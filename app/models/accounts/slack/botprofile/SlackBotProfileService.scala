@@ -2,6 +2,8 @@ package models.accounts.slack.botprofile
 
 import java.time.OffsetDateTime
 
+import models.behaviors.BotResult
+import models.behaviors.events.SlackMessageEvent
 import models.team.Team
 import slack.api.SlackApiClient
 import utils.SlackChannels
@@ -26,4 +28,14 @@ trait SlackBotProfileService {
 
   def clientFor(botProfile: SlackBotProfile): SlackApiClient = SlackApiClient(botProfile.token)
 
+  def eventualMaybeEvent(slackTeamId: String, channelId: String, userId: String): Future[Option[SlackMessageEvent]]
+
+  def sendResultWithNewEvent(
+    description: String,
+    getEventualMaybeResult: SlackMessageEvent => Future[Option[BotResult]],
+    slackTeamId: String,
+    channelId: String,
+    userId: String,
+    originalMessageTs: String
+  ): Future[Unit]
 }

@@ -15,6 +15,7 @@ import play.api.libs.json.{JsDefined, JsValue}
 import services.AWSLambdaConstants._
 import services.{AWSLambdaLogResult, DataService}
 
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.concurrent.duration._
 
@@ -27,16 +28,66 @@ sealed trait BotResult {
   val resultType: ResultType.Value
   val forcePrivateResponse: Boolean
   val event: Event
+  val maybeConversation: Option[Conversation]
+  val shouldInterrupt: Boolean = true
   def text: String
   def fullText: String = text
   def hasText: Boolean = fullText.trim.nonEmpty
 
+  def maybeChannelForSend(maybeConversation: Option[Conversation], dataService: DataService)(implicit actorSystem: ActorSystem): Future[Option[String]] = {
+    event.maybeChannelForSend(forcePrivateResponse, maybeConversation, dataService)
+  }
+
+  def maybeOngoingConversation(dataService: DataService)(implicit actorSystem: ActorSystem): Future[Option[Conversation]] = {
+    maybeChannelForSend(None, dataService).flatMap { maybeChannel =>
+      dataService.conversations.findOngoingFor(event.userIdForContext, event.context, maybeChannel, event.maybeThreadId)
+    }
+  }
+
+  val interruptionPrompt = {
+    val action = if (maybeConversation.isDefined) { "ask" } else { "tell" }
+    s"You haven't answered my question yet, but I have something new to $action you."
+  }
+
+  def interruptOngoingConversationsFor(dataService: DataService)(implicit actorSystem: ActorSystem): Future[Boolean] = {
+    if (maybeConversation.exists(_.maybeThreadId.isDefined)) {
+      Future.successful(false)
+    } else {
+      maybeChannelForSend(maybeConversation, dataService).flatMap { maybeChannelForSend =>
+        dataService.conversations.allOngoingFor(event.userIdForContext, event.context, maybeChannelForSend, event.maybeThreadId).flatMap { ongoing =>
+          val toInterrupt = ongoing.filterNot(ea => maybeConversation.map(_.id).contains(ea.id))
+          Future.sequence(toInterrupt.map { ea =>
+            dataService.conversations.background(ea, interruptionPrompt, includeUsername = true)
+          })
+        }
+      }.map(interruptionResults => interruptionResults.nonEmpty)
+    }
+  }
+
   def sendIn(
               maybeShouldUnfurl: Option[Boolean],
-              maybeConversation: Option[Conversation],
-              dataService: DataService
+              dataService: DataService,
+              maybeIntro: Option[String] = None,
+              maybeInterruptionIntro: Option[String] = None
             )(implicit actorSystem: ActorSystem): Future[Option[String]] = {
-    event.sendMessage(fullText, forcePrivateResponse, maybeShouldUnfurl, maybeConversation, maybeActions, dataService)
+    for {
+      didInterrupt <- if (shouldInterrupt) {
+        interruptOngoingConversationsFor(dataService)
+      } else {
+        Future.successful(false)
+      }
+      _ <- maybeIntro.map { intro =>
+        val introToSend = if (didInterrupt) {
+          maybeInterruptionIntro.getOrElse(intro)
+        } else {
+          intro
+        }
+        SimpleTextResult(event, maybeConversation, introToSend, forcePrivateResponse).sendIn(None, dataService)
+      }.getOrElse {
+        Future.successful({})
+      }
+      sendResult <- event.sendMessage(fullText, forcePrivateResponse, maybeShouldUnfurl, maybeConversation, maybeActions, dataService)
+    } yield sendResult
   }
 
   def maybeActions: Option[MessageActions] = None
@@ -52,6 +103,7 @@ trait BotResultWithLogResult extends BotResult {
 
 case class SuccessResult(
                           event: Event,
+                          maybeConversation: Option[Conversation],
                           result: JsValue,
                           parametersWithValues: Seq[ParameterWithValue],
                           maybeResponseTemplate: Option[String],
@@ -67,7 +119,7 @@ case class SuccessResult(
   }
 }
 
-case class SimpleTextResult(event: Event, simpleText: String, forcePrivateResponse: Boolean) extends BotResult {
+case class SimpleTextResult(event: Event, maybeConversation: Option[Conversation], simpleText: String, forcePrivateResponse: Boolean) extends BotResult {
 
   val resultType = ResultType.SimpleText
 
@@ -75,7 +127,7 @@ case class SimpleTextResult(event: Event, simpleText: String, forcePrivateRespon
 
 }
 
-case class TextWithActionsResult(event: Event, simpleText: String, forcePrivateResponse: Boolean, actions: MessageActions) extends BotResult {
+case class TextWithActionsResult(event: Event, maybeConversation: Option[Conversation], simpleText: String, forcePrivateResponse: Boolean, actions: MessageActions) extends BotResult {
   val resultType = ResultType.TextWithActions
 
   def text: String = simpleText
@@ -85,17 +137,19 @@ case class TextWithActionsResult(event: Event, simpleText: String, forcePrivateR
   }
 }
 
-case class NoResponseResult(event: Event, maybeLogResult: Option[AWSLambdaLogResult]) extends BotResultWithLogResult {
+case class NoResponseResult(event: Event, maybeConversation: Option[Conversation], maybeLogResult: Option[AWSLambdaLogResult]) extends BotResultWithLogResult {
 
   val resultType = ResultType.NoResponse
   val forcePrivateResponse = false // N/A
+  override val shouldInterrupt = false
 
   def text: String = ""
 
   override def sendIn(
                        maybeShouldUnfurl: Option[Boolean],
-                       maybeConversation: Option[Conversation],
-                       dataService: DataService
+                       dataService: DataService,
+                       maybeIntro: Option[String] = None,
+                       maybeInterruptionIntro: Option[String] = None
                      )(implicit actorSystem: ActorSystem): Future[Option[String]] = {
     // do nothing
     Future.successful(None)
@@ -119,6 +173,7 @@ trait WithBehaviorLink {
 
 case class UnhandledErrorResult(
                                  event: Event,
+                                 maybeConversation: Option[Conversation],
                                  behaviorVersion: BehaviorVersion,
                                  dataService: DataService,
                                  configuration: Configuration,
@@ -126,16 +181,18 @@ case class UnhandledErrorResult(
                                ) extends BotResultWithLogResult with WithBehaviorLink {
 
   val resultType = ResultType.UnhandledError
+  val functionLines = behaviorVersion.functionBody.split("\n").length
 
   def text: String = {
     val prompt = s"\nI encountered an error in ${linkToBehaviorFor("one of your skills")} before calling `$SUCCESS_CALLBACK `or `$ERROR_CALLBACK`"
-    Array(Some(prompt), maybeLogResult.flatMap(_.maybeTranslated)).flatten.mkString(":\n\n")
+    Array(Some(prompt), maybeLogResult.flatMap(_.maybeTranslated(functionLines))).flatten.mkString(":\n\n")
   }
 
 }
 
 case class HandledErrorResult(
                                event: Event,
+                               maybeConversation: Option[Conversation],
                                behaviorVersion: BehaviorVersion,
                                dataService: DataService,
                                configuration: Configuration,
@@ -161,6 +218,7 @@ case class HandledErrorResult(
 
 case class SyntaxErrorResult(
                               event: Event,
+                              maybeConversation: Option[Conversation],
                               behaviorVersion: BehaviorVersion,
                               dataService: DataService,
                               configuration: Configuration,
@@ -183,6 +241,7 @@ case class SyntaxErrorResult(
 
 case class NoCallbackTriggeredResult(
                                       event: Event,
+                                      maybeConversation: Option[Conversation],
                                       behaviorVersion: BehaviorVersion,
                                       dataService: DataService,
                                       configuration: Configuration
@@ -197,6 +256,7 @@ case class NoCallbackTriggeredResult(
 
 case class MissingTeamEnvVarsResult(
                                  event: Event,
+                                 maybeConversation: Option[Conversation],
                                  behaviorVersion: BehaviorVersion,
                                  dataService: DataService,
                                  configuration: Configuration,
@@ -218,7 +278,7 @@ case class MissingTeamEnvVarsResult(
 
 }
 
-case class AWSDownResult(event: Event) extends BotResult {
+case class AWSDownResult(event: Event, maybeConversation: Option[Conversation]) extends BotResult {
 
   val resultType = ResultType.AWSDown
   val forcePrivateResponse = false
@@ -236,6 +296,7 @@ case class AWSDownResult(event: Event) extends BotResult {
 case class OAuth2TokenMissing(
                                oAuth2Application: OAuth2Application,
                                event: Event,
+                               maybeConversation: Option[Conversation],
                                loginToken: LoginToken,
                                cache: CacheApi,
                                configuration: Configuration
@@ -264,17 +325,19 @@ case class OAuth2TokenMissing(
 
   override def sendIn(
                        maybeShouldUnfurl: Option[Boolean],
-                       maybeConversation: Option[Conversation],
-                       dataService: DataService
+                       dataService: DataService,
+                       maybeIntro: Option[String] = None,
+                       maybeInterruptionIntro: Option[String] = None
                      )(implicit actorSystem: ActorSystem): Future[Option[String]] = {
     cache.set(key, event, 5.minutes)
-    super.sendIn(maybeShouldUnfurl, maybeConversation, dataService)
+    super.sendIn(maybeShouldUnfurl, dataService)
   }
 }
 
 case class RequiredApiNotReady(
                                 required: RequiredOAuth2ApiConfig,
                                 event: Event,
+                                maybeConversation: Option[Conversation],
                                 cache: CacheApi,
                                 dataService: DataService,
                                 configuration: Configuration

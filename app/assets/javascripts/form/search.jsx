@@ -9,7 +9,8 @@ define(function(require) {
       isSearching: React.PropTypes.bool,
       onChange: React.PropTypes.func.isRequired,
       value: React.PropTypes.string,
-      className: React.PropTypes.string
+      className: React.PropTypes.string,
+      withResults: React.PropTypes.bool
     },
 
     getRemainingProps: function() {
@@ -25,13 +26,17 @@ define(function(require) {
 
     render: function() {
       return (
-        <div className="columns columns-elastic">
+        <div className={"columns columns-elastic " + (this.props.withResults ? " mbneg1 position-relative position-z-above " : "")}>
           <div className="column column-expand prn">
             <div className={"position-relative " + (this.props.isSearching ? "pulse-faded" : "")}>
               <div>
                 <FormInput
                   {...this.getRemainingProps()}
-                  className={"form-input-icon form-input-with-button " + (this.props.className || "")}
+                  className={
+                    "form-input-icon form-input-with-button " +
+                    (this.props.withResults ? " border-radius-bottom-none " : "") +
+                    (this.props.className || "")
+                  }
                   onEscKey={this.clearValue}
                 />
               </div>
@@ -47,7 +52,10 @@ define(function(require) {
           </div>
           <div className="column column-shrink">
             <button type="button"
-              className="button-shrink button-with-form-input"
+              className={
+                "button-shrink button-with-form-input " +
+                (this.props.withResults ? " border-radius-bottom-none " : "")
+              }
               onClick={this.clearValue}
               disabled={!this.props.value}
             >

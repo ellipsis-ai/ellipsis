@@ -13,7 +13,7 @@ import play.api.i18n.MessagesApi
 import play.api.libs.json.{JsError, JsSuccess, Json}
 import play.api.libs.ws.WSClient
 import services.{AWSLambdaService, DataService, GithubService}
-import utils.{CitiesToTimeZones, FuzzyMatcher}
+import utils.{CitiesToTimeZones, FuzzyMatcher, TimeZoneParser}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -51,8 +51,8 @@ class ApplicationController @Inject() (
           BehaviorGroupData.maybeFor(group.id, user, None, dataService)
         }).map(_.flatten.sorted)
       }.getOrElse(Future.successful(Seq()))
-      result <- teamAccess.maybeTargetTeam.map { _ =>
-        Future.successful(Ok(views.html.index(viewConfig(Some(teamAccess)), groupData, maybeSlackTeamId, maybeBranch)))
+      result <- teamAccess.maybeTargetTeam.map { team =>
+        Future.successful(Ok(views.html.index(viewConfig(Some(teamAccess)), groupData, maybeSlackTeamId, team.maybeTimeZone.map(_.toString), maybeBranch)))
       }.getOrElse {
         reAuthFor(request, maybeTeamId)
       }
@@ -159,6 +159,47 @@ class ApplicationController @Inject() (
         NotFound("")
       }
     }
+  }
+
+  def possibleCitiesFor(searchQuery: String) = silhouette.SecuredAction { implicit request =>
+    val matches = citiesToTimeZones.possibleCitiesFor(searchQuery)
+    Ok(Json.obj("matches" -> matches))
+  }
+
+  private val timeZoneForm = Form(
+    mapping(
+      "tzName" -> nonEmptyText,
+      "teamId" -> optional(nonEmptyText)
+    )(TeamTimeZoneData.apply)(TeamTimeZoneData.unapply)
+  )
+
+  def setTeamTimeZone = silhouette.SecuredAction.async { implicit request =>
+    val user = request.identity
+    timeZoneForm.bindFromRequest.fold(
+      formWithErrors => {
+        Future.successful(BadRequest(formWithErrors.errorsAsJson))
+      },
+      info => {
+        for {
+          teamAccess <- dataService.users.teamAccessFor(user, Some(info.maybeTeamId.getOrElse(user.teamId)))
+          maybeTeam <- teamAccess.maybeTargetTeam.map { team =>
+            TimeZoneParser.maybeZoneFor(info.tzName).map { tz =>
+              dataService.teams.setTimeZoneFor(team, tz).map(Some(_))
+            }.getOrElse(Future.successful(Some(team)))
+          }.getOrElse(Future.successful(None))
+        } yield {
+          maybeTeam.map { team =>
+            team.maybeTimeZone.map { tz =>
+              Ok(Json.toJson(TeamTimeZoneData(tz.toString, None)).toString)
+            }.getOrElse {
+              BadRequest(Json.obj("message" -> "Invalid time zone").toString)
+            }
+          }.getOrElse {
+            NotFound("")
+          }
+        }
+      }
+    )
   }
 
 }

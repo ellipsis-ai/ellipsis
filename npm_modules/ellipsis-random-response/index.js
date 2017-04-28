@@ -1,5 +1,7 @@
 "use strict";
 
+const moment = require('moment-timezone');
+
 const emojiList = {
   happy: ["😀", "😃", "😄", "😁", "😊", "🙂", "☺️"],
   celebratory: ["👏", "👏👏👏", "👍", "🎺", "🎉", "🎊", "💃", "🕺", "💯", "🎈", "🍾"],
@@ -13,6 +15,10 @@ const emojiList = {
   hello: ["👋", "🙂"],
   appreciated: ["👍", "🙂", "😊"],
   sarcastic: ["😬", "🙈", "🙃", "😛","🤔"],
+  good_morning: ["👋", "☀️", "🌞", "☕️"],
+  good_afternoon: ["👋", "😎", "😊"],
+  good_evening: ["👋", "😌", "🌆"],
+  late_night: ["🌜", "🌖", "😴", "🌃"],
   misc: []
 };
 
@@ -25,7 +31,7 @@ const responseList = {
   confused: ["Hmm", "Uh…", "Um…", "I’m confused"],
   yes: ["Yes!", "Absolutely", "For sure", "Definitely", "Do it", "That’s a great idea"],
   no: ["No", "No way", "Nope", "I don’t think so", "Forget it", "That doesn’t seem like a good idea"],
-  understood: ["OK.", "Got it.", "Understood", "Makes sense."],
+  understood: ["OK.", "Got it.", "Understood.", "Makes sense."],
   hello: [
     "Well hello there.",
     "Hi",
@@ -47,6 +53,29 @@ const responseList = {
     "Welp",
     "_cough_",
     "Moving right along…"
+  ],
+  good_morning: [
+    "Good morning!",
+    "Good morning.",
+    "Morning",
+    "Good day."
+  ],
+  good_afternoon: [
+    "Good afternoon!",
+    "Good afternoon",
+    "Afternoon",
+    "Hello! I hope you’re having a pleasant afternoon."
+  ],
+  good_evening: [
+    "Good evening!",
+    "Good evening.",
+    "Evening",
+    "Hi there. I hope this evening treats you well."
+  ],
+  late_night: [
+    "Why hello there. It’s awfully late, isn’t it.",
+    "Greetings. I hope you had a good day today.",
+    "Greetings at this late hour."
   ],
   misc: []
 };
@@ -91,6 +120,22 @@ const RandomResponse = {
 
   responseWithEmoji: function(optionalTheme) {
     return RandomResponse.emoji(optionalTheme) + " " + RandomResponse.response(optionalTheme);
+  },
+
+  greetingForTimeZone: function(timeZoneId) {
+    if (!timeZoneId) {
+      return this.responseWithEmoji("hello");
+    }
+    const hour = moment().tz(timeZoneId).hour();
+    if (hour >= 5 && hour < 12) {
+      return this.responseWithEmoji("good_morning");
+    } else if (hour >= 12 && hour < 17) {
+      return this.responseWithEmoji("good_afternoon");
+    } else if (hour >= 17 && hour < 22) {
+      return this.responseWithEmoji("good_evening");
+    } else {
+      return this.responseWithEmoji("late_night");
+    }
   },
 
   fromList: function(list) {

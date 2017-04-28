@@ -29,7 +29,7 @@ case class ScheduleBehavior(
         scheduledMessage.successResponse(dataService)
       }.getOrElse(Future.successful(s"Sorry, I don’t know how to schedule `$recurrence`"))
     } yield {
-      SimpleTextResult(event, responseText, forcePrivateResponse = false)
+      SimpleTextResult(event, None, responseText, forcePrivateResponse = false)
     }
   }
 

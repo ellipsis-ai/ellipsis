@@ -37,17 +37,10 @@ class SavedAnswerController @Inject() (
       },
       inputId => {
         for {
-          maybeInput <- dataService.inputs.findByInputId(inputId)
-          maybeNumDeleted <- maybeInput.map { input =>
-            dataService.savedAnswers.deleteForUser(input, user).map(Some(_))
-          }.getOrElse(Future.successful(None))
+          numDeleted <- dataService.savedAnswers.deleteForUser(inputId, user)
         } yield {
-          maybeNumDeleted.map { numDeleted =>
-            val result = Map("numDeleted" -> numDeleted)
-            Ok(Json.toJson(result))
-          }.getOrElse {
-            NotFound("")
-          }
+          val result = Map("numDeleted" -> numDeleted)
+          Ok(Json.toJson(result))
         }
       }
     )
@@ -61,17 +54,10 @@ class SavedAnswerController @Inject() (
       inputId => {
         for {
           // TODO: ensure the user is allowed to do this
-          maybeInput <- dataService.inputs.findByInputId(inputId)
-          maybeNumDeleted <- maybeInput.map { input =>
-            dataService.savedAnswers.deleteAllFor(input).map(Some(_))
-          }.getOrElse(Future.successful(None))
+          numDeleted <- dataService.savedAnswers.deleteAllFor(inputId)
         } yield {
-          maybeNumDeleted.map { numDeleted =>
-            val result = Map("numDeleted" -> numDeleted)
-            Ok(Json.toJson(result))
-          }.getOrElse {
-            NotFound("")
-          }
+          val result = Map("numDeleted" -> numDeleted)
+          Ok(Json.toJson(result))
         }
       }
     )

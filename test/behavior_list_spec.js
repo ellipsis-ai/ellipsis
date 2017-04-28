@@ -7,6 +7,7 @@ const BehaviorGroupCard = require('../app/assets/javascripts/behavior_list/behav
 describe('BehaviorList', () => {
   jsRoutes.controllers.BehaviorEditorController.edit = () => '/edit';
   jsRoutes.controllers.BehaviorEditorController.newGroup = () => '/newGroup';
+  jsRoutes.controllers.ApplicationController.possibleCitiesFor = () => '/possibleCitiesFor';
 
   const behaviorVersionTask1 = Object.freeze({
     "teamId": "abcdef",

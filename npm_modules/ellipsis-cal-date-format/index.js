@@ -19,7 +19,37 @@ const EventFormatter = {
 
   defaultTimeZone: 'UTC',
 
-  formatEvent: function(event, tz, optionalTodayYMD) {
+  formatHangoutLinkFor(event, options) {
+    const separator = options && options.details ? "" : " · ";
+    return event.hangoutLink ? `${separator}[Join hangout](${event.hangoutLink})` : "";
+  },
+
+  formatEvent: function(event, tz, optionalTodayYMD, options) {
+    if (options && options.details) {
+      return this.formatEventWithDetails(event, tz, optionalTodayYMD, options);
+    } else {
+      return this.formatEventWithoutDetails(event, tz, optionalTodayYMD, options);
+    }
+  },
+
+  formatEventWithDetails: function(event, tz, optionalTodayYMD, options) {
+    const time = this.formatEventDateTime(event, tz, optionalTodayYMD);
+    let optionalData = "";
+    if (event.description) {
+      optionalData += `${event.description}  \n`;
+    }
+    if (event.location) {
+      optionalData += `_Where: ${event.location}_  \n`;
+    }
+    return `${time}  \n**[${event.summary}](${event.htmlLink})**  \n${optionalData}${this.formatHangoutLinkFor(event, options)}`;
+  },
+
+  formatEventWithoutDetails: function(event, tz, optionalTodayYMD, options) {
+    const time = this.formatEventDateTime(event, tz, optionalTodayYMD);
+    return `${time}: **[${event.summary}](${event.htmlLink})**${this.formatHangoutLinkFor(event, options)}`;
+  },
+
+  formatEventDateTime: function(event, tz, optionalTodayYMD) {
     if (!event) {
       return "";
     } else if (event.start.date) {

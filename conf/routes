@@ -12,6 +12,8 @@ GET         /fetch_published_skills                   @controllers.ApplicationCo
 POST        /merge_skills                             @controllers.ApplicationController.mergeBehaviorGroups
 POST        /delete_skills                            @controllers.ApplicationController.deleteBehaviorGroups
 GET         /search_skills                            @controllers.ApplicationController.findBehaviorGroupsMatching(queryString: String, branch: Option[String] ?= None, teamId: Option[String] ?= None)
+POST        /set_team_time_zone                       @controllers.ApplicationController.setTeamTimeZone
+GET         /possible_cities_for                      @controllers.ApplicationController.possibleCitiesFor(searchQuery: String)
 
 GET         /new_skill                                @controllers.BehaviorEditorController.newGroup(teamId: Option[String] ?= None)
 GET         /edit_skill/:id                           @controllers.BehaviorEditorController.edit(id: String, actionId: Option[String] ?= None)

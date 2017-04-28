@@ -32,12 +32,13 @@ trait Event {
   val context = name
   val isResponseExpected: Boolean
   val includesBotMention: Boolean
+  val messageRecipientPrefix: String
 
-  def logTextFor(result: BotResult, maybeConversation: Option[Conversation]): String = {
+  def logTextFor(result: BotResult): String = {
     val channelText = maybeChannel.map { channel =>
       s" in channel [${channel}]"
     }.getOrElse("")
-    val convoText = maybeConversation.map { convo =>
+    val convoText = result.maybeConversation.map { convo =>
       s" in conversation [${convo.id}]"
     }.getOrElse("")
     s"Sending result [${result.fullText}] in response to slack message [${messageText}]$channelText$convoText"
@@ -103,7 +104,17 @@ trait Event {
   }
 
   def noExactMatchResult(dataService: DataService, lambdaService: AWSLambdaService)(implicit actorSystem: ActorSystem): Future[BotResult] = {
-    DisplayHelpBehavior(Some(messageText), None, Some(0), isFirstTrigger = true, this, lambdaService, dataService).result
+    DisplayHelpBehavior(
+      Some(messageText),
+      None,
+      Some(0),
+      includeNameAndDescription = true,
+      includeNonMatchingResults = false,
+      isFirstTrigger = true,
+      this,
+      lambdaService,
+      dataService
+    ).result
   }
 
   def eventualMaybeDMChannel(dataService: DataService)(implicit actorSystem: ActorSystem): Future[Option[String]]
@@ -116,6 +127,14 @@ trait Event {
         maybeChannel
       }
     }
+  }
+
+  def maybeChannelForSend(
+                           forcePrivate: Boolean,
+                           maybeConversation: Option[Conversation],
+                           dataService: DataService
+                         )(implicit actorSystem: ActorSystem): Future[Option[String]] = {
+    Future.successful(maybeChannel)
   }
 
   def allOngoingConversations(dataService: DataService): Future[Seq[Conversation]]

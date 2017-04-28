@@ -8,11 +8,13 @@ trait ConversationService {
 
   def save(conversation: Conversation): Future[Conversation]
 
-  def allOngoingFor(userIdForContext: String, context: String, maybeChannel: Option[String], maybeThreadId: Option[String], isPrivateMessage: Boolean): Future[Seq[Conversation]]
+  def allOngoingFor(userIdForContext: String, context: String, maybeChannel: Option[String], maybeThreadId: Option[String]): Future[Seq[Conversation]]
 
   def allForeground: Future[Seq[Conversation]]
 
-  def findOngoingFor(userIdForContext: String, context: String, maybeChannel: Option[String], maybeThreadId: Option[String], isPrivateMessage: Boolean): Future[Option[Conversation]]
+  def allNeedingReminder: Future[Seq[Conversation]]
+
+  def findOngoingFor(userIdForContext: String, context: String, maybeChannel: Option[String], maybeThreadId: Option[String]): Future[Option[Conversation]]
 
   def cancel(conversation: Conversation): Future[Unit]
 
@@ -26,7 +28,7 @@ trait ConversationService {
 
   def isDone(id: String): Future[Boolean]
 
-  def touch(conversation: Conversation): Future[Unit]
+  def touch(conversation: Conversation): Future[Conversation]
 
   def background(conversation: Conversation, prompt: String, includeUsername: Boolean)(implicit actorSystem: ActorSystem): Future[Unit]
 

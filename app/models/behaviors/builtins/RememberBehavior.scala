@@ -43,6 +43,7 @@ case class RememberBehavior(event: Event, lambdaService: AWSLambdaService, dataS
                 None,
                 group.team.id,
                 None,
+                Some(group.id),
                 isNewBehavior = false,
                 None,
                 "",
@@ -82,9 +83,9 @@ case class RememberBehavior(event: Event, lambdaService: AWSLambdaService, dataS
         }.getOrElse {
           dataService.behaviorGroups.editLinkFor(groupVersion.group.id, lambdaService.configuration)
         }
-        SimpleTextResult(event, s"OK, I compiled recent messages into [a new skill]($link)", forcePrivateResponse = false)
+        SimpleTextResult(event, None, s"OK, I compiled recent messages into [a new skill]($link)", forcePrivateResponse = false)
       }.getOrElse{
-        NoResponseResult(event, None)
+        NoResponseResult(event, None, None)
       }
     }
   }

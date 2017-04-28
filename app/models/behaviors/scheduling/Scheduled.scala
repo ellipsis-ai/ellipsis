@@ -7,14 +7,14 @@ import akka.actor.ActorSystem
 import models.accounts.slack.botprofile.SlackBotProfile
 import models.accounts.slack.profile.SlackProfile
 import models.accounts.user.User
+import models.behaviors.BotResult
 import models.behaviors.events.{EventHandler, ScheduledEvent}
 import models.behaviors.scheduling.recurrence.Recurrence
-import models.behaviors.{BotResult, SimpleTextResult}
 import models.team.Team
 import play.api.{Configuration, Logger}
 import services.DataService
 import slack.api.{ApiError, SlackApiClient}
-import utils.SlackChannels
+import utils.{FutureSequencer, SlackChannels}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -38,31 +38,33 @@ trait Scheduled {
     shortDescription("OK, I will run", dataService)
   }
 
-  def scheduleInfoResultFor(
-                             event: ScheduledEvent,
-                             result: BotResult,
-                             configuration: Configuration,
-                             didInterrupt: Boolean,
-                             displayText: String
-                           ): BotResult = {
-    val helpLink = configuration.getString("application.apiBaseUrl").map { baseUrl =>
-      val path = controllers.routes.HelpController.scheduledMessages()
-      s"$baseUrl$path"
-    }.get
-    val resultText = if (didInterrupt) {
-      s"""Meanwhile, I’m running $displayText [as scheduled]($helpLink) _(${recurrence.displayString.trim})._
+  def maybeScheduleInfoTextFor(
+                           event: ScheduledEvent,
+                           result: BotResult,
+                           configuration: Configuration,
+                           displayText: String,
+                           isForInterruption: Boolean
+                         ): Option[String] = {
+    if (result.hasText) {
+      val helpLink = configuration.getString("application.apiBaseUrl").map { baseUrl =>
+        val path = controllers.routes.HelpController.scheduledMessages()
+        s"$baseUrl$path"
+      }.get
+      val greeting = if (isForInterruption) {
+        "Meanwhile, "
+      } else {
+        """:wave: Hi.
          |
-       |───
-     """.stripMargin
-    } else {
-      s""":wave: Hi.
-         |
-       |I’m running $displayText [as scheduled]($helpLink) _(${recurrence.displayString.trim})._
-         |
-       |───
          |""".stripMargin
+      }
+      Some(s"""${greeting}I’m running $displayText [as scheduled]($helpLink) _(${recurrence.displayString.trim})._
+       |
+       |───
+       |
+       |""".stripMargin)
+    } else {
+      None
     }
-    SimpleTextResult(event, resultText, result.forcePrivateResponse)
   }
 
   def isScheduledForDirectMessage: Boolean = {
@@ -151,24 +153,6 @@ trait Scheduled {
 
   case class SlackDMInfo(userId: String, channelId: String)
 
-  private def sendDMsSequentiallyFor(
-                                      infos: List[SlackDMInfo],
-                                      eventHandler: EventHandler,
-                                      client: SlackApiClient,
-                                      profile: SlackBotProfile,
-                                      dataService: DataService,
-                                      configuration: Configuration
-                                    )(implicit actorSystem: ActorSystem): Future[Unit] = {
-    if (infos.isEmpty) {
-      Future.successful({})
-    } else {
-      val info = infos.head
-      sendFor(info.channelId, info.userId, eventHandler, client, profile, dataService, configuration).flatMap { _ =>
-        sendDMsSequentiallyFor(infos.tail, eventHandler, client, profile, dataService, configuration)
-      }
-    }
-  }
-
   def sendForIndividualMembers(
                                 channel: String,
                                 eventHandler: EventHandler,
@@ -190,7 +174,7 @@ trait Scheduled {
           }
         }
       }).map(_.flatten)
-      _ <- sendDMsSequentiallyFor(dmInfos.toList, eventHandler, client, profile, dataService, configuration)
+      _ <- FutureSequencer.sequence(dmInfos, sendForFn(eventHandler, client, profile, dataService, configuration))
     } yield {}
   }
 
@@ -208,28 +192,33 @@ trait Scheduled {
              )(implicit actorSystem: ActorSystem): Future[Unit] = {
     val event = eventFor(channel, slackUserId, profile)
     for {
-      didInterrupt <- eventHandler.interruptOngoingConversationsFor(event)
       results <- eventHandler.handle(event, None)
     } yield {
-      sendResults(results.toList, event, configuration, didInterrupt, dataService)
+      FutureSequencer.sequence(results, sendResultFn(event, configuration, dataService))
     }
+  }
+
+  def sendForFn(
+                  eventHandler: EventHandler,
+                  client: SlackApiClient,
+                  profile: SlackBotProfile,
+                  dataService: DataService,
+                  configuration: Configuration
+               )(implicit actorSystem: ActorSystem): SlackDMInfo => Future[Unit] = {
+    info: SlackDMInfo => sendFor(info.channelId, info.userId, eventHandler, client, profile, dataService, configuration)
   }
 
   def sendResult(
                   result: BotResult,
                   event: ScheduledEvent,
                   configuration: Configuration,
-                  didInterrupt: Boolean,
                   dataService: DataService
                 )(implicit actorSystem: ActorSystem): Future[Unit] = {
     for {
       displayText <- displayText(dataService)
-      _ <- if (result.hasText) {
-        scheduleInfoResultFor(event, result, configuration, didInterrupt, displayText).sendIn(None, None, dataService)
-      } else {
-        Future.successful({})
-      }
-      _ <- result.sendIn(None, None, dataService)
+      maybeIntroText <- Future.successful(maybeScheduleInfoTextFor(event, result, configuration, displayText, isForInterruption = false))
+      maybeInterruptionIntroText <- Future.successful(maybeScheduleInfoTextFor(event, result, configuration, displayText, isForInterruption = true))
+      _ <- result.sendIn(None, dataService, maybeIntroText, maybeInterruptionIntroText)
     } yield {
       val channelInfo =
         event.maybeChannel.
@@ -239,20 +228,12 @@ trait Scheduled {
     }
   }
 
-  def sendResults(
-                   results: List[BotResult],
-                   event: ScheduledEvent,
-                   configuration: Configuration,
-                   didInterrupt: Boolean,
-                   dataService: DataService
-                 )(implicit actorSystem: ActorSystem): Future[Unit] = {
-    if (results.isEmpty) {
-      Future.successful({})
-    } else {
-      sendResult(results.head, event, configuration, didInterrupt, dataService).flatMap { _ =>
-        sendResults(results.tail, event, configuration, didInterrupt, dataService)
-      }
-    }
+  def sendResultFn(
+                    event: ScheduledEvent,
+                    configuration: Configuration,
+                    dataService: DataService
+                  )(implicit actorSystem: ActorSystem): BotResult => Future[Unit] = {
+    result: BotResult => sendResult(result, event, configuration, dataService)
   }
 
   def send(

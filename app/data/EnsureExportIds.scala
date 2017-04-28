@@ -8,6 +8,7 @@ import models.behaviors.behavior.{BehaviorQueries, RawBehavior}
 import models.behaviors.behaviorgroup.{BehaviorGroupQueries, RawBehaviorGroup}
 import models.behaviors.input.{InputQueries, RawInput}
 import services.DataService
+import utils.FutureSequencer
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -24,20 +25,10 @@ class EnsureExportIds @Inject() (dataService: DataService) {
     }
   }
 
-  def runSequentiallyForBehaviorGroups(groups: List[RawBehaviorGroup]): Future[Unit] = {
-    groups.headOption.map { group =>
-      ensureForGroup(group).flatMap { _ =>
-        runSequentiallyForBehaviorGroups(groups.tail)
-      }
-    }.getOrElse {
-      Future.successful({})
-    }
-  }
-
   def ensureForBehaviorGroups: Unit = {
     dataService.runNow(
       dataService.run(BehaviorGroupQueries.all.result).flatMap { groups =>
-        runSequentiallyForBehaviorGroups(groups.toList)
+        FutureSequencer.sequence(groups, ensureForGroup)
       }.map(_ => {})
     )
   }
@@ -52,20 +43,10 @@ class EnsureExportIds @Inject() (dataService: DataService) {
     }
   }
 
-  def runSequentiallyForBehaviors(behaviors: List[RawBehavior]): Future[Unit] = {
-    behaviors.headOption.map { ea =>
-      ensureForBehavior(ea).flatMap { _ =>
-        runSequentiallyForBehaviors(behaviors.tail)
-      }
-    }.getOrElse {
-      Future.successful({})
-    }
-  }
-
   def ensureForBehaviors: Unit = {
     dataService.runNow(
       dataService.run(BehaviorQueries.all.result).flatMap { behaviors =>
-        runSequentiallyForBehaviors(behaviors.toList)
+        FutureSequencer.sequence(behaviors, ensureForBehavior)
       }.map(_ => {})
     )
   }
@@ -80,20 +61,10 @@ class EnsureExportIds @Inject() (dataService: DataService) {
     }
   }
 
-  def runSequentiallyForInputs(inputs: List[RawInput]): Future[Unit] = {
-    inputs.headOption.map { ea =>
-      ensureForInput(ea).flatMap { _ =>
-        runSequentiallyForInputs(inputs.tail)
-      }
-    }.getOrElse {
-      Future.successful({})
-    }
-  }
-
   def ensureForInputs: Unit = {
     dataService.runNow(
       dataService.run(InputQueries.all.result).flatMap { inputs =>
-        runSequentiallyForInputs(inputs.toList)
+        FutureSequencer.sequence(inputs, ensureForInput)
       }.map(_ => {})
     )
   }

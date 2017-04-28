@@ -36,7 +36,7 @@ case class UnscheduleBehavior(
         }
         s"I couldn't find `$text` scheduled. $alternativesMessage"
       }
-      SimpleTextResult(event, msg, forcePrivateResponse = false)
+      SimpleTextResult(event, None, msg, forcePrivateResponse = false)
     }
   }
 

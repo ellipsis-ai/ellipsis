@@ -2,6 +2,7 @@ import React from 'react';
 import TestUtils from 'react-addons-test-utils';
 const BehaviorListApp = require('../app/assets/javascripts/behavior_list/app');
 const BehaviorList = require('../app/assets/javascripts/behavior_list/index');
+const TimeZoneSetter = require('../app/assets/javascripts/time_zone_setter/index');
 const BehaviorGroup = require('../app/assets/javascripts/models/behavior_group');
 jest.mock('../app/assets/javascripts/lib/data_request', () => ({
   jsonGet: jest.fn(() => {
@@ -19,6 +20,7 @@ jest.mock('../app/assets/javascripts/lib/data_request', () => ({
 describe('BehaviorListApp', () => {
   jsRoutes.controllers.ApplicationController.fetchPublishedBehaviorInfo = () => '/fetch';
   jsRoutes.controllers.BehaviorEditorController.newGroup = () => '/newGroup';
+  jsRoutes.controllers.ApplicationController.possibleCitiesFor = () => '/possibleCitiesFor';
 
   const behaviorVersionTask1 = Object.freeze({
     "teamId": "abcdef",
@@ -106,6 +108,7 @@ describe('BehaviorListApp', () => {
     behaviorGroups: [group1, group2, group3],
     teamId: "1",
     slackTeamId: "1",
+    teamTimeZone: "America/Toronto",
     branchName: null
   });
 
@@ -122,9 +125,17 @@ describe('BehaviorListApp', () => {
   });
 
   describe('render', () => {
-    it('renders', () => {
+    it('renders a BehaviorList when the time zone is set', () => {
       const list = createBehaviorListApp(config);
       expect(TestUtils.scryRenderedComponentsWithType(list, BehaviorList).length).toBe(1);
+      expect(TestUtils.scryRenderedComponentsWithType(list, TimeZoneSetter).length).toBe(0);
+    });
+
+    it('renders a TimeZoneSetter when no time zone is set', () => {
+      config.teamTimeZone = null;
+      const list = createBehaviorListApp(config);
+      expect(TestUtils.scryRenderedComponentsWithType(list, BehaviorList).length).toBe(0);
+      expect(TestUtils.scryRenderedComponentsWithType(list, TimeZoneSetter).length).toBe(1);
     });
   });
 

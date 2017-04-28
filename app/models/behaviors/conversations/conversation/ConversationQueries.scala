@@ -1,5 +1,7 @@
 package models.behaviors.conversations.conversation
 
+import java.time.OffsetDateTime
+
 import models.behaviors.conversations.InvokeBehaviorConversation
 import models.behaviors.triggers.messagetrigger.MessageTriggerQueries
 import drivers.SlickPostgresDriver.api._
@@ -47,12 +49,22 @@ object ConversationQueries {
   }
   val allOngoingQueryFor = Compiled(uncompiledAllOngoingQueryFor _)
 
-  def uncompiledAllForegroundQuery = {
+  def uncompiledAllPendingQuery = {
     val doneValue: Rep[String] = Conversation.DONE_STATE
-    allWithTrigger.
-      filterNot { case((convo, _), _) => convo.state === doneValue }.
-      filterNot { case((convo, _), _) => convo.maybeThreadId.isDefined }
+    allWithTrigger.filterNot { case((convo, _), _) => convo.state === doneValue }
+  }
+  def allPendingQuery = Compiled(uncompiledAllPendingQuery)
+
+  def uncompiledAllForegroundQuery = {
+    uncompiledAllPendingQuery.filterNot { case((convo, _), _) => convo.maybeThreadId.isDefined }
   }
   def allForegroundQuery = Compiled(uncompiledAllForegroundQuery)
+
+  def uncompiledAllNeedingReminderQuery(windowStart: Rep[OffsetDateTime], windowEnd: Rep[OffsetDateTime]) = {
+    uncompiledAllPendingQuery.
+      filter { case((convo, _), _) => convo.startedAt >= windowStart }.
+      filter { case((convo, _), _) => convo.maybeLastInteractionAt.map(dt => dt < windowEnd).getOrElse(convo.startedAt < windowEnd) }
+  }
+  val allNeedingReminderQuery = Compiled(uncompiledAllNeedingReminderQuery _)
 
 }

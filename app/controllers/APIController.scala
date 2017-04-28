@@ -150,40 +150,36 @@ class APIController @Inject() (
 
   }
 
+  private def maybeIntroTextFor(isInvokedExternally: Boolean, event: Event, context: ApiMethodContext, isForInterruption: Boolean): Option[String] = {
+    val greeting = if (isForInterruption) {
+      s""":wave: Hi.
+       |
+       |""".stripMargin
+    } else {
+      "Meanwhile, "
+    }
+    if (isInvokedExternally) {
+      context.maybeSlackProfile.map { slackProfile =>
+        s"""$greeting<@${slackProfile.loginInfo.providerKey}> asked me to run `${event.messageText}`.
+         |
+         |───
+         |""".stripMargin
+      }
+    } else { None }
+  }
+
   private def runBehaviorFor(maybeEvent: Option[Event], context: ApiMethodContext) = {
     for {
       isInvokedExternally <- Future.successful(context.maybeUserForApiToken.isDefined)
       result <- maybeEvent.map { event =>
         for {
-          didInterrupt <- eventHandler.interruptOngoingConversationsFor(event)
           result <- eventHandler.handle(event, None).map { results =>
             results.foreach { result =>
-              val eventualIntroSend = if (isInvokedExternally) {
-                context.maybeSlackProfile.map { slackProfile =>
-                  val resultText = if (didInterrupt) {
-                    s"""Meanwhile, <@${slackProfile.loginInfo.providerKey}> asked me to run `${event.messageText}`.
-                       |
-                       |───
-                       |""".stripMargin
-                  } else {
-                    s""":wave: Hi.
-                       |
-                       |<@${slackProfile.loginInfo.providerKey}> asked me to run `${event.messageText}`.
-                       |
-                       |───
-                       |""".stripMargin
-                  }
-                  val introResult = SimpleTextResult(event, resultText, result.forcePrivateResponse)
-                  introResult.sendIn(None, None, dataService)
-                }.getOrElse(Future.successful({}))
-              } else {
-                Future.successful({})
-              }
-              eventualIntroSend.flatMap { _ =>
-                result.sendIn(None, None, dataService).map { _ =>
-                  val channelText = event.maybeChannel.map(c => s" in channel [$c]").getOrElse("")
-                  Logger.info(s"Sending result [${result.fullText}] in response to /api/post_message [${event.messageText}]$channelText")
-                }
+              val maybeIntro = maybeIntroTextFor(isInvokedExternally, event, context, isForInterruption = false)
+              val maybeInterruptionIntro = maybeIntroTextFor(isInvokedExternally, event, context, isForInterruption = true)
+              result.sendIn(None, dataService, maybeIntro, maybeInterruptionIntro).map { _ =>
+                val channelText = event.maybeChannel.map(c => s" in channel [$c]").getOrElse("")
+                Logger.info(s"Sending result [${result.fullText}] in response to /api/post_message [${event.messageText}]$channelText")
               }
             }
             Ok(Json.toJson(results.map(_.fullText)))
@@ -336,12 +332,16 @@ class APIController @Inject() (
 
   case class UnscheduleActionInfo(
                                    actionName: String,
+                                   userId: Option[String],
+                                   channel: Option[String],
                                    token: String
                                  )
 
   private val unscheduleActionForm = Form(
     mapping(
       "actionName" -> nonEmptyText,
+      "userId" -> optional(nonEmptyText),
+      "channel" -> optional(nonEmptyText),
       "token" -> nonEmptyText
     )(UnscheduleActionInfo.apply)(UnscheduleActionInfo.unapply)
   )
@@ -355,16 +355,25 @@ class APIController @Inject() (
         val eventualResult = for {
           context <- ApiMethodContext.createFor(info.token)
           maybeBehavior <- context.maybeBehaviorFor(info.actionName)
+          maybeUser <- info.userId.map { userId =>
+            dataService.users.find(userId)
+          }.getOrElse(Future.successful(None))
           result <- maybeBehavior.map { behavior =>
-            dataService.scheduledBehaviors.allForBehavior(behavior).flatMap { scheduledBehaviors =>
-              if (scheduledBehaviors.isEmpty) {
-                Future.successful(Ok("There was nothing to unschedule for this action"))
-              } else {
-                for {
-                  displayText <- scheduledBehaviors.head.displayText(dataService)
-                  _ <- dataService.scheduledBehaviors.deleteFor(behavior, behavior.team)
-                } yield {
-                  Ok(s"Ok, I unscheduled everything for $displayText")
+            if (info.userId.isDefined && maybeUser.isEmpty) {
+              Future.successful(NotFound(s"Couldn't find a user with ID `${info.userId.get}`"))
+            } else {
+              dataService.scheduledBehaviors.allForBehavior(behavior, maybeUser, info.channel).flatMap { scheduledBehaviors =>
+                if (scheduledBehaviors.isEmpty) {
+                  Future.successful(Ok("There was nothing to unschedule for this action"))
+                } else {
+                  for {
+                    displayText <- scheduledBehaviors.head.displayText(dataService)
+                    _ <- Future.sequence(scheduledBehaviors.map { ea =>
+                      dataService.scheduledBehaviors.delete(ea)
+                    })
+                  } yield {
+                    Ok(s"Ok, I unscheduled everything for $displayText")
+                  }
                 }
               }
             }
@@ -443,8 +452,8 @@ class APIController @Inject() (
           context <- ApiMethodContext.createFor(info.token)
           maybeEvent <- context.maybeMessageEventFor(info.message, info.channel)
           result <- maybeEvent.map { event =>
-            val botResult = SimpleTextResult(event, info.message, forcePrivateResponse = false)
-            botResult.sendIn(None, None, dataService).map { _ =>
+            val botResult = SimpleTextResult(event, None, info.message, forcePrivateResponse = false)
+            botResult.sendIn(None, dataService).map { _ =>
               Ok(Json.toJson(Seq(botResult.fullText)))
             }
           }.getOrElse(Future.successful(NotFound("")))

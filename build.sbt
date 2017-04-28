@@ -14,7 +14,7 @@ pipelineStages := Seq(rjs, digest, gzip)
 
 scalaVersion := "2.11.8"
 
-lazy val slackClientVersion = "3feb51c21462b9d677b6cf5ebce9ad8b2fc4c3aa"
+lazy val slackClientVersion = "d8e8debca2986d1553167c71dc772764717714f6"
 lazy val slackClientProject = ProjectRef(uri(s"https://github.com/ellipsis-ai/slack-scala-client.git#$slackClientVersion"), "slack-scala-client")
 
 libraryDependencies ++= Seq(
@@ -38,7 +38,7 @@ libraryDependencies ++= Seq(
   "org.postgresql" % "postgresql" % "9.4-1201-jdbc4",
   "net.codingwell" %% "scala-guice" % "4.0.0",
   "net.ceedubs" %% "ficus" % "1.1.2",
-  "com.amazonaws" % "aws-java-sdk" % "1.10.72",
+  "com.amazonaws" % "aws-java-sdk" % "1.11.123",
   "org.webjars" % "requirejs" % "2.2.0",
   "org.webjars.bower" % "core.js" % "2.4.1",
   "org.webjars.bower" % "react" % "15.3.1",

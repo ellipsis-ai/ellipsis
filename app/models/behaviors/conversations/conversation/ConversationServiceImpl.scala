@@ -80,7 +80,7 @@ class ConversationServiceImpl @Inject() (
     dataService.run(action)
   }
 
-  def allOngoingFor(userIdForContext: String, context: String, maybeChannel: Option[String], maybeThreadId: Option[String], isPrivateMessage: Boolean): Future[Seq[Conversation]] = {
+  def allOngoingFor(userIdForContext: String, context: String, maybeChannel: Option[String], maybeThreadId: Option[String]): Future[Seq[Conversation]] = {
     val action = allOngoingQueryFor(userIdForContext, context).result.map { r =>
       r.map(tuple2Conversation)
     }.map { activeConvos =>
@@ -88,13 +88,7 @@ class ConversationServiceImpl @Inject() (
         activeConvos.filter(_.maybeThreadId.contains(threadId))
       }.getOrElse {
         val withoutThreadId = activeConvos.filter(_.maybeThreadId.isEmpty)
-        val withMatchingChannel = withoutThreadId.filter(_.maybeChannel == maybeChannel)
-        val matchingBecausePrivate = if (isPrivateMessage) {
-          withoutThreadId.filter(_.stateRequiresPrivateMessage)
-        } else {
-          Seq()
-        }
-        withMatchingChannel ++ matchingBecausePrivate
+        withoutThreadId.filter(_.maybeChannel == maybeChannel)
       }
 
     }
@@ -108,8 +102,17 @@ class ConversationServiceImpl @Inject() (
     dataService.run(action)
   }
 
-  def findOngoingFor(userIdForContext: String, context: String, maybeChannel: Option[String], maybeThreadId: Option[String], isPrivateMessage: Boolean): Future[Option[Conversation]] = {
-    allOngoingFor(userIdForContext, context, maybeChannel: Option[String], maybeThreadId, isPrivateMessage).map(_.headOption)
+  def allNeedingReminder: Future[Seq[Conversation]] = {
+    val reminderWindowStart = OffsetDateTime.now.minusHours(1)
+    val reminderWindowEnd = OffsetDateTime.now.minusMinutes(30)
+    val action = allNeedingReminderQuery(reminderWindowStart, reminderWindowEnd).result.map { r =>
+      r.map(tuple2Conversation)
+    }
+    dataService.run(action)
+  }
+
+  def findOngoingFor(userIdForContext: String, context: String, maybeChannel: Option[String], maybeThreadId: Option[String]): Future[Option[Conversation]] = {
+    allOngoingFor(userIdForContext, context, maybeChannel: Option[String], maybeThreadId).map(_.headOption)
   }
 
   def uncompiledCancelQuery(conversationId: Rep[String]) = all.filter(_.id === conversationId).map(_.state)
@@ -140,14 +143,17 @@ class ConversationServiceImpl @Inject() (
   def uncompiledTouchQuery(conversationId: Rep[String]) = all.filter(_.id === conversationId).map(_.maybeLastInteractionAt)
   val touchQuery = Compiled(uncompiledTouchQuery _)
 
-  def touch(conversation: Conversation): Future[Unit] = {
-    val action = touchQuery(conversation.id).update(Some(OffsetDateTime.now)).map(_ => {})
-    dataService.run(action)
+  def touch(conversation: Conversation): Future[Conversation] = {
+    val lastInteractionAt = OffsetDateTime.now
+    val action = touchQuery(conversation.id).update(Some(lastInteractionAt)).map(_ => {})
+    dataService.run(action).map { _ =>
+      conversation.copyWithLastInteractionAt(lastInteractionAt)
+    }
   }
 
   def background(conversation: Conversation, prompt: String, includeUsername: Boolean)(implicit actorSystem: ActorSystem): Future[Unit] = {
     for {
-      maybeEvent <- conversation.maybeEventForBackgrounding(dataService)
+      maybeEvent <- conversation.maybePlaceholderEvent(dataService)
       maybeLastTs <- maybeEvent.map { event =>
         val usernameString = if (includeUsername) { s"<@${event.userIdForContext}>: " } else { "" }
         event.sendMessage(
@@ -162,8 +168,8 @@ class ConversationServiceImpl @Inject() (
       _ <- maybeEvent.map { event =>
         val convoWithThreadId = conversation.copyWithMaybeThreadId(maybeLastTs)
         dataService.conversations.save(convoWithThreadId).flatMap { _ =>
-          convoWithThreadId.respond(event, lambdaService, dataService, cache, ws, configuration).map { result =>
-            result.sendIn(None, Some(convoWithThreadId), dataService)
+          convoWithThreadId.respond(event, isReminding=false, lambdaService, dataService, cache, ws, configuration).map { result =>
+            result.sendIn(None, dataService)
           }
         }
       }.getOrElse(Future.successful({}))

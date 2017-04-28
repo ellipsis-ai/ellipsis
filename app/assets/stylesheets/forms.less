@@ -3,12 +3,13 @@
 @import (reference) "bg";
 @import (reference) "type";
 @import (reference) "headings";
+@import (reference) "position";
 
 form {
   margin: 0;
 }
 
-input, select, textarea, .form-field {
+input, select, textarea, .form-field, .form-multi-select {
   font-size: @type-form;
   line-height: @xl;
 }
@@ -42,12 +43,24 @@ input.box-code-example {
   .bg-white();
 }
 
-.form-input {
+.form-input, .form-multi-select {
   padding: (@form-padding-vertical - @border-width) (@form-padding-horizontal - @border-width);
   height: @form-input-height;
   .form-field();
   width: 100%;
   vertical-align: bottom; /* Prevents default bottom "margin" when textarea is only child of a box */
+}
+
+.form-multi-select {
+  .form-input-height-auto();
+  .position-relative(); /* Ensures option element offset position is relative to the select element */
+  padding: 0;
+  border-radius: 0;
+}
+
+.form-multi-select option {
+  padding: @xxs @form-padding-horizontal;
+  height: @xl - @xxs * 2;
 }
 
 .form-input.type-monospace {

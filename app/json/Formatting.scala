@@ -1,6 +1,7 @@
 package json
 
 import play.api.libs.json._
+import utils.CityInfo
 
 object Formatting {
 
@@ -72,4 +73,9 @@ object Formatting {
 
   implicit val scheduledActionsDataReads = Json.reads[ScheduledActionsData]
   implicit val scheduledActionsDataWrites = Json.writes[ScheduledActionsData]
+
+  implicit val teamTimeZoneDataReads = Json.reads[TeamTimeZoneData]
+  implicit val teamTimeZoneDataWrites = Json.writes[TeamTimeZoneData]
+
+  implicit val cityInfoDataWrites = Json.writes[CityInfo]
 }

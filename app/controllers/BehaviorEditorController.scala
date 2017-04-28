@@ -74,12 +74,14 @@ class BehaviorEditorController @Inject() (
   }
 
   case class SaveBehaviorInfo(
-                               dataJson: String
+                               dataJson: String,
+                               isReinstall: Option[Boolean]
                              )
 
   private val saveForm = Form(
     mapping(
-      "dataJson" -> nonEmptyText
+      "dataJson" -> nonEmptyText,
+      "isReinstall" -> optional(boolean)
     )(SaveBehaviorInfo.apply)(SaveBehaviorInfo.unapply)
   )
 
@@ -103,8 +105,17 @@ class BehaviorEditorController @Inject() (
                   dataService.behaviorGroups.createFor(data.exportId, team).map(Some(_))
                 }.getOrElse(Future.successful(None))
               }
+              oauth2Appications <- teamAccess.maybeTargetTeam.map { team =>
+                dataService.oauth2Applications.allFor(team)
+              }.getOrElse(Future.successful(Seq()))
               _ <- maybeGroup.map { group =>
-                dataService.behaviorGroupVersions.createFor(group, user, data.copyForNewVersionOf(group)).map(Some(_))
+                val dataForNewVersion = data.copyForNewVersionOf(group)
+                val dataToUse = if (info.isReinstall.exists(identity)) {
+                  dataForNewVersion.copyWithApiApplicationsIfAvailable(oauth2Appications)
+                } else {
+                  dataForNewVersion
+                }
+                dataService.behaviorGroupVersions.createFor(group, user, dataToUse).map(Some(_))
               }.getOrElse(Future.successful(None))
               maybeGroupData <- maybeGroup.map { group =>
                 BehaviorGroupData.maybeFor(group.id, user, maybeGithubUrl = None, dataService)
@@ -156,13 +167,13 @@ class BehaviorEditorController @Inject() (
     for {
       maybeBehaviorGroup <- dataService.behaviorGroups.find(behaviorGroupId)
       versions <- maybeBehaviorGroup.map { group =>
-       dataService.behaviorGroupVersions.allFor(group)
+       dataService.behaviorGroupVersions.allFor(group).map(_.sortBy(_.createdAt).reverse.take(20))
       }.getOrElse(Future.successful(Seq()))
       versionsData <- Future.sequence(versions.map { ea =>
-        BehaviorGroupData.buildFor(ea, user, dataService)
+       BehaviorGroupData.buildFor(ea, user, dataService)
       })
     } yield {
-      Ok(Json.toJson(versionsData.sortBy(_.createdAt).reverse))
+      Ok(Json.toJson(versionsData))
     }
   }
 

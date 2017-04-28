@@ -5,7 +5,8 @@ import java.time.OffsetDateTime
 import models.behaviors._
 import models.behaviors.behaviorparameter.BehaviorParameter
 import models.behaviors.behaviorversion.BehaviorVersion
-import models.behaviors.events.{Event, SlackMessageEvent}
+import models.behaviors.events.SlackMessageActionConstants._
+import models.behaviors.events.{Event, SlackMessageActionButton, SlackMessageActions, SlackMessageEvent}
 import models.behaviors.triggers.messagetrigger.MessageTrigger
 import play.api.Configuration
 import play.api.cache.CacheApi
@@ -38,13 +39,15 @@ trait Conversation {
 
   def pendingEventKey: String = s"pending-event-for-$id"
 
-  def isStale: Boolean = maybeLastInteractionAt.getOrElse(startedAt).isBefore(staleCutoff)
+  def isStale: Boolean = {
+    maybeThreadId.isEmpty && maybeLastInteractionAt.getOrElse(startedAt).isBefore(staleCutoff)
+  }
 
   def shouldBeBackgrounded: Boolean = {
     startedAt.plusSeconds(Conversation.SECONDS_UNTIL_BACKGROUNDED).isBefore(OffsetDateTime.now)
   }
 
-  private def maybeSlackEventForBackgrounding(dataService: DataService): Future[Option[Event]] = {
+  private def maybeSlackPlaceholderEvent(dataService: DataService): Future[Option[Event]] = {
     dataService.slackBotProfiles.allFor(behaviorVersion.team).map { botProfiles =>
       for {
         botProfile <- botProfiles.headOption
@@ -53,14 +56,16 @@ trait Conversation {
     }
   }
 
-  def maybeEventForBackgrounding(dataService: DataService): Future[Option[Event]] = {
+  def maybePlaceholderEvent(dataService: DataService): Future[Option[Event]] = {
     context match {
-      case Conversation.SLACK_CONTEXT => maybeSlackEventForBackgrounding(dataService)
+      case Conversation.SLACK_CONTEXT => maybeSlackPlaceholderEvent(dataService)
       case _ => Future.successful(None)
     }
   }
 
   def copyWithMaybeThreadId(maybeId: Option[String]): Conversation
+
+  def copyWithLastInteractionAt(dt: OffsetDateTime): Conversation
 
   val stateRequiresPrivateMessage: Boolean = false
 
@@ -69,6 +74,7 @@ trait Conversation {
   def updateWith(event: Event, lambdaService: AWSLambdaService, dataService: DataService, cache: CacheApi, configuration: Configuration): Future[Conversation]
   def respond(
                event: Event,
+               isReminding: Boolean,
                lambdaService: AWSLambdaService,
                dataService: DataService,
                cache: CacheApi,
@@ -86,7 +92,7 @@ trait Conversation {
                ): Future[BotResult] = {
     for {
       updatedConversation <- updateWith(event, lambdaService, dataService, cache, configuration)
-      result <- updatedConversation.respond(event, lambdaService, dataService, cache, ws, configuration)
+      result <- updatedConversation.respond(event, isReminding=false, lambdaService, dataService, cache, ws, configuration)
     } yield result
   }
 
@@ -98,6 +104,26 @@ trait Conversation {
                                ws: WSClient,
                                configuration: Configuration
                              ): Future[Option[BehaviorParameter]]
+
+  def maybeRemindResult(
+                        lambdaService: AWSLambdaService,
+                        dataService: DataService,
+                        cache: CacheApi,
+                        ws: WSClient,
+                        configuration: Configuration
+                      ): Future[Option[BotResult]] = {
+    maybePlaceholderEvent(dataService).flatMap { maybeEvent =>
+      maybeEvent.map { event =>
+        respond(event, isReminding=true, lambdaService, dataService, cache, ws, configuration).map { result =>
+          val intro = s"Hey <@$userIdForContext>, don’t forget, I’m still waiting for your answer to this:"
+          val actions = Seq(SlackMessageActionButton(STOP_CONVERSATION, "Stop asking", id))
+          val question = result.text
+          val attachment = SlackMessageActions(STOP_CONVERSATION, actions, Some(question), None)
+          Some(TextWithActionsResult(result.event, Some(this), intro, result.forcePrivateResponse, attachment))
+        }
+      }.getOrElse(Future.successful(None))
+    }
+  }
 
   def toRaw: RawConversation = {
     RawConversation(

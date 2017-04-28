@@ -1,6 +1,6 @@
 package models.help
 
-import json.{BehaviorGroupData, BehaviorTriggerData}
+import json.BehaviorTriggerData
 import models.behaviors.events.Event
 import services.{AWSLambdaService, DataService}
 import utils.FuzzyMatchResult
@@ -9,7 +9,7 @@ import scala.util.matching.Regex
 
 case class HelpSearchResult(
                              searchQuery: String,
-                             underlying: FuzzyMatchResult[BehaviorGroupData],
+                             underlying: FuzzyMatchResult[HelpGroupData],
                              event: Event,
                              dataService: DataService,
                              lambdaService: AWSLambdaService
@@ -27,9 +27,9 @@ case class HelpSearchResult(
 
   def description: String = {
     if (descriptionMatches) {
-      searchPattern.replaceAllIn(trimmedGroupDescription, "$1**$2**$3")
+      searchPattern.replaceAllIn(group.description, "$1**$2**$3")
     } else {
-      trimmedGroupDescription
+      group.description
     }
   }
 
