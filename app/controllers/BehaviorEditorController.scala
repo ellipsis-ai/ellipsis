@@ -5,7 +5,6 @@ import javax.inject.Inject
 import com.mohiva.play.silhouette.api.Silhouette
 import json.Formatting._
 import json._
-import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
 import models.behaviors.behaviorparameter.TextType
 import models.behaviors.testing.{InvocationTester, TestEvent, TriggerTester}
 import models.behaviors.triggers.messagetrigger.MessageTrigger
@@ -18,7 +17,6 @@ import play.api.i18n.MessagesApi
 import play.api.libs.json._
 import play.api.libs.ws.WSClient
 import services.{AWSLambdaService, DataService}
-import utils.FutureSequencer
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -169,11 +167,13 @@ class BehaviorEditorController @Inject() (
     for {
       maybeBehaviorGroup <- dataService.behaviorGroups.find(behaviorGroupId)
       versions <- maybeBehaviorGroup.map { group =>
-       dataService.behaviorGroupVersions.allFor(group)
+       dataService.behaviorGroupVersions.allFor(group).map(_.sortBy(_.createdAt).reverse.take(20))
       }.getOrElse(Future.successful(Seq()))
-      versionsData <- FutureSequencer.sequence(versions, (v: BehaviorGroupVersion) => BehaviorGroupData.buildFor(v, user, dataService))
+      versionsData <- Future.sequence(versions.map { ea =>
+       BehaviorGroupData.buildFor(ea, user, dataService)
+      })
     } yield {
-      Ok(Json.toJson(versionsData.sortBy(_.createdAt).reverse))
+      Ok(Json.toJson(versionsData))
     }
   }
 
