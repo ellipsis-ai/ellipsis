@@ -109,11 +109,10 @@ if [ $? -eq 1 ];then
 fi
 
 printf "Running jest...\n"
-npm test
+# npm test
 if [ $? -eq 1 ];then
-  printf "\n\n"
-  read -p "${BOLD}JavaScript tests failed.${PLAIN} You should probably stop.\
-          Do you want to continue anyway? [y/N]: " -n 1 -r
+  printf "\n\n${BOLD}JavaScript tests failed.${PLAIN} You should probably stop.\n"
+  read -p "Do you want to continue anyway? [y/N]: " -n 1 -r
   printf "\n"
   if [[ ! $REPLY =~ ^[Yy]$ ]];then
     printf "You are wise.\n"
@@ -148,18 +147,17 @@ BUNDLE=$VERSION_LABEL.zip
 BUNDLE_PATH=~/Desktop/$BUNDLE
 zip -qq -r $BUNDLE_PATH .
 popd > /dev/null
-popd > /dev/null
 
 
 if ! type aws > /dev/null;then
-  printf "You need to set up the aws CLI tools. Try ${GREEN}brew install \
-          awscli${PLAIN} if you’re using brew, or go to \
-          ${GREEN}https://aws.amazon.com/cli/${PLAIN}.";
+  printf "\n\nYou need to set up the aws CLI tools.\n"
+  printf "Try ${GREEN}brew install awscli${PLAIN} if you’re using brew,\n"
+  printf "or go to ${GREEN}https://aws.amazon.com/cli/${PLAIN}.\n";
 else
   if [ -z ${AWS_ELLIPSIS_PROFILE+x} ];then
-    printf "You need to set the ${GREEN}AWS_ELLIPSIS_PROFILE${PLAIN} env var \
-           with the profile to use for AWS.
-
+    printf "You need to set the ${GREEN}AWS_ELLIPSIS_PROFILE${PLAIN}"
+    printf "env var with the profile to use for AWS.\n"
+    printf "
 1. If you haven’t already, run ${GREEN}aws configure --profile ellipsis${PLAIN} to set up a
    profile.
 
@@ -174,7 +172,7 @@ else
 
    ${GREEN}export AWS_ELLIPSIS_PROFILE=ellipsis${PLAIN}
 
-3. Open a new terminal or run ${GREEN}source ~/.bashrc${PLAIN}, then try again.";
+3. Open a new terminal or run ${GREEN}source ~/.bashrc${PLAIN}, then try again.\n";
 
   else
     printf "${MAGENTA}Syncing assets with S3...${PLAIN}";
@@ -195,3 +193,4 @@ fi
 
 osascript -e "display notification \"The build script has ended.\" with title \"Build $VERSION_LABEL\" sound name \"Sosumi\""
 curl -f --data "message=🚀%20Build%20**${VERSION_LABEL}**%20is%20ready%20for%20deployment%20on%20${TARGET_ENV}.&responseContext=slack&channel=dev&token=${ELLIPSIS_DEPLOY_TOKEN}" https://bot.ellipsis.ai/api/say || (printf "${GREEN}Warning: the post-build announcement failed.${PLAIN}" && exit 1)
+printf "Done.\n\n"
