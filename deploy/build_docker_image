@@ -53,80 +53,51 @@ GREEN=`tput setaf 2`
 BOLD=`tput bold`
 PLAIN=`tput sgr0`
 
-if [ -z "$ELLIPSIS_DEPLOY_TOKEN" ];
-then
-
-  printf "${GREEN}You need to set the ELLIPSIS_DEPLOY_TOKEN environment variable. Visit https://bot.ellipsis.ai/list_api_tokens and add the deploy token to your environment.${PLAIN}
-
-"
+if [ -z "$ELLIPSIS_DEPLOY_TOKEN" ];then
+  printf "${GREEN}You need to set the ELLIPSIS_DEPLOY_TOKEN environment \
+        variable. Visit https://bot.ellipsis.ai/list_api_tokens and add
+        the deploy token to your environment.${PLAIN}"
   exit 1
 fi
 
 GIT_USERNAME=`git config user.name`
 DISPLAY_USERNAME=${GIT_USERNAME:-$USER}
-printf "${GREEN}Announcing the deployment to #dev...${PLAIN}
-
-"
-curl -f --data "message=Heads%20up!%20${DISPLAY_USERNAME}%20is%20preparing%20a%20deploy.&responseContext=slack&channel=dev&token=${ELLIPSIS_DEPLOY_TOKEN}" https://bot.ellipsis.ai/api/say || (printf "${GREEN}The deploy announcement failed. Please check the ELLIPSIS_DEPLOY_TOKEN environment variable.${PLAIN}
-
-" && exit 1)
-
-printf "
-
-"
+printf "${GREEN}Announcing the deployment to #dev...${PLAIN}"
+curl -f --data "message=Heads%20up!%20${DISPLAY_USERNAME}%20is%20preparing%20a%20deploy.&responseContext=slack&channel=dev&token=${ELLIPSIS_DEPLOY_TOKEN}" https://bot.ellipsis.ai/api/say || (printf "${GREEN}The deploy announcement failed. Please check the ELLIPSIS_DEPLOY_TOKEN environment variable.${PLAIN}" && exit 1)
+printf "\n"
 pushd `git rev-parse --show-toplevel` > /dev/null
-
 git diff-index --quiet HEAD --
-if [ $? -eq 1 ];
-then
-
-  printf "
-${GREEN}You have uncommitted changes in your working directory. Deal with them first.${PLAIN}
-
-"
+if [ $? -eq 1 ];then
+  printf "${GREEN}You have uncommitted changes in your working directory. \
+          Deal with them first.${PLAIN}";
   exit 1
-
 fi
 
-if [ ! -f node_modules/.bin/eslint ];
-then
-
-  printf "
-${GREEN}eslint${PLAIN} is not installed. Try running ${GREEN}npm install${PLAIN}.
-
-"
+if [ ! -f node_modules/.bin/eslint ];then
+  printf "${GREEN}eslint${PLAIN} is not installed. Try running \
+         ${GREEN}npm install${PLAIN}.";
   exit 1
-
 fi
 
-if [ ! -f node_modules/.bin/jest ];
-then
-
-  printf "
-${GREEN}jest${PLAIN} is not installed. Try running ${GREEN}npm install${PLAIN}.
-
-"
+if [ ! -f node_modules/.bin/jest ];then
+  printf "${GREEN}jest${PLAIN} is not installed. Try running \
+          ${GREEN}npm install${PLAIN}.";
   exit 1
-
 fi
 
 type activator >/dev/null 2>&1 || {
-
-  printf "
-${GREEN}activator${PLAIN} is not installed. Visit ${GREEN}https://www.lightbend.com/activator/download${PLAIN} to download it.
-
-";
+  printf "${GREEN}activator${PLAIN} is not installed. Visit \
+          ${GREEN}https://www.lightbend.com/activator/download${PLAIN} \
+          to download it.";
   exit 1
 }
 
 printf "Running eslint...\n"
 npm run lint
-if [ $? -eq 1 ];
-then
+if [ $? -eq 1 ];then
   read -p "eslint failed. You should probably stop. Do you want to continue anyway? [y/N]: " -n 1 -r
   echo
-  if [[ ! $REPLY =~ ^[Yy]$ ]]
-  then
+  if [[ ! $REPLY =~ ^[Yy]$ ]];then
     printf "See ya later.\n"
     exit 1
   else
@@ -136,13 +107,12 @@ fi
 
 printf "Running jest...\n"
 npm test
-if [ $? -eq 1 ];
-then
+if [ $? -eq 1 ];then
   printf "\n\n"
-  read -p "${BOLD}JavaScript tests failed.${PLAIN} You should probably stop. Do you want to continue anyway? [y/N]: " -n 1 -r
+  read -p "${BOLD}JavaScript tests failed.${PLAIN} You should probably stop.\
+          Do you want to continue anyway? [y/N]: " -n 1 -r
   printf "\n"
-  if [[ ! $REPLY =~ ^[Yy]$ ]]
-  then
+  if [[ ! $REPLY =~ ^[Yy]$ ]];then
     printf "You are wise.\n"
     exit 1
   else
@@ -152,14 +122,12 @@ fi
 
 printf "Running activator test...\n"
 activator test
-if [ $? -eq 1 ];
-then
-  printf "\n\n"
+if [ $? -eq 1 ];then
+  printf "\n\n";
   read -p "${BOLD}Scala tests failed.${PLAIN} You should probably stop. Do you want to continue anyway? [y/N]: " -n 1 -r
-  printf "\n"
-  if [[ ! $REPLY =~ ^[Yy]$ ]]
-  then
-    printf "You are wise.\n"
+  printf "\n";
+  if [[ ! $REPLY =~ ^[Yy]$ ]];then
+    printf "You are wise.\n";
     exit 1
   else
     hold_on_to_your_butts
@@ -180,22 +148,14 @@ popd > /dev/null
 popd > /dev/null
 
 
-
-if ! type aws > /dev/null;
-then
-
-  printf "
-You need to set up the aws CLI tools. Try ${GREEN}brew install awscli${PLAIN} if you’re using
-brew, or go to ${GREEN}https://aws.amazon.com/cli/${PLAIN}.";
-
+if ! type aws > /dev/null;then
+  printf "You need to set up the aws CLI tools. Try ${GREEN}brew install \
+          awscli${PLAIN} if you’re using brew, or go to \
+          ${GREEN}https://aws.amazon.com/cli/${PLAIN}.";
 else
-
-  if [ -z ${AWS_ELLIPSIS_PROFILE+x} ];
-  then
-
-    printf "
-You need to set the ${GREEN}AWS_ELLIPSIS_PROFILE${PLAIN} env var with the
-profile to use for AWS.
+  if [ -z ${AWS_ELLIPSIS_PROFILE+x} ];then
+    printf "You need to set the ${GREEN}AWS_ELLIPSIS_PROFILE${PLAIN} env var \
+           with the profile to use for AWS.
 
 1. If you haven’t already, run ${GREEN}aws configure --profile ellipsis${PLAIN} to set up a
    profile.
@@ -214,7 +174,6 @@ profile to use for AWS.
 3. Open a new terminal or run ${GREEN}source ~/.bashrc${PLAIN}, then try again.";
 
   else
-
     printf "${MAGENTA}Syncing assets with S3...${PLAIN}";
     mkdir -p $PUBLIC_ASSETS_DIR
     rm -rf $PUBLIC_ASSETS_DIR/*
@@ -228,9 +187,7 @@ profile to use for AWS.
     --version-label $VERSION_LABEL \
     --source-bundle S3Bucket=$EB_BUCKET,S3Key=$S3_KEY \
     --process;
-
   fi
-
 fi
 
 osascript -e "display notification \"The build script has ended.\" with title \"Build $VERSION_LABEL\" sound name \"Sosumi\""
