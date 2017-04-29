@@ -12,6 +12,7 @@ ASSETS_BUCKET=ellipsis-assets
 EB_BUCKET=elasticbeanstalk-us-east-1-170937251085
 APP_NAME="My First Elastic Beanstalk Application"
 TARGET_ENV="production"
+EMOJI=" 🐴 "
 
 if [ "$1" = "stag01" ]; then
   TARGET_ENV="stag01"
@@ -20,9 +21,10 @@ if [ "$1" = "stag01" ]; then
   ASSETS_BUCKET="assets-${STAG01_ACCOUNT_ID}"
   APP_NAME="playapp"
   AWS_ELLIPSIS_PROFILE="el-stag01-${STAG01_ACCOUNT_ID}"
+  EMOJI=" 🦑 "
 fi
 
-printf "\n\n${GREEN}Getting ready to deploy to ${MAGENTA}${TARGET_ENV}${PLAIN}\n"
+printf "\n\n${EMOJI}${GREEN} - Getting ready to deploy to ${MAGENTA}${TARGET_ENV}${PLAIN} -${EMOJI}\n"
 printf "_____________________________________________________ \n";
 printf "Target Env    = ${TARGET_ENV}\n"
 printf "AWS Profile   = ${AWS_ELLIPSIS_PROFILE}\n"
@@ -147,7 +149,7 @@ printf "\n\n${GREEN}Announcing the deployment to #dev...${PLAIN}\n"
 printf "_____________________________________________________ \n";
 GIT_USERNAME=`git config user.name`
 DISPLAY_USERNAME=${GIT_USERNAME:-$USER}
-curl -f --data "message=Heads%20up!%20${DISPLAY_USERNAME}%20is%20preparing%20a%20deploy%20to%20${TARGET_ENV}.&responseContext=slack&channel=dev&token=${ELLIPSIS_DEPLOY_TOKEN}" https://bot.ellipsis.ai/api/say || (printf "${GREEN}The deploy announcement failed. Please check the ELLIPSIS_DEPLOY_TOKEN environment variable.${PLAIN}" && exit 1)
+curl -f --data "message=🚀%20${DISPLAY_USERNAME}%20is%20preparing%20a%20build%20for%20${TARGET_ENV}.&responseContext=slack&channel=dev&token=${ELLIPSIS_DEPLOY_TOKEN}" https://bot.ellipsis.ai/api/say || (printf "${GREEN}The deploy announcement failed. Please check the ELLIPSIS_DEPLOY_TOKEN environment variable.${PLAIN}" && exit 1)
 printf "\nOk.\n"
 
 printf "\n\n${GREEN}Running eslint...${PLAIN}\n";
@@ -225,6 +227,10 @@ printf "\n\n${GREEN}Uploading ${BUNDLE} to S3...${PLAIN}\n";
 printf "_____________________________________________________ \n";
 S3_KEY=`date +'%Y-%m-%d'`-$BUNDLE
 aws --profile $AWS_ELLIPSIS_PROFILE s3 cp $BUNDLE_PATH s3://$EB_BUCKET/$S3_KEY
+printf "Ok.\n";
+
+printf "\n\n${GREEN}Updating Beanstalk App Version...${PLAIN}\n";
+printf "_____________________________________________________ \n";
 aws --profile $AWS_ELLIPSIS_PROFILE elasticbeanstalk create-application-version \
 --application-name "$APP_NAME" \
 --version-label $VERSION_LABEL \
@@ -236,4 +242,4 @@ printf "\n\n${GREEN}Sending notifications...${PLAIN}\n";
 printf "_____________________________________________________ \n";
 osascript -e "display notification \"The build script has ended.\" with title \"Build $VERSION_LABEL\" sound name \"Sosumi\""
 curl -f --data "message=🚀%20Build%20**${VERSION_LABEL}**%20is%20ready%20for%20deployment%20on%20${TARGET_ENV}.&responseContext=slack&channel=dev&token=${ELLIPSIS_DEPLOY_TOKEN}" https://bot.ellipsis.ai/api/say || (printf "${GREEN}Warning: the post-build announcement failed.${PLAIN}" && exit 1)
-printf "\nThe End\n\n";
+printf "\n\nThe End\n\n";
