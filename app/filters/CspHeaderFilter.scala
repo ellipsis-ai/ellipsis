@@ -12,7 +12,8 @@ class CspHeaderFilter @Inject() (override implicit val mat: Materializer) extend
   def apply(nextFilter: (RequestHeader) => Future[Result])(requestHeader: RequestHeader): Future[Result] = {
     val headers: Seq[(String,String)] = Seq(
       ("X-Frame-Options", "DENY"),
-      ("Content-Security-Policy", "frame-ancestors 'none'")
+      ("X-Content-Type-Options", "nosniff"),
+      ("Content-Security-Policy", "default-src https: 'unsafe-eval' 'unsafe-inline'; object-src 'none' frame-ancestors 'none'")
     )
     nextFilter(requestHeader).map { result => result.withHeaders(headers: _*) }
   }

@@ -11,17 +11,11 @@ import scala.concurrent.Future
 class HTTPSRedirectFilter @Inject() (override implicit val mat: Materializer) extends Filter {
 
   def apply(nextFilter: (RequestHeader) => Future[Result])(requestHeader: RequestHeader): Future[Result] = {
-    requestHeader.headers.get("x-forwarded-proto") match {
-      case Some(header) => {
-        if ("https" == header) {
-          nextFilter(requestHeader).map { result =>
-            result.withHeaders(("Strict-Transport-Security", "max-age=31536000"))
-          }
-        } else {
-          Future.successful(Results.Redirect("https://" + requestHeader.host + requestHeader.uri, 301))
-        }
-      }
-      case None => nextFilter(requestHeader)
+    if (!requestHeader.secure) {
+      Future.successful(Results.MovedPermanently("https://" + requestHeader.host + requestHeader.uri))
+    } else {
+      nextFilter(requestHeader).map(_.withHeaders("Strict-Transport-Security" -> "max-age=31536000; includeSubDomains"))
     }
   }
+
 }
