@@ -47,13 +47,11 @@ sealed trait BehaviorParameterType {
       isFirst <- context.isFirstParam
       paramCount <- context.unfilledParamCount(paramState)
     } yield {
-      val preamble = if (isReminding || !isFirst || paramCount == 0) {
+      val preamble = if (isReminding || !isFirst || paramCount <= 1) {
         ""
       } else {
-        context.event.messageRecipientPrefix ++ (if (paramCount == 1) {
-          s"I need to ask you a question."
-        } else if (paramCount == 2) {
-          s"I need to ask you a couple questions."
+        context.event.messageRecipientPrefix ++ (if (paramCount == 2) {
+          s"I need to ask you a couple of questions."
         } else if (paramCount < 5) {
           s"I need to ask you a few questions."
         } else {
