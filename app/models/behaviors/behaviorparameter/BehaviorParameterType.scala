@@ -341,7 +341,11 @@ case class BehaviorBackedDataType(behaviorVersion: BehaviorVersion) extends Beha
         case r: SuccessResult => {
           val validValues = extractValidValues(r)
           if (validValues.isEmpty) {
-            cancelAndRespondFor(s"This data type isn't returning any values: ${editLinkFor(context)}", context)
+            maybeSearchQuery.map { searchQuery =>
+              Future.successful(s"I couldn't find anything matching `$searchQuery`. Try searching again or type `…stop`.")
+            }.getOrElse {
+              cancelAndRespondFor(s"This data type isn't returning any values: ${editLinkFor(context)}", context)
+            }
           } else {
             context.maybeConversation.foreach { conversation =>
               context.cache.set(valuesListCacheKeyFor(conversation, context.parameter), validValues)
