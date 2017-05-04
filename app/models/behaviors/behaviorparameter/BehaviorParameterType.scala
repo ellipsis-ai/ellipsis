@@ -127,6 +127,37 @@ object NumberType extends BuiltInType {
   val invalidPromptModifier: String = "I need a number"
 }
 
+object YesNoType extends BuiltInType {
+  val name = "Yes/No"
+  val yesStrings = Seq("y", "yes", "yep", "yeah", "t", "true", "sure", "why not")
+  val noStrings = Seq("n", "no", "nope", "nah", "f", "false", "no way", "no chance")
+
+  def matchStringFor(text: String): String = text.toLowerCase.trim
+
+  def maybeValidValueFor(text: String): Option[Boolean] = {
+    val matchString = text.toLowerCase.trim
+    if (yesStrings.contains(matchString)) {
+      Some(true)
+    } else if (noStrings.contains(matchString)) {
+      Some(false)
+    } else {
+      None
+    }
+  }
+
+  def isValid(text: String, context: BehaviorParameterContext): Future[Boolean] = {
+    Future.successful(maybeValidValueFor(text).isDefined)
+  }
+
+  def prepareForInvocation(text: String, context: BehaviorParameterContext) = Future.successful {
+    maybeValidValueFor(text).map { vv =>
+      JsBoolean(vv)
+    }.getOrElse(JsString(text))
+  }
+
+  val invalidPromptModifier: String = "I need something like 'yes' or 'no'"
+}
+
 
 case class BehaviorBackedDataType(behaviorVersion: BehaviorVersion) extends BehaviorParameterType {
 
@@ -428,7 +459,8 @@ object BehaviorParameterType {
 
   val allBuiltin = Seq(
     TextType,
-    NumberType
+    NumberType,
+    YesNoType
   )
 
   def findBuiltIn(id: String): Option[BehaviorParameterType] = allBuiltin.find(_.id == id)
