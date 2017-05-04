@@ -19,7 +19,7 @@ import models.behaviors.events.Event
 import models.environmentvariable.{EnvironmentVariable, TeamEnvironmentVariable, UserEnvironmentVariable}
 import models.behaviors.invocationtoken.InvocationToken
 import models.team.Team
-import play.api.Configuration
+import play.api.{Configuration, Logger}
 import play.api.cache.CacheApi
 import play.api.libs.json._
 import play.api.libs.ws.WSClient
@@ -113,7 +113,8 @@ class AWSLambdaServiceImpl @Inject() (
                       requiredOAuth2ApiConfigs: Seq[RequiredOAuth2ApiConfig],
                       environmentVariables: Seq[EnvironmentVariable],
                       successFn: InvokeResult => BotResult,
-                      maybeConversation: Option[Conversation]
+                      maybeConversation: Option[Conversation],
+                      isRetrying: Boolean
                     ): Future[BotResult] = {
     for {
       userInfo <- event.userInfo(ws, dataService)
@@ -134,10 +135,19 @@ class AWSLambdaServiceImpl @Inject() (
               withFunctionName(functionName).
               withInvocationType(InvocationType.RequestResponse).
               withPayload(payloadJson.toString())
-          JavaFutureConverter.javaToScala(client.invokeAsync(invokeRequest)).map(successFn).recover {
+          JavaFutureConverter.javaToScala(client.invokeAsync(invokeRequest)).map(successFn).recoverWith {
             case e: java.util.concurrent.ExecutionException => {
               e.getMessage match {
-                case amazonServiceExceptionRegex() => AWSDownResult(event, maybeConversation)
+                case amazonServiceExceptionRegex() => Future.successful(AWSDownResult(event, maybeConversation))
+                case resourceNotFoundExceptionRegex() => {
+                  if (!isRetrying) {
+                    Logger.info(s"retrying behavior invocation after resource not found")
+                    Thread.sleep(2000)
+                    invokeFunction(functionName, token, payloadData, team, event, requiredOAuth2ApiConfigs, environmentVariables, successFn, maybeConversation, isRetrying=true)
+                  } else {
+                    throw e
+                  }
+                }
                 case _ => throw e
               }
             }
@@ -175,7 +185,8 @@ class AWSLambdaServiceImpl @Inject() (
               val logResult = AWSLambdaLogResult.fromText(logString)
               behaviorVersion.resultFor(result.getPayload, logResult, parametersWithValues, dataService, configuration, event, maybeConversation)
             },
-            maybeConversation
+            maybeConversation,
+            isRetrying = false
           )
         } yield invocationResult
       }
@@ -183,6 +194,7 @@ class AWSLambdaServiceImpl @Inject() (
   }
 
   val amazonServiceExceptionRegex = """.*com\.amazonaws\.AmazonServiceException.*""".r
+  val resourceNotFoundExceptionRegex = """com\.amazonaws\.services\.lambda\.model\.ResourceNotFoundException.*""".r
 
   val requireRegex = """.*require\(['"]\s*(\S+)\s*['"]\).*""".r
 
