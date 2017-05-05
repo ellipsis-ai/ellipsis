@@ -47,13 +47,11 @@ sealed trait BehaviorParameterType {
       isFirst <- context.isFirstParam
       paramCount <- context.unfilledParamCount(paramState)
     } yield {
-      val preamble = if (isReminding || !isFirst || paramCount == 0) {
+      val preamble = if (isReminding || !isFirst || paramCount <= 1) {
         ""
       } else {
-        context.event.messageRecipientPrefix ++ (if (paramCount == 1) {
-          s"I need to ask you a question."
-        } else if (paramCount == 2) {
-          s"I need to ask you a couple questions."
+        context.event.messageRecipientPrefix ++ (if (paramCount == 2) {
+          s"I need to ask you a couple of questions."
         } else if (paramCount < 5) {
           s"I need to ask you a few questions."
         } else {
@@ -127,6 +125,37 @@ object NumberType extends BuiltInType {
   }
 
   val invalidPromptModifier: String = "I need a number"
+}
+
+object YesNoType extends BuiltInType {
+  val name = "Yes/No"
+  val yesStrings = Seq("y", "yes", "yep", "yeah", "t", "true", "sure", "why not")
+  val noStrings = Seq("n", "no", "nope", "nah", "f", "false", "no way", "no chance")
+
+  def matchStringFor(text: String): String = text.toLowerCase.trim
+
+  def maybeValidValueFor(text: String): Option[Boolean] = {
+    val matchString = text.toLowerCase.trim
+    if (yesStrings.contains(matchString)) {
+      Some(true)
+    } else if (noStrings.contains(matchString)) {
+      Some(false)
+    } else {
+      None
+    }
+  }
+
+  def isValid(text: String, context: BehaviorParameterContext): Future[Boolean] = {
+    Future.successful(maybeValidValueFor(text).isDefined)
+  }
+
+  def prepareForInvocation(text: String, context: BehaviorParameterContext) = Future.successful {
+    maybeValidValueFor(text).map { vv =>
+      JsBoolean(vv)
+    }.getOrElse(JsString(text))
+  }
+
+  val invalidPromptModifier: String = "I need something like 'yes' or 'no'"
 }
 
 
@@ -343,7 +372,11 @@ case class BehaviorBackedDataType(behaviorVersion: BehaviorVersion) extends Beha
         case r: SuccessResult => {
           val validValues = extractValidValues(r)
           if (validValues.isEmpty) {
-            cancelAndRespondFor(s"This data type isn't returning any values: ${editLinkFor(context)}", context)
+            maybeSearchQuery.map { searchQuery =>
+              Future.successful(s"I couldn't find anything matching `$searchQuery`. Try searching again or type `…stop`.")
+            }.getOrElse {
+              cancelAndRespondFor(s"This data type isn't returning any values: ${editLinkFor(context)}", context)
+            }
           } else {
             context.maybeConversation.foreach { conversation =>
               context.cache.set(valuesListCacheKeyFor(conversation, context.parameter), validValues)
@@ -426,7 +459,8 @@ object BehaviorParameterType {
 
   val allBuiltin = Seq(
     TextType,
-    NumberType
+    NumberType,
+    YesNoType
   )
 
   def findBuiltIn(id: String): Option[BehaviorParameterType] = allBuiltin.find(_.id == id)

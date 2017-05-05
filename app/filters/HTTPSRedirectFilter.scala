@@ -15,10 +15,10 @@ class HTTPSRedirectFilter @Inject() (override implicit val mat: Materializer) ex
       case Some(header) => {
         if ("https" == header) {
           nextFilter(requestHeader).map { result =>
-            result.withHeaders(("Strict-Transport-Security", "max-age=31536000"))
+            result.withHeaders(("Strict-Transport-Security", "max-age=31536000; includeSubDomains"))
           }
         } else {
-          Future.successful(Results.Redirect("https://" + requestHeader.host + requestHeader.uri, 301))
+          Future.successful(Results.MovedPermanently("https://" + requestHeader.host + requestHeader.uri))
         }
       }
       case None => nextFilter(requestHeader)
