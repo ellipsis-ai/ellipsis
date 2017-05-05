@@ -1,6 +1,6 @@
 {
   "name": "ellipsis-cal-date-format",
-  "version": "0.0.4",
+  "version": "0.0.6",
   "description": "Format calendar events into human-friendly text",
   "main": "index.js",
   "scripts": {
