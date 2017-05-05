@@ -46,21 +46,5 @@
     </script>
     @content
   </body>
-  <script>window.document.body.addEventListener('touchstart', function() {})</script>
-  <script>
-  (function() {
-    var header = document.getElementById('main-header');
-    var timerId;
-    function adjustPadding() {
-      if (timerId) {
-        window.clearTimeout(timerId);
-      }
-      timerId = window.setTimeout(function() {
-        document.body.style.paddingTop = header.offsetHeight + 'px'
-      }, 50);
-    }
-    window.addEventListener('resize', adjustPadding);
-    adjustPadding();
-   })();
-  </script>
+  <script src="@RemoteAssets.getUrl("javascripts/page.js")"></script>
 </html>
