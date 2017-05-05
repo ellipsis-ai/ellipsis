@@ -53,13 +53,18 @@ describe("Formatter", () => {
         },
         end: {
           date: '2017-01-03'
-        }
+        },
+        attendees: [
+          { self: true, email: "andrew@ellipsis.ai" },
+          { email: "luke@ellipsis.ai" },
+          { email: "matteo@ellipsis.ai" }
+        ]
       };
       expect(Formatter.formatEventWithDetails(event, null, null, { details: true })).toBe([
         format(event.start.date, 'ALL_DAY') + " ",
         Formatter.verbiage.DASH + " ",
         format('2017-01-02', 'ALL_DAY') + "  \n",
-        `**[${event.summary}](${event.htmlLink})**  \n${event.description}  \n_Where: ${event.location}_  \n[Join hangout](${event.hangoutLink})`
+        `**[${event.summary} - luke@ellipsis.ai, matteo@ellipsis.ai](${event.htmlLink})**  \n${event.description}  \n_Where: ${event.location}_  \n[Join hangout](${event.hangoutLink})`
       ].join(""));
     });
   });
