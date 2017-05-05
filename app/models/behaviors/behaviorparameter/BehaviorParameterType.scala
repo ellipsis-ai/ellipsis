@@ -366,13 +366,17 @@ case class BehaviorBackedDataType(behaviorVersion: BehaviorVersion) extends Beha
                                     isReminding: Boolean
                                   ): Future[String] = {
     for {
-      superPrompt <- super.promptFor(maybePreviousCollectedValue, context, paramState, isReminding)
+      superPrompt <- maybeSearchQuery.map { searchQuery =>
+        Future.successful(s"Here are some options for `$searchQuery`. Type a number to choose an option.")
+      }.getOrElse(super.promptFor(maybePreviousCollectedValue, context, paramState, isReminding))
       maybeValidValuesResult <- fetchValidValuesResult(maybeSearchQuery, context)
       output <- maybeValidValuesResult.map {
         case r: SuccessResult => {
           val validValues = extractValidValues(r)
           if (validValues.isEmpty) {
             maybeSearchQuery.map { searchQuery =>
+              val key = searchQueryCacheKeyFor(context.maybeConversation.get, context.parameter)
+              context.cache.remove(key)
               Future.successful(s"I couldn't find anything matching `$searchQuery`. Try searching again or type `…stop`.")
             }.getOrElse {
               cancelAndRespondFor(s"This data type isn't returning any values: ${editLinkFor(context)}", context)
