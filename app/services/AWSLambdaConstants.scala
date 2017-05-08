@@ -5,7 +5,7 @@ object AWSLambdaConstants {
   val CONTEXT_PARAM = "ellipsis"
   val SUCCESS_CALLBACK = s"$CONTEXT_PARAM.success()"
   val ERROR_CALLBACK = s"$CONTEXT_PARAM.error()"
-  val INVOCATION_TIMEOUT_SECONDS = 10
+  val INVOCATION_TIMEOUT_SECONDS = 20
   val TOKEN_KEY = "token"
   val USER_INFO_KEY = "userInfo"
   val TEAM_INFO_KEY = "teamInfo"
