@@ -31,6 +31,7 @@ import models.behaviors.scheduling.scheduledmessage.{ScheduledMessageService, Sc
 import models.behaviors.triggers.messagetrigger.{MessageTriggerService, MessageTriggerServiceImpl}
 import models.environmentvariable._
 import models.behaviors.invocationtoken.{InvocationTokenService, InvocationTokenServiceImpl}
+import models.behaviors.library.{LibraryVersionService, LibraryVersionServiceImpl}
 import models.behaviors.savedanswer.{SavedAnswerService, SavedAnswerServiceImpl}
 import models.behaviors.scheduling.recurrence.{RecurrenceService, RecurrenceServiceImpl}
 import models.behaviors.scheduling.scheduledbehavior.{ScheduledBehaviorService, ScheduledBehaviorServiceImpl}
@@ -65,6 +66,7 @@ class ServiceModule extends AbstractModule with ScalaModule {
     bind[BehaviorVersionService].to[BehaviorVersionServiceImpl]
     bind[BehaviorParameterService].to[BehaviorParameterServiceImpl]
     bind[InputService].to[InputServiceImpl]
+    bind[LibraryVersionService].to[LibraryVersionServiceImpl]
     bind[SavedAnswerService].to[SavedAnswerServiceImpl]
     bind[MessageTriggerService].to[MessageTriggerServiceImpl]
     bind[AWSConfigService].to[AWSConfigServiceImpl]
