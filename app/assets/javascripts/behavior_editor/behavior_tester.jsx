@@ -331,7 +331,7 @@ define(function(require) {
       var highlighted = this.state.highlightedTriggerText === trigger.text;
       var className = "pvxs " +
         (trigger.isRegex ? " type-monospace " : "") +
-        (highlighted ? " type-bold type-green " : "");
+        (highlighted ? " type-semibold type-green " : "");
       return (
         <div ref={`trigger${index}`} key={`trigger${index}`} className={className}>
           {trigger.text} {highlighted ? "✓" : ""}
