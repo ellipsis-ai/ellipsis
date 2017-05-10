@@ -10,6 +10,7 @@ import models.behaviors.config.requiredoauth2apiconfig.RequiredOAuth2ApiConfig
 import models.behaviors.config.requiredsimpletokenapi.RequiredSimpleTokenApi
 import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.events.Event
+import models.behaviors.library.LibraryVersion
 import models.behaviors.{BotResult, ParameterWithValue}
 import models.environmentvariable.EnvironmentVariable
 import org.scalatest.mock.MockitoSugar
@@ -41,6 +42,7 @@ class MockAWSLambdaService @Inject() (
                                   behaviorVersion: BehaviorVersion,
                                   functionBody: String,
                                   params: Array[String],
+                                  libraries: Seq[LibraryVersion],
                                   maybeAWSConfig: Option[AWSConfig],
                                   requiredOAuth2ApiConfigs: Seq[RequiredOAuth2ApiConfig],
                                   requiredSimpleTokenApis: Seq[RequiredSimpleTokenApi]
