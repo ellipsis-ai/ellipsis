@@ -51,7 +51,7 @@ define(function(require) {
               <h4 className="mvn">
                 <ExpandButton onToggle={this.togglePostMessage} expandedWhen={this.state.activeSection === "postMessage"}>
                   <code>post_message</code>
-                  <span className="type-weak"> — trigger a response from Ellipsis in a channel</span>
+                  <span className="type-weak"> — run an action in a channel using a trigger message</span>
                 </ExpandButton>
               </h4>
 
