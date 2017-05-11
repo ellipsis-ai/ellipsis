@@ -15,7 +15,7 @@ define(function(require) {
       return (
         <button
           type="button"
-          className="button-raw button-s type-monospace type-bold mlxs"
+          className="button-raw button-s type-monospace type-semibold mlxs"
           onClick={envVarDetail.onClick}
         >{envVarDetail.environmentVariableName}</button>
       );

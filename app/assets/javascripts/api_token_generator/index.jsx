@@ -124,12 +124,12 @@ define(function(require) {
       return (
         <div className="columns columns-elastic mobile-columns-float">
           <div className="column-group">
-            <div className="column-row type-bold">
-              <div className="column column-expand type-label pvs">Label</div>
-              <div className="column column-shrink type-label pvs">Token</div>
-              <div className="column column-shrink type-label pvs">Created</div>
-              <div className="column column-shrink type-label pvs display-ellipsis">Last used</div>
-              <div className="column column-shrink type-label pvs"></div>
+            <div className="column-row">
+              <div className="column column-expand"><h6 className="mvs">Label</h6></div>
+              <div className="column column-shrink"><h6 className="mvs">Token</h6></div>
+              <div className="column column-shrink"><h6 className="mvs">Created</h6></div>
+              <div className="column column-shrink display-ellipsis"><h6 className="mvs">Last used</h6></div>
+              <div className="column column-shrink"><h6 className="mvs" /></div>
             </div>
             {this.getTokens().map((token, index) => {
               return (

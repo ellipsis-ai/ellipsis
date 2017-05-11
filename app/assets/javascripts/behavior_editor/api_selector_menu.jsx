@@ -47,7 +47,7 @@ define(function(require) {
         return (
           <span>
           <span>Third-party APIs in skill </span>
-          <span className="type-bold">({activeAPICount} active)</span>
+          <span className="type-semibold">({activeAPICount} active)</span>
         </span>
         );
       } else {

@@ -10,7 +10,11 @@ p {
   -webkit-font-smoothing: antialiased;
 }
 
-.type-bold {
+b, .type-bold {
+  font-weight: 700;
+}
+
+.type-semibold {
   font-weight: 600;
 }
 
@@ -18,11 +22,8 @@ p {
   font-weight: 400;
 }
 
-code .type-bold,
-code.type-bold,
-.type-monospace.type-bold,
-.type-monospace .type-bold {
-  font-weight: 700;
+.type-light {
+  font-weight: 300;
 }
 
 .type-l {
@@ -82,6 +83,10 @@ code.type-bold,
 
 .type-pink {
   color: @pink-medium !important;
+}
+
+.type-pink-light {
+  color: @pink-light !important;
 }
 
 .type-green {

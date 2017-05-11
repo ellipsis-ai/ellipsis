@@ -25,7 +25,7 @@ label {
 @form-padding-vertical: @s;
 @form-padding-horizontal: @s;
 @form-input-height: @s * 2 + @xl;
-@form-input-height-large: @s * 2 + @xxl;
+@form-input-height-large: @m * 2 + @xxl;
 @form-input-height-h2: @s * 2 + @xxxl;
 @form-bg-disabled: @gray-lightest-translucent;
 @form-color-disabled: @gray-medium;
@@ -51,6 +51,26 @@ input.box-code-example {
   vertical-align: bottom; /* Prevents default bottom "margin" when textarea is only child of a box */
 }
 
+.form-input-inverted {
+  background-color: @blue-faded-darkest;
+  border-color: @blue-medium !important;
+  color: @white;
+}
+
+@inverted-placeholder-color: @blue-faded-medium;
+
+.form-input-inverted::-webkit-input-placeholder {
+  color: @inverted-placeholder-color;
+}
+
+.form-input-inverted::-moz-placeholder {
+  color: @inverted-placeholder-color;
+}
+
+.form-input-inverted::placeholder {
+  color: @inverted-placeholder-color;
+}
+
 .form-multi-select {
   .form-input-height-auto();
   .position-relative(); /* Ensures option element offset position is relative to the select element */
@@ -72,7 +92,8 @@ input.box-code-example {
 }
 
 .form-input-l {
-  .type-l();
+  font-size: @type-button-l;
+  line-height: @xxl;
   height: @form-input-height-large;
 }
 
@@ -102,8 +123,9 @@ input.box-code-example {
 }
 
 .button-with-form-input {
-  border-top-left-radius: 0;
-  border-bottom-left-radius: 0;
+  border-top-left-radius: 0 !important;
+  border-bottom-left-radius: 0 !important;
+  min-width: 0 !important;
 }
 
 .label-checkbox {
@@ -153,8 +175,8 @@ input.box-code-example {
 }
 
 .form-input-borderless.form-input-l {
-  height: @form-input-height-large - @xs;
-  line-height: @form-input-height-large - @border-width-thick - @xs;
+  height: @form-input-height-large - @s;
+  line-height: @form-input-height-large - @border-width-thick - @s;
   padding-top: 0;
   padding-bottom: 0;
 }

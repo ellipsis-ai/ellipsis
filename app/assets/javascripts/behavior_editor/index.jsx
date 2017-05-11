@@ -1780,7 +1780,7 @@ const BehaviorEditor = React.createClass({
         <div className="columns columns-elastic mobile-columns-float">
           <div className="column column-shrink">
             <FormInput
-              className="form-input-borderless form-input-l type-bold width-15 mobile-width-full"
+              className="form-input-borderless form-input-l type-l type-semibold width-15 mobile-width-full"
               ref="input"
               value={this.getBehaviorName()}
               placeholder={this.isDataTypeBehavior() ? "Data type name" : "Action name (optional)"}

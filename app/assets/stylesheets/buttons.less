@@ -117,11 +117,6 @@ button.button-dropdown-trigger.button-s.button-dropdown-trigger-borderless {
   }
 }
 
-button.button-warning {
-  border-color: @pink-medium;
-  color: @pink-medium-text;
-}
-
 .form-select-s {
   font-size: @type-s;
   line-height: @l;
@@ -142,11 +137,16 @@ button.button-s,
   border-radius: @border-radius-small;
 }
 
-button.button-l {
-  font-size: @type-m;
+button.button-l, a.button-l {
+  font-size: @type-button-l;
   font-weight: 600;
   line-height: @xxl;
   height: @button-large-height;
+  border-width: @border-width-thick;
+  padding-top: @m - @border-width-thick;
+  padding-bottom: @m - @border-width-thick;
+  min-width: @m * 20;
+  border-radius: @border-radius-large;
 }
 
 button.button-dropdown-trigger.button-s,
@@ -301,6 +301,13 @@ a.button:focus {
   padding: (@s - @border-width-thick + 1) (@l - @border-width-thick) (@s - @border-width-thick - 1);
 }
 
+button.button-l:focus,
+a.button-l:focus {
+  border-width: @border-width-thick * 2;
+  padding-top: @m - @border-width-thick * 2;
+  padding-bottom: @m - @border-width-thick * 2;
+}
+
 button.button-dropdown-item:focus,
 button.button-dropdown-item:hover,
 button.button-dropdown-item-hover {
@@ -397,10 +404,6 @@ button.button-dropdown-trigger-borderless.button-dropdown-trigger-menu-open,
   padding-top: @border-width-thick * 2 !important;
 }
 
-button.button-warning:focus {
-  border-color: @pink-dark;
-}
-
 button.button-s:focus,
 a.button-s:focus {
   padding: (@xs - @border-width-thick + 1) (@m - @border-width-thick) (@xs - @border-width-thick - 1);
@@ -446,10 +449,6 @@ button:active {
   border-color: @blue-dark;
 }
 
-button.button-warning:active {
-  border-color: @pink-dark;
-}
-
 button.button-subtle:active {
   border-color: @blue-dark !important;
 }
@@ -480,60 +479,67 @@ button.button-none:active {
 }
 
 button.button-primary,
-button.button-error {
+a.button-primary,
+button.button-error,
+a.button-error,
+button.button-inverted,
+a.button-inverted {
   font-weight: 600;
   color: @white;
   .light-antialiasing();
 }
 
-button.button-primary {
+button.button-primary,
+a.button-primary {
   background-color: @blue-medium;
   border-color: @blue-medium;
 }
 
-button.button-primary:focus {
+button.button-primary:focus,
+a.button-primary:focus {
   background-color: @blue-medium;
   border-color: @blue-dark;
 }
 
-button.button-primary:active {
+button.button-primary:active,
+a.button-primary:focus {
   background-color: @blue-dark;
   border-color: @blue-dark;
   color: @white;
 }
 
-button.button-error {
+button.button-error,
+a.button-error {
   background-color: @pink-medium;
   border-color: @pink-medium;
 }
 
-button.button-error:focus {
+button.button-error:focus,
+a.button-error:focus {
   background-color: @pink-medium;
   border-color: @pink-dark;
 }
 
-button.button-error:active {
+button.button-error:active,
+a.button-error:focus {
   background-color: @pink-dark;
   border-color: @pink-dark;
   color: @white;
 }
 
-button.button-help-toggled {
-  background-color: @blue-lighter;
-}
-
-button.button-help-toggled:focus {
-  background-color: @blue-lighter;
-}
-
-button.button-help-toggled:active {
-  background-color: @blue-dark;
+button.button-inverted,
+a.button-inverted {
+  border-color: @white !important;
   color: @white;
 }
 
+button.button-inverted:hover,
+a.button-inverted:hover {
+  background-color: @white-subtle;
+}
+
 button.button-primary[disabled],
-button.button-error[disabled],
-button.button-help-toggled[disabled] {
+button.button-error[disabled] {
   background-color: @gray-light !important;
   border-color: @gray-light !important;
   color: @white !important;
