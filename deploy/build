@@ -71,6 +71,7 @@ git diff-index --quiet HEAD --
 if [ $? -eq 1 ];then
   printf "\n\n${RED}You have uncommitted changes in your working directory.\n"
   printf "Deal with them first!${PLAIN}\n\n";
+  printf "Bye.\n"
   exit 1
 fi
 printf "\n${GREEN}Ok.${PLAIN}\n"
@@ -112,33 +113,38 @@ printf "_____________________________________________________ \n";
 if [ -z "$ELLIPSIS_DEPLOY_TOKEN" ];then
   printf "${RED}You need to set the ELLIPSIS_DEPLOY_TOKEN environment variable.\n"
   printf "Visit https://bot.ellipsis.ai/list_api_tokens and add"
-  printf "the deploy token to your environment.${PLAIN}\n\n"
+  printf " the deploy token to your environment.${PLAIN}\n\n"
+  printf "Bye.\n"
   exit 1
 fi
 
 if [ ! -f node_modules/.bin/eslint ];then
   printf "\n\n${RED}eslint is not installed.\n"
-  printf "Try running npm install${PLAIN}.\n\n";
+  printf "Try running npm install${PLAIN}.\n";
+  printf "Bye.\n"
   exit 1
 fi
 
 if [ ! -f node_modules/.bin/jest ];then
   printf "\n\n${RED}jest is not installed.\n"
-  printf "Try running npm install${PLAIN}.\n\n";
+  printf "Try running npm install${PLAIN}.\n";
+  printf "Bye.\n"
   exit 1
 fi
 
 type activator >/dev/null 2>&1 || {
   printf "\n\n${RED}activator is not installed.\n"
   printf "Visit https://www.lightbend.com/activator/download"
-  printf "to download it.${PLAIN}\n\n";
+  printf "to download it.${PLAIN}\n";
+  printf "Bye.\n"
   exit 1
 }
 
 type aws >/dev/null 2>&1 || {
   printf "\n\n${RED}You need to set up the aws CLI tools.\n"
   printf "Try brew install awscli if you’re using brew,\n"
-  printf "or go to https://aws.amazon.com/cli/.${PLAIN}\n\n";
+  printf "or go to https://aws.amazon.com/cli/.${PLAIN}\n";
+  printf "Bye.\n"
   exit 1
 }
 
@@ -179,7 +185,7 @@ if [ $? -eq 1 ];then
   read -p "${MAGENTA}eslint failed. You should probably stop. Do you want to continue anyway? [y/N]: ${PLAIN}" -n 1 -r
   echo
   if [[ ! $REPLY =~ ^[Yy]$ ]];then
-    printf "See ya later.\n";
+    printf "Bye.\n"
     exit 1
   else
     printf "Okay, continuing anyway...\n";
@@ -196,6 +202,7 @@ if [ $? -eq 1 ];then
   printf "\n"
   if [[ ! $REPLY =~ ^[Yy]$ ]];then
     printf "You are wise.\n"
+    printf "Bye.\n"
     exit 1
   else
     hold_on_to_your_butts
@@ -212,6 +219,7 @@ if [ $? -eq 1 ];then
   printf "\n";
   if [[ ! $REPLY =~ ^[Yy]$ ]];then
     printf "You are wise.\n";
+    printf "Bye.\n"
     exit 1
   else
     hold_on_to_your_butts
