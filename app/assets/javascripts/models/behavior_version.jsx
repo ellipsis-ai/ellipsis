@@ -1,28 +1,24 @@
 define(function(require) {
   var DeepEqual = require('../lib/deep_equal'),
+    Editable = require('./editable'),
     ResponseTemplate = require('./response_template'),
     Trigger = require('./trigger');
 
-  class BehaviorVersion {
+  class BehaviorVersion extends Editable {
     constructor(props) {
+      super();
+
       var initialProps = Object.assign({
-        functionBody: '',
         config: {},
         knownEnvVarsUsed: [],
         shouldRevealCodeEditor: (!!props.functionBody && props.functionBody.length > 0),
-        editorScrollPosition: 0,
         createdAt: Date.now()
       }, props);
 
       Object.defineProperties(this, {
-        id: { value:initialProps.id, enumerable: true },
-        groupId: { value: initialProps.groupId, enumerable: true },
-        teamId: { value: initialProps.teamId, enumerable: true },
         behaviorId: { value: initialProps.behaviorId, enumerable: true },
         isNewBehavior: { value: initialProps.isNewBehavior, enumerable: true },
-        name: { value: initialProps.name, enumerable: true },
         description: { value: initialProps.description, enumerable: true },
-        functionBody: { value: initialProps.functionBody, enumerable: true },
         responseTemplate: { value: initialProps.responseTemplate, enumerable: true },
         inputIds: { value: initialProps.inputIds, enumerable: true },
         triggers: { value: initialProps.triggers, enumerable: true },
@@ -30,9 +26,12 @@ define(function(require) {
         knownEnvVarsUsed: { value: initialProps.knownEnvVarsUsed, enumerable: true },
         createdAt: { value: initialProps.createdAt, enumerable: true },
         exportId: { value: initialProps.exportId, enumerable: true },
-        shouldRevealCodeEditor: { value: initialProps.shouldRevealCodeEditor, enumerable: true },
-        editorScrollPosition: { value: initialProps.editorScrollPosition, enumerable: true }
+        shouldRevealCodeEditor: { value: initialProps.shouldRevealCodeEditor, enumerable: true }
       });
+    }
+
+    isBehaviorVersion() {
+      return true;
     }
 
     copyWithNewTimestamp() {
@@ -41,10 +40,6 @@ define(function(require) {
 
     isDataType() {
       return this.config.isDataType;
-    }
-
-    getName() {
-      return this.name || "";
     }
 
     getDescription() {
@@ -91,10 +86,6 @@ define(function(require) {
       });
     }
 
-    forEqualityComparison() {
-      return this.toJSON();
-    }
-
     isIdenticalToVersion(behaviorVersion) {
       return DeepEqual.isEqual(this.forEqualityComparison(), behaviorVersion.forEqualityComparison());
     }
@@ -135,9 +126,6 @@ define(function(require) {
       return new BehaviorVersion(materializedProps);
     }
 
-    static forEqualityComparison(version) {
-      return version.forEqualityComparison();
-    }
   }
 
   return BehaviorVersion;

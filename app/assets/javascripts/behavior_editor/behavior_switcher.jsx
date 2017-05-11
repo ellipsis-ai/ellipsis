@@ -17,7 +17,7 @@ define(function(require) {
       onSelect: React.PropTypes.func.isRequired,
       addNewAction: React.PropTypes.func.isRequired,
       addNewDataType: React.PropTypes.func.isRequired,
-      isBehaviorModified: React.PropTypes.func.isRequired
+      isModified: React.PropTypes.func.isRequired
     },
 
     getSkillTitle: function() {
@@ -77,37 +77,37 @@ define(function(require) {
               <BehaviorSwitcherGroup
                 ref="actionSwitcher"
                 heading="Actions"
-                behaviors={this.props.actionBehaviors}
+                editables={this.props.actionBehaviors}
                 selectedBehavior={this.getSelectedBehavior()}
                 onAddNew={this.props.addNewAction}
                 addNewLabel="Add new action"
                 emptyMessage="Add actions to provide a response using custom data types for input."
                 onSelect={this.props.onSelect}
-                isBehaviorModified={this.props.isBehaviorModified}
+                isModified={this.props.isModified}
               />
 
               <BehaviorSwitcherGroup
                 ref="dataTypeSwitcher"
                 heading="Data types"
-                behaviors={this.props.dataTypeBehaviors}
+                editables={this.props.dataTypeBehaviors}
                 selectedBehavior={this.getSelectedBehavior()}
                 onAddNew={this.props.addNewDataType}
                 addNewLabel="Add new data type"
                 emptyMessage="Custom data types allow you to limit user input to a set of choices, backed by custom data."
                 onSelect={this.props.onSelect}
-                isBehaviorModified={this.props.isBehaviorModified}
+                isModified={this.props.isModified}
               />
 
               <BehaviorSwitcherGroup
                 ref="librarySwitcher"
                 heading="Libraries"
-                behaviors={this.props.libraries}
+                editables={this.props.libraries}
                 selectedBehavior={this.getSelectedLibrary()}
                 onAddNew={this.props.addNewLibrary}
                 addNewLabel="Add new library"
                 emptyMessage="Libraries are shareable bits of code that you can require() from elsewhere in the skill"
                 onSelect={this.props.onSelect}
-                isBehaviorModified={this.props.isBehaviorModified}
+                isModified={this.props.isModified}
               />
             </div>
           ) : null}

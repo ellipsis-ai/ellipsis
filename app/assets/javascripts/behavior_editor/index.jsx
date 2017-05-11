@@ -1391,7 +1391,7 @@ const BehaviorEditor = React.createClass({
         onCursorChange={this.ensureCursorVisible}
         useLineWrapping={this.state.codeEditorUseLineWrapping}
         onToggleCodeEditorLineWrapping={this.toggleCodeEditorLineWrapping}
-        canDeleteFunctionBody={!this.isDataTypeBehavior()}
+        canDeleteFunctionBody={!this.isDataTypeBehavior() && !this.getSelectedLibrary()}
         onDeleteFunctionBody={this.confirmDeleteCode}
 
         envVariableNames={this.getEnvVariableNames()}
@@ -1800,7 +1800,7 @@ const BehaviorEditor = React.createClass({
               addNewAction={this.addNewAction}
               addNewDataType={this.addNewDataType}
               addNewLibrary={this.addNewLibrary}
-              isBehaviorModified={this.behaviorIsModified}
+              isModified={this.behaviorIsModified}
             />
           </Sticky>
         </Collapsible>
@@ -2003,7 +2003,7 @@ const BehaviorEditor = React.createClass({
         <hr className="man thin bg-gray-light" />
 
         {this.renderCodeEditor({
-          sectionNumber: "2",
+          sectionNumber: "1",
           sectionHeading: "Write any code here that you'd like to include elsewhere",
           codeEditorHelp: (
             <div className="mbxl">

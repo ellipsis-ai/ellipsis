@@ -2,8 +2,8 @@ define(function(require) {
   var React = require('react'),
     AddNewBehaviorToGroup = require('./add_new_behavior_to_group'),
     BehaviorName = require('../behavior_list/behavior_name'),
+    Editable = require('../models/editable'),
     LibraryName = require('./library_name'),
-    BehaviorVersion = require('../models/behavior_version'),
     ifPresent = require('../lib/if_present'),
     Sort = require('../lib/sort');
 
@@ -11,35 +11,35 @@ define(function(require) {
     displayName: 'BehaviorSwitcherGroup',
     propTypes: {
       heading: React.PropTypes.string.isRequired,
-      behaviors: React.PropTypes.arrayOf(React.PropTypes.instanceOf(BehaviorVersion)).isRequired,
+      editables: React.PropTypes.arrayOf(React.PropTypes.instanceOf(Editable)).isRequired,
       selectedId: React.PropTypes.string,
       onAddNew: React.PropTypes.func.isRequired,
       addNewLabel: React.PropTypes.string,
       emptyMessage: React.PropTypes.string.isRequired,
       onSelect: React.PropTypes.func.isRequired,
-      isBehaviorModified: React.PropTypes.func.isRequired
+      isModified: React.PropTypes.func.isRequired
     },
 
     getSelected: function() {
-      return this.props.behaviors.find(ea => this.props.selectedId && ((ea.libraryId === this.props.selectedId) || (ea.behaviorId === this.props.selectedId)) );
+      return this.props.editables.find(ea => this.props.selectedId && ((ea.libraryId === this.props.selectedId) || (ea.behaviorId === this.props.selectedId)) );
     },
 
-    getBehaviorList: function() {
-      return Sort.arrayAlphabeticalBy(this.props.behaviors, (behavior) => behavior.sortKey);
+    getEditableList: function() {
+      return Sort.arrayAlphabeticalBy(this.props.editables, ea => ea.sortKey);
     },
 
-    isSelectedVersion: function(version) {
-      return !!this.getSelected() && version.id === this.getSelected().id;
+    isSelected: function(editable) {
+      return !!this.getSelected() && editable.id === this.getSelected().id;
     },
 
-    renderNameFor: function(version) {
-      if (typeof version.isDataType === "function") {
+    renderNameFor: function(editable) {
+      if (editable.isBehaviorVersion()) {
         return (
           <BehaviorName
             className="plxl mobile-pll"
-            triggerClassName={this.isSelectedVersion(version) ? "box-chat-selected" : "opacity-75"}
-            version={version}
-            disableLink={this.isSelectedVersion(version)}
+            triggerClassName={this.isSelected(editable) ? "box-chat-selected" : "opacity-75"}
+            version={editable}
+            disableLink={this.isSelected(editable)}
             omitDescription={true}
             onClick={this.props.onSelect}
           />
@@ -48,9 +48,9 @@ define(function(require) {
         return (
           <LibraryName
             className="plxl mobile-pll"
-            triggerClassName={this.isSelectedVersion(version) ? "box-chat-selected" : "opacity-75"}
-            version={version}
-            disableLink={this.isSelectedVersion(version)}
+            triggerClassName={this.isSelected(editable) ? "box-chat-selected" : "opacity-75"}
+            version={editable}
+            disableLink={this.isSelected(editable)}
             omitDescription={true}
             onClick={this.props.onSelect}
           />
@@ -65,15 +65,15 @@ define(function(require) {
             <h6>{this.props.heading}</h6>
           </div>
           <div className="type-s">
-            {ifPresent(this.getBehaviorList(), behaviors => behaviors.map((version, index) => (
+            {ifPresent(this.getEditableList(), editables => editables.map((editable, index) => (
               <div
                 key={`behavior${index}`}
-                className={`pvxs ${this.isSelectedVersion(version) ? "bg-blue border-blue-medium type-white" : ""}`}
+                className={`pvxs ${this.isSelected(editable) ? "bg-blue border-blue-medium type-white" : ""}`}
               >
-                <div className={"position-absolute position-left pls type-bold type-m " + (this.isSelectedVersion(version) ? "" : "type-pink")}>
-                  {this.props.isBehaviorModified(version) ? "•" : ""}
+                <div className={"position-absolute position-left pls type-bold type-m " + (this.isSelected(editable) ? "" : "type-pink")}>
+                  {this.props.isModified(editable) ? "•" : ""}
                 </div>
-                {this.renderNameFor(version)}
+                {this.renderNameFor(editable)}
               </div>
             )), () => (
               <p className="container container-wide type-weak">{this.props.emptyMessage}</p>
