@@ -1,10 +1,10 @@
 define(function(require) {
   var React = require('react'),
+      APIRequestHelp = require('./api_request_help'),
       Collapsible = require('../shared_ui/collapsible'),
       CSRFTokenHiddenInput = require('../shared_ui/csrf_token_hidden_input'),
       Formatter = require('../lib/formatter'),
       HelpButton = require('../help/help_button'),
-      HelpPanel = require('../help/panel'),
       Input = require('../form/input'),
       PageWithPanels = require('../shared_ui/page_with_panels'),
       SettingsMenu = require('../shared_ui/settings_menu');
@@ -95,25 +95,7 @@ define(function(require) {
 
           <footer ref="footer" className="position-fixed-bottom position-z-front border-top">
             <Collapsible ref="ellipsisApiHelp" revealWhen={this.props.activePanelName === 'ellipsisApiHelp'}>
-              <HelpPanel
-                heading="Sending API requests to Ellipsis"
-                onCollapseClick={this.toggleApiHelp}
-              >
-                <p>
-                  Any application can send a message to Ellipsis by making a GET request to <code className="box-code-example">https://bot.ellipsis.ai/post_message</code>.
-                </p>
-
-                <p>
-                  The request should include the following parameters:
-                </p>
-
-                <ul>
-                  <li><code className="box-code-example">message:</code> a message which would normally trigger a skill</li>
-                  <li><code className="box-code-example">responseContext:</code> use <code className="box-code-example">slack</code> to see a response in Slack</li>
-                  <li><code className="box-code-example">channel:</code> the name of the channel to send a response</li>
-                  <li><code className="box-code-example">token:</code> a valid API token</li>
-                </ul>
-              </HelpPanel>
+              <APIRequestHelp onCollapse={this.toggleApiHelp} />
             </Collapsible>
           </footer>
         </div>
