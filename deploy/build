@@ -98,6 +98,15 @@ announce_failure() {
       --data-urlencode "token=${ELLIPSIS_DEPLOY_TOKEN}"
 }
 
+announce_completed() {
+  ")
+  curl -f https://bot.ellipsis.ai/api/say \
+      --data-urlencode "message="🚀 Matteo has just finished building **${VERSION_LABEL}** and it is ready for deployment on ${TARGET_ENV}" \
+      --data-urlencode "responseContext=slack" \
+      --data-urlencode "channel=dev" \
+      --data-urlencode "token=${ELLIPSIS_DEPLOY_TOKEN}"
+}
+
 hold_on_to_your_butts() {
   printf "
   _____________________
@@ -304,5 +313,5 @@ fi
 printf "\n\n${GREEN}Sending notifications...${PLAIN}\n";
 printf "_____________________________________________________ \n";
 osascript -e "display notification \"The build script has ended.\" with title \"Build $VERSION_LABEL\" sound name \"Sosumi\""
-curl -f --data "message=🚀%20Build%20**${VERSION_LABEL}**%20is%20ready%20for%20deployment%20on%20${TARGET_ENV}.&responseContext=slack&channel=dev&token=${ELLIPSIS_DEPLOY_TOKEN}" https://bot.ellipsis.ai/api/say || (printf "${GREEN}Warning: the post-build announcement failed.${PLAIN}" && exit 1)
+announce_completed
 printf "\n\nThe End\n\n";
