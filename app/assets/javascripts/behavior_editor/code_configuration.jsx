@@ -209,7 +209,7 @@ define(function(require) {
                 </div>
                 <div className="column column-expand plxs">
                   <code className="type-s">
-                    <span className="type-s type-weak">{"function ("}</span>
+                    <span className="type-s type-weak">{"module.exports = function ("}</span>
                     {this.props.inputs.map((input, inputIndex) => (
                       <span key={`param${inputIndex}`}>{input.name}<span className="type-weak">, </span></span>
                     ))}

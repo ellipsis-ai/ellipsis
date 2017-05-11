@@ -194,6 +194,7 @@ class GithubService @Inject() (
               actionInputs,
               dataTypeInputs,
               behaviors,
+              Seq(), // TODO: for realz
               requiredOAuth2ApiConfigData,
               requiredSimpleTokenApiData,
               Some(githubUrl),

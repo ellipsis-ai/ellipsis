@@ -156,6 +156,24 @@ class BehaviorEditorController @Inject() (
     }
   }
 
+  def newUnsavedLibrary(
+                          teamId: String,
+                          maybeLibraryIdToClone: Option[String]
+                        ) = silhouette.SecuredAction.async { implicit request =>
+    maybeLibraryIdToClone.map { libraryIdToClone =>
+      // TODO: for realz
+      Future.successful(Some(LibraryVersionData.newUnsaved))
+    }.getOrElse {
+      Future.successful(Some(LibraryVersionData.newUnsaved))
+    }.map { maybeVersionData =>
+      maybeVersionData.map { data =>
+        Ok(Json.toJson(data))
+      }.getOrElse {
+        NotFound(s"""Library not found: ${maybeLibraryIdToClone.getOrElse("")}""")
+      }
+    }
+  }
+
   def newUnsavedInput(name: String) = silhouette.SecuredAction.async { implicit request =>
     BehaviorParameterTypeData.from(TextType, dataService).map { paramType =>
       Ok(Json.toJson(InputData.newUnsavedNamed(name, paramType)))

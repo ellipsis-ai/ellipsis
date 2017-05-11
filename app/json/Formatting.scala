@@ -14,6 +14,9 @@ object Formatting {
   implicit val inputReads = Json.reads[InputData]
   implicit val inputWrites = Json.writes[InputData]
 
+  implicit val libraryVersionReads = Json.reads[LibraryVersionData]
+  implicit val libraryVersionWrites = Json.writes[LibraryVersionData]
+
   implicit val behaviorTriggerReads = Json.reads[BehaviorTriggerData]
   implicit val behaviorTriggerWrites = Json.writes[BehaviorTriggerData]
 

@@ -1,18 +1,20 @@
 define(function(require) {
   var React = require('react'),
     BehaviorSwitcherGroup = require('./behavior_switcher_group'),
-    BehaviorVersion = require('../models/behavior_version');
+    BehaviorVersion = require('../models/behavior_version'),
+    LibraryVersion = require('../models/library_version');
 
   return React.createClass({
     displayName: 'BehaviorSwitcher',
     propTypes: {
       actionBehaviors: React.PropTypes.arrayOf(React.PropTypes.instanceOf(BehaviorVersion)).isRequired,
       dataTypeBehaviors: React.PropTypes.arrayOf(React.PropTypes.instanceOf(BehaviorVersion)).isRequired,
-      selectedBehavior: React.PropTypes.instanceOf(BehaviorVersion),
+      libraries: React.PropTypes.arrayOf(React.PropTypes.instanceOf(LibraryVersion)).isRequired,
+      selectedId: React.PropTypes.string,
       groupId: React.PropTypes.string,
       groupName: React.PropTypes.string.isRequired,
       groupDescription: React.PropTypes.string.isRequired,
-      onSelectBehavior: React.PropTypes.func.isRequired,
+      onSelect: React.PropTypes.func.isRequired,
       addNewAction: React.PropTypes.func.isRequired,
       addNewDataType: React.PropTypes.func.isRequired,
       isBehaviorModified: React.PropTypes.func.isRequired
@@ -31,12 +33,24 @@ define(function(require) {
     },
 
     onEditSkillDetails: function() {
-      this.props.onSelectBehavior(this.props.groupId, null);
+      this.props.onSelect(this.props.groupId, null);
+    },
+
+    getAllBehaviors: function() {
+      return this.props.actionBehaviors.concat(this.props.dataTypeBehaviors);
+    },
+
+    getSelectedBehavior: function() {
+      return this.getAllBehaviors().find(ea => ea.behaviorId === this.props.selectedId);
+    },
+
+    getSelectedLibrary: function() {
+      return this.props.libraries.find(ea => ea.libraryId === this.props.selectedId);
     },
 
     render: function() {
       return (
-        <div>
+        <div className="pbxxxl">
 
           <div className="border-bottom ptxl pbl mbl">
 
@@ -48,12 +62,12 @@ define(function(require) {
               <button type="button"
                 className={
                   "button-block pvxs phxl mobile-phl width width-full " +
-                  (this.props.selectedBehavior ? "" : "bg-blue border-blue-medium type-white")
+                  (this.getSelectedBehavior() ? "" : "bg-blue border-blue-medium type-white")
                 }
                 onClick={this.onEditSkillDetails}
-                disabled={!this.props.selectedBehavior}
+                disabled={!this.getSelectedBehavior()}
               >
-                <span className={`type-s ${this.props.selectedBehavior ? "link" : "type-white"}`}>Skill details</span>
+                <span className={`type-s ${this.getSelectedBehavior() ? "link" : "type-white"}`}>Skill details</span>
               </button>
             </div>
           </div>
@@ -64,11 +78,11 @@ define(function(require) {
                 ref="actionSwitcher"
                 heading="Actions"
                 behaviors={this.props.actionBehaviors}
-                selectedBehavior={this.props.selectedBehavior}
+                selectedBehavior={this.getSelectedBehavior()}
                 onAddNew={this.props.addNewAction}
                 addNewLabel="Add new action"
                 emptyMessage="Add actions to provide a response using custom data types for input."
-                onSelectBehavior={this.props.onSelectBehavior}
+                onSelect={this.props.onSelect}
                 isBehaviorModified={this.props.isBehaviorModified}
               />
 
@@ -76,11 +90,23 @@ define(function(require) {
                 ref="dataTypeSwitcher"
                 heading="Data types"
                 behaviors={this.props.dataTypeBehaviors}
-                selectedBehavior={this.props.selectedBehavior}
+                selectedBehavior={this.getSelectedBehavior()}
                 onAddNew={this.props.addNewDataType}
                 addNewLabel="Add new data type"
                 emptyMessage="Custom data types allow you to limit user input to a set of choices, backed by custom data."
-                onSelectBehavior={this.props.onSelectBehavior}
+                onSelect={this.props.onSelect}
+                isBehaviorModified={this.props.isBehaviorModified}
+              />
+
+              <BehaviorSwitcherGroup
+                ref="librarySwitcher"
+                heading="Libraries"
+                behaviors={this.props.libraries}
+                selectedBehavior={this.getSelectedLibrary()}
+                onAddNew={this.props.addNewLibrary}
+                addNewLabel="Add new library"
+                emptyMessage="Libraries are shareable bits of code that you can require() from elsewhere in the skill"
+                onSelect={this.props.onSelect}
                 isBehaviorModified={this.props.isBehaviorModified}
               />
             </div>

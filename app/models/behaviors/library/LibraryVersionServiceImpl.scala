@@ -14,12 +14,13 @@ import scala.concurrent.Future
 class LibraryVersionsTable(tag: Tag) extends Table[LibraryVersion](tag, "library_versions") {
 
   def id = column[String]("id", O.PrimaryKey)
+  def libraryId = column[String]("library_id")
   def name = column[String]("name")
   def code = column[String]("code")
   def behaviorGroupVersionId = column[String]("group_version_id")
   def createdAt = column[OffsetDateTime]("created_at")
 
-  def * = (id, name, code, behaviorGroupVersionId, createdAt) <> ((LibraryVersion.apply _).tupled, LibraryVersion.unapply _)
+  def * = (id, libraryId, name, code, behaviorGroupVersionId, createdAt) <> ((LibraryVersion.apply _).tupled, LibraryVersion.unapply _)
 }
 
 class LibraryVersionServiceImpl @Inject() (

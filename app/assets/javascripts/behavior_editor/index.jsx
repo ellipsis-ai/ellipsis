@@ -24,6 +24,7 @@ var React = require('react'),
   Input = require('../models/input'),
   NotificationData = require('../models/notification_data'),
   FormInput = require('../form/input'),
+  LibraryVersion = require('../models/library_version'),
   ModalScrim = require('../shared_ui/modal_scrim'),
   Notifications = require('../notifications/notifications'),
   PageWithPanels = require('../shared_ui/page_with_panels'),
@@ -67,7 +68,7 @@ const BehaviorEditor = React.createClass({
 
   propTypes: Object.assign(PageWithPanels.requiredPropTypes(), {
     group: React.PropTypes.instanceOf(BehaviorGroup).isRequired,
-    selectedBehaviorId: React.PropTypes.string,
+    selectedId: React.PropTypes.string,
     csrfToken: React.PropTypes.string.isRequired,
     envVariables: React.PropTypes.arrayOf(React.PropTypes.object),
     oauth2Applications: React.PropTypes.arrayOf(oauth2ApplicationShape),
@@ -100,7 +101,7 @@ const BehaviorEditor = React.createClass({
   },
 
   otherBehaviorsInGroup: function() {
-    return this.getBehaviorGroup().behaviorVersions.filter(ea => ea.behaviorId !== this.getSelectedBehaviorId());
+    return this.getBehaviorGroup().behaviorVersions.filter(ea => ea.behaviorId !== this.getSelectedId());
   },
 
   getOtherSavedInputsInGroup: function() {
@@ -180,11 +181,11 @@ const BehaviorEditor = React.createClass({
     }
   },
 
-  getSelectedBehaviorId: function() {
+  getSelectedId: function() {
     if (this.state) {
-      return this.state.selectedBehaviorId;
+      return this.state.selectedId;
     } else {
-      return this.props.selectedBehaviorId;
+      return this.props.selectedId;
     }
   },
 
@@ -197,17 +198,27 @@ const BehaviorEditor = React.createClass({
   },
 
   getOriginalSelectedBehavior: function() {
-    return this.getSelectedBehaviorFor(this.props.group, this.getSelectedBehaviorId());
+    return this.getSelectedBehaviorFor(this.props.group, this.getSelectedId());
   },
 
   getSelectedBehavior: function() {
-    return this.getSelectedBehaviorFor(this.getBehaviorGroup(), this.getSelectedBehaviorId());
+    return this.getSelectedBehaviorFor(this.getBehaviorGroup(), this.getSelectedId());
   },
 
   getSelectedBehaviorFor: function(group, selectedBehaviorId) {
     return group.behaviorVersions.find(ea => {
       return ea.behaviorId === selectedBehaviorId;
     });
+  },
+
+  getSelectedLibrary: function() {
+    return this.getBehaviorGroup().libraryVersions.find(ea => {
+      return ea.libraryId === this.getSelectedId();
+    });
+  },
+
+  getSelected: function() {
+    return this.getSelectedBehavior() || this.getSelectedLibrary();
   },
 
   getBehaviorProp: function(key) {
@@ -345,7 +356,7 @@ const BehaviorEditor = React.createClass({
       return new NotificationData({
         kind: "data_type_needs_config",
         name: ea.name,
-        onClick: () => this.onSelectBehavior(this.getBehaviorGroup().id, behaviorId)
+        onClick: () => this.onSelect(this.getBehaviorGroup().id, behaviorId)
       });
     });
   },
@@ -473,7 +484,7 @@ const BehaviorEditor = React.createClass({
     this.props.onClearActivePanel();
     const group = this.getBehaviorGroup();
     const updatedGroup = group.clone({
-      behaviorVersions: group.behaviorVersions.filter(ea => ea.behaviorId !== this.getSelectedBehaviorId())
+      behaviorVersions: group.behaviorVersions.filter(ea => ea.behaviorId !== this.getSelectedId())
     });
     this.updateGroupStateWith(updatedGroup);
   },
@@ -547,9 +558,7 @@ const BehaviorEditor = React.createClass({
   },
 
   updateBehaviorScrollPosition: function() {
-    if (this.getSelectedBehavior()) {
-      this.setBehaviorProp('editorScrollPosition', window.scrollY);
-    }
+    // TODO: do it
   },
 
   refreshCodeEditor: function() {
@@ -633,7 +642,7 @@ const BehaviorEditor = React.createClass({
             const config = this.state.requiredOAuth2ApiConfig;
             const apiId = config && config.apiId;
             const recommendedScope = config && config.recommendedScope;
-            window.location.href = jsRoutes.controllers.OAuth2ApplicationController.newApp(apiId, recommendedScope, null, this.getSelectedBehaviorId()).url;
+            window.location.href = jsRoutes.controllers.OAuth2ApplicationController.newApp(apiId, recommendedScope, null, this.getSelectedId()).url;
           } else {
             const newProps = {
               group: BehaviorGroup.fromJson(json),
@@ -678,7 +687,7 @@ const BehaviorEditor = React.createClass({
     const stateUpdates = {
       group: version
     };
-    if (!version.hasBehaviorVersionWithId(this.getSelectedBehaviorId())) {
+    if (!version.hasBehaviorVersionWithId(this.getSelectedId())) {
       stateUpdates.selectedBehaviorId = null;
     }
     this.setState(stateUpdates, optionalCallback);
@@ -711,7 +720,7 @@ const BehaviorEditor = React.createClass({
 
   setBehaviorProps: function(props, callback) {
     const existingGroup = this.getBehaviorGroup();
-    const existingBehavior = this.getSelectedBehaviorFor(existingGroup, this.getSelectedBehaviorId());
+    const existingBehavior = this.getSelectedBehaviorFor(existingGroup, this.getSelectedId());
     if (!existingBehavior) {
       return;
     }
@@ -732,13 +741,13 @@ const BehaviorEditor = React.createClass({
   updateGroupStateWith: function(updatedGroup, callback) {
 
     const timestampedGroup = updatedGroup.copyWithNewTimestamp();
-    const selectedBehaviorIdBefore = this.getSelectedBehaviorId();
-    const selectedBehaviorIdNowInvalid = !timestampedGroup.behaviorVersions.find(ea => ea.behaviorId === selectedBehaviorIdBefore);
-    let selectedBehaviorIdAfter;
-    if (selectedBehaviorIdBefore && selectedBehaviorIdNowInvalid) {
-      selectedBehaviorIdAfter = this.getNextBehaviorIdFor(timestampedGroup);
+    const selectedIdBefore = this.props.selectedId;
+    const selectedIdNowInvalid = !timestampedGroup.behaviorVersions.find(ea => ea.behaviorId === selectedIdBefore) && !timestampedGroup.libraryVersions.find(ea => ea.libraryId === selectedIdBefore);
+    let selectedIdAfter;
+    if (selectedIdBefore && selectedIdNowInvalid) {
+      selectedIdAfter = this.getNextBehaviorIdFor(timestampedGroup);
     } else {
-      selectedBehaviorIdAfter = selectedBehaviorIdBefore;
+      selectedIdAfter = selectedIdBefore;
     }
 
     const updatedVersions = ImmutableObjectUtils.arrayWithNewElementAtIndex(this.state.versions, timestampedGroup, 0);
@@ -746,7 +755,7 @@ const BehaviorEditor = React.createClass({
     this.setState({
       group: timestampedGroup,
       versions: updatedVersions,
-      selectedBehaviorId: selectedBehaviorIdAfter
+      selectedId: selectedIdAfter
     }, () => {
       if (callback) {
         callback();
@@ -845,7 +854,7 @@ const BehaviorEditor = React.createClass({
 
   toggleCodeEditor: function() {
     const updatedBehaviorVersions = this.getBehaviorGroup().behaviorVersions.map(ea => {
-      if (ea.behaviorId === this.getSelectedBehaviorId()) {
+      if (ea.behaviorId === this.getSelectedId()) {
         return ea.clone({ shouldRevealCodeEditor: !ea.shouldRevealCodeEditor });
       } else {
         return ea;
@@ -1080,6 +1089,10 @@ const BehaviorEditor = React.createClass({
     return this.getBehaviorGroup().getDataTypes();
   },
 
+  getLibraries: function() {
+    return this.getBehaviorGroup().libraryVersions;
+  },
+
   hasInputs: function() {
     return this.getInputs() && this.getInputs().length > 0;
   },
@@ -1224,7 +1237,7 @@ const BehaviorEditor = React.createClass({
   onConfigureType: function(paramTypeId) {
     const typeBehaviorVersion = this.getBehaviorGroup().behaviorVersions.find(ea => ea.id === paramTypeId);
     if (typeBehaviorVersion) {
-      this.onSelectBehavior(this.getBehaviorGroup().id, typeBehaviorVersion.behaviorId);
+      this.onSelect(this.getBehaviorGroup().id, typeBehaviorVersion.behaviorId);
     }
   },
 
@@ -1270,7 +1283,7 @@ const BehaviorEditor = React.createClass({
     const hasModifiedTemplate = !!(selectedBehavior && selectedBehavior.responseTemplate && selectedBehavior.responseTemplate.text);
     return {
       group: this.props.group,
-      selectedBehaviorId: this.props.selectedBehaviorId,
+      selectedId: this.props.selectedId,
       activeDropdown: null,
       codeEditorUseLineWrapping: false,
       envVariables: this.getInitialEnvVariables(),
@@ -1309,7 +1322,7 @@ const BehaviorEditor = React.createClass({
       if (typeof(nextProps.onLoad) === 'function') {
         nextProps.onLoad();
       }
-      BrowserUtils.replaceURL(jsRoutes.controllers.BehaviorEditorController.edit(newGroup.id, this.getSelectedBehaviorId()).url);
+      BrowserUtils.replaceURL(jsRoutes.controllers.BehaviorEditorController.edit(newGroup.id, this.getSelectedId()).url);
     }
   },
 
@@ -1502,7 +1515,7 @@ const BehaviorEditor = React.createClass({
               ref="behaviorTester"
               triggers={this.getBehaviorTriggers()}
               inputs={this.getInputs()}
-              behaviorId={this.getSelectedBehaviorId()}
+              behaviorId={this.getSelectedId()}
               csrfToken={this.props.csrfToken}
               onDone={this.props.onClearActivePanel}
               appsRequiringAuth={this.getOAuth2ApplicationsRequiringAuth()}
@@ -1512,7 +1525,7 @@ const BehaviorEditor = React.createClass({
           <Collapsible revealWhen={this.props.activePanelName === 'dataTypeTester'} onChange={this.layoutDidUpdate}>
             <DataTypeTester
               ref="dataTypeTester"
-              behaviorId={this.getSelectedBehaviorId()}
+              behaviorId={this.getSelectedId()}
               isSearch={this.isSearchDataTypeBehavior()}
               csrfToken={this.props.csrfToken}
               onDone={this.props.onClearActivePanel}
@@ -1693,19 +1706,24 @@ const BehaviorEditor = React.createClass({
     }
   },
 
-  onSelectBehavior: function(groupId, behaviorId) {
+  getEditorScrollPosition: function() {
+    const selected = this.getSelected();
+    return selected ? selected.editorScrollPosition : 0;
+  },
+
+  onSelect: function(groupId, id) {
     var newState = {
       animationDisabled: true,
-      selectedBehaviorId: behaviorId
+      selectedId: id
     };
     if (this.windowIsMobile()) {
       newState.behaviorSwitcherVisible = false;
     }
     this.setState(newState, () => {
       if (groupId) {
-        BrowserUtils.replaceURL(jsRoutes.controllers.BehaviorEditorController.edit(groupId, behaviorId).url);
+        BrowserUtils.replaceURL(jsRoutes.controllers.BehaviorEditorController.edit(groupId, id).url);
       }
-      var newScrollPosition = this.getBehaviorProp('editorScrollPosition');
+      var newScrollPosition = this.getEditorScrollPosition();
       window.scrollTo(window.scrollX, typeof(newScrollPosition) === 'number' ? newScrollPosition : 0);
       this.setState({
         animationDisabled: false
@@ -1726,7 +1744,7 @@ const BehaviorEditor = React.createClass({
         const newVersion = BehaviorVersion.fromJson(Object.assign({}, json, { groupId: group.id }));
         const groupWithNewBehavior = group.withNewBehaviorVersion(newVersion);
         this.updateGroupStateWith(groupWithNewBehavior, () => {
-          this.onSelectBehavior(groupWithNewBehavior.id, newVersion.behaviorId);
+          this.onSelect(groupWithNewBehavior.id, newVersion.behaviorId);
         });
       });
   },
@@ -1737,6 +1755,20 @@ const BehaviorEditor = React.createClass({
 
   addNewDataType: function() {
     this.addNewBehavior(true);
+  },
+
+  addNewLibrary: function(libraryIdToClone) {
+    const group = this.getBehaviorGroup();
+    const url = jsRoutes.controllers.BehaviorEditorController.newUnsavedLibrary(group.teamId, libraryIdToClone).url;
+    fetch(url, { credentials: 'same-origin' })
+      .then((response) => response.json())
+      .then((json) => {
+        const newVersion = new LibraryVersion(Object.assign({}, json, { groupId: group.id }));
+        const groupWithNewLibrary = group.withNewLibraryVersion(newVersion);
+        this.updateGroupStateWith(groupWithNewLibrary, () => {
+          this.onSelect(groupWithNewLibrary.id, newVersion.libraryId);
+        });
+      });
   },
 
   renderBehaviorSwitcher: function() {
@@ -1757,15 +1789,17 @@ const BehaviorEditor = React.createClass({
               ref="behaviorSwitcher"
               actionBehaviors={this.getActionBehaviors()}
               dataTypeBehaviors={this.getDataTypeBehaviors()}
-              selectedBehavior={this.getSelectedBehavior()}
+              libraries={this.getLibraries()}
+              selectedId={this.getSelectedId()}
               groupId={this.getBehaviorGroup().id}
               groupName={this.getBehaviorGroup().getName()}
               groupDescription={this.getBehaviorGroup().description || ""}
               onBehaviorGroupNameChange={this.onBehaviorGroupNameChange}
               onBehaviorGroupDescriptionChange={this.onBehaviorGroupDescriptionChange}
-              onSelectBehavior={this.onSelectBehavior}
+              onSelect={this.onSelect}
               addNewAction={this.addNewAction}
               addNewDataType={this.addNewDataType}
+              addNewLibrary={this.addNewLibrary}
               isBehaviorModified={this.behaviorIsModified}
             />
           </Sticky>
@@ -1962,6 +1996,25 @@ const BehaviorEditor = React.createClass({
     }
   },
 
+  renderLibrary: function() {
+    return (
+      <div className="pbxxxl">
+
+        <hr className="man thin bg-gray-light" />
+
+        {this.renderCodeEditor({
+          sectionNumber: "2",
+          sectionHeading: "Write any code here that you'd like to include elsewhere",
+          codeEditorHelp: (
+            <div className="mbxl">
+
+            </div>
+          )
+        })}
+      </div>
+    );
+  },
+
   renderEditor: function() {
     if (this.getSelectedBehavior()) {
       return (
@@ -1973,6 +2026,12 @@ const BehaviorEditor = React.createClass({
           {this.renderNameAndManagementActions()}
 
           {this.renderForBehaviorType()}
+        </div>
+      );
+    } else if (this.getSelectedLibrary()) {
+      return (
+        <div>
+          {this.renderLibrary()}
         </div>
       );
     } else {

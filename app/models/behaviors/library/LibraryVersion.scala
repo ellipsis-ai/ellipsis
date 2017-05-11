@@ -2,10 +2,9 @@ package models.behaviors.library
 
 import java.time.OffsetDateTime
 
-import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
-
 case class LibraryVersion(
                             id: String,
+                            libraryId: String,
                             name: String,
                             code: String,
                             behaviorGroupVersionId: String,

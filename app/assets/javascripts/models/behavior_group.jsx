@@ -16,6 +16,7 @@ define(function(require) {
         actionInputs: { value: props.actionInputs, enumerable: true },
         dataTypeInputs: { value: props.dataTypeInputs, enumerable: true },
         behaviorVersions: { value: props.behaviorVersions, enumerable: true },
+        libraryVersions: { value: props.libraryVersions, enumerable: true },
         requiredOAuth2ApiConfigs: { value: props.requiredOAuth2ApiConfigs, enumerable: true },
         requiredSimpleTokenApis: { value: props.requiredSimpleTokenApis, enumerable: true },
         createdAt: { value: props.createdAt, enumerable: true },
@@ -124,6 +125,12 @@ define(function(require) {
       });
     }
 
+    withNewLibraryVersion(libraryVersion) {
+      return this.clone({
+        libraryVersions: this.libraryVersions.concat([libraryVersion])
+      });
+    }
+
     hasBehaviorVersionWithId(behaviorId) {
       return !!this.behaviorVersions.find(ea => ea.behaviorId === behaviorId);
     }
@@ -150,7 +157,8 @@ define(function(require) {
       return new BehaviorGroup(Object.assign({}, props, {
         behaviorVersions: props.behaviorVersions.map((ea) => BehaviorVersion.fromJson(Object.assign({}, ea, { groupId: props.id }))),
         actionInputs: Input.allFromJson(props.actionInputs || []),
-        dataTypeInputs: Input.allFromJson(props.dataTypeInputs || [])
+        dataTypeInputs: Input.allFromJson(props.dataTypeInputs || []),
+        libraryVersions: props.libraryVersions.map(ea => new LibraryVersion(Object.assign({}, ea, { groupId: props.id })))
       }));
     }
 
