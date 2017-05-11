@@ -6,7 +6,7 @@ define(function(require) {
 
   class BehaviorVersion extends Editable {
     constructor(props) {
-      super();
+      super(props);
 
       var initialProps = Object.assign({
         config: {},

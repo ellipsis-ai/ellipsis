@@ -3,7 +3,7 @@ define(function(require) {
 
   class LibraryVersion extends Editable {
     constructor(props) {
-      super();
+      super(props);
 
       Object.defineProperties(this, {
         libraryId: { value: props.libraryId, enumerable: true }
