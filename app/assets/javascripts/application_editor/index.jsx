@@ -361,7 +361,7 @@ define(function(require) {
                     name="name"
                     value={this.getApplicationName()}
                     placeholder={"e.g. " + this.getApplicationApiName() + "ReadOnly"}
-                    className="form-input-borderless form-input-l"
+                    className="form-input-borderless form-input-l type-l"
                     onChange={this.setApplicationName}
                     onEnterKey={this.onApplicationNameEnterKey}
                   />

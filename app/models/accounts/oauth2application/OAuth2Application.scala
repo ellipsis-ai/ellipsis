@@ -29,7 +29,9 @@ case class OAuth2Application(
         "scope" -> scopeString,
         "state" -> state,
         "access_type" -> "offline",
-        "response_type" -> "code"
+        "response_type" -> "code",
+        "prompt" -> "consent",
+        "include_granted_scopes" -> "true"
       )
     }
   }

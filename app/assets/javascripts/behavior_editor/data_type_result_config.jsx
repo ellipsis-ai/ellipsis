@@ -27,11 +27,11 @@ define(function(require) {
             <SectionHeading number="1">How to prompt the user</SectionHeading>
             <Checklist disabledWhen={this.props.isFinishedBehavior}>
               <Checklist.Item checkedWhen={!this.props.usesSearch}>
-                <span>Use <span className="type-bold">Select from a list</span> when there are few choices.</span>
+                <span>Use <span className="type-semibold">Select from a list</span> when there are few choices.</span>
                 <span>The user will just pick from the whole list.</span>
               </Checklist.Item>
               <Checklist.Item checkedWhen={this.props.usesSearch}>
-                <span>Use <span className="type-bold">Search for a match</span> when there are many choices.</span>
+                <span>Use <span className="type-semibold">Search for a match</span> when there are many choices.</span>
                 <span>The user will type in a search query and presented with matches to choose from.</span>
               </Checklist.Item>
             </Checklist>

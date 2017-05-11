@@ -6,7 +6,7 @@ import play.api.http.HttpFilters
 import play.filters.gzip.GzipFilter
 import play.filters.headers.SecurityHeadersFilter
 
-class Filters @Inject() (
+class ProductionFilters @Inject() (
                           https: HTTPSRedirectFilter,
                           csrfFilter: ExcludingCSRFFilter,
                           gzipFilter: GzipFilter,

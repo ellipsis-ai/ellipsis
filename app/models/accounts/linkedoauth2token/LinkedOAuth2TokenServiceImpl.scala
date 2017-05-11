@@ -4,7 +4,7 @@ import java.time.OffsetDateTime
 import javax.inject.{Inject, Provider}
 
 import models.accounts.user.User
-import models.accounts.oauth2application.OAuth2ApplicationQueries
+import models.accounts.oauth2application.{OAuth2Application, OAuth2ApplicationQueries}
 import play.api.http.{HeaderNames, MimeTypes}
 import play.api.libs.ws.WSClient
 import play.api.mvc.Results
@@ -121,5 +121,8 @@ class LinkedOAuth2TokenServiceImpl @Inject() (
     dataService.run(action)
   }
 
-
+  def deleteFor(application: OAuth2Application, user: User): Future[Boolean] = {
+    val action = findQuery(user.id, application.id).delete.map(r => r > 0)
+    dataService.run(action)
+  }
 }
