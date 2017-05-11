@@ -24,6 +24,13 @@ if [ "$1" = "stag01" ]; then
   EMOJI=" 🦑 "
 fi
 
+aws configure --profile $AWS_ELLIPSIS_PROFILE list > /dev/null
+if [ $? -gt 0 ]; then
+  printf "\nYou need to configure the AWS staging profile:\n\n"
+  printf "${GREEN}aws configure --profile ${AWS_ELLIPSIS_PROFILE}${PLAIN}\n\n"
+  exit 1
+fi
+
 printf "\n\n${EMOJI}${GREEN} - Getting ready to deploy to ${MAGENTA}${TARGET_ENV}${PLAIN} -${EMOJI}\n"
 printf "_____________________________________________________ \n";
 printf "Target Env    = ${TARGET_ENV}\n"
