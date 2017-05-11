@@ -7,6 +7,8 @@ BOLD=`tput bold`
 PLAIN=`tput sgr0`
 
 VERSION_LABEL=ellipsis-`git rev-parse --short HEAD`
+GIT_USERNAME=`git config user.name`
+DISPLAY_USERNAME=${GIT_USERNAME:-$USER}
 
 # By default we target prod
 TARGET_ENV="prod"
@@ -75,6 +77,14 @@ if [ $? -eq 1 ];then
   exit 1
 fi
 printf "\n${GREEN}Ok.${PLAIN}\n"
+
+announce_failure() {
+  curl -f https://bot.ellipsis.ai/api/say \
+      --data-urlencode "message=💥${DISPLAY_USERNAME} failed to prepare the build for ${TARGET_ENV}"
+      --data-urlencode "responseContext=slack" \
+      --data-urlencode "channel=dev" \
+      --data-urlencode "token=${ELLIPSIS_DEPLOY_TOKEN}"
+}
 
 hold_on_to_your_butts() {
   printf "\e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[38;5;52m1\e[38;5;52m0\e[38;5;52m1\e[38;5;52m1\e[38;5;138m0\e[38;5;145m0\e[38;5;52m1\e[0m \e[0m \e[38;5;53m0\e[38;5;139m1\e[38;5;231m1\e[38;5;231m1\e[38;5;231m0\e[38;5;231m1\e[38;5;231m1\e[38;5;225m0\e[38;5;181m1\e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[38;5;17m1\e[38;5;24m0\e[0m \e[0m \e[38;5;17m0\e[38;5;17m1\e[38;5;17m1\e[0m
@@ -173,9 +183,7 @@ printf "\n${GREEN}Ok.${PLAIN}\n"
 
 printf "\n\n${GREEN}Announcing the deployment to #dev...${PLAIN}\n"
 printf "_____________________________________________________ \n";
-GIT_USERNAME=`git config user.name`
-DISPLAY_USERNAME=${GIT_USERNAME:-$USER}
-curl -f --data "message=🚀%20${DISPLAY_USERNAME}%20is%20preparing%20a%20build%20for%20${TARGET_ENV}.&responseContext=slack&channel=dev&token=${ELLIPSIS_DEPLOY_TOKEN}" https://bot.ellipsis.ai/api/say || (printf "${GREEN}The deploy announcement failed. Please check the ELLIPSIS_DEPLOY_TOKEN environment variable.${PLAIN}" && exit 1)
+curl -f --data "message=🚀%20${DISPLAY_USERNAME}%20is%20preparing%20a%20build%20for%20${TARGET_ENV}.&responseContext=slack&channel=dev&token=${ELLIPSIS_DEPLOY_TOKEN}" https://bot.ellipsis.ai/api/say || (printf "${RED}The deploy announcement failed. Please check the ELLIPSIS_DEPLOY_TOKEN environment variable.${PLAIN}" && exit 1)
 printf "\n${GREEN}Ok.${PLAIN}\n"
 
 printf "\n\n${GREEN}Running eslint...${PLAIN}\n";
@@ -185,6 +193,7 @@ if [ $? -eq 1 ];then
   read -p "${MAGENTA}eslint failed. You should probably stop. Do you want to continue anyway? [y/N]: ${PLAIN}" -n 1 -r
   echo
   if [[ ! $REPLY =~ ^[Yy]$ ]];then
+    announce_failure
     printf "Bye.\n"
     exit 1
   else
@@ -202,6 +211,7 @@ if [ $? -eq 1 ];then
   printf "\n"
   if [[ ! $REPLY =~ ^[Yy]$ ]];then
     printf "You are wise.\n"
+    announce_failure
     printf "Bye.\n"
     exit 1
   else
@@ -219,6 +229,7 @@ if [ $? -eq 1 ];then
   printf "\n";
   if [[ ! $REPLY =~ ^[Yy]$ ]];then
     printf "You are wise.\n";
+    announce_failure
     printf "Bye.\n"
     exit 1
   else
@@ -253,7 +264,8 @@ if [ $? -eq 0 ];then
    printf "${GREEN}Ok.${PLAIN}\n";
 else
    printf "\n\n${RED}Error found!.\n";
-   printf "Exiting...${PLAIN}\n\n";
+   announce_failure
+   printf "Bye.\n"
 fi
 
 
@@ -264,8 +276,9 @@ aws --profile $AWS_ELLIPSIS_PROFILE s3 cp $BUNDLE_PATH s3://$EB_BUCKET/$S3_KEY
 if [ $? -eq 0 ];then
    printf "${GREEN}Ok.${PLAIN}\n";
 else
-   printf "\n\n${RED}Error found!.\n";
-   printf "Exiting...${PLAIN}\n\n";
+  printf "\n\n${RED}Error found!.\n";
+  announce_failure
+  printf "Bye.\n"
 fi
 
 printf "\n\n${GREEN}Updating Beanstalk App Version...${PLAIN}\n";
@@ -278,8 +291,9 @@ aws --profile $AWS_ELLIPSIS_PROFILE elasticbeanstalk create-application-version 
 if [ $? -eq 0 ];then
    printf "\n${GREEN}Ok.${PLAIN}\n"
 else
-   printf "\n\n${RED}Error found!.\n";
-   printf "Exiting...${PLAIN}\n\n";
+  printf "\n\n${RED}Error found!.\n";
+  announce_failure
+  printf "Bye.\n"
 fi
 
 printf "\n\n${GREEN}Sending notifications...${PLAIN}\n";
