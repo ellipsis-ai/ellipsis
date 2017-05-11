@@ -78,44 +78,33 @@ if [ $? -eq 1 ];then
 fi
 printf "\n${GREEN}Ok.${PLAIN}\n"
 
+announce_start() {
+  curl -f https://bot.ellipsis.ai/api/say \
+      --data-urlencode "message=🚀 ${DISPLAY_USERNAME} is preparing a build for ${TARGET_ENV}." \
+      --data-urlencode "responseContext=slack" \
+      --data-urlencode "channel=dev" \
+      --data-urlencode "token=${ELLIPSIS_DEPLOY_TOKEN}"
+}
+
 announce_failure() {
   curl -f https://bot.ellipsis.ai/api/say \
-      --data-urlencode "message=💥${DISPLAY_USERNAME} failed to prepare the build for ${TARGET_ENV}"
+      --data-urlencode "message=💥${DISPLAY_USERNAME} failed to prepare the build for ${TARGET_ENV}" \
       --data-urlencode "responseContext=slack" \
       --data-urlencode "channel=dev" \
       --data-urlencode "token=${ELLIPSIS_DEPLOY_TOKEN}"
 }
 
 hold_on_to_your_butts() {
-  printf "\e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[38;5;52m1\e[38;5;52m0\e[38;5;52m1\e[38;5;52m1\e[38;5;138m0\e[38;5;145m0\e[38;5;52m1\e[0m \e[0m \e[38;5;53m0\e[38;5;139m1\e[38;5;231m1\e[38;5;231m1\e[38;5;231m0\e[38;5;231m1\e[38;5;231m1\e[38;5;225m0\e[38;5;181m1\e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[38;5;17m1\e[38;5;24m0\e[0m \e[0m \e[38;5;17m0\e[38;5;17m1\e[38;5;17m1\e[0m
-\e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[38;5;53m0\e[38;5;225m1\e[38;5;96m0\e[38;5;139m0\e[38;5;182m1\e[38;5;188m1\e[38;5;145m1\e[38;5;96m0\e[38;5;139m0\e[38;5;188m0\e[38;5;231m1\e[38;5;231m0\e[38;5;231m1\e[38;5;231m1\e[38;5;231m1\e[38;5;224m0\e[0m \e[0m \e[0m \e[38;5;17m1\e[38;5;24m1\e[38;5;61m1\e[38;5;18m0\e[0m \e[0m \e[0m \e[0m \e[0m \e[0m
-\e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[38;5;52m0\e[38;5;52m1\e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[38;5;59m0\e[38;5;189m1\e[38;5;96m0\e[38;5;139m0\e[38;5;102m1\e[38;5;145m0\e[38;5;182m1\e[38;5;96m0\e[38;5;95m1\e[38;5;95m0\e[38;5;132m1\e[38;5;225m0\e[38;5;231m0\e[38;5;231m1\e[38;5;231m1\e[38;5;231m0\e[38;5;145m1\e[0m \e[38;5;17m1\e[38;5;24m0\e[38;5;24m1\e[38;5;17m1\e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m
-\e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[38;5;52m0\e[38;5;52m1\e[38;5;95m0\e[38;5;95m0\e[38;5;95m1\e[38;5;52m1\e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[38;5;59m1\e[38;5;231m0\e[38;5;139m0\e[38;5;52m0\e[38;5;60m1\e[38;5;145m1\e[38;5;182m1\e[38;5;95m1\e[38;5;53m0\e[38;5;95m0\e[38;5;139m1\e[38;5;225m1\e[38;5;224m0\e[38;5;224m1\e[38;5;225m0\e[38;5;231m0\e[38;5;231m0\e[38;5;189m0\e[38;5;146m0\e[38;5;67m1\e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m
-\e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[38;5;52m0\e[38;5;88m0\e[38;5;131m0\e[38;5;131m0\e[38;5;174m1\e[38;5;174m1\e[38;5;95m0\e[38;5;52m1\e[0m \e[0m \e[0m \e[0m \e[0m \e[38;5;52m0\e[38;5;231m1\e[38;5;59m1\e[0m \e[0m \e[0m \e[0m \e[38;5;52m0\e[38;5;96m1\e[38;5;95m1\e[38;5;96m1\e[38;5;182m1\e[38;5;231m1\e[38;5;224m1\e[38;5;230m1\e[38;5;231m0\e[38;5;231m1\e[38;5;104m1\e[38;5;25m0\e[38;5;104m1\e[38;5;59m1\e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m
-\e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[38;5;52m0\e[38;5;52m0\e[38;5;88m1\e[38;5;88m0\e[38;5;131m1\e[38;5;174m0\e[38;5;138m1\e[38;5;94m1\e[0m \e[0m \e[0m \e[0m \e[0m \e[38;5;102m0\e[38;5;145m1\e[0m \e[0m \e[0m \e[38;5;52m1\e[38;5;59m1\e[38;5;139m1\e[38;5;96m1\e[38;5;140m0\e[38;5;224m1\e[38;5;224m0\e[38;5;181m0\e[38;5;231m1\e[38;5;231m0\e[38;5;189m1\e[38;5;61m0\e[38;5;60m0\e[38;5;104m1\e[38;5;146m1\e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m
-\e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[38;5;52m1\e[38;5;88m1\e[38;5;95m0\e[38;5;95m0\e[38;5;88m0\e[38;5;52m0\e[38;5;52m1\e[38;5;52m1\e[0m \e[38;5;102m0\e[38;5;139m0\e[38;5;59m1\e[38;5;53m1\e[38;5;52m1\e[38;5;53m1\e[38;5;182m0\e[38;5;188m1\e[38;5;139m1\e[38;5;131m1\e[38;5;181m0\e[38;5;231m1\e[38;5;225m1\e[38;5;104m1\e[38;5;60m1\e[38;5;61m0\e[38;5;103m0\e[38;5;61m1\e[38;5;188m0\e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m
-\e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[38;5;52m1\e[38;5;52m1\e[38;5;88m0\e[38;5;88m0\e[38;5;95m0\e[38;5;95m0\e[38;5;95m0\e[38;5;88m1\e[38;5;52m1\e[38;5;59m1\e[38;5;95m0\e[38;5;59m1\e[38;5;52m1\e[38;5;52m0\e[38;5;95m0\e[38;5;52m1\e[38;5;131m0\e[38;5;138m1\e[38;5;132m1\e[38;5;181m0\e[38;5;182m0\e[38;5;17m1\e[38;5;17m0\e[38;5;68m1\e[38;5;25m0\e[38;5;68m1\e[38;5;145m0\e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m
-\e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[38;5;52m0\e[38;5;52m0\e[38;5;52m1\e[38;5;52m1\e[38;5;52m1\e[38;5;52m0\e[0m \e[0m \e[0m \e[0m \e[0m \e[38;5;94m1\e[38;5;95m0\e[38;5;95m0\e[38;5;138m0\e[38;5;96m0\e[38;5;53m1\e[38;5;182m1\e[38;5;224m1\e[38;5;225m1\e[38;5;140m0\e[38;5;68m1\e[38;5;231m0\e[38;5;58m1\e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m
-\e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[38;5;95m1\e[38;5;225m1\e[38;5;145m0\e[38;5;52m0\e[38;5;52m0\e[0m \e[0m \e[0m \e[38;5;138m1\e[38;5;52m1\e[0m \e[0m \e[38;5;53m0\e[38;5;52m0\e[38;5;95m0\e[38;5;224m1\e[38;5;231m0\e[38;5;182m0\e[38;5;146m1\e[38;5;231m1\e[38;5;102m1\e[0m \e[38;5;17m0\e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m
-\e[0m \e[38;5;59m1\e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[38;5;59m1\e[38;5;95m1\e[38;5;88m1\e[38;5;52m0\e[38;5;52m0\e[0m \e[38;5;52m1\e[38;5;96m0\e[38;5;59m0\e[38;5;53m1\e[38;5;59m0\e[38;5;138m0\e[38;5;132m0\e[38;5;95m0\e[38;5;174m1\e[38;5;181m1\e[38;5;59m0\e[38;5;102m0\e[38;5;59m0\e[38;5;17m0\e[38;5;59m0\e[38;5;17m1\e[38;5;17m0\e[0m \e[0m \e[0m \e[0m \e[0m \e[0m
-\e[0m \e[0m \e[38;5;59m1\e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[38;5;17m1\e[38;5;53m1\e[38;5;138m0\e[38;5;145m1\e[38;5;139m0\e[38;5;95m1\e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m
-\e[0m \e[0m \e[0m \e[38;5;59m1\e[38;5;59m0\e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[38;5;96m0\e[38;5;103m1\e[38;5;60m0\e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m
-\e[0m \e[0m \e[0m \e[0m \e[0m \e[38;5;59m0\e[38;5;52m1\e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[38;5;53m1\e[38;5;96m1\e[38;5;103m1\e[38;5;140m1\e[38;5;182m1\e[38;5;182m1\e[38;5;60m0\e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m
-\e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[38;5;53m0\e[0m \e[0m \e[38;5;59m1\e[38;5;103m1\e[38;5;231m1\e[38;5;231m1\e[38;5;60m1\e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m
-\e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[38;5;52m0\e[38;5;181m0\e[38;5;224m0\e[38;5;53m1\e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[38;5;17m1\e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m
-\e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[38;5;95m1\e[38;5;131m0\e[38;5;95m1\e[0m \e[0m \e[0m \e[0m \e[38;5;17m0\e[38;5;17m0\e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m
-\e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[38;5;52m0\e[38;5;95m1\e[38;5;102m1\e[38;5;188m0\e[38;5;59m0\e[38;5;52m1\e[38;5;138m1\e[38;5;188m0\e[38;5;188m1\e[38;5;102m1\e[38;5;17m0\e[38;5;17m0\e[38;5;17m1\e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m
-\e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[38;5;53m1\e[38;5;138m1\e[38;5;145m0\e[38;5;145m0\e[38;5;182m1\e[38;5;188m0\e[38;5;231m1\e[38;5;60m1\e[0m \e[0m \e[0m \e[38;5;60m1\e[38;5;146m0\e[38;5;189m1\e[38;5;189m0\e[38;5;146m0\e[38;5;96m0\e[38;5;17m0\e[0m \e[0m \e[0m \e[0m \e[0m \e[0m
-\e[38;5;60m1\e[38;5;59m0\e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[38;5;59m0\e[38;5;139m1\e[38;5;225m0\e[38;5;224m0\e[38;5;231m0\e[38;5;231m0\e[38;5;231m0\e[38;5;102m0\e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[38;5;59m1\e[38;5;103m1\e[38;5;188m0\e[38;5;225m1\e[38;5;188m1\e[38;5;102m0\e[0m \e[0m \e[38;5;52m1\e[0m \e[0m
-\e[38;5;60m0\e[38;5;102m0\e[38;5;102m0\e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[38;5;52m0\e[38;5;52m0\e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[38;5;53m0\e[38;5;175m0\e[38;5;225m0\e[38;5;231m1\e[38;5;231m1\e[38;5;59m0\e[38;5;17m1\e[38;5;17m0\e[38;5;17m0\e[38;5;17m0\e[0m \e[0m \e[0m \e[0m \e[38;5;53m1\e[38;5;96m0\e[38;5;59m0\e[38;5;102m1\e[38;5;182m0\e[38;5;95m1\e[38;5;52m0\e[38;5;89m1\e[38;5;53m0
-\e[38;5;60m1\e[38;5;102m0\e[38;5;103m1\e[38;5;59m1\e[0m \e[38;5;59m1\e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[38;5;52m0\e[38;5;53m1\e[38;5;53m1\e[38;5;53m1\e[38;5;52m1\e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[38;5;95m1\e[38;5;189m0\e[38;5;231m0\e[38;5;231m0\e[38;5;231m1\e[38;5;231m0\e[38;5;60m0\e[38;5;59m1\e[38;5;53m1\e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[38;5;52m1\e[38;5;52m0\e[38;5;59m0\e[38;5;52m0\e[38;5;52m0\e[38;5;53m0
-\e[38;5;59m1\e[38;5;103m1\e[38;5;146m0\e[38;5;146m1\e[0m \e[38;5;59m0\e[38;5;145m0\e[38;5;59m0\e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[38;5;52m0\e[38;5;53m0\e[38;5;53m0\e[38;5;53m1\e[38;5;53m0\e[38;5;53m0\e[38;5;52m1\e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[38;5;138m1\e[38;5;182m1\e[38;5;188m1\e[38;5;224m0\e[38;5;224m0\e[38;5;102m1\e[38;5;53m1\e[38;5;52m1\e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[38;5;52m1\e[0m \e[0m \e[38;5;52m1
-\e[38;5;146m1\e[38;5;103m0\e[38;5;103m0\e[38;5;153m0\e[38;5;103m0\e[0m \e[38;5;189m1\e[38;5;189m1\e[38;5;146m0\e[38;5;103m0\e[38;5;96m0\e[38;5;102m1\e[38;5;59m0\e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[38;5;52m1\e[38;5;52m1\e[38;5;53m1\e[38;5;53m0\e[38;5;53m1\e[38;5;52m1\e[38;5;52m0\e[0m \e[38;5;52m1\e[0m \e[0m \e[38;5;52m0\e[38;5;52m1\e[38;5;52m1\e[38;5;95m0\e[38;5;95m1\e[38;5;95m0\e[38;5;131m1\e[38;5;95m0\e[38;5;52m0\e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m
-\e[38;5;231m1\e[38;5;231m0\e[38;5;146m0\e[38;5;103m0\e[38;5;146m0\e[38;5;59m1\e[38;5;152m1\e[38;5;231m0\e[38;5;231m1\e[38;5;231m0\e[38;5;231m0\e[38;5;231m1\e[38;5;231m0\e[38;5;188m0\e[38;5;96m0\e[0m \e[0m \e[38;5;53m0\e[38;5;59m0\e[38;5;53m1\e[38;5;53m0\e[38;5;96m0\e[38;5;138m0\e[38;5;139m1\e[38;5;96m0\e[38;5;17m0\e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[38;5;52m0\e[38;5;52m1\e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m
-\e[38;5;231m1\e[38;5;231m0\e[38;5;231m0\e[38;5;189m0\e[38;5;146m0\e[38;5;60m0\e[38;5;59m0\e[38;5;231m1\e[38;5;231m1\e[38;5;231m0\e[38;5;231m0\e[38;5;231m1\e[38;5;231m1\e[38;5;231m0\e[38;5;231m1\e[38;5;231m0\e[38;5;145m0\e[38;5;96m0\e[38;5;96m0\e[38;5;96m0\e[38;5;95m0\e[38;5;139m0\e[38;5;139m0\e[38;5;96m1\e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m
-\e[38;5;231m0\e[38;5;231m1\e[38;5;231m0\e[38;5;231m1\e[38;5;231m0\e[38;5;231m0\e[38;5;60m0\e[38;5;110m0\e[38;5;231m1\e[38;5;231m1\e[38;5;231m1\e[38;5;231m0\e[38;5;231m0\e[38;5;231m1\e[38;5;231m1\e[38;5;231m0\e[38;5;231m0\e[38;5;231m0\e[38;5;145m0\e[38;5;96m1\e[38;5;139m1\e[38;5;225m0\e[38;5;145m1\e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m
-\e[0m\n\n"
-  printf "Hold on to your butts...\n"
+  printf "
+  _____________________
+< Hold on to your butts >
+  ---------------------
+        \   ^__^
+         \  (oo)\_______
+            (__)\       )\/\
+                ||----w |
+                ||     ||
+  \n\n"
 }
 
 printf "${GREEN}\n\nChecking your Environment...${PLAIN}\n"
@@ -183,7 +172,7 @@ printf "\n${GREEN}Ok.${PLAIN}\n"
 
 printf "\n\n${GREEN}Announcing the deployment to #dev...${PLAIN}\n"
 printf "_____________________________________________________ \n";
-curl -f --data "message=🚀%20${DISPLAY_USERNAME}%20is%20preparing%20a%20build%20for%20${TARGET_ENV}.&responseContext=slack&channel=dev&token=${ELLIPSIS_DEPLOY_TOKEN}" https://bot.ellipsis.ai/api/say || (printf "${RED}The deploy announcement failed. Please check the ELLIPSIS_DEPLOY_TOKEN environment variable.${PLAIN}" && exit 1)
+# announce_start
 printf "\n${GREEN}Ok.${PLAIN}\n"
 
 printf "\n\n${GREEN}Running eslint...${PLAIN}\n";
@@ -263,7 +252,7 @@ aws --profile $AWS_ELLIPSIS_PROFILE s3 sync $PUBLIC_ASSETS_DIR/public s3://$ASSE
 if [ $? -eq 0 ];then
    printf "${GREEN}Ok.${PLAIN}\n";
 else
-   printf "\n\n${RED}Error found!.\n";
+   printf "\n\n${RED}Error found!.${PLAIN}\n";
    announce_failure
    printf "Bye.\n"
 fi
@@ -276,7 +265,7 @@ aws --profile $AWS_ELLIPSIS_PROFILE s3 cp $BUNDLE_PATH s3://$EB_BUCKET/$S3_KEY
 if [ $? -eq 0 ];then
    printf "${GREEN}Ok.${PLAIN}\n";
 else
-  printf "\n\n${RED}Error found!.\n";
+  printf "\n\n${RED}Error found!.${PLAIN}\n";
   announce_failure
   printf "Bye.\n"
 fi
@@ -284,14 +273,14 @@ fi
 printf "\n\n${GREEN}Updating Beanstalk App Version...${PLAIN}\n";
 printf "_____________________________________________________ \n";
 aws --profile $AWS_ELLIPSIS_PROFILE elasticbeanstalk create-application-version \
---application-name "$APP_NAME" \
+--application-name "${APP_NAME}" \
 --version-label $VERSION_LABEL \
 --source-bundle S3Bucket=$EB_BUCKET,S3Key=$S3_KEY \
---process;
+--process
 if [ $? -eq 0 ];then
    printf "\n${GREEN}Ok.${PLAIN}\n"
 else
-  printf "\n\n${RED}Error found!.\n";
+  printf "\n\n${RED}Error found!.${PLAIN}\n";
   announce_failure
   printf "Bye.\n"
 fi
