@@ -1,35 +1,39 @@
 #!/bin/sh
 
-RED=`tput setaf 1`
-GREEN=`tput setaf 2`
-MAGENTA=`tput setaf 5`
+RED=`tput setaf 1`   # Use red for errors
+GREEN=`tput setaf 2` # Use green for success
+MAGENTA=`tput setaf 5` # Use magenta for warnings and notes
 BOLD=`tput bold`
 PLAIN=`tput sgr0`
 
 VERSION_LABEL=ellipsis-`git rev-parse --short HEAD`
 
-ASSETS_BUCKET=ellipsis-assets
-EB_BUCKET=elasticbeanstalk-us-east-1-170937251085
-APP_NAME="My First Elastic Beanstalk Application"
-TARGET_ENV="production"
-EMOJI=" 🐴 "
+# By default we target prod
+TARGET_ENV="prod"
 
 if [ "$1" = "stag01" ]; then
   TARGET_ENV="stag01"
-  STAG01_ACCOUNT_ID="458075145501"
-  EB_BUCKET="elasticbeanstalk-us-east-1-${STAG01_ACCOUNT_ID}"
-  ASSETS_BUCKET="assets-${STAG01_ACCOUNT_ID}"
-  APP_NAME="playapp"
-  AWS_ELLIPSIS_PROFILE="el-stag01-${STAG01_ACCOUNT_ID}"
-  EMOJI=" 🦑 "
 fi
 
-aws configure --profile $AWS_ELLIPSIS_PROFILE list > /dev/null
-if [ $? -gt 0 ]; then
-  printf "\nYou need to configure the AWS staging profile:\n\n"
-  printf "${GREEN}aws configure --profile ${AWS_ELLIPSIS_PROFILE}${PLAIN}\n\n"
-  exit 1
+if [ "${TARGET_ENV}" = "stag01" ]
+then
+  ACCOUNT_ID="458075145501"
+  ASSETS_BUCKET="assets-${ACCOUNT_ID}"
+  APP_NAME="playapp"
+  EMOJI=" 🦑 "
+elif [ "${TARGET_ENV}" = "prod" ]
+then
+  ACCOUNT_ID="170937251085"
+  ASSETS_BUCKET=ellipsis-assets
+  APP_NAME="My First Elastic Beanstalk Application"
+  EMOJI=" 🐴 "
 fi
+
+if [ -z "${AWS_ELLIPSIS_PROFILE}" ]
+then
+  AWS_ELLIPSIS_PROFILE="el-${TARGET_ENV}-deployer"
+fi
+EB_BUCKET="elasticbeanstalk-us-east-1-${ACCOUNT_ID}"
 
 printf "\n\n${EMOJI}${GREEN} - Getting ready to deploy to ${MAGENTA}${TARGET_ENV}${PLAIN} -${EMOJI}\n"
 printf "_____________________________________________________ \n";
@@ -50,16 +54,26 @@ else
   printf "Deploying...\n";
 fi
 
-printf "${GREEN}Checking your local branch...${PLAIN}\n"
+printf "${GREEN}\n\nChecking your AWS CLI settings...${PLAIN}\n"
+printf "_____________________________________________________ \n";
+aws configure --profile $AWS_ELLIPSIS_PROFILE list > /dev/null
+if [ $? -gt 0 ]; then
+  printf "\n${RED}You need to configure the AWS staging profile:\n\n"
+  printf "aws configure --profile ${AWS_ELLIPSIS_PROFILE}${PLAIN}\n\n"
+  exit 1
+fi
+printf "\n${GREEN}Ok.${PLAIN}\n"
+
+printf "${GREEN}\n\nChecking your local branch...${PLAIN}\n"
 printf "_____________________________________________________ \n";
 pushd `git rev-parse --show-toplevel` > /dev/null
 git diff-index --quiet HEAD --
 if [ $? -eq 1 ];then
-  printf "\n\n${MAGENTA}You have uncommitted changes in your working directory.\n"
+  printf "\n\n${RED}You have uncommitted changes in your working directory.\n"
   printf "Deal with them first!${PLAIN}\n\n";
   exit 1
 fi
-printf "\nOk.\n"
+printf "\n${GREEN}Ok.${PLAIN}\n"
 
 hold_on_to_your_butts() {
   printf "\e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[38;5;52m1\e[38;5;52m0\e[38;5;52m1\e[38;5;52m1\e[38;5;138m0\e[38;5;145m0\e[38;5;52m1\e[0m \e[0m \e[38;5;53m0\e[38;5;139m1\e[38;5;231m1\e[38;5;231m1\e[38;5;231m0\e[38;5;231m1\e[38;5;231m1\e[38;5;225m0\e[38;5;181m1\e[0m \e[0m \e[0m \e[0m \e[0m \e[0m \e[38;5;17m1\e[38;5;24m0\e[0m \e[0m \e[38;5;17m0\e[38;5;17m1\e[38;5;17m1\e[0m
@@ -93,43 +107,43 @@ hold_on_to_your_butts() {
   printf "Hold on to your butts...\n"
 }
 
-printf "${GREEN}Checking your Environment...${PLAIN}\n"
+printf "${GREEN}\n\nChecking your Environment...${PLAIN}\n"
 printf "_____________________________________________________ \n";
 if [ -z "$ELLIPSIS_DEPLOY_TOKEN" ];then
-  printf "${MAGENTA}You need to set the ELLIPSIS_DEPLOY_TOKEN environment variable.\n"
+  printf "${RED}You need to set the ELLIPSIS_DEPLOY_TOKEN environment variable.\n"
   printf "Visit https://bot.ellipsis.ai/list_api_tokens and add"
   printf "the deploy token to your environment.${PLAIN}\n\n"
   exit 1
 fi
 
 if [ ! -f node_modules/.bin/eslint ];then
-  printf "\n\n${MAGENTA}eslint is not installed.\n"
+  printf "\n\n${RED}eslint is not installed.\n"
   printf "Try running npm install${PLAIN}.\n\n";
   exit 1
 fi
 
 if [ ! -f node_modules/.bin/jest ];then
-  printf "\n\n${MAGENTA}jest is not installed.\n"
+  printf "\n\n${RED}jest is not installed.\n"
   printf "Try running npm install${PLAIN}.\n\n";
   exit 1
 fi
 
 type activator >/dev/null 2>&1 || {
-  printf "\n\n${MAGENTA}activator is not installed.\n"
+  printf "\n\n${RED}activator is not installed.\n"
   printf "Visit https://www.lightbend.com/activator/download"
   printf "to download it.${PLAIN}\n\n";
   exit 1
 }
 
 type aws >/dev/null 2>&1 || {
-  printf "\n\n${MAGENTA}You need to set up the aws CLI tools.\n"
+  printf "\n\n${RED}You need to set up the aws CLI tools.\n"
   printf "Try brew install awscli if you’re using brew,\n"
   printf "or go to https://aws.amazon.com/cli/.${PLAIN}\n\n";
   exit 1
 }
 
 if [ -z ${AWS_ELLIPSIS_PROFILE+x} ];then
-  printf "${MAGENTA}You need to set the AWS_ELLIPSIS_PROFILE"
+  printf "${RED}You need to set the AWS_ELLIPSIS_PROFILE"
   printf "env var with the profile to use for AWS.${PLAIN}\n"
   printf "
 1. If you haven’t already, run ${GREEN}aws configure --profile ellipsis${PLAIN} to set up a
@@ -149,21 +163,20 @@ if [ -z ${AWS_ELLIPSIS_PROFILE+x} ];then
 3. Open a new terminal or run ${GREEN}source ~/.bashrc${PLAIN}, then try again.\n";
 exit 1
 fi
-
-printf "\nOk.\n"
+printf "\n${GREEN}Ok.${PLAIN}\n"
 
 printf "\n\n${GREEN}Announcing the deployment to #dev...${PLAIN}\n"
 printf "_____________________________________________________ \n";
 GIT_USERNAME=`git config user.name`
 DISPLAY_USERNAME=${GIT_USERNAME:-$USER}
 curl -f --data "message=🚀%20${DISPLAY_USERNAME}%20is%20preparing%20a%20build%20for%20${TARGET_ENV}.&responseContext=slack&channel=dev&token=${ELLIPSIS_DEPLOY_TOKEN}" https://bot.ellipsis.ai/api/say || (printf "${GREEN}The deploy announcement failed. Please check the ELLIPSIS_DEPLOY_TOKEN environment variable.${PLAIN}" && exit 1)
-printf "\nOk.\n"
+printf "\n${GREEN}Ok.${PLAIN}\n"
 
 printf "\n\n${GREEN}Running eslint...${PLAIN}\n";
 printf "_____________________________________________________ \n";
 npm run lint
 if [ $? -eq 1 ];then
-  read -p "eslint failed. You should probably stop. Do you want to continue anyway? [y/N]: " -n 1 -r
+  read -p "${MAGENTA}eslint failed. You should probably stop. Do you want to continue anyway? [y/N]: ${PLAIN}" -n 1 -r
   echo
   if [[ ! $REPLY =~ ^[Yy]$ ]];then
     printf "See ya later.\n";
@@ -172,14 +185,14 @@ if [ $? -eq 1 ];then
     printf "Okay, continuing anyway...\n";
   fi
 fi
-printf "\nOk.\n";
+printf "\n${GREEN}Ok.${PLAIN}\n"
 
 printf "\n\n${GREEN}Running jest...${PLAIN}\n";
 printf "_____________________________________________________ \n";
 npm test
 if [ $? -eq 1 ];then
-  printf "\n\n${BOLD}JavaScript tests failed.${PLAIN} You should probably stop.\n"
-  read -p "Do you want to continue anyway? [y/N]: " -n 1 -r
+  printf "\n\n${MAGENTA}JavaScript tests failed. You should probably stop.\n"
+  read -p "Do you want to continue anyway? [y/N]: ${PLAIN}" -n 1 -r
   printf "\n"
   if [[ ! $REPLY =~ ^[Yy]$ ]];then
     printf "You are wise.\n"
@@ -188,7 +201,7 @@ if [ $? -eq 1 ];then
     hold_on_to_your_butts
   fi
 fi
-printf "\nOk.\n";
+printf "\n${GREEN}Ok.${PLAIN}\n"
 
 printf "\n\n${GREEN}Running activator test...${PLAIN}\n";
 printf "_____________________________________________________ \n";
@@ -204,7 +217,7 @@ if [ $? -eq 1 ];then
     hold_on_to_your_butts
   fi
 fi
-printf "\nOk.\n";
+printf "\n${GREEN}Ok.${PLAIN}\n"
 
 printf "\n\n${GREEN}Packaging the build...${PLAIN}\n";
 printf "_____________________________________________________ \n";
@@ -219,7 +232,7 @@ BUNDLE=$VERSION_LABEL.zip
 BUNDLE_PATH=~/Desktop/$BUNDLE
 zip -qq -r $BUNDLE_PATH .
 popd > /dev/null
-printf "\nOk.\n"
+printf "\n${GREEN}Ok.${PLAIN}\n"
 
 printf "\n\n${GREEN}Syncing assets with S3...${PLAIN}\n";
 printf "_____________________________________________________ \n";
@@ -228,13 +241,24 @@ mkdir -p $PUBLIC_ASSETS_DIR
 rm -rf $PUBLIC_ASSETS_DIR/*
 unzip -qq target/docker/stage/opt/docker/lib/ellipsis.ellipsis-1.0-SNAPSHOT-assets.jar -d $PUBLIC_ASSETS_DIR/
 aws --profile $AWS_ELLIPSIS_PROFILE s3 sync $PUBLIC_ASSETS_DIR/public s3://$ASSETS_BUCKET/ --acl=public-read --quiet
-printf "Ok.\n";
+if [ $? -eq 0 ];then
+   printf "${GREEN}Ok.${PLAIN}\n";
+else
+   printf "\n\n${RED}Error found!.\n";
+   printf "Exiting...${PLAIN}\n\n";
+fi
+
 
 printf "\n\n${GREEN}Uploading ${BUNDLE} to S3...${PLAIN}\n";
 printf "_____________________________________________________ \n";
 S3_KEY=`date +'%Y-%m-%d'`-$BUNDLE
 aws --profile $AWS_ELLIPSIS_PROFILE s3 cp $BUNDLE_PATH s3://$EB_BUCKET/$S3_KEY
-printf "Ok.\n";
+if [ $? -eq 0 ];then
+   printf "${GREEN}Ok.${PLAIN}\n";
+else
+   printf "\n\n${RED}Error found!.\n";
+   printf "Exiting...${PLAIN}\n\n";
+fi
 
 printf "\n\n${GREEN}Updating Beanstalk App Version...${PLAIN}\n";
 printf "_____________________________________________________ \n";
@@ -243,7 +267,12 @@ aws --profile $AWS_ELLIPSIS_PROFILE elasticbeanstalk create-application-version 
 --version-label $VERSION_LABEL \
 --source-bundle S3Bucket=$EB_BUCKET,S3Key=$S3_KEY \
 --process;
-printf "\nOk.\n";
+if [ $? -eq 0 ];then
+   printf "\n${GREEN}Ok.${PLAIN}\n"
+else
+   printf "\n\n${RED}Error found!.\n";
+   printf "Exiting...${PLAIN}\n\n";
+fi
 
 printf "\n\n${GREEN}Sending notifications...${PLAIN}\n";
 printf "_____________________________________________________ \n";
