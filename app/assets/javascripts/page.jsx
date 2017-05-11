@@ -13,60 +13,69 @@
       }
       this.timerId = window.setTimeout(function() {
         document.body.style.paddingTop = this.header.offsetHeight + 'px';
-      }, 50);
+      }.bind(this), 50);
     }
   }
 
   class MenuHandler {
     constructor() {
-
+      this.userMenuButton = document.getElementById('main-user-menu-button');
+      this.userMenu = document.getElementById('main-user-menu');
+      this.navBar = document.getElementById('main-header');
+      this.userMenuButton.addEventListener('click', this.onUserMenuClick.bind(this));
+      document.addEventListener('click', this.onDocumentClick.bind(this));
     }
 
-  }
-
-    var userMenuButton = document.getElementById('main-user-menu-button');
-    var userMenu = document.getElementById('main-user-menu');
-    var navBar = document.getElementById('main-header');
-    var addClass = function(el, className) {
+    addClass(el, className) {
       var classes = el.className.replace(/\s+/g, ' ').split(' ');
-      if (!classes.find(function(cl) { return cl.trim() === className; })) {
+      if (!classes.find(function(cl) {
+          return cl.trim() === className;
+        })) {
         classes.push(className);
         el.className = classes.join(' ');
       }
-    };
-    var removeClass = function(el, className) {
+    }
+
+    removeClass(el, className) {
       var classes = el.className.replace(/\s+/g, ' ').split(' ');
-      var newClasses = classes.filter(function(cl) { return cl !== className; });
+      var newClasses = classes.filter(function(cl) {
+        return cl !== className;
+      });
       el.className = newClasses.join(' ');
-    };
-    userMenuButton.addEventListener('click', function(event) {
-      var oldStyle = userMenu.style.display;
-      userMenu.style.display = oldStyle === 'none' ? '' : 'none';
+    }
+
+    onUserMenuClick(event) {
+      var oldStyle = this.userMenu.style.display;
+      this.userMenu.style.display = oldStyle === 'none' ? '' : 'none';
       if (oldStyle === 'none') {
-        addClass(userMenuButton, 'button-dropdown-trigger-menu-open');
-        removeClass(navBar, 'position-z-behind-scrim');
-        addClass(navBar, 'position-z-front');
+        this.addClass(this.userMenuButton, 'button-dropdown-trigger-menu-open');
+        this.removeClass(this.navBar, 'position-z-behind-scrim');
+        this.addClass(this.navBar, 'position-z-front');
       } else {
-        removeClass(userMenuButton, 'button-dropdown-trigger-menu-open');
-        removeClass(navBar, 'position-z-front');
-        addClass(navBar, 'position-z-behind-scrim');
+        this.removeClass(this.userMenuButton, 'button-dropdown-trigger-menu-open');
+        this.removeClass(this.navBar, 'position-z-front');
+        this.addClass(this.navBar, 'position-z-behind-scrim');
       }
       event.stopPropagation();
       event.preventDefault();
-    });
-    document.addEventListener('click', function() {
-      if (userMenu.style.display !== 'none') {
-        userMenu.style.display = 'none';
-        removeClass(userMenuButton, 'button-dropdown-trigger-menu-open');
-        removeClass(navBar, 'position-z-front');
-        addClass(navBar, 'position-z-almost-front');
+    }
+
+    onDocumentClick() {
+      if (this.userMenu.style.display !== 'none') {
+        this.userMenu.style.display = 'none';
+        this.removeClass(this.userMenuButton, 'button-dropdown-trigger-menu-open');
+        this.removeClass(this.navBar, 'position-z-front');
+        this.addClass(this.navBar, 'position-z-behind-scrim');
       }
-    });
+    }
+  }
 
   /* Enables touchscreen active pseudo-class support */
   document.body.addEventListener('touchstart', function() { return null; });
 
   const hh = new HeaderHandler();
   hh.adjustPadding();
+
+  new MenuHandler();
 
 })();
