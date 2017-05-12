@@ -6,6 +6,7 @@ import javax.inject.Inject
 import com.google.inject.Provider
 import drivers.SlickPostgresDriver.api._
 import json.LibraryVersionData
+import models.IDs
 import models.accounts.user.User
 import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
 import services.DataService
@@ -18,13 +19,15 @@ class LibraryVersionsTable(tag: Tag) extends Table[LibraryVersion](tag, "library
 
   def id = column[String]("id", O.PrimaryKey)
   def libraryId = column[String]("library_id")
+  def maybeExportId = column[Option[String]]("export_id")
   def name = column[String]("name")
   def maybeDescription = column[Option[String]]("description")
   def functionBody = column[String]("function_body")
   def behaviorGroupVersionId = column[String]("group_version_id")
   def createdAt = column[OffsetDateTime]("created_at")
 
-  def * = (id, libraryId, name, maybeDescription, functionBody, behaviorGroupVersionId, createdAt) <> ((LibraryVersion.apply _).tupled, LibraryVersion.unapply _)
+  def * = (id, libraryId, maybeExportId, name, maybeDescription, functionBody, behaviorGroupVersionId, createdAt) <>
+    ((LibraryVersion.apply _).tupled, LibraryVersion.unapply _)
 }
 
 class LibraryVersionServiceImpl @Inject() (
@@ -72,8 +75,9 @@ class LibraryVersionServiceImpl @Inject() (
 
   def createForAction(data: LibraryVersionData, behaviorGroupVersion: BehaviorGroupVersion): DBIO[LibraryVersion] = {
     val libraryVersion = LibraryVersion(
-      data.id,
-      data.libraryId,
+      data.id.getOrElse(IDs.next),
+      data.libraryId.getOrElse(IDs.next),
+      data.exportId,
       data.name,
       data.description,
       data.functionBody,
@@ -85,7 +89,7 @@ class LibraryVersionServiceImpl @Inject() (
 
   def ensureForAction(data: LibraryVersionData, behaviorGroupVersion: BehaviorGroupVersion): DBIO[LibraryVersion] = {
     for {
-      maybeExisting <- findAction(data.id)
+      maybeExisting <- data.id.map(findAction).getOrElse(DBIO.successful(None))
       libraryVersion <- maybeExisting.map { existing =>
         val updated = existing.copy(
           name = data.name,

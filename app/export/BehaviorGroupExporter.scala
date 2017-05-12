@@ -3,7 +3,7 @@ package export
 import java.io.{File, PrintWriter}
 
 import json.Formatting._
-import json.{BehaviorGroupConfig, BehaviorGroupData, BehaviorVersionData}
+import json.{BehaviorGroupConfig, BehaviorGroupData, BehaviorVersionData, LibraryVersionData}
 import models.IDs
 import models.accounts.user.User
 import play.api.libs.json.Json
@@ -67,6 +67,24 @@ case class BehaviorGroupExporter(
     writeFileFor(groupPath, "action_inputs.json", Json.prettyPrint(Json.toJson(forExport)))
   }
 
+  def writeLibraries(): Unit = {
+    val fullPath = s"$groupPath/lib"
+    if (groupData.libraryVersions.nonEmpty) {
+      createDirectoryFor(fullPath)
+    }
+    groupData.libraryVersions.foreach { libraryVersion =>
+      libraryVersion.maybeExportName.foreach { exportName =>
+        val forExport = groupData.libraryVersions.map(_.copyForExport(this)).sortBy(_.exportId)
+        writeFileFor(fullPath, exportName, libraryVersion.exportFileContent)
+      }
+    }
+  }
+
+  def fullPathFor(libraryVersionData: LibraryVersionData): String = {
+    val safeDirName = SafeFileName.forName(libraryVersionData.maybeExportName.getOrElse(IDs.next))
+    s"$groupPath/lib/$safeDirName"
+  }
+
   def fullPathFor(behaviorVersionData: BehaviorVersionData): String = {
     val behaviorType = if (behaviorVersionData.isDataType) { "data_types" } else { "actions" }
     val safeDirName = SafeFileName.forName(behaviorVersionData.maybeExportName.getOrElse(IDs.next))
@@ -119,6 +137,7 @@ case class BehaviorGroupExporter(
     }
     writeDataTypes()
     writeActions()
+    writeLibraries()
   }
 
   def createDirectory(fullPath: String): Unit = {

@@ -40,12 +40,12 @@ define(function(require) {
       return this.props.actionBehaviors.concat(this.props.dataTypeBehaviors);
     },
 
-    getSelectedBehavior: function() {
-      return this.getAllBehaviors().find(ea => ea.behaviorId === this.props.selectedId);
+    getEditables: function() {
+      return this.getAllBehaviors().concat(this.props.libraries);
     },
 
-    getSelectedLibrary: function() {
-      return this.props.libraries.find(ea => ea.libraryId === this.props.selectedId);
+    getSelected: function() {
+      return this.getEditables().find(ea => ea.getPersistentId() === this.props.selectedId);
     },
 
     render: function() {
@@ -62,12 +62,12 @@ define(function(require) {
               <button type="button"
                 className={
                   "button-block pvxs phxl mobile-phl width width-full " +
-                  (this.getSelectedBehavior() ? "" : "bg-blue border-blue-medium type-white")
+                  (this.getSelected() ? "" : "bg-blue border-blue-medium type-white")
                 }
                 onClick={this.onEditSkillDetails}
-                disabled={!this.getSelectedBehavior()}
+                disabled={!this.getSelected()}
               >
-                <span className={`type-s ${this.getSelectedBehavior() ? "link" : "type-white"}`}>Skill details</span>
+                <span className={`type-s ${this.getSelected() ? "link" : "type-white"}`}>Skill details</span>
               </button>
             </div>
           </div>
@@ -78,7 +78,7 @@ define(function(require) {
                 ref="actionSwitcher"
                 heading="Actions"
                 editables={this.props.actionBehaviors}
-                selectedBehavior={this.getSelectedBehavior()}
+                selectedId={this.props.selectedId}
                 onAddNew={this.props.addNewAction}
                 addNewLabel="Add new action"
                 emptyMessage="Add actions to provide a response using custom data types for input."
@@ -90,7 +90,7 @@ define(function(require) {
                 ref="dataTypeSwitcher"
                 heading="Data types"
                 editables={this.props.dataTypeBehaviors}
-                selectedBehavior={this.getSelectedBehavior()}
+                selectedId={this.props.selectedId}
                 onAddNew={this.props.addNewDataType}
                 addNewLabel="Add new data type"
                 emptyMessage="Custom data types allow you to limit user input to a set of choices, backed by custom data."
@@ -102,7 +102,7 @@ define(function(require) {
                 ref="librarySwitcher"
                 heading="Libraries"
                 editables={this.props.libraries}
-                selectedBehavior={this.getSelectedLibrary()}
+                selectedId={this.props.selectedId}
                 onAddNew={this.props.addNewLibrary}
                 addNewLabel="Add new library"
                 emptyMessage="Libraries are shareable bits of code that you can require() from elsewhere in the skill"

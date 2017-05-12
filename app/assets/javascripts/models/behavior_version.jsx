@@ -24,7 +24,6 @@ define(function(require) {
         config: { value: initialProps.config, enumerable: true },
         knownEnvVarsUsed: { value: initialProps.knownEnvVarsUsed, enumerable: true },
         createdAt: { value: initialProps.createdAt, enumerable: true },
-        exportId: { value: initialProps.exportId, enumerable: true },
         shouldRevealCodeEditor: { value: initialProps.shouldRevealCodeEditor, enumerable: true }
       });
     }

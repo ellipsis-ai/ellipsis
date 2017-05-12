@@ -21,7 +21,7 @@ define(function(require) {
     },
 
     getSelected: function() {
-      return this.props.editables.find(ea => this.props.selectedId && ((ea.libraryId === this.props.selectedId) || (ea.behaviorId === this.props.selectedId)) );
+      return this.props.editables.find(ea => this.props.selectedId && ea.getPersistentId() === this.props.selectedId );
     },
 
     getEditableList: function() {
@@ -29,7 +29,7 @@ define(function(require) {
     },
 
     isSelected: function(editable) {
-      return !!this.getSelected() && editable.id === this.getSelected().id;
+      return !!this.getSelected() && editable.getPersistentId() === this.getSelected().getPersistentId();
     },
 
     renderNameFor: function(editable) {

@@ -6,6 +6,7 @@ import java.util.zip.{ZipEntry, ZipInputStream}
 
 import json.Formatting._
 import json._
+import models.IDs
 import models.accounts.user.User
 import models.behaviors.behaviorgroup.BehaviorGroup
 import models.team.Team
@@ -43,6 +44,7 @@ case class BehaviorGroupZipImporter(
     val versionStringMaps = scala.collection.mutable.Map[String, scala.collection.mutable.Map[String, String]]()
 
     val versionFileRegex = """^(actions|data_types)/([^/]+)/(.+)""".r
+    val libFileRegex = """^lib/(.+)""".r
     val readmeRegex = """^README$$""".r
     val configRegex = """^config\.json$$""".r
     val actionInputsRegex = """^action_inputs\.json$$""".r
@@ -56,6 +58,7 @@ case class BehaviorGroupZipImporter(
     var requiredSimpleTokenApiData: Seq[RequiredSimpleTokenApiData] = Seq()
     var actionInputs: Seq[InputData] = Seq()
     var dataTypeInputs: Seq[InputData] = Seq()
+    var libraries: Seq[LibraryVersionData] = Seq()
 
     while (nextEntry != null) {
       val entryName = nextEntry.getName
@@ -68,6 +71,18 @@ case class BehaviorGroupZipImporter(
           newMap
         })
         map.put(filename, readDataFrom(zipInputStream))
+      }
+      libFileRegex.findFirstMatchIn(entryName).foreach { firstMatch =>
+        val filename = firstMatch.subgroups(1)
+        val code = readDataFrom(zipInputStream)
+        libraries ++= Seq(LibraryVersionData(
+          Some(IDs.next),
+          None, // TODO: get this
+          None, // TODO: this too
+          filename,
+          None,
+          code
+        ))
       }
       readmeRegex.findFirstMatchIn(entryName).foreach { firstMatch =>
         maybeGroupDescription = Some(readDataFrom(zipInputStream))
@@ -136,7 +151,7 @@ case class BehaviorGroupZipImporter(
           actionInputs,
           dataTypeInputs,
           versionsData,
-          Seq(), // TODO: for realz
+          libraries,
           requiredOAuth2ApiConfigData,
           requiredSimpleTokenApiData,
           githubUrl = None,

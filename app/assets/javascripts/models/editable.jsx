@@ -17,6 +17,7 @@ define(function(require) {
         name: { value: initialProps.name, enumerable: true },
         description: { value: initialProps.description, enumerable: true },
         functionBody: { value: initialProps.functionBody, enumerable: true },
+        exportId: { value: initialProps.exportId, enumerable: true },
         editorScrollPosition: { value: initialProps.editorScrollPosition, enumerable: true }
       });
     }

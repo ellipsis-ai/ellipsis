@@ -5,6 +5,7 @@ import java.time.OffsetDateTime
 case class LibraryVersion(
                             id: String,
                             libraryId: String,
+                            maybeExportId: Option[String],
                             name: String,
                             maybeDescription: Option[String],
                             functionBody: String,
