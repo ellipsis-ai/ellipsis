@@ -1126,10 +1126,10 @@ const BehaviorEditor = React.createClass({
     return !currentMatchesInitial && !previewingVersions;
   },
 
-  behaviorIsModified: function(currentBehavior) {
-    var originalBehavior = this.props.group.behaviorVersions.find((ea) => ea.behaviorId === currentBehavior.behaviorId);
+  editableIsModified: function(current) {
+    var original = this.props.group.getEditables().find((ea) => ea.getPersistentId() === current.getPersistentId());
     var previewingVersions = this.props.activePanelName === 'versionHistory';
-    return !previewingVersions && !(originalBehavior && currentBehavior.isIdenticalToVersion(originalBehavior));
+    return !previewingVersions && !(original && current.isIdenticalToVersion(original));
   },
 
   isSaving: function() {
@@ -1633,7 +1633,7 @@ const BehaviorEditor = React.createClass({
         <ChangeSummary
           currentGroupVersion={this.getBehaviorGroup()}
           originalGroupVersion={this.props.group}
-          isBehaviorModified={this.behaviorIsModified}
+          isModified={this.editableIsModified}
         />
       );
     } else {
@@ -1797,7 +1797,7 @@ const BehaviorEditor = React.createClass({
               addNewAction={this.addNewAction}
               addNewDataType={this.addNewDataType}
               addNewLibrary={this.addNewLibrary}
-              isModified={this.behaviorIsModified}
+              isModified={this.editableIsModified}
             />
           </Sticky>
         </Collapsible>

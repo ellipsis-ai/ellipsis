@@ -8,7 +8,7 @@ define(function(require) {
     propTypes: {
       currentGroupVersion: React.PropTypes.instanceOf(BehaviorGroup).isRequired,
       originalGroupVersion: React.PropTypes.instanceOf(BehaviorGroup).isRequired,
-      isBehaviorModified: React.PropTypes.func.isRequired
+      isModified: React.PropTypes.func.isRequired
     },
 
     getResultFor: function(actionCount, dataTypeCount, adjective) {
@@ -45,8 +45,8 @@ define(function(require) {
       const originalActions = this.props.originalGroupVersion.getActions();
       const originalDataTypes = this.props.originalGroupVersion.getDataTypes();
 
-      const actionsModified = currentActions.filter((ea) => this.props.isBehaviorModified(ea) && !ea.isNewBehavior).length;
-      const dataTypesModified = currentDataTypes.filter((ea) => this.props.isBehaviorModified(ea) && !ea.isNewBehavior).length;
+      const actionsModified = currentActions.filter((ea) => this.props.isModified(ea) && !ea.isNewBehavior).length;
+      const dataTypesModified = currentDataTypes.filter((ea) => this.props.isModified(ea) && !ea.isNewBehavior).length;
 
       const currentActionIds = currentActions.map((ea) => ea.id);
       const originalActionIds = originalActions.map((ea) => ea.id);
