@@ -99,9 +99,8 @@ announce_failure() {
 }
 
 announce_completed() {
-  ")
   curl -f https://bot.ellipsis.ai/api/say \
-      --data-urlencode "message="🚀 Matteo has just finished building **${VERSION_LABEL}** and it is ready for deployment on ${TARGET_ENV}" \
+      --data-urlencode "message=🚀 Matteo has just finished building **${VERSION_LABEL}** and it is ready for deployment on ${TARGET_ENV}" \
       --data-urlencode "responseContext=slack" \
       --data-urlencode "channel=dev" \
       --data-urlencode "token=${ELLIPSIS_DEPLOY_TOKEN}"
