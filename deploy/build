@@ -52,7 +52,7 @@ read -p "${BOLD}Do you want to continue? [y/N]${PLAIN}: " -n 1 -r
 printf "\n";
 if [[ ! $REPLY =~ ^[Yy]$ ]]
 then
-  printf "Good Bye.\n";
+  printf "Goodbye.\n";
   exit 1
 else
   printf "Deploying...\n";
@@ -84,7 +84,7 @@ printf "\n${GREEN}Ok.${PLAIN}\n"
 
 announce_start() {
   curl -f https://bot.ellipsis.ai/api/say \
-      --data-urlencode "message=🚀 ${DISPLAY_USERNAME} is preparing a build for ${TARGET_ENV}." \
+      --data-urlencode "message=🛠 ${DISPLAY_USERNAME} is preparing a build for ${TARGET_ENV}." \
       --data-urlencode "responseContext=slack" \
       --data-urlencode "channel=dev" \
       --data-urlencode "token=${ELLIPSIS_DEPLOY_TOKEN}"
@@ -92,7 +92,7 @@ announce_start() {
 
 announce_failure() {
   curl -f https://bot.ellipsis.ai/api/say \
-      --data-urlencode "message=💥${DISPLAY_USERNAME} failed to prepare the build for ${TARGET_ENV}" \
+      --data-urlencode "message=💥 ${DISPLAY_USERNAME} failed to prepare the build for ${TARGET_ENV}" \
       --data-urlencode "responseContext=slack" \
       --data-urlencode "channel=dev" \
       --data-urlencode "token=${ELLIPSIS_DEPLOY_TOKEN}"
@@ -100,7 +100,7 @@ announce_failure() {
 
 announce_completed() {
   curl -f https://bot.ellipsis.ai/api/say \
-      --data-urlencode "message=🚀 Matteo has just finished building **${VERSION_LABEL}** and it is ready for deployment on ${TARGET_ENV}" \
+      --data-urlencode "message=🚀 ${DISPLAY_USERNAME} has just finished building **${VERSION_LABEL}** and it’s ready for deployment on ${TARGET_ENV}" \
       --data-urlencode "responseContext=slack" \
       --data-urlencode "channel=dev" \
       --data-urlencode "token=${ELLIPSIS_DEPLOY_TOKEN}"
@@ -272,11 +272,12 @@ unzip -qq target/docker/stage/opt/docker/lib/ellipsis.ellipsis-1.0-SNAPSHOT-asse
 aws --profile $AWS_ELLIPSIS_PROFILE s3 sync $PUBLIC_ASSETS_DIR/public s3://$ASSETS_BUCKET/ --acl=public-read --quiet
 if [ $? -eq 0 ]
 then
-   printf "${GREEN}Ok.${PLAIN}\n";
+  printf "${GREEN}Ok.${PLAIN}\n";
 else
-   printf "\n\n${RED}Error found!.${PLAIN}\n";
-   announce_failure
-   printf "Bye.\n"
+  printf "\n\n${RED}Error found!.${PLAIN}\n";
+  announce_failure
+  printf "Bye.\n"
+  exit 1
 fi
 
 
@@ -286,11 +287,12 @@ S3_KEY=`date +'%Y-%m-%d'`-$BUNDLE
 aws --profile $AWS_ELLIPSIS_PROFILE s3 cp $BUNDLE_PATH s3://$EB_BUCKET/$S3_KEY
 if [ $? -eq 0 ]
 then
-   printf "${GREEN}Ok.${PLAIN}\n";
+  printf "${GREEN}Ok.${PLAIN}\n";
 else
   printf "\n\n${RED}Error found!.${PLAIN}\n";
   announce_failure
   printf "Bye.\n"
+  exit 1
 fi
 
 printf "\n\n${GREEN}Updating Beanstalk App Version...${PLAIN}\n";
@@ -307,10 +309,11 @@ else
   printf "\n\n${RED}Error found!.${PLAIN}\n";
   announce_failure
   printf "Bye.\n"
+  exit 1
 fi
 
 printf "\n\n${GREEN}Sending notifications...${PLAIN}\n";
 printf "_____________________________________________________ \n";
 osascript -e "display notification \"The build script has ended.\" with title \"Build $VERSION_LABEL\" sound name \"Sosumi\""
 announce_completed
-printf "\n\nThe End\n\n";
+printf "\n\n\n\n          ${BOLD}F   I   N${PLAIN}          \n\n\n\n";
