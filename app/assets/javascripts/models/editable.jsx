@@ -15,6 +15,7 @@ define(function(require) {
         groupId: { value: initialProps.groupId, enumerable: true },
         teamId: { value: initialProps.teamId, enumerable: true },
         name: { value: initialProps.name, enumerable: true },
+        description: { value: initialProps.description, enumerable: true },
         functionBody: { value: initialProps.functionBody, enumerable: true },
         editorScrollPosition: { value: initialProps.editorScrollPosition, enumerable: true }
       });
@@ -32,9 +33,14 @@ define(function(require) {
       return this.name || "";
     }
 
+    getDescription() {
+      return this.description || "";
+    }
+
     includesText(queryString) {
       var lowercase = queryString.toLowerCase().trim();
-      return this.getName().toLowerCase().includes(lowercase);
+      return this.getName().toLowerCase().includes(lowercase) ||
+        this.getDescription().toLowerCase().includes(lowercase);
     }
 
     // Used by JSON.stringify for submitting data to the server

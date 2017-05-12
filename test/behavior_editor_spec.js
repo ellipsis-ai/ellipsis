@@ -81,18 +81,18 @@ describe('BehaviorEditor', () => {
     ).refs.component;
   }
 
-  describe('getBehaviorFunctionBody', () => {
+  describe('getFunctionBody', () => {
     it('returns the defined function', () => {
       firstBehavior.functionBody = 'return;';
       let editor = createEditor(editorConfig);
-      expect(editor.getBehaviorFunctionBody()).toEqual('return;');
+      expect(editor.getFunctionBody()).toEqual('return;');
     });
 
     it('returns a string even when no function is defined', () => {
       delete firstBehavior.functionBody;
       firstBehavior.shouldRevealCodeEditor = false;
       let editor = createEditor(editorConfig);
-      expect(editor.getBehaviorFunctionBody()).toEqual("");
+      expect(editor.getFunctionBody()).toEqual("");
     });
   });
 

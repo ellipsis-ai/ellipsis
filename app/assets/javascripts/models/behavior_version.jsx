@@ -18,7 +18,6 @@ define(function(require) {
       Object.defineProperties(this, {
         behaviorId: { value: initialProps.behaviorId, enumerable: true },
         isNewBehavior: { value: initialProps.isNewBehavior, enumerable: true },
-        description: { value: initialProps.description, enumerable: true },
         responseTemplate: { value: initialProps.responseTemplate, enumerable: true },
         inputIds: { value: initialProps.inputIds, enumerable: true },
         triggers: { value: initialProps.triggers, enumerable: true },
@@ -54,10 +53,6 @@ define(function(require) {
       return this.config.isDataType;
     }
 
-    getDescription() {
-      return this.description || "";
-    }
-
     getTriggers() {
       return this.triggers || [];
     }
@@ -83,8 +78,7 @@ define(function(require) {
 
     includesText(queryString) {
       var lowercase = queryString.toLowerCase().trim();
-      return this.getName().toLowerCase().includes(lowercase) ||
-          this.getDescription().toLowerCase().includes(lowercase) ||
+      return super.includesText(queryString) ||
           this.getTriggers().some((trigger) => (
             trigger.getText().toLowerCase().includes(lowercase)
           ));

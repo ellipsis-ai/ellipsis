@@ -19,11 +19,12 @@ class LibraryVersionsTable(tag: Tag) extends Table[LibraryVersion](tag, "library
   def id = column[String]("id", O.PrimaryKey)
   def libraryId = column[String]("library_id")
   def name = column[String]("name")
+  def maybeDescription = column[Option[String]]("description")
   def functionBody = column[String]("function_body")
   def behaviorGroupVersionId = column[String]("group_version_id")
   def createdAt = column[OffsetDateTime]("created_at")
 
-  def * = (id, libraryId, name, functionBody, behaviorGroupVersionId, createdAt) <> ((LibraryVersion.apply _).tupled, LibraryVersion.unapply _)
+  def * = (id, libraryId, name, maybeDescription, functionBody, behaviorGroupVersionId, createdAt) <> ((LibraryVersion.apply _).tupled, LibraryVersion.unapply _)
 }
 
 class LibraryVersionServiceImpl @Inject() (
@@ -74,6 +75,7 @@ class LibraryVersionServiceImpl @Inject() (
       data.id,
       data.libraryId,
       data.name,
+      data.description,
       data.functionBody,
       behaviorGroupVersion.id,
       OffsetDateTime.now
@@ -87,6 +89,7 @@ class LibraryVersionServiceImpl @Inject() (
       libraryVersion <- maybeExisting.map { existing =>
         val updated = existing.copy(
           name = data.name,
+          maybeDescription = data.description,
           behaviorGroupVersionId = behaviorGroupVersion.id
         )
         uncompiledFindQuery(existing.id).update(updated).map { _ => updated }

@@ -24,6 +24,7 @@ var React = require('react'),
   Input = require('../models/input'),
   NotificationData = require('../models/notification_data'),
   FormInput = require('../form/input'),
+  LibraryCodeEditorHelp = require('./library_code_editor_help'),
   LibraryVersion = require('../models/library_version'),
   ModalScrim = require('../shared_ui/modal_scrim'),
   Notifications = require('../notifications/notifications'),
@@ -153,11 +154,11 @@ const BehaviorEditor = React.createClass({
     return this.getEditableProp('name') || "";
   },
 
-  getBehaviorDescription: function() {
+  getEditableDescription: function() {
     return this.getEditableProp('description') || "";
   },
 
-  getBehaviorFunctionBody: function() {
+  getFunctionBody: function() {
     return this.getEditableProp('functionBody') || "";
   },
 
@@ -197,7 +198,7 @@ const BehaviorEditor = React.createClass({
     }
   },
 
-  getOriginalSelectedBehavior: function() {
+  getOriginalSelected: function() {
     return this.getSelectedFor(this.props.group, this.getSelectedId());
   },
 
@@ -1115,9 +1116,14 @@ const BehaviorEditor = React.createClass({
   },
 
   isFinishedBehavior: function() {
-    var originalSelectedBehavior = this.getOriginalSelectedBehavior();
+    var originalSelectedBehavior = this.getOriginalSelected();
     return !!(originalSelectedBehavior && !originalSelectedBehavior.isNewBehavior &&
       (originalSelectedBehavior.functionBody || originalSelectedBehavior.responseTemplate.text));
+  },
+
+  isFinishedLibraryVersion: function() {
+    var originalSelected = this.getOriginalSelected();
+    return !!(originalSelected && !originalSelected.isNewBehavior && originalSelected.functionBody);
   },
 
   isModified: function() {
@@ -1380,10 +1386,10 @@ const BehaviorEditor = React.createClass({
         apiSelector={this.renderAPISelector()}
 
         inputs={this.getInputs()}
-        systemParams={this.getSystemParams()}
+        systemParams={props.systemParams || this.getSystemParams()}
         apiApplications={this.getApiApplications()}
 
-        functionBody={this.getBehaviorFunctionBody()}
+        functionBody={this.getFunctionBody()}
         onChangeFunctionBody={this.updateCode}
         onCursorChange={this.ensureCursorVisible}
         useLineWrapping={this.state.codeEditorUseLineWrapping}
@@ -1849,7 +1855,7 @@ const BehaviorEditor = React.createClass({
                       className="form-input-borderless form-input-m mbneg1"
                       placeholder="Action description (optional)"
                       onChange={this.updateDescription}
-                      value={this.getBehaviorDescription()}
+                      value={this.getEditableDescription()}
                     />
                   </div>
                 </div>
@@ -1926,7 +1932,7 @@ const BehaviorEditor = React.createClass({
                     codeEditorHelp: (
                       <CodeEditorHelp
                         isFinishedBehavior={this.isFinishedBehavior()}
-                        functionBody={this.getBehaviorFunctionBody()}
+                        functionBody={this.getFunctionBody()}
                         onToggleHelp={this.toggleBoilerplateHelp}
                         helpIsActive={this.props.activePanelName === 'helpForBoilerplateParameters'}
                         hasInputs={this.hasInputs()}
@@ -1974,7 +1980,7 @@ const BehaviorEditor = React.createClass({
             codeEditorHelp: (
               <div className="mbxl">
                 <DataTypeCodeEditorHelp
-                  functionBody={this.getBehaviorFunctionBody()}
+                  functionBody={this.getFunctionBody()}
                   usesSearch={this.hasInputNamed('searchQuery')}
                   isFinishedBehavior={this.isFinishedBehavior()}
                 />
@@ -1997,15 +2003,30 @@ const BehaviorEditor = React.createClass({
     return (
       <div className="pbxxxl">
 
+        <div className="columns container container-wide">
+          <div className="column column-full mobile-column-full">
+            <FormInput
+              className="form-input-borderless form-input-m mbneg1"
+              placeholder="Library description (optional)"
+              onChange={this.updateDescription}
+              value={this.getEditableDescription()}
+            />
+          </div>
+        </div>
+
         <hr className="man thin bg-gray-light" />
 
         {this.renderCodeEditor({
+          systemParams: [],
           sectionNumber: "1",
-          sectionHeading: "Write any code here that you'd like to include elsewhere",
+          sectionHeading: "Write code to define a module",
           codeEditorHelp: (
-            <div className="mbxl">
-
-            </div>
+            <LibraryCodeEditorHelp
+              isFinished={this.isFinishedLibraryVersion()}
+              functionBody={this.getFunctionBody()}
+              onToggleHelp={this.toggleBoilerplateHelp}
+              helpIsActive={this.props.activePanelName === 'helpForBoilerplateParameters'}
+            />
           )
         })}
       </div>

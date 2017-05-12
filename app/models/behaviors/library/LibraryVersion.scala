@@ -6,6 +6,7 @@ case class LibraryVersion(
                             id: String,
                             libraryId: String,
                             name: String,
+                            maybeDescription: Option[String],
                             functionBody: String,
                             behaviorGroupVersionId: String,
                             createdAt: OffsetDateTime
