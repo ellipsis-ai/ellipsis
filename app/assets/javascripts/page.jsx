@@ -5,6 +5,7 @@
       this.header = document.getElementById('main-header');
       this.timerId = null;
       window.addEventListener('resize', this.adjustPadding.bind(this));
+      this.adjustPadding();
     }
 
     adjustPadding() {
@@ -73,9 +74,7 @@
   /* Enables touchscreen active pseudo-class support */
   document.body.addEventListener('touchstart', function() { return null; });
 
-  const hh = new HeaderHandler();
-  hh.adjustPadding();
-
+  new HeaderHandler();
   new MenuHandler();
 
 })();
