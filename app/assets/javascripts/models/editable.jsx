@@ -6,8 +6,9 @@ define(function(require) {
     constructor(props) {
       const initialProps = Object.assign({
         name: '',
+        description: '',
         functionBody: '',
-        editorScrollPosition: 0,
+        editorScrollPosition: 0
       }, props);
 
       Object.defineProperties(this, {
