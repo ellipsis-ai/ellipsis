@@ -24,35 +24,36 @@ then
   ASSETS_BUCKET="assets-${ACCOUNT_ID}"
   APP_NAME="playapp"
   EMOJI=" 🦑 "
+  AWS_ELLIPSIS_PROFILE="el-${TARGET_ENV}-deployer"
 elif [ "${TARGET_ENV}" = "prod" ]
 then
   ACCOUNT_ID="170937251085"
   ASSETS_BUCKET=ellipsis-assets
   APP_NAME="My First Elastic Beanstalk Application"
   EMOJI=" 🐴 "
+  if [ -z "${AWS_ELLIPSIS_PROFILE}" ]
+  then
+    AWS_ELLIPSIS_PROFILE="el-${TARGET_ENV}-deployer"
+  fi
 fi
 
-if [ -z "${AWS_ELLIPSIS_PROFILE}" ]
-then
-  AWS_ELLIPSIS_PROFILE="el-${TARGET_ENV}-deployer"
-fi
 EB_BUCKET="elasticbeanstalk-us-east-1-${ACCOUNT_ID}"
 
 printf "\n\n${EMOJI}${GREEN} - Getting ready to deploy to ${MAGENTA}${TARGET_ENV}${PLAIN} -${EMOJI}\n"
-printf "_____________________________________________________ \n";
-printf "Target Env    = ${TARGET_ENV}\n"
-printf "AWS Profile   = ${AWS_ELLIPSIS_PROFILE}\n"
-printf "App Name      = ${APP_NAME}\n"
-printf "Target Bucket = ${EB_BUCKET}\n"
-printf "Assets Bucket = ${ASSETS_BUCKET}\n"
-printf "_____________________________________________________ \n";
+printf "───────────────────────────────────────────────────────────────────\n";
+printf " Target environment: ${BOLD}${TARGET_ENV}${PLAIN}\n"
+printf "        AWS profile: ${BOLD}${AWS_ELLIPSIS_PROFILE}${PLAIN}\n"
+printf "           App name: ${BOLD}${APP_NAME}${PLAIN}\n"
+printf "      Target bucket: ${BOLD}${EB_BUCKET}${PLAIN}\n"
+printf "      Assets bucket: ${BOLD}${ASSETS_BUCKET}${PLAIN}\n"
+printf "───────────────────────────────────────────────────────────────────\n";
 
 printf "\n\n"
 read -p "${BOLD}Do you want to continue? [y/N]${PLAIN}: " -n 1 -r
 printf "\n";
 if [[ ! $REPLY =~ ^[Yy]$ ]]
 then
-  printf "Good Bye.\n";
+  printf "Au revoir.\n";
   exit 1
 else
   printf "Deploying...\n";
@@ -63,11 +64,19 @@ printf "_____________________________________________________ \n";
 aws configure --profile $AWS_ELLIPSIS_PROFILE list > /dev/null
 if [ $? -gt 0 ]
 then
-  printf "\n${RED}You need to configure the AWS staging profile:\n\n"
+  printf "\n${RED}You need to configure the AWS profile for this deploy:\n\n"
   printf "aws configure --profile ${AWS_ELLIPSIS_PROFILE}${PLAIN}\n\n"
+  printf "
+You will need an AWS access key and secret key. If you don’t have one, you
+can create a new one from the users page:
+
+${GREEN}https://console.aws.amazon.com/iam/home?region=us-east-1#users${PLAIN}
+
+Use ${GREEN}text${PLAIN} for the output format, and ${GREEN}us-east-1${PLAIN} for the region.\n\n"
   exit 1
 fi
-printf "\n${GREEN}Ok.${PLAIN}\n"
+
+printf "\n${GREEN}OK.${PLAIN}\n"
 
 printf "${GREEN}\n\nChecking your local branch...${PLAIN}\n"
 printf "_____________________________________________________ \n";
@@ -80,11 +89,11 @@ then
   printf "Bye.\n"
   exit 1
 fi
-printf "\n${GREEN}Ok.${PLAIN}\n"
+printf "\n${GREEN}OK.${PLAIN}\n"
 
 announce_start() {
   curl -f https://bot.ellipsis.ai/api/say \
-      --data-urlencode "message=🚀 ${DISPLAY_USERNAME} is preparing a build for ${TARGET_ENV}." \
+      --data-urlencode "message=🛠 ${DISPLAY_USERNAME} is preparing a build for ${TARGET_ENV}." \
       --data-urlencode "responseContext=slack" \
       --data-urlencode "channel=dev" \
       --data-urlencode "token=${ELLIPSIS_DEPLOY_TOKEN}"
@@ -92,7 +101,7 @@ announce_start() {
 
 announce_failure() {
   curl -f https://bot.ellipsis.ai/api/say \
-      --data-urlencode "message=💥${DISPLAY_USERNAME} failed to prepare the build for ${TARGET_ENV}" \
+      --data-urlencode "message=💥 ${DISPLAY_USERNAME} failed to prepare the build for ${TARGET_ENV}" \
       --data-urlencode "responseContext=slack" \
       --data-urlencode "channel=dev" \
       --data-urlencode "token=${ELLIPSIS_DEPLOY_TOKEN}"
@@ -100,7 +109,7 @@ announce_failure() {
 
 announce_completed() {
   curl -f https://bot.ellipsis.ai/api/say \
-      --data-urlencode "message=🚀 Matteo has just finished building **${VERSION_LABEL}** and it is ready for deployment on ${TARGET_ENV}" \
+      --data-urlencode "message=🚀 ${DISPLAY_USERNAME} has just finished building **${VERSION_LABEL}** and it’s ready for deployment on ${TARGET_ENV}" \
       --data-urlencode "responseContext=slack" \
       --data-urlencode "channel=dev" \
       --data-urlencode "token=${ELLIPSIS_DEPLOY_TOKEN}"
@@ -108,11 +117,13 @@ announce_completed() {
 
 hold_on_to_your_butts() {
   printf "
-  _____________________
-< Hold on to your butts >
-  ---------------------
-        \   ^__^
-         \  (oo)\_______
+  ____________________
+ /                    \
+ | Buckle up, partner |
+ \______   ___________/
+        \ |
+         \| ^__^
+            (oo)\_______
             (__)\       )---*
                 ||----w |
                 ||     ||
@@ -162,33 +173,11 @@ type aws >/dev/null 2>&1 || {
   exit 1
 }
 
-if [ -z ${AWS_ELLIPSIS_PROFILE+x} ];then
-  printf "${RED}You need to set the AWS_ELLIPSIS_PROFILE"
-  printf "env var with the profile to use for AWS.${PLAIN}\n"
-  printf "
-1. If you haven’t already, run ${GREEN}aws configure --profile ellipsis${PLAIN} to set up a
- profile.
-
- You will need an AWS access key and secret key. If you don’t have one, you
- can create a new one from the users page:
-
- ${GREEN}https://console.aws.amazon.com/iam/home?region=us-east-1#users${PLAIN}
-
- Use ${GREEN}text${PLAIN} for the output format, and ${GREEN}us-east-1${PLAIN} for the region.
-
-2. Add a line to your ${GREEN}.bashrc${PLAIN} file:
-
- ${GREEN}export AWS_ELLIPSIS_PROFILE=ellipsis${PLAIN}
-
-3. Open a new terminal or run ${GREEN}source ~/.bashrc${PLAIN}, then try again.\n";
-exit 1
-fi
-printf "\n${GREEN}Ok.${PLAIN}\n"
-
+printf "\n${GREEN}OK.${PLAIN}\n"
 printf "\n\n${GREEN}Announcing the deployment to #dev...${PLAIN}\n"
 printf "_____________________________________________________ \n";
 announce_start
-printf "\n${GREEN}Ok.${PLAIN}\n"
+printf "\n${GREEN}OK.${PLAIN}\n"
 
 printf "\n\n${GREEN}Running eslint...${PLAIN}\n";
 printf "_____________________________________________________ \n";
@@ -203,10 +192,10 @@ then
     printf "Bye.\n"
     exit 1
   else
-    printf "Okay, continuing anyway...\n";
+    printf "OK, continuing anyway...\n";
   fi
 fi
-printf "\n${GREEN}Ok.${PLAIN}\n"
+printf "\n${GREEN}OK.${PLAIN}\n"
 
 printf "\n\n${GREEN}Running jest...${PLAIN}\n";
 printf "_____________________________________________________ \n";
@@ -226,7 +215,7 @@ then
     hold_on_to_your_butts
   fi
 fi
-printf "\n${GREEN}Ok.${PLAIN}\n"
+printf "\n${GREEN}OK.${PLAIN}\n"
 
 printf "\n\n${GREEN}Running activator test...${PLAIN}\n";
 printf "_____________________________________________________ \n";
@@ -246,7 +235,7 @@ then
     hold_on_to_your_butts
   fi
 fi
-printf "\n${GREEN}Ok.${PLAIN}\n"
+printf "\n${GREEN}OK.${PLAIN}\n"
 
 printf "\n\n${GREEN}Packaging the build...${PLAIN}\n";
 printf "_____________________________________________________ \n";
@@ -261,7 +250,7 @@ BUNDLE=$VERSION_LABEL.zip
 BUNDLE_PATH=~/Desktop/$BUNDLE
 zip -qq -r $BUNDLE_PATH .
 popd > /dev/null
-printf "\n${GREEN}Ok.${PLAIN}\n"
+printf "\n${GREEN}OK.${PLAIN}\n"
 
 printf "\n\n${GREEN}Syncing assets with S3...${PLAIN}\n";
 printf "_____________________________________________________ \n";
@@ -272,28 +261,30 @@ unzip -qq target/docker/stage/opt/docker/lib/ellipsis.ellipsis-1.0-SNAPSHOT-asse
 aws --profile $AWS_ELLIPSIS_PROFILE s3 sync $PUBLIC_ASSETS_DIR/public s3://$ASSETS_BUCKET/ --acl=public-read --quiet
 if [ $? -eq 0 ]
 then
-   printf "${GREEN}Ok.${PLAIN}\n";
+  printf "${GREEN}OK.${PLAIN}\n";
 else
-   printf "\n\n${RED}Error found!.${PLAIN}\n";
-   announce_failure
-   printf "Bye.\n"
+  printf "\n\n${RED}An error occurred!${PLAIN}\n";
+  announce_failure
+  printf "Bye.\n"
+  exit 1
 fi
 
 
-printf "\n\n${GREEN}Uploading ${BUNDLE} to S3...${PLAIN}\n";
+printf "\n\n${GREEN}Uploading app bundle ${BUNDLE} to S3...${PLAIN}\n";
 printf "_____________________________________________________ \n";
 S3_KEY=`date +'%Y-%m-%d'`-$BUNDLE
 aws --profile $AWS_ELLIPSIS_PROFILE s3 cp $BUNDLE_PATH s3://$EB_BUCKET/$S3_KEY
 if [ $? -eq 0 ]
 then
-   printf "${GREEN}Ok.${PLAIN}\n";
+  printf "${GREEN}OK.${PLAIN}\n";
 else
-  printf "\n\n${RED}Error found!.${PLAIN}\n";
+  printf "\n\n${RED}An error occurred!${PLAIN}\n";
   announce_failure
   printf "Bye.\n"
+  exit 1
 fi
 
-printf "\n\n${GREEN}Updating Beanstalk App Version...${PLAIN}\n";
+printf "\n\n${GREEN}Updating Beanstalk app version...${PLAIN}\n";
 printf "_____________________________________________________ \n";
 aws --profile $AWS_ELLIPSIS_PROFILE elasticbeanstalk create-application-version \
 --application-name "${APP_NAME}" \
@@ -302,15 +293,16 @@ aws --profile $AWS_ELLIPSIS_PROFILE elasticbeanstalk create-application-version 
 --process
 if [ $? -eq 0 ]
 then
-   printf "\n${GREEN}Ok.${PLAIN}\n"
+   printf "\n${GREEN}OK.${PLAIN}\n"
 else
-  printf "\n\n${RED}Error found!.${PLAIN}\n";
+  printf "\n\n${RED}An error occurred!{PLAIN}\n";
   announce_failure
   printf "Bye.\n"
+  exit 1
 fi
 
 printf "\n\n${GREEN}Sending notifications...${PLAIN}\n";
 printf "_____________________________________________________ \n";
 osascript -e "display notification \"The build script has ended.\" with title \"Build $VERSION_LABEL\" sound name \"Sosumi\""
 announce_completed
-printf "\n\nThe End\n\n";
+printf "\n\n\n\n          ${BOLD}F   I   N${PLAIN}          \n\n\n\n";
