@@ -15,10 +15,17 @@ case class LibraryVersion(
 
   val jsName = s"$name.js"
 
-  val code =
+  val code = LibraryVersion.codeFor(functionBody)
+
+}
+
+object LibraryVersion {
+
+  def codeFor(functionBody: String): String = {
     s"""module.exports = (function() {
-       |  $functionBody
-       |})()
+         |$functionBody
+         |})()
      """.stripMargin
+  }
 
 }

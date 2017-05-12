@@ -13,11 +13,7 @@ case class LibraryVersionData(
                                functionBody: String
                             ) {
 
-  val code =
-    s"""module.exports = (function() {
-       |  $functionBody
-       |})()
-     """.stripMargin
+  val code: String = LibraryVersion.codeFor(functionBody)
 
   def maybeExportName: Option[String] = {
     Option(name).filter(_.trim.nonEmpty).orElse(exportId).map(_ ++ ".js")
@@ -48,7 +44,7 @@ case class LibraryVersionData(
   }
 
   def exportFileContent: String = {
-    val descriptionText = description.map(_ ++ "\n").getOrElse("")
+    val descriptionText = description.filter(_.trim.nonEmpty).map(_ ++ "\n").getOrElse("")
     val exportIdText = exportId.map { id => s"@exportId $id\n" }.getOrElse("")
     val headerContent = if (descriptionText.isEmpty && exportIdText.isEmpty) {
       ""
