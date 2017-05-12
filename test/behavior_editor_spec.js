@@ -34,9 +34,10 @@ describe('BehaviorEditor', () => {
           groupId: '1',
           shouldRevealCodeEditor: true
         }
-      ]
+      ],
+      libraryVersions: []
     },
-    selectedBehaviorId: "1",
+    selectedId: "1",
     csrfToken: "2",
     envVariables: [ { name: "HOT_DOG" } ],
     builtinParamTypes: [{

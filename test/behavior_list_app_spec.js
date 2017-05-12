@@ -87,6 +87,7 @@ describe('BehaviorListApp', () => {
     name: "A",
     description: "",
     behaviorVersions: [behaviorVersionTask1],
+    libraryVersions: [],
     createdAt: 1466109904858
   });
   const group2 = Object.freeze({
@@ -94,6 +95,7 @@ describe('BehaviorListApp', () => {
     name: "B",
     description: "",
     behaviorVersions: [behaviorVersionTask2],
+    libraryVersions: [],
     createdAt: 1466109904858
   });
   const group3 = Object.freeze({
@@ -101,6 +103,7 @@ describe('BehaviorListApp', () => {
     name: "",
     description: "",
     behaviorVersions: [behaviorVersionKnowledge1],
+    libraryVersions: [],
     createdAt: 1466109904858
   });
   const defaultConfig = Object.freeze({

@@ -7,6 +7,7 @@ const behaviorGroupData = Object.freeze({
   "actionInputs": [],
   "dataTypeInputs": [],
   "behaviorVersions": [],
+  "libraryVersions": [],
   "createdAt": 1468338136532
 });
 

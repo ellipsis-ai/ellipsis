@@ -17,6 +17,7 @@ define(function(require) {
       onSelect: React.PropTypes.func.isRequired,
       addNewAction: React.PropTypes.func.isRequired,
       addNewDataType: React.PropTypes.func.isRequired,
+      addNewLibrary: React.PropTypes.func.isRequired,
       isModified: React.PropTypes.func.isRequired
     },
 
