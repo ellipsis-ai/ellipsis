@@ -94,7 +94,8 @@ class LibraryVersionServiceImpl @Inject() (
         val updated = existing.copy(
           name = data.name,
           maybeDescription = data.description,
-          behaviorGroupVersionId = behaviorGroupVersion.id
+          behaviorGroupVersionId = behaviorGroupVersion.id,
+          functionBody = data.functionBody
         )
         uncompiledFindQuery(existing.id).update(updated).map { _ => updated }
       }.getOrElse(createForAction(data, behaviorGroupVersion))

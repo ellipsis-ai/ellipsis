@@ -30,6 +30,23 @@ case class LibraryVersionData(
     )
   }
 
+  def copyWithIdsEnsuredFor(maybeExistingGroupData: Option[BehaviorGroupData]): LibraryVersionData = {
+    val maybeExisting = maybeExistingGroupData.flatMap { data =>
+      data.libraryVersions.find(_.exportId == exportId)
+    }
+    copy(
+      id = id.orElse(Some(IDs.next)),
+      libraryId = maybeExisting.flatMap(_.libraryId).orElse(libraryId).orElse(Some(IDs.next))
+    )
+  }
+
+  def copyWithNewIdIn(oldToNewIdMapping: collection.mutable.Map[String, String]): LibraryVersionData = {
+    val newId = IDs.next
+    val maybeOldID = id
+    maybeOldID.foreach { oldId => oldToNewIdMapping.put(oldId, newId) }
+    copy(id = Some(newId))
+  }
+
   def exportFileContent: String = {
     val descriptionText = description.map(_ ++ "\n").getOrElse("")
     val exportIdText = exportId.map { id => s"@exportId $id\n" }.getOrElse("")
