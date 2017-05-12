@@ -24,6 +24,10 @@ define(function(require) {
       return false;
     }
 
+    isLibraryVersion() {
+      return false;
+    }
+
     getName() {
       return this.name || "";
     }

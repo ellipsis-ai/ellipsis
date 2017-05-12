@@ -15,7 +15,7 @@ case class BehaviorEditorData(
                                teamAccess: UserTeamAccess,
                                group: BehaviorGroupData,
                                builtinParamTypes: Seq[BehaviorParameterTypeData],
-                               maybeSelectedBehaviorId: Option[String],
+                               maybeSelectedId: Option[String],
                                environmentVariables: Seq[EnvironmentVariableData],
                                savedAnswers: Seq[InputSavedAnswerData],
                                oauth2Applications: Seq[OAuth2ApplicationData],
@@ -29,7 +29,7 @@ object BehaviorEditorData {
   def buildForEdit(
                     user: User,
                     groupId: String,
-                    maybeBehaviorId: Option[String],
+                    maybeSelectedId: Option[String],
                     dataService: DataService,
                     ws: WSClient
                   ): Future[Option[BehaviorEditorData]] = {
@@ -46,7 +46,7 @@ object BehaviorEditorData {
         buildFor(
           user,
           Some(data),
-          maybeBehaviorId,
+          maybeSelectedId,
           team,
           dataService,
           ws
@@ -69,7 +69,7 @@ object BehaviorEditorData {
         buildFor(
           user,
           maybeGroupData = None,
-          maybeBehaviorId = None,
+          maybeSelectedId = None,
           team,
           dataService,
           ws
@@ -105,7 +105,7 @@ object BehaviorEditorData {
   def buildFor(
                 user: User,
                 maybeGroupData: Option[BehaviorGroupData],
-                maybeBehaviorId: Option[String],
+                maybeSelectedId: Option[String],
                 team: Team,
                 dataService: DataService,
                 ws: WSClient
@@ -129,13 +129,19 @@ object BehaviorEditorData {
       }.getOrElse(Future.successful(None))
       inputSavedAnswerData <- inputSavedAnswerDataFor(maybeGroupData, user, dataService)
       // make sure the behavior exists and is accessible
-      maybeRealBehaviorId <- maybeBehaviorId.map { behaviorId =>
-        dataService.behaviors.find(behaviorId, user).map { maybeBehavior =>
+      maybeVerifiedBehaviorId <- maybeSelectedId.map { selectedId =>
+        dataService.behaviors.find(selectedId, user).map { maybeBehavior =>
           maybeBehavior.map(_.id)
+        }
+      }.getOrElse(Future.successful(None))
+      maybeVerifiedLibraryId <- maybeSelectedId.map { selectedId =>
+        dataService.libraries.findByLibraryId(selectedId, user).map { maybeLibraryVersion =>
+          maybeLibraryVersion.map(_.libraryId)
         }
       }.getOrElse(Future.successful(None))
       builtinParamTypeData <- Future.sequence(BehaviorParameterType.allBuiltin.map(ea => BehaviorParameterTypeData.from(ea, dataService)))
     } yield {
+      val maybeVerifiedSelectedId = maybeVerifiedBehaviorId.orElse(maybeVerifiedLibraryId)
       val data = maybeGroupData.getOrElse {
         BehaviorGroupData(
           None,
@@ -158,7 +164,7 @@ object BehaviorEditorData {
         teamAccess,
         data,
         builtinParamTypeData,
-        maybeRealBehaviorId,
+        maybeVerifiedSelectedId,
         teamEnvironmentVariables.map(EnvironmentVariableData.withoutValueFor),
         inputSavedAnswerData,
         oAuth2Applications.map(OAuth2ApplicationData.from),

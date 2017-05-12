@@ -119,6 +119,9 @@ class BehaviorGroupVersionServiceImpl @Inject() (
       _ <- DBIO.sequence(data.actionInputs.map { ea =>
         dataService.inputs.ensureForAction(ea, groupVersion)
       })
+      _ <- DBIO.sequence(data.libraryVersions.map { ea =>
+        dataService.libraries.ensureForAction(ea, groupVersion)
+      })
       _ <- DBIO.sequence(data.actionBehaviorVersions.map { ea =>
         ea.behaviorId.map { behaviorId =>
           for {

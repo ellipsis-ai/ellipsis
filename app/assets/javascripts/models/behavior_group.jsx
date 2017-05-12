@@ -1,5 +1,6 @@
 define(function(require) {
   var BehaviorVersion = require('./behavior_version');
+  var LibraryVersion = require('./library_version');
   var Input = require('./input');
   var DeepEqual = require('../lib/deep_equal');
   const ONE_MINUTE = 60000;
@@ -22,6 +23,10 @@ define(function(require) {
         createdAt: { value: props.createdAt, enumerable: true },
         exportId: { value: props.exportId, enumerable: true }
       });
+    }
+
+    getEditables() {
+      return this.behaviorVersions.concat(this.libraryVersions);
     }
 
     getRequiredOAuth2ApiConfigs() {

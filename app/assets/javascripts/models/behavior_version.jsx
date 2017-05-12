@@ -30,6 +30,18 @@ define(function(require) {
       });
     }
 
+    buildUpdatedGroupFor(group, props) {
+      const timestampedBehavior = this.clone(props).copyWithNewTimestamp();
+      const updatedVersions = group.behaviorVersions.
+        filter(ea => ea.behaviorId !== timestampedBehavior.behaviorId ).
+        concat([timestampedBehavior]);
+      return group.clone({ behaviorVersions: updatedVersions });
+    }
+
+    getPersistentId() {
+      return this.behaviorId;
+    }
+
     isBehaviorVersion() {
       return true;
     }

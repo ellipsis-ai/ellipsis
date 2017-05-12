@@ -6,11 +6,17 @@ case class LibraryVersion(
                             id: String,
                             libraryId: String,
                             name: String,
-                            code: String,
+                            functionBody: String,
                             behaviorGroupVersionId: String,
                             createdAt: OffsetDateTime
                           ) {
 
   val jsName = s"$name.js"
+
+  val code =
+    s"""module.exports = (function() {
+       |  $functionBody
+       |})()
+     """.stripMargin
 
 }

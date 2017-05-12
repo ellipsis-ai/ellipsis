@@ -150,19 +150,19 @@ const BehaviorEditor = React.createClass({
   },
 
   getBehaviorName: function() {
-    return this.getBehaviorProp('name') || "";
+    return this.getEditableProp('name') || "";
   },
 
   getBehaviorDescription: function() {
-    return this.getBehaviorProp('description') || "";
+    return this.getEditableProp('description') || "";
   },
 
   getBehaviorFunctionBody: function() {
-    return this.getBehaviorProp('functionBody') || "";
+    return this.getEditableProp('functionBody') || "";
   },
 
   getInputIds: function() {
-    return this.getBehaviorProp('inputIds') || [];
+    return this.getEditableProp('inputIds') || [];
   },
 
   getInputs: function() {
@@ -198,32 +198,32 @@ const BehaviorEditor = React.createClass({
   },
 
   getOriginalSelectedBehavior: function() {
-    return this.getSelectedBehaviorFor(this.props.group, this.getSelectedId());
+    return this.getSelectedFor(this.props.group, this.getSelectedId());
   },
 
   getSelectedBehavior: function() {
-    return this.getSelectedBehaviorFor(this.getBehaviorGroup(), this.getSelectedId());
+    const selected = this.getSelected();
+    return (selected && selected.isBehaviorVersion()) ? selected : null;
   },
 
-  getSelectedBehaviorFor: function(group, selectedBehaviorId) {
-    return group.behaviorVersions.find(ea => {
-      return ea.behaviorId === selectedBehaviorId;
+  getSelectedFor: function(group, selectedId) {
+    return group.getEditables().find(ea => {
+      return ea.getPersistentId() === selectedId;
     });
   },
 
   getSelectedLibrary: function() {
-    return this.getBehaviorGroup().libraryVersions.find(ea => {
-      return ea.libraryId === this.getSelectedId();
-    });
+    const selected = this.getSelected();
+    return (selected && selected.isLibraryVersion()) ? selected : null;
   },
 
   getSelected: function() {
-    return this.getSelectedBehavior() || this.getSelectedLibrary();
+    return this.getSelectedFor(this.getBehaviorGroup(), this.getSelectedId());
   },
 
-  getBehaviorProp: function(key) {
-    var selectedBehavior = this.getSelectedBehavior();
-    return selectedBehavior ? selectedBehavior[key] : null;
+  getEditableProp: function(key) {
+    var selected = this.getSelected();
+    return selected ? selected[key] : null;
   },
 
   getBehaviorTemplate: function() {
@@ -231,7 +231,7 @@ const BehaviorEditor = React.createClass({
     if (!selectedBehavior) {
       return null;
     }
-    var template = this.getBehaviorProp('responseTemplate');
+    var template = this.getEditableProp('responseTemplate');
     if ((!template || !template.text) && !this.hasModifiedTemplate() && !this.isDataTypeBehavior()) {
       return this.getDefaultBehaviorTemplate();
     } else {
@@ -240,11 +240,11 @@ const BehaviorEditor = React.createClass({
   },
 
   getBehaviorTriggers: function() {
-    return this.getBehaviorProp('triggers') || [];
+    return this.getEditableProp('triggers') || [];
   },
 
   getBehaviorConfig: function() {
-    return this.getBehaviorProp('config');
+    return this.getEditableProp('config');
   },
 
   shouldForcePrivateResponse: function() {
@@ -449,7 +449,7 @@ const BehaviorEditor = React.createClass({
   },
 
   addTrigger: function(callback) {
-    this.setBehaviorProp('triggers', this.getBehaviorTriggers().concat(new Trigger()), callback);
+    this.setEditableProp('triggers', this.getBehaviorTriggers().concat(new Trigger()), callback);
   },
 
   cancelVersionPanel: function() {
@@ -494,19 +494,19 @@ const BehaviorEditor = React.createClass({
   },
 
   deleteCode: function() {
-    this.setBehaviorProp('inputIds', []);
-    this.setBehaviorProp('functionBody', '');
+    this.setEditableProp('inputIds', []);
+    this.setEditableProp('functionBody', '');
     this.toggleCodeEditor();
     this.props.onClearActivePanel();
   },
 
   deleteInputAtIndex: function(index) {
-    this.setBehaviorProp('inputIds', ImmutableObjectUtils.arrayRemoveElementAtIndex(this.getInputIds(), index));
+    this.setEditableProp('inputIds', ImmutableObjectUtils.arrayRemoveElementAtIndex(this.getInputIds(), index));
   },
 
   deleteTriggerAtIndex: function(index) {
     var triggers = ImmutableObjectUtils.arrayRemoveElementAtIndex(this.getBehaviorTriggers(), index);
-    this.setBehaviorProp('triggers', triggers);
+    this.setEditableProp('triggers', triggers);
   },
 
   getLeftPanelCoordinates: function() {
@@ -666,7 +666,7 @@ const BehaviorEditor = React.createClass({
   checkDataAndCallback: function(callback) {
     var template = this.getBehaviorTemplate();
     if (template && template.toString() === this.getDefaultBehaviorTemplate().toString()) {
-      this.setBehaviorProp('responseTemplate', this.getBehaviorTemplate(), callback);
+      this.setEditableProp('responseTemplate', this.getBehaviorTemplate(), callback);
     } else {
       callback();
     }
@@ -688,7 +688,7 @@ const BehaviorEditor = React.createClass({
       group: version
     };
     if (!version.hasBehaviorVersionWithId(this.getSelectedId())) {
-      stateUpdates.selectedBehaviorId = null;
+      stateUpdates.selectedId = null;
     }
     this.setState(stateUpdates, optionalCallback);
   },
@@ -705,10 +705,10 @@ const BehaviorEditor = React.createClass({
     this.setConfigProperty('aws', awsConfig);
   },
 
-  setBehaviorProp: function(key, value, callback) {
+  setEditableProp: function(key, value, callback) {
     var newProps = {};
     newProps[key] = value;
-    this.setBehaviorProps(newProps, callback);
+    this.setEditableProps(newProps, callback);
   },
 
   buildNewVersionsWithBehaviorProps(group, behavior, props) {
@@ -718,16 +718,13 @@ const BehaviorEditor = React.createClass({
       concat([timestampedBehavior]);
   },
 
-  setBehaviorProps: function(props, callback) {
+  setEditableProps: function(props, callback) {
     const existingGroup = this.getBehaviorGroup();
-    const existingBehavior = this.getSelectedBehaviorFor(existingGroup, this.getSelectedId());
-    if (!existingBehavior) {
-      return;
+    const existingSelected = this.getSelectedFor(existingGroup, this.getSelectedId());
+    if (existingSelected) {
+      const updatedGroup = existingSelected.buildUpdatedGroupFor(existingGroup, props);
+      this.updateGroupStateWith(updatedGroup, callback);
     }
-    const newVersionsForGroup = this.buildNewVersionsWithBehaviorProps(existingGroup, existingBehavior, props);
-    const updatedGroup = existingGroup.clone({ behaviorVersions: newVersionsForGroup });
-
-    this.updateGroupStateWith(updatedGroup, callback);
   },
 
   getNextBehaviorIdFor: function(group) {
@@ -741,7 +738,7 @@ const BehaviorEditor = React.createClass({
   updateGroupStateWith: function(updatedGroup, callback) {
 
     const timestampedGroup = updatedGroup.copyWithNewTimestamp();
-    const selectedIdBefore = this.props.selectedId;
+    const selectedIdBefore = this.getSelectedId();
     const selectedIdNowInvalid = !timestampedGroup.behaviorVersions.find(ea => ea.behaviorId === selectedIdBefore) && !timestampedGroup.libraryVersions.find(ea => ea.libraryId === selectedIdBefore);
     let selectedIdAfter;
     if (selectedIdBefore && selectedIdNowInvalid) {
@@ -767,7 +764,7 @@ const BehaviorEditor = React.createClass({
   setConfigProperty: function(property, value, callback) {
     var config = Object.assign({}, this.getBehaviorConfig());
     config[property] = value;
-    this.setBehaviorProp('config', config, callback);
+    this.setEditableProp('config', config, callback);
   },
 
   showEnvVariableAdder: function(prompt) {
@@ -898,7 +895,7 @@ const BehaviorEditor = React.createClass({
   },
 
   updateCode: function(newCode) {
-    this.setBehaviorProp('functionBody', newCode);
+    this.setEditableProp('functionBody', newCode);
   },
 
   addEnvVar: function(envVar) {
@@ -919,16 +916,16 @@ const BehaviorEditor = React.createClass({
     if (shouldUseSearch) {
       this.addNewInput('searchQuery');
     } else {
-      this.setBehaviorProp('inputIds', []);
+      this.setEditableProp('inputIds', []);
     }
   },
 
   updateDescription: function(newDescription) {
-    this.setBehaviorProp('description', newDescription);
+    this.setEditableProp('description', newDescription);
   },
 
   updateName: function(newName) {
-    this.setBehaviorProp('name', newName);
+    this.setEditableProp('name', newName);
   },
 
   updateEnvVariables: function(envVars, options) {
@@ -1029,7 +1026,7 @@ const BehaviorEditor = React.createClass({
   },
 
   updateTemplate: function(newTemplateString) {
-    this.setBehaviorProp('responseTemplate', this.getBehaviorTemplate().clone({ text: newTemplateString }), () => {
+    this.setEditableProp('responseTemplate', this.getBehaviorTemplate().clone({ text: newTemplateString }), () => {
       this.setState({ hasModifiedTemplate: true });
     });
   },
@@ -1058,14 +1055,14 @@ const BehaviorEditor = React.createClass({
       newProps.responseTemplate = newTemplate;
     }
     if (Object.keys(newProps).length > 0) {
-      this.setBehaviorProps(newProps);
+      this.setEditableProps(newProps);
     }
 
     return numTriggersModified + (templateModified ? 1 : 0);
   },
 
   updateTriggerAtIndexWithTrigger: function(index, newTrigger) {
-    this.setBehaviorProp('triggers', ImmutableObjectUtils.arrayWithNewElementAtIndex(this.getBehaviorTriggers(), newTrigger, index));
+    this.setEditableProp('triggers', ImmutableObjectUtils.arrayWithNewElementAtIndex(this.getBehaviorTriggers(), newTrigger, index));
   },
 
   undoChanges: function() {
@@ -2031,6 +2028,7 @@ const BehaviorEditor = React.createClass({
     } else if (this.getSelectedLibrary()) {
       return (
         <div>
+          {this.renderNameAndManagementActions()}
           {this.renderLibrary()}
         </div>
       );
