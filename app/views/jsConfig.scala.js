@@ -9,6 +9,11 @@ var requirejs = {
 
 @JavaScriptReverseRouter("jsRoutes")(
   routes.javascript.APIAccessController.linkCustomOAuth2Service,
+  routes.javascript.APIController.postMessage,
+  routes.javascript.APIController.say,
+  routes.javascript.APITokenController.createToken,
+  routes.javascript.APITokenController.listTokens,
+  routes.javascript.APITokenController.revokeToken,
   routes.javascript.ApplicationController.deleteBehaviorGroups,
   routes.javascript.ApplicationController.fetchPublishedBehaviorInfo,
   routes.javascript.ApplicationController.findBehaviorGroupsMatching,
@@ -26,19 +31,14 @@ var requirejs = {
   routes.javascript.BehaviorEditorController.versionInfoFor,
   routes.javascript.BehaviorImportExportController.doImport,
   routes.javascript.BehaviorImportExportController.export,
-  routes.javascript.EnvironmentVariablesController.submit,
-  routes.javascript.OAuth2ApplicationController.newApp,
-  routes.javascript.SavedAnswerController.resetForTeam,
-  routes.javascript.SavedAnswerController.resetForUser,
-  routes.javascript.APIController.postMessage,
-  routes.javascript.APIController.say,
-  routes.javascript.APITokenController.createToken,
-  routes.javascript.APITokenController.listTokens,
-  routes.javascript.APITokenController.revokeToken,
   routes.javascript.EnvironmentVariablesController.list,
+  routes.javascript.EnvironmentVariablesController.submit,
   routes.javascript.EnvironmentVariablesController.submit,
   routes.javascript.OAuth2ApplicationController.edit,
   routes.javascript.OAuth2ApplicationController.list,
   routes.javascript.OAuth2ApplicationController.newApp,
-  routes.javascript.OAuth2ApplicationController.save
+  routes.javascript.OAuth2ApplicationController.newApp,
+  routes.javascript.OAuth2ApplicationController.save,
+  routes.javascript.SavedAnswerController.resetForTeam,
+  routes.javascript.SavedAnswerController.resetForUser
 )
