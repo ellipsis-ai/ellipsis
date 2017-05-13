@@ -12,7 +12,6 @@ import play.api.data.Forms._
 import play.api.i18n.MessagesApi
 import play.api.libs.json.Json
 import play.api.libs.ws.WSClient
-import play.api.routing.JavaScriptReverseRouter
 import services.{AWSLambdaService, DataService, GithubService}
 import utils.{CitiesToTimeZones, FuzzyMatcher, TimeZoneParser}
 
