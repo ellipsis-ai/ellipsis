@@ -10,8 +10,9 @@ import play.api.cache.CacheApi
 import play.api.data.Form
 import play.api.data.Forms._
 import play.api.i18n.MessagesApi
-import play.api.libs.json.{JsError, JsSuccess, Json}
+import play.api.libs.json.Json
 import play.api.libs.ws.WSClient
+import play.api.routing.JavaScriptReverseRouter
 import services.{AWSLambdaService, DataService, GithubService}
 import utils.{CitiesToTimeZones, FuzzyMatcher, TimeZoneParser}
 
@@ -202,4 +203,7 @@ class ApplicationController @Inject() (
     )
   }
 
+  def jsConfig = silhouette.SecuredAction.async { implicit request =>
+    Future.successful(Ok(views.js.jsConfig()))
+  }
 }
