@@ -23,8 +23,10 @@
       this.userMenuButton = document.getElementById('main-user-menu-button');
       this.userMenu = document.getElementById('main-user-menu');
       this.navBar = document.getElementById('main-header');
-      this.userMenuButton.addEventListener('click', this.onUserMenuClick.bind(this));
-      document.addEventListener('click', this.onDocumentClick.bind(this));
+      if (this.userMenuButton && this.userMenu) {
+        this.userMenuButton.addEventListener('click', this.onUserMenuClick.bind(this));
+        document.addEventListener('click', this.onDocumentClick.bind(this));
+      }
     }
 
     addClass(el, className) {
