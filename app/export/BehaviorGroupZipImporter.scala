@@ -44,7 +44,8 @@ case class BehaviorGroupZipImporter(
     val versionStringMaps = scala.collection.mutable.Map[String, scala.collection.mutable.Map[String, String]]()
 
     val versionFileRegex = """^(actions|data_types)/([^/]+)/(.+)""".r
-    val libFileRegex = """^lib/(.+)""".r
+    val libFileRegex = """^lib/(.+).js""".r
+    val libContentRegex = """\/\*\s*(.*)\s+@exportId\s+(\S+)\s*\*\/\s*(.*)""".r
     val readmeRegex = """^README$$""".r
     val configRegex = """^config\.json$$""".r
     val actionInputsRegex = """^action_inputs\.json$$""".r
@@ -73,14 +74,22 @@ case class BehaviorGroupZipImporter(
         map.put(filename, readDataFrom(zipInputStream))
       }
       libFileRegex.findFirstMatchIn(entryName).foreach { firstMatch =>
-        val filename = firstMatch.subgroups(1)
-        val code = readDataFrom(zipInputStream)
+        val filenameWithoutExtension = firstMatch.subgroups(0)
+        var maybeExportId: Option[String] = None
+        var maybeDescription: Option[String] = None
+        var code: String = ""
+        val content = readDataFrom(zipInputStream)
+        libContentRegex.findFirstMatchIn(content).foreach { firstMatch =>
+          maybeDescription = Some(firstMatch.subgroups(0))
+          maybeExportId = Some(firstMatch.subgroups(1))
+          code = firstMatch.subgroups(2)
+        }
         libraries ++= Seq(LibraryVersionData(
-          Some(IDs.next),
-          None, // TODO: get this
-          None, // TODO: this too
-          filename,
           None,
+          None,
+          maybeExportId,
+          filenameWithoutExtension,
+          maybeDescription,
           code
         ))
       }

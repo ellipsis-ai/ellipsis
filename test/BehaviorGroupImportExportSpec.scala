@@ -1,6 +1,6 @@
 import drivers.SlickPostgresDriver.api._
 import export.{BehaviorGroupExporter, BehaviorGroupZipImporter}
-import json.{BehaviorParameterTypeData, BehaviorVersionData}
+import json.{BehaviorParameterTypeData, BehaviorVersionData, LibraryVersionData}
 import models.IDs
 import models.accounts.user.User
 import models.behaviors.behaviorgroup.{BehaviorGroup, BehaviorGroupQueries}
@@ -266,6 +266,48 @@ class BehaviorGroupImportExportSpec extends DBSpec {
         importedParams must have length 1
       })
     }
+
+    "export and import back in with a code library" in {
+      withEmptyDB(dataService, { db =>
+        val team = newSavedTeam
+        val user = newSavedUserOn(team)
+        val group = newSavedBehaviorGroupFor(team)
+
+        val behaviorVersionData = BehaviorVersionData.newUnsavedFor(team.id, isDataType = false, dataService)
+        val libraryName = IDs.next
+        val libraryDescription = "A description"
+        val libraryVersionData = LibraryVersionData.newUnsaved.copy(name = libraryName, description = Some(libraryDescription))
+
+        val groupData = newGroupVersionDataFor(group, user).copy(
+          behaviorVersions = Seq(behaviorVersionData),
+          libraryVersions = Seq(libraryVersionData)
+        )
+
+        newSavedGroupVersionFor(group, user, Some(groupData))
+
+        val groupsBefore = runNow(dataService.behaviorGroups.allFor(team))
+        groupsBefore must have length 1
+
+        exportAndImport(group, user, user)
+
+        val groupsAfter = runNow(dataService.behaviorGroups.allFor(team))
+        groupsAfter must have length 2
+
+        val exportedGroup = groupsBefore.head
+        val importedGroup = groupsAfter.filterNot(_.id == exportedGroup.id).head
+        val importedGroupVersion = runNow(dataService.behaviorGroups.maybeCurrentVersionFor(importedGroup)).get
+
+        mustBeValidImport(exportedGroup, importedGroup)
+
+        val importedCodeLibraries = runNow(dataService.libraries.allFor(importedGroupVersion))
+        importedCodeLibraries must have length 1
+        val lib = importedCodeLibraries.head
+        lib.maybeExportId.isDefined mustBe true
+        lib.name mustBe libraryName
+        lib.maybeDescription must contain(libraryDescription)
+      })
+    }
+
 
 
   }
