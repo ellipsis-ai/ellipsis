@@ -37,13 +37,9 @@
         @views.html.mainNav(config, selectedNav)
       </div>
     </header>
-    <script>
-      requirejs = {
-        paths: {
-          '../common': '@RemoteAssets.getUrl("javascripts/common.js").replaceFirst("\\.js$", "")'
-        }
-      };
-    </script>
+    @config.maybeTeamAccess.map { _ =>
+      <script src="@routes.ApplicationController.jsConfig"></script>
+    }
     @content
   </body>
   <script src="@RemoteAssets.getUrl("javascripts/page.js")"></script>
