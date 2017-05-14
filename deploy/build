@@ -1,0 +1,308 @@
+#!/bin/sh
+
+RED=`tput setaf 1`   # Use red for errors
+GREEN=`tput setaf 2` # Use green for success
+MAGENTA=`tput setaf 5` # Use magenta for warnings and notes
+BOLD=`tput bold`
+PLAIN=`tput sgr0`
+
+VERSION_LABEL=ellipsis-`git rev-parse --short HEAD`
+GIT_USERNAME=`git config user.name`
+DISPLAY_USERNAME=${GIT_USERNAME:-$USER}
+
+# By default we target prod
+TARGET_ENV="prod"
+
+if [ "$1" = "stag01" ]
+then
+  TARGET_ENV="stag01"
+fi
+
+if [ "${TARGET_ENV}" = "stag01" ]
+then
+  ACCOUNT_ID="458075145501"
+  ASSETS_BUCKET="assets-${ACCOUNT_ID}"
+  APP_NAME="playapp"
+  EMOJI=" 🦑 "
+  AWS_ELLIPSIS_PROFILE="el-${TARGET_ENV}-deployer"
+elif [ "${TARGET_ENV}" = "prod" ]
+then
+  ACCOUNT_ID="170937251085"
+  ASSETS_BUCKET=ellipsis-assets
+  APP_NAME="My First Elastic Beanstalk Application"
+  EMOJI=" 🐴 "
+  if [ -z "${AWS_ELLIPSIS_PROFILE}" ]
+  then
+    AWS_ELLIPSIS_PROFILE="el-${TARGET_ENV}-deployer"
+  fi
+fi
+
+EB_BUCKET="elasticbeanstalk-us-east-1-${ACCOUNT_ID}"
+
+printf "\n\n${EMOJI}${GREEN} - Getting ready to deploy to ${MAGENTA}${TARGET_ENV}${PLAIN} -${EMOJI}\n"
+printf "───────────────────────────────────────────────────────────────────\n";
+printf " Target environment: ${BOLD}${TARGET_ENV}${PLAIN}\n"
+printf "        AWS profile: ${BOLD}${AWS_ELLIPSIS_PROFILE}${PLAIN}\n"
+printf "           App name: ${BOLD}${APP_NAME}${PLAIN}\n"
+printf "      Target bucket: ${BOLD}${EB_BUCKET}${PLAIN}\n"
+printf "      Assets bucket: ${BOLD}${ASSETS_BUCKET}${PLAIN}\n"
+printf "───────────────────────────────────────────────────────────────────\n";
+
+printf "\n\n"
+read -p "${BOLD}Do you want to continue? [y/N]${PLAIN}: " -n 1 -r
+printf "\n";
+if [[ ! $REPLY =~ ^[Yy]$ ]]
+then
+  printf "Au revoir.\n";
+  exit 1
+else
+  printf "Deploying...\n";
+fi
+
+printf "${GREEN}\n\nChecking your AWS CLI settings...${PLAIN}\n"
+printf "_____________________________________________________ \n";
+aws configure --profile $AWS_ELLIPSIS_PROFILE list > /dev/null
+if [ $? -gt 0 ]
+then
+  printf "\n${RED}You need to configure the AWS profile for this deploy:\n\n"
+  printf "aws configure --profile ${AWS_ELLIPSIS_PROFILE}${PLAIN}\n\n"
+  printf "
+You will need an AWS access key and secret key. If you don’t have one, you
+can create a new one from the users page:
+
+${GREEN}https://console.aws.amazon.com/iam/home?region=us-east-1#users${PLAIN}
+
+Use ${GREEN}text${PLAIN} for the output format, and ${GREEN}us-east-1${PLAIN} for the region.\n\n"
+  exit 1
+fi
+
+printf "\n${GREEN}OK.${PLAIN}\n"
+
+printf "${GREEN}\n\nChecking your local branch...${PLAIN}\n"
+printf "_____________________________________________________ \n";
+pushd `git rev-parse --show-toplevel` > /dev/null
+git diff-index --quiet HEAD --
+if [ $? -eq 1 ]
+then
+  printf "\n\n${RED}You have uncommitted changes in your working directory.\n"
+  printf "Deal with them first!${PLAIN}\n\n";
+  printf "Bye.\n"
+  exit 1
+fi
+printf "\n${GREEN}OK.${PLAIN}\n"
+
+announce_start() {
+  curl -f https://bot.ellipsis.ai/api/say \
+      --data-urlencode "message=🛠 ${DISPLAY_USERNAME} is preparing a build for ${TARGET_ENV}." \
+      --data-urlencode "responseContext=slack" \
+      --data-urlencode "channel=dev" \
+      --data-urlencode "token=${ELLIPSIS_DEPLOY_TOKEN}"
+}
+
+announce_failure() {
+  curl -f https://bot.ellipsis.ai/api/say \
+      --data-urlencode "message=💥 ${DISPLAY_USERNAME} failed to prepare the build for ${TARGET_ENV}" \
+      --data-urlencode "responseContext=slack" \
+      --data-urlencode "channel=dev" \
+      --data-urlencode "token=${ELLIPSIS_DEPLOY_TOKEN}"
+}
+
+announce_completed() {
+  curl -f https://bot.ellipsis.ai/api/say \
+      --data-urlencode "message=🚀 ${DISPLAY_USERNAME} has just finished building **${VERSION_LABEL}** and it’s ready for deployment on ${TARGET_ENV}" \
+      --data-urlencode "responseContext=slack" \
+      --data-urlencode "channel=dev" \
+      --data-urlencode "token=${ELLIPSIS_DEPLOY_TOKEN}"
+}
+
+hold_on_to_your_butts() {
+  printf "
+  ____________________
+ /                    \
+ | Buckle up, partner |
+ \______   ___________/
+        \ |
+         \| ^__^
+            (oo)\_______
+            (__)\       )---*
+                ||----w |
+                ||     ||
+  \n\n"
+}
+
+printf "${GREEN}\n\nChecking your Environment...${PLAIN}\n"
+printf "_____________________________________________________ \n";
+if [ -z "$ELLIPSIS_DEPLOY_TOKEN" ]
+then
+  printf "${RED}You need to set the ELLIPSIS_DEPLOY_TOKEN environment variable.\n"
+  printf "Visit https://bot.ellipsis.ai/list_api_tokens and add"
+  printf " the deploy token to your environment.${PLAIN}\n\n"
+  printf "Bye.\n"
+  exit 1
+fi
+
+if [ ! -f node_modules/.bin/eslint ]
+then
+  printf "\n\n${RED}eslint is not installed.\n"
+  printf "Try running npm install${PLAIN}.\n";
+  printf "Bye.\n"
+  exit 1
+fi
+
+if [ ! -f node_modules/.bin/jest ]
+then
+  printf "\n\n${RED}jest is not installed.\n"
+  printf "Try running npm install${PLAIN}.\n";
+  printf "Bye.\n"
+  exit 1
+fi
+
+type activator >/dev/null 2>&1 || {
+  printf "\n\n${RED}activator is not installed.\n"
+  printf "Visit https://www.lightbend.com/activator/download"
+  printf "to download it.${PLAIN}\n";
+  printf "Bye.\n"
+  exit 1
+}
+
+type aws >/dev/null 2>&1 || {
+  printf "\n\n${RED}You need to set up the aws CLI tools.\n"
+  printf "Try brew install awscli if you’re using brew,\n"
+  printf "or go to https://aws.amazon.com/cli/.${PLAIN}\n";
+  printf "Bye.\n"
+  exit 1
+}
+
+printf "\n${GREEN}OK.${PLAIN}\n"
+printf "\n\n${GREEN}Announcing the deployment to #dev...${PLAIN}\n"
+printf "_____________________________________________________ \n";
+announce_start
+printf "\n${GREEN}OK.${PLAIN}\n"
+
+printf "\n\n${GREEN}Running eslint...${PLAIN}\n";
+printf "_____________________________________________________ \n";
+npm run lint
+if [ $? -eq 1 ]
+then
+  read -p "${MAGENTA}eslint failed. You should probably stop. Do you want to continue anyway? [y/N]: ${PLAIN}" -n 1 -r
+  echo
+  if [[ ! $REPLY =~ ^[Yy]$ ]]
+  then
+    announce_failure
+    printf "Bye.\n"
+    exit 1
+  else
+    printf "OK, continuing anyway...\n";
+  fi
+fi
+printf "\n${GREEN}OK.${PLAIN}\n"
+
+printf "\n\n${GREEN}Running jest...${PLAIN}\n";
+printf "_____________________________________________________ \n";
+npm test
+if [ $? -eq 1 ]
+then
+  printf "\n\n${MAGENTA}JavaScript tests failed. You should probably stop.\n"
+  read -p "Do you want to continue anyway? [y/N]: ${PLAIN}" -n 1 -r
+  printf "\n"
+  if [[ ! $REPLY =~ ^[Yy]$ ]]
+  then
+    printf "You are wise.\n"
+    announce_failure
+    printf "Bye.\n"
+    exit 1
+  else
+    hold_on_to_your_butts
+  fi
+fi
+printf "\n${GREEN}OK.${PLAIN}\n"
+
+printf "\n\n${GREEN}Running activator test...${PLAIN}\n";
+printf "_____________________________________________________ \n";
+activator test
+if [ $? -eq 1 ]
+then
+  printf "\n\n${BOLD}Scala tests failed.${PLAIN} You should probably stop.\n";
+  read -p "Do you want to continue anyway? [y/N]: " -n 1 -r
+  printf "\n";
+  if [[ ! $REPLY =~ ^[Yy]$ ]]
+  then
+    printf "You are wise.\n";
+    announce_failure
+    printf "Bye.\n"
+    exit 1
+  else
+    hold_on_to_your_butts
+  fi
+fi
+printf "\n${GREEN}OK.${PLAIN}\n"
+
+printf "\n\n${GREEN}Packaging the build...${PLAIN}\n";
+printf "_____________________________________________________ \n";
+touch conf/version.conf
+echo application.version=\"`git rev-parse --short HEAD`\" >conf/version.conf
+activator docker:stage
+mkdir -p target/docker/.ebextensions
+cp .ebextensions/* target/docker/.ebextensions/
+cp deploy/Docker* target/docker/
+pushd target/docker > /dev/null
+BUNDLE=$VERSION_LABEL.zip
+BUNDLE_PATH=~/Desktop/$BUNDLE
+zip -qq -r $BUNDLE_PATH .
+popd > /dev/null
+printf "\n${GREEN}OK.${PLAIN}\n"
+
+printf "\n\n${GREEN}Syncing assets with S3...${PLAIN}\n";
+printf "_____________________________________________________ \n";
+PUBLIC_ASSETS_DIR=/tmp/public-assets
+mkdir -p $PUBLIC_ASSETS_DIR
+rm -rf $PUBLIC_ASSETS_DIR/*
+unzip -qq target/docker/stage/opt/docker/lib/ellipsis.ellipsis-1.0-SNAPSHOT-assets.jar -d $PUBLIC_ASSETS_DIR/
+aws --profile $AWS_ELLIPSIS_PROFILE s3 sync $PUBLIC_ASSETS_DIR/public s3://$ASSETS_BUCKET/ --acl=public-read --quiet
+if [ $? -eq 0 ]
+then
+  printf "${GREEN}OK.${PLAIN}\n";
+else
+  printf "\n\n${RED}An error occurred!${PLAIN}\n";
+  announce_failure
+  printf "Bye.\n"
+  exit 1
+fi
+
+
+printf "\n\n${GREEN}Uploading app bundle ${BUNDLE} to S3...${PLAIN}\n";
+printf "_____________________________________________________ \n";
+S3_KEY=`date +'%Y-%m-%d'`-$BUNDLE
+aws --profile $AWS_ELLIPSIS_PROFILE s3 cp $BUNDLE_PATH s3://$EB_BUCKET/$S3_KEY
+if [ $? -eq 0 ]
+then
+  printf "${GREEN}OK.${PLAIN}\n";
+else
+  printf "\n\n${RED}An error occurred!${PLAIN}\n";
+  announce_failure
+  printf "Bye.\n"
+  exit 1
+fi
+
+printf "\n\n${GREEN}Updating Beanstalk app version...${PLAIN}\n";
+printf "_____________________________________________________ \n";
+aws --profile $AWS_ELLIPSIS_PROFILE elasticbeanstalk create-application-version \
+--application-name "${APP_NAME}" \
+--version-label $VERSION_LABEL \
+--source-bundle S3Bucket=$EB_BUCKET,S3Key=$S3_KEY \
+--process
+if [ $? -eq 0 ]
+then
+   printf "\n${GREEN}OK.${PLAIN}\n"
+else
+  printf "\n\n${RED}An error occurred!{PLAIN}\n";
+  announce_failure
+  printf "Bye.\n"
+  exit 1
+fi
+
+printf "\n\n${GREEN}Sending notifications...${PLAIN}\n";
+printf "_____________________________________________________ \n";
+osascript -e "display notification \"The build script has ended.\" with title \"Build $VERSION_LABEL\" sound name \"Sosumi\""
+announce_completed
+printf "\n\n\n\n          ${BOLD}F   I   N${PLAIN}          \n\n\n\n";

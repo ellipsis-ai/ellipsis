@@ -177,7 +177,7 @@ BehaviorEditorDropdownMenu.Item = React.createClass({
               ✓
             </div>
           ) : null}
-          <div className={"column column-expand align-m " + (this.props.checkedWhen ? "type-bold" : "")}>
+          <div className={"column column-expand align-m " + (this.props.checkedWhen ? "type-semibold" : "")}>
             {this.props.label}
           </div>
         </div>

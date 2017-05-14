@@ -8,24 +8,6 @@
 @import json.Formatting._
 
 @main("Edit skill", config, selectedNav = "skills") {
-  @helper.javascriptRouter("jsRoutes")(
-    routes.javascript.ApplicationController.deleteBehaviorGroups,
-    routes.javascript.BehaviorEditorController.edit,
-    routes.javascript.BehaviorEditorController.save,
-    routes.javascript.BehaviorEditorController.regexValidationErrorsFor,
-    routes.javascript.BehaviorEditorController.versionInfoFor,
-    routes.javascript.BehaviorEditorController.testTriggers,
-    routes.javascript.BehaviorEditorController.testInvocation,
-    routes.javascript.BehaviorEditorController.newUnsavedBehavior,
-    routes.javascript.BehaviorEditorController.newUnsavedLibrary,
-    routes.javascript.BehaviorEditorController.newUnsavedInput,
-    routes.javascript.EnvironmentVariablesController.submit,
-    routes.javascript.OAuth2ApplicationController.newApp,
-    routes.javascript.APIAccessController.linkCustomOAuth2Service,
-    routes.javascript.BehaviorImportExportController.export,
-    routes.javascript.SavedAnswerController.resetForTeam,
-    routes.javascript.SavedAnswerController.resetForUser
-  )
   <div id="content" class="content">
     <div>
       <div id="editorContainer"></div>

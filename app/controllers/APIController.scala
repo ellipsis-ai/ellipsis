@@ -152,20 +152,20 @@ class APIController @Inject() (
 
   private def maybeIntroTextFor(isInvokedExternally: Boolean, event: Event, context: ApiMethodContext, isForInterruption: Boolean): Option[String] = {
     val greeting = if (isForInterruption) {
+      "Meanwhile, "
+    } else {
       s""":wave: Hi.
        |
        |""".stripMargin
-    } else {
-      "Meanwhile, "
     }
     if (isInvokedExternally) {
-      context.maybeSlackProfile.map { slackProfile =>
-        s"""$greeting<@${slackProfile.loginInfo.providerKey}> asked me to run `${event.messageText}`.
-         |
-         |───
-         |""".stripMargin
-      }
-    } else { None }
+      Some(s"""${greeting}I’ve been asked to run `${event.messageText}`.
+       |
+       |───
+       |""".stripMargin)
+    } else {
+      None
+    }
   }
 
   private def runBehaviorFor(maybeEvent: Option[Event], context: ApiMethodContext) = {

@@ -109,6 +109,6 @@ jobs:
               echo "bucket exists!";
             fi
             echo "uploading to builds bucket: s3://${BUCKET}/${BOT_BUNDLE}"
-            S3_KEY=`date +'%Y-%m-%d'`-$BOT_BUNDLE
+            S3_KEY=${CIRCLE_BRANCH}/`date +'%Y-%m-%d'`-$BOT_BUNDLE
             echo "Uploading with command aws s3 --region ${AWS_REGION} cp ${BOT_BUNDLE_PATH} s3://${BUCKET}/${S3_KEY}"
             aws s3 --region ${AWS_REGION} cp ${BOT_BUNDLE_PATH} s3://${BUCKET}/${S3_KEY}

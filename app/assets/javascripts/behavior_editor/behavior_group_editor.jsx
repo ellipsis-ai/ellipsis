@@ -39,7 +39,7 @@ define(function(require) {
           <div className="columns columns-elastic">
             <div className="column column-shrink">
               <Input
-                className="form-input-borderless form-input-l mbn width-2"
+                className="form-input-borderless form-input-l type-l mbn width-2"
                 placeholder="Icon"
                 onChange={this.props.onBehaviorGroupIconChange}
                 value={this.props.group.icon || ""}
@@ -48,7 +48,7 @@ define(function(require) {
             <div className="column column-expand">
               <Input
                 ref="skillName"
-                className="form-input-borderless form-input-l type-bold mbn width-20"
+                className="form-input-borderless form-input-l type-l type-semibold mbn width-20"
                 placeholder="Add a title (optional)"
                 onChange={this.props.onBehaviorGroupNameChange}
                 value={this.props.group.name || ""}
