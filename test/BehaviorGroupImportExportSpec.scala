@@ -308,7 +308,30 @@ class BehaviorGroupImportExportSpec extends DBSpec {
       })
     }
 
+  }
 
+  "LibraryVersionData" should {
+
+    "process library file content correctly" in {
+      val content =
+        s"""/*
+           |Some description blah
+           |@exportId 123456789abcdef
+           |*/
+           |const foo = require('foo');
+           |
+           |foo('bar');
+           |""".stripMargin
+      val filename = "foo-lib.js"
+      val data = LibraryVersionData.fromFile(content, filename)
+      data.name mustBe "foo-lib"
+      data.description must contain("Some description blah")
+      data.functionBody mustBe
+        """const foo = require('foo');
+          |
+          |foo('bar');
+          |""".stripMargin
+    }
 
   }
 

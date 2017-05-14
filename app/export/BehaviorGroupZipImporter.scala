@@ -73,33 +73,17 @@ case class BehaviorGroupZipImporter(
         })
         map.put(filename, readDataFrom(zipInputStream))
       }
-      libFileRegex.findFirstMatchIn(entryName).foreach { firstMatch =>
-        val filenameWithoutExtension = firstMatch.subgroups(0)
-        var maybeExportId: Option[String] = None
-        var maybeDescription: Option[String] = None
-        var code: String = ""
-        val content = readDataFrom(zipInputStream)
-        libContentRegex.findFirstMatchIn(content).foreach { firstMatch =>
-          maybeDescription = Some(firstMatch.subgroups(0))
-          maybeExportId = Some(firstMatch.subgroups(1))
-          code = firstMatch.subgroups(2)
-        }
-        libraries ++= Seq(LibraryVersionData(
-          None,
-          None,
-          maybeExportId,
-          filenameWithoutExtension,
-          maybeDescription,
-          code
-        ))
+      LibraryVersionData.libFileRegex.findFirstMatchIn(entryName).foreach { _ =>
+        val newLib = LibraryVersionData.fromFile(readDataFrom(zipInputStream), entryName)
+        libraries ++= Seq(newLib)
       }
-      readmeRegex.findFirstMatchIn(entryName).foreach { firstMatch =>
+      readmeRegex.findFirstMatchIn(entryName).foreach { _ =>
         maybeGroupDescription = Some(readDataFrom(zipInputStream))
       }
-      configRegex.findFirstMatchIn(entryName).foreach { firstMatch =>
+      configRegex.findFirstMatchIn(entryName).foreach { _ =>
         val readData = readDataFrom(zipInputStream)
         Json.parse(readData).validate[BehaviorGroupConfig] match {
-          case JsSuccess(data, jsPath) => {
+          case JsSuccess(data, _) => {
             maybeGroupName = Some(data.name)
             maybeExportId = data.exportId
             maybeIcon = data.icon

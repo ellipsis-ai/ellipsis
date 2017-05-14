@@ -7,7 +7,7 @@ CREATE TABLE library_versions(
   name TEXT NOT NULL,
   description TEXT,
   function_body TEXT NOT NULL,
-  group_version_id TEXT NOT NULL REFERENCES behavior_group_versions(id),
+  group_version_id TEXT NOT NULL REFERENCES behavior_group_versions(id) ON DELETE CASCADE,
   created_at TIMESTAMPTZ NOT NULL
 );
 

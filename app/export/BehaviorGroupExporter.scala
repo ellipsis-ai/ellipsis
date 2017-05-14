@@ -112,9 +112,7 @@ case class BehaviorGroupExporter(
 
   protected def writeFilesFor(behaviorVersionData: BehaviorVersionData): Unit = {
     val path = fullPathFor(behaviorVersionData)
-    behaviorVersionData.description.foreach { desc =>
-      writeFileFor(path, "README", desc)
-    }
+    writeFileFor(path, "README", behaviorVersionData.description.getOrElse(""))
     writeFileFor(path, "function.js", functionStringFor(behaviorVersionData))
     writeFileFor(path, "triggers.json", triggersStringFor(behaviorVersionData))
     writeFileFor(path, "params.json", paramsStringFor(behaviorVersionData))

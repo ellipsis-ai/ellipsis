@@ -70,4 +70,29 @@ object LibraryVersionData {
     description = None,
     functionBody = ""
   )
+
+  val libFileRegex = """^(.+).js""".r
+  val libContentRegex = """(?s)\/\*\s*([^$]*)\s+@exportId\s+(\S+)\s*\*\/\s*(.*)""".r
+
+  def fromFile(content: String, filename: String): LibraryVersionData = {
+    var maybeExportId: Option[String] = None
+    var maybeDescription: Option[String] = None
+    var code: String = ""
+    libContentRegex.findFirstMatchIn(content).foreach { firstMatch =>
+      maybeDescription = Some(firstMatch.subgroups(0))
+      maybeExportId = Some(firstMatch.subgroups(1))
+      code = firstMatch.subgroups(2)
+    }
+    val name = libFileRegex.findFirstMatchIn(filename).map { firstMatch =>
+      firstMatch.subgroups(0)
+    }.getOrElse(filename)
+    LibraryVersionData(
+      None,
+      None,
+      maybeExportId,
+      name,
+      maybeDescription,
+      LibraryVersion.functionBodyFrom(code)
+    )
+  }
 }
