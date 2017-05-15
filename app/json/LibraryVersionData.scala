@@ -3,11 +3,16 @@ package json
 import export.BehaviorGroupExporter
 import models.IDs
 import models.behaviors.library.LibraryVersion
+import services.DataService
+
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
 
 case class LibraryVersionData(
                                id: Option[String],
                                libraryId: Option[String],
                                exportId: Option[String],
+                               isNew: Option[Boolean],
                                name: String,
                                description: Option[String],
                                functionBody: String
@@ -59,17 +64,36 @@ case class LibraryVersionData(
 object LibraryVersionData {
 
   def fromVersion(version: LibraryVersion): LibraryVersionData = {
-    LibraryVersionData(Some(version.id), Some(version.libraryId), version.maybeExportId, version.name, version.maybeDescription, version.functionBody)
+    LibraryVersionData(Some(version.id), Some(version.libraryId), version.maybeExportId, isNew = Some(false), version.name, version.maybeDescription, version.functionBody)
   }
 
   def newUnsaved: LibraryVersionData = LibraryVersionData(
     id = Some(IDs.next),
     libraryId = Some(IDs.next),
     exportId = Some(IDs.next),
+    isNew = Some(true),
     name = "",
     description = None,
     functionBody = ""
   )
+
+  def maybeClonedFor(libraryIdToClone: String, dataService: DataService): Future[Option[LibraryVersionData]] = {
+    for {
+      maybeExisting <- dataService.libraries.findCurrentByLibraryId(libraryIdToClone)
+    } yield {
+      maybeExisting.map { existing =>
+        LibraryVersionData(
+          id = Some(IDs.next),
+          libraryId = Some(IDs.next),
+          exportId = Some(IDs.next),
+          isNew = Some(true),
+          name = s"${existing.name}-copy",
+          description = existing.maybeDescription,
+          functionBody = existing.functionBody
+        )
+      }
+    }
+  }
 
   val libFileRegex = """^lib\/(.+).js""".r
   val libContentRegex = """(?s)\/\*\s*([^$]*)\s+@exportId\s+(\S+)\s*\*\/\s*(.*)""".r
@@ -90,6 +114,7 @@ object LibraryVersionData {
       None,
       None,
       maybeExportId,
+      isNew = Some(false),
       name,
       maybeDescription,
       LibraryVersion.functionBodyFrom(code)

@@ -134,9 +134,11 @@ object BehaviorEditorData {
           maybeBehavior.map(_.id)
         }
       }.getOrElse(Future.successful(None))
-      maybeVerifiedLibraryId <- maybeSelectedId.map { selectedId =>
-        dataService.libraries.findByLibraryId(selectedId, user).map { maybeLibraryVersion =>
-          maybeLibraryVersion.map(_.libraryId)
+      maybeVerifiedLibraryId <- maybeSelectedId.flatMap { selectedId =>
+        maybeGroupVersion.map { groupVersion =>
+          dataService.libraries.findByLibraryId(selectedId, groupVersion, user).map { maybeLibraryVersion =>
+            maybeLibraryVersion.map(_.libraryId)
+          }
         }
       }.getOrElse(Future.successful(None))
       builtinParamTypeData <- Future.sequence(BehaviorParameterType.allBuiltin.map(ea => BehaviorParameterTypeData.from(ea, dataService)))

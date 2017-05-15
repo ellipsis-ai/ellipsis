@@ -1,6 +1,7 @@
 package models.behaviors.library
 
 import drivers.SlickPostgresDriver.api._
+import models.behaviors.behaviorgroup.BehaviorGroupQueries
 
 object LibraryVersionQueries {
 
@@ -11,8 +12,8 @@ object LibraryVersionQueries {
   }
   val allForQuery = Compiled(uncompiledAllForQuery _)
 
-  def uncompiledFindByLibraryIdQuery(libraryId: Rep[String]) = {
-    all.filter(_.libraryId === libraryId)
+  def uncompiledFindByLibraryIdQuery(libraryId: Rep[String], groupVersionId: Rep[String]) = {
+    all.filter(_.libraryId === libraryId).filter(_.behaviorGroupVersionId === groupVersionId)
   }
   val findByLibraryIdQuery = Compiled(uncompiledFindByLibraryIdQuery _)
 
@@ -20,5 +21,12 @@ object LibraryVersionQueries {
     all.filter(_.id === id)
   }
   val findQuery = Compiled(uncompiledFindQuery _)
+
+  def uncompiledFindCurrentForLibraryIdQuery(libraryId: Rep[String]) = {
+    all.join(BehaviorGroupQueries.all).on(_.behaviorGroupVersionId === _.maybeCurrentVersionId).
+      filter { case(lib, group) => lib.libraryId === libraryId }.
+      map { case(lib, group) => lib }
+  }
+  val findCurrentForLibraryIdQuery = Compiled(uncompiledFindCurrentForLibraryIdQuery _)
 
 }

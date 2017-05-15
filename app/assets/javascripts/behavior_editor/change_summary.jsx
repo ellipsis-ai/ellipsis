@@ -45,8 +45,8 @@ define(function(require) {
       const originalActions = this.props.originalGroupVersion.getActions();
       const originalDataTypes = this.props.originalGroupVersion.getDataTypes();
 
-      const actionsModified = currentActions.filter((ea) => this.props.isModified(ea) && !ea.isNewBehavior).length;
-      const dataTypesModified = currentDataTypes.filter((ea) => this.props.isModified(ea) && !ea.isNewBehavior).length;
+      const actionsModified = currentActions.filter((ea) => this.props.isModified(ea) && !ea.isNew).length;
+      const dataTypesModified = currentDataTypes.filter((ea) => this.props.isModified(ea) && !ea.isNew).length;
 
       const currentActionIds = currentActions.map((ea) => ea.id);
       const originalActionIds = originalActions.map((ea) => ea.id);

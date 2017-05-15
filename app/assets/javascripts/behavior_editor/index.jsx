@@ -150,7 +150,7 @@ const BehaviorEditor = React.createClass({
     }
   },
 
-  getBehaviorName: function() {
+  getEditableName: function() {
     return this.getEditableProp('name') || "";
   },
 
@@ -458,15 +458,19 @@ const BehaviorEditor = React.createClass({
     this.showVersionIndex(0);
   },
 
-  cloneBehavior: function() {
-    const behaviorVersion = this.getSelectedBehavior();
-    if (behaviorVersion) {
-      this.addNewBehavior(behaviorVersion.isDataType(), behaviorVersion.behaviorId);
+  cloneEditable: function() {
+    const editable = this.getSelected();
+    if (editable) {
+      if (editable.isBehaviorVersion()) {
+        this.addNewBehavior(editable.isDataType(), editable.behaviorId);
+      } else {
+        this.addNewLibrary(editable.libraryId);
+      }
     }
   },
 
-  confirmDeleteBehavior: function() {
-    this.toggleActivePanel('confirmDeleteBehavior', true);
+  confirmDeleteEditable: function() {
+    this.toggleActivePanel('confirmDeleteEditable', true);
   },
 
   confirmDeleteBehaviorGroup: function() {
@@ -481,11 +485,12 @@ const BehaviorEditor = React.createClass({
     this.toggleActivePanel('confirmUndo', true);
   },
 
-  deleteBehavior: function() {
+  deleteEditable: function() {
     this.props.onClearActivePanel();
     const group = this.getBehaviorGroup();
     const updatedGroup = group.clone({
-      behaviorVersions: group.behaviorVersions.filter(ea => ea.behaviorId !== this.getSelectedId())
+      behaviorVersions: group.behaviorVersions.filter(ea => ea.behaviorId !== this.getSelectedId()),
+      libraryVersions: group.libraryVersions.filter(ea => ea.libraryId !== this.getSelectedId())
     });
     this.updateGroupStateWith(updatedGroup);
   },
@@ -1109,8 +1114,8 @@ const BehaviorEditor = React.createClass({
     return this.isDataTypeBehavior() && this.hasInputNamed('searchQuery');
   },
 
-  isExistingBehavior: function() {
-    return !!this.getSelectedBehavior() && !this.getSelectedBehavior().isNewBehavior;
+  isExisting: function() {
+    return !!this.getSelected() && !this.getSelected().isNew;
   },
 
   isExistingGroup: function() {
@@ -1118,14 +1123,14 @@ const BehaviorEditor = React.createClass({
   },
 
   isFinishedBehavior: function() {
-    var originalSelectedBehavior = this.getOriginalSelected();
-    return !!(originalSelectedBehavior && !originalSelectedBehavior.isNewBehavior &&
-      (originalSelectedBehavior.functionBody || originalSelectedBehavior.responseTemplate.text));
+    var originalSelected = this.getOriginalSelected();
+    return !!(originalSelected && !originalSelected.isNew &&
+      (originalSelected.functionBody || originalSelected.responseTemplate.text));
   },
 
   isFinishedLibraryVersion: function() {
     var originalSelected = this.getOriginalSelected();
-    return !!(originalSelected && !originalSelected.isNewBehavior && originalSelected.functionBody);
+    return !!(originalSelected && !originalSelected.isNew && originalSelected.functionBody);
   },
 
   isModified: function() {
@@ -1405,6 +1410,11 @@ const BehaviorEditor = React.createClass({
     );
   },
 
+  confirmDeleteText: function() {
+    const selected = this.getSelected();
+    return selected ? selected.confirmDeleteText() : "";
+  },
+
   renderFooter: function() {
     return (
       <div>
@@ -1422,9 +1432,9 @@ const BehaviorEditor = React.createClass({
             </ConfirmActionPanel>
           </Collapsible>
 
-          <Collapsible ref="confirmDeleteBehavior" revealWhen={this.props.activePanelName === 'confirmDeleteBehavior'} onChange={this.layoutDidUpdate}>
-            <ConfirmActionPanel confirmText="Delete" onConfirmClick={this.deleteBehavior} onCancelClick={this.props.onClearActivePanel}>
-              <p>Are you sure you want to delete this action?</p>
+          <Collapsible ref="confirmDeleteEditable" revealWhen={this.props.activePanelName === 'confirmDeleteEditable'} onChange={this.layoutDidUpdate}>
+            <ConfirmActionPanel confirmText="Delete" onConfirmClick={this.deleteEditable} onCancelClick={this.props.onClearActivePanel}>
+              <p>{this.confirmDeleteText()}</p>
             </ConfirmActionPanel>
           </Collapsible>
 
@@ -1601,7 +1611,7 @@ const BehaviorEditor = React.createClass({
                       text: 'Save and test…',
                       displayWhen: this.isModified()
                     }]}
-                    disabledWhen={!this.isExistingBehavior() && !this.isModified()}
+                    disabledWhen={!this.isExisting() && !this.isModified()}
                     className={`mbm ${this.isExistingGroup() ? "mrs" : "mrl"}`} onClick={this.checkIfModifiedAndTest}
                   />
                   {this.isExistingGroup() ? (
@@ -1662,12 +1672,12 @@ const BehaviorEditor = React.createClass({
 
   getBehaviorHeadingText: function() {
     if (this.isDataTypeBehavior()) {
-      if (this.isExistingBehavior()) {
+      if (this.isExisting()) {
         return "Edit data type";
       } else {
         return "New data type";
       }
-    } else if (this.isExistingBehavior()) {
+    } else if (this.isExisting()) {
       return "Edit action";
     } else {
       return "New action";
@@ -1821,23 +1831,23 @@ const BehaviorEditor = React.createClass({
             <FormInput
               className="form-input-borderless form-input-l type-l type-semibold width-15 mobile-width-full"
               ref="input"
-              value={this.getBehaviorName()}
+              value={this.getEditableName()}
               placeholder={this.isDataTypeBehavior() ? "Data type name" : "Action name (optional)"}
               onChange={this.updateName}
             />
           </div>
           <div className="column column-expand align-r align-b mobile-align-l mobile-mtl">
-            {this.isExistingBehavior() ? (
+            {this.isExisting() ? (
               <span>
                 <button type="button"
                   className="button-s mrs mbs"
-                  onClick={this.cloneBehavior}>
-                  {this.isDataTypeBehavior() ? "Clone data type…" : "Clone action…" }
+                  onClick={this.cloneEditable}>
+                  {this.getSelected().cloneActionText()}
                 </button>
                 <button type="button"
                   className="button-s mrs mbs"
-                  onClick={this.confirmDeleteBehavior}>
-                  {this.isDataTypeBehavior() ? "Delete data type…" : "Delete action…" }
+                  onClick={this.confirmDeleteEditable}>
+                  {this.getSelected().deleteActionText()}
                 </button>
               </span>
             ) : null}

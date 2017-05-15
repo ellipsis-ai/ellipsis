@@ -44,7 +44,7 @@ case class RememberBehavior(event: Event, lambdaService: AWSLambdaService, dataS
                 group.team.id,
                 None,
                 Some(group.id),
-                isNewBehavior = false,
+                isNew = false,
                 None,
                 "",
                 qaExtractor.possibleAnswerContent,

@@ -161,8 +161,7 @@ class BehaviorEditorController @Inject() (
                           maybeLibraryIdToClone: Option[String]
                         ) = silhouette.SecuredAction.async { implicit request =>
     maybeLibraryIdToClone.map { libraryIdToClone =>
-      // TODO: for realz
-      Future.successful(Some(LibraryVersionData.newUnsaved))
+      LibraryVersionData.maybeClonedFor(libraryIdToClone, dataService)
     }.getOrElse {
       Future.successful(Some(LibraryVersionData.newUnsaved))
     }.map { maybeVersionData =>

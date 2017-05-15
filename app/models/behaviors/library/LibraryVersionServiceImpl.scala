@@ -46,14 +46,14 @@ class LibraryVersionServiceImpl @Inject() (
     dataService.run(allForAction(groupVersion))
   }
 
-  def findByLibraryIdWithoutAccessCheck(libraryId: String): Future[Option[LibraryVersion]] = {
-    val action = findByLibraryIdQuery(libraryId).result.map(_.headOption)
+  def findByLibraryIdWithoutAccessCheck(libraryId: String, groupVersion: BehaviorGroupVersion): Future[Option[LibraryVersion]] = {
+    val action = findByLibraryIdQuery(libraryId, groupVersion.id).result.map(_.headOption)
     dataService.run(action)
   }
 
-  def findByLibraryId(libraryId: String, user: User): Future[Option[LibraryVersion]] = {
+  def findByLibraryId(libraryId: String, groupVersion: BehaviorGroupVersion, user: User): Future[Option[LibraryVersion]] = {
     for {
-      maybeLibraryVersion <- findByLibraryIdWithoutAccessCheck(libraryId)
+      maybeLibraryVersion <- findByLibraryIdWithoutAccessCheck(libraryId, groupVersion)
       maybeGroupVersion <- maybeLibraryVersion.map { libraryVersion =>
         dataService.behaviorGroupVersions.findWithoutAccessCheck(libraryVersion.behaviorGroupVersionId)
       }.getOrElse(Future.successful(None))
@@ -71,6 +71,17 @@ class LibraryVersionServiceImpl @Inject() (
 
   def findAction(id: String): DBIO[Option[LibraryVersion]] = {
     findQuery(id).result.map(_.headOption)
+  }
+
+  def find(id: String): Future[Option[LibraryVersion]] = {
+    dataService.run(findAction(id))
+  }
+
+  def findCurrentByLibraryId(libraryId: String): Future[Option[LibraryVersion]] = {
+    val action = findCurrentForLibraryIdQuery(libraryId).result.map { r =>
+      r.headOption
+    }
+    dataService.run(action)
   }
 
   def createForAction(data: LibraryVersionData, behaviorGroupVersion: BehaviorGroupVersion): DBIO[LibraryVersion] = {

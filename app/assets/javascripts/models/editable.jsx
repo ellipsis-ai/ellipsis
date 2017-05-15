@@ -15,6 +15,7 @@ define(function(require) {
         id: { value: initialProps.id, enumerable: true },
         groupId: { value: initialProps.groupId, enumerable: true },
         teamId: { value: initialProps.teamId, enumerable: true },
+        isNew: { value: initialProps.isNew, enumerable: true },
         name: { value: initialProps.name, enumerable: true },
         description: { value: initialProps.description, enumerable: true },
         functionBody: { value: initialProps.functionBody, enumerable: true },

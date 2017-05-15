@@ -10,6 +10,18 @@ define(function(require) {
       });
     }
 
+    cloneActionText() {
+      return "Clone library…";
+    }
+
+    deleteActionText() {
+      return "Delete library…";
+    }
+
+    confirmDeleteText() {
+      return "Are you sure you want to delete this library?";
+    }
+
     buildUpdatedGroupFor(group, props) {
       const updated = this.clone(props);
       const updatedVersions = group.libraryVersions.

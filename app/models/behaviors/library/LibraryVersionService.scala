@@ -13,7 +13,11 @@ trait LibraryVersionService {
 
   def allFor(groupVersion: BehaviorGroupVersion): Future[Seq[LibraryVersion]]
 
-  def findByLibraryId(libraryId: String, user: User): Future[Option[LibraryVersion]]
+  def findByLibraryId(libraryId: String, groupVersion: BehaviorGroupVersion, user: User): Future[Option[LibraryVersion]]
+
+  def findCurrentByLibraryId(libraryId: String): Future[Option[LibraryVersion]]
+
+  def find(id: String): Future[Option[LibraryVersion]]
 
   def ensureForAction(data: LibraryVersionData, behaviorGroupVersion: BehaviorGroupVersion): DBIO[LibraryVersion]
 

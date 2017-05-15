@@ -17,7 +17,6 @@ define(function(require) {
 
       Object.defineProperties(this, {
         behaviorId: { value: initialProps.behaviorId, enumerable: true },
-        isNewBehavior: { value: initialProps.isNewBehavior, enumerable: true },
         responseTemplate: { value: initialProps.responseTemplate, enumerable: true },
         inputIds: { value: initialProps.inputIds, enumerable: true },
         triggers: { value: initialProps.triggers, enumerable: true },
@@ -26,6 +25,19 @@ define(function(require) {
         createdAt: { value: initialProps.createdAt, enumerable: true },
         shouldRevealCodeEditor: { value: initialProps.shouldRevealCodeEditor, enumerable: true }
       });
+    }
+
+    cloneActionText() {
+      return this.isDataType() ? "Clone data type…" : "Clone action…";
+    }
+
+    deleteActionText() {
+      return this.isDataType() ? "Delete data type…" : "Delete action…";
+    }
+
+    confirmDeleteText() {
+      const behaviorType = this.isDataType() ? "data type" : "action";
+      return `Are you sure you want to delete this ${behaviorType}?`;
     }
 
     buildUpdatedGroupFor(group, props) {
@@ -101,7 +113,7 @@ define(function(require) {
     }
 
     get sortKey() {
-      if (this.isNewBehavior) {
+      if (this.isNew) {
         return "Z" + this.timestampForAlphabeticalSort();
       } else {
         return "A" + (this.name || this.getFirstTriggerText() || this.timestampForAlphabeticalSort());
