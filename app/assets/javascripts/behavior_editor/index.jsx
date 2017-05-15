@@ -1110,6 +1110,10 @@ const BehaviorEditor = React.createClass({
     return this.getSelectedBehavior() && this.getSelectedBehavior().isDataType();
   },
 
+  isLibrary: function() {
+    return !!this.getSelectedLibrary();
+  },
+
   isSearchDataTypeBehavior: function() {
     return this.isDataTypeBehavior() && this.hasInputNamed('searchQuery');
   },
@@ -1670,8 +1674,14 @@ const BehaviorEditor = React.createClass({
     );
   },
 
-  getBehaviorHeadingText: function() {
-    if (this.isDataTypeBehavior()) {
+  getEditableHeadingText: function() {
+    if (this.isLibrary()) {
+      if (this.isExisting()) {
+        return "Edit library";
+      } else {
+        return "New library";
+      }
+    } else if (this.isDataTypeBehavior()) {
       if (this.isExisting()) {
         return "Edit data type";
       } else {
@@ -1684,9 +1694,9 @@ const BehaviorEditor = React.createClass({
     }
   },
 
-  getBehaviorHeading: function() {
+  getEditableHeading: function() {
     return (
-      <h5 className="type-blue-faded mbn">{this.getBehaviorHeadingText()}</h5>
+      <h5 className="type-blue-faded mbn">{this.getEditableHeadingText()}</h5>
     );
   },
 
@@ -2058,7 +2068,7 @@ const BehaviorEditor = React.createClass({
       return (
         <div>
           <div className="container container-wide mtl">
-            {this.getBehaviorHeading()}
+            {this.getEditableHeading()}
           </div>
 
           {this.renderNameAndManagementActions()}
@@ -2069,6 +2079,9 @@ const BehaviorEditor = React.createClass({
     } else if (this.getSelectedLibrary()) {
       return (
         <div>
+          <div className="container container-wide mtl">
+            {this.getEditableHeading()}
+          </div>
           {this.renderNameAndManagementActions()}
           {this.renderLibrary()}
         </div>
