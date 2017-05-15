@@ -27,6 +27,10 @@ define(function(require) {
       });
     }
 
+    namePlaceholderText() {
+      return this.isDataType() ? "Data type name" : "Action name (optional)";
+    }
+
     cloneActionText() {
       return this.isDataType() ? "Clone data type…" : "Clone action…";
     }

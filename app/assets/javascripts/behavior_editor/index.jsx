@@ -1840,7 +1840,7 @@ const BehaviorEditor = React.createClass({
               className="form-input-borderless form-input-l type-l type-semibold width-15 mobile-width-full"
               ref="input"
               value={this.getEditableName()}
-              placeholder={this.isDataTypeBehavior() ? "Data type name" : "Action name (optional)"}
+              placeholder={this.getSelected().namePlaceholderText()}
               onChange={this.updateName}
             />
           </div>

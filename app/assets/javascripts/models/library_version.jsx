@@ -10,6 +10,10 @@ define(function(require) {
       });
     }
 
+    namePlaceholderText() {
+      return "Library name";
+    }
+
     cloneActionText() {
       return "Clone library…";
     }
