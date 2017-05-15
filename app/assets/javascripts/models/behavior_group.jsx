@@ -112,6 +112,7 @@ define(function(require) {
     toJSON() {
       return this.clone({
         behaviorVersions: this.sortedForComparison(this.behaviorVersions).map(BehaviorVersion.forEqualityComparison),
+        libraryVersions: this.sortedForComparison(this.libraryVersions).map(LibraryVersion.forEqualityComparison),
         createdAt: null
       });
     }
@@ -148,9 +149,9 @@ define(function(require) {
 
     sortedForComparison(versions) {
       return versions.sort((a, b) => {
-        if (a.behaviorId < b.behaviorId) {
+        if (a.getPersistentId() < b.getPersistentId()) {
           return -1;
-        } else if (a.behaviorId > b.behaviorId) {
+        } else if (a.getPersistentId() > b.getPersistentId()) {
           return 1;
         } else {
           return 0;

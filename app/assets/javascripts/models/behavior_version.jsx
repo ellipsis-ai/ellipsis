@@ -85,9 +85,8 @@ define(function(require) {
 
     // Used by JSON.stringify for submitting data to the server
     toJSON() {
-      return this.clone({
-        createdAt: null,
-        editorScrollPosition: null
+      return super.toJSON().clone({
+        createdAt: null
       });
     }
 

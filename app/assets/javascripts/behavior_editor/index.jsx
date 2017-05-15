@@ -559,7 +559,9 @@ const BehaviorEditor = React.createClass({
   },
 
   updateBehaviorScrollPosition: function() {
-    // TODO: do it
+    if (this.getSelected()) {
+      this.setEditableProp('editorScrollPosition', window.scrollY);
+    }
   },
 
   refreshCodeEditor: function() {
