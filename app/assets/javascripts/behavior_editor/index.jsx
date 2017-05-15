@@ -464,7 +464,7 @@ const BehaviorEditor = React.createClass({
       if (editable.isBehaviorVersion()) {
         this.addNewBehavior(editable.isDataType(), editable.behaviorId);
       } else {
-        this.addNewLibrary(editable.libraryId);
+        this.cloneLibrary(editable.libraryId);
       }
     }
   },
@@ -1772,7 +1772,7 @@ const BehaviorEditor = React.createClass({
     this.addNewBehavior(true);
   },
 
-  addNewLibrary: function(libraryIdToClone) {
+  addNewLibraryImpl: function(libraryIdToClone) {
     const group = this.getBehaviorGroup();
     const url = jsRoutes.controllers.BehaviorEditorController.newUnsavedLibrary(group.teamId, libraryIdToClone).url;
     fetch(url, { credentials: 'same-origin' })
@@ -1784,6 +1784,14 @@ const BehaviorEditor = React.createClass({
           this.onSelect(groupWithNewLibrary.id, newVersion.libraryId);
         });
       });
+  },
+
+  addNewLibrary: function() {
+    this.addNewLibraryImpl();
+  },
+
+  cloneLibrary: function(libraryIdToClone) {
+    this.addNewLibraryImpl(libraryIdToClone);
   },
 
   renderBehaviorSwitcher: function() {
