@@ -322,7 +322,7 @@ class BehaviorGroupImportExportSpec extends DBSpec {
            |
            |foo('bar');
            |""".stripMargin
-      val filename = "foo-lib.js"
+      val filename = "lib/foo-lib.js"
       val data = LibraryVersionData.fromFile(content, filename)
       data.name mustBe "foo-lib"
       data.description must contain("Some description blah")

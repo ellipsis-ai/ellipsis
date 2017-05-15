@@ -245,7 +245,7 @@ class GithubService @Inject() (
       path <- (tree \ "path").asOpt[String]
     } yield {
       fetchTextFor(url).map { text =>
-        Some(LibraryVersionData.fromFile(text, path))
+        Some(LibraryVersionData.fromFile(text, s"lib/$path"))
       }
     }).getOrElse {
       Future.successful(None)
