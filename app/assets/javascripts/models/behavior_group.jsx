@@ -1,5 +1,6 @@
 define(function(require) {
   var BehaviorVersion = require('./behavior_version');
+  var LibraryVersion = require('./library_version');
   var Input = require('./input');
   var DeepEqual = require('../lib/deep_equal');
   const ONE_MINUTE = 60000;
@@ -16,11 +17,16 @@ define(function(require) {
         actionInputs: { value: props.actionInputs, enumerable: true },
         dataTypeInputs: { value: props.dataTypeInputs, enumerable: true },
         behaviorVersions: { value: props.behaviorVersions, enumerable: true },
+        libraryVersions: { value: props.libraryVersions, enumerable: true },
         requiredOAuth2ApiConfigs: { value: props.requiredOAuth2ApiConfigs, enumerable: true },
         requiredSimpleTokenApis: { value: props.requiredSimpleTokenApis, enumerable: true },
         createdAt: { value: props.createdAt, enumerable: true },
         exportId: { value: props.exportId, enumerable: true }
       });
+    }
+
+    getEditables() {
+      return this.behaviorVersions.concat(this.libraryVersions);
     }
 
     getRequiredOAuth2ApiConfigs() {
@@ -106,6 +112,7 @@ define(function(require) {
     toJSON() {
       return this.clone({
         behaviorVersions: this.sortedForComparison(this.behaviorVersions).map(BehaviorVersion.forEqualityComparison),
+        libraryVersions: this.sortedForComparison(this.libraryVersions).map(LibraryVersion.forEqualityComparison),
         createdAt: null
       });
     }
@@ -124,6 +131,12 @@ define(function(require) {
       });
     }
 
+    withNewLibraryVersion(libraryVersion) {
+      return this.clone({
+        libraryVersions: this.libraryVersions.concat([libraryVersion])
+      });
+    }
+
     hasBehaviorVersionWithId(behaviorId) {
       return !!this.behaviorVersions.find(ea => ea.behaviorId === behaviorId);
     }
@@ -136,9 +149,9 @@ define(function(require) {
 
     sortedForComparison(versions) {
       return versions.sort((a, b) => {
-        if (a.behaviorId < b.behaviorId) {
+        if (a.getPersistentId() < b.getPersistentId()) {
           return -1;
-        } else if (a.behaviorId > b.behaviorId) {
+        } else if (a.getPersistentId() > b.getPersistentId()) {
           return 1;
         } else {
           return 0;
@@ -150,7 +163,8 @@ define(function(require) {
       return new BehaviorGroup(Object.assign({}, props, {
         behaviorVersions: props.behaviorVersions.map((ea) => BehaviorVersion.fromJson(Object.assign({}, ea, { groupId: props.id }))),
         actionInputs: Input.allFromJson(props.actionInputs || []),
-        dataTypeInputs: Input.allFromJson(props.dataTypeInputs || [])
+        dataTypeInputs: Input.allFromJson(props.dataTypeInputs || []),
+        libraryVersions: props.libraryVersions.map(ea => new LibraryVersion(Object.assign({}, ea, { groupId: props.id })))
       }));
     }
 

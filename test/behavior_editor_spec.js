@@ -34,9 +34,10 @@ describe('BehaviorEditor', () => {
           groupId: '1',
           shouldRevealCodeEditor: true
         }
-      ]
+      ],
+      libraryVersions: []
     },
-    selectedBehaviorId: "1",
+    selectedId: "1",
     csrfToken: "2",
     envVariables: [ { name: "HOT_DOG" } ],
     builtinParamTypes: [{
@@ -81,18 +82,18 @@ describe('BehaviorEditor', () => {
     ).refs.component;
   }
 
-  describe('getBehaviorFunctionBody', () => {
+  describe('getFunctionBody', () => {
     it('returns the defined function', () => {
       firstBehavior.functionBody = 'return;';
       let editor = createEditor(editorConfig);
-      expect(editor.getBehaviorFunctionBody()).toEqual('return;');
+      expect(editor.getFunctionBody()).toEqual('return;');
     });
 
     it('returns a string even when no function is defined', () => {
       delete firstBehavior.functionBody;
       firstBehavior.shouldRevealCodeEditor = false;
       let editor = createEditor(editorConfig);
-      expect(editor.getBehaviorFunctionBody()).toEqual("");
+      expect(editor.getFunctionBody()).toEqual("");
     });
   });
 
@@ -159,10 +160,10 @@ describe('BehaviorEditor', () => {
       let defaultTemplate = ResponseTemplate.fromString('default');
       editor.getDefaultBehaviorTemplate = jest.fn();
       editor.getDefaultBehaviorTemplate.mockReturnValue(defaultTemplate);
-      editor.setBehaviorProp = jest.fn();
+      editor.setEditableProp = jest.fn();
       let callback = jest.fn();
       editor.checkDataAndCallback(callback);
-      let mock = editor.setBehaviorProp.mock;
+      let mock = editor.setEditableProp.mock;
       expect(mock.calls.length).toBe(1);
       let firstCallArgs = mock.calls[0];
       expect(firstCallArgs).toEqual(['responseTemplate', defaultTemplate, callback]);
@@ -219,10 +220,10 @@ describe('BehaviorEditor', () => {
   describe('updateTemplate', () => {
     it('sets a callback to mark the template as modified', () => {
       let editor = createEditor(editorConfig);
-      editor.setBehaviorProp = jest.fn();
+      editor.setEditableProp = jest.fn();
       editor.setState = jest.fn();
       editor.updateTemplate('new template');
-      const callback = editor.setBehaviorProp.mock.calls[0][2];
+      const callback = editor.setEditableProp.mock.calls[0][2];
       callback();
       expect(editor.setState).toBeCalledWith({ hasModifiedTemplate: true });
     });

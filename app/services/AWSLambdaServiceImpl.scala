@@ -18,6 +18,7 @@ import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.events.Event
 import models.environmentvariable.{EnvironmentVariable, TeamEnvironmentVariable, UserEnvironmentVariable}
 import models.behaviors.invocationtoken.InvocationToken
+import models.behaviors.library.LibraryVersion
 import models.team.Team
 import play.api.{Configuration, Logger}
 import play.api.cache.CacheApi
@@ -200,8 +201,9 @@ class AWSLambdaServiceImpl @Inject() (
 
   val alreadyIncludedModules = Array("aws-sdk", "dynamodb-doc")
 
-  private def requiredModulesIn(code: String): Array[String] = {
-    requireRegex.findAllMatchIn(code).flatMap(_.subgroups.headOption).toArray.diff(alreadyIncludedModules).sorted
+  private def requiredModulesIn(code: String, libraries: Seq[LibraryVersion]): Array[String] = {
+    val libraryNames = libraries.map(_.name)
+    requireRegex.findAllMatchIn(code).flatMap(_.subgroups.headOption).toArray.diff(alreadyIncludedModules ++ libraryNames).sorted
   }
 
   private def awsCodeFor(maybeAwsConfig: Option[AWSConfig]): String = {
@@ -283,8 +285,8 @@ class AWSLambdaServiceImpl @Inject() (
   private def dirNameFor(functionName: String) = s"/tmp/$functionName"
   private def zipFileNameFor(functionName: String) = s"${dirNameFor(functionName)}.zip"
 
-  case class PreviousFunctionInfo(functionName: String, functionBody: String) {
-    val requiredModules = requiredModulesIn(functionBody)
+  case class PreviousFunctionInfo(functionName: String, functionBody: String, libraries: Seq[LibraryVersion]) {
+    val requiredModules = requiredModulesIn(functionBody, libraries)
     val dirName = dirNameFor(functionName)
 
     def canCopyModules(neededModules: Array[String]): Boolean = {
@@ -297,10 +299,17 @@ class AWSLambdaServiceImpl @Inject() (
     }
   }
 
+  private def writeFileNamed(path: String, content: String) = {
+    val writer = new PrintWriter(new File(path))
+    writer.write(content)
+    writer.close()
+  }
+
   private def createZipWithModulesFor(
                                        functionName: String,
                                        functionBody: String,
                                        params: Array[String],
+                                       libraries: Seq[LibraryVersion],
                                        maybeAWSConfig: Option[AWSConfig],
                                        requiredOAuth2ApiConfigs: Seq[RequiredOAuth2ApiConfig],
                                        requiredSimpleTokenApis: Seq[RequiredSimpleTokenApi],
@@ -310,11 +319,12 @@ class AWSLambdaServiceImpl @Inject() (
     val path = Path(dirName)
     path.createDirectory()
 
-    val writer = new PrintWriter(new File(s"$dirName/index.js"))
-    writer.write(nodeCodeFor(functionBody, params, maybeAWSConfig, requiredOAuth2ApiConfigs, requiredSimpleTokenApis))
-    writer.close()
+    writeFileNamed(s"$dirName/index.js", nodeCodeFor(functionBody, params, maybeAWSConfig, requiredOAuth2ApiConfigs, requiredSimpleTokenApis))
+    libraries.foreach { ea =>
+      writeFileNamed(s"$dirName/${ea.jsName}", ea.code)
+    }
 
-    val requiredModules = requiredModulesIn(functionBody)
+    val requiredModules = requiredModulesIn(functionBody, libraries)
     val shouldInstallModules = maybePreviousFunctionInfo.forall { previousFunctionInfo =>
       if (previousFunctionInfo.canCopyModules(requiredModules)) {
         previousFunctionInfo.copyModulesInto(dirName)
@@ -337,12 +347,13 @@ class AWSLambdaServiceImpl @Inject() (
                          functionName: String,
                          functionBody: String,
                          params: Array[String],
+                         libraries: Seq[LibraryVersion],
                          maybeAWSConfig: Option[AWSConfig],
                          requiredOAuth2ApiConfigs: Seq[RequiredOAuth2ApiConfig],
                          requiredSimpleTokenApis: Seq[RequiredSimpleTokenApi],
                          maybePreviousFunctionInfo: Option[PreviousFunctionInfo]
                        ): ByteBuffer = {
-    createZipWithModulesFor(functionName, functionBody, params, maybeAWSConfig, requiredOAuth2ApiConfigs, requiredSimpleTokenApis, maybePreviousFunctionInfo)
+    createZipWithModulesFor(functionName, functionBody, params, libraries, maybeAWSConfig, requiredOAuth2ApiConfigs, requiredSimpleTokenApis, maybePreviousFunctionInfo)
     val path = Paths.get(zipFileNameFor(functionName))
     ByteBuffer.wrap(Files.readAllBytes(path))
   }
@@ -368,6 +379,7 @@ class AWSLambdaServiceImpl @Inject() (
                       functionName: String,
                       functionBody: String,
                       params: Array[String],
+                      libraries: Seq[LibraryVersion],
                       maybeAWSConfig: Option[AWSConfig],
                       requiredOAuth2ApiConfigs: Seq[RequiredOAuth2ApiConfig],
                       requiredSimpleTokenApis: Seq[RequiredSimpleTokenApi],
@@ -381,7 +393,7 @@ class AWSLambdaServiceImpl @Inject() (
       } else {
         val functionCode =
           new FunctionCode().
-            withZipFile(getZipFor(functionName, functionBody, params, maybeAWSConfig, requiredOAuth2ApiConfigs, requiredSimpleTokenApis, maybePreviousFunctionInfo))
+            withZipFile(getZipFor(functionName, functionBody, params, libraries, maybeAWSConfig, requiredOAuth2ApiConfigs, requiredSimpleTokenApis, maybePreviousFunctionInfo))
         val createFunctionRequest =
           new CreateFunctionRequest().
             withFunctionName(functionName).
@@ -400,16 +412,21 @@ class AWSLambdaServiceImpl @Inject() (
                          behaviorVersion: BehaviorVersion,
                          functionBody: String,
                          params: Array[String],
+                         libraries: Seq[LibraryVersion],
                          maybeAWSConfig: Option[AWSConfig],
                          requiredOAuth2ApiConfigs: Seq[RequiredOAuth2ApiConfig],
                          requiredSimpleTokenApis: Seq[RequiredSimpleTokenApi]
                        ): Future[Unit] = {
-    dataService.behaviorVersions.maybePreviousFor(behaviorVersion).map { maybePrevious =>
+    for {
+      maybePrevious <- dataService.behaviorVersions.maybePreviousFor(behaviorVersion)
+      previousLibraries <- maybePrevious.map { prev =>
+        dataService.libraries.allFor(prev.groupVersion)
+      }.getOrElse(Future.successful(Seq()))
+    } yield {
       val maybePreviousFunctionInfo = maybePrevious.map { version =>
-        PreviousFunctionInfo(version.functionName, version.functionBody)
+        PreviousFunctionInfo(version.functionName, version.functionBody, previousLibraries)
       }
-      deployFunction(behaviorVersion.functionName, functionBody, params, maybeAWSConfig, requiredOAuth2ApiConfigs, requiredSimpleTokenApis, maybePreviousFunctionInfo)
+      deployFunction(behaviorVersion.functionName, functionBody, params, libraries, maybeAWSConfig, requiredOAuth2ApiConfigs, requiredSimpleTokenApis, maybePreviousFunctionInfo)
     }
-
   }
 }

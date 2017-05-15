@@ -30,6 +30,7 @@ import models.behaviors.scheduling.scheduledmessage.ScheduledMessageService
 import models.behaviors.triggers.messagetrigger.MessageTriggerService
 import models.environmentvariable.{TeamEnvironmentVariableService, UserEnvironmentVariableService}
 import models.behaviors.invocationtoken.InvocationTokenService
+import models.behaviors.library.LibraryVersionService
 import models.behaviors.savedanswer.SavedAnswerService
 import models.behaviors.scheduling.recurrence.RecurrenceService
 import models.behaviors.scheduling.scheduledbehavior.ScheduledBehaviorService
@@ -65,6 +66,7 @@ class MockDataService extends DataService with MockitoSugar {
   val behaviorVersions = mock[BehaviorVersionService]
   val behaviorParameters = mock[BehaviorParameterService]
   val inputs = mock[InputService]
+  val libraries = mock[LibraryVersionService]
   val savedAnswers = mock[SavedAnswerService]
   val messageTriggers = mock[MessageTriggerService]
   val awsConfigs = mock[AWSConfigService]

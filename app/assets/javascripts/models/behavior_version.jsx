@@ -1,38 +1,63 @@
 define(function(require) {
   var DeepEqual = require('../lib/deep_equal'),
+    Editable = require('./editable'),
     ResponseTemplate = require('./response_template'),
     Trigger = require('./trigger');
 
-  class BehaviorVersion {
+  class BehaviorVersion extends Editable {
     constructor(props) {
+      super(props);
+
       var initialProps = Object.assign({
-        functionBody: '',
         config: {},
         knownEnvVarsUsed: [],
         shouldRevealCodeEditor: (!!props.functionBody && props.functionBody.length > 0),
-        editorScrollPosition: 0,
         createdAt: Date.now()
       }, props);
 
       Object.defineProperties(this, {
-        id: { value:initialProps.id, enumerable: true },
-        groupId: { value: initialProps.groupId, enumerable: true },
-        teamId: { value: initialProps.teamId, enumerable: true },
         behaviorId: { value: initialProps.behaviorId, enumerable: true },
-        isNewBehavior: { value: initialProps.isNewBehavior, enumerable: true },
-        name: { value: initialProps.name, enumerable: true },
-        description: { value: initialProps.description, enumerable: true },
-        functionBody: { value: initialProps.functionBody, enumerable: true },
         responseTemplate: { value: initialProps.responseTemplate, enumerable: true },
         inputIds: { value: initialProps.inputIds, enumerable: true },
         triggers: { value: initialProps.triggers, enumerable: true },
         config: { value: initialProps.config, enumerable: true },
         knownEnvVarsUsed: { value: initialProps.knownEnvVarsUsed, enumerable: true },
         createdAt: { value: initialProps.createdAt, enumerable: true },
-        exportId: { value: initialProps.exportId, enumerable: true },
-        shouldRevealCodeEditor: { value: initialProps.shouldRevealCodeEditor, enumerable: true },
-        editorScrollPosition: { value: initialProps.editorScrollPosition, enumerable: true }
+        shouldRevealCodeEditor: { value: initialProps.shouldRevealCodeEditor, enumerable: true }
       });
+    }
+
+    namePlaceholderText() {
+      return this.isDataType() ? "Data type name" : "Action name (optional)";
+    }
+
+    cloneActionText() {
+      return this.isDataType() ? "Clone data type…" : "Clone action…";
+    }
+
+    deleteActionText() {
+      return this.isDataType() ? "Delete data type…" : "Delete action…";
+    }
+
+    confirmDeleteText() {
+      const behaviorType = this.isDataType() ? "data type" : "action";
+      return `Are you sure you want to delete this ${behaviorType}?`;
+    }
+
+    buildUpdatedGroupFor(group, props) {
+      const timestampedBehavior = this.clone(props).copyWithNewTimestamp();
+      const updatedVersions = group.behaviorVersions.
+        filter(ea => ea.behaviorId !== timestampedBehavior.behaviorId ).
+        concat([timestampedBehavior]);
+      return group.clone({ behaviorVersions: updatedVersions });
+    }
+
+    getPersistentId() {
+      return this.behaviorId;
+    }
+
+    isBehaviorVersion() {
+      return true;
     }
 
     copyWithNewTimestamp() {
@@ -41,14 +66,6 @@ define(function(require) {
 
     isDataType() {
       return this.config.isDataType;
-    }
-
-    getName() {
-      return this.name || "";
-    }
-
-    getDescription() {
-      return this.description || "";
     }
 
     getTriggers() {
@@ -76,8 +93,7 @@ define(function(require) {
 
     includesText(queryString) {
       var lowercase = queryString.toLowerCase().trim();
-      return this.getName().toLowerCase().includes(lowercase) ||
-          this.getDescription().toLowerCase().includes(lowercase) ||
+      return super.includesText(queryString) ||
           this.getTriggers().some((trigger) => (
             trigger.getText().toLowerCase().includes(lowercase)
           ));
@@ -85,14 +101,9 @@ define(function(require) {
 
     // Used by JSON.stringify for submitting data to the server
     toJSON() {
-      return this.clone({
-        createdAt: null,
-        editorScrollPosition: null
+      return super.toJSON().clone({
+        createdAt: null
       });
-    }
-
-    forEqualityComparison() {
-      return this.toJSON();
     }
 
     isIdenticalToVersion(behaviorVersion) {
@@ -106,7 +117,7 @@ define(function(require) {
     }
 
     get sortKey() {
-      if (this.isNewBehavior) {
+      if (this.isNew) {
         return "Z" + this.timestampForAlphabeticalSort();
       } else {
         return "A" + (this.name || this.getFirstTriggerText() || this.timestampForAlphabeticalSort());
@@ -135,9 +146,6 @@ define(function(require) {
       return new BehaviorVersion(materializedProps);
     }
 
-    static forEqualityComparison(version) {
-      return version.forEqualityComparison();
-    }
   }
 
   return BehaviorVersion;

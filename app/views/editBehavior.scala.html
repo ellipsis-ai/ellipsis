@@ -16,7 +16,7 @@
         var BehaviorEditorConfiguration = {
           group: @Html(Json.toJson(data.group).toString),
           builtinParamTypes: @Html(Json.toJson(data.builtinParamTypes).toString),
-          selectedBehaviorId: @Html(Json.toJson(data.maybeSelectedBehaviorId).toString()),
+          selectedId: @Html(Json.toJson(data.maybeSelectedId).toString()),
           containerId: 'editorContainer',
           csrfToken: "@CSRF.getToken(r).map(_.value)",
           envVariables: @Html(Json.toJson(data.environmentVariables).toString),

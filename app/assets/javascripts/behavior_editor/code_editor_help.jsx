@@ -56,7 +56,7 @@ define(function(require) {
             </Checklist.Item>
 
             <Checklist.Item hiddenWhen={!this.props.isFinishedBehavior || this.hasCalledRequire()}>
-              <span>Use <code>require(…)</code> to load any NPM package.</span>
+              <span>Use <code>require(…)</code> to load any NPM package or local library.</span>
             </Checklist.Item>
 
           </Checklist>

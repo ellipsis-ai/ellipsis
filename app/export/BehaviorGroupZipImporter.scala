@@ -6,6 +6,7 @@ import java.util.zip.{ZipEntry, ZipInputStream}
 
 import json.Formatting._
 import json._
+import models.IDs
 import models.accounts.user.User
 import models.behaviors.behaviorgroup.BehaviorGroup
 import models.team.Team
@@ -56,6 +57,7 @@ case class BehaviorGroupZipImporter(
     var requiredSimpleTokenApiData: Seq[RequiredSimpleTokenApiData] = Seq()
     var actionInputs: Seq[InputData] = Seq()
     var dataTypeInputs: Seq[InputData] = Seq()
+    var libraries: Seq[LibraryVersionData] = Seq()
 
     while (nextEntry != null) {
       val entryName = nextEntry.getName
@@ -69,13 +71,17 @@ case class BehaviorGroupZipImporter(
         })
         map.put(filename, readDataFrom(zipInputStream))
       }
-      readmeRegex.findFirstMatchIn(entryName).foreach { firstMatch =>
+      LibraryVersionData.libFileRegex.findFirstMatchIn(entryName).foreach { _ =>
+        val newLib = LibraryVersionData.fromFile(readDataFrom(zipInputStream), entryName)
+        libraries ++= Seq(newLib)
+      }
+      readmeRegex.findFirstMatchIn(entryName).foreach { _ =>
         maybeGroupDescription = Some(readDataFrom(zipInputStream))
       }
-      configRegex.findFirstMatchIn(entryName).foreach { firstMatch =>
+      configRegex.findFirstMatchIn(entryName).foreach { _ =>
         val readData = readDataFrom(zipInputStream)
         Json.parse(readData).validate[BehaviorGroupConfig] match {
-          case JsSuccess(data, jsPath) => {
+          case JsSuccess(data, _) => {
             maybeGroupName = Some(data.name)
             maybeExportId = data.exportId
             maybeIcon = data.icon
@@ -136,6 +142,7 @@ case class BehaviorGroupZipImporter(
           actionInputs,
           dataTypeInputs,
           versionsData,
+          libraries,
           requiredOAuth2ApiConfigData,
           requiredSimpleTokenApiData,
           githubUrl = None,

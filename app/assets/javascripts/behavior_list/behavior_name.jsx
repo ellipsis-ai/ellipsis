@@ -30,7 +30,7 @@ define(function(require) {
             <SubstringHighlighter text={trigger.displayText} substring={this.props.highlightText} />
           </span>
         );
-      } else if (this.props.version.isNewBehavior && !this.props.isImportable) {
+      } else if (this.props.version.isNew && !this.props.isImportable) {
         return (
           <span className={`${className} type-italic mrs`}>New action</span>
         );

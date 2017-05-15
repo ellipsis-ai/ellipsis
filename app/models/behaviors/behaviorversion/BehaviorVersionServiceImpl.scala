@@ -223,10 +223,12 @@ class BehaviorVersionServiceImpl @Inject() (
         inputs <- DBIO.sequence(data.inputIds.map { inputId =>
           dataService.inputs.findByInputIdAction(inputId, groupVersion)
         }).map(_.flatten)
+        libraries <- dataService.libraries.allForAction(groupVersion)
         _ <- DBIO.from(lambdaService.deployFunctionFor(
           updated,
           data.functionBody,
           withoutBuiltin(inputs.map(_.name).toArray),
+          libraries,
           maybeAWSConfig,
           requiredOAuth2ApiConfigs,
           requiredSimpleTokenApis
@@ -358,10 +360,12 @@ class BehaviorVersionServiceImpl @Inject() (
       maybeAWSConfig <- dataService.awsConfigs.maybeFor(behaviorVersion)
       requiredOAuth2ApiConfigs <- dataService.requiredOAuth2ApiConfigs.allFor(groupVersion)
       requiredSimpleTokenApis <- dataService.requiredSimpleTokenApis.allFor(groupVersion)
+      libraries <- dataService.libraries.allFor(behaviorVersion.groupVersion)
       _ <- lambdaService.deployFunctionFor(
               behaviorVersion,
               behaviorVersion.functionBody,
               params.map(_.name).toArray,
+              libraries,
               maybeAWSConfig,
               requiredOAuth2ApiConfigs,
               requiredSimpleTokenApis

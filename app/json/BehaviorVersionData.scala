@@ -19,7 +19,7 @@ case class BehaviorVersionData(
                                 teamId: String,
                                 behaviorId: Option[String],
                                 groupId: Option[String],
-                                isNewBehavior: Option[Boolean],
+                                isNew: Option[Boolean],
                                 name: Option[String],
                                 description: Option[String],
                                 functionBody: String,
@@ -56,7 +56,7 @@ case class BehaviorVersionData(
       behaviorId = Some(IDs.next),
       exportId = None,
       name = name.map(n => s"Copy of $n"),
-      isNewBehavior = Some(true)
+      isNew = Some(true)
     )
   }
 
@@ -95,7 +95,7 @@ object BehaviorVersionData {
                 teamId: String,
                 behaviorId: Option[String],
                 groupId: Option[String],
-                isNewBehavior: Boolean,
+                isNew: Boolean,
                 description: Option[String],
                 functionBody: String,
                 responseTemplate: String,
@@ -119,7 +119,7 @@ object BehaviorVersionData {
       teamId,
       behaviorId,
       groupId,
-      Some(isNewBehavior),
+      Some(isNew),
       config.name,
       description,
       functionBody,
@@ -140,7 +140,7 @@ object BehaviorVersionData {
       teamId,
       Some(IDs.next),
       None,
-      isNewBehavior = true,
+      isNew = true,
       None,
       "",
       "",
@@ -171,7 +171,7 @@ object BehaviorVersionData {
       teamId,
       None,
       None,
-      isNewBehavior = false,
+      isNew = false,
       maybeDescription,
       extractFunctionBodyFrom(function),
       response,
@@ -232,7 +232,7 @@ object BehaviorVersionData {
           behaviorVersion.team.id,
           Some(behavior.id),
           maybeGroupVersion.map(_.group.id),
-          isNewBehavior = false,
+          isNew = false,
           behaviorVersion.maybeDescription,
           behaviorVersion.functionBody,
           behaviorVersion.maybeResponseTemplate.getOrElse(""),

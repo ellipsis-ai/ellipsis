@@ -100,6 +100,7 @@ class BehaviorGroupServiceImpl @Inject() (
         val actionInputs = groupsData.flatMap(_.actionInputs)
         val dataTypeInputs = groupsData.flatMap(_.dataTypeInputs)
         val behaviorVersions = groupsData.flatMap(_.behaviorVersions)
+        val libraryVersions = groupsData.flatMap(_.libraryVersions)
         val requiredOAuth2ApiConfigs = groupsData.flatMap(_.requiredOAuth2ApiConfigs)
         val requiredSimpleTokenApis = groupsData.flatMap(_.requiredSimpleTokenApis)
         BehaviorGroupData(
@@ -111,6 +112,7 @@ class BehaviorGroupServiceImpl @Inject() (
           actionInputs,
           dataTypeInputs,
           behaviorVersions,
+          libraryVersions,
           requiredOAuth2ApiConfigs,
           requiredSimpleTokenApis,
           githubUrl = None,

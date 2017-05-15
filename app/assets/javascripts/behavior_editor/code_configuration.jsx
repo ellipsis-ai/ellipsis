@@ -209,7 +209,7 @@ define(function(require) {
                 </div>
                 <div className="column column-expand plxs">
                   <code className="type-s">
-                    <span className="type-s type-weak">{"function ("}</span>
+                    <span className="type-s type-weak">{"module.exports = (function ("}</span>
                     {this.props.inputs.map((input, inputIndex) => (
                       <span key={`param${inputIndex}`}>{input.name}<span className="type-weak">, </span></span>
                     ))}
@@ -266,7 +266,7 @@ define(function(require) {
               <div className="column column-expand plxs">
                 <div className="columns columns-elastic">
                   <div className="column column-expand">
-                    <code className="type-weak type-s">{"\u007D"}</code>
+                    <code className="type-weak type-s">{"\u007D()"}</code>
                   </div>
                   <div className="column column-shrink prs align-r">
                     {this.props.canDeleteFunctionBody ? (

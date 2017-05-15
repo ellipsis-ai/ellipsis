@@ -22,6 +22,7 @@ case class BehaviorGroupData(
                               actionInputs: Seq[InputData],
                               dataTypeInputs: Seq[InputData],
                               behaviorVersions: Seq[BehaviorVersionData],
+                              libraryVersions: Seq[LibraryVersionData],
                               requiredOAuth2ApiConfigs: Seq[RequiredOAuth2ApiConfigData],
                               requiredSimpleTokenApis: Seq[RequiredSimpleTokenApiData],
                               githubUrl: Option[String],
@@ -52,12 +53,14 @@ case class BehaviorGroupData(
     val actionInputsWithIds = actionInputs.map(_.copyWithIdsEnsuredFor(maybeExistingGroupData))
     val dataTypeInputsWithIds = dataTypeInputs.map(_.copyWithIdsEnsuredFor(maybeExistingGroupData))
     val behaviorVersionsWithIds = behaviorVersions.map(_.copyForImportableForTeam(team, actionInputsWithIds ++ dataTypeInputsWithIds, maybeExistingGroupData))
+    val libraryVersionsWithIds = libraryVersions.map(_.copyWithIdsEnsuredFor(maybeExistingGroupData))
     val actionInputsWithParamTypeIds = actionInputsWithIds.map(_.copyWithParamTypeIdFromExportId(behaviorVersionsWithIds))
     val dataTypeInputsWithParamTypeIds = dataTypeInputsWithIds.map(_.copyWithParamTypeIdFromExportId(behaviorVersionsWithIds))
     copy(
       actionInputs = actionInputsWithParamTypeIds,
       dataTypeInputs = dataTypeInputsWithParamTypeIds,
-      behaviorVersions = behaviorVersionsWithIds
+      behaviorVersions = behaviorVersionsWithIds,
+      libraryVersions = libraryVersionsWithIds
     )
   }
 
@@ -66,13 +69,15 @@ case class BehaviorGroupData(
     val actionInputsWithIds = actionInputs.map(ea => ea.copyWithNewIdIn(oldToNewIdMapping))
     val dataTypeInputsWithIds = dataTypeInputs.map(ea => ea.copyWithNewIdIn(oldToNewIdMapping))
     val behaviorVersionsWithIds = behaviorVersions.map(ea => ea.copyWithNewIdIn(oldToNewIdMapping))
+    val libraryVersionsWithIds = libraryVersions.map(ea => ea.copyWithNewIdIn(oldToNewIdMapping))
     val actionInputsForNewVersion = actionInputsWithIds.map(_.copyWithParamTypeIdsIn(oldToNewIdMapping))
     val dataTypeInputsForNewVersion = dataTypeInputsWithIds.map(_.copyWithParamTypeIdsIn(oldToNewIdMapping))
     copy(
       id = Some(group.id),
       actionInputs = actionInputsForNewVersion,
       dataTypeInputs = dataTypeInputsForNewVersion,
-      behaviorVersions = behaviorVersionsWithIds
+      behaviorVersions = behaviorVersionsWithIds,
+      libraryVersions = libraryVersionsWithIds
     )
   }
 
@@ -128,6 +133,8 @@ object BehaviorGroupData {
       })
       inputs <- dataService.inputs.allForGroupVersion(version)
       inputsData <- Future.sequence(inputs.map(ea => InputData.fromInput(ea, dataService)))
+      libraryVersions <- dataService.libraries.allFor(version)
+      libraryVersionsData <- Future.successful(libraryVersions.map(ea => LibraryVersionData.fromVersion(ea)))
       requiredOAuth2ApiConfigs <- dataService.requiredOAuth2ApiConfigs.allFor(version)
       requiredSimpleTokenApis <- dataService.requiredSimpleTokenApis.allFor(version)
     } yield {
@@ -143,6 +150,7 @@ object BehaviorGroupData {
         actionInputsData,
         dataTypeInputsData,
         versionsData,
+        libraryVersionsData,
         requiredOAuth2ApiConfigs.map(RequiredOAuth2ApiConfigData.from),
         requiredSimpleTokenApis.map(RequiredSimpleTokenApiData.from),
         None,

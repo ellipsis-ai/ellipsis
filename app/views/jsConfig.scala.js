@@ -23,6 +23,7 @@ var requirejs = {
   routes.javascript.BehaviorEditorController.edit,
   routes.javascript.BehaviorEditorController.newGroup,
   routes.javascript.BehaviorEditorController.newUnsavedBehavior,
+  routes.javascript.BehaviorEditorController.newUnsavedLibrary,
   routes.javascript.BehaviorEditorController.newUnsavedInput,
   routes.javascript.BehaviorEditorController.regexValidationErrorsFor,
   routes.javascript.BehaviorEditorController.save,

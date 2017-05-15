@@ -73,8 +73,9 @@ class GithubService @Inject() (
       withHeaders(("Accept", "application/vnd.github.v3.json")).
       get().
       map { response =>
-        val base64Content = (Json.parse(response.body) \ "content").validate[String].get
-        new String(Base64.decodeBase64(base64Content), Charset.forName("UTF-8"))
+        (Json.parse(response.body) \ "content").validate[String].map { base64Content =>
+          new String(Base64.decodeBase64(base64Content), Charset.forName("UTF-8"))
+        }.getOrElse("")
       }
   }
 
@@ -128,7 +129,14 @@ class GithubService @Inject() (
     s"${githubUrlForGroupPath(categoryPath, maybeBranch)}/$behaviorType/$behaviorPath"
   }
 
-  private def fetchBehaviorDataFor(behaviorUrl: String, behaviorPath: String, behaviorType: String, categoryPath: String, team: Team, maybeBranch: Option[String]): Future[Option[BehaviorVersionData]] = {
+  private def fetchBehaviorDataFor(
+                                    behaviorUrl: String,
+                                    behaviorPath: String,
+                                    behaviorType: String,
+                                    categoryPath: String,
+                                    team: Team,
+                                    maybeBranch: Option[String]
+                                  ): Future[Option[BehaviorVersionData]] = {
     withTreeFor(behaviorUrl).flatMap { maybeTree =>
       (for {
         tree <- maybeTree
@@ -178,6 +186,7 @@ class GithubService @Inject() (
             actionInputs <- fetchInputsFor(actionInputsUrl)
             dataTypeInputs <- fetchInputsFor(dataTypeInputsUrl)
             behaviors <- fetchBehaviorsFor(groupUrl, groupPath, team, maybeBranch)
+            libraries <- fetchLibrariesFor(groupUrl, groupPath, team, maybeBranch)
           } yield {
             val githubUrl = githubUrlForGroupPath(groupPath, maybeBranch)
             val maybeExportId = maybeConfig.flatMap(_.exportId)
@@ -194,6 +203,7 @@ class GithubService @Inject() (
               actionInputs,
               dataTypeInputs,
               behaviors,
+              libraries,
               requiredOAuth2ApiConfigData,
               requiredSimpleTokenApiData,
               Some(githubUrl),
@@ -227,6 +237,41 @@ class GithubService @Inject() (
         Future.sequence(eventualBehaviorData).map(_.flatten)
       }
     } yield behaviorData
+  }
+
+  private def fetchLibraryFrom(tree: JsValue): Future[Option[LibraryVersionData]] = {
+    (for {
+      url <- (tree \ "url").asOpt[String]
+      path <- (tree \ "path").asOpt[String]
+    } yield {
+      fetchTextFor(url).map { text =>
+        Some(LibraryVersionData.fromFile(text, s"lib/$path"))
+      }
+    }).getOrElse {
+      Future.successful(None)
+    }
+  }
+
+  def fetchLibrariesFor(categoryUrl: String, categoryPath: String, team: Team, maybeBranch: Option[String]): Future[Seq[LibraryVersionData]] = {
+    for {
+      urls <- fetchTreeUrlsFor(categoryUrl)
+      paths <- fetchPathsFor(categoryUrl)
+      libraryData <- {
+        val eventualData: Seq[Future[Seq[LibraryVersionData]]] = urls.zip(paths).map { case (url, path) =>
+          path match {
+            case "lib" => {
+              withTreeFor(url).flatMap { maybeTree =>
+                maybeTree.map { tree =>
+                  Future.sequence(tree.map { ea => fetchLibraryFrom(ea) }).map(_.flatten)
+                }.getOrElse(Future.successful(Seq()))
+              }
+            }
+            case _ => Future.successful(Seq())
+          }
+        }
+        Future.sequence(eventualData).map(_.flatten)
+      }
+    } yield libraryData
   }
 
   def fetchPublishedBehaviorGroups(team: Team, maybeBranch: Option[String]): Future[Seq[BehaviorGroupData]] = {

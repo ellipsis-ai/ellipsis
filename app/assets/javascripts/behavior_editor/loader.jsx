@@ -52,7 +52,7 @@ requirejs(['../common'], function() {
         }));
       }
 
-      function fallbackSelectedBehaviorIdFor(group) {
+      function fallbackSelectedIdFor(group) {
         var isSimpleBehaviorGroup = !group.name && !group.description && group.behaviorVersions.length === 1;
         if (isSimpleBehaviorGroup) {
           return group.behaviorVersions[0].behaviorId;
@@ -62,13 +62,13 @@ requirejs(['../common'], function() {
       }
 
       const group = BehaviorGroup.fromJson(config.groupData);
-      const selectedBehaviorId = config.selectedBehaviorId || fallbackSelectedBehaviorIdFor(group);
-      if (group.id && selectedBehaviorId) {
-        BrowserUtils.replaceURL(jsRoutes.controllers.BehaviorEditorController.edit(group.id, selectedBehaviorId).url);
+      const selectedId = config.selectedId || fallbackSelectedIdFor(group);
+      if (group.id && selectedId) {
+        BrowserUtils.replaceURL(jsRoutes.controllers.BehaviorEditorController.edit(group.id, selectedId).url);
       }
       reload(Object.assign({}, config, {
         group: group,
-        selectedBehaviorId: selectedBehaviorId
+        selectedId: selectedId
       }));
     }
   );

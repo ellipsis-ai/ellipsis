@@ -81,6 +81,7 @@ trait DBSpec extends PlaySpec with OneAppPerSuite with MockitoSugar {
       actionInputs = Seq(),
       dataTypeInputs = Seq(),
       behaviorVersions = Seq(),
+      libraryVersions = Seq(),
       requiredOAuth2ApiConfigs = Seq(),
       requiredSimpleTokenApis = Seq(),
       githubUrl = None,
@@ -92,7 +93,7 @@ trait DBSpec extends PlaySpec with OneAppPerSuite with MockitoSugar {
   def newBehaviorVersionDataFor(behavior: Behavior): BehaviorVersionData = {
     BehaviorVersionData.newUnsavedFor(behavior.team.id, behavior.isDataType, dataService).copy(
       behaviorId = Some(behavior.id),
-      isNewBehavior = Some(false)
+      isNew = Some(false)
     )
   }
 
