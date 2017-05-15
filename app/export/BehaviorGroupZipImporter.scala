@@ -44,8 +44,6 @@ case class BehaviorGroupZipImporter(
     val versionStringMaps = scala.collection.mutable.Map[String, scala.collection.mutable.Map[String, String]]()
 
     val versionFileRegex = """^(actions|data_types)/([^/]+)/(.+)""".r
-    val libFileRegex = """^lib/(.+).js""".r
-    val libContentRegex = """\/\*\s*(.*)\s+@exportId\s+(\S+)\s*\*\/\s*(.*)""".r
     val readmeRegex = """^README$$""".r
     val configRegex = """^config\.json$$""".r
     val actionInputsRegex = """^action_inputs\.json$$""".r
