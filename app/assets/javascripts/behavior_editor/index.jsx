@@ -1607,17 +1607,18 @@ const BehaviorEditor = React.createClass({
                     <span className="mobile-display-none">Undo changes</span>
                     <span className="mobile-display-only">Undo</span>
                   </button>
-                  <DynamicLabelButton
-                    labels={[{
-                      text: 'Test…',
-                      displayWhen: !this.isModified()
-                    }, {
-                      text: 'Save and test…',
-                      displayWhen: this.isModified()
-                    }]}
-                    disabledWhen={!this.isExisting() && !this.isModified()}
-                    className={`mbm ${this.isExistingGroup() ? "mrs" : "mrl"}`} onClick={this.checkIfModifiedAndTest}
-                  />
+                  {this.getSelectedBehavior() ? (
+                    <DynamicLabelButton
+                      labels={[{
+                        text: 'Test…',
+                        displayWhen: !this.isModified()
+                      }, {
+                        text: 'Save and test…',
+                        displayWhen: this.isModified()
+                      }]}
+                      disabledWhen={!this.isExisting() && !this.isModified()}
+                      className={`mbm ${this.isExistingGroup() ? "mrs" : "mrl"}`} onClick={this.checkIfModifiedAndTest}
+                    />) : null}
                   {this.isExistingGroup() ? (
                     <button type="button"
                       className="mrl mbm"
