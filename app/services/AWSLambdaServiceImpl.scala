@@ -197,13 +197,24 @@ class AWSLambdaServiceImpl @Inject() (
   val amazonServiceExceptionRegex = """.*com\.amazonaws\.AmazonServiceException.*""".r
   val resourceNotFoundExceptionRegex = """com\.amazonaws\.services\.lambda\.model\.ResourceNotFoundException.*""".r
 
-  val requireRegex = """.*require\(['"]\s*(\S+)\s*['"]\).*""".r
+  val requireRegex = """.*require\s*\(['"]\s*(\S+)\s*['"]\).*""".r
 
   val alreadyIncludedModules = Array("aws-sdk", "dynamodb-doc")
 
-  private def requiredModulesIn(code: String, libraries: Seq[LibraryVersion]): Array[String] = {
+  private def requiredModulesIn(code: String, libraries: Seq[LibraryVersion], includeLibraryRequires: Boolean): Array[String] = {
     val libraryNames = libraries.map(_.name)
-    requireRegex.findAllMatchIn(code).flatMap(_.subgroups.headOption).toArray.diff(alreadyIncludedModules ++ libraryNames).sorted
+    val requiredForCode =
+      requireRegex.findAllMatchIn(code).
+        flatMap(_.subgroups.headOption).
+        toArray.
+        diff(alreadyIncludedModules ++ libraryNames).
+        sorted
+    val requiredForLibs = if (includeLibraryRequires) {
+      libraries.flatMap(ea => requiredModulesIn(ea.functionBody, libraries, includeLibraryRequires = false))
+    } else {
+      Seq()
+    }
+    (requiredForCode ++ requiredForLibs).distinct
   }
 
   private def awsCodeFor(maybeAwsConfig: Option[AWSConfig]): String = {
@@ -286,7 +297,7 @@ class AWSLambdaServiceImpl @Inject() (
   private def zipFileNameFor(functionName: String) = s"${dirNameFor(functionName)}.zip"
 
   case class PreviousFunctionInfo(functionName: String, functionBody: String, libraries: Seq[LibraryVersion]) {
-    val requiredModules = requiredModulesIn(functionBody, libraries)
+    val requiredModules = requiredModulesIn(functionBody, libraries, includeLibraryRequires = true)
     val dirName = dirNameFor(functionName)
 
     def canCopyModules(neededModules: Array[String]): Boolean = {
@@ -324,7 +335,7 @@ class AWSLambdaServiceImpl @Inject() (
       writeFileNamed(s"$dirName/${ea.jsName}", ea.code)
     }
 
-    val requiredModules = requiredModulesIn(functionBody, libraries)
+    val requiredModules = requiredModulesIn(functionBody, libraries, includeLibraryRequires = true)
     val shouldInstallModules = maybePreviousFunctionInfo.forall { previousFunctionInfo =>
       if (previousFunctionInfo.canCopyModules(requiredModules)) {
         previousFunctionInfo.copyModulesInto(dirName)
