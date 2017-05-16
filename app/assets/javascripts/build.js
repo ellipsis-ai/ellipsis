@@ -86,6 +86,10 @@ requirejs.config({
       name: 'environment_variables/loader',
       include: ['environment_variables/index'],
       exclude: ['common']
+    }, {
+      name: 'styleguide/colors',
+      include: ['styleguide/colors/index'],
+      exclude: ['common']
     }
   ]
 });

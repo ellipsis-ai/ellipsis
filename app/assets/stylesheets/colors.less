@@ -1,52 +1,131 @@
 @black: hsl(231, 15%, 15%);
-@black-translucent: hsla(231, 15%, 15%, 0.1);
+.color-black { color: @black; }
+
 @white: #FFFFFF;
-@white-faded: hsla(0, 0%, 100%, 65%);
-@white-translucent: hsla(0, 0%, 100%, 0.97);
-@white-subtle: hsla(0, 0%, 100%, 0.25);
-@almost-white: hsl(231, 15%, 97%);
-@gray-lightest: hsl(231, 10%, 92.5%);
-@gray-lightest-translucent: hsla(231, 10%, 93%, 0.95);
-@gray-light: hsl(231, 11%, 81%);
+.color-white { color: @white; }
+
+@black-translucent: hsla(231, 15%, 15%, 0.1);
+.color-black-translucent { color: @black-translucent; }
+
 @gray-light-translucent: hsla(231, 11%, 81%, 0.5);
-@gray-medium: hsl(231, 9%, 65%);
-@gray-dark: hsl(231, 10%, 45%);
-@gray-darkest: hsl(231, 13%, 25%);
+.color-gray-light-translucent { color: @gray-light-translucent; }
+
+@gray-lightest-translucent: hsla(231, 10%, 93%, 0.95);
+.color-gray-lightest-translucent { color: @gray-lightest-translucent; }
+
+@white-subtle: hsla(0, 0%, 100%, 0.25);
+.color-white-subtle { color: @white-subtle; }
+
+@white-faded: hsla(0, 0%, 100%, 0.65);
+.color-white-faded { color: @white-faded; }
+
+@white-translucent: hsla(0, 0%, 100%, 0.97);
+.color-white-translucent { color: @white-translucent; }
+
 @almost-black: hsl(231, 14%, 20%);
+.color-almost-black { color: @almost-black; }
+
+@gray-darkest: hsl(231, 13%, 25%);
+.color-gray-darkest { color: @gray-darkest; }
+
+@gray-dark: hsl(231, 10%, 45%);
+.color-gray-dark { color: @gray-dark; }
+
+@gray-medium: hsl(231, 9%, 65%);
+.color-gray-medium { color: @gray-medium; }
+
+@gray-light: hsl(231, 11%, 81%);
+.color-gray-light { color: @gray-light; }
+
+@gray-lightest: hsl(231, 10%, 93%);
+.color-gray-lightest { color: @gray-lightest; }
+
+@almost-white: hsl(231, 15%, 97%);
+.color-almost-white { color: @almost-white; }
 
 @blue-faded-darkest: hsl(231, 31%, 23%);
+.color-blue-faded-darkest { color: @blue-faded-darkest; }
+
 @blue-faded-dark: hsl(231, 22%, 43%);
+.color-blue-faded-dark { color: @blue-faded-dark; }
+
 @blue-faded-medium: hsl(231, 15%, 48%);
+.color-blue-faded-medium { color: @blue-faded-medium; }
 
 @blue-darkest: hsl(231, 71%, 20%);
+.color-blue-darkest { color: @blue-darkest; }
+
 @blue-dark: hsl(231, 71%, 42%);
+.color-blue-dark { color: @blue-dark; }
+
 @blue-medium-text: hsl(231, 74%, 57%);
+.color-blue-medium-text { color: @blue-medium-text; }
+
 @blue-medium: hsl(231, 97%, 64%);
+.color-blue-medium { color: @blue-medium; }
+
 @blue-medium-alt: hsl(231, 100%, 71%);
+.color-blue-medium-alt { color: @blue-medium-alt; }
+
 @blue-light: hsl(231, 97%, 88%);
+.color-blue-light { color: @blue-light; }
+
 @blue-lighter: hsl(231, 97%, 97%);
-@blue-lightest: hsl(231, 97%, 98.5%);
+.color-blue-lighter { color: @blue-lighter; }
+
+@blue-lightest: hsl(231, 97%, 99%);
+.color-blue-lightest { color: @blue-lightest; }
 
 @pink-darkest: hsl(341, 50%, 25%);
+.color-pink-darkest { color: @pink-darkest; }
+
 @pink-dark: hsl(341, 50%, 50%);
+.color-pink-dark { color: @pink-dark; }
+
 @pink-medium: hsl(341, 93%, 65%);
+.color-pink-medium { color: @pink-medium; }
+
 @pink-light: hsl(341, 93%, 70%);
+.color-pink-light { color: @pink-light; }
+
 @pink-lighter: hsl(341, 93%, 97%);
+.color-pink-lighter { color: @pink-lighter; }
+
 @pink-lightest: hsl(341, 93%, 99%);
+.color-pink-lightest { color: @pink-lightest; }
+
+@green-dark: hsl(127, 93%, 20%);
+.color-green-dark { color: @green-dark; }
+
+@green-text: hsl(127, 93%, 35%);
+.color-green-text { color: @green-text; }
+
+@green-medium: hsl(127, 93%, 43%);
+.color-green-medium { color: @green-medium; }
+
+@green-light: hsl(127, 93%, 63%);
+.color-green-light { color: @green-light; }
+
+@green-lighter: hsl(127, 92%, 86%);
+.color-green-lighter { color: @green-lighter; }
 
 @green-lightest: hsl(127, 90%, 96%);
-@green-lighter: hsl(127, 92%, 86%);
-@green-light: hsl(127, 93%, 63%);
-@green-medium: hsl(127, 93%, 43%);
-@green-text: hsl(127, 93%, 35%);
-@green-dark: hsl(127, 93%, 20%);
+.color-green-lightest { color: @green-lightest; }
 
 @orange-light: hsl(24, 100%, 67%);
+.color-orange-light { color: @orange-light; }
+
 @orange-lighter: hsl(24, 100%, 77%);
+.color-orange-lighter { color: @orange-lighter; }
 
 @yellow-medium: hsl(45, 70%, 48%);
+.color-yellow-medium { color: @yellow-medium; }
+
 @yellow-light: hsl(45, 88%, 67%);
+.color-yellow-light { color: @yellow-light; }
+
 @yellow-lighter: hsl(45, 100%, 92%);
+.color-yellow-lighter { color: @yellow-lighter; }
 
 @border-color: @gray-light;
 @border-color-light: @gray-light-translucent;
