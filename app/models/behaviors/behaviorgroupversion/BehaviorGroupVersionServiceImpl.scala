@@ -105,6 +105,9 @@ class BehaviorGroupVersionServiceImpl @Inject() (
       requiredSimpleTokenApis <- DBIO.sequence(data.requiredSimpleTokenApis.map { requiredData =>
         dataService.requiredSimpleTokenApis.maybeCreateForAction(requiredData, groupVersion)
       }).map(_.flatten)
+      _ <- DBIO.sequence(data.libraryVersions.map { ea =>
+        dataService.libraries.ensureForAction(ea, groupVersion)
+      })
       _ <- DBIO.sequence(data.dataTypeBehaviorVersions.map { ea =>
         ea.behaviorId.map { behaviorId =>
           for {
@@ -118,9 +121,6 @@ class BehaviorGroupVersionServiceImpl @Inject() (
       })
       _ <- DBIO.sequence(data.actionInputs.map { ea =>
         dataService.inputs.ensureForAction(ea, groupVersion)
-      })
-      _ <- DBIO.sequence(data.libraryVersions.map { ea =>
-        dataService.libraries.ensureForAction(ea, groupVersion)
       })
       _ <- DBIO.sequence(data.actionBehaviorVersions.map { ea =>
         ea.behaviorId.map { behaviorId =>
