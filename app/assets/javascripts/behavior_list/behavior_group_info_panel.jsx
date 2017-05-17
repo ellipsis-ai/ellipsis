@@ -1,7 +1,7 @@
 define(function(require) {
   var React = require('react'),
     BehaviorGroup = require('../models/behavior_group'),
-    BehaviorName = require('../behavior_list/behavior_name'),
+    EditableName = require('./editable_name'),
     Formatter = require('../lib/formatter'),
     SVGInstall = require('../svg/install'),
     SVGInstalled = require('../svg/installed'),
@@ -88,7 +88,7 @@ define(function(require) {
           <div style={{ overflowY: "auto", maxHeight: "21em" }}>
             {behaviors.map((behavior, index) => (
               <div className="pvs" key={`group-${this.props.groupData.exportId}-behavior${index}`}>
-                <BehaviorName
+                <EditableName
                   version={behavior}
                   disableLink={!this.props.groupData.id || !behavior.behaviorId}
                   isImportable={true}
