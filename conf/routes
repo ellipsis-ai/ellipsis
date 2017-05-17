@@ -113,3 +113,7 @@ GET         /assets/*file                             @controllers.RemoteAssets.
 #
 
 GET         /teams/:teamId/settings/scheduled_actions         @controllers.teams.settings.ScheduledActionsController.index(teamId: String)
+
+# Styleguide routes
+
+GET         /styleguide/colors                        @controllers.StyleguideController.colors

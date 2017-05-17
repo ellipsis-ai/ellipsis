@@ -2,8 +2,8 @@
 
 requirejs(['../common'], function() {
   requirejs(
-    ['core-js', 'react', 'react-dom', './behavior_list/app'],
-    function(Core, React, ReactDOM, BehaviorListApp) {
+    ['core-js', 'whatwg-fetch', 'react', 'react-dom', './behavior_list/app'],
+    function(Core, Fetch, React, ReactDOM, BehaviorListApp) {
       ReactDOM.render(
         React.createElement(BehaviorListApp, BehaviorListConfig),
         document.getElementById(BehaviorListConfig.containerId)
