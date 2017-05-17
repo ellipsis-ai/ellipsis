@@ -37,9 +37,7 @@
         @views.html.mainNav(config, selectedNav)
       </div>
     </header>
-    @config.maybeTeamAccess.map { _ =>
-      <script src="@routes.ApplicationController.jsConfig"></script>
-    }
+    <script src="@routes.ApplicationController.jsConfig"></script>
     @content
   </body>
   <script src="@RemoteAssets.getUrl("javascripts/page.js")"></script>
