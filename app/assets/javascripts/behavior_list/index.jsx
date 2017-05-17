@@ -1,6 +1,6 @@
 define(function(require) {
   var React = require('react'),
-    BehaviorName = require('./behavior_name'),
+    EditableName = require('./editable_name'),
     BehaviorGroup = require('../models/behavior_group'),
     BehaviorGroupCard = require('./behavior_group_card'),
     BehaviorGroupInfoPanel = require('./behavior_group_info_panel'),
@@ -344,7 +344,7 @@ define(function(require) {
         return (
           <div>
             {matchingBehaviorVersions.map((version) => (
-              <BehaviorName
+              <EditableName
                 className="mbs"
                 version={version}
                 disableLink={true}
