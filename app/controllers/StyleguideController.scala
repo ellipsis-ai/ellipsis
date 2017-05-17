@@ -16,6 +16,10 @@ class StyleguideController @Inject() (
 ) extends EllipsisController {
 
   def colors = silhouette.UserAwareAction.async { implicit request =>
-    Future.successful(Ok(views.html.styleguide.colors(viewConfig(None))))
+    val result = render {
+      case Accepts.JavaScript() => Ok(views.js.styleguide.colors())
+      case Accepts.Html() => Ok(views.html.styleguide.colors(viewConfig(None)))
+    }
+    Future.successful(result)
   }
 }
