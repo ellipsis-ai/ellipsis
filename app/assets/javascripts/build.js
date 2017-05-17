@@ -89,7 +89,11 @@ requirejs.config({
     }, {
       name: 'styleguide/colors',
       include: ['styleguide/colors/index'],
-      exclude: ['common', '/styleguide/colors']
+      exclude: ['common']
     }
-  ]
+  ],
+
+  paths: {
+    '/styleguide/colors': 'empty:'
+  }
 });
