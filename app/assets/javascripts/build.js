@@ -18,7 +18,7 @@ requirejs.config({
 
   // Exclude dynamic data paths from optimization using special empty: syntax
   paths: {
-    'config/styleguide/colors': 'empty:'
+    'config': 'empty:'
   },
 
   packages: [
@@ -92,7 +92,7 @@ requirejs.config({
       include: ['environment_variables/index'],
       exclude: ['common']
     }, {
-      name: 'styleguide/colors',
+      name: 'styleguide/colors/loader',
       include: ['styleguide/colors/index'],
       exclude: ['common']
     }
