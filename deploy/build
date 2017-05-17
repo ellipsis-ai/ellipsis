@@ -242,6 +242,13 @@ printf "_____________________________________________________ \n";
 touch conf/version.conf
 echo application.version=\"`git rev-parse --short HEAD`\" >conf/version.conf
 activator docker:stage
+if [ $? -eq 1 ]
+then
+  printf "\n\n${RED}Failed to package the build\n${PLAIN}";
+  announce_failure
+  printf "Bye.\n"
+  exit 1
+fi
 mkdir -p target/docker/.ebextensions
 cp .ebextensions/* target/docker/.ebextensions/
 cp deploy/Docker* target/docker/
