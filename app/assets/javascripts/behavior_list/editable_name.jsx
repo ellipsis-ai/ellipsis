@@ -1,13 +1,13 @@
 define(function(require) {
   var React = require('react'),
-    BehaviorVersion = require('../models/behavior_version'),
+    Editable = require('../models/editable'),
     SubstringHighlighter = require('../shared_ui/substring_highlighter'),
     ImmutableObjectUtils = require('../lib/immutable_object_utils');
 
   return React.createClass({
-    displayName: 'BehaviorName',
+    displayName: 'EditableName',
     propTypes: {
-      version: React.PropTypes.instanceOf(BehaviorVersion).isRequired,
+      version: React.PropTypes.instanceOf(Editable).isRequired,
       disableLink: React.PropTypes.bool,
       omitDescription: React.PropTypes.bool,
       labelDataType: React.PropTypes.bool,
@@ -110,13 +110,26 @@ define(function(require) {
       );
     },
 
+    getDisplayClassesFor: function(version) {
+      const italic = !version.name ? "type-italic" : "";
+      return `${italic} display-limit-width display-ellipsis`;
+    },
+
     getDataTypeLabelFromVersion: function(version) {
       return (
-        <div className="type-italic display-limit-width display-ellipsis">
+        <div className={this.getDisplayClassesFor(version)}>
           <span className={this.props.disableLink ? "" : "link"}>{version.name || "New data type"}</span>
           {this.props.labelDataType ? (
             <span> (data type)</span>
           ) : null}
+        </div>
+      );
+    },
+
+    geLibraryLabelFromVersion: function(version) {
+      return (
+        <div className={this.getDisplayClassesFor(version)}>
+          <span className={this.props.disableLink ? "" : "link"}>{version.name || "New library"}</span>
         </div>
       );
     },
@@ -150,10 +163,14 @@ define(function(require) {
     },
 
     getLabelFromVersion: function(version) {
-      if (version.isDataType()) {
-        return this.getDataTypeLabelFromVersion(version);
+      if (version.isBehaviorVersion()) {
+        if (version.isDataType()) {
+          return this.getDataTypeLabelFromVersion(version);
+        } else {
+          return this.getActionLabelFromVersion(version);
+        }
       } else {
-        return this.getActionLabelFromVersion(version);
+        return this.geLibraryLabelFromVersion(version);
       }
     },
 
@@ -169,7 +186,7 @@ define(function(require) {
 
     onLinkClick: function(event) {
       if (this.props.onClick) {
-        this.props.onClick(this.props.version.groupId, this.props.version.behaviorId);
+        this.props.onClick(this.props.version.groupId, this.props.version.getPersistentId());
         event.preventDefault();
       }
     },
@@ -185,7 +202,7 @@ define(function(require) {
         return (
           <div>
             <a
-              href={jsRoutes.controllers.BehaviorEditorController.edit(this.props.version.groupId, this.props.version.behaviorId).url}
+              href={jsRoutes.controllers.BehaviorEditorController.edit(this.props.version.groupId, this.props.version.getPersistentId()).url}
               onClick={this.onLinkClick}
               className={"link-block " + (this.props.className || "")}>
               {this.getLabelFromVersion(this.props.version)}
