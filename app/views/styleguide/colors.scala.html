@@ -5,6 +5,8 @@
 @main("Styleguide colors", config) {
   <div>
     <div id="colorContainer"></div>
+    @* Re-include the CSS from the app server URL so it can be read by JS *@
+    <link rel='stylesheet' href='@routes.RemoteAssets.getAsset("stylesheets/main.css").url'>
     <script data-main='@RemoteAssets.getUrl("javascripts/styleguide/colors/loader.js")' src='@RemoteAssets.getUrl("lib/requirejs/require.min.js")'></script>
   </div>
 }

@@ -4,7 +4,7 @@ define(function(require) {
 
   return React.createClass({
     getColorClasses: function() {
-      return [].slice.call(document.styleSheets).reduce((all, styleSheet) => {
+      const colorList = [].slice.call(document.styleSheets).reduce((all, styleSheet) => {
         if (styleSheet.cssRules) {
           return all.concat(
             [].slice.call(styleSheet.cssRules)
@@ -27,6 +27,14 @@ define(function(require) {
           return all;
         }
       }, []);
+      // Find the unique set by name
+      const byName = {};
+      colorList.forEach((color) => {
+        if (!byName[color.name]) {
+          byName[color.name] = color;
+        }
+      });
+      return Object.keys(byName).map((name) => byName[name]);
     },
 
     renderColor: function(color) {
