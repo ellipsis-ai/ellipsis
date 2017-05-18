@@ -138,7 +138,7 @@ class APIAccessController @Inject() (
 
   private def noApplicationResult(implicit request: SecuredRequest[EllipsisEnv, AnyContent]): Future[Result] = {
     Future.successful(
-      NotFound(views.html.notFound(viewConfig(None), Some("Can't find OAuth2 application"), None, None))
+      NotFound(views.html.error.notFound(viewConfig(None), Some("Can't find OAuth2 application"), None, None))
     )
   }
 
@@ -169,7 +169,7 @@ class APIAccessController @Inject() (
   def authenticated(message: String) = silhouette.SecuredAction.async { implicit request =>
     val user = request.identity
     dataService.teams.find(user.teamId).map { maybeTeam =>
-      Ok(views.html.authenticated(viewConfig(None), maybeTeam, message))
+      Ok(views.html.apiaccess.authenticated(viewConfig(None), maybeTeam, message))
     }
   }
 

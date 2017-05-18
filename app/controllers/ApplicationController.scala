@@ -52,7 +52,7 @@ class ApplicationController @Inject() (
         }).map(_.flatten.sorted)
       }.getOrElse(Future.successful(Seq()))
       result <- teamAccess.maybeTargetTeam.map { team =>
-        Future.successful(Ok(views.html.index(viewConfig(Some(teamAccess)), groupData, maybeSlackTeamId, team.maybeTimeZone.map(_.toString), maybeBranch)))
+        Future.successful(Ok(views.html.application.index(viewConfig(Some(teamAccess)), groupData, maybeSlackTeamId, team.maybeTimeZone.map(_.toString), maybeBranch)))
       }.getOrElse {
         reAuthFor(request, maybeTeamId)
       }

@@ -217,7 +217,7 @@ class SocialAuthController @Inject() (
             }
           } yield resultForValidToken
         } else {
-          Future.successful(Ok(views.html.loginTokenExpired(viewConfig(None))))
+          Future.successful(Ok(views.html.socialauth.loginTokenExpired(viewConfig(None))))
         }
       }.getOrElse {
         Future.successful(NotFound("Token not found"))

@@ -34,7 +34,7 @@ class OAuth2ApplicationController @Inject() (
     } yield {
       teamAccess.maybeTargetTeam.map { team =>
         Ok(
-          views.html.listOAuth2Applications(
+          views.html.oauth2application.list(
             viewConfig(Some(teamAccess)),
             apis.map(api => OAuth2ApiData.from(api)),
             applications.map(app => OAuth2ApplicationData.from(app))
@@ -53,7 +53,7 @@ class OAuth2ApplicationController @Inject() (
       apis <- dataService.oauth2Apis.allFor(teamAccess.maybeTargetTeam)
     } yield {
       teamAccess.maybeTargetTeam.map { team =>
-        Ok(views.html.newOAuth2Application(
+        Ok(views.html.oauth2application.newApplication(
           viewConfig(Some(teamAccess)),
           apis.map(api => OAuth2ApiData.from(api)),
           IDs.next,
@@ -80,10 +80,10 @@ class OAuth2ApplicationController @Inject() (
         team <- teamAccess.maybeTargetTeam
         application <- maybeApplication
       } yield {
-        Ok(views.html.editOAuth2Application(viewConfig(Some(teamAccess)), apis.map(api => OAuth2ApiData.from(api)), application))
+        Ok(views.html.oauth2application.edit(viewConfig(Some(teamAccess)), apis.map(api => OAuth2ApiData.from(api)), application))
       }).getOrElse {
         NotFound(
-          views.html.notFound(
+          views.html.error.notFound(
             viewConfig(Some(teamAccess)),
             Some("OAuth2 application not found"),
             Some("The OAuth2 application you are trying to access could not be found."),

@@ -27,7 +27,7 @@ class ErrorHandler @Inject() (
     val maybeNonEmptyMessage = Option(message).filter(_.trim.nonEmpty)
     Future.successful(
       NotFound(
-        views.html.notFound(
+        views.html.error.notFound(
           ViewConfig(config, None),
           None,
           maybeNonEmptyMessage
@@ -41,7 +41,7 @@ class ErrorHandler @Inject() (
     implicit val messages = messagesApi.preferred(request)
     Future.successful(
       InternalServerError(
-        views.html.serverError(
+        views.html.error.serverError(
           ViewConfig(config, None), Some(exception.id)
         )
       )
@@ -54,7 +54,7 @@ class ErrorHandler @Inject() (
     implicit val messages = messagesApi.preferred(request)
     Future.successful(
       InternalServerError(
-        views.html.serverError(
+        views.html.error.serverError(
           Some(exception.id)
         )
       )
