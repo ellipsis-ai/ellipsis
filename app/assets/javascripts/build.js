@@ -16,6 +16,11 @@ requirejs.config({
   // Stops r.js from unnecessarily minifying non-build assets
   skipDirOptimize: true,
 
+  // Exclude dynamic data paths from optimization using special empty: syntax
+  paths: {
+    'config': 'empty:'
+  },
+
   packages: [
     {
       name: 'codemirror',
@@ -87,7 +92,7 @@ requirejs.config({
       include: ['environment_variables/index'],
       exclude: ['common']
     }, {
-      name: 'styleguide/colors',
+      name: 'styleguide/colors/loader',
       include: ['styleguide/colors/index'],
       exclude: ['common']
     }
