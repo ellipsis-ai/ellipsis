@@ -6,6 +6,7 @@ var requirejs = {
     '../common': '@RemoteAssets.getUrl("javascripts/common.js").replaceFirst("\\.js$", "")',
 
     @* Data paths need a trailing ? to avoid a .js extension *@
+    'config/index': '@{routes.ApplicationController.index()}?',
     'config/styleguide/colors': '@{routes.StyleguideController.colors()}?'
   }
 };
