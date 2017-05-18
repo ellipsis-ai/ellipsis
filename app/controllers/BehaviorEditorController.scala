@@ -35,11 +35,11 @@ class BehaviorEditorController @Inject() (
     val user = request.identity
     BehaviorEditorData.buildForNew(user, maybeTeamId, dataService, ws).flatMap { maybeEditorData =>
       maybeEditorData.map { editorData =>
-        Future.successful(Ok(views.html.editBehavior(viewConfig(Some(editorData.teamAccess)), editorData)))
+        Future.successful(Ok(views.html.behavioreditor.edit(viewConfig(Some(editorData.teamAccess)), editorData)))
       }.getOrElse {
         dataService.users.teamAccessFor(user, None).flatMap { teamAccess =>
           val response = NotFound(
-            views.html.notFound(
+            views.html.error.notFound(
               viewConfig(Some(teamAccess)),
               Some(""),
               Some("The skill you are trying to access could not be found."),
@@ -56,11 +56,11 @@ class BehaviorEditorController @Inject() (
     val user = request.identity
     BehaviorEditorData.buildForEdit(user, groupId, maybeBehaviorId, dataService, ws).flatMap { maybeEditorData =>
       maybeEditorData.map { editorData =>
-        Future.successful(Ok(views.html.editBehavior(viewConfig(Some(editorData.teamAccess)), editorData)))
+        Future.successful(Ok(views.html.behavioreditor.edit(viewConfig(Some(editorData.teamAccess)), editorData)))
       }.getOrElse {
         dataService.users.teamAccessFor(user, None).flatMap { teamAccess =>
           val response = NotFound(
-            views.html.notFound(
+            views.html.error.notFound(
               viewConfig(Some(teamAccess)),
               Some("Skill not found"),
               Some("The skill you are trying to access could not be found."),

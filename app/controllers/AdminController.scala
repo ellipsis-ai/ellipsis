@@ -28,7 +28,7 @@ class AdminController @Inject() (
       if (isAdmin) {
         fn()
       } else {
-        Future.successful(NotFound(views.html.notFound(viewConfig(None), None, None)))
+        Future.successful(NotFound(views.html.error.notFound(viewConfig(None), None, None)))
       }
     }
   }

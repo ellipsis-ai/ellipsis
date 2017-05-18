@@ -2,7 +2,7 @@
   config: ViewConfig
 )(implicit r: RequestHeader, m: Messages)
 
-@main("Styleguide colors", config) {
+@page.main("Styleguide colors", config) {
   <div>
     <div id="colorContainer"></div>
     @* Re-include the CSS from the app server URL so it can be read by JS *@

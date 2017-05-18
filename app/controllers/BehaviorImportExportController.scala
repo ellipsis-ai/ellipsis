@@ -39,7 +39,7 @@ class BehaviorImportExportController @Inject() (
     val user = request.identity
     dataService.users.teamAccessFor(user, maybeTeamId).map { teamAccess =>
       teamAccess.maybeTargetTeam.map { team =>
-        Ok(views.html.importBehaviorZip(viewConfig(Some(teamAccess))))
+        Ok(views.html.behaviorimportexport.importZip(viewConfig(Some(teamAccess))))
       }.getOrElse {
         NotFound(s"No accessible team")
       }}

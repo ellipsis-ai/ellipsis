@@ -43,7 +43,7 @@ class SlackController @Inject() (
       clientId <- configuration.getString("silhouette.slack.clientID")
     } yield {
         val redirectUrl = routes.SocialAuthController.installForSlack().absoluteURL(secure=true)
-        Ok(views.html.addToSlack(viewConfig(None), scopes, clientId, redirectUrl))
+        Ok(views.html.slack.addToSlack(viewConfig(None), scopes, clientId, redirectUrl))
       }
     maybeResult.getOrElse(Redirect(routes.ApplicationController.index()))
   }
@@ -58,7 +58,7 @@ class SlackController @Inject() (
         clientId <- configuration.getString("silhouette.slack.clientID")
       } yield {
           val redirectUrl = routes.SocialAuthController.authenticateSlack(maybeRedirectUrl).absoluteURL(secure=true)
-          Ok(views.html.signInWithSlack(viewConfig(maybeTeamAccess), scopes, clientId, UriEncoding.encodePathSegment(redirectUrl, "utf-8")))
+          Ok(views.html.slack.signInWithSlack(viewConfig(maybeTeamAccess), scopes, clientId, UriEncoding.encodePathSegment(redirectUrl, "utf-8")))
         }
       maybeResult.getOrElse(Redirect(routes.ApplicationController.index()))
     }

@@ -1,12 +1,12 @@
 @(config: ViewConfig)(implicit r: RequestHeader)
 @if(config.isDevelopment) {
   <div class="align-button type-label paxs mbs type-white bg-blue border-radius">Dev</div>
-  <div class="display-inline-block mobile-display-none" style="height: 40px">@views.html.logo("128 0 272 112")</div>
+  <div class="display-inline-block mobile-display-none" style="height: 40px">@logo("128 0 272 112")</div>
 } else {
   @if(config.maybeTeamAccess.exists(_.isAdminAccess)) {
     <div class="type-l mobile-ptxs pbxs">👻</div>
   } else {
-    <div class="mobile-display-none" style="height: 40px">@views.html.logo()</div>
-    <div class="mobile-display-only" style="height: 36px">@views.html.logo("0 0 112 112")</div>
+    <div class="mobile-display-none" style="height: 40px">@logo()</div>
+    <div class="mobile-display-only" style="height: 36px">@logo("0 0 112 112")</div>
   }
 }
