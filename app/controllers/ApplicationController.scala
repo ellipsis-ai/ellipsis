@@ -203,6 +203,6 @@ class ApplicationController @Inject() (
   }
 
   def jsConfig = silhouette.SecuredAction.async { implicit request =>
-    Future.successful(Ok(views.js.jsConfig()))
+    Future.successful(Ok(views.js.application.jsConfig()))
   }
 }
