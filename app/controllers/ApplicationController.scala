@@ -34,10 +34,11 @@ class ApplicationController @Inject() (
 
   def index(maybeTeamId: Option[String], maybeBranch: Option[String] = None) = silhouette.SecuredAction.async { implicit request =>
     val user = request.identity
+    val eventualTeamAccess = dataService.users.teamAccessFor(user, maybeTeamId)
     render.async {
       case Accepts.JavaScript() => {
         for {
-          teamAccess <- dataService.users.teamAccessFor(user, maybeTeamId)
+          teamAccess <- eventualTeamAccess
           maybeBehaviorGroups <- teamAccess.maybeTargetTeam.map { team =>
             dataService.behaviorGroups.allFor(team).map(Some(_))
           }.getOrElse {
@@ -56,13 +57,13 @@ class ApplicationController @Inject() (
           result <- teamAccess.maybeTargetTeam.map { team =>
             Future.successful(Ok(views.js.application.index(viewConfig(Some(teamAccess)), groupData, maybeSlackTeamId, team.maybeTimeZone.map(_.toString), maybeBranch)))
           }.getOrElse {
-            reAuthFor(request, maybeTeamId)
+            Future.successful(Unauthorized("Not authenticated"))
           }
         } yield result
       }
       case Accepts.Html() => {
         for {
-          teamAccess <- dataService.users.teamAccessFor(user, maybeTeamId)
+          teamAccess <- eventualTeamAccess
           result <- teamAccess.maybeTargetTeam.map { team =>
             Future.successful(Ok(views.html.application.index(viewConfig(Some(teamAccess)))))
           }.getOrElse {
