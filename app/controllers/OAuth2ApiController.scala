@@ -30,7 +30,7 @@ class OAuth2ApiController @Inject() (
     } yield {
       teamAccess.maybeTargetTeam.map { team =>
         Ok(
-          views.html.listOAuth2Apis(
+          views.html.oauth2api.list(
             viewConfig(Some(teamAccess)),
             apis
           )
@@ -45,7 +45,7 @@ class OAuth2ApiController @Inject() (
     val user = request.identity
     dataService.users.teamAccessFor(user, maybeTeamId).map { teamAccess =>
       teamAccess.maybeTargetTeam.map { _ =>
-        Ok(views.html.oAuth2Api(viewConfig(Some(teamAccess)), None, OAuth2GrantType.values))
+        Ok(views.html.oauth2api.edit(viewConfig(Some(teamAccess)), None, OAuth2GrantType.values))
       }.getOrElse {
         NotFound("Team not accessible")
       }
@@ -59,7 +59,7 @@ class OAuth2ApiController @Inject() (
       maybeApi <- dataService.oauth2Apis.find(apiId)
     } yield {
       teamAccess.maybeTargetTeam.map { team =>
-        Ok(views.html.oAuth2Api(viewConfig(Some(teamAccess)), maybeApi, OAuth2GrantType.values))
+        Ok(views.html.oauth2api.edit(viewConfig(Some(teamAccess)), maybeApi, OAuth2GrantType.values))
       }.getOrElse {
         NotFound("Team not accessible")
       }

@@ -34,7 +34,7 @@
   <body class="flex-rows flex-rows-viewport @bgClass">
     <header id="main-header" class='@("position-fixed-top position-z-behind-scrim border-emphasis-bottom type-white border-pink " + navBgColorForPage)'>
       <div class="container container-wide prm mobile-prs">
-        @views.html.mainNav(config, selectedNav)
+        @shared.mainNav(config, selectedNav)
       </div>
     </header>
     <script src="@routes.ApplicationController.jsConfig"></script>

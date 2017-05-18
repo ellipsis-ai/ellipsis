@@ -107,7 +107,7 @@ class EnvironmentVariablesController @Inject() (
     } yield {
       teamAccess.maybeTargetTeam.map { team =>
         val jsonData = Json.toJson(EnvironmentVariablesData(team.id, environmentVariables.map(ea => EnvironmentVariableData.withoutValueFor(ea))))
-        Ok(views.html.listEnvironmentVariables(viewConfig(Some(teamAccess)), jsonData.toString))
+        Ok(views.html.environmentvariables.list(viewConfig(Some(teamAccess)), jsonData.toString))
       }.getOrElse{
         NotFound("Team not accessible")
       }

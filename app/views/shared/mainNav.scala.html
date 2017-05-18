@@ -13,7 +13,7 @@
   <div class="column column-expand pts mobile-ptxs">
     <a class="link-pink display-inline-block align-b mrs"
       href='@routes.ApplicationController.index(config.maybeTeamAccess.flatMap(_.maybeAdminAccessToTeamId))'>
-      @views.html.mainLogo(config)
+      @mainLogo(config)
     </a>
 
     <a class="@tabClassFor("skills")"
@@ -26,5 +26,5 @@
       Settings
     </a>
   </div>
-  @config.maybeTeamAccess.map { teamAccess => @views.html.teamMenu(teamAccess) }
+  @config.maybeTeamAccess.map { teamAccess => @teamMenu(teamAccess) }
 </div>

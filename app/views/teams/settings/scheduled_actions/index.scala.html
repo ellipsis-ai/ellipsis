@@ -4,7 +4,7 @@
   scheduledActionsJson: String
 )(implicit messages: Messages, r: RequestHeader)
 
-@main("Scheduled Actions", config) {
+@page.main("Scheduled Actions", config) {
 
   <div id="content" class="content">
   <p>@scheduledActionsJson</p>

@@ -1,17 +1,14 @@
 @(
   config: ViewConfig,
   apis: Seq[json.OAuth2ApiData],
-  applicationId: String,
-  maybeApiId: Option[String],
-  maybeRecommendedScope: Option[String],
-  maybeBehaviorId: Option[String]
+  application: models.accounts.oauth2application.OAuth2Application
   )(implicit messages: Messages, r: RequestHeader)
 
 @import play.filters.csrf._
 @import play.api.libs.json._
 @import json.Formatting._
 
-@main("Add an API application", config, selectedNav = "settings") {
+@page.main("Edit API application", config, selectedNav = "settings") {
   <div id="content" class="content">
     <div id="applicationEditor"></div>
     <script>
@@ -20,12 +17,16 @@
         csrfToken: "@CSRF.getToken(r).map(_.value)",
         teamId: "@config.maybeTargetTeamId.getOrElse("")",
         apis: @Html(Json.toJson(apis).toString),
-        callbackUrl: "@routes.APIAccessController.linkCustomOAuth2Service(applicationId, None, None, None, None).absoluteURL(secure = true)",
+        callbackUrl: "@routes.APIAccessController.linkCustomOAuth2Service(application.id, None, None, None, None).absoluteURL(secure = true)",
         mainUrl: "@routes.ApplicationController.index().absoluteURL(secure = true)",
-        applicationId: "@applicationId",
-        applicationApiId: "@maybeApiId.getOrElse("")",
-        recommendedScope: "@maybeRecommendedScope.getOrElse("")",
-        behaviorId: "@maybeBehaviorId.getOrElse("")"
+        applicationId: "@application.id",
+        applicationName: "@application.name",
+        requiresAuth: @application.api.grantType.requiresAuth,
+        applicationClientId: "@application.clientId",
+        applicationClientSecret: "@application.clientSecret",
+        applicationScope: "@application.maybeScope",
+        applicationApiId: "@application.api.id",
+        applicationSaved: true
       };
     </script>
     <script data-main='@RemoteAssets.getUrl("javascripts/application_editor/loader.js")' src='@RemoteAssets.getUrl("lib/requirejs/require.min.js")'></script>
