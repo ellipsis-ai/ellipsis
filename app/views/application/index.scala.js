@@ -11,12 +11,7 @@
 @import play.filters.csrf._
 @import json.Formatting._
 
-requirejs.config({
-  paths: {
-    '../common': '@RemoteAssets.getUrl("javascripts/common.js").replaceFirst("\\.js$", "")'
-  }
-});
-
+@shared.requireJsConfig()
 @shared.jsRoutes()
 
 define("config/index", function() {
