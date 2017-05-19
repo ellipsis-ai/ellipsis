@@ -33,42 +33,83 @@ class BehaviorEditorController @Inject() (
 
   def newGroup(maybeTeamId: Option[String]) = silhouette.SecuredAction.async { implicit request =>
     val user = request.identity
-    BehaviorEditorData.buildForNew(user, maybeTeamId, dataService, ws).flatMap { maybeEditorData =>
-      maybeEditorData.map { editorData =>
-        Future.successful(Ok(views.html.behavioreditor.edit(viewConfig(Some(editorData.teamAccess)), editorData)))
-      }.getOrElse {
-        dataService.users.teamAccessFor(user, None).flatMap { teamAccess =>
-          val response = NotFound(
-            views.html.error.notFound(
-              viewConfig(Some(teamAccess)),
-              Some(""),
-              Some("The skill you are trying to access could not be found."),
-              Some(reAuthLinkFor(request, None))
-            ))
-
-          withAuthDiscarded(request, response)
+    render.async {
+      case Accepts.JavaScript() => {
+        BehaviorEditorData.buildForNew(user, maybeTeamId, dataService, ws).flatMap { maybeEditorData =>
+          maybeEditorData.map { editorData =>
+            Future.successful(Ok(views.js.behavioreditor.edit(viewConfig(Some(editorData.teamAccess)), editorData)))
+          }.getOrElse {
+            Future.successful(Unauthorized("Forbidden"))
+          }
         }
+      }
+      case Accepts.Html() => {
+        for {
+          teamAccess <- dataService.users.teamAccessFor(user, maybeTeamId)
+          maybeBehaviorGroups <- teamAccess.maybeTargetTeam.map { team =>
+            dataService.behaviorGroups.allFor(team).map(Some(_))
+          }.getOrElse {
+            Future.successful(None)
+          }
+          result <- teamAccess.maybeTargetTeam.map { team =>
+            val route = routes.BehaviorEditorController.newGroup(maybeTeamId)
+            Future.successful(Ok(views.html.behavioreditor.edit(viewConfig(Some(teamAccess)), route)))
+          }.getOrElse {
+            dataService.users.teamAccessFor(user, None).flatMap { teamAccess =>
+              val response = NotFound(
+                views.html.error.notFound(
+                  viewConfig(Some(teamAccess)),
+                  Some(""),
+                  Some("The skill you are trying to access could not be found."),
+                  Some(reAuthLinkFor(request, None))
+                ))
+
+              withAuthDiscarded(request, response)
+            }
+          }
+        } yield result
       }
     }
   }
 
   def edit(groupId: String, maybeBehaviorId: Option[String]) = silhouette.SecuredAction.async { implicit request =>
     val user = request.identity
-    BehaviorEditorData.buildForEdit(user, groupId, maybeBehaviorId, dataService, ws).flatMap { maybeEditorData =>
-      maybeEditorData.map { editorData =>
-        Future.successful(Ok(views.html.behavioreditor.edit(viewConfig(Some(editorData.teamAccess)), editorData)))
-      }.getOrElse {
-        dataService.users.teamAccessFor(user, None).flatMap { teamAccess =>
-          val response = NotFound(
-            views.html.error.notFound(
-              viewConfig(Some(teamAccess)),
-              Some("Skill not found"),
-              Some("The skill you are trying to access could not be found."),
-              Some(reAuthLinkFor(request, None))
-            ))
-
-          withAuthDiscarded(request, response)
+    render.async {
+      case Accepts.JavaScript() => {
+        BehaviorEditorData.buildForEdit(user, groupId, maybeBehaviorId, dataService, ws).flatMap { maybeEditorData =>
+          maybeEditorData.map { editorData =>
+            Future.successful(Ok(views.js.behavioreditor.edit(viewConfig(Some(editorData.teamAccess)), editorData)))
+          }.getOrElse {
+            Future.successful(Unauthorized("Forbidden"))
+          }
         }
+      }
+      case Accepts.Html() => {
+        for {
+          maybeGroupData <- BehaviorGroupData.maybeFor(groupId, user, maybeGithubUrl = None, dataService)
+          maybeTeam <- maybeGroupData.map { data =>
+            dataService.teams.find(data.teamId, user)
+          }.getOrElse(Future.successful(None))
+          result <- maybeTeam.map { team =>
+            dataService.users.teamAccessFor(user, Some(team.id)).map { teamAccess =>
+              val route = routes.BehaviorEditorController.edit(groupId, maybeBehaviorId)
+              Ok(views.html.behavioreditor.edit(viewConfig(Some(teamAccess)), route))
+            }
+          }.getOrElse {
+            dataService.users.teamAccessFor(user, None).flatMap { teamAccess =>
+              val response = NotFound(
+                views.html.error.notFound(
+                  viewConfig(Some(teamAccess)),
+                  Some("Skill not found"),
+                  Some("The skill you are trying to access could not be found."),
+                  Some(reAuthLinkFor(request, None))
+                )
+              )
+
+              withAuthDiscarded(request, response)
+            }
+          }
+        } yield result
       }
     }
   }
