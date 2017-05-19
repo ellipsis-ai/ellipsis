@@ -3,6 +3,7 @@ package controllers
 import javax.inject.Inject
 
 import com.mohiva.play.silhouette.api.Silhouette
+import com.mohiva.play.silhouette.api.actions.SecuredRequest
 import json.Formatting._
 import json._
 import models.behaviors.behaviorparameter.TextType
@@ -16,6 +17,7 @@ import play.api.data.Forms._
 import play.api.i18n.MessagesApi
 import play.api.libs.json._
 import play.api.libs.ws.WSClient
+import play.api.mvc.{AnyContent, Result}
 import services.{AWSLambdaService, DataService}
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -35,20 +37,14 @@ class BehaviorEditorController @Inject() (
     val user = request.identity
     render.async {
       case Accepts.JavaScript() => {
-        BehaviorEditorData.buildForNew(user, maybeTeamId, dataService, ws).flatMap { maybeEditorData =>
-          maybeEditorData.map { editorData =>
-            Future.successful(Ok(views.js.behavioreditor.edit(viewConfig(Some(editorData.teamAccess)), editorData)))
-          }.getOrElse {
-            Future.successful(Unauthorized("Forbidden"))
-          }
-        }
+        editorDataResult(BehaviorEditorData.buildForNew(user, maybeTeamId, dataService, ws))
       }
       case Accepts.Html() => {
         for {
           teamAccess <- dataService.users.teamAccessFor(user, maybeTeamId)
           result <- teamAccess.maybeTargetTeam.map { team =>
-            val route = routes.BehaviorEditorController.newGroup(maybeTeamId)
-            Future.successful(Ok(views.html.behavioreditor.edit(viewConfig(Some(teamAccess)), route)))
+            val dataRoute = routes.BehaviorEditorController.newGroup(maybeTeamId)
+            Future.successful(Ok(views.html.behavioreditor.edit(viewConfig(Some(teamAccess)), dataRoute)))
           }.getOrElse {
             reAuthFor(request, maybeTeamId)
           }
@@ -61,13 +57,7 @@ class BehaviorEditorController @Inject() (
     val user = request.identity
     render.async {
       case Accepts.JavaScript() => {
-        BehaviorEditorData.buildForEdit(user, groupId, maybeBehaviorId, dataService, ws).flatMap { maybeEditorData =>
-          maybeEditorData.map { editorData =>
-            Future.successful(Ok(views.js.behavioreditor.edit(viewConfig(Some(editorData.teamAccess)), editorData)))
-          }.getOrElse {
-            Future.successful(Unauthorized("Forbidden"))
-          }
-        }
+        editorDataResult(BehaviorEditorData.buildForEdit(user, groupId, maybeBehaviorId, dataService, ws))
       }
       case Accepts.Html() => {
         for {
@@ -77,25 +67,37 @@ class BehaviorEditorController @Inject() (
           }.getOrElse(Future.successful(None))
           result <- maybeTeam.map { team =>
             dataService.users.teamAccessFor(user, Some(team.id)).map { teamAccess =>
-              val route = routes.BehaviorEditorController.edit(groupId, maybeBehaviorId)
-              Ok(views.html.behavioreditor.edit(viewConfig(Some(teamAccess)), route))
+              val dataRoute = routes.BehaviorEditorController.edit(groupId, maybeBehaviorId)
+              Ok(views.html.behavioreditor.edit(viewConfig(Some(teamAccess)), dataRoute))
             }
-          }.getOrElse {
-            dataService.users.teamAccessFor(user, None).flatMap { teamAccess =>
-              val response = NotFound(
-                views.html.error.notFound(
-                  viewConfig(Some(teamAccess)),
-                  Some("Skill not found"),
-                  Some("The skill you are trying to access could not be found."),
-                  Some(reAuthLinkFor(request, None))
-                )
-              )
-
-              withAuthDiscarded(request, response)
-            }
-          }
+          }.getOrElse { skillNotFound }
         } yield result
       }
+    }
+  }
+
+  private def editorDataResult(eventualMaybeEditorData: Future[Option[BehaviorEditorData]])(implicit request: SecuredRequest[EllipsisEnv, AnyContent]): Future[Result] = {
+    eventualMaybeEditorData.flatMap { maybeEditorData =>
+      maybeEditorData.map { editorData =>
+        Future.successful(Ok(views.js.behavioreditor.edit(viewConfig(Some(editorData.teamAccess)), editorData)))
+      }.getOrElse {
+        Future.successful(Unauthorized("Forbidden"))
+      }
+    }
+  }
+
+  private def skillNotFound()(implicit request: SecuredRequest[EllipsisEnv, AnyContent]): Future[Result] = {
+    dataService.users.teamAccessFor(request.identity, None).flatMap { teamAccess =>
+      val response = NotFound(
+        views.html.error.notFound(
+          viewConfig(Some(teamAccess)),
+          Some("Skill not found"),
+          Some("The skill you are trying to access could not be found."),
+          Some(reAuthLinkFor(request, None))
+        )
+      )
+
+      withAuthDiscarded(request, response)
     }
   }
 
