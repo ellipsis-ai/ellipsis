@@ -65,7 +65,7 @@ class ApplicationController @Inject() (
         for {
           teamAccess <- eventualTeamAccess
           result <- teamAccess.maybeTargetTeam.map { team =>
-            Future.successful(Ok(views.html.application.index(viewConfig(Some(teamAccess)))))
+            Future.successful(Ok(views.html.application.index(viewConfig(Some(teamAccess)), maybeTeamId, maybeBranch)))
           }.getOrElse {
             reAuthFor(request, maybeTeamId)
           }

@@ -1,10 +1,14 @@
 @(
-  config: ViewConfig
+  config: ViewConfig,
+  maybeTeamId: Option[String],
+  maybeBranch: Option[String]
 )(implicit messages: Messages, r: RequestHeader)
 
-@page.main("View your skills", config, selectedNav = "skills", bgClass = "bg-blue-lighter") {
+@page.main("View your skills", config, selectedNav = "skills", bgClass = "bg-blue-lighter", includeJsConfig = false) {
   <div id="content" class="content pbn bg-blue-lighter">
     <div id="behaviorListContainer"></div>
-    <script data-main='@RemoteAssets.getUrl("javascripts/behavior_list/loader.js")' src='@RemoteAssets.getUrl("lib/requirejs/require.min.js")'></script>
+    <script src='@RemoteAssets.getUrl("lib/requirejs/require.min.js")'></script>
+    <script src='@{routes.ApplicationController.index(maybeTeamId, maybeBranch)}'></script>
+    <script src='@RemoteAssets.getUrl("javascripts/behavior_list/loader.js")'></script>
   </div>
 }
