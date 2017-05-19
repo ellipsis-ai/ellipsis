@@ -46,26 +46,11 @@ class BehaviorEditorController @Inject() (
       case Accepts.Html() => {
         for {
           teamAccess <- dataService.users.teamAccessFor(user, maybeTeamId)
-          maybeBehaviorGroups <- teamAccess.maybeTargetTeam.map { team =>
-            dataService.behaviorGroups.allFor(team).map(Some(_))
-          }.getOrElse {
-            Future.successful(None)
-          }
           result <- teamAccess.maybeTargetTeam.map { team =>
             val route = routes.BehaviorEditorController.newGroup(maybeTeamId)
             Future.successful(Ok(views.html.behavioreditor.edit(viewConfig(Some(teamAccess)), route)))
           }.getOrElse {
-            dataService.users.teamAccessFor(user, None).flatMap { teamAccess =>
-              val response = NotFound(
-                views.html.error.notFound(
-                  viewConfig(Some(teamAccess)),
-                  Some(""),
-                  Some("The skill you are trying to access could not be found."),
-                  Some(reAuthLinkFor(request, None))
-                ))
-
-              withAuthDiscarded(request, response)
-            }
+            reAuthFor(request, maybeTeamId)
           }
         } yield result
       }
