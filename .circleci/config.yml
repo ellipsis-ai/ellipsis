@@ -46,9 +46,11 @@ jobs:
       - save_cache:
           paths:
             - node_modules
-          keys:
-            - v4-node-{{ .Branch }}-{{ checksum "package.json" }}
-            - v4-node-{{ checksum "package.json" }}
+          key: v4-node-{{ .Branch }}-{{ checksum "package.json" }}
+      - save_cache:
+          paths:
+            - node_modules
+          key: v4-node-{{ checksum "package.json" }}
       - run:
           name: Run JavaScript Linter
           command: |
@@ -71,9 +73,14 @@ jobs:
             - .sbt
             - ~/.ivy2
             - ~/.sbt
-          keys:
-            - v6-playapp-{{ .Branch }}-{{ checksum "build.sbt" }}
-            - v6-playapp-{{ checksum "build.sbt" }}
+          key: v6-playapp-{{ .Branch }}-{{ checksum "build.sbt" }}
+      - save_cache:
+          paths:
+            - .ivy2
+            - .sbt
+            - ~/.ivy2
+            - ~/.sbt
+          key: v6-playapp-{{ checksum "build.sbt" }}
       - run:
           name: Prepare app to be dockerized
           command: |
