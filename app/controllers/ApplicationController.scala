@@ -34,29 +34,44 @@ class ApplicationController @Inject() (
 
   def index(maybeTeamId: Option[String], maybeBranch: Option[String] = None) = silhouette.SecuredAction.async { implicit request =>
     val user = request.identity
-    for {
-      teamAccess <- dataService.users.teamAccessFor(user, maybeTeamId)
-      maybeBehaviorGroups <- teamAccess.maybeTargetTeam.map { team =>
-        dataService.behaviorGroups.allFor(team).map(Some(_))
-      }.getOrElse {
-        Future.successful(None)
+    val eventualTeamAccess = dataService.users.teamAccessFor(user, maybeTeamId)
+    render.async {
+      case Accepts.JavaScript() => {
+        for {
+          teamAccess <- eventualTeamAccess
+          maybeBehaviorGroups <- teamAccess.maybeTargetTeam.map { team =>
+            dataService.behaviorGroups.allFor(team).map(Some(_))
+          }.getOrElse {
+            Future.successful(None)
+          }
+          maybeSlackTeamId <- teamAccess.maybeTargetTeam.map { team =>
+            dataService.slackBotProfiles.allFor(team).map { botProfiles =>
+              botProfiles.headOption.map(_.slackTeamId)
+            }
+          }.getOrElse(Future.successful(None))
+          groupData <- maybeBehaviorGroups.map { groups =>
+            Future.sequence(groups.map { group =>
+              BehaviorGroupData.maybeFor(group.id, user, None, dataService)
+            }).map(_.flatten.sorted)
+          }.getOrElse(Future.successful(Seq()))
+          result <- teamAccess.maybeTargetTeam.map { team =>
+            Future.successful(Ok(views.js.application.index(viewConfig(Some(teamAccess)), groupData, maybeSlackTeamId, team.maybeTimeZone.map(_.toString), maybeBranch)))
+          }.getOrElse {
+            Future.successful(Unauthorized("Not authenticated"))
+          }
+        } yield result
       }
-      maybeSlackTeamId <- teamAccess.maybeTargetTeam.map { team =>
-        dataService.slackBotProfiles.allFor(team).map { botProfiles =>
-          botProfiles.headOption.map(_.slackTeamId)
-        }
-      }.getOrElse(Future.successful(None))
-      groupData <- maybeBehaviorGroups.map { groups =>
-        Future.sequence(groups.map { group =>
-          BehaviorGroupData.maybeFor(group.id, user, None, dataService)
-        }).map(_.flatten.sorted)
-      }.getOrElse(Future.successful(Seq()))
-      result <- teamAccess.maybeTargetTeam.map { team =>
-        Future.successful(Ok(views.html.application.index(viewConfig(Some(teamAccess)), groupData, maybeSlackTeamId, team.maybeTimeZone.map(_.toString), maybeBranch)))
-      }.getOrElse {
-        reAuthFor(request, maybeTeamId)
+      case Accepts.Html() => {
+        for {
+          teamAccess <- eventualTeamAccess
+          result <- teamAccess.maybeTargetTeam.map { team =>
+            Future.successful(Ok(views.html.application.index(viewConfig(Some(teamAccess)), maybeTeamId, maybeBranch)))
+          }.getOrElse {
+            reAuthFor(request, maybeTeamId)
+          }
+        } yield result
       }
-    } yield result
+    }
   }
 
   def fetchPublishedBehaviorInfo(maybeTeamId: Option[String],
