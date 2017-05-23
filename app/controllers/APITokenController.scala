@@ -41,11 +41,28 @@ class APITokenController @Inject() (
 
   def listTokens(maybeJustCreatedTokenId: Option[String]) = silhouette.SecuredAction.async { implicit request =>
     val user = request.identity
-    for {
-      teamAccess <- dataService.users.teamAccessFor(user, None)
-      tokens <- dataService.apiTokens.allFor(user)
-    } yield Ok(views.html.api.listTokens(viewConfig(Some(teamAccess)), tokens.map(APITokenData.from), maybeJustCreatedTokenId))
-
+    render.async {
+      case Accepts.JavaScript() => {
+        for {
+          teamAccess <- dataService.users.teamAccessFor(user, None)
+          tokens <- dataService.apiTokens.allFor(user)
+        } yield {
+          teamAccess.maybeTargetTeam.map { team =>
+            Ok(views.js.api.listTokens(team.id, tokens.map(APITokenData.from), maybeJustCreatedTokenId))
+          }.getOrElse {
+            Unauthorized("Forbidden")
+          }
+        }
+      }
+      case Accepts.Html() => {
+        for {
+          teamAccess <- dataService.users.teamAccessFor(user, None)
+        } yield {
+          val dataRoute = routes.APITokenController.listTokens(maybeJustCreatedTokenId)
+          Ok(views.html.api.listTokens(viewConfig(Some(teamAccess)), dataRoute))
+        }
+      }
+    }
   }
 
   private val revokeApiTokenForm = Form(

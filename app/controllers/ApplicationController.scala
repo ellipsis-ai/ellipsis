@@ -54,12 +54,13 @@ class ApplicationController @Inject() (
               BehaviorGroupData.maybeFor(group.id, user, None, dataService)
             }).map(_.flatten.sorted)
           }.getOrElse(Future.successful(Seq()))
-          result <- teamAccess.maybeTargetTeam.map { team =>
-            Future.successful(Ok(views.js.application.index(viewConfig(Some(teamAccess)), groupData, maybeSlackTeamId, team.maybeTimeZone.map(_.toString), maybeBranch)))
+        } yield {
+          teamAccess.maybeTargetTeam.map { team =>
+            Ok(views.js.application.index(team.id, groupData, maybeSlackTeamId, team.maybeTimeZone.map(_.toString), maybeBranch))
           }.getOrElse {
-            Future.successful(Unauthorized("Not authenticated"))
+            Unauthorized("Not authenticated")
           }
-        } yield result
+        }
       }
       case Accepts.Html() => {
         for {

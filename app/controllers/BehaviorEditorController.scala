@@ -79,7 +79,7 @@ class BehaviorEditorController @Inject() (
   private def editorDataResult(eventualMaybeEditorData: Future[Option[BehaviorEditorData]])(implicit request: SecuredRequest[EllipsisEnv, AnyContent]): Future[Result] = {
     eventualMaybeEditorData.flatMap { maybeEditorData =>
       maybeEditorData.map { editorData =>
-        Future.successful(Ok(views.js.behavioreditor.edit(viewConfig(Some(editorData.teamAccess)), editorData)))
+        Future.successful(Ok(views.js.behavioreditor.edit(editorData)))
       }.getOrElse {
         Future.successful(Unauthorized("Forbidden"))
       }

@@ -1,5 +1,5 @@
 @(
-  config: ViewConfig,
+  teamId: String,
   behaviorGroups: Seq[json.BehaviorGroupData],
   maybeSlackTeamId: Option[String],
   maybeTeamTimeZone: Option[String],
@@ -19,7 +19,7 @@ define("config/index", function() {
     containerId: "behaviorListContainer",
     behaviorGroups: @JavaScript(Json.toJson(behaviorGroups).toString),
     csrfToken: "@CSRF.getToken(r).map(_.value)",
-    teamId: "@config.maybeTargetTeamId.getOrElse("")",
+    teamId: "@teamId",
     slackTeamId: "@maybeSlackTeamId.getOrElse("")",
     teamTimeZone: @JavaScript(Json.toJson(maybeTeamTimeZone).toString),
     branchName: @JavaScript(Json.toJson(maybeBranch).toString)
