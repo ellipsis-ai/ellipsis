@@ -1,20 +1,13 @@
 @(
   config: ViewConfig,
-  environmentVariableJsonString: String
-  )(implicit messages: Messages, r: RequestHeader)
+  dataRoute: Call
+)(implicit messages: Messages, r: RequestHeader)
 
-@import play.filters.csrf._
-
-@page.main("Environment variables", config, selectedNav = "settings") {
+@page.main("Environment variables", config, selectedNav = "settings", includeJsConfig = false) {
   <div id="content" class="content flex-row-cascade">
     <div id="environmentVariableList" class="flex-row-cascade"></div>
-    <script>
-      var EnvironmentVariableListConfig = {
-        containerId: 'environmentVariableList',
-        csrfToken: "@CSRF.getToken(r).map(_.value)",
-        data: @Html(environmentVariableJsonString)
-      };
-    </script>
-    <script data-main='@RemoteAssets.getUrl("javascripts/environment_variables/loader.js")' src='@RemoteAssets.getUrl("lib/requirejs/require.min.js")'></script>
+    <script src='@RemoteAssets.getUrl("lib/requirejs/require.min.js")'></script>
+    <script src="@dataRoute"></script>
+    <script src='@RemoteAssets.getUrl("javascripts/environment_variables/loader.js")'></script>
   </div>
 }

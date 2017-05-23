@@ -99,17 +99,33 @@ class EnvironmentVariablesController @Inject() (
 
   def list(maybeTeamId: Option[String]) = silhouette.SecuredAction.async { implicit request =>
     val user = request.identity
-    for {
-      teamAccess <- dataService.users.teamAccessFor(user, maybeTeamId)
-      environmentVariables <- teamAccess.maybeTargetTeam.map { team =>
-        dataService.teamEnvironmentVariables.allFor(team)
-      }.getOrElse(Future.successful(Seq()))
-    } yield {
-      teamAccess.maybeTargetTeam.map { team =>
-        val jsonData = Json.toJson(EnvironmentVariablesData(team.id, environmentVariables.map(ea => EnvironmentVariableData.withoutValueFor(ea))))
-        Ok(views.html.environmentvariables.list(viewConfig(Some(teamAccess)), jsonData.toString))
-      }.getOrElse{
-        NotFound("Team not accessible")
+    render.async {
+      case Accepts.JavaScript() => {
+        for {
+          teamAccess <- dataService.users.teamAccessFor(user, maybeTeamId)
+          environmentVariables <- teamAccess.maybeTargetTeam.map { team =>
+            dataService.teamEnvironmentVariables.allFor(team)
+          }.getOrElse(Future.successful(Seq()))
+        } yield {
+          teamAccess.maybeTargetTeam.map { team =>
+            val jsonData = Json.toJson(EnvironmentVariablesData(team.id, environmentVariables.map(ea => EnvironmentVariableData.withoutValueFor(ea))))
+            Ok(views.js.environmentvariables.list(jsonData.toString))
+          }.getOrElse{
+            Unauthorized("Forbidden")
+          }
+        }
+      }
+      case Accepts.Html() => {
+        for {
+          teamAccess <- dataService.users.teamAccessFor(user, maybeTeamId)
+          result <- teamAccess.maybeTargetTeam.map { team =>
+            val dataRoute = routes.EnvironmentVariablesController.list(maybeTeamId)
+            Future.successful(Ok(views.html.environmentvariables.list(viewConfig(Some(teamAccess)), dataRoute)))
+          }.getOrElse {
+            reAuthFor(request, maybeTeamId)
+          }
+
+        } yield result
       }
     }
   }
