@@ -3,6 +3,7 @@ package controllers
 import javax.inject.Inject
 
 import com.mohiva.play.silhouette.api.Silhouette
+import json.Formatting._
 import json._
 import models._
 import models.accounts.oauth2application.OAuth2Application
@@ -11,6 +12,8 @@ import play.api.Configuration
 import play.api.data.Form
 import play.api.data.Forms._
 import play.api.i18n.MessagesApi
+import play.api.libs.json.Json
+import play.filters.csrf.CSRF
 import services.DataService
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -35,13 +38,14 @@ class OAuth2ApplicationController @Inject() (
           }.getOrElse(Future.successful(Seq()))
         } yield {
           teamAccess.maybeTargetTeam.map { team =>
-            Ok(
-              views.js.oauth2application.list(
-                team.id,
-                apis.map(api => OAuth2ApiData.from(api)),
-                applications.map(app => OAuth2ApplicationData.from(app))
-              )
+            val data = Json.obj(
+              "containerId" -> "applicationList",
+              "csrfToken" -> CSRF.getToken(request).map(_.value),
+              "teamId" -> team.id,
+              "apis" -> apis.map(api => OAuth2ApiData.from(api)),
+              "applications" -> applications.map(app => OAuth2ApplicationData.from(app))
             )
+            Ok(views.js.oauth2application.list(Json.prettyPrint(data)))
           }.getOrElse{
             Unauthorized("Forbidden")
           }
