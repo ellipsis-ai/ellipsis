@@ -21,7 +21,7 @@ define("config/index", function() {
     csrfToken: "@CSRF.getToken(r).map(_.value)",
     teamId: "@config.maybeTargetTeamId.getOrElse("")",
     slackTeamId: "@maybeSlackTeamId.getOrElse("")",
-    teamTimeZone: @JavaScript(Json.asciiStringify(Json.toJson(maybeTeamTimeZone))),
-    branchName: @JavaScript(Json.asciiStringify(Json.toJson(maybeBranch)))
+    teamTimeZone: @JavaScript(Json.toJson(maybeTeamTimeZone).toString),
+    branchName: @JavaScript(Json.toJson(maybeBranch).toString)
   };
 });
