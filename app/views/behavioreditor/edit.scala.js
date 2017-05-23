@@ -1,5 +1,4 @@
 @(
-  config: ViewConfig,
   data: json.BehaviorEditorData
 )(implicit messages: Messages, r: RequestHeader)
 
