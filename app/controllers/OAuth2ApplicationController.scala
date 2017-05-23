@@ -48,21 +48,37 @@ class OAuth2ApplicationController @Inject() (
 
   def newApp(maybeApiId: Option[String], maybeRecommendedScope: Option[String], maybeTeamId: Option[String], maybeBehaviorId: Option[String]) = silhouette.SecuredAction.async { implicit request =>
     val user = request.identity
-    for {
-      teamAccess <- dataService.users.teamAccessFor(user, maybeTeamId)
-      apis <- dataService.oauth2Apis.allFor(teamAccess.maybeTargetTeam)
-    } yield {
-      teamAccess.maybeTargetTeam.map { team =>
-        Ok(views.html.oauth2application.newApplication(
-          viewConfig(Some(teamAccess)),
-          apis.map(api => OAuth2ApiData.from(api)),
-          IDs.next,
-          maybeApiId,
-          maybeRecommendedScope,
-          maybeBehaviorId)
-        )
-      }.getOrElse {
-        NotFound("Team not accessible")
+    render.async {
+      case Accepts.JavaScript() => {
+        for {
+          teamAccess <- dataService.users.teamAccessFor(user, maybeTeamId)
+          apis <- dataService.oauth2Apis.allFor(teamAccess.maybeTargetTeam)
+        } yield {
+          teamAccess.maybeTargetTeam.map { team =>
+            Ok(views.js.oauth2application.newApplication(
+              team.id,
+              apis.map(api => OAuth2ApiData.from(api)),
+              IDs.next,
+              maybeApiId,
+              maybeRecommendedScope,
+              maybeBehaviorId)
+            )
+          }.getOrElse {
+            Unauthorized("Forbidden")
+          }
+        }
+      }
+      case Accepts.Html() => {
+        for {
+          teamAccess <- dataService.users.teamAccessFor(user, maybeTeamId)
+        } yield {
+          teamAccess.maybeTargetTeam.map { team =>
+            val dataRoute = routes.OAuth2ApplicationController.newApp(maybeApiId, maybeRecommendedScope, maybeTeamId, maybeBehaviorId)
+            Ok(views.html.oauth2application.edit(viewConfig(Some(teamAccess)), "Add an API application", dataRoute))
+          }.getOrElse {
+            NotFound("Team not accessible")
+          }
+        }
       }
     }
   }
@@ -76,19 +92,34 @@ class OAuth2ApplicationController @Inject() (
         dataService.oauth2Applications.find(id)
       }.getOrElse(Future.successful(None))
     } yield {
-      (for {
-        team <- teamAccess.maybeTargetTeam
-        application <- maybeApplication
-      } yield {
-        Ok(views.html.oauth2application.edit(viewConfig(Some(teamAccess)), apis.map(api => OAuth2ApiData.from(api)), application))
-      }).getOrElse {
-        NotFound(
-          views.html.error.notFound(
-            viewConfig(Some(teamAccess)),
-            Some("OAuth2 application not found"),
-            Some("The OAuth2 application you are trying to access could not be found."),
-            Some(reAuthLinkFor(request, None))
-          ))
+      render {
+        case Accepts.JavaScript() => {
+          (for {
+            team <- teamAccess.maybeTargetTeam
+            application <- maybeApplication
+          } yield {
+            Ok(views.js.oauth2application.edit(team.id, apis.map(api => OAuth2ApiData.from(api)), application))
+          }).getOrElse {
+            NotFound("Unknown application")
+          }
+        }
+        case Accepts.Html() => {
+          (for {
+            _ <- teamAccess.maybeTargetTeam
+            _ <- maybeApplication
+          } yield {
+            val dataRoute = routes.OAuth2ApplicationController.edit(id, maybeTeamId)
+            Ok(views.html.oauth2application.edit(viewConfig(Some(teamAccess)), "Edit API application", dataRoute))
+          }).getOrElse {
+            NotFound(
+              views.html.error.notFound(
+                viewConfig(Some(teamAccess)),
+                Some("OAuth2 application not found"),
+                Some("The OAuth2 application you are trying to access could not be found."),
+                Some(reAuthLinkFor(request, None))
+              ))
+          }
+        }
       }
     }
   }
