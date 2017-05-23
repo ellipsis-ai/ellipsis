@@ -15,16 +15,16 @@
 @shared.jsRoutes()
 
 define("config/oauth2application/edit", function() {
-  return {
-    containerId: 'applicationEditor',
-    csrfToken: "@CSRF.getToken(r).map(_.value)",
-    teamId: "@teamId",
-    apis: @JavaScript(Json.toJson(apis).toString),
-    callbackUrl: "@routes.APIAccessController.linkCustomOAuth2Service(applicationId, None, None, None, None).absoluteURL(secure = true)",
-    mainUrl: "@routes.ApplicationController.index().absoluteURL(secure = true)",
-    applicationId: "@applicationId",
-    applicationApiId: "@maybeApiId.getOrElse("")",
-    recommendedScope: "@maybeRecommendedScope.getOrElse("")",
-    behaviorId: "@maybeBehaviorId.getOrElse("")"
-  };
+  return @JavaScript(Json.prettyPrint(Json.obj(
+    "containerId" -> "applicationEditor",
+    "csrfToken" -> CSRF.getToken(r).map(_.value),
+    "teamId" -> teamId,
+    "apis" -> apis,
+    "callbackUrl" -> routes.APIAccessController.linkCustomOAuth2Service(applicationId, None, None, None, None).absoluteURL(secure = true),
+    "mainUrl" -> routes.ApplicationController.index().absoluteURL(secure = true),
+    "applicationId" -> applicationId,
+    "applicationApiId" -> maybeApiId,
+    "recommendedScope" -> maybeRecommendedScope,
+    "behaviorId" -> maybeBehaviorId
+  )));
 });

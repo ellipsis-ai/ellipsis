@@ -25,23 +25,39 @@ class OAuth2ApplicationController @Inject() (
 
   def list(maybeTeamId: Option[String]) = silhouette.SecuredAction.async { implicit request =>
     val user = request.identity
-    for {
-      teamAccess <- dataService.users.teamAccessFor(user, maybeTeamId)
-      apis <- dataService.oauth2Apis.allFor(teamAccess.maybeTargetTeam)
-      applications <- teamAccess.maybeTargetTeam.map { team =>
-        dataService.oauth2Applications.allFor(team)
-      }.getOrElse(Future.successful(Seq()))
-    } yield {
-      teamAccess.maybeTargetTeam.map { team =>
-        Ok(
-          views.html.oauth2application.list(
-            viewConfig(Some(teamAccess)),
-            apis.map(api => OAuth2ApiData.from(api)),
-            applications.map(app => OAuth2ApplicationData.from(app))
-          )
-        )
-      }.getOrElse{
-        NotFound("Team not accessible")
+    render.async {
+      case Accepts.JavaScript() => {
+        for {
+          teamAccess <- dataService.users.teamAccessFor(user, maybeTeamId)
+          apis <- dataService.oauth2Apis.allFor(teamAccess.maybeTargetTeam)
+          applications <- teamAccess.maybeTargetTeam.map { team =>
+            dataService.oauth2Applications.allFor(team)
+          }.getOrElse(Future.successful(Seq()))
+        } yield {
+          teamAccess.maybeTargetTeam.map { team =>
+            Ok(
+              views.js.oauth2application.list(
+                team.id,
+                apis.map(api => OAuth2ApiData.from(api)),
+                applications.map(app => OAuth2ApplicationData.from(app))
+              )
+            )
+          }.getOrElse{
+            Unauthorized("Forbidden")
+          }
+        }
+      }
+      case Accepts.Html() => {
+        for {
+          teamAccess <- dataService.users.teamAccessFor(user, maybeTeamId)
+        } yield {
+          teamAccess.maybeTargetTeam.map { team =>
+            val dataRoute = routes.OAuth2ApplicationController.list(maybeTeamId)
+            Ok(views.html.oauth2application.list(viewConfig(Some(teamAccess)), dataRoute))
+          }.getOrElse {
+            NotFound("Team not accessible")
+          }
+        }
       }
     }
   }
