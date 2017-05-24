@@ -1,0 +1,218 @@
+#!/bin/sh
+
+# Use trap so that CNTRL-C kills all the subshells
+trap "kill 0" SIGINT
+
+RED=`tput setaf 1`   # Use red for errors
+GREEN=`tput setaf 2` # Use green for success
+MAGENTA=`tput setaf 5` # Use magenta for warnings and notes
+BOLD=`tput bold`
+PLAIN=`tput sgr0`
+
+VERSION_LABEL=ellipsis-`git rev-parse --short HEAD`
+GIT_USERNAME=`git config user.name`
+DISPLAY_USERNAME=$(whoami)
+
+# By default we target prod
+TARGET_ENV="prod"
+
+if [ "$1" = "stag01" ]
+then
+  TARGET_ENV="stag01"
+fi
+
+if [ "${TARGET_ENV}" = "stag01" ]
+then
+  ACCOUNT_ID="458075145501"
+  ASSETS_BUCKET="assets-${ACCOUNT_ID}"
+  EB_APP_NAME="playapp"
+  EB_ENV_NAME="playapp-env"
+  EMOJI=" 🦑 "
+  AWS_ELLIPSIS_PROFILE="el-${TARGET_ENV}-deployer"
+elif [ "${TARGET_ENV}" = "prod" ]
+then
+  ACCOUNT_ID="170937251085"
+  ASSETS_BUCKET=ellipsis-assets
+  EB_APP_NAME="My First Elastic Beanstalk Application"
+  EB_ENV_NAME="ellipsis-demo"
+  EMOJI=" 🐴 "
+  if [ -z "${AWS_ELLIPSIS_PROFILE}" ]
+  then
+    AWS_ELLIPSIS_PROFILE="el-${TARGET_ENV}-deployer"
+  fi
+fi
+
+EB_BUCKET="elasticbeanstalk-us-east-1-${ACCOUNT_ID}"
+
+printf "\n\n${EMOJI}${GREEN} - Getting ready to deploy to ${MAGENTA}${TARGET_ENV}${PLAIN} -${EMOJI}\n"
+printf "───────────────────────────────────────────────────────────────────\n";
+printf " Target environment: ${BOLD}${TARGET_ENV}${PLAIN}\n"
+printf "        AWS profile: ${BOLD}${AWS_ELLIPSIS_PROFILE}${PLAIN}\n"
+printf "           App name: ${BOLD}${EB_APP_NAME}${PLAIN}\n"
+printf "      Target bucket: ${BOLD}${EB_BUCKET}${PLAIN}\n"
+printf "      Assets bucket: ${BOLD}${ASSETS_BUCKET}${PLAIN}\n"
+printf "───────────────────────────────────────────────────────────────────\n";
+
+printf "Deploying...\n";
+
+announce_start() {
+  curl -f https://bot.ellipsis.ai/api/say \
+      --data-urlencode "message=🛠 ${DISPLAY_USERNAME} is building app version ${VERSION_LABEL} for ${TARGET_ENV}." \
+      --data-urlencode "responseContext=slack" \
+      --data-urlencode "channel=dev" \
+      --data-urlencode "token=${ELLIPSIS_DEPLOY_TOKEN}"
+}
+
+announce_failure() {
+  curl -f https://bot.ellipsis.ai/api/say \
+      --data-urlencode "message=💥 ${DISPLAY_USERNAME} failed to build app version ${VERSION_LABEL} for ${TARGET_ENV}" \
+      --data-urlencode "responseContext=slack" \
+      --data-urlencode "channel=dev" \
+      --data-urlencode "token=${ELLIPSIS_DEPLOY_TOKEN}"
+}
+
+announce_completed() {
+  curl -f https://bot.ellipsis.ai/api/say \
+      --data-urlencode "message=🚀 ${DISPLAY_USERNAME} has just finished building **${VERSION_LABEL}** and it’s ready for deployment on ${TARGET_ENV}" \
+      --data-urlencode "responseContext=slack" \
+      --data-urlencode "channel=dev" \
+      --data-urlencode "token=${ELLIPSIS_DEPLOY_TOKEN}"
+}
+
+check_environment() {
+  aws configure --profile $AWS_ELLIPSIS_PROFILE list
+  if [ $? -gt 0 ]
+  then
+    printf "\n${RED}You need to configure the AWS profile for this deploy:\n\n"
+    printf "Bye.\n"
+    exit 1
+  fi
+
+  if [ -z "$ELLIPSIS_DEPLOY_TOKEN" ]
+  then
+    printf "${RED}You need to set the ELLIPSIS_DEPLOY_TOKEN environment variable.\n"
+    printf "Bye.\n"
+    exit 1
+  fi
+
+  type activator >/dev/null 2>&1 || {
+    printf "\n\n${RED}activator is not installed.\n"
+    printf "Bye.\n"
+    exit 1
+  }
+
+  type aws >/dev/null 2>&1 || {
+    printf "\n\n${RED}You need to set up the aws CLI tools.\n"
+    printf "Bye.\n"
+    exit 1
+  }
+}
+
+printf "\n${GREEN}OK.${PLAIN}\n"
+printf "${GREEN}\n\nChecking your Environment...${PLAIN}\n"
+printf "_____________________________________________________ \n";
+check_environment()
+printf "\n${GREEN}OK.${PLAIN}\n"
+
+printf "\n${GREEN}OK.${PLAIN}\n"
+printf "\n\n${GREEN}Announcing the deployment to #dev...${PLAIN}\n"
+printf "_____________________________________________________ \n";
+announce_start
+printf "\n${GREEN}OK.${PLAIN}\n"
+
+printf "\n\n${GREEN}Packaging the build...${PLAIN}\n";
+printf "_____________________________________________________ \n";
+BUNDLE_DIR=./target/eb-bundles
+touch conf/version.conf
+echo application.version=\"`git rev-parse --short HEAD`\" >conf/version.conf
+activator docker:stage
+if [ $? -eq 1 ]
+then
+  printf "\n\n${RED}Failed to package the build\n${PLAIN}";
+  announce_failure
+  printf "Bye.\n"
+  exit 1
+fi
+printf "\n${GREEN}OK.${PLAIN}\n"
+mkdir -p target/docker/.ebextensions
+cp .ebextensions/* target/docker/.ebextensions/
+cp deploy/Docker* target/docker/
+TOP_DIR=`pwd`
+BUNDLE=$VERSION_LABEL.zip
+BUNDLE_DIR="${TOP_DIR}/target/eb-bundles"
+BUNDLE_PATH="${BUNDLE_DIR}/${BUNDLE}"
+mkdir -p $BUNDLE_DIR
+cd target/docker/
+zip -qq -r $BUNDLE_PATH .
+cd $TOP_DIR
+printf "\n${GREEN}OK.${PLAIN}\n"
+
+
+printf "\n\n${GREEN}Syncing assets with S3...${PLAIN}\n";
+printf "_____________________________________________________ \n";
+PUBLIC_ASSETS_DIR=/tmp/public-assets
+mkdir -p $PUBLIC_ASSETS_DIR
+rm -rf $PUBLIC_ASSETS_DIR/*
+unzip -qq target/docker/stage/opt/docker/lib/ellipsis.ellipsis-1.0-SNAPSHOT-assets.jar -d $PUBLIC_ASSETS_DIR/
+aws --profile $AWS_ELLIPSIS_PROFILE s3 sync $PUBLIC_ASSETS_DIR/public s3://$ASSETS_BUCKET/ --acl=public-read --quiet
+if [ $? -eq 0 ]
+then
+  printf "${GREEN}OK.${PLAIN}\n";
+else
+  printf "\n\n${RED}An error occurred!${PLAIN}\n";
+  announce_failure
+  printf "Bye.\n"
+  exit 1
+fi
+
+
+printf "\n\n${GREEN}Uploading app bundle ${BUNDLE} to S3...${PLAIN}\n";
+printf "_____________________________________________________ \n";
+S3_KEY=`date +'%Y-%m-%d'`-$BUNDLE
+aws --profile $AWS_ELLIPSIS_PROFILE s3 cp $BUNDLE_PATH s3://$EB_BUCKET/$S3_KEY
+if [ $? -eq 0 ]
+then
+  printf "${GREEN}OK.${PLAIN}\n";
+else
+  printf "\n\n${RED}An error occurred!${PLAIN}\n";
+  announce_failure
+  printf "Bye.\n"
+  exit 1
+fi
+
+printf "\n\n${GREEN}Creating Beanstalk app new version...${PLAIN}\n";
+printf "_____________________________________________________ \n";
+aws --profile $AWS_ELLIPSIS_PROFILE elasticbeanstalk create-application-version \
+--application-name "${EB_APP_NAME}" \
+--version-label $VERSION_LABEL \
+--source-bundle S3Bucket=$EB_BUCKET,S3Key=$S3_KEY \
+--process
+if [ $? -eq 0 ]
+then
+   printf "\n${GREEN}OK.${PLAIN}\n"
+else
+  printf "\n\n${RED}An error occurred!{PLAIN}\n";
+  announce_failure
+  printf "Bye.\n"
+  exit 1
+fi
+
+# printf "\n\n${GREEN}Updating Beanstalk environment...${PLAIN}\n";
+# printf "_____________________________________________________ \n";
+# aws --profile $AWS_ELLIPSIS_PROFILE elasticbeanstalk update-environment \
+#   --environment-name "${EB_APP_NAME}" \
+#   --version-label $VERSION_LABEL
+# if [ $? -eq 0 ]
+# then
+#    printf "\n${GREEN}OK.${PLAIN}\n"
+# else
+#   printf "\n\n${RED}An error occurred!{PLAIN}\n";
+#   announce_failure
+#   printf "Bye.\n"
+#   exit 1
+# fi
+
+printf "\n\n${GREEN}Sending notifications...${PLAIN}\n";
+printf "_____________________________________________________ \n";
+announce_completed
+printf "\n\n\n\n          ${BOLD}F   I   N${PLAIN}          \n\n\n\n";
