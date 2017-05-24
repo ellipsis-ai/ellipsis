@@ -69,6 +69,8 @@ object Formatting {
   implicit val apiTokenReads = Json.reads[APITokenData]
   implicit val apiTokenWrites = Json.writes[APITokenData]
 
+  implicit val apiTokenListConfigWrites = Json.writes[APITokenListConfig]
+
   implicit val invocationLogEntryReads = Json.reads[InvocationLogEntryData]
   implicit val invocationLogEntryWrites = Json.writes[InvocationLogEntryData]
 
