@@ -85,7 +85,7 @@ class SlackController @Inject() (
     if (info.isValid) {
       Ok(info.challenge)
     } else {
-      Unauthorized("Bad token")
+      Forbidden("Bad token")
     }
   }
 
@@ -226,7 +226,7 @@ class SlackController @Inject() (
         Ok(":+1:")
       }
     } else {
-      Unauthorized("Bad token")
+      Forbidden("Bad token")
     }
   }
 
@@ -581,7 +581,7 @@ class SlackController @Inject() (
               val updated = info.original_message.copy(attachments = originalAttachmentsToUse :+ newAttachment)
               Ok(Json.toJson(updated))
             } else {
-              Unauthorized("Bad token")
+              Forbidden("Bad token")
             }
           }
           case JsError(err) => {

@@ -29,6 +29,10 @@ object Formatting {
   implicit val oAuth2ApplicationReads = Json.reads[OAuth2ApplicationData]
   implicit val oAuth2ApplicationWrites = Json.writes[OAuth2ApplicationData]
 
+  implicit val oAuth2ApplicationListConfigWrites = Json.writes[OAuth2ApplicationListConfig]
+
+  implicit val oAuth2ApplicationEditConfigWrites = Json.writes[OAuth2ApplicationEditConfig]
+
   implicit val requiredOAuth2ApiConfigReads = Json.reads[RequiredOAuth2ApiConfigData]
   implicit val requiredOAuth2ApiConfigWrites = Json.writes[RequiredOAuth2ApiConfigData]
 
@@ -62,8 +66,16 @@ object Formatting {
   implicit val environmentVariablesReads = Json.reads[EnvironmentVariablesData]
   implicit val environmentVariablesWrites = Json.writes[EnvironmentVariablesData]
 
+  implicit val behaviorEditorEditConfigWrites = Json.writes[BehaviorEditorEditConfig]
+
+  implicit val environmentVariablesListConfigWrites = Json.writes[EnvironmentVariablesListConfig]
+
+  implicit val applicationIndexConfig = Json.writes[ApplicationIndexConfig]
+
   implicit val apiTokenReads = Json.reads[APITokenData]
   implicit val apiTokenWrites = Json.writes[APITokenData]
+
+  implicit val apiTokenListConfigWrites = Json.writes[APITokenListConfig]
 
   implicit val invocationLogEntryReads = Json.reads[InvocationLogEntryData]
   implicit val invocationLogEntryWrites = Json.writes[InvocationLogEntryData]

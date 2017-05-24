@@ -3,12 +3,15 @@ package controllers
 import javax.inject.Inject
 
 import com.mohiva.play.silhouette.api.Silhouette
+import json.Formatting._
+import json.{APITokenData, APITokenListConfig}
+import models.silhouette.EllipsisEnv
 import play.api.Configuration
 import play.api.data.Form
 import play.api.data.Forms._
 import play.api.i18n.MessagesApi
-import json.APITokenData
-import models.silhouette.EllipsisEnv
+import play.api.libs.json.Json
+import play.filters.csrf.CSRF
 import services.DataService
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -48,9 +51,16 @@ class APITokenController @Inject() (
           tokens <- dataService.apiTokens.allFor(user)
         } yield {
           teamAccess.maybeTargetTeam.map { team =>
-            Ok(views.js.api.listTokens(team.id, tokens.map(APITokenData.from), maybeJustCreatedTokenId))
+            val config = APITokenListConfig(
+              containerId = "apiTokenGenerator",
+              csrfToken = CSRF.getToken(request).map(_.value),
+              teamId = team.id,
+              tokens = tokens.map(APITokenData.from),
+              justCreatedTokenId = maybeJustCreatedTokenId
+            )
+            Ok(views.js.shared.pageConfig("config/api/listTokens", Json.toJson(config)))
           }.getOrElse {
-            Unauthorized("Forbidden")
+            NotFound("Team not found")
           }
         }
       }
