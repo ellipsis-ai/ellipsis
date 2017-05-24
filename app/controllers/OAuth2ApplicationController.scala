@@ -38,14 +38,13 @@ class OAuth2ApplicationController @Inject() (
           }.getOrElse(Future.successful(Seq()))
         } yield {
           teamAccess.maybeTargetTeam.map { team =>
-            val data = Json.obj(
-              "containerId" -> "applicationList",
-              "csrfToken" -> CSRF.getToken(request).map(_.value),
-              "teamId" -> team.id,
-              "apis" -> apis.map(api => OAuth2ApiData.from(api)),
-              "applications" -> applications.map(app => OAuth2ApplicationData.from(app))
-            )
-            Ok(views.js.oauth2application.list(Json.prettyPrint(data)))
+            Ok(views.js.oauth2application.list(OAuth2ApplicationListConfig(
+              "applicationList",
+              CSRF.getToken(request).map(_.value),
+              team.id,
+              apis.map(api => OAuth2ApiData.from(api)),
+              applications.map(app => OAuth2ApplicationData.from(app))
+            )))
           }.getOrElse{
             Unauthorized("Forbidden")
           }
@@ -75,14 +74,21 @@ class OAuth2ApplicationController @Inject() (
           apis <- dataService.oauth2Apis.allFor(teamAccess.maybeTargetTeam)
         } yield {
           teamAccess.maybeTargetTeam.map { team =>
-            Ok(views.js.oauth2application.newApplication(
-              team.id,
-              apis.map(api => OAuth2ApiData.from(api)),
-              IDs.next,
-              maybeApiId,
-              maybeRecommendedScope,
-              maybeBehaviorId)
-            )
+            val newApplicationId = IDs.next
+            Ok(views.js.oauth2application.edit(
+              OAuth2ApplicationEditConfig(
+                "applicationEditor",
+                CSRF.getToken(request).map(_.value),
+                team.id,
+                apis.map(OAuth2ApiData.from),
+                routes.APIAccessController.linkCustomOAuth2Service(newApplicationId, None, None, None, None).absoluteURL(secure = true),
+                routes.ApplicationController.index().absoluteURL(secure = true),
+                newApplicationId,
+                applicationApiId = maybeApiId,
+                recommendedScope = maybeRecommendedScope,
+                behaviorId = maybeBehaviorId
+              )
+            ))
           }.getOrElse {
             Unauthorized("Forbidden")
           }
@@ -118,7 +124,24 @@ class OAuth2ApplicationController @Inject() (
             team <- teamAccess.maybeTargetTeam
             application <- maybeApplication
           } yield {
-            Ok(views.js.oauth2application.edit(team.id, apis.map(api => OAuth2ApiData.from(api)), application))
+            Ok(views.js.oauth2application.edit(
+              OAuth2ApplicationEditConfig(
+                "applicationEditor",
+                CSRF.getToken(request).map(_.value),
+                team.id,
+                apis.map(OAuth2ApiData.from),
+                routes.APIAccessController.linkCustomOAuth2Service(application.id, None, None, None, None).absoluteURL(secure = true),
+                routes.ApplicationController.index().absoluteURL(secure = true),
+                application.id,
+                Some(application.name),
+                Some(application.api.grantType.requiresAuth),
+                Some(application.clientId),
+                Some(application.clientSecret),
+                application.maybeScope,
+                Some(application.api.id),
+                applicationSaved = true
+              )
+            ))
           }).getOrElse {
             NotFound("Unknown application")
           }
