@@ -1,5 +1,5 @@
 @(
-  configName: String,
+  jsConfigModuleName: String,
   data: play.api.libs.json.JsValue
 )(implicit messages: Messages, r: RequestHeader)
 
@@ -8,6 +8,6 @@
 @shared.requireJsConfig()
 @shared.jsRoutes()
 
-define("@JavaScript(configName)", function() {
+define("@JavaScript(jsConfigModuleName)", function() {
   return @JavaScript(Json.prettyPrint(data));
 });
