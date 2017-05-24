@@ -48,27 +48,36 @@
     }
 
     onUserMenuClick(event) {
-      var oldStyle = this.userMenu.style.display;
-      this.userMenu.style.display = oldStyle === 'none' ? '' : 'none';
-      if (oldStyle === 'none') {
-        this.addClass(this.userMenuButton, 'button-dropdown-trigger-menu-open');
-        this.removeClass(this.navBar, 'position-z-behind-scrim');
-        this.addClass(this.navBar, 'position-z-front');
+      if (this.userMenuVisible()) {
+        this.hideUserMenu();
       } else {
-        this.removeClass(this.userMenuButton, 'button-dropdown-trigger-menu-open');
-        this.removeClass(this.navBar, 'position-z-front');
-        this.addClass(this.navBar, 'position-z-behind-scrim');
+        this.showUserMenu();
       }
       event.stopPropagation();
       event.preventDefault();
     }
 
+    hideUserMenu() {
+      this.addClass(this.userMenu, 'display-none');
+      this.removeClass(this.userMenuButton, 'button-dropdown-trigger-menu-open');
+      this.removeClass(this.navBar, 'position-z-front');
+      this.addClass(this.navBar, 'position-z-behind-scrim');
+    }
+
+    showUserMenu() {
+      this.removeClass(this.userMenu, 'display-none');
+      this.addClass(this.userMenuButton, 'button-dropdown-trigger-menu-open');
+      this.removeClass(this.navBar, 'position-z-behind-scrim');
+      this.addClass(this.navBar, 'position-z-front');
+    }
+
+    userMenuVisible() {
+      return this.userMenu.clientHeight > 0;
+    }
+
     onDocumentClick() {
-      if (this.userMenu.style.display !== 'none') {
-        this.userMenu.style.display = 'none';
-        this.removeClass(this.userMenuButton, 'button-dropdown-trigger-menu-open');
-        this.removeClass(this.navBar, 'position-z-front');
-        this.addClass(this.navBar, 'position-z-behind-scrim');
+      if (this.userMenuVisible()) {
+        this.hideUserMenu();
       }
     }
   }

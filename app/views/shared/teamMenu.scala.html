@@ -22,7 +22,7 @@
     </button>
   </span>
   <div class="position-relative type-black">
-    <ul class="type-s popup popup-dropdown-menu popup-dropdown-menu-right fade-in" id="main-user-menu" style="display: none">
+    <ul class="type-s popup popup-dropdown-menu popup-dropdown-menu-right fade-in display-none" id="main-user-menu">
       @teamAccess.loggedInTeam.maybeNonEmptyName.map(name => {
           <li class='type-disabled align-l phs pvxs display-ellipsis'>Signed into {name}</li>
       }).getOrElse("")
