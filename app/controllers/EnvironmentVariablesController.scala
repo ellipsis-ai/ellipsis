@@ -116,7 +116,7 @@ class EnvironmentVariablesController @Inject() (
             )
             Ok(views.js.shared.pageConfig("config/environmentvariables/list", Json.toJson(config)))
           }.getOrElse{
-            Unauthorized("Forbidden")
+            NotFound("Team not found")
           }
         }
       }

@@ -43,7 +43,7 @@ class DefaultStorage @Inject() (
             dynamoDBService.putItem(info.itemId, Json.toJson(info.itemJson), info.itemType, team).map { _ =>
               Ok("success")
             }
-          }.getOrElse(Future.successful(Unauthorized("Invalid request token")))
+          }.getOrElse(Future.successful(Forbidden("Invalid request token")))
         } yield result
       }
     )
@@ -58,7 +58,7 @@ class DefaultStorage @Inject() (
             Ok(item)
           }.getOrElse(NotFound("item not found"))
         }
-      }.getOrElse(Future.successful(Unauthorized("Invalid request token")))
+      }.getOrElse(Future.successful(Forbidden("Invalid request token")))
     } yield result
   }
 

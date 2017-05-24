@@ -87,7 +87,7 @@ class BehaviorEditorController @Inject() (
         )
         Future.successful(Ok(views.js.shared.pageConfig("config/behavioreditor/edit", Json.toJson(config))))
       }.getOrElse {
-        Future.successful(Unauthorized("Forbidden"))
+        Future.successful(NotFound("Skill not found"))
       }
     }
   }

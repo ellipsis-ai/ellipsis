@@ -47,7 +47,7 @@ class OAuth2ApplicationController @Inject() (
             )
             Ok(views.js.shared.pageConfig("config/oauth2application/list", Json.toJson(config)))
           }.getOrElse{
-            Unauthorized("Forbidden")
+            NotFound("Team not found")
           }
         }
       }
@@ -59,7 +59,7 @@ class OAuth2ApplicationController @Inject() (
             val dataRoute = routes.OAuth2ApplicationController.list(maybeTeamId)
             Ok(views.html.oauth2application.list(viewConfig(Some(teamAccess)), dataRoute))
           }.getOrElse {
-            NotFound("Team not accessible")
+            NotFound("Team not found")
           }
         }
       }
@@ -90,7 +90,7 @@ class OAuth2ApplicationController @Inject() (
             )
             Ok(views.js.shared.pageConfig("config/oauth2application/edit", Json.toJson(config)))
           }.getOrElse {
-            Unauthorized("Forbidden")
+            NotFound("Team not found")
           }
         }
       }
@@ -102,7 +102,7 @@ class OAuth2ApplicationController @Inject() (
             val dataRoute = routes.OAuth2ApplicationController.newApp(maybeApiId, maybeRecommendedScope, maybeTeamId, maybeBehaviorId)
             Ok(views.html.oauth2application.edit(viewConfig(Some(teamAccess)), "Add an API application", dataRoute))
           }.getOrElse {
-            NotFound("Team not accessible")
+            NotFound("Team not found")
           }
         }
       }

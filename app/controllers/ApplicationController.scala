@@ -68,7 +68,7 @@ class ApplicationController @Inject() (
             )
             Ok(views.js.shared.pageConfig("config/index", Json.toJson(config)))
           }.getOrElse {
-            Unauthorized("Not authenticated")
+            NotFound("Team not found")
           }
         }
       }
