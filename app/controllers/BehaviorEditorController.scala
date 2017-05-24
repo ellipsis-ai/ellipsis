@@ -18,6 +18,7 @@ import play.api.i18n.MessagesApi
 import play.api.libs.json._
 import play.api.libs.ws.WSClient
 import play.api.mvc.{AnyContent, Result}
+import play.filters.csrf.CSRF
 import services.{AWSLambdaService, DataService}
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -79,7 +80,12 @@ class BehaviorEditorController @Inject() (
   private def editorDataResult(eventualMaybeEditorData: Future[Option[BehaviorEditorData]])(implicit request: SecuredRequest[EllipsisEnv, AnyContent]): Future[Result] = {
     eventualMaybeEditorData.flatMap { maybeEditorData =>
       maybeEditorData.map { editorData =>
-        Future.successful(Ok(views.js.behavioreditor.edit(editorData)))
+        val config = BehaviorEditorEditConfig.fromEditorData(
+          containerId = "editorContainer",
+          csrfToken = CSRF.getToken(request).map(_.value),
+          data = editorData
+        )
+        Future.successful(Ok(views.js.shared.pageConfig("config/behavioreditor/edit", Json.toJson(config))))
       }.getOrElse {
         Future.successful(Unauthorized("Forbidden"))
       }

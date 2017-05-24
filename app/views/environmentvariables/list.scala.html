@@ -3,7 +3,7 @@
   dataRoute: Call
 )(implicit messages: Messages, r: RequestHeader)
 
-@page.main("Environment variables", config, selectedNav = "settings", includeJsConfig = false) {
+@page.main("Environment variables", config, selectedNav = "settings") {
   <div id="content" class="content flex-row-cascade">
     <div id="environmentVariableList" class="flex-row-cascade"></div>
     <script src='@RemoteAssets.getUrl("lib/requirejs/require.min.js")'></script>

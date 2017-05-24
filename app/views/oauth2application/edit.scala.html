@@ -4,7 +4,7 @@
   dataRoute: Call
 )(implicit messages: Messages, r: RequestHeader)
 
-@page.main(title, config, selectedNav = "settings", includeJsConfig = false) {
+@page.main(title, config, selectedNav = "settings") {
   <div id="content" class="content">
     <div id="applicationEditor"></div>
     <script src='@RemoteAssets.getUrl("lib/requirejs/require.min.js")'></script>

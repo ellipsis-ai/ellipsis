@@ -3,8 +3,7 @@
   config: ViewConfig,
   pageId: String = "",
   selectedNav: String = "",
-  bgClass: String = "bg-lightest",
-  includeJsConfig: Boolean = true
+  bgClass: String = "bg-lightest"
 )(content: Html)(implicit messages: Messages, r: RequestHeader)
 
 @navBgColorForPage = @{if (config.maybeTeamAccess.exists(_.isAdminAccess)) " bg-pink " else " bg-black "}
@@ -38,9 +37,6 @@
         @shared.mainNav(config, selectedNav)
       </div>
     </header>
-    @if(includeJsConfig) {
-      <script src="@routes.ApplicationController.jsConfig"></script>
-    }
     @content
   </body>
   <script src="@RemoteAssets.getUrl("javascripts/page.js")"></script>

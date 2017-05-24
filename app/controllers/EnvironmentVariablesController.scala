@@ -11,6 +11,7 @@ import play.api.data.Form
 import play.api.data.Forms._
 import play.api.i18n.MessagesApi
 import play.api.libs.json._
+import play.filters.csrf.CSRF
 import services.DataService
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -108,8 +109,12 @@ class EnvironmentVariablesController @Inject() (
           }.getOrElse(Future.successful(Seq()))
         } yield {
           teamAccess.maybeTargetTeam.map { team =>
-            val jsonData = Json.toJson(EnvironmentVariablesData(team.id, environmentVariables.map(ea => EnvironmentVariableData.withoutValueFor(ea))))
-            Ok(views.js.environmentvariables.list(jsonData.toString))
+            val config = EnvironmentVariablesListConfig(
+              containerId = "environmentVariableList",
+              csrfToken = CSRF.getToken(request).map(_.value),
+              data = EnvironmentVariablesData(team.id, environmentVariables.map(ea => EnvironmentVariableData.withoutValueFor(ea)))
+            )
+            Ok(views.js.shared.pageConfig("config/environmentvariables/list", Json.toJson(config)))
           }.getOrElse{
             Unauthorized("Forbidden")
           }

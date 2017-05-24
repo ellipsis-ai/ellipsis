@@ -66,6 +66,12 @@ object Formatting {
   implicit val environmentVariablesReads = Json.reads[EnvironmentVariablesData]
   implicit val environmentVariablesWrites = Json.writes[EnvironmentVariablesData]
 
+  implicit val behaviorEditorEditConfigWrites = Json.writes[BehaviorEditorEditConfig]
+
+  implicit val environmentVariablesListConfigWrites = Json.writes[EnvironmentVariablesListConfig]
+
+  implicit val applicationIndexConfig = Json.writes[ApplicationIndexConfig]
+
   implicit val apiTokenReads = Json.reads[APITokenData]
   implicit val apiTokenWrites = Json.writes[APITokenData]
 

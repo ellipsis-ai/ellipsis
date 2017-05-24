@@ -12,6 +12,7 @@ import play.api.data.Forms._
 import play.api.i18n.MessagesApi
 import play.api.libs.json.Json
 import play.api.libs.ws.WSClient
+import play.filters.csrf.CSRF
 import services.{AWSLambdaService, DataService, GithubService}
 import utils.{CitiesToTimeZones, FuzzyMatcher, TimeZoneParser}
 
@@ -56,7 +57,16 @@ class ApplicationController @Inject() (
           }.getOrElse(Future.successful(Seq()))
         } yield {
           teamAccess.maybeTargetTeam.map { team =>
-            Ok(views.js.application.index(team.id, groupData, maybeSlackTeamId, team.maybeTimeZone.map(_.toString), maybeBranch))
+            val config = ApplicationIndexConfig(
+              containerId = "behaviorListContainer",
+              behaviorGroups = groupData,
+              csrfToken = CSRF.getToken(request).map(_.value),
+              teamId = team.id,
+              slackTeamId = maybeSlackTeamId,
+              teamTimeZone = team.maybeTimeZone.map(_.toString),
+              branchName = maybeBranch
+            )
+            Ok(views.js.shared.pageConfig("config/index", Json.toJson(config)))
           }.getOrElse {
             Unauthorized("Not authenticated")
           }
@@ -216,9 +226,5 @@ class ApplicationController @Inject() (
         }
       }
     )
-  }
-
-  def jsConfig = silhouette.SecuredAction.async { implicit request =>
-    Future.successful(Ok(views.js.application.jsConfig()))
   }
 }
