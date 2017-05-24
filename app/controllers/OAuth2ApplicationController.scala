@@ -39,11 +39,11 @@ class OAuth2ApplicationController @Inject() (
         } yield {
           teamAccess.maybeTargetTeam.map { team =>
             Ok(views.js.oauth2application.list(OAuth2ApplicationListConfig(
-              "applicationList",
-              CSRF.getToken(request).map(_.value),
-              team.id,
-              apis.map(api => OAuth2ApiData.from(api)),
-              applications.map(app => OAuth2ApplicationData.from(app))
+              containerId = "applicationList",
+              csrfToken = CSRF.getToken(request).map(_.value),
+              teamId = team.id,
+              apis = apis.map(api => OAuth2ApiData.from(api)),
+              applications = applications.map(app => OAuth2ApplicationData.from(app))
             )))
           }.getOrElse{
             Unauthorized("Forbidden")
@@ -77,13 +77,13 @@ class OAuth2ApplicationController @Inject() (
             val newApplicationId = IDs.next
             Ok(views.js.oauth2application.edit(
               OAuth2ApplicationEditConfig(
-                "applicationEditor",
-                CSRF.getToken(request).map(_.value),
-                team.id,
-                apis.map(OAuth2ApiData.from),
-                routes.APIAccessController.linkCustomOAuth2Service(newApplicationId, None, None, None, None).absoluteURL(secure = true),
-                routes.ApplicationController.index().absoluteURL(secure = true),
-                newApplicationId,
+                containerId = "applicationEditor",
+                csrfToken = CSRF.getToken(request).map(_.value),
+                teamId = team.id,
+                apis = apis.map(OAuth2ApiData.from),
+                callbackUrl = routes.APIAccessController.linkCustomOAuth2Service(newApplicationId, None, None, None, None).absoluteURL(secure = true),
+                mainUrl = routes.ApplicationController.index().absoluteURL(secure = true),
+                applicationId = newApplicationId,
                 applicationApiId = maybeApiId,
                 recommendedScope = maybeRecommendedScope,
                 behaviorId = maybeBehaviorId
@@ -126,19 +126,19 @@ class OAuth2ApplicationController @Inject() (
           } yield {
             Ok(views.js.oauth2application.edit(
               OAuth2ApplicationEditConfig(
-                "applicationEditor",
-                CSRF.getToken(request).map(_.value),
-                team.id,
-                apis.map(OAuth2ApiData.from),
-                routes.APIAccessController.linkCustomOAuth2Service(application.id, None, None, None, None).absoluteURL(secure = true),
-                routes.ApplicationController.index().absoluteURL(secure = true),
-                application.id,
-                Some(application.name),
-                Some(application.api.grantType.requiresAuth),
-                Some(application.clientId),
-                Some(application.clientSecret),
-                application.maybeScope,
-                Some(application.api.id),
+                containerId = "applicationEditor",
+                csrfToken = CSRF.getToken(request).map(_.value),
+                teamId = team.id,
+                apis = apis.map(OAuth2ApiData.from),
+                callbackUrl = routes.APIAccessController.linkCustomOAuth2Service(application.id, None, None, None, None).absoluteURL(secure = true),
+                mainUrl = routes.ApplicationController.index().absoluteURL(secure = true),
+                applicationId = application.id,
+                applicationName = Some(application.name),
+                requiresAuth = Some(application.api.grantType.requiresAuth),
+                applicationClientId = Some(application.clientId),
+                applicationClientSecret = Some(application.clientSecret),
+                applicationScope = application.maybeScope,
+                applicationApiId = Some(application.api.id),
                 applicationSaved = true
               )
             ))
