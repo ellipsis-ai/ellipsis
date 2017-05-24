@@ -82,48 +82,11 @@ jobs:
             - ~/.sbt
           key: v6-playapp-{{ checksum "build.sbt" }}
       - run:
-          name: Prepare app to be dockerized
+          name: Maybe Deploy on stag01
           command: |
-            BOT_VERSION=`git rev-parse --short HEAD`
-            echo application.version=\"${BOT_VERSION}\" > conf/version.conf
-            activator docker:stage
-      - run:
-          name: Prepare the Elasticbeanstalk bundle
-          command: |
-            BOT_VERSION=`git rev-parse --short HEAD`
-            BOT_BUNDLE=$BOT_VERSION.zip
-            echo "Bot bundle: ${BOT_BUNDLE}"
-            BOT_BUNDLE_PATH=~/$BOT_BUNDLE
-            echo "Bot bundle path: ${BOT_BUNDLE_PATH}"
-            mkdir -p target/docker/.ebextensions
-            cp .ebextensions/* target/docker/.ebextensions/
-            cp deploy/Docker* target/docker/
-            pushd target/docker
-            zip -qq -r $BOT_BUNDLE_PATH .
-            popd
-            echo "Verifing bundle existance at ${BOT_BUNDLE_PATH}"
-            test -e $BOT_BUNDLE_PATH
-      - run:
-          name: Upload Elastic beanstalk bundle
-          command: |
-            BOT_VERSION=`git rev-parse --short HEAD`
-            BOT_BUNDLE=$BOT_VERSION.zip
-            echo "Bot bundle: ${BOT_BUNDLE}"
-            BOT_BUNDLE_PATH=~/$BOT_BUNDLE
-            echo "Bot bundle path: ${BOT_BUNDLE_PATH}"
-            AWS_ACCOUNT_ID=`aws ec2 describe-security-groups --group-names 'Default' --query 'SecurityGroups[0].OwnerId' --output text --region ${AWS_REGION}`
-            echo "aws account id: ${AWS_ACCOUNT_ID}"
-            BUCKET="greenbuilds-${AWS_ACCOUNT_ID}"
-            echo "build bucket: ${BUCKET}"
-            BUCKET_EXISTS=`aws s3api head-bucket --bucket "$BUCKET" 2>&1`
-            echo "Bucket test result: ${BUCKET_EXISTS}"
-            if [[ $BUCKET_EXISTS ]]; then
-              echo "bucket does not exists, creating...";
-              aws s3api create-bucket --bucket $BUCKET --region us-east-1
-            else
-              echo "bucket exists!";
+            if [ "${CIRCLE_BRANCH}" == "stag01" ]
+            then
+              mkdir ~/.aws
+              echo -e "[el-stag01-deployer]\naws_access_key_id = ${STAG01_AWS_ACCESS_KEY}\naws_secret_access_key = ${STAG01_AWS_SECRET_KEY}\nregion = us-east-1" >> ~/.aws/credentials
+              ./deploy/circleci_build stag01
             fi
-            echo "uploading to builds bucket: s3://${BUCKET}/${BOT_BUNDLE}"
-            S3_KEY=${CIRCLE_BRANCH}/`date +'%Y-%m-%d'`-$BOT_BUNDLE
-            echo "Uploading with command aws s3 --region ${AWS_REGION} cp ${BOT_BUNDLE_PATH} s3://${BUCKET}/${S3_KEY}"
-            aws s3 --region ${AWS_REGION} cp ${BOT_BUNDLE_PATH} s3://${BUCKET}/${S3_KEY}
