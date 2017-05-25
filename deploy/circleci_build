@@ -43,7 +43,6 @@ then
 fi
 
 EB_BUCKET="elasticbeanstalk-us-east-1-${ACCOUNT_ID}"
-
 printf "\n\n${EMOJI}${GREEN} - Getting ready to deploy to ${MAGENTA}${TARGET_ENV}${PLAIN} -${EMOJI}\n"
 printf "───────────────────────────────────────────────────────────────────\n";
 printf " Target environment: ${BOLD}${TARGET_ENV}${PLAIN}\n"
@@ -113,8 +112,6 @@ printf "${GREEN}\n\nChecking your Environment...${PLAIN}\n"
 printf "_____________________________________________________ \n";
 check_environment()
 printf "\n${GREEN}OK.${PLAIN}\n"
-
-printf "\n${GREEN}OK.${PLAIN}\n"
 printf "\n\n${GREEN}Announcing the deployment to #dev...${PLAIN}\n"
 printf "_____________________________________________________ \n";
 announce_start
@@ -147,7 +144,6 @@ zip -qq -r $BUNDLE_PATH .
 cd $TOP_DIR
 printf "\n${GREEN}OK.${PLAIN}\n"
 
-
 printf "\n\n${GREEN}Syncing assets with S3...${PLAIN}\n";
 printf "_____________________________________________________ \n";
 PUBLIC_ASSETS_DIR=/tmp/public-assets
@@ -164,7 +160,6 @@ else
   printf "Bye.\n"
   exit 1
 fi
-
 
 printf "\n\n${GREEN}Uploading app bundle ${BUNDLE} to S3...${PLAIN}\n";
 printf "_____________________________________________________ \n";
