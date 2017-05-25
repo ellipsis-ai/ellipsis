@@ -52,11 +52,11 @@ jobs:
             - node_modules
           key: v4-node-{{ checksum "package.json" }}
       - run:
-          name: Run JavaScript Linter
+          name: Run JavaScript linter
           command: |
             npm run lint
       - run:
-          name: Run JavaScript Tests
+          name: Run JavaScript tests
           command: |
             npm test
       - restore_cache:
@@ -64,7 +64,7 @@ jobs:
             - v6-playapp-{{ .Branch }}-{{ checksum "build.sbt" }}
             - v6-playapp-{{ checksum "build.sbt" }}
       - run:
-          name: Run Activator Tests
+          name: Run Activator tests
           command: |
             activator test
       - save_cache:
@@ -82,11 +82,20 @@ jobs:
             - ~/.sbt
           key: v6-playapp-{{ checksum "build.sbt" }}
       - run:
-          name: Maybe Deploy on stag01
+          name: Maybe deploy on stag01
           command: |
             if [ "${CIRCLE_BRANCH}" == "stag01" ]
             then
               mkdir ~/.aws
               echo -e "[el-stag01-deployer]\naws_access_key_id = ${STAG01_AWS_ACCESS_KEY}\naws_secret_access_key = ${STAG01_AWS_SECRET_KEY}\nregion = us-east-1" >> ~/.aws/credentials
               ./deploy/circleci_build stag01
+            fi
+      - run:
+          name: Maybe deploy on prod
+          command: |
+            if [ "${CIRCLE_BRANCH}" == "prod" ]
+            then
+              mkdir ~/.aws
+              echo -e "[el-prod-deployer]\naws_access_key_id = ${PROD_AWS_ACCESS_KEY}\naws_secret_access_key = ${PROD_AWS_SECRET_KEY}\nregion = us-east-1" >> ~/.aws/credentials
+              ./deploy/circleci_build
             fi
