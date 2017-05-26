@@ -26,6 +26,7 @@ case class SlackMessageEvent(
                                ) extends MessageEvent with SlackEvent {
 
   lazy val isBotMessage: Boolean = profile.userId == user
+  val isPublicChannel: Boolean = !isDirectMessage(channel) && !isPrivateChannel(channel)
 
   override def botPrefix: String = if (isDirectMessage(channel)) { "" } else { s"<@${profile.userId}> " }
 

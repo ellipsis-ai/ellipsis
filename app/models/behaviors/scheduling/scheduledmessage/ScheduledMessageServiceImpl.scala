@@ -107,6 +107,20 @@ class ScheduledMessageServiceImpl @Inject() (
     dataService.run(action)
   }
 
+  def uncompiledAllForChannelQuery(teamId: Rep[String], channel: Rep[String]) = {
+    allWithUser.
+      filter { case(((msg, _), _), _) => msg.teamId === teamId }.
+      filter { case(((msg, _), _), _) => msg.maybeChannel === channel }
+  }
+  val allForChannelQuery = Compiled(uncompiledAllForChannelQuery _)
+
+  def allForChannel(team: Team, channel: String): Future[Seq[ScheduledMessage]] = {
+    val action = allForTeamQuery(team.id).result.map { r =>
+      r.map(tuple2ScheduledMessage)
+    }
+    dataService.run(action)
+  }
+
   def uncompiledFindQueryFor(id: Rep[String]) = {
     allWithUser.filter { case(((msg, _), _), _) => msg.id === id }
   }

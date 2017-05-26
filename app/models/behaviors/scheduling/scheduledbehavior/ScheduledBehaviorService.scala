@@ -12,6 +12,8 @@ trait ScheduledBehaviorService {
 
   def allForTeam(team: Team): Future[Seq[ScheduledBehavior]]
 
+  def allForChannel(team: Team, channel: String): Future[Seq[ScheduledBehavior]]
+
   def find(id: String): Future[Option[ScheduledBehavior]]
 
   def allForBehavior(behavior: Behavior, maybeUser: Option[User], maybeChannel: Option[String]): Future[Seq[ScheduledBehavior]]

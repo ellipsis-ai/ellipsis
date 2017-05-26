@@ -25,18 +25,28 @@ case class ListScheduledBehavior(
       |```
     """.stripMargin
 
+  private def channelText: String = {
+    event.maybeChannel.map { channel =>
+      if (event.isPublicChannel) {
+        s" in <#$channel>"
+      } else {
+        " in this channel"
+      }
+    }.getOrElse("")
+  }
+
   def responseFor(scheduled: Seq[Scheduled]): Future[String] = {
     Future.sequence(scheduled.map(_.listResponse(dataService))).map { listResponses =>
-      s"""Here’s what you have scheduled:
-         |
-       |${listResponses.mkString}
-         |
-       |You can unschedule by typing something like:
-         |
-       |```
-         |${event.botPrefix}unschedule "go bananas"
-         |```
-     """.stripMargin
+      s"""Here’s what you have scheduled$channelText:
+        |
+        |${listResponses.mkString}
+        |
+        |You can unschedule by typing something like:
+        |
+        |```
+        |${event.botPrefix}unschedule "go bananas"
+        |```
+      """.stripMargin
     }
   }
 
@@ -44,7 +54,11 @@ case class ListScheduledBehavior(
     for {
       maybeTeam <- dataService.teams.find(event.teamId)
       scheduled <- maybeTeam.map { team =>
-        Scheduled.allForTeam(team, dataService)
+        event.maybeChannel.map { channel =>
+          Scheduled.allForChannel(team, channel, dataService)
+        }.getOrElse {
+          Scheduled.allForTeam(team, dataService)
+        }
       }.getOrElse(Future.successful(Seq()))
       responseText <- if (scheduled.isEmpty) {
         Future.successful(noMessagesResponse)
