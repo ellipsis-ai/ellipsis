@@ -42,13 +42,17 @@ class APITokenController @Inject() (
     )
   }
 
-  def listTokens(maybeJustCreatedTokenId: Option[String]) = silhouette.SecuredAction.async { implicit request =>
+  def listTokens(maybeJustCreatedTokenId: Option[String], maybeTeamId: Option[String]) = silhouette.SecuredAction.async { implicit request =>
     val user = request.identity
     render.async {
       case Accepts.JavaScript() => {
         for {
-          teamAccess <- dataService.users.teamAccessFor(user, None)
-          tokens <- dataService.apiTokens.allFor(user)
+          teamAccess <- dataService.users.teamAccessFor(user, maybeTeamId)
+          tokens <- if (teamAccess.isAdminAccess) {
+            Future.successful(Seq())
+          } else {
+            dataService.apiTokens.allFor(user)
+          }
         } yield {
           teamAccess.maybeTargetTeam.map { team =>
             val config = APITokenListConfig(
@@ -56,7 +60,8 @@ class APITokenController @Inject() (
               csrfToken = CSRF.getToken(request).map(_.value),
               teamId = team.id,
               tokens = tokens.map(APITokenData.from),
-              justCreatedTokenId = maybeJustCreatedTokenId
+              justCreatedTokenId = maybeJustCreatedTokenId,
+              canGenerateTokens = !teamAccess.isAdminAccess
             )
             Ok(views.js.shared.pageConfig("config/api/listTokens", Json.toJson(config)))
           }.getOrElse {
@@ -66,10 +71,14 @@ class APITokenController @Inject() (
       }
       case Accepts.Html() => {
         for {
-          teamAccess <- dataService.users.teamAccessFor(user, None)
+          teamAccess <- dataService.users.teamAccessFor(user, maybeTeamId)
         } yield {
-          val dataRoute = routes.APITokenController.listTokens(maybeJustCreatedTokenId)
-          Ok(views.html.api.listTokens(viewConfig(Some(teamAccess)), dataRoute))
+          teamAccess.maybeTargetTeam.map { _ =>
+            val dataRoute = routes.APITokenController.listTokens(maybeJustCreatedTokenId, maybeTeamId)
+            Ok(views.html.api.listTokens(viewConfig(Some(teamAccess)), dataRoute))
+          }.getOrElse {
+            NotFound("Team not found")
+          }
         }
       }
     }

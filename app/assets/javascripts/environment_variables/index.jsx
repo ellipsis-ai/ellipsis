@@ -84,7 +84,7 @@ define(function(require) {
             <div className="flex-column flex-column-left flex-rows container container-wide prn">
               <div className="columns flex-columns flex-row-expand">
                 <div className="column column-one-quarter flex-column">
-                  <SettingsMenu activePage="environmentVariables"/>
+                  <SettingsMenu activePage="environmentVariables" teamId={this.props.data.teamId} />
                 </div>
                 <div className="column column-three-quarters flex-column bg-white ptxl pbxxxxl phxxxxl">
 

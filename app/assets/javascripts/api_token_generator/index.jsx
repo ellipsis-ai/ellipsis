@@ -24,7 +24,8 @@ define(function(require) {
         createdAt: React.PropTypes.number.isRequired,
         isRevoked: React.PropTypes.bool.isRequired
       })).isRequired,
-      justCreatedTokenId: React.PropTypes.string
+      justCreatedTokenId: React.PropTypes.string,
+      canGenerateTokens: React.PropTypes.bool.isRequired
     }),
 
     sortByMostRecent: function(tokens) {
@@ -70,7 +71,7 @@ define(function(require) {
             <div className="flex-column flex-column-left container container-wide prn">
               <div className="columns">
                 <div className="column column-one-quarter">
-                  <SettingsMenu activePage="apiTokens"/>
+                  <SettingsMenu activePage="apiTokens" teamId={this.props.teamId} />
                 </div>
                 <div className="column column-three-quarters bg-white border-radius-bottom-left ptxxl pbxxxxl phxxxxl">
                   <p>
@@ -163,26 +164,36 @@ define(function(require) {
     },
 
     renderTokenCreator: function() {
-      return (
-        <div className="mvxl">
-          <form action={createForm.url} method={createForm.method}>
-            <h4 className="mbn">Generate a new token</h4>
-            <p className="type-s">Enter a label to describe what this token will be used for.</p>
+      if (this.props.canGenerateTokens) {
+        return (
+          <div className="mvxl">
+            <form action={createForm.url} method={createForm.method}>
+              <h4 className="mbn">Generate a new token</h4>
+              <p className="type-s">Enter a label to describe what this token will be used for.</p>
 
-            <CSRFTokenHiddenInput value={this.props.csrfToken} />
-            <input type="hidden" name="teamId" value={this.props.teamId} />
+              <CSRFTokenHiddenInput value={this.props.csrfToken}/>
+              <input type="hidden" name="teamId" value={this.props.teamId}/>
 
-            <div className="columns mbm">
-              <div className="column column-one-third">
-                <Input name="label" value={this.getNewTokenLabel()} onChange={this.setNewTokenLabel} />
+              <div className="columns mbm">
+                <div className="column column-one-third">
+                  <Input name="label" value={this.getNewTokenLabel()} onChange={this.setNewTokenLabel}/>
+                </div>
+                <div className="column column-one-third">
+                  <button type="submit" className="button-primary" disabled={!this.getNewTokenLabel()}>Generate</button>
+                </div>
               </div>
-              <div className="column column-one-third">
-                <button type="submit" className="button-primary" disabled={!this.getNewTokenLabel()}>Generate</button>
-              </div>
-            </div>
-          </form>
-        </div>
-      );
+            </form>
+          </div>
+        );
+      } else {
+        return (
+          <div className="mvxl">
+            <p className="type-pink type-bold type-italic">
+              You do not have access to generate tokens for this team.
+            </p>
+          </div>
+        );
+      }
     }
   });
 

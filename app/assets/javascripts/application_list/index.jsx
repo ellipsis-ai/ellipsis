@@ -62,7 +62,7 @@ define(function(require) {
             <div className="flex-column flex-column-left container container-wide prn">
               <div className="columns">
                 <div className="column column-one-quarter">
-                  <SettingsMenu activePage="oauthApplications"/>
+                  <SettingsMenu activePage="oauthApplications" teamId={this.props.teamId} />
                 </div>
                 <div className="column column-three-quarters bg-white border-radius-bottom-left ptxl pbxxxxl phxxxxl">
 
@@ -163,7 +163,7 @@ define(function(require) {
                     {group.map((app, appIndex) => {
                       return (
                         <li key={`oAuthApplicationGroup${groupIndex}-${appIndex}`}>
-                          <a href={route(app.applicationId).url}>{app.displayName}</a>
+                          <a href={route(app.applicationId, this.props.teamId).url}>{app.displayName}</a>
                         </li>
                       );
                     })}
@@ -180,7 +180,7 @@ define(function(require) {
       return (
         <div className="mvxl">
           <a className="button"
-            href={jsRoutes.controllers.OAuth2ApplicationController.newApp().url}
+            href={jsRoutes.controllers.OAuth2ApplicationController.newApp(null, null, this.props.teamId, null).url}
           >
             Add a new API application
           </a>
