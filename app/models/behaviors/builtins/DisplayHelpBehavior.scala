@@ -71,7 +71,11 @@ case class DisplayHelpBehavior(
 
   def skillNameAndDescriptionFor(result: HelpResult): String = {
     if (includeNameAndDescription) {
-      val name = s"**${result.group.name}**"
+      val name = result.group.maybeEditLink(dataService, lambdaService).map { url =>
+        s"**[${result.group.name} ✎]($url)**"
+      }.getOrElse {
+        s"**${result.group.name}**"
+      }
       val description = result.description
       s"$name  \n$description\n\n"
     } else {

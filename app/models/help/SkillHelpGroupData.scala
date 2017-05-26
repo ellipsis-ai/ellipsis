@@ -1,6 +1,7 @@
 package models.help
 
 import json.{BehaviorGroupData, BehaviorVersionData}
+import services.{AWSLambdaService, DataService}
 import utils.{FuzzyMatchPattern, SimpleFuzzyMatchPattern}
 
 case class SkillHelpGroupData(group: BehaviorGroupData) extends HelpGroupData {
@@ -13,6 +14,9 @@ case class SkillHelpGroupData(group: BehaviorGroupData) extends HelpGroupData {
 
   val maybeDescription: Option[String] = group.description.map(_.trim).filter(_.nonEmpty)
   val description: String = maybeDescription.getOrElse("")
+  def maybeEditLink(dataService: DataService, lambdaService: AWSLambdaService): Option[String] = {
+    group.id.map(id => dataService.behaviors.editLinkFor(id, None, lambdaService.configuration))
+  }
 
   val fuzzyMatchPatterns: Seq[FuzzyMatchPattern] = {
     Seq(fuzzyMatchName, fuzzyMatchDescription) ++ behaviorVersions.flatMap(_.triggers)
