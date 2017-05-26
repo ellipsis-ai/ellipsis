@@ -82,12 +82,12 @@ case class BehaviorGroupData(
   }
 
   def copyWithApiApplicationsIfAvailable(oauth2Applications: Seq[OAuth2Application]): BehaviorGroupData = {
-    val oauth2 = requiredOAuth2ApiConfigs.flatMap { eaRequired =>
+    val oauth2 = requiredOAuth2ApiConfigs.map { eaRequired =>
       oauth2Applications.find { eaAvailable =>
         eaAvailable.api.id == eaRequired.apiId && eaRequired.recommendedScope == eaAvailable.maybeScope
       }.map { app =>
         eaRequired.copy(application = Some(OAuth2ApplicationData.from(app)))
-      }
+      }.getOrElse(eaRequired)
     }
     copy(requiredOAuth2ApiConfigs = oauth2)
   }

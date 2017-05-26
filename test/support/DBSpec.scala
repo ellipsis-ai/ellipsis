@@ -5,11 +5,14 @@ import drivers.SlickPostgresDriver.api.{Database => PostgresDatabase}
 import json._
 import mocks.MockAWSLambdaService
 import models.IDs
+import models.accounts.oauth2api.{AuthorizationCode, OAuth2Api}
+import models.accounts.oauth2application.OAuth2Application
 import models.accounts.user.User
 import models.behaviors.behavior.Behavior
 import models.behaviors.behaviorgroup.BehaviorGroup
 import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
 import models.behaviors.behaviorversion.BehaviorVersion
+import models.behaviors.config.requiredoauth2apiconfig.RequiredOAuth2ApiConfig
 import models.behaviors.input.Input
 import models.behaviors.savedanswer.SavedAnswer
 import models.team.Team
@@ -127,6 +130,19 @@ trait DBSpec extends PlaySpec with OneAppPerSuite with MockitoSugar {
 
   def newSavedBehaviorGroupFor(team: Team): BehaviorGroup = {
     runNow(dataService.behaviorGroups.createFor(None, team))
+  }
+
+  def newSavedOAuth2Api: OAuth2Api = {
+    runNow(dataService.oauth2Apis.save(OAuth2Api(IDs.next, IDs.next, AuthorizationCode, Some(""), "", None, None, None)))
+  }
+
+  def newSavedOAuth2ApplicationFor(api: OAuth2Api, team: Team): OAuth2Application = {
+    runNow(dataService.oauth2Applications.save(OAuth2Application(IDs.next, IDs.next, api, IDs.next, IDs.next, None, team.id)))
+  }
+
+  def newSavedRequiredOAuth2ConfigFor(api: OAuth2Api, groupVersion: BehaviorGroupVersion): RequiredOAuth2ApiConfig = {
+    val data = RequiredOAuth2ApiConfigData(None, api.id, None, None)
+    runNow(dataService.requiredOAuth2ApiConfigs.maybeCreateFor(data, groupVersion)).get
   }
 
   def withEmptyDB[T](dataService: PostgresDataService, fn: PostgresDatabase => T) = {
