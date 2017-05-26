@@ -22,4 +22,6 @@ trait RequiredOAuth2ApiConfigService {
 
   def maybeCreateForAction(data: RequiredOAuth2ApiConfigData, groupVersion: BehaviorGroupVersion): DBIO[Option[RequiredOAuth2ApiConfig]]
 
+  def maybeCreateFor(data: RequiredOAuth2ApiConfigData, groupVersion: BehaviorGroupVersion): Future[Option[RequiredOAuth2ApiConfig]]
+
 }

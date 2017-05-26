@@ -129,4 +129,8 @@ class RequiredOAuth2ApiConfigServiceImpl @Inject() (
     } yield maybeConfig
   }
 
+  def maybeCreateFor(data: RequiredOAuth2ApiConfigData, groupVersion: BehaviorGroupVersion): Future[Option[RequiredOAuth2ApiConfig]] = {
+    dataService.run(maybeCreateForAction(data, groupVersion))
+  }
+
 }

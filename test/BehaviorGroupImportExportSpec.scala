@@ -308,6 +308,80 @@ class BehaviorGroupImportExportSpec extends DBSpec {
       })
     }
 
+    "export and import back in with a required oauth2 config without the oauth2 app already existing for the team" in {
+      withEmptyDB(dataService, { db =>
+        val team = newSavedTeam
+        val user = newSavedUserOn(team)
+        val group = newSavedBehaviorGroupFor(team)
+
+        val behaviorVersionData = BehaviorVersionData.newUnsavedFor(team.id, isDataType = false, dataService)
+        val groupData = newGroupVersionDataFor(group, user).copy(
+          behaviorVersions = Seq(behaviorVersionData)
+        )
+
+        val groupVersion = newSavedGroupVersionFor(group, user, Some(groupData))
+        val api = newSavedOAuth2Api
+        val requiredApiConfig = newSavedRequiredOAuth2ConfigFor(api, groupVersion)
+
+        val groupsBefore = runNow(dataService.behaviorGroups.allFor(team))
+        groupsBefore must have length 1
+
+        exportAndImport(group, user, user)
+
+        val groupsAfter = runNow(dataService.behaviorGroups.allFor(team))
+        groupsAfter must have length 2
+
+        val exportedGroup = groupsBefore.head
+        val importedGroup = groupsAfter.filterNot(_.id == exportedGroup.id).head
+        val importedGroupVersion = runNow(dataService.behaviorGroups.maybeCurrentVersionFor(importedGroup)).get
+
+        mustBeValidImport(exportedGroup, importedGroup)
+
+        val importedRequiredApiConfigs = runNow(dataService.requiredOAuth2ApiConfigs.allFor(importedGroupVersion))
+        importedRequiredApiConfigs must have length 1
+        val importedRequiredApiConfig = importedRequiredApiConfigs.head
+        importedRequiredApiConfig.api.id mustBe requiredApiConfig.api.id
+      })
+    }
+
+    "export and import back in with a required oauth2 config with an oauth2 app already existing for the team" in {
+      withEmptyDB(dataService, { db =>
+        val team = newSavedTeam
+        val user = newSavedUserOn(team)
+        val group = newSavedBehaviorGroupFor(team)
+
+        val behaviorVersionData = BehaviorVersionData.newUnsavedFor(team.id, isDataType = false, dataService)
+        val groupData = newGroupVersionDataFor(group, user).copy(
+          behaviorVersions = Seq(behaviorVersionData)
+        )
+
+        val groupVersion = newSavedGroupVersionFor(group, user, Some(groupData))
+        val api = newSavedOAuth2Api
+        val app = newSavedOAuth2ApplicationFor(api, team)
+        val requiredApiConfig = newSavedRequiredOAuth2ConfigFor(api, groupVersion)
+
+        val groupsBefore = runNow(dataService.behaviorGroups.allFor(team))
+        groupsBefore must have length 1
+
+        exportAndImport(group, user, user)
+
+        val groupsAfter = runNow(dataService.behaviorGroups.allFor(team))
+        groupsAfter must have length 2
+
+        val exportedGroup = groupsBefore.head
+        val importedGroup = groupsAfter.filterNot(_.id == exportedGroup.id).head
+        val importedGroupVersion = runNow(dataService.behaviorGroups.maybeCurrentVersionFor(importedGroup)).get
+
+        mustBeValidImport(exportedGroup, importedGroup)
+
+        val importedRequiredApiConfigs = runNow(dataService.requiredOAuth2ApiConfigs.allFor(importedGroupVersion))
+        importedRequiredApiConfigs must have length 1
+        val importedRequiredApiConfig = importedRequiredApiConfigs.head
+        importedRequiredApiConfig.api.id mustBe requiredApiConfig.api.id
+        importedRequiredApiConfig.maybeApplication must contain(app)
+      })
+    }
+
   }
 
   "LibraryVersionData" should {
