@@ -650,7 +650,7 @@ const BehaviorEditor = React.createClass({
             const config = this.state.requiredOAuth2ApiConfig;
             const apiId = config && config.apiId;
             const recommendedScope = config && config.recommendedScope;
-            window.location.href = jsRoutes.controllers.OAuth2ApplicationController.newApp(apiId, recommendedScope, null, this.getSelectedId()).url;
+            window.location.href = jsRoutes.controllers.OAuth2ApplicationController.newApp(apiId, recommendedScope, this.getBehaviorGroup().teamId, this.getSelectedId()).url;
           } else {
             const newProps = {
               group: BehaviorGroup.fromJson(json),
