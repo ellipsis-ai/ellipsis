@@ -14,7 +14,7 @@ case class SkillHelpGroupData(group: BehaviorGroupData) extends HelpGroupData {
 
   val maybeDescription: Option[String] = group.description.map(_.trim).filter(_.nonEmpty)
   val description: String = maybeDescription.getOrElse("")
-  def editLink(dataService: DataService, lambdaService: AWSLambdaService): Option[String] = {
+  def maybeEditLink(dataService: DataService, lambdaService: AWSLambdaService): Option[String] = {
     group.id.map(id => dataService.behaviors.editLinkFor(id, None, lambdaService.configuration))
   }
 

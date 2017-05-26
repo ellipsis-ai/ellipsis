@@ -11,7 +11,7 @@ trait HelpGroupData extends FuzzyMatchable {
   val name: String
   def shortName: String = name
   val description: String
-  def editLink(dataService: DataService, lambdaService: AWSLambdaService): Option[String]
+  def maybeEditLink(dataService: DataService, lambdaService: AWSLambdaService): Option[String]
 
   val fuzzyMatchPatterns: Seq[FuzzyMatchPattern]
   val fuzzyMatchName: FuzzyMatchPattern
