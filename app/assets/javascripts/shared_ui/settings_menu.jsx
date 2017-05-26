@@ -3,6 +3,7 @@ define(function (require) {
 
   return React.createClass({
     propTypes: {
+      teamId: React.PropTypes.string.isRequired,
       activePage: React.PropTypes.string
     },
 
@@ -15,13 +16,13 @@ define(function (require) {
         <nav className="mvxxl">
           <ul className="list-nav">
             <li className={this.activeClassWhenPageName("environmentVariables")}>
-              <a href={jsRoutes.controllers.EnvironmentVariablesController.list().url}>Environment variables</a>
+              <a href={jsRoutes.controllers.EnvironmentVariablesController.list(this.props.teamId).url}>Environment variables</a>
             </li>
             <li className={this.activeClassWhenPageName("apiTokens")}>
-              <a href={jsRoutes.controllers.APITokenController.listTokens().url}>Ellipsis API tokens</a>
+              <a href={jsRoutes.controllers.APITokenController.listTokens(null, this.props.teamId).url}>Ellipsis API tokens</a>
             </li>
             <li className={this.activeClassWhenPageName("oauthApplications")}>
-              <a href={jsRoutes.controllers.OAuth2ApplicationController.list().url}>Third-party API applications</a>
+              <a href={jsRoutes.controllers.OAuth2ApplicationController.list(this.props.teamId).url}>Third-party API applications</a>
             </li>
           </ul>
         </nav>

@@ -5,5 +5,6 @@ case class APITokenListConfig(
   csrfToken: Option[String],
   teamId: String,
   tokens: Seq[APITokenData],
-  justCreatedTokenId: Option[String]
+  justCreatedTokenId: Option[String],
+  canGenerateTokens: Boolean
 )
