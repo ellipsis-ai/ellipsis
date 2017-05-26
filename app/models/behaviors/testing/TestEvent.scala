@@ -31,7 +31,7 @@ case class TestEvent(
   def eventualMaybeDMChannel(dataService: DataService)(implicit actorSystem: ActorSystem) = Future.successful(None)
   val isResponseExpected = true
   val messageRecipientPrefix: String = ""
-  val isPublicChannel = false
+  lazy val isPublicChannel = false
 
   def isDirectMessage(channel: String): Boolean = false
 
