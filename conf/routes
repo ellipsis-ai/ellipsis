@@ -53,7 +53,7 @@ GET         /new_oauth2_api                           @controllers.OAuth2ApiCont
 GET         /edit_oauth2_api/:id                      @controllers.OAuth2ApiController.edit(id: String, teamId: Option[String] ?= None)
 POST        /save_oauth2_api                          @controllers.OAuth2ApiController.save
 
-GET         /list_api_tokens                          @controllers.APITokenController.listTokens(tokenId: Option[String] ?= None)
+GET         /list_api_tokens                          @controllers.APITokenController.listTokens(tokenId: Option[String] ?= None, teamId: Option[String] ?= None)
 POST        /create_api_token                         @controllers.APITokenController.createToken
 POST        /revoke_api_token                         @controllers.APITokenController.revokeToken
 

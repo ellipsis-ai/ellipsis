@@ -212,7 +212,7 @@ define(function(require) {
             <div className="flex-column flex-column-left container container-wide prn">
               <div className="columns">
                 <div className="column column-one-quarter">
-                  <SettingsMenu activePage="oauthApplications" />
+                  <SettingsMenu activePage="oauthApplications" teamId={this.props.teamId} />
                 </div>
                 <div className="column column-three-quarters bg-white border-radius-bottom-left ptxl pbxxxxl phxxxxl">
                   <Collapsible revealWhen={!this.apiIsSet()}>
