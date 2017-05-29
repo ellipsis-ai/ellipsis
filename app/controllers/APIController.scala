@@ -54,7 +54,8 @@ class APIController @Inject() (
                                maybeBotProfile: Option[SlackBotProfile],
                                maybeSlackProfile: Option[SlackProfile],
                                maybeScheduledMessage: Option[ScheduledMessage],
-                               maybeTeam: Option[Team]
+                               maybeTeam: Option[Team],
+                               isInvokedExternally: Boolean
                              ) {
 
     def maybeSlackChannelIdFor(channel: String): Future[Option[String]] = {
@@ -144,13 +145,21 @@ class APIController @Inject() (
           dataService.slackProfiles.find(slackLinkedAccount.loginInfo)
         }.getOrElse(Future.successful(None))
       } yield {
-        ApiMethodContext(maybeInvocationToken, maybeUser, maybeBotProfile, maybeSlackProfile, maybeScheduledMessage, maybeTeam)
+        ApiMethodContext(
+          maybeInvocationToken,
+          maybeUser,
+          maybeBotProfile,
+          maybeSlackProfile,
+          maybeScheduledMessage,
+          maybeTeam,
+          isInvokedExternally = maybeUserForApiToken.isDefined
+        )
       }
     }
 
   }
 
-  private def maybeIntroTextFor(isInvokedExternally: Boolean, event: Event, context: ApiMethodContext, isForInterruption: Boolean): Option[String] = {
+  private def maybeIntroTextFor(event: Event, context: ApiMethodContext, isForInterruption: Boolean): Option[String] = {
     val greeting = if (isForInterruption) {
       "Meanwhile, "
     } else {
@@ -158,7 +167,7 @@ class APIController @Inject() (
        |
        |""".stripMargin
     }
-    if (isInvokedExternally) {
+    if (context.isInvokedExternally) {
       Some(s"""${greeting}I’ve been asked to run `${event.messageText}`.
        |
        |───
@@ -170,13 +179,12 @@ class APIController @Inject() (
 
   private def runBehaviorFor(maybeEvent: Option[Event], context: ApiMethodContext) = {
     for {
-      isInvokedExternally <- Future.successful(context.maybeUser.isDefined)
       result <- maybeEvent.map { event =>
         for {
           result <- eventHandler.handle(event, None).map { results =>
             results.foreach { result =>
-              val maybeIntro = maybeIntroTextFor(isInvokedExternally, event, context, isForInterruption = false)
-              val maybeInterruptionIntro = maybeIntroTextFor(isInvokedExternally, event, context, isForInterruption = true)
+              val maybeIntro = maybeIntroTextFor(event, context, isForInterruption = false)
+              val maybeInterruptionIntro = maybeIntroTextFor(event, context, isForInterruption = true)
               result.sendIn(None, dataService, maybeIntro, maybeInterruptionIntro).map { _ =>
                 val channelText = event.maybeChannel.map(c => s" in channel [$c]").getOrElse("")
                 Logger.info(s"Sending result [${result.fullText}] in response to /api/post_message [${event.messageText}]$channelText")
