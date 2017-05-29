@@ -41,8 +41,6 @@ class APIController @Inject() (
   class InvalidTokenException extends Exception
 
   trait ApiMethodInfo {
-    val responseContext: String
-    val channel: String
     val token: String
   }
 
@@ -52,7 +50,7 @@ class APIController @Inject() (
 
   case class ApiMethodContext(
                                maybeInvocationToken: Option[InvocationToken],
-                               maybeUserForApiToken: Option[User],
+                               maybeUser: Option[User],
                                maybeBotProfile: Option[SlackBotProfile],
                                maybeSlackProfile: Option[SlackProfile],
                                maybeScheduledMessage: Option[ScheduledMessage],
@@ -146,7 +144,7 @@ class APIController @Inject() (
           dataService.slackProfiles.find(slackLinkedAccount.loginInfo)
         }.getOrElse(Future.successful(None))
       } yield {
-        ApiMethodContext(maybeInvocationToken, maybeUserForApiToken, maybeBotProfile, maybeSlackProfile, maybeScheduledMessage, maybeTeam)
+        ApiMethodContext(maybeInvocationToken, maybeUser, maybeBotProfile, maybeSlackProfile, maybeScheduledMessage, maybeTeam)
       }
     }
 
@@ -172,7 +170,7 @@ class APIController @Inject() (
 
   private def runBehaviorFor(maybeEvent: Option[Event], context: ApiMethodContext) = {
     for {
-      isInvokedExternally <- Future.successful(context.maybeUserForApiToken.isDefined)
+      isInvokedExternally <- Future.successful(context.maybeUser.isDefined)
       result <- maybeEvent.map { event =>
         for {
           result <- eventHandler.handle(event, None).map { results =>
@@ -194,6 +192,10 @@ class APIController @Inject() (
   trait ApiMethodWithActionInfo extends ApiMethodInfo {
     val actionName: Option[String]
     val trigger: Option[String]
+
+  }
+
+  trait ApiMethodWithActionAndArgumentsInfo extends ApiMethodWithActionInfo {
     val arguments: Seq[RunActionArgumentInfo]
 
     val argumentsMap: Map[String, String] = {
@@ -221,7 +223,7 @@ class APIController @Inject() (
                             responseContext: String,
                             channel: String,
                             token: String
-                          ) extends ApiMethodWithActionInfo
+                          ) extends ApiMethodWithActionAndArgumentsInfo
 
   private val runActionForm = Form(
     mapping(
@@ -291,7 +293,7 @@ class APIController @Inject() (
             info.trigger.map { trigger =>
               runByTrigger(trigger, info, context)
             }.getOrElse {
-              Future.successful(BadRequest("No action name or trigger"))
+              Future.successful(BadRequest(actionNameAndTriggerError))
             }
           }
         } yield result
@@ -313,7 +315,7 @@ class APIController @Inject() (
                                  responseContext: String,
                                  channel: String,
                                  token: String
-                                ) extends ApiMethodWithActionInfo
+                                ) extends ApiMethodWithActionAndArgumentsInfo
 
   private val scheduleActionForm = Form(
     mapping(
@@ -375,7 +377,7 @@ class APIController @Inject() (
       maybeSlackChannelId <- context.maybeSlackChannelIdFor(info.channel)
       maybeScheduled <- (for {
         team <- context.maybeTeam
-        user <- context.maybeUserForApiToken
+        user <- context.maybeUser
       } yield {
         dataService.scheduledMessages.maybeCreateFor(trigger, info.recurrenceString, user, team, maybeSlackChannelId, info.useDM)
       }).getOrElse(Future.successful(None))
@@ -401,7 +403,7 @@ class APIController @Inject() (
             info.trigger.map { trigger =>
               scheduleByTrigger(trigger, info, context)
             }.getOrElse {
-              Future.successful(BadRequest("No action name or trigger"))
+              Future.successful(BadRequest(actionNameAndTriggerError))
             }
           }
         } yield result
@@ -415,53 +417,92 @@ class APIController @Inject() (
   }
 
   case class UnscheduleActionInfo(
-                                   actionName: String,
+                                   actionName: Option[String],
+                                   trigger: Option[String],
                                    userId: Option[String],
                                    channel: Option[String],
                                    token: String
-                                 )
+                                 ) extends ApiMethodWithActionInfo
 
   private val unscheduleActionForm = Form(
     mapping(
-      "actionName" -> nonEmptyText,
+      "actionName" -> optional(nonEmptyText),
+      "trigger" -> optional(nonEmptyText),
       "userId" -> optional(nonEmptyText),
       "channel" -> optional(nonEmptyText),
       "token" -> nonEmptyText
-    )(UnscheduleActionInfo.apply)(UnscheduleActionInfo.unapply)
+    )(UnscheduleActionInfo.apply)(UnscheduleActionInfo.unapply) verifying(actionNameAndTriggerError, checkActionNameAndTrigger _)
   )
+
+  private def unscheduleByName(
+                                actionName: String,
+                                info: UnscheduleActionInfo,
+                                context: ApiMethodContext
+                              )(implicit request: Request[AnyContent]): Future[Result] = {
+    for {
+      maybeBehavior <- context.maybeBehaviorFor(actionName)
+      maybeUser <- info.userId.map { userId =>
+        dataService.users.find(userId)
+      }.getOrElse(Future.successful(None))
+      result <- maybeBehavior.map { behavior =>
+        if (info.userId.isDefined && maybeUser.isEmpty) {
+          Future.successful(NotFound(s"Couldn't find a user with ID `${info.userId.get}`"))
+        } else {
+          dataService.scheduledBehaviors.allForBehavior(behavior, maybeUser, info.channel).flatMap { scheduledBehaviors =>
+            if (scheduledBehaviors.isEmpty) {
+              Future.successful(Ok("There was nothing to unschedule for this action"))
+            } else {
+              for {
+                displayText <- scheduledBehaviors.head.displayText(dataService)
+                _ <- Future.sequence(scheduledBehaviors.map { ea =>
+                  dataService.scheduledBehaviors.delete(ea)
+                })
+              } yield {
+                Ok(s"Ok, I unscheduled everything for $displayText")
+              }
+            }
+          }
+        }
+      }.getOrElse(Future.successful(NotFound(s"Couldn't find an action with name `${info.actionName}`")))
+    } yield result
+  }
+
+  private def unscheduleByTrigger(
+                                   trigger: String,
+                                   info: UnscheduleActionInfo,
+                                   context: ApiMethodContext
+                                  )(implicit request: Request[AnyContent]): Future[Result] = {
+    context.maybeTeam.map { team =>
+      dataService.scheduledMessages.deleteFor(trigger, team).map { didDelete =>
+        if (didDelete) {
+          Ok(s"Ok, I unscheduled everything for `$trigger`")
+        } else {
+          Ok("There was nothing to unschedule for this trigger")
+        }
+      }
+    }.getOrElse {
+      Future.successful(NotFound("Couldn't find team"))
+    }
+
+  }
 
   def unscheduleAction = Action.async { implicit request =>
     unscheduleActionForm.bindFromRequest.fold(
       formWithErrors => {
-        Future.successful(BadRequest(formWithErrors.toString))
+        Future.successful(resultForFormErrors(formWithErrors))
       },
       info => {
         val eventualResult = for {
           context <- ApiMethodContext.createFor(info.token)
-          maybeBehavior <- context.maybeBehaviorFor(info.actionName)
-          maybeUser <- info.userId.map { userId =>
-            dataService.users.find(userId)
-          }.getOrElse(Future.successful(None))
-          result <- maybeBehavior.map { behavior =>
-            if (info.userId.isDefined && maybeUser.isEmpty) {
-              Future.successful(NotFound(s"Couldn't find a user with ID `${info.userId.get}`"))
-            } else {
-              dataService.scheduledBehaviors.allForBehavior(behavior, maybeUser, info.channel).flatMap { scheduledBehaviors =>
-                if (scheduledBehaviors.isEmpty) {
-                  Future.successful(Ok("There was nothing to unschedule for this action"))
-                } else {
-                  for {
-                    displayText <- scheduledBehaviors.head.displayText(dataService)
-                    _ <- Future.sequence(scheduledBehaviors.map { ea =>
-                      dataService.scheduledBehaviors.delete(ea)
-                    })
-                  } yield {
-                    Ok(s"Ok, I unscheduled everything for $displayText")
-                  }
-                }
-              }
+          result <- info.actionName.map { actionName =>
+            unscheduleByName(actionName, info, context)
+          }.getOrElse {
+            info.trigger.map { trigger =>
+              unscheduleByTrigger(trigger, info, context)
+            }.getOrElse {
+              Future.successful(BadRequest(actionNameAndTriggerError))
             }
-          }.getOrElse(Future.successful(NotFound(s"Couldn't find an action with name `${info.actionName}`")))
+          }
         } yield result
 
         eventualResult.recover {
@@ -469,10 +510,7 @@ class APIController @Inject() (
         }
       }
     )
-
   }
-
-
 
   case class PostMessageInfo(
                               message: String,
