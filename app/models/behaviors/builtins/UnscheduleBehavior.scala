@@ -24,7 +24,7 @@ case class UnscheduleBehavior(
       scheduled <- maybeTeam.map { team =>
         dataService.scheduledMessages.allForTeam(team)
       }.getOrElse(Future.successful(Seq()))
-      listResponses <- Future.sequence(scheduled.map(_.listResponse(dataService)))
+      listResponses <- Future.sequence(scheduled.map(_.listResponse(dataService, includeChannel = true)))
     } yield {
       val msg = if (didDelete) {
         s"OK, I unscheduled `$text`"

@@ -35,7 +35,9 @@ trait Scheduled {
   def followingSentAt: OffsetDateTime = recurrence.nextAfter(nextSentAt)
 
   def successResponse(dataService: DataService): Future[String] = {
-    shortDescription("OK, I will run", dataService)
+    displayText(dataService).map { displayText =>
+      s"""OK, I will run $displayText $recurrenceAndChannel."""
+    }
   }
 
   def maybeScheduleInfoTextFor(
@@ -90,20 +92,27 @@ trait Scheduled {
     s"${recurrence.displayString.trim} $channelInfo"
   }
 
-  def shortDescription(prefix: String, dataService: DataService): Future[String] = {
-    displayText(dataService).map { displayText =>
-      s"$prefix $displayText $recurrenceAndChannel."
+  def recipientDetails: String = {
+    if (isForIndividualMembers) {
+      " in a direct message to each member of the channel"
+    } else {
+      ""
     }
   }
 
-  def listResponse(dataService: DataService): Future[String] = {
-    shortDescription("Run", dataService).map { desc =>
+  def listResponse(dataService: DataService, includeChannel: Boolean): Future[String] = {
+    val details = if (includeChannel) {
+      recurrenceAndChannel
+    } else {
+      recurrence.displayString.trim ++ recipientDetails
+    }
+    displayText(dataService).map { desc =>
       s"""
-         |
-        |**$desc**
-         |
+        |
+        |**Run $desc $details.**
+        |
         |$nextRunsString
-         |
+        |
         |
      """.stripMargin
     }
@@ -272,6 +281,13 @@ object Scheduled {
     for {
       scheduledMessages <- dataService.scheduledMessages.allForTeam(team)
       scheduledBehaviors <- dataService.scheduledBehaviors.allForTeam(team)
+    } yield scheduledMessages ++ scheduledBehaviors
+  }
+
+  def allForChannel(team: Team, channel: String, dataService: DataService): Future[Seq[Scheduled]] = {
+    for {
+      scheduledMessages <- dataService.scheduledMessages.allForChannel(team, channel)
+      scheduledBehaviors <- dataService.scheduledBehaviors.allForChannel(team, channel)
     } yield scheduledMessages ++ scheduledBehaviors
   }
 

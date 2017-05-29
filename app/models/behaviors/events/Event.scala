@@ -33,6 +33,7 @@ trait Event {
   val isResponseExpected: Boolean
   val includesBotMention: Boolean
   val messageRecipientPrefix: String
+  val isPublicChannel: Boolean
 
   def logTextFor(result: BotResult): String = {
     val channelText = maybeChannel.map { channel =>
