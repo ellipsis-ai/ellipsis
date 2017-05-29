@@ -100,11 +100,16 @@ trait Scheduled {
     }
   }
 
-  def listResponse(dataService: DataService): Future[String] = {
+  def listResponse(dataService: DataService, includeChannel: Boolean): Future[String] = {
+    val details = if (includeChannel) {
+      recurrenceAndChannel
+    } else {
+      recurrence.displayString.trim ++ recipientDetails
+    }
     displayText(dataService).map { desc =>
       s"""
         |
-        |**Run $desc ${recurrence.displayString.trim}$recipientDetails.**
+        |**Run $desc $details.**
         |
         |$nextRunsString
         |

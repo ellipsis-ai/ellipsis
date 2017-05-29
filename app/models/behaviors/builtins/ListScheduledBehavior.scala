@@ -13,31 +13,78 @@ import scala.concurrent.Future
 
 case class ListScheduledBehavior(
                                   event: Event,
+                                  maybeChannel: Option[String],
                                   lambdaService: AWSLambdaService,
                                   dataService: DataService
                                  ) extends BuiltinBehavior {
 
-  lazy val noMessagesResponse: String =
-    s"""You haven’t yet scheduled anything. To do so, try something like:
+  private def example: String = {
+    s"""
+       |```
+       |${event.botPrefix}schedule "go bananas" every day at 3pm
+       |```
+       """.stripMargin
+  }
+
+  private def noMessagesResponse: String = {
+    if (maybeChannel.isDefined) {
+      s"""You haven’t yet scheduled anything in this channel. To schedule, try something like:
+         |
+         |$example
+         |
+         |$otherCommand
+       """.stripMargin
+    } else {
+      s"""Nothing has been scheduled for this team. To schedule something, try:
+         |
+         |$example
+       """.stripMargin
+    }
+  }
+
+  private def otherCommand: String = {
+    if (maybeChannel.isDefined) {
+      s"""To see what is scheduled across all channels:
+         |
+         |```
+         |${event.botPrefix}all scheduled
+         |```
+       """.stripMargin
+    } else {
+      s"""To see what is scheduled in just this channel:
+         |
+         |```
+         |${event.botPrefix}scheduled
+         |```
+       """.stripMargin
+    }
+  }
+
+  private def intro: String = {
+    maybeChannel.map { channel =>
+      if (event.isPublicChannel) {
+        s"Here’s what you have scheduled in <#$channel>:"
+      } else {
+        "Here’s what you have scheduled in this channel:"
+      }
+    }.getOrElse {
+      "Here’s everything that has been scheduled for this team:"
+    }
+  }
+
+  private def unscheduleCommand: String = {
+    s"""
+      |You can unschedule by typing something like:
       |
       |```
-      |${event.botPrefix}schedule "go bananas" every day at 3pm
+      |${event.botPrefix}unschedule "go bananas"
       |```
     """.stripMargin
-
-  private def channelText: String = {
-    event.maybeChannel.map { channel =>
-      if (event.isPublicChannel) {
-        s" in <#$channel>"
-      } else {
-        " in this channel"
-      }
-    }.getOrElse("")
   }
 
   def responseFor(scheduled: Seq[Scheduled]): Future[String] = {
-    Future.sequence(scheduled.map(_.listResponse(dataService))).map { listResponses =>
-      s"""Here’s what you have scheduled$channelText:
+    Future.sequence(scheduled.map(_.listResponse(dataService, maybeChannel.isEmpty))).map { listResponses =>
+      s"""$intro
         |
         |${listResponses.mkString}
         |
@@ -46,6 +93,8 @@ case class ListScheduledBehavior(
         |```
         |${event.botPrefix}unschedule "go bananas"
         |```
+        |
+        |$otherCommand
       """.stripMargin
     }
   }
@@ -54,7 +103,7 @@ case class ListScheduledBehavior(
     for {
       maybeTeam <- dataService.teams.find(event.teamId)
       scheduled <- maybeTeam.map { team =>
-        event.maybeChannel.map { channel =>
+        maybeChannel.map { channel =>
           Scheduled.allForChannel(team, channel, dataService)
         }.getOrElse {
           Scheduled.allForTeam(team, dataService)

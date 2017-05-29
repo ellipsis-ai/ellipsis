@@ -28,6 +28,7 @@ object BuiltinBehavior {
   val helpRegex = s"""(?i)^help\\s*(\\S*.*)$$""".r
   val rememberRegex = s"""(?i)^(remember|\\^)\\s*$$""".r
   val scheduledRegex = s"""(?i)^scheduled$$""".r
+  val allScheduledRegex = s"""(?i)^all scheduled$$""".r
   val scheduleRegex = s"""(?i)^schedule\\s+([`"'])(.*?)\\1(\\s+privately for everyone in this channel)?\\s+(.*)\\s*$$""".r
   val unscheduleRegex = s"""(?i)^unschedule\\s+([`"'])(.*?)\\1\\s*$$""".r
   val resetBehaviorsRegex = """(?i)reset behaviors really really really""".r
@@ -53,7 +54,8 @@ object BuiltinBehavior {
           dataService
         ))
         case rememberRegex(cmd) => Some(RememberBehavior(event, lambdaService, dataService))
-        case scheduledRegex() => Some(ListScheduledBehavior(event, lambdaService, dataService))
+        case scheduledRegex() => Some(ListScheduledBehavior(event, event.maybeChannel, lambdaService, dataService))
+        case allScheduledRegex() => Some(ListScheduledBehavior(event, None, lambdaService, dataService))
         case scheduleRegex(_, text, individually, recurrence) => Some(ScheduleBehavior(text, (individually != null), recurrence, event, lambdaService, dataService))
         case unscheduleRegex(_, text) => Some(UnscheduleBehavior(text, event, lambdaService, dataService))
         case resetBehaviorsRegex() => Some(ResetBehaviorsBehavior(event, lambdaService, dataService))

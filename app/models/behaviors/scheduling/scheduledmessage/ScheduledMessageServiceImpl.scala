@@ -115,7 +115,7 @@ class ScheduledMessageServiceImpl @Inject() (
   val allForChannelQuery = Compiled(uncompiledAllForChannelQuery _)
 
   def allForChannel(team: Team, channel: String): Future[Seq[ScheduledMessage]] = {
-    val action = allForTeamQuery(team.id).result.map { r =>
+    val action = allForChannelQuery(team.id, channel).result.map { r =>
       r.map(tuple2ScheduledMessage)
     }
     dataService.run(action)
