@@ -320,7 +320,6 @@ class APIController @Inject() (
                                  arguments: Seq[RunActionArgumentInfo],
                                  recurrenceString: String,
                                  useDM: Boolean,
-                                 responseContext: String,
                                  channel: String,
                                  token: String
                                 ) extends ApiMethodWithActionAndArgumentsInfo
@@ -337,7 +336,6 @@ class APIController @Inject() (
       ),
       "recurrence" -> nonEmptyText,
       "useDM" -> boolean,
-      "responseContext" -> nonEmptyText,
       "channel" -> nonEmptyText,
       "token" -> nonEmptyText
     )(ScheduleActionInfo.apply)(ScheduleActionInfo.unapply) verifying(actionNameAndTriggerError, checkActionNameAndTrigger _)
