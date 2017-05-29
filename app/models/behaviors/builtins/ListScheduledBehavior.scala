@@ -88,11 +88,7 @@ case class ListScheduledBehavior(
         |
         |${listResponses.mkString}
         |
-        |You can unschedule by typing something like:
-        |
-        |```
-        |${event.botPrefix}unschedule "go bananas"
-        |```
+        |$unscheduleCommand
         |
         |$otherCommand
       """.stripMargin
