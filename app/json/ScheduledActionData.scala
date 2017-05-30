@@ -22,18 +22,17 @@ case class ScheduledActionsData(teamId: String, scheduledActions: Seq[ScheduledA
 
 object ScheduledActionsData {
   private def nameForChannel(maybeChannel: Option[String], maybeChannelInfo: Option[Seq[ChannelLike]]): String = {
-    val maybeName = for {
+    (for {
       channel <- maybeChannel
       channelInfo <- maybeChannelInfo
+      matchingChannel <- channelInfo.find(ea => ea.id == channel || ea.name == channel)
     } yield {
-      val matchingChannel = channelInfo.find(ea => ea.id == channel || ea.name == channel)
-      matchingChannel.map {
+      matchingChannel match {
         case SlackChannel(namedChannel) => s"""#${namedChannel.name}"""
         case SlackGroup(_) => "Private group"
         case SlackDM(_) => "Direct message"
       }
-    }
-    maybeName.flatten.getOrElse("Unknown")
+    }).getOrElse("Unknown")
   }
 
   def fromScheduleData(teamId: String, dataService: DataService, maybeChannelInfo: Option[Seq[ChannelLike]], scheduledMessages: Seq[ScheduledMessage], scheduledBehaviors: Seq[ScheduledBehavior])(implicit ec: ExecutionContext): Future[ScheduledActionsData] = {
