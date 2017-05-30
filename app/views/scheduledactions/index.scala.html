@@ -1,10 +1,12 @@
 @(
   config: ViewConfig,
-  scheduledActionsJson: String
+  maybeTeamId: Option[String]
 )(implicit messages: Messages, r: RequestHeader)
 
-@page.main("Scheduling", config) {
+@page.main("Scheduling", config, selectedNav = "scheduling") {
   <div id="content" class="content">
-    <pre>@scheduledActionsJson</pre>
+    <div id="applicationList"></div>
+    <script src='@RemoteAssets.getUrl("lib/requirejs/require.min.js")'></script>
+    <script src="@routes.ScheduledActionsController.index(maybeTeamId)"></script>
   </div>
 }

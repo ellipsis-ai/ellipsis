@@ -24,25 +24,37 @@ class ScheduledActionsController @Inject() (
 
   def index(maybeTeamId: Option[String]) = silhouette.SecuredAction.async { implicit request =>
     val user = request.identity
-    for {
-      teamAccess <- dataService.users.teamAccessFor(user, maybeTeamId)
-      scheduledMessages <- teamAccess.maybeTargetTeam.map { team =>
-        dataService.scheduledMessages.allForTeam(team)
-      }.getOrElse(Future.successful(Seq()))
-      scheduledBehaviors <- teamAccess.maybeTargetTeam.map { team =>
-        dataService.scheduledBehaviors.allForTeam(team)
-      }.getOrElse(Future.successful(Seq()))
-      result <- teamAccess.maybeTargetTeam.map { team =>
-        ScheduledActionsData.fromScheduleData(team.id, dataService, scheduledMessages, scheduledBehaviors).map { data =>
-          val scheduledActionsJson = Json.toJson(data)
-          Ok(views.html.scheduledactions.index(
-            viewConfig(Some(teamAccess)),
-            Json.prettyPrint(scheduledActionsJson)
-          ))
-        }
-      }.getOrElse {
-        Future.successful(NotFound("Team not accessible"))
+    render.async {
+      case Accepts.JavaScript() => {
+        for {
+          teamAccess <- dataService.users.teamAccessFor(user, maybeTeamId)
+          scheduledMessages <- teamAccess.maybeTargetTeam.map { team =>
+            dataService.scheduledMessages.allForTeam(team)
+          }.getOrElse(Future.successful(Seq()))
+          scheduledBehaviors <- teamAccess.maybeTargetTeam.map { team =>
+            dataService.scheduledBehaviors.allForTeam(team)
+          }.getOrElse(Future.successful(Seq()))
+          result <- teamAccess.maybeTargetTeam.map { team =>
+            ScheduledActionsData.fromScheduleData(team.id, dataService, scheduledMessages, scheduledBehaviors).map { data =>
+              val scheduledActionsJson = Json.toJson(data)
+              Ok(views.js.shared.pageConfig("config/scheduling/index", scheduledActionsJson))
+            }
+          }.getOrElse {
+            Future.successful(NotFound("Team not found"))
+          }
+        } yield result
       }
-    } yield result
+      case Accepts.Html() => {
+        for {
+          teamAccess <- dataService.users.teamAccessFor(user, maybeTeamId)
+        } yield {
+          teamAccess.maybeTargetTeam.map { _ =>
+            Ok(views.html.scheduledactions.index(viewConfig(Some(teamAccess)), maybeTeamId))
+          }.getOrElse {
+            NotFound("Team not found")
+          }
+        }
+      }
+    }
   }
 }
