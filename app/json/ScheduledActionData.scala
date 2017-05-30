@@ -22,7 +22,7 @@ case class ScheduledActionsData(teamId: String, scheduledActions: Seq[ScheduledA
 
 object ScheduledActionsData {
   private def nameForChannel(maybeChannel: Option[String], maybeChannelInfo: Option[Seq[ChannelLike]]): String = {
-    val name = for {
+    val maybeName = for {
       channel <- maybeChannel
       channelInfo <- maybeChannelInfo
     } yield {
@@ -33,7 +33,7 @@ object ScheduledActionsData {
         case SlackDM(_) => "Direct message"
       }
     }
-    name.flatten.getOrElse("Unknown channel")
+    maybeName.flatten.getOrElse("Unknown")
   }
 
   def fromScheduleData(teamId: String, dataService: DataService, maybeChannelInfo: Option[Seq[ChannelLike]], scheduledMessages: Seq[ScheduledMessage], scheduledBehaviors: Seq[ScheduledBehavior])(implicit ec: ExecutionContext): Future[ScheduledActionsData] = {
