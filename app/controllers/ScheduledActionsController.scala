@@ -2,6 +2,7 @@ package controllers
 
 import javax.inject.Inject
 
+import akka.actor.ActorSystem
 import com.mohiva.play.silhouette.api.Silhouette
 import json.Formatting._
 import json._
@@ -19,7 +20,8 @@ class ScheduledActionsController @Inject() (
                                              val messagesApi: MessagesApi,
                                              val configuration: Configuration,
                                              val silhouette: Silhouette[EllipsisEnv],
-                                             val dataService: DataService
+                                             val dataService: DataService,
+                                             implicit val actorSystem: ActorSystem
                                             ) extends ReAuthable {
 
   def index(maybeTeamId: Option[String]) = silhouette.SecuredAction.async { implicit request =>
@@ -34,8 +36,17 @@ class ScheduledActionsController @Inject() (
           scheduledBehaviors <- teamAccess.maybeTargetTeam.map { team =>
             dataService.scheduledBehaviors.allForTeam(team)
           }.getOrElse(Future.successful(Seq()))
+          maybeBotProfile <- teamAccess.maybeTargetTeam.map { team =>
+            dataService.slackBotProfiles.allFor(team).map(_.headOption)
+          }.getOrElse(Future.successful(None))
+          maybeChannels <- maybeBotProfile.map { botProfile =>
+            Future.successful(Some(dataService.slackBotProfiles.channelsFor(botProfile)))
+          }.getOrElse(Future.successful(None))
+          maybeChannelInfo <- maybeChannels.map { channels =>
+            channels.listInfos.map(Some(_))
+          }.getOrElse(Future.successful(None))
           result <- teamAccess.maybeTargetTeam.map { team =>
-            ScheduledActionsData.fromScheduleData(team.id, dataService, scheduledMessages, scheduledBehaviors).map { data =>
+            ScheduledActionsData.fromScheduleData(team.id, dataService, maybeChannelInfo, scheduledMessages, scheduledBehaviors).map { data =>
               val scheduledActionsJson = Json.toJson(data)
               Ok(views.js.shared.pageConfig("config/scheduling/index", scheduledActionsJson))
             }

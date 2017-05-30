@@ -3,6 +3,7 @@ package json
 import models.behaviors.scheduling.scheduledbehavior.ScheduledBehavior
 import models.behaviors.scheduling.scheduledmessage.ScheduledMessage
 import services.DataService
+import utils._
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -14,28 +15,45 @@ case class ScheduledActionData(
   arguments: Seq[ScheduledActionArgumentData],
   recurrenceString: String,
   useDM: Boolean,
-  channel: Option[String]
+  channel: String
 )
 
 case class ScheduledActionsData(teamId: String, scheduledActions: Seq[ScheduledActionData])
 
 object ScheduledActionsData {
-  def fromScheduleData(teamId: String, dataService: DataService, scheduledMessages: Seq[ScheduledMessage], scheduledBehaviors: Seq[ScheduledBehavior])(implicit ec: ExecutionContext): Future[ScheduledActionsData] = {
-
-    val fromMessages = Future.sequence(scheduledMessages.map { ea =>
-      Future(ScheduledActionData(None, Some(ea.text), Seq(), ea.recurrence.displayString, ea.isForIndividualMembers, ea.maybeChannel))
-    })
-
-    val fromBehaviors = Future.sequence(scheduledBehaviors.map { ea =>
-      ea.displayText(dataService).map { name =>
-        val arguments = ea.arguments.map { case(key, value) => ScheduledActionArgumentData(key, value) }.toSeq
-        ScheduledActionData(Some(name), None, arguments, ea.recurrence.displayString, ea.isForIndividualMembers, ea.maybeChannel)
+  private def nameForChannel(maybeChannel: Option[String], maybeChannelInfo: Option[Seq[ChannelLike]]): String = {
+    val name = for {
+      channel <- maybeChannel
+      channelInfo <- maybeChannelInfo
+    } yield {
+      val matchingChannel = channelInfo.find(ea => ea.id == channel || ea.name == channel)
+      matchingChannel.map {
+        case SlackChannel(namedChannel) => s"""#${namedChannel.name}"""
+        case SlackGroup(_) => "Private group"
+        case SlackDM(_) => "Direct message"
       }
-    })
+    }
+    name.flatten.getOrElse("Unknown channel")
+  }
+
+  def fromScheduleData(teamId: String, dataService: DataService, maybeChannelInfo: Option[Seq[ChannelLike]], scheduledMessages: Seq[ScheduledMessage], scheduledBehaviors: Seq[ScheduledBehavior])(implicit ec: ExecutionContext): Future[ScheduledActionsData] = {
+
+    val fromMessages = scheduledMessages.map { ea =>
+      Future.successful(
+        ScheduledActionData(None, Some(ea.text), Seq(), ea.recurrence.displayString, ea.isForIndividualMembers, nameForChannel(ea.maybeChannel, maybeChannelInfo))
+      )
+    }
+
+    val fromBehaviors = scheduledBehaviors.map { ea =>
+      ea.displayText(dataService).map { behaviorName =>
+        val arguments = ea.arguments.map { case(key, value) => ScheduledActionArgumentData(key, value) }.toSeq
+        ScheduledActionData(Some(behaviorName), None, arguments, ea.recurrence.displayString, ea.isForIndividualMembers, nameForChannel(ea.maybeChannel, maybeChannelInfo))
+      }
+    }
 
     for {
-      messages <- fromMessages
-      behaviors <- fromBehaviors
+      messages <- Future.sequence(fromMessages)
+      behaviors <- Future.sequence(fromBehaviors)
     } yield {
       ScheduledActionsData(teamId, messages ++ behaviors)
     }
