@@ -35,7 +35,7 @@ class ScheduledActionsController @Inject() (
       result <- teamAccess.maybeTargetTeam.map { team =>
         ScheduledActionsData.fromScheduleData(team.id, dataService, scheduledMessages, scheduledBehaviors).map { data =>
           val scheduledActionsJson = Json.toJson(data)
-          Ok(views.html.teams.settings.scheduled_actions.index(
+          Ok(views.html.scheduledactions.index(
             viewConfig(Some(teamAccess)),
             Json.prettyPrint(scheduledActionsJson)
           ))
