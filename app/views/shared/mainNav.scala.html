@@ -21,6 +21,11 @@
       Skills
     </a>
 
+    <a class="@tabClassFor("scheduling")"
+      href='@routes.ScheduledActionsController.index(config.maybeTeamAccess.flatMap(_.maybeAdminAccessToTeamId))'>
+      Scheduling
+    </a>
+
     <a class="@tabClassFor("settings")"
       href='@routes.EnvironmentVariablesController.list(config.maybeTeamAccess.flatMap(_.maybeAdminAccessToTeamId))'>
       Settings
