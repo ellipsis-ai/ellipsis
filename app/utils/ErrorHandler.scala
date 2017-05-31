@@ -60,6 +60,7 @@ class ErrorHandler @Inject() (
       }
       case Accepts.Html() => super.onDevServerError(request, exception)
     }
+// Use the code below to test production server errors
 //    Future.successful(
 //      InternalServerError(
 //        views.html.error.serverError(
