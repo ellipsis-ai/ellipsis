@@ -3,10 +3,10 @@ package utils
 import javax.inject.Inject
 
 import models.ViewConfig
-import play.api.http.DefaultHttpErrorHandler
+import play.api.http.{ContentTypes, DefaultHttpErrorHandler}
 import play.api.i18n.MessagesApi
 import play.api.mvc.Results._
-import play.api.mvc.{RequestHeader, Result}
+import play.api.mvc.{Rendering, RequestExtractors, RequestHeader, Result}
 import play.api.routing.Router
 import play.api.{Configuration, OptionalSourceMapper, UsefulException}
 
@@ -19,7 +19,10 @@ class ErrorHandler @Inject() (
                                router: javax.inject.Provider[Router],
                                messagesApi: MessagesApi
                              )
-  extends DefaultHttpErrorHandler(env, config, sourceMapper, router) {
+  extends DefaultHttpErrorHandler(env, config, sourceMapper, router)
+    with ContentTypes
+    with RequestExtractors
+    with Rendering {
 
   override def onNotFound(request: RequestHeader, message: String): Future[Result] = {
     implicit val r = request
@@ -48,17 +51,21 @@ class ErrorHandler @Inject() (
     )
   }
 
-  /* Uncomment to test the custom error handler locally
   override def onDevServerError(request: RequestHeader, exception: UsefulException): Future[Result] = {
     implicit val r = request
     implicit val messages = messagesApi.preferred(request)
-    Future.successful(
-      InternalServerError(
-        views.html.error.serverError(
-          Some(exception.id)
-        )
-      )
-    )
+    render.async {
+      case Accepts.JavaScript() => {
+        Future.successful(Ok(views.js.error.jsError(s"${exception.title}: ${exception.description}")))
+      }
+      case Accepts.Html() => super.onDevServerError(request, exception)
+    }
+//    Future.successful(
+//      InternalServerError(
+//        views.html.error.serverError(
+//          ViewConfig(config, None), Some(exception.id)
+//        )
+//      )
+//    )
   }
-  */
 }
