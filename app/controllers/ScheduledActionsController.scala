@@ -26,29 +26,24 @@ class ScheduledActionsController @Inject() (
 
   def index(maybeTeamId: Option[String]) = silhouette.SecuredAction.async { implicit request =>
     val user = request.identity
+
     render.async {
       case Accepts.JavaScript() => {
         for {
           teamAccess <- dataService.users.teamAccessFor(user, maybeTeamId)
-          scheduledMessages <- teamAccess.maybeTargetTeam.map { team =>
-            dataService.scheduledMessages.allForTeam(team)
-          }.getOrElse(Future.successful(Seq()))
-          scheduledBehaviors <- teamAccess.maybeTargetTeam.map { team =>
-            dataService.scheduledBehaviors.allForTeam(team)
-          }.getOrElse(Future.successful(Seq()))
-          maybeBotProfile <- teamAccess.maybeTargetTeam.map { team =>
-            dataService.slackBotProfiles.allFor(team).map(_.headOption)
-          }.getOrElse(Future.successful(None))
-          maybeChannels <- maybeBotProfile.map { botProfile =>
-            Future.successful(Some(dataService.slackBotProfiles.channelsFor(botProfile)))
-          }.getOrElse(Future.successful(None))
-          maybeChannelInfo <- maybeChannels.map { channels =>
-            channels.listInfos.map(Some(_))
-          }.getOrElse(Future.successful(None))
           result <- teamAccess.maybeTargetTeam.map { team =>
-            ScheduledActionsData.fromScheduleData(team.id, dataService, maybeChannelInfo, scheduledMessages, scheduledBehaviors).map { data =>
-              val scheduledActionsJson = Json.toJson(data)
-              Ok(views.js.shared.pageConfig("config/scheduling/index", scheduledActionsJson))
+            for {
+              scheduledMessages <- dataService.scheduledMessages.allForTeam(team)
+              scheduledBehaviors <- dataService.scheduledBehaviors.allForTeam(team)
+              maybeBotProfile <- dataService.slackBotProfiles.allFor(team).map(_.headOption)
+              maybeChannelInfo <- maybeBotProfile.map { botProfile =>
+                val channels = dataService.slackBotProfiles.channelsFor(botProfile)
+                channels.listInfos.map(Some(_))
+              }.getOrElse(Future.successful(None))
+              scheduledActionsData <- ScheduledActionsData.fromScheduleData(team.id, dataService, maybeChannelInfo, scheduledMessages, scheduledBehaviors)
+            } yield {
+              val json = Json.toJson(scheduledActionsData)
+              Ok(views.js.shared.pageConfig("config/scheduling/index", json))
             }
           }.getOrElse {
             Future.successful(NotFound("Team not found"))
