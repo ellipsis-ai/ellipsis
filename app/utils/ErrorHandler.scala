@@ -56,7 +56,7 @@ class ErrorHandler @Inject() (
     implicit val messages = messagesApi.preferred(request)
     render.async {
       case Accepts.JavaScript() => {
-        Future.successful(Ok(views.js.error.jsError(s"${exception.title}: ${exception.description}")))
+        Future.successful(Ok(views.js.error.jsError(exception)))
       }
       case Accepts.Html() => super.onDevServerError(request, exception)
     }
