@@ -140,7 +140,7 @@ class BehaviorEditorController @Inject() (
                 }.getOrElse(Future.successful(None))
               }
               oauth2Appications <- teamAccess.maybeTargetTeam.map { team =>
-                dataService.oauth2Applications.allFor(team)
+                dataService.oauth2Applications.allUsableFor(team)
               }.getOrElse(Future.successful(Seq()))
               _ <- maybeGroup.map { group =>
                 val dataForNewVersion = data.copyForNewVersionOf(group)

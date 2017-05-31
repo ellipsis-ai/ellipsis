@@ -114,7 +114,7 @@ object BehaviorEditorData {
       teamAccess <- dataService.users.teamAccessFor(user, Some(team.id))
       teamEnvironmentVariables <- dataService.teamEnvironmentVariables.allFor(team)
       userEnvironmentVariables <- dataService.userEnvironmentVariables.allFor(user)
-      oAuth2Applications <- dataService.oauth2Applications.allFor(team)
+      oAuth2Applications <- dataService.oauth2Applications.allUsableFor(team)
       oauth2Apis <- dataService.oauth2Apis.allFor(teamAccess.maybeTargetTeam)
       simpleTokenApis <- dataService.simpleTokenApis.allFor(teamAccess.maybeTargetTeam)
       linkedOAuth2Tokens <- dataService.linkedOAuth2Tokens.allForUser(user, ws)

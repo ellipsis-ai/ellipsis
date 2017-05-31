@@ -16,7 +16,8 @@ case class RawOAuth2Application(
                                  clientId: String,
                                  clientSecret: String,
                                  maybeScope: Option[String],
-                                 teamId: String
+                                 teamId: String,
+                                 isShared: Boolean
                                )
 
 class OAuth2ApplicationsTable(tag: Tag) extends Table[RawOAuth2Application](tag, "oauth2_applications") {
@@ -27,8 +28,9 @@ class OAuth2ApplicationsTable(tag: Tag) extends Table[RawOAuth2Application](tag,
   def clientSecret = column[String]("client_secret")
   def maybeScope = column[Option[String]]("scope")
   def teamId = column[String]("team_id")
+  def isShared = column[Boolean]("is_shared")
 
-  def * = (id, name, apiId, clientId, clientSecret, maybeScope, teamId) <>
+  def * = (id, name, apiId, clientId, clientSecret, maybeScope, teamId, isShared) <>
     ((RawOAuth2Application.apply _).tupled, RawOAuth2Application.unapply _)
 
 }
@@ -45,8 +47,15 @@ class OAuth2ApplicationServiceImpl @Inject() (
     dataService.run(findQuery(id).result.map(_.headOption.map(tuple2Application)))
   }
 
-  def allFor(team: Team): Future[Seq[OAuth2Application]] = {
+  def allEditableFor(team: Team): Future[Seq[OAuth2Application]] = {
     val action = allForTeamQuery(team.id).result.map { r =>
+      r.map(tuple2Application)
+    }
+    dataService.run(action)
+  }
+
+  def allUsableFor(team: Team): Future[Seq[OAuth2Application]] = {
+    val action = allUsableForTeamQuery(team.id).result.map { r =>
       r.map(tuple2Application)
     }
     dataService.run(action)

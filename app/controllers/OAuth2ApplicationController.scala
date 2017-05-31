@@ -34,7 +34,7 @@ class OAuth2ApplicationController @Inject() (
           teamAccess <- dataService.users.teamAccessFor(user, maybeTeamId)
           apis <- dataService.oauth2Apis.allFor(teamAccess.maybeTargetTeam)
           applications <- teamAccess.maybeTargetTeam.map { team =>
-            dataService.oauth2Applications.allFor(team)
+            dataService.oauth2Applications.allEditableFor(team)
           }.getOrElse(Future.successful(Seq()))
         } yield {
           teamAccess.maybeTargetTeam.map { team =>
@@ -113,6 +113,7 @@ class OAuth2ApplicationController @Inject() (
     val user = request.identity
     for {
       teamAccess <- dataService.users.teamAccessFor(user, maybeTeamId)
+      isAdmin <- dataService.users.isAdmin(user)
       apis <- dataService.oauth2Apis.allFor(teamAccess.maybeTargetTeam)
       maybeApplication <- teamAccess.maybeTargetTeam.map { team =>
         dataService.oauth2Applications.find(id)
@@ -138,7 +139,9 @@ class OAuth2ApplicationController @Inject() (
               applicationClientSecret = Some(application.clientSecret),
               applicationScope = application.maybeScope,
               applicationApiId = Some(application.api.id),
-              applicationSaved = true
+              applicationSaved = true,
+              applicationShared = application.isShared,
+              applicationCanBeShared = isAdmin
             )
             Ok(views.js.shared.pageConfig("config/oauth2application/edit", Json.toJson(config)))
           }).getOrElse {
@@ -174,8 +177,11 @@ class OAuth2ApplicationController @Inject() (
                                     clientSecret: String,
                                     maybeScope: Option[String],
                                     teamId: String,
-                                    maybeBehaviorId: Option[String]
-                                  )
+                                    maybeBehaviorId: Option[String],
+                                    maybeIsShared: Option[String]
+                                  ) {
+    val isShared: Boolean = maybeIsShared.contains("on")
+  }
 
   private val saveForm = Form(
     mapping(
@@ -186,7 +192,8 @@ class OAuth2ApplicationController @Inject() (
       "clientSecret" -> nonEmptyText,
       "scope" -> optional(nonEmptyText),
       "teamId" -> nonEmptyText,
-      "behaviorId" -> optional(nonEmptyText)
+      "behaviorId" -> optional(nonEmptyText),
+      "isShared" -> optional(nonEmptyText)
     )(OAuth2ApplicationInfo.apply)(OAuth2ApplicationInfo.unapply)
   )
 
@@ -199,12 +206,14 @@ class OAuth2ApplicationController @Inject() (
       info => {
         for {
           maybeTeam <- dataService.teams.find(info.teamId, user)
+          isAdmin <- dataService.users.isAdmin(user)
           maybeApi <- dataService.oauth2Apis.find(info.apiId)
           maybeApplication <- (for {
             api <- maybeApi
             team <- maybeTeam
           } yield {
-            val instance = OAuth2Application(info.id, info.name, api, info.clientId, info.clientSecret, info.maybeScope, info.teamId)
+            val isShared = isAdmin && info.isShared
+            val instance = OAuth2Application(info.id, info.name, api, info.clientId, info.clientSecret, info.maybeScope, info.teamId, isShared)
             dataService.oauth2Applications.save(instance).map(Some(_))
           }).getOrElse(Future.successful(None))
           maybeBehaviorVersion <- info.maybeBehaviorId.map { behaviorId =>
