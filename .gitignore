@@ -34,3 +34,4 @@ node_modules
 tags
 actw
 **/npm-debug.log
+package-lock.json
