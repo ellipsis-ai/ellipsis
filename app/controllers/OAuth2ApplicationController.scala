@@ -116,7 +116,9 @@ class OAuth2ApplicationController @Inject() (
       isAdmin <- dataService.users.isAdmin(user)
       apis <- dataService.oauth2Apis.allFor(teamAccess.maybeTargetTeam)
       maybeApplication <- teamAccess.maybeTargetTeam.map { team =>
-        dataService.oauth2Applications.find(id)
+        dataService.oauth2Applications.find(id).map { maybeApp =>
+          maybeApp.filter(_.teamId == team.id)
+        }
       }.getOrElse(Future.successful(None))
     } yield {
       render {
