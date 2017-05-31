@@ -54,7 +54,7 @@ case class SlackChannels(client: SlackApiClient) {
     }
   }
 
-  private def listInfos(implicit actorSystem: ActorSystem): Future[Seq[ChannelLike]] = {
+  def listInfos(implicit actorSystem: ActorSystem): Future[Seq[ChannelLike]] = {
     for {
       channels <- client.listChannels()
       groups <- client.listGroups()

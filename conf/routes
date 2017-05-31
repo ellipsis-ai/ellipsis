@@ -59,6 +59,8 @@ POST        /revoke_api_token                         @controllers.APITokenContr
 
 GET         /list_environment_variables               @controllers.EnvironmentVariablesController.list(teamId: Option[String] ?= None)
 
+GET         /scheduling                               @controllers.ScheduledActionsController.index(maybeTeamId: Option[String] ?= None)
+
 GET         /authenticate/slack                       @controllers.SocialAuthController.authenticateSlack(redirect: Option[String] ?= None, team: Option[String] ?= None, channel: Option[String] ?= None)
 GET         /install/slack                            @controllers.SocialAuthController.installForSlack(redirect: Option[String] ?= None, team: Option[String] ?= None, channel: Option[String] ?= None)
 POST        /sign_out                                 @controllers.SocialAuthController.signOut
@@ -104,13 +106,6 @@ GET         /get_action_logs/:behaviorId/:token       @controllers.InvocationLog
 
 # Map static resources from the /public folder to the /assets URL path
 GET         /assets/*file                             @controllers.RemoteAssets.getAsset(path="/public", file: Asset)
-
-
-#
-# Teams Routes
-#
-
-GET         /teams/:teamId/settings/scheduled_actions         @controllers.teams.settings.ScheduledActionsController.index(teamId: String)
 
 # Styleguide routes
 
