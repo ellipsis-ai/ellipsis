@@ -43,7 +43,7 @@ class ScheduledActionsController @Inject()(
               scheduledBehaviorData <- ScheduledActionData.fromScheduledBehaviors(scheduledBehaviors, dataService, channelList)
             } yield {
               val pageData = ScheduledActionsConfig("scheduling", team.id, scheduledMessageData ++ scheduledBehaviorData, team.maybeTimeZone.map(_.toString))
-              Ok(views.js.shared.pageConfig("config/scheduling/index", Json.toJson(pageData)))
+              Ok(views.js.shared.pageConfig(viewConfig(Some(teamAccess)), "config/scheduling/index", Json.toJson(pageData)))
             }
           }.getOrElse {
             Future.successful(NotFound("Team not found"))
