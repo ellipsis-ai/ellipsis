@@ -46,7 +46,10 @@ object ScheduledActionRecurrenceData {
 }
 
 case class ScheduledActionData(
-  actionName: Option[String],
+  behaviorName: Option[String],
+  behaviorGroupName: Option[String],
+  behaviorId: Option[String],
+  behaviorGroupId: Option[String],
   trigger: Option[String],
   arguments: Seq[ScheduledActionArgumentData],
   recurrence: ScheduledActionRecurrenceData,
@@ -78,30 +81,39 @@ object ScheduledActionsData {
     val fromMessages = scheduledMessages.map { ea =>
       Future.successful(
         ScheduledActionData(
-          None,
-          Some(ea.text),
-          Seq(),
-          ScheduledActionRecurrenceData.fromRecurrence(ea.recurrence),
-          ea.nextSentAt,
-          ea.followingSentAt,
-          ea.isForIndividualMembers,
-          nameForChannel(ea.maybeChannel, maybeChannelInfo)
+          behaviorName = None,
+          behaviorGroupName = None,
+          behaviorId = None,
+          behaviorGroupId = None,
+          trigger = Some(ea.text),
+          arguments = Seq(),
+          recurrence = ScheduledActionRecurrenceData.fromRecurrence(ea.recurrence),
+          firstRecurrence = ea.nextSentAt,
+          secondRecurrence = ea.followingSentAt,
+          useDM = ea.isForIndividualMembers,
+          channel = nameForChannel(ea.maybeChannel, maybeChannelInfo)
         )
       )
     }
 
     val fromBehaviors = scheduledBehaviors.map { ea =>
-      ea.displayText(dataService).map { behaviorName =>
+      for {
+        maybeBehaviorName <- ea.maybeBehaviorName(dataService)
+        maybeBehaviorGroupName <- ea.maybeBehaviorGroupName(dataService)
+      } yield {
         val arguments = ea.arguments.map { case(key, value) => ScheduledActionArgumentData(key, value) }.toSeq
         ScheduledActionData(
-          Some(behaviorName),
-          None,
-          arguments,
-          ScheduledActionRecurrenceData.fromRecurrence(ea.recurrence),
-          ea.nextSentAt,
-          ea.followingSentAt,
-          ea.isForIndividualMembers,
-          nameForChannel(ea.maybeChannel, maybeChannelInfo)
+          behaviorName = maybeBehaviorName,
+          behaviorGroupName = maybeBehaviorGroupName,
+          behaviorId = Some(ea.behavior.id),
+          behaviorGroupId = Some(ea.behavior.group.id),
+          trigger = None,
+          arguments = arguments,
+          recurrence = ScheduledActionRecurrenceData.fromRecurrence(ea.recurrence),
+          firstRecurrence = ea.nextSentAt,
+          secondRecurrence = ea.followingSentAt,
+          useDM = ea.isForIndividualMembers,
+          channel = nameForChannel(ea.maybeChannel, maybeChannelInfo)
         )
       }
     }
