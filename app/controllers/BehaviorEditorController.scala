@@ -7,6 +7,7 @@ import com.mohiva.play.silhouette.api.Silhouette
 import com.mohiva.play.silhouette.api.actions.SecuredRequest
 import json.Formatting._
 import json._
+import models.accounts.user.User
 import models.behaviors.behaviorparameter.TextType
 import models.behaviors.testing.{InvocationTester, TestEvent, TriggerTester}
 import models.behaviors.triggers.messagetrigger.MessageTrigger
@@ -87,7 +88,7 @@ class BehaviorEditorController @Inject() (
           csrfToken = CSRF.getToken(request).map(_.value),
           data = editorData
         )
-        Future.successful(Ok(views.js.shared.pageConfig("config/behavioreditor/edit", Json.toJson(config))))
+        Future.successful(Ok(views.js.shared.pageConfig(viewConfig(Some(editorData.teamAccess)), "config/behavioreditor/edit", Json.toJson(config))))
       }.getOrElse {
         Future.successful(NotFound("Skill not found"))
       }

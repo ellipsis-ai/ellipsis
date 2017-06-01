@@ -43,7 +43,7 @@ class ScheduledActionsController @Inject() (
               scheduledActionsData <- ScheduledActionsData.fromScheduleData(team.id, dataService, maybeChannelInfo, scheduledMessages, scheduledBehaviors)
             } yield {
               val json = Json.toJson(scheduledActionsData)
-              Ok(views.js.shared.pageConfig("config/scheduling/index", json))
+              Ok(views.js.shared.pageConfig(viewConfig(Some(teamAccess)), "config/scheduling/index", json))
             }
           }.getOrElse {
             Future.successful(NotFound("Team not found"))

@@ -63,7 +63,7 @@ class APITokenController @Inject() (
               justCreatedTokenId = maybeJustCreatedTokenId,
               canGenerateTokens = !teamAccess.isAdminAccess
             )
-            Ok(views.js.shared.pageConfig("config/api/listTokens", Json.toJson(config)))
+            Ok(views.js.shared.pageConfig(viewConfig(Some(teamAccess)), "config/api/listTokens", Json.toJson(config)))
           }.getOrElse {
             NotFound("Team not found")
           }

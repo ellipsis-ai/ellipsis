@@ -114,7 +114,7 @@ class EnvironmentVariablesController @Inject() (
               csrfToken = CSRF.getToken(request).map(_.value),
               data = EnvironmentVariablesData(team.id, environmentVariables.map(ea => EnvironmentVariableData.withoutValueFor(ea)))
             )
-            Ok(views.js.shared.pageConfig("config/environmentvariables/list", Json.toJson(config)))
+            Ok(views.js.shared.pageConfig(viewConfig(Some(teamAccess)), "config/environmentvariables/list", Json.toJson(config)))
           }.getOrElse{
             NotFound("Team not found")
           }

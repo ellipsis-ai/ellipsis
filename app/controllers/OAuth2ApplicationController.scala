@@ -45,7 +45,7 @@ class OAuth2ApplicationController @Inject() (
               apis = apis.map(api => OAuth2ApiData.from(api)),
               applications = applications.map(app => OAuth2ApplicationData.from(app))
             )
-            Ok(views.js.shared.pageConfig("config/oauth2application/list", Json.toJson(config)))
+            Ok(views.js.shared.pageConfig(viewConfig(Some(teamAccess)), "config/oauth2application/list", Json.toJson(config)))
           }.getOrElse{
             NotFound("Team not found")
           }
@@ -88,7 +88,7 @@ class OAuth2ApplicationController @Inject() (
               recommendedScope = maybeRecommendedScope,
               behaviorId = maybeBehaviorId
             )
-            Ok(views.js.shared.pageConfig("config/oauth2application/edit", Json.toJson(config)))
+            Ok(views.js.shared.pageConfig(viewConfig(Some(teamAccess)), "config/oauth2application/edit", Json.toJson(config)))
           }.getOrElse {
             NotFound("Team not found")
           }
@@ -145,7 +145,7 @@ class OAuth2ApplicationController @Inject() (
               applicationShared = application.isShared,
               applicationCanBeShared = isAdmin
             )
-            Ok(views.js.shared.pageConfig("config/oauth2application/edit", Json.toJson(config)))
+            Ok(views.js.shared.pageConfig(viewConfig(Some(teamAccess)), "config/oauth2application/edit", Json.toJson(config)))
           }).getOrElse {
             NotFound("Unknown application")
           }
