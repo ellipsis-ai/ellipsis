@@ -32,7 +32,7 @@ class EventHandler @Inject() (
   def startInvokeConversationFor(event: Event): Future[Seq[BotResult]] = {
     for {
       maybeTeam <- dataService.teams.find(event.teamId)
-      responses <- BehaviorResponse.allFor(event, maybeTeam, None, lambdaService, dataService, cache, ws, configuration)
+      responses <- BehaviorResponse.allFor(event, maybeTeam, None, lambdaService, dataService, cache, ws, configuration, actorSystem)
       results <- Future.sequence(responses.map(_.result)).flatMap { r =>
         if (r.isEmpty && event.isResponseExpected) {
           event.noExactMatchResult(dataService, lambdaService).map { noMatchResult =>
@@ -70,7 +70,7 @@ class EventHandler @Inject() (
         cancelConversationResult(event, updatedConvo, s"OK, I’ll stop asking about that.")
       } else {
         if (originalConvo.isStale) {
-          updatedConvo.maybeNextParamToCollect(event, lambdaService, dataService, cache, ws, configuration).map { maybeNextParam =>
+          updatedConvo.maybeNextParamToCollect(event, lambdaService, dataService, cache, ws, configuration, actorSystem).map { maybeNextParam =>
             val maybeLastPrompt = maybeNextParam.map { nextParam =>
               nextParam.input.question
             }
@@ -92,7 +92,7 @@ class EventHandler @Inject() (
             TextWithActionsResult(event, Some(updatedConvo), prompt, forcePrivateResponse = false, attachment)
           }
         } else {
-          updatedConvo.resultFor(event, lambdaService, dataService, cache, ws, configuration)
+          updatedConvo.resultFor(event, lambdaService, dataService, cache, ws, configuration, actorSystem)
         }
       }
     }

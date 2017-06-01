@@ -154,7 +154,7 @@ class APIAccessController @Inject() (
       maybeApplication <- dataService.oauth2Applications.find(applicationId)
       result <- maybeApplication.map { application =>
         dataService.teams.find(application.teamId, user).map(_.isDefined).flatMap { isLoggedInToCorrectTeam =>
-          if (isLoggedInToCorrectTeam) {
+          if (application.isShared || isLoggedInToCorrectTeam) {
             maybeResultForStep2(codeOpt, stateOpt, user, application, maybeInvocationId, maybeRedirectAfterAuth).getOrElse {
               resultForStep1(application, maybeRedirectAfterAuth, maybeInvocationId)
             }

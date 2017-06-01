@@ -2,6 +2,7 @@ package models.behaviors.conversations
 
 import java.time.OffsetDateTime
 
+import akka.actor.ActorSystem
 import models.IDs
 import models.behaviors.behaviorparameter.BehaviorParameter
 import models.behaviors.{BehaviorResponse, BotResult}
@@ -57,18 +58,18 @@ case class InvokeBehaviorConversation(
     }.head // There should always be a match
   }
 
-  def collectionStatesFor(event: Event, dataService: DataService, cache: CacheApi, configuration: Configuration): Future[Seq[CollectionState]] = {
+  def collectionStatesFor(event: Event, dataService: DataService, cache: CacheApi, configuration: Configuration, actorSystem: ActorSystem): Future[Seq[CollectionState]] = {
     for {
       user <- event.ensureUser(dataService)
-      simpleTokenState <- SimpleTokenCollectionState.from(user, this, event, dataService, cache, configuration)
-      userEnvVarState <- UserEnvVarCollectionState.from(user, this, event, dataService, cache, configuration)
-      paramState <- ParamCollectionState.from(this, event, dataService, cache, configuration)
+      simpleTokenState <- SimpleTokenCollectionState.from(user, this, event, dataService, cache, configuration, actorSystem)
+      userEnvVarState <- UserEnvVarCollectionState.from(user, this, event, dataService, cache, configuration, actorSystem)
+      paramState <- ParamCollectionState.from(this, event, dataService, cache, configuration, actorSystem)
     } yield Seq(simpleTokenState, userEnvVarState, paramState)
   }
 
-  def updateToNextState(event: Event, cache: CacheApi, dataService: DataService, configuration: Configuration): Future[Conversation] = {
+  def updateToNextState(event: Event, cache: CacheApi, dataService: DataService, configuration: Configuration, actorSystem: ActorSystem): Future[Conversation] = {
     for {
-      collectionStates <- collectionStatesFor(event, dataService, cache, configuration)
+      collectionStates <- collectionStatesFor(event, dataService, cache, configuration, actorSystem)
       collectionStatesWithIsComplete <- Future.sequence(collectionStates.map { collectionState =>
         collectionState.isCompleteIn(this).map { isComplete => (collectionState, isComplete) }
       })
@@ -83,13 +84,13 @@ case class InvokeBehaviorConversation(
     } yield updated
   }
 
-  def updateWith(event: Event, lambdaService: AWSLambdaService, dataService: DataService, cache: CacheApi, configuration: Configuration): Future[Conversation] = {
+  def updateWith(event: Event, lambdaService: AWSLambdaService, dataService: DataService, cache: CacheApi, configuration: Configuration, actorSystem: ActorSystem): Future[Conversation] = {
 
     for {
-      collectionStates <- collectionStatesFor(event, dataService, cache, configuration)
+      collectionStates <- collectionStatesFor(event, dataService, cache, configuration, actorSystem)
       updated <- collectionStates.find(_.name == state).map(_.collectValueFrom(this)).getOrElse {
         state match {
-          case Conversation.NEW_STATE => updateToNextState(event, cache, dataService, configuration)
+          case Conversation.NEW_STATE => updateToNextState(event, cache, dataService, configuration, actorSystem)
           case Conversation.DONE_STATE => Future.successful(this)
         }
       }
@@ -103,13 +104,14 @@ case class InvokeBehaviorConversation(
                dataService: DataService,
                cache: CacheApi,
                ws: WSClient,
-               configuration: Configuration
+               configuration: Configuration,
+               actorSystem: ActorSystem
              ): Future[BotResult] = {
     for {
-      collectionStates <- collectionStatesFor(event, dataService, cache, configuration)
+      collectionStates <- collectionStatesFor(event, dataService, cache, configuration, actorSystem)
       result <- collectionStates.find(_.name == state).map(_.promptResultFor(this, isReminding)).getOrElse {
         val paramState = paramStateIn(collectionStates)
-        BehaviorResponse.buildFor(event, behaviorVersion, paramState.invocationMap, maybeTrigger, Some(this), lambdaService, dataService, cache, ws, configuration).flatMap { br =>
+        BehaviorResponse.buildFor(event, behaviorVersion, paramState.invocationMap, maybeTrigger, Some(this), lambdaService, dataService, cache, ws, configuration, actorSystem).flatMap { br =>
           br.resultForFilledOut
         }
       }
@@ -122,10 +124,11 @@ case class InvokeBehaviorConversation(
                        dataService: DataService,
                        cache: CacheApi,
                        ws: WSClient,
-                       configuration: Configuration
+                       configuration: Configuration,
+                       actorSystem: ActorSystem
                      ): Future[Option[BehaviorParameter]] = {
     for {
-      collectionStates <- collectionStatesFor(event, dataService, cache, configuration)
+      collectionStates <- collectionStatesFor(event, dataService, cache, configuration, actorSystem)
       maybeCollectionState <- Future.successful(collectionStates.find(_.name == state))
       maybeParam <- maybeCollectionState.map {
         case s: ParamCollectionState => s.maybeNextToCollect(this)

@@ -13,7 +13,8 @@ class OAuth2ApplicationSpec extends PlaySpec {
       "clientId",
       "clientSecret",
       None,
-      "team"
+      "team",
+      isShared = false
     )
   }
 

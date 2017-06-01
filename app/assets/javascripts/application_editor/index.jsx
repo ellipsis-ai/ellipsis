@@ -1,6 +1,7 @@
 define(function(require) {
   var React = require('react'),
     CSS = require('../lib/css'),
+    Checkbox = require('../form/checkbox'),
     Collapsible = require('../shared_ui/collapsible'),
     CsrfTokenHiddenInput = require('../shared_ui/csrf_token_hidden_input'),
     Input = require('../form/input'),
@@ -30,6 +31,8 @@ define(function(require) {
       applicationClientSecret: React.PropTypes.string,
       applicationScope: React.PropTypes.string,
       applicationSaved: React.PropTypes.bool,
+      applicationShared: React.PropTypes.bool.isRequired,
+      applicationCanBeShared: React.PropTypes.bool.isRequired,
       csrfToken: React.PropTypes.string.isRequired,
       teamId: React.PropTypes.string.isRequired,
       callbackUrl: React.PropTypes.string.isRequired,
@@ -47,7 +50,8 @@ define(function(require) {
         applicationScope: this.props.applicationScope || this.props.recommendedScope || "",
         hasNamedApplication: this.props.applicationSaved || false,
         shouldRevealApplicationUrl: this.props.applicationSaved || false,
-        isSaving: false
+        isSaving: false,
+        applicationShared: this.props.applicationShared
       };
     },
 
@@ -103,7 +107,8 @@ define(function(require) {
         applicationClientId: "",
         applicationScope: "",
         hasNamedApplication: false,
-        shouldRevealApplicationUrl: false
+        shouldRevealApplicationUrl: false,
+        applicationShared: false
       }, function() {
         BrowserUtils.removeQueryParam('apiId');
       });
@@ -171,6 +176,10 @@ define(function(require) {
       );
     },
 
+    applicationCanBeShared: function() {
+      return this.props.applicationCanBeShared;
+    },
+
     onSaveClick: function() {
       this.setState({
         isSaving: true
@@ -181,6 +190,12 @@ define(function(require) {
       if (event) {
         event.target.select();
       }
+    },
+
+    onApplicationSharedChange: function(isChecked) {
+      this.setState({
+        applicationShared: isChecked
+      });
     },
 
     renderBehaviorId: function() {
@@ -472,6 +487,31 @@ define(function(require) {
                   </div>
                 </div>
               </div>
+
+              {ifPresent(this.applicationCanBeShared(), () => (
+                <div className="mvm">
+                  <h4 className="mbn position-relative">
+                    <span className="position-hanging-indent">5</span>
+                    <span>Optionally share {this.getApplicationApiName()} with other teams.</span>
+                  </h4>
+                  <p className="type-s">
+                    This option is available for Ellipsis admins only.
+                  </p>
+
+                  <div className="columns">
+                    <div className="column column-one-third">
+                      <Checkbox
+                        className="display-block type-s"
+                        onChange={this.onApplicationSharedChange}
+                        checked={this.state.applicationShared}
+                        label="Shared with other teams"
+                        name="isShared"
+                      />
+                    </div>
+                  </div>
+                </div>
+              ))}
+
             </Collapsible>
           </div>
         </div>

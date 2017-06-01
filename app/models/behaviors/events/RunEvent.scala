@@ -71,7 +71,8 @@ case class RunEvent(
                                dataService: DataService,
                                cache: CacheApi,
                                ws: WSClient,
-                               configuration: Configuration
+                               configuration: Configuration,
+                               actorSystem: ActorSystem
                              ): Future[Seq[BehaviorResponse]] = {
     for {
       maybeBehaviorVersion <- dataService.behaviors.maybeCurrentVersionFor(behavior)
@@ -93,7 +94,8 @@ case class RunEvent(
             dataService,
             cache,
             ws,
-            configuration
+            configuration,
+            actorSystem
           )
         } yield Seq(response)
       }.getOrElse(Future.successful(Seq()))

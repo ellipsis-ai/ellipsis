@@ -1,5 +1,6 @@
 package support
 
+import akka.actor.ActorSystem
 import com.typesafe.config.ConfigFactory
 import drivers.SlickPostgresDriver.api.{Database => PostgresDatabase}
 import json._
@@ -44,6 +45,7 @@ trait DBSpec extends PlaySpec with OneAppPerSuite with MockitoSugar {
       build()
 
   val dataService = app.injector.instanceOf(classOf[PostgresDataService])
+  val actorSystem = app.injector.instanceOf(classOf[ActorSystem])
 
   def newSavedTeam: Team = runNow(dataService.teams.create(IDs.next))
 
@@ -137,7 +139,7 @@ trait DBSpec extends PlaySpec with OneAppPerSuite with MockitoSugar {
   }
 
   def newSavedOAuth2ApplicationFor(api: OAuth2Api, team: Team): OAuth2Application = {
-    runNow(dataService.oauth2Applications.save(OAuth2Application(IDs.next, IDs.next, api, IDs.next, IDs.next, None, team.id)))
+    runNow(dataService.oauth2Applications.save(OAuth2Application(IDs.next, IDs.next, api, IDs.next, IDs.next, None, team.id, isShared = false)))
   }
 
   def newSavedRequiredOAuth2ConfigFor(api: OAuth2Api, groupVersion: BehaviorGroupVersion): RequiredOAuth2ApiConfig = {

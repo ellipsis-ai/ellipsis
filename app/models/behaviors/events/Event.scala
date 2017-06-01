@@ -165,7 +165,8 @@ trait Event {
                                dataService: DataService,
                                cache: CacheApi,
                                ws: WSClient,
-                               configuration: Configuration
+                               configuration: Configuration,
+                               actorSystem: ActorSystem
                              ): Future[Seq[BehaviorResponse]]
 
 }

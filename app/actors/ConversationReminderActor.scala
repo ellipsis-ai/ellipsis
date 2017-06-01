@@ -36,7 +36,7 @@ class ConversationReminderActor @Inject()(
     case "tick" => {
       dataService.conversations.allNeedingReminder.flatMap { pending =>
         Future.sequence(pending.map { ea =>
-          ea.maybeRemindResult(lambdaService, dataService, cache, ws, configuration).flatMap { maybeResult =>
+          ea.maybeRemindResult(lambdaService, dataService, cache, ws, configuration, actorSystem).flatMap { maybeResult =>
             maybeResult.map { result =>
               result.sendIn(None, dataService, None).flatMap { maybeSendResult =>
                 dataService.conversations.touch(ea)

@@ -20,7 +20,7 @@ case class RevokeAuthBehavior(
       maybeTeam <- dataService.teams.find(event.teamId)
       user <- event.ensureUser(dataService)
       maybeApplication <- maybeTeam.map { team =>
-        dataService.oauth2Applications.allFor(team)
+        dataService.oauth2Applications.allUsableFor(team)
       }.getOrElse(Future.successful(Seq())).map(all => all.find(_.name.toLowerCase == appName.toLowerCase))
       didDelete <- maybeApplication.map { app =>
         dataService.linkedOAuth2Tokens.deleteFor(app, user)

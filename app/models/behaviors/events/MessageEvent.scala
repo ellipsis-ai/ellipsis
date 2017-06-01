@@ -1,5 +1,6 @@
 package models.behaviors.events
 
+import akka.actor.ActorSystem
 import models.behaviors.BehaviorResponse
 import models.behaviors.behavior.Behavior
 import models.behaviors.conversations.conversation.Conversation
@@ -30,7 +31,8 @@ trait MessageEvent extends Event {
                               dataService: DataService,
                               cache: CacheApi,
                               ws: WSClient,
-                              configuration: Configuration
+                              configuration: Configuration,
+                              actorSystem: ActorSystem
                             ): Future[Seq[BehaviorResponse]] = {
     for {
       maybeLimitToBehaviorVersion <- maybeLimitToBehavior.map { limitToBehavior =>
@@ -83,7 +85,8 @@ trait MessageEvent extends Event {
             dataService,
             cache,
             ws,
-            configuration
+            configuration,
+            actorSystem
           )
         } yield response
       })

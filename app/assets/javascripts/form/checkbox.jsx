@@ -7,7 +7,8 @@ return React.createClass({
     onChange: React.PropTypes.func.isRequired,
     onEnterKey: React.PropTypes.func,
     className: React.PropTypes.string,
-    label: React.PropTypes.string
+    label: React.PropTypes.string,
+    name: React.PropTypes.string
   },
   onChange: function() {
     this.props.onChange(!!this.refs.input.checked);
@@ -35,6 +36,7 @@ return React.createClass({
           checked={this.props.checked}
           onChange={this.onChange}
           onKeyPress={this.handleEnterKey}
+          name={this.props.name}
         />
         <span>{this.props.label}</span>
       </label>
