@@ -2,6 +2,7 @@ package controllers
 
 import javax.inject.Inject
 
+import akka.actor.ActorSystem
 import com.mohiva.play.silhouette.api.Silhouette
 import com.mohiva.play.silhouette.api.actions.SecuredRequest
 import json.Formatting._
@@ -31,7 +32,8 @@ class BehaviorEditorController @Inject() (
                                            val dataService: DataService,
                                            val lambdaService: AWSLambdaService,
                                            val cache: CacheApi,
-                                           val ws: WSClient
+                                           val ws: WSClient,
+                                           val actorSystem: ActorSystem
                                          ) extends ReAuthable {
 
   def newGroup(maybeTeamId: Option[String]) = silhouette.SecuredAction.async { implicit request =>
@@ -251,7 +253,7 @@ class BehaviorEditorController @Inject() (
           }.getOrElse(Future.successful(None))
           maybeReport <- maybeBehaviorVersion.map { behaviorVersion =>
             val event = TestEvent(user, behaviorVersion.team, info.message, includesBotMention = true)
-            TriggerTester(lambdaService, dataService, cache, ws, configuration).test(event, behaviorVersion).map(Some(_))
+            TriggerTester(lambdaService, dataService, cache, ws, configuration, actorSystem).test(event, behaviorVersion).map(Some(_))
           }.getOrElse(Future.successful(None))
 
         } yield {
@@ -290,7 +292,7 @@ class BehaviorEditorController @Inject() (
                 dataService.behaviors.maybeCurrentVersionFor(behavior)
               }.getOrElse(Future.successful(None))
               maybeReport <- maybeBehaviorVersion.map { behaviorVersion =>
-                InvocationTester(user, behaviorVersion, paramValues, lambdaService, dataService, cache, configuration).run.map(Some(_))
+                InvocationTester(user, behaviorVersion, paramValues, lambdaService, dataService, cache, configuration, actorSystem).run.map(Some(_))
               }.getOrElse(Future.successful(None))
             } yield {
               maybeReport.map { report =>

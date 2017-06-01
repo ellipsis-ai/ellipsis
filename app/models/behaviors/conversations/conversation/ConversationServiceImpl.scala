@@ -56,7 +56,8 @@ class ConversationServiceImpl @Inject() (
                                           lambdaServiceProvider: Provider[AWSLambdaService],
                                           cacheProvider: Provider[CacheApi],
                                           wsProvider: Provider[WSClient],
-                                          configurationProvider: Provider[Configuration]
+                                          configurationProvider: Provider[Configuration],
+                                          actorSystem: ActorSystem
                                          ) extends ConversationService {
 
   def dataService: DataService = dataServiceProvider.get
@@ -168,7 +169,7 @@ class ConversationServiceImpl @Inject() (
       _ <- maybeEvent.map { event =>
         val convoWithThreadId = conversation.copyWithMaybeThreadId(maybeLastTs)
         dataService.conversations.save(convoWithThreadId).flatMap { _ =>
-          convoWithThreadId.respond(event, isReminding=false, lambdaService, dataService, cache, ws, configuration).map { result =>
+          convoWithThreadId.respond(event, isReminding=false, lambdaService, dataService, cache, ws, configuration, actorSystem).map { result =>
             result.sendIn(None, dataService)
           }
         }

@@ -1,5 +1,6 @@
 package models.behaviors.conversations
 
+import akka.actor.ActorSystem
 import models.behaviors.behaviorparameter.{BehaviorParameter, BehaviorParameterContext}
 import models.behaviors.conversations.collectedparametervalue.CollectedParameterValue
 import models.behaviors.conversations.conversation.Conversation
@@ -20,7 +21,8 @@ case class ParamCollectionState(
                                  event: Event,
                                  dataService: DataService,
                                  cache: CacheApi,
-                                 configuration: Configuration
+                                 configuration: Configuration,
+                                 actorSystem: ActorSystem
                                ) extends CollectionState {
 
   val name = InvokeBehaviorConversation.COLLECT_PARAM_VALUES_STATE
@@ -33,7 +35,7 @@ case class ParamCollectionState(
     }
 
     val eventualWithHasValidValue = Future.sequence(tuples.map { case(param, maybeCollected, maybeSaved) =>
-      val context = BehaviorParameterContext(event, Some(conversation), param, cache, dataService, configuration)
+      val context = BehaviorParameterContext(event, Some(conversation), param, cache, dataService, configuration, actorSystem)
       val maybeValue = maybeCollected.map(_.valueString).orElse(maybeSaved.map(_.valueString))
       val eventualHasValidValue = maybeValue.map { valueString =>
         param.paramType.isValid(valueString, context)
@@ -70,10 +72,10 @@ case class ParamCollectionState(
     for {
       maybeNextToCollect <- maybeNextToCollect(conversation)
       updatedConversation <- maybeNextToCollect.map { case(param, maybeValue) =>
-        val context = BehaviorParameterContext(event, Some(conversation), param, cache, dataService, configuration)
+        val context = BehaviorParameterContext(event, Some(conversation), param, cache, dataService, configuration, actorSystem)
         param.paramType.handleCollected(event, context).map(_ => conversation)
       }.getOrElse(Future.successful(conversation))
-      updatedConversation <- updatedConversation.updateToNextState(event, cache, dataService, configuration)
+      updatedConversation <- updatedConversation.updateToNextState(event, cache, dataService, configuration, actorSystem)
     } yield updatedConversation
   }
 
@@ -81,7 +83,7 @@ case class ParamCollectionState(
     for {
       maybeNextToCollect <- maybeNextToCollect(conversation)
       result <- maybeNextToCollect.map { case(param, maybeValue) =>
-        val context = BehaviorParameterContext(event, Some(conversation), param, cache, dataService, configuration)
+        val context = BehaviorParameterContext(event, Some(conversation), param, cache, dataService, configuration, actorSystem)
         param.prompt(maybeValue, context, this, isReminding)
       }.getOrElse {
         Future.successful("All done!")
@@ -100,14 +102,15 @@ object ParamCollectionState {
             event: Event,
             dataService: DataService,
             cache: CacheApi,
-            configuration: Configuration
+            configuration: Configuration,
+            actorSystem: ActorSystem
           ): Future[ParamCollectionState] = {
     for {
       params <- dataService.behaviorParameters.allFor(conversation.behaviorVersion)
       collected <- dataService.collectedParameterValues.allFor(conversation)
       user <- event.ensureUser(dataService)
       savedAnswers <- dataService.savedAnswers.allFor(user, params)
-    } yield ParamCollectionState(params, collected, savedAnswers, event, dataService, cache, configuration)
+    } yield ParamCollectionState(params, collected, savedAnswers, event, dataService, cache, configuration, actorSystem)
   }
 
 }

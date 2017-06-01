@@ -1,5 +1,6 @@
 package models.behaviors.conversations
 
+import akka.actor.ActorSystem
 import models.accounts.user.User
 import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.events.Event
@@ -16,7 +17,8 @@ case class UserEnvVarCollectionState(
                                       event: Event,
                                       dataService: DataService,
                                       cache: CacheApi,
-                                      configuration: Configuration
+                                      configuration: Configuration,
+                                      actorSystem: ActorSystem
                                     ) extends CollectionState {
 
   val name = InvokeBehaviorConversation.COLLECT_USER_ENV_VARS_STATE
@@ -36,7 +38,7 @@ case class UserEnvVarCollectionState(
       updatedConversation <- maybeNextToCollect.map { envVarName =>
         dataService.userEnvironmentVariables.ensureFor(envVarName, Some(event.relevantMessageText), user).map(_ => conversation)
       }.getOrElse(Future.successful(conversation))
-      updatedConversation <- updatedConversation.updateToNextState(event, cache, dataService, configuration)
+      updatedConversation <- updatedConversation.updateToNextState(event, cache, dataService, configuration, actorSystem)
     } yield updatedConversation
   }
 
@@ -61,10 +63,11 @@ object UserEnvVarCollectionState {
             event: Event,
             dataService: DataService,
             cache: CacheApi,
-            configuration: Configuration
+            configuration: Configuration,
+            actorSystem: ActorSystem
           ): Future[UserEnvVarCollectionState] = {
     dataService.userEnvironmentVariables.missingFor(user, conversation.behaviorVersion, dataService).map { missing =>
-      UserEnvVarCollectionState(missing, event, dataService, cache, configuration)
+      UserEnvVarCollectionState(missing, event, dataService, cache, configuration, actorSystem)
     }
   }
 

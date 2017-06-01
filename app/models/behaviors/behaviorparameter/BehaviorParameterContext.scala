@@ -1,5 +1,6 @@
 package models.behaviors.behaviorparameter
 
+import akka.actor.ActorSystem
 import models.behaviors.conversations.ParamCollectionState
 import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.events.Event
@@ -16,7 +17,8 @@ case class BehaviorParameterContext(
                                      parameter: BehaviorParameter,
                                      cache: CacheApi,
                                      dataService: DataService,
-                                     configuration: Configuration
+                                     configuration: Configuration,
+                                     actorSystem: ActorSystem
                                    ) {
 
   val behaviorVersion = parameter.behaviorVersion

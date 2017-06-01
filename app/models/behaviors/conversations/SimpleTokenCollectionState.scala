@@ -1,5 +1,6 @@
 package models.behaviors.conversations
 
+import akka.actor.ActorSystem
 import models.accounts.linkedsimpletoken.LinkedSimpleToken
 import models.accounts.simpletokenapi.SimpleTokenApi
 import models.accounts.user.User
@@ -18,7 +19,8 @@ case class SimpleTokenCollectionState(
                                        event: Event,
                                        dataService: DataService,
                                        cache: CacheApi,
-                                       configuration: Configuration
+                                       configuration: Configuration,
+                                       actorSystem: ActorSystem
                                     ) extends CollectionState {
 
   val name = InvokeBehaviorConversation.COLLECT_SIMPLE_TOKENS_STATE
@@ -37,7 +39,7 @@ case class SimpleTokenCollectionState(
         val token = event.relevantMessageText.trim
         dataService.linkedSimpleTokens.save(LinkedSimpleToken(token, user.id, api)).map(_ => conversation)
       }.getOrElse(Future.successful(conversation))
-      updatedConversation <- updatedConversation.updateToNextState(event, cache, dataService, configuration)
+      updatedConversation <- updatedConversation.updateToNextState(event, cache, dataService, configuration, actorSystem)
     } yield updatedConversation
   }
 
@@ -68,7 +70,8 @@ object SimpleTokenCollectionState {
             event: Event,
             dataService: DataService,
             cache: CacheApi,
-            configuration: Configuration
+            configuration: Configuration,
+            actorSystem: ActorSystem
           ): Future[SimpleTokenCollectionState] = {
     for {
       tokens <- dataService.linkedSimpleTokens.allForUser(user)
@@ -77,7 +80,7 @@ object SimpleTokenCollectionState {
       val missing = requiredTokenApis.filterNot { required =>
         tokens.exists(linked => linked.api == required.api)
       }.map(_.api)
-      SimpleTokenCollectionState(missing, event, dataService, cache, configuration)
+      SimpleTokenCollectionState(missing, event, dataService, cache, configuration, actorSystem)
     }
   }
 

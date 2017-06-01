@@ -1,16 +1,18 @@
 package models.behaviors.behaviorparameter
 
+import akka.actor.ActorSystem
 import com.fasterxml.jackson.core.JsonParseException
 import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
 import models.behaviors.behaviorversion.BehaviorVersion
 import models.behaviors.conversations.ParamCollectionState
 import models.behaviors.conversations.conversation.Conversation
-import models.behaviors.events.Event
+import models.behaviors.events.{Event, SlackMessageEvent}
 import models.behaviors.{BotResult, ParameterValue, ParameterWithValue, SuccessResult}
 import models.team.Team
 import play.api.libs.json._
 import services.{AWSLambdaConstants, DataService}
 import slick.dbio.DBIO
+import utils.SlackMessageReactionHandler
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -431,13 +433,23 @@ case class BehaviorBackedDataType(behaviorVersion: BehaviorVersion) extends Beha
                            paramState: ParamCollectionState,
                            isReminding: Boolean
                          ): Future[String] = {
-    usesSearch(context).flatMap { usesSearch =>
+    val eventualPrompt = usesSearch(context).flatMap { usesSearch =>
       if (usesSearch) {
         promptForSearchCase(maybePreviousCollectedValue, context, paramState, isReminding)
       } else {
         promptForListAllCase(None, maybePreviousCollectedValue, context, paramState, isReminding)
       }
     }
+    context.event match {
+      case event: SlackMessageEvent => {
+        implicit val actorSystem = context.actorSystem
+        SlackMessageReactionHandler.handle(event.clientFor(context.dataService), eventualPrompt, event.channel, event.ts)
+      }
+      case _ =>
+    }
+
+    eventualPrompt
+
   }
 
   override def handleCollected(event: Event, context: BehaviorParameterContext): Future[Unit] = {

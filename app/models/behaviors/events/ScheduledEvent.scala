@@ -49,8 +49,9 @@ case class ScheduledEvent(underlying: Event, scheduled: Scheduled) extends Event
                                dataService: DataService,
                                cache: CacheApi,
                                ws: WSClient,
-                               configuration: Configuration
-                             ) = underlying.allBehaviorResponsesFor(maybeTeam, maybeLimitToBehavior, lambdaService, dataService, cache, ws, configuration)
+                               configuration: Configuration,
+                               actorSystem: ActorSystem
+                             ) = underlying.allBehaviorResponsesFor(maybeTeam, maybeLimitToBehavior, lambdaService, dataService, cache, ws, configuration, actorSystem)
 
   def allOngoingConversations(dataService: DataService) = underlying.allOngoingConversations(dataService)
 

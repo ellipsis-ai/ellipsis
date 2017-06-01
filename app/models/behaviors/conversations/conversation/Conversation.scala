@@ -2,6 +2,7 @@ package models.behaviors.conversations.conversation
 
 import java.time.OffsetDateTime
 
+import akka.actor.ActorSystem
 import models.behaviors._
 import models.behaviors.behaviorparameter.BehaviorParameter
 import models.behaviors.behaviorversion.BehaviorVersion
@@ -71,7 +72,7 @@ trait Conversation {
 
   def updateStateTo(newState: String, dataService: DataService): Future[Conversation]
   def cancel(dataService: DataService): Future[Conversation] = updateStateTo(Conversation.DONE_STATE, dataService)
-  def updateWith(event: Event, lambdaService: AWSLambdaService, dataService: DataService, cache: CacheApi, configuration: Configuration): Future[Conversation]
+  def updateWith(event: Event, lambdaService: AWSLambdaService, dataService: DataService, cache: CacheApi, configuration: Configuration, actorSystem: ActorSystem): Future[Conversation]
   def respond(
                event: Event,
                isReminding: Boolean,
@@ -79,7 +80,8 @@ trait Conversation {
                dataService: DataService,
                cache: CacheApi,
                ws: WSClient,
-               configuration: Configuration
+               configuration: Configuration,
+               actorSystem: ActorSystem
              ): Future[BotResult]
 
   def resultFor(
@@ -88,11 +90,12 @@ trait Conversation {
                  dataService: DataService,
                  cache: CacheApi,
                  ws: WSClient,
-                 configuration: Configuration
+                 configuration: Configuration,
+                 actorSystem: ActorSystem
                ): Future[BotResult] = {
     for {
-      updatedConversation <- updateWith(event, lambdaService, dataService, cache, configuration)
-      result <- updatedConversation.respond(event, isReminding=false, lambdaService, dataService, cache, ws, configuration)
+      updatedConversation <- updateWith(event, lambdaService, dataService, cache, configuration, actorSystem)
+      result <- updatedConversation.respond(event, isReminding=false, lambdaService, dataService, cache, ws, configuration, actorSystem)
     } yield result
   }
 
@@ -102,7 +105,8 @@ trait Conversation {
                                dataService: DataService,
                                cache: CacheApi,
                                ws: WSClient,
-                               configuration: Configuration
+                               configuration: Configuration,
+                               actorSystem: ActorSystem
                              ): Future[Option[BehaviorParameter]]
 
   def maybeRemindResult(
@@ -110,11 +114,12 @@ trait Conversation {
                         dataService: DataService,
                         cache: CacheApi,
                         ws: WSClient,
-                        configuration: Configuration
+                        configuration: Configuration,
+                        actorSystem: ActorSystem
                       ): Future[Option[BotResult]] = {
     maybePlaceholderEvent(dataService).flatMap { maybeEvent =>
       maybeEvent.map { event =>
-        respond(event, isReminding=true, lambdaService, dataService, cache, ws, configuration).map { result =>
+        respond(event, isReminding=true, lambdaService, dataService, cache, ws, configuration, actorSystem).map { result =>
           val intro = s"Hey <@$userIdForContext>, don’t forget, I’m still waiting for your answer to this:"
           val actions = Seq(SlackMessageActionButton(STOP_CONVERSATION, "Stop asking", id))
           val question = result.text

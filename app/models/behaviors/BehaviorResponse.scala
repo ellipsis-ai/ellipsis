@@ -116,7 +116,7 @@ case class BehaviorResponse(
                   dataService.collectedParameterValues.ensureFor(p.parameter, convo, v.text)
                 }.getOrElse(Future.successful(Unit))
               })
-              result <- convo.resultFor(event, lambdaService, dataService, cache, ws, configuration)
+              result <- convo.resultFor(event, lambdaService, dataService, cache, ws, configuration, actorSystem)
             } yield result
           }
         }
@@ -134,7 +134,8 @@ object BehaviorResponse {
                                maybeConversation: Option[Conversation],
                                dataService: DataService,
                                cache: CacheApi,
-                               configuration: Configuration
+                               configuration: Configuration,
+                               actorSystem: ActorSystem
                              ): Future[Seq[ParameterWithValue]] = {
     for {
       params <- dataService.behaviorParameters.allFor(behaviorVersion)
@@ -142,7 +143,7 @@ object BehaviorResponse {
         AWSLambdaConstants.invocationParamFor(i)
       })
       values <- Future.sequence(params.zip(invocationNames).map { case(param, invocationName) =>
-        val context = BehaviorParameterContext(event, maybeConversation, param, cache, dataService, configuration)
+        val context = BehaviorParameterContext(event, maybeConversation, param, cache, dataService, configuration, actorSystem)
         paramValues.get(invocationName).map { v =>
           for {
             isValid <- param.paramType.isValid(v, context)
@@ -167,9 +168,10 @@ object BehaviorResponse {
                 dataService: DataService,
                 cache: CacheApi,
                 ws: WSClient,
-                configuration: Configuration
+                configuration: Configuration,
+                actorSystem: ActorSystem
                 ): Future[BehaviorResponse] = {
-    parametersWithValuesFor(event, behaviorVersion, paramValues, maybeConversation, dataService, cache, configuration).map { paramsWithValues =>
+    parametersWithValuesFor(event, behaviorVersion, paramValues, maybeConversation, dataService, cache, configuration, actorSystem).map { paramsWithValues =>
       BehaviorResponse(event, behaviorVersion, maybeConversation, paramsWithValues, maybeActivatedTrigger, lambdaService, dataService, cache, ws, configuration)
     }
   }
@@ -182,8 +184,9 @@ object BehaviorResponse {
               dataService: DataService,
               cache: CacheApi,
               ws: WSClient,
-              configuration: Configuration
+              configuration: Configuration,
+              actorSystem: ActorSystem
                ): Future[Seq[BehaviorResponse]] = {
-    event.allBehaviorResponsesFor(maybeTeam, maybeLimitToBehavior, lambdaService, dataService, cache, ws, configuration)
+    event.allBehaviorResponsesFor(maybeTeam, maybeLimitToBehavior, lambdaService, dataService, cache, ws, configuration, actorSystem)
   }
 }
