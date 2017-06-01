@@ -95,8 +95,8 @@ object Formatting {
   implicit val scheduledActionDataReads = Json.reads[ScheduledActionData]
   implicit val scheduledActionDataWrites = Json.writes[ScheduledActionData]
 
-  implicit val scheduledActionsDataReads = Json.reads[ScheduledActionsData]
-  implicit val scheduledActionsDataWrites = Json.writes[ScheduledActionsData]
+  implicit val scheduledActionsConfigReads = Json.reads[ScheduledActionsConfig]
+  implicit val scheduledActionsConfigWrites = Json.writes[ScheduledActionsConfig]
 
   implicit val teamTimeZoneDataReads = Json.reads[TeamTimeZoneData]
   implicit val teamTimeZoneDataWrites = Json.writes[TeamTimeZoneData]

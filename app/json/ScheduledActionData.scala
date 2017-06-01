@@ -2,7 +2,6 @@ package json
 
 import java.time.OffsetDateTime
 
-import models.behaviors.scheduling.recurrence.Recurrence
 import models.behaviors.scheduling.scheduledbehavior.ScheduledBehavior
 import models.behaviors.scheduling.scheduledmessage.ScheduledMessage
 import services.DataService
@@ -10,63 +9,27 @@ import utils._
 
 import scala.concurrent.{ExecutionContext, Future}
 
-case class ScheduledActionRecurrenceTimeData(hour: Int, minute: Int)
-
 case class ScheduledActionArgumentData(name: String, value: String)
-case class ScheduledActionRecurrenceData(
-  displayString: String,
-  frequency: Int,
-  typeName: String,
-  timeOfDay: Option[ScheduledActionRecurrenceTimeData],
-  timeZone: Option[String],
-  minuteOfHour: Option[Int],
-  dayOfWeek: Option[Int],
-  dayOfMonth: Option[Int],
-  nthDayOfWeek: Option[Int],
-  month: Option[Int],
-  daysOfWeek: Seq[Int]
-)
-
-object ScheduledActionRecurrenceData {
-  def fromRecurrence(recurrence: Recurrence): ScheduledActionRecurrenceData = {
-    ScheduledActionRecurrenceData(
-      recurrence.displayString,
-      recurrence.frequency,
-      recurrence.typeName,
-      recurrence.maybeTimeOfDay.map(time => ScheduledActionRecurrenceTimeData(time.getHour, time.getMinute)),
-      recurrence.maybeTimeZone.map(_.toString),
-      recurrence.maybeMinuteOfHour,
-      recurrence.maybeDayOfWeek.map(_.getValue),
-      recurrence.maybeDayOfMonth,
-      recurrence.maybeNthDayOfWeek,
-      recurrence.maybeMonth,
-      recurrence.daysOfWeek.map(_.getValue)
-    )
-  }
-}
 
 case class ScheduledActionData(
-  behaviorName: Option[String],
-  behaviorGroupName: Option[String],
-  behaviorId: Option[String],
-  behaviorGroupId: Option[String],
-  trigger: Option[String],
-  arguments: Seq[ScheduledActionArgumentData],
-  recurrence: ScheduledActionRecurrenceData,
-  firstRecurrence: OffsetDateTime,
-  secondRecurrence: OffsetDateTime,
-  useDM: Boolean,
-  channel: String
-)
+                                behaviorName: Option[String],
+                                behaviorGroupName: Option[String],
+                                behaviorId: Option[String],
+                                behaviorGroupId: Option[String],
+                                trigger: Option[String],
+                                arguments: Seq[ScheduledActionArgumentData],
+                                recurrence: ScheduledActionRecurrenceData,
+                                firstRecurrence: OffsetDateTime,
+                                secondRecurrence: OffsetDateTime,
+                                useDM: Boolean,
+                                channel: String
+                              )
 
-case class ScheduledActionsData(teamId: String, scheduledActions: Seq[ScheduledActionData])
-
-object ScheduledActionsData {
-  private def nameForChannel(maybeChannel: Option[String], maybeChannelInfo: Option[Seq[ChannelLike]]): String = {
+object ScheduledActionData {
+  private def nameForChannel(maybeChannel: Option[String], channelList: Seq[ChannelLike]): String = {
     (for {
       channel <- maybeChannel
-      channelInfo <- maybeChannelInfo
-      matchingChannel <- channelInfo.find(ea => ea.id == channel || ea.name == channel)
+      matchingChannel <- channelList.find(ea => ea.id == channel || ea.name == channel)
     } yield {
       matchingChannel match {
         case SlackChannel(namedChannel) => s"""#${namedChannel.name}"""
@@ -76,9 +39,11 @@ object ScheduledActionsData {
     }).getOrElse("Unknown")
   }
 
-  def fromScheduleData(teamId: String, dataService: DataService, maybeChannelInfo: Option[Seq[ChannelLike]], scheduledMessages: Seq[ScheduledMessage], scheduledBehaviors: Seq[ScheduledBehavior])(implicit ec: ExecutionContext): Future[ScheduledActionsData] = {
-
-    val fromMessages = scheduledMessages.map { ea =>
+  def fromScheduledMessages(
+                             scheduledMessages: Seq[ScheduledMessage],
+                             channelList: Seq[ChannelLike]
+                           )(implicit ec: ExecutionContext): Future[Seq[ScheduledActionData]] = {
+    val data = scheduledMessages.map { ea =>
       Future.successful(
         ScheduledActionData(
           behaviorName = None,
@@ -91,17 +56,24 @@ object ScheduledActionsData {
           firstRecurrence = ea.nextSentAt,
           secondRecurrence = ea.followingSentAt,
           useDM = ea.isForIndividualMembers,
-          channel = nameForChannel(ea.maybeChannel, maybeChannelInfo)
+          channel = nameForChannel(ea.maybeChannel, channelList)
         )
       )
     }
+    Future.sequence(data)
+  }
 
-    val fromBehaviors = scheduledBehaviors.map { ea =>
+  def fromScheduledBehaviors(
+                              scheduledBehaviors: Seq[ScheduledBehavior],
+                              dataService: DataService,
+                              channelList: Seq[ChannelLike]
+                            )(implicit ec: ExecutionContext): Future[Seq[ScheduledActionData]] = {
+    val data = scheduledBehaviors.map { ea =>
       for {
         maybeBehaviorName <- ea.maybeBehaviorName(dataService)
         maybeBehaviorGroupName <- ea.maybeBehaviorGroupName(dataService)
       } yield {
-        val arguments = ea.arguments.map { case(key, value) => ScheduledActionArgumentData(key, value) }.toSeq
+        val arguments = ea.arguments.map { case (key, value) => ScheduledActionArgumentData(key, value) }.toSeq
         ScheduledActionData(
           behaviorName = maybeBehaviorName,
           behaviorGroupName = maybeBehaviorGroupName,
@@ -113,16 +85,10 @@ object ScheduledActionsData {
           firstRecurrence = ea.nextSentAt,
           secondRecurrence = ea.followingSentAt,
           useDM = ea.isForIndividualMembers,
-          channel = nameForChannel(ea.maybeChannel, maybeChannelInfo)
+          channel = nameForChannel(ea.maybeChannel, channelList)
         )
       }
     }
-
-    for {
-      messages <- Future.sequence(fromMessages)
-      behaviors <- Future.sequence(fromBehaviors)
-    } yield {
-      ScheduledActionsData(teamId, messages ++ behaviors)
-    }
+    Future.sequence(data)
   }
 }

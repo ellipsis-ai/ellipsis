@@ -16,13 +16,13 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
 
-class ScheduledActionsController @Inject() (
-                                             val messagesApi: MessagesApi,
-                                             val configuration: Configuration,
-                                             val silhouette: Silhouette[EllipsisEnv],
-                                             val dataService: DataService,
-                                             implicit val actorSystem: ActorSystem
-                                            ) extends ReAuthable {
+class ScheduledActionsController @Inject()(
+                                            val messagesApi: MessagesApi,
+                                            val configuration: Configuration,
+                                            val silhouette: Silhouette[EllipsisEnv],
+                                            val dataService: DataService,
+                                            implicit val actorSystem: ActorSystem
+                                          ) extends ReAuthable {
 
   def index(maybeTeamId: Option[String]) = silhouette.SecuredAction.async { implicit request =>
     val user = request.identity
@@ -36,14 +36,14 @@ class ScheduledActionsController @Inject() (
               scheduledMessages <- dataService.scheduledMessages.allForTeam(team)
               scheduledBehaviors <- dataService.scheduledBehaviors.allForTeam(team)
               maybeBotProfile <- dataService.slackBotProfiles.allFor(team).map(_.headOption)
-              maybeChannelInfo <- maybeBotProfile.map { botProfile =>
-                val channels = dataService.slackBotProfiles.channelsFor(botProfile)
-                channels.listInfos.map(Some(_))
-              }.getOrElse(Future.successful(None))
-              scheduledActionsData <- ScheduledActionsData.fromScheduleData(team.id, dataService, maybeChannelInfo, scheduledMessages, scheduledBehaviors)
+              channelList <- maybeBotProfile.map { botProfile =>
+                dataService.slackBotProfiles.channelsFor(botProfile).listInfos
+              }.getOrElse(Future.successful(Seq()))
+              scheduledMessageData <- ScheduledActionData.fromScheduledMessages(scheduledMessages, channelList)
+              scheduledBehaviorData <- ScheduledActionData.fromScheduledBehaviors(scheduledBehaviors, dataService, channelList)
             } yield {
-              val json = Json.toJson(scheduledActionsData)
-              Ok(views.js.shared.pageConfig("config/scheduling/index", json))
+              val pageData = ScheduledActionsConfig(team.id, scheduledMessageData ++ scheduledBehaviorData, team.maybeTimeZone.map(_.toString))
+              Ok(views.js.shared.pageConfig("config/scheduling/index", Json.toJson(pageData)))
             }
           }.getOrElse {
             Future.successful(NotFound("Team not found"))
