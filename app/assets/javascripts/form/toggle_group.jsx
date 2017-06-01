@@ -21,7 +21,7 @@ define(function(require) {
       activeWhen: React.PropTypes.bool.isRequired,
       label: React.PropTypes.node.isRequired,
       onClick: React.PropTypes.func.isRequired,
-      title: React.PropTypes.string
+      renderTitle: React.PropTypes.string
     },
 
     render: function() {

@@ -1,4 +1,6 @@
-define(function() {
+define(function(require) {
+
+  const Recurrence = require('./recurrence');
 
   class ScheduledAction {
 
@@ -19,17 +21,24 @@ define(function() {
 
       Object.defineProperties(this, {
         behaviorName: { value: initialProps.behaviorName, enumerable: true },
-        behaviorGroupName: { value: initialProps.behaviorName, enumerable: true },
-        behaviorId: { value: initialProps.behaviorName, enumerable: true },
-        behaviorGroupId: { value: initialProps.behaviorName, enumerable: true },
-        trigger: { value: initialProps.behaviorName, enumerable: true },
-        arguments: { value: initialProps.behaviorName, enumerable: true },
-        recurrence: { value: initialProps.behaviorName, enumerable: true },
-        firstRecurrence: { value: initialProps.behaviorName, enumerable: true },
-        secondRecurrence: { value: initialProps.behaviorName, enumerable: true },
-        useDM: { value: initialProps.behaviorName, enumerable: true },
-        channel: { value: initialProps.behaviorName, enumerable: true }
+        behaviorGroupName: { value: initialProps.behaviorGroupName, enumerable: true },
+        behaviorId: { value: initialProps.behaviorId, enumerable: true },
+        behaviorGroupId: { value: initialProps.behaviorGroupId, enumerable: true },
+        trigger: { value: initialProps.trigger, enumerable: true },
+        arguments: { value: initialProps.arguments, enumerable: true },
+        recurrence: { value: initialProps.recurrence, enumerable: true },
+        firstRecurrence: { value: initialProps.firstRecurrence, enumerable: true },
+        secondRecurrence: { value: initialProps.secondRecurrence, enumerable: true },
+        useDM: { value: initialProps.useDM, enumerable: true },
+        channel: { value: initialProps.channel, enumerable: true }
       });
+    }
+
+    static fromJson(props) {
+      const materializedProps = Object.assign(props, {
+        recurrence: new Recurrence(props.recurrence)
+      });
+      return new ScheduledAction(materializedProps);
     }
   }
 
