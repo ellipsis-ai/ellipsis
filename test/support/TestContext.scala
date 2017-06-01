@@ -1,5 +1,6 @@
 package support
 
+import akka.actor.ActorSystem
 import mocks.{MockAWSLambdaService, MockAWSLogsService, MockDataService}
 import models.IDs
 import models.accounts.user.User
@@ -32,6 +33,7 @@ trait TestContext extends MockitoSugar{
   lazy val user: User = newUserFor(teamId)
   lazy implicit val app: Application = appBuilder.build()
   lazy val dataService = app.injector.instanceOf(classOf[DataService])
+  lazy val actorSystem = app.injector.instanceOf(classOf[ActorSystem])
   lazy val eventHandler = app.injector.instanceOf(classOf[EventHandler])
   lazy val githubService = app.injector.instanceOf(classOf[GithubService])
   lazy val lambdaService = app.injector.instanceOf(classOf[AWSLambdaService])
