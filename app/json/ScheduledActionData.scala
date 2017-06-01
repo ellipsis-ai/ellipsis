@@ -1,6 +1,6 @@
 package json
 
-import java.time.{DayOfWeek, LocalTime, OffsetDateTime, ZoneId}
+import java.time.OffsetDateTime
 
 import models.behaviors.scheduling.recurrence.Recurrence
 import models.behaviors.scheduling.scheduledbehavior.ScheduledBehavior
