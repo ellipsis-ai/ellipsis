@@ -548,7 +548,8 @@ class SlackController @Inject() (
                         dataService,
                         cache,
                         ws,
-                        configuration
+                        configuration,
+                        actorSystem
                       ).map(Some(_))
                     }.getOrElse(Future.successful(None))
                     maybeResult <- maybeResponse.map { response =>

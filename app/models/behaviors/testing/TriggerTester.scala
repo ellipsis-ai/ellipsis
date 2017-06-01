@@ -1,5 +1,6 @@
 package models.behaviors.testing
 
+import akka.actor.ActorSystem
 import models.behaviors.behaviorversion.BehaviorVersion
 import models.behaviors.BehaviorResponse
 import play.api.Configuration
@@ -15,12 +16,13 @@ case class TriggerTester(
                           dataService: DataService,
                           cache: CacheApi,
                           ws: WSClient,
-                          configuration: Configuration
+                          configuration: Configuration,
+                          actorSystem: ActorSystem
                         ) {
 
   def test(event: TestEvent, behaviorVersion: BehaviorVersion): Future[TriggerTestReport] = {
     for {
-      maybeResponse <- BehaviorResponse.allFor(event, None, Some(behaviorVersion.behavior), lambdaService, dataService, cache, ws, configuration).map(_.headOption)
+      maybeResponse <- BehaviorResponse.allFor(event, None, Some(behaviorVersion.behavior), lambdaService, dataService, cache, ws, configuration, actorSystem).map(_.headOption)
     } yield {
       TriggerTestReport(event, behaviorVersion, maybeResponse)
     }
