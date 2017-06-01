@@ -14,7 +14,8 @@ case class OAuth2Application(
                               clientId: String,
                               clientSecret: String,
                               maybeScope: Option[String],
-                              teamId: String
+                              teamId: String,
+                              isShared: Boolean
                             ) {
 
   val maybeAuthorizationUrl = api.maybeAuthorizationUrl
@@ -89,6 +90,7 @@ case class OAuth2Application(
     clientId,
     clientSecret,
     maybeScope,
-    teamId
+    teamId,
+    isShared
   )
 }

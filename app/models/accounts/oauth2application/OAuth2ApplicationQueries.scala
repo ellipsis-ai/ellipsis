@@ -12,7 +12,7 @@ object OAuth2ApplicationQueries {
 
   def tuple2Application(tuple: TupleType): OAuth2Application = {
     val raw = tuple._1
-    OAuth2Application(raw.id, raw.name, tuple._2, raw.clientId, raw.clientSecret, raw.maybeScope, raw.teamId)
+    OAuth2Application(raw.id, raw.name, tuple._2, raw.clientId, raw.clientSecret, raw.maybeScope, raw.teamId, raw.isShared)
   }
 
   def uncompiledFindQuery(id: Rep[String]) = {
@@ -25,5 +25,10 @@ object OAuth2ApplicationQueries {
     allWithApi.filter { case(app, api) => app.teamId === teamId }
   }
   val allForTeamQuery = Compiled(uncompiledAllForTeamQuery _)
+
+  def uncompiledAllUsableForTeamQuery(teamId: Rep[String]) = {
+    allWithApi.filter { case(app, api) => app.teamId === teamId || app.isShared }
+  }
+  val allUsableForTeamQuery = Compiled(uncompiledAllUsableForTeamQuery _)
 
 }
