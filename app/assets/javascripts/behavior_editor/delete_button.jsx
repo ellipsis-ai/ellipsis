@@ -7,7 +7,7 @@ return React.createClass({
   propTypes: {
     hidden: React.PropTypes.bool,
     onClick: React.PropTypes.func.isRequired,
-    renderTitle: React.PropTypes.string
+    title: React.PropTypes.string
   },
   onClick: function() {
     this.props.onClick();
@@ -20,7 +20,7 @@ return React.createClass({
         ref="button"
         className={"button-subtle button-symbol" + CSS.visibleWhen(!this.props.hidden)}
         onClick={this.onClick}
-        title={this.props.renderTitle || "Delete"}
+        title={this.props.title || "Delete"}
       >
         <SVGXIcon label="Delete" />
       </button></span>
