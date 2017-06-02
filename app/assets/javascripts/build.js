@@ -95,6 +95,10 @@ requirejs.config({
       name: 'styleguide/colors/loader',
       include: ['styleguide/colors/index'],
       exclude: ['common']
+    }, {
+      name: 'scheduling/loader',
+      include: ['scheduling/index'],
+      exclude: ['common']
     }
   ]
 });
