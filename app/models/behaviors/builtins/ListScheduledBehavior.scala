@@ -3,7 +3,6 @@ package models.behaviors.builtins
 import akka.actor.ActorSystem
 import models.behaviors.events.Event
 import models.behaviors.scheduling.Scheduled
-import models.behaviors.scheduling.scheduledmessage.ScheduledMessage
 import models.behaviors.{BotResult, SimpleTextResult}
 import services.{AWSLambdaService, DataService}
 

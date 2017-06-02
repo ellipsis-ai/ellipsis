@@ -4,7 +4,8 @@ define(function(require) {
 
   return {
     formatTimestampLong: function(timestamp) {
-      return moment(timestamp).format('ll, LTS');
+      const m = moment(timestamp);
+      return `${m.format('dddd, LL')} at ${m.format('LT')}`;
     },
 
     formatTimestampRelative: function(timestamp) {
