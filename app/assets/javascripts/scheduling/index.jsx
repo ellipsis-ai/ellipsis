@@ -23,11 +23,8 @@ define(function(require) {
       const groupsByName = {};
       this.props.scheduledActions.forEach((action) => {
         const channelName = action.channel || "Unknown";
-        if (groupsByName[channelName]) {
-          groupsByName[channelName].push(action);
-        } else {
-          groupsByName[channelName] = [action];
-        }
+        const group = groupsByName[channelName] || [];
+        groupsByName[channelName] = group.concat([action]);
       });
       const channelNames = Object.keys(groupsByName);
       const sortedNames = Sort.arrayAlphabeticalBy(channelNames, (ea) => ea);
@@ -40,15 +37,12 @@ define(function(require) {
     },
 
     shouldShowChannel: function(channelName) {
-      if (this.state.filterChannels.length > 0) {
-        return this.state.filterChannels.includes(channelName);
-      } else {
-        return true;
-      }
+      return this.state.filterChannels.length === 0 ||
+        this.state.filterChannels.includes(channelName);
     },
 
     toggleFilter: function(channelName) {
-      let newState = {};
+      const newState = {};
       if (this.filterActiveFor(channelName)) {
         newState.filterChannels = this.state.filterChannels.filter((ea) => ea !== channelName);
       } else {
