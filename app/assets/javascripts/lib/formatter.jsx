@@ -15,7 +15,8 @@ define(function(require) {
     formatTimestampRelativeIfRecent: function(timestamp) {
       var then = timestamp;
       var now = Date.now();
-      if (now - then < ONE_WEEK_IN_MS) {
+      var diff = now - then > 0 ? now - then : then - now;
+      if (diff < ONE_WEEK_IN_MS) {
         return this.formatTimestampRelative(timestamp);
       } else {
         return this.formatTimestampShort(timestamp);

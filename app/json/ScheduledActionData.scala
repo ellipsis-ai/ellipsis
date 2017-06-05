@@ -12,6 +12,8 @@ import scala.concurrent.{ExecutionContext, Future}
 case class ScheduledActionArgumentData(name: String, value: String)
 
 case class ScheduledActionData(
+                                id: String,
+                                scheduleType: String,
                                 behaviorName: Option[String],
                                 behaviorGroupName: Option[String],
                                 behaviorId: Option[String],
@@ -46,6 +48,8 @@ object ScheduledActionData {
     val data = scheduledMessages.map { ea =>
       Future.successful(
         ScheduledActionData(
+          id = ea.id,
+          scheduleType = "message",
           behaviorName = None,
           behaviorGroupName = None,
           behaviorId = None,
@@ -75,6 +79,8 @@ object ScheduledActionData {
       } yield {
         val arguments = ea.arguments.map { case (key, value) => ScheduledActionArgumentData(key, value) }.toSeq
         ScheduledActionData(
+          id = ea.id,
+          scheduleType = "behavior",
           behaviorName = maybeBehaviorName,
           behaviorGroupName = maybeBehaviorGroupName,
           behaviorId = Some(ea.behavior.id),

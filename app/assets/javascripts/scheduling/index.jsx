@@ -1,22 +1,31 @@
 define(function(require) {
-  var React = require('react'),
+  const React = require('react'),
     Collapsible = require('../shared_ui/collapsible'),
+    FixedFooter = require('../shared_ui/fixed_footer'),
+    ModalScrim = require('../shared_ui/modal_scrim'),
+    PageWithPanels = require('../shared_ui/page_with_panels'),
     ScheduledAction = require('../models/scheduled_action'),
     ScheduledItem = require('./scheduled_item'),
+    ScheduledItemEditor = require('./scheduled_item_editor'),
     Sort = require('../lib/sort');
 
-  return React.createClass({
+  const Scheduling = React.createClass({
     displayName: 'Scheduling',
-    propTypes: {
+    propTypes: Object.assign(PageWithPanels.requiredPropTypes(), {
       teamId: React.PropTypes.string.isRequired,
       scheduledActions: React.PropTypes.arrayOf(React.PropTypes.instanceOf(ScheduledAction)),
       teamTimeZone: React.PropTypes.string
-    },
+    }),
 
     getInitialState: function() {
       return {
-        filterChannel: null
+        filterChannel: null,
+        selectedItem: null
       };
+    },
+
+    getSelectedItem: function() {
+      return this.state.selectedItem;
     },
 
     getScheduleByChannel: function() {
@@ -60,8 +69,74 @@ define(function(require) {
       return this.state.filterChannel === channelName;
     },
 
+    toggleEditor: function(action) {
+      this.setState({
+        selectedItem: action
+      }, () => {
+        this.props.onToggleActivePanel("moreInfo", true);
+      });
+    },
+
+    renderSidebar: function(groups) {
+      return (
+        <div>
+          <div className="phxl mobile-phl mbs">
+            <h5 className="display-inline-block prm">Filter by channel</h5>
+            <span>
+              <button type="button"
+                className="button-s button-shrink"
+                disabled={!this.state.filterChannel}
+                onClick={this.clearFilters}
+              >
+                Clear
+              </button>
+            </span>
+          </div>
+
+          <div>
+            {this.renderFilterList(groups)}
+          </div>
+        </div>
+      );
+    },
+
+    renderFilterList: function(groups) {
+      return groups.map((group) => (
+        <button
+          className={`button-block width-full phxl mobile-phl pvxs mvxs ${
+            this.filterActiveFor(group.channelName) ? "bg-blue type-white " : "type-link "
+            }`}
+          key={`filter-${group.channelName}`}
+          onClick={() => this.toggleFilter(group.channelName)}
+        >
+          {group.channelName}
+        </button>
+      ));
+    },
+
+    renderScheduleList: function(groups) {
+      return groups.map((group) => (
+        <Collapsible key={`group-${group.channelName}`} revealWhen={this.shouldShowChannel(group.channelName)}>
+          <div className="pvl">
+            <div className="phxxxl">
+              <h4>{group.channelName}</h4>
+            </div>
+
+            <div>
+              {group.actions.map((action) => (
+                <div className="pvxl phxxxl border-top" key={`${action.type}-${action.id}`}>
+                  <ScheduledItem scheduledAction={action} onClick={this.toggleEditor} />
+                </div>
+              ))}
+            </div>
+          </div>
+        </Collapsible>
+      ));
+    },
+
     render: function() {
       const groups = this.getScheduleByChannel();
+      const selectedItem = this.getSelectedItem();
       return (
         <div>
           <div className="bg-light">
@@ -76,58 +151,28 @@ define(function(require) {
             <div className="flex-column flex-column-left container container-wide phn">
               <div className="columns">
                 <div className="column column-one-quarter ptxl phn">
-                  <div className="phxl mobile-phl mbs">
-                    <h5 className="display-inline-block prm">Filter by channel</h5>
-                    <span>
-                      <button type="button"
-                        className="button-s button-shrink"
-                        disabled={!this.state.filterChannel}
-                        onClick={this.clearFilters}
-                      >
-                        Clear
-                      </button>
-                    </span>
-                  </div>
-
-                  <div>
-                    {groups.map((group) => (
-                      <button
-                        className={`button-block width-full phxl mobile-phl pvxs mvxs ${
-                            this.filterActiveFor(group.channelName) ? "bg-blue type-white " : "type-link "
-                          }`}
-                        key={`filter-${group.channelName}`}
-                        onClick={() => this.toggleFilter(group.channelName)}
-                      >
-                        {group.channelName}
-                      </button>
-                    ))}
-                  </div>
+                  {this.renderSidebar(groups)}
                 </div>
                 <div className="column column-three-quarters bg-white border-radius-bottom-left ptxl pbxxxxl">
-
-                  {groups.map((group) => (
-                    <Collapsible key={`group-${group.channelName}`} revealWhen={this.shouldShowChannel(group.channelName)}>
-                      <div className="pvl">
-                        <div className="phxxxl">
-                          <h4>{group.channelName}</h4>
-                        </div>
-
-                        <div>
-                          {group.actions.map((action, index) => (
-                            <div className="pvxl phxxxl border-top" key={`action${index}`}>
-                              <ScheduledItem scheduledAction={action} />
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    </Collapsible>
-                  ))}
+                  {this.renderScheduleList(groups)}
                 </div>
               </div>
             </div>
           </div>
+
+          <ModalScrim isActive={this.props.activePanelIsModal} onClick={this.props.onClearActivePanel} />
+          <FixedFooter ref="footer" className="bg-white">
+            <Collapsible
+              ref="moreInfo"
+              revealWhen={this.props.activePanelName === 'moreInfo'}
+            >
+              <ScheduledItemEditor scheduledAction={selectedItem} />
+            </Collapsible>
+          </FixedFooter>
         </div>
       );
     }
   });
+
+  return PageWithPanels.with(Scheduling);
 });

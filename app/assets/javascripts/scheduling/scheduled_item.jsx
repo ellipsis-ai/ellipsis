@@ -6,7 +6,8 @@ define(function(require) {
   return React.createClass({
     displayName: 'ScheduledItem',
     propTypes: {
-      scheduledAction: React.PropTypes.instanceOf(ScheduledAction).isRequired
+      scheduledAction: React.PropTypes.instanceOf(ScheduledAction).isRequired,
+      onClick: React.PropTypes.func.isRequired
     },
 
     getTriggerText: function() {
@@ -76,10 +77,14 @@ define(function(require) {
       }
     },
 
+    toggle: function() {
+      this.props.onClick(this.props.scheduledAction);
+    },
+
     render: function() {
       return (
         <div className="type-s">
-          <div>{this.renderTitle()}</div>
+          <button type="button" className="button-block" onClick={this.toggle}>{this.renderTitle()}</button>
           <div className="mtl">
             <h5>Next two times:</h5>
             <div>
