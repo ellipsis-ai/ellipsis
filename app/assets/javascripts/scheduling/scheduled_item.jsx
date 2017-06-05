@@ -45,7 +45,7 @@ define(function(require) {
       return (
         <span className="">
           <span>Run </span>
-          <span className="box-chat mlxs mrs type-black">{this.getTriggerText()}</span>
+          <span className="box-chat mhs type-black">{this.getTriggerText()}</span>
           <span> {this.getRecurrenceSummary()}</span>
         </span>
       );
