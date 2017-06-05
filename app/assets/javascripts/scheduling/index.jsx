@@ -15,7 +15,7 @@ define(function(require) {
 
     getInitialState: function() {
       return {
-        filterChannels: []
+        filterChannel: null
       };
     },
 
@@ -37,28 +37,27 @@ define(function(require) {
     },
 
     shouldShowChannel: function(channelName) {
-      return this.state.filterChannels.length === 0 ||
-        this.state.filterChannels.includes(channelName);
+      return !this.state.filterChannel || this.state.filterChannel === channelName;
     },
 
     toggleFilter: function(channelName) {
       const newState = {};
       if (this.filterActiveFor(channelName)) {
-        newState.filterChannels = this.state.filterChannels.filter((ea) => ea !== channelName);
+        newState.filterChannel = null;
       } else {
-        newState.filterChannels = this.state.filterChannels.concat([channelName]);
+        newState.filterChannel = channelName;
       }
       this.setState(newState);
     },
 
     clearFilters: function() {
       this.setState({
-        filterChannels: []
+        filterChannel: null
       });
     },
 
     filterActiveFor: function(channelName) {
-      return this.state.filterChannels.includes(channelName);
+      return this.state.filterChannel === channelName;
     },
 
     render: function() {
@@ -82,7 +81,7 @@ define(function(require) {
                     <span>
                       <button type="button"
                         className="button-s button-shrink"
-                        disabled={this.state.filterChannels.length === 0}
+                        disabled={!this.state.filterChannel}
                         onClick={this.clearFilters}
                       >
                         Clear
