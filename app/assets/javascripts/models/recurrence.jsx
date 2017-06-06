@@ -106,6 +106,9 @@ define(function() {
         typeName: "monthly",
         timeOfDay: this.fallbackTimeOfDay(),
         minuteOfHour: null,
+        dayOfWeek: this.dayOfWeek || null,
+        nthDayOfWeek: this.nthDayOfWeek || typeof(this.dayOfWeek) === "number" ? 1 : null,
+        dayOfMonth: typeof(this.dayOfWeek) === "number" ? null : 1,
         daysOfWeek: [],
         month: null,
         timeZone: this.timeZone || (defaultProps ? defaultProps.timeZone : null)
