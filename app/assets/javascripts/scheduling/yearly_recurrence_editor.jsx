@@ -13,14 +13,16 @@ define(function(require) {
     render: function() {
       return (
         <div>
-          <FrequencyEditor
-            recurrence={this.props.recurrence}
-            onChange={this.props.onChange}
-            unit="year"
-            units="years"
-            min={1}
-            max={10}
-          />
+          <div className="mvl">
+            <FrequencyEditor
+              recurrence={this.props.recurrence}
+              onChange={this.props.onChange}
+              unit="year"
+              units="years"
+              min={1}
+              max={10}
+            />
+          </div>
         </div>
       );
     }

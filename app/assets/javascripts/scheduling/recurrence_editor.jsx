@@ -20,34 +20,32 @@ define(function(require) {
       return this.props.recurrence.typeName === typeName;
     },
 
-    setType: function(newType) {
-      this.props.onChange(this.props.recurrence.clone({
-        typeName: newType
-      }));
+    set: function(newProps) {
+      this.props.onChange(this.props.recurrence.clone(newProps));
     },
 
     setTypeMinutely: function() {
-      this.setType("minutely");
+      this.props.onChange(this.props.recurrence.becomeMinutely());
     },
 
     setTypeHourly: function() {
-      this.setType("hourly");
+      this.props.onChange(this.props.recurrence.becomeHourly());
     },
 
     setTypeDaily: function() {
-      this.setType("daily");
+      this.props.onChange(this.props.recurrence.becomeDaily());
     },
 
     setTypeWeekly: function() {
-      this.setType("weekly");
+      this.props.onChange(this.props.recurrence.becomeWeekly());
     },
 
     setTypeMonthly: function() {
-      this.setType("monthly");
+      this.props.onChange(this.props.recurrence.becomeMonthly());
     },
 
     setTypeYearly: function() {
-      this.setType("yearly");
+      this.props.onChange(this.props.recurrence.becomeYearly());
     },
 
     renderRecurrenceEditorForType: function() {

@@ -38,6 +38,75 @@ define(function() {
     clone(props) {
       return new Recurrence(Object.assign({}, this, props));
     }
+
+    becomeMinutely() {
+      return this.clone({
+        typeName: "minutely",
+        timeOfDay: null,
+        timeZone: null,
+        minuteOfHour: null,
+        dayOfWeek: null,
+        dayOfMonth: null,
+        nthDayOfWeek: null,
+        month: null,
+        daysOfWeek: []
+      });
+    }
+
+    becomeHourly() {
+      return this.clone({
+        typeName: "hourly",
+        timeOfDay: null,
+        timeZone: null,
+        dayOfWeek: null,
+        dayOfMonth: null,
+        nthDayOfWeek: null,
+        month: null,
+        daysOfWeek: []
+      });
+    }
+
+    becomeDaily() {
+      return this.clone({
+        typeName: "daily",
+        minuteOfHour: null,
+        dayOfWeek: null,
+        dayOfMonth: null,
+        nthDayOfWeek: null,
+        month: null,
+        daysOfWeek: []
+      });
+    }
+
+    becomeWeekly() {
+      return this.clone({
+        typeName: "weekly",
+        minuteOfHour: null,
+        dayOfWeek: null,
+        dayOfMonth: null,
+        nthDayOfWeek: null,
+        month: null
+      });
+    }
+
+    becomeMonthly() {
+      return this.clone({
+        typeName: "monthly",
+        minuteOfHour: null,
+        daysOfWeek: [],
+        month: null
+      });
+    }
+
+    becomeYearly() {
+      return this.clone({
+        typeName: "yearly",
+        minuteOfHour: null,
+        dayOfWeek: null,
+        nthDayOfWeek: null,
+        daysOfWeek: []
+      });
+    }
   }
 
   return Recurrence;
