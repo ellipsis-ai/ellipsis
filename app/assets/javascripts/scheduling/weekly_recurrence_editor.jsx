@@ -2,6 +2,7 @@ define(function(require) {
   var React = require('react'),
     FrequencyEditor = require('./frequency_editor'),
     TimeOfDayEditor = require('./time_of_day_editor'),
+    WeekdayEditor = require('./weekday_editor'),
     Recurrence = require('../models/recurrence');
 
   return React.createClass({
@@ -23,6 +24,12 @@ define(function(require) {
               units="weeks"
               min={1}
               max={520}
+            />
+          </div>
+          <div className="mvl">
+            <WeekdayEditor
+              recurrence={this.props.recurrence}
+              onChange={this.props.onChange}
             />
           </div>
           <div className="mvl">

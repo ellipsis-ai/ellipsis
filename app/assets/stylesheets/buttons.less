@@ -13,7 +13,8 @@ button, a.button {
 button,
 a.button,
 .form-select-element,
-.form-toggle-group {
+.form-toggle-group,
+.checkbox-button {
   font-size: @type-m;
   line-height: @xl;
   padding: (@s - @border-width + 1) (@l - @border-width) (@s - @border-width - 1);
@@ -125,7 +126,8 @@ button.button-dropdown-trigger.button-s.button-dropdown-trigger-borderless {
 a.button-s,
 button.button-s,
 .form-select-s .form-select-element,
-.form-toggle-group-s {
+.form-toggle-group-s,
+.checkbox-button-s {
   font-size: @type-s;
   line-height: @l;
   padding: (@xs - @border-width + 1) (@m - @border-width) (@xs - @border-width - 1);
@@ -490,9 +492,11 @@ a.button-inverted {
 }
 
 button.button-primary,
-a.button-primary {
+a.button-primary,
+.checkbox-button-checked {
   background-color: @blue-medium;
   border-color: @blue-medium;
+  color: @white;
 }
 
 button.button-primary:focus,
@@ -631,14 +635,23 @@ button.button-activated {
   }
 }
 
+.form-toggle-group-s button.button-toggle,
+.checkbox-button-s {
+  font-size: @type-xs;
+  line-height: @line-height-xs;
+}
+
+.checkbox-button-s {
+  vertical-align: middle;
+  padding: 3px @xs;
+}
+
 .form-toggle-group-s {
   padding: 0;
   button.button-toggle {
     margin: 1px 0 0 0;
     height: 20px;
     padding: 2px @s;
-    font-size: @type-xs;
-    line-height: @line-height-xs;
 
     &:first-child {
       border-top-left-radius: @border-radius-tiny;

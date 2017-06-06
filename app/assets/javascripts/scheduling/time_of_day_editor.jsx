@@ -140,13 +140,13 @@ define(function(require) {
             onChange={this.onChangeHour}
           />
           <MinuteInput value={this.getMinute()} onChange={this.setMinute} />
-          <span className="align-button mlm">
+          <span className="align-button mhm">
             <ToggleGroup className="form-toggle-group-s">
               <ToggleGroup.Item onClick={this.setAM} label="AM" activeWhen={this.isAM()} />
               <ToggleGroup.Item onClick={this.setPM} label="PM" activeWhen={this.isPM()} />
             </ToggleGroup>
           </span>
-          <span className="align-button mlm">
+          <span className="align-button">
             {this.props.teamTimeZone}
           </span>
         </div>
