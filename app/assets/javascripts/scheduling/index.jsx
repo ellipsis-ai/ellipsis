@@ -184,6 +184,7 @@ define(function(require) {
                 scheduledAction={selectedItem}
                 onChange={this.updateSelectedItem}
                 onCancel={this.cancelEditor}
+                teamTimeZone={this.props.teamTimeZone || "America/New_York"}
               />
             </Collapsible>
           </FixedFooter>

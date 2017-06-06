@@ -13,7 +13,8 @@ define(function(require) {
     displayName: 'RecurrenceEditor',
     propTypes: {
       recurrence: React.PropTypes.instanceOf(Recurrence).isRequired,
-      onChange: React.PropTypes.func.isRequired
+      onChange: React.PropTypes.func.isRequired,
+      teamTimeZone: React.PropTypes.string.isRequired
     },
 
     typeMatches: function(typeName) {
@@ -33,34 +34,66 @@ define(function(require) {
     },
 
     setTypeDaily: function() {
-      this.props.onChange(this.props.recurrence.becomeDaily());
+      this.props.onChange(this.props.recurrence.becomeDaily({
+        timeZone: this.props.teamTimeZone
+      }));
     },
 
     setTypeWeekly: function() {
-      this.props.onChange(this.props.recurrence.becomeWeekly());
+      this.props.onChange(this.props.recurrence.becomeWeekly({
+        timeZone: this.props.teamTimeZone
+      }));
     },
 
     setTypeMonthly: function() {
-      this.props.onChange(this.props.recurrence.becomeMonthly());
+      this.props.onChange(this.props.recurrence.becomeMonthly({
+        timeZone: this.props.teamTimeZone
+      }));
     },
 
     setTypeYearly: function() {
-      this.props.onChange(this.props.recurrence.becomeYearly());
+      this.props.onChange(this.props.recurrence.becomeYearly({
+        timeZone: this.props.teamTimeZone
+      }));
     },
 
     renderRecurrenceEditorForType: function() {
       if (this.typeMatches("minutely")) {
-        return (<MinutelyRecurrenceEditor recurrence={this.props.recurrence} onChange={this.props.onChange} />);
+        return (
+          <MinutelyRecurrenceEditor recurrence={this.props.recurrence} onChange={this.props.onChange} />
+        );
       } else if (this.typeMatches("hourly")) {
-        return (<HourlyRecurrenceEditor recurrence={this.props.recurrence} onChange={this.props.onChange} />);
+        return (
+          <HourlyRecurrenceEditor recurrence={this.props.recurrence} onChange={this.props.onChange} />
+        );
       } else if (this.typeMatches("daily")) {
-        return (<DailyRecurrenceEditor recurrence={this.props.recurrence} onChange={this.props.onChange} />);
+        return (
+          <DailyRecurrenceEditor recurrence={this.props.recurrence}
+            onChange={this.props.onChange}
+            teamTimeZone={this.props.teamTimeZone}
+          />
+        );
       } else if (this.typeMatches("weekly")) {
-        return (<WeeklyRecurrenceEditor recurrence={this.props.recurrence} onChange={this.props.onChange} />);
+        return (
+          <WeeklyRecurrenceEditor recurrence={this.props.recurrence}
+            onChange={this.props.onChange}
+            teamTimeZone={this.props.teamTimeZone}
+          />
+        );
       } else if (this.typeMatches("monthly")) {
-        return (<MonthlyRecurrenceEditor recurrence={this.props.recurrence} onChange={this.props.onChange} />);
+        return (
+          <MonthlyRecurrenceEditor recurrence={this.props.recurrence}
+            onChange={this.props.onChange}
+            teamTimeZone={this.props.teamTimeZone}
+          />
+        );
       } else if (this.typeMatches("yearly")) {
-        return (<YearlyRecurrenceEditor recurrence={this.props.recurrence} onChange={this.props.onChange} />);
+        return (
+          <YearlyRecurrenceEditor recurrence={this.props.recurrence}
+            onChange={this.props.onChange}
+            teamTimeZone={this.props.teamTimeZone}
+          />
+        );
       }
     },
 

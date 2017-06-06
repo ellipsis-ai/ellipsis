@@ -9,7 +9,8 @@ define(function(require) {
     propTypes: {
       scheduledAction: React.PropTypes.instanceOf(ScheduledAction),
       onChange: React.PropTypes.func.isRequired,
-      onCancel: React.PropTypes.func.isRequired
+      onCancel: React.PropTypes.func.isRequired,
+      teamTimeZone: React.PropTypes.string.isRequired
     },
 
     shouldRenderItem: function() {
@@ -37,6 +38,7 @@ define(function(require) {
               <RecurrenceEditor
                 onChange={this.updateRecurrence}
                 recurrence={this.props.scheduledAction.recurrence}
+                teamTimeZone={this.props.teamTimeZone}
               />
             </div>
 

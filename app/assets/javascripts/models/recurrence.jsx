@@ -7,10 +7,7 @@ define(function() {
         displayString: "",
         frequency: 1,
         typeName: "daily",
-        timeOfDay: {
-          hour: 9,
-          minute: 0
-        },
+        timeOfDay: Recurrence.defaultTimeOfDay(),
         timeZone: null,
         minuteOfHour: null,
         dayOfWeek: null,
@@ -35,6 +32,10 @@ define(function() {
       });
     }
 
+    fallbackTimeOfDay() {
+      return this.timeOfDay || Recurrence.defaultTimeOfDay();
+    }
+
     clone(props) {
       return new Recurrence(Object.assign({}, this, props));
     }
@@ -54,8 +55,15 @@ define(function() {
     }
 
     becomeHourly() {
+      let minuteOfHour;
+      if (typeof(this.minuteOfHour) === "number") {
+        minuteOfHour = this.minuteOfHour;
+      } else {
+        minuteOfHour = 0;
+      }
       return this.clone({
         typeName: "hourly",
+        minuteOfHour: minuteOfHour,
         timeOfDay: null,
         timeZone: null,
         dayOfWeek: null,
@@ -66,46 +74,58 @@ define(function() {
       });
     }
 
-    becomeDaily() {
+    becomeDaily(defaultProps) {
       return this.clone({
         typeName: "daily",
+        timeOfDay: this.fallbackTimeOfDay(),
         minuteOfHour: null,
         dayOfWeek: null,
         dayOfMonth: null,
         nthDayOfWeek: null,
         month: null,
-        daysOfWeek: []
+        daysOfWeek: [],
+        timeZone: this.timeZone || (defaultProps ? defaultProps.timeZone : null)
       });
     }
 
-    becomeWeekly() {
+    becomeWeekly(defaultProps) {
       return this.clone({
         typeName: "weekly",
+        timeOfDay: this.fallbackTimeOfDay(),
         minuteOfHour: null,
         dayOfWeek: null,
         dayOfMonth: null,
         nthDayOfWeek: null,
-        month: null
+        month: null,
+        timeZone: this.timeZone || (defaultProps ? defaultProps.timeZone : null)
       });
     }
 
-    becomeMonthly() {
+    becomeMonthly(defaultProps) {
       return this.clone({
         typeName: "monthly",
+        timeOfDay: this.fallbackTimeOfDay(),
         minuteOfHour: null,
         daysOfWeek: [],
-        month: null
+        month: null,
+        timeZone: this.timeZone || (defaultProps ? defaultProps.timeZone : null)
       });
     }
 
-    becomeYearly() {
+    becomeYearly(defaultProps) {
       return this.clone({
         typeName: "yearly",
+        timeOfDay: this.fallbackTimeOfDay(),
         minuteOfHour: null,
         dayOfWeek: null,
         nthDayOfWeek: null,
-        daysOfWeek: []
+        daysOfWeek: [],
+        timeZone: this.timeZone || (defaultProps ? defaultProps.timeZone : null)
       });
+    }
+
+    static defaultTimeOfDay() {
+      return { hour: 9, minute: 0 };
     }
   }
 
