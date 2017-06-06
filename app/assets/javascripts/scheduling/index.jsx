@@ -28,6 +28,12 @@ define(function(require) {
       return this.state.selectedItem;
     },
 
+    updateSelectedItem: function(newItem) {
+      this.setState({
+        selectedItem: newItem
+      });
+    },
+
     getScheduleByChannel: function() {
       const groupsByName = {};
       this.props.scheduledActions.forEach((action) => {
@@ -74,6 +80,14 @@ define(function(require) {
         selectedItem: action
       }, () => {
         this.props.onToggleActivePanel("moreInfo", true);
+      });
+    },
+
+    cancelEditor: function() {
+      this.props.onClearActivePanel(() => {
+        this.setState({
+          selectedItem: null
+        });
       });
     },
 
@@ -166,7 +180,11 @@ define(function(require) {
               ref="moreInfo"
               revealWhen={this.props.activePanelName === 'moreInfo'}
             >
-              <ScheduledItemEditor scheduledAction={selectedItem} />
+              <ScheduledItemEditor
+                scheduledAction={selectedItem}
+                onChange={this.updateSelectedItem}
+                onCancel={this.cancelEditor}
+              />
             </Collapsible>
           </FixedFooter>
         </div>

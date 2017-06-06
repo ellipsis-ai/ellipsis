@@ -34,6 +34,10 @@ define(function() {
         daysOfWeek: { value: initialProps.daysOfWeek, enumerable: true }
       });
     }
+
+    clone(props) {
+      return new Recurrence(Object.assign({}, this, props));
+    }
   }
 
   return Recurrence;

@@ -38,6 +38,10 @@ define(function(require) {
       });
     }
 
+    clone(props) {
+      return new ScheduledAction(Object.assign({}, this, props));
+    }
+
     static fromJson(props) {
       const materializedProps = Object.assign(props, {
         recurrence: new Recurrence(props.recurrence),
