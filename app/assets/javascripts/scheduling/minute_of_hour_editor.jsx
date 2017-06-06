@@ -1,6 +1,6 @@
 define(function(require) {
   var React = require('react'),
-    FormInput = require('../form/input'),
+    MinuteInput = require('../form/minute_input'),
     Recurrence = require('../models/recurrence');
 
   return React.createClass({
@@ -14,27 +14,9 @@ define(function(require) {
       return this.props.recurrence.minuteOfHour;
     },
 
-    getTextValue: function() {
-      const minute = this.getValue() || 0;
-      let str = minute.toString().padStart(2, "0");
-      return `:${str}`;
-    },
-
-    getValidInt: function(int) {
-      if (isNaN(int) || int < 0) {
-        return 0;
-      } else if (int > 59) {
-        return 59;
-      } else {
-        return int;
-      }
-    },
-
     onChange: function(newValue) {
-      const stripped = newValue.replace(/^:/, '').substr(-2, 2);
-      const newMinute = this.getValidInt(parseInt(stripped, 10));
       this.props.onChange(this.props.recurrence.clone({
-        minuteOfHour: newMinute
+        minuteOfHour: newValue
       }));
     },
 
@@ -53,11 +35,7 @@ define(function(require) {
       return (
         <div>
           <span className="align-button mrm">At</span>
-          <FormInput
-            className="width-5 form-input-borderless align-c"
-            value={this.getTextValue()}
-            onChange={this.onChange}
-          />
+          <MinuteInput value={this.getValue()} onChange={this.onChange} />
           <span className="align-button mlm">{this.getSuffix()}</span>
         </div>
       );
