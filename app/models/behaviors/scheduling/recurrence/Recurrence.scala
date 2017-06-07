@@ -490,6 +490,11 @@ object MonthlyByNthDayOfWeek {
 
 case class Yearly(id: String, frequency: Int, monthDay: MonthDay, timeOfDay: LocalTime, timeZone: ZoneId) extends RecurrenceWithTimeOfDay {
 
+  override def displayString: String = {
+    val frequencyString = if (frequency == 1) { "year" } else { s"$frequency years" }
+    s"every $frequencyString on ${monthDay.format(Recurrence.monthDayFormatter)} at ${timeOfDay.format(Recurrence.timeFormatter)} ${stringFor(timeZone)}"
+  }
+
   def copyWithEmptyId: Yearly = copy(id = "")
 
   val month = monthDay.getMonthValue
@@ -570,6 +575,7 @@ object Recurrence {
 
   val timeFormatter = DateTimeFormatter.ofPattern("h:mma")
   val timeFormatterWithZone = DateTimeFormatter.ofPattern("h:mma z")
+  val monthDayFormatter = DateTimeFormatter.ofPattern("MMMM d")
 
   def zoneOffsetAt(when: OffsetDateTime, timeZone: ZoneId): ZoneOffset = {
     timeZone.getRules.getOffset(when.toInstant);
