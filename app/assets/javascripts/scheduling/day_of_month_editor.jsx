@@ -2,6 +2,7 @@ define(function(require) {
   var React = require('react'),
     DayOfMonthInput = require('../form/day_of_month_input'),
     Select = require('../form/select'),
+    OptionalInt = require('../models/optional_int'),
     Recurrence = require('../models/recurrence');
 
   return React.createClass({
@@ -12,11 +13,11 @@ define(function(require) {
     },
 
     isNthWeekdayOfMonth: function() {
-      return typeof this.props.recurrence.nthDayOfWeek === "number" || typeof this.props.recurrence.dayOfWeek === "number";
+      return Number.isInteger(this.props.recurrence.nthDayOfWeek) || Number.isInteger(this.props.recurrence.dayOfWeek);
     },
 
     getDay: function() {
-      return [this.props.recurrence.dayOfMonth, this.props.recurrence.nthDayOfWeek].find((ea) => typeof(ea) === "number");
+      return [this.props.recurrence.dayOfMonth, this.props.recurrence.nthDayOfWeek].find(Number.isInteger);
     },
 
     getDayOfWeekWithFallback: function() {
@@ -41,15 +42,23 @@ define(function(require) {
 
     onChangeDayOfMonth: function(dayNumber) {
       this.props.onChange(this.props.recurrence.clone({
+        typeName: "monthly_by_day_of_month",
         dayOfMonth: dayNumber,
         nthDayOfWeek: null,
         dayOfWeek: null
       }));
     },
 
+    limitNthWeekdayNumber: function(dayNumber) {
+      const lastDigit = dayNumber % 10;
+      const limitMax = Math.min(lastDigit, 5);
+      return Math.max(1, limitMax);
+    },
+
     onChangeNthWeekdayOfMonth: function(dayNumber) {
-      const fixedDayNumber = typeof dayNumber === "number" ? Math.max(dayNumber, 5) : null;
+      const fixedDayNumber = Number.isInteger(dayNumber) ? this.limitNthWeekdayNumber(dayNumber) : null;
       this.props.onChange(this.props.recurrence.clone({
+        typeName: "monthly_by_nth_day_of_week",
         dayOfMonth: null,
         nthDayOfWeek: fixedDayNumber,
         dayOfWeek: this.getDayOfWeekWithFallback()
@@ -59,23 +68,19 @@ define(function(require) {
     onChangeDayType: function(newValue) {
       if (newValue === "dayOfMonth") {
         this.props.onChange(this.props.recurrence.clone({
+          typeName: "monthly_by_day_of_month",
           dayOfMonth: this.getDay(),
           nthDayOfWeek: null,
           dayOfWeek: null
         }));
       } else {
         const parsed = newValue.match(/^weekday(\d)$/);
-        let newDay;
-        if (parsed) {
-          newDay = parseInt(parsed, 10);
-        }
-        if (isNaN(newDay)) {
-          newDay = 1;
-        }
+        const newDay = OptionalInt.fromStringWithDefault(parsed ? parsed[1] : "", 1);
         this.props.onChange(this.props.recurrence.clone({
+          typeName: "monthly_by_nth_day_of_week",
           dayOfMonth: null,
-          nthDayOfWeek: Math.min(5, this.getDay()),
-          dayOfWeek: newDay
+          nthDayOfWeek: this.limitNthWeekdayNumber(this.getDay()),
+          dayOfWeek: newDay.value
         }));
       }
     },

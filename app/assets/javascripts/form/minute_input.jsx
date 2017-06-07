@@ -1,6 +1,7 @@
 define(function(require) {
   var React = require('react'),
-    FormInput = require('./input');
+    FormInput = require('./input'),
+    OptionalInt = require('../models/optional_int');
 
   return React.createClass({
     displayName: 'MinuteInput',
@@ -11,7 +12,7 @@ define(function(require) {
 
     getTextValue: function() {
       const minute = this.props.value;
-      if (typeof minute === "number") {
+      if (Number.isInteger(minute)) {
         return minute.toString().padStart(2, "0");
       } else {
         return "";
@@ -22,14 +23,8 @@ define(function(require) {
       const minutesRegex = /^([0-5]?[0-9])$/;
       const parsed = newValue.substr(-2, 2).match(minutesRegex) ||
         (newValue.substr(-3, 1) + newValue.substr(-1, 1)).match(minutesRegex);
-      let minute;
-      if (parsed) {
-        minute = parseInt(parsed[1], 10);
-      }
-      if (isNaN(minute)) {
-        minute = null;
-      }
-      this.props.onChange(minute);
+      const minute = OptionalInt.fromString(parsed ? parsed[1] : "");
+      this.props.onChange(minute.value);
     },
 
     render: function() {

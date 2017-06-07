@@ -1,6 +1,7 @@
 define(function(require) {
   var React = require('react'),
-    FormInput = require('./input');
+    FormInput = require('./input'),
+    OptionalInt = require('../models/optional_int');
 
   return React.createClass({
     displayName: 'DayOfMonthInput',
@@ -11,14 +12,7 @@ define(function(require) {
 
     onChange: function(newValue) {
       const parsed = newValue.substr(-2, 2).match(/(3[0-1]|[1-2][0-9]|[1-9])$/);
-      let day;
-      if (parsed) {
-        day = parseInt(parsed, 10);
-      }
-      if (!Number.isInteger(day)) {
-        day = null;
-      }
-      this.props.onChange(day);
+      this.props.onChange(OptionalInt.fromString(parsed ? parsed[1] : "").value);
     },
 
     getTextValue: function() {
@@ -52,7 +46,7 @@ define(function(require) {
             value={this.getTextValue()}
             onChange={this.onChange}
           />
-          <span className="align-button type-label">{this.getOrdinalSuffix()}</span>
+          <span className="align-button type-label type-monospace">{this.getOrdinalSuffix()}</span>
         </span>
       );
     }

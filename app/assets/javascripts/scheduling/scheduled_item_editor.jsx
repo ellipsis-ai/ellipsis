@@ -34,7 +34,7 @@ define(function(require) {
             <ScheduledItemTitle scheduledAction={this.props.scheduledAction}/>
           </div>
           <div className="column column-three-quarters mobile-column-full plxxl">
-            <div className="pbxl">
+            <div>
               <RecurrenceEditor
                 onChange={this.updateRecurrence}
                 recurrence={this.props.scheduledAction.recurrence}
@@ -42,7 +42,7 @@ define(function(require) {
               />
             </div>
 
-            <div className="mvxl">
+            <div className="mtxxl">
               <button type="button" className="button-primary" onClick={this.cancel}>
                 Cancel
               </button>

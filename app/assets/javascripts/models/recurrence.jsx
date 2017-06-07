@@ -55,12 +55,7 @@ define(function() {
     }
 
     becomeHourly() {
-      let minuteOfHour;
-      if (typeof(this.minuteOfHour) === "number") {
-        minuteOfHour = this.minuteOfHour;
-      } else {
-        minuteOfHour = 0;
-      }
+      const minuteOfHour = Number.isInteger(this.minuteOfHour) ? this.minuteOfHour : 0;
       return this.clone({
         typeName: "hourly",
         minuteOfHour: minuteOfHour,
@@ -101,14 +96,14 @@ define(function() {
       });
     }
 
-    becomeMonthly(defaultProps) {
+    becomeMonthlyByDayOfMonth(defaultProps) {
       return this.clone({
-        typeName: "monthly",
+        typeName: "monthly_by_day_of_month",
         timeOfDay: this.fallbackTimeOfDay(),
         minuteOfHour: null,
-        dayOfWeek: this.dayOfWeek || null,
-        nthDayOfWeek: this.nthDayOfWeek || typeof(this.dayOfWeek) === "number" ? 1 : null,
-        dayOfMonth: typeof(this.dayOfWeek) === "number" ? null : 1,
+        dayOfWeek: null,
+        nthDayOfWeek: null,
+        dayOfMonth: this.dayOfMonth || 1,
         daysOfWeek: [],
         month: null,
         timeZone: this.timeZone || (defaultProps ? defaultProps.timeZone : null)
@@ -123,6 +118,8 @@ define(function() {
         dayOfWeek: null,
         nthDayOfWeek: null,
         daysOfWeek: [],
+        dayOfMonth: this.dayOfMonth || 1,
+        month: 1,
         timeZone: this.timeZone || (defaultProps ? defaultProps.timeZone : null)
       });
     }

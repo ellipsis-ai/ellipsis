@@ -20,7 +20,7 @@ define(function(require) {
 
     getTextValue: function() {
       const freq = this.getFrequency();
-      if (typeof freq === 'number') {
+      if (Number.isInteger(freq)) {
         return freq.toString();
       } else {
         return "";

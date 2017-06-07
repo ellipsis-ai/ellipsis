@@ -24,7 +24,7 @@ define(function(require) {
     },
 
     getMonthText: function() {
-      return typeof this.props.recurrence.month === "number" ? this.props.recurrence.month.toString() : "";
+      return Number.isInteger(this.props.recurrence.month) ? this.props.recurrence.month.toString() : "";
     },
 
     getMaxDayForMonth: function(monthEnumValue) {
@@ -67,12 +67,14 @@ define(function(require) {
             <DayOfMonthInput value={this.getDay()} onChange={this.onChangeDay} />
           </span>
           <span className="align-button mrm">of</span>
-          <Select className="form-select-s" value={this.getMonthText()} onChange={this.onChangeMonth}>
-            <option value="" />
-            {MONTH_NAMES.map((name, index) => (
-              <option key={name} value={MONTH_ENUM_VALUES[index].toString()}>{name}</option>
-            ))}
-          </Select>
+          <div className="align-button height-xl">
+            <Select className="form-select-s" value={this.getMonthText()} onChange={this.onChangeMonth}>
+              <option value="" />
+              {MONTH_NAMES.map((name, index) => (
+                <option key={name} value={MONTH_ENUM_VALUES[index].toString()}>{name}</option>
+              ))}
+            </Select>
+          </div>
         </div>
       );
     }

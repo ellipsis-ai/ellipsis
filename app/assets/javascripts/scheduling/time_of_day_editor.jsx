@@ -3,6 +3,7 @@ define(function(require) {
     FormInput = require('../form/input'),
     MinuteInput = require('../form/minute_input'),
     ToggleGroup = require('../form/toggle_group'),
+    OptionalInt = require('../models/optional_int'),
     Recurrence = require('../models/recurrence');
 
   return React.createClass({
@@ -17,7 +18,7 @@ define(function(require) {
 
     updateLastValidHour: function() {
       const hour = this.getHour();
-      if (typeof (hour) === "number") {
+      if (Number.isInteger(hour)) {
         this.lastValidHour = hour;
       }
     },
@@ -32,7 +33,7 @@ define(function(require) {
 
     isAM: function() {
       const hour = this.getHour();
-      if (typeof hour === "number") {
+      if (Number.isInteger(hour)) {
         return hour < 12;
       } else {
         return this.lastValidHour < 12;
@@ -44,7 +45,7 @@ define(function(require) {
       let newHour;
       if (hour && hour >= 12) {
         newHour = hour - 12;
-      } else if (typeof hour === "number") {
+      } else if (Number.isInteger(hour)) {
         newHour = hour;
       } else {
         newHour = 0;
@@ -54,7 +55,7 @@ define(function(require) {
 
     isPM: function() {
       const hour = this.getHour();
-      if (typeof hour === "number") {
+      if (Number.isInteger(hour)) {
         return hour >= 12;
       } else {
         return this.lastValidHour >= 12;
@@ -66,7 +67,7 @@ define(function(require) {
       let newHour;
       if (hour && hour < 12) {
         newHour = hour + 12;
-      } else if (typeof hour === "number") {
+      } else if (Number.isInteger(hour)) {
         newHour = hour;
       } else {
         newHour = 12;
@@ -107,7 +108,7 @@ define(function(require) {
         str = (hour - 12).toString();
       } else if (hour === 0) {
         str = "12";
-      } else if (typeof hour === "number") {
+      } else if (Number.isInteger(hour)) {
         str = hour.toString();
       }
       return str;
@@ -116,18 +117,16 @@ define(function(require) {
     onChangeHour: function(newValue) {
       const parsed = newValue.substr(-2, 2).match(/^(1[0-2]|[1-9])$/) ||
         newValue.substr(-1, 1).match(/^([1-9])$/);
-      let hour;
-      if (parsed) {
-        hour = parseInt(parsed[1], 10);
+      const hour = OptionalInt.fromString(parsed ? parsed[1] : "");
+      let adjustedValue;
+      if (this.isAM() && hour.is((int) => int === 12)) {
+        adjustedValue = 0;
+      } else if (this.isPM() && hour.is((int) => int < 12)) {
+        adjustedValue = hour.value + 12;
+      } else {
+        adjustedValue = hour.value;
       }
-      if (isNaN(hour)) {
-        hour = null;
-      } else if (this.isAM() && hour === 12) {
-        hour = 0;
-      } else if (this.isPM() && hour < 12) {
-        hour += 12;
-      }
-      this.setHour(hour);
+      this.setHour(adjustedValue);
     },
 
     render: function() {
