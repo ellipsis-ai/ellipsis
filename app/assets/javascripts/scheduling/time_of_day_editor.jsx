@@ -2,8 +2,8 @@ define(function(require) {
   var React = require('react'),
     FormInput = require('../form/input'),
     MinuteInput = require('../form/minute_input'),
+    Hour = require('../models/hour'),
     ToggleGroup = require('../form/toggle_group'),
-    OptionalInt = require('../models/optional_int'),
     Recurrence = require('../models/recurrence');
 
   return React.createClass({
@@ -33,45 +33,21 @@ define(function(require) {
 
     isAM: function() {
       const hour = this.getHour();
-      if (Number.isInteger(hour)) {
-        return hour < 12;
-      } else {
-        return this.lastValidHour < 12;
-      }
+      return Hour.isAM(Number.isInteger(hour) ? hour : this.lastValidHour);
     },
 
     setAM: function() {
-      const hour = this.getHour();
-      let newHour;
-      if (hour && hour >= 12) {
-        newHour = hour - 12;
-      } else if (Number.isInteger(hour)) {
-        newHour = hour;
-      } else {
-        newHour = 0;
-      }
+      const newHour = Hour.convertToAM(this.getHour());
       this.setHour(newHour);
     },
 
     isPM: function() {
       const hour = this.getHour();
-      if (Number.isInteger(hour)) {
-        return hour >= 12;
-      } else {
-        return this.lastValidHour >= 12;
-      }
+      return Hour.isPM(Number.isInteger(hour) ? hour : this.lastValidHour);
     },
 
     setPM: function() {
-      const hour = this.getHour();
-      let newHour;
-      if (hour && hour < 12) {
-        newHour = hour + 12;
-      } else if (Number.isInteger(hour)) {
-        newHour = hour;
-      } else {
-        newHour = 12;
-      }
+      const newHour = Hour.convertToPM(this.getHour());
       this.setHour(newHour);
     },
 
@@ -103,30 +79,18 @@ define(function(require) {
 
     getHourTextValue: function() {
       const hour = this.getHour();
-      let str = "";
-      if (hour > 12) {
-        str = (hour - 12).toString();
-      } else if (hour === 0) {
-        str = "12";
-      } else if (Number.isInteger(hour)) {
-        str = hour.toString();
-      }
-      return str;
+      return new Hour(hour).toString();
     },
 
     onChangeHour: function(newValue) {
-      const parsed = newValue.substr(-2, 2).match(/^(1[0-2]|[1-9])$/) ||
-        newValue.substr(-1, 1).match(/^([1-9])$/);
-      const hour = OptionalInt.fromString(parsed ? parsed[1] : "");
-      let adjustedValue;
-      if (this.isAM() && hour.is((int) => int === 12)) {
-        adjustedValue = 0;
-      } else if (this.isPM() && hour.is((int) => int < 12)) {
-        adjustedValue = hour.value + 12;
+      const hour = Hour.fromString(newValue);
+      if (this.isAM()) {
+        this.setHour(hour.convertToAMValue());
+      } else if (this.isPM()) {
+        this.setHour(hour.convertToPMValue());
       } else {
-        adjustedValue = hour.value;
+        this.setHour(hour.value);
       }
-      this.setHour(adjustedValue);
     },
 
     render: function() {
