@@ -33,13 +33,11 @@ define(function(require) {
     },
 
     toggleDay: function(day) {
-      let newWeekdays;
       if (this.weekdaysInclude(day)) {
-        newWeekdays = this.getWeekdays().filter((ea) => ea !== day);
+        this.onChange(this.getWeekdays().filter((ea) => ea !== day));
       } else {
-        newWeekdays = this.getWeekdays().concat(day);
+        this.onChange(this.getWeekdays().concat(day));
       }
-      this.onChange(newWeekdays);
     },
 
     toggleMonday: function() {
