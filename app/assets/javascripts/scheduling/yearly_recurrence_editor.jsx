@@ -1,6 +1,7 @@
 define(function(require) {
   var React = require('react'),
     FrequencyEditor = require('./frequency_editor'),
+    MonthDayEditor = require('./month_day_editor'),
     TimeOfDayEditor = require('./time_of_day_editor'),
     Recurrence = require('../models/recurrence');
 
@@ -23,6 +24,12 @@ define(function(require) {
               units="years"
               min={1}
               max={10}
+            />
+          </div>
+          <div className="mvl">
+            <MonthDayEditor
+              recurrence={this.props.recurrence}
+              onChange={this.props.onChange}
             />
           </div>
           <div className="mvl">

@@ -1,6 +1,6 @@
 define(function(require) {
   var React = require('react'),
-    FormInput = require('../form/input'),
+    DayOfMonthInput = require('../form/day_of_month_input'),
     Select = require('../form/select'),
     Recurrence = require('../models/recurrence');
 
@@ -23,15 +23,6 @@ define(function(require) {
       return this.props.recurrence.dayOfWeek || 1;
     },
 
-    getTextDay: function() {
-      const day = this.getDay();
-      if (typeof day === 'number') {
-        return day.toString();
-      } else {
-        return "";
-      }
-    },
-
     getTextDayType: function() {
       if (this.isNthWeekdayOfMonth()) {
         return `weekday${this.getDayOfWeekWithFallback()}`;
@@ -48,50 +39,21 @@ define(function(require) {
       }
     },
 
-    onChangeDayOfMonth: function(newValue) {
-      const parsed = newValue.substr(-2, 2).match(/(3[0-1]|[1-2][0-9]|[1-9])$/);
-      let day;
-      if (parsed) {
-        day = parseInt(parsed, 10);
-      }
-      if (isNaN(day)) {
-        day = null;
-      }
+    onChangeDayOfMonth: function(dayNumber) {
       this.props.onChange(this.props.recurrence.clone({
-        dayOfMonth: day,
+        dayOfMonth: dayNumber,
         nthDayOfWeek: null,
         dayOfWeek: null
       }));
     },
 
-    onChangeNthWeekdayOfMonth: function(newValue) {
-      const parsed = newValue.substr(-1, 1).match(/^([1-5])$/);
-      let day;
-      if (parsed) {
-        day = parseInt(parsed, 10);
-      }
-      if (isNaN(day)) {
-        day = null;
-      }
+    onChangeNthWeekdayOfMonth: function(dayNumber) {
+      const fixedDayNumber = typeof dayNumber === "number" ? Math.max(dayNumber, 5) : null;
       this.props.onChange(this.props.recurrence.clone({
         dayOfMonth: null,
-        nthDayOfWeek: day,
+        nthDayOfWeek: fixedDayNumber,
         dayOfWeek: this.getDayOfWeekWithFallback()
       }));
-    },
-
-    getOrdinalSuffix: function() {
-      const lastDigit = this.getDay() % 10;
-      const last2Digits = this.getDay() % 100;
-      if (lastDigit === 1 && last2Digits !== 11) {
-        return "st";
-      } else if (lastDigit === 2 && last2Digits !== 12) {
-        return "nd";
-      } else if (lastDigit === 3 && last2Digits !== 13) {
-        return "rd";
-      } else {
-        return "th";
-      }
     },
 
     onChangeDayType: function(newValue) {
@@ -122,12 +84,9 @@ define(function(require) {
       return (
         <div>
           <span className="align-button mrm">On the</span>
-          <FormInput
-            className="width-2 form-input-borderless align-c"
-            value={this.getTextDay()}
-            onChange={this.onChangeDay}
-          />
-          <span className="align-button mrm type-label">{this.getOrdinalSuffix()}</span>
+          <span className="mrm">
+            <DayOfMonthInput value={this.getDay()} onChange={this.onChangeDay} />
+          </span>
           <div className="align-button height-xl mrm">
             <Select className="form-select-s" value={this.getTextDayType()} onChange={this.onChangeDayType}>
               <option value="dayOfMonth">day</option>
