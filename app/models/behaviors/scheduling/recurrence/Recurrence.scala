@@ -52,7 +52,7 @@ sealed trait Recurrence {
     initialAfterAssumingZone(withZone(start))
   }
   def withStandardAdjustments(when: OffsetDateTime): OffsetDateTime = when.withSecond(0).withNano(0)
-  def displayString: String = ""
+  def displayString: String
 
   def toRaw: RawRecurrence = RawRecurrence(
     id,
@@ -116,7 +116,7 @@ case class Hourly(id: String, frequency: Int, minuteOfHour: Int) extends Recurre
 
   def copyWithEmptyId: Hourly = copy(id = "")
 
-  override def displayString: String = {
+  def displayString: String = {
     val frequencyString = if (frequency == 1) { "hour" } else { s"$frequency hours" }
     s"every $frequencyString at $minuteOfHour minutes"
   }
@@ -194,7 +194,7 @@ case class Daily(id: String, frequency: Int, timeOfDay: LocalTime, timeZone: Zon
 
   def copyWithEmptyId: Daily = copy(id = "")
 
-  override def displayString: String = {
+  def displayString: String = {
     val frequencyString = if (frequency == 1) { "day" } else { s"$frequency days" }
     s"every $frequencyString at ${timeOfDay.format(Recurrence.timeFormatter)} ${stringFor(timeZone)}"
   }
@@ -278,7 +278,7 @@ case class Weekly(
     maybeNextDayInWeekOf(when).getOrElse(daysOfWeek.head)
   }
 
-  override def displayString: String = {
+  def displayString: String = {
     val frequencyString = if (frequency == 1) {
       daysOfWeekString
     } else {
@@ -354,7 +354,7 @@ case class MonthlyByDayOfMonth(id: String, frequency: Int, dayOfMonth: Int, time
 
   def copyWithEmptyId: MonthlyByDayOfMonth = copy(id = "")
 
-  override def displayString: String = {
+  def displayString: String = {
     val frequencyString = if (frequency == 1) { "month" } else { s"$frequency months" }
     s"every $frequencyString on the ${Recurrence.ordinalStringFor(dayOfMonth)} at ${timeOfDay.format(Recurrence.timeFormatter)} ${stringFor(timeZone)}"
   }
@@ -420,7 +420,7 @@ case class MonthlyByNthDayOfWeek(id: String, frequency: Int, dayOfWeek: DayOfWee
 
   def copyWithEmptyId: MonthlyByNthDayOfWeek = copy(id = "")
 
-  override def displayString: String = {
+  def displayString: String = {
     val frequencyString = if (frequency == 1) { "month" } else { s"$frequency months" }
     s"every $frequencyString on the ${Recurrence.ordinalStringFor(nth)} ${Recurrence.dayOfWeekNameFor(dayOfWeek)} at ${timeOfDay.format(Recurrence.timeFormatter)} ${stringFor(timeZone)}"
   }
@@ -490,7 +490,7 @@ object MonthlyByNthDayOfWeek {
 
 case class Yearly(id: String, frequency: Int, monthDay: MonthDay, timeOfDay: LocalTime, timeZone: ZoneId) extends RecurrenceWithTimeOfDay {
 
-  override def displayString: String = {
+  def displayString: String = {
     val frequencyString = if (frequency == 1) { "year" } else { s"$frequency years" }
     s"every $frequencyString on ${monthDay.format(Recurrence.monthDayFormatter)} at ${timeOfDay.format(Recurrence.timeFormatter)} ${stringFor(timeZone)}"
   }
