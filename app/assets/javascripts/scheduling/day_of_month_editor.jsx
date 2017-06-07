@@ -128,18 +128,19 @@ define(function(require) {
             onChange={this.onChangeDay}
           />
           <span className="align-button mrm type-label">{this.getOrdinalSuffix()}</span>
-          <div className="align-button height-xl">
+          <div className="align-button height-xl mrm">
             <Select className="form-select-s" value={this.getTextDayType()} onChange={this.onChangeDayType}>
-              <option value="dayOfMonth">day of the month</option>
-              <option value="weekday1">Monday of the month</option>
-              <option value="weekday2">Tuesday of the month</option>
-              <option value="weekday3">Wednesday of the month</option>
-              <option value="weekday4">Thursday of the month</option>
-              <option value="weekday5">Friday of the month</option>
-              <option value="weekday6">Saturday of the month</option>
-              <option value="weekday0">Sunday of the month</option>
+              <option value="dayOfMonth">day</option>
+              <option value="weekday1">Monday</option>
+              <option value="weekday2">Tuesday</option>
+              <option value="weekday3">Wednesday</option>
+              <option value="weekday4">Thursday</option>
+              <option value="weekday5">Friday</option>
+              <option value="weekday6">Saturday</option>
+              <option value="weekday0">Sunday</option>
             </Select>
           </div>
+          <span className="align-button">of the month</span>
         </div>
       );
     }
