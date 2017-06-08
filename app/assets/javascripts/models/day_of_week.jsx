@@ -35,6 +35,15 @@ define(function(require) {
   DayOfWeek.THURSDAY = new DayOfWeek(4);
   DayOfWeek.FRIDAY = new DayOfWeek(5);
   DayOfWeek.SATURDAY = new DayOfWeek(6);
+  DayOfWeek.WEEK = [
+    DayOfWeek.MONDAY,
+    DayOfWeek.TUESDAY,
+    DayOfWeek.WEDNESDAY,
+    DayOfWeek.THURSDAY,
+    DayOfWeek.FRIDAY,
+    DayOfWeek.SATURDAY,
+    DayOfWeek.SUNDAY
+  ];
 
   return DayOfWeek;
 });

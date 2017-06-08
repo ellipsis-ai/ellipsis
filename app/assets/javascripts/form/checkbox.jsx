@@ -10,10 +10,11 @@ return React.createClass({
     label: React.PropTypes.string,
     title: React.PropTypes.string,
     name: React.PropTypes.string,
-    useButtonStyle: React.PropTypes.bool
+    useButtonStyle: React.PropTypes.bool,
+    value: React.PropTypes.string
   },
   onChange: function() {
-    this.props.onChange(!!this.refs.input.checked);
+    this.props.onChange(Boolean(this.refs.input.checked), this.props.value);
   },
 
   handleEnterKey: function(event) {
@@ -54,6 +55,7 @@ return React.createClass({
           onChange={this.onChange}
           onKeyPress={this.handleEnterKey}
           name={this.props.name}
+          value={this.props.value}
         />
         <span>{this.props.label}</span>
       </label>

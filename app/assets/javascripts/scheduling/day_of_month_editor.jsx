@@ -93,13 +93,9 @@ define(function(require) {
           <div className="align-button height-xl mrm">
             <Select className="form-select-s" value={this.getTextDayType()} onChange={this.onChangeDayType}>
               <option value="dayOfMonth">day</option>
-              <option value={DayOfWeek.MONDAY.toString()}>{DayOfWeek.MONDAY.name()}</option>
-              <option value={DayOfWeek.TUESDAY.toString()}>{DayOfWeek.TUESDAY.name()}</option>
-              <option value={DayOfWeek.WEDNESDAY.toString()}>{DayOfWeek.WEDNESDAY.name()}</option>
-              <option value={DayOfWeek.THURSDAY.toString()}>{DayOfWeek.THURSDAY.name()}</option>
-              <option value={DayOfWeek.FRIDAY.toString()}>{DayOfWeek.FRIDAY.name()}</option>
-              <option value={DayOfWeek.SATURDAY.toString()}>{DayOfWeek.SATURDAY.name()}</option>
-              <option value={DayOfWeek.SUNDAY.toString()}>{DayOfWeek.SUNDAY.name()}</option>
+              {DayOfWeek.WEEK.map((day) => (
+                <option key={day.name()} value={day.toString()}>{day.name()}</option>
+              ))}
             </Select>
           </div>
           <span className="align-button">of the month</span>
