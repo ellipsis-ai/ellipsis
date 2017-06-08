@@ -42,6 +42,14 @@ define(function() {
       return Number.isInteger(this.value);
     }
 
+    valueWithinRange(min, max) {
+      if (this.isInteger()) {
+        return Math.min(Math.max(this.value, min), max);
+      } else {
+        return null;
+      }
+    }
+
     static fromString(string) {
       return OptionalInt.fromStringWithDefault(string, null);
     }
