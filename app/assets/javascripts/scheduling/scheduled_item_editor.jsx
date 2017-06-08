@@ -29,11 +29,11 @@ define(function(require) {
       }));
     },
 
-    updateAction: function(behaviorName, newArgs) {
+    updateAction: function(behaviorName, newArgs, callback) {
       this.props.onChange(this.props.scheduledAction.clone({
         behaviorName: behaviorName,
         arguments: newArgs
-      }));
+      }), callback);
     },
 
     cancel: function() {
@@ -44,17 +44,20 @@ define(function(require) {
       return (
         <div className="columns">
           <div className="column column-one-quarter mobile-column-full">
-            <h4>Edit schedule</h4>
+            <h4 className="type-weak">Edit schedule</h4>
           </div>
           <div className="column column-three-quarters mobile-column-full plxxl">
-            <div className="mbxl">
+            <div>
+              <h5 className="mbs">What to do</h5>
               <ScheduledItemConfig
                 scheduledAction={this.props.scheduledAction}
                 onChangeTriggerText={this.updateTriggerText}
                 onChangeAction={this.updateAction}
               />
             </div>
-            <div className="mtxl">
+            <hr />
+            <div>
+              <h5 className="mbl">When to repeat</h5>
               <RecurrenceEditor
                 onChange={this.updateRecurrence}
                 recurrence={this.props.scheduledAction.recurrence}
@@ -62,7 +65,7 @@ define(function(require) {
               />
             </div>
 
-            <div className="mtxxl">
+            <div className="mtxxl mbxl">
               <button type="button" className="button-primary" onClick={this.cancel}>
                 Cancel
               </button>

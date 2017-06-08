@@ -86,7 +86,7 @@ define(function(require) {
     render: function() {
       return (
         <div>
-          <span className="align-button mrm">On the</span>
+          <span className="align-button mrm type-s">On the</span>
           <span className="mrm">
             <DayOfMonthInput value={this.getDay()} onChange={this.onChangeDay} />
           </span>
@@ -98,7 +98,7 @@ define(function(require) {
               ))}
             </Select>
           </div>
-          <span className="align-button">of the month</span>
+          <span className="align-button type-s">of the month</span>
         </div>
       );
     }

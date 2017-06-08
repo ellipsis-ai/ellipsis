@@ -100,9 +100,9 @@ define(function(require) {
     render: function() {
       return (
         <div>
-          <div>
-            <div className="display-inline-block align-m mrm">Repeat</div>
-            <div className="display-inline-block">
+          <div className="mvm">
+            <div className="align-button mrm type-s">Repeat</div>
+            <div className="align-button">
               <ToggleGroup className="form-toggle-group-s">
                 <ToggleGroup.Item
                   onClick={this.setTypeMinutely}
@@ -138,7 +138,7 @@ define(function(require) {
             </div>
           </div>
 
-          <div className="mvxl">
+          <div className="mvm">
             {this.renderRecurrenceEditorForType()}
           </div>
         </div>

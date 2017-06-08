@@ -28,10 +28,10 @@ define(function(require) {
       return this.state.selectedItem;
     },
 
-    updateSelectedItem: function(newItem) {
+    updateSelectedItem: function(newItem, optionalCallback) {
       this.setState({
         selectedItem: newItem
-      });
+      }, optionalCallback);
     },
 
     getScheduleByChannel: function() {

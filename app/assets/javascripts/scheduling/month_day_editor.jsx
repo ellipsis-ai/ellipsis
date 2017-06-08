@@ -41,11 +41,11 @@ define(function(require) {
     render: function() {
       return (
         <div>
-          <span className="align-button mrm">On the</span>
+          <span className="align-button mrm type-s">On the</span>
           <span className="mrm">
             <DayOfMonthInput value={this.getDay()} onChange={this.onChangeDay} />
           </span>
-          <span className="align-button mrm">of</span>
+          <span className="align-button mrm type-s">of</span>
           <div className="align-button height-xl">
             <Select className="form-select-s" value={this.getMonthText()} onChange={this.onChangeMonth}>
               {Month.YEAR.map((month) => (

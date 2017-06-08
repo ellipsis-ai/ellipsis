@@ -34,9 +34,9 @@ define(function(require) {
     render: function() {
       return (
         <div>
-          <span className="align-button mrm">At</span>
+          <span className="align-button mrm type-s">At</span>
           <MinuteInput value={this.getValue()} onChange={this.onChange} />
-          <span className="align-button mlm">{this.getSuffix()}</span>
+          <span className="align-button mlm type-s">{this.getSuffix()}</span>
         </div>
       );
     }

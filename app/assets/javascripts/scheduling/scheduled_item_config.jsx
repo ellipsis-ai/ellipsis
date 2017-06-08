@@ -14,7 +14,7 @@ define(function(require) {
     },
 
     hasSkillName: function() {
-      return !!this.props.scheduledAction.behaviorGroupName;
+      return typeof this.props.scheduledAction.behaviorGroupName === "string";
     },
 
     getSkillName: function() {
@@ -22,7 +22,7 @@ define(function(require) {
     },
 
     getActionName: function() {
-      return this.props.scheduledAction.behaviorName || "an unnamed action";
+      return this.props.scheduledAction.behaviorName || "";
     },
 
     getArguments: function() {
@@ -34,7 +34,7 @@ define(function(require) {
     },
 
     hasTriggerText: function() {
-      return !!this.props.scheduledAction.trigger;
+      return typeof this.props.scheduledAction.trigger === "string";
     },
 
     onChangeTriggerText: function(newText) {
@@ -66,16 +66,23 @@ define(function(require) {
     },
 
     addArgument: function() {
-      this.props.onChangeAction(this.getActionName(), this.getArguments().concat({ name: "", value: "" }));
+      this.props.onChangeAction(this.getActionName(), this.getArguments().concat({ name: "", value: "" }), () => {
+        const lastIndex = this.getArguments().length - 1;
+        const nameInput = this.refs[`argumentName${lastIndex}`];
+        if (nameInput) {
+          nameInput.focus();
+        }
+      });
     },
 
     renderTriggerConfig: function() {
       return (
         <div>
-          <div>Run any action triggered by the message:</div>
-          <div>
-            <FormInput placeholder="Enter a message that would trigger a response" className="form-input-borderless width-20" value={this.getTriggerText()} onChange={this.onChangeTriggerText} />
-          </div>
+          <div className="type-s mbxs">Run any action triggered by the message:</div>
+          <FormInput placeholder="Enter a message that would trigger a response"
+            value={this.getTriggerText()}
+            onChange={this.onChangeTriggerText}
+          />
         </div>
       );
     },
@@ -83,23 +90,19 @@ define(function(require) {
     renderActionConfig: function() {
       return (
         <div>
-          <div className="mbxl">
-            <span className="align-button mrm">Run the action named</span>
+          <div className="mbl">
+            <span className="align-button mrm type-s">Run the action named</span>
             <FormInput className="form-input-borderless width-10 mrm" value={this.getActionName()} onChange={this.onChangeActionName} />
             {this.hasSkillName() ? (
-              <span className="align-button">
+              <span className="align-button type-s">
                 <span> in the </span>
                 <span className="border phxs mhxs type-black bg-white">{this.getSkillName()}</span>
                 <span> skill</span>
               </span>
             ) : null}
           </div>
-          <div className="mtxl">
-            <h4>Include pre-filled input for the action <span className="type-weak type-regular">(optional)</span></h4>
+          <div className="mtl">
             {this.renderArguments()}
-            <div>
-              <button type="button" className="button-s" onClick={this.addArgument}>Add input</button>
-            </div>
           </div>
         </div>
       );
@@ -110,14 +113,15 @@ define(function(require) {
       if (args.length > 0) {
         return (
           <div>
+            <div className="type-s mbm">Include pre-filled input:</div>
             <div className="columns">
-              <div className="column column-one-third"><h5>Name of input</h5></div>
-              <div className="column column-two-thirds"><h5>Answer to include</h5></div>
+              <div className="column column-one-third type-label">Name of input</div>
+              <div className="column column-two-thirds type-label">Answer to include</div>
             </div>
             {args.map((arg, index) => (
               <div className="columns" key={`argument${index}`}>
                 <div className="column column-one-third">
-                  <FormInput className="form-input-borderless" value={arg.name}
+                  <FormInput ref={`argumentName${index}`} className="form-input-borderless" value={arg.name}
                     onChange={this.onChangeArgumentName.bind(this, index)}/>
                 </div>
                 <div className="column column-two-thirds">
@@ -136,6 +140,15 @@ define(function(require) {
                 </div>
               </div>
             ))}
+            <div className="mtm">
+              <button type="button" className="button-s" onClick={this.addArgument}>Add another input</button>
+            </div>
+          </div>
+        );
+      } else {
+        return (
+          <div className="mtm">
+            <button type="button" className="button-s" onClick={this.addArgument}>Pre-fill input for the action</button>
           </div>
         );
       }

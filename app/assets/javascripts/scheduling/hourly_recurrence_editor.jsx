@@ -14,7 +14,7 @@ define(function(require) {
     render: function() {
       return (
         <div>
-          <div className="mvl">
+          <div className="mvm">
             <FrequencyEditor
               recurrence={this.props.recurrence}
               onChange={this.props.onChange}
@@ -24,7 +24,7 @@ define(function(require) {
               max={8760}
             />
           </div>
-          <div className="mvl">
+          <div className="mvm">
             <MinuteOfHourEditor
               recurrence={this.props.recurrence}
               onChange={this.props.onChange}
