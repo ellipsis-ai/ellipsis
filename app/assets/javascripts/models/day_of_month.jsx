@@ -18,7 +18,7 @@ define(function(require) {
 
     static fromString(string) {
       const parsed = string.substr(-2, 2).match(/(3[0-1]|[1-2][0-9]|[1-9])$/);
-      return new DayOfMonth(OptionalInt.fromString(parsed ? parsed[1] : "").value);
+      return new DayOfMonth(super.fromString(parsed ? parsed[1] : "").value);
     }
   }
 

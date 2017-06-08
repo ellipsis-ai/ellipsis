@@ -2,7 +2,7 @@ define(function(require) {
   var React = require('react'),
     DayOfMonthInput = require('../form/day_of_month_input'),
     Select = require('../form/select'),
-    OptionalInt = require('../models/optional_int'),
+    DayOfWeek = require('../models/day_of_week'),
     Recurrence = require('../models/recurrence');
 
   return React.createClass({
@@ -20,13 +20,13 @@ define(function(require) {
       return [this.props.recurrence.dayOfMonth, this.props.recurrence.nthDayOfWeek].find(Number.isInteger);
     },
 
-    getDayOfWeekWithFallback: function() {
-      return this.props.recurrence.dayOfWeek || 1;
+    getDayOfWeek: function() {
+      return this.props.recurrence.dayOfWeek;
     },
 
     getTextDayType: function() {
       if (this.isNthWeekdayOfMonth()) {
-        return `weekday${this.getDayOfWeekWithFallback()}`;
+        return new DayOfWeek(this.getDayOfWeek()).toString() || DayOfWeek.MONDAY.toString();
       } else {
         return "dayOfMonth";
       }
@@ -61,7 +61,7 @@ define(function(require) {
         typeName: "monthly_by_nth_day_of_week",
         dayOfMonth: null,
         nthDayOfWeek: fixedDayNumber,
-        dayOfWeek: this.getDayOfWeekWithFallback()
+        dayOfWeek: this.getDayOfWeek()
       }));
     },
 
@@ -74,13 +74,11 @@ define(function(require) {
           dayOfWeek: null
         }));
       } else {
-        const parsed = newValue.match(/^weekday(\d)$/);
-        const newDay = OptionalInt.fromStringWithDefault(parsed ? parsed[1] : "", 1);
         this.props.onChange(this.props.recurrence.clone({
           typeName: "monthly_by_nth_day_of_week",
           dayOfMonth: null,
           nthDayOfWeek: this.limitNthWeekdayNumber(this.getDay()),
-          dayOfWeek: newDay.value
+          dayOfWeek: DayOfWeek.fromString(newValue).value
         }));
       }
     },
@@ -95,13 +93,13 @@ define(function(require) {
           <div className="align-button height-xl mrm">
             <Select className="form-select-s" value={this.getTextDayType()} onChange={this.onChangeDayType}>
               <option value="dayOfMonth">day</option>
-              <option value="weekday1">Monday</option>
-              <option value="weekday2">Tuesday</option>
-              <option value="weekday3">Wednesday</option>
-              <option value="weekday4">Thursday</option>
-              <option value="weekday5">Friday</option>
-              <option value="weekday6">Saturday</option>
-              <option value="weekday0">Sunday</option>
+              <option value={DayOfWeek.MONDAY.toString()}>{DayOfWeek.MONDAY.name()}</option>
+              <option value={DayOfWeek.TUESDAY.toString()}>{DayOfWeek.TUESDAY.name()}</option>
+              <option value={DayOfWeek.WEDNESDAY.toString()}>{DayOfWeek.WEDNESDAY.name()}</option>
+              <option value={DayOfWeek.THURSDAY.toString()}>{DayOfWeek.THURSDAY.name()}</option>
+              <option value={DayOfWeek.FRIDAY.toString()}>{DayOfWeek.FRIDAY.name()}</option>
+              <option value={DayOfWeek.SATURDAY.toString()}>{DayOfWeek.SATURDAY.name()}</option>
+              <option value={DayOfWeek.SUNDAY.toString()}>{DayOfWeek.SUNDAY.name()}</option>
             </Select>
           </div>
           <span className="align-button">of the month</span>
