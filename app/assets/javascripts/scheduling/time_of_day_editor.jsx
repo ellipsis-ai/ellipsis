@@ -96,7 +96,7 @@ define(function(require) {
     render: function() {
       return (
         <div>
-          <span className="align-button mrm">At</span>
+          <span className="align-button mrm type-s">At</span>
           <FormInput
             className="width-2 form-input-borderless align-c"
             value={this.getHourTextValue()}
@@ -109,7 +109,7 @@ define(function(require) {
               <ToggleGroup.Item onClick={this.setPM} label="PM" activeWhen={this.isPM()} />
             </ToggleGroup>
           </span>
-          <span className="align-button">
+          <span className="align-button type-s">
             {this.props.teamTimeZone}
           </span>
         </div>

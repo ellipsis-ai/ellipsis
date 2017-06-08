@@ -37,7 +37,7 @@ define(function(require) {
     render: function() {
       return (
         <div>
-          <span className="align-button mrm">On</span>
+          <span className="align-button mrm type-s">On</span>
           <span className="align-button">
             {DayOfWeek.WEEK.map((day) => (
               <Checkbox key={day.name()}

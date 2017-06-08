@@ -37,13 +37,13 @@ define(function(require) {
     render: function() {
       return (
         <div>
-          <span className="align-button mrm">Every</span>
+          <span className="align-button mrm type-s">Every</span>
           <FormInput
             className="width-5 form-input-borderless align-c"
             value={this.getTextValue()}
             onChange={this.onChange}
           />
-          <span className="align-button mlm">{this.getUnit()}</span>
+          <span className="align-button mlm type-s">{this.getUnit()}</span>
         </div>
       );
     }
