@@ -83,6 +83,14 @@ define(function(require) {
       });
     },
 
+    addNewItem: function() {
+      this.setState({
+        selectedItem: ScheduledAction.newWithDefaults(this.props.teamTimeZone)
+      }, () => {
+        this.props.onToggleActivePanel("moreInfo", true);
+      });
+    },
+
     cancelEditor: function() {
       this.props.onClearActivePanel(() => {
         this.setState({
@@ -154,10 +162,17 @@ define(function(require) {
       return (
         <div>
           <div className="bg-light">
-            <div className="container container-wide pbm">
-              <h3 className="mvn ptxxl type-weak display-ellipsis">
-                <span className="mrs">Scheduling</span>
-              </h3>
+            <div className="container container-wide pvxl">
+              <div className="columns columns-elastic mobile-columns-float">
+                <div className="column column-expand align-b">
+                  <h3 className="mvn type-weak display-ellipsis">
+                    <span className="mrs">Scheduling</span>
+                  </h3>
+                </div>
+                <div className="column column-shrink">
+                  <button type="button" className="button-shrink" onClick={this.addNewItem}>Schedule something new</button>
+                </div>
+              </div>
             </div>
           </div>
 

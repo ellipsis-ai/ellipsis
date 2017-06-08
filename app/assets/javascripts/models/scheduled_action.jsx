@@ -50,6 +50,14 @@ define(function(require) {
       });
       return new ScheduledAction(materializedProps);
     }
+
+    static newWithDefaults(timeZone) {
+      return new ScheduledAction({
+        scheduleType: "daily",
+        trigger: "",
+        recurrence: new Recurrence({ timeZone: timeZone }).becomeDaily()
+      });
+    }
   }
 
   return ScheduledAction;
