@@ -66,9 +66,15 @@ define(function(require) {
             </div>
 
             <div className="mtxxl mbxl">
-              <button type="button" className="button-primary" onClick={this.cancel}>
-                Cancel
-              </button>
+              <div className="columns columns-elastic mobile-columns-float">
+                <div className="column column-expand">
+                  <button type="button" className="button-primary mbs mrs" disabled={true}>Save changes</button>
+                  <button type="button" className="mbs mrs" onClick={this.cancel}>Cancel</button>
+                </div>
+                <div className="column column-shrink align-r mobile-align-l">
+                  <button type="button" className="mbs button-shrink" disabled={true}>Unschedule this item</button>
+                </div>
+              </div>
             </div>
           </div>
         </div>
