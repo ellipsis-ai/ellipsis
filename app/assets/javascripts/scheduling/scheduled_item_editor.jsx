@@ -41,14 +41,14 @@ define(function(require) {
     },
 
     isNew: function() {
-      return Boolean(this.props.scheduledAction.id);
+      return !this.props.scheduledAction.id;
     },
 
     renderDetails: function() {
       return (
         <div className="columns">
           <div className="column column-one-quarter mobile-column-full">
-            <h4 className="type-weak">{this.isNew() ? "Edit schedule" : "New schedule"}</h4>
+            <h4 className="type-weak">{this.isNew() ? "New schedule" : "Edit schedule"}</h4>
           </div>
           <div className="column column-three-quarters mobile-column-full plxxl">
             <div>
