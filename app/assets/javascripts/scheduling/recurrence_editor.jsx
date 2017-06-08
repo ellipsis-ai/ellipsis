@@ -100,38 +100,43 @@ define(function(require) {
     render: function() {
       return (
         <div>
-          <ToggleGroup>
-            <ToggleGroup.Item
-              onClick={this.setTypeMinutely}
-              activeWhen={this.typeMatches("minutely")}
-              label="Minutely"
-            />
-            <ToggleGroup.Item
-              onClick={this.setTypeHourly}
-              activeWhen={this.typeMatches("hourly")}
-              label="Hourly"
-            />
-            <ToggleGroup.Item
-              onClick={this.setTypeDaily}
-              activeWhen={this.typeMatches("daily")}
-              label="Daily"
-            />
-            <ToggleGroup.Item
-              onClick={this.setTypeWeekly}
-              activeWhen={this.typeMatches("weekly")}
-              label="Weekly"
-            />
-            <ToggleGroup.Item
-              onClick={this.setTypeMonthly}
-              activeWhen={this.typeMatches("monthly")}
-              label="Monthly"
-            />
-            <ToggleGroup.Item
-              onClick={this.setTypeYearly}
-              activeWhen={this.typeMatches("yearly")}
-              label="Yearly"
-            />
-          </ToggleGroup>
+          <div>
+            <div className="display-inline-block align-m mrm">Repeat</div>
+            <div className="display-inline-block">
+              <ToggleGroup className="form-toggle-group-s">
+                <ToggleGroup.Item
+                  onClick={this.setTypeMinutely}
+                  activeWhen={this.typeMatches("minutely")}
+                  label="Minutely"
+                />
+                <ToggleGroup.Item
+                  onClick={this.setTypeHourly}
+                  activeWhen={this.typeMatches("hourly")}
+                  label="Hourly"
+                />
+                <ToggleGroup.Item
+                  onClick={this.setTypeDaily}
+                  activeWhen={this.typeMatches("daily")}
+                  label="Daily"
+                />
+                <ToggleGroup.Item
+                  onClick={this.setTypeWeekly}
+                  activeWhen={this.typeMatches("weekly")}
+                  label="Weekly"
+                />
+                <ToggleGroup.Item
+                  onClick={this.setTypeMonthly}
+                  activeWhen={this.typeMatches("monthly")}
+                  label="Monthly"
+                />
+                <ToggleGroup.Item
+                  onClick={this.setTypeYearly}
+                  activeWhen={this.typeMatches("yearly")}
+                  label="Yearly"
+                />
+              </ToggleGroup>
+            </div>
+          </div>
 
           <div className="mvxl">
             {this.renderRecurrenceEditorForType()}

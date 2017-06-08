@@ -1,7 +1,7 @@
 define(function(require) {
 var React = require('react'),
   debounce = require('javascript-debounce'),
-  DeleteButton = require('./delete_button'),
+  DeleteButton = require('../shared_ui/delete_button'),
   HelpButton = require('../help/help_button'),
   Input = require('../form/input'),
   Collapsible = require('../shared_ui/collapsible'),

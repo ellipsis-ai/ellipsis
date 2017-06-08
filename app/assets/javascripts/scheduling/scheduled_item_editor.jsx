@@ -2,7 +2,7 @@ define(function(require) {
   var React = require('react'),
     RecurrenceEditor = require('./recurrence_editor'),
     ScheduledAction = require('../models/scheduled_action'),
-    ScheduledItemTitle = require('./scheduled_item_title');
+    ScheduledItemConfig = require('./scheduled_item_config');
 
   return React.createClass({
     displayName: 'ScheduledItemEditor',
@@ -23,6 +23,19 @@ define(function(require) {
       }));
     },
 
+    updateTriggerText: function(newText) {
+      this.props.onChange(this.props.scheduledAction.clone({
+        trigger: newText
+      }));
+    },
+
+    updateAction: function(behaviorName, newArgs) {
+      this.props.onChange(this.props.scheduledAction.clone({
+        behaviorName: behaviorName,
+        arguments: newArgs
+      }));
+    },
+
     cancel: function() {
       this.props.onCancel();
     },
@@ -31,10 +44,17 @@ define(function(require) {
       return (
         <div className="columns">
           <div className="column column-one-quarter mobile-column-full">
-            <ScheduledItemTitle scheduledAction={this.props.scheduledAction}/>
+            <h4>Edit schedule</h4>
           </div>
           <div className="column column-three-quarters mobile-column-full plxxl">
-            <div>
+            <div className="mbxl">
+              <ScheduledItemConfig
+                scheduledAction={this.props.scheduledAction}
+                onChangeTriggerText={this.updateTriggerText}
+                onChangeAction={this.updateAction}
+              />
+            </div>
+            <div className="mtxl">
               <RecurrenceEditor
                 onChange={this.updateRecurrence}
                 recurrence={this.props.scheduledAction.recurrence}
