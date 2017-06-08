@@ -8,16 +8,19 @@ return React.createClass({
     onEnterKey: React.PropTypes.func,
     className: React.PropTypes.string,
     label: React.PropTypes.string,
-    name: React.PropTypes.string
+    title: React.PropTypes.string,
+    name: React.PropTypes.string,
+    useButtonStyle: React.PropTypes.bool,
+    value: React.PropTypes.string
   },
   onChange: function() {
-    this.props.onChange(!!this.refs.input.checked);
+    this.props.onChange(Boolean(this.refs.input.checked), this.props.value);
   },
 
   handleEnterKey: function(event) {
     if (event.which === 13) {
       event.preventDefault();
-      if (typeof this.props.onEnterKey == 'function') {
+      if (typeof this.props.onEnterKey === 'function') {
         this.props.onEnterKey();
       }
     }
@@ -27,9 +30,24 @@ return React.createClass({
     this.refs.input.focus();
   },
 
+  getClassName: function() {
+    const classNames = [];
+    if (this.props.useButtonStyle) {
+      if (this.props.checked) {
+        classNames.push("checkbox-button checkbox-button-s checkbox-button-checked");
+      } else {
+        classNames.push("checkbox-button checkbox-button-s");
+      }
+    }
+    if (this.props.className) {
+      classNames.push(this.props.className);
+    }
+    return classNames.join(" ");
+  },
+
   render: function() {
     return (
-      <label className={this.props.className || ""}>
+      <label className={this.getClassName()} title={this.props.title}>
         <input type="checkbox"
           className={this.props.label ? "man mrs" : "man"}
           ref="input"
@@ -37,6 +55,7 @@ return React.createClass({
           onChange={this.onChange}
           onKeyPress={this.handleEnterKey}
           name={this.props.name}
+          value={this.props.value}
         />
         <span>{this.props.label}</span>
       </label>

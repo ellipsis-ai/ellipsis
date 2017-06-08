@@ -6,6 +6,8 @@ define(function(require) {
 
     constructor(props) {
       const initialProps = Object.assign({
+        id: null,
+        scheduleType: null,
         behaviorName: null,
         behaviorGroupName: null,
         behaviorId: null,
@@ -20,6 +22,8 @@ define(function(require) {
       }, props);
 
       Object.defineProperties(this, {
+        id: { value: initialProps.id, enumerable: true },
+        scheduleType: { value: initialProps.scheduleType, enumerable: true },
         behaviorName: { value: initialProps.behaviorName, enumerable: true },
         behaviorGroupName: { value: initialProps.behaviorGroupName, enumerable: true },
         behaviorId: { value: initialProps.behaviorId, enumerable: true },
@@ -34,9 +38,15 @@ define(function(require) {
       });
     }
 
+    clone(props) {
+      return new ScheduledAction(Object.assign({}, this, props));
+    }
+
     static fromJson(props) {
       const materializedProps = Object.assign(props, {
-        recurrence: new Recurrence(props.recurrence)
+        recurrence: new Recurrence(props.recurrence),
+        firstRecurrence: new Date(props.firstRecurrence),
+        secondRecurrence: new Date(props.secondRecurrence)
       });
       return new ScheduledAction(materializedProps);
     }
