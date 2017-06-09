@@ -40,7 +40,8 @@ define(function(require) {
     getScheduleByChannel: function() {
       const groupsByName = {};
       this.props.scheduledActions.forEach((action) => {
-        const channelName = action.channel || "Unknown";
+        const channel = this.props.channelList.find((ea) => ea.id === action.channel);
+        const channelName = channel ? channel.getFormattedName() : "Unknown";
         const group = groupsByName[channelName] || [];
         groupsByName[channelName] = group.concat([action]);
       });
@@ -200,9 +201,11 @@ define(function(require) {
             >
               <ScheduledItemEditor
                 scheduledAction={selectedItem}
+                channelList={this.props.channelList}
                 onChange={this.updateSelectedItem}
                 onCancel={this.cancelEditor}
                 teamTimeZone={this.props.teamTimeZone || "America/New_York"}
+                slackUserId={this.props.slackUserId || ""}
               />
             </Collapsible>
           </FixedFooter>

@@ -22,6 +22,21 @@ define(function() {
       });
     }
 
+    getName(options) {
+      const shouldFormat = options && options.formatting;
+      if (this.isPublic) {
+        return `${shouldFormat ? "#" : ""}${this.name}`;
+      } else if (this.members.length > 1) {
+        return `${shouldFormat ? "🔒 " : ""}${this.name} (private)`;
+      } else {
+        return "Direct message";
+      }
+    }
+
+    getFormattedName() {
+      return this.getName({ formatting: true });
+    }
+
     clone(props) {
       return new ScheduleChannel(Object.assign({}, this, props));
     }

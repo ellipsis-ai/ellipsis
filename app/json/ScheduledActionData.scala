@@ -28,19 +28,6 @@ case class ScheduledActionData(
                               )
 
 object ScheduledActionData {
-  private def nameForChannel(maybeChannel: Option[String], channelList: Seq[ChannelLike]): String = {
-    (for {
-      channel <- maybeChannel
-      matchingChannel <- channelList.find(ea => ea.id == channel || ea.name == channel)
-    } yield {
-      matchingChannel match {
-        case SlackChannel(namedChannel) => s"""#${namedChannel.name}"""
-        case SlackGroup(_) => "Private group"
-        case SlackDM(_) => "Direct message"
-      }
-    }).getOrElse("Unknown")
-  }
-
   def fromScheduledMessages(
                              scheduledMessages: Seq[ScheduledMessage],
                              channelList: Seq[ChannelLike]
@@ -60,7 +47,7 @@ object ScheduledActionData {
           firstRecurrence = ea.nextSentAt,
           secondRecurrence = ea.followingSentAt,
           useDM = ea.isForIndividualMembers,
-          channel = nameForChannel(ea.maybeChannel, channelList)
+          channel = ea.maybeChannel.getOrElse("")
         )
       )
     }
@@ -91,7 +78,7 @@ object ScheduledActionData {
           firstRecurrence = ea.nextSentAt,
           secondRecurrence = ea.followingSentAt,
           useDM = ea.isForIndividualMembers,
-          channel = nameForChannel(ea.maybeChannel, channelList)
+          channel = ea.maybeChannel.getOrElse("")
         )
       }
     }

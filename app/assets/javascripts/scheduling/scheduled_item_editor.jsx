@@ -1,16 +1,20 @@
 define(function(require) {
   var React = require('react'),
     RecurrenceEditor = require('./recurrence_editor'),
+    ScheduleChannelEditor = require('./schedule_channel_editor'),
+    ScheduledItemConfig = require('./scheduled_item_config'),
     ScheduledAction = require('../models/scheduled_action'),
-    ScheduledItemConfig = require('./scheduled_item_config');
+    ScheduleChannel = require('../models/schedule_channel');
 
   return React.createClass({
     displayName: 'ScheduledItemEditor',
     propTypes: {
       scheduledAction: React.PropTypes.instanceOf(ScheduledAction),
+      channelList: React.PropTypes.arrayOf(React.PropTypes.instanceOf(ScheduleChannel)).isRequired,
       onChange: React.PropTypes.func.isRequired,
       onCancel: React.PropTypes.func.isRequired,
-      teamTimeZone: React.PropTypes.string.isRequired
+      teamTimeZone: React.PropTypes.string.isRequired,
+      slackUserId: React.PropTypes.string.isRequired
     },
 
     shouldRenderItem: function() {
@@ -36,6 +40,12 @@ define(function(require) {
       }), callback);
     },
 
+    updateChannel: function(channelId) {
+      this.props.onChange(this.props.scheduledAction.clone({
+        channel: channelId
+      }));
+    },
+
     cancel: function() {
       this.props.onCancel();
     },
@@ -57,6 +67,16 @@ define(function(require) {
                 scheduledAction={this.props.scheduledAction}
                 onChangeTriggerText={this.updateTriggerText}
                 onChangeAction={this.updateAction}
+              />
+            </div>
+            <hr />
+            <div>
+              <h5 className="mbs">Where to do it</h5>
+              <ScheduleChannelEditor
+                scheduledAction={this.props.scheduledAction}
+                channelList={this.props.channelList}
+                onChange={this.updateChannel}
+                slackUserId={this.props.slackUserId}
               />
             </div>
             <hr />
