@@ -8,7 +8,8 @@ define(function() {
         name: null,
         context: null,
         members: [],
-        isPublic: false
+        isPublic: false,
+        isArchived: false
       }, props);
 
       Object.defineProperties(this, {
@@ -16,7 +17,8 @@ define(function() {
         name: { value: initialProps.name, enumerable: true },
         context: { value: initialProps.context, enumerable: true },
         members: { value: initialProps.members, enumerable: true },
-        isPublic: { value: initialProps.isPublic, enumerable: true }
+        isPublic: { value: initialProps.isPublic, enumerable: true },
+        isArchived: { value: initialProps.isArchived, enumerable: true }
       });
     }
 

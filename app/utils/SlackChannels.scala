@@ -13,6 +13,7 @@ trait ChannelLike {
   val id: String
   val name: String
   val isPublic: Boolean
+  val isArchived: Boolean
 }
 
 case class SlackChannel(channel: Channel) extends ChannelLike {
@@ -20,6 +21,7 @@ case class SlackChannel(channel: Channel) extends ChannelLike {
   val id: String = channel.id
   val name: String = channel.name
   val isPublic: Boolean = true
+  val isArchived: Boolean = channel.is_archived.getOrElse(false)
 }
 
 case class SlackGroup(group: Group) extends ChannelLike {
@@ -27,6 +29,7 @@ case class SlackGroup(group: Group) extends ChannelLike {
   val id: String = group.id
   val name: String = group.name
   val isPublic: Boolean = false
+  val isArchived: Boolean = group.is_archived
 }
 
 case class SlackDM(im: Im) extends ChannelLike {
@@ -34,6 +37,7 @@ case class SlackDM(im: Im) extends ChannelLike {
   val id: String = im.id
   val name: String = id
   val isPublic: Boolean = false
+  val isArchived: Boolean = im.is_user_deleted.getOrElse(false)
 }
 
 case class SlackChannels(client: SlackApiClient) {

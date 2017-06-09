@@ -16,7 +16,8 @@ define(function(require) {
       teamId: React.PropTypes.string.isRequired,
       scheduledActions: React.PropTypes.arrayOf(React.PropTypes.instanceOf(ScheduledAction)),
       channelList: React.PropTypes.arrayOf(React.PropTypes.instanceOf(ScheduleChannel)),
-      teamTimeZone: React.PropTypes.string
+      teamTimeZone: React.PropTypes.string,
+      slackUserId: React.PropTypes.string
     }),
 
     getInitialState: function() {
