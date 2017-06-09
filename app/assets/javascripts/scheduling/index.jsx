@@ -5,6 +5,7 @@ define(function(require) {
     ModalScrim = require('../shared_ui/modal_scrim'),
     PageWithPanels = require('../shared_ui/page_with_panels'),
     ScheduledAction = require('../models/scheduled_action'),
+    ScheduleChannel = require('../models/schedule_channel'),
     ScheduledItem = require('./scheduled_item'),
     ScheduledItemEditor = require('./scheduled_item_editor'),
     Sort = require('../lib/sort');
@@ -14,6 +15,7 @@ define(function(require) {
     propTypes: Object.assign(PageWithPanels.requiredPropTypes(), {
       teamId: React.PropTypes.string.isRequired,
       scheduledActions: React.PropTypes.arrayOf(React.PropTypes.instanceOf(ScheduledAction)),
+      channelList: React.PropTypes.arrayOf(React.PropTypes.instanceOf(ScheduleChannel)),
       teamTimeZone: React.PropTypes.string
     }),
 

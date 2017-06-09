@@ -42,7 +42,13 @@ class ScheduledActionsController @Inject()(
               scheduledMessageData <- ScheduledActionData.fromScheduledMessages(scheduledMessages, channelList)
               scheduledBehaviorData <- ScheduledActionData.fromScheduledBehaviors(scheduledBehaviors, dataService, channelList)
             } yield {
-              val pageData = ScheduledActionsConfig("scheduling", team.id, scheduledMessageData ++ scheduledBehaviorData, team.maybeTimeZone.map(_.toString))
+              val pageData = ScheduledActionsConfig(
+                containerId = "scheduling",
+                teamId = team.id,
+                scheduledActions = scheduledMessageData ++ scheduledBehaviorData,
+                channelList = ScheduleChannelData.fromChannelLikeList(channelList),
+                teamTimeZone = team.maybeTimeZone.map(_.toString)
+              )
               Ok(views.js.shared.pageConfig(viewConfig(Some(teamAccess)), "config/scheduling/index", Json.toJson(pageData)))
             }
           }.getOrElse {

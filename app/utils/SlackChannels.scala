@@ -12,24 +12,28 @@ trait ChannelLike {
   val members: Seq[String]
   val id: String
   val name: String
+  val isPublic: Boolean
 }
 
 case class SlackChannel(channel: Channel) extends ChannelLike {
   val members: Seq[String] = channel.members.getOrElse(Seq())
   val id: String = channel.id
   val name: String = channel.name
+  val isPublic: Boolean = true
 }
 
 case class SlackGroup(group: Group) extends ChannelLike {
   val members: Seq[String] = group.members
   val id: String = group.id
   val name: String = group.name
+  val isPublic: Boolean = false
 }
 
 case class SlackDM(im: Im) extends ChannelLike {
   val members: Seq[String] = Seq(im.user)
   val id: String = im.id
   val name: String = id
+  val isPublic: Boolean = false
 }
 
 case class SlackChannels(client: SlackApiClient) {
