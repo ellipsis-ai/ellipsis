@@ -1,14 +1,12 @@
 package models.behaviors.behaviorparameter
 
-import akka.actor.ActorSystem
 import com.fasterxml.jackson.core.JsonParseException
 import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
-import models.behaviors.behaviorversion.BehaviorVersion
 import models.behaviors.conversations.ParamCollectionState
 import models.behaviors.conversations.conversation.Conversation
+import models.behaviors.datatypeconfig.DataTypeConfig
 import models.behaviors.events.{Event, SlackMessageEvent}
 import models.behaviors.{BotResult, ParameterValue, ParameterWithValue, SuccessResult}
-import models.team.Team
 import play.api.libs.json._
 import services.{AWSLambdaConstants, DataService}
 import slick.dbio.DBIO
@@ -161,7 +159,9 @@ object YesNoType extends BuiltInType {
 }
 
 
-case class BehaviorBackedDataType(behaviorVersion: BehaviorVersion) extends BehaviorParameterType {
+case class BehaviorBackedDataType(dataTypeConfig: DataTypeConfig) extends BehaviorParameterType {
+
+  val behaviorVersion = dataTypeConfig.behaviorVersion
 
   val id = behaviorVersion.id
   override val exportId: String = behaviorVersion.behavior.maybeExportId.getOrElse(id)
@@ -481,17 +481,11 @@ object BehaviorParameterType {
 
   def findBuiltIn(id: String): Option[BehaviorParameterType] = allBuiltin.find(_.id == id)
 
-  def allFor(team: Team, dataService: DataService): Future[Seq[BehaviorParameterType]] = {
-    dataService.behaviorVersions.dataTypesForTeam(team).map { behaviorBacked =>
-      allBuiltin ++ behaviorBacked.map(BehaviorBackedDataType.apply)
-    }
-  }
-
   def allForAction(maybeBehaviorGroupVersion: Option[BehaviorGroupVersion], dataService: DataService): DBIO[Seq[BehaviorParameterType]] = {
     maybeBehaviorGroupVersion.map { groupVersion =>
-      dataService.behaviorVersions.dataTypesForGroupVersionAction(groupVersion)
-    }.getOrElse(DBIO.successful(Seq())).map { behaviorBacked =>
-      allBuiltin ++ behaviorBacked.map(BehaviorBackedDataType.apply)
+      dataService.dataTypeConfigs.allForAction(groupVersion)
+    }.getOrElse(DBIO.successful(Seq())).map { dataTypeConfigs =>
+      allBuiltin ++ dataTypeConfigs.map(BehaviorBackedDataType.apply)
     }
   }
 

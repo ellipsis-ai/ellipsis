@@ -22,6 +22,9 @@ import models.behaviors.config.requiredoauth2apiconfig.RequiredOAuth2ApiConfigSe
 import models.behaviors.config.requiredsimpletokenapi.RequiredSimpleTokenApiService
 import models.behaviors.conversations.collectedparametervalue.CollectedParameterValueService
 import models.behaviors.conversations.conversation.ConversationService
+import models.behaviors.datatypeconfig.DataTypeConfigService
+import models.behaviors.datatypefield.DataTypeFieldService
+import models.behaviors.defaultstorageitem.DefaultStorageItemService
 import models.behaviors.input.InputService
 import models.behaviors.invocationlogentry.InvocationLogEntryService
 import models.behaviors.scheduling.scheduledmessage.ScheduledMessageService
@@ -59,6 +62,9 @@ trait DataService {
   val behaviorGroupVersions: BehaviorGroupVersionService
   val behaviors: BehaviorService
   val behaviorVersions: BehaviorVersionService
+  val dataTypeConfigs: DataTypeConfigService
+  val dataTypeFields: DataTypeFieldService
+  val defaultStorageItems: DefaultStorageItemService
   val behaviorParameters: BehaviorParameterService
   val inputs: InputService
   val libraries: LibraryVersionService

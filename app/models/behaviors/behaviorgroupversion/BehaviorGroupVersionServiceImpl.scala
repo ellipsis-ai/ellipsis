@@ -9,6 +9,9 @@ import json.BehaviorGroupData
 import models.IDs
 import models.accounts.user.User
 import models.behaviors.behaviorgroup.{BehaviorGroup, BehaviorGroupQueries}
+import models.behaviors.datatypeconfig.DataTypeConfig
+import models.behaviors.defaultstorageitem.{DefaultStorageItem, DefaultStorageItemService}
+import sangria.schema._
 import services.DataService
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -136,6 +139,34 @@ class BehaviorGroupVersionServiceImpl @Inject() (
     } yield groupVersion) transactionally
 
     dataService.run(action)
+  }
+
+  private def queryFieldsFor(
+                              dataTypeConfig: DataTypeConfig,
+                              graphQLType: ObjectType[DefaultStorageItemService, DefaultStorageItem],
+                              group: BehaviorGroup
+                            ): Seq[Field[DefaultStorageItemService, Unit]] = {
+    val Id = Argument("id", StringType)
+    Seq(
+      Field(dataTypeConfig.name, OptionType(graphQLType), resolve = c => c.ctx.findById(c.arg(Id), group))
+    )
+  }
+
+  def schemaFor(groupVersion: BehaviorGroupVersion): Future[Schema[DefaultStorageItemService, Unit]] = {
+    dataService.dataTypeConfigs.allFor(groupVersion).flatMap { configs =>
+      Future.sequence(configs.map { ea =>
+        dataService.dataTypeConfigs.graphQLTypeFor(ea, scala.collection.mutable.Map()).map { graphQLType =>
+          (ea, graphQLType)
+        }
+      }).map { tuples =>
+        val group = groupVersion.group
+        val queryFields = tuples.flatMap { case(eaConfig, eaType) =>
+          queryFieldsFor(eaConfig, eaType, group)
+        }
+        val QueryType = ObjectType("Query", fields[DefaultStorageItemService, Unit](queryFields:_*))
+        Schema(query = QueryType)
+      }
+    }
   }
 
 }
