@@ -4,7 +4,9 @@ import javax.inject.Inject
 
 import com.google.inject.Provider
 import drivers.SlickPostgresDriver.api._
+import models.IDs
 import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
+import models.behaviors.behaviorversion.BehaviorVersion
 import models.behaviors.defaultstorageitem.{DefaultStorageItem, DefaultStorageItemService}
 import sangria.schema._
 import services.DataService
@@ -64,5 +66,11 @@ class DataTypeConfigServiceImpl @Inject() (
   def allFor(groupVersion: BehaviorGroupVersion): Future[Seq[DataTypeConfig]] = {
     dataService.run(allForAction(groupVersion))
   }
+
+  def createForAction(behaviorVersion: BehaviorVersion): DBIO[DataTypeConfig] = {
+    val newInstance = DataTypeConfig(IDs.next, behaviorVersion)
+    (all += newInstance.toRaw).map(_ => newInstance)
+  }
+
 
 }

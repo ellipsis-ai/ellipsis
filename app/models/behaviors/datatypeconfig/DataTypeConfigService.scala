@@ -1,6 +1,7 @@
 package models.behaviors.datatypeconfig
 
 import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
+import models.behaviors.behaviorversion.BehaviorVersion
 import models.behaviors.defaultstorageitem.{DefaultStorageItem, DefaultStorageItemService}
 import sangria.schema._
 import slick.dbio.DBIO
@@ -17,5 +18,7 @@ trait DataTypeConfigService {
   def allForAction(groupVersion: BehaviorGroupVersion): DBIO[Seq[DataTypeConfig]]
 
   def allFor(groupVersion: BehaviorGroupVersion): Future[Seq[DataTypeConfig]]
+
+  def createForAction(behaviorVersion: BehaviorVersion): DBIO[DataTypeConfig]
 
 }

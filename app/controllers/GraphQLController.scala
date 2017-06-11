@@ -68,7 +68,7 @@ class GraphQLController @Inject() (
             executeQuery(schema, queryAst, maybeOperationName, maybeVariablesFrom(maybeVariables))
           }
 
-          case Failure(error: SyntaxError) => {
+          case Failure(error) => {
             Future.successful(BadRequest(Json.obj("error" → error.getMessage)))
           }
         }

@@ -119,6 +119,7 @@ class BehaviorGroupVersionServiceImpl @Inject() (
               dataService.behaviors.createForAction(group, Some(behaviorId), ea.exportId, ea.config.isDataType)
             }
             behaviorVersion <- dataService.behaviorVersions.createForAction(behavior, groupVersion, requiredOAuth2ApiConfigs, requiredSimpleTokenApis, Some(user), ea)
+            _ <- dataService.dataTypeConfigs.createForAction(behaviorVersion)
           } yield Some(behaviorVersion)
         }.getOrElse(DBIO.successful(None))
       })
