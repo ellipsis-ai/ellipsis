@@ -42,8 +42,10 @@ define(function(require) {
       this.props.scheduledActions.forEach((action) => {
         const channel = this.props.channelList.find((ea) => ea.id === action.channel);
         const channelName = channel ? channel.getFormattedName() : "Unknown";
-        const group = groupsByName[channelName] || [];
-        groupsByName[channelName] = group.concat([action]);
+        if (!channel || channel.members.includes(this.props.slackUserId)) {
+          const group = groupsByName[channelName] || [];
+          groupsByName[channelName] = group.concat([action]);
+        }
       });
       const channelNames = Object.keys(groupsByName);
       const sortedNames = Sort.arrayAlphabeticalBy(channelNames, (ea) => ea);
