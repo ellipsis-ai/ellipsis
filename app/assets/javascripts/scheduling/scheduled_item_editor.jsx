@@ -18,7 +18,7 @@ define(function(require) {
     },
 
     shouldRenderItem: function() {
-      return !!this.props.scheduledAction;
+      return Boolean(this.props.scheduledAction);
     },
 
     updateRecurrence: function(newRecurrence) {
@@ -50,15 +50,11 @@ define(function(require) {
       this.props.onCancel();
     },
 
-    isNew: function() {
-      return !this.props.scheduledAction.id;
-    },
-
     renderDetails: function() {
       return (
         <div className="columns">
           <div className="column column-one-quarter mobile-column-full">
-            <h4 className="type-weak">{this.isNew() ? "New schedule" : "Edit schedule"}</h4>
+            <h4 className="type-weak">{this.props.scheduledAction.isNew() ? "New schedule" : "Edit schedule"}</h4>
           </div>
           <div className="column column-three-quarters mobile-column-full plxxl">
             <div>
@@ -96,7 +92,7 @@ define(function(require) {
                   <button type="button" className="mbs mrs" onClick={this.cancel}>Cancel</button>
                 </div>
                 <div className="column column-shrink align-r mobile-align-l">
-                  {this.isNew() ? null : (
+                  {this.props.scheduledAction.isNew() ? null : (
                     <button type="button" className="mbs button-shrink" disabled={true}>Unschedule this item</button>
                   )}
                 </div>

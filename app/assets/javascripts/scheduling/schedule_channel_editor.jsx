@@ -47,13 +47,21 @@ define(function(require) {
 
     nameForChannel: function(channelId) {
       const channel = this.props.channelList.find((ea) => ea.id === channelId);
-      return channel ? channel.getFormattedName() : "Unknown";
+      return channel ? (
+        <span>{channel.getFormattedName()}</span>
+      ) : (
+        <span className="type-disabled">None</span>
+      );
     },
 
     toggleShowChannels: function() {
       this.setState({
         showChannels: !this.state.showChannels
       });
+    },
+
+    shouldShowChannels: function() {
+      return this.props.scheduledAction.isNew() || this.state.showChannels;
     },
 
     showChannelButtonText: function() {
@@ -69,10 +77,12 @@ define(function(require) {
             <span>Channel: </span>
             <b>{this.nameForChannel(this.props.scheduledAction.channel)}</b>
           </div>
-          <div>
-            <button type="button" className="button-s button-shrink" onClick={this.toggleShowChannels}>{this.showChannelButtonText()}</button>
-          </div>
-          <Collapsible revealWhen={this.state.showChannels}>
+          <Collapsible revealWhen={!this.props.scheduledAction.isNew()}>
+            <div>
+              <button type="button" className="button-s button-shrink" onClick={this.toggleShowChannels}>{this.showChannelButtonText()}</button>
+            </div>
+          </Collapsible>
+          <Collapsible revealWhen={this.shouldShowChannels()}>
             <SearchWithResults
               placeholder="Search for a channel"
               value={this.props.scheduledAction.channel}
