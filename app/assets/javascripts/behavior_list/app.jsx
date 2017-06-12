@@ -5,7 +5,7 @@ define(function(require) {
     PageNotification = require('../shared_ui/page_notification'),
     DataRequest = require('../lib/data_request'),
     ImmutableObjectUtils = require('../lib/immutable_object_utils'),
-    TimeZoneSetter = require('../time_zone_setter/index');
+    TimeZoneSetter = require('../time_zone/team_time_zone');
 
   return React.createClass({
     displayName: 'BehaviorListApp',
