@@ -29,10 +29,19 @@ define(function(require) {
       const channels = this.props.channelList.filter(
         (ea) => !ea.isArchived && ea.members.includes(this.props.slackUserId) && this.searchIncludes(ea)
       );
-      return channels.map((ea) => ({
-        name: ea.getName(),
+      const channelList = channels.map((ea) => ({
+        name: ea.getFormattedName(),
         value: ea.id
       }));
+      if (this.props.scheduledAction.isNew()) {
+        // Provide a blank option if there might not be a channel set
+        return [{
+          name: "(none)",
+          value: ""
+        }].concat(channelList);
+      } else {
+        return channelList;
+      }
     },
 
     updateSearch: function(newValue) {

@@ -25,9 +25,16 @@ case class SlackChannel(channel: Channel) extends ChannelLike {
 }
 
 case class SlackGroup(group: Group) extends ChannelLike {
+  // Slack API hard-codes topic value "Group messaging" for group DMs
+  val isGroupDM: Boolean = group.topic.value == "Group messaging"
   val members: Seq[String] = group.members
   val id: String = group.id
-  val name: String = group.name
+  // Slack API returns list of user names in group DMs inside the group "purpose"
+  val name: String = if (isGroupDM) {
+    group.purpose.value
+  } else {
+    group.name
+  }
   val isPublic: Boolean = false
   val isArchived: Boolean = group.is_archived
 }
