@@ -81,6 +81,12 @@ return React.createClass({
     this.refs.input.select();
   },
 
+  componentDidMount: function() {
+    // Need to add keystroke handlers directly with the DOM, because React events don't bubble up all the way
+    this.refs.input.addEventListener('keydown', this.handleKeyDown, false);
+    this.refs.input.addEventListener('keypress', this.handleKeyPress, false);
+  },
+
   render: function() {
     return (
       <input
@@ -96,8 +102,6 @@ return React.createClass({
         onChange={this.onChange}
         onBlur={this.onBlur}
         onFocus={this.onFocus}
-        onKeyPress={this.handleKeyPress}
-        onKeyDown={this.handleKeyDown}
         autoCapitalize={this.props.disableAuto ? "off" : null}
         autoComplete={this.props.disableAuto ? "off" : null}
         autoCorrect={this.props.disableAuto ? "off" : null}
