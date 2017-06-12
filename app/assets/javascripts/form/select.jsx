@@ -68,6 +68,10 @@ define(function(require) {
       return this.refs.select.selectedIndex;
     },
 
+    getCurrentValue: function() {
+      return this.refs.select ? this.refs.select.value : null;
+    },
+
     render: function() {
       return (
         <div

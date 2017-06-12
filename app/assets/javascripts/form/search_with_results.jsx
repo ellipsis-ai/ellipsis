@@ -17,7 +17,8 @@ define(function(require) {
       noMatches: React.PropTypes.bool.isRequired,
       error: React.PropTypes.string,
       onChangeSearch: React.PropTypes.func.isRequired,
-      onSelect: React.PropTypes.func.isRequired
+      onSelect: React.PropTypes.func.isRequired,
+      onEnterKey: React.PropTypes.func
     },
 
     getInitialState: function() {
@@ -41,12 +42,14 @@ define(function(require) {
     onSelectNext: function() {
       if (this.selector) {
         this.selector.selectNextItem();
+        this.onSelect(this.selector.getCurrentValue());
       }
     },
 
     onSelectPrevious: function() {
       if (this.selector) {
         this.selector.selectPreviousItem();
+        this.onSelect(this.selector.getCurrentValue());
       }
     },
 
@@ -85,16 +88,37 @@ define(function(require) {
       }
     },
 
+    focus: function() {
+      if (this.input) {
+        this.input.focus();
+      }
+    },
+
+    onEnterKey: function() {
+      if (this.props.onEnterKey) {
+        this.props.onEnterKey(this.props.value);
+      }
+    },
+
+    clearSearch: function() {
+      if (this.input) {
+        this.input.clearValue();
+      }
+    },
+
     render: function() {
       return (
         <div>
           <div className={this.state.isSearching ? "pulse" : ""}>
             <div className="mvl width-30 mobile-width-full">
-              <SearchInput placeholder={this.props.placeholder}
+              <SearchInput
+                ref={(input) => this.input = input}
+                placeholder={this.props.placeholder}
                 value={this.state.searchText}
                 onChange={this.updateSearchText}
                 onUpKey={this.onSelectPrevious}
                 onDownKey={this.onSelectNext}
+                onEnterKey={this.onEnterKey}
                 withResults={true}
               />
               <div className="position-relative">

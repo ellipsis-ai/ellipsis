@@ -17,17 +17,36 @@ define(function(require) {
     getInitialState: function() {
       return {
         searchText: "",
+        selectedValue: this.props.scheduledAction.channel,
         showChannels: false
       };
     },
 
-    searchIncludes: function(channel) {
-      return !this.state.searchText || channel.getName().toLowerCase().includes(this.state.searchText.toLowerCase());
+    componentWillUpdate: function(newProps) {
+      if (newProps.scheduledAction.channel !== this.props.scheduledAction.channel) {
+        this.setState({
+          searchText: "",
+          selectedValue: newProps.scheduledAction.channel
+        });
+      }
+    },
+
+    searchIncludes: function(channel, text) {
+      if (!text) {
+        return true;
+      } else {
+        const forComparison = text.replace(/^#/, "").toLowerCase();
+        return channel.getName().toLowerCase().includes(forComparison);
+      }
+    },
+
+    canSelectChannel: function(channel) {
+      return !channel.isArchived && channel.members.includes(this.props.slackUserId);
     },
 
     getFilteredChannelList: function() {
       const channels = this.props.channelList.filter(
-        (ea) => !ea.isArchived && ea.members.includes(this.props.slackUserId) && this.searchIncludes(ea)
+        (ea) => this.canSelectChannel(ea) && this.searchIncludes(ea, this.state.searchText)
       );
       const channelList = channels.map((ea) => ({
         name: ea.getFormattedName(),
@@ -45,13 +64,38 @@ define(function(require) {
     },
 
     updateSearch: function(newValue) {
-      this.setState({
+      const newState = {
         searchText: newValue
-      });
+      };
+      const selectedChannel = this.props.channelList.find((ea) => ea.id === this.state.selectedValue);
+      if (!selectedChannel || !this.searchIncludes(selectedChannel, newValue)) {
+        const newChannel = this.props.channelList.find((ea) => this.canSelectChannel(ea) && this.searchIncludes(ea, newValue));
+        newState.selectedValue = newChannel ? newChannel.id : "";
+      }
+      this.setState(newState);
     },
 
     selectChannel: function(newValue) {
-      this.props.onChange(newValue);
+      this.setState({
+        selectedValue: newValue
+      });
+    },
+
+    updateChannel: function() {
+      if (this.state.selectedValue) {
+        this.setState({
+          showChannels: false
+        }, () => {
+          this.props.onChange(this.state.selectedValue);
+        });
+      }
+    },
+
+    undoChannel: function() {
+      this.setState({
+        selectedValue: this.props.scheduledAction.channel,
+        showChannels: false
+      });
     },
 
     nameForChannel: function(channelId) {
@@ -63,9 +107,14 @@ define(function(require) {
       );
     },
 
-    toggleShowChannels: function() {
+    showChannels: function() {
       this.setState({
-        showChannels: !this.state.showChannels
+        showChannels: true
+      }, () => {
+        if (this.searcher) {
+          this.searcher.clearSearch();
+          this.searcher.focus();
+        }
       });
     },
 
@@ -73,34 +122,41 @@ define(function(require) {
       return this.props.scheduledAction.isNew() || this.state.showChannels;
     },
 
-    showChannelButtonText: function() {
-      return this.state.showChannels ? "Hide channels" : "Modify channel";
-    },
-
     render: function() {
       const channelList = this.getFilteredChannelList();
       const hasNoMatches = Boolean(this.state.searchText) && channelList.length === 0;
       return (
         <div>
-          <div className="type-s mbs">
-            <span>Channel: </span>
-            <b>{this.nameForChannel(this.props.scheduledAction.channel)}</b>
-          </div>
-          <Collapsible revealWhen={!this.props.scheduledAction.isNew()}>
-            <div>
-              <button type="button" className="button-s button-shrink" onClick={this.toggleShowChannels}>{this.showChannelButtonText()}</button>
-            </div>
-          </Collapsible>
           <Collapsible revealWhen={this.shouldShowChannels()}>
             <SearchWithResults
+              ref={(searcher) => this.searcher = searcher}
               placeholder="Search for a channel"
-              value={this.props.scheduledAction.channel}
+              value={this.state.selectedValue}
               options={channelList}
               isSearching={false}
               noMatches={hasNoMatches}
               onChangeSearch={this.updateSearch}
               onSelect={this.selectChannel}
+              onEnterKey={this.updateChannel}
             />
+            <button type="button"
+              className="button-s button-shrink mrs"
+              disabled={!this.state.selectedValue}
+              onClick={this.updateChannel}>Select channel</button>
+            {this.props.scheduledAction.isNew() ? null : (
+              <button type="button"
+                className="button-s button-shrink mrs"
+                onClick={this.undoChannel}>Cancel</button>
+            )}
+          </Collapsible>
+          <div className="type-s mtm mbs">
+            <span>Channel: </span>
+            <b>{this.nameForChannel(this.props.scheduledAction.channel)}</b>
+          </div>
+          <Collapsible revealWhen={!this.shouldShowChannels()}>
+            <div>
+              <button type="button" className="button-s button-shrink" onClick={this.showChannels}>Modify channel</button>
+            </div>
           </Collapsible>
         </div>
       );
