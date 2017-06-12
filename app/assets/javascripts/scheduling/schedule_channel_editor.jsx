@@ -48,19 +48,10 @@ define(function(require) {
       const channels = this.props.channelList.filter(
         (ea) => this.canSelectChannel(ea) && this.searchIncludes(ea, this.state.searchText)
       );
-      const channelList = channels.map((ea) => ({
+      return channels.map((ea) => ({
         name: ea.getFormattedName(),
         value: ea.id
       }));
-      if (this.props.scheduledAction.isNew()) {
-        // Provide a blank option if there might not be a channel set
-        return [{
-          name: "(none)",
-          value: ""
-        }].concat(channelList);
-      } else {
-        return channelList;
-      }
     },
 
     updateSearch: function(newValue) {
@@ -151,13 +142,15 @@ define(function(require) {
           </Collapsible>
           <div className="type-s mtm mbs">
             <span>Channel: </span>
-            <b>{this.nameForChannel(this.props.scheduledAction.channel)}</b>
+            {this.shouldShowChannels() ? (
+              <b>{this.nameForChannel(this.props.scheduledAction.channel)}</b>
+            ) : (
+              <button type="button" className="button-raw" onClick={this.showChannels}>
+                <b className="type-black">{this.nameForChannel(this.props.scheduledAction.channel)}</b>
+                <span> — Modify</span>
+              </button>
+            )}
           </div>
-          <Collapsible revealWhen={!this.shouldShowChannels()}>
-            <div>
-              <button type="button" className="button-s button-shrink" onClick={this.showChannels}>Modify channel</button>
-            </div>
-          </Collapsible>
         </div>
       );
     }
