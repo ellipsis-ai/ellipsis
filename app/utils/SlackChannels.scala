@@ -12,24 +12,39 @@ trait ChannelLike {
   val members: Seq[String]
   val id: String
   val name: String
+  val isPublic: Boolean
+  val isArchived: Boolean
 }
 
 case class SlackChannel(channel: Channel) extends ChannelLike {
   val members: Seq[String] = channel.members.getOrElse(Seq())
   val id: String = channel.id
   val name: String = channel.name
+  val isPublic: Boolean = true
+  val isArchived: Boolean = channel.is_archived.getOrElse(false)
 }
 
 case class SlackGroup(group: Group) extends ChannelLike {
+  // Slack API hard-codes topic value "Group messaging" for group DMs
+  val isGroupDM: Boolean = group.topic.value == "Group messaging"
   val members: Seq[String] = group.members
   val id: String = group.id
-  val name: String = group.name
+  // Slack API returns list of user names in group DMs inside the group "purpose"
+  val name: String = if (isGroupDM) {
+    group.purpose.value
+  } else {
+    group.name
+  }
+  val isPublic: Boolean = false
+  val isArchived: Boolean = group.is_archived
 }
 
 case class SlackDM(im: Im) extends ChannelLike {
   val members: Seq[String] = Seq(im.user)
   val id: String = im.id
   val name: String = id
+  val isPublic: Boolean = false
+  val isArchived: Boolean = im.is_user_deleted.getOrElse(false)
 }
 
 case class SlackChannels(client: SlackApiClient) {

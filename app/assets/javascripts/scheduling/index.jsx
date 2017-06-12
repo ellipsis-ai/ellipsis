@@ -5,6 +5,7 @@ define(function(require) {
     ModalScrim = require('../shared_ui/modal_scrim'),
     PageWithPanels = require('../shared_ui/page_with_panels'),
     ScheduledAction = require('../models/scheduled_action'),
+    ScheduleChannel = require('../models/schedule_channel'),
     ScheduledItem = require('./scheduled_item'),
     ScheduledItemEditor = require('./scheduled_item_editor'),
     Sort = require('../lib/sort');
@@ -14,7 +15,9 @@ define(function(require) {
     propTypes: Object.assign(PageWithPanels.requiredPropTypes(), {
       teamId: React.PropTypes.string.isRequired,
       scheduledActions: React.PropTypes.arrayOf(React.PropTypes.instanceOf(ScheduledAction)),
-      teamTimeZone: React.PropTypes.string
+      channelList: React.PropTypes.arrayOf(React.PropTypes.instanceOf(ScheduleChannel)),
+      teamTimeZone: React.PropTypes.string,
+      slackUserId: React.PropTypes.string
     }),
 
     getInitialState: function() {
@@ -37,7 +40,8 @@ define(function(require) {
     getScheduleByChannel: function() {
       const groupsByName = {};
       this.props.scheduledActions.forEach((action) => {
-        const channelName = action.channel || "Unknown";
+        const channel = this.props.channelList.find((ea) => ea.id === action.channel);
+        const channelName = channel ? channel.getFormattedName() : "Unknown";
         const group = groupsByName[channelName] || [];
         groupsByName[channelName] = group.concat([action]);
       });
@@ -92,11 +96,7 @@ define(function(require) {
     },
 
     cancelEditor: function() {
-      this.props.onClearActivePanel(() => {
-        this.setState({
-          selectedItem: null
-        });
-      });
+      this.props.onClearActivePanel();
     },
 
     renderSidebar: function(groups) {
@@ -197,9 +197,11 @@ define(function(require) {
             >
               <ScheduledItemEditor
                 scheduledAction={selectedItem}
+                channelList={this.props.channelList}
                 onChange={this.updateSelectedItem}
                 onCancel={this.cancelEditor}
                 teamTimeZone={this.props.teamTimeZone || "America/New_York"}
+                slackUserId={this.props.slackUserId || ""}
               />
             </Collapsible>
           </FixedFooter>

@@ -1,20 +1,24 @@
 define(function(require) {
   var React = require('react'),
     RecurrenceEditor = require('./recurrence_editor'),
+    ScheduleChannelEditor = require('./schedule_channel_editor'),
+    ScheduledItemConfig = require('./scheduled_item_config'),
     ScheduledAction = require('../models/scheduled_action'),
-    ScheduledItemConfig = require('./scheduled_item_config');
+    ScheduleChannel = require('../models/schedule_channel');
 
   return React.createClass({
     displayName: 'ScheduledItemEditor',
     propTypes: {
       scheduledAction: React.PropTypes.instanceOf(ScheduledAction),
+      channelList: React.PropTypes.arrayOf(React.PropTypes.instanceOf(ScheduleChannel)).isRequired,
       onChange: React.PropTypes.func.isRequired,
       onCancel: React.PropTypes.func.isRequired,
-      teamTimeZone: React.PropTypes.string.isRequired
+      teamTimeZone: React.PropTypes.string.isRequired,
+      slackUserId: React.PropTypes.string.isRequired
     },
 
     shouldRenderItem: function() {
-      return !!this.props.scheduledAction;
+      return Boolean(this.props.scheduledAction);
     },
 
     updateRecurrence: function(newRecurrence) {
@@ -36,19 +40,21 @@ define(function(require) {
       }), callback);
     },
 
-    cancel: function() {
-      this.props.onCancel();
+    updateChannel: function(channelId) {
+      this.props.onChange(this.props.scheduledAction.clone({
+        channel: channelId
+      }));
     },
 
-    isNew: function() {
-      return !this.props.scheduledAction.id;
+    cancel: function() {
+      this.props.onCancel();
     },
 
     renderDetails: function() {
       return (
         <div className="columns">
           <div className="column column-one-quarter mobile-column-full">
-            <h4 className="type-weak">{this.isNew() ? "New schedule" : "Edit schedule"}</h4>
+            <h4 className="type-weak">{this.props.scheduledAction.isNew() ? "New schedule" : "Edit schedule"}</h4>
           </div>
           <div className="column column-three-quarters mobile-column-full plxxl">
             <div>
@@ -57,6 +63,16 @@ define(function(require) {
                 scheduledAction={this.props.scheduledAction}
                 onChangeTriggerText={this.updateTriggerText}
                 onChangeAction={this.updateAction}
+              />
+            </div>
+            <hr />
+            <div>
+              <h5 className="mbs">Where to do it</h5>
+              <ScheduleChannelEditor
+                scheduledAction={this.props.scheduledAction}
+                channelList={this.props.channelList}
+                onChange={this.updateChannel}
+                slackUserId={this.props.slackUserId}
               />
             </div>
             <hr />
@@ -76,7 +92,7 @@ define(function(require) {
                   <button type="button" className="mbs mrs" onClick={this.cancel}>Cancel</button>
                 </div>
                 <div className="column column-shrink align-r mobile-align-l">
-                  {this.isNew() ? null : (
+                  {this.props.scheduledAction.isNew() ? null : (
                     <button type="button" className="mbs button-shrink" disabled={true}>Unschedule this item</button>
                   )}
                 </div>

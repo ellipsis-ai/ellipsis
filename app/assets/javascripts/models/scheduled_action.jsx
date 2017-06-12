@@ -38,6 +38,10 @@ define(function(require) {
       });
     }
 
+    isNew() {
+      return !this.id;
+    }
+
     clone(props) {
       return new ScheduledAction(Object.assign({}, this, props));
     }

@@ -41,8 +41,19 @@ class ScheduledActionsController @Inject()(
               }.getOrElse(Future.successful(Seq()))
               scheduledMessageData <- ScheduledActionData.fromScheduledMessages(scheduledMessages, channelList)
               scheduledBehaviorData <- ScheduledActionData.fromScheduledBehaviors(scheduledBehaviors, dataService, channelList)
+              maybeSlackLinkedAccount <- dataService.linkedAccounts.maybeForSlackFor(user)
+              maybeSlackProfile <- maybeSlackLinkedAccount.map { linkedAccount =>
+                dataService.slackProfiles.find(linkedAccount.loginInfo)
+              }.getOrElse(Future.successful(None))
             } yield {
-              val pageData = ScheduledActionsConfig("scheduling", team.id, scheduledMessageData ++ scheduledBehaviorData, team.maybeTimeZone.map(_.toString))
+              val pageData = ScheduledActionsConfig(
+                containerId = "scheduling",
+                teamId = team.id,
+                scheduledActions = scheduledMessageData ++ scheduledBehaviorData,
+                channelList = ScheduleChannelData.fromChannelLikeList(channelList),
+                teamTimeZone = team.maybeTimeZone.map(_.toString),
+                slackUserId = maybeSlackProfile.map(_.loginInfo.providerKey)
+              )
               Ok(views.js.shared.pageConfig(viewConfig(Some(teamAccess)), "config/scheduling/index", Json.toJson(pageData)))
             }
           }.getOrElse {
