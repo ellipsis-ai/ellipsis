@@ -96,11 +96,7 @@ define(function(require) {
     },
 
     cancelEditor: function() {
-      this.props.onClearActivePanel(() => {
-        this.setState({
-          selectedItem: null
-        });
-      });
+      this.props.onClearActivePanel();
     },
 
     renderSidebar: function(groups) {
