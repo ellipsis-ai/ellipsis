@@ -1,5 +1,7 @@
 package controllers
 
+import java.time.format.TextStyle
+import java.util.Locale
 import javax.inject.Inject
 
 import akka.actor.ActorSystem
@@ -52,6 +54,7 @@ class ScheduledActionsController @Inject()(
                 scheduledActions = scheduledMessageData ++ scheduledBehaviorData,
                 channelList = ScheduleChannelData.fromChannelLikeList(channelList),
                 teamTimeZone = team.maybeTimeZone.map(_.toString),
+                teamTimeZoneName = team.maybeTimeZone.map(_.getDisplayName(TextStyle.FULL, Locale.ENGLISH)),
                 slackUserId = maybeSlackProfile.map(_.loginInfo.providerKey)
               )
               Ok(views.js.shared.pageConfig(viewConfig(Some(teamAccess)), "config/scheduling/index", Json.toJson(pageData)))

@@ -90,6 +90,7 @@ define(function(require) {
       return {
         name: name,
         timeZone: timeZone,
+        timeZoneName: cityInfo.timeZoneName,
         key: key
       };
     },
@@ -110,7 +111,7 @@ define(function(require) {
         selectedCity: cityKey,
         selectedOption: option
       }, () => {
-        this.props.onChange(this.state.selectedOption.timeZone, this.state.selectedOption.name);
+        this.props.onChange(option.timeZone, option.name, option.timeZoneName);
       });
     },
 

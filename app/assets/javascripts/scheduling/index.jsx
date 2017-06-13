@@ -17,6 +17,7 @@ define(function(require) {
       scheduledActions: React.PropTypes.arrayOf(React.PropTypes.instanceOf(ScheduledAction)),
       channelList: React.PropTypes.arrayOf(React.PropTypes.instanceOf(ScheduleChannel)),
       teamTimeZone: React.PropTypes.string,
+      teamTimeZoneName: React.PropTypes.string,
       slackUserId: React.PropTypes.string
     }),
 

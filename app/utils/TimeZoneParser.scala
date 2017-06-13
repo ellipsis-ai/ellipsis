@@ -30,4 +30,7 @@ object TimeZoneParser {
       map { case(mapping, _) => ZoneId.of(mapping.id) }
   }
 
+  def maybeZoneForId(id: String): Option[ZoneId] = {
+    idMapping.find(mapping => mapping.id == id).map(mapping => ZoneId.of(mapping.id))
+  }
 }

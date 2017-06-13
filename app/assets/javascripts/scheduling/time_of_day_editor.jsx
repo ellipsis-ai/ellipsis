@@ -21,7 +21,7 @@ define(function(require) {
         showTimeZones: false,
         selectedTimeZoneId: "",
         selectedTimeZoneName: "",
-        currentTimeZoneName: this.props.recurrence.timeZone || this.props.teamTimeZone
+        currentTimeZoneName: ""
       };
     },
 
@@ -93,6 +93,16 @@ define(function(require) {
       return new Hour(hour).toString();
     },
 
+    getCurrentTimeZoneName: function() {
+      if (this.state.currentTimeZoneName) {
+        return this.state.currentTimeZoneName;
+      } else {
+        const timeZone = this.props.recurrence.timeZone || this.props.teamTimeZone;
+        const humanized = timeZone.replace(/^.+\//, "").replace(/_/g, " ");
+        return `${humanized} time`;
+      }
+    },
+
     onChangeHour: function(newValue) {
       const hour = Hour.fromString(newValue);
       if (this.isAM()) {
@@ -125,11 +135,26 @@ define(function(require) {
       });
     },
 
-    updateSelectedTimeZone: function(timeZoneId, timeZoneName) {
+    cancelSetTimeZone: function() {
       this.setState({
+        showTimeZones: false
+      });
+    },
+
+    recurrenceTimeZoneMatches(timeZoneId) {
+      return timeZoneId === this.props.recurrence.timeZone ||
+        (!this.props.recurrence.timeZone && timeZoneId === this.props.teamTimeZone);
+    },
+
+    updateSelectedTimeZone: function(timeZoneId, cityName, timeZoneName) {
+      const newState = {
         selectedTimeZoneId: timeZoneId,
         selectedTimeZoneName: timeZoneName
-      });
+      };
+      if (!this.state.currentTimeZoneName && this.recurrenceTimeZoneMatches(timeZoneId)) {
+        newState.currentTimeZoneName = newState.selectedTimeZoneName;
+      }
+      this.setState(newState);
     },
 
     render: function() {
@@ -154,7 +179,7 @@ define(function(require) {
                 <span>{this.state.currentTimeZoneName}</span>
               ) : (
                 <button type="button" className="button-raw" onClick={this.showTimeZones}>
-                  <span className="type-black">{this.state.currentTimeZoneName}</span>
+                  <span className="type-black">{this.getCurrentTimeZoneName()}</span>
                   <span> — Modify</span>
                 </button>
               )}
@@ -168,7 +193,10 @@ define(function(require) {
                 disabled={!this.state.selectedTimeZoneId}
                 onClick={this.setTimeZone}
               >Select time zone</button>
-              <button type="button" className="button-s button-shrink">Cancel</button>
+              <button type="button"
+                className="button-s button-shrink"
+                onClick={this.cancelSetTimeZone}
+              >Cancel</button>
             </div>
           </Collapsible>
         </div>
