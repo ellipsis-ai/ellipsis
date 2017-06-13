@@ -1,8 +1,5 @@
 package utils
 
-import java.time.format.TextStyle
-import java.util.Locale
-
 import scala.io.Source
 
 case class CityInfo(name: String, asciiName: String, admin: Option[String], country: String, timeZoneId: String, population: Long, timeZoneName: String)
