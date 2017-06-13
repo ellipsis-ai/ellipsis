@@ -9,7 +9,8 @@ define(function(require) {
     propTypes: {
       recurrence: React.PropTypes.instanceOf(Recurrence).isRequired,
       onChange: React.PropTypes.func.isRequired,
-      teamTimeZone: React.PropTypes.string.isRequired
+      teamTimeZone: React.PropTypes.string.isRequired,
+      teamTimeZoneName: React.PropTypes.string.isRequired
     },
 
     render: function() {
@@ -30,6 +31,7 @@ define(function(require) {
               recurrence={this.props.recurrence}
               onChange={this.props.onChange}
               teamTimeZone={this.props.teamTimeZone}
+              teamTimeZoneName={this.props.teamTimeZoneName}
             />
           </div>
         </div>

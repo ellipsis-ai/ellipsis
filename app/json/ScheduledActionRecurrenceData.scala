@@ -1,5 +1,8 @@
 package json
 
+import java.time.format.TextStyle
+import java.util.Locale
+
 import models.behaviors.scheduling.recurrence.Recurrence
 
 case class ScheduledActionRecurrenceTimeData(hour: Int, minute: Int)
@@ -10,6 +13,7 @@ case class ScheduledActionRecurrenceData(
                                           typeName: String,
                                           timeOfDay: Option[ScheduledActionRecurrenceTimeData],
                                           timeZone: Option[String],
+                                          timeZoneName: Option[String],
                                           minuteOfHour: Option[Int],
                                           dayOfWeek: Option[Int],
                                           dayOfMonth: Option[Int],
@@ -26,6 +30,7 @@ object ScheduledActionRecurrenceData {
       recurrence.typeName,
       recurrence.maybeTimeOfDay.map(time => ScheduledActionRecurrenceTimeData(time.getHour, time.getMinute)),
       recurrence.maybeTimeZone.map(_.toString),
+      recurrence.maybeTimeZone.map(_.getDisplayName(TextStyle.FULL, Locale.ENGLISH)),
       recurrence.maybeMinuteOfHour,
       recurrence.maybeDayOfWeek.map(_.getValue),
       recurrence.maybeDayOfMonth,

@@ -5,7 +5,7 @@ define(function(require) {
     PageNotification = require('../shared_ui/page_notification'),
     DataRequest = require('../lib/data_request'),
     ImmutableObjectUtils = require('../lib/immutable_object_utils'),
-    TimeZoneSetter = require('../time_zone_setter/index');
+    TimeZoneSetter = require('../time_zone/team_time_zone');
 
   return React.createClass({
     displayName: 'BehaviorListApp',
@@ -182,7 +182,7 @@ define(function(require) {
           .then((json) => {
             if (json.tzName) {
               this.setState({
-                currentTeamTimeZone: displayName,
+                currentTeamTimeZone: json.formattedName || displayName,
                 isSavingTeamTimeZone: false
               });
             } else {

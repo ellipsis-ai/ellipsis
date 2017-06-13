@@ -14,6 +14,7 @@ define(function(require) {
       onChange: React.PropTypes.func.isRequired,
       onCancel: React.PropTypes.func.isRequired,
       teamTimeZone: React.PropTypes.string.isRequired,
+      teamTimeZoneName: React.PropTypes.string.isRequired,
       slackUserId: React.PropTypes.string.isRequired
     },
 
@@ -82,6 +83,7 @@ define(function(require) {
                 onChange={this.updateRecurrence}
                 recurrence={this.props.scheduledAction.recurrence}
                 teamTimeZone={this.props.teamTimeZone}
+                teamTimeZoneName={this.props.teamTimeZoneName}
               />
             </div>
 

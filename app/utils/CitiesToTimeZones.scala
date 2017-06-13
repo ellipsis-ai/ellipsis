@@ -2,7 +2,7 @@ package utils
 
 import scala.io.Source
 
-case class CityInfo(name: String, asciiName: String, admin: Option[String], country: String, timeZoneId: String, population: Long)
+case class CityInfo(name: String, asciiName: String, admin: Option[String], country: String, timeZoneId: String, population: Long, timeZoneName: String)
 
 class CitiesToTimeZones {
 
@@ -77,11 +77,13 @@ class CitiesToTimeZones {
         case e: NumberFormatException => 15000 // membership in the list means at least this many people
       }
 
-      val info = CityInfo(name, asciiName, admin1, country, tz, population)
+      TimeZoneParser.maybeNameForZoneId(tz).map { timeZoneName =>
+        val info = CityInfo(name, asciiName, admin1, country, tz, population, timeZoneName)
 
-      addToInfoMap(name, info)
-      addToInfoMap(asciiName, info)
-      addToInfoMap(tz, info)
+        addToInfoMap(name, info)
+        addToInfoMap(asciiName, info)
+        addToInfoMap(tz, info)
+      }
     }
     bufferedSource.close
   }

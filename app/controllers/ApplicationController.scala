@@ -1,5 +1,7 @@
 package controllers
 
+import java.time.format.TextStyle
+import java.util.Locale
 import javax.inject.Inject
 
 import com.mohiva.play.silhouette.api.Silhouette
@@ -195,7 +197,8 @@ class ApplicationController @Inject() (
   private val timeZoneForm = Form(
     mapping(
       "tzName" -> nonEmptyText,
-      "teamId" -> optional(nonEmptyText)
+      "teamId" -> optional(nonEmptyText),
+      "formattedName" -> optional(nonEmptyText)
     )(TeamTimeZoneData.apply)(TeamTimeZoneData.unapply)
   )
 
@@ -216,7 +219,7 @@ class ApplicationController @Inject() (
         } yield {
           maybeTeam.map { team =>
             team.maybeTimeZone.map { tz =>
-              Ok(Json.toJson(TeamTimeZoneData(tz.toString, None)).toString)
+              Ok(Json.toJson(TeamTimeZoneData(tz.toString, None, Some(tz.getDisplayName(TextStyle.FULL, Locale.ENGLISH)))).toString)
             }.getOrElse {
               BadRequest(Json.obj("message" -> "Invalid time zone").toString)
             }

@@ -1,22 +1,20 @@
 define(function(require) {
   var React = require('react'),
     DataRequest = require('../lib/data_request'),
-    DynamicLabelButton = require('../form/dynamic_label_button'),
     Select = require('../form/select'),
     SearchInput = require('../form/search'),
     debounce = require('javascript-debounce');
 
   return React.createClass({
-    displayName: 'TimeZoneSetter',
+    displayName: 'TimeZoneSelector',
     propTypes: {
-      onSetTimeZone: React.PropTypes.func.isRequired,
-      isSaving: React.PropTypes.bool,
-      error: React.PropTypes.string
+      onChange: React.PropTypes.func.isRequired,
+      defaultTimeZone: React.PropTypes.string
     },
 
     componentDidMount: function() {
       this.delayRequestMatchingTimezones = debounce(this.requestMatchingTimezones, 250);
-      this.requestMatchingTimezones(this.state.guessedTimeZone);
+      this.requestMatchingTimezones(this.state.defaultTimeZone);
     },
 
     guessTimeZone: function() {
@@ -30,9 +28,9 @@ define(function(require) {
     },
 
     getInitialState: function() {
-      var guessedTimeZone = this.guessTimeZone();
+      var defaultTimeZone = this.props.defaultTimeZone || this.guessTimeZone();
       return {
-        guessedTimeZone: guessedTimeZone,
+        defaultTimeZone: defaultTimeZone,
         selectedCity: "",
         selectedOption: null,
         searchText: "",
@@ -82,10 +80,7 @@ define(function(require) {
 
     setSelectedTimeZoneFromCity: function(cityInfo) {
       const optionProps = this.getOptionPropsFromCityInfo(cityInfo);
-      this.setState({
-        selectedCity: optionProps.key,
-        selectedOption: optionProps
-      });
+      this.updateCityAndOption(optionProps.key, optionProps);
     },
 
     getOptionPropsFromCityInfo: function(cityInfo) {
@@ -95,6 +90,7 @@ define(function(require) {
       return {
         name: name,
         timeZone: timeZone,
+        timeZoneName: cityInfo.timeZoneName,
         key: key
       };
     },
@@ -106,11 +102,17 @@ define(function(require) {
     updateSelectedTimeZone: function(valueOrNull, newValueIndex) {
       var newResult = this.getFilteredTzInfo()[newValueIndex];
       if (newResult) {
-        this.setState({
-          selectedCity: newResult.key,
-          selectedOption: newResult
-        });
+        this.updateCityAndOption(newResult.key, newResult);
       }
+    },
+
+    updateCityAndOption: function(cityKey, option) {
+      this.setState({
+        selectedCity: cityKey,
+        selectedOption: option
+      }, () => {
+        this.props.onChange(option.timeZone, option.name, option.timeZoneName);
+      });
     },
 
     updateSearchText: function(newValue) {
@@ -142,10 +144,6 @@ define(function(require) {
       return `${city}${region && region !== city ? `, ${region}` : ""}, ${country}`;
     },
 
-    setTimeZone: function() {
-      this.props.onSetTimeZone(this.state.selectedOption.timeZone, this.state.selectedOption.name);
-    },
-
     renderSearchMessage: function() {
       if (this.state.error) {
         return (
@@ -166,70 +164,44 @@ define(function(require) {
 
     render: function() {
       return (
-        <div className="bg-white border-bottom border-bottom-thick pvxl">
-          <div className="container container-c container-narrow">
-            <h2>Welcome to Ellipsis!</h2>
-
-            <h3>Set your team’s time zone</h3>
-            <p>
-              Before you get started, pick a default time zone for your team.
-            </p>
-
-            <p>
-              This will be used when Ellipsis displays dates and times to a group, or whenever a time of day mentioned
-              isn’t otherwise obvious.
-            </p>
-
-            <div className={this.state.isSearching ? "pulse" : ""}>
-              <div className="mvl width-30 mobile-width-full">
-                <SearchInput placeholder="Search for a city"
-                  value={this.state.searchText}
-                  onChange={this.updateSearchText}
-                  onUpKey={this.selectPreviousMatch}
-                  onDownKey={this.selectNextMatch}
-                  withResults={true}
-                />
-                <div className="position-relative">
-                  <Select
-                    ref="results"
-                    value={this.state.selectedCity}
-                    onChange={this.updateSelectedTimeZone}
-                    size="5"
-                    withSearch={true}
-                  >
-                    {this.getFilteredTzInfo().map((tz) => (
-                      <option key={tz.key} value={tz.key}>{tz.name}</option>
-                    ))}
-                  </Select>
-                  <div className="position-absolute position-z-popup position-top-left">
-                    {this.renderSearchMessage()}
-                  </div>
+        <div>
+          <div className={this.state.isSearching ? "pulse" : ""}>
+            <div className="mvl width-30 mobile-width-full">
+              <SearchInput placeholder="Search for a city"
+                value={this.state.searchText}
+                onChange={this.updateSearchText}
+                onUpKey={this.selectPreviousMatch}
+                onDownKey={this.selectNextMatch}
+                withResults={true}
+              />
+              <div className="position-relative">
+                <Select
+                  ref="results"
+                  value={this.state.selectedCity}
+                  onChange={this.updateSelectedTimeZone}
+                  size="5"
+                  withSearch={true}
+                >
+                  {this.getFilteredTzInfo().map((tz) => (
+                    <option key={tz.key} value={tz.key}>{tz.name}</option>
+                  ))}
+                </Select>
+                <div className="position-absolute position-z-popup position-top-left">
+                  {this.renderSearchMessage()}
                 </div>
               </div>
             </div>
-            <div className="mvl">
-              <span className="mrm">Selected time zone:</span>
-              <b>{this.state.selectedOption ? this.state.selectedOption.name : (
-                <i className="type-disabled">None</i>
-              )}</b>
-            </div>
-            <div className="mvl">
-              <DynamicLabelButton
-                className="button-primary mrm"
-                onClick={this.setTimeZone}
-                disabledWhen={this.props.isSaving || !this.state.selectedOption}
-                labels={[{
-                  text: "Set team time zone",
-                  displayWhen: !this.props.isSaving
-                }, {
-                  text: "Saving…",
-                  displayWhen: this.props.isSaving
-                }]}
-              />
-              {this.props.error ? (
-                <span className="align-button type-italic type-pink fade-in">— {this.props.error}</span>
-              ) : null}
-            </div>
+          </div>
+          <div className="mvl">
+            <span className="mrm">Selected time zone:</span>
+            <b>{this.state.selectedOption ? (
+              <span>
+                <span>{this.state.selectedOption.name}</span>
+                <span> ({this.state.selectedOption.timeZoneName})</span>
+              </span>
+            ) : (
+              <i className="type-disabled">None</i>
+            )}</b>
           </div>
         </div>
       );

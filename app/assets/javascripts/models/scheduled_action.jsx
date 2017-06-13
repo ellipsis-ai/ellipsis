@@ -55,11 +55,11 @@ define(function(require) {
       return new ScheduledAction(materializedProps);
     }
 
-    static newWithDefaults(timeZone) {
+    static newWithDefaults(timeZone, timeZoneName) {
       return new ScheduledAction({
         scheduleType: "daily",
         trigger: "",
-        recurrence: new Recurrence({ timeZone: timeZone }).becomeDaily()
+        recurrence: new Recurrence({ timeZone: timeZone, timeZoneName: timeZoneName }).becomeDaily()
       });
     }
   }
