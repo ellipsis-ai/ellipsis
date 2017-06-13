@@ -80,8 +80,7 @@ class CitiesToTimeZones {
         case e: NumberFormatException => 15000 // membership in the list means at least this many people
       }
 
-      TimeZoneParser.maybeZoneForId(tz).map { zoneId =>
-        val timeZoneName = zoneId.getDisplayName(TextStyle.FULL, Locale.ENGLISH)
+      TimeZoneParser.maybeNameForZoneId(tz).map { timeZoneName =>
         val info = CityInfo(name, asciiName, admin1, country, tz, population, timeZoneName)
 
         addToInfoMap(name, info)

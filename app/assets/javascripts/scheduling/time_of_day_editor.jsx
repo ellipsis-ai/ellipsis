@@ -13,15 +13,15 @@ define(function(require) {
     propTypes: {
       recurrence: React.PropTypes.instanceOf(Recurrence).isRequired,
       onChange: React.PropTypes.func.isRequired,
-      teamTimeZone: React.PropTypes.string.isRequired
+      teamTimeZone: React.PropTypes.string.isRequired,
+      teamTimeZoneName: React.PropTypes.string.isRequired
     },
 
     getInitialState: function() {
       return {
         showTimeZones: false,
         selectedTimeZoneId: "",
-        selectedTimeZoneName: "",
-        currentTimeZoneName: ""
+        selectedTimeZoneName: ""
       };
     },
 
@@ -94,12 +94,10 @@ define(function(require) {
     },
 
     getCurrentTimeZoneName: function() {
-      if (this.state.currentTimeZoneName) {
-        return this.state.currentTimeZoneName;
+      if (this.props.recurrence.timeZoneName) {
+        return this.props.recurrence.timeZoneName;
       } else {
-        const timeZone = this.props.recurrence.timeZone || this.props.teamTimeZone;
-        const humanized = timeZone.replace(/^.+\//, "").replace(/_/g, " ");
-        return `${humanized} time`;
+        return this.props.teamTimeZoneName;
       }
     },
 
@@ -126,11 +124,11 @@ define(function(require) {
 
     setTimeZone: function() {
       this.setState({
-        currentTimeZoneName: this.state.selectedTimeZoneName,
         showTimeZones: false
       }, () => {
         this.props.onChange(this.props.recurrence.clone({
-          timeZone: this.state.selectedTimeZoneId
+          timeZone: this.state.selectedTimeZoneId,
+          timeZoneName: this.state.selectedTimeZoneName
         }));
       });
     },
@@ -141,20 +139,11 @@ define(function(require) {
       });
     },
 
-    recurrenceTimeZoneMatches(timeZoneId) {
-      return timeZoneId === this.props.recurrence.timeZone ||
-        (!this.props.recurrence.timeZone && timeZoneId === this.props.teamTimeZone);
-    },
-
     updateSelectedTimeZone: function(timeZoneId, cityName, timeZoneName) {
-      const newState = {
+      this.setState({
         selectedTimeZoneId: timeZoneId,
         selectedTimeZoneName: timeZoneName
-      };
-      if (!this.state.currentTimeZoneName && this.recurrenceTimeZoneMatches(timeZoneId)) {
-        newState.currentTimeZoneName = newState.selectedTimeZoneName;
-      }
-      this.setState(newState);
+      });
     },
 
     render: function() {
@@ -176,7 +165,7 @@ define(function(require) {
             </span>
             <span className="align-button type-s">
               {this.shouldShowTimeZones() ? (
-                <span>{this.state.currentTimeZoneName}</span>
+                <span>{this.getCurrentTimeZoneName()}</span>
               ) : (
                 <button type="button" className="button-raw" onClick={this.showTimeZones}>
                   <span className="type-black">{this.getCurrentTimeZoneName()}</span>

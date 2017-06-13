@@ -92,7 +92,7 @@ define(function(require) {
 
     addNewItem: function() {
       this.setState({
-        selectedItem: ScheduledAction.newWithDefaults(this.props.teamTimeZone)
+        selectedItem: ScheduledAction.newWithDefaults(this.props.teamTimeZone, this.props.teamTimeZoneName)
       }, () => {
         this.props.onToggleActivePanel("moreInfo", true);
       });
@@ -204,6 +204,7 @@ define(function(require) {
                 onChange={this.updateSelectedItem}
                 onCancel={this.cancelEditor}
                 teamTimeZone={this.props.teamTimeZone || "America/New_York"}
+                teamTimeZoneName={this.props.teamTimeZoneName || "Eastern Time"}
                 slackUserId={this.props.slackUserId || ""}
               />
             </Collapsible>

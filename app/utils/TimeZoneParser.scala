@@ -1,6 +1,8 @@
 package utils
 
 import java.time.ZoneId
+import java.time.format.TextStyle
+import java.util.Locale
 
 import scala.collection.JavaConversions._
 
@@ -32,5 +34,9 @@ object TimeZoneParser {
 
   def maybeZoneForId(id: String): Option[ZoneId] = {
     idMapping.find(mapping => mapping.id == id).map(mapping => ZoneId.of(mapping.id))
+  }
+
+  def maybeNameForZoneId(id: String): Option[String] = {
+    maybeZoneForId(id).map(_.getDisplayName(TextStyle.FULL, Locale.ENGLISH))
   }
 }

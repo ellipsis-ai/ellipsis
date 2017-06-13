@@ -9,6 +9,7 @@ define(function() {
         typeName: "daily",
         timeOfDay: Recurrence.defaultTimeOfDay(),
         timeZone: null,
+        timeZoneName: null,
         minuteOfHour: null,
         dayOfWeek: null,
         dayOfMonth: null,
@@ -23,6 +24,7 @@ define(function() {
         typeName: { value: initialProps.typeName, enumerable: true },
         timeOfDay: { value: initialProps.timeOfDay, enumerable: true },
         timeZone: { value: initialProps.timeZone, enumerable: true },
+        timeZoneName: { value: initialProps.timeZoneName, enumerable: true },
         minuteOfHour: { value: initialProps.minuteOfHour, enumerable: true },
         dayOfWeek: { value: initialProps.dayOfWeek, enumerable: true },
         dayOfMonth: { value: initialProps.dayOfMonth, enumerable: true },
@@ -45,6 +47,7 @@ define(function() {
         typeName: "minutely",
         timeOfDay: null,
         timeZone: null,
+        timeZoneName: null,
         minuteOfHour: null,
         dayOfWeek: null,
         dayOfMonth: null,
@@ -61,6 +64,7 @@ define(function() {
         minuteOfHour: minuteOfHour,
         timeOfDay: null,
         timeZone: null,
+        timeZoneName: null,
         dayOfWeek: null,
         dayOfMonth: null,
         nthDayOfWeek: null,
@@ -79,7 +83,8 @@ define(function() {
         nthDayOfWeek: null,
         month: null,
         daysOfWeek: [],
-        timeZone: this.timeZone || (defaultProps ? defaultProps.timeZone : null)
+        timeZone: this.timeZone || (defaultProps ? defaultProps.timeZone : null),
+        timeZoneName: this.timeZoneName || (defaultProps ? defaultProps.timeZoneName : null)
       });
     }
 
@@ -92,7 +97,8 @@ define(function() {
         dayOfMonth: null,
         nthDayOfWeek: null,
         month: null,
-        timeZone: this.timeZone || (defaultProps ? defaultProps.timeZone : null)
+        timeZone: this.timeZone || (defaultProps ? defaultProps.timeZone : null),
+        timeZoneName: this.timeZoneName || (defaultProps ? defaultProps.timeZoneName : null)
       });
     }
 
@@ -106,7 +112,8 @@ define(function() {
         dayOfMonth: this.dayOfMonth || 1,
         daysOfWeek: [],
         month: null,
-        timeZone: this.timeZone || (defaultProps ? defaultProps.timeZone : null)
+        timeZone: this.timeZone || (defaultProps ? defaultProps.timeZone : null),
+        timeZoneName: this.timeZoneName || (defaultProps ? defaultProps.timeZoneName : null)
       });
     }
 
@@ -120,7 +127,8 @@ define(function() {
         daysOfWeek: [],
         dayOfMonth: this.dayOfMonth || 1,
         month: 1,
-        timeZone: this.timeZone || (defaultProps ? defaultProps.timeZone : null)
+        timeZone: this.timeZone || (defaultProps ? defaultProps.timeZone : null),
+        timeZoneName: this.timeZoneName || (defaultProps ? defaultProps.timeZoneName : null)
       });
     }
 
