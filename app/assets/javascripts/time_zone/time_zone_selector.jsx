@@ -1,9 +1,7 @@
 define(function(require) {
   var React = require('react'),
     DataRequest = require('../lib/data_request'),
-    Select = require('../form/select'),
-    SearchInput = require('../form/search'),
-    debounce = require('javascript-debounce');
+    SearchWithResults = require('../form/search_with_results');
 
   return React.createClass({
     displayName: 'TimeZoneSelector',
@@ -13,7 +11,6 @@ define(function(require) {
     },
 
     componentDidMount: function() {
-      this.delayRequestMatchingTimezones = debounce(this.requestMatchingTimezones, 250);
       this.requestMatchingTimezones(this.state.defaultTimeZone);
     },
 
@@ -33,7 +30,6 @@ define(function(require) {
         defaultTimeZone: defaultTimeZone,
         selectedCity: "",
         selectedOption: null,
-        searchText: "",
         isSearching: false,
         noMatches: false,
         cityResults: [],
@@ -118,80 +114,39 @@ define(function(require) {
     updateSearchText: function(newValue) {
       const newQuery = newValue.trim();
       if (newQuery) {
-        this.setState({
-          searchText: newValue
-        }, () => {
-          this.delayRequestMatchingTimezones(newValue);
-        });
+        this.requestMatchingTimezones(newValue);
       } else {
         this.setState({
-          searchText: newValue,
           noMatches: false,
           cityResults: []
         });
       }
     },
 
-    selectNextMatch: function() {
-      this.updateSelectedTimeZone(null, this.refs.results.selectNextItem());
-    },
-
-    selectPreviousMatch: function() {
-      this.updateSelectedTimeZone(null, this.refs.results.selectPreviousItem());
-    },
-
     assembleName: function(city, region, country) {
       return `${city}${region && region !== city ? `, ${region}` : ""}, ${country}`;
     },
 
-    renderSearchMessage: function() {
-      if (this.state.error) {
-        return (
-          <div className="fade-in maxs pvxs phs type-pink type-bold type-italic">
-            {this.state.error}
-          </div>
-        );
-      } else if (this.state.isSearching) {
-        return (
-          <div className="fade-in maxs pvxs phs type-italic type-disabled">Searching…</div>
-        );
-      } else if (this.state.noMatches) {
-        return (
-          <div className="fade-in maxs pvxs phs type-italic type-disabled">No matches found</div>
-        );
+    focus: function() {
+      if (this.searchInput) {
+        this.searchInput.focus();
       }
     },
 
     render: function() {
       return (
         <div>
-          <div className={this.state.isSearching ? "pulse" : ""}>
-            <div className="mvl width-30 mobile-width-full">
-              <SearchInput placeholder="Search for a city"
-                value={this.state.searchText}
-                onChange={this.updateSearchText}
-                onUpKey={this.selectPreviousMatch}
-                onDownKey={this.selectNextMatch}
-                withResults={true}
-              />
-              <div className="position-relative">
-                <Select
-                  ref="results"
-                  value={this.state.selectedCity}
-                  onChange={this.updateSelectedTimeZone}
-                  size="5"
-                  withSearch={true}
-                >
-                  {this.getFilteredTzInfo().map((tz) => (
-                    <option key={tz.key} value={tz.key}>{tz.name}</option>
-                  ))}
-                </Select>
-                <div className="position-absolute position-z-popup position-top-left">
-                  {this.renderSearchMessage()}
-                </div>
-              </div>
-            </div>
-          </div>
+          <SearchWithResults
+            ref={(searchInput) => this.searchInput = searchInput}
+            placeholder="Search for a city"
+            value={this.state.selectedCity}
+            options={this.getFilteredTzInfo().map((tz) => ({ name: tz.name, value: tz.key }))}
+            isSearching={this.state.isSearching}
+            noMatches={this.state.noMatches}
+            error={this.state.error}
+            onChangeSearch={this.updateSearchText}
+            onSelect={this.updateSelectedTimeZone}
+          />
           <div className="mvl">
             <span className="mrm">Selected time zone:</span>
             <b>{this.state.selectedOption ? (

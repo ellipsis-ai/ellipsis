@@ -72,6 +72,10 @@ define(function(require) {
       return this.refs.select ? this.refs.select.value : null;
     },
 
+    getCurrentIndex: function() {
+      return this.refs.select ? this.refs.select.selectedIndex : null;
+    },
+
     render: function() {
       return (
         <div
