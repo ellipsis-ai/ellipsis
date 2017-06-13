@@ -194,7 +194,12 @@ define(function(require) {
           </div>
           <div className="mvl">
             <span className="mrm">Selected time zone:</span>
-            <b>{this.state.selectedOption ? this.state.selectedOption.name : (
+            <b>{this.state.selectedOption ? (
+              <span>
+                <span>{this.state.selectedOption.name}</span>
+                <span> ({this.state.selectedOption.timeZoneName})</span>
+              </span>
+            ) : (
               <i className="type-disabled">None</i>
             )}</b>
           </div>

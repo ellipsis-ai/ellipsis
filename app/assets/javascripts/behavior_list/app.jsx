@@ -182,7 +182,7 @@ define(function(require) {
           .then((json) => {
             if (json.tzName) {
               this.setState({
-                currentTeamTimeZone: displayName,
+                currentTeamTimeZone: json.formattedName || displayName,
                 isSavingTeamTimeZone: false
               });
             } else {
