@@ -119,6 +119,10 @@ define(function(require) {
     showTimeZones: function() {
       this.setState({
         showTimeZones: true
+      }, () => {
+        if (this.timeZoneSetter) {
+          this.timeZoneSetter.focus();
+        }
       });
     },
 
@@ -175,7 +179,7 @@ define(function(require) {
             </span>
           </div>
           <Collapsible revealWhen={this.shouldShowTimeZones()}>
-            <TimeZoneSetter onChange={this.updateSelectedTimeZone} />
+            <TimeZoneSetter ref={(setter) => this.timeZoneSetter = setter} onChange={this.updateSelectedTimeZone} />
             <div className="mvm">
               <button type="button"
                 className="button-s button-shrink mrs"

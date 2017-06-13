@@ -35,21 +35,21 @@ define(function(require) {
       this.props.onChangeSearch(newSearch);
     },
 
-    onSelect: function(newValue) {
-      this.props.onSelect(newValue);
+    onSelect: function(newValue, newIndex) {
+      this.props.onSelect(newValue, newIndex);
     },
 
     onSelectNext: function() {
       if (this.selector) {
         this.selector.selectNextItem();
-        this.onSelect(this.selector.getCurrentValue());
+        this.onSelect(this.selector.getCurrentValue(), this.selector.getCurrentIndex());
       }
     },
 
     onSelectPrevious: function() {
       if (this.selector) {
         this.selector.selectPreviousItem();
-        this.onSelect(this.selector.getCurrentValue());
+        this.onSelect(this.selector.getCurrentValue(), this.selector.getCurrentIndex());
       }
     },
 
