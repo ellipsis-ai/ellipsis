@@ -38,4 +38,8 @@ class DefaultStorageItemServiceImpl @Inject() (
     dataService.run(action)
   }
 
+  def filter(filter: JsObject, behaviorGroup: BehaviorGroup): Future[Seq[DefaultStorageItem]] = {
+    Future.successful(Seq()) // TODO: for realz
+  }
+
 }

@@ -25,7 +25,7 @@ class GraphQLController @Inject() (
                                     val dataService: DataService
                                   ) extends EllipsisController {
 
-  def executeQuery(schema: Schema[DefaultStorageItemService, Unit], query: Document, op: Option[String], vars: JsObject) =
+  def executeQuery(schema: Schema[DefaultStorageItemService, Any], query: Document, op: Option[String], vars: JsObject) =
     Executor.execute(schema, query, operationName = op, variables = vars, userContext = dataService.defaultStorageItems)
       .map(Ok(_))
       .recover {
@@ -48,7 +48,7 @@ class GraphQLController @Inject() (
               maybeQuery: Option[String],
               maybeOperationName: Option[String],
               maybeVariables: Option[String]
-              ) = Action.async(parse.json) { request ⇒
+              ) = Action.async { request ⇒
 
     for {
       maybeTeam <- dataService.teams.findForInvocationToken(token)

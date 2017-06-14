@@ -102,6 +102,8 @@ POST        /api/unschedule_action                    @controllers.APIController
 POST        /api/say                                  @controllers.APIController.say
 #NOCSRF
 GET         /get_action_logs/:behaviorId/:token       @controllers.InvocationLogController.getLogs(behaviorId: String, token: String, from: Option[String] ?= None, to: Option[String] ?= None, userId: Option[String] ?= None)
+#NOCSRF
+GET         /storage/query/:skillId/:token            @controllers.GraphQLController.query(skillId: String, token: String, query: Option[String], op: Option[String] ?= None, variables: Option[String] ?= None)
 
 
 # Map static resources from the /public folder to the /assets URL path

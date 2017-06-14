@@ -7,7 +7,7 @@ import models.behaviors.datatypeconfig.DataTypeConfigQueries
 object DataTypeFieldQueries {
 
   val all = TableQuery[DataTypeFieldsTable]
-  val allWithDataTypeConfig = all.joinLeft(DataTypeConfigQueries.allWithBehaviorVersion).on(_.configId === _._1.id)
+  val allWithDataTypeConfig = all.joinLeft(DataTypeConfigQueries.allWithBehaviorVersion).on(_.fieldTypeId === _._1.behaviorVersionId)
 
   type TupleType = (RawDataTypeField, Option[DataTypeConfigQueries.TupleType])
 

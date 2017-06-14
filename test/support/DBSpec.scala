@@ -12,8 +12,11 @@ import models.accounts.user.User
 import models.behaviors.behavior.Behavior
 import models.behaviors.behaviorgroup.BehaviorGroup
 import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
+import models.behaviors.behaviorparameter.BehaviorParameterType
 import models.behaviors.behaviorversion.BehaviorVersion
 import models.behaviors.config.requiredoauth2apiconfig.RequiredOAuth2ApiConfig
+import models.behaviors.datatypeconfig.DataTypeConfig
+import models.behaviors.datatypefield.DataTypeField
 import models.behaviors.input.Input
 import models.behaviors.savedanswer.SavedAnswer
 import models.team.Team
@@ -124,6 +127,10 @@ trait DBSpec extends PlaySpec with OneAppPerSuite with MockitoSugar {
   def newSavedGroupVersionFor(group: BehaviorGroup, user: User, maybeData: Option[BehaviorGroupData] = None): BehaviorGroupVersion = {
     val data = maybeData.getOrElse(defaultGroupVersionDataFor(group, user))
     runNow(dataService.behaviorGroupVersions.createFor(group, user, data.copyForNewVersionOf(group)))
+  }
+
+  def newSavedDataTypeFieldFor(name: String, dataTypeConfig: DataTypeConfig, fieldType: BehaviorParameterType): DataTypeField = {
+    runNow(dataService.dataTypeFields.createFor(name, fieldType, dataTypeConfig))
   }
 
   def behaviorVersionFor(behavior: Behavior, groupVersion: BehaviorGroupVersion): BehaviorVersion = {

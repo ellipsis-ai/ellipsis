@@ -3,12 +3,55 @@ package models
 import drivers.SlickPostgresDriver.api.{Database => PostgresDatabase}
 import json.{BehaviorGroupData, BehaviorParameterTypeData, BehaviorVersionData}
 import models.behaviors.behaviorgroup.BehaviorGroup
+import models.behaviors.behaviorparameter.{BehaviorParameterType, NumberType, TextType}
 import support.DBSpec
 
 class BehaviorGroupVersionSpec extends DBSpec {
 
   def reloadGroup(db: PostgresDatabase, group: BehaviorGroup): BehaviorGroup = {
     runNow(dataService.behaviorGroups.find(group.id)).get
+  }
+
+  "schemaFor" should {
+
+    "build a schema" in {
+      withEmptyDB(dataService, { db =>
+        val team = newSavedTeam
+        val user = newSavedUserOn(team)
+        val group = newSavedBehaviorGroupFor(team)
+        val behaviorVersionData = BehaviorVersionData.newUnsavedFor(group.team.id, isDataType = true, dataService).copy(name = Some("SomeType"))
+        val behaviorVersionData2 = BehaviorVersionData.newUnsavedFor(group.team.id, isDataType = true, dataService).copy(name = Some("SomeType2"))
+        val groupData = newGroupVersionDataFor(group, user).copy(
+          behaviorVersions = Seq(behaviorVersionData, behaviorVersionData2)
+        )
+        val firstVersion = newSavedGroupVersionFor(group, user, Some(groupData))
+        val dataTypeConfigs = runNow(dataService.dataTypeConfigs.allFor(firstVersion))
+        val someType = dataTypeConfigs.find(_.name == "SomeType").get
+        val someType2 = dataTypeConfigs.find(_.name == "SomeType2").get
+        newSavedDataTypeFieldFor("foo", someType, TextType)
+        val fieldType = runNow(dataService.run(BehaviorParameterType.findAction(someType.behaviorVersion.id, firstVersion, dataService))).get
+        newSavedDataTypeFieldFor("someType", someType2, fieldType)
+        newSavedDataTypeFieldFor("bar", someType2, NumberType)
+        val schema = runNow(dataService.behaviorGroupVersions.schemaFor(firstVersion))
+        schema.query.fields must have length(2)
+        schema.renderPretty.trim mustBe
+          """type Query {
+            |  someTypeList: [SomeType]
+            |  someType2List: [SomeType2]
+            |}
+            |
+            |type SomeType {
+            |  foo: String
+            |}
+            |
+            |type SomeType2 {
+            |  bar: Float
+            |  someType: SomeType
+            |}
+          """.stripMargin.trim
+      })
+    }
+
   }
 
   "createFor" should {

@@ -39,6 +39,6 @@ trait BehaviorGroupVersionService {
                  data: BehaviorGroupData
                ): Future[BehaviorGroupVersion]
 
-  def schemaFor(groupVersion: BehaviorGroupVersion): Future[Schema[DefaultStorageItemService, Unit]]
+  def schemaFor(groupVersion: BehaviorGroupVersion): Future[Schema[DefaultStorageItemService, Any]]
 
 }

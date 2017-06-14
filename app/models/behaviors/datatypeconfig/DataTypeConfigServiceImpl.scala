@@ -7,8 +7,6 @@ import drivers.SlickPostgresDriver.api._
 import models.IDs
 import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
 import models.behaviors.behaviorversion.BehaviorVersion
-import models.behaviors.defaultstorageitem.{DefaultStorageItem, DefaultStorageItemService}
-import sangria.schema._
 import services.DataService
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -32,30 +30,6 @@ class DataTypeConfigServiceImpl @Inject() (
   def dataService = dataServiceProvider.get
 
   import DataTypeConfigQueries._
-
-  def graphQLTypeFor(
-                      config: DataTypeConfig,
-                      seen: scala.collection.mutable.Map[DataTypeConfig, ObjectType[DefaultStorageItemService, DefaultStorageItem]]
-                    ): Future[ObjectType[DefaultStorageItemService, DefaultStorageItem]] = {
-    seen.get(config).map { existingType =>
-      Future.successful(existingType)
-    }.getOrElse {
-      dataService.dataTypeFields.allFor(config).flatMap { dataTypeFields =>
-        Future.sequence(dataTypeFields.map { ea =>
-          dataService.dataTypeFields.graphQLFor(ea, seen)
-        }).map { fields =>
-          val newType = ObjectType(
-            config.name,
-            config.behaviorVersion.description,
-            fields.toList
-          )
-          seen.put(config, newType)
-          newType
-        }
-      }
-    }
-
-  }
 
   def allForAction(groupVersion: BehaviorGroupVersion): DBIO[Seq[DataTypeConfig]] = {
     allForQuery(groupVersion.id).result.map { r =>
