@@ -150,7 +150,7 @@ PUBLIC_ASSETS_DIR=/tmp/public-assets
 mkdir -p $PUBLIC_ASSETS_DIR
 rm -rf $PUBLIC_ASSETS_DIR/*
 unzip -qq target/docker/stage/opt/docker/lib/ellipsis.ellipsis-1.0-SNAPSHOT-assets.jar -d $PUBLIC_ASSETS_DIR/
-aws --profile $AWS_ELLIPSIS_PROFILE s3 sync $PUBLIC_ASSETS_DIR/public s3://$ASSETS_BUCKET/ --acl=public-read --quiet
+aws --profile $AWS_ELLIPSIS_PROFILE s3 sync $PUBLIC_ASSETS_DIR/public s3://$ASSETS_BUCKET/ --acl=public-read --only-show-errors
 if [ $? -eq 0 ]
 then
   printf "${GREEN}OK.${PLAIN}\n";
