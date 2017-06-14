@@ -13,6 +13,7 @@ define(function(require) {
       channelList: React.PropTypes.arrayOf(React.PropTypes.instanceOf(ScheduleChannel)).isRequired,
       onChange: React.PropTypes.func.isRequired,
       onCancel: React.PropTypes.func.isRequired,
+      onSave: React.PropTypes.func.isRequired,
       teamTimeZone: React.PropTypes.string.isRequired,
       teamTimeZoneName: React.PropTypes.string.isRequired,
       slackUserId: React.PropTypes.string.isRequired
@@ -49,6 +50,10 @@ define(function(require) {
 
     cancel: function() {
       this.props.onCancel();
+    },
+
+    save: function() {
+      this.props.onSave();
     },
 
     renderDetails: function() {
@@ -90,7 +95,7 @@ define(function(require) {
             <div className="mtxxl mbxl">
               <div className="columns columns-elastic mobile-columns-float">
                 <div className="column column-expand">
-                  <button type="button" className="button-primary mbs mrs" disabled={true}>Save changes</button>
+                  <button type="button" className="button-primary mbs mrs" disabled={false} onClick={this.save}>Save changes</button>
                   <button type="button" className="mbs mrs" onClick={this.cancel}>Cancel</button>
                 </div>
                 <div className="column column-shrink align-r mobile-align-l">

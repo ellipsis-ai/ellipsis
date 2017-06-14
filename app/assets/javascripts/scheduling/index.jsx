@@ -16,6 +16,7 @@ define(function(require) {
       teamId: React.PropTypes.string.isRequired,
       scheduledActions: React.PropTypes.arrayOf(React.PropTypes.instanceOf(ScheduledAction)),
       channelList: React.PropTypes.arrayOf(React.PropTypes.instanceOf(ScheduleChannel)),
+      onSave: React.PropTypes.func.isRequired,
       teamTimeZone: React.PropTypes.string,
       teamTimeZoneName: React.PropTypes.string,
       slackUserId: React.PropTypes.string
@@ -100,6 +101,10 @@ define(function(require) {
 
     cancelEditor: function() {
       this.props.onClearActivePanel();
+    },
+
+    saveSelectedItem: function() {
+      this.props.onSave(this.getSelectedItem());
     },
 
     renderSidebar: function(groups) {
@@ -203,6 +208,7 @@ define(function(require) {
                 channelList={this.props.channelList}
                 onChange={this.updateSelectedItem}
                 onCancel={this.cancelEditor}
+                onSave={this.saveSelectedItem}
                 teamTimeZone={this.props.teamTimeZone || "America/New_York"}
                 teamTimeZoneName={this.props.teamTimeZoneName || "Eastern Time"}
                 slackUserId={this.props.slackUserId || ""}

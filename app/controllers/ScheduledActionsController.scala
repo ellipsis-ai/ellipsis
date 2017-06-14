@@ -10,8 +10,11 @@ import json.Formatting._
 import json._
 import models.silhouette.EllipsisEnv
 import play.api.Configuration
+import play.api.data.Form
+import play.api.data.Forms._
 import play.api.i18n.MessagesApi
-import play.api.libs.json.Json
+import play.api.libs.json.{JsSuccess, Json}
+import play.filters.csrf.CSRF
 import services.DataService
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -50,6 +53,7 @@ class ScheduledActionsController @Inject()(
             } yield {
               val pageData = ScheduledActionsConfig(
                 containerId = "scheduling",
+                csrfToken = CSRF.getToken(request).map(_.value),
                 teamId = team.id,
                 scheduledActions = scheduledMessageData ++ scheduledBehaviorData,
                 channelList = ScheduleChannelData.fromChannelLikeList(channelList),
@@ -76,5 +80,53 @@ class ScheduledActionsController @Inject()(
         }
       }
     }
+  }
+
+  case class ScheduledActionSaveForm(dataJson: String, teamId: String)
+
+  private val saveForm = Form(
+    mapping(
+      "dataJson" -> nonEmptyText,
+      "teamId" -> nonEmptyText
+    )(ScheduledActionSaveForm.apply)(ScheduledActionSaveForm.unapply)
+  )
+
+  def save = silhouette.SecuredAction.async { implicit request =>
+    val user = request.identity
+    saveForm.bindFromRequest.fold(
+      formWithErrors => {
+        Future.successful(BadRequest(formWithErrors.errorsAsJson))
+      },
+      info => {
+        val json = Json.parse(info.dataJson)
+        json.validate[ScheduledActionData] match {
+          case JsSuccess(data, jsPath) => {
+            for {
+              teamAccess <- dataService.users.teamAccessFor(user, Some(info.teamId))
+              maybeBotProfile <- teamAccess.maybeTargetTeam.map { team =>
+                dataService.slackBotProfiles.allFor(team).map(_.headOption)
+              }.getOrElse(Future.successful(None))
+              channelList <- maybeBotProfile.map { botProfile =>
+                dataService.slackBotProfiles.channelsFor(botProfile).listInfos
+              }.getOrElse(Future.successful(Seq()))
+              maybeExistingScheduledBehavior <- dataService.scheduledBehaviors.find(data.id)
+              maybeExistingScheduledMessage <- dataService.scheduledMessages.find(data.id)
+              maybeBehaviorData <- maybeExistingScheduledBehavior.map { scheduledBehavior =>
+                ScheduledActionData.fromScheduledBehaviors(Seq(scheduledBehavior), dataService, channelList)
+              }.getOrElse(Future.successful(Seq()))
+              maybeMessageData <- maybeExistingScheduledMessage.map { scheduledMessage =>
+                ScheduledActionData.fromScheduledMessages(Seq(scheduledMessage), channelList)
+              }.getOrElse(Future.successful(Seq()))
+            } yield {
+              (maybeBehaviorData ++ maybeMessageData).headOption.map { scheduledData =>
+                Ok(Json.toJson(scheduledData))
+              }.getOrElse {
+                NotFound("Scheduled action ID not found")
+              }
+            }
+          }
+        }
+      }
+    )
   }
 }
