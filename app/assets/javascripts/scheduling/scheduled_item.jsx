@@ -32,8 +32,8 @@ define(function(require) {
         <div className="type-s">
           <button type="button" className="button-block" onClick={this.toggle}>
             <span>
-              <ScheduledItemTitle scheduledAction={this.props.scheduledAction} />
-              <span> {this.getRecurrenceSummary()}</span>
+              <span><ScheduledItemTitle scheduledAction={this.props.scheduledAction}/> </span>
+              <span className="link">{this.getRecurrenceSummary()}</span>
             </span>
           </button>
           <div className="mtl">
