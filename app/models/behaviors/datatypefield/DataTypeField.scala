@@ -10,9 +10,10 @@ case class DataTypeField(
                           configId: String
                          ) {
 
-  def graphQLName: String = GraphQLHelpers.formatFieldName(name)
+  def graphQLOutputName: String = GraphQLHelpers.formatFieldName(name)
 
-  def graphQL: String = s"${graphQLName}: ${fieldType.graphQLName}"
+  def graphQLOutput: String = s"$graphQLOutputName: ${fieldType.graphQLOutputName}"
+  def graphQLInput: String = s"$graphQLOutputName: ${fieldType.graphQLInputName}"
 
   def toRaw: RawDataTypeField = {
     RawDataTypeField(id, name, fieldType.id, configId)

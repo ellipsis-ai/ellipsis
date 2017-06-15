@@ -13,25 +13,45 @@ case class DataTypeConfig(
                         ) {
 
   lazy val name = behaviorVersion.maybeName.getOrElse("Unnamed Type")
-  lazy val inputName = name ++ "Input"
-  lazy val listName = name.take(1).toLowerCase ++ name.substring(1) ++ "List"
+  lazy val graphQLListName = name.take(1).toLowerCase ++ name.substring(1) ++ "List"
 
-  lazy val graphQLName: String = GraphQLHelpers.formatTypeName(name)
+  lazy val graphQLOutputName: String = GraphQLHelpers.formatTypeName(name)
+  lazy val graphQLInputName: String = graphQLOutputName ++ "Input"
 
-  def graphQLFields(dataService: DataService): Future[String] = {
+  def graphQLOutputFields(dataService: DataService): Future[String] = {
     dataService.dataTypeFields.allFor(this).map { fields =>
-      "  " ++ fields.sortBy(_.name).map(_.graphQL).mkString("\n  ")
+      "  " ++ fields.sortBy(_.name).map(_.graphQLOutput).mkString("\n  ")
     }
   }
 
-  def graphQL(dataService: DataService): Future[String] = {
-    graphQLFields(dataService).map { fieldsStr =>
-      s"""type ${graphQLName} {
+  def graphQLOutput(dataService: DataService): Future[String] = {
+    graphQLOutputFields(dataService).map { fieldsStr =>
+      s"""type ${graphQLOutputName} {
          |$fieldsStr
          |}""".stripMargin
     }
   }
 
+  def graphQLInputFields(dataService: DataService): Future[String] = {
+    dataService.dataTypeFields.allFor(this).map { fields =>
+      "  " ++ fields.sortBy(_.name).map(_.graphQLInput).mkString("\n  ")
+    }
+  }
+
+  def graphQLInput(dataService: DataService): Future[String] = {
+    graphQLInputFields(dataService).map { fieldsStr =>
+      s"""input ${graphQLInputName} {
+         |$fieldsStr
+         |}""".stripMargin
+    }
+  }
+
+  def graphQL(dataService: DataService): Future[String] = {
+    for {
+      input <- graphQLInput(dataService)
+      output <- graphQLOutput(dataService)
+    } yield s"""$input\n\n$output"""
+  }
 
   def toRaw: RawDataTypeConfig = RawDataTypeConfig(id, behaviorVersion.id)
 }

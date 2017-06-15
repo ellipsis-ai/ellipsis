@@ -34,21 +34,13 @@ class BehaviorGroupVersionSpec extends DBSpec {
         newSavedDataTypeFieldFor("bar", someType2, NumberType)
         val schema = runNow(dataService.behaviorGroupVersions.schemaFor(firstVersion))
         schema.query.fields must have length(2)
-        schema.renderPretty.trim mustBe
-          """type Query {
-            |  someTypeList: [SomeType]
-            |  someType2List: [SomeType2]
-            |}
-            |
-            |type SomeType {
-            |  foo: String
-            |}
-            |
-            |type SomeType2 {
-            |  bar: Float
-            |  someType: SomeType
-            |}
-          """.stripMargin.trim
+        val someTypeQueryField = schema.query.fields.find(_.name == someType.graphQLListName).get
+        someTypeQueryField.arguments must have length(1)
+        val filterArg = someTypeQueryField.arguments.head
+        filterArg.name mustBe "filter"
+        filterArg.argumentType.namedType.name mustBe someType.graphQLInputName
+
+        println(schema.renderPretty.trim)
       })
     }
 

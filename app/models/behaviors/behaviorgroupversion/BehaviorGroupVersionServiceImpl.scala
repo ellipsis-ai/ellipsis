@@ -146,7 +146,7 @@ class BehaviorGroupVersionServiceImpl @Inject() (
   }
 
   private def queryFieldsStringFor(config: DataTypeConfig): String = {
-    s"""  ${config.listName}: [${config.graphQLName}]\n"""
+    s"""  ${config.graphQLListName}(filter: ${config.graphQLInputName}): [${config.graphQLOutputName}]\n"""
   }
 
   def schemaStringFor(groupVersion: BehaviorGroupVersion): Future[String] = {
@@ -154,7 +154,7 @@ class BehaviorGroupVersionServiceImpl @Inject() (
       configs <- dataService.dataTypeConfigs.allFor(groupVersion).map(_.sortBy(_.id))
       typesStr <- Future.sequence(configs.map(_.graphQL(dataService))).map(_.mkString("\n\n"))
     } yield {
-      val queryFieldsStr = configs.sortBy(_.graphQLName).map { config =>
+      val queryFieldsStr = configs.sortBy(_.graphQLOutputName).map { config =>
         queryFieldsStringFor(config)
       }.mkString("")
 
