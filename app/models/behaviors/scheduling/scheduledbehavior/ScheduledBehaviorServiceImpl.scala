@@ -177,33 +177,44 @@ class ScheduledBehaviorServiceImpl @Inject() (
     save(scheduledBehavior.withUpdatedNextTriggeredFor(OffsetDateTime.now))
   }
 
-  def maybeCreateFor(
+  def maybeCreateWithRecurrenceText(behavior: Behavior,
+                                    arguments: Map[String, String],
+                                    recurrenceText: String,
+                                    user: User,
+                                    team: Team,
+                                    maybeChannel: Option[String],
+                                    isForIndividualMembers: Boolean): Future[Option[ScheduledBehavior]] = {
+    for {
+      maybeRecurrence <- dataService.recurrences.maybeCreateFromText(recurrenceText, team.timeZone)
+      maybeScheduledBehavior <- maybeRecurrence.map { recurrence =>
+        createFor(behavior, arguments, recurrence, user, team, maybeChannel, isForIndividualMembers).map(Some(_))
+      }.getOrElse(Future.successful(None))
+    } yield maybeScheduledBehavior
+  }
+
+  def createFor(
                       behavior: Behavior,
                       arguments: Map[String, String],
-                      recurrenceText: String,
+                      recurrence: Recurrence,
                       user: User,
                       team: Team,
                       maybeChannel: Option[String],
                       isForIndividualMembers: Boolean
-                    ): Future[Option[ScheduledBehavior]] = {
-    dataService.recurrences.maybeCreateFromText(recurrenceText, team.timeZone).flatMap { maybeRecurrence =>
-      maybeRecurrence.map { recurrence =>
-        val now = Recurrence.withZone(OffsetDateTime.now, team.timeZone)
-        val newMessage = ScheduledBehavior(
-          IDs.next,
-          behavior,
-          arguments,
-          Some(user),
-          team,
-          maybeChannel,
-          isForIndividualMembers,
-          recurrence,
-          recurrence.initialAfter(now),
-          now
-        )
-        save(newMessage).map(Some(_))
-      }.getOrElse(Future.successful(None))
-    }
+                    ): Future[ScheduledBehavior] = {
+    val now = Recurrence.withZone(OffsetDateTime.now, team.timeZone)
+    val newMessage = ScheduledBehavior(
+      IDs.next,
+      behavior,
+      arguments,
+      Some(user),
+      team,
+      maybeChannel,
+      isForIndividualMembers,
+      recurrence,
+      recurrence.initialAfter(now),
+      now
+    )
+    save(newMessage)
   }
 
   def uncompiledRawFindQuery(behaviorId: Rep[String], teamId: Rep[String]) = {

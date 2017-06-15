@@ -8,7 +8,11 @@ import akka.actor.ActorSystem
 import com.mohiva.play.silhouette.api.Silhouette
 import json.Formatting._
 import json._
+import models.accounts.user.User
+import models.behaviors.scheduling.scheduledbehavior.ScheduledBehavior
+import models.behaviors.scheduling.scheduledmessage.ScheduledMessage
 import models.silhouette.EllipsisEnv
+import models.team.Team
 import play.api.Configuration
 import play.api.data.Form
 import play.api.data.Forms._
@@ -47,9 +51,11 @@ class ScheduledActionsController @Inject()(
               behaviorGroups <- dataService.behaviorGroups.allFor(team)
               groupData <- Future.sequence(behaviorGroups.map { group =>
                 BehaviorGroupData.maybeFor(group.id, user, None, dataService)
-              }).map(_.flatten.sorted)
+              }
+              ).map(_.flatten.sorted)
               scheduledMessageData <- ScheduledActionData.fromScheduledMessages(scheduledMessages, channelList)
-              scheduledBehaviorData <- ScheduledActionData.fromScheduledBehaviors(scheduledBehaviors, dataService, channelList)
+              scheduledBehaviorData <- ScheduledActionData
+                .fromScheduledBehaviors(scheduledBehaviors, dataService, channelList)
               maybeSlackLinkedAccount <- dataService.linkedAccounts.maybeForSlackFor(user)
               maybeSlackProfile <- maybeSlackLinkedAccount.map { linkedAccount =>
                 dataService.slackProfiles.find(linkedAccount.loginInfo)
@@ -66,7 +72,9 @@ class ScheduledActionsController @Inject()(
                 teamTimeZoneName = team.maybeTimeZone.map(_.getDisplayName(TextStyle.FULL, Locale.ENGLISH)),
                 slackUserId = maybeSlackProfile.map(_.loginInfo.providerKey)
               )
-              Ok(views.js.shared.pageConfig(viewConfig(Some(teamAccess)), "config/scheduling/index", Json.toJson(pageData)))
+              Ok(views.js.shared
+                .pageConfig(viewConfig(Some(teamAccess)), "config/scheduling/index", Json.toJson(pageData))
+              )
             }
           }.getOrElse {
             Future.successful(NotFound("Team not found"))
@@ -96,6 +104,57 @@ class ScheduledActionsController @Inject()(
     )(ScheduledActionSaveForm.apply)(ScheduledActionSaveForm.unapply)
   )
 
+  private def maybeUpdateScheduledBehavior(
+                                            scheduledBehavior: ScheduledBehavior,
+                                            newData: ScheduledActionData,
+                                            user: User,
+                                            team: Team
+                                          ): Future[Option[ScheduledBehavior]] = {
+    for {
+      maybeBehavior <- newData.behaviorId.map { behaviorId =>
+        if (behaviorId == scheduledBehavior.behavior.id) {
+          Future.successful(Some(scheduledBehavior.behavior))
+        } else {
+          dataService.behaviors.find(behaviorId, user)
+        }
+      }.getOrElse(Future.successful(None))
+      maybeRecurrence <- newData.recurrence.maybeNewRecurrence.map { recurrence =>
+        dataService.recurrences.delete(scheduledBehavior.recurrence.id)
+        dataService.recurrences.save(recurrence).map(Some(_))
+      }.getOrElse(Future.successful(None))
+      maybeScheduledBehavior <- (for {
+        behavior <- maybeBehavior
+        recurrence <- maybeRecurrence
+      } yield {
+        val newArguments = newData.arguments.map(ea => ea.name -> ea.value).toMap
+        val maybeChannel = Option(newData.channel).filter(_.trim.nonEmpty)
+        dataService.scheduledBehaviors.delete(scheduledBehavior)
+        dataService.scheduledBehaviors.createFor(behavior, newArguments, recurrence, user, team, maybeChannel, newData.useDM).map(Some(_))
+      }).getOrElse(Future.successful(None))
+    } yield maybeScheduledBehavior
+  }
+
+  private def maybeUpdateScheduledMessage(
+                                         scheduledMessage: ScheduledMessage,
+                                         newData: ScheduledActionData,
+                                         user: User,
+                                         team: Team
+                                         ): Future[Option[ScheduledMessage]] = {
+    newData.trigger.filter(_.nonEmpty).map { trigger =>
+      for {
+        maybeRecurrence <- newData.recurrence.maybeNewRecurrence.map { recurrence =>
+          dataService.recurrences.delete(scheduledMessage.recurrence.id)
+          dataService.recurrences.save(recurrence).map(Some(_))
+        }.getOrElse(Future.successful(None))
+        maybeScheduledMessage <- maybeRecurrence.map { recurrence =>
+          val maybeChannel = Option(newData.channel).filter(_.trim.nonEmpty)
+          dataService.scheduledMessages.deleteFor(scheduledMessage.text, team)
+          dataService.scheduledMessages.createFor(trigger, recurrence, user, team, maybeChannel, newData.useDM).map(Some(_))
+        }.getOrElse(Future.successful(None))
+      } yield maybeScheduledMessage
+    }.getOrElse(Future.successful(None))
+  }
+
   def save = silhouette.SecuredAction.async { implicit request =>
     val user = request.identity
     saveForm.bindFromRequest.fold(
@@ -120,10 +179,16 @@ class ScheduledActionsController @Inject()(
                   maybeExistingScheduledMessage <- dataService.scheduledMessages.find(data.id).map { maybeScheduled =>
                     maybeScheduled.filter(_.team.id == team.id)
                   }
-                  behaviorData <- maybeExistingScheduledBehavior.map { scheduledBehavior =>
+                  maybeUpdatedScheduledBehavior <- maybeExistingScheduledBehavior.map { existingScheduled =>
+                    maybeUpdateScheduledBehavior(existingScheduled, data, user, team)
+                  }.getOrElse(Future.successful(None))
+                  maybeUpdatedScheduledMessage <- maybeExistingScheduledMessage.map { existingScheduled =>
+                    maybeUpdateScheduledMessage(existingScheduled, data, user, team)
+                  }.getOrElse(Future.successful(None))
+                  behaviorData <- maybeUpdatedScheduledBehavior.map { scheduledBehavior =>
                     ScheduledActionData.fromScheduledBehaviors(Seq(scheduledBehavior), dataService, channelList)
                   }.getOrElse(Future.successful(Seq()))
-                  messageData <- maybeExistingScheduledMessage.map { scheduledMessage =>
+                  messageData <- maybeUpdatedScheduledMessage.map { scheduledMessage =>
                     ScheduledActionData.fromScheduledMessages(Seq(scheduledMessage), channelList)
                   }.getOrElse(Future.successful(Seq()))
                 } yield {

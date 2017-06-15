@@ -1,6 +1,7 @@
 package models.behaviors.scheduling.scheduledmessage
 
 import models.accounts.user.User
+import models.behaviors.scheduling.recurrence.Recurrence
 import models.team.Team
 
 import scala.concurrent.Future
@@ -19,7 +20,7 @@ trait ScheduledMessageService {
 
   def updateNextTriggeredFor(message: ScheduledMessage): Future[ScheduledMessage]
 
-  def maybeCreateFor(
+  def maybeCreateWithRecurrenceText(
                       text: String,
                       recurrenceText: String,
                       user: User,
@@ -27,6 +28,15 @@ trait ScheduledMessageService {
                       maybeChannel: Option[String],
                       isForIndividualMembers: Boolean
                     ): Future[Option[ScheduledMessage]]
+
+  def createFor(
+                 text: String,
+                 recurrence: Recurrence,
+                 user: User,
+                 team: Team,
+                 maybeChannel: Option[String],
+                 isForIndividualMembers: Boolean
+               ): Future[ScheduledMessage]
 
   def deleteFor(text: String, team: Team): Future[Boolean]
 

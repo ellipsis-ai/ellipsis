@@ -355,7 +355,7 @@ class APIController @Inject() (
       } yield {
         for {
           user <- dataService.users.ensureUserFor(slackProfile.loginInfo, behavior.team.id)
-          maybeScheduled <- dataService.scheduledBehaviors.maybeCreateFor(
+          maybeScheduled <- dataService.scheduledBehaviors.maybeCreateWithRecurrenceText(
             behavior,
             info.argumentsMap,
             info.recurrenceString,
@@ -385,7 +385,7 @@ class APIController @Inject() (
         team <- context.maybeTeam
         user <- context.maybeUser
       } yield {
-        dataService.scheduledMessages.maybeCreateFor(trigger, info.recurrenceString, user, team, maybeSlackChannelId, info.useDM)
+        dataService.scheduledMessages.maybeCreateWithRecurrenceText(trigger, info.recurrenceString, user, team, maybeSlackChannelId, info.useDM)
       }).getOrElse(Future.successful(None))
       result <- maybeScheduled.map { scheduled =>
         scheduled.successResponse(dataService).map(Ok(_))

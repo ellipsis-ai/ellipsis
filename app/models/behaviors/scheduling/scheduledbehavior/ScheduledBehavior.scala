@@ -71,6 +71,23 @@ case class ScheduledBehavior(
     dataService.scheduledBehaviors.updateNextTriggeredFor(this)
   }
 
+  def update(
+              behavior: Behavior,
+              arguments: Map[String, String],
+              maybeChannel: Option[String],
+              isForIndividualMembers: Boolean,
+              recurrence: Recurrence,
+              dataService: DataService
+            ): Future[ScheduledBehavior] = {
+    this.copy(
+      behavior = behavior,
+      arguments = arguments,
+      maybeChannel = maybeChannel,
+      isForIndividualMembers = isForIndividualMembers,
+      recurrence = recurrence
+    ).updateNextTriggeredFor(dataService)
+  }
+
   def toRaw: RawScheduledBehavior = {
     RawScheduledBehavior(
       id,
