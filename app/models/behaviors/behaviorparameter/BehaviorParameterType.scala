@@ -23,8 +23,8 @@ sealed trait BehaviorParameterType {
   val name: String
   def needsConfig(dataService: DataService): Future[Boolean]
 
-  val graphQLOutputName: String
-  lazy val graphQLInputName: String = graphQLOutputName
+  val outputName: String
+  lazy val inputName: String = outputName
 
   def isValid(text: String, context: BehaviorParameterContext): Future[Boolean]
 
@@ -99,7 +99,7 @@ trait BuiltInType extends BehaviorParameterType {
 object TextType extends BuiltInType {
   val name = "Text"
 
-  val graphQLOutputName: String = "String"
+  val outputName: String = "String"
 
   def isValid(text: String, context: BehaviorParameterContext) = Future.successful(true)
 
@@ -112,7 +112,7 @@ object TextType extends BuiltInType {
 object NumberType extends BuiltInType {
   val name = "Number"
 
-  val graphQLOutputName: String = "Float"
+  val outputName: String = "Float"
 
   def isValid(text: String, context: BehaviorParameterContext) = Future.successful {
     try {
@@ -139,7 +139,7 @@ object YesNoType extends BuiltInType {
   val yesStrings = Seq("y", "yes", "yep", "yeah", "t", "true", "sure", "why not")
   val noStrings = Seq("n", "no", "nope", "nah", "f", "false", "no way", "no chance")
 
-  val graphQLOutputName: String = "Boolean"
+  val outputName: String = "Boolean"
 
   def matchStringFor(text: String): String = text.toLowerCase.trim
 
@@ -176,8 +176,8 @@ case class BehaviorBackedDataType(dataTypeConfig: DataTypeConfig) extends Behavi
   override val exportId: String = behaviorVersion.behavior.maybeExportId.getOrElse(id)
   val name = behaviorVersion.maybeName.getOrElse("Unnamed data type")
 
-  val graphQLOutputName: String = dataTypeConfig.graphQLOutputName
-  override lazy val graphQLInputName: String = dataTypeConfig.graphQLInputName
+  val outputName: String = dataTypeConfig.outputName
+  override lazy val inputName: String = dataTypeConfig.inputName
 
   case class ValidValue(id: String, label: String, data: Map[String, String])
   implicit val validValueReads = new Reads[ValidValue] {

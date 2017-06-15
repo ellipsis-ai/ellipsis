@@ -33,11 +33,11 @@ class GraphQLServiceSpec extends DBSpec {
         val schema = runNow(graphQLService.schemaFor(firstVersion))
         schema.query.fields must have length(2)
 
-        val someTypeQueryField = schema.query.fields.find(_.name == someType.graphQLListName).get
+        val someTypeQueryField = schema.query.fields.find(_.name == someType.listName).get
         someTypeQueryField.arguments must have length(1)
         val filterArg = someTypeQueryField.arguments.head
         filterArg.name mustBe "filter"
-        filterArg.argumentType.namedType.name mustBe someType.graphQLInputName
+        filterArg.argumentType.namedType.name mustBe someType.inputName
 
         val mutation = schema.mutation.get
         mutation.fields must have length(4)
@@ -46,9 +46,9 @@ class GraphQLServiceSpec extends DBSpec {
         someTypeUpdateField.arguments must have length(1)
         val updateArg = someTypeUpdateField.arguments.head
         updateArg.name mustBe someType.pluralName
-        updateArg.argumentType.namedType.name mustBe someType.graphQLInputName
+        updateArg.argumentType.namedType.name mustBe someType.inputName
 
-        val someTypeDeleteField = mutation.fields.find(_.name == someType.graphQLDeleteFieldName).get
+        val someTypeDeleteField = mutation.fields.find(_.name == someType.deleteFieldName).get
         someTypeDeleteField.arguments must have length(1)
         val idArg = someTypeDeleteField.arguments.head
         idArg.name mustBe "id"

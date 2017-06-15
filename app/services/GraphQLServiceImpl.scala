@@ -25,8 +25,8 @@ class GraphQLServiceImpl @Inject() (
       configs <- dataService.dataTypeConfigs.allFor(groupVersion).map(_.sortBy(_.id))
       typesStr <- Future.sequence(configs.map(_.graphQL(dataService))).map(_.mkString("\n\n"))
     } yield {
-      val queryFieldsStr = configs.map(_.graphQLQueryFieldsString).mkString("")
-      val mutationFieldsStr = configs.map(_.graphQLMutationFieldsString).mkString("")
+      val queryFieldsStr = configs.map(_.queryFieldsString).mkString("")
+      val mutationFieldsStr = configs.map(_.mutationFieldsString).mkString("")
       s"""schema {
          |  query: Query
          |  mutation: Mutation

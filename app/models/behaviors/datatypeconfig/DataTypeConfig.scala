@@ -14,35 +14,35 @@ case class DataTypeConfig(
 
   lazy val name = behaviorVersion.maybeName.getOrElse("Unnamed Type")
   lazy val pluralName = GraphQLHelpers.formatFieldName(name) ++ "s" // TODO: for realz
-  lazy val graphQLListName = name.take(1).toLowerCase ++ name.substring(1) ++ "List"
-  lazy val graphQLDeleteFieldName = "delete" ++ graphQLOutputName
+  lazy val listName = name.take(1).toLowerCase ++ name.substring(1) ++ "List"
+  lazy val deleteFieldName = "delete" ++ outputName
 
-  lazy val graphQLOutputName: String = GraphQLHelpers.formatTypeName(name)
-  lazy val graphQLInputName: String = graphQLOutputName ++ "Input"
+  lazy val outputName: String = GraphQLHelpers.formatTypeName(name)
+  lazy val inputName: String = outputName ++ "Input"
 
-  def graphQLOutputFields(dataService: DataService): Future[String] = {
+  def outputFields(dataService: DataService): Future[String] = {
     dataService.dataTypeFields.allFor(this).map { fields =>
-      "  " ++ fields.sortBy(_.name).map(_.graphQLOutput).mkString("\n  ")
+      "  " ++ fields.sortBy(_.name).map(_.output).mkString("\n  ")
     }
   }
 
-  def graphQLOutput(dataService: DataService): Future[String] = {
-    graphQLOutputFields(dataService).map { fieldsStr =>
-      s"""type ${graphQLOutputName} {
+  def output(dataService: DataService): Future[String] = {
+    outputFields(dataService).map { fieldsStr =>
+      s"""type ${outputName} {
          |$fieldsStr
          |}""".stripMargin
     }
   }
 
-  def graphQLInputFields(dataService: DataService): Future[String] = {
+  def inputFields(dataService: DataService): Future[String] = {
     dataService.dataTypeFields.allFor(this).map { fields =>
-      "  " ++ fields.sortBy(_.name).map(_.graphQLInput).mkString("\n  ")
+      "  " ++ fields.sortBy(_.name).map(_.input).mkString("\n  ")
     }
   }
 
-  def graphQLInput(dataService: DataService): Future[String] = {
-    graphQLInputFields(dataService).map { fieldsStr =>
-      s"""input ${graphQLInputName} {
+  def input(dataService: DataService): Future[String] = {
+    inputFields(dataService).map { fieldsStr =>
+      s"""input ${inputName} {
          |$fieldsStr
          |}""".stripMargin
     }
@@ -50,18 +50,18 @@ case class DataTypeConfig(
 
   def graphQL(dataService: DataService): Future[String] = {
     for {
-      input <- graphQLInput(dataService)
-      output <- graphQLOutput(dataService)
+      input <- input(dataService)
+      output <- output(dataService)
     } yield s"""$input\n\n$output"""
   }
 
-  def graphQLQueryFieldsString: String = {
-    s"""  ${graphQLListName}(filter: ${graphQLInputName}): [${graphQLOutputName}]\n"""
+  def queryFieldsString: String = {
+    s"""  ${listName}(filter: ${inputName}): [${outputName}]\n"""
   }
 
-  def graphQLMutationFieldsString: String = {
-    s"""  $pluralName($pluralName: [$graphQLInputName!]!): [$graphQLOutputName!]!
-       |  $graphQLDeleteFieldName(id: ID!): $graphQLOutputName"""
+  def mutationFieldsString: String = {
+    s"""  $pluralName($pluralName: [$inputName!]!): [$outputName!]!
+       |  $deleteFieldName(id: ID!): $outputName"""
   }
 
   def toRaw: RawDataTypeConfig = RawDataTypeConfig(id, behaviorVersion.id)
