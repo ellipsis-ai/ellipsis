@@ -103,27 +103,35 @@ class ScheduledActionsController @Inject()(
           case JsSuccess(data, jsPath) => {
             for {
               teamAccess <- dataService.users.teamAccessFor(user, Some(info.teamId))
-              maybeBotProfile <- teamAccess.maybeTargetTeam.map { team =>
-                dataService.slackBotProfiles.allFor(team).map(_.headOption)
-              }.getOrElse(Future.successful(None))
-              channelList <- maybeBotProfile.map { botProfile =>
-                dataService.slackBotProfiles.channelsFor(botProfile).listInfos
-              }.getOrElse(Future.successful(Seq()))
-              maybeExistingScheduledBehavior <- dataService.scheduledBehaviors.find(data.id)
-              maybeExistingScheduledMessage <- dataService.scheduledMessages.find(data.id)
-              maybeBehaviorData <- maybeExistingScheduledBehavior.map { scheduledBehavior =>
-                ScheduledActionData.fromScheduledBehaviors(Seq(scheduledBehavior), dataService, channelList)
-              }.getOrElse(Future.successful(Seq()))
-              maybeMessageData <- maybeExistingScheduledMessage.map { scheduledMessage =>
-                ScheduledActionData.fromScheduledMessages(Seq(scheduledMessage), channelList)
-              }.getOrElse(Future.successful(Seq()))
-            } yield {
-              (maybeBehaviorData ++ maybeMessageData).headOption.map { scheduledData =>
-                Ok(Json.toJson(scheduledData))
+              result <- teamAccess.maybeTargetTeam.map { team =>
+                for {
+                  maybeBotProfile <- dataService.slackBotProfiles.allFor(team).map(_.headOption)
+                  channelList <- maybeBotProfile.map { botProfile =>
+                    dataService.slackBotProfiles.channelsFor(botProfile).listInfos
+                  }.getOrElse(Future.successful(Seq()))
+                  maybeExistingScheduledBehavior <- dataService.scheduledBehaviors.find(data.id).map { maybeScheduled =>
+                    maybeScheduled.filter(_.team.id == team.id)
+                  }
+                  maybeExistingScheduledMessage <- dataService.scheduledMessages.find(data.id).map { maybeScheduled =>
+                    maybeScheduled.filter(_.team.id == team.id)
+                  }
+                  behaviorData <- maybeExistingScheduledBehavior.map { scheduledBehavior =>
+                    ScheduledActionData.fromScheduledBehaviors(Seq(scheduledBehavior), dataService, channelList)
+                  }.getOrElse(Future.successful(Seq()))
+                  messageData <- maybeExistingScheduledMessage.map { scheduledMessage =>
+                    ScheduledActionData.fromScheduledMessages(Seq(scheduledMessage), channelList)
+                  }.getOrElse(Future.successful(Seq()))
+                } yield {
+                  (behaviorData ++ messageData).headOption.map { scheduledData =>
+                    Ok(Json.toJson(scheduledData))
+                  }.getOrElse {
+                    NotFound(Json.toJson("Scheduled action not found"))
+                  }
+                }
               }.getOrElse {
-                NotFound("Scheduled action ID not found")
+                Future.successful(NotFound("Team not found"))
               }
-            }
+            } yield result
           }
         }
       }
