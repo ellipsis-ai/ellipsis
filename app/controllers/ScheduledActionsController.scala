@@ -13,7 +13,7 @@ import play.api.Configuration
 import play.api.data.Form
 import play.api.data.Forms._
 import play.api.i18n.MessagesApi
-import play.api.libs.json.{JsSuccess, Json}
+import play.api.libs.json.{JsError, JsSuccess, Json}
 import play.filters.csrf.CSRF
 import services.DataService
 
@@ -44,6 +44,10 @@ class ScheduledActionsController @Inject()(
               channelList <- maybeBotProfile.map { botProfile =>
                 dataService.slackBotProfiles.channelsFor(botProfile).listInfos
               }.getOrElse(Future.successful(Seq()))
+              behaviorGroups <- dataService.behaviorGroups.allFor(team)
+              groupData <- Future.sequence(behaviorGroups.map { group =>
+                BehaviorGroupData.maybeFor(group.id, user, None, dataService)
+              }).map(_.flatten.sorted)
               scheduledMessageData <- ScheduledActionData.fromScheduledMessages(scheduledMessages, channelList)
               scheduledBehaviorData <- ScheduledActionData.fromScheduledBehaviors(scheduledBehaviors, dataService, channelList)
               maybeSlackLinkedAccount <- dataService.linkedAccounts.maybeForSlackFor(user)
@@ -57,6 +61,7 @@ class ScheduledActionsController @Inject()(
                 teamId = team.id,
                 scheduledActions = scheduledMessageData ++ scheduledBehaviorData,
                 channelList = ScheduleChannelData.fromChannelLikeList(channelList),
+                behaviorGroups = groupData,
                 teamTimeZone = team.maybeTimeZone.map(_.toString),
                 teamTimeZoneName = team.maybeTimeZone.map(_.getDisplayName(TextStyle.FULL, Locale.ENGLISH)),
                 slackUserId = maybeSlackProfile.map(_.loginInfo.providerKey)
@@ -129,9 +134,12 @@ class ScheduledActionsController @Inject()(
                   }
                 }
               }.getOrElse {
-                Future.successful(NotFound("Team not found"))
+                Future.successful(NotFound(Json.toJson("Team not found")))
               }
             } yield result
+          }
+          case e: JsError => {
+            Future.successful(BadRequest(Json.toJson(s"Malformatted data: ${e.errors.mkString("\n")}")))
           }
         }
       }

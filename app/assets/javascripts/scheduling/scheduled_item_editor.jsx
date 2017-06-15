@@ -3,6 +3,7 @@ define(function(require) {
     RecurrenceEditor = require('./recurrence_editor'),
     ScheduleChannelEditor = require('./schedule_channel_editor'),
     ScheduledItemConfig = require('./scheduled_item_config'),
+    BehaviorGroup = require('../models/behavior_group'),
     ScheduledAction = require('../models/scheduled_action'),
     ScheduleChannel = require('../models/schedule_channel');
 
@@ -11,6 +12,7 @@ define(function(require) {
     propTypes: {
       scheduledAction: React.PropTypes.instanceOf(ScheduledAction),
       channelList: React.PropTypes.arrayOf(React.PropTypes.instanceOf(ScheduleChannel)).isRequired,
+      behaviorGroups: React.PropTypes.arrayOf(React.PropTypes.instanceOf(BehaviorGroup)).isRequired,
       onChange: React.PropTypes.func.isRequired,
       onCancel: React.PropTypes.func.isRequired,
       onSave: React.PropTypes.func.isRequired,
@@ -35,9 +37,9 @@ define(function(require) {
       }));
     },
 
-    updateAction: function(behaviorName, newArgs, callback) {
+    updateAction: function(behaviorId, newArgs, callback) {
       this.props.onChange(this.props.scheduledAction.clone({
-        behaviorName: behaviorName,
+        behaviorId: behaviorId,
         arguments: newArgs
       }), callback);
     },
@@ -67,6 +69,7 @@ define(function(require) {
               <h5 className="mbs">What to do</h5>
               <ScheduledItemConfig
                 scheduledAction={this.props.scheduledAction}
+                behaviorGroups={this.props.behaviorGroups}
                 onChangeTriggerText={this.updateTriggerText}
                 onChangeAction={this.updateAction}
               />

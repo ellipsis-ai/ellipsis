@@ -6,6 +6,7 @@ case class ScheduledActionsConfig(
                                    teamId: String,
                                    scheduledActions: Seq[ScheduledActionData],
                                    channelList: Seq[ScheduleChannelData],
+                                   behaviorGroups: Seq[BehaviorGroupData],
                                    teamTimeZone: Option[String],
                                    teamTimeZoneName: Option[String],
                                    slackUserId: Option[String]

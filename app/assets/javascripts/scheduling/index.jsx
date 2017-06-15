@@ -4,6 +4,7 @@ define(function(require) {
     FixedFooter = require('../shared_ui/fixed_footer'),
     ModalScrim = require('../shared_ui/modal_scrim'),
     PageWithPanels = require('../shared_ui/page_with_panels'),
+    BehaviorGroup = require('../models/behavior_group'),
     ScheduledAction = require('../models/scheduled_action'),
     ScheduleChannel = require('../models/schedule_channel'),
     ScheduledItem = require('./scheduled_item'),
@@ -14,8 +15,9 @@ define(function(require) {
     displayName: 'Scheduling',
     propTypes: Object.assign(PageWithPanels.requiredPropTypes(), {
       teamId: React.PropTypes.string.isRequired,
-      scheduledActions: React.PropTypes.arrayOf(React.PropTypes.instanceOf(ScheduledAction)),
-      channelList: React.PropTypes.arrayOf(React.PropTypes.instanceOf(ScheduleChannel)),
+      scheduledActions: React.PropTypes.arrayOf(React.PropTypes.instanceOf(ScheduledAction)).isRequired,
+      channelList: React.PropTypes.arrayOf(React.PropTypes.instanceOf(ScheduleChannel)).isRequired,
+      behaviorGroups: React.PropTypes.arrayOf(React.PropTypes.instanceOf(BehaviorGroup)).isRequired,
       onSave: React.PropTypes.func.isRequired,
       teamTimeZone: React.PropTypes.string,
       teamTimeZoneName: React.PropTypes.string,
@@ -155,7 +157,7 @@ define(function(require) {
             <div>
               {group.actions.map((action) => (
                 <div className="pvxl phxxxl border-top" key={`${action.type}-${action.id}`}>
-                  <ScheduledItem scheduledAction={action} onClick={this.toggleEditor} />
+                  <ScheduledItem scheduledAction={action} behaviorGroups={this.props.behaviorGroups} onClick={this.toggleEditor} />
                 </div>
               ))}
             </div>
@@ -206,6 +208,7 @@ define(function(require) {
               <ScheduledItemEditor
                 scheduledAction={selectedItem}
                 channelList={this.props.channelList}
+                behaviorGroups={this.props.behaviorGroups}
                 onChange={this.updateSelectedItem}
                 onCancel={this.cancelEditor}
                 onSave={this.saveSelectedItem}

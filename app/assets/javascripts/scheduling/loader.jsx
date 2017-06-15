@@ -1,7 +1,8 @@
 requirejs(['common'], function() {
   requirejs(['core-js', 'whatwg-fetch', 'react', 'react-dom', './scheduling/index', 'config/scheduling/index',
-      './models/scheduled_action', './models/schedule_channel', './lib/data_request'],
-    function(Core, Fetch, React, ReactDOM, Scheduling, SchedulingConfig, ScheduledAction, ScheduleChannel, DataRequest) {
+      './models/scheduled_action', './models/schedule_channel', './models/behavior_group', './lib/data_request'],
+    function(Core, Fetch, React, ReactDOM, Scheduling, SchedulingConfig,
+             ScheduledAction, ScheduleChannel, BehaviorGroup, DataRequest) {
 
       function onSave(scheduledAction) {
         const body = {
@@ -16,6 +17,7 @@ requirejs(['common'], function() {
       var config = Object.assign(SchedulingConfig, {
         scheduledActions: SchedulingConfig.scheduledActions.map(ScheduledAction.fromJson),
         channelList: SchedulingConfig.channelList.map(ScheduleChannel.fromJson),
+        behaviorGroups: SchedulingConfig.behaviorGroups.map(BehaviorGroup.fromJson),
         onSave: onSave
       });
 
