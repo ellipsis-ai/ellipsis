@@ -76,6 +76,19 @@ class BehaviorGroupServiceImpl @Inject() (
     dataService.run(action)
   }
 
+  def findForInvocationToken(tokenId: String): Future[Option[BehaviorGroup]] = {
+    for {
+      maybeToken <- dataService.invocationTokens.findNotExpired(tokenId)
+      maybeUser <- dataService.users.findForInvocationToken(tokenId)
+      maybeOriginatingBehavior <- (for {
+        token <- maybeToken
+        user <- maybeUser
+      } yield {
+        dataService.behaviors.find(token.behaviorId, user)
+      }).getOrElse(Future.successful(None))
+    } yield maybeOriginatingBehavior.map(_.group)
+  }
+
   def merge(groups: Seq[BehaviorGroup], user: User): Future[BehaviorGroup] = {
     Future.sequence(groups.map { ea =>
       dataService.behaviorGroups.maybeCurrentVersionFor(ea)

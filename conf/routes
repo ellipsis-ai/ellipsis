@@ -103,7 +103,7 @@ POST        /api/say                                  @controllers.APIController
 #NOCSRF
 GET         /get_action_logs/:behaviorId/:token       @controllers.InvocationLogController.getLogs(behaviorId: String, token: String, from: Option[String] ?= None, to: Option[String] ?= None, userId: Option[String] ?= None)
 #NOCSRF
-GET         /storage/query/:skillId/:token            @controllers.GraphQLController.query(skillId: String, token: String, query: Option[String], op: Option[String] ?= None, variables: Option[String] ?= None)
+GET         /storage/query/:token/:query              @controllers.GraphQLController.query(token: String, query: String, op: Option[String] ?= None, variables: Option[String] ?= None)
 
 
 # Map static resources from the /public folder to the /assets URL path

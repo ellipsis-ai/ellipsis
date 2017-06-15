@@ -17,6 +17,8 @@ trait BehaviorGroupService {
 
   def find(id: String): Future[Option[BehaviorGroup]]
 
+  def findForInvocationToken(tokenId: String): Future[Option[BehaviorGroup]]
+
   def merge(groups: Seq[BehaviorGroup], user: User): Future[BehaviorGroup]
 
   def delete(group: BehaviorGroup): Future[BehaviorGroup]
