@@ -13,7 +13,9 @@ case class DataTypeConfig(
                         ) {
 
   lazy val name = behaviorVersion.maybeName.getOrElse("Unnamed Type")
+  lazy val pluralName = GraphQLHelpers.formatFieldName(name) ++ "s" // TODO: for realz
   lazy val graphQLListName = name.take(1).toLowerCase ++ name.substring(1) ++ "List"
+  lazy val graphQLDeleteFieldName = "delete" ++ graphQLOutputName
 
   lazy val graphQLOutputName: String = GraphQLHelpers.formatTypeName(name)
   lazy val graphQLInputName: String = graphQLOutputName ++ "Input"
@@ -51,6 +53,15 @@ case class DataTypeConfig(
       input <- graphQLInput(dataService)
       output <- graphQLOutput(dataService)
     } yield s"""$input\n\n$output"""
+  }
+
+  def graphQLQueryFieldsString: String = {
+    s"""  ${graphQLListName}(filter: ${graphQLInputName}): [${graphQLOutputName}]\n"""
+  }
+
+  def graphQLMutationFieldsString: String = {
+    s"""  $pluralName($pluralName: [$graphQLInputName!]!): [$graphQLOutputName!]!
+       |  $graphQLDeleteFieldName(id: ID!): $graphQLOutputName"""
   }
 
   def toRaw: RawDataTypeConfig = RawDataTypeConfig(id, behaviorVersion.id)
