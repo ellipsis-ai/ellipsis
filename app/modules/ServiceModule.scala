@@ -88,6 +88,7 @@ class ServiceModule extends AbstractModule with ScalaModule {
 
     bind[AWSLambdaService].to[AWSLambdaServiceImpl]
     bind[AWSLogsService].to[AWSLogsServiceImpl]
+    bind[GraphQLService].to[GraphQLServiceImpl]
     bind[Models].asEagerSingleton()
     bind[SlackEventService].asEagerSingleton()
     bind[EventHandler].asEagerSingleton()

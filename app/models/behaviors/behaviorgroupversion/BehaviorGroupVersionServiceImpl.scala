@@ -9,16 +9,10 @@ import json.BehaviorGroupData
 import models.IDs
 import models.accounts.user.User
 import models.behaviors.behaviorgroup.{BehaviorGroup, BehaviorGroupQueries}
-import models.behaviors.datatypeconfig.DataTypeConfig
-import models.behaviors.defaultstorageitem.{DefaultStorageItem, DefaultStorageItemService}
-import play.api.libs.json.JsObject
-import sangria.parser.QueryParser
-import sangria.schema._
 import services.DataService
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
-import scala.util.{Failure, Success}
 
 case class RawBehaviorGroupVersion(
                                    id: String,
@@ -143,44 +137,6 @@ class BehaviorGroupVersionServiceImpl @Inject() (
     } yield groupVersion) transactionally
 
     dataService.run(action)
-  }
-
-  def schemaStringFor(groupVersion: BehaviorGroupVersion): Future[String] = {
-    for {
-      configs <- dataService.dataTypeConfigs.allFor(groupVersion).map(_.sortBy(_.id))
-      typesStr <- Future.sequence(configs.map(_.graphQL(dataService))).map(_.mkString("\n\n"))
-    } yield {
-      val queryFieldsStr = configs.map(_.graphQLQueryFieldsString).mkString("")
-      val mutationFieldsStr = configs.map(_.graphQLMutationFieldsString).mkString("")
-      s"""schema {
-         |  query: Query
-         |  mutation: Mutation
-         |}
-         |
-         |type Query {
-         |$queryFieldsStr
-         |}
-         |
-         |type Mutation {
-         |$mutationFieldsStr
-         |}
-         |
-         |$typesStr
-         |
-         |
-       """.stripMargin
-    }
-  }
-
-  class MySchemaBuilder extends DefaultAstSchemaBuilder[DefaultStorageItemService]
-
-  def schemaFor(groupVersion: BehaviorGroupVersion): Future[Schema[DefaultStorageItemService, Any]] = {
-    schemaStringFor(groupVersion).map { str =>
-      QueryParser.parse(str) match {
-        case Success(res) => Schema.buildFromAst(res, new MySchemaBuilder)
-        case Failure(err) => throw new RuntimeException(err.getMessage)
-      }
-    }
   }
 
 }

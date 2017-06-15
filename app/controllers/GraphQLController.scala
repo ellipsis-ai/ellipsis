@@ -11,9 +11,9 @@ import play.api.mvc.Action
 import sangria.ast.Document
 import sangria.execution.{ErrorWithResolver, Executor, QueryAnalysisError}
 import sangria.marshalling.playJson._
-import sangria.parser.{QueryParser, SyntaxError}
+import sangria.parser.QueryParser
 import sangria.schema.Schema
-import services.DataService
+import services.{DataService, GraphQLService}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -22,7 +22,8 @@ import scala.util.{Failure, Success}
 class GraphQLController @Inject() (
                                     val messagesApi: MessagesApi,
                                     val configuration: Configuration,
-                                    val dataService: DataService
+                                    val dataService: DataService,
+                                    val graphQL: GraphQLService
                                   ) extends EllipsisController {
 
   def executeQuery(schema: Schema[DefaultStorageItemService, Any], query: Document, op: Option[String], vars: JsObject) =
@@ -57,7 +58,7 @@ class GraphQLController @Inject() (
         dataService.behaviorGroups.maybeCurrentVersionFor(group)
       }.getOrElse(Future.successful(None))
       maybeSchema <- maybeBehaviorGroupVersion.map { groupVersion =>
-        dataService.behaviorGroupVersions.schemaFor(groupVersion).map(Some(_))
+        graphQL.schemaFor(groupVersion).map(Some(_))
       }.getOrElse(Future.successful(None))
       result <- (for {
         schema <- maybeSchema
