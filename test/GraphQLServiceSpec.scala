@@ -97,15 +97,22 @@ class GraphQLServiceSpec extends DBSpec {
         (savedItems.head.data \ "foo").as[String] mustBe "bar"
         (mutationResult.get \ "data").get mustBe JsObject(Map("createSomeType" -> JsObject(Map("foo" -> JsString("bar")))))
 
+//        val query =
+//          """query FindSomeType($filter: SomeTypeInput!) {
+//            |  someTypeList(filter: $filter) {
+//            |    foo
+//            |  }
+//            |}
+//          """.stripMargin
+//        val queryVariables = JsObject(Map("filter" -> jsonData)).toString
         val query =
-          """query FindSomeType($filter: SomeTypeInput!) {
-            |  someTypeList(filter: $filter) {
+          """{
+            |  someTypeList(filter: { foo: "bar" }) {
             |    foo
             |  }
             |}
           """.stripMargin
-        val queryVariables = JsObject(Map("filter" -> jsonData)).toString
-        val queryResult = runNow(graphQLService.runQuery(firstVersion.group, query, None, Some(queryVariables)))
+        val queryResult = runNow(graphQLService.runQuery(firstVersion.group, query, None, None))
         (queryResult.get \ "data").get mustBe JsObject(Map("someTypeList" -> JsArray(Array(JsObject(Map("foo" -> JsString("bar")))))))
       })
     }

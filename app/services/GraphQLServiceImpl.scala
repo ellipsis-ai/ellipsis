@@ -142,7 +142,7 @@ class GraphQLServiceImpl @Inject() (
         case obj: JsObject => Some(obj)
         case _ => None
       }
-    }.getOrElse(JsNull)
+    }.getOrElse(Json.obj())
   }
 
   def runQuery(
