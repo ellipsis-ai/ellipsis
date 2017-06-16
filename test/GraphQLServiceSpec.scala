@@ -89,8 +89,12 @@ class GraphQLServiceSpec extends DBSpec {
              |  }
              |}
            """.stripMargin
-        val variables = JsObject(Map("someType" -> JsObject(Map("foo" -> JsString("bar"))))).toString
+        val jsonData = JsObject(Map("foo" -> JsString("bar")))
+        val variables = JsObject(Map("someType" -> jsonData)).toString
         val result = runNow(graphQLService.runQuery(firstVersion.group, query, None, Some(variables)))
+        val savedItems = runNow(dataService.defaultStorageItems.filter(someType.name, jsonData, group))
+        savedItems must have length(1)
+        (savedItems.head.data \ "foo").as[String] mustBe "bar"
         (result.get \ "data").get mustBe JsObject(Map("createSomeType" -> JsObject(Map("foo" -> JsString("bar")))))
       })
     }

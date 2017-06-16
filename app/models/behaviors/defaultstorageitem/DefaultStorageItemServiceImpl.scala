@@ -12,16 +12,17 @@ import services.DataService
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-case class RawDefaultStorageItem(id: String, behaviorGroupId: String, data: JsValue)
+case class RawDefaultStorageItem(id: String, typeName: String, behaviorGroupId: String, data: JsValue)
 
 class DefaultStorageItemsTable(tag: Tag) extends Table[RawDefaultStorageItem](tag, "default_storage_items") {
 
   def id = column[String]("id", O.PrimaryKey)
+  def typeName = column[String]("type_name")
   def behaviorGroupId = column[String]("behavior_group_id")
   def data = column[JsValue]("data")
 
   def * =
-    (id, behaviorGroupId, data) <> ((RawDefaultStorageItem.apply _).tupled, RawDefaultStorageItem.unapply _)
+    (id, typeName, behaviorGroupId, data) <> ((RawDefaultStorageItem.apply _).tupled, RawDefaultStorageItem.unapply _)
 }
 
 class DefaultStorageItemServiceImpl @Inject() (
@@ -39,12 +40,22 @@ class DefaultStorageItemServiceImpl @Inject() (
     dataService.run(action)
   }
 
-  def filter(typeName: String, filter: JsObject, behaviorGroup: BehaviorGroup): Future[Seq[DefaultStorageItem]] = {
-    Future.successful(Seq()) // TODO: for realz
+  def filter(typeName: String, filter: JsValue, behaviorGroup: BehaviorGroup): Future[Seq[DefaultStorageItem]] = {
+    val action = filterQuery(behaviorGroup.id, typeName, filter).result.map { r =>
+      r.map(tuple2Item)
+    }
+    dataService.run(action)
   }
 
   def createItem(typeName: String, data: JsValue, behaviorGroup: BehaviorGroup): Future[DefaultStorageItem] = {
-    Future.successful(DefaultStorageItem(IDs.next, behaviorGroup, data)) // TODO: for realz
+    val newID = IDs.next
+    val newData = data match {
+      case obj: JsObject => obj + ("id", JsString(newID))
+      case _ => data
+    }
+    val newInstance = DefaultStorageItem(newID, typeName, behaviorGroup, newData)
+    val action = (all += newInstance.toRaw).map(_ => newInstance)
+    dataService.run(action)
   }
 
   def deleteItem(id: String, behaviorGroup: BehaviorGroup): Future[DefaultStorageItem] = {

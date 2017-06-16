@@ -14,11 +14,19 @@ CREATE TABLE data_type_fields(
 
 CREATE TABLE default_storage_items(
   id TEXT PRIMARY KEY,
+  type_name TEXT NOT NULL,
   behavior_group_id TEXT NOT NULL REFERENCES behavior_groups(id),
   data JSONB NOT NULL
 );
 
+CREATE INDEX default_storage_items_type_name_index ON default_storage_items(type_name);
+CREATE INDEX default_storage_items_behavior_group_id_index ON default_storage_items(behavior_group_id);
+
+
 # --- !Downs
+
+DROP INDEX IF EXISTS default_storage_items_behavior_group_id_index;
+DROP INDEX IF EXISTS default_storage_items_type_name_index;
 
 DROP TABLE IF EXISTS default_storage_items;
 DROP TABLE IF EXISTS data_type_fields;
