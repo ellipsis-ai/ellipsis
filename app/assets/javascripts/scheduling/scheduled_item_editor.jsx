@@ -1,5 +1,6 @@
 define(function(require) {
   var React = require('react'),
+    DynamicLabelButton = require('../form/dynamic_label_button'),
     RecurrenceEditor = require('./recurrence_editor'),
     ScheduleChannelEditor = require('./schedule_channel_editor'),
     ScheduledItemConfig = require('./scheduled_item_config'),
@@ -16,6 +17,8 @@ define(function(require) {
       onChange: React.PropTypes.func.isRequired,
       onCancel: React.PropTypes.func.isRequired,
       onSave: React.PropTypes.func.isRequired,
+      isSaving: React.PropTypes.bool.isRequired,
+      error: React.PropTypes.string,
       teamTimeZone: React.PropTypes.string.isRequired,
       teamTimeZoneName: React.PropTypes.string.isRequired,
       slackUserId: React.PropTypes.string.isRequired
@@ -58,6 +61,10 @@ define(function(require) {
       this.props.onSave();
     },
 
+    hasChanges: function() {
+      return true;
+    },
+
     renderDetails: function() {
       return (
         <div className="columns">
@@ -96,17 +103,25 @@ define(function(require) {
             </div>
 
             <div className="mtxxl mbxl">
-              <div className="columns columns-elastic mobile-columns-float">
-                <div className="column column-expand">
-                  <button type="button" className="button-primary mbs mrs" disabled={false} onClick={this.save}>Save changes</button>
-                  <button type="button" className="mbs mrs" onClick={this.cancel}>Cancel</button>
-                </div>
-                <div className="column column-shrink align-r mobile-align-l">
-                  {this.props.scheduledAction.isNew() ? null : (
-                    <button type="button" className="mbs button-shrink" disabled={true}>Unschedule this item</button>
-                  )}
-                </div>
-              </div>
+              <DynamicLabelButton
+                disabledWhen={!this.hasChanges() || this.props.isSaving}
+                className="button-primary mbs mrs"
+                onClick={this.save}
+                labels={[
+                  { text: "Save changes", displayWhen: !this.props.isSaving },
+                  { text: "Saving…", displayWhen: this.props.isSaving }
+                ]}
+              />
+              <button type="button" className="mbs mrs" onClick={this.cancel} disabled={this.props.isSaving}>Cancel</button>
+              {this.props.scheduledAction.isNew() ? null : (
+                <button type="button" className="mrs mbs button-shrink" disabled={true}>Unschedule this item</button>
+              )}
+              {this.props.error ? (
+                <span className="fade-in">
+                  <span className="align-button mbs mrm" />
+                  <span className="align-button mbs type-pink type-bold type-italic"> {this.props.error}</span>
+                </span>
+              ) : null}
             </div>
           </div>
         </div>

@@ -22,6 +22,8 @@ define(function(require) {
       teamTimeZone: React.PropTypes.string,
       teamTimeZoneName: React.PropTypes.string,
       slackUserId: React.PropTypes.string,
+      isSaving: React.PropTypes.bool.isRequired,
+      error: React.PropTypes.string,
       justSavedAction: React.PropTypes.instanceOf(ScheduledAction)
     }),
 
@@ -34,12 +36,16 @@ define(function(require) {
 
     componentWillReceiveProps(nextProps) {
       const newAction = nextProps.justSavedAction;
-      if (newAction && nextProps.scheduledActions !== this.props.scheduledActions) {
-        this.props.onClearActivePanel();
-        this.setState({
-          filterChannel: null,
-          selectedItem: newAction
-        });
+      if (this.props.isSaving && !nextProps.isSaving) {
+        if (!nextProps.error) {
+          this.props.onClearActivePanel();
+        }
+        if (newAction) {
+          this.setState({
+            filterChannel: null,
+            selectedItem: newAction
+          });
+        }
       }
     },
 
@@ -224,6 +230,8 @@ define(function(require) {
                 onChange={this.updateSelectedItem}
                 onCancel={this.cancelEditor}
                 onSave={this.saveSelectedItem}
+                isSaving={this.props.isSaving}
+                error={this.props.error}
                 teamTimeZone={this.props.teamTimeZone || "America/New_York"}
                 teamTimeZoneName={this.props.teamTimeZoneName || "Eastern Time"}
                 slackUserId={this.props.slackUserId || ""}

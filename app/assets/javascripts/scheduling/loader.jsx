@@ -8,7 +8,9 @@ requirejs(['common'], function() {
         scheduledActions: SchedulingConfig.scheduledActions.map(ScheduledAction.fromJson),
         channelList: SchedulingConfig.channelList.map(ScheduleChannel.fromJson),
         behaviorGroups: SchedulingConfig.behaviorGroups.map(BehaviorGroup.fromJson),
-        onSave: onSave
+        onSave: onSave,
+        isSaving: false,
+        error: null
       });
 
       function onSave(scheduledAction) {
@@ -16,6 +18,10 @@ requirejs(['common'], function() {
           dataJson: JSON.stringify(scheduledAction),
           teamId: SchedulingConfig.teamId
         };
+        reload({
+          isSaving: true,
+          error: null
+        });
         DataRequest.jsonPost(jsRoutes.controllers.ScheduledActionsController.save().url, body, SchedulingConfig.csrfToken)
           .then((json) => {
             const newAction = ScheduledAction.fromJson(json);
@@ -28,11 +34,17 @@ requirejs(['common'], function() {
               newActions = currentConfig.scheduledActions.concat(newAction);
             }
             reload({
+              isSaving: false,
               justSavedAction: newAction,
               scheduledActions: newActions
             });
           })
-          .catch(console.log);
+          .catch((err) => {
+            reload({
+              isSaving: false,
+              error: "An error occurred while saving. Please try again"
+            });
+          });
       }
 
       function reload(newProps) {
