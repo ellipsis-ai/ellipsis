@@ -95,12 +95,21 @@ class ScheduledActionsController @Inject()(
   }
 
   case class ScheduledActionSaveForm(dataJson: String, teamId: String)
+  case class ScheduledActionDeleteForm(id: String, scheduleType: String, teamId: String)
 
   private val saveForm = Form(
     mapping(
       "dataJson" -> nonEmptyText,
       "teamId" -> nonEmptyText
     )(ScheduledActionSaveForm.apply)(ScheduledActionSaveForm.unapply)
+  )
+
+  private val deleteForm = Form(
+    mapping(
+      "id" -> nonEmptyText,
+      "scheduleType" -> nonEmptyText,
+      "teamId" -> nonEmptyText
+    )(ScheduledActionDeleteForm.apply)(ScheduledActionDeleteForm.unapply)
   )
 
   private def maybeNewScheduledBehavior(
@@ -239,6 +248,57 @@ class ScheduledActionsController @Inject()(
             Future.successful(BadRequest(Json.toJson(s"Malformatted data: ${e.errors.mkString("\n")}")))
           }
         }
+      }
+    )
+  }
+
+  private def maybeDeleteScheduledMessage(id: String, team: Team): Future[Boolean] = {
+    for {
+      maybeExistingScheduledMessage <- dataService.scheduledMessages.findForTeam(id, team)
+      didDeleteMessage <- maybeExistingScheduledMessage.map { scheduledMessage =>
+        dataService.scheduledMessages.delete(scheduledMessage)
+      }.getOrElse(Future.successful(false))
+    } yield didDeleteMessage
+  }
+
+  private def maybeDeleteScheduledBehavior(id: String, team: Team): Future[Boolean] = {
+    for {
+      maybeExistingScheduledBehavior <- dataService.scheduledBehaviors.findForTeam(id, team)
+      didDeleteBehavior <- maybeExistingScheduledBehavior.map { scheduledBehavior =>
+        dataService.scheduledBehaviors.delete(scheduledBehavior)
+      }.getOrElse(Future.successful(false))
+    } yield didDeleteBehavior
+  }
+
+  def delete = silhouette.SecuredAction.async { implicit request =>
+    val user = request.identity
+    deleteForm.bindFromRequest.fold(
+      formWithErrors => {
+        Future.successful(BadRequest(formWithErrors.errorsAsJson))
+      },
+      info => {
+        for {
+          teamAccess <- dataService.users.teamAccessFor(user, Some(info.teamId))
+          result <- teamAccess.maybeTargetTeam.map { team =>
+            for {
+              deleted <- if (info.scheduleType == "message") {
+                maybeDeleteScheduledMessage(info.id, team)
+              } else if (info.scheduleType == "behavior") {
+                maybeDeleteScheduledBehavior(info.id, team)
+              } else {
+                Future.successful(false)
+              }
+            } yield {
+              if (deleted) {
+                Ok(Json.toJson(true))
+              } else {
+                NotFound(Json.toJson("Scheduled action not found"))
+              }
+            }
+          }.getOrElse {
+            Future.successful(NotFound(Json.toJson("Team not found")))
+          }
+        } yield result
       }
     )
   }
