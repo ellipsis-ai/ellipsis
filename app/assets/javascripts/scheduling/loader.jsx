@@ -4,26 +4,46 @@ requirejs(['common'], function() {
     function(Core, Fetch, React, ReactDOM, Scheduling, SchedulingConfig,
              ScheduledAction, ScheduleChannel, BehaviorGroup, DataRequest) {
 
-      function onSave(scheduledAction) {
-        const body = {
-          dataJson: JSON.stringify(scheduledAction),
-          teamId: SchedulingConfig.teamId
-        };
-        DataRequest.jsonPost(jsRoutes.controllers.ScheduledActionsController.save().url, body, SchedulingConfig.csrfToken)
-          .then((result) => { console.log(result); })
-          .catch((err) => { console.log(err); });
-      }
-
-      var config = Object.assign(SchedulingConfig, {
+      let currentConfig = Object.assign({}, SchedulingConfig, {
         scheduledActions: SchedulingConfig.scheduledActions.map(ScheduledAction.fromJson),
         channelList: SchedulingConfig.channelList.map(ScheduleChannel.fromJson),
         behaviorGroups: SchedulingConfig.behaviorGroups.map(BehaviorGroup.fromJson),
         onSave: onSave
       });
 
-      ReactDOM.render(
-        React.createElement(Scheduling, config),
-        document.getElementById(SchedulingConfig.containerId)
-      );
+      function onSave(scheduledAction) {
+        const body = {
+          dataJson: JSON.stringify(scheduledAction),
+          teamId: SchedulingConfig.teamId
+        };
+        DataRequest.jsonPost(jsRoutes.controllers.ScheduledActionsController.save().url, body, SchedulingConfig.csrfToken)
+          .then((json) => {
+            const newAction = ScheduledAction.fromJson(json);
+            const oldActionIndex = currentConfig.scheduledActions.findIndex((ea) => ea.id === scheduledAction.id);
+            let newActions;
+            if (oldActionIndex > -1) {
+              newActions = currentConfig.scheduledActions.slice();
+              newActions.splice(oldActionIndex, 1, newAction);
+            } else {
+              newActions = currentConfig.scheduledActions.concat(newAction);
+            }
+            reload({
+              justSavedAction: newAction,
+              scheduledActions: newActions
+            });
+          })
+          .catch(console.log);
+      }
+
+      function reload(newProps) {
+        const newConfig = Object.assign({}, currentConfig, newProps);
+        ReactDOM.render(
+          React.createElement(Scheduling, newConfig),
+          document.getElementById(SchedulingConfig.containerId)
+        );
+        currentConfig = newConfig;
+      }
+
+      reload();
     });
 });

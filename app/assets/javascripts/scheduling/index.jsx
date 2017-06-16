@@ -21,7 +21,8 @@ define(function(require) {
       onSave: React.PropTypes.func.isRequired,
       teamTimeZone: React.PropTypes.string,
       teamTimeZoneName: React.PropTypes.string,
-      slackUserId: React.PropTypes.string
+      slackUserId: React.PropTypes.string,
+      justSavedAction: React.PropTypes.instanceOf(ScheduledAction)
     }),
 
     getInitialState: function() {
@@ -29,6 +30,17 @@ define(function(require) {
         filterChannel: null,
         selectedItem: null
       };
+    },
+
+    componentWillReceiveProps(nextProps) {
+      const newAction = nextProps.justSavedAction;
+      if (newAction && nextProps.scheduledActions !== this.props.scheduledActions) {
+        this.props.onClearActivePanel();
+        this.setState({
+          filterChannel: null,
+          selectedItem: newAction
+        });
+      }
     },
 
     getSelectedItem: function() {
