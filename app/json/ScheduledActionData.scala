@@ -15,8 +15,8 @@ case class ScheduledActionData(
                                 trigger: Option[String],
                                 arguments: Seq[ScheduledActionArgumentData],
                                 recurrence: ScheduledActionRecurrenceData,
-                                firstRecurrence: OffsetDateTime,
-                                secondRecurrence: OffsetDateTime,
+                                firstRecurrence: Option[OffsetDateTime],
+                                secondRecurrence: Option[OffsetDateTime],
                                 useDM: Boolean,
                                 channel: String
                               )
@@ -31,8 +31,8 @@ object ScheduledActionData {
       trigger = Some(scheduledMessage.text),
       arguments = Seq(),
       recurrence = ScheduledActionRecurrenceData.fromRecurrence(scheduledMessage.recurrence),
-      firstRecurrence = scheduledMessage.nextSentAt,
-      secondRecurrence = scheduledMessage.followingSentAt,
+      firstRecurrence = Some(scheduledMessage.nextSentAt),
+      secondRecurrence = Some(scheduledMessage.followingSentAt),
       useDM = scheduledMessage.isForIndividualMembers,
       channel = scheduledMessage.maybeChannel.getOrElse("")
     )
@@ -48,8 +48,8 @@ object ScheduledActionData {
       trigger = None,
       arguments = arguments,
       recurrence = ScheduledActionRecurrenceData.fromRecurrence(scheduledBehavior.recurrence),
-      firstRecurrence = scheduledBehavior.nextSentAt,
-      secondRecurrence = scheduledBehavior.followingSentAt,
+      firstRecurrence = Some(scheduledBehavior.nextSentAt),
+      secondRecurrence = Some(scheduledBehavior.followingSentAt),
       useDM = scheduledBehavior.isForIndividualMembers,
       channel = scheduledBehavior.maybeChannel.getOrElse("")
     )
