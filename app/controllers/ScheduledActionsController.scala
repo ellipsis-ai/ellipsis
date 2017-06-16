@@ -164,6 +164,44 @@ class ScheduledActionsController @Inject()(
     }.getOrElse(Future.successful(None))
   }
 
+  private def maybeNewScheduledMessageData(data: ScheduledActionData, user: User, team: Team): Future[Option[ScheduledActionData]] = {
+    for {
+      maybeExistingScheduledMessage <- data.id.map { scheduleId =>
+        dataService.scheduledMessages.findForTeam(scheduleId, team)
+      }.getOrElse(Future.successful(None))
+      maybeNewScheduledMessage <- maybeExistingScheduledMessage.map { existingScheduled =>
+        maybeNewScheduledMessage(Some(existingScheduled), data, user, team)
+      }.getOrElse {
+        if (data.id.isEmpty) {
+          maybeNewScheduledMessage(None, data, user, team)
+        } else {
+          Future.successful(None)
+        }
+      }
+    } yield {
+      maybeNewScheduledMessage.map(ScheduledActionData.fromScheduledMessage)
+    }
+  }
+
+  private def maybeNewScheduledBehaviorData(data: ScheduledActionData, user: User, team: Team): Future[Option[ScheduledActionData]] = {
+    for {
+      maybeExistingScheduledBehavior <- data.id.map { scheduleId =>
+        dataService.scheduledBehaviors.findForTeam(scheduleId, team)
+      }.getOrElse(Future.successful(None))
+      maybeNewScheduledBehavior <- maybeExistingScheduledBehavior.map { existingScheduled =>
+        maybeNewScheduledBehavior(Some(existingScheduled), data, user, team)
+      }.getOrElse {
+        if (data.id.isEmpty) {
+          maybeNewScheduledBehavior(None, data, user, team)
+        } else {
+          Future.successful(None)
+        }
+      }
+    } yield {
+      maybeNewScheduledBehavior.map(ScheduledActionData.fromScheduledBehavior)
+    }
+  }
+
   def save = silhouette.SecuredAction.async { implicit request =>
     val user = request.identity
     saveForm.bindFromRequest.fold(
@@ -178,45 +216,15 @@ class ScheduledActionsController @Inject()(
               teamAccess <- dataService.users.teamAccessFor(user, Some(info.teamId))
               result <- teamAccess.maybeTargetTeam.map { team =>
                 for {
-                  maybeUpdatedData <- if (data.scheduleType == "message") {
-                    for {
-                      maybeExistingScheduledMessage <- data.id.map { scheduleId =>
-                        dataService.scheduledMessages.findForTeam(scheduleId, team)
-                      }.getOrElse(Future.successful(None))
-                      maybeUpdatedScheduledMessage <- maybeExistingScheduledMessage.map { existingScheduled =>
-                        maybeNewScheduledMessage(Some(existingScheduled), data, user, team)
-                      }.getOrElse {
-                        if (data.id.isEmpty) {
-                          maybeNewScheduledMessage(None, data, user, team)
-                        } else {
-                          Future.successful(None)
-                        }
-                      }
-                    } yield {
-                      maybeUpdatedScheduledMessage.map(ScheduledActionData.fromScheduledMessage)
-                    }
+                  maybeNewScheduledActionData <- if (data.scheduleType == "message") {
+                    maybeNewScheduledMessageData(data, user, team)
                   } else if (data.scheduleType == "behavior") {
-                    for {
-                      maybeExistingScheduledBehavior <- data.id.map { scheduleId =>
-                        dataService.scheduledBehaviors.findForTeam(scheduleId, team)
-                      }.getOrElse(Future.successful(None))
-                      maybeUpdatedScheduledBehavior <- maybeExistingScheduledBehavior.map { existingScheduled =>
-                        maybeNewScheduledBehavior(Some(existingScheduled), data, user, team)
-                      }.getOrElse {
-                        if (data.id.isEmpty) {
-                          maybeNewScheduledBehavior(None, data, user, team)
-                        } else {
-                          Future.successful(None)
-                        }
-                      }
-                    } yield {
-                      maybeUpdatedScheduledBehavior.map(ScheduledActionData.fromScheduledBehavior)
-                    }
+                    maybeNewScheduledBehaviorData(data, user, team)
                   } else {
                     Future.successful(None)
                   }
                 } yield {
-                  maybeUpdatedData.map { data =>
+                  maybeNewScheduledActionData.map { data =>
                     Ok(Json.toJson(data))
                   }.getOrElse {
                     NotFound(Json.toJson("Scheduled action not found"))
