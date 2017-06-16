@@ -8,7 +8,7 @@ import models.behaviors.scheduling.scheduledmessage.ScheduledMessage
 case class ScheduledActionArgumentData(name: String, value: String)
 
 case class ScheduledActionData(
-                                id: String,
+                                id: Option[String],
                                 scheduleType: String,
                                 behaviorId: Option[String],
                                 behaviorGroupId: Option[String],
@@ -24,7 +24,7 @@ case class ScheduledActionData(
 object ScheduledActionData {
   def fromScheduledMessage(scheduledMessage: ScheduledMessage): ScheduledActionData = {
     ScheduledActionData(
-      id = scheduledMessage.id,
+      id = Some(scheduledMessage.id),
       scheduleType = "message",
       behaviorId = None,
       behaviorGroupId = None,
@@ -41,7 +41,7 @@ object ScheduledActionData {
   def fromScheduledBehavior(scheduledBehavior: ScheduledBehavior): ScheduledActionData = {
     val arguments = scheduledBehavior.arguments.map { case (key, value) => ScheduledActionArgumentData(key, value) }.toSeq
     ScheduledActionData(
-      id = scheduledBehavior.id,
+      id = Some(scheduledBehavior.id),
       scheduleType = "behavior",
       behaviorId = Some(scheduledBehavior.behavior.id),
       behaviorGroupId = Some(scheduledBehavior.behavior.group.id),

@@ -103,17 +103,17 @@ class ScheduledActionsController @Inject()(
     )(ScheduledActionSaveForm.apply)(ScheduledActionSaveForm.unapply)
   )
 
-  private def maybeUpdateScheduledBehavior(
-                                            original: ScheduledBehavior,
+  private def maybeNewScheduledBehavior(
+                                            maybeOriginal: Option[ScheduledBehavior],
                                             newData: ScheduledActionData,
                                             user: User,
                                             team: Team
                                           ): Future[Option[ScheduledBehavior]] = {
     for {
       maybeBehavior <- newData.behaviorId.map { behaviorId =>
-        if (behaviorId == original.behavior.id) {
+        maybeOriginal.filter(original => original.behavior.id == behaviorId).map { original =>
           Future.successful(Some(original.behavior))
-        } else {
+        }.getOrElse {
           dataService.behaviors.find(behaviorId, user)
         }
       }.getOrElse(Future.successful(None))
@@ -130,14 +130,16 @@ class ScheduledActionsController @Inject()(
       }).getOrElse(Future.successful(None))
     } yield {
       if (maybeNewScheduledBehavior.isDefined) {
-        dataService.scheduledBehaviors.delete(original)
+        maybeOriginal.map { original =>
+          dataService.scheduledBehaviors.delete(original)
+        }
       }
       maybeNewScheduledBehavior
     }
   }
 
-  private def maybeUpdateScheduledMessage(
-                                         original: ScheduledMessage,
+  private def maybeNewScheduledMessage(
+                                         maybeOriginal: Option[ScheduledMessage],
                                          newData: ScheduledActionData,
                                          user: User,
                                          team: Team
@@ -153,7 +155,9 @@ class ScheduledActionsController @Inject()(
         }.getOrElse(Future.successful(None))
       } yield {
         if (maybeNewScheduledMessage.isDefined) {
-          dataService.scheduledMessages.delete(original)
+          maybeOriginal.map { original =>
+            dataService.scheduledMessages.delete(original)
+          }
         }
         maybeNewScheduledMessage
       }
@@ -176,19 +180,35 @@ class ScheduledActionsController @Inject()(
                 for {
                   maybeUpdatedData <- if (data.scheduleType == "message") {
                     for {
-                      maybeExistingScheduledMessage <- dataService.scheduledMessages.findForTeam(data.id, team)
-                      maybeUpdatedScheduledMessage <- maybeExistingScheduledMessage.map { existingScheduled =>
-                        maybeUpdateScheduledMessage(existingScheduled, data, user, team)
+                      maybeExistingScheduledMessage <- data.id.map { scheduleId =>
+                        dataService.scheduledMessages.findForTeam(scheduleId, team)
                       }.getOrElse(Future.successful(None))
+                      maybeUpdatedScheduledMessage <- maybeExistingScheduledMessage.map { existingScheduled =>
+                        maybeNewScheduledMessage(Some(existingScheduled), data, user, team)
+                      }.getOrElse {
+                        if (data.id.isEmpty) {
+                          maybeNewScheduledMessage(None, data, user, team)
+                        } else {
+                          Future.successful(None)
+                        }
+                      }
                     } yield {
                       maybeUpdatedScheduledMessage.map(ScheduledActionData.fromScheduledMessage)
                     }
                   } else if (data.scheduleType == "behavior") {
                     for {
-                      maybeExistingScheduledBehavior <- dataService.scheduledBehaviors.findForTeam(data.id, team)
-                      maybeUpdatedScheduledBehavior <- maybeExistingScheduledBehavior.map { existingScheduled =>
-                        maybeUpdateScheduledBehavior(existingScheduled, data, user, team)
+                      maybeExistingScheduledBehavior <- data.id.map { scheduleId =>
+                        dataService.scheduledBehaviors.findForTeam(scheduleId, team)
                       }.getOrElse(Future.successful(None))
+                      maybeUpdatedScheduledBehavior <- maybeExistingScheduledBehavior.map { existingScheduled =>
+                        maybeNewScheduledBehavior(Some(existingScheduled), data, user, team)
+                      }.getOrElse {
+                        if (data.id.isEmpty) {
+                          maybeNewScheduledBehavior(None, data, user, team)
+                        } else {
+                          Future.successful(None)
+                        }
+                      }
                     } yield {
                       maybeUpdatedScheduledBehavior.map(ScheduledActionData.fromScheduledBehavior)
                     }

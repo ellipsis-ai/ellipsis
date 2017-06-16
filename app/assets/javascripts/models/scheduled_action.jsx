@@ -78,7 +78,7 @@ define(function(require) {
 
     static newWithDefaults(timeZone, timeZoneName) {
       return new ScheduledAction({
-        scheduleType: "daily",
+        scheduleType: "message",
         trigger: "",
         recurrence: new Recurrence({ timeZone: timeZone, timeZoneName: timeZoneName }).becomeDaily()
       });
