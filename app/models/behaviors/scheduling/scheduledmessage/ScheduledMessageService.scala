@@ -16,6 +16,8 @@ trait ScheduledMessageService {
 
   def find(id: String): Future[Option[ScheduledMessage]]
 
+  def findForTeam(id: String, team: Team): Future[Option[ScheduledMessage]]
+
   def save(message: ScheduledMessage): Future[ScheduledMessage]
 
   def updateNextTriggeredFor(message: ScheduledMessage): Future[ScheduledMessage]
@@ -39,5 +41,7 @@ trait ScheduledMessageService {
                ): Future[ScheduledMessage]
 
   def deleteFor(text: String, team: Team): Future[Boolean]
+
+  def delete(scheduledMessage: ScheduledMessage): Future[Boolean]
 
 }

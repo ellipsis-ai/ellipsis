@@ -145,6 +145,18 @@ class ScheduledBehaviorServiceImpl @Inject() (
     dataService.run(action)
   }
 
+  def uncompiledFindForTeamQuery(id: Rep[String], teamId: Rep[String]) = {
+    allWithUser.filter { case ((((msg, _), _), _), _) => msg.id === id && msg.teamId === teamId }
+  }
+  val findForTeamQuery = Compiled(uncompiledFindForTeamQuery _)
+
+  def findForTeam(id: String, team: Team): Future[Option[ScheduledBehavior]] = {
+    val action = findForTeamQuery(id, team.id).result.map { r =>
+      r.headOption.map(tuple2ScheduledBehavior)
+    }
+    dataService.run(action)
+  }
+
   def uncompiledFindByBehaviorIdQueryFor(behaviorId: Rep[String], maybeUserId: Rep[Option[String]], maybeChannel: Rep[Option[String]]) = {
     allWithUser.
       filter { case((((msg, _), _), _), _) => msg.behaviorId === behaviorId }.
@@ -223,7 +235,7 @@ class ScheduledBehaviorServiceImpl @Inject() (
   val rawFindQueryFor = Compiled(uncompiledRawFindQuery _)
 
   def delete(scheduledBehavior: ScheduledBehavior): Future[Boolean] = {
-    // recurrence deletes cascade to scheduled messages
+    // recurrence deletes cascade to scheduled behaviors
     dataService.recurrences.delete(scheduledBehavior.recurrence.id)
   }
 }

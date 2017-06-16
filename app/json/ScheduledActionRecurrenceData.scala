@@ -1,12 +1,11 @@
 package json
 
-import java.time.{DayOfWeek, LocalTime, MonthDay, ZoneId}
 import java.time.format.TextStyle
+import java.time.{DayOfWeek, LocalTime, MonthDay, ZoneId}
 import java.util.Locale
 
 import models.IDs
 import models.behaviors.scheduling.recurrence._
-import services.DataService
 import utils.TimeZoneParser
 
 case class ScheduledActionRecurrenceTimeData(hour: Int, minute: Int)

@@ -133,6 +133,18 @@ class ScheduledMessageServiceImpl @Inject() (
     dataService.run(action)
   }
 
+  def uncompiledFindForTeamQuery(id: Rep[String], teamId: Rep[String]) = {
+    allWithUser.filter { case (((msg, _), _), _) => msg.id === id && msg.teamId === teamId }
+  }
+  val findForTeamQuery = Compiled(uncompiledFindForTeamQuery _)
+
+  def findForTeam(id: String, team: Team): Future[Option[ScheduledMessage]] = {
+    val action = findForTeamQuery(id, team.id).result.map { r =>
+      r.headOption.map(tuple2ScheduledMessage)
+    }
+    dataService.run(action)
+  }
+
   def save(message: ScheduledMessage): Future[ScheduledMessage] = {
     val raw = message.toRaw
     val query = all.filter(_.id === raw.id)
@@ -203,5 +215,10 @@ class ScheduledMessageServiceImpl @Inject() (
       }).map(didDeletes => didDeletes.contains(true))
     } yield didDelete
     dataService.run(action)
+  }
+
+  def delete(scheduledMessage: ScheduledMessage): Future[Boolean] = {
+    // recurrence deletes cascade to scheduled behaviors
+    dataService.recurrences.delete(scheduledMessage.recurrence.id)
   }
 }
