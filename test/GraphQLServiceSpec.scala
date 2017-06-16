@@ -2,7 +2,7 @@ package models
 
 import json.BehaviorVersionData
 import models.behaviors.behaviorparameter.{BehaviorParameterType, NumberType, TextType}
-import play.api.libs.json.{JsObject, JsString}
+import play.api.libs.json.{JsArray, JsObject, JsString}
 import services.GraphQLService
 import support.DBSpec
 
@@ -82,7 +82,7 @@ class GraphQLServiceSpec extends DBSpec {
         newSavedDataTypeFieldFor("someType", someType2, fieldType)
         newSavedDataTypeFieldFor("bar", someType2, NumberType)
 
-        val query =
+        val mutation =
           """mutation CreateSomeType($someType: SomeTypeInput!) {
              |  createSomeType(someType: $someType) {
              |    foo
@@ -90,12 +90,23 @@ class GraphQLServiceSpec extends DBSpec {
              |}
            """.stripMargin
         val jsonData = JsObject(Map("foo" -> JsString("bar")))
-        val variables = JsObject(Map("someType" -> jsonData)).toString
-        val result = runNow(graphQLService.runQuery(firstVersion.group, query, None, Some(variables)))
+        val mutationVariables = JsObject(Map("someType" -> jsonData)).toString
+        val mutationResult = runNow(graphQLService.runQuery(firstVersion.group, mutation, None, Some(mutationVariables)))
         val savedItems = runNow(dataService.defaultStorageItems.filter(someType.name, jsonData, group))
         savedItems must have length(1)
         (savedItems.head.data \ "foo").as[String] mustBe "bar"
-        (result.get \ "data").get mustBe JsObject(Map("createSomeType" -> JsObject(Map("foo" -> JsString("bar")))))
+        (mutationResult.get \ "data").get mustBe JsObject(Map("createSomeType" -> JsObject(Map("foo" -> JsString("bar")))))
+
+        val query =
+          """query FindSomeType($filter: SomeTypeInput!) {
+            |  someTypeList(filter: $filter) {
+            |    foo
+            |  }
+            |}
+          """.stripMargin
+        val queryVariables = JsObject(Map("filter" -> jsonData)).toString
+        val queryResult = runNow(graphQLService.runQuery(firstVersion.group, query, None, Some(queryVariables)))
+        (queryResult.get \ "data").get mustBe JsObject(Map("someTypeList" -> JsArray(Array(JsObject(Map("foo" -> JsString("bar")))))))
       })
     }
   }

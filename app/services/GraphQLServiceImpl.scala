@@ -62,9 +62,14 @@ class GraphQLServiceImpl @Inject() (
                                    ctx: Context[DefaultStorageItemService, _],
                                    typeDefinition: ast.TypeDefinition,
                                    definition: ast.FieldDefinition
-                                 ): Context[DefaultStorageItemService, _] => Action[DefaultStorageItemService, _] = {
+                                 ): Action[DefaultStorageItemService, _] = {
       definition.name match {
-        case listFieldRegex(typeName) => ctx => ctx.ctx.filter(typeName, ctx.arg(definition.arguments.head.name), group)
+        case listFieldRegex(typeName) => {
+          val filter: JsValue = Json.toJson(ctx.arg(definition.arguments.head.name).asInstanceOf[ListMap[String, Option[String]]].toArray.toMap)
+          ctx.ctx.filter(typeName.capitalize, filter, group).map { items =>
+            fromJson(JsArray(items.map(_.data)))
+          }
+        }
       }
     }
 
@@ -93,8 +98,13 @@ class GraphQLServiceImpl @Inject() (
           case "Query" => resolveQueryField(ctx, typeDefinition, definition)
           case "Mutation" => resolveMutationField(ctx, typeDefinition, definition)
           case _ => {
-            val jsVal = (ctx.value.asInstanceOf[JsObject] \ (definition.name)).get
-            fromJson(jsVal)
+            ctx.value match {
+              case arr: JsArray => fromJson(arr)
+              case _ => {
+                val jsVal = (ctx.value.asInstanceOf[JsObject] \ (definition.name)).get
+                fromJson(jsVal)
+              }
+            }
           }
         }
       }
