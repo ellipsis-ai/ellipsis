@@ -13,9 +13,10 @@ case class DataTypeConfig(
                         ) {
 
   lazy val name = behaviorVersion.maybeName.getOrElse("Unnamed Type")
-  lazy val pluralName = GraphQLHelpers.formatFieldName(name) ++ "s" // TODO: for realz
+  lazy val fieldName = GraphQLHelpers.formatFieldName(name)
   lazy val listName = name.take(1).toLowerCase ++ name.substring(1) ++ "List"
   lazy val deleteFieldName = "delete" ++ outputName
+  lazy val createFieldName = "create" ++ outputName
 
   lazy val outputName: String = GraphQLHelpers.formatTypeName(name)
   lazy val inputName: String = outputName ++ "Input"
@@ -56,11 +57,11 @@ case class DataTypeConfig(
   }
 
   def queryFieldsString: String = {
-    s"""  ${listName}(filter: ${inputName}): [${outputName}]\n"""
+    s"""  ${listName}(filter: ${inputName}!): [${outputName}]\n"""
   }
 
   def mutationFieldsString: String = {
-    s"""  $pluralName($pluralName: [$inputName!]!): [$outputName!]!
+    s"""  $createFieldName($fieldName: $inputName!): $outputName!
        |  $deleteFieldName(id: ID!): $outputName"""
   }
 

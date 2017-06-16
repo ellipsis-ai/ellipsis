@@ -5,13 +5,15 @@ import javax.inject.Inject
 import models.behaviors.behaviorgroup.BehaviorGroup
 import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
 import models.behaviors.defaultstorageitem.DefaultStorageItemService
-import play.api.libs.json.{JsObject, JsValue, Json}
+import play.api.libs.json._
+import sangria.ast
 import sangria.ast.Document
 import sangria.execution.Executor
 import sangria.marshalling.playJson._
 import sangria.parser.QueryParser
-import sangria.schema.{DefaultAstSchemaBuilder, Schema}
+import sangria.schema.{Action, Context, DefaultAstSchemaBuilder, Schema}
 
+import scala.collection.immutable.ListMap
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.util.{Failure, Success}
@@ -47,12 +49,69 @@ class GraphQLServiceImpl @Inject() (
     }
   }
 
-  class MySchemaBuilder extends DefaultAstSchemaBuilder[DefaultStorageItemService]
+  class MySchemaBuilder(groupVersion: BehaviorGroupVersion) extends DefaultAstSchemaBuilder[DefaultStorageItemService] {
+
+    val group = groupVersion.group
+
+    val listFieldRegex = """(\S+)List""".r
+    val createFieldRegex = """create(\S+)""".r
+    val deleteFieldRegex = """delete(\S+)""".r
+
+
+    private def resolveQueryField(
+                                   ctx: Context[DefaultStorageItemService, _],
+                                   typeDefinition: ast.TypeDefinition,
+                                   definition: ast.FieldDefinition
+                                 ): Context[DefaultStorageItemService, _] => Action[DefaultStorageItemService, _] = {
+      definition.name match {
+        case listFieldRegex(typeName) => ctx => ctx.ctx.filter(typeName, ctx.arg(definition.arguments.head.name), group)
+      }
+    }
+
+    private def resolveMutationField(
+                                   ctx: Context[DefaultStorageItemService, _],
+                                   typeDefinition: ast.TypeDefinition,
+                                   definition: ast.FieldDefinition
+                                 ): Action[DefaultStorageItemService, _] = {
+      definition.name match {
+        case createFieldRegex(typeName) => {
+          val data: JsValue = Json.toJson(ctx.arg(definition.arguments.head.name).asInstanceOf[ListMap[String, Option[String]]].toArray.toMap)
+          ctx.ctx.createItem(typeName, data, group).map { newItem =>
+            newItem.data
+          }
+        }
+        case deleteFieldRegex(_) => ctx.ctx.deleteItem(ctx.arg(definition.arguments.head.name), group)
+      }
+    }
+
+    override def resolveField(
+                               typeDefinition: ast.TypeDefinition,
+                               definition: ast.FieldDefinition
+                             ): Context[DefaultStorageItemService, _] => Action[DefaultStorageItemService, _] = {
+      ctx => {
+        typeDefinition.name match {
+          case "Query" => resolveQueryField(ctx, typeDefinition, definition)
+          case "Mutation" => resolveMutationField(ctx, typeDefinition, definition)
+          case _ => {
+            val jsVal = (ctx.value.asInstanceOf[JsObject] \ (definition.name)).get
+            fromJson(jsVal)
+          }
+        }
+      }
+    }
+
+    def fromJson(v: JsValue) = v match {
+      case JsArray(l) ⇒ l
+      case JsString(s) ⇒ s
+      case JsNumber(n) ⇒ n.intValue()
+      case other ⇒ other
+    }
+  }
 
   def schemaFor(groupVersion: BehaviorGroupVersion): Future[Schema[DefaultStorageItemService, Any]] = {
     schemaStringFor(groupVersion).map { str =>
       QueryParser.parse(str) match {
-        case Success(res) => Schema.buildFromAst(res, new MySchemaBuilder)
+        case Success(res) => Schema.buildFromAst(res, new MySchemaBuilder(groupVersion))
         case Failure(err) => throw new RuntimeException(err.getMessage)
       }
     }
@@ -62,18 +121,18 @@ class GraphQLServiceImpl @Inject() (
                     schema: Schema[DefaultStorageItemService, Any],
                     query: Document,
                     op: Option[String],
-                    vars: JsObject
+                    vars: JsValue
                   ): Future[JsValue] = {
     Executor.execute(schema, query, operationName = op, variables = vars, userContext = dataService.defaultStorageItems)
   }
 
-  private def maybeVariablesFrom(maybeString: Option[String]): JsObject = {
+  private def variablesFrom(maybeString: Option[String]): JsValue = {
     maybeString.flatMap { str =>
       Json.parse(str) match {
         case obj: JsObject => Some(obj)
         case _ => None
       }
-    }.getOrElse(Json.obj())
+    }.getOrElse(JsNull)
   }
 
   def runQuery(
@@ -92,7 +151,7 @@ class GraphQLServiceImpl @Inject() (
         maybeSchema.map { schema =>
           QueryParser.parse(query) match {
             case Success(queryAst) => {
-              executeQuery(schema, queryAst, maybeOperationName, maybeVariablesFrom(maybeVariables)).map(Some(_))
+              executeQuery(schema, queryAst, maybeOperationName, variablesFrom(maybeVariables)).map(Some(_))
             }
             case Failure(error) => throw error
           }

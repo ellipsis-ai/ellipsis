@@ -4,6 +4,7 @@ import javax.inject.Inject
 
 import com.google.inject.Provider
 import drivers.SlickPostgresDriver.api._
+import models.IDs
 import models.behaviors.behaviorgroup.BehaviorGroup
 import play.api.libs.json._
 import services.DataService
@@ -38,8 +39,16 @@ class DefaultStorageItemServiceImpl @Inject() (
     dataService.run(action)
   }
 
-  def filter(filter: JsObject, behaviorGroup: BehaviorGroup): Future[Seq[DefaultStorageItem]] = {
+  def filter(typeName: String, filter: JsObject, behaviorGroup: BehaviorGroup): Future[Seq[DefaultStorageItem]] = {
     Future.successful(Seq()) // TODO: for realz
+  }
+
+  def createItem(typeName: String, data: JsValue, behaviorGroup: BehaviorGroup): Future[DefaultStorageItem] = {
+    Future.successful(DefaultStorageItem(IDs.next, behaviorGroup, data)) // TODO: for realz
+  }
+
+  def deleteItem(id: String, behaviorGroup: BehaviorGroup): Future[DefaultStorageItem] = {
+    Future.successful(null) // TODO: for realz
   }
 
 }
