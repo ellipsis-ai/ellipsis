@@ -18,11 +18,11 @@ object DataTypeFieldQueries {
         findBuiltIn(raw.fieldTypeId).
         orElse(tuple._2.map { config => BehaviorBackedDataType(DataTypeConfigQueries.tuple2Config(config)) }).
         getOrElse(TextType)
-    DataTypeField(raw.id, raw.name, paramType, raw.configId)
+    DataTypeField(raw.id, raw.fieldId, raw.name, paramType, raw.configId, raw.rank)
   }
 
   def uncompiledAllForConfigQuery(configId: Rep[String]) = {
-    allWithDataTypeConfig.filter { case(field, _) => field.configId === configId }
+    allWithDataTypeConfig.filter { case(field, _) => field.configId === configId }.sortBy { case(field, _) => field.rank.asc }
   }
   val allForConfigQuery = Compiled(uncompiledAllForConfigQuery _)
 

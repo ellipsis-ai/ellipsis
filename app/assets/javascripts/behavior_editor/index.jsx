@@ -14,6 +14,8 @@ var React = require('react'),
   CodeEditorHelp = require('./code_editor_help'),
   ConfirmActionPanel = require('../panels/confirm_action'),
   CollapseButton = require('../shared_ui/collapse_button'),
+  DataTypeField = require('../models/data_type_field'),
+  DataTypeSchemaConfig = require('./data_type_schema_config'),
   DataTypeCodeEditorHelp = require('./data_type_code_editor_help'),
   DataTypeResultConfig = require('./data_type_result_config'),
   DynamicLabelButton = require('../form/dynamic_label_button'),
@@ -171,6 +173,10 @@ const BehaviorEditor = React.createClass({
     return this.getInputIds().
       map(eaId => allInputs.find(ea => ea.inputId === eaId)).
       filter(ea => !!ea);
+  },
+
+  getDataTypeFields: function() {
+    return this.getSelectedBehavior().getDataTypeFields();
   },
 
   getFirstBehaviorInputName: function() {
@@ -424,9 +430,23 @@ const BehaviorEditor = React.createClass({
     this.updateGroupStateWith(newGroup, callback);
   },
 
+  setDataTypeConfig: function(newConfig) {
+    this.setEditableProp('dataTypeConfig', newConfig);
+  },
+
+  setDataTypeFields: function(newFields) {
+    const newConfig = this.getSelectedBehavior().getDataTypeConfig().clone({ fields: newFields });
+    this.setDataTypeConfig(newConfig);
+  },
+
   addInput: function(input) {
     const newInputs = this.getInputs().concat([input]);
     this.setBehaviorInputs(newInputs, this.focusOnLastInput);
+  },
+
+  addDataTypeField: function(field) {
+    const newFields = this.getDataTypeFields().concat([field]);
+    this.setDataTypeFields(newFields);
   },
 
   getNewGenericInputName: function() {
@@ -446,6 +466,26 @@ const BehaviorEditor = React.createClass({
       .then(response => response.json())
       .then(json => {
         this.addInput(new Input(json));
+      });
+  },
+
+  getNewGenericDataTypeFieldName: function() {
+    let newIndex = this.getDataTypeFields().length + 1;
+    while (this.getDataTypeFields().some(ea => {
+      return ea.name === 'dataTypeField' + newIndex;
+    })) {
+      newIndex++;
+    }
+    return `dataTypeField${newIndex}`;
+  },
+
+  addNewDataTypeField: function(optionalNewName) {
+    const newName = optionalNewName || this.getNewGenericDataTypeFieldName();
+    const url = jsRoutes.controllers.BehaviorEditorController.newUnsavedDataTypeField(newName).url;
+    fetch(url, { credentials: 'same-origin' })
+      .then(response => response.json())
+      .then(json => {
+        this.addDataTypeField(new DataTypeField(json));
       });
   },
 
@@ -508,6 +548,10 @@ const BehaviorEditor = React.createClass({
 
   deleteInputAtIndex: function(index) {
     this.setEditableProp('inputIds', ImmutableObjectUtils.arrayRemoveElementAtIndex(this.getInputIds(), index));
+  },
+
+  deleteDataTypeFieldAtIndex: function(index) {
+    this.setDataTypeFields(ImmutableObjectUtils.arrayRemoveElementAtIndex(this.getDataTypeFields(), index));
   },
 
   deleteTriggerAtIndex: function(index) {
@@ -1027,6 +1071,13 @@ const BehaviorEditor = React.createClass({
         }
       }
     });
+  },
+
+  updateDataTypeFieldAtIndexWith: function(index, newField) {
+    var fields = this.getDataTypeFields();
+    var newFields = ImmutableObjectUtils.arrayWithNewElementAtIndex(fields, newField, index);
+
+    this.setDataTypeFields(newFields);
   },
 
   updateForcePrivateResponse: function(newValue) {
@@ -1997,6 +2048,17 @@ const BehaviorEditor = React.createClass({
       <div className="pbxxxl">
         <hr className="mtl mbn thin bg-gray-light" />
 
+        <DataTypeSchemaConfig
+          ref="DataTypeSchemaConfig"
+          onChange={this.updateDataTypeFieldAtIndexWith}
+          onDelete={this.deleteDataTypeFieldAtIndex}
+          onAdd={this.addNewDataTypeField}
+          fields={this.getDataTypeFields()}
+          paramTypes={this.getParamTypes()}
+          animationDisabled={this.animationIsDisabled()}
+          onConfigureType={this.onConfigureType}
+        />
+
         <DataTypeResultConfig
           usesSearch={this.hasInputNamed('searchQuery')}
           onChange={this.updateDataTypeResultConfig}
@@ -2006,7 +2068,7 @@ const BehaviorEditor = React.createClass({
         <hr className="man thin bg-gray-light" />
 
           {this.renderCodeEditor({
-            sectionNumber: "2",
+            sectionNumber: "3",
             sectionHeading: "Run code to generate a list",
             codeEditorHelp: (
               <div className="mbxl">

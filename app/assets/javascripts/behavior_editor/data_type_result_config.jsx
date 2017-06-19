@@ -24,7 +24,7 @@ define(function(require) {
       return (
         <div className="container ptxl pbxxxl">
           <div>
-            <SectionHeading number="1">How to prompt the user</SectionHeading>
+            <SectionHeading number="2">How to prompt the user</SectionHeading>
             <Checklist disabledWhen={this.props.isFinishedBehavior}>
               <Checklist.Item checkedWhen={!this.props.usesSearch}>
                 <span>Use <span className="type-semibold">Select from a list</span> when there are few choices.</span>

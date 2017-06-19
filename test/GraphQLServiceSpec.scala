@@ -1,14 +1,22 @@
 package models
 
-import json.BehaviorVersionData
-import models.behaviors.behaviorparameter.{BehaviorParameterType, NumberType, TextType}
+import json.{BehaviorParameterTypeData, BehaviorVersionData, DataTypeConfigData, DataTypeFieldData}
+import models.behaviors.behaviorparameter.{NumberType, TextType}
 import play.api.libs.json.{JsArray, JsObject, JsString}
-import services.GraphQLService
+import services.{DataService, GraphQLService}
 import support.DBSpec
 
 class GraphQLServiceSpec extends DBSpec {
 
   lazy val graphQLService = app.injector.instanceOf(classOf[GraphQLService])
+
+  def textTypeData(dataService: DataService): BehaviorParameterTypeData = {
+    runNow(BehaviorParameterTypeData.from(TextType, dataService))
+  }
+
+  def numberTypeData(dataService: DataService): BehaviorParameterTypeData = {
+    runNow(BehaviorParameterTypeData.from(NumberType, dataService))
+  }
 
   "schemaFor" should {
 
@@ -17,19 +25,23 @@ class GraphQLServiceSpec extends DBSpec {
         val team = newSavedTeam
         val user = newSavedUserOn(team)
         val group = newSavedBehaviorGroupFor(team)
-        val behaviorVersionData = BehaviorVersionData.newUnsavedFor(group.team.id, isDataType = true, dataService).copy(name = Some("SomeType"))
-        val behaviorVersionData2 = BehaviorVersionData.newUnsavedFor(group.team.id, isDataType = true, dataService).copy(name = Some("SomeType2"))
+        val behaviorVersionData =
+          BehaviorVersionData.newUnsavedFor(group.team.id, isDataType = true, dataService).
+            copy(name = Some("SomeType")).
+            copy(dataTypeConfig = Some(DataTypeConfigData(Seq(DataTypeFieldData.newUnsavedNamed("foo", textTypeData(dataService))))))
+        val behaviorVersionData2 =
+          BehaviorVersionData.newUnsavedFor(group.team.id, isDataType = true, dataService).
+            copy(name = Some("SomeType2")).
+            copy(dataTypeConfig = Some(DataTypeConfigData(Seq(
+              DataTypeFieldData.newUnsavedNamed("someType", BehaviorParameterTypeData(behaviorVersionData.behaviorId, None, behaviorVersionData.name.get, None)),
+              DataTypeFieldData.newUnsavedNamed("bar", numberTypeData(dataService))
+            ))))
         val groupData = newGroupVersionDataFor(group, user).copy(
           behaviorVersions = Seq(behaviorVersionData, behaviorVersionData2)
         )
         val firstVersion = newSavedGroupVersionFor(group, user, Some(groupData))
         val dataTypeConfigs = runNow(dataService.dataTypeConfigs.allFor(firstVersion))
         val someType = dataTypeConfigs.find(_.name == "SomeType").get
-        val someType2 = dataTypeConfigs.find(_.name == "SomeType2").get
-        newSavedDataTypeFieldFor("foo", someType, TextType)
-        val fieldType = runNow(dataService.run(BehaviorParameterType.findAction(someType.behaviorVersion.id, firstVersion, dataService))).get
-        newSavedDataTypeFieldFor("someType", someType2, fieldType)
-        newSavedDataTypeFieldFor("bar", someType2, NumberType)
 
         val schema = runNow(graphQLService.schemaFor(firstVersion))
         schema.query.fields must have length(2)
@@ -68,19 +80,23 @@ class GraphQLServiceSpec extends DBSpec {
         val team = newSavedTeam
         val user = newSavedUserOn(team)
         val group = newSavedBehaviorGroupFor(team)
-        val behaviorVersionData = BehaviorVersionData.newUnsavedFor(group.team.id, isDataType = true, dataService).copy(name = Some("SomeType"))
-        val behaviorVersionData2 = BehaviorVersionData.newUnsavedFor(group.team.id, isDataType = true, dataService).copy(name = Some("SomeType2"))
+        val behaviorVersionData =
+          BehaviorVersionData.newUnsavedFor(group.team.id, isDataType = true, dataService).
+            copy(name = Some("SomeType")).
+            copy(dataTypeConfig = Some(DataTypeConfigData(Seq(DataTypeFieldData.newUnsavedNamed("foo", textTypeData(dataService))))))
+        val behaviorVersionData2 =
+          BehaviorVersionData.newUnsavedFor(group.team.id, isDataType = true, dataService).
+            copy(name = Some("SomeType2")).
+            copy(dataTypeConfig = Some(DataTypeConfigData(Seq(
+              DataTypeFieldData.newUnsavedNamed("someType", BehaviorParameterTypeData(behaviorVersionData.behaviorId, None, behaviorVersionData.name.get, None)),
+              DataTypeFieldData.newUnsavedNamed("bar", numberTypeData(dataService))
+            ))))
         val groupData = newGroupVersionDataFor(group, user).copy(
           behaviorVersions = Seq(behaviorVersionData, behaviorVersionData2)
         )
         val firstVersion = newSavedGroupVersionFor(group, user, Some(groupData))
         val dataTypeConfigs = runNow(dataService.dataTypeConfigs.allFor(firstVersion))
         val someType = dataTypeConfigs.find(_.name == "SomeType").get
-        val someType2 = dataTypeConfigs.find(_.name == "SomeType2").get
-        newSavedDataTypeFieldFor("foo", someType, TextType)
-        val fieldType = runNow(dataService.run(BehaviorParameterType.findAction(someType.behaviorVersion.id, firstVersion, dataService))).get
-        newSavedDataTypeFieldFor("someType", someType2, fieldType)
-        newSavedDataTypeFieldFor("bar", someType2, NumberType)
 
         val mutation =
           """mutation CreateSomeType($someType: SomeTypeInput!) {

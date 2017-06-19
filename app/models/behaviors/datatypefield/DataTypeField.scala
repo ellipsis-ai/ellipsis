@@ -5,9 +5,11 @@ import models.behaviors.defaultstorageitem.GraphQLHelpers
 
 case class DataTypeField(
                           id: String,
+                          fieldId: String,
                           name: String,
                           fieldType: BehaviorParameterType,
-                          configId: String
+                          configId: String,
+                          rank: Int
                          ) {
 
   def outputName: String = GraphQLHelpers.formatFieldName(name)
@@ -16,7 +18,7 @@ case class DataTypeField(
   def input: String = s"$outputName: ${fieldType.inputName}"
 
   def toRaw: RawDataTypeField = {
-    RawDataTypeField(id, name, fieldType.id, configId)
+    RawDataTypeField(id, fieldId, name, fieldType.id, configId, rank)
   }
 
 }

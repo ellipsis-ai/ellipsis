@@ -129,10 +129,6 @@ trait DBSpec extends PlaySpec with OneAppPerSuite with MockitoSugar {
     runNow(dataService.behaviorGroupVersions.createFor(group, user, data.copyForNewVersionOf(group)))
   }
 
-  def newSavedDataTypeFieldFor(name: String, dataTypeConfig: DataTypeConfig, fieldType: BehaviorParameterType): DataTypeField = {
-    runNow(dataService.dataTypeFields.createFor(name, fieldType, dataTypeConfig))
-  }
-
   def behaviorVersionFor(behavior: Behavior, groupVersion: BehaviorGroupVersion): BehaviorVersion = {
     runNow(dataService.behaviorVersions.findFor(behavior, groupVersion)).get
   }

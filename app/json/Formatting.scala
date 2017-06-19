@@ -14,6 +14,12 @@ object Formatting {
   implicit val inputReads = Json.reads[InputData]
   implicit val inputWrites = Json.writes[InputData]
 
+  implicit val dataTypeFieldReads = Json.reads[DataTypeFieldData]
+  implicit val dataTypeFieldWrites = Json.writes[DataTypeFieldData]
+
+  implicit val dataTypeConfigReads = Json.reads[DataTypeConfigData]
+  implicit val dataTypeConfigWrites = Json.writes[DataTypeConfigData]
+
   implicit val libraryVersionReads = Json.reads[LibraryVersionData]
   implicit val libraryVersionWrites = Json.writes[LibraryVersionData]
 

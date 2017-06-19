@@ -18,6 +18,7 @@
   routes.javascript.BehaviorEditorController.newUnsavedBehavior,
   routes.javascript.BehaviorEditorController.newUnsavedLibrary,
   routes.javascript.BehaviorEditorController.newUnsavedInput,
+  routes.javascript.BehaviorEditorController.newUnsavedDataTypeField,
   routes.javascript.BehaviorEditorController.regexValidationErrorsFor,
   routes.javascript.BehaviorEditorController.save,
   routes.javascript.BehaviorEditorController.testInvocation,

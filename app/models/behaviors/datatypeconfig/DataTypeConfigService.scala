@@ -1,5 +1,6 @@
 package models.behaviors.datatypeconfig
 
+import json.DataTypeConfigData
 import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
 import models.behaviors.behaviorversion.BehaviorVersion
 import slick.dbio.DBIO
@@ -12,6 +13,8 @@ trait DataTypeConfigService {
 
   def allFor(groupVersion: BehaviorGroupVersion): Future[Seq[DataTypeConfig]]
 
-  def createForAction(behaviorVersion: BehaviorVersion): DBIO[DataTypeConfig]
+  def maybeFor(behaviorVersion: BehaviorVersion): Future[Option[DataTypeConfig]]
+
+  def createForAction(behaviorVersion: BehaviorVersion, data: DataTypeConfigData): DBIO[DataTypeConfig]
 
 }

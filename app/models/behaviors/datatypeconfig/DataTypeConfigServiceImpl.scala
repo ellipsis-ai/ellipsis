@@ -4,6 +4,7 @@ import javax.inject.Inject
 
 import com.google.inject.Provider
 import drivers.SlickPostgresDriver.api._
+import json.DataTypeConfigData
 import models.IDs
 import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
 import models.behaviors.behaviorversion.BehaviorVersion
@@ -41,9 +42,22 @@ class DataTypeConfigServiceImpl @Inject() (
     dataService.run(allForAction(groupVersion))
   }
 
-  def createForAction(behaviorVersion: BehaviorVersion): DBIO[DataTypeConfig] = {
+  def maybeFor(behaviorVersion: BehaviorVersion): Future[Option[DataTypeConfig]] = {
+    val action = maybeForQuery(behaviorVersion.id).result.map { r =>
+      r.headOption.map(tuple2Config)
+    }
+    dataService.run(action)
+  }
+
+  def createForAction(behaviorVersion: BehaviorVersion, data: DataTypeConfigData): DBIO[DataTypeConfig] = {
     val newInstance = DataTypeConfig(IDs.next, behaviorVersion)
-    (all += newInstance.toRaw).map(_ => newInstance)
+    (all += newInstance.toRaw).flatMap { _ =>
+      DBIO.sequence(data.fields.zipWithIndex.map { case(ea, i) =>
+        dataService.dataTypeFields.createForAction(ea, i + 1, newInstance, behaviorVersion.groupVersion)
+      }).map { _ =>
+        newInstance
+      }
+    }
   }
 
 

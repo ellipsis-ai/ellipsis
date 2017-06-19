@@ -57,6 +57,13 @@ class GraphQLServiceImpl @Inject() (
     val createFieldRegex = """create(\S+)""".r
     val deleteFieldRegex = """delete(\S+)""".r
 
+    private def valueFor(
+                          ctx: Context[DefaultStorageItemService, _],
+                          definition: ast.FieldDefinition
+                        ): JsValue = {
+      Json.toJson(ctx.arg(definition.arguments.head.name).asInstanceOf[ListMap[String, Option[String]]].toArray.toMap)
+    }
+
 
     private def resolveQueryField(
                                    ctx: Context[DefaultStorageItemService, _],
@@ -65,8 +72,7 @@ class GraphQLServiceImpl @Inject() (
                                  ): Action[DefaultStorageItemService, _] = {
       definition.name match {
         case listFieldRegex(typeName) => {
-          val filter: JsValue = Json.toJson(ctx.arg(definition.arguments.head.name).asInstanceOf[ListMap[String, Option[String]]].toArray.toMap)
-          ctx.ctx.filter(typeName.capitalize, filter, group).map { items =>
+          ctx.ctx.filter(typeName.capitalize, valueFor(ctx, definition), group).map { items =>
             fromJson(JsArray(items.map(_.data)))
           }
         }
@@ -80,8 +86,7 @@ class GraphQLServiceImpl @Inject() (
                                  ): Action[DefaultStorageItemService, _] = {
       definition.name match {
         case createFieldRegex(typeName) => {
-          val data: JsValue = Json.toJson(ctx.arg(definition.arguments.head.name).asInstanceOf[ListMap[String, Option[String]]].toArray.toMap)
-          ctx.ctx.createItem(typeName, data, group).map { newItem =>
+          ctx.ctx.createItem(typeName, valueFor(ctx, definition), group).map { newItem =>
             newItem.data
           }
         }

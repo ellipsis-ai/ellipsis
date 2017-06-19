@@ -15,8 +15,13 @@ object DataTypeConfigQueries {
   }
 
   def uncompiledAllForQuery(groupVersionId: Rep[String]) = {
-    allWithBehaviorVersion.filter { case(config, bv) => bv._1._1._1.groupVersionId === groupVersionId }
+    allWithBehaviorVersion.filter { case(_, bv) => bv._1._1._1.groupVersionId === groupVersionId }
   }
   val allForQuery = Compiled(uncompiledAllForQuery _)
+
+  def uncompiledMaybeForQuery(behaviorVersionId: Rep[String]) = {
+    allWithBehaviorVersion.filter { case(_, bv) => bv._1._1._1.id === behaviorVersionId }
+  }
+  val maybeForQuery = Compiled(uncompiledMaybeForQuery _)
 
 }

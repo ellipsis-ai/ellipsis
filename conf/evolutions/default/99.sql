@@ -7,9 +7,11 @@ CREATE TABLE data_type_configs(
 
 CREATE TABLE data_type_fields(
   id TEXT PRIMARY KEY,
+  field_id TEXT NOT NULL,
   name TEXT NOT NULL,
   field_type TEXT NOT NULL,
-  config_id TEXT NOT NULL REFERENCES data_type_configs(id)
+  config_id TEXT NOT NULL REFERENCES data_type_configs(id),
+  rank INT NOT NULL
 );
 
 CREATE TABLE default_storage_items(

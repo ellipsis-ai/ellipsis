@@ -1,5 +1,7 @@
 define(function(require) {
-  var DeepEqual = require('../lib/deep_equal'),
+  var
+    DataTypeConfig = require('./data_type_config'),
+    DeepEqual = require('../lib/deep_equal'),
     Editable = require('./editable'),
     ResponseTemplate = require('./response_template'),
     Trigger = require('./trigger');
@@ -12,7 +14,8 @@ define(function(require) {
         config: {},
         knownEnvVarsUsed: [],
         shouldRevealCodeEditor: (!!props.functionBody && props.functionBody.length > 0),
-        createdAt: Date.now()
+        createdAt: Date.now(),
+        dataTypeConfig: null
       }, props);
 
       Object.defineProperties(this, {
@@ -23,7 +26,8 @@ define(function(require) {
         config: { value: initialProps.config, enumerable: true },
         knownEnvVarsUsed: { value: initialProps.knownEnvVarsUsed, enumerable: true },
         createdAt: { value: initialProps.createdAt, enumerable: true },
-        shouldRevealCodeEditor: { value: initialProps.shouldRevealCodeEditor, enumerable: true }
+        shouldRevealCodeEditor: { value: initialProps.shouldRevealCodeEditor, enumerable: true },
+        dataTypeConfig: { value: initialProps.dataTypeConfig, enumerable: true }
       });
     }
 
@@ -66,6 +70,14 @@ define(function(require) {
 
     isDataType() {
       return this.config.isDataType;
+    }
+
+    getDataTypeConfig() {
+      return this.dataTypeConfig;
+    }
+
+    getDataTypeFields() {
+      return this.getDataTypeConfig() ? this.getDataTypeConfig().getFields() : [];
     }
 
     getTriggers() {
@@ -140,6 +152,9 @@ define(function(require) {
       const materializedProps = Object.assign({}, props, {
         responseTemplate: ResponseTemplate.fromString(props.responseTemplate || '')
       });
+      if (props.dataTypeConfig) {
+        materializedProps.dataTypeConfig = DataTypeConfig.fromJson(props.dataTypeConfig);
+      }
       if (props.triggers) {
         materializedProps.triggers = Trigger.triggersFromJson(props.triggers);
       }

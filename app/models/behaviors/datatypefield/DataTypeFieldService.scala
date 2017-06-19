@@ -1,7 +1,9 @@
 package models.behaviors.datatypefield
 
-import models.behaviors.behaviorparameter.BehaviorParameterType
+import json.DataTypeFieldData
+import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
 import models.behaviors.datatypeconfig.DataTypeConfig
+import slick.dbio.DBIO
 
 import scala.concurrent.Future
 
@@ -9,6 +11,6 @@ trait DataTypeFieldService {
 
   def allFor(config: DataTypeConfig): Future[Seq[DataTypeField]]
 
-  def createFor(name: String, fieldType: BehaviorParameterType, config: DataTypeConfig): Future[DataTypeField]
+  def createForAction(data: DataTypeFieldData, rank: Int, config: DataTypeConfig, behaviorGroupVersion: BehaviorGroupVersion): DBIO[DataTypeField]
 
 }
