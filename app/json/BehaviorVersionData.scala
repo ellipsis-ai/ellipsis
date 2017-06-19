@@ -167,6 +167,7 @@ object BehaviorVersionData {
                    params: String,
                    triggers: String,
                    configString: String,
+                   maybeDataTypeConfigString: Option[String],
                    maybeGithubUrl: Option[String],
                    dataService: DataService
                    ): BehaviorVersionData = {
@@ -183,7 +184,9 @@ object BehaviorVersionData {
       Json.parse(params).validate[Seq[String]].get,
       Json.parse(triggers).validate[Seq[BehaviorTriggerData]].get,
       config,
-      None, // TODO: for realz
+      maybeDataTypeConfigString.map { cfg =>
+        Json.parse(cfg).validate[DataTypeConfigData].get
+      },
       config.exportId,
       maybeGithubUrl,
       createdAt = None,
