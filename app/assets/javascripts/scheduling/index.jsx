@@ -28,6 +28,7 @@ define(function(require) {
       onDelete: React.PropTypes.func.isRequired,
       isDeleting: React.PropTypes.bool.isRequired,
       error: React.PropTypes.string,
+      onClearErrors: React.PropTypes.func.isRequired,
       justSavedAction: React.PropTypes.instanceOf(ScheduledAction)
     }),
 
@@ -124,6 +125,7 @@ define(function(require) {
     },
 
     toggleEditor: function(action) {
+      this.props.onClearErrors();
       this.setState({
         selectedItem: action,
         justSaved: false,
@@ -134,6 +136,7 @@ define(function(require) {
     },
 
     addNewItem: function() {
+      this.props.onClearErrors();
       this.setState({
         selectedItem: ScheduledAction.newWithDefaults(this.props.teamTimeZone, this.props.teamTimeZoneName),
         justSaved: false,

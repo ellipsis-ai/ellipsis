@@ -12,6 +12,7 @@ requirejs(['common'], function() {
         isSaving: false,
         onDelete: onDelete,
         isDeleting: false,
+        onClearErrors: onClearErrors,
         error: null
       });
 
@@ -80,6 +81,14 @@ requirejs(['common'], function() {
               error: "An error occurred while deleting. Please try again"
             });
           });
+      }
+
+      function onClearErrors() {
+        reload({
+          isSaving: false,
+          isDeleting: false,
+          error: null
+        });
       }
 
       function reload(newProps) {
