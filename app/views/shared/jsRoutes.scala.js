@@ -34,5 +34,7 @@
   routes.javascript.OAuth2ApplicationController.newApp,
   routes.javascript.OAuth2ApplicationController.save,
   routes.javascript.SavedAnswerController.resetForTeam,
-  routes.javascript.SavedAnswerController.resetForUser
+  routes.javascript.SavedAnswerController.resetForUser,
+  routes.javascript.ScheduledActionsController.delete,
+  routes.javascript.ScheduledActionsController.save
 )

@@ -8,8 +8,6 @@ define(function(require) {
       const initialProps = Object.assign({
         id: null,
         scheduleType: null,
-        behaviorName: null,
-        behaviorGroupName: null,
         behaviorId: null,
         behaviorGroupId: null,
         trigger: null,
@@ -24,8 +22,6 @@ define(function(require) {
       Object.defineProperties(this, {
         id: { value: initialProps.id, enumerable: true },
         scheduleType: { value: initialProps.scheduleType, enumerable: true },
-        behaviorName: { value: initialProps.behaviorName, enumerable: true },
-        behaviorGroupName: { value: initialProps.behaviorGroupName, enumerable: true },
         behaviorId: { value: initialProps.behaviorId, enumerable: true },
         behaviorGroupId: { value: initialProps.behaviorGroupId, enumerable: true },
         trigger: { value: initialProps.trigger, enumerable: true },
@@ -36,6 +32,31 @@ define(function(require) {
         useDM: { value: initialProps.useDM, enumerable: true },
         channel: { value: initialProps.channel, enumerable: true }
       });
+    }
+
+    getSkillNameFromGroups(behaviorGroups) {
+      let name = "";
+      if (this.behaviorGroupId) {
+        const group = behaviorGroups.find((ea) => ea.id === this.behaviorGroupId);
+        if (group) {
+          name = group.getName();
+        }
+      }
+      return name;
+    }
+
+    getActionNameFromGroups(behaviorGroups) {
+      let name = "";
+      if (this.behaviorGroupId && this.behaviorId) {
+        const group = behaviorGroups.find((ea) => ea.id === this.behaviorGroupId);
+        if (group) {
+          const behaviorVersion = group.behaviorVersions.find((ea) => ea.behaviorId === this.behaviorId);
+          if (behaviorVersion) {
+            name = behaviorVersion.getName();
+          }
+        }
+      }
+      return name;
     }
 
     isNew() {
@@ -57,7 +78,7 @@ define(function(require) {
 
     static newWithDefaults(timeZone, timeZoneName) {
       return new ScheduledAction({
-        scheduleType: "daily",
+        scheduleType: "message",
         trigger: "",
         recurrence: new Recurrence({ timeZone: timeZone, timeZoneName: timeZoneName }).becomeDaily()
       });

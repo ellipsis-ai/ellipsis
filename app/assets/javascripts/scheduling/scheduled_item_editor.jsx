@@ -1,8 +1,10 @@
 define(function(require) {
   var React = require('react'),
+    DynamicLabelButton = require('../form/dynamic_label_button'),
     RecurrenceEditor = require('./recurrence_editor'),
     ScheduleChannelEditor = require('./schedule_channel_editor'),
     ScheduledItemConfig = require('./scheduled_item_config'),
+    BehaviorGroup = require('../models/behavior_group'),
     ScheduledAction = require('../models/scheduled_action'),
     ScheduleChannel = require('../models/schedule_channel');
 
@@ -11,8 +13,13 @@ define(function(require) {
     propTypes: {
       scheduledAction: React.PropTypes.instanceOf(ScheduledAction),
       channelList: React.PropTypes.arrayOf(React.PropTypes.instanceOf(ScheduleChannel)).isRequired,
+      behaviorGroups: React.PropTypes.arrayOf(React.PropTypes.instanceOf(BehaviorGroup)).isRequired,
       onChange: React.PropTypes.func.isRequired,
       onCancel: React.PropTypes.func.isRequired,
+      onSave: React.PropTypes.func.isRequired,
+      isSaving: React.PropTypes.bool.isRequired,
+      onDelete: React.PropTypes.func.isRequired,
+      error: React.PropTypes.string,
       teamTimeZone: React.PropTypes.string.isRequired,
       teamTimeZoneName: React.PropTypes.string.isRequired,
       slackUserId: React.PropTypes.string.isRequired
@@ -34,9 +41,9 @@ define(function(require) {
       }));
     },
 
-    updateAction: function(behaviorName, newArgs, callback) {
+    updateAction: function(behaviorId, newArgs, callback) {
       this.props.onChange(this.props.scheduledAction.clone({
-        behaviorName: behaviorName,
+        behaviorId: behaviorId,
         arguments: newArgs
       }), callback);
     },
@@ -51,6 +58,22 @@ define(function(require) {
       this.props.onCancel();
     },
 
+    save: function() {
+      this.props.onSave();
+    },
+
+    delete: function() {
+      this.props.onDelete();
+    },
+
+    hasChanges: function() {
+      return true;
+    },
+
+    hasActiveRequest: function() {
+      return this.props.isSaving;
+    },
+
     renderDetails: function() {
       return (
         <div className="columns">
@@ -62,6 +85,7 @@ define(function(require) {
               <h5 className="mbs">What to do</h5>
               <ScheduledItemConfig
                 scheduledAction={this.props.scheduledAction}
+                behaviorGroups={this.props.behaviorGroups}
                 onChangeTriggerText={this.updateTriggerText}
                 onChangeAction={this.updateAction}
               />
@@ -88,17 +112,29 @@ define(function(require) {
             </div>
 
             <div className="mtxxl mbxl">
-              <div className="columns columns-elastic mobile-columns-float">
-                <div className="column column-expand">
-                  <button type="button" className="button-primary mbs mrs" disabled={true}>Save changes</button>
-                  <button type="button" className="mbs mrs" onClick={this.cancel}>Cancel</button>
-                </div>
-                <div className="column column-shrink align-r mobile-align-l">
-                  {this.props.scheduledAction.isNew() ? null : (
-                    <button type="button" className="mbs button-shrink" disabled={true}>Unschedule this item</button>
-                  )}
-                </div>
-              </div>
+              <DynamicLabelButton
+                disabledWhen={!this.hasChanges() || this.hasActiveRequest()}
+                className="button-primary mbs mrs"
+                onClick={this.save}
+                labels={[
+                  { text: "Save changes", displayWhen: !this.props.isSaving },
+                  { text: "Saving…", displayWhen: this.props.isSaving }
+                ]}
+              />
+              <button type="button" className="mbs mrs" onClick={this.cancel} disabled={this.hasActiveRequest()}>Cancel</button>
+              {this.props.scheduledAction.isNew() ? null : (
+                <button type="button"
+                  className="mrs mbs button-shrink"
+                  disabled={this.props.isSaving}
+                  onClick={this.delete}
+                >Unschedule this</button>
+              )}
+              {this.props.error ? (
+                <span className="fade-in">
+                  <span className="align-button mbs mrm" />
+                  <span className="align-button mbs type-pink type-bold type-italic"> {this.props.error}</span>
+                </span>
+              ) : null}
             </div>
           </div>
         </div>
@@ -108,7 +144,7 @@ define(function(require) {
     render: function() {
       return (
         <div className="box-action phn">
-          <div className="container container-c">
+          <div className="container container-wide">
             {this.shouldRenderItem() ? this.renderDetails() : null}
           </div>
         </div>

@@ -133,6 +133,18 @@ class ScheduledMessageServiceImpl @Inject() (
     dataService.run(action)
   }
 
+  def uncompiledFindForTeamQuery(id: Rep[String], teamId: Rep[String]) = {
+    allWithUser.filter { case (((msg, _), _), _) => msg.id === id && msg.teamId === teamId }
+  }
+  val findForTeamQuery = Compiled(uncompiledFindForTeamQuery _)
+
+  def findForTeam(id: String, team: Team): Future[Option[ScheduledMessage]] = {
+    val action = findForTeamQuery(id, team.id).result.map { r =>
+      r.headOption.map(tuple2ScheduledMessage)
+    }
+    dataService.run(action)
+  }
+
   def save(message: ScheduledMessage): Future[ScheduledMessage] = {
     val raw = message.toRaw
     val query = all.filter(_.id === raw.id)
@@ -150,7 +162,7 @@ class ScheduledMessageServiceImpl @Inject() (
     save(message.withUpdatedNextTriggeredFor(OffsetDateTime.now))
   }
 
-  def maybeCreateFor(
+  def maybeCreateWithRecurrenceText(
                       text: String,
                       recurrenceText: String,
                       user: User,
@@ -158,23 +170,35 @@ class ScheduledMessageServiceImpl @Inject() (
                       maybeChannel: Option[String],
                       isForIndividualMembers: Boolean
                     ): Future[Option[ScheduledMessage]] = {
-    dataService.recurrences.maybeCreateFromText(recurrenceText, team.timeZone).flatMap { maybeRecurrence =>
-      maybeRecurrence.map { recurrence =>
-        val now = Recurrence.withZone(OffsetDateTime.now, team.timeZone)
-        val newMessage = ScheduledMessage(
-          IDs.next,
-          text,
-          Some(user),
-          team,
-          maybeChannel,
-          isForIndividualMembers,
-          recurrence,
-          recurrence.initialAfter(now),
-          now
-        )
-        save(newMessage).map(Some(_))
+    for {
+      maybeRecurrence <- dataService.recurrences.maybeCreateFromText(recurrenceText, team.timeZone)
+      maybeScheduledMessage <- maybeRecurrence.map { recurrence =>
+        createFor(text, recurrence, user, team, maybeChannel, isForIndividualMembers).map(Some(_))
       }.getOrElse(Future.successful(None))
-    }
+    } yield maybeScheduledMessage
+  }
+
+  def createFor(
+                 text: String,
+                 recurrence: Recurrence,
+                 user: User,
+                 team: Team,
+                 maybeChannel: Option[String],
+                 isForIndividualMembers: Boolean
+               ): Future[ScheduledMessage] = {
+    val now = Recurrence.withZone(OffsetDateTime.now, team.timeZone)
+    val newMessage = ScheduledMessage(
+      IDs.next,
+      text,
+      Some(user),
+      team,
+      maybeChannel,
+      isForIndividualMembers,
+      recurrence,
+      recurrence.initialAfter(now),
+      now
+    )
+    save(newMessage)
   }
 
   def uncompiledRawFindQuery(text: Rep[String], teamId: Rep[String]) = {
@@ -191,5 +215,10 @@ class ScheduledMessageServiceImpl @Inject() (
       }).map(didDeletes => didDeletes.contains(true))
     } yield didDelete
     dataService.run(action)
+  }
+
+  def delete(scheduledMessage: ScheduledMessage): Future[Boolean] = {
+    // recurrence deletes cascade to scheduled behaviors
+    dataService.recurrences.delete(scheduledMessage.recurrence.id)
   }
 }

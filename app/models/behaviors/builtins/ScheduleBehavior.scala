@@ -23,7 +23,7 @@ case class ScheduleBehavior(
       user <- event.ensureUser(dataService)
       maybeTeam <- dataService.teams.find(user.teamId)
       maybeScheduledMessage <- maybeTeam.map { team =>
-        dataService.scheduledMessages.maybeCreateFor(text, recurrence, user, team, event.maybeChannel, isForIndividualMembers)
+        dataService.scheduledMessages.maybeCreateWithRecurrenceText(text, recurrence, user, team, event.maybeChannel, isForIndividualMembers)
       }.getOrElse(Future.successful(None))
       responseText <- maybeScheduledMessage.map { scheduledMessage =>
         scheduledMessage.successResponse(dataService)

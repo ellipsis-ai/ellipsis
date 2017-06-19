@@ -376,7 +376,7 @@ class APIControllerSpec extends PlaySpec with MockitoSugar {
         when(dataService.behaviors.maybeCurrentVersionFor(targetBehavior)).thenReturn(Future.successful(Some(mockBehaviorVersion)))
         val mockVersion = mock[BehaviorGroupVersion]
         when(dataService.behaviorGroups.maybeCurrentVersionFor(group)).thenReturn(Future.successful(Some(mockVersion)))
-        when(dataService.scheduledBehaviors.maybeCreateFor(targetBehavior, Map(), recurrenceString, user, team, Some(defaultChannel), false)).thenReturn {
+        when(dataService.scheduledBehaviors.maybeCreateWithRecurrenceText(targetBehavior, Map(), recurrenceString, user, team, Some(defaultChannel), false)).thenReturn {
           Future.successful(
             Some(
               ScheduledBehavior(
@@ -400,7 +400,7 @@ class APIControllerSpec extends PlaySpec with MockitoSugar {
         val result = route(app, request).get
         status(result) mustBe OK
 
-        verify(dataService.scheduledBehaviors, times(1)).maybeCreateFor(targetBehavior, Map(), recurrenceString, user, team, Some(defaultChannel), false)
+        verify(dataService.scheduledBehaviors, times(1)).maybeCreateWithRecurrenceText(targetBehavior, Map(), recurrenceString, user, team, Some(defaultChannel), false)
       }
     }
 
@@ -412,7 +412,7 @@ class APIControllerSpec extends PlaySpec with MockitoSugar {
         val trigger = "foo"
         val recurrenceString = "every day at noon"
         when(dataService.users.ensureUserFor(any[LoginInfo], anyString)).thenReturn(Future.successful(user))
-        when(dataService.scheduledMessages.maybeCreateFor(trigger, recurrenceString, user, team, Some(defaultChannel), false)).thenReturn {
+        when(dataService.scheduledMessages.maybeCreateWithRecurrenceText(trigger, recurrenceString, user, team, Some(defaultChannel), false)).thenReturn {
           Future.successful(
             Some(
               ScheduledMessage(
@@ -435,7 +435,7 @@ class APIControllerSpec extends PlaySpec with MockitoSugar {
         val result = route(app, request).get
         status(result) mustBe OK
 
-        verify(dataService.scheduledMessages, times(1)).maybeCreateFor(trigger, recurrenceString, user, team, Some(defaultChannel), false)
+        verify(dataService.scheduledMessages, times(1)).maybeCreateWithRecurrenceText(trigger, recurrenceString, user, team, Some(defaultChannel), false)
       }
     }
   }
