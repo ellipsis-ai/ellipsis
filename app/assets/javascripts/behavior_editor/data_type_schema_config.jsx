@@ -53,7 +53,7 @@ define(function(require) {
                 <SectionHeading number="1">Define the fields</SectionHeading>
                 <div className="mbm">
                   {this.props.fields.map((field, index) => (
-                    <div key={`dataTypeField${index}`}>
+                    <div key={`dataTypeField${index}`} className="mbs">
                       <DataTypeFieldDefinition
                         key={'DataTypeFieldDefinition' + index}
                         ref={'field' + index}
@@ -64,9 +64,6 @@ define(function(require) {
                         id={index}
                         onConfigureType={this.props.onConfigureType}
                       />
-                      {index + 1 < this.props.fields.length ? (
-                        <div className="pvxs type-label type-disabled align-c">and</div>
-                      ) : null}
                     </div>
                   ))}
                 </div>
