@@ -94,14 +94,25 @@ class ScheduledActionsController @Inject()(
     }
   }
 
-  case class ScheduledActionSaveForm(dataJson: String, teamId: String)
-  case class ScheduledActionDeleteForm(id: String, scheduleType: String, teamId: String)
+  trait ScheduledActionForm {
+    val scheduleType: String
+    val teamId: String
+  }
+
+  case class ScheduledActionSaveForm(dataJson: String, scheduleType: String, teamId: String) extends ScheduledActionForm
+  case class ScheduledActionDeleteForm(id: String, scheduleType: String, teamId: String) extends ScheduledActionForm
+
+  private val scheduleTypeError: String = "Schedule type must be message or behavior"
+  private def validScheduleType(info: ScheduledActionForm) = {
+    info.scheduleType == "message" || info.scheduleType == "behavior"
+  }
 
   private val saveForm = Form(
     mapping(
       "dataJson" -> nonEmptyText,
+      "scheduleType" -> nonEmptyText,
       "teamId" -> nonEmptyText
-    )(ScheduledActionSaveForm.apply)(ScheduledActionSaveForm.unapply)
+    )(ScheduledActionSaveForm.apply)(ScheduledActionSaveForm.unapply) verifying(scheduleTypeError, validScheduleType _)
   )
 
   private val deleteForm = Form(
@@ -109,7 +120,7 @@ class ScheduledActionsController @Inject()(
       "id" -> nonEmptyText,
       "scheduleType" -> nonEmptyText,
       "teamId" -> nonEmptyText
-    )(ScheduledActionDeleteForm.apply)(ScheduledActionDeleteForm.unapply)
+    )(ScheduledActionDeleteForm.apply)(ScheduledActionDeleteForm.unapply) verifying(scheduleTypeError, validScheduleType _)
   )
 
   private def maybeNewScheduledBehavior(
@@ -225,12 +236,10 @@ class ScheduledActionsController @Inject()(
               teamAccess <- dataService.users.teamAccessFor(user, Some(info.teamId))
               result <- teamAccess.maybeTargetTeam.map { team =>
                 for {
-                  maybeNewScheduledActionData <- if (data.scheduleType == "message") {
+                  maybeNewScheduledActionData <- if (info.scheduleType == "message") {
                     maybeNewScheduledMessageData(data, user, team)
-                  } else if (data.scheduleType == "behavior") {
-                    maybeNewScheduledBehaviorData(data, user, team)
                   } else {
-                    Future.successful(None)
+                    maybeNewScheduledBehaviorData(data, user, team)
                   }
                 } yield {
                   maybeNewScheduledActionData.map { data =>
@@ -283,10 +292,8 @@ class ScheduledActionsController @Inject()(
             for {
               deleted <- if (info.scheduleType == "message") {
                 maybeDeleteScheduledMessage(info.id, team)
-              } else if (info.scheduleType == "behavior") {
-                maybeDeleteScheduledBehavior(info.id, team)
               } else {
-                Future.successful(false)
+                maybeDeleteScheduledBehavior(info.id, team)
               }
             } yield {
               if (deleted) {

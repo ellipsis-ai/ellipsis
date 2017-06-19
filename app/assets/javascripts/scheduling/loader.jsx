@@ -19,6 +19,7 @@ requirejs(['common'], function() {
       function onSave(scheduledAction) {
         const body = {
           dataJson: JSON.stringify(scheduledAction),
+          scheduleType: scheduledAction.scheduleType,
           teamId: SchedulingConfig.teamId
         };
         reload({
