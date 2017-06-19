@@ -61,6 +61,7 @@ GET         /list_environment_variables               @controllers.EnvironmentVa
 
 GET         /scheduling                               @controllers.ScheduledActionsController.index(maybeTeamId: Option[String] ?= None)
 POST        /save_schedule                            @controllers.ScheduledActionsController.save
+POST        /delete_schedule                          @controllers.ScheduledActionsController.delete
 
 GET         /authenticate/slack                       @controllers.SocialAuthController.authenticateSlack(redirect: Option[String] ?= None, team: Option[String] ?= None, channel: Option[String] ?= None)
 GET         /install/slack                            @controllers.SocialAuthController.installForSlack(redirect: Option[String] ?= None, team: Option[String] ?= None, channel: Option[String] ?= None)

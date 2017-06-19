@@ -18,6 +18,7 @@ define(function(require) {
       onCancel: React.PropTypes.func.isRequired,
       onSave: React.PropTypes.func.isRequired,
       isSaving: React.PropTypes.bool.isRequired,
+      onDelete: React.PropTypes.func.isRequired,
       error: React.PropTypes.string,
       teamTimeZone: React.PropTypes.string.isRequired,
       teamTimeZoneName: React.PropTypes.string.isRequired,
@@ -61,8 +62,16 @@ define(function(require) {
       this.props.onSave();
     },
 
+    delete: function() {
+      this.props.onDelete();
+    },
+
     hasChanges: function() {
       return true;
+    },
+
+    hasActiveRequest: function() {
+      return this.props.isSaving;
     },
 
     renderDetails: function() {
@@ -104,7 +113,7 @@ define(function(require) {
 
             <div className="mtxxl mbxl">
               <DynamicLabelButton
-                disabledWhen={!this.hasChanges() || this.props.isSaving}
+                disabledWhen={!this.hasChanges() || this.hasActiveRequest()}
                 className="button-primary mbs mrs"
                 onClick={this.save}
                 labels={[
@@ -112,9 +121,13 @@ define(function(require) {
                   { text: "Saving…", displayWhen: this.props.isSaving }
                 ]}
               />
-              <button type="button" className="mbs mrs" onClick={this.cancel} disabled={this.props.isSaving}>Cancel</button>
+              <button type="button" className="mbs mrs" onClick={this.cancel} disabled={this.hasActiveRequest()}>Cancel</button>
               {this.props.scheduledAction.isNew() ? null : (
-                <button type="button" className="mrs mbs button-shrink" disabled={true}>Unschedule this item</button>
+                <button type="button"
+                  className="mrs mbs button-shrink"
+                  disabled={this.props.isSaving}
+                  onClick={this.delete}
+                >Unschedule this</button>
               )}
               {this.props.error ? (
                 <span className="fade-in">
@@ -131,7 +144,7 @@ define(function(require) {
     render: function() {
       return (
         <div className="box-action phn">
-          <div className="container container-c">
+          <div className="container container-wide">
             {this.shouldRenderItem() ? this.renderDetails() : null}
           </div>
         </div>

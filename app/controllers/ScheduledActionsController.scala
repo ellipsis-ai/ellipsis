@@ -290,7 +290,7 @@ class ScheduledActionsController @Inject()(
               }
             } yield {
               if (deleted) {
-                Ok(Json.toJson(true))
+                Ok(Json.toJson(Json.obj("deletedId" -> info.id)))
               } else {
                 NotFound(Json.toJson("Scheduled action not found"))
               }

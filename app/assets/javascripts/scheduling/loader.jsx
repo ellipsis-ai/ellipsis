@@ -10,6 +10,8 @@ requirejs(['common'], function() {
         behaviorGroups: SchedulingConfig.behaviorGroups.map(BehaviorGroup.fromJson),
         onSave: onSave,
         isSaving: false,
+        onDelete: onDelete,
+        isDeleting: false,
         error: null
       });
 
@@ -43,6 +45,39 @@ requirejs(['common'], function() {
             reload({
               isSaving: false,
               error: "An error occurred while saving. Please try again"
+            });
+          });
+      }
+
+      function onDelete(scheduledAction) {
+        const body = {
+          id: scheduledAction.id,
+          scheduleType: scheduledAction.scheduleType,
+          teamId: SchedulingConfig.teamId
+        };
+        reload({
+          isDeleting: true,
+          error: null
+        });
+        DataRequest.jsonPost(jsRoutes.controllers.ScheduledActionsController.delete().url, body, SchedulingConfig.csrfToken)
+          .then((json) => {
+            const oldActionIndex = currentConfig.scheduledActions.findIndex((ea) => ea.id === scheduledAction.id);
+            let newActions;
+            if (oldActionIndex > -1 && json.deletedId === scheduledAction.id) {
+              newActions = currentConfig.scheduledActions.slice();
+              newActions.splice(oldActionIndex, 1);
+              reload({
+                isDeleting: false,
+                scheduledActions: newActions
+              });
+            } else {
+              throw Error("No action deleted");
+            }
+          })
+          .catch((err) => {
+            reload({
+              isDeleting: false,
+              error: "An error occurred while deleting. Please try again"
             });
           });
       }

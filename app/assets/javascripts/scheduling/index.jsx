@@ -1,6 +1,7 @@
 define(function(require) {
   const React = require('react'),
     Collapsible = require('../shared_ui/collapsible'),
+    ConfirmActionPanel = require('../panels/confirm_action'),
     FixedFooter = require('../shared_ui/fixed_footer'),
     ModalScrim = require('../shared_ui/modal_scrim'),
     PageWithPanels = require('../shared_ui/page_with_panels'),
@@ -9,6 +10,7 @@ define(function(require) {
     ScheduleChannel = require('../models/schedule_channel'),
     ScheduledItem = require('./scheduled_item'),
     ScheduledItemEditor = require('./scheduled_item_editor'),
+    ScheduledItemTitle = require('./scheduled_item_title'),
     Sort = require('../lib/sort');
 
   const Scheduling = React.createClass({
@@ -18,11 +20,13 @@ define(function(require) {
       scheduledActions: React.PropTypes.arrayOf(React.PropTypes.instanceOf(ScheduledAction)).isRequired,
       channelList: React.PropTypes.arrayOf(React.PropTypes.instanceOf(ScheduleChannel)).isRequired,
       behaviorGroups: React.PropTypes.arrayOf(React.PropTypes.instanceOf(BehaviorGroup)).isRequired,
-      onSave: React.PropTypes.func.isRequired,
       teamTimeZone: React.PropTypes.string,
       teamTimeZoneName: React.PropTypes.string,
       slackUserId: React.PropTypes.string,
+      onSave: React.PropTypes.func.isRequired,
       isSaving: React.PropTypes.bool.isRequired,
+      onDelete: React.PropTypes.func.isRequired,
+      isDeleting: React.PropTypes.bool.isRequired,
       error: React.PropTypes.string,
       justSavedAction: React.PropTypes.instanceOf(ScheduledAction)
     }),
@@ -30,21 +34,37 @@ define(function(require) {
     getInitialState: function() {
       return {
         filterChannel: null,
-        selectedItem: null
+        selectedItem: null,
+        justSaved: false,
+        justDeleted: false
       };
     },
 
     componentWillReceiveProps(nextProps) {
-      const newAction = nextProps.justSavedAction;
-      if (this.props.isSaving && !nextProps.isSaving) {
+      const justSaved = this.props.isSaving && !nextProps.isSaving;
+      const justDeleted = this.props.isDeleting && !nextProps.isDeleting;
+      const newAction = justSaved ? nextProps.justSavedAction : null;
+      if (justSaved || justDeleted) {
         if (!nextProps.error) {
           this.props.onClearActivePanel();
         }
-        if (newAction) {
+        if (justSaved) {
           this.setState({
             filterChannel: null,
-            selectedItem: newAction
+            selectedItem: newAction || this.state.selectedItem,
+            justSaved: !nextProps.error,
+            justDeleted: false
           });
+        } else if (justDeleted) {
+          this.setState({
+            filterChannel: null,
+            selectedItem: nextProps.error ? this.state.selectedItem : null,
+            justSaved: false,
+            justDeleted: !nextProps.error
+          });
+          if (nextProps.error) {
+            this.props.onToggleActivePanel("moreInfo", true);
+          }
         }
       }
     },
@@ -105,7 +125,9 @@ define(function(require) {
 
     toggleEditor: function(action) {
       this.setState({
-        selectedItem: action
+        selectedItem: action,
+        justSaved: false,
+        justDeleted: false
       }, () => {
         this.props.onToggleActivePanel("moreInfo", true);
       });
@@ -113,7 +135,9 @@ define(function(require) {
 
     addNewItem: function() {
       this.setState({
-        selectedItem: ScheduledAction.newWithDefaults(this.props.teamTimeZone, this.props.teamTimeZoneName)
+        selectedItem: ScheduledAction.newWithDefaults(this.props.teamTimeZone, this.props.teamTimeZoneName),
+        justSaved: false,
+        justDeleted: false
       }, () => {
         this.props.onToggleActivePanel("moreInfo", true);
       });
@@ -125,6 +149,19 @@ define(function(require) {
 
     saveSelectedItem: function() {
       this.props.onSave(this.getSelectedItem());
+    },
+
+    confirmDeleteItem: function() {
+      this.props.onToggleActivePanel("confirmDelete", true);
+    },
+
+    deleteSelectedItem: function() {
+      this.props.onClearActivePanel();
+      this.props.onDelete(this.getSelectedItem());
+    },
+
+    undoConfirmDelete: function() {
+      this.props.onToggleActivePanel("moreInfo", true);
     },
 
     renderSidebar: function(groups) {
@@ -231,11 +268,41 @@ define(function(require) {
                 onCancel={this.cancelEditor}
                 onSave={this.saveSelectedItem}
                 isSaving={this.props.isSaving}
+                onDelete={this.confirmDeleteItem}
                 error={this.props.error}
                 teamTimeZone={this.props.teamTimeZone || "America/New_York"}
                 teamTimeZoneName={this.props.teamTimeZoneName || "Eastern Time"}
                 slackUserId={this.props.slackUserId || ""}
               />
+            </Collapsible>
+            <Collapsible revealWhen={this.props.activePanelName === 'confirmDelete'}>
+              <ConfirmActionPanel confirmText="Unschedule" onConfirmClick={this.deleteSelectedItem} onCancelClick={this.undoConfirmDelete}>
+                <div className="mbxl">
+                  <p className="type-bold">Are you sure you want to unschedule this item?</p>
+
+                  {this.getSelectedItem() ? (
+                    <p className="type-s">
+                      <span><ScheduledItemTitle scheduledAction={this.getSelectedItem()} behaviorGroups={this.props.behaviorGroups}/> </span>
+                      <span>{this.getSelectedItem().recurrence.displayString}</span>
+                    </p>
+                  ) : null}
+                </div>
+              </ConfirmActionPanel>
+            </Collapsible>
+            <Collapsible revealWhen={this.state.justSaved}>
+              <div className="container pvxl border-top">
+                <span className="fade-in type-green type-bold type-italic">Your changes have been saved.</span>
+              </div>
+            </Collapsible>
+            <Collapsible revealWhen={this.props.isDeleting || this.state.justDeleted}>
+              <div className="container pvxl border-top">
+                {this.props.isDeleting ? (
+                  <span className="fade-in type-weak type-italic type-bold">Unscheduling…</span>
+                ) : null}
+                {this.state.justDeleted ? (
+                  <span className="fade-in type-green type-bold type-italic">The item has been unscheduled.</span>
+                ) : null}
+              </div>
             </Collapsible>
           </FixedFooter>
         </div>
