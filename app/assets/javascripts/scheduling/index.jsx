@@ -16,7 +16,6 @@ define(function(require) {
   const Scheduling = React.createClass({
     displayName: 'Scheduling',
     propTypes: Object.assign(PageWithPanels.requiredPropTypes(), {
-      teamId: React.PropTypes.string.isRequired,
       scheduledActions: React.PropTypes.arrayOf(React.PropTypes.instanceOf(ScheduledAction)).isRequired,
       channelList: React.PropTypes.arrayOf(React.PropTypes.instanceOf(ScheduleChannel)).isRequired,
       behaviorGroups: React.PropTypes.arrayOf(React.PropTypes.instanceOf(BehaviorGroup)).isRequired,

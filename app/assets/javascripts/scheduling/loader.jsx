@@ -1,106 +1,136 @@
 requirejs(['common'], function() {
   requirejs(['core-js', 'whatwg-fetch', 'react', 'react-dom', './scheduling/index', 'config/scheduling/index',
-      './models/scheduled_action', './models/schedule_channel', './models/behavior_group', './lib/data_request'],
+      './models/scheduled_action', './models/schedule_channel', './models/behavior_group', './lib/data_request', './lib/immutable_object_utils'],
     function(Core, Fetch, React, ReactDOM, Scheduling, SchedulingConfig,
-             ScheduledAction, ScheduleChannel, BehaviorGroup, DataRequest) {
+             ScheduledAction, ScheduleChannel, BehaviorGroup, DataRequest, ImmutableObjectUtils) {
 
-      let currentConfig = Object.assign({}, SchedulingConfig, {
-        scheduledActions: SchedulingConfig.scheduledActions.map(ScheduledAction.fromJson),
-        channelList: SchedulingConfig.channelList.map(ScheduleChannel.fromJson),
-        behaviorGroups: SchedulingConfig.behaviorGroups.map(BehaviorGroup.fromJson),
-        onSave: onSave,
-        isSaving: false,
-        onDelete: onDelete,
-        isDeleting: false,
-        onClearErrors: onClearErrors,
-        error: null
+      const SchedulingLoader = React.createClass({
+        displayName: 'SchedulingLoader',
+        propTypes: {
+          containerId: React.PropTypes.string.isRequired,
+          csrfToken: React.PropTypes.string.isRequired,
+          teamId: React.PropTypes.string.isRequired,
+          scheduledActions: React.PropTypes.arrayOf(React.PropTypes.object),
+          channelList: React.PropTypes.arrayOf(React.PropTypes.object),
+          behaviorGroups: React.PropTypes.arrayOf(React.PropTypes.object),
+          teamTimeZone: React.PropTypes.string,
+          teamTimeZoneName: React.PropTypes.string,
+          slackUserId: React.PropTypes.string
+        },
+
+        getInitialState: function() {
+          return {
+            scheduledActions: this.props.scheduledActions.map(ScheduledAction.fromJson),
+            channelList: this.props.channelList.map(ScheduleChannel.fromJson),
+            behaviorGroups: this.props.behaviorGroups.map(BehaviorGroup.fromJson),
+            isSaving: false,
+            justSavedAction: null,
+            isDeleting: false,
+            error: null
+          };
+        },
+
+        onSave: function(scheduledAction) {
+          const body = {
+            dataJson: JSON.stringify(scheduledAction),
+            scheduleType: scheduledAction.scheduleType,
+            teamId: this.props.teamId
+          };
+          this.setState({
+            isSaving: true,
+            justSavedAction: null,
+            error: null
+          }, () => {
+            DataRequest.jsonPost(jsRoutes.controllers.ScheduledActionsController.save().url, body, this.props.csrfToken)
+              .then((json) => {
+                const newAction = ScheduledAction.fromJson(json);
+                const oldActionIndex = this.state.scheduledActions.findIndex((ea) => ea.id === scheduledAction.id);
+                let newActions;
+                if (oldActionIndex > -1) {
+                  newActions = ImmutableObjectUtils.arrayWithNewElementAtIndex(this.state.scheduledActions, newAction, oldActionIndex);
+                } else {
+                  newActions = this.state.scheduledActions.concat(newAction);
+                }
+                this.setState({
+                  isSaving: false,
+                  justSavedAction: newAction,
+                  scheduledActions: newActions
+                });
+              })
+              .catch(() => {
+                this.setState({
+                  isSaving: false,
+                  error: "An error occurred while saving. Please try again"
+                });
+              });
+          });
+        },
+
+        onDelete: function(scheduledAction) {
+          const body = {
+            id: scheduledAction.id,
+            scheduleType: scheduledAction.scheduleType,
+            teamId: this.props.teamId
+          };
+          this.setState({
+            isDeleting: true,
+            justSavedAction: null,
+            error: null
+          }, () => {
+            DataRequest.jsonPost(jsRoutes.controllers.ScheduledActionsController.delete().url, body, this.props.csrfToken)
+              .then((json) => {
+                const oldActionIndex = this.state.scheduledActions.findIndex((ea) => ea.id === scheduledAction.id);
+                if (oldActionIndex > -1 && json.deletedId === scheduledAction.id) {
+                  this.setState({
+                    isDeleting: false,
+                    scheduledActions: ImmutableObjectUtils.arrayRemoveElementAtIndex(this.state.scheduledActions, oldActionIndex)
+                  });
+                } else {
+                  throw Error("No action deleted");
+                }
+              })
+              .catch(() => {
+                this.setState({
+                  isDeleting: false,
+                  error: "An error occurred while deleting. Please try again"
+                });
+              });
+          });
+        },
+
+        onClearErrors: function() {
+          this.setState({
+            isSaving: false,
+            isDeleting: false,
+            justSavedAction: null,
+            error: null
+          });
+        },
+
+        render: function() {
+          return (
+            <Scheduling
+              scheduledActions={this.state.scheduledActions}
+              channelList={this.state.channelList}
+              behaviorGroups={this.state.behaviorGroups}
+              onSave={this.onSave}
+              isSaving={this.state.isSaving}
+              justSavedAction={this.state.justSavedAction}
+              onDelete={this.onDelete}
+              isDeleting={this.state.isDeleting}
+              onClearErrors={this.onClearErrors}
+              error={this.state.error}
+              teamTimeZone={this.props.teamTimeZone}
+              teamTimeZoneName={this.props.teamTimeZone}
+              slackUserId={this.props.slackUserId}
+            />
+          );
+        }
       });
 
-      function onSave(scheduledAction) {
-        const body = {
-          dataJson: JSON.stringify(scheduledAction),
-          scheduleType: scheduledAction.scheduleType,
-          teamId: SchedulingConfig.teamId
-        };
-        reload({
-          isSaving: true,
-          error: null
-        });
-        DataRequest.jsonPost(jsRoutes.controllers.ScheduledActionsController.save().url, body, SchedulingConfig.csrfToken)
-          .then((json) => {
-            const newAction = ScheduledAction.fromJson(json);
-            const oldActionIndex = currentConfig.scheduledActions.findIndex((ea) => ea.id === scheduledAction.id);
-            let newActions;
-            if (oldActionIndex > -1) {
-              newActions = currentConfig.scheduledActions.slice();
-              newActions.splice(oldActionIndex, 1, newAction);
-            } else {
-              newActions = currentConfig.scheduledActions.concat(newAction);
-            }
-            reload({
-              isSaving: false,
-              justSavedAction: newAction,
-              scheduledActions: newActions
-            });
-          })
-          .catch((err) => {
-            reload({
-              isSaving: false,
-              error: "An error occurred while saving. Please try again"
-            });
-          });
-      }
-
-      function onDelete(scheduledAction) {
-        const body = {
-          id: scheduledAction.id,
-          scheduleType: scheduledAction.scheduleType,
-          teamId: SchedulingConfig.teamId
-        };
-        reload({
-          isDeleting: true,
-          error: null
-        });
-        DataRequest.jsonPost(jsRoutes.controllers.ScheduledActionsController.delete().url, body, SchedulingConfig.csrfToken)
-          .then((json) => {
-            const oldActionIndex = currentConfig.scheduledActions.findIndex((ea) => ea.id === scheduledAction.id);
-            let newActions;
-            if (oldActionIndex > -1 && json.deletedId === scheduledAction.id) {
-              newActions = currentConfig.scheduledActions.slice();
-              newActions.splice(oldActionIndex, 1);
-              reload({
-                isDeleting: false,
-                scheduledActions: newActions
-              });
-            } else {
-              throw Error("No action deleted");
-            }
-          })
-          .catch((err) => {
-            reload({
-              isDeleting: false,
-              error: "An error occurred while deleting. Please try again"
-            });
-          });
-      }
-
-      function onClearErrors() {
-        reload({
-          isSaving: false,
-          isDeleting: false,
-          error: null
-        });
-      }
-
-      function reload(newProps) {
-        const newConfig = Object.assign({}, currentConfig, newProps);
-        ReactDOM.render(
-          React.createElement(Scheduling, newConfig),
-          document.getElementById(SchedulingConfig.containerId)
-        );
-        currentConfig = newConfig;
-      }
-
-      reload();
+      ReactDOM.render(
+        React.createElement(SchedulingLoader, SchedulingConfig),
+        document.getElementById(SchedulingConfig.containerId)
+      );
     });
 });
