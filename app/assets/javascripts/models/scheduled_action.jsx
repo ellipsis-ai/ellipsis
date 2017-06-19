@@ -1,6 +1,7 @@
 define(function(require) {
 
-  const Recurrence = require('./recurrence');
+  const Recurrence = require('./recurrence'),
+    DeepEqual = require('../lib/deep_equal');
 
   class ScheduledAction {
 
@@ -61,6 +62,16 @@ define(function(require) {
 
     isNew() {
       return !this.id;
+    }
+
+    forEqualityComparison() {
+      return this.clone({
+        recurrence: this.recurrence ? this.recurrence.forEqualityComparison() : null
+      });
+    }
+
+    isIdenticalTo(otherAction) {
+      return DeepEqual.isEqual(this.forEqualityComparison(), otherAction.forEqualityComparison());
     }
 
     clone(props) {

@@ -19,6 +19,7 @@ define(function(require) {
       onSave: React.PropTypes.func.isRequired,
       isSaving: React.PropTypes.bool.isRequired,
       onDelete: React.PropTypes.func.isRequired,
+      hasChanges: React.PropTypes.bool.isRequired,
       error: React.PropTypes.string,
       teamTimeZone: React.PropTypes.string.isRequired,
       teamTimeZoneName: React.PropTypes.string.isRequired,
@@ -67,7 +68,7 @@ define(function(require) {
     },
 
     hasChanges: function() {
-      return true;
+      return this.props.hasChanges;
     },
 
     hasActiveRequest: function() {
@@ -124,7 +125,7 @@ define(function(require) {
               <button type="button" className="mbs mrs" onClick={this.cancel} disabled={this.hasActiveRequest()}>Cancel</button>
               {this.props.scheduledAction.isNew() ? null : (
                 <button type="button"
-                  className="mrs mbs button-shrink"
+                  className="mrs mbs"
                   disabled={this.props.isSaving}
                   onClick={this.delete}
                 >Unschedule this</button>
