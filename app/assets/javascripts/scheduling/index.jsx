@@ -166,6 +166,21 @@ define(function(require) {
       this.props.onToggleActivePanel("moreInfo", true);
     },
 
+    selectedItemHasChanges: function() {
+      const selected = this.getSelectedItem();
+      if (!selected) {
+        return false;
+      }
+      if (selected.isNew()) {
+        return true;
+      }
+      const original = this.props.scheduledActions.find((ea) => ea.id === selected.id);
+      if (!original) {
+        return true;
+      }
+      return !original.isIdenticalTo(selected);
+    },
+
     renderSidebar: function(groups) {
       return (
         <div>
@@ -271,6 +286,7 @@ define(function(require) {
                 onSave={this.saveSelectedItem}
                 isSaving={this.props.isSaving}
                 onDelete={this.confirmDeleteItem}
+                hasChanges={this.selectedItemHasChanges()}
                 error={this.props.error}
                 teamTimeZone={this.props.teamTimeZone || "America/New_York"}
                 teamTimeZoneName={this.props.teamTimeZoneName || "Eastern Time"}

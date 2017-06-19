@@ -38,6 +38,13 @@ define(function() {
       return this.timeOfDay || Recurrence.defaultTimeOfDay();
     }
 
+    forEqualityComparison() {
+      return this.clone({
+        displayString: null,
+        timeZoneName: null
+      });
+    }
+
     clone(props) {
       return new Recurrence(Object.assign({}, this, props));
     }
