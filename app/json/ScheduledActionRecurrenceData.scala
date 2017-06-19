@@ -1,7 +1,7 @@
 package json
 
 import java.time.format.TextStyle
-import java.time.{DayOfWeek, LocalTime, MonthDay, ZoneId}
+import java.time._
 import java.util.Locale
 
 import models.IDs
@@ -33,7 +33,7 @@ case class ScheduledActionRecurrenceData(
     try {
       Some(daysOfWeek.map(DayOfWeek.of)).filter(_.nonEmpty)
     } catch {
-      case _: Exception => None
+      case _: DateTimeException => None
     }
   }
 
@@ -41,7 +41,7 @@ case class ScheduledActionRecurrenceData(
     try {
       dayOfWeek.map(DayOfWeek.of)
     } catch {
-      case _: Exception => None
+      case _: DateTimeException => None
     }
   }
 
@@ -62,7 +62,7 @@ case class ScheduledActionRecurrenceData(
         MonthDay.of(month, dayOfMonth)
       }
     } catch {
-      case _: Exception => None
+      case _: DateTimeException => None
     }
   }
 
@@ -70,7 +70,7 @@ case class ScheduledActionRecurrenceData(
     try {
       timeOfDay.map(ea => LocalTime.of(ea.hour, ea.minute))
     } catch {
-      case _: Exception => None
+      case _: DateTimeException => None
     }
   }
 
