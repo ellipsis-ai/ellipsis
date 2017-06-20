@@ -55,6 +55,12 @@ define(function(require) {
       }));
     },
 
+    updateUseDM: function(newValue) {
+      this.props.onChange(this.props.scheduledAction.clone({
+        useDM: newValue
+      }));
+    },
+
     cancel: function() {
       this.props.onCancel();
     },
@@ -97,7 +103,8 @@ define(function(require) {
               <ScheduleChannelEditor
                 scheduledAction={this.props.scheduledAction}
                 channelList={this.props.channelList}
-                onChange={this.updateChannel}
+                onChangeChannel={this.updateChannel}
+                onChangeUseDM={this.updateUseDM}
                 slackUserId={this.props.slackUserId}
               />
             </div>

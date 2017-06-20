@@ -1,5 +1,6 @@
 define(function(require) {
   var React = require('react'),
+    Checkbox = require('../form/checkbox'),
     Collapsible = require('../shared_ui/collapsible'),
     SearchWithResults = require('../form/search_with_results'),
     ScheduledAction = require('../models/scheduled_action'),
@@ -11,7 +12,8 @@ define(function(require) {
       scheduledAction: React.PropTypes.instanceOf(ScheduledAction).isRequired,
       channelList: React.PropTypes.arrayOf(React.PropTypes.instanceOf(ScheduleChannel)).isRequired,
       slackUserId: React.PropTypes.string.isRequired,
-      onChange: React.PropTypes.func.isRequired
+      onChangeChannel: React.PropTypes.func.isRequired,
+      onChangeUseDM: React.PropTypes.func.isRequired
     },
 
     getInitialState: function() {
@@ -77,7 +79,7 @@ define(function(require) {
         this.setState({
           showChannels: false
         }, () => {
-          this.props.onChange(this.state.selectedValue);
+          this.props.onChangeChannel(this.state.selectedValue);
         });
       }
     },
@@ -150,6 +152,13 @@ define(function(require) {
                 <span> — Modify</span>
               </button>
             )}
+          </div>
+          <div className="type-s mvs">
+            <Checkbox
+              checked={this.props.scheduledAction.useDM}
+              onChange={this.props.onChangeUseDM}
+              label="Send to each channel member privately"
+            />
           </div>
         </div>
       );
