@@ -20,6 +20,10 @@ define(function(require) {
       const parsed = string.substr(-2, 2).match(/(3[0-1]|[1-2][0-9]|[1-9])$/);
       return new DayOfMonth(super.fromString(parsed ? parsed[1] : "").value);
     }
+
+    static isValid(intOrNull) {
+      return new DayOfMonth(intOrNull).is((ea) => ea >= 1 && ea <= 31);
+    }
   }
 
   return DayOfMonth;

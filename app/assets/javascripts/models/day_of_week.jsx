@@ -15,6 +15,11 @@ define(function(require) {
       const int = super.fromStringWithDefault(parsed ? parsed[1] : "", DayOfWeek.MONDAY.value);
       return new DayOfWeek(int.value);
     }
+
+    static isValid(intOrNull) {
+      const d = new DayOfWeek(intOrNull);
+      return d.is((ea) => ea >= 0 && ea <= 6);
+    }
   }
 
   Object.defineProperties(DayOfWeek, {

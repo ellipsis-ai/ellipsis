@@ -74,6 +74,28 @@ define(function(require) {
       return DeepEqual.isEqual(this.forEqualityComparison(), otherAction.forEqualityComparison());
     }
 
+    isValidForScheduleType() {
+      if (this.scheduleType === "message") {
+        return this.trigger.length > 0;
+      } else if (this.scheduleType === "behavior") {
+        return this.behaviorId.length > 0 && this.behaviorGroupId.length > 0;
+      } else {
+        return false;
+      }
+    }
+
+    hasValidRecurrence() {
+      return this.recurrence && this.recurrence.isValid();
+    }
+
+    hasValidChannel() {
+      return this.channel.length > 0;
+    }
+
+    isValid() {
+      return this.isValidForScheduleType() && this.hasValidChannel() && this.hasValidRecurrence();
+    }
+
     clone(props) {
       return new ScheduledAction(Object.assign({}, this, props));
     }

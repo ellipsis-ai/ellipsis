@@ -27,6 +27,10 @@ define(function(require) {
       const int = super.fromStringWithDefault(parsed ? parsed[1] : "", Month.JANUARY.value);
       return new Month(int.value);
     }
+
+    static isValid(intOrNull) {
+      return new Month(intOrNull).isValid();
+    }
   }
 
   Object.defineProperties(Month, {
