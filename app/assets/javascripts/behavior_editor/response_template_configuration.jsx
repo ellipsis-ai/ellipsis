@@ -4,7 +4,7 @@ define(function(require) {
     Codemirror = require('../shared_ui/react-codemirror'),
     HelpButton = require('../help/help_button'),
     ResponseTemplate = require('../models/response_template'),
-    SectionHeading = require('./section_heading'),
+    SectionHeading = require('../shared_ui/section_heading'),
     ToggleGroup = require('../form/toggle_group');
 
   return React.createClass({

@@ -2,6 +2,7 @@ define(function(require) {
   const React = require('react'),
     Collapsible = require('../shared_ui/collapsible'),
     ConfirmActionPanel = require('../panels/confirm_action'),
+    DynamicLabelButton = require('../form/dynamic_label_button'),
     FixedFooter = require('../shared_ui/fixed_footer'),
     ModalScrim = require('../shared_ui/modal_scrim'),
     PageWithPanels = require('../shared_ui/page_with_panels'),
@@ -36,7 +37,8 @@ define(function(require) {
         filterChannel: null,
         selectedItem: null,
         justSaved: false,
-        justDeleted: false
+        justDeleted: false,
+        isEditing: false
       };
     },
 
@@ -45,28 +47,35 @@ define(function(require) {
       const justDeleted = this.props.isDeleting && !nextProps.isDeleting;
       const newAction = justSaved ? nextProps.justSavedAction : null;
       if (justSaved || justDeleted) {
-        if (!nextProps.error) {
-          this.props.onClearActivePanel();
-        }
-        if (justSaved) {
-          this.setState({
-            filterChannel: null,
-            selectedItem: newAction || this.state.selectedItem,
-            justSaved: !nextProps.error,
-            justDeleted: false
-          });
-        } else if (justDeleted) {
-          this.setState({
-            filterChannel: null,
-            selectedItem: nextProps.error ? this.state.selectedItem : null,
-            justSaved: false,
-            justDeleted: !nextProps.error
-          });
-          if (nextProps.error) {
-            this.props.onToggleActivePanel("moreInfo", true);
-          }
-        }
+        this.props.onClearActivePanel();
       }
+      if (justSaved) {
+        this.setState({
+          filterChannel: null,
+          selectedItem: newAction || this.state.selectedItem,
+          justSaved: !nextProps.error,
+          justDeleted: false,
+          isEditing: Boolean(nextProps.error)
+        });
+      } else if (justDeleted) {
+        this.setState({
+          filterChannel: null,
+          selectedItem: nextProps.error ? this.state.selectedItem : null,
+          justSaved: false,
+          justDeleted: !nextProps.error,
+          isEditing: Boolean(nextProps.error)
+        });
+      }
+    },
+
+    componentDidUpdate(prevProps, prevState) {
+      if (prevState.isEditing !== this.state.isEditing) {
+        window.scrollTo(0, 0);
+      }
+    },
+
+    isEditing: function() {
+      return this.state.isEditing;
     },
 
     getSelectedItem: function() {
@@ -128,9 +137,8 @@ define(function(require) {
       this.setState({
         selectedItem: action,
         justSaved: false,
-        justDeleted: false
-      }, () => {
-        this.props.onToggleActivePanel("moreInfo", true);
+        justDeleted: false,
+        isEditing: true
       });
     },
 
@@ -139,14 +147,16 @@ define(function(require) {
       this.setState({
         selectedItem: ScheduledAction.newWithDefaults(this.props.teamTimeZone, this.props.teamTimeZoneName),
         justSaved: false,
-        justDeleted: false
-      }, () => {
-        this.props.onToggleActivePanel("moreInfo", true);
+        justDeleted: false,
+        isEditing: true
       });
     },
 
     cancelEditor: function() {
-      this.props.onClearActivePanel();
+      this.setState({
+        selectedItem: null,
+        isEditing: false
+      });
     },
 
     saveSelectedItem: function() {
@@ -158,12 +168,11 @@ define(function(require) {
     },
 
     deleteSelectedItem: function() {
-      this.props.onClearActivePanel();
       this.props.onDelete(this.getSelectedItem());
     },
 
     undoConfirmDelete: function() {
-      this.props.onToggleActivePanel("moreInfo", true);
+      this.props.onClearActivePanel();
     },
 
     selectedItemHasChanges: function() {
@@ -179,6 +188,26 @@ define(function(require) {
         return true;
       }
       return !original.isIdenticalTo(selected);
+    },
+
+    renderSubheading: function() {
+      if (this.isEditing()) {
+        const selectedItem = this.getSelectedItem();
+        return (
+          <span className="fade-in">
+            <span className="mhs">→</span>
+            <span className="mhs">{selectedItem && !selectedItem.isNew() ? "Edit schedule" : "New schedule"}</span>
+          </span>
+        );
+      }
+    },
+
+    shouldShowActions: function() {
+      return this.isEditing() && !this.props.activePanelName;
+    },
+
+    hasActiveRequest: function() {
+      return this.props.isSaving || this.props.isDeleting;
     },
 
     renderSidebar: function(groups) {
@@ -241,60 +270,63 @@ define(function(require) {
     render: function() {
       const groups = this.getScheduleByChannel();
       const selectedItem = this.getSelectedItem();
+      const selectedItemIsValid = selectedItem && selectedItem.isValid();
+      const selectedItemIsNew = selectedItem && selectedItem.isNew();
       return (
         <div>
           <div className="bg-light">
             <div className="container container-wide pvxl">
               <div className="columns columns-elastic mobile-columns-float">
                 <div className="column column-expand align-b">
-                  <h3 className="mvn type-weak display-ellipsis">
+                  <h3 className="mvn type-weak display-ellipsis mts">
                     <span className="mrs">Scheduling</span>
+                    {this.renderSubheading()}
                   </h3>
                 </div>
                 <div className="column column-shrink mobile-ptm">
-                  <button type="button" className="button-shrink" onClick={this.addNewItem}>Schedule something new</button>
+                  <Collapsible revealWhen={!this.isEditing()}>
+                    <button type="button" className="button-shrink" onClick={this.addNewItem}>Schedule something new</button>
+                  </Collapsible>
                 </div>
               </div>
             </div>
           </div>
-
-          <div className="flex-columns">
-            <div className="flex-column flex-column-left container container-wide phn">
-              <div className="columns">
-                <div className="column column-one-quarter mobile-column-full ptxl phn">
-                  {this.renderSidebar(groups)}
-                </div>
-                <div className="column column-three-quarters mobile-column-full bg-white border-radius-bottom-left ptxl pbxxxxl">
-                  {this.renderScheduleList(groups)}
+          <Collapsible revealWhen={!this.isEditing()}>
+            <div className="flex-columns">
+              <div className="flex-column flex-column-left container container-wide phn">
+                <div className="columns">
+                  <div className="column column-one-quarter mobile-column-full ptxl phn">
+                    {this.renderSidebar(groups)}
+                  </div>
+                  <div className="column column-three-quarters mobile-column-full bg-white border-radius-bottom-left ptxl pbxxxxl">
+                    {this.renderScheduleList(groups)}
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
+          </Collapsible>
+          <Collapsible revealWhen={this.isEditing()}>
+            <ScheduledItemEditor
+              scheduledAction={selectedItem}
+              channelList={this.props.channelList}
+              behaviorGroups={this.props.behaviorGroups}
+              onChange={this.updateSelectedItem}
+              teamTimeZone={this.props.teamTimeZone || "America/New_York"}
+              teamTimeZoneName={this.props.teamTimeZoneName || "Eastern Time"}
+              slackUserId={this.props.slackUserId || ""}
+            />
+          </Collapsible>
 
           <ModalScrim isActive={this.props.activePanelIsModal} onClick={this.props.onClearActivePanel} />
           <FixedFooter ref="footer" className="bg-white">
-            <Collapsible
-              ref="moreInfo"
-              revealWhen={this.props.activePanelName === 'moreInfo'}
-            >
-              <ScheduledItemEditor
-                scheduledAction={selectedItem}
-                channelList={this.props.channelList}
-                behaviorGroups={this.props.behaviorGroups}
-                onChange={this.updateSelectedItem}
-                onCancel={this.cancelEditor}
-                onSave={this.saveSelectedItem}
-                isSaving={this.props.isSaving}
-                onDelete={this.confirmDeleteItem}
-                hasChanges={this.selectedItemHasChanges()}
-                error={this.props.error}
-                teamTimeZone={this.props.teamTimeZone || "America/New_York"}
-                teamTimeZoneName={this.props.teamTimeZoneName || "Eastern Time"}
-                slackUserId={this.props.slackUserId || ""}
-              />
-            </Collapsible>
             <Collapsible revealWhen={this.props.activePanelName === 'confirmDelete'}>
-              <ConfirmActionPanel confirmText="Unschedule" onConfirmClick={this.deleteSelectedItem} onCancelClick={this.undoConfirmDelete}>
+              <ConfirmActionPanel
+                confirmText="Unschedule"
+                confirmingText="Unscheduling…"
+                isConfirming={this.props.isDeleting}
+                onConfirmClick={this.deleteSelectedItem}
+                onCancelClick={this.undoConfirmDelete}
+              >
                 <div className="mbxl">
                   <p className="type-bold">Are you sure you want to unschedule this item?</p>
 
@@ -312,13 +344,41 @@ define(function(require) {
                 <span className="fade-in type-green type-bold type-italic">Your changes have been saved.</span>
               </div>
             </Collapsible>
-            <Collapsible revealWhen={this.props.isDeleting || this.state.justDeleted}>
+            <Collapsible revealWhen={this.state.justDeleted}>
               <div className="container pvxl border-top">
-                {this.props.isDeleting ? (
-                  <span className="fade-in type-weak type-italic type-bold">Unscheduling…</span>
-                ) : null}
-                {this.state.justDeleted ? (
-                  <span className="fade-in type-green type-bold type-italic">The item has been unscheduled.</span>
+                <span className="fade-in type-green type-bold type-italic">The item has been unscheduled.</span>
+              </div>
+            </Collapsible>
+            <Collapsible revealWhen={this.shouldShowActions()}>
+              <div className="container ptl pbs border-top">
+                <DynamicLabelButton
+                  disabledWhen={!this.selectedItemHasChanges() || this.hasActiveRequest() || !selectedItemIsValid}
+                  className="button-primary mbs mrs"
+                  onClick={this.saveSelectedItem}
+                  labels={[
+                    { text: "Save changes", displayWhen: !this.props.isSaving },
+                    { text: "Saving…", displayWhen: this.props.isSaving }
+                  ]}
+                />
+                <button
+                  type="button"
+                  className="mbs mrs"
+                  onClick={this.cancelEditor}
+                  disabled={this.hasActiveRequest()}
+                >Cancel</button>
+                {selectedItemIsNew ? null : (
+                  <button
+                    type="button"
+                    className="mrs mbs"
+                    onClick={this.confirmDeleteItem}
+                    disabled={this.hasActiveRequest()}
+                  >Unschedule this</button>
+                )}
+                {this.props.error ? (
+                  <span className="fade-in">
+                    <span className="align-button mbs mrm" />
+                    <span className="align-button mbs type-pink type-bold type-italic"> {this.props.error}</span>
+                  </span>
                 ) : null}
               </div>
             </Collapsible>
