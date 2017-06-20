@@ -1,7 +1,7 @@
 define(function(require) {
   var React = require('react'),
-    DynamicLabelButton = require('../form/dynamic_label_button'),
     RecurrenceEditor = require('./recurrence_editor'),
+    SectionHeading = require('../shared_ui/section_heading'),
     ScheduleChannelEditor = require('./schedule_channel_editor'),
     ScheduledItemConfig = require('./scheduled_item_config'),
     BehaviorGroup = require('../models/behavior_group'),
@@ -15,12 +15,6 @@ define(function(require) {
       channelList: React.PropTypes.arrayOf(React.PropTypes.instanceOf(ScheduleChannel)).isRequired,
       behaviorGroups: React.PropTypes.arrayOf(React.PropTypes.instanceOf(BehaviorGroup)).isRequired,
       onChange: React.PropTypes.func.isRequired,
-      onCancel: React.PropTypes.func.isRequired,
-      onSave: React.PropTypes.func.isRequired,
-      isSaving: React.PropTypes.bool.isRequired,
-      onDelete: React.PropTypes.func.isRequired,
-      hasChanges: React.PropTypes.bool.isRequired,
-      error: React.PropTypes.string,
       teamTimeZone: React.PropTypes.string.isRequired,
       teamTimeZoneName: React.PropTypes.string.isRequired,
       slackUserId: React.PropTypes.string.isRequired
@@ -56,35 +50,12 @@ define(function(require) {
       }));
     },
 
-    cancel: function() {
-      this.props.onCancel();
-    },
-
-    save: function() {
-      this.props.onSave();
-    },
-
-    delete: function() {
-      this.props.onDelete();
-    },
-
-    hasChanges: function() {
-      return this.props.hasChanges;
-    },
-
-    hasActiveRequest: function() {
-      return this.props.isSaving;
-    },
-
     renderDetails: function() {
       return (
-        <div className="columns">
-          <div className="column column-one-quarter mobile-column-full">
-            <h4 className="type-weak">{this.props.scheduledAction.isNew() ? "New schedule" : "Edit schedule"}</h4>
-          </div>
-          <div className="column column-three-quarters mobile-column-full plxxl mobile-pln">
-            <div>
-              <h5 className="mbs">What to do</h5>
+        <div>
+          <div className="pbxl">
+            <div className="container container-wide border-bottom pvxxl">
+              <SectionHeading number="1">What to do</SectionHeading>
               <ScheduledItemConfig
                 scheduledAction={this.props.scheduledAction}
                 behaviorGroups={this.props.behaviorGroups}
@@ -92,9 +63,8 @@ define(function(require) {
                 onChangeAction={this.updateAction}
               />
             </div>
-            <hr />
-            <div>
-              <h5 className="mbs">Where to do it</h5>
+            <div className="container container-wide border-bottom pvxxl">
+              <SectionHeading number="2">Where to do it</SectionHeading>
               <ScheduleChannelEditor
                 scheduledAction={this.props.scheduledAction}
                 channelList={this.props.channelList}
@@ -102,9 +72,8 @@ define(function(require) {
                 slackUserId={this.props.slackUserId}
               />
             </div>
-            <hr />
-            <div>
-              <h5 className="mbl">When to repeat</h5>
+            <div className="container container-wide pvxxl">
+              <SectionHeading number="3">When to repeat</SectionHeading>
               <RecurrenceEditor
                 onChange={this.updateRecurrence}
                 recurrence={this.props.scheduledAction.recurrence}
@@ -112,45 +81,17 @@ define(function(require) {
                 teamTimeZoneName={this.props.teamTimeZoneName}
               />
             </div>
-
-            <div className="mtxxl mbxl">
-              <DynamicLabelButton
-                disabledWhen={!this.hasChanges() || this.hasActiveRequest() || !this.props.scheduledAction.isValid()}
-                className="button-primary mbs mrs"
-                onClick={this.save}
-                labels={[
-                  { text: "Save changes", displayWhen: !this.props.isSaving },
-                  { text: "Saving…", displayWhen: this.props.isSaving }
-                ]}
-              />
-              <button type="button" className="mbs mrs" onClick={this.cancel} disabled={this.hasActiveRequest()}>Cancel</button>
-              {this.props.scheduledAction.isNew() ? null : (
-                <button type="button"
-                  className="mrs mbs"
-                  disabled={this.props.isSaving}
-                  onClick={this.delete}
-                >Unschedule this</button>
-              )}
-              {this.props.error ? (
-                <span className="fade-in">
-                  <span className="align-button mbs mrm" />
-                  <span className="align-button mbs type-pink type-bold type-italic"> {this.props.error}</span>
-                </span>
-              ) : null}
-            </div>
           </div>
         </div>
       );
     },
 
     render: function() {
-      return (
-        <div className="box-action phn">
-          <div className="container container-wide">
-            {this.shouldRenderItem() ? this.renderDetails() : null}
-          </div>
-        </div>
-      );
+      if (this.shouldRenderItem()) {
+        return this.renderDetails();
+      } else {
+        return null;
+      }
     }
   });
 });
