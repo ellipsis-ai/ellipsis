@@ -49,15 +49,10 @@ define(function(require) {
       }), callback);
     },
 
-    updateChannel: function(channelId) {
+    updateChannel: function(channelId, useDM) {
       this.props.onChange(this.props.scheduledAction.clone({
-        channel: channelId
-      }));
-    },
-
-    updateUseDM: function(newValue) {
-      this.props.onChange(this.props.scheduledAction.clone({
-        useDM: newValue
+        channel: channelId,
+        useDM: useDM
       }));
     },
 
@@ -103,8 +98,7 @@ define(function(require) {
               <ScheduleChannelEditor
                 scheduledAction={this.props.scheduledAction}
                 channelList={this.props.channelList}
-                onChangeChannel={this.updateChannel}
-                onChangeUseDM={this.updateUseDM}
+                onChange={this.updateChannel}
                 slackUserId={this.props.slackUserId}
               />
             </div>

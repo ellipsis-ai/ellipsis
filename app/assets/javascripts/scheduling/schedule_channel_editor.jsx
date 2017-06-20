@@ -12,8 +12,7 @@ define(function(require) {
       scheduledAction: React.PropTypes.instanceOf(ScheduledAction).isRequired,
       channelList: React.PropTypes.arrayOf(React.PropTypes.instanceOf(ScheduleChannel)).isRequired,
       slackUserId: React.PropTypes.string.isRequired,
-      onChangeChannel: React.PropTypes.func.isRequired,
-      onChangeUseDM: React.PropTypes.func.isRequired
+      onChange: React.PropTypes.func.isRequired
     },
 
     getInitialState: function() {
@@ -74,14 +73,28 @@ define(function(require) {
       });
     },
 
+    channelIsDM: function(channelId) {
+      if (!channelId) {
+        return false;
+      }
+      const selectedChannel = this.props.channelList.find((ea) => ea.id === channelId);
+      return Boolean(selectedChannel && selectedChannel.isDM());
+    },
+
     updateChannel: function() {
       if (this.state.selectedValue) {
         this.setState({
           showChannels: false
         }, () => {
-          this.props.onChangeChannel(this.state.selectedValue);
+          const newChannel = this.state.selectedValue;
+          const useDM = this.channelIsDM(this.state.selectedValue) ? false : this.props.scheduledAction.useDM;
+          this.props.onChange(newChannel, useDM);
         });
       }
+    },
+
+    updateDM: function(newValue) {
+      this.props.onChange(this.props.scheduledAction.channel, newValue);
     },
 
     undoChannel: function() {
@@ -118,6 +131,7 @@ define(function(require) {
     render: function() {
       const channelList = this.getFilteredChannelList();
       const hasNoMatches = Boolean(this.state.searchText) && channelList.length === 0;
+      const isDM = this.channelIsDM(this.props.scheduledAction.channel);
       return (
         <div>
           <Collapsible revealWhen={this.shouldShowChannels()}>
@@ -155,9 +169,11 @@ define(function(require) {
           </div>
           <div className="type-s mvs">
             <Checkbox
+              disabledWhen={isDM}
               checked={this.props.scheduledAction.useDM}
-              onChange={this.props.onChangeUseDM}
+              onChange={this.updateDM}
               label="Send to each channel member privately"
+              className={isDM ? "type-disabled" : ""}
             />
           </div>
         </div>
