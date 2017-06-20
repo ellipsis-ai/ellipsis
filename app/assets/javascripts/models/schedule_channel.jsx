@@ -33,6 +33,10 @@ define(function() {
       }
     }
 
+    isDM() {
+      return !this.isPublic && this.members.length < 2;
+    }
+
     getFormattedName() {
       return this.getName({ formatting: true });
     }

@@ -11,7 +11,8 @@ return React.createClass({
     title: React.PropTypes.string,
     name: React.PropTypes.string,
     useButtonStyle: React.PropTypes.bool,
-    value: React.PropTypes.string
+    value: React.PropTypes.string,
+    disabledWhen: React.PropTypes.bool
   },
   onChange: function() {
     this.props.onChange(Boolean(this.refs.input.checked), this.props.value);
@@ -56,6 +57,7 @@ return React.createClass({
           onKeyPress={this.handleEnterKey}
           name={this.props.name}
           value={this.props.value}
+          disabled={this.props.disabledWhen}
         />
         <span>{this.props.label}</span>
       </label>

@@ -49,9 +49,10 @@ define(function(require) {
       }), callback);
     },
 
-    updateChannel: function(channelId) {
+    updateChannel: function(channelId, useDM) {
       this.props.onChange(this.props.scheduledAction.clone({
-        channel: channelId
+        channel: channelId,
+        useDM: useDM
       }));
     },
 
@@ -81,7 +82,7 @@ define(function(require) {
           <div className="column column-one-quarter mobile-column-full">
             <h4 className="type-weak">{this.props.scheduledAction.isNew() ? "New schedule" : "Edit schedule"}</h4>
           </div>
-          <div className="column column-three-quarters mobile-column-full plxxl">
+          <div className="column column-three-quarters mobile-column-full plxxl mobile-pln">
             <div>
               <h5 className="mbs">What to do</h5>
               <ScheduledItemConfig

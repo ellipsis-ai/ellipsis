@@ -222,13 +222,13 @@ define(function(require) {
       return groups.map((group) => (
         <Collapsible key={`group-${group.channelName}`} revealWhen={this.shouldShowChannel(group.channelName)}>
           <div className="pvl">
-            <div className="phxxxl">
+            <div className="phxxxl mobile-phl">
               <h4>{group.channelName}</h4>
             </div>
 
             <div>
               {group.actions.map((action) => (
-                <div className="pvxl phxxxl border-top" key={`${action.type}-${action.id}`}>
+                <div className="pvxl phxxxl mobile-phl border-top" key={`${action.type}-${action.id}`}>
                   <ScheduledItem scheduledAction={action} behaviorGroups={this.props.behaviorGroups} onClick={this.toggleEditor} />
                 </div>
               ))}
@@ -251,7 +251,7 @@ define(function(require) {
                     <span className="mrs">Scheduling</span>
                   </h3>
                 </div>
-                <div className="column column-shrink">
+                <div className="column column-shrink mobile-ptm">
                   <button type="button" className="button-shrink" onClick={this.addNewItem}>Schedule something new</button>
                 </div>
               </div>
@@ -261,10 +261,10 @@ define(function(require) {
           <div className="flex-columns">
             <div className="flex-column flex-column-left container container-wide phn">
               <div className="columns">
-                <div className="column column-one-quarter ptxl phn">
+                <div className="column column-one-quarter mobile-column-full ptxl phn">
                   {this.renderSidebar(groups)}
                 </div>
-                <div className="column column-three-quarters bg-white border-radius-bottom-left ptxl pbxxxxl">
+                <div className="column column-three-quarters mobile-column-full bg-white border-radius-bottom-left ptxl pbxxxxl">
                   {this.renderScheduleList(groups)}
                 </div>
               </div>

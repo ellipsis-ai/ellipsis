@@ -217,7 +217,14 @@ bounds, max-height/width and overflow get cleared after reveal, and reset before
   render: function() {
     return (
       <div ref="container" style={this.getDefaultStyle()} className={this.props.className || ""}>
-        {this.props.children}
+        {React.Children.map(this.props.children, (ea) => {
+          // Force children to re-render when animation starts or stops by inserting an extra data attribute
+          if (ea) {
+            return React.cloneElement(ea, { "data-is-animating": this.state.isAnimating });
+          } else {
+            return ea;
+          }
+        })}
       </div>
     );
   }
