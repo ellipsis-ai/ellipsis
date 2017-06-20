@@ -114,7 +114,7 @@ define(function(require) {
 
             <div className="mtxxl mbxl">
               <DynamicLabelButton
-                disabledWhen={!this.hasChanges() || this.hasActiveRequest()}
+                disabledWhen={!this.hasChanges() || this.hasActiveRequest() || !this.props.scheduledAction.isValid()}
                 className="button-primary mbs mrs"
                 onClick={this.save}
                 labels={[

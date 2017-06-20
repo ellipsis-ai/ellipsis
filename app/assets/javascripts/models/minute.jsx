@@ -16,6 +16,11 @@ define(function(require) {
         (string.substr(-3, 1) + string.substr(-1, 1)).match(minutesRegex);
       return new Minute(super.fromString(parsed ? parsed[1] : "").value);
     }
+
+    static isValid(intOrNull) {
+      const m = new Minute(intOrNull);
+      return m.is((ea) => ea >= 0 && ea <= 59);
+    }
   }
 
   return Minute;

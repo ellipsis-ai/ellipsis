@@ -1,4 +1,11 @@
-define(function() {
+define(function(require) {
+
+  const OptionalInt = require('../models/optional_int'),
+    DayOfWeek = require('../models/day_of_week'),
+    DayOfMonth = require('../models/day_of_month'),
+    Hour = require('../models/hour'),
+    Minute = require('../models/minute'),
+    Month = require('../models/month');
 
   class Recurrence {
 
@@ -43,6 +50,60 @@ define(function() {
         displayString: null,
         timeZoneName: null
       });
+    }
+
+    isValid() {
+      return this.isValidMinutely() || this.isValidHourly() || this.isValidDaily() || this.isValidWeekly() ||
+        this.isValidMonthlyByDayOfMonth() || this.isValidMonthlyByNthDayOfWeek() || this.isValidYearly();
+    }
+
+    hasValidFrequency() {
+      return new OptionalInt(this.frequency).is(ea => ea > 0);
+    }
+
+    hasValidTimeOfDay() {
+      return this.timeOfDay && this.hasValidTimeZone() && Minute.isValid(this.timeOfDay.minute) &&
+        Hour.isValid(this.timeOfDay.hour);
+    }
+
+    hasValidNthDayOfWeek() {
+      return new OptionalInt(this.nthDayOfWeek).is((ea) => ea >= 1 && ea <= 5);
+    }
+
+    hasValidTimeZone() {
+      return this.timeZone.length > 0;
+    }
+
+    isValidMinutely() {
+      return this.typeName === "minutely" && this.hasValidFrequency();
+    }
+
+    isValidHourly() {
+      return this.typeName === "hourly" && this.hasValidFrequency() && Hour.isValid(this.minuteOfHour);
+    }
+
+    isValidDaily() {
+      return this.typeName === "daily" && this.hasValidFrequency() && this.hasValidTimeOfDay();
+    }
+
+    isValidWeekly() {
+      return this.typeName === "weekly" && this.hasValidFrequency() && this.hasValidTimeOfDay() &&
+        this.daysOfWeek.length > 0 && this.daysOfWeek.every(DayOfWeek.isValid);
+    }
+
+    isValidMonthlyByDayOfMonth() {
+      return this.typeName === "monthly_by_day_of_month" && this.hasValidFrequency() && this.hasValidTimeOfDay() &&
+        DayOfMonth.isValid(this.dayOfMonth);
+    }
+
+    isValidMonthlyByNthDayOfWeek() {
+      return this.typeName === "monthly_by_nth_day_of_week" && this.hasValidFrequency() && this.hasValidTimeOfDay() &&
+        this.hasValidNthDayOfWeek() && DayOfWeek.isValid(this.dayOfWeek);
+    }
+
+    isValidYearly() {
+      return this.typeName === "yearly" && this.hasValidFrequency() && this.hasValidTimeOfDay() &&
+        DayOfMonth.isValid(this.dayOfMonth) && Month.isValid(this.month);
     }
 
     clone(props) {
