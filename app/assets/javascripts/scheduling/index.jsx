@@ -387,16 +387,21 @@ define(function(require) {
                   className="button-primary mbs mrs"
                   onClick={this.saveSelectedItem}
                   labels={[
-                    { text: "Save changes", displayWhen: !this.props.isSaving },
+                    { text: "Save schedule", displayWhen: selectedItemIsNew && !this.props.isSaving },
+                    { text: "Save changes", displayWhen: !selectedItemIsNew && !this.props.isSaving },
                     { text: "Saving…", displayWhen: this.props.isSaving }
                   ]}
                 />
-                <button
-                  type="button"
+                <DynamicLabelButton
+                  disabledWhen={this.hasActiveRequest()}
                   className="mbs mrs"
                   onClick={this.cancelEditor}
-                  disabled={this.hasActiveRequest()}
-                >Cancel</button>
+                  labels={[
+                    { text: "Cancel", displayWhen: selectedItemIsNew },
+                    { text: "Undo changes", displayWhen: !selectedItemIsNew && this.selectedItemHasChanges() },
+                    { text: "Done", displayWhen: !selectedItemIsNew && !this.selectedItemHasChanges() }
+                  ]}
+                />
                 {selectedItemIsNew ? null : (
                   <button
                     type="button"
