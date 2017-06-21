@@ -33,7 +33,7 @@ class ScheduledActionsController @Inject()(
                                             implicit val actorSystem: ActorSystem
                                           ) extends ReAuthable {
 
-  def index(maybeTeamId: Option[String]) = silhouette.SecuredAction.async { implicit request =>
+  def index(maybeScheduledId: Option[String], maybeNewSchedule: Option[Boolean], maybeTeamId: Option[String]) = silhouette.SecuredAction.async { implicit request =>
     val user = request.identity
 
     render.async {
@@ -69,7 +69,9 @@ class ScheduledActionsController @Inject()(
                 behaviorGroups = groupData,
                 teamTimeZone = team.maybeTimeZone.map(_.toString),
                 teamTimeZoneName = team.maybeTimeZone.map(_.getDisplayName(TextStyle.FULL, Locale.ENGLISH)),
-                slackUserId = maybeSlackProfile.map(_.loginInfo.providerKey)
+                slackUserId = maybeSlackProfile.map(_.loginInfo.providerKey),
+                selectedScheduleId = maybeScheduledId,
+                newAction = maybeNewSchedule
               )
               Ok(views.js.shared
                 .pageConfig(viewConfig(Some(teamAccess)), "config/scheduling/index", Json.toJson(pageData))
@@ -85,7 +87,7 @@ class ScheduledActionsController @Inject()(
           teamAccess <- dataService.users.teamAccessFor(user, maybeTeamId)
         } yield {
           teamAccess.maybeTargetTeam.map { _ =>
-            Ok(views.html.scheduledactions.index(viewConfig(Some(teamAccess)), maybeTeamId))
+            Ok(views.html.scheduledactions.index(viewConfig(Some(teamAccess)), maybeScheduledId, maybeNewSchedule, maybeTeamId))
           }.getOrElse {
             NotFound("Team not found")
           }

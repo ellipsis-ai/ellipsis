@@ -10,6 +10,11 @@ define(function(require) {
       }
     },
 
+    hasQueryParam: function(qpName) {
+      var url = new URI();
+      return url.hasQuery(qpName);
+    },
+
     removeQueryParam: function(qpName) {
       var url = new URI();
       url.removeQuery(qpName);

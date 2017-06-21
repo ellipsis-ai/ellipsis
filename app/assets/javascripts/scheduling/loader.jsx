@@ -15,7 +15,9 @@ requirejs(['common'], function() {
           behaviorGroups: React.PropTypes.arrayOf(React.PropTypes.object),
           teamTimeZone: React.PropTypes.string,
           teamTimeZoneName: React.PropTypes.string,
-          slackUserId: React.PropTypes.string
+          slackUserId: React.PropTypes.string,
+          selectedScheduleId: React.PropTypes.string,
+          newAction: React.PropTypes.bool
         },
 
         getInitialState: function() {
@@ -123,6 +125,8 @@ requirejs(['common'], function() {
               teamTimeZone={this.props.teamTimeZone}
               teamTimeZoneName={this.props.teamTimeZone}
               slackUserId={this.props.slackUserId}
+              selectedScheduleId={this.props.selectedScheduleId}
+              newAction={this.props.newAction}
             />
           );
         }

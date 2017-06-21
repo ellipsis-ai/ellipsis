@@ -1,5 +1,6 @@
 define(function(require) {
   const React = require('react'),
+    BrowserUtils = require('../lib/browser_utils'),
     Collapsible = require('../shared_ui/collapsible'),
     ConfirmActionPanel = require('../panels/confirm_action'),
     DynamicLabelButton = require('../form/dynamic_label_button'),
@@ -29,16 +30,19 @@ define(function(require) {
       isDeleting: React.PropTypes.bool.isRequired,
       error: React.PropTypes.string,
       onClearErrors: React.PropTypes.func.isRequired,
-      justSavedAction: React.PropTypes.instanceOf(ScheduledAction)
+      justSavedAction: React.PropTypes.instanceOf(ScheduledAction),
+      selectedScheduleId: React.PropTypes.string,
+      newAction: React.PropTypes.bool
     }),
 
     getInitialState: function() {
+      const selectedItem = this.getDefaultSelectedItem();
       return {
         filterChannel: null,
-        selectedItem: null,
+        selectedItem: selectedItem,
         justSaved: false,
         justDeleted: false,
-        isEditing: false
+        isEditing: Boolean(selectedItem)
       };
     },
 
@@ -71,6 +75,29 @@ define(function(require) {
     componentDidUpdate(prevProps, prevState) {
       if (prevState.isEditing !== this.state.isEditing) {
         window.scrollTo(0, 0);
+
+        const explicitTeamId = BrowserUtils.hasQueryParam("teamId") ? this.props.teamId : null;
+        BrowserUtils.replaceURL(this.getCorrectedURL(explicitTeamId));
+      }
+    },
+
+    getDefaultSelectedItem: function() {
+      if (this.props.selectedScheduleId) {
+        return this.props.scheduledActions.find((ea) => ea.id === this.props.selectedScheduleId);
+      } else if (this.props.newAction) {
+        return this.createNewSchedule();
+      } else {
+        return null;
+      }
+    },
+
+    getCorrectedURL: function(explicitTeamId) {
+      if (this.state.isEditing && this.state.selectedItem && !this.state.selectedItem.isNew()) {
+        return jsRoutes.controllers.ScheduledActionsController.index(this.state.selectedItem.id, null, explicitTeamId).url;
+      } else if (this.state.isEditing && this.state.selectedItem) {
+        return jsRoutes.controllers.ScheduledActionsController.index(null, true, explicitTeamId).url;
+      } else {
+        return jsRoutes.controllers.ScheduledActionsController.index(null, null, explicitTeamId).url;
       }
     },
 
@@ -142,10 +169,14 @@ define(function(require) {
       });
     },
 
+    createNewSchedule: function() {
+      return ScheduledAction.newWithDefaults(this.props.teamTimeZone, this.props.teamTimeZoneName);
+    },
+
     addNewItem: function() {
       this.props.onClearErrors();
       this.setState({
-        selectedItem: ScheduledAction.newWithDefaults(this.props.teamTimeZone, this.props.teamTimeZoneName),
+        selectedItem: this.createNewSchedule(),
         justSaved: false,
         justDeleted: false,
         isEditing: true
@@ -270,8 +301,8 @@ define(function(require) {
     render: function() {
       const groups = this.getScheduleByChannel();
       const selectedItem = this.getSelectedItem();
-      const selectedItemIsValid = selectedItem && selectedItem.isValid();
-      const selectedItemIsNew = selectedItem && selectedItem.isNew();
+      const selectedItemIsValid = Boolean(selectedItem && selectedItem.isValid());
+      const selectedItemIsNew = Boolean(selectedItem && selectedItem.isNew());
       return (
         <div>
           <div className="bg-light">
@@ -356,16 +387,21 @@ define(function(require) {
                   className="button-primary mbs mrs"
                   onClick={this.saveSelectedItem}
                   labels={[
-                    { text: "Save changes", displayWhen: !this.props.isSaving },
+                    { text: "Save schedule", displayWhen: selectedItemIsNew && !this.props.isSaving },
+                    { text: "Save changes", displayWhen: !selectedItemIsNew && !this.props.isSaving },
                     { text: "Saving…", displayWhen: this.props.isSaving }
                   ]}
                 />
-                <button
-                  type="button"
+                <DynamicLabelButton
+                  disabledWhen={this.hasActiveRequest()}
                   className="mbs mrs"
                   onClick={this.cancelEditor}
-                  disabled={this.hasActiveRequest()}
-                >Cancel</button>
+                  labels={[
+                    { text: "Cancel", displayWhen: selectedItemIsNew },
+                    { text: "Undo changes", displayWhen: !selectedItemIsNew && this.selectedItemHasChanges() },
+                    { text: "Done", displayWhen: !selectedItemIsNew && !this.selectedItemHasChanges() }
+                  ]}
+                />
                 {selectedItemIsNew ? null : (
                   <button
                     type="button"
