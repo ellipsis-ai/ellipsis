@@ -9,5 +9,7 @@ case class ScheduledActionsConfig(
                                    behaviorGroups: Seq[BehaviorGroupData],
                                    teamTimeZone: Option[String],
                                    teamTimeZoneName: Option[String],
-                                   slackUserId: Option[String]
+                                   slackUserId: Option[String],
+                                   selectedScheduleId: Option[String],
+                                   newAction: Option[Boolean]
                                  )

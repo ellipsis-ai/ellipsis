@@ -59,7 +59,7 @@ POST        /revoke_api_token                         @controllers.APITokenContr
 
 GET         /list_environment_variables               @controllers.EnvironmentVariablesController.list(teamId: Option[String] ?= None)
 
-GET         /scheduling                               @controllers.ScheduledActionsController.index(maybeTeamId: Option[String] ?= None)
+GET         /scheduling                               @controllers.ScheduledActionsController.index(selectedId: Option[String] ?= None, newSchedule: Option[Boolean] ?= None, teamId: Option[String] ?= None)
 POST        /save_schedule                            @controllers.ScheduledActionsController.save
 POST        /delete_schedule                          @controllers.ScheduledActionsController.delete
 
