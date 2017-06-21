@@ -18,17 +18,13 @@ define(function(require) {
     getInitialState: function() {
       return {
         searchText: "",
-        selectedValue: this.props.scheduledAction.channel,
         showChannels: false
       };
     },
 
     componentWillUpdate: function(newProps) {
-      if (newProps.scheduledAction.channel !== this.props.scheduledAction.channel) {
-        this.setState({
-          searchText: "",
-          selectedValue: newProps.scheduledAction.channel
-        });
+      if (newProps.scheduledAction.id !== this.props.scheduledAction.id) {
+        this.setState(this.getInitialState());
       }
     },
 
@@ -49,28 +45,34 @@ define(function(require) {
       const channels = this.props.channelList.filter(
         (ea) => this.canSelectChannel(ea) && this.searchIncludes(ea, this.state.searchText)
       );
-      return channels.map((ea) => ({
+      const channelList = channels.map((ea) => ({
         name: ea.getFormattedName(),
         value: ea.id
       }));
+      if (this.props.channelList.length > 0 && this.props.scheduledAction.channel) {
+        return channelList;
+      } else {
+        return [{
+          name: "No channel selected",
+          value: ""
+        }].concat(channelList);
+      }
     },
 
     updateSearch: function(newValue) {
-      const newState = {
-        searchText: newValue
-      };
-      const selectedChannel = this.props.channelList.find((ea) => ea.id === this.state.selectedValue);
+      const selectedChannel = this.props.channelList.find((ea) => ea.id === this.props.scheduledAction.channel);
       if (!selectedChannel || !this.searchIncludes(selectedChannel, newValue)) {
         const newChannel = this.props.channelList.find((ea) => this.canSelectChannel(ea) && this.searchIncludes(ea, newValue));
-        newState.selectedValue = newChannel ? newChannel.id : "";
+        this.selectChannel(newChannel ? newChannel.id : "");
       }
-      this.setState(newState);
+      this.setState({
+        searchText: newValue
+      });
     },
 
     selectChannel: function(newValue) {
-      this.setState({
-        selectedValue: newValue
-      });
+      const useDM = this.channelIsDM(newValue) ? false : this.props.scheduledAction.useDM;
+      this.props.onChange(newValue, useDM);
     },
 
     channelIsDM: function(channelId) {
@@ -81,27 +83,8 @@ define(function(require) {
       return Boolean(selectedChannel && selectedChannel.isDM());
     },
 
-    updateChannel: function() {
-      if (this.state.selectedValue) {
-        this.setState({
-          showChannels: false
-        }, () => {
-          const newChannel = this.state.selectedValue;
-          const useDM = this.channelIsDM(this.state.selectedValue) ? false : this.props.scheduledAction.useDM;
-          this.props.onChange(newChannel, useDM);
-        });
-      }
-    },
-
     updateDM: function(newValue) {
       this.props.onChange(this.props.scheduledAction.channel, newValue);
-    },
-
-    undoChannel: function() {
-      this.setState({
-        selectedValue: this.props.scheduledAction.channel,
-        showChannels: false
-      });
     },
 
     nameForChannel: function(channelId) {
@@ -138,23 +121,14 @@ define(function(require) {
             <SearchWithResults
               ref={(searcher) => this.searcher = searcher}
               placeholder="Search for a channel"
-              value={this.state.selectedValue}
+              value={this.props.scheduledAction.channel || ""}
               options={channelList}
               isSearching={false}
               noMatches={hasNoMatches}
               onChangeSearch={this.updateSearch}
               onSelect={this.selectChannel}
-              onEnterKey={this.updateChannel}
+              onEnterKey={this.selectChannel}
             />
-            <button type="button"
-              className="button-s button-shrink mrs"
-              disabled={!this.state.selectedValue}
-              onClick={this.updateChannel}>Select channel</button>
-            {this.props.scheduledAction.isNew() ? null : (
-              <button type="button"
-                className="button-s button-shrink mrs"
-                onClick={this.undoChannel}>Cancel</button>
-            )}
           </Collapsible>
           <div className="type-s mtm mbs">
             <span>Channel: </span>
