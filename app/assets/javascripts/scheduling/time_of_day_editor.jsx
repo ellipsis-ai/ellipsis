@@ -19,10 +19,14 @@ define(function(require) {
 
     getInitialState: function() {
       return {
-        showTimeZones: false,
-        selectedTimeZoneId: "",
-        selectedTimeZoneName: ""
+        showTimeZones: false
       };
+    },
+
+    componentWillReceiveProps(nextProps) {
+      if (this.props.recurrence.id !== nextProps.recurrence.id) {
+        this.setState(this.getInitialState());
+      }
     },
 
     lastValidHour: null,
@@ -126,28 +130,11 @@ define(function(require) {
       });
     },
 
-    setTimeZone: function() {
-      this.setState({
-        showTimeZones: false
-      }, () => {
-        this.props.onChange(this.props.recurrence.clone({
-          timeZone: this.state.selectedTimeZoneId,
-          timeZoneName: this.state.selectedTimeZoneName
-        }));
-      });
-    },
-
-    cancelSetTimeZone: function() {
-      this.setState({
-        showTimeZones: false
-      });
-    },
-
     updateSelectedTimeZone: function(timeZoneId, cityName, timeZoneName) {
-      this.setState({
-        selectedTimeZoneId: timeZoneId,
-        selectedTimeZoneName: timeZoneName
-      });
+      this.props.onChange(this.props.recurrence.clone({
+        timeZone: timeZoneId,
+        timeZoneName: timeZoneName
+      }));
     },
 
     render: function() {
@@ -179,18 +166,15 @@ define(function(require) {
             </span>
           </div>
           <Collapsible revealWhen={this.shouldShowTimeZones()}>
-            <TimeZoneSetter ref={(setter) => this.timeZoneSetter = setter} onChange={this.updateSelectedTimeZone} />
-            <div className="mvm">
-              <button type="button"
-                className="button-s button-shrink mrs"
-                disabled={!this.state.selectedTimeZoneId}
-                onClick={this.setTimeZone}
-              >Select time zone</button>
-              <button type="button"
-                className="button-s button-shrink"
-                onClick={this.cancelSetTimeZone}
-              >Cancel</button>
-            </div>
+            {this.shouldShowTimeZones() ? (
+              <TimeZoneSetter
+                ref={(setter) => this.timeZoneSetter = setter}
+                defaultTimeZone={this.props.recurrence.timeZone}
+                onChange={this.updateSelectedTimeZone}
+              />
+            ) : (
+              <div/>
+            )}
           </Collapsible>
         </div>
       );

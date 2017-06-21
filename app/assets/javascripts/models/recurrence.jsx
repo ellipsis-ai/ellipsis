@@ -11,6 +11,7 @@ define(function(require) {
 
     constructor(props) {
       const initialProps = Object.assign({
+        id: null,
         displayString: "",
         frequency: 1,
         typeName: "daily",
@@ -26,6 +27,7 @@ define(function(require) {
       }, props);
 
       Object.defineProperties(this, {
+        id: { value: initialProps.id, enumerable: true },
         displayString: { value: initialProps.displayString, enumerable: true },
         frequency: { value: initialProps.frequency, enumerable: true },
         typeName: { value: initialProps.typeName, enumerable: true },
