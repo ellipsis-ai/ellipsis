@@ -301,8 +301,8 @@ define(function(require) {
     render: function() {
       const groups = this.getScheduleByChannel();
       const selectedItem = this.getSelectedItem();
-      const selectedItemIsValid = selectedItem && selectedItem.isValid();
-      const selectedItemIsNew = selectedItem && selectedItem.isNew();
+      const selectedItemIsValid = Boolean(selectedItem && selectedItem.isValid());
+      const selectedItemIsNew = Boolean(selectedItem && selectedItem.isNew());
       return (
         <div>
           <div className="bg-light">
