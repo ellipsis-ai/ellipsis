@@ -47,7 +47,7 @@ case class TestEvent(
   }
 
   override def userInfo(ws: WSClient, dataService: DataService)(implicit actorSystem: ActorSystem): Future[UserInfo] = {
-    UserInfo.buildFor(Some(user), this, ws, dataService)
+    UserInfo.buildFor(user, this, ws, dataService)
   }
 
   override def ensureUser(dataService: DataService): Future[User] = {
