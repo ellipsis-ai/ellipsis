@@ -25,6 +25,10 @@ define(function() {
     }
 
     static objectsEqual(obj1, obj2) {
+      // typeof null returns "object", so we need to guard against one side being null
+      if (obj1 !== obj2 && (obj1 === null || obj2 === null)) {
+        return false;
+      }
       if (obj1.constructor !== obj2.constructor) {
         return false;
       }

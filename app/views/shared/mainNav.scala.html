@@ -21,11 +21,10 @@
       Skills
     </a>
 
-    @{/* Enable once there is a real page
     <a class="@tabClassFor("scheduling")"
-      href='@routes.ScheduledActionsController.index(config.maybeTeamAccess.flatMap(_.maybeAdminAccessToTeamId))'>
+      href='@routes.ScheduledActionsController.index(None, None, config.maybeTeamAccess.flatMap(_.maybeAdminAccessToTeamId))'>
       Scheduling
-    </a>*/}
+    </a>
 
     <a class="@tabClassFor("settings")"
       href='@routes.EnvironmentVariablesController.list(config.maybeTeamAccess.flatMap(_.maybeAdminAccessToTeamId))'>

@@ -1,0 +1,48 @@
+define(function(require) {
+  var React = require('react'),
+    FrequencyEditor = require('./frequency_editor'),
+    MonthDayEditor = require('./month_day_editor'),
+    TimeOfDayEditor = require('./time_of_day_editor'),
+    Recurrence = require('../models/recurrence');
+
+  return React.createClass({
+    displayName: 'YearlyRecurrenceEditor',
+    propTypes: {
+      recurrence: React.PropTypes.instanceOf(Recurrence).isRequired,
+      onChange: React.PropTypes.func.isRequired,
+      teamTimeZone: React.PropTypes.string.isRequired,
+      teamTimeZoneName: React.PropTypes.string.isRequired
+    },
+
+    render: function() {
+      return (
+        <div>
+          <div className="mvm">
+            <FrequencyEditor
+              recurrence={this.props.recurrence}
+              onChange={this.props.onChange}
+              unit="year"
+              units="years"
+              min={1}
+              max={10}
+            />
+          </div>
+          <div className="mvm">
+            <MonthDayEditor
+              recurrence={this.props.recurrence}
+              onChange={this.props.onChange}
+            />
+          </div>
+          <div className="mvm">
+            <TimeOfDayEditor
+              recurrence={this.props.recurrence}
+              onChange={this.props.onChange}
+              teamTimeZone={this.props.teamTimeZone}
+              teamTimeZoneName={this.props.teamTimeZoneName}
+            />
+          </div>
+        </div>
+      );
+    }
+  });
+});

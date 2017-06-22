@@ -8,7 +8,7 @@ define(function(require) {
     Input = require('../models/input'),
     Notifications = require('../notifications/notifications'),
     NotificationData = require('../models/notification_data'),
-    SectionHeading = require('./section_heading'),
+    SectionHeading = require('../shared_ui/section_heading'),
     SVGSettingsIcon = require('../svg/settings'),
     debounce = require('javascript-debounce');
 

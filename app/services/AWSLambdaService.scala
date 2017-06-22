@@ -1,6 +1,6 @@
 package services
 
-import com.amazonaws.services.lambda.AWSLambdaAsyncClient
+import com.amazonaws.services.lambda.AWSLambdaAsync
 import models.Models
 import models.behaviors.behaviorversion.BehaviorVersion
 import models.behaviors.config.awsconfig.AWSConfig
@@ -20,7 +20,7 @@ trait AWSLambdaService extends AWSService {
   val configuration: Configuration
   val models: Models
 
-  val client: AWSLambdaAsyncClient
+  val client: AWSLambdaAsync
 
   def listFunctionNames: Future[Seq[String]]
 

@@ -1,6 +1,6 @@
 define(function(require) {
   var React = require('react'),
-    SectionHeading = require('./section_heading'),
+    SectionHeading = require('../shared_ui/section_heading'),
     Checklist = require('./checklist'),
     ToggleGroup = require('../form/toggle_group');
 

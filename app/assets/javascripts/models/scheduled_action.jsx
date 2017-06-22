@@ -1,13 +1,14 @@
 define(function(require) {
 
-  const Recurrence = require('./recurrence');
+  const Recurrence = require('./recurrence'),
+    DeepEqual = require('../lib/deep_equal');
 
   class ScheduledAction {
 
     constructor(props) {
       const initialProps = Object.assign({
-        behaviorName: null,
-        behaviorGroupName: null,
+        id: null,
+        scheduleType: null,
         behaviorId: null,
         behaviorGroupId: null,
         trigger: null,
@@ -20,8 +21,8 @@ define(function(require) {
       }, props);
 
       Object.defineProperties(this, {
-        behaviorName: { value: initialProps.behaviorName, enumerable: true },
-        behaviorGroupName: { value: initialProps.behaviorGroupName, enumerable: true },
+        id: { value: initialProps.id, enumerable: true },
+        scheduleType: { value: initialProps.scheduleType, enumerable: true },
         behaviorId: { value: initialProps.behaviorId, enumerable: true },
         behaviorGroupId: { value: initialProps.behaviorGroupId, enumerable: true },
         trigger: { value: initialProps.trigger, enumerable: true },
@@ -34,11 +35,86 @@ define(function(require) {
       });
     }
 
+    getSkillNameFromGroups(behaviorGroups) {
+      let name = "";
+      if (this.behaviorGroupId) {
+        const group = behaviorGroups.find((ea) => ea.id === this.behaviorGroupId);
+        if (group) {
+          name = group.getName();
+        }
+      }
+      return name;
+    }
+
+    getActionNameFromGroups(behaviorGroups) {
+      let name = "";
+      if (this.behaviorGroupId && this.behaviorId) {
+        const group = behaviorGroups.find((ea) => ea.id === this.behaviorGroupId);
+        if (group) {
+          const behaviorVersion = group.behaviorVersions.find((ea) => ea.behaviorId === this.behaviorId);
+          if (behaviorVersion) {
+            name = behaviorVersion.getName();
+          }
+        }
+      }
+      return name;
+    }
+
+    isNew() {
+      return !this.id;
+    }
+
+    forEqualityComparison() {
+      return this.clone({
+        recurrence: this.recurrence ? this.recurrence.forEqualityComparison() : null
+      });
+    }
+
+    isIdenticalTo(otherAction) {
+      return DeepEqual.isEqual(this.forEqualityComparison(), otherAction.forEqualityComparison());
+    }
+
+    isValidForScheduleType() {
+      if (this.scheduleType === "message") {
+        return this.trigger.length > 0;
+      } else if (this.scheduleType === "behavior") {
+        return this.behaviorId.length > 0 && this.behaviorGroupId.length > 0;
+      } else {
+        return false;
+      }
+    }
+
+    hasValidRecurrence() {
+      return this.recurrence && this.recurrence.isValid();
+    }
+
+    hasValidChannel() {
+      return this.channel.length > 0;
+    }
+
+    isValid() {
+      return this.isValidForScheduleType() && this.hasValidChannel() && this.hasValidRecurrence();
+    }
+
+    clone(props) {
+      return new ScheduledAction(Object.assign({}, this, props));
+    }
+
     static fromJson(props) {
       const materializedProps = Object.assign(props, {
-        recurrence: new Recurrence(props.recurrence)
+        recurrence: new Recurrence(props.recurrence),
+        firstRecurrence: new Date(props.firstRecurrence),
+        secondRecurrence: new Date(props.secondRecurrence)
       });
       return new ScheduledAction(materializedProps);
+    }
+
+    static newWithDefaults(timeZone, timeZoneName) {
+      return new ScheduledAction({
+        scheduleType: "message",
+        trigger: "",
+        recurrence: new Recurrence({ timeZone: timeZone, timeZoneName: timeZoneName }).becomeDaily()
+      });
     }
   }
 

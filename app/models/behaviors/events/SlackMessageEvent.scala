@@ -131,42 +131,6 @@ case class SlackMessageEvent(
     }
   }
 
-  private def maybeChannelInfoFor(client: SlackApiClient)(implicit actorSystem: ActorSystem): Future[Option[Channel]] = {
-    client.getChannelInfo(channel).map(Some(_)).recover {
-      case e: ApiError => None
-    }
-  }
-
-  override def detailsFor(ws: WSClient, dataService: DataService)(implicit actorSystem: ActorSystem): Future[JsObject] = {
-    val client = clientFor(dataService)
-    for {
-      user <- client.getUserInfo(userIdForContext)
-      maybeChannel <- maybeChannelInfoFor(client)
-    } yield {
-      val profileData = user.profile.map { profile =>
-        Seq(
-          profile.first_name.map(v => "firstName" -> JsString(v)),
-          profile.last_name.map(v => "lastName" -> JsString(v)),
-          profile.real_name.map(v => "realName" -> JsString(v))
-        ).flatten
-      }.getOrElse(Seq())
-      val channelMembers = maybeChannel.flatMap { channel =>
-        channel.members.map(_.filterNot(_ == profile.userId))
-      }.getOrElse(Seq())
-      JsObject(
-        Seq(
-          "name" -> JsString(user.name),
-          "profile" -> JsObject(profileData),
-          "isPrimaryOwner" -> JsBoolean(user.is_primary_owner.getOrElse(false)),
-          "isOwner" -> JsBoolean(user.is_owner.getOrElse(false)),
-          "isRestricted" -> JsBoolean(user.is_restricted.getOrElse(false)),
-          "isUltraRestricted" -> JsBoolean(user.is_ultra_restricted.getOrElse(false)),
-          "channelMembers" -> JsArray(channelMembers.map(JsString.apply))
-        )
-      )
-    }
-  }
-
   override def unformatTextFragment(text: String): String = {
     // Replace formatted links with their visible text
     text.replaceAll("""<.+?\|(.+?)>""", "$1")

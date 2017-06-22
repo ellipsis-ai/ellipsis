@@ -58,14 +58,10 @@ case class UserInfo(
 
 object UserInfo {
 
-  def buildFor(maybeUser: Option[User], event: Event, ws: WSClient, dataService: DataService)(implicit actorSystem: ActorSystem): Future[UserInfo] = {
+  def buildFor(user: User, event: Event, ws: WSClient, dataService: DataService)(implicit actorSystem: ActorSystem): Future[UserInfo] = {
     for {
-      linkedOAuth2Tokens <- maybeUser.map { user =>
-        dataService.linkedOAuth2Tokens.allForUser(user, ws)
-      }.getOrElse(Future.successful(Seq()))
-      linkedSimpleTokens <- maybeUser.map { user =>
-        dataService.linkedSimpleTokens.allForUser(user)
-      }.getOrElse(Future.successful(Seq()))
+      linkedOAuth2Tokens <- dataService.linkedOAuth2Tokens.allForUser(user, ws)
+      linkedSimpleTokens <- dataService.linkedSimpleTokens.allForUser(user)
       links <- Future.successful {
         linkedOAuth2Tokens.map { ea =>
           LinkedInfo(ea.application.name, ea.accessToken)
@@ -74,9 +70,6 @@ object UserInfo {
         }
       }
       messageInfo <- event.messageInfo(ws, dataService)
-      user <- maybeUser.map(Future.successful).getOrElse {
-        event.ensureUser(dataService)
-      }
     } yield {
       UserInfo(user, links, Some(messageInfo))
     }
@@ -84,9 +77,8 @@ object UserInfo {
 
   def buildFor(event: Event, teamId: String, ws: WSClient, dataService: DataService)(implicit actorSystem: ActorSystem): Future[UserInfo] = {
     for {
-      maybeLinkedAccount <- dataService.linkedAccounts.find(event.loginInfo, teamId)
-      maybeUser <- Future.successful(maybeLinkedAccount.map(_.user))
-      info <- buildFor(maybeUser, event, ws, dataService)
+      user <- event.ensureUser(dataService)
+      info <- buildFor(user, event, ws, dataService)
     } yield info
   }
 

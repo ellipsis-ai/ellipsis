@@ -6,6 +6,7 @@ import models.behaviors.UserInfo
 import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.events.{MessageActions, MessageEvent}
 import models.team.Team
+import play.api.libs.json.JsObject
 import play.api.libs.ws.WSClient
 import services.DataService
 
@@ -47,11 +48,15 @@ case class TestEvent(
   }
 
   override def userInfo(ws: WSClient, dataService: DataService)(implicit actorSystem: ActorSystem): Future[UserInfo] = {
-    UserInfo.buildFor(Some(user), this, ws, dataService)
+    UserInfo.buildFor(user, this, ws, dataService)
   }
 
   override def ensureUser(dataService: DataService): Future[User] = {
     Future.successful(user)
+  }
+
+  def detailsFor(ws: WSClient, dataService: DataService)(implicit actorSystem: ActorSystem): Future[JsObject] = {
+    Future.successful(JsObject(Seq()))
   }
 
 }

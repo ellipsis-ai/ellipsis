@@ -24,6 +24,12 @@ define(function(require) {
       this.props.onChange("");
     },
 
+    focus: function() {
+      if (this.input) {
+        this.input.focus();
+      }
+    },
+
     render: function() {
       return (
         <div className={"columns columns-elastic " + (this.props.withResults ? " mbneg1 position-relative position-z-above " : "")}>
@@ -31,6 +37,7 @@ define(function(require) {
             <div className={"position-relative " + (this.props.isSearching ? "pulse-faded" : "")}>
               <div>
                 <FormInput
+                  ref={(input) => this.input = input}
                   {...this.getRemainingProps()}
                   className={
                     "form-input-icon form-input-with-button " +

@@ -2,7 +2,7 @@ import React from 'react';
 import TestUtils from 'react-addons-test-utils';
 const BehaviorListApp = require('../app/assets/javascripts/behavior_list/app');
 const BehaviorList = require('../app/assets/javascripts/behavior_list/index');
-const TimeZoneSetter = require('../app/assets/javascripts/time_zone_setter/index');
+const TimeZoneSetter = require('../app/assets/javascripts/time_zone/team_time_zone');
 const BehaviorGroup = require('../app/assets/javascripts/models/behavior_group');
 jest.mock('../app/assets/javascripts/lib/data_request', () => ({
   jsonGet: jest.fn(() => {

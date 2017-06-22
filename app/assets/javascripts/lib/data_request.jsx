@@ -5,7 +5,13 @@ define(function(require) {
     jsonGet: function(url) {
       return fetch(url, {
         credentials: 'same-origin'
-      }).then((response) => response.json());
+      }).then((response) => {
+        if (response.ok) {
+          return response.json();
+        } else {
+          throw Error(response.statusText);
+        }
+      });
     },
 
     jsonPost: function(url, body, csrfToken) {
@@ -19,7 +25,13 @@ define(function(require) {
           'x-requested-with': 'XMLHttpRequest'
         },
         body: JSON.stringify(body)
-      }).then((response) => response.json());
+      }).then((response) => {
+        if (response.ok) {
+          return response.json();
+        } else {
+          throw Error(response.statusText);
+        }
+      });
     }
   };
 });

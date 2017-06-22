@@ -5,9 +5,9 @@ class CitiesToTimeZonesSpec extends PlaySpec {
 
   val citiesToTimezones = new CitiesToTimeZones()
 
-  val toronto = CityInfo("Toronto", "Toronto", Some("Ontario"), "Canada", "America/Toronto", 2600000)
-  val sf = CityInfo("San Francisco", "San Francisco", Some("California"), "United States", "America/Los_Angeles", 864816)
-  val montreal = CityInfo("Montréal", "Montreal", Some("Quebec"), "Canada", "America/Toronto", 1600000)
+  val toronto = CityInfo("Toronto", "Toronto", Some("Ontario"), "Canada", "America/Toronto", 2600000, "Eastern Time")
+  val sf = CityInfo("San Francisco", "San Francisco", Some("California"), "United States", "America/Los_Angeles", 864816, "Pacific Time")
+  val montreal = CityInfo("Montréal", "Montreal", Some("Quebec"), "Canada", "America/Toronto", 1600000, "Eastern Time")
 
   "possibleCitiesFor" should {
 

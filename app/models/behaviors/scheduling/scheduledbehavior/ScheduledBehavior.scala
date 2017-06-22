@@ -11,6 +11,7 @@ import models.behaviors.scheduling.recurrence.Recurrence
 import models.team.Team
 import play.api.libs.json.Json
 import services.DataService
+import utils.SlackTimestamp
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -60,7 +61,7 @@ case class ScheduledBehavior(
   }
 
   def eventFor(channel: String, slackUserId: String, profile: SlackBotProfile): ScheduledEvent = {
-    ScheduledEvent(RunEvent(profile, behavior, arguments, channel, None, slackUserId, "ts"), this)
+    ScheduledEvent(RunEvent(profile, behavior, arguments, channel, None, slackUserId, SlackTimestamp.now), this)
   }
 
   def withUpdatedNextTriggeredFor(when: OffsetDateTime): ScheduledBehavior = {
