@@ -21,16 +21,15 @@ define(function(require) {
 
     scrollToSelectedOption: function() {
       const selector = this.refs.select;
-      const selectedOptions = selector.selectedOptions;
-      const firstSelected = selectedOptions.length > 0 ? selectedOptions[0] : null;
-      if (!firstSelected) {
+      const selectedOption = selector.selectedIndex >= 0 ? selector.options[selector.selectedIndex] : null;
+      if (!selectedOption) {
         return;
       }
 
       const selectorTop = selector.scrollTop;
       const selectorBottom = selectorTop + selector.offsetHeight;
-      const optionTop = firstSelected.offsetTop;
-      const optionBottom = optionTop + firstSelected.offsetHeight;
+      const optionTop = selectedOption.offsetTop;
+      const optionBottom = optionTop + selectedOption.offsetHeight;
       if (optionBottom < selectorTop || optionTop > selectorBottom) {
         selector.scrollTop = optionTop;
       }
