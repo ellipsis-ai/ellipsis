@@ -54,7 +54,7 @@ define(function(require) {
     renderDetails: function() {
       return (
         <div>
-          <div className="pbxl">
+          <div className="pbxxxxl">
             <div className="container container-wide border-bottom pvxxl">
               <SectionHeading number="1">What to do</SectionHeading>
               <ScheduledItemConfig

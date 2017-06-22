@@ -29,7 +29,7 @@ define(function() {
       } else if (this.members.length > 1) {
         return `${shouldFormat ? "🔒 " : ""}${this.name} (private)`;
       } else {
-        return `${shouldFormat ? "🔒 " : ""}Direct message`;
+        return `${shouldFormat ? "🔒 " : ""}Direct message to you`;
       }
     }
 
