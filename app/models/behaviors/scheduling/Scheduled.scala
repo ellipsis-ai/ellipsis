@@ -48,8 +48,8 @@ trait Scheduled {
                            isForInterruption: Boolean
                          ): Option[String] = {
     if (result.hasText) {
-      val helpLink = configuration.getString("application.apiBaseUrl").map { baseUrl =>
-        val path = controllers.routes.HelpController.scheduledMessages()
+      val scheduleLink = configuration.getString("application.apiBaseUrl").map { baseUrl =>
+        val path = controllers.routes.ScheduledActionsController.index(Some(event.scheduled.id), None, Some(event.teamId))
         s"$baseUrl$path"
       }.get
       val greeting = if (isForInterruption) {
@@ -59,7 +59,7 @@ trait Scheduled {
          |
          |""".stripMargin
       }
-      Some(s"""${greeting}I’m running $displayText [as scheduled]($helpLink) _(${recurrence.displayString.trim})._
+      Some(s"""${greeting}I’m running $displayText as scheduled. _[✎ Edit]($scheduleLink)_
        |
        |───
        |
