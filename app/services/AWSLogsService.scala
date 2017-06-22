@@ -1,6 +1,6 @@
 package services
 
-import com.amazonaws.services.logs.AWSLogsAsyncClient
+import com.amazonaws.services.logs.AWSLogsAsync
 import models.Models
 import play.api.Configuration
 
@@ -11,7 +11,7 @@ trait AWSLogsService extends AWSService {
   val configuration: Configuration
   val models: Models
 
-  val client: AWSLogsAsyncClient
+  val client: AWSLogsAsync
 
   def deleteGroupForLambdaFunctionNamed(name: String): Future[Unit]
 }

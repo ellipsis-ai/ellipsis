@@ -2,9 +2,8 @@ package services
 
 import javax.inject.Inject
 
-import com.amazonaws.services.logs.model.ResourceNotFoundException
-import com.amazonaws.services.logs.AWSLogsAsyncClient
-import com.amazonaws.services.logs.model.DeleteLogGroupRequest
+import com.amazonaws.services.logs.model.{DeleteLogGroupRequest, ResourceNotFoundException}
+import com.amazonaws.services.logs.{AWSLogsAsync, AWSLogsAsyncClientBuilder}
 import models.Models
 import play.api.Configuration
 import play.api.cache.CacheApi
@@ -21,7 +20,10 @@ class AWSLogsServiceImpl @Inject() (
                                      val dataService: DataService
                                    ) extends AWSLogsService {
 
-  val client: AWSLogsAsyncClient = new AWSLogsAsyncClient(credentials)
+  val client: AWSLogsAsync = AWSLogsAsyncClientBuilder.standard().
+    withRegion(region).
+    withCredentials(credentialsProvider).
+    build()
 
   def deleteGroupNamed(name: String): Future[Unit] = {
     val request = new DeleteLogGroupRequest(name)
