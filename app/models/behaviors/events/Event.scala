@@ -59,9 +59,7 @@ trait Event {
     MessageInfo.buildFor(this, ws, dataService)
   }
 
-  def detailsFor(ws: WSClient, dataService: DataService)(implicit actorSystem: ActorSystem): Future[JsObject] = {
-    Future.successful(JsObject(Seq()))
-  }
+  def detailsFor(ws: WSClient, dataService: DataService)(implicit actorSystem: ActorSystem): Future[JsObject]
 
   def recentMessages(dataService: DataService)(implicit actorSystem: ActorSystem): Future[Seq[String]] = Future.successful(Seq())
 
