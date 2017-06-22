@@ -22,7 +22,8 @@ define(function(require) {
     scrollToSelectedOption: function() {
       const selector = this.refs.select;
       const selectedOption = selector.selectedIndex >= 0 ? selector.options[selector.selectedIndex] : null;
-      if (!selectedOption) {
+      /* Safari returns 0 for offset positioning of <option> elements */
+      if (!selectedOption || !selectedOption.offsetHeight) {
         return;
       }
 

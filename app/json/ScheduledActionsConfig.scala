@@ -10,6 +10,7 @@ case class ScheduledActionsConfig(
                                    teamTimeZone: Option[String],
                                    teamTimeZoneName: Option[String],
                                    slackUserId: Option[String],
+                                   slackBotUserId: Option[String],
                                    selectedScheduleId: Option[String],
                                    newAction: Option[Boolean]
                                  )

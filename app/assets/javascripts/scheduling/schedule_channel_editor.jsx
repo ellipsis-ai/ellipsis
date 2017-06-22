@@ -12,6 +12,7 @@ define(function(require) {
       scheduledAction: React.PropTypes.instanceOf(ScheduledAction).isRequired,
       channelList: React.PropTypes.arrayOf(React.PropTypes.instanceOf(ScheduleChannel)).isRequired,
       slackUserId: React.PropTypes.string.isRequired,
+      slackBotUserId: React.PropTypes.string.isRequired,
       onChange: React.PropTypes.func.isRequired
     },
 
@@ -83,6 +84,17 @@ define(function(require) {
       return Boolean(selectedChannel && selectedChannel.isDM());
     },
 
+    botMissingFromChannel: function() {
+      const channelId = this.props.scheduledAction.channel;
+      if (channelId && this.props.slackBotUserId) {
+        const channelInfo = this.props.channelList.find((ea) => ea.id === channelId);
+        if (channelInfo) {
+          return !channelInfo.userCanAccess(this.props.slackBotUserId);
+        }
+      }
+      return false;
+    },
+
     updateDM: function(newValue) {
       this.props.onChange(this.props.scheduledAction.channel, newValue);
     },
@@ -111,6 +123,28 @@ define(function(require) {
       return this.props.scheduledAction.isNew() || this.state.showChannels;
     },
 
+    renderChannelWarning: function() {
+      if (this.botMissingFromChannel()) {
+        return (
+          <span className="type-pink type-bold type-italic">
+            — Warning: Ellipsis must be invited to this channel to run any action.
+          </span>
+        );
+      } else if (this.props.scheduledAction.channel) {
+        return (
+          <span className="type-green">
+            — Ellipsis can send messages in this channel.
+          </span>
+        );
+      } else {
+        return (
+          <span className="type-pink">
+            — Select a channel for Ellipsis to run this action.
+          </span>
+        );
+      }
+    },
+
     render: function() {
       const channelList = this.getFilteredChannelList();
       const hasNoMatches = Boolean(this.state.searchText) && channelList.length === 0;
@@ -132,14 +166,8 @@ define(function(require) {
           </Collapsible>
           <div className="type-s mtm mbs">
             <span>Channel: </span>
-            {this.shouldShowChannels() ? (
-              <b>{this.nameForChannel(this.props.scheduledAction.channel)}</b>
-            ) : (
-              <button type="button" className="button-raw" onClick={this.showChannels}>
-                <b className="type-black">{this.nameForChannel(this.props.scheduledAction.channel)}</b>
-                <span> — Modify</span>
-              </button>
-            )}
+            <b className="mrxs">{this.nameForChannel(this.props.scheduledAction.channel)}</b>
+            {this.renderChannelWarning()}
           </div>
           <div className="type-s mvs">
             <Checkbox
@@ -150,6 +178,13 @@ define(function(require) {
               className={isDM ? "type-disabled" : ""}
             />
           </div>
+          <Collapsible revealWhen={!this.shouldShowChannels()}>
+            <div>
+              <button type="button" className="button-s" onClick={this.showChannels}>
+                Change channel
+              </button>
+            </div>
+          </Collapsible>
         </div>
       );
     }

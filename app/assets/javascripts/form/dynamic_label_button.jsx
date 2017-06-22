@@ -1,6 +1,5 @@
 define(function(require) {
-  var React = require('react'),
-    ifPresent = require('../lib/if_present');
+  var React = require('react');
 
   return React.createClass({
     displayName: 'DynamicLabelButton',
@@ -16,6 +15,8 @@ define(function(require) {
       }))
     },
 
+    buttonLabels: [],
+
     getInitialState: function() {
       return {
         minWidth: null
@@ -24,7 +25,7 @@ define(function(require) {
 
     adjustMinWidthIfNecessary: function() {
       var newMax = this.getMaxLabelWidth();
-      if (newMax !== this.state.minWidth) {
+      if (newMax !== this.state.minWidth && newMax > 0) {
         this.setState({ minWidth: newMax });
       }
     },
@@ -39,9 +40,9 @@ define(function(require) {
 
     getMaxLabelWidth: function() {
       var maxWidth = 0;
-      Object.keys(this.refs).forEach((refName) => {
-        if (/^buttonLabel/.test(refName)) {
-          maxWidth = Math.max(maxWidth, this.refs[refName].scrollWidth);
+      this.buttonLabels.forEach((label) => {
+        if (label && label.scrollWidth) {
+          maxWidth = Math.max(maxWidth, label.scrollWidth);
         }
       });
       return maxWidth > 0 ? maxWidth : null;
@@ -54,18 +55,19 @@ define(function(require) {
     },
 
     getLabels: function() {
+      this.buttonLabels = [];
       return this.props.labels.map((label, index) => (
-        <div ref={`buttonLabel${index}`} key={`buttonLabel${index}`} className={
+        <div ref={(element) => this.buttonLabels.push(element)} key={`buttonLabel${index}`} className={
           `button-label-absolute visibility ${label.displayWhen ? "visibility-visible" : "visibility-hidden"}`
         }>
-          {ifPresent(label.mobileText, () => (
+          {label.mobileText ? (
             <span>
               <span className="mobile-display-none">{label.text}</span>
               <span className="mobile-display-only">{label.mobileText}</span>
             </span>
-          ), () => (
+          ) : (
             <span>{label.text}</span>
-          ))}
+          )}
         </div>
       ));
     },
