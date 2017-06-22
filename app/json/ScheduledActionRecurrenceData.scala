@@ -11,6 +11,7 @@ import utils.TimeZoneParser
 case class ScheduledActionRecurrenceTimeData(hour: Int, minute: Int)
 
 case class ScheduledActionRecurrenceData(
+                                          id: Option[String],
                                           displayString: String,
                                           frequency: Int,
                                           typeName: String,
@@ -172,6 +173,7 @@ case class ScheduledActionRecurrenceData(
 object ScheduledActionRecurrenceData {
   def fromRecurrence(recurrence: Recurrence): ScheduledActionRecurrenceData = {
     ScheduledActionRecurrenceData(
+      Some(recurrence.id),
       recurrence.displayString,
       recurrence.frequency,
       recurrence.typeName,

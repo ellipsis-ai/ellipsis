@@ -29,6 +29,15 @@ define(function(require) {
 
     componentDidMount: function() {
       this.delayChangeSearch = debounce(this.onChangeSearch, 250);
+      if (this.selector) {
+        this.selector.scrollToSelectedOption();
+      }
+    },
+
+    componentDidUpdate(prevProps) {
+      if (prevProps.options !== this.props.options && this.selector) {
+        this.selector.scrollToSelectedOption();
+      }
     },
 
     onChangeSearch: function(newSearch) {
@@ -130,7 +139,7 @@ define(function(require) {
                   withSearch={true}
                 >
                   {this.props.options.map((ea) => (
-                    <option key={ea.value} value={ea.value}>{ea.name}</option>
+                    <option key={ea.value} value={ea.value} className={ea.value ? "" : "type-italic"}>{ea.name}</option>
                   ))}
                 </Select>
                 <div className="position-absolute position-z-popup position-top-left">
