@@ -70,6 +70,7 @@ class ScheduledActionsController @Inject()(
                 teamTimeZone = team.maybeTimeZone.map(_.toString),
                 teamTimeZoneName = team.maybeTimeZone.map(_.getDisplayName(TextStyle.FULL, Locale.ENGLISH)),
                 slackUserId = maybeSlackProfile.map(_.loginInfo.providerKey),
+                slackBotUserId = maybeBotProfile.map(_.userId),
                 selectedScheduleId = maybeScheduledId,
                 newAction = maybeNewSchedule
               )

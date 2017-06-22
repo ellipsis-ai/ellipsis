@@ -17,7 +17,8 @@ define(function(require) {
       onChange: React.PropTypes.func.isRequired,
       teamTimeZone: React.PropTypes.string.isRequired,
       teamTimeZoneName: React.PropTypes.string.isRequired,
-      slackUserId: React.PropTypes.string.isRequired
+      slackUserId: React.PropTypes.string.isRequired,
+      slackBotUserId: React.PropTypes.string.isRequired
     },
 
     shouldRenderItem: function() {
@@ -70,6 +71,7 @@ define(function(require) {
                 channelList={this.props.channelList}
                 onChange={this.updateChannel}
                 slackUserId={this.props.slackUserId}
+                slackBotUserId={this.props.slackBotUserId}
               />
             </div>
             <div className="container container-wide pvxxl">

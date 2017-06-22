@@ -37,6 +37,10 @@ define(function() {
       return !this.isPublic && this.members.length < 2;
     }
 
+    userCanAccess(slackUserId) {
+      return this.isDM() || this.members.includes(slackUserId);
+    }
+
     getFormattedName() {
       return this.getName({ formatting: true });
     }
