@@ -9,6 +9,7 @@ import models.behaviors.scheduling.Scheduled
 import models.behaviors.scheduling.recurrence.Recurrence
 import models.team.Team
 import services.DataService
+import utils.SlackTimestamp
 
 import scala.concurrent.Future
 
@@ -29,7 +30,7 @@ case class ScheduledMessage(
   }
 
   def eventFor(channel: String, slackUserId: String, profile: SlackBotProfile): ScheduledEvent = {
-    ScheduledEvent(SlackMessageEvent(profile, channel, None, slackUserId, text, "ts"), this)
+    ScheduledEvent(SlackMessageEvent(profile, channel, None, slackUserId, text, SlackTimestamp.now), this)
   }
 
   def withUpdatedNextTriggeredFor(when: OffsetDateTime): ScheduledMessage = {
