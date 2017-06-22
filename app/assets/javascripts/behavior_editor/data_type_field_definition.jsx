@@ -1,6 +1,6 @@
 define(function(require) {
   var React = require('react'),
-    DeleteButton = require('./delete_button'),
+    DeleteButton = require('../shared_ui/delete_button'),
     FormInput = require('../form/input'),
     Select = require('../form/select'),
     DataTypeField = require('../models/data_type_field'),

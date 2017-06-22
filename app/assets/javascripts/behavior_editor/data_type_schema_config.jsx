@@ -1,6 +1,6 @@
 define(function(require) {
   var React = require('react'),
-    SectionHeading = require('./section_heading'),
+    SectionHeading = require('../shared_ui/section_heading'),
     DataTypeFieldDefinition = require('./data_type_field_definition'),
     Field = require('../models/data_type_field');
 
