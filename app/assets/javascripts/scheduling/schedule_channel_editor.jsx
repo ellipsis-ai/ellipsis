@@ -123,6 +123,28 @@ define(function(require) {
       return this.props.scheduledAction.isNew() || this.state.showChannels;
     },
 
+    renderChannelWarning: function() {
+      if (this.botMissingFromChannel()) {
+        return (
+          <span className="type-pink type-bold type-italic">
+            — Warning: Ellipsis must be invited to this channel to run any action.
+          </span>
+        );
+      } else if (this.props.scheduledAction.channel) {
+        return (
+          <span className="type-green">
+            — Ellipsis can send messages in this channel.
+          </span>
+        );
+      } else {
+        return (
+          <span className="type-pink">
+            — Select a channel for Ellipsis to run this action.
+          </span>
+        );
+      }
+    },
+
     render: function() {
       const channelList = this.getFilteredChannelList();
       const hasNoMatches = Boolean(this.state.searchText) && channelList.length === 0;
@@ -144,16 +166,8 @@ define(function(require) {
           </Collapsible>
           <div className="type-s mtm mbs">
             <span>Channel: </span>
-            <b className="mrs">{this.nameForChannel(this.props.scheduledAction.channel)}</b>
-            {this.botMissingFromChannel() ? (
-              <span className="type-pink type-bold type-italic">
-                — Warning: Ellipsis must be invited to this channel for this to run.
-              </span>
-            ) : (
-              <span className="type-green">
-                — Ellipsis can send messages in this channel.
-              </span>
-            )}
+            <b className="mrxs">{this.nameForChannel(this.props.scheduledAction.channel)}</b>
+            {this.renderChannelWarning()}
           </div>
           <div className="type-s mvs">
             <Checkbox
