@@ -6,8 +6,8 @@ import java.nio.file.{Files, Paths}
 import javax.inject.Inject
 
 import akka.actor.ActorSystem
-import com.amazonaws.services.lambda.AWSLambdaAsyncClient
 import com.amazonaws.services.lambda.model._
+import com.amazonaws.services.lambda.{AWSLambdaAsync, AWSLambdaAsyncClientBuilder}
 import models.Models
 import models.behaviors._
 import models.behaviors.behaviorversion.BehaviorVersion
@@ -16,22 +16,22 @@ import models.behaviors.config.requiredoauth2apiconfig.RequiredOAuth2ApiConfig
 import models.behaviors.config.requiredsimpletokenapi.RequiredSimpleTokenApi
 import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.events.Event
-import models.environmentvariable.{EnvironmentVariable, TeamEnvironmentVariable, UserEnvironmentVariable}
 import models.behaviors.invocationtoken.InvocationToken
 import models.behaviors.library.LibraryVersion
+import models.environmentvariable.{EnvironmentVariable, TeamEnvironmentVariable, UserEnvironmentVariable}
 import models.team.Team
-import play.api.{Configuration, Logger}
 import play.api.cache.CacheApi
 import play.api.libs.json._
 import play.api.libs.ws.WSClient
+import play.api.{Configuration, Logger}
 import sun.misc.BASE64Decoder
 import utils.JavaFutureConverter
 
 import scala.collection.JavaConversions.asScalaBuffer
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.reflect.io.Path
-import sys.process._
-import scala.concurrent.ExecutionContext.Implicits.global
+import scala.sys.process._
 import scala.util.{Failure, Success}
 
 class AWSLambdaServiceImpl @Inject() (
@@ -46,7 +46,12 @@ class AWSLambdaServiceImpl @Inject() (
 
   import AWSLambdaConstants._
 
-  val client: AWSLambdaAsyncClient = new AWSLambdaAsyncClient(credentials)
+  val client: AWSLambdaAsync =
+    AWSLambdaAsyncClientBuilder.standard().
+      withRegion(region).
+      withCredentials(credentialsProvider).
+      build()
+
   val apiBaseUrl: String = configuration.getString(s"application.$API_BASE_URL_KEY").get
 
   def fetchFunctions(maybeNextMarker: Option[String]): Future[List[FunctionConfiguration]] = {
