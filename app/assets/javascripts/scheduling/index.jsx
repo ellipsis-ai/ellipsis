@@ -121,11 +121,14 @@ define(function(require) {
       this.props.scheduledActions.forEach((action) => {
         const channel = this.props.channelList.find((ea) => ea.id === action.channel);
         const channelName = channel ? channel.getFormattedName() : "Unknown";
-        if (!channel || channel.members.includes(this.props.slackUserId)) {
+        const includesUser = channel.userCanAccess(this.props.slackUserId);
+        const excludesBot = this.props.slackBotUserId && !channel.userCanAccess(this.props.slackBotUserId);
+        if (!channel || channel.isPublic || includesUser) {
           const group = groupsByName[channelName] || {
             channelName: channelName,
             channelId: channel.id,
-            excludesBot: this.props.slackBotUserId && !channel.userCanAccess(this.props.slackBotUserId),
+            excludesBot: excludesBot,
+            excludesUser: !includesUser,
             actions: []
           };
           group.actions.push(action);
@@ -282,6 +285,22 @@ define(function(require) {
       ));
     },
 
+    renderGroupWarning: function(group) {
+      if (group.excludesBot) {
+        return (
+          <span className="type-s type-pink type-bold type-italic">
+            — Warning: Ellipsis must be invited to this channel for any scheduled action to run.
+          </span>
+        );
+      } else if (group.excludesUser) {
+        return (
+          <span className="type-s type-weak type-italic">
+            — You are not a member of this channel.
+          </span>
+        );
+      }
+    },
+
     renderGroups: function(groups) {
       const groupClassName = groups.length > 1 ? "phxxxl mobile-phl" : "container";
       if (groups.length > 0) {
@@ -290,12 +309,8 @@ define(function(require) {
             <div className="pvl">
               <div className={groupClassName}>
                 <h4>
-                  <span className="mrs">{group.channelName}</span>
-                  {group.excludesBot ? (
-                    <span className="type-s type-pink type-bold type-italic">
-                        — Warning: Ellipsis must be invited to this channel for any scheduled action to run
-                      </span>
-                  ) : null}
+                  <span className="mrxs">{group.channelName}</span>
+                  {this.renderGroupWarning(group)}
                 </h4>
               </div>
 
