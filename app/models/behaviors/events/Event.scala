@@ -65,17 +65,16 @@ trait Event {
 
   def recentMessages(dataService: DataService)(implicit actorSystem: ActorSystem): Future[Seq[String]] = Future.successful(Seq())
 
-  def skillListLinkFor(isListEmpty: Boolean, lambdaService: AWSLambdaService): String = {
-    val skillListLink = lambdaService.configuration.getString("application.apiBaseUrl").map { baseUrl =>
-      val path = controllers.routes.ApplicationController.index(Some(teamId))
-      s"$baseUrl$path"
-    }.get
-    val linkText = if (isListEmpty) {
-      "Get started by teaching me something"
-    } else {
-      "View all skills"
-    }
-    s"[$linkText]($skillListLink)"
+  def navLinks(noSkills: Boolean, lambdaService: AWSLambdaService): String = {
+    lambdaService.configuration.getString("application.apiBaseUrl").map { baseUrl =>
+      val skillsListPath = controllers.routes.ApplicationController.index(Some(teamId))
+      val schedulingPath = controllers.routes.ScheduledActionsController.index(None, None, Some(teamId))
+      if (noSkills) {
+        s"""[Get started by teaching me something]($baseUrl$skillsListPath)"""
+      } else {
+        s"""[View all skills]($baseUrl$skillsListPath) · [Scheduling]($baseUrl$schedulingPath)"""
+      }
+    }.getOrElse("")
   }
 
   def teachMeLinkFor(lambdaService: AWSLambdaService): String = {
