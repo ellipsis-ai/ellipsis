@@ -102,7 +102,7 @@ class EventHandler @Inject() (
     maybeConversation.map { conversation =>
       handleInConversation(conversation, event).map(Seq(_))
     }.getOrElse {
-      BuiltinBehavior.maybeFrom(event, lambdaService, dataService).map { builtin =>
+      BuiltinBehavior.maybeFrom(event, lambdaService, dataService, configuration).map { builtin =>
         builtin.result.map(Seq(_))
       }.getOrElse {
         startInvokeConversationFor(event)
