@@ -244,26 +244,28 @@ define(function(require) {
     },
 
     renderSidebar: function(groups) {
-      return (
-        <div>
-          <div className="phxl mobile-phl mbs">
-            <h5 className="display-inline-block prm">Filter by channel</h5>
-            <span>
-              <button type="button"
-                className="button-s button-shrink"
-                disabled={!this.state.filterChannel}
-                onClick={this.clearFilters}
-              >
-                Clear
-              </button>
-            </span>
-          </div>
+      if (groups.length > 1) {
+        return (
+          <div className="column column-one-quarter mobile-column-full ptxl phn">
+            <div className="phxl mobile-phl mbs">
+              <h5 className="display-inline-block prm">Filter by channel</h5>
+              <span>
+                <button type="button"
+                  className="button-s button-shrink"
+                  disabled={!this.state.filterChannel}
+                  onClick={this.clearFilters}
+                >
+                  Clear
+                </button>
+              </span>
+            </div>
 
-          <div>
-            {this.renderFilterList(groups)}
+            <div>
+              {this.renderFilterList(groups)}
+            </div>
           </div>
-        </div>
-      );
+        );
+      }
     },
 
     renderFilterList: function(groups) {
@@ -280,31 +282,53 @@ define(function(require) {
       ));
     },
 
-    renderScheduleList: function(groups) {
-      return groups.map((group) => (
-        <Collapsible key={`group-${group.channelName}`} revealWhen={this.shouldShowChannel(group.channelName)}>
-          <div className="pvl">
-            <div className="phxxxl mobile-phl">
-              <h4>
-                <span className="mrs">{group.channelName}</span>
-                {group.excludesBot ? (
-                  <span className="type-s type-pink type-bold type-italic">
-                    — Warning: Ellipsis must be invited to this channel for any scheduled action to run
-                  </span>
-                ) : null}
-              </h4>
-            </div>
+    renderGroups: function(groups) {
+      const groupClassName = groups.length > 1 ? "phxxxl mobile-phl" : "container";
+      if (groups.length > 0) {
+        return groups.map((group) => (
+          <Collapsible key={`group-${group.channelName}`} revealWhen={this.shouldShowChannel(group.channelName)}>
+            <div className="pvl">
+              <div className={groupClassName}>
+                <h4>
+                  <span className="mrs">{group.channelName}</span>
+                  {group.excludesBot ? (
+                    <span className="type-s type-pink type-bold type-italic">
+                        — Warning: Ellipsis must be invited to this channel for any scheduled action to run
+                      </span>
+                  ) : null}
+                </h4>
+              </div>
 
-            <div>
-              {group.actions.map((action) => (
-                <div className="pvxl phxxxl mobile-phl border-top" key={`${action.type}-${action.id}`}>
-                  <ScheduledItem scheduledAction={action} behaviorGroups={this.props.behaviorGroups} onClick={this.toggleEditor} />
-                </div>
-              ))}
+              <div>
+                {group.actions.map((action) => (
+                  <div className={"pvxl border-top " + groupClassName} key={`${action.type}-${action.id}`}>
+                    <ScheduledItem scheduledAction={action} behaviorGroups={this.props.behaviorGroups} onClick={this.toggleEditor} />
+                  </div>
+                ))}
+              </div>
             </div>
+          </Collapsible>
+        ));
+      } else {
+        return (
+          <div className={"ptxxl " + groupClassName}>
+            <p className="type-bold">Nothing is currently scheduled on this team.</p>
+
+            <p>You can schedule any action to run on a recurring basis in a particular channel.</p>
           </div>
-        </Collapsible>
-      ));
+        );
+      }
+    },
+
+    renderScheduleList: function(groups) {
+      return (
+        <div className={
+          "column mobile-column-full bg-white ptxl pbxxxxl " +
+          (groups.length > 1 ? "column-three-quarters border-radius-bottom-left " : "column-full")
+        }>
+          {this.renderGroups(groups)}
+        </div>
+      );
     },
 
     render: function() {
@@ -335,12 +359,8 @@ define(function(require) {
             <div className="flex-columns">
               <div className="flex-column flex-column-left container container-wide phn">
                 <div className="columns">
-                  <div className="column column-one-quarter mobile-column-full ptxl phn">
-                    {this.renderSidebar(groups)}
-                  </div>
-                  <div className="column column-three-quarters mobile-column-full bg-white border-radius-bottom-left ptxl pbxxxxl">
-                    {this.renderScheduleList(groups)}
-                  </div>
+                  {this.renderSidebar(groups)}
+                  {this.renderScheduleList(groups)}
                 </div>
               </div>
             </div>
