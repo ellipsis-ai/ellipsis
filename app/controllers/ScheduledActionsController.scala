@@ -42,42 +42,26 @@ class ScheduledActionsController @Inject()(
           teamAccess <- dataService.users.teamAccessFor(user, maybeTeamId)
           result <- teamAccess.maybeTargetTeam.map { team =>
             for {
-              scheduledMessages <- dataService.scheduledMessages.allForTeam(team)
-              scheduledBehaviors <- dataService.scheduledBehaviors.allForTeam(team)
               maybeBotProfile <- dataService.slackBotProfiles.allFor(team).map(_.headOption)
+              maybeSlackLinkedAccount <- dataService.linkedAccounts.maybeForSlackFor(user)
+              maybeSlackUserId <- maybeSlackLinkedAccount.map { linkedAccount =>
+                dataService.slackProfiles.maybeSlackUserId(linkedAccount.loginInfo)
+              }.getOrElse(Future.successful(None))
               channelList <- maybeBotProfile.map { botProfile =>
-                dataService.slackBotProfiles.channelsFor(botProfile).listInfos
+                dataService.slackBotProfiles.channelsFor(botProfile).getListForUser(maybeSlackUserId)
               }.getOrElse(Future.successful(Seq()))
+              scheduledActions <- ScheduledActionData.buildFor(maybeSlackUserId, team, channelList, dataService)
               behaviorGroups <- dataService.behaviorGroups.allFor(team)
               groupData <- Future.sequence(behaviorGroups.map { group =>
                 BehaviorGroupData.maybeFor(group.id, user, None, dataService)
               }).map(_.flatten.sorted)
-              maybeSlackLinkedAccount <- dataService.linkedAccounts.maybeForSlackFor(user)
-              maybeSlackProfile <- maybeSlackLinkedAccount.map { linkedAccount =>
-                dataService.slackProfiles.find(linkedAccount.loginInfo)
-              }.getOrElse(Future.successful(None))
             } yield {
-              val maybeSlackUserId = maybeSlackProfile.map(_.loginInfo.providerKey)
-
-              val visibleChannels = maybeSlackUserId.map { slackUserId =>
-                channelList.filter(_.visibleToUser(slackUserId))
-              }.getOrElse(Seq())
-
-              val scheduledMessageData = scheduledMessages.map(ScheduledActionData.fromScheduledMessage)
-              val scheduledBehaviorData = scheduledBehaviors.map(ScheduledActionData.fromScheduledBehavior)
-
-              /* TODO: once our scheduling models are medium-aware, should filter out Slack channels
-                 for someone without a Slack user ID */
-              val visibleActionData = maybeSlackUserId.map { slackUserId =>
-                (scheduledMessageData ++ scheduledBehaviorData).filter(_.visibleToSlackUser(slackUserId, channelList))
-              }.getOrElse(Seq())
-
               val pageData = ScheduledActionsConfig(
                 containerId = "scheduling",
                 csrfToken = CSRF.getToken(request).map(_.value),
                 teamId = team.id,
-                scheduledActions = visibleActionData,
-                channelList = ScheduleChannelData.fromChannelLikeList(visibleChannels),
+                scheduledActions = scheduledActions,
+                channelList = ScheduleChannelData.fromChannelLikeList(channelList),
                 behaviorGroups = groupData,
                 teamTimeZone = team.maybeTimeZone.map(_.toString),
                 teamTimeZoneName = team.maybeTimeZone.map(_.getDisplayName(TextStyle.FULL, Locale.ENGLISH)),
