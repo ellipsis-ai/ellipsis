@@ -43,10 +43,7 @@ class ScheduledActionsController @Inject()(
           result <- teamAccess.maybeTargetTeam.map { team =>
             for {
               maybeBotProfile <- dataService.slackBotProfiles.allFor(team).map(_.headOption)
-              maybeSlackLinkedAccount <- dataService.linkedAccounts.maybeForSlackFor(user)
-              maybeSlackUserId <- maybeSlackLinkedAccount.map { linkedAccount =>
-                dataService.slackProfiles.maybeSlackUserId(linkedAccount.loginInfo)
-              }.getOrElse(Future.successful(None))
+              maybeSlackUserId <- dataService.linkedAccounts.maybeSlackUserIdFor(user)
               channelList <- maybeBotProfile.map { botProfile =>
                 dataService.slackBotProfiles.channelsFor(botProfile).getListForUser(maybeSlackUserId)
               }.getOrElse(Future.successful(Seq()))
