@@ -16,6 +16,7 @@ var React = require('react'),
   CollapseButton = require('../shared_ui/collapse_button'),
   DataTypeField = require('../models/data_type_field'),
   DataTypeSchemaConfig = require('./data_type_schema_config'),
+  DataTypeSourceConfig = require('./data_type_source_config'),
   DataTypeCodeEditorHelp = require('./data_type_code_editor_help'),
   DataTypeResultConfig = require('./data_type_result_config'),
   DynamicLabelButton = require('../form/dynamic_label_button'),
@@ -211,6 +212,10 @@ const BehaviorEditor = React.createClass({
   getSelectedBehavior: function() {
     const selected = this.getSelected();
     return (selected && selected.isBehaviorVersion()) ? selected : null;
+  },
+
+  getDataTypeConfig: function() {
+    return this.getSelectedBehavior().getDataTypeConfig();
   },
 
   getSelectedFor: function(group, selectedId) {
@@ -435,7 +440,7 @@ const BehaviorEditor = React.createClass({
   },
 
   setDataTypeFields: function(newFields) {
-    const newConfig = this.getSelectedBehavior().getDataTypeConfig().clone({ fields: newFields });
+    const newConfig = this.getDataTypeConfig().clone({ fields: newFields });
     this.setDataTypeConfig(newConfig);
   },
 
@@ -970,6 +975,11 @@ const BehaviorEditor = React.createClass({
     } else {
       this.setEditableProp('inputIds', []);
     }
+  },
+
+  updateDataTypeSource: function(usesCode) {
+    const newConfig = this.getDataTypeConfig().clone({ usesCode: usesCode });
+    this.setDataTypeConfig(newConfig);
   },
 
   updateDescription: function(newDescription) {
@@ -2043,11 +2053,11 @@ const BehaviorEditor = React.createClass({
     );
   },
 
-  renderDataTypeBehavior: function() {
-    return (
-      <div className="pbxxxl">
-        <hr className="mtl mbn thin bg-gray-light" />
-
+  renderDataTypeSchemaConfig: function() {
+    if (this.getDataTypeConfig().usesCode) {
+      return null;
+    } else {
+      return (
         <DataTypeSchemaConfig
           ref="DataTypeSchemaConfig"
           onChange={this.updateDataTypeFieldAtIndexWith}
@@ -2058,28 +2068,62 @@ const BehaviorEditor = React.createClass({
           animationDisabled={this.animationIsDisabled()}
           onConfigureType={this.onConfigureType}
         />
+      );
+    }
+  },
 
+  renderDataTypeResultConfig: function() {
+    if (this.getDataTypeConfig().usesCode) {
+      return (
         <DataTypeResultConfig
           usesSearch={this.hasInputNamed('searchQuery')}
           onChange={this.updateDataTypeResultConfig}
           isFinishedBehavior={this.isFinishedBehavior()}
         />
+      );
+    } else {
+      return null;
+    }
+  },
+
+  renderDataTypeCodeEditor: function() {
+    if (this.getDataTypeConfig().usesCode) {
+      return this.renderCodeEditor({
+        sectionNumber: "3",
+        sectionHeading: "Run code to generate a list",
+        codeEditorHelp: (
+          <div className="mbxl">
+            <DataTypeCodeEditorHelp
+              functionBody={this.getFunctionBody()}
+              usesSearch={this.hasInputNamed('searchQuery')}
+              isFinishedBehavior={this.isFinishedBehavior()}
+            />
+          </div>
+        )
+      });
+    } else {
+      return null;
+    }
+  },
+
+  renderDataTypeBehavior: function() {
+    return (
+      <div className="pbxxxl">
+        <hr className="mtl mbn thin bg-gray-light" />
+
+        <DataTypeSourceConfig
+          usesCode={this.getDataTypeConfig().usesCode}
+          onChange={this.updateDataTypeSource}
+          isFinishedBehavior={this.isFinishedBehavior()}
+        />
+
+        {this.renderDataTypeSchemaConfig()}
+
+        {this.renderDataTypeResultConfig()}
 
         <hr className="man thin bg-gray-light" />
 
-          {this.renderCodeEditor({
-            sectionNumber: "3",
-            sectionHeading: "Run code to generate a list",
-            codeEditorHelp: (
-              <div className="mbxl">
-                <DataTypeCodeEditorHelp
-                  functionBody={this.getFunctionBody()}
-                  usesSearch={this.hasInputNamed('searchQuery')}
-                  isFinishedBehavior={this.isFinishedBehavior()}
-                />
-              </div>
-            )
-          })}
+        {this.renderDataTypeCodeEditor()}
       </div>
     );
   },

@@ -5,11 +5,16 @@ define(function(require) {
   class DataTypeConfig {
     constructor(props) {
       var initialProps = Object.assign({
-        fields: []
+        fields: [],
+        usesCode: false
       }, props);
       Object.defineProperties(this, {
         fields: {
           value: initialProps.fields,
+          enumerable: true
+        },
+        usesCode: {
+          value: initialProps.usesCode,
           enumerable: true
         }
       });
@@ -17,6 +22,10 @@ define(function(require) {
 
     getFields() {
       return this.fields;
+    }
+
+    get usesCode() {
+      return this.usesCode;
     }
 
     clone(props) {

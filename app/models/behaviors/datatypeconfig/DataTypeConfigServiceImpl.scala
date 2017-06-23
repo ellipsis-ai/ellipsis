@@ -13,15 +13,16 @@ import services.DataService
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-case class RawDataTypeConfig(id: String, behaviorVersionId: String)
+case class RawDataTypeConfig(id: String, maybeUsesCode: Option[Boolean], behaviorVersionId: String)
 
 class DataTypeConfigsTable(tag: Tag) extends Table[RawDataTypeConfig](tag, "data_type_configs") {
 
   def id = column[String]("id", O.PrimaryKey)
+  def maybeUsesCode = column[Option[Boolean]]("uses_code")
   def behaviorVersionId = column[String]("behavior_version_id")
 
   def * =
-    (id, behaviorVersionId) <> ((RawDataTypeConfig.apply _).tupled, RawDataTypeConfig.unapply _)
+    (id, maybeUsesCode, behaviorVersionId) <> ((RawDataTypeConfig.apply _).tupled, RawDataTypeConfig.unapply _)
 }
 
 class DataTypeConfigServiceImpl @Inject() (
@@ -50,7 +51,7 @@ class DataTypeConfigServiceImpl @Inject() (
   }
 
   def createForAction(behaviorVersion: BehaviorVersion, data: DataTypeConfigData): DBIO[DataTypeConfig] = {
-    val newInstance = DataTypeConfig(IDs.next, behaviorVersion)
+    val newInstance = DataTypeConfig(IDs.next, data.usesCode, behaviorVersion)
     (all += newInstance.toRaw).flatMap { _ =>
       DBIO.sequence(data.fields.zipWithIndex.map { case(ea, i) =>
         dataService.dataTypeFields.createForAction(ea, i + 1, newInstance, behaviorVersion.groupVersion)

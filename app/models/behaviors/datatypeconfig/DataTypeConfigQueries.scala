@@ -11,7 +11,8 @@ object DataTypeConfigQueries {
   type TupleType = (RawDataTypeConfig, BehaviorVersionQueries.TupleType)
 
   def tuple2Config(tuple: TupleType): DataTypeConfig = {
-    DataTypeConfig(tuple._1.id, BehaviorVersionQueries.tuple2BehaviorVersion(tuple._2))
+    val raw = tuple._1
+    DataTypeConfig(raw.id, raw.maybeUsesCode, BehaviorVersionQueries.tuple2BehaviorVersion(tuple._2))
   }
 
   def uncompiledAllForQuery(groupVersionId: Rep[String]) = {

@@ -9,6 +9,7 @@ import scala.concurrent.Future
 
 case class DataTypeConfig(
                           id: String,
+                          maybeUsesCode: Option[Boolean],
                           behaviorVersion: BehaviorVersion
                         ) {
 
@@ -65,5 +66,5 @@ case class DataTypeConfig(
        |  $deleteFieldName(id: ID!): $outputName"""
   }
 
-  def toRaw: RawDataTypeConfig = RawDataTypeConfig(id, behaviorVersion.id)
+  def toRaw: RawDataTypeConfig = RawDataTypeConfig(id, maybeUsesCode, behaviorVersion.id)
 }

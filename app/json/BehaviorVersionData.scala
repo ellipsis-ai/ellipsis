@@ -138,7 +138,7 @@ object BehaviorVersionData {
   }
 
   def newUnsavedFor(teamId: String, isDataType: Boolean, dataService: DataService): BehaviorVersionData = {
-    val maybeDataTypeConfig = if (isDataType) { Some(DataTypeConfigData(Seq())) } else { None }
+    val maybeDataTypeConfig = if (isDataType) { Some(DataTypeConfigData(Seq(), None)) } else { None }
     buildFor(
       Some(IDs.next),
       teamId,
@@ -244,7 +244,7 @@ object BehaviorVersionData {
         val config = BehaviorConfig(maybeExportId, behaviorVersion.maybeName, maybeAWSConfigData, Some(behaviorVersion.forcePrivateResponse), behavior.isDataType)
         val maybeEnsuredDataTypeConfigData = maybeDataTypeConfigData.orElse {
           if (behavior.isDataType) {
-            Some(DataTypeConfigData(Seq()))
+            Some(DataTypeConfigData(Seq(), None))
           } else {
             None
           }

@@ -7,7 +7,8 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
 case class DataTypeConfigData(
-                               fields: Seq[DataTypeFieldData]
+                               fields: Seq[DataTypeFieldData],
+                               usesCode: Option[Boolean]
                              )
 
 object DataTypeConfigData {
@@ -24,7 +25,7 @@ object DataTypeConfigData {
       val fieldData = withFieldType.map { case(field, fieldTypeData) =>
         DataTypeFieldData(Some(field.id), Some(field.fieldId), None, field.name, Some(fieldTypeData))
       }
-      DataTypeConfigData(fieldData)
+      DataTypeConfigData(fieldData, config.maybeUsesCode)
     }
   }
 }

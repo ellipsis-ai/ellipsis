@@ -2,6 +2,7 @@
 
 CREATE TABLE data_type_configs(
   id TEXT PRIMARY KEY,
+  uses_code BOOLEAN,
   behavior_version_id TEXT NOT NULL REFERENCES behavior_versions(id)
 );
 
