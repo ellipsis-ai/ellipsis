@@ -4,6 +4,7 @@ import java.time.OffsetDateTime
 
 import models.behaviors.scheduling.scheduledbehavior.ScheduledBehavior
 import models.behaviors.scheduling.scheduledmessage.ScheduledMessage
+import utils.ChannelLike
 
 case class ScheduledActionArgumentData(name: String, value: String)
 
@@ -19,7 +20,13 @@ case class ScheduledActionData(
                                 secondRecurrence: Option[OffsetDateTime],
                                 useDM: Boolean,
                                 channel: String
-                              )
+                              ) {
+  def visibleToSlackUser(slackUserId: String, channelList: Seq[ChannelLike]): Boolean = {
+    channelList.exists { someChannel =>
+      someChannel.id == channel && someChannel.visibleToUser(slackUserId)
+    }
+  }
+}
 
 object ScheduledActionData {
   def fromScheduledMessage(scheduledMessage: ScheduledMessage): ScheduledActionData = {

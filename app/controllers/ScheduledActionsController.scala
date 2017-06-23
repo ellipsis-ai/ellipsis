@@ -51,25 +51,37 @@ class ScheduledActionsController @Inject()(
               behaviorGroups <- dataService.behaviorGroups.allFor(team)
               groupData <- Future.sequence(behaviorGroups.map { group =>
                 BehaviorGroupData.maybeFor(group.id, user, None, dataService)
-              }
-              ).map(_.flatten.sorted)
+              }).map(_.flatten.sorted)
               maybeSlackLinkedAccount <- dataService.linkedAccounts.maybeForSlackFor(user)
               maybeSlackProfile <- maybeSlackLinkedAccount.map { linkedAccount =>
                 dataService.slackProfiles.find(linkedAccount.loginInfo)
               }.getOrElse(Future.successful(None))
             } yield {
+              val maybeSlackUserId = maybeSlackProfile.map(_.loginInfo.providerKey)
+
+              val visibleChannels = maybeSlackUserId.map { slackUserId =>
+                channelList.filter(_.visibleToUser(slackUserId))
+              }.getOrElse(Seq())
+
               val scheduledMessageData = scheduledMessages.map(ScheduledActionData.fromScheduledMessage)
               val scheduledBehaviorData = scheduledBehaviors.map(ScheduledActionData.fromScheduledBehavior)
+
+              /* TODO: once our scheduling models are medium-aware, should filter out Slack channels
+                 for someone without a Slack user ID */
+              val visibleActionData = maybeSlackUserId.map { slackUserId =>
+                (scheduledMessageData ++ scheduledBehaviorData).filter(_.visibleToSlackUser(slackUserId, channelList))
+              }.getOrElse(Seq())
+
               val pageData = ScheduledActionsConfig(
                 containerId = "scheduling",
                 csrfToken = CSRF.getToken(request).map(_.value),
                 teamId = team.id,
-                scheduledActions = scheduledMessageData ++ scheduledBehaviorData,
-                channelList = ScheduleChannelData.fromChannelLikeList(channelList),
+                scheduledActions = visibleActionData,
+                channelList = ScheduleChannelData.fromChannelLikeList(visibleChannels),
                 behaviorGroups = groupData,
                 teamTimeZone = team.maybeTimeZone.map(_.toString),
                 teamTimeZoneName = team.maybeTimeZone.map(_.getDisplayName(TextStyle.FULL, Locale.ENGLISH)),
-                slackUserId = maybeSlackProfile.map(_.loginInfo.providerKey),
+                slackUserId = maybeSlackUserId,
                 slackBotUserId = maybeBotProfile.map(_.userId),
                 selectedScheduleId = maybeScheduledId,
                 newAction = maybeNewSchedule

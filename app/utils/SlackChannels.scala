@@ -14,6 +14,10 @@ trait ChannelLike {
   val name: String
   val isPublic: Boolean
   val isArchived: Boolean
+
+  def visibleToUser(userId: String): Boolean = {
+    isPublic || members.contains(userId)
+  }
 }
 
 case class SlackChannel(channel: Channel) extends ChannelLike {
