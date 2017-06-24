@@ -28,14 +28,14 @@ class GraphQLServiceSpec extends DBSpec {
         val behaviorVersionData =
           BehaviorVersionData.newUnsavedFor(group.team.id, isDataType = true, dataService).
             copy(name = Some("SomeType")).
-            copy(dataTypeConfig = Some(DataTypeConfigData(Seq(DataTypeFieldData.newUnsavedNamed("foo", textTypeData(dataService))))))
+            copy(dataTypeConfig = Some(DataTypeConfigData(Seq(DataTypeFieldData.newUnsavedNamed("foo", textTypeData(dataService))), Some(false))))
         val behaviorVersionData2 =
           BehaviorVersionData.newUnsavedFor(group.team.id, isDataType = true, dataService).
             copy(name = Some("SomeType2")).
             copy(dataTypeConfig = Some(DataTypeConfigData(Seq(
               DataTypeFieldData.newUnsavedNamed("someType", BehaviorParameterTypeData(behaviorVersionData.behaviorId, None, behaviorVersionData.name.get, None)),
               DataTypeFieldData.newUnsavedNamed("bar", numberTypeData(dataService))
-            ))))
+            ), Some(false))))
         val groupData = newGroupVersionDataFor(group, user).copy(
           behaviorVersions = Seq(behaviorVersionData, behaviorVersionData2)
         )
@@ -83,14 +83,14 @@ class GraphQLServiceSpec extends DBSpec {
         val behaviorVersionData =
           BehaviorVersionData.newUnsavedFor(group.team.id, isDataType = true, dataService).
             copy(name = Some("SomeType")).
-            copy(dataTypeConfig = Some(DataTypeConfigData(Seq(DataTypeFieldData.newUnsavedNamed("foo", textTypeData(dataService))))))
+            copy(dataTypeConfig = Some(DataTypeConfigData(Seq(DataTypeFieldData.newUnsavedNamed("foo", textTypeData(dataService))), Some(false))))
         val behaviorVersionData2 =
           BehaviorVersionData.newUnsavedFor(group.team.id, isDataType = true, dataService).
             copy(name = Some("SomeType2")).
             copy(dataTypeConfig = Some(DataTypeConfigData(Seq(
               DataTypeFieldData.newUnsavedNamed("someType", BehaviorParameterTypeData(behaviorVersionData.behaviorId, None, behaviorVersionData.name.get, None)),
               DataTypeFieldData.newUnsavedNamed("bar", numberTypeData(dataService))
-            ))))
+            ), Some(false))))
         val groupData = newGroupVersionDataFor(group, user).copy(
           behaviorVersions = Seq(behaviorVersionData, behaviorVersionData2)
         )
