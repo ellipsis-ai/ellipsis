@@ -15,7 +15,7 @@ import play.api.Configuration
 import play.api.cache.CacheApi
 import play.api.libs.json.{JsString, JsValue}
 import play.api.libs.ws.WSClient
-import services.{AWSLambdaConstants, AWSLambdaService, DataService}
+import services._
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -41,12 +41,10 @@ case class BehaviorResponse(
                              maybeConversation: Option[Conversation],
                              parametersWithValues: Seq[ParameterWithValue],
                              maybeActivatedTrigger: Option[MessageTrigger],
-                             lambdaService: AWSLambdaService,
-                             dataService: DataService,
-                             cache: CacheApi,
-                             ws: WSClient,
-                             configuration: Configuration
+                             services: DefaultServices
                              ) {
+
+  val dataService: DataService = services.dataService
 
   def hasAllParamValues: Boolean = {
     parametersWithValues.forall(_.hasValidValue)
@@ -116,7 +114,7 @@ case class BehaviorResponse(
                   dataService.collectedParameterValues.ensureFor(p.parameter, convo, v.text)
                 }.getOrElse(Future.successful(Unit))
               })
-              result <- convo.resultFor(event, lambdaService, dataService, cache, ws, configuration, actorSystem)
+              result <- convo.resultFor(event, services)
             } yield result
           }
         }
@@ -132,18 +130,15 @@ object BehaviorResponse {
                                behaviorVersion: BehaviorVersion,
                                paramValues: Map[String, String],
                                maybeConversation: Option[Conversation],
-                               dataService: DataService,
-                               cache: CacheApi,
-                               configuration: Configuration,
-                               actorSystem: ActorSystem
+                               services: DefaultServices
                              ): Future[Seq[ParameterWithValue]] = {
     for {
-      params <- dataService.behaviorParameters.allFor(behaviorVersion)
+      params <- services.dataService.behaviorParameters.allFor(behaviorVersion)
       invocationNames <- Future.successful(params.zipWithIndex.map { case (p, i) =>
         AWSLambdaConstants.invocationParamFor(i)
       })
       values <- Future.sequence(params.zip(invocationNames).map { case(param, invocationName) =>
-        val context = BehaviorParameterContext(event, maybeConversation, param, cache, dataService, configuration, actorSystem)
+        val context = BehaviorParameterContext(event, maybeConversation, param, services)
         paramValues.get(invocationName).map { v =>
           for {
             isValid <- param.paramType.isValid(v, context)
@@ -164,15 +159,10 @@ object BehaviorResponse {
                 paramValues: Map[String, String],
                 maybeActivatedTrigger: Option[MessageTrigger],
                 maybeConversation: Option[Conversation],
-                lambdaService: AWSLambdaService,
-                dataService: DataService,
-                cache: CacheApi,
-                ws: WSClient,
-                configuration: Configuration,
-                actorSystem: ActorSystem
+                services: DefaultServices
                 ): Future[BehaviorResponse] = {
-    parametersWithValuesFor(event, behaviorVersion, paramValues, maybeConversation, dataService, cache, configuration, actorSystem).map { paramsWithValues =>
-      BehaviorResponse(event, behaviorVersion, maybeConversation, paramsWithValues, maybeActivatedTrigger, lambdaService, dataService, cache, ws, configuration)
+    parametersWithValuesFor(event, behaviorVersion, paramValues, maybeConversation, services).map { paramsWithValues =>
+      BehaviorResponse(event, behaviorVersion, maybeConversation, paramsWithValues, maybeActivatedTrigger, services)
     }
   }
 
@@ -180,13 +170,8 @@ object BehaviorResponse {
               event: Event,
               maybeTeam: Option[Team],
               maybeLimitToBehavior: Option[Behavior],
-              lambdaService: AWSLambdaService,
-              dataService: DataService,
-              cache: CacheApi,
-              ws: WSClient,
-              configuration: Configuration,
-              actorSystem: ActorSystem
+              services: DefaultServices
                ): Future[Seq[BehaviorResponse]] = {
-    event.allBehaviorResponsesFor(maybeTeam, maybeLimitToBehavior, lambdaService, dataService, cache, ws, configuration, actorSystem)
+    event.allBehaviorResponsesFor(maybeTeam, maybeLimitToBehavior, services)
   }
 }

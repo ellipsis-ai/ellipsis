@@ -1,13 +1,10 @@
 package models.behaviors.conversations
 
-import akka.actor.ActorSystem
 import models.accounts.user.User
 import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.events.Event
 import models.behaviors.{BotResult, SimpleTextResult}
-import play.api.Configuration
-import play.api.cache.CacheApi
-import services.DataService
+import services.DefaultServices
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -15,11 +12,10 @@ import scala.concurrent.Future
 case class UserEnvVarCollectionState(
                                       missingEnvVarNames: Seq[String],
                                       event: Event,
-                                      dataService: DataService,
-                                      cache: CacheApi,
-                                      configuration: Configuration,
-                                      actorSystem: ActorSystem
+                                      services: DefaultServices
                                     ) extends CollectionState {
+
+  val dataService = services.dataService
 
   val name = InvokeBehaviorConversation.COLLECT_USER_ENV_VARS_STATE
 
@@ -38,7 +34,7 @@ case class UserEnvVarCollectionState(
       updatedConversation <- maybeNextToCollect.map { envVarName =>
         dataService.userEnvironmentVariables.ensureFor(envVarName, Some(event.relevantMessageText), user).map(_ => conversation)
       }.getOrElse(Future.successful(conversation))
-      updatedConversation <- updatedConversation.updateToNextState(event, cache, dataService, configuration, actorSystem)
+      updatedConversation <- updatedConversation.updateToNextState(event, services)
     } yield updatedConversation
   }
 
@@ -61,13 +57,10 @@ object UserEnvVarCollectionState {
             user: User,
             conversation: Conversation,
             event: Event,
-            dataService: DataService,
-            cache: CacheApi,
-            configuration: Configuration,
-            actorSystem: ActorSystem
+            services: DefaultServices
           ): Future[UserEnvVarCollectionState] = {
-    dataService.userEnvironmentVariables.missingFor(user, conversation.behaviorVersion, dataService).map { missing =>
-      UserEnvVarCollectionState(missing, event, dataService, cache, configuration, actorSystem)
+    services.dataService.userEnvironmentVariables.missingFor(user, conversation.behaviorVersion, services.dataService).map { missing =>
+      UserEnvVarCollectionState(missing, event, services)
     }
   }
 

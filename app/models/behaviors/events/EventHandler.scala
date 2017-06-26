@@ -2,16 +2,11 @@ package models.behaviors.events
 
 import javax.inject._
 
-import akka.actor.ActorSystem
 import models.behaviors.builtins.BuiltinBehavior
 import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.events.SlackMessageActionConstants._
 import models.behaviors.{BehaviorResponse, BotResult, SimpleTextResult, TextWithActionsResult}
-import play.api.Configuration
-import play.api.cache.CacheApi
-import play.api.i18n.MessagesApi
-import play.api.libs.ws.WSClient
-import services.{AWSLambdaService, DataService}
+import services.DefaultServices
 import utils.Color
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -19,20 +14,16 @@ import scala.concurrent.Future
 import scala.concurrent.duration._
 
 @Singleton
-class EventHandler @Inject() (
-                               lambdaService: AWSLambdaService,
-                               dataService: DataService,
-                               cache: CacheApi,
-                               messages: MessagesApi,
-                               ws: WSClient,
-                               configuration: Configuration,
-                               implicit val actorSystem: ActorSystem
-                               ) {
+class EventHandler @Inject() (services: DefaultServices) {
+
+  val dataService = services.dataService
+  val lambdaService = services.lambdaService
+  implicit val actorService = services.actorSystem
 
   def startInvokeConversationFor(event: Event): Future[Seq[BotResult]] = {
     for {
       maybeTeam <- dataService.teams.find(event.teamId)
-      responses <- BehaviorResponse.allFor(event, maybeTeam, None, lambdaService, dataService, cache, ws, configuration, actorSystem)
+      responses <- BehaviorResponse.allFor(event, maybeTeam, None, services)
       results <- Future.sequence(responses.map(_.result)).flatMap { r =>
         if (r.isEmpty && event.isResponseExpected) {
           event.noExactMatchResult(dataService, lambdaService).map { noMatchResult =>
@@ -70,12 +61,12 @@ class EventHandler @Inject() (
         cancelConversationResult(event, updatedConvo, s"OK, I’ll stop asking about that.")
       } else {
         if (originalConvo.isStale) {
-          updatedConvo.maybeNextParamToCollect(event, lambdaService, dataService, cache, ws, configuration, actorSystem).map { maybeNextParam =>
+          updatedConvo.maybeNextParamToCollect(event, services).map { maybeNextParam =>
             val maybeLastPrompt = maybeNextParam.map { nextParam =>
               nextParam.input.question
             }
             val key = updatedConvo.pendingEventKey
-            cache.set(key, event, 5.minutes)
+            services.cache.set(key, event, 5.minutes)
             val actions = Seq(
               SlackMessageActionButton(CONFIRM_CONTINUE_CONVERSATION, "Yes, it's an answer", updatedConvo.id),
               SlackMessageActionButton(DONT_CONTINUE_CONVERSATION, "No, not an answer", updatedConvo.id)
@@ -92,7 +83,7 @@ class EventHandler @Inject() (
             TextWithActionsResult(event, Some(updatedConvo), prompt, forcePrivateResponse = false, attachment)
           }
         } else {
-          updatedConvo.resultFor(event, lambdaService, dataService, cache, ws, configuration, actorSystem)
+          updatedConvo.resultFor(event, services)
         }
       }
     }

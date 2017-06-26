@@ -1,15 +1,12 @@
 package models.behaviors.conversations
 
-import akka.actor.ActorSystem
 import models.accounts.linkedsimpletoken.LinkedSimpleToken
 import models.accounts.simpletokenapi.SimpleTokenApi
 import models.accounts.user.User
 import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.events.Event
 import models.behaviors.{BotResult, SimpleTextResult}
-import play.api.Configuration
-import play.api.cache.CacheApi
-import services.DataService
+import services.DefaultServices
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -17,11 +14,10 @@ import scala.concurrent.Future
 case class SimpleTokenCollectionState(
                                        missingTokenApis: Seq[SimpleTokenApi],
                                        event: Event,
-                                       dataService: DataService,
-                                       cache: CacheApi,
-                                       configuration: Configuration,
-                                       actorSystem: ActorSystem
+                                       services: DefaultServices
                                     ) extends CollectionState {
+
+  val dataService = services.dataService
 
   val name = InvokeBehaviorConversation.COLLECT_SIMPLE_TOKENS_STATE
 
@@ -39,7 +35,7 @@ case class SimpleTokenCollectionState(
         val token = event.relevantMessageText.trim
         dataService.linkedSimpleTokens.save(LinkedSimpleToken(token, user.id, api)).map(_ => conversation)
       }.getOrElse(Future.successful(conversation))
-      updatedConversation <- updatedConversation.updateToNextState(event, cache, dataService, configuration, actorSystem)
+      updatedConversation <- updatedConversation.updateToNextState(event, services)
     } yield updatedConversation
   }
 
@@ -68,11 +64,9 @@ object SimpleTokenCollectionState {
             user: User,
             conversation: Conversation,
             event: Event,
-            dataService: DataService,
-            cache: CacheApi,
-            configuration: Configuration,
-            actorSystem: ActorSystem
+            services: DefaultServices
           ): Future[SimpleTokenCollectionState] = {
+    val dataService = services.dataService
     for {
       tokens <- dataService.linkedSimpleTokens.allForUser(user)
       requiredTokenApis <- dataService.requiredSimpleTokenApis.allFor(conversation.behaviorVersion.groupVersion)
@@ -80,7 +74,7 @@ object SimpleTokenCollectionState {
       val missing = requiredTokenApis.filterNot { required =>
         tokens.exists(linked => linked.api == required.api)
       }.map(_.api)
-      SimpleTokenCollectionState(missing, event, dataService, cache, configuration, actorSystem)
+      SimpleTokenCollectionState(missing, event, services)
     }
   }
 

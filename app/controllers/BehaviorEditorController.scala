@@ -2,26 +2,21 @@ package controllers
 
 import javax.inject.Inject
 
-import akka.actor.ActorSystem
 import com.mohiva.play.silhouette.api.Silhouette
 import com.mohiva.play.silhouette.api.actions.SecuredRequest
 import json.Formatting._
 import json._
-import models.accounts.user.User
 import models.behaviors.behaviorparameter.TextType
 import models.behaviors.testing.{InvocationTester, TestEvent, TriggerTester}
 import models.behaviors.triggers.messagetrigger.MessageTrigger
 import models.silhouette.EllipsisEnv
-import play.api.Configuration
-import play.api.cache.CacheApi
 import play.api.data.Form
 import play.api.data.Forms._
 import play.api.i18n.MessagesApi
 import play.api.libs.json._
-import play.api.libs.ws.WSClient
 import play.api.mvc.{AnyContent, Result}
 import play.filters.csrf.CSRF
-import services.{AWSLambdaService, DataService}
+import services.DefaultServices
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -29,13 +24,12 @@ import scala.concurrent.Future
 class BehaviorEditorController @Inject() (
                                            val messagesApi: MessagesApi,
                                            val silhouette: Silhouette[EllipsisEnv],
-                                           val configuration: Configuration,
-                                           val dataService: DataService,
-                                           val lambdaService: AWSLambdaService,
-                                           val cache: CacheApi,
-                                           val ws: WSClient,
-                                           val actorSystem: ActorSystem
+                                           val services: DefaultServices
                                          ) extends ReAuthable {
+
+  val dataService = services.dataService
+  val configuration = services.configuration
+  val ws = services.ws
 
   def newGroup(maybeTeamId: Option[String]) = silhouette.SecuredAction.async { implicit request =>
     val user = request.identity
@@ -260,7 +254,7 @@ class BehaviorEditorController @Inject() (
           }.getOrElse(Future.successful(None))
           maybeReport <- maybeBehaviorVersion.map { behaviorVersion =>
             val event = TestEvent(user, behaviorVersion.team, info.message, includesBotMention = true)
-            TriggerTester(lambdaService, dataService, cache, ws, configuration, actorSystem).test(event, behaviorVersion).map(Some(_))
+            TriggerTester(services).test(event, behaviorVersion).map(Some(_))
           }.getOrElse(Future.successful(None))
 
         } yield {
@@ -299,7 +293,7 @@ class BehaviorEditorController @Inject() (
                 dataService.behaviors.maybeCurrentVersionFor(behavior)
               }.getOrElse(Future.successful(None))
               maybeReport <- maybeBehaviorVersion.map { behaviorVersion =>
-                InvocationTester(user, behaviorVersion, paramValues, lambdaService, dataService, cache, configuration, actorSystem).run.map(Some(_))
+                InvocationTester(user, behaviorVersion, paramValues, services).run.map(Some(_))
               }.getOrElse(Future.successful(None))
             } yield {
               maybeReport.map { report =>

@@ -22,6 +22,8 @@ case class DataTypeConfig(
   lazy val outputName: String = GraphQLHelpers.formatTypeName(name)
   lazy val inputName: String = outputName ++ "Input"
 
+  def usesCode: Boolean = maybeUsesCode.isEmpty || maybeUsesCode.contains(true)
+
   def outputFields(dataService: DataService): Future[String] = {
     dataService.dataTypeFields.allFor(this).map { fields =>
       "  " ++ fields.sortBy(_.name).map(_.output).mkString("\n  ")

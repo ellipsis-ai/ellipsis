@@ -9,7 +9,7 @@ import drivers.SlickPostgresDriver.api._
 import play.api.Configuration
 import play.api.cache.CacheApi
 import play.api.libs.ws.WSClient
-import services.{AWSLambdaService, DataService}
+import services.{AWSLambdaService, DataService, DefaultServices}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -52,19 +52,15 @@ class ConversationsTable(tag: Tag) extends Table[RawConversation](tag, "conversa
 }
 
 class ConversationServiceImpl @Inject() (
-                                          dataServiceProvider: Provider[DataService],
-                                          lambdaServiceProvider: Provider[AWSLambdaService],
-                                          cacheProvider: Provider[CacheApi],
-                                          wsProvider: Provider[WSClient],
-                                          configurationProvider: Provider[Configuration],
-                                          actorSystem: ActorSystem
+                                          servicesProvider: Provider[DefaultServices]
                                          ) extends ConversationService {
 
-  def dataService: DataService = dataServiceProvider.get
-  def lambdaService: AWSLambdaService = lambdaServiceProvider.get
-  def cache: CacheApi = cacheProvider.get
-  def ws: WSClient = wsProvider.get
-  def configuration: Configuration = configurationProvider.get
+  def services: DefaultServices = servicesProvider.get
+  def dataService: DataService = services.dataService
+  def lambdaService: AWSLambdaService = services.lambdaService
+  def cache: CacheApi = services.cache
+  def ws: WSClient = services.ws
+  def configuration: Configuration = services.configuration
 
   import ConversationQueries._
 
@@ -169,7 +165,7 @@ class ConversationServiceImpl @Inject() (
       _ <- maybeEvent.map { event =>
         val convoWithThreadId = conversation.copyWithMaybeThreadId(maybeLastTs)
         dataService.conversations.save(convoWithThreadId).flatMap { _ =>
-          convoWithThreadId.respond(event, isReminding=false, lambdaService, dataService, cache, ws, configuration, actorSystem).map { result =>
+          convoWithThreadId.respond(event, isReminding=false, services).map { result =>
             result.sendIn(None, dataService)
           }
         }

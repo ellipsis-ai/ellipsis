@@ -2,17 +2,13 @@ package models.behaviors.conversations.conversation
 
 import java.time.OffsetDateTime
 
-import akka.actor.ActorSystem
 import models.behaviors._
 import models.behaviors.behaviorparameter.BehaviorParameter
 import models.behaviors.behaviorversion.BehaviorVersion
 import models.behaviors.events.SlackMessageActionConstants._
 import models.behaviors.events.{Event, SlackMessageActionButton, SlackMessageActions, SlackMessageEvent}
 import models.behaviors.triggers.messagetrigger.MessageTrigger
-import play.api.Configuration
-import play.api.cache.CacheApi
-import play.api.libs.ws.WSClient
-import services.{AWSLambdaService, DataService}
+import services.{DataService, DefaultServices}
 import utils.SlackTimestamp
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -72,54 +68,32 @@ trait Conversation {
 
   def updateStateTo(newState: String, dataService: DataService): Future[Conversation]
   def cancel(dataService: DataService): Future[Conversation] = updateStateTo(Conversation.DONE_STATE, dataService)
-  def updateWith(event: Event, lambdaService: AWSLambdaService, dataService: DataService, cache: CacheApi, configuration: Configuration, actorSystem: ActorSystem): Future[Conversation]
+  def updateWith(event: Event, services: DefaultServices): Future[Conversation]
   def respond(
                event: Event,
                isReminding: Boolean,
-               lambdaService: AWSLambdaService,
-               dataService: DataService,
-               cache: CacheApi,
-               ws: WSClient,
-               configuration: Configuration,
-               actorSystem: ActorSystem
+               services: DefaultServices
              ): Future[BotResult]
 
   def resultFor(
                  event: Event,
-                 lambdaService: AWSLambdaService,
-                 dataService: DataService,
-                 cache: CacheApi,
-                 ws: WSClient,
-                 configuration: Configuration,
-                 actorSystem: ActorSystem
+                 services: DefaultServices
                ): Future[BotResult] = {
     for {
-      updatedConversation <- updateWith(event, lambdaService, dataService, cache, configuration, actorSystem)
-      result <- updatedConversation.respond(event, isReminding=false, lambdaService, dataService, cache, ws, configuration, actorSystem)
+      updatedConversation <- updateWith(event, services)
+      result <- updatedConversation.respond(event, isReminding=false, services)
     } yield result
   }
 
   def maybeNextParamToCollect(
                                event: Event,
-                               lambdaService: AWSLambdaService,
-                               dataService: DataService,
-                               cache: CacheApi,
-                               ws: WSClient,
-                               configuration: Configuration,
-                               actorSystem: ActorSystem
+                               services: DefaultServices
                              ): Future[Option[BehaviorParameter]]
 
-  def maybeRemindResult(
-                        lambdaService: AWSLambdaService,
-                        dataService: DataService,
-                        cache: CacheApi,
-                        ws: WSClient,
-                        configuration: Configuration,
-                        actorSystem: ActorSystem
-                      ): Future[Option[BotResult]] = {
-    maybePlaceholderEvent(dataService).flatMap { maybeEvent =>
+  def maybeRemindResult(services: DefaultServices): Future[Option[BotResult]] = {
+    maybePlaceholderEvent(services.dataService).flatMap { maybeEvent =>
       maybeEvent.map { event =>
-        respond(event, isReminding=true, lambdaService, dataService, cache, ws, configuration, actorSystem).map { result =>
+        respond(event, isReminding=true, services).map { result =>
           val intro = s"Hey <@$userIdForContext>, don’t forget, I’m still waiting for your answer to this:"
           val actions = Seq(SlackMessageActionButton(STOP_CONVERSATION, "Stop asking", id))
           val question = result.text

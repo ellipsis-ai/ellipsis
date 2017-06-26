@@ -2,11 +2,9 @@ package actors
 
 import javax.inject.Inject
 
-import akka.actor.{Actor, ActorSystem}
-import play.api.cache.CacheApi
-import play.api.libs.ws.WSClient
-import play.api.{Configuration, Logger}
-import services.{AWSLambdaService, DataService}
+import akka.actor.Actor
+import play.api.Logger
+import services.DefaultServices
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -16,14 +14,10 @@ object ConversationReminderActor {
   final val name = "conversationReminder"
 }
 
-class ConversationReminderActor @Inject()(
-                                          val lambdaService: AWSLambdaService,
-                                          val dataService: DataService,
-                                          val cache: CacheApi,
-                                          val ws: WSClient,
-                                          val configuration: Configuration,
-                                          implicit val actorSystem: ActorSystem
-                                        ) extends Actor {
+class ConversationReminderActor @Inject()(val services: DefaultServices) extends Actor {
+
+  val dataService = services.dataService
+  implicit val actorSystem = services.actorSystem
 
   // initial delay of 1 minute so that, in the case of errors & actor restarts, it doesn't hammer external APIs
   val tick = context.system.scheduler.schedule(1 minute, 1 minute, self, "tick")
@@ -36,7 +30,7 @@ class ConversationReminderActor @Inject()(
     case "tick" => {
       dataService.conversations.allNeedingReminder.flatMap { pending =>
         Future.sequence(pending.map { ea =>
-          ea.maybeRemindResult(lambdaService, dataService, cache, ws, configuration, actorSystem).flatMap { maybeResult =>
+          ea.maybeRemindResult(services).flatMap { maybeResult =>
             maybeResult.map { result =>
               result.sendIn(None, dataService, None).flatMap { maybeSendResult =>
                 dataService.conversations.touch(ea)

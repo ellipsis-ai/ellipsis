@@ -1,14 +1,10 @@
 package models.behaviors.events
 
-import akka.actor.ActorSystem
 import models.behaviors.BehaviorResponse
 import models.behaviors.behavior.Behavior
 import models.behaviors.conversations.conversation.Conversation
 import models.team.Team
-import play.api.Configuration
-import play.api.cache.CacheApi
-import play.api.libs.ws.WSClient
-import services.{AWSLambdaService, DataService}
+import services.{DataService, DefaultServices}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -27,13 +23,9 @@ trait MessageEvent extends Event {
   def allBehaviorResponsesFor(
                               maybeTeam: Option[Team],
                               maybeLimitToBehavior: Option[Behavior],
-                              lambdaService: AWSLambdaService,
-                              dataService: DataService,
-                              cache: CacheApi,
-                              ws: WSClient,
-                              configuration: Configuration,
-                              actorSystem: ActorSystem
+                              services: DefaultServices
                             ): Future[Seq[BehaviorResponse]] = {
+    val dataService = services.dataService
     for {
       maybeLimitToBehaviorVersion <- maybeLimitToBehavior.map { limitToBehavior =>
         dataService.behaviors.maybeCurrentVersionFor(limitToBehavior)
@@ -81,12 +73,7 @@ trait MessageEvent extends Event {
             trigger.invocationParamsFor(this, params),
             Some(trigger),
             None,
-            lambdaService,
-            dataService,
-            cache,
-            ws,
-            configuration,
-            actorSystem
+            services
           )
         } yield response
       })

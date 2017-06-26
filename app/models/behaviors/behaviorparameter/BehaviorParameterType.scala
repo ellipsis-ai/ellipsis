@@ -222,7 +222,7 @@ case class BehaviorBackedDataType(dataTypeConfig: DataTypeConfig) extends Behavi
 
   def editLinkFor(context: BehaviorParameterContext) = {
     val behavior = behaviorVersion.behavior
-    val link = context.dataService.behaviors.editLinkFor(behavior.group.id, Some(behavior.id), context.configuration)
+    val link = context.dataService.behaviors.editLinkFor(behavior.group.id, Some(behavior.id), context.services.configuration)
     s"[${context.parameter.paramType.name}]($link)"
   }
 
@@ -343,11 +343,34 @@ case class BehaviorBackedDataType(dataTypeConfig: DataTypeConfig) extends Behavi
   }
 
   private def fetchValidValues(maybeSearchQuery: Option[String], context: BehaviorParameterContext): Future[Seq[ValidValue]] = {
-    fetchValidValuesResult(maybeSearchQuery, context).map { maybeResult =>
-      maybeResult.map {
-        case r: SuccessResult => extractValidValues(r)
-        case r: BotResult => Seq()
-      }.getOrElse(Seq())
+    if (dataTypeConfig.usesCode) {
+      fetchValidValuesResult(maybeSearchQuery, context).map { maybeResult =>
+        maybeResult.map {
+          case r: SuccessResult => extractValidValues(r)
+          case r: BotResult => Seq()
+        }.getOrElse(Seq())
+      }
+    } else {
+      val filter = maybeSearchQuery.map { searchQuery =>
+        s"""{ label: $searchQuery }"""
+      }.getOrElse("{}")
+      dataTypeConfig.outputFields(context.dataService).flatMap { fieldStr =>
+        val query =
+          s"""{
+             |  ${dataTypeConfig.listName}(filter: $filter) {
+             |  $fieldStr
+             |  }
+             |}
+         """.stripMargin
+        context.services.graphQLService.runQuery(behaviorVersion.group, query, None, None).map { queryResult =>
+          (queryResult.get \ "data").asOpt[JsArray].map {
+            case arr: JsArray => arr.value.flatMap { ea =>
+              extractValidValueFrom(ea)
+            }
+            case _ => Seq()
+          }.getOrElse(Seq())
+        }
+      }
     }
   }
 
@@ -454,7 +477,7 @@ case class BehaviorBackedDataType(dataTypeConfig: DataTypeConfig) extends Behavi
     }
     context.event match {
       case event: SlackMessageEvent => {
-        implicit val actorSystem = context.actorSystem
+        implicit val actorSystem = context.services.actorSystem
         SlackMessageReactionHandler.handle(event.clientFor(context.dataService), eventualPrompt, event.channel, event.ts)
       }
       case _ =>

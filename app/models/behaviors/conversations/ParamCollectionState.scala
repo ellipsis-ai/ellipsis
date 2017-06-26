@@ -1,15 +1,12 @@
 package models.behaviors.conversations
 
-import akka.actor.ActorSystem
 import models.behaviors.behaviorparameter.{BehaviorParameter, BehaviorParameterContext}
 import models.behaviors.conversations.collectedparametervalue.CollectedParameterValue
 import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.events.Event
 import models.behaviors.savedanswer.SavedAnswer
 import models.behaviors.{BotResult, SimpleTextResult}
-import play.api.Configuration
-import play.api.cache.CacheApi
-import services.{AWSLambdaConstants, DataService}
+import services.{AWSLambdaConstants, DefaultServices}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -19,10 +16,7 @@ case class ParamCollectionState(
                                  collected: Seq[CollectedParameterValue],
                                  savedAnswers: Seq[SavedAnswer],
                                  event: Event,
-                                 dataService: DataService,
-                                 cache: CacheApi,
-                                 configuration: Configuration,
-                                 actorSystem: ActorSystem
+                                 services: DefaultServices
                                ) extends CollectionState {
 
   val name = InvokeBehaviorConversation.COLLECT_PARAM_VALUES_STATE
@@ -35,7 +29,7 @@ case class ParamCollectionState(
     }
 
     val eventualWithHasValidValue = Future.sequence(tuples.map { case(param, maybeCollected, maybeSaved) =>
-      val context = BehaviorParameterContext(event, Some(conversation), param, cache, dataService, configuration, actorSystem)
+      val context = BehaviorParameterContext(event, Some(conversation), param, services)
       val maybeValue = maybeCollected.map(_.valueString).orElse(maybeSaved.map(_.valueString))
       val eventualHasValidValue = maybeValue.map { valueString =>
         param.paramType.isValid(valueString, context)
@@ -72,10 +66,10 @@ case class ParamCollectionState(
     for {
       maybeNextToCollect <- maybeNextToCollect(conversation)
       updatedConversation <- maybeNextToCollect.map { case(param, maybeValue) =>
-        val context = BehaviorParameterContext(event, Some(conversation), param, cache, dataService, configuration, actorSystem)
+        val context = BehaviorParameterContext(event, Some(conversation), param, services)
         param.paramType.handleCollected(event, context).map(_ => conversation)
       }.getOrElse(Future.successful(conversation))
-      updatedConversation <- updatedConversation.updateToNextState(event, cache, dataService, configuration, actorSystem)
+      updatedConversation <- updatedConversation.updateToNextState(event, services)
     } yield updatedConversation
   }
 
@@ -83,7 +77,7 @@ case class ParamCollectionState(
     for {
       maybeNextToCollect <- maybeNextToCollect(conversation)
       result <- maybeNextToCollect.map { case(param, maybeValue) =>
-        val context = BehaviorParameterContext(event, Some(conversation), param, cache, dataService, configuration, actorSystem)
+        val context = BehaviorParameterContext(event, Some(conversation), param, services)
         param.prompt(maybeValue, context, this, isReminding)
       }.getOrElse {
         Future.successful("All done!")
@@ -100,17 +94,15 @@ object ParamCollectionState {
   def from(
             conversation: Conversation,
             event: Event,
-            dataService: DataService,
-            cache: CacheApi,
-            configuration: Configuration,
-            actorSystem: ActorSystem
+            services: DefaultServices
           ): Future[ParamCollectionState] = {
+    val dataService = services.dataService
     for {
       params <- dataService.behaviorParameters.allFor(conversation.behaviorVersion)
       collected <- dataService.collectedParameterValues.allFor(conversation)
       user <- event.ensureUser(dataService)
       savedAnswers <- dataService.savedAnswers.allFor(user, params)
-    } yield ParamCollectionState(params, collected, savedAnswers, event, dataService, cache, configuration, actorSystem)
+    } yield ParamCollectionState(params, collected, savedAnswers, event, services)
   }
 
 }
