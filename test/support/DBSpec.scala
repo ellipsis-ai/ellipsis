@@ -12,11 +12,8 @@ import models.accounts.user.User
 import models.behaviors.behavior.Behavior
 import models.behaviors.behaviorgroup.BehaviorGroup
 import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
-import models.behaviors.behaviorparameter.BehaviorParameterType
 import models.behaviors.behaviorversion.BehaviorVersion
 import models.behaviors.config.requiredoauth2apiconfig.RequiredOAuth2ApiConfig
-import models.behaviors.datatypeconfig.DataTypeConfig
-import models.behaviors.datatypefield.DataTypeField
 import models.behaviors.input.Input
 import models.behaviors.savedanswer.SavedAnswer
 import models.team.Team
@@ -29,7 +26,7 @@ import play.api.db.evolutions.Evolutions
 import play.api.inject.bind
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.{Application, Configuration}
-import services.{AWSLambdaService, GithubService, PostgresDataService}
+import services.{AWSLambdaService, DefaultServices, GithubService, PostgresDataService}
 
 import scala.concurrent.duration._
 import scala.concurrent.{Await, Future}
@@ -39,6 +36,7 @@ trait DBSpec extends PlaySpec with OneAppPerSuite with MockitoSugar {
   lazy val config = ConfigFactory.load()
   lazy val cache = app.injector.instanceOf(classOf[CacheApi])
   lazy val configuration = app.injector.instanceOf(classOf[Configuration])
+  lazy val services = app.injector.instanceOf(classOf[DefaultServices])
 
   override implicit lazy val app: Application =
     GuiceApplicationBuilder().

@@ -13,7 +13,7 @@ import play.api.inject._
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.ws.WSClient
 import play.api.{Application, Configuration}
-import services.{AWSLambdaService, AWSLogsService, DataService, GithubService}
+import services._
 
 trait TestContext extends MockitoSugar{
 
@@ -40,5 +40,6 @@ trait TestContext extends MockitoSugar{
   lazy val cache = app.injector.instanceOf(classOf[CacheApi])
   lazy val ws = app.injector.instanceOf(classOf[WSClient])
   lazy val configuration = app.injector.instanceOf(classOf[Configuration])
+  lazy val services = app.injector.instanceOf(classOf[DefaultServices])
 
 }

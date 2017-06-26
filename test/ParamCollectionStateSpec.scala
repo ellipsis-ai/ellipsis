@@ -32,7 +32,7 @@ class ParamCollectionStateSpec extends DBSpec {
         val param = runNow(dataService.behaviorParameters.allFor(behaviorVersion)).head
 
         val savedAnswer = newSavedAnswerFor(param.input, user)
-        val state = runNow(ParamCollectionState.from(conversation, event, dataService, cache, configuration, actorSystem))
+        val state = runNow(ParamCollectionState.from(conversation, event, services))
 
         runNow(state.maybeNextToCollect(conversation)).map(_._1.id) mustBe None
       })
@@ -63,7 +63,7 @@ class ParamCollectionStateSpec extends DBSpec {
         val param = runNow(dataService.behaviorParameters.allFor(behaviorVersion)).head
 
         val savedAnswer = newSavedAnswerFor(param.input, user)
-        val state = runNow(ParamCollectionState.from(conversation, event, dataService, cache, configuration, actorSystem))
+        val state = runNow(ParamCollectionState.from(conversation, event, services))
 
         runNow(state.maybeNextToCollect(conversation)).map(_._1.id) mustBe None
       })
@@ -94,7 +94,7 @@ class ParamCollectionStateSpec extends DBSpec {
         val param = runNow(dataService.behaviorParameters.allFor(behaviorVersion)).head
 
         val savedAnswer = newSavedAnswerFor(param.input, user)
-        val state = runNow(ParamCollectionState.from(conversation, event, dataService, cache, configuration, actorSystem))
+        val state = runNow(ParamCollectionState.from(conversation, event, services))
 
         runNow(state.maybeNextToCollect(conversation)).map(_._1.id) mustBe Some(param.id)
       })
