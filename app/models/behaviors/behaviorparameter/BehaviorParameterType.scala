@@ -354,7 +354,7 @@ case class BehaviorBackedDataType(dataTypeConfig: DataTypeConfig) extends Behavi
       val filter = maybeSearchQuery.map { searchQuery =>
         s"""{ label: $searchQuery }"""
       }.getOrElse("{}")
-      dataTypeConfig.outputFields(context.dataService).flatMap { fieldStr =>
+      dataTypeConfig.outputFieldNames(context.dataService).flatMap { fieldStr =>
         val query =
           s"""{
              |  ${dataTypeConfig.listName}(filter: $filter) {
@@ -363,11 +363,12 @@ case class BehaviorBackedDataType(dataTypeConfig: DataTypeConfig) extends Behavi
              |}
          """.stripMargin
         context.services.graphQLService.runQuery(behaviorVersion.group, query, None, None).map { queryResult =>
-          (queryResult.get \ "data").asOpt[JsArray].map {
-            case arr: JsArray => arr.value.flatMap { ea =>
-              extractValidValueFrom(ea)
-            }
-            case _ => Seq()
+          (queryResult.get \ "data").asOpt[JsObject].map { obj =>
+            (obj \ dataTypeConfig.listName).asOpt[JsArray].map { arr =>
+              arr.value.flatMap { ea =>
+                extractValidValueFrom(ea)
+              }
+            }.getOrElse(Seq())
           }.getOrElse(Seq())
         }
       }
@@ -406,34 +407,25 @@ case class BehaviorBackedDataType(dataTypeConfig: DataTypeConfig) extends Behavi
       superPrompt <- maybeSearchQuery.map { searchQuery =>
         Future.successful(s"Here are some options for `$searchQuery`. Type a number to choose an option.")
       }.getOrElse(super.promptFor(maybePreviousCollectedValue, context, paramState, isReminding))
-      maybeValidValuesResult <- fetchValidValuesResult(maybeSearchQuery, context)
-      output <- maybeValidValuesResult.map {
-        case r: SuccessResult => {
-          val validValues = extractValidValues(r)
-          if (validValues.isEmpty) {
-            maybeSearchQuery.map { searchQuery =>
-              val key = searchQueryCacheKeyFor(context.maybeConversation.get, context.parameter)
-              context.cache.remove(key)
-              Future.successful(s"I couldn't find anything matching `$searchQuery`. Try searching again or type `…stop`.")
-            }.getOrElse {
-              cancelAndRespondFor(s"This data type isn't returning any values: ${editLinkFor(context)}", context)
-            }
-          } else {
-            context.maybeConversation.foreach { conversation =>
-              context.cache.set(valuesListCacheKeyFor(conversation, context.parameter), validValues)
-            }
-            val valuesPrompt = validValues.zipWithIndex.map { case (ea, i) =>
-              s"\n\n$i. ${ea.label}"
-            }.mkString
-            Future.successful(superPrompt ++ valuesPrompt)
-          }
+      validValues <- fetchValidValues(maybeSearchQuery, context)
+      output <- if (validValues.isEmpty) {
+        maybeSearchQuery.map { searchQuery =>
+          val key = searchQueryCacheKeyFor(context.maybeConversation.get, context.parameter)
+          context.cache.remove(key)
+          Future.successful(s"I couldn't find anything matching `$searchQuery`. Try searching again or type `…stop`.")
+        }.getOrElse {
+          cancelAndRespondFor(s"This data type isn't returning any values: ${editLinkFor(context)}", context)
         }
-        case r: BotResult => cancelAndRespondFor(r.fullText, context)
-      }.getOrElse {
-        cancelAndRespondFor(s"This data type appears to be misconfigured: ${editLinkFor(context)}", context)
+      } else {
+        context.maybeConversation.foreach { conversation =>
+          context.cache.set(valuesListCacheKeyFor(conversation, context.parameter), validValues)
+        }
+        val valuesPrompt = validValues.zipWithIndex.map { case (ea, i) =>
+          s"\n\n$i. ${ea.label}"
+        }.mkString
+        Future.successful(superPrompt ++ valuesPrompt)
       }
     } yield output
-
   }
 
   private def maybeCachedSearchQueryFor(context: BehaviorParameterContext): Option[String] = {

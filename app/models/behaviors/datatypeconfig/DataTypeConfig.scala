@@ -30,6 +30,12 @@ case class DataTypeConfig(
     }
   }
 
+  def outputFieldNames(dataService: DataService): Future[String] = {
+    dataService.dataTypeFields.allFor(this).map { fields =>
+      "  " ++ fields.sortBy(_.name).map(_.outputName).mkString("\n  ")
+    }
+  }
+
   def output(dataService: DataService): Future[String] = {
     outputFields(dataService).map { fieldsStr =>
       s"""type ${outputName} {
