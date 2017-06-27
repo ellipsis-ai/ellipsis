@@ -32,7 +32,7 @@ define(function(require) {
     }
 
     namePlaceholderText() {
-      return this.isDataType() ? "Data type name" : "Action name (optional)";
+      return this.isDataType() ? "Data type name (required)" : "Action name (optional)";
     }
 
     cloneActionText() {

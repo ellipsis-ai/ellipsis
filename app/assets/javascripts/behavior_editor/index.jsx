@@ -1809,7 +1809,7 @@ const BehaviorEditor = React.createClass({
 
   renderNameAndManagementActions: function() {
     return (
-      <div className="container container-wide">
+      <div className="container container-wide bg-white">
         <div className="columns columns-elastic mobile-columns-float">
           <div className="column column-shrink">
             <FormInput
@@ -1820,27 +1820,31 @@ const BehaviorEditor = React.createClass({
               onChange={this.updateName}
             />
           </div>
-          <div className="column column-expand align-r align-b mobile-align-l mobile-mtl">
+          <div className="column column-expand align-r align-m mobile-align-l mobile-mtl">
             {this.isExisting() ? (
-              <span>
-                <button type="button"
-                  className="button-s mrs mbs"
-                  onClick={this.cloneEditable}>
-                  {this.getSelected().cloneActionText()}
-                </button>
-                <button type="button"
-                  className="button-s mbs"
-                  onClick={this.confirmDeleteEditable}>
-                  {this.getSelected().deleteActionText()}
-                </button>
-              </span>
+              <div>
+                <div className="mobile-display-inline-block mobile-mrs align-t">
+                  <button type="button"
+                    className="button-s mbs"
+                    onClick={this.cloneEditable}>
+                    {this.getSelected().cloneActionText()}
+                  </button>
+                </div>
+                <div className="mobile-display-inline-block align-t">
+                  <button type="button"
+                    className="button-s"
+                    onClick={this.confirmDeleteEditable}>
+                    {this.getSelected().deleteActionText()}
+                  </button>
+                </div>
+              </div>
             ) : (
-              <span>
+              <div>
                 <button type="button"
-                  className="button-s mbs"
+                  className="button-s"
                   onClick={this.deleteEditable}
                 >{this.getSelected().cancelNewText()}</button>
-              </span>
+              </div>
             )}
           </div>
         </div>
@@ -1852,7 +1856,7 @@ const BehaviorEditor = React.createClass({
     return (
 
       <div>
-                <div className="columns container container-wide">
+                <div className="columns container container-wide bg-white">
                   <div className="column column-full mobile-column-full">
                     <FormInput
                       className="form-input-borderless form-input-m mbneg1"
@@ -1967,7 +1971,8 @@ const BehaviorEditor = React.createClass({
   renderDataTypeBehavior: function() {
     return (
       <div className="pbxxxl">
-        <hr className="mtl mbn thin bg-gray-light" />
+        <div className="bg-white pbl" />
+        <hr className="mtn mbn thin bg-gray-light" />
 
         <DataTypeEditor
           behaviorVersion={this.getSelectedBehavior()}
@@ -2016,7 +2021,7 @@ const BehaviorEditor = React.createClass({
     return (
       <div className="pbxxxl">
 
-        <div className="columns container container-wide">
+        <div className="columns container container-wide bg-white">
           <div className="column column-full mobile-column-full">
             <FormInput
               className="form-input-borderless form-input-m mbneg1"
@@ -2051,7 +2056,7 @@ const BehaviorEditor = React.createClass({
     if (selected) {
       return (
         <div>
-          <div className="container container-wide mtl">
+          <div className="container container-wide ptl bg-white">
             <h5 className="type-blue-faded mbn">{selected.getEditorTitle()}</h5>
           </div>
 
