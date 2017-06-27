@@ -26,6 +26,14 @@ define(function(require) {
       return "Are you sure you want to delete this library?";
     }
 
+    getNewEditorTitle() {
+      return "New library";
+    }
+
+    getExistingEditorTitle() {
+      return "Edit library";
+    }
+
     buildUpdatedGroupFor(group, props) {
       const updated = this.clone(props);
       const updatedVersions = group.libraryVersions.

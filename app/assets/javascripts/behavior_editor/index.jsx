@@ -14,11 +14,7 @@ var React = require('react'),
   CodeEditorHelp = require('./code_editor_help'),
   ConfirmActionPanel = require('../panels/confirm_action'),
   CollapseButton = require('../shared_ui/collapse_button'),
-  DataTypeField = require('../models/data_type_field'),
-  DataTypeSchemaConfig = require('./data_type_schema_config'),
-  DataTypeSourceConfig = require('./data_type_source_config'),
-  DataTypeCodeEditorHelp = require('./data_type_code_editor_help'),
-  DataTypeResultConfig = require('./data_type_result_config'),
+  DataTypeEditor = require('./data_type_editor'),
   DynamicLabelButton = require('../form/dynamic_label_button'),
   EnvVariableAdder = require('../environment_variables/adder'),
   EnvVariableSetter = require('../environment_variables/setter'),
@@ -176,10 +172,6 @@ const BehaviorEditor = React.createClass({
       filter(ea => !!ea);
   },
 
-  getDataTypeFields: function() {
-    return this.getSelectedBehavior().getDataTypeFields();
-  },
-
   getFirstBehaviorInputName: function() {
     var inputs = this.getInputs();
     if (inputs[0] && inputs[0].name) {
@@ -212,10 +204,6 @@ const BehaviorEditor = React.createClass({
   getSelectedBehavior: function() {
     const selected = this.getSelected();
     return (selected && selected.isBehaviorVersion()) ? selected : null;
-  },
-
-  getDataTypeConfig: function() {
-    return this.getSelectedBehavior().getDataTypeConfig();
   },
 
   getSelectedFor: function(group, selectedId) {
@@ -435,23 +423,9 @@ const BehaviorEditor = React.createClass({
     this.updateGroupStateWith(newGroup, callback);
   },
 
-  setDataTypeConfig: function(newConfig) {
-    this.setEditableProp('dataTypeConfig', newConfig);
-  },
-
-  setDataTypeFields: function(newFields) {
-    const newConfig = this.getDataTypeConfig().clone({ fields: newFields });
-    this.setDataTypeConfig(newConfig);
-  },
-
   addInput: function(input) {
     const newInputs = this.getInputs().concat([input]);
     this.setBehaviorInputs(newInputs, this.focusOnLastInput);
-  },
-
-  addDataTypeField: function(field) {
-    const newFields = this.getDataTypeFields().concat([field]);
-    this.setDataTypeFields(newFields);
   },
 
   getNewGenericInputName: function() {
@@ -471,26 +445,6 @@ const BehaviorEditor = React.createClass({
       .then(response => response.json())
       .then(json => {
         this.addInput(new Input(json));
-      });
-  },
-
-  getNewGenericDataTypeFieldName: function() {
-    let newIndex = this.getDataTypeFields().length + 1;
-    while (this.getDataTypeFields().some(ea => {
-      return ea.name === 'dataTypeField' + newIndex;
-    })) {
-      newIndex++;
-    }
-    return `dataTypeField${newIndex}`;
-  },
-
-  addNewDataTypeField: function(optionalNewName) {
-    const newName = optionalNewName || this.getNewGenericDataTypeFieldName();
-    const url = jsRoutes.controllers.BehaviorEditorController.newUnsavedDataTypeField(newName).url;
-    fetch(url, { credentials: 'same-origin' })
-      .then(response => response.json())
-      .then(json => {
-        this.addDataTypeField(new DataTypeField(json));
       });
   },
 
@@ -553,10 +507,6 @@ const BehaviorEditor = React.createClass({
 
   deleteInputAtIndex: function(index) {
     this.setEditableProp('inputIds', ImmutableObjectUtils.arrayRemoveElementAtIndex(this.getInputIds(), index));
-  },
-
-  deleteDataTypeFieldAtIndex: function(index) {
-    this.setDataTypeFields(ImmutableObjectUtils.arrayRemoveElementAtIndex(this.getDataTypeFields(), index));
   },
 
   deleteTriggerAtIndex: function(index) {
@@ -969,19 +919,6 @@ const BehaviorEditor = React.createClass({
     });
   },
 
-  updateDataTypeResultConfig: function(shouldUseSearch) {
-    if (shouldUseSearch) {
-      this.addNewInput('searchQuery');
-    } else {
-      this.setEditableProp('inputIds', []);
-    }
-  },
-
-  updateDataTypeSource: function(usesCode) {
-    const newConfig = this.getDataTypeConfig().clone({ usesCode: usesCode });
-    this.setDataTypeConfig(newConfig);
-  },
-
   updateDescription: function(newDescription) {
     this.setEditableProp('description', newDescription);
   },
@@ -1081,13 +1018,6 @@ const BehaviorEditor = React.createClass({
         }
       }
     });
-  },
-
-  updateDataTypeFieldAtIndexWith: function(index, newField) {
-    var fields = this.getDataTypeFields();
-    var newFields = ImmutableObjectUtils.arrayWithNewElementAtIndex(fields, newField, index);
-
-    this.setDataTypeFields(newFields);
   },
 
   updateForcePrivateResponse: function(newValue) {
@@ -1736,32 +1666,6 @@ const BehaviorEditor = React.createClass({
     );
   },
 
-  getEditableHeadingText: function() {
-    if (this.isLibrary()) {
-      if (this.isExisting()) {
-        return "Edit library";
-      } else {
-        return "New library";
-      }
-    } else if (this.isDataTypeBehavior()) {
-      if (this.isExisting()) {
-        return "Edit data type";
-      } else {
-        return "New data type";
-      }
-    } else if (this.isExisting()) {
-      return "Edit action";
-    } else {
-      return "New action";
-    }
-  },
-
-  getEditableHeading: function() {
-    return (
-      <h5 className="type-blue-faded mbn">{this.getEditableHeadingText()}</h5>
-    );
-  },
-
   behaviorSwitcherIsVisible: function() {
     return this.state.behaviorSwitcherVisible;
   },
@@ -2053,86 +1957,51 @@ const BehaviorEditor = React.createClass({
     );
   },
 
-  renderDataTypeSchemaConfig: function() {
-    if (this.getDataTypeConfig().usesCode) {
-      return null;
-    } else {
-      return (
-        <DataTypeSchemaConfig
-          ref="DataTypeSchemaConfig"
-          onChange={this.updateDataTypeFieldAtIndexWith}
-          onDelete={this.deleteDataTypeFieldAtIndex}
-          onAdd={this.addNewDataTypeField}
-          fields={this.getDataTypeFields()}
-          paramTypes={this.getParamTypes()}
-          animationDisabled={this.animationIsDisabled()}
-          onConfigureType={this.onConfigureType}
-        />
-      );
-    }
-  },
-
-  renderDataTypeResultConfig: function() {
-    if (this.getDataTypeConfig().usesCode) {
-      return (
-        <DataTypeResultConfig
-          usesSearch={this.hasInputNamed('searchQuery')}
-          onChange={this.updateDataTypeResultConfig}
-          isFinishedBehavior={this.isFinishedBehavior()}
-        />
-      );
-    } else {
-      return null;
-    }
-  },
-
-  renderDataTypeCodeEditor: function() {
-    if (this.getDataTypeConfig().usesCode) {
-      return this.renderCodeEditor({
-        sectionNumber: "3",
-        sectionHeading: "Run code to generate a list",
-        codeEditorHelp: (
-          <div className="mbxl">
-            <DataTypeCodeEditorHelp
-              functionBody={this.getFunctionBody()}
-              usesSearch={this.hasInputNamed('searchQuery')}
-              isFinishedBehavior={this.isFinishedBehavior()}
-            />
-          </div>
-        )
-      });
-    } else {
-      return null;
-    }
-  },
-
   renderDataTypeBehavior: function() {
     return (
       <div className="pbxxxl">
         <hr className="mtl mbn thin bg-gray-light" />
 
-        <DataTypeSourceConfig
-          usesCode={this.getDataTypeConfig().usesCode}
-          onChange={this.updateDataTypeSource}
-          isFinishedBehavior={this.isFinishedBehavior()}
+        <DataTypeEditor
+          behaviorVersion={this.getSelectedBehavior()}
+          paramTypes={this.getParamTypes()}
+          inputs={this.getInputs()}
+          onChange={this.setEditableProps}
+          onAddNewInput={this.addNewInput}
+          onConfigureType={this.onConfigureType}
+
+          activePanelName={this.props.activePanelName}
+          activeDropdownName={this.getActiveDropdown()}
+          onToggleActiveDropdown={this.toggleActiveDropdown}
+          onToggleActivePanel={this.toggleActivePanel}
+          animationIsDisabled={this.animationIsDisabled()}
+
+          onToggleAWSConfig={this.toggleAWSConfig}
+          awsConfig={this.getAWSConfig()}
+          onAWSAddNewEnvVariable={this.onAWSAddNewEnvVariable}
+          onAWSConfigChange={this.setAWSEnvVar}
+
+          apiSelector={this.renderAPISelector()}
+          systemParams={this.getSystemParams()}
+          apiApplications={this.getApiApplications()}
+
+          onCursorChange={this.ensureCursorVisible}
+          useLineWrapping={this.state.codeEditorUseLineWrapping}
+          onToggleCodeEditorLineWrapping={this.toggleCodeEditorLineWrapping}
+
+          envVariableNames={this.getEnvVariableNames()}
         />
-
-        {this.renderDataTypeSchemaConfig()}
-
-        {this.renderDataTypeResultConfig()}
-
-        <hr className="man thin bg-gray-light" />
-
-        {this.renderDataTypeCodeEditor()}
       </div>
     );
   },
 
-  renderForBehaviorType: function() {
-    if (this.isDataTypeBehavior()) {
+  renderForSelected: function(selected) {
+    if (selected.isDataType()) {
       return this.renderDataTypeBehavior();
-    } else {
+    } else if (selected.isBehaviorVersion()) {
       return this.renderNormalBehavior();
+    } else if (selected.isLibraryVersion()) {
+      return this.renderLibrary();
     }
   },
 
@@ -2171,40 +2040,28 @@ const BehaviorEditor = React.createClass({
   },
 
   renderEditor: function() {
-    if (this.getSelectedBehavior()) {
+    const selected = this.getSelected();
+    if (selected) {
       return (
         <div>
           <div className="container container-wide mtl">
-            {this.getEditableHeading()}
+            <h5 className="type-blue-faded mbn">{selected.getEditorTitle()}</h5>
           </div>
 
           {this.renderNameAndManagementActions()}
-
-          {this.renderForBehaviorType()}
-        </div>
-      );
-    } else if (this.getSelectedLibrary()) {
-      return (
-        <div>
-          <div className="container container-wide mtl">
-            {this.getEditableHeading()}
-          </div>
-          {this.renderNameAndManagementActions()}
-          {this.renderLibrary()}
+          {this.renderForSelected(selected)}
         </div>
       );
     } else {
       return (
-        <div>
-          <BehaviorGroupEditor
-            group={this.getBehaviorGroup()}
-            isModified={this.isModified()}
-            onBehaviorGroupNameChange={this.onBehaviorGroupNameChange}
-            onBehaviorGroupDescriptionChange={this.onBehaviorGroupDescriptionChange}
-            onBehaviorGroupIconChange={this.onBehaviorGroupIconChange}
-            onDeleteClick={this.confirmDeleteBehaviorGroup}
-          />
-        </div>
+        <BehaviorGroupEditor
+          group={this.getBehaviorGroup()}
+          isModified={this.isModified()}
+          onBehaviorGroupNameChange={this.onBehaviorGroupNameChange}
+          onBehaviorGroupDescriptionChange={this.onBehaviorGroupDescriptionChange}
+          onBehaviorGroupIconChange={this.onBehaviorGroupIconChange}
+          onDeleteClick={this.confirmDeleteBehaviorGroup}
+        />
       );
     }
   },

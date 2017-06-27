@@ -72,6 +72,14 @@ define(function(require) {
       return this.config.isDataType;
     }
 
+    getNewEditorTitle() {
+      return this.isDataType() ? "New data type" : "New action";
+    }
+
+    getExistingEditorTitle() {
+      return this.isDataType() ? "Edit data type" : "Edit action";
+    }
+
     getDataTypeConfig() {
       return this.dataTypeConfig;
     }
@@ -101,6 +109,10 @@ define(function(require) {
       } else {
         return "";
       }
+    }
+
+    getFunctionBody() {
+      return this.functionBody || "";
     }
 
     includesText(queryString) {
