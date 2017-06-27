@@ -28,8 +28,40 @@ define(function(require) {
       return false;
     }
 
+    isDataType() {
+      return false;
+    }
+
     isLibraryVersion() {
       return false;
+    }
+
+    namePlaceholderText() {
+      return "Item name";
+    }
+
+    cloneActionText() {
+      return "Clone item…";
+    }
+
+    deleteActionText() {
+      return "Delete item…";
+    }
+
+    confirmDeleteText() {
+      return "Are you sure you want to delete this item?";
+    }
+
+    getEditorTitle() {
+      return this.isNew ? this.getNewEditorTitle() : this.getExistingEditorTitle();
+    }
+
+    getNewEditorTitle() {
+      return "New item";
+    }
+
+    getExistingEditorTitle() {
+      return "Edit item";
     }
 
     getName() {

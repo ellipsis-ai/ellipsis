@@ -6,7 +6,7 @@ define(function(require) {
     constructor(props) {
       var initialProps = Object.assign({
         fields: [],
-        usesCode: false
+        usesCode: true
       }, props);
       Object.defineProperties(this, {
         fields: {
@@ -22,10 +22,6 @@ define(function(require) {
 
     getFields() {
       return this.fields;
-    }
-
-    get usesCode() {
-      return this.usesCode;
     }
 
     clone(props) {

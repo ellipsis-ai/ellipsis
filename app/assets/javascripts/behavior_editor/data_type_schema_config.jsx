@@ -43,14 +43,10 @@ define(function(require) {
     render: function() {
       return (
         <div>
-
-
-          <hr className="mtn thin bg-gray-light" />
-
           <div className="columns container container-narrow">
             <div className="mbxxl">
               <div>
-                <SectionHeading number="2">Define the fields</SectionHeading>
+                <SectionHeading number="2">Define fields for each item being stored</SectionHeading>
                 <div className="mbm">
                   {this.props.fields.map((field, index) => (
                     <div key={`dataTypeField${index}`} className="mbs">

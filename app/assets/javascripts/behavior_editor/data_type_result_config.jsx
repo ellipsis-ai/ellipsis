@@ -22,22 +22,10 @@ define(function(require) {
 
     render: function() {
       return (
-        <div className="container ptxl pbxxxl">
-          <div>
-            <SectionHeading number="2">How to prompt the user</SectionHeading>
-            <Checklist disabledWhen={this.props.isFinishedBehavior}>
-              <Checklist.Item checkedWhen={!this.props.usesSearch}>
-                <span>Use <span className="type-semibold">Select from a list</span> when there are few choices.</span>
-                <span>The user will just pick from the whole list.</span>
-              </Checklist.Item>
-              <Checklist.Item checkedWhen={this.props.usesSearch}>
-                <span>Use <span className="type-semibold">Search for a match</span> when there are many choices.</span>
-                <span>The user will type in a search query and presented with matches to choose from.</span>
-              </Checklist.Item>
-            </Checklist>
-          </div>
+        <div className="container ptxl pbxxl">
+          <SectionHeading number="2">How to prompt the user</SectionHeading>
 
-          <div>
+          <div className="mvxl">
             <ToggleGroup className="align-m">
               <ToggleGroup.Item
                 title="The user will be shown a list of choices, and be asked to select one."
@@ -52,6 +40,19 @@ define(function(require) {
                 onClick={this.onUseSearch}
               />
             </ToggleGroup>
+          </div>
+
+          <div className="mtxl">
+            <Checklist disabledWhen={this.props.isFinishedBehavior}>
+              <Checklist.Item checkedWhen={!this.props.usesSearch}>
+                <span>Use <span className="type-semibold">Select from a list</span> when there are few choices.</span>
+                <span>The user will just pick from the whole list.</span>
+              </Checklist.Item>
+              <Checklist.Item checkedWhen={this.props.usesSearch}>
+                <span>Use <span className="type-semibold">Search for a match</span> when there are many choices.</span>
+                <span>The user will type in a search query and presented with matches to choose from.</span>
+              </Checklist.Item>
+            </Checklist>
           </div>
         </div>
       );
