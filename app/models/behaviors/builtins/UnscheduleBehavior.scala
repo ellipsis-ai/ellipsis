@@ -3,6 +3,7 @@ package models.behaviors.builtins
 import akka.actor.ActorSystem
 import models.behaviors.events.Event
 import models.behaviors.{BotResult, SimpleTextResult}
+import play.api.Configuration
 import services.{AWSLambdaService, DataService}
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -12,7 +13,8 @@ case class UnscheduleBehavior(
                                text: String,
                                event: Event,
                                lambdaService: AWSLambdaService,
-                               dataService: DataService
+                               dataService: DataService,
+                               configuration: Configuration
                              ) extends BuiltinBehavior {
 
   def result(implicit actorSystem: ActorSystem): Future[BotResult] = {
@@ -24,7 +26,7 @@ case class UnscheduleBehavior(
       scheduled <- maybeTeam.map { team =>
         dataService.scheduledMessages.allForTeam(team)
       }.getOrElse(Future.successful(Seq()))
-      listResponses <- Future.sequence(scheduled.map(_.listResponse(dataService, includeChannel = true)))
+      listResponses <- Future.sequence(scheduled.map(ea => ea.listResponse(ea.id, ea.team.id, dataService, configuration, includeChannel = true)))
     } yield {
       val msg = if (didDelete) {
         s"OK, I unscheduled `$text`"

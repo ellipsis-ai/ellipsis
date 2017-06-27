@@ -3,6 +3,7 @@ package models.behaviors.builtins
 import akka.actor.ActorSystem
 import models.behaviors.BotResult
 import models.behaviors.events.Event
+import play.api.Configuration
 import services.{AWSLambdaService, DataService}
 
 import scala.concurrent.Future
@@ -35,7 +36,7 @@ object BuiltinBehavior {
   val setTimeZoneRegex = s"""(?i)^set default time\\s*zone to\\s(.*)$$""".r
   val revokeAuthRegex = s"""(?i)^revoke\\s+all\\s+tokens\\s+for\\s+(.*)""".r
 
-  def maybeFrom(event: Event, lambdaService: AWSLambdaService, dataService: DataService): Option[BuiltinBehavior] = {
+  def maybeFrom(event: Event, lambdaService: AWSLambdaService, dataService: DataService, configuration: Configuration): Option[BuiltinBehavior] = {
     if (event.includesBotMention) {
       uneducateQuotes(event.relevantMessageText) match {
         case setEnvironmentVariableRegex(name, value) => Some(SetEnvironmentVariableBehavior(name, value, event, lambdaService, dataService))
@@ -54,10 +55,10 @@ object BuiltinBehavior {
           dataService
         ))
         case rememberRegex(cmd) => Some(RememberBehavior(event, lambdaService, dataService))
-        case scheduledRegex() => Some(ListScheduledBehavior(event, event.maybeChannel, lambdaService, dataService))
-        case allScheduledRegex() => Some(ListScheduledBehavior(event, None, lambdaService, dataService))
+        case scheduledRegex() => Some(ListScheduledBehavior(event, event.maybeChannel, lambdaService, dataService, configuration))
+        case allScheduledRegex() => Some(ListScheduledBehavior(event, None, lambdaService, dataService, configuration))
         case scheduleRegex(_, text, individually, recurrence) => Some(ScheduleBehavior(text, (individually != null), recurrence, event, lambdaService, dataService))
-        case unscheduleRegex(_, text) => Some(UnscheduleBehavior(text, event, lambdaService, dataService))
+        case unscheduleRegex(_, text) => Some(UnscheduleBehavior(text, event, lambdaService, dataService, configuration))
         case resetBehaviorsRegex() => Some(ResetBehaviorsBehavior(event, lambdaService, dataService))
         case setTimeZoneRegex(tzString) => Some(SetDefaultTimeZoneBehavior(tzString, event, lambdaService, dataService))
         case revokeAuthRegex(appName) => Some(RevokeAuthBehavior(appName, event, lambdaService, dataService))

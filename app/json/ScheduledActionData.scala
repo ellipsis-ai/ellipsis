@@ -4,6 +4,12 @@ import java.time.OffsetDateTime
 
 import models.behaviors.scheduling.scheduledbehavior.ScheduledBehavior
 import models.behaviors.scheduling.scheduledmessage.ScheduledMessage
+import models.team.Team
+import services.DataService
+import utils.ChannelLike
+
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
 
 case class ScheduledActionArgumentData(name: String, value: String)
 
@@ -19,7 +25,13 @@ case class ScheduledActionData(
                                 secondRecurrence: Option[OffsetDateTime],
                                 useDM: Boolean,
                                 channel: String
-                              )
+                              ) {
+  def visibleToSlackUser(slackUserId: String, channelList: Seq[ChannelLike]): Boolean = {
+    channelList.exists { someChannel =>
+      someChannel.id == channel && someChannel.visibleToUser(slackUserId)
+    }
+  }
+}
 
 object ScheduledActionData {
   def fromScheduledMessage(scheduledMessage: ScheduledMessage): ScheduledActionData = {
@@ -53,5 +65,20 @@ object ScheduledActionData {
       useDM = scheduledBehavior.isForIndividualMembers,
       channel = scheduledBehavior.maybeChannel.getOrElse("")
     )
+  }
+
+  def buildFor(maybeSlackUserId: Option[String], team: Team, channelList: Seq[ChannelLike], dataService: DataService): Future[Seq[ScheduledActionData]] = {
+    /* TODO: once our scheduling models are medium-aware, make this filtering more intelligent for
+       users with or without a Slack user ID */
+    for {
+      scheduledBehaviors <- dataService.scheduledBehaviors.allForTeam(team)
+      scheduledMessages <- dataService.scheduledMessages.allForTeam(team)
+    } yield {
+      maybeSlackUserId.map { slackUserId =>
+        val scheduledMessageData = scheduledMessages.map(ScheduledActionData.fromScheduledMessage)
+        val scheduledBehaviorData = scheduledBehaviors.map(ScheduledActionData.fromScheduledBehavior)
+        (scheduledMessageData ++ scheduledBehaviorData).filter(_.visibleToSlackUser(slackUserId, channelList))
+      }.getOrElse(Seq())
+    }
   }
 }

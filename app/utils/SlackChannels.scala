@@ -14,6 +14,10 @@ trait ChannelLike {
   val name: String
   val isPublic: Boolean
   val isArchived: Boolean
+
+  def visibleToUser(userId: String): Boolean = {
+    isPublic || members.contains(userId)
+  }
 }
 
 case class SlackChannel(channel: Channel) extends ChannelLike {
@@ -69,7 +73,7 @@ case class SlackChannels(client: SlackApiClient) {
     }
   }
 
-  def listInfos(implicit actorSystem: ActorSystem): Future[Seq[ChannelLike]] = {
+  def getList(implicit actorSystem: ActorSystem): Future[Seq[ChannelLike]] = {
     for {
       channels <- client.listChannels()
       groups <- client.listGroups()
@@ -77,6 +81,14 @@ case class SlackChannels(client: SlackApiClient) {
     } yield {
       channels.map(SlackChannel.apply) ++ groups.map(SlackGroup.apply) ++ dms.map(SlackDM.apply)
     }
+  }
+
+  def getListForUser(maybeSlackUserId: Option[String])(implicit actorSystem: ActorSystem): Future[Seq[ChannelLike]] = {
+    maybeSlackUserId.map { slackUserId =>
+      getList.map { channels =>
+        channels.filter(ea => ea.visibleToUser(slackUserId))
+      }
+    }.getOrElse(Future.successful(Seq()))
   }
 
   def getMembersFor(channelOrGroupId: String)(implicit actorSystem: ActorSystem): Future[Seq[String]] = {
@@ -99,7 +111,7 @@ case class SlackChannels(client: SlackApiClient) {
     val unformattedChannelLikeIdOrName = unformatChannelText(channelLikeIdOrName)
     getInfoFor(unformattedChannelLikeIdOrName).flatMap { maybeChannelLike =>
       maybeChannelLike.map(c => Future.successful(Some(c.id))).getOrElse {
-        listInfos.map { infos =>
+        getList.map { infos =>
           infos.find(_.name == unformattedChannelLikeIdOrName).map(_.id)
         }
       }

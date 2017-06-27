@@ -48,10 +48,7 @@ trait Scheduled {
                            isForInterruption: Boolean
                          ): Option[String] = {
     if (result.hasText) {
-      val helpLink = configuration.getString("application.apiBaseUrl").map { baseUrl =>
-        val path = controllers.routes.HelpController.scheduledMessages()
-        s"$baseUrl$path"
-      }.get
+      val scheduleLink = scheduleLinkFor(configuration, event.scheduled.id, event.teamId)
       val greeting = if (isForInterruption) {
         "Meanwhile, "
       } else {
@@ -59,7 +56,7 @@ trait Scheduled {
          |
          |""".stripMargin
       }
-      Some(s"""${greeting}I’m running $displayText [as scheduled]($helpLink) _(${recurrence.displayString.trim})._
+      Some(s"""${greeting}I’m running $displayText as scheduled. $scheduleLink
        |
        |───
        |
@@ -67,6 +64,13 @@ trait Scheduled {
     } else {
       None
     }
+  }
+
+  def scheduleLinkFor(configuration: Configuration, scheduleId: String, teamId: String): String = {
+    configuration.getString("application.apiBaseUrl").map { baseUrl =>
+      val path = controllers.routes.ScheduledActionsController.index(Some(scheduleId), None, Some(teamId))
+      s"_[✎ Edit]($baseUrl$path)_"
+    }.getOrElse("")
   }
 
   def isScheduledForDirectMessage: Boolean = {
@@ -100,16 +104,23 @@ trait Scheduled {
     }
   }
 
-  def listResponse(dataService: DataService, includeChannel: Boolean): Future[String] = {
+  def listResponse(
+                    scheduleId: String,
+                    teamId: String,
+                    dataService: DataService,
+                    configuration: Configuration,
+                    includeChannel: Boolean
+                  ): Future[String] = {
     val details = if (includeChannel) {
       recurrenceAndChannel
     } else {
       recurrence.displayString.trim ++ recipientDetails
     }
+    val scheduleLink = scheduleLinkFor(configuration, scheduleId, teamId)
     displayText(dataService).map { desc =>
       s"""
         |
-        |**Run $desc $details.**
+        |**Run $desc $details.** $scheduleLink
         |
         |$nextRunsString
         |

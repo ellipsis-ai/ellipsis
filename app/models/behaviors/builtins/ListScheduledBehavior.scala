@@ -4,6 +4,7 @@ import akka.actor.ActorSystem
 import models.behaviors.events.Event
 import models.behaviors.scheduling.Scheduled
 import models.behaviors.{BotResult, SimpleTextResult}
+import play.api.Configuration
 import services.{AWSLambdaService, DataService}
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -14,49 +15,33 @@ case class ListScheduledBehavior(
                                   event: Event,
                                   maybeChannel: Option[String],
                                   lambdaService: AWSLambdaService,
-                                  dataService: DataService
+                                  dataService: DataService,
+                                  configuration: Configuration
                                  ) extends BuiltinBehavior {
-
-  private def example: String = {
-    s"""
-       |```
-       |${event.botPrefix}schedule "go bananas" every day at 3pm
-       |```
-       """.stripMargin
-  }
 
   private def noMessagesResponse: String = {
     if (maybeChannel.isDefined) {
-      s"""You haven’t yet scheduled anything in this channel. To schedule, try something like:
+      s"""You haven’t yet scheduled anything in this channel. $newScheduleLink
          |
-         |$example
-         |
-         |$otherCommand
+         |$viewAllLink
        """.stripMargin
     } else {
-      s"""Nothing has been scheduled for this team. To schedule something, try:
-         |
-         |$example
-       """.stripMargin
+      s"Nothing has been scheduled for this team. $newScheduleLink"
     }
   }
 
-  private def otherCommand: String = {
-    if (maybeChannel.isDefined) {
-      s"""To see what is scheduled across all channels:
-         |
-         |```
-         |${event.botPrefix}all scheduled
-         |```
-       """.stripMargin
-    } else {
-      s"""To see what is scheduled in just this channel:
-         |
-         |```
-         |${event.botPrefix}scheduled
-         |```
-       """.stripMargin
-    }
+  private def viewAllLink: String = {
+    configuration.getString("application.apiBaseUrl").map { baseUrl =>
+      val path = controllers.routes.ScheduledActionsController.index(None, None, Some(event.teamId))
+      s"[View all scheduled items]($baseUrl$path)"
+    }.getOrElse("")
+  }
+
+  private def newScheduleLink: String = {
+    configuration.getString("application.apiBaseUrl").map { baseUrl =>
+      val path = controllers.routes.ScheduledActionsController.index(None, Some(true), Some(event.teamId))
+      s"[Schedule something new]($baseUrl$path)"
+    }.getOrElse("")
   }
 
   private def intro: String = {
@@ -71,25 +56,13 @@ case class ListScheduledBehavior(
     }
   }
 
-  private def unscheduleCommand: String = {
-    s"""
-      |You can unschedule by typing something like:
-      |
-      |```
-      |${event.botPrefix}unschedule "go bananas"
-      |```
-    """.stripMargin
-  }
-
   def responseFor(scheduled: Seq[Scheduled]): Future[String] = {
-    Future.sequence(scheduled.map(_.listResponse(dataService, maybeChannel.isEmpty))).map { listResponses =>
+    Future.sequence(scheduled.map(ea => ea.listResponse(ea.id, ea.team.id, dataService, configuration, maybeChannel.isEmpty))).map { listResponses =>
       s"""$intro
         |
         |${listResponses.mkString}
         |
-        |$unscheduleCommand
-        |
-        |$otherCommand
+        |$viewAllLink
       """.stripMargin
     }
   }

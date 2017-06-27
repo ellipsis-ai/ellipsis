@@ -124,7 +124,7 @@ requirejs(['common'], function() {
               onClearErrors={this.onClearErrors}
               error={this.state.error}
               teamTimeZone={this.props.teamTimeZone}
-              teamTimeZoneName={this.props.teamTimeZone}
+              teamTimeZoneName={this.props.teamTimeZoneName}
               slackUserId={this.props.slackUserId}
               slackBotUserId={this.props.slackBotUserId}
               selectedScheduleId={this.props.selectedScheduleId}
