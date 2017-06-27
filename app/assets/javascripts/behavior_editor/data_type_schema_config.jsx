@@ -29,7 +29,14 @@ define(function(require) {
     },
 
     addField: function() {
-      this.props.onAdd();
+      this.props.onAdd(() => this.focusOnLastField());
+    },
+
+    focusOnLastField: function() {
+      const lastFieldIndex = this.props.fields.length - 1;
+      if (lastFieldIndex >= 0) {
+        this.focusIndex(lastFieldIndex);
+      }
     },
 
     focusIndex: function(index) {
@@ -42,7 +49,7 @@ define(function(require) {
 
     render: function() {
       return (
-        <div>
+        <div className="ptxl">
           <div className="columns container container-narrow">
             <div className="mbxxl">
               <div>

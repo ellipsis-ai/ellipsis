@@ -84,6 +84,13 @@ define(function(require) {
       this.setState({
         dataTypeSourceChosen: true
       });
+      if (newConfig.fields.length === 0) {
+        this.addNewDataTypeField(() => {
+          if (this.refs.schemaConfig) {
+            this.refs.schemaConfig.focusOnLastField();
+          }
+        });
+      }
     },
 
     getDataTypeConfig: function() {
@@ -94,24 +101,24 @@ define(function(require) {
       return this.getDataTypeConfig().usesCode;
     },
 
-    setDataTypeConfig: function(newConfig) {
+    setDataTypeConfig: function(newConfig, callback) {
       this.props.onChange({
         dataTypeConfig: newConfig
-      });
+      }, callback);
     },
 
     getDataTypeFields: function() {
       return this.getSelectedBehavior().getDataTypeFields();
     },
 
-    setDataTypeFields: function(newFields) {
+    setDataTypeFields: function(newFields, callback) {
       const newConfig = this.getDataTypeConfig().clone({ fields: newFields });
-      this.setDataTypeConfig(newConfig);
+      this.setDataTypeConfig(newConfig, callback);
     },
 
-    addDataTypeField: function(field) {
+    addDataTypeField: function(field, callback) {
       const newFields = this.getDataTypeFields().concat([field]);
-      this.setDataTypeFields(newFields);
+      this.setDataTypeFields(newFields, callback);
     },
 
     updateDataTypeFieldAtIndexWith: function(index, newField) {
@@ -135,13 +142,13 @@ define(function(require) {
       return `dataTypeField${newIndex}`;
     },
 
-    addNewDataTypeField: function(optionalNewName) {
-      const newName = optionalNewName || this.getNewGenericDataTypeFieldName();
+    addNewDataTypeField: function(callback) {
+      const newName = this.getNewGenericDataTypeFieldName();
       const url = jsRoutes.controllers.BehaviorEditorController.newUnsavedDataTypeField(newName).url;
       fetch(url, { credentials: 'same-origin' })
         .then(response => response.json())
         .then(json => {
-          this.addDataTypeField(new DataTypeField(json));
+          this.addDataTypeField(new DataTypeField(json), callback);
         });
     },
 
@@ -180,11 +187,11 @@ define(function(require) {
       return (
         <div>
 
-          <Collapsible revealWhen={!this.dataTypeSourceChosen()}>
+          <Collapsible revealWhen={!this.dataTypeSourceChosen()} animationDisabled={this.props.animationIsDisabled}>
             <DataTypeSourceConfig onChange={this.updateDataTypeSource} />
           </Collapsible>
 
-          <Collapsible revealWhen={this.dataTypeSourceChosen()}>
+          <Collapsible revealWhen={this.dataTypeSourceChosen()} animationDisabled={this.props.animationIsDisabled}>
 
             <div className="container ptxl pbs">
               <SectionHeading number="1">
@@ -206,7 +213,7 @@ define(function(require) {
               />
             ) : (
               <DataTypeSchemaConfig
-                ref="DataTypeSchemaConfig"
+                ref="schemaConfig"
                 onChange={this.updateDataTypeFieldAtIndexWith}
                 onDelete={this.deleteDataTypeFieldAtIndex}
                 onAdd={this.addNewDataTypeField}
