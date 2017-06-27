@@ -3,6 +3,8 @@ package controllers
 import javax.inject.Inject
 
 import play.api.Configuration
+import play.api.data.Form
+import play.api.data.Forms._
 import play.api.i18n.MessagesApi
 import play.api.mvc.Action
 import services.{DataService, GraphQLService}
@@ -17,23 +19,38 @@ class GraphQLController @Inject() (
                                     val graphQL: GraphQLService
                                   ) extends EllipsisController {
 
-  def query(
-              token: String,
-              query: String,
-              maybeOperationName: Option[String],
-              maybeVariables: Option[String]
-              ) = Action.async { request =>
+  case class QueryInfo(
+                        query: String,
+                        maybeOperationName: Option[String],
+                        maybeVariables: Option[String]
+                      )
 
-    for {
-      maybeBehaviorGroup <- dataService.behaviorGroups.findForInvocationToken(token)
-      maybeResult <- maybeBehaviorGroup.map { group =>
-        graphQL.runQuery(group, query, maybeOperationName, maybeVariables)
-      }.getOrElse(Future.successful(None))
-    } yield {
-      maybeResult.map { result =>
-        Ok(result.toString)
-      }.getOrElse(NotFound(""))
-    }
+  private val queryForm = Form(
+    mapping(
+      "query" -> nonEmptyText,
+      "operationName" -> optional(nonEmptyText),
+      "variables" -> optional(nonEmptyText)
+    )(QueryInfo.apply)(QueryInfo.unapply)
+  )
+
+  def query(token: String) = Action.async { implicit request =>
+    queryForm.bindFromRequest.fold(
+      formWithErrors => {
+        Future.successful(BadRequest(formWithErrors.toString))
+      },
+      info => {
+        for {
+          maybeBehaviorGroup <- dataService.behaviorGroups.findForInvocationToken(token)
+          maybeResult <- maybeBehaviorGroup.map { group =>
+            graphQL.runQuery(group, info.query, info.maybeOperationName, info.maybeVariables)
+          }.getOrElse(Future.successful(None))
+        } yield {
+          maybeResult.map { result =>
+            Ok(result.toString)
+          }.getOrElse(NotFound(""))
+        }
+      }
+    )
   }
 
 }
