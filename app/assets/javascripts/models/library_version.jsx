@@ -34,6 +34,10 @@ define(function(require) {
       return "Edit library";
     }
 
+    cancelNewText() {
+      return "Cancel new library";
+    }
+
     buildUpdatedGroupFor(group, props) {
       const updated = this.clone(props);
       const updatedVersions = group.libraryVersions.

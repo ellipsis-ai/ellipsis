@@ -48,6 +48,10 @@ define(function(require) {
       return `Are you sure you want to delete this ${behaviorType}?`;
     }
 
+    cancelNewText() {
+      return this.isDataType() ? "Cancel new data type" : "Cancel new action";
+    }
+
     buildUpdatedGroupFor(group, props) {
       const timestampedBehavior = this.clone(props).copyWithNewTimestamp();
       const updatedVersions = group.behaviorVersions.

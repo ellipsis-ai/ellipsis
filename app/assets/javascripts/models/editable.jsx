@@ -72,6 +72,10 @@ define(function(require) {
       return this.description || "";
     }
 
+    cancelNewText() {
+      return "Cancel new item";
+    }
+
     includesText(queryString) {
       var lowercase = queryString.toLowerCase().trim();
       return this.getName().toLowerCase().includes(lowercase) ||

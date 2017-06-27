@@ -1829,12 +1829,19 @@ const BehaviorEditor = React.createClass({
                   {this.getSelected().cloneActionText()}
                 </button>
                 <button type="button"
-                  className="button-s mrs mbs"
+                  className="button-s mbs"
                   onClick={this.confirmDeleteEditable}>
                   {this.getSelected().deleteActionText()}
                 </button>
               </span>
-            ) : null}
+            ) : (
+              <span>
+                <button type="button"
+                  className="button-s mbs"
+                  onClick={this.deleteEditable}
+                >{this.getSelected().cancelNewText()}</button>
+              </span>
+            )}
           </div>
         </div>
       </div>
