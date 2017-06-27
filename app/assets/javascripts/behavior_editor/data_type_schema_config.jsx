@@ -32,6 +32,8 @@ define(function(require) {
       this.props.onAdd(() => this.focusOnLastField());
     },
 
+    fieldComponents: [],
+
     focusOnLastField: function() {
       const lastFieldIndex = this.props.fields.length - 1;
       if (lastFieldIndex >= 0) {
@@ -40,11 +42,9 @@ define(function(require) {
     },
 
     focusIndex: function(index) {
-      this.refs['field' + index].focus();
-    },
-
-    hasFields: function() {
-      return this.props.fields.length > 0;
+      if (this.fieldComponents[index]) {
+        this.fieldComponents[index].focus();
+      }
     },
 
     render: function() {
@@ -59,7 +59,7 @@ define(function(require) {
                     <div key={`dataTypeField${index}`} className="mbs">
                       <DataTypeFieldDefinition
                         key={'DataTypeFieldDefinition' + index}
-                        ref={'field' + index}
+                        ref={(component) => this.fieldComponents[index] = component}
                         field={field}
                         paramTypes={this.props.paramTypes}
                         onChange={this.onChange.bind(this, index)}

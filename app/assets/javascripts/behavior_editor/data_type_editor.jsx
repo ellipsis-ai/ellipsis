@@ -86,8 +86,8 @@ define(function(require) {
       });
       if (newConfig.fields.length === 0) {
         this.addNewDataTypeField(() => {
-          if (this.refs.schemaConfig) {
-            this.refs.schemaConfig.focusOnLastField();
+          if (this.schemaConfig) {
+            this.schemaConfig.focusOnLastField();
           }
         });
       }
@@ -213,7 +213,7 @@ define(function(require) {
               />
             ) : (
               <DataTypeSchemaConfig
-                ref="schemaConfig"
+                ref={(element) => this.schemaConfig = element}
                 onChange={this.updateDataTypeFieldAtIndexWith}
                 onDelete={this.deleteDataTypeFieldAtIndex}
                 onAdd={this.addNewDataTypeField}
