@@ -26,6 +26,10 @@ define(function(require) {
       return "Are you sure you want to delete this library?";
     }
 
+    cancelNewText() {
+      return "Cancel new library";
+    }
+
     buildUpdatedGroupFor(group, props) {
       const updated = this.clone(props);
       const updatedVersions = group.libraryVersions.
