@@ -22,7 +22,7 @@ class GraphQLController @Inject() (
               query: String,
               maybeOperationName: Option[String],
               maybeVariables: Option[String]
-              ) = Action.async { request ⇒
+              ) = Action.async { request =>
 
     for {
       maybeBehaviorGroup <- dataService.behaviorGroups.findForInvocationToken(token)

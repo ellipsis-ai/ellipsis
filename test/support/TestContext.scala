@@ -26,6 +26,7 @@ trait TestContext extends MockitoSugar{
       overrides(bind[AWSLambdaService].to[MockAWSLambdaService]).
       overrides(bind[EventHandler].toInstance(mock[EventHandler])).
       overrides(bind[GithubService].toInstance(mock[GithubService])).
+      overrides(bind[GraphQLService].toInstance(mock[GraphQLService])).
       disable[ActorModule]
   }
   lazy val teamId: String = IDs.next
@@ -33,6 +34,7 @@ trait TestContext extends MockitoSugar{
   lazy val user: User = newUserFor(teamId)
   lazy implicit val app: Application = appBuilder.build()
   lazy val dataService = app.injector.instanceOf(classOf[DataService])
+  lazy val graphQLService = app.injector.instanceOf(classOf[GraphQLService])
   lazy val actorSystem = app.injector.instanceOf(classOf[ActorSystem])
   lazy val eventHandler = app.injector.instanceOf(classOf[EventHandler])
   lazy val githubService = app.injector.instanceOf(classOf[GithubService])
