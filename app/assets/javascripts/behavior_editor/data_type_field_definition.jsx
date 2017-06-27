@@ -62,26 +62,29 @@ define(function(require) {
         <div>
           <div className="border border-light bg-white plm pbxs">
             <div className="columns columns-elastic">
-              <div className="column column-expand align-form-input">
+              <div className="column column-expand">
                 <FormInput
                   ref="name"
-                  className="form-input-borderless type-monospace type-s width-15 mrm"
-                  placeholder="dataTypeField"
+                  className="form-input-borderless type-monospace type-s width-15 mrm align-m"
+                  placeholder="Field name"
                   value={this.props.field.name}
                   onChange={this.onNameChange}
                 />
 
-                <span className="display-inline-block align-m type-s type-weak mrm mbs">of type</span>
-                <Select className="form-select-s form-select-light align-m mrm mbs" name="paramType" value={this.props.field.fieldType.id} onChange={this.onTypeChange}>
+                <span className="display-inline-block align-m type-s type-weak mrm">of type</span>
+
+                <Select className="form-select-s form-select-light align-m mrm" name="paramType" value={this.props.field.fieldType.id} onChange={this.onTypeChange}>
                   {this.props.paramTypes.map((fieldType) => (
                     <option value={fieldType.id} key={this.keyFor(fieldType)}>
                       {fieldType.name}
                     </option>
                   ))}
                 </Select>
+
                 {ifPresent(this.isConfigurable(), () => (
-                  <button type="button" className="button-s button-shrink mbs" onClick={this.onConfigureType}>Edit type…</button>
+                  <button type="button" className="button-s button-shrink align-m" onClick={this.onConfigureType}>Edit type…</button>
                 ))}
+
               </div>
               <div className="column column-shrink">
                 <DeleteButton
