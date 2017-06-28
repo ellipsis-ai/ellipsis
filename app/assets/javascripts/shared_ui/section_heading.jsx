@@ -1,8 +1,8 @@
 define(function(require) {
-var React = require('react'),
+const React = require('react'),
   ifPresent = require('../lib/if_present');
 
-return React.createClass({
+const SectionHeading = React.createClass({
   displayName: "SectionHeading",
   propTypes: {
     number: React.PropTypes.string,
@@ -21,5 +21,7 @@ return React.createClass({
     );
   }
 });
+
+return SectionHeading;
 
 });

@@ -3,6 +3,7 @@ define(function(require) {
     CodeConfiguration = require('./code_configuration'),
     Collapsible = require('../shared_ui/collapsible'),
     DataTypeCodeEditorHelp = require('./data_type_code_editor_help'),
+    DataTypeDataCollectionConfig = require('./data_type_data_collection_config'),
     DataTypeResultConfig = require('./data_type_result_config'),
     DataTypeSchemaConfig = require('./data_type_schema_config'),
     DataTypeSourceConfig = require('./data_type_source_config'),
@@ -183,6 +184,53 @@ define(function(require) {
       });
     },
 
+    renderCodeEditor: function() {
+      return (
+        <div>
+          <CodeConfiguration
+            sectionNumber={"3"}
+            sectionHeading={"Run code to generate a list"}
+            codeEditorHelp={(
+              <div className="mbxl">
+                <DataTypeCodeEditorHelp
+                  functionBody={this.getSelectedBehavior().getFunctionBody()}
+                  usesSearch={this.hasInputNamed('searchQuery')}
+                  isFinishedBehavior={this.isFinishedBehavior()}
+                />
+              </div>
+            )}
+
+            activePanelName={this.props.activePanelName}
+            activeDropdownName={this.props.activeDropdownName}
+            onToggleActiveDropdown={this.props.onToggleActiveDropdown}
+            onToggleActivePanel={this.props.onToggleActivePanel}
+            animationIsDisabled={this.props.animationIsDisabled}
+
+            onToggleAWSConfig={this.props.onToggleAWSConfig}
+            awsConfig={this.props.awsConfig}
+            onAWSAddNewEnvVariable={this.props.onAWSAddNewEnvVariable}
+            onAWSConfigChange={this.props.onAWSConfigChange}
+
+            apiSelector={this.props.apiSelector}
+
+            inputs={this.props.inputs}
+            systemParams={this.props.systemParams}
+            apiApplications={this.props.apiApplications}
+
+            functionBody={this.getSelectedBehavior().getFunctionBody()}
+            onChangeFunctionBody={this.updateCode}
+            onCursorChange={this.props.onCursorChange}
+            useLineWrapping={this.props.useLineWrapping}
+            onToggleCodeEditorLineWrapping={this.props.onToggleCodeEditorLineWrapping}
+            canDeleteFunctionBody={false}
+            onDeleteFunctionBody={() => null}
+
+            envVariableNames={this.props.envVariableNames}
+          />
+        </div>
+      );
+    },
+
     render: function() {
       return (
         <div>
@@ -224,52 +272,11 @@ define(function(require) {
               />
             )}
 
-            {this.usesCode() ? (
-              <div>
-                <hr className="man thin bg-gray-light" />
+            <hr className="man thin bg-gray-light" />
 
-                <CodeConfiguration
-                  sectionNumber={"3"}
-                  sectionHeading={"Run code to generate a list"}
-                  codeEditorHelp={(
-                    <div className="mbxl">
-                      <DataTypeCodeEditorHelp
-                        functionBody={this.getSelectedBehavior().getFunctionBody()}
-                        usesSearch={this.hasInputNamed('searchQuery')}
-                        isFinishedBehavior={this.isFinishedBehavior()}
-                      />
-                    </div>
-                  )}
-
-                  activePanelName={this.props.activePanelName}
-                  activeDropdownName={this.props.activeDropdownName}
-                  onToggleActiveDropdown={this.props.onToggleActiveDropdown}
-                  onToggleActivePanel={this.props.onToggleActivePanel}
-                  animationIsDisabled={this.props.animationIsDisabled}
-
-                  onToggleAWSConfig={this.props.onToggleAWSConfig}
-                  awsConfig={this.props.awsConfig}
-                  onAWSAddNewEnvVariable={this.props.onAWSAddNewEnvVariable}
-                  onAWSConfigChange={this.props.onAWSConfigChange}
-
-                  apiSelector={this.props.apiSelector}
-
-                  inputs={this.props.inputs}
-                  systemParams={this.props.systemParams}
-                  apiApplications={this.props.apiApplications}
-
-                  functionBody={this.getSelectedBehavior().getFunctionBody()}
-                  onChangeFunctionBody={this.updateCode}
-                  onCursorChange={this.props.onCursorChange}
-                  useLineWrapping={this.props.useLineWrapping}
-                  onToggleCodeEditorLineWrapping={this.props.onToggleCodeEditorLineWrapping}
-                  canDeleteFunctionBody={false}
-                  onDeleteFunctionBody={() => null}
-
-                  envVariableNames={this.props.envVariableNames}
-                />
-              </div>
-            ) : null}
+            {this.usesCode() ? this.renderCodeEditor() : (
+              <DataTypeDataCollectionConfig />
+            )}
           </Collapsible>
         </div>
       );

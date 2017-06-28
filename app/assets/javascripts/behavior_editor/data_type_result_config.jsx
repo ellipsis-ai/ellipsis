@@ -43,7 +43,7 @@ define(function(require) {
           </div>
 
           <div className="mtxl">
-            <Checklist disabledWhen={this.props.isFinishedBehavior}>
+            <Checklist disabledWhen={true}>
               <Checklist.Item checkedWhen={!this.props.usesSearch}>
                 <span>Use <span className="type-semibold">Select from a list</span> when there are few choices.</span>
                 <span>The user will just pick from the whole list.</span>
