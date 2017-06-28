@@ -63,27 +63,45 @@ define(function(require) {
           <div className="border border-light bg-white plm pbxs">
             <div className="columns columns-elastic">
               <div className="column column-expand">
-                <FormInput
-                  ref="name"
-                  className="form-input-borderless type-monospace type-s width-15 mrm align-m"
-                  placeholder="Field name"
-                  value={this.props.field.name}
-                  onChange={this.onNameChange}
-                />
-
-                <span className="display-inline-block align-m type-s type-weak mrm">of type</span>
-
-                <Select className="form-select-s form-select-light align-m mrm" name="paramType" value={this.props.field.fieldType.id} onChange={this.onTypeChange}>
-                  {this.props.paramTypes.map((fieldType) => (
-                    <option value={fieldType.id} key={this.keyFor(fieldType)}>
-                      {fieldType.name}
-                    </option>
-                  ))}
-                </Select>
-
-                {ifPresent(this.isConfigurable(), () => (
-                  <button type="button" className="button-s button-shrink align-m" onClick={this.onConfigureType}>Edit type…</button>
-                ))}
+                <div className="columns">
+                  <div className="column column-one-half narrow-column-full">
+                    <div className="columns columns-elastic">
+                      <div className="column column-shrink align-form-input">
+                        <span className=" type-s type-weak">Name:</span>
+                      </div>
+                      <div className="column column-expand">
+                        <FormInput
+                          ref="name"
+                          className="form-input-borderless type-monospace mrxl"
+                          placeholder=""
+                          value={this.props.field.name}
+                          onChange={this.onNameChange}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                  <div className="column column-one-half narrow-column-full">
+                    <div className="columns columns-elastic">
+                      <div className="column column-shrink">
+                        <div className="type-s type-weak mrs align-form-input display-ellipsis">Type of data:</div>
+                      </div>
+                      <div className="column column-expand align-form-input">
+                        <Select className="form-select-s form-select-light align-m width-full" name="paramType" value={this.props.field.fieldType.id} onChange={this.onTypeChange}>
+                          {this.props.paramTypes.map((fieldType) => (
+                            <option value={fieldType.id} key={this.keyFor(fieldType)}>
+                              {fieldType.name}
+                            </option>
+                          ))}
+                        </Select>
+                      </div>
+                      {ifPresent(this.isConfigurable(), () => (
+                        <div className="column column-shrink align-form-input">
+                          <button type="button" className="button-s button-shrink" onClick={this.onConfigureType}>Edit type…</button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
 
               </div>
               <div className="column column-shrink">
