@@ -1,6 +1,6 @@
 define(function(require) {
 
-  const Input = require('./input');
+  const Name = require('../lib/name');
 
   class DataTypeField {
     constructor(props) {
@@ -47,8 +47,7 @@ define(function(require) {
     }
 
     static formatName(proposedName) {
-      // TODO: maybe use graphql-specific validation
-      return Input.formatName(proposedName);
+      return Name.formatForCode(proposedName);
     }
 
   }
