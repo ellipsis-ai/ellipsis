@@ -20,6 +20,11 @@ object DataTypeConfigQueries {
   }
   val allForQuery = Compiled(uncompiledAllForQuery _)
 
+  def uncompiledAllUsingDefaultStorageForQuery(groupVersionId: Rep[String]) = {
+    uncompiledAllForQuery(groupVersionId).filter { case(config, _) => config.maybeUsesCode === false }
+  }
+  val allUsingDefaultStorageForQuery = Compiled(uncompiledAllUsingDefaultStorageForQuery _)
+
   def uncompiledMaybeForQuery(behaviorVersionId: Rep[String]) = {
     allWithBehaviorVersion.filter { case(_, bv) => bv._1._1._1.id === behaviorVersionId }
   }

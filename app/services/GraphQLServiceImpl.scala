@@ -24,7 +24,7 @@ class GraphQLServiceImpl @Inject() (
 
   private def schemaStringFor(groupVersion: BehaviorGroupVersion): Future[String] = {
     for {
-      configs <- dataService.dataTypeConfigs.allFor(groupVersion).map(_.sortBy(_.id))
+      configs <- dataService.dataTypeConfigs.allUsingDefaultStorageFor(groupVersion).map(_.sortBy(_.id))
       typesStr <- Future.sequence(configs.map(_.graphQL(dataService))).map(_.mkString("\n\n"))
     } yield {
       val queryFieldsStr = configs.map(_.queryFieldsString).mkString("")

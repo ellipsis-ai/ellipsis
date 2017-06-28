@@ -43,6 +43,13 @@ class DataTypeConfigServiceImpl @Inject() (
     dataService.run(allForAction(groupVersion))
   }
 
+  def allUsingDefaultStorageFor(groupVersion: BehaviorGroupVersion): Future[Seq[DataTypeConfig]] = {
+    val action = allUsingDefaultStorageForQuery(groupVersion.id).result.map { r =>
+      r.map(tuple2Config)
+    }
+    dataService.run(action)
+  }
+
   def maybeFor(behaviorVersion: BehaviorVersion): Future[Option[DataTypeConfig]] = {
     val action = maybeForQuery(behaviorVersion.id).result.map { r =>
       r.headOption.map(tuple2Config)
