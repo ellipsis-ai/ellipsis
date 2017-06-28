@@ -106,7 +106,7 @@ POST        /api/say                                  @controllers.APIController
 #NOCSRF
 GET         /get_action_logs/:behaviorId/:token       @controllers.InvocationLogController.getLogs(behaviorId: String, token: String, from: Option[String] ?= None, to: Option[String] ?= None, userId: Option[String] ?= None)
 #NOCSRF
-POST        /storage/query/:token                     @controllers.GraphQLController.query(token: String)
+POST        /api/graphql                              @controllers.GraphQLController.query
 
 
 # Map static resources from the /public folder to the /assets URL path

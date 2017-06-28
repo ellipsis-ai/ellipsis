@@ -50,22 +50,19 @@ class DataTypeConfigServiceImpl @Inject() (
     dataService.run(action)
   }
 
-  def maybeFor(behaviorVersion: BehaviorVersion): Future[Option[DataTypeConfig]] = {
-    val action = maybeForQuery(behaviorVersion.id).result.map { r =>
+  def maybeForAction(behaviorVersion: BehaviorVersion): DBIO[Option[DataTypeConfig]] = {
+    maybeForQuery(behaviorVersion.id).result.map { r =>
       r.headOption.map(tuple2Config)
     }
-    dataService.run(action)
+  }
+
+  def maybeFor(behaviorVersion: BehaviorVersion): Future[Option[DataTypeConfig]] = {
+    dataService.run(maybeForAction(behaviorVersion))
   }
 
   def createForAction(behaviorVersion: BehaviorVersion, data: DataTypeConfigData): DBIO[DataTypeConfig] = {
     val newInstance = DataTypeConfig(IDs.next, data.usesCode, behaviorVersion)
-    (all += newInstance.toRaw).flatMap { _ =>
-      DBIO.sequence(data.fields.zipWithIndex.map { case(ea, i) =>
-        dataService.dataTypeFields.createForAction(ea, i + 1, newInstance, behaviorVersion.groupVersion)
-      }).map { _ =>
-        newInstance
-      }
-    }
+    (all += newInstance.toRaw).map(_ => newInstance)
   }
 
 

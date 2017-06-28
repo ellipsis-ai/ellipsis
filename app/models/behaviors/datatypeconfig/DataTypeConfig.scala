@@ -15,7 +15,7 @@ case class DataTypeConfig(
 
   lazy val name = behaviorVersion.maybeName.getOrElse("Unnamed Type")
   lazy val fieldName = GraphQLHelpers.formatFieldName(name)
-  lazy val listName = name.take(1).toLowerCase ++ name.substring(1) ++ "List"
+  lazy val listName = GraphQLHelpers.formatFieldName(name) ++ "List"
   lazy val deleteFieldName = "delete" ++ outputName
   lazy val createFieldName = "create" ++ outputName
 

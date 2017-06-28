@@ -108,7 +108,7 @@ class BehaviorGroupVersionServiceImpl @Inject() (
       _ <- DBIO.sequence(data.libraryVersions.map { ea =>
         dataService.libraries.ensureForAction(ea, groupVersion)
       })
-      _ <- DBIO.sequence(data.dataTypeBehaviorVersions.map { ea =>
+      dataTypeBehaviorVersionTuples <- DBIO.sequence(data.dataTypeBehaviorVersions.map { ea =>
         ea.behaviorId.map { behaviorId =>
           for {
             maybeExistingBehavior <- dataService.behaviors.findAction(behaviorId, user)
@@ -116,8 +116,20 @@ class BehaviorGroupVersionServiceImpl @Inject() (
               dataService.behaviors.createForAction(group, Some(behaviorId), ea.exportId, ea.config.isDataType)
             }
             behaviorVersion <- dataService.behaviorVersions.createForAction(behavior, groupVersion, requiredOAuth2ApiConfigs, requiredSimpleTokenApis, Some(user), ea)
-          } yield Some(behaviorVersion)
+          } yield Some((ea, behaviorVersion))
         }.getOrElse(DBIO.successful(None))
+      }).map(_.flatten)
+      dataTypeConfigTuples <- DBIO.sequence(dataTypeBehaviorVersionTuples.map { case(data, bv) =>
+        dataService.dataTypeConfigs.maybeForAction(bv).map { maybeConfig =>
+          maybeConfig.map { config => (data, config) }
+        }
+      }).map(_.flatten)
+      _ <- DBIO.sequence(dataTypeConfigTuples.map { case(data, config) =>
+        data.dataTypeConfig.map { configData =>
+          DBIO.sequence(configData.fields.zipWithIndex.map { case (ea, i) =>
+            dataService.dataTypeFields.createForAction(ea, i + 1, config, groupVersion)
+          })
+        }.getOrElse(DBIO.successful(Seq()))
       })
       _ <- DBIO.sequence(data.actionInputs.map { ea =>
         dataService.inputs.ensureForAction(ea, groupVersion)

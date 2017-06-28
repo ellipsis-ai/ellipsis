@@ -9,7 +9,11 @@ import scala.concurrent.Future
 case class DataTypeConfigData(
                                fields: Seq[DataTypeFieldData],
                                usesCode: Option[Boolean]
-                             )
+                             ) {
+  def copyWithParamTypeIdsIn(oldToNewIdMapping: collection.mutable.Map[String, String]): DataTypeConfigData = {
+    copy(fields = fields.map(_.copyWithParamTypeIdsIn(oldToNewIdMapping)))
+  }
+}
 
 object DataTypeConfigData {
 

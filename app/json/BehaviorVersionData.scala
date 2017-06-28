@@ -68,6 +68,11 @@ case class BehaviorVersionData(
     copy(id = Some(newId))
   }
 
+  def copyWithParamTypeIdsIn(oldToNewIdMapping: collection.mutable.Map[String, String]): BehaviorVersionData = {
+    val maybeNewDataTypeConfig = dataTypeConfig.map(_.copyWithParamTypeIdsIn(oldToNewIdMapping))
+    copy(dataTypeConfig = maybeNewDataTypeConfig)
+  }
+
   lazy val isDataType: Boolean = config.isDataType
 
   lazy val maybeFirstTrigger: Option[String] = triggers.filterNot(_.isRegex).map(_.text.toLowerCase).sorted.headOption

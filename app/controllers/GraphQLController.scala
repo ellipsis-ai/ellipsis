@@ -20,6 +20,7 @@ class GraphQLController @Inject() (
                                   ) extends EllipsisController {
 
   case class QueryInfo(
+                        token: String,
                         query: String,
                         maybeOperationName: Option[String],
                         maybeVariables: Option[String]
@@ -27,20 +28,21 @@ class GraphQLController @Inject() (
 
   private val queryForm = Form(
     mapping(
+      "token" -> nonEmptyText,
       "query" -> nonEmptyText,
       "operationName" -> optional(nonEmptyText),
       "variables" -> optional(nonEmptyText)
     )(QueryInfo.apply)(QueryInfo.unapply)
   )
 
-  def query(token: String) = Action.async { implicit request =>
+  def query = Action.async { implicit request =>
     queryForm.bindFromRequest.fold(
       formWithErrors => {
         Future.successful(BadRequest(formWithErrors.toString))
       },
       info => {
         for {
-          maybeBehaviorGroup <- dataService.behaviorGroups.findForInvocationToken(token)
+          maybeBehaviorGroup <- dataService.behaviorGroups.findForInvocationToken(info.token)
           maybeResult <- maybeBehaviorGroup.map { group =>
             graphQL.runQuery(group, info.query, info.maybeOperationName, info.maybeVariables)
           }.getOrElse(Future.successful(None))
