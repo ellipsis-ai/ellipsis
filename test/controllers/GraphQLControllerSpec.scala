@@ -46,11 +46,13 @@ class GraphQLControllerSpec extends PlaySpec with MockitoSugar {
                     """.stripMargin
 
   def bodyFor(
+              token: String,
               query: String,
               maybeOperationName: Option[String] = None,
               maybeVariables: Option[String] = None
             ): JsValue = {
     val parts = Seq(
+      Some(("token", JsString(token))),
       Some(("query", JsString(query))),
       maybeOperationName.map { n => ("operationName", JsString(n)) },
       maybeVariables.map { v => ("variables", JsString(v)) }
@@ -64,7 +66,7 @@ class GraphQLControllerSpec extends PlaySpec with MockitoSugar {
       running(app) {
         val queryResult = Some(JsObject(Map("data" -> JsArray())))
         val token = setUpMocksFor(team, user, madeUpQuery, queryResult, dataService, graphQLService)
-        val request = FakeRequest(controllers.routes.GraphQLController.query(token)).withJsonBody(bodyFor(madeUpQuery))
+        val request = FakeRequest(controllers.routes.GraphQLController.query()).withJsonBody(bodyFor(token, madeUpQuery))
         val result = route(app, request).get
         status(result) mustBe OK
         val resultStr = contentAsString(result)
@@ -75,7 +77,7 @@ class GraphQLControllerSpec extends PlaySpec with MockitoSugar {
     "respond with NotFound for None result" in new ControllerTestContext {
       running(app) {
         val token = setUpMocksFor(team, user, madeUpQuery, None, dataService, graphQLService)
-        val request = FakeRequest(controllers.routes.GraphQLController.query(token)).withJsonBody(bodyFor(madeUpQuery))
+        val request = FakeRequest(controllers.routes.GraphQLController.query()).withJsonBody(bodyFor(token, madeUpQuery))
         val result = route(app, request).get
         status(result) mustBe NOT_FOUND
       }
