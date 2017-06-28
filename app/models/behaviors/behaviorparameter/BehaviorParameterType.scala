@@ -347,12 +347,12 @@ case class BehaviorBackedDataType(dataTypeConfig: DataTypeConfig) extends Behavi
       fetchValidValuesResult(maybeSearchQuery, context).map { maybeResult =>
         maybeResult.map {
           case r: SuccessResult => extractValidValues(r)
-          case r: BotResult => Seq()
+          case _: BotResult => Seq()
         }.getOrElse(Seq())
       }
     } else {
       val filter = maybeSearchQuery.map { searchQuery =>
-        s"""{ label: $searchQuery }"""
+        s"""{ ${BehaviorParameterType.LABEL_PROPERTY}: $searchQuery }"""
       }.getOrElse("{}")
       dataTypeConfig.outputFieldNames(context.dataService).flatMap { fieldStr =>
         val query =
