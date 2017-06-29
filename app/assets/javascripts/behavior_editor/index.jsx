@@ -33,6 +33,7 @@ var React = require('react'),
   ResponseTemplateConfiguration = require('./response_template_configuration'),
   ResponseTemplateHelp = require('./response_template_help'),
   SavedAnswerEditor = require('./saved_answer_editor'),
+  SequentialName = require('../lib/sequential_name'),
   SharedAnswerInputSelector = require('./shared_answer_input_selector'),
   Sticky = require('../shared_ui/sticky'),
   SVGHamburger = require('../svg/hamburger'),
@@ -449,18 +450,8 @@ const BehaviorEditor = React.createClass({
     this.setBehaviorInputs(newInputs, this.focusOnLastInput);
   },
 
-  getNewGenericInputName: function() {
-    let newIndex = this.getInputs().length + 1;
-    while (this.getInputs().some(ea => {
-      return ea.name === 'userInput' + newIndex;
-    })) {
-      newIndex++;
-    }
-    return `userInput${newIndex}`;
-  },
-
   addNewInput: function(optionalNewName) {
-    const newName = optionalNewName || this.getNewGenericInputName();
+    const newName = optionalNewName || SequentialName.nextFor(this.getInputs(), (ea) => ea.name, "userInput");
     const url = jsRoutes.controllers.BehaviorEditorController.newUnsavedInput(newName).url;
     fetch(url, { credentials: 'same-origin' })
       .then(response => response.json())
@@ -1751,18 +1742,9 @@ const BehaviorEditor = React.createClass({
     return this.state.animationDisabled;
   },
 
-  getNewDataTypeName: function() {
-    const dataTypes = this.getDataTypeBehaviors();
-    let index = dataTypes.length + 1;
-    while (dataTypes.some((ea) => ea.name === `Data type ${index}`)) {
-      index++;
-    }
-    return `Data type ${index}`;
-  },
-
   addNewBehavior: function(isDataType, behaviorIdToClone) {
     const group = this.getBehaviorGroup();
-    const newName = isDataType ? this.getNewDataTypeName() : null;
+    const newName = isDataType ? SequentialName.nextFor(this.getDataTypeBehaviors(), (ea) => ea.name, "dataType") : null;
     const url = jsRoutes.controllers.BehaviorEditorController.newUnsavedBehavior(isDataType, group.teamId, behaviorIdToClone, newName).url;
     fetch(url, { credentials: 'same-origin' })
       .then((response) => response.json())
