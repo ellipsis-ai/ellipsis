@@ -12,6 +12,8 @@ define(function(require) {
       // children: React.PropTypes.node.isRequired
     },
 
+    // TODO: Hook these up to modify the data type once it supports these options
+
     setReadOnly: function() {
 
     },
