@@ -351,7 +351,7 @@ const BehaviorEditor = React.createClass({
   },
 
   buildDataTypeNotifications: function() {
-    return this.getParamTypesNeedingConfiguration().map(ea => {
+    const needsConfig = this.getParamTypesNeedingConfiguration().map(ea => {
       const behaviorVersion = this.getBehaviorGroup().behaviorVersions.find(bv => bv.id === ea.id);
       const behaviorId = behaviorVersion ? behaviorVersion.behaviorId : null;
       return new NotificationData({
@@ -360,6 +360,26 @@ const BehaviorEditor = React.createClass({
         onClick: () => this.onSelect(this.getBehaviorGroup().id, behaviorId)
       });
     });
+
+    const dataTypes = this.getDataTypeBehaviors();
+
+    const unnamedDataTypes = dataTypes
+      .filter((ea) => !ea.getName().trim())
+      .map((ea) => {
+        const dataTypeId = ea.behaviorId;
+        return new NotificationData({
+          kind: "data_type_unnamed",
+          onClick: () => {
+            this.onSelect(this.getBehaviorGroup().id, dataTypeId, () => {
+              if (this.refs.editableNameInput) {
+                this.refs.editableNameInput.focus();
+              }
+            });
+          }
+        });
+      });
+
+    return [].concat(needsConfig, unnamedDataTypes);
   },
 
   getValidParamNamesForTemplate: function() {
@@ -1704,7 +1724,7 @@ const BehaviorEditor = React.createClass({
     return selected ? selected.editorScrollPosition : 0;
   },
 
-  onSelect: function(groupId, id) {
+  onSelect: function(groupId, id, optionalCallback) {
     var newState = {
       animationDisabled: true,
       selectedId: id
@@ -1721,6 +1741,9 @@ const BehaviorEditor = React.createClass({
       this.setState({
         animationDisabled: false
       });
+      if (optionalCallback) {
+        optionalCallback();
+      }
     });
   },
 
@@ -1728,9 +1751,19 @@ const BehaviorEditor = React.createClass({
     return this.state.animationDisabled;
   },
 
+  getNewDataTypeName: function() {
+    const dataTypes = this.getDataTypeBehaviors();
+    let index = dataTypes.length + 1;
+    while (dataTypes.some((ea) => ea.name === `Data type ${index}`)) {
+      index++;
+    }
+    return `Data type ${index}`;
+  },
+
   addNewBehavior: function(isDataType, behaviorIdToClone) {
     const group = this.getBehaviorGroup();
-    const url = jsRoutes.controllers.BehaviorEditorController.newUnsavedBehavior(isDataType, group.teamId, behaviorIdToClone).url;
+    const newName = isDataType ? this.getNewDataTypeName() : null;
+    const url = jsRoutes.controllers.BehaviorEditorController.newUnsavedBehavior(isDataType, group.teamId, behaviorIdToClone, newName).url;
     fetch(url, { credentials: 'same-origin' })
       .then((response) => response.json())
       .then((json) => {
@@ -1816,7 +1849,7 @@ const BehaviorEditor = React.createClass({
           <div className="column column-shrink">
             <FormInput
               className="form-input-borderless form-input-l type-l type-semibold width-15 mobile-width-full"
-              ref="input"
+              ref="editableNameInput"
               value={this.getEditableName()}
               placeholder={this.getSelected().namePlaceholderText()}
               onChange={this.updateName}

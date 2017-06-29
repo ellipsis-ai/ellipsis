@@ -33,7 +33,7 @@ POST        /test_skill_triggers                      @controllers.BehaviorEdito
 POST        /test_behavior_triggers                   @controllers.BehaviorEditorController.testTriggers
 POST        /test_skill_invocation                    @controllers.BehaviorEditorController.testInvocation
 POST        /test_behavior_invocation                 @controllers.BehaviorEditorController.testInvocation
-GET         /new_unsaved_behavior/:isDataType/:teamId   @controllers.BehaviorEditorController.newUnsavedBehavior(isDataType: Boolean, teamId: String, behaviorId: Option[String] ?= None)
+GET         /new_unsaved_behavior/:isDataType/:teamId @controllers.BehaviorEditorController.newUnsavedBehavior(isDataType: Boolean, teamId: String, behaviorId: Option[String] ?= None, name: Option[String] ?= None)
 GET         /new_unsaved_library/:teamId              @controllers.BehaviorEditorController.newUnsavedLibrary(teamId: String, libraryId: Option[String] ?= None)
 GET         /new_unsaved_input/:name                  @controllers.BehaviorEditorController.newUnsavedInput(name: String)
 GET         /new_unsaved_data_type_field/:name        @controllers.BehaviorEditorController.newUnsavedDataTypeField(name: String)
