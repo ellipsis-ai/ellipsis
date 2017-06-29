@@ -1,20 +1,18 @@
 package models.behaviors.defaultstorageitem
 
-import models.behaviors.behaviorgroup.BehaviorGroup
+import models.behaviors.behavior.Behavior
 import play.api.libs.json.JsValue
 
 case class DefaultStorageItem(
                              id: String,
-                             typeName: String,
-                             behaviorGroup: BehaviorGroup,
+                             behavior: Behavior,
                              data: JsValue
                              ) {
 
   def toRaw: RawDefaultStorageItem = {
     RawDefaultStorageItem(
       id,
-      typeName,
-      behaviorGroup.id,
+      behavior.id,
       data
     )
   }
