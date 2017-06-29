@@ -97,23 +97,23 @@ trait DBSpec extends PlaySpec with OneAppPerSuite with MockitoSugar {
   }
 
   def newBehaviorVersionDataFor(behavior: Behavior): BehaviorVersionData = {
-    BehaviorVersionData.newUnsavedFor(behavior.team.id, behavior.isDataType, dataService).copy(
+    BehaviorVersionData.newUnsavedFor(behavior.team.id, behavior.isDataType, None, dataService).copy(
       behaviorId = Some(behavior.id),
       isNew = Some(false)
     )
   }
 
   def newBehaviorVersionDataFor(group: BehaviorGroup, isDataType: Boolean): BehaviorVersionData = {
-    BehaviorVersionData.newUnsavedFor(group.team.id, isDataType, dataService)
+    BehaviorVersionData.newUnsavedFor(group.team.id, isDataType, None, dataService)
   }
 
   def defaultGroupVersionDataFor(group: BehaviorGroup, user: User): BehaviorGroupData = {
     val input1Data = newInputDataFor()
     val input2Data = newInputDataFor()
-    val behaviorVersion1Data = BehaviorVersionData.newUnsavedFor(group.team.id, isDataType = false, dataService).copy(
+    val behaviorVersion1Data = BehaviorVersionData.newUnsavedFor(group.team.id, isDataType = false, maybeName = None, dataService).copy(
       inputIds = Seq(input1Data.inputId.get)
     )
-    val behaviorVersion2Data = BehaviorVersionData.newUnsavedFor(group.team.id, isDataType = false, dataService).copy(
+    val behaviorVersion2Data = BehaviorVersionData.newUnsavedFor(group.team.id, isDataType = false, maybeName = None, dataService).copy(
       inputIds = Seq(input2Data.inputId.get)
     )
     newGroupVersionDataFor(group, user).copy(

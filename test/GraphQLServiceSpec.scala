@@ -26,12 +26,10 @@ class GraphQLServiceSpec extends DBSpec {
         val user = newSavedUserOn(team)
         val group = newSavedBehaviorGroupFor(team)
         val behaviorVersionData =
-          BehaviorVersionData.newUnsavedFor(group.team.id, isDataType = true, dataService).
-            copy(name = Some("SomeType")).
+          BehaviorVersionData.newUnsavedFor(group.team.id, isDataType = true, maybeName = Some("SomeType"), dataService).
             copy(dataTypeConfig = Some(DataTypeConfigData(Seq(DataTypeFieldData.newUnsavedNamed("foo", textTypeData(dataService))), Some(false))))
         val behaviorVersionData2 =
-          BehaviorVersionData.newUnsavedFor(group.team.id, isDataType = true, dataService).
-            copy(name = Some("SomeType2")).
+          BehaviorVersionData.newUnsavedFor(group.team.id, isDataType = true, maybeName = Some("SomeType2"), dataService).
             copy(dataTypeConfig = Some(DataTypeConfigData(Seq(
               DataTypeFieldData.newUnsavedNamed("someType", BehaviorParameterTypeData(behaviorVersionData.behaviorId, None, behaviorVersionData.name.get, None)),
               DataTypeFieldData.newUnsavedNamed("bar", numberTypeData(dataService))
@@ -81,12 +79,10 @@ class GraphQLServiceSpec extends DBSpec {
         val user = newSavedUserOn(team)
         val group = newSavedBehaviorGroupFor(team)
         val behaviorVersionData =
-          BehaviorVersionData.newUnsavedFor(group.team.id, isDataType = true, dataService).
-            copy(name = Some("SomeType")).
+          BehaviorVersionData.newUnsavedFor(group.team.id, isDataType = true, maybeName = Some("SomeType"), dataService).
             copy(dataTypeConfig = Some(DataTypeConfigData(Seq(DataTypeFieldData.newUnsavedNamed("foo", textTypeData(dataService))), Some(false))))
         val behaviorVersionData2 =
-          BehaviorVersionData.newUnsavedFor(group.team.id, isDataType = true, dataService).
-            copy(name = Some("SomeType2")).
+          BehaviorVersionData.newUnsavedFor(group.team.id, isDataType = true, maybeName = Some("SomeType2"), dataService).
             copy(dataTypeConfig = Some(DataTypeConfigData(Seq(
               DataTypeFieldData.newUnsavedNamed("someType", BehaviorParameterTypeData(behaviorVersionData.behaviorId, None, behaviorVersionData.name.get, None)),
               DataTypeFieldData.newUnsavedNamed("bar", numberTypeData(dataService))
