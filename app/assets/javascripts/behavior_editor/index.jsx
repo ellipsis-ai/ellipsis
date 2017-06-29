@@ -367,11 +367,10 @@ const BehaviorEditor = React.createClass({
     const unnamedDataTypes = dataTypes
       .filter((ea) => !ea.getName().trim())
       .map((ea) => {
-        const dataTypeId = ea.behaviorId;
         return new NotificationData({
           kind: "data_type_unnamed",
           onClick: () => {
-            this.onSelect(this.getBehaviorGroup().id, dataTypeId, () => {
+            this.onSelect(this.getBehaviorGroup().id, ea.behaviorId, () => {
               if (this.refs.editableNameInput) {
                 this.refs.editableNameInput.focus();
               }
@@ -380,7 +379,39 @@ const BehaviorEditor = React.createClass({
         });
       });
 
-    return [].concat(needsConfig, unnamedDataTypes);
+    const missingFields = dataTypes
+      .filter((ea) => ea.getDataTypeConfig().isMissingFields())
+      .map((ea) => {
+        return new NotificationData({
+          kind: "data_type_missing_fields",
+          name: ea.getName(),
+          onClick: () => {
+            this.onSelect(this.getBehaviorGroup().id, ea.behaviorId, () => {
+              if (this.refs.dataTypeEditor) {
+                this.refs.dataTypeEditor.addNewDataTypeField();
+              }
+            });
+          }
+        });
+      });
+
+    const unnamedFields = dataTypes
+      .filter((dataType) => dataType.getDataTypeFields().some((field) => !field.name))
+      .map((ea) => {
+        return new NotificationData({
+          kind: "data_type_unnamed_fields",
+          name: ea.getName(),
+          onClick: () => {
+            this.onSelect(this.getBehaviorGroup().id, ea.behaviorId, () => {
+              if (this.refs.dataTypeEditor) {
+                this.refs.dataTypeEditor.focusOnFirstBlankField();
+              }
+            });
+          }
+        });
+      });
+
+    return [].concat(needsConfig, unnamedDataTypes, missingFields, unnamedFields);
   },
 
   getValidParamNamesForTemplate: function() {
@@ -1992,6 +2023,7 @@ const BehaviorEditor = React.createClass({
         <hr className="mtn mbn thin bg-gray-light" />
 
         <DataTypeEditor
+          ref="dataTypeEditor"
           behaviorVersion={this.getSelectedBehavior()}
           paramTypes={this.getParamTypes()}
           inputs={this.getInputs()}

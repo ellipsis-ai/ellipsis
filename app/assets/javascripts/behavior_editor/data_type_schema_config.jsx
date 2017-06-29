@@ -41,6 +41,13 @@ define(function(require) {
       }
     },
 
+    focusOnFirstBlankField: function() {
+      const index = this.props.fields.findIndex((ea) => !ea.name);
+      if (index >= 0) {
+        this.focusIndex(index);
+      }
+    },
+
     focusIndex: function(index) {
       if (this.fieldComponents[index]) {
         this.fieldComponents[index].focus();

@@ -7,6 +7,8 @@ define(function(require) {
     NotificationForMissingOAuth2Application = require('./oauth2_config_without_application'),
     NotificationForDataTypeNeedsConfig = require('./data_type_needs_config'),
     NotificationForDataTypeUnnamed = require('./data_type_unnamed'),
+    NotificationForDataTypeMissingFields = require('./data_type_missing_fields'),
+    NotificationForDataTypeUnnamedFields = require('./data_type_unnamed_fields'),
     NotificationForUnusedOAuth2Application = require('./oauth2_application_unused'),
     NotificationForUnusedAWS = require('./aws_unused'),
     NotificationForParamNotInFunction = require('./param_not_in_function'),
@@ -43,7 +45,7 @@ define(function(require) {
           containerClass: "box-warning",
           icon: this.getWarningIcon(),
           message: (
-            <NotificationForDataTypeNeedsConfig details={this.props.group.members}/>
+            <NotificationForDataTypeNeedsConfig details={this.props.group.members} />
           )
         };
       } else if (kind === "data_type_unnamed") {
@@ -51,7 +53,23 @@ define(function(require) {
           containerClass: "box-warning",
           icon: this.getWarningIcon(),
           message: (
-            <NotificationForDataTypeUnnamed details={this.props.group.members}/>
+            <NotificationForDataTypeUnnamed details={this.props.group.members} />
+          )
+        };
+      } else if (kind === "data_type_missing_fields") {
+        return {
+          containerClass: "box-warning",
+          icon: this.getWarningIcon(),
+          message: (
+            <NotificationForDataTypeMissingFields details={this.props.group.members} />
+          )
+        };
+      } else if (kind === "data_type_unnamed_fields") {
+        return {
+          containerClass: "box-warning",
+          icon: this.getWarningIcon(),
+          message: (
+            <NotificationForDataTypeUnnamedFields details={this.props.group.members} />
           )
         };
       } else if (kind === "oauth2_application_unused") {

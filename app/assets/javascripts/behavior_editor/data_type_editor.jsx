@@ -87,11 +87,7 @@ define(function(require) {
         dataTypeSourceChosen: true
       });
       if (newConfig.fields.length === 0) {
-        this.addNewDataTypeField(() => {
-          if (this.schemaConfig) {
-            this.schemaConfig.focusOnLastField();
-          }
-        });
+        this.addNewDataTypeField();
       }
     },
 
@@ -118,9 +114,19 @@ define(function(require) {
       this.setDataTypeConfig(newConfig, callback);
     },
 
-    addDataTypeField: function(field, callback) {
+    addDataTypeField: function(field) {
       const newFields = this.getDataTypeFields().concat([field]);
-      this.setDataTypeFields(newFields, callback);
+      this.setDataTypeFields(newFields, () => {
+        if (this.schemaConfig) {
+          this.schemaConfig.focusOnLastField();
+        }
+      });
+    },
+
+    focusOnFirstBlankField: function() {
+      if (this.schemaConfig) {
+        this.schemaConfig.focusOnFirstBlankField();
+      }
     },
 
     updateDataTypeFieldAtIndexWith: function(index, newField) {
@@ -134,13 +140,13 @@ define(function(require) {
       this.setDataTypeFields(ImmutableObjectUtils.arrayRemoveElementAtIndex(this.getDataTypeFields(), index));
     },
 
-    addNewDataTypeField: function(callback) {
+    addNewDataTypeField: function() {
       const newName = SequentialName.nextFor(this.getDataTypeFields(), (ea) => ea.name, "field");
       const url = jsRoutes.controllers.BehaviorEditorController.newUnsavedDataTypeField(newName).url;
       fetch(url, { credentials: 'same-origin' })
         .then(response => response.json())
         .then(json => {
-          this.addDataTypeField(new DataTypeField(json), callback);
+          this.addDataTypeField(new DataTypeField(json));
         });
     },
 
