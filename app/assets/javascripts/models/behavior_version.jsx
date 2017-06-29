@@ -92,6 +92,10 @@ define(function(require) {
       return this.getDataTypeConfig() ? this.getDataTypeConfig().getFields() : [];
     }
 
+    requiresFields() {
+      return this.getDataTypeConfig() ? this.getDataTypeConfig().requiresFields() : false;
+    }
+
     getTriggers() {
       return this.triggers || [];
     }

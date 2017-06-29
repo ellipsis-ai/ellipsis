@@ -25,12 +25,12 @@ define(function(require) {
       } else {
         return (
           <span>
-            <span>Data types require a name:</span>
+            <span>Data types require a name.</span>
             {this.props.details.map((ea, index) => (
-              <span>
-                <button key={`detail${index}`}
+              <span key={`detail${index}`}>
+                <button
                   type="button"
-                  className="mhxs phxs button-raw link button-s"
+                  className="button-raw link button-s mhxs"
                   onClick={ea.onClick}
                 >Edit name {index + 1}</button>
                 {index + 1 < this.props.details.length ? (

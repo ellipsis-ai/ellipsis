@@ -396,7 +396,7 @@ const BehaviorEditor = React.createClass({
       });
 
     const unnamedFields = dataTypes
-      .filter((dataType) => dataType.getDataTypeFields().some((field) => !field.name))
+      .filter((dataType) => dataType.requiresFields() && dataType.getDataTypeFields().some((field) => !field.name))
       .map((ea) => {
         return new NotificationData({
           kind: "data_type_unnamed_fields",
