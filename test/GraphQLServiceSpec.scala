@@ -110,7 +110,9 @@ class GraphQLServiceSpec extends DBSpec {
         val mutationResult = runNow(graphQLService.runQuery(firstVersion.group, mutation, None, Some(mutationVariables)))
         val savedItems = runNow(dataService.defaultStorageItems.filter(someType.name, jsonData, group))
         savedItems must have length(1)
-        (savedItems.head.data \ "foo").as[String] mustBe "bar"
+        val savedItem = savedItems.head
+        (savedItem.data \ "foo").as[String] mustBe "bar"
+        (savedItem.data \ "id").as[String] mustBe savedItem.id
         (mutationResult.get \ "data").get mustBe JsObject(Map("createSomeType" -> JsObject(Map("foo" -> JsString("bar")))))
 
 //        val query =
