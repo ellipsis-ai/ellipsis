@@ -21,7 +21,7 @@ var React = require('react'),
   FixedFooter = require('../shared_ui/fixed_footer'),
   HiddenJsonInput = require('./hidden_json_input'),
   Input = require('../models/input'),
-  Name = require('../lib/name'),
+  Formatter = require('../lib/formatter'),
   NotificationData = require('../models/notification_data'),
   FormInput = require('../form/input'),
   LibraryCodeEditorHelp = require('./library_code_editor_help'),
@@ -925,7 +925,7 @@ const BehaviorEditor = React.createClass({
   },
 
   updateName: function(newName) {
-    const normalizedName = this.isDataTypeBehavior() ? Name.formatForCode(newName) : newName;
+    const normalizedName = this.isDataTypeBehavior() ? Formatter.formatNameForCode(newName) : newName;
     this.setEditableProp('name', normalizedName);
   },
 

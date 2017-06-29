@@ -1,5 +1,4 @@
-define(function(require) {
-  const Name = require('../lib/name');
+define(function() {
 
   class Input {
     constructor(props) {
@@ -72,15 +71,6 @@ define(function(require) {
 
     static allFromJson(jsonArray) {
       return jsonArray.map((triggerObj) => new Input(triggerObj));
-    }
-
-    static formatName(proposedName) {
-      return Name.formatForCode(proposedName);
-    }
-
-    static isValidName(proposedName) {
-      var formattedName = Name.formatForCode(proposedName);
-      return formattedName === proposedName;
     }
   }
 

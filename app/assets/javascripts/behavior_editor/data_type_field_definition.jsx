@@ -2,6 +2,7 @@ define(function(require) {
   var React = require('react'),
     DeleteButton = require('../shared_ui/delete_button'),
     FormInput = require('../form/input'),
+    Formatter = require('../lib/formatter'),
     Select = require('../form/select'),
     DataTypeField = require('../models/data_type_field'),
     ifPresent = require('../lib/if_present');
@@ -27,7 +28,7 @@ define(function(require) {
     },
 
     onNameChange: function(newName) {
-      this.props.onChange(this.props.field.clone({ name: DataTypeField.formatName(newName) }));
+      this.props.onChange(this.props.field.clone({ name: Formatter.formatNameForCode(newName) }));
     },
 
     onTypeChange: function(newTypeId) {

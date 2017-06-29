@@ -1,6 +1,4 @@
-define(function(require) {
-
-  const Name = require('../lib/name');
+define(function() {
 
   class DataTypeField {
     constructor(props) {
@@ -44,10 +42,6 @@ define(function(require) {
 
     static fieldsFromJson(jsonArray) {
       return jsonArray.map((ea) => new DataTypeField(ea));
-    }
-
-    static formatName(proposedName) {
-      return Name.formatForCode(proposedName);
     }
 
   }

@@ -2,7 +2,22 @@ define(function(require) {
   var moment = require('moment');
   var ONE_WEEK_IN_MS = 1000 * 60 * 60 * 24 * 7;
 
-  return {
+  const RESERVED_WORDS = Object.freeze([
+    'break', 'case', 'catch', 'class', 'const', 'continue', 'debugger', 'default',
+    'delete', 'do', 'else', 'export', 'extends', 'finally', 'for', 'function',
+    'if', 'import', 'in', 'instanceof', 'new', 'return', 'super', 'switch',
+    'this', 'throw', 'try', 'typeof', 'var', 'void', 'while', 'with', 'yield'
+  ]);
+
+  function matchesReservedWord(name) {
+    return RESERVED_WORDS.some((word) => word === name);
+  }
+
+  function wasProbablyReservedWord(name) {
+    return RESERVED_WORDS.some((word) => name.indexOf('_' + word) === 0 && name.length === word.length + 2);
+  }
+
+  const Formatter = {
     formatTimestampLong: function(timestamp) {
       const m = moment(timestamp);
       return `${m.format('dddd, LL')} at ${m.format('LT')}`;
@@ -41,6 +56,27 @@ define(function(require) {
       return name.toUpperCase().replace(/\s/g, '_').replace(/^\d|[^A-Z0-9_]/g, '');
     },
 
+    formatNameForCode: function(name) {
+      // Needs to satisfy requirements for GraphQL identifiers, which is a subset of valid JavaScript identifiers:
+      // Regex: /[_A-Za-z][_0-9A-Za-z]*/
+      const validForJS = name.replace(/[^_0-9A-Za-z]/g, '').replace(/^[^_A-Za-z]/, '');
+
+      // GraphQL field names also can't begin with two underscores, per the spec https://facebook.github.io/graphql/#sec-Objects
+      const validForGraphQL = validForJS.replace(/^__*/, '_');
+
+      if (matchesReservedWord(validForGraphQL)) {
+        return '_' + validForGraphQL;
+      } else if (wasProbablyReservedWord(validForGraphQL)) {
+        return validForGraphQL.replace(/^_/, '');
+      } else {
+        return validForGraphQL;
+      }
+    },
+
+    isValidNameForCode: function(name) {
+      return Formatter.formatNameForCode(name) === name;
+    },
+
     formatList: function(list, optionalMapper) {
       var mapper = optionalMapper || ((ea) => ea);
       if (list.length === 0) {
@@ -55,4 +91,6 @@ define(function(require) {
       }
     }
   };
+
+  return Formatter;
 });

@@ -2,6 +2,7 @@ define(function(require) {
 var React = require('react'),
   DeleteButton = require('../shared_ui/delete_button'),
   FormInput = require('../form/input'),
+  Formatter = require('../lib/formatter'),
   Select = require('../form/select'),
   SVGTip = require('../svg/tip'),
   SVGInfo = require('../svg/info'),
@@ -43,7 +44,7 @@ return React.createClass({
   },
 
   onNameChange: function(newName) {
-    this.props.onChange(this.props.input.clone({ name: Input.formatName(newName) }));
+    this.props.onChange(this.props.input.clone({ name: Formatter.formatNameForCode(newName) }));
   },
 
   onInputTypeChange: function(newTypeId) {
