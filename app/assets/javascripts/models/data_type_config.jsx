@@ -20,6 +20,18 @@ define(function(require) {
       });
     }
 
+    requiresFields() {
+      return !this.usesCode;
+    }
+
+    hasFields() {
+      return this.fields.length > 0;
+    }
+
+    isMissingFields() {
+      return this.requiresFields() && !this.hasFields();
+    }
+
     getFields() {
       return this.fields;
     }

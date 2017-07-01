@@ -8,6 +8,7 @@ define(function(require) {
     DataTypeSchemaConfig = require('./data_type_schema_config'),
     DataTypeSourceConfig = require('./data_type_source_config'),
     SectionHeading = require('../shared_ui/section_heading'),
+    SequentialName = require('../lib/sequential_name'),
     BehaviorVersion = require('../models/behavior_version'),
     DataTypeField = require('../models/data_type_field'),
     Input = require('../models/input'),
@@ -86,11 +87,7 @@ define(function(require) {
         dataTypeSourceChosen: true
       });
       if (newConfig.fields.length === 0) {
-        this.addNewDataTypeField(() => {
-          if (this.schemaConfig) {
-            this.schemaConfig.focusOnLastField();
-          }
-        });
+        this.addNewDataTypeField();
       }
     },
 
@@ -117,9 +114,19 @@ define(function(require) {
       this.setDataTypeConfig(newConfig, callback);
     },
 
-    addDataTypeField: function(field, callback) {
+    addDataTypeField: function(field) {
       const newFields = this.getDataTypeFields().concat([field]);
-      this.setDataTypeFields(newFields, callback);
+      this.setDataTypeFields(newFields, () => {
+        if (this.schemaConfig) {
+          this.schemaConfig.focusOnLastField();
+        }
+      });
+    },
+
+    focusOnFirstBlankField: function() {
+      if (this.schemaConfig) {
+        this.schemaConfig.focusOnFirstBlankField();
+      }
     },
 
     updateDataTypeFieldAtIndexWith: function(index, newField) {
@@ -133,23 +140,13 @@ define(function(require) {
       this.setDataTypeFields(ImmutableObjectUtils.arrayRemoveElementAtIndex(this.getDataTypeFields(), index));
     },
 
-    getNewGenericDataTypeFieldName: function() {
-      let newIndex = this.getDataTypeFields().length + 1;
-      while (this.getDataTypeFields().some(ea => {
-        return ea.name === 'dataTypeField' + newIndex;
-      })) {
-        newIndex++;
-      }
-      return `dataTypeField${newIndex}`;
-    },
-
-    addNewDataTypeField: function(callback) {
-      const newName = this.getNewGenericDataTypeFieldName();
+    addNewDataTypeField: function() {
+      const newName = SequentialName.nextFor(this.getDataTypeFields(), (ea) => ea.name, "field");
       const url = jsRoutes.controllers.BehaviorEditorController.newUnsavedDataTypeField(newName).url;
       fetch(url, { credentials: 'same-origin' })
         .then(response => response.json())
         .then(json => {
-          this.addDataTypeField(new DataTypeField(json), callback);
+          this.addDataTypeField(new DataTypeField(json));
         });
     },
 

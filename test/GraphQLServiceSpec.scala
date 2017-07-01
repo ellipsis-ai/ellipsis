@@ -20,22 +20,19 @@ class GraphQLServiceSpec extends DBSpec {
     runNow(BehaviorParameterTypeData.from(NumberType, dataService))
   }
 
-  def buildGroupDataFor(group: BehaviorGroup, user: User): BehaviorGroupData = {
-    val behaviorVersionData =
-      BehaviorVersionData.newUnsavedFor(group.team.id, isDataType = true, dataService).
-        copy(name = Some("SomeType")).
-        copy(dataTypeConfig = Some(DataTypeConfigData(Seq(DataTypeFieldData.newUnsavedNamed("foo", textTypeData(dataService))), Some(false))))
-    val behaviorVersionData2 =
-      BehaviorVersionData.newUnsavedFor(group.team.id, isDataType = true, dataService).
-        copy(name = Some("SomeType2")).
-        copy(dataTypeConfig = Some(DataTypeConfigData(Seq(
-          DataTypeFieldData.newUnsavedNamed("someType", BehaviorParameterTypeData(behaviorVersionData.id, None, behaviorVersionData.name.get, None)),
-          DataTypeFieldData.newUnsavedNamed("bar", numberTypeData(dataService))
-        ), Some(false))))
-    newGroupVersionDataFor(group, user).copy(
-      behaviorVersions = Seq(behaviorVersionData, behaviorVersionData2)
-    )
-  }
+  def buildGroupDataFor(group: BehaviorGroup, user : User): BehaviorGroupData = {
+        val behaviorVersionData =
+          BehaviorVersionData.newUnsavedFor(group.team.id, isDataType = true, maybeName = Some("SomeType"), dataService).
+            copy(dataTypeConfig = Some(DataTypeConfigData(Seq(DataTypeFieldData.newUnsavedNamed("foo", textTypeData(dataService))), Some(false))))
+        val behaviorVersionData2 =
+          BehaviorVersionData.newUnsavedFor(group.team.id, isDataType = true, maybeName = Some("SomeType2"), dataService).
+            copy(dataTypeConfig = Some(DataTypeConfigData(Seq(
+              DataTypeFieldData.newUnsavedNamed("someType", BehaviorParameterTypeData(behaviorVersionData.id, None, behaviorVersionData.name.get, None)),
+              DataTypeFieldData.newUnsavedNamed("bar", numberTypeData(dataService))
+            ), Some(false))))
+         newGroupVersionDataFor(group, user).copy(
+          behaviorVersions = Seq(behaviorVersionData, behaviorVersionData2)
+        )}
 
   "schemaFor" should {
 

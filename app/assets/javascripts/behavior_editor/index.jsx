@@ -33,6 +33,7 @@ var React = require('react'),
   ResponseTemplateConfiguration = require('./response_template_configuration'),
   ResponseTemplateHelp = require('./response_template_help'),
   SavedAnswerEditor = require('./saved_answer_editor'),
+  SequentialName = require('../lib/sequential_name'),
   SharedAnswerInputSelector = require('./shared_answer_input_selector'),
   Sticky = require('../shared_ui/sticky'),
   SVGHamburger = require('../svg/hamburger'),
@@ -351,7 +352,7 @@ const BehaviorEditor = React.createClass({
   },
 
   buildDataTypeNotifications: function() {
-    return this.getParamTypesNeedingConfiguration().map(ea => {
+    const needsConfig = this.getParamTypesNeedingConfiguration().map(ea => {
       const behaviorVersion = this.getBehaviorGroup().behaviorVersions.find(bv => bv.id === ea.id);
       const behaviorId = behaviorVersion ? behaviorVersion.behaviorId : null;
       return new NotificationData({
@@ -360,6 +361,57 @@ const BehaviorEditor = React.createClass({
         onClick: () => this.onSelect(this.getBehaviorGroup().id, behaviorId)
       });
     });
+
+    const dataTypes = this.getDataTypeBehaviors();
+
+    const unnamedDataTypes = dataTypes
+      .filter((ea) => !ea.getName().trim())
+      .map((ea) => {
+        return new NotificationData({
+          kind: "data_type_unnamed",
+          onClick: () => {
+            this.onSelect(this.getBehaviorGroup().id, ea.behaviorId, () => {
+              if (this.refs.editableNameInput) {
+                this.refs.editableNameInput.focus();
+              }
+            });
+          }
+        });
+      });
+
+    const missingFields = dataTypes
+      .filter((ea) => ea.getDataTypeConfig().isMissingFields())
+      .map((ea) => {
+        return new NotificationData({
+          kind: "data_type_missing_fields",
+          name: ea.getName(),
+          onClick: () => {
+            this.onSelect(this.getBehaviorGroup().id, ea.behaviorId, () => {
+              if (this.refs.dataTypeEditor) {
+                this.refs.dataTypeEditor.addNewDataTypeField();
+              }
+            });
+          }
+        });
+      });
+
+    const unnamedFields = dataTypes
+      .filter((dataType) => dataType.requiresFields() && dataType.getDataTypeFields().some((field) => !field.name))
+      .map((ea) => {
+        return new NotificationData({
+          kind: "data_type_unnamed_fields",
+          name: ea.getName(),
+          onClick: () => {
+            this.onSelect(this.getBehaviorGroup().id, ea.behaviorId, () => {
+              if (this.refs.dataTypeEditor) {
+                this.refs.dataTypeEditor.focusOnFirstBlankField();
+              }
+            });
+          }
+        });
+      });
+
+    return [].concat(needsConfig, unnamedDataTypes, missingFields, unnamedFields);
   },
 
   getValidParamNamesForTemplate: function() {
@@ -429,18 +481,8 @@ const BehaviorEditor = React.createClass({
     this.setBehaviorInputs(newInputs, this.focusOnLastInput);
   },
 
-  getNewGenericInputName: function() {
-    let newIndex = this.getInputs().length + 1;
-    while (this.getInputs().some(ea => {
-      return ea.name === 'userInput' + newIndex;
-    })) {
-      newIndex++;
-    }
-    return `userInput${newIndex}`;
-  },
-
   addNewInput: function(optionalNewName) {
-    const newName = optionalNewName || this.getNewGenericInputName();
+    const newName = optionalNewName || SequentialName.nextFor(this.getInputs(), (ea) => ea.name, "userInput");
     const url = jsRoutes.controllers.BehaviorEditorController.newUnsavedInput(newName).url;
     fetch(url, { credentials: 'same-origin' })
       .then(response => response.json())
@@ -1704,7 +1746,7 @@ const BehaviorEditor = React.createClass({
     return selected ? selected.editorScrollPosition : 0;
   },
 
-  onSelect: function(groupId, id) {
+  onSelect: function(groupId, id, optionalCallback) {
     var newState = {
       animationDisabled: true,
       selectedId: id
@@ -1721,6 +1763,9 @@ const BehaviorEditor = React.createClass({
       this.setState({
         animationDisabled: false
       });
+      if (optionalCallback) {
+        optionalCallback();
+      }
     });
   },
 
@@ -1730,7 +1775,8 @@ const BehaviorEditor = React.createClass({
 
   addNewBehavior: function(isDataType, behaviorIdToClone) {
     const group = this.getBehaviorGroup();
-    const url = jsRoutes.controllers.BehaviorEditorController.newUnsavedBehavior(isDataType, group.teamId, behaviorIdToClone).url;
+    const newName = isDataType ? SequentialName.nextFor(this.getDataTypeBehaviors(), (ea) => ea.name, "dataType") : null;
+    const url = jsRoutes.controllers.BehaviorEditorController.newUnsavedBehavior(isDataType, group.teamId, behaviorIdToClone, newName).url;
     fetch(url, { credentials: 'same-origin' })
       .then((response) => response.json())
       .then((json) => {
@@ -1816,7 +1862,7 @@ const BehaviorEditor = React.createClass({
           <div className="column column-shrink">
             <FormInput
               className="form-input-borderless form-input-l type-l type-semibold width-15 mobile-width-full"
-              ref="input"
+              ref="editableNameInput"
               value={this.getEditableName()}
               placeholder={this.getSelected().namePlaceholderText()}
               onChange={this.updateName}
@@ -1977,6 +2023,7 @@ const BehaviorEditor = React.createClass({
         <hr className="mtn mbn thin bg-gray-light" />
 
         <DataTypeEditor
+          ref="dataTypeEditor"
           behaviorVersion={this.getSelectedBehavior()}
           paramTypes={this.getParamTypes()}
           inputs={this.getInputs()}

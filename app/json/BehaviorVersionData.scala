@@ -142,7 +142,7 @@ object BehaviorVersionData {
     )
   }
 
-  def newUnsavedFor(teamId: String, isDataType: Boolean, dataService: DataService): BehaviorVersionData = {
+  def newUnsavedFor(teamId: String, isDataType: Boolean, maybeName: Option[String], dataService: DataService): BehaviorVersionData = {
     val maybeDataTypeConfig = if (isDataType) { Some(DataTypeConfigData(Seq(), None)) } else { None }
     buildFor(
       Some(IDs.next),
@@ -155,7 +155,7 @@ object BehaviorVersionData {
       "",
       Seq(),
       Seq(BehaviorTriggerData("", requiresMention = true, isRegex = false, caseSensitive = false)),
-      BehaviorConfig(None, None, None, None, isDataType),
+      BehaviorConfig(None, maybeName, None, None, isDataType),
       maybeDataTypeConfig,
       None,
       None,
