@@ -22,6 +22,7 @@ sealed trait BehaviorParameterType {
   val exportId: String
   val name: String
   def needsConfig(dataService: DataService): Future[Boolean]
+  val isBuiltIn: Boolean
 
   val outputName: String
   lazy val inputName: String = outputName
@@ -90,6 +91,7 @@ sealed trait BehaviorParameterType {
 trait BuiltInType extends BehaviorParameterType {
   lazy val id = name
   lazy val exportId = name
+  val isBuiltIn: Boolean = true
   def needsConfig(dataService: DataService) = Future.successful(false)
   def resolvedValueFor(text: String, context: BehaviorParameterContext): Future[Option[String]] = {
     Future.successful(Some(text))
@@ -178,6 +180,8 @@ case class BehaviorBackedDataType(dataTypeConfig: DataTypeConfig) extends Behavi
 
   val outputName: String = dataTypeConfig.outputName
   override lazy val inputName: String = dataTypeConfig.inputName
+
+  val isBuiltIn: Boolean = false
 
   case class ValidValue(id: String, label: String, data: Map[String, String])
   implicit val validValueReads = new Reads[ValidValue] {

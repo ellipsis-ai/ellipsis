@@ -59,11 +59,25 @@ class GraphQLServiceImpl @Inject() (
     val createFieldRegex = """create(\S+)""".r
     val deleteFieldRegex = """delete(\S+)""".r
 
+    private def toJson(v: Any): JsValue = {
+      v match {
+        case opt: Option[Any] => opt.map(toJson).getOrElse(JsNull)
+        case s: String => Json.toJson(s)
+        case n: Double => JsNumber(BigDecimal(n))
+        case arr: Array[Any] => JsArray(arr.map(toJson))
+        case m: Map[String, Any] => {
+          JsObject(m.map { ea => (ea._1, toJson(ea._2)) })
+        }
+      }
+    }
+
     private def valueFor(
                           ctx: Context[DefaultStorageItemService, _],
                           definition: ast.FieldDefinition
                         ): JsValue = {
-      Json.toJson(ctx.arg(definition.arguments.head.name).asInstanceOf[ListMap[String, Option[String]]].toArray.toMap)
+      Json.toJson(ctx.arg(definition.arguments.head.name).asInstanceOf[ListMap[String, Option[Any]]].toArray.toMap.map { case(k, maybeValue) =>
+        (k, maybeValue.map(toJson))
+      })
     }
 
 
@@ -96,7 +110,7 @@ class GraphQLServiceImpl @Inject() (
             }
           }
         }
-        case deleteFieldRegex(_) => ctx.ctx.deleteItem(ctx.arg(definition.arguments.head.name), group)
+        case deleteFieldRegex(_) => ctx.ctx.deleteItem(ctx.arg(definition.arguments.head.name), group).map(_.data)
       }
     }
 
@@ -124,7 +138,7 @@ class GraphQLServiceImpl @Inject() (
     def fromJson(v: JsValue) = v match {
       case JsArray(l) ⇒ l
       case JsString(s) ⇒ s
-      case JsNumber(n) ⇒ n.intValue()
+      case JsNumber(n) ⇒ n.doubleValue()
       case other ⇒ other
     }
   }

@@ -48,6 +48,8 @@ trait BehaviorVersionService {
 
   def findCurrentByName(name: String, group: BehaviorGroup): Future[Option[BehaviorVersion]]
 
+  def findCurrentByNameAction(name: String, group: BehaviorGroup): DBIO[Option[BehaviorVersion]]
+
   def hasSearchParam(behaviorVersion: BehaviorVersion): Future[Boolean]
 
   def createForAction(

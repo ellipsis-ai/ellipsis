@@ -17,6 +17,8 @@ trait BehaviorService {
 
   def findByIdOrName(idOrName: String, group: BehaviorGroup): Future[Option[Behavior]]
 
+  def findByNameAction(name: String, group: BehaviorGroup): DBIO[Option[Behavior]]
+
   def findByIdOrNameOrTrigger(idOrNameOrTrigger: String, group: BehaviorGroup): Future[Option[Behavior]]
 
   def findAction(id: String, user: User): DBIO[Option[Behavior]]

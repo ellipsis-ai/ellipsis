@@ -2,6 +2,7 @@ package models.behaviors.defaultstorageitem
 
 import models.behaviors.behaviorgroup.BehaviorGroup
 import play.api.libs.json.JsValue
+import slick.dbio.DBIO
 
 import scala.concurrent.Future
 
@@ -12,6 +13,8 @@ trait DefaultStorageItemService {
   def filter(typeName: String, filter: JsValue, behaviorGroup: BehaviorGroup): Future[Seq[DefaultStorageItem]]
 
   def createItem(typeName: String, data: JsValue, behaviorGroup: BehaviorGroup): Future[Option[DefaultStorageItem]]
+
+  def createItemAction(typeName: String, data: JsValue, behaviorGroup: BehaviorGroup): DBIO[Option[DefaultStorageItem]]
 
   def deleteItem(id: String, behaviorGroup: BehaviorGroup): Future[DefaultStorageItem]
 

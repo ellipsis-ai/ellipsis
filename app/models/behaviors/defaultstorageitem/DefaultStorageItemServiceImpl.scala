@@ -55,23 +55,53 @@ class DefaultStorageItemServiceImpl @Inject() (
     }
   }
 
-  private def createItemForBehavior(behavior: Behavior, data: JsValue): Future[DefaultStorageItem] = {
+  private def createItemForBehaviorAction(behavior: Behavior, data: JsValue): DBIO[DefaultStorageItem] = {
     val newID = IDs.next
-    val newData = data match {
-      case obj: JsObject => obj + ("id", JsString(newID))
-      case _ => data
-    }
-    val newInstance = DefaultStorageItem(newID, behavior, newData)
-    val action = (all += newInstance.toRaw).map(_ => newInstance)
-    dataService.run(action)
+    for {
+      maybeCurrentVersion <- dataService.behaviors.maybeCurrentVersionForAction(behavior)
+      maybeDataTypeConfig <- maybeCurrentVersion.map { version =>
+        dataService.dataTypeConfigs.maybeForAction(version)
+      }.getOrElse(DBIO.successful(None))
+      fields <- maybeDataTypeConfig.map { config =>
+        dataService.dataTypeFields.allForAction(config)
+      }.getOrElse(DBIO.successful(Seq()))
+      fieldsWithObjectType <- DBIO.successful(fields.filterNot(_.fieldType.isBuiltIn))
+      nestedFieldItems <- DBIO.sequence(fieldsWithObjectType.flatMap { field =>
+        (data \ field.name).toOption.map { fieldData =>
+          createItemAction(field.fieldType.name, fieldData, behavior.group).map { maybeItem =>
+            (field, maybeItem)
+          }
+        }
+      })
+      newData <- DBIO.successful(data match {
+        case obj: JsObject => {
+          val dataWithId: JsObject = obj + ("id", JsString(newID))
+          nestedFieldItems.foldLeft(dataWithId)((acc, tuple) => {
+            val (field, maybeItem) = tuple
+            maybeItem.map { item =>
+              acc + (field.name, JsString(item.id))
+            }.getOrElse(acc)
+          })
+        }
+        case _ => data
+      })
+      newInstance <- DBIO.successful(DefaultStorageItem(newID, behavior, newData))
+      _ <- DBIO.successful(println(s"saving $newInstance"))
+      _ <- (all += newInstance.toRaw)
+    } yield newInstance
+  }
+
+  def createItemAction(typeName: String, data: JsValue, behaviorGroup: BehaviorGroup): DBIO[Option[DefaultStorageItem]] = {
+    (for {
+      maybeBehavior <- dataService.behaviors.findByNameAction(typeName, behaviorGroup)
+      maybeItem <- maybeBehavior.map { behavior =>
+        createItemForBehaviorAction(behavior, data).map(Some(_))
+      }.getOrElse(DBIO.successful(None))
+    } yield maybeItem) transactionally
   }
 
   def createItem(typeName: String, data: JsValue, behaviorGroup: BehaviorGroup): Future[Option[DefaultStorageItem]] = {
-    dataService.behaviors.findByIdOrName(typeName, behaviorGroup).flatMap { maybeBehavior =>
-      maybeBehavior.map { behavior =>
-        createItemForBehavior(behavior, data).map(Some(_))
-      }.getOrElse(Future.successful(None))
-    }
+    dataService.run(createItemAction(typeName, data, behaviorGroup))
   }
 
   def deleteItem(id: String, behaviorGroup: BehaviorGroup): Future[DefaultStorageItem] = {

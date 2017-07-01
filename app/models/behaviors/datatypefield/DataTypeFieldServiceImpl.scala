@@ -38,11 +38,14 @@ class DataTypeFieldServiceImpl @Inject() (
 
   import DataTypeFieldQueries._
 
-  def allFor(config: DataTypeConfig): Future[Seq[DataTypeField]] = {
-    val action = allForConfigQuery(config.id).result.map { r =>
+  def allForAction(config: DataTypeConfig): DBIO[Seq[DataTypeField]] = {
+    allForConfigQuery(config.id).result.map { r =>
       r.map(tuple2Field)
     }
-    dataService.run(action)
+  }
+
+  def allFor(config: DataTypeConfig): Future[Seq[DataTypeField]] = {
+    dataService.run(allForAction(config))
   }
 
   private def maybeParamTypeForAction(data: DataTypeFieldData, behaviorGroupVersion: BehaviorGroupVersion): DBIO[Option[BehaviorParameterType]] = {
