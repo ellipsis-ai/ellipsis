@@ -38,9 +38,13 @@ class DataTypeFieldServiceImpl @Inject() (
 
   import DataTypeFieldQueries._
 
+  def builtInFieldsFor(config: DataTypeConfig): Seq[DataTypeField] = {
+    Seq(DataTypeField("id", "id", "id", TextType, config.id, 0))
+  }
+
   def allForAction(config: DataTypeConfig): DBIO[Seq[DataTypeField]] = {
     allForConfigQuery(config.id).result.map { r =>
-      r.map(tuple2Field)
+      builtInFieldsFor(config) ++ r.map(tuple2Field)
     }
   }
 

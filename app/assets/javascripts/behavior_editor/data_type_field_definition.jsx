@@ -58,6 +58,48 @@ define(function(require) {
       return 'field-type-' + this.props.id + '-' + fieldType.id;
     },
 
+    isBuiltIn: function() {
+      return this.props.field.name === "id";
+    },
+
+    renderFieldType: function() {
+      if (this.isBuiltIn()) {
+        return (
+          <span>{this.props.field.fieldType.name}</span>
+        );
+      } else {
+        return (
+          <Select
+            className="form-select-s form-select-light align-m width-full"
+            name="paramType"
+            value={this.props.field.fieldType.id}
+            onChange={this.onTypeChange}
+            disabled={this.isBuiltIn()}
+          >
+            {this.props.paramTypes.map((fieldType) => (
+              <option value={fieldType.id} key={this.keyFor(fieldType)}>
+                {fieldType.name}
+              </option>
+            ))}
+          </Select>
+        );
+      }
+    },
+
+    renderDeleteButton: function() {
+      if (this.isBuiltIn()) {
+        return null;
+      } else {
+        return (
+          <DeleteButton
+            onClick={this.onDeleteClick}
+            title={this.props.field.name ? `Delete the “${this.props.field.name}” field` : "Delete this field"}
+            disabled={this.isBuiltIn()}
+          />
+        );
+      }
+    },
+
     render: function() {
       return (
         <div>
@@ -77,6 +119,7 @@ define(function(require) {
                           placeholder=""
                           value={this.props.field.name}
                           onChange={this.onNameChange}
+                          disabled={this.isBuiltIn()}
                         />
                       </div>
                     </div>
@@ -87,29 +130,21 @@ define(function(require) {
                         <div className="type-s type-weak mrs align-form-input display-ellipsis">Type of data:</div>
                       </div>
                       <div className="column column-expand align-form-input">
-                        <Select className="form-select-s form-select-light align-m width-full" name="paramType" value={this.props.field.fieldType.id} onChange={this.onTypeChange}>
-                          {this.props.paramTypes.map((fieldType) => (
-                            <option value={fieldType.id} key={this.keyFor(fieldType)}>
-                              {fieldType.name}
-                            </option>
-                          ))}
-                        </Select>
+                        {this.renderFieldType()}
                       </div>
                       {ifPresent(this.isConfigurable(), () => (
                         <div className="column column-shrink align-form-input">
                           <button type="button" className="button-s button-shrink" onClick={this.onConfigureType}>Edit type…</button>
                         </div>
                       ))}
+                      <div className="column column-shrink">
+                        {this.renderDeleteButton()}
+                      </div>
                     </div>
                   </div>
+
                 </div>
 
-              </div>
-              <div className="column column-shrink">
-                <DeleteButton
-                  onClick={this.onDeleteClick}
-                  title={this.props.field.name ? `Delete the “${this.props.field.name}” field` : "Delete this field"}
-                />
               </div>
             </div>
           </div>

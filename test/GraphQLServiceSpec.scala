@@ -139,6 +139,7 @@ class GraphQLServiceSpec extends DBSpec {
         val mutation =
           """mutation CreateSomeType2($someType2: SomeType2Input!) {
             |  createSomeType2(someType2: $someType2) {
+            |    id
             |    bar
             |  }
             |}
@@ -158,7 +159,8 @@ class GraphQLServiceSpec extends DBSpec {
         (savedSomeType2.data \ "bar").as[Double] mustBe 2
         (savedSomeType2.data \ "id").as[String] mustBe savedSomeType2.id
 
-        (mutationResult.get \ "data").get mustBe JsObject(Map("createSomeType2" -> JsObject(Map("bar" -> JsNumber(2)))))
+        (mutationResult.get \ "data").get mustBe JsObject(Map(
+          "createSomeType2" -> JsObject(Map("bar" -> JsNumber(2), "id" -> JsString(savedSomeType2.id)))))
 
         val query =
         """{

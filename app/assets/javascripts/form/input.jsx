@@ -23,7 +23,8 @@ return React.createClass({
     placeholder: React.PropTypes.string,
     type: React.PropTypes.string,
     value: React.PropTypes.string.isRequired,
-    disableAuto: React.PropTypes.bool
+    disableAuto: React.PropTypes.bool,
+    disabled: React.PropTypes.bool
   },
 
   onChange: function() {
@@ -106,6 +107,7 @@ return React.createClass({
         autoComplete={this.props.disableAuto ? "off" : null}
         autoCorrect={this.props.disableAuto ? "off" : null}
         spellCheck={this.props.disableAuto ? false : null}
+        disabled={!!this.props.disabled}
       />
     );
   }

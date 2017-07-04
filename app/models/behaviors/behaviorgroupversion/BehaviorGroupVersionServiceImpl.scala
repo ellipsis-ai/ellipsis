@@ -126,7 +126,7 @@ class BehaviorGroupVersionServiceImpl @Inject() (
       }).map(_.flatten)
       _ <- DBIO.sequence(dataTypeConfigTuples.map { case(data, config) =>
         data.dataTypeConfig.map { configData =>
-          DBIO.sequence(configData.fields.zipWithIndex.map { case (ea, i) =>
+          DBIO.sequence(configData.fields.filterNot(_.isBuiltin).zipWithIndex.map { case (ea, i) =>
             dataService.dataTypeFields.createForAction(ea, i + 1, config, groupVersion)
           })
         }.getOrElse(DBIO.successful(Seq()))

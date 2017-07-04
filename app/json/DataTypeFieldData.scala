@@ -11,6 +11,8 @@ case class DataTypeFieldData(
                               fieldType: Option[BehaviorParameterTypeData]
                             ) {
 
+  val isBuiltin: Boolean = name == "id"
+
   def copyForExport(groupExporter: BehaviorGroupExporter): DataTypeFieldData = {
     copy(
       id = None,
