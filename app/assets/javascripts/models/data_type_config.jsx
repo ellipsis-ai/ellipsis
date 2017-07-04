@@ -28,6 +28,18 @@ define(function(require) {
       return this.fields.length > 0;
     }
 
+    hasIdField() {
+      return this.fields.find(ea => ea.name === "id");
+    }
+
+    withBuiltinFieldsEnsured(idFieldType) {
+      if (!this.usesCode && !this.hasIdField()) {
+        return this.clone({ fields: this.fields.concat([new DataTypeField({ name: "id", fieldId: "id", fieldType: idFieldType })]) });
+      } else {
+        return this;
+      }
+    }
+
     isMissingFields() {
       return this.requiresFields() && !this.hasFields();
     }

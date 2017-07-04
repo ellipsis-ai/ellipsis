@@ -81,7 +81,8 @@ define(function(require) {
     },
 
     updateDataTypeSource: function(usesCode) {
-      const newConfig = this.getDataTypeConfig().clone({ usesCode: usesCode });
+      const textType = this.props.paramTypes.find(ea => ea.id === "Text");
+      const newConfig = this.getDataTypeConfig().clone({ usesCode: usesCode }).withBuiltinFieldsEnsured(textType);
       this.setDataTypeConfig(newConfig);
       this.setState({
         dataTypeSourceChosen: true
