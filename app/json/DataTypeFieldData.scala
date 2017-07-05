@@ -51,6 +51,13 @@ case class DataTypeFieldData(
     copy(id = Some(newId))
   }
 
+  def copyForClone: DataTypeFieldData = {
+    copy(
+      fieldId = Some(IDs.next),
+      exportId = Some(IDs.next)
+    )
+  }
+
 }
 
 object DataTypeFieldData {

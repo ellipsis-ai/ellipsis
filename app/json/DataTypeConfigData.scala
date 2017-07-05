@@ -1,5 +1,6 @@
 package json
 
+import models.IDs
 import models.behaviors.datatypeconfig.DataTypeConfig
 import services.DataService
 
@@ -12,6 +13,12 @@ case class DataTypeConfigData(
                              ) {
   def copyWithParamTypeIdsIn(oldToNewIdMapping: collection.mutable.Map[String, String]): DataTypeConfigData = {
     copy(fields = fields.map(_.copyWithParamTypeIdsIn(oldToNewIdMapping)))
+  }
+
+  def copyForClone: DataTypeConfigData = {
+    copy(
+      fields = fields.map(_.copyForClone)
+    )
   }
 }
 

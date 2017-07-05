@@ -57,6 +57,7 @@ case class BehaviorVersionData(
       behaviorId = Some(IDs.next),
       exportId = None,
       name = name.map(n => s"Copy of $n"),
+      dataTypeConfig = dataTypeConfig.map(_.copyForClone),
       isNew = Some(true)
     )
   }
