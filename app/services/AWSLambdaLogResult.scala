@@ -53,7 +53,7 @@ object AWSLambdaLogResult {
   }
 
   def extractUserDefinedLogStatementsFrom(text: String): String = {
-    val maybeUserDefinedLogStatementsContent = """(?s)START.*?\n(.*)""".r.findFirstMatchIn(text).flatMap(_.subgroups.headOption)
+    val maybeUserDefinedLogStatementsContent = """(?s)(START.*?\n)?(.*)""".r.findFirstMatchIn(text).flatMap(_.subgroups.tail.headOption)
     maybeUserDefinedLogStatementsContent.map { content =>
       content.split( """\S+\t\S+\t""")
     }.map { strings =>
