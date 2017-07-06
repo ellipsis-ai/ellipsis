@@ -6,7 +6,8 @@ define(function() {
         fieldId: null,
         fieldVersionId: null,
         name: "",
-        fieldType: null
+        fieldType: null,
+        isLabel: false
       }, props);
 
       if (!initialProps.fieldId) {
@@ -31,6 +32,10 @@ define(function() {
         },
         fieldType: {
           value: initialProps.fieldType,
+          enumerable: true
+        },
+        isLabel: {
+          value: initialProps.isLabel,
           enumerable: true
         }
       });
