@@ -1,6 +1,5 @@
 package json
 
-import models.IDs
 import models.behaviors.datatypeconfig.DataTypeConfig
 import services.DataService
 
@@ -34,7 +33,7 @@ object DataTypeConfigData {
       })
     } yield {
       val fieldData = withFieldType.map { case(field, fieldTypeData) =>
-        DataTypeFieldData(Some(field.id), Some(field.fieldId), None, field.name, Some(fieldTypeData))
+        DataTypeFieldData(Some(field.id), Some(field.fieldId), None, field.name, Some(fieldTypeData), field.isLabel)
       }
       DataTypeConfigData(fieldData, config.maybeUsesCode)
     }

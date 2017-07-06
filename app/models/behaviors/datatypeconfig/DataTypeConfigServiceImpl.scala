@@ -13,7 +13,11 @@ import services.DataService
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-case class RawDataTypeConfig(id: String, maybeUsesCode: Option[Boolean], behaviorVersionId: String)
+case class RawDataTypeConfig(
+                              id: String,
+                              maybeUsesCode: Option[Boolean],
+                              behaviorVersionId: String
+                            )
 
 class DataTypeConfigsTable(tag: Tag) extends Table[RawDataTypeConfig](tag, "data_type_configs") {
 

@@ -355,27 +355,48 @@ case class BehaviorBackedDataType(dataTypeConfig: DataTypeConfig) extends Behavi
         }.getOrElse(Seq())
       }
     } else {
-      val filter = maybeSearchQuery.map { searchQuery =>
-        s"""{ ${BehaviorParameterType.LABEL_PROPERTY}: $searchQuery }"""
-      }.getOrElse("{}")
-      dataTypeConfig.outputFieldNames(context.dataService).flatMap { fieldStr =>
-        val query =
+      for {
+        maybeLabelField <- context.dataService.dataTypeFields.allFor(dataTypeConfig).map{ fields =>
+          fields.find(_.isLabel).orElse {
+            fields.find { ea =>
+              !ea.isId && ea.fieldType == TextType
+            }
+          }
+        }
+        filter <- Future.successful(maybeSearchQuery.map { searchQuery =>
+          maybeLabelField.map { field =>
+            s"""{ ${field.name}: $searchQuery }"""
+          }.getOrElse {
+            throw new RuntimeException("Need a valid label field")
+          }
+        }.getOrElse("{}"))
+        query <- dataTypeConfig.outputFieldNames(context.dataService).map { fieldStr =>
           s"""{
              |  ${dataTypeConfig.listName}(filter: $filter) {
              |  $fieldStr
              |  }
              |}
          """.stripMargin
-        context.services.graphQLService.runQuery(behaviorVersion.group, query, None, None).map { queryResult =>
+        }
+        result <- context.services.graphQLService.runQuery(behaviorVersion.group, query, None, None).map { queryResult =>
           (queryResult.get \ "data").asOpt[JsObject].map { obj =>
             (obj \ dataTypeConfig.listName).asOpt[JsArray].map { arr =>
-              arr.value.flatMap { ea =>
-                extractValidValueFrom(ea)
+              arr.value.flatMap {
+                case ea: JsObject =>
+                  for {
+                    id <- (ea \ "id").asOpt[String]
+                    label <- maybeLabelField.flatMap { labelField => (ea \ labelField.name).asOpt[String] }
+                    validValue <- extractValidValueFrom(Json.toJson(Map(
+                      "id" -> JsString(id),
+                      "label" -> JsString(label)
+                    ) ++ ea.value))
+                  } yield validValue
+                case _ => None
               }
             }.getOrElse(Seq())
           }.getOrElse(Seq())
         }
-      }
+      } yield result
     }
   }
 
@@ -465,7 +486,7 @@ case class BehaviorBackedDataType(dataTypeConfig: DataTypeConfig) extends Behavi
                            isReminding: Boolean
                          ): Future[String] = {
     val eventualPrompt = usesSearch(context).flatMap { usesSearch =>
-      if (usesSearch) {
+      if (usesSearch) { //} || !dataTypeConfig.usesCode) {
         promptForSearchCase(maybePreviousCollectedValue, context, paramState, isReminding)
       } else {
         promptForListAllCase(None, maybePreviousCollectedValue, context, paramState, isReminding)

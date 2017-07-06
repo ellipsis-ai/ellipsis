@@ -9,7 +9,8 @@ case class DataTypeField(
                           name: String,
                           fieldType: BehaviorParameterType,
                           configId: String,
-                          rank: Int
+                          rank: Int,
+                          isLabel: Boolean
                          ) {
 
   def outputName: String = GraphQLHelpers.formatFieldName(name)
@@ -17,8 +18,10 @@ case class DataTypeField(
   def output: String = s"$outputName: ${fieldType.outputName}"
   def input: String = s"$outputName: ${fieldType.inputName}"
 
+  lazy val isId: Boolean = name == BehaviorParameterType.ID_PROPERTY
+
   def toRaw: RawDataTypeField = {
-    RawDataTypeField(id, fieldId, name, fieldType.id, configId, rank)
+    RawDataTypeField(id, fieldId, name, fieldType.id, configId, rank, isLabel)
   }
 
 }

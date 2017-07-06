@@ -15,7 +15,15 @@ import slick.dbio.DBIO
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-case class RawDataTypeField(id: String, fieldId: String, name: String, fieldTypeId: String, configId: String, rank: Int)
+case class RawDataTypeField(
+                             id: String,
+                             fieldId: String,
+                             name: String,
+                             fieldTypeId: String,
+                             configId: String,
+                             rank: Int,
+                             isLabel: Boolean
+                           )
 
 class DataTypeFieldsTable(tag: Tag) extends Table[RawDataTypeField](tag, "data_type_fields") {
 
@@ -25,9 +33,10 @@ class DataTypeFieldsTable(tag: Tag) extends Table[RawDataTypeField](tag, "data_t
   def fieldTypeId = column[String]("field_type")
   def configId = column[String]("config_id")
   def rank = column[Int]("rank")
+  def isLabel = column[Boolean]("is_label")
 
   def * =
-    (id, fieldId, name, fieldTypeId, configId, rank) <> ((RawDataTypeField.apply _).tupled, RawDataTypeField.unapply _)
+    (id, fieldId, name, fieldTypeId, configId, rank, isLabel) <> ((RawDataTypeField.apply _).tupled, RawDataTypeField.unapply _)
 }
 
 class DataTypeFieldServiceImpl @Inject() (
@@ -38,8 +47,15 @@ class DataTypeFieldServiceImpl @Inject() (
 
   import DataTypeFieldQueries._
 
+  def find(id: String): Future[Option[DataTypeField]] = {
+    val action = findQuery(id).result.map { r =>
+      r.headOption.map(tuple2Field)
+    }
+    dataService.run(action)
+  }
+
   def builtInFieldsFor(config: DataTypeConfig): Seq[DataTypeField] = {
-    Seq(DataTypeField("id", "id", "id", TextType, config.id, 0))
+    Seq(DataTypeField("id", "id", "id", TextType, config.id, 0, isLabel = false))
   }
 
   def allForAction(config: DataTypeConfig): DBIO[Seq[DataTypeField]] = {
@@ -69,7 +85,8 @@ class DataTypeFieldServiceImpl @Inject() (
           data.name,
           fieldType.getOrElse(TextType),
           config.id,
-          rank
+          rank,
+          data.isLabel
         )
       (all += newInstance.toRaw).map { _ => newInstance }
     }

@@ -9,6 +9,8 @@ import scala.concurrent.Future
 
 trait DataTypeFieldService {
 
+  def find(id: String): Future[Option[DataTypeField]]
+
   def allFor(config: DataTypeConfig): Future[Seq[DataTypeField]]
 
   def allForAction(config: DataTypeConfig): DBIO[Seq[DataTypeField]]

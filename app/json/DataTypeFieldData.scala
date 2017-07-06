@@ -8,7 +8,8 @@ case class DataTypeFieldData(
                               fieldId: Option[String],
                               exportId: Option[String],
                               name: String,
-                              fieldType: Option[BehaviorParameterTypeData]
+                              fieldType: Option[BehaviorParameterTypeData],
+                              isLabel: Boolean
                             ) {
 
   val isBuiltin: Boolean = name == "id"
@@ -67,6 +68,7 @@ object DataTypeFieldData {
     fieldId = Some(IDs.next),
     exportId = None,
     name,
-    Some(paramType)
+    Some(paramType),
+    isLabel = false
   )
 }
