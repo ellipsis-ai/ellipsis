@@ -365,7 +365,7 @@ case class BehaviorBackedDataType(dataTypeConfig: DataTypeConfig) extends Behavi
         }
         filter <- Future.successful(maybeSearchQuery.map { searchQuery =>
           maybeLabelField.map { field =>
-            s"""{ ${field.name}: $searchQuery }"""
+            s"""{ ${field.name}: \"$searchQuery\" }"""
           }.getOrElse {
             throw new RuntimeException("Need a valid label field")
           }
@@ -476,7 +476,13 @@ case class BehaviorBackedDataType(dataTypeConfig: DataTypeConfig) extends Behavi
   }
 
   private def usesSearch(context: BehaviorParameterContext): Future[Boolean] = {
-    context.dataService.behaviorVersions.hasSearchParam(behaviorVersion)
+    if (dataTypeConfig.usesCode) {
+      context.dataService.behaviorVersions.hasSearchParam(behaviorVersion)
+    } else {
+      context.dataService.defaultStorageItems.countFor(behaviorVersion.behavior).map { count =>
+        count >= BehaviorParameterType.SEARCH_COUNT_THRESHOLD
+      }
+    }
   }
 
   override def promptFor(
@@ -486,7 +492,7 @@ case class BehaviorBackedDataType(dataTypeConfig: DataTypeConfig) extends Behavi
                            isReminding: Boolean
                          ): Future[String] = {
     val eventualPrompt = usesSearch(context).flatMap { usesSearch =>
-      if (usesSearch) { //} || !dataTypeConfig.usesCode) {
+      if (usesSearch) {
         promptForSearchCase(maybePreviousCollectedValue, context, paramState, isReminding)
       } else {
         promptForListAllCase(None, maybePreviousCollectedValue, context, paramState, isReminding)
@@ -524,6 +530,7 @@ object BehaviorParameterType {
   val ID_PROPERTY = "id"
   val LABEL_PROPERTY = "label"
   val DATA_PROPERTY = "data"
+  val SEARCH_COUNT_THRESHOLD = 10
 
   val allBuiltin = Seq(
     TextType,

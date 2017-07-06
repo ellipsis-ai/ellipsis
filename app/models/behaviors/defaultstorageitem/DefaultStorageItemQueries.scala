@@ -32,4 +32,9 @@ object DefaultStorageItemQueries {
   }
   val filterQuery = Compiled(uncompiledFilterQuery _)
 
+  def uncompiledCountQuery(behaviorId: Rep[String]) = {
+    all.filter(_.behaviorId === behaviorId).length
+  }
+  val countQuery = Compiled(uncompiledCountQuery _)
+
 }

@@ -55,6 +55,11 @@ class DefaultStorageItemServiceImpl @Inject() (
     }
   }
 
+  def countFor(behavior: Behavior): Future[Int] = {
+    val action = countQuery(behavior.id).result
+    dataService.run(action)
+  }
+
   private def createItemForBehaviorAction(behavior: Behavior, data: JsValue): DBIO[DefaultStorageItem] = {
     val newID = IDs.next
     for {
