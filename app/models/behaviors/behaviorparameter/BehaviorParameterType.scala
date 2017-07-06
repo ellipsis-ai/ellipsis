@@ -378,25 +378,25 @@ case class BehaviorBackedDataType(dataTypeConfig: DataTypeConfig) extends Behavi
              |}
          """.stripMargin
         }
-        result <- context.services.graphQLService.runQuery(behaviorVersion.group, query, None, None).map { queryResult =>
-          (queryResult.get \ "data").asOpt[JsObject].map { obj =>
-            (obj \ dataTypeConfig.listName).asOpt[JsArray].map { arr =>
-              arr.value.flatMap {
-                case ea: JsObject =>
-                  for {
-                    id <- (ea \ "id").asOpt[String]
-                    label <- maybeLabelField.flatMap { labelField => (ea \ labelField.name).asOpt[String] }
-                    validValue <- extractValidValueFrom(Json.toJson(Map(
-                      "id" -> JsString(id),
-                      "label" -> JsString(label)
-                    ) ++ ea.value))
-                  } yield validValue
-                case _ => None
-              }
-            }.getOrElse(Seq())
-          }.getOrElse(Seq())
+        items <- (for {
+          searchQuery <- maybeSearchQuery
+          labelField <- maybeLabelField
+        } yield {
+          context.services.dataService.defaultStorageItems.searchByField(s"%$searchQuery%", labelField)
+        }).getOrElse {
+          context.services.dataService.defaultStorageItems.allFor(behaviorVersion.behavior)
         }
-      } yield result
+      } yield {
+        items.map(_.data).flatMap {
+          case ea: JsObject =>
+            val maybeLabel = maybeLabelField.flatMap { labelField => (ea \ labelField.name).asOpt[String] }
+            extractValidValueFrom(Json.toJson(Map(
+              "id" -> JsString(id),
+              "label" -> maybeLabel.map(JsString.apply).getOrElse(JsNull)
+            ) ++ ea.value))
+          case _ => None
+        }
+      }
     }
   }
 

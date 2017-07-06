@@ -2,6 +2,7 @@ package models.behaviors.defaultstorageitem
 
 import models.behaviors.behavior.Behavior
 import models.behaviors.behaviorgroup.BehaviorGroup
+import models.behaviors.datatypefield.DataTypeField
 import play.api.libs.json.JsValue
 import slick.dbio.DBIO
 
@@ -14,6 +15,10 @@ trait DefaultStorageItemService {
   def filter(typeName: String, filter: JsValue, behaviorGroup: BehaviorGroup): Future[Seq[DefaultStorageItem]]
 
   def countFor(behavior: Behavior): Future[Int]
+
+  def searchByField(searchQuery: String, field: DataTypeField): Future[Seq[DefaultStorageItem]]
+
+  def allFor(behavior: Behavior): Future[Seq[DefaultStorageItem]]
 
   def createItem(typeName: String, data: JsValue, behaviorGroup: BehaviorGroup): Future[Option[DefaultStorageItem]]
 

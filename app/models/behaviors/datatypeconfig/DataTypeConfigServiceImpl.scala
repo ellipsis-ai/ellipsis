@@ -64,6 +64,13 @@ class DataTypeConfigServiceImpl @Inject() (
     dataService.run(maybeForAction(behaviorVersion))
   }
 
+  def find(id: String): Future[Option[DataTypeConfig]] = {
+    val action = findQuery(id).result.map { r =>
+      r.headOption.map(tuple2Config)
+    }
+    dataService.run(action)
+  }
+
   def createForAction(behaviorVersion: BehaviorVersion, data: DataTypeConfigData): DBIO[DataTypeConfig] = {
     val newInstance = DataTypeConfig(IDs.next, data.usesCode, behaviorVersion)
     (all += newInstance.toRaw).map(_ => newInstance)

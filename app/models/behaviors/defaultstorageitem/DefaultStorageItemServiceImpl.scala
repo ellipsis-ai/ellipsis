@@ -7,6 +7,7 @@ import drivers.SlickPostgresDriver.api._
 import models.IDs
 import models.behaviors.behavior.Behavior
 import models.behaviors.behaviorgroup.BehaviorGroup
+import models.behaviors.datatypefield.DataTypeField
 import play.api.libs.json._
 import services.DataService
 
@@ -53,6 +54,25 @@ class DefaultStorageItemServiceImpl @Inject() (
         filterForBehavior(behavior, filter)
       }.getOrElse(Future.successful(Seq()))
     }
+  }
+
+  def searchByField(searchQuery: String, field: DataTypeField): Future[Seq[DefaultStorageItem]] = {
+    for {
+      maybeConfig <- dataService.dataTypeConfigs.find(field.configId)
+      items <- maybeConfig.map { config =>
+        val action = searchByFieldQuery(searchQuery, field.name, config.behaviorVersion.behavior.id).result.map { r =>
+          r.map(tuple2Item)
+        }
+        dataService.run(action)
+      }.getOrElse(Future.successful(Seq()))
+    } yield items
+  }
+
+  def allFor(behavior: Behavior): Future[Seq[DefaultStorageItem]] = {
+    val action = allForQuery(behavior.id).result.map { r =>
+      r.map(tuple2Item)
+    }
+    dataService.run(action)
   }
 
   def countFor(behavior: Behavior): Future[Int] = {

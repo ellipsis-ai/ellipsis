@@ -37,4 +37,15 @@ object DefaultStorageItemQueries {
   }
   val countQuery = Compiled(uncompiledCountQuery _)
 
+  def uncompiledSearchByFieldQuery(searchQuery: Rep[String], fieldName: Rep[String], behaviorId: Rep[String]) = {
+    allWithBehavior.
+      filter { case(item, ((behavior, _), _)) => behavior.id === behaviorId }.
+      filter { case(item, _) => item.data.+>>(fieldName).like(searchQuery) }
+  }
+  val searchByFieldQuery = Compiled(uncompiledSearchByFieldQuery _)
+
+  def uncompiledAllForQuery(behaviorId: Rep[String]) = {
+    allWithBehavior.filter { case(item, ((behavior, _), _)) => behavior.id === behaviorId }
+  }
+  val allForQuery = Compiled(uncompiledAllForQuery _)
 }

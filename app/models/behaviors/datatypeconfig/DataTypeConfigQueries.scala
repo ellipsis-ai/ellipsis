@@ -30,4 +30,9 @@ object DataTypeConfigQueries {
   }
   val maybeForQuery = Compiled(uncompiledMaybeForQuery _)
 
+  def uncompiledFindQuery(id: Rep[String]) = {
+    allWithBehaviorVersion.filter { case(config, _) => config.id === id }
+  }
+  val findQuery = Compiled(uncompiledFindQuery _)
+
 }
