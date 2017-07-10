@@ -4,6 +4,7 @@ define(function(require) {
     Collapsible = require('../shared_ui/collapsible'),
     DataTypeCodeEditorHelp = require('./data_type_code_editor_help'),
     DataTypeDataCollectionConfig = require('./data_type_data_collection_config'),
+    DataTypeDataSummary = require('./data_type_data_summary'),
     DataTypeResultConfig = require('./data_type_result_config'),
     DataTypeSchemaConfig = require('./data_type_schema_config'),
     DataTypeSourceConfig = require('./data_type_source_config'),
@@ -247,6 +248,10 @@ define(function(require) {
                 </span>
                 <button type="button" className="button-s button-shrink align-m" onClick={this.changeSource}>Modify</button>
               </SectionHeading>
+
+              {this.usesCode() ? null : (
+                <DataTypeDataSummary />
+              )}
             </div>
 
             <hr className="man thin bg-gray-light" />
