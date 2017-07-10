@@ -24,7 +24,8 @@ return React.createClass({
     type: React.PropTypes.string,
     value: React.PropTypes.string.isRequired,
     disableAuto: React.PropTypes.bool,
-    disabled: React.PropTypes.bool
+    disabled: React.PropTypes.bool,
+    readOnly: React.PropTypes.bool
   },
 
   onChange: function() {
@@ -108,6 +109,7 @@ return React.createClass({
         autoCorrect={this.props.disableAuto ? "off" : null}
         spellCheck={this.props.disableAuto ? false : null}
         disabled={!!this.props.disabled}
+        readOnly={!!this.props.readOnly}
       />
     );
   }
