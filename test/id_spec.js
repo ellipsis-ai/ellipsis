@@ -15,7 +15,7 @@ describe("ID", () => {
   describe("toBase64", () => {
     it("should be consistent with the Scala implementation of IDs.uuidToBase64", () => {
       const arr = uuidArray();
-      expect(ID.toBase64(arr)).toBe("ICVpil7jQmSp7ci-_m9hvQ");
+      expect(ID.toBase64URLEncoded(arr)).toBe("ICVpil7jQmSp7ci-_m9hvQ");
     });
   });
 });

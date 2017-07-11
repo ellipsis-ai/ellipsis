@@ -8,7 +8,7 @@ define(function(require) {
       return bytes;
     }
 
-    static toBase64(uint8array) {
+    static toBase64URLEncoded(uint8array) {
       const str = String.fromCharCode.apply(this, uint8array);
       return window.btoa(str)
         .replace(/\+/g, '-')
@@ -17,7 +17,7 @@ define(function(require) {
     }
 
     static next() {
-      ID.toBase64(ID.newRandomUUIDArray());
+      return ID.toBase64URLEncoded(ID.newRandomUUIDArray());
     }
   }
 
