@@ -1,5 +1,6 @@
 jest.mock('../app/assets/javascripts/behavior_editor/code_editor')
   .mock('../app/assets/javascripts/shared_ui/react-codemirror');
+window.crypto = require('./mocks/mock_window_crypto');
 
 import React from 'react';
 import TestUtils from 'react-addons-test-utils';

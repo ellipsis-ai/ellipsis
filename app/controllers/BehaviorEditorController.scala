@@ -205,12 +205,6 @@ class BehaviorEditorController @Inject() (
     }
   }
 
-  def newUnsavedInput(name: String) = silhouette.SecuredAction.async { implicit request =>
-    BehaviorParameterTypeData.from(TextType, dataService).map { paramType =>
-      Ok(Json.toJson(InputData.newUnsavedNamed(name, paramType)))
-    }
-  }
-
   def newUnsavedDataTypeField(name: String) = silhouette.SecuredAction.async { implicit request =>
     BehaviorParameterTypeData.from(TextType, dataService).map { paramType =>
       Ok(Json.toJson(DataTypeFieldData.newUnsavedNamed(name, paramType)))
