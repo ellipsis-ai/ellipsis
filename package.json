@@ -62,7 +62,8 @@
     "testPathIgnorePatterns": [
       "/node_modules/.+",
       "/project/.+",
-      "/target/.+"
+      "/target/.+",
+      "/test/mocks/.+"
     ]
   },
   "repository": {
