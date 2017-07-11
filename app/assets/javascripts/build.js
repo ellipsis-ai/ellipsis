@@ -43,6 +43,10 @@ requirejs.config({
       location: '../lib/moment',
       main: 'moment'
     }, {
+      name: 'node-uuid',
+      location: '../lib/node-uuid',
+      main: 'uuid'
+    }, {
       name: 'react',
       location: '../lib/react',
       main: 'react.min'
@@ -62,6 +66,7 @@ requirejs.config({
       include: [
         'core-js',
         'javascript-debounce',
+        'node-uuid',
         'react',
         'react-dom',
         'urijs',

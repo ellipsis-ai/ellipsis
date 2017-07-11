@@ -27,6 +27,10 @@ requirejs.config({
       location: '../lib/moment',
       main: 'moment'
     }, {
+      name: 'node-uuid',
+      location: '../lib/node-uuid',
+      main: 'uuid'
+    }, {
       name: 'react',
       location: '../lib/react',
       main: 'react'

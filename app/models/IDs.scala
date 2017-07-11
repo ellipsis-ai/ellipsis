@@ -5,7 +5,7 @@ import java.util.UUID
 
 object IDs {
 
-  private def uuidToBase64(uuid: UUID): String = {
+  def uuidToBase64(uuid: UUID): String = {
     val bb = ByteBuffer.wrap(new Array[Byte](16))
     bb.putLong(uuid.getMostSignificantBits)
     bb.putLong(uuid.getLeastSignificantBits)

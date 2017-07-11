@@ -210,12 +210,6 @@ class BehaviorEditorController @Inject() (
     }
   }
 
-  def newUnsavedInput(name: String) = silhouette.SecuredAction.async { implicit request =>
-    BehaviorParameterTypeData.from(TextType, dataService).map { paramType =>
-      Ok(Json.toJson(InputData.newUnsavedNamed(name, paramType)))
-    }
-  }
-
   def versionInfoFor(behaviorGroupId: String) = silhouette.SecuredAction.async { implicit request =>
     val user = request.identity
     for {

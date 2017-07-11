@@ -79,14 +79,4 @@ object InputData {
 
   }
 
-  def newUnsavedNamed(name: String, paramType: BehaviorParameterTypeData): InputData = InputData(
-    id = Some(IDs.next),
-    inputId = Some(IDs.next),
-    exportId = None,
-    name,
-    Some(paramType),
-    "",
-    isSavedForTeam = false,
-    isSavedForUser = false
-  )
 }
