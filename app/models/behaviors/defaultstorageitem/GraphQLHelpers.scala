@@ -14,4 +14,6 @@ object GraphQLHelpers {
     capitalized.charAt(0).toLower.toString ++ capitalized.substring(1)
   }
 
+  val fallbackTypeName: String = "UnnamedType"
+
 }

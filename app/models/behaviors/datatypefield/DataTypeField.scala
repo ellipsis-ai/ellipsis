@@ -11,14 +11,10 @@ case class DataTypeField(
                           configId: String,
                           rank: Int,
                           isLabel: Boolean
-                         ) {
-
-  def outputName: String = GraphQLHelpers.formatFieldName(name)
-
-  def output: String = s"$outputName: ${fieldType.outputName}"
-  def input: String = s"$outputName: ${fieldType.inputName}"
+                         ) extends DataTypeFieldForSchema {
 
   lazy val isId: Boolean = name == BehaviorParameterType.ID_PROPERTY
+  lazy val fieldTypeForSchema: FieldTypeForSchema = fieldType
 
   def toRaw: RawDataTypeField = {
     RawDataTypeField(id, fieldId, name, fieldType.id, configId, rank, isLabel)

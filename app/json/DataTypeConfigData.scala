@@ -1,15 +1,21 @@
 package json
 
-import models.behaviors.datatypeconfig.DataTypeConfig
+import models.behaviors.datatypeconfig.{DataTypeConfig, DataTypeConfigForSchema}
+import models.behaviors.datatypefield.DataTypeFieldForSchema
+import models.behaviors.defaultstorageitem.GraphQLHelpers
 import services.DataService
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
 case class DataTypeConfigData(
+                               name: Option[String],
                                fields: Seq[DataTypeFieldData],
                                usesCode: Option[Boolean]
-                             ) {
+                             ) extends DataTypeConfigForSchema {
+
+  lazy val typeName: String = name.getOrElse(GraphQLHelpers.fallbackTypeName)
+
   def copyWithParamTypeIdsIn(oldToNewIdMapping: collection.mutable.Map[String, String]): DataTypeConfigData = {
     copy(fields = fields.map(_.copyWithParamTypeIdsIn(oldToNewIdMapping)))
   }
@@ -19,6 +25,11 @@ case class DataTypeConfigData(
       fields = fields.map(_.copyForClone)
     )
   }
+
+  def dataTypeFields(dataService: DataService): Future[Seq[DataTypeFieldForSchema]] = {
+    Future.successful(fields)
+  }
+
 }
 
 object DataTypeConfigData {
@@ -35,7 +46,7 @@ object DataTypeConfigData {
       val fieldData = withFieldType.map { case(field, fieldTypeData) =>
         DataTypeFieldData(Some(field.id), Some(field.fieldId), None, field.name, Some(fieldTypeData), field.isLabel)
       }
-      DataTypeConfigData(fieldData, config.maybeUsesCode)
+      DataTypeConfigData(config.maybeName, fieldData, config.maybeUsesCode)
     }
   }
 }

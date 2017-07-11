@@ -2,6 +2,8 @@ package json
 
 import export.BehaviorGroupExporter
 import models.behaviors.behaviorparameter.BehaviorParameterType
+import models.behaviors.datatypefield.FieldTypeForSchema
+import models.behaviors.defaultstorageitem.GraphQLHelpers
 import services.DataService
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -12,7 +14,30 @@ case class BehaviorParameterTypeData(
                                       exportId: Option[String],
                                       name: String,
                                       needsConfig: Option[Boolean]
-                                    ) {
+                                    ) extends FieldTypeForSchema {
+
+  def maybeBuiltinType: Option[BehaviorParameterType] = {
+    for {
+      typeId <- id
+      builtin <- BehaviorParameterType.findBuiltIn(typeId)
+    } yield builtin
+  }
+
+  lazy val outputName: String = {
+    maybeBuiltinType.map { builtin =>
+      builtin.outputName
+    }.getOrElse {
+      GraphQLHelpers.formatTypeName(name)
+    }
+  }
+
+  override lazy val inputName: String = {
+    maybeBuiltinType.map { builtin =>
+      builtin.inputName
+    }.getOrElse {
+      outputName ++ "Input"
+    }
+  }
 
   def copyForExport(groupExporter: BehaviorGroupExporter): BehaviorParameterTypeData = {
     copy(id = None, needsConfig = None)

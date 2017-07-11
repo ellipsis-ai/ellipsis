@@ -2,9 +2,11 @@ package services
 
 import javax.inject.Inject
 
+import json.BehaviorGroupData
 import models.behaviors.behaviorgroup.BehaviorGroup
 import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
-import models.behaviors.defaultstorageitem.DefaultStorageItemService
+import models.behaviors.datatypeconfig.DataTypeConfigForSchema
+import models.behaviors.defaultstorageitem.{DefaultStorageItemService, GraphQLHelpers}
 import play.api.libs.json._
 import sangria.ast
 import sangria.ast.Document
@@ -22,13 +24,10 @@ class GraphQLServiceImpl @Inject() (
                                     dataService: DataService
                                   ) extends GraphQLService {
 
-  private def schemaStringFor(groupVersion: BehaviorGroupVersion): Future[String] = {
-    for {
-      configs <- dataService.dataTypeConfigs.allUsingDefaultStorageFor(groupVersion).map(_.sortBy(_.id))
-      typesStr <- Future.sequence(configs.map(_.graphQL(dataService))).map(_.mkString("\n\n"))
-    } yield {
-      val queryFieldsStr = configs.map(_.queryFieldsString).mkString("")
-      val mutationFieldsStr = configs.map(_.mutationFieldsString).mkString("")
+  private def schemaStringFromConfigs(configs: Seq[DataTypeConfigForSchema]): Future[String] = {
+    val queryFieldsStr = configs.map(_.queryFieldsString).mkString("")
+    val mutationFieldsStr = configs.map(_.mutationFieldsString).mkString("")
+    Future.sequence(configs.map(_.graphQL(dataService))).map(_.mkString("\n\n")).map { typesStr =>
       s"""schema {
          |  query: Query
          |  mutation: Mutation
@@ -47,6 +46,17 @@ class GraphQLServiceImpl @Inject() (
          |
        """.stripMargin
     }
+  }
+
+  private def schemaStringFor(groupVersion: BehaviorGroupVersion): Future[String] = {
+    dataService.dataTypeConfigs.allUsingDefaultStorageFor(groupVersion).map(_.sortBy(_.id)).flatMap { configs =>
+      schemaStringFromConfigs(configs)
+    }
+  }
+
+  private def previewSchemaStringFor(data: BehaviorGroupData): Future[String] = {
+    val configs = data.dataTypeBehaviorVersions.flatMap(_.dataTypeConfig)
+    schemaStringFromConfigs(configs)
   }
 
   class CreationTypeNotFoundException extends Exception
@@ -147,6 +157,15 @@ class GraphQLServiceImpl @Inject() (
     schemaStringFor(groupVersion).map { str =>
       QueryParser.parse(str) match {
         case Success(res) => Schema.buildFromAst(res, new MySchemaBuilder(groupVersion))
+        case Failure(err) => throw new RuntimeException(err.getMessage)
+      }
+    }
+  }
+
+  def previewSchemaFor(data: BehaviorGroupData): Future[Schema[DefaultStorageItemService, Any]] = {
+    previewSchemaStringFor(data).map { str =>
+      QueryParser.parse(str) match {
+        case Success(res) => Schema.buildFromAst(res, new DefaultAstSchemaBuilder[DefaultStorageItemService]())
         case Failure(err) => throw new RuntimeException(err.getMessage)
       }
     }

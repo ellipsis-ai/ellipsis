@@ -5,6 +5,7 @@ import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
 import models.behaviors.conversations.ParamCollectionState
 import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.datatypeconfig.DataTypeConfig
+import models.behaviors.datatypefield.FieldTypeForSchema
 import models.behaviors.events.{Event, SlackMessageEvent}
 import models.behaviors.{BotResult, ParameterValue, ParameterWithValue, SuccessResult}
 import play.api.libs.json._
@@ -16,16 +17,13 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.concurrent.duration._
 
-sealed trait BehaviorParameterType {
+sealed trait BehaviorParameterType extends FieldTypeForSchema {
 
   val id: String
   val exportId: String
   val name: String
   def needsConfig(dataService: DataService): Future[Boolean]
   val isBuiltIn: Boolean
-
-  val outputName: String
-  lazy val inputName: String = outputName
 
   def isValid(text: String, context: BehaviorParameterContext): Future[Boolean]
 

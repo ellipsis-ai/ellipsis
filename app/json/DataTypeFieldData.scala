@@ -2,6 +2,8 @@ package json
 
 import export.BehaviorGroupExporter
 import models.IDs
+import models.behaviors.behaviorparameter.TextType
+import models.behaviors.datatypefield.{DataTypeFieldForSchema, FieldTypeForSchema}
 
 case class DataTypeFieldData(
                               id: Option[String],
@@ -10,9 +12,16 @@ case class DataTypeFieldData(
                               name: String,
                               fieldType: Option[BehaviorParameterTypeData],
                               isLabel: Boolean
-                            ) {
+                            ) extends DataTypeFieldForSchema {
 
   val isBuiltin: Boolean = name == "id"
+
+  lazy val fieldTypeForSchema: FieldTypeForSchema = {
+    fieldType.getOrElse {
+      val paramType = TextType
+      BehaviorParameterTypeData(Some(paramType.id), Some(paramType.exportId), paramType.name, Some(false))
+    }
+  }
 
   def copyForExport(groupExporter: BehaviorGroupExporter): DataTypeFieldData = {
     copy(
