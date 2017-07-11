@@ -9,7 +9,7 @@ define(function(require) {
       return window.btoa(str)
         .replace(/\+/g, '-')
         .replace(/\//g, '_')
-        .substring(0, 22);
+        .replace(/=+$/g, '');
     }
   }
 
