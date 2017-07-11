@@ -22,6 +22,7 @@ var React = require('react'),
   FixedFooter = require('../shared_ui/fixed_footer'),
   HiddenJsonInput = require('./hidden_json_input'),
   Input = require('../models/input'),
+  ID = require('../lib/id'),
   NotificationData = require('../models/notification_data'),
   FormInput = require('../form/input'),
   LibraryCodeEditorHelp = require('./library_code_editor_help'),
@@ -71,6 +72,12 @@ const BehaviorEditor = React.createClass({
     group: React.PropTypes.instanceOf(BehaviorGroup).isRequired,
     selectedId: React.PropTypes.string,
     csrfToken: React.PropTypes.string.isRequired,
+    builtinParamTypes: React.PropTypes.arrayOf(React.PropTypes.shape({
+      exportId: React.PropTypes.string,
+      id: React.PropTypes.string.isRequired,
+      name: React.PropTypes.string,
+      needsConfig: React.PropTypes.needsConfig
+    })).isRequired,
     envVariables: React.PropTypes.arrayOf(React.PropTypes.object),
     oauth2Applications: React.PropTypes.arrayOf(oauth2ApplicationShape),
     oauth2Apis: React.PropTypes.arrayOf(React.PropTypes.shape({
@@ -441,12 +448,11 @@ const BehaviorEditor = React.createClass({
 
   addNewInput: function(optionalNewName) {
     const newName = optionalNewName || this.getNewGenericInputName();
-    const url = jsRoutes.controllers.BehaviorEditorController.newUnsavedInput(newName).url;
-    fetch(url, { credentials: 'same-origin' })
-      .then(response => response.json())
-      .then(json => {
-        this.addInput(new Input(json));
-      });
+    this.addInput(new Input({
+      inputId: ID.next(),
+      name: newName,
+      paramType: this.props.builtinParamTypes.find((ea) => ea.id === "Text")
+    }));
   },
 
   addTrigger: function(callback) {
