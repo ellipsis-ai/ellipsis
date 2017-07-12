@@ -177,7 +177,9 @@ class GraphQLServiceImpl @Inject() (
                     op: Option[String],
                     vars: JsValue
                   ): Future[JsValue] = {
-    Executor.execute(schema, query, operationName = op, variables = vars, userContext = dataService.defaultStorageItems)
+    Executor.execute(schema, query, operationName = op, variables = vars, userContext = dataService.defaultStorageItems).recover {
+      case e: sangria.execution.ValidationError => errorResultFor(e.getMessage)
+    }
   }
 
   private def variablesFrom(maybeString: Option[String]): JsValue = {
@@ -189,10 +191,14 @@ class GraphQLServiceImpl @Inject() (
     }.getOrElse(Json.obj())
   }
 
-  private def errorResultFor(message: String): Future[JsValue] = {
-    Future.successful(Json.toJson(Map(
+  private def errorResultFor(message: String): JsValue = {
+    Json.toJson(Map(
       "errors" -> Seq(message)
-    )))
+    ))
+  }
+
+  private def errorResultFutureFor(message: String): Future[JsValue] = {
+    Future.successful(errorResultFor(message))
   }
 
   def runQuery(
@@ -210,11 +216,11 @@ class GraphQLServiceImpl @Inject() (
             case Success(queryAst) => {
               executeQuery(schema, queryAst, maybeOperationName, variablesFrom(maybeVariables))
             }
-            case Failure(error) => errorResultFor(error.getMessage)
+            case Failure(error) => errorResultFutureFor(error.getMessage)
           }
         } yield result
       }.getOrElse {
-        errorResultFor("Couldn't find a saved version for this skill")
+        errorResultFutureFor("Couldn't find a saved version for this skill")
       }
     }
   }
