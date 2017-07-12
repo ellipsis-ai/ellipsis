@@ -1,59 +1,41 @@
 define(function(require) {
-var React = require('react'),
-  Event = require('../lib/event');
 
-return React.createClass({
-  displayName: 'FormInput',
-  propTypes: {
-    autoFocus: React.PropTypes.bool,
-    className: React.PropTypes.string,
-    style: React.PropTypes.object,
-    id: React.PropTypes.oneOfType([
-      React.PropTypes.number,
-      React.PropTypes.string
-    ]),
-    name: React.PropTypes.string,
-    onBlur: React.PropTypes.func,
-    onChange: React.PropTypes.func.isRequired,
-    onEnterKey: React.PropTypes.func,
-    onEscKey: React.PropTypes.func,
-    onFocus: React.PropTypes.func,
-    onDownKey: React.PropTypes.func,
-    onUpKey: React.PropTypes.func,
-    placeholder: React.PropTypes.string,
-    type: React.PropTypes.string,
-    value: React.PropTypes.string.isRequired,
-    disableAuto: React.PropTypes.bool,
-    disabled: React.PropTypes.bool,
-    readOnly: React.PropTypes.bool
-  },
+  const React = require('react'),
+    Event = require('../lib/event');
 
-  onChange: function() {
+class FormInput extends React.Component {
+
+  constructor(props) {
+    super(props);
+    ['onChange', 'onBlur', 'onFocus', 'handleKeyPress', 'handleKeyDown'].forEach((func) => this[func] = this[func].bind(this));
+  }
+
+  onChange() {
     this.props.onChange(this.refs.input.value);
-  },
+  }
 
-  onBlur: function() {
+  onBlur() {
     if (typeof(this.props.onBlur) === 'function') {
       this.props.onBlur(this.refs.input.value);
     }
-  },
+  }
 
-  onFocus: function() {
+  onFocus() {
     if (typeof(this.props.onFocus) === 'function') {
       this.props.onFocus(this.refs.input.value);
     }
-  },
+  }
 
-  handleKeyPress: function(event) {
+  handleKeyPress(event) {
     if (Event.keyPressWasEnter(event)) {
       event.preventDefault();
       if (typeof this.props.onEnterKey === 'function') {
         this.props.onEnterKey();
       }
     }
-  },
+  }
 
-  handleKeyDown: function(event) {
+  handleKeyDown(event) {
     if (Event.keyPressWasEsc(event) && this.props.onEscKey) {
       event.stopPropagation();
       event.preventDefault();
@@ -65,31 +47,31 @@ return React.createClass({
       event.preventDefault();
       this.props.onUpKey();
     }
-  },
+  }
 
-  isEmpty: function() {
+  isEmpty() {
     return !this.refs.input.value;
-  },
+  }
 
-  focus: function() {
+  focus() {
     this.refs.input.focus();
-  },
+  }
 
-  blur: function() {
+  blur() {
     this.refs.input.blur();
-  },
+  }
 
-  select: function() {
+  select() {
     this.refs.input.select();
-  },
+  }
 
-  componentDidMount: function() {
+  componentDidMount() {
     // Need to add keystroke handlers directly with the DOM, because React events don't bubble up all the way
     this.refs.input.addEventListener('keydown', this.handleKeyDown, false);
     this.refs.input.addEventListener('keypress', this.handleKeyPress, false);
-  },
+  }
 
-  render: function() {
+  render() {
     return (
       <input
         type={this.props.type || "text"}
@@ -113,6 +95,32 @@ return React.createClass({
       />
     );
   }
-});
+}
+
+FormInput.propTypes = {
+  autoFocus: React.PropTypes.bool,
+  className: React.PropTypes.string,
+  style: React.PropTypes.object,
+  id: React.PropTypes.oneOfType([
+    React.PropTypes.number,
+    React.PropTypes.string
+  ]),
+  name: React.PropTypes.string,
+  onBlur: React.PropTypes.func,
+  onChange: React.PropTypes.func.isRequired,
+  onEnterKey: React.PropTypes.func,
+  onEscKey: React.PropTypes.func,
+  onFocus: React.PropTypes.func,
+  onDownKey: React.PropTypes.func,
+  onUpKey: React.PropTypes.func,
+  placeholder: React.PropTypes.string,
+  type: React.PropTypes.string,
+  value: React.PropTypes.string.isRequired,
+  disableAuto: React.PropTypes.bool,
+  disabled: React.PropTypes.bool,
+  readOnly: React.PropTypes.bool
+};
+
+  return FormInput;
 
 });
