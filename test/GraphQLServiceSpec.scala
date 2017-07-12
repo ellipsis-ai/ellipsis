@@ -215,6 +215,49 @@ class GraphQLServiceSpec extends DBSpec {
         (queryResult \ "data").get mustBe JsObject(Map("someTypeList" -> JsArray(Array(JsObject(Map("foo" -> JsString("bar")))))))
       })
     }
+
+    "return an appropriate error if the query doesn't parse" in {
+      withEmptyDB(dataService, { db =>
+        val team = newSavedTeam
+        val user = newSavedUserOn(team)
+        val group = newSavedBehaviorGroupFor(team)
+        val groupData = buildGroupDataFor(group, user)
+        val firstVersion = newSavedGroupVersionFor(group, user, Some(groupData))
+
+        val query: String = "some nonsense"
+        val result = runNow(graphQLService.runQuery(firstVersion.group, query, None, None))
+
+        (result \ "data").toOption mustBe None
+        val errors = (result \ "errors").as[Seq[String]]
+        errors must have length(1)
+        """^Syntax error while parsing GraphQL query.*""".r.findFirstMatchIn(errors.head) mustBe defined
+      })
+    }
+
+    "return an appropriate error if the query includes nonexistent fields" in {
+      withEmptyDB(dataService, { db =>
+        val team = newSavedTeam
+        val user = newSavedUserOn(team)
+        val group = newSavedBehaviorGroupFor(team)
+        val groupData = buildGroupDataFor(group, user)
+        val firstVersion = newSavedGroupVersionFor(group, user, Some(groupData))
+
+        val query =
+          """{
+            |  someTypeList(filter: { foo: "bar" }) {
+            |    nonExistent
+            |  }
+            |}
+          """.stripMargin
+        val result = runNow(graphQLService.runQuery(firstVersion.group, query, None, None))
+
+        (result \ "data").toOption mustBe None
+        val errors = (result \ "errors").as[Seq[String]]
+        errors must have length(1)
+        println(errors.head)
+        """^Query does not pass validation. Violations:\s*Cannot query field 'nonExistent' on type 'SomeType'.*""".r.findFirstMatchIn(errors.head) mustBe defined
+      })
+    }
   }
 
 }
