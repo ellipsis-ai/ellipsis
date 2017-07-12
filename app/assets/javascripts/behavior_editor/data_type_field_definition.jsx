@@ -56,7 +56,7 @@ define(function(require) {
     },
 
     isBuiltIn: function() {
-      return this.props.field.name === "id";
+      return this.props.field.isGenerated();
     },
 
     renderFieldType: function() {

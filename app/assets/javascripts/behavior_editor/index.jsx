@@ -1470,11 +1470,11 @@ const BehaviorEditor = React.createClass({
           (this.isModified() ? " bg-white " : " bg-light-translucent ")
         }>
           <Collapsible ref="addDataStorageItems" revealWhen={this.props.activePanelName === 'addDataStorageItems'} onChange={this.layoutDidUpdate}>
-            <DataStorageAdder />
+            <DataStorageAdder behaviorVersion={this.getSelectedBehavior()} onSave={console.log} onCancelClick={this.props.onClearActivePanel} />
           </Collapsible>
 
           <Collapsible ref="browseDataStorage" revealWhen={this.props.activePanelName === 'browseDataStorage'} onChange={this.layoutDidUpdate}>
-            <DataStorageBrowser />
+            <DataStorageBrowser behaviorVersion={this.getSelectedBehavior()} />
           </Collapsible>
 
           <Collapsible ref="confirmUndo" revealWhen={this.props.activePanelName === 'confirmUndo'} onChange={this.layoutDidUpdate}>
