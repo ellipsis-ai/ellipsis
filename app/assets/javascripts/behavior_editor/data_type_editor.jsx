@@ -8,6 +8,7 @@ define(function(require) {
     DataTypeResultConfig = require('./data_type_result_config'),
     DataTypeSchemaConfig = require('./data_type_schema_config'),
     DataTypeSourceConfig = require('./data_type_source_config'),
+    ID = require('../lib/id'),
     SectionHeading = require('../shared_ui/section_heading'),
     SequentialName = require('../lib/sequential_name'),
     BehaviorVersion = require('../models/behavior_version'),
@@ -81,8 +82,12 @@ define(function(require) {
       return this.props.behaviorVersion;
     },
 
+    getDefaultDataType: function() {
+      return this.props.paramTypes.find(ea => ea.id === "Text");
+    },
+
     updateDataTypeSource: function(usesCode) {
-      const textType = this.props.paramTypes.find(ea => ea.id === "Text");
+      const textType = this.getDefaultDataType();
       const newConfig = this.getDataTypeConfig().clone({ usesCode: usesCode }).withBuiltinFieldsEnsured(textType);
       this.setDataTypeConfig(newConfig);
       this.setState({
@@ -144,12 +149,11 @@ define(function(require) {
 
     addNewDataTypeField: function() {
       const newName = SequentialName.nextFor(this.getDataTypeFields(), (ea) => ea.name, "field");
-      const url = jsRoutes.controllers.BehaviorEditorController.newUnsavedDataTypeField(newName).url;
-      fetch(url, { credentials: 'same-origin' })
-        .then(response => response.json())
-        .then(json => {
-          this.addDataTypeField(new DataTypeField(json));
-        });
+      this.addDataTypeField(new DataTypeField({
+        fieldId: ID.next(),
+        name: newName,
+        fieldType: this.getDefaultDataType()
+      }));
     },
 
     hasInputNamed: function(name) {
