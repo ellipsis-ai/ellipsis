@@ -1662,6 +1662,12 @@ const BehaviorEditor = React.createClass({
     );
   },
 
+  getEditableHeading: function() {
+    return (
+      <h5 className="type-blue-faded mbn">{this.getSelectedBehavior().getEditorTitle()}</h5>
+    );
+  },
+
   behaviorSwitcherIsVisible: function() {
     return this.state.behaviorSwitcherVisible;
   },
