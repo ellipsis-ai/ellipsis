@@ -15,6 +15,8 @@ var React = require('react'),
   ConfirmActionPanel = require('../panels/confirm_action'),
   CollapseButton = require('../shared_ui/collapse_button'),
   DataTypeEditor = require('./data_type_editor'),
+  DataStorageAdder = require('./data_storage_adder'),
+  DataStorageBrowser = require('./data_storage_browser'),
   DynamicLabelButton = require('../form/dynamic_label_button'),
   EnvVariableAdder = require('../environment_variables/adder'),
   EnvVariableSetter = require('../environment_variables/setter'),
@@ -1471,6 +1473,14 @@ const BehaviorEditor = React.createClass({
           (this.mobileBehaviorSwitcherIsVisible() ? " mobile-position-behind-scrim " : "") +
           (this.isModified() ? " bg-white " : " bg-light-translucent ")
         }>
+          <Collapsible ref="addDataStorageItems" revealWhen={this.props.activePanelName === 'addDataStorageItems'} onChange={this.layoutDidUpdate}>
+            <DataStorageAdder />
+          </Collapsible>
+
+          <Collapsible ref="browseDataStorage" revealWhen={this.props.activePanelName === 'browseDataStorage'} onChange={this.layoutDidUpdate}>
+            <DataStorageBrowser />
+          </Collapsible>
+
           <Collapsible ref="confirmUndo" revealWhen={this.props.activePanelName === 'confirmUndo'} onChange={this.layoutDidUpdate}>
             <ConfirmActionPanel confirmText="Undo changes" onConfirmClick={this.undoChanges} onCancelClick={this.props.onClearActivePanel}>
               <p>This will undo any changes you’ve made since last saving. Are you sure you want to do this?</p>
@@ -2036,6 +2046,7 @@ const BehaviorEditor = React.createClass({
           onChange={this.setEditableProps}
           onAddNewInput={this.addNewInput}
           onConfigureType={this.onConfigureType}
+          isModified={this.editableIsModified}
 
           activePanelName={this.props.activePanelName}
           activeDropdownName={this.getActiveDropdown()}

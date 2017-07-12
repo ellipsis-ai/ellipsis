@@ -16,8 +16,7 @@ define(function(require) {
     Input = require('../models/input'),
     ImmutableObjectUtils = require('../lib/immutable_object_utils');
 
-  return React.createClass({
-    displayName: 'DataTypeEditor',
+  const DataTypeEditor = React.createClass({
     propTypes: {
       behaviorVersion: React.PropTypes.instanceOf(BehaviorVersion).isRequired,
       paramTypes: React.PropTypes.arrayOf(
@@ -30,6 +29,7 @@ define(function(require) {
       onChange: React.PropTypes.func.isRequired,
       onAddNewInput: React.PropTypes.func.isRequired,
       onConfigureType: React.PropTypes.func.isRequired,
+      isModified: React.PropTypes.func.isRequired,
 
       activePanelName: React.PropTypes.string,
       activeDropdownName: React.PropTypes.string,
@@ -175,6 +175,10 @@ define(function(require) {
       return Boolean(!selected.isNew && selected.getFunctionBody());
     },
 
+    isModified: function() {
+      return this.props.isModified(this.props.behaviorVersion);
+    },
+
     updateCode: function(newCode) {
       this.props.onChange({
         functionBody: newCode
@@ -185,6 +189,14 @@ define(function(require) {
       this.setState({
         dataTypeSourceChosen: false
       });
+    },
+
+    addDataStorageItems: function() {
+      this.props.onToggleActivePanel('addDataStorageItems', true);
+    },
+
+    browseDataStorageItems: function() {
+      this.props.onToggleActivePanel('browseDataStorage', true);
     },
 
     renderCodeEditor: function() {
@@ -254,7 +266,10 @@ define(function(require) {
               </SectionHeading>
 
               {this.usesCode() ? null : (
-                <DataTypeDataSummary />
+                <DataTypeDataSummary isModified={this.isModified()}
+                  onAddItems={this.addDataStorageItems}
+                  onBrowse={this.browseDataStorageItems}
+                />
               )}
             </div>
 
@@ -289,4 +304,6 @@ define(function(require) {
       );
     }
   });
+
+  return DataTypeEditor;
 });

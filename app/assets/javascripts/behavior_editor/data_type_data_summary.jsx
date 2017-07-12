@@ -5,9 +5,9 @@ define(function(require) {
   const DataTypeDataSummary = React.createClass({
     displayName: 'DataTypeDataSummary',
     propTypes: {
-      // string: React.PropTypes.string.isRequired,
-      // callback: React.PropTypes.func.isRequired,
-      // children: React.PropTypes.node.isRequired
+      isModified: React.PropTypes.bool.isRequired,
+      onAddItems: React.PropTypes.func.isRequired,
+      onBrowse: React.PropTypes.func.isRequired
     },
 
     render: function() {
@@ -18,13 +18,18 @@ define(function(require) {
           </p>
 
           <div>
-            <Button className="button-s mrs mbs" disabled={true}>
+            <Button className="button-s mrs mbs" disabled={true} onClick={this.props.onBrowse}>
               Browse data
             </Button>
 
-            <Button className="button-s mrs mbs">
+            <Button className="button-s mrs mbs" disabled={this.props.isModified} onClick={this.props.onAddItems}>
               Add items
             </Button>
+            {this.props.isModified ? (
+              <span className="display-inline-block align-m mbs fade-in type-s type-pink type-italic">
+                — Save changes to add data
+              </span>
+            ) : null}
           </div>
         </div>
       );
