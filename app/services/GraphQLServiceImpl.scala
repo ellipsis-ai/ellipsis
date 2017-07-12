@@ -210,7 +210,7 @@ class GraphQLServiceImpl @Inject() (
             case Success(queryAst) => {
               executeQuery(schema, queryAst, maybeOperationName, variablesFrom(maybeVariables))
             }
-            case Failure(error) => throw error
+            case Failure(error) => errorResultFor(error.getMessage)
           }
         } yield result
       }.getOrElse {
