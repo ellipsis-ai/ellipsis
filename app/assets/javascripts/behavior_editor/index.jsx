@@ -32,6 +32,7 @@ var React = require('react'),
   ModalScrim = require('../shared_ui/modal_scrim'),
   Notifications = require('../notifications/notifications'),
   PageWithPanels = require('../shared_ui/page_with_panels'),
+  ParamType = require('../models/param_type'),
   ResponseTemplate = require('../models/response_template'),
   ResponseTemplateConfiguration = require('./response_template_configuration'),
   ResponseTemplateHelp = require('./response_template_help'),
@@ -75,12 +76,7 @@ const BehaviorEditor = React.createClass({
     group: React.PropTypes.instanceOf(BehaviorGroup).isRequired,
     selectedId: React.PropTypes.string,
     csrfToken: React.PropTypes.string.isRequired,
-    builtinParamTypes: React.PropTypes.arrayOf(React.PropTypes.shape({
-      exportId: React.PropTypes.string,
-      id: React.PropTypes.string.isRequired,
-      name: React.PropTypes.string,
-      needsConfig: React.PropTypes.needsConfig
-    })).isRequired,
+    builtinParamTypes: React.PropTypes.arrayOf(React.PropTypes.instanceOf(ParamType)).isRequired,
     envVariables: React.PropTypes.arrayOf(React.PropTypes.object),
     oauth2Applications: React.PropTypes.arrayOf(oauth2ApplicationShape),
     oauth2Apis: React.PropTypes.arrayOf(React.PropTypes.shape({

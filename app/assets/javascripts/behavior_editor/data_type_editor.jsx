@@ -14,17 +14,13 @@ define(function(require) {
     BehaviorVersion = require('../models/behavior_version'),
     DataTypeField = require('../models/data_type_field'),
     Input = require('../models/input'),
+    ParamType = require('../models/param_type'),
     ImmutableObjectUtils = require('../lib/immutable_object_utils');
 
   const DataTypeEditor = React.createClass({
     propTypes: {
       behaviorVersion: React.PropTypes.instanceOf(BehaviorVersion).isRequired,
-      paramTypes: React.PropTypes.arrayOf(
-        React.PropTypes.shape({
-          id: React.PropTypes.string.isRequired,
-          name: React.PropTypes.string.isRequired
-        })
-      ).isRequired,
+      paramTypes: React.PropTypes.arrayOf(React.PropTypes.instanceOf(ParamType)).isRequired,
       inputs: React.PropTypes.arrayOf(React.PropTypes.instanceOf(Input)).isRequired,
       onChange: React.PropTypes.func.isRequired,
       onAddNewInput: React.PropTypes.func.isRequired,
@@ -287,6 +283,7 @@ define(function(require) {
                 onChange={this.updateDataTypeFieldAtIndexWith}
                 onDelete={this.deleteDataTypeFieldAtIndex}
                 onAdd={this.addNewDataTypeField}
+                behaviorVersionId={this.props.behaviorVersion.id}
                 fields={this.getDataTypeFields()}
                 paramTypes={this.props.paramTypes}
                 animationDisabled={this.props.animationIsDisabled}

@@ -3,6 +3,7 @@ define(function(require) {
     DataTypeConfig = require('./data_type_config'),
     DeepEqual = require('../lib/deep_equal'),
     Editable = require('./editable'),
+    ParamType = require('./param_type'),
     ResponseTemplate = require('./response_template'),
     Trigger = require('./trigger');
 
@@ -19,6 +20,7 @@ define(function(require) {
       }, props);
 
       Object.defineProperties(this, {
+        id: { value: initialProps.id, enumerable: true },
         behaviorId: { value: initialProps.behaviorId, enumerable: true },
         responseTemplate: { value: initialProps.responseTemplate, enumerable: true },
         inputIds: { value: initialProps.inputIds, enumerable: true },
@@ -157,11 +159,11 @@ define(function(require) {
     }
 
     toParamType() {
-      return {
+      return new ParamType({
         id: this.id,
         exportId: this.exportId,
         name: this.name || "Unnamed data type"
-      };
+      });
     }
 
     clone(props) {

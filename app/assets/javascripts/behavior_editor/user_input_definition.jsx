@@ -7,6 +7,7 @@ var React = require('react'),
   SVGTip = require('../svg/tip'),
   SVGInfo = require('../svg/info'),
   Input = require('../models/input'),
+  ParamType = require('../models/param_type'),
   ifPresent = require('../lib/if_present');
 
   var EACH_TIME = "each_time";
@@ -22,12 +23,7 @@ return React.createClass({
     ]).isRequired,
     input: React.PropTypes.instanceOf(Input).isRequired,
     isShared: React.PropTypes.bool.isRequired,
-    paramTypes: React.PropTypes.arrayOf(
-      React.PropTypes.shape({
-        id: React.PropTypes.string,
-        name: React.PropTypes.string
-      })
-    ).isRequired,
+    paramTypes: React.PropTypes.arrayOf(React.PropTypes.instanceOf(ParamType)).isRequired,
     onChange: React.PropTypes.func.isRequired,
     onDelete: React.PropTypes.func.isRequired,
     onEnterKey: React.PropTypes.func.isRequired,

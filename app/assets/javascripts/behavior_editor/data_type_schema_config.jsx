@@ -2,7 +2,8 @@ define(function(require) {
   var React = require('react'),
     SectionHeading = require('../shared_ui/section_heading'),
     DataTypeFieldDefinition = require('./data_type_field_definition'),
-    Field = require('../models/data_type_field');
+    Field = require('../models/data_type_field'),
+    ParamType = require('../models/param_type');
 
   return React.createClass({
     displayName: 'DataTypeSchemaConfig',
@@ -10,13 +11,9 @@ define(function(require) {
       onChange: React.PropTypes.func.isRequired,
       onDelete: React.PropTypes.func.isRequired,
       onAdd: React.PropTypes.func.isRequired,
+      behaviorVersionId: React.PropTypes.string.isRequired,
       fields: React.PropTypes.arrayOf(React.PropTypes.instanceOf(Field)).isRequired,
-      paramTypes: React.PropTypes.arrayOf(
-        React.PropTypes.shape({
-          id: React.PropTypes.string.isRequired,
-          name: React.PropTypes.string.isRequired
-        })
-      ).isRequired,
+      paramTypes: React.PropTypes.arrayOf(React.PropTypes.instanceOf(ParamType)).isRequired,
       animationDisabled: React.PropTypes.bool,
       onConfigureType: React.PropTypes.func.isRequired
     },
@@ -73,6 +70,7 @@ define(function(require) {
                         onDelete={this.onDelete.bind(this, index)}
                         id={index}
                         onConfigureType={this.props.onConfigureType}
+                        behaviorVersionId={this.props.behaviorVersionId}
                       />
                     </div>
                   ))}

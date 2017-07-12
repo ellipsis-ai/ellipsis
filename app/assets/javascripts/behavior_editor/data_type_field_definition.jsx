@@ -5,6 +5,7 @@ define(function(require) {
     Formatter = require('../lib/formatter'),
     Select = require('../form/select'),
     DataTypeField = require('../models/data_type_field'),
+    ParamType = require('../models/param_type'),
     ifPresent = require('../lib/if_present');
 
   return React.createClass({
@@ -14,13 +15,9 @@ define(function(require) {
         React.PropTypes.number,
         React.PropTypes.string
       ]).isRequired,
+      behaviorVersionId: React.PropTypes.string.isRequired,
       field: React.PropTypes.instanceOf(DataTypeField).isRequired,
-      paramTypes: React.PropTypes.arrayOf(
-        React.PropTypes.shape({
-          id: React.PropTypes.string,
-          name: React.PropTypes.string
-        })
-      ).isRequired,
+      paramTypes: React.PropTypes.arrayOf(React.PropTypes.instanceOf(ParamType)).isRequired,
       onChange: React.PropTypes.func.isRequired,
       onDelete: React.PropTypes.func.isRequired,
       shouldGrabFocus: React.PropTypes.bool,
@@ -45,8 +42,8 @@ define(function(require) {
     },
 
     isConfigurable: function() {
-      const pt = this.props.field.fieldType;
-      return pt.id !== pt.name;
+      const paramType = this.props.field.fieldType;
+      return paramType.id !== paramType.name && paramType.id !== this.props.behaviorVersionId;
     },
 
     focus: function() {
@@ -129,12 +126,12 @@ define(function(require) {
                   <div className="column column-shrink prs type-s type-weak align-form-input ">
                     <div className="display-ellipsis">Type of data:</div>
                   </div>
-                  <div className="column column-expand align-form-input">
+                  <div className="column column-expand align-form-input prs">
                     {this.renderFieldType()}
                   </div>
                   {ifPresent(this.isConfigurable(), () => (
                     <div className="column column-shrink align-form-input">
-                      <button type="button" className="button-s button-shrink" onClick={this.onConfigureType}>Edit type…</button>
+                      <button type="button" className="button-s button-shrink align-m" onClick={this.onConfigureType}>Edit type…</button>
                     </div>
                   ))}
                   <div className="column column-shrink">
