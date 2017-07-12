@@ -22,6 +22,7 @@ var React = require('react'),
   FixedFooter = require('../shared_ui/fixed_footer'),
   HiddenJsonInput = require('./hidden_json_input'),
   Input = require('../models/input'),
+  Formatter = require('../lib/formatter'),
   ID = require('../lib/id'),
   NotificationData = require('../models/notification_data'),
   FormInput = require('../form/input'),
@@ -30,10 +31,12 @@ var React = require('react'),
   ModalScrim = require('../shared_ui/modal_scrim'),
   Notifications = require('../notifications/notifications'),
   PageWithPanels = require('../shared_ui/page_with_panels'),
+  ParamType = require('../models/param_type'),
   ResponseTemplate = require('../models/response_template'),
   ResponseTemplateConfiguration = require('./response_template_configuration'),
   ResponseTemplateHelp = require('./response_template_help'),
   SavedAnswerEditor = require('./saved_answer_editor'),
+  SequentialName = require('../lib/sequential_name'),
   SharedAnswerInputSelector = require('./shared_answer_input_selector'),
   Sticky = require('../shared_ui/sticky'),
   SVGHamburger = require('../svg/hamburger'),
@@ -72,12 +75,7 @@ const BehaviorEditor = React.createClass({
     group: React.PropTypes.instanceOf(BehaviorGroup).isRequired,
     selectedId: React.PropTypes.string,
     csrfToken: React.PropTypes.string.isRequired,
-    builtinParamTypes: React.PropTypes.arrayOf(React.PropTypes.shape({
-      exportId: React.PropTypes.string,
-      id: React.PropTypes.string.isRequired,
-      name: React.PropTypes.string,
-      needsConfig: React.PropTypes.needsConfig
-    })).isRequired,
+    builtinParamTypes: React.PropTypes.arrayOf(React.PropTypes.instanceOf(ParamType)).isRequired,
     envVariables: React.PropTypes.arrayOf(React.PropTypes.object),
     oauth2Applications: React.PropTypes.arrayOf(oauth2ApplicationShape),
     oauth2Apis: React.PropTypes.arrayOf(React.PropTypes.shape({
@@ -436,18 +434,8 @@ const BehaviorEditor = React.createClass({
     this.setBehaviorInputs(newInputs, this.focusOnLastInput);
   },
 
-  getNewGenericInputName: function() {
-    let newIndex = this.getInputs().length + 1;
-    while (this.getInputs().some(ea => {
-      return ea.name === 'userInput' + newIndex;
-    })) {
-      newIndex++;
-    }
-    return `userInput${newIndex}`;
-  },
-
   addNewInput: function(optionalNewName) {
-    const newName = optionalNewName || this.getNewGenericInputName();
+    const newName = optionalNewName || SequentialName.nextFor(this.getInputs(), (ea) => ea.name, "userInput");
     this.addInput(new Input({
       inputId: ID.next(),
       name: newName,
@@ -926,20 +914,13 @@ const BehaviorEditor = React.createClass({
     });
   },
 
-  updateDataTypeResultConfig: function(shouldUseSearch) {
-    if (shouldUseSearch) {
-      this.addNewInput('searchQuery');
-    } else {
-      this.setEditableProp('inputIds', []);
-    }
-  },
-
   updateDescription: function(newDescription) {
     this.setEditableProp('description', newDescription);
   },
 
   updateName: function(newName) {
-    this.setEditableProp('name', newName);
+    const normalizedName = this.isDataTypeBehavior() ? Formatter.formatNameForCode(newName) : newName;
+    this.setEditableProp('name', normalizedName);
   },
 
   updateEnvVariables: function(envVars, options) {
@@ -1681,32 +1662,6 @@ const BehaviorEditor = React.createClass({
     );
   },
 
-  getEditableHeadingText: function() {
-    if (this.isLibrary()) {
-      if (this.isExisting()) {
-        return "Edit library";
-      } else {
-        return "New library";
-      }
-    } else if (this.isDataTypeBehavior()) {
-      if (this.isExisting()) {
-        return "Edit data type";
-      } else {
-        return "New data type";
-      }
-    } else if (this.isExisting()) {
-      return "Edit action";
-    } else {
-      return "New action";
-    }
-  },
-
-  getEditableHeading: function() {
-    return (
-      <h5 className="type-blue-faded mbn">{this.getEditableHeadingText()}</h5>
-    );
-  },
-
   behaviorSwitcherIsVisible: function() {
     return this.state.behaviorSwitcherVisible;
   },
@@ -1743,7 +1698,7 @@ const BehaviorEditor = React.createClass({
     return selected ? selected.editorScrollPosition : 0;
   },
 
-  onSelect: function(groupId, id) {
+  onSelect: function(groupId, id, optionalCallback) {
     var newState = {
       animationDisabled: true,
       selectedId: id
@@ -1760,6 +1715,9 @@ const BehaviorEditor = React.createClass({
       this.setState({
         animationDisabled: false
       });
+      if (optionalCallback) {
+        optionalCallback();
+      }
     });
   },
 
@@ -1769,7 +1727,8 @@ const BehaviorEditor = React.createClass({
 
   addNewBehavior: function(isDataType, behaviorIdToClone) {
     const group = this.getBehaviorGroup();
-    const url = jsRoutes.controllers.BehaviorEditorController.newUnsavedBehavior(isDataType, group.teamId, behaviorIdToClone).url;
+    const newName = isDataType ? SequentialName.nextFor(this.getDataTypeBehaviors(), (ea) => ea.name, "dataType") : null;
+    const url = jsRoutes.controllers.BehaviorEditorController.newUnsavedBehavior(isDataType, group.teamId, behaviorIdToClone, newName).url;
     fetch(url, { credentials: 'same-origin' })
       .then((response) => response.json())
       .then((json) => {
@@ -1850,38 +1809,42 @@ const BehaviorEditor = React.createClass({
 
   renderNameAndManagementActions: function() {
     return (
-      <div className="container container-wide">
+      <div className="container container-wide bg-white">
         <div className="columns columns-elastic mobile-columns-float">
           <div className="column column-shrink">
             <FormInput
               className="form-input-borderless form-input-l type-l type-semibold width-15 mobile-width-full"
-              ref="input"
+              ref="editableNameInput"
               value={this.getEditableName()}
               placeholder={this.getSelected().namePlaceholderText()}
               onChange={this.updateName}
             />
           </div>
-          <div className="column column-expand align-r align-b mobile-align-l mobile-mtl">
+          <div className="column column-expand align-r align-m mobile-align-l mobile-mtl">
             {this.isExisting() ? (
-              <span>
-                <button type="button"
-                  className="button-s mrs mbs"
-                  onClick={this.cloneEditable}>
-                  {this.getSelected().cloneActionText()}
-                </button>
-                <button type="button"
-                  className="button-s mbs"
-                  onClick={this.confirmDeleteEditable}>
-                  {this.getSelected().deleteActionText()}
-                </button>
-              </span>
+              <div>
+                <div className="mobile-display-inline-block mobile-mrs align-t">
+                  <button type="button"
+                    className="button-s mbs"
+                    onClick={this.cloneEditable}>
+                    {this.getSelected().cloneActionText()}
+                  </button>
+                </div>
+                <div className="mobile-display-inline-block align-t">
+                  <button type="button"
+                    className="button-s"
+                    onClick={this.confirmDeleteEditable}>
+                    {this.getSelected().deleteActionText()}
+                  </button>
+                </div>
+              </div>
             ) : (
-              <span>
+              <div>
                 <button type="button"
-                  className="button-s mbs"
+                  className="button-s"
                   onClick={this.deleteEditable}
                 >{this.getSelected().cancelNewText()}</button>
-              </span>
+              </div>
             )}
           </div>
         </div>
@@ -1893,7 +1856,7 @@ const BehaviorEditor = React.createClass({
     return (
 
       <div>
-                <div className="columns container container-wide">
+                <div className="columns container container-wide bg-white">
                   <div className="column column-full mobile-column-full">
                     <FormInput
                       className="form-input-borderless form-input-m mbneg1"
@@ -2047,7 +2010,7 @@ const BehaviorEditor = React.createClass({
     return (
       <div className="pbxxxl">
 
-        <div className="columns container container-wide">
+        <div className="columns container container-wide bg-white">
           <div className="column column-full mobile-column-full">
             <FormInput
               className="form-input-borderless form-input-m mbneg1"

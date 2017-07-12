@@ -1,10 +1,13 @@
 requirejs(['common'], function() {
   requirejs(
-    ['core-js', 'whatwg-fetch', 'react', 'react-dom', './lib/browser_utils', './behavior_editor/index', './models/behavior_group', 'config/behavioreditor/edit'],
-    function(Core, Fetch, React, ReactDOM, BrowserUtils, BehaviorEditor, BehaviorGroup, BehaviorEditorConfiguration) {
+    ['core-js', 'whatwg-fetch', 'react', 'react-dom', './lib/browser_utils', './behavior_editor/index', './models/behavior_group', 'config/behavioreditor/edit', './models/param_type'],
+    function(Core, Fetch, React, ReactDOM, BrowserUtils, BehaviorEditor, BehaviorGroup, BehaviorEditorConfiguration, ParamType) {
       var config = Object.assign({}, BehaviorEditorConfiguration, {
         groupData: BehaviorEditorConfiguration.group,
         group: BehaviorGroup.fromJson(BehaviorEditorConfiguration.group),
+        builtinParamTypes: BehaviorEditorConfiguration.builtinParamTypes.map((ea) => {
+          return ParamType.fromJson(ea).clone({ isBuiltIn: true });
+        }),
         onSave: onSave,
         onForgetSavedAnswerForInput: resetSavedAnswerForInput
       });

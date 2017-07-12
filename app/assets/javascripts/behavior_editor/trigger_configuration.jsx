@@ -2,7 +2,7 @@ define(function(require) {
   var React = require('react'),
     Checklist = require('./checklist'),
     HelpButton = require('../help/help_button'),
-    Input = require('../models/input'),
+    Formatter = require('../lib/formatter'),
     Notifications = require('../notifications/notifications'),
     NotificationData = require('../models/notification_data'),
     SectionHeading = require('../shared_ui/section_heading'),
@@ -76,7 +76,7 @@ define(function(require) {
     getNotificationsFor: function(trigger) {
       const unknownParamNames = trigger.paramNames.filter((ea) => !this.props.inputNames.includes(ea));
       return unknownParamNames.map((name) => {
-        if (Input.isValidName(name)) {
+        if (Formatter.isValidNameForCode(name)) {
           return new NotificationData({
             kind: "param_not_in_function",
             name: name,

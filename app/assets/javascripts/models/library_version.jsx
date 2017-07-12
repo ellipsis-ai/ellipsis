@@ -26,6 +26,14 @@ define(function(require) {
       return "Are you sure you want to delete this library?";
     }
 
+    getNewEditorTitle() {
+      return "New library";
+    }
+
+    getExistingEditorTitle() {
+      return "Edit library";
+    }
+
     cancelNewText() {
       return "Cancel new library";
     }
