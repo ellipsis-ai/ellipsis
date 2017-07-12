@@ -914,6 +914,15 @@ const BehaviorEditor = React.createClass({
     });
   },
 
+  updateDataTypeResultConfig: function(shouldUseSearch) {
+    if (shouldUseSearch) {
+      this.addNewInput('searchQuery');
+    } else {
+      this.setEditableProp('inputIds', []);
+    }
+  },
+
+
   updateDescription: function(newDescription) {
     this.setEditableProp('description', newDescription);
   },
@@ -1664,7 +1673,7 @@ const BehaviorEditor = React.createClass({
 
   getEditableHeading: function() {
     return (
-      <h5 className="type-blue-faded mbn">{this.getSelectedBehavior().getEditorTitle()}</h5>
+      <h5 className="type-blue-faded mbn">{this.getSelected().getEditorTitle()}</h5>
     );
   },
 
