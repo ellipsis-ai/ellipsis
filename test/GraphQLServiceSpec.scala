@@ -145,7 +145,7 @@ class GraphQLServiceSpec extends DBSpec {
         val savedItem = savedItems.head
         (savedItem.data \ "foo").as[String] mustBe "bar"
         (savedItem.data \ "id").as[String] mustBe savedItem.id
-        (mutationResult.get \ "data").get mustBe JsObject(Map("createSomeType" -> JsObject(Map("foo" -> JsString("bar")))))
+        (mutationResult \ "data").get mustBe JsObject(Map("createSomeType" -> JsObject(Map("foo" -> JsString("bar")))))
 
 //        val query =
 //          """query FindSomeType($filter: SomeTypeInput!) {
@@ -163,7 +163,7 @@ class GraphQLServiceSpec extends DBSpec {
             |}
           """.stripMargin
         val queryResult = runNow(graphQLService.runQuery(firstVersion.group, query, None, None))
-        (queryResult.get \ "data").get mustBe JsObject(Map("someTypeList" -> JsArray(Array(JsObject(Map("foo" -> JsString("bar")))))))
+        (queryResult \ "data").get mustBe JsObject(Map("someTypeList" -> JsArray(Array(JsObject(Map("foo" -> JsString("bar")))))))
       })
     }
 
@@ -201,7 +201,7 @@ class GraphQLServiceSpec extends DBSpec {
         (savedSomeType2.data \ "bar").as[Double] mustBe 2
         (savedSomeType2.data \ "id").as[String] mustBe savedSomeType2.id
 
-        (mutationResult.get \ "data").get mustBe JsObject(Map(
+        (mutationResult \ "data").get mustBe JsObject(Map(
           "createSomeType2" -> JsObject(Map("bar" -> JsNumber(2), "id" -> JsString(savedSomeType2.id)))))
 
         val query =
@@ -212,7 +212,7 @@ class GraphQLServiceSpec extends DBSpec {
           |}
         """.stripMargin
         val queryResult = runNow(graphQLService.runQuery(firstVersion.group, query, None, None))
-        (queryResult.get \ "data").get mustBe JsObject(Map("someTypeList" -> JsArray(Array(JsObject(Map("foo" -> JsString("bar")))))))
+        (queryResult \ "data").get mustBe JsObject(Map("someTypeList" -> JsArray(Array(JsObject(Map("foo" -> JsString("bar")))))))
       })
     }
   }
