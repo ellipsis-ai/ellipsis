@@ -22,6 +22,7 @@
     "javascript-debounce": "1.0.0",
     "jest": "^19.0.2",
     "moment": "2.14.1",
+    "node-uuid": "^1.4.7",
     "react": "15.3.1",
     "react-addons-test-utils": "15.3.1",
     "react-dom": "15.3.1",
@@ -61,7 +62,8 @@
     "testPathIgnorePatterns": [
       "/node_modules/.+",
       "/project/.+",
-      "/target/.+"
+      "/target/.+",
+      "/test/mocks/.+"
     ]
   },
   "repository": {
