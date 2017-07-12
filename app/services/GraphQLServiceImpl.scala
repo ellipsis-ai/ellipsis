@@ -189,29 +189,34 @@ class GraphQLServiceImpl @Inject() (
     }.getOrElse(Json.obj())
   }
 
+  private def errorResultFor(message: String): Future[JsValue] = {
+    Future.successful(Json.toJson(Map(
+      "errors" -> Seq(message)
+    )))
+  }
+
   def runQuery(
                behaviorGroup: BehaviorGroup,
                query: String,
                maybeOperationName: Option[String],
                maybeVariables: Option[String]
-              ): Future[Option[JsValue]] = {
+              ): Future[JsValue] = {
 
-    for {
-      maybeBehaviorGroupVersion <- dataService.behaviorGroups.maybeCurrentVersionFor(behaviorGroup)
-      maybeSchema <- maybeBehaviorGroupVersion.map { groupVersion =>
-        schemaFor(groupVersion).map(Some(_))
-      }.getOrElse(Future.successful(None))
-      maybeResult <- {
-        maybeSchema.map { schema =>
-          QueryParser.parse(query) match {
+    dataService.behaviorGroups.maybeCurrentVersionFor(behaviorGroup).flatMap { maybeBehaviorGroupVersion =>
+      maybeBehaviorGroupVersion.map { groupVersion =>
+        for {
+          schema <- schemaFor(groupVersion)
+          result <- QueryParser.parse(query) match {
             case Success(queryAst) => {
-              executeQuery(schema, queryAst, maybeOperationName, variablesFrom(maybeVariables)).map(Some(_))
+              executeQuery(schema, queryAst, maybeOperationName, variablesFrom(maybeVariables))
             }
             case Failure(error) => throw error
           }
-        }.getOrElse(Future.successful(None))
+        } yield result
+      }.getOrElse {
+        errorResultFor("Couldn't find a saved version for this skill")
       }
-    } yield maybeResult
+    }
   }
 
 }

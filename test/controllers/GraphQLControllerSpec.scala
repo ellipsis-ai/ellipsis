@@ -27,7 +27,7 @@ class GraphQLControllerSpec extends PlaySpec with MockitoSugar {
                      team: Team,
                      user: User,
                      query: String,
-                     queryResult: Option[JsValue],
+                     queryResult: JsValue,
                      dataService: DataService,
                      graphQLService: GraphQLService
                    ) = {
@@ -64,22 +64,23 @@ class GraphQLControllerSpec extends PlaySpec with MockitoSugar {
 
     "respond with a valid result" in new ControllerTestContext {
       running(app) {
-        val queryResult = Some(JsObject(Map("data" -> JsArray())))
+        val queryResult = JsObject(Map("data" -> JsArray(Seq(JsString("foo")))))
         val token = setUpMocksFor(team, user, madeUpQuery, queryResult, dataService, graphQLService)
         val request = FakeRequest(controllers.routes.GraphQLController.query()).withJsonBody(bodyFor(token, madeUpQuery))
         val result = route(app, request).get
         status(result) mustBe OK
-        val resultStr = contentAsString(result)
-        println(resultStr)
+        contentAsJson(result) mustBe queryResult
       }
     }
 
-    "respond with NotFound for None result" in new ControllerTestContext {
+    "respond with a 200 + errors if present" in new ControllerTestContext {
       running(app) {
-        val token = setUpMocksFor(team, user, madeUpQuery, None, dataService, graphQLService)
+        val queryResult = JsObject(Map("errors" -> JsArray(Seq(JsString("foo")))))
+        val token = setUpMocksFor(team, user, madeUpQuery, queryResult, dataService, graphQLService)
         val request = FakeRequest(controllers.routes.GraphQLController.query()).withJsonBody(bodyFor(token, madeUpQuery))
         val result = route(app, request).get
-        status(result) mustBe NOT_FOUND
+        status(result) mustBe OK
+        contentAsJson(result) mustBe queryResult
       }
     }
 

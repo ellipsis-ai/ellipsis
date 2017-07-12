@@ -20,6 +20,6 @@ trait GraphQLService {
                 query: String,
                 maybeOperationName: Option[String],
                 maybeVariables: Option[String]
-              ): Future[Option[JsValue]]
+              ): Future[JsValue]
 
 }
