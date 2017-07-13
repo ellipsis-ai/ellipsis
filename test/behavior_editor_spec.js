@@ -8,6 +8,7 @@ const BehaviorEditor = require('../app/assets/javascripts/behavior_editor/index'
 const BehaviorVersion = require('../app/assets/javascripts/models/behavior_version');
 const BehaviorGroup = require('../app/assets/javascripts/models/behavior_group');
 const ResponseTemplate = require('../app/assets/javascripts/models/response_template');
+const ParamType = require('../app/assets/javascripts/models/param_type');
 
 jsRoutes.controllers.BehaviorEditorController.save = jest.fn(() => ({ url: '/mock_save' }));
 jsRoutes.controllers.BehaviorEditorController.newGroup = jest.fn(() => ({ url: '/mock_new_skill' }));
@@ -77,7 +78,8 @@ describe('BehaviorEditor', () => {
 
   function createEditor(config) {
     const props = Object.assign({}, config, {
-      group: BehaviorGroup.fromJson(config.group)
+      group: BehaviorGroup.fromJson(config.group),
+      builtinParamTypes: config.builtinParamTypes.map(ParamType.fromJson)
     });
     return TestUtils.renderIntoDocument(
       <BehaviorEditor {...props} />
