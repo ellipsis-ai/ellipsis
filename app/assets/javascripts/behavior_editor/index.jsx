@@ -1986,7 +1986,8 @@ const BehaviorEditor = React.createClass({
   renderDataTypeBehavior: function() {
     return (
       <div className="pbxxxl">
-        <hr className="mtl mbn thin bg-gray-light" />
+        <div className="bg-white pbl" />
+        <hr className="mtn mbn thin bg-gray-light" />
 
         <DataTypeResultConfig
           usesSearch={this.hasInputNamed('searchQuery')}
@@ -2059,7 +2060,7 @@ const BehaviorEditor = React.createClass({
     if (this.getSelectedBehavior()) {
       return (
         <div>
-          <div className="container container-wide mtl">
+          <div className="container container-wide ptl bg-white">
             {this.getEditableHeading()}
           </div>
 
@@ -2071,7 +2072,7 @@ const BehaviorEditor = React.createClass({
     } else if (this.getSelectedLibrary()) {
       return (
         <div>
-          <div className="container container-wide mtl">
+          <div className="container container-wide ptl bg-white">
             {this.getEditableHeading()}
           </div>
           {this.renderNameAndManagementActions()}
