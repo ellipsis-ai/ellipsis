@@ -1125,6 +1125,10 @@ const BehaviorEditor = React.createClass({
     return this.state && this.state.hasModifiedTemplate;
   },
 
+  isTestable: function() {
+    return Boolean(this.getSelectedBehavior() && this.getSelectedBehavior().usesCode());
+  },
+
   getActionBehaviors: function() {
     return this.getBehaviorGroup().getActions();
   },
@@ -1658,7 +1662,7 @@ const BehaviorEditor = React.createClass({
                     <span className="mobile-display-none">Undo changes</span>
                     <span className="mobile-display-only">Undo</span>
                   </button>
-                  {this.getSelectedBehavior() ? (
+                  {this.isTestable() ? (
                     <DynamicLabelButton
                       labels={[{
                         text: 'Test…',

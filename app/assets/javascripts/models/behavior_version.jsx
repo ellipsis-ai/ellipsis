@@ -78,6 +78,10 @@ define(function(require) {
       return this.config.isDataType;
     }
 
+    usesCode() {
+      return !this.isDataType() || this.getDataTypeConfig().usesCode;
+    }
+
     getNewEditorTitle() {
       return this.isDataType() ? "New data type" : "New action";
     }
