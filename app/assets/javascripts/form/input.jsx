@@ -90,6 +90,8 @@ class FormInput extends React.Component {
         autoComplete={this.props.disableAuto ? "off" : null}
         autoCorrect={this.props.disableAuto ? "off" : null}
         spellCheck={this.props.disableAuto ? false : null}
+        disabled={!!this.props.disabled}
+        readOnly={!!this.props.readOnly}
       />
     );
   }
@@ -114,7 +116,9 @@ FormInput.propTypes = {
   placeholder: React.PropTypes.string,
   type: React.PropTypes.string,
   value: React.PropTypes.string.isRequired,
-  disableAuto: React.PropTypes.bool
+  disableAuto: React.PropTypes.bool,
+  disabled: React.PropTypes.bool,
+  readOnly: React.PropTypes.bool
 };
 
   return FormInput;

@@ -1,6 +1,7 @@
 define(function(require) {
   var DeepEqual = require('../lib/deep_equal'),
     Editable = require('./editable'),
+    ParamType = require('./param_type'),
     ResponseTemplate = require('./response_template'),
     Trigger = require('./trigger');
 
@@ -16,6 +17,7 @@ define(function(require) {
       }, props);
 
       Object.defineProperties(this, {
+        id: { value: initialProps.id, enumerable: true },
         behaviorId: { value: initialProps.behaviorId, enumerable: true },
         responseTemplate: { value: initialProps.responseTemplate, enumerable: true },
         inputIds: { value: initialProps.inputIds, enumerable: true },
@@ -28,7 +30,7 @@ define(function(require) {
     }
 
     namePlaceholderText() {
-      return this.isDataType() ? "Data type name" : "Action name (optional)";
+      return this.isDataType() ? "Data type name (required)" : "Action name (optional)";
     }
 
     cloneActionText() {
@@ -72,6 +74,14 @@ define(function(require) {
       return this.config.isDataType;
     }
 
+    getNewEditorTitle() {
+      return this.isDataType() ? "New data type" : "New action";
+    }
+
+    getExistingEditorTitle() {
+      return this.isDataType() ? "Edit data type" : "Edit action";
+    }
+
     getTriggers() {
       return this.triggers || [];
     }
@@ -93,6 +103,10 @@ define(function(require) {
       } else {
         return "";
       }
+    }
+
+    getFunctionBody() {
+      return this.functionBody || "";
     }
 
     includesText(queryString) {
@@ -129,11 +143,11 @@ define(function(require) {
     }
 
     toParamType() {
-      return {
+      return new ParamType({
         id: this.id,
         exportId: this.exportId,
         name: this.name || "Unnamed data type"
-      };
+      });
     }
 
     clone(props) {

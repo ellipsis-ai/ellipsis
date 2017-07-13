@@ -9,6 +9,7 @@ define(function(require) {
       value: React.PropTypes.oneOfType([React.PropTypes.string, React.PropTypes.number]),
       children: React.PropTypes.node.isRequired,
       onChange: React.PropTypes.func.isRequired,
+      disabled: React.PropTypes.bool,
       size: React.PropTypes.string,
       withSearch: React.PropTypes.bool
     },
@@ -97,6 +98,7 @@ define(function(require) {
             onBlur={this.onBlur}
             size={this.props.size}
             style={this.props.size ? { minHeight: `${Number(this.props.size) * 1.5}em` } : null}
+            disabled={!!this.props.disabled}
           >
             {this.props.children}
           </select>
