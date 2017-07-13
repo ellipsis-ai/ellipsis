@@ -20,9 +20,9 @@ trait DefaultStorageItemService {
 
   def allFor(behavior: Behavior): Future[Seq[DefaultStorageItem]]
 
-  def createItem(typeName: String, data: JsValue, behaviorGroup: BehaviorGroup): Future[Option[DefaultStorageItem]]
+  def createItem(typeName: String, data: JsValue, behaviorGroup: BehaviorGroup): Future[DefaultStorageItem]
 
-  def createItemAction(typeName: String, data: JsValue, behaviorGroup: BehaviorGroup): DBIO[Option[DefaultStorageItem]]
+  def createItemAction(typeName: String, data: JsValue, behaviorGroup: BehaviorGroup): DBIO[DefaultStorageItem]
 
   def deleteItem(id: String, behaviorGroup: BehaviorGroup): Future[DefaultStorageItem]
 

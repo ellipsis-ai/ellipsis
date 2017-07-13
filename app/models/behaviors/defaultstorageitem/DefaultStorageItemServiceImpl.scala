@@ -26,6 +26,8 @@ class DefaultStorageItemsTable(tag: Tag) extends Table[RawDefaultStorageItem](ta
     (id, behaviorId, data) <> ((RawDefaultStorageItem.apply _).tupled, RawDefaultStorageItem.unapply _)
 }
 
+class CreationTypeNotFoundException extends Exception
+
 class DefaultStorageItemServiceImpl @Inject() (
                                              dataServiceProvider: Provider[DataService]
                                            ) extends DefaultStorageItemService {
@@ -102,10 +104,8 @@ class DefaultStorageItemServiceImpl @Inject() (
         case obj: JsObject => {
           val dataWithId: JsObject = obj + ("id", JsString(newID))
           nestedFieldItems.foldLeft(dataWithId)((acc, tuple) => {
-            val (field, maybeItem) = tuple
-            maybeItem.map { item =>
-              acc + (field.name, JsString(item.id))
-            }.getOrElse(acc)
+            val (field, item) = tuple
+            acc + (field.name, JsString(item.id))
           })
         }
         case _ => data
@@ -116,16 +116,20 @@ class DefaultStorageItemServiceImpl @Inject() (
     } yield newInstance
   }
 
-  def createItemAction(typeName: String, data: JsValue, behaviorGroup: BehaviorGroup): DBIO[Option[DefaultStorageItem]] = {
-    (for {
+  def createItemAction(typeName: String, data: JsValue, behaviorGroup: BehaviorGroup): DBIO[DefaultStorageItem] = {
+    ((for {
       maybeBehavior <- dataService.behaviors.findByNameAction(typeName, behaviorGroup)
       maybeItem <- maybeBehavior.map { behavior =>
         createItemForBehaviorAction(behavior, data).map(Some(_))
       }.getOrElse(DBIO.successful(None))
-    } yield maybeItem) transactionally
+    } yield maybeItem) transactionally).map { maybeNewItem =>
+      maybeNewItem.getOrElse {
+        throw new CreationTypeNotFoundException()
+      }
+    }
   }
 
-  def createItem(typeName: String, data: JsValue, behaviorGroup: BehaviorGroup): Future[Option[DefaultStorageItem]] = {
+  def createItem(typeName: String, data: JsValue, behaviorGroup: BehaviorGroup): Future[DefaultStorageItem] = {
     dataService.run(createItemAction(typeName, data, behaviorGroup))
   }
 

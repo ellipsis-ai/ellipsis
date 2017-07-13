@@ -59,8 +59,6 @@ class GraphQLServiceImpl @Inject() (
     schemaStringFromConfigs(configs)
   }
 
-  class CreationTypeNotFoundException extends Exception
-
   class MySchemaBuilder(groupVersion: BehaviorGroupVersion) extends DefaultAstSchemaBuilder[DefaultStorageItemService] {
 
     val group = groupVersion.group
@@ -111,15 +109,7 @@ class GraphQLServiceImpl @Inject() (
                                    definition: ast.FieldDefinition
                                  ): Action[DefaultStorageItemService, _] = {
       definition.name match {
-        case createFieldRegex(typeName) => {
-          ctx.ctx.createItem(typeName, valueFor(ctx, definition), group).map { maybeNewItem =>
-            maybeNewItem.map { newItem =>
-              newItem.data
-            }.getOrElse {
-              throw new CreationTypeNotFoundException()
-            }
-          }
-        }
+        case createFieldRegex(typeName) => ctx.ctx.createItem(typeName, valueFor(ctx, definition), group).map(_.data)
         case deleteFieldRegex(_) => ctx.ctx.deleteItem(ctx.arg(definition.arguments.head.name), group).map(_.data)
       }
     }
