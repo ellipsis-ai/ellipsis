@@ -1,6 +1,8 @@
 define(function(require) {
 
-  const DataTypeField = require('./data_type_field');
+  const DataTypeField = require('./data_type_field'),
+    SequentialName = require("../lib/sequential_name"),
+    ID = require("../lib/id");
 
   class DataTypeConfig {
     constructor(props) {
@@ -24,24 +26,32 @@ define(function(require) {
       return !this.usesCode;
     }
 
-    hasFields() {
-      return this.fields.length > 0;
+    hasTextFields() {
+      return this.fields.some((ea) => ea.name !== "id" && ea.fieldType.id === "Text");
     }
 
     hasIdField() {
-      return this.fields.find(ea => ea.name === "id");
+      return this.fields.some((ea, index) => ea.name === "id" && index === DataTypeConfig.ID_FIELD_INDEX);
     }
 
-    withBuiltinFieldsEnsured(idFieldType) {
-      if (!this.usesCode && !this.hasIdField()) {
-        return this.clone({ fields: this.fields.concat([new DataTypeField({ name: "id", fieldId: "id", fieldType: idFieldType })]) });
-      } else {
+    withRequiredFieldsEnsured(requiredFieldType) {
+      if (!this.requiresFields()) {
         return this;
       }
+
+      const missingFields = [];
+      if (!this.hasIdField()) {
+        missingFields.push(new DataTypeField({ name: "id", fieldId: "id", fieldType: requiredFieldType }));
+      }
+      if (!this.hasTextFields()) {
+        const newName = SequentialName.nextFor(this.fields, (ea) => ea.name, "field");
+        missingFields.push(new DataTypeField({ name: newName, fieldId: ID.next(), fieldType: requiredFieldType }));
+      }
+      return this.clone({ fields: missingFields.concat(this.fields) });
     }
 
     isMissingFields() {
-      return this.requiresFields() && !this.hasFields();
+      return this.requiresFields() && !this.hasTextFields();
     }
 
     getFields() {
@@ -61,6 +71,8 @@ define(function(require) {
     }
 
   }
+
+  DataTypeConfig.ID_FIELD_INDEX = 0;
 
   return DataTypeConfig;
 });

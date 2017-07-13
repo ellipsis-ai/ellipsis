@@ -16,7 +16,7 @@ define(function(require) {
       if (count === 1) {
         return (
           <span>
-            <span>Each data type must have at least one field.</span>
+            <span>Each data type should have at least one text field.</span>
             <button type="button"
               className="button-raw link button-s mhxs"
               onClick={this.props.details[0].onClick}
@@ -26,7 +26,7 @@ define(function(require) {
       } else {
         return (
           <span>
-            <span>Each data type must have at least one field.</span>
+            <span>Each data type should have at least one text field.</span>
             {this.props.details.map((ea, index) => (
               <span key={`detail${index}`}>
                 <button

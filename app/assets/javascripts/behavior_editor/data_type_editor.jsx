@@ -84,14 +84,11 @@ define(function(require) {
 
     updateDataTypeSource: function(usesCode) {
       const textType = this.getDefaultDataType();
-      const newConfig = this.getDataTypeConfig().clone({ usesCode: usesCode }).withBuiltinFieldsEnsured(textType);
+      const newConfig = this.getDataTypeConfig().clone({ usesCode: usesCode }).withRequiredFieldsEnsured(textType);
       this.setDataTypeConfig(newConfig);
       this.setState({
         dataTypeSourceChosen: true
       });
-      if (newConfig.fields.length === 0) {
-        this.addNewDataTypeField();
-      }
     },
 
     getDataTypeConfig: function() {
@@ -144,7 +141,7 @@ define(function(require) {
     },
 
     addNewDataTypeField: function() {
-      const newName = SequentialName.nextFor(this.getDataTypeFields(), (ea) => ea.name, "field");
+      const newName = SequentialName.nextFor(this.getDataTypeFields().slice(1), (ea) => ea.name, "field");
       this.addDataTypeField(new DataTypeField({
         fieldId: ID.next(),
         name: newName,

@@ -27,7 +27,7 @@ define(function(require) {
     }
 
     getWritableFieldsFor(behaviorVersion) {
-      return behaviorVersion.getDataTypeFields().filter((ea) => !ea.isGenerated());
+      return behaviorVersion.getDataTypeFields().slice(1);
     }
 
     updateFieldValue(index, newValue) {

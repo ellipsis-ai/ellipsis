@@ -41,11 +41,6 @@ define(function() {
       });
     }
 
-    isGenerated() {
-      // TODO
-      return this.name === "id";
-    }
-
     clone(props) {
       return new DataTypeField(Object.assign({}, this, props));
     }

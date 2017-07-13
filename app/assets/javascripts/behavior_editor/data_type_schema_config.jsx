@@ -65,6 +65,7 @@ define(function(require) {
                         key={'DataTypeFieldDefinition' + index}
                         ref={(component) => this.fieldComponents[index] = component}
                         field={field}
+                        isBuiltIn={index === 0}
                         paramTypes={this.props.paramTypes}
                         onChange={this.onChange.bind(this, index)}
                         onDelete={this.onDelete.bind(this, index)}
