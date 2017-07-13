@@ -45,6 +45,13 @@ define(function(require) {
       }
     },
 
+    focusOnFirstDuplicateField: function() {
+      const dupeIndex = this.props.fields.findIndex((current, index) => current.name && this.props.fields.slice(0, index).some((previous) => previous.name === current.name));
+      if (dupeIndex >= 0) {
+        this.focusIndex(dupeIndex);
+      }
+    },
+
     focusIndex: function(index) {
       if (this.fieldComponents[index]) {
         this.fieldComponents[index].focus();

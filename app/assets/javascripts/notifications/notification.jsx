@@ -9,6 +9,7 @@ define(function(require) {
     NotificationForDataTypeUnnamed = require('./data_type_unnamed'),
     NotificationForDataTypeMissingFields = require('./data_type_missing_fields'),
     NotificationForDataTypeUnnamedFields = require('./data_type_unnamed_fields'),
+    NotificationForDataTypeDuplicateFields = require('./data_type_duplicate_fields'),
     NotificationForUnusedOAuth2Application = require('./oauth2_application_unused'),
     NotificationForUnusedAWS = require('./aws_unused'),
     NotificationForParamNotInFunction = require('./param_not_in_function'),
@@ -70,6 +71,14 @@ define(function(require) {
           icon: this.getWarningIcon(),
           message: (
             <NotificationForDataTypeUnnamedFields details={this.props.group.members} />
+          )
+        };
+      } else if (kind === "data_type_duplicate_fields") {
+        return {
+          containerClass: "box-warning",
+          icon: this.getWarningIcon(),
+          message: (
+            <NotificationForDataTypeDuplicateFields details={this.props.group.members} />
           )
         };
       } else if (kind === "oauth2_application_unused") {

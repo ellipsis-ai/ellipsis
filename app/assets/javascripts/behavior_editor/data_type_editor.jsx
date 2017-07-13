@@ -129,6 +129,12 @@ define(function(require) {
       }
     },
 
+    focusOnDuplicateField: function() {
+      if (this.schemaConfig) {
+        this.schemaConfig.focusOnFirstDuplicateField();
+      }
+    },
+
     updateDataTypeFieldAtIndexWith: function(index, newField) {
       var fields = this.getDataTypeFields();
       var newFields = ImmutableObjectUtils.arrayWithNewElementAtIndex(fields, newField, index);

@@ -416,7 +416,31 @@ const BehaviorEditor = React.createClass({
         });
       });
 
-    return [].concat(needsConfig, unnamedDataTypes, missingFields, unnamedFields);
+    const duplicateFields = dataTypes
+      .filter((dataType) => {
+        if (dataType.requiresFields()) {
+          const names = dataType.getDataTypeFields().map((ea) => ea.name).filter((ea) => ea.length > 0);
+          const uniqueNames = new Set(names);
+          return uniqueNames.size < names.length;
+        } else {
+          return false;
+        }
+      })
+      .map((ea) => {
+        return new NotificationData({
+          kind: "data_type_duplicate_fields",
+          name: ea.getName(),
+          onClick: () => {
+            this.onSelect(this.getBehaviorGroup().id, ea.behaviorId, () => {
+              if (this.refs.dataTypeEditor) {
+                this.refs.dataTypeEditor.focusOnDuplicateField();
+              }
+            });
+          }
+        });
+      });
+
+    return [].concat(needsConfig, unnamedDataTypes, missingFields, unnamedFields, duplicateFields);
   },
 
   getValidParamNamesForTemplate: function() {
