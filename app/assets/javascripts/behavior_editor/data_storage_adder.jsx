@@ -8,18 +8,26 @@ define(function(require) {
   class DataStorageAdder extends React.Component {
     constructor(props) {
       super(props);
-      this.state = this.getDefaultState();
+      this.state = {
+        fieldValues: this.getBlankValuesFor(props.behaviorVersion)
+      };
       ['save', 'cancel'].forEach((ea) => this[ea] = this[ea].bind(this));
     }
 
-    getDefaultState() {
-      return {
-        fieldValues: this.getWritableFields().map(() => "")
-      };
+    componentWillReceiveProps(newProps) {
+      if (newProps.behaviorVersion !== this.props.behaviorVersion) {
+        this.setState({
+          fieldValues: this.getBlankValuesFor(newProps.behaviorVersion)
+        });
+      }
     }
 
-    getWritableFields() {
-      return this.props.behaviorVersion.getDataTypeFields().filter((ea) => !ea.isGenerated());
+    getBlankValuesFor(behaviorVersion) {
+      return this.getWritableFieldsFor(behaviorVersion).map(() => "");
+    }
+
+    getWritableFieldsFor(behaviorVersion) {
+      return behaviorVersion.getDataTypeFields().filter((ea) => !ea.isGenerated());
     }
 
     updateFieldValue(index, newValue) {
@@ -32,17 +40,15 @@ define(function(require) {
       return this.state.fieldValues.some((ea) => ea.length > 0);
     }
 
-    reset() {
-      this.setState(this.getDefaultState());
-    }
-
     save() {
       const newItem = {};
-      this.getWritableFields().forEach((field, index) => {
+      this.getWritableFieldsFor(this.props.behaviorVersion).forEach((field, index) => {
         newItem[field.fieldId] = this.state.fieldValues[index];
       });
       this.props.onSave(newItem);
-      this.reset();
+      this.setState({
+        fieldValues: this.getBlankValuesFor(this.props.behaviorVersion)
+      });
     }
 
     cancel() {
@@ -50,48 +56,45 @@ define(function(require) {
     }
 
     render() {
-      if (this.props.behaviorVersion) {
-        return (
-          <div className="box-action phn">
-            <div className="container">
-              <div className="columns">
-                <div className="column column-page-sidebar">
-                  <h4 className="type-weak">Add data to {this.props.behaviorVersion.getName() || "this data type"}</h4>
-                </div>
-                <div className="column column-page-main">
-                  <h4>New item</h4>
+      return (
+        <div className="box-action phn">
+          <div className="container">
+            <div className="columns">
+              <div className="column column-page-sidebar">
+                <h4 className="type-weak">Add data to {this.props.behaviorVersion.getName() || "this data type"}</h4>
+              </div>
+              <div className="column column-page-main">
+                <h4>New item</h4>
 
-                  <div className="columns columns-elastic">
-                    <div className="column-group">
-                      {this.getWritableFields().map((field, index) => (
-                        <DataStorageAdderField
-                          key={field.fieldId}
-                          field={field}
-                          value={this.state.fieldValues[index]}
-                          onChange={this.updateFieldValue.bind(this, index)}
-                        />
-                      ))}
-                    </div>
+                <div className="columns columns-elastic">
+                  <div className="column-group">
+                    {this.getWritableFieldsFor(this.props.behaviorVersion).map((field, index) => (
+                      <DataStorageAdderField
+                        key={field.fieldId}
+                        field={field}
+                        value={this.state.fieldValues[index]}
+                        onChange={this.updateFieldValue.bind(this, index)}
+                      />
+                    ))}
                   </div>
-
-                  <div className="ptxl">
-                    <Button className="button-primary mrs mbs" onClick={this.save} disabled={!this.hasValues()}>Save item</Button>
-                    <Button className="mrs mbs" onClick={this.cancel}>Cancel</Button>
-                  </div>
-
                 </div>
+
+                <div className="ptxl">
+                  <Button className="button-primary mrs mbs" onClick={this.save} disabled={!this.hasValues()}>Save
+                    item</Button>
+                  <Button className="mrs mbs" onClick={this.cancel}>Cancel</Button>
+                </div>
+
               </div>
             </div>
           </div>
-        );
-      } else {
-        return null;
-      }
+        </div>
+      );
     }
   }
 
   DataStorageAdder.propTypes = {
-    behaviorVersion: React.PropTypes.instanceOf(BehaviorVersion),
+    behaviorVersion: React.PropTypes.instanceOf(BehaviorVersion).isRequired,
     onSave: React.PropTypes.func.isRequired,
     onCancelClick: React.PropTypes.func.isRequired
   };

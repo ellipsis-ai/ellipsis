@@ -1469,13 +1469,17 @@ const BehaviorEditor = React.createClass({
           (this.mobileBehaviorSwitcherIsVisible() ? " mobile-position-behind-scrim " : "") +
           (this.isModified() ? " bg-white " : " bg-light-translucent ")
         }>
-          <Collapsible ref="addDataStorageItems" revealWhen={this.props.activePanelName === 'addDataStorageItems'} onChange={this.layoutDidUpdate}>
-            <DataStorageAdder behaviorVersion={this.getSelectedBehavior()} onSave={console.log} onCancelClick={this.props.onClearActivePanel} />
-          </Collapsible>
+          {this.isDataTypeBehavior() ? (
+            <div>
+              <Collapsible ref="addDataStorageItems" revealWhen={this.props.activePanelName === 'addDataStorageItems'} onChange={this.layoutDidUpdate}>
+                <DataStorageAdder behaviorVersion={this.getSelectedBehavior()} onSave={console.log} onCancelClick={this.props.onClearActivePanel} />
+              </Collapsible>
 
-          <Collapsible ref="browseDataStorage" revealWhen={this.props.activePanelName === 'browseDataStorage'} onChange={this.layoutDidUpdate}>
-            <DataStorageBrowser behaviorVersion={this.getSelectedBehavior()} />
-          </Collapsible>
+              <Collapsible ref="browseDataStorage" revealWhen={this.props.activePanelName === 'browseDataStorage'} onChange={this.layoutDidUpdate}>
+                <DataStorageBrowser behaviorVersion={this.getSelectedBehavior()} />
+              </Collapsible>
+            </div>
+          ) : null}
 
           <Collapsible ref="confirmUndo" revealWhen={this.props.activePanelName === 'confirmUndo'} onChange={this.layoutDidUpdate}>
             <ConfirmActionPanel confirmText="Undo changes" onConfirmClick={this.undoChanges} onCancelClick={this.props.onClearActivePanel}>
