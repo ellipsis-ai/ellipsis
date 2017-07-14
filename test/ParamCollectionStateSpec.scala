@@ -16,7 +16,7 @@ class ParamCollectionStateSpec extends DBSpec {
 
         val inputData = newInputDataFor(isSavedForTeam = Some(true))
         val triggerData = newTriggerData
-        val behaviorVersionData = BehaviorVersionData.newUnsavedFor(team.id, isDataType = false, dataService).copy(
+        val behaviorVersionData = BehaviorVersionData.newUnsavedFor(team.id, isDataType = false, maybeName = None, dataService).copy(
           inputIds = Seq(inputData.inputId.get),
           triggers = Seq(triggerData)
         )
@@ -47,7 +47,7 @@ class ParamCollectionStateSpec extends DBSpec {
 
         val inputData = newInputDataFor(isSavedForUser = Some(true))
         val triggerData = newTriggerData
-        val behaviorVersionData = BehaviorVersionData.newUnsavedFor(team.id, isDataType = false, dataService).copy(
+        val behaviorVersionData = BehaviorVersionData.newUnsavedFor(team.id, isDataType = false, maybeName = None, dataService).copy(
           inputIds = Seq(inputData.inputId.get),
           triggers = Seq(triggerData)
         )
@@ -78,7 +78,7 @@ class ParamCollectionStateSpec extends DBSpec {
 
         val inputData = newInputDataFor()
         val triggerData = newTriggerData
-        val behaviorVersionData = BehaviorVersionData.newUnsavedFor(team.id, isDataType = false, dataService).copy(
+        val behaviorVersionData = BehaviorVersionData.newUnsavedFor(team.id, isDataType = false, maybeName = None, dataService).copy(
           inputIds = Seq(inputData.inputId.get),
           triggers = Seq(triggerData)
         )

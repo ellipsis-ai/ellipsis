@@ -1743,11 +1743,11 @@ const BehaviorEditor = React.createClass({
   addNewBehavior: function(isDataType, behaviorIdToClone) {
     const group = this.getBehaviorGroup();
     const newName = isDataType ? SequentialName.nextFor(this.getDataTypeBehaviors(), (ea) => ea.name, "dataType") : null;
-    const url = jsRoutes.controllers.BehaviorEditorController.newUnsavedBehavior(isDataType, group.teamId, behaviorIdToClone).url;
+    const url = jsRoutes.controllers.BehaviorEditorController.newUnsavedBehavior(isDataType, group.teamId, behaviorIdToClone, newName).url;
     fetch(url, { credentials: 'same-origin' })
       .then((response) => response.json())
       .then((json) => {
-        const newVersion = BehaviorVersion.fromJson(Object.assign({}, json, { groupId: group.id, name: newName }));
+        const newVersion = BehaviorVersion.fromJson(Object.assign({}, json, { groupId: group.id }));
         const groupWithNewBehavior = group.withNewBehaviorVersion(newVersion);
         this.updateGroupStateWith(groupWithNewBehavior, () => {
           this.onSelect(groupWithNewBehavior.id, newVersion.behaviorId);

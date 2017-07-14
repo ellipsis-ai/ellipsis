@@ -176,14 +176,15 @@ class BehaviorEditorController @Inject() (
   def newUnsavedBehavior(
                           isDataType: Boolean,
                           teamId: String,
-                          maybeBehaviorIdToClone: Option[String]
+                          maybeBehaviorIdToClone: Option[String],
+                          maybeName: Option[String]
                         ) = silhouette.SecuredAction.async { implicit request =>
     maybeBehaviorIdToClone.map { behaviorIdToClone =>
       BehaviorVersionData.maybeFor(behaviorIdToClone, request.identity, dataService, None, None).map { maybeBehaviorVersionData =>
         maybeBehaviorVersionData.map(_.copyForClone)
       }
     }.getOrElse {
-      Future.successful(Some(BehaviorVersionData.newUnsavedFor(teamId, isDataType, dataService)))
+      Future.successful(Some(BehaviorVersionData.newUnsavedFor(teamId, isDataType, maybeName, dataService)))
     }.map { maybeVersionData =>
       maybeVersionData.map { data =>
         Ok(Json.toJson(data))
