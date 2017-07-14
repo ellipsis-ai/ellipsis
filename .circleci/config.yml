@@ -35,10 +35,14 @@ jobs:
           command: |
             tar --help
             gzip --help
+            cat npm_modules/*/package.json > npm_modules/npm_checksum
       - restore_cache:
           keys:
             - v4-node-{{ .Branch }}-{{ checksum "package.json" }}
             - v4-node-{{ checksum "package.json" }}
+      - restore_cache:
+          keys:
+            - v1-npm_modules-{{ checksum "npm_modules/npm_checksum" }}
       - run:
           name: Install npm dependencies
           command: |
@@ -51,6 +55,15 @@ jobs:
           paths:
             - node_modules
           key: v4-node-{{ checksum "package.json" }}
+      - save_cache:
+          paths:
+            - npm_modules/ellipsis-action-logs/node_modules
+            - npm_modules/ellipsis-aws-billing/node_modules
+            - npm_modules/ellipsis-cal-date-format/node_modules
+            - npm_modules/ellipsis-default-storage/node_modules
+            - npm_modules/ellipsis-post-message/node_modules
+            - npm_modules/ellipsis-random-response/node_modules
+          key: v1-npm_modules-{{ checksum "npm_modules/npm_checksum" }}
       - run:
           name: Run JavaScript linter
           command: |
