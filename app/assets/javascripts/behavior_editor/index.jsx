@@ -1382,7 +1382,8 @@ const BehaviorEditor = React.createClass({
       selectedSavedAnswerInputId: null,
       behaviorSwitcherVisible: this.isExistingGroup() && !this.windowIsMobile(),
       hasMobileLayout: this.windowIsMobile(),
-      animationDisabled: false
+      animationDisabled: false,
+      lastSavedDataStorageItem: null
     };
   },
 
@@ -1500,7 +1501,10 @@ const BehaviorEditor = React.createClass({
           {this.isDataTypeBehavior() ? (
             <div>
               <Collapsible ref="addDataStorageItems" revealWhen={this.props.activePanelName === 'addDataStorageItems'} onChange={this.layoutDidUpdate}>
-                <DataStorageAdder behaviorVersion={this.getSelectedBehavior()} onSave={console.log} onCancelClick={this.props.onClearActivePanel} />
+                <DataStorageAdder
+                  behaviorVersion={this.getSelectedBehavior()}
+                  onCancelClick={this.props.onClearActivePanel}
+                />
               </Collapsible>
 
               <Collapsible ref="browseDataStorage" revealWhen={this.props.activePanelName === 'browseDataStorage'} onChange={this.layoutDidUpdate}>
