@@ -6,25 +6,41 @@ define(function(require) {
   class DataStorageAdderField extends React.Component {
     constructor(props) {
       super(props);
+      this.input = null;
       this.onChange = this.onChange.bind(this);
     }
 
     onChange(newValue) {
-      this.props.onChange(newValue);
+      if (this.props.onChange) {
+        this.props.onChange(newValue);
+      }
+    }
+
+    focus() {
+      if (this.input) {
+        this.input.focus();
+      }
     }
 
     render() {
       return (
         <div className="column-row">
-          <div className="column column-shrink align-form-input type-s">
+          <div className="column column-shrink align-form-input type-s pvxs">
             {this.props.field.name ? (
               <span className="type-monospace">{this.props.field.name}</span>
             ) : (
               <span className="type-weak type-italic">Unnamed field</span>
             )}
           </div>
-          <div className="column column-expand pbm">
-            <Input value={this.props.value} onChange={this.onChange} className="form-input-borderless" />
+          <div className="column column-expand pvxs">
+            <Input
+              ref={(input) => this.input = input}
+              value={this.props.value}
+              onChange={this.onChange}
+              onEnterKey={this.props.onEnterKey}
+              className="form-input-borderless"
+              readOnly={this.props.readOnly}
+            />
           </div>
         </div>
       );
@@ -34,7 +50,9 @@ define(function(require) {
   DataStorageAdderField.propTypes = {
     field: React.PropTypes.instanceOf(DataTypeField).isRequired,
     value: React.PropTypes.string.isRequired,
-    onChange: React.PropTypes.func.isRequired
+    onChange: React.PropTypes.func,
+    onEnterKey: React.PropTypes.func,
+    readOnly: React.PropTypes.bool
   };
 
   return DataStorageAdderField;

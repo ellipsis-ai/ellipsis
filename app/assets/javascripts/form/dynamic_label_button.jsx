@@ -1,44 +1,32 @@
 define(function(require) {
-  var React = require('react');
+  const React = require('react');
 
-  return React.createClass({
-    displayName: 'DynamicLabelButton',
-    propTypes: {
-      type: React.PropTypes.string,
-      className: React.PropTypes.string,
-      disabledWhen: React.PropTypes.bool,
-      onClick: React.PropTypes.func,
-      labels: React.PropTypes.arrayOf(React.PropTypes.shape({
-        text: React.PropTypes.string.isRequired,
-        mobileText: React.PropTypes.string,
-        displayWhen: React.PropTypes.bool.isRequired
-      }))
-    },
-
-    buttonLabels: [],
-
-    getInitialState: function() {
-      return {
+  class DynamicLabelButton extends React.Component {
+    constructor(props) {
+      super(props);
+      this.buttonLabels = [];
+      this.state = {
         minWidth: null
       };
-    },
+      this.onClick = this.onClick.bind(this);
+    }
 
-    adjustMinWidthIfNecessary: function() {
+    adjustMinWidthIfNecessary() {
       var newMax = this.getMaxLabelWidth();
       if (newMax !== this.state.minWidth && newMax > 0) {
         this.setState({ minWidth: newMax });
       }
-    },
+    }
 
-    componentDidMount: function() {
+    componentDidMount() {
       this.adjustMinWidthIfNecessary();
-    },
+    }
 
-    componentDidUpdate: function() {
+    componentDidUpdate() {
       this.adjustMinWidthIfNecessary();
-    },
+    }
 
-    getMaxLabelWidth: function() {
+    getMaxLabelWidth() {
       var maxWidth = 0;
       this.buttonLabels.forEach((label) => {
         if (label && label.scrollWidth) {
@@ -46,15 +34,15 @@ define(function(require) {
         }
       });
       return maxWidth > 0 ? maxWidth : null;
-    },
+    }
 
-    getPlaceholderStyle: function() {
+    getPlaceholderStyle() {
       return this.state.minWidth ? ({
         minWidth: `${this.state.minWidth}px`
       }) : null;
-    },
+    }
 
-    getLabels: function() {
+    getLabels() {
       this.buttonLabels = [];
       return this.props.labels.map((label, index) => (
         <div ref={(element) => this.buttonLabels.push(element)} key={`buttonLabel${index}`} className={
@@ -70,20 +58,28 @@ define(function(require) {
           )}
         </div>
       ));
-    },
+    }
 
-    focus: function() {
-      this.refs.button.focus();
-    },
+    focus() {
+      if (this.button) {
+        this.button.focus();
+      }
+    }
 
-    render: function() {
+    onClick() {
+      if (this.props.onClick) {
+        this.props.onClick();
+      }
+    }
+
+    render() {
       return (
         <button
-          ref="button"
+          ref={(el) => this.button = el}
           type={this.props.type || "button"}
           className={this.props.className || ""}
           disabled={this.props.disabledWhen || false}
-          onClick={this.props.onClick || null}
+          onClick={this.onClick}
         >
           <div className="button-labels">
             <div style={this.getPlaceholderStyle()}>&nbsp;</div>
@@ -92,5 +88,19 @@ define(function(require) {
         </button>
       );
     }
-  });
+  }
+
+  DynamicLabelButton.propTypes = {
+    type: React.PropTypes.string,
+    className: React.PropTypes.string,
+    disabledWhen: React.PropTypes.bool,
+    onClick: React.PropTypes.func.isRequired,
+    labels: React.PropTypes.arrayOf(React.PropTypes.shape({
+      text: React.PropTypes.string.isRequired,
+      mobileText: React.PropTypes.string,
+      displayWhen: React.PropTypes.bool.isRequired
+    })).isRequired
+  };
+
+  return DynamicLabelButton;
 });
