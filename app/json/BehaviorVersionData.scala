@@ -134,7 +134,7 @@ object BehaviorVersionData {
     )
   }
 
-  def newUnsavedFor(teamId: String, isDataType: Boolean, dataService: DataService): BehaviorVersionData = {
+  def newUnsavedFor(teamId: String, isDataType: Boolean, maybeName: Option[String], dataService: DataService): BehaviorVersionData = {
     buildFor(
       Some(IDs.next),
       teamId,
@@ -146,7 +146,7 @@ object BehaviorVersionData {
       "",
       Seq(),
       Seq(BehaviorTriggerData("", requiresMention = true, isRegex = false, caseSensitive = false)),
-      BehaviorConfig(None, None, None, None, isDataType),
+      BehaviorConfig(None, maybeName, None, None, isDataType),
       None,
       None,
       None,
