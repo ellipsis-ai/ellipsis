@@ -1,10 +1,12 @@
 package models.behaviors.defaultstorageitem
 
+import java.time.OffsetDateTime
 import javax.inject.Inject
 
 import com.google.inject.Provider
 import drivers.SlickPostgresDriver.api._
 import models.IDs
+import models.accounts.user.User
 import models.behaviors.behavior.Behavior
 import models.behaviors.behaviorgroup.BehaviorGroup
 import models.behaviors.datatypefield.DataTypeField
@@ -14,16 +16,24 @@ import services.DataService
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-case class RawDefaultStorageItem(id: String, behaviorId: String, data: JsValue)
+case class RawDefaultStorageItem(
+                                  id: String,
+                                  behaviorId: String,
+                                  updatedAt: OffsetDateTime,
+                                  updatedByUserId: String,
+                                  data: JsValue
+                                )
 
 class DefaultStorageItemsTable(tag: Tag) extends Table[RawDefaultStorageItem](tag, "default_storage_items") {
 
   def id = column[String]("id", O.PrimaryKey)
   def behaviorId = column[String]("behavior_id")
+  def updatedAt = column[OffsetDateTime]("updated_at")
+  def updatedByUserId = column[String]("updated_by_user_id")
   def data = column[JsValue]("data")
 
   def * =
-    (id, behaviorId, data) <> ((RawDefaultStorageItem.apply _).tupled, RawDefaultStorageItem.unapply _)
+    (id, behaviorId, updatedAt, updatedByUserId, data) <> ((RawDefaultStorageItem.apply _).tupled, RawDefaultStorageItem.unapply _)
 }
 
 class CreationTypeNotFoundException extends Exception
@@ -82,7 +92,7 @@ class DefaultStorageItemServiceImpl @Inject() (
     dataService.run(action)
   }
 
-  private def createItemForBehaviorAction(behavior: Behavior, data: JsValue): DBIO[DefaultStorageItem] = {
+  private def createItemForBehaviorAction(behavior: Behavior, user: User, data: JsValue): DBIO[DefaultStorageItem] = {
     val newID = IDs.next
     for {
       maybeCurrentVersion <- dataService.behaviors.maybeCurrentVersionForAction(behavior)
@@ -95,7 +105,7 @@ class DefaultStorageItemServiceImpl @Inject() (
       fieldsWithObjectType <- DBIO.successful(fields.filterNot(_.fieldType.isBuiltIn))
       nestedFieldItems <- DBIO.sequence(fieldsWithObjectType.flatMap { field =>
         (data \ field.name).toOption.map { fieldData =>
-          createItemAction(field.fieldType.name, fieldData, behavior.group).map { maybeItem =>
+          createItemAction(field.fieldType.name, user, fieldData, behavior.group).map { maybeItem =>
             (field, maybeItem)
           }
         }
@@ -110,17 +120,17 @@ class DefaultStorageItemServiceImpl @Inject() (
         }
         case _ => data
       })
-      newInstance <- DBIO.successful(DefaultStorageItem(newID, behavior, newData))
+      newInstance <- DBIO.successful(DefaultStorageItem(newID, behavior, OffsetDateTime.now, user.id, newData))
       _ <- DBIO.successful(println(s"saving $newInstance"))
       _ <- (all += newInstance.toRaw)
     } yield newInstance
   }
 
-  def createItemAction(typeName: String, data: JsValue, behaviorGroup: BehaviorGroup): DBIO[DefaultStorageItem] = {
+  def createItemAction(typeName: String, user: User, data: JsValue, behaviorGroup: BehaviorGroup): DBIO[DefaultStorageItem] = {
     ((for {
       maybeBehavior <- dataService.behaviors.findByNameAction(typeName, behaviorGroup)
       maybeItem <- maybeBehavior.map { behavior =>
-        createItemForBehaviorAction(behavior, data).map(Some(_))
+        createItemForBehaviorAction(behavior, user, data).map(Some(_))
       }.getOrElse(DBIO.successful(None))
     } yield maybeItem) transactionally).map { maybeNewItem =>
       maybeNewItem.getOrElse {
@@ -129,8 +139,8 @@ class DefaultStorageItemServiceImpl @Inject() (
     }
   }
 
-  def createItem(typeName: String, data: JsValue, behaviorGroup: BehaviorGroup): Future[DefaultStorageItem] = {
-    dataService.run(createItemAction(typeName, data, behaviorGroup))
+  def createItem(typeName: String, user: User, data: JsValue, behaviorGroup: BehaviorGroup): Future[DefaultStorageItem] = {
+    dataService.run(createItemAction(typeName, user, data, behaviorGroup))
   }
 
   def deleteItem(id: String, behaviorGroup: BehaviorGroup): Future[DefaultStorageItem] = {

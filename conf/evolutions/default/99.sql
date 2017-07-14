@@ -20,6 +20,8 @@ CREATE TABLE data_type_fields(
 CREATE TABLE default_storage_items(
   id TEXT PRIMARY KEY,
   behavior_id TEXT NOT NULL REFERENCES behaviors(id),
+  updated_at TIMESTAMPTZ NOT NULL,
+  updated_by_user_id TEXT NOT NULL REFERENCES users(id),
   data JSONB NOT NULL
 );
 

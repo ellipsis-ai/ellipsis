@@ -1,5 +1,6 @@
 package models.behaviors.defaultstorageitem
 
+import models.accounts.user.User
 import models.behaviors.behavior.Behavior
 import models.behaviors.behaviorgroup.BehaviorGroup
 import models.behaviors.datatypefield.DataTypeField
@@ -20,9 +21,9 @@ trait DefaultStorageItemService {
 
   def allFor(behavior: Behavior): Future[Seq[DefaultStorageItem]]
 
-  def createItem(typeName: String, data: JsValue, behaviorGroup: BehaviorGroup): Future[DefaultStorageItem]
+  def createItem(typeName: String, user: User, data: JsValue, behaviorGroup: BehaviorGroup): Future[DefaultStorageItem]
 
-  def createItemAction(typeName: String, data: JsValue, behaviorGroup: BehaviorGroup): DBIO[DefaultStorageItem]
+  def createItemAction(typeName: String, user: User, data: JsValue, behaviorGroup: BehaviorGroup): DBIO[DefaultStorageItem]
 
   def deleteItem(id: String, behaviorGroup: BehaviorGroup): Future[DefaultStorageItem]
 

@@ -3,6 +3,7 @@ package services
 import javax.inject.Inject
 
 import json.BehaviorGroupData
+import models.accounts.user.User
 import models.behaviors.behaviorgroup.BehaviorGroup
 import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
 import models.behaviors.datatypeconfig.DataTypeConfigForSchema
@@ -59,7 +60,7 @@ class GraphQLServiceImpl @Inject() (
     schemaStringFromConfigs(configs)
   }
 
-  class MySchemaBuilder(groupVersion: BehaviorGroupVersion) extends DefaultAstSchemaBuilder[DefaultStorageItemService] {
+  class MySchemaBuilder(groupVersion: BehaviorGroupVersion, user: User) extends DefaultAstSchemaBuilder[DefaultStorageItemService] {
 
     val group = groupVersion.group
 
@@ -109,7 +110,7 @@ class GraphQLServiceImpl @Inject() (
                                    definition: ast.FieldDefinition
                                  ): Action[DefaultStorageItemService, _] = {
       definition.name match {
-        case createFieldRegex(typeName) => ctx.ctx.createItem(typeName, valueFor(ctx, definition), group).map(_.data)
+        case createFieldRegex(typeName) => ctx.ctx.createItem(typeName, user, valueFor(ctx, definition), group).map(_.data)
         case deleteFieldRegex(_) => ctx.ctx.deleteItem(ctx.arg(definition.arguments.head.name), group).map(_.data)
       }
     }
@@ -143,10 +144,10 @@ class GraphQLServiceImpl @Inject() (
     }
   }
 
-  def schemaFor(groupVersion: BehaviorGroupVersion): Future[Schema[DefaultStorageItemService, Any]] = {
+  def schemaFor(groupVersion: BehaviorGroupVersion, user: User): Future[Schema[DefaultStorageItemService, Any]] = {
     schemaStringFor(groupVersion).map { str =>
       QueryParser.parse(str) match {
-        case Success(res) => Schema.buildFromAst(res, new MySchemaBuilder(groupVersion))
+        case Success(res) => Schema.buildFromAst(res, new MySchemaBuilder(groupVersion, user))
         case Failure(err) => throw new RuntimeException(err.getMessage)
       }
     }
@@ -193,6 +194,7 @@ class GraphQLServiceImpl @Inject() (
 
   def runQuery(
                behaviorGroup: BehaviorGroup,
+               user: User,
                query: String,
                maybeOperationName: Option[String],
                maybeVariables: Option[String]
@@ -201,7 +203,7 @@ class GraphQLServiceImpl @Inject() (
     dataService.behaviorGroups.maybeCurrentVersionFor(behaviorGroup).flatMap { maybeBehaviorGroupVersion =>
       maybeBehaviorGroupVersion.map { groupVersion =>
         for {
-          schema <- schemaFor(groupVersion)
+          schema <- schemaFor(groupVersion, user)
           result <- QueryParser.parse(query) match {
             case Success(queryAst) => {
               executeQuery(schema, queryAst, maybeOperationName, variablesFrom(maybeVariables))

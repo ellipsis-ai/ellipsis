@@ -42,10 +42,14 @@ class GraphQLController @Inject() (
       },
       info => {
         for {
+          maybeUser <- dataService.users.findForInvocationToken(info.token)
           maybeBehaviorGroup <- dataService.behaviorGroups.findForInvocationToken(info.token)
-          maybeResult <- maybeBehaviorGroup.map { group =>
-            graphQL.runQuery(group, info.query, info.maybeOperationName, info.maybeVariables).map(Some(_))
-          }.getOrElse(Future.successful(None))
+          maybeResult <- (for {
+            user <- maybeUser
+            group <- maybeBehaviorGroup
+          } yield {
+            graphQL.runQuery(group, user, info.query, info.maybeOperationName, info.maybeVariables).map(Some(_))
+          }).getOrElse(Future.successful(None))
         } yield {
           maybeResult.map { result =>
             Ok(result.toString)

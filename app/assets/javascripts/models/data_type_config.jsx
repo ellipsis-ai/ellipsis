@@ -39,15 +39,16 @@ define(function(require) {
         return this;
       }
 
-      const missingFields = [];
+      let fieldsToUse = this.fields.slice();
       if (!this.hasIdField()) {
-        missingFields.push(new DataTypeField({ name: "id", fieldId: "id", fieldType: requiredFieldType }));
+        const newIdField = new DataTypeField({ name: "id", fieldId: "id", fieldType: requiredFieldType });
+        fieldsToUse = [newIdField].concat(fieldsToUse);
       }
       if (!this.hasTextFields()) {
         const newName = SequentialName.nextFor(this.fields, (ea) => ea.name, "field");
-        missingFields.push(new DataTypeField({ name: newName, fieldId: ID.next(), fieldType: requiredFieldType }));
+        fieldsToUse.push(new DataTypeField({ name: newName, fieldId: ID.next(), fieldType: requiredFieldType }));
       }
-      return this.clone({ fields: missingFields.concat(this.fields) });
+      return this.clone({ fields: fieldsToUse });
     }
 
     isMissingFields() {

@@ -34,7 +34,8 @@ class GraphQLControllerSpec extends PlaySpec with MockitoSugar {
     val token = IDs.next
     val mockGroup = mock[BehaviorGroup]
     when(dataService.behaviorGroups.findForInvocationToken(token)).thenReturn(Future.successful(Some(mockGroup)))
-    when(graphQLService.runQuery(mockGroup, query, None, None)).thenReturn(Future.successful(queryResult))
+    when(dataService.users.findForInvocationToken(token)).thenReturn(Future.successful(Some(user)))
+    when(graphQLService.runQuery(mockGroup, user, query, None, None)).thenReturn(Future.successful(queryResult))
     token
   }
 
