@@ -6,6 +6,7 @@ define(function(require) {
     Collapsible = require('../shared_ui/collapsible'),
     BehaviorVersion = require('../models/behavior_version'),
     Input = require('../models/input'),
+    ParamType = require('../models/param_type'),
     Trigger = require('../models/trigger');
 
   return React.createClass({
@@ -18,12 +19,7 @@ define(function(require) {
       onInputNameBlur: React.PropTypes.func.isRequired,
       onEnterKey: React.PropTypes.func.isRequired,
       userInputs: React.PropTypes.arrayOf(React.PropTypes.instanceOf(Input)).isRequired,
-      paramTypes: React.PropTypes.arrayOf(
-        React.PropTypes.shape({
-          id: React.PropTypes.string.isRequired,
-          name: React.PropTypes.string.isRequired
-        })
-      ).isRequired,
+      paramTypes: React.PropTypes.arrayOf(React.PropTypes.instanceOf(ParamType)).isRequired,
       triggers: React.PropTypes.arrayOf(React.PropTypes.instanceOf(Trigger)).isRequired,
       isFinishedBehavior: React.PropTypes.bool.isRequired,
       behaviorHasCode: React.PropTypes.bool.isRequired,

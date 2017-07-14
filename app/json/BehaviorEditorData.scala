@@ -153,7 +153,7 @@ object BehaviorEditorData {
           icon = None,
           actionInputs = Seq(),
           dataTypeInputs = Seq(),
-          Seq(BehaviorVersionData.newUnsavedFor(team.id, isDataType = false, dataService)),
+          Seq(BehaviorVersionData.newUnsavedFor(team.id, isDataType = false, maybeName = None, dataService)),
           Seq(),
           Seq(),
           Seq(),

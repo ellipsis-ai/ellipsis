@@ -15,7 +15,7 @@ class SavedAnswerServiceSpec extends DBSpec {
         val group = newSavedBehaviorGroupFor(team)
 
         val inputData = newInputDataFor(isSavedForUser = Some(true))
-        val behaviorVersionData = BehaviorVersionData.newUnsavedFor(team.id, isDataType = false, dataService).copy(
+        val behaviorVersionData = BehaviorVersionData.newUnsavedFor(team.id, isDataType = false, maybeName = None, dataService).copy(
           inputIds = Seq(inputData.inputId.get)
         )
         val groupData = newGroupVersionDataFor(group, user).copy(
@@ -54,7 +54,7 @@ class SavedAnswerServiceSpec extends DBSpec {
         val group = newSavedBehaviorGroupFor(team)
 
         val inputData = newInputDataFor(isSavedForUser = Some(true))
-        val behaviorVersionData = BehaviorVersionData.newUnsavedFor(team.id, isDataType = false, dataService).copy(
+        val behaviorVersionData = BehaviorVersionData.newUnsavedFor(team.id, isDataType = false, maybeName = None, dataService).copy(
           inputIds = Seq(inputData.inputId.get)
         )
         val groupData = newGroupVersionDataFor(group, user).copy(
@@ -88,7 +88,7 @@ class SavedAnswerServiceSpec extends DBSpec {
         val group = newSavedBehaviorGroupFor(team)
 
         val inputData = newInputDataFor(isSavedForTeam = Some(true))
-        val behaviorVersionData = BehaviorVersionData.newUnsavedFor(team.id, isDataType = false, dataService).copy(
+        val behaviorVersionData = BehaviorVersionData.newUnsavedFor(team.id, isDataType = false, maybeName = None, dataService).copy(
           inputIds = Seq(inputData.inputId.get)
         )
         val groupData = newGroupVersionDataFor(group, user).copy(

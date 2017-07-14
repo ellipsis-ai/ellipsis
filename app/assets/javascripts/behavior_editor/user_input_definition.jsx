@@ -2,10 +2,12 @@ define(function(require) {
 var React = require('react'),
   DeleteButton = require('../shared_ui/delete_button'),
   FormInput = require('../form/input'),
+  Formatter = require('../lib/formatter'),
   Select = require('../form/select'),
   SVGTip = require('../svg/tip'),
   SVGInfo = require('../svg/info'),
   Input = require('../models/input'),
+  ParamType = require('../models/param_type'),
   ifPresent = require('../lib/if_present');
 
   var EACH_TIME = "each_time";
@@ -21,12 +23,7 @@ return React.createClass({
     ]).isRequired,
     input: React.PropTypes.instanceOf(Input).isRequired,
     isShared: React.PropTypes.bool.isRequired,
-    paramTypes: React.PropTypes.arrayOf(
-      React.PropTypes.shape({
-        id: React.PropTypes.string,
-        name: React.PropTypes.string
-      })
-    ).isRequired,
+    paramTypes: React.PropTypes.arrayOf(React.PropTypes.instanceOf(ParamType)).isRequired,
     onChange: React.PropTypes.func.isRequired,
     onDelete: React.PropTypes.func.isRequired,
     onEnterKey: React.PropTypes.func.isRequired,
@@ -43,7 +40,7 @@ return React.createClass({
   },
 
   onNameChange: function(newName) {
-    this.props.onChange(this.props.input.clone({ name: Input.formatName(newName) }));
+    this.props.onChange(this.props.input.clone({ name: Formatter.formatNameForCode(newName) }));
   },
 
   onInputTypeChange: function(newTypeId) {
