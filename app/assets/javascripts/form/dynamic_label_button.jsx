@@ -94,12 +94,12 @@ define(function(require) {
     type: React.PropTypes.string,
     className: React.PropTypes.string,
     disabledWhen: React.PropTypes.bool,
-    onClick: React.PropTypes.func,
+    onClick: React.PropTypes.func.isRequired,
     labels: React.PropTypes.arrayOf(React.PropTypes.shape({
       text: React.PropTypes.string.isRequired,
       mobileText: React.PropTypes.string,
       displayWhen: React.PropTypes.bool.isRequired
-    }))
+    })).isRequired
   };
 
   return DynamicLabelButton;
