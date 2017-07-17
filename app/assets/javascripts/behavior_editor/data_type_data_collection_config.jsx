@@ -1,44 +1,37 @@
 define(function(require) {
-  var React = require('react'),
+  const React = require('react'),
     Checklist = require('./checklist'),
     SectionHeading = require('../shared_ui/section_heading'),
     ToggleGroup = require('../form/toggle_group');
 
-  return React.createClass({
-    displayName: 'DataTypeDataCollectionConfig',
-    propTypes: {
-      // string: React.PropTypes.string.isRequired,
-      // callback: React.PropTypes.func.isRequired,
-      // children: React.PropTypes.node.isRequired
-    },
-
+  class DataTypeDataCollectionConfig extends React.Component {
     // TODO: Hook these up to modify the data type once it supports these options
 
-    setReadOnly: function() {
+    setReadOnly() {
 
-    },
+    }
 
-    setWriteOnly: function() {
+    setWriteOnly() {
 
-    },
+    }
 
-    setReadWrite: function() {
+    setReadWrite() {
 
-    },
+    }
 
-    isReadOnly: function() {
+    isReadOnly() {
       return true;
-    },
+    }
 
-    isWriteOnly: function() {
+    isWriteOnly() {
       return false;
-    },
+    }
 
-    isReadWrite: function() {
+    isReadWrite() {
       return false;
-    },
+    }
 
-    render: function() {
+    render() {
       return (
         <div className="container ptxl pbxxl">
           <SectionHeading number={"3"}>Input data collection</SectionHeading>
@@ -63,5 +56,13 @@ define(function(require) {
         </div>
       );
     }
-  });
+  }
+
+  DataTypeDataCollectionConfig.propTypes = {
+    // string: React.PropTypes.string.isRequired,
+    // callback: React.PropTypes.func.isRequired,
+    // children: React.PropTypes.node.isRequired
+  };
+
+  return DataTypeDataCollectionConfig;
 });
