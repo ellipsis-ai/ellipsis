@@ -15,52 +15,17 @@ define(function(require) {
     DataTypeField = require('../models/data_type_field'),
     Input = require('../models/input'),
     ParamType = require('../models/param_type'),
-    ImmutableObjectUtils = require('../lib/immutable_object_utils');
+    ImmutableObjectUtils = require('../lib/immutable_object_utils'),
+    autobind = require('../lib/autobind');
 
-  const DataTypeEditor = React.createClass({
-    propTypes: {
-      behaviorVersion: React.PropTypes.instanceOf(BehaviorVersion).isRequired,
-      paramTypes: React.PropTypes.arrayOf(React.PropTypes.instanceOf(ParamType)).isRequired,
-      inputs: React.PropTypes.arrayOf(React.PropTypes.instanceOf(Input)).isRequired,
-      onChange: React.PropTypes.func.isRequired,
-      onAddNewInput: React.PropTypes.func.isRequired,
-      onConfigureType: React.PropTypes.func.isRequired,
-      isModified: React.PropTypes.func.isRequired,
-
-      activePanelName: React.PropTypes.string,
-      activeDropdownName: React.PropTypes.string,
-      onToggleActiveDropdown: React.PropTypes.func.isRequired,
-      onToggleActivePanel: React.PropTypes.func.isRequired,
-      animationIsDisabled: React.PropTypes.bool,
-
-      onToggleAWSConfig: React.PropTypes.func.isRequired,
-      awsConfig: React.PropTypes.object,
-      onAWSAddNewEnvVariable: React.PropTypes.func.isRequired,
-      onAWSConfigChange: React.PropTypes.func.isRequired,
-
-      apiSelector: React.PropTypes.node.isRequired,
-      systemParams: React.PropTypes.arrayOf(React.PropTypes.string).isRequired,
-      apiApplications: React.PropTypes.arrayOf(React.PropTypes.shape({
-        apiId: React.PropTypes.string.isRequired,
-        recommendedScope: React.PropTypes.string,
-        application: React.PropTypes.shape({
-          applicationId: React.PropTypes.string.isRequired,
-          displayName: React.PropTypes.string.isRequired
-        })
-      })).isRequired,
-
-      onCursorChange: React.PropTypes.func.isRequired,
-      useLineWrapping: React.PropTypes.bool.isRequired,
-      onToggleCodeEditorLineWrapping: React.PropTypes.func.isRequired,
-
-      envVariableNames: React.PropTypes.arrayOf(React.PropTypes.string).isRequired
-    },
-
-    getInitialState: function() {
-      return {
+  class DataTypeEditor extends React.Component {
+    constructor(props) {
+      super(props);
+      this.state = {
         dataTypeSourceChosen: !this.props.behaviorVersion.isNew
       };
-    },
+      autobind(this);
+    }
 
     componentWillReceiveProps(nextProps) {
       if (nextProps.behaviorVersion.id !== this.props.behaviorVersion.id) {
@@ -68,98 +33,98 @@ define(function(require) {
           dataTypeSourceChosen: !nextProps.behaviorVersion.isNew
         });
       }
-    },
+    }
 
-    dataTypeSourceChosen: function() {
+    dataTypeSourceChosen() {
       return this.state.dataTypeSourceChosen;
-    },
+    }
 
-    getSelectedBehavior: function() {
+    getSelectedBehavior() {
       return this.props.behaviorVersion;
-    },
+    }
 
-    getDefaultDataType: function() {
+    getDefaultDataType() {
       return this.props.paramTypes.find(ea => ea.id === "Text");
-    },
+    }
 
-    updateDataTypeSource: function(usesCode) {
+    updateDataTypeSource(usesCode) {
       const textType = this.getDefaultDataType();
       const newConfig = this.getDataTypeConfig().clone({ usesCode: usesCode }).withRequiredFieldsEnsured(textType);
       this.setDataTypeConfig(newConfig);
       this.setState({
         dataTypeSourceChosen: true
       });
-    },
+    }
 
-    getDataTypeConfig: function() {
+    getDataTypeConfig() {
       return this.getSelectedBehavior().getDataTypeConfig();
-    },
+    }
 
-    usesCode: function() {
+    usesCode() {
       return this.getDataTypeConfig().usesCode;
-    },
+    }
 
-    setDataTypeConfig: function(newConfig, callback) {
+    setDataTypeConfig(newConfig, callback) {
       this.props.onChange({
         dataTypeConfig: newConfig
       }, callback);
-    },
+    }
 
-    getDataTypeFields: function() {
+    getDataTypeFields() {
       return this.getSelectedBehavior().getDataTypeFields();
-    },
+    }
 
-    setDataTypeFields: function(newFields, callback) {
+    setDataTypeFields(newFields, callback) {
       const newConfig = this.getDataTypeConfig().clone({ fields: newFields });
       this.setDataTypeConfig(newConfig, callback);
-    },
+    }
 
-    addDataTypeField: function(field) {
+    addDataTypeField(field) {
       const newFields = this.getDataTypeFields().concat([field]);
       this.setDataTypeFields(newFields, () => {
         if (this.schemaConfig) {
           this.schemaConfig.focusOnLastField();
         }
       });
-    },
+    }
 
-    focusOnFirstBlankField: function() {
+    focusOnFirstBlankField() {
       if (this.schemaConfig) {
         this.schemaConfig.focusOnFirstBlankField();
       }
-    },
+    }
 
-    focusOnDuplicateField: function() {
+    focusOnDuplicateField() {
       if (this.schemaConfig) {
         this.schemaConfig.focusOnFirstDuplicateField();
       }
-    },
+    }
 
-    updateDataTypeFieldAtIndexWith: function(index, newField) {
+    updateDataTypeFieldAtIndexWith(index, newField) {
       var fields = this.getDataTypeFields();
       var newFields = ImmutableObjectUtils.arrayWithNewElementAtIndex(fields, newField, index);
 
       this.setDataTypeFields(newFields);
-    },
+    }
 
-    deleteDataTypeFieldAtIndex: function(index) {
+    deleteDataTypeFieldAtIndex(index) {
       this.setDataTypeFields(ImmutableObjectUtils.arrayRemoveElementAtIndex(this.getDataTypeFields(), index));
-    },
+    }
 
-    addNewDataTypeField: function() {
+    addNewDataTypeField() {
       const newName = SequentialName.nextFor(this.getDataTypeFields().slice(1), (ea) => ea.name, "field");
       this.addDataTypeField(new DataTypeField({
         fieldId: ID.next(),
         name: newName,
         fieldType: this.getDefaultDataType()
       }));
-    },
+    }
 
-    hasInputNamed: function(name) {
+    hasInputNamed(name) {
       return this.props.inputs.some(ea => ea.name === name);
-    },
+    }
 
-    updateDataTypeResultConfig: function(shouldUseSearch) {
+    updateDataTypeResultConfig(shouldUseSearch) {
       if (shouldUseSearch) {
         this.props.onAddNewInput('searchQuery');
       } else {
@@ -167,42 +132,42 @@ define(function(require) {
           inputIds: []
         });
       }
-    },
+    }
 
-    isFinishedBehavior: function() {
+    isFinishedBehavior() {
       const selected = this.getSelectedBehavior();
       return Boolean(!selected.isNew && selected.getFunctionBody());
-    },
+    }
 
-    isModified: function() {
+    isModified() {
       return this.props.isModified(this.props.behaviorVersion);
-    },
+    }
 
-    isValidForDataStorage: function() {
+    isValidForDataStorage() {
       return this.getDataTypeConfig().isValidForDataStorage();
-    },
+    }
 
-    updateCode: function(newCode) {
+    updateCode(newCode) {
       this.props.onChange({
         functionBody: newCode
       });
-    },
+    }
 
-    changeSource: function() {
+    changeSource() {
       this.setState({
         dataTypeSourceChosen: false
       });
-    },
+    }
 
-    addDataStorageItems: function() {
+    addDataStorageItems() {
       this.props.onToggleActivePanel('addDataStorageItems', true);
-    },
+    }
 
-    browseDataStorageItems: function() {
+    browseDataStorageItems() {
       this.props.onToggleActivePanel('browseDataStorage', true);
-    },
+    }
 
-    renderCodeEditor: function() {
+    renderCodeEditor() {
       return (
         <div>
           <CodeConfiguration
@@ -247,9 +212,9 @@ define(function(require) {
           />
         </div>
       );
-    },
+    }
 
-    render: function() {
+    render() {
       return (
         <div>
 
@@ -309,7 +274,45 @@ define(function(require) {
         </div>
       );
     }
-  });
+  }
+
+  DataTypeEditor.propTypes = {
+    behaviorVersion: React.PropTypes.instanceOf(BehaviorVersion).isRequired,
+    paramTypes: React.PropTypes.arrayOf(React.PropTypes.instanceOf(ParamType)).isRequired,
+    inputs: React.PropTypes.arrayOf(React.PropTypes.instanceOf(Input)).isRequired,
+    onChange: React.PropTypes.func.isRequired,
+    onAddNewInput: React.PropTypes.func.isRequired,
+    onConfigureType: React.PropTypes.func.isRequired,
+    isModified: React.PropTypes.func.isRequired,
+
+    activePanelName: React.PropTypes.string,
+    activeDropdownName: React.PropTypes.string,
+    onToggleActiveDropdown: React.PropTypes.func.isRequired,
+    onToggleActivePanel: React.PropTypes.func.isRequired,
+    animationIsDisabled: React.PropTypes.bool,
+
+    onToggleAWSConfig: React.PropTypes.func.isRequired,
+    awsConfig: React.PropTypes.object,
+    onAWSAddNewEnvVariable: React.PropTypes.func.isRequired,
+    onAWSConfigChange: React.PropTypes.func.isRequired,
+
+    apiSelector: React.PropTypes.node.isRequired,
+    systemParams: React.PropTypes.arrayOf(React.PropTypes.string).isRequired,
+    apiApplications: React.PropTypes.arrayOf(React.PropTypes.shape({
+      apiId: React.PropTypes.string.isRequired,
+      recommendedScope: React.PropTypes.string,
+      application: React.PropTypes.shape({
+        applicationId: React.PropTypes.string.isRequired,
+        displayName: React.PropTypes.string.isRequired
+      })
+    })).isRequired,
+
+    onCursorChange: React.PropTypes.func.isRequired,
+    useLineWrapping: React.PropTypes.bool.isRequired,
+    onToggleCodeEditorLineWrapping: React.PropTypes.func.isRequired,
+
+    envVariableNames: React.PropTypes.arrayOf(React.PropTypes.string).isRequired
+  };
 
   return DataTypeEditor;
 });
