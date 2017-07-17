@@ -21,6 +21,8 @@ trait DefaultStorageItemService {
 
   def allFor(behavior: Behavior): Future[Seq[DefaultStorageItem]]
 
+  def createItemForBehavior(behavior: Behavior, user: User, data: JsValue): Future[DefaultStorageItem]
+
   def createItem(typeName: String, user: User, data: JsValue, behaviorGroup: BehaviorGroup): Future[DefaultStorageItem]
 
   def createItemAction(typeName: String, user: User, data: JsValue, behaviorGroup: BehaviorGroup): DBIO[DefaultStorageItem]

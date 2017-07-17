@@ -111,4 +111,7 @@ object Formatting {
   implicit val teamTimeZoneDataWrites = Json.writes[TeamTimeZoneData]
 
   implicit val cityInfoDataWrites = Json.writes[CityInfo]
+
+  implicit val defaultStorageItemDataReads = Json.reads[DefaultStorageItemData]
+  implicit val defaultStorageItemDataWrites = Json.writes[DefaultStorageItemData]
 }

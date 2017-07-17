@@ -307,4 +307,47 @@ class BehaviorEditorController @Inject() (
     Ok(Json.toJson(Array(content)))
   }
 
+  case class SaveDefaultStorageItemInfo(itemJson: String)
+
+  private val saveDefaultStorageItemForm = Form(
+    mapping(
+      "itemJson" -> nonEmptyText
+    )(SaveDefaultStorageItemInfo.apply)(SaveDefaultStorageItemInfo.unapply)
+  )
+
+  def saveDefaultStorageItem = silhouette.SecuredAction.async { implicit request =>
+    val user = request.identity
+    saveDefaultStorageItemForm.bindFromRequest.fold(
+      formWithErrors => {
+        Future.successful(BadRequest(formWithErrors.errorsAsJson))
+      },
+      info => {
+        val json = Json.parse(info.itemJson)
+        json.validate[DefaultStorageItemData] match {
+          case JsSuccess(item, _) => {
+            for {
+              maybeBehavior <- dataService.behaviors.find(item.behaviorId, user)
+              result <- maybeBehavior.map { behavior =>
+                dataService.defaultStorageItems.createItemForBehavior(behavior, user, item.data).map { newItem =>
+                  Ok(
+                    Json.toJson(
+                      DefaultStorageItemData(
+                        Some(newItem.id),
+                        newItem.behavior.id,
+                        Some(newItem.updatedAt),
+                        Some(newItem.updatedByUserId),
+                        newItem.data
+                      )
+                    )
+                  )
+                }
+              }.getOrElse(Future.successful(NotFound(s"Couldn't find data type for ID: ${item.behaviorId}")))
+            } yield result
+          }
+          case JsError(errs) => Future.successful(BadRequest("Couldn't build a storage item from this data"))
+        }
+      }
+    )
+  }
+
 }

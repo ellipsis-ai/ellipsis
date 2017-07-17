@@ -126,6 +126,10 @@ class DefaultStorageItemServiceImpl @Inject() (
     } yield newInstance
   }
 
+  def createItemForBehavior(behavior: Behavior, user: User, data: JsValue): Future[DefaultStorageItem] = {
+    dataService.run(createItemForBehaviorAction(behavior, user, data))
+  }
+
   def createItemAction(typeName: String, user: User, data: JsValue, behaviorGroup: BehaviorGroup): DBIO[DefaultStorageItem] = {
     ((for {
       maybeBehavior <- dataService.behaviors.findByNameAction(typeName, behaviorGroup)
