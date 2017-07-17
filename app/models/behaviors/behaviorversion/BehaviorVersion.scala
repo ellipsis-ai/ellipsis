@@ -52,7 +52,7 @@ case class BehaviorVersion(
 
   def functionBody: String = maybeFunctionBody.getOrElse("")
 
-  def functionName: String = id
+  def functionName: String = BehaviorVersion.functionNameFor(id)
 
   private def isUnhandledError(json: JsValue): Boolean = {
     (json \ "errorMessage").toOption.flatMap { m =>
@@ -113,4 +113,9 @@ case class BehaviorVersion(
     )
   }
 
+}
+
+object BehaviorVersion {
+  val lambdaFunctionPrefix = "behavior-"
+  def functionNameFor(behaviorVersionId: String): String = s"$lambdaFunctionPrefix$behaviorVersionId"
 }

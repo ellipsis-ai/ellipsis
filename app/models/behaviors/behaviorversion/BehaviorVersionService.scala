@@ -18,7 +18,7 @@ import scala.concurrent.Future
 
 trait BehaviorVersionService {
 
-  def currentIdsWithFunction: Future[Seq[String]]
+  def currentFunctionNames: Future[Seq[String]]
 
   def allFor(behavior: Behavior): Future[Seq[BehaviorVersion]]
 
@@ -79,5 +79,7 @@ trait BehaviorVersionService {
   def unlearn(behaviorVersion: BehaviorVersion): Future[Unit]
 
   def redeploy(behaviorVersion: BehaviorVersion): Future[Unit]
+
+  def redeployAllCurrentVersions: Future[Unit]
 
 }

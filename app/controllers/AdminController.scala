@@ -35,7 +35,7 @@ class AdminController @Inject() (
 
   def lambdaFunctions() = silhouette.SecuredAction.async { implicit request =>
     withIsAdminCheck(() => {
-      lambdaService.partionedFunctionNames.map { partitioned =>
+      lambdaService.partionedBehaviorFunctionNames.map { partitioned =>
         Ok(views.html.admin.listLambdaFunctions(partitioned.missing, partitioned.current, partitioned.obsolete))
       }
     })
@@ -52,4 +52,11 @@ class AdminController @Inject() (
     })
   }
 
+  def redeployAll = silhouette.SecuredAction.async { implicit request =>
+    withIsAdminCheck(() => {
+      // do this in the background and respond immediately
+      dataService.behaviorVersions.redeployAllCurrentVersions
+      Future.successful(Redirect(routes.AdminController.lambdaFunctions()).flashing("success" -> "Redeploying in the background…"))
+    })
+  }
 }
