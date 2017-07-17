@@ -77,6 +77,7 @@ GET         /authenticated/:message                   @controllers.APIAccessCont
 
 GET         /admin/lambda_functions                   @controllers.AdminController.lambdaFunctions()
 POST        /admin/redeploy/:versionId                @controllers.AdminController.redeploy(versionId: String)
+POST        /admin/redeploy_all                       @controllers.AdminController.redeployAll
 
 GET         /metrics/invocations_for_date/:token/:year/:month/:day          @controllers.VisibilityAPIController.invocationCountsForDate(token: String, year: String, month: String, day: String)
 GET         /metrics/for_team_for_date/:token/:teamName/:year/:month/:day   @controllers.VisibilityAPIController.forTeamForDate(token: String, teamName: String, year: String, month: String, day: String)

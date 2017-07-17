@@ -61,7 +61,7 @@ class AWSLambdaServiceImpl @Inject() (
     }.getOrElse(listRequest)
     JavaFutureConverter.javaToScala(client.listFunctionsAsync(listRequestWithMarker)).flatMap { result =>
       if (result.getNextMarker == null) {
-        Future.successful(List())
+        Future.successful(result.getFunctions.toList)
       } else {
         fetchFunctions(Some(result.getNextMarker)).map { functions =>
           (result.getFunctions ++ functions).toList
@@ -70,20 +70,22 @@ class AWSLambdaServiceImpl @Inject() (
     }
   }
 
-  def listFunctionNames: Future[Seq[String]] = {
+  def listBehaviorFunctionNames: Future[Seq[String]] = {
     fetchFunctions(None).map { functions =>
-      functions.map(_.getFunctionName)
+      functions.map(_.getFunctionName).filter { ea =>
+        ea.startsWith(BehaviorVersion.lambdaFunctionPrefix)
+      }
     }
   }
 
-  def partionedFunctionNames: Future[PartitionedFunctionNames] = {
+  def partionedBehaviorFunctionNames: Future[PartitionedFunctionNames] = {
     for {
-      allFunctionNames <- listFunctionNames
-      currentVersionIdsWithFunction <- dataService.behaviorVersions.currentIdsWithFunction
+      allBehaviorFunctionNames <- listBehaviorFunctionNames
+      currentFunctionNames <- dataService.behaviorVersions.currentFunctionNames
     } yield {
-      val missing = currentVersionIdsWithFunction.diff(allFunctionNames)
-      val current = currentVersionIdsWithFunction.intersect(allFunctionNames)
-      val obsolete = allFunctionNames.diff(currentVersionIdsWithFunction)
+      val missing = currentFunctionNames.diff(allBehaviorFunctionNames)
+      val current = currentFunctionNames.intersect(allBehaviorFunctionNames)
+      val obsolete = allBehaviorFunctionNames.diff(currentFunctionNames)
       PartitionedFunctionNames(current, missing, obsolete)
     }
   }

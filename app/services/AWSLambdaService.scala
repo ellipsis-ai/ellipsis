@@ -22,11 +22,11 @@ trait AWSLambdaService extends AWSService {
 
   val client: AWSLambdaAsync
 
-  def listFunctionNames: Future[Seq[String]]
+  def listBehaviorFunctionNames: Future[Seq[String]]
 
   case class PartitionedFunctionNames(current: Seq[String], missing: Seq[String], obsolete: Seq[String])
 
-  def partionedFunctionNames: Future[PartitionedFunctionNames]
+  def partionedBehaviorFunctionNames: Future[PartitionedFunctionNames]
 
   def functionWithParams(params: Array[String], functionBody: String): String
 

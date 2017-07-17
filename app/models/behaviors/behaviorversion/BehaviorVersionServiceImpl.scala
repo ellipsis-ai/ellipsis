@@ -89,8 +89,10 @@ class BehaviorVersionServiceImpl @Inject() (
   }
   val currentWithFunctionQuery = Compiled(uncompiledCurrentWithFunctionQuery)
 
-  def currentIdsWithFunction: Future[Seq[String]] = {
-    dataService.run(uncompiledCurrentWithFunctionQuery.result)
+  def currentFunctionNames: Future[Seq[String]] = {
+    dataService.run(uncompiledCurrentWithFunctionQuery.result).map { r =>
+      r.map(BehaviorVersion.functionNameFor)
+    }
   }
 
   def uncompiledAllForQuery(behaviorId: Rep[String]) = {
@@ -370,6 +372,30 @@ class BehaviorVersionServiceImpl @Inject() (
               requiredOAuth2ApiConfigs,
               requiredSimpleTokenApis
             )
+    } yield {}
+  }
+
+  private def allCurrent: Future[Seq[BehaviorVersion]] = {
+    val action = allWithGroupVersion.filter {
+      case(_, ((groupVersion, (group, _)), _)) => groupVersion.id === group.maybeCurrentVersionId
+    }.result.map { r =>
+      r.map(tuple2BehaviorVersion)
+    }
+    dataService.run(action)
+  }
+
+  private def redeployAllSequentially(versions: Seq[BehaviorVersion]): Future[Unit] = {
+    versions.headOption.map { v =>
+      redeploy(v).flatMap { _ =>
+        redeployAllSequentially(versions.tail)
+      }
+    }.getOrElse(Future.successful(Unit))
+  }
+
+  def redeployAllCurrentVersions: Future[Unit] = {
+    for {
+      currentVersions <- allCurrent
+      _ <- redeployAllSequentially(currentVersions)
     } yield {}
   }
 
