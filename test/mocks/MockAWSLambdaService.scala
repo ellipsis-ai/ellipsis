@@ -30,9 +30,9 @@ class MockAWSLambdaService @Inject() (
 
   override val client: AWSLambdaAsyncClient = mock[AWSLambdaAsyncClient]
 
-  override def listFunctionNames: Future[Seq[String]] = Future.successful(Seq())
+  override def listBehaviorFunctionNames: Future[Seq[String]] = Future.successful(Seq())
 
-  def partionedFunctionNames: Future[PartitionedFunctionNames] = {
+  def partionedBehaviorFunctionNames: Future[PartitionedFunctionNames] = {
     Future.successful(PartitionedFunctionNames(Seq(), Seq(), Seq()))
   }
 

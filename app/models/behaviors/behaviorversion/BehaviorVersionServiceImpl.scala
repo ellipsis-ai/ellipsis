@@ -1,30 +1,28 @@
 package models.behaviors.behaviorversion
 
-import java.nio.ByteBuffer
-import java.nio.charset.Charset
 import java.time.OffsetDateTime
 import javax.inject.Inject
 
 import akka.actor.ActorSystem
 import com.google.inject.Provider
+import drivers.SlickPostgresDriver.api._
 import json.BehaviorVersionData
 import models.IDs
 import models.accounts.user.User
 import models.behaviors._
 import models.behaviors.behavior.{Behavior, BehaviorQueries}
-import play.api.Configuration
-import play.api.cache.CacheApi
-import play.api.libs.json.{JsValue, Json}
-import play.api.libs.ws.WSClient
-import services.{AWSLambdaLogResult, AWSLambdaService, DataService}
-import drivers.SlickPostgresDriver.api._
 import models.behaviors.behaviorgroup.BehaviorGroup
 import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
 import models.behaviors.config.requiredoauth2apiconfig.RequiredOAuth2ApiConfig
 import models.behaviors.config.requiredsimpletokenapi.RequiredSimpleTokenApi
 import models.behaviors.conversations.conversation.Conversation
-import models.behaviors.events.{Event, MessageEvent}
+import models.behaviors.events.Event
 import models.team.Team
+import play.api.cache.CacheApi
+import play.api.libs.json.JsValue
+import play.api.libs.ws.WSClient
+import play.api.{Configuration, Logger}
+import services.{AWSLambdaService, DataService}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -89,8 +87,10 @@ class BehaviorVersionServiceImpl @Inject() (
   }
   val currentWithFunctionQuery = Compiled(uncompiledCurrentWithFunctionQuery)
 
-  def currentIdsWithFunction: Future[Seq[String]] = {
-    dataService.run(uncompiledCurrentWithFunctionQuery.result)
+  def currentFunctionNames: Future[Seq[String]] = {
+    dataService.run(uncompiledCurrentWithFunctionQuery.result).map { r =>
+      r.map(BehaviorVersion.functionNameFor)
+    }
   }
 
   def uncompiledAllForQuery(behaviorId: Rep[String]) = {
@@ -370,6 +370,34 @@ class BehaviorVersionServiceImpl @Inject() (
               requiredOAuth2ApiConfigs,
               requiredSimpleTokenApis
             )
+    } yield {}
+  }
+
+  private def allCurrent: Future[Seq[BehaviorVersion]] = {
+    val action = allWithGroupVersion.filter {
+      case(_, ((groupVersion, (group, _)), _)) => groupVersion.id === group.maybeCurrentVersionId
+    }.result.map { r =>
+      r.map(tuple2BehaviorVersion)
+    }
+    dataService.run(action)
+  }
+
+  private def redeployAllSequentially(versions: Seq[BehaviorVersion]): Future[Unit] = {
+    versions.headOption.map { v =>
+      redeploy(v).recover {
+        case e: Exception => {
+          Logger.info(s"Error redeploying version with ID: ${v.id}: ${e.getMessage}")
+        }
+      }.flatMap { _ =>
+        redeployAllSequentially(versions.tail)
+      }
+    }.getOrElse(Future.successful(Unit))
+  }
+
+  def redeployAllCurrentVersions: Future[Unit] = {
+    for {
+      currentVersions <- allCurrent
+      _ <- redeployAllSequentially(currentVersions)
     } yield {}
   }
 

@@ -31,7 +31,7 @@ class CleanUpLambdaActor @Inject() (lambdaService: AWSLambdaService) extends Act
   def receive = {
     case "tick" => {
       for {
-        partitioned <- lambdaService.partionedFunctionNames
+        partitioned <- lambdaService.partionedBehaviorFunctionNames
         _ <- Future.sequence(partitioned.obsolete.map { ea =>
           cleanUp(ea)
         })
