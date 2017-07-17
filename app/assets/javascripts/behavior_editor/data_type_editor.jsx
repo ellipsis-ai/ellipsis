@@ -178,6 +178,10 @@ define(function(require) {
       return this.props.isModified(this.props.behaviorVersion);
     },
 
+    isValidForDataStorage: function() {
+      return this.getDataTypeConfig().isValidForDataStorage();
+    },
+
     updateCode: function(newCode) {
       this.props.onChange({
         functionBody: newCode
@@ -265,7 +269,9 @@ define(function(require) {
               </SectionHeading>
 
               {this.usesCode() ? null : (
-                <DataTypeDataSummary isModified={this.isModified()}
+                <DataTypeDataSummary
+                  isModified={this.isModified()}
+                  isValid={this.isValidForDataStorage()}
                   onAddItems={this.addDataStorageItems}
                   onBrowse={this.browseDataStorageItems}
                 />

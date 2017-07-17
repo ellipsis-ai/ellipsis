@@ -4,6 +4,7 @@ define(function(require) {
     Collapsible = require('../shared_ui/collapsible'),
     DataStorageAdderField = require('./data_storage_adder_field'),
     DynamicLabelButton = require('../form/dynamic_label_button'),
+    DataRequest = require('../lib/data_request'),
     ImmutableObjectUtils = require('../lib/immutable_object_utils');
 
   class DataStorageAdder extends React.Component {
@@ -43,6 +44,20 @@ define(function(require) {
       return this.getAllFieldsFor(behaviorVersion).slice(1);
     }
 
+    getLastSavedItemFields() {
+      if (!this.state.lastSavedItem) {
+        return [];
+      }
+      const fieldNames = Object.keys(this.state.lastSavedItem.data);
+      return fieldNames
+        .filter((ea) => ea === "id")
+        .concat(fieldNames.filter((ea) => ea !== "id"))
+        .map((fieldName) => ({
+          name: fieldName,
+          value: this.state.lastSavedItem.data[fieldName]
+        }));
+    }
+
     updateFieldValue(index, newValue) {
       this.setState({
         fieldValues: ImmutableObjectUtils.arrayWithNewElementAtIndex(this.state.fieldValues, newValue, index)
@@ -64,20 +79,32 @@ define(function(require) {
       }, () => {
         const newItem = {};
         this.getWritableFieldsFor(this.props.behaviorVersion).forEach((field, index) => {
-          newItem[field.fieldId] = this.state.fieldValues[index];
+          newItem[field.name] = this.state.fieldValues[index];
         });
 
-        // TODO: Hook this up to an actual save mechanism
-        
-        this.setState({
-          lastSavedItem: newItem,
-          isSaving: false,
-          fieldValues: this.getBlankValuesFor(this.props.behaviorVersion)
-        }, () => {
-          if (this.inputs[0]) {
-            this.inputs[0].focus();
-          }
-        });
+        DataRequest.jsonPost(jsRoutes.controllers.BehaviorEditorController.saveDefaultStorageItem().url, {
+          itemJson: JSON.stringify({
+            behaviorId: this.props.behaviorVersion.behaviorId,
+            data: newItem
+          })
+        }, this.props.csrfToken)
+          .then((savedItem) => {
+            this.setState({
+              lastSavedItem: savedItem,
+              isSaving: false,
+              fieldValues: this.getBlankValuesFor(this.props.behaviorVersion)
+            }, () => {
+              if (this.inputs[0]) {
+                this.inputs[0].focus();
+              }
+            });
+          })
+          .catch(() => {
+            this.setState({
+              isSaving: false,
+              error: "An error occurred while saving. Please try again."
+            });
+          });
       });
     }
 
@@ -116,11 +143,11 @@ define(function(require) {
                       }`
                     }>
                       <div className="column-group">
-                        {this.getAllFieldsFor(this.props.behaviorVersion).map((field) => (
+                        {this.getLastSavedItemFields().map((field) => (
                           <DataStorageAdderField
-                            key={`lastSaved-${field.fieldId}`}
-                            field={field}
-                            value={this.state.lastSavedItem[field.fieldId] || ""}
+                            key={`lastSaved-${field.name}`}
+                            name={field.name}
+                            value={field.value || ""}
                             readOnly={true}
                           />
                         ))}
@@ -137,7 +164,7 @@ define(function(require) {
                       <DataStorageAdderField
                         key={`nextItem-${field.fieldId}`}
                         ref={(input) => this.inputs[index] = input}
-                        field={field}
+                        name={field.name}
                         value={this.state.fieldValues[index]}
                         onChange={this.updateFieldValue.bind(this, index)}
                         onEnterKey={this.onEnterKey.bind(this, index)}
@@ -170,6 +197,9 @@ define(function(require) {
                       displayWhen: this.hasValues()
                     }]}
                   />
+                  {this.state.error ? (
+                    <div className="align-button fade-in type-pink type-bold type-italic">{this.state.error}</div>
+                  ) : null}
                 </div>
 
               </div>
@@ -181,6 +211,7 @@ define(function(require) {
   }
 
   DataStorageAdder.propTypes = {
+    csrfToken: React.PropTypes.string.isRequired,
     behaviorVersion: React.PropTypes.instanceOf(BehaviorVersion).isRequired,
     onCancelClick: React.PropTypes.func.isRequired
   };

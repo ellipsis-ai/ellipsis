@@ -1,6 +1,5 @@
 define(function(require) {
   const React = require('react'),
-    DataTypeField = require('../models/data_type_field'),
     Input = require('../form/input');
 
   class DataStorageAdderField extends React.Component {
@@ -26,8 +25,8 @@ define(function(require) {
       return (
         <div className="column-row">
           <div className="column column-shrink align-form-input type-s pvxs">
-            {this.props.field.name ? (
-              <span className="type-monospace">{this.props.field.name}</span>
+            {this.props.name ? (
+              <span className="type-monospace">{this.props.name}</span>
             ) : (
               <span className="type-weak type-italic">Unnamed field</span>
             )}
@@ -48,7 +47,7 @@ define(function(require) {
   }
 
   DataStorageAdderField.propTypes = {
-    field: React.PropTypes.instanceOf(DataTypeField).isRequired,
+    name: React.PropTypes.string,
     value: React.PropTypes.string.isRequired,
     onChange: React.PropTypes.func,
     onEnterKey: React.PropTypes.func,

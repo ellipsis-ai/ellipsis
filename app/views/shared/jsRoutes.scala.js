@@ -19,6 +19,7 @@
   routes.javascript.BehaviorEditorController.newUnsavedLibrary,
   routes.javascript.BehaviorEditorController.regexValidationErrorsFor,
   routes.javascript.BehaviorEditorController.save,
+  routes.javascript.BehaviorEditorController.saveDefaultStorageItem,
   routes.javascript.BehaviorEditorController.testInvocation,
   routes.javascript.BehaviorEditorController.testTriggers,
   routes.javascript.BehaviorEditorController.versionInfoFor,

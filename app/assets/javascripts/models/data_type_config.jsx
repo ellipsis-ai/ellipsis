@@ -55,6 +55,10 @@ define(function(require) {
       return this.requiresFields() && !this.hasTextFields();
     }
 
+    isValidForDataStorage() {
+      return this.hasIdField() && this.hasTextFields() && this.fields.every((ea) => ea.name.length > 0);
+    }
+
     getFields() {
       return this.fields;
     }

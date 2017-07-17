@@ -1502,6 +1502,7 @@ const BehaviorEditor = React.createClass({
             <div>
               <Collapsible ref="addDataStorageItems" revealWhen={this.props.activePanelName === 'addDataStorageItems'} onChange={this.layoutDidUpdate}>
                 <DataStorageAdder
+                  csrfToken={this.props.csrfToken}
                   behaviorVersion={this.getSelectedBehavior()}
                   onCancelClick={this.props.onClearActivePanel}
                 />
