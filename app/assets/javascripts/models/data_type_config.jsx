@@ -30,8 +30,12 @@ define(function(require) {
       return this.fields.some((ea) => ea.name !== "id" && ea.fieldType.id === "Text");
     }
 
+    isIdField(field, index) {
+      return field.name === "id" && index === DataTypeConfig.ID_FIELD_INDEX;
+    }
+
     hasIdField() {
-      return this.fields.some((ea, index) => ea.name === "id" && index === DataTypeConfig.ID_FIELD_INDEX);
+      return this.fields.some(this.isIdField);
     }
 
     withRequiredFieldsEnsured(requiredFieldType) {
@@ -61,6 +65,15 @@ define(function(require) {
 
     getFields() {
       return this.fields;
+    }
+
+    getWritableFields() {
+      const fields = this.getFields();
+      if (fields.length > 0) {
+        return fields.filter((ea, index) => !this.isIdField(ea, index));
+      } else {
+        return [];
+      }
     }
 
     clone(props) {

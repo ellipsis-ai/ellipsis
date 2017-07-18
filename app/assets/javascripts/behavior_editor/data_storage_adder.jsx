@@ -5,6 +5,7 @@ define(function(require) {
     DataStorageAdderField = require('./data_storage_adder_field'),
     DynamicLabelButton = require('../form/dynamic_label_button'),
     DataRequest = require('../lib/data_request'),
+    DataStorageItem = require('../models/data_storage_item'),
     ImmutableObjectUtils = require('../lib/immutable_object_utils'),
     autobind = require('../lib/autobind');
 
@@ -13,7 +14,7 @@ define(function(require) {
       super(props);
       this.state = {
         fieldValues: this.getBlankValuesFor(props.behaviorVersion),
-        lastSavedItem: null,
+        lastSavedItem: new DataStorageItem(),
         isSaving: false,
         error: null
       };
@@ -27,14 +28,14 @@ define(function(require) {
           newProps.behaviorVersion.getDataTypeFields() !== this.props.behaviorVersion.getDataTypeFields()) {
         this.setState({
           fieldValues: this.getBlankValuesFor(newProps.behaviorVersion),
-          lastSavedItem: null,
+          lastSavedItem: new DataStorageItem(),
           error: null
         });
       }
     }
 
     getBlankValuesFor(behaviorVersion) {
-      return this.getWritableFieldsFor(behaviorVersion).map(() => "");
+      return new Array(this.getWritableFieldsFor(behaviorVersion).length).fill("");
     }
 
     getAllFieldsFor(behaviorVersion) {
@@ -42,21 +43,11 @@ define(function(require) {
     }
 
     getWritableFieldsFor(behaviorVersion) {
-      return this.getAllFieldsFor(behaviorVersion).slice(1);
+      return behaviorVersion.getWritableDataTypeFields();
     }
 
     getLastSavedItemFields() {
-      if (!this.state.lastSavedItem) {
-        return [];
-      }
-      const fieldNames = Object.keys(this.state.lastSavedItem.data);
-      return fieldNames
-        .filter((ea) => ea === "id")
-        .concat(fieldNames.filter((ea) => ea !== "id"))
-        .map((fieldName) => ({
-          name: fieldName,
-          value: this.state.lastSavedItem.data[fieldName]
-        }));
+      return this.state.lastSavedItem.fields;
     }
 
     updateFieldValue(index, newValue) {
@@ -70,7 +61,7 @@ define(function(require) {
     }
 
     hasSavedItem() {
-      return Boolean(this.state.lastSavedItem);
+      return this.state.lastSavedItem.fields.length > 0;
     }
 
     save() {
@@ -82,30 +73,37 @@ define(function(require) {
         this.getWritableFieldsFor(this.props.behaviorVersion).forEach((field, index) => {
           newItem[field.name] = this.state.fieldValues[index];
         });
+        const url = jsRoutes.controllers.BehaviorEditorController.saveDefaultStorageItem().url;
 
-        DataRequest.jsonPost(jsRoutes.controllers.BehaviorEditorController.saveDefaultStorageItem().url, {
+        DataRequest.jsonPost(url, {
           itemJson: JSON.stringify({
             behaviorId: this.props.behaviorVersion.behaviorId,
             data: newItem
           })
         }, this.props.csrfToken)
           .then((savedItem) => {
-            this.setState({
-              lastSavedItem: savedItem,
-              isSaving: false,
-              fieldValues: this.getBlankValuesFor(this.props.behaviorVersion)
-            }, () => {
-              if (this.inputs[0]) {
-                this.inputs[0].focus();
-              }
-            });
+            if (savedItem.data) {
+              this.onSavedNewItem(savedItem.data);
+            } else {
+              throw new Error();
+            }
           })
-          .catch(() => {
-            this.setState({
-              isSaving: false,
-              error: "An error occurred while saving. Please try again."
-            });
-          });
+          .catch(this.onErrorSaving);
+      });
+    }
+
+    onSavedNewItem(data) {
+      this.setState({
+        lastSavedItem: new DataStorageItem(data),
+        isSaving: false,
+        fieldValues: this.getBlankValuesFor(this.props.behaviorVersion)
+      }, this.focusFirstInput);
+    }
+
+    onErrorSaving() {
+      this.setState({
+        isSaving: false,
+        error: "An error occurred while saving. Please try again."
       });
     }
 
@@ -125,6 +123,29 @@ define(function(require) {
       }
     }
 
+    focusFirstInput() {
+      if (this.inputs[0]) {
+        this.inputs[0].focus();
+      }
+    }
+
+    renderError() {
+      return this.state.error ? (
+        <div className="align-button mbs fade-in type-pink type-bold type-italic">{this.state.error}</div>
+      ) : null;
+    }
+
+    renderLastSavedItem() {
+      return this.getLastSavedItemFields().map((field) => (
+        <DataStorageAdderField
+          key={`lastSaved-${field.name}`}
+          name={field.name}
+          value={field.value || ""}
+          readOnly={true}
+        />
+      ));
+    }
+
     render() {
       this.inputs = [];
       return (
@@ -137,24 +158,15 @@ define(function(require) {
               <div className="column column-page-main">
                 <Collapsible revealWhen={this.hasSavedItem()}>
                   <h4>Last saved item</h4>
-                  {this.state.lastSavedItem ? (
-                    <div className={
-                      `columns columns-elastic bg-lightest border border-light phm type-weak mbxl ${
-                        this.isSaving() ? "pulse" : ""
-                      }`
-                    }>
-                      <div className="column-group">
-                        {this.getLastSavedItemFields().map((field) => (
-                          <DataStorageAdderField
-                            key={`lastSaved-${field.name}`}
-                            name={field.name}
-                            value={field.value || ""}
-                            readOnly={true}
-                          />
-                        ))}
-                      </div>
+                  <div className={
+                    `columns columns-elastic bg-lightest border border-light phm type-weak mbxl ${
+                      this.isSaving() ? "pulse" : ""
+                    }`
+                  }>
+                    <div className="column-group">
+                      {this.renderLastSavedItem()}
                     </div>
-                  ) : null}
+                  </div>
                 </Collapsible>
 
                 <h4>New item</h4>
@@ -187,7 +199,7 @@ define(function(require) {
                       displayWhen: this.isSaving()
                     }]}
                    />
-                  <DynamicLabelButton className="mrs mbs"
+                  <DynamicLabelButton className="mrxl mbs"
                     onClick={this.cancel}
                     disabledWhen={this.isSaving()}
                     labels={[{
@@ -198,9 +210,7 @@ define(function(require) {
                       displayWhen: this.hasValues()
                     }]}
                   />
-                  {this.state.error ? (
-                    <div className="align-button fade-in type-pink type-bold type-italic">{this.state.error}</div>
-                  ) : null}
+                  {this.renderError()}
                 </div>
 
               </div>

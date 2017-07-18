@@ -98,6 +98,10 @@ define(function(require) {
       return this.getDataTypeConfig() ? this.getDataTypeConfig().getFields() : [];
     }
 
+    getWritableDataTypeFields() {
+      return this.getDataTypeConfig() ? this.getDataTypeConfig().getWritableFields() : [];
+    }
+
     requiresFields() {
       return this.getDataTypeConfig() ? this.getDataTypeConfig().requiresFields() : false;
     }
