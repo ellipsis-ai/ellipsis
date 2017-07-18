@@ -15,8 +15,8 @@ var React = require('react'),
   ConfirmActionPanel = require('../panels/confirm_action'),
   CollapseButton = require('../shared_ui/collapse_button'),
   DataTypeEditor = require('./data_type_editor'),
-  DataStorageAdder = require('./data_storage_adder'),
-  DataStorageBrowser = require('./data_storage_browser'),
+  DefaultStorageAdder = require('./default_storage_adder'),
+  DefaultStorageBrowser = require('./default_storage_browser'),
   DynamicLabelButton = require('../form/dynamic_label_button'),
   EnvVariableAdder = require('../environment_variables/adder'),
   EnvVariableSetter = require('../environment_variables/setter'),
@@ -1506,7 +1506,7 @@ const BehaviorEditor = React.createClass({
           {this.isDataTypeBehavior() ? (
             <div>
               <Collapsible ref="addDataStorageItems" revealWhen={this.props.activePanelName === 'addDataStorageItems'} onChange={this.layoutDidUpdate}>
-                <DataStorageAdder
+                <DefaultStorageAdder
                   csrfToken={this.props.csrfToken}
                   behaviorVersion={this.getSelectedBehavior()}
                   onCancelClick={this.props.onClearActivePanel}
@@ -1514,7 +1514,7 @@ const BehaviorEditor = React.createClass({
               </Collapsible>
 
               <Collapsible ref="browseDataStorage" revealWhen={this.props.activePanelName === 'browseDataStorage'} onChange={this.layoutDidUpdate}>
-                <DataStorageBrowser behaviorVersion={this.getSelectedBehavior()} />
+                <DefaultStorageBrowser behaviorVersion={this.getSelectedBehavior()} />
               </Collapsible>
             </div>
           ) : null}

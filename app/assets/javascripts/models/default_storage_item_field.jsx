@@ -1,5 +1,5 @@
 define(function() {
-  class DataStorageItemField {
+  class DefaultStorageItemField {
     constructor(name, value) {
       Object.defineProperties(this, {
         name: {
@@ -14,5 +14,5 @@ define(function() {
     }
   }
 
-  return DataStorageItemField;
+  return DefaultStorageItemField;
 });

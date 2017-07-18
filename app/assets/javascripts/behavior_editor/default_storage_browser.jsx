@@ -1,7 +1,7 @@
 define(function(require) {
   const React = require('react');
 
-  class DataStorageBrowser extends React.Component {
+  class DefaultStorageBrowser extends React.Component {
     render() {
       return (
         <div className="box-action phn">
@@ -20,8 +20,8 @@ define(function(require) {
     }
   }
 
-  DataStorageBrowser.propTypes = {
+  DefaultStorageBrowser.propTypes = {
   };
 
-  return DataStorageBrowser;
+  return DefaultStorageBrowser;
 });

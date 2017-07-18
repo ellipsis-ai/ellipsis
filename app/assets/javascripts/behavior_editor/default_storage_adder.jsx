@@ -2,19 +2,19 @@ define(function(require) {
   const React = require('react'),
     BehaviorVersion = require('../models/behavior_version'),
     Collapsible = require('../shared_ui/collapsible'),
-    DataStorageAdderField = require('./data_storage_adder_field'),
+    DefaultStorageAdderField = require('./default_storage_adder_field'),
     DynamicLabelButton = require('../form/dynamic_label_button'),
     DataRequest = require('../lib/data_request'),
-    DataStorageItem = require('../models/data_storage_item'),
+    DefaultStorageItem = require('../models/default_storage_item'),
     ImmutableObjectUtils = require('../lib/immutable_object_utils'),
     autobind = require('../lib/autobind');
 
-  class DataStorageAdder extends React.Component {
+  class DefaultStorageAdder extends React.Component {
     constructor(props) {
       super(props);
       this.state = {
         fieldValues: this.getDefaultValuesFor(props.behaviorVersion),
-        lastSavedItem: new DataStorageItem(),
+        lastSavedItem: new DefaultStorageItem(),
         isSaving: false,
         error: null
       };
@@ -28,7 +28,7 @@ define(function(require) {
           newProps.behaviorVersion.getDataTypeFields() !== this.props.behaviorVersion.getDataTypeFields()) {
         this.setState({
           fieldValues: this.getDefaultValuesFor(newProps.behaviorVersion),
-          lastSavedItem: new DataStorageItem(),
+          lastSavedItem: new DefaultStorageItem(),
           error: null
         });
       }
@@ -79,7 +79,7 @@ define(function(require) {
         }, this.props.csrfToken)
           .then((savedItem) => {
             if (savedItem.data) {
-              this.onSavedNewItem(savedItem.data);
+              this.onSavedNewItem(savedItem);
             } else {
               throw new Error();
             }
@@ -88,9 +88,9 @@ define(function(require) {
       });
     }
 
-    onSavedNewItem(data) {
+    onSavedNewItem(savedItemData) {
       this.setState({
-        lastSavedItem: new DataStorageItem(data),
+        lastSavedItem: new DefaultStorageItem(savedItemData),
         isSaving: false,
         fieldValues: this.getDefaultValuesFor(this.props.behaviorVersion)
       }, this.focusFirstInput);
@@ -133,7 +133,7 @@ define(function(require) {
 
     renderLastSavedItem() {
       return this.getLastSavedItemFields().map((field) => (
-        <DataStorageAdderField
+        <DefaultStorageAdderField
           key={`lastSaved-${field.name}`}
           name={field.name}
           value={field.value || ""}
@@ -170,7 +170,7 @@ define(function(require) {
                 <div className="columns columns-elastic border border-light phm">
                   <div className="column-group">
                     {this.getWritableFieldsFor(this.props.behaviorVersion).map((field, index) => (
-                      <DataStorageAdderField
+                      <DefaultStorageAdderField
                         key={`nextItem-${field.fieldId}`}
                         ref={(input) => this.inputs[index] = input}
                         name={field.name}
@@ -218,11 +218,11 @@ define(function(require) {
     }
   }
 
-  DataStorageAdder.propTypes = {
+  DefaultStorageAdder.propTypes = {
     csrfToken: React.PropTypes.string.isRequired,
     behaviorVersion: React.PropTypes.instanceOf(BehaviorVersion).isRequired,
     onCancelClick: React.PropTypes.func.isRequired
   };
 
-  return DataStorageAdder;
+  return DefaultStorageAdder;
 });

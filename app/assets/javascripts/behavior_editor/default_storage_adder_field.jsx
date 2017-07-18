@@ -5,7 +5,7 @@ define(function(require) {
     Select = require('../form/select'),
     autobind = require('../lib/autobind');
 
-  class DataStorageAdderField extends React.Component {
+  class DefaultStorageAdderField extends React.Component {
     constructor(props) {
       super(props);
       this.input = null;
@@ -79,7 +79,7 @@ define(function(require) {
     }
   }
 
-  DataStorageAdderField.propTypes = {
+  DefaultStorageAdderField.propTypes = {
     name: React.PropTypes.string,
     value: React.PropTypes.string.isRequired,
     fieldType: React.PropTypes.instanceOf(ParamType),
@@ -88,5 +88,5 @@ define(function(require) {
     readOnly: React.PropTypes.bool
   };
 
-  return DataStorageAdderField;
+  return DefaultStorageAdderField;
 });
