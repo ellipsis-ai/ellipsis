@@ -267,9 +267,10 @@ define(function(require) {
 
             <hr className="man thin bg-gray-light" />
 
-            {this.usesCode() ? this.renderCodeEditor() : (
+            {this.usesCode() ? this.renderCodeEditor() : null
+            /* Disabled data collection config settings until operative (
               <DataTypeDataCollectionConfig />
-            )}
+            )*/}
           </Collapsible>
         </div>
       );
