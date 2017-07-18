@@ -498,6 +498,11 @@ const BehaviorEditor = React.createClass({
     return this.props.builtinParamTypes.concat(customTypes);
   },
 
+  getParamTypesForDataTypes: function() {
+    // TODO: use getParamTypes instead if we want to support custom data types
+    return this.props.builtinParamTypes;
+  },
+
   /* Setters/togglers */
 
   setBehaviorInputs: function(newBehaviorInputs, callback) {
@@ -2074,7 +2079,7 @@ const BehaviorEditor = React.createClass({
         <DataTypeEditor
           ref="dataTypeEditor"
           behaviorVersion={this.getSelectedBehavior()}
-          paramTypes={this.getParamTypes()}
+          paramTypes={this.getParamTypesForDataTypes()}
           inputs={this.getInputs()}
           onChange={this.setEditableProps}
           onAddNewInput={this.addNewInput}
