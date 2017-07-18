@@ -67,4 +67,32 @@ describe("Formatter", () => {
       expect(Formatter.formatNameForCode("____hmm")).toEqual("_hmm");
     });
   });
+
+  describe("formatPossibleNumber", () => {
+    it("strips non-numeric characters", () => {
+      expect(Formatter.formatPossibleNumber("")).toEqual("");
+      expect(Formatter.formatPossibleNumber("abc∂é")).toEqual("");
+      expect(Formatter.formatPossibleNumber("01abc23")).toEqual("123");
+    });
+
+    it("preserves leading negative and first decimal", () => {
+      expect(Formatter.formatPossibleNumber("-123.4")).toEqual("-123.4");
+      expect(Formatter.formatPossibleNumber(".")).toEqual(".");
+      expect(Formatter.formatPossibleNumber(".5")).toEqual(".5");
+      expect(Formatter.formatPossibleNumber(" 1.5")).toEqual("1.5");
+      expect(Formatter.formatPossibleNumber("$0.67.9 A-B-C")).toEqual("0.679");
+    });
+
+    it("strips redundant zeros", () => {
+      expect(Formatter.formatPossibleNumber("0")).toEqual("0");
+      expect(Formatter.formatPossibleNumber("0.0")).toEqual("0.0");
+      expect(Formatter.formatPossibleNumber("0.00")).toEqual("0.00");
+      expect(Formatter.formatPossibleNumber("00")).toEqual("0");
+      expect(Formatter.formatPossibleNumber("00.0")).toEqual("0.0");
+      expect(Formatter.formatPossibleNumber("01")).toEqual("1");
+      expect(Formatter.formatPossibleNumber("0.1")).toEqual("0.1");
+      expect(Formatter.formatPossibleNumber("0.10")).toEqual("0.10");
+      expect(Formatter.formatPossibleNumber("0000.010000")).toEqual("0.010000");
+    });
+  });
 });

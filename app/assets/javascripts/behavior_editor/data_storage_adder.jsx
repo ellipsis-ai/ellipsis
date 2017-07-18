@@ -13,7 +13,7 @@ define(function(require) {
     constructor(props) {
       super(props);
       this.state = {
-        fieldValues: this.getBlankValuesFor(props.behaviorVersion),
+        fieldValues: this.getDefaultValuesFor(props.behaviorVersion),
         lastSavedItem: new DataStorageItem(),
         isSaving: false,
         error: null
@@ -27,19 +27,15 @@ define(function(require) {
       if (newProps.behaviorVersion.id !== this.props.behaviorVersion.id ||
           newProps.behaviorVersion.getDataTypeFields() !== this.props.behaviorVersion.getDataTypeFields()) {
         this.setState({
-          fieldValues: this.getBlankValuesFor(newProps.behaviorVersion),
+          fieldValues: this.getDefaultValuesFor(newProps.behaviorVersion),
           lastSavedItem: new DataStorageItem(),
           error: null
         });
       }
     }
 
-    getBlankValuesFor(behaviorVersion) {
-      return new Array(this.getWritableFieldsFor(behaviorVersion).length).fill("");
-    }
-
-    getAllFieldsFor(behaviorVersion) {
-      return behaviorVersion.getDataTypeFields();
+    getDefaultValuesFor(behaviorVersion) {
+      return this.getWritableFieldsFor(behaviorVersion).map((field) => field.fieldType.getDefaultValue());
     }
 
     getWritableFieldsFor(behaviorVersion) {
@@ -96,7 +92,7 @@ define(function(require) {
       this.setState({
         lastSavedItem: new DataStorageItem(data),
         isSaving: false,
-        fieldValues: this.getBlankValuesFor(this.props.behaviorVersion)
+        fieldValues: this.getDefaultValuesFor(this.props.behaviorVersion)
       }, this.focusFirstInput);
     }
 
@@ -181,6 +177,7 @@ define(function(require) {
                         value={this.state.fieldValues[index]}
                         onChange={this.updateFieldValue.bind(this, index)}
                         onEnterKey={this.onEnterKey.bind(this, index)}
+                        fieldType={field.fieldType}
                       />
                     ))}
                   </div>

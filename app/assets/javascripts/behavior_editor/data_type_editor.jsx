@@ -43,12 +43,12 @@ define(function(require) {
       return this.props.behaviorVersion;
     }
 
-    getDefaultDataType() {
+    getDefaultFieldType() {
       return this.props.paramTypes.find(ea => ea.id === "Text");
     }
 
     updateDataTypeSource(usesCode) {
-      const textType = this.getDefaultDataType();
+      const textType = this.getDefaultFieldType();
       const newConfig = this.getDataTypeConfig().clone({ usesCode: usesCode }).withRequiredFieldsEnsured(textType);
       this.setDataTypeConfig(newConfig);
       this.setState({
@@ -116,7 +116,7 @@ define(function(require) {
       this.addDataTypeField(new DataTypeField({
         fieldId: ID.next(),
         name: newName,
-        fieldType: this.getDefaultDataType()
+        fieldType: this.getDefaultFieldType()
       }));
     }
 

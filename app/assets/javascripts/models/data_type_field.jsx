@@ -1,4 +1,5 @@
-define(function() {
+define(function(require) {
+  const ParamType = require('./param_type');
 
   class DataTypeField {
     constructor(props) {
@@ -45,8 +46,16 @@ define(function() {
       return new DataTypeField(Object.assign({}, this, props));
     }
 
+    static fromJson(props) {
+      const materializedProps = Object.assign({}, props);
+      if (props.fieldType) {
+        materializedProps.fieldType = ParamType.fromJson(props.fieldType);
+      }
+      return new DataTypeField(materializedProps);
+    }
+
     static fieldsFromJson(jsonArray) {
-      return jsonArray.map((ea) => new DataTypeField(ea));
+      return jsonArray.map(DataTypeField.fromJson);
     }
 
   }
