@@ -154,32 +154,34 @@ define(function(require) {
               <div className="column column-page-main">
                 <Collapsible revealWhen={this.hasSavedItem()}>
                   <h4>Last saved item</h4>
-                  <div className={
-                    `columns columns-elastic bg-lightest border border-light phm type-weak mbxl ${
-                      this.isSaving() ? "pulse" : ""
-                    }`
-                  }>
-                    <div className="column-group">
-                      {this.renderLastSavedItem()}
+                  <div className={`bg-lightest border border-light phm type-weak mbxl ${
+                    this.isSaving() ? "pulse" : ""
+                  }`}>
+                    <div className="columns columns-elastic">
+                      <div className="column-group">
+                        {this.renderLastSavedItem()}
+                      </div>
                     </div>
                   </div>
                 </Collapsible>
 
                 <h4>New item</h4>
 
-                <div className="columns columns-elastic border border-light phm">
-                  <div className="column-group">
-                    {this.getWritableFieldsFor(this.props.behaviorVersion).map((field, index) => (
-                      <DefaultStorageAdderField
-                        key={`nextItem-${field.fieldId}`}
-                        ref={(input) => this.inputs[index] = input}
-                        name={field.name}
-                        value={this.state.fieldValues[index]}
-                        onChange={this.updateFieldValue.bind(this, index)}
-                        onEnterKey={this.onEnterKey.bind(this, index)}
-                        fieldType={field.fieldType}
-                      />
-                    ))}
+                <div className="border border-light phm">
+                  <div className="columns columns-elastic">
+                    <div className="column-group">
+                      {this.getWritableFieldsFor(this.props.behaviorVersion).map((field, index) => (
+                        <DefaultStorageAdderField
+                          key={`nextItem-${field.fieldId}`}
+                          ref={(input) => this.inputs[index] = input}
+                          name={field.name}
+                          value={this.state.fieldValues[index]}
+                          onChange={this.updateFieldValue.bind(this, index)}
+                          onEnterKey={this.onEnterKey.bind(this, index)}
+                          fieldType={field.fieldType}
+                        />
+                      ))}
+                    </div>
                   </div>
                 </div>
 

@@ -64,14 +64,14 @@ define(function(require) {
     render() {
       return (
         <div className="column-row">
-          <div className="column column-shrink align-form-input type-s pvxs">
+          <div className="column column-shrink align-form-input type-s">
             {this.props.name ? (
               <span className="type-monospace">{this.props.name}</span>
             ) : (
               <span className="type-weak type-italic">Unnamed field</span>
             )}
           </div>
-          <div className="column column-expand pvxs">
+          <div className="column column-expand">
             {this.renderInput()}
           </div>
         </div>
