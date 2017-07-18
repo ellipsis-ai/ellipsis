@@ -74,8 +74,7 @@ class AWSLambdaServiceImpl @Inject() (
     fetchFunctions(None).map { functions =>
       val allFunctionNames = functions.map(_.getFunctionName)
       val behaviorFunctionNames = allFunctionNames.filter { ea =>
-        // TODO: put filter back in once old lambda functions are cleaned up
-        true || ea.startsWith(BehaviorVersion.lambdaFunctionPrefix)
+        ea.startsWith(BehaviorVersion.lambdaFunctionPrefix)
       }
       behaviorFunctionNames
     }
