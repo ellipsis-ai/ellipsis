@@ -143,8 +143,8 @@ class GraphQLServiceSpec extends DBSpec {
         val savedItems = runNow(dataService.defaultStorageItems.filter(someType.typeName, jsonData, group))
         savedItems must have length(1)
         val savedItem = savedItems.head
-        (savedItem.data \ "foo").as[String] mustBe "bar"
-        (savedItem.data \ "id").as[String] mustBe savedItem.id
+        (savedItem.dataWithId \ "foo").as[String] mustBe "bar"
+        (savedItem.dataWithId \ "id").as[String] mustBe savedItem.id
         (mutationResult \ "data").get mustBe JsObject(Map("createSomeType" -> JsObject(Map("foo" -> JsString("bar")))))
 
 //        val query =
@@ -193,13 +193,13 @@ class GraphQLServiceSpec extends DBSpec {
         val savedSomeTypes = runNow(dataService.defaultStorageItems.filter(someType.typeName, Json.obj(), group))
         savedSomeTypes must have length(1)
         val savedSomeType = savedSomeTypes.head
-        (savedSomeType.data \ "foo").as[String] mustBe "bar"
+        (savedSomeType.dataWithId \ "foo").as[String] mustBe "bar"
 
         val savedSomeType2s = runNow(dataService.defaultStorageItems.filter(someType2.typeName, Json.obj(), group))
         savedSomeType2s must have length(1)
         val savedSomeType2 = savedSomeType2s.head
-        (savedSomeType2.data \ "bar").as[Double] mustBe 2
-        (savedSomeType2.data \ "id").as[String] mustBe savedSomeType2.id
+        (savedSomeType2.dataWithId \ "bar").as[Double] mustBe 2
+        (savedSomeType2.dataWithId \ "id").as[String] mustBe savedSomeType2.id
 
         (mutationResult \ "data").get mustBe JsObject(Map(
           "createSomeType2" -> JsObject(Map("bar" -> JsNumber(2), "id" -> JsString(savedSomeType2.id)))))

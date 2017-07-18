@@ -98,7 +98,7 @@ class GraphQLServiceImpl @Inject() (
       definition.name match {
         case listFieldRegex(typeName) => {
           ctx.ctx.filter(typeName.capitalize, valueFor(ctx, definition), group).map { items =>
-            fromJson(JsArray(items.map(_.data)))
+            fromJson(JsArray(items.map(_.dataWithId)))
           }
         }
       }
@@ -110,8 +110,8 @@ class GraphQLServiceImpl @Inject() (
                                    definition: ast.FieldDefinition
                                  ): Action[DefaultStorageItemService, _] = {
       definition.name match {
-        case createFieldRegex(typeName) => ctx.ctx.createItem(typeName, user, valueFor(ctx, definition), group).map(_.data)
-        case deleteFieldRegex(_) => ctx.ctx.deleteItem(ctx.arg(definition.arguments.head.name), group).map(_.data)
+        case createFieldRegex(typeName) => ctx.ctx.createItem(typeName, user, valueFor(ctx, definition), group).map(_.dataWithId)
+        case deleteFieldRegex(_) => ctx.ctx.deleteItem(ctx.arg(definition.arguments.head.name), group).map(_.dataWithId)
       }
     }
 
