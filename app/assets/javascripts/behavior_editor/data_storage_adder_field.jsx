@@ -1,12 +1,13 @@
 define(function(require) {
   const React = require('react'),
-    Input = require('../form/input');
+    Input = require('../form/input'),
+    autobind = require('../lib/autobind');
 
   class DataStorageAdderField extends React.Component {
     constructor(props) {
       super(props);
       this.input = null;
-      this.onChange = this.onChange.bind(this);
+      autobind(this);
     }
 
     onChange(newValue) {

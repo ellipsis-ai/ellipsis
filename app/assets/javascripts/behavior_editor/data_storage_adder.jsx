@@ -5,7 +5,8 @@ define(function(require) {
     DataStorageAdderField = require('./data_storage_adder_field'),
     DynamicLabelButton = require('../form/dynamic_label_button'),
     DataRequest = require('../lib/data_request'),
-    ImmutableObjectUtils = require('../lib/immutable_object_utils');
+    ImmutableObjectUtils = require('../lib/immutable_object_utils'),
+    autobind = require('../lib/autobind');
 
   class DataStorageAdder extends React.Component {
     constructor(props) {
@@ -18,7 +19,7 @@ define(function(require) {
       };
       this.inputs = [];
       this.saveButton = null;
-      ['save', 'cancel', 'onEnterKey'].forEach((ea) => this[ea] = this[ea].bind(this));
+      autobind(this);
     }
 
     componentWillReceiveProps(newProps) {

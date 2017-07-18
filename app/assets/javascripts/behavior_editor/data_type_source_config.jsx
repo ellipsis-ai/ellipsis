@@ -1,22 +1,23 @@
 define(function(require) {
-  var React = require('react'),
-    SectionHeading = require('../shared_ui/section_heading');
+  const React = require('react'),
+    SectionHeading = require('../shared_ui/section_heading'),
+    autobind = require('../lib/autobind');
 
-  return React.createClass({
-    displayName: 'DataTypeResultConfig',
-    propTypes: {
-      onChange: React.PropTypes.func.isRequired
-    },
+  class DataTypeSourceConfig extends React.Component {
+    constructor(props) {
+      super(props);
+      autobind(this);
+    }
 
-    onUseDefaultStorage: function() {
+    onUseDefaultStorage() {
       this.props.onChange(false);
-    },
+    }
 
-    onUseCode: function() {
+    onUseCode() {
       this.props.onChange(true);
-    },
+    }
 
-    render: function() {
+    render() {
       return (
         <div className="container ptxl pbxxxl">
           <SectionHeading number="1">Where does the data come from?</SectionHeading>
@@ -51,5 +52,11 @@ define(function(require) {
         </div>
       );
     }
-  });
+  }
+
+  DataTypeSourceConfig.propTypes = {
+    onChange: React.PropTypes.func.isRequired
+  };
+
+  return DataTypeSourceConfig;
 });
