@@ -112,8 +112,7 @@ class DefaultStorageItemServiceImpl @Inject() (
       })
       newData <- DBIO.successful(data match {
         case obj: JsObject => {
-          val dataWithId: JsObject = obj + ("id", JsString(newID))
-          nestedFieldItems.foldLeft(dataWithId)((acc, tuple) => {
+          nestedFieldItems.foldLeft(obj)((acc, tuple) => {
             val (field, item) = tuple
             acc + (field.name, JsString(item.id))
           })

@@ -329,17 +329,7 @@ class BehaviorEditorController @Inject() (
               maybeBehavior <- dataService.behaviors.find(item.behaviorId, user)
               result <- maybeBehavior.map { behavior =>
                 dataService.defaultStorageItems.createItemForBehavior(behavior, user, item.data).map { newItem =>
-                  Ok(
-                    Json.toJson(
-                      DefaultStorageItemData(
-                        Some(newItem.id),
-                        newItem.behavior.id,
-                        Some(newItem.updatedAt),
-                        Some(newItem.updatedByUserId),
-                        newItem.data
-                      )
-                    )
-                  )
+                  Ok(Json.toJson(DefaultStorageItemData.fromItem(newItem)))
                 }
               }.getOrElse(Future.successful(NotFound(s"Couldn't find data type for ID: ${item.behaviorId}")))
             } yield result
