@@ -3,8 +3,8 @@ define(function(require) {
     Button = require('../form/button');
 
   class DataTypeDataSummary extends React.Component {
-    canAddData() {
-      return !this.props.isModified && this.props.isValid;
+    isInvalid() {
+      return this.props.isModified || !this.props.isValid;
     }
 
     getErrorText() {
@@ -38,11 +38,11 @@ define(function(require) {
           */}
 
           <div>
-            {/*<Button className="button-s mrs mbs" disabled={true} onClick={this.props.onBrowse}>
+            <Button className="button-s mrs mbs" disabled={this.isInvalid()} onClick={this.props.onBrowse}>
               Browse data
-            </Button> */}
+            </Button>
 
-            <Button className="button-s mrs mbs" disabled={!this.canAddData()} onClick={this.props.onAddItems}>
+            <Button className="button-s mrs mbs" disabled={this.isInvalid()} onClick={this.props.onAddItems}>
               Add items
             </Button>
 

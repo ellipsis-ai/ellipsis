@@ -1514,7 +1514,10 @@ const BehaviorEditor = React.createClass({
               </Collapsible>
 
               <Collapsible ref="browseDataStorage" revealWhen={this.props.activePanelName === 'browseDataStorage'} onChange={this.layoutDidUpdate}>
-                <DefaultStorageBrowser behaviorVersion={this.getSelectedBehavior()} />
+                <DefaultStorageBrowser
+                  behaviorVersion={this.getSelectedBehavior()}
+                  onCancelClick={this.props.onClearActivePanel}
+                />
               </Collapsible>
             </div>
           ) : null}
