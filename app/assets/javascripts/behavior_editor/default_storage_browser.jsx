@@ -10,6 +10,10 @@ define(function(require) {
       autobind(this);
     }
 
+    static getTableRowCount() {
+      return 20;
+    }
+
     getItems() {
       // TODO
       return [];
@@ -29,17 +33,25 @@ define(function(require) {
 
     renderItems(fields) {
       const items = this.getItems();
-      if (items.length > 0) {
-        return items.map((item) => this.renderItem(item, fields));
-      } else {
-        return (
-          <tr>
+      const maxRowCount = DefaultStorageBrowser.getTableRowCount();
+      const tableRows = [];
+      items.slice(0, maxRowCount).forEach((item) => tableRows.push(this.renderItem(item, fields)));
+      const itemRowCount = tableRows.length;
+      const middleOfRemainingRows = Math.floor((maxRowCount - itemRowCount) / 2);
+      for (let rowIndex = itemRowCount; rowIndex < maxRowCount; rowIndex++) {
+        let rowText = "";
+        if (rowIndex === middleOfRemainingRows) {
+          rowText = itemRowCount === 0 ? "No items stored" : "End of items";
+        }
+        tableRows.push((
+          <tr key={`row${rowIndex}`}>
             <td colSpan={fields.length} className="phxs">
-              <i className="type-weak">No items stored</i>
+              <div className="align-c type-italic type-weak">{rowText}<br /></div>
             </td>
           </tr>
-        );
+        ));
       }
+      return tableRows;
     }
 
     renderFieldHeader(field) {
