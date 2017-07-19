@@ -5,7 +5,7 @@ define(function(require) {
     Select = require('../form/select'),
     autobind = require('../lib/autobind');
 
-  class DataStorageAdderField extends React.Component {
+  class DefaultStorageAdderField extends React.Component {
     constructor(props) {
       super(props);
       this.input = null;
@@ -64,14 +64,14 @@ define(function(require) {
     render() {
       return (
         <div className="column-row">
-          <div className="column column-shrink align-form-input type-s pvxs">
+          <div className="column column-shrink align-form-input type-s">
             {this.props.name ? (
               <span className="type-monospace">{this.props.name}</span>
             ) : (
               <span className="type-weak type-italic">Unnamed field</span>
             )}
           </div>
-          <div className="column column-expand pvxs">
+          <div className="column column-expand">
             {this.renderInput()}
           </div>
         </div>
@@ -79,7 +79,7 @@ define(function(require) {
     }
   }
 
-  DataStorageAdderField.propTypes = {
+  DefaultStorageAdderField.propTypes = {
     name: React.PropTypes.string,
     value: React.PropTypes.string.isRequired,
     fieldType: React.PropTypes.instanceOf(ParamType),
@@ -88,5 +88,5 @@ define(function(require) {
     readOnly: React.PropTypes.bool
   };
 
-  return DataStorageAdderField;
+  return DefaultStorageAdderField;
 });
