@@ -16,13 +16,15 @@ define(function(require) {
         knownEnvVarsUsed: [],
         shouldRevealCodeEditor: (!!props.functionBody && props.functionBody.length > 0),
         createdAt: Date.now(),
-        dataTypeConfig: null
+        dataTypeConfig: null,
+        functionBody: ""
       }, props);
 
       Object.defineProperties(this, {
         id: { value: initialProps.id, enumerable: true },
         behaviorId: { value: initialProps.behaviorId, enumerable: true },
         responseTemplate: { value: initialProps.responseTemplate, enumerable: true },
+        functionBody: { value: initialProps.functionBody, enumerable: true },
         inputIds: { value: initialProps.inputIds, enumerable: true },
         triggers: { value: initialProps.triggers, enumerable: true },
         config: { value: initialProps.config, enumerable: true },
@@ -100,6 +102,21 @@ define(function(require) {
 
     getWritableDataTypeFields() {
       return this.getDataTypeConfig() ? this.getDataTypeConfig().getWritableFields() : [];
+    }
+
+    buildGraphQLListQuery() {
+      const fieldNames = this.getDataTypeFields().map((ea) => ea.name);
+      const queryName = this.getName().replace(/^./, (firstLetter) => firstLetter.toLowerCase());
+      if (fieldNames.length === 0) {
+        throw new Error("Unable to create a GraphQL query: no fields found");
+      }
+      if (fieldNames.some((ea) => !ea)) {
+        throw new Error("Unable to create a GraphQL query: unnamed fields");
+      }
+      if (!queryName) {
+        throw new Error("Unable to create a GraphQL query: data type has no name");
+      }
+      return `{ ${queryName}List(filter: {}) { ${fieldNames.join(" ")} } }`;
     }
 
     requiresFields() {

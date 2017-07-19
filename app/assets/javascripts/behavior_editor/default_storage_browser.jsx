@@ -2,21 +2,71 @@ define(function(require) {
   const React = require('react'),
     BehaviorVersion = require('../models/behavior_version'),
     Button = require('../form/button'),
+    DataRequest = require('../lib/data_request'),
     autobind = require('../lib/autobind');
 
   class DefaultStorageBrowser extends React.Component {
     constructor(props) {
       super(props);
       autobind(this);
+      this.state = {
+        items: [],
+        isLoading: false,
+        error: null
+      };
+    }
+
+    componentWillReceiveProps(newProps) {
+      if (!this.props.isVisible && newProps.isVisible) {
+        this.loadItems();
+      }
     }
 
     static getTableRowCount() {
       return 20;
     }
 
+    getGraphQLQuery() {
+      try {
+        return this.props.behaviorVersion.buildGraphQLListQuery();
+      } catch(err) {
+        this.onErrorLoadingData();
+      }
+    }
+
+    loadItems() {
+      this.setState({
+        isLoading: true,
+        error: null
+      }, () => {
+        const url = jsRoutes.controllers.BehaviorEditorController.queryDefaultStorage().url;
+        DataRequest.jsonPost(url, {
+            behaviorGroupId: this.props.behaviorGroupId,
+            query: this.getGraphQLQuery(),
+            operationName: null,
+            variables: null
+          }, this.props.csrfToken)
+          .then(this.onLoadedData)
+          .catch(this.onErrorLoadingData);
+      });
+    }
+
+    onLoadedData(json) {
+      this.setState({
+        isLoading: false
+      });
+      console.log(json);
+    }
+
+    onErrorLoadingData() {
+      this.setState({
+        isLoading: false,
+        error: "An error occurred while loading the data."
+      });
+    }
+
     getItems() {
-      // TODO
-      return [];
+      return this.state.items;
     }
 
     getFields() {
@@ -96,10 +146,14 @@ define(function(require) {
                 </table>
 
                 <div className="ptxl">
+
                   <Button
-                    className="mrs mbs"
+                    className="mrl mbs"
                     onClick={this.props.onCancelClick}
                   >Done</Button>
+                  {this.state.error ? (
+                    <span className="type-bold type-pink type-italic fade-in">{this.state.error}</span>
+                  ) : null}
                 </div>
               </div>
             </div>
@@ -110,8 +164,11 @@ define(function(require) {
   }
 
   DefaultStorageBrowser.propTypes = {
+    csrfToken: React.PropTypes.string.isRequired,
     behaviorVersion: React.PropTypes.instanceOf(BehaviorVersion).isRequired,
-    onCancelClick: React.PropTypes.func.isRequired
+    behaviorGroupId: React.PropTypes.string.isRequired,
+    onCancelClick: React.PropTypes.func.isRequired,
+    isVisible: React.PropTypes.bool.isRequired
   };
 
   return DefaultStorageBrowser;

@@ -1,8 +1,8 @@
+window.crypto = require('./mocks/mock_window_crypto');
 const BehaviorVersion = require('../app/assets/javascripts/models/behavior_version');
 
 const behaviorVersionTask1 = Object.freeze({
-  "teamId": "abcdef",
-  "groupId": "sfgsdf",
+  "id": "abcdef",
   "behaviorId": "ghijkl",
   "functionBody": "use strict;",
   "responseTemplate": "A template",
@@ -28,7 +28,7 @@ const behaviorVersionTask1 = Object.freeze({
   "createdAt": 1468338136532
 });
 const behaviorVersionTask2 = Object.freeze({
-  "teamId": "abcdef",
+  "id": "abcdef",
   "groupId": "gsdfgsg",
   "behaviorId": "mnopqr",
   "functionBody": "use strict;",
@@ -55,8 +55,7 @@ const behaviorVersionTask2 = Object.freeze({
   "createdAt": 1468359271138
 });
 const behaviorVersionKnowledge1 = Object.freeze({
-  "teamId": "abcdef",
-  "groupId": "jfghjfg",
+  "id": "abcdef",
   "behaviorId": "stuvwx",
   "functionBody": "",
   "responseTemplate": "The magic 8-ball says:\n\n“Concentrate and ask again.”",
@@ -74,6 +73,33 @@ const behaviorVersionKnowledge1 = Object.freeze({
   }],
   "config": {},
   "createdAt": 1466109904858
+});
+const defaultStorageDataType = Object.freeze({
+  id: "abcdef",
+  behaviorId: "jfgh",
+  name: "myDataType",
+  dataTypeConfig: {
+    fields: [{
+      fieldId: "1",
+      fieldVersionId: "2",
+      name: "field1",
+      fieldType: {
+        name: "Text",
+        id: "Text"
+      },
+      isLabel: true
+    }, {
+      fieldId: "3",
+      fieldVersionId: "4",
+      name: "field2",
+      fieldType: {
+        name: "Text",
+        id: "Text"
+      },
+      isLabel: false
+    }],
+    usesCode: false
+  }
 });
 
 describe('BehaviorVersion', () => {
@@ -171,6 +197,13 @@ describe('BehaviorVersion', () => {
     it('sorts new by timestamp only, with a leading Z', () => {
       const version1 = BehaviorVersion.fromJson(behaviorVersionTask1).clone({ name: "Name", isNew: true });
       expect(version1.sortKey).toEqual("Z" + version1.timestampForAlphabeticalSort());
+    });
+  });
+
+  describe('buildGraphQLListQuery', () => {
+    it('returns a valid GraphQL list query for a default storage data type', () => {
+      const dataType = BehaviorVersion.fromJson(defaultStorageDataType);
+      expect(dataType.buildGraphQLListQuery()).toEqual(`{ myDataTypeList(filter: {}) { field1 field2 } }`);
     });
   });
 });
