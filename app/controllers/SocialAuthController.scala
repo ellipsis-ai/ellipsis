@@ -1,6 +1,6 @@
 package controllers
 
-import java.net.{URI, URLEncoder}
+import java.net.{URI, URLDecoder, URLEncoder}
 import java.time.OffsetDateTime
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
@@ -200,7 +200,11 @@ class SocialAuthController @Inject() (
             token: String,
             maybeRedirect: Option[String]
             ) = silhouette.UserAwareAction.async { implicit request =>
-    val successRedirect = validatedRedirectUri(maybeRedirect.getOrElse(routes.ApplicationController.index().toString))
+    val successRedirect = validatedRedirectUri(
+      maybeRedirect.
+        map(URLDecoder.decode(_, "utf-8")).
+        getOrElse(routes.ApplicationController.index().toString)
+    )
     for {
       maybeToken <- dataService.loginTokens.find(token)
       result <- maybeToken.map { token =>
