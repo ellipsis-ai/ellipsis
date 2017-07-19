@@ -57,4 +57,6 @@ class MockAWSLambdaService @Inject() (
                      ): Future[BotResult] = Future.successful(mock[BotResult])
 
   override def functionWithParams(params: Array[String], functionBody: String): String = ""
+
+  def maybeArnForFunctionNamed(functionName: String): Future[Option[String]] = Future.successful(None)
 }

@@ -24,4 +24,6 @@ class MockAWSLogsService @Inject() (
 
   def deleteGroupForLambdaFunctionNamed(name: String): Future[Unit] = Future.successful({})
 
+  def createSubscriptionForFunctionNamed(name: String): Future[Unit] = Future.successful({})
+
 }
