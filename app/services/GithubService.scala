@@ -22,6 +22,7 @@ class GithubService @Inject() (
                                 ws: WSClient,
                                 config: Configuration,
                                 cache: CacheApi,
+                                cacheService: CacheService,
                                 dataService: DataService
                               ) {
 
@@ -299,8 +300,10 @@ class GithubService @Inject() (
   def publishedBehaviorGroupsFor(team: Team, maybeBranch: Option[String], alreadyInstalled: Seq[BehaviorGroupData]): Seq[BehaviorGroupData] = {
     val shouldTryCache = maybeBranch.isEmpty
     val behaviorGroups = if (shouldTryCache) {
-      cache.getOrElse[Seq[BehaviorGroupData]](PUBLISHED_BEHAVIORS_KEY, cacheTimeout) {
-        blockingFetchPublishedBehaviorGroups(team, maybeBranch)
+      cacheService.getBehaviorGroupData(PUBLISHED_BEHAVIORS_KEY).getOrElse {
+        val fetched = blockingFetchPublishedBehaviorGroups(team, maybeBranch)
+        cacheService.cacheBehaviorGroupData(PUBLISHED_BEHAVIORS_KEY, fetched, cacheTimeout)
+        fetched
       }
     } else {
       blockingFetchPublishedBehaviorGroups(team, maybeBranch)

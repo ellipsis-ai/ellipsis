@@ -19,7 +19,7 @@ import play.api.libs.ws.WSClient
 import play.api.mvc.{Action, AnyContent, Request, Result}
 import play.api.{Configuration, Logger}
 import play.utils.UriEncoding
-import services.{AWSLambdaService, DataService, SlackEventService}
+import services.{AWSLambdaService, CacheService, DataService, SlackEventService}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -31,7 +31,7 @@ class SlackController @Inject() (
                                   val dataService: DataService,
                                   val slackEventService: SlackEventService,
                                   val lambdaService: AWSLambdaService,
-                                  val cache: CacheApi,
+                                  val cacheService: CacheService,
                                   val ws: WSClient,
                                   val eventHandler: EventHandler,
                                   implicit val actorSystem: ActorSystem
@@ -492,7 +492,7 @@ class SlackController @Inject() (
                 dataService.conversations.find(conversationId).flatMap { maybeConversation =>
                   maybeConversation.map { convo =>
                     dataService.conversations.touch(convo).flatMap { _ =>
-                      cache.get[SlackMessageEvent](convo.pendingEventKey).map { event =>
+                      cacheService.getEvent(convo.pendingEventKey).map { event =>
                         slackEventService.onEvent(event)
                       }.getOrElse(Future.successful({}))
                     }
@@ -506,7 +506,7 @@ class SlackController @Inject() (
                 dataService.conversations.find(conversationId).flatMap { maybeConversation =>
                   maybeConversation.map { convo =>
                     dataService.conversations.background(convo, "OK, on to the next thing.", includeUsername = false).flatMap { _ =>
-                      cache.get[SlackMessageEvent](convo.pendingEventKey).map { event =>
+                      cacheService.getEvent(convo.pendingEventKey).map { event =>
                         eventHandler.handle(event, None).flatMap { results =>
                           Future.sequence(
                             results.map(result => result.sendIn(None, dataService).map { _ =>
@@ -546,7 +546,7 @@ class SlackController @Inject() (
                         None,
                         lambdaService,
                         dataService,
-                        cache,
+                        cacheService,
                         ws,
                         configuration,
                         actorSystem

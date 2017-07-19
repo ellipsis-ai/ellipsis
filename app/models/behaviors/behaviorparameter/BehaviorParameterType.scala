@@ -160,6 +160,7 @@ object YesNoType extends BuiltInType {
   val invalidPromptModifier: String = "I need something like 'yes' or 'no'"
 }
 
+case class ValidValue(id: String, label: String, data: Map[String, String])
 
 case class BehaviorBackedDataType(behaviorVersion: BehaviorVersion) extends BehaviorParameterType {
 
@@ -167,7 +168,7 @@ case class BehaviorBackedDataType(behaviorVersion: BehaviorVersion) extends Beha
   override val exportId: String = behaviorVersion.behavior.maybeExportId.getOrElse(id)
   val name = behaviorVersion.maybeName.getOrElse("Unnamed data type")
 
-  case class ValidValue(id: String, label: String, data: Map[String, String])
+
   implicit val validValueReads = new Reads[ValidValue] {
     def reads(json: JsValue) = {
       val idProperty = json \ BehaviorParameterType.ID_PROPERTY
@@ -260,7 +261,7 @@ case class BehaviorBackedDataType(behaviorVersion: BehaviorVersion) extends Beha
   private def cachedValuesFor(context: BehaviorParameterContext): Option[Seq[ValidValue]] = {
     for {
       conversation <- context.maybeConversation
-      values <- context.cache.get[Seq[ValidValue]](valuesListCacheKeyFor(conversation, context.parameter))
+      values <- context.cacheService.getValidValues(valuesListCacheKeyFor(conversation, context.parameter))
     } yield values
   }
 
@@ -378,14 +379,14 @@ case class BehaviorBackedDataType(behaviorVersion: BehaviorVersion) extends Beha
           if (validValues.isEmpty) {
             maybeSearchQuery.map { searchQuery =>
               val key = searchQueryCacheKeyFor(context.maybeConversation.get, context.parameter)
-              context.cache.remove(key)
+              context.cacheService.remove(key)
               Future.successful(s"I couldn't find anything matching `$searchQuery`. Try searching again or type `…stop`.")
             }.getOrElse {
               cancelAndRespondFor(s"This data type isn't returning any values: ${editLinkFor(context)}", context)
             }
           } else {
             context.maybeConversation.foreach { conversation =>
-              context.cache.set(valuesListCacheKeyFor(conversation, context.parameter), validValues)
+              context.cacheService.cacheValidValues(valuesListCacheKeyFor(conversation, context.parameter), validValues)
             }
             val valuesPrompt = validValues.zipWithIndex.map { case (ea, i) =>
               s"\n\n$i. ${ea.label}"
@@ -403,7 +404,7 @@ case class BehaviorBackedDataType(behaviorVersion: BehaviorVersion) extends Beha
 
   private def maybeCachedSearchQueryFor(context: BehaviorParameterContext): Option[String] = {
     context.maybeConversation.map { conversation =>
-      context.cache.get[String](searchQueryCacheKeyFor(conversation, context.parameter))
+      context.cacheService.get[String](searchQueryCacheKeyFor(conversation, context.parameter))
     }.getOrElse(None)
   }
 
@@ -457,7 +458,7 @@ case class BehaviorBackedDataType(behaviorVersion: BehaviorVersion) extends Beha
       if (usesSearch && maybeCachedSearchQueryFor(context).isEmpty && context.maybeConversation.isDefined) {
         val key = searchQueryCacheKeyFor(context.maybeConversation.get, context.parameter)
         val searchQuery = event.relevantMessageText
-        context.cache.set(key, searchQuery, 5.minutes)
+        context.cacheService.set(key, searchQuery, 5.minutes)
         Future.successful({})
       } else {
         super.handleCollected(event, context)

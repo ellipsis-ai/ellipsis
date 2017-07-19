@@ -12,7 +12,7 @@ import models.behaviors.triggers.messagetrigger.MessageTrigger
 import play.api.Configuration
 import play.api.cache.CacheApi
 import play.api.libs.ws.WSClient
-import services.{AWSLambdaService, DataService}
+import services.{AWSLambdaService, CacheService, DataService}
 import utils.SlackTimestamp
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -72,13 +72,13 @@ trait Conversation {
 
   def updateStateTo(newState: String, dataService: DataService): Future[Conversation]
   def cancel(dataService: DataService): Future[Conversation] = updateStateTo(Conversation.DONE_STATE, dataService)
-  def updateWith(event: Event, lambdaService: AWSLambdaService, dataService: DataService, cache: CacheApi, configuration: Configuration, actorSystem: ActorSystem): Future[Conversation]
+  def updateWith(event: Event, lambdaService: AWSLambdaService, dataService: DataService, cacheService: CacheService, configuration: Configuration, actorSystem: ActorSystem): Future[Conversation]
   def respond(
                event: Event,
                isReminding: Boolean,
                lambdaService: AWSLambdaService,
                dataService: DataService,
-               cache: CacheApi,
+               cacheService: CacheService,
                ws: WSClient,
                configuration: Configuration,
                actorSystem: ActorSystem
@@ -88,14 +88,14 @@ trait Conversation {
                  event: Event,
                  lambdaService: AWSLambdaService,
                  dataService: DataService,
-                 cache: CacheApi,
+                 cacheService: CacheService,
                  ws: WSClient,
                  configuration: Configuration,
                  actorSystem: ActorSystem
                ): Future[BotResult] = {
     for {
-      updatedConversation <- updateWith(event, lambdaService, dataService, cache, configuration, actorSystem)
-      result <- updatedConversation.respond(event, isReminding=false, lambdaService, dataService, cache, ws, configuration, actorSystem)
+      updatedConversation <- updateWith(event, lambdaService, dataService, cacheService, configuration, actorSystem)
+      result <- updatedConversation.respond(event, isReminding=false, lambdaService, dataService, cacheService, ws, configuration, actorSystem)
     } yield result
   }
 
@@ -103,7 +103,7 @@ trait Conversation {
                                event: Event,
                                lambdaService: AWSLambdaService,
                                dataService: DataService,
-                               cache: CacheApi,
+                               cacheService: CacheService,
                                ws: WSClient,
                                configuration: Configuration,
                                actorSystem: ActorSystem
@@ -112,14 +112,14 @@ trait Conversation {
   def maybeRemindResult(
                         lambdaService: AWSLambdaService,
                         dataService: DataService,
-                        cache: CacheApi,
+                        cacheService: CacheService,
                         ws: WSClient,
                         configuration: Configuration,
                         actorSystem: ActorSystem
                       ): Future[Option[BotResult]] = {
     maybePlaceholderEvent(dataService).flatMap { maybeEvent =>
       maybeEvent.map { event =>
-        respond(event, isReminding=true, lambdaService, dataService, cache, ws, configuration, actorSystem).map { result =>
+        respond(event, isReminding=true, lambdaService, dataService, cacheService, ws, configuration, actorSystem).map { result =>
           val intro = s"Hey <@$userIdForContext>, don’t forget, I’m still waiting for your answer to this:"
           val actions = Seq(SlackMessageActionButton(STOP_CONVERSATION, "Stop asking", id))
           val question = result.text

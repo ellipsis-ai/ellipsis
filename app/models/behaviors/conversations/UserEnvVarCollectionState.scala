@@ -7,7 +7,7 @@ import models.behaviors.events.Event
 import models.behaviors.{BotResult, SimpleTextResult}
 import play.api.Configuration
 import play.api.cache.CacheApi
-import services.DataService
+import services.{CacheService, DataService}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -16,7 +16,7 @@ case class UserEnvVarCollectionState(
                                       missingEnvVarNames: Seq[String],
                                       event: Event,
                                       dataService: DataService,
-                                      cache: CacheApi,
+                                      cacheService: CacheService,
                                       configuration: Configuration,
                                       actorSystem: ActorSystem
                                     ) extends CollectionState {
@@ -38,7 +38,7 @@ case class UserEnvVarCollectionState(
       updatedConversation <- maybeNextToCollect.map { envVarName =>
         dataService.userEnvironmentVariables.ensureFor(envVarName, Some(event.relevantMessageText), user).map(_ => conversation)
       }.getOrElse(Future.successful(conversation))
-      updatedConversation <- updatedConversation.updateToNextState(event, cache, dataService, configuration, actorSystem)
+      updatedConversation <- updatedConversation.updateToNextState(event, cacheService, dataService, configuration, actorSystem)
     } yield updatedConversation
   }
 
@@ -62,12 +62,12 @@ object UserEnvVarCollectionState {
             conversation: Conversation,
             event: Event,
             dataService: DataService,
-            cache: CacheApi,
+            cacheService: CacheService,
             configuration: Configuration,
             actorSystem: ActorSystem
           ): Future[UserEnvVarCollectionState] = {
     dataService.userEnvironmentVariables.missingFor(user, conversation.behaviorVersion, dataService).map { missing =>
-      UserEnvVarCollectionState(missing, event, dataService, cache, configuration, actorSystem)
+      UserEnvVarCollectionState(missing, event, dataService, cacheService, configuration, actorSystem)
     }
   }
 

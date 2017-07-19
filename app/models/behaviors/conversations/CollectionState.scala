@@ -4,8 +4,7 @@ import models.behaviors.BotResult
 import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.events.Event
 import play.api.Configuration
-import play.api.cache.CacheApi
-import services.DataService
+import services.{CacheService, DataService}
 
 import scala.concurrent.Future
 
@@ -15,7 +14,7 @@ trait CollectionState {
 
   val event: Event
   val dataService: DataService
-  val cache: CacheApi
+  val cacheService: CacheService
   val configuration: Configuration
 
   def isCompleteIn(conversation: Conversation): Future[Boolean]

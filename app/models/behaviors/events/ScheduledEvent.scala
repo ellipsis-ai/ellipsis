@@ -9,7 +9,7 @@ import play.api.Configuration
 import play.api.cache.CacheApi
 import play.api.libs.json.JsObject
 import play.api.libs.ws.WSClient
-import services.{AWSLambdaService, DataService}
+import services.{AWSLambdaService, CacheService, DataService}
 
 import scala.concurrent.Future
 
@@ -52,11 +52,11 @@ case class ScheduledEvent(underlying: Event, scheduled: Scheduled) extends Event
                                maybeLimitToBehavior: Option[Behavior],
                                lambdaService: AWSLambdaService,
                                dataService: DataService,
-                               cache: CacheApi,
+                               cacheService: CacheService,
                                ws: WSClient,
                                configuration: Configuration,
                                actorSystem: ActorSystem
-                             ) = underlying.allBehaviorResponsesFor(maybeTeam, maybeLimitToBehavior, lambdaService, dataService, cache, ws, configuration, actorSystem)
+                             ) = underlying.allBehaviorResponsesFor(maybeTeam, maybeLimitToBehavior, lambdaService, dataService, cacheService, ws, configuration, actorSystem)
 
   def allOngoingConversations(dataService: DataService) = underlying.allOngoingConversations(dataService)
 

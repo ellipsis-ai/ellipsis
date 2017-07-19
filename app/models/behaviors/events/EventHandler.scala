@@ -11,7 +11,7 @@ import play.api.Configuration
 import play.api.cache.CacheApi
 import play.api.i18n.MessagesApi
 import play.api.libs.ws.WSClient
-import services.{AWSLambdaService, DataService}
+import services.{AWSLambdaService, CacheService, DataService}
 import utils.Color
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -22,7 +22,7 @@ import scala.concurrent.duration._
 class EventHandler @Inject() (
                                lambdaService: AWSLambdaService,
                                dataService: DataService,
-                               cache: CacheApi,
+                               cacheService: CacheService,
                                messages: MessagesApi,
                                ws: WSClient,
                                configuration: Configuration,
@@ -32,7 +32,7 @@ class EventHandler @Inject() (
   def startInvokeConversationFor(event: Event): Future[Seq[BotResult]] = {
     for {
       maybeTeam <- dataService.teams.find(event.teamId)
-      responses <- BehaviorResponse.allFor(event, maybeTeam, None, lambdaService, dataService, cache, ws, configuration, actorSystem)
+      responses <- BehaviorResponse.allFor(event, maybeTeam, None, lambdaService, dataService, cacheService, ws, configuration, actorSystem)
       results <- Future.sequence(responses.map(_.result)).flatMap { r =>
         if (r.isEmpty && event.isResponseExpected) {
           event.noExactMatchResult(dataService, lambdaService).map { noMatchResult =>
@@ -70,12 +70,12 @@ class EventHandler @Inject() (
         cancelConversationResult(event, updatedConvo, s"OK, I’ll stop asking about that.")
       } else {
         if (originalConvo.isStale) {
-          updatedConvo.maybeNextParamToCollect(event, lambdaService, dataService, cache, ws, configuration, actorSystem).map { maybeNextParam =>
+          updatedConvo.maybeNextParamToCollect(event, lambdaService, dataService, cacheService, ws, configuration, actorSystem).map { maybeNextParam =>
             val maybeLastPrompt = maybeNextParam.map { nextParam =>
               nextParam.input.question
             }
             val key = updatedConvo.pendingEventKey
-            cache.set(key, event, 5.minutes)
+            cacheService.cacheEvent(key, event, 5.minutes)
             val actions = Seq(
               SlackMessageActionButton(CONFIRM_CONTINUE_CONVERSATION, "Yes, it's an answer", updatedConvo.id),
               SlackMessageActionButton(DONT_CONTINUE_CONVERSATION, "No, not an answer", updatedConvo.id)
@@ -92,7 +92,7 @@ class EventHandler @Inject() (
             TextWithActionsResult(event, Some(updatedConvo), prompt, forcePrivateResponse = false, attachment)
           }
         } else {
-          updatedConvo.resultFor(event, lambdaService, dataService, cache, ws, configuration, actorSystem)
+          updatedConvo.resultFor(event, lambdaService, dataService, cacheService, ws, configuration, actorSystem)
         }
       }
     }

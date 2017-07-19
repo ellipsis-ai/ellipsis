@@ -9,7 +9,7 @@ import models.team.Team
 import play.api.Configuration
 import play.api.cache.CacheApi
 import play.api.libs.ws.WSClient
-import services.{AWSLambdaConstants, AWSLambdaService, DataService}
+import services.{AWSLambdaConstants, AWSLambdaService, CacheService, DataService}
 import utils.SlackMessageSender
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -69,7 +69,7 @@ case class RunEvent(
                                maybeLimitToBehavior: Option[Behavior],
                                lambdaService: AWSLambdaService,
                                dataService: DataService,
-                               cache: CacheApi,
+                               cacheService: CacheService,
                                ws: WSClient,
                                configuration: Configuration,
                                actorSystem: ActorSystem
@@ -92,7 +92,7 @@ case class RunEvent(
             None,
             lambdaService,
             dataService,
-            cache,
+            cacheService,
             ws,
             configuration,
             actorSystem

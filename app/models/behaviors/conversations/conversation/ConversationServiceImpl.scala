@@ -9,7 +9,7 @@ import drivers.SlickPostgresDriver.api._
 import play.api.Configuration
 import play.api.cache.CacheApi
 import play.api.libs.ws.WSClient
-import services.{AWSLambdaService, DataService}
+import services.{AWSLambdaService, CacheService, DataService}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -54,7 +54,7 @@ class ConversationsTable(tag: Tag) extends Table[RawConversation](tag, "conversa
 class ConversationServiceImpl @Inject() (
                                           dataServiceProvider: Provider[DataService],
                                           lambdaServiceProvider: Provider[AWSLambdaService],
-                                          cacheProvider: Provider[CacheApi],
+                                          cacheServiceProvider: Provider[CacheService],
                                           wsProvider: Provider[WSClient],
                                           configurationProvider: Provider[Configuration],
                                           actorSystem: ActorSystem
@@ -62,7 +62,7 @@ class ConversationServiceImpl @Inject() (
 
   def dataService: DataService = dataServiceProvider.get
   def lambdaService: AWSLambdaService = lambdaServiceProvider.get
-  def cache: CacheApi = cacheProvider.get
+  def cacheService: CacheService = cacheServiceProvider.get
   def ws: WSClient = wsProvider.get
   def configuration: Configuration = configurationProvider.get
 
@@ -169,7 +169,7 @@ class ConversationServiceImpl @Inject() (
       _ <- maybeEvent.map { event =>
         val convoWithThreadId = conversation.copyWithMaybeThreadId(maybeLastTs)
         dataService.conversations.save(convoWithThreadId).flatMap { _ =>
-          convoWithThreadId.respond(event, isReminding=false, lambdaService, dataService, cache, ws, configuration, actorSystem).map { result =>
+          convoWithThreadId.respond(event, isReminding=false, lambdaService, dataService, cacheService, ws, configuration, actorSystem).map { result =>
             result.sendIn(None, dataService)
           }
         }

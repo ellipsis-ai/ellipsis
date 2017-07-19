@@ -6,7 +6,7 @@ import akka.actor.{Actor, ActorSystem}
 import play.api.cache.CacheApi
 import play.api.libs.ws.WSClient
 import play.api.{Configuration, Logger}
-import services.{AWSLambdaService, DataService}
+import services.{AWSLambdaService, CacheService, DataService}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -17,12 +17,12 @@ object ConversationReminderActor {
 }
 
 class ConversationReminderActor @Inject()(
-                                          val lambdaService: AWSLambdaService,
-                                          val dataService: DataService,
-                                          val cache: CacheApi,
-                                          val ws: WSClient,
-                                          val configuration: Configuration,
-                                          implicit val actorSystem: ActorSystem
+                                           val lambdaService: AWSLambdaService,
+                                           val dataService: DataService,
+                                           val cacheService: CacheService,
+                                           val ws: WSClient,
+                                           val configuration: Configuration,
+                                           implicit val actorSystem: ActorSystem
                                         ) extends Actor {
 
   // initial delay of 1 minute so that, in the case of errors & actor restarts, it doesn't hammer external APIs
@@ -36,7 +36,7 @@ class ConversationReminderActor @Inject()(
     case "tick" => {
       dataService.conversations.allNeedingReminder.flatMap { pending =>
         Future.sequence(pending.map { ea =>
-          ea.maybeRemindResult(lambdaService, dataService, cache, ws, configuration, actorSystem).flatMap { maybeResult =>
+          ea.maybeRemindResult(lambdaService, dataService, cacheService, ws, configuration, actorSystem).flatMap { maybeResult =>
             maybeResult.map { result =>
               result.sendIn(None, dataService, None).flatMap { maybeSendResult =>
                 dataService.conversations.touch(ea)

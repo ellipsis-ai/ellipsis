@@ -6,20 +6,20 @@ import models.behaviors.behaviorversion.BehaviorVersion
 import models.behaviors.BehaviorResponse
 import play.api.Configuration
 import play.api.cache.CacheApi
-import services.{AWSLambdaConstants, AWSLambdaService, DataService}
+import services.{AWSLambdaConstants, AWSLambdaService, CacheService, DataService}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
 case class InvocationTester(
-                            user: User,
-                            behaviorVersion: BehaviorVersion,
-                            paramValues: Map[String, String],
-                            lambdaService: AWSLambdaService,
-                            dataService: DataService,
-                            cache: CacheApi,
-                            configuration: Configuration,
-                            actorSystem: ActorSystem
+                             user: User,
+                             behaviorVersion: BehaviorVersion,
+                             paramValues: Map[String, String],
+                             lambdaService: AWSLambdaService,
+                             dataService: DataService,
+                             cacheService: CacheService,
+                             configuration: Configuration,
+                             actorSystem: ActorSystem
                           ) {
 
   def run: Future[InvocationTestReport] = {
@@ -48,7 +48,7 @@ case class InvocationTester(
           (AWSLambdaConstants.invocationParamFor(i), v.get)
         }.toMap
         for {
-          parametersWithValues <- BehaviorResponse.parametersWithValuesFor(event, behaviorVersion, invocationParamValues, None, dataService, cache, configuration, actorSystem)
+          parametersWithValues <- BehaviorResponse.parametersWithValuesFor(event, behaviorVersion, invocationParamValues, None, dataService, cacheService, configuration, actorSystem)
           result <- dataService.behaviorVersions.resultFor(behaviorVersion, parametersWithValues, event, None)
         } yield InvocationTestReport(behaviorVersion, Some(result), Seq(), Seq(), Seq())
       } else {

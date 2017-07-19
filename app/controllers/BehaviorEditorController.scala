@@ -21,7 +21,7 @@ import play.api.libs.json._
 import play.api.libs.ws.WSClient
 import play.api.mvc.{AnyContent, Result}
 import play.filters.csrf.CSRF
-import services.{AWSLambdaService, DataService}
+import services.{AWSLambdaService, CacheService, DataService}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -32,7 +32,7 @@ class BehaviorEditorController @Inject() (
                                            val configuration: Configuration,
                                            val dataService: DataService,
                                            val lambdaService: AWSLambdaService,
-                                           val cache: CacheApi,
+                                           val cacheService: CacheService,
                                            val ws: WSClient,
                                            val actorSystem: ActorSystem
                                          ) extends ReAuthable {
@@ -249,7 +249,7 @@ class BehaviorEditorController @Inject() (
           }.getOrElse(Future.successful(None))
           maybeReport <- maybeBehaviorVersion.map { behaviorVersion =>
             val event = TestEvent(user, behaviorVersion.team, info.message, includesBotMention = true)
-            TriggerTester(lambdaService, dataService, cache, ws, configuration, actorSystem).test(event, behaviorVersion).map(Some(_))
+            TriggerTester(lambdaService, dataService, cacheService, ws, configuration, actorSystem).test(event, behaviorVersion).map(Some(_))
           }.getOrElse(Future.successful(None))
 
         } yield {
@@ -288,7 +288,7 @@ class BehaviorEditorController @Inject() (
                 dataService.behaviors.maybeCurrentVersionFor(behavior)
               }.getOrElse(Future.successful(None))
               maybeReport <- maybeBehaviorVersion.map { behaviorVersion =>
-                InvocationTester(user, behaviorVersion, paramValues, lambdaService, dataService, cache, configuration, actorSystem).run.map(Some(_))
+                InvocationTester(user, behaviorVersion, paramValues, lambdaService, dataService, cacheService, configuration, actorSystem).run.map(Some(_))
               }.getOrElse(Future.successful(None))
             } yield {
               maybeReport.map { report =>

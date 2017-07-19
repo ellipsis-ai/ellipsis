@@ -11,9 +11,9 @@ import models.behaviors.events._
 import models.behaviors.templates.TemplateApplier
 import play.api.Configuration
 import play.api.cache.CacheApi
-import play.api.libs.json.{JsDefined, JsValue}
+import play.api.libs.json.{JsDefined, JsValue, Json}
 import services.AWSLambdaConstants._
-import services.{AWSLambdaLogResult, DataService}
+import services.{AWSLambdaLogResult, CacheService, DataService}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -298,7 +298,7 @@ case class OAuth2TokenMissing(
                                event: Event,
                                maybeConversation: Option[Conversation],
                                loginToken: LoginToken,
-                               cache: CacheApi,
+                               cacheService: CacheService,
                                configuration: Configuration
                                ) extends BotResult {
 
@@ -329,7 +329,7 @@ case class OAuth2TokenMissing(
                        maybeIntro: Option[String] = None,
                        maybeInterruptionIntro: Option[String] = None
                      )(implicit actorSystem: ActorSystem): Future[Option[String]] = {
-    cache.set(key, event, 5.minutes)
+    cacheService.cacheEvent(key, event, 5.minutes)
     super.sendIn(maybeShouldUnfurl, dataService)
   }
 }
@@ -338,7 +338,6 @@ case class RequiredApiNotReady(
                                 required: RequiredOAuth2ApiConfig,
                                 event: Event,
                                 maybeConversation: Option[Conversation],
-                                cache: CacheApi,
                                 dataService: DataService,
                                 configuration: Configuration
                              ) extends BotResult {

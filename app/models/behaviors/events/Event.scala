@@ -14,7 +14,7 @@ import play.api.Configuration
 import play.api.cache.CacheApi
 import play.api.libs.json.JsObject
 import play.api.libs.ws.WSClient
-import services.{AWSLambdaService, DataService}
+import services.{AWSLambdaService, CacheService, DataService}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{ExecutionContext, Future}
@@ -160,7 +160,7 @@ trait Event {
                                maybeLimitToBehavior: Option[Behavior],
                                lambdaService: AWSLambdaService,
                                dataService: DataService,
-                               cache: CacheApi,
+                               cacheService: CacheService,
                                ws: WSClient,
                                configuration: Configuration,
                                actorSystem: ActorSystem
