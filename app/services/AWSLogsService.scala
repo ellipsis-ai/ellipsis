@@ -13,5 +13,10 @@ trait AWSLogsService extends AWSService {
 
   val client: AWSLogsAsync
 
+  def logGroupNameFor(functionName: String): String = s"/aws/lambda/$functionName"
+
   def deleteGroupForLambdaFunctionNamed(name: String): Future[Unit]
+
+  def createSubscriptionForFunctionNamed(name: String): Future[Unit]
+
 }

@@ -424,7 +424,9 @@ class AWSLambdaServiceImpl @Inject() (
             withHandler("index.handler").
             withTimeout(INVOCATION_TIMEOUT_SECONDS)
 
-        JavaFutureConverter.javaToScala(client.createFunctionAsync(createFunctionRequest)).map(_ => Unit)
+        JavaFutureConverter.javaToScala(client.createFunctionAsync(createFunctionRequest)).flatMap { result =>
+          logsService.createSubscriptionForFunctionNamed(result.getFunctionName).map(_ => Unit)
+        }
       }
     }
   }
@@ -448,6 +450,21 @@ class AWSLambdaServiceImpl @Inject() (
         PreviousFunctionInfo(version.functionName, version.functionBody, previousLibraries)
       }
       deployFunction(behaviorVersion.functionName, functionBody, params, libraries, maybeAWSConfig, requiredOAuth2ApiConfigs, requiredSimpleTokenApis, maybePreviousFunctionInfo)
+    }
+  }
+
+  def maybeArnForFunctionNamed(functionName: String): Future[Option[String]] = {
+    val request = new GetFunctionRequest()
+    request.setFunctionName(functionName)
+    JavaFutureConverter.javaToScala(client.getFunctionAsync(request)).map { result =>
+      Some(result.getConfiguration.getFunctionArn)
+    }.recover {
+      case e: java.util.concurrent.ExecutionException => {
+        e.getMessage match {
+          case resourceNotFoundExceptionRegex() => None
+          case _ => throw e
+        }
+      }
     }
   }
 }

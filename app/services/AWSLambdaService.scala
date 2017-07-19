@@ -49,4 +49,6 @@ trait AWSLambdaService extends AWSService {
                          requiredSimpleTokenApis: Seq[RequiredSimpleTokenApi]
                          ): Future[Unit]
 
+  def maybeArnForFunctionNamed(functionName: String): Future[Option[String]]
+
 }
