@@ -340,4 +340,35 @@ class BehaviorEditorController @Inject() (
     )
   }
 
+  case class QueryDefaultStorageInfo(behaviorGroupId: String, query: String, maybeOperationName: Option[String], maybeVariables: Option[String])
+
+  private val queryDefaultStorageForm = Form(
+    mapping(
+      "behaviorGroupId" -> nonEmptyText,
+      "query" -> nonEmptyText,
+      "operationName" -> optional(nonEmptyText),
+      "variables" -> optional(nonEmptyText)
+    )(QueryDefaultStorageInfo.apply)(QueryDefaultStorageInfo.unapply)
+  )
+
+  def queryDefaultStorage = silhouette.SecuredAction.async { implicit request =>
+    val user = request.identity
+    queryDefaultStorageForm.bindFromRequest.fold(
+      formWithErrors => {
+        Future.successful(BadRequest(formWithErrors.errorsAsJson))
+      },
+      info => {
+        for {
+          maybeBehaviorGroup <- dataService.behaviorGroups.find(info.behaviorGroupId)
+          maybeResult <- maybeBehaviorGroup.map { group =>
+            services.graphQLService.runQuery(group, user, info.query, info.maybeOperationName, info.maybeVariables).map(Some(_))
+          }.getOrElse(Future.successful(None))
+        } yield {
+          maybeResult.map { result =>
+            Ok(result.toString)
+          }.getOrElse(NotFound("Skill not found"))
+        }
+      }
+    )
+  }
 }
