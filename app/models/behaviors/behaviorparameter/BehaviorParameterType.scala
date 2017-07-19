@@ -385,7 +385,7 @@ case class BehaviorBackedDataType(dataTypeConfig: DataTypeConfig) extends Behavi
           context.services.dataService.defaultStorageItems.allFor(behaviorVersion.behavior)
         }
       } yield {
-        items.map(_.dataWithId).flatMap {
+        items.map(_.data).flatMap {
           case ea: JsObject =>
             val maybeLabel = maybeLabelField.flatMap { labelField => (ea \ labelField.name).asOpt[String] }
             extractValidValueFrom(Json.toJson(Map(

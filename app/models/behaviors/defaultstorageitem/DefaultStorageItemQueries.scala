@@ -11,12 +11,6 @@ object DefaultStorageItemQueries {
 
   type TupleType = (RawDefaultStorageItem, BehaviorQueries.TupleType)
 
-  def tuple2Item(tuple: TupleType): DefaultStorageItem = {
-    val raw = tuple._1
-    val behavior = BehaviorQueries.tuple2Behavior(tuple._2)
-    DefaultStorageItem(raw.id, behavior, raw.updatedAt, raw.updatedByUserId, raw.data)
-  }
-
   def uncompiledFindByIdQuery(id: Rep[String], behaviorGroupId: Rep[String]) = {
     allWithBehavior.filter { case(item, ((behavior, _), _)) => item.id === id && behavior.groupId === behaviorGroupId }
   }

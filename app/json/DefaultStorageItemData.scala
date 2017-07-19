@@ -21,7 +21,7 @@ object DefaultStorageItemData {
       item.behavior.id,
       Some(item.updatedAt),
       Some(item.updatedByUserId),
-      item.dataWithId
+      item.data
     )
   }
 
