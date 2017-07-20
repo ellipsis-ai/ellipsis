@@ -104,9 +104,18 @@ define(function(require) {
       return this.getDataTypeConfig() ? this.getDataTypeConfig().getWritableFields() : [];
     }
 
+    getGraphQLListQueryName() {
+      const name = this.getName();
+      if (name) {
+        return name.replace(/^./, (firstLetter) => firstLetter.toLowerCase()) + "List";
+      } else {
+        return "";
+      }
+    }
+
     buildGraphQLListQuery() {
       const fieldNames = this.getDataTypeFields().map((ea) => ea.name);
-      const queryName = this.getName().replace(/^./, (firstLetter) => firstLetter.toLowerCase());
+      const queryName = this.getGraphQLListQueryName();
       if (fieldNames.length === 0) {
         throw new Error("Unable to create a GraphQL query: no fields found");
       }
@@ -116,7 +125,7 @@ define(function(require) {
       if (!queryName) {
         throw new Error("Unable to create a GraphQL query: data type has no name");
       }
-      return `{ ${queryName}List(filter: {}) { ${fieldNames.join(" ")} } }`;
+      return `{ ${queryName}(filter: {}) { ${fieldNames.join(" ")} } }`;
     }
 
     requiresFields() {

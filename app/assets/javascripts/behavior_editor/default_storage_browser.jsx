@@ -3,6 +3,7 @@ define(function(require) {
     BehaviorVersion = require('../models/behavior_version'),
     Button = require('../form/button'),
     DataRequest = require('../lib/data_request'),
+    DefaultStorageItem = require('../models/default_storage_item'),
     autobind = require('../lib/autobind');
 
   class DefaultStorageBrowser extends React.Component {
@@ -36,6 +37,7 @@ define(function(require) {
 
     loadItems() {
       this.setState({
+        items: [],
         isLoading: true,
         error: null
       }, () => {
@@ -52,10 +54,16 @@ define(function(require) {
     }
 
     onLoadedData(json) {
-      this.setState({
-        isLoading: false
-      });
-      console.log(json);
+      const queryName = this.props.behaviorVersion.getGraphQLListQueryName();
+      try {
+        const items = json.data[queryName];
+        this.setState({
+          isLoading: false,
+          items: items.map((ea) => new DefaultStorageItem({ data: ea }))
+        });
+      } catch(err) {
+        this.onErrorLoadingData();
+      }
     }
 
     onErrorLoadingData() {
@@ -73,10 +81,24 @@ define(function(require) {
       return this.props.behaviorVersion.getDataTypeConfig().getFields();
     }
 
-    renderItem(item, fields) {
+    getTableStatusText(itemRowCount, maxRowCount) {
+      if (this.state.isLoading) {
+        return "Loading…";
+      } else if (itemRowCount === 0) {
+        return "No items found";
+      } else if (itemRowCount === 1) {
+        return "1 item found";
+      } else if (itemRowCount <= maxRowCount) {
+        return `${itemRowCount} items found`;
+      } else {
+        return `Showing the first ${maxRowCount} items`;
+      }
+    }
+
+    renderItem(item, fields, index, isLastItem) {
       return (
-        <tr key={item.id}>
-          {fields.map((field, index) => this.renderFieldCell(item, field, index + 1 < fields.length))}
+        <tr key={`row${index}`}>
+          {fields.map((field) => this.renderFieldCell(item, field, isLastItem))}
         </tr>
       );
     }
@@ -85,14 +107,11 @@ define(function(require) {
       const items = this.getItems();
       const maxRowCount = DefaultStorageBrowser.getTableRowCount();
       const tableRows = [];
-      items.slice(0, maxRowCount).forEach((item) => tableRows.push(this.renderItem(item, fields)));
+      items.slice(0, maxRowCount).forEach((item, index) => tableRows.push(this.renderItem(item, fields, index, index + 1 === items.length)));
       const itemRowCount = tableRows.length;
-      const middleOfRemainingRows = Math.floor((maxRowCount - itemRowCount) / 2);
+      const middleOfRemainingRows = itemRowCount + Math.floor((maxRowCount - itemRowCount) / 2);
       for (let rowIndex = itemRowCount; rowIndex < maxRowCount; rowIndex++) {
-        let rowText = "";
-        if (rowIndex === middleOfRemainingRows) {
-          rowText = itemRowCount === 0 ? "No items stored" : "End of items";
-        }
+        const rowText = rowIndex === middleOfRemainingRows ? this.getTableStatusText(itemRowCount, maxRowCount) : "";
         tableRows.push((
           <tr key={`row${rowIndex}`}>
             <td colSpan={fields.length} className="phxs">
@@ -113,12 +132,20 @@ define(function(require) {
     }
 
     renderFieldCell(item, field, isLast) {
+      const value = item.data[field.name];
+      const asString = String(value);
+      let className = "";
+      if (!value && asString === "null" || asString === "") {
+        className = "type-weak";
+      }
       return (
         <td key={`${item.id}-${field.fieldId}`}
           className={`phxs ${
             isLast ? "border-bottom border-light" : ""
           }`}
-        >{item.data[field.name]}</td>
+        >
+          <span className={className}>{asString || "(empty)"}</span>
+        </td>
       );
     }
 
@@ -134,7 +161,9 @@ define(function(require) {
               </div>
               <div className="column column-page-main">
 
-                <table className="type-s border border-light">
+                <table className={`type-s border border-light ${
+                  this.state.isLoading ? "pulse" : ""
+                }`}>
                   <thead>
                   <tr>
                     {fields.map(this.renderFieldHeader)}
@@ -152,7 +181,7 @@ define(function(require) {
                     onClick={this.props.onCancelClick}
                   >Done</Button>
                   {this.state.error ? (
-                    <span className="type-bold type-pink type-italic fade-in">{this.state.error}</span>
+                    <span className="align-button mbs type-bold type-pink type-italic fade-in">{this.state.error}</span>
                   ) : null}
                 </div>
               </div>
