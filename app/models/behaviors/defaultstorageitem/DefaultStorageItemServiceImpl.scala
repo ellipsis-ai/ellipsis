@@ -127,7 +127,7 @@ class DefaultStorageItemServiceImpl @Inject() (
 
   private def fieldValueWithIdsFor(field: DataTypeField, fieldValue: JsValue): DBIO[JsValue] = {
     field.fieldType match {
-      case t: BuiltInType => DBIO.successful(fieldValue)
+      case t: BuiltInType => DBIO.successful(t.prepareValue(fieldValue.as[String]))
       case t: BehaviorBackedDataType => dataWithFieldIdsFor(fieldValue, t.behaviorVersion.behavior.id)
     }
   }
@@ -142,7 +142,7 @@ class DefaultStorageItemServiceImpl @Inject() (
               eventualAcc.flatMap { acc =>
                 fields.find(_.name == fieldName).map { field =>
                   fieldValueWithIdsFor(field, fieldValue).map { resolvedValue =>
-                    acc + (field.id, resolvedValue)
+                    acc + (field.fieldId, resolvedValue)
                   }
                 }.getOrElse(DBIO.successful(acc))
               }
@@ -177,7 +177,7 @@ class DefaultStorageItemServiceImpl @Inject() (
           obj.value.foldLeft(initial) {
             case (eventualAcc, (fieldId, fieldValue)) => {
               eventualAcc.flatMap { acc =>
-                fields.find(_.id == fieldId).map { field =>
+                fields.find(_.fieldId == fieldId).map { field =>
                   fieldValueWithNamesFor(field, fieldValue).map { resolvedValue =>
                     acc + (field.name, resolvedValue)
                   }
