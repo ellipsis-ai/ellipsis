@@ -127,7 +127,7 @@ class DefaultStorageItemServiceImpl @Inject() (
 
   private def fieldValueWithIdsFor(field: DataTypeField, fieldValue: JsValue): DBIO[JsValue] = {
     field.fieldType match {
-      case t: BuiltInType => DBIO.successful(t.prepareValue(fieldValue.as[String]))
+      case t: BuiltInType => DBIO.successful(t.prepareJsValue(fieldValue))
       case t: BehaviorBackedDataType => dataWithFieldIdsFor(fieldValue, t.behaviorVersion.behavior.id)
     }
   }

@@ -95,6 +95,7 @@ trait BuiltInType extends BehaviorParameterType {
     Future.successful(Some(text))
   }
   def prepareValue(text: String): JsValue
+  def prepareJsValue(value: JsValue): JsValue
   def prepareForInvocation(text: String, context: BehaviorParameterContext) = Future.successful(prepareValue(text))
 }
 
@@ -106,6 +107,12 @@ object TextType extends BuiltInType {
   def isValid(text: String, context: BehaviorParameterContext) = Future.successful(true)
 
   def prepareValue(text: String) = JsString(text)
+  def prepareJsValue(value: JsValue): JsValue = {
+    value match {
+      case s: JsString => s
+      case v => prepareValue(v.toString)
+    }
+  }
 
   val invalidPromptModifier: String = "I need a valid answer"
 
@@ -129,6 +136,13 @@ object NumberType extends BuiltInType {
     JsNumber(BigDecimal(text))
   } catch {
     case e: NumberFormatException => JsString(text)
+  }
+
+  def prepareJsValue(value: JsValue): JsValue = {
+    value match {
+      case n: JsNumber => n
+      case v => prepareValue(v.toString)
+    }
   }
 
   val invalidPromptModifier: String = "I need a number"
@@ -162,6 +176,13 @@ object YesNoType extends BuiltInType {
     maybeValidValueFor(text).map { vv =>
       JsBoolean(vv)
     }.getOrElse(JsString(text))
+  }
+
+  def prepareJsValue(value: JsValue): JsValue = {
+    value match {
+      case b: JsBoolean => b
+      case v => prepareValue(v.toString)
+    }
   }
 
   val invalidPromptModifier: String = "I need something like 'yes' or 'no'"
