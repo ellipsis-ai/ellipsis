@@ -98,7 +98,7 @@ define(function(require) {
     renderItem(item, fields, index, isLastItem) {
       return (
         <tr key={`row${index}`}>
-          {fields.map((field) => this.renderFieldCell(item, field, isLastItem))}
+          {fields.map((field) => this.renderFieldCell(item, field, index, isLastItem))}
         </tr>
       );
     }
@@ -106,16 +106,21 @@ define(function(require) {
     renderItems(fields) {
       const items = this.getItems();
       const maxRowCount = DefaultStorageBrowser.getTableRowCount();
-      const tableRows = [];
-      items.slice(0, maxRowCount).forEach((item, index) => tableRows.push(this.renderItem(item, fields, index, index + 1 === items.length)));
+      const tableRows = items.slice(0, maxRowCount).map((item, index) => {
+        return this.renderItem(item, fields, index, index + 1 === items.length);
+      });
       const itemRowCount = tableRows.length;
       const middleOfRemainingRows = itemRowCount + Math.floor((maxRowCount - itemRowCount) / 2);
       for (let rowIndex = itemRowCount; rowIndex < maxRowCount; rowIndex++) {
-        const rowText = rowIndex === middleOfRemainingRows ? this.getTableStatusText(itemRowCount, maxRowCount) : "";
+        const rowText = rowIndex + 1 === middleOfRemainingRows ? this.getTableStatusText(itemRowCount, maxRowCount) : "";
         tableRows.push((
           <tr key={`row${rowIndex}`}>
-            <td colSpan={fields.length} className="phxs">
-              <div className="align-c type-italic type-weak">{rowText}<br /></div>
+            <td
+              colSpan={fields.length}
+              className={`phxs bg-light align-c type-italic type-weak ${
+                rowIndex + 1 === maxRowCount ? "border-bottom border-light" : ""
+              }`}>
+              <div>{rowText}<br /></div>
             </td>
           </tr>
         ));
@@ -126,25 +131,36 @@ define(function(require) {
     renderFieldHeader(field) {
       return (
         <th key={field.fieldId}
-          className="bg-lightest border-bottom border-light type-weak phxs"
+          className="bg-light border-bottom border-light type-monospace type-weak phxs"
         >{field.name}</th>
       );
     }
 
-    renderFieldCell(item, field, isLast) {
-      const value = item.data[field.name];
-      const asString = String(value);
-      let className = "";
-      if (!value && asString === "null" || asString === "") {
-        className = "type-weak";
-      }
+    isEmptyValue(value) {
+      return value === null || value === undefined || value === "";
+    }
+
+    renderValue(value) {
+      const className = this.isEmptyValue(value) ? "type-disabled" : "";
+      const asString = String(value) || "(empty)";
       return (
-        <td key={`${item.id}-${field.fieldId}`}
-          className={`phxs ${
-            isLast ? "border-bottom border-light" : ""
-          }`}
+        <span className={className}>{asString}</span>
+      );
+    }
+
+    renderFieldCell(item, field, index, isLast) {
+      const value = item.data[field.name];
+      const className = `phxs type-monospace border-light border-right ${
+        isLast ? "border-bottom " : ""
+      } ${
+        index % 2 === 1 ? "bg-lightest" : ""
+      }`;
+      return (
+        <td
+          key={`${item.id}-${field.fieldId}`}
+          className={className}
         >
-          <span className={className}>{asString || "(empty)"}</span>
+          {this.renderValue(value)}
         </td>
       );
     }
@@ -165,9 +181,9 @@ define(function(require) {
                   this.state.isLoading ? "pulse" : ""
                 }`}>
                   <thead>
-                  <tr>
-                    {fields.map(this.renderFieldHeader)}
-                  </tr>
+                    <tr>
+                      {fields.map(this.renderFieldHeader)}
+                    </tr>
                   </thead>
                   <tbody>
                     {this.renderItems(fields)}
