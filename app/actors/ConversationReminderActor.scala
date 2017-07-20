@@ -3,7 +3,6 @@ package actors
 import javax.inject.Inject
 
 import akka.actor.{Actor, ActorSystem}
-import play.api.cache.CacheApi
 import play.api.libs.ws.WSClient
 import play.api.{Configuration, Logger}
 import services.{AWSLambdaService, CacheService, DataService}

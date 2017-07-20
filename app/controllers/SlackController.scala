@@ -10,7 +10,6 @@ import models.behaviors.events.SlackMessageActionConstants._
 import models.behaviors.events.{EventHandler, SlackMessageEvent}
 import models.help.HelpGroupSearchValue
 import models.silhouette.EllipsisEnv
-import play.api.cache.CacheApi
 import play.api.data.Form
 import play.api.data.Forms._
 import play.api.i18n.MessagesApi

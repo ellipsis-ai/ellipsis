@@ -2,10 +2,9 @@ package models.behaviors.testing
 
 import akka.actor.ActorSystem
 import models.accounts.user.User
-import models.behaviors.behaviorversion.BehaviorVersion
 import models.behaviors.BehaviorResponse
+import models.behaviors.behaviorversion.BehaviorVersion
 import play.api.Configuration
-import play.api.cache.CacheApi
 import services.{AWSLambdaConstants, AWSLambdaService, CacheService, DataService}
 
 import scala.concurrent.ExecutionContext.Implicits.global

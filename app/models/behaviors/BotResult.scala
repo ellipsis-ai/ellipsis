@@ -10,8 +10,7 @@ import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.events._
 import models.behaviors.templates.TemplateApplier
 import play.api.Configuration
-import play.api.cache.CacheApi
-import play.api.libs.json.{JsDefined, JsValue, Json}
+import play.api.libs.json.{JsDefined, JsValue}
 import services.AWSLambdaConstants._
 import services.{AWSLambdaLogResult, CacheService, DataService}
 

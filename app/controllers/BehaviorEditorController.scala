@@ -7,13 +7,10 @@ import com.mohiva.play.silhouette.api.Silhouette
 import com.mohiva.play.silhouette.api.actions.SecuredRequest
 import json.Formatting._
 import json._
-import models.accounts.user.User
-import models.behaviors.behaviorparameter.TextType
 import models.behaviors.testing.{InvocationTester, TestEvent, TriggerTester}
 import models.behaviors.triggers.messagetrigger.MessageTrigger
 import models.silhouette.EllipsisEnv
 import play.api.Configuration
-import play.api.cache.CacheApi
 import play.api.data.Form
 import play.api.data.Forms._
 import play.api.i18n.MessagesApi

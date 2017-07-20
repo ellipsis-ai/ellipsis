@@ -7,7 +7,6 @@ import akka.actor.ActorSystem
 import com.google.inject.Provider
 import drivers.SlickPostgresDriver.api._
 import play.api.Configuration
-import play.api.cache.CacheApi
 import play.api.libs.ws.WSClient
 import services.{AWSLambdaService, CacheService, DataService}
 

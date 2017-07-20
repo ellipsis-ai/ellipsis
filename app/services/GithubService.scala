@@ -4,24 +4,22 @@ import java.nio.charset.Charset
 import java.time.OffsetDateTime
 import javax.inject.{Inject, Singleton}
 
-import json._
 import json.Formatting._
+import json._
 import models.team.Team
 import org.apache.commons.codec.binary.Base64
 import play.api.Configuration
-import play.api.cache.CacheApi
 import play.api.libs.json.{JsError, JsSuccess, JsValue, Json}
 import play.api.libs.ws.WSClient
 
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 import scala.concurrent.{Await, Future}
-import scala.concurrent.ExecutionContext.Implicits.global
 
 @Singleton
 class GithubService @Inject() (
                                 ws: WSClient,
                                 config: Configuration,
-                                cache: CacheApi,
                                 cacheService: CacheService,
                                 dataService: DataService
                               ) {

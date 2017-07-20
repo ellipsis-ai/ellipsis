@@ -20,13 +20,12 @@ import models.team.Team
 import modules.ActorModule
 import org.scalatest.mock.MockitoSugar
 import org.scalatestplus.play.{OneAppPerSuite, PlaySpec}
-import play.api.cache.CacheApi
 import play.api.db.Databases
 import play.api.db.evolutions.Evolutions
 import play.api.inject.bind
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.{Application, Configuration}
-import services.{AWSLambdaService, GithubService, PostgresDataService}
+import services.{AWSLambdaService, CacheService, GithubService, PostgresDataService}
 
 import scala.concurrent.duration._
 import scala.concurrent.{Await, Future}
@@ -34,7 +33,7 @@ import scala.concurrent.{Await, Future}
 trait DBSpec extends PlaySpec with OneAppPerSuite with MockitoSugar {
 
   lazy val config = ConfigFactory.load()
-  lazy val cache = app.injector.instanceOf(classOf[CacheApi])
+  lazy val cacheService = app.injector.instanceOf(classOf[CacheService])
   lazy val configuration = app.injector.instanceOf(classOf[Configuration])
 
   override implicit lazy val app: Application =

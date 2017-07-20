@@ -10,7 +10,6 @@ import models.behaviors.events.SlackMessageActionConstants._
 import models.behaviors.events.{Event, SlackMessageActionButton, SlackMessageActions, SlackMessageEvent}
 import models.behaviors.triggers.messagetrigger.MessageTrigger
 import play.api.Configuration
-import play.api.cache.CacheApi
 import play.api.libs.ws.WSClient
 import services.{AWSLambdaService, CacheService, DataService}
 import utils.SlackTimestamp

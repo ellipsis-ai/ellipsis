@@ -11,7 +11,6 @@ import models.behaviors.events._
 import models.behaviors.invocationtoken.InvocationToken
 import models.behaviors.scheduling.scheduledmessage.ScheduledMessage
 import models.team.Team
-import play.api.cache.CacheApi
 import play.api.data.Form
 import play.api.data.Forms._
 import play.api.i18n.MessagesApi
@@ -31,7 +30,6 @@ class APIController @Inject() (
                                 val dataService: DataService,
                                 val lambdaService: AWSLambdaService,
                                 val ws: WSClient,
-                                val cache: CacheApi,
                                 val slackService: SlackEventService,
                                 val eventHandler: EventHandler,
                                 implicit val actorSystem: ActorSystem

@@ -6,7 +6,6 @@ import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.events.Event
 import models.behaviors.{BotResult, SimpleTextResult}
 import play.api.Configuration
-import play.api.cache.CacheApi
 import services.{CacheService, DataService}
 
 import scala.concurrent.ExecutionContext.Implicits.global

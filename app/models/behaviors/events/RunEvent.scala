@@ -7,7 +7,6 @@ import models.behaviors.behavior.Behavior
 import models.behaviors.conversations.conversation.Conversation
 import models.team.Team
 import play.api.Configuration
-import play.api.cache.CacheApi
 import play.api.libs.ws.WSClient
 import services.{AWSLambdaConstants, AWSLambdaService, CacheService, DataService}
 import utils.SlackMessageSender

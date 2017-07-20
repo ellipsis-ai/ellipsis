@@ -6,13 +6,12 @@ import akka.actor.ActorSystem
 import models.behaviors.behavior.Behavior
 import models.behaviors.behaviorparameter.{BehaviorParameter, BehaviorParameterContext}
 import models.behaviors.behaviorversion.BehaviorVersion
-import models.team.Team
 import models.behaviors.conversations.InvokeBehaviorConversation
 import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.events.Event
 import models.behaviors.triggers.messagetrigger.MessageTrigger
+import models.team.Team
 import play.api.Configuration
-import play.api.cache.CacheApi
 import play.api.libs.json.{JsString, JsValue}
 import play.api.libs.ws.WSClient
 import services.{AWSLambdaConstants, AWSLambdaService, CacheService, DataService}

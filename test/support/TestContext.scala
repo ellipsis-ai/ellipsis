@@ -8,12 +8,11 @@ import models.behaviors.events.EventHandler
 import models.team.Team
 import modules.ActorModule
 import org.scalatest.mock.MockitoSugar
-import play.api.cache.CacheApi
 import play.api.inject._
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.ws.WSClient
 import play.api.{Application, Configuration}
-import services.{AWSLambdaService, AWSLogsService, DataService, GithubService}
+import services._
 
 trait TestContext extends MockitoSugar{
 
@@ -37,7 +36,7 @@ trait TestContext extends MockitoSugar{
   lazy val eventHandler = app.injector.instanceOf(classOf[EventHandler])
   lazy val githubService = app.injector.instanceOf(classOf[GithubService])
   lazy val lambdaService = app.injector.instanceOf(classOf[AWSLambdaService])
-  lazy val cache = app.injector.instanceOf(classOf[CacheApi])
+  lazy val cacheService = app.injector.instanceOf(classOf[CacheService])
   lazy val ws = app.injector.instanceOf(classOf[WSClient])
   lazy val configuration = app.injector.instanceOf(classOf[Configuration])
 

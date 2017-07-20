@@ -8,7 +8,6 @@ import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.events.SlackMessageActionConstants._
 import models.behaviors.{BehaviorResponse, BotResult, SimpleTextResult, TextWithActionsResult}
 import play.api.Configuration
-import play.api.cache.CacheApi
 import play.api.i18n.MessagesApi
 import play.api.libs.ws.WSClient
 import services.{AWSLambdaService, CacheService, DataService}

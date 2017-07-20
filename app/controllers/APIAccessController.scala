@@ -6,18 +6,15 @@ import javax.inject.Inject
 import akka.actor.ActorSystem
 import com.mohiva.play.silhouette.api.Silhouette
 import com.mohiva.play.silhouette.api.actions.SecuredRequest
-import json.Formatting._
 import models.IDs
 import models.accounts.linkedoauth2token.LinkedOAuth2Token
 import models.accounts.oauth2application.OAuth2Application
 import models.accounts.user.User
-import models.behaviors.events.{EventHandler, SlackMessageEvent}
+import models.behaviors.events.EventHandler
 import models.silhouette.EllipsisEnv
 import play.api.Configuration
-import play.api.cache.CacheApi
 import play.api.http.{HeaderNames, MimeTypes}
 import play.api.i18n.MessagesApi
-import play.api.libs.json.{JsError, JsSuccess, JsValue}
 import play.api.libs.ws.WSClient
 import play.api.mvc.{AnyContent, Result, Results}
 import services.{CacheService, DataService}
@@ -31,7 +28,6 @@ class APIAccessController @Inject() (
                                       val configuration: Configuration,
                                       val dataService: DataService,
                                       val ws: WSClient,
-                                      val cache: CacheApi,
                                       val cacheService: CacheService,
                                       val eventHandler: EventHandler,
                                       implicit val actorSystem: ActorSystem
