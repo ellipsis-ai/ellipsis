@@ -127,8 +127,7 @@ class GraphQLServiceImpl @Inject() (
             ctx.value match {
               case arr: JsArray => fromJson(arr)
               case _ => {
-                val jsVal = (ctx.value.asInstanceOf[JsObject] \ (definition.name)).getOrElse(JsNull)
-                fromJson(jsVal)
+                (ctx.value.asInstanceOf[JsObject] \ (definition.name)).asOpt[JsValue].map(fromJson)
               }
             }
           }
@@ -139,7 +138,10 @@ class GraphQLServiceImpl @Inject() (
     def fromJson(v: JsValue) = v match {
       case JsArray(l) ⇒ l
       case JsString(s) ⇒ s
-      case JsNumber(n) ⇒ n.doubleValue()
+      case JsNumber(n) ⇒ {
+        n.doubleValue()
+      }
+      case JsNull => null
       case other ⇒ other
     }
   }

@@ -94,6 +94,8 @@ trait BuiltInType extends BehaviorParameterType {
   def resolvedValueFor(text: String, context: BehaviorParameterContext): Future[Option[String]] = {
     Future.successful(Some(text))
   }
+  def prepareValue(text: String): JsValue
+  def prepareForInvocation(text: String, context: BehaviorParameterContext) = Future.successful(prepareValue(text))
 }
 
 object TextType extends BuiltInType {
@@ -103,7 +105,7 @@ object TextType extends BuiltInType {
 
   def isValid(text: String, context: BehaviorParameterContext) = Future.successful(true)
 
-  def prepareForInvocation(text: String, context: BehaviorParameterContext) = Future.successful(JsString(text))
+  def prepareValue(text: String) = JsString(text)
 
   val invalidPromptModifier: String = "I need a valid answer"
 
@@ -123,12 +125,10 @@ object NumberType extends BuiltInType {
     }
   }
 
-  def prepareForInvocation(text: String, context: BehaviorParameterContext) = Future.successful {
-    try {
-      JsNumber(BigDecimal(text))
-    } catch {
-      case e: NumberFormatException => JsString(text)
-    }
+  def prepareValue(text: String): JsValue = try {
+    JsNumber(BigDecimal(text))
+  } catch {
+    case e: NumberFormatException => JsString(text)
   }
 
   val invalidPromptModifier: String = "I need a number"
@@ -158,7 +158,7 @@ object YesNoType extends BuiltInType {
     Future.successful(maybeValidValueFor(text).isDefined)
   }
 
-  def prepareForInvocation(text: String, context: BehaviorParameterContext) = Future.successful {
+  def prepareValue(text: String) = {
     maybeValidValueFor(text).map { vv =>
       JsBoolean(vv)
     }.getOrElse(JsString(text))
