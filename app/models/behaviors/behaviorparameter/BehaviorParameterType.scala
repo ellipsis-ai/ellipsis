@@ -175,13 +175,14 @@ object YesNoType extends BuiltInType {
   def prepareValue(text: String) = {
     maybeValidValueFor(text).map { vv =>
       JsBoolean(vv)
-    }.getOrElse(JsString(text))
+    }.getOrElse(JsNull)
   }
 
   def prepareJsValue(value: JsValue): JsValue = {
     value match {
       case b: JsBoolean => b
-      case v => prepareValue(v.toString)
+      case v: JsString => prepareValue(v.value)
+      case _ => JsNull
     }
   }
 
