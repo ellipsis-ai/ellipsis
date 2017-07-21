@@ -1,9 +1,11 @@
 package models.behaviors.scheduling
 
+import java.sql.Timestamp
 import java.time.OffsetDateTime
 import java.time.format.DateTimeFormatter
 
 import akka.actor.ActorSystem
+import drivers.SlickPostgresDriver.api._
 import models.accounts.slack.botprofile.SlackBotProfile
 import models.accounts.slack.profile.SlackProfile
 import models.accounts.user.User
@@ -14,6 +16,7 @@ import models.team.Team
 import play.api.{Configuration, Logger}
 import services.DataService
 import slack.api.{ApiError, SlackApiClient}
+import slick.dbio.DBIO
 import utils.{FutureSequencer, SlackChannels}
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -156,8 +159,8 @@ trait Scheduled {
      """.stripMargin
   }
 
-  def botProfile(dataService: DataService): Future[Option[SlackBotProfile]] = {
-    dataService.slackBotProfiles.allFor(team).map(_.headOption)
+  def botProfileAction(dataService: DataService): DBIO[Option[SlackBotProfile]] = {
+    dataService.slackBotProfiles.allForAction(team).map(_.headOption)
   }
 
   def maybeSlackProfile(dataService: DataService): Future[Option[SlackProfile]] = {
@@ -275,18 +278,11 @@ trait Scheduled {
     }.getOrElse(Future.successful(Unit))
   }
 
-  def updateNextTriggeredFor(dataService: DataService): Future[Scheduled]
+  def updateNextTriggeredForAction(dataService: DataService): DBIO[Scheduled]
 
 }
 
 object Scheduled {
-
-  def allToBeSent(dataService: DataService): Future[Seq[Scheduled]] = {
-    for {
-      scheduledMessages <- dataService.scheduledMessages.allToBeSent
-      scheduledBehaviors <- dataService.scheduledBehaviors.allToBeSent
-    } yield scheduledMessages ++ scheduledBehaviors
-  }
 
   def allForTeam(team: Team, dataService: DataService): Future[Seq[Scheduled]] = {
     for {
@@ -300,6 +296,27 @@ object Scheduled {
       scheduledMessages <- dataService.scheduledMessages.allForChannel(team, channel)
       scheduledBehaviors <- dataService.scheduledBehaviors.allForChannel(team, channel)
     } yield scheduledMessages ++ scheduledBehaviors
+  }
+
+  def maybeNextToBeSentAction(when: OffsetDateTime, dataService: DataService): DBIO[Option[Scheduled]] = {
+    dataService.scheduledMessages.maybeNextToBeSentAction(when).flatMap { maybeNext =>
+      maybeNext.map { next =>
+        DBIO.successful(Some(next))
+      }.getOrElse {
+        dataService.scheduledBehaviors.maybeNextToBeSentAction(when)
+      }
+    }
+  }
+
+  def nextToBeSentIdQueryFor(tableName: String, when: OffsetDateTime): DBIO[Seq[String]] = {
+    val ts = Timestamp.from(when.toInstant)
+    sql"""
+         SELECT id from #$tableName
+         WHERE next_sent_at <= ${ts}
+         ORDER BY id
+         FOR UPDATE SKIP LOCKED
+         LIMIT 1
+         """.as[String]
   }
 
 }
