@@ -3,6 +3,7 @@ define(function(require) {
     BehaviorVersion = require('../models/behavior_version'),
     Collapsible = require('../shared_ui/collapsible'),
     DefaultStorageAdderField = require('./default_storage_adder_field'),
+    Button = require('../form/button'),
     DynamicLabelButton = require('../form/dynamic_label_button'),
     DataRequest = require('../lib/data_request'),
     DefaultStorageItem = require('../models/default_storage_item'),
@@ -198,17 +199,10 @@ define(function(require) {
                       displayWhen: this.isSaving()
                     }]}
                    />
-                  <DynamicLabelButton className="mrxl mbs"
+                  <Button className="mrxl mbs"
                     onClick={this.cancel}
-                    disabledWhen={this.isSaving()}
-                    labels={[{
-                      text: "Done",
-                      displayWhen: !this.hasValues()
-                    }, {
-                      text: "Cancel",
-                      displayWhen: this.hasValues()
-                    }]}
-                  />
+                    disabled={this.isSaving()}
+                  >Done</Button>
                   {this.renderError()}
                 </div>
 
