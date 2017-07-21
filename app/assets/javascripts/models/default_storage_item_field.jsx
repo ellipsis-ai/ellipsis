@@ -9,6 +9,10 @@ define(function() {
         value: {
           value: value,
           enumerable: true
+        },
+        stringValue: {
+          value: String(value),
+          enumerable: true
         }
       });
     }

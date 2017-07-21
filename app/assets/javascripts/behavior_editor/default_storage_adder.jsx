@@ -136,7 +136,7 @@ define(function(require) {
         <DefaultStorageAdderField
           key={`lastSaved-${field.name}`}
           name={field.name}
-          value={field.value || ""}
+          value={field.stringValue}
           readOnly={true}
         />
       ));
