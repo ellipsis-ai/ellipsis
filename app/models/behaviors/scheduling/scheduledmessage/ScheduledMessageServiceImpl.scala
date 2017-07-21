@@ -87,7 +87,7 @@ class ScheduledMessageServiceImpl @Inject() (
 
   def maybeNextToBeSentAction(when: OffsetDateTime): DBIO[Option[ScheduledMessage]] = {
     for {
-      maybeNextId <- Scheduled.nextToBeSentIdQueryFor(ScheduledMessage.tableName, Timestamp.from(when.toInstant)).map(_.headOption)
+      maybeNextId <- Scheduled.nextToBeSentIdQueryFor(ScheduledMessage.tableName, when).map(_.headOption)
       maybeNext <- maybeNextId.map(findAction).getOrElse(DBIO.successful(None))
     } yield maybeNext
   }

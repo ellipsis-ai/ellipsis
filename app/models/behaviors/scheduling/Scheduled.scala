@@ -308,16 +308,15 @@ object Scheduled {
     }
   }
 
-  def nextToBeSentIdQueryFor(tableName: String, when: Timestamp): DBIO[Seq[String]] = {
-    val sql =
-      sql"""
-           SELECT id from #$tableName
-           WHERE next_sent_at <= ${when}
-           ORDER BY id
-           FOR UPDATE SKIP LOCKED
-           LIMIT 1
-           """
-    sql.as[String]
+  def nextToBeSentIdQueryFor(tableName: String, when: OffsetDateTime): DBIO[Seq[String]] = {
+    val ts = Timestamp.from(when.toInstant)
+    sql"""
+         SELECT id from #$tableName
+         WHERE next_sent_at <= ${ts}
+         ORDER BY id
+         FOR UPDATE SKIP LOCKED
+         LIMIT 1
+         """.as[String]
   }
 
 }

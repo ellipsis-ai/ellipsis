@@ -167,7 +167,7 @@ class ScheduledBehaviorServiceImpl @Inject() (
 
   def maybeNextToBeSentAction(when: OffsetDateTime): DBIO[Option[ScheduledBehavior]] = {
     for {
-      maybeNextId <- Scheduled.nextToBeSentIdQueryFor(ScheduledBehavior.tableName, Timestamp.from(when.toInstant)).map(_.headOption)
+      maybeNextId <- Scheduled.nextToBeSentIdQueryFor(ScheduledBehavior.tableName, when).map(_.headOption)
       maybeNext <- maybeNextId.map(findAction).getOrElse(DBIO.successful(None))
     } yield maybeNext
   }
