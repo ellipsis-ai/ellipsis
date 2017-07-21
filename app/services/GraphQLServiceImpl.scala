@@ -141,6 +141,7 @@ class GraphQLServiceImpl @Inject() (
       case JsNumber(n) ⇒ {
         n.doubleValue()
       }
+      case JsBoolean(b) => b
       case JsNull => null
       case other ⇒ other
     }
