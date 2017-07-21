@@ -81,17 +81,17 @@ define(function(require) {
       return this.props.behaviorVersion.getDataTypeConfig().getFields();
     }
 
-    getTableStatusText(itemRowCount, maxRowCount) {
+    getTableStatusText(itemCount, maxItemCount) {
       if (this.state.isLoading) {
         return "Loading…";
-      } else if (itemRowCount === 0) {
+      } else if (itemCount === 0) {
         return "No items found";
-      } else if (itemRowCount === 1) {
+      } else if (itemCount === 1) {
         return "1 item found";
-      } else if (itemRowCount <= maxRowCount) {
-        return `${itemRowCount} items found`;
+      } else if (itemCount <= maxItemCount) {
+        return `${itemCount} items found`;
       } else {
-        return `Showing the first ${maxRowCount} items`;
+        return `Showing the first ${maxItemCount} items out of ${itemCount}`;
       }
     }
 
@@ -105,14 +105,15 @@ define(function(require) {
 
     renderItems(fields) {
       const items = this.getItems();
-      const maxRowCount = DefaultStorageBrowser.getTableRowCount();
-      const tableRows = items.slice(0, maxRowCount).map((item, index) => {
+      const maxItemCount = DefaultStorageBrowser.getTableRowCount();
+      const maxRowCount = maxItemCount + 1;
+      const tableRows = items.slice(0, maxItemCount).map((item, index) => {
         return this.renderItem(item, fields, index, index + 1 === items.length);
       });
       const itemRowCount = tableRows.length;
-      const middleOfRemainingRows = itemRowCount + Math.floor((maxRowCount - itemRowCount) / 2);
+      const middleOfRemainingRows = itemRowCount + Math.ceil((maxRowCount - itemRowCount) / 2);
       for (let rowIndex = itemRowCount; rowIndex < maxRowCount; rowIndex++) {
-        const rowText = rowIndex + 1 === middleOfRemainingRows ? this.getTableStatusText(itemRowCount, maxRowCount) : "";
+        const rowText = rowIndex + 1 === middleOfRemainingRows ? this.getTableStatusText(items.length, maxItemCount) : "";
         tableRows.push((
           <tr key={`row${rowIndex}`}>
             <td
