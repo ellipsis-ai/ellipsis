@@ -6,6 +6,7 @@ import models.behaviors.BotResult
 import models.behaviors.events.SlackMessageEvent
 import models.team.Team
 import slack.api.SlackApiClient
+import slick.dbio.DBIO
 import utils.SlackChannels
 
 import scala.concurrent.Future
@@ -13,6 +14,8 @@ import scala.concurrent.Future
 trait SlackBotProfileService {
 
   def allProfiles: Future[Seq[SlackBotProfile]]
+
+  def allForAction(team: Team): DBIO[Seq[SlackBotProfile]]
 
   def allFor(team: Team): Future[Seq[SlackBotProfile]]
 

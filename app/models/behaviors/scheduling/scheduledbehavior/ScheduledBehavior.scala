@@ -11,6 +11,7 @@ import models.behaviors.scheduling.recurrence.Recurrence
 import models.team.Team
 import play.api.libs.json.Json
 import services.DataService
+import slick.dbio.DBIO
 import utils.SlackTimestamp
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -68,8 +69,8 @@ case class ScheduledBehavior(
     this.copy(nextSentAt = recurrence.nextAfter(when))
   }
 
-  def updateNextTriggeredFor(dataService: DataService): Future[ScheduledBehavior] = {
-    dataService.scheduledBehaviors.updateNextTriggeredFor(this)
+  def updateNextTriggeredForAction(dataService: DataService): DBIO[ScheduledBehavior] = {
+    dataService.scheduledBehaviors.updateNextTriggeredForAction(this)
   }
 
   def toRaw: RawScheduledBehavior = {
@@ -86,4 +87,8 @@ case class ScheduledBehavior(
       createdAt
     )
   }
+}
+
+object ScheduledBehavior {
+  val tableName: String = "scheduled_behaviors"
 }

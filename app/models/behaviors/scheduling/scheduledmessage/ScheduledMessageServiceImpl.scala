@@ -1,5 +1,6 @@
 package models.behaviors.scheduling.scheduledmessage
 
+import java.sql.Timestamp
 import java.time.OffsetDateTime
 import javax.inject.Inject
 
@@ -7,6 +8,7 @@ import com.google.inject.Provider
 import drivers.SlickPostgresDriver.api._
 import models.IDs
 import models.accounts.user.{User, UserQueries}
+import models.behaviors.scheduling.Scheduled
 import models.behaviors.scheduling.recurrence.{RawRecurrence, Recurrence, RecurrenceQueries}
 import models.team.{Team, TeamQueries}
 import services.DataService
@@ -26,7 +28,7 @@ case class RawScheduledMessage(
                                 createdAt: OffsetDateTime
                               )
 
-class ScheduledMessagesTable(tag: Tag) extends Table[RawScheduledMessage](tag, "scheduled_messages") {
+class ScheduledMessagesTable(tag: Tag) extends Table[RawScheduledMessage](tag, ScheduledMessage.tableName) {
 
   def id = column[String]("id")
   def text = column[String]("text")
@@ -83,16 +85,11 @@ class ScheduledMessageServiceImpl @Inject() (
     )
   }
 
-  def uncompiledAllToBeSentQuery(when: Rep[OffsetDateTime]) = {
-    allWithUser.filter { case(((msg, _), _), _) =>  msg.nextSentAt <= when }
-  }
-  val allToBeSentQuery = Compiled(uncompiledAllToBeSentQuery _)
-
-  def allToBeSent: Future[Seq[ScheduledMessage]] = {
-    val action = allToBeSentQuery(OffsetDateTime.now).result.map { r =>
-      r.map(tuple2ScheduledMessage)
-    }
-    dataService.run(action)
+  def maybeNextToBeSentAction(when: OffsetDateTime): DBIO[Option[ScheduledMessage]] = {
+    for {
+      maybeNextId <- Scheduled.nextToBeSentIdQueryFor(ScheduledMessage.tableName, Timestamp.from(when.toInstant)).map(_.headOption)
+      maybeNext <- maybeNextId.map(findAction).getOrElse(DBIO.successful(None))
+    } yield maybeNext
   }
 
   def uncompiledAllForTeamQuery(teamId: Rep[String]) = {
@@ -126,11 +123,14 @@ class ScheduledMessageServiceImpl @Inject() (
   }
   val findQueryFor = Compiled(uncompiledFindQueryFor _)
 
-  def find(id: String): Future[Option[ScheduledMessage]] = {
-    val action = findQueryFor(id).result.map { r =>
+  def findAction(id: String): DBIO[Option[ScheduledMessage]] = {
+    findQueryFor(id).result.map { r =>
       r.headOption.map(tuple2ScheduledMessage)
     }
-    dataService.run(action)
+  }
+
+  def find(id: String): Future[Option[ScheduledMessage]] = {
+    dataService.run(findAction(id))
   }
 
   def uncompiledFindForTeamQuery(id: Rep[String], teamId: Rep[String]) = {
@@ -145,21 +145,24 @@ class ScheduledMessageServiceImpl @Inject() (
     dataService.run(action)
   }
 
-  def save(message: ScheduledMessage): Future[ScheduledMessage] = {
+  def saveAction(message: ScheduledMessage): DBIO[ScheduledMessage] = {
     val raw = message.toRaw
     val query = all.filter(_.id === raw.id)
-    val action = query.result.flatMap { r =>
+    query.result.flatMap { r =>
       r.headOption.map { existing =>
         query.update(raw)
       }.getOrElse {
         all += raw
       }
     }.map { _ => message }
-    dataService.run(action)
   }
 
-  def updateNextTriggeredFor(message: ScheduledMessage): Future[ScheduledMessage] = {
-    save(message.withUpdatedNextTriggeredFor(OffsetDateTime.now))
+  def save(message: ScheduledMessage): Future[ScheduledMessage] = {
+    dataService.run(saveAction(message))
+  }
+
+  def updateNextTriggeredForAction(message: ScheduledMessage): DBIO[ScheduledMessage] = {
+    saveAction(message.withUpdatedNextTriggeredFor(OffsetDateTime.now))
   }
 
   def maybeCreateWithRecurrenceText(
