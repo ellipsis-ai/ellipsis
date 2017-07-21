@@ -110,7 +110,8 @@ object TextType extends BuiltInType {
   def prepareJsValue(value: JsValue): JsValue = {
     value match {
       case s: JsString => s
-      case v => prepareValue(v.asOpt[String].getOrElse(""))
+      case JsNull => JsNull
+      case v => JsString(v.toString)
     }
   }
 
@@ -142,7 +143,7 @@ object NumberType extends BuiltInType {
     value match {
       case n: JsNumber => n
       case s: JsString => prepareValue(s.value)
-      case o => o.asOpt[JsString].getOrElse(JsNull)
+      case v => v
     }
   }
 
@@ -182,9 +183,8 @@ object YesNoType extends BuiltInType {
   def prepareJsValue(value: JsValue): JsValue = {
     value match {
       case b: JsBoolean => b
-      case v: JsString => prepareValue(v.value)
-      case JsNull => JsBoolean(false)
-      case o => o.asOpt[JsString].getOrElse(JsNull)
+      case s: JsString => prepareValue(s.value)
+      case v => v
     }
   }
 
