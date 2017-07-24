@@ -13,6 +13,7 @@ import play.api.Configuration
 import play.api.cache.CacheApi
 import play.api.libs.ws.WSClient
 import services.{AWSLambdaService, DataService}
+import slick.dbio.DBIO
 import utils.SlackTimestamp
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -48,8 +49,8 @@ trait Conversation {
     startedAt.plusSeconds(Conversation.SECONDS_UNTIL_BACKGROUNDED).isBefore(OffsetDateTime.now)
   }
 
-  private def maybeSlackPlaceholderEvent(dataService: DataService): Future[Option[Event]] = {
-    dataService.slackBotProfiles.allFor(behaviorVersion.team).map { botProfiles =>
+  private def maybeSlackPlaceholderEventAction(dataService: DataService): DBIO[Option[Event]] = {
+    dataService.slackBotProfiles.allForAction(behaviorVersion.team).map { botProfiles =>
       for {
         botProfile <- botProfiles.headOption
         channel <- maybeChannel
@@ -57,10 +58,10 @@ trait Conversation {
     }
   }
 
-  def maybePlaceholderEvent(dataService: DataService): Future[Option[Event]] = {
+  def maybePlaceholderEventAction(dataService: DataService): DBIO[Option[Event]] = {
     context match {
-      case Conversation.SLACK_CONTEXT => maybeSlackPlaceholderEvent(dataService)
-      case _ => Future.successful(None)
+      case Conversation.SLACK_CONTEXT => maybeSlackPlaceholderEventAction(dataService)
+      case _ => DBIO.successful(None)
     }
   }
 
@@ -73,6 +74,18 @@ trait Conversation {
   def updateStateTo(newState: String, dataService: DataService): Future[Conversation]
   def cancel(dataService: DataService): Future[Conversation] = updateStateTo(Conversation.DONE_STATE, dataService)
   def updateWith(event: Event, lambdaService: AWSLambdaService, dataService: DataService, cache: CacheApi, configuration: Configuration, actorSystem: ActorSystem): Future[Conversation]
+
+  def respondAction(
+                     event: Event,
+                     isReminding: Boolean,
+                     lambdaService: AWSLambdaService,
+                     dataService: DataService,
+                     cache: CacheApi,
+                     ws: WSClient,
+                     configuration: Configuration,
+                     actorSystem: ActorSystem
+                   ): DBIO[BotResult]
+
   def respond(
                event: Event,
                isReminding: Boolean,
@@ -109,24 +122,24 @@ trait Conversation {
                                actorSystem: ActorSystem
                              ): Future[Option[BehaviorParameter]]
 
-  def maybeRemindResult(
-                        lambdaService: AWSLambdaService,
-                        dataService: DataService,
-                        cache: CacheApi,
-                        ws: WSClient,
-                        configuration: Configuration,
-                        actorSystem: ActorSystem
-                      ): Future[Option[BotResult]] = {
-    maybePlaceholderEvent(dataService).flatMap { maybeEvent =>
+  def maybeRemindResultAction(
+                              lambdaService: AWSLambdaService,
+                              dataService: DataService,
+                              cache: CacheApi,
+                              ws: WSClient,
+                              configuration: Configuration,
+                              actorSystem: ActorSystem
+                            ): DBIO[Option[BotResult]] = {
+    maybePlaceholderEventAction(dataService).flatMap { maybeEvent =>
       maybeEvent.map { event =>
-        respond(event, isReminding=true, lambdaService, dataService, cache, ws, configuration, actorSystem).map { result =>
+        respondAction(event, isReminding=true, lambdaService, dataService, cache, ws, configuration, actorSystem).map { result =>
           val intro = s"Hey <@$userIdForContext>, don’t forget, I’m still waiting for your answer to this:"
           val actions = Seq(SlackMessageActionButton(STOP_CONVERSATION, "Stop asking", id))
           val question = result.text
           val attachment = SlackMessageActions(STOP_CONVERSATION, actions, Some(question), None)
           Some(TextWithActionsResult(result.event, Some(this), intro, result.forcePrivateResponse, attachment))
         }
-      }.getOrElse(Future.successful(None))
+      }.getOrElse(DBIO.successful(None))
     }
   }
 

@@ -7,6 +7,7 @@ import models.behaviors.events.Event
 import play.api.Configuration
 import play.api.cache.CacheApi
 import services.DataService
+import slick.dbio.DBIO
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -23,8 +24,8 @@ case class BehaviorParameterContext(
 
   val behaviorVersion = parameter.behaviorVersion
 
-  def isFirstParam: Future[Boolean] = {
-    dataService.behaviorParameters.isFirstForBehaviorVersion(parameter)
+  def isFirstParamAction: DBIO[Boolean] = {
+    dataService.behaviorParameters.isFirstForBehaviorVersionAction(parameter)
   }
 
   def unfilledParamCount(paramState: ParamCollectionState): Future[Int] = {

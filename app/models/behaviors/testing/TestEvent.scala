@@ -9,6 +9,7 @@ import models.team.Team
 import play.api.libs.json.JsObject
 import play.api.libs.ws.WSClient
 import services.DataService
+import slick.dbio.DBIO
 
 import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -47,12 +48,12 @@ case class TestEvent(
     Future.successful(messageBuffer += text).map(_ => None)
   }
 
-  override def userInfo(ws: WSClient, dataService: DataService)(implicit actorSystem: ActorSystem): Future[UserInfo] = {
-    UserInfo.buildFor(user, this, ws, dataService)
+  override def userInfoAction(ws: WSClient, dataService: DataService)(implicit actorSystem: ActorSystem): DBIO[UserInfo] = {
+    UserInfo.buildForAction(user, this, ws, dataService)
   }
 
-  override def ensureUser(dataService: DataService): Future[User] = {
-    Future.successful(user)
+  override def ensureUserAction(dataService: DataService): DBIO[User] = {
+    DBIO.successful(user)
   }
 
   def detailsFor(ws: WSClient, dataService: DataService)(implicit actorSystem: ActorSystem): Future[JsObject] = {

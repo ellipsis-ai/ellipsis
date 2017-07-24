@@ -89,15 +89,15 @@ class InvocationLogEntryServiceImpl @Inject() (
     dataService.run(action)
   }
 
-  def createFor(
-                 behaviorVersion: BehaviorVersion,
-                 parametersWithValues: Seq[ParameterWithValue],
-                 result: BotResult,
-                 event: Event,
-                 maybeUserIdForContext: Option[String],
-                 user: User,
-                 runtimeInMilliseconds: Long
-               ): Future[InvocationLogEntry] = {
+  def createForAction(
+                       behaviorVersion: BehaviorVersion,
+                       parametersWithValues: Seq[ParameterWithValue],
+                       result: BotResult,
+                       event: Event,
+                       maybeUserIdForContext: Option[String],
+                       user: User,
+                       runtimeInMilliseconds: Long
+                     ): DBIO[InvocationLogEntry] = {
     val raw =
       RawInvocationLogEntry(
         IDs.next,
@@ -115,7 +115,7 @@ class InvocationLogEntryServiceImpl @Inject() (
         OffsetDateTime.now
       )
 
-    val action = (all += raw).map { _ =>
+    (all += raw).map { _ =>
       InvocationLogEntry(
         raw.id,
         behaviorVersion,
@@ -130,6 +130,6 @@ class InvocationLogEntryServiceImpl @Inject() (
         raw.createdAt
       )
     }
-    dataService.run(action)
   }
+
 }

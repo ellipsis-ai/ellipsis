@@ -9,7 +9,11 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 trait LinkedAccountService {
 
+  def findAction(loginInfo: LoginInfo, teamId: String): DBIO[Option[LinkedAccount]]
+
   def find(loginInfo: LoginInfo, teamId: String): Future[Option[LinkedAccount]]
+
+  def saveAction(link: LinkedAccount): DBIO[LinkedAccount]
 
   def save(link: LinkedAccount): Future[LinkedAccount]
 

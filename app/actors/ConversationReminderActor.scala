@@ -1,8 +1,10 @@
 package actors
 
+import java.time.OffsetDateTime
 import javax.inject.Inject
 
 import akka.actor.{Actor, ActorSystem}
+import drivers.SlickPostgresDriver.api._
 import play.api.cache.CacheApi
 import play.api.libs.ws.WSClient
 import play.api.{Configuration, Logger}
@@ -32,29 +34,41 @@ class ConversationReminderActor @Inject()(
     tick.cancel()
   }
 
-  def receive = {
-    case "tick" => {
-      dataService.conversations.allNeedingReminder.flatMap { pending =>
-        Future.sequence(pending.map { ea =>
-          ea.maybeRemindResult(lambdaService, dataService, cache, ws, configuration, actorSystem).flatMap { maybeResult =>
-            maybeResult.map { result =>
-              result.sendIn(None, dataService, None).flatMap { maybeSendResult =>
-                dataService.conversations.touch(ea)
-              }
-            }.getOrElse(Future.successful(None))
-          }.recover {
-            case t: Throwable => {
-              Logger.error(s"Exception reminding about conversation with ID: ${ea.id}", t)
+  def remindAsNeeded(when: OffsetDateTime): Future[Unit] = {
+    val action: DBIO[Boolean] = dataService.conversations.maybeNextNeedingReminderAction(when).flatMap { maybeNext =>
+      maybeNext.map { convo =>
+        convo.maybeRemindResultAction(lambdaService, dataService, cache, ws, configuration, actorSystem).flatMap { maybeResult =>
+          maybeResult.map { result =>
+            result.sendInAction(None, dataService, None).flatMap { _ =>
+              dataService.conversations.touchAction(convo).map(_ => true)
             }
-          }
-        })
-      }.
-        map { _ => true }.
-        recover {
-          case t: Throwable => {
-            Logger.error("Exception reminding about conversations", t)
+          }.getOrElse {
+            // TODO: probably want to mark this as "don't remind" somehow
+            dataService.conversations.touchAction(convo).map(_ => true)
           }
         }
+      }.getOrElse(DBIO.successful(false))
     }
+    val eventualShouldContinue: Future[Boolean] = dataService.run(action.transactionally).recover {
+      case t: Throwable => {
+        Logger.error(s"Exception reminding about a conversation", t)
+        true
+      }
+    }
+    eventualShouldContinue.flatMap { shouldContinue =>
+      if (shouldContinue) {
+        remindAsNeeded(when)
+      } else {
+        Future.successful({})
+      }
+    }.recover {
+      case t: Throwable => {
+        Logger.error("Exception reminding about conversations", t)
+      }
+    }
+  }
+
+  def receive = {
+    case "tick" => remindAsNeeded(OffsetDateTime.now)
   }
 }

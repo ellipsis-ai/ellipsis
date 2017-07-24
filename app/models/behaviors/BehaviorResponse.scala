@@ -16,6 +16,7 @@ import play.api.cache.CacheApi
 import play.api.libs.json.{JsString, JsValue}
 import play.api.libs.ws.WSClient
 import services.{AWSLambdaConstants, AWSLambdaService, DataService}
+import slick.dbio.DBIO
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -75,14 +76,14 @@ case class BehaviorResponse(
     }
   }
 
-  def resultForFilledOut: Future[BotResult] = {
+  def resultForFilledOutAction: DBIO[BotResult] = {
     val startTime = OffsetDateTime.now
     for {
-      user <- event.ensureUser(dataService)
-      result <- dataService.behaviorVersions.resultFor(behaviorVersion, parametersWithValues, event, maybeConversation)
+      user <- event.ensureUserAction(dataService)
+      result <- dataService.behaviorVersions.resultForAction(behaviorVersion, parametersWithValues, event, maybeConversation)
       _ <- {
         val runtimeInMilliseconds = OffsetDateTime.now.toInstant.toEpochMilli - startTime.toInstant.toEpochMilli
-        dataService.invocationLogEntries.createFor(
+        dataService.invocationLogEntries.createForAction(
           behaviorVersion,
           parametersWithValues,
           result,
@@ -93,6 +94,10 @@ case class BehaviorResponse(
         )
       }
     } yield result
+  }
+
+  def resultForFilledOut: Future[BotResult] = {
+    dataService.run(resultForFilledOutAction)
   }
 
   def result(implicit actorSystem: ActorSystem): Future[BotResult] = {
@@ -127,6 +132,37 @@ case class BehaviorResponse(
 
 object BehaviorResponse {
 
+  def parametersWithValuesForAction(
+                                     event: Event,
+                                     behaviorVersion: BehaviorVersion,
+                                     paramValues: Map[String, String],
+                                     maybeConversation: Option[Conversation],
+                                     dataService: DataService,
+                                     cache: CacheApi,
+                                     configuration: Configuration,
+                                     actorSystem: ActorSystem
+                                   ): DBIO[Seq[ParameterWithValue]] = {
+    for {
+      params <- dataService.behaviorParameters.allForAction(behaviorVersion)
+      invocationNames <- DBIO.successful(params.zipWithIndex.map { case (p, i) =>
+        AWSLambdaConstants.invocationParamFor(i)
+      })
+      values <- DBIO.sequence(params.zip(invocationNames).map { case(param, invocationName) =>
+        val context = BehaviorParameterContext(event, maybeConversation, param, cache, dataService, configuration, actorSystem)
+        paramValues.get(invocationName).map { v =>
+          for {
+            isValid <- DBIO.from(param.paramType.isValid(v, context))
+            json <- DBIO.from(param.paramType.prepareForInvocation(v, context))
+          } yield {
+            Some(ParameterValue(v, json, isValid))
+          }
+        }.getOrElse(DBIO.successful(None))
+      })
+    } yield params.zip(values).zip(invocationNames).map { case((param, maybeValue), invocationName) =>
+      ParameterWithValue(param, invocationName, maybeValue)
+    }
+  }
+
   def parametersWithValuesFor(
                                event: Event,
                                behaviorVersion: BehaviorVersion,
@@ -137,25 +173,25 @@ object BehaviorResponse {
                                configuration: Configuration,
                                actorSystem: ActorSystem
                              ): Future[Seq[ParameterWithValue]] = {
-    for {
-      params <- dataService.behaviorParameters.allFor(behaviorVersion)
-      invocationNames <- Future.successful(params.zipWithIndex.map { case (p, i) =>
-        AWSLambdaConstants.invocationParamFor(i)
-      })
-      values <- Future.sequence(params.zip(invocationNames).map { case(param, invocationName) =>
-        val context = BehaviorParameterContext(event, maybeConversation, param, cache, dataService, configuration, actorSystem)
-        paramValues.get(invocationName).map { v =>
-          for {
-            isValid <- param.paramType.isValid(v, context)
-            json <- param.paramType.prepareForInvocation(v, context)
-          } yield {
-            Some(ParameterValue(v, json, isValid))
-          }
-        }.getOrElse(Future.successful(None))
-      })
-    } yield params.zip(values).zip(invocationNames).map { case((param, maybeValue), invocationName) =>
-        ParameterWithValue(param, invocationName, maybeValue)
-      }
+    dataService.run(parametersWithValuesForAction(event, behaviorVersion, paramValues, maybeConversation, dataService, cache, configuration, actorSystem))
+  }
+
+  def buildForAction(
+                      event: Event,
+                      behaviorVersion: BehaviorVersion,
+                      paramValues: Map[String, String],
+                      maybeActivatedTrigger: Option[MessageTrigger],
+                      maybeConversation: Option[Conversation],
+                      lambdaService: AWSLambdaService,
+                      dataService: DataService,
+                      cache: CacheApi,
+                      ws: WSClient,
+                      configuration: Configuration,
+                      actorSystem: ActorSystem
+                    ): DBIO[BehaviorResponse] = {
+    parametersWithValuesForAction(event, behaviorVersion, paramValues, maybeConversation, dataService, cache, configuration, actorSystem).map { paramsWithValues =>
+      BehaviorResponse(event, behaviorVersion, maybeConversation, paramsWithValues, maybeActivatedTrigger, lambdaService, dataService, cache, ws, configuration)
+    }
   }
 
   def buildFor(
@@ -171,9 +207,7 @@ object BehaviorResponse {
                 configuration: Configuration,
                 actorSystem: ActorSystem
                 ): Future[BehaviorResponse] = {
-    parametersWithValuesFor(event, behaviorVersion, paramValues, maybeConversation, dataService, cache, configuration, actorSystem).map { paramsWithValues =>
-      BehaviorResponse(event, behaviorVersion, maybeConversation, paramsWithValues, maybeActivatedTrigger, lambdaService, dataService, cache, ws, configuration)
-    }
+    dataService.run(buildForAction(event, behaviorVersion, paramValues, maybeActivatedTrigger, maybeConversation, lambdaService, dataService, cache, ws, configuration, actorSystem))
   }
 
   def allFor(

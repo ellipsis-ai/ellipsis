@@ -39,15 +39,15 @@ sealed trait BehaviorParameterType {
     }
   }
 
-  def promptFor(
+  def promptForAction(
                  maybePreviousCollectedValue: Option[String],
                  context: BehaviorParameterContext,
                  paramState: ParamCollectionState,
                  isReminding: Boolean
-               ): Future[String] = {
+               ): DBIO[String] = {
     for {
-      isFirst <- context.isFirstParam
-      paramCount <- context.unfilledParamCount(paramState)
+      isFirst <- context.isFirstParamAction
+      paramCount <- DBIO.from(context.unfilledParamCount(paramState))
     } yield {
       val preamble = if (isReminding || !isFirst || paramCount <= 1) {
         ""
@@ -62,6 +62,16 @@ sealed trait BehaviorParameterType {
       }
       s"$preamble\n\n**${context.parameter.question}** ${invalidValueModifierFor(maybePreviousCollectedValue)}"
     }
+  }
+
+
+  def promptFor(
+                 maybePreviousCollectedValue: Option[String],
+                 context: BehaviorParameterContext,
+                 paramState: ParamCollectionState,
+                 isReminding: Boolean
+               ): Future[String] = {
+    context.dataService.run(promptForAction(maybePreviousCollectedValue, context, paramState, isReminding))
   }
 
   def resolvedValueFor(text: String, context: BehaviorParameterContext): Future[Option[String]]

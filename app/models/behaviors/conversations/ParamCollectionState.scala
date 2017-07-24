@@ -10,6 +10,7 @@ import models.behaviors.{BotResult, SimpleTextResult}
 import play.api.Configuration
 import play.api.cache.CacheApi
 import services.{AWSLambdaConstants, DataService}
+import slick.dbio.DBIO
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -79,14 +80,14 @@ case class ParamCollectionState(
     } yield updatedConversation
   }
 
-  def promptResultFor(conversation: Conversation, isReminding: Boolean): Future[BotResult] = {
+  def promptResultForAction(conversation: Conversation, isReminding: Boolean): DBIO[BotResult] = {
     for {
-      maybeNextToCollect <- maybeNextToCollect(conversation)
+      maybeNextToCollect <- DBIO.from(maybeNextToCollect(conversation))
       result <- maybeNextToCollect.map { case(param, maybeValue) =>
         val context = BehaviorParameterContext(event, Some(conversation), param, cache, dataService, configuration, actorSystem)
-        param.prompt(maybeValue, context, this, isReminding)
+        param.promptAction(maybeValue, context, this, isReminding)
       }.getOrElse {
-        Future.successful("All done!")
+        DBIO.successful("All done!")
       }.map { prompt =>
         SimpleTextResult(event, Some(conversation), prompt, conversation.behaviorVersion.forcePrivateResponse)
       }
@@ -97,6 +98,22 @@ case class ParamCollectionState(
 
 object ParamCollectionState {
 
+  def fromAction(
+                  conversation: Conversation,
+                  event: Event,
+                  dataService: DataService,
+                  cache: CacheApi,
+                  configuration: Configuration,
+                  actorSystem: ActorSystem
+                ): DBIO[ParamCollectionState] = {
+    for {
+      params <- dataService.behaviorParameters.allForAction(conversation.behaviorVersion)
+      collected <- dataService.collectedParameterValues.allForAction(conversation)
+      user <- event.ensureUserAction(dataService)
+      savedAnswers <- dataService.savedAnswers.allForAction(user, params)
+    } yield ParamCollectionState(params, collected, savedAnswers, event, dataService, cache, configuration, actorSystem)
+  }
+
   def from(
             conversation: Conversation,
             event: Event,
@@ -105,12 +122,7 @@ object ParamCollectionState {
             configuration: Configuration,
             actorSystem: ActorSystem
           ): Future[ParamCollectionState] = {
-    for {
-      params <- dataService.behaviorParameters.allFor(conversation.behaviorVersion)
-      collected <- dataService.collectedParameterValues.allFor(conversation)
-      user <- event.ensureUser(dataService)
-      savedAnswers <- dataService.savedAnswers.allFor(user, params)
-    } yield ParamCollectionState(params, collected, savedAnswers, event, dataService, cache, configuration, actorSystem)
+    dataService.run(fromAction(conversation, event, dataService, cache, configuration, actorSystem))
   }
 
 }

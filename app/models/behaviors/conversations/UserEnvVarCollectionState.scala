@@ -8,6 +8,7 @@ import models.behaviors.{BotResult, SimpleTextResult}
 import play.api.Configuration
 import play.api.cache.CacheApi
 import services.DataService
+import slick.dbio.DBIO
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -25,8 +26,12 @@ case class UserEnvVarCollectionState(
 
   val sortedEnvVars = missingEnvVarNames.sorted
 
+  def maybeNextToCollectAction: DBIO[Option[String]] = {
+    DBIO.successful(sortedEnvVars.headOption)
+  }
+
   def maybeNextToCollect: Future[Option[String]] = {
-    Future.successful(sortedEnvVars.headOption)
+    dataService.run(maybeNextToCollectAction)
   }
 
   def isCompleteIn(conversation: Conversation): Future[Boolean] = maybeNextToCollect.map(_.isEmpty)
@@ -42,8 +47,8 @@ case class UserEnvVarCollectionState(
     } yield updatedConversation
   }
 
-  def promptResultFor(conversation: Conversation, isReminding: Boolean): Future[BotResult] = {
-    maybeNextToCollect.map { maybeNextToCollect =>
+  def promptResultForAction(conversation: Conversation, isReminding: Boolean): DBIO[BotResult] = {
+    maybeNextToCollectAction.map { maybeNextToCollect =>
       val prompt = maybeNextToCollect.map { envVarName =>
         s"To run this skill, I first need a value for $envVarName. This is specific to you and I'll only ask for it once"
       }.getOrElse {
@@ -57,16 +62,16 @@ case class UserEnvVarCollectionState(
 
 object UserEnvVarCollectionState {
 
-  def from(
-            user: User,
-            conversation: Conversation,
-            event: Event,
-            dataService: DataService,
-            cache: CacheApi,
-            configuration: Configuration,
-            actorSystem: ActorSystem
-          ): Future[UserEnvVarCollectionState] = {
-    dataService.userEnvironmentVariables.missingFor(user, conversation.behaviorVersion, dataService).map { missing =>
+  def fromAction(
+                  user: User,
+                  conversation: Conversation,
+                  event: Event,
+                  dataService: DataService,
+                  cache: CacheApi,
+                  configuration: Configuration,
+                  actorSystem: ActorSystem
+                ): DBIO[UserEnvVarCollectionState] = {
+    dataService.userEnvironmentVariables.missingForAction(user, conversation.behaviorVersion, dataService).map { missing =>
       UserEnvVarCollectionState(missing, event, dataService, cache, configuration, actorSystem)
     }
   }

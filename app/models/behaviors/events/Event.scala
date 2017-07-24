@@ -15,6 +15,7 @@ import play.api.cache.CacheApi
 import play.api.libs.json.JsObject
 import play.api.libs.ws.WSClient
 import services.{AWSLambdaService, DataService}
+import slick.dbio.DBIO
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{ExecutionContext, Future}
@@ -47,12 +48,16 @@ trait Event {
 
   def loginInfo: LoginInfo = LoginInfo(name, userIdForContext)
 
-  def ensureUser(dataService: DataService): Future[User] = {
-    dataService.users.ensureUserFor(loginInfo, teamId)
+  def ensureUserAction(dataService: DataService): DBIO[User] = {
+    dataService.users.ensureUserForAction(loginInfo, teamId)
   }
 
-  def userInfo(ws: WSClient, dataService: DataService)(implicit actorSystem: ActorSystem): Future[UserInfo] = {
-    UserInfo.buildFor(this, teamId, ws, dataService)
+  def ensureUser(dataService: DataService): Future[User] = {
+    dataService.run(ensureUserAction(dataService))
+  }
+
+  def userInfoAction(ws: WSClient, dataService: DataService)(implicit actorSystem: ActorSystem): DBIO[UserInfo] = {
+    UserInfo.buildForAction(this, teamId, ws, dataService)
   }
 
   def messageInfo(ws: WSClient, dataService: DataService)(implicit actorSystem: ActorSystem): Future[MessageInfo] = {
@@ -127,12 +132,12 @@ trait Event {
     }
   }
 
-  def maybeChannelForSend(
-                           forcePrivate: Boolean,
-                           maybeConversation: Option[Conversation],
-                           dataService: DataService
-                         )(implicit actorSystem: ActorSystem): Future[Option[String]] = {
-    Future.successful(maybeChannel)
+  def maybeChannelForSendAction(
+                                 forcePrivate: Boolean,
+                                 maybeConversation: Option[Conversation],
+                                 dataService: DataService
+                               )(implicit actorSystem: ActorSystem): DBIO[Option[String]] = {
+    DBIO.successful(maybeChannel)
   }
 
   def allOngoingConversations(dataService: DataService): Future[Seq[Conversation]]

@@ -3,6 +3,7 @@ package models.environmentvariable
 import models.behaviors.behaviorversion.BehaviorVersion
 import models.team.Team
 import services.DataService
+import slick.dbio.DBIO
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -15,6 +16,8 @@ trait TeamEnvironmentVariableService {
 
   def deleteFor(name: String, team: Team): Future[Boolean]
 
+  def allForAction(team: Team): DBIO[Seq[TeamEnvironmentVariable]]
+
   def allFor(team: Team): Future[Seq[TeamEnvironmentVariable]]
 
   def lookForInCode(code: String): Seq[String] = {
@@ -24,16 +27,16 @@ trait TeamEnvironmentVariableService {
     }.toSeq
   }
 
-  def knownUsedIn(behaviorVersion: BehaviorVersion, dataService: DataService): Future[Seq[String]] = {
-    dataService.awsConfigs.environmentVariablesUsedFor(behaviorVersion).map { inConfig =>
+  def knownUsedInAction(behaviorVersion: BehaviorVersion, dataService: DataService): DBIO[Seq[String]] = {
+    dataService.awsConfigs.environmentVariablesUsedForAction(behaviorVersion).map { inConfig =>
       inConfig ++ lookForInCode(behaviorVersion.functionBody)
     }
   }
 
-  def missingIn(behaviorVersion: BehaviorVersion, dataService: DataService): Future[Seq[String]] = {
+  def missingInAction(behaviorVersion: BehaviorVersion, dataService: DataService): DBIO[Seq[String]] = {
     for {
-      envVars <- allFor(behaviorVersion.team)
-      missing <- knownUsedIn(behaviorVersion, dataService).map{ used =>
+      envVars <- allForAction(behaviorVersion.team)
+      missing <- knownUsedInAction(behaviorVersion, dataService).map{ used =>
         used diff envVars.filter(_.value.trim.nonEmpty).map(_.name)
       }
     } yield missing

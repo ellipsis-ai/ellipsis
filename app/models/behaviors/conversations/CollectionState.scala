@@ -6,6 +6,7 @@ import models.behaviors.events.Event
 import play.api.Configuration
 import play.api.cache.CacheApi
 import services.DataService
+import slick.dbio.DBIO
 
 import scala.concurrent.Future
 
@@ -20,6 +21,6 @@ trait CollectionState {
 
   def isCompleteIn(conversation: Conversation): Future[Boolean]
   def collectValueFrom(conversation: InvokeBehaviorConversation): Future[Conversation]
-  def promptResultFor(conversation: Conversation, isReminding: Boolean): Future[BotResult]
+  def promptResultForAction(conversation: Conversation, isReminding: Boolean): DBIO[BotResult]
 
 }

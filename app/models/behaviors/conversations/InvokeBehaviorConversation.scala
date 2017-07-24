@@ -14,6 +14,7 @@ import play.api.Configuration
 import play.api.cache.CacheApi
 import play.api.libs.ws.WSClient
 import services.{AWSLambdaService, DataService}
+import slick.dbio.DBIO
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -59,11 +60,15 @@ case class InvokeBehaviorConversation(
   }
 
   def collectionStatesFor(event: Event, dataService: DataService, cache: CacheApi, configuration: Configuration, actorSystem: ActorSystem): Future[Seq[CollectionState]] = {
+    dataService.run(collectionStatesForAction(event, dataService, cache, configuration, actorSystem))
+  }
+
+  def collectionStatesForAction(event: Event, dataService: DataService, cache: CacheApi, configuration: Configuration, actorSystem: ActorSystem): DBIO[Seq[CollectionState]] = {
     for {
-      user <- event.ensureUser(dataService)
-      simpleTokenState <- SimpleTokenCollectionState.from(user, this, event, dataService, cache, configuration, actorSystem)
-      userEnvVarState <- UserEnvVarCollectionState.from(user, this, event, dataService, cache, configuration, actorSystem)
-      paramState <- ParamCollectionState.from(this, event, dataService, cache, configuration, actorSystem)
+      user <- event.ensureUserAction(dataService)
+      simpleTokenState <- SimpleTokenCollectionState.fromAction(user, this, event, dataService, cache, configuration, actorSystem)
+      userEnvVarState <- UserEnvVarCollectionState.fromAction(user, this, event, dataService, cache, configuration, actorSystem)
+      paramState <- ParamCollectionState.fromAction(this, event, dataService, cache, configuration, actorSystem)
     } yield Seq(simpleTokenState, userEnvVarState, paramState)
   }
 
@@ -97,6 +102,27 @@ case class InvokeBehaviorConversation(
     } yield updated
   }
 
+  def respondAction(
+                     event: Event,
+                     isReminding: Boolean,
+                     lambdaService: AWSLambdaService,
+                     dataService: DataService,
+                     cache: CacheApi,
+                     ws: WSClient,
+                     configuration: Configuration,
+                     actorSystem: ActorSystem
+                   ): DBIO[BotResult] = {
+    for {
+      collectionStates <- collectionStatesForAction(event, dataService, cache, configuration, actorSystem)
+      result <- collectionStates.find(_.name == state).map(_.promptResultForAction(this, isReminding)).getOrElse {
+        val paramState = paramStateIn(collectionStates)
+        BehaviorResponse.buildForAction(event, behaviorVersion, paramState.invocationMap, maybeTrigger, Some(this), lambdaService, dataService, cache, ws, configuration, actorSystem).flatMap { br =>
+          br.resultForFilledOutAction
+        }
+      }
+    } yield result
+  }
+
   def respond(
                event: Event,
                isReminding: Boolean,
@@ -107,15 +133,7 @@ case class InvokeBehaviorConversation(
                configuration: Configuration,
                actorSystem: ActorSystem
              ): Future[BotResult] = {
-    for {
-      collectionStates <- collectionStatesFor(event, dataService, cache, configuration, actorSystem)
-      result <- collectionStates.find(_.name == state).map(_.promptResultFor(this, isReminding)).getOrElse {
-        val paramState = paramStateIn(collectionStates)
-        BehaviorResponse.buildFor(event, behaviorVersion, paramState.invocationMap, maybeTrigger, Some(this), lambdaService, dataService, cache, ws, configuration, actorSystem).flatMap { br =>
-          br.resultForFilledOut
-        }
-      }
-    } yield result
+    dataService.run(respondAction(event, isReminding, lambdaService, dataService, cache, ws, configuration, actorSystem))
   }
 
   def maybeNextParamToCollect(

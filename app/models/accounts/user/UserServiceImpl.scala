@@ -55,16 +55,29 @@ class UserServiceImpl @Inject() (
 
   def createFor(teamId: String): Future[User] = save(createOnTeamWithId(teamId))
 
-  def save(user: User): Future[User] = {
+  def saveAction(user: User): DBIO[User] = {
     val query = findQueryFor(user.id)
-    val action = query.result.flatMap { result =>
+    query.result.flatMap { result =>
       result.headOption.map { existing =>
         all.filter(_.id === user.id).update(user)
       }.getOrElse {
         all += user
       }.map { _ => user }
     }
-    dataService.run(action)
+  }
+
+  def save(user: User): Future[User] = {
+    dataService.run(saveAction(user))
+  }
+
+  def ensureUserForAction(loginInfo: LoginInfo, teamId: String): DBIO[User] = {
+    dataService.linkedAccounts.findAction(loginInfo, teamId).flatMap { maybeLinkedAccount =>
+      maybeLinkedAccount.map(DBIO.successful).getOrElse {
+        saveAction(createOnTeamWithId(teamId)).flatMap { user =>
+          dataService.linkedAccounts.saveAction(LinkedAccount(user, loginInfo, OffsetDateTime.now))
+        }
+      }.map(_.user)
+    }
   }
 
   def ensureUserFor(loginInfo: LoginInfo, teamId: String): Future[User] = {

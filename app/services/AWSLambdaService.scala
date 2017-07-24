@@ -12,6 +12,7 @@ import models.behaviors.library.LibraryVersion
 import models.behaviors.{BotResult, ParameterWithValue}
 import models.environmentvariable.EnvironmentVariable
 import play.api.Configuration
+import slick.dbio.DBIO
 
 import scala.concurrent.Future
 
@@ -29,6 +30,14 @@ trait AWSLambdaService extends AWSService {
   def partionedBehaviorFunctionNames: Future[PartitionedFunctionNames]
 
   def functionWithParams(params: Array[String], functionBody: String): String
+
+  def invokeAction(
+                    behaviorVersion: BehaviorVersion,
+                    parametersWithValues: Seq[ParameterWithValue],
+                    environmentVariables: Seq[EnvironmentVariable],
+                    event: Event,
+                    maybeConversation: Option[Conversation]
+                  ): DBIO[BotResult]
 
   def invoke(
               behaviorVersion: BehaviorVersion,
