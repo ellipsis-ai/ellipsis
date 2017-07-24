@@ -43,7 +43,7 @@ class ConversationReminderActor @Inject()(
               dataService.conversations.touchAction(convo).map(_ => true)
             }
           }.getOrElse {
-            // TODO: probably want to mark this as "don't remind" somehow
+            // Just act like the reminding happened if no remind result can be build (i.e. non-Slack message for now)
             dataService.conversations.touchAction(convo).map(_ => true)
           }
         }
