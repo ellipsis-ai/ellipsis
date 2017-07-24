@@ -47,8 +47,12 @@ class SlackBotProfileServiceImpl @Inject() (
   }
   val allForTeamQuery = Compiled(uncompiledAllForTeamQuery _)
 
+  def allForAction(team: Team): DBIO[Seq[SlackBotProfile]] = {
+    allForTeamQuery(team.id).result
+  }
+
   def allFor(team: Team): Future[Seq[SlackBotProfile]] = {
-    dataService.run(allForTeamQuery(team.id).result)
+    dataService.run(allForAction(team))
   }
 
   def uncompiledAllForSlackTeamQuery(slackTeamId: Rep[String]) = {

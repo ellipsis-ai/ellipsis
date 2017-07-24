@@ -73,7 +73,6 @@ class AWSLambdaServiceImpl @Inject() (
   def listBehaviorFunctionNames: Future[Seq[String]] = {
     fetchFunctions(None).map { functions =>
       val allFunctionNames = functions.map(_.getFunctionName)
-      // TODO: clean up the old functions once we decide everything has worked
       val behaviorFunctionNames = allFunctionNames.filter { ea =>
         ea.startsWith(BehaviorVersion.lambdaFunctionPrefix)
       }

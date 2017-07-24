@@ -1,14 +1,17 @@
 package models.behaviors.scheduling.scheduledmessage
 
+import java.time.OffsetDateTime
+
 import models.accounts.user.User
 import models.behaviors.scheduling.recurrence.Recurrence
 import models.team.Team
+import slick.dbio.DBIO
 
 import scala.concurrent.Future
 
 trait ScheduledMessageService {
 
-  def allToBeSent: Future[Seq[ScheduledMessage]]
+  def maybeNextToBeSentAction(when: OffsetDateTime): DBIO[Option[ScheduledMessage]]
 
   def allForTeam(team: Team): Future[Seq[ScheduledMessage]]
 
@@ -20,7 +23,7 @@ trait ScheduledMessageService {
 
   def save(message: ScheduledMessage): Future[ScheduledMessage]
 
-  def updateNextTriggeredFor(message: ScheduledMessage): Future[ScheduledMessage]
+  def updateNextTriggeredForAction(message: ScheduledMessage): DBIO[ScheduledMessage]
 
   def maybeCreateWithRecurrenceText(
                       text: String,
