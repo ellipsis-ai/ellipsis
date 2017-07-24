@@ -12,10 +12,8 @@ services:
       - DB_PORT=5432
       - MEMCACHED_HOST=memcached
       - MEMCACHED_PORT=11211
-    links:
-      - memcached
-      - postgres
-      - elasticsearch
+    
+
     # - activator_cache
     # volumes_from:
     #   - activator_cache

@@ -19,7 +19,7 @@ RUN curl -L -o /tmp/activator.zip \
 RUN apk add --update git
 
 # Node and Npm
-RUN apk add --update nodejs
+RUN apk add --update nodejs nodejs-npm && npm install npm@latest -g
 
 # Docker and docker compose
 RUN apk add --update docker
