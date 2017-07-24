@@ -17,6 +17,7 @@ import org.scalatest.mock.MockitoSugar
 import play.api.Configuration
 import play.api.libs.ws.WSClient
 import services.{AWSLambdaService, AWSLogsService, DataService}
+import slick.dbio.DBIO
 
 import scala.concurrent.Future
 
@@ -55,6 +56,14 @@ class MockAWSLambdaService @Inject() (
                        event: Event,
                        maybeConversation: Option[Conversation]
                      ): Future[BotResult] = Future.successful(mock[BotResult])
+
+  override def invokeAction(
+                       behaviorVersion: BehaviorVersion,
+                       parametersWithValues: Seq[ParameterWithValue],
+                       environmentVariables: Seq[EnvironmentVariable],
+                       event: Event,
+                       maybeConversation: Option[Conversation]
+                     ): DBIO[BotResult] = DBIO.successful(mock[BotResult])
 
   override def functionWithParams(params: Array[String], functionBody: String): String = ""
 }
