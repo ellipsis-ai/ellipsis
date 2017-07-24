@@ -1,35 +1,17 @@
 version: '2'
 services:
-  circleci:
-    build: ./docker_files/circleci/
-    volumes:
-      - .:/home/circleci/ellipsis
-    command: /bin/bash
-    tty: true
-    stdin_open: true
-    environment:
-      - DB_HOST=postgres
-      - DB_PORT=5432
-      - MEMCACHED_HOST=memcached
-      - MEMCACHED_PORT=11211
-    
-
-    # - activator_cache
-    # volumes_from:
-    #   - activator_cache
-    # ports:
-    #   - "9000:9000"
-    # command: /home/ellipsis/code/actw run
-
-  # activator_cache:
-  #   volumes:
-  #     - /root/.ivy2
-  #     - /root/.sbt
-  #   image: busybox
-  #   command: /bin/sh
-  #   stdin_open: true
   memcached:
     image: memcached
+  postgres:
+    image: postgres
+    volumes:
+      - ~/db/pgdata:/pgdata
+      - ./deploy/dev/db/setup_new_db.sql:/docker-entrypoint-initdb.d/setup_new_db.sql
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_PASSWORD=ellipsis
+      - PGDATA=/pgdata
   elasticsearch:
     build: ./docker_files/elasticsearch/
     # image: elasticsearch:2.3
@@ -46,13 +28,32 @@ services:
       - ELASTICSEARCH_URL=http://elasticsearch:9200
     links:
       - elasticsearch
-  postgres:
-    image: postgres
-    volumes:
-      - ~/db/pgdata:/pgdata
-      - ./deploy/dev/db/setup_new_db.sql:/docker-entrypoint-initdb.d/setup_new_db.sql
-    ports:
-      - "5432:5432"
-    environment:
-      - POSTGRES_PASSWORD=ellipsis
-      - PGDATA=/pgdata
+
+
+  # I still cannot make the playapp run in a container yet.
+  # I am keeping this for reference
+  #
+  # playapp:
+  #   build: ./docker_files/playapp/
+  #   volumes:
+  #     - .:/home/ellipsis
+  #   command: /bin/bash
+  #   tty: true
+  #   stdin_open: true
+  #   environment:
+  #     - DB_HOST=postgres
+  #     - DB_PORT=5432
+  #     - MEMCACHED_HOST=memcached
+  #     - MEMCACHED_PORT=11211
+  #   volumes_from:
+  #    - activator_cache
+  # activator_cache:
+  #   volumes:
+  #     - /root/.ivy2
+  #     - /root/.sbt
+  #   image: busybox
+  #   command: /bin/sh
+  #   stdin_open: true
+  #   ports:
+  #     - "9000:9000"
+  # command: /home/ellipsis/code/actw run
