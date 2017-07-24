@@ -116,7 +116,7 @@ case class InvokeBehaviorConversation(
       collectionStates <- collectionStatesForAction(event, dataService, cache, configuration, actorSystem)
       result <- collectionStates.find(_.name == state).map(_.promptResultForAction(this, isReminding)).getOrElse {
         val paramState = paramStateIn(collectionStates)
-        BehaviorResponse.buildForAction(event, behaviorVersion, paramState.invocationMap, maybeTrigger, Some(this), lambdaService, dataService, cache, ws, configuration, actorSystem).flatMap { br =>
+        dataService.behaviorResponses.buildForAction(event, behaviorVersion, paramState.invocationMap, maybeTrigger, Some(this), lambdaService, dataService, cache, ws, configuration, actorSystem).flatMap { br =>
           br.resultForFilledOutAction
         }
       }

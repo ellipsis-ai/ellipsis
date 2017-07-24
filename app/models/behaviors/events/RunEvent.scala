@@ -84,7 +84,7 @@ case class RunEvent(
               (AWSLambdaConstants.invocationParamFor(param.rank - 1), value)
             }
           })
-          response <- BehaviorResponse.buildFor(
+          response <- dataService.behaviorResponses.buildFor(
             this,
             behaviorVersion,
             invocationParams,

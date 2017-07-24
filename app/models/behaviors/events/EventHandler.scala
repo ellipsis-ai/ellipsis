@@ -32,7 +32,7 @@ class EventHandler @Inject() (
   def startInvokeConversationFor(event: Event): Future[Seq[BotResult]] = {
     for {
       maybeTeam <- dataService.teams.find(event.teamId)
-      responses <- BehaviorResponse.allFor(event, maybeTeam, None, lambdaService, dataService, cache, ws, configuration, actorSystem)
+      responses <- dataService.behaviorResponses.allFor(event, maybeTeam, None, lambdaService, dataService, cache, ws, configuration, actorSystem)
       results <- Future.sequence(responses.map(_.result)).flatMap { r =>
         if (r.isEmpty && event.isResponseExpected) {
           event.noExactMatchResult(dataService, lambdaService).map { noMatchResult =>

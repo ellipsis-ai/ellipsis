@@ -15,6 +15,7 @@ import models.accounts.simpletokenapi.SimpleTokenApiService
 import models.accounts.slack.botprofile.SlackBotProfileService
 import models.accounts.user.UserService
 import models.apitoken.APITokenService
+import models.behaviors.BehaviorResponseService
 import models.behaviors.behavior.BehaviorService
 import models.behaviors.behaviorgroup.BehaviorGroupService
 import models.behaviors.behaviorgroupversion.BehaviorGroupVersionService
@@ -76,7 +77,8 @@ class PostgresDataService @Inject() (
                                       val scheduledMessagesProvider: Provider[ScheduledMessageService],
                                       val scheduledBehaviorsProvider: Provider[ScheduledBehaviorService],
                                       val recurrencesProvider: Provider[RecurrenceService],
-                                      val invocationLogEntriesProvider: Provider[InvocationLogEntryService]
+                                      val invocationLogEntriesProvider: Provider[InvocationLogEntryService],
+                                      val behaviorResponsesProvider: Provider[BehaviorResponseService]
                             ) extends DataService {
 
   val users = usersProvider.get
@@ -113,6 +115,7 @@ class PostgresDataService @Inject() (
   val scheduledBehaviors = scheduledBehaviorsProvider.get
   val recurrences = recurrencesProvider.get
   val invocationLogEntries = invocationLogEntriesProvider.get
+  val behaviorResponses = behaviorResponsesProvider.get
 
   def run[T](action: DBIO[T]): Future[T] = models.run(action)
   def runNow[T](action: DBIO[T]): T = models.runNow(action)

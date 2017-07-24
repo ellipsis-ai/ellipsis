@@ -538,7 +538,7 @@ class SlackController @Inject() (
                   event => for {
                     maybeBehaviorVersion <- dataService.behaviorVersions.findWithoutAccessCheck(behaviorVersionId)
                     maybeResponse <- maybeBehaviorVersion.map { behaviorVersion =>
-                      BehaviorResponse.buildFor(
+                      dataService.behaviorResponses.buildFor(
                         event,
                         behaviorVersion,
                         Map(),

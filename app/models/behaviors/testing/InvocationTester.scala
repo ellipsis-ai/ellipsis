@@ -48,7 +48,7 @@ case class InvocationTester(
           (AWSLambdaConstants.invocationParamFor(i), v.get)
         }.toMap
         for {
-          parametersWithValues <- BehaviorResponse.parametersWithValuesFor(event, behaviorVersion, invocationParamValues, None, dataService, cache, configuration, actorSystem)
+          parametersWithValues <- dataService.behaviorResponses.parametersWithValuesFor(event, behaviorVersion, invocationParamValues, None, dataService, cache, configuration, actorSystem)
           result <- dataService.behaviorVersions.resultFor(behaviorVersion, parametersWithValues, event, None)
         } yield InvocationTestReport(behaviorVersion, Some(result), Seq(), Seq(), Seq())
       } else {
