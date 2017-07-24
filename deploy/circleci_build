@@ -175,7 +175,7 @@ else
   exit 1
 fi
 
-printf "\n\n${GREEN}Creating Beanstalk app new version...${PLAIN}\n";
+printf "\n\n${GREEN}Creating app new version for OLD App...${PLAIN}\n";
 printf "_____________________________________________________ \n";
 aws --profile $AWS_ELLIPSIS_PROFILE elasticbeanstalk create-application-version \
 --application-name "${EB_APP_NAME}" \
@@ -191,6 +191,30 @@ else
   printf "Bye.\n"
   exit 1
 fi
+
+# In production we have 2 Beanstalk Apps and the following uploads the app version
+# to the second App. This is temporary.
+if [ "${TARGET_ENV}" = "prod" ]
+then
+  printf "\n\n${GREEN}Creating app new version for Ellipsis App...${PLAIN}\n";
+  printf "_____________________________________________________ \n";
+  aws --profile $AWS_ELLIPSIS_PROFILE elasticbeanstalk create-application-version \
+  --application-name "Ellipsis" \
+  --version-label $VERSION_LABEL \
+  --source-bundle S3Bucket=$EB_BUCKET,S3Key=$S3_KEY \
+  --process
+  if [ $? -eq 0 ]
+  then
+     printf "\n${GREEN}OK.${PLAIN}\n"
+  else
+    printf "\n\n${RED}An error occurred!{PLAIN}\n";
+    announce_failure
+    printf "Bye.\n"
+    exit 1
+  fi
+fi
+
+
 
 # printf "\n\n${GREEN}Updating Beanstalk environment...${PLAIN}\n";
 # printf "_____________________________________________________ \n";
