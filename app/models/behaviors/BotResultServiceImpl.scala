@@ -6,6 +6,7 @@ import akka.actor.ActorSystem
 import services.DataService
 import slick.dbio.DBIO
 
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
 class BotResultServiceImpl @Inject() (
