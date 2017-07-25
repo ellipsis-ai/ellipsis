@@ -4,6 +4,7 @@ import akka.actor.ActorSystem
 import mocks.{MockAWSLambdaService, MockAWSLogsService, MockDataService}
 import models.IDs
 import models.accounts.user.User
+import models.behaviors.BotResultService
 import models.behaviors.events.EventHandler
 import models.team.Team
 import modules.ActorModule
@@ -27,6 +28,7 @@ trait TestContext extends MockitoSugar{
       overrides(bind[EventHandler].toInstance(mock[EventHandler])).
       overrides(bind[GithubService].toInstance(mock[GithubService])).
       overrides(bind[SlackEventService].toInstance(mock[SlackEventService])).
+      overrides(bind[BotResultService].toInstance(mock[BotResultService])).
       disable[ActorModule]
   }
   lazy val teamId: String = IDs.next
@@ -39,6 +41,7 @@ trait TestContext extends MockitoSugar{
   val githubService = app.injector.instanceOf(classOf[GithubService])
   val lambdaService = app.injector.instanceOf(classOf[AWSLambdaService])
   val slackEventService = app.injector.instanceOf(classOf[SlackEventService])
+  val botResultService = app.injector.instanceOf(classOf[BotResultService])
   val cache = app.injector.instanceOf(classOf[CacheApi])
   val ws = app.injector.instanceOf(classOf[WSClient])
   val configuration = app.injector.instanceOf(classOf[Configuration])

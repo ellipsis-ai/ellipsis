@@ -4,7 +4,7 @@ import javax.inject.Inject
 
 import akka.actor.ActorSystem
 import com.mohiva.play.silhouette.api.Silhouette
-import models.behaviors.BehaviorResponse
+import models.behaviors.{BehaviorResponse, BotResultService}
 import models.behaviors.builtins.DisplayHelpBehavior
 import models.behaviors.events.SlackMessageActionConstants._
 import models.behaviors.events.{EventHandler, SlackMessageEvent}
@@ -34,6 +34,7 @@ class SlackController @Inject() (
                                   val cache: CacheApi,
                                   val ws: WSClient,
                                   val eventHandler: EventHandler,
+                                  val botResultService: BotResultService,
                                   implicit val actorSystem: ActorSystem
                                 ) extends EllipsisController {
 
@@ -509,7 +510,7 @@ class SlackController @Inject() (
                       cache.get[SlackMessageEvent](convo.pendingEventKey).map { event =>
                         eventHandler.handle(event, None).flatMap { results =>
                           Future.sequence(
-                            results.map(result => result.sendIn(None, dataService).map { _ =>
+                            results.map(result => botResultService.sendIn(result, None).map { _ =>
                               Logger.info(event.logTextFor(result))
                             })
                           )

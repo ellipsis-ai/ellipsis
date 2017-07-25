@@ -6,8 +6,8 @@ import javax.inject.Inject
 import akka.actor.ActorSystem
 import com.google.inject.Provider
 import drivers.SlickPostgresDriver.api._
+import models.behaviors.BotResultService
 import models.behaviors.conversations.ConversationServices
-import models.behaviors.events.Event
 import play.api.Configuration
 import play.api.cache.CacheApi
 import play.api.libs.ws.WSClient
@@ -61,6 +61,7 @@ class ConversationServiceImpl @Inject() (
                                           cacheProvider: Provider[CacheApi],
                                           wsProvider: Provider[WSClient],
                                           configurationProvider: Provider[Configuration],
+                                          botResultServiceProvider: Provider[BotResultService],
                                           actorSystem: ActorSystem
                                          ) extends ConversationService {
 
@@ -70,6 +71,7 @@ class ConversationServiceImpl @Inject() (
   def cache: CacheApi = cacheProvider.get
   def ws: WSClient = wsProvider.get
   def configuration: Configuration = configurationProvider.get
+  def botResultService: BotResultService = botResultServiceProvider.get
   def services: ConversationServices = ConversationServices(dataService, lambdaService, slackEventService, cache, configuration, ws, actorSystem)
 
   import ConversationQueries._
@@ -185,7 +187,7 @@ class ConversationServiceImpl @Inject() (
         val convoWithThreadId = conversation.copyWithMaybeThreadId(maybeLastTs)
         dataService.conversations.saveAction(convoWithThreadId).flatMap { _ =>
           convoWithThreadId.respondAction(event, isReminding=false, services).map { result =>
-            result.sendInAction(None, dataService)
+            botResultService.sendInAction(result, None)
           }
         }
       }.getOrElse(DBIO.successful({}))

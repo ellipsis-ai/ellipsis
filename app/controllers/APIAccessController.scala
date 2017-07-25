@@ -10,6 +10,7 @@ import models.IDs
 import models.accounts.linkedoauth2token.LinkedOAuth2Token
 import models.accounts.oauth2application.OAuth2Application
 import models.accounts.user.User
+import models.behaviors.BotResultService
 import models.behaviors.events.{Event, EventHandler}
 import models.silhouette.EllipsisEnv
 import play.api.Configuration
@@ -31,6 +32,7 @@ class APIAccessController @Inject() (
                                       val ws: WSClient,
                                       val cache: CacheApi,
                                       val eventHandler: EventHandler,
+                                      val botResultService: BotResultService,
                                       implicit val actorSystem: ActorSystem
                                     )
   extends ReAuthable {
@@ -62,7 +64,7 @@ class APIAccessController @Inject() (
                                     )(implicit request: SecuredRequest[EllipsisEnv, AnyContent]): Option[Future[Result]] = {
     cache.get[Event](invocationId).map { event =>
       eventHandler.handle(event, None).map { results =>
-        results.map(_.sendIn(None, dataService))
+        results.map(ea => botResultService.sendIn(ea, None))
         Redirect(routes.APIAccessController.authenticated(s"There should now be a response in ${event.name}."))
       }
     }

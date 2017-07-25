@@ -91,7 +91,7 @@ class BotResultSpec extends PlaySpec with MockitoSugar with DBSpec {
         mockSlackClient(event)
         mockPostChatMessage(responseText, event.client, resultTs, None)
 
-        runNow(result.sendIn(None, dataService)) mustBe Some(resultTs)
+        runNow(botResultService.sendIn(result, None)) mustBe Some(resultTs)
       })
     }
 
@@ -125,7 +125,7 @@ class BotResultSpec extends PlaySpec with MockitoSugar with DBSpec {
 
         runNow(dataService.slackBotProfiles.allFor(team)) mustBe Seq(profile)
 
-        runNow(result.sendIn(None, dataService)) mustBe Some(resultTs)
+        runNow(botResultService.sendIn(result, None)) mustBe Some(resultTs)
 
         val updatedConversation = runNow(dataService.conversations.find(conversationToBeInterrupted.id)).get
 
@@ -150,7 +150,7 @@ class BotResultSpec extends PlaySpec with MockitoSugar with DBSpec {
 
         when(dataService.conversations.background(conversation, result.interruptionPrompt, true)).thenReturn(Future.successful({}))
 
-        runNow(result.sendIn(None, dataService)) mustBe None
+        runNow(botResultService.sendIn(result, None)) mustBe None
 
         Mockito.verify(dataService.conversations, times(0)).background(conversation, result.interruptionPrompt, true)
       })
@@ -176,7 +176,7 @@ class BotResultSpec extends PlaySpec with MockitoSugar with DBSpec {
         when(dataService.conversations.background(selfConversation, result.interruptionPrompt, true)).thenReturn(Future.successful({}))
         when(dataService.conversations.background(otherConversation, result.interruptionPrompt, true)).thenReturn(Future.successful({}))
 
-        runNow(result.sendIn(None, dataService)) mustBe Some(resultTs)
+        runNow(botResultService.sendIn(result, None)) mustBe Some(resultTs)
 
         Mockito.verify(dataService.conversations, times(0)).background(selfConversation, result.interruptionPrompt, true)
         Mockito.verify(dataService.conversations, times(1)).background(otherConversation, result.interruptionPrompt, true)
@@ -205,7 +205,7 @@ class BotResultSpec extends PlaySpec with MockitoSugar with DBSpec {
         when(dataService.conversations.background(threadedConversation, result.interruptionPrompt, true)).thenReturn(Future.successful({}))
         when(dataService.conversations.background(otherConversation, result.interruptionPrompt, true)).thenReturn(Future.successful({}))
 
-        runNow(result.sendIn(None, dataService)) mustBe Some(resultTs)
+        runNow(botResultService.sendIn(result, None)) mustBe Some(resultTs)
 
         Mockito.verify(dataService.conversations, times(0)).background(threadedConversation, result.interruptionPrompt, true)
         Mockito.verify(dataService.conversations, times(0)).background(otherConversation, result.interruptionPrompt, true)

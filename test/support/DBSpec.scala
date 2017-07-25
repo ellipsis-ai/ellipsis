@@ -9,6 +9,7 @@ import models.IDs
 import models.accounts.oauth2api.{AuthorizationCode, OAuth2Api}
 import models.accounts.oauth2application.OAuth2Application
 import models.accounts.user.User
+import models.behaviors.BotResultService
 import models.behaviors.behavior.Behavior
 import models.behaviors.behaviorgroup.BehaviorGroup
 import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
@@ -51,6 +52,7 @@ trait DBSpec extends PlaySpec with OneAppPerSuite with MockitoSugar {
   val actorSystem = app.injector.instanceOf(classOf[ActorSystem])
   val slackEventService = app.injector.instanceOf(classOf[SlackEventService])
   val ws = app.injector.instanceOf(classOf[WSClient])
+  val botResultService = app.injector.instanceOf(classOf[BotResultService])
 
   def newSavedTeam: Team = runNow(dataService.teams.create(IDs.next))
 

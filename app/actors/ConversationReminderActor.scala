@@ -5,6 +5,7 @@ import javax.inject.Inject
 
 import akka.actor.{Actor, ActorSystem}
 import drivers.SlickPostgresDriver.api._
+import models.behaviors.BotResultService
 import models.behaviors.conversations.ConversationServices
 import play.api.cache.CacheApi
 import play.api.libs.ws.WSClient
@@ -26,6 +27,7 @@ class ConversationReminderActor @Inject()(
                                           val cache: CacheApi,
                                           val ws: WSClient,
                                           val configuration: Configuration,
+                                          val botResultService: BotResultService,
                                           implicit val actorSystem: ActorSystem
                                         ) extends Actor {
 
@@ -42,7 +44,7 @@ class ConversationReminderActor @Inject()(
         val services = ConversationServices(dataService, lambdaService, slackEventService, cache, configuration, ws, actorSystem)
         convo.maybeRemindResultAction(services).flatMap { maybeResult =>
           maybeResult.map { result =>
-            result.sendInAction(None, dataService, None).flatMap { _ =>
+            botResultService.sendInAction(result, None, None).flatMap { _ =>
               dataService.conversations.touchAction(convo).map(_ => true)
             }
           }.getOrElse {

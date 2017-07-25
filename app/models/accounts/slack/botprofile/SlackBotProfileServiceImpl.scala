@@ -5,7 +5,7 @@ import javax.inject.{Inject, Provider}
 
 import akka.actor.ActorSystem
 import drivers.SlickPostgresDriver.api._
-import models.behaviors.BotResult
+import models.behaviors.{BotResult, BotResultService}
 import models.behaviors.events.SlackMessageEvent
 import models.team.Team
 import play.api.Logger
@@ -29,11 +29,13 @@ class SlackBotProfileTable(tag: Tag) extends Table[SlackBotProfile](tag, "slack_
 class SlackBotProfileServiceImpl @Inject() (
                                           dataServiceProvider: Provider[DataService],
                                           slackEventServiceProvider: Provider[SlackEventService],
+                                          botResultServiceProvider: Provider[BotResultService],
                                           implicit val actorSystem: ActorSystem
                                         ) extends SlackBotProfileService {
 
   def dataService = dataServiceProvider.get
   def slackEventService = slackEventServiceProvider.get
+  def botResultService = botResultServiceProvider.get
 
   val all = TableQuery[SlackBotProfileTable]
 
@@ -108,7 +110,7 @@ class SlackBotProfileServiceImpl @Inject() (
     for {
       maybeResult <- eventualMaybeResult
       maybeTimestamp <- maybeResult.map { result =>
-        result.sendIn(None, dataService)
+        botResultService.sendIn(result, None)
       }.getOrElse(Future.successful(None))
     } yield maybeTimestamp
   }

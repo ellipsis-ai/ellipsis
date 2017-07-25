@@ -69,40 +69,9 @@ sealed trait BotResult {
     }
   }
 
-  def sendInAction(
-                    maybeShouldUnfurl: Option[Boolean],
-                    dataService: DataService,
-                    maybeIntro: Option[String] = None,
-                    maybeInterruptionIntro: Option[String] = None
-                  )(implicit actorSystem: ActorSystem): DBIO[Option[String]] = {
-    for {
-      didInterrupt <- if (shouldInterrupt) {
-        interruptOngoingConversationsForAction(dataService)
-      } else {
-        DBIO.successful(false)
-      }
-      _ <- maybeIntro.map { intro =>
-        val introToSend = if (didInterrupt) {
-          maybeInterruptionIntro.getOrElse(intro)
-        } else {
-          intro
-        }
-        SimpleTextResult(event, maybeConversation, introToSend, forcePrivateResponse).sendInAction(None, dataService)
-      }.getOrElse {
-        DBIO.successful({})
-      }
-      sendResult <- DBIO.from(event.sendMessage(fullText, forcePrivateResponse, maybeShouldUnfurl, maybeConversation, maybeActions))
-    } yield sendResult
-  }
+  def beforeSend(): Unit = {}
 
-  def sendIn(
-              maybeShouldUnfurl: Option[Boolean],
-              dataService: DataService,
-              maybeIntro: Option[String] = None,
-              maybeInterruptionIntro: Option[String] = None
-            )(implicit actorSystem: ActorSystem): Future[Option[String]] = {
-    dataService.run(sendInAction(maybeShouldUnfurl, dataService, maybeIntro, maybeInterruptionIntro))
-  }
+  val shouldSend: Boolean = true
 
   def maybeActions: Option[MessageActions] = None
 }
@@ -159,15 +128,8 @@ case class NoResponseResult(event: Event, maybeConversation: Option[Conversation
 
   def text: String = ""
 
-  override def sendIn(
-                       maybeShouldUnfurl: Option[Boolean],
-                       dataService: DataService,
-                       maybeIntro: Option[String] = None,
-                       maybeInterruptionIntro: Option[String] = None
-                     )(implicit actorSystem: ActorSystem): Future[Option[String]] = {
-    // do nothing
-    Future.successful(None)
-  }
+  override val shouldSend: Boolean = false
+
 
 }
 
@@ -337,15 +299,7 @@ case class OAuth2TokenMissing(
        |""".stripMargin
   }
 
-  override def sendIn(
-                       maybeShouldUnfurl: Option[Boolean],
-                       dataService: DataService,
-                       maybeIntro: Option[String] = None,
-                       maybeInterruptionIntro: Option[String] = None
-                     )(implicit actorSystem: ActorSystem): Future[Option[String]] = {
-    cache.set(key, event, 5.minutes)
-    super.sendIn(maybeShouldUnfurl, dataService)
-  }
+  override def beforeSend: Unit = cache.set(key, event, 5.minutes)
 }
 
 case class RequiredApiNotReady(
