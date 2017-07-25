@@ -66,7 +66,19 @@ class APIControllerSpec extends PlaySpec with MockitoSugar {
     when(dataService.users.findForInvocationToken(token)).thenReturn(Future.successful(maybeUserForToken))
     when(dataService.teams.find(user.teamId)).thenReturn(Future.successful(Some(team)))
     val botProfile = SlackBotProfile(defaultChannel, team.id, defaultSlackTeamId, defaultSlackToken, OffsetDateTime.now)
-    val event = SlackMessageEvent(botProfile, defaultChannel, None, defaultSlackUserId, "foo", SlackTimestamp.now, slackEventService.clientFor(botProfile))
+
+    val apiController = app.injector.instanceOf(classOf[APIController])
+    implicit val actorSystem = apiController.actorSystem
+
+    val mockSlackClient = mock[SlackApiClient]
+    when(slackEventService.clientFor(botProfile)).thenReturn(mockSlackClient)
+    when(mockSlackClient.listIms).thenReturn(Future.successful(Seq()))
+    when(mockSlackClient.postChatMessage(anyString, anyString, any[Option[String]], any[Option[Boolean]], any[Option[String]],
+      any[Option[String]], any[Option[Seq[Attachment]]], any[Option[Boolean]], any[Option[Boolean]],
+      any[Option[String]], any[Option[String]], any[Option[Boolean]], any[Option[Boolean]],
+      any[Option[String]], any[Option[Boolean]])(any[ActorSystem])).thenReturn(Future.successful(SlackTimestamp.now))
+
+    val event = SlackMessageEvent(botProfile, defaultChannel, None, defaultSlackUserId, "foo", SlackTimestamp.now, mockSlackClient)
     when(dataService.slackBotProfiles.allFor(team)).thenReturn(Future.successful(Seq(botProfile)))
     val loginInfo = LoginInfo(defaultContext, defaultSlackUserId)
     val slackProfile = SlackProfile(defaultSlackTeamId, loginInfo)
@@ -76,20 +88,11 @@ class APIControllerSpec extends PlaySpec with MockitoSugar {
     when(dataService.slackProfiles.find(loginInfo)).thenReturn(Future.successful(Some(slackProfile)))
     val mockSlackChannels = mock[SlackChannels]
     when(dataService.slackBotProfiles.channelsFor(botProfile)).thenReturn(mockSlackChannels)
-    val apiController = app.injector.instanceOf(classOf[APIController])
-    implicit val actorSystem = apiController.actorSystem
     when(mockSlackChannels.maybeIdFor(defaultChannel)).thenReturn(Future.successful(Some(defaultChannel)))
 
     when(dataService.conversations.allOngoingFor(defaultSlackUserId, event.context, event.maybeChannel, event.maybeThreadId)).thenReturn(Future.successful(Seq()))
     when(eventHandler.handle(any[Event], org.mockito.Matchers.eq(None))).thenReturn(Future.successful(Seq(SimpleTextResult(event, None, "result", forcePrivateResponse = false))))
 
-    val mockSlackClient = mock[SlackApiClient]
-    when(slackEventService.clientFor(botProfile)).thenReturn(mockSlackClient)
-    when(mockSlackClient.listIms).thenReturn(Future.successful(Seq()))
-    when(mockSlackClient.postChatMessage(anyString, anyString, any[Option[String]], any[Option[Boolean]], any[Option[String]],
-                                          any[Option[String]], any[Option[Seq[Attachment]]], any[Option[Boolean]], any[Option[Boolean]],
-                                          any[Option[String]], any[Option[String]], any[Option[Boolean]], any[Option[Boolean]],
-                                          any[Option[String]], any[Option[Boolean]])(any[ActorSystem])).thenReturn(Future.successful(SlackTimestamp.now))
     token
   }
 
