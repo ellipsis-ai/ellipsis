@@ -3,19 +3,17 @@ package models.behaviors
 import java.time.OffsetDateTime
 
 import akka.actor.ActorSystem
-import models.behaviors.behavior.Behavior
-import models.behaviors.behaviorparameter.{BehaviorParameter, BehaviorParameterContext}
+import models.behaviors.behaviorparameter.BehaviorParameter
 import models.behaviors.behaviorversion.BehaviorVersion
-import models.team.Team
-import models.behaviors.conversations.InvokeBehaviorConversation
 import models.behaviors.conversations.conversation.Conversation
+import models.behaviors.conversations.{ConversationServices, InvokeBehaviorConversation}
 import models.behaviors.events.Event
 import models.behaviors.triggers.messagetrigger.MessageTrigger
 import play.api.Configuration
 import play.api.cache.CacheApi
 import play.api.libs.json.{JsString, JsValue}
 import play.api.libs.ws.WSClient
-import services.{AWSLambdaConstants, AWSLambdaService, DataService}
+import services.{AWSLambdaService, DataService, SlackEventService}
 import slick.dbio.DBIO
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -44,6 +42,7 @@ case class BehaviorResponse(
                              maybeActivatedTrigger: Option[MessageTrigger],
                              lambdaService: AWSLambdaService,
                              dataService: DataService,
+                             slackEventService: SlackEventService,
                              cache: CacheApi,
                              ws: WSClient,
                              configuration: Configuration
@@ -108,7 +107,7 @@ case class BehaviorResponse(
             resultForFilledOut
           } else {
             for {
-              maybeChannel <- event.maybeChannelToUseFor(behaviorVersion, dataService)
+              maybeChannel <- event.maybeChannelToUseFor(behaviorVersion)
               convo <- InvokeBehaviorConversation.createFor(
                 behaviorVersion,
                 event,
@@ -121,7 +120,8 @@ case class BehaviorResponse(
                   dataService.collectedParameterValues.ensureFor(p.parameter, convo, v.text)
                 }.getOrElse(Future.successful(Unit))
               })
-              result <- convo.resultFor(event, lambdaService, dataService, cache, ws, configuration, actorSystem)
+              services <- Future.successful(ConversationServices(dataService, lambdaService, slackEventService, cache, configuration, ws, actorSystem))
+              result <- convo.resultFor(event, services)
             } yield result
           }
         }

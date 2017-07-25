@@ -14,7 +14,7 @@ import models.behaviors.events.{EventHandler, ScheduledEvent}
 import models.behaviors.scheduling.recurrence.Recurrence
 import models.team.Team
 import play.api.{Configuration, Logger}
-import services.DataService
+import services.{DataService, SlackEventService}
 import slack.api.{ApiError, SlackApiClient}
 import slick.dbio.DBIO
 import utils.{FutureSequencer, SlackChannels}
@@ -182,7 +182,8 @@ trait Scheduled {
                                 client: SlackApiClient,
                                 profile: SlackBotProfile,
                                 dataService: DataService,
-                                configuration: Configuration
+                                configuration: Configuration,
+                                slackEventService: SlackEventService
                               )(implicit actorSystem: ActorSystem): Future[Unit] = {
     for {
       members <- SlackChannels(client).getMembersFor(channel)
@@ -197,11 +198,11 @@ trait Scheduled {
           }
         }
       }).map(_.flatten)
-      _ <- FutureSequencer.sequence(dmInfos, sendForFn(eventHandler, client, profile, dataService, configuration))
+      _ <- FutureSequencer.sequence(dmInfos, sendForFn(eventHandler, client, profile, dataService, configuration, slackEventService))
     } yield {}
   }
 
-  def eventFor(channel: String, slackUserId: String, profile: SlackBotProfile): ScheduledEvent
+  def eventFor(channel: String, slackUserId: String, profile: SlackBotProfile, slackEventService: SlackEventService): ScheduledEvent
 
   // TODO: don't be slack-specific
   def sendFor(
@@ -211,9 +212,10 @@ trait Scheduled {
                client: SlackApiClient,
                profile: SlackBotProfile,
                dataService: DataService,
-               configuration: Configuration
+               configuration: Configuration,
+               slackEventService: SlackEventService
              )(implicit actorSystem: ActorSystem): Future[Unit] = {
-    val event = eventFor(channel, slackUserId, profile)
+    val event = eventFor(channel, slackUserId, profile, slackEventService)
     for {
       results <- eventHandler.handle(event, None)
     } yield {
@@ -226,9 +228,10 @@ trait Scheduled {
                   client: SlackApiClient,
                   profile: SlackBotProfile,
                   dataService: DataService,
-                  configuration: Configuration
+                  configuration: Configuration,
+                  slackEventService: SlackEventService
                )(implicit actorSystem: ActorSystem): SlackDMInfo => Future[Unit] = {
-    info: SlackDMInfo => sendFor(info.channelId, info.userId, eventHandler, client, profile, dataService, configuration)
+    info: SlackDMInfo => sendFor(info.channelId, info.userId, eventHandler, client, profile, dataService, configuration, slackEventService)
   }
 
   def sendResult(
@@ -264,15 +267,16 @@ trait Scheduled {
             client: SlackApiClient,
             profile: SlackBotProfile,
             dataService: DataService,
-            configuration: Configuration
+            configuration: Configuration,
+            slackEventService: SlackEventService
           )(implicit actorSystem: ActorSystem): Future[Unit] = {
     maybeChannel.map { channel =>
       if (isForIndividualMembers) {
-        sendForIndividualMembers(channel, eventHandler, client, profile, dataService, configuration)
+        sendForIndividualMembers(channel, eventHandler, client, profile, dataService, configuration, slackEventService)
       } else {
         maybeSlackProfile(dataService).flatMap { maybeSlackProfile =>
           val slackUserId = maybeSlackProfile.map(_.loginInfo.providerKey).getOrElse(profile.userId)
-          sendFor(channel, slackUserId, eventHandler, client, profile, dataService, configuration)
+          sendFor(channel, slackUserId, eventHandler, client, profile, dataService, configuration, slackEventService)
         }
       }
     }.getOrElse(Future.successful(Unit))

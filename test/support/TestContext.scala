@@ -13,7 +13,7 @@ import play.api.inject._
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.ws.WSClient
 import play.api.{Application, Configuration}
-import services.{AWSLambdaService, AWSLogsService, DataService, GithubService}
+import services._
 
 trait TestContext extends MockitoSugar{
 
@@ -26,6 +26,7 @@ trait TestContext extends MockitoSugar{
       overrides(bind[AWSLambdaService].to[MockAWSLambdaService]).
       overrides(bind[EventHandler].toInstance(mock[EventHandler])).
       overrides(bind[GithubService].toInstance(mock[GithubService])).
+      overrides(bind[SlackEventService].toInstance(mock[SlackEventService])).
       disable[ActorModule]
   }
   lazy val teamId: String = IDs.next
@@ -37,6 +38,7 @@ trait TestContext extends MockitoSugar{
   lazy val eventHandler = app.injector.instanceOf(classOf[EventHandler])
   lazy val githubService = app.injector.instanceOf(classOf[GithubService])
   lazy val lambdaService = app.injector.instanceOf(classOf[AWSLambdaService])
+  lazy val slackEventService = app.injector.instanceOf(classOf[SlackEventService])
   lazy val cache = app.injector.instanceOf(classOf[CacheApi])
   lazy val ws = app.injector.instanceOf(classOf[WSClient])
   lazy val configuration = app.injector.instanceOf(classOf[Configuration])

@@ -58,7 +58,7 @@ sealed trait BotResult {
     if (maybeConversation.exists(_.maybeThreadId.isDefined)) {
       DBIO.successful(false)
     } else {
-      DBIO.from(maybeChannelForSend(maybeConversation, dataService)).flatMap { maybeChannelForSend =>
+      maybeChannelForSendAction(maybeConversation, dataService).flatMap { maybeChannelForSend =>
         dataService.conversations.allOngoingForAction(event.userIdForContext, event.context, maybeChannelForSend, event.maybeThreadId).flatMap { ongoing =>
           val toInterrupt = ongoing.filterNot(ea => maybeConversation.map(_.id).contains(ea.id))
           DBIO.sequence(toInterrupt.map { ea =>
@@ -91,7 +91,7 @@ sealed trait BotResult {
       }.getOrElse {
         DBIO.successful({})
       }
-      sendResult <- DBIO.from(event.sendMessage(fullText, forcePrivateResponse, maybeShouldUnfurl, maybeConversation, maybeActions, dataService))
+      sendResult <- DBIO.from(event.sendMessage(fullText, forcePrivateResponse, maybeShouldUnfurl, maybeConversation, maybeActions))
     } yield sendResult
   }
 

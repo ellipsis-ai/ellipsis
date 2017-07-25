@@ -10,6 +10,7 @@ import play.api.Configuration
 import play.api.cache.CacheApi
 import play.api.libs.ws.WSClient
 import services.{AWSLambdaConstants, AWSLambdaService, DataService}
+import slack.api.SlackApiClient
 import utils.SlackMessageSender
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -22,7 +23,8 @@ case class RunEvent(
                      channel: String,
                      maybeThreadId: Option[String],
                      user: String,
-                     ts: String
+                     ts: String,
+                     client: SlackApiClient
                   ) extends Event with SlackEvent {
 
   val messageText: String = ""
@@ -47,11 +49,10 @@ case class RunEvent(
                    forcePrivate: Boolean,
                    maybeShouldUnfurl: Option[Boolean],
                    maybeConversation: Option[Conversation],
-                   maybeActions: Option[MessageActions] = None,
-                   dataService: DataService
+                   maybeActions: Option[MessageActions] = None
                  )(implicit actorSystem: ActorSystem): Future[Option[String]] = {
     SlackMessageSender(
-      clientFor(dataService),
+      client,
       user,
       unformattedText,
       forcePrivate,
@@ -89,13 +90,7 @@ case class RunEvent(
             behaviorVersion,
             invocationParams,
             None,
-            None,
-            lambdaService,
-            dataService,
-            cache,
-            ws,
-            configuration,
-            actorSystem
+            None
           )
         } yield Seq(response)
       }.getOrElse(Future.successful(Seq()))

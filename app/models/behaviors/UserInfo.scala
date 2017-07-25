@@ -30,7 +30,7 @@ case class MessageInfo(medium: String, channel: Option[String], userId: String, 
 object MessageInfo {
 
   def buildFor(event: Event, ws: WSClient, dataService: DataService)(implicit actorSystem: ActorSystem): Future[MessageInfo] = {
-    event.detailsFor(ws, dataService).map { details =>
+    event.detailsFor(ws).map { details =>
       MessageInfo(event.name, event.maybeChannel, event.userIdForContext, details)
     }
   }

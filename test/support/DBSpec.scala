@@ -25,8 +25,9 @@ import play.api.db.Databases
 import play.api.db.evolutions.Evolutions
 import play.api.inject.bind
 import play.api.inject.guice.GuiceApplicationBuilder
+import play.api.libs.ws.WSClient
 import play.api.{Application, Configuration}
-import services.{AWSLambdaService, GithubService, PostgresDataService}
+import services.{AWSLambdaService, GithubService, PostgresDataService, SlackEventService}
 
 import scala.concurrent.duration._
 import scala.concurrent.{Await, Future}
@@ -41,11 +42,15 @@ trait DBSpec extends PlaySpec with OneAppPerSuite with MockitoSugar {
     GuiceApplicationBuilder().
       overrides(bind[AWSLambdaService].to[MockAWSLambdaService]).
       overrides(bind[GithubService].toInstance(mock[GithubService])).
+      overrides(bind[SlackEventService].toInstance(mock[SlackEventService])).
       disable[ActorModule].
       build()
 
   val dataService = app.injector.instanceOf(classOf[PostgresDataService])
+  val lambdaService = app.injector.instanceOf(classOf[AWSLambdaService])
   val actorSystem = app.injector.instanceOf(classOf[ActorSystem])
+  val slackEventService = app.injector.instanceOf(classOf[SlackEventService])
+  val ws = app.injector.instanceOf(classOf[WSClient])
 
   def newSavedTeam: Team = runNow(dataService.teams.create(IDs.next))
 

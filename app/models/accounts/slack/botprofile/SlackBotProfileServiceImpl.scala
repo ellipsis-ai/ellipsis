@@ -9,7 +9,7 @@ import models.behaviors.BotResult
 import models.behaviors.events.SlackMessageEvent
 import models.team.Team
 import play.api.Logger
-import services.DataService
+import services.{DataService, SlackEventService}
 import utils.{SlackMessageReactionHandler, SlackTimestamp}
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -28,10 +28,12 @@ class SlackBotProfileTable(tag: Tag) extends Table[SlackBotProfile](tag, "slack_
 
 class SlackBotProfileServiceImpl @Inject() (
                                           dataServiceProvider: Provider[DataService],
+                                          slackEventServiceProvider: Provider[SlackEventService],
                                           implicit val actorSystem: ActorSystem
                                         ) extends SlackBotProfileService {
 
   def dataService = dataServiceProvider.get
+  def slackEventService = slackEventServiceProvider.get
 
   val all = TableQuery[SlackBotProfileTable]
 
@@ -97,7 +99,7 @@ class SlackBotProfileServiceImpl @Inject() (
   def eventualMaybeEvent(slackTeamId: String, channelId: String, userId: String): Future[Option[SlackMessageEvent]] = {
     allForSlackTeamId(slackTeamId).map { botProfiles =>
       botProfiles.headOption.map { botProfile =>
-        SlackMessageEvent(botProfile, channelId, None, userId, "", SlackTimestamp.now)
+        SlackMessageEvent(botProfile, channelId, None, userId, "", SlackTimestamp.now, slackEventService.clientFor(botProfile))
       }
     }
   }
@@ -123,10 +125,9 @@ class SlackBotProfileServiceImpl @Inject() (
     (for {
       maybeEvent <- eventualMaybeEvent(slackTeamId, channelId, userId)
       _ <- maybeEvent.map { event =>
-        val client = clientFor(event.profile)
         val eventualResult = getEventualMaybeResult(event)
         sendResult(eventualResult)
-        SlackMessageReactionHandler.handle(client, eventualResult, channelId, originalMessageTs, delayMilliseconds)
+        SlackMessageReactionHandler.handle(event.client, eventualResult, channelId, originalMessageTs, delayMilliseconds)
       }.getOrElse(Future.successful(None))
     } yield {}).recover {
       case t: Throwable => {

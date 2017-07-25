@@ -216,7 +216,7 @@ class SlackController @Inject() (
         for {
           maybeProfile <- dataService.slackBotProfiles.allForSlackTeamId(info.teamId).map(_.headOption)
           _ <- maybeProfile.map { profile =>
-            slackEventService.onEvent(SlackMessageEvent(profile, info.channel, info.maybeThreadTs, info.userId, info.message, info.ts))
+            slackEventService.onEvent(SlackMessageEvent(profile, info.channel, info.maybeThreadTs, info.userId, info.message, info.ts, slackEventService.clientFor(profile)))
           }.getOrElse {
             Future.successful({})
           }
@@ -543,13 +543,7 @@ class SlackController @Inject() (
                         behaviorVersion,
                         Map(),
                         None,
-                        None,
-                        lambdaService,
-                        dataService,
-                        cache,
-                        ws,
-                        configuration,
-                        actorSystem
+                        None
                       ).map(Some(_))
                     }.getOrElse(Future.successful(None))
                     maybeResult <- maybeResponse.map { response =>

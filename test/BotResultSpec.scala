@@ -1,27 +1,23 @@
-import java.time.OffsetDateTime
-
 import akka.actor.ActorSystem
 import models.IDs
 import models.accounts.slack.botprofile.SlackBotProfile
-import models.behaviors.{NoResponseResult, SuccessResult}
+import models.behaviors.conversations.InvokeBehaviorConversation
 import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.events.SlackMessageEvent
-import models.team.Team
+import models.behaviors.{NoResponseResult, SuccessResult}
+import org.mockito.Matchers._
 import org.mockito.Mockito
 import org.mockito.Mockito._
 import org.scalatest.mock.MockitoSugar
 import org.scalatestplus.play.PlaySpec
 import play.api.libs.json.JsString
-import play.api.test.Helpers.running
-import services.DataService
 import slack.api.SlackApiClient
-import support.TestContext
+import support.DBSpec
 import utils.SlackTimestamp
 
-import scala.concurrent.duration._
-import scala.concurrent.{Await, Future}
+import scala.concurrent.Future
 
-class BotResultSpec extends PlaySpec with MockitoSugar {
+class BotResultSpec extends PlaySpec with MockitoSugar with DBSpec {
 
   val defaultContext = "slack"
   val defaultChannel = "C1234567"
@@ -33,11 +29,12 @@ class BotResultSpec extends PlaySpec with MockitoSugar {
 
   implicit val system = ActorSystem("slack")
 
-  def runNow[T](f: Future[T]) = Await.result(f, 30.seconds)
+  def newSavedBotProfile: SlackBotProfile = {
+    runNow(dataService.slackBotProfiles.ensure(IDs.next, IDs.next, IDs.next, IDs.next))
+  }
 
-  def newEventFor(team: Team, maybeThreadId: Option[String] = defaultThreadId): SlackMessageEvent = {
-    val profile = SlackBotProfile(defaultSlackBotUserId, team.id, defaultSlackTeamId, defaultSlackToken, OffsetDateTime.now)
-    SlackMessageEvent(profile, defaultChannel, maybeThreadId, defaultSlackUserId, "", SlackTimestamp.now)
+  def newEventFor(profile: SlackBotProfile, maybeThreadId: Option[String] = defaultThreadId): SlackMessageEvent = {
+    SlackMessageEvent(profile, defaultChannel, maybeThreadId, defaultSlackUserId, "", SlackTimestamp.now, mock[SlackApiClient])
   }
 
   def newMockConversation(maybeThreadId: Option[String] = None): Conversation = {
@@ -48,95 +45,123 @@ class BotResultSpec extends PlaySpec with MockitoSugar {
     convo
   }
 
-  def setUpMocks(
-                  event: SlackMessageEvent,
-                  responseText: String,
-                  resultTs: String,
-                  ongoingConversations: Seq[Conversation],
-                  maybeThreadId: Option[String],
-                  dataService: DataService
-                ): Unit = {
-    val slackClient = mock[SlackApiClient]
-    when(dataService.slackBotProfiles.clientFor(event.profile)).thenReturn(slackClient)
-    when(slackClient.listIms).thenReturn(Future.successful(Seq()))
-    when(dataService.conversations.allOngoingFor(defaultSlackUserId, event.context, event.maybeChannel, event.maybeThreadId)).thenReturn(Future.successful(ongoingConversations))
+  def mockPostChatMessage(text: String, client: SlackApiClient, resultTs: String, maybeThreadId: Option[String]): Unit = {
+    println(s"mocking text: $text ts: $resultTs threadId: $maybeThreadId")
+    when(client.postChatMessage(
+      channelId = defaultChannel,
+      text = text,
+      username = None,
+      asUser = Some(true),
+      parse = None,
+      linkNames = None,
+      attachments = None,
+      unfurlLinks = Some(false),
+      unfurlMedia = Some(true),
+      iconUrl = None,
+      iconEmoji = None,
+      replaceOriginal = None,
+      deleteOriginal = None,
+      threadTs = maybeThreadId,
+      replyBroadcast = Some(false)
+    )).thenReturn({
+      Future.successful(resultTs)
+    })
+  }
 
-    when(slackClient.postChatMessage(
-      defaultChannel,
-      responseText,
-      None,
-      Some(true),
-      None,
-      None,
-      None,
-      Some(false),
-      Some(true),
-      None,
-      None,
-      None,
-      None,
-      maybeThreadId,
-      Some(false)
-    )).thenReturn(Future.successful(resultTs))
-
+  def mockSlackClient(event: SlackMessageEvent): Unit = {
+    val client = event.client
+    when(slackEventService.clientFor(event.profile)).thenReturn(client)
+    when(client.listIms).thenReturn(Future.successful(Seq()))
+    when(client.getUserInfo(anyString)(any[ActorSystem]())).thenReturn(Future.successful(mock[slack.models.User]))
   }
 
   "sendIn" should {
 
-    "send a response" in new TestContext {
-      running(app) {
-        val event: SlackMessageEvent = newEventFor(team)
+    "send a response" in {
+      withEmptyDB(dataService, { db =>
+        val profile = newSavedBotProfile
+        val team = runNow(dataService.teams.find(profile.teamId)).head
+        val user = newSavedUserOn(team)
+
+        val event: SlackMessageEvent = newEventFor(profile)
         val responseText = "response"
         val result = SuccessResult(event, None, JsString("result"), Seq(), Some(responseText), None, forcePrivateResponse = false)
         val resultTs: String = SlackTimestamp.now
 
-        setUpMocks(event, responseText, resultTs, Seq(), None, dataService)
+        mockSlackClient(event)
+        mockPostChatMessage(responseText, event.client, resultTs, None)
 
         runNow(result.sendIn(None, dataService)) mustBe Some(resultTs)
-      }
+      })
     }
 
-    "interrupt ongoing conversations" in new TestContext {
-      running(app) {
-        val event: SlackMessageEvent = newEventFor(team)
+    "interrupt ongoing conversations" in {
+      withEmptyDB(dataService, { db =>
+        val profile = newSavedBotProfile
+        val team = runNow(dataService.teams.find(profile.teamId)).head
+        val user = newSavedUserOn(team)
+
+        val event: SlackMessageEvent = newEventFor(profile)
+
         val responseText = "response"
         val result = SuccessResult(event, None, JsString("result"), Seq(), Some(responseText), None, forcePrivateResponse = false)
         val resultTs: String = SlackTimestamp.now
 
-        val conversation = newMockConversation()
+        val group = newSavedBehaviorGroupFor(team)
 
-        setUpMocks(event, responseText, resultTs, Seq(conversation), None, dataService)
+        val groupVersion = newSavedGroupVersionFor(group, user)
+        val behaviorVersion = runNow(dataService.behaviorVersions.allForGroupVersion(groupVersion)).head
+        val conversationToBeInterrupted = runNow(InvokeBehaviorConversation.createFor(behaviorVersion, newEventFor(profile), Some(event.channel), None, dataService))
 
-        when(dataService.conversations.background(conversation, result.interruptionPrompt, true)).thenReturn(Future.successful({}))
+        mockSlackClient(event)
+        mockPostChatMessage(responseText, event.client, resultTs, None)
+        val interruptionPrompt = dataService.conversations.interruptionPromptFor(event, result.interruptionPrompt, includeUsername = true)
+        mockPostChatMessage(interruptionPrompt, event.client, resultTs, None)
+
+        conversationToBeInterrupted.maybeThreadId.isEmpty mustBe true
+        val ongoing = runNow(dataService.conversations.allOngoingFor(event.userIdForContext, event.context, Some(event.channel), event.maybeThreadId))
+        ongoing must have length(1)
+        ongoing.head mustBe conversationToBeInterrupted
+
+        runNow(dataService.slackBotProfiles.allFor(team)) mustBe Seq(profile)
 
         runNow(result.sendIn(None, dataService)) mustBe Some(resultTs)
 
-        Mockito.verify(dataService.conversations, times(1)).background(conversation, result.interruptionPrompt, true)
-      }
+        val updatedConversation = runNow(dataService.conversations.find(conversationToBeInterrupted.id)).get
+
+        updatedConversation.maybeThreadId.isDefined mustBe true
+      })
     }
 
-    "not interrupt for noResponse()" in new TestContext {
-      running(app) {
-        val event: SlackMessageEvent = newEventFor(team)
+    "not interrupt for noResponse()" in {
+      withEmptyDB(dataService, { db =>
+        val profile = newSavedBotProfile
+        val team = runNow(dataService.teams.find(profile.teamId)).head
+        val event: SlackMessageEvent = newEventFor(profile)
+
         val responseText = "response"
         val result = NoResponseResult(event, None, None)
         val resultTs: String = SlackTimestamp.now
 
         val conversation = newMockConversation()
 
-        setUpMocks(event, responseText, resultTs, Seq(conversation), None, dataService)
+        mockSlackClient(event)
+        mockPostChatMessage(responseText, event.client, resultTs, None)
 
         when(dataService.conversations.background(conversation, result.interruptionPrompt, true)).thenReturn(Future.successful({}))
 
         runNow(result.sendIn(None, dataService)) mustBe None
 
         Mockito.verify(dataService.conversations, times(0)).background(conversation, result.interruptionPrompt, true)
-      }
+      })
     }
 
-    "not interrupt self conversation" in new TestContext {
-      running(app) {
-        val event: SlackMessageEvent = newEventFor(team)
+    "not interrupt self conversation" in {
+      withEmptyDB(dataService, { db =>
+        val profile = newSavedBotProfile
+        val team = runNow(dataService.teams.find(profile.teamId)).head
+        val event: SlackMessageEvent = newEventFor(profile)
+
         val responseText = "response"
         val resultTs: String = SlackTimestamp.now
 
@@ -145,7 +170,8 @@ class BotResultSpec extends PlaySpec with MockitoSugar {
 
         val result = SuccessResult(event, Some(selfConversation), JsString("result"), Seq(), Some(responseText), None, forcePrivateResponse = false)
 
-        setUpMocks(event, responseText, resultTs, Seq(selfConversation, otherConversation), None, dataService)
+        mockSlackClient(event)
+        mockPostChatMessage(responseText, event.client, resultTs, None)
 
         when(dataService.conversations.background(selfConversation, result.interruptionPrompt, true)).thenReturn(Future.successful({}))
         when(dataService.conversations.background(otherConversation, result.interruptionPrompt, true)).thenReturn(Future.successful({}))
@@ -154,13 +180,17 @@ class BotResultSpec extends PlaySpec with MockitoSugar {
 
         Mockito.verify(dataService.conversations, times(0)).background(selfConversation, result.interruptionPrompt, true)
         Mockito.verify(dataService.conversations, times(1)).background(otherConversation, result.interruptionPrompt, true)
-      }
+      })
     }
 
-    "not interrupt for message in thread" in new TestContext {
-      running(app) {
+    "not interrupt for message in thread" in {
+      withEmptyDB(dataService, { db =>
+        val profile = newSavedBotProfile
+        val team = runNow(dataService.teams.find(profile.teamId)).head
+
         val threadId = IDs.next
-        val event: SlackMessageEvent = newEventFor(team, Some(threadId))
+        val event: SlackMessageEvent = newEventFor(profile, Some(threadId))
+
         val responseText = "response"
         val resultTs: String = SlackTimestamp.now
 
@@ -169,7 +199,8 @@ class BotResultSpec extends PlaySpec with MockitoSugar {
 
         val result = SuccessResult(event, Some(threadedConversation), JsString("result"), Seq(), Some(responseText), None, forcePrivateResponse = false)
 
-        setUpMocks(event, responseText, resultTs, Seq(otherConversation), Some(threadId), dataService)
+        mockSlackClient(event)
+        mockPostChatMessage(responseText, event.client, resultTs, Some(threadId))
 
         when(dataService.conversations.background(threadedConversation, result.interruptionPrompt, true)).thenReturn(Future.successful({}))
         when(dataService.conversations.background(otherConversation, result.interruptionPrompt, true)).thenReturn(Future.successful({}))
@@ -178,7 +209,7 @@ class BotResultSpec extends PlaySpec with MockitoSugar {
 
         Mockito.verify(dataService.conversations, times(0)).background(threadedConversation, result.interruptionPrompt, true)
         Mockito.verify(dataService.conversations, times(0)).background(otherConversation, result.interruptionPrompt, true)
-      }
+      })
     }
 
   }

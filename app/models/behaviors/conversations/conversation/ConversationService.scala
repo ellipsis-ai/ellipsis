@@ -3,6 +3,7 @@ package models.behaviors.conversations.conversation
 import java.time.OffsetDateTime
 
 import akka.actor.ActorSystem
+import models.behaviors.events.Event
 import slick.dbio.DBIO
 
 import scala.concurrent.Future
@@ -38,6 +39,11 @@ trait ConversationService {
   def touchAction(conversation: Conversation): DBIO[Conversation]
 
   def touch(conversation: Conversation): Future[Conversation]
+
+  def interruptionPromptFor(event: Event, prompt: String, includeUsername: Boolean): String = {
+    val usernameString = if (includeUsername) { s"<@${event.userIdForContext}>: " } else { "" }
+    s"""$usernameString$prompt You can continue the previous conversation in this thread:""".stripMargin
+  }
 
   def backgroundAction(conversation: Conversation, prompt: String, includeUsername: Boolean)(implicit actorSystem: ActorSystem): DBIO[Unit]
 

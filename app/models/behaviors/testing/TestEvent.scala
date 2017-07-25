@@ -30,7 +30,7 @@ case class TestEvent(
   lazy val name = "test"
   lazy val maybeChannel = None
   lazy val maybeThreadId = None
-  def eventualMaybeDMChannel(dataService: DataService)(implicit actorSystem: ActorSystem) = Future.successful(None)
+  def eventualMaybeDMChannel(implicit actorSystem: ActorSystem) = Future.successful(None)
   val isResponseExpected = true
   val messageRecipientPrefix: String = ""
   lazy val isPublicChannel = false
@@ -42,8 +42,7 @@ case class TestEvent(
                    forcePrivate: Boolean,
                    maybeShouldUnfurl: Option[Boolean],
                    maybeConversation: Option[Conversation],
-                   maybeActions: Option[MessageActions],
-                   dataService: DataService
+                   maybeActions: Option[MessageActions]
                  )(implicit actorSystem: ActorSystem): Future[Option[String]] = {
     Future.successful(messageBuffer += text).map(_ => None)
   }
@@ -56,7 +55,7 @@ case class TestEvent(
     DBIO.successful(user)
   }
 
-  def detailsFor(ws: WSClient, dataService: DataService)(implicit actorSystem: ActorSystem): Future[JsObject] = {
+  def detailsFor(ws: WSClient)(implicit actorSystem: ActorSystem): Future[JsObject] = {
     Future.successful(JsObject(Seq()))
   }
 

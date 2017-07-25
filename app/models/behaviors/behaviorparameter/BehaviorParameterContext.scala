@@ -6,7 +6,7 @@ import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.events.Event
 import play.api.Configuration
 import play.api.cache.CacheApi
-import services.DataService
+import services.{DataService, SlackEventService}
 import slick.dbio.DBIO
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -18,6 +18,7 @@ case class BehaviorParameterContext(
                                      parameter: BehaviorParameter,
                                      cache: CacheApi,
                                      dataService: DataService,
+                                     slackEventService: SlackEventService,
                                      configuration: Configuration,
                                      actorSystem: ActorSystem
                                    ) {

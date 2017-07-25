@@ -19,7 +19,8 @@ case class SlackMessageEvent(
                                  maybeThreadId: Option[String],
                                  user: String,
                                  text: String,
-                                 ts: String
+                                 ts: String,
+                                 client: SlackApiClient
                                ) extends MessageEvent with SlackEvent {
 
   lazy val isBotMessage: Boolean = profile.userId == user
@@ -76,8 +77,8 @@ case class SlackMessageEvent(
     } yield messages
   }
 
-  def channelForSend(forcePrivate: Boolean, maybeConversation: Option[Conversation], dataService: DataService)(implicit actorSystem: ActorSystem): Future[String] = {
-    eventualMaybeDMChannel(dataService)(actorSystem).map { maybeDMChannel =>
+  def channelForSend(forcePrivate: Boolean, maybeConversation: Option[Conversation])(implicit actorSystem: ActorSystem): Future[String] = {
+    eventualMaybeDMChannel(actorSystem).map { maybeDMChannel =>
       (if (forcePrivate) {
         maybeDMChannel
       } else {
@@ -95,12 +96,11 @@ case class SlackMessageEvent(
                    forcePrivate: Boolean,
                    maybeShouldUnfurl: Option[Boolean],
                    maybeConversation: Option[Conversation],
-                   maybeActions: Option[MessageActions] = None,
-                   dataService: DataService
+                   maybeActions: Option[MessageActions] = None
                  )(implicit actorSystem: ActorSystem): Future[Option[String]] = {
-    channelForSend(forcePrivate, maybeConversation, dataService).flatMap { channelToUse =>
+    channelForSend(forcePrivate, maybeConversation).flatMap { channelToUse =>
       SlackMessageSender(
-        clientFor(dataService),
+        client,
         user,
         unformattedText,
         forcePrivate,

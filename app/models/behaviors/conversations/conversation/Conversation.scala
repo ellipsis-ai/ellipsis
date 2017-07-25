@@ -2,17 +2,14 @@ package models.behaviors.conversations.conversation
 
 import java.time.OffsetDateTime
 
-import akka.actor.ActorSystem
 import models.behaviors._
 import models.behaviors.behaviorparameter.BehaviorParameter
 import models.behaviors.behaviorversion.BehaviorVersion
+import models.behaviors.conversations.ConversationServices
 import models.behaviors.events.SlackMessageActionConstants._
 import models.behaviors.events.{Event, SlackMessageActionButton, SlackMessageActions, SlackMessageEvent}
 import models.behaviors.triggers.messagetrigger.MessageTrigger
-import play.api.Configuration
-import play.api.cache.CacheApi
-import play.api.libs.ws.WSClient
-import services.{AWSLambdaService, DataService}
+import services.DataService
 import slick.dbio.DBIO
 import utils.SlackTimestamp
 
@@ -49,18 +46,18 @@ trait Conversation {
     startedAt.plusSeconds(Conversation.SECONDS_UNTIL_BACKGROUNDED).isBefore(OffsetDateTime.now)
   }
 
-  private def maybeSlackPlaceholderEventAction(dataService: DataService): DBIO[Option[Event]] = {
-    dataService.slackBotProfiles.allForAction(behaviorVersion.team).map { botProfiles =>
+  private def maybeSlackPlaceholderEventAction(services: ConversationServices): DBIO[Option[Event]] = {
+    services.dataService.slackBotProfiles.allForAction(behaviorVersion.team).map { botProfiles =>
       for {
         botProfile <- botProfiles.headOption
         channel <- maybeChannel
-      } yield SlackMessageEvent(botProfile, channel, None, userIdForContext, "", SlackTimestamp.now)
+      } yield SlackMessageEvent(botProfile, channel, None, userIdForContext, "", SlackTimestamp.now, services.slackEventService.clientFor(botProfile))
     }
   }
 
-  def maybePlaceholderEventAction(dataService: DataService): DBIO[Option[Event]] = {
+  def maybePlaceholderEventAction(services: ConversationServices): DBIO[Option[Event]] = {
     context match {
-      case Conversation.SLACK_CONTEXT => maybeSlackPlaceholderEventAction(dataService)
+      case Conversation.SLACK_CONTEXT => maybeSlackPlaceholderEventAction(services)
       case _ => DBIO.successful(None)
     }
   }
@@ -73,66 +70,41 @@ trait Conversation {
 
   def updateStateTo(newState: String, dataService: DataService): Future[Conversation]
   def cancel(dataService: DataService): Future[Conversation] = updateStateTo(Conversation.DONE_STATE, dataService)
-  def updateWith(event: Event, lambdaService: AWSLambdaService, dataService: DataService, cache: CacheApi, configuration: Configuration, actorSystem: ActorSystem): Future[Conversation]
+  def updateWith(event: Event, services: ConversationServices): Future[Conversation]
 
   def respondAction(
                      event: Event,
                      isReminding: Boolean,
-                     lambdaService: AWSLambdaService,
-                     dataService: DataService,
-                     cache: CacheApi,
-                     ws: WSClient,
-                     configuration: Configuration,
-                     actorSystem: ActorSystem
+                     services: ConversationServices
                    ): DBIO[BotResult]
 
   def respond(
                event: Event,
                isReminding: Boolean,
-               lambdaService: AWSLambdaService,
-               dataService: DataService,
-               cache: CacheApi,
-               ws: WSClient,
-               configuration: Configuration,
-               actorSystem: ActorSystem
+               services: ConversationServices
              ): Future[BotResult]
 
   def resultFor(
                  event: Event,
-                 lambdaService: AWSLambdaService,
-                 dataService: DataService,
-                 cache: CacheApi,
-                 ws: WSClient,
-                 configuration: Configuration,
-                 actorSystem: ActorSystem
+                 services: ConversationServices
                ): Future[BotResult] = {
     for {
-      updatedConversation <- updateWith(event, lambdaService, dataService, cache, configuration, actorSystem)
-      result <- updatedConversation.respond(event, isReminding=false, lambdaService, dataService, cache, ws, configuration, actorSystem)
+      updatedConversation <- updateWith(event, services)
+      result <- updatedConversation.respond(event, isReminding=false, services)
     } yield result
   }
 
   def maybeNextParamToCollect(
                                event: Event,
-                               lambdaService: AWSLambdaService,
-                               dataService: DataService,
-                               cache: CacheApi,
-                               ws: WSClient,
-                               configuration: Configuration,
-                               actorSystem: ActorSystem
+                               services: ConversationServices
                              ): Future[Option[BehaviorParameter]]
 
   def maybeRemindResultAction(
-                              lambdaService: AWSLambdaService,
-                              dataService: DataService,
-                              cache: CacheApi,
-                              ws: WSClient,
-                              configuration: Configuration,
-                              actorSystem: ActorSystem
+                               services: ConversationServices
                             ): DBIO[Option[BotResult]] = {
-    maybePlaceholderEventAction(dataService).flatMap { maybeEvent =>
+    maybePlaceholderEventAction(services).flatMap { maybeEvent =>
       maybeEvent.map { event =>
-        respondAction(event, isReminding=true, lambdaService, dataService, cache, ws, configuration, actorSystem).map { result =>
+        respondAction(event, isReminding=true, services).map { result =>
           val intro = s"Hey <@$userIdForContext>, don’t forget, I’m still waiting for your answer to this:"
           val actions = Seq(SlackMessageActionButton(STOP_CONVERSATION, "Stop asking", id))
           val question = result.text

@@ -79,13 +79,7 @@ trait MessageEvent extends Event {
             trigger.behaviorVersion,
             trigger.invocationParamsFor(this, params),
             Some(trigger),
-            None,
-            lambdaService,
-            dataService,
-            cache,
-            ws,
-            configuration,
-            actorSystem
+            None
           )
         } yield response
       })

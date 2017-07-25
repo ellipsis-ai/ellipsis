@@ -5,10 +5,11 @@ import javax.inject.Inject
 
 import akka.actor.{Actor, ActorSystem}
 import drivers.SlickPostgresDriver.api._
+import models.behaviors.conversations.ConversationServices
 import play.api.cache.CacheApi
 import play.api.libs.ws.WSClient
 import play.api.{Configuration, Logger}
-import services.{AWSLambdaService, DataService}
+import services.{AWSLambdaService, DataService, SlackEventService}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -21,6 +22,7 @@ object ConversationReminderActor {
 class ConversationReminderActor @Inject()(
                                           val lambdaService: AWSLambdaService,
                                           val dataService: DataService,
+                                          val slackEventService: SlackEventService,
                                           val cache: CacheApi,
                                           val ws: WSClient,
                                           val configuration: Configuration,
@@ -37,7 +39,8 @@ class ConversationReminderActor @Inject()(
   def remindAsNeeded(when: OffsetDateTime): Future[Unit] = {
     val action: DBIO[Boolean] = dataService.conversations.maybeNextNeedingReminderAction(when).flatMap { maybeNext =>
       maybeNext.map { convo =>
-        convo.maybeRemindResultAction(lambdaService, dataService, cache, ws, configuration, actorSystem).flatMap { maybeResult =>
+        val services = ConversationServices(dataService, lambdaService, slackEventService, cache, configuration, ws, actorSystem)
+        convo.maybeRemindResultAction(services).flatMap { maybeResult =>
           maybeResult.map { result =>
             result.sendInAction(None, dataService, None).flatMap { _ =>
               dataService.conversations.touchAction(convo).map(_ => true)

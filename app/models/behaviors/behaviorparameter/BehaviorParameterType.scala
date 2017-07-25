@@ -1,6 +1,5 @@
 package models.behaviors.behaviorparameter
 
-import akka.actor.ActorSystem
 import com.fasterxml.jackson.core.JsonParseException
 import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
 import models.behaviors.behaviorversion.BehaviorVersion
@@ -453,7 +452,7 @@ case class BehaviorBackedDataType(behaviorVersion: BehaviorVersion) extends Beha
     context.event match {
       case event: SlackMessageEvent => {
         implicit val actorSystem = context.actorSystem
-        SlackMessageReactionHandler.handle(event.clientFor(context.dataService), eventualPrompt, event.channel, event.ts)
+        SlackMessageReactionHandler.handle(event.client, eventualPrompt, event.channel, event.ts)
       }
       case _ =>
     }

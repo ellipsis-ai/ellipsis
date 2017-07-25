@@ -64,7 +64,7 @@ trait Event {
     MessageInfo.buildFor(this, ws, dataService)
   }
 
-  def detailsFor(ws: WSClient, dataService: DataService)(implicit actorSystem: ActorSystem): Future[JsObject]
+  def detailsFor(ws: WSClient)(implicit actorSystem: ActorSystem): Future[JsObject]
 
   def recentMessages(dataService: DataService)(implicit actorSystem: ActorSystem): Future[Seq[String]] = Future.successful(Seq())
 
@@ -120,10 +120,10 @@ trait Event {
     ).result
   }
 
-  def eventualMaybeDMChannel(dataService: DataService)(implicit actorSystem: ActorSystem): Future[Option[String]]
+  def eventualMaybeDMChannel(implicit actorSystem: ActorSystem): Future[Option[String]]
 
-  def maybeChannelToUseFor(behaviorVersion: BehaviorVersion, dataService: DataService)(implicit actorSystem: ActorSystem): Future[Option[String]] = {
-    eventualMaybeDMChannel(dataService).map { maybeDMChannel =>
+  def maybeChannelToUseFor(behaviorVersion: BehaviorVersion)(implicit actorSystem: ActorSystem): Future[Option[String]] = {
+    eventualMaybeDMChannel.map { maybeDMChannel =>
       if (behaviorVersion.forcePrivateResponse) {
         maybeDMChannel
       } else {
@@ -147,8 +147,7 @@ trait Event {
                    forcePrivate: Boolean,
                    maybeShouldUnfurl: Option[Boolean],
                    maybeConversation: Option[Conversation],
-                   maybeActions: Option[MessageActions] = None,
-                   dataService: DataService
+                   maybeActions: Option[MessageActions] = None
                  )(implicit actorSystem: ActorSystem): Future[Option[String]]
 
   def botPrefix: String = ""

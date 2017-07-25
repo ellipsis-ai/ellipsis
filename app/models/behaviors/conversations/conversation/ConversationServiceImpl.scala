@@ -6,10 +6,12 @@ import javax.inject.Inject
 import akka.actor.ActorSystem
 import com.google.inject.Provider
 import drivers.SlickPostgresDriver.api._
+import models.behaviors.conversations.ConversationServices
+import models.behaviors.events.Event
 import play.api.Configuration
 import play.api.cache.CacheApi
 import play.api.libs.ws.WSClient
-import services.{AWSLambdaService, DataService}
+import services.{AWSLambdaService, DataService, SlackEventService}
 import slick.dbio.DBIO
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -54,6 +56,7 @@ class ConversationsTable(tag: Tag) extends Table[RawConversation](tag, Conversat
 
 class ConversationServiceImpl @Inject() (
                                           dataServiceProvider: Provider[DataService],
+                                          slackEventServiceProvier: Provider[SlackEventService],
                                           lambdaServiceProvider: Provider[AWSLambdaService],
                                           cacheProvider: Provider[CacheApi],
                                           wsProvider: Provider[WSClient],
@@ -62,10 +65,12 @@ class ConversationServiceImpl @Inject() (
                                          ) extends ConversationService {
 
   def dataService: DataService = dataServiceProvider.get
+  def slackEventService: SlackEventService = slackEventServiceProvier.get
   def lambdaService: AWSLambdaService = lambdaServiceProvider.get
   def cache: CacheApi = cacheProvider.get
   def ws: WSClient = wsProvider.get
   def configuration: Configuration = configurationProvider.get
+  def services: ConversationServices = ConversationServices(dataService, lambdaService, slackEventService, cache, configuration, ws, actorSystem)
 
   import ConversationQueries._
 
@@ -166,22 +171,20 @@ class ConversationServiceImpl @Inject() (
 
   def backgroundAction(conversation: Conversation, prompt: String, includeUsername: Boolean)(implicit actorSystem: ActorSystem): DBIO[Unit] = {
     for {
-      maybeEvent <- conversation.maybePlaceholderEventAction(dataService)
+      maybeEvent <- conversation.maybePlaceholderEventAction(services)
       maybeLastTs <- maybeEvent.map { event =>
-        val usernameString = if (includeUsername) { s"<@${event.userIdForContext}>: " } else { "" }
         DBIO.from(event.sendMessage(
-          s"""$usernameString$prompt You can continue the previous conversation in this thread:""".stripMargin,
+          interruptionPromptFor(event, prompt, includeUsername),
           conversation.behaviorVersion.forcePrivateResponse,
           maybeShouldUnfurl = None,
           Some(conversation),
-          maybeActions = None,
-          dataService
+          maybeActions = None
         ))
       }.getOrElse(DBIO.successful(None))
       _ <- maybeEvent.map { event =>
         val convoWithThreadId = conversation.copyWithMaybeThreadId(maybeLastTs)
         dataService.conversations.saveAction(convoWithThreadId).flatMap { _ =>
-          convoWithThreadId.respondAction(event, isReminding=false, lambdaService, dataService, cache, ws, configuration, actorSystem).map { result =>
+          convoWithThreadId.respondAction(event, isReminding=false, services).map { result =>
             result.sendInAction(None, dataService)
           }
         }

@@ -74,7 +74,7 @@ trait DataService {
   val scheduledBehaviors: ScheduledBehaviorService
   val recurrences: RecurrenceService
   val invocationLogEntries: InvocationLogEntryService
-  val behaviorResponses: BehaviorResponseService
+  def behaviorResponses: BehaviorResponseService
 
   def run[T](action: DBIO[T]): Future[T]
   def runNow[T](action: DBIO[T]): T

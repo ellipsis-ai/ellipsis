@@ -88,7 +88,8 @@ class APIController @Inject() (
             None,
             slackProfile.loginInfo.providerKey,
             message,
-            SlackTimestamp.now
+            SlackTimestamp.now,
+            slackService.clientFor(botProfile)
           )
           val event: Event = maybeScheduledMessage.map { scheduledMessage =>
             ScheduledEvent(slackEvent, scheduledMessage)
@@ -269,7 +270,8 @@ class APIController @Inject() (
           maybeSlackChannelId.getOrElse(info.channel),
           None,
           slackProfile.loginInfo.providerKey,
-          SlackTimestamp.now
+          SlackTimestamp.now,
+          slackService.clientFor(botProfile)
         )
       )
       result <- runBehaviorFor(maybeEvent, context)

@@ -14,6 +14,7 @@ import models.accounts.oauth2token.{OAuth2TokenService, OAuth2TokenServiceImpl}
 import models.accounts.simpletokenapi.{SimpleTokenApiService, SimpleTokenApiServiceImpl}
 import models.accounts.slack.botprofile.{SlackBotProfileService, SlackBotProfileServiceImpl}
 import models.apitoken.{APITokenService, APITokenServiceImpl}
+import models.behaviors.{BehaviorResponseService, BehaviorResponseServiceImpl}
 import models.behaviors.behavior.{BehaviorService, BehaviorServiceImpl}
 import models.behaviors.behaviorgroup.{BehaviorGroupService, BehaviorGroupServiceImpl}
 import models.behaviors.behaviorgroupversion.{BehaviorGroupVersionService, BehaviorGroupVersionServiceImpl}
@@ -79,6 +80,7 @@ class ServiceModule extends AbstractModule with ScalaModule {
     bind[RecurrenceService].to[RecurrenceServiceImpl]
     bind[InvocationLogEntryService].to[InvocationLogEntryServiceImpl]
     bind[AWSDynamoDBService].to[AWSDynamoDBServiceImpl]
+    bind[BehaviorResponseService].to[BehaviorResponseServiceImpl]
 
     bind[AWSLambdaService].to[AWSLambdaServiceImpl]
     bind[AWSLogsService].to[AWSLogsServiceImpl]

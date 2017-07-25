@@ -1,27 +1,18 @@
 package models.behaviors.testing
 
-import akka.actor.ActorSystem
 import models.behaviors.behaviorversion.BehaviorVersion
-import play.api.Configuration
-import play.api.cache.CacheApi
-import play.api.libs.ws.WSClient
-import services.{AWSLambdaService, DataService}
+import services.DataService
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
 case class TriggerTester(
-                          lambdaService: AWSLambdaService,
-                          dataService: DataService,
-                          cache: CacheApi,
-                          ws: WSClient,
-                          configuration: Configuration,
-                          actorSystem: ActorSystem
+                          dataService: DataService
                         ) {
 
   def test(event: TestEvent, behaviorVersion: BehaviorVersion): Future[TriggerTestReport] = {
     for {
-      maybeResponse <- dataService.behaviorResponses.allFor(event, None, Some(behaviorVersion.behavior), lambdaService, dataService, cache, ws, configuration, actorSystem).map(_.headOption)
+      maybeResponse <- dataService.behaviorResponses.allFor(event, None, Some(behaviorVersion.behavior)).map(_.headOption)
     } yield {
       TriggerTestReport(event, behaviorVersion, maybeResponse)
     }
