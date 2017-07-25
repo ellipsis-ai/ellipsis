@@ -8,7 +8,8 @@ import models.behaviors.events.{ScheduledEvent, SlackMessageEvent}
 import models.behaviors.scheduling.Scheduled
 import models.behaviors.scheduling.recurrence.Recurrence
 import models.team.Team
-import services.{DataService, SlackEventService}
+import services.DataService
+import slack.api.SlackApiClient
 import slick.dbio.DBIO
 import utils.SlackTimestamp
 
@@ -30,8 +31,8 @@ case class ScheduledMessage(
     Future.successful(s"`$text`")
   }
 
-  def eventFor(channel: String, slackUserId: String, profile: SlackBotProfile, slackEventService: SlackEventService): ScheduledEvent = {
-    ScheduledEvent(SlackMessageEvent(profile, channel, None, slackUserId, text, SlackTimestamp.now, slackEventService.clientFor(profile)), this)
+  def eventFor(channel: String, slackUserId: String, profile: SlackBotProfile, client: SlackApiClient): ScheduledEvent = {
+    ScheduledEvent(SlackMessageEvent(profile, channel, None, slackUserId, text, SlackTimestamp.now, client), this)
   }
 
   def withUpdatedNextTriggeredFor(when: OffsetDateTime): ScheduledMessage = {

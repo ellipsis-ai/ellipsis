@@ -8,7 +8,7 @@ import drivers.SlickPostgresDriver.api._
 import models.behaviors.events.EventHandler
 import models.behaviors.scheduling.Scheduled
 import play.api.{Configuration, Logger}
-import services.{DataService, SlackEventService}
+import services.DataService
 import slack.api.SlackApiClient
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -23,7 +23,6 @@ class ScheduledActor @Inject()(
                                         val dataService: DataService,
                                         val eventHandler: EventHandler,
                                         val configuration: Configuration,
-                                        val slackEventService: SlackEventService,
                                         implicit val actorSystem: ActorSystem
                                       ) extends Actor {
 
@@ -42,7 +41,7 @@ class ScheduledActor @Inject()(
           maybeProfile <- scheduled.botProfileAction(dataService)
           _ <- maybeProfile.map { profile =>
             scheduled.updateNextTriggeredForAction(dataService).flatMap { _ =>
-              DBIO.from(scheduled.send(eventHandler, new SlackApiClient(profile.token), profile, dataService, configuration, slackEventService).recover {
+              DBIO.from(scheduled.send(eventHandler, new SlackApiClient(profile.token), profile, dataService, configuration).recover {
                 case t: Throwable => Logger.error(s"Exception handling scheduled message: $displayText", t)
               })
             }
