@@ -81,13 +81,7 @@ class UserServiceImpl @Inject() (
   }
 
   def ensureUserFor(loginInfo: LoginInfo, teamId: String): Future[User] = {
-    dataService.linkedAccounts.find(loginInfo, teamId).flatMap { maybeLinkedAccount =>
-      maybeLinkedAccount.map(Future.successful).getOrElse {
-        save(createOnTeamWithId(teamId)).flatMap { user =>
-          dataService.linkedAccounts.save(LinkedAccount(user, loginInfo, OffsetDateTime.now))
-        }
-      }.map(_.user)
-    }
+    dataService.run(ensureUserForAction(loginInfo, teamId))
   }
 
   def teamAccessForAction(user: User, maybeTargetTeamId: Option[String]): DBIO[UserTeamAccess] = {
@@ -108,20 +102,7 @@ class UserServiceImpl @Inject() (
   }
 
   def teamAccessFor(user: User, maybeTargetTeamId: Option[String]): Future[UserTeamAccess] = {
-    for {
-      loggedInTeam <- dataService.teams.find(user.teamId).map(_.get)
-      maybeSlackLinkedAccount <- dataService.linkedAccounts.maybeForSlackFor(user)
-      isAdmin <- maybeSlackLinkedAccount.map(dataService.linkedAccounts.isAdmin).getOrElse(Future.successful(false))
-      maybeTeam <- maybeTargetTeamId.map { targetTeamId =>
-        if (targetTeamId != user.teamId && !isAdmin) {
-          Future.successful(None)
-        } else {
-          dataService.teams.find(targetTeamId)
-        }
-      }.getOrElse {
-        dataService.teams.find(user.teamId)
-      }
-    } yield UserTeamAccess(user, loggedInTeam, maybeTeam, maybeTeam.exists(t => t.id != user.teamId))
+    dataService.run(teamAccessForAction(user, maybeTargetTeamId))
   }
 
   def isAdmin(user: User): Future[Boolean] = {
