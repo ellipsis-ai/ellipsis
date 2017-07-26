@@ -41,15 +41,15 @@ class ConversationReminderActor @Inject()(
   def remindAsNeeded(when: OffsetDateTime): Future[Unit] = {
     val action: DBIO[Boolean] = dataService.conversations.maybeNextNeedingReminderAction(when).flatMap { maybeNext =>
       maybeNext.map { convo =>
-        val services = ConversationServices(dataService, lambdaService, slackEventService, cache, configuration, ws, actorSystem)
-        convo.maybeRemindResultAction(services).flatMap { maybeResult =>
-          maybeResult.map { result =>
-            botResultService.sendInAction(result, None, None).flatMap { _ =>
-              dataService.conversations.touchAction(convo).map(_ => true)
+        dataService.conversations.touchAction(convo).flatMap { _ =>
+          val services = ConversationServices(dataService, lambdaService, slackEventService, cache, configuration, ws, actorSystem)
+          convo.maybeRemindResultAction(services).flatMap { maybeResult =>
+            maybeResult.map { result =>
+              botResultService.sendInAction(result, None, None).map(_ => true)
+            }.getOrElse {
+              // Just act like the reminding happened if no remind result can be build (i.e. non-Slack message for now)
+              DBIO.successful(true)
             }
-          }.getOrElse {
-            // Just act like the reminding happened if no remind result can be build (i.e. non-Slack message for now)
-            dataService.conversations.touchAction(convo).map(_ => true)
           }
         }
       }.getOrElse(DBIO.successful(false))
