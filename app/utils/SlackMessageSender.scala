@@ -23,6 +23,31 @@ case class SlackMessageSender(
                                maybeActions: Option[MessageActions] = None
                              ) {
 
+  private def postChatMessage(
+                               text: String,
+                               maybeThreadTs: Option[String] = None,
+                               maybeReplyBroadcast: Option[Boolean] = None,
+                               maybeAttachments: Option[Seq[Attachment]] = None
+                             )(implicit actorSystem: ActorSystem): Future[String] = {
+    client.postChatMessage(
+      maybeThreadTs.map(_ => originatingChannel).getOrElse(channelToUse),
+      text,
+      username = None,
+      asUser = Some(true),
+      parse = None,
+      linkNames = None,
+      attachments = maybeAttachments,
+      unfurlLinks = Some(maybeShouldUnfurl.getOrElse(false)),
+      unfurlMedia = Some(true),
+      iconUrl = None,
+      iconEmoji = None,
+      replaceOriginal = None,
+      deleteOriginal = None,
+      threadTs = maybeThreadTs,
+      replyBroadcast = maybeReplyBroadcast
+    )
+  }
+
   private def isDirectMessage(channelId: String): Boolean = {
     channelId.startsWith("D")
   }
@@ -53,30 +78,20 @@ case class SlackMessageSender(
           } else {
             s"<#$originatingChannel>"
           }
-          client.postChatMessage(
-            originatingChannel,
-            s"<@${user}> I've responded back in $channelText.",
-            asUser = Some(true),
-            threadTs = maybeThreadId
+          postChatMessage(
+            text = s"<@${user}> I've responded back in $channelText.",
+            maybeThreadTs = maybeThreadId
           )
         } else {
           Future.successful({})
         }
         _ <- if (isDirectMessage(channelToUse) && channelToUse != originatingChannel) {
-          client.postChatMessage(
-            originatingChannel,
-            s"<@${user}> I've sent you a private message :sleuth_or_spy:",
-            asUser = Some(true)
-          )
+          postChatMessage(s"<@${user}> I've sent you a private message :sleuth_or_spy:")
         } else {
           Future.successful({})
         }
         _ <- if (!isDirectMessage(channelToUse) && channelToUse != originatingChannel) {
-          client.postChatMessage(
-            originatingChannel,
-            s"<@${user}> OK, back to <#${channelToUse}>",
-            asUser = Some(true)
-          )
+          postChatMessage(s"<@${user}> OK, back to <#${channelToUse}>")
         } else {
           Future.successful({})
         }
@@ -110,22 +125,11 @@ case class SlackMessageSender(
         val maybeThreadTsToUse = maybeConversation.flatMap(_.maybeThreadId)
         val replyBroadcast = maybeThreadTsToUse.isDefined && maybeConversation.exists(_.state == Conversation.DONE_STATE)
 
-        client.postChatMessage(
-          channelToUse,
+        postChatMessage(
           segment,
-          username = None,
-          asUser = Some(true),
-          parse = None,
-          linkNames = None,
-          attachments = maybeAttachmentsForSegment,
-          unfurlLinks = Some(maybeShouldUnfurl.getOrElse(false)),
-          unfurlMedia = Some(true),
-          iconUrl = None,
-          iconEmoji = None,
-          replaceOriginal = None,
-          deleteOriginal = None,
-          threadTs = maybeThreadTsToUse,
-          replyBroadcast = Some(replyBroadcast)
+          maybeThreadTsToUse,
+          Some(replyBroadcast),
+          maybeAttachmentsForSegment
         )
       }.flatMap { ts => sendMessageSegmentsInOrder(segments.tail, channelToUse, maybeShouldUnfurl, maybeAttachments, maybeConversation, Some(ts))}
     }
