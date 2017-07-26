@@ -71,7 +71,7 @@ class ConversationServiceImpl @Inject() (
   def ws: WSClient = wsProvider.get
   def configuration: Configuration = configurationProvider.get
   def botResultService: BotResultService = botResultServiceProvider.get
-  def services: ConversationServices = ConversationServices(dataService, lambdaService, slackEventService, cache, configuration, ws, actorSystem)
+  def services: ConversationServices = ConversationServices(dataService, lambdaService, slackEventService, cacheService, configuration, ws, actorSystem)
 
   import ConversationQueries._
 

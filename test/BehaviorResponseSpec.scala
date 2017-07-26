@@ -46,7 +46,7 @@ class BehaviorResponseSpec extends PlaySpec with MockitoSugar {
           ParameterWithValue(barParam, "param1", Some(ParameterValue("param1", JsString("batman"), isValid = true)))
           )
         when(dataService.behaviorResponses.buildFor(event, version, specificTrigger.invocationParamsFor(event, params), Some(specificTrigger), None)).thenReturn(
-          Future.successful(BehaviorResponse(event, version, None, paramsWithValues, Some(specificTrigger), lambdaService, dataService, slackEventService, cache, ws, configuration))
+          Future.successful(BehaviorResponse(event, version, None, paramsWithValues, Some(specificTrigger), lambdaService, dataService, slackEventService, cacheService, ws, configuration))
         )
         val responses = await(event.allBehaviorResponsesFor(Some(team), None, lambdaService, dataService, cacheService, ws, configuration, actorSystem))
         responses must have length(1)

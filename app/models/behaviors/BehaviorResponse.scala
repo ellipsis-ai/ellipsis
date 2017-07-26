@@ -119,7 +119,7 @@ case class BehaviorResponse(
                   dataService.collectedParameterValues.ensureFor(p.parameter, convo, v.text)
                 }.getOrElse(Future.successful(Unit))
               })
-              services <- Future.successful(ConversationServices(dataService, lambdaService, slackEventService, cache, configuration, ws, actorSystem))
+              services <- Future.successful(ConversationServices(dataService, lambdaService, slackEventService, cacheService, configuration, ws, actorSystem))
               result <- convo.resultFor(event, services)
             } yield result
           }
