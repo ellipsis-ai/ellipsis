@@ -117,8 +117,8 @@ class ConversationServiceImpl @Inject() (
   }
 
   def maybeNextNeedingReminderAction(when: OffsetDateTime): DBIO[Option[Conversation]] = {
-    val reminderWindowStart = when.minusMinutes(2)
-    val reminderWindowEnd = when.minusMinutes(1)
+    val reminderWindowStart = when.minusHours(1)
+    val reminderWindowEnd = when.minusMinutes(30)
     for {
       maybeId <- nextNeedingReminderIdQueryFor(reminderWindowStart, reminderWindowEnd).map(_.headOption)
       maybeConvo <- maybeId.map(findAction).getOrElse(DBIO.successful(None))
