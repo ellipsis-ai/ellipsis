@@ -8,10 +8,12 @@ import scala.concurrent.Future
 
 trait BehaviorParameterService {
 
+  def allForAction(behaviorVersion: BehaviorVersion): DBIO[Seq[BehaviorParameter]]
+
   def allFor(behaviorVersion: BehaviorVersion): Future[Seq[BehaviorParameter]]
 
   def ensureForAction(behaviorVersion: BehaviorVersion, inputs: Seq[Input]): DBIO[Seq[BehaviorParameter]]
 
-  def isFirstForBehaviorVersion(parameter: BehaviorParameter): Future[Boolean]
+  def isFirstForBehaviorVersionAction(parameter: BehaviorParameter): DBIO[Boolean]
 
 }

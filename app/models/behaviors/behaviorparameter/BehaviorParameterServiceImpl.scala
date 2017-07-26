@@ -38,9 +38,12 @@ class BehaviorParameterServiceImpl @Inject() (
 
   import BehaviorParameterQueries._
 
+  def allForAction(behaviorVersion: BehaviorVersion): DBIO[Seq[BehaviorParameter]] = {
+    allForQuery(behaviorVersion.id).result.map(_.map(tuple2Parameter).sortBy(_.rank))
+  }
+
   def allFor(behaviorVersion: BehaviorVersion): Future[Seq[BehaviorParameter]] = {
-   val action = allForQuery(behaviorVersion.id).result.map(_.map(tuple2Parameter).sortBy(_.rank))
-    dataService.run(action)
+    dataService.run(allForAction(behaviorVersion))
   }
 
   private def createForAction(input: Input, rank: Int, behaviorVersion: BehaviorVersion): DBIO[BehaviorParameter] = {
@@ -63,8 +66,8 @@ class BehaviorParameterServiceImpl @Inject() (
     } yield newParams
   }
 
-  def isFirstForBehaviorVersion(parameter: BehaviorParameter): Future[Boolean] = {
-    allFor(parameter.behaviorVersion).map { all =>
+  def isFirstForBehaviorVersionAction(parameter: BehaviorParameter): DBIO[Boolean] = {
+    allForAction(parameter.behaviorVersion).map { all =>
       all.headOption.contains(parameter)
     }
   }

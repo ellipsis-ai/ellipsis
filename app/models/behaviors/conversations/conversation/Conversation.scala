@@ -2,16 +2,18 @@ package models.behaviors.conversations.conversation
 
 import java.time.OffsetDateTime
 
-import akka.actor.ActorSystem
 import models.behaviors._
 import models.behaviors.behaviorparameter.BehaviorParameter
 import models.behaviors.behaviorversion.BehaviorVersion
+import models.behaviors.conversations.ConversationServices
 import models.behaviors.events.SlackMessageActionConstants._
 import models.behaviors.events.{Event, SlackMessageActionButton, SlackMessageActions, SlackMessageEvent}
 import models.behaviors.triggers.messagetrigger.MessageTrigger
 import play.api.Configuration
 import play.api.libs.ws.WSClient
-import services.{AWSLambdaService, CacheService, DataService}
+import services.AWSLambdaService
+import services.DataService
+import slick.dbio.DBIO
 import utils.SlackTimestamp
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -47,19 +49,19 @@ trait Conversation {
     startedAt.plusSeconds(Conversation.SECONDS_UNTIL_BACKGROUNDED).isBefore(OffsetDateTime.now)
   }
 
-  private def maybeSlackPlaceholderEvent(dataService: DataService): Future[Option[Event]] = {
-    dataService.slackBotProfiles.allFor(behaviorVersion.team).map { botProfiles =>
+  private def maybeSlackPlaceholderEventAction(services: ConversationServices): DBIO[Option[Event]] = {
+    services.dataService.slackBotProfiles.allForAction(behaviorVersion.team).map { botProfiles =>
       for {
         botProfile <- botProfiles.headOption
         channel <- maybeChannel
-      } yield SlackMessageEvent(botProfile, channel, None, userIdForContext, "", SlackTimestamp.now)
+      } yield SlackMessageEvent(botProfile, channel, None, userIdForContext, "", SlackTimestamp.now, services.slackEventService.clientFor(botProfile))
     }
   }
 
-  def maybePlaceholderEvent(dataService: DataService): Future[Option[Event]] = {
+  def maybePlaceholderEventAction(services: ConversationServices): DBIO[Option[Event]] = {
     context match {
-      case Conversation.SLACK_CONTEXT => maybeSlackPlaceholderEvent(dataService)
-      case _ => Future.successful(None)
+      case Conversation.SLACK_CONTEXT => maybeSlackPlaceholderEventAction(services)
+      case _ => DBIO.successful(None)
     }
   }
 
@@ -71,61 +73,48 @@ trait Conversation {
 
   def updateStateTo(newState: String, dataService: DataService): Future[Conversation]
   def cancel(dataService: DataService): Future[Conversation] = updateStateTo(Conversation.DONE_STATE, dataService)
-  def updateWith(event: Event, lambdaService: AWSLambdaService, dataService: DataService, cacheService: CacheService, configuration: Configuration, actorSystem: ActorSystem): Future[Conversation]
+  def updateWith(event: Event, services: ConversationServices): Future[Conversation]
+
+  def respondAction(
+                     event: Event,
+                     isReminding: Boolean,
+                     services: ConversationServices
+                   ): DBIO[BotResult]
+
   def respond(
                event: Event,
                isReminding: Boolean,
-               lambdaService: AWSLambdaService,
-               dataService: DataService,
-               cacheService: CacheService,
-               ws: WSClient,
-               configuration: Configuration,
-               actorSystem: ActorSystem
+               services: ConversationServices
              ): Future[BotResult]
 
   def resultFor(
                  event: Event,
-                 lambdaService: AWSLambdaService,
-                 dataService: DataService,
-                 cacheService: CacheService,
-                 ws: WSClient,
-                 configuration: Configuration,
-                 actorSystem: ActorSystem
+                 services: ConversationServices
                ): Future[BotResult] = {
     for {
-      updatedConversation <- updateWith(event, lambdaService, dataService, cacheService, configuration, actorSystem)
-      result <- updatedConversation.respond(event, isReminding=false, lambdaService, dataService, cacheService, ws, configuration, actorSystem)
+      updatedConversation <- updateWith(event, services)
+      result <- updatedConversation.respond(event, isReminding=false, services)
     } yield result
   }
 
   def maybeNextParamToCollect(
                                event: Event,
-                               lambdaService: AWSLambdaService,
-                               dataService: DataService,
-                               cacheService: CacheService,
-                               ws: WSClient,
-                               configuration: Configuration,
-                               actorSystem: ActorSystem
+                               services: ConversationServices
                              ): Future[Option[BehaviorParameter]]
 
-  def maybeRemindResult(
-                        lambdaService: AWSLambdaService,
-                        dataService: DataService,
-                        cacheService: CacheService,
-                        ws: WSClient,
-                        configuration: Configuration,
-                        actorSystem: ActorSystem
-                      ): Future[Option[BotResult]] = {
-    maybePlaceholderEvent(dataService).flatMap { maybeEvent =>
+  def maybeRemindResultAction(
+                               services: ConversationServices
+                            ): DBIO[Option[BotResult]] = {
+    maybePlaceholderEventAction(services).flatMap { maybeEvent =>
       maybeEvent.map { event =>
-        respond(event, isReminding=true, lambdaService, dataService, cacheService, ws, configuration, actorSystem).map { result =>
+        respondAction(event, isReminding=true, services).map { result =>
           val intro = s"Hey <@$userIdForContext>, don’t forget, I’m still waiting for your answer to this:"
           val actions = Seq(SlackMessageActionButton(STOP_CONVERSATION, "Stop asking", id))
           val question = result.text
           val attachment = SlackMessageActions(STOP_CONVERSATION, actions, Some(question), None)
           Some(TextWithActionsResult(result.event, Some(this), intro, result.forcePrivateResponse, attachment))
         }
-      }.getOrElse(Future.successful(None))
+      }.getOrElse(DBIO.successful(None))
     }
   }
 

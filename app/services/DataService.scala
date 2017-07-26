@@ -12,6 +12,7 @@ import models.accounts.slack.botprofile.SlackBotProfileService
 import models.accounts.slack.profile.SlackProfileService
 import models.accounts.user.UserService
 import models.apitoken.APITokenService
+import models.behaviors.BehaviorResponseService
 import models.behaviors.behavior.BehaviorService
 import models.behaviors.behaviorgroup.BehaviorGroupService
 import models.behaviors.behaviorgroupversion.BehaviorGroupVersionService
@@ -73,6 +74,7 @@ trait DataService {
   val scheduledBehaviors: ScheduledBehaviorService
   val recurrences: RecurrenceService
   val invocationLogEntries: InvocationLogEntryService
+  def behaviorResponses: BehaviorResponseService
 
   def run[T](action: DBIO[T]): Future[T]
   def runNow[T](action: DBIO[T]): T

@@ -4,7 +4,6 @@ import akka.actor.ActorSystem
 import models.accounts.slack.botprofile.SlackBotProfile
 import play.api.libs.json.{JsArray, JsBoolean, JsObject, JsString}
 import play.api.libs.ws.WSClient
-import services.DataService
 import slack.api.{ApiError, SlackApiClient}
 import slack.models.Channel
 
@@ -15,9 +14,9 @@ trait SlackEvent {
   val user: String
   val channel: String
   val profile: SlackBotProfile
-  def clientFor(dataService: DataService) = dataService.slackBotProfiles.clientFor(profile)
-  def eventualMaybeDMChannel(dataService: DataService)(implicit actorSystem: ActorSystem) = {
-    dataService.slackBotProfiles.clientFor(profile).listIms.map(_.find(_.user == user).map(_.id))
+  val client: SlackApiClient
+  def eventualMaybeDMChannel(implicit actorSystem: ActorSystem) = {
+    client.listIms.map(_.find(_.user == user).map(_.id))
   }
 
   def isDirectMessage(channelId: String): Boolean = {
@@ -40,8 +39,7 @@ trait SlackEvent {
     }
   }
 
-  def detailsFor(ws: WSClient, dataService: DataService)(implicit actorSystem: ActorSystem): Future[JsObject] = {
-    val client = clientFor(dataService)
+  def detailsFor(ws: WSClient)(implicit actorSystem: ActorSystem): Future[JsObject] = {
     for {
       user <- client.getUserInfo(user)
       maybeChannel <- maybeChannelInfoFor(client)

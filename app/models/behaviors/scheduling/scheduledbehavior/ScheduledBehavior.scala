@@ -11,6 +11,8 @@ import models.behaviors.scheduling.recurrence.Recurrence
 import models.team.Team
 import play.api.libs.json.Json
 import services.DataService
+import slack.api.SlackApiClient
+import slick.dbio.DBIO
 import utils.SlackTimestamp
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -60,16 +62,16 @@ case class ScheduledBehavior(
     }
   }
 
-  def eventFor(channel: String, slackUserId: String, profile: SlackBotProfile): ScheduledEvent = {
-    ScheduledEvent(RunEvent(profile, behavior, arguments, channel, None, slackUserId, SlackTimestamp.now), this)
+  def eventFor(channel: String, slackUserId: String, profile: SlackBotProfile, client: SlackApiClient): ScheduledEvent = {
+    ScheduledEvent(RunEvent(profile, behavior, arguments, channel, None, slackUserId, SlackTimestamp.now, client), this)
   }
 
   def withUpdatedNextTriggeredFor(when: OffsetDateTime): ScheduledBehavior = {
     this.copy(nextSentAt = recurrence.nextAfter(when))
   }
 
-  def updateNextTriggeredFor(dataService: DataService): Future[ScheduledBehavior] = {
-    dataService.scheduledBehaviors.updateNextTriggeredFor(this)
+  def updateNextTriggeredForAction(dataService: DataService): DBIO[ScheduledBehavior] = {
+    dataService.scheduledBehaviors.updateNextTriggeredForAction(this)
   }
 
   def toRaw: RawScheduledBehavior = {
@@ -86,4 +88,8 @@ case class ScheduledBehavior(
       createdAt
     )
   }
+}
+
+object ScheduledBehavior {
+  val tableName: String = "scheduled_behaviors"
 }

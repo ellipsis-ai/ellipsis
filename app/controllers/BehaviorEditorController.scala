@@ -246,7 +246,7 @@ class BehaviorEditorController @Inject() (
           }.getOrElse(Future.successful(None))
           maybeReport <- maybeBehaviorVersion.map { behaviorVersion =>
             val event = TestEvent(user, behaviorVersion.team, info.message, includesBotMention = true)
-            TriggerTester(lambdaService, dataService, cacheService, ws, configuration, actorSystem).test(event, behaviorVersion).map(Some(_))
+            TriggerTester(dataService).test(event, behaviorVersion).map(Some(_))
           }.getOrElse(Future.successful(None))
 
         } yield {
@@ -285,7 +285,7 @@ class BehaviorEditorController @Inject() (
                 dataService.behaviors.maybeCurrentVersionFor(behavior)
               }.getOrElse(Future.successful(None))
               maybeReport <- maybeBehaviorVersion.map { behaviorVersion =>
-                InvocationTester(user, behaviorVersion, paramValues, lambdaService, dataService, cacheService, configuration, actorSystem).run.map(Some(_))
+                InvocationTester(user, behaviorVersion, paramValues, dataService).run.map(Some(_))
               }.getOrElse(Future.successful(None))
             } yield {
               maybeReport.map { report =>

@@ -1,19 +1,22 @@
 package models.behaviors.scheduling
 
+import java.sql.Timestamp
 import java.time.OffsetDateTime
 import java.time.format.DateTimeFormatter
 
 import akka.actor.ActorSystem
+import drivers.SlickPostgresDriver.api._
 import models.accounts.slack.botprofile.SlackBotProfile
 import models.accounts.slack.profile.SlackProfile
 import models.accounts.user.User
-import models.behaviors.BotResult
 import models.behaviors.events.{EventHandler, ScheduledEvent}
 import models.behaviors.scheduling.recurrence.Recurrence
+import models.behaviors.{BotResult, BotResultService}
 import models.team.Team
 import play.api.{Configuration, Logger}
 import services.DataService
 import slack.api.{ApiError, SlackApiClient}
+import slick.dbio.DBIO
 import utils.{FutureSequencer, SlackChannels}
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -156,8 +159,8 @@ trait Scheduled {
      """.stripMargin
   }
 
-  def botProfile(dataService: DataService): Future[Option[SlackBotProfile]] = {
-    dataService.slackBotProfiles.allFor(team).map(_.headOption)
+  def botProfileAction(dataService: DataService): DBIO[Option[SlackBotProfile]] = {
+    dataService.slackBotProfiles.allForAction(team).map(_.headOption)
   }
 
   def maybeSlackProfile(dataService: DataService): Future[Option[SlackProfile]] = {
@@ -179,7 +182,8 @@ trait Scheduled {
                                 client: SlackApiClient,
                                 profile: SlackBotProfile,
                                 dataService: DataService,
-                                configuration: Configuration
+                                configuration: Configuration,
+                                botResultService: BotResultService
                               )(implicit actorSystem: ActorSystem): Future[Unit] = {
     for {
       members <- SlackChannels(client).getMembersFor(channel)
@@ -194,11 +198,11 @@ trait Scheduled {
           }
         }
       }).map(_.flatten)
-      _ <- FutureSequencer.sequence(dmInfos, sendForFn(eventHandler, client, profile, dataService, configuration))
+      _ <- FutureSequencer.sequence(dmInfos, sendForFn(eventHandler, client, profile, dataService, configuration, botResultService))
     } yield {}
   }
 
-  def eventFor(channel: String, slackUserId: String, profile: SlackBotProfile): ScheduledEvent
+  def eventFor(channel: String, slackUserId: String, profile: SlackBotProfile, client: SlackApiClient): ScheduledEvent
 
   // TODO: don't be slack-specific
   def sendFor(
@@ -208,13 +212,14 @@ trait Scheduled {
                client: SlackApiClient,
                profile: SlackBotProfile,
                dataService: DataService,
-               configuration: Configuration
+               configuration: Configuration,
+               botResultService: BotResultService
              )(implicit actorSystem: ActorSystem): Future[Unit] = {
-    val event = eventFor(channel, slackUserId, profile)
+    val event = eventFor(channel, slackUserId, profile, client)
     for {
       results <- eventHandler.handle(event, None)
     } yield {
-      FutureSequencer.sequence(results, sendResultFn(event, configuration, dataService))
+      FutureSequencer.sequence(results, sendResultFn(event, configuration, dataService, botResultService))
     }
   }
 
@@ -223,22 +228,24 @@ trait Scheduled {
                   client: SlackApiClient,
                   profile: SlackBotProfile,
                   dataService: DataService,
-                  configuration: Configuration
+                  configuration: Configuration,
+                  botResultService: BotResultService
                )(implicit actorSystem: ActorSystem): SlackDMInfo => Future[Unit] = {
-    info: SlackDMInfo => sendFor(info.channelId, info.userId, eventHandler, client, profile, dataService, configuration)
+    info: SlackDMInfo => sendFor(info.channelId, info.userId, eventHandler, client, profile, dataService, configuration, botResultService)
   }
 
   def sendResult(
                   result: BotResult,
                   event: ScheduledEvent,
                   configuration: Configuration,
-                  dataService: DataService
+                  dataService: DataService,
+                  botResultService: BotResultService
                 )(implicit actorSystem: ActorSystem): Future[Unit] = {
     for {
       displayText <- displayText(dataService)
       maybeIntroText <- Future.successful(maybeScheduleInfoTextFor(event, result, configuration, displayText, isForInterruption = false))
       maybeInterruptionIntroText <- Future.successful(maybeScheduleInfoTextFor(event, result, configuration, displayText, isForInterruption = true))
-      _ <- result.sendIn(None, dataService, maybeIntroText, maybeInterruptionIntroText)
+      _ <- botResultService.sendIn(result, None, maybeIntroText, maybeInterruptionIntroText)
     } yield {
       val channelInfo =
         event.maybeChannel.
@@ -251,9 +258,10 @@ trait Scheduled {
   def sendResultFn(
                     event: ScheduledEvent,
                     configuration: Configuration,
-                    dataService: DataService
+                    dataService: DataService,
+                    botResultService: BotResultService
                   )(implicit actorSystem: ActorSystem): BotResult => Future[Unit] = {
-    result: BotResult => sendResult(result, event, configuration, dataService)
+    result: BotResult => sendResult(result, event, configuration, dataService, botResultService)
   }
 
   def send(
@@ -261,32 +269,26 @@ trait Scheduled {
             client: SlackApiClient,
             profile: SlackBotProfile,
             dataService: DataService,
-            configuration: Configuration
+            configuration: Configuration,
+            botResultService: BotResultService
           )(implicit actorSystem: ActorSystem): Future[Unit] = {
     maybeChannel.map { channel =>
       if (isForIndividualMembers) {
-        sendForIndividualMembers(channel, eventHandler, client, profile, dataService, configuration)
+        sendForIndividualMembers(channel, eventHandler, client, profile, dataService, configuration, botResultService)
       } else {
         maybeSlackProfile(dataService).flatMap { maybeSlackProfile =>
           val slackUserId = maybeSlackProfile.map(_.loginInfo.providerKey).getOrElse(profile.userId)
-          sendFor(channel, slackUserId, eventHandler, client, profile, dataService, configuration)
+          sendFor(channel, slackUserId, eventHandler, client, profile, dataService, configuration, botResultService)
         }
       }
     }.getOrElse(Future.successful(Unit))
   }
 
-  def updateNextTriggeredFor(dataService: DataService): Future[Scheduled]
+  def updateNextTriggeredForAction(dataService: DataService): DBIO[Scheduled]
 
 }
 
 object Scheduled {
-
-  def allToBeSent(dataService: DataService): Future[Seq[Scheduled]] = {
-    for {
-      scheduledMessages <- dataService.scheduledMessages.allToBeSent
-      scheduledBehaviors <- dataService.scheduledBehaviors.allToBeSent
-    } yield scheduledMessages ++ scheduledBehaviors
-  }
 
   def allForTeam(team: Team, dataService: DataService): Future[Seq[Scheduled]] = {
     for {
@@ -300,6 +302,27 @@ object Scheduled {
       scheduledMessages <- dataService.scheduledMessages.allForChannel(team, channel)
       scheduledBehaviors <- dataService.scheduledBehaviors.allForChannel(team, channel)
     } yield scheduledMessages ++ scheduledBehaviors
+  }
+
+  def maybeNextToBeSentAction(when: OffsetDateTime, dataService: DataService): DBIO[Option[Scheduled]] = {
+    dataService.scheduledMessages.maybeNextToBeSentAction(when).flatMap { maybeNext =>
+      maybeNext.map { next =>
+        DBIO.successful(Some(next))
+      }.getOrElse {
+        dataService.scheduledBehaviors.maybeNextToBeSentAction(when)
+      }
+    }
+  }
+
+  def nextToBeSentIdQueryFor(tableName: String, when: OffsetDateTime): DBIO[Seq[String]] = {
+    val ts = Timestamp.from(when.toInstant)
+    sql"""
+         SELECT id from #$tableName
+         WHERE next_sent_at <= ${ts}
+         ORDER BY id
+         FOR UPDATE SKIP LOCKED
+         LIMIT 1
+         """.as[String]
   }
 
 }

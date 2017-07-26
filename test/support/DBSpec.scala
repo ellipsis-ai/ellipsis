@@ -9,6 +9,7 @@ import models.IDs
 import models.accounts.oauth2api.{AuthorizationCode, OAuth2Api}
 import models.accounts.oauth2application.OAuth2Application
 import models.accounts.user.User
+import models.behaviors.BotResultService
 import models.behaviors.behavior.Behavior
 import models.behaviors.behaviorgroup.BehaviorGroup
 import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
@@ -24,8 +25,9 @@ import play.api.db.Databases
 import play.api.db.evolutions.Evolutions
 import play.api.inject.bind
 import play.api.inject.guice.GuiceApplicationBuilder
+import play.api.libs.ws.WSClient
 import play.api.{Application, Configuration}
-import services.{AWSLambdaService, CacheService, GithubService, PostgresDataService}
+import services.{AWSLambdaService, CacheService, GithubService, PostgresDataService, SlackEventService}
 
 import scala.concurrent.duration._
 import scala.concurrent.{Await, Future}
@@ -40,11 +42,16 @@ trait DBSpec extends PlaySpec with OneAppPerSuite with MockitoSugar {
     GuiceApplicationBuilder().
       overrides(bind[AWSLambdaService].to[MockAWSLambdaService]).
       overrides(bind[GithubService].toInstance(mock[GithubService])).
+      overrides(bind[SlackEventService].toInstance(mock[SlackEventService])).
       disable[ActorModule].
       build()
 
   val dataService = app.injector.instanceOf(classOf[PostgresDataService])
+  val lambdaService = app.injector.instanceOf(classOf[AWSLambdaService])
   val actorSystem = app.injector.instanceOf(classOf[ActorSystem])
+  val slackEventService = app.injector.instanceOf(classOf[SlackEventService])
+  val ws = app.injector.instanceOf(classOf[WSClient])
+  val botResultService = app.injector.instanceOf(classOf[BotResultService])
 
   def newSavedTeam: Team = runNow(dataService.teams.create(IDs.next))
 

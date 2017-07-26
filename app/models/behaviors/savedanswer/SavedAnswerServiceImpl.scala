@@ -62,21 +62,24 @@ class SavedAnswerServiceImpl @Inject() (
     dataService.run(action)
   }
 
-  def maybeFor(user: User, param: BehaviorParameter): Future[Option[SavedAnswer]] = {
+  def maybeForAction(user: User, param: BehaviorParameter): DBIO[Option[SavedAnswer]] = {
     if (param.input.isSaved) {
-      val action = maybeForQuery(maybeUserIdFor(param.input, user), param.input.inputId).result.map { r =>
+      maybeForQuery(maybeUserIdFor(param.input, user), param.input.inputId).result.map { r =>
         r.headOption
       }
-      dataService.run(action)
     } else {
-      Future.successful(None)
+      DBIO.successful(None)
     }
   }
 
-  def allFor(user: User, params: Seq[BehaviorParameter]): Future[Seq[SavedAnswer]] = {
-    Future.sequence(params.map { param =>
-      maybeFor(user, param)
+  def allForAction(user: User, params: Seq[BehaviorParameter]): DBIO[Seq[SavedAnswer]] = {
+    DBIO.sequence(params.map { param =>
+      maybeForAction(user, param)
     }).map(_.flatten)
+  }
+
+  def allFor(user: User, params: Seq[BehaviorParameter]): Future[Seq[SavedAnswer]] = {
+    dataService.run(allForAction(user, params))
   }
 
   def allFor(inputId: String): Future[Seq[SavedAnswer]] = {

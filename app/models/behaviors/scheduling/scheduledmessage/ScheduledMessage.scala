@@ -9,6 +9,8 @@ import models.behaviors.scheduling.Scheduled
 import models.behaviors.scheduling.recurrence.Recurrence
 import models.team.Team
 import services.DataService
+import slack.api.SlackApiClient
+import slick.dbio.DBIO
 import utils.SlackTimestamp
 
 import scala.concurrent.Future
@@ -29,16 +31,16 @@ case class ScheduledMessage(
     Future.successful(s"`$text`")
   }
 
-  def eventFor(channel: String, slackUserId: String, profile: SlackBotProfile): ScheduledEvent = {
-    ScheduledEvent(SlackMessageEvent(profile, channel, None, slackUserId, text, SlackTimestamp.now), this)
+  def eventFor(channel: String, slackUserId: String, profile: SlackBotProfile, client: SlackApiClient): ScheduledEvent = {
+    ScheduledEvent(SlackMessageEvent(profile, channel, None, slackUserId, text, SlackTimestamp.now, client), this)
   }
 
   def withUpdatedNextTriggeredFor(when: OffsetDateTime): ScheduledMessage = {
     this.copy(nextSentAt = recurrence.nextAfter(when))
   }
 
-  def updateNextTriggeredFor(dataService: DataService): Future[ScheduledMessage] = {
-    dataService.scheduledMessages.updateNextTriggeredFor(this)
+  def updateNextTriggeredForAction(dataService: DataService): DBIO[ScheduledMessage] = {
+    dataService.scheduledMessages.updateNextTriggeredForAction(this)
   }
 
   def toRaw: RawScheduledMessage = {
@@ -54,4 +56,8 @@ case class ScheduledMessage(
       createdAt
     )
   }
+}
+
+object ScheduledMessage {
+  val tableName: String = "scheduled_messages"
 }

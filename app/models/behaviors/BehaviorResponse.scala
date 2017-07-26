@@ -3,18 +3,17 @@ package models.behaviors
 import java.time.OffsetDateTime
 
 import akka.actor.ActorSystem
-import models.behaviors.behavior.Behavior
-import models.behaviors.behaviorparameter.{BehaviorParameter, BehaviorParameterContext}
+import models.behaviors.behaviorparameter.BehaviorParameter
 import models.behaviors.behaviorversion.BehaviorVersion
-import models.behaviors.conversations.InvokeBehaviorConversation
 import models.behaviors.conversations.conversation.Conversation
+import models.behaviors.conversations.{ConversationServices, InvokeBehaviorConversation}
 import models.behaviors.events.Event
 import models.behaviors.triggers.messagetrigger.MessageTrigger
-import models.team.Team
 import play.api.Configuration
 import play.api.libs.json.{JsString, JsValue}
 import play.api.libs.ws.WSClient
-import services.{AWSLambdaConstants, AWSLambdaService, CacheService, DataService}
+import services.{AWSLambdaService, CacheService, DataService, SlackEventService}
+import slick.dbio.DBIO
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -42,6 +41,7 @@ case class BehaviorResponse(
                              maybeActivatedTrigger: Option[MessageTrigger],
                              lambdaService: AWSLambdaService,
                              dataService: DataService,
+                             slackEventService: SlackEventService,
                              cacheService: CacheService,
                              ws: WSClient,
                              configuration: Configuration
@@ -74,14 +74,14 @@ case class BehaviorResponse(
     }
   }
 
-  def resultForFilledOut: Future[BotResult] = {
+  def resultForFilledOutAction: DBIO[BotResult] = {
     val startTime = OffsetDateTime.now
     for {
-      user <- event.ensureUser(dataService)
-      result <- dataService.behaviorVersions.resultFor(behaviorVersion, parametersWithValues, event, maybeConversation)
+      user <- event.ensureUserAction(dataService)
+      result <- dataService.behaviorVersions.resultForAction(behaviorVersion, parametersWithValues, event, maybeConversation)
       _ <- {
         val runtimeInMilliseconds = OffsetDateTime.now.toInstant.toEpochMilli - startTime.toInstant.toEpochMilli
-        dataService.invocationLogEntries.createFor(
+        dataService.invocationLogEntries.createForAction(
           behaviorVersion,
           parametersWithValues,
           result,
@@ -94,6 +94,10 @@ case class BehaviorResponse(
     } yield result
   }
 
+  def resultForFilledOut: Future[BotResult] = {
+    dataService.run(resultForFilledOutAction)
+  }
+
   def result(implicit actorSystem: ActorSystem): Future[BotResult] = {
     dataService.behaviorVersions.maybeNotReadyResultFor(behaviorVersion, event).flatMap { maybeNotReadyResult =>
       maybeNotReadyResult.map(Future.successful).getOrElse {
@@ -102,7 +106,7 @@ case class BehaviorResponse(
             resultForFilledOut
           } else {
             for {
-              maybeChannel <- event.maybeChannelToUseFor(behaviorVersion, dataService)
+              maybeChannel <- event.maybeChannelToUseFor(behaviorVersion)
               convo <- InvokeBehaviorConversation.createFor(
                 behaviorVersion,
                 event,
@@ -115,77 +119,12 @@ case class BehaviorResponse(
                   dataService.collectedParameterValues.ensureFor(p.parameter, convo, v.text)
                 }.getOrElse(Future.successful(Unit))
               })
-              result <- convo.resultFor(event, lambdaService, dataService, cacheService, ws, configuration, actorSystem)
+              services <- Future.successful(ConversationServices(dataService, lambdaService, slackEventService, cache, configuration, ws, actorSystem))
+              result <- convo.resultFor(event, services)
             } yield result
           }
         }
       }
     }
-  }
-}
-
-object BehaviorResponse {
-
-  def parametersWithValuesFor(
-                               event: Event,
-                               behaviorVersion: BehaviorVersion,
-                               paramValues: Map[String, String],
-                               maybeConversation: Option[Conversation],
-                               dataService: DataService,
-                               cacheService: CacheService,
-                               configuration: Configuration,
-                               actorSystem: ActorSystem
-                             ): Future[Seq[ParameterWithValue]] = {
-    for {
-      params <- dataService.behaviorParameters.allFor(behaviorVersion)
-      invocationNames <- Future.successful(params.zipWithIndex.map { case (p, i) =>
-        AWSLambdaConstants.invocationParamFor(i)
-      })
-      values <- Future.sequence(params.zip(invocationNames).map { case(param, invocationName) =>
-        val context = BehaviorParameterContext(event, maybeConversation, param, cacheService, dataService, configuration, actorSystem)
-        paramValues.get(invocationName).map { v =>
-          for {
-            isValid <- param.paramType.isValid(v, context)
-            json <- param.paramType.prepareForInvocation(v, context)
-          } yield {
-            Some(ParameterValue(v, json, isValid))
-          }
-        }.getOrElse(Future.successful(None))
-      })
-    } yield params.zip(values).zip(invocationNames).map { case((param, maybeValue), invocationName) =>
-        ParameterWithValue(param, invocationName, maybeValue)
-      }
-  }
-
-  def buildFor(
-                event: Event,
-                behaviorVersion: BehaviorVersion,
-                paramValues: Map[String, String],
-                maybeActivatedTrigger: Option[MessageTrigger],
-                maybeConversation: Option[Conversation],
-                lambdaService: AWSLambdaService,
-                dataService: DataService,
-                cacheService: CacheService,
-                ws: WSClient,
-                configuration: Configuration,
-                actorSystem: ActorSystem
-                ): Future[BehaviorResponse] = {
-    parametersWithValuesFor(event, behaviorVersion, paramValues, maybeConversation, dataService, cacheService, configuration, actorSystem).map { paramsWithValues =>
-      BehaviorResponse(event, behaviorVersion, maybeConversation, paramsWithValues, maybeActivatedTrigger, lambdaService, dataService, cacheService, ws, configuration)
-    }
-  }
-
-  def allFor(
-              event: Event,
-              maybeTeam: Option[Team],
-              maybeLimitToBehavior: Option[Behavior],
-              lambdaService: AWSLambdaService,
-              dataService: DataService,
-              cacheService: CacheService,
-              ws: WSClient,
-              configuration: Configuration,
-              actorSystem: ActorSystem
-               ): Future[Seq[BehaviorResponse]] = {
-    event.allBehaviorResponsesFor(maybeTeam, maybeLimitToBehavior, lambdaService, dataService, cacheService, ws, configuration, actorSystem)
   }
 }

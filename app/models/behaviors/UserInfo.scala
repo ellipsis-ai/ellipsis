@@ -8,6 +8,7 @@ import models.team.Team
 import play.api.libs.ws.WSClient
 import play.api.libs.json._
 import services.DataService
+import slick.dbio.DBIO
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -29,7 +30,7 @@ case class MessageInfo(medium: String, channel: Option[String], userId: String, 
 object MessageInfo {
 
   def buildFor(event: Event, ws: WSClient, dataService: DataService)(implicit actorSystem: ActorSystem): Future[MessageInfo] = {
-    event.detailsFor(ws, dataService).map { details =>
+    event.detailsFor(ws).map { details =>
       MessageInfo(event.name, event.maybeChannel, event.userIdForContext, details)
     }
   }
@@ -58,27 +59,27 @@ case class UserInfo(
 
 object UserInfo {
 
-  def buildFor(user: User, event: Event, ws: WSClient, dataService: DataService)(implicit actorSystem: ActorSystem): Future[UserInfo] = {
+  def buildForAction(user: User, event: Event, ws: WSClient, dataService: DataService)(implicit actorSystem: ActorSystem): DBIO[UserInfo] = {
     for {
-      linkedOAuth2Tokens <- dataService.linkedOAuth2Tokens.allForUser(user, ws)
-      linkedSimpleTokens <- dataService.linkedSimpleTokens.allForUser(user)
-      links <- Future.successful {
+      linkedOAuth2Tokens <- dataService.linkedOAuth2Tokens.allForUserAction(user, ws)
+      linkedSimpleTokens <- dataService.linkedSimpleTokens.allForUserAction(user)
+      links <- DBIO.successful {
         linkedOAuth2Tokens.map { ea =>
           LinkedInfo(ea.application.name, ea.accessToken)
         } ++ linkedSimpleTokens.map { ea =>
           LinkedInfo(ea.api.name, ea.accessToken)
         }
       }
-      messageInfo <- event.messageInfo(ws, dataService)
+      messageInfo <- DBIO.from(event.messageInfo(ws, dataService))
     } yield {
       UserInfo(user, links, Some(messageInfo))
     }
   }
 
-  def buildFor(event: Event, teamId: String, ws: WSClient, dataService: DataService)(implicit actorSystem: ActorSystem): Future[UserInfo] = {
+  def buildForAction(event: Event, teamId: String, ws: WSClient, dataService: DataService)(implicit actorSystem: ActorSystem): DBIO[UserInfo] = {
     for {
-      user <- event.ensureUser(dataService)
-      info <- buildFor(user, event, ws, dataService)
+      user <- event.ensureUserAction(dataService)
+      info <- buildForAction(user, event, ws, dataService)
     } yield info
   }
 

@@ -29,25 +29,31 @@ class LinkedAccountServiceImpl @Inject() (dataServiceProvider: Provider[DataServ
 
   import LinkedAccountQueries._
 
-  def find(loginInfo: LoginInfo, teamId: String): Future[Option[LinkedAccount]] = {
-    val action = findQuery(loginInfo.providerID, loginInfo.providerKey, teamId).
+  def findAction(loginInfo: LoginInfo, teamId: String): DBIO[Option[LinkedAccount]] = {
+    findQuery(loginInfo.providerID, loginInfo.providerKey, teamId).
       result.
       map { result =>
         result.headOption.map(tuple2LinkedAccount)
       }
-    dataService.run(action)
   }
 
-  def save(link: LinkedAccount): Future[LinkedAccount] = {
+  def find(loginInfo: LoginInfo, teamId: String): Future[Option[LinkedAccount]] = {
+    dataService.run(findAction(loginInfo, teamId))
+  }
+
+  def saveAction(link: LinkedAccount): DBIO[LinkedAccount] = {
     val query = all.filter(_.providerId === link.loginInfo.providerID).filter(_.providerKey === link.loginInfo.providerKey)
-    val action = query.result.headOption.flatMap {
+    query.result.headOption.flatMap {
       case Some(_) => {
         query.
           update(link.toRaw)
       }
       case None => all += link.toRaw
     }.map { _ => link }
-    dataService.run(action)
+  }
+
+  def save(link: LinkedAccount): Future[LinkedAccount] = {
+    dataService.run(saveAction(link))
   }
 
   def allFor(user: User): Future[Seq[LinkedAccount]] = {
