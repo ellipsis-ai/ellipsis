@@ -46,21 +46,12 @@ class ConversationReminderActor @Inject()(
           convo.maybeRemindResultAction(services).flatMap { maybeResult =>
             maybeResult.map { result =>
               botResultService.sendInAction(result, None, None).map(_ => true)
-            }.getOrElse {
-              // Just act like the reminding happened if no remind result can be build (i.e. non-Slack message for now)
-              DBIO.successful(true)
-            }
+            }.getOrElse(DBIO.successful(true))
           }
         }
       }.getOrElse(DBIO.successful(false))
     }
-    val eventualShouldContinue: Future[Boolean] = dataService.run(action.transactionally).recover {
-      case t: Throwable => {
-        Logger.error(s"Exception reminding about a conversation", t)
-        true
-      }
-    }
-    eventualShouldContinue.flatMap { shouldContinue =>
+    dataService.run(action.transactionally).flatMap { shouldContinue =>
       if (shouldContinue) {
         remindAsNeeded(when)
       } else {
