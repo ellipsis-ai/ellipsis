@@ -8,6 +8,7 @@ import models.behaviors.{BotResult, ParameterWithValue}
 import models.behaviors.behaviorversion.BehaviorVersion
 import models.behaviors.events.Event
 import models.team.Team
+import slick.dbio.DBIO
 
 import scala.concurrent.Future
 
@@ -23,14 +24,14 @@ trait InvocationLogEntryService {
 
   def allForBehavior(behavior: Behavior, from: OffsetDateTime, to: OffsetDateTime, maybeUserId: Option[String]): Future[Seq[InvocationLogEntry]]
 
-  def createFor(
-                 behaviorVersion: BehaviorVersion,
-                 parametersWithValues: Seq[ParameterWithValue],
-                 result: BotResult,
-                 event: Event,
-                 maybeUserIdForContext: Option[String],
-                 user: User,
-                 runtimeInMilliseconds: Long
-               ): Future[InvocationLogEntry]
+  def createForAction(
+                       behaviorVersion: BehaviorVersion,
+                       parametersWithValues: Seq[ParameterWithValue],
+                       result: BotResult,
+                       event: Event,
+                       maybeUserIdForContext: Option[String],
+                       user: User,
+                       runtimeInMilliseconds: Long
+                     ): DBIO[InvocationLogEntry]
 
 }

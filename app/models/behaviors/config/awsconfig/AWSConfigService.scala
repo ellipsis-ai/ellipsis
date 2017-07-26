@@ -8,10 +8,12 @@ import scala.concurrent.Future
 
 trait AWSConfigService {
 
+  def maybeForAction(behaviorVersion: BehaviorVersion): DBIO[Option[AWSConfig]]
+
   def maybeFor(behaviorVersion: BehaviorVersion): Future[Option[AWSConfig]]
 
-  def environmentVariablesUsedFor(behaviorVersion: BehaviorVersion): Future[Seq[String]] = {
-    maybeFor(behaviorVersion).map { maybeAwsConfig =>
+  def environmentVariablesUsedForAction(behaviorVersion: BehaviorVersion): DBIO[Seq[String]] = {
+    maybeForAction(behaviorVersion).map { maybeAwsConfig =>
       maybeAwsConfig.map { awsConfig =>
         awsConfig.environmentVariableNames
       }.getOrElse(Seq())

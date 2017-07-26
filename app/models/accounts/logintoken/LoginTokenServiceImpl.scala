@@ -35,9 +35,9 @@ class LoginTokenServiceImpl @Inject() (dataServiceProvider: Provider[DataService
     dataService.run(findQuery(value).result.map(_.headOption))
   }
 
-  def createFor(user: User): Future[LoginToken] = {
+  def createForAction(user: User): DBIO[LoginToken] = {
     val instance = LoginToken(IDs.next, user.id, OffsetDateTime.now)
-    dataService.run((all += instance).map(_ => instance))
+    (all += instance).map(_ => instance)
   }
 
 }

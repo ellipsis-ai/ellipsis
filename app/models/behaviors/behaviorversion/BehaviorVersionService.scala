@@ -67,6 +67,13 @@ trait BehaviorVersionService {
 
   def maybeNotReadyResultFor(behaviorVersion: BehaviorVersion, event: Event): Future[Option[BotResult]]
 
+  def resultForAction(
+                       behaviorVersion: BehaviorVersion,
+                       parametersWithValues: Seq[ParameterWithValue],
+                       event: Event,
+                       maybeConversation: Option[Conversation]
+                     ): DBIO[BotResult]
+
   def resultFor(
                  behaviorVersion: BehaviorVersion,
                  parametersWithValues: Seq[ParameterWithValue],

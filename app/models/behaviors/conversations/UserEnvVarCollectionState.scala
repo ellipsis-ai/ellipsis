@@ -1,13 +1,10 @@
 package models.behaviors.conversations
 
-import akka.actor.ActorSystem
 import models.accounts.user.User
 import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.events.Event
 import models.behaviors.{BotResult, SimpleTextResult}
-import play.api.Configuration
-import play.api.cache.CacheApi
-import services.DataService
+import slick.dbio.DBIO
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -15,18 +12,21 @@ import scala.concurrent.Future
 case class UserEnvVarCollectionState(
                                       missingEnvVarNames: Seq[String],
                                       event: Event,
-                                      dataService: DataService,
-                                      cache: CacheApi,
-                                      configuration: Configuration,
-                                      actorSystem: ActorSystem
+                                      services: ConversationServices
                                     ) extends CollectionState {
+
+  lazy val dataService = services.dataService
 
   val name = InvokeBehaviorConversation.COLLECT_USER_ENV_VARS_STATE
 
   val sortedEnvVars = missingEnvVarNames.sorted
 
+  def maybeNextToCollectAction: DBIO[Option[String]] = {
+    DBIO.successful(sortedEnvVars.headOption)
+  }
+
   def maybeNextToCollect: Future[Option[String]] = {
-    Future.successful(sortedEnvVars.headOption)
+    dataService.run(maybeNextToCollectAction)
   }
 
   def isCompleteIn(conversation: Conversation): Future[Boolean] = maybeNextToCollect.map(_.isEmpty)
@@ -38,12 +38,12 @@ case class UserEnvVarCollectionState(
       updatedConversation <- maybeNextToCollect.map { envVarName =>
         dataService.userEnvironmentVariables.ensureFor(envVarName, Some(event.relevantMessageText), user).map(_ => conversation)
       }.getOrElse(Future.successful(conversation))
-      updatedConversation <- updatedConversation.updateToNextState(event, cache, dataService, configuration, actorSystem)
+      updatedConversation <- updatedConversation.updateToNextState(event, services)
     } yield updatedConversation
   }
 
-  def promptResultFor(conversation: Conversation, isReminding: Boolean): Future[BotResult] = {
-    maybeNextToCollect.map { maybeNextToCollect =>
+  def promptResultForAction(conversation: Conversation, isReminding: Boolean): DBIO[BotResult] = {
+    maybeNextToCollectAction.map { maybeNextToCollect =>
       val prompt = maybeNextToCollect.map { envVarName =>
         s"To run this skill, I first need a value for $envVarName. This is specific to you and I'll only ask for it once"
       }.getOrElse {
@@ -57,17 +57,15 @@ case class UserEnvVarCollectionState(
 
 object UserEnvVarCollectionState {
 
-  def from(
-            user: User,
-            conversation: Conversation,
-            event: Event,
-            dataService: DataService,
-            cache: CacheApi,
-            configuration: Configuration,
-            actorSystem: ActorSystem
-          ): Future[UserEnvVarCollectionState] = {
-    dataService.userEnvironmentVariables.missingFor(user, conversation.behaviorVersion, dataService).map { missing =>
-      UserEnvVarCollectionState(missing, event, dataService, cache, configuration, actorSystem)
+  def fromAction(
+                  user: User,
+                  conversation: Conversation,
+                  event: Event,
+                  services: ConversationServices
+                ): DBIO[UserEnvVarCollectionState] = {
+    val dataService = services.dataService
+    dataService.userEnvironmentVariables.missingForAction(user, conversation.behaviorVersion, dataService).map { missing =>
+      UserEnvVarCollectionState(missing, event, services)
     }
   }
 

@@ -1,9 +1,11 @@
 import json.BehaviorVersionData
-import models.behaviors.conversations.{InvokeBehaviorConversation, ParamCollectionState}
+import models.behaviors.conversations.{ConversationServices, InvokeBehaviorConversation, ParamCollectionState}
 import models.behaviors.testing.TestEvent
 import support.DBSpec
 
 class ParamCollectionStateSpec extends DBSpec {
+
+  val services = ConversationServices(dataService, lambdaService, slackEventService, cache, configuration, ws, actorSystem)
 
   "ParamCollectionState" should {
 
@@ -32,7 +34,7 @@ class ParamCollectionStateSpec extends DBSpec {
         val param = runNow(dataService.behaviorParameters.allFor(behaviorVersion)).head
 
         val savedAnswer = newSavedAnswerFor(param.input, user)
-        val state = runNow(ParamCollectionState.from(conversation, event, dataService, cache, configuration, actorSystem))
+        val state = runNow(ParamCollectionState.from(conversation, event, services))
 
         runNow(state.maybeNextToCollect(conversation)).map(_._1.id) mustBe None
       })
@@ -63,7 +65,7 @@ class ParamCollectionStateSpec extends DBSpec {
         val param = runNow(dataService.behaviorParameters.allFor(behaviorVersion)).head
 
         val savedAnswer = newSavedAnswerFor(param.input, user)
-        val state = runNow(ParamCollectionState.from(conversation, event, dataService, cache, configuration, actorSystem))
+        val state = runNow(ParamCollectionState.from(conversation, event, services))
 
         runNow(state.maybeNextToCollect(conversation)).map(_._1.id) mustBe None
       })
@@ -94,7 +96,7 @@ class ParamCollectionStateSpec extends DBSpec {
         val param = runNow(dataService.behaviorParameters.allFor(behaviorVersion)).head
 
         val savedAnswer = newSavedAnswerFor(param.input, user)
-        val state = runNow(ParamCollectionState.from(conversation, event, dataService, cache, configuration, actorSystem))
+        val state = runNow(ParamCollectionState.from(conversation, event, services))
 
         runNow(state.maybeNextToCollect(conversation)).map(_._1.id) mustBe Some(param.id)
       })

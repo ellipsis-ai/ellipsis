@@ -14,6 +14,7 @@ import play.api.cache.CacheApi
 import play.api.libs.json.{JsDefined, JsValue}
 import services.AWSLambdaConstants._
 import services.{AWSLambdaLogResult, DataService}
+import slick.dbio.DBIO
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -34,8 +35,12 @@ sealed trait BotResult {
   def fullText: String = text
   def hasText: Boolean = fullText.trim.nonEmpty
 
+  def maybeChannelForSendAction(maybeConversation: Option[Conversation], dataService: DataService)(implicit actorSystem: ActorSystem): DBIO[Option[String]] = {
+    event.maybeChannelForSendAction(forcePrivateResponse, maybeConversation, dataService)
+  }
+
   def maybeChannelForSend(maybeConversation: Option[Conversation], dataService: DataService)(implicit actorSystem: ActorSystem): Future[Option[String]] = {
-    event.maybeChannelForSend(forcePrivateResponse, maybeConversation, dataService)
+    dataService.run(maybeChannelForSendAction(maybeConversation, dataService))
   }
 
   def maybeOngoingConversation(dataService: DataService)(implicit actorSystem: ActorSystem): Future[Option[Conversation]] = {
@@ -49,46 +54,24 @@ sealed trait BotResult {
     s"You haven't answered my question yet, but I have something new to $action you."
   }
 
-  def interruptOngoingConversationsFor(dataService: DataService)(implicit actorSystem: ActorSystem): Future[Boolean] = {
+  def interruptOngoingConversationsForAction(dataService: DataService)(implicit actorSystem: ActorSystem): DBIO[Boolean] = {
     if (maybeConversation.exists(_.maybeThreadId.isDefined)) {
-      Future.successful(false)
+      DBIO.successful(false)
     } else {
-      maybeChannelForSend(maybeConversation, dataService).flatMap { maybeChannelForSend =>
-        dataService.conversations.allOngoingFor(event.userIdForContext, event.context, maybeChannelForSend, event.maybeThreadId).flatMap { ongoing =>
+      maybeChannelForSendAction(maybeConversation, dataService).flatMap { maybeChannelForSend =>
+        dataService.conversations.allOngoingForAction(event.userIdForContext, event.context, maybeChannelForSend, event.maybeThreadId).flatMap { ongoing =>
           val toInterrupt = ongoing.filterNot(ea => maybeConversation.map(_.id).contains(ea.id))
-          Future.sequence(toInterrupt.map { ea =>
-            dataService.conversations.background(ea, interruptionPrompt, includeUsername = true)
+          DBIO.sequence(toInterrupt.map { ea =>
+            dataService.conversations.backgroundAction(ea, interruptionPrompt, includeUsername = true)
           })
         }
       }.map(interruptionResults => interruptionResults.nonEmpty)
     }
   }
 
-  def sendIn(
-              maybeShouldUnfurl: Option[Boolean],
-              dataService: DataService,
-              maybeIntro: Option[String] = None,
-              maybeInterruptionIntro: Option[String] = None
-            )(implicit actorSystem: ActorSystem): Future[Option[String]] = {
-    for {
-      didInterrupt <- if (shouldInterrupt) {
-        interruptOngoingConversationsFor(dataService)
-      } else {
-        Future.successful(false)
-      }
-      _ <- maybeIntro.map { intro =>
-        val introToSend = if (didInterrupt) {
-          maybeInterruptionIntro.getOrElse(intro)
-        } else {
-          intro
-        }
-        SimpleTextResult(event, maybeConversation, introToSend, forcePrivateResponse).sendIn(None, dataService)
-      }.getOrElse {
-        Future.successful({})
-      }
-      sendResult <- event.sendMessage(fullText, forcePrivateResponse, maybeShouldUnfurl, maybeConversation, maybeActions, dataService)
-    } yield sendResult
-  }
+  def beforeSend(): Unit = {}
+
+  val shouldSend: Boolean = true
 
   def maybeActions: Option[MessageActions] = None
 }
@@ -145,15 +128,8 @@ case class NoResponseResult(event: Event, maybeConversation: Option[Conversation
 
   def text: String = ""
 
-  override def sendIn(
-                       maybeShouldUnfurl: Option[Boolean],
-                       dataService: DataService,
-                       maybeIntro: Option[String] = None,
-                       maybeInterruptionIntro: Option[String] = None
-                     )(implicit actorSystem: ActorSystem): Future[Option[String]] = {
-    // do nothing
-    Future.successful(None)
-  }
+  override val shouldSend: Boolean = false
+
 
 }
 
@@ -323,15 +299,7 @@ case class OAuth2TokenMissing(
        |""".stripMargin
   }
 
-  override def sendIn(
-                       maybeShouldUnfurl: Option[Boolean],
-                       dataService: DataService,
-                       maybeIntro: Option[String] = None,
-                       maybeInterruptionIntro: Option[String] = None
-                     )(implicit actorSystem: ActorSystem): Future[Option[String]] = {
-    cache.set(key, event, 5.minutes)
-    super.sendIn(maybeShouldUnfurl, dataService)
-  }
+  override def beforeSend: Unit = cache.set(key, event, 5.minutes)
 }
 
 case class RequiredApiNotReady(

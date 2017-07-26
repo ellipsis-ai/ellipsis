@@ -1,6 +1,5 @@
 package models.behaviors.behaviorparameter
 
-import akka.actor.ActorSystem
 import com.fasterxml.jackson.core.JsonParseException
 import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
 import models.behaviors.behaviorversion.BehaviorVersion
@@ -39,15 +38,15 @@ sealed trait BehaviorParameterType {
     }
   }
 
-  def promptFor(
+  def promptForAction(
                  maybePreviousCollectedValue: Option[String],
                  context: BehaviorParameterContext,
                  paramState: ParamCollectionState,
                  isReminding: Boolean
-               ): Future[String] = {
+               ): DBIO[String] = {
     for {
-      isFirst <- context.isFirstParam
-      paramCount <- context.unfilledParamCount(paramState)
+      isFirst <- context.isFirstParamAction
+      paramCount <- DBIO.from(context.unfilledParamCount(paramState))
     } yield {
       val preamble = if (isReminding || !isFirst || paramCount <= 1) {
         ""
@@ -62,6 +61,16 @@ sealed trait BehaviorParameterType {
       }
       s"$preamble\n\n**${context.parameter.question}** ${invalidValueModifierFor(maybePreviousCollectedValue)}"
     }
+  }
+
+
+  def promptFor(
+                 maybePreviousCollectedValue: Option[String],
+                 context: BehaviorParameterContext,
+                 paramState: ParamCollectionState,
+                 isReminding: Boolean
+               ): Future[String] = {
+    context.dataService.run(promptForAction(maybePreviousCollectedValue, context, paramState, isReminding))
   }
 
   def resolvedValueFor(text: String, context: BehaviorParameterContext): Future[Option[String]]
@@ -443,7 +452,7 @@ case class BehaviorBackedDataType(behaviorVersion: BehaviorVersion) extends Beha
     context.event match {
       case event: SlackMessageEvent => {
         implicit val actorSystem = context.actorSystem
-        SlackMessageReactionHandler.handle(event.clientFor(context.dataService), eventualPrompt, event.channel, event.ts)
+        SlackMessageReactionHandler.handle(event.client, eventualPrompt, event.channel, event.ts)
       }
       case _ =>
     }

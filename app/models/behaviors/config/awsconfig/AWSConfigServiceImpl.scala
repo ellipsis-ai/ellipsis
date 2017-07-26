@@ -33,9 +33,12 @@ class AWSConfigServiceImpl @Inject() (
   def uncompiledFindQuery(behaviorVersionId: Rep[String]) = all.filter(_.behaviorVersionId === behaviorVersionId)
   val findQuery = Compiled(uncompiledFindQuery _)
 
+  def maybeForAction(behaviorVersion: BehaviorVersion): DBIO[Option[AWSConfig]] = {
+    findQuery(behaviorVersion.id).result.map(_.headOption)
+  }
+
   def maybeFor(behaviorVersion: BehaviorVersion): Future[Option[AWSConfig]] = {
-    val action = findQuery(behaviorVersion.id).result.map(_.headOption)
-    dataService.run(action)
+    dataService.run(maybeForAction(behaviorVersion))
   }
 
   def createForAction(

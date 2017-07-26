@@ -1,12 +1,8 @@
 package models.behaviors.testing
 
-import akka.actor.ActorSystem
 import models.accounts.user.User
 import models.behaviors.behaviorversion.BehaviorVersion
-import models.behaviors.BehaviorResponse
-import play.api.Configuration
-import play.api.cache.CacheApi
-import services.{AWSLambdaConstants, AWSLambdaService, DataService}
+import services.{AWSLambdaConstants, DataService}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -15,11 +11,7 @@ case class InvocationTester(
                             user: User,
                             behaviorVersion: BehaviorVersion,
                             paramValues: Map[String, String],
-                            lambdaService: AWSLambdaService,
-                            dataService: DataService,
-                            cache: CacheApi,
-                            configuration: Configuration,
-                            actorSystem: ActorSystem
+                            dataService: DataService
                           ) {
 
   def run: Future[InvocationTestReport] = {
@@ -48,7 +40,7 @@ case class InvocationTester(
           (AWSLambdaConstants.invocationParamFor(i), v.get)
         }.toMap
         for {
-          parametersWithValues <- BehaviorResponse.parametersWithValuesFor(event, behaviorVersion, invocationParamValues, None, dataService, cache, configuration, actorSystem)
+          parametersWithValues <- dataService.behaviorResponses.parametersWithValuesFor(event, behaviorVersion, invocationParamValues, None)
           result <- dataService.behaviorVersions.resultFor(behaviorVersion, parametersWithValues, event, None)
         } yield InvocationTestReport(behaviorVersion, Some(result), Seq(), Seq(), Seq())
       } else {

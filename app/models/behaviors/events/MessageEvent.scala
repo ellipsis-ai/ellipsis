@@ -74,19 +74,12 @@ trait MessageEvent extends Event {
       responses <- Future.sequence(activatedTriggers.map { trigger =>
         for {
           params <- dataService.behaviorParameters.allFor(trigger.behaviorVersion)
-          response <-
-          BehaviorResponse.buildFor(
+          response <- dataService.behaviorResponses.buildFor(
             this,
             trigger.behaviorVersion,
             trigger.invocationParamsFor(this, params),
             Some(trigger),
-            None,
-            lambdaService,
-            dataService,
-            cache,
-            ws,
-            configuration,
-            actorSystem
+            None
           )
         } yield response
       })

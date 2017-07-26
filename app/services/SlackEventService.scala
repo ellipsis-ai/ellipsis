@@ -3,9 +3,12 @@ package services
 import javax.inject._
 
 import akka.actor.ActorSystem
+import models.accounts.slack.botprofile.SlackBotProfile
+import models.behaviors.BotResultService
 import models.behaviors.events.{EventHandler, SlackMessageEvent}
 import play.api.Logger
 import play.api.i18n.MessagesApi
+import slack.api.SlackApiClient
 import utils.SlackMessageReactionHandler
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -16,6 +19,7 @@ class SlackEventService @Inject()(
                                    val dataService: DataService,
                                    messages: MessagesApi,
                                    val eventHandler: EventHandler,
+                                   val botResultService: BotResultService,
                                    implicit val actorSystem: ActorSystem
                                  ) {
 
@@ -29,16 +33,18 @@ class SlackEventService @Inject()(
         maybeConversation <- event.maybeOngoingConversation(dataService)
         _ <- eventHandler.handle(event, maybeConversation).flatMap { results =>
           Future.sequence(
-            results.map(result => result.sendIn(None, dataService).map { _ =>
+            results.map(result => botResultService.sendIn(result, None).map { _ =>
               Logger.info(event.logTextFor(result))
             })
           )
         }
       } yield {}
-      SlackMessageReactionHandler.handle(event.clientFor(dataService), eventuallyHandleMessage, event.channel, event.ts)
+      SlackMessageReactionHandler.handle(event.client, eventuallyHandleMessage, event.channel, event.ts)
     } else {
       Future.successful({})
     }
   }
+
+  def clientFor(botProfile: SlackBotProfile): SlackApiClient = SlackApiClient(botProfile.token)
 
 }

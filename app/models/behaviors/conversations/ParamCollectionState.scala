@@ -1,15 +1,13 @@
 package models.behaviors.conversations
 
-import akka.actor.ActorSystem
 import models.behaviors.behaviorparameter.{BehaviorParameter, BehaviorParameterContext}
 import models.behaviors.conversations.collectedparametervalue.CollectedParameterValue
 import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.events.Event
 import models.behaviors.savedanswer.SavedAnswer
 import models.behaviors.{BotResult, SimpleTextResult}
-import play.api.Configuration
-import play.api.cache.CacheApi
-import services.{AWSLambdaConstants, DataService}
+import services.AWSLambdaConstants
+import slick.dbio.DBIO
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -19,10 +17,7 @@ case class ParamCollectionState(
                                  collected: Seq[CollectedParameterValue],
                                  savedAnswers: Seq[SavedAnswer],
                                  event: Event,
-                                 dataService: DataService,
-                                 cache: CacheApi,
-                                 configuration: Configuration,
-                                 actorSystem: ActorSystem
+                                 services: ConversationServices
                                ) extends CollectionState {
 
   val name = InvokeBehaviorConversation.COLLECT_PARAM_VALUES_STATE
@@ -35,10 +30,10 @@ case class ParamCollectionState(
     }
 
     val eventualWithHasValidValue = Future.sequence(tuples.map { case(param, maybeCollected, maybeSaved) =>
-      val context = BehaviorParameterContext(event, Some(conversation), param, cache, dataService, configuration, actorSystem)
+      val paramContext = BehaviorParameterContext(event, Some(conversation), param, services.cache, services.dataService, services.slackEventService, services.configuration, services.actorSystem)
       val maybeValue = maybeCollected.map(_.valueString).orElse(maybeSaved.map(_.valueString))
       val eventualHasValidValue = maybeValue.map { valueString =>
-        param.paramType.isValid(valueString, context)
+        param.paramType.isValid(valueString, paramContext)
       }.getOrElse(Future.successful(false))
 
       eventualHasValidValue.map { hasValidValue =>
@@ -72,21 +67,21 @@ case class ParamCollectionState(
     for {
       maybeNextToCollect <- maybeNextToCollect(conversation)
       updatedConversation <- maybeNextToCollect.map { case(param, maybeValue) =>
-        val context = BehaviorParameterContext(event, Some(conversation), param, cache, dataService, configuration, actorSystem)
-        param.paramType.handleCollected(event, context).map(_ => conversation)
+        val paramContext = BehaviorParameterContext(event, Some(conversation), param, services.cache, services.dataService, services.slackEventService, services.configuration, services.actorSystem)
+        param.paramType.handleCollected(event, paramContext).map(_ => conversation)
       }.getOrElse(Future.successful(conversation))
-      updatedConversation <- updatedConversation.updateToNextState(event, cache, dataService, configuration, actorSystem)
+      updatedConversation <- updatedConversation.updateToNextState(event, services)
     } yield updatedConversation
   }
 
-  def promptResultFor(conversation: Conversation, isReminding: Boolean): Future[BotResult] = {
+  def promptResultForAction(conversation: Conversation, isReminding: Boolean): DBIO[BotResult] = {
     for {
-      maybeNextToCollect <- maybeNextToCollect(conversation)
+      maybeNextToCollect <- DBIO.from(maybeNextToCollect(conversation))
       result <- maybeNextToCollect.map { case(param, maybeValue) =>
-        val context = BehaviorParameterContext(event, Some(conversation), param, cache, dataService, configuration, actorSystem)
-        param.prompt(maybeValue, context, this, isReminding)
+        val paramContext = BehaviorParameterContext(event, Some(conversation), param, services.cache, services.dataService, services.slackEventService, services.configuration, services.actorSystem)
+        param.promptAction(maybeValue, paramContext, this, isReminding)
       }.getOrElse {
-        Future.successful("All done!")
+        DBIO.successful("All done!")
       }.map { prompt =>
         SimpleTextResult(event, Some(conversation), prompt, conversation.behaviorVersion.forcePrivateResponse)
       }
@@ -97,20 +92,26 @@ case class ParamCollectionState(
 
 object ParamCollectionState {
 
+  def fromAction(
+                  conversation: Conversation,
+                  event: Event,
+                  services: ConversationServices
+                ): DBIO[ParamCollectionState] = {
+    val dataService = services.dataService
+    for {
+      params <- dataService.behaviorParameters.allForAction(conversation.behaviorVersion)
+      collected <- dataService.collectedParameterValues.allForAction(conversation)
+      user <- event.ensureUserAction(dataService)
+      savedAnswers <- dataService.savedAnswers.allForAction(user, params)
+    } yield ParamCollectionState(params, collected, savedAnswers, event, services)
+  }
+
   def from(
             conversation: Conversation,
             event: Event,
-            dataService: DataService,
-            cache: CacheApi,
-            configuration: Configuration,
-            actorSystem: ActorSystem
+            services: ConversationServices
           ): Future[ParamCollectionState] = {
-    for {
-      params <- dataService.behaviorParameters.allFor(conversation.behaviorVersion)
-      collected <- dataService.collectedParameterValues.allFor(conversation)
-      user <- event.ensureUser(dataService)
-      savedAnswers <- dataService.savedAnswers.allFor(user, params)
-    } yield ParamCollectionState(params, collected, savedAnswers, event, dataService, cache, configuration, actorSystem)
+    services.dataService.run(fromAction(conversation, event, services))
   }
 
 }

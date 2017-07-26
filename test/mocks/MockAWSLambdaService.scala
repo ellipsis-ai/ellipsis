@@ -11,12 +11,14 @@ import models.behaviors.config.requiredsimpletokenapi.RequiredSimpleTokenApi
 import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.events.Event
 import models.behaviors.library.LibraryVersion
-import models.behaviors.{BotResult, ParameterWithValue}
+import models.behaviors.{BotResult, ParameterWithValue, SuccessResult}
 import models.environmentvariable.EnvironmentVariable
 import org.scalatest.mock.MockitoSugar
 import play.api.Configuration
+import play.api.libs.json.JsString
 import play.api.libs.ws.WSClient
 import services.{AWSLambdaService, AWSLogsService, DataService}
+import slick.dbio.DBIO
 
 import scala.concurrent.Future
 
@@ -27,6 +29,18 @@ class MockAWSLambdaService @Inject() (
                                        val dataService: DataService,
                                        val logsService: AWSLogsService
                                      ) extends AWSLambdaService with MockitoSugar {
+
+  def resultFor(event: Event, maybeConversation: Option[Conversation]): BotResult = {
+    SuccessResult(
+      event,
+      maybeConversation,
+      result = JsString("result"),
+      parametersWithValues = Seq(),
+      maybeResponseTemplate = None,
+      maybeLogResult = None,
+      forcePrivateResponse = false
+    )
+  }
 
   override val client: AWSLambdaAsyncClient = mock[AWSLambdaAsyncClient]
 
@@ -54,7 +68,15 @@ class MockAWSLambdaService @Inject() (
                        environmentVariables: Seq[EnvironmentVariable],
                        event: Event,
                        maybeConversation: Option[Conversation]
-                     ): Future[BotResult] = Future.successful(mock[BotResult])
+                     ): Future[BotResult] = Future.successful(resultFor(event, maybeConversation))
+
+  override def invokeAction(
+                       behaviorVersion: BehaviorVersion,
+                       parametersWithValues: Seq[ParameterWithValue],
+                       environmentVariables: Seq[EnvironmentVariable],
+                       event: Event,
+                       maybeConversation: Option[Conversation]
+                     ): DBIO[BotResult] = DBIO.successful(resultFor(event, maybeConversation))
 
   override def functionWithParams(params: Array[String], functionBody: String): String = ""
 }

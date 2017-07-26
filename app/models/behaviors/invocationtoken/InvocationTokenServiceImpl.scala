@@ -48,9 +48,9 @@ class InvocationTokenServiceImpl @Inject() (
     }
   }
 
-  def createFor(user: User, behavior: Behavior, maybeScheduled: Option[Scheduled]): Future[InvocationToken] = {
+  def createForAction(user: User, behavior: Behavior, maybeScheduled: Option[Scheduled]): DBIO[InvocationToken] = {
     val newInstance = InvocationToken(IDs.next, user.id, behavior.id, maybeScheduled.map(_.id), OffsetDateTime.now)
-    dataService.run((all += newInstance).map(_ => newInstance))
+    (all += newInstance).map(_ => newInstance)
   }
 
 }

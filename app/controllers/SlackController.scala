@@ -4,7 +4,7 @@ import javax.inject.Inject
 
 import akka.actor.ActorSystem
 import com.mohiva.play.silhouette.api.Silhouette
-import models.behaviors.BehaviorResponse
+import models.behaviors.{BehaviorResponse, BotResultService}
 import models.behaviors.builtins.DisplayHelpBehavior
 import models.behaviors.events.SlackMessageActionConstants._
 import models.behaviors.events.{EventHandler, SlackMessageEvent}
@@ -34,6 +34,7 @@ class SlackController @Inject() (
                                   val cache: CacheApi,
                                   val ws: WSClient,
                                   val eventHandler: EventHandler,
+                                  val botResultService: BotResultService,
                                   implicit val actorSystem: ActorSystem
                                 ) extends EllipsisController {
 
@@ -216,7 +217,7 @@ class SlackController @Inject() (
         for {
           maybeProfile <- dataService.slackBotProfiles.allForSlackTeamId(info.teamId).map(_.headOption)
           _ <- maybeProfile.map { profile =>
-            slackEventService.onEvent(SlackMessageEvent(profile, info.channel, info.maybeThreadTs, info.userId, info.message, info.ts))
+            slackEventService.onEvent(SlackMessageEvent(profile, info.channel, info.maybeThreadTs, info.userId, info.message, info.ts, slackEventService.clientFor(profile)))
           }.getOrElse {
             Future.successful({})
           }
@@ -509,7 +510,7 @@ class SlackController @Inject() (
                       cache.get[SlackMessageEvent](convo.pendingEventKey).map { event =>
                         eventHandler.handle(event, None).flatMap { results =>
                           Future.sequence(
-                            results.map(result => result.sendIn(None, dataService).map { _ =>
+                            results.map(result => botResultService.sendIn(result, None).map { _ =>
                               Logger.info(event.logTextFor(result))
                             })
                           )
@@ -538,18 +539,12 @@ class SlackController @Inject() (
                   event => for {
                     maybeBehaviorVersion <- dataService.behaviorVersions.findWithoutAccessCheck(behaviorVersionId)
                     maybeResponse <- maybeBehaviorVersion.map { behaviorVersion =>
-                      BehaviorResponse.buildFor(
+                      dataService.behaviorResponses.buildFor(
                         event,
                         behaviorVersion,
                         Map(),
                         None,
-                        None,
-                        lambdaService,
-                        dataService,
-                        cache,
-                        ws,
-                        configuration,
-                        actorSystem
+                        None
                       ).map(Some(_))
                     }.getOrElse(Future.successful(None))
                     maybeResult <- maybeResponse.map { response =>
