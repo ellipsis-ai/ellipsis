@@ -70,7 +70,7 @@ object ConversationQueries {
     val endTs = Timestamp.from(windowEnd.toInstant)
     sql"""
          SELECT id FROM #$tableName
-         WHERE started_at >= ${startTs} AND
+         WHERE started_at >= ${startTs} AND state <> ${Conversation.DONE_STATE} AND
            ((#$lastInteractionAtName IS NOT NULL AND #$lastInteractionAtName < ${endTs}) OR
            (#$lastInteractionAtName IS NULL AND #$startedAtName < ${endTs}))
          ORDER BY id

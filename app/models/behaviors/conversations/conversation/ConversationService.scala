@@ -24,6 +24,12 @@ trait ConversationService {
 
   def findOngoingFor(userIdForContext: String, context: String, maybeChannel: Option[String], maybeThreadId: Option[String]): Future[Option[Conversation]]
 
+  def cancelAction(conversation: Conversation): DBIO[Unit]
+
+  def cancelAction(maybeConversation: Option[Conversation]): DBIO[Unit] = {
+    maybeConversation.map(cancelAction).getOrElse(DBIO.successful({}))
+  }
+
   def cancel(conversation: Conversation): Future[Unit]
 
   def cancel(maybeConversation: Option[Conversation]): Future[Unit] = {
