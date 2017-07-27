@@ -18,11 +18,10 @@ import models.behaviors.config.requiredsimpletokenapi.RequiredSimpleTokenApi
 import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.events.Event
 import models.team.Team
-import play.api.cache.CacheApi
 import play.api.libs.json.JsValue
 import play.api.libs.ws.WSClient
 import play.api.{Configuration, Logger}
-import services.{AWSLambdaService, DataService}
+import services.{AWSLambdaService, CacheService, DataService}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -63,7 +62,7 @@ class BehaviorVersionServiceImpl @Inject() (
                                       lambdaServiceProvider: Provider[AWSLambdaService],
                                       ws: WSClient,
                                       configuration: Configuration,
-                                      cache: CacheApi,
+                                      cacheService: CacheService,
                                       implicit val actorSystem: ActorSystem
                                     ) extends BehaviorVersionService {
 
@@ -320,13 +319,13 @@ class BehaviorVersionServiceImpl @Inject() (
         DBIO.successful(Some(MissingTeamEnvVarsResult(event, None, behaviorVersion, dataService, configuration, missingTeamEnvVars)))
       } else {
         notReadyOAuth2Applications.headOption.map { firstNotReadyOAuth2App =>
-          DBIO.successful(Some(RequiredApiNotReady(firstNotReadyOAuth2App, event, None, cache, dataService, configuration)))
+          DBIO.successful(Some(RequiredApiNotReady(firstNotReadyOAuth2App, event, None, dataService, configuration)))
         }.getOrElse {
           val missingOAuth2ApplicationsRequiringAuth = missingOAuth2Applications.filter(_.api.grantType.requiresAuth)
           missingOAuth2ApplicationsRequiringAuth.headOption.map { firstMissingOAuth2App =>
             event.ensureUserAction(dataService).flatMap { user =>
               dataService.loginTokens.createForAction(user).map { loginToken =>
-                OAuth2TokenMissing(firstMissingOAuth2App, event, None, loginToken, cache, configuration)
+                OAuth2TokenMissing(firstMissingOAuth2App, event, None, loginToken, cacheService, configuration)
               }
             }.map(Some(_))
           }.getOrElse(DBIO.successful(None))

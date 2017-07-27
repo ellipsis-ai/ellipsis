@@ -11,7 +11,6 @@ import models.behaviors.testing.{InvocationTester, TestEvent, TriggerTester}
 import models.behaviors.triggers.messagetrigger.MessageTrigger
 import models.silhouette.EllipsisEnv
 import play.api.Configuration
-import play.api.cache.CacheApi
 import play.api.data.Form
 import play.api.data.Forms._
 import play.api.i18n.MessagesApi
@@ -19,7 +18,7 @@ import play.api.libs.json._
 import play.api.libs.ws.WSClient
 import play.api.mvc.{AnyContent, Result}
 import play.filters.csrf.CSRF
-import services.{AWSLambdaService, DataService}
+import services.{AWSLambdaService, CacheService, DataService}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -30,7 +29,7 @@ class BehaviorEditorController @Inject() (
                                            val configuration: Configuration,
                                            val dataService: DataService,
                                            val lambdaService: AWSLambdaService,
-                                           val cache: CacheApi,
+                                           val cacheService: CacheService,
                                            val ws: WSClient,
                                            val actorSystem: ActorSystem
                                          ) extends ReAuthable {

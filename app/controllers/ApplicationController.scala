@@ -8,7 +8,6 @@ import com.mohiva.play.silhouette.api.Silhouette
 import json._
 import models.silhouette.EllipsisEnv
 import play.api.Configuration
-import play.api.cache.CacheApi
 import play.api.data.Form
 import play.api.data.Forms._
 import play.api.i18n.MessagesApi
@@ -28,7 +27,6 @@ class ApplicationController @Inject() (
                                         val dataService: DataService,
                                         val lambdaService: AWSLambdaService,
                                         val ws: WSClient,
-                                        val cache: CacheApi,
                                         val githubService: GithubService,
                                         val citiesToTimeZones: CitiesToTimeZones
                                       ) extends ReAuthable {
