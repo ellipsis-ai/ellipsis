@@ -13,19 +13,25 @@ services:
       - POSTGRES_PASSWORD=ellipsis
       - PGDATA=/pgdata
   elasticsearch:
-    build: ./docker_files/elasticsearch/
-    # image: elasticsearch:2.3
+    image: elasticsearch:5.3
     ports:
       - "9200:9200"
       - "9300:9300"
     volumes:
       - ~/db/esdata:/usr/share/elasticsearch/data
+      - ./deploy/dev/elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml
   kibana:
-    build: ./docker_files/kibana/
+    image: kibana:5.3
     ports:
       - "5601:5601"
     environment:
       - ELASTICSEARCH_URL=http://elasticsearch:9200
+    links:
+      - elasticsearch
+  es-head:
+    image: mobz/elasticsearch-head:5
+    ports:
+      - "9100:9100"
     links:
       - elasticsearch
 
