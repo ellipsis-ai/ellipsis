@@ -131,9 +131,12 @@ class ConversationServiceImpl @Inject() (
   def uncompiledCancelQuery(conversationId: Rep[String]) = all.filter(_.id === conversationId).map(_.state)
   val cancelQuery = Compiled(uncompiledCancelQuery _)
 
+  def cancelAction(conversation: Conversation): DBIO[Unit] = {
+    cancelQuery(conversation.id).update(Conversation.DONE_STATE).map(_ => {})
+  }
+
   def cancel(conversation: Conversation): Future[Unit] = {
-    val action = cancelQuery(conversation.id).update(Conversation.DONE_STATE).map(_ => {})
-    dataService.run(action)
+    dataService.run(cancelAction(conversation))
   }
 
   def deleteAll(): Future[Unit] = {
