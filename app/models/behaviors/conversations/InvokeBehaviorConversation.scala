@@ -7,10 +7,11 @@ import models.behaviors.BotResult
 import models.behaviors.behaviorparameter.BehaviorParameter
 import models.behaviors.behaviorversion.BehaviorVersion
 import models.behaviors.conversations.conversation.Conversation
-import models.behaviors.events.Event
+import models.behaviors.events.{Event, SlackMessageEvent}
 import models.behaviors.triggers.messagetrigger.MessageTrigger
 import services.DataService
 import slick.dbio.DBIO
+import utils.SlackMessageReactionHandler
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -119,7 +120,15 @@ case class InvokeBehaviorConversation(
                isReminding: Boolean,
                services: ConversationServices
              ): Future[BotResult] = {
-    services.dataService.run(respondAction(event, isReminding, services))
+    val eventualResponse = services.dataService.run(respondAction(event, isReminding, services))
+    event match {
+      case event: SlackMessageEvent => {
+        implicit val actorSystem = services.actorSystem
+        SlackMessageReactionHandler.handle(event.client, eventualResponse, event.channel, event.ts)
+      }
+      case _ =>
+    }
+    eventualResponse
   }
 
   def maybeNextParamToCollect(

@@ -165,9 +165,9 @@ class BehaviorVersionServiceImpl @Inject() (
     dataService.run(action)
   }
 
-  def hasSearchParam(behaviorVersion: BehaviorVersion): Future[Boolean] = {
+  def hasSearchParamAction(behaviorVersion: BehaviorVersion): DBIO[Boolean] = {
     for {
-      params <- dataService.behaviorParameters.allFor(behaviorVersion)
+      params <- dataService.behaviorParameters.allForAction(behaviorVersion)
     } yield {
       params.exists(_.name == BehaviorQueries.SEARCH_QUERY_PARAM)
     }
