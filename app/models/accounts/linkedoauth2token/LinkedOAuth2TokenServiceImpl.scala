@@ -67,20 +67,24 @@ class LinkedOAuth2TokenServiceImpl @Inject() (
   }
   val allForUserIdQuery = Compiled(uncompiledAllForUserIdQuery _)
 
-  def allForUser(user: User, ws: WSClient): Future[Seq[LinkedOAuth2Token]] = {
-    dataService.run(allForUserIdQuery(user.id).result).flatMap { r =>
-      Future.sequence(r.map(tuple2Token).map(refreshIfNecessary))
+  def allForUserAction(user: User, ws: WSClient): DBIO[Seq[LinkedOAuth2Token]] = {
+    allForUserIdQuery(user.id).result.flatMap { r =>
+      DBIO.sequence(r.map(tuple2Token).map(refreshIfNecessaryAction))
     }
   }
 
-  private def refreshIfNecessary(linkedOAuth2Token: LinkedOAuth2Token): Future[LinkedOAuth2Token] = {
+  def allForUser(user: User, ws: WSClient): Future[Seq[LinkedOAuth2Token]] = {
+    dataService.run(allForUserAction(user, ws))
+  }
+
+  private def refreshIfNecessaryAction(linkedOAuth2Token: LinkedOAuth2Token): DBIO[LinkedOAuth2Token] = {
     val eventualMaybeNewInstance = if (linkedOAuth2Token.isExpiredOrExpiresSoon) {
       linkedOAuth2Token.maybeRefreshToken.map { token =>
         val tokenResponse = linkedOAuth2Token.application.refreshTokenRequestFor(token, ws).
           withHeaders(HeaderNames.ACCEPT -> MimeTypes.JSON).
           post(Results.EmptyContent())
 
-        tokenResponse.flatMap { response =>
+        DBIO.from(tokenResponse).flatMap { response =>
           val json = response.json
           (json \ "access_token").asOpt[String].map { accessToken =>
             val maybeTokenType = (json \ "token_type").asOpt[String]
@@ -88,17 +92,17 @@ class LinkedOAuth2TokenServiceImpl @Inject() (
             val maybeExpirationTime = (json \ "expires_in").asOpt[Int].map { seconds =>
               OffsetDateTime.now.plusSeconds(seconds)
             }
-            save(linkedOAuth2Token.copy(
+            saveAction(linkedOAuth2Token.copy(
               accessToken = accessToken,
               maybeScopeGranted = maybeScopeGranted,
               maybeExpirationTime = maybeExpirationTime,
               maybeTokenType = maybeTokenType
             )).map(Some(_))
-          }.getOrElse(Future.successful(None))
+          }.getOrElse(DBIO.successful(None))
         }
-      }.getOrElse(Future.successful(None))
+      }.getOrElse(DBIO.successful(None))
     } else {
-      Future.successful(None)
+      DBIO.successful(None)
     }
 
     eventualMaybeNewInstance.map { maybeNewInstance =>
@@ -111,14 +115,17 @@ class LinkedOAuth2TokenServiceImpl @Inject() (
   }
   val findQuery = Compiled(uncompiledFindQuery _)
 
-  def save(token: LinkedOAuth2Token): Future[LinkedOAuth2Token] = {
+  def saveAction(token: LinkedOAuth2Token): DBIO[LinkedOAuth2Token] = {
     val query = findQuery(token.userId, token.application.id)
     val raw = token.toRaw
-    val action = query.result.headOption.flatMap {
+    query.result.headOption.flatMap {
       case Some(_) => query.update(raw)
       case None => all += raw
     }.map { _ => token }
-    dataService.run(action)
+  }
+
+  def save(token: LinkedOAuth2Token): Future[LinkedOAuth2Token] = {
+    dataService.run(saveAction(token))
   }
 
   def deleteFor(application: OAuth2Application, user: User): Future[Boolean] = {

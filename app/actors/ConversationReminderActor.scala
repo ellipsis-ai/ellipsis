@@ -1,11 +1,15 @@
 package actors
 
+import java.time.OffsetDateTime
 import javax.inject.Inject
 
 import akka.actor.{Actor, ActorSystem}
+import drivers.SlickPostgresDriver.api._
+import models.behaviors.BotResultService
+import models.behaviors.conversations.ConversationServices
 import play.api.libs.ws.WSClient
 import play.api.{Configuration, Logger}
-import services.{AWSLambdaService, CacheService, DataService}
+import services.{AWSLambdaService, CacheService, DataService, SlackEventService}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -16,12 +20,14 @@ object ConversationReminderActor {
 }
 
 class ConversationReminderActor @Inject()(
-                                           val lambdaService: AWSLambdaService,
-                                           val dataService: DataService,
-                                           val cacheService: CacheService,
-                                           val ws: WSClient,
-                                           val configuration: Configuration,
-                                           implicit val actorSystem: ActorSystem
+                                          val lambdaService: AWSLambdaService,
+                                          val dataService: DataService,
+                                          val slackEventService: SlackEventService,
+                                          val cacheService: CacheService,
+                                          val ws: WSClient,
+                                          val configuration: Configuration,
+                                          val botResultService: BotResultService,
+                                          implicit val actorSystem: ActorSystem
                                         ) extends Actor {
 
   // initial delay of 1 minute so that, in the case of errors & actor restarts, it doesn't hammer external APIs
@@ -31,29 +37,33 @@ class ConversationReminderActor @Inject()(
     tick.cancel()
   }
 
-  def receive = {
-    case "tick" => {
-      dataService.conversations.allNeedingReminder.flatMap { pending =>
-        Future.sequence(pending.map { ea =>
-          ea.maybeRemindResult(lambdaService, dataService, cacheService, ws, configuration, actorSystem).flatMap { maybeResult =>
+  def remindAsNeeded(when: OffsetDateTime): Future[Unit] = {
+    val action: DBIO[Boolean] = dataService.conversations.maybeNextNeedingReminderAction(when).flatMap { maybeNext =>
+      maybeNext.map { convo =>
+        dataService.conversations.touchAction(convo).flatMap { _ =>
+          val services = ConversationServices(dataService, lambdaService, slackEventService, cacheService, configuration, ws, actorSystem)
+          convo.maybeRemindResultAction(services).flatMap { maybeResult =>
             maybeResult.map { result =>
-              result.sendIn(None, dataService, None).flatMap { maybeSendResult =>
-                dataService.conversations.touch(ea)
-              }
-            }.getOrElse(Future.successful(None))
-          }.recover {
-            case t: Throwable => {
-              Logger.error(s"Exception reminding about conversation with ID: ${ea.id}", t)
-            }
-          }
-        })
-      }.
-        map { _ => true }.
-        recover {
-          case t: Throwable => {
-            Logger.error("Exception reminding about conversations", t)
+              botResultService.sendInAction(result, None, None).map(_ => true)
+            }.getOrElse(DBIO.successful(true))
           }
         }
+      }.getOrElse(DBIO.successful(false))
     }
+    dataService.run(action.transactionally).flatMap { shouldContinue =>
+      if (shouldContinue) {
+        remindAsNeeded(when)
+      } else {
+        Future.successful({})
+      }
+    }.recover {
+      case t: Throwable => {
+        Logger.error("Exception reminding about conversations", t)
+      }
+    }
+  }
+
+  def receive = {
+    case "tick" => remindAsNeeded(OffsetDateTime.now)
   }
 }

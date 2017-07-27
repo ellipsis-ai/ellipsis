@@ -48,8 +48,8 @@ class CollectedParameterValueServiceImpl @Inject() (
   }
   val allForQuery = Compiled(uncompiledAllForQuery _)
 
-  def allFor(conversation: Conversation): Future[Seq[CollectedParameterValue]] = {
-    dataService.run(allForQuery(conversation.id).result).map { r =>
+  def allForAction(conversation: Conversation): DBIO[Seq[CollectedParameterValue]] = {
+    allForQuery(conversation.id).result.map { r =>
       r.map(tuple2ParameterValue)
     }
   }

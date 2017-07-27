@@ -50,10 +50,14 @@ class LinkedSimpleTokenServiceImpl @Inject() (
   }
   val allForUserIdQuery = Compiled(uncompiledAllForUserIdQuery _)
 
-  def allForUser(user: User): Future[Seq[LinkedSimpleToken]] = {
-    dataService.run(allForUserIdQuery(user.id).result).map { r =>
+  def allForUserAction(user: User): DBIO[Seq[LinkedSimpleToken]] = {
+    allForUserIdQuery(user.id).result.map { r =>
       r.map(tuple2Token)
     }
+  }
+
+  def allForUser(user: User): Future[Seq[LinkedSimpleToken]] = {
+    dataService.run(allForUserAction(user))
   }
 
   def uncompiledFindQuery(userId: Rep[String], apiId: Rep[String]) = {

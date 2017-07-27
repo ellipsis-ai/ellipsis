@@ -5,7 +5,8 @@ import models.behaviors.conversations.ParamCollectionState
 import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.events.Event
 import play.api.Configuration
-import services.{CacheService, DataService}
+import services.{CacheService, DataService, SlackEventService}
+import slick.dbio.DBIO
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -16,14 +17,15 @@ case class BehaviorParameterContext(
                                      parameter: BehaviorParameter,
                                      cacheService: CacheService,
                                      dataService: DataService,
+                                     slackEventService: SlackEventService,
                                      configuration: Configuration,
                                      actorSystem: ActorSystem
                                    ) {
 
   val behaviorVersion = parameter.behaviorVersion
 
-  def isFirstParam: Future[Boolean] = {
-    dataService.behaviorParameters.isFirstForBehaviorVersion(parameter)
+  def isFirstParamAction: DBIO[Boolean] = {
+    dataService.behaviorParameters.isFirstForBehaviorVersionAction(parameter)
   }
 
   def unfilledParamCount(paramState: ParamCollectionState): Future[Int] = {

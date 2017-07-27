@@ -87,8 +87,11 @@ class TeamEnvironmentVariableServiceImpl @Inject() (
   def uncompiledAllForTeamQuery(teamId: Rep[String]) = allWithTeam.filter(_._1.teamId === teamId)
   val allForTeamQuery = Compiled(uncompiledAllForTeamQuery _)
 
+  def allForAction(team: Team): DBIO[Seq[TeamEnvironmentVariable]] = {
+    allForTeamQuery(team.id).result.map { r => r.map(tuple2EnvironmentVariable)}
+  }
+
   def allFor(team: Team): Future[Seq[TeamEnvironmentVariable]] = {
-    val action = allForTeamQuery(team.id).result.map { r => r.map(tuple2EnvironmentVariable)}
-    dataService.run(action)
+    dataService.run(allForAction(team))
   }
 }

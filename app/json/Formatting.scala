@@ -4,6 +4,7 @@ import models.accounts.slack.botprofile.SlackBotProfile
 import models.behaviors.behaviorparameter.ValidValue
 import models.behaviors.events.SlackMessageEvent
 import play.api.libs.json._
+import services.SlackMessageEventData
 import utils.CityInfo
 
 object Formatting {
@@ -112,8 +113,8 @@ object Formatting {
   implicit val slackBotProfileReads = Json.reads[SlackBotProfile]
   implicit val slackBotProfileWrites = Json.writes[SlackBotProfile]
 
-  implicit val slackMessageEventReads = Json.reads[SlackMessageEvent]
-  implicit val slackMessageEventWrites = Json.writes[SlackMessageEvent]
+  implicit val slackMessageEventDataReads = Json.reads[SlackMessageEventData]
+  implicit val slackMessageEventDataWrites = Json.writes[SlackMessageEventData]
 
   implicit val validValueReads = Json.reads[ValidValue]
   implicit val validValueWrites = Json.writes[ValidValue]

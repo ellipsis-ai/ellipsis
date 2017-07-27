@@ -306,32 +306,54 @@ class BehaviorVersionServiceImpl @Inject() (
     }
   }
 
-  def maybeNotReadyResultFor(behaviorVersion: BehaviorVersion, event: Event): Future[Option[BotResult]] = {
+  def maybeNotReadyResultForAction(behaviorVersion: BehaviorVersion, event: Event): DBIO[Option[BotResult]] = {
     for {
-      missingTeamEnvVars <- dataService.teamEnvironmentVariables.missingIn(behaviorVersion, dataService)
-      requiredOAuth2ApiConfigs <- dataService.requiredOAuth2ApiConfigs.allFor(behaviorVersion.groupVersion)
-      userInfo <- event.userInfo(ws, dataService)
-      notReadyOAuth2Applications <- Future.successful(requiredOAuth2ApiConfigs.filterNot(_.isReady))
-      missingOAuth2Applications <- Future.successful(requiredOAuth2ApiConfigs.flatMap(_.maybeApplication).filter { app =>
+      missingTeamEnvVars <- dataService.teamEnvironmentVariables.missingInAction(behaviorVersion, dataService)
+      requiredOAuth2ApiConfigs <- dataService.requiredOAuth2ApiConfigs.allForAction(behaviorVersion.groupVersion)
+      userInfo <- event.userInfoAction(ws, dataService)
+      notReadyOAuth2Applications <- DBIO.successful(requiredOAuth2ApiConfigs.filterNot(_.isReady))
+      missingOAuth2Applications <- DBIO.successful(requiredOAuth2ApiConfigs.flatMap(_.maybeApplication).filter { app =>
         !userInfo.links.exists(_.externalSystem == app.name)
       })
       maybeResult <- if (missingTeamEnvVars.nonEmpty) {
-        Future.successful(Some(MissingTeamEnvVarsResult(event, None, behaviorVersion, dataService, configuration, missingTeamEnvVars)))
+        DBIO.successful(Some(MissingTeamEnvVarsResult(event, None, behaviorVersion, dataService, configuration, missingTeamEnvVars)))
       } else {
         notReadyOAuth2Applications.headOption.map { firstNotReadyOAuth2App =>
-          Future.successful(Some(RequiredApiNotReady(firstNotReadyOAuth2App, event, None, dataService, configuration)))
+          DBIO.successful(Some(RequiredApiNotReady(firstNotReadyOAuth2App, event, None, dataService, configuration)))
         }.getOrElse {
           val missingOAuth2ApplicationsRequiringAuth = missingOAuth2Applications.filter(_.api.grantType.requiresAuth)
           missingOAuth2ApplicationsRequiringAuth.headOption.map { firstMissingOAuth2App =>
-            event.ensureUser(dataService).flatMap { user =>
-              dataService.loginTokens.createFor(user).map { loginToken =>
+            event.ensureUserAction(dataService).flatMap { user =>
+              dataService.loginTokens.createForAction(user).map { loginToken =>
                 OAuth2TokenMissing(firstMissingOAuth2App, event, None, loginToken, cacheService, configuration)
               }
             }.map(Some(_))
-          }.getOrElse(Future.successful(None))
+          }.getOrElse(DBIO.successful(None))
         }
       }
     } yield maybeResult
+  }
+
+  def maybeNotReadyResultFor(behaviorVersion: BehaviorVersion, event: Event): Future[Option[BotResult]] = {
+    dataService.run(maybeNotReadyResultForAction(behaviorVersion, event))
+  }
+
+  def resultForAction(
+                       behaviorVersion: BehaviorVersion,
+                       parametersWithValues: Seq[ParameterWithValue],
+                       event: Event,
+                       maybeConversation: Option[Conversation]
+                     ): DBIO[BotResult] = {
+    for {
+      teamEnvVars <- dataService.teamEnvironmentVariables.allForAction(behaviorVersion.team)
+      user <- event.ensureUserAction(dataService)
+      userEnvVars <- dataService.userEnvironmentVariables.allForAction(user)
+      result <- maybeNotReadyResultForAction(behaviorVersion, event).flatMap { maybeResult =>
+        maybeResult.map(DBIO.successful).getOrElse {
+          lambdaService.invokeAction(behaviorVersion, parametersWithValues, (teamEnvVars ++ userEnvVars), event, maybeConversation)
+        }
+      }
+    } yield result
   }
 
   def resultFor(
@@ -340,16 +362,7 @@ class BehaviorVersionServiceImpl @Inject() (
                  event: Event,
                  maybeConversation: Option[Conversation]
                ): Future[BotResult] = {
-    for {
-      teamEnvVars <- dataService.teamEnvironmentVariables.allFor(behaviorVersion.team)
-      user <- event.ensureUser(dataService)
-      userEnvVars <- dataService.userEnvironmentVariables.allFor(user)
-      result <- maybeNotReadyResultFor(behaviorVersion, event).flatMap { maybeResult =>
-        maybeResult.map(Future.successful).getOrElse {
-          lambdaService.invoke(behaviorVersion, parametersWithValues, (teamEnvVars ++ userEnvVars), event, maybeConversation)
-        }
-      }
-    } yield result
+    dataService.run(resultForAction(behaviorVersion, parametersWithValues, event, maybeConversation))
   }
 
   def redeploy(behaviorVersion: BehaviorVersion): Future[Unit] = {

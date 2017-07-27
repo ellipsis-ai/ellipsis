@@ -6,7 +6,7 @@ import akka.actor.ActorSystem
 import models.accounts.slack.botprofile.SlackBotProfile
 import models.accounts.slack.profile.SlackProfile
 import models.accounts.user.User
-import models.behaviors.SimpleTextResult
+import models.behaviors.{BotResultService, SimpleTextResult}
 import models.behaviors.events._
 import models.behaviors.invocationtoken.InvocationToken
 import models.behaviors.scheduling.scheduledmessage.ScheduledMessage
@@ -32,6 +32,7 @@ class APIController @Inject() (
                                 val ws: WSClient,
                                 val slackService: SlackEventService,
                                 val eventHandler: EventHandler,
+                                val botResultService: BotResultService,
                                 implicit val actorSystem: ActorSystem
                               )
   extends EllipsisController {
@@ -86,7 +87,8 @@ class APIController @Inject() (
             None,
             slackProfile.loginInfo.providerKey,
             message,
-            SlackTimestamp.now
+            SlackTimestamp.now,
+            slackService.clientFor(botProfile)
           )
           val event: Event = maybeScheduledMessage.map { scheduledMessage =>
             ScheduledEvent(slackEvent, scheduledMessage)
@@ -183,7 +185,7 @@ class APIController @Inject() (
             results.foreach { result =>
               val maybeIntro = maybeIntroTextFor(event, context, isForInterruption = false)
               val maybeInterruptionIntro = maybeIntroTextFor(event, context, isForInterruption = true)
-              result.sendIn(None, dataService, maybeIntro, maybeInterruptionIntro).map { _ =>
+              botResultService.sendIn(result, None, maybeIntro, maybeInterruptionIntro).map { _ =>
                 val channelText = event.maybeChannel.map(c => s" in channel [$c]").getOrElse("")
                 Logger.info(s"Sending result [${result.fullText}] in response to /api/post_message [${event.messageText}]$channelText")
               }
@@ -267,7 +269,8 @@ class APIController @Inject() (
           maybeSlackChannelId.getOrElse(info.channel),
           None,
           slackProfile.loginInfo.providerKey,
-          SlackTimestamp.now
+          SlackTimestamp.now,
+          slackService.clientFor(botProfile)
         )
       )
       result <- runBehaviorFor(maybeEvent, context)
@@ -579,7 +582,7 @@ class APIController @Inject() (
           maybeEvent <- context.maybeMessageEventFor(info.message, info.channel)
           result <- maybeEvent.map { event =>
             val botResult = SimpleTextResult(event, None, info.message, forcePrivateResponse = false)
-            botResult.sendIn(None, dataService).map { _ =>
+            botResultService.sendIn(botResult, None).map { _ =>
               Ok(Json.toJson(Seq(botResult.fullText)))
             }
           }.getOrElse(Future.successful(NotFound("")))
