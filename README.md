@@ -73,6 +73,26 @@ Run ngrok using:
 ```bash
 $ ngrok http 9000
 ```
+If you use the free version of Ngrok everytime you restart it Ngrok will assign to you a new
+subdomain and you will have to update the Playapp configuration. If you upgrade your Ngrok plan
+you can choose and keep a subdomain. You can then use the Ngrock config. file:
+
+Create a file at ~/.ngrok2/ngrok.yml. It should look like this
+
+```
+authtoken: <AUTH TOKEN>
+tunnels:
+  dev:
+    proto: http
+    addr: 9000
+    hostname: <CHOOSEN SUBDOMAIN>.ngrok.io
+```
+Then from the command line you can simply run:
+
+```bash
+$ ngrok start dev
+```
+
 
 #### Create a Slack API App
 - Go to https://api.slack.com/apps
@@ -134,12 +154,12 @@ You can verify that by running:
 $ PGPASSWORD=ellipsis psql -h 127.0.0.1 -p 5432 ellipsis ellipsis
 ```
 
-You should also have Elasticsearch running on port 9200 and Kibana on port 5601
+You also have Elasticsearch on port 9200, Kibana on port 5601, Elasticsearch-head
+on 9100 and Memcached on 11211.
 
 http://localhost:9200
-http://localhost:9200/_plugin/head/
+http://localhost:9100
 http://localhost:5601
-http://localhost:5601/app/sense
 
 
 #### Run the app
