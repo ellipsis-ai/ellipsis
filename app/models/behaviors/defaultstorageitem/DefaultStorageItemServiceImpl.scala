@@ -258,8 +258,15 @@ class DefaultStorageItemServiceImpl @Inject() (
     dataService.run(createItemAction(typeName, user, data, behaviorGroup))
   }
 
-  def deleteItem(id: String, behaviorGroup: BehaviorGroup): Future[DefaultStorageItem] = {
-    Future.successful(null) // TODO: for realz
+  def deleteItemAction(id: String, behaviorGroup: BehaviorGroup): DBIO[Option[DefaultStorageItem]] = {
+    for {
+      maybeItem <- findByIdAction(id, behaviorGroup)
+      _ <- maybeItem.map(_ => deleteByIdQuery(id).delete).getOrElse(DBIO.successful({}))
+    } yield maybeItem
+  }
+
+  def deleteItem(id: String, behaviorGroup: BehaviorGroup): Future[Option[DefaultStorageItem]] = {
+    dataService.run(deleteItemAction(id, behaviorGroup))
   }
 
 }

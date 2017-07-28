@@ -42,4 +42,9 @@ object DefaultStorageItemQueries {
     allWithBehavior.filter { case(item, ((behavior, _), _)) => behavior.id === behaviorId }
   }
   val allForQuery = Compiled(uncompiledAllForQuery _)
+
+  def uncompiledDeleteByIdQuery(id: Rep[String]) = {
+    all.filter { case(item) => item.id === id }
+  }
+  val deleteByIdQuery = Compiled(uncompiledDeleteByIdQuery _)
 }

@@ -111,7 +111,9 @@ class GraphQLServiceImpl @Inject() (
                                  ): Action[DefaultStorageItemService, _] = {
       definition.name match {
         case createFieldRegex(typeName) => ctx.ctx.createItem(typeName, user, valueFor(ctx, definition), group).map(_.data)
-        case deleteFieldRegex(_) => ctx.ctx.deleteItem(ctx.arg(definition.arguments.head.name), group).map(_.data)
+        case deleteFieldRegex(_) => ctx.ctx.deleteItem(ctx.arg(definition.arguments.head.name), group).map { maybeItem =>
+          maybeItem.map(_.data).getOrElse(JsNull)
+        }
       }
     }
 
