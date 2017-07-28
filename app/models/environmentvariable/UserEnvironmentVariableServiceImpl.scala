@@ -87,8 +87,11 @@ class UserEnvironmentVariableServiceImpl @Inject() (
   def uncompiledAllForUserQuery(userId: Rep[String]) = allWithUser.filter(_._1.userId === userId)
   val allForUserQuery = Compiled(uncompiledAllForUserQuery _)
 
+  def allForAction(user: User): DBIO[Seq[UserEnvironmentVariable]] = {
+    allForUserQuery(user.id).result.map { r => r.map(tuple2EnvironmentVariable)}
+  }
+
   def allFor(user: User): Future[Seq[UserEnvironmentVariable]] = {
-    val action = allForUserQuery(user.id).result.map { r => r.map(tuple2EnvironmentVariable)}
-    dataService.run(action)
+    dataService.run(allForAction(user))
   }
 }

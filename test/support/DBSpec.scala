@@ -9,6 +9,7 @@ import models.IDs
 import models.accounts.oauth2api.{AuthorizationCode, OAuth2Api}
 import models.accounts.oauth2application.OAuth2Application
 import models.accounts.user.User
+import models.behaviors.BotResultService
 import models.behaviors.behavior.Behavior
 import models.behaviors.behaviorgroup.BehaviorGroup
 import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
@@ -20,11 +21,11 @@ import models.team.Team
 import modules.ActorModule
 import org.scalatest.mock.MockitoSugar
 import org.scalatestplus.play.{OneAppPerSuite, PlaySpec}
-import play.api.cache.CacheApi
 import play.api.db.Databases
 import play.api.db.evolutions.Evolutions
 import play.api.inject.bind
 import play.api.inject.guice.GuiceApplicationBuilder
+import play.api.libs.ws.WSClient
 import play.api.{Application, Configuration}
 import services.{AWSLambdaService, DefaultServices, GithubService, PostgresDataService}
 
@@ -34,7 +35,7 @@ import scala.concurrent.{Await, Future}
 trait DBSpec extends PlaySpec with OneAppPerSuite with MockitoSugar {
 
   lazy val config = ConfigFactory.load()
-  lazy val cache = app.injector.instanceOf(classOf[CacheApi])
+  lazy val cacheService = app.injector.instanceOf(classOf[CacheService])
   lazy val configuration = app.injector.instanceOf(classOf[Configuration])
   lazy val services = app.injector.instanceOf(classOf[DefaultServices])
 
@@ -42,11 +43,16 @@ trait DBSpec extends PlaySpec with OneAppPerSuite with MockitoSugar {
     GuiceApplicationBuilder().
       overrides(bind[AWSLambdaService].to[MockAWSLambdaService]).
       overrides(bind[GithubService].toInstance(mock[GithubService])).
+      overrides(bind[SlackEventService].toInstance(mock[SlackEventService])).
       disable[ActorModule].
       build()
 
   val dataService = app.injector.instanceOf(classOf[PostgresDataService])
+  val lambdaService = app.injector.instanceOf(classOf[AWSLambdaService])
   val actorSystem = app.injector.instanceOf(classOf[ActorSystem])
+  val slackEventService = app.injector.instanceOf(classOf[SlackEventService])
+  val ws = app.injector.instanceOf(classOf[WSClient])
+  val botResultService = app.injector.instanceOf(classOf[BotResultService])
 
   def newSavedTeam: Team = runNow(dataService.teams.create(IDs.next))
 

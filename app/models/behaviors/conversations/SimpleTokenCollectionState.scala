@@ -7,6 +7,7 @@ import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.events.Event
 import models.behaviors.{BotResult, SimpleTextResult}
 import services.DefaultServices
+import slick.dbio.DBIO
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -17,12 +18,16 @@ case class SimpleTokenCollectionState(
                                        services: DefaultServices
                                     ) extends CollectionState {
 
-  val dataService = services.dataService
+  lazy val dataService = services.dataService
 
   val name = InvokeBehaviorConversation.COLLECT_SIMPLE_TOKENS_STATE
 
+  def maybeNextToCollectAction: DBIO[Option[SimpleTokenApi]] = {
+    DBIO.successful(missingTokenApis.headOption)
+  }
+
   def maybeNextToCollect: Future[Option[SimpleTokenApi]] = {
-    Future.successful(missingTokenApis.headOption)
+    dataService.run(maybeNextToCollectAction)
   }
 
   def isCompleteIn(conversation: Conversation): Future[Boolean] = maybeNextToCollect.map(_.isEmpty)
@@ -39,8 +44,8 @@ case class SimpleTokenCollectionState(
     } yield updatedConversation
   }
 
-  def promptResultFor(conversation: Conversation, isReminding: Boolean): Future[BotResult] = {
-    maybeNextToCollect.map { maybeNextToCollect =>
+  def promptResultForAction(conversation: Conversation, isReminding: Boolean): DBIO[BotResult] = {
+    maybeNextToCollectAction.map { maybeNextToCollect =>
       val prompt = maybeNextToCollect.map { api =>
         s"""
            |To use this skill, you need to provide your ${api.name} API token.
@@ -60,16 +65,16 @@ case class SimpleTokenCollectionState(
 
 object SimpleTokenCollectionState {
 
-  def from(
-            user: User,
-            conversation: Conversation,
-            event: Event,
-            services: DefaultServices
-          ): Future[SimpleTokenCollectionState] = {
+  def fromAction(
+                  user: User,
+                  conversation: Conversation,
+                  event: Event,
+                  services: DefaultServices
+          ): DBIO[SimpleTokenCollectionState] = {
     val dataService = services.dataService
     for {
-      tokens <- dataService.linkedSimpleTokens.allForUser(user)
-      requiredTokenApis <- dataService.requiredSimpleTokenApis.allFor(conversation.behaviorVersion.groupVersion)
+      tokens <- dataService.linkedSimpleTokens.allForUserAction(user)
+      requiredTokenApis <- dataService.requiredSimpleTokenApis.allForAction(conversation.behaviorVersion.groupVersion)
     } yield {
       val missing = requiredTokenApis.filterNot { required =>
         tokens.exists(linked => linked.api == required.api)

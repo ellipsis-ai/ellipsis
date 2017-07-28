@@ -29,8 +29,6 @@ trait SlackBotProfileService {
     SlackChannels(SlackApiClient(botProfile.token))
   }
 
-  def clientFor(botProfile: SlackBotProfile): SlackApiClient = SlackApiClient(botProfile.token)
-
   def eventualMaybeEvent(slackTeamId: String, channelId: String, userId: String): Future[Option[SlackMessageEvent]]
 
   def sendResultWithNewEvent(

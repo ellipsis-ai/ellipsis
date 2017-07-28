@@ -1,9 +1,11 @@
 import json.BehaviorVersionData
-import models.behaviors.conversations.{InvokeBehaviorConversation, ParamCollectionState}
+import models.behaviors.conversations.{ConversationServices, InvokeBehaviorConversation, ParamCollectionState}
 import models.behaviors.testing.TestEvent
 import support.DBSpec
 
 class ParamCollectionStateSpec extends DBSpec {
+
+  val services = ConversationServices(dataService, lambdaService, slackEventService, cacheService, configuration, ws, actorSystem)
 
   "ParamCollectionState" should {
 

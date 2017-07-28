@@ -10,6 +10,8 @@ import scala.concurrent.Future
 
 trait RequiredOAuth2ApiConfigService {
 
+  def allForAction(groupVersion: BehaviorGroupVersion): DBIO[Seq[RequiredOAuth2ApiConfig]]
+
   def allFor(groupVersion: BehaviorGroupVersion): Future[Seq[RequiredOAuth2ApiConfig]]
 
   def allFor(api: OAuth2Api, behaviorGroup: BehaviorGroup): Future[Seq[RequiredOAuth2ApiConfig]]

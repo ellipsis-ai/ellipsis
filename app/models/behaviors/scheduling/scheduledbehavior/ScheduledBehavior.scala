@@ -11,6 +11,7 @@ import models.behaviors.scheduling.recurrence.Recurrence
 import models.team.Team
 import play.api.libs.json.Json
 import services.DataService
+import slack.api.SlackApiClient
 import slick.dbio.DBIO
 import utils.SlackTimestamp
 
@@ -61,8 +62,8 @@ case class ScheduledBehavior(
     }
   }
 
-  def eventFor(channel: String, slackUserId: String, profile: SlackBotProfile): ScheduledEvent = {
-    ScheduledEvent(RunEvent(profile, behavior, arguments, channel, None, slackUserId, SlackTimestamp.now), this)
+  def eventFor(channel: String, slackUserId: String, profile: SlackBotProfile, client: SlackApiClient): ScheduledEvent = {
+    ScheduledEvent(RunEvent(profile, behavior, arguments, channel, None, slackUserId, SlackTimestamp.now, client), this)
   }
 
   def withUpdatedNextTriggeredFor(when: OffsetDateTime): ScheduledBehavior = {

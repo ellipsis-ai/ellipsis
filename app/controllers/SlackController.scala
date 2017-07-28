@@ -3,7 +3,7 @@ package controllers
 import javax.inject.Inject
 
 import com.mohiva.play.silhouette.api.Silhouette
-import models.behaviors.BehaviorResponse
+import models.behaviors.{BehaviorResponse, BotResultService}
 import models.behaviors.builtins.DisplayHelpBehavior
 import models.behaviors.events.SlackMessageActionConstants._
 import models.behaviors.events.{EventHandler, SlackMessageEvent}
@@ -214,7 +214,7 @@ class SlackController @Inject() (
         for {
           maybeProfile <- dataService.slackBotProfiles.allForSlackTeamId(info.teamId).map(_.headOption)
           _ <- maybeProfile.map { profile =>
-            slackEventService.onEvent(SlackMessageEvent(profile, info.channel, info.maybeThreadTs, info.userId, info.message, info.ts))
+            slackEventService.onEvent(SlackMessageEvent(profile, info.channel, info.maybeThreadTs, info.userId, info.message, info.ts, slackEventService.clientFor(profile)))
           }.getOrElse {
             Future.successful({})
           }
@@ -490,7 +490,7 @@ class SlackController @Inject() (
                 dataService.conversations.find(conversationId).flatMap { maybeConversation =>
                   maybeConversation.map { convo =>
                     dataService.conversations.touch(convo).flatMap { _ =>
-                      cache.get[SlackMessageEvent](convo.pendingEventKey).map { event =>
+                      cacheService.getEvent(convo.pendingEventKey).map { event =>
                         slackEventService.onEvent(event)
                       }.getOrElse(Future.successful({}))
                     }
@@ -504,10 +504,10 @@ class SlackController @Inject() (
                 dataService.conversations.find(conversationId).flatMap { maybeConversation =>
                   maybeConversation.map { convo =>
                     dataService.conversations.background(convo, "OK, on to the next thing.", includeUsername = false).flatMap { _ =>
-                      cache.get[SlackMessageEvent](convo.pendingEventKey).map { event =>
+                      cacheService.getEvent(convo.pendingEventKey).map { event =>
                         eventHandler.handle(event, None).flatMap { results =>
                           Future.sequence(
-                            results.map(result => result.sendIn(None, dataService).map { _ =>
+                            results.map(result => botResultService.sendIn(result, None).map { _ =>
                               Logger.info(event.logTextFor(result))
                             })
                           )
@@ -536,7 +536,7 @@ class SlackController @Inject() (
                   event => for {
                     maybeBehaviorVersion <- dataService.behaviorVersions.findWithoutAccessCheck(behaviorVersionId)
                     maybeResponse <- maybeBehaviorVersion.map { behaviorVersion =>
-                      BehaviorResponse.buildFor(
+                      dataService.behaviorResponses.buildFor(
                         event,
                         behaviorVersion,
                         Map(),

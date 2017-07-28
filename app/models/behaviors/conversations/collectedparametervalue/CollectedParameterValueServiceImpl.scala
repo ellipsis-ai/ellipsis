@@ -3,11 +3,10 @@ package models.behaviors.conversations.collectedparametervalue
 import javax.inject.Inject
 
 import com.google.inject.Provider
+import drivers.SlickPostgresDriver.api._
 import models.behaviors.behaviorparameter.{BehaviorParameter, BehaviorParameterQueries}
 import models.behaviors.conversations.conversation.{Conversation, ConversationQueries}
-import play.api.cache.CacheApi
 import services.DataService
-import drivers.SlickPostgresDriver.api._
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -24,12 +23,10 @@ class CollectedParameterValuesTable(tag: Tag) extends Table[RawCollectedParamete
 }
 
 class CollectedParameterValueServiceImpl @Inject() (
-                                                     dataServiceProvider: Provider[DataService],
-                                                     cacheProvider: Provider[CacheApi]
+                                                     dataServiceProvider: Provider[DataService]
                                                    ) extends CollectedParameterValueService {
 
   def dataService = dataServiceProvider.get
-  def cache = cacheProvider.get
 
   val all = TableQuery[CollectedParameterValuesTable]
   val joined =
@@ -51,8 +48,8 @@ class CollectedParameterValueServiceImpl @Inject() (
   }
   val allForQuery = Compiled(uncompiledAllForQuery _)
 
-  def allFor(conversation: Conversation): Future[Seq[CollectedParameterValue]] = {
-    dataService.run(allForQuery(conversation.id).result).map { r =>
+  def allForAction(conversation: Conversation): DBIO[Seq[CollectedParameterValue]] = {
+    allForQuery(conversation.id).result.map { r =>
       r.map(tuple2ParameterValue)
     }
   }

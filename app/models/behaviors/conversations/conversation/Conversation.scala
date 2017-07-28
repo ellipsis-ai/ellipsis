@@ -8,7 +8,9 @@ import models.behaviors.behaviorversion.BehaviorVersion
 import models.behaviors.events.SlackMessageActionConstants._
 import models.behaviors.events.{Event, SlackMessageActionButton, SlackMessageActions, SlackMessageEvent}
 import models.behaviors.triggers.messagetrigger.MessageTrigger
-import services.{DataService, DefaultServices}
+import services.DefaultServices
+import services.DataService
+import slick.dbio.DBIO
 import utils.SlackTimestamp
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -44,19 +46,19 @@ trait Conversation {
     startedAt.plusSeconds(Conversation.SECONDS_UNTIL_BACKGROUNDED).isBefore(OffsetDateTime.now)
   }
 
-  private def maybeSlackPlaceholderEvent(dataService: DataService): Future[Option[Event]] = {
-    dataService.slackBotProfiles.allFor(behaviorVersion.team).map { botProfiles =>
+  private def maybeSlackPlaceholderEventAction(services: DefaultServices): DBIO[Option[Event]] = {
+    services.dataService.slackBotProfiles.allForAction(behaviorVersion.team).map { botProfiles =>
       for {
         botProfile <- botProfiles.headOption
         channel <- maybeChannel
-      } yield SlackMessageEvent(botProfile, channel, None, userIdForContext, "", SlackTimestamp.now)
+      } yield SlackMessageEvent(botProfile, channel, None, userIdForContext, "", SlackTimestamp.now, services.slackEventService.clientFor(botProfile))
     }
   }
 
-  def maybePlaceholderEvent(dataService: DataService): Future[Option[Event]] = {
+  def maybePlaceholderEventAction(services: DefaultServices): DBIO[Option[Event]] = {
     context match {
-      case Conversation.SLACK_CONTEXT => maybeSlackPlaceholderEvent(dataService)
-      case _ => Future.successful(None)
+      case Conversation.SLACK_CONTEXT => maybeSlackPlaceholderEventAction(services)
+      case _ => DBIO.successful(None)
     }
   }
 
@@ -69,6 +71,14 @@ trait Conversation {
   def updateStateTo(newState: String, dataService: DataService): Future[Conversation]
   def cancel(dataService: DataService): Future[Conversation] = updateStateTo(Conversation.DONE_STATE, dataService)
   def updateWith(event: Event, services: DefaultServices): Future[Conversation]
+  def updateWith(event: Event, services: DefaultServices): Future[Conversation]
+
+  def respondAction(
+                     event: Event,
+                     isReminding: Boolean,
+                     services: DefaultServices
+                   ): DBIO[BotResult]
+
   def respond(
                event: Event,
                isReminding: Boolean,
@@ -90,17 +100,19 @@ trait Conversation {
                                services: DefaultServices
                              ): Future[Option[BehaviorParameter]]
 
-  def maybeRemindResult(services: DefaultServices): Future[Option[BotResult]] = {
-    maybePlaceholderEvent(services.dataService).flatMap { maybeEvent =>
+  def maybeRemindResultAction(
+                               services: DefaultServices
+                            ): DBIO[Option[BotResult]] = {
+    maybePlaceholderEventAction(services).flatMap { maybeEvent =>
       maybeEvent.map { event =>
-        respond(event, isReminding=true, services).map { result =>
+        respondAction(event, isReminding=true, services).map { result =>
           val intro = s"Hey <@$userIdForContext>, don’t forget, I’m still waiting for your answer to this:"
           val actions = Seq(SlackMessageActionButton(STOP_CONVERSATION, "Stop asking", id))
           val question = result.text
           val attachment = SlackMessageActions(STOP_CONVERSATION, actions, Some(question), None)
           Some(TextWithActionsResult(result.event, Some(this), intro, result.forcePrivateResponse, attachment))
         }
-      }.getOrElse(Future.successful(None))
+      }.getOrElse(DBIO.successful(None))
     }
   }
 

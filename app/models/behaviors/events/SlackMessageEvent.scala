@@ -5,11 +5,8 @@ import models.accounts.slack.botprofile.SlackBotProfile
 import models.accounts.slack.profile.SlackProfile
 import models.accounts.user.User
 import models.behaviors.conversations.conversation.Conversation
-import play.api.libs.json.{JsArray, JsBoolean, JsObject, JsString}
-import play.api.libs.ws.WSClient
 import services.DataService
-import slack.api.{ApiError, SlackApiClient}
-import slack.models.Channel
+import slack.api.SlackApiClient
 import utils.SlackMessageSender
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -22,7 +19,8 @@ case class SlackMessageEvent(
                                  maybeThreadId: Option[String],
                                  user: String,
                                  text: String,
-                                 ts: String
+                                 ts: String,
+                                 client: SlackApiClient
                                ) extends MessageEvent with SlackEvent {
 
   lazy val isBotMessage: Boolean = profile.userId == user
@@ -79,8 +77,8 @@ case class SlackMessageEvent(
     } yield messages
   }
 
-  def channelForSend(forcePrivate: Boolean, maybeConversation: Option[Conversation], dataService: DataService)(implicit actorSystem: ActorSystem): Future[String] = {
-    eventualMaybeDMChannel(dataService)(actorSystem).map { maybeDMChannel =>
+  def channelForSend(forcePrivate: Boolean, maybeConversation: Option[Conversation])(implicit actorSystem: ActorSystem): Future[String] = {
+    eventualMaybeDMChannel(actorSystem).map { maybeDMChannel =>
       (if (forcePrivate) {
         maybeDMChannel
       } else {
@@ -93,25 +91,16 @@ case class SlackMessageEvent(
     }
   }
 
-  override def maybeChannelForSend(
-                           forcePrivate: Boolean,
-                           maybeConversation: Option[Conversation],
-                           dataService: DataService
-                         )(implicit actorSystem: ActorSystem): Future[Option[String]] = {
-    channelForSend(forcePrivate, maybeConversation, dataService).map(Some(_))
-  }
-
   def sendMessage(
                    unformattedText: String,
                    forcePrivate: Boolean,
                    maybeShouldUnfurl: Option[Boolean],
                    maybeConversation: Option[Conversation],
-                   maybeActions: Option[MessageActions] = None,
-                   dataService: DataService
+                   maybeActions: Option[MessageActions] = None
                  )(implicit actorSystem: ActorSystem): Future[Option[String]] = {
-    channelForSend(forcePrivate, maybeConversation, dataService).flatMap { channelToUse =>
+    channelForSend(forcePrivate, maybeConversation).flatMap { channelToUse =>
       SlackMessageSender(
-        clientFor(dataService),
+        client,
         user,
         unformattedText,
         forcePrivate,

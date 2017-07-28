@@ -50,7 +50,7 @@ trait BehaviorVersionService {
 
   def findCurrentByNameAction(name: String, group: BehaviorGroup): DBIO[Option[BehaviorVersion]]
 
-  def hasSearchParam(behaviorVersion: BehaviorVersion): Future[Boolean]
+  def hasSearchParamAction(behaviorVersion: BehaviorVersion): DBIO[Boolean]
 
   def createForAction(
                        behavior: Behavior,
@@ -68,6 +68,13 @@ trait BehaviorVersionService {
   def maybePreviousFor(behaviorVersion: BehaviorVersion): Future[Option[BehaviorVersion]]
 
   def maybeNotReadyResultFor(behaviorVersion: BehaviorVersion, event: Event): Future[Option[BotResult]]
+
+  def resultForAction(
+                       behaviorVersion: BehaviorVersion,
+                       parametersWithValues: Seq[ParameterWithValue],
+                       event: Event,
+                       maybeConversation: Option[Conversation]
+                     ): DBIO[BotResult]
 
   def resultFor(
                  behaviorVersion: BehaviorVersion,

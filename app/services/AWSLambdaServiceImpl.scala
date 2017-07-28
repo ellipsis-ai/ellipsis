@@ -20,10 +20,10 @@ import models.behaviors.invocationtoken.InvocationToken
 import models.behaviors.library.LibraryVersion
 import models.environmentvariable.{EnvironmentVariable, TeamEnvironmentVariable, UserEnvironmentVariable}
 import models.team.Team
-import play.api.cache.CacheApi
 import play.api.libs.json._
 import play.api.libs.ws.WSClient
 import play.api.{Configuration, Logger}
+import slick.dbio.DBIO
 import sun.misc.BASE64Decoder
 import utils.JavaFutureConverter
 
@@ -38,7 +38,6 @@ class AWSLambdaServiceImpl @Inject() (
                                        val configuration: Configuration,
                                        val models: Models,
                                        val ws: WSClient,
-                                       val cache: CacheApi,
                                        val dataService: DataService,
                                        val logsService: AWSLogsService,
                                        implicit val actorSystem: ActorSystem
@@ -114,20 +113,20 @@ class AWSLambdaServiceImpl @Inject() (
     )))
   }
 
-  def invokeFunction(
-                      functionName: String,
-                      token: InvocationToken,
-                      payloadData: Seq[(String, JsValue)],
-                      team: Team,
-                      event: Event,
-                      requiredOAuth2ApiConfigs: Seq[RequiredOAuth2ApiConfig],
-                      environmentVariables: Seq[EnvironmentVariable],
-                      successFn: InvokeResult => BotResult,
-                      maybeConversation: Option[Conversation],
-                      isRetrying: Boolean
-                    ): Future[BotResult] = {
+  def invokeFunctionAction(
+                            functionName: String,
+                            token: InvocationToken,
+                            payloadData: Seq[(String, JsValue)],
+                            team: Team,
+                            event: Event,
+                            requiredOAuth2ApiConfigs: Seq[RequiredOAuth2ApiConfig],
+                            environmentVariables: Seq[EnvironmentVariable],
+                            successFn: InvokeResult => BotResult,
+                            maybeConversation: Option[Conversation],
+                            isRetrying: Boolean
+                          ): DBIO[BotResult] = {
     for {
-      userInfo <- event.userInfo(ws, dataService)
+      userInfo <- event.userInfoAction(ws, dataService)
       result <- {
         val oauth2ApplicationsNeedingRefresh =
           requiredOAuth2ApiConfigs.flatMap(_.maybeApplication).
@@ -135,7 +134,7 @@ class AWSLambdaServiceImpl @Inject() (
               !userInfo.links.exists(_.externalSystem == app.name)
             }.
             filterNot(_.api.grantType.requiresAuth)
-        TeamInfo.forOAuth2Apps(oauth2ApplicationsNeedingRefresh, team, ws).flatMap { teamInfo =>
+        DBIO.from(TeamInfo.forOAuth2Apps(oauth2ApplicationsNeedingRefresh, team, ws).flatMap { teamInfo =>
           val payloadJson = JsObject(
             payloadData ++ contextParamDataFor(environmentVariables, userInfo, teamInfo, token)
           )
@@ -153,7 +152,7 @@ class AWSLambdaServiceImpl @Inject() (
                   if (!isRetrying) {
                     Logger.info(s"retrying behavior invocation after resource not found")
                     Thread.sleep(2000)
-                    invokeFunction(functionName, token, payloadData, team, event, requiredOAuth2ApiConfigs, environmentVariables, successFn, maybeConversation, isRetrying=true)
+                    dataService.run(invokeFunctionAction(functionName, token, payloadData, team, event, requiredOAuth2ApiConfigs, environmentVariables, successFn, maybeConversation, isRetrying=true))
                   } else {
                     throw e
                   }
@@ -162,27 +161,27 @@ class AWSLambdaServiceImpl @Inject() (
               }
             }
           }
-        }
+        })
       }
     } yield result
   }
 
-  def invoke(
-              behaviorVersion: BehaviorVersion,
-              parametersWithValues: Seq[ParameterWithValue],
-              environmentVariables: Seq[EnvironmentVariable],
-              event: Event,
-              maybeConversation: Option[Conversation]
-              ): Future[BotResult] = {
+  def invokeAction(
+                    behaviorVersion: BehaviorVersion,
+                    parametersWithValues: Seq[ParameterWithValue],
+                    environmentVariables: Seq[EnvironmentVariable],
+                    event: Event,
+                    maybeConversation: Option[Conversation]
+                  ): DBIO[BotResult] = {
     for {
-      requiredOAuth2ApiConfigs <- dataService.requiredOAuth2ApiConfigs.allFor(behaviorVersion.groupVersion)
+      requiredOAuth2ApiConfigs <- dataService.requiredOAuth2ApiConfigs.allForAction(behaviorVersion.groupVersion)
       result <- if (behaviorVersion.functionBody.isEmpty) {
-        Future.successful(SuccessResult(event, maybeConversation, JsNull, parametersWithValues, behaviorVersion.maybeResponseTemplate, None, behaviorVersion.forcePrivateResponse))
+        DBIO.successful(SuccessResult(event, maybeConversation, JsNull, parametersWithValues, behaviorVersion.maybeResponseTemplate, None, behaviorVersion.forcePrivateResponse))
       } else {
         for {
-          user <- event.ensureUser(dataService)
-          token <- dataService.invocationTokens.createFor(user, behaviorVersion.behavior, event.maybeScheduled)
-          invocationResult <- invokeFunction(
+          user <- event.ensureUserAction(dataService)
+          token <- dataService.invocationTokens.createForAction(user, behaviorVersion.behavior, event.maybeScheduled)
+          invocationResult <- invokeFunctionAction(
             behaviorVersion.functionName,
             token,
             parametersWithValues.map { ea => (ea.invocationName, ea.preparedValue) },
@@ -201,6 +200,16 @@ class AWSLambdaServiceImpl @Inject() (
         } yield invocationResult
       }
     } yield result
+  }
+
+  def invoke(
+              behaviorVersion: BehaviorVersion,
+              parametersWithValues: Seq[ParameterWithValue],
+              environmentVariables: Seq[EnvironmentVariable],
+              event: Event,
+              maybeConversation: Option[Conversation]
+              ): Future[BotResult] = {
+    dataService.run(invokeAction(behaviorVersion, parametersWithValues, environmentVariables, event, maybeConversation))
   }
 
   val amazonServiceExceptionRegex = """.*com\.amazonaws\.AmazonServiceException.*""".r

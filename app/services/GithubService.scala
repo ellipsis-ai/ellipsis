@@ -4,24 +4,23 @@ import java.nio.charset.Charset
 import java.time.OffsetDateTime
 import javax.inject.{Inject, Singleton}
 
-import json._
 import json.Formatting._
+import json._
 import models.team.Team
 import org.apache.commons.codec.binary.Base64
 import play.api.Configuration
-import play.api.cache.CacheApi
 import play.api.libs.json.{JsError, JsSuccess, JsValue, Json}
 import play.api.libs.ws.WSClient
 
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 import scala.concurrent.{Await, Future}
-import scala.concurrent.ExecutionContext.Implicits.global
 
 @Singleton
 class GithubService @Inject() (
                                 ws: WSClient,
                                 config: Configuration,
-                                cache: CacheApi,
+                                cacheService: CacheService,
                                 dataService: DataService
                               ) {
 
@@ -300,8 +299,10 @@ class GithubService @Inject() (
   def publishedBehaviorGroupsFor(team: Team, maybeBranch: Option[String], alreadyInstalled: Seq[BehaviorGroupData]): Seq[BehaviorGroupData] = {
     val shouldTryCache = maybeBranch.isEmpty
     val behaviorGroups = if (shouldTryCache) {
-      cache.getOrElse[Seq[BehaviorGroupData]](PUBLISHED_BEHAVIORS_KEY, cacheTimeout) {
-        blockingFetchPublishedBehaviorGroups(team, maybeBranch)
+      cacheService.getBehaviorGroupData(PUBLISHED_BEHAVIORS_KEY).getOrElse {
+        val fetched = blockingFetchPublishedBehaviorGroups(team, maybeBranch)
+        cacheService.cacheBehaviorGroupData(PUBLISHED_BEHAVIORS_KEY, fetched, cacheTimeout)
+        fetched
       }
     } else {
       blockingFetchPublishedBehaviorGroups(team, maybeBranch)

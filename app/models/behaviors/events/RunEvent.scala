@@ -6,6 +6,9 @@ import models.behaviors.BehaviorResponse
 import models.behaviors.behavior.Behavior
 import models.behaviors.conversations.conversation.Conversation
 import models.team.Team
+import play.api.Configuration
+import play.api.libs.ws.WSClient
+import slack.api.SlackApiClient
 import services.{AWSLambdaConstants, DataService, DefaultServices}
 import utils.SlackMessageSender
 
@@ -19,7 +22,8 @@ case class RunEvent(
                      channel: String,
                      maybeThreadId: Option[String],
                      user: String,
-                     ts: String
+                     ts: String,
+                     client: SlackApiClient
                   ) extends Event with SlackEvent {
 
   val messageText: String = ""
@@ -44,11 +48,10 @@ case class RunEvent(
                    forcePrivate: Boolean,
                    maybeShouldUnfurl: Option[Boolean],
                    maybeConversation: Option[Conversation],
-                   maybeActions: Option[MessageActions] = None,
-                   dataService: DataService
+                   maybeActions: Option[MessageActions] = None
                  )(implicit actorSystem: ActorSystem): Future[Option[String]] = {
     SlackMessageSender(
-      clientFor(dataService),
+      client,
       user,
       unformattedText,
       forcePrivate,
@@ -77,7 +80,7 @@ case class RunEvent(
               (AWSLambdaConstants.invocationParamFor(param.rank - 1), value)
             }
           })
-          response <- BehaviorResponse.buildFor(
+          response <- dataService.behaviorResponses.buildFor(
             this,
             behaviorVersion,
             invocationParams,

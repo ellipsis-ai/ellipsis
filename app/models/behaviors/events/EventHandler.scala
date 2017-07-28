@@ -3,6 +3,7 @@ package models.behaviors.events
 import javax.inject._
 
 import models.behaviors.builtins.BuiltinBehavior
+import models.behaviors.conversations.ConversationServices
 import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.events.SlackMessageActionConstants._
 import models.behaviors.{BehaviorResponse, BotResult, SimpleTextResult, TextWithActionsResult}
@@ -19,6 +20,8 @@ class EventHandler @Inject() (services: DefaultServices) {
   val dataService = services.dataService
   val lambdaService = services.lambdaService
   implicit val actorService = services.actorSystem
+
+  def slackEventService = services.slackEventService
 
   def startInvokeConversationFor(event: Event): Future[Seq[BotResult]] = {
     for {
@@ -66,7 +69,7 @@ class EventHandler @Inject() (services: DefaultServices) {
               nextParam.input.question
             }
             val key = updatedConvo.pendingEventKey
-            services.cache.set(key, event, 5.minutes)
+            services.cacheService.cacheEvent(key, event, 5.minutes)
             val actions = Seq(
               SlackMessageActionButton(CONFIRM_CONTINUE_CONVERSATION, "Yes, it's an answer", updatedConvo.id),
               SlackMessageActionButton(DONT_CONTINUE_CONVERSATION, "No, not an answer", updatedConvo.id)

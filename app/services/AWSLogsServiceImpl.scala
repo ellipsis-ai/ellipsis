@@ -6,7 +6,6 @@ import com.amazonaws.services.logs.model.{DeleteLogGroupRequest, ResourceNotFoun
 import com.amazonaws.services.logs.{AWSLogsAsync, AWSLogsAsyncClientBuilder}
 import models.Models
 import play.api.Configuration
-import play.api.cache.CacheApi
 import play.api.libs.ws.WSClient
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -16,7 +15,6 @@ class AWSLogsServiceImpl @Inject() (
                                      val configuration: Configuration,
                                      val models: Models,
                                      val ws: WSClient,
-                                     val cache: CacheApi,
                                      val dataService: DataService
                                    ) extends AWSLogsService {
 

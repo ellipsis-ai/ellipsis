@@ -1,5 +1,6 @@
 package models.behaviors.conversations.conversation
 
+import java.sql.Timestamp
 import java.time.OffsetDateTime
 
 import models.behaviors.conversations.InvokeBehaviorConversation
@@ -60,11 +61,22 @@ object ConversationQueries {
   }
   def allForegroundQuery = Compiled(uncompiledAllForegroundQuery)
 
-  def uncompiledAllNeedingReminderQuery(windowStart: Rep[OffsetDateTime], windowEnd: Rep[OffsetDateTime]) = {
-    uncompiledAllPendingQuery.
-      filter { case((convo, _), _) => convo.startedAt >= windowStart }.
-      filter { case((convo, _), _) => convo.maybeLastInteractionAt.map(dt => dt < windowEnd).getOrElse(convo.startedAt < windowEnd) }
+  val tableName: String = "conversations"
+  val startedAtName: String = "started_at"
+  val lastInteractionAtName: String = "last_interaction_at"
+
+  def nextNeedingReminderIdQueryFor(windowStart: OffsetDateTime, windowEnd: OffsetDateTime): DBIO[Seq[String]] = {
+    val startTs = Timestamp.from(windowStart.toInstant)
+    val endTs = Timestamp.from(windowEnd.toInstant)
+    sql"""
+         SELECT id FROM #$tableName
+         WHERE started_at >= ${startTs} AND state <> ${Conversation.DONE_STATE} AND
+           ((#$lastInteractionAtName IS NOT NULL AND #$lastInteractionAtName < ${endTs}) OR
+           (#$lastInteractionAtName IS NULL AND #$startedAtName < ${endTs}))
+         ORDER BY id
+         FOR UPDATE SKIP LOCKED
+         LIMIT 1
+       """.as[String]
   }
-  val allNeedingReminderQuery = Compiled(uncompiledAllNeedingReminderQuery _)
 
 }

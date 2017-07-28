@@ -12,7 +12,8 @@ import models.behaviors.scheduling.Scheduled
 import models.team.Team
 import play.api.libs.json.JsObject
 import play.api.libs.ws.WSClient
-import services.{AWSLambdaService, DataService, DefaultServices}
+import services.{AWSLambdaService, CacheService, DataService, DefaultServices}
+import slick.dbio.DBIO
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{ExecutionContext, Future}
@@ -45,19 +46,23 @@ trait Event {
 
   def loginInfo: LoginInfo = LoginInfo(name, userIdForContext)
 
-  def ensureUser(dataService: DataService): Future[User] = {
-    dataService.users.ensureUserFor(loginInfo, teamId)
+  def ensureUserAction(dataService: DataService): DBIO[User] = {
+    dataService.users.ensureUserForAction(loginInfo, teamId)
   }
 
-  def userInfo(ws: WSClient, dataService: DataService)(implicit actorSystem: ActorSystem): Future[UserInfo] = {
-    UserInfo.buildFor(this, teamId, ws, dataService)
+  def ensureUser(dataService: DataService): Future[User] = {
+    dataService.run(ensureUserAction(dataService))
+  }
+
+  def userInfoAction(ws: WSClient, dataService: DataService)(implicit actorSystem: ActorSystem): DBIO[UserInfo] = {
+    UserInfo.buildForAction(this, teamId, ws, dataService)
   }
 
   def messageInfo(ws: WSClient, dataService: DataService)(implicit actorSystem: ActorSystem): Future[MessageInfo] = {
     MessageInfo.buildFor(this, ws, dataService)
   }
 
-  def detailsFor(ws: WSClient, dataService: DataService)(implicit actorSystem: ActorSystem): Future[JsObject]
+  def detailsFor(ws: WSClient)(implicit actorSystem: ActorSystem): Future[JsObject]
 
   def recentMessages(dataService: DataService)(implicit actorSystem: ActorSystem): Future[Seq[String]] = Future.successful(Seq())
 
@@ -113,10 +118,10 @@ trait Event {
     ).result
   }
 
-  def eventualMaybeDMChannel(dataService: DataService)(implicit actorSystem: ActorSystem): Future[Option[String]]
+  def eventualMaybeDMChannel(implicit actorSystem: ActorSystem): Future[Option[String]]
 
-  def maybeChannelToUseFor(behaviorVersion: BehaviorVersion, dataService: DataService)(implicit actorSystem: ActorSystem): Future[Option[String]] = {
-    eventualMaybeDMChannel(dataService).map { maybeDMChannel =>
+  def maybeChannelToUseFor(behaviorVersion: BehaviorVersion)(implicit actorSystem: ActorSystem): Future[Option[String]] = {
+    eventualMaybeDMChannel.map { maybeDMChannel =>
       if (behaviorVersion.forcePrivateResponse) {
         maybeDMChannel
       } else {
@@ -125,12 +130,12 @@ trait Event {
     }
   }
 
-  def maybeChannelForSend(
-                           forcePrivate: Boolean,
-                           maybeConversation: Option[Conversation],
-                           dataService: DataService
-                         )(implicit actorSystem: ActorSystem): Future[Option[String]] = {
-    Future.successful(maybeChannel)
+  def maybeChannelForSendAction(
+                                 forcePrivate: Boolean,
+                                 maybeConversation: Option[Conversation],
+                                 dataService: DataService
+                               )(implicit actorSystem: ActorSystem): DBIO[Option[String]] = {
+    DBIO.successful(maybeChannel)
   }
 
   def allOngoingConversations(dataService: DataService): Future[Seq[Conversation]]
@@ -140,8 +145,7 @@ trait Event {
                    forcePrivate: Boolean,
                    maybeShouldUnfurl: Option[Boolean],
                    maybeConversation: Option[Conversation],
-                   maybeActions: Option[MessageActions] = None,
-                   dataService: DataService
+                   maybeActions: Option[MessageActions] = None
                  )(implicit actorSystem: ActorSystem): Future[Option[String]]
 
   def botPrefix: String = ""

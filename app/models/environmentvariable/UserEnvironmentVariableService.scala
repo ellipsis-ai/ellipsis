@@ -3,6 +3,7 @@ package models.environmentvariable
 import models.accounts.user.User
 import models.behaviors.behaviorversion.BehaviorVersion
 import services.DataService
+import slick.dbio.DBIO
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -15,6 +16,8 @@ trait UserEnvironmentVariableService {
 
   def deleteFor(name: String, user: User): Future[Boolean]
 
+  def allForAction(user: User): DBIO[Seq[UserEnvironmentVariable]]
+
   def allFor(user: User): Future[Seq[UserEnvironmentVariable]]
 
   def lookForInCode(code: String): Seq[String] = {
@@ -24,17 +27,20 @@ trait UserEnvironmentVariableService {
     }.toSeq
   }
 
-  def knownUsedIn(behaviorVersion: BehaviorVersion, dataService: DataService): Future[Seq[String]] = {
-    Future.successful(lookForInCode(behaviorVersion.functionBody))
+  def knownUsedIn(behaviorVersion: BehaviorVersion, dataService: DataService): Seq[String] = {
+    lookForInCode(behaviorVersion.functionBody)
+  }
+
+  def missingForAction(user: User, behaviorVersion: BehaviorVersion, dataService: DataService): DBIO[Seq[String]] = {
+    for {
+      envVars <- allForAction(user)
+    } yield knownUsedIn(behaviorVersion, dataService).map{ used =>
+      used diff envVars.filter(_.value.trim.nonEmpty).map(_.name)
+    }
   }
 
   def missingFor(user: User, behaviorVersion: BehaviorVersion, dataService: DataService): Future[Seq[String]] = {
-    for {
-      envVars <- allFor(user)
-      missing <- knownUsedIn(behaviorVersion, dataService).map{ used =>
-        used diff envVars.filter(_.value.trim.nonEmpty).map(_.name)
-      }
-    } yield missing
+    dataService.run(missingForAction(user, behaviorVersion, dataService))
   }
 
 }

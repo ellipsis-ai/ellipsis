@@ -6,7 +6,6 @@ import com.mohiva.play.silhouette.api.Silhouette
 import com.mohiva.play.silhouette.api.actions.SecuredRequest
 import json.Formatting._
 import json._
-import models.behaviors.behaviorparameter.TextType
 import models.behaviors.testing.{InvocationTester, TestEvent, TriggerTester}
 import models.behaviors.triggers.messagetrigger.MessageTrigger
 import models.silhouette.EllipsisEnv
@@ -282,7 +281,7 @@ class BehaviorEditorController @Inject() (
                 dataService.behaviors.maybeCurrentVersionFor(behavior)
               }.getOrElse(Future.successful(None))
               maybeReport <- maybeBehaviorVersion.map { behaviorVersion =>
-                InvocationTester(user, behaviorVersion, paramValues, services).run.map(Some(_))
+                InvocationTester(user, behaviorVersion, paramValues, dataService).run.map(Some(_))
               }.getOrElse(Future.successful(None))
             } yield {
               maybeReport.map { report =>

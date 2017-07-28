@@ -5,6 +5,7 @@ import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.events.Event
 import models.behaviors.{BotResult, SimpleTextResult}
 import services.DefaultServices
+import slick.dbio.DBIO
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -15,14 +16,18 @@ case class UserEnvVarCollectionState(
                                       services: DefaultServices
                                     ) extends CollectionState {
 
-  val dataService = services.dataService
+  lazy val dataService = services.dataService
 
   val name = InvokeBehaviorConversation.COLLECT_USER_ENV_VARS_STATE
 
   val sortedEnvVars = missingEnvVarNames.sorted
 
+  def maybeNextToCollectAction: DBIO[Option[String]] = {
+    DBIO.successful(sortedEnvVars.headOption)
+  }
+
   def maybeNextToCollect: Future[Option[String]] = {
-    Future.successful(sortedEnvVars.headOption)
+    dataService.run(maybeNextToCollectAction)
   }
 
   def isCompleteIn(conversation: Conversation): Future[Boolean] = maybeNextToCollect.map(_.isEmpty)
@@ -38,8 +43,8 @@ case class UserEnvVarCollectionState(
     } yield updatedConversation
   }
 
-  def promptResultFor(conversation: Conversation, isReminding: Boolean): Future[BotResult] = {
-    maybeNextToCollect.map { maybeNextToCollect =>
+  def promptResultForAction(conversation: Conversation, isReminding: Boolean): DBIO[BotResult] = {
+    maybeNextToCollectAction.map { maybeNextToCollect =>
       val prompt = maybeNextToCollect.map { envVarName =>
         s"To run this skill, I first need a value for $envVarName. This is specific to you and I'll only ask for it once"
       }.getOrElse {
@@ -53,13 +58,14 @@ case class UserEnvVarCollectionState(
 
 object UserEnvVarCollectionState {
 
-  def from(
-            user: User,
-            conversation: Conversation,
-            event: Event,
-            services: DefaultServices
-          ): Future[UserEnvVarCollectionState] = {
-    services.dataService.userEnvironmentVariables.missingFor(user, conversation.behaviorVersion, services.dataService).map { missing =>
+  def fromAction(
+                  user: User,
+                  conversation: Conversation,
+                  event: Event,
+                  services: DefaultServices
+                ): DBIO[UserEnvVarCollectionState] = {
+    val dataService = services.dataService
+    dataService.userEnvironmentVariables.missingForAction(user, conversation.behaviorVersion, dataService).map { missing =>
       UserEnvVarCollectionState(missing, event, services)
     }
   }

@@ -55,8 +55,8 @@ libraryDependencies ++= Seq(
   "com.joestelmach" % "natty" % "0.11",
   "com.rockymadden.stringmetric" %% "stringmetric-core" % "0.27.4",
   "org.sangria-graphql" %% "sangria" % "1.2.1",
-  "org.sangria-graphql" %% "sangria-play-json" % "1.0.0"
-  //"com.github.mumoshu" %% "play2-memcached-play24" % "0.7.0"
+  "org.sangria-graphql" %% "sangria-play-json" % "1.0.0",
+  "com.github.mumoshu" %% "play2-memcached-play25" % "0.8.0"
 )
 
 javaOptions in Test += "-Dconfig.file=conf/test.conf"

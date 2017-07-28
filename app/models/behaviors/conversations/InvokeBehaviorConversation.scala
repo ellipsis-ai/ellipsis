@@ -3,13 +3,16 @@ package models.behaviors.conversations
 import java.time.OffsetDateTime
 
 import models.IDs
+import models.behaviors.BotResult
 import models.behaviors.behaviorparameter.BehaviorParameter
 import models.behaviors.behaviorversion.BehaviorVersion
 import models.behaviors.conversations.conversation.Conversation
-import models.behaviors.events.Event
+import models.behaviors.events.{Event, SlackMessageEvent}
 import models.behaviors.triggers.messagetrigger.MessageTrigger
 import models.behaviors.{BehaviorResponse, BotResult}
 import services.{DataService, DefaultServices}
+import slick.dbio.DBIO
+import utils.SlackMessageReactionHandler
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -55,11 +58,16 @@ case class InvokeBehaviorConversation(
   }
 
   def collectionStatesFor(event: Event, services: DefaultServices): Future[Seq[CollectionState]] = {
+  def collectionStatesFor(event: Event, services: ConversationServices): Future[Seq[CollectionState]] = {
+    services.dataService.run(collectionStatesForAction(event, services))
+  }
+
+  def collectionStatesForAction(event: Event, services: ConversationServices): DBIO[Seq[CollectionState]] = {
     for {
-      user <- event.ensureUser(services.dataService)
-      simpleTokenState <- SimpleTokenCollectionState.from(user, this, event, services)
-      userEnvVarState <- UserEnvVarCollectionState.from(user, this, event, services)
-      paramState <- ParamCollectionState.from(this, event, services)
+      user <- event.ensureUserAction(services.dataService)
+      simpleTokenState <- SimpleTokenCollectionState.fromAction(user, this, event, services)
+      userEnvVarState <- UserEnvVarCollectionState.fromAction(user, this, event, services)
+      paramState <- ParamCollectionState.fromAction(this, event, services)
     } yield Seq(simpleTokenState, userEnvVarState, paramState)
   }
 
@@ -93,25 +101,41 @@ case class InvokeBehaviorConversation(
     } yield updated
   }
 
-  def respond(
-               event: Event,
-               isReminding: Boolean,
-               services: DefaultServices
-             ): Future[BotResult] = {
+  def respondAction(
+                     event: Event,
+                     isReminding: Boolean,
+                     services: DefaultServices
+                   ): DBIO[BotResult] = {
     for {
-      collectionStates <- collectionStatesFor(event, services)
-      result <- collectionStates.find(_.name == state).map(_.promptResultFor(this, isReminding)).getOrElse {
+      collectionStates <- collectionStatesForAction(event, services)
+      result <- collectionStates.find(_.name == state).map(_.promptResultForAction(this, isReminding)).getOrElse {
         val paramState = paramStateIn(collectionStates)
-        BehaviorResponse.buildFor(event, behaviorVersion, paramState.invocationMap, maybeTrigger, Some(this), services).flatMap { br =>
-          br.resultForFilledOut
+        services.dataService.behaviorResponses.buildForAction(event, behaviorVersion, paramState.invocationMap, maybeTrigger, Some(this)).flatMap { br =>
+          br.resultForFilledOutAction
         }
       }
     } yield result
   }
 
+  def respond(
+               event: Event,
+               isReminding: Boolean,
+               services: ConversationServices
+             ): Future[BotResult] = {
+    val eventualResponse = services.dataService.run(respondAction(event, isReminding, services))
+    event match {
+      case event: SlackMessageEvent => {
+        implicit val actorSystem = services.actorSystem
+        SlackMessageReactionHandler.handle(event.client, eventualResponse, event.channel, event.ts)
+      }
+      case _ =>
+    }
+    eventualResponse
+  }
+
   def maybeNextParamToCollect(
-                       event: Event,
-                       services: DefaultServices
+                               event: Event,
+                               services: DefaultServices
                      ): Future[Option[BehaviorParameter]] = {
     for {
       collectionStates <- collectionStatesFor(event, services)
