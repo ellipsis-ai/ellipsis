@@ -15,9 +15,15 @@ trait DefaultStorageItemService {
 
   def filter(typeName: String, filter: JsValue, behaviorGroup: BehaviorGroup): Future[Seq[DefaultStorageItem]]
 
+  def countForAction(behavior: Behavior): DBIO[Int]
+
   def countFor(behavior: Behavior): Future[Int]
 
+  def searchByFieldAction(searchQuery: String, field: DataTypeField): DBIO[Seq[DefaultStorageItem]]
+
   def searchByField(searchQuery: String, field: DataTypeField): Future[Seq[DefaultStorageItem]]
+
+  def allForAction(behavior: Behavior): DBIO[Seq[DefaultStorageItem]]
 
   def allFor(behavior: Behavior): Future[Seq[DefaultStorageItem]]
 

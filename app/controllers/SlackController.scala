@@ -32,7 +32,7 @@ class SlackController @Inject() (
   val dataService = services.dataService
   val configuration = services.configuration
   val lambdaService = services.lambdaService
-  val cache = services.cache
+  val cacheService = services.cacheService
   implicit val actorSystem = services.actorSystem
 
   def add = silhouette.UserAwareAction { implicit request =>
@@ -507,7 +507,7 @@ class SlackController @Inject() (
                       cacheService.getEvent(convo.pendingEventKey).map { event =>
                         eventHandler.handle(event, None).flatMap { results =>
                           Future.sequence(
-                            results.map(result => botResultService.sendIn(result, None).map { _ =>
+                            results.map(result => services.botResultService.sendIn(result, None).map { _ =>
                               Logger.info(event.logTextFor(result))
                             })
                           )
@@ -541,8 +541,7 @@ class SlackController @Inject() (
                         behaviorVersion,
                         Map(),
                         None,
-                        None,
-                        services
+                        None
                       ).map(Some(_))
                     }.getOrElse(Future.successful(None))
                     maybeResult <- maybeResponse.map { response =>

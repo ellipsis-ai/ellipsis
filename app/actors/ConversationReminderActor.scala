@@ -34,7 +34,7 @@ class ConversationReminderActor @Inject()(val services: DefaultServices) extends
         dataService.conversations.touchAction(convo).flatMap { _ =>
           convo.maybeRemindResultAction(services).flatMap { maybeResult =>
             maybeResult.map { result =>
-              botResultService.sendInAction(result, None, None).map(_ => true)
+              services.botResultService.sendInAction(result, None, None).map(_ => true)
             }.getOrElse(DBIO.successful(true))
           }
         }

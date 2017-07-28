@@ -128,8 +128,6 @@ case class NoResponseResult(event: Event, maybeConversation: Option[Conversation
   def text: String = ""
 
   override val shouldSend: Boolean = false
-
-
 }
 
 trait WithBehaviorLink {

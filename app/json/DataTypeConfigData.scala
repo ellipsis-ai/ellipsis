@@ -4,6 +4,7 @@ import models.behaviors.datatypeconfig.{DataTypeConfig, DataTypeConfigForSchema}
 import models.behaviors.datatypefield.DataTypeFieldForSchema
 import models.behaviors.defaultstorageitem.GraphQLHelpers
 import services.DataService
+import slick.dbio.DBIO
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -24,6 +25,10 @@ case class DataTypeConfigData(
     copy(
       fields = fields.map(_.copyForClone)
     )
+  }
+
+  def dataTypeFieldsAction(dataService: DataService): DBIO[Seq[DataTypeFieldForSchema]] = {
+    DBIO.successful(fields)
   }
 
   def dataTypeFields(dataService: DataService): Future[Seq[DataTypeFieldForSchema]] = {

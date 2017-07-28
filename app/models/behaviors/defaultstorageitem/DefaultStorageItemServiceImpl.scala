@@ -98,31 +98,40 @@ class DefaultStorageItemServiceImpl @Inject() (
     }
   }
 
-  def searchByField(searchQuery: String, field: DataTypeField): Future[Seq[DefaultStorageItem]] = {
+  def searchByFieldAction(searchQuery: String, field: DataTypeField): DBIO[Seq[DefaultStorageItem]] = {
     for {
-      maybeConfig <- dataService.dataTypeConfigs.find(field.configId)
+      maybeConfig <- dataService.dataTypeConfigs.findAction(field.configId)
       items <- maybeConfig.map { config =>
         val behaviorId = config.behaviorVersion.behavior.id
-        val action = for {
+        for {
           result <- searchByFieldQuery(searchQuery, field.name, behaviorId).result
           items <- DBIO.sequence(result.map(tuple2Item))
         } yield items
-        dataService.run(action)
-      }.getOrElse(Future.successful(Seq()))
+      }.getOrElse(DBIO.successful(Seq()))
+    } yield items
+  }
+
+  def searchByField(searchQuery: String, field: DataTypeField): Future[Seq[DefaultStorageItem]] = {
+    dataService.run(searchByFieldAction(searchQuery, field))
+  }
+
+  def allForAction(behavior: Behavior): DBIO[Seq[DefaultStorageItem]] = {
+    for {
+      result <- allForQuery(behavior.id).result
+      items <- DBIO.sequence(result.map(tuple2Item))
     } yield items
   }
 
   def allFor(behavior: Behavior): Future[Seq[DefaultStorageItem]] = {
-    val action = for {
-      result <- allForQuery(behavior.id).result
-      items <- DBIO.sequence(result.map(tuple2Item))
-    } yield items
-    dataService.run(action)
+    dataService.run(allForAction(behavior))
+  }
+
+  def countForAction(behavior: Behavior): DBIO[Int] = {
+    countQuery(behavior.id).result
   }
 
   def countFor(behavior: Behavior): Future[Int] = {
-    val action = countQuery(behavior.id).result
-    dataService.run(action)
+    dataService.run(countForAction(behavior))
   }
 
   private def fieldValueWithIdsFor(field: DataTypeField, fieldValue: JsValue): DBIO[JsValue] = {

@@ -71,8 +71,7 @@ trait MessageEvent extends Event {
             trigger.behaviorVersion,
             trigger.invocationParamsFor(this, params),
             Some(trigger),
-            None,
-            services
+            None
           )
         } yield response
       })

@@ -58,11 +58,10 @@ case class InvokeBehaviorConversation(
   }
 
   def collectionStatesFor(event: Event, services: DefaultServices): Future[Seq[CollectionState]] = {
-  def collectionStatesFor(event: Event, services: ConversationServices): Future[Seq[CollectionState]] = {
     services.dataService.run(collectionStatesForAction(event, services))
   }
 
-  def collectionStatesForAction(event: Event, services: ConversationServices): DBIO[Seq[CollectionState]] = {
+  def collectionStatesForAction(event: Event, services: DefaultServices): DBIO[Seq[CollectionState]] = {
     for {
       user <- event.ensureUserAction(services.dataService)
       simpleTokenState <- SimpleTokenCollectionState.fromAction(user, this, event, services)
@@ -120,7 +119,7 @@ case class InvokeBehaviorConversation(
   def respond(
                event: Event,
                isReminding: Boolean,
-               services: ConversationServices
+               services: DefaultServices
              ): Future[BotResult] = {
     val eventualResponse = services.dataService.run(respondAction(event, isReminding, services))
     event match {

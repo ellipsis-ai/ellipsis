@@ -64,11 +64,14 @@ class DataTypeConfigServiceImpl @Inject() (
     dataService.run(maybeForAction(behaviorVersion))
   }
 
-  def find(id: String): Future[Option[DataTypeConfig]] = {
-    val action = findQuery(id).result.map { r =>
+  def findAction(id: String): DBIO[Option[DataTypeConfig]] = {
+    findQuery(id).result.map { r =>
       r.headOption.map(tuple2Config)
     }
-    dataService.run(action)
+  }
+
+  def find(id: String): Future[Option[DataTypeConfig]] = {
+    dataService.run(findAction(id))
   }
 
   def createForAction(behaviorVersion: BehaviorVersion, data: DataTypeConfigData): DBIO[DataTypeConfig] = {

@@ -15,6 +15,8 @@ trait DataTypeConfigService {
 
   def allUsingDefaultStorageFor(groupVersion: BehaviorGroupVersion): Future[Seq[DataTypeConfig]]
 
+  def findAction(id: String): DBIO[Option[DataTypeConfig]]
+
   def find(id: String): Future[Option[DataTypeConfig]]
 
   def maybeForAction(behaviorVersion: BehaviorVersion): DBIO[Option[DataTypeConfig]]

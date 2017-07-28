@@ -27,7 +27,7 @@ import play.api.inject.bind
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.ws.WSClient
 import play.api.{Application, Configuration}
-import services.{AWSLambdaService, DefaultServices, GithubService, PostgresDataService}
+import services._
 
 import scala.concurrent.duration._
 import scala.concurrent.{Await, Future}

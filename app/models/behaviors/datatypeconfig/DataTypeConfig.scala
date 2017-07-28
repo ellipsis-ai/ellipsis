@@ -4,6 +4,7 @@ import models.behaviors.behaviorversion.BehaviorVersion
 import models.behaviors.datatypefield.DataTypeFieldForSchema
 import models.behaviors.defaultstorageitem.GraphQLHelpers
 import services.DataService
+import slick.dbio.DBIO
 
 import scala.concurrent.Future
 
@@ -18,8 +19,12 @@ case class DataTypeConfig(
 
   def usesCode: Boolean = maybeUsesCode.isEmpty || maybeUsesCode.contains(true)
 
+  def dataTypeFieldsAction(dataService: DataService): DBIO[Seq[DataTypeFieldForSchema]] = {
+    dataService.dataTypeFields.allForAction(this)
+  }
+
   def dataTypeFields(dataService: DataService): Future[Seq[DataTypeFieldForSchema]] = {
-    dataService.dataTypeFields.allFor(this)
+    dataService.run(dataTypeFieldsAction(dataService))
   }
 
   def toRaw: RawDataTypeConfig = RawDataTypeConfig(id, maybeUsesCode, behaviorVersion.id)

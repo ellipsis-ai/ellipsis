@@ -3,7 +3,6 @@ package models.behaviors.events
 import javax.inject._
 
 import models.behaviors.builtins.BuiltinBehavior
-import models.behaviors.conversations.ConversationServices
 import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.events.SlackMessageActionConstants._
 import models.behaviors.{BehaviorResponse, BotResult, SimpleTextResult, TextWithActionsResult}
@@ -26,7 +25,7 @@ class EventHandler @Inject() (services: DefaultServices) {
   def startInvokeConversationFor(event: Event): Future[Seq[BotResult]] = {
     for {
       maybeTeam <- dataService.teams.find(event.teamId)
-      responses <- BehaviorResponse.allFor(event, maybeTeam, None, services)
+      responses <- dataService.behaviorResponses.allFor(event, maybeTeam, None)
       results <- Future.sequence(responses.map(_.result)).flatMap { r =>
         if (r.isEmpty && event.isResponseExpected) {
           event.noExactMatchResult(dataService, lambdaService).map { noMatchResult =>

@@ -371,9 +371,9 @@ case class BehaviorBackedDataType(dataTypeConfig: DataTypeConfig) extends Behavi
     }
   }
 
-  private def fetchValidValues(maybeSearchQuery: Option[String], context: BehaviorParameterContext): Future[Seq[ValidValue]] = {
+  private def fetchValidValuesAction(maybeSearchQuery: Option[String], context: BehaviorParameterContext): DBIO[Seq[ValidValue]] = {
     if (dataTypeConfig.usesCode) {
-      fetchValidValuesResult(maybeSearchQuery, context).map { maybeResult =>
+      fetchValidValuesResultAction(maybeSearchQuery, context).map { maybeResult =>
         maybeResult.map {
           case r: SuccessResult => extractValidValues(r)
           case _: BotResult => Seq()
@@ -381,21 +381,21 @@ case class BehaviorBackedDataType(dataTypeConfig: DataTypeConfig) extends Behavi
       }
     } else {
       for {
-        maybeLabelField <- context.dataService.dataTypeFields.allFor(dataTypeConfig).map{ fields =>
+        maybeLabelField <- context.dataService.dataTypeFields.allForAction(dataTypeConfig).map{ fields =>
           fields.find(_.isLabel).orElse {
             fields.find { ea =>
               !ea.isId && ea.fieldType == TextType
             }
           }
         }
-        filter <- Future.successful(maybeSearchQuery.map { searchQuery =>
+        filter <- DBIO.successful(maybeSearchQuery.map { searchQuery =>
           maybeLabelField.map { field =>
             s"""{ ${field.name}: \"$searchQuery\" }"""
           }.getOrElse {
             throw new RuntimeException("Need a valid label field")
           }
         }.getOrElse("{}"))
-        query <- dataTypeConfig.outputFieldNames(context.dataService).map { fieldStr =>
+        query <- dataTypeConfig.outputFieldNamesAction(context.dataService).map { fieldStr =>
           s"""{
              |  ${dataTypeConfig.listName}(filter: $filter) {
              |  $fieldStr
@@ -407,9 +407,9 @@ case class BehaviorBackedDataType(dataTypeConfig: DataTypeConfig) extends Behavi
           searchQuery <- maybeSearchQuery
           labelField <- maybeLabelField
         } yield {
-          context.services.dataService.defaultStorageItems.searchByField(s"%$searchQuery%", labelField)
+          context.services.dataService.defaultStorageItems.searchByFieldAction(s"%$searchQuery%", labelField)
         }).getOrElse {
-          context.services.dataService.defaultStorageItems.allFor(behaviorVersion.behavior)
+          context.services.dataService.defaultStorageItems.allForAction(behaviorVersion.behavior)
         }
       } yield {
         items.map(_.data).flatMap {
@@ -423,6 +423,10 @@ case class BehaviorBackedDataType(dataTypeConfig: DataTypeConfig) extends Behavi
         }
       }
     }
+  }
+
+  private def fetchValidValues(maybeSearchQuery: Option[String], context: BehaviorParameterContext): Future[Seq[ValidValue]] = {
+    context.dataService.run(fetchValidValuesAction(maybeSearchQuery, context))
   }
 
   private def textMatchesLabel(text: String, label: String, context: BehaviorParameterContext): Boolean = {
@@ -455,9 +459,9 @@ case class BehaviorBackedDataType(dataTypeConfig: DataTypeConfig) extends Behavi
                                         ): DBIO[String] = {
     for {
       superPrompt <- maybeSearchQuery.map { searchQuery =>
-        Future.successful(s"Here are some options for `$searchQuery`. Type a number to choose an option.")
+        DBIO.successful(s"Here are some options for `$searchQuery`. Type a number to choose an option.")
       }.getOrElse(super.promptForAction(maybePreviousCollectedValue, context, paramState, isReminding))
-      validValues <- fetchValidValues(maybeSearchQuery, context)
+      validValues <- fetchValidValuesAction(maybeSearchQuery, context)
       output <- if (validValues.isEmpty) {
         maybeSearchQuery.map { searchQuery =>
           val key = searchQueryCacheKeyFor(context.maybeConversation.get, context.parameter)

@@ -1,10 +1,10 @@
 package models.behaviors.behaviorparameter
 
+import models.behaviors.behaviorversion.BehaviorVersion
 import models.behaviors.conversations.ParamCollectionState
 import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.events.Event
-import play.api.cache.CacheApi
-import services.{DefaultServices, DataService}
+import services.{CacheService, DataService, DefaultServices}
 import slick.dbio.DBIO
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -17,9 +17,9 @@ case class BehaviorParameterContext(
                                      services: DefaultServices
                                    ) {
 
-  val behaviorVersion = parameter.behaviorVersion
+  val behaviorVersion: BehaviorVersion = parameter.behaviorVersion
   val dataService: DataService = services.dataService
-  val cache: CacheApi = services.cache
+  val cacheService: CacheService = services.cacheService
 
   def isFirstParamAction: DBIO[Boolean] = {
     services.dataService.behaviorParameters.isFirstForBehaviorVersionAction(parameter)

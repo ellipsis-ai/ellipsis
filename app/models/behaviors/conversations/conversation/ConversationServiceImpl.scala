@@ -7,11 +7,9 @@ import akka.actor.ActorSystem
 import com.google.inject.Provider
 import drivers.SlickPostgresDriver.api._
 import models.behaviors.BotResultService
-import models.behaviors.conversations.ConversationServices
 import play.api.Configuration
 import play.api.libs.ws.WSClient
-import services.{AWSLambdaService, DataService, DefaultServices}
-import services.{AWSLambdaService, CacheService, DataService, SlackEventService}
+import services._
 import slick.dbio.DBIO
 
 import scala.concurrent.ExecutionContext.Implicits.global

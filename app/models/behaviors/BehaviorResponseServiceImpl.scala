@@ -2,7 +2,6 @@ package models.behaviors
 
 import javax.inject.Inject
 
-import akka.actor.ActorSystem
 import models.behaviors.behavior.Behavior
 import models.behaviors.behaviorparameter.BehaviorParameterContext
 import models.behaviors.behaviorversion.BehaviorVersion
@@ -10,9 +9,6 @@ import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.events.Event
 import models.behaviors.triggers.messagetrigger.MessageTrigger
 import models.team.Team
-import play.api.Configuration
-import play.api.cache.CacheApi
-import play.api.libs.ws.WSClient
 import services._
 import slick.dbio.DBIO
 
@@ -20,14 +16,11 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
 class BehaviorResponseServiceImpl @Inject() (
-                                          dataService: DataService,
-                                          lambdaService: AWSLambdaService,
-                                          slackEventService: SlackEventService,
-                                          cacheService: CacheService,
-                                          ws: WSClient,
-                                          configuration: Configuration,
-                                          actorSystem: ActorSystem
+                                            services: DefaultServices,
+                                            slackEventService: SlackEventService
                                         ) extends BehaviorResponseService {
+
+  val dataService = services.dataService
 
   def parametersWithValuesForAction(
                                      event: Event,
@@ -41,7 +34,7 @@ class BehaviorResponseServiceImpl @Inject() (
         AWSLambdaConstants.invocationParamFor(i)
       })
       values <- DBIO.sequence(params.zip(invocationNames).map { case(param, invocationName) =>
-        val context = BehaviorParameterContext(event, maybeConversation, param, cacheService, dataService, slackEventService, configuration, actorSystem)
+        val context = BehaviorParameterContext(event, maybeConversation, param, services)
         paramValues.get(invocationName).map { v =>
           for {
             isValid <- DBIO.from(param.paramType.isValid(v, context))
@@ -73,7 +66,7 @@ class BehaviorResponseServiceImpl @Inject() (
                       maybeConversation: Option[Conversation]
                     ): DBIO[BehaviorResponse] = {
     parametersWithValuesForAction(event, behaviorVersion, paramValues, maybeConversation).map { paramsWithValues =>
-      BehaviorResponse(event, behaviorVersion, maybeConversation, paramsWithValues, maybeActivatedTrigger, lambdaService, dataService, slackEventService, cacheService, ws, configuration)
+      BehaviorResponse(event, behaviorVersion, maybeConversation, paramsWithValues, maybeActivatedTrigger, services)
     }
   }
 
@@ -92,7 +85,7 @@ class BehaviorResponseServiceImpl @Inject() (
               maybeTeam: Option[Team],
               maybeLimitToBehavior: Option[Behavior]
             ): Future[Seq[BehaviorResponse]] = {
-    event.allBehaviorResponsesFor(maybeTeam, maybeLimitToBehavior, lambdaService, dataService, cacheService, ws, configuration, actorSystem)
+    event.allBehaviorResponsesFor(maybeTeam, maybeLimitToBehavior, services)
   }
 
 }

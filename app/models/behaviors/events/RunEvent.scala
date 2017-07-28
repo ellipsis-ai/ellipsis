@@ -85,8 +85,7 @@ case class RunEvent(
             behaviorVersion,
             invocationParams,
             None,
-            None,
-            services
+            None
           )
         } yield Seq(response)
       }.getOrElse(Future.successful(Seq()))

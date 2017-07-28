@@ -3,6 +3,7 @@ package models.behaviors.datatypeconfig
 import models.behaviors.datatypefield.DataTypeFieldForSchema
 import models.behaviors.defaultstorageitem.GraphQLHelpers
 import services.DataService
+import slick.dbio.DBIO
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -18,6 +19,8 @@ trait DataTypeConfigForSchema {
   lazy val outputName: String = GraphQLHelpers.formatTypeName(typeName)
   lazy val inputName: String = outputName ++ "Input"
 
+  def dataTypeFieldsAction(dataService: DataService): DBIO[Seq[DataTypeFieldForSchema]]
+
   def dataTypeFields(dataService: DataService): Future[Seq[DataTypeFieldForSchema]]
 
   def outputFields(dataService: DataService): Future[String] = {
@@ -26,10 +29,14 @@ trait DataTypeConfigForSchema {
     }
   }
 
-  def outputFieldNames(dataService: DataService): Future[String] = {
-    dataTypeFields(dataService).map { fields =>
+  def outputFieldNamesAction(dataService: DataService): DBIO[String] = {
+    dataTypeFieldsAction(dataService).map { fields =>
       "  " ++ fields.sortBy(_.name).map(_.outputName).mkString("\n  ")
     }
+  }
+
+  def outputFieldNames(dataService: DataService): Future[String] = {
+    dataService.run(outputFieldNamesAction(dataService))
   }
 
   def output(dataService: DataService): Future[String] = {

@@ -71,7 +71,6 @@ trait Conversation {
   def updateStateTo(newState: String, dataService: DataService): Future[Conversation]
   def cancel(dataService: DataService): Future[Conversation] = updateStateTo(Conversation.DONE_STATE, dataService)
   def updateWith(event: Event, services: DefaultServices): Future[Conversation]
-  def updateWith(event: Event, services: DefaultServices): Future[Conversation]
 
   def respondAction(
                      event: Event,
