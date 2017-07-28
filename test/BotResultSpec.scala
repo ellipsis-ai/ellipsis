@@ -223,8 +223,8 @@ class BotResultSpec extends PlaySpec with MockitoSugar with DBSpec {
         val updatedSelfConversation = runNow(dataService.conversations.find(selfConversation.id)).get
         updatedSelfConversation.maybeThreadId.isEmpty mustBe true
 
-        val updatedOtherConversation = runNow(dataService.conversations.find(conversationToInterrupt.id)).get
-        updatedOtherConversation.maybeThreadId.isDefined mustBe true
+        val updatedConversationToInterrupt = runNow(dataService.conversations.find(conversationToInterrupt.id)).get
+        updatedConversationToInterrupt.maybeThreadId.isDefined mustBe true
       })
     }
 
