@@ -9,10 +9,9 @@ import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.events.SlackMessageActionConstants._
 import models.behaviors.{BotResult, SimpleTextResult, TextWithActionsResult}
 import play.api.Configuration
-import play.api.cache.CacheApi
 import play.api.i18n.MessagesApi
 import play.api.libs.ws.WSClient
-import services.{AWSLambdaService, DataService, SlackEventService}
+import services.{AWSLambdaService, CacheService, DataService, SlackEventService}
 import utils.Color
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -24,7 +23,7 @@ class EventHandler @Inject() (
                                lambdaService: AWSLambdaService,
                                dataService: DataService,
                                slackEventServiceProvider: Provider[SlackEventService],
-                               cache: CacheApi,
+                               cacheService: CacheService,
                                messages: MessagesApi,
                                ws: WSClient,
                                configuration: Configuration,
@@ -73,14 +72,14 @@ class EventHandler @Inject() (
       if (isCancelConversationMessage(event)) {
         cancelConversationResult(event, updatedConvo, s"OK, I’ll stop asking about that.")
       } else {
-        val services = ConversationServices(dataService, lambdaService, slackEventService, cache, configuration, ws, actorSystem)
+        val services = ConversationServices(dataService, lambdaService, slackEventService, cacheService, configuration, ws, actorSystem)
         if (originalConvo.isStale) {
           updatedConvo.maybeNextParamToCollect(event, services).map { maybeNextParam =>
             val maybeLastPrompt = maybeNextParam.map { nextParam =>
               nextParam.input.question
             }
             val key = updatedConvo.pendingEventKey
-            cache.set(key, event, 5.minutes)
+            cacheService.cacheEvent(key, event, 5.minutes)
             val actions = Seq(
               SlackMessageActionButton(CONFIRM_CONTINUE_CONVERSATION, "Yes, it's an answer", updatedConvo.id),
               SlackMessageActionButton(DONT_CONTINUE_CONVERSATION, "No, not an answer", updatedConvo.id)

@@ -10,10 +10,9 @@ import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.events._
 import models.behaviors.templates.TemplateApplier
 import play.api.Configuration
-import play.api.cache.CacheApi
 import play.api.libs.json.{JsDefined, JsValue}
 import services.AWSLambdaConstants._
-import services.{AWSLambdaLogResult, DataService}
+import services.{AWSLambdaLogResult, CacheService, DataService}
 import slick.dbio.DBIO
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -274,7 +273,7 @@ case class OAuth2TokenMissing(
                                event: Event,
                                maybeConversation: Option[Conversation],
                                loginToken: LoginToken,
-                               cache: CacheApi,
+                               cacheService: CacheService,
                                configuration: Configuration
                                ) extends BotResult {
 
@@ -299,14 +298,13 @@ case class OAuth2TokenMissing(
        |""".stripMargin
   }
 
-  override def beforeSend: Unit = cache.set(key, event, 5.minutes)
+  override def beforeSend: Unit = cacheService.cacheEvent(key, event, 5.minutes)
 }
 
 case class RequiredApiNotReady(
                                 required: RequiredOAuth2ApiConfig,
                                 event: Event,
                                 maybeConversation: Option[Conversation],
-                                cache: CacheApi,
                                 dataService: DataService,
                                 configuration: Configuration
                              ) extends BotResult {

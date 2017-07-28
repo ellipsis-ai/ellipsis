@@ -10,10 +10,9 @@ import models.behaviors.conversations.{ConversationServices, InvokeBehaviorConve
 import models.behaviors.events.Event
 import models.behaviors.triggers.messagetrigger.MessageTrigger
 import play.api.Configuration
-import play.api.cache.CacheApi
 import play.api.libs.json.{JsString, JsValue}
 import play.api.libs.ws.WSClient
-import services.{AWSLambdaService, DataService, SlackEventService}
+import services.{AWSLambdaService, CacheService, DataService, SlackEventService}
 import slick.dbio.DBIO
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -43,7 +42,7 @@ case class BehaviorResponse(
                              lambdaService: AWSLambdaService,
                              dataService: DataService,
                              slackEventService: SlackEventService,
-                             cache: CacheApi,
+                             cacheService: CacheService,
                              ws: WSClient,
                              configuration: Configuration
                              ) {
@@ -120,7 +119,7 @@ case class BehaviorResponse(
                   dataService.collectedParameterValues.ensureFor(p.parameter, convo, v.text)
                 }.getOrElse(Future.successful(Unit))
               })
-              services <- Future.successful(ConversationServices(dataService, lambdaService, slackEventService, cache, configuration, ws, actorSystem))
+              services <- Future.successful(ConversationServices(dataService, lambdaService, slackEventService, cacheService, configuration, ws, actorSystem))
               result <- convo.resultFor(event, services)
             } yield result
           }

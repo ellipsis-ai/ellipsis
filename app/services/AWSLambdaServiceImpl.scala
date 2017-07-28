@@ -20,7 +20,6 @@ import models.behaviors.invocationtoken.InvocationToken
 import models.behaviors.library.LibraryVersion
 import models.environmentvariable.{EnvironmentVariable, TeamEnvironmentVariable, UserEnvironmentVariable}
 import models.team.Team
-import play.api.cache.CacheApi
 import play.api.libs.json._
 import play.api.libs.ws.WSClient
 import play.api.{Configuration, Logger}
@@ -39,7 +38,6 @@ class AWSLambdaServiceImpl @Inject() (
                                        val configuration: Configuration,
                                        val models: Models,
                                        val ws: WSClient,
-                                       val cache: CacheApi,
                                        val dataService: DataService,
                                        val logsService: AWSLogsService,
                                        implicit val actorSystem: ActorSystem

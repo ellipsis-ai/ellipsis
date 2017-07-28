@@ -5,7 +5,7 @@ import support.DBSpec
 
 class ParamCollectionStateSpec extends DBSpec {
 
-  val services = ConversationServices(dataService, lambdaService, slackEventService, cache, configuration, ws, actorSystem)
+  val services = ConversationServices(dataService, lambdaService, slackEventService, cacheService, configuration, ws, actorSystem)
 
   "ParamCollectionState" should {
 
