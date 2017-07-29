@@ -7,11 +7,11 @@ import models.accounts.user.User
 import models.behaviors.behaviorgroup.BehaviorGroup
 import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
 import models.behaviors.datatypeconfig.DataTypeConfigForSchema
-import models.behaviors.defaultstorageitem.{DefaultStorageItemService, GraphQLHelpers}
+import models.behaviors.defaultstorageitem.DefaultStorageItemService
 import play.api.libs.json._
 import sangria.ast
 import sangria.ast.Document
-import sangria.execution.Executor
+import sangria.execution.{Executor, UserFacingError}
 import sangria.marshalling.playJson._
 import sangria.parser.QueryParser
 import sangria.schema.{Action, Context, DefaultAstSchemaBuilder, Schema}
@@ -20,6 +20,10 @@ import scala.collection.immutable.ListMap
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.util.{Failure, Success}
+
+case class ItemNotFoundError(id: String) extends Exception with UserFacingError {
+  override def getMessage(): String = s"Item with ID `$id` not found"
+}
 
 class GraphQLServiceImpl @Inject() (
                                     dataService: DataService
@@ -111,8 +115,13 @@ class GraphQLServiceImpl @Inject() (
                                  ): Action[DefaultStorageItemService, _] = {
       definition.name match {
         case createFieldRegex(typeName) => ctx.ctx.createItem(typeName, user, valueFor(ctx, definition), group).map(_.data)
-        case deleteFieldRegex(_) => ctx.ctx.deleteItem(ctx.arg(definition.arguments.head.name), group).map { maybeItem =>
-          maybeItem.map(_.data).getOrElse(JsNull)
+        case deleteFieldRegex(_) => {
+          val idToDelete: String = ctx.arg(definition.arguments.head.name)
+          ctx.ctx.deleteItem(idToDelete, group).map { maybeItem =>
+            maybeItem.map(_.data).getOrElse {
+              throw ItemNotFoundError(idToDelete)
+            }
+          }
         }
       }
     }
@@ -128,6 +137,7 @@ class GraphQLServiceImpl @Inject() (
           case _ => {
             ctx.value match {
               case arr: JsArray => fromJson(arr)
+              case JsNull => null
               case _ => {
                 (ctx.value.asInstanceOf[JsObject] \ (definition.name)).asOpt[JsValue].map(fromJson)
               }

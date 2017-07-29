@@ -5,7 +5,7 @@ import models.accounts.user.User
 import models.behaviors.behaviorgroup.BehaviorGroup
 import models.behaviors.behaviorparameter.{NumberType, TextType}
 import play.api.libs.json._
-import services.{DataService, GraphQLService}
+import services.{DataService, GraphQLService, ItemNotFoundError}
 import support.DBSpec
 
 class GraphQLServiceSpec extends DBSpec {
@@ -213,6 +213,76 @@ class GraphQLServiceSpec extends DBSpec {
         """.stripMargin
         val queryResult = runNow(graphQLService.runQuery(firstVersion.group, user, query, None, None))
         (queryResult \ "data").get mustBe JsObject(Map("someTypeList" -> JsArray(Array(JsObject(Map("foo" -> JsString("bar")))))))
+      })
+    }
+
+    "save a new record and delete it" in {
+      withEmptyDB(dataService, { db =>
+        val team = newSavedTeam
+        val user = newSavedUserOn(team)
+        val group = newSavedBehaviorGroupFor(team)
+        val groupData = buildGroupDataFor(group, user)
+        val firstVersion = newSavedGroupVersionFor(group, user, Some(groupData))
+        val dataTypeConfigs = runNow(dataService.dataTypeConfigs.allFor(firstVersion))
+        val someType = dataTypeConfigs.find(_.typeName == "SomeType").get
+
+        val createMutation =
+          """mutation CreateSomeType($someType: SomeTypeInput!) {
+            |  createSomeType(someType: $someType) {
+            |    foo
+            |  }
+            |}
+          """.stripMargin
+        val jsonData = JsObject(Map("foo" -> JsString("bar")))
+        val mutationVariables = JsObject(Map("someType" -> jsonData)).toString
+        val mutationResult = runNow(graphQLService.runQuery(firstVersion.group, user, createMutation, None, Some(mutationVariables)))
+        val savedItems = runNow(dataService.defaultStorageItems.filter(someType.typeName, jsonData, group))
+        savedItems must have length(1)
+        val savedItem = savedItems.head
+        (savedItem.data \ "foo").as[String] mustBe "bar"
+        (savedItem.data \ "id").as[String] mustBe savedItem.id
+        (mutationResult \ "data").get mustBe JsObject(Map("createSomeType" -> JsObject(Map("foo" -> JsString("bar")))))
+
+        val deleteMutation =
+        """mutation DeleteSomeType($id: ID!) {
+          |  deleteSomeType(id: $id) {
+          |    foo
+          |  }
+          |}
+        """.stripMargin
+        val deleteVariables = JsObject(Map("id" -> JsString(savedItem.id))).toString
+
+        val deleteResult = runNow(graphQLService.runQuery(firstVersion.group, user, deleteMutation, None, Some(deleteVariables)))
+        (deleteResult \ "data").get mustBe JsObject(Map("deleteSomeType" -> JsObject(Map("foo" -> JsString("bar")))))
+
+        val remainingItems = runNow(dataService.defaultStorageItems.filter(someType.typeName, jsonData, group))
+        remainingItems must have length(0)
+      })
+    }
+
+    "return an appropriate error trying to delete a nonexistent item" in {
+      withEmptyDB(dataService, { db =>
+        val team = newSavedTeam
+        val user = newSavedUserOn(team)
+        val group = newSavedBehaviorGroupFor(team)
+        val groupData = buildGroupDataFor(group, user)
+        val firstVersion = newSavedGroupVersionFor(group, user, Some(groupData))
+
+        val deleteMutation =
+          """mutation DeleteSomeType($id: ID!) {
+            |  deleteSomeType(id: $id) {
+            |    foo
+            |  }
+            |}
+          """.stripMargin
+        val nonexistentItemId = IDs.next
+        val deleteVariables = JsObject(Map("id" -> JsString(nonexistentItemId))).toString
+
+        val deleteResult = runNow(graphQLService.runQuery(firstVersion.group, user, deleteMutation, None, Some(deleteVariables)))
+        (deleteResult \ "data").get mustBe JsObject(Map("deleteSomeType" -> JsNull))
+        val errors = (deleteResult \ "errors").as[Seq[JsValue]].map(ea => (ea \ "message").as[String])
+        errors must have length(1)
+        errors.head mustBe ItemNotFoundError(nonexistentItemId).getMessage
       })
     }
 
