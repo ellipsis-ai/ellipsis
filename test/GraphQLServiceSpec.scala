@@ -34,6 +34,16 @@ class GraphQLServiceSpec extends DBSpec {
           behaviorVersions = Seq(behaviorVersionData, behaviorVersionData2)
         )}
 
+  def assertResultContainsErrorMessages(result: JsValue, messages: Seq[String]) = {
+    val errors = (result \ "errors").as[Seq[JsValue]].map(ea => (ea \ "message").as[String])
+    errors must have length(messages.length)
+    messages.foreach { msg =>
+      errors.find { ea =>
+        s"""^$msg.*""".r.findFirstMatchIn(ea).isDefined
+      } mustBe defined
+    }
+  }
+
   "schemaFor" should {
 
     "build a schema" in {
@@ -280,9 +290,7 @@ class GraphQLServiceSpec extends DBSpec {
 
         val deleteResult = runNow(graphQLService.runQuery(firstVersion.group, user, deleteMutation, None, Some(deleteVariables)))
         (deleteResult \ "data").get mustBe JsObject(Map("deleteSomeType" -> JsNull))
-        val errors = (deleteResult \ "errors").as[Seq[JsValue]].map(ea => (ea \ "message").as[String])
-        errors must have length(1)
-        errors.head mustBe ItemNotFoundError(nonexistentItemId).getMessage
+        assertResultContainsErrorMessages(deleteResult, Seq(ItemNotFoundError(nonexistentItemId).getMessage))
       })
     }
 
@@ -298,9 +306,7 @@ class GraphQLServiceSpec extends DBSpec {
         val result = runNow(graphQLService.runQuery(firstVersion.group, user, query, None, None))
 
         (result \ "data").toOption mustBe None
-        val errors = (result \ "errors").as[Seq[String]]
-        errors must have length(1)
-        """^Syntax error while parsing GraphQL query.*""".r.findFirstMatchIn(errors.head) mustBe defined
+        assertResultContainsErrorMessages(result, Seq("Syntax error while parsing GraphQL query"))
       })
     }
 
@@ -322,10 +328,7 @@ class GraphQLServiceSpec extends DBSpec {
         val result = runNow(graphQLService.runQuery(firstVersion.group, user, query, None, None))
 
         (result \ "data").toOption mustBe None
-        val errors = (result \ "errors").as[Seq[String]]
-        errors must have length(1)
-        println(errors.head)
-        """^Query does not pass validation. Violations:\s*Cannot query field 'nonExistent' on type 'SomeType'.*""".r.findFirstMatchIn(errors.head) mustBe defined
+        assertResultContainsErrorMessages(result, Seq("""Query does not pass validation. Violations:\s*Cannot query field 'nonExistent' on type 'SomeType'"""))
       })
     }
   }

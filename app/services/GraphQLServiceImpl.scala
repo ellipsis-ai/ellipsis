@@ -199,7 +199,9 @@ class GraphQLServiceImpl @Inject() (
 
   private def errorResultFor(message: String): JsValue = {
     Json.toJson(Map(
-      "errors" -> Seq(message)
+      "errors" -> Seq(Map(
+        "message" -> message
+      ))
     ))
   }
 
