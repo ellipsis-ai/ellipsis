@@ -2084,6 +2084,7 @@ const BehaviorEditor = React.createClass({
 
         <DataTypeEditor
           ref="dataTypeEditor"
+          group={this.getBehaviorGroup()}
           behaviorVersion={this.getSelectedBehavior()}
           paramTypes={this.getParamTypesForDataTypes()}
           inputs={this.getInputs()}

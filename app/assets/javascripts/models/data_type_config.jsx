@@ -60,7 +60,7 @@ define(function(require) {
     }
 
     isValidForDataStorage() {
-      return this.hasIdField() && this.hasTextFields() && this.fields.every((ea) => ea.name.length > 0);
+      return this.usesCode || this.hasIdField() && this.hasTextFields() && this.fields.every((ea) => ea.name.length > 0);
     }
 
     getFields() {

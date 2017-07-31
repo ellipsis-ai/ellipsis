@@ -43,6 +43,10 @@ define(function(require) {
       return this.props.behaviorVersion;
     }
 
+    getBehaviorGroup() {
+      return this.props.group;
+    }
+
     getDefaultFieldType() {
       return this.props.paramTypes.find(ea => ea.id === "Text");
     }
@@ -144,7 +148,7 @@ define(function(require) {
     }
 
     isValidForDataStorage() {
-      return this.getDataTypeConfig().isValidForDataStorage();
+      return this.getBehaviorGroup().isValidForDataStorage();
     }
 
     updateCode(newCode) {
