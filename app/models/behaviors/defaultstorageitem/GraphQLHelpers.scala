@@ -15,7 +15,11 @@ object GraphQLHelpers {
 
   def formatFieldName(name: String): String = {
     val capitalized = formatTypeName(name)
-    capitalized.charAt(0).toLower.toString ++ capitalized.substring(1)
+    if (capitalized.isEmpty) {
+      ""
+    } else {
+      capitalized.charAt(0).toLower.toString ++ capitalized.substring(1)
+    }
   }
 
   val fallbackTypeName: String = "UnnamedType"

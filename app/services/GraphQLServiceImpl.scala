@@ -13,7 +13,7 @@ import sangria.ast
 import sangria.ast.Document
 import sangria.execution.{Executor, UserFacingError}
 import sangria.marshalling.playJson._
-import sangria.parser.QueryParser
+import sangria.parser.{QueryParser, SyntaxError}
 import sangria.schema.{Action, Context, DefaultAstSchemaBuilder, Schema}
 
 import scala.collection.immutable.ListMap
@@ -163,7 +163,7 @@ class GraphQLServiceImpl @Inject() (
     schemaStringFor(groupVersion).map { str =>
       QueryParser.parse(str) match {
         case Success(res) => Schema.buildFromAst(res, new MySchemaBuilder(groupVersion, user))
-        case Failure(err) => throw new RuntimeException(err.getMessage)
+        case Failure(err) => throw err
       }
     }
   }
@@ -219,7 +219,7 @@ class GraphQLServiceImpl @Inject() (
 
     dataService.behaviorGroups.maybeCurrentVersionFor(behaviorGroup).flatMap { maybeBehaviorGroupVersion =>
       maybeBehaviorGroupVersion.map { groupVersion =>
-        for {
+        (for {
           schema <- schemaFor(groupVersion, user)
           result <- QueryParser.parse(query) match {
             case Success(queryAst) => {
@@ -227,7 +227,10 @@ class GraphQLServiceImpl @Inject() (
             }
             case Failure(error) => errorResultFutureFor(error.getMessage)
           }
-        } yield result
+        } yield result).recover {
+          case err: SyntaxError => errorResultFor(err.getMessage())
+          case t: Throwable => throw t
+        }
       }.getOrElse {
         errorResultFutureFor("Couldn't find a saved version for this skill")
       }
