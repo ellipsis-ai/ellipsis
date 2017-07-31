@@ -472,7 +472,7 @@ case class BehaviorBackedDataType(dataTypeConfig: DataTypeConfig) extends Behavi
         }
       } else {
         context.maybeConversation.foreach { conversation =>
-          context.cacheService.set(valuesListCacheKeyFor(conversation, context.parameter), validValues)
+          context.cacheService.cacheValidValues(valuesListCacheKeyFor(conversation, context.parameter), validValues)
         }
         val valuesPrompt = validValues.zipWithIndex.map { case (ea, i) =>
           s"\n\n$i. ${ea.label}"
