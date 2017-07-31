@@ -3,5 +3,6 @@
    "Ports": [{
        "ContainerPort": "9000"
    }],
-   "Volumes": []
+   "Volumes": [],
+   "Logging": "/var/logs/ellipsis/application.json"
 }
