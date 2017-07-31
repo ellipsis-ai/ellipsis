@@ -5,7 +5,11 @@ object GraphQLHelpers {
   def formatTypeName(name: String): String = {
     val withValidFirstChar = """$[^_a-zA-Z]*""".r.replaceAllIn(name, "")
     val withValidChars = """[^_a-zA-Z0-9\s]""".r.replaceAllIn(withValidFirstChar, "")
-    val parts = withValidChars.split("""\s+""").map(ea => ea.charAt(0).toUpper.toString ++ ea.substring(1))
+    val parts: Array[String] = if (withValidChars.isEmpty) {
+      Array()
+    } else {
+      withValidChars.split("""\s+""").map(ea => ea.charAt(0).toUpper.toString ++ ea.substring(1))
+    }
     parts.mkString("")
   }
 
