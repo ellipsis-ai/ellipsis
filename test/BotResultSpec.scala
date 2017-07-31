@@ -145,13 +145,15 @@ class BotResultSpec extends PlaySpec with MockitoSugar with DBSpec {
         val event: SlackMessageEvent = newEventFor(profile)
 
         val responseText = "response"
-        val result = SuccessResult(event, None, JsString("result"), Seq(), Some(responseText), None, forcePrivateResponse = false)
+        val resultJs = JsString("result")
+        val result = SuccessResult(event, None, resultJs, Seq(), Some(responseText), None, forcePrivateResponse = false)
         val resultTs: String = SlackTimestamp.now
 
         val conversationToBeInterrupted = newConversationFor(team, user, profile, event)
 
         mockSlackClient(event)
         mockPostChatMessage(responseText, event.client, resultTs, None)
+        mockPostChatMessage(resultJs.toString, event.client, resultTs, Some(resultTs))
         val interruptionPrompt = dataService.conversations.interruptionPromptFor(event, result.interruptionPrompt, includeUsername = true)
         mockPostChatMessage(interruptionPrompt, event.client, resultTs, None)
 
@@ -202,15 +204,17 @@ class BotResultSpec extends PlaySpec with MockitoSugar with DBSpec {
         val event: SlackMessageEvent = newEventFor(profile)
 
         val responseText = "response"
+        val resultJs = JsString("result")
         val resultTs: String = SlackTimestamp.now
 
         val selfConversation = newConversationFor(team, user, profile, event)
-        val otherConversation = newConversationFor(team, user, profile, event)
+        val conversationToInterrupt = newConversationFor(team, user, profile, event)
 
-        val result = SuccessResult(event, Some(selfConversation), JsString("result"), Seq(), Some(responseText), None, forcePrivateResponse = false)
+        val result = SuccessResult(event, Some(selfConversation), resultJs, Seq(), Some(responseText), None, forcePrivateResponse = false)
 
         mockSlackClient(event)
         mockPostChatMessage(responseText, event.client, resultTs, None)
+        mockPostChatMessage(resultJs.toString, event.client, resultTs, Some(resultTs))
         val interruptionPrompt = dataService.conversations.interruptionPromptFor(event, result.interruptionPrompt, includeUsername = true)
         mockPostChatMessage(interruptionPrompt, event.client, resultTs, None)
 
@@ -219,8 +223,8 @@ class BotResultSpec extends PlaySpec with MockitoSugar with DBSpec {
         val updatedSelfConversation = runNow(dataService.conversations.find(selfConversation.id)).get
         updatedSelfConversation.maybeThreadId.isEmpty mustBe true
 
-        val updatedOtherConversation = runNow(dataService.conversations.find(otherConversation.id)).get
-        updatedOtherConversation.maybeThreadId.isDefined mustBe true
+        val updatedConversationToInterrupt = runNow(dataService.conversations.find(conversationToInterrupt.id)).get
+        updatedConversationToInterrupt.maybeThreadId.isDefined mustBe true
       })
     }
 
