@@ -9,7 +9,6 @@ import models.behaviors.events.EventHandler
 import models.team.Team
 import modules.ActorModule
 import org.scalatest.mock.MockitoSugar
-import play.api.cache.CacheApi
 import play.api.inject._
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.ws.WSClient
@@ -42,7 +41,7 @@ trait TestContext extends MockitoSugar{
   val lambdaService = app.injector.instanceOf(classOf[AWSLambdaService])
   val slackEventService = app.injector.instanceOf(classOf[SlackEventService])
   val botResultService = app.injector.instanceOf(classOf[BotResultService])
-  val cache = app.injector.instanceOf(classOf[CacheApi])
+  val cacheService = app.injector.instanceOf(classOf[CacheService])
   val ws = app.injector.instanceOf(classOf[WSClient])
   val configuration = app.injector.instanceOf(classOf[Configuration])
 

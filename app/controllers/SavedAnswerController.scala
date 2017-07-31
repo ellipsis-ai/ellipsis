@@ -5,7 +5,6 @@ import javax.inject.Inject
 import com.mohiva.play.silhouette.api.Silhouette
 import models.silhouette.EllipsisEnv
 import play.api.Configuration
-import play.api.cache.CacheApi
 import play.api.data.Form
 import play.api.data.Forms._
 import play.api.i18n.MessagesApi
@@ -21,7 +20,6 @@ class SavedAnswerController @Inject() (
                                          val silhouette: Silhouette[EllipsisEnv],
                                          val configuration: Configuration,
                                          val dataService: DataService,
-                                         val cache: CacheApi,
                                          val ws: WSClient
                                        ) extends ReAuthable {
 

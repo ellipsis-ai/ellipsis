@@ -7,9 +7,8 @@ import models.behaviors.behavior.Behavior
 import models.behaviors.conversations.conversation.Conversation
 import models.team.Team
 import play.api.Configuration
-import play.api.cache.CacheApi
 import play.api.libs.ws.WSClient
-import services.{AWSLambdaConstants, AWSLambdaService, DataService}
+import services.{AWSLambdaConstants, AWSLambdaService, CacheService, DataService}
 import slack.api.SlackApiClient
 import utils.SlackMessageSender
 
@@ -70,7 +69,7 @@ case class RunEvent(
                                maybeLimitToBehavior: Option[Behavior],
                                lambdaService: AWSLambdaService,
                                dataService: DataService,
-                               cache: CacheApi,
+                               cacheService: CacheService,
                                ws: WSClient,
                                configuration: Configuration,
                                actorSystem: ActorSystem

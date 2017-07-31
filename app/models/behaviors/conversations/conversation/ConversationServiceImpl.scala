@@ -9,9 +9,8 @@ import drivers.SlickPostgresDriver.api._
 import models.behaviors.BotResultService
 import models.behaviors.conversations.ConversationServices
 import play.api.Configuration
-import play.api.cache.CacheApi
 import play.api.libs.ws.WSClient
-import services.{AWSLambdaService, DataService, SlackEventService}
+import services.{AWSLambdaService, CacheService, DataService, SlackEventService}
 import slick.dbio.DBIO
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -58,7 +57,7 @@ class ConversationServiceImpl @Inject() (
                                           dataServiceProvider: Provider[DataService],
                                           slackEventServiceProvier: Provider[SlackEventService],
                                           lambdaServiceProvider: Provider[AWSLambdaService],
-                                          cacheProvider: Provider[CacheApi],
+                                          cacheServiceProvider: Provider[CacheService],
                                           wsProvider: Provider[WSClient],
                                           configurationProvider: Provider[Configuration],
                                           botResultServiceProvider: Provider[BotResultService],
@@ -68,11 +67,11 @@ class ConversationServiceImpl @Inject() (
   def dataService: DataService = dataServiceProvider.get
   def slackEventService: SlackEventService = slackEventServiceProvier.get
   def lambdaService: AWSLambdaService = lambdaServiceProvider.get
-  def cache: CacheApi = cacheProvider.get
+  def cacheService: CacheService = cacheServiceProvider.get
   def ws: WSClient = wsProvider.get
   def configuration: Configuration = configurationProvider.get
   def botResultService: BotResultService = botResultServiceProvider.get
-  def services: ConversationServices = ConversationServices(dataService, lambdaService, slackEventService, cache, configuration, ws, actorSystem)
+  def services: ConversationServices = ConversationServices(dataService, lambdaService, slackEventService, cacheService, configuration, ws, actorSystem)
 
   import ConversationQueries._
 
@@ -132,9 +131,12 @@ class ConversationServiceImpl @Inject() (
   def uncompiledCancelQuery(conversationId: Rep[String]) = all.filter(_.id === conversationId).map(_.state)
   val cancelQuery = Compiled(uncompiledCancelQuery _)
 
+  def cancelAction(conversation: Conversation): DBIO[Unit] = {
+    cancelQuery(conversation.id).update(Conversation.DONE_STATE).map(_ => {})
+  }
+
   def cancel(conversation: Conversation): Future[Unit] = {
-    val action = cancelQuery(conversation.id).update(Conversation.DONE_STATE).map(_ => {})
-    dataService.run(action)
+    dataService.run(cancelAction(conversation))
   }
 
   def deleteAll(): Future[Unit] = {
@@ -186,7 +188,7 @@ class ConversationServiceImpl @Inject() (
       _ <- maybeEvent.map { event =>
         val convoWithThreadId = conversation.copyWithMaybeThreadId(maybeLastTs)
         dataService.conversations.saveAction(convoWithThreadId).flatMap { _ =>
-          convoWithThreadId.respondAction(event, isReminding=false, services).map { result =>
+          convoWithThreadId.respondAction(event, isReminding=false, services).flatMap { result =>
             botResultService.sendInAction(result, None)
           }
         }

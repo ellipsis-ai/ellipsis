@@ -6,9 +6,8 @@ import models.behaviors.behavior.Behavior
 import models.behaviors.conversations.conversation.Conversation
 import models.team.Team
 import play.api.Configuration
-import play.api.cache.CacheApi
 import play.api.libs.ws.WSClient
-import services.{AWSLambdaService, DataService}
+import services.{AWSLambdaService, CacheService, DataService}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -25,14 +24,14 @@ trait MessageEvent extends Event {
   }
 
   def allBehaviorResponsesFor(
-                              maybeTeam: Option[Team],
-                              maybeLimitToBehavior: Option[Behavior],
-                              lambdaService: AWSLambdaService,
-                              dataService: DataService,
-                              cache: CacheApi,
-                              ws: WSClient,
-                              configuration: Configuration,
-                              actorSystem: ActorSystem
+                               maybeTeam: Option[Team],
+                               maybeLimitToBehavior: Option[Behavior],
+                               lambdaService: AWSLambdaService,
+                               dataService: DataService,
+                               cacheService: CacheService,
+                               ws: WSClient,
+                               configuration: Configuration,
+                               actorSystem: ActorSystem
                             ): Future[Seq[BehaviorResponse]] = {
     for {
       maybeLimitToBehaviorVersion <- maybeLimitToBehavior.map { limitToBehavior =>

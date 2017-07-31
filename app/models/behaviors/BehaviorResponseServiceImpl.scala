@@ -13,7 +13,7 @@ import models.team.Team
 import play.api.Configuration
 import play.api.cache.CacheApi
 import play.api.libs.ws.WSClient
-import services.{AWSLambdaConstants, AWSLambdaService, DataService, SlackEventService}
+import services._
 import slick.dbio.DBIO
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -23,7 +23,7 @@ class BehaviorResponseServiceImpl @Inject() (
                                           dataService: DataService,
                                           lambdaService: AWSLambdaService,
                                           slackEventService: SlackEventService,
-                                          cache: CacheApi,
+                                          cacheService: CacheService,
                                           ws: WSClient,
                                           configuration: Configuration,
                                           actorSystem: ActorSystem
@@ -41,7 +41,7 @@ class BehaviorResponseServiceImpl @Inject() (
         AWSLambdaConstants.invocationParamFor(i)
       })
       values <- DBIO.sequence(params.zip(invocationNames).map { case(param, invocationName) =>
-        val context = BehaviorParameterContext(event, maybeConversation, param, cache, dataService, slackEventService, configuration, actorSystem)
+        val context = BehaviorParameterContext(event, maybeConversation, param, cacheService, dataService, slackEventService, configuration, actorSystem)
         paramValues.get(invocationName).map { v =>
           for {
             isValid <- DBIO.from(param.paramType.isValid(v, context))
@@ -73,7 +73,7 @@ class BehaviorResponseServiceImpl @Inject() (
                       maybeConversation: Option[Conversation]
                     ): DBIO[BehaviorResponse] = {
     parametersWithValuesForAction(event, behaviorVersion, paramValues, maybeConversation).map { paramsWithValues =>
-      BehaviorResponse(event, behaviorVersion, maybeConversation, paramsWithValues, maybeActivatedTrigger, lambdaService, dataService, slackEventService, cache, ws, configuration)
+      BehaviorResponse(event, behaviorVersion, maybeConversation, paramsWithValues, maybeActivatedTrigger, lambdaService, dataService, slackEventService, cacheService, ws, configuration)
     }
   }
 
@@ -92,7 +92,7 @@ class BehaviorResponseServiceImpl @Inject() (
               maybeTeam: Option[Team],
               maybeLimitToBehavior: Option[Behavior]
             ): Future[Seq[BehaviorResponse]] = {
-    event.allBehaviorResponsesFor(maybeTeam, maybeLimitToBehavior, lambdaService, dataService, cache, ws, configuration, actorSystem)
+    event.allBehaviorResponsesFor(maybeTeam, maybeLimitToBehavior, lambdaService, dataService, cacheService, ws, configuration, actorSystem)
   }
 
 }
