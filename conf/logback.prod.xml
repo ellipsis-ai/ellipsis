@@ -8,7 +8,7 @@
     </encoder>
   </appender>
   <appender name="JSON_IN_FILE" class="ch.qos.logback.core.FileAppender">
-    <file>/var/log/ellipsis/application.json</file>
+    <file>/var/log/ellipsis/application.log</file>
     <encoder class="net.logstash.logback.encoder.LogstashEncoder"></encoder>
   </appender>
 
