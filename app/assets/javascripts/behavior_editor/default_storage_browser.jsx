@@ -2,6 +2,7 @@ define(function(require) {
   const React = require('react'),
     BehaviorVersion = require('../models/behavior_version'),
     Button = require('../form/button'),
+    Checkbox = require('../form/checkbox'),
     DataRequest = require('../lib/data_request'),
     DefaultStorageItem = require('../models/default_storage_item'),
     autobind = require('../lib/autobind');
@@ -13,7 +14,8 @@ define(function(require) {
       this.state = {
         items: [],
         isLoading: false,
-        error: null
+        error: null,
+        checkedIds: []
       };
     }
 
@@ -39,7 +41,8 @@ define(function(require) {
       this.setState({
         items: [],
         isLoading: true,
-        error: null
+        error: null,
+        checkedIds: []
       }, () => {
         const url = jsRoutes.controllers.BehaviorEditorController.queryDefaultStorage().url;
         DataRequest.jsonPost(url, {
@@ -98,6 +101,7 @@ define(function(require) {
     renderItem(item, fields, index, isLastItem) {
       return (
         <tr key={`row${index}`}>
+          {this.renderCheckboxCell(item)}
           {fields.map((field) => this.renderFieldCell(item, field, index, isLastItem))}
         </tr>
       );
@@ -117,7 +121,7 @@ define(function(require) {
         tableRows.push((
           <tr key={`row${rowIndex}`}>
             <td
-              colSpan={fields.length}
+              colSpan={fields.length+1}
               className={`phxs bg-light align-c type-italic type-weak ${
                 rowIndex + 1 === maxRowCount ? "border-bottom border-light" : ""
               }`}>
@@ -149,6 +153,62 @@ define(function(require) {
       );
     }
 
+    getCheckedIds() {
+      return this.state.checkedIds || [];
+    }
+
+    checkedItemsCount() {
+      return this.getCheckedIds().length;
+    }
+
+    onDeleteItemsClick() {
+      const url = jsRoutes.controllers.BehaviorEditorController.deleteDefaultStorageItems().url;
+
+      DataRequest.jsonPost(url, {
+        behaviorId: this.props.behaviorVersion.behaviorId,
+        itemIds: this.getCheckedIds()
+      }, this.props.csrfToken)
+        .then(() => {
+          this.loadItems();
+        })
+        .catch(this.onErrorSaving);
+    }
+
+    isChecked(item) {
+      return this.getCheckedIds().indexOf(item.data.id) >= 0;
+    }
+
+    toggleChecked(checked, itemId) {
+      const checkedIdsBefore = this.getCheckedIds();
+      let checkedIdsAfter = checkedIdsBefore;
+      if (checked) {
+        checkedIdsAfter = checkedIdsAfter.concat([itemId]);
+      } else {
+        const idx = this.getCheckedIds().indexOf(itemId)
+        checkedIdsAfter.splice(idx, 1);
+      }
+      this.setState({
+        checkedIds: checkedIdsAfter
+      });
+    }
+
+    renderCheckboxCell(item) {
+      const itemId = item.data.id;
+      return (
+        <td
+          key={`${itemId}-checkbox`}
+          className="phm"
+        >
+          <Checkbox
+            checked={this.isChecked(item)}
+            onChange={this.toggleChecked}
+            value={itemId}
+            >
+          </Checkbox>
+        </td>
+      );
+    }
+
     renderFieldCell(item, field, index, isLast) {
       const value = item.data[field.name];
       const className = `phxs type-monospace border-light border-right ${
@@ -164,6 +224,17 @@ define(function(require) {
           {this.renderValue(value)}
         </td>
       );
+    }
+
+    getDeleteButtonText() {
+      const count = this.checkedItemsCount();
+      if (count === 0) {
+        return "Delete items";
+      } else if (count === 1) {
+        return "Delete one item";
+      } else {
+        return `Delete ${this.checkedItemsCount()} items`;
+      }
     }
 
     render() {
@@ -183,6 +254,7 @@ define(function(require) {
                 }`}>
                   <thead>
                     <tr>
+                      <th className="bg-light border-bottom border-light type-monospace type-weak phxs"></th>
                       {fields.map(this.renderFieldHeader)}
                     </tr>
                   </thead>
@@ -197,6 +269,11 @@ define(function(require) {
                     className="mrl mbs"
                     onClick={this.props.onCancelClick}
                   >Done</Button>
+                  <Button
+                    disabled={this.checkedItemsCount() === 0}
+                    className="mrl mbs"
+                    onClick={this.onDeleteItemsClick}
+                  >{this.getDeleteButtonText()}</Button>
                   {this.state.error ? (
                     <span className="align-button mbs type-bold type-pink type-italic fade-in">{this.state.error}</span>
                   ) : null}

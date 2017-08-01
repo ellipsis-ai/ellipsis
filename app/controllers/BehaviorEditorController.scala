@@ -339,6 +339,34 @@ class BehaviorEditorController @Inject() (
     )
   }
 
+  case class DeleteDefaultStorageItemsInfo(behaviorId: String, itemIds: Seq[String])
+
+  private val deleteDefaultStorageItemsForm = Form(
+    mapping(
+      "behaviorId" -> nonEmptyText,
+      "itemIds" -> seq(nonEmptyText)
+    )(DeleteDefaultStorageItemsInfo.apply)(DeleteDefaultStorageItemsInfo.unapply)
+  )
+
+  def deleteDefaultStorageItems = silhouette.SecuredAction.async { implicit request =>
+    val user = request.identity
+    deleteDefaultStorageItemsForm.bindFromRequest.fold(
+      formWithErrors => {
+        Future.successful(BadRequest(formWithErrors.errorsAsJson))
+      },
+      info => {
+        for {
+          maybeBehavior <- dataService.behaviors.find(info.behaviorId, user)
+          result <- maybeBehavior.map { behavior =>
+            dataService.defaultStorageItems.deleteItems(info.itemIds, behavior.group).map { count =>
+              Ok(Json.toJson(Map("deletedCount" -> count)))
+            }
+          }.getOrElse(Future.successful(NotFound(s"Couldn't find data type for ID: ${info.behaviorId}")))
+        } yield result
+      }
+    )
+  }
+
   case class QueryDefaultStorageInfo(behaviorGroupId: String, query: String, maybeOperationName: Option[String], maybeVariables: Option[String])
 
   private val queryDefaultStorageForm = Form(

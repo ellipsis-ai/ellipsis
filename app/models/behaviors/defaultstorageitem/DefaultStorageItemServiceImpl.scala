@@ -269,4 +269,10 @@ class DefaultStorageItemServiceImpl @Inject() (
     dataService.run(deleteItemAction(id, behaviorGroup))
   }
 
+  def deleteItems(ids: Seq[String], behaviorGroup: BehaviorGroup): Future[Int] = {
+    Future.sequence(ids.map(ea => deleteItem(ea, behaviorGroup))).map { deletedItemOptions =>
+      deletedItemOptions.flatten.length
+    }
+  }
+
 }

@@ -35,4 +35,6 @@ trait DefaultStorageItemService {
 
   def deleteItem(id: String, behaviorGroup: BehaviorGroup): Future[Option[DefaultStorageItem]]
 
+  def deleteItems(ids: Seq[String], behaviorGroup: BehaviorGroup): Future[Int]
+
 }

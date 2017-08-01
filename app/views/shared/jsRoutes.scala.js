@@ -13,6 +13,7 @@
   routes.javascript.ApplicationController.mergeBehaviorGroups,
   routes.javascript.ApplicationController.possibleCitiesFor,
   routes.javascript.ApplicationController.setTeamTimeZone,
+  routes.javascript.BehaviorEditorController.deleteDefaultStorageItems,
   routes.javascript.BehaviorEditorController.edit,
   routes.javascript.BehaviorEditorController.newGroup,
   routes.javascript.BehaviorEditorController.newUnsavedBehavior,
