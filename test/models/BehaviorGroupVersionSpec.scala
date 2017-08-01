@@ -9,7 +9,7 @@ import support.DBSpec
 class BehaviorGroupVersionSpec extends DBSpec {
 
   def reloadGroup(db: PostgresDatabase, group: BehaviorGroup): BehaviorGroup = {
-    runNow(dataService.behaviorGroups.find(group.id)).get
+    runNow(dataService.behaviorGroups.findWithoutAccessCheck(group.id)).get
   }
 
   "createFor" should {

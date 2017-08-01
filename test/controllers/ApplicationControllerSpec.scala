@@ -42,7 +42,7 @@ class ApplicationControllerSpec extends PlaySpec with MockitoSugar {
         when(dataService.users.teamAccessFor(user, Some(team.id))).thenReturn(Future.successful(teamAccess))
         when(teamAccess.maybeTargetTeam).thenReturn(Some(team))
         when(dataService.behaviorGroups.allFor(team)).thenReturn(Future.successful(Seq(behaviorGroup)))
-        when(dataService.behaviorGroups.find(groupId)).thenReturn(Future.successful(Some(behaviorGroup)))
+        when(dataService.behaviorGroups.findWithoutAccessCheck(groupId)).thenReturn(Future.successful(Some(behaviorGroup)))
         when(dataService.behaviorGroupVersions.findWithoutAccessCheck(groupVersionId)).thenReturn(Future.successful(Some(behaviorGroupVersion)))
         when(dataService.behaviors.allForGroup(behaviorGroup)).thenReturn(Future.successful(Seq(behavior)))
         when(dataService.inputs.allForGroupVersion(behaviorGroupVersion)).thenReturn(Future.successful(Seq()))

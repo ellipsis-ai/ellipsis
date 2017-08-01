@@ -86,7 +86,7 @@ object BehaviorEditorData {
     maybeBehaviorGroupData.map { data =>
       data.id.map { groupId =>
         for {
-          maybeGroup <- dataService.behaviorGroups.find(groupId)
+          maybeGroup <- dataService.behaviorGroups.findWithoutAccessCheck(groupId)
           maybeBehaviorGroupVersion <- maybeGroup.map { group =>
             dataService.behaviorGroups.maybeCurrentVersionFor(group)
           }.getOrElse(Future.successful(None))
@@ -121,7 +121,7 @@ object BehaviorEditorData {
       // TODO: use the group data or some such to avoid grabbing group from DB again
       maybeGroup <- maybeGroupData.flatMap { groupData =>
         groupData.id.map { groupId =>
-          dataService.behaviorGroups.find(groupId)
+          dataService.behaviorGroups.findWithoutAccessCheck(groupId)
         }
       }.getOrElse(Future.successful(None))
       maybeGroupVersion <- maybeGroup.map { group =>

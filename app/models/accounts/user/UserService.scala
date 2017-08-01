@@ -3,6 +3,7 @@ package models.accounts.user
 import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.api.services.IdentityService
 import models.behaviors.behavior.Behavior
+import models.behaviors.behaviorgroup.BehaviorGroup
 import models.behaviors.events.{Event, SlackMessageEvent}
 import models.team.Team
 import slick.dbio.DBIO
@@ -19,6 +20,8 @@ trait UserService extends IdentityService[User] {
   def ensureUserFor(loginInfo: LoginInfo, teamId: String): Future[User]
   def teamAccessForAction(user: User, maybeTargetTeamId: Option[String]): DBIO[UserTeamAccess]
   def teamAccessFor(user: User, maybeTargetTeamId: Option[String]): Future[UserTeamAccess]
+  def canAccess(user: User, group: BehaviorGroup): Future[Boolean] = canAccess(user, group.team)
+  def canAccessAction(user: User, group: BehaviorGroup): DBIO[Boolean] = canAccessAction(user, group.team)
   def canAccessAction(user: User, behavior: Behavior): DBIO[Boolean] = canAccessAction(user, behavior.team)
   def canAccess(user: User, behavior: Behavior): Future[Boolean] = canAccess(user, behavior.team)
   def canAccessAction(user: User, team: Team): DBIO[Boolean] = {

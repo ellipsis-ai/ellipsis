@@ -69,9 +69,28 @@ class BehaviorGroupServiceImpl @Inject() (
     }
   }
 
-  def find(id: String): Future[Option[BehaviorGroup]] = {
-    val action = findQuery(id).result.map { r =>
+  def findWithoutAccessCheckAction(id: String): DBIO[Option[BehaviorGroup]] = {
+    findQuery(id).result.map { r =>
       r.headOption.map(tuple2Group)
+    }
+  }
+
+  def findWithoutAccessCheck(id: String): Future[Option[BehaviorGroup]] = {
+    dataService.run(findWithoutAccessCheckAction(id))
+  }
+
+  def find(id: String, user: User): Future[Option[BehaviorGroup]] = {
+    val action = for {
+      maybeGroup <- findWithoutAccessCheckAction(id)
+      canAccess <- maybeGroup.map { group =>
+        dataService.users.canAccessAction(user, group)
+      }.getOrElse(DBIO.successful(false))
+    } yield {
+      if (canAccess) {
+        maybeGroup
+      } else {
+        None
+      }
     }
     dataService.run(action)
   }

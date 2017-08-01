@@ -57,7 +57,7 @@ class BehaviorGroupImportExportSpec extends DBSpec {
   }
 
   def mustBeValidImport(exported: BehaviorGroup, imported: BehaviorGroup): Unit = {
-    val reloadedExported = runNow(dataService.behaviorGroups.find(exported.id).map(_.get))
+    val reloadedExported = runNow(dataService.behaviorGroups.findWithoutAccessCheck(exported.id).map(_.get))
     reloadedExported.id must not be(imported.id)
 
     // since we changed the existing export ID

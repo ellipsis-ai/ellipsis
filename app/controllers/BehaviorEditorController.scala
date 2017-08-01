@@ -128,7 +128,7 @@ class BehaviorEditorController @Inject() (
             for {
               teamAccess <- dataService.users.teamAccessFor(user, Some(data.teamId))
               maybeExistingGroup <- data.id.map { groupId =>
-                dataService.behaviorGroups.find(groupId)
+                dataService.behaviorGroups.findWithoutAccessCheck(groupId)
               }.getOrElse(Future.successful(None))
               maybeGroup <- maybeExistingGroup.map(g => Future.successful(Some(g))).getOrElse {
                 teamAccess.maybeTargetTeam.map { team =>
@@ -207,7 +207,7 @@ class BehaviorEditorController @Inject() (
   def versionInfoFor(behaviorGroupId: String) = silhouette.SecuredAction.async { implicit request =>
     val user = request.identity
     for {
-      maybeBehaviorGroup <- dataService.behaviorGroups.find(behaviorGroupId)
+      maybeBehaviorGroup <- dataService.behaviorGroups.findWithoutAccessCheck(behaviorGroupId)
       versions <- maybeBehaviorGroup.map { group =>
        dataService.behaviorGroupVersions.allFor(group).map(_.sortBy(_.createdAt).reverse.take(20))
       }.getOrElse(Future.successful(Seq()))
@@ -386,7 +386,7 @@ class BehaviorEditorController @Inject() (
       },
       info => {
         for {
-          maybeBehaviorGroup <- dataService.behaviorGroups.find(info.behaviorGroupId)
+          maybeBehaviorGroup <- dataService.behaviorGroups.findWithoutAccessCheck(info.behaviorGroupId)
           maybeResult <- maybeBehaviorGroup.map { group =>
             services.graphQLService.runQuery(group, user, info.query, info.maybeOperationName, info.maybeVariables).map(Some(_))
           }.getOrElse(Future.successful(None))

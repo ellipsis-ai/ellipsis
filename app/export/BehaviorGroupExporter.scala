@@ -167,7 +167,7 @@ object BehaviorGroupExporter {
   def maybeFor(groupId: String, user: User, dataService: DataService): Future[Option[BehaviorGroupExporter]] = {
     val mainParentPath = "/tmp/exports/"
     for {
-      maybeGroup <- dataService.behaviorGroups.find(groupId)
+      maybeGroup <- dataService.behaviorGroups.findWithoutAccessCheck(groupId)
       maybeGroupVersion <- maybeGroup.map { group =>
         dataService.behaviorGroups.maybeCurrentVersionFor(group)
       }.getOrElse(Future.successful(None))
