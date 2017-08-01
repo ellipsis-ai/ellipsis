@@ -127,7 +127,7 @@ define(function(require) {
 
     isValidForDataStorage() {
       return this.getDataTypes().every(ea => {
-        return ea.name && ea.name.length > 0 && ea.getDataTypeConfig().isValidForDataStorage()
+        return ea.name && ea.name.length > 0 && ea.getDataTypeConfig().isValidForDataStorage();
       });
     }
 

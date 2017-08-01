@@ -11,6 +11,7 @@ define(function(require) {
     ID = require('../lib/id'),
     SectionHeading = require('../shared_ui/section_heading'),
     SequentialName = require('../lib/sequential_name'),
+    BehaviorGroup = require('../models/behavior_group'),
     BehaviorVersion = require('../models/behavior_version'),
     DataTypeField = require('../models/data_type_field'),
     Input = require('../models/input'),
@@ -282,6 +283,7 @@ define(function(require) {
   }
 
   DataTypeEditor.propTypes = {
+    group: React.PropTypes.instanceOf(BehaviorGroup).isRequired,
     behaviorVersion: React.PropTypes.instanceOf(BehaviorVersion).isRequired,
     paramTypes: React.PropTypes.arrayOf(React.PropTypes.instanceOf(ParamType)).isRequired,
     inputs: React.PropTypes.arrayOf(React.PropTypes.instanceOf(Input)).isRequired,

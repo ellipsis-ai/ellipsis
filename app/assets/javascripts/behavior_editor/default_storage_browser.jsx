@@ -184,7 +184,7 @@ define(function(require) {
       if (checked) {
         checkedIdsAfter = checkedIdsAfter.concat([itemId]);
       } else {
-        const idx = this.getCheckedIds().indexOf(itemId)
+        const idx = this.getCheckedIds().indexOf(itemId);
         checkedIdsAfter.splice(idx, 1);
       }
       this.setState({
