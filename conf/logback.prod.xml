@@ -11,11 +11,6 @@
     <file>/var/log/ellipsis/application.json</file>
     <encoder class="net.logstash.logback.encoder.LogstashEncoder"></encoder>
   </appender>
-  <appender name="JSON_IN_FILE2" class="ch.qos.logback.core.FileAppender">
-    <file>/var/app/current/logs/application.log</file>
-    <encoder class="net.logstash.logback.encoder.LogstashEncoder"></encoder>
-  </appender>
-
 
   <logger name="play" level="WARN" />
   <logger name="application" level="INFO" />
@@ -25,7 +20,6 @@
   <root level="WARN">
     <appender-ref ref="STDOUT" />
     <appender-ref ref="JSON_IN_FILE" />
-    <appender-ref ref="JSON_IN_FILE2" />
   </root>
 
 </configuration>
