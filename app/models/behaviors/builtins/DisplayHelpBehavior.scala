@@ -132,7 +132,7 @@ case class DisplayHelpBehavior(
       maybeBehaviorGroups <- maybeTeam.map { team =>
         maybeSkillId match {
           case Some(HelpGroupData.MISCELLANEOUS_ACTION_ID) => dataService.behaviorGroups.allWithNoNameFor(team).map(Some(_))
-          case Some(skillId) => dataService.behaviorGroups.find(skillId).map(_.map(Seq(_)))
+          case Some(skillId) => dataService.behaviorGroups.findWithoutAccessCheck(skillId).map(_.map(Seq(_)))
           case None => dataService.behaviorGroups.allFor(team).map(Some(_))
         }
       }.getOrElse {

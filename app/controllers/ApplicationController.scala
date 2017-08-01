@@ -121,7 +121,7 @@ class ApplicationController @Inject() (
       info => {
         for {
           groups <- Future.sequence(info.behaviorGroupIds.map { id =>
-            dataService.behaviorGroups.find(id)
+            dataService.behaviorGroups.findWithoutAccessCheck(id)
           }).map(_.flatten)
           merged <- dataService.behaviorGroups.merge(groups, user)
           maybeData <- BehaviorGroupData.maybeFor(merged.id, user, None, dataService)
@@ -142,7 +142,7 @@ class ApplicationController @Inject() (
       info => {
         for {
           groups <- Future.sequence(info.behaviorGroupIds.map { id =>
-            dataService.behaviorGroups.find(id)
+            dataService.behaviorGroups.findWithoutAccessCheck(id)
           }).map(_.flatten)
           deleted <- Future.sequence(groups.map(dataService.behaviorGroups.delete))
         } yield {

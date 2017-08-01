@@ -2,16 +2,11 @@ package models.behaviors.events
 
 import javax.inject._
 
-import akka.actor.ActorSystem
 import models.behaviors.builtins.BuiltinBehavior
-import models.behaviors.conversations.ConversationServices
 import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.events.SlackMessageActionConstants._
-import models.behaviors.{BotResult, SimpleTextResult, TextWithActionsResult}
-import play.api.Configuration
-import play.api.i18n.MessagesApi
-import play.api.libs.ws.WSClient
-import services.{AWSLambdaService, CacheService, DataService, SlackEventService}
+import models.behaviors.{BehaviorResponse, BotResult, SimpleTextResult, TextWithActionsResult}
+import services.DefaultServices
 import utils.Color
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -19,18 +14,13 @@ import scala.concurrent.Future
 import scala.concurrent.duration._
 
 @Singleton
-class EventHandler @Inject() (
-                               lambdaService: AWSLambdaService,
-                               dataService: DataService,
-                               slackEventServiceProvider: Provider[SlackEventService],
-                               cacheService: CacheService,
-                               messages: MessagesApi,
-                               ws: WSClient,
-                               configuration: Configuration,
-                               implicit val actorSystem: ActorSystem
-                               ) {
+class EventHandler @Inject() (services: DefaultServices) {
 
-  def slackEventService = slackEventServiceProvider.get
+  val dataService = services.dataService
+  val lambdaService = services.lambdaService
+  implicit val actorService = services.actorSystem
+
+  def slackEventService = services.slackEventService
 
   def startInvokeConversationFor(event: Event): Future[Seq[BotResult]] = {
     for {
@@ -72,14 +62,13 @@ class EventHandler @Inject() (
       if (isCancelConversationMessage(event)) {
         cancelConversationResult(event, updatedConvo, s"OK, I’ll stop asking about that.")
       } else {
-        val services = ConversationServices(dataService, lambdaService, slackEventService, cacheService, configuration, ws, actorSystem)
         if (originalConvo.isStale) {
           updatedConvo.maybeNextParamToCollect(event, services).map { maybeNextParam =>
             val maybeLastPrompt = maybeNextParam.map { nextParam =>
               nextParam.input.question
             }
             val key = updatedConvo.pendingEventKey
-            cacheService.cacheEvent(key, event, 5.minutes)
+            services.cacheService.cacheEvent(key, event, 5.minutes)
             val actions = Seq(
               SlackMessageActionButton(CONFIRM_CONTINUE_CONVERSATION, "Yes, it's an answer", updatedConvo.id),
               SlackMessageActionButton(DONT_CONTINUE_CONVERSATION, "No, not an answer", updatedConvo.id)
@@ -106,7 +95,7 @@ class EventHandler @Inject() (
     maybeConversation.map { conversation =>
       handleInConversation(conversation, event).map(Seq(_))
     }.getOrElse {
-      BuiltinBehavior.maybeFrom(event, lambdaService, dataService, configuration).map { builtin =>
+      BuiltinBehavior.maybeFrom(event, lambdaService, dataService, services.configuration).map { builtin =>
         builtin.result.map(Seq(_))
       }.getOrElse {
         startInvokeConversationFor(event)

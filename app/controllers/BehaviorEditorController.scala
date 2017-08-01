@@ -2,7 +2,6 @@ package controllers
 
 import javax.inject.Inject
 
-import akka.actor.ActorSystem
 import com.mohiva.play.silhouette.api.Silhouette
 import com.mohiva.play.silhouette.api.actions.SecuredRequest
 import json.Formatting._
@@ -10,15 +9,13 @@ import json._
 import models.behaviors.testing.{InvocationTester, TestEvent, TriggerTester}
 import models.behaviors.triggers.messagetrigger.MessageTrigger
 import models.silhouette.EllipsisEnv
-import play.api.Configuration
 import play.api.data.Form
 import play.api.data.Forms._
 import play.api.i18n.MessagesApi
 import play.api.libs.json._
-import play.api.libs.ws.WSClient
 import play.api.mvc.{AnyContent, Result}
 import play.filters.csrf.CSRF
-import services.{AWSLambdaService, CacheService, DataService}
+import services.DefaultServices
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -26,13 +23,12 @@ import scala.concurrent.Future
 class BehaviorEditorController @Inject() (
                                            val messagesApi: MessagesApi,
                                            val silhouette: Silhouette[EllipsisEnv],
-                                           val configuration: Configuration,
-                                           val dataService: DataService,
-                                           val lambdaService: AWSLambdaService,
-                                           val cacheService: CacheService,
-                                           val ws: WSClient,
-                                           val actorSystem: ActorSystem
+                                           val services: DefaultServices
                                          ) extends ReAuthable {
+
+  val dataService = services.dataService
+  val configuration = services.configuration
+  val ws = services.ws
 
   def newGroup(maybeTeamId: Option[String]) = silhouette.SecuredAction.async { implicit request =>
     val user = request.identity
@@ -132,7 +128,7 @@ class BehaviorEditorController @Inject() (
             for {
               teamAccess <- dataService.users.teamAccessFor(user, Some(data.teamId))
               maybeExistingGroup <- data.id.map { groupId =>
-                dataService.behaviorGroups.find(groupId)
+                dataService.behaviorGroups.findWithoutAccessCheck(groupId)
               }.getOrElse(Future.successful(None))
               maybeGroup <- maybeExistingGroup.map(g => Future.successful(Some(g))).getOrElse {
                 teamAccess.maybeTargetTeam.map { team =>
@@ -211,7 +207,7 @@ class BehaviorEditorController @Inject() (
   def versionInfoFor(behaviorGroupId: String) = silhouette.SecuredAction.async { implicit request =>
     val user = request.identity
     for {
-      maybeBehaviorGroup <- dataService.behaviorGroups.find(behaviorGroupId)
+      maybeBehaviorGroup <- dataService.behaviorGroups.findWithoutAccessCheck(behaviorGroupId)
       versions <- maybeBehaviorGroup.map { group =>
        dataService.behaviorGroupVersions.allFor(group).map(_.sortBy(_.createdAt).reverse.take(20))
       }.getOrElse(Future.successful(Seq()))
@@ -246,7 +242,7 @@ class BehaviorEditorController @Inject() (
           }.getOrElse(Future.successful(None))
           maybeReport <- maybeBehaviorVersion.map { behaviorVersion =>
             val event = TestEvent(user, behaviorVersion.team, info.message, includesBotMention = true)
-            TriggerTester(dataService).test(event, behaviorVersion).map(Some(_))
+            TriggerTester(services).test(event, behaviorVersion).map(Some(_))
           }.getOrElse(Future.successful(None))
 
         } yield {
@@ -285,7 +281,7 @@ class BehaviorEditorController @Inject() (
                 dataService.behaviors.maybeCurrentVersionFor(behavior)
               }.getOrElse(Future.successful(None))
               maybeReport <- maybeBehaviorVersion.map { behaviorVersion =>
-                InvocationTester(user, behaviorVersion, paramValues, dataService).run.map(Some(_))
+                InvocationTester(user, behaviorVersion, paramValues, services).run.map(Some(_))
               }.getOrElse(Future.successful(None))
             } yield {
               maybeReport.map { report =>
@@ -310,4 +306,96 @@ class BehaviorEditorController @Inject() (
     Ok(Json.toJson(Array(content)))
   }
 
+  case class SaveDefaultStorageItemInfo(itemJson: String)
+
+  private val saveDefaultStorageItemForm = Form(
+    mapping(
+      "itemJson" -> nonEmptyText
+    )(SaveDefaultStorageItemInfo.apply)(SaveDefaultStorageItemInfo.unapply)
+  )
+
+  def saveDefaultStorageItem = silhouette.SecuredAction.async { implicit request =>
+    val user = request.identity
+    saveDefaultStorageItemForm.bindFromRequest.fold(
+      formWithErrors => {
+        Future.successful(BadRequest(formWithErrors.errorsAsJson))
+      },
+      info => {
+        val json = Json.parse(info.itemJson)
+        json.validate[DefaultStorageItemData] match {
+          case JsSuccess(item, _) => {
+            for {
+              maybeBehavior <- dataService.behaviors.find(item.behaviorId, user)
+              result <- maybeBehavior.map { behavior =>
+                dataService.defaultStorageItems.createItemForBehavior(behavior, user, item.data).map { newItem =>
+                  Ok(Json.toJson(DefaultStorageItemData.fromItem(newItem)))
+                }
+              }.getOrElse(Future.successful(NotFound(s"Couldn't find data type for ID: ${item.behaviorId}")))
+            } yield result
+          }
+          case JsError(errs) => Future.successful(BadRequest("Couldn't build a storage item from this data"))
+        }
+      }
+    )
+  }
+
+  case class DeleteDefaultStorageItemsInfo(behaviorId: String, itemIds: Seq[String])
+
+  private val deleteDefaultStorageItemsForm = Form(
+    mapping(
+      "behaviorId" -> nonEmptyText,
+      "itemIds" -> seq(nonEmptyText)
+    )(DeleteDefaultStorageItemsInfo.apply)(DeleteDefaultStorageItemsInfo.unapply)
+  )
+
+  def deleteDefaultStorageItems = silhouette.SecuredAction.async { implicit request =>
+    val user = request.identity
+    deleteDefaultStorageItemsForm.bindFromRequest.fold(
+      formWithErrors => {
+        Future.successful(BadRequest(formWithErrors.errorsAsJson))
+      },
+      info => {
+        for {
+          maybeBehavior <- dataService.behaviors.find(info.behaviorId, user)
+          result <- maybeBehavior.map { behavior =>
+            dataService.defaultStorageItems.deleteItems(info.itemIds, behavior.group).map { count =>
+              Ok(Json.toJson(Map("deletedCount" -> count)))
+            }
+          }.getOrElse(Future.successful(NotFound(s"Couldn't find data type for ID: ${info.behaviorId}")))
+        } yield result
+      }
+    )
+  }
+
+  case class QueryDefaultStorageInfo(behaviorGroupId: String, query: String, maybeOperationName: Option[String], maybeVariables: Option[String])
+
+  private val queryDefaultStorageForm = Form(
+    mapping(
+      "behaviorGroupId" -> nonEmptyText,
+      "query" -> nonEmptyText,
+      "operationName" -> optional(nonEmptyText),
+      "variables" -> optional(nonEmptyText)
+    )(QueryDefaultStorageInfo.apply)(QueryDefaultStorageInfo.unapply)
+  )
+
+  def queryDefaultStorage = silhouette.SecuredAction.async { implicit request =>
+    val user = request.identity
+    queryDefaultStorageForm.bindFromRequest.fold(
+      formWithErrors => {
+        Future.successful(BadRequest(formWithErrors.errorsAsJson))
+      },
+      info => {
+        for {
+          maybeBehaviorGroup <- dataService.behaviorGroups.findWithoutAccessCheck(info.behaviorGroupId)
+          maybeResult <- maybeBehaviorGroup.map { group =>
+            services.graphQLService.runQuery(group, user, info.query, info.maybeOperationName, info.maybeVariables).map(Some(_))
+          }.getOrElse(Future.successful(None))
+        } yield {
+          maybeResult.map { result =>
+            Ok(result.toString)
+          }.getOrElse(NotFound("Skill not found"))
+        }
+      }
+    )
+  }
 }

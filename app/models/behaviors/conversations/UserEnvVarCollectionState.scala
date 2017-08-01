@@ -4,6 +4,7 @@ import models.accounts.user.User
 import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.events.Event
 import models.behaviors.{BotResult, SimpleTextResult}
+import services.DefaultServices
 import slick.dbio.DBIO
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -12,7 +13,7 @@ import scala.concurrent.Future
 case class UserEnvVarCollectionState(
                                       missingEnvVarNames: Seq[String],
                                       event: Event,
-                                      services: ConversationServices
+                                      services: DefaultServices
                                     ) extends CollectionState {
 
   lazy val dataService = services.dataService
@@ -61,7 +62,7 @@ object UserEnvVarCollectionState {
                   user: User,
                   conversation: Conversation,
                   event: Event,
-                  services: ConversationServices
+                  services: DefaultServices
                 ): DBIO[UserEnvVarCollectionState] = {
     val dataService = services.dataService
     dataService.userEnvironmentVariables.missingForAction(user, conversation.behaviorVersion, dataService).map { missing =>

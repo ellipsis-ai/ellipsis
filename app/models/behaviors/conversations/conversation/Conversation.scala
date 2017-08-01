@@ -5,10 +5,10 @@ import java.time.OffsetDateTime
 import models.behaviors._
 import models.behaviors.behaviorparameter.BehaviorParameter
 import models.behaviors.behaviorversion.BehaviorVersion
-import models.behaviors.conversations.ConversationServices
 import models.behaviors.events.SlackMessageActionConstants._
 import models.behaviors.events.{Event, SlackMessageActionButton, SlackMessageActions, SlackMessageEvent}
 import models.behaviors.triggers.messagetrigger.MessageTrigger
+import services.DefaultServices
 import services.DataService
 import slick.dbio.DBIO
 import utils.SlackTimestamp
@@ -46,7 +46,7 @@ trait Conversation {
     startedAt.plusSeconds(Conversation.SECONDS_UNTIL_BACKGROUNDED).isBefore(OffsetDateTime.now)
   }
 
-  private def maybeSlackPlaceholderEventAction(services: ConversationServices): DBIO[Option[Event]] = {
+  private def maybeSlackPlaceholderEventAction(services: DefaultServices): DBIO[Option[Event]] = {
     services.dataService.slackBotProfiles.allForAction(behaviorVersion.team).map { botProfiles =>
       for {
         botProfile <- botProfiles.headOption
@@ -55,7 +55,7 @@ trait Conversation {
     }
   }
 
-  def maybePlaceholderEventAction(services: ConversationServices): DBIO[Option[Event]] = {
+  def maybePlaceholderEventAction(services: DefaultServices): DBIO[Option[Event]] = {
     context match {
       case Conversation.SLACK_CONTEXT => maybeSlackPlaceholderEventAction(services)
       case _ => DBIO.successful(None)
@@ -70,23 +70,23 @@ trait Conversation {
 
   def updateStateTo(newState: String, dataService: DataService): Future[Conversation]
   def cancel(dataService: DataService): Future[Conversation] = updateStateTo(Conversation.DONE_STATE, dataService)
-  def updateWith(event: Event, services: ConversationServices): Future[Conversation]
+  def updateWith(event: Event, services: DefaultServices): Future[Conversation]
 
   def respondAction(
                      event: Event,
                      isReminding: Boolean,
-                     services: ConversationServices
+                     services: DefaultServices
                    ): DBIO[BotResult]
 
   def respond(
                event: Event,
                isReminding: Boolean,
-               services: ConversationServices
+               services: DefaultServices
              ): Future[BotResult]
 
   def resultFor(
                  event: Event,
-                 services: ConversationServices
+                 services: DefaultServices
                ): Future[BotResult] = {
     for {
       updatedConversation <- updateWith(event, services)
@@ -96,11 +96,11 @@ trait Conversation {
 
   def maybeNextParamToCollect(
                                event: Event,
-                               services: ConversationServices
+                               services: DefaultServices
                              ): Future[Option[BehaviorParameter]]
 
   def maybeRemindResultAction(
-                               services: ConversationServices
+                               services: DefaultServices
                             ): DBIO[Option[BotResult]] = {
     maybePlaceholderEventAction(services).flatMap { maybeEvent =>
       maybeEvent.map { event =>

@@ -42,14 +42,23 @@ case class RawBehaviorVersion(
 class BehaviorVersionsTable(tag: Tag) extends Table[RawBehaviorVersion](tag, "behavior_versions") {
 
   def id = column[String]("id", O.PrimaryKey)
+
   def behaviorId = column[String]("behavior_id")
+
   def groupVersionId = column[String]("group_version_id")
+
   def maybeDescription = column[Option[String]]("description")
+
   def maybeName = column[Option[String]]("name")
+
   def maybeFunctionBody = column[Option[String]]("code")
+
   def maybeResponseTemplate = column[Option[String]]("response_template")
+
   def forcePrivateResponse = column[Boolean]("private_response")
+
   def maybeAuthorId = column[Option[String]]("author_id")
+
   def createdAt = column[OffsetDateTime]("created_at")
 
   def * =
@@ -67,6 +76,7 @@ class BehaviorVersionServiceImpl @Inject() (
                                     ) extends BehaviorVersionService {
 
   def dataService = dataServiceProvider.get
+
   def lambdaService = lambdaServiceProvider.get
 
   import BehaviorVersionQueries._
@@ -80,10 +90,11 @@ class BehaviorVersionServiceImpl @Inject() (
 
   def uncompiledCurrentWithFunctionQuery() = {
     allWithGroupVersion.
-      filter { case(_, ((groupVersion, (group, _)), _)) => group.maybeCurrentVersionId === groupVersion.id }.
-      filter { case(((version, _), _), _) => version.maybeFunctionBody.map(_.trim.length > 0).getOrElse(false) }.
-      map { case(((version, _), _), _) => version.id }
+      filter { case (_, ((groupVersion, (group, _)), _)) => group.maybeCurrentVersionId === groupVersion.id }.
+      filter { case (((version, _), _), _) => version.maybeFunctionBody.map(_.trim.length > 0).getOrElse(false) }.
+      map { case (((version, _), _), _) => version.id }
   }
+
   val currentWithFunctionQuery = Compiled(uncompiledCurrentWithFunctionQuery)
 
   def currentFunctionNames: Future[Seq[String]] = {
@@ -94,9 +105,10 @@ class BehaviorVersionServiceImpl @Inject() (
 
   def uncompiledAllForQuery(behaviorId: Rep[String]) = {
     allWithGroupVersion.
-      filter { case(((version, _), _), _) => version.behaviorId === behaviorId }.
-      sortBy { case(((version, _), _), _) => version.createdAt.desc }
+      filter { case (((version, _), _), _) => version.behaviorId === behaviorId }.
+      sortBy { case (((version, _), _), _) => version.createdAt.desc }
   }
+
   val allForQuery = Compiled(uncompiledAllForQuery _)
 
   def allFor(behavior: Behavior): Future[Seq[BehaviorVersion]] = {
@@ -107,8 +119,9 @@ class BehaviorVersionServiceImpl @Inject() (
   }
 
   def uncompiledAllForGroupVersionQuery(groupVersionId: Rep[String]) = {
-    allWithGroupVersion.filter { case(_, ((groupVersion, _), _)) => groupVersion.id === groupVersionId }
+    allWithGroupVersion.filter { case (_, ((groupVersion, _), _)) => groupVersion.id === groupVersionId }
   }
+
   val allForGroupVersionQuery = Compiled(uncompiledAllForGroupVersionQuery _)
 
   def allForGroupVersionAction(groupVersion: BehaviorGroupVersion): DBIO[Seq[BehaviorVersion]] = {
@@ -122,8 +135,9 @@ class BehaviorVersionServiceImpl @Inject() (
   }
 
   def uncompiledAllForTeamQuery(teamId: Rep[String]) = {
-    allWithGroupVersion.filter { case(_, ((_, (_, team)), _)) => team.id === teamId }
+    allWithGroupVersion.filter { case (_, ((_, (_, team)), _)) => team.id === teamId }
   }
+
   val allForTeamQuery = Compiled(uncompiledAllForTeamQuery _)
 
   def allCurrentForTeam(team: Team): Future[Seq[BehaviorVersion]] = {
@@ -134,8 +148,9 @@ class BehaviorVersionServiceImpl @Inject() (
   }
 
   def uncompiledFindQuery(id: Rep[String]) = {
-    allWithGroupVersion.filter { case(((version, _), _), _) => version.id === id }
+    allWithGroupVersion.filter { case (((version, _), _), _) => version.id === id }
   }
+
   val findQuery = Compiled(uncompiledFindQuery _)
 
   def findWithoutAccessCheck(id: String): Future[Option[BehaviorVersion]] = {
@@ -144,8 +159,11 @@ class BehaviorVersionServiceImpl @Inject() (
   }
 
   def uncompiledFindForBehaviorAndGroupVersionQuery(behaviorId: Rep[String], groupVersionId: Rep[String]) = {
-    allWithGroupVersion.filter { case(((behaviorVersion, _), _), ((groupVersion, _), _)) => behaviorVersion.behaviorId === behaviorId && groupVersion.id === groupVersionId }
+    allWithGroupVersion.filter { case (((behaviorVersion, _), _), ((groupVersion, _), _)) => behaviorVersion
+      .behaviorId === behaviorId && groupVersion.id === groupVersionId
+    }
   }
+
   val findForBehaviorAndGroupVersionQuery = Compiled(uncompiledFindForBehaviorAndGroupVersionQuery _)
 
   def findForAction(behavior: Behavior, groupVersion: BehaviorGroupVersion): DBIO[Option[BehaviorVersion]] = {
@@ -159,10 +177,13 @@ class BehaviorVersionServiceImpl @Inject() (
   }
 
   def findCurrentByName(name: String, group: BehaviorGroup): Future[Option[BehaviorVersion]] = {
-    val action = findCurrentByNameQuery(name, group.id).result.map { r =>
+    dataService.run(findCurrentByNameAction(name, group))
+  }
+
+  def findCurrentByNameAction(name: String, group: BehaviorGroup): DBIO[Option[BehaviorVersion]] = {
+    findCurrentByNameQuery(name, group.id).result.map { r =>
       r.headOption.map(tuple2BehaviorVersion)
     }
-    dataService.run(action)
   }
 
   def hasSearchParamAction(behaviorVersion: BehaviorVersion): DBIO[Boolean] = {
@@ -187,13 +208,24 @@ class BehaviorVersionServiceImpl @Inject() (
       None,
       None,
       None,
-      forcePrivateResponse=false,
+      forcePrivateResponse = false,
       maybeUser.map(_.id),
       OffsetDateTime.now
     )
 
     (all += raw).map { _ =>
-      BehaviorVersion(raw.id, behavior, groupVersion, raw.maybeDescription, raw.maybeName, raw.maybeFunctionBody, raw.maybeResponseTemplate, raw.forcePrivateResponse, maybeUser, raw.createdAt)
+      BehaviorVersion(
+        raw.id,
+        behavior,
+        groupVersion,
+        raw.maybeDescription,
+        raw.maybeName,
+        raw.maybeFunctionBody,
+        raw.maybeResponseTemplate,
+        raw.forcePrivateResponse,
+        maybeUser,
+        raw.createdAt
+      )
     }
   }
 
@@ -215,13 +247,15 @@ class BehaviorVersionServiceImpl @Inject() (
           maybeFunctionBody = Some(data.functionBody),
           maybeResponseTemplate = Some(data.responseTemplate),
           forcePrivateResponse = data.config.forcePrivateResponse.exists(identity)
-        ))
+        )
+        )
         maybeAWSConfig <- data.awsConfig.map { c =>
           dataService.awsConfigs.createForAction(updated, c.accessKeyName, c.secretKeyName, c.regionName).map(Some(_))
         }.getOrElse(DBIO.successful(None))
         inputs <- DBIO.sequence(data.inputIds.map { inputId =>
           dataService.inputs.findByInputIdAction(inputId, groupVersion)
-        }).map(_.flatten)
+        }
+        ).map(_.flatten)
         libraries <- dataService.libraries.allForAction(groupVersion)
         _ <- DBIO.from(lambdaService.deployFunctionFor(
           updated,
@@ -231,7 +265,8 @@ class BehaviorVersionServiceImpl @Inject() (
           maybeAWSConfig,
           requiredOAuth2ApiConfigs,
           requiredSimpleTokenApis
-        ))
+        )
+        )
         _ <- dataService.behaviorParameters.ensureForAction(updated, inputs)
         _ <- DBIO.sequence(
           data.triggers.
@@ -246,11 +281,15 @@ class BehaviorVersionServiceImpl @Inject() (
             )
           }
         )
+        _ <- data.dataTypeConfig.map { configData =>
+          dataService.dataTypeConfigs.createForAction(updated, configData)
+        }.getOrElse(DBIO.successful(None))
       } yield Unit
     } yield behaviorVersion
   }
 
   def uncompiledFindQueryFor(id: Rep[String]) = all.filter(_.id === id)
+
   val findQueryFor = Compiled(uncompiledFindQueryFor _)
 
   def saveAction(behaviorVersion: BehaviorVersion): DBIO[BehaviorVersion] = {
@@ -316,10 +355,20 @@ class BehaviorVersionServiceImpl @Inject() (
         !userInfo.links.exists(_.externalSystem == app.name)
       })
       maybeResult <- if (missingTeamEnvVars.nonEmpty) {
-        DBIO.successful(Some(MissingTeamEnvVarsResult(event, None, behaviorVersion, dataService, configuration, missingTeamEnvVars)))
+        DBIO.successful(Some(MissingTeamEnvVarsResult(
+          event,
+          None,
+          behaviorVersion,
+          dataService,
+          configuration,
+          missingTeamEnvVars
+        )
+        )
+        )
       } else {
         notReadyOAuth2Applications.headOption.map { firstNotReadyOAuth2App =>
-          DBIO.successful(Some(RequiredApiNotReady(firstNotReadyOAuth2App, event, None, dataService, configuration)))
+          DBIO.successful(Some(RequiredApiNotReady(firstNotReadyOAuth2App, event, None,  dataService, configuration)
+          ))
         }.getOrElse {
           val missingOAuth2ApplicationsRequiringAuth = missingOAuth2Applications.filter(_.api.grantType.requiresAuth)
           missingOAuth2ApplicationsRequiringAuth.headOption.map { firstMissingOAuth2App =>
@@ -350,7 +399,8 @@ class BehaviorVersionServiceImpl @Inject() (
       userEnvVars <- dataService.userEnvironmentVariables.allForAction(user)
       result <- maybeNotReadyResultForAction(behaviorVersion, event).flatMap { maybeResult =>
         maybeResult.map(DBIO.successful).getOrElse {
-          lambdaService.invokeAction(behaviorVersion, parametersWithValues, (teamEnvVars ++ userEnvVars), event, maybeConversation)
+          lambdaService
+            .invokeAction(behaviorVersion, parametersWithValues, (teamEnvVars ++ userEnvVars), event, maybeConversation)
         }
       }
     } yield result
@@ -374,20 +424,20 @@ class BehaviorVersionServiceImpl @Inject() (
       requiredSimpleTokenApis <- dataService.requiredSimpleTokenApis.allFor(groupVersion)
       libraries <- dataService.libraries.allFor(behaviorVersion.groupVersion)
       _ <- lambdaService.deployFunctionFor(
-              behaviorVersion,
-              behaviorVersion.functionBody,
-              params.map(_.name).toArray,
-              libraries,
-              maybeAWSConfig,
-              requiredOAuth2ApiConfigs,
-              requiredSimpleTokenApis
-            )
+        behaviorVersion,
+        behaviorVersion.functionBody,
+        params.map(_.name).toArray,
+        libraries,
+        maybeAWSConfig,
+        requiredOAuth2ApiConfigs,
+        requiredSimpleTokenApis
+      )
     } yield {}
   }
 
   private def allCurrent: Future[Seq[BehaviorVersion]] = {
     val action = allWithGroupVersion.filter {
-      case(_, ((groupVersion, (group, _)), _)) => groupVersion.id === group.maybeCurrentVersionId
+      case (_, ((groupVersion, (group, _)), _)) => groupVersion.id === group.maybeCurrentVersionId
     }.result.map { r =>
       r.map(tuple2BehaviorVersion)
     }

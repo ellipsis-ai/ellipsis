@@ -26,6 +26,7 @@ trait TestContext extends MockitoSugar{
       overrides(bind[AWSLambdaService].to[MockAWSLambdaService]).
       overrides(bind[EventHandler].toInstance(mock[EventHandler])).
       overrides(bind[GithubService].toInstance(mock[GithubService])).
+      overrides(bind[GraphQLService].toInstance(mock[GraphQLService])).
       overrides(bind[SlackEventService].toInstance(mock[SlackEventService])).
       overrides(bind[BotResultService].toInstance(mock[BotResultService])).
       disable[ActorModule]
@@ -35,7 +36,8 @@ trait TestContext extends MockitoSugar{
   lazy val user: User = newUserFor(teamId)
   lazy implicit val app: Application = appBuilder.build()
   val dataService = app.injector.instanceOf(classOf[DataService])
-  val actorSystem = app.injector.instanceOf(classOf[ActorSystem])
+  val graphQLService = app.injector.instanceOf(classOf[GraphQLService])
+  lazy val actorSystem = app.injector.instanceOf(classOf[ActorSystem])
   val eventHandler = app.injector.instanceOf(classOf[EventHandler])
   val githubService = app.injector.instanceOf(classOf[GithubService])
   val lambdaService = app.injector.instanceOf(classOf[AWSLambdaService])
@@ -44,5 +46,6 @@ trait TestContext extends MockitoSugar{
   val cacheService = app.injector.instanceOf(classOf[CacheService])
   val ws = app.injector.instanceOf(classOf[WSClient])
   val configuration = app.injector.instanceOf(classOf[Configuration])
+  lazy val services = app.injector.instanceOf(classOf[DefaultServices])
 
 }

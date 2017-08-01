@@ -72,11 +72,12 @@ case class BehaviorGroupData(
     val libraryVersionsWithIds = libraryVersions.map(ea => ea.copyWithNewIdIn(oldToNewIdMapping))
     val actionInputsForNewVersion = actionInputsWithIds.map(_.copyWithParamTypeIdsIn(oldToNewIdMapping))
     val dataTypeInputsForNewVersion = dataTypeInputsWithIds.map(_.copyWithParamTypeIdsIn(oldToNewIdMapping))
+    val behaviorVersionsForNewVersion = behaviorVersionsWithIds.map(_.copyWithParamTypeIdsIn(oldToNewIdMapping))
     copy(
       id = Some(group.id),
       actionInputs = actionInputsForNewVersion,
       dataTypeInputs = dataTypeInputsForNewVersion,
-      behaviorVersions = behaviorVersionsWithIds,
+      behaviorVersions = behaviorVersionsForNewVersion,
       libraryVersions = libraryVersionsWithIds
     )
   }
@@ -162,7 +163,7 @@ object BehaviorGroupData {
 
   def maybeFor(id: String, user: User, maybeGithubUrl: Option[String], dataService: DataService): Future[Option[BehaviorGroupData]] = {
     for {
-      maybeGroup <- dataService.behaviorGroups.find(id)
+      maybeGroup <- dataService.behaviorGroups.findWithoutAccessCheck(id)
       maybeLatestGroupVersion <- maybeGroup.flatMap { group =>
         group.maybeCurrentVersionId.map { versionId =>
           dataService.behaviorGroupVersions.findWithoutAccessCheck(versionId)

@@ -3,12 +3,13 @@ package models
 import drivers.SlickPostgresDriver.api.{Database => PostgresDatabase}
 import json.{BehaviorGroupData, BehaviorParameterTypeData, BehaviorVersionData}
 import models.behaviors.behaviorgroup.BehaviorGroup
+import models.behaviors.behaviorparameter.{BehaviorParameterType, NumberType, TextType}
 import support.DBSpec
 
 class BehaviorGroupVersionSpec extends DBSpec {
 
   def reloadGroup(db: PostgresDatabase, group: BehaviorGroup): BehaviorGroup = {
-    runNow(dataService.behaviorGroups.find(group.id)).get
+    runNow(dataService.behaviorGroups.findWithoutAccessCheck(group.id)).get
   }
 
   "createFor" should {

@@ -8,8 +8,8 @@ import models.behaviors.conversations.conversation.Conversation
 import models.team.Team
 import play.api.Configuration
 import play.api.libs.ws.WSClient
-import services.{AWSLambdaConstants, AWSLambdaService, CacheService, DataService}
 import slack.api.SlackApiClient
+import services.{AWSLambdaConstants, DataService, DefaultServices}
 import utils.SlackMessageSender
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -67,13 +67,9 @@ case class RunEvent(
   def allBehaviorResponsesFor(
                                maybeTeam: Option[Team],
                                maybeLimitToBehavior: Option[Behavior],
-                               lambdaService: AWSLambdaService,
-                               dataService: DataService,
-                               cacheService: CacheService,
-                               ws: WSClient,
-                               configuration: Configuration,
-                               actorSystem: ActorSystem
+                               services: DefaultServices
                              ): Future[Seq[BehaviorResponse]] = {
+    val dataService = services.dataService
     for {
       maybeBehaviorVersion <- dataService.behaviors.maybeCurrentVersionFor(behavior)
       responses <- maybeBehaviorVersion.map { behaviorVersion =>

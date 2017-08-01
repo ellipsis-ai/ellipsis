@@ -11,11 +11,15 @@ define(function() {
     'shouldComponentUpdate'
   ];
 
-  return function(context) {
-    Object.getOwnPropertyNames(Object.getPrototypeOf(context)).forEach((propName) => {
-      if (typeof context[propName] === "function" && !blacklist.includes(propName)) {
-        context[propName] = context[propName].bind(context);
-      }
-    });
-  };
+  class Autobind {
+    static bindInstanceMethods(instance) {
+      Object.getOwnPropertyNames(Object.getPrototypeOf(instance)).forEach((propName) => {
+        if (typeof instance[propName] === "function" && !blacklist.includes(propName)) {
+          instance[propName] = instance[propName].bind(instance);
+        }
+      });
+    }
+  }
+
+  return Autobind.bindInstanceMethods;
 });

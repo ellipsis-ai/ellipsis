@@ -3,13 +3,10 @@ package actors
 import java.time.OffsetDateTime
 import javax.inject.Inject
 
-import akka.actor.{Actor, ActorSystem}
+import akka.actor.Actor
 import drivers.SlickPostgresDriver.api._
-import models.behaviors.BotResultService
-import models.behaviors.conversations.ConversationServices
-import play.api.libs.ws.WSClient
-import play.api.{Configuration, Logger}
-import services.{AWSLambdaService, CacheService, DataService, SlackEventService}
+import play.api.Logger
+import services.DefaultServices
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -19,16 +16,10 @@ object ConversationReminderActor {
   final val name = "conversationReminder"
 }
 
-class ConversationReminderActor @Inject()(
-                                          val lambdaService: AWSLambdaService,
-                                          val dataService: DataService,
-                                          val slackEventService: SlackEventService,
-                                          val cacheService: CacheService,
-                                          val ws: WSClient,
-                                          val configuration: Configuration,
-                                          val botResultService: BotResultService,
-                                          implicit val actorSystem: ActorSystem
-                                        ) extends Actor {
+class ConversationReminderActor @Inject()(val services: DefaultServices) extends Actor {
+
+  val dataService = services.dataService
+  implicit val actorSystem = services.actorSystem
 
   // initial delay of 1 minute so that, in the case of errors & actor restarts, it doesn't hammer external APIs
   val tick = context.system.scheduler.schedule(1 minute, 1 minute, self, "tick")
@@ -41,10 +32,9 @@ class ConversationReminderActor @Inject()(
     val action: DBIO[Boolean] = dataService.conversations.maybeNextNeedingReminderAction(when).flatMap { maybeNext =>
       maybeNext.map { convo =>
         dataService.conversations.touchAction(convo).flatMap { _ =>
-          val services = ConversationServices(dataService, lambdaService, slackEventService, cacheService, configuration, ws, actorSystem)
           convo.maybeRemindResultAction(services).flatMap { maybeResult =>
             maybeResult.map { result =>
-              botResultService.sendInAction(result, None, None).map(_ => true)
+              services.botResultService.sendInAction(result, None, None).map(_ => true)
             }.getOrElse(DBIO.successful(true))
           }
         }

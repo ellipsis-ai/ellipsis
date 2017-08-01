@@ -18,6 +18,12 @@ object Formatting {
   implicit val inputReads = Json.reads[InputData]
   implicit val inputWrites = Json.writes[InputData]
 
+  implicit val dataTypeFieldReads = Json.reads[DataTypeFieldData]
+  implicit val dataTypeFieldWrites = Json.writes[DataTypeFieldData]
+
+  implicit val dataTypeConfigReads = Json.reads[DataTypeConfigData]
+  implicit val dataTypeConfigWrites = Json.writes[DataTypeConfigData]
+
   implicit val libraryVersionReads = Json.reads[LibraryVersionData]
   implicit val libraryVersionWrites = Json.writes[LibraryVersionData]
 
@@ -109,6 +115,9 @@ object Formatting {
   implicit val teamTimeZoneDataWrites = Json.writes[TeamTimeZoneData]
 
   implicit val cityInfoDataWrites = Json.writes[CityInfo]
+
+  implicit val defaultStorageItemDataReads = Json.reads[DefaultStorageItemData]
+  implicit val defaultStorageItemDataWrites = Json.writes[DefaultStorageItemData]
 
   implicit val slackBotProfileReads = Json.reads[SlackBotProfile]
   implicit val slackBotProfileWrites = Json.writes[SlackBotProfile]

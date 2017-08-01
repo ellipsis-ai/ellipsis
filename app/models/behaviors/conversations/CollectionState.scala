@@ -2,6 +2,7 @@ package models.behaviors.conversations
 
 import models.behaviors.BotResult
 import models.behaviors.conversations.conversation.Conversation
+import services.DefaultServices
 import models.behaviors.events.Event
 import slick.dbio.DBIO
 
@@ -11,8 +12,8 @@ trait CollectionState {
 
   val name: String
 
+  val services: DefaultServices
   val event: Event
-  val services: ConversationServices
 
   def isCompleteIn(conversation: Conversation): Future[Boolean]
   def collectValueFrom(conversation: InvokeBehaviorConversation): Future[Conversation]

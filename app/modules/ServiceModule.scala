@@ -25,6 +25,9 @@ import models.behaviors.config.requiredoauth2apiconfig.{RequiredOAuth2ApiConfigS
 import models.behaviors.config.requiredsimpletokenapi.{RequiredSimpleTokenApiService, RequiredSimpleTokenApiServiceImpl}
 import models.behaviors.conversations.collectedparametervalue.{CollectedParameterValueService, CollectedParameterValueServiceImpl}
 import models.behaviors.conversations.conversation.{ConversationService, ConversationServiceImpl}
+import models.behaviors.datatypeconfig.{DataTypeConfigService, DataTypeConfigServiceImpl}
+import models.behaviors.datatypefield.{DataTypeFieldService, DataTypeFieldServiceImpl}
+import models.behaviors.defaultstorageitem.{DefaultStorageItemService, DefaultStorageItemServiceImpl}
 import models.behaviors.events.EventHandler
 import models.behaviors.input.{InputService, InputServiceImpl}
 import models.behaviors.invocationlogentry.{InvocationLogEntryService, InvocationLogEntryServiceImpl}
@@ -65,6 +68,9 @@ class ServiceModule extends AbstractModule with ScalaModule {
     bind[BehaviorGroupVersionService].to[BehaviorGroupVersionServiceImpl]
     bind[BehaviorService].to[BehaviorServiceImpl]
     bind[BehaviorVersionService].to[BehaviorVersionServiceImpl]
+    bind[DataTypeConfigService].to[DataTypeConfigServiceImpl]
+    bind[DataTypeFieldService].to[DataTypeFieldServiceImpl]
+    bind[DefaultStorageItemService].to[DefaultStorageItemServiceImpl]
     bind[BehaviorParameterService].to[BehaviorParameterServiceImpl]
     bind[InputService].to[InputServiceImpl]
     bind[LibraryVersionService].to[LibraryVersionServiceImpl]
@@ -85,6 +91,7 @@ class ServiceModule extends AbstractModule with ScalaModule {
 
     bind[AWSLambdaService].to[AWSLambdaServiceImpl]
     bind[AWSLogsService].to[AWSLogsServiceImpl]
+    bind[GraphQLService].to[GraphQLServiceImpl]
     bind[Models].asEagerSingleton()
     bind[SlackEventService].asEagerSingleton()
     bind[EventHandler].asEagerSingleton()
