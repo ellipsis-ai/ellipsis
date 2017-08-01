@@ -5,9 +5,7 @@ requirejs(['common'], function() {
       var config = Object.assign({}, BehaviorEditorConfiguration, {
         groupData: BehaviorEditorConfiguration.group,
         group: BehaviorGroup.fromJson(BehaviorEditorConfiguration.group),
-        builtinParamTypes: BehaviorEditorConfiguration.builtinParamTypes.map((ea) => {
-          return ParamType.fromJson(ea).clone({ isBuiltIn: true });
-        }),
+        builtinParamTypes: BehaviorEditorConfiguration.builtinParamTypes.map(ParamType.fromJson),
         onSave: onSave,
         onForgetSavedAnswerForInput: resetSavedAnswerForInput
       });

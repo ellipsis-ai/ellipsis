@@ -3,15 +3,15 @@ package models.behaviors.input
 import drivers.SlickPostgresDriver.api._
 import models.behaviors.behaviorgroupversion.BehaviorGroupVersionQueries
 import models.behaviors.behaviorparameter.{BehaviorBackedDataType, BehaviorParameterType, TextType}
-import models.behaviors.behaviorversion.BehaviorVersionQueries
+import models.behaviors.datatypeconfig.DataTypeConfigQueries
 
 object InputQueries {
 
   val all = TableQuery[InputsTable]
   val allWithGroupVersion = all.join(BehaviorGroupVersionQueries.allWithUser).on(_.behaviorGroupVersionId === _._1._1.id)
-  val joined = allWithGroupVersion.joinLeft(BehaviorVersionQueries.allWithGroupVersion).on(_._1.paramType === _._1._1._1.id)
+  val joined = allWithGroupVersion.joinLeft(DataTypeConfigQueries.allWithBehaviorVersion).on(_._1.paramType === _._2._1._1._1.id)
 
-  type TupleType = ((RawInput, BehaviorGroupVersionQueries.TupleType), Option[BehaviorVersionQueries.TupleType])
+  type TupleType = ((RawInput, BehaviorGroupVersionQueries.TupleType), Option[DataTypeConfigQueries.TupleType])
 
   def tuple2Input(tuple: TupleType): Input = {
     val raw = tuple._1._1
@@ -19,7 +19,7 @@ object InputQueries {
     val paramType =
       BehaviorParameterType.
         findBuiltIn(raw.paramType).
-        orElse(tuple._2.map { dataTypeBehaviorVersion => BehaviorBackedDataType(BehaviorVersionQueries.tuple2BehaviorVersion(dataTypeBehaviorVersion)) }).
+        orElse(tuple._2.map { config => BehaviorBackedDataType(DataTypeConfigQueries.tuple2Config(config)) }).
         getOrElse(TextType)
     Input(raw.id, raw.inputId, raw.maybeExportId, raw.name, raw.maybeQuestion, paramType, raw.isSavedForTeam, raw.isSavedForUser, groupVersion)
   }

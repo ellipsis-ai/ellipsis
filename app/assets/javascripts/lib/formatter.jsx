@@ -89,6 +89,18 @@ define(function(require) {
         return list.slice(0, list.length - 1).map(mapper).join(", ") +
             ", and " + list.slice(list.length - 1).map(mapper).join("");
       }
+    },
+
+    formatPossibleNumber: function(value) {
+      const minus = value.charAt(0) === "-" ? "-" : "";
+      const stripped = value
+        .replace(/[^\d.]/g, "")
+        .replace(/^0+/, "0")
+        .replace(/^0+([1-9])/, "$1");
+      const pieces = stripped.split(".");
+      const beforeDecimal = pieces[0];
+      const afterDecimal = pieces.length > 1 ? "." + pieces.slice(1).join("") : "";
+      return minus + beforeDecimal + afterDecimal;
     }
   };
 

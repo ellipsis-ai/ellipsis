@@ -45,11 +45,11 @@ class BehaviorGroupServiceSpec extends DBSpec {
         reloadedGroupVersions.foreach { groupVersion =>
           runNow(dataService.behaviors.allForGroup(groupVersion.group)) mustBe empty
           runNow(dataService.inputs.allForGroupVersion(groupVersion)) mustBe empty
-          runNow(dataService.behaviorGroups.find(groupVersion.group.id)) mustBe empty
+          runNow(dataService.behaviorGroups.findWithoutAccessCheck(groupVersion.group.id)) mustBe empty
         }
         runNow(dataService.behaviors.allForGroup(merged)) must have length 9
         runNow(dataService.inputs.allForGroupVersion(mergedVersion)) must have length 9
-        runNow(dataService.behaviorGroups.find(merged.id)) must not be empty
+        runNow(dataService.behaviorGroups.findWithoutAccessCheck(merged.id)) must not be empty
       })
     }
 

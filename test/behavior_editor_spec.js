@@ -21,6 +21,7 @@ describe('BehaviorEditor', () => {
       actionInputs: [],
       behaviorVersions: [
         {
+          id: "123abcdef",
           behaviorId: "1",
           functionBody: "onSuccess('Woot')",
           responseTemplate: "{successResult}",
@@ -243,7 +244,9 @@ describe('BehaviorEditor', () => {
       expect(editor.renderNormalBehavior).toBeCalled();
     });
     it("renders the data type editor when isDataType is true", () => {
-      editorConfig.group.behaviorVersions[0].config.isDataType = true;
+      const bv = editorConfig.group.behaviorVersions[0];
+      bv.config.isDataType = true;
+      bv.dataTypeConfig = { fields: [] };
       let editor = createEditor(editorConfig);
       editor.renderDataTypeBehavior = jest.fn();
       editor.renderNormalBehavior = jest.fn();

@@ -14,8 +14,9 @@ var React = require('react'),
   CodeEditorHelp = require('./code_editor_help'),
   ConfirmActionPanel = require('../panels/confirm_action'),
   CollapseButton = require('../shared_ui/collapse_button'),
-  DataTypeCodeEditorHelp = require('./data_type_code_editor_help'),
-  DataTypeResultConfig = require('./data_type_result_config'),
+  DataTypeEditor = require('./data_type_editor'),
+  DefaultStorageAdder = require('./default_storage_adder'),
+  DefaultStorageBrowser = require('./default_storage_browser'),
   DynamicLabelButton = require('../form/dynamic_label_button'),
   EnvVariableAdder = require('../environment_variables/adder'),
   EnvVariableSetter = require('../environment_variables/setter'),
@@ -356,7 +357,7 @@ const BehaviorEditor = React.createClass({
   },
 
   buildDataTypeNotifications: function() {
-    return this.getParamTypesNeedingConfiguration().map(ea => {
+    const needsConfig = this.getParamTypesNeedingConfiguration().map(ea => {
       const behaviorVersion = this.getBehaviorGroup().behaviorVersions.find(bv => bv.id === ea.id);
       const behaviorId = behaviorVersion ? behaviorVersion.behaviorId : null;
       return new NotificationData({
@@ -365,6 +366,81 @@ const BehaviorEditor = React.createClass({
         onClick: () => this.onSelect(this.getBehaviorGroup().id, behaviorId)
       });
     });
+
+    const dataTypes = this.getDataTypeBehaviors();
+
+    const unnamedDataTypes = dataTypes
+      .filter((ea) => !ea.getName().trim())
+      .map((ea) => {
+        return new NotificationData({
+          kind: "data_type_unnamed",
+          onClick: () => {
+            this.onSelect(this.getBehaviorGroup().id, ea.behaviorId, () => {
+              if (this.refs.editableNameInput) {
+                this.refs.editableNameInput.focus();
+              }
+            });
+          }
+        });
+      });
+
+    const missingFields = dataTypes
+      .filter((ea) => ea.getDataTypeConfig().isMissingFields())
+      .map((ea) => {
+        return new NotificationData({
+          kind: "data_type_missing_fields",
+          name: ea.getName(),
+          onClick: () => {
+            this.onSelect(this.getBehaviorGroup().id, ea.behaviorId, () => {
+              if (this.refs.dataTypeEditor) {
+                this.refs.dataTypeEditor.addNewDataTypeField();
+              }
+            });
+          }
+        });
+      });
+
+    const unnamedFields = dataTypes
+      .filter((dataType) => dataType.requiresFields() && dataType.getDataTypeFields().some((field) => !field.name))
+      .map((ea) => {
+        return new NotificationData({
+          kind: "data_type_unnamed_fields",
+          name: ea.getName(),
+          onClick: () => {
+            this.onSelect(this.getBehaviorGroup().id, ea.behaviorId, () => {
+              if (this.refs.dataTypeEditor) {
+                this.refs.dataTypeEditor.focusOnFirstBlankField();
+              }
+            });
+          }
+        });
+      });
+
+    const duplicateFields = dataTypes
+      .filter((dataType) => {
+        if (dataType.requiresFields()) {
+          const names = dataType.getDataTypeFields().map((ea) => ea.name).filter((ea) => ea.length > 0);
+          const uniqueNames = new Set(names);
+          return uniqueNames.size < names.length;
+        } else {
+          return false;
+        }
+      })
+      .map((ea) => {
+        return new NotificationData({
+          kind: "data_type_duplicate_fields",
+          name: ea.getName(),
+          onClick: () => {
+            this.onSelect(this.getBehaviorGroup().id, ea.behaviorId, () => {
+              if (this.refs.dataTypeEditor) {
+                this.refs.dataTypeEditor.focusOnDuplicateField();
+              }
+            });
+          }
+        });
+      });
+
+    return [].concat(needsConfig, unnamedDataTypes, missingFields, unnamedFields, duplicateFields);
   },
 
   getValidParamNamesForTemplate: function() {
@@ -420,6 +496,11 @@ const BehaviorEditor = React.createClass({
   getParamTypes: function() {
     var customTypes = Sort.arrayAlphabeticalBy(this.getBehaviorGroup().getCustomParamTypes(), (ea) => ea.name);
     return this.props.builtinParamTypes.concat(customTypes);
+  },
+
+  getParamTypesForDataTypes: function() {
+    // TODO: use getParamTypes instead if we want to support custom data types
+    return this.props.builtinParamTypes;
   },
 
   /* Setters/togglers */
@@ -914,15 +995,6 @@ const BehaviorEditor = React.createClass({
     });
   },
 
-  updateDataTypeResultConfig: function(shouldUseSearch) {
-    if (shouldUseSearch) {
-      this.addNewInput('searchQuery');
-    } else {
-      this.setEditableProp('inputIds', []);
-    }
-  },
-
-
   updateDescription: function(newDescription) {
     this.setEditableProp('description', newDescription);
   },
@@ -1080,6 +1152,10 @@ const BehaviorEditor = React.createClass({
 
   hasModifiedTemplate: function() {
     return this.state && this.state.hasModifiedTemplate;
+  },
+
+  isTestable: function() {
+    return Boolean(this.getSelectedBehavior() && this.getSelectedBehavior().usesCode());
   },
 
   getActionBehaviors: function() {
@@ -1311,7 +1387,8 @@ const BehaviorEditor = React.createClass({
       selectedSavedAnswerInputId: null,
       behaviorSwitcherVisible: this.isExistingGroup() && !this.windowIsMobile(),
       hasMobileLayout: this.windowIsMobile(),
-      animationDisabled: false
+      animationDisabled: false,
+      lastSavedDataStorageItem: null
     };
   },
 
@@ -1426,6 +1503,28 @@ const BehaviorEditor = React.createClass({
           (this.mobileBehaviorSwitcherIsVisible() ? " mobile-position-behind-scrim " : "") +
           (this.isModified() ? " bg-white " : " bg-light-translucent ")
         }>
+          {this.isDataTypeBehavior() ? (
+            <div>
+              <Collapsible ref="addDataStorageItems" revealWhen={this.props.activePanelName === 'addDataStorageItems'} onChange={this.layoutDidUpdate}>
+                <DefaultStorageAdder
+                  csrfToken={this.props.csrfToken}
+                  behaviorVersion={this.getSelectedBehavior()}
+                  onCancelClick={this.props.onClearActivePanel}
+                />
+              </Collapsible>
+
+              <Collapsible ref="browseDataStorage" revealWhen={this.props.activePanelName === 'browseDataStorage'} onChange={this.layoutDidUpdate}>
+                <DefaultStorageBrowser
+                  csrfToken={this.props.csrfToken}
+                  behaviorVersion={this.getSelectedBehavior()}
+                  behaviorGroupId={this.getBehaviorGroup().id}
+                  onCancelClick={this.props.onClearActivePanel}
+                  isVisible={this.props.activePanelName === 'browseDataStorage'}
+                />
+              </Collapsible>
+            </div>
+          ) : null}
+
           <Collapsible ref="confirmUndo" revealWhen={this.props.activePanelName === 'confirmUndo'} onChange={this.layoutDidUpdate}>
             <ConfirmActionPanel confirmText="Undo changes" onConfirmClick={this.undoChanges} onCancelClick={this.props.onClearActivePanel}>
               <p>This will undo any changes you’ve made since last saving. Are you sure you want to do this?</p>
@@ -1603,7 +1702,7 @@ const BehaviorEditor = React.createClass({
                     <span className="mobile-display-none">Undo changes</span>
                     <span className="mobile-display-only">Undo</span>
                   </button>
-                  {this.getSelectedBehavior() ? (
+                  {this.isTestable() ? (
                     <DynamicLabelButton
                       labels={[{
                         text: 'Test…',
@@ -1668,12 +1767,6 @@ const BehaviorEditor = React.createClass({
           <input type="hidden" name="behaviorGroupIds[0]" value={this.getBehaviorGroup().id || ""} />
         </form>
       </div>
-    );
-  },
-
-  getEditableHeading: function() {
-    return (
-      <h5 className="type-blue-faded mbn">{this.getSelected().getEditorTitle()}</h5>
     );
   },
 
@@ -1989,36 +2082,49 @@ const BehaviorEditor = React.createClass({
         <div className="bg-white pbl" />
         <hr className="mtn mbn thin bg-gray-light" />
 
-        <DataTypeResultConfig
-          usesSearch={this.hasInputNamed('searchQuery')}
-          onChange={this.updateDataTypeResultConfig}
-          isFinishedBehavior={this.isFinishedBehavior()}
+        <DataTypeEditor
+          ref="dataTypeEditor"
+          group={this.getBehaviorGroup()}
+          behaviorVersion={this.getSelectedBehavior()}
+          paramTypes={this.getParamTypesForDataTypes()}
+          inputs={this.getInputs()}
+          onChange={this.setEditableProps}
+          onAddNewInput={this.addNewInput}
+          onConfigureType={this.onConfigureType}
+          isModified={this.editableIsModified}
+
+          activePanelName={this.props.activePanelName}
+          activeDropdownName={this.getActiveDropdown()}
+          onToggleActiveDropdown={this.toggleActiveDropdown}
+          onToggleActivePanel={this.toggleActivePanel}
+          animationIsDisabled={this.animationIsDisabled()}
+
+          onToggleAWSConfig={this.toggleAWSConfig}
+          awsConfig={this.getAWSConfig()}
+          onAWSAddNewEnvVariable={this.onAWSAddNewEnvVariable}
+          onAWSConfigChange={this.setAWSEnvVar}
+
+          apiSelector={this.renderAPISelector()}
+          systemParams={this.getSystemParams()}
+          apiApplications={this.getApiApplications()}
+
+          onCursorChange={this.ensureCursorVisible}
+          useLineWrapping={this.state.codeEditorUseLineWrapping}
+          onToggleCodeEditorLineWrapping={this.toggleCodeEditorLineWrapping}
+
+          envVariableNames={this.getEnvVariableNames()}
         />
-
-        <hr className="man thin bg-gray-light" />
-
-          {this.renderCodeEditor({
-            sectionNumber: "2",
-            sectionHeading: "Run code to generate a list",
-            codeEditorHelp: (
-              <div className="mbxl">
-                <DataTypeCodeEditorHelp
-                  functionBody={this.getFunctionBody()}
-                  usesSearch={this.hasInputNamed('searchQuery')}
-                  isFinishedBehavior={this.isFinishedBehavior()}
-                />
-              </div>
-            )
-          })}
       </div>
     );
   },
 
-  renderForBehaviorType: function() {
-    if (this.isDataTypeBehavior()) {
+  renderForSelected: function(selected) {
+    if (selected.isDataType()) {
       return this.renderDataTypeBehavior();
-    } else {
+    } else if (selected.isBehaviorVersion()) {
       return this.renderNormalBehavior();
+    } else if (selected.isLibraryVersion()) {
+      return this.renderLibrary();
     }
   },
 
@@ -2057,40 +2163,28 @@ const BehaviorEditor = React.createClass({
   },
 
   renderEditor: function() {
-    if (this.getSelectedBehavior()) {
+    const selected = this.getSelected();
+    if (selected) {
       return (
         <div>
           <div className="container container-wide ptl bg-white">
-            {this.getEditableHeading()}
+            <h5 className="type-blue-faded mbn">{selected.getEditorTitle()}</h5>
           </div>
 
           {this.renderNameAndManagementActions()}
-
-          {this.renderForBehaviorType()}
-        </div>
-      );
-    } else if (this.getSelectedLibrary()) {
-      return (
-        <div>
-          <div className="container container-wide ptl bg-white">
-            {this.getEditableHeading()}
-          </div>
-          {this.renderNameAndManagementActions()}
-          {this.renderLibrary()}
+          {this.renderForSelected(selected)}
         </div>
       );
     } else {
       return (
-        <div>
-          <BehaviorGroupEditor
-            group={this.getBehaviorGroup()}
-            isModified={this.isModified()}
-            onBehaviorGroupNameChange={this.onBehaviorGroupNameChange}
-            onBehaviorGroupDescriptionChange={this.onBehaviorGroupDescriptionChange}
-            onBehaviorGroupIconChange={this.onBehaviorGroupIconChange}
-            onDeleteClick={this.confirmDeleteBehaviorGroup}
-          />
-        </div>
+        <BehaviorGroupEditor
+          group={this.getBehaviorGroup()}
+          isModified={this.isModified()}
+          onBehaviorGroupNameChange={this.onBehaviorGroupNameChange}
+          onBehaviorGroupDescriptionChange={this.onBehaviorGroupDescriptionChange}
+          onBehaviorGroupIconChange={this.onBehaviorGroupIconChange}
+          onDeleteClick={this.confirmDeleteBehaviorGroup}
+        />
       );
     }
   },

@@ -6,7 +6,7 @@ import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.events.Event
 import models.behaviors.savedanswer.SavedAnswer
 import models.behaviors.{BotResult, SimpleTextResult}
-import services.AWSLambdaConstants
+import services.{AWSLambdaConstants, DefaultServices}
 import slick.dbio.DBIO
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -17,7 +17,7 @@ case class ParamCollectionState(
                                  collected: Seq[CollectedParameterValue],
                                  savedAnswers: Seq[SavedAnswer],
                                  event: Event,
-                                 services: ConversationServices
+                                 services: DefaultServices
                                ) extends CollectionState {
 
   val name = InvokeBehaviorConversation.COLLECT_PARAM_VALUES_STATE
@@ -30,7 +30,7 @@ case class ParamCollectionState(
     }
 
     val eventualWithHasValidValue = Future.sequence(tuples.map { case(param, maybeCollected, maybeSaved) =>
-      val paramContext = BehaviorParameterContext(event, Some(conversation), param, services.cacheService, services.dataService, services.slackEventService, services.configuration, services.actorSystem)
+      val paramContext = BehaviorParameterContext(event, Some(conversation), param, services)
       val maybeValue = maybeCollected.map(_.valueString).orElse(maybeSaved.map(_.valueString))
       val eventualHasValidValue = maybeValue.map { valueString =>
         param.paramType.isValid(valueString, paramContext)
@@ -67,8 +67,8 @@ case class ParamCollectionState(
     for {
       maybeNextToCollect <- maybeNextToCollect(conversation)
       updatedConversation <- maybeNextToCollect.map { case(param, maybeValue) =>
-        val paramContext = BehaviorParameterContext(event, Some(conversation), param, services.cacheService, services.dataService, services.slackEventService, services.configuration, services.actorSystem)
-        param.paramType.handleCollected(event, paramContext).map(_ => conversation)
+        val context = BehaviorParameterContext(event, Some(conversation), param, services)
+        param.paramType.handleCollected(event, context).map(_ => conversation)
       }.getOrElse(Future.successful(conversation))
       updatedConversation <- updatedConversation.updateToNextState(event, services)
     } yield updatedConversation
@@ -78,7 +78,7 @@ case class ParamCollectionState(
     for {
       maybeNextToCollect <- DBIO.from(maybeNextToCollect(conversation))
       result <- maybeNextToCollect.map { case(param, maybeValue) =>
-        val paramContext = BehaviorParameterContext(event, Some(conversation), param, services.cacheService, services.dataService, services.slackEventService, services.configuration, services.actorSystem)
+        val paramContext = BehaviorParameterContext(event, Some(conversation), param, services)
         param.promptAction(maybeValue, paramContext, this, isReminding)
       }.getOrElse {
         DBIO.successful("All done!")
@@ -95,7 +95,7 @@ object ParamCollectionState {
   def fromAction(
                   conversation: Conversation,
                   event: Event,
-                  services: ConversationServices
+                  services: DefaultServices
                 ): DBIO[ParamCollectionState] = {
     val dataService = services.dataService
     for {
@@ -109,7 +109,7 @@ object ParamCollectionState {
   def from(
             conversation: Conversation,
             event: Event,
-            services: ConversationServices
+            services: DefaultServices
           ): Future[ParamCollectionState] = {
     services.dataService.run(fromAction(conversation, event, services))
   }

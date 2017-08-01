@@ -2,7 +2,6 @@ package controllers
 
 import javax.inject.Inject
 
-import akka.actor.ActorSystem
 import com.mohiva.play.silhouette.api.Silhouette
 import models.behaviors.{BehaviorResponse, BotResultService}
 import models.behaviors.builtins.DisplayHelpBehavior
@@ -10,15 +9,14 @@ import models.behaviors.events.SlackMessageActionConstants._
 import models.behaviors.events.{EventHandler, SlackMessageEvent}
 import models.help.HelpGroupSearchValue
 import models.silhouette.EllipsisEnv
+import play.api.Logger
 import play.api.data.Form
 import play.api.data.Forms._
 import play.api.i18n.MessagesApi
 import play.api.libs.json._
-import play.api.libs.ws.WSClient
 import play.api.mvc.{Action, AnyContent, Request, Result}
-import play.api.{Configuration, Logger}
 import play.utils.UriEncoding
-import services.{AWSLambdaService, CacheService, DataService, SlackEventService}
+import services._
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -26,16 +24,16 @@ import scala.concurrent.Future
 class SlackController @Inject() (
                                   val messagesApi: MessagesApi,
                                   val silhouette: Silhouette[EllipsisEnv],
-                                  val configuration: Configuration,
-                                  val dataService: DataService,
-                                  val slackEventService: SlackEventService,
-                                  val lambdaService: AWSLambdaService,
-                                  val cacheService: CacheService,
-                                  val ws: WSClient,
                                   val eventHandler: EventHandler,
-                                  val botResultService: BotResultService,
-                                  implicit val actorSystem: ActorSystem
+                                  val slackEventService: SlackEventService,
+                                  val services: DefaultServices
                                 ) extends EllipsisController {
+
+  val dataService = services.dataService
+  val configuration = services.configuration
+  val lambdaService = services.lambdaService
+  val cacheService = services.cacheService
+  implicit val actorSystem = services.actorSystem
 
   def add = silhouette.UserAwareAction { implicit request =>
     val maybeResult = for {
@@ -509,7 +507,7 @@ class SlackController @Inject() (
                       cacheService.getEvent(convo.pendingEventKey).map { event =>
                         eventHandler.handle(event, None).flatMap { results =>
                           Future.sequence(
-                            results.map(result => botResultService.sendIn(result, None).map { _ =>
+                            results.map(result => services.botResultService.sendIn(result, None).map { _ =>
                               Logger.info(event.logTextFor(result))
                             })
                           )

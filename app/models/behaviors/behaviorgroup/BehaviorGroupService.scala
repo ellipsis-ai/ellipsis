@@ -15,7 +15,11 @@ trait BehaviorGroupService {
 
   def allWithNoNameFor(team: Team): Future[Seq[BehaviorGroup]]
 
-  def find(id: String): Future[Option[BehaviorGroup]]
+  def findWithoutAccessCheck(id: String): Future[Option[BehaviorGroup]]
+
+  def find(id: String, user: User): Future[Option[BehaviorGroup]]
+
+  def findForInvocationToken(tokenId: String): Future[Option[BehaviorGroup]]
 
   def merge(groups: Seq[BehaviorGroup], user: User): Future[BehaviorGroup]
 

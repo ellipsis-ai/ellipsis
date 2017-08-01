@@ -39,14 +39,6 @@ trait AWSLambdaService extends AWSService {
                     maybeConversation: Option[Conversation]
                   ): DBIO[BotResult]
 
-  def invoke(
-              behaviorVersion: BehaviorVersion,
-              parametersWithValues: Seq[ParameterWithValue],
-              environmentVariables: Seq[EnvironmentVariable],
-              event: Event,
-              maybeConversation: Option[Conversation]
-              ): Future[BotResult]
-
   def deleteFunction(functionName: String): Future[Unit]
   def deployFunctionFor(
                          behaviorVersion: BehaviorVersion,

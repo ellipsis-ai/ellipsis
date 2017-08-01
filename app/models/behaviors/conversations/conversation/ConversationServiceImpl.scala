@@ -7,10 +7,9 @@ import akka.actor.ActorSystem
 import com.google.inject.Provider
 import drivers.SlickPostgresDriver.api._
 import models.behaviors.BotResultService
-import models.behaviors.conversations.ConversationServices
 import play.api.Configuration
 import play.api.libs.ws.WSClient
-import services.{AWSLambdaService, CacheService, DataService, SlackEventService}
+import services._
 import slick.dbio.DBIO
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -54,24 +53,17 @@ class ConversationsTable(tag: Tag) extends Table[RawConversation](tag, Conversat
 }
 
 class ConversationServiceImpl @Inject() (
-                                          dataServiceProvider: Provider[DataService],
-                                          slackEventServiceProvier: Provider[SlackEventService],
-                                          lambdaServiceProvider: Provider[AWSLambdaService],
-                                          cacheServiceProvider: Provider[CacheService],
-                                          wsProvider: Provider[WSClient],
-                                          configurationProvider: Provider[Configuration],
-                                          botResultServiceProvider: Provider[BotResultService],
-                                          actorSystem: ActorSystem
+                                          servicesProvider: Provider[DefaultServices]
                                          ) extends ConversationService {
 
-  def dataService: DataService = dataServiceProvider.get
-  def slackEventService: SlackEventService = slackEventServiceProvier.get
-  def lambdaService: AWSLambdaService = lambdaServiceProvider.get
-  def cacheService: CacheService = cacheServiceProvider.get
-  def ws: WSClient = wsProvider.get
-  def configuration: Configuration = configurationProvider.get
-  def botResultService: BotResultService = botResultServiceProvider.get
-  def services: ConversationServices = ConversationServices(dataService, lambdaService, slackEventService, cacheService, configuration, ws, actorSystem)
+  def services: DefaultServices = servicesProvider.get
+  def dataService: DataService = services.dataService
+  def lambdaService: AWSLambdaService = services.lambdaService
+  def ws: WSClient = services.ws
+  def configuration: Configuration = services.configuration
+  def slackEventService: SlackEventService = services.slackEventService
+  def cacheService: CacheService = services.cacheService
+  def botResultService: BotResultService = services.botResultService
 
   import ConversationQueries._
 

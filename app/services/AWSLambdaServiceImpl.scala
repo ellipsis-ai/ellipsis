@@ -202,16 +202,6 @@ class AWSLambdaServiceImpl @Inject() (
     } yield result
   }
 
-  def invoke(
-              behaviorVersion: BehaviorVersion,
-              parametersWithValues: Seq[ParameterWithValue],
-              environmentVariables: Seq[EnvironmentVariable],
-              event: Event,
-              maybeConversation: Option[Conversation]
-              ): Future[BotResult] = {
-    dataService.run(invokeAction(behaviorVersion, parametersWithValues, environmentVariables, event, maybeConversation))
-  }
-
   val amazonServiceExceptionRegex = """.*com\.amazonaws\.AmazonServiceException.*""".r
   val resourceNotFoundExceptionRegex = """com\.amazonaws\.services\.lambda\.model\.ResourceNotFoundException.*""".r
 

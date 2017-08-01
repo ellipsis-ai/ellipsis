@@ -5,10 +5,9 @@ import models.behaviors.behavior.Behavior
 import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.scheduling.Scheduled
 import models.team.Team
-import play.api.Configuration
 import play.api.libs.json.JsObject
 import play.api.libs.ws.WSClient
-import services.{AWSLambdaService, CacheService, DataService}
+import services.{DataService, DefaultServices}
 
 import scala.concurrent.Future
 
@@ -48,13 +47,8 @@ case class ScheduledEvent(underlying: Event, scheduled: Scheduled) extends Event
   def allBehaviorResponsesFor(
                                maybeTeam: Option[Team],
                                maybeLimitToBehavior: Option[Behavior],
-                               lambdaService: AWSLambdaService,
-                               dataService: DataService,
-                               cacheService: CacheService,
-                               ws: WSClient,
-                               configuration: Configuration,
-                               actorSystem: ActorSystem
-                             ) = underlying.allBehaviorResponsesFor(maybeTeam, maybeLimitToBehavior, lambdaService, dataService, cacheService, ws, configuration, actorSystem)
+                               services: DefaultServices
+                             ) = underlying.allBehaviorResponsesFor(maybeTeam, maybeLimitToBehavior, services)
 
   def allOngoingConversations(dataService: DataService) = underlying.allOngoingConversations(dataService)
 

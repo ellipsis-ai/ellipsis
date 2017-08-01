@@ -36,7 +36,7 @@ object BehaviorQueries {
 
   def uncompiledAllForTeamQuery(teamId: Rep[String]) = {
     allWithGroup.
-      filter { case((behavior, team), _) => team.id === teamId }
+      filter { case((_, team), _) => team.id === teamId }
   }
   val allForTeamQuery = Compiled(uncompiledAllForTeamQuery _)
 

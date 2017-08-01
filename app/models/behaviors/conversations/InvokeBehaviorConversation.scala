@@ -9,7 +9,8 @@ import models.behaviors.behaviorversion.BehaviorVersion
 import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.events.{Event, SlackMessageEvent}
 import models.behaviors.triggers.messagetrigger.MessageTrigger
-import services.DataService
+import models.behaviors.{BehaviorResponse, BotResult}
+import services.{DataService, DefaultServices}
 import slick.dbio.DBIO
 import utils.SlackMessageReactionHandler
 
@@ -56,11 +57,11 @@ case class InvokeBehaviorConversation(
     }.head // There should always be a match
   }
 
-  def collectionStatesFor(event: Event, services: ConversationServices): Future[Seq[CollectionState]] = {
+  def collectionStatesFor(event: Event, services: DefaultServices): Future[Seq[CollectionState]] = {
     services.dataService.run(collectionStatesForAction(event, services))
   }
 
-  def collectionStatesForAction(event: Event, services: ConversationServices): DBIO[Seq[CollectionState]] = {
+  def collectionStatesForAction(event: Event, services: DefaultServices): DBIO[Seq[CollectionState]] = {
     for {
       user <- event.ensureUserAction(services.dataService)
       simpleTokenState <- SimpleTokenCollectionState.fromAction(user, this, event, services)
@@ -69,7 +70,7 @@ case class InvokeBehaviorConversation(
     } yield Seq(simpleTokenState, userEnvVarState, paramState)
   }
 
-  def updateToNextState(event: Event, services: ConversationServices): Future[Conversation] = {
+  def updateToNextState(event: Event, services: DefaultServices): Future[Conversation] = {
     for {
       collectionStates <- collectionStatesFor(event, services)
       collectionStatesWithIsComplete <- Future.sequence(collectionStates.map { collectionState =>
@@ -86,7 +87,7 @@ case class InvokeBehaviorConversation(
     } yield updated
   }
 
-  def updateWith(event: Event, services: ConversationServices): Future[Conversation] = {
+  def updateWith(event: Event, services: DefaultServices): Future[Conversation] = {
 
     for {
       collectionStates <- collectionStatesFor(event, services)
@@ -102,7 +103,7 @@ case class InvokeBehaviorConversation(
   def respondAction(
                      event: Event,
                      isReminding: Boolean,
-                     services: ConversationServices
+                     services: DefaultServices
                    ): DBIO[BotResult] = {
     for {
       collectionStates <- collectionStatesForAction(event, services)
@@ -118,7 +119,7 @@ case class InvokeBehaviorConversation(
   def respond(
                event: Event,
                isReminding: Boolean,
-               services: ConversationServices
+               services: DefaultServices
              ): Future[BotResult] = {
     val eventualResponse = services.dataService.run(respondAction(event, isReminding, services))
     event match {
@@ -133,7 +134,7 @@ case class InvokeBehaviorConversation(
 
   def maybeNextParamToCollect(
                                event: Event,
-                               services: ConversationServices
+                               services: DefaultServices
                      ): Future[Option[BehaviorParameter]] = {
     for {
       collectionStates <- collectionStatesFor(event, services)

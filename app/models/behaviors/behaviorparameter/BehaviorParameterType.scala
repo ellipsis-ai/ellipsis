@@ -2,27 +2,27 @@ package models.behaviors.behaviorparameter
 
 import com.fasterxml.jackson.core.JsonParseException
 import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
-import models.behaviors.behaviorversion.BehaviorVersion
 import models.behaviors.conversations.ParamCollectionState
 import models.behaviors.conversations.conversation.Conversation
-import models.behaviors.events.{Event, SlackMessageEvent}
+import models.behaviors.datatypeconfig.DataTypeConfig
+import models.behaviors.datatypefield.FieldTypeForSchema
+import models.behaviors.events.Event
 import models.behaviors.{BotResult, ParameterValue, ParameterWithValue, SuccessResult}
-import models.team.Team
 import play.api.libs.json._
 import services.{AWSLambdaConstants, DataService}
 import slick.dbio.DBIO
-import utils.SlackMessageReactionHandler
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.concurrent.duration._
 
-sealed trait BehaviorParameterType {
+sealed trait BehaviorParameterType extends FieldTypeForSchema {
 
   val id: String
   val exportId: String
   val name: String
   def needsConfig(dataService: DataService): Future[Boolean]
+  val isBuiltIn: Boolean
 
   def isValid(text: String, context: BehaviorParameterContext): Future[Boolean]
 
@@ -88,18 +88,31 @@ sealed trait BehaviorParameterType {
 trait BuiltInType extends BehaviorParameterType {
   lazy val id = name
   lazy val exportId = name
+  val isBuiltIn: Boolean = true
   def needsConfig(dataService: DataService) = Future.successful(false)
   def resolvedValueFor(text: String, context: BehaviorParameterContext): Future[Option[String]] = {
     Future.successful(Some(text))
   }
+  def prepareValue(text: String): JsValue
+  def prepareJsValue(value: JsValue): JsValue
+  def prepareForInvocation(text: String, context: BehaviorParameterContext) = Future.successful(prepareValue(text))
 }
 
 object TextType extends BuiltInType {
   val name = "Text"
 
+  val outputName: String = "String"
+
   def isValid(text: String, context: BehaviorParameterContext) = Future.successful(true)
 
-  def prepareForInvocation(text: String, context: BehaviorParameterContext) = Future.successful(JsString(text))
+  def prepareValue(text: String) = JsString(text)
+  def prepareJsValue(value: JsValue): JsValue = {
+    value match {
+      case s: JsString => s
+      case JsNull => JsNull
+      case v => JsString(v.toString)
+    }
+  }
 
   val invalidPromptModifier: String = "I need a valid answer"
 
@@ -107,6 +120,8 @@ object TextType extends BuiltInType {
 
 object NumberType extends BuiltInType {
   val name = "Number"
+
+  val outputName: String = "Float"
 
   def isValid(text: String, context: BehaviorParameterContext) = Future.successful {
     try {
@@ -117,11 +132,17 @@ object NumberType extends BuiltInType {
     }
   }
 
-  def prepareForInvocation(text: String, context: BehaviorParameterContext) = Future.successful {
-    try {
-      JsNumber(BigDecimal(text))
-    } catch {
-      case e: NumberFormatException => JsString(text)
+  def prepareValue(text: String): JsValue = try {
+    JsNumber(BigDecimal(text))
+  } catch {
+    case e: NumberFormatException => JsString(text)
+  }
+
+  def prepareJsValue(value: JsValue): JsValue = {
+    value match {
+      case n: JsNumber => n
+      case s: JsString => prepareValue(s.value)
+      case v => v
     }
   }
 
@@ -132,6 +153,8 @@ object YesNoType extends BuiltInType {
   val name = "Yes/No"
   val yesStrings = Seq("y", "yes", "yep", "yeah", "t", "true", "sure", "why not")
   val noStrings = Seq("n", "no", "nope", "nah", "f", "false", "no way", "no chance")
+
+  val outputName: String = "Boolean"
 
   def matchStringFor(text: String): String = text.toLowerCase.trim
 
@@ -150,10 +173,18 @@ object YesNoType extends BuiltInType {
     Future.successful(maybeValidValueFor(text).isDefined)
   }
 
-  def prepareForInvocation(text: String, context: BehaviorParameterContext) = Future.successful {
+  def prepareValue(text: String) = {
     maybeValidValueFor(text).map { vv =>
       JsBoolean(vv)
     }.getOrElse(JsString(text))
+  }
+
+  def prepareJsValue(value: JsValue): JsValue = {
+    value match {
+      case b: JsBoolean => b
+      case s: JsString => prepareValue(s.value)
+      case v => v
+    }
   }
 
   val invalidPromptModifier: String = "I need something like 'yes' or 'no'"
@@ -161,12 +192,18 @@ object YesNoType extends BuiltInType {
 
 case class ValidValue(id: String, label: String, data: Map[String, String])
 
-case class BehaviorBackedDataType(behaviorVersion: BehaviorVersion) extends BehaviorParameterType {
+case class BehaviorBackedDataType(dataTypeConfig: DataTypeConfig) extends BehaviorParameterType {
+
+  val behaviorVersion = dataTypeConfig.behaviorVersion
 
   val id = behaviorVersion.id
   override val exportId: String = behaviorVersion.behavior.maybeExportId.getOrElse(id)
   val name = behaviorVersion.maybeName.getOrElse("Unnamed data type")
 
+  val outputName: String = dataTypeConfig.outputName
+  override lazy val inputName: String = dataTypeConfig.inputName
+
+  val isBuiltIn: Boolean = false
 
   implicit val validValueReads = new Reads[ValidValue] {
     def reads(json: JsValue) = {
@@ -210,7 +247,7 @@ case class BehaviorBackedDataType(behaviorVersion: BehaviorVersion) extends Beha
 
   def editLinkFor(context: BehaviorParameterContext) = {
     val behavior = behaviorVersion.behavior
-    val link = context.dataService.behaviors.editLinkFor(behavior.group.id, Some(behavior.id), context.configuration)
+    val link = context.dataService.behaviors.editLinkFor(behavior.group.id, Some(behavior.id), context.services.configuration)
     s"[${context.parameter.paramType.name}]($link)"
   }
 
@@ -334,13 +371,62 @@ case class BehaviorBackedDataType(behaviorVersion: BehaviorVersion) extends Beha
     }
   }
 
-  private def fetchValidValues(maybeSearchQuery: Option[String], context: BehaviorParameterContext): Future[Seq[ValidValue]] = {
-    fetchValidValuesResult(maybeSearchQuery, context).map { maybeResult =>
-      maybeResult.map {
-        case r: SuccessResult => extractValidValues(r)
-        case r: BotResult => Seq()
-      }.getOrElse(Seq())
+  private def fetchValidValuesAction(maybeSearchQuery: Option[String], context: BehaviorParameterContext): DBIO[Seq[ValidValue]] = {
+    if (dataTypeConfig.usesCode) {
+      fetchValidValuesResultAction(maybeSearchQuery, context).map { maybeResult =>
+        maybeResult.map {
+          case r: SuccessResult => extractValidValues(r)
+          case _: BotResult => Seq()
+        }.getOrElse(Seq())
+      }
+    } else {
+      for {
+        maybeLabelField <- context.dataService.dataTypeFields.allForAction(dataTypeConfig).map{ fields =>
+          fields.find(_.isLabel).orElse {
+            fields.find { ea =>
+              !ea.isId && ea.fieldType == TextType
+            }
+          }
+        }
+        filter <- DBIO.successful(maybeSearchQuery.map { searchQuery =>
+          maybeLabelField.map { field =>
+            s"""{ ${field.name}: \"$searchQuery\" }"""
+          }.getOrElse {
+            throw new RuntimeException("Need a valid label field")
+          }
+        }.getOrElse("{}"))
+        query <- dataTypeConfig.outputFieldNamesAction(context.dataService).map { fieldStr =>
+          s"""{
+             |  ${dataTypeConfig.listName}(filter: $filter) {
+             |  $fieldStr
+             |  }
+             |}
+         """.stripMargin
+        }
+        items <- (for {
+          searchQuery <- maybeSearchQuery
+          labelField <- maybeLabelField
+        } yield {
+          context.services.dataService.defaultStorageItems.searchByFieldAction(s"%$searchQuery%", labelField)
+        }).getOrElse {
+          context.services.dataService.defaultStorageItems.allForAction(behaviorVersion.behavior)
+        }
+      } yield {
+        items.map(_.data).flatMap {
+          case ea: JsObject =>
+            val maybeLabel = maybeLabelField.flatMap { labelField => (ea \ labelField.name).asOpt[String] }
+            extractValidValueFrom(Json.toJson(Map(
+              "id" -> JsString(id),
+              "label" -> maybeLabel.map(JsString.apply).getOrElse(JsNull)
+            ) ++ ea.value))
+          case _ => None
+        }
+      }
     }
+  }
+
+  private def fetchValidValues(maybeSearchQuery: Option[String], context: BehaviorParameterContext): Future[Seq[ValidValue]] = {
+    context.dataService.run(fetchValidValuesAction(maybeSearchQuery, context))
   }
 
   private def textMatchesLabel(text: String, label: String, context: BehaviorParameterContext): Boolean = {
@@ -375,34 +461,25 @@ case class BehaviorBackedDataType(behaviorVersion: BehaviorVersion) extends Beha
       superPrompt <- maybeSearchQuery.map { searchQuery =>
         DBIO.successful(s"Here are some options for `$searchQuery`. Type a number to choose an option.")
       }.getOrElse(super.promptForAction(maybePreviousCollectedValue, context, paramState, isReminding))
-      maybeValidValuesResult <- fetchValidValuesResultAction(maybeSearchQuery, context)
-      output <- maybeValidValuesResult.map {
-        case r: SuccessResult => {
-          val validValues = extractValidValues(r)
-          if (validValues.isEmpty) {
-            maybeSearchQuery.map { searchQuery =>
-              val key = searchQueryCacheKeyFor(context.maybeConversation.get, context.parameter)
-              context.cacheService.remove(key)
-              DBIO.successful(s"I couldn't find anything matching `$searchQuery`. Try searching again or type `…stop`.")
-            }.getOrElse {
-              cancelAndRespondForAction(s"This data type isn't returning any values: ${editLinkFor(context)}", context)
-            }
-          } else {
-            context.maybeConversation.foreach { conversation =>
-              context.cacheService.cacheValidValues(valuesListCacheKeyFor(conversation, context.parameter), validValues)
-            }
-            val valuesPrompt = validValues.zipWithIndex.map { case (ea, i) =>
-              s"\n\n$i. ${ea.label}"
-            }.mkString
-            DBIO.successful(superPrompt ++ valuesPrompt)
-          }
+      validValues <- fetchValidValuesAction(maybeSearchQuery, context)
+      output <- if (validValues.isEmpty) {
+        maybeSearchQuery.map { searchQuery =>
+          val key = searchQueryCacheKeyFor(context.maybeConversation.get, context.parameter)
+          context.cacheService.remove(key)
+          DBIO.successful(s"I couldn't find anything matching `$searchQuery`. Try searching again or type `…stop`.")
+        }.getOrElse {
+          cancelAndRespondForAction(s"This data type isn't returning any values: ${editLinkFor(context)}", context)
         }
-        case r: BotResult => cancelAndRespondForAction(r.fullText, context)
-      }.getOrElse {
-        cancelAndRespondForAction(s"This data type appears to be misconfigured: ${editLinkFor(context)}", context)
+      } else {
+        context.maybeConversation.foreach { conversation =>
+          context.cacheService.cacheValidValues(valuesListCacheKeyFor(conversation, context.parameter), validValues)
+        }
+        val valuesPrompt = validValues.zipWithIndex.map { case (ea, i) =>
+          s"\n\n$i. ${ea.label}"
+        }.mkString
+        DBIO.successful(superPrompt ++ valuesPrompt)
       }
     } yield output
-
   }
 
   private def maybeCachedSearchQueryFor(context: BehaviorParameterContext): Option[String] = {
@@ -428,7 +505,13 @@ case class BehaviorBackedDataType(behaviorVersion: BehaviorVersion) extends Beha
   }
 
   private def usesSearchAction(context: BehaviorParameterContext): DBIO[Boolean] = {
-    context.dataService.behaviorVersions.hasSearchParamAction(behaviorVersion)
+    if (dataTypeConfig.usesCode) {
+      context.dataService.behaviorVersions.hasSearchParamAction(behaviorVersion)
+    } else {
+      context.dataService.defaultStorageItems.countForAction(behaviorVersion.behavior).map { count =>
+        count >= BehaviorParameterType.SEARCH_COUNT_THRESHOLD
+      }
+    }
   }
 
   private def usesSearch(context: BehaviorParameterContext): Future[Boolean] = {
@@ -470,6 +553,7 @@ object BehaviorParameterType {
   val ID_PROPERTY = "id"
   val LABEL_PROPERTY = "label"
   val DATA_PROPERTY = "data"
+  val SEARCH_COUNT_THRESHOLD = 10
 
   val allBuiltin = Seq(
     TextType,
@@ -479,17 +563,11 @@ object BehaviorParameterType {
 
   def findBuiltIn(id: String): Option[BehaviorParameterType] = allBuiltin.find(_.id == id)
 
-  def allFor(team: Team, dataService: DataService): Future[Seq[BehaviorParameterType]] = {
-    dataService.behaviorVersions.dataTypesForTeam(team).map { behaviorBacked =>
-      allBuiltin ++ behaviorBacked.map(BehaviorBackedDataType.apply)
-    }
-  }
-
   def allForAction(maybeBehaviorGroupVersion: Option[BehaviorGroupVersion], dataService: DataService): DBIO[Seq[BehaviorParameterType]] = {
     maybeBehaviorGroupVersion.map { groupVersion =>
-      dataService.behaviorVersions.dataTypesForGroupVersionAction(groupVersion)
-    }.getOrElse(DBIO.successful(Seq())).map { behaviorBacked =>
-      allBuiltin ++ behaviorBacked.map(BehaviorBackedDataType.apply)
+      dataService.dataTypeConfigs.allForAction(groupVersion)
+    }.getOrElse(DBIO.successful(Seq())).map { dataTypeConfigs =>
+      allBuiltin ++ dataTypeConfigs.map(BehaviorBackedDataType.apply)
     }
   }
 

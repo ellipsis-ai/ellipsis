@@ -35,6 +35,9 @@ POST        /test_skill_invocation                    @controllers.BehaviorEdito
 POST        /test_behavior_invocation                 @controllers.BehaviorEditorController.testInvocation
 GET         /new_unsaved_behavior/:isDataType/:teamId @controllers.BehaviorEditorController.newUnsavedBehavior(isDataType: Boolean, teamId: String, behaviorId: Option[String] ?= None, name: Option[String] ?= None)
 GET         /new_unsaved_library/:teamId              @controllers.BehaviorEditorController.newUnsavedLibrary(teamId: String, libraryId: Option[String] ?= None)
+POST        /save_default_storage_item                @controllers.BehaviorEditorController.saveDefaultStorageItem
+POST        /query_default_storage                    @controllers.BehaviorEditorController.queryDefaultStorage
+POST        /delete_default_storage_items             @controllers.BehaviorEditorController.deleteDefaultStorageItems
 
 POST        /reset_saved_answer_for_user              @controllers.SavedAnswerController.resetForUser
 POST        /reset_saved_answer_for_all               @controllers.SavedAnswerController.resetForTeam
@@ -104,6 +107,8 @@ POST        /api/unschedule_action                    @controllers.APIController
 POST        /api/say                                  @controllers.APIController.say
 #NOCSRF
 GET         /get_action_logs/:behaviorId/:token       @controllers.InvocationLogController.getLogs(behaviorId: String, token: String, from: Option[String] ?= None, to: Option[String] ?= None, userId: Option[String] ?= None)
+#NOCSRF
+POST        /api/graphql                              @controllers.GraphQLController.query
 
 
 # Map static resources from the /public folder to the /assets URL path

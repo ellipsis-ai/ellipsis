@@ -62,14 +62,6 @@ class MockAWSLambdaService @Inject() (
                                   requiredSimpleTokenApis: Seq[RequiredSimpleTokenApi]
                                 ): Future[Unit] = Future.successful({})
 
-  override def invoke(
-                       behaviorVersion: BehaviorVersion,
-                       parametersWithValues: Seq[ParameterWithValue],
-                       environmentVariables: Seq[EnvironmentVariable],
-                       event: Event,
-                       maybeConversation: Option[Conversation]
-                     ): Future[BotResult] = Future.successful(resultFor(event, maybeConversation))
-
   override def invokeAction(
                        behaviorVersion: BehaviorVersion,
                        parametersWithValues: Seq[ParameterWithValue],

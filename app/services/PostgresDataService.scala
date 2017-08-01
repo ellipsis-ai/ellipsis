@@ -26,6 +26,9 @@ import models.behaviors.config.requiredoauth2apiconfig.RequiredOAuth2ApiConfigSe
 import models.behaviors.config.requiredsimpletokenapi.RequiredSimpleTokenApiService
 import models.behaviors.conversations.collectedparametervalue.CollectedParameterValueService
 import models.behaviors.conversations.conversation.ConversationService
+import models.behaviors.datatypeconfig.DataTypeConfigService
+import models.behaviors.datatypefield.DataTypeFieldService
+import models.behaviors.defaultstorageitem.DefaultStorageItemService
 import models.behaviors.input.InputService
 import models.behaviors.invocationlogentry.InvocationLogEntryService
 import models.behaviors.scheduling.scheduledmessage.ScheduledMessageService
@@ -64,6 +67,9 @@ class PostgresDataService @Inject() (
                                       val behaviorGroupVersionsProvider: Provider[BehaviorGroupVersionService],
                                       val behaviorsProvider: Provider[BehaviorService],
                                       val behaviorVersionsProvider: Provider[BehaviorVersionService],
+                                      val dataTypeConfigsProvider: Provider[DataTypeConfigService],
+                                      val dataTypeFieldsProvider: Provider[DataTypeFieldService],
+                                      val defaultStorageItemsProvider: Provider[DefaultStorageItemService],
                                       val behaviorParametersProvider: Provider[BehaviorParameterService],
                                       val inputsProvider: Provider[InputService],
                                       val librariesProvider: Provider[LibraryVersionService],
@@ -101,6 +107,9 @@ class PostgresDataService @Inject() (
   val behaviorGroupVersions = behaviorGroupVersionsProvider.get
   val behaviors = behaviorsProvider.get
   val behaviorVersions = behaviorVersionsProvider.get
+  val dataTypeConfigs = dataTypeConfigsProvider.get
+  val dataTypeFields = dataTypeFieldsProvider.get
+  val defaultStorageItems = defaultStorageItemsProvider.get
   val behaviorParameters = behaviorParametersProvider.get
   val inputs = inputsProvider.get
   val libraries = librariesProvider.get

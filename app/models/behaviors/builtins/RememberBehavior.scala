@@ -54,6 +54,7 @@ case class RememberBehavior(event: Event, lambdaService: AWSLambdaService, dataS
                 None,
                 None,
                 None,
+                None,
                 dataService
               )
             ),

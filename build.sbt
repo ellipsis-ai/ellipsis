@@ -54,8 +54,10 @@ libraryDependencies ++= Seq(
   "com.atlassian.commonmark" % "commonmark-ext-autolink" % "0.6.0",
   "com.joestelmach" % "natty" % "0.11",
   "com.rockymadden.stringmetric" %% "stringmetric-core" % "0.27.4",
-  "net.logstash.logback" % "logstash-logback-encoder" % "4.0",
-  "com.github.mumoshu" %% "play2-memcached-play25" % "0.8.0"
+  "org.sangria-graphql" %% "sangria" % "1.2.1",
+  "org.sangria-graphql" %% "sangria-play-json" % "1.0.0",
+  "com.github.mumoshu" %% "play2-memcached-play25" % "0.8.0",
+  "net.logstash.logback" % "logstash-logback-encoder" % "4.0"
 )
 
 

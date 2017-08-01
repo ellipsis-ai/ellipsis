@@ -63,6 +63,12 @@ class BehaviorServiceImpl @Inject() (
     }
   }
 
+  def findByNameAction(name: String, group: BehaviorGroup): DBIO[Option[Behavior]] = {
+    dataService.behaviorVersions.findCurrentByNameAction(name, group).map { maybeBehaviorVersion =>
+      maybeBehaviorVersion.map(_.behavior)
+    }
+  }
+
   def findByTrigger(trigger: String, group: BehaviorGroup): Future[Option[Behavior]] = {
     for {
       triggers <- dataService.messageTriggers.allActiveFor(group)

@@ -15,7 +15,11 @@ trait BehaviorService {
 
   def findWithoutAccessCheck(id: String): Future[Option[Behavior]]
 
+  def findWithoutAccessCheckAction(id: String): DBIO[Option[Behavior]]
+
   def findByIdOrName(idOrName: String, group: BehaviorGroup): Future[Option[Behavior]]
+
+  def findByNameAction(name: String, group: BehaviorGroup): DBIO[Option[Behavior]]
 
   def findByIdOrNameOrTrigger(idOrNameOrTrigger: String, group: BehaviorGroup): Future[Option[Behavior]]
 

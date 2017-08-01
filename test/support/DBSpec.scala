@@ -27,7 +27,7 @@ import play.api.inject.bind
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.ws.WSClient
 import play.api.{Application, Configuration}
-import services.{AWSLambdaService, CacheService, GithubService, PostgresDataService, SlackEventService}
+import services._
 
 import scala.concurrent.duration._
 import scala.concurrent.{Await, Future}
@@ -37,6 +37,7 @@ trait DBSpec extends PlaySpec with OneAppPerSuite with MockitoSugar {
   lazy val config = ConfigFactory.load()
   lazy val cacheService = app.injector.instanceOf(classOf[CacheService])
   lazy val configuration = app.injector.instanceOf(classOf[Configuration])
+  lazy val services = app.injector.instanceOf(classOf[DefaultServices])
 
   override implicit lazy val app: Application =
     GuiceApplicationBuilder().
