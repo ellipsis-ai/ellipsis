@@ -71,7 +71,7 @@ object ScheduledActionData {
     /* TODO: once our scheduling models are medium-aware, make this filtering more intelligent for
        users with or without a Slack user ID */
     for {
-      scheduledBehaviors <- dataService.scheduledBehaviors.allForTeam(team)
+      scheduledBehaviors <- dataService.scheduledBehaviors.allActiveForTeam(team)
       scheduledMessages <- dataService.scheduledMessages.allForTeam(team)
     } yield {
       maybeSlackUserId.map { slackUserId =>

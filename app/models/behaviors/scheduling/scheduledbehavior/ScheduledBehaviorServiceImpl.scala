@@ -109,6 +109,26 @@ class ScheduledBehaviorServiceImpl @Inject() (
     dataService.run(action)
   }
 
+  def allActiveForTeam(team: Team): Future[Seq[ScheduledBehavior]] = {
+    for {
+      all <- allForTeam(team)
+      groups <- dataService.behaviorGroups.allFor(team)
+      currentGroupVersions <- Future.sequence(groups.map { g =>
+        g.maybeCurrentVersionId.map { versionId =>
+          dataService.behaviorGroupVersions.findWithoutAccessCheck(versionId)
+        }.getOrElse(Future.successful(None))
+      }).map(_.flatten)
+      currentBehaviorVersions <- Future.sequence(currentGroupVersions.map { gv =>
+        dataService.behaviorVersions.allForGroupVersion(gv)
+      }).map(_.flatten)
+    } yield {
+      val currentBehaviors = currentBehaviorVersions.map(_.behavior)
+      all.filter { ea =>
+        currentBehaviors.contains(ea.behavior)
+      }
+    }
+  }
+
   def uncompiledAllForChannelQuery(teamId: Rep[String], channel: Rep[String]) = {
     allWithUser.
       filter { case((((msg, _), _), _), _) => msg.teamId === teamId }.
@@ -121,6 +141,12 @@ class ScheduledBehaviorServiceImpl @Inject() (
       r.map(tuple2ScheduledBehavior)
     }
     dataService.run(action)
+  }
+
+  def allActiveForChannel(team: Team, channel: String): Future[Seq[ScheduledBehavior]] = {
+    allActiveForTeam(team).map { forTeam =>
+      forTeam.filter(_.maybeChannel.contains(channel))
+    }
   }
 
   def uncompiledFindQueryFor(id: Rep[String]) = {
