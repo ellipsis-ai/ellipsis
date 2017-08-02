@@ -148,6 +148,7 @@ object BehaviorVersionData {
   }
 
   def newUnsavedFor(teamId: String, isDataType: Boolean, maybeName: Option[String], dataService: DataService): BehaviorVersionData = {
+    val maybeDataTypeConfig = maybeDataTypeConfigFor(isDataType, maybeName)
     buildFor(
       Some(IDs.next),
       teamId,
@@ -159,7 +160,7 @@ object BehaviorVersionData {
       "",
       Seq(),
       Seq(BehaviorTriggerData("", requiresMention = true, isRegex = false, caseSensitive = false)),
-      BehaviorConfig(None, maybeName, None, None, maybeDataTypeConfigFor(isDataType, maybeName)),
+      BehaviorConfig(None, maybeName, None, None, isDataType = maybeDataTypeConfig.isDefined, maybeDataTypeConfig),
       None,
       None,
       None,
@@ -175,11 +176,15 @@ object BehaviorVersionData {
                    params: String,
                    triggers: String,
                    configString: String,
-                   maybeDataTypeConfigString: Option[String],
                    maybeGithubUrl: Option[String],
                    dataService: DataService
                    ): BehaviorVersionData = {
     val config = Json.parse(configString).validate[BehaviorConfig].get
+    val configWithDataTypeConfig = if (!config.isDataType || config.dataTypeConfig.isDefined) {
+      config
+    } else {
+      config.copy(dataTypeConfig = Some(DataTypeConfigData(config.name, Seq(), usesCode = Some(true))))
+    }
     BehaviorVersionData.buildFor(
       None,
       teamId,
@@ -191,8 +196,8 @@ object BehaviorVersionData {
       response,
       Json.parse(params).validate[Seq[String]].get,
       Json.parse(triggers).validate[Seq[BehaviorTriggerData]].get,
-      config,
-      config.exportId,
+      configWithDataTypeConfig,
+      configWithDataTypeConfig.exportId,
       maybeGithubUrl,
       createdAt = None,
       dataService
@@ -247,7 +252,14 @@ object BehaviorVersionData {
           AWSConfigData(config.maybeAccessKeyName, config.maybeSecretKeyName, config.maybeRegionName)
         }
         val maybeEnsuredDataTypeConfigData = maybeDataTypeConfigData.orElse(maybeDataTypeConfigFor(behaviorVersion.isDataType, behaviorVersion.maybeName))
-        val config = BehaviorConfig(maybeExportId, behaviorVersion.maybeName, maybeAWSConfigData, Some(behaviorVersion.forcePrivateResponse), maybeEnsuredDataTypeConfigData)
+        val config = BehaviorConfig(
+          maybeExportId,
+          behaviorVersion.maybeName,
+          maybeAWSConfigData,
+          Some(behaviorVersion.forcePrivateResponse),
+          isDataType = maybeEnsuredDataTypeConfigData.isDefined,
+          maybeEnsuredDataTypeConfigData
+        )
 
         BehaviorVersionData.buildFor(
           Some(behaviorVersion.id),

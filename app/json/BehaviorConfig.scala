@@ -5,10 +5,9 @@ case class BehaviorConfig(
                            name: Option[String],
                            aws: Option[AWSConfigData],
                            forcePrivateResponse: Option[Boolean],
+                           isDataType: Boolean,
                            dataTypeConfig: Option[DataTypeConfigData]
                            ) {
-
-  val isDataType: Boolean = dataTypeConfig.isDefined
 
   val knownEnvVarsUsed: Seq[String] = {
     aws.map(_.knownEnvVarsUsed).getOrElse(Seq())
