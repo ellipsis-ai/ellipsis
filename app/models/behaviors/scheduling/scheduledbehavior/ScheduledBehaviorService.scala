@@ -12,9 +12,9 @@ import scala.concurrent.Future
 
 trait ScheduledBehaviorService {
 
-  def allForTeam(team: Team): Future[Seq[ScheduledBehavior]]
+  def allActiveForTeam(team: Team): Future[Seq[ScheduledBehavior]]
 
-  def allForChannel(team: Team, channel: String): Future[Seq[ScheduledBehavior]]
+  def allActiveForChannel(team: Team, channel: String): Future[Seq[ScheduledBehavior]]
 
   def find(id: String): Future[Option[ScheduledBehavior]]
 

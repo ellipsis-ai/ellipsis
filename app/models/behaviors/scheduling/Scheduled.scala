@@ -290,17 +290,17 @@ trait Scheduled {
 
 object Scheduled {
 
-  def allForTeam(team: Team, dataService: DataService): Future[Seq[Scheduled]] = {
+  def allActiveForTeam(team: Team, dataService: DataService): Future[Seq[Scheduled]] = {
     for {
       scheduledMessages <- dataService.scheduledMessages.allForTeam(team)
-      scheduledBehaviors <- dataService.scheduledBehaviors.allForTeam(team)
+      scheduledBehaviors <- dataService.scheduledBehaviors.allActiveForTeam(team)
     } yield scheduledMessages ++ scheduledBehaviors
   }
 
-  def allForChannel(team: Team, channel: String, dataService: DataService): Future[Seq[Scheduled]] = {
+  def allActiveForChannel(team: Team, channel: String, dataService: DataService): Future[Seq[Scheduled]] = {
     for {
       scheduledMessages <- dataService.scheduledMessages.allForChannel(team, channel)
-      scheduledBehaviors <- dataService.scheduledBehaviors.allForChannel(team, channel)
+      scheduledBehaviors <- dataService.scheduledBehaviors.allActiveForChannel(team, channel)
     } yield scheduledMessages ++ scheduledBehaviors
   }
 
