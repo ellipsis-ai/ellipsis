@@ -14,18 +14,17 @@ return React.createClass({
     shouldFilterCurrentVersion: React.PropTypes.bool,
     versions: React.PropTypes.arrayOf(React.PropTypes.instanceOf(BehaviorGroup)).isRequired
   },
+
   getVersionText: function(versionIndex) {
-    var text;
     if (versionIndex === 0 && this.props.versions.length === 1) {
-      text = "Loading…";
+      return "Loading…";
     } else if (versionIndex === 0) {
-      text = "Unsaved version";
+      return "Unsaved version";
     } else if (versionIndex === 1) {
-      text = "Last saved version";
+      return `v${this.getVersionNumberForIndex(versionIndex)}. Last saved version (${this.getDateForVersion(this.props.versions[versionIndex])})`;
     } else {
-      text = this.getDateForVersion(this.props.versions[versionIndex]);
+      return `v${this.getVersionNumberForIndex(versionIndex)}. ${this.getDateForVersion(this.props.versions[versionIndex])}`;
     }
-    return this.getVersionNumberForIndex(versionIndex) + text;
   },
   getDateForVersion: function(version) {
     return Formatter.formatTimestampRelativeIfRecent(version.createdAt);
@@ -66,7 +65,7 @@ return React.createClass({
     }
   },
   getVersionNumberForIndex: function(index) {
-    return 'v' + (this.props.versions.length - index) + '. ';
+    return this.props.versions.length - index;
   },
   cancel: function() {
     this.props.onCancelClick();
