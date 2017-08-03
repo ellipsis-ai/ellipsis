@@ -1007,7 +1007,7 @@ const BehaviorEditor = React.createClass({
   },
 
   updateName: function(newName) {
-    const normalizedName = this.isDataTypeBehavior() ? Formatter.formatNameForCode(newName) : newName;
+    const normalizedName = this.isDataTypeBehavior() ? Formatter.formatDataTypeName(newName) : newName;
     this.setEditableProp('name', normalizedName);
   },
 
@@ -1842,7 +1842,7 @@ const BehaviorEditor = React.createClass({
 
   addNewBehavior: function(isDataType, behaviorIdToClone) {
     const group = this.getBehaviorGroup();
-    const newName = isDataType ? SequentialName.nextFor(this.getDataTypeBehaviors(), (ea) => ea.name, "dataType") : null;
+    const newName = isDataType ? SequentialName.nextFor(this.getDataTypeBehaviors(), (ea) => ea.name, "DataType") : null;
     const url = jsRoutes.controllers.BehaviorEditorController.newUnsavedBehavior(isDataType, group.teamId, behaviorIdToClone, newName).url;
     fetch(url, { credentials: 'same-origin' })
       .then((response) => response.json())
