@@ -10,6 +10,7 @@ const BehaviorGroup = require('../app/assets/javascripts/models/behavior_group')
 const ResponseTemplate = require('../app/assets/javascripts/models/response_template');
 const ParamType = require('../app/assets/javascripts/models/param_type');
 
+jsRoutes.controllers.BehaviorEditorController.edit = jest.fn(() => ({ url: '/mock_edit' }));
 jsRoutes.controllers.BehaviorEditorController.save = jest.fn(() => ({ url: '/mock_save' }));
 jsRoutes.controllers.BehaviorEditorController.newGroup = jest.fn(() => ({ url: '/mock_new_skill' }));
 jsRoutes.controllers.ApplicationController.deleteBehaviorGroups = jest.fn(() => ({ url: '/mock_delete_behavior_group' }));
@@ -18,6 +19,7 @@ describe('BehaviorEditor', () => {
   const defaultConfig = {
     teamId: "A",
     group: {
+      id: '1',
       actionInputs: [],
       behaviorVersions: [
         {
@@ -32,7 +34,12 @@ describe('BehaviorEditor', () => {
             isRegex: false,
             caseSensitive: false
           }],
-          config: {},
+          config: {
+            dataTypeConfig: {
+              fields: [],
+              name: ''
+            }
+          },
           knownEnvVarsUsed: [],
           groupId: '1',
           shouldRevealCodeEditor: true
