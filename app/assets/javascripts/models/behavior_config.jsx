@@ -6,7 +6,7 @@ define(function(require) {
     constructor(props) {
       var initialProps = Object.assign({
         isDataType: false,
-        dataTypeConfig: null,
+        dataTypeConfig: null
       }, props);
 
       Object.defineProperties(this, {
