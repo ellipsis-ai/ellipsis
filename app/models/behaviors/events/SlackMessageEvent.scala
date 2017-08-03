@@ -31,10 +31,12 @@ case class SlackMessageEvent(
 
   val messageText: String = text
 
-  override val relevantMessageText: String = {
+  override val relevantMessageTextWithFormatting: String = {
     val withoutDotDotDot = MessageEvent.ellipsisRegex.replaceFirstIn(messageText, "")
     SlackMessageEvent.toBotRegexFor(profile.userId).replaceFirstIn(withoutDotDotDot, "")
   }
+
+  override val relevantMessageText: String = SlackMessageFormatter.unformatText(relevantMessageTextWithFormatting)
 
   lazy val includesBotMention: Boolean = {
     isDirectMessage(channel) ||

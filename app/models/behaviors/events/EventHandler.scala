@@ -81,7 +81,7 @@ class EventHandler @Inject() (services: DefaultServices) {
             }.getOrElse {
               s"It's been a while since I asked you the question above."
             }
-            val attachment = SlackMessageActions("should_continue_conversation", actions, Some(s"Just so I'm sure, is `${event.relevantMessageText}` answering this?"), Some(Color.PINK))
+            val attachment = SlackMessageActions("should_continue_conversation", actions, Some(s"Just so I'm sure, is `${event.relevantMessageTextWithFormatting}` answering this?"), Some(Color.PINK))
             TextWithActionsResult(event, Some(updatedConvo), prompt, forcePrivateResponse = false, attachment)
           }
         } else {
