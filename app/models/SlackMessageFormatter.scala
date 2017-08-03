@@ -31,8 +31,7 @@ object SlackMessageFormatter {
   def bodyTextFor(text: String): String = {
     val builder = StringBuilder.newBuilder
     val slack = new SlackRenderer(builder)
-    val escapedText = escapeSlackHTMLEntities(text)
-    commonmarkNodeFor(escapedText).accept(slack)
+    commonmarkNodeFor(text).accept(slack)
     builder.mkString
   }
 
@@ -46,10 +45,6 @@ object SlackMessageFormatter {
       replaceAll("""<(?:[^!].*?\|)(.+?)>""", "$1").
       replaceAll("""<([^!].*?)>""", "$1").
       replaceAll("""<!(?:.+?\|)?(.+?)>""", "<$1>")
-  }
-
-  def escapeSlackHTMLEntities(text: String): String = {
-    text.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;")
   }
 
   def unescapeSlackHTMLEntities(text: String): String = {
