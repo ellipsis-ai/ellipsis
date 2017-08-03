@@ -9,6 +9,7 @@ import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
 import models.team.Team
 import play.api.libs.json.Json
 import services.DataService
+import utils.NameFormatter
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -64,7 +65,14 @@ case class BehaviorVersionData(
     val newId = IDs.next
     val maybeOldID = id
     maybeOldID.foreach { oldId => oldToNewIdMapping.put(oldId, newId) }
-    copy(id = Some(newId))
+    val nameToUse = name.map { n =>
+      if (isDataType) {
+        NameFormatter.formatDataTypeName(n)
+      } else {
+        n
+      }
+    }
+    copy(id = Some(newId), name = nameToUse)
   }
 
   def copyWithParamTypeIdsIn(oldToNewIdMapping: collection.mutable.Map[String, String]): BehaviorVersionData = {
