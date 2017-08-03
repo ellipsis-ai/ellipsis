@@ -48,8 +48,12 @@ object SlackMessageFormatter {
       replaceAll("""<!(?:.+?\|)?(.+?)>""", "<$1>")
   }
 
+  def unescapeSlackHTMLEntities(text: String): String = {
+    text.replaceAll("&amp;", "&").replaceAll("&lt;", "<").replaceAll("&gt;", ">")
+  }
+
   def unformatText(text: String): String = {
-    StringEscapeUtils.unescapeXml(unformatLinks(text))
+    unescapeSlackHTMLEntities(unformatLinks(text))
   }
 
 }

@@ -52,7 +52,7 @@ class SlackMessageFormatterSpec extends PlaySpec {
     }
   }
 
-  "unformatText" should {
+  "unescapeSlackHTMLEntities" should {
 
     "unscape HTML entities" in {
       SlackMessageFormatter.unformatText("&amp;") mustBe "&"
@@ -60,11 +60,15 @@ class SlackMessageFormatterSpec extends PlaySpec {
       SlackMessageFormatter.unformatText("&lt;&amp;amp;&gt;") mustBe "<&amp;>"
     }
 
+  }
+
+  "unformatText" should {
+
     "strip links first, and unescape HTML entities second" in {
       SlackMessageFormatter.unformatText("&lt;https://bot.ellipsis.ai/?foo&amp;bar&gt;") mustBe "<https://bot.ellipsis.ai/?foo&bar>"
     }
 
-    "handles a complex message" in {
+    "handle a complex message" in {
       val received = "Hey <!channel|channel>, has anyone seen <mailto:luke@ellipsis.ai|luke@ellipsis.ai>? He &amp; I have a meeting."
       val expected = "Hey @channel, has anyone seen luke@ellipsis.ai? He & I have a meeting."
       SlackMessageFormatter.unformatText(received) mustBe expected
