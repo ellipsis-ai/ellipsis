@@ -3,7 +3,6 @@ define(function(require) {
     CodeConfiguration = require('./code_configuration'),
     Collapsible = require('../shared_ui/collapsible'),
     DataTypeCodeEditorHelp = require('./data_type_code_editor_help'),
-    DataTypeDataCollectionConfig = require('./data_type_data_collection_config'),
     DataTypeDataSummary = require('./data_type_data_summary'),
     DataTypeResultConfig = require('./data_type_result_config'),
     DataTypeSchemaConfig = require('./data_type_schema_config'),

@@ -72,9 +72,9 @@ case class ListScheduledBehavior(
       maybeTeam <- dataService.teams.find(event.teamId)
       scheduled <- maybeTeam.map { team =>
         maybeChannel.map { channel =>
-          Scheduled.allForChannel(team, channel, dataService)
+          Scheduled.allActiveForChannel(team, channel, dataService)
         }.getOrElse {
-          Scheduled.allForTeam(team, dataService)
+          Scheduled.allActiveForTeam(team, dataService)
         }
       }.getOrElse(Future.successful(Seq()))
       responseText <- if (scheduled.isEmpty) {

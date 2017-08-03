@@ -121,7 +121,6 @@ case class BehaviorGroupZipImporter(
         strings.getOrElse("params.json", ""),
         strings.getOrElse("triggers.json", ""),
         strings.getOrElse("config.json", ""),
-        strings.get("data_type_config.json"),
         maybeGithubUrl = None,
         dataService
       )

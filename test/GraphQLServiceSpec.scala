@@ -20,16 +20,28 @@ class GraphQLServiceSpec extends DBSpec {
     runNow(BehaviorParameterTypeData.from(NumberType, dataService))
   }
 
+  def buildBehaviorVersionDataFor(group: BehaviorGroup, maybeName: Option[String], fields: Seq[(String, BehaviorParameterTypeData)]): BehaviorVersionData = {
+    val data = BehaviorVersionData.newUnsavedFor(group.team.id, isDataType = true, maybeName, dataService)
+    data.copy(
+      config = data.config.copy(
+        dataTypeConfig = Some(DataTypeConfigData(
+          maybeName,
+          fields.map { case(name, paramType) =>
+            DataTypeFieldData.newUnsavedNamed(name, paramType)
+          },
+          Some(false)
+        ))
+      )
+    )
+  }
+
   def buildGroupDataFor(group: BehaviorGroup, user : User): BehaviorGroupData = {
-        val behaviorVersionData =
-          BehaviorVersionData.newUnsavedFor(group.team.id, isDataType = true, maybeName = Some("SomeType"), dataService).
-            copy(dataTypeConfig = Some(DataTypeConfigData(Some("SomeType"), Seq(DataTypeFieldData.newUnsavedNamed("foo", textTypeData(dataService))), Some(false))))
-        val behaviorVersionData2 =
-          BehaviorVersionData.newUnsavedFor(group.team.id, isDataType = true, maybeName = Some("SomeType2"), dataService).
-            copy(dataTypeConfig = Some(DataTypeConfigData(Some("SomeType2"), Seq(
-              DataTypeFieldData.newUnsavedNamed("someType", BehaviorParameterTypeData(behaviorVersionData.id, None, behaviorVersionData.name.get, None)),
-              DataTypeFieldData.newUnsavedNamed("bar", numberTypeData(dataService))
-            ), Some(false))))
+        val behaviorVersionData = buildBehaviorVersionDataFor(group, Some("SomeType"), Seq(("foo", textTypeData(dataService))))
+        val fieldsForData2 = Seq(
+          ("someType", BehaviorParameterTypeData(behaviorVersionData.id, None, behaviorVersionData.name.get, None)),
+          ("bar", numberTypeData(dataService))
+        )
+        val behaviorVersionData2 = buildBehaviorVersionDataFor(group, Some("SomeType2"), fieldsForData2)
          newGroupVersionDataFor(group, user).copy(
           behaviorVersions = Seq(behaviorVersionData, behaviorVersionData2)
         )}
@@ -94,7 +106,7 @@ class GraphQLServiceSpec extends DBSpec {
         val user = newSavedUserOn(team)
         val group = newSavedBehaviorGroupFor(team)
         val groupData = buildGroupDataFor(group, user)
-        val dataTypeConfigs = groupData.dataTypeBehaviorVersions.flatMap(_.dataTypeConfig)
+        val dataTypeConfigs = groupData.dataTypeBehaviorVersions.flatMap(_.config.dataTypeConfig)
         val someType = dataTypeConfigs.find(_.typeName == "SomeType").get
 
         val schema = runNow(graphQLService.previewSchemaFor(groupData))

@@ -810,6 +810,13 @@ const BehaviorEditor = React.createClass({
     }
   },
 
+  setConfigProps: function(props, callback) {
+    const existingGroup = this.getBehaviorGroup();
+    const existingSelected = this.getSelectedFor(existingGroup, this.getSelectedId());
+    const existingConfig = existingSelected.config;
+    this.setEditableProp("config", existingConfig.clone(props), callback);
+  },
+
   getNextBehaviorIdFor: function(group) {
     if (group.behaviorVersions.length) {
       return group.behaviorVersions[0].behaviorId;
@@ -2088,7 +2095,7 @@ const BehaviorEditor = React.createClass({
           behaviorVersion={this.getSelectedBehavior()}
           paramTypes={this.getParamTypesForDataTypes()}
           inputs={this.getInputs()}
-          onChange={this.setEditableProps}
+          onChange={this.setConfigProps}
           onAddNewInput={this.addNewInput}
           onConfigureType={this.onConfigureType}
           isModified={this.editableIsModified}

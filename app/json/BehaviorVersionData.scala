@@ -2,16 +2,15 @@ package json
 
 import java.time.OffsetDateTime
 
-import models.team.Team
-import models.accounts.user.User
-import play.api.libs.json.Json
-
-import scala.concurrent.ExecutionContext.Implicits.global
-import Formatting._
+import json.Formatting._
 import models.IDs
+import models.accounts.user.User
 import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
+import models.team.Team
+import play.api.libs.json.Json
 import services.DataService
 
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
 case class BehaviorVersionData(
@@ -27,7 +26,6 @@ case class BehaviorVersionData(
                                 inputIds: Seq[String],
                                 triggers: Seq[BehaviorTriggerData],
                                 config: BehaviorConfig,
-                                dataTypeConfig: Option[DataTypeConfigData],
                                 exportId: Option[String],
                                 githubUrl: Option[String],
                                 knownEnvVarsUsed: Seq[String],
@@ -57,7 +55,7 @@ case class BehaviorVersionData(
       behaviorId = Some(IDs.next),
       exportId = None,
       name = name.map(n => s"Copy of $n"),
-      dataTypeConfig = dataTypeConfig.map(_.copyForClone),
+      config = config.copyForClone,
       isNew = Some(true)
     )
   }
@@ -70,8 +68,8 @@ case class BehaviorVersionData(
   }
 
   def copyWithParamTypeIdsIn(oldToNewIdMapping: collection.mutable.Map[String, String]): BehaviorVersionData = {
-    val maybeNewDataTypeConfig = dataTypeConfig.map(_.copyWithParamTypeIdsIn(oldToNewIdMapping))
-    copy(dataTypeConfig = maybeNewDataTypeConfig)
+    val maybeNewDataTypeConfig = config.dataTypeConfig.map(_.copyWithParamTypeIdsIn(oldToNewIdMapping))
+    copy(config = config.copy(dataTypeConfig = maybeNewDataTypeConfig))
   }
 
   lazy val isDataType: Boolean = config.isDataType
@@ -97,6 +95,14 @@ object BehaviorVersionData {
     }.getOrElse("")
   }
 
+  def maybeDataTypeConfigFor(isDataType: Boolean, maybeName: Option[String]): Option[DataTypeConfigData] = {
+    if (isDataType) {
+      Some(DataTypeConfigData(maybeName, Seq(), None))
+    } else {
+      None
+    }
+  }
+
   def buildFor(
                 id: Option[String],
                 teamId: String,
@@ -109,7 +115,6 @@ object BehaviorVersionData {
                 inputIds: Seq[String],
                 triggers: Seq[BehaviorTriggerData],
                 config: BehaviorConfig,
-                dataTypeConfig: Option[DataTypeConfigData],
                 exportId: Option[String],
                 githubUrl: Option[String],
                 createdAt: Option[OffsetDateTime],
@@ -135,7 +140,6 @@ object BehaviorVersionData {
       inputIds,
       triggers.sorted,
       config,
-      dataTypeConfig,
       exportId,
       githubUrl,
       knownEnvVarsUsed,
@@ -144,7 +148,7 @@ object BehaviorVersionData {
   }
 
   def newUnsavedFor(teamId: String, isDataType: Boolean, maybeName: Option[String], dataService: DataService): BehaviorVersionData = {
-    val maybeDataTypeConfig = if (isDataType) { Some(DataTypeConfigData(maybeName, Seq(), None)) } else { None }
+    val maybeDataTypeConfig = maybeDataTypeConfigFor(isDataType, maybeName)
     buildFor(
       Some(IDs.next),
       teamId,
@@ -156,8 +160,7 @@ object BehaviorVersionData {
       "",
       Seq(),
       Seq(BehaviorTriggerData("", requiresMention = true, isRegex = false, caseSensitive = false)),
-      BehaviorConfig(None, maybeName, None, None, isDataType),
-      maybeDataTypeConfig,
+      BehaviorConfig(None, maybeName, None, None, isDataType = maybeDataTypeConfig.isDefined, maybeDataTypeConfig),
       None,
       None,
       None,
@@ -173,11 +176,15 @@ object BehaviorVersionData {
                    params: String,
                    triggers: String,
                    configString: String,
-                   maybeDataTypeConfigString: Option[String],
                    maybeGithubUrl: Option[String],
                    dataService: DataService
                    ): BehaviorVersionData = {
     val config = Json.parse(configString).validate[BehaviorConfig].get
+    val configWithDataTypeConfig = if (!config.isDataType || config.dataTypeConfig.isDefined) {
+      config
+    } else {
+      config.copy(dataTypeConfig = Some(DataTypeConfigData(config.name, Seq(), usesCode = Some(true))))
+    }
     BehaviorVersionData.buildFor(
       None,
       teamId,
@@ -189,11 +196,8 @@ object BehaviorVersionData {
       response,
       Json.parse(params).validate[Seq[String]].get,
       Json.parse(triggers).validate[Seq[BehaviorTriggerData]].get,
-      config,
-      maybeDataTypeConfigString.map { cfg =>
-        Json.parse(cfg).validate[DataTypeConfigData].get
-      },
-      config.exportId,
+      configWithDataTypeConfig,
+      configWithDataTypeConfig.exportId,
       maybeGithubUrl,
       createdAt = None,
       dataService
@@ -247,14 +251,16 @@ object BehaviorVersionData {
         val maybeAWSConfigData = maybeAWSConfig.map { config =>
           AWSConfigData(config.maybeAccessKeyName, config.maybeSecretKeyName, config.maybeRegionName)
         }
-        val config = BehaviorConfig(maybeExportId, behaviorVersion.maybeName, maybeAWSConfigData, Some(behaviorVersion.forcePrivateResponse), behavior.isDataType)
-        val maybeEnsuredDataTypeConfigData = maybeDataTypeConfigData.orElse {
-          if (behavior.isDataType) {
-            Some(DataTypeConfigData(behaviorVersion.maybeName, Seq(), None))
-          } else {
-            None
-          }
-        }
+        val maybeEnsuredDataTypeConfigData = maybeDataTypeConfigData.orElse(maybeDataTypeConfigFor(behaviorVersion.isDataType, behaviorVersion.maybeName))
+        val config = BehaviorConfig(
+          maybeExportId,
+          behaviorVersion.maybeName,
+          maybeAWSConfigData,
+          Some(behaviorVersion.forcePrivateResponse),
+          isDataType = maybeEnsuredDataTypeConfigData.isDefined,
+          maybeEnsuredDataTypeConfigData
+        )
+
         BehaviorVersionData.buildFor(
           Some(behaviorVersion.id),
           behaviorVersion.team.id,
@@ -269,7 +275,6 @@ object BehaviorVersionData {
             BehaviorTriggerData(ea.pattern, requiresMention = ea.requiresBotMention, isRegex = ea.shouldTreatAsRegex, caseSensitive = ea.isCaseSensitive)
           ),
           config,
-          maybeEnsuredDataTypeConfigData,
           behavior.maybeExportId,
           githubUrl = None,
           Some(behaviorVersion.createdAt),

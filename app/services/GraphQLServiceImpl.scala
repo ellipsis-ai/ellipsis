@@ -60,7 +60,7 @@ class GraphQLServiceImpl @Inject() (
   }
 
   private def previewSchemaStringFor(data: BehaviorGroupData): Future[String] = {
-    val configs = data.dataTypeBehaviorVersions.flatMap(_.dataTypeConfig)
+    val configs = data.dataTypeBehaviorVersions.flatMap(_.config.dataTypeConfig)
     schemaStringFromConfigs(configs)
   }
 

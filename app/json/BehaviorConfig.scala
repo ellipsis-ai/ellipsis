@@ -5,10 +5,18 @@ case class BehaviorConfig(
                            name: Option[String],
                            aws: Option[AWSConfigData],
                            forcePrivateResponse: Option[Boolean],
-                           isDataType: Boolean
+                           isDataType: Boolean,
+                           dataTypeConfig: Option[DataTypeConfigData]
                            ) {
+
   val knownEnvVarsUsed: Seq[String] = {
     aws.map(_.knownEnvVarsUsed).getOrElse(Seq())
+  }
+
+  def copyForClone: BehaviorConfig = {
+    copy(
+      dataTypeConfig = dataTypeConfig.map(_.copyForClone)
+    )
   }
 
 }

@@ -1,3 +1,4 @@
+window.crypto = require('./mocks/mock_window_crypto');
 const BehaviorGroup = require('../app/assets/javascripts/models/behavior_group');
 
 const behaviorGroupData = Object.freeze({
