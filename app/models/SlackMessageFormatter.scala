@@ -3,6 +3,7 @@ package models
 import java.util
 
 import models.behaviors.templates.SlackRenderer
+import org.apache.commons.lang3.StringEscapeUtils
 import org.commonmark.ext.autolink.AutolinkExtension
 import org.commonmark.ext.gfm.strikethrough.StrikethroughExtension
 import org.commonmark.node.{AbstractVisitor, Image, Node}
@@ -33,6 +34,22 @@ object SlackMessageFormatter {
     val slack = new SlackRenderer(builder)
     commonmarkNodeFor(text).accept(slack)
     builder.mkString
+  }
+
+  def unformatLinks(text: String): String = {
+    text.
+      replaceAll("""<@(?:.+?\|)?(.+?)>""", "@$1").
+      replaceAll("""<#(?:.+?\|)?(.+?)>""", "#$1").
+      replaceAll("""<!(here|group|channel|everyone)(\|(here|group|channel|everyone))?>""", "@$1").
+      replaceAll("""<!subteam\^.+?\|(.+?)>""", "@$1").
+      replaceAll("""<!date.+?\|(.+?)>""", "$1").
+      replaceAll("""<(?:[^!].*?\|)(.+?)>""", "$1").
+      replaceAll("""<([^!].*?)>""", "$1").
+      replaceAll("""<!(?:.+?\|)?(.+?)>""", "<$1>")
+  }
+
+  def unformatText(text: String): String = {
+    StringEscapeUtils.unescapeXml(unformatLinks(text))
   }
 
 }

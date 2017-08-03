@@ -1,6 +1,7 @@
 package models.behaviors.events
 
 import akka.actor.ActorSystem
+import models.SlackMessageFormatter
 import models.accounts.slack.botprofile.SlackBotProfile
 import models.accounts.slack.profile.SlackProfile
 import models.accounts.user.User
@@ -121,8 +122,7 @@ case class SlackMessageEvent(
   }
 
   override def unformatTextFragment(text: String): String = {
-    // Replace formatted links with their visible text
-    text.replaceAll("""<.+?\|(.+?)>""", "$1")
+    SlackMessageFormatter.unformatText(text)
   }
 
 }
