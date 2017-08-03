@@ -107,7 +107,6 @@ class GithubService @Inject() (
         params,
         triggers,
         config,
-        None, // TODO: for realz
         Some(githubUrl),
         dataService
       )

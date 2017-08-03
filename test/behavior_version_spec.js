@@ -78,27 +78,29 @@ const defaultStorageDataType = Object.freeze({
   id: "abcdef",
   behaviorId: "jfgh",
   name: "myDataType",
-  dataTypeConfig: {
-    fields: [{
-      fieldId: "1",
-      fieldVersionId: "2",
-      name: "field1",
-      fieldType: {
-        name: "Text",
-        id: "Text"
-      },
-      isLabel: true
-    }, {
-      fieldId: "3",
-      fieldVersionId: "4",
-      name: "field2",
-      fieldType: {
-        name: "Text",
-        id: "Text"
-      },
-      isLabel: false
-    }],
-    usesCode: false
+  config: {
+    dataTypeConfig: {
+      fields: [{
+        fieldId: "1",
+        fieldVersionId: "2",
+        name: "field1",
+        fieldType: {
+          name: "Text",
+          id: "Text"
+        },
+        isLabel: true
+      }, {
+        fieldId: "3",
+        fieldVersionId: "4",
+        name: "field2",
+        fieldType: {
+          name: "Text",
+          id: "Text"
+        },
+        isLabel: false
+      }],
+      usesCode: false
+    }
   }
 });
 
