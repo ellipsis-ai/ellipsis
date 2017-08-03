@@ -3,7 +3,6 @@ package models
 import java.util
 
 import models.behaviors.templates.SlackRenderer
-import org.apache.commons.lang3.StringEscapeUtils
 import org.commonmark.ext.autolink.AutolinkExtension
 import org.commonmark.ext.gfm.strikethrough.StrikethroughExtension
 import org.commonmark.node.{AbstractVisitor, Image, Node}
