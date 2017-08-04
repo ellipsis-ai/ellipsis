@@ -34,7 +34,7 @@ trait Conversation {
 
   def isPending: Boolean = state == Conversation.PENDING_STATE
 
-  def staleCutoff: OffsetDateTime = OffsetDateTime.now.minusSeconds(1)
+  def staleCutoff: OffsetDateTime = OffsetDateTime.now.minusHours(1)
 
   def pendingEventKey: String = s"pending-event-for-$id"
 
