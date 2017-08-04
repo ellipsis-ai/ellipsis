@@ -20,7 +20,6 @@ import play.api.libs.ws.WSClient
 import play.api.mvc.{Action, AnyContent, Request, Result}
 import play.api.{Configuration, Logger}
 import services.{AWSLambdaService, DataService, SlackEventService}
-import slack.api.ApiError
 import utils.SlackTimestamp
 
 import scala.concurrent.ExecutionContext.Implicits.global
