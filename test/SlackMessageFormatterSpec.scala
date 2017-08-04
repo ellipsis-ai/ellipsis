@@ -1,4 +1,5 @@
 import models.SlackMessageFormatter
+import models.accounts.slack.SlackUserInfo
 import org.scalatestplus.play.PlaySpec
 import org.apache.commons.lang.StringEscapeUtils.escapeJava
 
@@ -9,6 +10,10 @@ class SlackMessageFormatterSpec extends PlaySpec {
   def format(original: String): String = {
     escapeJava(SlackMessageFormatter.bodyTextFor(original))
   }
+
+  val userId = "U1234567"
+  val user = SlackUserInfo(userId, "attaboy", Some("America/Toronto"))
+  val userList = Seq(user)
 
   "bodyTextFor" should {
 
@@ -55,23 +60,35 @@ class SlackMessageFormatterSpec extends PlaySpec {
   "unescapeSlackHTMLEntities" should {
 
     "unscape HTML entities" in {
-      SlackMessageFormatter.unformatText("&amp;") mustBe "&"
-      SlackMessageFormatter.unformatText("&amp;quot;") mustBe "&quot;"
-      SlackMessageFormatter.unformatText("&lt;&amp;amp;&gt;") mustBe "<&amp;>"
+      SlackMessageFormatter.unescapeSlackHTMLEntities("&amp;") mustBe "&"
+      SlackMessageFormatter.unescapeSlackHTMLEntities("&amp;quot;") mustBe "&quot;"
+      SlackMessageFormatter.unescapeSlackHTMLEntities("&lt;&amp;amp;&gt;") mustBe "<&amp;>"
     }
 
+  }
+
+  "augmentUserIdsWithNames" should {
+    "add user names to user links" in {
+      SlackMessageFormatter.augmentUserIdsWithNames(s"Hey <@${user.userId}>, what's shaking?", userList) mustBe s"Hey <@${user.userId}|${user.name}>, what's shaking?"
+    }
   }
 
   "unformatText" should {
 
     "strip links first, and unescape HTML entities second" in {
-      SlackMessageFormatter.unformatText("&lt;https://bot.ellipsis.ai/?foo&amp;bar&gt;") mustBe "<https://bot.ellipsis.ai/?foo&bar>"
+      SlackMessageFormatter.unformatText("&lt;https://bot.ellipsis.ai/?foo&amp;bar&gt;", userList) mustBe "<https://bot.ellipsis.ai/?foo&bar>"
     }
 
     "handle a complex message" in {
-      val received = "Hey <!channel|channel>, has anyone seen <mailto:luke@ellipsis.ai|luke@ellipsis.ai>? He &amp; I have a meeting."
-      val expected = "Hey @channel, has anyone seen luke@ellipsis.ai? He & I have a meeting."
-      SlackMessageFormatter.unformatText(received) mustBe expected
+      val received =
+        s"""Hey <!channel|channel>, has anyone seen <mailto:luke@ellipsis.ai|luke@ellipsis.ai>?
+          |
+          |He &amp; I have a meeting. <@${user.userId}>, have you seen him?""".stripMargin
+      val expected =
+        s"""Hey @channel, has anyone seen luke@ellipsis.ai?
+          |
+          |He & I have a meeting. @${user.name}, have you seen him?""".stripMargin
+      SlackMessageFormatter.unformatText(received, userList) mustBe expected
     }
 
   }

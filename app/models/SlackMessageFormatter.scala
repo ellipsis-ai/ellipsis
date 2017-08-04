@@ -2,6 +2,7 @@ package models
 
 import java.util
 
+import models.accounts.slack.SlackUserInfo
 import models.behaviors.templates.SlackRenderer
 import org.commonmark.ext.autolink.AutolinkExtension
 import org.commonmark.ext.gfm.strikethrough.StrikethroughExtension
@@ -51,8 +52,18 @@ object SlackMessageFormatter {
     text.replaceAll("&amp;", "&").replaceAll("&lt;", "<").replaceAll("&gt;", ">")
   }
 
-  def unformatText(text: String): String = {
-    unescapeSlackHTMLEntities(unformatLinks(text))
+  def augmentUserIdsWithNames(initialText: String, userList: Seq[SlackUserInfo]): String = {
+    userList.foldLeft(initialText) { (resultText, user) =>
+      resultText.replace(s"""<@${user.userId}>""", s"""<@${user.userId}|${user.name}>""")
+    }
+  }
+
+  def unformatText(text: String, userList: Seq[SlackUserInfo]): String = {
+    unescapeSlackHTMLEntities(
+      unformatLinks(
+        augmentUserIdsWithNames(text, userList)
+      )
+    )
   }
 
 }

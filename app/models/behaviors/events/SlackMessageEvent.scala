@@ -38,18 +38,8 @@ case class SlackMessageEvent(
     SlackMessageEvent.toBotRegexFor(profile.userId).replaceFirstIn(withoutDotDotDot, "")
   }
 
-  def augmentUserIdsWithNames(text: String): String = {
-    val result = new StringBuilder(text)
-    slackUserList.foreach { user =>
-      val newResult = result.toString.replace(s"""<@${user.userId}>""", s"""<@${user.userId}|${user.name}>""")
-      result.clear
-      result.append(newResult)
-    }
-    result.toString
-  }
-
   override val relevantMessageText: String = {
-    SlackMessageFormatter.unformatText(augmentUserIdsWithNames(relevantMessageTextWithFormatting))
+    unformatTextFragment(relevantMessageTextWithFormatting)
   }
 
   lazy val includesBotMention: Boolean = {
@@ -138,7 +128,7 @@ case class SlackMessageEvent(
   }
 
   override def unformatTextFragment(text: String): String = {
-    SlackMessageFormatter.unformatText(text)
+    SlackMessageFormatter.unformatText(text, slackUserList)
   }
 
 }
