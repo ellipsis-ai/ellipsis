@@ -30,7 +30,7 @@ case class DisplayHelpBehavior(
 
   private def matchString: String = {
     maybeHelpSearch.map { s =>
-      s" related to `$s`"
+      s" related to “$s”"
     }.getOrElse("")
   }
 
