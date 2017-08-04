@@ -214,9 +214,24 @@ class SlackController @Inject() (
       } else {
         for {
           maybeProfile <- dataService.slackBotProfiles.allForSlackTeamId(info.teamId).map(_.headOption)
-          _ <- maybeProfile.map { profile =>
-            slackEventService.onEvent(SlackMessageEvent(profile, info.channel, info.maybeThreadTs, info.userId, info.message, info.ts, slackEventService.clientFor(profile)))
-          }.getOrElse {
+          maybeSlackUsers <- maybeProfile.map { profile =>
+            slackEventService.maybeSlackUserListFor(profile)
+          }.getOrElse(Future.successful(None))
+          _ <- (for {
+            profile <- maybeProfile
+            slackUsers <- maybeSlackUsers
+          } yield {
+            slackEventService.onEvent(SlackMessageEvent(
+              profile,
+              info.channel,
+              info.maybeThreadTs,
+              info.userId,
+              info.message,
+              info.ts,
+              slackEventService.clientFor(profile),
+              slackUsers
+            ))
+          }).getOrElse {
             Future.successful({})
           }
         } yield {}

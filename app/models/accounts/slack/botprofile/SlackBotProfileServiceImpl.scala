@@ -101,7 +101,7 @@ class SlackBotProfileServiceImpl @Inject() (
   def eventualMaybeEvent(slackTeamId: String, channelId: String, userId: String): Future[Option[SlackMessageEvent]] = {
     allForSlackTeamId(slackTeamId).map { botProfiles =>
       botProfiles.headOption.map { botProfile =>
-        SlackMessageEvent(botProfile, channelId, None, userId, "", SlackTimestamp.now, slackEventService.clientFor(botProfile))
+        SlackMessageEvent(botProfile, channelId, None, userId, "", SlackTimestamp.now, slackEventService.clientFor(botProfile), Seq())
       }
     }
   }

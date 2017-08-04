@@ -51,7 +51,7 @@ trait Conversation {
       for {
         botProfile <- botProfiles.headOption
         channel <- maybeChannel
-      } yield SlackMessageEvent(botProfile, channel, None, userIdForContext, "", SlackTimestamp.now, services.slackEventService.clientFor(botProfile))
+      } yield SlackMessageEvent(botProfile, channel, None, userIdForContext, "", SlackTimestamp.now, services.slackEventService.clientFor(botProfile), Seq())
     }
   }
 

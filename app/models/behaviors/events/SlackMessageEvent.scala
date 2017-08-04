@@ -2,6 +2,7 @@ package models.behaviors.events
 
 import akka.actor.ActorSystem
 import models.SlackMessageFormatter
+import models.accounts.slack.SlackUserInfo
 import models.accounts.slack.botprofile.SlackBotProfile
 import models.accounts.slack.profile.SlackProfile
 import models.accounts.user.User
@@ -21,7 +22,8 @@ case class SlackMessageEvent(
                                  user: String,
                                  text: String,
                                  ts: String,
-                                 client: SlackApiClient
+                                 client: SlackApiClient,
+                                 slackUserList: Seq[SlackUserInfo]
                                ) extends MessageEvent with SlackEvent {
 
   lazy val isBotMessage: Boolean = profile.userId == user
@@ -36,7 +38,19 @@ case class SlackMessageEvent(
     SlackMessageEvent.toBotRegexFor(profile.userId).replaceFirstIn(withoutDotDotDot, "")
   }
 
-  override val relevantMessageText: String = SlackMessageFormatter.unformatText(relevantMessageTextWithFormatting)
+  def augmentUserIdsWithNames(text: String): String = {
+    val result = new StringBuilder(text)
+    slackUserList.foreach { user =>
+      val newResult = result.toString.replace(s"""<@${user.userId}>""", s"""<@${user.userId}|${user.name}>""")
+      result.clear
+      result.append(newResult)
+    }
+    result.toString
+  }
+
+  override val relevantMessageText: String = {
+    SlackMessageFormatter.unformatText(augmentUserIdsWithNames(relevantMessageTextWithFormatting))
+  }
 
   lazy val includesBotMention: Boolean = {
     isDirectMessage(channel) ||

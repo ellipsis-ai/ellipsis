@@ -3,6 +3,7 @@ package controllers
 import javax.inject.Inject
 
 import akka.actor.ActorSystem
+import models.accounts.slack.SlackUserInfo
 import models.accounts.slack.botprofile.SlackBotProfile
 import models.accounts.slack.profile.SlackProfile
 import models.accounts.user.User
@@ -19,6 +20,7 @@ import play.api.libs.ws.WSClient
 import play.api.mvc.{Action, AnyContent, Request, Result}
 import play.api.{Configuration, Logger}
 import services.{AWSLambdaService, DataService, SlackEventService}
+import slack.api.ApiError
 import utils.SlackTimestamp
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -52,6 +54,7 @@ class APIController @Inject() (
                                maybeUser: Option[User],
                                maybeBotProfile: Option[SlackBotProfile],
                                maybeSlackProfile: Option[SlackProfile],
+                               maybeSlackUserList: Option[Seq[SlackUserInfo]],
                                maybeScheduledMessage: Option[ScheduledMessage],
                                maybeTeam: Option[Team],
                                isInvokedExternally: Boolean
@@ -80,6 +83,7 @@ class APIController @Inject() (
         for {
           botProfile <- maybeBotProfile
           slackProfile <- maybeSlackProfile
+          slackUserList <- maybeSlackUserList
         } yield {
           val slackEvent = SlackMessageEvent(
             botProfile,
@@ -88,7 +92,8 @@ class APIController @Inject() (
             slackProfile.loginInfo.providerKey,
             message,
             SlackTimestamp.now,
-            slackService.clientFor(botProfile)
+            slackService.clientFor(botProfile),
+            slackUserList
           )
           val event: Event = maybeScheduledMessage.map { scheduledMessage =>
             ScheduledEvent(slackEvent, scheduledMessage)
@@ -144,12 +149,16 @@ class APIController @Inject() (
         maybeSlackProfile <- maybeSlackLinkedAccount.map { slackLinkedAccount =>
           dataService.slackProfiles.find(slackLinkedAccount.loginInfo)
         }.getOrElse(Future.successful(None))
+        maybeSlackUserList <- maybeBotProfile.map { profile =>
+          slackService.maybeSlackUserListFor(profile)
+        }.getOrElse(Future.successful(None))
       } yield {
         ApiMethodContext(
           maybeInvocationToken,
           maybeUser,
           maybeBotProfile,
           maybeSlackProfile,
+          maybeSlackUserList,
           maybeScheduledMessage,
           maybeTeam,
           isInvokedExternally = maybeUserForApiToken.isDefined

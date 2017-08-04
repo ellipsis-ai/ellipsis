@@ -63,7 +63,9 @@ class CacheService @Inject() (
             event.user,
             event.text,
             event.ts,
-            slackEventService.clientFor(event.profile)
+            slackEventService.clientFor(event.profile),
+            // TODO: Add user list to caching:
+            Seq()
           ))
         }
         case JsError(err) => None

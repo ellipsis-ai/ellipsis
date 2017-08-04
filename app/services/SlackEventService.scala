@@ -3,12 +3,13 @@ package services
 import javax.inject._
 
 import akka.actor.ActorSystem
+import models.accounts.slack.SlackUserInfo
 import models.accounts.slack.botprofile.SlackBotProfile
 import models.behaviors.BotResultService
 import models.behaviors.events.{EventHandler, SlackMessageEvent}
 import play.api.Logger
 import play.api.i18n.MessagesApi
-import slack.api.SlackApiClient
+import slack.api.{ApiError, SlackApiClient}
 import utils.SlackMessageReactionHandler
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -46,5 +47,17 @@ class SlackEventService @Inject()(
   }
 
   def clientFor(botProfile: SlackBotProfile): SlackApiClient = SlackApiClient(botProfile.token)
+
+  def maybeSlackUserListFor(botProfile: SlackBotProfile): Future[Option[Seq[SlackUserInfo]]] = {
+    for {
+      maybeUsers <- clientFor(botProfile).listUsers().map(Some(_)).recover {
+        case e: ApiError => None
+      }
+    } yield {
+      maybeUsers.map { users =>
+        users.map { user => SlackUserInfo(user.id, user.name, user.tz) }
+      }
+    }
+  }
 
 }
