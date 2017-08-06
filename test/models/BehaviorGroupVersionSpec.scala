@@ -102,6 +102,23 @@ class BehaviorGroupVersionSpec extends DBSpec {
       })
     }
 
+    "ensures that data type names have the same format" in {
+      withEmptyDB(dataService, { db =>
+        val team = newSavedTeam
+        val user = newSavedUserOn(team)
+        val group = newSavedBehaviorGroupFor(team)
+
+        val dataTypeVersionData = BehaviorVersionData.newUnsavedFor(team.id, isDataType = true, maybeName = Some("_a data type"), dataService)
+
+        val groupData = newGroupVersionDataFor(group, user).copy(
+          behaviorVersions = Seq(dataTypeVersionData)
+        )
+        val saved = newSavedGroupVersionFor(group, user, Some(groupData))
+
+        runNow(dataService.behaviorVersions.dataTypesForGroupVersionAction(saved)).head.maybeName mustBe Some("Adatatype")
+      })
+    }
+
   }
 
 }

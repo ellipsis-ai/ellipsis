@@ -28,6 +28,7 @@ import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.ws.WSClient
 import play.api.{Application, Configuration}
 import services._
+import slick.dbio.DBIO
 
 import scala.concurrent.duration._
 import scala.concurrent.{Await, Future}
@@ -178,5 +179,9 @@ trait DBSpec extends PlaySpec with OneAppPerSuite with MockitoSugar {
 
   def runNow[T](future: Future[T]): T = {
     Await.result(future, 30.seconds)
+  }
+
+  def runNow[T](dbio: DBIO[T]): T = {
+    runNow(dataService.run(dbio))
   }
 }
