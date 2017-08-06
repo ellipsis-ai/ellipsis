@@ -57,7 +57,7 @@ libraryDependencies ++= Seq(
   "org.sangria-graphql" %% "sangria" % "1.2.1",
   "org.sangria-graphql" %% "sangria-play-json" % "1.0.0",
   "com.github.mumoshu" %% "play2-memcached-play25" % "0.8.0",
-  "net.logstash.logback" % "logstash-logback-encoder" % "4.0"
+  "net.logstash.logback" % "logstash-logback-encoder" % "4.5.1"
 )
 
 
