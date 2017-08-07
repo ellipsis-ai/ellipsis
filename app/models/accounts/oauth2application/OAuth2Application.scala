@@ -2,7 +2,8 @@ package models.accounts.oauth2application
 
 import models.accounts.oauth2api.OAuth2Api
 import org.apache.commons.lang.WordUtils
-import play.api.libs.ws.{WSClient, WSRequest}
+import play.api.http.{HeaderNames, MimeTypes}
+import play.api.libs.ws.{WSClient, WSRequest, WSResponse}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -37,38 +38,45 @@ case class OAuth2Application(
     }
   }
 
-  private def clientCredentialsTokenRequestFor(ws: WSClient): WSRequest = {
-    ws.url(accessTokenUrl).withQueryString(
-      "client_id" -> clientId,
-      "client_secret" -> clientSecret,
-      "grant_type" -> "client_credentials",
-      "scope" -> scopeString
-    ).withMethod("POST")
+  private def clientCredentialsTokenResponseFor(ws: WSClient): Future[WSResponse] = {
+    ws.url(accessTokenUrl).
+      withHeaders(HeaderNames.ACCEPT -> MimeTypes.JSON).
+      post(Map(
+        "client_id" -> Seq(clientId),
+        "client_secret" -> Seq(clientSecret),
+        "grant_type" -> Seq("client_credentials"),
+        "scope" -> Seq(scopeString)
+      ))
   }
 
   def getClientCredentialsTokenFor(ws: WSClient): Future[Option[String]] = {
-    clientCredentialsTokenRequestFor(ws).execute().map { response =>
+    clientCredentialsTokenResponseFor(ws).map { response =>
       val json = response.json
       (json \ "access_token").asOpt[String]
     }
   }
 
-  def accessTokenRequestFor(code: String, redirectUrl: String, ws: WSClient): WSRequest = {
-    ws.url(accessTokenUrl).withQueryString(
-      "client_id" -> clientId,
-      "client_secret" -> clientSecret,
-      "code" -> code,
-      "grant_type" -> "authorization_code",
-      "redirect_uri" -> redirectUrl)
+  def accessTokenResponseFor(code: String, redirectUrl: String, ws: WSClient): Future[WSResponse] = {
+    ws.url(accessTokenUrl).
+      withHeaders(HeaderNames.ACCEPT -> MimeTypes.JSON).
+      post(Map(
+        "client_id" -> Seq(clientId),
+        "client_secret" -> Seq(clientSecret),
+        "code" -> Seq(code),
+        "grant_type" -> Seq("authorization_code"),
+        "redirect_uri" -> Seq(redirectUrl)
+      ))
   }
 
-  def refreshTokenRequestFor(refreshToken: String, ws: WSClient): WSRequest = {
-    ws.url(accessTokenUrl).withQueryString(
-      "refresh_token" -> refreshToken,
-      "client_id" -> clientId,
-      "client_secret" -> clientSecret,
-      "grant_type" -> "refresh_token"
-    )
+  def refreshTokenResponseFor(refreshToken: String, ws: WSClient): Future[WSResponse] = {
+    ws.url(accessTokenUrl).
+      withHeaders(HeaderNames.ACCEPT -> MimeTypes.JSON).
+      post(Map(
+        "refresh_token" -> Seq(refreshToken),
+        "client_id" -> Seq(clientId),
+        "client_secret" -> Seq(clientSecret),
+        "grant_type" -> Seq("refresh_token")
+      ))
   }
 
   def keyName: String = {

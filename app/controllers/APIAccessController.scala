@@ -37,12 +37,7 @@ class APIAccessController @Inject() (
   extends ReAuthable {
 
   private def getToken(code: String, application: OAuth2Application, user: User, redirectUrl: String): Future[Option[LinkedOAuth2Token]] = {
-    val tokenResponse =
-      application.accessTokenRequestFor(code, redirectUrl, ws).
-        withHeaders(HeaderNames.ACCEPT -> MimeTypes.JSON).
-        post(Results.EmptyContent())
-
-    tokenResponse.flatMap { response =>
+    application.accessTokenResponseFor(code, redirectUrl, ws).flatMap { response =>
       val json = response.json
       (json \ "access_token").asOpt[String].map { accessToken =>
         val maybeTokenType = (json \ "token_type").asOpt[String]
