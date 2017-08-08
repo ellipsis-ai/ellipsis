@@ -50,6 +50,8 @@ class SlackEventService @Inject()(
 
   def maybeSlackUserListFor(botProfile: SlackBotProfile): Future[Option[Seq[SlackUserInfo]]] = {
     for {
+      // TODO: We should use pagination for fetching the list of users as per the Slack API docs
+      // https://api.slack.com/methods/users.list
       maybeUsers <- clientFor(botProfile).listUsers().map(Some(_)).recover {
         case e: ApiError => None
       }
