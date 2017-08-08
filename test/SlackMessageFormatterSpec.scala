@@ -30,6 +30,8 @@ class SlackMessageFormatterSpec extends PlaySpec {
     "unformat channels and users" in {
       SlackMessageFormatter.unformatLinks("<@U12345678>") mustBe "@U12345678"
       SlackMessageFormatter.unformatLinks("<@U12345678|attaboy>") mustBe "@attaboy"
+      SlackMessageFormatter.unformatLinks("<@W12345678>") mustBe "@U12345678"
+      SlackMessageFormatter.unformatLinks("<@W12345678|enterprise") mustBe "@enterprise"
       SlackMessageFormatter.unformatLinks("<#C12345789>") mustBe "#C12345789"
       SlackMessageFormatter.unformatLinks("<#C12345789|general>") mustBe "#general"
     }
