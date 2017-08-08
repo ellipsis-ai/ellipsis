@@ -102,6 +102,7 @@ class SlackBotProfileServiceImpl @Inject() (
     allForSlackTeamId(slackTeamId).map { botProfiles =>
       botProfiles.headOption.map { botProfile =>
         // TODO: Create a new class of synthetic events that doesn't need a SlackUserInfo list
+        // https://github.com/ellipsis-ai/ellipsis/issues/1719
         // For now, there's no text in the event, so the empty user list doesn't matter
         SlackMessageEvent(botProfile, channelId, None, userId, "", SlackTimestamp.now, slackEventService.clientFor(botProfile), Seq())
       }
