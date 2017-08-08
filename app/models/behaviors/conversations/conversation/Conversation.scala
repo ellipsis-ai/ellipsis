@@ -51,6 +51,8 @@ trait Conversation {
       for {
         botProfile <- botProfiles.headOption
         channel <- maybeChannel
+      // TODO: Create a new class of synthetic events that doesn't need a SlackUserInfo list
+      // For now, there's no text in the event, so the empty user list doesn't matter
       } yield SlackMessageEvent(botProfile, channel, None, userIdForContext, "", SlackTimestamp.now, services.slackEventService.clientFor(botProfile), Seq())
     }
   }

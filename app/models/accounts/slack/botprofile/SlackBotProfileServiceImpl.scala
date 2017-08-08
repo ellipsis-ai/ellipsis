@@ -101,6 +101,8 @@ class SlackBotProfileServiceImpl @Inject() (
   def eventualMaybeEvent(slackTeamId: String, channelId: String, userId: String): Future[Option[SlackMessageEvent]] = {
     allForSlackTeamId(slackTeamId).map { botProfiles =>
       botProfiles.headOption.map { botProfile =>
+        // TODO: Create a new class of synthetic events that doesn't need a SlackUserInfo list
+        // For now, there's no text in the event, so the empty user list doesn't matter
         SlackMessageEvent(botProfile, channelId, None, userId, "", SlackTimestamp.now, slackEventService.clientFor(botProfile), Seq())
       }
     }
