@@ -4,6 +4,7 @@ import javax.inject.{Inject, Provider, Singleton}
 
 import json.BehaviorGroupData
 import json.Formatting._
+import models.accounts.slack.SlackUserInfo
 import models.accounts.slack.botprofile.SlackBotProfile
 import models.behaviors.behaviorparameter.ValidValue
 import models.behaviors.events.{Event, SlackMessageEvent}
@@ -19,7 +20,8 @@ case class SlackMessageEventData(
                                   maybeThreadId: Option[String],
                                   user: String,
                                   text: String,
-                                  ts: String
+                                  ts: String,
+                                  slackUserList: Seq[SlackUserInfo]
                                 )
 
 @Singleton
@@ -45,7 +47,7 @@ class CacheService @Inject() (
   def cacheEvent(key: String, event: Event, expiration: Duration = Duration.Inf): Unit = {
     event match {
       case ev: SlackMessageEvent => {
-        val eventData = SlackMessageEventData(ev.profile, ev.channel, ev.maybeThreadId, ev.user, ev.text, ev.ts)
+        val eventData = SlackMessageEventData(ev.profile, ev.channel, ev.maybeThreadId, ev.user, ev.text, ev.ts, ev.slackUserList)
         set(key, Json.toJson(eventData), expiration)
       }
       case _ =>
@@ -64,8 +66,7 @@ class CacheService @Inject() (
             event.text,
             event.ts,
             slackEventService.clientFor(event.profile),
-            // TODO: Add user list to caching:
-            Seq()
+            event.slackUserList
           ))
         }
         case JsError(err) => None
