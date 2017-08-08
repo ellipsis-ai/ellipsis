@@ -30,8 +30,8 @@ class SlackMessageFormatterSpec extends PlaySpec {
     "unformat channels and users" in {
       SlackMessageFormatter.unformatLinks("<@U12345678>") mustBe "@U12345678"
       SlackMessageFormatter.unformatLinks("<@U12345678|attaboy>") mustBe "@attaboy"
-      SlackMessageFormatter.unformatLinks("<@W12345678>") mustBe "@U12345678"
-      SlackMessageFormatter.unformatLinks("<@W12345678|enterprise") mustBe "@enterprise"
+      SlackMessageFormatter.unformatLinks("<@W12345678>") mustBe "@W12345678"
+      SlackMessageFormatter.unformatLinks("<@W12345678|enterprise>") mustBe "@enterprise"
       SlackMessageFormatter.unformatLinks("<#C12345789>") mustBe "#C12345789"
       SlackMessageFormatter.unformatLinks("<#C12345789|general>") mustBe "#general"
     }
@@ -56,6 +56,10 @@ class SlackMessageFormatterSpec extends PlaySpec {
       SlackMessageFormatter.unformatLinks("<mailto:luke@ellipsis.ai>") mustBe "mailto:luke@ellipsis.ai"
       SlackMessageFormatter.unformatLinks("<https://bot.ellipsis.ai/|https://bot.ellipsis.ai/>") mustBe "https://bot.ellipsis.ai/"
       SlackMessageFormatter.unformatLinks("<https://bot.ellipsis.ai/>") mustBe "https://bot.ellipsis.ai/"
+    }
+
+    "not unformat incomplete links" in {
+      SlackMessageFormatter.unformatLinks("<@U12345678") mustBe "<@U12345678"
     }
   }
 
