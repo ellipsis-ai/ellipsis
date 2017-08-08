@@ -68,6 +68,16 @@ describe("Formatter", () => {
     });
   });
 
+  describe("formatDataTypeName", () => {
+    it("drops leading non-alphabetical characters", () => {
+      expect(Formatter.formatDataTypeName("_SomeType")).toEqual("SomeType");
+    });
+
+    it("capitalizes", () => {
+      expect(Formatter.formatDataTypeName("someType")).toEqual("SomeType");
+    });
+  });
+
   describe("formatPossibleNumber", () => {
     it("strips non-numeric characters", () => {
       expect(Formatter.formatPossibleNumber("")).toEqual("");

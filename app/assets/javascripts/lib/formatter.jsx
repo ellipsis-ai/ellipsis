@@ -73,6 +73,13 @@ define(function(require) {
       }
     },
 
+    formatDataTypeName: function(name) {
+      const forCode = this.formatNameForCode(name);
+      const startingWithLetter = forCode.replace(/^[^a-zA-Z]*/, '');
+      const capitalized = startingWithLetter.charAt(0).toUpperCase() + startingWithLetter.slice(1);
+      return capitalized;
+    },
+
     isValidNameForCode: function(name) {
       return Formatter.formatNameForCode(name) === name;
     },

@@ -118,9 +118,6 @@ case class BehaviorGroupExporter(
     writeFileFor(path, "params.json", paramsStringFor(behaviorVersionData))
     writeFileFor(path, "response.md", behaviorVersionData.responseTemplate)
     writeFileFor(path, "config.json", configStringFor(behaviorVersionData))
-    behaviorVersionData.dataTypeConfig.foreach { config =>
-      writeFileFor(path, "data_type_config.json", Json.prettyPrint(Json.toJson(config)))
-    }
   }
 
   def writeActions(): Unit = {

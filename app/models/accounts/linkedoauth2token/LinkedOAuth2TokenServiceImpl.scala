@@ -80,9 +80,7 @@ class LinkedOAuth2TokenServiceImpl @Inject() (
   private def refreshIfNecessaryAction(linkedOAuth2Token: LinkedOAuth2Token): DBIO[LinkedOAuth2Token] = {
     val eventualMaybeNewInstance = if (linkedOAuth2Token.isExpiredOrExpiresSoon) {
       linkedOAuth2Token.maybeRefreshToken.map { token =>
-        val tokenResponse = linkedOAuth2Token.application.refreshTokenRequestFor(token, ws).
-          withHeaders(HeaderNames.ACCEPT -> MimeTypes.JSON).
-          post(Results.EmptyContent())
+        val tokenResponse = linkedOAuth2Token.application.refreshTokenResponseFor(token, ws)
 
         DBIO.from(tokenResponse).flatMap { response =>
           val json = response.json

@@ -810,6 +810,13 @@ const BehaviorEditor = React.createClass({
     }
   },
 
+  setConfigProps: function(props, callback) {
+    const existingGroup = this.getBehaviorGroup();
+    const existingSelected = this.getSelectedFor(existingGroup, this.getSelectedId());
+    const existingConfig = existingSelected.config;
+    this.setEditableProp("config", existingConfig.clone(props), callback);
+  },
+
   getNextBehaviorIdFor: function(group) {
     if (group.behaviorVersions.length) {
       return group.behaviorVersions[0].behaviorId;
@@ -1000,7 +1007,7 @@ const BehaviorEditor = React.createClass({
   },
 
   updateName: function(newName) {
-    const normalizedName = this.isDataTypeBehavior() ? Formatter.formatNameForCode(newName) : newName;
+    const normalizedName = this.isDataTypeBehavior() ? Formatter.formatDataTypeName(newName) : newName;
     this.setEditableProp('name', normalizedName);
   },
 
@@ -1835,7 +1842,7 @@ const BehaviorEditor = React.createClass({
 
   addNewBehavior: function(isDataType, behaviorIdToClone) {
     const group = this.getBehaviorGroup();
-    const newName = isDataType ? SequentialName.nextFor(this.getDataTypeBehaviors(), (ea) => ea.name, "dataType") : null;
+    const newName = isDataType ? SequentialName.nextFor(this.getDataTypeBehaviors(), (ea) => ea.name, "DataType") : null;
     const url = jsRoutes.controllers.BehaviorEditorController.newUnsavedBehavior(isDataType, group.teamId, behaviorIdToClone, newName).url;
     fetch(url, { credentials: 'same-origin' })
       .then((response) => response.json())
@@ -2088,7 +2095,7 @@ const BehaviorEditor = React.createClass({
           behaviorVersion={this.getSelectedBehavior()}
           paramTypes={this.getParamTypesForDataTypes()}
           inputs={this.getInputs()}
-          onChange={this.setEditableProps}
+          onChange={this.setConfigProps}
           onAddNewInput={this.addNewInput}
           onConfigureType={this.onConfigureType}
           isModified={this.editableIsModified}

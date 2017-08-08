@@ -27,10 +27,11 @@ case class SlackMessageSender(
                                text: String,
                                maybeThreadTs: Option[String] = None,
                                maybeReplyBroadcast: Option[Boolean] = None,
-                               maybeAttachments: Option[Seq[Attachment]] = None
+                               maybeAttachments: Option[Seq[Attachment]] = None,
+                               maybeChannelToForce: Option[String] = None
                              )(implicit actorSystem: ActorSystem): Future[String] = {
     client.postChatMessage(
-      maybeThreadTs.map(_ => originatingChannel).getOrElse(channelToUse),
+      maybeChannelToForce.getOrElse(maybeThreadTs.map(_ => originatingChannel).getOrElse(channelToUse)),
       text,
       username = None,
       asUser = Some(true),
@@ -86,7 +87,10 @@ case class SlackMessageSender(
           Future.successful({})
         }
         _ <- if (isDirectMessage(channelToUse) && channelToUse != originatingChannel) {
-          postChatMessage(s"<@${user}> I've sent you a private message :sleuth_or_spy:")
+          postChatMessage(
+            s"<@${user}> I've sent you a private message :sleuth_or_spy:",
+            maybeChannelToForce = Some(originatingChannel)
+          )
         } else {
           Future.successful({})
         }

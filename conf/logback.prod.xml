@@ -1,9 +1,18 @@
 <configuration>
+
   <conversionRule conversionWord="coloredLevel" converterClass="play.api.libs.logback.ColoredLevel" />
+
   <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
     <encoder>
       <pattern>%date{yyyy-MM-dd HH:mm:ss ZZZZ} %coloredLevel %logger{15} - %message%n%xException{10}</pattern>
     </encoder>
+  </appender>
+  <appender name="FILE" class="ch.qos.logback.core.FileAppender">
+    <file>/var/log/ellipsis/application.log</file>
+    <encoder class="net.logstash.logback.encoder.LogstashEncoder"></encoder>
+  </appender>
+  <appender name="ASYNCFILE" class="ch.qos.logback.classic.AsyncAppender">
+    <appender-ref ref="FILE" />
   </appender>
 
   <logger name="play" level="WARN" />
@@ -13,6 +22,7 @@
 
   <root level="WARN">
     <appender-ref ref="STDOUT" />
+    <appender-ref ref="ASYNCFILE" />
   </root>
 
 </configuration>

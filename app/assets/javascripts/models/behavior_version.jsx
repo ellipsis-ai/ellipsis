@@ -1,6 +1,6 @@
 define(function(require) {
   var
-    DataTypeConfig = require('./data_type_config'),
+    BehaviorConfig = require('./behavior_config'),
     DeepEqual = require('../lib/deep_equal'),
     Editable = require('./editable'),
     ParamType = require('./param_type'),
@@ -12,11 +12,10 @@ define(function(require) {
       super(props);
 
       var initialProps = Object.assign({
-        config: {},
+        config: null,
         knownEnvVarsUsed: [],
         shouldRevealCodeEditor: (!!props.functionBody && props.functionBody.length > 0),
         createdAt: Date.now(),
-        dataTypeConfig: null,
         functionBody: ""
       }, props);
 
@@ -30,8 +29,7 @@ define(function(require) {
         config: { value: initialProps.config, enumerable: true },
         knownEnvVarsUsed: { value: initialProps.knownEnvVarsUsed, enumerable: true },
         createdAt: { value: initialProps.createdAt, enumerable: true },
-        shouldRevealCodeEditor: { value: initialProps.shouldRevealCodeEditor, enumerable: true },
-        dataTypeConfig: { value: initialProps.dataTypeConfig, enumerable: true }
+        shouldRevealCodeEditor: { value: initialProps.shouldRevealCodeEditor, enumerable: true }
       });
     }
 
@@ -93,7 +91,7 @@ define(function(require) {
     }
 
     getDataTypeConfig() {
-      return this.dataTypeConfig;
+      return this.config.getDataTypeConfig();
     }
 
     getDataTypeFields() {
@@ -208,8 +206,8 @@ define(function(require) {
       const materializedProps = Object.assign({}, props, {
         responseTemplate: ResponseTemplate.fromString(props.responseTemplate || '')
       });
-      if (props.dataTypeConfig) {
-        materializedProps.dataTypeConfig = DataTypeConfig.fromJson(props.dataTypeConfig);
+      if (props.config) {
+        materializedProps.config = BehaviorConfig.fromJson(props.config);
       }
       if (props.triggers) {
         materializedProps.triggers = Trigger.triggersFromJson(props.triggers);
