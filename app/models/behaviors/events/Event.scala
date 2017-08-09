@@ -26,6 +26,7 @@ trait Event {
   val maybeThreadId: Option[String]
   val messageText: String
   val relevantMessageText: String = messageText
+  val relevantMessageTextWithFormatting: String = messageText
   val maybeMessageText: Option[String] = Option(messageText).filter(_.trim.nonEmpty)
   val maybeScheduled: Option[Scheduled] = None
   val context = name

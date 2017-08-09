@@ -4,6 +4,10 @@ import org.commonmark.ext.gfm.strikethrough.Strikethrough
 import org.commonmark.node._
 
 class SlackRenderer(stringBuilder: StringBuilder) extends AbstractVisitor {
+  def escapeControlEntities(text: String): String = {
+    text.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;")
+  }
+
   override def visit(blockQuote: BlockQuote) {
     var node = blockQuote.getFirstChild
     while (node != null) {
@@ -39,7 +43,7 @@ class SlackRenderer(stringBuilder: StringBuilder) extends AbstractVisitor {
   }
 
   override def visit(code: Code) {
-    stringBuilder.append(s"`${code.getLiteral}`")
+    stringBuilder.append(s"`${escapeControlEntities(code.getLiteral)}`")
     visitChildren(code)
   }
 
@@ -55,7 +59,7 @@ class SlackRenderer(stringBuilder: StringBuilder) extends AbstractVisitor {
 
   override def visit(fencedCodeBlock: FencedCodeBlock) {
     stringBuilder.append("```")
-    stringBuilder.append(fencedCodeBlock.getLiteral)
+    stringBuilder.append(escapeControlEntities(fencedCodeBlock.getLiteral))
     visitChildren(fencedCodeBlock)
     stringBuilder.append("```")
   }
@@ -89,7 +93,7 @@ class SlackRenderer(stringBuilder: StringBuilder) extends AbstractVisitor {
 
   override def visit(indentedCodeBlock: IndentedCodeBlock) {
     stringBuilder.append("\r```\r")
-    stringBuilder.append(indentedCodeBlock.getLiteral)
+    stringBuilder.append(escapeControlEntities(indentedCodeBlock.getLiteral))
     visitChildren(indentedCodeBlock)
     stringBuilder.append("\r```\r")
 

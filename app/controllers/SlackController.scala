@@ -3,6 +3,7 @@ package controllers
 import javax.inject.Inject
 
 import com.mohiva.play.silhouette.api.Silhouette
+import models.SlackMessageFormatter
 import models.behaviors.{BehaviorResponse, BotResultService}
 import models.behaviors.builtins.DisplayHelpBehavior
 import models.behaviors.events.SlackMessageActionConstants._
@@ -213,9 +214,30 @@ class SlackController @Inject() (
       } else {
         for {
           maybeProfile <- dataService.slackBotProfiles.allForSlackTeamId(info.teamId).map(_.headOption)
-          _ <- maybeProfile.map { profile =>
-            slackEventService.onEvent(SlackMessageEvent(profile, info.channel, info.maybeThreadTs, info.userId, info.message, info.ts, slackEventService.clientFor(profile)))
-          }.getOrElse {
+          maybeSlackUsers <- maybeProfile.map { profile =>
+            if (SlackMessageFormatter.textContainsRawUserIds(info.message)) {
+              slackEventService.maybeSlackUserListFor(profile)
+            } else {
+              // TODO: an empty list here isn't a good solution; we probably want a special class for
+              // the message text that knows whether it needs a user list to convert user IDs
+              Future.successful(Some(Seq()))
+            }
+          }.getOrElse(Future.successful(None))
+          _ <- (for {
+            profile <- maybeProfile
+            slackUsers <- maybeSlackUsers
+          } yield {
+            slackEventService.onEvent(SlackMessageEvent(
+              profile,
+              info.channel,
+              info.maybeThreadTs,
+              info.userId,
+              info.message,
+              info.ts,
+              slackEventService.clientFor(profile),
+              slackUsers
+            ))
+          }).getOrElse {
             Future.successful({})
           }
         } yield {}
@@ -407,7 +429,7 @@ class SlackController @Inject() (
         // we return the original message back.
         //
         // TODO: Investigate whether this is safe and/or desirable
-        val unescapedPayload = payload.replaceAll("&amp;", "&").replaceAll("&lt;", "<").replaceAll("&gt;", ">")
+        val unescapedPayload = SlackMessageFormatter.unescapeSlackHTMLEntities(payload)
 
         Json.parse(unescapedPayload).validate[ActionsTriggeredInfo] match {
           case JsSuccess(info, jsPath) => {

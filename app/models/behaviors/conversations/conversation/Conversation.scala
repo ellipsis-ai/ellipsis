@@ -51,7 +51,10 @@ trait Conversation {
       for {
         botProfile <- botProfiles.headOption
         channel <- maybeChannel
-      } yield SlackMessageEvent(botProfile, channel, None, userIdForContext, "", SlackTimestamp.now, services.slackEventService.clientFor(botProfile))
+      // TODO: Create a new class of synthetic events that doesn't need a SlackUserInfo list
+      // https://github.com/ellipsis-ai/ellipsis/issues/1719
+      // For now, there's no text in the event, so the empty user list doesn't matter
+      } yield SlackMessageEvent(botProfile, channel, None, userIdForContext, "", SlackTimestamp.now, services.slackEventService.clientFor(botProfile), Seq())
     }
   }
 
