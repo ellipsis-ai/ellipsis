@@ -1,14 +1,17 @@
 package utils
 
 import akka.actor.ActorSystem
+import json.Formatting._
 import models.SlackMessageFormatter
 import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.events.{MessageActions, SlackMessageActions}
+import play.api.libs.json.{JsArray, JsError, JsSuccess, JsValue}
 import slack.api.SlackApiClient
 import slack.models.Attachment
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
+import scala.reflect.io.File
 
 case class SlackMessageSender(
                                client: SlackApiClient,
@@ -20,7 +23,8 @@ case class SlackMessageSender(
                                maybeThreadId: Option[String],
                                maybeShouldUnfurl: Option[Boolean],
                                maybeConversation: Option[Conversation],
-                               maybeActions: Option[MessageActions] = None
+                               maybeActions: Option[MessageActions] = None,
+                               maybeFiles: Option[JsArray] = None
                              ) {
 
   private def postChatMessage(
@@ -139,6 +143,28 @@ case class SlackMessageSender(
     }
   }
 
+  def sendFile(json: JsValue)(implicit actorSystem: ActorSystem): Future[Unit] = {
+    val file = File.makeTemp().jfile
+    json.validate[SlackFileSpec] match {
+      case JsSuccess(spec, _) => {
+        client.uploadFile(
+          file,
+          content = spec.content,
+          filetype = spec.filetype,
+          filename = spec.filename,
+          channels = Some(Seq(channelToUse))
+        ).map(_ => {})
+      }
+      case JsError(err) => throw new RuntimeException("Couldn't deal") // TODO: for realz
+    }
+  }
+
+  def sendFiles(implicit actorSystem: ActorSystem): Future[Unit] = {
+    maybeFiles.map { files =>
+      Future.sequence(files.value.map(sendFile)).map(_ => {})
+    }.getOrElse(Future.successful({}))
+  }
+
   def send(implicit actorSystem: ActorSystem): Future[Option[String]] = {
     val formattedText = SlackMessageFormatter.bodyTextFor(unformattedText)
     val maybeAttachments = maybeActions.flatMap { actions =>
@@ -150,6 +176,7 @@ case class SlackMessageSender(
     for {
       _ <- sendPreamble(formattedText, channelToUse)
       maybeLastTs <- sendMessageSegmentsInOrder(messageSegmentsFor(formattedText), channelToUse, maybeShouldUnfurl, maybeAttachments, maybeConversation, None)
+      _ <- sendFiles
     } yield maybeLastTs
   }
 }

@@ -43,7 +43,23 @@ class BotResultServiceImpl @Inject() (
       }.getOrElse {
         DBIO.successful({})
       }
-      sendResult <- DBIO.from(event.sendMessage(botResult.fullText, forcePrivateResponse, maybeShouldUnfurl, maybeConversation, botResult.maybeActions))
+      maybeFiles <- try {
+        DBIO.successful(botResult.maybeFiles)
+      } catch {
+        case e: InvalidFilesException => {
+          sendInAction(SimpleTextResult(event, maybeConversation, e.responseText, forcePrivateResponse), None).map(_ => None)
+        }
+      }
+      sendResult <- DBIO.from(
+        event.sendMessage(
+          botResult.fullText,
+          forcePrivateResponse,
+          maybeShouldUnfurl,
+          maybeConversation,
+          botResult.maybeActions,
+          maybeFiles
+        )
+      )
     } yield sendResult
   }
 

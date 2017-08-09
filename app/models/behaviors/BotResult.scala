@@ -10,7 +10,7 @@ import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.events._
 import models.behaviors.templates.TemplateApplier
 import play.api.Configuration
-import play.api.libs.json.{JsDefined, JsValue}
+import play.api.libs.json._
 import services.AWSLambdaConstants._
 import services.{AWSLambdaLogResult, CacheService, DataService}
 import slick.dbio.DBIO
@@ -29,6 +29,7 @@ sealed trait BotResult {
   val forcePrivateResponse: Boolean
   val event: Event
   val maybeConversation: Option[Conversation]
+  def maybeFiles: Option[JsArray] = None
   val shouldInterrupt: Boolean = true
   def text: String
   def fullText: String = text
@@ -83,10 +84,31 @@ trait BotResultWithLogResult extends BotResult {
 
 }
 
+case class InvalidFilesException(message: String) extends Exception {
+  def responseText: String =
+    s"""Invalid files passed to `ellipsis.success()`
+       |
+       |Errors: $message
+       |
+       |The value for the `files` property should be an array like:
+       |
+       |```
+       |[
+       |  {
+       |    content: "The content…",
+       |    filetype: "text",
+       |    filename: "filname.txt"
+       |  }, ...
+       |]
+       |```
+     """.stripMargin
+}
+
 case class SuccessResult(
                           event: Event,
                           maybeConversation: Option[Conversation],
                           result: JsValue,
+                          resultWithOptions: JsValue,
                           parametersWithValues: Seq[ParameterWithValue],
                           maybeResponseTemplate: Option[String],
                           maybeLogResult: Option[AWSLambdaLogResult],
@@ -94,6 +116,15 @@ case class SuccessResult(
                           ) extends BotResultWithLogResult {
 
   val resultType = ResultType.Success
+
+  override def maybeFiles: Option[JsArray] = {
+    (resultWithOptions \ "files").validate[JsArray] match {
+      case JsSuccess(files, _) => Some(files)
+      case JsError(errs) => throw InvalidFilesException(errs.map { case (_, validationErrors) =>
+        validationErrors.map(_.message).mkString(", ")
+      }.mkString(", "))
+    }
+  }
 
   def text: String = {
     val inputs = parametersWithValues.map { ea => (ea.parameter.name, ea.preparedValue) }

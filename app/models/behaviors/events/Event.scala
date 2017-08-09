@@ -10,9 +10,9 @@ import models.behaviors.builtins.DisplayHelpBehavior
 import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.scheduling.Scheduled
 import models.team.Team
-import play.api.libs.json.JsObject
+import play.api.libs.json.{JsArray, JsObject}
 import play.api.libs.ws.WSClient
-import services.{AWSLambdaService, CacheService, DataService, DefaultServices}
+import services.{AWSLambdaService, DataService, DefaultServices}
 import slick.dbio.DBIO
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -145,7 +145,8 @@ trait Event {
                    forcePrivate: Boolean,
                    maybeShouldUnfurl: Option[Boolean],
                    maybeConversation: Option[Conversation],
-                   maybeActions: Option[MessageActions] = None
+                   maybeActions: Option[MessageActions] = None,
+                   maybeFiles: Option[JsArray] = None
                  )(implicit actorSystem: ActorSystem): Future[Option[String]]
 
   def botPrefix: String = ""
