@@ -1,6 +1,6 @@
 package utils
 
-case class SlackFileSpec(
+case class UploadFileSpec(
                           content: Option[String],
                           filetype: Option[String],
                           filename: Option[String]

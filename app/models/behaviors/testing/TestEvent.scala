@@ -6,10 +6,11 @@ import models.behaviors.UserInfo
 import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.events.{MessageActions, MessageEvent}
 import models.team.Team
-import play.api.libs.json.{JsArray, JsObject}
+import play.api.libs.json.JsObject
 import play.api.libs.ws.WSClient
 import services.DataService
 import slick.dbio.DBIO
+import utils.UploadFileSpec
 
 import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -43,7 +44,7 @@ case class TestEvent(
                    maybeShouldUnfurl: Option[Boolean],
                    maybeConversation: Option[Conversation],
                    maybeActions: Option[MessageActions],
-                   maybeFiles: Option[JsArray]
+                   files: Seq[UploadFileSpec]
                  )(implicit actorSystem: ActorSystem): Future[Option[String]] = {
     Future.successful(messageBuffer += text).map(_ => None)
   }

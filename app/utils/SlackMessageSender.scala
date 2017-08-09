@@ -1,11 +1,9 @@
 package utils
 
 import akka.actor.ActorSystem
-import json.Formatting._
 import models.SlackMessageFormatter
 import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.events.{MessageActions, SlackMessageActions}
-import play.api.libs.json.{JsArray, JsError, JsSuccess, JsValue}
 import slack.api.SlackApiClient
 import slack.models.Attachment
 
@@ -24,7 +22,7 @@ case class SlackMessageSender(
                                maybeShouldUnfurl: Option[Boolean],
                                maybeConversation: Option[Conversation],
                                maybeActions: Option[MessageActions] = None,
-                               maybeFiles: Option[JsArray] = None
+                               files: Seq[UploadFileSpec] = Seq()
                              ) {
 
   private def postChatMessage(
@@ -143,26 +141,19 @@ case class SlackMessageSender(
     }
   }
 
-  def sendFile(json: JsValue)(implicit actorSystem: ActorSystem): Future[Unit] = {
+  def sendFile(spec: UploadFileSpec)(implicit actorSystem: ActorSystem): Future[Unit] = {
     val file = File.makeTemp().jfile
-    json.validate[SlackFileSpec] match {
-      case JsSuccess(spec, _) => {
-        client.uploadFile(
-          file,
-          content = spec.content,
-          filetype = spec.filetype,
-          filename = spec.filename,
-          channels = Some(Seq(channelToUse))
-        ).map(_ => {})
-      }
-      case JsError(err) => throw new RuntimeException("Couldn't deal") // TODO: for realz
-    }
+    client.uploadFile(
+      file,
+      content = spec.content,
+      filetype = spec.filetype,
+      filename = spec.filename,
+      channels = Some(Seq(channelToUse))
+    ).map(_ => {})
   }
 
   def sendFiles(implicit actorSystem: ActorSystem): Future[Unit] = {
-    maybeFiles.map { files =>
-      Future.sequence(files.value.map(sendFile)).map(_ => {})
-    }.getOrElse(Future.successful({}))
+    Future.sequence(files.map(sendFile)).map(_ => {})
   }
 
   def send(implicit actorSystem: ActorSystem): Future[Option[String]] = {

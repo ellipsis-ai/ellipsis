@@ -1,6 +1,7 @@
 package models.behaviors
 
 import akka.actor.ActorSystem
+import json.Formatting._
 import models.IDs
 import models.accounts.logintoken.LoginToken
 import models.accounts.oauth2application.OAuth2Application
@@ -14,6 +15,7 @@ import play.api.libs.json._
 import services.AWSLambdaConstants._
 import services.{AWSLambdaLogResult, CacheService, DataService}
 import slick.dbio.DBIO
+import utils.UploadFileSpec
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -29,7 +31,7 @@ sealed trait BotResult {
   val forcePrivateResponse: Boolean
   val event: Event
   val maybeConversation: Option[Conversation]
-  def maybeFiles: Option[JsArray] = None
+  def files: Seq[UploadFileSpec] = Seq()
   val shouldInterrupt: Boolean = true
   def text: String
   def fullText: String = text
@@ -117,9 +119,9 @@ case class SuccessResult(
 
   val resultType = ResultType.Success
 
-  override def maybeFiles: Option[JsArray] = {
-    (resultWithOptions \ "files").validate[JsArray] match {
-      case JsSuccess(files, _) => Some(files)
+  override def files: Seq[UploadFileSpec] = {
+    (resultWithOptions \ "files").validate[Seq[UploadFileSpec]] match {
+      case JsSuccess(files, _) => files
       case JsError(errs) => throw InvalidFilesException(errs.map { case (_, validationErrors) =>
         validationErrors.map(_.message).mkString(", ")
       }.mkString(", "))
