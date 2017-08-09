@@ -101,7 +101,7 @@ define(function(require) {
         onSuccess: (json) => {
           this.setState({
             highlightedTriggerText: json.activatedTrigger,
-            paramValues: json.paramValues,
+            inputValues: json.paramValues,
             isTestingTriggers: false,
             hasTestedTriggers: true,
             triggerErrorOccurred: false

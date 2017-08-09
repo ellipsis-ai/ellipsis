@@ -2,6 +2,7 @@ package models
 
 import java.util
 
+import models.accounts.slack.SlackUserInfo
 import models.behaviors.templates.SlackRenderer
 import org.commonmark.ext.autolink.AutolinkExtension
 import org.commonmark.ext.gfm.strikethrough.StrikethroughExtension
@@ -33,6 +34,40 @@ object SlackMessageFormatter {
     val slack = new SlackRenderer(builder)
     commonmarkNodeFor(text).accept(slack)
     builder.mkString
+  }
+
+  def unformatLinks(text: String): String = {
+    text.
+      replaceAll("""<@(?:.+?\|)?(.+?)>""", "@$1").
+      replaceAll("""<#(?:.+?\|)?(.+?)>""", "#$1").
+      replaceAll("""<!(here|group|channel|everyone)(\|(here|group|channel|everyone))?>""", "@$1").
+      replaceAll("""<!subteam\^.+?\|(.+?)>""", "@$1").
+      replaceAll("""<!date.+?\|(.+?)>""", "$1").
+      replaceAll("""<(?:[^!].*?\|)(.+?)>""", "$1").
+      replaceAll("""<([^!].*?)>""", "$1").
+      replaceAll("""<!(?:.+?\|)?(.+?)>""", "<$1>")
+  }
+
+  def unescapeSlackHTMLEntities(text: String): String = {
+    text.replaceAll("&amp;", "&").replaceAll("&lt;", "<").replaceAll("&gt;", ">")
+  }
+
+  def augmentUserIdsWithNames(initialText: String, userList: Seq[SlackUserInfo]): String = {
+    userList.foldLeft(initialText) { (resultText, user) =>
+      resultText.replace(s"""<@${user.userId}>""", s"""<@${user.userId}|${user.name}>""")
+    }
+  }
+
+  def unformatText(text: String, userList: Seq[SlackUserInfo]): String = {
+    unescapeSlackHTMLEntities(
+      unformatLinks(
+        augmentUserIdsWithNames(text, userList)
+      )
+    )
+  }
+
+  def textContainsRawUserIds(text: String): Boolean = {
+    """<@\w+>""".r.findFirstIn(text).isDefined
   }
 
 }

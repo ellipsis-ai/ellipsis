@@ -32,7 +32,10 @@ case class ScheduledMessage(
   }
 
   def eventFor(channel: String, slackUserId: String, profile: SlackBotProfile, client: SlackApiClient): ScheduledEvent = {
-    ScheduledEvent(SlackMessageEvent(profile, channel, None, slackUserId, text, SlackTimestamp.now, client), this)
+    // TODO: Create a new class of synthetic events that doesn't need a SlackUserInfo list
+    // https://github.com/ellipsis-ai/ellipsis/issues/1719
+    // Scheduled messages shouldn't ever be created with Slack-formatted text, since the built-in schedule behavior already receives unformatted text
+    ScheduledEvent(SlackMessageEvent(profile, channel, None, slackUserId, text, SlackTimestamp.now, client, Seq()), this)
   }
 
   def withUpdatedNextTriggeredFor(when: OffsetDateTime): ScheduledMessage = {

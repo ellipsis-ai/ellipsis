@@ -73,13 +73,15 @@ class APIControllerSpec extends PlaySpec with MockitoSugar {
 
     val mockSlackClient = mock[SlackApiClient]
     when(slackEventService.clientFor(botProfile)).thenReturn(mockSlackClient)
+    when(slackEventService.maybeSlackUserListFor(botProfile)).thenReturn(Future.successful(Some(Seq())))
     when(mockSlackClient.listIms).thenReturn(Future.successful(Seq()))
     when(mockSlackClient.postChatMessage(anyString, anyString, any[Option[String]], any[Option[Boolean]], any[Option[String]],
       any[Option[String]], any[Option[Seq[Attachment]]], any[Option[Boolean]], any[Option[Boolean]],
       any[Option[String]], any[Option[String]], any[Option[Boolean]], any[Option[Boolean]],
       any[Option[String]], any[Option[Boolean]])(any[ActorSystem])).thenReturn(Future.successful(SlackTimestamp.now))
+    when(mockSlackClient.listUsers).thenReturn(Future.successful(Seq()))
 
-    val event = SlackMessageEvent(botProfile, defaultChannel, None, defaultSlackUserId, "foo", SlackTimestamp.now, mockSlackClient)
+    val event = SlackMessageEvent(botProfile, defaultChannel, None, defaultSlackUserId, "foo", SlackTimestamp.now, mockSlackClient, Seq())
     when(dataService.slackBotProfiles.allFor(team)).thenReturn(Future.successful(Seq(botProfile)))
     val loginInfo = LoginInfo(defaultContext, defaultSlackUserId)
     val slackProfile = SlackProfile(defaultSlackTeamId, loginInfo)

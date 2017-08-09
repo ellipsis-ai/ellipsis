@@ -1,6 +1,8 @@
 package models.behaviors.events
 
 import akka.actor.ActorSystem
+import models.SlackMessageFormatter
+import models.accounts.slack.SlackUserInfo
 import models.accounts.slack.botprofile.SlackBotProfile
 import models.accounts.slack.profile.SlackProfile
 import models.accounts.user.User
@@ -20,7 +22,8 @@ case class SlackMessageEvent(
                                  user: String,
                                  text: String,
                                  ts: String,
-                                 client: SlackApiClient
+                                 client: SlackApiClient,
+                                 slackUserList: Seq[SlackUserInfo]
                                ) extends MessageEvent with SlackEvent {
 
   lazy val isBotMessage: Boolean = profile.userId == user
@@ -30,9 +33,13 @@ case class SlackMessageEvent(
 
   val messageText: String = text
 
-  override val relevantMessageText: String = {
+  override val relevantMessageTextWithFormatting: String = {
     val withoutDotDotDot = MessageEvent.ellipsisRegex.replaceFirstIn(messageText, "")
     SlackMessageEvent.toBotRegexFor(profile.userId).replaceFirstIn(withoutDotDotDot, "")
+  }
+
+  override val relevantMessageText: String = {
+    unformatTextFragment(relevantMessageTextWithFormatting)
   }
 
   lazy val includesBotMention: Boolean = {
@@ -121,8 +128,7 @@ case class SlackMessageEvent(
   }
 
   override def unformatTextFragment(text: String): String = {
-    // Replace formatted links with their visible text
-    text.replaceAll("""<.+?\|(.+?)>""", "$1")
+    SlackMessageFormatter.unformatText(text, slackUserList)
   }
 
 }
