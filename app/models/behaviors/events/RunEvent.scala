@@ -6,11 +6,9 @@ import models.behaviors.BehaviorResponse
 import models.behaviors.behavior.Behavior
 import models.behaviors.conversations.conversation.Conversation
 import models.team.Team
-import play.api.Configuration
-import play.api.libs.ws.WSClient
-import slack.api.SlackApiClient
 import services.{AWSLambdaConstants, DataService, DefaultServices}
-import utils.SlackMessageSender
+import slack.api.SlackApiClient
+import utils.{UploadFileSpec, SlackMessageSender}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -48,7 +46,8 @@ case class RunEvent(
                    forcePrivate: Boolean,
                    maybeShouldUnfurl: Option[Boolean],
                    maybeConversation: Option[Conversation],
-                   maybeActions: Option[MessageActions] = None
+                   maybeActions: Option[MessageActions] = None,
+                   files: Seq[UploadFileSpec] = Seq()
                  )(implicit actorSystem: ActorSystem): Future[Option[String]] = {
     SlackMessageSender(
       client,
@@ -60,7 +59,8 @@ case class RunEvent(
       maybeThreadId,
       maybeShouldUnfurl,
       maybeConversation,
-      maybeActions
+      maybeActions,
+      files
     ).send
   }
 
