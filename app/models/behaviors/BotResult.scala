@@ -120,8 +120,8 @@ case class SuccessResult(
   val resultType = ResultType.Success
 
   override def files: Seq[UploadFileSpec] = {
-    (resultWithOptions \ "files").validate[Seq[UploadFileSpec]] match {
-      case JsSuccess(files, _) => files
+    (resultWithOptions \ "files").validateOpt[Seq[UploadFileSpec]] match {
+      case JsSuccess(maybeFiles, _) => maybeFiles.getOrElse(Seq())
       case JsError(errs) => throw InvalidFilesException(errs.map { case (_, validationErrors) =>
         validationErrors.map(_.message).mkString(", ")
       }.mkString(", "))
