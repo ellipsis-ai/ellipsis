@@ -8,6 +8,7 @@ import models.team.Team
 import play.api.libs.json.JsObject
 import play.api.libs.ws.WSClient
 import services.{DataService, DefaultServices}
+import utils.UploadFileSpec
 
 import scala.concurrent.Future
 
@@ -22,9 +23,10 @@ case class ScheduledEvent(underlying: Event, scheduled: Scheduled) extends Event
                    forcePrivate: Boolean,
                    maybeShouldUnfurl: Option[Boolean],
                    maybeConversation: Option[Conversation],
-                   maybeActions: Option[MessageActions]
+                   maybeActions: Option[MessageActions],
+                   files: Seq[UploadFileSpec]
                  )(implicit actorSystem: ActorSystem) = {
-    underlying.sendMessage(text, forcePrivate, maybeShouldUnfurl, maybeConversation, maybeActions)
+    underlying.sendMessage(text, forcePrivate, maybeShouldUnfurl, maybeConversation, maybeActions, files)
   }
 
   override def detailsFor(ws: WSClient)(implicit actorSystem: ActorSystem): Future[JsObject] = {

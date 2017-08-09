@@ -176,7 +176,7 @@ class AWSLambdaServiceImpl @Inject() (
     for {
       requiredOAuth2ApiConfigs <- dataService.requiredOAuth2ApiConfigs.allForAction(behaviorVersion.groupVersion)
       result <- if (behaviorVersion.functionBody.isEmpty) {
-        DBIO.successful(SuccessResult(event, maybeConversation, JsNull, parametersWithValues, behaviorVersion.maybeResponseTemplate, None, behaviorVersion.forcePrivateResponse))
+        DBIO.successful(SuccessResult(event, maybeConversation, JsNull, JsNull, parametersWithValues, behaviorVersion.maybeResponseTemplate, None, behaviorVersion.forcePrivateResponse))
       } else {
         for {
           user <- event.ensureUserAction(dataService)
@@ -284,8 +284,13 @@ class AWSLambdaServiceImpl @Inject() (
         |   $CONTEXT_PARAM.$NO_RESPONSE_KEY = function() {
         |     callback(null, { $NO_RESPONSE_KEY: true });
         |   };
-        |   $CONTEXT_PARAM.success = function(result) {
-        |     callback(null, { "result": result === undefined ? null : result });
+        |   $CONTEXT_PARAM.success = function(result, options) {
+        |     var resultWithOptions = Object.assign(
+        |       {},
+        |       { "result": result === undefined ? null : result },
+        |       options ? options : {}
+        |     );
+        |     callback(null, resultWithOptions);
         |   };
         |   $CONTEXT_PARAM.error = function(err) { callback(err || "(No error message or an empty error message was provided.)"); };
         |   if (process.listeners('unhandledRejection').length === 0) {

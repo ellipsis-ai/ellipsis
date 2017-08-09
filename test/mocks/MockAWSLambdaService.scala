@@ -15,7 +15,7 @@ import models.behaviors.{BotResult, ParameterWithValue, SuccessResult}
 import models.environmentvariable.EnvironmentVariable
 import org.scalatest.mock.MockitoSugar
 import play.api.Configuration
-import play.api.libs.json.JsString
+import play.api.libs.json.{JsNull, JsString}
 import play.api.libs.ws.WSClient
 import services.{AWSLambdaService, AWSLogsService, DataService}
 import slick.dbio.DBIO
@@ -35,6 +35,7 @@ class MockAWSLambdaService @Inject() (
       event,
       maybeConversation,
       result = JsString("result"),
+      resultWithOptions = JsNull,
       parametersWithValues = Seq(),
       maybeResponseTemplate = None,
       maybeLogResult = None,
