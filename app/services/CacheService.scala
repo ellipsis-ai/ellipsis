@@ -11,7 +11,7 @@ import models.behaviors.events.{Event, SlackMessageEvent}
 import play.api.cache.CacheApi
 import play.api.libs.json.{JsError, JsSuccess, JsValue, Json}
 
-import scala.concurrent.duration.Duration
+import scala.concurrent.duration._
 import scala.reflect.ClassTag
 
 case class SlackMessageEventData(
@@ -94,6 +94,20 @@ class CacheService @Inject() (
   def getBehaviorGroupData(key: String): Option[Seq[BehaviorGroupData]] = {
     get[JsValue](key).flatMap { json =>
       json.validate[Seq[BehaviorGroupData]] match {
+        case JsSuccess(data, jsPath) => Some(data)
+        case JsError(err) => None
+      }
+    }
+  }
+
+  def cacheSlackUserList(key: String, data: Seq[SlackUserInfo]): Unit = {
+    // TODO: we should probably make this last longer, and invalidate it based on events we receive from Slack
+    set(key, Json.toJson(data), 1.minute)
+  }
+
+  def getSlackUserList(key: String): Option[Seq[SlackUserInfo]] = {
+    get[JsValue](key).flatMap { json =>
+      json.validate[Seq[SlackUserInfo]] match {
         case JsSuccess(data, jsPath) => Some(data)
         case JsError(err) => None
       }

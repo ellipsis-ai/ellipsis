@@ -3,7 +3,6 @@ package controllers
 import javax.inject.Inject
 
 import akka.actor.ActorSystem
-import models.accounts.slack.SlackUserInfo
 import models.accounts.slack.botprofile.SlackBotProfile
 import models.accounts.slack.profile.SlackProfile
 import models.accounts.user.User
