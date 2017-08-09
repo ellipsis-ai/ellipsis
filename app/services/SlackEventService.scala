@@ -66,6 +66,8 @@ class SlackEventService @Inject()(
           cacheService.cacheSlackUserList(cacheKeyForSlackUserList(botProfile), slackUserList)
           Some(slackUserList)
         }.recover {
+          // TODO: we shouldn't swallow these errors -- instead figure out what should happen if we need a user list
+          // but we can't get one
           case e: ApiError => None
         }
       } yield maybeUsers
