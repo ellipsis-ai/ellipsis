@@ -99,4 +99,19 @@ class SlackMessageFormatterSpec extends PlaySpec {
 
   }
 
+  "textContainsRawUserIds" should {
+    "be true when the text has linked user IDs without display names" in {
+      SlackMessageFormatter.textContainsRawUserIds("Hi there, <@U12345678>.") mustBe true
+      SlackMessageFormatter.textContainsRawUserIds("<@W12345678> is a real piece of work.") mustBe true
+    }
+
+    "be false when the text has linked user IDs with display names" in {
+      SlackMessageFormatter.textContainsRawUserIds("Whoa, what is <@U12345678|attaboy> doing?") mustBe false
+    }
+
+    "be false when the text has no linked users" in {
+      SlackMessageFormatter.textContainsRawUserIds("Let's discuss this in <#C12345679|dev>.") mustBe false
+    }
+  }
+
 }

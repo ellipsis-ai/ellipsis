@@ -66,4 +66,8 @@ object SlackMessageFormatter {
     )
   }
 
+  def textContainsRawUserIds(text: String): Boolean = {
+    """<@\w+>""".r.findFirstIn(text).isDefined
+  }
+
 }

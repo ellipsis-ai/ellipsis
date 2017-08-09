@@ -53,7 +53,6 @@ class APIController @Inject() (
                                maybeUser: Option[User],
                                maybeBotProfile: Option[SlackBotProfile],
                                maybeSlackProfile: Option[SlackProfile],
-                               maybeSlackUserList: Option[Seq[SlackUserInfo]],
                                maybeScheduledMessage: Option[ScheduledMessage],
                                maybeTeam: Option[Team],
                                isInvokedExternally: Boolean
@@ -82,7 +81,6 @@ class APIController @Inject() (
         for {
           botProfile <- maybeBotProfile
           slackProfile <- maybeSlackProfile
-          slackUserList <- maybeSlackUserList
         } yield {
           val slackEvent = SlackMessageEvent(
             botProfile,
@@ -92,7 +90,9 @@ class APIController @Inject() (
             message,
             SlackTimestamp.now,
             slackService.clientFor(botProfile),
-            slackUserList
+            // TODO: don't send an empty list for slackUserList here
+            // We should figure out the right class for events where there is no formatted text
+            Seq()
           )
           val event: Event = maybeScheduledMessage.map { scheduledMessage =>
             ScheduledEvent(slackEvent, scheduledMessage)
@@ -148,16 +148,12 @@ class APIController @Inject() (
         maybeSlackProfile <- maybeSlackLinkedAccount.map { slackLinkedAccount =>
           dataService.slackProfiles.find(slackLinkedAccount.loginInfo)
         }.getOrElse(Future.successful(None))
-        maybeSlackUserList <- maybeBotProfile.map { profile =>
-          slackService.maybeSlackUserListFor(profile)
-        }.getOrElse(Future.successful(None))
       } yield {
         ApiMethodContext(
           maybeInvocationToken,
           maybeUser,
           maybeBotProfile,
           maybeSlackProfile,
-          maybeSlackUserList,
           maybeScheduledMessage,
           maybeTeam,
           isInvokedExternally = maybeUserForApiToken.isDefined
