@@ -214,25 +214,19 @@ class SlackController @Inject() (
       } else {
         for {
           maybeProfile <- dataService.slackBotProfiles.allForSlackTeamId(info.teamId).map(_.headOption)
-          maybeSlackUsers <- maybeProfile.map { profile =>
-            if (SlackMessageFormatter.textContainsRawUserIds(info.message)) {
-              slackEventService.maybeSlackUserListFor(profile)
-            } else {
-              // TODO: an empty list here isn't a good solution; we probably want a special class for
-              // the message text that knows whether it needs a user list to convert user IDs
-              Future.successful(Some(Seq()))
-            }
+          maybeSlackMessage <- maybeProfile.map { profile =>
+            SlackMessage.fromFormattedText(info.message, profile, slackEventService).map(Some(_))
           }.getOrElse(Future.successful(None))
           _ <- (for {
             profile <- maybeProfile
-            slackUsers <- maybeSlackUsers
+            slackMessage <- maybeSlackMessage
           } yield {
             slackEventService.onEvent(SlackMessageEvent(
               profile,
               info.channel,
               info.maybeThreadTs,
               info.userId,
-              SlackMessage.fromFormattedText(info.message, profile.userId, slackUsers),
+              slackMessage,
               info.ts,
               slackEventService.clientFor(profile)
             ))

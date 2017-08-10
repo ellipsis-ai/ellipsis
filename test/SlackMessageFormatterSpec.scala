@@ -82,7 +82,7 @@ class SlackMessageFormatterSpec extends PlaySpec {
   "unformatText" should {
 
     "strip links first, and unescape HTML entities second" in {
-      SlackMessageFormatter.unformatText("&lt;https://bot.ellipsis.ai/?foo&amp;bar&gt;", userList) mustBe "<https://bot.ellipsis.ai/?foo&bar>"
+      SlackMessageFormatter.unformatTextWithUsers("&lt;https://bot.ellipsis.ai/?foo&amp;bar&gt;", userList) mustBe "<https://bot.ellipsis.ai/?foo&bar>"
     }
 
     "handle a complex message" in {
@@ -94,7 +94,7 @@ class SlackMessageFormatterSpec extends PlaySpec {
         s"""Hey @channel, has anyone seen luke@ellipsis.ai?
           |
           |He & I have a meeting. @${user.name}, have you seen him?""".stripMargin
-      SlackMessageFormatter.unformatText(received, userList) mustBe expected
+      SlackMessageFormatter.unformatTextWithUsers(received, userList) mustBe expected
     }
 
   }

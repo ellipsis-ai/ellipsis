@@ -58,12 +58,12 @@ object SlackMessageFormatter {
     }
   }
 
-  def unformatText(text: String, userList: Seq[SlackUserInfo]): String = {
-    unescapeSlackHTMLEntities(
-      unformatLinks(
-        augmentUserIdsWithNames(text, userList)
-      )
-    )
+  def unformatText(text: String): String = {
+    unescapeSlackHTMLEntities(unformatLinks(text))
+  }
+
+  def unformatTextWithUsers(text: String, userList: Seq[SlackUserInfo]): String = {
+    unformatText(augmentUserIdsWithNames(text, userList))
   }
 
   def textContainsRawUserIds(text: String): Boolean = {
