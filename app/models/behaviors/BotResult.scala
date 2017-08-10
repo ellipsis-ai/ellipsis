@@ -266,7 +266,8 @@ case class MissingTeamEnvVarsResult(
                                  behaviorVersion: BehaviorVersion,
                                  dataService: DataService,
                                  configuration: Configuration,
-                                 missingEnvVars: Seq[String]
+                                 missingEnvVars: Seq[String],
+                                 botPrefix: String
                                ) extends BotResult with WithBehaviorLink {
 
   val resultType = ResultType.MissingTeamEnvVar
@@ -278,7 +279,7 @@ case class MissingTeamEnvVarsResult(
        |
        |You can define an environment variable by typing something like:
        |
-       |`${event.botPrefix}set env ENV_VAR_NAME value`
+       |`${botPrefix}set env ENV_VAR_NAME value`
     """.stripMargin
   }
 

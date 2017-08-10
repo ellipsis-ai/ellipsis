@@ -450,7 +450,8 @@ class SlackController @Inject() (
                     isFirstTrigger = false,
                     event,
                     lambdaService,
-                    dataService
+                    dataService,
+                    cacheService
                   ).result.map(Some(_)),
                   info.team.id,
                   info.channel.id,
@@ -472,7 +473,8 @@ class SlackController @Inject() (
                     isFirstTrigger = false,
                     event,
                     lambdaService,
-                    dataService
+                    dataService,
+                    cacheService
                   ).result.map(Some(_)),
                   info.team.id,
                   info.channel.id,
@@ -498,7 +500,8 @@ class SlackController @Inject() (
                     isFirstTrigger = false,
                     event,
                     lambdaService,
-                    dataService
+                    dataService,
+                    cacheService
                   ).result.map(Some(_)),
                   info.team.id,
                   info.channel.id,

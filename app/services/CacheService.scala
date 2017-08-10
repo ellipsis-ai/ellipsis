@@ -114,4 +114,12 @@ class CacheService @Inject() (
     }
   }
 
+  def cacheBotUsername(userId: String, username: String): Unit = {
+    set(s"slack-username-for-id-${userId}", username, 5.minutes)
+  }
+
+  def getBotUsername(userId: String): Option[String] = {
+    get(s"slack-username-for-id-${userId}")
+  }
+
 }

@@ -7,8 +7,8 @@ import models.accounts.slack.botprofile.SlackBotProfile
 import models.accounts.slack.profile.SlackProfile
 import models.accounts.user.User
 import models.behaviors.conversations.conversation.Conversation
-import services.DataService
-import slack.api.SlackApiClient
+import services.{CacheService, DataService}
+import slack.api.{ApiError, SlackApiClient}
 import utils.{SlackMessageSender, UploadFileSpec}
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -29,7 +29,22 @@ case class SlackMessageEvent(
   lazy val isBotMessage: Boolean = profile.userId == user
   lazy val isPublicChannel: Boolean = !isDirectMessage(channel) && !isPrivateChannel(channel)
 
-  override def botPrefix: String = if (isDirectMessage(channel)) { "" } else { s"<@${profile.userId}> " }
+  override def botPrefix(cacheService: CacheService)(implicit actorSystem: ActorSystem): Future[String] = {
+    if (isDirectMessage(channel)) {
+      Future.successful("")
+    } else {
+      cacheService.getBotUsername(profile.userId).map { name =>
+        Future.successful(s"@$name ")
+      }.getOrElse {
+        client.getUserInfo(profile.userId).map { slackUser =>
+          cacheService.cacheBotUsername(profile.userId, slackUser.name)
+          s"@${slackUser.name} "
+        } recover {
+          case e: ApiError => "..."
+        }
+      }
+    }
+  }
 
   val messageText: String = text
 

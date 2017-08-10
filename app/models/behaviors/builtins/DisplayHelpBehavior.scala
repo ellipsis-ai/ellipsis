@@ -6,7 +6,7 @@ import models.behaviors.events.SlackMessageActionConstants._
 import models.behaviors.events._
 import models.behaviors.{BotResult, TextWithActionsResult}
 import models.help._
-import services.{AWSLambdaService, DataService}
+import services.{AWSLambdaService, CacheService, DataService}
 import utils._
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -21,7 +21,8 @@ case class DisplayHelpBehavior(
                          isFirstTrigger: Boolean,
                          event: Event,
                          lambdaService: AWSLambdaService,
-                         dataService: DataService
+                         dataService: DataService,
+                         cacheService: CacheService
                        ) extends BuiltinBehavior {
 
   private def maybeHelpSearch: Option[String] = {
@@ -34,7 +35,7 @@ case class DisplayHelpBehavior(
     }.getOrElse("")
   }
 
-  private def introResultFor(results: Seq[HelpResult], startAt: Int): BotResult = {
+  private def introResultFor(results: Seq[HelpResult], startAt: Int, botPrefix: String): BotResult = {
     val endAt = startAt + SlackMessageSender.MAX_ACTIONS_PER_ATTACHMENT - 1
     val resultsToShow = results.slice(startAt, endAt)
     val resultsRemaining = results.slice(endAt, results.length)
@@ -49,7 +50,7 @@ case class DisplayHelpBehavior(
     val maybeInstructions = if (startAt > 0 || !isFirstTrigger) {
       None
     } else if (matchString.isEmpty) {
-      Some(s"Click a skill to learn more. You can also search by keyword. For example, type:  \n`${event.botPrefix}help bananas`")
+      Some(s"Click a skill to learn more. You can also search by keyword. For example, type:  \n`${botPrefix}help bananas`")
     } else {
       Some("Click a skill to learn more, or try searching a different keyword.")
     }
@@ -143,6 +144,7 @@ case class DisplayHelpBehavior(
           BehaviorGroupData.maybeFor(group.id, user, None, dataService)
         }).map(_.flatten.sorted)
       }.getOrElse(Future.successful(Seq()))
+      botPrefix <- event.botPrefix(cacheService)
     } yield {
       val (named, unnamed) = groupData.partition(_.maybeNonEmptyName.isDefined)
       val namedGroupData = named.map(behaviorGroupData => SkillHelpGroupData(behaviorGroupData))
@@ -152,14 +154,14 @@ case class DisplayHelpBehavior(
         namedGroupData
       }
       val matchingGroupData = maybeHelpSearch.map { helpSearch =>
-        FuzzyMatcher[HelpGroupData](helpSearch, flattenedGroupData).run.map(matchResult => HelpSearchResult(helpSearch, matchResult, event, dataService, lambdaService))
-      }.getOrElse(flattenedGroupData.map(group => SimpleHelpResult(group, event, dataService, lambdaService)))
+        FuzzyMatcher[HelpGroupData](helpSearch, flattenedGroupData).run.map(matchResult => HelpSearchResult(helpSearch, matchResult, event, dataService, lambdaService, botPrefix))
+      }.getOrElse(flattenedGroupData.map(group => SimpleHelpResult(group, event, dataService, lambdaService, botPrefix)))
       if (matchingGroupData.isEmpty) {
         emptyResult
       } else if (matchingGroupData.length == 1) {
         skillResultFor(matchingGroupData.head)
       } else {
-        introResultFor(matchingGroupData, maybeStartAtIndex.getOrElse(0))
+        introResultFor(matchingGroupData, maybeStartAtIndex.getOrElse(0), botPrefix)
       }
     }
   }

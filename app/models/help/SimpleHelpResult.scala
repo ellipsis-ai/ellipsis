@@ -7,7 +7,8 @@ case class SimpleHelpResult(
                              group: HelpGroupData,
                              event: Event,
                              dataService: DataService,
-                             lambdaService: AWSLambdaService
+                             lambdaService: AWSLambdaService,
+                             botPrefix: String
                            ) extends HelpResult {
   val matchingTriggers = Seq()
 
