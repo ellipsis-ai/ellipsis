@@ -6,7 +6,7 @@ import models.behaviors._
 import models.behaviors.behaviorparameter.BehaviorParameter
 import models.behaviors.behaviorversion.BehaviorVersion
 import models.behaviors.events.SlackMessageActionConstants._
-import models.behaviors.events.{Event, SlackMessageActionButton, SlackMessageActions, SlackMessageEvent}
+import models.behaviors.events._
 import models.behaviors.triggers.messagetrigger.MessageTrigger
 import services.DefaultServices
 import services.DataService
@@ -54,7 +54,7 @@ trait Conversation {
       // TODO: Create a new class of synthetic events that doesn't need a SlackUserInfo list
       // https://github.com/ellipsis-ai/ellipsis/issues/1719
       // For now, there's no text in the event, so the empty user list doesn't matter
-      } yield SlackMessageEvent(botProfile, channel, None, userIdForContext, "", SlackTimestamp.now, services.slackEventService.clientFor(botProfile), Seq())
+      } yield SlackMessageEvent(botProfile, channel, None, userIdForContext, SlackMessage.blank, SlackTimestamp.now, services.slackEventService.clientFor(botProfile))
     }
   }
 

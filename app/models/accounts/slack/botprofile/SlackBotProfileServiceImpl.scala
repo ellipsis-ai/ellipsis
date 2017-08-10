@@ -6,7 +6,7 @@ import javax.inject.{Inject, Provider}
 import akka.actor.ActorSystem
 import drivers.SlickPostgresDriver.api._
 import models.behaviors.{BotResult, BotResultService}
-import models.behaviors.events.SlackMessageEvent
+import models.behaviors.events.{SlackMessage, SlackMessageEvent}
 import models.team.Team
 import play.api.Logger
 import services.{DataService, SlackEventService}
@@ -101,10 +101,7 @@ class SlackBotProfileServiceImpl @Inject() (
   def eventualMaybeEvent(slackTeamId: String, channelId: String, userId: String): Future[Option[SlackMessageEvent]] = {
     allForSlackTeamId(slackTeamId).map { botProfiles =>
       botProfiles.headOption.map { botProfile =>
-        // TODO: Create a new class of synthetic events that doesn't need a SlackUserInfo list
-        // https://github.com/ellipsis-ai/ellipsis/issues/1719
-        // For now, there's no text in the event, so the empty user list doesn't matter
-        SlackMessageEvent(botProfile, channelId, None, userId, "", SlackTimestamp.now, slackEventService.clientFor(botProfile), Seq())
+        SlackMessageEvent(botProfile, channelId, None, userId, SlackMessage.blank, SlackTimestamp.now, slackEventService.clientFor(botProfile))
       }
     }
   }

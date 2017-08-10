@@ -86,12 +86,9 @@ class APIController @Inject() (
             maybeSlackChannelId.getOrElse(channel),
             None,
             slackProfile.loginInfo.providerKey,
-            message,
+            SlackMessage.fromUnformattedText(message, botProfile.userId),
             SlackTimestamp.now,
-            slackService.clientFor(botProfile),
-            // TODO: don't send an empty list for slackUserList here
-            // We should figure out the right class for events where there is no formatted text
-            Seq()
+            slackService.clientFor(botProfile)
           )
           val event: Event = maybeScheduledMessage.map { scheduledMessage =>
             ScheduledEvent(slackEvent, scheduledMessage)

@@ -7,7 +7,7 @@ import models.SlackMessageFormatter
 import models.behaviors.{BehaviorResponse, BotResultService}
 import models.behaviors.builtins.DisplayHelpBehavior
 import models.behaviors.events.SlackMessageActionConstants._
-import models.behaviors.events.{EventHandler, SlackMessageEvent}
+import models.behaviors.events.{EventHandler, SlackMessage, SlackMessageEvent}
 import models.help.HelpGroupSearchValue
 import models.silhouette.EllipsisEnv
 import play.api.Logger
@@ -232,10 +232,9 @@ class SlackController @Inject() (
               info.channel,
               info.maybeThreadTs,
               info.userId,
-              info.message,
+              SlackMessage.fromFormattedText(info.message, profile.userId, slackUsers),
               info.ts,
-              slackEventService.clientFor(profile),
-              slackUsers
+              slackEventService.clientFor(profile)
             ))
           }).getOrElse {
             Future.successful({})
