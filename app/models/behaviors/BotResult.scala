@@ -99,7 +99,7 @@ case class InvalidFilesException(message: String) extends Exception {
        |  {
        |    content: "The content…",
        |    filetype: "text",
-       |    filename: "filname.txt"
+       |    filename: "filename.txt"
        |  }, ...
        |]
        |```

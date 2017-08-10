@@ -142,10 +142,10 @@ case class SlackMessageSender(
   }
 
   def sendFile(spec: UploadFileSpec)(implicit actorSystem: ActorSystem): Future[Unit] = {
-    val file = File.makeTemp().jfile
+    val file = File.makeTemp()
+    file.appendAll(spec.content)
     client.uploadFile(
-      file,
-      content = spec.content,
+      file.jfile,
       filetype = spec.filetype,
       filename = spec.filename,
       channels = Some(Seq(channelToUse))
