@@ -18,6 +18,7 @@ class EventHandler @Inject() (services: DefaultServices) {
 
   val dataService = services.dataService
   val lambdaService = services.lambdaService
+  val cacheService = services.cacheService
   implicit val actorService = services.actorSystem
 
   def slackEventService = services.slackEventService
@@ -28,7 +29,7 @@ class EventHandler @Inject() (services: DefaultServices) {
       responses <- dataService.behaviorResponses.allFor(event, maybeTeam, None)
       results <- Future.sequence(responses.map(_.result)).flatMap { r =>
         if (r.isEmpty && event.isResponseExpected) {
-          event.noExactMatchResult(dataService, lambdaService).map { noMatchResult =>
+          event.noExactMatchResult(dataService, lambdaService, cacheService).map { noMatchResult =>
             Seq(noMatchResult)
           }
         } else {
@@ -95,7 +96,7 @@ class EventHandler @Inject() (services: DefaultServices) {
     maybeConversation.map { conversation =>
       handleInConversation(conversation, event).map(Seq(_))
     }.getOrElse {
-      BuiltinBehavior.maybeFrom(event, lambdaService, dataService, services.configuration).map { builtin =>
+      BuiltinBehavior.maybeFrom(event, lambdaService, dataService, cacheService, services.configuration).map { builtin =>
         builtin.result.map(Seq(_))
       }.getOrElse {
         startInvokeConversationFor(event)

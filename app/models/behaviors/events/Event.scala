@@ -95,17 +95,7 @@ trait Event {
     s"[install new skills]($installLink)"
   }
 
-  def iDontKnowHowToRespondMessageFor(lambdaService: AWSLambdaService)(implicit ec: ExecutionContext): String = {
-    s"""
-       |I don’t know how to respond to:
-       |
-       |> $messageText
-       |
-       |Type `${botPrefix}help` to see what I can do or ${teachMeLinkFor(lambdaService)}
-    """.stripMargin
-  }
-
-  def noExactMatchResult(dataService: DataService, lambdaService: AWSLambdaService)(implicit actorSystem: ActorSystem): Future[BotResult] = {
+  def noExactMatchResult(dataService: DataService, lambdaService: AWSLambdaService, cacheService: CacheService)(implicit actorSystem: ActorSystem): Future[BotResult] = {
     DisplayHelpBehavior(
       Some(messageText),
       None,
@@ -115,7 +105,8 @@ trait Event {
       isFirstTrigger = true,
       this,
       lambdaService,
-      dataService
+      dataService,
+      cacheService
     ).result
   }
 
@@ -149,7 +140,7 @@ trait Event {
                    maybeActions: Option[MessageActions] = None
                  )(implicit actorSystem: ActorSystem): Future[Option[String]]
 
-  def botPrefix: String = ""
+  def botPrefix(cacheService: CacheService)(implicit actorSystem: ActorSystem): Future[String] = Future.successful("")
 
   val invocationLogText: String
 

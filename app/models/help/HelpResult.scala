@@ -17,9 +17,9 @@ trait HelpResult {
 
   def description: String
 
-  private def triggerStringFor(trigger: BehaviorTriggerData): String = {
+  private def triggerStringFor(trigger: BehaviorTriggerData, botPrefix: String): String = {
     val prefix = if (trigger.requiresMention)
-      event.botPrefix
+      botPrefix
     else
       ""
     val formattedTrigger = s"`$prefix${trigger.text}`"
@@ -77,8 +77,8 @@ trait HelpResult {
     }
   }
 
-  def helpTextFor(behaviorVersions: Seq[BehaviorVersionData]): String = {
-    behaviorVersions.flatMap(ea => maybeHelpStringFor(ea)).mkString("\n\n")
+  def helpTextFor(behaviorVersions: Seq[BehaviorVersionData], botPrefix: String): String = {
+    behaviorVersions.flatMap(ea => maybeHelpStringFor(ea, botPrefix)).mkString("\n\n")
   }
 
   def behaviorVersionsHeading(includeNonMatching: Boolean): String = {
@@ -101,7 +101,7 @@ trait HelpResult {
     }
   }
 
-  def maybeHelpStringFor(behaviorVersionData: BehaviorVersionData): Option[String] = {
+  def maybeHelpStringFor(behaviorVersionData: BehaviorVersionData, botPrefix: String): Option[String] = {
     val triggers = behaviorVersionData.triggers
     if (triggers.isEmpty) {
       None
@@ -109,9 +109,9 @@ trait HelpResult {
       val nonRegexTriggers = triggers.filterNot(_.isRegex)
       val namedTriggers =
         if (nonRegexTriggers.isEmpty)
-          triggerStringFor(triggers.head)
+          triggerStringFor(triggers.head, botPrefix)
         else
-          nonRegexTriggers.map(trigger => triggerStringFor(trigger)).mkString(" ")
+          nonRegexTriggers.map(trigger => triggerStringFor(trigger, botPrefix)).mkString(" ")
       val regexTriggerCount =
         if (nonRegexTriggers.isEmpty)
           triggers.tail.count({ ea => ea.isRegex })
