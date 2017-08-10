@@ -3,7 +3,6 @@ package controllers
 import javax.inject.Inject
 
 import com.mohiva.play.silhouette.api.Silhouette
-import models.SlackMessageFormatter
 import models.behaviors.{BehaviorResponse, BotResultService}
 import models.behaviors.builtins.DisplayHelpBehavior
 import models.behaviors.events.SlackMessageActionConstants._
@@ -422,7 +421,7 @@ class SlackController @Inject() (
         // we return the original message back.
         //
         // TODO: Investigate whether this is safe and/or desirable
-        val unescapedPayload = SlackMessageFormatter.unescapeSlackHTMLEntities(payload)
+        val unescapedPayload = SlackMessage.unescapeSlackHTMLEntities(payload)
 
         Json.parse(unescapedPayload).validate[ActionsTriggeredInfo] match {
           case JsSuccess(info, jsPath) => {
