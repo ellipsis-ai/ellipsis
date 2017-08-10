@@ -84,7 +84,7 @@ case class DisplayHelpBehavior(
     }
   }
 
-  def skillResultFor(result: HelpResult, botPrefix: String): BotResult = {
+  def skillResultFor(result: HelpResult): BotResult = {
     val behaviorVersions = result.behaviorVersionsToDisplay(includeNonMatchingResults)
 
     val intro = if (isFirstTrigger) {
@@ -92,7 +92,7 @@ case class DisplayHelpBehavior(
     } else {
       "OK, here’s the help you asked for:"
     }
-    val versionsText = result.helpTextFor(behaviorVersions, botPrefix)
+    val versionsText = result.helpTextFor(behaviorVersions)
     val nameAndDescription = skillNameAndDescriptionFor(result)
     val listHeading = result.behaviorVersionsHeading(includeNonMatchingResults) ++ "  "
     val resultText =
@@ -154,12 +154,12 @@ case class DisplayHelpBehavior(
         namedGroupData
       }
       val matchingGroupData = maybeHelpSearch.map { helpSearch =>
-        FuzzyMatcher[HelpGroupData](helpSearch, flattenedGroupData).run.map(matchResult => HelpSearchResult(helpSearch, matchResult, event, dataService, lambdaService))
-      }.getOrElse(flattenedGroupData.map(group => SimpleHelpResult(group, event, dataService, lambdaService)))
+        FuzzyMatcher[HelpGroupData](helpSearch, flattenedGroupData).run.map(matchResult => HelpSearchResult(helpSearch, matchResult, event, dataService, lambdaService, botPrefix))
+      }.getOrElse(flattenedGroupData.map(group => SimpleHelpResult(group, event, dataService, lambdaService, botPrefix)))
       if (matchingGroupData.isEmpty) {
         emptyResult
       } else if (matchingGroupData.length == 1) {
-        skillResultFor(matchingGroupData.head, botPrefix)
+        skillResultFor(matchingGroupData.head)
       } else {
         introResultFor(matchingGroupData, maybeStartAtIndex.getOrElse(0), botPrefix)
       }
