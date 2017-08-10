@@ -1,6 +1,7 @@
 package models.behaviors
 
 import akka.actor.ActorSystem
+import json.Formatting._
 import models.IDs
 import models.accounts.logintoken.LoginToken
 import models.accounts.oauth2application.OAuth2Application
@@ -10,10 +11,11 @@ import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.events._
 import models.behaviors.templates.TemplateApplier
 import play.api.Configuration
-import play.api.libs.json.{JsDefined, JsValue}
+import play.api.libs.json._
 import services.AWSLambdaConstants._
 import services.{AWSLambdaLogResult, CacheService, DataService}
 import slick.dbio.DBIO
+import utils.UploadFileSpec
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -29,6 +31,7 @@ sealed trait BotResult {
   val forcePrivateResponse: Boolean
   val event: Event
   val maybeConversation: Option[Conversation]
+  def files: Seq[UploadFileSpec] = Seq()
   val shouldInterrupt: Boolean = true
   def text: String
   def fullText: String = text
@@ -83,10 +86,31 @@ trait BotResultWithLogResult extends BotResult {
 
 }
 
+case class InvalidFilesException(message: String) extends Exception {
+  def responseText: String =
+    s"""Invalid files passed to `ellipsis.success()`
+       |
+       |Errors: $message
+       |
+       |The value for the `files` property should be an array like:
+       |
+       |```
+       |[
+       |  {
+       |    content: "The content…",
+       |    filetype: "text",
+       |    filename: "filname.txt"
+       |  }, ...
+       |]
+       |```
+     """.stripMargin
+}
+
 case class SuccessResult(
                           event: Event,
                           maybeConversation: Option[Conversation],
                           result: JsValue,
+                          resultWithOptions: JsValue,
                           parametersWithValues: Seq[ParameterWithValue],
                           maybeResponseTemplate: Option[String],
                           maybeLogResult: Option[AWSLambdaLogResult],
@@ -94,6 +118,15 @@ case class SuccessResult(
                           ) extends BotResultWithLogResult {
 
   val resultType = ResultType.Success
+
+  override def files: Seq[UploadFileSpec] = {
+    (resultWithOptions \ "files").validateOpt[Seq[UploadFileSpec]] match {
+      case JsSuccess(maybeFiles, _) => maybeFiles.getOrElse(Seq())
+      case JsError(errs) => throw InvalidFilesException(errs.map { case (_, validationErrors) =>
+        validationErrors.map(_.message).mkString(", ")
+      }.mkString(", "))
+    }
+  }
 
   def text: String = {
     val inputs = parametersWithValues.map { ea => (ea.parameter.name, ea.preparedValue) }

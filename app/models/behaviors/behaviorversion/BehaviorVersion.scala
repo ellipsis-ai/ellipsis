@@ -80,7 +80,7 @@ case class BehaviorVersion(
     val json = Json.parse(jsonString)
     val logResultOption = Some(logResult)
     (json \ "result").toOption.map { successResult =>
-      SuccessResult(event, maybeConversation, successResult, parametersWithValues, maybeResponseTemplate, logResultOption, forcePrivateResponse)
+      SuccessResult(event, maybeConversation, successResult, json, parametersWithValues, maybeResponseTemplate, logResultOption, forcePrivateResponse)
     }.getOrElse {
       if ((json \ NO_RESPONSE_KEY).toOption.exists(_.as[Boolean])) {
         NoResponseResult(event, maybeConversation, logResultOption)

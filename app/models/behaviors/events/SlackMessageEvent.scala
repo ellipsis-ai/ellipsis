@@ -9,7 +9,7 @@ import models.accounts.user.User
 import models.behaviors.conversations.conversation.Conversation
 import services.{CacheService, DataService}
 import slack.api.{ApiError, SlackApiClient}
-import utils.SlackMessageSender
+import utils.{SlackMessageSender, UploadFileSpec}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -118,7 +118,8 @@ case class SlackMessageEvent(
                    forcePrivate: Boolean,
                    maybeShouldUnfurl: Option[Boolean],
                    maybeConversation: Option[Conversation],
-                   maybeActions: Option[MessageActions] = None
+                   maybeActions: Option[MessageActions] = None,
+                   files: Seq[UploadFileSpec] = Seq()
                  )(implicit actorSystem: ActorSystem): Future[Option[String]] = {
     channelForSend(forcePrivate, maybeConversation).flatMap { channelToUse =>
       SlackMessageSender(
@@ -131,7 +132,8 @@ case class SlackMessageEvent(
         maybeThreadId,
         maybeShouldUnfurl,
         maybeConversation,
-        maybeActions
+        maybeActions,
+        files
       ).send
     }
   }

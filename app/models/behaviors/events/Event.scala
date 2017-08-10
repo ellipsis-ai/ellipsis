@@ -12,8 +12,9 @@ import models.behaviors.scheduling.Scheduled
 import models.team.Team
 import play.api.libs.json.JsObject
 import play.api.libs.ws.WSClient
-import services.{AWSLambdaService, CacheService, DataService, DefaultServices}
+import services.{AWSLambdaService, DataService, CacheService, DefaultServices}
 import slick.dbio.DBIO
+import utils.UploadFileSpec
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{ExecutionContext, Future}
@@ -137,7 +138,8 @@ trait Event {
                    forcePrivate: Boolean,
                    maybeShouldUnfurl: Option[Boolean],
                    maybeConversation: Option[Conversation],
-                   maybeActions: Option[MessageActions] = None
+                   maybeActions: Option[MessageActions] = None,
+                   files: Seq[UploadFileSpec] = Seq()
                  )(implicit actorSystem: ActorSystem): Future[Option[String]]
 
   def botPrefix(cacheService: CacheService)(implicit actorSystem: ActorSystem): Future[String] = Future.successful("")
