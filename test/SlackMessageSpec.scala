@@ -71,11 +71,11 @@ class SlackMessageSpec extends PlaySpec {
       val received =
         s"""Hey <!channel|channel>, has anyone seen <mailto:luke@ellipsis.ai|luke@ellipsis.ai>?
            |
-          |He &amp; I have a meeting. <@${user.userId}>, have you seen him?""".stripMargin
+           |He &amp; I have a meeting. <@${user.userId}>, have you seen him?""".stripMargin
       val expected =
         s"""Hey @channel, has anyone seen luke@ellipsis.ai?
            |
-          |He & I have a meeting. @${user.name}, have you seen him?""".stripMargin
+           |He & I have a meeting. @${user.name}, have you seen him?""".stripMargin
       SlackMessage.unformatTextWithUsers(received, userList) mustBe expected
     }
 
