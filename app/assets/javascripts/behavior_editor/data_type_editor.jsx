@@ -10,6 +10,7 @@ define(function(require) {
     ID = require('../lib/id'),
     SectionHeading = require('../shared_ui/section_heading'),
     SequentialName = require('../lib/sequential_name'),
+    BehaviorConfig = require('../models/behavior_config'),
     BehaviorGroup = require('../models/behavior_group'),
     BehaviorVersion = require('../models/behavior_version'),
     DataTypeField = require('../models/data_type_field'),
@@ -186,7 +187,7 @@ define(function(require) {
             animationIsDisabled={this.props.animationIsDisabled}
 
             onToggleAWSConfig={this.props.onToggleAWSConfig}
-            awsConfig={this.props.awsConfig}
+            behaviorConfig={this.props.behaviorConfig}
             onAWSAddNewEnvVariable={this.props.onAWSAddNewEnvVariable}
             onAWSConfigChange={this.props.onAWSConfigChange}
 
@@ -292,7 +293,7 @@ define(function(require) {
     animationIsDisabled: React.PropTypes.bool,
 
     onToggleAWSConfig: React.PropTypes.func.isRequired,
-    awsConfig: React.PropTypes.object,
+    behaviorConfig: React.PropTypes.instanceOf(BehaviorConfig).isRequired,
     onAWSAddNewEnvVariable: React.PropTypes.func.isRequired,
     onAWSConfigChange: React.PropTypes.func.isRequired,
 

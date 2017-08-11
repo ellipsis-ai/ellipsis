@@ -1,13 +1,14 @@
 define(function(require) {
   var React = require('react'),
+    BehaviorConfig = require('../models/behavior_config'),
     DropdownMenu = require('../shared_ui/dropdown_menu');
 
   return React.createClass({
     displayName: "APISelectorMenu",
     propTypes: {
       openWhen: React.PropTypes.bool.isRequired,
+      behaviorConfig: React.PropTypes.instanceOf(BehaviorConfig),
       onAWSClick: React.PropTypes.func.isRequired,
-      awsCheckedWhen: React.PropTypes.bool.isRequired,
       toggle: React.PropTypes.func.isRequired,
       allOAuth2Applications: React.PropTypes.arrayOf(React.PropTypes.shape({
         applicationId: React.PropTypes.string.isRequired,
@@ -37,10 +38,18 @@ define(function(require) {
       getOAuth2ApiWithId: React.PropTypes.func.isRequired
     },
 
+    canHaveAwsConfig: function() {
+      return Boolean(this.props.behaviorConfig);
+    },
+
+    hasAwsConfig: function() {
+      return Boolean(this.props.behaviorConfig && this.props.behaviorConfig.aws);
+    },
+
     getAPISelectorDropdownLabel: function() {
       var activeApiConfigs = this.props.requiredOAuth2ApiConfigs.filter((ea) => !!ea.application);
       var activeAPICount = activeApiConfigs.length + this.props.requiredSimpleTokenApis.length;
-      if (this.props.awsCheckedWhen) {
+      if (this.hasAwsConfig()) {
         activeAPICount++;
       }
       if (activeAPICount > 0) {
@@ -134,11 +143,13 @@ define(function(require) {
           menuClassName="popup-dropdown-menu-wide popup-dropdown-menu-right mobile-popup-dropdown-menu-left"
           toggle={this.props.toggle}
         >
-          <DropdownMenu.Item
-            onClick={this.props.onAWSClick}
-            checkedWhen={this.props.awsCheckedWhen}
-            label={(<img src="/assets/images/logos/aws_logo_web_300px.png" width="77" height="32"/>)}
-          />
+          {this.canHaveAwsConfig() ? (
+            <DropdownMenu.Item
+              onClick={this.props.onAWSClick}
+              checkedWhen={this.hasAwsConfig()}
+              label={(<img src="/assets/images/logos/aws_logo_web_300px.png" width="77" height="32"/>)}
+            />
+          ) : null}
           {this.props.allOAuth2Applications.map((app, index) => {
             return (
               <DropdownMenu.Item
