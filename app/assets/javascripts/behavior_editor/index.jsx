@@ -585,6 +585,10 @@ const BehaviorEditor = React.createClass({
     this.setEditableProp('inputIds', ImmutableObjectUtils.arrayRemoveElementAtIndex(this.getInputIds(), index));
   },
 
+  deleteAllInputs: function() {
+    this.setEditableProp('inputIds', []);
+  },
+
   deleteTriggerAtIndex: function(index) {
     var triggers = ImmutableObjectUtils.arrayRemoveElementAtIndex(this.getBehaviorTriggers(), index);
     this.setEditableProp('triggers', triggers);
@@ -2095,8 +2099,10 @@ const BehaviorEditor = React.createClass({
           behaviorVersion={this.getSelectedBehavior()}
           paramTypes={this.getParamTypesForDataTypes()}
           inputs={this.getInputs()}
-          onChange={this.setConfigProps}
+          onChangeConfig={this.setConfigProps}
+          onChangeCode={this.updateCode}
           onAddNewInput={this.addNewInput}
+          onDeleteInputs={this.deleteAllInputs}
           onConfigureType={this.onConfigureType}
           isModified={this.editableIsModified}
 
