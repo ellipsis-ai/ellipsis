@@ -69,7 +69,7 @@ define(function(require) {
     }
 
     setDataTypeConfig(newConfig, callback) {
-      this.props.onChange({
+      this.props.onChangeConfig({
         dataTypeConfig: newConfig
       }, callback);
     }
@@ -132,9 +132,7 @@ define(function(require) {
       if (shouldUseSearch) {
         this.props.onAddNewInput('searchQuery');
       } else {
-        this.props.onChange({
-          inputIds: []
-        });
+        this.props.onDeleteInputs();
       }
     }
 
@@ -149,12 +147,6 @@ define(function(require) {
 
     isValidForDataStorage() {
       return this.getBehaviorGroup().isValidForDataStorage();
-    }
-
-    updateCode(newCode) {
-      this.props.onChange({
-        functionBody: newCode
-      });
     }
 
     changeSource() {
@@ -205,7 +197,7 @@ define(function(require) {
             apiApplications={this.props.apiApplications}
 
             functionBody={this.getSelectedBehavior().getFunctionBody()}
-            onChangeFunctionBody={this.updateCode}
+            onChangeFunctionBody={this.props.onChangeCode}
             onCursorChange={this.props.onCursorChange}
             useLineWrapping={this.props.useLineWrapping}
             onToggleCodeEditorLineWrapping={this.props.onToggleCodeEditorLineWrapping}
@@ -286,8 +278,10 @@ define(function(require) {
     behaviorVersion: React.PropTypes.instanceOf(BehaviorVersion).isRequired,
     paramTypes: React.PropTypes.arrayOf(React.PropTypes.instanceOf(ParamType)).isRequired,
     inputs: React.PropTypes.arrayOf(React.PropTypes.instanceOf(Input)).isRequired,
-    onChange: React.PropTypes.func.isRequired,
+    onChangeConfig: React.PropTypes.func.isRequired,
+    onChangeCode: React.PropTypes.func.isRequired,
     onAddNewInput: React.PropTypes.func.isRequired,
+    onDeleteInputs: React.PropTypes.func.isRequired,
     onConfigureType: React.PropTypes.func.isRequired,
     isModified: React.PropTypes.func.isRequired,
 
