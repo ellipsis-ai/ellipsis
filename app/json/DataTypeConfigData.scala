@@ -1,5 +1,6 @@
 package json
 
+import export.BehaviorGroupExporter
 import models.behaviors.datatypeconfig.{DataTypeConfig, DataTypeConfigForSchema}
 import models.behaviors.datatypefield.DataTypeFieldForSchema
 import models.behaviors.defaultstorageitem.GraphQLHelpers
@@ -17,14 +18,30 @@ case class DataTypeConfigData(
 
   lazy val typeName: String = name.getOrElse(GraphQLHelpers.fallbackTypeName)
 
+  def userDefinedFields: Seq[DataTypeFieldData] = fields.filterNot(_.isBuiltin)
+
   def copyWithParamTypeIdsIn(oldToNewIdMapping: collection.mutable.Map[String, String]): DataTypeConfigData = {
-    copy(fields = fields.map(_.copyWithParamTypeIdsIn(oldToNewIdMapping)))
+    copy(fields = userDefinedFields.map(_.copyWithParamTypeIdsIn(oldToNewIdMapping)))
   }
 
   def copyForClone: DataTypeConfigData = {
     copy(
-      fields = fields.map(_.copyForClone)
+      fields = userDefinedFields.map(_.copyForClone)
     )
+  }
+
+  def copyForNewVersion: DataTypeConfigData = {
+    copy(
+      fields = userDefinedFields.map(_.copyForNewVersion)
+    )
+  }
+
+  def copyForExport(groupExporter: BehaviorGroupExporter): DataTypeConfigData = {
+    if (usesCode.contains(true)) {
+      copy(fields = Seq())
+    } else {
+      copy(fields = userDefinedFields.map(_.copyForExport(groupExporter)))
+    }
   }
 
   def dataTypeFieldsAction(dataService: DataService): DBIO[Seq[DataTypeFieldForSchema]] = {

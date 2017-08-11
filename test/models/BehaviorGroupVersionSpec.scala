@@ -1,9 +1,10 @@
 package models
 
 import drivers.SlickPostgresDriver.api.{Database => PostgresDatabase}
-import json.{BehaviorGroupData, BehaviorParameterTypeData, BehaviorVersionData}
+import json.{BehaviorGroupData, BehaviorParameterTypeData, BehaviorVersionData, DataTypeFieldData}
 import models.behaviors.behaviorgroup.BehaviorGroup
-import models.behaviors.behaviorparameter.{BehaviorParameterType, NumberType, TextType}
+import models.behaviors.behaviorparameter.TextType
+import play.api.libs.json.Json
 import support.DBSpec
 
 class BehaviorGroupVersionSpec extends DBSpec {
@@ -116,6 +117,54 @@ class BehaviorGroupVersionSpec extends DBSpec {
         val saved = newSavedGroupVersionFor(group, user, Some(groupData))
 
         runNow(dataService.behaviorVersions.dataTypesForGroupVersionAction(saved)).head.maybeName mustBe Some("Adatatype")
+      })
+    }
+
+    "maintains default storage data" in {
+      withEmptyDB(dataService, { db =>
+        val team = newSavedTeam
+        val user = newSavedUserOn(team)
+        val group = newSavedBehaviorGroupFor(team)
+
+        val dataTypeVersionData = BehaviorVersionData.newUnsavedFor(team.id, isDataType = true, maybeName = Some("A data type"), dataService)
+        val defaultStorageDataTypeVersionData = dataTypeVersionData.copy(
+          config = dataTypeVersionData.config.copy(
+            dataTypeConfig = dataTypeVersionData.config.dataTypeConfig.map { cfg =>
+              cfg.copy(
+                usesCode = Some(false),
+                fields = Seq(
+                  DataTypeFieldData.newUnsavedNamed("name", runNow(BehaviorParameterTypeData.from(TextType, dataService)))
+                )
+              )
+            }
+          )
+        )
+
+        val groupData = newGroupVersionDataFor(group, user).copy(
+          behaviorVersions = Seq(defaultStorageDataTypeVersionData)
+        )
+
+        val firstGroupVersion = newSavedGroupVersionFor(group, user, Some(groupData))
+
+        val firstBehaviorVersion = runNow(dataService.behaviorVersions.allForGroupVersion(firstGroupVersion)).head
+        val firstDataTypeConfig = runNow(dataService.dataTypeConfigs.maybeFor(firstBehaviorVersion)).get
+        val firstDataTypeFields = runNow(dataService.dataTypeFields.allFor(firstDataTypeConfig))
+
+        val behavior = runNow(dataService.behaviors.allForGroup(firstGroupVersion.group)).head
+        val savedItem = runNow(dataService.defaultStorageItems.createItemForBehavior(behavior, user, Json.toJson(Map("name" -> "foo"))))
+
+        val groupVersionData = runNow(BehaviorGroupData.buildFor(firstGroupVersion, user, dataService)).copyForNewVersionOf(group)
+        val secondGroupVersion = runNow(dataService.behaviorGroupVersions.createFor(group, user, groupVersionData))
+
+        val secondBehaviorVersion = runNow(dataService.behaviorVersions.allForGroupVersion(secondGroupVersion)).head
+        val secondDataTypeConfig = runNow(dataService.dataTypeConfigs.maybeFor(secondBehaviorVersion)).get
+        val secondDataTypeFields = runNow(dataService.dataTypeFields.allFor(secondDataTypeConfig))
+
+        firstDataTypeFields.map(_.fieldId).toSet mustBe secondDataTypeFields.map(_.fieldId).toSet
+
+        val itemForSecondVersion = runNow(dataService.defaultStorageItems.allFor(behavior)).head
+
+        savedItem.data mustBe itemForSecondVersion.data
       })
     }
 

@@ -1,11 +1,11 @@
 import drivers.SlickPostgresDriver.api._
 import export.{BehaviorGroupExporter, BehaviorGroupZipImporter}
-import json.{BehaviorParameterTypeData, BehaviorVersionData, LibraryVersionData}
+import json.{BehaviorParameterTypeData, BehaviorVersionData, DataTypeFieldData, LibraryVersionData}
 import models.IDs
 import models.accounts.user.User
 import models.behaviors.behaviorgroup.{BehaviorGroup, BehaviorGroupQueries}
 import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
-import models.behaviors.behaviorparameter.{BehaviorBackedDataType, BehaviorParameterType}
+import models.behaviors.behaviorparameter.{BehaviorBackedDataType, BehaviorParameterType, TextType}
 import models.behaviors.behaviorversion.BehaviorVersion
 import support.DBSpec
 
@@ -215,7 +215,59 @@ class BehaviorGroupImportExportSpec extends DBSpec {
           dataService.behaviors.maybeCurrentVersionFor(behavior)
         }).map(_.flatten))
         importedDataTypeVersions must have length 1
-        checkParamTypeMatches(importedParams.head.input.paramType, importedDataTypeVersions.head)
+        val importedDataTypeVersion = importedDataTypeVersions.head
+        val dataTypeConfig = runNow(dataService.dataTypeConfigs.maybeFor(importedDataTypeVersion)).get
+        runNow(dataService.dataTypeFields.allFor(dataTypeConfig)) mustBe empty
+        checkParamTypeMatches(importedParams.head.input.paramType, importedDataTypeVersion)
+      })
+    }
+
+    "export and import back in with a default-storage-backed data type" in {
+      withEmptyDB(dataService, { db =>
+        val team = newSavedTeam
+        val user = newSavedUserOn(team)
+        val group = newSavedBehaviorGroupFor(team)
+
+        val dataTypeVersionData = BehaviorVersionData.newUnsavedFor(team.id, isDataType = true, maybeName = Some("A data type"), dataService)
+        val defaultStorageDataTypeVersionData = dataTypeVersionData.copy(
+          config = dataTypeVersionData.config.copy(
+            dataTypeConfig = dataTypeVersionData.config.dataTypeConfig.map { cfg =>
+              cfg.copy(
+                usesCode = Some(false),
+                fields = Seq(
+                  DataTypeFieldData.newUnsavedNamed("name", runNow(BehaviorParameterTypeData.from(TextType, dataService)))
+                )
+              )
+            }
+          )
+        )
+
+        val groupData = newGroupVersionDataFor(group, user).copy(
+          behaviorVersions = Seq(defaultStorageDataTypeVersionData)
+        )
+        newSavedGroupVersionFor(group, user, Some(groupData))
+
+        val groupsBefore = runNow(dataService.behaviorGroups.allFor(team))
+        groupsBefore must have length 1
+
+        exportAndImport(group, user, user)
+
+        val groupsAfter = runNow(dataService.behaviorGroups.allFor(team))
+        groupsAfter must have length 2
+
+        val exportedGroup = groupsBefore.head
+        val importedGroup = groupsAfter.filterNot(_.id == exportedGroup.id).head
+
+        mustBeValidImport(exportedGroup, importedGroup)
+
+        val importedDataTypes = runNow(dataService.behaviors.dataTypesForGroup(importedGroup))
+        val importedDataTypeVersions = runNow(Future.sequence(importedDataTypes.map { behavior =>
+          dataService.behaviors.maybeCurrentVersionFor(behavior)
+        }).map(_.flatten))
+        importedDataTypeVersions must have length 1
+        val importedDataTypeVersion = importedDataTypeVersions.head
+        val dataTypeConfig = runNow(dataService.dataTypeConfigs.maybeFor(importedDataTypeVersion)).get
+        runNow(dataService.dataTypeFields.allFor(dataTypeConfig)) must have length 2 // includes generated id field
       })
     }
 

@@ -72,7 +72,7 @@ case class BehaviorVersionData(
         n
       }
     }
-    copy(id = Some(newId), name = nameToUse)
+    copy(id = Some(newId), name = nameToUse, config = config.copyForNewVersion)
   }
 
   def copyWithParamTypeIdsIn(oldToNewIdMapping: collection.mutable.Map[String, String]): BehaviorVersionData = {
