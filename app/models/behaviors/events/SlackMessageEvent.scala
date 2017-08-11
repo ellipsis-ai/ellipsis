@@ -1,8 +1,6 @@
 package models.behaviors.events
 
 import akka.actor.ActorSystem
-import models.SlackMessageFormatter
-import models.accounts.slack.SlackUserInfo
 import models.accounts.slack.botprofile.SlackBotProfile
 import models.accounts.slack.profile.SlackProfile
 import models.accounts.user.User
@@ -16,15 +14,14 @@ import scala.concurrent.Future
 import scala.util.matching.Regex
 
 case class SlackMessageEvent(
-                                 profile: SlackBotProfile,
-                                 channel: String,
-                                 maybeThreadId: Option[String],
-                                 user: String,
-                                 text: String,
-                                 ts: String,
-                                 client: SlackApiClient,
-                                 slackUserList: Seq[SlackUserInfo]
-                               ) extends MessageEvent with SlackEvent {
+                              profile: SlackBotProfile,
+                              channel: String,
+                              maybeThreadId: Option[String],
+                              user: String,
+                              message: SlackMessage,
+                              ts: String,
+                              client: SlackApiClient
+                            ) extends MessageEvent with SlackEvent {
 
   lazy val isBotMessage: Boolean = profile.userId == user
   lazy val isPublicChannel: Boolean = !isDirectMessage(channel) && !isPrivateChannel(channel)
@@ -46,21 +43,20 @@ case class SlackMessageEvent(
     }
   }
 
-  val messageText: String = text
+  val messageText: String = message.originalText
 
   override val relevantMessageTextWithFormatting: String = {
-    val withoutDotDotDot = MessageEvent.ellipsisRegex.replaceFirstIn(messageText, "")
-    SlackMessageEvent.toBotRegexFor(profile.userId).replaceFirstIn(withoutDotDotDot, "")
+    message.withoutBotPrefix
   }
 
   override val relevantMessageText: String = {
-    unformatTextFragment(relevantMessageTextWithFormatting)
+    message.unformattedText
   }
 
   lazy val includesBotMention: Boolean = {
     isDirectMessage(channel) ||
-      SlackMessageEvent.mentionRegexFor(profile.userId).findFirstMatchIn(text).nonEmpty ||
-      MessageEvent.ellipsisRegex.findFirstMatchIn(text).nonEmpty
+      SlackMessageEvent.mentionRegexFor(profile.userId).findFirstMatchIn(message.originalText).nonEmpty ||
+      MessageEvent.ellipsisRegex.findFirstMatchIn(message.originalText).nonEmpty
   }
 
   override val isResponseExpected: Boolean = includesBotMention
@@ -142,10 +138,6 @@ case class SlackMessageEvent(
     super.ensureUser(dataService).flatMap { user =>
       dataService.slackProfiles.save(SlackProfile(profile.slackTeamId, loginInfo)).map(_ => user)
     }
-  }
-
-  override def unformatTextFragment(text: String): String = {
-    SlackMessageFormatter.unformatText(text, slackUserList)
   }
 
 }
