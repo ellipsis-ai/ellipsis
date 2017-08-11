@@ -10,12 +10,19 @@ import models.behaviors.behavior.Behavior
 import models.behaviors.behaviorgroup.BehaviorGroup
 import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
 import models.behaviors.conversations.conversation.Conversation
+import models.behaviors.datatypeconfig.BehaviorVersionForDataTypeSchema
+import models.behaviors.datatypefield.DataTypeFieldForSchema
+import models.behaviors.defaultstorageitem.GraphQLHelpers
 import models.behaviors.events.Event
 import models.team.Team
 import play.api.Configuration
 import play.api.libs.json.{JsValue, Json}
 import services.AWSLambdaConstants._
 import services.{AWSLambdaLogResult, DataService}
+import slick.dbio.DBIO
+
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
 
 case class BehaviorVersion(
                             id: String,
@@ -28,7 +35,21 @@ case class BehaviorVersion(
                             forcePrivateResponse: Boolean,
                             maybeAuthor: Option[User],
                             createdAt: OffsetDateTime
-                          ) {
+                          ) extends BehaviorVersionForDataTypeSchema {
+
+  lazy val typeName = maybeName.getOrElse(GraphQLHelpers.fallbackTypeName)
+
+  def dataTypeFieldsAction(dataService: DataService): DBIO[Seq[DataTypeFieldForSchema]] = {
+    dataService.dataTypeConfigs.maybeForAction(this).flatMap { maybeConfig =>
+      maybeConfig.map { config =>
+        dataService.dataTypeFields.allForAction(config)
+      }.getOrElse(DBIO.successful(Seq()))
+    }
+  }
+
+  def dataTypeFields(dataService: DataService): Future[Seq[DataTypeFieldForSchema]] = {
+    dataService.run(dataTypeFieldsAction(dataService))
+  }
 
   val maybeExportId: Option[String] = behavior.maybeExportId
 
