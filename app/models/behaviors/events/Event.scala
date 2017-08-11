@@ -146,11 +146,6 @@ trait Event {
 
   val invocationLogText: String
 
-  def unformatTextFragment(text: String): String = {
-    // Override for client-specific code to strip formatting from text
-    text
-  }
-
   def allBehaviorResponsesFor(
                                maybeTeam: Option[Team],
                                maybeLimitToBehavior: Option[Behavior],

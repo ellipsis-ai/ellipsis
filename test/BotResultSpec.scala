@@ -6,7 +6,7 @@ import models.accounts.slack.botprofile.SlackBotProfile
 import models.accounts.user.User
 import models.behaviors.conversations.InvokeBehaviorConversation
 import models.behaviors.conversations.conversation.Conversation
-import models.behaviors.events.SlackMessageEvent
+import models.behaviors.events.{SlackMessage, SlackMessageEvent}
 import models.behaviors.{NoResponseResult, SuccessResult}
 import models.team.Team
 import org.mockito.Matchers._
@@ -37,7 +37,7 @@ class BotResultSpec extends PlaySpec with MockitoSugar with DBSpec {
   }
 
   def newEventFor(profile: SlackBotProfile, maybeThreadId: Option[String] = defaultThreadId): SlackMessageEvent = {
-    SlackMessageEvent(profile, defaultChannel, maybeThreadId, defaultSlackUserId, "", SlackTimestamp.now, mock[SlackApiClient], Seq())
+    SlackMessageEvent(profile, defaultChannel, maybeThreadId, defaultSlackUserId, SlackMessage.blank, SlackTimestamp.now, mock[SlackApiClient])
   }
 
   def newConversationFor(team: Team, user: User, profile: SlackBotProfile, event: SlackMessageEvent): Conversation = {

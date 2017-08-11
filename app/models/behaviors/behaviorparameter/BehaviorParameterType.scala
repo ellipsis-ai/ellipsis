@@ -430,10 +430,7 @@ case class BehaviorBackedDataType(dataTypeConfig: DataTypeConfig) extends Behavi
   }
 
   private def textMatchesLabel(text: String, label: String, context: BehaviorParameterContext): Boolean = {
-    val lowercaseText = text.toLowerCase
-    val unformattedText = context.event.unformatTextFragment(text).toLowerCase
-    val lowercaseLabel = label.toLowerCase
-    lowercaseLabel == lowercaseText || lowercaseLabel == unformattedText
+    text.toLowerCase == label.toLowerCase
   }
 
   private def fetchMatchFor(text: String, context: BehaviorParameterContext): Future[Option[ValidValue]] = {
