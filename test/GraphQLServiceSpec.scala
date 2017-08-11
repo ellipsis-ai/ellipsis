@@ -25,7 +25,6 @@ class GraphQLServiceSpec extends DBSpec {
     data.copy(
       config = data.config.copy(
         dataTypeConfig = Some(DataTypeConfigData(
-          maybeName,
           fields.map { case(name, paramType) =>
             DataTypeFieldData.newUnsavedNamed(name, paramType)
           },
@@ -66,27 +65,27 @@ class GraphQLServiceSpec extends DBSpec {
         val groupData = buildGroupDataFor(group, user)
         val firstVersion = newSavedGroupVersionFor(group, user, Some(groupData))
         val dataTypeConfigs = runNow(dataService.dataTypeConfigs.allFor(firstVersion))
-        val someType = dataTypeConfigs.find(_.typeName == "SomeType").get
+        val someType = dataTypeConfigs.find(_.behaviorVersion.typeName == "SomeType").get
 
         val schema = runNow(graphQLService.schemaFor(firstVersion, user))
         schema.query.fields must have length(2)
 
-        val someTypeQueryField = schema.query.fields.find(_.name == someType.listName).get
+        val someTypeQueryField = schema.query.fields.find(_.name == someType.behaviorVersion.listName).get
         someTypeQueryField.arguments must have length(1)
         val filterArg = someTypeQueryField.arguments.head
         filterArg.name mustBe "filter"
-        filterArg.argumentType.namedType.name mustBe someType.inputName
+        filterArg.argumentType.namedType.name mustBe someType.behaviorVersion.inputName
 
         val mutation = schema.mutation.get
         mutation.fields must have length(4)
 
-        val someTypeCreateField = mutation.fields.find(_.name == someType.createFieldName).get
+        val someTypeCreateField = mutation.fields.find(_.name == someType.behaviorVersion.createFieldName).get
         someTypeCreateField.arguments must have length(1)
         val updateArg = someTypeCreateField.arguments.head
-        updateArg.name mustBe someType.fieldName
-        updateArg.argumentType.namedType.name mustBe someType.inputName
+        updateArg.name mustBe someType.behaviorVersion.fieldName
+        updateArg.argumentType.namedType.name mustBe someType.behaviorVersion.inputName
 
-        val someTypeDeleteField = mutation.fields.find(_.name == someType.deleteFieldName).get
+        val someTypeDeleteField = mutation.fields.find(_.name == someType.behaviorVersion.deleteFieldName).get
         someTypeDeleteField.arguments must have length(1)
         val idArg = someTypeDeleteField.arguments.head
         idArg.name mustBe "id"
@@ -106,28 +105,28 @@ class GraphQLServiceSpec extends DBSpec {
         val user = newSavedUserOn(team)
         val group = newSavedBehaviorGroupFor(team)
         val groupData = buildGroupDataFor(group, user)
-        val dataTypeConfigs = groupData.dataTypeBehaviorVersions.flatMap(_.config.dataTypeConfig)
-        val someType = dataTypeConfigs.find(_.typeName == "SomeType").get
+        val dataTypeBehaviorVersions = groupData.dataTypeBehaviorVersions
+        val someTypeBehaviorVersion = dataTypeBehaviorVersions.find(_.typeName == "SomeType").get
 
         val schema = runNow(graphQLService.previewSchemaFor(groupData))
         schema.query.fields must have length(2)
 
-        val someTypeQueryField = schema.query.fields.find(_.name == someType.listName).get
+        val someTypeQueryField = schema.query.fields.find(_.name == someTypeBehaviorVersion.listName).get
         someTypeQueryField.arguments must have length(1)
         val filterArg = someTypeQueryField.arguments.head
         filterArg.name mustBe "filter"
-        filterArg.argumentType.namedType.name mustBe someType.inputName
+        filterArg.argumentType.namedType.name mustBe someTypeBehaviorVersion.inputName
 
         val mutation = schema.mutation.get
         mutation.fields must have length(4)
 
-        val someTypeCreateField = mutation.fields.find(_.name == someType.createFieldName).get
+        val someTypeCreateField = mutation.fields.find(_.name == someTypeBehaviorVersion.createFieldName).get
         someTypeCreateField.arguments must have length(1)
         val updateArg = someTypeCreateField.arguments.head
-        updateArg.name mustBe someType.fieldName
-        updateArg.argumentType.namedType.name mustBe someType.inputName
+        updateArg.name mustBe someTypeBehaviorVersion.fieldName
+        updateArg.argumentType.namedType.name mustBe someTypeBehaviorVersion.inputName
 
-        val someTypeDeleteField = mutation.fields.find(_.name == someType.deleteFieldName).get
+        val someTypeDeleteField = mutation.fields.find(_.name == someTypeBehaviorVersion.deleteFieldName).get
         someTypeDeleteField.arguments must have length(1)
         val idArg = someTypeDeleteField.arguments.head
         idArg.name mustBe "id"
@@ -150,7 +149,7 @@ class GraphQLServiceSpec extends DBSpec {
         val groupData = buildGroupDataFor(group, user)
         val firstVersion = newSavedGroupVersionFor(group, user, Some(groupData))
         val dataTypeConfigs = runNow(dataService.dataTypeConfigs.allFor(firstVersion))
-        val someType = dataTypeConfigs.find(_.typeName == "SomeType").get
+        val someType = dataTypeConfigs.find(_.behaviorVersion.typeName == "SomeType").get
 
         val mutation =
           """mutation CreateSomeType($someType: SomeTypeInput!) {
@@ -162,7 +161,7 @@ class GraphQLServiceSpec extends DBSpec {
         val jsonData = JsObject(Map("foo" -> JsString("bar")))
         val mutationVariables = JsObject(Map("someType" -> jsonData)).toString
         val mutationResult = runNow(graphQLService.runQuery(firstVersion.group, user, mutation, None, Some(mutationVariables)))
-        val savedItems = runNow(dataService.defaultStorageItems.filter(someType.typeName, jsonData, group))
+        val savedItems = runNow(dataService.defaultStorageItems.filter(someType.behaviorVersion.typeName, jsonData, group))
         savedItems must have length(1)
         val savedItem = savedItems.head
         (savedItem.data \ "foo").as[String] mustBe "bar"
@@ -197,8 +196,8 @@ class GraphQLServiceSpec extends DBSpec {
         val groupData = buildGroupDataFor(group, user)
         val firstVersion = newSavedGroupVersionFor(group, user, Some(groupData))
         val dataTypeConfigs = runNow(dataService.dataTypeConfigs.allFor(firstVersion))
-        val someType = dataTypeConfigs.find(_.typeName == "SomeType").get
-        val someType2 = dataTypeConfigs.find(_.typeName == "SomeType2").get
+        val someType = dataTypeConfigs.find(_.behaviorVersion.typeName == "SomeType").get
+        val someType2 = dataTypeConfigs.find(_.behaviorVersion.typeName == "SomeType2").get
 
         val mutation =
           """mutation CreateSomeType2($someType2: SomeType2Input!) {
@@ -212,12 +211,12 @@ class GraphQLServiceSpec extends DBSpec {
         val mutationVariables = JsObject(Map("someType2" -> jsonData)).toString
         val mutationResult = runNow(graphQLService.runQuery(firstVersion.group, user, mutation, None, Some(mutationVariables)))
 
-        val savedSomeTypes = runNow(dataService.defaultStorageItems.filter(someType.typeName, Json.obj(), group))
+        val savedSomeTypes = runNow(dataService.defaultStorageItems.filter(someType.behaviorVersion.typeName, Json.obj(), group))
         savedSomeTypes must have length(1)
         val savedSomeType = savedSomeTypes.head
         (savedSomeType.data \ "foo").as[String] mustBe "bar"
 
-        val savedSomeType2s = runNow(dataService.defaultStorageItems.filter(someType2.typeName, Json.obj(), group))
+        val savedSomeType2s = runNow(dataService.defaultStorageItems.filter(someType2.behaviorVersion.typeName, Json.obj(), group))
         savedSomeType2s must have length(1)
         val savedSomeType2 = savedSomeType2s.head
         (savedSomeType2.data \ "bar").as[Double] mustBe 2
@@ -246,7 +245,7 @@ class GraphQLServiceSpec extends DBSpec {
         val groupData = buildGroupDataFor(group, user)
         val firstVersion = newSavedGroupVersionFor(group, user, Some(groupData))
         val dataTypeConfigs = runNow(dataService.dataTypeConfigs.allFor(firstVersion))
-        val someType = dataTypeConfigs.find(_.typeName == "SomeType").get
+        val someType = dataTypeConfigs.find(_.behaviorVersion.typeName == "SomeType").get
 
         val createMutation =
           """mutation CreateSomeType($someType: SomeTypeInput!) {
@@ -258,7 +257,7 @@ class GraphQLServiceSpec extends DBSpec {
         val jsonData = JsObject(Map("foo" -> JsString("bar")))
         val mutationVariables = JsObject(Map("someType" -> jsonData)).toString
         val mutationResult = runNow(graphQLService.runQuery(firstVersion.group, user, createMutation, None, Some(mutationVariables)))
-        val savedItems = runNow(dataService.defaultStorageItems.filter(someType.typeName, jsonData, group))
+        val savedItems = runNow(dataService.defaultStorageItems.filter(someType.behaviorVersion.typeName, jsonData, group))
         savedItems must have length(1)
         val savedItem = savedItems.head
         (savedItem.data \ "foo").as[String] mustBe "bar"
@@ -277,7 +276,7 @@ class GraphQLServiceSpec extends DBSpec {
         val deleteResult = runNow(graphQLService.runQuery(firstVersion.group, user, deleteMutation, None, Some(deleteVariables)))
         (deleteResult \ "data").get mustBe JsObject(Map("deleteSomeType" -> JsObject(Map("foo" -> JsString("bar")))))
 
-        val remainingItems = runNow(dataService.defaultStorageItems.filter(someType.typeName, jsonData, group))
+        val remainingItems = runNow(dataService.defaultStorageItems.filter(someType.behaviorVersion.typeName, jsonData, group))
         remainingItems must have length(0)
       })
     }

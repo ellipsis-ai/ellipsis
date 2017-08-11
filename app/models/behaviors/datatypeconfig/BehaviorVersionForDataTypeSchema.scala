@@ -8,7 +8,7 @@ import slick.dbio.DBIO
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-trait DataTypeConfigForSchema {
+trait BehaviorVersionForDataTypeSchema {
 
   val typeName: String
   lazy val fieldName = GraphQLHelpers.formatFieldName(typeName)
