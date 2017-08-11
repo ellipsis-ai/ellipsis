@@ -1,6 +1,7 @@
 define(function(require) {
   const React = require('react'),
     AWSConfig = require('./aws_config'),
+    BehaviorConfig = require('../models/behavior_config'),
     CodeEditor = require('./code_editor'),
     Collapsible = require('../shared_ui/collapsible'),
     DropdownMenu = require('../shared_ui/dropdown_menu'),
@@ -26,7 +27,7 @@ define(function(require) {
       animationIsDisabled: React.PropTypes.bool.isRequired,
 
       onToggleAWSConfig: React.PropTypes.func.isRequired,
-      awsConfig: React.PropTypes.object,
+      behaviorConfig: React.PropTypes.instanceOf(BehaviorConfig),
       onAWSAddNewEnvVariable: React.PropTypes.func.isRequired,
       onAWSConfigChange: React.PropTypes.func.isRequired,
 
@@ -89,11 +90,15 @@ define(function(require) {
     },
 
     hasAwsConfig: function() {
-      return !!this.props.awsConfig;
+      return Boolean(this.getAwsConfig());
+    },
+
+    getAwsConfig: function() {
+      return this.props.behaviorConfig ? this.props.behaviorConfig.aws : null;
     },
 
     getAWSConfigProperty: function(property) {
-      const config = this.props.awsConfig;
+      const config = this.getAwsConfig();
       if (config) {
         return config[property];
       } else {
@@ -129,11 +134,10 @@ define(function(require) {
     },
 
     buildNotifications: function() {
-      var props = this.props;
       var oAuth2Notifications = [];
       var awsNotifications = [];
       this.props.apiApplications
-        .filter((ea) => ea && !this.hasUsedOAuth2Application(props.functionBody, ea.keyName))
+        .filter((ea) => ea && !this.hasUsedOAuth2Application(this.props.functionBody, ea.keyName))
         .forEach((ea) => {
           oAuth2Notifications.push(new NotificationData({
             kind: "oauth2_application_unused",
@@ -141,7 +145,7 @@ define(function(require) {
             code: `ellipsis.accessTokens.${ea.keyName}`
           }));
         });
-      if (props.awsConfig && !this.hasUsedAWSObject(props.functionBody)) {
+      if (this.hasAwsConfig() && !this.hasUsedAWSObject(this.props.functionBody)) {
         awsNotifications.push(new NotificationData({
           kind: "aws_unused",
           code: "ellipsis.AWS"

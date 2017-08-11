@@ -5,11 +5,19 @@ define(function(require) {
   class BehaviorConfig {
     constructor(props) {
       var initialProps = Object.assign({
+        exportId: null,
+        name: null,
+        aws: null,
+        forcePrivateResponse: false,
         isDataType: false,
         dataTypeConfig: null
       }, props);
 
       Object.defineProperties(this, {
+        exportId: { value: initialProps.exportId, enumerable: true },
+        name: { value: initialProps.name, enumerable: true },
+        aws: { value: initialProps.aws, enumerable: true },
+        forcePrivateResponse: { value: initialProps.forcePrivateResponse, enumerable: true },
         isDataType: { value: initialProps.isDataType, enumerable: true },
         dataTypeConfig: { value: initialProps.dataTypeConfig, enumerable: true }
       });

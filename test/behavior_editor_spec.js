@@ -340,4 +340,17 @@ describe('BehaviorEditor', () => {
       expect(editor.getOtherSavedInputsInGroup().map(ea => ea.inputId)).toEqual([otherBehaviorsInGroup[0].inputIds[0]]);
     });
   });
+
+  describe('setConfigProperty', () => {
+    it("clones the existing behavior config with updated properties", () => {
+      editorConfig.group.behaviorVersions[0].config.forcePrivateResponse = false;
+      let editor = createEditor(editorConfig);
+      editor.setEditableProp = jest.fn();
+      expect(editor.getBehaviorConfig().forcePrivateResponse).toBe(false);
+      editor.setConfigProperty('forcePrivateResponse', true);
+      const newConfig = editor.setEditableProp.mock.calls[0][1];
+      expect(newConfig.constructor.name).toBe("BehaviorConfig");
+      expect(newConfig.forcePrivateResponse).toBe(true);
+    });
+  });
 });
