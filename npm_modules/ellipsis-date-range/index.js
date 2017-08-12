@@ -3,7 +3,12 @@
 const moment = require('moment');
 const chrono = require('chrono-node');
 
-// Build a custom Chrono parser
+// NOTE:
+// Chrono-node has a nice architecture and functionality but the ParsedResult.date
+// function is a mystery. So I basically do the ParsedResult to Date conversion
+// myself using the fantastic moment package.
+
+
 function customChrono() {
 
   // Customize the defaul Chrono Parser so that we can
@@ -34,7 +39,6 @@ function customChrono() {
         hour: startDate.hour(),
         minute: startDate.minute(),
         second: startDate.seconds()
-
       },
       end: {
         day: endDate.date(),
@@ -53,7 +57,9 @@ function customChrono() {
   var lastYMWRefiner = new chrono.Refiner();
   lastYMWRefiner.refine = (text, results, opt) => {
     results.forEach((result) => {
+      console.log(result);
       if (result.end === undefined && !result.tags.ENSlashDateFormatParser) {
+        console.log("REF>>>>>>>>> ");
         result.end = result.start.clone();
         var startDate = moment.utc();
         startDate.set('year', result.start.get('year'));
@@ -65,23 +71,19 @@ function customChrono() {
         startDate.set('millisecond', result.start.get('millisecond'));
 
         var endDate = startDate.clone();
-
-        if (result.text.toLowerCase().match(/week/i)) {
-          startDate.startOf('week');
-          endDate.endOf('week');
-        } else if (result.text.toLowerCase().match(/month/i)) {
-          startDate.startOf('month');
-          endDate.endOf('month');
-        } else if (result.text.toLowerCase().match(/year/i)) {
-          startDate.startOf('year');
-          endDate.endOf('year');
+        var range = 'day';
+        if (result.text.match(/week/i)) {
+          range = 'week'
+        } else if (result.text.match(/month/i)) {
+          range = 'month'
+        } else if (result.text.match(/year/i)) {
+          range = 'year'
         } else if (result.tags.ENMonthNameParser) {
           // This matches "last april" or "previous may"
-          startDate.utc().startOf('Month');
-          endDate.utc().endOf('Month');
-        } else {
-          // This will blow up for now as endDate will be null
+          range = 'month'
         }
+        startDate.utc().startOf(range);
+        endDate.utc().endOf(range);
         result.tags.lastYMWRefiner=true;
 
         result.start.imply('day', startDate.date());
@@ -127,8 +129,8 @@ const DateRange = {
       r[0].end.get('second')
     );
     return {
-      start: moment.utc(new Date(sDate)).toDate(),
-      end: moment.utc(new Date(eDate)).toDate()
+      start: new Date(sDate),
+      end: new Date(eDate)
     }
   }
 }
