@@ -25,48 +25,46 @@ const moment = require('moment');
 // global.Date.now = _Date.now;
 
 
-// [
-//   { text: "last year", range: "year" },
-//   { text: "last month", range: "month" },,
-//   { text: "last week", range: "week" },
-//
-// ].forEach((i) => {
-//     test(i.text, () => {
-//       const r = DateRange.getRange(i.text);
-//       var eStartDate = moment.utc().subtract(1, i.range).startOf(i.range).set('millisecond', 0);
-//       var eEndDate = moment.utc().subtract(1, i.range).endOf(i.range).set('millisecond', 0);
-//       expect(r.start.toISOString()).toBe(eStartDate.toDate().toISOString());
-//       expect(r.end.toISOString()).toBe(eEndDate.toDate().toISOString())
-//     });
-// });
-//
-// [
-//   { text: "year to date", range: "year" },
-//   { text: "ytd", range: "year" },
-//   { text: "YTD", range: "year" },
-//   { text: "this year", range: "year" },
-//   { text: "month to date", range: "month" },
-//   { text: "mtd", range: "month" },
-//   { text: "MTD", range: "month" },
-//   { text: "this month", range: "month" },
-//   { text: "week to date", range: "week" },
-//   { text: "wtd", range: "week" },
-//   { text: "WTD", range: "week" },
-//   { text: "this week", range: "week" },
-//
-// ].forEach((i) => {
-//     test(i.text, () => {
-//       const r = DateRange.getRange(i.text);
-//       var eStartDate = moment.utc().startOf(i.range).set('millisecond', 0);
-//       var eEndDate = moment.utc().set('millisecond', 0);
-//       expect(r.start.toISOString()).toBe(eStartDate.toDate().toISOString());
-//       expect(r.end.toISOString()).toBe(eEndDate.toDate().toISOString());
-//     });
-// });
+[
+  { text: "last year", range: "year", minus: "year"  },
+  { text: "last month", range: "month", minus: "month" },
+  { text: "last week", range: "isoWeek", minus: "week" }
+].forEach((i) => {
+    test(i.text, () => {
+      const r = DateRange.getRange(i.text);
+      var eStartDate = moment.utc().subtract(1, i.minus).startOf(i.range).set('millisecond', 0);
+      var eEndDate = moment.utc().subtract(1, i.minus).endOf(i.range).set('millisecond', 0);
+      expect(r.start.toISOString()).toBe(eStartDate.toDate().toISOString());
+      expect(r.end.toISOString()).toBe(eEndDate.toDate().toISOString())
+    });
+});
 
 [
-  // { text: "April 2016", eStart: moment.utc("2016-04-01T00:00:00.000Z"), eEnd: moment.utc("2016-04-30T23:59:59.000Z") },
-  // { text: "Apr 2009", eStart: moment.utc("2009-04-01T00:00:00.000Z"), eEnd: moment.utc("2009-04-30T23:59:59.000Z") },
+  { text: "year to date", range: "year" },
+  { text: "ytd", range: "year" },
+  { text: "YTD", range: "year" },
+  { text: "this year", range: "year" },
+  { text: "month to date", range: "month" },
+  { text: "mtd", range: "month" },
+  { text: "MTD", range: "month" },
+  { text: "this month", range: "month" },
+  { text: "week to date", range: "week" },
+  { text: "wtd", range: "week" },
+  { text: "WTD", range: "week" },
+  { text: "this week", range: "week" }
+].forEach((i) => {
+    test(i.text, () => {
+      const r = DateRange.getRange(i.text);
+      var eStartDate = moment.utc().startOf(i.range).set('millisecond', 0);
+      var eEndDate = moment.utc().set('millisecond', 0);
+      expect(r.start.toISOString()).toBe(eStartDate.toDate().toISOString());
+      expect(r.end.toISOString()).toBe(eEndDate.toDate().toISOString());
+    });
+});
+
+[
+  { text: "April 2016", eStart: moment.utc("2016-04-01T00:00:00.000Z"), eEnd: moment.utc("2016-04-30T23:59:59.000Z") },
+  { text: "Apr 2009", eStart: moment.utc("2009-04-01T00:00:00.000Z"), eEnd: moment.utc("2009-04-30T23:59:59.000Z") },
   { text: "4/1/2016", eStart: moment.utc("2016-04-01T00:00:00.000Z"), eEnd: moment.utc("2016-04-01T23:59:59.000Z") },
   { text: "4/1/2016 - 5/1/2017", eStart: moment.utc("2016-04-01T12:00:00.000Z"), eEnd: moment.utc("2017-05-01T12:00:00.000Z") },
 ].forEach((i) => {

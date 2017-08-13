@@ -57,46 +57,62 @@ function customChrono() {
   var lastYMWRefiner = new chrono.Refiner();
   lastYMWRefiner.refine = (text, results, opt) => {
     results.forEach((result) => {
-      console.log(result);
-      if (result.end === undefined && !result.tags.ENSlashDateFormatParser) {
-        console.log("REF>>>>>>>>> ");
-        result.end = result.start.clone();
-        var startDate = moment.utc();
-        startDate.set('year', result.start.get('year'));
-        startDate.set('month', result.start.get('month')-1);
-        startDate.set('date', result.start.get('day'));
-        startDate.set('hour', result.start.get('hour'));
-        startDate.set('minute', result.start.get('minute'));
-        startDate.set('second', result.start.get('second'));
-        startDate.set('millisecond', result.start.get('millisecond'));
+      if (result.end === undefined) {
+        // Handle text with slash formatted dates like
+        // 04/01/2017.
+        if (result.tags.ENSlashDateFormatParser) {
+          result.end = result.start.clone();
+          result.start.imply('hour', 0);
+          result.start.imply('minute', 0);
+          result.start.imply('second', 0);
+          result.end.imply('hour', 23);
+          result.end.imply('minute', 59);
+          result.end.imply('second', 59);
+        } else {
+          result.end = result.start.clone();
 
-        var endDate = startDate.clone();
-        var range = 'day';
-        if (result.text.match(/week/i)) {
-          range = 'week'
-        } else if (result.text.match(/month/i)) {
-          range = 'month'
-        } else if (result.text.match(/year/i)) {
-          range = 'year'
-        } else if (result.tags.ENMonthNameParser) {
-          // This matches "last april" or "previous may"
-          range = 'month'
+          // ParseResult to Moment date does some weird math.
+          // So I do the conversion myself.
+          var startDate = moment.utc();
+          startDate.set('year', result.start.get('year'));
+          startDate.set('month', result.start.get('month')-1);
+          startDate.set('date', result.start.get('day'));
+          startDate.set('hour', result.start.get('hour'));
+          startDate.set('minute', result.start.get('minute'));
+          startDate.set('second', result.start.get('second'));
+          startDate.set('millisecond', result.start.get('millisecond'));
+
+          var endDate = startDate.clone();
+          var range = 'day';
+          if (result.text.match(/week/i)) {
+            range = 'isoWeek'
+            // Chrone makes the week start on Sunday. We like it to start on
+            // Monday, just like 'isoWeek' in moment
+            startDate = moment.utc().subtract(1, 'week').startOf(range).set('millisecond', 0);
+          } else if (result.text.match(/month/i)) {
+            range = 'month'
+          } else if (result.text.match(/year/i)) {
+            range = 'year'
+          } else if (result.tags.ENMonthNameParser) {
+            // This matches "last april" or "previous may"
+            range = 'month'
+          }
+          startDate.utc().startOf(range);
+          endDate.utc().endOf(range);
+          result.tags.lastYMWRefiner=true;
+
+          result.start.imply('day', startDate.date());
+          result.start.imply('month',startDate.month() + 1);
+          result.start.imply('hour', 0);
+          result.start.imply('minute',0);
+          result.start.imply('second',0);
+
+          result.end.imply('day', endDate.date());
+          result.end.imply('month', endDate.month() + 1);
+          result.end.imply('hour', endDate.hours());
+          result.end.imply('minute', endDate.minutes());
+          result.end.imply('second', endDate.seconds());
         }
-        startDate.utc().startOf(range);
-        endDate.utc().endOf(range);
-        result.tags.lastYMWRefiner=true;
-
-        result.start.imply('day', startDate.date());
-        result.start.imply('month',startDate.month() + 1);
-        result.start.imply('hour', 0);
-        result.start.imply('minute',0);
-        result.start.imply('second',0);
-
-        result.end.imply('day', endDate.date());
-        result.end.imply('month', endDate.month() + 1);
-        result.end.imply('hour', endDate.hours());
-        result.end.imply('minute', endDate.minutes());
-        result.end.imply('second', endDate.seconds());
       }
     });
     return results;
