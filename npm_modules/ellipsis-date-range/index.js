@@ -25,14 +25,14 @@ function customChrono() {
   //   "this week", "this month", "this year".
   var ymwtoDateParser = new chrono.Parser();
   ymwtoDateParser.pattern = () => {
-    return /year to date|ytd|month to date|mtd|week to date|wtd|this week|this month|this year/i
-  }
+    return /year to date|ytd|month to date|mtd|week to date|wtd|this week|this month|this year/i;
+  };
   ymwtoDateParser.extract = (text, ref, match, opt) => {
     var startDate = null;
     var endDate = moment().utc();
     var range = 'year';
     if (match[0].match(/week|wtd/i)) {
-      range = 'week'
+      range = 'week';
     } else if (match[0].match(/month|mtd/i)) {
       range = 'month';
     }
@@ -58,7 +58,7 @@ function customChrono() {
       }
     });
     return parsedResult;
-  }
+  };
 
   // Handle:
   //   "last year", "last week", "last month"
@@ -89,21 +89,20 @@ function customChrono() {
           var endDate = startDate.clone();
           var range = 'day';
           if (result.text.match(/week/i)) {
-            range = 'isoWeek'
+            range = 'isoWeek';
             // Chrone makes the week start on Sunday. We like it to start on
             // Monday, just like 'isoWeek' in moment
             startDate = moment.utc().subtract(1, 'week').startOf(range).set('millisecond', 0);
           } else if (result.text.match(/month/i)) {
-            range = 'month'
+            range = 'month';
           } else if (result.text.match(/year/i)) {
-            range = 'year'
+            range = 'year';
           } else if (result.tags.ENMonthNameParser) {
             // This matches "last april" or "previous may"
-            range = 'month'
+            range = 'month';
           }
           startDate.utc().startOf(range);
           endDate.utc().endOf(range);
-          result.tags.lastYMWRefiner=true;
 
           result.start.imply('day', startDate.date());
           result.start.imply('month',startDate.month() + 1);
@@ -120,7 +119,7 @@ function customChrono() {
       }
     });
     return results;
-  }
+  };
 
   // Last refiner makes sure the times on start and end dates
   // are consitent, meaning start time is 00:00:00 and
@@ -141,7 +140,7 @@ function customChrono() {
       }
     });
     return results;
-  }
+  };
   var custom = new chrono.Chrono();
   custom.parsers.push(ymwtoDateParser);
   custom.refiners.push(lastYMWRefiner);
@@ -152,7 +151,7 @@ function customChrono() {
 const DateRange = {
   getRange: (text) => {
     const r = customChrono().parse(text);
-    if (r.length == 0 ) return null;
+    if (r.length === 0 ) return null;
     var sDate = Date.UTC(
       r[0].start.get('year'),
       r[0].start.get('month') - 1,
@@ -172,8 +171,8 @@ const DateRange = {
     return {
       start: new Date(sDate),
       end: new Date(eDate)
-    }
+    };
   }
-}
+};
 
 module.exports = DateRange;
