@@ -3,17 +3,26 @@
 const moment = require('moment');
 const chrono = require('chrono-node');
 
-// NOTE:
+// This module is a simple layer on top of chrono-node. The module exports one
+// function that takes text and returns Date range it finds in the text. If no
+// date range is found the function returns null.
+//
+// NOTE 1:
 // Chrono-node has a nice architecture and functionality but the ParsedResult.date
 // function is a mystery. So I basically do the ParsedResult to Date conversion
 // myself using the fantastic moment package.
-
+//
+// NOTE 2:
+// Whatever date is parsed is assumed to be in UTC. For example: if you are in
+// PDT and type "last week" we first convert now to UTC than go back by one
+// week.
 
 function customChrono() {
 
-  // Customize the defaul Chrono Parser so that we can
-  // handle "year to date", "week to date", "month to date",
-  // "last week", "last month", "last year".
+
+  // Handle:
+  //   "year to date", "week to date", "month to date",
+  //   "this week", "this month", "this year".
   var ymwtoDateParser = new chrono.Parser();
   ymwtoDateParser.pattern = () => {
     return /year to date|ytd|month to date|mtd|week to date|wtd|this week|this month|this year/i
@@ -51,9 +60,10 @@ function customChrono() {
     return parsedResult;
   }
 
-  // We create a Refiner to deal with:
-  // 1. "last year", "last week", "last month"
-  // 2. "April 2017", "May 2017", "Last April" and so on
+  // Handle:
+  //   "last year", "last week", "last month"
+  //   "April 2017", "May 2017", "Last April"
+  //   "1/12/2026"
   var lastYMWRefiner = new chrono.Refiner();
   lastYMWRefiner.refine = (text, results, opt) => {
     results.forEach((result) => {
@@ -65,8 +75,8 @@ function customChrono() {
         } else {
           result.end = result.start.clone();
 
-          // ParseResult to Moment date does some weird math.
-          // So I do the conversion myself.
+          // Chrono-node has a method that takes a ParseResult and returns a Moment date
+          // but it does some weird math and a timezoneOffset. So I do the conversion myself.
           var startDate = moment.utc();
           startDate.set('year', result.start.get('year'));
           startDate.set('month', result.start.get('month')-1);
@@ -112,6 +122,9 @@ function customChrono() {
     return results;
   }
 
+  // Last refiner makes sure the times on start and end dates
+  // are consitent, meaning start time is 00:00:00 and
+  // end time is 23:59:59
   var setStartTimeAndEndTimeRefiner = new chrono.Refiner();
   setStartTimeAndEndTimeRefiner.refine = (text, results, opt) => {
     results.forEach((result) => {
