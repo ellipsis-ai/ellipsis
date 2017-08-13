@@ -56,7 +56,7 @@ const moment = require('moment');
     test(i.text, () => {
       const r = DateRange.getRange(i.text);
       var eStartDate = moment.utc().startOf(i.range).set('millisecond', 0);
-      var eEndDate = moment.utc().set('millisecond', 0);
+      var eEndDate = moment.utc().set('hours', 23).set('minutes', 59).set('seconds', 59).set('millisecond', 0);
       expect(r.start.toISOString()).toBe(eStartDate.toDate().toISOString());
       expect(r.end.toISOString()).toBe(eEndDate.toDate().toISOString());
     });
@@ -66,7 +66,9 @@ const moment = require('moment');
   { text: "April 2016", eStart: moment.utc("2016-04-01T00:00:00.000Z"), eEnd: moment.utc("2016-04-30T23:59:59.000Z") },
   { text: "Apr 2009", eStart: moment.utc("2009-04-01T00:00:00.000Z"), eEnd: moment.utc("2009-04-30T23:59:59.000Z") },
   { text: "4/1/2016", eStart: moment.utc("2016-04-01T00:00:00.000Z"), eEnd: moment.utc("2016-04-01T23:59:59.000Z") },
-  { text: "4/1/2016 - 5/1/2017", eStart: moment.utc("2016-04-01T12:00:00.000Z"), eEnd: moment.utc("2017-05-01T12:00:00.000Z") },
+  { text: "4/1/2016 - 5/1/2017", eStart: moment.utc("2016-04-01T00:00:00.000Z"), eEnd: moment.utc("2017-05-01T23:59:59.000Z") },
+  { text: "1 April 2016 - 1 May 2017", eStart: moment.utc("2016-04-01T00:00:00.000Z"), eEnd: moment.utc("2017-05-01T23:59:59.000Z") },
+  { text: "April 1 2016 - May 2 2017", eStart: moment.utc("2016-04-01T00:00:00.000Z"), eEnd: moment.utc("2017-05-02T23:59:59.000Z") },
 ].forEach((i) => {
     test(i.text, () => {
       const r = DateRange.getRange(i.text);

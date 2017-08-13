@@ -62,12 +62,6 @@ function customChrono() {
         // 04/01/2017.
         if (result.tags.ENSlashDateFormatParser) {
           result.end = result.start.clone();
-          result.start.imply('hour', 0);
-          result.start.imply('minute', 0);
-          result.start.imply('second', 0);
-          result.end.imply('hour', 23);
-          result.end.imply('minute', 59);
-          result.end.imply('second', 59);
         } else {
           result.end = result.start.clone();
 
@@ -118,9 +112,27 @@ function customChrono() {
     return results;
   }
 
+  var setStartTimeAndEndTimeRefiner = new chrono.Refiner();
+  setStartTimeAndEndTimeRefiner.refine = (text, results, opt) => {
+    results.forEach((result) => {
+      result.start.assign('hour', 0);
+      result.start.assign('minute',0);
+      result.start.assign('second',0);
+      result.start.assign('millisecond',0);
+
+      if (result.end) {
+        result.end.assign('hour', 23);
+        result.end.assign('minute', 59);
+        result.end.assign('second', 59);
+        result.end.assign('millisecond',0);
+      }
+    });
+    return results;
+  }
   var custom = new chrono.Chrono();
   custom.parsers.push(ymwtoDateParser);
   custom.refiners.push(lastYMWRefiner);
+  custom.refiners.push(setStartTimeAndEndTimeRefiner);
   return custom;
 }
 
