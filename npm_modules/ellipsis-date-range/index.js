@@ -1,6 +1,6 @@
 'use strict';
 
-const moment = require('moment');
+const moment = require('moment-timezone');
 const chrono = require('chrono-node');
 
 // This module is a simple layer on top of chrono-node. The module exports one
@@ -17,9 +17,11 @@ const chrono = require('chrono-node');
 // PDT and type "last week" we first convert now to UTC than go back by one
 // week.
 
-function customChrono() {
+const defaultTimeZone = 'UTC';
 
+function customChrono(timeZone) {
 
+  var userTimezone = timeZone ||  defaultTimeZone;
   // Handle:
   //   "year to date", "week to date", "month to date",
   //   "this week", "this month", "this year".
@@ -28,15 +30,14 @@ function customChrono() {
     return /year to date|ytd|month to date|mtd|week to date|wtd|this week|this month|this year/i;
   };
   ymwtoDateParser.extract = (text, ref, match, opt) => {
-    var startDate = null;
-    var endDate = moment().utc();
     var range = 'year';
     if (match[0].match(/week|wtd/i)) {
       range = 'week';
     } else if (match[0].match(/month|mtd/i)) {
       range = 'month';
     }
-    startDate = moment().utc().startOf(range);
+    var startDate = moment().tz(userTimezone).startOf(range);
+    var endDate = moment().tz(userTimezone);
     var parsedResult = new chrono.ParsedResult({
       ref: ref,
       text: match[0],
@@ -77,22 +78,14 @@ function customChrono() {
 
           // Chrono-node has a method that takes a ParseResult and returns a Moment date
           // but it does some weird math and a timezoneOffset. So I do the conversion myself.
-          var startDate = moment.utc();
-          startDate.set('year', result.start.get('year'));
-          startDate.set('month', result.start.get('month')-1);
-          startDate.set('date', result.start.get('day'));
-          startDate.set('hour', result.start.get('hour'));
-          startDate.set('minute', result.start.get('minute'));
-          startDate.set('second', result.start.get('second'));
-          startDate.set('millisecond', result.start.get('millisecond'));
-
+          var startDate = setMomentObject(moment().tz(userTimezone),result.start);
           var endDate = startDate.clone();
           var range = 'day';
           if (result.text.match(/week/i)) {
             range = 'isoWeek';
             // Chrone makes the week start on Sunday. We like it to start on
             // Monday, just like 'isoWeek' in moment
-            startDate = moment.utc().subtract(1, 'week').startOf(range).set('millisecond', 0);
+            startDate = moment().tz(userTimezone).subtract(1, 'week').startOf(range).set('millisecond', 0);
           } else if (result.text.match(/month/i)) {
             range = 'month';
           } else if (result.text.match(/year/i)) {
@@ -101,8 +94,8 @@ function customChrono() {
             // This matches "last april" or "previous may"
             range = 'month';
           }
-          startDate.utc().startOf(range);
-          endDate.utc().endOf(range);
+          startDate.startOf(range);
+          endDate.endOf(range);
 
           result.start.imply('day', startDate.date());
           result.start.imply('month',startDate.month() + 1);
@@ -148,29 +141,31 @@ function customChrono() {
   return custom;
 }
 
+// This is an helper method. It should alwasy be private.
+const setMomentObject = (momentDate, parsedComponent) => {
+    return momentDate
+      .set('year', parsedComponent.get('year'))
+      .set('month', parsedComponent.get('month') - 1)
+      .set('date', parsedComponent.get('day'))
+      .set('hour', parsedComponent.get('hour'))
+      .set('minute', parsedComponent.get('minute'))
+      .set('second', parsedComponent.get('second'))
+      .set('millisecond', parsedComponent.get('millisecond'));
+}
+
 const DateRange = {
-  getRange: (text) => {
-    const r = customChrono().parse(text);
+
+  defaultTimeZone: defaultTimeZone,
+
+  getRange: (text, timeZone=defaultTimeZone) => {
+    const r = customChrono(timeZone).parse(text);
     if (r.length === 0 ) return null;
-    var sDate = Date.UTC(
-      r[0].start.get('year'),
-      r[0].start.get('month') - 1,
-      r[0].start.get('day'),
-      r[0].start.get('hour'),
-      r[0].start.get('minute'),
-      r[0].start.get('second')
-    );
-    var eDate = Date.UTC(
-      r[0].end.get('year'),
-      r[0].end.get('month') - 1,
-      r[0].end.get('day'),
-      r[0].end.get('hour'),
-      r[0].end.get('minute'),
-      r[0].end.get('second')
-    );
+    var sDate = setMomentObject(moment.tz(timeZone), r[0].start);
+    var eDate = setMomentObject(moment.tz(timeZone), r[0].end);
     return {
-      start: new Date(sDate),
-      end: new Date(eDate)
+      start: sDate.toDate(),
+      end: eDate.toDate(),
+      tz: timeZone
     };
   }
 };

@@ -10,7 +10,8 @@
   "license": "ISC",
   "dependencies": {
     "chrono-node": "1.3.5",
-    "moment": "2.18.1"
+    "moment": "2.18.1",
+    "moment-timezone": "0.5.13"
   },
   "devDependencies": {
     "jest-cli": "^18.1.0"

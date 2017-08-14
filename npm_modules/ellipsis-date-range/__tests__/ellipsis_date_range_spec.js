@@ -22,6 +22,7 @@ const moment = require('moment');
       var eEndDate = moment.utc().subtract(1, i.minus).endOf(i.range).set('millisecond', 0);
       expect(r.start.toISOString()).toBe(eStartDate.toDate().toISOString());
       expect(r.end.toISOString()).toBe(eEndDate.toDate().toISOString());
+      expect(r.tz).toBe(DateRange.defaultTimeZone);
     });
 });
 
@@ -37,31 +38,79 @@ const moment = require('moment');
   { text: "week to date", range: "week" },
   { text: "wtd", range: "week" },
   { text: "WTD", range: "week" },
-  { text: "this week", range: "week" }
+  { text: "this week", range: "week" },
+  { text: "ytd", range: "year", tz: 'Asia/Tokyo' },
+  { text: "wtd", range: "week", tz: 'America/New_York' },
+  { text: "mtd", range: "month", tz: 'Europe/Rome' }
 ].forEach((i) => {
     test(i.text, () => {
-      const r = DateRange.getRange(i.text);
-      var eStartDate = moment.utc().startOf(i.range).set('millisecond', 0);
-      var eEndDate = moment.utc().set('hours', 23).set('minutes', 59).set('seconds', 59).set('millisecond', 0);
+      const r = DateRange.getRange(i.text, i.tz);
+      var eStartDate = moment.tz(i.tz).startOf(i.range).set('millisecond', 0);
+      var eEndDate = moment.tz(i.tz).set('hours', 23).set('minutes', 59).set('seconds', 59).set('millisecond', 0);
       expect(r.start.toISOString()).toBe(eStartDate.toDate().toISOString());
       expect(r.end.toISOString()).toBe(eEndDate.toDate().toISOString());
+      expect(r.tz).toBe(i.tz || DateRange.defaultTimeZone);
     });
 });
 
 [
-  { text: "April 2016", eStart: moment.utc("2016-04-01T00:00:00.000Z"), eEnd: moment.utc("2016-04-30T23:59:59.000Z") },
-  { text: "Apr 2009", eStart: moment.utc("2009-04-01T00:00:00.000Z"), eEnd: moment.utc("2009-04-30T23:59:59.000Z") },
-  { text: "4/1/2016", eStart: moment.utc("2016-04-01T00:00:00.000Z"), eEnd: moment.utc("2016-04-01T23:59:59.000Z") },
-  { text: "4/1/2017 - 5/1/2017", eStart: moment.utc("2017-04-01T00:00:00.000Z"), eEnd: moment.utc("2017-05-01T23:59:59.000Z") },
-  { text: "1/1/2017 - 2/1/2017", eStart: moment.utc("2017-01-01T00:00:00.000Z"), eEnd: moment.utc("2017-02-01T23:59:59.000Z") },
-  { text: "1/11/2017 - 2/11/2017", eStart: moment.utc("2017-01-11T00:00:00.000Z"), eEnd: moment.utc("2017-02-11T23:59:59.000Z") },
-  { text: "1 April 2016 - 1 May 2017", eStart: moment.utc("2016-04-01T00:00:00.000Z"), eEnd: moment.utc("2017-05-01T23:59:59.000Z") },
-  { text: "April 1 2016 - May 2 2017", eStart: moment.utc("2016-04-01T00:00:00.000Z"), eEnd: moment.utc("2017-05-02T23:59:59.000Z") }
+  {
+    text: "April 2016",
+    eStart: moment.utc("2016-04-01T00:00:00.000Z"),
+    eEnd: moment.utc("2016-04-30T23:59:59.000Z")
+  },
+  {
+    text: "Apr 2009",
+    eStart: moment.utc("2009-04-01T00:00:00.000Z"),
+    eEnd: moment.utc("2009-04-30T23:59:59.000Z")
+  },
+  {
+    text: "4/1/2016",
+    eStart: moment.utc("2016-04-01T00:00:00.000Z"),
+    eEnd: moment.utc("2016-04-01T23:59:59.000Z")
+  },
+  {
+    text: "4/1/2016",
+    eStart: moment.tz("2016-04-01T00:00:00.000", 'Europe/Rome'),
+    eEnd: moment.tz("2016-04-01T23:59:59.000", 'Europe/Rome'),
+    tz: 'Europe/Rome'
+  },
+  {
+    text: "4/1/2017 - 5/1/2017",
+    eStart: moment.utc("2017-04-01T00:00:00.000Z"),
+    eEnd: moment.utc("2017-05-01T23:59:59.000Z")
+  },
+  {
+    text: "1/1/2017 - 2/1/2017",
+    eStart: moment.utc("2017-01-01T00:00:00.000Z"),
+    eEnd: moment.utc("2017-02-01T23:59:59.000Z")
+  },
+  {
+    text: "1/11/2017 - 2/11/2017",
+    eStart: moment.utc("2017-01-11T00:00:00.000Z"),
+    eEnd: moment.utc("2017-02-11T23:59:59.000Z") },
+  {
+    text: "1 April 2016 - 1 May 2017",
+    eStart: moment.utc("2016-04-01T00:00:00.000Z"),
+    eEnd: moment.utc("2017-05-01T23:59:59.000Z")
+  },
+  {
+    text: "April 1 2016 - May 2 2017",
+    eStart: moment.utc("2016-04-01T00:00:00.000Z"),
+    eEnd: moment.utc("2017-05-02T23:59:59.000Z")
+  },
+  {
+    text: "April 1 2016 - May 2 2017",
+    eStart: moment.tz("2016-04-01T00:00:00.000", 'Asia/Tokyo'),
+    eEnd: moment.tz("2017-05-02T23:59:59.000", 'Asia/Tokyo'),
+    tz: 'Asia/Tokyo'
+  }
 ].forEach((i) => {
     test(i.text, () => {
-      const r = DateRange.getRange(i.text);
+      const r = DateRange.getRange(i.text, i.tz);
       expect(r.start.toISOString()).toBe(i.eStart.toDate().toISOString());
       expect(r.end.toISOString()).toBe(i.eEnd.toDate().toISOString());
+      expect(r.tz).toBe(i.tz || DateRange.defaultTimeZone);
     });
 });
 
@@ -78,5 +127,6 @@ const moment = require('moment');
       const r = DateRange.getRange(i.text);
       expect(r.start.toISOString()).toBe(i.eStart.toDate().toISOString());
       expect(r.end.toISOString()).toBe(i.eEnd.toDate().toISOString());
+      expect(r.tz).toBe(i.tz || DateRange.defaultTimeZone);
     });
 });
