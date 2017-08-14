@@ -41,6 +41,8 @@ function customChrono(timeZone) {
   ymwtoDateParser.pattern = () => {
     return /year to date|ytd|month to date|mtd|week to date|wtd|this week|this month|this year/i;
   };
+
+  // eslint-disable-next-line no-unused-vars
   ymwtoDateParser.extract = (text, ref, match, opt) => {
     var range = 'year';
     if (match[0].match(/week|wtd/i)) {
@@ -78,6 +80,7 @@ function customChrono(timeZone) {
   //   "April 2017", "May 2017", "Last April"
   //   "1/12/2026"
   var lastYMWRefiner = new chrono.Refiner();
+  // eslint-disable-next-line no-unused-vars
   lastYMWRefiner.refine = (text, results, opt) => {
     results.forEach((result) => {
       if (result.end === undefined) {
@@ -130,6 +133,7 @@ function customChrono(timeZone) {
   // are consitent, meaning start time is 00:00:00 and
   // end time is 23:59:59
   var setStartTimeAndEndTimeRefiner = new chrono.Refiner();
+  // eslint-disable-next-line no-unused-vars
   setStartTimeAndEndTimeRefiner.refine = (text, results, opt) => {
     results.forEach((result) => {
       result.start.assign('hour', 0);
