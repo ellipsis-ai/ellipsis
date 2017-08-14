@@ -7,7 +7,9 @@
   "directories": {
     "test": "test"
   },
-  "dependencies": {},
+  "dependencies": {
+    "moment-timezone": "0.5.13"
+  },
   "devDependencies": {
     "amdefine": "^1.0.0",
     "babel-core": "^6.13.2",

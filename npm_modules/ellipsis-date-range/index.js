@@ -19,6 +19,18 @@ const chrono = require('chrono-node');
 
 const defaultTimeZone = 'UTC';
 
+// This is an helper method. It should alwasy be private.
+const setMomentObject = (momentDate, parsedComponent) => {
+    return momentDate
+      .set('year', parsedComponent.get('year'))
+      .set('month', parsedComponent.get('month') - 1)
+      .set('date', parsedComponent.get('day'))
+      .set('hour', parsedComponent.get('hour'))
+      .set('minute', parsedComponent.get('minute'))
+      .set('second', parsedComponent.get('second'))
+      .set('millisecond', parsedComponent.get('millisecond'));
+};
+
 function customChrono(timeZone) {
 
   var userTimezone = timeZone ||  defaultTimeZone;
@@ -139,18 +151,6 @@ function customChrono(timeZone) {
   custom.refiners.push(lastYMWRefiner);
   custom.refiners.push(setStartTimeAndEndTimeRefiner);
   return custom;
-}
-
-// This is an helper method. It should alwasy be private.
-const setMomentObject = (momentDate, parsedComponent) => {
-    return momentDate
-      .set('year', parsedComponent.get('year'))
-      .set('month', parsedComponent.get('month') - 1)
-      .set('date', parsedComponent.get('day'))
-      .set('hour', parsedComponent.get('hour'))
-      .set('minute', parsedComponent.get('minute'))
-      .set('second', parsedComponent.get('second'))
-      .set('millisecond', parsedComponent.get('millisecond'));
 }
 
 const DateRange = {
