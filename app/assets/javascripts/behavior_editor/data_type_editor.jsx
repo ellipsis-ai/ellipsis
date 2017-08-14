@@ -10,6 +10,7 @@ define(function(require) {
     ID = require('../lib/id'),
     SectionHeading = require('../shared_ui/section_heading'),
     SequentialName = require('../lib/sequential_name'),
+    BehaviorConfig = require('../models/behavior_config'),
     BehaviorGroup = require('../models/behavior_group'),
     BehaviorVersion = require('../models/behavior_version'),
     DataTypeField = require('../models/data_type_field'),
@@ -69,7 +70,7 @@ define(function(require) {
     }
 
     setDataTypeConfig(newConfig, callback) {
-      this.props.onChange({
+      this.props.onChangeConfig({
         dataTypeConfig: newConfig
       }, callback);
     }
@@ -132,9 +133,7 @@ define(function(require) {
       if (shouldUseSearch) {
         this.props.onAddNewInput('searchQuery');
       } else {
-        this.props.onChange({
-          inputIds: []
-        });
+        this.props.onDeleteInputs();
       }
     }
 
@@ -149,12 +148,6 @@ define(function(require) {
 
     isValidForDataStorage() {
       return this.getBehaviorGroup().isValidForDataStorage();
-    }
-
-    updateCode(newCode) {
-      this.props.onChange({
-        functionBody: newCode
-      });
     }
 
     changeSource() {
@@ -194,7 +187,7 @@ define(function(require) {
             animationIsDisabled={this.props.animationIsDisabled}
 
             onToggleAWSConfig={this.props.onToggleAWSConfig}
-            awsConfig={this.props.awsConfig}
+            behaviorConfig={this.props.behaviorConfig}
             onAWSAddNewEnvVariable={this.props.onAWSAddNewEnvVariable}
             onAWSConfigChange={this.props.onAWSConfigChange}
 
@@ -205,7 +198,7 @@ define(function(require) {
             apiApplications={this.props.apiApplications}
 
             functionBody={this.getSelectedBehavior().getFunctionBody()}
-            onChangeFunctionBody={this.updateCode}
+            onChangeFunctionBody={this.props.onChangeCode}
             onCursorChange={this.props.onCursorChange}
             useLineWrapping={this.props.useLineWrapping}
             onToggleCodeEditorLineWrapping={this.props.onToggleCodeEditorLineWrapping}
@@ -286,8 +279,10 @@ define(function(require) {
     behaviorVersion: React.PropTypes.instanceOf(BehaviorVersion).isRequired,
     paramTypes: React.PropTypes.arrayOf(React.PropTypes.instanceOf(ParamType)).isRequired,
     inputs: React.PropTypes.arrayOf(React.PropTypes.instanceOf(Input)).isRequired,
-    onChange: React.PropTypes.func.isRequired,
+    onChangeConfig: React.PropTypes.func.isRequired,
+    onChangeCode: React.PropTypes.func.isRequired,
     onAddNewInput: React.PropTypes.func.isRequired,
+    onDeleteInputs: React.PropTypes.func.isRequired,
     onConfigureType: React.PropTypes.func.isRequired,
     isModified: React.PropTypes.func.isRequired,
 
@@ -298,7 +293,7 @@ define(function(require) {
     animationIsDisabled: React.PropTypes.bool,
 
     onToggleAWSConfig: React.PropTypes.func.isRequired,
-    awsConfig: React.PropTypes.object,
+    behaviorConfig: React.PropTypes.instanceOf(BehaviorConfig).isRequired,
     onAWSAddNewEnvVariable: React.PropTypes.func.isRequired,
     onAWSConfigChange: React.PropTypes.func.isRequired,
 

@@ -4,7 +4,7 @@ import java.time.OffsetDateTime
 
 import models.accounts.slack.botprofile.SlackBotProfile
 import models.accounts.user.User
-import models.behaviors.events.{ScheduledEvent, SlackMessageEvent}
+import models.behaviors.events.{ScheduledEvent, SlackMessage, SlackMessageEvent}
 import models.behaviors.scheduling.Scheduled
 import models.behaviors.scheduling.recurrence.Recurrence
 import models.team.Team
@@ -32,10 +32,7 @@ case class ScheduledMessage(
   }
 
   def eventFor(channel: String, slackUserId: String, profile: SlackBotProfile, client: SlackApiClient): ScheduledEvent = {
-    // TODO: Create a new class of synthetic events that doesn't need a SlackUserInfo list
-    // https://github.com/ellipsis-ai/ellipsis/issues/1719
-    // Scheduled messages shouldn't ever be created with Slack-formatted text, since the built-in schedule behavior already receives unformatted text
-    ScheduledEvent(SlackMessageEvent(profile, channel, None, slackUserId, text, SlackTimestamp.now, client, Seq()), this)
+    ScheduledEvent(SlackMessageEvent(profile, channel, None, slackUserId, SlackMessage.fromUnformattedText(text, profile.userId), SlackTimestamp.now, client), this)
   }
 
   def withUpdatedNextTriggeredFor(when: OffsetDateTime): ScheduledMessage = {

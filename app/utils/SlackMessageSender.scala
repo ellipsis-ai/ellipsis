@@ -9,6 +9,7 @@ import slack.models.Attachment
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
+import scala.reflect.io.File
 
 case class SlackMessageSender(
                                client: SlackApiClient,
@@ -20,7 +21,8 @@ case class SlackMessageSender(
                                maybeThreadId: Option[String],
                                maybeShouldUnfurl: Option[Boolean],
                                maybeConversation: Option[Conversation],
-                               maybeActions: Option[MessageActions] = None
+                               maybeActions: Option[MessageActions] = None,
+                               files: Seq[UploadFileSpec] = Seq()
                              ) {
 
   private def postChatMessage(
@@ -139,6 +141,21 @@ case class SlackMessageSender(
     }
   }
 
+  def sendFile(spec: UploadFileSpec)(implicit actorSystem: ActorSystem): Future[Unit] = {
+    val file = File.makeTemp().jfile
+    client.uploadFile(
+      file,
+      content = spec.content,
+      filetype = spec.filetype,
+      filename = spec.filename,
+      channels = Some(Seq(channelToUse))
+    ).map(_ => {})
+  }
+
+  def sendFiles(implicit actorSystem: ActorSystem): Future[Unit] = {
+    Future.sequence(files.map(sendFile)).map(_ => {})
+  }
+
   def send(implicit actorSystem: ActorSystem): Future[Option[String]] = {
     val formattedText = SlackMessageFormatter.bodyTextFor(unformattedText)
     val maybeAttachments = maybeActions.flatMap { actions =>
@@ -150,6 +167,7 @@ case class SlackMessageSender(
     for {
       _ <- sendPreamble(formattedText, channelToUse)
       maybeLastTs <- sendMessageSegmentsInOrder(messageSegmentsFor(formattedText), channelToUse, maybeShouldUnfurl, maybeAttachments, maybeConversation, None)
+      _ <- sendFiles
     } yield maybeLastTs
   }
 }

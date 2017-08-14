@@ -107,7 +107,7 @@ case class BehaviorGroupExporter(
   }
 
   def configStringFor(behaviorVersionData: BehaviorVersionData): String = {
-    Json.prettyPrint(Json.toJson(behaviorVersionData.config))
+    Json.prettyPrint(Json.toJson(behaviorVersionData.config.copyForExport(this)))
   }
 
   protected def writeFilesFor(behaviorVersionData: BehaviorVersionData): Unit = {

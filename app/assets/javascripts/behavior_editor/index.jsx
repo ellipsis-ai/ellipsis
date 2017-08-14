@@ -585,6 +585,10 @@ const BehaviorEditor = React.createClass({
     this.setEditableProp('inputIds', ImmutableObjectUtils.arrayRemoveElementAtIndex(this.getInputIds(), index));
   },
 
+  deleteAllInputs: function() {
+    this.setEditableProp('inputIds', []);
+  },
+
   deleteTriggerAtIndex: function(index) {
     var triggers = ImmutableObjectUtils.arrayRemoveElementAtIndex(this.getBehaviorTriggers(), index);
     this.setEditableProp('triggers', triggers);
@@ -852,9 +856,10 @@ const BehaviorEditor = React.createClass({
   },
 
   setConfigProperty: function(property, value, callback) {
-    var config = Object.assign({}, this.getBehaviorConfig());
-    config[property] = value;
-    this.setEditableProp('config', config, callback);
+    const newProps = {};
+    newProps[property] = value;
+    const newConfig = this.getBehaviorConfig().clone(newProps);
+    this.setEditableProp('config', newConfig, callback);
   },
 
   showEnvVariableAdder: function(prompt) {
@@ -1438,7 +1443,7 @@ const BehaviorEditor = React.createClass({
       <APISelectorMenu
         openWhen={this.getActiveDropdown() === 'apiSelectorDropdown'}
         onAWSClick={this.toggleAWSConfig}
-        awsCheckedWhen={!!this.getAWSConfig()}
+        behaviorConfig={this.getBehaviorConfig()}
         toggle={this.toggleAPISelectorMenu}
         allOAuth2Applications={this.getAllOAuth2Applications()}
         requiredOAuth2ApiConfigs={this.getRequiredOAuth2ApiConfigs()}
@@ -1470,7 +1475,7 @@ const BehaviorEditor = React.createClass({
         animationIsDisabled={this.animationIsDisabled()}
 
         onToggleAWSConfig={this.toggleAWSConfig}
-        awsConfig={this.getAWSConfig()}
+        behaviorConfig={this.getBehaviorConfig()}
         onAWSAddNewEnvVariable={this.onAWSAddNewEnvVariable}
         onAWSConfigChange={this.setAWSEnvVar}
 
@@ -2095,8 +2100,10 @@ const BehaviorEditor = React.createClass({
           behaviorVersion={this.getSelectedBehavior()}
           paramTypes={this.getParamTypesForDataTypes()}
           inputs={this.getInputs()}
-          onChange={this.setConfigProps}
+          onChangeConfig={this.setConfigProps}
+          onChangeCode={this.updateCode}
           onAddNewInput={this.addNewInput}
+          onDeleteInputs={this.deleteAllInputs}
           onConfigureType={this.onConfigureType}
           isModified={this.editableIsModified}
 
@@ -2107,7 +2114,7 @@ const BehaviorEditor = React.createClass({
           animationIsDisabled={this.animationIsDisabled()}
 
           onToggleAWSConfig={this.toggleAWSConfig}
-          awsConfig={this.getAWSConfig()}
+          behaviorConfig={this.getBehaviorConfig()}
           onAWSAddNewEnvVariable={this.onAWSAddNewEnvVariable}
           onAWSConfigChange={this.setAWSEnvVar}
 

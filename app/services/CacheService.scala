@@ -7,7 +7,7 @@ import json.Formatting._
 import models.accounts.slack.SlackUserInfo
 import models.accounts.slack.botprofile.SlackBotProfile
 import models.behaviors.behaviorparameter.ValidValue
-import models.behaviors.events.{Event, SlackMessageEvent}
+import models.behaviors.events.{Event, SlackMessage, SlackMessageEvent}
 import play.api.cache.CacheApi
 import play.api.libs.json.{JsError, JsSuccess, JsValue, Json}
 
@@ -19,9 +19,8 @@ case class SlackMessageEventData(
                                   channel: String,
                                   maybeThreadId: Option[String],
                                   user: String,
-                                  text: String,
-                                  ts: String,
-                                  slackUserList: Seq[SlackUserInfo]
+                                  message: SlackMessage,
+                                  ts: String
                                 )
 
 @Singleton
@@ -47,7 +46,7 @@ class CacheService @Inject() (
   def cacheEvent(key: String, event: Event, expiration: Duration = Duration.Inf): Unit = {
     event match {
       case ev: SlackMessageEvent => {
-        val eventData = SlackMessageEventData(ev.profile, ev.channel, ev.maybeThreadId, ev.user, ev.text, ev.ts, ev.slackUserList)
+        val eventData = SlackMessageEventData(ev.profile, ev.channel, ev.maybeThreadId, ev.user, ev.message, ev.ts)
         set(key, Json.toJson(eventData), expiration)
       }
       case _ =>
@@ -63,10 +62,9 @@ class CacheService @Inject() (
             event.channel,
             event.maybeThreadId,
             event.user,
-            event.text,
+            event.message,
             event.ts,
-            slackEventService.clientFor(event.profile),
-            event.slackUserList
+            slackEventService.clientFor(event.profile)
           ))
         }
         case JsError(err) => None
@@ -112,6 +110,14 @@ class CacheService @Inject() (
         case JsError(err) => None
       }
     }
+  }
+
+  def cacheBotUsername(userId: String, username: String): Unit = {
+    set(s"slack-username-for-id-${userId}", username, 5.minutes)
+  }
+
+  def getBotUsername(userId: String): Option[String] = {
+    get(s"slack-username-for-id-${userId}")
   }
 
 }

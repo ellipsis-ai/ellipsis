@@ -9,6 +9,7 @@ trait HelpResult {
   val event: Event
   val group: HelpGroupData
   val matchingTriggers: Seq[BehaviorTriggerData]
+  val botPrefix: String
 
   val dataService: DataService
   val lambdaService: AWSLambdaService
@@ -19,7 +20,7 @@ trait HelpResult {
 
   private def triggerStringFor(trigger: BehaviorTriggerData): String = {
     val prefix = if (trigger.requiresMention)
-      event.botPrefix
+      botPrefix
     else
       ""
     val formattedTrigger = s"`$prefix${trigger.text}`"

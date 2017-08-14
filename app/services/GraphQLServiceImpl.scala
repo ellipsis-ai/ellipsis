@@ -6,7 +6,7 @@ import json.BehaviorGroupData
 import models.accounts.user.User
 import models.behaviors.behaviorgroup.BehaviorGroup
 import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
-import models.behaviors.datatypeconfig.DataTypeConfigForSchema
+import models.behaviors.datatypeconfig.BehaviorVersionForDataTypeSchema
 import models.behaviors.defaultstorageitem.DefaultStorageItemService
 import play.api.libs.json._
 import sangria.ast
@@ -29,10 +29,10 @@ class GraphQLServiceImpl @Inject() (
                                     dataService: DataService
                                   ) extends GraphQLService {
 
-  private def schemaStringFromConfigs(configs: Seq[DataTypeConfigForSchema]): Future[String] = {
-    val queryFieldsStr = configs.map(_.queryFieldsString).mkString("")
-    val mutationFieldsStr = configs.map(_.mutationFieldsString).mkString("")
-    Future.sequence(configs.map(_.graphQL(dataService))).map(_.mkString("\n\n")).map { typesStr =>
+  private def buildSchemaStringFor(versions: Seq[BehaviorVersionForDataTypeSchema]): Future[String] = {
+    val queryFieldsStr = versions.map(_.queryFieldsString).mkString("")
+    val mutationFieldsStr = versions.map(_.mutationFieldsString).mkString("")
+    Future.sequence(versions.map(_.graphQL(dataService))).map(_.mkString("\n\n")).map { typesStr =>
       s"""schema {
          |  query: Query
          |  mutation: Mutation
@@ -55,13 +55,12 @@ class GraphQLServiceImpl @Inject() (
 
   private def schemaStringFor(groupVersion: BehaviorGroupVersion): Future[String] = {
     dataService.dataTypeConfigs.allUsingDefaultStorageFor(groupVersion).map(_.sortBy(_.id)).flatMap { configs =>
-      schemaStringFromConfigs(configs)
+      buildSchemaStringFor(configs.map(_.behaviorVersion))
     }
   }
 
   private def previewSchemaStringFor(data: BehaviorGroupData): Future[String] = {
-    val configs = data.dataTypeBehaviorVersions.flatMap(_.config.dataTypeConfig)
-    schemaStringFromConfigs(configs)
+    buildSchemaStringFor(data.dataTypeBehaviorVersions)
   }
 
   class MySchemaBuilder(groupVersion: BehaviorGroupVersion, user: User) extends DefaultAstSchemaBuilder[DefaultStorageItemService] {

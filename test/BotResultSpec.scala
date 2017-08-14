@@ -6,14 +6,14 @@ import models.accounts.slack.botprofile.SlackBotProfile
 import models.accounts.user.User
 import models.behaviors.conversations.InvokeBehaviorConversation
 import models.behaviors.conversations.conversation.Conversation
-import models.behaviors.events.SlackMessageEvent
+import models.behaviors.events.{SlackMessage, SlackMessageEvent}
 import models.behaviors.{NoResponseResult, SuccessResult}
 import models.team.Team
 import org.mockito.Matchers._
 import org.mockito.Mockito._
 import org.scalatest.mock.MockitoSugar
 import org.scalatestplus.play.PlaySpec
-import play.api.libs.json.JsString
+import play.api.libs.json.{JsNull, JsString}
 import slack.api.SlackApiClient
 import support.DBSpec
 import utils.SlackTimestamp
@@ -37,7 +37,7 @@ class BotResultSpec extends PlaySpec with MockitoSugar with DBSpec {
   }
 
   def newEventFor(profile: SlackBotProfile, maybeThreadId: Option[String] = defaultThreadId): SlackMessageEvent = {
-    SlackMessageEvent(profile, defaultChannel, maybeThreadId, defaultSlackUserId, "", SlackTimestamp.now, mock[SlackApiClient], Seq())
+    SlackMessageEvent(profile, defaultChannel, maybeThreadId, defaultSlackUserId, SlackMessage.blank, SlackTimestamp.now, mock[SlackApiClient])
   }
 
   def newConversationFor(team: Team, user: User, profile: SlackBotProfile, event: SlackMessageEvent): Conversation = {
@@ -126,7 +126,7 @@ class BotResultSpec extends PlaySpec with MockitoSugar with DBSpec {
 
         val event: SlackMessageEvent = newEventFor(profile)
         val responseText = "response"
-        val result = SuccessResult(event, None, JsString("result"), Seq(), Some(responseText), None, forcePrivateResponse = false)
+        val result = SuccessResult(event, None, JsString("result"), JsNull, Seq(), Some(responseText), None, forcePrivateResponse = false)
         val resultTs: String = SlackTimestamp.now
 
         mockSlackClient(event)
@@ -146,7 +146,7 @@ class BotResultSpec extends PlaySpec with MockitoSugar with DBSpec {
 
         val responseText = "response"
         val resultJs = JsString("result")
-        val result = SuccessResult(event, None, resultJs, Seq(), Some(responseText), None, forcePrivateResponse = false)
+        val result = SuccessResult(event, None, resultJs, JsNull, Seq(), Some(responseText), None, forcePrivateResponse = false)
         val resultTs: String = SlackTimestamp.now
 
         val conversationToBeInterrupted = newConversationFor(team, user, profile, event)
@@ -210,7 +210,7 @@ class BotResultSpec extends PlaySpec with MockitoSugar with DBSpec {
         val selfConversation = newConversationFor(team, user, profile, event)
         val conversationToInterrupt = newConversationFor(team, user, profile, event)
 
-        val result = SuccessResult(event, Some(selfConversation), resultJs, Seq(), Some(responseText), None, forcePrivateResponse = false)
+        val result = SuccessResult(event, Some(selfConversation), resultJs, JsNull, Seq(), Some(responseText), None, forcePrivateResponse = false)
 
         mockSlackClient(event)
         mockPostChatMessage(responseText, event.client, resultTs, None)
@@ -245,7 +245,7 @@ class BotResultSpec extends PlaySpec with MockitoSugar with DBSpec {
         runNow(dataService.conversations.save(threadedConversation.copyWithMaybeThreadId(Some(threadId))))
         threadedConversation = runNow(dataService.conversations.find(threadedConversation.id)).get
 
-        val result = SuccessResult(event, Some(threadedConversation), JsString("result"), Seq(), Some(responseText), None, forcePrivateResponse = false)
+        val result = SuccessResult(event, Some(threadedConversation), JsString("result"), JsNull, Seq(), Some(responseText), None, forcePrivateResponse = false)
 
         val otherConversation = newConversationFor(team, user, profile, event)
 

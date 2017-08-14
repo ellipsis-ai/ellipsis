@@ -200,8 +200,8 @@ case class BehaviorBackedDataType(dataTypeConfig: DataTypeConfig) extends Behavi
   override val exportId: String = behaviorVersion.behavior.maybeExportId.getOrElse(id)
   val name = behaviorVersion.maybeName.getOrElse("Unnamed data type")
 
-  val outputName: String = dataTypeConfig.outputName
-  override lazy val inputName: String = dataTypeConfig.inputName
+  val outputName: String = behaviorVersion.outputName
+  override lazy val inputName: String = behaviorVersion.inputName
 
   val isBuiltIn: Boolean = false
 
@@ -395,9 +395,9 @@ case class BehaviorBackedDataType(dataTypeConfig: DataTypeConfig) extends Behavi
             throw new RuntimeException("Need a valid label field")
           }
         }.getOrElse("{}"))
-        query <- dataTypeConfig.outputFieldNamesAction(context.dataService).map { fieldStr =>
+        query <- behaviorVersion.outputFieldNamesAction(context.dataService).map { fieldStr =>
           s"""{
-             |  ${dataTypeConfig.listName}(filter: $filter) {
+             |  ${behaviorVersion.listName}(filter: $filter) {
              |  $fieldStr
              |  }
              |}
@@ -430,10 +430,7 @@ case class BehaviorBackedDataType(dataTypeConfig: DataTypeConfig) extends Behavi
   }
 
   private def textMatchesLabel(text: String, label: String, context: BehaviorParameterContext): Boolean = {
-    val lowercaseText = text.toLowerCase
-    val unformattedText = context.event.unformatTextFragment(text).toLowerCase
-    val lowercaseLabel = label.toLowerCase
-    lowercaseLabel == lowercaseText || lowercaseLabel == unformattedText
+    text.toLowerCase == label.toLowerCase
   }
 
   private def fetchMatchFor(text: String, context: BehaviorParameterContext): Future[Option[ValidValue]] = {

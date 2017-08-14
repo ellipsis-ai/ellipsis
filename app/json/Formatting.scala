@@ -3,10 +3,10 @@ package json
 import models.accounts.slack.SlackUserInfo
 import models.accounts.slack.botprofile.SlackBotProfile
 import models.behaviors.behaviorparameter.ValidValue
-import models.behaviors.events.SlackMessageEvent
+import models.behaviors.events.SlackMessage
 import play.api.libs.json._
 import services.SlackMessageEventData
-import utils.CityInfo
+import utils.{CityInfo, UploadFileSpec}
 
 object Formatting {
 
@@ -126,10 +126,16 @@ object Formatting {
   implicit val slackUserInfoReads = Json.reads[SlackUserInfo]
   implicit val slackUserInfoWrites = Json.writes[SlackUserInfo]
 
+  implicit val slackMessageReads = Json.reads[SlackMessage]
+  implicit val slackMessageWrites = Json.writes[SlackMessage]
+
   implicit val slackMessageEventDataReads = Json.reads[SlackMessageEventData]
   implicit val slackMessageEventDataWrites = Json.writes[SlackMessageEventData]
 
   implicit val validValueReads = Json.reads[ValidValue]
   implicit val validValueWrites = Json.writes[ValidValue]
+
+  implicit val slackFileSpecReads = Json.reads[UploadFileSpec]
+  implicit val slackFileSpecWrites = Json.writes[UploadFileSpec]
 
 }

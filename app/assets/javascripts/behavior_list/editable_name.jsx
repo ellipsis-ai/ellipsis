@@ -36,7 +36,7 @@ define(function(require) {
         );
       } else if (!this.props.version.name && !this.props.version.description) {
         return (
-          <span className={`${className} type-italic mrs`}>(No triggers)</span>
+          <span className={`${className} type-italic mrs`}>Unnamed action</span>
         );
       }
     },

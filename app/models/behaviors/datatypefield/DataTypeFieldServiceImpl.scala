@@ -55,7 +55,11 @@ class DataTypeFieldServiceImpl @Inject() (
   }
 
   def builtInFieldsFor(config: DataTypeConfig): Seq[DataTypeField] = {
-    Seq(DataTypeField("id", "id", "id", TextType, config.id, 0, isLabel = false))
+    if (config.usesCode) {
+      Seq()
+    } else {
+      Seq(DataTypeField("id", "id", "id", TextType, config.id, 0, isLabel = false))
+    }
   }
 
   def allForAction(config: DataTypeConfig): DBIO[Seq[DataTypeField]] = {

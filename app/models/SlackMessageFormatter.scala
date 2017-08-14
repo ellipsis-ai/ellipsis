@@ -36,38 +36,4 @@ object SlackMessageFormatter {
     builder.mkString
   }
 
-  def unformatLinks(text: String): String = {
-    text.
-      replaceAll("""<@(?:.+?\|)?(.+?)>""", "@$1").
-      replaceAll("""<#(?:.+?\|)?(.+?)>""", "#$1").
-      replaceAll("""<!(here|group|channel|everyone)(\|(here|group|channel|everyone))?>""", "@$1").
-      replaceAll("""<!subteam\^.+?\|(.+?)>""", "@$1").
-      replaceAll("""<!date.+?\|(.+?)>""", "$1").
-      replaceAll("""<(?:[^!].*?\|)(.+?)>""", "$1").
-      replaceAll("""<([^!].*?)>""", "$1").
-      replaceAll("""<!(?:.+?\|)?(.+?)>""", "<$1>")
-  }
-
-  def unescapeSlackHTMLEntities(text: String): String = {
-    text.replaceAll("&amp;", "&").replaceAll("&lt;", "<").replaceAll("&gt;", ">")
-  }
-
-  def augmentUserIdsWithNames(initialText: String, userList: Seq[SlackUserInfo]): String = {
-    userList.foldLeft(initialText) { (resultText, user) =>
-      resultText.replace(s"""<@${user.userId}>""", s"""<@${user.userId}|${user.name}>""")
-    }
-  }
-
-  def unformatText(text: String, userList: Seq[SlackUserInfo]): String = {
-    unescapeSlackHTMLEntities(
-      unformatLinks(
-        augmentUserIdsWithNames(text, userList)
-      )
-    )
-  }
-
-  def textContainsRawUserIds(text: String): Boolean = {
-    """<@\w+>""".r.findFirstIn(text).isDefined
-  }
-
 }

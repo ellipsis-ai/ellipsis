@@ -6,9 +6,13 @@ import json.Formatting._
 import models.IDs
 import models.accounts.user.User
 import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
+import models.behaviors.datatypeconfig.BehaviorVersionForDataTypeSchema
+import models.behaviors.datatypefield.DataTypeFieldForSchema
+import models.behaviors.defaultstorageitem.GraphQLHelpers
 import models.team.Team
 import play.api.libs.json.Json
 import services.DataService
+import slick.dbio.DBIO
 import utils.NameFormatter
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -31,8 +35,18 @@ case class BehaviorVersionData(
                                 githubUrl: Option[String],
                                 knownEnvVarsUsed: Seq[String],
                                 createdAt: Option[OffsetDateTime]
-                                ) {
+                                ) extends BehaviorVersionForDataTypeSchema {
   val awsConfig: Option[AWSConfigData] = config.aws
+
+  lazy val typeName: String = name.getOrElse(GraphQLHelpers.fallbackTypeName)
+
+  def dataTypeFieldsAction(dataService: DataService): DBIO[Seq[DataTypeFieldForSchema]] = {
+    DBIO.successful(config.dataTypeConfig.map(_.fields).getOrElse(Seq()))
+  }
+
+  def dataTypeFields(dataService: DataService): Future[Seq[DataTypeFieldForSchema]] = {
+    dataService.run(dataTypeFieldsAction(dataService))
+  }
 
   def maybeExportName: Option[String] = {
     name.orElse(exportId)
@@ -72,7 +86,7 @@ case class BehaviorVersionData(
         n
       }
     }
-    copy(id = Some(newId), name = nameToUse)
+    copy(id = Some(newId), name = nameToUse, config = config.copyForNewVersion)
   }
 
   def copyWithParamTypeIdsIn(oldToNewIdMapping: collection.mutable.Map[String, String]): BehaviorVersionData = {
@@ -105,7 +119,7 @@ object BehaviorVersionData {
 
   def maybeDataTypeConfigFor(isDataType: Boolean, maybeName: Option[String]): Option[DataTypeConfigData] = {
     if (isDataType) {
-      Some(DataTypeConfigData(maybeName, Seq(), None))
+      Some(DataTypeConfigData(Seq(), None))
     } else {
       None
     }
@@ -191,7 +205,7 @@ object BehaviorVersionData {
     val configWithDataTypeConfig = if (!config.isDataType || config.dataTypeConfig.isDefined) {
       config
     } else {
-      config.copy(dataTypeConfig = Some(DataTypeConfigData(config.name, Seq(), usesCode = Some(true))))
+      config.copy(dataTypeConfig = Some(DataTypeConfigData(Seq(), usesCode = Some(true))))
     }
     BehaviorVersionData.buildFor(
       None,

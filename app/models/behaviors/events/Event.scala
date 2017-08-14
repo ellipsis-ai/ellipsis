@@ -12,8 +12,9 @@ import models.behaviors.scheduling.Scheduled
 import models.team.Team
 import play.api.libs.json.JsObject
 import play.api.libs.ws.WSClient
-import services.{AWSLambdaService, CacheService, DataService, DefaultServices}
+import services.{AWSLambdaService, DataService, CacheService, DefaultServices}
 import slick.dbio.DBIO
+import utils.UploadFileSpec
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{ExecutionContext, Future}
@@ -95,17 +96,7 @@ trait Event {
     s"[install new skills]($installLink)"
   }
 
-  def iDontKnowHowToRespondMessageFor(lambdaService: AWSLambdaService)(implicit ec: ExecutionContext): String = {
-    s"""
-       |I don’t know how to respond to:
-       |
-       |> $messageText
-       |
-       |Type `${botPrefix}help` to see what I can do or ${teachMeLinkFor(lambdaService)}
-    """.stripMargin
-  }
-
-  def noExactMatchResult(dataService: DataService, lambdaService: AWSLambdaService)(implicit actorSystem: ActorSystem): Future[BotResult] = {
+  def noExactMatchResult(dataService: DataService, lambdaService: AWSLambdaService, cacheService: CacheService)(implicit actorSystem: ActorSystem): Future[BotResult] = {
     DisplayHelpBehavior(
       Some(messageText),
       None,
@@ -115,7 +106,8 @@ trait Event {
       isFirstTrigger = true,
       this,
       lambdaService,
-      dataService
+      dataService,
+      cacheService
     ).result
   }
 
@@ -146,17 +138,13 @@ trait Event {
                    forcePrivate: Boolean,
                    maybeShouldUnfurl: Option[Boolean],
                    maybeConversation: Option[Conversation],
-                   maybeActions: Option[MessageActions] = None
+                   maybeActions: Option[MessageActions] = None,
+                   files: Seq[UploadFileSpec] = Seq()
                  )(implicit actorSystem: ActorSystem): Future[Option[String]]
 
-  def botPrefix: String = ""
+  def botPrefix(cacheService: CacheService)(implicit actorSystem: ActorSystem): Future[String] = Future.successful("")
 
   val invocationLogText: String
-
-  def unformatTextFragment(text: String): String = {
-    // Override for client-specific code to strip formatting from text
-    text
-  }
 
   def allBehaviorResponsesFor(
                                maybeTeam: Option[Team],
