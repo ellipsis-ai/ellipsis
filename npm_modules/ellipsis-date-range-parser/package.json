@@ -1,6 +1,6 @@
 {
   "name": "ellipsis-date-range-parser",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "Parse a string and extract a date range.",
   "main": "index.js",
   "scripts": {

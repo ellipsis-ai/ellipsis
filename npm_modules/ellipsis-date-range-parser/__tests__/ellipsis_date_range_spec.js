@@ -130,3 +130,13 @@ const moment = require('moment');
       expect(r.tz).toBe(i.tz || DateRangeParser.defaultTimeZone);
     });
 });
+
+
+test("with an invalid timezone it uses UTC", () => {
+  const r = DateRangeParser.parse("last year I got married", "Pippo");
+  var eStartDate = moment.utc().subtract(1, 'year').startOf('year').set('millisecond', 0);
+  var eEndDate = moment.utc().subtract(1, 'year').endOf('year').set('millisecond', 0);
+  expect(r.start.toISOString()).toBe(eStartDate.toDate().toISOString());
+  expect(r.end.toISOString()).toBe(eEndDate.toDate().toISOString());
+  expect(r.tz).toBe(DateRangeParser.defaultTimeZone);
+});

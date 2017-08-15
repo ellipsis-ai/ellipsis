@@ -162,6 +162,12 @@ const DateRangeParser = {
   defaultTimeZone: defaultTimeZone,
 
   parse: (text, timeZone=defaultTimeZone) => {
+    if ( moment.tz.names().includes(timeZone) ) {
+      // do nothing, timeZone is valid
+    } else {
+      timeZone = defaultTimeZone;
+    }
+
     const r = customChrono(timeZone).parse(text);
     if (r.length === 0 ) return null;
     var sDate = setMomentObject(moment.tz(timeZone), r[0].start);
