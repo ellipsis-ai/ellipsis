@@ -1,12 +1,12 @@
 {
-  "name": "ellipsis-date-range",
+  "name": "ellipsis-date-range-parser",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
   "scripts": {
     "test": "./node_modules/.bin/jest"
   },
-  "author": "Matteo Melani",
+  "author": "Ellipsis Co. <matteo@ellipsis.ai> (https://www.ellipsis.ai)",
   "license": "ISC",
   "dependencies": {
     "chrono-node": "1.3.5",

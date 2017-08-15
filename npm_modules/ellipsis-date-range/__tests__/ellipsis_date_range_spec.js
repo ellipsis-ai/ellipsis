@@ -1,5 +1,5 @@
 'use strict';
-const DateRange = require('../index');
+const DateRangeParser = require('../index');
 const moment = require('moment');
 
 // This is to mock new Date() 2010-04-17T07:00:00.000Z
@@ -17,12 +17,12 @@ const moment = require('moment');
   { text: "last week", range: "isoWeek", minus: "week" }
 ].forEach((i) => {
     test(i.text, () => {
-      const r = DateRange.getRange(i.text);
+      const r = DateRangeParser.parse(i.text);
       var eStartDate = moment.utc().subtract(1, i.minus).startOf(i.range).set('millisecond', 0);
       var eEndDate = moment.utc().subtract(1, i.minus).endOf(i.range).set('millisecond', 0);
       expect(r.start.toISOString()).toBe(eStartDate.toDate().toISOString());
       expect(r.end.toISOString()).toBe(eEndDate.toDate().toISOString());
-      expect(r.tz).toBe(DateRange.defaultTimeZone);
+      expect(r.tz).toBe(DateRangeParser.defaultTimeZone);
     });
 });
 
@@ -44,12 +44,12 @@ const moment = require('moment');
   { text: "mtd", range: "month", tz: 'Europe/Rome' }
 ].forEach((i) => {
     test(i.text, () => {
-      const r = DateRange.getRange(i.text, i.tz);
+      const r = DateRangeParser.parse(i.text, i.tz);
       var eStartDate = moment.tz(i.tz).startOf(i.range).set('millisecond', 0);
       var eEndDate = moment.tz(i.tz).set('hours', 23).set('minutes', 59).set('seconds', 59).set('millisecond', 0);
       expect(r.start.toISOString()).toBe(eStartDate.toDate().toISOString());
       expect(r.end.toISOString()).toBe(eEndDate.toDate().toISOString());
-      expect(r.tz).toBe(i.tz || DateRange.defaultTimeZone);
+      expect(r.tz).toBe(i.tz || DateRangeParser.defaultTimeZone);
     });
 });
 
@@ -107,10 +107,10 @@ const moment = require('moment');
   }
 ].forEach((i) => {
     test(i.text, () => {
-      const r = DateRange.getRange(i.text, i.tz);
+      const r = DateRangeParser.parse(i.text, i.tz);
       expect(r.start.toISOString()).toBe(i.eStart.toDate().toISOString());
       expect(r.end.toISOString()).toBe(i.eEnd.toDate().toISOString());
-      expect(r.tz).toBe(i.tz || DateRange.defaultTimeZone);
+      expect(r.tz).toBe(i.tz || DateRangeParser.defaultTimeZone);
     });
 });
 
@@ -124,9 +124,9 @@ const moment = require('moment');
   { text: "from April 1 2016 to  May 2 2017", eStart: moment.utc("2016-04-01T00:00:00.000Z"), eEnd: moment.utc("2017-05-02T23:59:59.000Z") }
 ].forEach((i) => {
     test(i.text, () => {
-      const r = DateRange.getRange(i.text);
+      const r = DateRangeParser.parse(i.text);
       expect(r.start.toISOString()).toBe(i.eStart.toDate().toISOString());
       expect(r.end.toISOString()).toBe(i.eEnd.toDate().toISOString());
-      expect(r.tz).toBe(i.tz || DateRange.defaultTimeZone);
+      expect(r.tz).toBe(i.tz || DateRangeParser.defaultTimeZone);
     });
 });

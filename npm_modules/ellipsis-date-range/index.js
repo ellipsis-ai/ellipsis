@@ -157,11 +157,11 @@ function customChrono(timeZone) {
   return custom;
 }
 
-const DateRange = {
+const DateRangeParser = {
 
   defaultTimeZone: defaultTimeZone,
 
-  getRange: (text, timeZone=defaultTimeZone) => {
+  parse: (text, timeZone=defaultTimeZone) => {
     const r = customChrono(timeZone).parse(text);
     if (r.length === 0 ) return null;
     var sDate = setMomentObject(moment.tz(timeZone), r[0].start);
@@ -174,4 +174,4 @@ const DateRange = {
   }
 };
 
-module.exports = DateRange;
+module.exports = DateRangeParser;
