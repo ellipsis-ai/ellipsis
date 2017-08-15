@@ -60,7 +60,8 @@ case class BehaviorVersionData(
       id = Some(IDs.next),
       behaviorId = maybeExisting.flatMap(_.behaviorId).orElse(Some(IDs.next)),
       teamId = team.id,
-      inputIds = inputIds.flatMap { id => inputsData.find(_.exportId.contains(id)).flatMap(_.inputId) }
+      inputIds = inputIds.flatMap { id => inputsData.find(_.exportId.contains(id)).flatMap(_.inputId) },
+      config = config.copyForImportableFor(maybeExistingGroupData)
     )
   }
 

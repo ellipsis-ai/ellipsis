@@ -33,4 +33,10 @@ case class BehaviorConfig(
     )
   }
 
+  def copyForImportableFor(maybeExistingGroupData: Option[BehaviorGroupData]): BehaviorConfig = {
+    copy(
+      dataTypeConfig = dataTypeConfig.map(_.copyForImportableFor(maybeExistingGroupData))
+    )
+  }
+
 }

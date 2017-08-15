@@ -58,6 +58,19 @@ case class DataTypeFieldData(
     )
   }
 
+  def copyForImportableFor(maybeExistingGroupData: Option[BehaviorGroupData]): DataTypeFieldData = {
+    val maybeExisting: Option[DataTypeFieldData] = maybeExistingGroupData.flatMap { groupData =>
+      groupData.behaviorVersions.flatMap { bv =>
+        bv.config.dataTypeConfig.flatMap { dtConfig =>
+          dtConfig.fields.find(f => f.exportId.isDefined && f.exportId == exportId)
+        }
+      }.headOption
+    }
+    copy(
+      fieldId = maybeExisting.flatMap(_.fieldId).orElse(Some(IDs.next))
+    )
+  }
+
 }
 
 object DataTypeFieldData {

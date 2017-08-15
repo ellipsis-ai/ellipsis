@@ -38,6 +38,12 @@ case class DataTypeConfigData(
     }
   }
 
+  def copyForImportableFor(maybeExistingGroupData: Option[BehaviorGroupData]): DataTypeConfigData = {
+    copy(
+      fields = userDefinedFields.map(_.copyForImportableFor(maybeExistingGroupData))
+    )
+  }
+
 }
 
 object DataTypeConfigData {
