@@ -173,7 +173,7 @@ define(function(require) {
         actionInputs: Input.allFromJson(props.actionInputs || []),
         dataTypeInputs: Input.allFromJson(props.dataTypeInputs || []),
         libraryVersions: props.libraryVersions.map(ea => new LibraryVersion(Object.assign({}, ea, { groupId: props.id }))),
-        nodeModuleVersions: props.nodeModuleVersions.map(ea => new NodeModuleVersion(ea))
+        nodeModuleVersions: NodeModuleVersion.allFromJson(props.nodeModuleVersions || [])
       }));
     }
 

@@ -11,6 +11,10 @@ define(function(require) {
       return new NodeModuleVersion(Object.assign({}, this, props));
     }
 
+    static allFromJson(jsonArray) {
+      return jsonArray.map((props) => new NodeModuleVersion(props));
+    }
+
   }
 
   return NodeModuleVersion;
