@@ -52,14 +52,17 @@ describe("Formatter", () => {
 
     it("adds an underscore prefix reserved words", () => {
       expect(Formatter.formatNameForCode("for")).toEqual("_for");
+      expect(Formatter.formatNameForCode("null")).toEqual("_null");
     });
 
     it("removes an underscore prefix when one more character is typed after a reserved word", () => {
       expect(Formatter.formatNameForCode("_form")).toEqual("form");
+      expect(Formatter.formatNameForCode("_nulls")).toEqual("nulls");
     });
 
     it("preserves underscore prefixes for strings that start with a reserved word with 2 or more characters", () => {
       expect(Formatter.formatNameForCode("_format")).toEqual("_format");
+      expect(Formatter.formatNameForCode("_nulled")).toEqual("_nulled");
     });
 
     it("strips more than a single underscore prefix", () => {
