@@ -58,7 +58,8 @@ trait BehaviorVersionService {
                        requiredOAuth2ApiConfigs: Seq[RequiredOAuth2ApiConfig],
                        requiredSimpleTokenApis: Seq[RequiredSimpleTokenApi],
                        maybeUser: Option[User],
-                       data: BehaviorVersionData
+                       data: BehaviorVersionData,
+                       forceNodeModuleUpdate: Boolean
                      ): DBIO[BehaviorVersion]
 
   def delete(behaviorVersion: BehaviorVersion): Future[BehaviorVersion]

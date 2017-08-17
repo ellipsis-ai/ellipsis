@@ -36,7 +36,8 @@ trait BehaviorGroupVersionService {
   def createFor(
                  group: BehaviorGroup,
                  user: User,
-                 data: BehaviorGroupData
+                 data: BehaviorGroupData,
+                 forceNodeModuleUpdate: Boolean
                ): Future[BehaviorGroupVersion]
 
 }

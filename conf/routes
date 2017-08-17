@@ -27,6 +27,7 @@ POST        /import_skill                             @controllers.BehaviorImpor
 POST        /import_behavior                          @controllers.BehaviorImportExportController.doImport
 POST        /save_skill                               @controllers.BehaviorEditorController.save
 POST        /save_behavior                            @controllers.BehaviorEditorController.save
+POST        /update_node_modules                      @controllers.BehaviorEditorController.updateNodeModules
 GET         /regex_validation_errors/:pattern         @controllers.BehaviorEditorController.regexValidationErrorsFor(pattern: String)
 GET         /version_info/:behaviorId                 @controllers.BehaviorEditorController.versionInfoFor(behaviorId: String)
 POST        /test_skill_triggers                      @controllers.BehaviorEditorController.testTriggers

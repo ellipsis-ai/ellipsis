@@ -341,7 +341,8 @@ class AWSLambdaServiceImpl @Inject() (
                                        maybeAWSConfig: Option[AWSConfig],
                                        requiredOAuth2ApiConfigs: Seq[RequiredOAuth2ApiConfig],
                                        requiredSimpleTokenApis: Seq[RequiredSimpleTokenApi],
-                                       maybePreviousFunctionInfo: Option[PreviousFunctionInfo]
+                                       maybePreviousFunctionInfo: Option[PreviousFunctionInfo],
+                                       forceNodeModuleUpdate: Boolean
                                      ): Unit = {
     val dirName = dirNameFor(functionName)
     val path = Path(dirName)
@@ -353,15 +354,15 @@ class AWSLambdaServiceImpl @Inject() (
     }
 
     val requiredModules = requiredModulesIn(functionBody, libraries, includeLibraryRequires = true)
-    val shouldInstallModules = maybePreviousFunctionInfo.forall { previousFunctionInfo =>
+    val canUseCopyModules = maybePreviousFunctionInfo.forall { previousFunctionInfo =>
       if (previousFunctionInfo.canCopyModules(requiredModules)) {
         previousFunctionInfo.copyModulesInto(dirName)
-        false
-      } else {
         true
+      } else {
+        false
       }
     }
-    if (shouldInstallModules) {
+    if (forceNodeModuleUpdate || !canUseCopyModules) {
       requiredModules.foreach { moduleName =>
         // NPM wants to write a lockfile in $HOME; this makes it work for daemons
         Process(Seq("bash","-c",s"cd $dirName && npm install $moduleName"), None, "HOME" -> "/tmp").!
@@ -404,9 +405,20 @@ class AWSLambdaServiceImpl @Inject() (
                          maybeAWSConfig: Option[AWSConfig],
                          requiredOAuth2ApiConfigs: Seq[RequiredOAuth2ApiConfig],
                          requiredSimpleTokenApis: Seq[RequiredSimpleTokenApi],
-                         maybePreviousFunctionInfo: Option[PreviousFunctionInfo]
+                         maybePreviousFunctionInfo: Option[PreviousFunctionInfo],
+                         forceNodeModuleUpdate: Boolean
                        ): ByteBuffer = {
-    createZipWithModulesFor(functionName, functionBody, params, libraries, maybeAWSConfig, requiredOAuth2ApiConfigs, requiredSimpleTokenApis, maybePreviousFunctionInfo)
+    createZipWithModulesFor(
+      functionName,
+      functionBody,
+      params,
+      libraries,
+      maybeAWSConfig,
+      requiredOAuth2ApiConfigs,
+      requiredSimpleTokenApis,
+      maybePreviousFunctionInfo,
+      forceNodeModuleUpdate
+    )
     val path = Paths.get(zipFileNameFor(functionName))
     ByteBuffer.wrap(Files.readAllBytes(path))
   }
@@ -436,7 +448,8 @@ class AWSLambdaServiceImpl @Inject() (
                       maybeAWSConfig: Option[AWSConfig],
                       requiredOAuth2ApiConfigs: Seq[RequiredOAuth2ApiConfig],
                       requiredSimpleTokenApis: Seq[RequiredSimpleTokenApi],
-                      maybePreviousFunctionInfo: Option[PreviousFunctionInfo]
+                      maybePreviousFunctionInfo: Option[PreviousFunctionInfo],
+                      forceNodeModuleUpdate: Boolean
                     ): Future[Unit] = {
 
     deleteFunction(functionName).andThen {
@@ -446,7 +459,17 @@ class AWSLambdaServiceImpl @Inject() (
       } else {
         val functionCode =
           new FunctionCode().
-            withZipFile(getZipFor(functionName, functionBody, params, libraries, maybeAWSConfig, requiredOAuth2ApiConfigs, requiredSimpleTokenApis, maybePreviousFunctionInfo))
+            withZipFile(getZipFor(
+              functionName,
+              functionBody,
+              params,
+              libraries,
+              maybeAWSConfig,
+              requiredOAuth2ApiConfigs,
+              requiredSimpleTokenApis,
+              maybePreviousFunctionInfo,
+              forceNodeModuleUpdate
+            ))
         val createFunctionRequest =
           new CreateFunctionRequest().
             withFunctionName(functionName).
@@ -468,7 +491,8 @@ class AWSLambdaServiceImpl @Inject() (
                          libraries: Seq[LibraryVersion],
                          maybeAWSConfig: Option[AWSConfig],
                          requiredOAuth2ApiConfigs: Seq[RequiredOAuth2ApiConfig],
-                         requiredSimpleTokenApis: Seq[RequiredSimpleTokenApi]
+                         requiredSimpleTokenApis: Seq[RequiredSimpleTokenApi],
+                         forceNodeModuleUpdate: Boolean
                        ): Future[Unit] = {
     for {
       maybePrevious <- dataService.behaviorVersions.maybePreviousFor(behaviorVersion)
@@ -478,7 +502,17 @@ class AWSLambdaServiceImpl @Inject() (
       maybePreviousFunctionInfo <- Future.successful(maybePrevious.map { version =>
         PreviousFunctionInfo(version.functionName, version.functionBody, previousLibraries)
       })
-      _ <- deployFunction(behaviorVersion.functionName, functionBody, params, libraries, maybeAWSConfig, requiredOAuth2ApiConfigs, requiredSimpleTokenApis, maybePreviousFunctionInfo)
+      _ <- deployFunction(
+        behaviorVersion.functionName,
+        functionBody,
+        params,
+        libraries,
+        maybeAWSConfig,
+        requiredOAuth2ApiConfigs,
+        requiredSimpleTokenApis,
+        maybePreviousFunctionInfo,
+        forceNodeModuleUpdate
+      )
     } yield {}
   }
 }
