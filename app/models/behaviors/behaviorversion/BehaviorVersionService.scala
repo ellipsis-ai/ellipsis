@@ -18,6 +18,10 @@ import scala.concurrent.Future
 
 trait BehaviorVersionService {
 
+  import services.AWSLambdaConstants._
+
+  def withoutBuiltin(params: Array[String]) = params.filterNot(ea => ea == CONTEXT_PARAM)
+
   def currentFunctionNames: Future[Seq[String]]
 
   def allFor(behavior: Behavior): Future[Seq[BehaviorVersion]]
@@ -85,9 +89,5 @@ trait BehaviorVersionService {
                ): Future[BotResult]
 
   def unlearn(behaviorVersion: BehaviorVersion): Future[Unit]
-
-  def redeploy(behaviorVersion: BehaviorVersion): Future[Unit]
-
-  def redeployAllCurrentVersions: Future[Unit]
 
 }

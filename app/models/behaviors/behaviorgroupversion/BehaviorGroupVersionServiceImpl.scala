@@ -9,7 +9,8 @@ import json.BehaviorGroupData
 import models.IDs
 import models.accounts.user.User
 import models.behaviors.behaviorgroup.{BehaviorGroup, BehaviorGroupQueries}
-import services.DataService
+import play.api.Logger
+import services.{AWSLambdaService, DataService}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -40,10 +41,12 @@ class BehaviorGroupVersionsTable(tag: Tag) extends Table[RawBehaviorGroupVersion
 }
 
 class BehaviorGroupVersionServiceImpl @Inject() (
-                                             dataServiceProvider: Provider[DataService]
+                                             dataServiceProvider: Provider[DataService],
+                                             lambdaServiceProvider: Provider[AWSLambdaService]
                                            ) extends BehaviorGroupVersionService {
 
   def dataService = dataServiceProvider.get
+  def lambdaService = lambdaServiceProvider.get
 
   import BehaviorGroupVersionQueries._
 
@@ -146,9 +149,95 @@ class BehaviorGroupVersionServiceImpl @Inject() (
           } yield Some(behaviorVersion)
         }.getOrElse(DBIO.successful(None))
       })
+//      maybeAWSConfig <- data.awsConfig.map { c =>
+//        dataService.awsConfigs.createForAction(updated, c.accessKeyName, c.secretKeyName, c.regionName).map(Some(_))
+//      }.getOrElse(DBIO.successful(None))
+      maybeAWSConfig <- DBIO.successful(None)
+      libraries <- dataService.libraries.allForAction(groupVersion)
+      behaviorVersions <- dataService.behaviorVersions.allForGroupVersionAction(groupVersion)
+      behaviorVersionsWithParams <- DBIO.sequence(behaviorVersions.map { bv =>
+        dataService.behaviorParameters.allForAction(bv).map { params =>
+          params.map(_.input.name)
+        }.map { paramNames => (bv, dataService.behaviorVersions.withoutBuiltin(paramNames.toArray)) }
+      })
+      _ <- DBIO.from(
+        lambdaService.deployFunctionFor(
+          groupVersion,
+          libraries,
+          behaviorVersionsWithParams,
+          maybeAWSConfig,
+          requiredOAuth2ApiConfigs,
+          requiredSimpleTokenApis,
+          forceNodeModuleUpdate
+        )
+      )
+      _ <- lambdaService.ensureNodeModuleVersionsFor(groupVersion)
     } yield groupVersion) transactionally
 
     dataService.run(action)
+  }
+
+  def redeploy(groupVersion: BehaviorGroupVersion): Future[Unit] = {
+    for {
+      maybeAWSConfig <- Future.successful(None) //dataService.awsConfigs.maybeFor(behaviorVersion)
+      requiredOAuth2ApiConfigs <- dataService.requiredOAuth2ApiConfigs.allFor(groupVersion)
+      requiredSimpleTokenApis <- dataService.requiredSimpleTokenApis.allFor(groupVersion)
+      libraries <- dataService.libraries.allFor(groupVersion)
+      behaviorVersions <- dataService.behaviorVersions.allForGroupVersion(groupVersion)
+      behaviorVersionsWithParams <- Future.sequence(behaviorVersions.map { bv =>
+        dataService.behaviorParameters.allFor(bv).map { params =>
+          params.map(_.input.name)
+        }.map { paramNames => (bv, dataService.behaviorVersions.withoutBuiltin(paramNames.toArray)) }
+      })
+      _ <- lambdaService.deployFunctionFor(
+        groupVersion,
+        libraries,
+        behaviorVersionsWithParams,
+        maybeAWSConfig,
+        requiredOAuth2ApiConfigs,
+        requiredSimpleTokenApis,
+        forceNodeModuleUpdate = true
+      )
+    } yield {}
+  }
+
+  private def redeployAllSequentially(versions: Seq[BehaviorGroupVersion]): Future[Unit] = {
+    versions.headOption.map { v =>
+      redeploy(v).recover {
+        case e: Exception => {
+          Logger.info(s"Error redeploying version with ID: ${v.id}: ${e.getMessage}")
+        }
+      }.flatMap { _ =>
+        redeployAllSequentially(versions.tail)
+      }
+    }.getOrElse(Future.successful(Unit))
+  }
+
+  def redeployAllCurrentVersions: Future[Unit] = {
+    for {
+      currentVersions <- allCurrent
+      _ <- redeployAllSequentially(currentVersions)
+    } yield {}
+  }
+
+  private def allCurrent: Future[Seq[BehaviorGroupVersion]] = {
+    val action = allWithUser.filter {
+      case ((groupVersion, (group, _)), _) => groupVersion.id === group.maybeCurrentVersionId
+    }.result.map { r =>
+      r.map(tuple2BehaviorGroupVersion)
+    }
+    dataService.run(action)
+  }
+
+  def maybePreviousFor(groupVersion: BehaviorGroupVersion): Future[Option[BehaviorGroupVersion]] = {
+    allFor(groupVersion.group).map { versions =>
+      val index = versions.indexWhere(_.id == groupVersion.id)
+      if (index == versions.size - 1) {
+        None
+      } else {
+        Some(versions(index + 1))
+      }
+    }
   }
 
 }

@@ -250,25 +250,10 @@ class BehaviorVersionServiceImpl @Inject() (
           forcePrivateResponse = data.config.forcePrivateResponse.exists(identity)
         )
         )
-        maybeAWSConfig <- data.awsConfig.map { c =>
-          dataService.awsConfigs.createForAction(updated, c.accessKeyName, c.secretKeyName, c.regionName).map(Some(_))
-        }.getOrElse(DBIO.successful(None))
         inputs <- DBIO.sequence(data.inputIds.map { inputId =>
           dataService.inputs.findByInputIdAction(inputId, groupVersion)
         }
         ).map(_.flatten)
-        libraries <- dataService.libraries.allForAction(groupVersion)
-        _ <- DBIO.from(lambdaService.deployFunctionFor(
-          updated,
-          data.functionBody,
-          withoutBuiltin(inputs.map(_.name).toArray),
-          libraries,
-          maybeAWSConfig,
-          requiredOAuth2ApiConfigs,
-          requiredSimpleTokenApis,
-          forceNodeModuleUpdate
-        )
-        )
         _ <- dataService.behaviorParameters.ensureForAction(updated, inputs)
         _ <- DBIO.sequence(
           data.triggers.
@@ -286,7 +271,6 @@ class BehaviorVersionServiceImpl @Inject() (
         _ <- data.config.dataTypeConfig.map { configData =>
           dataService.dataTypeConfigs.createForAction(updated, configData)
         }.getOrElse(DBIO.successful(None))
-        _ <- lambdaService.ensureNodeModuleVersionsFor(updated)
       } yield Unit
     } yield behaviorVersion
   }
@@ -322,10 +306,6 @@ class BehaviorVersionServiceImpl @Inject() (
       }
     }.getOrElse(Array())
   }
-
-  import services.AWSLambdaConstants._
-
-  def withoutBuiltin(params: Array[String]) = params.filterNot(ea => ea == CONTEXT_PARAM)
 
   def maybeFunctionFor(behaviorVersion: BehaviorVersion): Future[Option[String]] = {
     behaviorVersion.maybeFunctionBody.map { functionBody =>
@@ -418,55 +398,6 @@ class BehaviorVersionServiceImpl @Inject() (
                  maybeConversation: Option[Conversation]
                ): Future[BotResult] = {
     dataService.run(resultForAction(behaviorVersion, parametersWithValues, event, maybeConversation))
-  }
-
-  def redeploy(behaviorVersion: BehaviorVersion): Future[Unit] = {
-    val groupVersion = behaviorVersion.groupVersion
-    for {
-      params <- dataService.behaviorParameters.allFor(behaviorVersion)
-      maybeAWSConfig <- dataService.awsConfigs.maybeFor(behaviorVersion)
-      requiredOAuth2ApiConfigs <- dataService.requiredOAuth2ApiConfigs.allFor(groupVersion)
-      requiredSimpleTokenApis <- dataService.requiredSimpleTokenApis.allFor(groupVersion)
-      libraries <- dataService.libraries.allFor(behaviorVersion.groupVersion)
-      _ <- lambdaService.deployFunctionFor(
-        behaviorVersion,
-        behaviorVersion.functionBody,
-        params.map(_.name).toArray,
-        libraries,
-        maybeAWSConfig,
-        requiredOAuth2ApiConfigs,
-        requiredSimpleTokenApis,
-        forceNodeModuleUpdate = true
-      )
-    } yield {}
-  }
-
-  private def allCurrent: Future[Seq[BehaviorVersion]] = {
-    val action = allWithGroupVersion.filter {
-      case (_, ((groupVersion, (group, _)), _)) => groupVersion.id === group.maybeCurrentVersionId
-    }.result.map { r =>
-      r.map(tuple2BehaviorVersion)
-    }
-    dataService.run(action)
-  }
-
-  private def redeployAllSequentially(versions: Seq[BehaviorVersion]): Future[Unit] = {
-    versions.headOption.map { v =>
-      redeploy(v).recover {
-        case e: Exception => {
-          Logger.info(s"Error redeploying version with ID: ${v.id}: ${e.getMessage}")
-        }
-      }.flatMap { _ =>
-        redeployAllSequentially(versions.tail)
-      }
-    }.getOrElse(Future.successful(Unit))
-  }
-
-  def redeployAllCurrentVersions: Future[Unit] = {
-    for {
-      currentVersions <- allCurrent
-      _ <- redeployAllSequentially(currentVersions)
-    } yield {}
   }
 
   private def isUnhandledError(json: JsValue): Boolean = {

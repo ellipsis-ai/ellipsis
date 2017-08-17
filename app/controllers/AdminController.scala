@@ -44,9 +44,9 @@ class AdminController @Inject() (
   def redeploy(versionId: String) = silhouette.SecuredAction.async { implicit request =>
     withIsAdminCheck(() => {
       for {
-        maybeBehaviorVersion <- dataService.behaviorVersions.findWithoutAccessCheck(versionId)
-        _ <- maybeBehaviorVersion.map { version =>
-          dataService.behaviorVersions.redeploy(version)
+        maybeGroupVersion <- dataService.behaviorGroupVersions.findWithoutAccessCheck(versionId)
+        _ <- maybeGroupVersion.map { version =>
+          dataService.behaviorGroupVersions.redeploy(version)
         }.getOrElse(Future.successful(Unit))
       } yield Redirect(routes.AdminController.lambdaFunctions())
     })
@@ -55,7 +55,7 @@ class AdminController @Inject() (
   def redeployAll = silhouette.SecuredAction.async { implicit request =>
     withIsAdminCheck(() => {
       // do this in the background and respond immediately
-      dataService.behaviorVersions.redeployAllCurrentVersions
+      dataService.behaviorGroupVersions.redeployAllCurrentVersions
       Future.successful(Redirect(routes.AdminController.lambdaFunctions()).flashing("success" -> "Redeploying in the background…"))
     })
   }
