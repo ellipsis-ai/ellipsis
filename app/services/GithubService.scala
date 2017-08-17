@@ -203,6 +203,7 @@ class GithubService @Inject() (
               dataTypeInputs,
               behaviors,
               libraries,
+              nodeModuleVersions = Seq(),
               requiredOAuth2ApiConfigData,
               requiredSimpleTokenApiData,
               Some(githubUrl),

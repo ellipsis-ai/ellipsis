@@ -9,6 +9,7 @@ import akka.actor.ActorSystem
 import com.amazonaws.services.lambda.model._
 import com.amazonaws.services.lambda.{AWSLambdaAsync, AWSLambdaAsyncClientBuilder}
 import json.Formatting._
+import json.NodeModuleVersionData
 import models.Models
 import models.behaviors._
 import models.behaviors.behaviorversion.BehaviorVersion
@@ -35,8 +36,6 @@ import scala.concurrent.Future
 import scala.reflect.io.Path
 import scala.sys.process._
 import scala.util.{Failure, Success}
-
-case class NodeModuleVersionInfo(from: String, version: String)
 
 class AWSLambdaServiceImpl @Inject() (
                                        val configuration: Configuration,
@@ -362,7 +361,7 @@ class AWSLambdaServiceImpl @Inject() (
         true
       }
     }
-    if (true || shouldInstallModules) {
+    if (shouldInstallModules) {
       requiredModules.foreach { moduleName =>
         // NPM wants to write a lockfile in $HOME; this makes it work for daemons
         Process(Seq("bash","-c",s"cd $dirName && npm install $moduleName"), None, "HOME" -> "/tmp").!
@@ -387,7 +386,7 @@ class AWSLambdaServiceImpl @Inject() (
     val maybeDependencies = (json \ "dependencies").asOpt[JsObject]
     maybeDependencies.map { dependencies =>
       DBIO.sequence(dependencies.values.toSeq.map { depJson =>
-        depJson.validate[NodeModuleVersionInfo] match {
+        depJson.validate[NodeModuleVersionData] match {
           case JsSuccess(info, _) => {
             dataService.nodeModuleVersions.ensureForAction(info.from, info.version, behaviorVersion.groupVersion).map(Some(_))
           }

@@ -18,6 +18,7 @@ define(function(require) {
         dataTypeInputs: { value: props.dataTypeInputs, enumerable: true },
         behaviorVersions: { value: props.behaviorVersions, enumerable: true },
         libraryVersions: { value: props.libraryVersions, enumerable: true },
+        nodeModuleVersions: { value: props.nodeModuleVersions, enumerable: true },
         requiredOAuth2ApiConfigs: { value: props.requiredOAuth2ApiConfigs, enumerable: true },
         requiredSimpleTokenApis: { value: props.requiredSimpleTokenApis, enumerable: true },
         createdAt: { value: props.createdAt, enumerable: true },

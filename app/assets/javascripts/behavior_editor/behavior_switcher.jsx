@@ -10,6 +10,7 @@ define(function(require) {
       actionBehaviors: React.PropTypes.arrayOf(React.PropTypes.instanceOf(BehaviorVersion)).isRequired,
       dataTypeBehaviors: React.PropTypes.arrayOf(React.PropTypes.instanceOf(BehaviorVersion)).isRequired,
       libraries: React.PropTypes.arrayOf(React.PropTypes.instanceOf(LibraryVersion)).isRequired,
+      nodeModuleVersions: React.PropTypes.arrayOf(React.PropTypes.object).isRequired,
       selectedId: React.PropTypes.string,
       groupId: React.PropTypes.string,
       groupName: React.PropTypes.string.isRequired,
@@ -47,6 +48,30 @@ define(function(require) {
 
     getSelected: function() {
       return this.getEditables().find(ea => ea.getPersistentId() === this.props.selectedId);
+    },
+
+    renderNodeModules: function() {
+      if (this.props.nodeModuleVersions.length) {
+        return (
+          <div className="border-bottom mtl pbl">
+            <div className="container container-wide mbs">
+              <h6>Required node modules</h6>
+            </div>
+            <div className="type-s">
+              {this.props.nodeModuleVersions.map((version, index) => (
+                <div
+                  key={`nodeModuleVersion${index}`}
+                  className={`pvxs`}
+                >
+                  <div className="plxl mobile-pll">{version.from} – v{version.version}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+      } else {
+        return null;
+      }
     },
 
     render: function() {
@@ -110,6 +135,8 @@ define(function(require) {
                 onSelect={this.props.onSelect}
                 isModified={this.props.isModified}
               />
+
+              {this.renderNodeModules()}
             </div>
           ) : null}
 

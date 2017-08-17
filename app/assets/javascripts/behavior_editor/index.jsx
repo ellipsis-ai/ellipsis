@@ -1182,6 +1182,10 @@ const BehaviorEditor = React.createClass({
     return this.getBehaviorGroup().libraryVersions;
   },
 
+  getNodeModuleVersions: function() {
+    return this.getBehaviorGroup().nodeModuleVersions;
+  },
+
   hasInputs: function() {
     return this.getInputs() && this.getInputs().length > 0;
   },
@@ -1909,6 +1913,7 @@ const BehaviorEditor = React.createClass({
               actionBehaviors={this.getActionBehaviors()}
               dataTypeBehaviors={this.getDataTypeBehaviors()}
               libraries={this.getLibraries()}
+              nodeModuleVersions={this.getNodeModuleVersions()}
               selectedId={this.getSelectedId()}
               groupId={this.getBehaviorGroup().id}
               groupName={this.getBehaviorGroup().getName()}
