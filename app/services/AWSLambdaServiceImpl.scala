@@ -390,10 +390,7 @@ class AWSLambdaServiceImpl @Inject() (
           case JsSuccess(info, _) => {
             dataService.nodeModuleVersions.ensureForAction(info.from, info.version, behaviorVersion.groupVersion).map(Some(_))
           }
-          case JsError(err) => {
-            println(err.toString)
-            DBIO.successful(None)
-          }
+          case JsError(err) => DBIO.successful(None)
         }
       }).map(_.flatten)
     }.getOrElse(DBIO.successful(Seq()))
