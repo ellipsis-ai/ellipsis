@@ -61,7 +61,8 @@ class MockAWSLambdaService @Inject() (
                                   libraries: Seq[LibraryVersion],
                                   maybeAWSConfig: Option[AWSConfig],
                                   requiredOAuth2ApiConfigs: Seq[RequiredOAuth2ApiConfig],
-                                  requiredSimpleTokenApis: Seq[RequiredSimpleTokenApi]
+                                  requiredSimpleTokenApis: Seq[RequiredSimpleTokenApi],
+                                  forceNodeModuleUpdate: Boolean
                                 ): Future[Unit] = Future.successful({})
 
   override def invokeAction(
