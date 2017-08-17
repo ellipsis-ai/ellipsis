@@ -46,7 +46,8 @@ describe('BehaviorEditor', () => {
           shouldRevealCodeEditor: true
         }
       ],
-      libraryVersions: []
+      libraryVersions: [],
+      nodeModuleVersions: []
     },
     selectedId: "1",
     csrfToken: "2",
