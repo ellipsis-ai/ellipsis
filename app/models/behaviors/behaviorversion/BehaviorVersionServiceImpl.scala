@@ -235,7 +235,8 @@ class BehaviorVersionServiceImpl @Inject() (
                        requiredOAuth2ApiConfigs: Seq[RequiredOAuth2ApiConfig],
                        requiredSimpleTokenApis: Seq[RequiredSimpleTokenApi],
                        maybeUser: Option[User],
-                       data: BehaviorVersionData
+                       data: BehaviorVersionData,
+                       forceNodeModuleUpdate: Boolean
                      ): DBIO[BehaviorVersion] = {
     for {
       behaviorVersion <- createForAction(behavior, groupVersion, maybeUser, data.id)
@@ -264,7 +265,8 @@ class BehaviorVersionServiceImpl @Inject() (
           libraries,
           maybeAWSConfig,
           requiredOAuth2ApiConfigs,
-          requiredSimpleTokenApis
+          requiredSimpleTokenApis,
+          forceNodeModuleUpdate
         )
         )
         _ <- dataService.behaviorParameters.ensureForAction(updated, inputs)
@@ -433,7 +435,8 @@ class BehaviorVersionServiceImpl @Inject() (
         libraries,
         maybeAWSConfig,
         requiredOAuth2ApiConfigs,
-        requiredSimpleTokenApis
+        requiredSimpleTokenApis,
+        forceNodeModuleUpdate = true
       )
     } yield {}
   }

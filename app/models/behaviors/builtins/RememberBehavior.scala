@@ -73,7 +73,7 @@ case class RememberBehavior(event: Event, lambdaService: AWSLambdaService, dataS
         user <- maybeUser
         data <- maybeVersionData
       } yield {
-        dataService.behaviorGroupVersions.createFor(group, user, data).map(Some(_))
+        dataService.behaviorGroupVersions.createFor(group, user, data, forceNodeModuleUpdate = false).map(Some(_))
       }).getOrElse(Future.successful(None))
       maybeBehaviorVersion <- maybeGroupVersion.map { groupVersion =>
         dataService.behaviorVersions.allForGroupVersion(groupVersion).map(_.headOption)

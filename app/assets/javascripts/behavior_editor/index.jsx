@@ -14,6 +14,7 @@ var React = require('react'),
   CodeEditorHelp = require('./code_editor_help'),
   ConfirmActionPanel = require('../panels/confirm_action'),
   CollapseButton = require('../shared_ui/collapse_button'),
+  DataRequest = require('../lib/data_request'),
   DataTypeEditor = require('./data_type_editor'),
   DefaultStorageAdder = require('./default_storage_adder'),
   DefaultStorageBrowser = require('./default_storage_browser'),
@@ -709,6 +710,30 @@ const BehaviorEditor = React.createClass({
     this.setState({
       error: "not_saved"
     });
+  },
+
+  updateNodeModules: function(optionalCallback) {
+    this.setState({ error: null });
+    this.toggleActivePanel('saving', true);
+    DataRequest.jsonPost(
+      jsRoutes.controllers.BehaviorEditorController.updateNodeModules().url,
+      { behaviorGroupId: this.getBehaviorGroup().id },
+      this.props.csrfToken
+    )
+      .then((json) => {
+        if (json.id) {
+          const newProps = {
+            group: BehaviorGroup.fromJson(json),
+            onLoad: optionalCallback
+          };
+          this.props.onSave(newProps, this.state);
+        } else {
+          this.onSaveError();
+        }
+      })
+      .catch((error) => {
+        this.onSaveError(error);
+      });
   },
 
   backgroundSave: function(optionalCallback) {
@@ -1925,6 +1950,7 @@ const BehaviorEditor = React.createClass({
               addNewDataType={this.addNewDataType}
               addNewLibrary={this.addNewLibrary}
               isModified={this.editableIsModified}
+              onUpdateNodeModules={this.updateNodeModules}
             />
           </Sticky>
         </Collapsible>

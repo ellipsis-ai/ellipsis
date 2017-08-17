@@ -20,7 +20,8 @@ define(function(require) {
       addNewAction: React.PropTypes.func.isRequired,
       addNewDataType: React.PropTypes.func.isRequired,
       addNewLibrary: React.PropTypes.func.isRequired,
-      isModified: React.PropTypes.func.isRequired
+      isModified: React.PropTypes.func.isRequired,
+      onUpdateNodeModules: React.PropTypes.func.isRequired
     },
 
     getSkillTitle: function() {
@@ -67,6 +68,11 @@ define(function(require) {
                   <div className="plxl mobile-pll">{version.from} – v{version.version}</div>
                 </div>
               ))}
+            </div>
+            <div className="container container-wide mvm">
+              <button type="button"
+                      onClick={this.props.onUpdateNodeModules}
+                      className="button button-s button-shrink">Update node module versions</button>
             </div>
           </div>
         );

@@ -145,7 +145,7 @@ class BehaviorEditorController @Inject() (
                 } else {
                   dataForNewVersion
                 }
-                dataService.behaviorGroupVersions.createFor(group, user, dataToUse).map(Some(_))
+                dataService.behaviorGroupVersions.createFor(group, user, dataToUse, forceNodeModuleUpdate = false).map(Some(_))
               }.getOrElse(Future.successful(None))
               maybeGroupData <- maybeGroup.map { group =>
                 BehaviorGroupData.maybeFor(group.id, user, maybeGithubUrl = None, dataService)
@@ -160,6 +160,44 @@ class BehaviorEditorController @Inject() (
           }
           case e: JsError => {
             Future.successful(BadRequest(s"Malformatted data: ${e.errors.mkString("\n")}"))
+          }
+        }
+      }
+    )
+  }
+
+  case class UpdateNodeModulesInfo(behaviorGroupId: String)
+
+  private val updateNodeModulesForm = Form(
+    mapping(
+      "behaviorGroupId" -> nonEmptyText
+    )(UpdateNodeModulesInfo.apply)(UpdateNodeModulesInfo.unapply)
+  )
+
+  def updateNodeModules = silhouette.SecuredAction.async { implicit request =>
+    val user = request.identity
+    updateNodeModulesForm.bindFromRequest.fold(
+      formWithErrors => {
+        Future.successful(BadRequest(formWithErrors.errorsAsJson))
+      },
+      info => {
+        for {
+          maybeGroup <- dataService.behaviorGroups.find(info.behaviorGroupId, user)
+          maybeGroupData <- BehaviorGroupData.maybeFor(info.behaviorGroupId, user, maybeGithubUrl = None, dataService)
+          maybeSavedGroupVersion <- (for {
+            group <- maybeGroup
+            groupData <- maybeGroupData
+          } yield {
+            dataService.behaviorGroupVersions.createFor(group, user, groupData.copyForNewVersionOf(group), forceNodeModuleUpdate = true).map(Some(_))
+          }).getOrElse(Future.successful(None))
+          maybeUpdatedGroupData <- maybeSavedGroupVersion.map { groupVersion =>
+            BehaviorGroupData.buildFor(groupVersion, user, dataService).map(Some(_))
+          }.getOrElse(Future.successful(None))
+        } yield {
+          maybeUpdatedGroupData.map { groupData =>
+            Ok(Json.toJson(groupData))
+          }.getOrElse {
+            NotFound("")
           }
         }
       }

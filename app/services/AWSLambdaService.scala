@@ -48,7 +48,8 @@ trait AWSLambdaService extends AWSService {
                          libraries: Seq[LibraryVersion],
                          maybeAWSConfig: Option[AWSConfig],
                          requiredOAuth2ApiConfigs: Seq[RequiredOAuth2ApiConfig],
-                         requiredSimpleTokenApis: Seq[RequiredSimpleTokenApi]
+                         requiredSimpleTokenApis: Seq[RequiredSimpleTokenApi],
+                         forceNodeModuleUpdate: Boolean
                          ): Future[Unit]
 
   def ensureNodeModuleVersionsFor(behaviorVersion: BehaviorVersion): DBIO[Seq[NodeModuleVersion]]
