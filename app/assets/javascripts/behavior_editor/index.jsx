@@ -1498,7 +1498,7 @@ const BehaviorEditor = React.createClass({
         onDeleteFunctionBody={this.confirmDeleteCode}
 
         envVariableNames={this.getEnvVariableNames()}
-
+        functionExecutesImmediately={props.functionExecutesImmediately || false}
       />
     );
   },
@@ -2175,7 +2175,8 @@ const BehaviorEditor = React.createClass({
               onToggleHelp={this.toggleBoilerplateHelp}
               helpIsActive={this.props.activePanelName === 'helpForBoilerplateParameters'}
             />
-          )
+          ),
+          functionExecutesImmediately: true
         })}
       </div>
     );
