@@ -5,7 +5,7 @@ import models.accounts.slack.botprofile.SlackBotProfile
 import models.behaviors.behaviorparameter.ValidValue
 import models.behaviors.events.SlackMessage
 import play.api.libs.json._
-import services.SlackMessageEventData
+import services.{NodeModuleVersionInfo, SlackMessageEventData}
 import utils.{CityInfo, UploadFileSpec}
 
 object Formatting {
@@ -137,5 +137,7 @@ object Formatting {
 
   implicit val slackFileSpecReads = Json.reads[UploadFileSpec]
   implicit val slackFileSpecWrites = Json.writes[UploadFileSpec]
+
+  implicit val nodeModuleVersionInfoReads = Json.reads[NodeModuleVersionInfo]
 
 }

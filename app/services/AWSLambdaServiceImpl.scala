@@ -8,6 +8,7 @@ import javax.inject.Inject
 import akka.actor.ActorSystem
 import com.amazonaws.services.lambda.model._
 import com.amazonaws.services.lambda.{AWSLambdaAsync, AWSLambdaAsyncClientBuilder}
+import json.Formatting._
 import models.Models
 import models.behaviors._
 import models.behaviors.behaviorversion.BehaviorVersion
@@ -18,6 +19,7 @@ import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.events.Event
 import models.behaviors.invocationtoken.InvocationToken
 import models.behaviors.library.LibraryVersion
+import models.behaviors.nodemoduleversion.NodeModuleVersion
 import models.environmentvariable.{EnvironmentVariable, TeamEnvironmentVariable, UserEnvironmentVariable}
 import models.team.Team
 import play.api.libs.json._
@@ -33,6 +35,8 @@ import scala.concurrent.Future
 import scala.reflect.io.Path
 import scala.sys.process._
 import scala.util.{Failure, Success}
+
+case class NodeModuleVersionInfo(from: String, version: String)
 
 class AWSLambdaServiceImpl @Inject() (
                                        val configuration: Configuration,
@@ -358,7 +362,7 @@ class AWSLambdaServiceImpl @Inject() (
         true
       }
     }
-    if (shouldInstallModules) {
+    if (true || shouldInstallModules) {
       requiredModules.foreach { moduleName =>
         // NPM wants to write a lockfile in $HOME; this makes it work for daemons
         Process(Seq("bash","-c",s"cd $dirName && npm install $moduleName"), None, "HOME" -> "/tmp").!
@@ -366,6 +370,34 @@ class AWSLambdaServiceImpl @Inject() (
     }
 
     Process(Seq("bash","-c",s"cd $dirName && zip -q -r ${zipFileNameFor(functionName)} *")).!
+  }
+
+  private def getNodeModuleInfoFor(functionName: String): JsValue = {
+    val dirName = dirNameFor(functionName)
+    val infoString = try {
+      Process(Seq("bash","-c",s"cd $dirName && npm list --depth=0 --json=true")).!!
+    } catch {
+      case t: Throwable => "{}"
+    }
+    Json.parse(infoString)
+  }
+
+  def ensureNodeModuleVersionsFor(behaviorVersion: BehaviorVersion): DBIO[Seq[NodeModuleVersion]] = {
+    val json = getNodeModuleInfoFor(behaviorVersion.functionName)
+    val maybeDependencies = (json \ "dependencies").asOpt[JsObject]
+    maybeDependencies.map { dependencies =>
+      DBIO.sequence(dependencies.values.toSeq.map { depJson =>
+        depJson.validate[NodeModuleVersionInfo] match {
+          case JsSuccess(info, _) => {
+            dataService.nodeModuleVersions.ensureForAction(info.from, info.version, behaviorVersion.groupVersion).map(Some(_))
+          }
+          case JsError(err) => {
+            println(err.toString)
+            DBIO.successful(None)
+          }
+        }
+      }).map(_.flatten)
+    }.getOrElse(DBIO.successful(Seq()))
   }
 
   private def getZipFor(
@@ -447,11 +479,10 @@ class AWSLambdaServiceImpl @Inject() (
       previousLibraries <- maybePrevious.map { prev =>
         dataService.libraries.allFor(prev.groupVersion)
       }.getOrElse(Future.successful(Seq()))
-    } yield {
-      val maybePreviousFunctionInfo = maybePrevious.map { version =>
+      maybePreviousFunctionInfo <- Future.successful(maybePrevious.map { version =>
         PreviousFunctionInfo(version.functionName, version.functionBody, previousLibraries)
-      }
-      deployFunction(behaviorVersion.functionName, functionBody, params, libraries, maybeAWSConfig, requiredOAuth2ApiConfigs, requiredSimpleTokenApis, maybePreviousFunctionInfo)
-    }
+      })
+      _ <- deployFunction(behaviorVersion.functionName, functionBody, params, libraries, maybeAWSConfig, requiredOAuth2ApiConfigs, requiredSimpleTokenApis, maybePreviousFunctionInfo)
+    } yield {}
   }
 }
