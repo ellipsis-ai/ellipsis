@@ -2,7 +2,8 @@ define(function(require) {
   var React = require('react'),
     BehaviorSwitcherGroup = require('./behavior_switcher_group'),
     BehaviorVersion = require('../models/behavior_version'),
-    LibraryVersion = require('../models/library_version');
+    LibraryVersion = require('../models/library_version'),
+    NodeModuleVersion = require('../models/node_module_version');
 
   return React.createClass({
     displayName: 'BehaviorSwitcher',
@@ -10,7 +11,7 @@ define(function(require) {
       actionBehaviors: React.PropTypes.arrayOf(React.PropTypes.instanceOf(BehaviorVersion)).isRequired,
       dataTypeBehaviors: React.PropTypes.arrayOf(React.PropTypes.instanceOf(BehaviorVersion)).isRequired,
       libraries: React.PropTypes.arrayOf(React.PropTypes.instanceOf(LibraryVersion)).isRequired,
-      nodeModuleVersions: React.PropTypes.arrayOf(React.PropTypes.object).isRequired,
+      nodeModuleVersions: React.PropTypes.arrayOf(React.PropTypes.instanceOf(NodeModuleVersion)).isRequired,
       selectedId: React.PropTypes.string,
       groupId: React.PropTypes.string,
       groupName: React.PropTypes.string.isRequired,

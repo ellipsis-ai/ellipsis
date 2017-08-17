@@ -1,6 +1,7 @@
 define(function(require) {
   var BehaviorVersion = require('./behavior_version');
   var LibraryVersion = require('./library_version');
+  var NodeModuleVersion = require('./node_module_version');
   var Input = require('./input');
   var DeepEqual = require('../lib/deep_equal');
   const ONE_MINUTE = 60000;
@@ -171,7 +172,8 @@ define(function(require) {
         behaviorVersions: props.behaviorVersions.map((ea) => BehaviorVersion.fromJson(Object.assign({}, ea, { groupId: props.id }))),
         actionInputs: Input.allFromJson(props.actionInputs || []),
         dataTypeInputs: Input.allFromJson(props.dataTypeInputs || []),
-        libraryVersions: props.libraryVersions.map(ea => new LibraryVersion(Object.assign({}, ea, { groupId: props.id })))
+        libraryVersions: props.libraryVersions.map(ea => new LibraryVersion(Object.assign({}, ea, { groupId: props.id }))),
+        nodeModuleVersions: props.nodeModuleVersions.map(ea => new NodeModuleVersion(ea))
       }));
     }
 
