@@ -1,6 +1,7 @@
 define(function(require) {
   var BehaviorVersion = require('./behavior_version');
   var LibraryVersion = require('./library_version');
+  var NodeModuleVersion = require('./node_module_version');
   var Input = require('./input');
   var DeepEqual = require('../lib/deep_equal');
   const ONE_MINUTE = 60000;
@@ -18,6 +19,7 @@ define(function(require) {
         dataTypeInputs: { value: props.dataTypeInputs, enumerable: true },
         behaviorVersions: { value: props.behaviorVersions, enumerable: true },
         libraryVersions: { value: props.libraryVersions, enumerable: true },
+        nodeModuleVersions: { value: props.nodeModuleVersions, enumerable: true },
         requiredOAuth2ApiConfigs: { value: props.requiredOAuth2ApiConfigs, enumerable: true },
         requiredSimpleTokenApis: { value: props.requiredSimpleTokenApis, enumerable: true },
         createdAt: { value: props.createdAt, enumerable: true },
@@ -170,7 +172,8 @@ define(function(require) {
         behaviorVersions: props.behaviorVersions.map((ea) => BehaviorVersion.fromJson(Object.assign({}, ea, { groupId: props.id }))),
         actionInputs: Input.allFromJson(props.actionInputs || []),
         dataTypeInputs: Input.allFromJson(props.dataTypeInputs || []),
-        libraryVersions: props.libraryVersions.map(ea => new LibraryVersion(Object.assign({}, ea, { groupId: props.id })))
+        libraryVersions: props.libraryVersions.map(ea => new LibraryVersion(Object.assign({}, ea, { groupId: props.id }))),
+        nodeModuleVersions: NodeModuleVersion.allFromJson(props.nodeModuleVersions || [])
       }));
     }
 

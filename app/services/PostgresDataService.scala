@@ -36,6 +36,7 @@ import models.behaviors.triggers.messagetrigger.MessageTriggerService
 import models.environmentvariable.{TeamEnvironmentVariableService, UserEnvironmentVariableService}
 import models.behaviors.invocationtoken.InvocationTokenService
 import models.behaviors.library.LibraryVersionService
+import models.behaviors.nodemoduleversion.NodeModuleVersionService
 import models.behaviors.savedanswer.SavedAnswerService
 import models.behaviors.scheduling.recurrence.RecurrenceService
 import models.behaviors.scheduling.scheduledbehavior.ScheduledBehaviorService
@@ -73,6 +74,7 @@ class PostgresDataService @Inject() (
                                       val behaviorParametersProvider: Provider[BehaviorParameterService],
                                       val inputsProvider: Provider[InputService],
                                       val librariesProvider: Provider[LibraryVersionService],
+                                      val nodeModuleVersionsProvider: Provider[NodeModuleVersionService],
                                       val savedAnswersProvider: Provider[SavedAnswerService],
                                       val messageTriggersProvider: Provider[MessageTriggerService],
                                       val awsConfigsProvider: Provider[AWSConfigService],
@@ -113,6 +115,7 @@ class PostgresDataService @Inject() (
   val behaviorParameters = behaviorParametersProvider.get
   val inputs = inputsProvider.get
   val libraries = librariesProvider.get
+  val nodeModuleVersions = nodeModuleVersionsProvider.get
   val savedAnswers = savedAnswersProvider.get
   val messageTriggers = messageTriggersProvider.get
   val awsConfigs = awsConfigsProvider.get

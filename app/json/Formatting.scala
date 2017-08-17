@@ -62,6 +62,9 @@ object Formatting {
   implicit val behaviorReads = Json.reads[BehaviorData]
   implicit val behaviorWrites = Json.writes[BehaviorData]
 
+  implicit val nodeModuleVersionDataReads = Json.reads[NodeModuleVersionData]
+  implicit val nodeModuleVersionDataWrites = Json.writes[NodeModuleVersionData]
+
   implicit val behaviorGroupReads = Json.reads[BehaviorGroupData]
   implicit val behaviorGroupWrites = Json.writes[BehaviorGroupData]
 

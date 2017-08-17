@@ -284,6 +284,7 @@ class BehaviorVersionServiceImpl @Inject() (
         _ <- data.config.dataTypeConfig.map { configData =>
           dataService.dataTypeConfigs.createForAction(updated, configData)
         }.getOrElse(DBIO.successful(None))
+        _ <- lambdaService.ensureNodeModuleVersionsFor(updated)
       } yield Unit
     } yield behaviorVersion
   }
