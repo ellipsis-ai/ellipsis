@@ -34,7 +34,9 @@ object BehaviorGroupVersionQueries {
   val findQuery = Compiled(uncompiledFindQuery _)
 
   def uncompiledAllForQuery(groupId: Rep[String]) = {
-    allWithUser.filter { case((version, _), _) => version.groupId === groupId }
+    allWithUser.
+      filter { case((version, _), _) => version.groupId === groupId }.
+      sortBy { case((version, _), _) => version.createdAt.desc }
   }
   val allForQuery = Compiled(uncompiledAllForQuery _)
 

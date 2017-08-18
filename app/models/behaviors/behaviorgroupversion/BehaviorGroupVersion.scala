@@ -19,7 +19,7 @@ case class BehaviorGroupVersion(
 
   val team: Team = group.team
 
-  val functionName: String = id
+  val functionName: String = BehaviorGroupVersion.functionNameFor(id)
 
   def isCurrentVersion: Boolean = group.maybeCurrentVersionId.contains(id)
 
