@@ -29,6 +29,7 @@ case class BehaviorGroupExporter(
     groupData.name.getOrElse(""),
     groupData.exportId,
     groupData.icon,
+    groupData.awsConfig,
     groupData.requiredOAuth2ApiConfigs,
     groupData.requiredSimpleTokenApis
   ).copyForExport

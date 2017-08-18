@@ -36,7 +36,6 @@ case class BehaviorVersionData(
                                 knownEnvVarsUsed: Seq[String],
                                 createdAt: Option[OffsetDateTime]
                                 ) extends BehaviorVersionForDataTypeSchema {
-  val awsConfig: Option[AWSConfigData] = config.aws
 
   lazy val typeName: String = name.getOrElse(GraphQLHelpers.fallbackTypeName)
 
@@ -144,8 +143,7 @@ object BehaviorVersionData {
               ): BehaviorVersionData = {
 
     val knownEnvVarsUsed =
-      config.knownEnvVarsUsed ++
-        dataService.teamEnvironmentVariables.lookForInCode(functionBody) ++
+      dataService.teamEnvironmentVariables.lookForInCode(functionBody) ++
         dataService.userEnvironmentVariables.lookForInCode(functionBody)
 
 
@@ -182,7 +180,7 @@ object BehaviorVersionData {
       "",
       Seq(),
       Seq(BehaviorTriggerData("", requiresMention = true, isRegex = false, caseSensitive = false)),
-      BehaviorConfig(None, maybeName, None, None, isDataType = maybeDataTypeConfig.isDefined, maybeDataTypeConfig),
+      BehaviorConfig(None, maybeName, None, isDataType = maybeDataTypeConfig.isDefined, maybeDataTypeConfig),
       None,
       None,
       None,
@@ -254,9 +252,6 @@ object BehaviorVersionData {
       maybeTriggers <- maybeBehaviorVersion.map { behaviorVersion =>
         dataService.messageTriggers.allFor(behaviorVersion).map(Some(_))
       }.getOrElse(Future.successful(None))
-      maybeAWSConfig <- maybeBehaviorVersion.map { behaviorVersion =>
-        dataService.awsConfigs.maybeFor(behaviorVersion)
-      }.getOrElse(Future.successful(None))
       maybeDataTypeConfig <- maybeBehaviorVersion.map { behaviorVersion =>
         dataService.dataTypeConfigs.maybeFor(behaviorVersion)
       }.getOrElse(Future.successful(None))
@@ -270,14 +265,10 @@ object BehaviorVersionData {
         params <- maybeParameters
         triggers <- maybeTriggers
       } yield {
-        val maybeAWSConfigData = maybeAWSConfig.map { config =>
-          AWSConfigData(config.maybeAccessKeyName, config.maybeSecretKeyName, config.maybeRegionName)
-        }
         val maybeEnsuredDataTypeConfigData = maybeDataTypeConfigData.orElse(maybeDataTypeConfigFor(behaviorVersion.isDataType, behaviorVersion.maybeName))
         val config = BehaviorConfig(
           maybeExportId,
           behaviorVersion.maybeName,
-          maybeAWSConfigData,
           Some(behaviorVersion.forcePrivateResponse),
           isDataType = maybeEnsuredDataTypeConfigData.isDefined,
           maybeEnsuredDataTypeConfigData

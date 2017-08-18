@@ -1,6 +1,6 @@
 package models.behaviors.config.awsconfig
 
-import models.behaviors.behaviorversion.BehaviorVersion
+import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
 import slick.dbio.DBIO
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -8,12 +8,12 @@ import scala.concurrent.Future
 
 trait AWSConfigService {
 
-  def maybeForAction(behaviorVersion: BehaviorVersion): DBIO[Option[AWSConfig]]
+  def maybeForAction(groupVersion: BehaviorGroupVersion): DBIO[Option[AWSConfig]]
 
-  def maybeFor(behaviorVersion: BehaviorVersion): Future[Option[AWSConfig]]
+  def maybeFor(groupVersion: BehaviorGroupVersion): Future[Option[AWSConfig]]
 
-  def environmentVariablesUsedForAction(behaviorVersion: BehaviorVersion): DBIO[Seq[String]] = {
-    maybeForAction(behaviorVersion).map { maybeAwsConfig =>
+  def environmentVariablesUsedForAction(groupVersion: BehaviorGroupVersion): DBIO[Seq[String]] = {
+    maybeForAction(groupVersion).map { maybeAwsConfig =>
       maybeAwsConfig.map { awsConfig =>
         awsConfig.environmentVariableNames
       }.getOrElse(Seq())
@@ -21,9 +21,9 @@ trait AWSConfigService {
   }
 
   def createForAction(
-                 behaviorVersion: BehaviorVersion,
-                 maybeAccessKeyName: Option[String],
-                 maybeSecretKeyName: Option[String],
-                 maybeRegionName: Option[String]
-               ): DBIO[AWSConfig]
+                       groupVersion: BehaviorGroupVersion,
+                       maybeAccessKeyName: Option[String],
+                       maybeSecretKeyName: Option[String],
+                       maybeRegionName: Option[String]
+                     ): DBIO[AWSConfig]
 }

@@ -3,7 +3,7 @@ package models.behaviors.builtins
 import java.time.OffsetDateTime
 
 import akka.actor.ActorSystem
-import json.{BehaviorConfig, BehaviorGroupData, BehaviorTriggerData, BehaviorVersionData}
+import json._
 import models.behaviors._
 import models.behaviors.events.Event
 import services.{AWSLambdaService, DataService}
@@ -50,7 +50,7 @@ case class RememberBehavior(event: Event, lambdaService: AWSLambdaService, dataS
                 qaExtractor.possibleAnswerContent,
                 Seq(),
                 triggerData,
-                BehaviorConfig(None, None, None, None, isDataType = false, dataTypeConfig = None),
+                BehaviorConfig(None, None, None, isDataType = false, dataTypeConfig = None),
                 None,
                 None,
                 None,
@@ -59,6 +59,7 @@ case class RememberBehavior(event: Event, lambdaService: AWSLambdaService, dataS
             ),
             Seq(),
             Seq(),
+            None,
             Seq(),
             Seq(),
             None,

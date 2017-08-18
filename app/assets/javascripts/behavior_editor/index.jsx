@@ -146,15 +146,7 @@ const BehaviorEditor = React.createClass({
   },
 
   getAWSConfig: function() {
-    var selectedBehavior = this.getSelectedBehavior();
-    if (this.state) {
-      var config = this.getBehaviorConfig();
-      return config && config['aws'];
-    } else if (selectedBehavior && selectedBehavior.config) {
-      return selectedBehavior.config.aws;
-    } else {
-      return undefined;
-    }
+    return this.getBehaviorGroup().awsConfig;
   },
 
   getEditableName: function() {
@@ -812,9 +804,10 @@ const BehaviorEditor = React.createClass({
   },
 
   setAWSEnvVar: function(property, envVarName) {
-    var awsConfig = Object.assign({}, this.getAWSConfig());
+    const awsConfig = Object.assign({}, this.getAWSConfig());
     awsConfig[property] = envVarName;
-    this.setConfigProperty('aws', awsConfig);
+    const updatedGroup = this.getBehaviorGroup().clone({ awsConfig: awsConfig });
+    this.updateGroupStateWith(updatedGroup);
   },
 
   setEditableProp: function(key, value, callback) {
@@ -933,7 +926,9 @@ const BehaviorEditor = React.createClass({
   },
 
   toggleAWSConfig: function() {
-    this.setConfigProperty('aws', this.getAWSConfig() ? undefined : {});
+    const newAWSConfig = this.getAWSConfig() ? undefined : {};
+    const updatedGroup = this.getBehaviorGroup().clone({ awsConfig: newAWSConfig });
+    this.updateGroupStateWith(updatedGroup);
   },
 
   toggleBehaviorSwitcher: function() {
@@ -1471,6 +1466,7 @@ const BehaviorEditor = React.createClass({
     return (
       <APISelectorMenu
         openWhen={this.getActiveDropdown() === 'apiSelectorDropdown'}
+        awsConfig={this.getAWSConfig()}
         onAWSClick={this.toggleAWSConfig}
         behaviorConfig={this.getBehaviorConfig()}
         toggle={this.toggleAPISelectorMenu}
@@ -1503,6 +1499,7 @@ const BehaviorEditor = React.createClass({
         onToggleActivePanel={this.toggleActivePanel}
         animationIsDisabled={this.animationIsDisabled()}
 
+        awsConfig={this.getAWSConfig()}
         onToggleAWSConfig={this.toggleAWSConfig}
         behaviorConfig={this.getBehaviorConfig()}
         onAWSAddNewEnvVariable={this.onAWSAddNewEnvVariable}

@@ -149,10 +149,9 @@ class BehaviorGroupVersionServiceImpl @Inject() (
           } yield Some(behaviorVersion)
         }.getOrElse(DBIO.successful(None))
       })
-//      maybeAWSConfig <- data.awsConfig.map { c =>
-//        dataService.awsConfigs.createForAction(updated, c.accessKeyName, c.secretKeyName, c.regionName).map(Some(_))
-//      }.getOrElse(DBIO.successful(None))
-      maybeAWSConfig <- DBIO.successful(None)
+      maybeAWSConfig <- data.awsConfig.map { c =>
+        dataService.awsConfigs.createForAction(groupVersion, c.accessKeyName, c.secretKeyName, c.regionName).map(Some(_))
+      }.getOrElse(DBIO.successful(None))
       libraries <- dataService.libraries.allForAction(groupVersion)
       behaviorVersions <- dataService.behaviorVersions.allForGroupVersionAction(groupVersion)
       behaviorVersionsWithParams <- DBIO.sequence(behaviorVersions.map { bv =>

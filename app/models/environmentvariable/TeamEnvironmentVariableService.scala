@@ -28,9 +28,7 @@ trait TeamEnvironmentVariableService {
   }
 
   def knownUsedInAction(behaviorVersion: BehaviorVersion, dataService: DataService): DBIO[Seq[String]] = {
-    dataService.awsConfigs.environmentVariablesUsedForAction(behaviorVersion).map { inConfig =>
-      inConfig ++ lookForInCode(behaviorVersion.functionBody)
-    }
+    DBIO.successful(lookForInCode(behaviorVersion.functionBody))
   }
 
   def missingInAction(behaviorVersion: BehaviorVersion, dataService: DataService): DBIO[Seq[String]] = {

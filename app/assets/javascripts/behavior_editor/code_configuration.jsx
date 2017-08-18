@@ -26,6 +26,7 @@ define(function(require) {
       onToggleActivePanel: React.PropTypes.func.isRequired,
       animationIsDisabled: React.PropTypes.bool.isRequired,
 
+      awsConfig: React.PropTypes.object,
       onToggleAWSConfig: React.PropTypes.func.isRequired,
       behaviorConfig: React.PropTypes.instanceOf(BehaviorConfig),
       onAWSAddNewEnvVariable: React.PropTypes.func.isRequired,
@@ -94,7 +95,7 @@ define(function(require) {
     },
 
     getAwsConfig: function() {
-      return this.props.behaviorConfig ? this.props.behaviorConfig.aws : null;
+      return this.props.awsConfig;
     },
 
     getAWSConfigProperty: function(property) {

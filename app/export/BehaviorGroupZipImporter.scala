@@ -53,6 +53,7 @@ case class BehaviorGroupZipImporter(
     var maybeGroupDescription: Option[String] = None
     var maybeExportId: Option[String] = None
     var maybeIcon: Option[String] = None
+    var maybeAWSConfig: Option[AWSConfigData] = None
     var requiredOAuth2ApiConfigData: Seq[RequiredOAuth2ApiConfigData] = Seq()
     var requiredSimpleTokenApiData: Seq[RequiredSimpleTokenApiData] = Seq()
     var actionInputs: Seq[InputData] = Seq()
@@ -85,6 +86,7 @@ case class BehaviorGroupZipImporter(
             maybeGroupName = Some(data.name)
             maybeExportId = data.exportId
             maybeIcon = data.icon
+            maybeAWSConfig = data.awsConfig
             requiredOAuth2ApiConfigData = data.requiredOAuth2ApiConfigs
             requiredSimpleTokenApiData = data.requiredSimpleTokenApis
           }
@@ -144,6 +146,7 @@ case class BehaviorGroupZipImporter(
           versionsData,
           libraries,
           nodeModuleVersions = Seq(),
+          maybeAWSConfig,
           requiredOAuth2ApiConfigData,
           requiredSimpleTokenApiData,
           githubUrl = None,

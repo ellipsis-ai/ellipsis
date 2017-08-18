@@ -4,6 +4,7 @@ case class BehaviorGroupConfig(
                                 name: String,
                                 exportId: Option[String],
                                 icon: Option[String],
+                                awsConfig: Option[AWSConfigData],
                                 requiredOAuth2ApiConfigs: Seq[RequiredOAuth2ApiConfigData],
                                 requiredSimpleTokenApis: Seq[RequiredSimpleTokenApiData]
                               ) {

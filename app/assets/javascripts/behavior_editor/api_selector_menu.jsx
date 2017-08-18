@@ -14,6 +14,7 @@ define(function(require) {
         applicationId: React.PropTypes.string.isRequired,
         displayName: React.PropTypes.string.isRequired
       })).isRequired,
+      awsConfig: React.PropTypes.object,
       requiredOAuth2ApiConfigs: React.PropTypes.arrayOf(React.PropTypes.shape({
         apiId: React.PropTypes.string.isRequired,
         recommendedScope: React.PropTypes.string,
@@ -38,12 +39,8 @@ define(function(require) {
       getOAuth2ApiWithId: React.PropTypes.func.isRequired
     },
 
-    canHaveAwsConfig: function() {
-      return Boolean(this.props.behaviorConfig);
-    },
-
     hasAwsConfig: function() {
-      return Boolean(this.props.behaviorConfig && this.props.behaviorConfig.aws);
+      return Boolean(this.props.awsConfig);
     },
 
     getAPISelectorDropdownLabel: function() {
@@ -143,13 +140,11 @@ define(function(require) {
           menuClassName="popup-dropdown-menu-wide popup-dropdown-menu-right mobile-popup-dropdown-menu-left"
           toggle={this.props.toggle}
         >
-          {this.canHaveAwsConfig() ? (
-            <DropdownMenu.Item
-              onClick={this.props.onAWSClick}
-              checkedWhen={this.hasAwsConfig()}
-              label={(<img src="/assets/images/logos/aws_logo_web_300px.png" width="77" height="32"/>)}
-            />
-          ) : null}
+          <DropdownMenu.Item
+            onClick={this.props.onAWSClick}
+            checkedWhen={this.hasAwsConfig()}
+            label={(<img src="/assets/images/logos/aws_logo_web_300px.png" width="77" height="32"/>)}
+          />
           {this.props.allOAuth2Applications.map((app, index) => {
             return (
               <DropdownMenu.Item

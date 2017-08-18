@@ -156,6 +156,7 @@ object BehaviorEditorData {
           Seq(BehaviorVersionData.newUnsavedFor(team.id, isDataType = false, maybeName = None, dataService)),
           Seq(),
           Seq(),
+          awsConfig = None,
           Seq(),
           Seq(),
           githubUrl = None,
