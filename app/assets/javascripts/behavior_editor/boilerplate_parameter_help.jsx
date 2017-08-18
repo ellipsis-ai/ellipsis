@@ -1,6 +1,7 @@
 define(function(require) {
 var React = require('react'),
   Collapsible = require('../shared_ui/collapsible'),
+  Constants = require('../lib/constants'),
   HelpPanel = require('../help/panel');
 
 return React.createClass({
@@ -83,7 +84,7 @@ return React.createClass({
         onCollapseClick={this.props.onCollapseClick}
       >
         <p>
-          <span>Write a JavaScript function compatible with <a href="https://nodejs.org/docs/latest-v4.x/api/">Node.js 4.3.2</a>. </span>
+          <span>Write a JavaScript function compatible with <a href={Constants.NODE_JS_DOCS_URL} target="_blank">Node.js {Constants.NODE_JS_VERSION}</a>. </span>
           <span>The function will automatically receive the <code className="type-bold">ellipsis</code> object, which contains </span>
           <span>important methods and properties. Ensure your function calls at least one of the <code className="type-bold">success</code>, </span>
           <span><code className="type-bold">error</code> or <code className="type-bold">noResponse</code> methods below to finish.</span>

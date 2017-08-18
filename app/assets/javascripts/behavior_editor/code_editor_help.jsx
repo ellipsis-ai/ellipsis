@@ -1,5 +1,6 @@
 define(function(require) {
   var React = require('react'),
+    Constants = require('../lib/constants'),
     Checklist = require('./checklist');
 
   return React.createClass({
@@ -42,7 +43,7 @@ define(function(require) {
         <div>
           <Checklist disabledWhen={this.props.isFinishedBehavior}>
             <Checklist.Item checkedWhen={this.hasCode()} hiddenWhen={this.props.isFinishedBehavior}>
-              <span>Write a Node.js (<a href="https://nodejs.org/docs/latest-v6.x/api/" target="_blank">v6.10.2</a>) </span>
+              <span>Write a Node.js (<a href={Constants.NODE_JS_DOCS_URL} target="_blank">{Constants.NODE_JS_VERSION}</a>) </span>
               <span>function. You can <code>require()</code> any </span>
               <span><a href="https://www.npmjs.com/" target="_blank">NPM package</a>.</span>
             </Checklist.Item>
