@@ -22,8 +22,6 @@ trait BehaviorVersionService {
 
   def withoutBuiltin(params: Array[String]) = params.filterNot(ea => ea == CONTEXT_PARAM)
 
-  def currentFunctionNames: Future[Seq[String]]
-
   def allFor(behavior: Behavior): Future[Seq[BehaviorVersion]]
 
   def allForGroupVersionAction(groupVersion: BehaviorGroupVersion): DBIO[Seq[BehaviorVersion]]

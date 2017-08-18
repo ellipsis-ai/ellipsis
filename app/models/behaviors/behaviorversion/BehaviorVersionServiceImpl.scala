@@ -88,21 +88,6 @@ class BehaviorVersionServiceImpl @Inject() (
     dataService.run(action)
   }
 
-  def uncompiledCurrentWithFunctionQuery() = {
-    allWithGroupVersion.
-      filter { case (_, ((groupVersion, (group, _)), _)) => group.maybeCurrentVersionId === groupVersion.id }.
-      filter { case (((version, _), _), _) => version.maybeFunctionBody.map(_.trim.length > 0).getOrElse(false) }.
-      map { case (((version, _), _), _) => version.id }
-  }
-
-  val currentWithFunctionQuery = Compiled(uncompiledCurrentWithFunctionQuery)
-
-  def currentFunctionNames: Future[Seq[String]] = {
-    dataService.run(uncompiledCurrentWithFunctionQuery.result).map { r =>
-      r.map(BehaviorVersion.functionNameFor)
-    }
-  }
-
   def uncompiledAllForQuery(behaviorId: Rep[String]) = {
     allWithGroupVersion.
       filter { case (((version, _), _), _) => version.behaviorId === behaviorId }.

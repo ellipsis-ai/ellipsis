@@ -73,20 +73,20 @@ class AWSLambdaServiceImpl @Inject() (
     }
   }
 
-  def listBehaviorFunctionNames: Future[Seq[String]] = {
+  def listBehaviorGroupFunctionNames: Future[Seq[String]] = {
     fetchFunctions(None).map { functions =>
       val allFunctionNames = functions.map(_.getFunctionName)
       val behaviorFunctionNames = allFunctionNames.filter { ea =>
-        ea.startsWith(BehaviorVersion.lambdaFunctionPrefix)
+        ea.startsWith(BehaviorGroupVersion.lambdaFunctionPrefix)
       }
       behaviorFunctionNames
     }
   }
 
-  def partionedBehaviorFunctionNames: Future[PartitionedFunctionNames] = {
+  def partionedBehaviorGroupFunctionNames: Future[PartitionedFunctionNames] = {
     for {
-      allBehaviorFunctionNames <- listBehaviorFunctionNames
-      currentFunctionNames <- dataService.behaviorVersions.currentFunctionNames
+      allBehaviorFunctionNames <- listBehaviorGroupFunctionNames
+      currentFunctionNames <- dataService.behaviorGroupVersions.currentFunctionNames
     } yield {
       val missing = currentFunctionNames.diff(allBehaviorFunctionNames)
       val current = currentFunctionNames.intersect(allBehaviorFunctionNames)
@@ -374,7 +374,7 @@ class AWSLambdaServiceImpl @Inject() (
     }
 
     val requiredModules = requiredModulesIn(behaviorVersionsWithParams.map(_._1), libraries, includeLibraryRequires = true)
-    val canUseCopyModules = maybePreviousFunctionInfo.forall { previousFunctionInfo =>
+    val canCopyModules = maybePreviousFunctionInfo.forall { previousFunctionInfo =>
       if (previousFunctionInfo.canCopyModules(requiredModules)) {
         previousFunctionInfo.copyModulesInto(dirName)
         true
@@ -382,7 +382,7 @@ class AWSLambdaServiceImpl @Inject() (
         false
       }
     }
-    if (forceNodeModuleUpdate || !canUseCopyModules) {
+    if (forceNodeModuleUpdate || !canCopyModules) {
       requiredModules.foreach { moduleName =>
         // NPM wants to write a lockfile in $HOME; this makes it work for daemons
         Process(Seq("bash","-c",s"cd $dirName && npm install $moduleName"), None, "HOME" -> "/tmp").!

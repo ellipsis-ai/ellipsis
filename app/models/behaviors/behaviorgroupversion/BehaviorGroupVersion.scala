@@ -40,3 +40,8 @@ case class BehaviorGroupVersion(
   }
 
 }
+
+object BehaviorGroupVersion {
+  val lambdaFunctionPrefix = "behavior-"
+  def functionNameFor(groupVersionId: String): String = s"$lambdaFunctionPrefix$groupVersionId"
+}

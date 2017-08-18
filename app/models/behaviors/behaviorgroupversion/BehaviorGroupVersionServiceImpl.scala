@@ -220,10 +220,20 @@ class BehaviorGroupVersionServiceImpl @Inject() (
     } yield {}
   }
 
-  private def allCurrent: Future[Seq[BehaviorGroupVersion]] = {
-    val action = allWithUser.filter {
+  def uncompiledAllCurrentQuery() = {
+    allWithUser.filter {
       case ((groupVersion, (group, _)), _) => groupVersion.id === group.maybeCurrentVersionId
-    }.result.map { r =>
+    }
+  }
+
+  def uncompiledAllCurrentIdsQuery() = {
+    uncompiledAllCurrentQuery().map {
+      case ((groupVersion, (group, _)), _) => groupVersion.id
+    }
+  }
+
+  private def allCurrent: Future[Seq[BehaviorGroupVersion]] = {
+    val action = uncompiledAllCurrentQuery().result.map { r =>
       r.map(tuple2BehaviorGroupVersion)
     }
     dataService.run(action)
@@ -237,6 +247,12 @@ class BehaviorGroupVersionServiceImpl @Inject() (
       } else {
         Some(versions(index + 1))
       }
+    }
+  }
+
+  def currentFunctionNames: Future[Seq[String]] = {
+    dataService.run(uncompiledAllCurrentIdsQuery().result).map { r =>
+      r.map(BehaviorGroupVersion.functionNameFor)
     }
   }
 
