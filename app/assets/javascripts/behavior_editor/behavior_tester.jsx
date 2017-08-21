@@ -129,12 +129,7 @@ define(function(require) {
         paramValues: this.state.inputValues,
         csrfToken: this.props.csrfToken,
         onSuccess: (json) => {
-          var newResults = this.state.results.concat(new InvocationTestResult(
-            json.result && json.result.fullText,
-            json.missingParamNames,
-            json.missingSimpleTokens,
-            json.missingUserEnvVars
-          ));
+          var newResults = this.state.results.concat(InvocationTestResult.fromReportJSON(json));
           this.setState({
             results: newResults,
             isTestingResult: false,
