@@ -40,6 +40,7 @@
         "controllers": {
           "APITokenController": {},
           "ApplicationController": {},
+          "AWSConfigController": {},
           "BehaviorEditorController": {},
           "EnvironmentVariablesController": {},
           "OAuth2ApplicationController": {}

@@ -5,8 +5,8 @@ const EnvironmentVariables = require('../app/assets/javascripts/environment_vari
 
 jsRoutes.controllers.EnvironmentVariablesController.list = jest.fn(() => ({ url: '/mock_environment_variables_list' }));
 jsRoutes.controllers.APITokenController.listTokens = jest.fn(() => ({ url: '/mock_list_tokens' }));
-jsRoutes.controllers.OAuth2ApplicationController.list = jest.fn(() => ({ url: 'mock_oauth2_list' }));
-jsRoutes.controllers.AWSConfigController.list = jest.fn(() => ({ url: 'mock_aws_config_list' }));
+jsRoutes.controllers.OAuth2ApplicationController.list = jest.fn(() => ({ url: '/mock_oauth2_list' }));
+jsRoutes.controllers.AWSConfigController.list = jest.fn(() => ({ url: '/mock_aws_config_list' }));
 
 
 describe('EnvironmentVariables', () => {

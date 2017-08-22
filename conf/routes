@@ -51,7 +51,7 @@ GET         /new_oauth2_application                   @controllers.OAuth2Applica
 GET         /edit_oauth2_application/:id              @controllers.OAuth2ApplicationController.edit(id: String, teamId: Option[String] ?= None)
 POST        /save_oauth2_application                  @controllers.OAuth2ApplicationController.save
 
-GET         /aws_configs                              @controllers.AWSConfigController.list(teamId: Option[String] ?= None)
+GET         /list_aws_configs                         @controllers.AWSConfigController.list(teamId: Option[String] ?= None)
 GET         /new_aws_config                           @controllers.AWSConfigController.newConfig(teamId: Option[String] ?= None, behaviorId: Option[String] ?= None, requiredAWSConfigId: Option[String] ?= None)
 GET         /edit_aws_config/:id                      @controllers.AWSConfigController.edit(id: String, teamId: Option[String] ?= None)
 POST        /save_aws_config                          @controllers.AWSConfigController.save
