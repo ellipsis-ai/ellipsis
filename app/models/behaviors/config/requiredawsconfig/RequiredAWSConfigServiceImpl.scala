@@ -58,11 +58,14 @@ class RequiredAWSConfigServiceImpl @Inject() (
   }
   val allForQuery = Compiled(uncompiledAllForQuery _)
 
-  def allFor(groupVersion: BehaviorGroupVersion): Future[Seq[RequiredAWSConfig]] = {
-    val action = allForQuery(groupVersion.id).result.map { r =>
+  def allForAction(groupVersion: BehaviorGroupVersion): DBIO[Seq[RequiredAWSConfig]] = {
+    allForQuery(groupVersion.id).result.map { r =>
       r.map(tuple2RequiredAWSConfig)
     }
-    dataService.run(action)
+  }
+
+  def allFor(groupVersion: BehaviorGroupVersion): Future[Seq[RequiredAWSConfig]] = {
+    dataService.run(allForAction(groupVersion))
   }
 
   def allFor(group: BehaviorGroup): Future[Seq[RequiredAWSConfig]] = {

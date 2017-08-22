@@ -123,6 +123,7 @@ class AWSLambdaServiceImpl @Inject() (
                             payloadData: Seq[(String, JsValue)],
                             team: Team,
                             event: Event,
+                            requiredAWSConfigs: Seq[RequiredAWSConfig],
                             requiredOAuth2ApiConfigs: Seq[RequiredOAuth2ApiConfig],
                             environmentVariables: Seq[EnvironmentVariable],
                             successFn: InvokeResult => BotResult,
@@ -132,13 +133,14 @@ class AWSLambdaServiceImpl @Inject() (
     for {
       userInfo <- event.userInfoAction(ws, dataService)
       result <- {
+        val awsConfigs = requiredAWSConfigs.flatMap(_.maybeConfig)
         val oauth2ApplicationsNeedingRefresh =
           requiredOAuth2ApiConfigs.flatMap(_.maybeApplication).
             filter { app =>
               !userInfo.links.exists(_.externalSystem == app.name)
             }.
             filterNot(_.api.grantType.requiresAuth)
-        DBIO.from(TeamInfo.forOAuth2Apps(oauth2ApplicationsNeedingRefresh, team, ws).flatMap { teamInfo =>
+        DBIO.from(TeamInfo.forConfig(oauth2ApplicationsNeedingRefresh, awsConfigs, team, ws).flatMap { teamInfo =>
           val payloadJson = JsObject(
             payloadData ++ contextParamDataFor(environmentVariables, userInfo, teamInfo, token)
           )
@@ -156,7 +158,7 @@ class AWSLambdaServiceImpl @Inject() (
                   if (!isRetrying) {
                     Logger.info(s"retrying behavior invocation after resource not found")
                     Thread.sleep(2000)
-                    dataService.run(invokeFunctionAction(functionName, token, payloadData, team, event, requiredOAuth2ApiConfigs, environmentVariables, successFn, maybeConversation, isRetrying=true))
+                    dataService.run(invokeFunctionAction(functionName, token, payloadData, team, event, requiredAWSConfigs, requiredOAuth2ApiConfigs, environmentVariables, successFn, maybeConversation, isRetrying=true))
                   } else {
                     throw e
                   }
@@ -178,6 +180,7 @@ class AWSLambdaServiceImpl @Inject() (
                     maybeConversation: Option[Conversation]
                   ): DBIO[BotResult] = {
     for {
+      requiredAWSConfigs <- dataService.requiredAWSConfigs.allForAction(behaviorVersion.groupVersion)
       requiredOAuth2ApiConfigs <- dataService.requiredOAuth2ApiConfigs.allForAction(behaviorVersion.groupVersion)
       result <- if (behaviorVersion.functionBody.isEmpty) {
         DBIO.successful(SuccessResult(event, maybeConversation, JsNull, JsNull, parametersWithValues, behaviorVersion.maybeResponseTemplate, None, behaviorVersion.forcePrivateResponse))
@@ -191,6 +194,7 @@ class AWSLambdaServiceImpl @Inject() (
             parametersWithValues.map { ea => (ea.invocationName, ea.preparedValue) },
             behaviorVersion.team,
             event,
+            requiredAWSConfigs,
             requiredOAuth2ApiConfigs,
             environmentVariables,
             result => {
@@ -231,7 +235,7 @@ class AWSLambdaServiceImpl @Inject() (
 
   private def awsCodeFor(awsConfig: AWSConfig): String = {
     val teamInfoPath = s"event.$CONTEXT_PARAM.teamInfo.aws.${awsConfig.keyName}"
-    s"""$CONTEXT_PARAM.aws.${awsConfig.name} = {
+    s"""$CONTEXT_PARAM.aws.${awsConfig.keyName} = {
        |  accessKeyId: ${teamInfoPath}.accessKeyId,
        |  secretAccessKey: ${teamInfoPath}.secretAccessKey,
        |  region: ${teamInfoPath}.region,
@@ -246,9 +250,9 @@ class AWSLambdaServiceImpl @Inject() (
     } else {
       val awsConfigs = requiredAWSConfigs.flatMap(_.maybeConfig)
       s"""
-         |var AWS = require('aws-sdk');
+         |ellipsis.aws = {};
          |
-         |${awsConfigs.map(awsCodeFor)}
+         |${awsConfigs.map(awsCodeFor).mkString("\n")}
        """.stripMargin
     }
   }

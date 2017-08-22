@@ -3,6 +3,7 @@ package models.behaviors
 import akka.actor.ActorSystem
 import models.accounts.oauth2application.OAuth2Application
 import models.accounts.user.User
+import models.behaviors.config.awsconfig.AWSConfig
 import models.behaviors.events.Event
 import models.team.Team
 import play.api.libs.ws.WSClient
@@ -85,11 +86,18 @@ object UserInfo {
 
 }
 
-case class TeamInfo(team: Team, links: Seq[LinkedInfo]) {
+case class TeamInfo(team: Team, links: Seq[LinkedInfo], awsConfigs: Seq[AWSConfig]) {
 
   def toJson: JsObject = {
     val linkParts: Seq[(String, JsValue)] = Seq(
-      "links" -> JsArray(links.map(_.toJson))
+      "links" -> JsArray(links.map(_.toJson)),
+      "aws" -> JsObject(awsConfigs.map { ea =>
+        ea.keyName -> JsObject(Seq(
+          "accessKeyId" -> JsString(ea.accessKey),
+          "secretAccessKey" -> JsString(ea.secretKey),
+          "region" -> JsString(ea.region)
+        ))
+      })
     )
     val timeZonePart = Seq("timeZone" -> JsString(team.timeZone.toString))
     JsObject(linkParts ++ timeZonePart)
@@ -99,7 +107,7 @@ case class TeamInfo(team: Team, links: Seq[LinkedInfo]) {
 
 object TeamInfo {
 
-  def forOAuth2Apps(apps: Seq[OAuth2Application], team: Team, ws: WSClient): Future[TeamInfo] = {
+  def forConfig(apps: Seq[OAuth2Application], awsConfigs: Seq[AWSConfig], team: Team, ws: WSClient): Future[TeamInfo] = {
     Future.sequence(apps.map { ea =>
       ea.getClientCredentialsTokenFor(ws).map { maybeToken =>
         maybeToken.map { token =>
@@ -107,7 +115,7 @@ object TeamInfo {
         }
       }
     }).map { linkMaybes =>
-      TeamInfo(team, linkMaybes.flatten)
+      TeamInfo(team, linkMaybes.flatten, awsConfigs)
     }
   }
 

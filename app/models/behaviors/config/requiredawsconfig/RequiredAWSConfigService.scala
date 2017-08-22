@@ -9,6 +9,8 @@ import scala.concurrent.Future
 
 trait RequiredAWSConfigService {
 
+  def allForAction(groupVersion: BehaviorGroupVersion): DBIO[Seq[RequiredAWSConfig]]
+
   def allFor(groupVersion: BehaviorGroupVersion): Future[Seq[RequiredAWSConfig]]
 
   def allFor(group: BehaviorGroup): Future[Seq[RequiredAWSConfig]]
