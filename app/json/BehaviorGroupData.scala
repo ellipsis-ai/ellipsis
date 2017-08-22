@@ -24,6 +24,7 @@ case class BehaviorGroupData(
                               behaviorVersions: Seq[BehaviorVersionData],
                               libraryVersions: Seq[LibraryVersionData],
                               nodeModuleVersions: Seq[NodeModuleVersionData],
+                              requiredAWSConfigs: Seq[RequiredAWSConfigData],
                               requiredOAuth2ApiConfigs: Seq[RequiredOAuth2ApiConfigData],
                               requiredSimpleTokenApis: Seq[RequiredSimpleTokenApiData],
                               githubUrl: Option[String],
@@ -138,6 +139,7 @@ object BehaviorGroupData {
       libraryVersions <- dataService.libraries.allFor(version)
       libraryVersionsData <- Future.successful(libraryVersions.map(ea => LibraryVersionData.fromVersion(ea)))
       nodeModuleVersions <- dataService.nodeModuleVersions.allFor(version)
+      requiredAWSConfigs <- dataService.requiredAWSConfigs.allFor(version)
       requiredOAuth2ApiConfigs <- dataService.requiredOAuth2ApiConfigs.allFor(version)
       requiredSimpleTokenApis <- dataService.requiredSimpleTokenApis.allFor(version)
     } yield {
@@ -155,6 +157,7 @@ object BehaviorGroupData {
         versionsData,
         libraryVersionsData,
         nodeModuleVersions.map(NodeModuleVersionData.from),
+        requiredAWSConfigs.map(RequiredAWSConfigData.from),
         requiredOAuth2ApiConfigs.map(RequiredOAuth2ApiConfigData.from),
         requiredSimpleTokenApis.map(RequiredSimpleTokenApiData.from),
         None,

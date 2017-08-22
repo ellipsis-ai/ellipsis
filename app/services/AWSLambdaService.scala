@@ -3,7 +3,7 @@ package services
 import com.amazonaws.services.lambda.AWSLambdaAsync
 import models.Models
 import models.behaviors.behaviorversion.BehaviorVersion
-import models.behaviors.config.awsconfig.AWSConfig
+import models.behaviors.config.requiredawsconfig.RequiredAWSConfig
 import models.behaviors.config.requiredoauth2apiconfig.RequiredOAuth2ApiConfig
 import models.behaviors.config.requiredsimpletokenapi.RequiredSimpleTokenApi
 import models.behaviors.conversations.conversation.Conversation
@@ -46,7 +46,7 @@ trait AWSLambdaService extends AWSService {
                          functionBody: String,
                          params: Array[String],
                          libraries: Seq[LibraryVersion],
-                         maybeAWSConfig: Option[AWSConfig],
+                         requiredAWSConfigs: Seq[RequiredAWSConfig],
                          requiredOAuth2ApiConfigs: Seq[RequiredOAuth2ApiConfig],
                          requiredSimpleTokenApis: Seq[RequiredSimpleTokenApi],
                          forceNodeModuleUpdate: Boolean

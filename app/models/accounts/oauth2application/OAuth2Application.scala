@@ -4,6 +4,7 @@ import models.accounts.oauth2api.OAuth2Api
 import org.apache.commons.lang.WordUtils
 import play.api.http.{HeaderNames, MimeTypes}
 import play.api.libs.ws.{WSClient, WSRequest, WSResponse}
+import utils.NameFormatter
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -79,17 +80,7 @@ case class OAuth2Application(
       ))
   }
 
-  def keyName: String = {
-    // TODO: This replicates code on the client; we should just save the value from the client instead
-    val words = name.split(" ").map((ea) => ea.replaceAll("""[^\w$]""", ""))
-    val firstWord = WordUtils.uncapitalize(words.head)
-    val camel = firstWord + words.tail.map((ea) => WordUtils.capitalize(ea)).mkString("")
-    if (camel.head.toString.matches("""[A-Za-z_$]""")) {
-      camel
-    } else {
-      "_" + camel
-    }
-  }
+  def keyName: String = NameFormatter.formatConfigPropertyName(name)
 
   def toRaw = RawOAuth2Application(
     id,

@@ -21,6 +21,7 @@ import models.behaviors.behaviorgroupversion.{BehaviorGroupVersionService, Behav
 import models.behaviors.behaviorparameter.{BehaviorParameterService, BehaviorParameterServiceImpl}
 import models.behaviors.behaviorversion.{BehaviorVersionService, BehaviorVersionServiceImpl}
 import models.behaviors.config.awsconfig.{AWSConfigService, AWSConfigServiceImpl}
+import models.behaviors.config.requiredawsconfig.{RequiredAWSConfigService, RequiredAWSConfigServiceImpl}
 import models.behaviors.config.requiredoauth2apiconfig.{RequiredOAuth2ApiConfigService, RequiredOAuth2ApiConfigServiceImpl}
 import models.behaviors.config.requiredsimpletokenapi.{RequiredSimpleTokenApiService, RequiredSimpleTokenApiServiceImpl}
 import models.behaviors.conversations.collectedparametervalue.{CollectedParameterValueService, CollectedParameterValueServiceImpl}
@@ -78,6 +79,7 @@ class ServiceModule extends AbstractModule with ScalaModule {
     bind[SavedAnswerService].to[SavedAnswerServiceImpl]
     bind[MessageTriggerService].to[MessageTriggerServiceImpl]
     bind[AWSConfigService].to[AWSConfigServiceImpl]
+    bind[RequiredAWSConfigService].to[RequiredAWSConfigServiceImpl]
     bind[RequiredOAuth2ApiConfigService].to[RequiredOAuth2ApiConfigServiceImpl]
     bind[RequiredSimpleTokenApiService].to[RequiredSimpleTokenApiServiceImpl]
     bind[ConversationService].to[ConversationServiceImpl]

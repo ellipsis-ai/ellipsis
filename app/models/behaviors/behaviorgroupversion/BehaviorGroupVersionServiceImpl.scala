@@ -100,6 +100,9 @@ class BehaviorGroupVersionServiceImpl @Inject() (
       _ <- DBIO.sequence(data.dataTypeInputs.map { ea =>
         dataService.inputs.ensureForAction(ea, groupVersion)
       })
+      requiredAWSConfigs <- DBIO.sequence(data.requiredAWSConfigs.map { requiredData =>
+        dataService.requiredAWSConfigs.createForAction(requiredData, groupVersion)
+      })
       requiredOAuth2ApiConfigs <- DBIO.sequence(data.requiredOAuth2ApiConfigs.map { requiredData =>
         dataService.requiredOAuth2ApiConfigs.maybeCreateForAction(requiredData, groupVersion)
       }).map(_.flatten)
@@ -116,7 +119,7 @@ class BehaviorGroupVersionServiceImpl @Inject() (
             behavior <- maybeExistingBehavior.map(DBIO.successful).getOrElse {
               dataService.behaviors.createForAction(group, Some(behaviorId), ea.exportId, ea.config.isDataType)
             }
-            behaviorVersion <- dataService.behaviorVersions.createForAction(behavior, groupVersion, requiredOAuth2ApiConfigs, requiredSimpleTokenApis, Some(user), ea, forceNodeModuleUpdate)
+            behaviorVersion <- dataService.behaviorVersions.createForAction(behavior, groupVersion, requiredAWSConfigs, requiredOAuth2ApiConfigs, requiredSimpleTokenApis, Some(user), ea, forceNodeModuleUpdate)
           } yield Some((ea, behaviorVersion))
         }.getOrElse(DBIO.successful(None))
       }).map(_.flatten)
@@ -142,7 +145,7 @@ class BehaviorGroupVersionServiceImpl @Inject() (
             behavior <- maybeExistingBehavior.map(DBIO.successful).getOrElse {
               dataService.behaviors.createForAction(group, Some(behaviorId), ea.exportId, ea.config.isDataType)
             }
-            behaviorVersion <- dataService.behaviorVersions.createForAction(behavior, groupVersion, requiredOAuth2ApiConfigs, requiredSimpleTokenApis, Some(user), ea, forceNodeModuleUpdate)
+            behaviorVersion <- dataService.behaviorVersions.createForAction(behavior, groupVersion, requiredAWSConfigs, requiredOAuth2ApiConfigs, requiredSimpleTokenApis, Some(user), ea, forceNodeModuleUpdate)
           } yield Some(behaviorVersion)
         }.getOrElse(DBIO.successful(None))
       })

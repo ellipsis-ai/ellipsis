@@ -52,7 +52,7 @@ class ApplicationControllerSpec extends PlaySpec with MockitoSugar {
         when(dataService.behaviorVersions.findFor(behavior, behaviorGroupVersion)).thenReturn(Future.successful(Some(behaviorVersion)))
         when(dataService.behaviorParameters.allFor(behaviorVersion)).thenReturn(Future.successful(Seq()))
         when(dataService.messageTriggers.allFor(behaviorVersion)).thenReturn(Future.successful(Seq()))
-        when(dataService.awsConfigs.maybeFor(behaviorVersion)).thenReturn(Future.successful(None))
+        when(dataService.requiredAWSConfigs.allFor(behaviorGroupVersion)).thenReturn(Future.successful(Seq()))
         when(dataService.requiredOAuth2ApiConfigs.allFor(behaviorGroupVersion)).thenReturn(Future.successful(Seq()))
         when(dataService.requiredSimpleTokenApis.allFor(behaviorGroupVersion)).thenReturn(Future.successful(Seq()))
         when(dataService.teamEnvironmentVariables.lookForInCode(anyString)).thenReturn(Seq())

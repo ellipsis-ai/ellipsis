@@ -1,6 +1,6 @@
 package models.accounts.simpletokenapi
 
-import org.apache.commons.lang.WordUtils
+import utils.NameFormatter
 
 case class SimpleTokenApi(
                           id: String,
@@ -9,9 +9,6 @@ case class SimpleTokenApi(
                           maybeTeamId: Option[String]
                         ) {
 
-  def keyName: String = {
-    val capitalized = WordUtils.capitalize(name).replaceAll("\\s", "")
-    capitalized.substring(0, 1).toLowerCase() + capitalized.substring(1)
-  }
+  def keyName: String = NameFormatter.formatConfigPropertyName(name)
 
 }

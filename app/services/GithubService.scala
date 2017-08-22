@@ -191,6 +191,7 @@ class GithubService @Inject() (
             val maybeExportId = maybeConfig.flatMap(_.exportId)
             val name = maybeConfig.map(_.name).getOrElse(groupPath)
             val icon = maybeConfig.flatMap(_.icon)
+            val requiredAWSConfigData = maybeConfig.map(_.requiredAWSConfigs).getOrElse(Seq())
             val requiredOAuth2ApiConfigData = maybeConfig.map(_.requiredOAuth2ApiConfigs).getOrElse(Seq())
             val requiredSimpleTokenApiData = maybeConfig.map(_.requiredSimpleTokenApis).getOrElse(Seq())
             BehaviorGroupData(
@@ -204,6 +205,7 @@ class GithubService @Inject() (
               behaviors,
               libraries,
               nodeModuleVersions = Seq(),
+              requiredAWSConfigData,
               requiredOAuth2ApiConfigData,
               requiredSimpleTokenApiData,
               Some(githubUrl),

@@ -5,6 +5,7 @@ import models.accounts.user.User
 import models.behaviors.behavior.Behavior
 import models.behaviors.behaviorgroup.BehaviorGroup
 import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
+import models.behaviors.config.requiredawsconfig.RequiredAWSConfig
 import models.behaviors.config.requiredoauth2apiconfig.RequiredOAuth2ApiConfig
 import models.behaviors.config.requiredsimpletokenapi.RequiredSimpleTokenApi
 import models.behaviors.conversations.conversation.Conversation
@@ -55,6 +56,7 @@ trait BehaviorVersionService {
   def createForAction(
                        behavior: Behavior,
                        groupVersion: BehaviorGroupVersion,
+                       requiredAWSConfigs: Seq[RequiredAWSConfig],
                        requiredOAuth2ApiConfigs: Seq[RequiredOAuth2ApiConfig],
                        requiredSimpleTokenApis: Seq[RequiredSimpleTokenApi],
                        maybeUser: Option[User],

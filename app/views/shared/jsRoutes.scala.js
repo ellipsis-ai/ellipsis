@@ -40,5 +40,10 @@
   routes.javascript.SavedAnswerController.resetForUser,
   routes.javascript.ScheduledActionsController.index,
   routes.javascript.ScheduledActionsController.delete,
-  routes.javascript.ScheduledActionsController.save
+  routes.javascript.ScheduledActionsController.save,
+  routes.javascript.AWSConfigController.list,
+  routes.javascript.AWSConfigController.newConfig,
+  routes.javascript.AWSConfigController.edit,
+  routes.javascript.AWSConfigController.save
+
 )

@@ -14,6 +14,7 @@ import models.Models
 import models.behaviors._
 import models.behaviors.behaviorversion.BehaviorVersion
 import models.behaviors.config.awsconfig.AWSConfig
+import models.behaviors.config.requiredawsconfig.RequiredAWSConfig
 import models.behaviors.config.requiredoauth2apiconfig.RequiredOAuth2ApiConfig
 import models.behaviors.config.requiredsimpletokenapi.RequiredSimpleTokenApi
 import models.behaviors.conversations.conversation.Conversation
@@ -228,20 +229,28 @@ class AWSLambdaServiceImpl @Inject() (
     (requiredForCode ++ requiredForLibs).distinct
   }
 
-  private def awsCodeFor(maybeAwsConfig: Option[AWSConfig]): String = {
-    maybeAwsConfig.map { awsConfig =>
+  private def awsCodeFor(awsConfig: AWSConfig): String = {
+    val teamInfoPath = s"event.$CONTEXT_PARAM.teamInfo.aws.${awsConfig.keyName}"
+    s"""$CONTEXT_PARAM.aws.${awsConfig.name} = {
+       |  accessKeyId: ${teamInfoPath}.accessKeyId,
+       |  secretAccessKey: ${teamInfoPath}.secretAccessKey,
+       |  region: ${teamInfoPath}.region,
+       |};
+       |
+     """.stripMargin
+  }
+
+  private def awsCodeFor(requiredAWSConfigs: Seq[RequiredAWSConfig]): String = {
+    if (requiredAWSConfigs.isEmpty) {
+      ""
+    } else {
+      val awsConfigs = requiredAWSConfigs.flatMap(_.maybeConfig)
       s"""
          |var AWS = require('aws-sdk');
          |
-         |AWS.config.update({
-         |  ${awsConfig.maybeAccessKeyName.map(n => s"accessKeyId: $CONTEXT_PARAM.env.$n,").getOrElse("")}
-         |  ${awsConfig.maybeSecretKeyName.map(n => s"secretAccessKey: $CONTEXT_PARAM.env.$n,").getOrElse("")}
-         |  ${awsConfig.maybeRegionName.map(n => s"region: $CONTEXT_PARAM.env.$n").getOrElse("")}
-         | });
-         |
-         | $CONTEXT_PARAM.AWS = AWS;
+         |${awsConfigs.map(awsCodeFor)}
        """.stripMargin
-    }.getOrElse("")
+    }
   }
 
   private def accessTokenCodeFor(app: RequiredOAuth2ApiConfig): String = {
@@ -273,7 +282,7 @@ class AWSLambdaServiceImpl @Inject() (
   private def nodeCodeFor(
                            functionBody: String,
                            params: Array[String],
-                           maybeAwsConfig: Option[AWSConfig],
+                           requiredAWSConfigs: Seq[RequiredAWSConfig],
                            requiredOAuth2ApiConfigs: Seq[RequiredOAuth2ApiConfig],
                            requiredSimpleTokenApis: Seq[RequiredSimpleTokenApi]
                          ): String = {
@@ -301,7 +310,7 @@ class AWSLambdaServiceImpl @Inject() (
         |       throw(reason);
         |     });
         |   }
-        |   ${awsCodeFor(maybeAwsConfig)}
+        |   ${awsCodeFor(requiredAWSConfigs)}
         |   $CONTEXT_PARAM.accessTokens = {};
         |   ${accessTokensCodeFor(requiredOAuth2ApiConfigs)}
         |   ${simpleTokensCodeFor(requiredSimpleTokenApis)}
@@ -338,7 +347,7 @@ class AWSLambdaServiceImpl @Inject() (
                                        functionBody: String,
                                        params: Array[String],
                                        libraries: Seq[LibraryVersion],
-                                       maybeAWSConfig: Option[AWSConfig],
+                                       requiredAWSConfigs: Seq[RequiredAWSConfig],
                                        requiredOAuth2ApiConfigs: Seq[RequiredOAuth2ApiConfig],
                                        requiredSimpleTokenApis: Seq[RequiredSimpleTokenApi],
                                        maybePreviousFunctionInfo: Option[PreviousFunctionInfo],
@@ -348,7 +357,7 @@ class AWSLambdaServiceImpl @Inject() (
     val path = Path(dirName)
     path.createDirectory()
 
-    writeFileNamed(s"$dirName/index.js", nodeCodeFor(functionBody, params, maybeAWSConfig, requiredOAuth2ApiConfigs, requiredSimpleTokenApis))
+    writeFileNamed(s"$dirName/index.js", nodeCodeFor(functionBody, params, requiredAWSConfigs, requiredOAuth2ApiConfigs, requiredSimpleTokenApis))
     libraries.foreach { ea =>
       writeFileNamed(s"$dirName/${ea.jsName}", ea.code)
     }
@@ -402,7 +411,7 @@ class AWSLambdaServiceImpl @Inject() (
                          functionBody: String,
                          params: Array[String],
                          libraries: Seq[LibraryVersion],
-                         maybeAWSConfig: Option[AWSConfig],
+                         requiredAWSConfigs: Seq[RequiredAWSConfig],
                          requiredOAuth2ApiConfigs: Seq[RequiredOAuth2ApiConfig],
                          requiredSimpleTokenApis: Seq[RequiredSimpleTokenApi],
                          maybePreviousFunctionInfo: Option[PreviousFunctionInfo],
@@ -413,7 +422,7 @@ class AWSLambdaServiceImpl @Inject() (
       functionBody,
       params,
       libraries,
-      maybeAWSConfig,
+      requiredAWSConfigs,
       requiredOAuth2ApiConfigs,
       requiredSimpleTokenApis,
       maybePreviousFunctionInfo,
@@ -445,7 +454,7 @@ class AWSLambdaServiceImpl @Inject() (
                       functionBody: String,
                       params: Array[String],
                       libraries: Seq[LibraryVersion],
-                      maybeAWSConfig: Option[AWSConfig],
+                      requiredAWSConfigs: Seq[RequiredAWSConfig],
                       requiredOAuth2ApiConfigs: Seq[RequiredOAuth2ApiConfig],
                       requiredSimpleTokenApis: Seq[RequiredSimpleTokenApi],
                       maybePreviousFunctionInfo: Option[PreviousFunctionInfo],
@@ -464,7 +473,7 @@ class AWSLambdaServiceImpl @Inject() (
               functionBody,
               params,
               libraries,
-              maybeAWSConfig,
+              requiredAWSConfigs,
               requiredOAuth2ApiConfigs,
               requiredSimpleTokenApis,
               maybePreviousFunctionInfo,
@@ -489,7 +498,7 @@ class AWSLambdaServiceImpl @Inject() (
                          functionBody: String,
                          params: Array[String],
                          libraries: Seq[LibraryVersion],
-                         maybeAWSConfig: Option[AWSConfig],
+                         requiredAWSConfigs: Seq[RequiredAWSConfig],
                          requiredOAuth2ApiConfigs: Seq[RequiredOAuth2ApiConfig],
                          requiredSimpleTokenApis: Seq[RequiredSimpleTokenApi],
                          forceNodeModuleUpdate: Boolean
@@ -507,7 +516,7 @@ class AWSLambdaServiceImpl @Inject() (
         functionBody,
         params,
         libraries,
-        maybeAWSConfig,
+        requiredAWSConfigs,
         requiredOAuth2ApiConfigs,
         requiredSimpleTokenApis,
         maybePreviousFunctionInfo,
