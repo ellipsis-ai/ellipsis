@@ -8,8 +8,18 @@ define(function(require) {
     propTypes: {
       openWhen: React.PropTypes.bool.isRequired,
       behaviorConfig: React.PropTypes.instanceOf(BehaviorConfig),
-      onAWSClick: React.PropTypes.func.isRequired,
       toggle: React.PropTypes.func.isRequired,
+      allAWSConfigs: React.PropTypes.arrayOf(React.PropTypes.shape({
+        configId: React.PropTypes.string.isRequired,
+        displayName: React.PropTypes.string.isRequired
+      })),
+      requiredAWSConfigs: React.PropTypes.arrayOf(React.PropTypes.shape({
+        configId: React.PropTypes.string.isRequired,
+        config: React.PropTypes.shape({
+          configId: React.PropTypes.string.isRequired,
+          displayName: React.PropTypes.string.isRequired
+        })
+      })),
       allOAuth2Applications: React.PropTypes.arrayOf(React.PropTypes.shape({
         applicationId: React.PropTypes.string.isRequired,
         displayName: React.PropTypes.string.isRequired
@@ -30,6 +40,8 @@ define(function(require) {
         apiId: React.PropTypes.string.isRequired,
         name: React.PropTypes.string.isRequired
       })).isRequired,
+      onAddAWSConfig: React.PropTypes.func.isRequired,
+      onRemoveAWSConfig: React.PropTypes.func.isRequired,
       onAddOAuth2Application: React.PropTypes.func.isRequired,
       onRemoveOAuth2Application: React.PropTypes.func.isRequired,
       onAddSimpleTokenApi: React.PropTypes.func.isRequired,
@@ -38,20 +50,10 @@ define(function(require) {
       getOAuth2ApiWithId: React.PropTypes.func.isRequired
     },
 
-    canHaveAwsConfig: function() {
-      return Boolean(this.props.behaviorConfig);
-    },
-
-    hasAwsConfig: function() {
-      return Boolean(this.props.behaviorConfig && this.props.behaviorConfig.aws);
-    },
-
     getAPISelectorDropdownLabel: function() {
+      var activeAWSConfigs = this.props.requiredAWSConfigs.filter(ea => !!ea.config);
       var activeApiConfigs = this.props.requiredOAuth2ApiConfigs.filter((ea) => !!ea.application);
-      var activeAPICount = activeApiConfigs.length + this.props.requiredSimpleTokenApis.length;
-      if (this.hasAwsConfig()) {
-        activeAPICount++;
-      }
+      var activeAPICount = activeAWSConfigs.length + activeApiConfigs.length + this.props.requiredSimpleTokenApis.length;
       if (activeAPICount > 0) {
         return (
           <span>
@@ -94,10 +96,29 @@ define(function(require) {
       }
     },
 
+    getAWSSelectorLabelForConfig: function(cfg) {
+      return (
+        <div className="columns columns-elastic">
+          <div className="column column-shrink prs align-m">
+            <img src="/assets/images/logos/aws_logo_web_300px.png" width="24" height="24"/>
+          </div>
+          <div className="column column-expand align-m">
+            {cfg.displayName}
+          </div>
+        </div>
+      );
+    },
 
     getAPISelectorLabelForApp: function(app) {
       var api = this.props.getOAuth2ApiWithId(app.apiId);
       return this.getAPISelectorLabelForApi(api, app.displayName);
+    },
+
+    isRequiredAWSConfig: function(cfg) {
+      var index = this.props.requiredAWSConfigs.findIndex(function(ea) {
+        return ea.config && ea.config.configId === cfg.configId;
+      });
+      return index >= 0;
     },
 
     isRequiredOAuth2Application: function(app) {
@@ -105,6 +126,14 @@ define(function(require) {
         return ea.application && ea.application.applicationId === app.applicationId;
       });
       return appIndex >= 0;
+    },
+
+    toggleAWSConfig: function(cfg) {
+      if (this.isRequiredAWSConfig(cfg)) {
+        this.props.onRemoveAWSConfig(cfg);
+      } else {
+        this.props.onAddAWSConfig(cfg);
+      }
     },
 
     toggleOAuth2Application: function(app) {
@@ -143,13 +172,16 @@ define(function(require) {
           menuClassName="popup-dropdown-menu-wide popup-dropdown-menu-right mobile-popup-dropdown-menu-left"
           toggle={this.props.toggle}
         >
-          {this.canHaveAwsConfig() ? (
-            <DropdownMenu.Item
-              onClick={this.props.onAWSClick}
-              checkedWhen={this.hasAwsConfig()}
-              label={(<img src="/assets/images/logos/aws_logo_web_300px.png" width="77" height="32"/>)}
-            />
-          ) : null}
+          {this.props.allAWSConfigs.map((cfg, index) => {
+            return (
+              <DropdownMenu.Item
+                key={"aws-config-" + index}
+                checkedWhen={this.isRequiredAWSConfig(cfg)}
+                onClick={this.toggleAWSConfig.bind(this, cfg)}
+                label={this.getAWSSelectorLabelForConfig(cfg)}
+              />
+            );
+          })}
           {this.props.allOAuth2Applications.map((app, index) => {
             return (
               <DropdownMenu.Item

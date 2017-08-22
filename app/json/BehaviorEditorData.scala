@@ -18,6 +18,7 @@ case class BehaviorEditorData(
                                maybeSelectedId: Option[String],
                                environmentVariables: Seq[EnvironmentVariableData],
                                savedAnswers: Seq[InputSavedAnswerData],
+                               awsConfigs: Seq[AWSConfigData],
                                oauth2Applications: Seq[OAuth2ApplicationData],
                                oauth2Apis: Seq[OAuth2ApiData],
                                simpleTokenApis: Seq[SimpleTokenApiData],
@@ -114,6 +115,7 @@ object BehaviorEditorData {
       teamAccess <- dataService.users.teamAccessFor(user, Some(team.id))
       teamEnvironmentVariables <- dataService.teamEnvironmentVariables.allFor(team)
       userEnvironmentVariables <- dataService.userEnvironmentVariables.allFor(user)
+      awsConfigs <- dataService.awsConfigs.allFor(team)
       oAuth2Applications <- dataService.oauth2Applications.allUsableFor(team)
       oauth2Apis <- dataService.oauth2Apis.allFor(teamAccess.maybeTargetTeam)
       simpleTokenApis <- dataService.simpleTokenApis.allFor(teamAccess.maybeTargetTeam)
@@ -171,6 +173,7 @@ object BehaviorEditorData {
         maybeVerifiedSelectedId,
         teamEnvironmentVariables.map(EnvironmentVariableData.withoutValueFor),
         inputSavedAnswerData,
+        awsConfigs.map(AWSConfigData.from),
         oAuth2Applications.map(OAuth2ApplicationData.from),
         oauth2Apis.map(OAuth2ApiData.from),
         simpleTokenApis.map(SimpleTokenApiData.from),

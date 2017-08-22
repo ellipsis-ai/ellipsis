@@ -3,7 +3,6 @@ define(function(require) {
     AWSConfig = require('./aws_config'),
     BehaviorConfig = require('../models/behavior_config'),
     CodeEditor = require('./code_editor'),
-    Collapsible = require('../shared_ui/collapsible'),
     DropdownMenu = require('../shared_ui/dropdown_menu'),
     HelpButton = require('../help/help_button'),
     Input = require('../models/input'),
@@ -26,15 +25,21 @@ define(function(require) {
       onToggleActivePanel: React.PropTypes.func.isRequired,
       animationIsDisabled: React.PropTypes.bool.isRequired,
 
-      onToggleAWSConfig: React.PropTypes.func.isRequired,
       behaviorConfig: React.PropTypes.instanceOf(BehaviorConfig),
-      onAWSAddNewEnvVariable: React.PropTypes.func.isRequired,
-      onAWSConfigChange: React.PropTypes.func.isRequired,
 
       apiSelector: React.PropTypes.node.isRequired,
 
       inputs: React.PropTypes.arrayOf(React.PropTypes.instanceOf(Input)).isRequired,
       systemParams: React.PropTypes.arrayOf(React.PropTypes.string).isRequired,
+
+      awsConfigs: React.PropTypes.arrayOf(React.PropTypes.shape({
+        configId: React.PropTypes.string.isRequired,
+        config: React.PropTypes.shape({
+          configId: React.PropTypes.string.isRequired,
+          displayName: React.PropTypes.string.isRequired
+        })
+      })).isRequired,
+
       apiApplications: React.PropTypes.arrayOf(React.PropTypes.shape({
         apiId: React.PropTypes.string.isRequired,
         recommendedScope: React.PropTypes.string,
@@ -89,23 +94,6 @@ define(function(require) {
       this.props.onToggleActiveDropdown('codeEditorSettings');
     },
 
-    hasAwsConfig: function() {
-      return Boolean(this.getAwsConfig());
-    },
-
-    getAwsConfig: function() {
-      return this.props.behaviorConfig ? this.props.behaviorConfig.aws : null;
-    },
-
-    getAWSConfigProperty: function(property) {
-      const config = this.getAwsConfig();
-      if (config) {
-        return config[property];
-      } else {
-        return "";
-      }
-    },
-
     getCodeFunctionParams: function() {
       const userParams = this.props.inputs.map(ea => ea.name);
       return userParams.concat(this.props.systemParams);
@@ -145,12 +133,14 @@ define(function(require) {
             code: `ellipsis.accessTokens.${ea.keyName}`
           }));
         });
-      if (this.hasAwsConfig() && !this.hasUsedAWSObject(this.props.functionBody)) {
-        awsNotifications.push(new NotificationData({
-          kind: "aws_unused",
-          code: "ellipsis.AWS"
-        }));
-      }
+      this.props.awsConfigs
+        .filter(ea => ea && !this.hasUsedAWSConfig(this.props.functionBody, ea.keyName))
+        .forEach(ea => {
+          awsNotifications.push(new NotificationData({
+            kind: "aws_unused",
+            code: `ellipsis.aws.${ea.keyName}`
+          }));
+        });
       return oAuth2Notifications.concat(awsNotifications);
     },
 
@@ -159,10 +149,9 @@ define(function(require) {
       var envVars = this.props.envVariableNames.map(function(name) {
         return `ellipsis.env.${name}`;
       });
+      var awsTokens = this.props.awsConfigs.map((cfg) => `ellipsis.aws.${cfg.keyName}`);
 
-      var aws = this.hasAwsConfig() ? ['ellipsis.AWS'] : [];
-
-      return this.getCodeFunctionParams().concat(apiTokens, aws, envVars);
+      return this.getCodeFunctionParams().concat(apiTokens, awsTokens, envVars);
     },
 
     refresh: function() {
@@ -190,21 +179,6 @@ define(function(require) {
           </div>
 
           <div>
-            <Collapsible revealWhen={this.hasAwsConfig()} animationDisabled={this.props.animationIsDisabled} className="debugger">
-              <div className="type-s plxxxl prs mbm">
-                <AWSConfig
-                  envVariableNames={this.props.envVariableNames}
-                  accessKeyName={this.getAWSConfigProperty('accessKeyName')}
-                  secretKeyName={this.getAWSConfigProperty('secretKeyName')}
-                  regionName={this.getAWSConfigProperty('regionName')}
-                  onAddNew={this.props.onAWSAddNewEnvVariable}
-                  onChange={this.props.onAWSConfigChange}
-                  onRemoveAWSConfig={this.props.onToggleAWSConfig}
-                  onToggleHelp={this.toggleAWSHelp}
-                  helpVisible={this.props.activePanelName === 'helpForAWS'}
-                />
-              </div>
-            </Collapsible>
 
             <div className="pbxs">
               <div className="columns columns-elastic">

@@ -79,6 +79,10 @@ const BehaviorEditor = React.createClass({
     csrfToken: React.PropTypes.string.isRequired,
     builtinParamTypes: React.PropTypes.arrayOf(React.PropTypes.instanceOf(ParamType)).isRequired,
     envVariables: React.PropTypes.arrayOf(React.PropTypes.object),
+    awsConfigs: React.PropTypes.arrayOf(React.PropTypes.shape({
+      configId: React.PropTypes.string.isRequired,
+      displayName: React.PropTypes.string.isRequired
+    })),
     oauth2Applications: React.PropTypes.arrayOf(oauth2ApplicationShape),
     oauth2Apis: React.PropTypes.arrayOf(React.PropTypes.shape({
       apiId: React.PropTypes.string.isRequired,
@@ -121,6 +125,14 @@ const BehaviorEditor = React.createClass({
     const otherInputs = otherInputIds.map(eaId => this.getBehaviorGroup().getInputs().find(ea => ea.inputId === eaId));
     const otherSavedInputs = otherInputs.filter(ea => ea.isSaved());
     return UniqueBy.forArray(otherSavedInputs, 'inputId');
+  },
+
+  getAllAWSConfigs: function() {
+    return this.props.awsConfigs || [];
+  },
+
+  getRequiredAWSConfigs: function() {
+    return this.getBehaviorGroup().getRequiredAWSConfigs();
   },
 
   getAllOAuth2Applications: function() {
@@ -932,10 +944,6 @@ const BehaviorEditor = React.createClass({
     this.toggleActivePanel('sharedAnswerInputSelector', true);
   },
 
-  toggleAWSConfig: function() {
-    this.setConfigProperty('aws', this.getAWSConfig() ? undefined : {});
-  },
-
   toggleBehaviorSwitcher: function() {
     this.setState({
       behaviorSwitcherVisible: !this.state.behaviorSwitcherVisible
@@ -1310,6 +1318,30 @@ const BehaviorEditor = React.createClass({
     });
   },
 
+  onAddAWSConfig: function(config) {
+    const existing = this.getRequiredAWSConfigs();
+    const indexToReplace = existing.findIndex(ea => ea.configId === config.configId && !ea.config);
+    const toReplace = existing[indexToReplace];
+    const configs = existing.slice();
+    if (indexToReplace >= 0) {
+      configs.splice(indexToReplace, 1);
+    }
+    const toAdd = Object.assign({}, toReplace, {
+      configId: config.configId,
+      config: config
+    });
+    const newConfigs = configs.concat([toAdd]);
+    this.updateGroupStateWith(this.getBehaviorGroup().clone({ requiredAWSConfigs: newConfigs }));
+  },
+
+  onRemoveAWSConfig: function(config) {
+    const existing = this.getRequiredAWSConfigs();
+    const newConfigs = existing.filter(ea => {
+      return ea.config && ea.config.configId !== config.configId;
+    });
+    this.updateGroupStateWith(this.getBehaviorGroup().clone({ requiredAWSConfigs: newConfigs }));
+  },
+
   onAddOAuth2Application: function(appToAdd) {
     const existing = this.getRequiredOAuth2ApiConfigs();
     const indexToReplace = existing.findIndex(ea => ea.apiId === appToAdd.apiId && !ea.application);
@@ -1474,10 +1506,14 @@ const BehaviorEditor = React.createClass({
         onAWSClick={this.toggleAWSConfig}
         behaviorConfig={this.getBehaviorConfig()}
         toggle={this.toggleAPISelectorMenu}
+        allAWSConfigs={this.getAllAWSConfigs()}
+        requiredAWSConfigs={this.getRequiredAWSConfigs()}
         allOAuth2Applications={this.getAllOAuth2Applications()}
         requiredOAuth2ApiConfigs={this.getRequiredOAuth2ApiConfigs()}
         allSimpleTokenApis={this.getAllSimpleTokenApis()}
         requiredSimpleTokenApis={this.getRequiredSimpleTokenApis()}
+        onAddAWSConfig={this.onAddAWSConfig}
+        onRemoveAWSConfig={this.onRemoveAWSConfig}
         onAddOAuth2Application={this.onAddOAuth2Application}
         onRemoveOAuth2Application={this.onRemoveOAuth2Application}
         onAddSimpleTokenApi={this.onAddSimpleTokenApi}
@@ -1503,15 +1539,13 @@ const BehaviorEditor = React.createClass({
         onToggleActivePanel={this.toggleActivePanel}
         animationIsDisabled={this.animationIsDisabled()}
 
-        onToggleAWSConfig={this.toggleAWSConfig}
         behaviorConfig={this.getBehaviorConfig()}
-        onAWSAddNewEnvVariable={this.onAWSAddNewEnvVariable}
-        onAWSConfigChange={this.setAWSEnvVar}
 
         apiSelector={this.renderAPISelector()}
 
         inputs={this.getInputs()}
         systemParams={props.systemParams || this.getSystemParams()}
+        awsConfigs={this.getRequiredAWSConfigs()}
         apiApplications={this.getApiApplications()}
 
         functionBody={this.getFunctionBody()}

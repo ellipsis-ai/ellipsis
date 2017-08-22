@@ -20,6 +20,7 @@ define(function(require) {
         behaviorVersions: { value: props.behaviorVersions, enumerable: true },
         libraryVersions: { value: props.libraryVersions, enumerable: true },
         nodeModuleVersions: { value: props.nodeModuleVersions, enumerable: true },
+        requiredAWSConfigs: { value: props.requiredAWSConfigs, enumerable: true },
         requiredOAuth2ApiConfigs: { value: props.requiredOAuth2ApiConfigs, enumerable: true },
         requiredSimpleTokenApis: { value: props.requiredSimpleTokenApis, enumerable: true },
         createdAt: { value: props.createdAt, enumerable: true },
@@ -29,6 +30,10 @@ define(function(require) {
 
     getEditables() {
       return this.behaviorVersions.concat(this.libraryVersions);
+    }
+
+    getRequiredAWSConfigs() {
+      return this.requiredAWSConfigs || [];
     }
 
     getRequiredOAuth2ApiConfigs() {

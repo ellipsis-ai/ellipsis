@@ -95,7 +95,7 @@ class RequiredAWSConfigServiceImpl @Inject() (
   def createForAction(data: RequiredAWSConfigData, groupVersion: BehaviorGroupVersion): DBIO[RequiredAWSConfig] = {
     for {
       maybeConfig <- data.config.map { configData =>
-        dataService.awsConfigs.findAction(configData.id)
+        dataService.awsConfigs.findAction(configData.configId)
       }.getOrElse(DBIO.successful(None))
       required <- {
         val newInstance = RequiredAWSConfig(IDs.next, groupVersion, maybeConfig)
