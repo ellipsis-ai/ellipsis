@@ -4,9 +4,13 @@ case class AWSConfigEditConfig(
                                 containerId: String,
                                 csrfToken: Option[String],
                                 teamId: String,
-                                mainUrl: String,
                                 configId: String,
-                                name: Option[String] = None,
-                                configSaved: Boolean = false,
+                                name: Option[String],
+                                accessKeyId: Option[String],
+                                secretAccessKey: Option[String],
+                                region: Option[String],
+                                configSaved: Boolean,
+                                documentationUrl: String,
+                                requiredAWSConfigId: Option[String],
                                 behaviorId: Option[String] = None
                               )

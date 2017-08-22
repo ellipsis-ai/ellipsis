@@ -15,11 +15,11 @@ class AWSConfigsTable(tag: Tag) extends Table[AWSConfig](tag, "aws_configs") {
   def id = column[String]("id", O.PrimaryKey)
   def name = column[String]("name")
   def teamId = column[String]("team_id")
-  def maybeAccessKeyName = column[Option[String]]("access_key_name")
-  def maybeSecretKeyName = column[Option[String]]("secret_key_name")
-  def maybeRegionName = column[Option[String]]("region_name")
+  def maybeAccessKeyId = column[Option[String]]("access_key_id")
+  def maybeSecretAccessKey = column[Option[String]]("secret_access_key")
+  def maybeRegion = column[Option[String]]("region")
 
-  def * = (id, name, teamId, maybeAccessKeyName, maybeSecretKeyName, maybeRegionName) <> ((AWSConfig.apply _).tupled, AWSConfig.unapply _)
+  def * = (id, name, teamId, maybeAccessKeyId, maybeSecretAccessKey, maybeRegion) <> ((AWSConfig.apply _).tupled, AWSConfig.unapply _)
 }
 
 class AWSConfigServiceImpl @Inject() (

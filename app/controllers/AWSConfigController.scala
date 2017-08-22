@@ -26,6 +26,8 @@ class AWSConfigController @Inject() (
                                       val configuration: Configuration
                                     ) extends ReAuthable {
 
+  val AWS_CONFIG_DOC_URL = "http://docs.aws.amazon.com/general/latest/gr/managing-aws-access-keys.html"
+
   def list(maybeTeamId: Option[String]) = silhouette.SecuredAction.async { implicit request =>
     val user = request.identity
     render.async {
@@ -64,7 +66,7 @@ class AWSConfigController @Inject() (
     }
   }
 
-  def newConfig(maybeTeamId: Option[String], maybeBehaviorId: Option[String]) = silhouette.SecuredAction.async { implicit request =>
+  def newConfig(maybeTeamId: Option[String], maybeBehaviorId: Option[String], maybeRequiredAWSConfigId: Option[String]) = silhouette.SecuredAction.async { implicit request =>
     val user = request.identity
     render.async {
       case Accepts.JavaScript() => {
@@ -77,11 +79,17 @@ class AWSConfigController @Inject() (
               containerId = "configEditor",
               csrfToken = CSRF.getToken(request).map(_.value),
               teamId = team.id,
-              mainUrl = routes.ApplicationController.index().absoluteURL(secure = true),
+              configSaved = false,
               configId = newConfigId,
-              behaviorId = maybeBehaviorId
+              name = None,
+              accessKeyId = None,
+              secretAccessKey = None,
+              region = None,
+              documentationUrl = AWS_CONFIG_DOC_URL,
+              behaviorId = maybeBehaviorId,
+              requiredAWSConfigId = maybeRequiredAWSConfigId
             )
-            Ok(views.js.shared.pageConfig(viewConfig(Some(teamAccess)), "config/oauth2application/edit", Json.toJson(config)))
+            Ok(views.js.shared.pageConfig(viewConfig(Some(teamAccess)), "config/awsconfig/edit", Json.toJson(config)))
           }.getOrElse {
             NotFound("Team not found")
           }
@@ -123,10 +131,15 @@ class AWSConfigController @Inject() (
               containerId = "configEditor",
               csrfToken = CSRF.getToken(request).map(_.value),
               teamId = team.id,
-              mainUrl = routes.ApplicationController.index().absoluteURL(secure = true),
+              configSaved = true,
               configId = config.id,
               name = Some(config.name),
-              configSaved = true
+              accessKeyId = config.maybeAccessKey,
+              secretAccessKey = config.maybeSecretKey,
+              region = config.maybeRegion,
+              documentationUrl = AWS_CONFIG_DOC_URL,
+              behaviorId = None,
+              requiredAWSConfigId = None
             )
             Ok(views.js.shared.pageConfig(viewConfig(Some(teamAccess)), "config/awsconfig/edit", Json.toJson(editConfig)))
           }).getOrElse {
@@ -157,9 +170,9 @@ class AWSConfigController @Inject() (
   case class AWSConfigInfo(
                             id: String,
                             name: String,
-                            accessKeyName: Option[String],
-                            secretKeyName: Option[String],
-                            regionName: Option[String],
+                            accessKeyId: Option[String],
+                            secretAccessKey: Option[String],
+                            region: Option[String],
                             teamId: String,
                             maybeBehaviorId: Option[String]
                           )
@@ -168,9 +181,9 @@ class AWSConfigController @Inject() (
     mapping(
       "id" -> nonEmptyText,
       "name" -> nonEmptyText,
-      "accessKeyName" -> optional(nonEmptyText),
-      "secretKeyName" -> optional(nonEmptyText),
-      "regionName" -> optional(nonEmptyText),
+      "accessKeyId" -> optional(nonEmptyText),
+      "secretAccessKey" -> optional(nonEmptyText),
+      "region" -> optional(nonEmptyText),
       "teamId" -> nonEmptyText,
       "behaviorId" -> optional(nonEmptyText)
     )(AWSConfigInfo.apply)(AWSConfigInfo.unapply)
@@ -188,7 +201,7 @@ class AWSConfigController @Inject() (
           maybeConfig <- (for {
             team <- maybeTeam
           } yield {
-            val instance = AWSConfig(info.id, info.name, info.teamId, info.accessKeyName, info.secretKeyName, info.regionName)
+            val instance = AWSConfig(info.id, info.name, info.teamId, info.accessKeyId, info.secretAccessKey, info.region)
             dataService.awsConfigs.save(instance).map(Some(_))
           }).getOrElse(Future.successful(None))
           maybeBehaviorVersion <- info.maybeBehaviorId.map { behaviorId =>
