@@ -14,6 +14,7 @@ import models.behaviors.behavior.Behavior
 import models.behaviors.behaviorgroup.BehaviorGroup
 import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
 import models.behaviors.behaviorversion.BehaviorVersion
+import models.behaviors.config.requiredawsconfig.RequiredAWSConfig
 import models.behaviors.config.requiredoauth2apiconfig.RequiredOAuth2ApiConfig
 import models.behaviors.input.Input
 import models.behaviors.savedanswer.SavedAnswer
@@ -155,6 +156,11 @@ trait DBSpec extends PlaySpec with OneAppPerSuite with MockitoSugar {
   def newSavedRequiredOAuth2ConfigFor(api: OAuth2Api, groupVersion: BehaviorGroupVersion): RequiredOAuth2ApiConfig = {
     val data = RequiredOAuth2ApiConfigData(None, api.id, None, None)
     runNow(dataService.requiredOAuth2ApiConfigs.maybeCreateFor(data, groupVersion)).get
+  }
+
+  def newSavedRequiredAWSConfigFor(groupVersion: BehaviorGroupVersion): RequiredAWSConfig = {
+    val data = RequiredAWSConfigData(None, None)
+    runNow(dataService.requiredAWSConfigs.createForAction(data, groupVersion))
   }
 
   def withEmptyDB[T](dataService: PostgresDataService, fn: PostgresDatabase => T) = {

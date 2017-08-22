@@ -433,6 +433,40 @@ class BehaviorGroupImportExportSpec extends DBSpec {
       })
     }
 
+    "export and import back in with a required aws config" in {
+      withEmptyDB(dataService, { db =>
+        val team = newSavedTeam
+        val user = newSavedUserOn(team)
+        val group = newSavedBehaviorGroupFor(team)
+
+        val behaviorVersionData = BehaviorVersionData.newUnsavedFor(team.id, isDataType = false, maybeName = None, dataService)
+        val groupData = newGroupVersionDataFor(group, user).copy(
+          behaviorVersions = Seq(behaviorVersionData)
+        )
+
+        val groupVersion = newSavedGroupVersionFor(group, user, Some(groupData))
+        val requiredAWSConfig = newSavedRequiredAWSConfigFor(groupVersion)
+
+        val groupsBefore = runNow(dataService.behaviorGroups.allFor(team))
+        groupsBefore must have length 1
+
+        exportAndImport(group, user, user)
+
+        val groupsAfter = runNow(dataService.behaviorGroups.allFor(team))
+        groupsAfter must have length 2
+
+        val exportedGroup = groupsBefore.head
+        val importedGroup = groupsAfter.filterNot(_.id == exportedGroup.id).head
+        val importedGroupVersion = runNow(dataService.behaviorGroups.maybeCurrentVersionFor(importedGroup)).get
+
+        mustBeValidImport(exportedGroup, importedGroup)
+
+        val importedRequiredAWSConfigs = runNow(dataService.requiredAWSConfigs.allFor(importedGroupVersion))
+        importedRequiredAWSConfigs must have length 1
+        val importedRequiredAWSConfig = importedRequiredAWSConfigs.head
+      })
+    }
+
   }
 
   "LibraryVersionData" should {
