@@ -14,7 +14,7 @@ define(function(require) {
         displayName: React.PropTypes.string.isRequired
       })),
       requiredAWSConfigs: React.PropTypes.arrayOf(React.PropTypes.shape({
-        configId: React.PropTypes.string.isRequired,
+        id: React.PropTypes.string.isRequired,
         config: React.PropTypes.shape({
           configId: React.PropTypes.string.isRequired,
           displayName: React.PropTypes.string.isRequired
@@ -100,7 +100,7 @@ define(function(require) {
       return (
         <div className="columns columns-elastic">
           <div className="column column-shrink prs align-m">
-            <img src="/assets/images/logos/aws_logo_web_300px.png" width="24" height="24"/>
+            <img src="/assets/images/logos/aws_logo_web_300px.png" height="32"/>
           </div>
           <div className="column column-expand align-m">
             {cfg.displayName}

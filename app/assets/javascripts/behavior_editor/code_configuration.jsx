@@ -1,6 +1,5 @@
 define(function(require) {
   const React = require('react'),
-    AWSConfig = require('./aws_config'),
     BehaviorConfig = require('../models/behavior_config'),
     CodeEditor = require('./code_editor'),
     DropdownMenu = require('../shared_ui/dropdown_menu'),
@@ -33,7 +32,7 @@ define(function(require) {
       systemParams: React.PropTypes.arrayOf(React.PropTypes.string).isRequired,
 
       awsConfigs: React.PropTypes.arrayOf(React.PropTypes.shape({
-        configId: React.PropTypes.string.isRequired,
+        id: React.PropTypes.string.isRequired,
         config: React.PropTypes.shape({
           configId: React.PropTypes.string.isRequired,
           displayName: React.PropTypes.string.isRequired
@@ -82,10 +81,6 @@ define(function(require) {
       }
     },
 
-    toggleAWSHelp: function() {
-      this.props.onToggleActivePanel('helpForAWS');
-    },
-
     toggleBoilerplateHelp: function() {
       this.props.onToggleActivePanel('helpForBoilerplateParameters');
     },
@@ -117,8 +112,9 @@ define(function(require) {
       return pattern.test(code);
     },
 
-    hasUsedAWSObject: function(code) {
-      return /\bellipsis\.AWS\b/.test(code);
+    hasUsedAWSConfig: function(code, keyName) {
+      var pattern = new RegExp(`\\bellipsis\\.aws\\.${keyName}\\b`);
+      return pattern.test(code);
     },
 
     buildNotifications: function() {
