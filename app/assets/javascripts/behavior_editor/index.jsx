@@ -157,18 +157,6 @@ const BehaviorEditor = React.createClass({
       .map((config) => config.application);
   },
 
-  getAWSConfig: function() {
-    var selectedBehavior = this.getSelectedBehavior();
-    if (this.state) {
-      var config = this.getBehaviorConfig();
-      return config && config['aws'];
-    } else if (selectedBehavior && selectedBehavior.config) {
-      return selectedBehavior.config.aws;
-    } else {
-      return undefined;
-    }
-  },
-
   getEditableName: function() {
     return this.getEditableProp('name') || "";
   },
@@ -1545,7 +1533,7 @@ const BehaviorEditor = React.createClass({
 
         inputs={this.getInputs()}
         systemParams={props.systemParams || this.getSystemParams()}
-        awsConfigs={this.getRequiredAWSConfigs()}
+        requiredAWSConfigs={this.getRequiredAWSConfigs()}
         apiApplications={this.getApiApplications()}
 
         functionBody={this.getFunctionBody()}
@@ -2178,13 +2166,11 @@ const BehaviorEditor = React.createClass({
           onToggleActivePanel={this.toggleActivePanel}
           animationIsDisabled={this.animationIsDisabled()}
 
-          onToggleAWSConfig={this.toggleAWSConfig}
           behaviorConfig={this.getBehaviorConfig()}
-          onAWSAddNewEnvVariable={this.onAWSAddNewEnvVariable}
-          onAWSConfigChange={this.setAWSEnvVar}
 
           apiSelector={this.renderAPISelector()}
           systemParams={this.getSystemParams()}
+          requiredAWSConfigs={this.getRequiredAWSConfigs()}
           apiApplications={this.getApiApplications()}
 
           onCursorChange={this.ensureCursorVisible}

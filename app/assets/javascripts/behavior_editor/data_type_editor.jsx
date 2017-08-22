@@ -195,6 +195,7 @@ define(function(require) {
 
             inputs={this.props.inputs}
             systemParams={this.props.systemParams}
+            requiredAWSConfigs={this.props.requiredAWSConfigs}
             apiApplications={this.props.apiApplications}
 
             functionBody={this.getSelectedBehavior().getFunctionBody()}
@@ -292,13 +293,19 @@ define(function(require) {
     onToggleActivePanel: React.PropTypes.func.isRequired,
     animationIsDisabled: React.PropTypes.bool,
 
-    onToggleAWSConfig: React.PropTypes.func.isRequired,
     behaviorConfig: React.PropTypes.instanceOf(BehaviorConfig).isRequired,
-    onAWSAddNewEnvVariable: React.PropTypes.func.isRequired,
-    onAWSConfigChange: React.PropTypes.func.isRequired,
 
     apiSelector: React.PropTypes.node.isRequired,
     systemParams: React.PropTypes.arrayOf(React.PropTypes.string).isRequired,
+
+    requiredAWSConfigs: React.PropTypes.arrayOf(React.PropTypes.shape({
+      id: React.PropTypes.string.isRequired,
+      config: React.PropTypes.shape({
+        configId: React.PropTypes.string.isRequired,
+        displayName: React.PropTypes.string.isRequired
+      })
+    })).isRequired,
+
     apiApplications: React.PropTypes.arrayOf(React.PropTypes.shape({
       apiId: React.PropTypes.string.isRequired,
       recommendedScope: React.PropTypes.string,

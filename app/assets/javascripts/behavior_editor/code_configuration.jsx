@@ -31,7 +31,7 @@ define(function(require) {
       inputs: React.PropTypes.arrayOf(React.PropTypes.instanceOf(Input)).isRequired,
       systemParams: React.PropTypes.arrayOf(React.PropTypes.string).isRequired,
 
-      awsConfigs: React.PropTypes.arrayOf(React.PropTypes.shape({
+      requiredAWSConfigs: React.PropTypes.arrayOf(React.PropTypes.shape({
         id: React.PropTypes.string.isRequired,
         config: React.PropTypes.shape({
           configId: React.PropTypes.string.isRequired,
@@ -129,7 +129,7 @@ define(function(require) {
             code: `ellipsis.accessTokens.${ea.keyName}`
           }));
         });
-      this.props.awsConfigs
+      this.props.requiredAWSConfigs
         .filter(ea => ea && !this.hasUsedAWSConfig(this.props.functionBody, ea.keyName))
         .forEach(ea => {
           awsNotifications.push(new NotificationData({
@@ -145,7 +145,7 @@ define(function(require) {
       var envVars = this.props.envVariableNames.map(function(name) {
         return `ellipsis.env.${name}`;
       });
-      var awsTokens = this.props.awsConfigs.map((cfg) => `ellipsis.aws.${cfg.keyName}`);
+      var awsTokens = this.props.requiredAWSConfigs.map((cfg) => `ellipsis.aws.${cfg.keyName}`);
 
       return this.getCodeFunctionParams().concat(apiTokens, awsTokens, envVars);
     },
