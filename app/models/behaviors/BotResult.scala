@@ -190,8 +190,15 @@ case class UnhandledErrorResult(
   val functionLines = behaviorVersion.functionBody.split("\n").length
 
   def text: String = {
-    val prompt = s"\nI encountered an error in ${linkToBehaviorFor("one of your skills")} before calling `$SUCCESS_CALLBACK `or `$ERROR_CALLBACK`"
-    Array(Some(prompt), maybeLogResult.flatMap(_.maybeTranslated(functionLines))).flatten.mkString(":\n\n")
+    val prompt = s"\nI encountered an error in ${linkToBehaviorFor("one of your skills")}"
+    maybeLogResult.flatMap(_.maybeTranslated(functionLines)).map { logText =>
+      s"""$prompt:
+         |
+         |```
+         |$logText
+         |```
+       """.stripMargin
+    }.getOrElse(prompt + ".")
   }
 
 }

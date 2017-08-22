@@ -21,7 +21,8 @@ case class AWSLambdaLogResult(source: String, userDefinedLogStatements: String, 
       translated.
         split("\n").
         filterNot { line => shouldExcludeLine(line, functionLines) }.
-        mkString("\n")
+        mkString("\n").
+        stripPrefix("\t")
     }
   }
 

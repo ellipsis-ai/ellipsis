@@ -279,10 +279,9 @@ class AWSLambdaServiceImpl @Inject() (
                          ): String = {
     val paramsFromEvent = params.indices.map(i => s"event.${invocationParamFor(i)}")
     val invocationParamsString = (paramsFromEvent ++ Array(s"event.$CONTEXT_PARAM")).mkString(", ")
-
     // Note: this attempts to make line numbers in the lambda script line up with those displayed in the UI
     // Be careful changing either this or the UI line numbers
-    s"""exports.handler = function(event, context, callback) { var fn = ${functionWithParams(params, functionBody)};
+    s"""exports.handler = function(event, context, callback) { var fn = ${functionWithParams(params, functionBody)}
         |   var $CONTEXT_PARAM = event.$CONTEXT_PARAM;
         |   $CONTEXT_PARAM.$NO_RESPONSE_KEY = function() {
         |     callback(null, { $NO_RESPONSE_KEY: true });
@@ -295,17 +294,30 @@ class AWSLambdaServiceImpl @Inject() (
         |     );
         |     callback(null, resultWithOptions);
         |   };
-        |   $CONTEXT_PARAM.error = function(err) { callback(err || "(No error message or an empty error message was provided.)"); };
+        |   $CONTEXT_PARAM.error = function(err) {
+        |     if (err instanceof Error) {
+        |       throw err;
+        |     } else {
+        |       const throwableError = new Error();
+        |       throwableError.stack = "Error: " + err + "\\n\\nTo get a stack trace, throw an Error object, e.g.\\n\\n  throw new Error(\\"Something went wrong.\\")";
+        |       throw throwableError;
+        |     }
+        |   };
+        |
         |   if (process.listeners('unhandledRejection').length === 0) {
-        |     process.on('unhandledRejection', function(reason, p) {
-        |       throw(reason);
+        |     process.on('unhandledRejection', function error(reason, p) {
+        |       $CONTEXT_PARAM.error(reason);
         |     });
         |   }
         |   ${awsCodeFor(maybeAwsConfig)}
         |   $CONTEXT_PARAM.accessTokens = {};
         |   ${accessTokensCodeFor(requiredOAuth2ApiConfigs)}
         |   ${simpleTokensCodeFor(requiredSimpleTokenApis)}
-        |   fn($invocationParamsString);
+        |   try {
+        |     fn($invocationParamsString);
+        |   } catch(err) {
+        |     $CONTEXT_PARAM.error(err);
+        |   }
         |}
     """.stripMargin
   }
