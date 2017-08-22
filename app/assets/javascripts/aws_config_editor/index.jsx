@@ -94,6 +94,16 @@ define(function(require) {
       }
     },
 
+    reset: function() {
+      this.setState({
+        name: "",
+        accessKeyId: "",
+        secretAccessKey: "",
+        region: "",
+        hasName: false
+      });
+    },
+
     renderBehaviorId: function() {
       var id = this.props.behaviorId;
       if (id && id.length > 0) {
@@ -168,19 +178,28 @@ define(function(require) {
             <a href={jsRoutes.controllers.AWSConfigController.list().url}>AWS configurations</a>
           </span>
           <span className="mhs">→</span>
-          {this.renderApplicationHeader()}
+          {this.renderConfigHeader()}
         </h3>
       );
     },
 
-    renderHeader: function() {
+    renderConfigHeader: function() {
       if (!this.props.configSaved) {
-        return (
-          <span>
-            <span className="mhs">→</span>
-            <span className="mhs">{this.getName()}</span>
-          </span>
-        );
+        if (this.getName() && this.getName().trim.length > 0) {
+          return (
+            <span>
+              <span className="mhs">
+                <button className="button-raw" onClick={this.reset}>Add a configuration</button>
+              </span>
+              <span className="mhs">→</span>
+              <span className="mhs">{this.getName()}</span>
+            </span>
+          );
+        } else {
+          return (
+            <span className="mhs">Add a configuration</span>
+          );
+        }
       } else {
         return (
           <span>

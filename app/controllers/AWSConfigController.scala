@@ -43,7 +43,7 @@ class AWSConfigController @Inject() (
               containerId = "configList",
               csrfToken = CSRF.getToken(request).map(_.value),
               teamId = team.id,
-              configsData = configs.map(AWSConfigData.from)
+              configs = configs.map(AWSConfigData.from)
             )
             Ok(views.js.shared.pageConfig(viewConfig(Some(teamAccess)), "config/awsconfig/list", Json.toJson(config)))
           }.getOrElse{

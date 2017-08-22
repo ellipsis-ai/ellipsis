@@ -19,7 +19,7 @@ define(function(require) {
     },
 
     hasConfigs: function() {
-      return !!(this.getConfigs() && this.getConfigs().length > 0);
+      return this.getConfigs().length > 0;
     },
 
     toggleHelp: function() {
@@ -116,7 +116,7 @@ define(function(require) {
           {configs.map((config, index) => {
             return (
               <div key={`awsConfig${index}`} className="mvm">
-                <h4><a href={route(config.configId).url}>{config.name}</a></h4>
+                <h4><a href={route(config.configId).url}>{config.displayName}</a></h4>
               </div>
             );
           })}
