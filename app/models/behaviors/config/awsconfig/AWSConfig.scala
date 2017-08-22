@@ -17,5 +17,4 @@ case class AWSConfig(
   lazy val secretKey: String = maybeSecretKey.getOrElse("NOT_SET")
   lazy val region: String = maybeRegion.getOrElse("NOT_SET")
 
-  def environmentVariableNames: Seq[String] = Seq(maybeAccessKey, maybeSecretKey, maybeRegion).flatten
 }

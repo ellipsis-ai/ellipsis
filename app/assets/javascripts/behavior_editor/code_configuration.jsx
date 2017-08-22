@@ -130,6 +130,7 @@ define(function(require) {
           }));
         });
       this.props.requiredAWSConfigs
+        .map(ea => ea.config)
         .filter(ea => ea && !this.hasUsedAWSConfig(this.props.functionBody, ea.keyName))
         .forEach(ea => {
           awsNotifications.push(new NotificationData({
