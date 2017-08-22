@@ -221,7 +221,7 @@ define(function(require) {
               <span className="position-hanging-indent">1</span>
               <span> Enter a name for this configuration</span>
             </h4>
-            <p className="type-s">The name should help differentiate this from any other AWS configurations you may have with different kinds of access, or access to a different set of data.</p>
+            <p className="type-s">The name should help differentiate this from any other AWS configurations you may have with different kinds of access, or access to a different set of data. (e.g. Production, Staging, Readonly)</p>
 
             <div className="mbxxl columns">
               <div className="column column-two-thirds">
@@ -238,8 +238,8 @@ define(function(require) {
                 </div>
 
                 <div className="mtm type-s">
-                  <span className="type-weak mrxs">Name used in code: </span>
-                  <code className="box-code-example">{Formatter.formatCamelCaseIdentifier(this.getName())}</code>
+                  <span className="type-weak mrxs">To access this config in code: </span>
+                  <code className="box-code-example">ellipsis.aws.{Formatter.formatCamelCaseIdentifier(this.getName())}</code>
                 </div>
 
               </div>
