@@ -36,8 +36,9 @@ trait TeamEnvironmentVariableService {
   def missingInAction(behaviorVersion: BehaviorVersion, dataService: DataService): DBIO[Set[String]] = {
     for {
       envVars <- allForAction(behaviorVersion.team)
-      missing <- knownUsedInAction(behaviorVersion, dataService).map{ used =>
-        used diff envVars.filter(_.value.trim.nonEmpty).map(_.name).toSet
+      missing <- knownUsedInAction(behaviorVersion, dataService).map { usedNames =>
+        val allNames = envVars.filter(_.value.trim.nonEmpty).map(_.name).toSet
+        usedNames diff allNames
       }
     } yield missing
   }

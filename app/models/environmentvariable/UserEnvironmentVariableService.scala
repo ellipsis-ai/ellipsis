@@ -35,8 +35,9 @@ trait UserEnvironmentVariableService {
     for {
       envVars <- allForAction(user)
     } yield {
-      val used = knownUsedIn(behaviorVersion, dataService)
-      used diff envVars.filter(_.value.trim.nonEmpty).map(_.name).toSet
+      val usedNames = knownUsedIn(behaviorVersion, dataService)
+      val allNames = envVars.filter(_.value.trim.nonEmpty).map(_.name).toSet
+      usedNames diff allNames
     }
   }
 
