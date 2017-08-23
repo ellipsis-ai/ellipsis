@@ -309,10 +309,26 @@ class AWSLambdaServiceImpl @Inject() (
         |       $CONTEXT_PARAM.error(reason);
         |     });
         |   }
+        |
         |   ${awsCodeFor(maybeAwsConfig)}
         |   $CONTEXT_PARAM.accessTokens = {};
         |   ${accessTokensCodeFor(requiredOAuth2ApiConfigs)}
         |   ${simpleTokensCodeFor(requiredSimpleTokenApis)}
+        |
+        |   const builtInConsole = Object.assign({}, console);
+        |   function augmentConsole(consoleMethod, realArgs) {
+        |     const args = [].slice.call(realArgs);
+        |     const firstArg = args[0];
+        |     const remainingArgs = args.slice(1);
+        |     const error = { toString: () => consoleMethod };
+        |     Error.captureStackTrace(error, augmentConsole);
+        |     const newArgs = args.concat("\\nELLIPSIS_STACK_TRACE_START\\n" + error.stack + "\\nELLIPSIS_STACK_TRACE_END");
+        |     builtInConsole[consoleMethod].apply(null, newArgs);
+        |   }
+        |   ["log", "error", "warn", "info"].forEach((method) => {
+        |     console[method] = function() { augmentConsole(method, arguments); };
+        |   });
+        |
         |   try {
         |     fn($invocationParamsString);
         |   } catch(err) {
