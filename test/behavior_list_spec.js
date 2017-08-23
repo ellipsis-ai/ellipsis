@@ -76,6 +76,7 @@ describe('BehaviorList', () => {
     description: "",
     behaviorVersions: [behaviorVersionTask1],
     libraryVersions: [],
+    requiredAWSConfigs: [],
     createdAt: 1466109904858
   }));
   const group2 = Object.freeze(BehaviorGroup.fromJson({
@@ -84,6 +85,7 @@ describe('BehaviorList', () => {
     description: "",
     behaviorVersions: [behaviorVersionTask2],
     libraryVersions: [],
+    requiredAWSConfigs: [],
     createdAt: 1466109904858
   }));
   const group3 = Object.freeze(BehaviorGroup.fromJson({
@@ -92,6 +94,7 @@ describe('BehaviorList', () => {
     description: "",
     behaviorVersions: [behaviorVersionKnowledge1],
     libraryVersions: [],
+    requiredAWSConfigs: [],
     createdAt: 1466109904858
   }));
   const defaultConfig = Object.freeze({

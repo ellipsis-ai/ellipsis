@@ -19,6 +19,7 @@ jsRoutes.controllers.BehaviorEditorController.edit = jest.fn(() => ({ url: '/moc
 describe('BehaviorEditor', () => {
   const defaultConfig = {
     teamId: "A",
+    awsConfigs: [],
     group: {
       id: '1',
       actionInputs: [],
@@ -47,7 +48,8 @@ describe('BehaviorEditor', () => {
         }
       ],
       libraryVersions: [],
-      nodeModuleVersions: []
+      nodeModuleVersions: [],
+      requiredAWSConfigs: []
     },
     selectedId: "1",
     csrfToken: "2",

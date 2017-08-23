@@ -9,6 +9,7 @@ const behaviorGroupData = Object.freeze({
   "dataTypeInputs": [],
   "behaviorVersions": [],
   "libraryVersions": [],
+  'requiredAWSConfigs': [],
   "createdAt": 1468338136532
 });
 
