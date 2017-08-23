@@ -7,6 +7,8 @@ import scala.concurrent.Future
 
 trait AWSConfigService {
 
+  def allForAction(team: Team): DBIO[Seq[AWSConfig]]
+
   def allFor(team: Team): Future[Seq[AWSConfig]]
 
   def findAction(id: String): DBIO[Option[AWSConfig]]

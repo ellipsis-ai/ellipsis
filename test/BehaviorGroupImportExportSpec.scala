@@ -445,7 +445,8 @@ class BehaviorGroupImportExportSpec extends DBSpec {
         )
 
         val groupVersion = newSavedGroupVersionFor(group, user, Some(groupData))
-        val requiredAWSConfig = newSavedRequiredAWSConfigFor(groupVersion)
+        val requiredName = "prod"
+        newSavedRequiredAWSConfigFor(requiredName, groupVersion)
 
         val groupsBefore = runNow(dataService.behaviorGroups.allFor(team))
         groupsBefore must have length 1
@@ -464,6 +465,7 @@ class BehaviorGroupImportExportSpec extends DBSpec {
         val importedRequiredAWSConfigs = runNow(dataService.requiredAWSConfigs.allFor(importedGroupVersion))
         importedRequiredAWSConfigs must have length 1
         val importedRequiredAWSConfig = importedRequiredAWSConfigs.head
+        importedRequiredAWSConfig.nameInCode mustBe requiredName
       })
     }
 

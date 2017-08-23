@@ -5,9 +5,6 @@ import javax.inject.Inject
 import com.amazonaws.services.lambda.AWSLambdaAsyncClient
 import models.Models
 import models.behaviors.behaviorversion.BehaviorVersion
-import models.behaviors.config.requiredawsconfig.RequiredAWSConfig
-import models.behaviors.config.requiredoauth2apiconfig.RequiredOAuth2ApiConfig
-import models.behaviors.config.requiredsimpletokenapi.RequiredSimpleTokenApi
 import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.events.Event
 import models.behaviors.library.LibraryVersion
@@ -18,7 +15,7 @@ import org.scalatest.mock.MockitoSugar
 import play.api.Configuration
 import play.api.libs.json.{JsNull, JsString}
 import play.api.libs.ws.WSClient
-import services.{AWSLambdaService, AWSLogsService, DataService}
+import services.{AWSLambdaService, AWSLogsService, ApiConfigInfo, DataService}
 import slick.dbio.DBIO
 
 import scala.concurrent.Future
@@ -59,9 +56,7 @@ class MockAWSLambdaService @Inject() (
                                   functionBody: String,
                                   params: Array[String],
                                   libraries: Seq[LibraryVersion],
-                                  requiredAWSConfigs: Seq[RequiredAWSConfig],
-                                  requiredOAuth2ApiConfigs: Seq[RequiredOAuth2ApiConfig],
-                                  requiredSimpleTokenApis: Seq[RequiredSimpleTokenApi],
+                                  apiConfigInfo: ApiConfigInfo,
                                   forceNodeModuleUpdate: Boolean
                                 ): Future[Unit] = Future.successful({})
 

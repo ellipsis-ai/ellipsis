@@ -158,8 +158,8 @@ trait DBSpec extends PlaySpec with OneAppPerSuite with MockitoSugar {
     runNow(dataService.requiredOAuth2ApiConfigs.maybeCreateFor(data, groupVersion)).get
   }
 
-  def newSavedRequiredAWSConfigFor(groupVersion: BehaviorGroupVersion): RequiredAWSConfig = {
-    val data = RequiredAWSConfigData(None, None)
+  def newSavedRequiredAWSConfigFor(name: String, groupVersion: BehaviorGroupVersion): RequiredAWSConfig = {
+    val data = RequiredAWSConfigData(None, name)
     runNow(dataService.requiredAWSConfigs.createForAction(data, groupVersion))
   }
 

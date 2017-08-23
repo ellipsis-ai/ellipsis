@@ -30,9 +30,12 @@ class AWSConfigServiceImpl @Inject() (
 
   import AWSConfigQueries._
 
+  def allForAction(team: Team): DBIO[Seq[AWSConfig]] = {
+    allForQuery(team.id).result
+  }
+
   def allFor(team: Team): Future[Seq[AWSConfig]] = {
-    val action = allForQuery(team.id).result
-    dataService.run(action)
+    dataService.run(allForAction(team))
   }
 
   def findAction(id: String): DBIO[Option[AWSConfig]] = {

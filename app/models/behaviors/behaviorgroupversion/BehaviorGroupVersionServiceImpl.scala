@@ -9,7 +9,7 @@ import json.BehaviorGroupData
 import models.IDs
 import models.accounts.user.User
 import models.behaviors.behaviorgroup.{BehaviorGroup, BehaviorGroupQueries}
-import services.DataService
+import services.{ApiConfigInfo, DataService}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -100,6 +100,7 @@ class BehaviorGroupVersionServiceImpl @Inject() (
       _ <- DBIO.sequence(data.dataTypeInputs.map { ea =>
         dataService.inputs.ensureForAction(ea, groupVersion)
       })
+      awsConfigs <- dataService.awsConfigs.allForAction(group.team)
       requiredAWSConfigs <- DBIO.sequence(data.requiredAWSConfigs.map { requiredData =>
         dataService.requiredAWSConfigs.createForAction(requiredData, groupVersion)
       })
@@ -112,6 +113,7 @@ class BehaviorGroupVersionServiceImpl @Inject() (
       _ <- DBIO.sequence(data.libraryVersions.map { ea =>
         dataService.libraries.ensureForAction(ea, groupVersion)
       })
+      apiConfig <- DBIO.successful(ApiConfigInfo(awsConfigs, requiredAWSConfigs, requiredOAuth2ApiConfigs, requiredSimpleTokenApis))
       dataTypeBehaviorVersionTuples <- DBIO.sequence(data.dataTypeBehaviorVersions.map { ea =>
         ea.behaviorId.map { behaviorId =>
           for {
@@ -119,7 +121,7 @@ class BehaviorGroupVersionServiceImpl @Inject() (
             behavior <- maybeExistingBehavior.map(DBIO.successful).getOrElse {
               dataService.behaviors.createForAction(group, Some(behaviorId), ea.exportId, ea.config.isDataType)
             }
-            behaviorVersion <- dataService.behaviorVersions.createForAction(behavior, groupVersion, requiredAWSConfigs, requiredOAuth2ApiConfigs, requiredSimpleTokenApis, Some(user), ea, forceNodeModuleUpdate)
+            behaviorVersion <- dataService.behaviorVersions.createForAction(behavior, groupVersion, apiConfig, Some(user), ea, forceNodeModuleUpdate)
           } yield Some((ea, behaviorVersion))
         }.getOrElse(DBIO.successful(None))
       }).map(_.flatten)
@@ -138,6 +140,7 @@ class BehaviorGroupVersionServiceImpl @Inject() (
       _ <- DBIO.sequence(data.actionInputs.map { ea =>
         dataService.inputs.ensureForAction(ea, groupVersion)
       })
+      apiConfig <- DBIO.successful(ApiConfigInfo(awsConfigs, requiredAWSConfigs, requiredOAuth2ApiConfigs, requiredSimpleTokenApis))
       _ <- DBIO.sequence(data.actionBehaviorVersions.map { ea =>
         ea.behaviorId.map { behaviorId =>
           for {
@@ -145,7 +148,7 @@ class BehaviorGroupVersionServiceImpl @Inject() (
             behavior <- maybeExistingBehavior.map(DBIO.successful).getOrElse {
               dataService.behaviors.createForAction(group, Some(behaviorId), ea.exportId, ea.config.isDataType)
             }
-            behaviorVersion <- dataService.behaviorVersions.createForAction(behavior, groupVersion, requiredAWSConfigs, requiredOAuth2ApiConfigs, requiredSimpleTokenApis, Some(user), ea, forceNodeModuleUpdate)
+            behaviorVersion <- dataService.behaviorVersions.createForAction(behavior, groupVersion, apiConfig, Some(user), ea, forceNodeModuleUpdate)
           } yield Some(behaviorVersion)
         }.getOrElse(DBIO.successful(None))
       })

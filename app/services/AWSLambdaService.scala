@@ -3,6 +3,7 @@ package services
 import com.amazonaws.services.lambda.AWSLambdaAsync
 import models.Models
 import models.behaviors.behaviorversion.BehaviorVersion
+import models.behaviors.config.awsconfig.AWSConfig
 import models.behaviors.config.requiredawsconfig.RequiredAWSConfig
 import models.behaviors.config.requiredoauth2apiconfig.RequiredOAuth2ApiConfig
 import models.behaviors.config.requiredsimpletokenapi.RequiredSimpleTokenApi
@@ -16,6 +17,13 @@ import play.api.Configuration
 import slick.dbio.DBIO
 
 import scala.concurrent.Future
+
+case class ApiConfigInfo(
+                          awsConfigs: Seq[AWSConfig],
+                          requiredAWSConfigs: Seq[RequiredAWSConfig],
+                          requiredOAuth2ApiConfigs: Seq[RequiredOAuth2ApiConfig],
+                          requiredSimpleTokenApis: Seq[RequiredSimpleTokenApi]
+                        )
 
 trait AWSLambdaService extends AWSService {
 
@@ -46,9 +54,7 @@ trait AWSLambdaService extends AWSService {
                          functionBody: String,
                          params: Array[String],
                          libraries: Seq[LibraryVersion],
-                         requiredAWSConfigs: Seq[RequiredAWSConfig],
-                         requiredOAuth2ApiConfigs: Seq[RequiredOAuth2ApiConfig],
-                         requiredSimpleTokenApis: Seq[RequiredSimpleTokenApi],
+                         apiConfigInfo: ApiConfigInfo,
                          forceNodeModuleUpdate: Boolean
                          ): Future[Unit]
 

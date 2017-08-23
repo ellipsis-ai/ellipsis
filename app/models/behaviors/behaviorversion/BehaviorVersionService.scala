@@ -5,13 +5,11 @@ import models.accounts.user.User
 import models.behaviors.behavior.Behavior
 import models.behaviors.behaviorgroup.BehaviorGroup
 import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
-import models.behaviors.config.requiredawsconfig.RequiredAWSConfig
-import models.behaviors.config.requiredoauth2apiconfig.RequiredOAuth2ApiConfig
-import models.behaviors.config.requiredsimpletokenapi.RequiredSimpleTokenApi
 import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.events.Event
 import models.behaviors.{BotResult, ParameterWithValue}
 import models.team.Team
+import services.ApiConfigInfo
 import slick.dbio.DBIO
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -56,9 +54,7 @@ trait BehaviorVersionService {
   def createForAction(
                        behavior: Behavior,
                        groupVersion: BehaviorGroupVersion,
-                       requiredAWSConfigs: Seq[RequiredAWSConfig],
-                       requiredOAuth2ApiConfigs: Seq[RequiredOAuth2ApiConfig],
-                       requiredSimpleTokenApis: Seq[RequiredSimpleTokenApi],
+                       apiConfigInfo: ApiConfigInfo,
                        maybeUser: Option[User],
                        data: BehaviorVersionData,
                        forceNodeModuleUpdate: Boolean

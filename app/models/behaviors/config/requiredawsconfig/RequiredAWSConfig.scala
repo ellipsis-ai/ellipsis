@@ -1,15 +1,14 @@
 package models.behaviors.config.requiredawsconfig
 
 import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
-import models.behaviors.config.awsconfig.AWSConfig
 
 case class RequiredAWSConfig(
                             id: String,
-                            groupVersion: BehaviorGroupVersion,
-                            maybeConfig: Option[AWSConfig]
+                            nameInCode: String,
+                            groupVersion: BehaviorGroupVersion
                             ) {
 
   def toRaw: RawRequiredAWSConfig = {
-    RawRequiredAWSConfig(id, groupVersion.id, maybeConfig.map(_.id))
+    RawRequiredAWSConfig(id, nameInCode, groupVersion.id)
   }
 }

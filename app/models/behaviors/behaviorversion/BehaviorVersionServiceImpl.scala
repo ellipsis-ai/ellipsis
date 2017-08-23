@@ -22,7 +22,7 @@ import models.team.Team
 import play.api.libs.json.JsValue
 import play.api.libs.ws.WSClient
 import play.api.{Configuration, Logger}
-import services.{AWSLambdaService, CacheService, DataService}
+import services.{AWSLambdaService, ApiConfigInfo, CacheService, DataService}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -233,9 +233,7 @@ class BehaviorVersionServiceImpl @Inject() (
   def createForAction(
                        behavior: Behavior,
                        groupVersion: BehaviorGroupVersion,
-                       requiredAWSConfigs: Seq[RequiredAWSConfig],
-                       requiredOAuth2ApiConfigs: Seq[RequiredOAuth2ApiConfig],
-                       requiredSimpleTokenApis: Seq[RequiredSimpleTokenApi],
+                       apiConfigInfo: ApiConfigInfo,
                        maybeUser: Option[User],
                        data: BehaviorVersionData,
                        forceNodeModuleUpdate: Boolean
@@ -261,9 +259,7 @@ class BehaviorVersionServiceImpl @Inject() (
           data.functionBody,
           withoutBuiltin(inputs.map(_.name).toArray),
           libraries,
-          requiredAWSConfigs,
-          requiredOAuth2ApiConfigs,
-          requiredSimpleTokenApis,
+          apiConfigInfo,
           forceNodeModuleUpdate
         )
         )
@@ -422,18 +418,18 @@ class BehaviorVersionServiceImpl @Inject() (
     val groupVersion = behaviorVersion.groupVersion
     for {
       params <- dataService.behaviorParameters.allFor(behaviorVersion)
+      awsConfigs <- dataService.awsConfigs.allFor(groupVersion.team)
       requiredAWSConfigs <- dataService.requiredAWSConfigs.allFor(groupVersion)
       requiredOAuth2ApiConfigs <- dataService.requiredOAuth2ApiConfigs.allFor(groupVersion)
       requiredSimpleTokenApis <- dataService.requiredSimpleTokenApis.allFor(groupVersion)
+      apiConfig <- Future.successful(ApiConfigInfo(awsConfigs, requiredAWSConfigs, requiredOAuth2ApiConfigs, requiredSimpleTokenApis))
       libraries <- dataService.libraries.allFor(behaviorVersion.groupVersion)
       _ <- lambdaService.deployFunctionFor(
         behaviorVersion,
         behaviorVersion.functionBody,
         params.map(_.name).toArray,
         libraries,
-        requiredAWSConfigs,
-        requiredOAuth2ApiConfigs,
-        requiredSimpleTokenApis,
+        apiConfig,
         forceNodeModuleUpdate = true
       )
     } yield {}

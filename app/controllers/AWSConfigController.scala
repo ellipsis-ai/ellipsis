@@ -211,19 +211,6 @@ class AWSConfigController @Inject() (
               }.getOrElse(Future.successful(None))
             }
           }.getOrElse(Future.successful(None))
-          requiredAWSConfigs <- (for {
-            behaviorVersion <- maybeBehaviorVersion
-            group <- behaviorVersion.behavior.maybeGroup
-          } yield {
-            dataService.requiredAWSConfigs.allFor(group)
-          }).getOrElse(Future.successful(Seq()))
-          _ <- Future.sequence {
-            requiredAWSConfigs.
-              filter(_.maybeConfig.isEmpty).
-              map { ea =>
-                dataService.requiredAWSConfigs.save(ea.copy(maybeConfig = maybeConfig))
-              }
-          }
         } yield {
           maybeConfig.map { config =>
             maybeBehaviorVersion.map { behaviorVersion =>
