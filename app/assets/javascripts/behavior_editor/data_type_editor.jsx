@@ -8,6 +8,7 @@ define(function(require) {
     DataTypeSchemaConfig = require('./data_type_schema_config'),
     DataTypeSourceConfig = require('./data_type_source_config'),
     ID = require('../lib/id'),
+    RequiredAWSConfig = require('../models/required_aws_config'),
     SectionHeading = require('../shared_ui/section_heading'),
     SequentialName = require('../lib/sequential_name'),
     BehaviorConfig = require('../models/behavior_config'),
@@ -298,13 +299,7 @@ define(function(require) {
     apiSelector: React.PropTypes.node.isRequired,
     systemParams: React.PropTypes.arrayOf(React.PropTypes.string).isRequired,
 
-    requiredAWSConfigs: React.PropTypes.arrayOf(React.PropTypes.shape({
-      id: React.PropTypes.string.isRequired,
-      config: React.PropTypes.shape({
-        configId: React.PropTypes.string.isRequired,
-        displayName: React.PropTypes.string.isRequired
-      })
-    })).isRequired,
+    requiredAWSConfigs: React.PropTypes.arrayOf(React.PropTypes.instanceOf(RequiredAWSConfig)).isRequired,
 
     apiApplications: React.PropTypes.arrayOf(React.PropTypes.shape({
       apiId: React.PropTypes.string.isRequired,
