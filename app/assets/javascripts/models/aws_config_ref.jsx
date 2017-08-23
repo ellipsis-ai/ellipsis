@@ -9,7 +9,7 @@ define(function() {
     }
 
     static fromJson(props) {
-      return new AWSConfigRef(props)
+      return new AWSConfigRef(props);
     }
   }
 
