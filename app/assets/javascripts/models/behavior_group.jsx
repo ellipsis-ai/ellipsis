@@ -4,6 +4,7 @@ define(function(require) {
   var NodeModuleVersion = require('./node_module_version');
   var Input = require('./input');
   var DeepEqual = require('../lib/deep_equal');
+  var RequiredAWSConfig = require('./required_aws_config');
   const ONE_MINUTE = 60000;
 
   class BehaviorGroup {
@@ -174,6 +175,7 @@ define(function(require) {
 
     static fromJson(props) {
       return new BehaviorGroup(Object.assign({}, props, {
+        requiredAWSConfigs: props.requiredAWSConfigs.map(RequiredAWSConfig.fromJson),
         behaviorVersions: props.behaviorVersions.map((ea) => BehaviorVersion.fromJson(Object.assign({}, ea, { groupId: props.id }))),
         actionInputs: Input.allFromJson(props.actionInputs || []),
         dataTypeInputs: Input.allFromJson(props.dataTypeInputs || []),

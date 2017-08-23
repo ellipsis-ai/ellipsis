@@ -1,7 +1,9 @@
 define(function(require) {
   var React = require('react'),
+    AWSConfigRef = require('../models/aws_config_ref'),
     BehaviorConfig = require('../models/behavior_config'),
-    DropdownMenu = require('../shared_ui/dropdown_menu');
+    DropdownMenu = require('../shared_ui/dropdown_menu'),
+    RequiredAWSConfig = require('../models/required_aws_config');
 
   return React.createClass({
     displayName: "APISelectorMenu",
@@ -9,17 +11,8 @@ define(function(require) {
       openWhen: React.PropTypes.bool.isRequired,
       behaviorConfig: React.PropTypes.instanceOf(BehaviorConfig),
       toggle: React.PropTypes.func.isRequired,
-      allAWSConfigs: React.PropTypes.arrayOf(React.PropTypes.shape({
-        configId: React.PropTypes.string.isRequired,
-        displayName: React.PropTypes.string.isRequired
-      })),
-      requiredAWSConfigs: React.PropTypes.arrayOf(React.PropTypes.shape({
-        id: React.PropTypes.string.isRequired,
-        config: React.PropTypes.shape({
-          configId: React.PropTypes.string.isRequired,
-          displayName: React.PropTypes.string.isRequired
-        })
-      })),
+      allAWSConfigs: React.PropTypes.arrayOf(React.PropTypes.instanceOf(AWSConfigRef)),
+      requiredAWSConfigs: React.PropTypes.arrayOf(React.PropTypes.instanceOf(RequiredAWSConfig)),
       allOAuth2Applications: React.PropTypes.arrayOf(React.PropTypes.shape({
         applicationId: React.PropTypes.string.isRequired,
         displayName: React.PropTypes.string.isRequired
@@ -50,8 +43,13 @@ define(function(require) {
       getOAuth2ApiWithId: React.PropTypes.func.isRequired
     },
 
+    isActiveAWSConfig: function(requiredAWSConfig) {
+      const availableNames = this.props.allAWSConfigs.map(ea => ea.nameInCode);
+      return availableNames.indexOf(requiredAWSConfig.nameInCode) >= 0;
+    },
+
     getAPISelectorDropdownLabel: function() {
-      var activeAWSConfigs = this.props.requiredAWSConfigs.filter(ea => !!ea.config);
+      var activeAWSConfigs = this.props.requiredAWSConfigs.filter(this.isActiveAWSConfig);
       var activeApiConfigs = this.props.requiredOAuth2ApiConfigs.filter((ea) => !!ea.application);
       var activeAPICount = activeAWSConfigs.length + activeApiConfigs.length + this.props.requiredSimpleTokenApis.length;
       if (activeAPICount > 0) {
@@ -116,7 +114,7 @@ define(function(require) {
 
     isRequiredAWSConfig: function(cfg) {
       var index = this.props.requiredAWSConfigs.findIndex(function(ea) {
-        return ea.config && ea.config.configId === cfg.configId;
+        return ea.nameInCode === cfg.nameInCode;
       });
       return index >= 0;
     },

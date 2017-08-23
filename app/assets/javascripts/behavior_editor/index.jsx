@@ -1,6 +1,7 @@
 define((require) => {
 var React = require('react'),
   APISelectorMenu = require('./api_selector_menu'),
+  AWSConfigRef = require('../models/aws_config_ref'),
   AWSHelp = require('./aws_help'),
   BehaviorGroup = require('../models/behavior_group'),
   BehaviorGroupEditor = require('./behavior_group_editor'),
@@ -34,6 +35,7 @@ var React = require('react'),
   Notifications = require('../notifications/notifications'),
   PageWithPanels = require('../shared_ui/page_with_panels'),
   ParamType = require('../models/param_type'),
+  RequiredAWSConfig = require('../models/required_aws_config'),
   ResponseTemplate = require('../models/response_template'),
   ResponseTemplateConfiguration = require('./response_template_configuration'),
   ResponseTemplateHelp = require('./response_template_help'),
@@ -79,10 +81,7 @@ const BehaviorEditor = React.createClass({
     csrfToken: React.PropTypes.string.isRequired,
     builtinParamTypes: React.PropTypes.arrayOf(React.PropTypes.instanceOf(ParamType)).isRequired,
     envVariables: React.PropTypes.arrayOf(React.PropTypes.object),
-    awsConfigs: React.PropTypes.arrayOf(React.PropTypes.shape({
-      configId: React.PropTypes.string.isRequired,
-      displayName: React.PropTypes.string.isRequired
-    })),
+    awsConfigs: React.PropTypes.arrayOf(React.PropTypes.instanceOf(AWSConfigRef)),
     oauth2Applications: React.PropTypes.arrayOf(oauth2ApplicationShape),
     oauth2Apis: React.PropTypes.arrayOf(React.PropTypes.shape({
       apiId: React.PropTypes.string.isRequired,
@@ -1307,25 +1306,17 @@ const BehaviorEditor = React.createClass({
   },
 
   onAddAWSConfig: function(config) {
-    const existing = this.getRequiredAWSConfigs();
-    const indexToReplace = existing.findIndex(ea => ea.configId === config.configId && !ea.config);
-    const toReplace = existing[indexToReplace];
-    const configs = existing.slice();
-    if (indexToReplace >= 0) {
-      configs.splice(indexToReplace, 1);
-    }
-    const toAdd = Object.assign({}, toReplace, {
-      configId: config.configId,
-      config: config
+    const toAdd = new RequiredAWSConfig({
+      nameInCode: config.nameInCode
     });
-    const newConfigs = configs.concat([toAdd]);
+    const newConfigs =  this.getRequiredAWSConfigs().concat([toAdd]);
     this.updateGroupStateWith(this.getBehaviorGroup().clone({ requiredAWSConfigs: newConfigs }));
   },
 
   onRemoveAWSConfig: function(config) {
     const existing = this.getRequiredAWSConfigs();
     const newConfigs = existing.filter(ea => {
-      return ea.config && ea.config.configId !== config.configId;
+      return ea.nameInCode !== config.nameInCode;
     });
     this.updateGroupStateWith(this.getBehaviorGroup().clone({ requiredAWSConfigs: newConfigs }));
   },

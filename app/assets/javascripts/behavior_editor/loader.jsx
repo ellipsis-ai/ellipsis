@@ -1,8 +1,9 @@
 requirejs(['common'], function() {
   requirejs(
-    ['core-js', 'whatwg-fetch', 'react', 'react-dom', './lib/browser_utils', './behavior_editor/index', './models/behavior_group', 'config/behavioreditor/edit', './models/param_type'],
-    function(Core, Fetch, React, ReactDOM, BrowserUtils, BehaviorEditor, BehaviorGroup, BehaviorEditorConfiguration, ParamType) {
+    ['core-js', 'whatwg-fetch', 'react', 'react-dom', './lib/browser_utils', './behavior_editor/index', './models/behavior_group', 'config/behavioreditor/edit', './models/param_type', './models/aws_config_ref'],
+    function(Core, Fetch, React, ReactDOM, BrowserUtils, BehaviorEditor, BehaviorGroup, BehaviorEditorConfiguration, ParamType, AWSConfigRef) {
       var config = Object.assign({}, BehaviorEditorConfiguration, {
+        awsConfigs: BehaviorEditorConfiguration.awsConfigs.map(AWSConfigRef.fromJson),
         groupData: BehaviorEditorConfiguration.group,
         group: BehaviorGroup.fromJson(BehaviorEditorConfiguration.group),
         builtinParamTypes: BehaviorEditorConfiguration.builtinParamTypes.map(ParamType.fromJson),

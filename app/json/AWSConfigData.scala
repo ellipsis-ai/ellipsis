@@ -3,9 +3,9 @@ package json
 import models.behaviors.config.awsconfig.AWSConfig
 
 case class AWSConfigData(
-                          configId: String,
+                          id: String,
                           displayName: String,
-                          keyName: String,
+                          nameInCode: String,
                           accessKeyId: Option[String],
                           secretAccessKey: Option[String],
                           region: Option[String]

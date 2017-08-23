@@ -7,6 +7,7 @@ define(function(require) {
     Input = require('../models/input'),
     Notifications = require('../notifications/notifications'),
     NotificationData = require('../models/notification_data'),
+    RequiredAWSConfig = require('../models/required_aws_config'),
     SectionHeading = require('../shared_ui/section_heading'),
     SVGSettingsIcon = require('../svg/settings'),
     debounce = require('javascript-debounce');
@@ -31,13 +32,7 @@ define(function(require) {
       inputs: React.PropTypes.arrayOf(React.PropTypes.instanceOf(Input)).isRequired,
       systemParams: React.PropTypes.arrayOf(React.PropTypes.string).isRequired,
 
-      requiredAWSConfigs: React.PropTypes.arrayOf(React.PropTypes.shape({
-        id: React.PropTypes.string.isRequired,
-        config: React.PropTypes.shape({
-          configId: React.PropTypes.string.isRequired,
-          displayName: React.PropTypes.string.isRequired
-        })
-      })).isRequired,
+      requiredAWSConfigs: React.PropTypes.arrayOf(React.PropTypes.instanceOf(RequiredAWSConfig)).isRequired,
 
       apiApplications: React.PropTypes.arrayOf(React.PropTypes.shape({
         apiId: React.PropTypes.string.isRequired,
@@ -130,12 +125,11 @@ define(function(require) {
           }));
         });
       this.props.requiredAWSConfigs
-        .map(ea => ea.config)
-        .filter(ea => ea && !this.hasUsedAWSConfig(this.props.functionBody, ea.keyName))
+        .filter(ea => !this.hasUsedAWSConfig(this.props.functionBody, ea.nameInCode))
         .forEach(ea => {
           awsNotifications.push(new NotificationData({
             kind: "aws_unused",
-            code: `ellipsis.aws.${ea.keyName}`
+            code: `ellipsis.aws.${ea.nameInCode}`
           }));
         });
       return oAuth2Notifications.concat(awsNotifications);
@@ -146,7 +140,7 @@ define(function(require) {
       var envVars = this.props.envVariableNames.map(function(name) {
         return `ellipsis.env.${name}`;
       });
-      var awsTokens = this.props.requiredAWSConfigs.map((cfg) => `ellipsis.aws.${cfg.keyName}`);
+      var awsTokens = this.props.requiredAWSConfigs.map(ea => `ellipsis.aws.${ea.nameInCode}`);
 
       return this.getCodeFunctionParams().concat(apiTokens, awsTokens, envVars);
     },
