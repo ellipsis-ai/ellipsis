@@ -11,7 +11,7 @@ case class ResultOutput(kind: String, fullText: String)
 case class InvocationTestReportOutput(
                                       missingParamNames: Seq[String],
                                       missingSimpleTokens: Seq[String],
-                                      missingUserEnvVars: Seq[String],
+                                      missingUserEnvVars: Set[String],
                                       result: Option[ResultOutput]
                                     )
 
@@ -20,7 +20,7 @@ case class InvocationTestReport(
                                  maybeResult: Option[BotResult],
                                  missingParams: Seq[BehaviorParameter],
                                  missingSimpleTokens: Seq[RequiredSimpleTokenApi],
-                                 missingUserEnvVars: Seq[String]
+                                 missingUserEnvVars: Set[String]
                               ) {
 
   implicit val resultOutputWrites = Json.writes[ResultOutput]

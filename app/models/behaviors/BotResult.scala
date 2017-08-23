@@ -266,7 +266,7 @@ case class MissingTeamEnvVarsResult(
                                  behaviorVersion: BehaviorVersion,
                                  dataService: DataService,
                                  configuration: Configuration,
-                                 missingEnvVars: Seq[String],
+                                 missingEnvVars: Set[String],
                                  botPrefix: String
                                ) extends BotResult with WithBehaviorLink {
 
