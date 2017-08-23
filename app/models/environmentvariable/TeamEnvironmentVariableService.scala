@@ -27,17 +27,17 @@ trait TeamEnvironmentVariableService {
     }.toSeq
   }
 
-  def knownUsedInAction(behaviorVersion: BehaviorVersion, dataService: DataService): DBIO[Seq[String]] = {
+  def knownUsedInAction(behaviorVersion: BehaviorVersion, dataService: DataService): DBIO[Set[String]] = {
     dataService.awsConfigs.environmentVariablesUsedForAction(behaviorVersion).map { inConfig =>
-      inConfig ++ lookForInCode(behaviorVersion.functionBody)
+      (inConfig ++ lookForInCode(behaviorVersion.functionBody)).toSet
     }
   }
 
-  def missingInAction(behaviorVersion: BehaviorVersion, dataService: DataService): DBIO[Seq[String]] = {
+  def missingInAction(behaviorVersion: BehaviorVersion, dataService: DataService): DBIO[Set[String]] = {
     for {
       envVars <- allForAction(behaviorVersion.team)
       missing <- knownUsedInAction(behaviorVersion, dataService).map{ used =>
-        used diff envVars.filter(_.value.trim.nonEmpty).map(_.name)
+        used diff envVars.filter(_.value.trim.nonEmpty).map(_.name).toSet
       }
     } yield missing
   }
