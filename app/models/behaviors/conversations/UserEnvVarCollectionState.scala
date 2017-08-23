@@ -11,7 +11,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
 case class UserEnvVarCollectionState(
-                                      missingEnvVarNames: Seq[String],
+                                      missingEnvVarNames: Set[String],
                                       event: Event,
                                       services: DefaultServices
                                     ) extends CollectionState {
@@ -20,7 +20,7 @@ case class UserEnvVarCollectionState(
 
   val name = InvokeBehaviorConversation.COLLECT_USER_ENV_VARS_STATE
 
-  val sortedEnvVars = missingEnvVarNames.sorted
+  val sortedEnvVars = missingEnvVarNames.toSeq.sorted
 
   def maybeNextToCollectAction: DBIO[Option[String]] = {
     DBIO.successful(sortedEnvVars.headOption)
