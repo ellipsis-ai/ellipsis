@@ -72,6 +72,9 @@ class AWSConfigController @Inject() (
       case Accepts.JavaScript() => {
         for {
           teamAccess <- dataService.users.teamAccessFor(user, maybeTeamId)
+          maybeRequiredAWSConfig <- maybeRequiredAWSConfigId.map { id =>
+            dataService.requiredAWSConfigs.find(id)
+          }.getOrElse(Future.successful(None))
         } yield {
           teamAccess.maybeTargetTeam.map { team =>
             val newConfigId = IDs.next
@@ -81,13 +84,12 @@ class AWSConfigController @Inject() (
               teamId = team.id,
               configSaved = false,
               configId = newConfigId,
-              name = None,
+              name = maybeRequiredAWSConfig.map(_.nameInCode),
               accessKeyId = None,
               secretAccessKey = None,
               region = None,
               documentationUrl = AWS_CONFIG_DOC_URL,
-              behaviorId = maybeBehaviorId,
-              requiredAWSConfigId = maybeRequiredAWSConfigId
+              behaviorId = maybeBehaviorId
             )
             Ok(views.js.shared.pageConfig(viewConfig(Some(teamAccess)), "config/awsconfig/edit", Json.toJson(config)))
           }.getOrElse {
@@ -100,7 +102,7 @@ class AWSConfigController @Inject() (
           teamAccess <- dataService.users.teamAccessFor(user, maybeTeamId)
         } yield {
           teamAccess.maybeTargetTeam.map { team =>
-            val dataRoute = routes.AWSConfigController.newConfig(maybeTeamId, maybeBehaviorId)
+            val dataRoute = routes.AWSConfigController.newConfig(maybeTeamId, maybeBehaviorId, maybeRequiredAWSConfigId)
             Ok(views.html.awsconfig.edit(viewConfig(Some(teamAccess)), "Add an AWS configuration", dataRoute))
           }.getOrElse {
             NotFound("Team not found")
@@ -138,8 +140,7 @@ class AWSConfigController @Inject() (
               secretAccessKey = config.maybeSecretKey,
               region = config.maybeRegion,
               documentationUrl = AWS_CONFIG_DOC_URL,
-              behaviorId = None,
-              requiredAWSConfigId = None
+              behaviorId = None
             )
             Ok(views.js.shared.pageConfig(viewConfig(Some(teamAccess)), "config/awsconfig/edit", Json.toJson(editConfig)))
           }).getOrElse {

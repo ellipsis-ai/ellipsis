@@ -19,8 +19,7 @@ define(function(require) {
       csrfToken: React.PropTypes.string.isRequired,
       teamId: React.PropTypes.string.isRequired,
       behaviorId: React.PropTypes.string,
-      documentationUrl: React.PropTypes.string.isRequired,
-      requiredAWSConfigId: React.PropTypes.string
+      documentationUrl: React.PropTypes.string.isRequired
     },
 
     getInitialState: function() {
@@ -117,7 +116,6 @@ define(function(require) {
       return (
         <form action={jsRoutes.controllers.AWSConfigController.save().url} method="POST">
           <CsrfTokenHiddenInput value={this.props.csrfToken} />
-          <input type="hidden" name="requiredAWSConfigId" value={this.props.requiredAWSConfigId} />
           <input type="hidden" name="id" value={this.props.configId} />
           <input type="hidden" name="teamId" value={this.props.teamId} />
           {this.renderBehaviorId()}

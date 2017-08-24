@@ -50,6 +50,18 @@ class RequiredAWSConfigServiceImpl @Inject() (
     )
   }
 
+  def uncompiledFindQuery(id: Rep[String]) = {
+    allWithGroupVersion.filter { case(required, _) => required.id === id }
+  }
+  val findQuery = Compiled(uncompiledFindQuery _)
+
+  def find(id: String): Future[Option[RequiredAWSConfig]] = {
+    val action = findQuery(id).result.map { r =>
+      r.headOption.map(tuple2RequiredAWSConfig)
+    }
+    dataService.run(action)
+  }
+
   def uncompiledAllForQuery(groupVersionId: Rep[String]) = {
     allWithGroupVersion.filter { case(_, ((groupVersion, _), _)) => groupVersion.id === groupVersionId }
   }
@@ -72,10 +84,6 @@ class RequiredAWSConfigServiceImpl @Inject() (
         allFor(currentVersion)
       }.getOrElse(Future.successful(Seq()))
     } yield required
-  }
-
-  def uncompiledFindQuery(id: Rep[String]) = {
-    allWithGroupVersion.filter { case (required, _) => required.id === id }
   }
 
   def uncompiledRawFindQuery(id: Rep[String]) = all.filter(_.id === id)

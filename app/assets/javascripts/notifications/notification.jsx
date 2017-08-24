@@ -4,6 +4,7 @@ define(function(require) {
     SVGTip = require('../svg/tip'),
     SVGWarning = require('../svg/warning'),
     NotificationForEnvVarMissing = require('./env_var_not_defined'),
+    NotificationForRequiredAWSConfigWithoutConfig = require('./required_aws_config_without_config'),
     NotificationForMissingOAuth2Application = require('./oauth2_config_without_application'),
     NotificationForDataTypeNeedsConfig = require('./data_type_needs_config'),
     NotificationForDataTypeUnnamed = require('./data_type_unnamed'),
@@ -30,7 +31,15 @@ define(function(require) {
           containerClass: "box-warning",
           icon: this.getWarningIcon(),
           message: (
-            <NotificationForEnvVarMissing details={this.props.group.members} />
+            <NotificationForEnvVarMissing details={this.props.group.members}/>
+          )
+        };
+      } else if (kind === "required_aws_config_without_config") {
+        return {
+          containerClass: "box-warning",
+          icon: this.getWarningIcon(),
+          message: (
+            <NotificationForRequiredAWSConfigWithoutConfig details={this.props.group.members} />
           )
         };
       } else if (kind === "oauth2_config_without_application") {

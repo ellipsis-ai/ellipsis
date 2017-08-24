@@ -11,6 +11,5 @@ case class AWSConfigEditConfig(
                                 region: Option[String],
                                 configSaved: Boolean,
                                 documentationUrl: String,
-                                requiredAWSConfigId: Option[String],
                                 behaviorId: Option[String] = None
                               )

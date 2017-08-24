@@ -322,6 +322,28 @@ const BehaviorEditor = React.createClass({
     }
   },
 
+  getRequiredAWSConfigsWithNoMatchingAWSConfig: function() {
+    const existingNames = this.getAllAWSConfigs().map(ea => ea.nameInCode);
+    return this.getRequiredAWSConfigs().filter(ea => {
+      return existingNames.indexOf(ea.nameInCode) === -1;
+    })
+  },
+
+  buildAWSNotifications: function() {
+    const behavior = this.getSelectedBehavior();
+    if (!behavior) {
+      return [];
+    }
+    return this.getRequiredAWSConfigsWithNoMatchingAWSConfig().map(ea => new NotificationData({
+      kind: "required_aws_config_without_config",
+      name: ea.nameInCode,
+      requiredAWSConfig: ea,
+      existingAWSConfigs: this.getAllAWSConfigs(),
+      onAddAWSConfig: this.onAddAWSConfig,
+      onNewAWSConfig: this.onNewAWSConfig
+    }));
+  },
+
   getOAuth2ApiWithId: function(apiId) {
     return this.props.oauth2Apis.find(ea => ea.apiId === apiId);
   },
@@ -467,6 +489,7 @@ const BehaviorEditor = React.createClass({
   buildNotifications: function() {
     return [].concat(
       this.buildEnvVarNotifications(),
+      this.buildAWSNotifications(),
       this.buildOAuthApplicationNotifications(),
       this.buildDataTypeNotifications(),
       this.buildTemplateNotifications()
@@ -754,6 +777,9 @@ const BehaviorEditor = React.createClass({
             const apiId = config && config.apiId;
             const recommendedScope = config && config.recommendedScope;
             window.location.href = jsRoutes.controllers.OAuth2ApplicationController.newApp(apiId, recommendedScope, this.getBehaviorGroup().teamId, this.getSelectedId()).url;
+          } else if (this.state.shouldRedirectToAddNewAWSConfig) {
+            const config = this.state.requiredAWSConfig;
+            window.location.href = jsRoutes.controllers.AWSConfigController.newConfig(this.getBehaviorGroup().teamId, this.getSelectedId(), config.id).url;
           } else {
             const newProps = {
               group: BehaviorGroup.fromJson(json),
@@ -1357,6 +1383,13 @@ const BehaviorEditor = React.createClass({
     this.updateGroupStateWith(this.getBehaviorGroup().clone({ requiredSimpleTokenApis: newConfigs }));
   },
 
+  onNewAWSConfig: function(requiredAWSConfig) {
+    this.setState({
+      shouldRedirectToAddNewAWSConfig: true,
+      requiredAWSConfig: requiredAWSConfig
+    }, () => { this.checkDataAndCallback(this.onSaveBehaviorGroup); });
+  },
+
   onNewOAuth2Application: function(requiredOAuth2ApiConfig) {
     this.setState({
       shouldRedirectToAddNewOAuth2App: true,
@@ -1432,6 +1465,8 @@ const BehaviorEditor = React.createClass({
       onNextNewEnvVar: null,
       envVariableAdderPrompt: null,
       redirectValue: "",
+      requiredAWSConfig: null,
+      shouldRedirectToAddNewAWSConfig: false,
       requiredOAuth2ApiConfig: null,
       shouldRedirectToAddNewOAuth2App: false,
       paramNameToSync: null,
