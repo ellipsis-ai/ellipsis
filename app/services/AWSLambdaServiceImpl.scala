@@ -298,7 +298,7 @@ class AWSLambdaServiceImpl @Inject() (
         |     if (err instanceof Error) {
         |       throw err;
         |     } else {
-        |       const throwableError = new Error();
+        |       const throwableError = new Error(err);
         |       throwableError.stack = "Error: " + err + "\\n\\nTo get a stack trace, throw an Error object, e.g.\\n\\n  throw new Error(\\"Something went wrong.\\")";
         |       throw throwableError;
         |     }
@@ -316,18 +316,25 @@ class AWSLambdaServiceImpl @Inject() (
         |   ${simpleTokensCodeFor(requiredSimpleTokenApis)}
         |
         |   const builtInConsole = Object.assign({}, console);
-        |   function augmentConsole(consoleMethod, realArgs) {
+        |   function augmentConsole(consoleMethod, realArgs, caller) {
         |     const args = [].slice.call(realArgs);
         |     const firstArg = args[0];
         |     const remainingArgs = args.slice(1);
         |     const error = { toString: () => consoleMethod };
-        |     Error.captureStackTrace(error, augmentConsole);
-        |     const newArgs = args.concat("\\nELLIPSIS_STACK_TRACE_START\\n" + error.stack + "\\nELLIPSIS_STACK_TRACE_END");
+        |     Error.captureStackTrace(error, caller);
+        |     const newArgs = error.stack.split("\\n").length > 1 ?
+        |       args.concat("\\nELLIPSIS_STACK_TRACE_START\\n" + error.stack + "\\nELLIPSIS_STACK_TRACE_END") :
+        |       args;
         |     builtInConsole[consoleMethod].apply(null, newArgs);
         |   }
-        |   ["log", "error", "warn", "info"].forEach((method) => {
-        |     console[method] = function() { augmentConsole(method, arguments); };
-        |   });
+        |   function consoleLog() { augmentConsole("log", arguments, consoleLog); }
+        |   function consoleError() { augmentConsole("error", arguments, consoleError); }
+        |   function consoleWarn() { augmentConsole("warn", arguments, consoleWarn); }
+        |   function consoleInfo() { augmentConsole("info", arguments, consoleInfo); }
+        |   console.log = consoleLog;
+        |   console.error = consoleError;
+        |   console.warn = consoleWarn;
+        |   console.info = consoleInfo;
         |
         |   try {
         |     fn($invocationParamsString);
