@@ -318,8 +318,6 @@ class AWSLambdaServiceImpl @Inject() (
         |   const builtInConsole = Object.assign({}, console);
         |   function augmentConsole(consoleMethod, realArgs, caller) {
         |     const args = [].slice.call(realArgs);
-        |     const firstArg = args[0];
-        |     const remainingArgs = args.slice(1);
         |     const error = { toString: () => consoleMethod };
         |     Error.captureStackTrace(error, caller);
         |     const newArgs = error.stack.split("\\n").length > 1 ?
