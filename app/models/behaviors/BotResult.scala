@@ -188,17 +188,28 @@ case class UnhandledErrorResult(
 
   val resultType = ResultType.UnhandledError
   val functionLines = behaviorVersion.functionBody.split("\n").length
+  val howToIncludeStackTraceMessage = "\n\nTo include a stack trace, throw an `Error` object in your code.  \ne.g. `throw new Error(\"Something went wrong.\")`"
+
+  def logContainsStackTrace(log: String): Boolean = {
+    val lines = log.lines.toList
+    lines.length > 1 && lines.tail.exists(_.matches("""^\s*at .+?\(.+?:\d+:\d+\)"""))
+  }
 
   def text: String = {
     val prompt = s"\nI encountered an error in ${linkToBehaviorFor("one of your skills")}"
     maybeLogResult.flatMap(_.maybeTranslated(functionLines)).map { logText =>
-      s"""$prompt:
+      val error = s"""$prompt:
          |
          |````
          |$logText
          |````
-       """.stripMargin
-    }.getOrElse(prompt + ".")
+         |""".stripMargin
+      if (!logContainsStackTrace(logText)) {
+        error + howToIncludeStackTraceMessage
+      } else {
+        error
+      }
+    }.getOrElse(prompt + "." + howToIncludeStackTraceMessage)
   }
 
 }

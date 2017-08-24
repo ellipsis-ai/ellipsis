@@ -299,15 +299,13 @@ class AWSLambdaServiceImpl @Inject() (
         |       throw err;
         |     } else {
         |       const throwableError = new Error(err);
-        |       throwableError.stack = "Error: " + err + "\\n\\nTo get a stack trace, throw an Error object, e.g.\\n\\n  throw new Error(\\"Something went wrong.\\")";
+        |       Error.captureStackTrace(throwableError, $CONTEXT_PARAM.error);
         |       throw throwableError;
         |     }
         |   };
         |
         |   if (process.listeners('unhandledRejection').length === 0) {
-        |     process.on('unhandledRejection', function error(reason, p) {
-        |       $CONTEXT_PARAM.error(reason);
-        |     });
+        |     process.on('unhandledRejection', $CONTEXT_PARAM.error);
         |   }
         |
         |   ${awsCodeFor(maybeAwsConfig)}

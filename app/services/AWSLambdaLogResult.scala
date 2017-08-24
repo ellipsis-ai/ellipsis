@@ -19,6 +19,7 @@ case class AWSLambdaLogResult(source: String, userDefinedLogStatements: String, 
     maybeError.map { error =>
       var translated = error
       translated = """/var/task/index.js""".r.replaceAllIn(translated, "<your function>")
+      translated = """/var/task/(.+)\.js""".r.replaceAllIn(translated, "$1")
       translated = """at fn|at exports\.handler""".r.replaceAllIn(translated, "at top level")
       translated.
         split("\n").
