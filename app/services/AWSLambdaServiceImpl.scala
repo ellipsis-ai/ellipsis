@@ -8,6 +8,8 @@ import javax.inject.Inject
 import akka.actor.ActorSystem
 import com.amazonaws.services.lambda.model._
 import com.amazonaws.services.lambda.{AWSLambdaAsync, AWSLambdaAsyncClientBuilder}
+import com.amazonaws.services.logs.model.{CreateLogGroupRequest, PutSubscriptionFilterRequest}
+import com.amazonaws.services.logs.{AWSLogsAsync, AWSLogsAsyncClientBuilder}
 import json.Formatting._
 import json.NodeModuleVersionData
 import models.Models
@@ -50,6 +52,12 @@ class AWSLambdaServiceImpl @Inject() (
 
   val client: AWSLambdaAsync =
     AWSLambdaAsyncClientBuilder.standard().
+      withRegion(region).
+      withCredentials(credentialsProvider).
+      build()
+
+  val logsClient: AWSLogsAsync =
+    AWSLogsAsyncClientBuilder.standard().
       withRegion(region).
       withCredentials(credentialsProvider).
       build()
@@ -440,6 +448,38 @@ class AWSLambdaServiceImpl @Inject() (
     } yield {}
   }
 
+  def logGroupNameFor(functionName: String): String = s"/aws/lambda/$functionName"
+
+  def ensureLogGroupFor(functionName: String): Future[Any] = {
+    val createLogGroupRequest =
+      new CreateLogGroupRequest().withLogGroupName(logGroupNameFor(functionName))
+    JavaFutureConverter.javaToScala(logsClient.createLogGroupAsync(createLogGroupRequest)).recover {
+      case ex: ResourceConflictException => // no big deal if it's already created
+    }
+  }
+
+  def setUpLogSubscriptionFor(functionName: String): Future[Any] = {
+    ensureLogGroupFor(functionName).flatMap { _ =>
+      val getFunctionRequest =
+        new GetFunctionRequest().withFunctionName("LogsToElasticsearch_es-logs")
+      JavaFutureConverter.javaToScala(client.getFunctionAsync(getFunctionRequest)).map { destinationFunctionResult =>
+        val destinationFunctionArn: String = destinationFunctionResult.getConfiguration.getFunctionArn
+        val request =
+          new PutSubscriptionFilterRequest().
+            withDestinationArn(destinationFunctionArn).
+            withLogGroupName(logGroupNameFor(functionName)).
+            withFilterName("RecipientStream").
+            withFilterPattern("""{ $.eventType = "*" }""")
+        logsClient.putSubscriptionFilter(request)
+      }.recover {
+        case t: Throwable => {
+          println(t.getMessage)
+        }
+      }
+    }
+
+  }
+
   def deployFunction(
                       functionName: String,
                       functionBody: String,
@@ -479,7 +519,9 @@ class AWSLambdaServiceImpl @Inject() (
             withHandler("index.handler").
             withTimeout(INVOCATION_TIMEOUT_SECONDS)
 
-        JavaFutureConverter.javaToScala(client.createFunctionAsync(createFunctionRequest)).map(_ => Unit)
+        JavaFutureConverter.javaToScala(client.createFunctionAsync(createFunctionRequest)).flatMap { result =>
+          setUpLogSubscriptionFor(result.getFunctionName)
+        }
       }
     }
   }
