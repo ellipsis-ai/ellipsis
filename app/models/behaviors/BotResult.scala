@@ -80,10 +80,12 @@ sealed trait BotResult {
 
 trait BotResultWithLogResult extends BotResult {
   val maybeLogResult: Option[AWSLambdaLogResult]
-  val logStatements = maybeLogResult.map(_.userDefinedLogStatements).getOrElse("")
 
-  override def fullText: String = logStatements ++ text
-
+  override def files: Seq[UploadFileSpec] = {
+    super.files ++ maybeLogResult.map(_.userDefinedLogStatements).filter(_.nonEmpty).map { log =>
+      Seq(UploadFileSpec(Some(log), Some("text"), Some("Developer log")))
+    }.getOrElse(Seq())
+  }
 }
 
 case class InvalidFilesException(message: String) extends Exception {
@@ -120,12 +122,13 @@ case class SuccessResult(
   val resultType = ResultType.Success
 
   override def files: Seq[UploadFileSpec] = {
-    (resultWithOptions \ "files").validateOpt[Seq[UploadFileSpec]] match {
+    val files = (resultWithOptions \ "files").validateOpt[Seq[UploadFileSpec]] match {
       case JsSuccess(maybeFiles, _) => maybeFiles.getOrElse(Seq())
       case JsError(errs) => throw InvalidFilesException(errs.map { case (_, validationErrors) =>
         validationErrors.map(_.message).mkString(", ")
       }.mkString(", "))
     }
+    files ++ super.files
   }
 
   def text: String = {

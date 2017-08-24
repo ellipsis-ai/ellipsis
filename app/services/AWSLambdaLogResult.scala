@@ -92,12 +92,7 @@ object AWSLambdaLogResult {
         case s => s
       }
       if (logs.nonEmpty) {
-        s"""Developer log:
-          |
-          |````
-          |${processed.mkString("\n")}
-          |````
-          |""".stripMargin
+        processed.mkString("\n")
       } else {
         ""
       }
