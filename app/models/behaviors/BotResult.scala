@@ -194,9 +194,9 @@ case class UnhandledErrorResult(
     maybeLogResult.flatMap(_.maybeTranslated(functionLines)).map { logText =>
       s"""$prompt:
          |
-         |```
+         |````
          |$logText
-         |```
+         |````
        """.stripMargin
     }.getOrElse(prompt + ".")
   }
@@ -223,8 +223,8 @@ case class HandledErrorResult(
 
   def text: String = {
     val detail = (json \ "errorMessage").toOption.map(processedResultFor).map { msg =>
-      s":\n\n```\n$msg\n```"
-    }.getOrElse("")
+      s":\n\n````\n$msg\n````"
+    }.getOrElse(".")
     s"I encountered an error in ${linkToBehaviorFor("one of your skills")}$detail"
   }
 }
@@ -245,7 +245,9 @@ case class SyntaxErrorResult(
     s"""
        |There's a syntax error in your skill:
        |
+       |````
        |${(json \ "errorMessage").asOpt[String].getOrElse("")}
+       |````
        |
        |${linkToBehaviorFor("Take a look in the skill editor")} for more details.
      """.stripMargin
