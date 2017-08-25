@@ -294,6 +294,13 @@ class AWSLambdaServiceImpl @Inject() (
         |     );
         |     callback(null, resultWithOptions);
         |   };
+        |   class EllipsisError extends Error {
+        |     constructor(errorMessage, userMessage) {
+        |       super(errorMessage + "\\nELLIPSIS_USER_ERROR_MESSAGE_START\\n" + userMessage + "\\nELLIPSIS_USER_ERROR_MESSAGE_END");
+        |       this.userMessage = userMessage;
+        |     }
+        |   }
+        |   $CONTEXT_PARAM.Error = EllipsisError;
         |   $CONTEXT_PARAM.error = function(err) {
         |     if (err instanceof Error) {
         |       throw err;

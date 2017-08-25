@@ -199,22 +199,21 @@ case class UnhandledErrorResult(
   }
 
   def text: String = {
-    val prompt = s"\nI encountered an error in ${linkToBehaviorFor("one of your skills")}"
-    maybeLogResult.flatMap(_.maybeTranslated(functionLines)).map { logText =>
-      val error = s"""$prompt:
-         |
-         |````
-         |$logText
-         |````
-         |""".stripMargin
-      if (!logContainsStackTrace(logText)) {
-        error + howToIncludeStackTraceMessage
-      } else {
-        error
-      }
-    }.getOrElse(prompt + "." + howToIncludeStackTraceMessage)
+    s"\nI encountered an error in ${linkToBehaviorFor("one of your skills")}" +
+      maybeLogResult.flatMap(_.maybeUserError).map { userError =>
+        s":\n\n$userError"
+      }.getOrElse(".")
   }
 
+  override def files: Seq[UploadFileSpec] = {
+    super.files ++ maybeLogResult.flatMap(_.maybeTranslated(functionLines)).map { logText =>
+      if (!logContainsStackTrace(logText)) {
+        Seq(UploadFileSpec(Some(logText + howToIncludeStackTraceMessage), Some("text"), Some("Error message")))
+      } else {
+        Seq(UploadFileSpec(Some(logText), Some("text"), Some("Stack trace")))
+      }
+    }.getOrElse(Seq())
+  }
 }
 
 case class HandledErrorResult(
