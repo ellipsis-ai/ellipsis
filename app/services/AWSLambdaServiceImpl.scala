@@ -279,10 +279,9 @@ class AWSLambdaServiceImpl @Inject() (
                          ): String = {
     val paramsFromEvent = params.indices.map(i => s"event.${invocationParamFor(i)}")
     val invocationParamsString = (paramsFromEvent ++ Array(s"event.$CONTEXT_PARAM")).mkString(", ")
-
     // Note: this attempts to make line numbers in the lambda script line up with those displayed in the UI
     // Be careful changing either this or the UI line numbers
-    s"""exports.handler = function(event, context, callback) { var fn = ${functionWithParams(params, functionBody)};
+    s"""exports.handler = function(event, context, callback) { var fn = ${functionWithParams(params, functionBody)}
         |   var $CONTEXT_PARAM = event.$CONTEXT_PARAM;
         |   $CONTEXT_PARAM.$NO_RESPONSE_KEY = function() {
         |     callback(null, { $NO_RESPONSE_KEY: true });
@@ -295,17 +294,49 @@ class AWSLambdaServiceImpl @Inject() (
         |     );
         |     callback(null, resultWithOptions);
         |   };
-        |   $CONTEXT_PARAM.error = function(err) { callback(err || "(No error message or an empty error message was provided.)"); };
+        |   $CONTEXT_PARAM.error = function(err) {
+        |     if (err instanceof Error) {
+        |       throw err;
+        |     } else {
+        |       const throwableError = new Error(err);
+        |       Error.captureStackTrace(throwableError, $CONTEXT_PARAM.error);
+        |       throw throwableError;
+        |     }
+        |   };
+        |
         |   if (process.listeners('unhandledRejection').length === 0) {
-        |     process.on('unhandledRejection', function(reason, p) {
-        |       throw(reason);
-        |     });
+        |     process.on('unhandledRejection', $CONTEXT_PARAM.error);
         |   }
+        |
         |   ${awsCodeFor(maybeAwsConfig)}
         |   $CONTEXT_PARAM.accessTokens = {};
         |   ${accessTokensCodeFor(requiredOAuth2ApiConfigs)}
         |   ${simpleTokensCodeFor(requiredSimpleTokenApis)}
-        |   fn($invocationParamsString);
+        |
+        |   const builtInConsole = Object.assign({}, console);
+        |   function augmentConsole(consoleMethod, realArgs, caller) {
+        |     const args = [].slice.call(realArgs);
+        |     const error = { toString: () => consoleMethod };
+        |     Error.captureStackTrace(error, caller);
+        |     const newArgs = error.stack.split("\\n").length > 1 ?
+        |       args.concat("\\nELLIPSIS_STACK_TRACE_START\\n" + error.stack + "\\nELLIPSIS_STACK_TRACE_END") :
+        |       args;
+        |     builtInConsole[consoleMethod].apply(null, newArgs);
+        |   }
+        |   function consoleLog() { augmentConsole("log", arguments, consoleLog); }
+        |   function consoleError() { augmentConsole("error", arguments, consoleError); }
+        |   function consoleWarn() { augmentConsole("warn", arguments, consoleWarn); }
+        |   function consoleInfo() { augmentConsole("info", arguments, consoleInfo); }
+        |   console.log = consoleLog;
+        |   console.error = consoleError;
+        |   console.warn = consoleWarn;
+        |   console.info = consoleInfo;
+        |
+        |   try {
+        |     fn($invocationParamsString);
+        |   } catch(err) {
+        |     $CONTEXT_PARAM.error(err);
+        |   }
         |}
     """.stripMargin
   }

@@ -1,5 +1,7 @@
 package services
 
+import scala.util.matching.Regex
+
 case class AWSLambdaLogResult(source: String, userDefinedLogStatements: String, maybeError: Option[String]) {
 
   def shouldExcludeLine(line: String, functionLines: Int): Boolean = {
@@ -17,11 +19,13 @@ case class AWSLambdaLogResult(source: String, userDefinedLogStatements: String, 
     maybeError.map { error =>
       var translated = error
       translated = """/var/task/index.js""".r.replaceAllIn(translated, "<your function>")
+      translated = """/var/task/(.+)\.js""".r.replaceAllIn(translated, "$1")
       translated = """at fn|at exports\.handler""".r.replaceAllIn(translated, "at top level")
       translated.
         split("\n").
         filterNot { line => shouldExcludeLine(line, functionLines) }.
-        mkString("\n")
+        mkString("\n").
+        stripPrefix("\t")
     }
   }
 
@@ -52,17 +56,46 @@ object AWSLambdaLogResult {
     (maybeErrorContent, nonErrorContent)
   }
 
+  private val stackTraceRegex = """(?s)(.+)\nELLIPSIS_STACK_TRACE_START\n(.+)ELLIPSIS_STACK_TRACE_END\Z""".r
+  private val stackTraceSourceRegex = """^\s+at (.+?) \(/.+/(.+?)\.js:(\d+):(\d+)\)""".r
+
+  def getLogStatementPrefix(ellipsisStackTrace: String): String = {
+    val lines = ellipsisStackTrace.split("\n")
+    val maybeLogMethod = lines.headOption.map {
+      case "log" => ""
+      case "info" => ""
+      case "warn" => "⚠️" // intellij hides the warning emoji
+      case "error" => "⛔️" // intellij hides the forbidden emoji
+    }.filter(_.nonEmpty)
+    val maybeSourceLine = lines.slice(1, 2).headOption
+    maybeSourceLine.map {
+      case stackTraceSourceRegex(funcName, sourceFile, lineNumber, charNumber) => {
+        val lineInfo = Option(sourceFile).filterNot(_ == "index").map { sourceName =>
+          s"$sourceName:$lineNumber"
+        }.getOrElse(lineNumber)
+        s"${maybeLogMethod.getOrElse("")}$lineInfo: "
+      }
+      case _ => ""
+    }.filter(_.nonEmpty).getOrElse {
+      maybeLogMethod.map(_ + ": ").getOrElse("")
+    }
+  }
+
   def extractUserDefinedLogStatementsFrom(text: String): String = {
     val maybeUserDefinedLogStatementsContent = """(?s)(START.*?\n)?(.*)""".r.findFirstMatchIn(text).flatMap(_.subgroups.tail.headOption)
     maybeUserDefinedLogStatementsContent.map { content =>
-      content.split( """\S+\t\S+\t""")
+      content.split("""\S+\t\S+\t""")
     }.map { strings =>
-      strings.
-        map(_.trim).
-        filter(_.nonEmpty).
-        map(s => """\n""".r.replaceAllIn(s, "\n\t")).
-        map(s => s"\nYou logged:\n\n\t$s\n").
-        mkString("")
+      val logs = strings.map(_.trim).filter(_.nonEmpty)
+      val processed = logs.map {
+        case stackTraceRegex(userContent, stackTrace) => getLogStatementPrefix(stackTrace) + userContent
+        case s => s
+      }
+      if (logs.nonEmpty) {
+        processed.mkString("\n")
+      } else {
+        ""
+      }
     }.getOrElse("")
   }
 
