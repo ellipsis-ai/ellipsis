@@ -1,7 +1,5 @@
 package services
 
-import scala.util.matching.Regex
-
 case class AWSLambdaLogResult(source: String, userDefinedLogStatements: String, maybeError: Option[String], maybeUserError: Option[String]) {
 
   def shouldExcludeLine(line: String, functionLines: Int): Boolean = {

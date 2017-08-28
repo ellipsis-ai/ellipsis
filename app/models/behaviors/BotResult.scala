@@ -81,10 +81,18 @@ sealed trait BotResult {
 trait BotResultWithLogResult extends BotResult {
   val maybeLogResult: Option[AWSLambdaLogResult]
 
+  val maybeUserLog: Option[String] = {
+    maybeLogResult.map(_.userDefinedLogStatements).filter(_.nonEmpty)
+  }
+
+  val maybeUserLogFile: Option[UploadFileSpec] = {
+    maybeUserLog.map { log =>
+      UploadFileSpec(Some(log), Some("text"), Some("Developer log"))
+    }
+  }
+
   override def files: Seq[UploadFileSpec] = {
-    super.files ++ maybeLogResult.map(_.userDefinedLogStatements).filter(_.nonEmpty).map { log =>
-      Seq(UploadFileSpec(Some(log), Some("text"), Some("Developer log")))
-    }.getOrElse(Seq())
+    super.files ++ Seq(maybeUserLogFile).flatten
   }
 }
 
@@ -193,11 +201,6 @@ case class UnhandledErrorResult(
   val functionLines = behaviorVersion.functionBody.split("\n").length
   val howToIncludeStackTraceMessage = "\n\nTo include a stack trace, throw an `Error` object in your code.  \ne.g. `throw new Error(\"Something went wrong.\")`"
 
-  def logContainsStackTrace(log: String): Boolean = {
-    val lines = log.lines.toList
-    lines.length > 1 && lines.tail.exists(_.matches("""^\s*at .+?\(.+?:\d+:\d+\)"""))
-  }
-
   def text: String = {
     s"\nI encountered an error in ${linkToBehaviorFor("one of your skills")}" +
       maybeLogResult.flatMap(_.maybeUserError).map { userError =>
@@ -205,14 +208,28 @@ case class UnhandledErrorResult(
       }.getOrElse(".")
   }
 
-  override def files: Seq[UploadFileSpec] = {
-    super.files ++ maybeLogResult.flatMap(_.maybeTranslated(functionLines)).map { logText =>
+  private def logContainsStackTrace(log: String): Boolean = {
+    val lines = log.lines.toList
+    lines.length > 1 && lines.tail.exists(_.matches("""^\s*at .+?\(.+?:\d+:\d+\)"""))
+  }
+
+  private def maybeErrorLog: Option[String] = {
+    maybeLogResult.flatMap(_.maybeTranslated(functionLines)).map { logText =>
       if (!logContainsStackTrace(logText)) {
-        Seq(UploadFileSpec(Some(logText + howToIncludeStackTraceMessage), Some("text"), Some("Error message")))
+        logText + howToIncludeStackTraceMessage
       } else {
-        Seq(UploadFileSpec(Some(logText), Some("text"), Some("Stack trace")))
+        logText
       }
-    }.getOrElse(Seq())
+    }
+  }
+
+  override def files: Seq[UploadFileSpec] = {
+    val log = maybeUserLog.map(_ + "\n").getOrElse("") + maybeErrorLog.getOrElse("")
+    if (log.nonEmpty) {
+      Seq(UploadFileSpec(Some(log), Some("text"), Some("Developer log")))
+    } else {
+      Seq()
+    }
   }
 }
 
