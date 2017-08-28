@@ -1,5 +1,6 @@
 define((require) => {
 var React = require('react'),
+  APIConfigPanel = require('./api_config_panel'),
   APISelectorMenu = require('./api_selector_menu'),
   AWSConfigRef = require('../models/aws_config_ref'),
   AWSHelp = require('./aws_help'),
@@ -1332,10 +1333,23 @@ const BehaviorEditor = React.createClass({
   },
 
   onAddAWSConfig: function(config) {
-    const toAdd = new RequiredAWSConfig({
-      nameInCode: config.nameInCode
-    });
-    const newConfigs =  this.getRequiredAWSConfigs().concat([toAdd]);
+    const existing = this.getRequiredAWSConfigs();
+    const indexToReplace = existing.findIndex(ea => !ea.config);
+    const toReplace = existing[indexToReplace];
+    const configs = existing.slice();
+    let toAdd;
+    if (indexToReplace >= 0) {
+      configs.splice(indexToReplace, 1);
+      toAdd = toReplace.clone({
+        config: config
+      });
+    } else {
+      toAdd = new RequiredAWSConfig({
+        nameInCode: config.nameInCode,
+        config: config
+      });
+    }
+    const newConfigs =  configs.concat([toAdd]);
     this.updateGroupStateWith(this.getBehaviorGroup().clone({ requiredAWSConfigs: newConfigs }));
   },
 
@@ -1581,6 +1595,13 @@ const BehaviorEditor = React.createClass({
     return selected ? selected.confirmDeleteText() : "";
   },
 
+  toggleApiAdderDropdown: function() {
+    var alreadyOpen = this.getActiveDropdown() === "apiConfigAdderDropdown";
+    this.setState({
+      activeDropdown: alreadyOpen ? null : { name: "apiConfigAdderDropdown" }
+    });
+  },
+
   renderFooter: function() {
     return (
       <div>
@@ -1613,6 +1634,29 @@ const BehaviorEditor = React.createClass({
               </Collapsible>
             </div>
           ) : null}
+
+          <Collapsible ref="configureApis" revealWhen={this.props.activePanelName === "configureApis"} onChange={this.layoutDidUpdate}>
+            <APIConfigPanel
+              openWhen={this.getActiveDropdown() === 'apiConfigAdderDropdown'}
+              toggle={this.toggleApiAdderDropdown}
+              getActiveDropdown={this.getActiveDropdown}
+              allAWSConfigs={this.getAllAWSConfigs()}
+              requiredAWSConfigs={this.getRequiredAWSConfigs()}
+              allOAuth2Applications={this.getAllOAuth2Applications()}
+              requiredOAuth2ApiConfigs={this.getRequiredOAuth2ApiConfigs()}
+              allSimpleTokenApis={this.getAllSimpleTokenApis()}
+              requiredSimpleTokenApis={this.getRequiredSimpleTokenApis()}
+              onAddAWSConfig={this.onAddAWSConfig}
+              onRemoveAWSConfig={this.onRemoveAWSConfig}
+              onAddOAuth2Application={this.onAddOAuth2Application}
+              onRemoveOAuth2Application={this.onRemoveOAuth2Application}
+              onAddSimpleTokenApi={this.onAddSimpleTokenApi}
+              onRemoveSimpleTokenApi={this.onRemoveSimpleTokenApi}
+              onNewOAuth2Application={this.onNewOAuth2Application}
+              getOAuth2ApiWithId={this.getOAuth2ApiWithId}
+            >
+            </APIConfigPanel>
+          </Collapsible>
 
           <Collapsible ref="confirmUndo" revealWhen={this.props.activePanelName === 'confirmUndo'} onChange={this.layoutDidUpdate}>
             <ConfirmActionPanel confirmText="Undo changes" onConfirmClick={this.undoChanges} onCancelClick={this.props.onClearActivePanel}>

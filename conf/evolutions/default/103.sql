@@ -5,7 +5,8 @@ BEGIN;
 CREATE TABLE required_aws_configs (
   id TEXT PRIMARY KEY,
   name_in_code TEXT NOT NULL,
-  group_version_id TEXT NOT NULL REFERENCES behavior_group_versions(id) ON DELETE CASCADE
+  group_version_id TEXT NOT NULL REFERENCES behavior_group_versions(id) ON DELETE CASCADE,
+  config_id TEXT REFERENCES aws_configs(id) ON DELETE SET NULL
 );
 
 CREATE INDEX required_aws_configs_group_version_id_index ON required_aws_configs(group_version_id);

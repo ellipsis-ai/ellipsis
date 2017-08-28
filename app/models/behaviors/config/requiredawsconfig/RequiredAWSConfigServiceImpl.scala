@@ -8,6 +8,7 @@ import json.RequiredAWSConfigData
 import models.IDs
 import models.behaviors.behaviorgroup.BehaviorGroup
 import models.behaviors.behaviorgroupversion.{BehaviorGroupVersion, BehaviorGroupVersionQueries}
+import models.behaviors.config.awsconfig.{AWSConfig, AWSConfigQueries}
 import services.DataService
 import slick.dbio.DBIO
 
@@ -17,7 +18,8 @@ import scala.concurrent.Future
 case class RawRequiredAWSConfig(
                                  id: String,
                                  nameInCode: String,
-                                 groupVersionId: String
+                                 groupVersionId: String,
+                                 maybeConfigId: Option[String]
                                )
 
 class RequiredAWSConfigsTable(tag: Tag) extends Table[RawRequiredAWSConfig](tag, "required_aws_configs") {
@@ -25,8 +27,9 @@ class RequiredAWSConfigsTable(tag: Tag) extends Table[RawRequiredAWSConfig](tag,
   def id = column[String]("id", O.PrimaryKey)
   def nameInCode = column[String]("name_in_code")
   def groupVersionId = column[String]("group_version_id")
+  def maybeConfigId = column[Option[String]]("config_id")
 
-  def * = (id, nameInCode, groupVersionId) <> ((RawRequiredAWSConfig.apply _).tupled, RawRequiredAWSConfig.unapply _)
+  def * = (id, nameInCode, groupVersionId, maybeConfigId) <> ((RawRequiredAWSConfig.apply _).tupled, RawRequiredAWSConfig.unapply _)
 }
 
 class RequiredAWSConfigServiceImpl @Inject() (
@@ -37,21 +40,24 @@ class RequiredAWSConfigServiceImpl @Inject() (
 
   val all = TableQuery[RequiredAWSConfigsTable]
   val allWithGroupVersion = all.join(BehaviorGroupVersionQueries.allWithUser).on(_.groupVersionId === _._1._1.id)
+  val allWithConfig = allWithGroupVersion.joinLeft(AWSConfigQueries.all).on(_._1.maybeConfigId === _.id)
 
-  type TupleType = (RawRequiredAWSConfig, BehaviorGroupVersionQueries.TupleType)
+  type TupleType = ((RawRequiredAWSConfig, BehaviorGroupVersionQueries.TupleType), Option[AWSConfig])
 
   def tuple2RequiredAWSConfig(tuple: TupleType): RequiredAWSConfig = {
-    val raw = tuple._1
-    val groupVersion = BehaviorGroupVersionQueries.tuple2BehaviorGroupVersion(tuple._2)
+    val raw = tuple._1._1
+    val groupVersion = BehaviorGroupVersionQueries.tuple2BehaviorGroupVersion(tuple._1._2)
+    val maybeConfig = tuple._2
     RequiredAWSConfig(
       raw.id,
       raw.nameInCode,
-      groupVersion
+      groupVersion,
+      maybeConfig
     )
   }
 
   def uncompiledFindQuery(id: Rep[String]) = {
-    allWithGroupVersion.filter { case(required, _) => required.id === id }
+    allWithConfig.filter { case((required, _), _) => required.id === id }
   }
   val findQuery = Compiled(uncompiledFindQuery _)
 
@@ -63,7 +69,7 @@ class RequiredAWSConfigServiceImpl @Inject() (
   }
 
   def uncompiledAllForQuery(groupVersionId: Rep[String]) = {
-    allWithGroupVersion.filter { case(_, ((groupVersion, _), _)) => groupVersion.id === groupVersionId }
+    allWithConfig.filter { case((_, ((groupVersion, _), _)), _) => groupVersion.id === groupVersionId }
   }
   val allForQuery = Compiled(uncompiledAllForQuery _)
 
@@ -102,8 +108,11 @@ class RequiredAWSConfigServiceImpl @Inject() (
 
   def createForAction(data: RequiredAWSConfigData, groupVersion: BehaviorGroupVersion): DBIO[RequiredAWSConfig] = {
     for {
+      maybeConfig <- data.config.map { configData =>
+        dataService.awsConfigs.findAction(configData.id)
+      }.getOrElse(DBIO.successful(None))
       required <- {
-        val newInstance = RequiredAWSConfig(IDs.next, data.nameInCode, groupVersion)
+        val newInstance = RequiredAWSConfig(IDs.next, data.nameInCode, groupVersion, maybeConfig)
         (all += newInstance.toRaw).map(_ => newInstance)
       }
     } yield required

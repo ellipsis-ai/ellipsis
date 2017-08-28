@@ -4,7 +4,8 @@ import models.behaviors.config.requiredawsconfig.RequiredAWSConfig
 
 case class RequiredAWSConfigData(
                                   id: Option[String],
-                                  nameInCode: String
+                                  nameInCode: String,
+                                  config: Option[AWSConfigData]
                                 ) {
 
   def copyForExport: RequiredAWSConfigData = {
@@ -16,7 +17,7 @@ case class RequiredAWSConfigData(
 object RequiredAWSConfigData {
 
   def from(config: RequiredAWSConfig): RequiredAWSConfigData = {
-    RequiredAWSConfigData(Some(config.id), config.nameInCode)
+    RequiredAWSConfigData(Some(config.id), config.nameInCode, config.maybeConfig.map(AWSConfigData.from))
   }
 
 }

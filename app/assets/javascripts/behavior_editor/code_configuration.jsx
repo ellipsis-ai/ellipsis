@@ -149,6 +149,10 @@ define(function(require) {
       this.refs.codeEditor.refresh();
     },
 
+    configureApis: function() {
+      this.props.onToggleActivePanel('configureApis');
+    },
+
     render: function() {
       return (
         <div>
@@ -163,7 +167,9 @@ define(function(require) {
                   </span>
                 </SectionHeading>
               </div>
-              <div className="column column-shrink ptxs mobile-mbm">{this.props.apiSelector}</div>
+              <div className="column column-shrink ptxs mobile-mbm">
+                <a onClick={this.configureApis}>Configure APIs</a>
+              </div>
             </div>
 
             {this.props.codeEditorHelp}
