@@ -113,7 +113,8 @@ class LinkedOAuth2TokenServiceImpl @Inject() (
   }
   val findQuery = Compiled(uncompiledFindQuery _)
 
-  def saveAction(token: LinkedOAuth2Token): DBIO[LinkedOAuth2Token] = {
+  def saveAction(tokenWithoutExpirationTimeEnsured: LinkedOAuth2Token): DBIO[LinkedOAuth2Token] = {
+    val token = tokenWithoutExpirationTimeEnsured.copyWithExpirationTimeIfRefreshToken
     val query = findQuery(token.userId, token.application.id)
     val raw = token.toRaw
     query.result.headOption.flatMap {

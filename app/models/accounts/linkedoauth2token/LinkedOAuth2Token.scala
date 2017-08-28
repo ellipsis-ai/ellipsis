@@ -34,6 +34,13 @@ case class LinkedOAuth2Token(
 
   def isExpiredOrExpiresSoon: Boolean = maybeExpirationTime.exists(_.isBefore(OffsetDateTime.now.plusMinutes(1)))
 
+  def copyWithExpirationTimeIfRefreshToken: LinkedOAuth2Token = {
+    val maybeEnsuredExpirationTime = maybeExpirationTime.orElse(maybeRefreshToken.map { _ =>
+      OffsetDateTime.now.plusHours(1)
+    })
+    copy(maybeExpirationTime = maybeEnsuredExpirationTime)
+  }
+
   def toRaw: RawLinkedOAuth2Token = RawLinkedOAuth2Token(
     accessToken,
     maybeTokenType,
