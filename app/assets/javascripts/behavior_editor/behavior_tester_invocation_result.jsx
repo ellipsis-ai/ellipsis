@@ -35,7 +35,7 @@ define(function(require) {
     missingInputs() {
       const missingInputNames = this.props.result.missingInputNames;
       return (
-        <div className="display-overflow-scroll border border-pink bg-white pas">
+        <div>
           {missingInputNames.length === 1 ? (
             <span>
               Ellipsis will ask the user for a value for the input <code className="type-bold mlxs">{missingInputNames[0]}</code>.
@@ -53,7 +53,7 @@ define(function(require) {
     missingUserEnvVars() {
       const missingUserEnvVars = this.props.result.missingUserEnvVars;
       return (
-        <div className="display-overflow-scroll border border-pink bg-white pas">
+        <div>
           {missingUserEnvVars.length === 1 ? (
             <span>
               If, like you, the user hasn't yet set a value for the environment variable <code className="type-bold">{missingUserEnvVars[0]}</code>, Ellipsis will ask for one.

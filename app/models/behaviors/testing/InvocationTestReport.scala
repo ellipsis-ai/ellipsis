@@ -9,7 +9,7 @@ import play.api.libs.json._
 case class ResultOutput(kind: String, fullText: String)
 
 case class InvocationTestReportOutput(
-                                      missingParamNames: Seq[String],
+                                      missingInputNames: Seq[String],
                                       missingSimpleTokens: Seq[String],
                                       missingUserEnvVars: Set[String],
                                       result: Option[ResultOutput]
