@@ -7,6 +7,7 @@ define(function() {
       this.missingInputNames = props.missingInputNames || [];
       this.missingSimpleTokens = props.missingSimpleTokens || [];
       this.missingUserEnvVars = props.missingUserEnvVars || [];
+      this.files = props.files || [];
     }
 
     wasSuccessful() {
@@ -23,7 +24,8 @@ define(function() {
         kind: props.result && props.result.kind ? props.result.kind : null,
         missingInputNames: props.missingInputNames || [],
         missingSimpleTokens: props.missingSimpleTokens || [],
-        missingUserEnvVars: props.missingUserEnvVars || []
+        missingUserEnvVars: props.missingUserEnvVars || [],
+        files: props.result && props.result.files ? props.result.files : []
       });
     }
   }
