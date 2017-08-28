@@ -469,16 +469,4 @@ class BehaviorVersionServiceImpl @Inject() (
     } yield {}
   }
 
-  private def isUnhandledError(json: JsValue): Boolean = {
-    (json \ "errorMessage").toOption.flatMap { m =>
-      "Process exited before completing request".r.findFirstIn(m.toString)
-    }.isDefined
-  }
-
-  private def isSyntaxError(json: JsValue): Boolean = {
-    (json \ "errorType").toOption.flatMap { m =>
-      "SyntaxError".r.findFirstIn(m.toString)
-    }.isDefined
-  }
-
 }

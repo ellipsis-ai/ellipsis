@@ -23,7 +23,7 @@ import scala.concurrent.duration._
 
 object ResultType extends Enumeration {
   type ResultType = Value
-  val Success, SimpleText, TextWithActions, ConversationPrompt, NoResponse, UnhandledError, HandledError, SyntaxError, NoCallbackTriggered, MissingTeamEnvVar, AWSDown, OAuth2TokenMissing, RequiredApiNotReady = Value
+  val Success, SimpleText, TextWithActions, ConversationPrompt, NoResponse, CaughtError, SyntaxError, NoCallbackTriggered, MissingTeamEnvVar, AWSDown, OAuth2TokenMissing, RequiredApiNotReady = Value
 }
 
 sealed trait BotResult {
@@ -188,21 +188,22 @@ trait WithBehaviorLink {
   }
 }
 
-case class UnhandledErrorResult(
+case class CaughtErrorResult(
                                  event: Event,
                                  maybeConversation: Option[Conversation],
                                  behaviorVersion: BehaviorVersion,
                                  dataService: DataService,
                                  configuration: Configuration,
+                                 json: JsValue,
                                  maybeLogResult: Option[AWSLambdaLogResult]
                                ) extends BotResultWithLogResult with WithBehaviorLink {
 
-  val resultType = ResultType.UnhandledError
+  val resultType = ResultType.CaughtError
   val functionLines = behaviorVersion.functionBody.split("\n").length
   val howToIncludeStackTraceMessage = "\n\nTo include a stack trace, throw an `Error` object in your code.  \ne.g. `throw new Error(\"Something went wrong.\")`"
 
   def text: String = {
-    s"\nI encountered an error in ${linkToBehaviorFor("one of your skills")}" +
+    s"I encountered an error in ${linkToBehaviorFor("one of your skills")}" +
       maybeLogResult.flatMap(_.maybeUserErrorMessage).map { userError =>
         s":\n\n$userError"
       }.getOrElse(".")
@@ -213,7 +214,19 @@ case class UnhandledErrorResult(
     lines.length > 1 && lines.tail.exists(_.matches("""^\s*at .+?\(.+?:\d+:\d+\)"""))
   }
 
-  private def maybeErrorLog: Option[String] = {
+  private def dropEnclosingDoubleQuotes(text: String): String = """^"|"$""".r.replaceAllIn(text, "")
+
+  private def processedResultFor(result: JsValue): String = {
+    dropEnclosingDoubleQuotes(result.as[String])
+  }
+
+  private val maybeCallbackErrorMessage: Option[String] = {
+    (json \ "errorMessage").toOption.map(processedResultFor).filterNot {
+      _.matches("""RequestId: \S+ Process exited before completing request""")
+    }
+  }
+
+  private val maybeThrownLogMessage: Option[String] = {
     maybeLogResult.flatMap(_.maybeTranslated(functionLines)).map { logText =>
       if (!logContainsStackTrace(logText)) {
         logText + howToIncludeStackTraceMessage
@@ -223,6 +236,11 @@ case class UnhandledErrorResult(
     }
   }
 
+  private def maybeErrorLog: Option[String] = {
+    val result = Seq(maybeCallbackErrorMessage, maybeThrownLogMessage).flatten.mkString("\n")
+    Option(result).filter(_.nonEmpty)
+  }
+
   override def files: Seq[UploadFileSpec] = {
     val log = maybeAuthorLog.map(_ + "\n").getOrElse("") + maybeErrorLog.getOrElse("")
     if (log.nonEmpty) {
@@ -230,32 +248,6 @@ case class UnhandledErrorResult(
     } else {
       Seq()
     }
-  }
-}
-
-case class HandledErrorResult(
-                               event: Event,
-                               maybeConversation: Option[Conversation],
-                               behaviorVersion: BehaviorVersion,
-                               dataService: DataService,
-                               configuration: Configuration,
-                               json: JsValue,
-                               maybeLogResult: Option[AWSLambdaLogResult]
-                             ) extends BotResultWithLogResult with WithBehaviorLink {
-
-  val resultType = ResultType.HandledError
-
-  private def dropEnclosingDoubleQuotes(text: String): String = """^"|"$""".r.replaceAllIn(text, "")
-
-  private def processedResultFor(result: JsValue): String = {
-    dropEnclosingDoubleQuotes(result.as[String])
-  }
-
-  def text: String = {
-    val detail = (json \ "errorMessage").toOption.map(processedResultFor).map { msg =>
-      s":\n\n````\n$msg\n````"
-    }.getOrElse(".")
-    s"I encountered an error in ${linkToBehaviorFor("one of your skills")}$detail"
   }
 }
 
