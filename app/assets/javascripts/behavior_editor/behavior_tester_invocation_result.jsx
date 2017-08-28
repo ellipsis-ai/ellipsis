@@ -1,6 +1,7 @@
 define(function(require) {
   const React = require('react'),
-    InvocationTestResult = require('../models/behavior_invocation_result');
+    InvocationTestResult = require('../models/behavior_invocation_result'),
+    BehaviorTesterInvocationResultFile = require('./behavior_tester_invocation_result_file');
 
   class BehaviorTesterInvocationResult extends React.Component {
     containerClassNames() {
@@ -89,6 +90,23 @@ define(function(require) {
       }
     }
 
+    renderFiles() {
+      const files = this.props.result.files;
+      if (files && files.length > 0) {
+        return (
+          <div>
+            {files.map((file, index) => (
+              <BehaviorTesterInvocationResultFile key={`file${index}`}
+                filename={file.filename}
+                filetype={file.filetype}
+                content={file.content}
+              />
+            ))}
+          </div>
+        );
+      }
+    }
+
     render() {
       return (
         <div
@@ -98,6 +116,7 @@ define(function(require) {
             }`}
         >
           {this.renderText()}
+          {this.renderFiles()}
         </div>
       );
     }
