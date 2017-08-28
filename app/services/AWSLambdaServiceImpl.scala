@@ -300,8 +300,22 @@ class AWSLambdaServiceImpl @Inject() (
 
   private def ellipsisErrorClass: String = {
     s"""class EllipsisError extends Error {
-       |  constructor(errorMessage, userMessage) {
-       |    super(errorMessage + "\\nELLIPSIS_USER_ERROR_MESSAGE_START\\n" + userMessage + "\\nELLIPSIS_USER_ERROR_MESSAGE_END");
+       |  constructor(errorMessageOrOptions) {
+       |    let errorMessage = "";
+       |    let systemMessage = "";
+       |    let userMessage = "";
+       |    if (typeof errorMessageOrOptions === "string") {
+       |      systemMessage = errorMessageOrOptions;
+       |    } else {
+       |      systemMessage = errorMessageOrOptions.message || "";
+       |      userMessage = errorMessageOrOptions.userMessage || "";
+       |    }
+       |    errorMessage += systemMessage;
+       |    if (userMessage) {
+       |      errorMessage += "\\nELLIPSIS_USER_ERROR_MESSAGE_START\\n" + userMessage + "\\nELLIPSIS_USER_ERROR_MESSAGE_END";
+       |    }
+       |    super(errorMessage);
+       |    this.systemMessage = systemMessage;
        |    this.userMessage = userMessage;
        |  }
        |}""".stripMargin
@@ -337,29 +351,29 @@ class AWSLambdaServiceImpl @Inject() (
     // Note: this attempts to make line numbers in the lambda script line up with those displayed in the UI
     // Be careful changing either this or the UI line numbers
     s"""exports.handler = function(event, context, callback) { var fn = ${functionWithParams(params, functionBody)}
-        |   var $CONTEXT_PARAM = event.$CONTEXT_PARAM;
-        |   $CONTEXT_PARAM.$NO_RESPONSE_KEY = $ellipsisNoResponseFunction;
-        |   $CONTEXT_PARAM.success = $ellipsisSuccessFunction;
-        |   $ellipsisErrorClass
-        |   $CONTEXT_PARAM.Error = EllipsisError;
-        |   $CONTEXT_PARAM.error = $ellipsisErrorFunction;
-        |
-        |   if (process.listeners('unhandledRejection').length === 0) {
-        |     process.on('unhandledRejection', $CONTEXT_PARAM.error);
-        |   }
-        |
-        |   ${awsCodeFor(maybeAwsConfig)}
-        |   $CONTEXT_PARAM.accessTokens = {};
-        |   ${accessTokensCodeFor(requiredOAuth2ApiConfigs)}
-        |   ${simpleTokensCodeFor(requiredSimpleTokenApis)}
-        |   $overrideConsole
-        |
-        |   try {
-        |     fn($invocationParamsString);
-        |   } catch(err) {
-        |     $CONTEXT_PARAM.error(err);
-        |   }
-        |}
+       |  var $CONTEXT_PARAM = event.$CONTEXT_PARAM;
+       |  $CONTEXT_PARAM.$NO_RESPONSE_KEY = $ellipsisNoResponseFunction;
+       |  $CONTEXT_PARAM.success = $ellipsisSuccessFunction;
+       |  $ellipsisErrorClass
+       |  $CONTEXT_PARAM.Error = EllipsisError;
+       |  $CONTEXT_PARAM.error = $ellipsisErrorFunction;
+       |
+       |  if (process.listeners('unhandledRejection').length === 0) {
+       |    process.on('unhandledRejection', $CONTEXT_PARAM.error);
+       |  }
+       |
+       |  ${awsCodeFor(maybeAwsConfig)}
+       |  $CONTEXT_PARAM.accessTokens = {};
+       |  ${accessTokensCodeFor(requiredOAuth2ApiConfigs)}
+       |  ${simpleTokensCodeFor(requiredSimpleTokenApis)}
+       |  $overrideConsole
+       |
+       |  try {
+       |    fn($invocationParamsString);
+       |  } catch(err) {
+       |    $CONTEXT_PARAM.error(err);
+       |  }
+       |}
     """.stripMargin
   }
 

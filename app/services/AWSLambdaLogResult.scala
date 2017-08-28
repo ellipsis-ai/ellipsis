@@ -56,7 +56,7 @@ object AWSLambdaLogResult {
 
   private val stackTraceRegex = """(?s)(.+)\nELLIPSIS_STACK_TRACE_START\n(.+)ELLIPSIS_STACK_TRACE_END\Z""".r
   private val stackTraceSourceRegex = """^\s+at (.+?) \(/.+/(.+?)\.js:(\d+):(\d+)\)""".r
-  private val userErrorRegex = """(?s)(.+)\nELLIPSIS_USER_ERROR_MESSAGE_START\n(.+)ELLIPSIS_USER_ERROR_MESSAGE_END\n(.+)""".r
+  private val userErrorRegex = """(?s)(.+)ELLIPSIS_USER_ERROR_MESSAGE_START\n(.+)ELLIPSIS_USER_ERROR_MESSAGE_END\n(.+)""".r
 
   def getLogStatementPrefix(ellipsisStackTrace: String): String = {
     val lines = ellipsisStackTrace.split("\n")
