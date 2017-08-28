@@ -300,16 +300,9 @@ class AWSLambdaServiceImpl @Inject() (
 
   private def ellipsisErrorClass: String = {
     s"""class EllipsisError extends Error {
-       |  constructor(errorMessageOrOptions) {
+       |  constructor(systemMessage, options) {
        |    let errorMessage = "";
-       |    let systemMessage = "";
-       |    let userMessage = "";
-       |    if (typeof errorMessageOrOptions === "string") {
-       |      systemMessage = errorMessageOrOptions;
-       |    } else {
-       |      systemMessage = errorMessageOrOptions.message || "";
-       |      userMessage = errorMessageOrOptions.userMessage || "";
-       |    }
+       |    let userMessage = options && options.userMessage ? options.userMessage : "";
        |    errorMessage += systemMessage;
        |    if (userMessage) {
        |      errorMessage += "\\nELLIPSIS_USER_ERROR_MESSAGE_START\\n" + userMessage + "\\nELLIPSIS_USER_ERROR_MESSAGE_END";
