@@ -1,6 +1,6 @@
 package services
 
-case class AWSLambdaLogResult(source: String, userDefinedLogStatements: String, maybeError: Option[String], maybeUserError: Option[String]) {
+case class AWSLambdaLogResult(source: String, authorDefinedLogStatements: String, maybeErrorMessage: Option[String], maybeUserErrorMessage: Option[String]) {
 
   def shouldExcludeLine(line: String, functionLines: Int): Boolean = {
     """<your function>:(\d+):""".r.findFirstMatchIn(line).exists { m =>
@@ -14,7 +14,7 @@ case class AWSLambdaLogResult(source: String, userDefinedLogStatements: String, 
   }
 
   def maybeTranslated(functionLines: Int): Option[String] = {
-    maybeError.map { error =>
+    maybeErrorMessage.map { error =>
       var translated = error
       translated = """/var/task/index.js""".r.replaceAllIn(translated, "<your function>")
       translated = """/var/task/(.+)\.js""".r.replaceAllIn(translated, "$1")

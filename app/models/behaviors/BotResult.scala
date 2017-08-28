@@ -81,18 +81,18 @@ sealed trait BotResult {
 trait BotResultWithLogResult extends BotResult {
   val maybeLogResult: Option[AWSLambdaLogResult]
 
-  val maybeUserLog: Option[String] = {
-    maybeLogResult.map(_.userDefinedLogStatements).filter(_.nonEmpty)
+  val maybeAuthorLog: Option[String] = {
+    maybeLogResult.map(_.authorDefinedLogStatements).filter(_.nonEmpty)
   }
 
-  val maybeUserLogFile: Option[UploadFileSpec] = {
-    maybeUserLog.map { log =>
+  val maybeAuthorLogFile: Option[UploadFileSpec] = {
+    maybeAuthorLog.map { log =>
       UploadFileSpec(Some(log), Some("text"), Some("Developer log"))
     }
   }
 
   override def files: Seq[UploadFileSpec] = {
-    super.files ++ Seq(maybeUserLogFile).flatten
+    super.files ++ Seq(maybeAuthorLogFile).flatten
   }
 }
 
@@ -203,7 +203,7 @@ case class UnhandledErrorResult(
 
   def text: String = {
     s"\nI encountered an error in ${linkToBehaviorFor("one of your skills")}" +
-      maybeLogResult.flatMap(_.maybeUserError).map { userError =>
+      maybeLogResult.flatMap(_.maybeUserErrorMessage).map { userError =>
         s":\n\n$userError"
       }.getOrElse(".")
   }
@@ -224,7 +224,7 @@ case class UnhandledErrorResult(
   }
 
   override def files: Seq[UploadFileSpec] = {
-    val log = maybeUserLog.map(_ + "\n").getOrElse("") + maybeErrorLog.getOrElse("")
+    val log = maybeAuthorLog.map(_ + "\n").getOrElse("") + maybeErrorLog.getOrElse("")
     if (log.nonEmpty) {
       Seq(UploadFileSpec(Some(log), Some("text"), Some("Developer log")))
     } else {
