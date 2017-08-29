@@ -2,6 +2,7 @@ define(function(require) {
   var React = require('react'),
     AWSConfigRef = require('../models/aws_config_ref'),
     DropdownMenu = require('../shared_ui/dropdown_menu'),
+    Input = require('../form/input'),
     RequiredAWSConfig = require('../models/required_aws_config'),
     Select = require('../form/select');
 
@@ -79,8 +80,17 @@ define(function(require) {
       return (
         <div className="box-action phn">
           <div className="container">
-            {this.renderAWSConfigs()}
-            {this.renderAdder()}
+            <div className="columns">
+              <div className="column column-page-sidebar">
+                <h4 className="type-weak">Third-party APIs used in this skill</h4>
+              </div>
+              <div className="column column-page-main">
+                <div className="container">
+                  {this.renderAWSConfigs()}
+                  {this.renderAdder()}
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       );
@@ -133,9 +143,11 @@ define(function(require) {
       );
     },
 
-    renderAWSConfig: function(config) {
+    renderAWSConfig: function(cfg) {
       return (
-        <span>{config.displayName}</span>
+        <Select className="form-select-s form-select-light align-m mrm mbs" name="paramType" value={cfg.config ? cfg.config.id : null} onChange={this.onSaveOptionChange}>
+          {this.props.allAWSConfigs.map(ea => <option value={ea.id}>{ea.displayName}</option>)}
+        </Select>
       );
     },
 
@@ -145,18 +157,40 @@ define(function(require) {
       );
     },
 
+    onNameInCodeChange: function(required, newNameInCode) {
+      this.props.onRemoveAWSConfig(required, () => {
+        this.props.onAddAWSConfig(required.clone({
+          nameInCode: newNameInCode
+        }));
+      });
+    },
+
+    renderNameInCodeInputFor: function(required) {
+      return (
+        <Input
+          className="form-input-borderless type-monospace"
+          key={`requiredNameInCode${required.id}`}
+          ref={`requiredNameInCode${required.id}`}
+          value={required.nameInCode}
+          placeholder="nameInCode"
+          onChange={this.onNameInCodeChange.bind(this, required)}
+        />
+      );
+    },
+
     renderRequiredAWSConfig: function(required) {
       return (
         <div>
-          <span>ellipsis.aws.{required.nameInCode}</span>
-          {required.config ? this.renderAWSConfig(required.config) : this.renderMissingAWSConfigFor(required)}
+          <div className="column">ellipsis.aws.</div>
+          <div className="column">{this.renderNameInCodeInputFor(required)}</div>
+          <div className="column">{required.config ? this.renderAWSConfig(required) : this.renderMissingAWSConfigFor(required)}</div>
         </div>
       );
     },
 
     renderAWSConfigs: function() {
       return (
-        <div>
+        <div className="columns">
           {this.props.requiredAWSConfigs.map(this.renderRequiredAWSConfig)}
         </div>
       );

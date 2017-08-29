@@ -324,10 +324,7 @@ const BehaviorEditor = React.createClass({
   },
 
   getRequiredAWSConfigsWithNoMatchingAWSConfig: function() {
-    const existingNames = this.getAllAWSConfigs().map(ea => ea.nameInCode);
-    return this.getRequiredAWSConfigs().filter(ea => {
-      return existingNames.indexOf(ea.nameInCode) === -1;
-    });
+    return this.getRequiredAWSConfigs().filter(ea => !ea.config);
   },
 
   buildAWSNotifications: function() {
@@ -1332,33 +1329,18 @@ const BehaviorEditor = React.createClass({
     });
   },
 
-  onAddAWSConfig: function(config) {
+  onAddAWSConfig: function(toAdd, callback) {
     const existing = this.getRequiredAWSConfigs();
-    const indexToReplace = existing.findIndex(ea => !ea.config);
-    const toReplace = existing[indexToReplace];
-    const configs = existing.slice();
-    let toAdd;
-    if (indexToReplace >= 0) {
-      configs.splice(indexToReplace, 1);
-      toAdd = toReplace.clone({
-        config: config
-      });
-    } else {
-      toAdd = new RequiredAWSConfig({
-        nameInCode: config.nameInCode,
-        config: config
-      });
-    }
-    const newConfigs =  configs.concat([toAdd]);
-    this.updateGroupStateWith(this.getBehaviorGroup().clone({ requiredAWSConfigs: newConfigs }));
+    const newConfigs = existing.concat([toAdd]);
+    this.updateGroupStateWith(this.getBehaviorGroup().clone({ requiredAWSConfigs: newConfigs }), callback);
   },
 
-  onRemoveAWSConfig: function(config) {
+  onRemoveAWSConfig: function(config, callback) {
     const existing = this.getRequiredAWSConfigs();
     const newConfigs = existing.filter(ea => {
       return ea.nameInCode !== config.nameInCode;
     });
-    this.updateGroupStateWith(this.getBehaviorGroup().clone({ requiredAWSConfigs: newConfigs }));
+    this.updateGroupStateWith(this.getBehaviorGroup().clone({ requiredAWSConfigs: newConfigs }), callback);
   },
 
   onAddOAuth2Application: function(appToAdd) {
