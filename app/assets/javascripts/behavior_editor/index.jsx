@@ -1636,6 +1636,7 @@ const BehaviorEditor = React.createClass({
               onRemoveSimpleTokenApi={this.onRemoveSimpleTokenApi}
               onNewOAuth2Application={this.onNewOAuth2Application}
               getOAuth2ApiWithId={this.getOAuth2ApiWithId}
+              onDoneClick={this.props.onClearActivePanel}
             >
             </APIConfigPanel>
           </Collapsible>

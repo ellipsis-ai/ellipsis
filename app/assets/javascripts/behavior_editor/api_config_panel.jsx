@@ -39,7 +39,8 @@ define(function(require) {
       onRemoveSimpleTokenApi: React.PropTypes.func.isRequired,
       onNewOAuth2Application: React.PropTypes.func.isRequired,
       getOAuth2ApiWithId: React.PropTypes.func.isRequired,
-      toggle: React.PropTypes.func.isRequired
+      toggle: React.PropTypes.func.isRequired,
+      onDoneClick: React.PropTypes.func.isRequired
     },
 
     getInitialState: function() {
@@ -85,9 +86,12 @@ define(function(require) {
                 <h4 className="type-weak">Third-party APIs used in this skill</h4>
               </div>
               <div className="column column-page-main">
-                <div className="container">
+                <div className="container pvl">
                   {this.renderAWSConfigs()}
                   {this.renderAdder()}
+                </div>
+                <div className="ptxl">
+                  <button className="button-primary mbs" type="button" onClick={this.props.onDoneClick}>Done</button>
                 </div>
               </div>
             </div>
