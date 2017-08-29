@@ -270,62 +270,6 @@ class AWSLambdaServiceImpl @Inject() (
         |}\n""".stripMargin
   }
 
-  private def ellipsisNoResponseFunction: String = {
-    s"""function() {
-       |  callback(null, { $NO_RESPONSE_KEY: true });
-       |}""".stripMargin
-  }
-  private def ellipsisSuccessFunction: String = {
-    s"""function(result, options) {
-       |  var resultWithOptions = Object.assign(
-       |    {},
-       |    { "result": result === undefined ? null : result },
-            options ? options : {}
-       |  );
-       |  callback(null, resultWithOptions);
-       |}""".stripMargin
-  }
-
-  private def ellipsisErrorFunction: String = {
-    s"""function(err) {
-       |  if (err instanceof Error) {
-       |    throw err;
-       |  } else {
-       |    const throwableError = new Error(err);
-       |    Error.captureStackTrace(throwableError, $CONTEXT_PARAM.error);
-       |    throw throwableError;
-       |  }
-       |}""".stripMargin
-  }
-
-  private val ellipsisErrorClass: String = {
-    val stream = getClass.getResourceAsStream("/javascripts/lambda/ellipsis/error.js")
-    val file = scala.io.Source.fromInputStream(stream)
-    try {
-      file.mkString
-    } finally {
-      file.close
-    }
-  }
-
-  private def overrideConsole: String = {
-    s"""const builtInConsole = Object.assign({}, console);
-       |function augmentConsole(consoleMethod, realArgs, caller) {
-       |  const args = [].slice.call(realArgs);
-       |  const error = { toString: () => consoleMethod };
-       |  Error.captureStackTrace(error, caller);
-       |  const newArgs = error.stack.split("\\n").length > 1 ?
-       |    args.concat("\\nELLIPSIS_STACK_TRACE_START\\n" + error.stack + "\\nELLIPSIS_STACK_TRACE_END") :
-       |    args;
-       |  builtInConsole[consoleMethod].apply(null, newArgs);
-       |}
-       |console.log = function consoleLog() { augmentConsole("log", arguments, consoleLog); };
-       |console.error = function consoleError() { augmentConsole("error", arguments, consoleError); };
-       |console.warn = function consoleWarn() { augmentConsole("warn", arguments, consoleWarn); };
-       |console.info = function consoleInfo() { augmentConsole("info", arguments, consoleInfo); };
-     """.stripMargin
-  }
-
   private def nodeCodeFor(
                            functionBody: String,
                            params: Array[String],
@@ -339,11 +283,10 @@ class AWSLambdaServiceImpl @Inject() (
     // Be careful changing either this or the UI line numbers
     s"""exports.handler = function(event, context, callback) { var fn = ${functionWithParams(params, functionBody)}
        |  var $CONTEXT_PARAM = event.$CONTEXT_PARAM;
-       |  $CONTEXT_PARAM.$NO_RESPONSE_KEY = $ellipsisNoResponseFunction;
-       |  $CONTEXT_PARAM.success = $ellipsisSuccessFunction;
-       |  $ellipsisErrorClass
-       |  $CONTEXT_PARAM.Error = EllipsisError;
-       |  $CONTEXT_PARAM.error = $ellipsisErrorFunction;
+       |  $CONTEXT_PARAM.$NO_RESPONSE_KEY = $NO_RESPONSE_CALLBACK_FUNCTION
+       |  $CONTEXT_PARAM.success = $SUCCESS_CALLBACK_FUNCTION
+       |  $CONTEXT_PARAM.Error = $ERROR_CLASS
+       |  $CONTEXT_PARAM.error = $ERROR_CALLBACK_FUNCTION
        |
        |  if (process.listeners('unhandledRejection').length === 0) {
        |    process.on('unhandledRejection', $CONTEXT_PARAM.error);
@@ -353,7 +296,7 @@ class AWSLambdaServiceImpl @Inject() (
        |  $CONTEXT_PARAM.accessTokens = {};
        |  ${accessTokensCodeFor(requiredOAuth2ApiConfigs)}
        |  ${simpleTokensCodeFor(requiredSimpleTokenApis)}
-       |  $overrideConsole
+       |  $OVERRIDE_CONSOLE
        |
        |  try {
        |    fn($invocationParamsString);
