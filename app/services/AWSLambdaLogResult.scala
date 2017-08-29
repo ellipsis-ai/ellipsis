@@ -1,8 +1,6 @@
 package services
 
-import scala.util.matching.Regex
-
-case class AWSLambdaLogResult(source: String, userDefinedLogStatements: String, maybeError: Option[String]) {
+case class AWSLambdaLogResult(source: String, authorDefinedLogStatements: String, maybeErrorMessage: Option[String], maybeUserErrorMessage: Option[String]) {
 
   def shouldExcludeLine(line: String, functionLines: Int): Boolean = {
     """<your function>:(\d+):""".r.findFirstMatchIn(line).exists { m =>
@@ -16,7 +14,7 @@ case class AWSLambdaLogResult(source: String, userDefinedLogStatements: String, 
   }
 
   def maybeTranslated(functionLines: Int): Option[String] = {
-    maybeError.map { error =>
+    maybeErrorMessage.map { error =>
       var translated = error
       translated = """/var/task/index.js""".r.replaceAllIn(translated, "<your function>")
       translated = """/var/task/(.+)\.js""".r.replaceAllIn(translated, "$1")
@@ -58,6 +56,7 @@ object AWSLambdaLogResult {
 
   private val stackTraceRegex = """(?s)(.+)\nELLIPSIS_STACK_TRACE_START\n(.+)ELLIPSIS_STACK_TRACE_END\Z""".r
   private val stackTraceSourceRegex = """^\s+at (.+?) \(/.+/(.+?)\.js:(\d+):(\d+)\)""".r
+  private val userErrorRegex = """(?s)(.+)ELLIPSIS_USER_ERROR_MESSAGE_START\n(.+)ELLIPSIS_USER_ERROR_MESSAGE_END\n(.+)""".r
 
   def getLogStatementPrefix(ellipsisStackTrace: String): String = {
     val lines = ellipsisStackTrace.split("\n")
@@ -78,6 +77,18 @@ object AWSLambdaLogResult {
       case _ => ""
     }.filter(_.nonEmpty).getOrElse {
       maybeLogMethod.map(_ + ": ").getOrElse("")
+    }
+  }
+
+  def extractUserErrorFrom(maybeText: Option[String]): (Option[String], Option[String]) = {
+    val maybeErrorTuple: Option[(Option[String], Option[String])] = maybeText.map {
+      case userErrorRegex(systemErrorMessage, userErrorMessage, stackTrace) =>
+        (Some(systemErrorMessage + stackTrace), Some(userErrorMessage))
+      case s: String =>
+        (Some(s), None)
+    }
+    maybeErrorTuple.getOrElse {
+      (None, None)
     }
   }
 
@@ -102,8 +113,9 @@ object AWSLambdaLogResult {
   def fromText(text: String): AWSLambdaLogResult = {
     val (maybeErrorContent, nonErrorContent) = extractErrorAndNonErrorContentFrom(text)
     val userDefinedLogStatements = extractUserDefinedLogStatementsFrom(nonErrorContent)
+    val (maybeSystemError, maybeUserError) = extractUserErrorFrom(maybeErrorContent)
 
-    AWSLambdaLogResult(text, userDefinedLogStatements, maybeErrorContent)
+    AWSLambdaLogResult(text, userDefinedLogStatements, maybeSystemError, maybeUserError)
   }
 
   def empty: AWSLambdaLogResult = fromText("")

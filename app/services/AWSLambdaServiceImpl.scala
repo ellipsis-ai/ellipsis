@@ -270,6 +270,68 @@ class AWSLambdaServiceImpl @Inject() (
         |}\n""".stripMargin
   }
 
+  private def ellipsisNoResponseFunction: String = {
+    s"""function() {
+       |  callback(null, { $NO_RESPONSE_KEY: true });
+       |}""".stripMargin
+  }
+  private def ellipsisSuccessFunction: String = {
+    s"""function(result, options) {
+       |  var resultWithOptions = Object.assign(
+       |    {},
+       |    { "result": result === undefined ? null : result },
+            options ? options : {}
+       |  );
+       |  callback(null, resultWithOptions);
+       |}""".stripMargin
+  }
+
+  private def ellipsisErrorFunction: String = {
+    s"""function(err) {
+       |  if (err instanceof Error) {
+       |    throw err;
+       |  } else {
+       |    const throwableError = new Error(err);
+       |    Error.captureStackTrace(throwableError, $CONTEXT_PARAM.error);
+       |    throw throwableError;
+       |  }
+       |}""".stripMargin
+  }
+
+  private def ellipsisErrorClass: String = {
+    s"""class EllipsisError extends Error {
+       |  constructor(systemMessage, options) {
+       |    let errorMessage = "";
+       |    let userMessage = options && options.userMessage ? options.userMessage : "";
+       |    errorMessage += systemMessage;
+       |    if (userMessage) {
+       |      errorMessage += "\\nELLIPSIS_USER_ERROR_MESSAGE_START\\n" + userMessage + "\\nELLIPSIS_USER_ERROR_MESSAGE_END";
+       |    }
+       |    super(errorMessage);
+       |    this.systemMessage = systemMessage;
+       |    this.userMessage = userMessage;
+       |  }
+       |}""".stripMargin
+  }
+
+  private def overrideConsole: String = {
+    s"""const builtInConsole = Object.assign({}, console);
+       |function augmentConsole(consoleMethod, realArgs, caller) {
+       |  const args = [].slice.call(realArgs);
+       |  const error = { toString: () => consoleMethod };
+       |  Error.captureStackTrace(error, caller);
+       |  const newArgs = error.stack.split("\\n").length > 1 ?
+       |    args.concat("\\nELLIPSIS_STACK_TRACE_START\\n" + error.stack + "\\nELLIPSIS_STACK_TRACE_END") :
+       |    args;
+       |  builtInConsole[consoleMethod].apply(null, newArgs);
+       |}
+       |console.log = function consoleLog() { augmentConsole("log", arguments, consoleLog); };
+       |console.error = function consoleError() { augmentConsole("error", arguments, consoleError); };
+       |console.warn = function consoleWarn() { augmentConsole("warn", arguments, consoleWarn); };
+       |console.info = function consoleInfo() { augmentConsole("info", arguments, consoleInfo); };
+     """.stripMargin
+  }
+
   private def nodeCodeFor(
                            functionBody: String,
                            params: Array[String],
@@ -282,62 +344,29 @@ class AWSLambdaServiceImpl @Inject() (
     // Note: this attempts to make line numbers in the lambda script line up with those displayed in the UI
     // Be careful changing either this or the UI line numbers
     s"""exports.handler = function(event, context, callback) { var fn = ${functionWithParams(params, functionBody)}
-        |   var $CONTEXT_PARAM = event.$CONTEXT_PARAM;
-        |   $CONTEXT_PARAM.$NO_RESPONSE_KEY = function() {
-        |     callback(null, { $NO_RESPONSE_KEY: true });
-        |   };
-        |   $CONTEXT_PARAM.success = function(result, options) {
-        |     var resultWithOptions = Object.assign(
-        |       {},
-        |       { "result": result === undefined ? null : result },
-        |       options ? options : {}
-        |     );
-        |     callback(null, resultWithOptions);
-        |   };
-        |   $CONTEXT_PARAM.error = function(err) {
-        |     if (err instanceof Error) {
-        |       throw err;
-        |     } else {
-        |       const throwableError = new Error(err);
-        |       Error.captureStackTrace(throwableError, $CONTEXT_PARAM.error);
-        |       throw throwableError;
-        |     }
-        |   };
-        |
-        |   if (process.listeners('unhandledRejection').length === 0) {
-        |     process.on('unhandledRejection', $CONTEXT_PARAM.error);
-        |   }
-        |
-        |   ${awsCodeFor(maybeAwsConfig)}
-        |   $CONTEXT_PARAM.accessTokens = {};
-        |   ${accessTokensCodeFor(requiredOAuth2ApiConfigs)}
-        |   ${simpleTokensCodeFor(requiredSimpleTokenApis)}
-        |
-        |   const builtInConsole = Object.assign({}, console);
-        |   function augmentConsole(consoleMethod, realArgs, caller) {
-        |     const args = [].slice.call(realArgs);
-        |     const error = { toString: () => consoleMethod };
-        |     Error.captureStackTrace(error, caller);
-        |     const newArgs = error.stack.split("\\n").length > 1 ?
-        |       args.concat("\\nELLIPSIS_STACK_TRACE_START\\n" + error.stack + "\\nELLIPSIS_STACK_TRACE_END") :
-        |       args;
-        |     builtInConsole[consoleMethod].apply(null, newArgs);
-        |   }
-        |   function consoleLog() { augmentConsole("log", arguments, consoleLog); }
-        |   function consoleError() { augmentConsole("error", arguments, consoleError); }
-        |   function consoleWarn() { augmentConsole("warn", arguments, consoleWarn); }
-        |   function consoleInfo() { augmentConsole("info", arguments, consoleInfo); }
-        |   console.log = consoleLog;
-        |   console.error = consoleError;
-        |   console.warn = consoleWarn;
-        |   console.info = consoleInfo;
-        |
-        |   try {
-        |     fn($invocationParamsString);
-        |   } catch(err) {
-        |     $CONTEXT_PARAM.error(err);
-        |   }
-        |}
+       |  var $CONTEXT_PARAM = event.$CONTEXT_PARAM;
+       |  $CONTEXT_PARAM.$NO_RESPONSE_KEY = $ellipsisNoResponseFunction;
+       |  $CONTEXT_PARAM.success = $ellipsisSuccessFunction;
+       |  $ellipsisErrorClass
+       |  $CONTEXT_PARAM.Error = EllipsisError;
+       |  $CONTEXT_PARAM.error = $ellipsisErrorFunction;
+       |
+       |  if (process.listeners('unhandledRejection').length === 0) {
+       |    process.on('unhandledRejection', $CONTEXT_PARAM.error);
+       |  }
+       |
+       |  ${awsCodeFor(maybeAwsConfig)}
+       |  $CONTEXT_PARAM.accessTokens = {};
+       |  ${accessTokensCodeFor(requiredOAuth2ApiConfigs)}
+       |  ${simpleTokensCodeFor(requiredSimpleTokenApis)}
+       |  $overrideConsole
+       |
+       |  try {
+       |    fn($invocationParamsString);
+       |  } catch(err) {
+       |    $CONTEXT_PARAM.error(err);
+       |  }
+       |}
     """.stripMargin
   }
 
