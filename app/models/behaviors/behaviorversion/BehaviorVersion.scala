@@ -105,7 +105,7 @@ case class BehaviorVersion(
         } else if (isSyntaxError(json)) {
           SyntaxErrorResult(event, maybeConversation, this, dataService, configuration, json, logResultOption)
         } else {
-          CaughtErrorResult(event, maybeConversation, this, dataService, configuration, json, logResultOption)
+          ExecutionErrorResult(event, maybeConversation, this, dataService, configuration, json, logResultOption)
         }
       }
     }

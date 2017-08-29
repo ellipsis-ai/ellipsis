@@ -23,7 +23,7 @@ import scala.concurrent.duration._
 
 object ResultType extends Enumeration {
   type ResultType = Value
-  val Success, SimpleText, TextWithActions, ConversationPrompt, NoResponse, CaughtError, SyntaxError, NoCallbackTriggered, MissingTeamEnvVar, AWSDown, OAuth2TokenMissing, RequiredApiNotReady = Value
+  val Success, SimpleText, TextWithActions, ConversationPrompt, NoResponse, ExecutionError, SyntaxError, NoCallbackTriggered, MissingTeamEnvVar, AWSDown, OAuth2TokenMissing, RequiredApiNotReady = Value
 }
 
 sealed trait BotResult {
@@ -130,13 +130,13 @@ case class SuccessResult(
   val resultType = ResultType.Success
 
   override def files: Seq[UploadFileSpec] = {
-    val files = (resultWithOptions \ "files").validateOpt[Seq[UploadFileSpec]] match {
+    val authoredFiles = (resultWithOptions \ "files").validateOpt[Seq[UploadFileSpec]] match {
       case JsSuccess(maybeFiles, _) => maybeFiles.getOrElse(Seq())
       case JsError(errs) => throw InvalidFilesException(errs.map { case (_, validationErrors) =>
         validationErrors.map(_.message).mkString(", ")
       }.mkString(", "))
     }
-    files ++ super.files
+    authoredFiles ++ super.files
   }
 
   def text: String = {
@@ -188,7 +188,7 @@ trait WithBehaviorLink {
   }
 }
 
-case class CaughtErrorResult(
+case class ExecutionErrorResult(
                                  event: Event,
                                  maybeConversation: Option[Conversation],
                                  behaviorVersion: BehaviorVersion,
@@ -198,7 +198,7 @@ case class CaughtErrorResult(
                                  maybeLogResult: Option[AWSLambdaLogResult]
                                ) extends BotResultWithLogResult with WithBehaviorLink {
 
-  val resultType = ResultType.CaughtError
+  val resultType = ResultType.ExecutionError
   val functionLines = behaviorVersion.functionBody.split("\n").length
   val howToIncludeStackTraceMessage = "\n\nTo include a stack trace, throw an `Error` object in your code.  \ne.g. `throw new Error(\"Something went wrong.\")`"
 

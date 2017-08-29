@@ -81,14 +81,13 @@ object AWSLambdaLogResult {
   }
 
   def extractUserErrorFrom(maybeText: Option[String]): (Option[String], Option[String]) = {
-    maybeText.map {
+    val maybeErrorTuple: Option[(Option[String], Option[String])] = maybeText.map {
       case userErrorRegex(systemErrorMessage, userErrorMessage, stackTrace) =>
         (Some(systemErrorMessage + stackTrace), Some(userErrorMessage))
       case s: String =>
         (Some(s), None)
-      case _ =>
-        (None, None)
-    }.getOrElse {
+    }
+    maybeErrorTuple.getOrElse {
       (None, None)
     }
   }
