@@ -169,7 +169,7 @@ define(function(require) {
                 </SectionHeading>
               </div>
               <div className="column column-shrink ptxs mobile-mbm">
-                <a onClick={this.configureApis}>Configure APIs</a>
+                <button type="button" className="button-s" onClick={this.configureApis}>Configure APIs</button>
               </div>
             </div>
 
