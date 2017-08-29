@@ -147,9 +147,14 @@ define(function(require) {
       );
     },
 
-    renderAWSConfig: function(cfg) {
+    renderAWSConfigFor: function(required) {
       return (
-        <Select className="form-select-s form-select-light align-m mrm mbs" name="paramType" value={cfg.config ? cfg.config.id : null} onChange={this.onSaveOptionChange}>
+        <Select
+          className="form-select-s form-select-light align-m mrm mbs"
+          name="paramType"
+          value={required.config ? required.config.id : null}
+          onChange={this.onConfigChange.bind(this, required)}
+        >
           {this.props.allAWSConfigs.map(ea => <option value={ea.id}>{ea.displayName}</option>)}
         </Select>
       );
@@ -161,12 +166,23 @@ define(function(require) {
       );
     },
 
-    onNameInCodeChange: function(required, newNameInCode) {
-      this.props.onRemoveAWSConfig(required, () => {
-        this.props.onAddAWSConfig(required.clone({
-          nameInCode: newNameInCode
-        }));
+    updateRequiredConfig: function(oldRequired, newRequired) {
+      this.props.onRemoveAWSConfig(oldRequired, () => {
+        this.props.onAddAWSConfig(newRequired);
       });
+    },
+
+    onConfigChange: function(required, newConfigId) {
+      const newConfig = this.props.allAWSConfigs.find(ea => ea.id === newConfigId);
+      this.updateRequiredConfig(required, required.clone({
+        config: newConfig
+      }));
+    },
+
+    onNameInCodeChange: function(required, newNameInCode) {
+      this.updateRequiredConfig(required, required.clone({
+        nameInCode: newNameInCode
+      }));
     },
 
     renderNameInCodeInputFor: function(required) {
@@ -187,7 +203,7 @@ define(function(require) {
         <div>
           <div className="column">ellipsis.aws.</div>
           <div className="column">{this.renderNameInCodeInputFor(required)}</div>
-          <div className="column">{required.config ? this.renderAWSConfig(required) : this.renderMissingAWSConfigFor(required)}</div>
+          <div className="column">{required.config ? this.renderAWSConfigFor(required) : this.renderMissingAWSConfigFor(required)}</div>
         </div>
       );
     },
