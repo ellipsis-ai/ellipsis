@@ -68,7 +68,7 @@ define(function(require) {
       const usedIds = this.getUsedAWSConfigIds();
       return this.props.allAWSConfigs.filter(ea => {
         return usedIds.indexOf(ea.id) === -1;
-      })
+      });
     },
 
     addAWSConfig: function(cfg) {

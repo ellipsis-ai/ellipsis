@@ -327,7 +327,7 @@ const BehaviorEditor = React.createClass({
     const existingNames = this.getAllAWSConfigs().map(ea => ea.nameInCode);
     return this.getRequiredAWSConfigs().filter(ea => {
       return existingNames.indexOf(ea.nameInCode) === -1;
-    })
+    });
   },
 
   buildAWSNotifications: function() {
