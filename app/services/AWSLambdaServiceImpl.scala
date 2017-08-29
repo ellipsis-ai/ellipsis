@@ -299,7 +299,13 @@ class AWSLambdaServiceImpl @Inject() (
   }
 
   private val ellipsisErrorClass: String = {
-    scala.io.Source.fromFile("dist/javascripts/lambda/ellipsis/error.js").mkString
+    val stream = getClass.getResourceAsStream("/javascripts/lambda/ellipsis/error.js")
+    val file = scala.io.Source.fromInputStream(stream)
+    try {
+      file.mkString
+    } finally {
+      file.close
+    }
   }
 
   private def overrideConsole: String = {

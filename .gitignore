@@ -21,6 +21,7 @@ tmp/
 test-result
 server.pid
 *.eml
+/dist/
 /.idea
 /.idea_modules
 /.classpath
