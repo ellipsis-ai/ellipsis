@@ -27,15 +27,16 @@ trait TeamEnvironmentVariableService {
     }.toSeq
   }
 
-  def knownUsedInAction(behaviorVersion: BehaviorVersion, dataService: DataService): DBIO[Seq[String]] = {
-    DBIO.successful(lookForInCode(behaviorVersion.functionBody))
+  def knownUsedInAction(behaviorVersion: BehaviorVersion, dataService: DataService): DBIO[Set[String]] = {
+    DBIO.successful(lookForInCode(behaviorVersion.functionBody).toSet)
   }
 
-  def missingInAction(behaviorVersion: BehaviorVersion, dataService: DataService): DBIO[Seq[String]] = {
+  def missingInAction(behaviorVersion: BehaviorVersion, dataService: DataService): DBIO[Set[String]] = {
     for {
       envVars <- allForAction(behaviorVersion.team)
-      missing <- knownUsedInAction(behaviorVersion, dataService).map{ used =>
-        used diff envVars.filter(_.value.trim.nonEmpty).map(_.name)
+      missing <- knownUsedInAction(behaviorVersion, dataService).map { usedNames =>
+        val allNames = envVars.filter(_.value.trim.nonEmpty).map(_.name).toSet
+        usedNames diff allNames
       }
     } yield missing
   }

@@ -23,7 +23,7 @@ import scala.concurrent.duration._
 
 object ResultType extends Enumeration {
   type ResultType = Value
-  val Success, SimpleText, TextWithActions, ConversationPrompt, NoResponse, UnhandledError, HandledError, SyntaxError, NoCallbackTriggered, MissingTeamEnvVar, AWSDown, OAuth2TokenMissing, RequiredApiNotReady = Value
+  val Success, SimpleText, TextWithActions, ConversationPrompt, NoResponse, ExecutionError, SyntaxError, NoCallbackTriggered, MissingTeamEnvVar, AWSDown, OAuth2TokenMissing, RequiredApiNotReady = Value
 }
 
 sealed trait BotResult {
@@ -80,10 +80,20 @@ sealed trait BotResult {
 
 trait BotResultWithLogResult extends BotResult {
   val maybeLogResult: Option[AWSLambdaLogResult]
-  val logStatements = maybeLogResult.map(_.userDefinedLogStatements).getOrElse("")
 
-  override def fullText: String = logStatements ++ text
+  val maybeAuthorLog: Option[String] = {
+    maybeLogResult.map(_.authorDefinedLogStatements).filter(_.nonEmpty)
+  }
 
+  val maybeAuthorLogFile: Option[UploadFileSpec] = {
+    maybeAuthorLog.map { log =>
+      UploadFileSpec(Some(log), Some("text"), Some("Developer log"))
+    }
+  }
+
+  override def files: Seq[UploadFileSpec] = {
+    super.files ++ Seq(maybeAuthorLogFile).flatten
+  }
 }
 
 case class InvalidFilesException(message: String) extends Exception {
@@ -120,12 +130,13 @@ case class SuccessResult(
   val resultType = ResultType.Success
 
   override def files: Seq[UploadFileSpec] = {
-    (resultWithOptions \ "files").validateOpt[Seq[UploadFileSpec]] match {
+    val authoredFiles = (resultWithOptions \ "files").validateOpt[Seq[UploadFileSpec]] match {
       case JsSuccess(maybeFiles, _) => maybeFiles.getOrElse(Seq())
       case JsError(errs) => throw InvalidFilesException(errs.map { case (_, validationErrors) =>
         validationErrors.map(_.message).mkString(", ")
       }.mkString(", "))
     }
+    authoredFiles ++ super.files
   }
 
   def text: String = {
@@ -177,36 +188,31 @@ trait WithBehaviorLink {
   }
 }
 
-case class UnhandledErrorResult(
+case class ExecutionErrorResult(
                                  event: Event,
                                  maybeConversation: Option[Conversation],
                                  behaviorVersion: BehaviorVersion,
                                  dataService: DataService,
                                  configuration: Configuration,
+                                 json: JsValue,
                                  maybeLogResult: Option[AWSLambdaLogResult]
                                ) extends BotResultWithLogResult with WithBehaviorLink {
 
-  val resultType = ResultType.UnhandledError
+  val resultType = ResultType.ExecutionError
   val functionLines = behaviorVersion.functionBody.split("\n").length
+  val howToIncludeStackTraceMessage = "\n\nTo include a stack trace, throw an `Error` object in your code.  \ne.g. `throw new Error(\"Something went wrong.\")`"
 
   def text: String = {
-    val prompt = s"\nI encountered an error in ${linkToBehaviorFor("one of your skills")} before calling `$SUCCESS_CALLBACK `or `$ERROR_CALLBACK`"
-    Array(Some(prompt), maybeLogResult.flatMap(_.maybeTranslated(functionLines))).flatten.mkString(":\n\n")
+    s"I encountered an error in ${linkToBehaviorFor("one of your skills")}" +
+      maybeLogResult.flatMap(_.maybeUserErrorMessage).map { userError =>
+        s":\n\n$userError"
+      }.getOrElse(".")
   }
 
-}
-
-case class HandledErrorResult(
-                               event: Event,
-                               maybeConversation: Option[Conversation],
-                               behaviorVersion: BehaviorVersion,
-                               dataService: DataService,
-                               configuration: Configuration,
-                               json: JsValue,
-                               maybeLogResult: Option[AWSLambdaLogResult]
-                             ) extends BotResultWithLogResult with WithBehaviorLink {
-
-  val resultType = ResultType.HandledError
+  private def logContainsStackTrace(log: String): Boolean = {
+    val lines = log.lines.toList
+    lines.length > 1 && lines.tail.exists(_.matches("""^\s*at .+?\(.+?:\d+:\d+\)"""))
+  }
 
   private def dropEnclosingDoubleQuotes(text: String): String = """^"|"$""".r.replaceAllIn(text, "")
 
@@ -214,11 +220,34 @@ case class HandledErrorResult(
     dropEnclosingDoubleQuotes(result.as[String])
   }
 
-  def text: String = {
-    val detail = (json \ "errorMessage").toOption.map(processedResultFor).map { msg =>
-      s":\n\n```\n$msg\n```"
-    }.getOrElse("")
-    s"I encountered an error in ${linkToBehaviorFor("one of your skills")}$detail"
+  private val maybeCallbackErrorMessage: Option[String] = {
+    (json \ "errorMessage").toOption.map(processedResultFor).filterNot {
+      _.matches("""RequestId: \S+ Process exited before completing request""")
+    }
+  }
+
+  private val maybeThrownLogMessage: Option[String] = {
+    maybeLogResult.flatMap(_.maybeTranslated(functionLines)).map { logText =>
+      if (!logContainsStackTrace(logText)) {
+        logText + howToIncludeStackTraceMessage
+      } else {
+        logText
+      }
+    }
+  }
+
+  private def maybeErrorLog: Option[String] = {
+    val result = Seq(maybeCallbackErrorMessage, maybeThrownLogMessage).flatten.mkString("\n")
+    Option(result).filter(_.nonEmpty)
+  }
+
+  override def files: Seq[UploadFileSpec] = {
+    val log = maybeAuthorLog.map(_ + "\n").getOrElse("") + maybeErrorLog.getOrElse("")
+    if (log.nonEmpty) {
+      Seq(UploadFileSpec(Some(log), Some("text"), Some("Developer log")))
+    } else {
+      Seq()
+    }
   }
 }
 
@@ -238,7 +267,9 @@ case class SyntaxErrorResult(
     s"""
        |There's a syntax error in your skill:
        |
+       |````
        |${(json \ "errorMessage").asOpt[String].getOrElse("")}
+       |````
        |
        |${linkToBehaviorFor("Take a look in the skill editor")} for more details.
      """.stripMargin
@@ -266,7 +297,7 @@ case class MissingTeamEnvVarsResult(
                                  behaviorVersion: BehaviorVersion,
                                  dataService: DataService,
                                  configuration: Configuration,
-                                 missingEnvVars: Seq[String],
+                                 missingEnvVars: Set[String],
                                  botPrefix: String
                                ) extends BotResult with WithBehaviorLink {
 

@@ -27,19 +27,21 @@ trait UserEnvironmentVariableService {
     }.toSeq
   }
 
-  def knownUsedIn(behaviorVersion: BehaviorVersion, dataService: DataService): Seq[String] = {
-    lookForInCode(behaviorVersion.functionBody)
+  def knownUsedIn(behaviorVersion: BehaviorVersion, dataService: DataService): Set[String] = {
+    lookForInCode(behaviorVersion.functionBody).toSet
   }
 
-  def missingForAction(user: User, behaviorVersion: BehaviorVersion, dataService: DataService): DBIO[Seq[String]] = {
+  def missingForAction(user: User, behaviorVersion: BehaviorVersion, dataService: DataService): DBIO[Set[String]] = {
     for {
       envVars <- allForAction(user)
-    } yield knownUsedIn(behaviorVersion, dataService).map{ used =>
-      used diff envVars.filter(_.value.trim.nonEmpty).map(_.name)
+    } yield {
+      val usedNames = knownUsedIn(behaviorVersion, dataService)
+      val allNames = envVars.filter(_.value.trim.nonEmpty).map(_.name).toSet
+      usedNames diff allNames
     }
   }
 
-  def missingFor(user: User, behaviorVersion: BehaviorVersion, dataService: DataService): Future[Seq[String]] = {
+  def missingFor(user: User, behaviorVersion: BehaviorVersion, dataService: DataService): Future[Set[String]] = {
     dataService.run(missingForAction(user, behaviorVersion, dataService))
   }
 

@@ -51,7 +51,8 @@ define(function(require) {
       canDeleteFunctionBody: React.PropTypes.bool.isRequired,
       onDeleteFunctionBody: React.PropTypes.func.isRequired,
 
-      envVariableNames: React.PropTypes.arrayOf(React.PropTypes.string).isRequired
+      envVariableNames: React.PropTypes.arrayOf(React.PropTypes.string).isRequired,
+      functionExecutesImmediately: React.PropTypes.bool
     },
 
     getInitialState: function() {
@@ -184,7 +185,11 @@ define(function(require) {
                 </div>
                 <div className="column column-expand plxs">
                   <code className="type-s">
-                    <span className="type-s type-weak">{"module.exports = (function ("}</span>
+                    <span className="type-s type-weak">{
+                      this.props.functionExecutesImmediately ?
+                        "module.exports = (function(" :
+                        "module.exports = function("
+                    }</span>
                     {this.props.inputs.map((input, inputIndex) => (
                       <span key={`param${inputIndex}`}>{input.name}<span className="type-weak">, </span></span>
                     ))}
@@ -241,7 +246,9 @@ define(function(require) {
               <div className="column column-expand plxs">
                 <div className="columns columns-elastic">
                   <div className="column column-expand">
-                    <code className="type-weak type-s">{"\u007D()"}</code>
+                    <code className="type-weak type-s">{
+                      this.props.functionExecutesImmediately ? "\u007D)();" : "\u007D;"
+                    }</code>
                   </div>
                   <div className="column column-shrink prs align-r">
                     {this.props.canDeleteFunctionBody ? (

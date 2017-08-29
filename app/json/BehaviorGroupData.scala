@@ -59,6 +59,7 @@ case class BehaviorGroupData(
     val actionInputsWithParamTypeIds = actionInputsWithIds.map(_.copyWithParamTypeIdFromExportId(behaviorVersionsWithIds))
     val dataTypeInputsWithParamTypeIds = dataTypeInputsWithIds.map(_.copyWithParamTypeIdFromExportId(behaviorVersionsWithIds))
     copy(
+      id = maybeExistingGroupData.flatMap(_.id),
       actionInputs = actionInputsWithParamTypeIds,
       dataTypeInputs = dataTypeInputsWithParamTypeIds,
       behaviorVersions = behaviorVersionsWithIds,

@@ -18,7 +18,12 @@ case class BehaviorGroupImporter(
 
   def run: Future[Option[BehaviorGroup]] = {
     for {
-      group <- dataService.behaviorGroups.createFor(data.exportId, team)
+      maybeExistingGroup <- data.id.map { groupId =>
+        dataService.behaviorGroups.findWithoutAccessCheck(groupId)
+      }.getOrElse(Future.successful(None))
+      group <- maybeExistingGroup.map(Future.successful).getOrElse {
+        dataService.behaviorGroups.createFor(data.exportId, team)
+      }
       oauth2Applications <- dataService.oauth2Applications.allUsableFor(team)
       _ <- dataService.behaviorGroupVersions.createFor(
         group,

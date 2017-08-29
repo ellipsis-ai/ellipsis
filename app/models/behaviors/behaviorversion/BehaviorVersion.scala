@@ -75,12 +75,6 @@ case class BehaviorVersion(
 
   def functionName: String = BehaviorVersion.functionNameFor(id)
 
-  private def isUnhandledError(json: JsValue): Boolean = {
-    (json \ "errorMessage").toOption.flatMap { m =>
-      "Process exited before completing request".r.findFirstIn(m.toString)
-    }.isDefined
-  }
-
   private def isSyntaxError(json: JsValue): Boolean = {
     (json \ "errorType").toOption.flatMap { m =>
       "SyntaxError".r.findFirstIn(m.toString)
@@ -106,14 +100,12 @@ case class BehaviorVersion(
       if ((json \ NO_RESPONSE_KEY).toOption.exists(_.as[Boolean])) {
         NoResponseResult(event, maybeConversation, logResultOption)
       } else {
-        if (isUnhandledError(json)) {
-          UnhandledErrorResult(event, maybeConversation, this, dataService, configuration, logResultOption)
-        } else if (json.toString == "null") {
+        if (json.toString == "null") {
           NoCallbackTriggeredResult(event, maybeConversation, this, dataService, configuration)
         } else if (isSyntaxError(json)) {
           SyntaxErrorResult(event, maybeConversation, this, dataService, configuration, json, logResultOption)
         } else {
-          HandledErrorResult(event, maybeConversation, this, dataService, configuration, json, logResultOption)
+          ExecutionErrorResult(event, maybeConversation, this, dataService, configuration, json, logResultOption)
         }
       }
     }
