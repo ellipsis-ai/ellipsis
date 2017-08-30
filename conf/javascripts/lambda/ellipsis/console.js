@@ -1,3 +1,4 @@
+/* global log:false */
 const builtInConsole = Object.assign({}, console);
 function augmentConsole(consoleMethod, realArgs, caller) {
   const args = [].slice.call(realArgs);
@@ -7,6 +8,7 @@ function augmentConsole(consoleMethod, realArgs, caller) {
     args.concat("\nELLIPSIS_STACK_TRACE_START\n" + error.stack + "\nELLIPSIS_STACK_TRACE_END") :
     args;
   builtInConsole[consoleMethod].apply(null, newArgs);
+  log.push(newArgs.join(" "));
 }
 console.log = function consoleLog() { augmentConsole("log", arguments, consoleLog); };
 console.error = function consoleError() { augmentConsole("error", arguments, consoleError); };

@@ -92,16 +92,20 @@ object AWSLambdaLogResult {
     }
   }
 
+  def processAuthorLogs(logs: Seq[String]): Seq[String] = {
+    logs.map {
+      case stackTraceRegex(userContent, stackTrace) => getLogStatementPrefix(stackTrace) + userContent
+      case s => s
+    }
+  }
+
   def extractUserDefinedLogStatementsFrom(text: String): String = {
     val maybeUserDefinedLogStatementsContent = """(?s)(START.*?\n)?(.*)""".r.findFirstMatchIn(text).flatMap(_.subgroups.tail.headOption)
     maybeUserDefinedLogStatementsContent.map { content =>
       content.split("""\S+\t\S+\t""")
     }.map { strings =>
       val logs = strings.map(_.trim).filter(_.nonEmpty)
-      val processed = logs.map {
-        case stackTraceRegex(userContent, stackTrace) => getLogStatementPrefix(stackTrace) + userContent
-        case s => s
-      }
+      val processed = processAuthorLogs(logs)
       if (logs.nonEmpty) {
         processed.mkString("\n")
       } else {

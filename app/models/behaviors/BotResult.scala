@@ -188,6 +188,8 @@ trait WithBehaviorLink {
   }
 }
 
+case class ExecutionErrorValue(message: String, stack: String, userMessage: Option[String])
+
 case class ExecutionErrorResult(
                                  event: Event,
                                  maybeConversation: Option[Conversation],
@@ -202,11 +204,23 @@ case class ExecutionErrorResult(
   val functionLines = behaviorVersion.functionBody.split("\n").length
   val howToIncludeStackTraceMessage = "\n\nTo include a stack trace, throw an `Error` object in your code.  \ne.g. `throw new Error(\"Something went wrong.\")`"
 
+  val maybeError: Option[ExecutionErrorValue] = {
+    (json \ "error").validate[ExecutionErrorValue] match {
+      case JsSuccess(errorValue, _) => Some(errorValue)
+      case JsError(_) => None
+    }
+  }
+
+  private val maybeUserErrorMessage: Option[String] = {
+    maybeError.flatMap(_.userMessage).orElse {
+      maybeLogResult.flatMap(_.maybeUserErrorMessage)
+    }
+  }
+
   def text: String = {
-    s"I encountered an error in ${linkToBehaviorFor("one of your skills")}" +
-      maybeLogResult.flatMap(_.maybeUserErrorMessage).map { userError =>
-        s":\n\n$userError"
-      }.getOrElse(".")
+    s"I encountered an error in ${linkToBehaviorFor("one of your skills")}${
+      maybeUserErrorMessage.map(userError => s":\n\n$userError").getOrElse(".")
+    }"
   }
 
   private def logContainsStackTrace(log: String): Boolean = {
@@ -237,12 +251,21 @@ case class ExecutionErrorResult(
   }
 
   private def maybeErrorLog: Option[String] = {
-    val result = Seq(maybeCallbackErrorMessage, maybeThrownLogMessage).flatten.mkString("\n")
-    Option(result).filter(_.nonEmpty)
+    maybeError.map { error =>
+      error.message + "\n" + error.stack
+    } orElse {
+      val result = Seq(maybeCallbackErrorMessage, maybeThrownLogMessage).flatten.mkString("\n")
+      Option(result).filter(_.nonEmpty)
+    }
   }
 
   override def files: Seq[UploadFileSpec] = {
-    val log = maybeAuthorLog.map(_ + "\n").getOrElse("") + maybeErrorLog.getOrElse("")
+    val logs = (json \ "logs").validate[Seq[String]] match {
+      case JsSuccess(l, _) => AWSLambdaLogResult.processAuthorLogs(l)
+      case JsError(_) => Seq()
+    }
+    val maybeLogText = Option(logs.mkString("\n")).filter(_.nonEmpty) orElse maybeAuthorLog
+    val log = maybeLogText.map(_ + "\n").getOrElse("") + maybeErrorLog.getOrElse("")
     if (log.nonEmpty) {
       Seq(UploadFileSpec(Some(log), Some("text"), Some("Developer log")))
     } else {

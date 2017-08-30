@@ -283,20 +283,20 @@ class AWSLambdaServiceImpl @Inject() (
     // Be careful changing either this or the UI line numbers
     s"""exports.handler = function(event, context, callback) { var fn = ${functionWithParams(params, functionBody)}
        |  var $CONTEXT_PARAM = event.$CONTEXT_PARAM;
+       |  const log = [];
+       |  $OVERRIDE_CONSOLE
        |  $CONTEXT_PARAM.$NO_RESPONSE_KEY = $NO_RESPONSE_CALLBACK_FUNCTION
        |  $CONTEXT_PARAM.success = $SUCCESS_CALLBACK_FUNCTION
-       |  $CONTEXT_PARAM.Error = $ERROR_CLASS
+       |  $ERROR_CLASS
+       |  $CONTEXT_PARAM.Error = EllipsisError;
        |  $CONTEXT_PARAM.error = $ERROR_CALLBACK_FUNCTION
        |
-       |  if (process.listeners('unhandledRejection').length === 0) {
-       |    process.on('unhandledRejection', $CONTEXT_PARAM.error);
-       |  }
+       |  process.once('unhandledRejection', $CONTEXT_PARAM.error);
        |
        |  ${awsCodeFor(maybeAwsConfig)}
        |  $CONTEXT_PARAM.accessTokens = {};
        |  ${accessTokensCodeFor(requiredOAuth2ApiConfigs)}
        |  ${simpleTokensCodeFor(requiredSimpleTokenApis)}
-       |  $OVERRIDE_CONSOLE
        |
        |  try {
        |    fn($invocationParamsString);

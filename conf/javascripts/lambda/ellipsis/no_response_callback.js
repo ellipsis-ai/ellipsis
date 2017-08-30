@@ -1,3 +1,8 @@
+/* global log:false */
 function ellipsisNoResponseCallback() {
-  callback(null, { $NO_RESPONSE_KEY: true });
+  process.removeListener('unhandledRejection', $CONTEXT_PARAM.error);
+  callback(null, {
+    $NO_RESPONSE_KEY: true,
+    logs: log
+  });
 }
