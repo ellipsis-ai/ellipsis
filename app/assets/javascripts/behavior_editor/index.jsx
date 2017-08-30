@@ -1338,7 +1338,7 @@ const BehaviorEditor = React.createClass({
   onRemoveAWSConfig: function(config, callback) {
     const existing = this.getRequiredAWSConfigs();
     const newConfigs = existing.filter(ea => {
-      return ea.nameInCode !== config.nameInCode;
+      return ea.id !== config.id;
     });
     this.updateGroupStateWith(this.getBehaviorGroup().clone({ requiredAWSConfigs: newConfigs }), callback);
   },

@@ -1,6 +1,7 @@
 define(function(require) {
   var React = require('react'),
     AWSConfigRef = require('../models/aws_config_ref'),
+    DeleteButton = require('../shared_ui/delete_button'),
     DropdownMenu = require('../shared_ui/dropdown_menu'),
     Input = require('../form/input'),
     RequiredAWSConfig = require('../models/required_aws_config'),
@@ -62,19 +63,16 @@ define(function(require) {
       );
     },
 
-    getUsedAWSConfigIds: function() {
-      return this.props.requiredAWSConfigs.filter(ea => !!ea.config).map(ea => ea.config.id);
-    },
-
-    getUnusedAWSConfigs: function() {
-      const usedIds = this.getUsedAWSConfigIds();
-      return this.props.allAWSConfigs.filter(ea => {
-        return usedIds.indexOf(ea.id) === -1;
+    getSortedRequiredAWSConfigs: function() {
+      return this.props.requiredAWSConfigs.sort((a, b) => {
+        if (a.id === b.id) {
+          return 0;
+        } else if (a.id < b.id) {
+          return -1;
+        } else {
+          return 1;
+        }
       });
-    },
-
-    addAWSConfig: function(cfg) {
-      this.props.onAddAWSConfig(cfg);
     },
 
     render: function() {
@@ -88,9 +86,9 @@ define(function(require) {
               <div className="column column-page-main">
                 <div className="container pvl">
                   {this.renderAWSConfigs()}
-                  {this.renderAdder()}
                 </div>
                 <div className="ptxl">
+                  {this.renderAdder()}
                   <button className="button-primary mbs" type="button" onClick={this.props.onDoneClick}>Done</button>
                 </div>
               </div>
@@ -109,11 +107,11 @@ define(function(require) {
           labelClassName="button-s"
           menuClassName="popup-dropdown-menu-wide popup-dropdown-menu-left mobile-popup-dropdown-menu-left"
         >
-          {this.getUnusedAWSConfigs().map((cfg, index) => {
+          {this.props.allAWSConfigs.map((cfg, index) => {
             return (
               <DropdownMenu.Item
                 key={"aws-config-" + index}
-                onClick={this.addAWSConfig.bind(this, cfg)}
+                onClick={this.onAddAWSConfig.bind(this, cfg)}
                 label={this.getAWSSelectorLabelForConfig(cfg)}
               />
             );
@@ -163,7 +161,14 @@ define(function(require) {
 
     updateRequiredConfig: function(oldRequired, newRequired) {
       this.props.onRemoveAWSConfig(oldRequired, () => {
-        this.props.onAddAWSConfig(newRequired);
+        this.props.onAddAWSConfig(newRequired, () => {
+          if (oldRequired.nameInCode !== newRequired.nameInCode) {
+            const input = this.refs[this.nameInCodeKeyFor(newRequired)];
+            input.focus();
+            input.refs.input.selectionStart = input.props.value.length;
+            input.refs.input.selectionEnd = input.props.value.length;
+          }
+        });
       });
     },
 
@@ -180,12 +185,27 @@ define(function(require) {
       }));
     },
 
+    onDeleteAWSConfig: function(required) {
+      this.props.onRemoveAWSConfig(required);
+    },
+
+    onAddAWSConfig: function(config) {
+      this.props.onAddAWSConfig(new RequiredAWSConfig({
+        nameInCode: config.nameInCode,
+        config: config
+      }))
+    },
+
+    nameInCodeKeyFor: function(required) {
+      return `requiredNameInCode${required.id}`;
+    },
+
     renderNameInCodeInputFor: function(required) {
       return (
         <Input
           className="form-input-borderless type-monospace"
-          key={`requiredNameInCode${required.id}`}
-          ref={`requiredNameInCode${required.id}`}
+          key={this.nameInCodeKeyFor(required)}
+          ref={this.nameInCodeKeyFor(required)}
           value={required.nameInCode}
           placeholder="nameInCode"
           onChange={this.onNameInCodeChange.bind(this, required)}
@@ -200,6 +220,9 @@ define(function(require) {
           <div className="column">ellipsis.aws.</div>
           <div className="column">{this.renderNameInCodeInputFor(required)}</div>
           <div className="column">{this.renderAWSConfigFor(required)}</div>
+          <div className="column column-shrink align-t">
+            <DeleteButton onClick={this.onDeleteAWSConfig.bind(this, required)} />
+          </div>
         </div>
       );
     },
@@ -207,7 +230,7 @@ define(function(require) {
     renderAWSConfigs: function() {
       return (
         <div className="columns">
-          {this.props.requiredAWSConfigs.map(this.renderRequiredAWSConfig)}
+          {this.getSortedRequiredAWSConfigs().map(this.renderRequiredAWSConfig)}
         </div>
       );
     }
