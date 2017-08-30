@@ -9,7 +9,12 @@ function ellipsisErrorCallback(err, promise) {
     callbackError = throwableError;
   }
   callback(null, {
-    error: callbackError,
+    error: {
+      name: callbackError.name,
+      message: callbackError.message,
+      userMessage: callbackError.userMessage,
+      stack: callbackError.stack
+    },
     logs: log
   });
 }

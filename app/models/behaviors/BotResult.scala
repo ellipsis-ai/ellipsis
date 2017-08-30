@@ -202,9 +202,9 @@ case class ExecutionErrorResult(
 
   val resultType = ResultType.ExecutionError
   val functionLines = behaviorVersion.functionBody.split("\n").length
-  val howToIncludeStackTraceMessage = "\n\nTo include a stack trace, throw an `Error` object in your code.  \ne.g. `throw new Error(\"Something went wrong.\")`"
+  val howToIncludeStackTraceMessage = "\n\nTo include a stack trace, throw an `Error` object in your code. For example:\n  throw new Error(\"Something went wrong.\")"
 
-  val maybeError: Option[ExecutionErrorValue] = {
+  private val maybeError: Option[ExecutionErrorValue] = {
     (json \ "error").validate[ExecutionErrorValue] match {
       case JsSuccess(errorValue, _) => Some(errorValue)
       case JsError(_) => None
@@ -252,7 +252,11 @@ case class ExecutionErrorResult(
 
   private def maybeErrorLog: Option[String] = {
     maybeError.map { error =>
-      error.message + "\n" + error.stack
+      if (error.stack.nonEmpty) {
+        error.stack
+      } else {
+        error.message + howToIncludeStackTraceMessage
+      }
     } orElse {
       val result = Seq(maybeCallbackErrorMessage, maybeThrownLogMessage).flatten.mkString("\n")
       Option(result).filter(_.nonEmpty)
@@ -264,7 +268,8 @@ case class ExecutionErrorResult(
       case JsSuccess(l, _) => AWSLambdaLogResult.processAuthorLogs(l)
       case JsError(_) => Seq()
     }
-    val maybeLogText = Option(logs.mkString("\n")).filter(_.nonEmpty) orElse maybeAuthorLog
+    val maybeLogs = Option(logs.mkString("\n")).filter(_.nonEmpty)
+    val maybeLogText = maybeLogs orElse maybeAuthorLog
     val log = maybeLogText.map(_ + "\n").getOrElse("") + maybeErrorLog.getOrElse("")
     if (log.nonEmpty) {
       Seq(UploadFileSpec(Some(log), Some("text"), Some("Developer log")))
