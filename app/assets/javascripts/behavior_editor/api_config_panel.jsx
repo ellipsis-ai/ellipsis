@@ -193,7 +193,7 @@ define(function(require) {
       this.props.onAddAWSConfig(new RequiredAWSConfig({
         nameInCode: config.nameInCode,
         config: config
-      }))
+      }));
     },
 
     nameInCodeKeyFor: function(required) {
