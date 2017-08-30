@@ -258,17 +258,6 @@ class BehaviorVersionServiceImpl @Inject() (
         }
         ).map(_.flatten)
         libraries <- dataService.libraries.allForAction(groupVersion)
-        _ <- DBIO.from(lambdaService.deployFunctionFor(
-          updated,
-          data.functionBody,
-          withoutBuiltin(inputs.map(_.name).toArray),
-          libraries,
-          maybeAWSConfig,
-          requiredOAuth2ApiConfigs,
-          requiredSimpleTokenApis,
-          forceNodeModuleUpdate
-        )
-        )
         _ <- dataService.behaviorParameters.ensureForAction(updated, inputs)
         _ <- DBIO.sequence(
           data.triggers.
@@ -287,7 +276,19 @@ class BehaviorVersionServiceImpl @Inject() (
           dataService.dataTypeConfigs.createForAction(updated, configData)
         }.getOrElse(DBIO.successful(None))
         _ <- lambdaService.ensureNodeModuleVersionsFor(updated)
-      } yield Unit
+      } yield {
+        // deploy in the background
+        lambdaService.deployFunctionFor(
+          updated,
+          data.functionBody,
+          withoutBuiltin(inputs.map(_.name).toArray),
+          libraries,
+          maybeAWSConfig,
+          requiredOAuth2ApiConfigs,
+          requiredSimpleTokenApis,
+          forceNodeModuleUpdate
+        )
+      }
     } yield behaviorVersion
   }
 
