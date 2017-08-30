@@ -155,14 +155,9 @@ define(function(require) {
           value={required.config ? required.config.id : null}
           onChange={this.onConfigChange.bind(this, required)}
         >
+          <option value={null}>None selected</option>
           {this.props.allAWSConfigs.map(ea => <option value={ea.id}>{ea.displayName}</option>)}
         </Select>
-      );
-    },
-
-    renderMissingAWSConfigFor: function(required) {
-      return (
-        <span>(missing)</span>
       );
     },
 
@@ -201,9 +196,10 @@ define(function(require) {
     renderRequiredAWSConfig: function(required) {
       return (
         <div>
+          <div className="column"><img src="/assets/images/logos/aws_logo_web_300px.png" height="32"/></div>
           <div className="column">ellipsis.aws.</div>
           <div className="column">{this.renderNameInCodeInputFor(required)}</div>
-          <div className="column">{required.config ? this.renderAWSConfigFor(required) : this.renderMissingAWSConfigFor(required)}</div>
+          <div className="column">{this.renderAWSConfigFor(required)}</div>
         </div>
       );
     },
