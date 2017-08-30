@@ -1,0 +1,17 @@
+env:
+  browser: false
+  node: true
+parserOptions:
+  ecmaFeatures:
+    jsx: false
+globals:
+  event: false
+  context: false
+  callback: false
+  $CONTEXT_PARAM: false
+plugins: []
+rules:
+  no-unused-vars:
+    - off
+  no-console:
+    - off
