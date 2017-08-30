@@ -25,10 +25,12 @@ object AWSLambdaConstants {
     }
   }
   val NO_RESPONSE_CALLBACK_FUNCTION: String = {
-    loadStaticJs("no_response_callback.js").replace("NO_RESPONSE_KEY", NO_RESPONSE_KEY)
+    loadStaticJs("no_response_callback.js").replace("$NO_RESPONSE_KEY", NO_RESPONSE_KEY)
   }
   val SUCCESS_CALLBACK_FUNCTION: String = loadStaticJs("success_callback.js")
-  val ERROR_CALLBACK_FUNCTION: String = loadStaticJs("error_callback.js")
+  val ERROR_CALLBACK_FUNCTION: String = {
+    loadStaticJs("error_callback.js").replace("$CONTEXT_PARAM", CONTEXT_PARAM)
+  }
   val ERROR_CLASS: String = loadStaticJs("error.js")
   val OVERRIDE_CONSOLE: String = loadStaticJs("console.js")
 }

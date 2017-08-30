@@ -3,8 +3,8 @@ function augmentConsole(consoleMethod, realArgs, caller) {
   const args = [].slice.call(realArgs);
   const error = { toString: () => consoleMethod };
   Error.captureStackTrace(error, caller);
-  const newArgs = error.stack.split("\\n").length > 1 ?
-    args.concat("\\nELLIPSIS_STACK_TRACE_START\\n" + error.stack + "\\nELLIPSIS_STACK_TRACE_END") :
+  const newArgs = error.stack.split("\n").length > 1 ?
+    args.concat("\nELLIPSIS_STACK_TRACE_START\n" + error.stack + "\nELLIPSIS_STACK_TRACE_END") :
     args;
   builtInConsole[consoleMethod].apply(null, newArgs);
 }
