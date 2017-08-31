@@ -252,6 +252,7 @@ fi
 mkdir -p target/docker/.ebextensions
 cp .ebextensions/* target/docker/.ebextensions/
 cp deploy/Docker* target/docker/
+cp -R newrelic target/docker/stage/opt/docker
 pushd target/docker > /dev/null
 BUNDLE=$VERSION_LABEL.zip
 BUNDLE_PATH=~/Desktop/$BUNDLE

@@ -24,25 +24,23 @@ fi
 if [ "${TARGET_ENV}" = "stag01" ]
 then
   ACCOUNT_ID="458075145501"
-  ASSETS_BUCKET="assets-${ACCOUNT_ID}"
-  EB_APP_NAME="playapp"
-  EB_ENV_NAME="playapp-env"
   EMOJI=" 🦑 "
-  AWS_ELLIPSIS_PROFILE="el-${TARGET_ENV}-deployer"
 elif [ "${TARGET_ENV}" = "prod" ]
 then
   ACCOUNT_ID="170937251085"
-  ASSETS_BUCKET=ellipsis-assets
-  EB_APP_NAME="My First Elastic Beanstalk Application"
-  EB_ENV_NAME="ellipsis-demo"
   EMOJI=" 🐴 "
-  if [ -z "${AWS_ELLIPSIS_PROFILE}" ]
-  then
-    AWS_ELLIPSIS_PROFILE="el-${TARGET_ENV}-deployer"
-  fi
 fi
 
+if [ -z "${AWS_ELLIPSIS_PROFILE}" ]
+then
+  AWS_ELLIPSIS_PROFILE="el-${TARGET_ENV}-deployer"
+fi
+
+ASSETS_BUCKET="assets-${ACCOUNT_ID}"
+EB_APP_NAME="playapp"
+EB_ENV_NAME="playapp-env"
 EB_BUCKET="elasticbeanstalk-us-east-1-${ACCOUNT_ID}"
+
 printf "\n\n${EMOJI}${GREEN} - Getting ready to deploy to ${MAGENTA}${TARGET_ENV}${PLAIN} -${EMOJI}\n"
 printf "───────────────────────────────────────────────────────────────────\n";
 printf " Target environment: ${BOLD}${TARGET_ENV}${PLAIN}\n"
@@ -110,7 +108,7 @@ check_environment() {
 printf "\n${GREEN}OK.${PLAIN}\n"
 printf "${GREEN}\n\nChecking your Environment...${PLAIN}\n"
 printf "_____________________________________________________ \n";
-check_environment()
+check_environment
 printf "\n${GREEN}OK.${PLAIN}\n"
 printf "\n\n${GREEN}Announcing the deployment to #dev...${PLAIN}\n"
 printf "_____________________________________________________ \n";
@@ -134,6 +132,7 @@ printf "\n${GREEN}OK.${PLAIN}\n"
 mkdir -p target/docker/.ebextensions
 cp .ebextensions/* target/docker/.ebextensions/
 cp deploy/Docker* target/docker/
+cp -R newrelic target/docker/stage/opt/docker
 TOP_DIR=`pwd`
 BUNDLE=$VERSION_LABEL.zip
 BUNDLE_DIR="${TOP_DIR}/target/eb-bundles"
@@ -144,28 +143,9 @@ zip -qq -r $BUNDLE_PATH .
 cd $TOP_DIR
 printf "\n${GREEN}OK.${PLAIN}\n"
 
-printf "\n\n${GREEN}Syncing assets with S3(OLD bucket)...${PLAIN}\n";
-printf "_____________________________________________________ \n";
-PUBLIC_ASSETS_DIR=/tmp/public-assets
-mkdir -p $PUBLIC_ASSETS_DIR
-rm -rf $PUBLIC_ASSETS_DIR/*
-unzip -qq target/docker/stage/opt/docker/lib/ellipsis.ellipsis-1.0-SNAPSHOT-assets.jar -d $PUBLIC_ASSETS_DIR/
-aws --profile $AWS_ELLIPSIS_PROFILE s3 sync $PUBLIC_ASSETS_DIR/public s3://$ASSETS_BUCKET/ --acl=public-read --only-show-errors
-if [ $? -eq 0 ]
-then
-  printf "${GREEN}OK.${PLAIN}\n";
-else
-  printf "\n\n${RED}An error occurred!${PLAIN}\n";
-  announce_failure
-  printf "Bye.\n"
-  exit 1
-fi
-
-# In production we have 2 Beanstalk Apps and the following uploads the app version
-# to the second App. This is temporary.
 if [ "${TARGET_ENV}" = "prod" ]
 then
-  printf "\n\n${GREEN}Syncing assets with S3(NEW bucket)...${PLAIN}\n";
+  printf "\n\n${GREEN}Syncing assets with S3...${PLAIN}\n";
   printf "_____________________________________________________ \n";
   PUBLIC_ASSETS_DIR=/tmp/public-assets
   mkdir -p $PUBLIC_ASSETS_DIR
@@ -197,28 +177,10 @@ else
   exit 1
 fi
 
-printf "\n\n${GREEN}Creating app new version for OLD App...${PLAIN}\n";
-printf "_____________________________________________________ \n";
-aws --profile $AWS_ELLIPSIS_PROFILE elasticbeanstalk create-application-version \
---application-name "${EB_APP_NAME}" \
---version-label $VERSION_LABEL \
---source-bundle S3Bucket=$EB_BUCKET,S3Key=$S3_KEY \
---process
-if [ $? -eq 0 ]
-then
-   printf "\n${GREEN}OK.${PLAIN}\n"
-else
-  printf "\n\n${RED}An error occurred!{PLAIN}\n";
-  announce_failure
-  printf "Bye.\n"
-  exit 1
-fi
 
-# In production we have 2 Beanstalk Apps and the following uploads the app version
-# to the second App. This is temporary.
 if [ "${TARGET_ENV}" = "prod" ]
 then
-  printf "\n\n${GREEN}Creating app new version for Ellipsis App...${PLAIN}\n";
+  printf "\n\n${GREEN}Creating new app version ...${PLAIN}\n";
   printf "_____________________________________________________ \n";
   aws --profile $AWS_ELLIPSIS_PROFILE elasticbeanstalk create-application-version \
   --application-name "Ellipsis" \
@@ -235,23 +197,6 @@ then
     exit 1
   fi
 fi
-
-
-
-# printf "\n\n${GREEN}Updating Beanstalk environment...${PLAIN}\n";
-# printf "_____________________________________________________ \n";
-# aws --profile $AWS_ELLIPSIS_PROFILE elasticbeanstalk update-environment \
-#   --environment-name "${EB_APP_NAME}" \
-#   --version-label $VERSION_LABEL
-# if [ $? -eq 0 ]
-# then
-#    printf "\n${GREEN}OK.${PLAIN}\n"
-# else
-#   printf "\n\n${RED}An error occurred!{PLAIN}\n";
-#   announce_failure
-#   printf "Bye.\n"
-#   exit 1
-# fi
 
 printf "\n\n${GREEN}Sending notifications...${PLAIN}\n";
 printf "_____________________________________________________ \n";

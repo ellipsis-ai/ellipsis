@@ -83,19 +83,8 @@ class LinkedOAuth2TokenServiceImpl @Inject() (
         val tokenResponse = linkedOAuth2Token.application.refreshTokenResponseFor(token, ws)
 
         DBIO.from(tokenResponse).flatMap { response =>
-          val json = response.json
-          (json \ "access_token").asOpt[String].map { accessToken =>
-            val maybeTokenType = (json \ "token_type").asOpt[String]
-            val maybeScopeGranted = (json \ "scope").asOpt[String]
-            val maybeExpirationTime = (json \ "expires_in").asOpt[Int].map { seconds =>
-              OffsetDateTime.now.plusSeconds(seconds)
-            }
-            saveAction(linkedOAuth2Token.copy(
-              accessToken = accessToken,
-              maybeScopeGranted = maybeScopeGranted,
-              maybeExpirationTime = maybeExpirationTime,
-              maybeTokenType = maybeTokenType
-            )).map(Some(_))
+          LinkedOAuth2TokenInfo.maybeFrom(response.json).map { info =>
+            saveAction(linkedOAuth2Token.copyFrom(info)).map(Some(_))
           }.getOrElse(DBIO.successful(None))
         }
       } else {
