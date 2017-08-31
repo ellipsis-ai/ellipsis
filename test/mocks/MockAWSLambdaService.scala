@@ -36,7 +36,7 @@ class MockAWSLambdaService @Inject() (
       event,
       maybeConversation,
       result = JsString("result"),
-      json = JsNull,
+      payloadJson = JsNull,
       parametersWithValues = Seq(),
       maybeResponseTemplate = None,
       maybeLogResult = None,

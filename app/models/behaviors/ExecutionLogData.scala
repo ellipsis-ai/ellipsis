@@ -1,6 +1,6 @@
 package models.behaviors
 
-case class ExecutionLog(logged: String, stack: String) {
+case class ExecutionLogData(logged: String, stack: String) {
   private val stackTraceSourceRegex = """^\s+at (.+?) \(/.+/(.+?)\.js:(\d+):(\d+)\)""".r
 
   def getLogStatementPrefix(ellipsisStackTrace: String): String = {

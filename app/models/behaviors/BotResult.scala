@@ -79,11 +79,11 @@ sealed trait BotResult {
 }
 
 trait BotResultWithLogResult extends BotResult {
-  val json: JsValue
+  val payloadJson: JsValue
   val maybeLogResult: Option[AWSLambdaLogResult]
 
   private val maybeAuthorLogTextFromJson: Option[String] = {
-    val logged = (json \ "logs").validate[Seq[ExecutionLog]] match {
+    val logged = (payloadJson \ "logs").validate[Seq[ExecutionLogData]] match {
       case JsSuccess(logs, _) => logs.map(_.toString).mkString("\n")
       case JsError(_) => ""
     }
@@ -131,7 +131,7 @@ case class SuccessResult(
                           event: Event,
                           maybeConversation: Option[Conversation],
                           result: JsValue,
-                          json: JsValue,
+                          payloadJson: JsValue,
                           parametersWithValues: Seq[ParameterWithValue],
                           maybeResponseTemplate: Option[String],
                           maybeLogResult: Option[AWSLambdaLogResult],
@@ -141,7 +141,7 @@ case class SuccessResult(
   val resultType = ResultType.Success
 
   override def files: Seq[UploadFileSpec] = {
-    val authoredFiles = (json \ "files").validateOpt[Seq[UploadFileSpec]] match {
+    val authoredFiles = (payloadJson \ "files").validateOpt[Seq[UploadFileSpec]] match {
       case JsSuccess(maybeFiles, _) => maybeFiles.getOrElse(Seq())
       case JsError(errs) => throw InvalidFilesException(errs.map { case (_, validationErrors) =>
         validationErrors.map(_.message).mkString(", ")
@@ -177,7 +177,7 @@ case class TextWithActionsResult(event: Event, maybeConversation: Option[Convers
 case class NoResponseResult(
                              event: Event,
                              maybeConversation: Option[Conversation],
-                             json: JsValue,
+                             payloadJson: JsValue,
                              maybeLogResult: Option[AWSLambdaLogResult]
                            ) extends BotResultWithLogResult {
 
@@ -204,17 +204,13 @@ trait WithBehaviorLink {
   }
 }
 
-case class ExecutionErrorValue(message: String, stack: String, userMessage: Option[String]) {
-  def translateStack(functionLines: Int): String = AWSLambdaLogResult.translateErrors(functionLines, stack)
-}
-
 case class ExecutionErrorResult(
                                  event: Event,
                                  maybeConversation: Option[Conversation],
                                  behaviorVersion: BehaviorVersion,
                                  dataService: DataService,
                                  configuration: Configuration,
-                                 json: JsValue,
+                                 payloadJson: JsValue,
                                  maybeLogResult: Option[AWSLambdaLogResult]
                                ) extends BotResultWithLogResult with WithBehaviorLink {
 
@@ -222,8 +218,8 @@ case class ExecutionErrorResult(
   val functionLines = behaviorVersion.functionBody.split("\n").length
   val howToIncludeStackTraceMessage = "\n\nTo include a stack trace, throw an `Error` object in your code. For example:\n  throw new Error(\"Something went wrong.\")"
 
-  private val maybeError: Option[ExecutionErrorValue] = {
-    (json \ "error").validate[ExecutionErrorValue] match {
+  private val maybeError: Option[ExecutionErrorData] = {
+    (payloadJson \ "error").validate[ExecutionErrorData] match {
       case JsSuccess(errorValue, _) => Some(errorValue)
       case JsError(_) => None
     }
@@ -251,7 +247,7 @@ case class ExecutionErrorResult(
   }
 
   private val maybeCallbackErrorMessage: Option[String] = {
-    (json \ "errorMessage").toOption.map(processedResultFor).filterNot {
+    (payloadJson \ "errorMessage").toOption.map(processedResultFor).filterNot {
       _.matches("""RequestId: \S+ Process exited before completing request""")
     }
   }
@@ -290,7 +286,7 @@ case class SyntaxErrorResult(
                               behaviorVersion: BehaviorVersion,
                               dataService: DataService,
                               configuration: Configuration,
-                              json: JsValue,
+                              payloadJson: JsValue,
                               maybeLogResult: Option[AWSLambdaLogResult]
                             ) extends BotResultWithLogResult with WithBehaviorLink {
 
@@ -301,7 +297,7 @@ case class SyntaxErrorResult(
        |There's a syntax error in your skill:
        |
        |````
-       |${(json \ "errorMessage").asOpt[String].getOrElse("")}
+       |${(payloadJson \ "errorMessage").asOpt[String].getOrElse("")}
        |````
        |
        |${linkToBehaviorFor("Take a look in the skill editor")} for more details.
