@@ -1,6 +1,6 @@
 package services
 
-case class AWSLambdaLogResult(source: String, authorDefinedLogStatements: String, maybeErrorMessage: Option[String], maybeUserErrorMessage: Option[String]) {
+case class AWSLambdaLogResult(source: String, authorDefinedLogStatements: String, maybeErrorMessage: Option[String]) {
   def maybeTranslated(functionLines: Int): Option[String] = {
     maybeErrorMessage.map(error => AWSLambdaLogResult.translateErrors(functionLines, error))
   }
@@ -54,20 +54,6 @@ object AWSLambdaLogResult {
     (maybeErrorContent, nonErrorContent)
   }
 
-  private val userErrorRegex = """(?s)(.+)ELLIPSIS_USER_ERROR_MESSAGE_START\n(.+)ELLIPSIS_USER_ERROR_MESSAGE_END\n(.+)""".r
-
-  def extractUserErrorFrom(maybeText: Option[String]): (Option[String], Option[String]) = {
-    val maybeErrorTuple: Option[(Option[String], Option[String])] = maybeText.map {
-      case userErrorRegex(systemErrorMessage, userErrorMessage, stackTrace) =>
-        (Some(systemErrorMessage + stackTrace), Some(userErrorMessage))
-      case s: String =>
-        (Some(s), None)
-    }
-    maybeErrorTuple.getOrElse {
-      (None, None)
-    }
-  }
-
   def extractUserDefinedLogStatementsFrom(text: String): String = {
     val maybeUserDefinedLogStatementsContent = """(?s)(START.*?\n)?(.*)""".r.findFirstMatchIn(text).flatMap(_.subgroups.tail.headOption)
     maybeUserDefinedLogStatementsContent.map { content =>
@@ -85,9 +71,8 @@ object AWSLambdaLogResult {
   def fromText(text: String): AWSLambdaLogResult = {
     val (maybeErrorContent, nonErrorContent) = extractErrorAndNonErrorContentFrom(text)
     val userDefinedLogStatements = extractUserDefinedLogStatementsFrom(nonErrorContent)
-    val (maybeSystemError, maybeUserError) = extractUserErrorFrom(maybeErrorContent)
 
-    AWSLambdaLogResult(text, userDefinedLogStatements, maybeSystemError, maybeUserError)
+    AWSLambdaLogResult(text, userDefinedLogStatements, maybeErrorContent)
   }
 
   def empty: AWSLambdaLogResult = fromText("")
