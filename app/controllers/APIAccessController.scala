@@ -1,23 +1,21 @@
 package controllers
 
-import java.time.OffsetDateTime
 import javax.inject.Inject
 
 import akka.actor.ActorSystem
 import com.mohiva.play.silhouette.api.Silhouette
 import com.mohiva.play.silhouette.api.actions.SecuredRequest
 import models.IDs
-import models.accounts.linkedoauth2token.LinkedOAuth2Token
+import models.accounts.linkedoauth2token.{LinkedOAuth2Token, LinkedOAuth2TokenInfo}
 import models.accounts.oauth2application.OAuth2Application
 import models.accounts.user.User
 import models.behaviors.BotResultService
 import models.behaviors.events.EventHandler
 import models.silhouette.EllipsisEnv
 import play.api.Configuration
-import play.api.http.{HeaderNames, MimeTypes}
 import play.api.i18n.MessagesApi
 import play.api.libs.ws.WSClient
-import play.api.mvc.{AnyContent, Result, Results}
+import play.api.mvc.{AnyContent, Result}
 import services.{CacheService, DataService}
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -38,18 +36,10 @@ class APIAccessController @Inject() (
 
   private def getToken(code: String, application: OAuth2Application, user: User, redirectUrl: String): Future[Option[LinkedOAuth2Token]] = {
     application.accessTokenResponseFor(code, redirectUrl, ws).flatMap { response =>
-      val json = response.json
-      (json \ "access_token").asOpt[String].map { accessToken =>
-        val maybeTokenType = (json \ "token_type").asOpt[String]
-        val maybeScopeGranted = (json \ "scope").asOpt[String]
-        val maybeExpirationTime = (json \ "expires_in").asOpt[Int].map { seconds =>
-          OffsetDateTime.now.plusSeconds(seconds)
-        }
-        val maybeRefreshToken = (json \ "refresh_token").asOpt[String]
-        val token = LinkedOAuth2Token(accessToken, maybeTokenType, maybeExpirationTime, maybeRefreshToken, maybeScopeGranted, user.id, application)
+      LinkedOAuth2TokenInfo.maybeFrom(response.json).map { info =>
+        val token = LinkedOAuth2Token(info.accessToken, info.maybeTokenType, info.maybeExpirationTime, info.maybeRefreshToken, info.maybeScopeGranted, user.id, application)
         dataService.linkedOAuth2Tokens.save(token).map(Some(_))
       }.getOrElse(Future.successful(None))
-
     }
   }
 
