@@ -134,6 +134,7 @@ printf "\n${GREEN}OK.${PLAIN}\n"
 mkdir -p target/docker/.ebextensions
 cp .ebextensions/* target/docker/.ebextensions/
 cp deploy/Docker* target/docker/
+cp -R newrelic target/docker/stage/opt/docker
 TOP_DIR=`pwd`
 BUNDLE=$VERSION_LABEL.zip
 BUNDLE_DIR="${TOP_DIR}/target/eb-bundles"
