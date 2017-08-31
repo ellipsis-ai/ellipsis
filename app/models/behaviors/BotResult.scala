@@ -188,7 +188,37 @@ trait WithBehaviorLink {
   }
 }
 
-case class ExecutionErrorValue(message: String, stack: String, userMessage: Option[String])
+case class ExecutionErrorValue(message: String, stack: String, userMessage: Option[String]) {
+  def translateStack(functionLines: Int): String = AWSLambdaLogResult.translateErrors(functionLines, stack)
+}
+
+case class ExecutionLog(logged: String, stack: String) {
+  private val stackTraceSourceRegex = """^\s+at (.+?) \(/.+/(.+?)\.js:(\d+):(\d+)\)""".r
+
+  def getLogStatementPrefix(ellipsisStackTrace: String): String = {
+    val lines = ellipsisStackTrace.split("\n")
+    val maybeLogMethod = lines.headOption.map {
+      case "log" => ""
+      case "info" => ""
+      case "warn" => "⚠️" // intellij hides the warning emoji
+      case "error" => "⛔️" // intellij hides the forbidden emoji
+    }.filter(_.nonEmpty)
+    val maybeSourceLine = lines.slice(1, 2).headOption
+    maybeSourceLine.map {
+      case stackTraceSourceRegex(funcName, sourceFile, lineNumber, charNumber) => {
+        val lineInfo = Option(sourceFile).filterNot(_ == "index").map { sourceName =>
+          s"$sourceName:$lineNumber"
+        }.getOrElse(lineNumber)
+        s"${maybeLogMethod.getOrElse("")}$lineInfo: "
+      }
+      case _ => ""
+    }.filter(_.nonEmpty).getOrElse {
+      maybeLogMethod.map(_ + ": ").getOrElse("")
+    }
+  }
+
+  override def toString: String = getLogStatementPrefix(stack) + logged
+}
 
 case class ExecutionErrorResult(
                                  event: Event,
@@ -252,8 +282,9 @@ case class ExecutionErrorResult(
 
   private def maybeErrorLog: Option[String] = {
     maybeError.map { error =>
-      if (error.stack.nonEmpty) {
-        error.stack
+      val translatedStack = error.translateStack(functionLines)
+      if (translatedStack.nonEmpty) {
+        translatedStack
       } else {
         error.message + howToIncludeStackTraceMessage
       }
@@ -263,13 +294,16 @@ case class ExecutionErrorResult(
     }
   }
 
-  override def files: Seq[UploadFileSpec] = {
-    val logs = (json \ "logs").validate[Seq[String]] match {
-      case JsSuccess(l, _) => AWSLambdaLogResult.processAuthorLogs(l)
-      case JsError(_) => Seq()
+  private val maybeAuthorLogTextFromJson: Option[String] = {
+    val logged = (json \ "logs").validate[Seq[ExecutionLog]] match {
+      case JsSuccess(logs, _) => logs.map(_.toString).mkString("\n")
+      case JsError(_) => ""
     }
-    val maybeLogs = Option(logs.mkString("\n")).filter(_.nonEmpty)
-    val maybeLogText = maybeLogs orElse maybeAuthorLog
+    Option(logged).filter(_.nonEmpty)
+  }
+
+  override def files: Seq[UploadFileSpec] = {
+    val maybeLogText = maybeAuthorLogTextFromJson orElse maybeAuthorLog
     val log = maybeLogText.map(_ + "\n").getOrElse("") + maybeErrorLog.getOrElse("")
     if (log.nonEmpty) {
       Seq(UploadFileSpec(Some(log), Some("text"), Some("Developer log")))
