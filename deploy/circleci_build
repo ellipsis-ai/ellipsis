@@ -110,7 +110,7 @@ check_environment() {
 printf "\n${GREEN}OK.${PLAIN}\n"
 printf "${GREEN}\n\nChecking your Environment...${PLAIN}\n"
 printf "_____________________________________________________ \n";
-check_environment()
+check_environment
 printf "\n${GREEN}OK.${PLAIN}\n"
 printf "\n\n${GREEN}Announcing the deployment to #dev...${PLAIN}\n"
 printf "_____________________________________________________ \n";
@@ -144,6 +144,8 @@ cd target/docker/
 zip -qq -r $BUNDLE_PATH .
 cd $TOP_DIR
 printf "\n${GREEN}OK.${PLAIN}\n"
+
+exit
 
 printf "\n\n${GREEN}Syncing assets with S3(OLD bucket)...${PLAIN}\n";
 printf "_____________________________________________________ \n";
