@@ -10,6 +10,8 @@ globals:
   lambdaCallback: false
   callback: true
   $CONTEXT_PARAM: false
+  EllipsisConsole: false
+  EllipsisError: false
 plugins: []
 rules:
   no-unused-vars:
