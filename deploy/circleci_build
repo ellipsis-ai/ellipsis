@@ -25,10 +25,12 @@ if [ "${TARGET_ENV}" = "stag01" ]
 then
   ACCOUNT_ID="458075145501"
   EMOJI=" 🦑 "
+  EB_APP_NAME="playapp"
 elif [ "${TARGET_ENV}" = "prod" ]
 then
   ACCOUNT_ID="170937251085"
   EMOJI=" 🐴 "
+  EB_APP_NAME="Ellipsis"
 fi
 
 if [ -z "${AWS_ELLIPSIS_PROFILE}" ]
@@ -37,8 +39,6 @@ then
 fi
 
 ASSETS_BUCKET="assets-${ACCOUNT_ID}"
-EB_APP_NAME="playapp"
-EB_ENV_NAME="playapp-env"
 EB_BUCKET="elasticbeanstalk-us-east-1-${ACCOUNT_ID}"
 
 printf "\n\n${EMOJI}${GREEN} - Getting ready to deploy to ${MAGENTA}${TARGET_ENV}${PLAIN} -${EMOJI}\n"
@@ -178,25 +178,24 @@ else
 fi
 
 
-if [ "${TARGET_ENV}" = "prod" ]
-then
-  printf "\n\n${GREEN}Creating new app version ...${PLAIN}\n";
-  printf "_____________________________________________________ \n";
-  aws --profile $AWS_ELLIPSIS_PROFILE elasticbeanstalk create-application-version \
-  --application-name "Ellipsis" \
+
+printf "\n\n${GREEN}Creating new app version ...${PLAIN}\n";
+printf "_____________________________________________________ \n";
+aws --profile $AWS_ELLIPSIS_PROFILE elasticbeanstalk create-application-version \
+  --application-name $EB_APP_NAME \
   --version-label $VERSION_LABEL \
   --source-bundle S3Bucket=$EB_BUCKET,S3Key=$S3_KEY \
   --process
-  if [ $? -eq 0 ]
-  then
-     printf "\n${GREEN}OK.${PLAIN}\n"
-  else
-    printf "\n\n${RED}An error occurred!{PLAIN}\n";
-    announce_failure
-    printf "Bye.\n"
-    exit 1
-  fi
+if [ $? -eq 0 ]
+then
+  printf "\n${GREEN}OK.${PLAIN}\n"
+else
+  printf "\n\n${RED}An error occurred!{PLAIN}\n";
+  announce_failure
+  printf "Bye.\n"
+  exit 1
 fi
+
 
 printf "\n\n${GREEN}Sending notifications...${PLAIN}\n";
 printf "_____________________________________________________ \n";
