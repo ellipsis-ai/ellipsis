@@ -37,4 +37,5 @@ object AWSLambdaConstants {
   }
   val ERROR_CLASS: String = loadStaticJs("error.js")
   val OVERRIDE_CONSOLE: String = loadStaticJs("console.js")
+  val CALLBACK_FUNCTION: String = loadStaticJs("callback.js")
 }

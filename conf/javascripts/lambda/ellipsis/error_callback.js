@@ -1,10 +1,10 @@
-function ellipsisErrorCallback(err, promise) {
+function ellipsisErrorCallback(err) {
   let callbackError;
   if (err instanceof Error) {
     callbackError = err;
   } else {
-    const throwableError = new $CONTEXT_PARAM.Error(err);
-    Error.captureStackTrace(throwableError, $CONTEXT_PARAM.error);
+    const throwableError = new EllipsisError(err);
+    Error.captureStackTrace(throwableError, ellipsisErrorCallback);
     callbackError = throwableError;
   }
   callback(null, {

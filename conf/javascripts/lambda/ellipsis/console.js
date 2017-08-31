@@ -20,12 +20,6 @@ const EllipsisConsole = {
   }
 };
 
-const lambdaCallback = callback;
-callback = function ellipsisCallback(err, result) {
-  lambdaCallback(err, Object.assign(result, {
-    logs: EllipsisConsole.logs
-  }));
-};
 console.log = function consoleLog() { EllipsisConsole.write("log", arguments, consoleLog); };
 console.error = function consoleError() { EllipsisConsole.write("error", arguments, consoleError); };
 console.warn = function consoleWarn() { EllipsisConsole.write("warn", arguments, consoleWarn); };
