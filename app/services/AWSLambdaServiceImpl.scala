@@ -282,8 +282,7 @@ class AWSLambdaServiceImpl @Inject() (
     // Note: this attempts to make line numbers in the lambda script line up with those displayed in the UI
     // Be careful changing either this or the UI line numbers
     s"""exports.handler = function(event, context, callback) { var fn = ${functionWithParams(params, functionBody)}
-       |  var $CONTEXT_PARAM = event.$CONTEXT_PARAM;
-       |  const log = [];
+       |  const $CONTEXT_PARAM = event.$CONTEXT_PARAM;
        |  $OVERRIDE_CONSOLE
        |  $CONTEXT_PARAM.$NO_RESPONSE_KEY = $NO_RESPONSE_CALLBACK_FUNCTION
        |  $CONTEXT_PARAM.success = $SUCCESS_CALLBACK_FUNCTION

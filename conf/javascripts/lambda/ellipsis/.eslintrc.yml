@@ -7,7 +7,7 @@ parserOptions:
 globals:
   event: false
   context: false
-  callback: false
+  callback: true
   $CONTEXT_PARAM: false
 plugins: []
 rules:

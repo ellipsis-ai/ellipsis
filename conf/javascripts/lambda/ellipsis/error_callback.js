@@ -1,4 +1,3 @@
-/* global log:false */
 function ellipsisErrorCallback(err, promise) {
   let callbackError;
   if (err instanceof Error) {
@@ -14,7 +13,6 @@ function ellipsisErrorCallback(err, promise) {
       message: callbackError.message,
       userMessage: callbackError.userMessage,
       stack: callbackError.stack
-    },
-    logs: log
+    }
   });
 }
