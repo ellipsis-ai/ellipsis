@@ -1,0 +1,18 @@
+{
+  "name": "ellipsis-date-range-parser",
+  "version": "0.0.3",
+  "description": "Parse a string and extract a date range.",
+  "main": "index.js",
+  "scripts": {
+    "test": "./node_modules/.bin/jest"
+  },
+  "author": "Ellipsis Co. <matteo@ellipsis.ai> (https://www.ellipsis.ai)",
+  "license": "ISC",
+  "dependencies": {
+    "chrono-node": "1.3.5",
+    "moment-timezone": "0.5.13"
+  },
+  "devDependencies": {
+    "jest": "^19.0.2"
+  }
+}

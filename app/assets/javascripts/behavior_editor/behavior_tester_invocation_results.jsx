@@ -1,64 +1,13 @@
 define(function(require) {
   var React = require('react'),
     InvocationTestResult = require('../models/behavior_invocation_result'),
-    ifPresent = require('../lib/if_present');
+    BehaviorTesterInvocationResult = require('./behavior_tester_invocation_result');
 
-  return React.createClass({
+  const BehaviorTesterInvocationResults = React.createClass({
     propTypes: {
       results: React.PropTypes.arrayOf(React.PropTypes.instanceOf(InvocationTestResult)).isRequired,
       resultStatus: React.PropTypes.node,
       onRenderResult: React.PropTypes.func
-    },
-
-    missingInputsResult: function(missingInputNames) {
-      return (
-        <div className="display-overflow-scroll border border-pink bg-white pas">
-          {missingInputNames.length === 1 ? (
-            <span>
-              Ellipsis will ask the user for a value for the input <code className="type-bold mlxs">{missingInputNames[0]}</code>.
-            </span>
-          ) : (
-            <span>
-              <span>Ellipsis will ask the user for values for these inputs: </span>
-              <code className="type-bold mlxs">{missingInputNames.join(", ")}</code>
-            </span>
-          )}
-        </div>
-      );
-    },
-
-    missingSimpleTokensResult: function(missingSimpleTokens) {
-      return (
-        <div className="display-overflow-scroll border border-pink bg-white pas">
-          {missingSimpleTokens.length === 1 ? (
-            <span>
-              If, like you, the user hasn't yet supplied a token for the <code className="type-bold">{missingSimpleTokens[0]}</code> API, Ellipsis will ask for one.
-            </span>
-          ) : (
-            <span>
-              <span>If, like you, the user hasn't yet supplied tokens for these APIs, Ellipsis will ask for them: </span>
-              <code className="type-bold mlxs">{missingSimpleTokens.join(", ")}</code>
-            </span>
-          )}
-        </div>
-      );
-    },
-
-    missingUserEnvVarsResult: function(missingUserEnvVars) {
-      return (
-        <div className="display-overflow-scroll border border-pink bg-white pas">
-          {missingUserEnvVars.length === 1 ? (
-            <span>
-              If, like you, the user hasn't yet set a value for the environment variable <code className="type-bold">{missingUserEnvVars[0]}</code>, Ellipsis will ask for one.
-            </span>
-          ) : (
-            <span>
-              <span>If, like you, the user hasn't yet set values for these environment variables, Ellipsis will ask for them: </span>
-              <code className="type-bold mlxs">{missingUserEnvVars.join(", ")}</code>
-            </span>
-          )}
-        </div>
-      );
     },
 
     componentDidUpdate: function(prevProps) {
@@ -94,35 +43,24 @@ define(function(require) {
     },
 
     renderResult: function(result, index) {
+      const isMostRecentResult = index + 1 === this.props.results.length;
       return (
         <div
           key={`invocationTestResult${index}`}
           className={
             "mbxs " +
-            (index + 1 === this.props.results.length ? "" : "opacity-50")
+            (isMostRecentResult ? "" : "opacity-50")
           }
         >
-          {this.props.onRenderResult ?
-            this.props.onRenderResult(result, index) :
-            this.defaultResultRenderer(result, index)
-          }
-        </div>
-      );
-    },
-
-    defaultResultRenderer: function(result) {
-      return (
-        <div>
-          {ifPresent(result.response, (response) => (
-            <div className="display-overflow-scroll border border-green pas bg-white">
-              <pre>{response}</pre>
-            </div>
-          ))}
-          {ifPresent(result.missingSimpleTokens, this.missingSimpleTokensResult)}
-          {ifPresent(result.missingUserEnvVars, this.missingUserEnvVarsResult)}
-          {ifPresent(result.missingInputNames, this.missingInputsResult)}
+          {this.props.onRenderResult ? (
+            this.props.onRenderResult(result)
+          ) : (
+            <BehaviorTesterInvocationResult result={result} />
+          )}
         </div>
       );
     }
   });
+
+  return BehaviorTesterInvocationResults;
 });

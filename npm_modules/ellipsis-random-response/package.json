@@ -6,7 +6,7 @@
   "scripts": {
     "test": "./node_modules/.bin/jest"
   },
-  "author": "Ellipsis Co. <luke@ellipsis.ai> (http://ellipsis.ai)",
+  "author": "Ellipsis Co. <luke@ellipsis.ai> (https://www.ellipsis.ai)",
   "license": "ISC",
   "devDependencies": {
     "jest": "^19.0.2"

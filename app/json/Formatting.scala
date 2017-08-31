@@ -4,6 +4,7 @@ import models.accounts.slack.SlackUserInfo
 import models.accounts.slack.botprofile.SlackBotProfile
 import models.behaviors.behaviorparameter.ValidValue
 import models.behaviors.events.SlackMessage
+import models.behaviors.testing.{InvocationTestReportOutput, ResultOutput}
 import play.api.libs.json._
 import services.SlackMessageEventData
 import utils.{CityInfo, UploadFileSpec}
@@ -61,6 +62,9 @@ object Formatting {
 
   implicit val behaviorReads = Json.reads[BehaviorData]
   implicit val behaviorWrites = Json.writes[BehaviorData]
+
+  implicit val nodeModuleVersionDataReads = Json.reads[NodeModuleVersionData]
+  implicit val nodeModuleVersionDataWrites = Json.writes[NodeModuleVersionData]
 
   implicit val behaviorGroupReads = Json.reads[BehaviorGroupData]
   implicit val behaviorGroupWrites = Json.writes[BehaviorGroupData]
@@ -138,4 +142,6 @@ object Formatting {
   implicit val slackFileSpecReads = Json.reads[UploadFileSpec]
   implicit val slackFileSpecWrites = Json.writes[UploadFileSpec]
 
+  implicit val resultOutputWrites = Json.writes[ResultOutput]
+  implicit val testReportOutputWrites = Json.writes[InvocationTestReportOutput]
 }

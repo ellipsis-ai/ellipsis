@@ -92,7 +92,8 @@ class BehaviorGroupVersionServiceImpl @Inject() (
   def createFor(
                  group: BehaviorGroup,
                  user: User,
-                 data: BehaviorGroupData
+                 data: BehaviorGroupData,
+                 forceNodeModuleUpdate: Boolean
                ): Future[BehaviorGroupVersion] = {
     val action = (for {
       groupVersion <- createForAction(group, user, data.name, data.icon, data.description)
@@ -115,7 +116,7 @@ class BehaviorGroupVersionServiceImpl @Inject() (
             behavior <- maybeExistingBehavior.map(DBIO.successful).getOrElse {
               dataService.behaviors.createForAction(group, Some(behaviorId), ea.exportId, ea.config.isDataType)
             }
-            behaviorVersion <- dataService.behaviorVersions.createForAction(behavior, groupVersion, requiredOAuth2ApiConfigs, requiredSimpleTokenApis, Some(user), ea)
+            behaviorVersion <- dataService.behaviorVersions.createForAction(behavior, groupVersion, requiredOAuth2ApiConfigs, requiredSimpleTokenApis, Some(user), ea, forceNodeModuleUpdate)
           } yield Some((ea, behaviorVersion))
         }.getOrElse(DBIO.successful(None))
       }).map(_.flatten)
@@ -141,7 +142,7 @@ class BehaviorGroupVersionServiceImpl @Inject() (
             behavior <- maybeExistingBehavior.map(DBIO.successful).getOrElse {
               dataService.behaviors.createForAction(group, Some(behaviorId), ea.exportId, ea.config.isDataType)
             }
-            behaviorVersion <- dataService.behaviorVersions.createForAction(behavior, groupVersion, requiredOAuth2ApiConfigs, requiredSimpleTokenApis, Some(user), ea)
+            behaviorVersion <- dataService.behaviorVersions.createForAction(behavior, groupVersion, requiredOAuth2ApiConfigs, requiredSimpleTokenApis, Some(user), ea, forceNodeModuleUpdate)
           } yield Some(behaviorVersion)
         }.getOrElse(DBIO.successful(None))
       })

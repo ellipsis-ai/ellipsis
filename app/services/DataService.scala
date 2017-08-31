@@ -33,6 +33,7 @@ import models.behaviors.triggers.messagetrigger.MessageTriggerService
 import models.environmentvariable.{TeamEnvironmentVariableService, UserEnvironmentVariableService}
 import models.behaviors.invocationtoken.InvocationTokenService
 import models.behaviors.library.LibraryVersionService
+import models.behaviors.nodemoduleversion.NodeModuleVersionService
 import models.behaviors.savedanswer.SavedAnswerService
 import models.behaviors.scheduling.recurrence.RecurrenceService
 import models.behaviors.scheduling.scheduledbehavior.ScheduledBehaviorService
@@ -69,6 +70,7 @@ trait DataService {
   val behaviorParameters: BehaviorParameterService
   val inputs: InputService
   val libraries: LibraryVersionService
+  val nodeModuleVersions: NodeModuleVersionService
   val savedAnswers: SavedAnswerService
   val messageTriggers: MessageTriggerService
   val awsConfigs: AWSConfigService

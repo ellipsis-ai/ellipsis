@@ -3,10 +3,26 @@ define(function(require) {
   var ONE_WEEK_IN_MS = 1000 * 60 * 60 * 24 * 7;
 
   const RESERVED_WORDS = Object.freeze([
+    // ECMAScript 2015 reserved words:
     'break', 'case', 'catch', 'class', 'const', 'continue', 'debugger', 'default',
     'delete', 'do', 'else', 'export', 'extends', 'finally', 'for', 'function',
     'if', 'import', 'in', 'instanceof', 'new', 'return', 'super', 'switch',
-    'this', 'throw', 'try', 'typeof', 'var', 'void', 'while', 'with', 'yield'
+    'this', 'throw', 'try', 'typeof', 'var', 'void', 'while', 'with', 'yield',
+
+    // ECMAScript future reserved words:
+    'enum', 'implements', 'interface', 'let', 'package', 'private', 'protected',
+    'public', 'static',
+
+    // Module reserved words:
+    'await',
+
+    // Old future reserved words:
+    'abstract', 'boolean', 'byte', 'char', 'double', 'final', 'float', 'goto',
+    'int', 'long', 'native', 'short', 'synchronized', 'throws', 'transient',
+    'volatile',
+
+    // Reserved literals:
+    'null', 'true', 'false'
   ]);
 
   function matchesReservedWord(name) {

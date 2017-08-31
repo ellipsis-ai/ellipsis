@@ -9,6 +9,7 @@ import models.behaviors.config.requiredsimpletokenapi.RequiredSimpleTokenApi
 import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.events.Event
 import models.behaviors.library.LibraryVersion
+import models.behaviors.nodemoduleversion.NodeModuleVersion
 import models.behaviors.{BotResult, ParameterWithValue}
 import models.environmentvariable.EnvironmentVariable
 import play.api.Configuration
@@ -47,7 +48,9 @@ trait AWSLambdaService extends AWSService {
                          libraries: Seq[LibraryVersion],
                          maybeAWSConfig: Option[AWSConfig],
                          requiredOAuth2ApiConfigs: Seq[RequiredOAuth2ApiConfig],
-                         requiredSimpleTokenApis: Seq[RequiredSimpleTokenApi]
+                         requiredSimpleTokenApis: Seq[RequiredSimpleTokenApi],
+                         forceNodeModuleUpdate: Boolean
                          ): Future[Unit]
 
+  def ensureNodeModuleVersionsFor(behaviorVersion: BehaviorVersion): DBIO[Seq[NodeModuleVersion]]
 }

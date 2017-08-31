@@ -35,7 +35,7 @@ define(function(require) {
 
     getParsedResponse: function(result) {
       try {
-        return JSON.parse(result.response);
+        return JSON.parse(result.responseText);
       } catch(e) {
         return null;
       }
@@ -96,9 +96,7 @@ define(function(require) {
         csrfToken: this.props.csrfToken,
         paramValues: this.params(),
         onSuccess: (json) => {
-          var newResults = this.state.results.concat(
-            new InvocationTestResult(json.result && json.result.fullText)
-          );
+          var newResults = this.state.results.concat(InvocationTestResult.fromReportJSON(json));
           this.setState({
             results: newResults,
             isTesting: false
@@ -180,7 +178,10 @@ define(function(require) {
         );
       } else if (result) {
         return (
-          <span className="type-pink">Last response invalid: must be an array of objects, each with an <code className="type-black">id</code> and <code className="type-black">label</code> property.</span>
+          <span className="type-pink">
+            <span>Last response invalid: must call <code>ellipsis.success</code> with an array of objects, </span>
+            <span>each with an <code className="type-black">id</code> and <code className="type-black">label</code> property.</span>
+          </span>
         );
       } else {
         return (
@@ -195,7 +196,13 @@ define(function(require) {
         return this.renderValidResultTableWith(this.getParsedResponse(result));
       } else {
         return (
-          <pre className="display-overflow-scroll border border-pink bg-white pas">{result.response}</pre>
+          <div className="display-overflow-scroll border border-pink bg-white pas">
+            {result.responseText ? (
+              <pre>{result.responseText}</pre>
+            ) : (
+              <i>(No response occurred.)</i>
+            )}
+          </div>
         );
       }
     },
@@ -246,7 +253,7 @@ define(function(require) {
         );
       } else {
         return (
-          <div className="type-italic border pas border-green bg-white type-italic">An empty array was returned.</div>
+          <div className="type-italic border pas border-green bg-white">An empty list was returned.</div>
         );
       }
     },

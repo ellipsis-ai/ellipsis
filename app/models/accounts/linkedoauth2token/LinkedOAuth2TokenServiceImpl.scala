@@ -78,8 +78,8 @@ class LinkedOAuth2TokenServiceImpl @Inject() (
   }
 
   private def refreshIfNecessaryAction(linkedOAuth2Token: LinkedOAuth2Token): DBIO[LinkedOAuth2Token] = {
-    val eventualMaybeNewInstance = if (linkedOAuth2Token.isExpiredOrExpiresSoon) {
-      linkedOAuth2Token.maybeRefreshToken.map { token =>
+    val eventualMaybeNewInstance = linkedOAuth2Token.maybeRefreshToken.map { token =>
+      if (linkedOAuth2Token.maybeExpirationTime.isEmpty || linkedOAuth2Token.isExpiredOrExpiresSoon) {
         val tokenResponse = linkedOAuth2Token.application.refreshTokenResponseFor(token, ws)
 
         DBIO.from(tokenResponse).flatMap { response =>
@@ -98,10 +98,10 @@ class LinkedOAuth2TokenServiceImpl @Inject() (
             )).map(Some(_))
           }.getOrElse(DBIO.successful(None))
         }
-      }.getOrElse(DBIO.successful(None))
-    } else {
-      DBIO.successful(None)
-    }
+      } else {
+        DBIO.successful(None)
+      }
+    }.getOrElse(DBIO.successful(None))
 
     eventualMaybeNewInstance.map { maybeNewInstance =>
       maybeNewInstance.getOrElse(linkedOAuth2Token)
@@ -113,7 +113,8 @@ class LinkedOAuth2TokenServiceImpl @Inject() (
   }
   val findQuery = Compiled(uncompiledFindQuery _)
 
-  def saveAction(token: LinkedOAuth2Token): DBIO[LinkedOAuth2Token] = {
+  def saveAction(tokenWithoutExpirationTimeEnsured: LinkedOAuth2Token): DBIO[LinkedOAuth2Token] = {
+    val token = tokenWithoutExpirationTimeEnsured.copyWithExpirationTimeIfRefreshToken
     val query = findQuery(token.userId, token.application.id)
     val raw = token.toRaw
     query.result.headOption.flatMap {

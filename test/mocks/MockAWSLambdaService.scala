@@ -11,6 +11,7 @@ import models.behaviors.config.requiredsimpletokenapi.RequiredSimpleTokenApi
 import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.events.Event
 import models.behaviors.library.LibraryVersion
+import models.behaviors.nodemoduleversion.NodeModuleVersion
 import models.behaviors.{BotResult, ParameterWithValue, SuccessResult}
 import models.environmentvariable.EnvironmentVariable
 import org.scalatest.mock.MockitoSugar
@@ -60,7 +61,8 @@ class MockAWSLambdaService @Inject() (
                                   libraries: Seq[LibraryVersion],
                                   maybeAWSConfig: Option[AWSConfig],
                                   requiredOAuth2ApiConfigs: Seq[RequiredOAuth2ApiConfig],
-                                  requiredSimpleTokenApis: Seq[RequiredSimpleTokenApi]
+                                  requiredSimpleTokenApis: Seq[RequiredSimpleTokenApi],
+                                  forceNodeModuleUpdate: Boolean
                                 ): Future[Unit] = Future.successful({})
 
   override def invokeAction(
@@ -72,4 +74,6 @@ class MockAWSLambdaService @Inject() (
                      ): DBIO[BotResult] = DBIO.successful(resultFor(event, maybeConversation))
 
   override def functionWithParams(params: Array[String], functionBody: String): String = ""
+
+  def ensureNodeModuleVersionsFor(behaviorVersion: BehaviorVersion): DBIO[Seq[NodeModuleVersion]] = DBIO.successful(Seq())
 }

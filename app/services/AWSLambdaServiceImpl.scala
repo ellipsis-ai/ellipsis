@@ -8,6 +8,8 @@ import javax.inject.Inject
 import akka.actor.ActorSystem
 import com.amazonaws.services.lambda.model._
 import com.amazonaws.services.lambda.{AWSLambdaAsync, AWSLambdaAsyncClientBuilder}
+import json.Formatting._
+import json.NodeModuleVersionData
 import models.Models
 import models.behaviors._
 import models.behaviors.behaviorversion.BehaviorVersion
@@ -18,6 +20,7 @@ import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.events.Event
 import models.behaviors.invocationtoken.InvocationToken
 import models.behaviors.library.LibraryVersion
+import models.behaviors.nodemoduleversion.NodeModuleVersion
 import models.environmentvariable.{EnvironmentVariable, TeamEnvironmentVariable, UserEnvironmentVariable}
 import models.team.Team
 import play.api.libs.json._
@@ -276,34 +279,31 @@ class AWSLambdaServiceImpl @Inject() (
                          ): String = {
     val paramsFromEvent = params.indices.map(i => s"event.${invocationParamFor(i)}")
     val invocationParamsString = (paramsFromEvent ++ Array(s"event.$CONTEXT_PARAM")).mkString(", ")
-
     // Note: this attempts to make line numbers in the lambda script line up with those displayed in the UI
     // Be careful changing either this or the UI line numbers
-    s"""exports.handler = function(event, context, callback) { var fn = ${functionWithParams(params, functionBody)};
-        |   var $CONTEXT_PARAM = event.$CONTEXT_PARAM;
-        |   $CONTEXT_PARAM.$NO_RESPONSE_KEY = function() {
-        |     callback(null, { $NO_RESPONSE_KEY: true });
-        |   };
-        |   $CONTEXT_PARAM.success = function(result, options) {
-        |     var resultWithOptions = Object.assign(
-        |       {},
-        |       { "result": result === undefined ? null : result },
-        |       options ? options : {}
-        |     );
-        |     callback(null, resultWithOptions);
-        |   };
-        |   $CONTEXT_PARAM.error = function(err) { callback(err || "(No error message or an empty error message was provided.)"); };
-        |   if (process.listeners('unhandledRejection').length === 0) {
-        |     process.on('unhandledRejection', function(reason, p) {
-        |       throw(reason);
-        |     });
-        |   }
-        |   ${awsCodeFor(maybeAwsConfig)}
-        |   $CONTEXT_PARAM.accessTokens = {};
-        |   ${accessTokensCodeFor(requiredOAuth2ApiConfigs)}
-        |   ${simpleTokensCodeFor(requiredSimpleTokenApis)}
-        |   fn($invocationParamsString);
-        |}
+    s"""exports.handler = function(event, context, callback) { var fn = ${functionWithParams(params, functionBody)}
+       |  var $CONTEXT_PARAM = event.$CONTEXT_PARAM;
+       |  $CONTEXT_PARAM.$NO_RESPONSE_KEY = $NO_RESPONSE_CALLBACK_FUNCTION
+       |  $CONTEXT_PARAM.success = $SUCCESS_CALLBACK_FUNCTION
+       |  $CONTEXT_PARAM.Error = $ERROR_CLASS
+       |  $CONTEXT_PARAM.error = $ERROR_CALLBACK_FUNCTION
+       |
+       |  if (process.listeners('unhandledRejection').length === 0) {
+       |    process.on('unhandledRejection', $CONTEXT_PARAM.error);
+       |  }
+       |
+       |  ${awsCodeFor(maybeAwsConfig)}
+       |  $CONTEXT_PARAM.accessTokens = {};
+       |  ${accessTokensCodeFor(requiredOAuth2ApiConfigs)}
+       |  ${simpleTokensCodeFor(requiredSimpleTokenApis)}
+       |  $OVERRIDE_CONSOLE
+       |
+       |  try {
+       |    fn($invocationParamsString);
+       |  } catch(err) {
+       |    $CONTEXT_PARAM.error(err);
+       |  }
+       |}
     """.stripMargin
   }
 
@@ -338,7 +338,8 @@ class AWSLambdaServiceImpl @Inject() (
                                        maybeAWSConfig: Option[AWSConfig],
                                        requiredOAuth2ApiConfigs: Seq[RequiredOAuth2ApiConfig],
                                        requiredSimpleTokenApis: Seq[RequiredSimpleTokenApi],
-                                       maybePreviousFunctionInfo: Option[PreviousFunctionInfo]
+                                       maybePreviousFunctionInfo: Option[PreviousFunctionInfo],
+                                       forceNodeModuleUpdate: Boolean
                                      ): Unit = {
     val dirName = dirNameFor(functionName)
     val path = Path(dirName)
@@ -350,15 +351,15 @@ class AWSLambdaServiceImpl @Inject() (
     }
 
     val requiredModules = requiredModulesIn(functionBody, libraries, includeLibraryRequires = true)
-    val shouldInstallModules = maybePreviousFunctionInfo.forall { previousFunctionInfo =>
+    val canUseCopyModules = maybePreviousFunctionInfo.forall { previousFunctionInfo =>
       if (previousFunctionInfo.canCopyModules(requiredModules)) {
         previousFunctionInfo.copyModulesInto(dirName)
-        false
-      } else {
         true
+      } else {
+        false
       }
     }
-    if (shouldInstallModules) {
+    if (forceNodeModuleUpdate || !canUseCopyModules) {
       requiredModules.foreach { moduleName =>
         // NPM wants to write a lockfile in $HOME; this makes it work for daemons
         Process(Seq("bash","-c",s"cd $dirName && npm install $moduleName"), None, "HOME" -> "/tmp").!
@@ -366,6 +367,31 @@ class AWSLambdaServiceImpl @Inject() (
     }
 
     Process(Seq("bash","-c",s"cd $dirName && zip -q -r ${zipFileNameFor(functionName)} *")).!
+  }
+
+  private def getNodeModuleInfoFor(functionName: String): JsValue = {
+    val dirName = dirNameFor(functionName)
+    val infoString = try {
+      Process(Seq("bash","-c",s"cd $dirName && npm list --depth=0 --json=true")).!!
+    } catch {
+      case t: Throwable => "{}"
+    }
+    Json.parse(infoString)
+  }
+
+  def ensureNodeModuleVersionsFor(behaviorVersion: BehaviorVersion): DBIO[Seq[NodeModuleVersion]] = {
+    val json = getNodeModuleInfoFor(behaviorVersion.functionName)
+    val maybeDependencies = (json \ "dependencies").asOpt[JsObject]
+    maybeDependencies.map { dependencies =>
+      DBIO.sequence(dependencies.values.toSeq.map { depJson =>
+        depJson.validate[NodeModuleVersionData] match {
+          case JsSuccess(info, _) => {
+            dataService.nodeModuleVersions.ensureForAction(info.from, info.version, behaviorVersion.groupVersion).map(Some(_))
+          }
+          case JsError(err) => DBIO.successful(None)
+        }
+      }).map(_.flatten)
+    }.getOrElse(DBIO.successful(Seq()))
   }
 
   private def getZipFor(
@@ -376,9 +402,20 @@ class AWSLambdaServiceImpl @Inject() (
                          maybeAWSConfig: Option[AWSConfig],
                          requiredOAuth2ApiConfigs: Seq[RequiredOAuth2ApiConfig],
                          requiredSimpleTokenApis: Seq[RequiredSimpleTokenApi],
-                         maybePreviousFunctionInfo: Option[PreviousFunctionInfo]
+                         maybePreviousFunctionInfo: Option[PreviousFunctionInfo],
+                         forceNodeModuleUpdate: Boolean
                        ): ByteBuffer = {
-    createZipWithModulesFor(functionName, functionBody, params, libraries, maybeAWSConfig, requiredOAuth2ApiConfigs, requiredSimpleTokenApis, maybePreviousFunctionInfo)
+    createZipWithModulesFor(
+      functionName,
+      functionBody,
+      params,
+      libraries,
+      maybeAWSConfig,
+      requiredOAuth2ApiConfigs,
+      requiredSimpleTokenApis,
+      maybePreviousFunctionInfo,
+      forceNodeModuleUpdate
+    )
     val path = Paths.get(zipFileNameFor(functionName))
     ByteBuffer.wrap(Files.readAllBytes(path))
   }
@@ -408,7 +445,8 @@ class AWSLambdaServiceImpl @Inject() (
                       maybeAWSConfig: Option[AWSConfig],
                       requiredOAuth2ApiConfigs: Seq[RequiredOAuth2ApiConfig],
                       requiredSimpleTokenApis: Seq[RequiredSimpleTokenApi],
-                      maybePreviousFunctionInfo: Option[PreviousFunctionInfo]
+                      maybePreviousFunctionInfo: Option[PreviousFunctionInfo],
+                      forceNodeModuleUpdate: Boolean
                     ): Future[Unit] = {
 
     deleteFunction(functionName).andThen {
@@ -418,7 +456,17 @@ class AWSLambdaServiceImpl @Inject() (
       } else {
         val functionCode =
           new FunctionCode().
-            withZipFile(getZipFor(functionName, functionBody, params, libraries, maybeAWSConfig, requiredOAuth2ApiConfigs, requiredSimpleTokenApis, maybePreviousFunctionInfo))
+            withZipFile(getZipFor(
+              functionName,
+              functionBody,
+              params,
+              libraries,
+              maybeAWSConfig,
+              requiredOAuth2ApiConfigs,
+              requiredSimpleTokenApis,
+              maybePreviousFunctionInfo,
+              forceNodeModuleUpdate
+            ))
         val createFunctionRequest =
           new CreateFunctionRequest().
             withFunctionName(functionName).
@@ -440,18 +488,28 @@ class AWSLambdaServiceImpl @Inject() (
                          libraries: Seq[LibraryVersion],
                          maybeAWSConfig: Option[AWSConfig],
                          requiredOAuth2ApiConfigs: Seq[RequiredOAuth2ApiConfig],
-                         requiredSimpleTokenApis: Seq[RequiredSimpleTokenApi]
+                         requiredSimpleTokenApis: Seq[RequiredSimpleTokenApi],
+                         forceNodeModuleUpdate: Boolean
                        ): Future[Unit] = {
     for {
       maybePrevious <- dataService.behaviorVersions.maybePreviousFor(behaviorVersion)
       previousLibraries <- maybePrevious.map { prev =>
         dataService.libraries.allFor(prev.groupVersion)
       }.getOrElse(Future.successful(Seq()))
-    } yield {
-      val maybePreviousFunctionInfo = maybePrevious.map { version =>
+      maybePreviousFunctionInfo <- Future.successful(maybePrevious.map { version =>
         PreviousFunctionInfo(version.functionName, version.functionBody, previousLibraries)
-      }
-      deployFunction(behaviorVersion.functionName, functionBody, params, libraries, maybeAWSConfig, requiredOAuth2ApiConfigs, requiredSimpleTokenApis, maybePreviousFunctionInfo)
-    }
+      })
+      _ <- deployFunction(
+        behaviorVersion.functionName,
+        functionBody,
+        params,
+        libraries,
+        maybeAWSConfig,
+        requiredOAuth2ApiConfigs,
+        requiredSimpleTokenApis,
+        maybePreviousFunctionInfo,
+        forceNodeModuleUpdate
+      )
+    } yield {}
   }
 }

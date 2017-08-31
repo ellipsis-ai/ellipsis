@@ -14,6 +14,7 @@ var React = require('react'),
   CodeEditorHelp = require('./code_editor_help'),
   ConfirmActionPanel = require('../panels/confirm_action'),
   CollapseButton = require('../shared_ui/collapse_button'),
+  DataRequest = require('../lib/data_request'),
   DataTypeEditor = require('./data_type_editor'),
   DefaultStorageAdder = require('./default_storage_adder'),
   DefaultStorageBrowser = require('./default_storage_browser'),
@@ -711,6 +712,30 @@ const BehaviorEditor = React.createClass({
     });
   },
 
+  updateNodeModules: function(optionalCallback) {
+    this.setState({ error: null });
+    this.toggleActivePanel('saving', true);
+    DataRequest.jsonPost(
+      jsRoutes.controllers.BehaviorEditorController.updateNodeModules().url,
+      { behaviorGroupId: this.getBehaviorGroup().id },
+      this.props.csrfToken
+    )
+      .then((json) => {
+        if (json.id) {
+          const newProps = {
+            group: BehaviorGroup.fromJson(json),
+            onLoad: optionalCallback
+          };
+          this.props.onSave(newProps, this.state);
+        } else {
+          this.onSaveError();
+        }
+      })
+      .catch((error) => {
+        this.onSaveError(error);
+      });
+  },
+
   backgroundSave: function(optionalCallback) {
     var form = new FormData(this.refs.behaviorForm);
     fetch(this.getFormAction(), {
@@ -1182,6 +1207,10 @@ const BehaviorEditor = React.createClass({
     return this.getBehaviorGroup().libraryVersions;
   },
 
+  getNodeModuleVersions: function() {
+    return this.getBehaviorGroup().nodeModuleVersions;
+  },
+
   hasInputs: function() {
     return this.getInputs() && this.getInputs().length > 0;
   },
@@ -1494,7 +1523,7 @@ const BehaviorEditor = React.createClass({
         onDeleteFunctionBody={this.confirmDeleteCode}
 
         envVariableNames={this.getEnvVariableNames()}
-
+        functionExecutesImmediately={props.functionExecutesImmediately || false}
       />
     );
   },
@@ -1909,6 +1938,7 @@ const BehaviorEditor = React.createClass({
               actionBehaviors={this.getActionBehaviors()}
               dataTypeBehaviors={this.getDataTypeBehaviors()}
               libraries={this.getLibraries()}
+              nodeModuleVersions={this.getNodeModuleVersions()}
               selectedId={this.getSelectedId()}
               groupId={this.getBehaviorGroup().id}
               groupName={this.getBehaviorGroup().getName()}
@@ -1920,6 +1950,7 @@ const BehaviorEditor = React.createClass({
               addNewDataType={this.addNewDataType}
               addNewLibrary={this.addNewLibrary}
               isModified={this.editableIsModified}
+              onUpdateNodeModules={this.updateNodeModules}
             />
           </Sticky>
         </Collapsible>
@@ -2170,7 +2201,8 @@ const BehaviorEditor = React.createClass({
               onToggleHelp={this.toggleBoilerplateHelp}
               helpIsActive={this.props.activePanelName === 'helpForBoilerplateParameters'}
             />
-          )
+          ),
+          functionExecutesImmediately: true
         })}
       </div>
     );

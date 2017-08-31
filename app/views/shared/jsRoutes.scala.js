@@ -21,6 +21,7 @@
   routes.javascript.BehaviorEditorController.queryDefaultStorage,
   routes.javascript.BehaviorEditorController.regexValidationErrorsFor,
   routes.javascript.BehaviorEditorController.save,
+  routes.javascript.BehaviorEditorController.updateNodeModules,
   routes.javascript.BehaviorEditorController.saveDefaultStorageItem,
   routes.javascript.BehaviorEditorController.testInvocation,
   routes.javascript.BehaviorEditorController.testTriggers,

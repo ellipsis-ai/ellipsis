@@ -235,7 +235,8 @@ class BehaviorVersionServiceImpl @Inject() (
                        requiredOAuth2ApiConfigs: Seq[RequiredOAuth2ApiConfig],
                        requiredSimpleTokenApis: Seq[RequiredSimpleTokenApi],
                        maybeUser: Option[User],
-                       data: BehaviorVersionData
+                       data: BehaviorVersionData,
+                       forceNodeModuleUpdate: Boolean
                      ): DBIO[BehaviorVersion] = {
     for {
       behaviorVersion <- createForAction(behavior, groupVersion, maybeUser, data.id)
@@ -264,7 +265,8 @@ class BehaviorVersionServiceImpl @Inject() (
           libraries,
           maybeAWSConfig,
           requiredOAuth2ApiConfigs,
-          requiredSimpleTokenApis
+          requiredSimpleTokenApis,
+          forceNodeModuleUpdate
         )
         )
         _ <- dataService.behaviorParameters.ensureForAction(updated, inputs)
@@ -284,6 +286,7 @@ class BehaviorVersionServiceImpl @Inject() (
         _ <- data.config.dataTypeConfig.map { configData =>
           dataService.dataTypeConfigs.createForAction(updated, configData)
         }.getOrElse(DBIO.successful(None))
+        _ <- lambdaService.ensureNodeModuleVersionsFor(updated)
       } yield Unit
     } yield behaviorVersion
   }
@@ -432,7 +435,8 @@ class BehaviorVersionServiceImpl @Inject() (
         libraries,
         maybeAWSConfig,
         requiredOAuth2ApiConfigs,
-        requiredSimpleTokenApis
+        requiredSimpleTokenApis,
+        forceNodeModuleUpdate = true
       )
     } yield {}
   }
@@ -463,18 +467,6 @@ class BehaviorVersionServiceImpl @Inject() (
       currentVersions <- allCurrent
       _ <- redeployAllSequentially(currentVersions)
     } yield {}
-  }
-
-  private def isUnhandledError(json: JsValue): Boolean = {
-    (json \ "errorMessage").toOption.flatMap { m =>
-      "Process exited before completing request".r.findFirstIn(m.toString)
-    }.isDefined
-  }
-
-  private def isSyntaxError(json: JsValue): Boolean = {
-    (json \ "errorType").toOption.flatMap { m =>
-      "SyntaxError".r.findFirstIn(m.toString)
-    }.isDefined
   }
 
 }
