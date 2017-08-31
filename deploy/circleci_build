@@ -145,8 +145,6 @@ zip -qq -r $BUNDLE_PATH .
 cd $TOP_DIR
 printf "\n${GREEN}OK.${PLAIN}\n"
 
-exit
-
 printf "\n\n${GREEN}Syncing assets with S3(OLD bucket)...${PLAIN}\n";
 printf "_____________________________________________________ \n";
 PUBLIC_ASSETS_DIR=/tmp/public-assets
