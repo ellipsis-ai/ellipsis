@@ -6,6 +6,7 @@ import akka.actor.ActorSystem
 import json.{BehaviorConfig, BehaviorGroupData, BehaviorTriggerData, BehaviorVersionData}
 import models.behaviors._
 import models.behaviors.events.Event
+import play.api.libs.json.JsNull
 import services.{AWSLambdaService, DataService}
 import utils.QuestionAnswerExtractor
 
@@ -87,7 +88,7 @@ case class RememberBehavior(event: Event, lambdaService: AWSLambdaService, dataS
         }
         SimpleTextResult(event, None, s"OK, I compiled recent messages into [a new skill]($link)", forcePrivateResponse = false)
       }.getOrElse{
-        NoResponseResult(event, None, None)
+        NoResponseResult(event, None, JsNull, None)
       }
     }
   }

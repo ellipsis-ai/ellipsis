@@ -281,22 +281,30 @@ class AWSLambdaServiceImpl @Inject() (
     val invocationParamsString = (paramsFromEvent ++ Array(s"event.$CONTEXT_PARAM")).mkString(", ")
     // Note: this attempts to make line numbers in the lambda script line up with those displayed in the UI
     // Be careful changing either this or the UI line numbers
-    s"""exports.handler = function(event, context, callback) { var fn = ${functionWithParams(params, functionBody)}
-       |  var $CONTEXT_PARAM = event.$CONTEXT_PARAM;
-       |  $CONTEXT_PARAM.$NO_RESPONSE_KEY = $NO_RESPONSE_CALLBACK_FUNCTION
-       |  $CONTEXT_PARAM.success = $SUCCESS_CALLBACK_FUNCTION
-       |  $CONTEXT_PARAM.Error = $ERROR_CLASS
-       |  $CONTEXT_PARAM.error = $ERROR_CALLBACK_FUNCTION
+    s"""exports.handler = function(event, context, lambdaCallback) { var fn = ${functionWithParams(params, functionBody)}
+       |  const $CONTEXT_PARAM = event.$CONTEXT_PARAM;
        |
-       |  if (process.listeners('unhandledRejection').length === 0) {
-       |    process.on('unhandledRejection', $CONTEXT_PARAM.error);
-       |  }
+       |  $OVERRIDE_CONSOLE
+       |  $CALLBACK_FUNCTION
+       |  const callback = ellipsisCallback;
+       |
+       |  $NO_RESPONSE_CALLBACK_FUNCTION
+       |  $SUCCESS_CALLBACK_FUNCTION
+       |  $ERROR_CLASS
+       |  $ERROR_CALLBACK_FUNCTION
+       |
+       |  $CONTEXT_PARAM.$NO_RESPONSE_KEY = ellipsisNoResponseCallback;
+       |  $CONTEXT_PARAM.success = ellipsisSuccessCallback;
+       |  $CONTEXT_PARAM.Error = EllipsisError;
+       |  $CONTEXT_PARAM.error = ellipsisErrorCallback;
+       |
+       |  process.removeAllListeners('unhandledRejection');
+       |  process.on('unhandledRejection', $CONTEXT_PARAM.error);
        |
        |  ${awsCodeFor(maybeAwsConfig)}
        |  $CONTEXT_PARAM.accessTokens = {};
        |  ${accessTokensCodeFor(requiredOAuth2ApiConfigs)}
        |  ${simpleTokensCodeFor(requiredSimpleTokenApis)}
-       |  $OVERRIDE_CONSOLE
        |
        |  try {
        |    fn($invocationParamsString);

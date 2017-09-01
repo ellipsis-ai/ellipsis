@@ -7,8 +7,11 @@ parserOptions:
 globals:
   event: false
   context: false
-  callback: false
+  lambdaCallback: false
+  callback: true
   $CONTEXT_PARAM: false
+  EllipsisConsole: false
+  EllipsisError: false
 plugins: []
 rules:
   no-unused-vars:

@@ -1,3 +1,5 @@
 function ellipsisNoResponseCallback() {
-  callback(null, { $NO_RESPONSE_KEY: true });
+  callback(null, {
+    $NO_RESPONSE_KEY: true
+  });
 }

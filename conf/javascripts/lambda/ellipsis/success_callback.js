@@ -1,8 +1,6 @@
 function ellipsisSuccessCallback(result, options) {
-  var resultWithOptions = Object.assign(
-    {},
-    { "result": result === undefined ? null : result },
-    options ? options : {}
-  );
+  var resultWithOptions = Object.assign({}, options, {
+    result: result === undefined ? null : result
+  });
   callback(null, resultWithOptions);
 }
