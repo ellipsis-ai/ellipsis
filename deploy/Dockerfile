@@ -9,9 +9,6 @@ RUN mkdir -p ${APP_LOG_FILE} && chown -R daemon:daemon ${APP_LOG_FILE}
 
 WORKDIR /opt/docker
 
-# Install New Relic Agent
-
-
 RUN chown -R daemon:daemon .
 USER daemon
 ENTRYPOINT ["bin/ellipsis", "-Dconfig.resource=production.conf", "-Dlogger.resource=logback.prod.xml"]
