@@ -6,6 +6,11 @@ class TemplateApplierSpec extends PlaySpec {
 
   "TemplateApplier" should {
 
+    "preserve line breaks for Markdown" in {
+      val applier = TemplateApplier(Some("foo\nbar\n\nbaz"), JsDefined(Json.toJson("")))
+      applier.apply mustBe "foo  \nbar  \n\nbaz"
+    }
+
     "apply to a single-level object result" in  {
       val json = Json.toJson(Map("foo" -> "2"))
       val applier = TemplateApplier(Some("{successResult.foo}"), JsDefined(json))
@@ -69,7 +74,7 @@ class TemplateApplierSpec extends PlaySpec {
           |1. {item}
           |{endfor}
         """.stripMargin), JsDefined(resultJson))
-      applier.apply.trim mustBe "1. first\n\n1. second\n\n1. third"
+      applier.apply.trim mustBe "1. first  \n1. second  \n1. third"
     }
 
     "apply for iteration over a list of non-strings" in {
@@ -79,7 +84,7 @@ class TemplateApplierSpec extends PlaySpec {
           |1. {item}
           |{endfor}
         """.stripMargin), JsDefined(resultJson))
-      applier.apply.trim mustBe "1. 1\n\n1. 2\n\n1. 3"
+      applier.apply.trim mustBe "1. 1  \n1. 2  \n1. 3"
     }
 
     "apply for iteration over a list of objects" in {
@@ -89,7 +94,7 @@ class TemplateApplierSpec extends PlaySpec {
           |1. {item.value}
           |{endfor}
         """.stripMargin), JsDefined(resultJson))
-      applier.apply.trim mustBe "1. 1\n\n1. 2\n\n1. 3"
+      applier.apply.trim mustBe "1. 1  \n1. 2  \n1. 3"
     }
 
     "apply for multiple iterations over a list" in {
@@ -103,7 +108,7 @@ class TemplateApplierSpec extends PlaySpec {
           |- {ea}
           |{endfor}
         """.stripMargin), JsDefined(resultJson))
-      applier.apply.trim mustBe "1. first\n\n1. second\n\n1. third\n\n\n\n- first\n\n- second\n\n- third"
+      applier.apply.trim mustBe "1. first  \n1. second  \n1. third  \n\n- first  \n- second  \n- third"
     }
 
     "apply for iteration over top-level list result" in {
@@ -113,7 +118,7 @@ class TemplateApplierSpec extends PlaySpec {
           |1. {item}
           |{endfor}
         """.stripMargin), JsDefined(resultJson))
-      applier.apply.trim mustBe "1. first\n\n1. second\n\n1. third"
+      applier.apply.trim mustBe "1. first  \n1. second  \n1. third"
     }
 
     "apply for nested iterations" in {
@@ -125,9 +130,9 @@ class TemplateApplierSpec extends PlaySpec {
           |{endfor}
           |{endfor}
         """.stripMargin), JsDefined(result))
-      val expected = "1. first and a\n\n1. first and b\n\n1. first and c\n\n" ++
-        "\n\n1. second and a\n\n1. second and b\n\n1. second and c\n\n" ++
-        "\n\n1. third and a\n\n1. third and b\n\n1. third and c"
+      val expected = "1. first and a  \n1. first and b  \n1. first and c  \n" ++
+        "1. second and a  \n1. second and b  \n1. second and c  \n" ++
+        "1. third and a  \n1. third and b  \n1. third and c"
 
       applier.apply.trim mustBe expected
     }
@@ -194,7 +199,7 @@ class TemplateApplierSpec extends PlaySpec {
           |{endif}
           |{endif}
         """.stripMargin), JsDefined(resultJson))
-      applier.apply.trim mustBe "displayed\nand high enough"
+      applier.apply.trim mustBe "displayed  \nand high enough"
     }
 
     "apply for conditional in iteration" in {
@@ -207,11 +212,13 @@ class TemplateApplierSpec extends PlaySpec {
           ] }""".stripMargin)
       val applier = TemplateApplier(Some(
         """{for ea in successResult.numbers}
-          |{if ea.isEven}{ea.number} is even{endif}
+          |{if ea.isEven}
+          |{ea.number} is even
+          |{endif}
           |{endfor}
         """.stripMargin), JsDefined(result))
 
-      applier.apply.trim mustBe "2 is even\n\n\n\n4 is even"
+      applier.apply.trim mustBe "2 is even  \n4 is even"
     }
 
     "apply for a true conditional with an else clause" in {
