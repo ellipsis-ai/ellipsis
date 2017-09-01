@@ -183,7 +183,7 @@ class GraphQLServiceImpl @Inject() (
                     vars: JsValue
                   ): Future[JsValue] = {
     Executor.execute(schema, query, operationName = op, variables = vars, userContext = dataService.defaultStorageItems).recover {
-      case e: sangria.execution.ExecutionError => errorResultFor(e.getMessage)
+      case e: sangria.execution.UserFacingError => errorResultFor(e.getMessage)
     }
   }
 
