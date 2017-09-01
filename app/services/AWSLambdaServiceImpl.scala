@@ -359,7 +359,7 @@ class AWSLambdaServiceImpl @Inject() (
     }
 
     val requiredModules = requiredModulesIn(functionBody, libraries, includeLibraryRequires = true)
-    val canUseCopyModules = maybePreviousFunctionInfo.forall { previousFunctionInfo =>
+    val canUseCopyModules = maybePreviousFunctionInfo.exists { previousFunctionInfo =>
       if (previousFunctionInfo.canCopyModules(requiredModules)) {
         previousFunctionInfo.copyModulesInto(dirName)
         true
