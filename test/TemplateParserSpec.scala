@@ -60,7 +60,7 @@ class TemplateParserSpec extends PlaySpec {
           |{endfor}""".stripMargin)
       result mustBe Block(Seq(
         Text("\n"),
-        Iteration(Identifier("item"), pathFor("successResult", "items"), Block(Seq(Text("\n1. "), substitutionFor("item"), Text("\n"))))))
+        Iteration(Identifier("item"), pathFor("successResult", "items"), Block(Seq(Text("1. "), substitutionFor("item"), Text("\n"))))))
     }
 
     "parse nested iterations" in {
@@ -76,12 +76,11 @@ class TemplateParserSpec extends PlaySpec {
           Identifier("item"),
           pathFor("successResult", "items"),
           Block(Seq(
-            Text("\n"),
             Iteration(
               Identifier("ea"),
               pathFor("someOtherList"),
               Block(Seq(
-                Text("\n1. "),
+                Text("1. "),
                 substitutionFor("item"),
                 Text(" "),
                 substitutionFor("ea"),
