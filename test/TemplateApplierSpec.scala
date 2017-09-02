@@ -62,7 +62,7 @@ class TemplateApplierSpec extends PlaySpec {
       applier.apply mustBe "1 + **madeUp not found** = 3"
     }
 
-    "apply for iteration over a list" in {
+    "apply for iteration over a list without extra line breaks" in {
       val resultJson = Json.toJson(Map("items" -> Array("first", "second", "third")))
       val applier = TemplateApplier(Some(
         """{for item in successResult.items}
@@ -116,7 +116,7 @@ class TemplateApplierSpec extends PlaySpec {
       applier.apply.trim mustBe "1. first\n1. second\n1. third"
     }
 
-    "apply for nested iterations" in {
+    "apply for nested iterations without extra line breaks" in {
       val result = Json.toJson(Map( "numbers" -> Array("first", "second", "third"), "letters" -> Array("a", "b", "c")))
       val applier = TemplateApplier(Some(
         """{for number in successResult.numbers}
@@ -197,7 +197,7 @@ class TemplateApplierSpec extends PlaySpec {
       applier.apply.trim mustBe "displayed\nand high enough"
     }
 
-    "apply for conditional in iteration" in {
+    "apply for conditional in iteration without extra line breaks" in {
       val result = Json.parse(
         """{ "numbers": [
           |{ "number": 1, "isEven": false },
@@ -208,12 +208,13 @@ class TemplateApplierSpec extends PlaySpec {
       val applier = TemplateApplier(Some(
         """{for ea in successResult.numbers}
           |{if ea.isEven}
+          |Even number alert!
           |{ea.number} is even
           |{endif}
           |{endfor}
         """.stripMargin), JsDefined(result))
 
-      applier.apply.trim mustBe "2 is even\n4 is even"
+      applier.apply.trim mustBe "Even number alert!\n2 is even\nEven number alert!\n4 is even"
     }
 
     "apply for a true conditional with an else clause" in {
@@ -238,6 +239,19 @@ class TemplateApplierSpec extends PlaySpec {
           |{endif}
         """.stripMargin), JsDefined(resultJson))
       applier.apply.trim mustBe "not displayed"
+    }
+
+    "preserve desired line breaks and paragraph breaks" in {
+      val result = Json.toJson(Map( "numbers" -> Array("first", "second") ))
+      val applier = TemplateApplier(Some(
+        """{for n in successResult.numbers}
+          |The next number is:
+          |- {n}
+          |
+          |{endfor}
+        """.stripMargin
+      ), JsDefined(result))
+      applier.apply.trim mustBe "The next number is:\n- first\n\nThe next number is:\n- second"
     }
 
   }
