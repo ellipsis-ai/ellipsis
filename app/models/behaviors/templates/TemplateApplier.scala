@@ -8,14 +8,9 @@ case class TemplateApplier(
                             inputs: Seq[(String, JsValue)] = Seq()
                             ) {
 
-  def forceLineBreaks(s: String) : String = {
-    s.replaceAll("""(?m)^(.+)\n""", "$1  \n")
-  }
-
   def apply: String = {
     maybeResponseTemplate.filter(_.trim.nonEmpty).map { responseTemplate =>
-      val newLinesPreserved = forceLineBreaks(responseTemplate)
-      new TemplateParser().parseBlockFrom(newLinesPreserved).map { block =>
+      new TemplateParser().parseBlockFrom(responseTemplate).map { block =>
         val stringBuilder: StringBuilder = new StringBuilder()
         val renderer = MarkdownRenderer(stringBuilder, result, inputs)
         renderer.visit(block)
