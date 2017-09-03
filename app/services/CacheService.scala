@@ -10,6 +10,7 @@ import models.behaviors.behaviorparameter.ValidValue
 import models.behaviors.events.{Event, SlackMessage, SlackMessageEvent}
 import play.api.cache.CacheApi
 import play.api.libs.json.{JsError, JsSuccess, JsValue, Json}
+import slack.models.Channel
 
 import scala.concurrent.duration._
 import scala.reflect.ClassTag
@@ -108,6 +109,19 @@ class CacheService @Inject() (
       json.validate[Seq[SlackUserInfo]] match {
         case JsSuccess(data, jsPath) => Some(data)
         case JsError(err) => None
+      }
+    }
+  }
+
+  def cacheSlackChannelInfo(channel: String, data: Channel): Unit = {
+    set(s"slack-channel-for-$channel", Json.toJson(data), 10.seconds)
+  }
+
+  def getSlackChannelInfo(channel: String): Option[Channel] = {
+    get[JsValue](s"slack-channel-for-$channel").flatMap { json =>
+      json.validate[Channel] match {
+        case JsSuccess(data, _) => Some(data)
+        case JsError(_) => None
       }
     }
   }

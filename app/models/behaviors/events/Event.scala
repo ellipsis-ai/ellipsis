@@ -56,15 +56,15 @@ trait Event {
     dataService.run(ensureUserAction(dataService))
   }
 
-  def userInfoAction(ws: WSClient, dataService: DataService)(implicit actorSystem: ActorSystem): DBIO[UserInfo] = {
-    UserInfo.buildForAction(this, teamId, ws, dataService)
+  def userInfoAction(ws: WSClient, dataService: DataService, cacheService: CacheService)(implicit actorSystem: ActorSystem): DBIO[UserInfo] = {
+    UserInfo.buildForAction(this, teamId, ws, dataService, cacheService)
   }
 
-  def messageInfo(ws: WSClient, dataService: DataService)(implicit actorSystem: ActorSystem): Future[MessageInfo] = {
-    MessageInfo.buildFor(this, ws, dataService)
+  def messageInfo(ws: WSClient, dataService: DataService, cacheService: CacheService)(implicit actorSystem: ActorSystem): Future[MessageInfo] = {
+    MessageInfo.buildFor(this, ws, dataService, cacheService)
   }
 
-  def detailsFor(ws: WSClient)(implicit actorSystem: ActorSystem): Future[JsObject]
+  def detailsFor(ws: WSClient, cacheService: CacheService)(implicit actorSystem: ActorSystem): Future[JsObject]
 
   def recentMessages(dataService: DataService)(implicit actorSystem: ActorSystem): Future[Seq[String]] = Future.successful(Seq())
 

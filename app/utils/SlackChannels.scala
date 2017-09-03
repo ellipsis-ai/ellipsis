@@ -1,6 +1,7 @@
 package utils
 
 import akka.actor.ActorSystem
+import services.CacheService
 import slack.api.{ApiError, SlackApiClient}
 import slack.models.{Channel, Group, Im}
 
@@ -51,7 +52,17 @@ case class SlackDM(im: Im) extends ChannelLike {
   val isArchived: Boolean = im.is_user_deleted.getOrElse(false)
 }
 
-case class SlackChannels(client: SlackApiClient) {
+case class SlackChannels(client: SlackApiClient, cacheService: CacheService) {
+
+  private def swallowingChannelNotFound[T](fn: () => Future[Option[T]]): Future[Option[T]] = {
+    fn().recover {
+      case e: ApiError => if (e.code == "channel_not_found") {
+        None
+      } else {
+        throw e
+      }
+    }
+  }
 
   private def swallowingChannelNotFound[T](fn: () => Future[T]): Future[Option[T]] = {
     fn().map(Some(_)).recover {
@@ -65,7 +76,7 @@ case class SlackChannels(client: SlackApiClient) {
 
   private def getInfoFor(channelLikeId: String)(implicit actorSystem: ActorSystem): Future[Option[ChannelLike]] = {
     for {
-      maybeChannel <- swallowingChannelNotFound(() => client.getChannelInfo(channelLikeId))
+      maybeChannel <- swallowingChannelNotFound(() => SlackChannels.maybeChannelInfoFor(channelLikeId, client, cacheService))
       maybeGroup <- swallowingChannelNotFound(() => client.getGroupInfo(channelLikeId))
       maybeIm <- client.listIms().map(_.find(_.id == channelLikeId))
     } yield {
@@ -114,6 +125,22 @@ case class SlackChannels(client: SlackApiClient) {
         getList.map { infos =>
           infos.find(_.name == unformattedChannelLikeIdOrName).map(_.id)
         }
+      }
+    }
+  }
+}
+
+object SlackChannels {
+  def maybeChannelInfoFor(channel: String, client: SlackApiClient, cacheService: CacheService)
+                         (implicit actorSystem: ActorSystem): Future[Option[Channel]] = {
+    cacheService.getSlackChannelInfo(channel).map { channelInfo =>
+      Future.successful(Some(channelInfo))
+    }.getOrElse {
+      client.getChannelInfo(channel).map { channelInfo =>
+        cacheService.cacheSlackChannelInfo(channel, channelInfo)
+        Some(channelInfo)
+      }.recover {
+        case e: ApiError => None
       }
     }
   }

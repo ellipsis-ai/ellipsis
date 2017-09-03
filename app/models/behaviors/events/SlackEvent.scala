@@ -4,8 +4,10 @@ import akka.actor.ActorSystem
 import models.accounts.slack.botprofile.SlackBotProfile
 import play.api.libs.json.{JsArray, JsBoolean, JsObject, JsString}
 import play.api.libs.ws.WSClient
+import services.CacheService
 import slack.api.{ApiError, SlackApiClient}
 import slack.models.Channel
+import utils.SlackChannels
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -33,16 +35,14 @@ trait SlackEvent {
     }
   }
 
-  private def maybeChannelInfoFor(client: SlackApiClient)(implicit actorSystem: ActorSystem): Future[Option[Channel]] = {
-    client.getChannelInfo(channel).map(Some(_)).recover {
-      case e: ApiError => None
-    }
+  private def maybeChannelInfoFor(client: SlackApiClient, cacheService: CacheService)(implicit actorSystem: ActorSystem): Future[Option[Channel]] = {
+    SlackChannels.maybeChannelInfoFor(channel, client, cacheService)
   }
 
-  def detailsFor(ws: WSClient)(implicit actorSystem: ActorSystem): Future[JsObject] = {
+  def detailsFor(ws: WSClient, cacheService: CacheService)(implicit actorSystem: ActorSystem): Future[JsObject] = {
     for {
       user <- client.getUserInfo(user)
-      maybeChannel <- maybeChannelInfoFor(client)
+      maybeChannel <- maybeChannelInfoFor(client, cacheService)
     } yield {
       val profileData = user.profile.map { profile =>
         Seq(

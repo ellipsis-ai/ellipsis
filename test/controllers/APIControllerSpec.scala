@@ -28,7 +28,7 @@ import play.api.Application
 import play.api.libs.json._
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
-import services.{DataService, SlackEventService}
+import services.{CacheService, DataService, SlackEventService}
 import slack.api.SlackApiClient
 import slack.models.Attachment
 import support.ControllerTestContext
@@ -51,6 +51,7 @@ class APIControllerSpec extends PlaySpec with MockitoSugar {
                      app: Application,
                      eventHandler: EventHandler,
                      dataService: DataService,
+                     cacheService: CacheService,
                      slackEventService: SlackEventService,
                      botResultService: BotResultService
                    ) = {
@@ -90,7 +91,7 @@ class APIControllerSpec extends PlaySpec with MockitoSugar {
     when(dataService.linkedAccounts.maybeForSlackFor(user)).thenReturn(Future.successful(Some(linkedAccount)))
     when(dataService.slackProfiles.find(loginInfo)).thenReturn(Future.successful(Some(slackProfile)))
     val mockSlackChannels = mock[SlackChannels]
-    when(dataService.slackBotProfiles.channelsFor(botProfile)).thenReturn(mockSlackChannels)
+    when(dataService.slackBotProfiles.channelsFor(botProfile, cacheService)).thenReturn(mockSlackChannels)
     when(mockSlackChannels.maybeIdFor(defaultChannel)).thenReturn(Future.successful(Some(defaultChannel)))
 
     when(dataService.conversations.allOngoingFor(defaultSlackUserId, event.context, event.maybeChannel, event.maybeThreadId)).thenReturn(Future.successful(Seq()))

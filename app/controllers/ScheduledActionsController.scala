@@ -19,7 +19,7 @@ import play.api.data.Forms._
 import play.api.i18n.MessagesApi
 import play.api.libs.json.{JsError, JsSuccess, Json}
 import play.filters.csrf.CSRF
-import services.DataService
+import services.{CacheService, DataService}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -30,6 +30,7 @@ class ScheduledActionsController @Inject()(
                                             val configuration: Configuration,
                                             val silhouette: Silhouette[EllipsisEnv],
                                             val dataService: DataService,
+                                            val cacheService: CacheService,
                                             implicit val actorSystem: ActorSystem
                                           ) extends ReAuthable {
 
@@ -45,7 +46,7 @@ class ScheduledActionsController @Inject()(
               maybeBotProfile <- dataService.slackBotProfiles.allFor(team).map(_.headOption)
               maybeSlackUserId <- dataService.linkedAccounts.maybeSlackUserIdFor(user)
               channelList <- maybeBotProfile.map { botProfile =>
-                dataService.slackBotProfiles.channelsFor(botProfile).getListForUser(maybeSlackUserId)
+                dataService.slackBotProfiles.channelsFor(botProfile, cacheService).getListForUser(maybeSlackUserId)
               }.getOrElse(Future.successful(Seq()))
               scheduledActions <- ScheduledActionData.buildFor(maybeSlackUserId, team, channelList, dataService)
               behaviorGroups <- dataService.behaviorGroups.allFor(team)
