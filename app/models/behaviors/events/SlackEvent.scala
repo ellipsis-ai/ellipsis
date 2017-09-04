@@ -21,16 +21,16 @@ trait SlackEvent {
     client.listIms.map(_.find(_.user == user).map(_.id))
   }
 
-  lazy val isDirectMessage: Boolean = {
+  val isDirectMessage: Boolean = {
     channel.startsWith("D")
   }
-  lazy val isPrivateChannel: Boolean = {
+  val isPrivateChannel: Boolean = {
     channel.startsWith("G")
   }
-  lazy val isPublicChannel: Boolean = {
+  val isPublicChannel: Boolean = {
     !isDirectMessage && !isPrivateChannel
   }
-  def getMessageRecipientPrefix: String = {
+  val messageRecipientPrefix: String = {
     if (isDirectMessage) {
       ""
     } else {
