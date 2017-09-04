@@ -87,12 +87,21 @@ class SlackController @Inject() (
     }
   }
 
-  trait MessageRequestInfo extends RequestInfo {
+  trait EventInfo {
+    val eventType: String
+  }
+
+  trait EventRequestInfo extends RequestInfo {
     val teamId: String
+    val event: EventInfo
+    val authedUsers: Seq[String]
+    val ts: String
+  }
+
+  trait MessageRequestInfo extends EventRequestInfo {
     val channel: String
     val userId: String
     val message: String
-    val ts: String
     val maybeThreadTs: Option[String]
   }
 
@@ -103,7 +112,7 @@ class SlackController @Inject() (
                                     userId: String,
                                     channel: String,
                                     text: String
-                                  )
+                                  ) extends EventInfo
 
   case class MessageSentEventRequestInfo(
                                           token: String,
@@ -117,7 +126,7 @@ class SlackController @Inject() (
     val userId: String = event.userId
     val channel: String = event.channel
     val ts: String = event.ts
-    val maybeThreadTs = event.maybeThreadTs
+    val maybeThreadTs: Option[String] = event.maybeThreadTs
   }
 
   private val messageSentEventRequestForm = Form(
@@ -158,7 +167,7 @@ class SlackController @Inject() (
                                       eventTs: String,
                                       maybeThreadTs: Option[String],
                                       ts: String
-                                   )
+                                   ) extends EventInfo
 
   case class MessageChangedEventRequestInfo(
                                              token: String,
@@ -241,6 +250,21 @@ class SlackController @Inject() (
       Forbidden("Bad token")
     }
   }
+
+  case class MemberJoinedChannelEventInfo(
+                                          eventType: String,
+                                          user: String,
+                                          channel: String,
+                                          channel_type: String,
+                                          inviter: String
+                                         ) extends EventInfo
+
+  case class MemberLeftChannelEventInfo(
+                                        eventType: String,
+                                        user: String,
+                                        channel: String,
+                                        channel_type: String
+                                       ) extends EventInfo
 
   def event = Action { implicit request =>
     challengeRequestForm.bindFromRequest.fold(
