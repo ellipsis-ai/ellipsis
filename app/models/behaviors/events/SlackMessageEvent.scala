@@ -94,6 +94,7 @@ case class SlackMessageEvent(
   }
 
   def channelForSend(forcePrivate: Boolean, maybeConversation: Option[Conversation])(implicit actorSystem: ActorSystem): Future[String] = {
+    // TODO: can this logic be re-written so we don't ask for the list of IMs unnecessarily?
     eventualMaybeDMChannel(actorSystem).map { maybeDMChannel =>
       (if (forcePrivate) {
         maybeDMChannel

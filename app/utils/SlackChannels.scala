@@ -64,23 +64,25 @@ case class SlackChannels(client: SlackApiClient, cacheService: CacheService) {
     }
   }
 
-  private def swallowingChannelNotFound[T](fn: () => Future[T]): Future[Option[T]] = {
-    fn().map(Some(_)).recover {
-      case e: ApiError => if (e.code == "channel_not_found") {
-        None
-      } else {
-        throw e
-      }
-    }
-  }
-
   private def getInfoFor(channelLikeId: String)(implicit actorSystem: ActorSystem): Future[Option[ChannelLike]] = {
     for {
       maybeChannel <- swallowingChannelNotFound(() => maybeChannelInfoFor(channelLikeId))
-      maybeGroup <- swallowingChannelNotFound(() => client.getGroupInfo(channelLikeId))
-      maybeIm <- client.listIms().map(_.find(_.id == channelLikeId))
+      maybeGroup <- if (maybeChannel.isEmpty) {
+        swallowingChannelNotFound(() => maybeGroupInfoFor(channelLikeId))
+      } else {
+        Future.successful(None)
+      }
+      maybeIm <- if (maybeChannel.isEmpty && maybeGroup.isEmpty) {
+        listIms.map(_.find(_.id == channelLikeId))
+      } else {
+        Future.successful(None)
+      }
     } yield {
-      maybeChannel.map(SlackChannel.apply).orElse(maybeGroup.map(SlackGroup.apply)).orElse(maybeIm.map(SlackDM.apply))
+      maybeChannel.map(SlackChannel.apply) orElse {
+        maybeGroup.map(SlackGroup.apply) orElse {
+          maybeIm.map(SlackDM.apply)
+        }
+      }
     }
   }
 
@@ -88,7 +90,7 @@ case class SlackChannels(client: SlackApiClient, cacheService: CacheService) {
     for {
       channels <- client.listChannels()
       groups <- client.listGroups()
-      dms <- client.listIms()
+      dms <- listIms
     } yield {
       channels.map(SlackChannel.apply) ++ groups.map(SlackGroup.apply) ++ dms.map(SlackDM.apply)
     }
@@ -130,14 +132,42 @@ case class SlackChannels(client: SlackApiClient, cacheService: CacheService) {
   }
 
   def maybeChannelInfoFor(channel: String)(implicit actorSystem: ActorSystem): Future[Option[Channel]] = {
-    cacheService.getSlackChannelInfo(channel).map { channelInfo =>
-      Future.successful(Some(channelInfo))
+    if (!channel.startsWith("C")) {
+      Future.successful(None)
+    } else {
+      cacheService.getSlackChannelInfo(channel).map { channelInfo =>
+        Future.successful(Some(channelInfo))
+      }.getOrElse {
+        client.getChannelInfo(channel).map { channelInfo =>
+          cacheService.cacheSlackChannelInfo(channel, channelInfo)
+          Some(channelInfo)
+        }
+      }
+    }
+  }
+
+  def maybeGroupInfoFor(group: String)(implicit actorSystem: ActorSystem): Future[Option[Group]] = {
+    if (!group.startsWith("G")) {
+      Future.successful(None)
+    } else {
+      cacheService.getSlackGroupInfo(group).map { groupInfo =>
+        Future.successful(Some(groupInfo))
+      }.getOrElse {
+        client.getGroupInfo(group).map { groupInfo =>
+          cacheService.cacheSlackGroupInfo(group, groupInfo)
+          Some(groupInfo)
+        }
+      }
+    }
+  }
+
+  def listIms(implicit actorSystem: ActorSystem): Future[Seq[Im]] = {
+    cacheService.getSlackIMs.map { ims =>
+      Future.successful(ims)
     }.getOrElse {
-      client.getChannelInfo(channel).map { channelInfo =>
-        cacheService.cacheSlackChannelInfo(channel, channelInfo)
-        Some(channelInfo)
-      }.recover {
-        case e: ApiError => None
+      client.listIms().map { ims =>
+        cacheService.cacheSlackIMs(ims)
+        ims
       }
     }
   }

@@ -38,18 +38,10 @@ trait SlackEvent {
     }
   }
 
-  private def maybeChannelInfoFor(client: SlackApiClient, cacheService: CacheService)(implicit actorSystem: ActorSystem): Future[Option[Channel]] = {
-    if (isPublicChannel) {
-      SlackChannels(client, cacheService).maybeChannelInfoFor(channel)
-    } else {
-      Future.successful(None)
-    }
-  }
-
   def detailsFor(ws: WSClient, cacheService: CacheService)(implicit actorSystem: ActorSystem): Future[JsObject] = {
     for {
       user <- client.getUserInfo(user)
-      maybeChannel <- maybeChannelInfoFor(client, cacheService)
+      channelMembers <- SlackChannels(client, cacheService).getMembersFor(channel)
     } yield {
       val profileData = user.profile.map { profile =>
         Seq(
@@ -57,9 +49,6 @@ trait SlackEvent {
           profile.last_name.map(v => "lastName" -> JsString(v)),
           profile.real_name.map(v => "realName" -> JsString(v))
         ).flatten
-      }.getOrElse(Seq())
-      val channelMembers = maybeChannel.flatMap { channel =>
-        channel.members.map(_.filterNot(_ == profile.userId))
       }.getOrElse(Seq())
       JsObject(
         Seq(
