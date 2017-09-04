@@ -24,10 +24,9 @@ case class SlackMessageEvent(
                             ) extends MessageEvent with SlackEvent {
 
   lazy val isBotMessage: Boolean = profile.userId == user
-  lazy val isPublicChannel: Boolean = isPublicChannel(channel)
 
   override def botPrefix(cacheService: CacheService)(implicit actorSystem: ActorSystem): Future[String] = {
-    if (isDirectMessage(channel)) {
+    if (isDirectMessage) {
       Future.successful("")
     } else {
       cacheService.getBotUsername(profile.userId).map { name =>
@@ -54,7 +53,7 @@ case class SlackMessageEvent(
   }
 
   lazy val includesBotMention: Boolean = {
-    isDirectMessage(channel) ||
+    isDirectMessage ||
       SlackMessageEvent.mentionRegexFor(profile.userId).findFirstMatchIn(message.originalText).nonEmpty ||
       MessageEvent.ellipsisRegex.findFirstMatchIn(message.originalText).nonEmpty
   }
@@ -62,7 +61,7 @@ case class SlackMessageEvent(
   override val isResponseExpected: Boolean = includesBotMention
   val teamId: String = profile.teamId
   val userIdForContext: String = user
-  val messageRecipientPrefix: String = messageRecipientPrefixFor(channel)
+  val messageRecipientPrefix: String = getMessageRecipientPrefix
 
   lazy val maybeChannel = Some(channel)
   lazy val name: String = Conversation.SLACK_CONTEXT

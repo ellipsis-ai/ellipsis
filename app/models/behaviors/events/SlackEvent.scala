@@ -21,17 +21,17 @@ trait SlackEvent {
     client.listIms.map(_.find(_.user == user).map(_.id))
   }
 
-  def isDirectMessage(channelId: String): Boolean = {
-    channelId.startsWith("D")
+  lazy val isDirectMessage: Boolean = {
+    channel.startsWith("D")
   }
-  def isPrivateChannel(channelId: String): Boolean = {
-    channelId.startsWith("G")
+  lazy val isPrivateChannel: Boolean = {
+    channel.startsWith("G")
   }
-  def isPublicChannel(channelId: String): Boolean = {
-    !isDirectMessage(channelId) && !isPrivateChannel(channelId)
+  lazy val isPublicChannel: Boolean = {
+    !isDirectMessage && !isPrivateChannel
   }
-  def messageRecipientPrefixFor(channelId: String): String = {
-    if (isDirectMessage(channelId)) {
+  def getMessageRecipientPrefix: String = {
+    if (isDirectMessage) {
       ""
     } else {
       s"<@$user>: "
@@ -39,7 +39,7 @@ trait SlackEvent {
   }
 
   private def maybeChannelInfoFor(client: SlackApiClient, cacheService: CacheService)(implicit actorSystem: ActorSystem): Future[Option[Channel]] = {
-    if (isPublicChannel(channel)) {
+    if (isPublicChannel) {
       SlackChannels(client, cacheService).maybeChannelInfoFor(channel)
     } else {
       Future.successful(None)
