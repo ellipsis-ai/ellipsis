@@ -27,6 +27,9 @@ trait SlackEvent {
   def isPrivateChannel(channelId: String): Boolean = {
     channelId.startsWith("G")
   }
+  def isPublicChannel(channelId: String): Boolean = {
+    !isDirectMessage(channelId) && !isPrivateChannel(channelId)
+  }
   def messageRecipientPrefixFor(channelId: String): String = {
     if (isDirectMessage(channelId)) {
       ""
@@ -36,7 +39,11 @@ trait SlackEvent {
   }
 
   private def maybeChannelInfoFor(client: SlackApiClient, cacheService: CacheService)(implicit actorSystem: ActorSystem): Future[Option[Channel]] = {
-    SlackChannels.maybeChannelInfoFor(channel, client, cacheService)
+    if (isPublicChannel(channel)) {
+      SlackChannels(client, cacheService).maybeChannelInfoFor(channel)
+    } else {
+      Future.successful(None)
+    }
   }
 
   def detailsFor(ws: WSClient, cacheService: CacheService)(implicit actorSystem: ActorSystem): Future[JsObject] = {

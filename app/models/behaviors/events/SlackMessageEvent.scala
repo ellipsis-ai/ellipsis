@@ -24,7 +24,7 @@ case class SlackMessageEvent(
                             ) extends MessageEvent with SlackEvent {
 
   lazy val isBotMessage: Boolean = profile.userId == user
-  lazy val isPublicChannel: Boolean = !isDirectMessage(channel) && !isPrivateChannel(channel)
+  lazy val isPublicChannel: Boolean = isPublicChannel(channel)
 
   override def botPrefix(cacheService: CacheService)(implicit actorSystem: ActorSystem): Future[String] = {
     if (isDirectMessage(channel)) {

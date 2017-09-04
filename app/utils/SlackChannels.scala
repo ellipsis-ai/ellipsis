@@ -76,7 +76,7 @@ case class SlackChannels(client: SlackApiClient, cacheService: CacheService) {
 
   private def getInfoFor(channelLikeId: String)(implicit actorSystem: ActorSystem): Future[Option[ChannelLike]] = {
     for {
-      maybeChannel <- swallowingChannelNotFound(() => SlackChannels.maybeChannelInfoFor(channelLikeId, client, cacheService))
+      maybeChannel <- swallowingChannelNotFound(() => maybeChannelInfoFor(channelLikeId))
       maybeGroup <- swallowingChannelNotFound(() => client.getGroupInfo(channelLikeId))
       maybeIm <- client.listIms().map(_.find(_.id == channelLikeId))
     } yield {
@@ -128,11 +128,8 @@ case class SlackChannels(client: SlackApiClient, cacheService: CacheService) {
       }
     }
   }
-}
 
-object SlackChannels {
-  def maybeChannelInfoFor(channel: String, client: SlackApiClient, cacheService: CacheService)
-                         (implicit actorSystem: ActorSystem): Future[Option[Channel]] = {
+  def maybeChannelInfoFor(channel: String)(implicit actorSystem: ActorSystem): Future[Option[Channel]] = {
     cacheService.getSlackChannelInfo(channel).map { channelInfo =>
       Future.successful(Some(channelInfo))
     }.getOrElse {

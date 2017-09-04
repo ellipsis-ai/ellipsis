@@ -35,7 +35,7 @@ case class RunEvent(
 
   lazy val maybeChannel = Some(channel)
   lazy val name: String = Conversation.SLACK_CONTEXT
-  lazy val isPublicChannel: Boolean = !isDirectMessage(channel) && !isPrivateChannel(channel)
+  lazy val isPublicChannel: Boolean = isPublicChannel(channel)
 
   def allOngoingConversations(dataService: DataService): Future[Seq[Conversation]] = {
     dataService.conversations.allOngoingFor(userIdForContext, context, maybeChannel, maybeThreadId)
