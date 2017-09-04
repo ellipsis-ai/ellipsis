@@ -54,21 +54,11 @@ case class SlackDM(im: Im) extends ChannelLike {
 
 case class SlackChannels(client: SlackApiClient, cacheService: CacheService) {
 
-  private def swallowingChannelNotFound[T](fn: () => Future[Option[T]]): Future[Option[T]] = {
-    fn().recover {
-      case e: ApiError => if (e.code == "channel_not_found") {
-        None
-      } else {
-        throw e
-      }
-    }
-  }
-
   private def getInfoFor(channelLikeId: String)(implicit actorSystem: ActorSystem): Future[Option[ChannelLike]] = {
     for {
-      maybeChannel <- swallowingChannelNotFound(() => maybeChannelInfoFor(channelLikeId))
+      maybeChannel <- maybeChannelInfoFor(channelLikeId)
       maybeGroup <- if (maybeChannel.isEmpty) {
-        swallowingChannelNotFound(() => maybeGroupInfoFor(channelLikeId))
+        maybeGroupInfoFor(channelLikeId)
       } else {
         Future.successful(None)
       }
@@ -141,21 +131,33 @@ case class SlackChannels(client: SlackApiClient, cacheService: CacheService) {
         client.getChannelInfo(channel).map { channelInfo =>
           cacheService.cacheSlackChannelInfo(channel, channelInfo)
           Some(channelInfo)
+        }.recover {
+          case e: ApiError => if (e.code == "channel_not_found") {
+            None
+          } else {
+            throw e
+          }
         }
       }
     }
   }
 
-  def maybeGroupInfoFor(group: String)(implicit actorSystem: ActorSystem): Future[Option[Group]] = {
-    if (!group.startsWith("G")) {
+  def maybeGroupInfoFor(channel: String)(implicit actorSystem: ActorSystem): Future[Option[Group]] = {
+    if (!channel.startsWith("G")) {
       Future.successful(None)
     } else {
-      cacheService.getSlackGroupInfo(group).map { groupInfo =>
+      cacheService.getSlackGroupInfo(channel).map { groupInfo =>
         Future.successful(Some(groupInfo))
       }.getOrElse {
-        client.getGroupInfo(group).map { groupInfo =>
-          cacheService.cacheSlackGroupInfo(group, groupInfo)
+        client.getGroupInfo(channel).map { groupInfo =>
+          cacheService.cacheSlackGroupInfo(channel, groupInfo)
           Some(groupInfo)
+        }.recover {
+          case e: ApiError => if (e.code == "channel_not_found") {
+            None
+          } else {
+            throw e
+          }
         }
       }
     }
