@@ -6,9 +6,9 @@ import models.behaviors.BehaviorResponse
 import models.behaviors.behavior.Behavior
 import models.behaviors.conversations.conversation.Conversation
 import models.team.Team
-import services.{AWSLambdaConstants, DataService, DefaultServices}
+import services.{AWSLambdaConstants, CacheService, DataService, DefaultServices}
 import slack.api.SlackApiClient
-import utils.{UploadFileSpec, SlackMessageSender}
+import utils.{SlackMessageSender, UploadFileSpec}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -45,7 +45,8 @@ case class RunEvent(
                    maybeShouldUnfurl: Option[Boolean],
                    maybeConversation: Option[Conversation],
                    maybeActions: Option[MessageActions] = None,
-                   files: Seq[UploadFileSpec] = Seq()
+                   files: Seq[UploadFileSpec] = Seq(),
+                   cacheService: CacheService
                  )(implicit actorSystem: ActorSystem): Future[Option[String]] = {
     SlackMessageSender(
       client,

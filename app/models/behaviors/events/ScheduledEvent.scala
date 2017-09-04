@@ -14,8 +14,8 @@ import scala.concurrent.Future
 
 case class ScheduledEvent(underlying: Event, scheduled: Scheduled) extends Event {
 
-  def eventualMaybeDMChannel(implicit actorSystem: ActorSystem): Future[Option[String]] = {
-    underlying.eventualMaybeDMChannel
+  def eventualMaybeDMChannel(cacheService: CacheService)(implicit actorSystem: ActorSystem): Future[Option[String]] = {
+    underlying.eventualMaybeDMChannel(cacheService)
   }
 
   def sendMessage(
@@ -24,9 +24,10 @@ case class ScheduledEvent(underlying: Event, scheduled: Scheduled) extends Event
                    maybeShouldUnfurl: Option[Boolean],
                    maybeConversation: Option[Conversation],
                    maybeActions: Option[MessageActions],
-                   files: Seq[UploadFileSpec]
-                 )(implicit actorSystem: ActorSystem) = {
-    underlying.sendMessage(text, forcePrivate, maybeShouldUnfurl, maybeConversation, maybeActions, files)
+                   files: Seq[UploadFileSpec],
+                   cacheService: CacheService
+                 )(implicit actorSystem: ActorSystem): Future[Option[String]] = {
+    underlying.sendMessage(text, forcePrivate, maybeShouldUnfurl, maybeConversation, maybeActions, files, cacheService)
   }
 
   override def detailsFor(ws: WSClient, cacheService: CacheService)(implicit actorSystem: ActorSystem): Future[JsObject] = {

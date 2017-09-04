@@ -17,8 +17,8 @@ trait SlackEvent {
   val channel: String
   val profile: SlackBotProfile
   val client: SlackApiClient
-  def eventualMaybeDMChannel(implicit actorSystem: ActorSystem) = {
-    client.listIms.map(_.find(_.user == user).map(_.id))
+  def eventualMaybeDMChannel(cacheService: CacheService)(implicit actorSystem: ActorSystem): Future[Option[String]] = {
+    SlackChannels(client, cacheService).listIms.map(_.find(_.user == user).map(_.id))
   }
 
   val isDirectMessage: Boolean = {

@@ -111,10 +111,10 @@ trait Event {
     ).result
   }
 
-  def eventualMaybeDMChannel(implicit actorSystem: ActorSystem): Future[Option[String]]
+  def eventualMaybeDMChannel(cacheService: CacheService)(implicit actorSystem: ActorSystem): Future[Option[String]]
 
-  def maybeChannelToUseFor(behaviorVersion: BehaviorVersion)(implicit actorSystem: ActorSystem): Future[Option[String]] = {
-    eventualMaybeDMChannel.map { maybeDMChannel =>
+  def maybeChannelToUseFor(behaviorVersion: BehaviorVersion, cacheService: CacheService)(implicit actorSystem: ActorSystem): Future[Option[String]] = {
+    eventualMaybeDMChannel(cacheService).map { maybeDMChannel =>
       if (behaviorVersion.forcePrivateResponse) {
         maybeDMChannel
       } else {
@@ -139,7 +139,8 @@ trait Event {
                    maybeShouldUnfurl: Option[Boolean],
                    maybeConversation: Option[Conversation],
                    maybeActions: Option[MessageActions] = None,
-                   files: Seq[UploadFileSpec] = Seq()
+                   files: Seq[UploadFileSpec] = Seq(),
+                   cacheService: CacheService
                  )(implicit actorSystem: ActorSystem): Future[Option[String]]
 
   def botPrefix(cacheService: CacheService)(implicit actorSystem: ActorSystem): Future[String] = Future.successful("")

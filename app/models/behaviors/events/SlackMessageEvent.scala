@@ -93,18 +93,13 @@ case class SlackMessageEvent(
     } yield messages
   }
 
-  def channelForSend(forcePrivate: Boolean, maybeConversation: Option[Conversation])(implicit actorSystem: ActorSystem): Future[String] = {
-    // TODO: can this logic be re-written so we don't ask for the list of IMs unnecessarily?
-    eventualMaybeDMChannel(actorSystem).map { maybeDMChannel =>
-      (if (forcePrivate) {
-        maybeDMChannel
-      } else {
-        None
-      }).orElse {
-        maybeConversation.flatMap { convo =>
-          convo.maybeChannel
-        }
-      }.getOrElse(channel)
+  def channelForSend(forcePrivate: Boolean, maybeConversation: Option[Conversation], cacheService: CacheService)(implicit actorSystem: ActorSystem): Future[String] = {
+    (if (forcePrivate) {
+      eventualMaybeDMChannel(cacheService)
+    } else {
+      Future.successful(maybeConversation.flatMap(_.maybeChannel))
+    }).map { maybeChannel =>
+      maybeChannel.getOrElse(channel)
     }
   }
 
@@ -114,9 +109,10 @@ case class SlackMessageEvent(
                    maybeShouldUnfurl: Option[Boolean],
                    maybeConversation: Option[Conversation],
                    maybeActions: Option[MessageActions] = None,
-                   files: Seq[UploadFileSpec] = Seq()
+                   files: Seq[UploadFileSpec] = Seq(),
+                   cacheService: CacheService
                  )(implicit actorSystem: ActorSystem): Future[Option[String]] = {
-    channelForSend(forcePrivate, maybeConversation).flatMap { channelToUse =>
+    channelForSend(forcePrivate, maybeConversation, cacheService).flatMap { channelToUse =>
       SlackMessageSender(
         client,
         user,

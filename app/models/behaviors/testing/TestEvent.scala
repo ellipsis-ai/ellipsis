@@ -31,7 +31,7 @@ case class TestEvent(
   lazy val name = "test"
   lazy val maybeChannel = None
   lazy val maybeThreadId = None
-  def eventualMaybeDMChannel(implicit actorSystem: ActorSystem) = Future.successful(None)
+  def eventualMaybeDMChannel(cacheService: CacheService)(implicit actorSystem: ActorSystem) = Future.successful(None)
   val isResponseExpected = true
   val messageRecipientPrefix: String = ""
   lazy val isPublicChannel = false
@@ -44,7 +44,8 @@ case class TestEvent(
                    maybeShouldUnfurl: Option[Boolean],
                    maybeConversation: Option[Conversation],
                    maybeActions: Option[MessageActions],
-                   files: Seq[UploadFileSpec]
+                   files: Seq[UploadFileSpec],
+                   cacheService: CacheService
                  )(implicit actorSystem: ActorSystem): Future[Option[String]] = {
     Future.successful(messageBuffer += text).map(_ => None)
   }
