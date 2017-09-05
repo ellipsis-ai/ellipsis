@@ -487,18 +487,18 @@ class AWSLambdaServiceImpl @Inject() (
               apiConfigInfo,
               maybePreviousFunctionInfo,
               forceNodeModuleUpdate
-            ).map { zip => new FunctionCode().
-        withZipFile(zip)
-          } createFunctionRequest <- Future.successful(
-          new CreateFunctionRequest().
-            withFunctionName(functionName).
-            withCode(functionCode).
-            withRole(configuration.getString("aws.role").get).
-            withRuntime(com.amazonaws.services.lambda.model.Runtime.Nodejs610).
-            withHandler("index.handler").
-            withTimeout(INVOCATION_TIMEOUT_SECONDS)
-)
-        _ <-JavaFutureConverter.javaToScala(client.createFunctionAsync(createFunctionRequest))} yield {}
+            ).map { zip => new FunctionCode().withZipFile(zip) }
+          createFunctionRequest <- Future.successful(
+            new CreateFunctionRequest().
+              withFunctionName(functionName).
+              withCode(functionCode).
+              withRole(configuration.getString("aws.role").get).
+              withRuntime(com.amazonaws.services.lambda.model.Runtime.Nodejs610).
+              withHandler("index.handler").
+              withTimeout(INVOCATION_TIMEOUT_SECONDS)
+          )
+          _ <-JavaFutureConverter.javaToScala(client.createFunctionAsync(createFunctionRequest))
+        } yield {}
       }
     }
   }
