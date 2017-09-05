@@ -275,6 +275,7 @@ class SlackController @Inject() (
   )
 
   private def channelMembersChangedResult(info: ChannelMembersChangedRequestInfo): Result = {
+    // TODO: invalidate the channel info cache
     Ok(":+1:")
   }
 
