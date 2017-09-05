@@ -43,6 +43,7 @@ class AWSLambdaServiceImpl @Inject() (
                                        val models: Models,
                                        val ws: WSClient,
                                        val dataService: DataService,
+                                       val cacheService: CacheService,
                                        val logsService: AWSLogsService,
                                        implicit val actorSystem: ActorSystem
                                        ) extends AWSLambdaService {
@@ -130,7 +131,7 @@ class AWSLambdaServiceImpl @Inject() (
                             isRetrying: Boolean
                           ): DBIO[BotResult] = {
     for {
-      userInfo <- event.userInfoAction(ws, dataService)
+      userInfo <- event.userInfoAction(ws, dataService, cacheService)
       result <- {
         val oauth2ApplicationsNeedingRefresh =
           requiredOAuth2ApiConfigs.flatMap(_.maybeApplication).

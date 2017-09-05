@@ -8,7 +8,7 @@ import models.behaviors.events.{MessageActions, MessageEvent}
 import models.team.Team
 import play.api.libs.json.JsObject
 import play.api.libs.ws.WSClient
-import services.DataService
+import services.{CacheService, DataService}
 import slick.dbio.DBIO
 import utils.UploadFileSpec
 
@@ -31,7 +31,7 @@ case class TestEvent(
   lazy val name = "test"
   lazy val maybeChannel = None
   lazy val maybeThreadId = None
-  def eventualMaybeDMChannel(implicit actorSystem: ActorSystem) = Future.successful(None)
+  def eventualMaybeDMChannel(cacheService: CacheService)(implicit actorSystem: ActorSystem) = Future.successful(None)
   val isResponseExpected = true
   val messageRecipientPrefix: String = ""
   lazy val isPublicChannel = false
@@ -44,20 +44,21 @@ case class TestEvent(
                    maybeShouldUnfurl: Option[Boolean],
                    maybeConversation: Option[Conversation],
                    maybeActions: Option[MessageActions],
-                   files: Seq[UploadFileSpec]
+                   files: Seq[UploadFileSpec],
+                   cacheService: CacheService
                  )(implicit actorSystem: ActorSystem): Future[Option[String]] = {
     Future.successful(messageBuffer += text).map(_ => None)
   }
 
-  override def userInfoAction(ws: WSClient, dataService: DataService)(implicit actorSystem: ActorSystem): DBIO[UserInfo] = {
-    UserInfo.buildForAction(user, this, ws, dataService)
+  override def userInfoAction(ws: WSClient, dataService: DataService, cacheService: CacheService)(implicit actorSystem: ActorSystem): DBIO[UserInfo] = {
+    UserInfo.buildForAction(user, this, ws, dataService, cacheService)
   }
 
   override def ensureUserAction(dataService: DataService): DBIO[User] = {
     DBIO.successful(user)
   }
 
-  def detailsFor(ws: WSClient)(implicit actorSystem: ActorSystem): Future[JsObject] = {
+  def detailsFor(ws: WSClient, cacheService: CacheService)(implicit actorSystem: ActorSystem): Future[JsObject] = {
     Future.successful(JsObject(Seq()))
   }
 

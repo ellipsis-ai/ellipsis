@@ -14,8 +14,6 @@ trait MessageEvent extends Event {
 
   lazy val invocationLogText: String = relevantMessageText
 
-  def isDirectMessage(channel: String): Boolean
-
   def allOngoingConversations(dataService: DataService): Future[Seq[Conversation]] = {
     dataService.conversations.allOngoingFor(userIdForContext, context, maybeChannel, maybeThreadId)
   }
