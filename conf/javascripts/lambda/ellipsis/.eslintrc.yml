@@ -1,0 +1,20 @@
+env:
+  browser: false
+  node: true
+parserOptions:
+  ecmaFeatures:
+    jsx: false
+globals:
+  event: false
+  context: false
+  lambdaCallback: false
+  callback: true
+  $CONTEXT_PARAM: false
+  EllipsisConsole: false
+  EllipsisError: false
+plugins: []
+rules:
+  no-unused-vars:
+    - off
+  no-console:
+    - off

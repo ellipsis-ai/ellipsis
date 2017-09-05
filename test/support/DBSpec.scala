@@ -165,11 +165,11 @@ trait DBSpec extends PlaySpec with OneAppPerSuite with MockitoSugar {
 
   def withEmptyDB[T](dataService: PostgresDataService, fn: PostgresDatabase => T) = {
     Databases.withDatabase(
-      driver = config.getString("db.default.driver"),
-      url = config.getString("db.default.url"),
+      driver = config.getString("slick.dbs.default.driver"),
+      url = config.getString("slick.dbs.default.url"),
       config = Map(
-        "username" -> config.getString("db.default.username"),
-        "password" -> config.getString("db.default.password")
+        "username" -> config.getString("slick.dbs.default.username"),
+        "password" -> config.getString("slick.dbs.default.password")
       )
     ) { database =>
       Evolutions.withEvolutions(database) {

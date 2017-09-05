@@ -14,7 +14,6 @@ import models.Models
 import models.behaviors._
 import models.behaviors.behaviorversion.BehaviorVersion
 import models.behaviors.config.awsconfig.AWSConfig
-import models.behaviors.config.requiredawsconfig.RequiredAWSConfig
 import models.behaviors.config.requiredoauth2apiconfig.RequiredOAuth2ApiConfig
 import models.behaviors.config.requiredsimpletokenapi.RequiredSimpleTokenApi
 import models.behaviors.conversations.conversation.Conversation
@@ -33,7 +32,7 @@ import utils.JavaFutureConverter
 
 import scala.collection.JavaConversions.asScalaBuffer
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{Future, blocking}
 import scala.reflect.io.Path
 import scala.sys.process._
 import scala.util.{Failure, Success}
@@ -217,7 +216,7 @@ class AWSLambdaServiceImpl @Inject() (
 
   val alreadyIncludedModules = Array("aws-sdk", "dynamodb-doc")
 
-  private def requiredModulesIn(code: String, libraries: Seq[LibraryVersion], includeLibraryRequires: Boolean): Array[String] = {
+  private def requiredModulesIn(code: String, libraries: Seq[LibraryVersion], includeLibraryRequires: Boolean): Seq[String] = {
     val libraryNames = libraries.map(_.name)
     val requiredForCode =
       requireRegex.findAllMatchIn(code).
@@ -284,68 +283,6 @@ class AWSLambdaServiceImpl @Inject() (
         |}\n""".stripMargin
   }
 
-  private def ellipsisNoResponseFunction: String = {
-    s"""function() {
-       |  callback(null, { $NO_RESPONSE_KEY: true });
-       |}""".stripMargin
-  }
-  private def ellipsisSuccessFunction: String = {
-    s"""function(result, options) {
-       |  var resultWithOptions = Object.assign(
-       |    {},
-       |    { "result": result === undefined ? null : result },
-            options ? options : {}
-       |  );
-       |  callback(null, resultWithOptions);
-       |}""".stripMargin
-  }
-
-  private def ellipsisErrorFunction: String = {
-    s"""function(err) {
-       |  if (err instanceof Error) {
-       |    throw err;
-       |  } else {
-       |    const throwableError = new Error(err);
-       |    Error.captureStackTrace(throwableError, $CONTEXT_PARAM.error);
-       |    throw throwableError;
-       |  }
-       |}""".stripMargin
-  }
-
-  private def ellipsisErrorClass: String = {
-    s"""class EllipsisError extends Error {
-       |  constructor(systemMessage, options) {
-       |    let errorMessage = "";
-       |    let userMessage = options && options.userMessage ? options.userMessage : "";
-       |    errorMessage += systemMessage;
-       |    if (userMessage) {
-       |      errorMessage += "\\nELLIPSIS_USER_ERROR_MESSAGE_START\\n" + userMessage + "\\nELLIPSIS_USER_ERROR_MESSAGE_END";
-       |    }
-       |    super(errorMessage);
-       |    this.systemMessage = systemMessage;
-       |    this.userMessage = userMessage;
-       |  }
-       |}""".stripMargin
-  }
-
-  private def overrideConsole: String = {
-    s"""const builtInConsole = Object.assign({}, console);
-       |function augmentConsole(consoleMethod, realArgs, caller) {
-       |  const args = [].slice.call(realArgs);
-       |  const error = { toString: () => consoleMethod };
-       |  Error.captureStackTrace(error, caller);
-       |  const newArgs = error.stack.split("\\n").length > 1 ?
-       |    args.concat("\\nELLIPSIS_STACK_TRACE_START\\n" + error.stack + "\\nELLIPSIS_STACK_TRACE_END") :
-       |    args;
-       |  builtInConsole[consoleMethod].apply(null, newArgs);
-       |}
-       |console.log = function consoleLog() { augmentConsole("log", arguments, consoleLog); };
-       |console.error = function consoleError() { augmentConsole("error", arguments, consoleError); };
-       |console.warn = function consoleWarn() { augmentConsole("warn", arguments, consoleWarn); };
-       |console.info = function consoleInfo() { augmentConsole("info", arguments, consoleInfo); };
-     """.stripMargin
-  }
-
   private def nodeCodeFor(
                            functionBody: String,
                            params: Array[String],
@@ -355,23 +292,30 @@ class AWSLambdaServiceImpl @Inject() (
     val invocationParamsString = (paramsFromEvent ++ Array(s"event.$CONTEXT_PARAM")).mkString(", ")
     // Note: this attempts to make line numbers in the lambda script line up with those displayed in the UI
     // Be careful changing either this or the UI line numbers
-    s"""exports.handler = function(event, context, callback) { var fn = ${functionWithParams(params, functionBody)}
-       |  var $CONTEXT_PARAM = event.$CONTEXT_PARAM;
-       |  $CONTEXT_PARAM.$NO_RESPONSE_KEY = $ellipsisNoResponseFunction;
-       |  $CONTEXT_PARAM.success = $ellipsisSuccessFunction;
-       |  $ellipsisErrorClass
-       |  $CONTEXT_PARAM.Error = EllipsisError;
-       |  $CONTEXT_PARAM.error = $ellipsisErrorFunction;
+    s"""exports.handler = function(event, context, lambdaCallback) { var fn = ${functionWithParams(params, functionBody)}
+       |  const $CONTEXT_PARAM = event.$CONTEXT_PARAM;
        |
-       |  if (process.listeners('unhandledRejection').length === 0) {
-       |    process.on('unhandledRejection', $CONTEXT_PARAM.error);
-       |  }
+       |  $OVERRIDE_CONSOLE
+       |  $CALLBACK_FUNCTION
+       |  const callback = ellipsisCallback;
+       |
+       |  $NO_RESPONSE_CALLBACK_FUNCTION
+       |  $SUCCESS_CALLBACK_FUNCTION
+       |  $ERROR_CLASS
+       |  $ERROR_CALLBACK_FUNCTION
+       |
+       |  $CONTEXT_PARAM.$NO_RESPONSE_KEY = ellipsisNoResponseCallback;
+       |  $CONTEXT_PARAM.success = ellipsisSuccessCallback;
+       |  $CONTEXT_PARAM.Error = EllipsisError;
+       |  $CONTEXT_PARAM.error = ellipsisErrorCallback;
+       |
+       |  process.removeAllListeners('unhandledRejection');
+       |  process.on('unhandledRejection', $CONTEXT_PARAM.error);
        |
        |  ${awsCodeFor(apiConfigInfo)}
        |  $CONTEXT_PARAM.accessTokens = {};
        |  ${accessTokensCodeFor(apiConfigInfo.requiredOAuth2ApiConfigs)}
        |  ${simpleTokensCodeFor(apiConfigInfo.requiredSimpleTokenApis)}
-       |  $overrideConsole
        |
        |  try {
        |    fn($invocationParamsString);
@@ -389,7 +333,7 @@ class AWSLambdaServiceImpl @Inject() (
     val requiredModules = requiredModulesIn(functionBody, libraries, includeLibraryRequires = true)
     val dirName = dirNameFor(functionName)
 
-    def canCopyModules(neededModules: Array[String]): Boolean = {
+    def canCopyModules(neededModules: Seq[String]): Boolean = {
       requiredModules.sameElements(neededModules) &&
         Files.exists(Paths.get(dirName))
     }
@@ -413,7 +357,7 @@ class AWSLambdaServiceImpl @Inject() (
                                        apiConfigInfo: ApiConfigInfo,
                                        maybePreviousFunctionInfo: Option[PreviousFunctionInfo],
                                        forceNodeModuleUpdate: Boolean
-                                     ): Unit = {
+                                     ): Future[Unit] = {
     val dirName = dirNameFor(functionName)
     val path = Path(dirName)
     path.createDirectory()
@@ -424,7 +368,7 @@ class AWSLambdaServiceImpl @Inject() (
     }
 
     val requiredModules = requiredModulesIn(functionBody, libraries, includeLibraryRequires = true)
-    val canUseCopyModules = maybePreviousFunctionInfo.forall { previousFunctionInfo =>
+    val canCopyModules = maybePreviousFunctionInfo.exists { previousFunctionInfo =>
       if (previousFunctionInfo.canCopyModules(requiredModules)) {
         previousFunctionInfo.copyModulesInto(dirName)
         true
@@ -432,14 +376,26 @@ class AWSLambdaServiceImpl @Inject() (
         false
       }
     }
-    if (forceNodeModuleUpdate || !canUseCopyModules) {
-      requiredModules.foreach { moduleName =>
-        // NPM wants to write a lockfile in $HOME; this makes it work for daemons
-        Process(Seq("bash","-c",s"cd $dirName && npm install $moduleName"), None, "HOME" -> "/tmp").!
+    for {
+      _ <- if (forceNodeModuleUpdate || !canCopyModules) {
+        Future.sequence(requiredModules.map { moduleName =>
+          // NPM wants to write a lockfile in $HOME; this makes it work for daemons
+          Future {
+            blocking(
+              Process(Seq("bash", "-c", s"cd $dirName && npm install $moduleName"), None, "HOME" -> "/tmp").!
+            )
+          }
+        })
+      } else {
+        Future.successful({})
       }
-    }
+      _ <- Future {
+        blocking(
+          Process(Seq("bash","-c",s"cd $dirName && zip -q -r ${zipFileNameFor(functionName)} *")).!
+        )
+      }
+    } yield {}
 
-    Process(Seq("bash","-c",s"cd $dirName && zip -q -r ${zipFileNameFor(functionName)} *")).!
   }
 
   private def getNodeModuleInfoFor(functionName: String): JsValue = {
@@ -475,7 +431,7 @@ class AWSLambdaServiceImpl @Inject() (
                          apiConfigInfo: ApiConfigInfo,
                          maybePreviousFunctionInfo: Option[PreviousFunctionInfo],
                          forceNodeModuleUpdate: Boolean
-                       ): ByteBuffer = {
+                       ): Future[ByteBuffer] = {
     createZipWithModulesFor(
       functionName,
       functionBody,
@@ -484,9 +440,10 @@ class AWSLambdaServiceImpl @Inject() (
       apiConfigInfo,
       maybePreviousFunctionInfo,
       forceNodeModuleUpdate
-    )
-    val path = Paths.get(zipFileNameFor(functionName))
-    ByteBuffer.wrap(Files.readAllBytes(path))
+    ).map { _ =>
+      val path = Paths.get(zipFileNameFor(functionName))
+      ByteBuffer.wrap(Files.readAllBytes(path))
+    }
   }
 
   def deleteFunction(functionName: String): Future[Unit] = {
@@ -517,13 +474,12 @@ class AWSLambdaServiceImpl @Inject() (
                     ): Future[Unit] = {
 
     deleteFunction(functionName).andThen {
-      case Failure(t) => Future.successful(Unit)
+      case Failure(t) => Future.successful({})
       case Success(v) => if (functionBody.trim.isEmpty) {
         Future.successful(Unit)
       } else {
-        val functionCode =
-          new FunctionCode().
-            withZipFile(getZipFor(
+        for {
+          functionCode <-getZipFor(
               functionName,
               functionBody,
               params,
@@ -531,8 +487,9 @@ class AWSLambdaServiceImpl @Inject() (
               apiConfigInfo,
               maybePreviousFunctionInfo,
               forceNodeModuleUpdate
-            ))
-        val createFunctionRequest =
+            ).map { zip => new FunctionCode().
+        withZipFile(zip)
+          } createFunctionRequest <- Future.successful(
           new CreateFunctionRequest().
             withFunctionName(functionName).
             withCode(functionCode).
@@ -540,8 +497,8 @@ class AWSLambdaServiceImpl @Inject() (
             withRuntime(com.amazonaws.services.lambda.model.Runtime.Nodejs610).
             withHandler("index.handler").
             withTimeout(INVOCATION_TIMEOUT_SECONDS)
-
-        JavaFutureConverter.javaToScala(client.createFunctionAsync(createFunctionRequest)).map(_ => Unit)
+)
+        _ <-JavaFutureConverter.javaToScala(client.createFunctionAsync(createFunctionRequest))} yield {}
       }
     }
   }

@@ -19,7 +19,6 @@ import models.behaviors.config.requiredsimpletokenapi.RequiredSimpleTokenApi
 import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.events.Event
 import models.team.Team
-import play.api.libs.json.JsValue
 import play.api.libs.ws.WSClient
 import play.api.{Configuration, Logger}
 import services.{AWSLambdaService, ApiConfigInfo, CacheService, DataService}
@@ -254,15 +253,6 @@ class BehaviorVersionServiceImpl @Inject() (
         }
         ).map(_.flatten)
         libraries <- dataService.libraries.allForAction(groupVersion)
-        _ <- DBIO.from(lambdaService.deployFunctionFor(
-          updated,
-          data.functionBody,
-          withoutBuiltin(inputs.map(_.name).toArray),
-          libraries,
-          apiConfigInfo,
-          forceNodeModuleUpdate
-        )
-        )
         _ <- dataService.behaviorParameters.ensureForAction(updated, inputs)
         _ <- DBIO.sequence(
           data.triggers.
@@ -281,7 +271,17 @@ class BehaviorVersionServiceImpl @Inject() (
           dataService.dataTypeConfigs.createForAction(updated, configData)
         }.getOrElse(DBIO.successful(None))
         _ <- lambdaService.ensureNodeModuleVersionsFor(updated)
-      } yield Unit
+      } yield {
+        // deploy in the background
+        lambdaService.deployFunctionFor(
+          updated,
+          data.functionBody,
+          withoutBuiltin(inputs.map(_.name).toArray),
+          libraries,
+          apiConfigInfo,
+          forceNodeModuleUpdate
+        )
+      }
     } yield behaviorVersion
   }
 

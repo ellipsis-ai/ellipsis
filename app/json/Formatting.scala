@@ -2,6 +2,7 @@ package json
 
 import models.accounts.slack.SlackUserInfo
 import models.accounts.slack.botprofile.SlackBotProfile
+import models.behaviors.{ExecutionErrorData, ExecutionLogData}
 import models.behaviors.behaviorparameter.ValidValue
 import models.behaviors.events.SlackMessage
 import models.behaviors.testing.{InvocationTestReportOutput, ResultOutput}
@@ -154,4 +155,6 @@ object Formatting {
   implicit val awsConfigListConfigReads = Json.reads[AWSConfigListConfig]
   implicit val awsConfigListConfigWrites = Json.writes[AWSConfigListConfig]
 
+  implicit val executionLogReads = Json.reads[ExecutionLogData]
+  implicit val executionErrorValueReads = Json.reads[ExecutionErrorData]
 }

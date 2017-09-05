@@ -98,7 +98,7 @@ case class BehaviorVersion(
       SuccessResult(event, maybeConversation, successResult, json, parametersWithValues, maybeResponseTemplate, logResultOption, forcePrivateResponse)
     }.getOrElse {
       if ((json \ NO_RESPONSE_KEY).toOption.exists(_.as[Boolean])) {
-        NoResponseResult(event, maybeConversation, logResultOption)
+        NoResponseResult(event, maybeConversation, json, logResultOption)
       } else {
         if (json.toString == "null") {
           NoCallbackTriggeredResult(event, maybeConversation, this, dataService, configuration)

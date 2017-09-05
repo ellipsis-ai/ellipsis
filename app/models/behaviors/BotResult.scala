@@ -79,10 +79,21 @@ sealed trait BotResult {
 }
 
 trait BotResultWithLogResult extends BotResult {
+  val payloadJson: JsValue
   val maybeLogResult: Option[AWSLambdaLogResult]
 
+  private val maybeAuthorLogTextFromJson: Option[String] = {
+    val logged = (payloadJson \ "logs").validate[Seq[ExecutionLogData]] match {
+      case JsSuccess(logs, _) => logs.map(_.toString).mkString("\n")
+      case JsError(_) => ""
+    }
+    Option(logged).filter(_.nonEmpty)
+  }
+
   val maybeAuthorLog: Option[String] = {
-    maybeLogResult.map(_.authorDefinedLogStatements).filter(_.nonEmpty)
+    maybeAuthorLogTextFromJson orElse {
+      maybeLogResult.map(_.authorDefinedLogStatements).filter(_.nonEmpty)
+    }
   }
 
   val maybeAuthorLogFile: Option[UploadFileSpec] = {
@@ -120,7 +131,7 @@ case class SuccessResult(
                           event: Event,
                           maybeConversation: Option[Conversation],
                           result: JsValue,
-                          resultWithOptions: JsValue,
+                          payloadJson: JsValue,
                           parametersWithValues: Seq[ParameterWithValue],
                           maybeResponseTemplate: Option[String],
                           maybeLogResult: Option[AWSLambdaLogResult],
@@ -130,7 +141,7 @@ case class SuccessResult(
   val resultType = ResultType.Success
 
   override def files: Seq[UploadFileSpec] = {
-    val authoredFiles = (resultWithOptions \ "files").validateOpt[Seq[UploadFileSpec]] match {
+    val authoredFiles = (payloadJson \ "files").validateOpt[Seq[UploadFileSpec]] match {
       case JsSuccess(maybeFiles, _) => maybeFiles.getOrElse(Seq())
       case JsError(errs) => throw InvalidFilesException(errs.map { case (_, validationErrors) =>
         validationErrors.map(_.message).mkString(", ")
@@ -163,7 +174,12 @@ case class TextWithActionsResult(event: Event, maybeConversation: Option[Convers
   }
 }
 
-case class NoResponseResult(event: Event, maybeConversation: Option[Conversation], maybeLogResult: Option[AWSLambdaLogResult]) extends BotResultWithLogResult {
+case class NoResponseResult(
+                             event: Event,
+                             maybeConversation: Option[Conversation],
+                             payloadJson: JsValue,
+                             maybeLogResult: Option[AWSLambdaLogResult]
+                           ) extends BotResultWithLogResult {
 
   val resultType = ResultType.NoResponse
   val forcePrivateResponse = false // N/A
@@ -194,19 +210,29 @@ case class ExecutionErrorResult(
                                  behaviorVersion: BehaviorVersion,
                                  dataService: DataService,
                                  configuration: Configuration,
-                                 json: JsValue,
+                                 payloadJson: JsValue,
                                  maybeLogResult: Option[AWSLambdaLogResult]
                                ) extends BotResultWithLogResult with WithBehaviorLink {
 
   val resultType = ResultType.ExecutionError
   val functionLines = behaviorVersion.functionBody.split("\n").length
-  val howToIncludeStackTraceMessage = "\n\nTo include a stack trace, throw an `Error` object in your code.  \ne.g. `throw new Error(\"Something went wrong.\")`"
+  val howToIncludeStackTraceMessage = "\n\nTo include a stack trace, throw an `Error` object in your code. For example:\n  throw new Error(\"Something went wrong.\")"
+
+  private val maybeError: Option[ExecutionErrorData] = {
+    (payloadJson \ "error").validate[ExecutionErrorData] match {
+      case JsSuccess(errorValue, _) => Some(errorValue)
+      case JsError(_) => None
+    }
+  }
+
+  private val maybeUserErrorMessage: Option[String] = {
+    maybeError.flatMap(_.userMessage)
+  }
 
   def text: String = {
-    s"I encountered an error in ${linkToBehaviorFor("one of your skills")}" +
-      maybeLogResult.flatMap(_.maybeUserErrorMessage).map { userError =>
-        s":\n\n$userError"
-      }.getOrElse(".")
+    s"I encountered an error in ${linkToBehaviorFor("one of your skills")}${
+      maybeUserErrorMessage.map(userError => s":\n\n$userError").getOrElse(".")
+    }"
   }
 
   private def logContainsStackTrace(log: String): Boolean = {
@@ -221,24 +247,27 @@ case class ExecutionErrorResult(
   }
 
   private val maybeCallbackErrorMessage: Option[String] = {
-    (json \ "errorMessage").toOption.map(processedResultFor).filterNot {
+    (payloadJson \ "errorMessage").toOption.map(processedResultFor).filterNot {
       _.matches("""RequestId: \S+ Process exited before completing request""")
     }
   }
 
   private val maybeThrownLogMessage: Option[String] = {
-    maybeLogResult.flatMap(_.maybeTranslated(functionLines)).map { logText =>
-      if (!logContainsStackTrace(logText)) {
-        logText + howToIncludeStackTraceMessage
-      } else {
-        logText
-      }
-    }
+    maybeLogResult.flatMap(_.maybeTranslated(functionLines))
   }
 
   private def maybeErrorLog: Option[String] = {
-    val result = Seq(maybeCallbackErrorMessage, maybeThrownLogMessage).flatten.mkString("\n")
-    Option(result).filter(_.nonEmpty)
+    maybeError.map { error =>
+      val translatedStack = error.translateStack(functionLines)
+      if (translatedStack.nonEmpty) {
+        translatedStack
+      } else {
+        error.message + howToIncludeStackTraceMessage
+      }
+    } orElse {
+      val result = Seq(maybeCallbackErrorMessage, maybeThrownLogMessage).flatten.mkString("\n")
+      Option(result).filter(_.nonEmpty)
+    }
   }
 
   override def files: Seq[UploadFileSpec] = {
@@ -257,7 +286,7 @@ case class SyntaxErrorResult(
                               behaviorVersion: BehaviorVersion,
                               dataService: DataService,
                               configuration: Configuration,
-                              json: JsValue,
+                              payloadJson: JsValue,
                               maybeLogResult: Option[AWSLambdaLogResult]
                             ) extends BotResultWithLogResult with WithBehaviorLink {
 
@@ -268,7 +297,7 @@ case class SyntaxErrorResult(
        |There's a syntax error in your skill:
        |
        |````
-       |${(json \ "errorMessage").asOpt[String].getOrElse("")}
+       |${(payloadJson \ "errorMessage").asOpt[String].getOrElse("")}
        |````
        |
        |${linkToBehaviorFor("Take a look in the skill editor")} for more details.
