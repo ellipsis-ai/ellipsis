@@ -31,6 +31,7 @@ import sun.misc.BASE64Decoder
 import utils.JavaFutureConverter
 
 import scala.collection.JavaConversions.asScalaBuffer
+import scala.concurrent.blocking
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.reflect.io.Path
@@ -213,7 +214,7 @@ class AWSLambdaServiceImpl @Inject() (
 
   val alreadyIncludedModules = Array("aws-sdk", "dynamodb-doc")
 
-  private def requiredModulesIn(code: String, libraries: Seq[LibraryVersion], includeLibraryRequires: Boolean): Array[String] = {
+  private def requiredModulesIn(code: String, libraries: Seq[LibraryVersion], includeLibraryRequires: Boolean): Seq[String] = {
     val libraryNames = libraries.map(_.name)
     val requiredForCode =
       requireRegex.findAllMatchIn(code).
@@ -323,7 +324,7 @@ class AWSLambdaServiceImpl @Inject() (
     val requiredModules = requiredModulesIn(functionBody, libraries, includeLibraryRequires = true)
     val dirName = dirNameFor(functionName)
 
-    def canCopyModules(neededModules: Array[String]): Boolean = {
+    def canCopyModules(neededModules: Seq[String]): Boolean = {
       requiredModules.sameElements(neededModules) &&
         Files.exists(Paths.get(dirName))
     }
@@ -349,7 +350,7 @@ class AWSLambdaServiceImpl @Inject() (
                                        requiredSimpleTokenApis: Seq[RequiredSimpleTokenApi],
                                        maybePreviousFunctionInfo: Option[PreviousFunctionInfo],
                                        forceNodeModuleUpdate: Boolean
-                                     ): Unit = {
+                                     ): Future[Unit] = {
     val dirName = dirNameFor(functionName)
     val path = Path(dirName)
     path.createDirectory()
@@ -360,7 +361,7 @@ class AWSLambdaServiceImpl @Inject() (
     }
 
     val requiredModules = requiredModulesIn(functionBody, libraries, includeLibraryRequires = true)
-    val canUseCopyModules = maybePreviousFunctionInfo.exists { previousFunctionInfo =>
+    val canCopyModules = maybePreviousFunctionInfo.exists { previousFunctionInfo =>
       if (previousFunctionInfo.canCopyModules(requiredModules)) {
         previousFunctionInfo.copyModulesInto(dirName)
         true
@@ -368,14 +369,26 @@ class AWSLambdaServiceImpl @Inject() (
         false
       }
     }
-    if (forceNodeModuleUpdate || !canUseCopyModules) {
-      requiredModules.foreach { moduleName =>
-        // NPM wants to write a lockfile in $HOME; this makes it work for daemons
-        Process(Seq("bash","-c",s"cd $dirName && npm install $moduleName"), None, "HOME" -> "/tmp").!
+    for {
+      _ <- if (forceNodeModuleUpdate || !canCopyModules) {
+        Future.sequence(requiredModules.map { moduleName =>
+          // NPM wants to write a lockfile in $HOME; this makes it work for daemons
+          Future {
+            blocking(
+              Process(Seq("bash", "-c", s"cd $dirName && npm install $moduleName"), None, "HOME" -> "/tmp").!
+            )
+          }
+        })
+      } else {
+        Future.successful({})
       }
-    }
+      _ <- Future {
+        blocking(
+          Process(Seq("bash","-c",s"cd $dirName && zip -q -r ${zipFileNameFor(functionName)} *")).!
+        )
+      }
+    } yield {}
 
-    Process(Seq("bash","-c",s"cd $dirName && zip -q -r ${zipFileNameFor(functionName)} *")).!
   }
 
   private def getNodeModuleInfoFor(functionName: String): JsValue = {
@@ -413,7 +426,7 @@ class AWSLambdaServiceImpl @Inject() (
                          requiredSimpleTokenApis: Seq[RequiredSimpleTokenApi],
                          maybePreviousFunctionInfo: Option[PreviousFunctionInfo],
                          forceNodeModuleUpdate: Boolean
-                       ): ByteBuffer = {
+                       ): Future[ByteBuffer] = {
     createZipWithModulesFor(
       functionName,
       functionBody,
@@ -424,9 +437,10 @@ class AWSLambdaServiceImpl @Inject() (
       requiredSimpleTokenApis,
       maybePreviousFunctionInfo,
       forceNodeModuleUpdate
-    )
-    val path = Paths.get(zipFileNameFor(functionName))
-    ByteBuffer.wrap(Files.readAllBytes(path))
+    ).map { _ =>
+      val path = Paths.get(zipFileNameFor(functionName))
+      ByteBuffer.wrap(Files.readAllBytes(path))
+    }
   }
 
   def deleteFunction(functionName: String): Future[Unit] = {
@@ -459,33 +473,35 @@ class AWSLambdaServiceImpl @Inject() (
                     ): Future[Unit] = {
 
     deleteFunction(functionName).andThen {
-      case Failure(t) => Future.successful(Unit)
+      case Failure(t) => Future.successful({})
       case Success(v) => if (functionBody.trim.isEmpty) {
         Future.successful(Unit)
       } else {
-        val functionCode =
-          new FunctionCode().
-            withZipFile(getZipFor(
-              functionName,
-              functionBody,
-              params,
-              libraries,
-              maybeAWSConfig,
-              requiredOAuth2ApiConfigs,
-              requiredSimpleTokenApis,
-              maybePreviousFunctionInfo,
-              forceNodeModuleUpdate
-            ))
-        val createFunctionRequest =
-          new CreateFunctionRequest().
-            withFunctionName(functionName).
-            withCode(functionCode).
-            withRole(configuration.getString("aws.role").get).
-            withRuntime(com.amazonaws.services.lambda.model.Runtime.Nodejs610).
-            withHandler("index.handler").
-            withTimeout(INVOCATION_TIMEOUT_SECONDS)
-
-        JavaFutureConverter.javaToScala(client.createFunctionAsync(createFunctionRequest)).map(_ => Unit)
+        for {
+          functionCode <- getZipFor(
+            functionName,
+            functionBody,
+            params,
+            libraries,
+            maybeAWSConfig,
+            requiredOAuth2ApiConfigs,
+            requiredSimpleTokenApis,
+            maybePreviousFunctionInfo,
+            forceNodeModuleUpdate
+          ).map { zip => new FunctionCode().
+            withZipFile(zip)
+          }
+          createFunctionRequest <- Future.successful(
+            new CreateFunctionRequest().
+              withFunctionName(functionName).
+              withCode(functionCode).
+              withRole(configuration.getString("aws.role").get).
+              withRuntime(com.amazonaws.services.lambda.model.Runtime.Nodejs610).
+              withHandler("index.handler").
+              withTimeout(INVOCATION_TIMEOUT_SECONDS)
+          )
+          _ <- JavaFutureConverter.javaToScala(client.createFunctionAsync(createFunctionRequest))
+        } yield {}
       }
     }
   }

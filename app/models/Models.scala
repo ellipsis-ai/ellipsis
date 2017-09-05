@@ -11,7 +11,7 @@ import drivers.SlickPostgresDriver.api._
 @Singleton
 class Models @Inject() (appLifecycle: ApplicationLifecycle) {
 
-  var db: Database = Database.forConfig("db.default")
+  var db: Database = Database.forConfig("slick.dbs.default")
 
   appLifecycle.addStopHook { () =>
     if (db != null) {
