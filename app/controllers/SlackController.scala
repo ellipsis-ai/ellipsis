@@ -262,7 +262,7 @@ class SlackController @Inject() (
                                                event: ChannelMembersChangedEventInfo
                                              ) extends EventRequestInfo
 
-  private val channelMembersChangedEventForm = Form(
+  private val channelMembersChangedRequestForm = Form(
     mapping(
       "team_id" -> nonEmptyText,
       "event" -> mapping(
@@ -308,7 +308,7 @@ class SlackController @Inject() (
           messageEventResult
         )
       case channelMembersChangedRegex(_) =>
-        channelMembersChangedEventForm.bindFromRequest.fold(
+        channelMembersChangedRequestForm.bindFromRequest.fold(
           formErrorResult,
           channelMembersChangedResult
         )
