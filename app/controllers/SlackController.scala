@@ -9,7 +9,7 @@ import models.behaviors.events.{EventHandler, SlackMessage, SlackMessageEvent}
 import models.help.HelpGroupSearchValue
 import models.silhouette.EllipsisEnv
 import play.api.Logger
-import play.api.data.{Form, Mapping}
+import play.api.data.Form
 import play.api.data.Forms._
 import play.api.i18n.MessagesApi
 import play.api.libs.json._
@@ -136,7 +136,7 @@ class SlackController @Inject() (
                                     text: String
                                   ) extends EventInfo
 
-  case class MessageSentEventRequestInfo(
+  case class MessageSentRequestInfo(
                                           teamId: String,
                                           event: MessageSentEventInfo
                                         ) extends MessageRequestInfo {
@@ -146,7 +146,7 @@ class SlackController @Inject() (
     val ts: String = event.ts
     val maybeThreadTs: Option[String] = event.maybeThreadTs
   }
-  private val messageSentEventRequestForm = Form(
+  private val messageSentRequestForm = Form(
     mapping(
       "team_id" -> nonEmptyText,
       "event" -> mapping(
@@ -157,7 +157,7 @@ class SlackController @Inject() (
         "channel" -> nonEmptyText,
         "text" -> nonEmptyText
       )(MessageSentEventInfo.apply)(MessageSentEventInfo.unapply)
-    )(MessageSentEventRequestInfo.apply)(MessageSentEventRequestInfo.unapply)
+    )(MessageSentRequestInfo.apply)(MessageSentRequestInfo.unapply)
   )
 
   case class EditedInfo(user: String, ts: String)
@@ -180,7 +180,7 @@ class SlackController @Inject() (
                                       ts: String
                                    ) extends EventInfo
 
-  case class MessageChangedEventRequestInfo(
+  case class MessageChangedRequestInfo(
                                              teamId: String,
                                              event: MessageChangedEventInfo
                                           ) extends MessageRequestInfo {
@@ -191,7 +191,7 @@ class SlackController @Inject() (
     val maybeThreadTs: Option[String] = event.maybeThreadTs
   }
 
-  private val messageChangedEventRequestForm = Form(
+  private val messageChangedRequestForm = Form(
     mapping(
       "team_id" -> nonEmptyText,
       "event" -> mapping(
@@ -212,7 +212,7 @@ class SlackController @Inject() (
         "thread_ts" -> optional(nonEmptyText),
         "ts" -> nonEmptyText
       )(MessageChangedEventInfo.apply)(MessageChangedEventInfo.unapply)
-    )(MessageChangedEventRequestInfo.apply)(MessageChangedEventRequestInfo.unapply) verifying("Not an edited message event request", fields => fields match {
+    )(MessageChangedRequestInfo.apply)(MessageChangedRequestInfo.unapply) verifying("Not an edited message event request", fields => fields match {
       case info => info.event.eventSubType == "message_changed"
     })
   )
@@ -257,10 +257,10 @@ class SlackController @Inject() (
                                           channelType: String
                                          ) extends EventInfo
 
-  case class ChannelMembersChangedEventRequestInfo(
-                                                    teamId: String,
-                                                    event: ChannelMembersChangedEventInfo
-                                                  ) extends EventRequestInfo
+  case class ChannelMembersChangedRequestInfo(
+                                               teamId: String,
+                                               event: ChannelMembersChangedEventInfo
+                                             ) extends EventRequestInfo
 
   private val channelMembersChangedEventForm = Form(
     mapping(
@@ -271,22 +271,20 @@ class SlackController @Inject() (
         "channel" -> nonEmptyText,
         "channel_type" -> nonEmptyText
       )(ChannelMembersChangedEventInfo.apply)(ChannelMembersChangedEventInfo.unapply)
-    )(ChannelMembersChangedEventRequestInfo.apply)(ChannelMembersChangedEventRequestInfo.unapply)
+    )(ChannelMembersChangedRequestInfo.apply)(ChannelMembersChangedRequestInfo.unapply)
   )
 
-  private def channelMembersChangedResult(channel: String): Result = {
+  private def channelMembersChangedResult(info: ChannelMembersChangedRequestInfo): Result = {
     Ok(":+1:")
   }
 
   def event = Action { implicit request =>
     challengeRequestForm.bindFromRequest.fold(
-      _ => {
-        validEventRequestForm.bindFromRequest.fold(
-          _ => unknownEventResult,
-          eventRequestInfo => handleValidEvent(eventRequestInfo.event.eventType)
-        )
-      },
-      info => challengeResult(info)
+      _ => validEventRequestForm.bindFromRequest.fold(
+        formErrorResult,
+        handleValidEvent
+      ),
+      challengeResult
     )
   }
 
@@ -294,24 +292,26 @@ class SlackController @Inject() (
     Ok("I don't know what to do with this request but I'm not concerned")
   }
 
-  private def handleValidEvent(eventType: String)(implicit request: Request[AnyContent]): Result = {
-    if (eventType == "message") {
-      messageSentEventRequestForm.bindFromRequest.fold(
-        _ => {
-          messageChangedEventRequestForm.bindFromRequest.fold(
-            _ => unknownEventResult,
-            info => messageEventResult(info)
-          )
-        },
-        info => messageEventResult(info)
-      )
-    } else if (eventType == "member_joined_channel" || eventType == "member_left_channel") {
-      channelMembersChangedEventForm.bindFromRequest.fold(
-        _ => unknownEventResult,
-        info => channelMembersChangedResult(info.event.channel)
-      )
-    } else {
-      unknownEventResult
+  private def formErrorResult[T](f: Form[T]): Result = unknownEventResult
+
+  private val channelMembersChangedRegex = "(member_joined_channel|member_left_channel)".r
+
+  private def handleValidEvent(info: EventRequestInfo)(implicit request: Request[AnyContent]): Result = {
+    info.event.eventType match {
+      case "message" =>
+        messageSentRequestForm.bindFromRequest.fold(
+          _ => messageChangedRequestForm.bindFromRequest.fold(
+            formErrorResult,
+            messageEventResult
+          ),
+          messageEventResult
+        )
+      case channelMembersChangedRegex(_) =>
+        channelMembersChangedEventForm.bindFromRequest.fold(
+          formErrorResult,
+          channelMembersChangedResult
+        )
+      case _ => unknownEventResult
     }
   }
 
