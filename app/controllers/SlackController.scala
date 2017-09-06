@@ -34,6 +34,14 @@ class SlackController @Inject() (
   val cacheService = services.cacheService
   implicit val actorSystem = services.actorSystem
 
+  private def maybeResultFor[T](form: Form[T], resultFn: T => Result)
+                               (implicit request: Request[AnyContent]): Option[Result] = {
+    form.bindFromRequest.fold(
+      _ => None,
+      info => Some(resultFn(info))
+    )
+  }
+
   def add = silhouette.UserAwareAction { implicit request =>
     val maybeResult = for {
       scopes <- configuration.getString("silhouette.slack.scope")
@@ -78,12 +86,14 @@ class SlackController @Inject() (
     })
   )
 
-  private def challengeResult(info: ChallengeRequestInfo): Result = {
-    if (info.isValid) {
-      Ok(info.challenge)
-    } else {
-      Forbidden("Bad token")
-    }
+  private def maybeChallengeResult(implicit request: Request[AnyContent]): Option[Result] = {
+    maybeResultFor(challengeRequestForm, (info: ChallengeRequestInfo) => {
+      if (info.isValid) {
+        Ok(info.challenge)
+      } else {
+        Forbidden("Bad token")
+      }
+    })
   }
 
   trait EventInfo {
@@ -118,6 +128,13 @@ class SlackController @Inject() (
       case info => info.requestType == "event_callback" && info.isValid
     })
   )
+
+  def isValidEventRequest(implicit request: Request[AnyContent]): Boolean = {
+    validEventRequestForm.bindFromRequest.fold(
+      _ => false,
+      _ => true
+    )
+  }
 
   trait MessageRequestInfo extends EventRequestInfo {
     val channel: String
@@ -157,7 +174,9 @@ class SlackController @Inject() (
         "channel" -> nonEmptyText,
         "text" -> nonEmptyText
       )(MessageSentEventInfo.apply)(MessageSentEventInfo.unapply)
-    )(MessageSentRequestInfo.apply)(MessageSentRequestInfo.unapply)
+    )(MessageSentRequestInfo.apply)(MessageSentRequestInfo.unapply) verifying("Not a valid message event", fields => fields match {
+      case info => info.event.eventType == "message"
+    })
   )
 
   case class EditedInfo(user: String, ts: String)
@@ -213,7 +232,7 @@ class SlackController @Inject() (
         "ts" -> nonEmptyText
       )(MessageChangedEventInfo.apply)(MessageChangedEventInfo.unapply)
     )(MessageChangedRequestInfo.apply)(MessageChangedRequestInfo.unapply) verifying("Not an edited message event request", fields => fields match {
-      case info => info.event.eventSubType == "message_changed"
+      case info => info.event.eventType == "message" && info.event.eventSubType == "message_changed"
     })
   )
 
@@ -250,6 +269,11 @@ class SlackController @Inject() (
     }
   }
 
+  private def maybeMessageResult(implicit request: Request[AnyContent]): Option[Result] = {
+    maybeResultFor(messageSentRequestForm, messageEventResult) orElse
+      maybeResultFor(messageChangedRequestForm, messageEventResult)
+  }
+
   case class ChannelMembersChangedEventInfo(
                                           eventType: String,
                                           user: String,
@@ -262,6 +286,8 @@ class SlackController @Inject() (
                                                event: ChannelMembersChangedEventInfo
                                              ) extends EventRequestInfo
 
+  private val channelMembersChangedPattern = "(member_joined_channel|member_left_channel)"
+
   private val channelMembersChangedRequestForm = Form(
     mapping(
       "team_id" -> nonEmptyText,
@@ -271,48 +297,30 @@ class SlackController @Inject() (
         "channel" -> nonEmptyText,
         "channel_type" -> nonEmptyText
       )(ChannelMembersChangedEventInfo.apply)(ChannelMembersChangedEventInfo.unapply)
-    )(ChannelMembersChangedRequestInfo.apply)(ChannelMembersChangedRequestInfo.unapply)
+    )(ChannelMembersChangedRequestInfo.apply)(ChannelMembersChangedRequestInfo.unapply) verifying("Not a valid message event", fields => fields match {
+      case info => info.event.eventType.matches(channelMembersChangedPattern)
+    })
   )
 
-  private def channelMembersChangedResult(info: ChannelMembersChangedRequestInfo): Result = {
-    // TODO: invalidate the channel info cache
-    Ok(":+1:")
+  private def maybeChannelMembersChangedResult(implicit request: Request[AnyContent]): Option[Result] = {
+    maybeResultFor(channelMembersChangedRequestForm, (info: ChannelMembersChangedRequestInfo) => {
+      // TODO: invalidate the channel info cache
+      Ok(":+1:")
+    })
+  }
+
+  private def maybeEventResult(implicit request: Request[AnyContent]): Option[Result] = {
+    if (isValidEventRequest) {
+      maybeMessageResult orElse
+        maybeChannelMembersChangedResult
+    } else {
+      None
+    }
   }
 
   def event = Action { implicit request =>
-    challengeRequestForm.bindFromRequest.fold(
-      _ => validEventRequestForm.bindFromRequest.fold(
-        formErrorResult,
-        handleValidEvent
-      ),
-      challengeResult
-    )
-  }
-
-  private def unknownEventResult: Result = {
-    Ok("I don't know what to do with this request but I'm not concerned")
-  }
-
-  private def formErrorResult[T](f: Form[T]): Result = unknownEventResult
-
-  private val channelMembersChangedRegex = "(member_joined_channel|member_left_channel)".r
-
-  private def handleValidEvent(info: EventRequestInfo)(implicit request: Request[AnyContent]): Result = {
-    info.event.eventType match {
-      case "message" =>
-        messageSentRequestForm.bindFromRequest.fold(
-          _ => messageChangedRequestForm.bindFromRequest.fold(
-            formErrorResult,
-            messageEventResult
-          ),
-          messageEventResult
-        )
-      case channelMembersChangedRegex(_) =>
-        channelMembersChangedRequestForm.bindFromRequest.fold(
-          formErrorResult,
-          channelMembersChangedResult
-        )
-      case _ => unknownEventResult
+    (maybeChallengeResult orElse maybeEventResult).getOrElse {
+      Ok("I don't know what to do with this request but I'm not concerned")
     }
   }
 
