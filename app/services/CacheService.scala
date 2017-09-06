@@ -118,7 +118,11 @@ class CacheService @Inject() (
   }
 
   def cacheSlackChannelInfo(channel: String, teamId: String, data: Channel): Unit = {
-    set(slackChannelInfoKey(channel, teamId), Json.toJson(data), 10.seconds)
+    set(slackChannelInfoKey(channel, teamId), Json.toJson(data), 1.hour)
+  }
+
+  def uncacheSlackChannelInfo(channel: String, teamId: String): Unit = {
+    remove(slackChannelInfoKey(channel, teamId))
   }
 
   def getSlackChannelInfo(channel: String, teamId: String): Option[Channel] = {
@@ -135,7 +139,11 @@ class CacheService @Inject() (
   }
 
   def cacheSlackGroupInfo(group: String, teamId: String, data: Group): Unit = {
-    set(slackGroupInfoKey(group, teamId), Json.toJson(data), 10.seconds)
+    set(slackGroupInfoKey(group, teamId), Json.toJson(data), 1.hour)
+  }
+
+  def uncacheSlackGroupInfo(group: String, teamId: String): Unit = {
+    remove(slackGroupInfoKey(group, teamId))
   }
 
   def getSlackGroupInfo(group: String, teamId: String): Option[Group] = {
