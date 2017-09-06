@@ -187,7 +187,7 @@ trait Scheduled {
                                 botResultService: BotResultService
                               )(implicit actorSystem: ActorSystem): Future[Unit] = {
     for {
-      members <- SlackChannels(client, cacheService).getMembersFor(channel)
+      members <- SlackChannels(client, cacheService, profile.slackTeamId).getMembersFor(channel)
       otherMembers <- Future.successful(members.filterNot(ea => ea == profile.userId))
       dmInfos <- Future.sequence(otherMembers.map { ea =>
         client.openIm(ea).map { dmChannel =>

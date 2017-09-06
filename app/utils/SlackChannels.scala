@@ -52,7 +52,7 @@ case class SlackDM(im: Im) extends ChannelLike {
   val isArchived: Boolean = im.is_user_deleted.getOrElse(false)
 }
 
-case class SlackChannels(client: SlackApiClient, cacheService: CacheService) {
+case class SlackChannels(client: SlackApiClient, cacheService: CacheService, slackTeamId: String) {
 
   private def getInfoFor(channelLikeId: String)(implicit actorSystem: ActorSystem): Future[Option[ChannelLike]] = {
     for {
@@ -125,11 +125,11 @@ case class SlackChannels(client: SlackApiClient, cacheService: CacheService) {
     if (!channel.startsWith("C")) {
       Future.successful(None)
     } else {
-      cacheService.getSlackChannelInfo(channel).map { channelInfo =>
+      cacheService.getSlackChannelInfo(channel, slackTeamId).map { channelInfo =>
         Future.successful(Some(channelInfo))
       }.getOrElse {
         client.getChannelInfo(channel).map { channelInfo =>
-          cacheService.cacheSlackChannelInfo(channel, channelInfo)
+          cacheService.cacheSlackChannelInfo(channel, slackTeamId, channelInfo)
           Some(channelInfo)
         }.recover {
           case e: ApiError => if (e.code == "channel_not_found") {
@@ -146,11 +146,11 @@ case class SlackChannels(client: SlackApiClient, cacheService: CacheService) {
     if (!channel.startsWith("G")) {
       Future.successful(None)
     } else {
-      cacheService.getSlackGroupInfo(channel).map { groupInfo =>
+      cacheService.getSlackGroupInfo(channel, slackTeamId).map { groupInfo =>
         Future.successful(Some(groupInfo))
       }.getOrElse {
         client.getGroupInfo(channel).map { groupInfo =>
-          cacheService.cacheSlackGroupInfo(channel, groupInfo)
+          cacheService.cacheSlackGroupInfo(channel, slackTeamId, groupInfo)
           Some(groupInfo)
         }.recover {
           case e: ApiError => if (e.code == "channel_not_found") {
@@ -164,11 +164,11 @@ case class SlackChannels(client: SlackApiClient, cacheService: CacheService) {
   }
 
   def listIms(implicit actorSystem: ActorSystem): Future[Seq[Im]] = {
-    cacheService.getSlackIMs.map { ims =>
+    cacheService.getSlackIMs(slackTeamId).map { ims =>
       Future.successful(ims)
     }.getOrElse {
       client.listIms().map { ims =>
-        cacheService.cacheSlackIMs(ims)
+        cacheService.cacheSlackIMs(ims, slackTeamId)
         ims
       }
     }

@@ -5,8 +5,7 @@ import models.accounts.slack.botprofile.SlackBotProfile
 import play.api.libs.json.{JsArray, JsBoolean, JsObject, JsString}
 import play.api.libs.ws.WSClient
 import services.CacheService
-import slack.api.{ApiError, SlackApiClient}
-import slack.models.Channel
+import slack.api.SlackApiClient
 import utils.SlackChannels
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -18,7 +17,7 @@ trait SlackEvent {
   val profile: SlackBotProfile
   val client: SlackApiClient
   def eventualMaybeDMChannel(cacheService: CacheService)(implicit actorSystem: ActorSystem): Future[Option[String]] = {
-    SlackChannels(client, cacheService).listIms.map(_.find(_.user == user).map(_.id))
+    SlackChannels(client, cacheService, profile.slackTeamId).listIms.map(_.find(_.user == user).map(_.id))
   }
 
   val isDirectMessage: Boolean = {
@@ -41,7 +40,7 @@ trait SlackEvent {
   def detailsFor(ws: WSClient, cacheService: CacheService)(implicit actorSystem: ActorSystem): Future[JsObject] = {
     for {
       user <- client.getUserInfo(user)
-      channelMembers <- SlackChannels(client, cacheService).getMembersFor(channel)
+      channelMembers <- SlackChannels(client, cacheService, profile.slackTeamId).getMembersFor(channel)
     } yield {
       val profileData = user.profile.map { profile =>
         Seq(
