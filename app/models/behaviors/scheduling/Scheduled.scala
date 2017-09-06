@@ -14,7 +14,7 @@ import models.behaviors.scheduling.recurrence.Recurrence
 import models.behaviors.{BotResult, BotResultService}
 import models.team.Team
 import play.api.{Configuration, Logger}
-import services.DataService
+import services.{CacheService, DataService}
 import slack.api.{ApiError, SlackApiClient}
 import slick.dbio.DBIO
 import utils.{FutureSequencer, SlackChannels}
@@ -182,11 +182,12 @@ trait Scheduled {
                                 client: SlackApiClient,
                                 profile: SlackBotProfile,
                                 dataService: DataService,
+                                cacheService: CacheService,
                                 configuration: Configuration,
                                 botResultService: BotResultService
                               )(implicit actorSystem: ActorSystem): Future[Unit] = {
     for {
-      members <- SlackChannels(client).getMembersFor(channel)
+      members <- SlackChannels(client, cacheService, profile.slackTeamId).getMembersFor(channel)
       otherMembers <- Future.successful(members.filterNot(ea => ea == profile.userId))
       dmInfos <- Future.sequence(otherMembers.map { ea =>
         client.openIm(ea).map { dmChannel =>
@@ -269,12 +270,13 @@ trait Scheduled {
             client: SlackApiClient,
             profile: SlackBotProfile,
             dataService: DataService,
+            cacheService: CacheService,
             configuration: Configuration,
             botResultService: BotResultService
           )(implicit actorSystem: ActorSystem): Future[Unit] = {
     maybeChannel.map { channel =>
       if (isForIndividualMembers) {
-        sendForIndividualMembers(channel, eventHandler, client, profile, dataService, configuration, botResultService)
+        sendForIndividualMembers(channel, eventHandler, client, profile, dataService, cacheService, configuration, botResultService)
       } else {
         maybeSlackProfile(dataService).flatMap { maybeSlackProfile =>
           val slackUserId = maybeSlackProfile.map(_.loginInfo.providerKey).getOrElse(profile.userId)

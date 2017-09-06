@@ -14,11 +14,11 @@ if (env=="dev"):
 # from pyhocon import ConfigFactory
 conf = pyhocon.ConfigFactory.parse_file("../conf/{0}.conf".format(env))
 
-host = conf['db.default.host']
-port = conf['db.default.port']
-dbname = conf['db.default.dbname']
-username = conf['db.default.username']
-password = conf['db.default.password']
+host = conf['slick.dbs.default.host']
+port = conf['slick.dbs.default.port']
+dbname = conf['slick.dbs.default.dbname']
+username = conf['slick.dbs.default.username']
+password = conf['slick.dbs.default.password']
 
 conn_string = ("dbname='%s' user='%s' host='%s' password='%s'" % (dbname, username, host, password))
 

@@ -24,10 +24,9 @@ case class SlackMessageEvent(
                             ) extends MessageEvent with SlackEvent {
 
   lazy val isBotMessage: Boolean = profile.userId == user
-  lazy val isPublicChannel: Boolean = !isDirectMessage(channel) && !isPrivateChannel(channel)
 
   override def botPrefix(cacheService: CacheService)(implicit actorSystem: ActorSystem): Future[String] = {
-    if (isDirectMessage(channel)) {
+    if (isDirectMessage) {
       Future.successful("")
     } else {
       cacheService.getBotUsername(profile.userId).map { name =>
@@ -54,7 +53,7 @@ case class SlackMessageEvent(
   }
 
   lazy val includesBotMention: Boolean = {
-    isDirectMessage(channel) ||
+    isDirectMessage ||
       SlackMessageEvent.mentionRegexFor(profile.userId).findFirstMatchIn(message.originalText).nonEmpty ||
       MessageEvent.ellipsisRegex.findFirstMatchIn(message.originalText).nonEmpty
   }
@@ -62,7 +61,6 @@ case class SlackMessageEvent(
   override val isResponseExpected: Boolean = includesBotMention
   val teamId: String = profile.teamId
   val userIdForContext: String = user
-  val messageRecipientPrefix: String = messageRecipientPrefixFor(channel)
 
   lazy val maybeChannel = Some(channel)
   lazy val name: String = Conversation.SLACK_CONTEXT
@@ -95,17 +93,13 @@ case class SlackMessageEvent(
     } yield messages
   }
 
-  def channelForSend(forcePrivate: Boolean, maybeConversation: Option[Conversation])(implicit actorSystem: ActorSystem): Future[String] = {
-    eventualMaybeDMChannel(actorSystem).map { maybeDMChannel =>
-      (if (forcePrivate) {
-        maybeDMChannel
-      } else {
-        None
-      }).orElse {
-        maybeConversation.flatMap { convo =>
-          convo.maybeChannel
-        }
-      }.getOrElse(channel)
+  def channelForSend(forcePrivate: Boolean, maybeConversation: Option[Conversation], cacheService: CacheService)(implicit actorSystem: ActorSystem): Future[String] = {
+    (if (forcePrivate) {
+      eventualMaybeDMChannel(cacheService)
+    } else {
+      Future.successful(maybeConversation.flatMap(_.maybeChannel))
+    }).map { maybeChannel =>
+      maybeChannel.getOrElse(channel)
     }
   }
 
@@ -115,9 +109,10 @@ case class SlackMessageEvent(
                    maybeShouldUnfurl: Option[Boolean],
                    maybeConversation: Option[Conversation],
                    maybeActions: Option[MessageActions] = None,
-                   files: Seq[UploadFileSpec] = Seq()
+                   files: Seq[UploadFileSpec] = Seq(),
+                   cacheService: CacheService
                  )(implicit actorSystem: ActorSystem): Future[Option[String]] = {
-    channelForSend(forcePrivate, maybeConversation).flatMap { channelToUse =>
+    channelForSend(forcePrivate, maybeConversation, cacheService).flatMap { channelToUse =>
       SlackMessageSender(
         client,
         user,

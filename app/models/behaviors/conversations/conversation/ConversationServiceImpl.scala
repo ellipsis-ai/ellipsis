@@ -174,7 +174,9 @@ class ConversationServiceImpl @Inject() (
           conversation.behaviorVersion.forcePrivateResponse,
           maybeShouldUnfurl = None,
           Some(conversation),
-          maybeActions = None
+          maybeActions = None,
+          files = Seq(),
+          cacheService
         ))
       }.getOrElse(DBIO.successful(None))
       _ <- maybeEvent.map { event =>

@@ -7,15 +7,15 @@ import models.behaviors.scheduling.Scheduled
 import models.team.Team
 import play.api.libs.json.JsObject
 import play.api.libs.ws.WSClient
-import services.{DataService, DefaultServices}
+import services.{CacheService, DataService, DefaultServices}
 import utils.UploadFileSpec
 
 import scala.concurrent.Future
 
 case class ScheduledEvent(underlying: Event, scheduled: Scheduled) extends Event {
 
-  def eventualMaybeDMChannel(implicit actorSystem: ActorSystem): Future[Option[String]] = {
-    underlying.eventualMaybeDMChannel
+  def eventualMaybeDMChannel(cacheService: CacheService)(implicit actorSystem: ActorSystem): Future[Option[String]] = {
+    underlying.eventualMaybeDMChannel(cacheService)
   }
 
   def sendMessage(
@@ -24,13 +24,14 @@ case class ScheduledEvent(underlying: Event, scheduled: Scheduled) extends Event
                    maybeShouldUnfurl: Option[Boolean],
                    maybeConversation: Option[Conversation],
                    maybeActions: Option[MessageActions],
-                   files: Seq[UploadFileSpec]
-                 )(implicit actorSystem: ActorSystem) = {
-    underlying.sendMessage(text, forcePrivate, maybeShouldUnfurl, maybeConversation, maybeActions, files)
+                   files: Seq[UploadFileSpec],
+                   cacheService: CacheService
+                 )(implicit actorSystem: ActorSystem): Future[Option[String]] = {
+    underlying.sendMessage(text, forcePrivate, maybeShouldUnfurl, maybeConversation, maybeActions, files, cacheService)
   }
 
-  override def detailsFor(ws: WSClient)(implicit actorSystem: ActorSystem): Future[JsObject] = {
-    underlying.detailsFor(ws)
+  override def detailsFor(ws: WSClient, cacheService: CacheService)(implicit actorSystem: ActorSystem): Future[JsObject] = {
+    underlying.detailsFor(ws, cacheService)
   }
 
   lazy val maybeChannel: Option[String] = underlying.maybeChannel
