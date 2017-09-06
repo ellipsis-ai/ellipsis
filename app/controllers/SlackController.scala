@@ -304,7 +304,14 @@ class SlackController @Inject() (
 
   private def maybeChannelMembersChangedResult(implicit request: Request[AnyContent]): Option[Result] = {
     maybeResultFor(channelMembersChangedRequestForm, (info: ChannelMembersChangedRequestInfo) => {
-      // TODO: invalidate the channel info cache
+      val channel = info.event.channel
+      val channelType = info.event.channelType
+      val teamId = info.teamId
+      if (channelType == "C") {
+        services.cacheService.uncacheSlackChannelInfo(channel, teamId)
+      } else if (channelType == "G") {
+        services.cacheService.uncacheSlackGroupInfo(channel, teamId)
+      }
       Ok(":+1:")
     })
   }
