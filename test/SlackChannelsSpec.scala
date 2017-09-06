@@ -7,7 +7,7 @@ import utils.SlackChannels
 
 class SlackChannelsSpec extends PlaySpec with MockitoSugar {
 
-  val channels = SlackChannels(mock[SlackApiClient], mock[CacheService])
+  val channels = SlackChannels(mock[SlackApiClient], mock[CacheService], "1234")
   val channelId = "C123456"
 
   "unformatChannelText" should {

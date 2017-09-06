@@ -113,12 +113,16 @@ class CacheService @Inject() (
     }
   }
 
-  def cacheSlackChannelInfo(channel: String, data: Channel): Unit = {
-    set(s"slack-channel-for-$channel", Json.toJson(data), 10.seconds)
+  private def slackChannelInfoKey(channel: String, teamId: String): String = {
+    s"slack-team-$teamId-channel-$channel-info"
   }
 
-  def getSlackChannelInfo(channel: String): Option[Channel] = {
-    get[JsValue](s"slack-channel-for-$channel").flatMap { json =>
+  def cacheSlackChannelInfo(channel: String, teamId: String, data: Channel): Unit = {
+    set(slackChannelInfoKey(channel, teamId), Json.toJson(data), 10.seconds)
+  }
+
+  def getSlackChannelInfo(channel: String, teamId: String): Option[Channel] = {
+    get[JsValue](slackChannelInfoKey(channel, teamId)).flatMap { json =>
       json.validate[Channel] match {
         case JsSuccess(data, _) => Some(data)
         case JsError(_) => None
@@ -126,12 +130,16 @@ class CacheService @Inject() (
     }
   }
 
-  def cacheSlackGroupInfo(group: String, data: Group): Unit = {
-    set(s"slack-group-for-$group", Json.toJson(data), 10.seconds)
+  private def slackGroupInfoKey(group: String, teamId: String): String = {
+    s"slack-team-$teamId-group-$group-info"
   }
 
-  def getSlackGroupInfo(group: String): Option[Group] = {
-    get[JsValue](s"slack-group-for-$group").flatMap { json =>
+  def cacheSlackGroupInfo(group: String, teamId: String, data: Group): Unit = {
+    set(slackGroupInfoKey(group, teamId), Json.toJson(data), 10.seconds)
+  }
+
+  def getSlackGroupInfo(group: String, teamId: String): Option[Group] = {
+    get[JsValue](slackGroupInfoKey(group, teamId)).flatMap { json =>
       json.validate[Group] match {
         case JsSuccess(data, _) => Some(data)
         case JsError(_) => None
@@ -139,12 +147,16 @@ class CacheService @Inject() (
     }
   }
 
-  def cacheSlackIMs(data: Seq[Im]): Unit = {
-    set("slack-ims", Json.toJson(data), 10.seconds)
+  private def slackImsKey(teamId: String): String = {
+    s"slack-ims-team-$teamId"
   }
 
-  def getSlackIMs: Option[Seq[Im]] = {
-    get[JsValue]("slack-ims").flatMap { json =>
+  def cacheSlackIMs(data: Seq[Im], teamId: String): Unit = {
+    set(slackImsKey(teamId), Json.toJson(data), 10.seconds)
+  }
+
+  def getSlackIMs(teamId: String): Option[Seq[Im]] = {
+    get[JsValue](slackImsKey(teamId)).flatMap { json =>
       json.validate[Seq[Im]] match {
         case JsSuccess(data, jsPath) => Some(data)
         case JsError(err) => None
