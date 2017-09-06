@@ -23,7 +23,7 @@ case class TemplateMessageTrigger(
   override val maybePattern: Option[String] = Some(paramRegex.replaceAllIn(pattern, ""))
 
   def regex: Regex = {
-    var pattern = template
+    var pattern = template.trim
     pattern = TemplateMessageTriggerUtils.escapeRegexCharactersIn(pattern)
     pattern = paramRegex.replaceAllIn(pattern, """(.+)""")
     pattern = """\s+""".r.replaceAllIn(pattern, """\\s+""")
