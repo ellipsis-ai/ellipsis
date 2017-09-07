@@ -110,7 +110,7 @@ define(function(require) {
                 <Checklist.Item checkedWhen={this.hasPrimaryTrigger()} hiddenWhen={this.props.isFinishedBehavior}>
                   Write a question or phrase people should use to trigger a response.
                 </Checklist.Item>
-                <Checklist.Item checkedWhen={this.triggersUseParams()}>
+                <Checklist.Item checkedWhen={this.triggersUseParams()} hiddenWhen={this.props.isFinishedBehavior}>
                   <span>A trigger can include “fill-in-the-blank” inputs, e.g. <code
         className="plxs">{"Call me {name}"}</code></span>
                 </Checklist.Item>
