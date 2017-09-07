@@ -18,13 +18,13 @@ import play.api.mvc.{AnyContent, Result}
 import play.filters.csrf.CSRF
 import services.DefaultServices
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 class BehaviorEditorController @Inject() (
                                            val silhouette: Silhouette[EllipsisEnv],
                                            val services: DefaultServices,
-                                           val assetsProvider: Provider[RemoteAssets]
+                                           val assetsProvider: Provider[RemoteAssets],
+                                           implicit val ec: ExecutionContext
                                          ) extends ReAuthable {
 
   val dataService = services.dataService

@@ -6,12 +6,13 @@ import com.google.inject.Provider
 import play.api.Configuration
 import services.DataService
 
-import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.ExecutionContext
 
 class HealthController @Inject() (
                                     val configuration: Configuration,
                                     val dataService: DataService,
-                                    val assetsProvider: Provider[RemoteAssets]
+                                    val assetsProvider: Provider[RemoteAssets],
+                                    implicit val ec: ExecutionContext
                                   ) extends EllipsisController {
 
   def check = Action.async { implicit request =>

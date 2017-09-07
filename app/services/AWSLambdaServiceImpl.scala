@@ -30,9 +30,7 @@ import sun.misc.BASE64Decoder
 import utils.JavaFutureConverter
 
 import scala.collection.JavaConversions.asScalaBuffer
-import scala.concurrent.blocking
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future, blocking}
 import scala.reflect.io.Path
 import scala.sys.process._
 import scala.util.{Failure, Success}
@@ -43,7 +41,8 @@ class AWSLambdaServiceImpl @Inject() (
                                        val dataService: DataService,
                                        val cacheService: CacheService,
                                        val logsService: AWSLogsService,
-                                       implicit val actorSystem: ActorSystem
+                                       implicit val actorSystem: ActorSystem,
+                                       implicit val ec: ExecutionContext
                                        ) extends AWSLambdaService {
 
   import AWSLambdaConstants._
@@ -56,7 +55,7 @@ class AWSLambdaServiceImpl @Inject() (
 
   val apiBaseUrl: String = configuration.get[String](s"application.$API_BASE_URL_KEY")
 
-  val invocationTimeoutSeconds: Int = configuration.getInt("aws.lambda.timeoutSeconds").get
+  val invocationTimeoutSeconds: Int = configuration.get[Int]("aws.lambda.timeoutSeconds")
 
   def fetchFunctions(maybeNextMarker: Option[String]): Future[List[FunctionConfiguration]] = {
     val listRequest = new ListFunctionsRequest()

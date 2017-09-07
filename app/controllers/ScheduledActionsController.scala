@@ -21,8 +21,7 @@ import play.api.libs.json.{JsError, JsSuccess, Json}
 import play.filters.csrf.CSRF
 import services.{CacheService, DataService}
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 
 class ScheduledActionsController @Inject()(
@@ -31,7 +30,8 @@ class ScheduledActionsController @Inject()(
                                             val dataService: DataService,
                                             val cacheService: CacheService,
                                             val assetsProvider: Provider[RemoteAssets],
-                                            implicit val actorSystem: ActorSystem
+                                            implicit val actorSystem: ActorSystem,
+                                            implicit val ec: ExecutionContext
                                           ) extends ReAuthable {
 
   def index(maybeScheduledId: Option[String], maybeNewSchedule: Option[Boolean], maybeTeamId: Option[String]) = silhouette.SecuredAction.async { implicit request =>

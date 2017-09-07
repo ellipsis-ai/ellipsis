@@ -12,14 +12,14 @@ import play.api.data.Form
 import play.api.data.Forms._
 import services.DataService
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 class OAuth2ApiController @Inject() (
                                       val silhouette: Silhouette[EllipsisEnv],
                                       val dataService: DataService,
                                       val configuration: Configuration,
-                                      val assetsProvider: Provider[RemoteAssets]
+                                      val assetsProvider: Provider[RemoteAssets],
+                                      implicit val ec: ExecutionContext
                                     ) extends ReAuthable {
 
   def list(maybeTeamId: Option[String]) = silhouette.SecuredAction.async { implicit request =>

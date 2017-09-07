@@ -9,14 +9,14 @@ import play.api.data.Forms._
 import play.api.libs.json.Json
 import services.{AWSDynamoDBService, DataService}
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 class DefaultStorage @Inject() (
                                  val configuration: Configuration,
                                  val dataService: DataService,
                                  val dynamoDBService: AWSDynamoDBService,
-                                 val assetsProvider: Provider[RemoteAssets]
+                                 val assetsProvider: Provider[RemoteAssets],
+                                 implicit val ec: ExecutionContext
                                ) extends EllipsisController {
 
   case class PutItemInfo(token: String, itemType: String, itemId: String, itemJson: String)

@@ -5,8 +5,7 @@ import models.behaviors.behaviorversion.BehaviorVersion
 import services.DataService
 import slick.dbio.DBIO
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 trait UserEnvironmentVariableService {
 
@@ -31,7 +30,7 @@ trait UserEnvironmentVariableService {
     lookForInCode(behaviorVersion.functionBody).toSet
   }
 
-  def missingForAction(user: User, behaviorVersion: BehaviorVersion, dataService: DataService): DBIO[Set[String]] = {
+  def missingForAction(user: User, behaviorVersion: BehaviorVersion, dataService: DataService)(implicit ec: ExecutionContext): DBIO[Set[String]] = {
     for {
       envVars <- allForAction(user)
     } yield {
@@ -41,7 +40,7 @@ trait UserEnvironmentVariableService {
     }
   }
 
-  def missingFor(user: User, behaviorVersion: BehaviorVersion, dataService: DataService): Future[Set[String]] = {
+  def missingFor(user: User, behaviorVersion: BehaviorVersion, dataService: DataService)(implicit ec: ExecutionContext): Future[Set[String]] = {
     dataService.run(missingForAction(user, behaviorVersion, dataService))
   }
 

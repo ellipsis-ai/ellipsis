@@ -9,8 +9,7 @@ import models.team.Team
 import play.api.libs.ws.WSClient
 import services.DataService
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 case class BehaviorEditorData(
                                teamAccess: UserTeamAccess,
@@ -34,7 +33,7 @@ object BehaviorEditorData {
                     dataService: DataService,
                     ws: WSClient,
                     assets: RemoteAssets
-                  ): Future[Option[BehaviorEditorData]] = {
+                  )(implicit ec: ExecutionContext): Future[Option[BehaviorEditorData]] = {
 
     for {
       maybeGroupData <- BehaviorGroupData.maybeFor(groupId, user, maybeGithubUrl = None, dataService)
@@ -64,7 +63,7 @@ object BehaviorEditorData {
                   dataService: DataService,
                   ws: WSClient,
                   assets: RemoteAssets
-                 ): Future[Option[BehaviorEditorData]] = {
+                 )(implicit ec: ExecutionContext): Future[Option[BehaviorEditorData]] = {
 
     val teamId = maybeTeamId.getOrElse(user.teamId)
     for {
@@ -87,7 +86,7 @@ object BehaviorEditorData {
                                      maybeBehaviorGroupData: Option[BehaviorGroupData],
                                      user: User,
                                      dataService: DataService
-                                     ): Future[Seq[InputSavedAnswerData]] = {
+                                     )(implicit ec: ExecutionContext): Future[Seq[InputSavedAnswerData]] = {
     maybeBehaviorGroupData.map { data =>
       data.id.map { groupId =>
         for {
@@ -115,7 +114,7 @@ object BehaviorEditorData {
                 dataService: DataService,
                 ws: WSClient,
                 assets: RemoteAssets
-              ): Future[BehaviorEditorData] = {
+              )(implicit ec: ExecutionContext): Future[BehaviorEditorData] = {
     for {
       teamAccess <- dataService.users.teamAccessFor(user, Some(team.id))
       teamEnvironmentVariables <- dataService.teamEnvironmentVariables.allFor(team)

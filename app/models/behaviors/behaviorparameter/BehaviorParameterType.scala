@@ -12,8 +12,7 @@ import play.api.libs.json._
 import services.{AWSLambdaConstants, DataService}
 import slick.dbio.DBIO
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration._
 
 sealed trait BehaviorParameterType extends FieldTypeForSchema {
@@ -21,12 +20,12 @@ sealed trait BehaviorParameterType extends FieldTypeForSchema {
   val id: String
   val exportId: String
   val name: String
-  def needsConfig(dataService: DataService): Future[Boolean]
+  def needsConfig(dataService: DataService)(implicit ec: ExecutionContext): Future[Boolean]
   val isBuiltIn: Boolean
 
-  def isValid(text: String, context: BehaviorParameterContext): Future[Boolean]
+  def isValid(text: String, context: BehaviorParameterContext)(implicit ec: ExecutionContext): Future[Boolean]
 
-  def prepareForInvocation(text: String, context: BehaviorParameterContext): Future[JsValue]
+  def prepareForInvocation(text: String, context: BehaviorParameterContext)(implicit ec: ExecutionContext): Future[JsValue]
 
   def invalidPromptModifier: String
 
@@ -43,7 +42,7 @@ sealed trait BehaviorParameterType extends FieldTypeForSchema {
                  context: BehaviorParameterContext,
                  paramState: ParamCollectionState,
                  isReminding: Boolean
-               ): DBIO[String] = {
+               )(implicit ec: ExecutionContext): DBIO[String] = {
     for {
       isFirst <- context.isFirstParamAction
       paramCount <- DBIO.from(context.unfilledParamCount(paramState))
@@ -63,9 +62,9 @@ sealed trait BehaviorParameterType extends FieldTypeForSchema {
     }
   }
 
-  def resolvedValueFor(text: String, context: BehaviorParameterContext): Future[Option[String]]
+  def resolvedValueFor(text: String, context: BehaviorParameterContext)(implicit ec: ExecutionContext): Future[Option[String]]
 
-  def handleCollected(event: Event, context: BehaviorParameterContext): Future[Unit] = {
+  def handleCollected(event: Event, context: BehaviorParameterContext)(implicit ec: ExecutionContext): Future[Unit] = {
     val potentialValue = event.relevantMessageText
     val input = context.parameter.input
     if (input.isSaved) {
@@ -89,13 +88,13 @@ trait BuiltInType extends BehaviorParameterType {
   lazy val id = name
   lazy val exportId = name
   val isBuiltIn: Boolean = true
-  def needsConfig(dataService: DataService) = Future.successful(false)
-  def resolvedValueFor(text: String, context: BehaviorParameterContext): Future[Option[String]] = {
+  def needsConfig(dataService: DataService)(implicit ec: ExecutionContext) = Future.successful(false)
+  def resolvedValueFor(text: String, context: BehaviorParameterContext)(implicit ec: ExecutionContext): Future[Option[String]] = {
     Future.successful(Some(text))
   }
   def prepareValue(text: String): JsValue
   def prepareJsValue(value: JsValue): JsValue
-  def prepareForInvocation(text: String, context: BehaviorParameterContext) = Future.successful(prepareValue(text))
+  def prepareForInvocation(text: String, context: BehaviorParameterContext)(implicit ec: ExecutionContext) = Future.successful(prepareValue(text))
 }
 
 object TextType extends BuiltInType {
@@ -103,7 +102,7 @@ object TextType extends BuiltInType {
 
   val outputName: String = "String"
 
-  def isValid(text: String, context: BehaviorParameterContext) = Future.successful(true)
+  def isValid(text: String, context: BehaviorParameterContext)(implicit ec: ExecutionContext) = Future.successful(true)
 
   def prepareValue(text: String) = JsString(text)
   def prepareJsValue(value: JsValue): JsValue = {
@@ -123,7 +122,7 @@ object NumberType extends BuiltInType {
 
   val outputName: String = "Float"
 
-  def isValid(text: String, context: BehaviorParameterContext) = Future.successful {
+  def isValid(text: String, context: BehaviorParameterContext)(implicit ec: ExecutionContext) = Future.successful {
     try {
       text.toDouble
       true
@@ -169,7 +168,7 @@ object YesNoType extends BuiltInType {
     }
   }
 
-  def isValid(text: String, context: BehaviorParameterContext): Future[Boolean] = {
+  def isValid(text: String, context: BehaviorParameterContext)(implicit ec: ExecutionContext): Future[Boolean] = {
     Future.successful(maybeValidValueFor(text).isDefined)
   }
 
@@ -235,7 +234,7 @@ case class BehaviorBackedDataType(dataTypeConfig: DataTypeConfig) extends Behavi
     )
   }
 
-  def resolvedValueFor(text: String, context: BehaviorParameterContext): Future[Option[String]] = {
+  def resolvedValueFor(text: String, context: BehaviorParameterContext)(implicit ec: ExecutionContext): Future[Option[String]] = {
     cachedValidValueFor(text, context).map { vv =>
       Future.successful(Some(vv))
     }.getOrElse {
@@ -251,7 +250,7 @@ case class BehaviorBackedDataType(dataTypeConfig: DataTypeConfig) extends Behavi
     s"[${context.parameter.paramType.name}]($link)"
   }
 
-  def needsConfig(dataService: DataService) = {
+  def needsConfig(dataService: DataService)(implicit ec: ExecutionContext) = {
     for {
       requiredOAuth2ApiConfigs <- dataService.requiredOAuth2ApiConfigs.allFor(behaviorVersion.groupVersion)
     } yield !requiredOAuth2ApiConfigs.forall(_.isReady)
@@ -259,7 +258,7 @@ case class BehaviorBackedDataType(dataTypeConfig: DataTypeConfig) extends Behavi
 
   val team = behaviorVersion.team
 
-  def maybeValidValueForSavedAnswer(value: ValidValue, context: BehaviorParameterContext): Future[Option[ValidValue]] = {
+  def maybeValidValueForSavedAnswer(value: ValidValue, context: BehaviorParameterContext)(implicit ec: ExecutionContext): Future[Option[ValidValue]] = {
     usesSearch(context).flatMap { usesSearch =>
       if (usesSearch) {
         fetchValidValues(Some(value.label), context).map { values =>
@@ -271,11 +270,11 @@ case class BehaviorBackedDataType(dataTypeConfig: DataTypeConfig) extends Behavi
     }
   }
 
-  def isValid(text: String, context: BehaviorParameterContext) = {
+  def isValid(text: String, context: BehaviorParameterContext)(implicit ec: ExecutionContext) = {
     maybeValidValueFor(text, context).map(_.isDefined)
   }
 
-  def maybeValidValueFor(text: String, context: BehaviorParameterContext): Future[Option[ValidValue]] = {
+  def maybeValidValueFor(text: String, context: BehaviorParameterContext)(implicit ec: ExecutionContext): Future[Option[ValidValue]] = {
     val maybeJson = try {
       Some(Json.parse(text))
     } catch {
@@ -326,7 +325,7 @@ case class BehaviorBackedDataType(dataTypeConfig: DataTypeConfig) extends Behavi
       orElse(cachedValidValueForLabel(text, context))
   }
 
-  def prepareForInvocation(text: String, context: BehaviorParameterContext) = {
+  def prepareForInvocation(text: String, context: BehaviorParameterContext)(implicit ec: ExecutionContext) = {
     maybeValidValueFor(text, context).map { maybeValidValue =>
       maybeValidValue.map { vv =>
         JsObject(Map(BehaviorParameterType.ID_PROPERTY -> JsString(vv.id), BehaviorParameterType.LABEL_PROPERTY -> JsString(vv.label)) ++ vv.data.map { case(k, v) => k -> JsString(v) })
@@ -344,7 +343,7 @@ case class BehaviorBackedDataType(dataTypeConfig: DataTypeConfig) extends Behavi
     s"search-query-${conversation.id}-${parameter.id}"
   }
 
-  private def fetchValidValuesResultAction(maybeSearchQuery: Option[String], context: BehaviorParameterContext): DBIO[Option[BotResult]] = {
+  private def fetchValidValuesResultAction(maybeSearchQuery: Option[String], context: BehaviorParameterContext)(implicit ec: ExecutionContext): DBIO[Option[BotResult]] = {
     val paramsWithValues = maybeSearchQuery.map { searchQuery =>
       val value = ParameterValue(searchQuery, JsString(searchQuery), isValid=true)
       Seq(ParameterWithValue(context.parameter, AWSLambdaConstants.invocationParamFor(0), Some(value)))
@@ -354,7 +353,7 @@ case class BehaviorBackedDataType(dataTypeConfig: DataTypeConfig) extends Behavi
     } yield maybeResult
   }
 
-  private def fetchValidValuesResult(maybeSearchQuery: Option[String], context: BehaviorParameterContext): Future[Option[BotResult]] = {
+  private def fetchValidValuesResult(maybeSearchQuery: Option[String], context: BehaviorParameterContext)(implicit ec: ExecutionContext): Future[Option[BotResult]] = {
     context.dataService.run(fetchValidValuesResultAction(maybeSearchQuery, context))
   }
 
@@ -371,7 +370,7 @@ case class BehaviorBackedDataType(dataTypeConfig: DataTypeConfig) extends Behavi
     }
   }
 
-  private def fetchValidValuesAction(maybeSearchQuery: Option[String], context: BehaviorParameterContext): DBIO[Seq[ValidValue]] = {
+  private def fetchValidValuesAction(maybeSearchQuery: Option[String], context: BehaviorParameterContext)(implicit ec: ExecutionContext): DBIO[Seq[ValidValue]] = {
     if (dataTypeConfig.usesCode) {
       fetchValidValuesResultAction(maybeSearchQuery, context).map { maybeResult =>
         maybeResult.map {
@@ -425,7 +424,7 @@ case class BehaviorBackedDataType(dataTypeConfig: DataTypeConfig) extends Behavi
     }
   }
 
-  private def fetchValidValues(maybeSearchQuery: Option[String], context: BehaviorParameterContext): Future[Seq[ValidValue]] = {
+  private def fetchValidValues(maybeSearchQuery: Option[String], context: BehaviorParameterContext)(implicit ec: ExecutionContext): Future[Seq[ValidValue]] = {
     context.dataService.run(fetchValidValuesAction(maybeSearchQuery, context))
   }
 
@@ -433,7 +432,7 @@ case class BehaviorBackedDataType(dataTypeConfig: DataTypeConfig) extends Behavi
     text.toLowerCase == label.toLowerCase
   }
 
-  private def fetchMatchFor(text: String, context: BehaviorParameterContext): Future[Option[ValidValue]] = {
+  private def fetchMatchFor(text: String, context: BehaviorParameterContext)(implicit ec: ExecutionContext): Future[Option[ValidValue]] = {
     fetchValidValues(None, context).map { validValues =>
       validValues.find {
         v => v.id == text || textMatchesLabel(text, v.label, context)
@@ -441,7 +440,7 @@ case class BehaviorBackedDataType(dataTypeConfig: DataTypeConfig) extends Behavi
     }
   }
 
-  private def cancelAndRespondForAction(response: String, context: BehaviorParameterContext): DBIO[String] = {
+  private def cancelAndRespondForAction(response: String, context: BehaviorParameterContext)(implicit ec: ExecutionContext): DBIO[String] = {
     context.dataService.conversations.cancelAction(context.maybeConversation).map { _ =>
       s"$response\n\n(Your current action has been cancelled. Try again after fixing the problem.)"
     }
@@ -453,7 +452,7 @@ case class BehaviorBackedDataType(dataTypeConfig: DataTypeConfig) extends Behavi
                                           context: BehaviorParameterContext,
                                           paramState: ParamCollectionState,
                                           isReminding: Boolean
-                                        ): DBIO[String] = {
+                                        )(implicit ec: ExecutionContext): DBIO[String] = {
     for {
       superPrompt <- maybeSearchQuery.map { searchQuery =>
         DBIO.successful(s"Here are some options for `$searchQuery`. Type a number to choose an option.")
@@ -490,7 +489,7 @@ case class BehaviorBackedDataType(dataTypeConfig: DataTypeConfig) extends Behavi
                                          context: BehaviorParameterContext,
                                          paramState: ParamCollectionState,
                                          isReminding: Boolean
-                                       ): DBIO[String] = {
+                                       )(implicit ec: ExecutionContext): DBIO[String] = {
 
     maybeCachedSearchQueryFor(context).map { searchQuery =>
       promptForListAllCaseAction(Some(searchQuery), maybePreviousCollectedValue, context, paramState, isReminding)
@@ -501,7 +500,7 @@ case class BehaviorBackedDataType(dataTypeConfig: DataTypeConfig) extends Behavi
     }
   }
 
-  private def usesSearchAction(context: BehaviorParameterContext): DBIO[Boolean] = {
+  private def usesSearchAction(context: BehaviorParameterContext)(implicit ec: ExecutionContext): DBIO[Boolean] = {
     if (dataTypeConfig.usesCode) {
       context.dataService.behaviorVersions.hasSearchParamAction(behaviorVersion)
     } else {
@@ -511,7 +510,7 @@ case class BehaviorBackedDataType(dataTypeConfig: DataTypeConfig) extends Behavi
     }
   }
 
-  private def usesSearch(context: BehaviorParameterContext): Future[Boolean] = {
+  private def usesSearch(context: BehaviorParameterContext)(implicit ec: ExecutionContext): Future[Boolean] = {
     context.dataService.run(usesSearchAction(context))
   }
 
@@ -520,7 +519,7 @@ case class BehaviorBackedDataType(dataTypeConfig: DataTypeConfig) extends Behavi
                                context: BehaviorParameterContext,
                                paramState: ParamCollectionState,
                                isReminding: Boolean
-                             ): DBIO[String] = {
+                             )(implicit ec: ExecutionContext): DBIO[String] = {
     usesSearchAction(context).flatMap { usesSearch =>
       if (usesSearch) {
         promptForSearchCaseAction(maybePreviousCollectedValue, context, paramState, isReminding)
@@ -530,7 +529,7 @@ case class BehaviorBackedDataType(dataTypeConfig: DataTypeConfig) extends Behavi
     }
   }
 
-  override def handleCollected(event: Event, context: BehaviorParameterContext): Future[Unit] = {
+  override def handleCollected(event: Event, context: BehaviorParameterContext)(implicit ec: ExecutionContext): Future[Unit] = {
     usesSearch(context).flatMap { usesSearch =>
       if (usesSearch && maybeCachedSearchQueryFor(context).isEmpty && context.maybeConversation.isDefined) {
         val key = searchQueryCacheKeyFor(context.maybeConversation.get, context.parameter)
@@ -560,7 +559,7 @@ object BehaviorParameterType {
 
   def findBuiltIn(id: String): Option[BehaviorParameterType] = allBuiltin.find(_.id == id)
 
-  def allForAction(maybeBehaviorGroupVersion: Option[BehaviorGroupVersion], dataService: DataService): DBIO[Seq[BehaviorParameterType]] = {
+  def allForAction(maybeBehaviorGroupVersion: Option[BehaviorGroupVersion], dataService: DataService)(implicit ec: ExecutionContext): DBIO[Seq[BehaviorParameterType]] = {
     maybeBehaviorGroupVersion.map { groupVersion =>
       dataService.dataTypeConfigs.allForAction(groupVersion)
     }.getOrElse(DBIO.successful(Seq())).map { dataTypeConfigs =>
@@ -568,7 +567,7 @@ object BehaviorParameterType {
     }
   }
 
-  def findAction(id: String, behaviorGroupVersion: BehaviorGroupVersion, dataService: DataService): DBIO[Option[BehaviorParameterType]] = {
+  def findAction(id: String, behaviorGroupVersion: BehaviorGroupVersion, dataService: DataService)(implicit ec: ExecutionContext): DBIO[Option[BehaviorParameterType]] = {
     allForAction(Some(behaviorGroupVersion), dataService).map { all =>
       all.find {
         case paramType: BehaviorBackedDataType => paramType.id == id || paramType.behaviorVersion.maybeExportId.contains(id)

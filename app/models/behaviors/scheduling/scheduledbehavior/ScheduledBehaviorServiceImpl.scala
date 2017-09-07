@@ -15,8 +15,7 @@ import models.team.{Team, TeamQueries}
 import play.api.libs.json.{JsError, JsSuccess, JsValue}
 import services.DataService
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 case class RawScheduledBehavior(
                                  id: String,
@@ -60,7 +59,8 @@ class ScheduledBehaviorsTable(tag: Tag) extends Table[RawScheduledBehavior](tag,
 }
 
 class ScheduledBehaviorServiceImpl @Inject() (
-                                              dataServiceProvider: Provider[DataService]
+                                              dataServiceProvider: Provider[DataService],
+                                              implicit val ec: ExecutionContext
                                             ) extends ScheduledBehaviorService {
 
   def dataService = dataServiceProvider.get

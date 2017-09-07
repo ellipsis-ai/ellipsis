@@ -6,8 +6,7 @@ import models.team.Team
 import services.DataService
 import drivers.SlickPostgresDriver.api._
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 class SimpleTokenApisTable(tag: Tag) extends Table[SimpleTokenApi](tag, "simple_token_apis") {
 
@@ -22,7 +21,8 @@ class SimpleTokenApisTable(tag: Tag) extends Table[SimpleTokenApi](tag, "simple_
 }
 
 class SimpleTokenApiServiceImpl @Inject() (
-                                       dataServiceProvider: Provider[DataService]
+                                       dataServiceProvider: Provider[DataService],
+                                       implicit val ec: ExecutionContext
                                      ) extends SimpleTokenApiService {
 
   import SimpleTokenApiQueries._

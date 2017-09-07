@@ -16,7 +16,6 @@ import services.{AWSLambdaService, DataService, CacheService, DefaultServices}
 import slick.dbio.DBIO
 import utils.UploadFileSpec
 
-import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{ExecutionContext, Future}
 
 trait Event {
@@ -52,21 +51,21 @@ trait Event {
     dataService.users.ensureUserForAction(loginInfo, teamId)
   }
 
-  def ensureUser(dataService: DataService): Future[User] = {
+  def ensureUser(dataService: DataService)(implicit ec: ExecutionContext): Future[User] = {
     dataService.run(ensureUserAction(dataService))
   }
 
-  def userInfoAction(ws: WSClient, dataService: DataService, cacheService: CacheService)(implicit actorSystem: ActorSystem): DBIO[UserInfo] = {
+  def userInfoAction(ws: WSClient, dataService: DataService, cacheService: CacheService)(implicit actorSystem: ActorSystem, ec: ExecutionContext): DBIO[UserInfo] = {
     UserInfo.buildForAction(this, teamId, ws, dataService, cacheService)
   }
 
-  def messageInfo(ws: WSClient, dataService: DataService, cacheService: CacheService)(implicit actorSystem: ActorSystem): Future[MessageInfo] = {
+  def messageInfo(ws: WSClient, dataService: DataService, cacheService: CacheService)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[MessageInfo] = {
     MessageInfo.buildFor(this, ws, dataService, cacheService)
   }
 
-  def detailsFor(ws: WSClient, cacheService: CacheService)(implicit actorSystem: ActorSystem): Future[JsObject]
+  def detailsFor(ws: WSClient, cacheService: CacheService)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[JsObject]
 
-  def recentMessages(dataService: DataService)(implicit actorSystem: ActorSystem): Future[Seq[String]] = Future.successful(Seq())
+  def recentMessages(dataService: DataService)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Seq[String]] = Future.successful(Seq())
 
   def navLinks(noSkills: Boolean, lambdaService: AWSLambdaService): String = {
     lambdaService.configuration.getOptional[String]("application.apiBaseUrl").map { baseUrl =>
@@ -96,7 +95,11 @@ trait Event {
     s"[install new skills]($installLink)"
   }
 
-  def noExactMatchResult(dataService: DataService, lambdaService: AWSLambdaService, cacheService: CacheService)(implicit actorSystem: ActorSystem): Future[BotResult] = {
+  def noExactMatchResult(
+                          dataService: DataService,
+                          lambdaService: AWSLambdaService,
+                          cacheService: CacheService
+                        )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[BotResult] = {
     DisplayHelpBehavior(
       Some(messageText),
       None,
@@ -111,9 +114,9 @@ trait Event {
     ).result
   }
 
-  def eventualMaybeDMChannel(cacheService: CacheService)(implicit actorSystem: ActorSystem): Future[Option[String]]
+  def eventualMaybeDMChannel(cacheService: CacheService)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[String]]
 
-  def maybeChannelToUseFor(behaviorVersion: BehaviorVersion, cacheService: CacheService)(implicit actorSystem: ActorSystem): Future[Option[String]] = {
+  def maybeChannelToUseFor(behaviorVersion: BehaviorVersion, cacheService: CacheService)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[String]] = {
     eventualMaybeDMChannel(cacheService).map { maybeDMChannel =>
       if (behaviorVersion.forcePrivateResponse) {
         maybeDMChannel
@@ -141,9 +144,9 @@ trait Event {
                    maybeActions: Option[MessageActions] = None,
                    files: Seq[UploadFileSpec] = Seq(),
                    cacheService: CacheService
-                 )(implicit actorSystem: ActorSystem): Future[Option[String]]
+                 )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[String]]
 
-  def botPrefix(cacheService: CacheService)(implicit actorSystem: ActorSystem): Future[String] = Future.successful("")
+  def botPrefix(cacheService: CacheService)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[String] = Future.successful("")
 
   val invocationLogText: String
 
@@ -151,6 +154,6 @@ trait Event {
                                maybeTeam: Option[Team],
                                maybeLimitToBehavior: Option[Behavior],
                                services: DefaultServices
-                             ): Future[Seq[BehaviorResponse]]
+                             )(implicit ec: ExecutionContext): Future[Seq[BehaviorResponse]]
 
 }

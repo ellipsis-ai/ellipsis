@@ -5,8 +5,7 @@ import org.apache.commons.lang.WordUtils
 import play.api.http.{HeaderNames, MimeTypes}
 import play.api.libs.ws.{WSClient, WSRequest, WSResponse}
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 case class OAuth2Application(
                               id: String,
@@ -49,7 +48,7 @@ case class OAuth2Application(
       ))
   }
 
-  def getClientCredentialsTokenFor(ws: WSClient): Future[Option[String]] = {
+  def getClientCredentialsTokenFor(ws: WSClient)(implicit ec: ExecutionContext): Future[Option[String]] = {
     clientCredentialsTokenResponseFor(ws).map { response =>
       val json = response.json
       (json \ "access_token").asOpt[String]

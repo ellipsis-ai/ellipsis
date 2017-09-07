@@ -10,8 +10,7 @@ import models.team.Team
 import services.DataService
 import utils.{FuzzyMatchPattern, FuzzyMatchable, SimpleFuzzyMatchPattern}
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 case class BehaviorGroupData(
                               id: Option[String],
@@ -126,7 +125,7 @@ case class BehaviorGroupData(
 
 object BehaviorGroupData {
 
-  def buildFor(version: BehaviorGroupVersion, user: User, dataService: DataService): Future[BehaviorGroupData] = {
+  def buildFor(version: BehaviorGroupVersion, user: User, dataService: DataService)(implicit ec: ExecutionContext): Future[BehaviorGroupData] = {
     for {
       behaviors <- dataService.behaviors.allForGroup(version.group)
       versionsData <- Future.sequence(behaviors.map { ea =>
@@ -165,7 +164,7 @@ object BehaviorGroupData {
     }
   }
 
-  def maybeFor(id: String, user: User, maybeGithubUrl: Option[String], dataService: DataService): Future[Option[BehaviorGroupData]] = {
+  def maybeFor(id: String, user: User, maybeGithubUrl: Option[String], dataService: DataService)(implicit ec: ExecutionContext): Future[Option[BehaviorGroupData]] = {
     for {
       maybeGroup <- dataService.behaviorGroups.findWithoutAccessCheck(id)
       maybeLatestGroupVersion <- maybeGroup.flatMap { group =>

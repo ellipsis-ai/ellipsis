@@ -8,12 +8,13 @@ import controllers.Assets.Asset
 import play.api.Configuration
 import play.api.mvc._
 
-import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.ExecutionContext
 
 @Singleton
 class RemoteAssets @Inject() (
                              val configuration: Configuration,
-                             val assets: Assets
+                             val assets: Assets,
+                             implicit val ec: ExecutionContext
                              )
   extends InjectedController {
 

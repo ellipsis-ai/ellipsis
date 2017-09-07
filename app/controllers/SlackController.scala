@@ -17,15 +17,15 @@ import play.api.mvc.{AnyContent, Request, Result}
 import play.utils.UriEncoding
 import services._
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 class SlackController @Inject() (
                                   val silhouette: Silhouette[EllipsisEnv],
                                   val eventHandler: EventHandler,
                                   val slackEventService: SlackEventService,
                                   val services: DefaultServices,
-                                  val assetsProvider: Provider[RemoteAssets]
+                                  val assetsProvider: Provider[RemoteAssets],
+                                  implicit val ec: ExecutionContext
                                 ) extends EllipsisController {
 
   val dataService = services.dataService

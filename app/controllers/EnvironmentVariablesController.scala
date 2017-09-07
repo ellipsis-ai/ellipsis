@@ -15,14 +15,14 @@ import play.api.libs.json._
 import play.filters.csrf.CSRF
 import services.DataService
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 class EnvironmentVariablesController @Inject() (
                                                  val silhouette: Silhouette[EllipsisEnv],
                                                  val dataService: DataService,
                                                  val configuration: Configuration,
-                                                 val assetsProvider: Provider[RemoteAssets]
+                                                 val assetsProvider: Provider[RemoteAssets],
+                                                 implicit val ec: ExecutionContext
                                                ) extends ReAuthable {
 
   case class EnvironmentVariablesInfo(teamId: String, dataJson: String)

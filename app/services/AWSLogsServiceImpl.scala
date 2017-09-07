@@ -7,13 +7,13 @@ import com.amazonaws.services.logs.{AWSLogsAsync, AWSLogsAsyncClientBuilder}
 import play.api.Configuration
 import play.api.libs.ws.WSClient
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 class AWSLogsServiceImpl @Inject() (
                                      val configuration: Configuration,
                                      val ws: WSClient,
-                                     val dataService: DataService
+                                     val dataService: DataService,
+                                     implicit val ec: ExecutionContext
                                    ) extends AWSLogsService {
 
   val client: AWSLogsAsync = AWSLogsAsyncClientBuilder.standard().

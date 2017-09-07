@@ -18,10 +18,9 @@ import models.accounts.linkedaccount.LinkedAccount
 import models.accounts.slack.SlackProvider
 import models.accounts.user.User
 import models.silhouette.EllipsisEnv
-import play.api.libs.concurrent.Execution.Implicits._
 import play.api.mvc.{RequestHeader, Result}
 
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration.FiniteDuration
 
 class SocialAuthController @Inject() (
@@ -32,7 +31,8 @@ class SocialAuthController @Inject() (
                                        val assetsProvider: Provider[RemoteAssets],
                                        slackProvider: SlackProvider,
                                        dataService: DataService,
-                                       authInfoRepository: AuthInfoRepository
+                                       authInfoRepository: AuthInfoRepository,
+                                       implicit val ec: ExecutionContext
                                      ) extends EllipsisController with Logger {
 
   val env = silhouette.env

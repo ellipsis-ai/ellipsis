@@ -13,8 +13,7 @@ import services.DataService
 import slick.dbio.DBIO
 import utils.SlackTimestamp
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 trait Conversation {
   val id: String
@@ -46,7 +45,7 @@ trait Conversation {
     startedAt.plusSeconds(Conversation.SECONDS_UNTIL_BACKGROUNDED).isBefore(OffsetDateTime.now)
   }
 
-  private def maybeSlackPlaceholderEventAction(services: DefaultServices): DBIO[Option[Event]] = {
+  private def maybeSlackPlaceholderEventAction(services: DefaultServices)(implicit ec: ExecutionContext): DBIO[Option[Event]] = {
     services.dataService.slackBotProfiles.allForAction(behaviorVersion.team).map { botProfiles =>
       for {
         botProfile <- botProfiles.headOption
@@ -57,7 +56,7 @@ trait Conversation {
     }
   }
 
-  def maybePlaceholderEventAction(services: DefaultServices): DBIO[Option[Event]] = {
+  def maybePlaceholderEventAction(services: DefaultServices)(implicit ec: ExecutionContext): DBIO[Option[Event]] = {
     context match {
       case Conversation.SLACK_CONTEXT => maybeSlackPlaceholderEventAction(services)
       case _ => DBIO.successful(None)
@@ -72,24 +71,24 @@ trait Conversation {
 
   def updateStateTo(newState: String, dataService: DataService): Future[Conversation]
   def cancel(dataService: DataService): Future[Conversation] = updateStateTo(Conversation.DONE_STATE, dataService)
-  def updateWith(event: Event, services: DefaultServices): Future[Conversation]
+  def updateWith(event: Event, services: DefaultServices)(implicit ec: ExecutionContext): Future[Conversation]
 
   def respondAction(
                      event: Event,
                      isReminding: Boolean,
                      services: DefaultServices
-                   ): DBIO[BotResult]
+                   )(implicit ec: ExecutionContext): DBIO[BotResult]
 
   def respond(
                event: Event,
                isReminding: Boolean,
                services: DefaultServices
-             ): Future[BotResult]
+             )(implicit ec: ExecutionContext): Future[BotResult]
 
   def resultFor(
                  event: Event,
                  services: DefaultServices
-               ): Future[BotResult] = {
+               )(implicit ec: ExecutionContext): Future[BotResult] = {
     for {
       updatedConversation <- updateWith(event, services)
       result <- updatedConversation.respond(event, isReminding=false, services)
@@ -99,11 +98,11 @@ trait Conversation {
   def maybeNextParamToCollect(
                                event: Event,
                                services: DefaultServices
-                             ): Future[Option[BehaviorParameter]]
+                             )(implicit ec: ExecutionContext): Future[Option[BehaviorParameter]]
 
   def maybeRemindResultAction(
                                services: DefaultServices
-                            ): DBIO[Option[BotResult]] = {
+                            )(implicit ec: ExecutionContext): DBIO[Option[BotResult]] = {
     maybePlaceholderEventAction(services).flatMap { maybeEvent =>
       maybeEvent.map { event =>
         respondAction(event, isReminding=true, services).map { result =>

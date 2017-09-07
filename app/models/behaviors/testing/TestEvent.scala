@@ -13,8 +13,7 @@ import slick.dbio.DBIO
 import utils.UploadFileSpec
 
 import scala.collection.mutable.ArrayBuffer
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 case class TestEvent(
                       user: User,
@@ -31,7 +30,7 @@ case class TestEvent(
   lazy val name = "test"
   lazy val maybeChannel = None
   lazy val maybeThreadId = None
-  def eventualMaybeDMChannel(cacheService: CacheService)(implicit actorSystem: ActorSystem) = Future.successful(None)
+  def eventualMaybeDMChannel(cacheService: CacheService)(implicit actorSystem: ActorSystem, ec: ExecutionContext) = Future.successful(None)
   val isResponseExpected = true
   val messageRecipientPrefix: String = ""
   lazy val isPublicChannel = false
@@ -46,11 +45,15 @@ case class TestEvent(
                    maybeActions: Option[MessageActions],
                    files: Seq[UploadFileSpec],
                    cacheService: CacheService
-                 )(implicit actorSystem: ActorSystem): Future[Option[String]] = {
+                 )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[String]] = {
     Future.successful(messageBuffer += text).map(_ => None)
   }
 
-  override def userInfoAction(ws: WSClient, dataService: DataService, cacheService: CacheService)(implicit actorSystem: ActorSystem): DBIO[UserInfo] = {
+  override def userInfoAction(
+                               ws: WSClient,
+                               dataService: DataService,
+                               cacheService: CacheService
+                             )(implicit actorSystem: ActorSystem, ec: ExecutionContext): DBIO[UserInfo] = {
     UserInfo.buildForAction(user, this, ws, dataService, cacheService)
   }
 
@@ -58,7 +61,7 @@ case class TestEvent(
     DBIO.successful(user)
   }
 
-  def detailsFor(ws: WSClient, cacheService: CacheService)(implicit actorSystem: ActorSystem): Future[JsObject] = {
+  def detailsFor(ws: WSClient, cacheService: CacheService)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[JsObject] = {
     Future.successful(JsObject(Seq()))
   }
 

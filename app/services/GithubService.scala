@@ -12,16 +12,16 @@ import play.api.Configuration
 import play.api.libs.json.{JsError, JsSuccess, JsValue, Json}
 import play.api.libs.ws.WSClient
 
-import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
-import scala.concurrent.{Await, Future}
+import scala.concurrent.{Await, ExecutionContext, Future}
 
 @Singleton
 class GithubService @Inject() (
                                 ws: WSClient,
                                 config: Configuration,
                                 cacheService: CacheService,
-                                dataService: DataService
+                                dataService: DataService,
+                                implicit val ec: ExecutionContext
                               ) {
 
   val API_URL = "https://api.github.com"

@@ -16,8 +16,7 @@ import play.api.test.Helpers._
 import play.filters.csrf.CSRF.TokenProvider
 import play.filters.csrf.CSRFConfig
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}
 
 trait ControllerTestContext extends TestContext with MustMatchers {
@@ -64,5 +63,6 @@ trait ControllerTestContext extends TestContext with MustMatchers {
   lazy implicit val env: Environment[EllipsisEnv] = new FakeEnvironment[EllipsisEnv](identities)
   lazy val csrfProvider = app.injector.instanceOf(classOf[TokenProvider])
   lazy val csrfConfig = app.injector.instanceOf(classOf[CSRFConfig])
+  lazy implicit val ec: ExecutionContext = app.injector.instanceOf(classOf[ExecutionContext])
 
 }

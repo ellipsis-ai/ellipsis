@@ -8,8 +8,7 @@ import models.team.Team
 import play.api.Configuration
 import slick.dbio.DBIO
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 trait BehaviorService {
 
@@ -33,25 +32,25 @@ trait BehaviorService {
 
   def allForGroup(group: BehaviorGroup): Future[Seq[Behavior]]
 
-  def regularForGroup(group: BehaviorGroup): Future[Seq[Behavior]] = {
+  def regularForGroup(group: BehaviorGroup)(implicit ec: ExecutionContext): Future[Seq[Behavior]] = {
     allForGroup(group).map { all =>
       all.filterNot(_.isDataType)
     }
   }
 
-  def regularForTeam(team: Team): Future[Seq[Behavior]] = {
+  def regularForTeam(team: Team)(implicit ec: ExecutionContext): Future[Seq[Behavior]] = {
     allForTeam(team).map { all =>
       all.filterNot(_.isDataType)
     }
   }
 
-  def dataTypesForTeam(team: Team): Future[Seq[Behavior]] = {
+  def dataTypesForTeam(team: Team)(implicit ec: ExecutionContext): Future[Seq[Behavior]] = {
     allForTeam(team).map { all =>
       all.filter(_.isDataType)
     }
   }
 
-  def dataTypesForGroup(group: BehaviorGroup): Future[Seq[Behavior]] = {
+  def dataTypesForGroup(group: BehaviorGroup)(implicit ec: ExecutionContext): Future[Seq[Behavior]] = {
     allForGroup(group).map { all =>
       all.filter(_.isDataType)
     }

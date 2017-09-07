@@ -10,15 +10,15 @@ import play.api.Configuration
 import play.api.mvc.{AnyContent, Result}
 import services.{AWSLambdaService, DataService}
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 class AdminController @Inject() (
                                   val silhouette: Silhouette[EllipsisEnv],
                                   val dataService: DataService,
                                   val lambdaService: AWSLambdaService,
                                   val configuration: Configuration,
-                                  val assetsProvider: Provider[RemoteAssets]
+                                  val assetsProvider: Provider[RemoteAssets],
+                                  implicit val ec: ExecutionContext
                                 ) extends ReAuthable {
 
   private def withIsAdminCheck(

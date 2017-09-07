@@ -10,7 +10,6 @@ import models.accounts.slack.profile.SlackProfile
 import support.DBSpec
 
 import scala.concurrent.Future
-import scala.concurrent.ExecutionContext.Implicits.global
 
 class LinkedAccountServiceSpec extends DBSpec {
 

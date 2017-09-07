@@ -13,8 +13,7 @@ import models.behaviors.scheduling.recurrence.{RawRecurrence, Recurrence, Recurr
 import models.team.{Team, TeamQueries}
 import services.DataService
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 case class RawScheduledMessage(
                                 id: String,
@@ -55,7 +54,8 @@ class ScheduledMessagesTable(tag: Tag) extends Table[RawScheduledMessage](tag, S
 }
 
 class ScheduledMessageServiceImpl @Inject() (
-                                               dataServiceProvider: Provider[DataService]
+                                               dataServiceProvider: Provider[DataService],
+                                               implicit val ec: ExecutionContext
                                              ) extends ScheduledMessageService {
 
   def dataService = dataServiceProvider.get

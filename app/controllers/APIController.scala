@@ -21,8 +21,7 @@ import play.api.{Configuration, Logger}
 import services.{AWSLambdaService, CacheService, DataService, SlackEventService}
 import utils.SlackTimestamp
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 class APIController @Inject() (
                                 val configuration: Configuration,
@@ -34,7 +33,8 @@ class APIController @Inject() (
                                 val eventHandler: EventHandler,
                                 val botResultService: BotResultService,
                                 val assetsProvider: Provider[RemoteAssets],
-                                implicit val actorSystem: ActorSystem
+                                implicit val actorSystem: ActorSystem,
+                                implicit val ec: ExecutionContext
                               )
   extends EllipsisController {
 

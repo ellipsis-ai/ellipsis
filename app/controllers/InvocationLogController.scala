@@ -10,13 +10,13 @@ import play.api.Configuration
 import play.api.libs.json.{JsNull, JsValue, Json}
 import services.DataService
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 class InvocationLogController @Inject() (
                                  val configuration: Configuration,
                                  val dataService: DataService,
-                                 val assetsProvider: Provider[RemoteAssets]
+                                 val assetsProvider: Provider[RemoteAssets],
+                                 implicit val ec: ExecutionContext
                                ) extends EllipsisController {
 
   case class LogEntryData(

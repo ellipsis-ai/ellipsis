@@ -12,15 +12,15 @@ import play.api.libs.json._
 import play.api.libs.ws.WSClient
 import services.DataService
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 class SavedAnswerController @Inject() (
                                          val silhouette: Silhouette[EllipsisEnv],
                                          val configuration: Configuration,
                                          val dataService: DataService,
                                          val ws: WSClient,
-                                         val assetsProvider: Provider[RemoteAssets]
+                                         val assetsProvider: Provider[RemoteAssets],
+                                         implicit val ec: ExecutionContext
                                        ) extends ReAuthable {
 
   private val resetForm = Form(

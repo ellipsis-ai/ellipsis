@@ -6,8 +6,7 @@ import models.behaviors.{BotResult, SimpleTextResult}
 import play.api.Configuration
 import services.{AWSLambdaService, DataService}
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 case class UnscheduleBehavior(
                                text: String,
@@ -17,7 +16,7 @@ case class UnscheduleBehavior(
                                configuration: Configuration
                              ) extends BuiltinBehavior {
 
-  def result(implicit actorSystem: ActorSystem): Future[BotResult] = {
+  def result(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[BotResult] = {
     for {
       maybeTeam <- dataService.teams.find(event.teamId)
       didDelete <- maybeTeam.map { team =>

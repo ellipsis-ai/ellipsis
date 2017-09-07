@@ -10,11 +10,11 @@ import play.api.libs.ws.WSClient
 import services.{CacheService, DataService, DefaultServices}
 import utils.UploadFileSpec
 
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 case class ScheduledEvent(underlying: Event, scheduled: Scheduled) extends Event {
 
-  def eventualMaybeDMChannel(cacheService: CacheService)(implicit actorSystem: ActorSystem): Future[Option[String]] = {
+  def eventualMaybeDMChannel(cacheService: CacheService)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[String]] = {
     underlying.eventualMaybeDMChannel(cacheService)
   }
 
@@ -26,11 +26,11 @@ case class ScheduledEvent(underlying: Event, scheduled: Scheduled) extends Event
                    maybeActions: Option[MessageActions],
                    files: Seq[UploadFileSpec],
                    cacheService: CacheService
-                 )(implicit actorSystem: ActorSystem): Future[Option[String]] = {
+                 )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[String]] = {
     underlying.sendMessage(text, forcePrivate, maybeShouldUnfurl, maybeConversation, maybeActions, files, cacheService)
   }
 
-  override def detailsFor(ws: WSClient, cacheService: CacheService)(implicit actorSystem: ActorSystem): Future[JsObject] = {
+  override def detailsFor(ws: WSClient, cacheService: CacheService)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[JsObject] = {
     underlying.detailsFor(ws, cacheService)
   }
 
@@ -51,7 +51,7 @@ case class ScheduledEvent(underlying: Event, scheduled: Scheduled) extends Event
                                maybeTeam: Option[Team],
                                maybeLimitToBehavior: Option[Behavior],
                                services: DefaultServices
-                             ) = underlying.allBehaviorResponsesFor(maybeTeam, maybeLimitToBehavior, services)
+                             )(implicit ec: ExecutionContext) = underlying.allBehaviorResponsesFor(maybeTeam, maybeLimitToBehavior, services)
 
   def allOngoingConversations(dataService: DataService) = underlying.allOngoingConversations(dataService)
 

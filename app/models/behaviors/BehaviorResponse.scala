@@ -13,8 +13,7 @@ import play.api.libs.json.{JsString, JsValue}
 import services._
 import slick.dbio.DBIO
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 case class ParameterValue(text: String, json: JsValue, isValid: Boolean)
 
@@ -46,21 +45,21 @@ case class BehaviorResponse(
     parametersWithValues.forall(_.hasValidValue)
   }
 
-  def hasAllUserEnvVarValues: Future[Boolean] = {
+  def hasAllUserEnvVarValues(implicit ec: ExecutionContext): Future[Boolean] = {
     for {
       user <- event.ensureUser(dataService)
       missing <- dataService.userEnvironmentVariables.missingFor(user, behaviorVersion, dataService)
     } yield missing.isEmpty
   }
 
-  def hasAllSimpleTokens: Future[Boolean] = {
+  def hasAllSimpleTokens(implicit ec: ExecutionContext): Future[Boolean] = {
     for {
       user <- event.ensureUser(dataService)
       missing <- dataService.requiredSimpleTokenApis.missingFor(user, behaviorVersion.groupVersion)
     } yield missing.isEmpty
   }
 
-  def isReady: Future[Boolean] = {
+  def isReady(implicit ec: ExecutionContext): Future[Boolean] = {
     for {
       hasSimpleTokens <- hasAllSimpleTokens
       hasUserEnvVars <- hasAllUserEnvVarValues
@@ -69,7 +68,7 @@ case class BehaviorResponse(
     }
   }
 
-  def resultForFilledOutAction: DBIO[BotResult] = {
+  def resultForFilledOutAction(implicit ec: ExecutionContext): DBIO[BotResult] = {
     val startTime = OffsetDateTime.now
     for {
       user <- event.ensureUserAction(dataService)
@@ -89,11 +88,11 @@ case class BehaviorResponse(
     } yield result
   }
 
-  def resultForFilledOut: Future[BotResult] = {
+  def resultForFilledOut(implicit ec: ExecutionContext): Future[BotResult] = {
     dataService.run(resultForFilledOutAction)
   }
 
-  def result(implicit actorSystem: ActorSystem): Future[BotResult] = {
+  def result(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[BotResult] = {
     dataService.behaviorVersions.maybeNotReadyResultFor(behaviorVersion, event).flatMap { maybeNotReadyResult =>
       maybeNotReadyResult.map(Future.successful).getOrElse {
         isReady.flatMap { ready =>

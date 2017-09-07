@@ -14,8 +14,9 @@ import models.silhouette._
 import net.ceedubs.ficus.Ficus._
 import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 import play.api.Configuration
-import play.api.libs.concurrent.Execution.Implicits._
 import play.api.mvc.CookieHeaderEncoding
+
+import scala.concurrent.ExecutionContext
 
 class SilhouetteModule extends AbstractSilhouetteModule {
 
@@ -23,7 +24,8 @@ class SilhouetteModule extends AbstractSilhouetteModule {
   def provideEnvironment(
                           userService: UserService,
                           authenticatorService: AuthenticatorService[CookieAuthenticator],
-                          eventBus: EventBus): Environment[EllipsisEnv] = {
+                          eventBus: EventBus
+                        )(implicit ec: ExecutionContext): Environment[EllipsisEnv] = {
 
     Environment[EllipsisEnv](
       userService,
@@ -42,7 +44,7 @@ class SilhouetteModule extends AbstractSilhouetteModule {
                                    configuration: Configuration,
                                    clock: Clock,
                                    encoding: CookieHeaderEncoding
-                                 ): AuthenticatorService[CookieAuthenticator] = {
+                                 )(implicit ec: ExecutionContext): AuthenticatorService[CookieAuthenticator] = {
 
     val settings = configuration.underlying.as[CookieAuthenticatorSettings]("silhouette.authenticator")
     val encoder = new CrypterAuthenticatorEncoder(crypter)

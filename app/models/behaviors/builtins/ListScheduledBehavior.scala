@@ -7,8 +7,7 @@ import models.behaviors.{BotResult, SimpleTextResult}
 import play.api.Configuration
 import services.{AWSLambdaService, DataService}
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 
 case class ListScheduledBehavior(
@@ -56,7 +55,7 @@ case class ListScheduledBehavior(
     }
   }
 
-  def responseFor(scheduled: Seq[Scheduled]): Future[String] = {
+  def responseFor(scheduled: Seq[Scheduled])(implicit ec: ExecutionContext): Future[String] = {
     Future.sequence(scheduled.map(ea => ea.listResponse(ea.id, ea.team.id, dataService, configuration, maybeChannel.isEmpty))).map { listResponses =>
       s"""$intro
         |
@@ -67,7 +66,7 @@ case class ListScheduledBehavior(
     }
   }
 
-  def result(implicit actorSystem: ActorSystem): Future[BotResult] = {
+  def result(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[BotResult] = {
     for {
       maybeTeam <- dataService.teams.find(event.teamId)
       scheduled <- maybeTeam.map { team =>

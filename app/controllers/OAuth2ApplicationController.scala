@@ -17,14 +17,14 @@ import play.api.libs.json.Json
 import play.filters.csrf.CSRF
 import services.DataService
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 class OAuth2ApplicationController @Inject() (
                                               val silhouette: Silhouette[EllipsisEnv],
                                               val dataService: DataService,
                                               val configuration: Configuration,
-                                              val assetsProvider: Provider[RemoteAssets]
+                                              val assetsProvider: Provider[RemoteAssets],
+                                              implicit val ec: ExecutionContext
                                             ) extends ReAuthable {
 
   def list(maybeTeamId: Option[String]) = silhouette.SecuredAction.async { implicit request =>

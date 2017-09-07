@@ -18,8 +18,7 @@ import play.api.libs.ws.WSClient
 import play.api.mvc.{AnyContent, Result}
 import services.{CacheService, DataService}
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 class APIAccessController @Inject() (
                                       val silhouette: Silhouette[EllipsisEnv],
@@ -30,7 +29,8 @@ class APIAccessController @Inject() (
                                       val eventHandler: EventHandler,
                                       val botResultService: BotResultService,
                                       val assetsProvider: Provider[RemoteAssets],
-                                      implicit val actorSystem: ActorSystem
+                                      implicit val actorSystem: ActorSystem,
+                                      implicit val ec: ExecutionContext
                                     )
   extends ReAuthable {
 

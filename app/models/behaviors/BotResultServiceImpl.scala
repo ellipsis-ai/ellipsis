@@ -6,12 +6,12 @@ import akka.actor.ActorSystem
 import services.{CacheService, DataService}
 import slick.dbio.DBIO
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 class BotResultServiceImpl @Inject() (
                                         dataService: DataService,
-                                        cacheService: CacheService
+                                        cacheService: CacheService,
+                                        implicit val ec: ExecutionContext
                                       ) extends BotResultService {
 
   def sendInAction(

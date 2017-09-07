@@ -8,8 +8,7 @@ import models.accounts.user.User
 import services.DataService
 import drivers.SlickPostgresDriver.api._
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 case class RawLinkedAccount(userId: String, loginInfo: LoginInfo, createdAt: OffsetDateTime)
 
@@ -23,7 +22,10 @@ class LinkedAccountsTable(tag: Tag) extends Table[RawLinkedAccount](tag, "linked
   def * = (userId, loginInfo, createdAt) <> (RawLinkedAccount.tupled, RawLinkedAccount.unapply _)
 }
 
-class LinkedAccountServiceImpl @Inject() (dataServiceProvider: Provider[DataService]) extends LinkedAccountService {
+class LinkedAccountServiceImpl @Inject() (
+                                           dataServiceProvider: Provider[DataService],
+                                           implicit val ec: ExecutionContext
+                                         ) extends LinkedAccountService {
 
   def dataService = dataServiceProvider.get
 

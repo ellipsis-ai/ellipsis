@@ -8,14 +8,14 @@ import play.api.data.Form
 import play.api.data.Forms._
 import services.{DataService, GraphQLService}
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 class GraphQLController @Inject() (
                                     val configuration: Configuration,
                                     val dataService: DataService,
                                     val graphQL: GraphQLService,
-                                    val assetsProvider: Provider[RemoteAssets]
+                                    val assetsProvider: Provider[RemoteAssets],
+                                    implicit val ec: ExecutionContext
                                   ) extends EllipsisController {
 
   case class QueryInfo(

@@ -8,8 +8,7 @@ import models.behaviors.behaviorparameter.{BehaviorParameter, BehaviorParameterQ
 import models.behaviors.conversations.conversation.{Conversation, ConversationQueries}
 import services.DataService
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 case class RawCollectedParameterValue(parameterId: String, conversationId: String, valueString: String)
 
@@ -23,7 +22,8 @@ class CollectedParameterValuesTable(tag: Tag) extends Table[RawCollectedParamete
 }
 
 class CollectedParameterValueServiceImpl @Inject() (
-                                                     dataServiceProvider: Provider[DataService]
+                                                     dataServiceProvider: Provider[DataService],
+                                                     implicit val ec: ExecutionContext
                                                    ) extends CollectedParameterValueService {
 
   def dataService = dataServiceProvider.get

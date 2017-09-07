@@ -12,8 +12,7 @@ import play.api.Logger
 import services.{DataService, SlackEventService}
 import utils.{SlackMessageReactionHandler, SlackTimestamp}
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 class SlackBotProfileTable(tag: Tag) extends Table[SlackBotProfile](tag, "slack_bot_profiles") {
   def userId = column[String]("user_id", O.PrimaryKey)
@@ -30,7 +29,8 @@ class SlackBotProfileServiceImpl @Inject() (
                                           dataServiceProvider: Provider[DataService],
                                           slackEventServiceProvider: Provider[SlackEventService],
                                           botResultServiceProvider: Provider[BotResultService],
-                                          implicit val actorSystem: ActorSystem
+                                          implicit val actorSystem: ActorSystem,
+                                          implicit val ec: ExecutionContext
                                         ) extends SlackBotProfileService {
 
   def dataService = dataServiceProvider.get

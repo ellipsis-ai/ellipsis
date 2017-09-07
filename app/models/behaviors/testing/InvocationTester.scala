@@ -1,12 +1,10 @@
 package models.behaviors.testing
 
 import models.accounts.user.User
-import models.behaviors.BehaviorResponse
 import models.behaviors.behaviorversion.BehaviorVersion
 import services._
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 case class InvocationTester(
                             user: User,
@@ -15,7 +13,7 @@ case class InvocationTester(
                             services: DefaultServices
                           ) {
 
-  def run: Future[InvocationTestReport] = {
+  def run(implicit ec: ExecutionContext): Future[InvocationTestReport] = {
     val dataService = services.dataService
     for {
       params <- dataService.behaviorParameters.allFor(behaviorVersion)

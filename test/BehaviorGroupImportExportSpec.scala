@@ -9,7 +9,6 @@ import models.behaviors.behaviorparameter.{BehaviorBackedDataType, BehaviorParam
 import models.behaviors.behaviorversion.BehaviorVersion
 import support.DBSpec
 
-import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
 class BehaviorGroupImportExportSpec extends DBSpec {

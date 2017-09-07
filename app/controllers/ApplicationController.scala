@@ -17,8 +17,7 @@ import play.filters.csrf.CSRF
 import services.{AWSLambdaService, DataService, GithubService}
 import utils.{CitiesToTimeZones, FuzzyMatcher, TimeZoneParser}
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 class ApplicationController @Inject() (
                                         val silhouette: Silhouette[EllipsisEnv],
@@ -28,7 +27,8 @@ class ApplicationController @Inject() (
                                         val ws: WSClient,
                                         val githubService: GithubService,
                                         val citiesToTimeZones: CitiesToTimeZones,
-                                        val assetsProvider: Provider[RemoteAssets]
+                                        val assetsProvider: Provider[RemoteAssets],
+                                        implicit val ec: ExecutionContext
                                       ) extends ReAuthable {
 
   import json.Formatting._

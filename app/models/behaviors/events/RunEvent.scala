@@ -10,8 +10,7 @@ import services.{AWSLambdaConstants, CacheService, DataService, DefaultServices}
 import slack.api.SlackApiClient
 import utils.{SlackMessageSender, UploadFileSpec}
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 case class RunEvent(
                      profile: SlackBotProfile,
@@ -47,7 +46,7 @@ case class RunEvent(
                    maybeActions: Option[MessageActions] = None,
                    files: Seq[UploadFileSpec] = Seq(),
                    cacheService: CacheService
-                 )(implicit actorSystem: ActorSystem): Future[Option[String]] = {
+                 )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[String]] = {
     SlackMessageSender(
       client,
       user,
@@ -67,7 +66,7 @@ case class RunEvent(
                                maybeTeam: Option[Team],
                                maybeLimitToBehavior: Option[Behavior],
                                services: DefaultServices
-                             ): Future[Seq[BehaviorResponse]] = {
+                             )(implicit ec: ExecutionContext): Future[Seq[BehaviorResponse]] = {
     val dataService = services.dataService
     for {
       maybeBehaviorVersion <- dataService.behaviors.maybeCurrentVersionFor(behavior)

@@ -7,8 +7,7 @@ import models.team.Team
 import services.DataService
 import drivers.SlickPostgresDriver.api._
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 class OAuth2ApisTable(tag: Tag) extends Table[OAuth2Api](tag, "oauth2_apis") {
 
@@ -32,7 +31,8 @@ class OAuth2ApisTable(tag: Tag) extends Table[OAuth2Api](tag, "oauth2_apis") {
 }
 
 class OAuth2ApiServiceImpl @Inject() (
-                                       dataServiceProvider: Provider[DataService]
+                                       dataServiceProvider: Provider[DataService],
+                                       implicit val ec: ExecutionContext
                                      ) extends OAuth2ApiService {
 
 
