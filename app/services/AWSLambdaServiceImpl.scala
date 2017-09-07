@@ -58,6 +58,8 @@ class AWSLambdaServiceImpl @Inject() (
 
   val apiBaseUrl: String = configuration.getString(s"application.$API_BASE_URL_KEY").get
 
+  val invocationTimeoutSeconds: Int = configuration.getInt("aws.lambda.timeoutSeconds").get
+
   def fetchFunctions(maybeNextMarker: Option[String]): Future[List[FunctionConfiguration]] = {
     val listRequest = new ListFunctionsRequest()
     val listRequestWithMarker = maybeNextMarker.map { nextMarker =>
@@ -498,7 +500,7 @@ class AWSLambdaServiceImpl @Inject() (
               withRole(configuration.getString("aws.role").get).
               withRuntime(com.amazonaws.services.lambda.model.Runtime.Nodejs610).
               withHandler("index.handler").
-              withTimeout(INVOCATION_TIMEOUT_SECONDS)
+              withTimeout(invocationTimeoutSeconds)
           )
           _ <- JavaFutureConverter.javaToScala(client.createFunctionAsync(createFunctionRequest))
         } yield {}
