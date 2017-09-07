@@ -2,7 +2,6 @@ package support
 
 import akka.actor.ActorSystem
 import com.typesafe.config.ConfigFactory
-import drivers.SlickPostgresDriver.api.{Database => PostgresDatabase}
 import json._
 import mocks.MockAWSLambdaService
 import models.IDs
@@ -21,7 +20,6 @@ import models.team.Team
 import modules.ActorModule
 import org.scalatest.mock.MockitoSugar
 import org.scalatestplus.play.{OneAppPerSuite, PlaySpec}
-import play.api.db.Databases
 import play.api.db.evolutions.Evolutions
 import play.api.inject.bind
 import play.api.inject.guice.GuiceApplicationBuilder
@@ -156,18 +154,18 @@ trait DBSpec extends PlaySpec with OneAppPerSuite with MockitoSugar {
     runNow(dataService.requiredOAuth2ApiConfigs.maybeCreateFor(data, groupVersion)).get
   }
 
-  def withEmptyDB[T](dataService: PostgresDataService, fn: PostgresDatabase => T) = {
+  def withEmptyDB[T](dataService: PostgresDataService, fn: () => T) = {
     Databases.withDatabase(
-      driver = config.getString("slick.dbs.default.driver"),
-      url = config.getString("slick.dbs.default.url"),
+      driver = config.getOptional[String]("slick.dbs.default.driver"),
+      url = config.getOptional[String]("slick.dbs.default.url"),
       config = Map(
-        "username" -> config.getString("slick.dbs.default.username"),
-        "password" -> config.getString("slick.dbs.default.password")
+        "username" -> config.getOptional[String]("slick.dbs.default.username"),
+        "password" -> config.getOptional[String]("slick.dbs.default.password")
       )
     ) { database =>
       Evolutions.withEvolutions(database) {
         try {
-          fn(dataService.models.db)
+          fn()
         } finally {
           // Misguided legacy down evolutions will blow up if any of these exist, so delete them
           runNow(dataService.slackProfiles.deleteAll())

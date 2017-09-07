@@ -376,7 +376,7 @@ case class OAuth2TokenMissing(
   val forcePrivateResponse = true
 
   def authLink: String = {
-    val baseUrl = configuration.getString("application.apiBaseUrl").get
+    val baseUrl = configuration.get[String]("application.apiBaseUrl")
     val redirectPath = controllers.routes.APIAccessController.linkCustomOAuth2Service(oAuth2Application.id, None, None, Some(key), None)
     val redirect = s"$baseUrl$redirectPath"
     val authPath = controllers.routes.SocialAuthController.loginWithToken(loginToken.value, Some(redirect))

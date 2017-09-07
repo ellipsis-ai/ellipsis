@@ -4,7 +4,6 @@ import javax.inject.Inject
 
 import com.amazonaws.services.logs.model.{DeleteLogGroupRequest, ResourceNotFoundException}
 import com.amazonaws.services.logs.{AWSLogsAsync, AWSLogsAsyncClientBuilder}
-import models.Models
 import play.api.Configuration
 import play.api.libs.ws.WSClient
 
@@ -13,7 +12,6 @@ import scala.concurrent.Future
 
 class AWSLogsServiceImpl @Inject() (
                                      val configuration: Configuration,
-                                     val models: Models,
                                      val ws: WSClient,
                                      val dataService: DataService
                                    ) extends AWSLogsService {

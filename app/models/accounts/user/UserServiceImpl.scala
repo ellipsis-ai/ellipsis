@@ -133,7 +133,7 @@ class UserServiceImpl @Inject() (
       maybeUser <- maybeToken.map { token =>
         find(token.userId)
       }.getOrElse {
-        if (configuration.getString("application.version").contains("Development")) {
+        if (configuration.getOptional[String]("application.version").contains("Development")) {
           // in dev, if not found, we assume the tokenId is a user ID
           find(tokenId)
         } else {

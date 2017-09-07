@@ -58,7 +58,7 @@ class GraphQLServiceSpec extends DBSpec {
   "schemaFor" should {
 
     "build a schema" in {
-      withEmptyDB(dataService, { db =>
+      withEmptyDB(dataService, { () =>
         val team = newSavedTeam
         val user = newSavedUserOn(team)
         val group = newSavedBehaviorGroupFor(team)
@@ -100,7 +100,7 @@ class GraphQLServiceSpec extends DBSpec {
   "previewSchemaFor" should {
 
     "build a preview schema given unsaved group data" in {
-      withEmptyDB(dataService, { db =>
+      withEmptyDB(dataService, { () =>
         val team = newSavedTeam
         val user = newSavedUserOn(team)
         val group = newSavedBehaviorGroupFor(team)
@@ -142,7 +142,7 @@ class GraphQLServiceSpec extends DBSpec {
   "runQuery" should {
 
     "save a new record and get it back" in {
-      withEmptyDB(dataService, { db =>
+      withEmptyDB(dataService, { () =>
         val team = newSavedTeam
         val user = newSavedUserOn(team)
         val group = newSavedBehaviorGroupFor(team)
@@ -189,7 +189,7 @@ class GraphQLServiceSpec extends DBSpec {
     }
 
     "save related data and get back a nested result" in {
-      withEmptyDB(dataService, { db =>
+      withEmptyDB(dataService, { () =>
         val team = newSavedTeam
         val user = newSavedUserOn(team)
         val group = newSavedBehaviorGroupFor(team)
@@ -238,7 +238,7 @@ class GraphQLServiceSpec extends DBSpec {
     }
 
     "save a new record and delete it" in {
-      withEmptyDB(dataService, { db =>
+      withEmptyDB(dataService, { () =>
         val team = newSavedTeam
         val user = newSavedUserOn(team)
         val group = newSavedBehaviorGroupFor(team)
@@ -282,7 +282,7 @@ class GraphQLServiceSpec extends DBSpec {
     }
 
     "return an appropriate error trying to delete a nonexistent item" in {
-      withEmptyDB(dataService, { db =>
+      withEmptyDB(dataService, { () =>
         val team = newSavedTeam
         val user = newSavedUserOn(team)
         val group = newSavedBehaviorGroupFor(team)
@@ -306,7 +306,7 @@ class GraphQLServiceSpec extends DBSpec {
     }
 
     "return an appropriate error if the query doesn't parse" in {
-      withEmptyDB(dataService, { db =>
+      withEmptyDB(dataService, { () =>
         val team = newSavedTeam
         val user = newSavedUserOn(team)
         val group = newSavedBehaviorGroupFor(team)
@@ -322,7 +322,7 @@ class GraphQLServiceSpec extends DBSpec {
     }
 
     "return an appropriate error if the query includes nonexistent fields" in {
-      withEmptyDB(dataService, { db =>
+      withEmptyDB(dataService, { () =>
         val team = newSavedTeam
         val user = newSavedUserOn(team)
         val group = newSavedBehaviorGroupFor(team)

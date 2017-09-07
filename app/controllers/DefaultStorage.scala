@@ -2,22 +2,21 @@ package controllers
 
 import javax.inject.Inject
 
+import com.google.inject.Provider
 import play.api.Configuration
 import play.api.data.Form
 import play.api.data.Forms._
-import play.api.i18n.MessagesApi
 import play.api.libs.json.Json
-import play.api.mvc.Action
 import services.{AWSDynamoDBService, DataService}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
 class DefaultStorage @Inject() (
-                                 val messagesApi: MessagesApi,
                                  val configuration: Configuration,
                                  val dataService: DataService,
-                                 val dynamoDBService: AWSDynamoDBService
+                                 val dynamoDBService: AWSDynamoDBService,
+                                 val assetsProvider: Provider[RemoteAssets]
                                ) extends EllipsisController {
 
   case class PutItemInfo(token: String, itemType: String, itemId: String, itemJson: String)

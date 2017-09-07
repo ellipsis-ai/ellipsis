@@ -2,6 +2,7 @@ package controllers
 
 import javax.inject.Inject
 
+import com.google.inject.Provider
 import com.mohiva.play.silhouette.api.Silhouette
 import com.mohiva.play.silhouette.api.actions.SecuredRequest
 import json.Formatting._
@@ -21,9 +22,9 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
 class BehaviorEditorController @Inject() (
-                                           val messagesApi: MessagesApi,
                                            val silhouette: Silhouette[EllipsisEnv],
-                                           val services: DefaultServices
+                                           val services: DefaultServices,
+                                           val assetsProvider: Provider[RemoteAssets]
                                          ) extends ReAuthable {
 
   val dataService = services.dataService
@@ -34,7 +35,7 @@ class BehaviorEditorController @Inject() (
     val user = request.identity
     render.async {
       case Accepts.JavaScript() => {
-        editorDataResult(BehaviorEditorData.buildForNew(user, maybeTeamId, dataService, ws))
+        editorDataResult(BehaviorEditorData.buildForNew(user, maybeTeamId, dataService, ws, assets))
       }
       case Accepts.Html() => {
         for {
@@ -54,7 +55,7 @@ class BehaviorEditorController @Inject() (
     val user = request.identity
     render.async {
       case Accepts.JavaScript() => {
-        editorDataResult(BehaviorEditorData.buildForEdit(user, groupId, maybeBehaviorId, dataService, ws))
+        editorDataResult(BehaviorEditorData.buildForEdit(user, groupId, maybeBehaviorId, dataService, ws, assets))
       }
       case Accepts.Html() => {
         for {

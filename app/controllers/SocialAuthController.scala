@@ -5,19 +5,19 @@ import java.time.OffsetDateTime
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 
-import services.DataService
+import com.google.inject.Provider
 import com.mohiva.play.silhouette.api.util.Clock
 import play.api.Configuration
+import services.DataService
 import com.mohiva.play.silhouette.api._
 import com.mohiva.play.silhouette.api.repositories.AuthInfoRepository
 import com.mohiva.play.silhouette.api.services.AuthenticatorResult
 import com.mohiva.play.silhouette.impl.authenticators.CookieAuthenticator
 import models._
-import models.accounts.user.User
 import models.accounts.linkedaccount.LinkedAccount
 import models.accounts.slack.SlackProvider
+import models.accounts.user.User
 import models.silhouette.EllipsisEnv
-import play.api.i18n.MessagesApi
 import play.api.libs.concurrent.Execution.Implicits._
 import play.api.mvc.{RequestHeader, Result}
 
@@ -25,11 +25,11 @@ import scala.concurrent.Future
 import scala.concurrent.duration.FiniteDuration
 
 class SocialAuthController @Inject() (
-                                       val messagesApi: MessagesApi,
                                        val silhouette: Silhouette[EllipsisEnv],
                                        val configuration: Configuration,
                                        val clock: Clock,
                                        val models: Models,
+                                       val assetsProvider: Provider[RemoteAssets],
                                        slackProvider: SlackProvider,
                                        dataService: DataService,
                                        authInfoRepository: AuthInfoRepository
@@ -82,7 +82,7 @@ class SocialAuthController @Inject() (
       val authorizationParams = maybeTeamId.map { teamId =>
         settings.authorizationParams + ("team" -> teamId)
       }.getOrElse(settings.authorizationParams)
-      settings.copy(redirectURL = url, authorizationParams = authorizationParams)
+      settings.copy(redirectURL = Some(url), authorizationParams = authorizationParams)
     }
     val authenticateResult = provider.authenticate() recover {
       case e: com.mohiva.play.silhouette.impl.exceptions.AccessDeniedException => {
@@ -138,10 +138,10 @@ class SocialAuthController @Inject() (
       maybeTeamId.foreach { teamId =>
         authorizationParams = authorizationParams + ("team" -> teamId)
       }
-      configuration.getString("silhouette.slack.signInScope").foreach { signInScope =>
+      configuration.getOptional[String]("silhouette.slack.signInScope").foreach { signInScope =>
         authorizationParams = authorizationParams + ("scope" -> signInScope)
       }
-      settings.copy(redirectURL = url, authorizationParams = authorizationParams)
+      settings.copy(redirectURL = Some(url), authorizationParams = authorizationParams)
     }
     val authenticateResult = provider.authenticate() recover {
       case e: com.mohiva.play.silhouette.impl.exceptions.AccessDeniedException => {

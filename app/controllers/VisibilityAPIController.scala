@@ -1,24 +1,23 @@
 package controllers
 
-import java.time.{OffsetDateTime, ZoneOffset}
 import java.time.format.DateTimeFormatter
+import java.time.{OffsetDateTime, ZoneOffset}
 import javax.inject.Inject
 
-import json.InvocationLogEntryData
+import com.google.inject.Provider
 import json.Formatting._
+import json.InvocationLogEntryData
 import play.api.Configuration
-import play.api.i18n.MessagesApi
 import play.api.libs.json.Json
-import play.api.mvc.Action
 import services.DataService
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
 class VisibilityAPIController @Inject() (
-                                 val messagesApi: MessagesApi,
                                  val configuration: Configuration,
-                                 val dataService: DataService
+                                 val dataService: DataService,
+                                 val assetsProvider: Provider[RemoteAssets]
                                ) extends EllipsisController {
 
   case class InvocationCount(

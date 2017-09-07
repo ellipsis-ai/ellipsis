@@ -10,7 +10,6 @@ import com.amazonaws.services.lambda.model._
 import com.amazonaws.services.lambda.{AWSLambdaAsync, AWSLambdaAsyncClientBuilder}
 import json.Formatting._
 import json.NodeModuleVersionData
-import models.Models
 import models.behaviors._
 import models.behaviors.behaviorversion.BehaviorVersion
 import models.behaviors.config.awsconfig.AWSConfig
@@ -40,7 +39,6 @@ import scala.util.{Failure, Success}
 
 class AWSLambdaServiceImpl @Inject() (
                                        val configuration: Configuration,
-                                       val models: Models,
                                        val ws: WSClient,
                                        val dataService: DataService,
                                        val logsService: AWSLogsService,
@@ -55,7 +53,7 @@ class AWSLambdaServiceImpl @Inject() (
       withCredentials(credentialsProvider).
       build()
 
-  val apiBaseUrl: String = configuration.getString(s"application.$API_BASE_URL_KEY").get
+  val apiBaseUrl: String = configuration.get[String](s"application.$API_BASE_URL_KEY")
 
   def fetchFunctions(maybeNextMarker: Option[String]): Future[List[FunctionConfiguration]] = {
     val listRequest = new ListFunctionsRequest()
@@ -494,7 +492,7 @@ class AWSLambdaServiceImpl @Inject() (
             new CreateFunctionRequest().
               withFunctionName(functionName).
               withCode(functionCode).
-              withRole(configuration.getString("aws.role").get).
+              withRole(configuration.get[String]("aws.role")).
               withRuntime(com.amazonaws.services.lambda.model.Runtime.Nodejs610).
               withHandler("index.handler").
               withTimeout(INVOCATION_TIMEOUT_SECONDS)

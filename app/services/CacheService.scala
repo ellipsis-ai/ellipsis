@@ -8,7 +8,7 @@ import models.accounts.slack.SlackUserInfo
 import models.accounts.slack.botprofile.SlackBotProfile
 import models.behaviors.behaviorparameter.ValidValue
 import models.behaviors.events.{Event, SlackMessage, SlackMessageEvent}
-import play.api.cache.CacheApi
+import play.api.cache.SyncCacheApi
 import play.api.libs.json.{JsError, JsSuccess, JsValue, Json}
 
 import scala.concurrent.duration._
@@ -25,7 +25,7 @@ case class SlackMessageEventData(
 
 @Singleton
 class CacheService @Inject() (
-                               cache: CacheApi,
+                               cache: SyncCacheApi, // TODO: change to async
                                slackEventServiceProvider: Provider[SlackEventService]
                               ) {
 

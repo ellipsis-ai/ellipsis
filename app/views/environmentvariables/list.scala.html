@@ -6,8 +6,8 @@
 @page.main("Environment variables", config, selectedNav = "settings") {
   <div id="content" class="content flex-row-cascade">
     <div id="environmentVariableList" class="flex-row-cascade"></div>
-    <script src='@RemoteAssets.getUrl("lib/requirejs/require.min.js")'></script>
+    <script src='@config.assets.getUrl("lib/requirejs/require.min.js")'></script>
     <script src="@dataRoute"></script>
-    <script src='@RemoteAssets.getUrl("javascripts/environment_variables/loader.js")'></script>
+    <script src='@config.assets.getUrl("javascripts/environment_variables/loader.js")'></script>
   </div>
 }

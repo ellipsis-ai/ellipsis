@@ -69,7 +69,7 @@ trait Event {
   def recentMessages(dataService: DataService)(implicit actorSystem: ActorSystem): Future[Seq[String]] = Future.successful(Seq())
 
   def navLinks(noSkills: Boolean, lambdaService: AWSLambdaService): String = {
-    lambdaService.configuration.getString("application.apiBaseUrl").map { baseUrl =>
+    lambdaService.configuration.getOptional[String]("application.apiBaseUrl").map { baseUrl =>
       val skillsListPath = controllers.routes.ApplicationController.index(Some(teamId))
       val schedulingPath = controllers.routes.ScheduledActionsController.index(None, None, Some(teamId))
       if (noSkills) {
@@ -81,7 +81,7 @@ trait Event {
   }
 
   def teachMeLinkFor(lambdaService: AWSLambdaService): String = {
-    val newBehaviorLink = lambdaService.configuration.getString("application.apiBaseUrl").map { baseUrl =>
+    val newBehaviorLink = lambdaService.configuration.getOptional[String]("application.apiBaseUrl").map { baseUrl =>
       val path = controllers.routes.BehaviorEditorController.newGroup(Some(teamId))
       s"$baseUrl$path"
     }.get
@@ -89,7 +89,7 @@ trait Event {
   }
 
   def installLinkFor(lambdaService: AWSLambdaService): String = {
-    val installLink = lambdaService.configuration.getString("application.apiBaseUrl").map { baseUrl =>
+    val installLink = lambdaService.configuration.getOptional[String]("application.apiBaseUrl").map { baseUrl =>
       val path = controllers.routes.ApplicationController.index(Some(teamId))
       s"$baseUrl$path"
     }.get

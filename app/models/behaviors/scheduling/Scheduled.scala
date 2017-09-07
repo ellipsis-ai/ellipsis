@@ -70,7 +70,7 @@ trait Scheduled {
   }
 
   def scheduleLinkFor(configuration: Configuration, scheduleId: String, teamId: String): String = {
-    configuration.getString("application.apiBaseUrl").map { baseUrl =>
+    configuration.getOptional[String]("application.apiBaseUrl").map { baseUrl =>
       val path = controllers.routes.ScheduledActionsController.index(Some(scheduleId), None, Some(teamId))
       s"_[✎ Edit]($baseUrl$path)_"
     }.getOrElse("")

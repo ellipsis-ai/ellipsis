@@ -5,6 +5,7 @@ import java.util.Locale
 import javax.inject.Inject
 
 import akka.actor.ActorSystem
+import com.google.inject.Provider
 import com.mohiva.play.silhouette.api.Silhouette
 import json.Formatting._
 import json._
@@ -16,7 +17,6 @@ import models.team.Team
 import play.api.Configuration
 import play.api.data.Form
 import play.api.data.Forms._
-import play.api.i18n.MessagesApi
 import play.api.libs.json.{JsError, JsSuccess, Json}
 import play.filters.csrf.CSRF
 import services.DataService
@@ -26,10 +26,10 @@ import scala.concurrent.Future
 
 
 class ScheduledActionsController @Inject()(
-                                            val messagesApi: MessagesApi,
                                             val configuration: Configuration,
                                             val silhouette: Silhouette[EllipsisEnv],
                                             val dataService: DataService,
+                                            val assetsProvider: Provider[RemoteAssets],
                                             implicit val actorSystem: ActorSystem
                                           ) extends ReAuthable {
 

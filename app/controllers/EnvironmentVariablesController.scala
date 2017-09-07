@@ -2,6 +2,7 @@ package controllers
 
 import javax.inject.Inject
 
+import com.google.inject.Provider
 import com.mohiva.play.silhouette.api.Silhouette
 import json._
 import json.Formatting._
@@ -18,10 +19,10 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
 class EnvironmentVariablesController @Inject() (
-                                                 val messagesApi: MessagesApi,
                                                  val silhouette: Silhouette[EllipsisEnv],
                                                  val dataService: DataService,
-                                                 val configuration: Configuration
+                                                 val configuration: Configuration,
+                                                 val assetsProvider: Provider[RemoteAssets]
                                                ) extends ReAuthable {
 
   case class EnvironmentVariablesInfo(teamId: String, dataJson: String)

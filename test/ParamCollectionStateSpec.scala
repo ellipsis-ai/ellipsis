@@ -8,7 +8,7 @@ class ParamCollectionStateSpec extends DBSpec {
   "ParamCollectionState" should {
 
     "Use a saved answer (for team) if present and input configured for it" in {
-      withEmptyDB(dataService, { db =>
+      withEmptyDB(dataService, { () =>
         val team = newSavedTeam
         val user = newSavedUserOn(team)
         val event = TestEvent(user, team, "foo", includesBotMention = false)
@@ -39,7 +39,7 @@ class ParamCollectionStateSpec extends DBSpec {
     }
 
     "Use a saved answer (for user) if present and input configured for it" in {
-      withEmptyDB(dataService, { db =>
+      withEmptyDB(dataService, { () =>
         val team = newSavedTeam
         val user = newSavedUserOn(team)
         val event = TestEvent(user, team, "foo", includesBotMention = false)
@@ -70,7 +70,7 @@ class ParamCollectionStateSpec extends DBSpec {
     }
 
     "don't use a saved answer if present but input not configured for it" in {
-      withEmptyDB(dataService, { db =>
+      withEmptyDB(dataService, { () =>
         val team = newSavedTeam
         val user = newSavedUserOn(team)
         val event = TestEvent(user, team, "foo", includesBotMention = false)

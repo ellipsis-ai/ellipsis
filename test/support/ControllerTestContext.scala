@@ -25,7 +25,7 @@ trait ControllerTestContext extends TestContext with MustMatchers {
   def assertUserJustLoggedIn(app: Application, user: User, result: Future[Result]): Unit = {
     val cookieSigner = app.injector.instanceOf(BindingKey(classOf[CookieSigner]).qualifiedWith("authenticator-cookie-signer"))
     val encoder = new Base64AuthenticatorEncoder
-    val authenticatorCookieName = app.configuration.getString("silhouette.authenticator.cookieName").get
+    val authenticatorCookieName = app.configuration.get[String]("silhouette.authenticator.cookieName")
     val maybeAuthenticatorCookie = cookies(result).get(authenticatorCookieName)
     maybeAuthenticatorCookie mustNot be(None)
     CookieAuthenticator.unserialize(maybeAuthenticatorCookie.get.value, cookieSigner, encoder) match {
@@ -35,12 +35,12 @@ trait ControllerTestContext extends TestContext with MustMatchers {
   }
 
   def assertNotJustLoggedIn(app: Application, result: Future[Result]): Unit = {
-    val authenticatorCookieName = app.configuration.getString("silhouette.authenticator.cookieName").get
+    val authenticatorCookieName = app.configuration.get[String]("silhouette.authenticator.cookieName")
     cookies(result).get(authenticatorCookieName) mustBe None
   }
 
   def assertJustLoggedOut(app: Application, result: Future[Result]): Unit = {
-    val authenticatorCookieName = app.configuration.getString("silhouette.authenticator.cookieName").get
+    val authenticatorCookieName = app.configuration.get[String]("silhouette.authenticator.cookieName")
     cookies(result).get(authenticatorCookieName).map { cookie =>
       //noinspection UnitInMap
       cookie.value must have length(0)

@@ -2,21 +2,20 @@ package controllers
 
 import javax.inject.Inject
 
+import com.google.inject.Provider
 import play.api.Configuration
 import play.api.data.Form
 import play.api.data.Forms._
-import play.api.i18n.MessagesApi
-import play.api.mvc.Action
 import services.{DataService, GraphQLService}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
 class GraphQLController @Inject() (
-                                    val messagesApi: MessagesApi,
                                     val configuration: Configuration,
                                     val dataService: DataService,
-                                    val graphQL: GraphQLService
+                                    val graphQL: GraphQLService,
+                                    val assetsProvider: Provider[RemoteAssets]
                                   ) extends EllipsisController {
 
   case class QueryInfo(

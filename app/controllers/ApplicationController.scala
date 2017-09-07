@@ -4,13 +4,13 @@ import java.time.format.TextStyle
 import java.util.Locale
 import javax.inject.Inject
 
+import com.google.inject.Provider
 import com.mohiva.play.silhouette.api.Silhouette
 import json._
 import models.silhouette.EllipsisEnv
 import play.api.Configuration
 import play.api.data.Form
 import play.api.data.Forms._
-import play.api.i18n.MessagesApi
 import play.api.libs.json.Json
 import play.api.libs.ws.WSClient
 import play.filters.csrf.CSRF
@@ -21,14 +21,14 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
 class ApplicationController @Inject() (
-                                        val messagesApi: MessagesApi,
                                         val silhouette: Silhouette[EllipsisEnv],
                                         val configuration: Configuration,
                                         val dataService: DataService,
                                         val lambdaService: AWSLambdaService,
                                         val ws: WSClient,
                                         val githubService: GithubService,
-                                        val citiesToTimeZones: CitiesToTimeZones
+                                        val citiesToTimeZones: CitiesToTimeZones,
+                                        val assetsProvider: Provider[RemoteAssets]
                                       ) extends ReAuthable {
 
   import json.Formatting._

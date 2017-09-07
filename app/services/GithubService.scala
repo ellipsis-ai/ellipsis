@@ -31,8 +31,8 @@ class GithubService @Inject() (
 
   val PUBLISHED_BEHAVIORS_KEY = "github_published_behaviors"
 
-  val repoCredentials: (String, String) = ("access_token", config.getString("github.repoAccessToken").get)
-  val cacheTimeout: Duration = config.getInt("github.cacheTimeoutSeconds").get.seconds
+  val repoCredentials: (String, String) = ("access_token", config.get[String]("github.repoAccessToken"))
+  val cacheTimeout: Duration = config.get[Int]("github.cacheTimeoutSeconds").seconds
 
   def branchFor(maybeBranch: Option[String]) = maybeBranch.getOrElse("master")
 

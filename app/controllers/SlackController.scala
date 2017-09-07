@@ -2,8 +2,8 @@ package controllers
 
 import javax.inject.Inject
 
+import com.google.inject.Provider
 import com.mohiva.play.silhouette.api.Silhouette
-import models.behaviors.{BehaviorResponse, BotResultService}
 import models.behaviors.builtins.DisplayHelpBehavior
 import models.behaviors.events.SlackMessageActionConstants._
 import models.behaviors.events.{EventHandler, SlackMessage, SlackMessageEvent}
@@ -12,9 +12,8 @@ import models.silhouette.EllipsisEnv
 import play.api.Logger
 import play.api.data.Form
 import play.api.data.Forms._
-import play.api.i18n.MessagesApi
 import play.api.libs.json._
-import play.api.mvc.{Action, AnyContent, Request, Result}
+import play.api.mvc.{AnyContent, Request, Result}
 import play.utils.UriEncoding
 import services._
 
@@ -22,11 +21,11 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
 class SlackController @Inject() (
-                                  val messagesApi: MessagesApi,
                                   val silhouette: Silhouette[EllipsisEnv],
                                   val eventHandler: EventHandler,
                                   val slackEventService: SlackEventService,
-                                  val services: DefaultServices
+                                  val services: DefaultServices,
+                                  val assetsProvider: Provider[RemoteAssets]
                                 ) extends EllipsisController {
 
   val dataService = services.dataService
@@ -37,8 +36,8 @@ class SlackController @Inject() (
 
   def add = silhouette.UserAwareAction { implicit request =>
     val maybeResult = for {
-      scopes <- configuration.getString("silhouette.slack.scope")
-      clientId <- configuration.getString("silhouette.slack.clientID")
+      scopes <- configuration.getOptional[String]("silhouette.slack.scope")
+      clientId <- configuration.getOptional[String]("silhouette.slack.clientID")
     } yield {
         val redirectUrl = routes.SocialAuthController.installForSlack().absoluteURL(secure=true)
         Ok(views.html.slack.addToSlack(viewConfig(None), scopes, clientId, redirectUrl))
@@ -52,8 +51,8 @@ class SlackController @Inject() (
     }.getOrElse(Future.successful(None))
     eventualMaybeTeamAccess.map { maybeTeamAccess =>
       val maybeResult = for {
-        scopes <- configuration.getString("silhouette.slack.signInScope")
-        clientId <- configuration.getString("silhouette.slack.clientID")
+        scopes <- configuration.getOptional[String]("silhouette.slack.signInScope")
+        clientId <- configuration.getOptional[String]("silhouette.slack.clientID")
       } yield {
           val redirectUrl = routes.SocialAuthController.authenticateSlack(maybeRedirectUrl).absoluteURL(secure=true)
           Ok(views.html.slack.signInWithSlack(viewConfig(maybeTeamAccess), scopes, clientId, UriEncoding.encodePathSegment(redirectUrl, "utf-8")))
@@ -64,7 +63,7 @@ class SlackController @Inject() (
 
   trait RequestInfo {
     val token: String
-    def isValid: Boolean = configuration.getString("slack.token").contains(token)
+    def isValid: Boolean = configuration.getOptional[String]("slack.token").contains(token)
   }
 
   case class ChallengeRequestInfo(token: String, challenge: String, requestType: String) extends RequestInfo

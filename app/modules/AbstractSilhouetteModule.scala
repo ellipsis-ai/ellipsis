@@ -2,11 +2,13 @@ package modules
 
 import com.google.inject.Provides
 import com.mohiva.play.silhouette.api.actions.SecuredErrorHandler
+import com.mohiva.play.silhouette.api.crypto.Signer
 import com.mohiva.play.silhouette.api.repositories.AuthInfoRepository
 import com.mohiva.play.silhouette.api.util._
 import com.mohiva.play.silhouette.api.{EventBus, Silhouette, SilhouetteProvider}
+import com.mohiva.play.silhouette.crypto.{JcaSigner, JcaSignerSettings}
 import com.mohiva.play.silhouette.impl.providers._
-import com.mohiva.play.silhouette.impl.providers.oauth2.state.DummyStateProvider
+import com.mohiva.play.silhouette.impl.providers.state.{CsrfStateItemHandler, CsrfStateSettings}
 import com.mohiva.play.silhouette.persistence.repositories.DelegableAuthInfoRepository
 import com.mohiva.play.silhouette.impl.util._
 import com.mohiva.play.silhouette.persistence.daos.DelegableAuthInfoDAO
@@ -55,10 +57,37 @@ trait AbstractSilhouetteModule extends ScalaModule {
   }
 
   @Provides
+  def provideSocialStateSigner(configuration: Configuration): Signer = {
+    val config = configuration.underlying.as[JcaSignerSettings]("silhouette.socialStateHandler.signer")
+
+    new JcaSigner(config)
+  }
+
+  @Provides
+  def provideCsrfStateItemHandler(
+                                   idGenerator: IDGenerator,
+                                   signer: Signer,
+                                   configuration: Configuration): CsrfStateItemHandler = {
+    val settings = configuration.underlying.as[CsrfStateSettings]("silhouette.csrfStateItemHandler")
+    new CsrfStateItemHandler(settings, idGenerator, signer)
+  }
+
+  @Provides
+  def provideSocialStateHandler(
+                                 signer: Signer,
+                                 csrfStateItemHandler: CsrfStateItemHandler
+                               ): SocialStateHandler = {
+
+    // TODO: consider using state param
+    new DefaultSocialStateHandler(Set(/*csrfStateItemHandler*/), signer)
+  }
+
+  @Provides
   def provideSlackProvider(
                             httpLayer: HTTPLayer,
+                            stateHandler: SocialStateHandler,
                             configuration: Configuration): SlackProvider = {
 
-    new SlackProvider(httpLayer, new DummyStateProvider, configuration.underlying.as[OAuth2Settings]("silhouette.slack"))
+    new SlackProvider(httpLayer, stateHandler, configuration.underlying.as[OAuth2Settings]("silhouette.slack"))
   }
 }

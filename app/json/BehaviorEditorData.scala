@@ -2,6 +2,7 @@ package json
 
 import java.time.OffsetDateTime
 
+import controllers.RemoteAssets
 import models.accounts.user.{User, UserTeamAccess}
 import models.behaviors.behaviorparameter.BehaviorParameterType
 import models.team.Team
@@ -31,7 +32,8 @@ object BehaviorEditorData {
                     groupId: String,
                     maybeSelectedId: Option[String],
                     dataService: DataService,
-                    ws: WSClient
+                    ws: WSClient,
+                    assets: RemoteAssets
                   ): Future[Option[BehaviorEditorData]] = {
 
     for {
@@ -49,7 +51,8 @@ object BehaviorEditorData {
           maybeSelectedId,
           team,
           dataService,
-          ws
+          ws,
+          assets
         ).map(Some(_))
       }).getOrElse(Future.successful(None))
     } yield maybeEditorData
@@ -59,7 +62,8 @@ object BehaviorEditorData {
                   user: User,
                   maybeTeamId: Option[String],
                   dataService: DataService,
-                  ws: WSClient
+                  ws: WSClient,
+                  assets: RemoteAssets
                  ): Future[Option[BehaviorEditorData]] = {
 
     val teamId = maybeTeamId.getOrElse(user.teamId)
@@ -72,7 +76,8 @@ object BehaviorEditorData {
           maybeSelectedId = None,
           team,
           dataService,
-          ws
+          ws,
+          assets
         ).map(Some(_))
       }.getOrElse(Future.successful(None))
     } yield maybeData
@@ -108,7 +113,8 @@ object BehaviorEditorData {
                 maybeSelectedId: Option[String],
                 team: Team,
                 dataService: DataService,
-                ws: WSClient
+                ws: WSClient,
+                assets: RemoteAssets
               ): Future[BehaviorEditorData] = {
     for {
       teamAccess <- dataService.users.teamAccessFor(user, Some(team.id))
@@ -171,8 +177,8 @@ object BehaviorEditorData {
         teamEnvironmentVariables.map(EnvironmentVariableData.withoutValueFor),
         inputSavedAnswerData,
         oAuth2Applications.map(OAuth2ApplicationData.from),
-        oauth2Apis.map(OAuth2ApiData.from),
-        simpleTokenApis.map(SimpleTokenApiData.from),
+        oauth2Apis.map(ea => OAuth2ApiData.from(ea, assets)),
+        simpleTokenApis.map(ea => SimpleTokenApiData.from(ea, assets)),
         linkedOAuth2Tokens.map(_.application.id)
       )
     }
