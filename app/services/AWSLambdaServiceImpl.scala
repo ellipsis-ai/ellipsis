@@ -41,6 +41,7 @@ class AWSLambdaServiceImpl @Inject() (
                                        val configuration: Configuration,
                                        val ws: WSClient,
                                        val dataService: DataService,
+                                       val cacheService: CacheService,
                                        val logsService: AWSLogsService,
                                        implicit val actorSystem: ActorSystem
                                        ) extends AWSLambdaService {
@@ -54,6 +55,8 @@ class AWSLambdaServiceImpl @Inject() (
       build()
 
   val apiBaseUrl: String = configuration.get[String](s"application.$API_BASE_URL_KEY")
+
+  val invocationTimeoutSeconds: Int = configuration.getInt("aws.lambda.timeoutSeconds").get
 
   def fetchFunctions(maybeNextMarker: Option[String]): Future[List[FunctionConfiguration]] = {
     val listRequest = new ListFunctionsRequest()
@@ -128,7 +131,7 @@ class AWSLambdaServiceImpl @Inject() (
                             isRetrying: Boolean
                           ): DBIO[BotResult] = {
     for {
-      userInfo <- event.userInfoAction(ws, dataService)
+      userInfo <- event.userInfoAction(ws, dataService, cacheService)
       result <- {
         val oauth2ApplicationsNeedingRefresh =
           requiredOAuth2ApiConfigs.flatMap(_.maybeApplication).
@@ -495,7 +498,7 @@ class AWSLambdaServiceImpl @Inject() (
               withRole(configuration.get[String]("aws.role")).
               withRuntime(com.amazonaws.services.lambda.model.Runtime.Nodejs610).
               withHandler("index.handler").
-              withTimeout(INVOCATION_TIMEOUT_SECONDS)
+              withTimeout(invocationTimeoutSeconds)
           )
           _ <- JavaFutureConverter.javaToScala(client.createFunctionAsync(createFunctionRequest))
         } yield {}

@@ -7,7 +7,7 @@ import models.behaviors.events.Event
 import models.team.Team
 import play.api.libs.ws.WSClient
 import play.api.libs.json._
-import services.DataService
+import services.{CacheService, DataService}
 import slick.dbio.DBIO
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -29,8 +29,8 @@ case class MessageInfo(medium: String, channel: Option[String], userId: String, 
 
 object MessageInfo {
 
-  def buildFor(event: Event, ws: WSClient, dataService: DataService)(implicit actorSystem: ActorSystem): Future[MessageInfo] = {
-    event.detailsFor(ws).map { details =>
+  def buildFor(event: Event, ws: WSClient, dataService: DataService, cacheService: CacheService)(implicit actorSystem: ActorSystem): Future[MessageInfo] = {
+    event.detailsFor(ws, cacheService).map { details =>
       MessageInfo(event.name, event.maybeChannel, event.userIdForContext, details)
     }
   }
@@ -59,7 +59,7 @@ case class UserInfo(
 
 object UserInfo {
 
-  def buildForAction(user: User, event: Event, ws: WSClient, dataService: DataService)(implicit actorSystem: ActorSystem): DBIO[UserInfo] = {
+  def buildForAction(user: User, event: Event, ws: WSClient, dataService: DataService, cacheService: CacheService)(implicit actorSystem: ActorSystem): DBIO[UserInfo] = {
     for {
       linkedOAuth2Tokens <- dataService.linkedOAuth2Tokens.allForUserAction(user, ws)
       linkedSimpleTokens <- dataService.linkedSimpleTokens.allForUserAction(user)
@@ -70,16 +70,16 @@ object UserInfo {
           LinkedInfo(ea.api.name, ea.accessToken)
         }
       }
-      messageInfo <- DBIO.from(event.messageInfo(ws, dataService))
+      messageInfo <- DBIO.from(event.messageInfo(ws, dataService, cacheService))
     } yield {
       UserInfo(user, links, Some(messageInfo))
     }
   }
 
-  def buildForAction(event: Event, teamId: String, ws: WSClient, dataService: DataService)(implicit actorSystem: ActorSystem): DBIO[UserInfo] = {
+  def buildForAction(event: Event, teamId: String, ws: WSClient, dataService: DataService, cacheService: CacheService)(implicit actorSystem: ActorSystem): DBIO[UserInfo] = {
     for {
       user <- event.ensureUserAction(dataService)
-      info <- buildForAction(user, event, ws, dataService)
+      info <- buildForAction(user, event, ws, dataService, cacheService)
     } yield info
   }
 

@@ -352,7 +352,7 @@ class BehaviorVersionServiceImpl @Inject() (
     for {
       missingTeamEnvVars <- dataService.teamEnvironmentVariables.missingInAction(behaviorVersion, dataService)
       requiredOAuth2ApiConfigs <- dataService.requiredOAuth2ApiConfigs.allForAction(behaviorVersion.groupVersion)
-      userInfo <- event.userInfoAction(ws, dataService)
+      userInfo <- event.userInfoAction(ws, dataService, cacheService)
       notReadyOAuth2Applications <- DBIO.successful(requiredOAuth2ApiConfigs.filterNot(_.isReady))
       missingOAuth2Applications <- DBIO.successful(requiredOAuth2ApiConfigs.flatMap(_.maybeApplication).filter { app =>
         !userInfo.links.exists(_.externalSystem == app.name)

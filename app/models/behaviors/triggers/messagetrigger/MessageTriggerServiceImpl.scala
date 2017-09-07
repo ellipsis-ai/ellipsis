@@ -109,15 +109,4 @@ class MessageTriggerServiceImpl @Inject() (
     }
   }
 
-  def allMatching(pattern: String, team: Team): Future[Seq[MessageTrigger]] = {
-    for {
-      triggers <- allActiveFor(team)
-    } yield {
-      val regex = ("(?i)" ++ pattern).r
-      (triggers).filter { ea =>
-        regex.findFirstMatchIn(ea.pattern).isDefined
-      }
-    }
-  }
-
 }

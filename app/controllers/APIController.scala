@@ -18,7 +18,7 @@ import play.api.libs.json.Json
 import play.api.libs.ws.WSClient
 import play.api.mvc.{AnyContent, Request, Result}
 import play.api.{Configuration, Logger}
-import services.{AWSLambdaService, DataService, SlackEventService}
+import services.{AWSLambdaService, CacheService, DataService, SlackEventService}
 import utils.SlackTimestamp
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -27,6 +27,7 @@ import scala.concurrent.Future
 class APIController @Inject() (
                                 val configuration: Configuration,
                                 val dataService: DataService,
+                                val cacheService: CacheService,
                                 val lambdaService: AWSLambdaService,
                                 val ws: WSClient,
                                 val slackService: SlackEventService,
@@ -59,7 +60,7 @@ class APIController @Inject() (
 
     def maybeSlackChannelIdFor(channel: String): Future[Option[String]] = {
       maybeBotProfile.map { botProfile =>
-        dataService.slackBotProfiles.channelsFor(botProfile).maybeIdFor(channel)
+        dataService.slackBotProfiles.channelsFor(botProfile, cacheService).maybeIdFor(channel)
       }.getOrElse(Future.successful(None))
     }
 
