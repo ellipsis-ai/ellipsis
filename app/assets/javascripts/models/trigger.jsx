@@ -8,8 +8,9 @@ define(function() {
         text: ""
       }, props);
       Object.defineProperties(this, {
+        /* Case sensitivity disabled in the UI, so force it to be false */
         caseSensitive: {
-          value: initialProps.caseSensitive,
+          value: false,
           enumerable: true
         },
         isRegex: {
@@ -62,10 +63,6 @@ define(function() {
 
     hasRegexCapturingParens() {
       return this.isRegex && /\(.+?\)/.test(this.getText());
-    }
-
-    hasCaseInsensitiveRegexFlagWhileCaseSensitive() {
-      return this.isRegex && this.caseSensitive && /^\(\?i\)/.test(this.getText());
     }
 
     getTextWithNewInputName(oldName, newName) {
