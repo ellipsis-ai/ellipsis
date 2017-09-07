@@ -34,7 +34,7 @@ import slack.models.Attachment
 import support.ControllerTestContext
 import utils.{SlackChannels, SlackTimestamp}
 
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 class APIControllerSpec extends PlaySpec with MockitoSugar {
 
@@ -54,7 +54,7 @@ class APIControllerSpec extends PlaySpec with MockitoSugar {
                      cacheService: CacheService,
                      slackEventService: SlackEventService,
                      botResultService: BotResultService
-                   ) = {
+                   )(implicit ec: ExecutionContext) = {
     val token = IDs.next
     when(dataService.apiTokens.find(token)).thenReturn(Future.successful(None))
     val behaviorId = maybeTokenBehaviorId.getOrElse(IDs.next)

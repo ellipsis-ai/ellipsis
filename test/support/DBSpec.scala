@@ -29,7 +29,7 @@ import services._
 import slick.dbio.DBIO
 
 import scala.concurrent.duration._
-import scala.concurrent.{Await, Future}
+import scala.concurrent.{Await, ExecutionContext, Future}
 
 trait DBSpec extends PlaySpec with OneAppPerSuite with MockitoSugar {
 
@@ -53,6 +53,7 @@ trait DBSpec extends PlaySpec with OneAppPerSuite with MockitoSugar {
   val slackEventService = app.injector.instanceOf(classOf[SlackEventService])
   val ws = app.injector.instanceOf(classOf[WSClient])
   val botResultService = app.injector.instanceOf(classOf[BotResultService])
+  implicit val ec: ExecutionContext = app.injector.instanceOf(classOf[ExecutionContext])
 
   def newSavedTeam: Team = runNow(dataService.teams.create(IDs.next))
 

@@ -15,6 +15,8 @@ import play.api.libs.ws.WSClient
 import play.api.{Application, Configuration}
 import services._
 
+import scala.concurrent.ExecutionContext
+
 trait TestContext extends MockitoSugar{
 
   def newUserFor(teamId: String): User = User(IDs.next, teamId, None)
@@ -47,5 +49,6 @@ trait TestContext extends MockitoSugar{
   val ws = app.injector.instanceOf(classOf[WSClient])
   val configuration = app.injector.instanceOf(classOf[Configuration])
   lazy val services = app.injector.instanceOf(classOf[DefaultServices])
+  lazy implicit val ec = app.injector.instanceOf(classOf[ExecutionContext])
 
 }
