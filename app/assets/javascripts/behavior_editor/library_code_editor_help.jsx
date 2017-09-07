@@ -12,18 +12,9 @@ define(function(require) {
       helpIsActive: React.PropTypes.bool.isRequired
     },
 
-    hasCalledRequire: function() {
-      var code = this.props.functionBody;
-      return /\brequire\(\s*\S.+?\)/.test(code);
-    },
-
     hasReturned: function() {
       var code = this.props.functionBody;
-      return /return/.test(code);
-    },
-
-    hasCode: function() {
-      return /\S/.test(this.props.functionBody);
+      return /return\s+\S+/.test(code);
     },
 
     render: function() {

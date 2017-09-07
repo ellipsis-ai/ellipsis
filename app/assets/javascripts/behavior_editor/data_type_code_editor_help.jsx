@@ -12,8 +12,7 @@ define(function(require) {
 
     hasCalledOnSuccess: function() {
       var code = this.props.functionBody;
-      return /\bonSuccess\([\s\S]*?\)/.test(code) ||
-        /\bellipsis\.success\([\s\S]*?\)/.test(code);
+      return /\bellipsis\.success\([\s\S]*?\)/.test(code);
     },
 
     codeUsesSearchQuery: function() {
