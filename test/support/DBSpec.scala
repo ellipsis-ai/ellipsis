@@ -2,7 +2,7 @@ package support
 
 import akka.actor.ActorSystem
 import json._
-import mocks.MockAWSLambdaService
+import mocks.{MockAWSLambdaService, MockCacheService}
 import models.IDs
 import models.accounts.oauth2api.{AuthorizationCode, OAuth2Api}
 import models.accounts.oauth2application.OAuth2Application
@@ -44,6 +44,7 @@ trait DBSpec extends PlaySpec with OneAppPerSuite with MockitoSugar {
       overrides(bind[AWSLambdaService].to[MockAWSLambdaService]).
       overrides(bind[GithubService].toInstance(mock[GithubService])).
       overrides(bind[SlackEventService].toInstance(mock[SlackEventService])).
+      overrides(bind[CacheService].to[MockCacheService]).
       disable[ActorModule].
       build()
 

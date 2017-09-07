@@ -1,7 +1,7 @@
 package support
 
 import akka.actor.ActorSystem
-import mocks.{MockAWSLambdaService, MockAWSLogsService, MockDataService}
+import mocks.{MockAWSLambdaService, MockAWSLogsService, MockCacheService, MockDataService}
 import models.IDs
 import models.accounts.user.User
 import models.behaviors.BotResultService
@@ -31,6 +31,7 @@ trait TestContext extends MockitoSugar{
       overrides(bind[GraphQLService].toInstance(mock[GraphQLService])).
       overrides(bind[SlackEventService].toInstance(mock[SlackEventService])).
       overrides(bind[BotResultService].toInstance(mock[BotResultService])).
+      overrides(bind[CacheService].to[MockCacheService]).
       disable[ActorModule]
   }
   lazy val teamId: String = IDs.next
