@@ -18,9 +18,10 @@ import net.ceedubs.ficus.Ficus._
 import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 import net.codingwell.scalaguice.ScalaModule
 import play.api.Configuration
-import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.ws.WSClient
 import utils.CustomSecuredErrorHandler
+
+import scala.concurrent.ExecutionContext
 
 trait AbstractSilhouetteModule extends ScalaModule {
 
@@ -29,7 +30,6 @@ trait AbstractSilhouetteModule extends ScalaModule {
     //    bind[UnsecuredErrorHandler].to[CustomUnsecuredErrorHandler]
     bind[SecuredErrorHandler].to[CustomSecuredErrorHandler]
     bind[CacheLayer].to[PlayCacheLayer]
-    bind[IDGenerator].toInstance(new SecureRandomIDGenerator())
     bind[FingerprintGenerator].toInstance(new DefaultFingerprintGenerator(false))
     bind[EventBus].toInstance(EventBus())
     bind[Clock].toInstance(Clock())
@@ -38,7 +38,10 @@ trait AbstractSilhouetteModule extends ScalaModule {
   }
 
   @Provides
-  def provideHTTPLayer(client: WSClient): HTTPLayer = new PlayHTTPLayer(client)
+  def provideSecureRandomIDGenerator(implicit ec: ExecutionContext): IDGenerator = new SecureRandomIDGenerator()
+
+  @Provides
+  def provideHTTPLayer(client: WSClient)(implicit ec: ExecutionContext): HTTPLayer = new PlayHTTPLayer(client)
 
   @Provides
   def provideSocialProviderRegistry(
@@ -51,7 +54,7 @@ trait AbstractSilhouetteModule extends ScalaModule {
   }
 
   @Provides
-  def provideAuthInfoRepository(oauth2InfoDAO: DelegableAuthInfoDAO[OAuth2Info]): AuthInfoRepository = {
+  def provideAuthInfoRepository(oauth2InfoDAO: DelegableAuthInfoDAO[OAuth2Info])(implicit ec: ExecutionContext): AuthInfoRepository = {
 
     new DelegableAuthInfoRepository(oauth2InfoDAO)
   }
