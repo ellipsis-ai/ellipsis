@@ -27,7 +27,7 @@ define(function(require) {
     getSkillTitle: function() {
       return (
         <div className="mbxs">
-          <h4 className="mbn">{this.props.groupName}</h4>
+          <h4 className="mvn">{this.props.groupName}</h4>
           <div className="type-s type-weak display-ellipsis display-limit-width"
             title={this.props.groupDescription}>
             {this.props.groupDescription}

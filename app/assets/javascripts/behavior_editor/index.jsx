@@ -2214,7 +2214,7 @@ const BehaviorEditor = React.createClass({
       return (
         <div>
           <div className="container container-wide ptl bg-white">
-            <h5 className="type-blue-faded mbn">{selected.getEditorTitle()}</h5>
+            <h5 className="type-blue-faded mvn">{selected.getEditorTitle()}</h5>
           </div>
 
           {this.renderNameAndManagementActions()}

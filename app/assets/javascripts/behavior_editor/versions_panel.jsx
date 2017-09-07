@@ -127,7 +127,7 @@ return React.createClass({
         <div className="container">
           <div className="columns">
             <div className="column column-page-sidebar">
-              <h4 className="type-weak">Select a version to restore</h4>
+              <h4 className="mtn type-weak">Select a version to restore</h4>
             </div>
             <div className="column column-page-main">
               <div>
