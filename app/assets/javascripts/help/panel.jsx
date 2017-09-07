@@ -21,7 +21,7 @@ return React.createClass({
         </div>
         <div className="columns">
           <div className="column column-page-sidebar mtl mobile-prxl">
-            <h4 className="type-weak">
+            <h4 className="mtn type-weak">
               {this.props.heading}
             </h4>
           </div>

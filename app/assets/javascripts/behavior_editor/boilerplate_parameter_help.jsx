@@ -13,17 +13,21 @@ return React.createClass({
   },
   getInitialState: function() {
     return {
-      expandedItem: null
+      expandedItems: []
     };
   },
-  getExpandedItem: function() {
-    return this.state.expandedItem;
+  getExpandedItems: function() {
+    return this.state.expandedItems;
   },
-  expandedItemMatches: function(itemName) {
-    return this.getExpandedItem() === itemName;
+  hasExpandedItem: function(itemName) {
+    return this.getExpandedItems().includes(itemName);
   },
   toggleExpandedItem: function(itemName) {
-    this.setState({ expandedItem: this.getExpandedItem() === itemName ? null : itemName });
+    const hasExpanded = this.hasExpandedItem(itemName);
+    const newItems = hasExpanded ?
+      this.getExpandedItems().filter((ea) => ea !== itemName) :
+      this.getExpandedItems().concat(itemName);
+    this.setState({ expandedItems: newItems });
   },
   toggleSuccessExamples: function() {
     this.toggleExpandedItem('success');
@@ -37,11 +41,17 @@ return React.createClass({
   toggleApiAccessTokens: function() {
     this.toggleExpandedItem('apiAccessTokens');
   },
+  toggleUserInfo: function() {
+    this.toggleExpandedItem('userInfo');
+  },
+  toggleEllipsisObject: function() {
+    this.toggleExpandedItem('ellipsisObject');
+  },
   renderExpandLabelFor: function(labelText, itemName) {
     return (
       <span>
         <span className="display-inline-block" style={{ width: '0.8em' }}>
-          {this.expandedItemMatches(itemName) ? "▾" : "▸"}
+          {this.hasExpandedItem(itemName) ? "▾" : "▸"}
         </span>
         <span> {labelText}</span>
       </span>
@@ -86,117 +96,197 @@ return React.createClass({
         <p>
           <span>Write a JavaScript function compatible with <a href={Constants.NODE_JS_DOCS_URL} target="_blank">Node.js {Constants.NODE_JS_VERSION}</a>. </span>
           <span>The function will automatically receive the <code className="type-bold">ellipsis</code> object, which contains </span>
-          <span>important methods and properties. Ensure your function calls at least one of the <code className="type-bold">success</code>, </span>
-          <span><code className="type-bold">error</code> or <code className="type-bold">noResponse</code> methods below to finish.</span>
+          <span>important methods and properties, along with any inputs you've defined in the action.</span>
         </p>
 
-        <div className="columns columns-elastic">
-          <div className="column-group">
-            <div className="column-row">
-              <div className="column column-shrink pbl prxl"><pre>{"ellipsis \u007B"}</pre></div>
-              <div className="column column-expand pbl"></div>
-            </div>
+        <p>
+          <span>Ensure your function calls the <code className="type-bold">success</code> or </span>
+          <span><code className="type-bold">noResponse</code> response method to finish, for example:</span>
+        </p>
 
-            <div className="column-row">
-              <div className="column column-shrink pbl prxl"><pre>  success(successResult)</pre></div>
-              <div className="column column-expand pbl">
-                <div>
-                  <span>Ends the function, passing <span className="type-monospace type-bold">successResult</span> to </span>
-                  <span>the response template and then displaying it to the user. </span>
-                  <span><span className="type-monospace type-bold">successResult</span> can be a string, array, </span>
-                  <span>or object. </span>
-                  <button type="button" className="button-raw" onClick={this.toggleSuccessExamples}>
-                    {this.renderExpandLabelFor('Examples', 'success')}
+        <div className="box-code-example mvl">ellipsis.success("It worked!");</div>
+
+        <div className="box-code-example mvl">ellipsis.noResponse();</div>
+
+        <p>
+          <span>To indicate an error, use the <code className="type-bold">ellipsis.Error</code> class, for example:</span>
+        </p>
+
+        <div className="box-code-example mvl">{'throw new ellipsis.Error("error 404");'}</div>
+
+        <div className="box-code-example mvl">{'throw new ellipsis.Error("error 404", { userMessage: "Something went wrong!" });'}</div>
+
+        <p>
+          <span>You can <code>require()</code> any <a href="https://www.npmjs.com/">NPM package</a> or any library you add to your skill.</span>
+        </p>
+
+        <pre className="box-code-example mvl">{'// Use the request npm module\nconst request = require("request");'}</pre>
+
+        <h5>The ellipsis object</h5>
+        <p>
+          <span>The function will receive a parameter called <code>ellipsis</code>, an object with useful run-time properties. </span>
+          <button type="button" className="button-raw" onClick={this.toggleEllipsisObject}>
+            {this.renderExpandLabelFor("Show properties", "ellipsisObject")}
+          </button>
+        </p>
+
+        <Collapsible revealWhen={this.hasExpandedItem("ellipsisObject")}>
+
+          <div className="columns columns-elastic">
+            <div className="column-group">
+              <div className="column-row">
+                <div className="column column-shrink pbl prxl"><pre>{"ellipsis \u007B"}</pre></div>
+                <div className="column column-expand pbl" />
+              </div>
+
+              <div className="column-row">
+                <div className="column column-shrink pbl prxl"><pre>  success(successResult)</pre></div>
+                <div className="column column-expand pbl">
+                  <div>
+                    <span>Ends the function, passing <span className="type-monospace type-bold">successResult</span> to </span>
+                    <span>the response template which is then displayed to the user. </span>
+                    <span><span className="type-monospace type-bold">successResult</span> can be a string, array, </span>
+                    <span>or object. </span>
+                    <button type="button" className="button-raw" onClick={this.toggleSuccessExamples}>
+                      {this.renderExpandLabelFor('Examples', 'success')}
+                    </button>
+                  </div>
+                  <Collapsible revealWhen={this.hasExpandedItem('success')}>
+                    <div className="box-code-example mvs">
+                      {'ellipsis.success("The answer is: " + answer);'}
+                    </div>
+                    <div className="box-code-example mvs">
+                      {"ellipsis.success(\u007B firstName: 'Abraham', lastName: 'Lincoln' \u007D);"}
+                    </div>
+                    <div className="box-code-example mvs">
+                      {"ellipsis.success(['Mercury', 'Venus', 'Earth', 'Mars', 'Jupiter', 'Saturn', 'Neptune', 'Uranus']);"}
+                    </div>
+                  </Collapsible>
+                </div>
+              </div>
+
+              <div className="column-row">
+                <div className="column column-shrink pbl prxl"><pre>  Error</pre></div>
+                <div className="column column-expand pbl">
+                  <div>
+                    <span>An error class constructor you can use with the <code>throw</code> statement.</span>
+                    <span>This will interrupt your function and show an error message to the user. </span>
+                    <button type="button" className="button-raw" onClick={this.toggleErrorExamples}>
+                      {this.renderExpandLabelFor('Example', 'error')}
+                    </button>
+                  </div>
+                  <Collapsible revealWhen={this.hasExpandedItem('error')}>
+                    <div className="box-code-example mvs">
+                      {'throw new ellipsis.Error("API error");'}
+                    </div>
+                    <div className="box-code-example mvs">
+                      {'throw new ellipsis.Error("API error", { userMessage: "Something went wrong." });'}
+                    </div>
+                  </Collapsible>
+                </div>
+              </div>
+
+              <div className="column-row">
+                <div className="column column-shrink pbl prxl"><pre>  noResponse()</pre></div>
+                <div className="column column-expand pbl">
+                  <span>Ends the function without sending a response.</span>
+                </div>
+              </div>
+
+              <div className="column-row">
+                <div className="column column-shrink pbl prxl"><pre>{`  env {}`}</pre></div>
+                <div className="column column-expand pbl">
+                  <div>
+                    <span>Contains any configured <b>environment variables</b> as properties, accessible by name. </span>
+                    <button type="button" className="button-raw" onClick={this.toggleEnvVariables}>
+                      {this.renderExpandLabelFor('Show list', 'envVariables')}
+                    </button>
+                  </div>
+                  <Collapsible revealWhen={this.hasExpandedItem('envVariables')}>
+                    <div className="phs pvxs bg-blue-lightest type-weak border border-blue position-relative mbs">
+                      {this.renderEnvVarList()}
+                    </div>
+                    <button type="button" className="button-s" onClick={this.props.onAddNewEnvVariable}>
+                      Add new environment variable
+                    </button>
+                  </Collapsible>
+                </div>
+              </div>
+
+              <div className="column-row">
+                <div className="column column-shrink pbl prxl"><pre>{'  accessTokens {}'}</pre></div>
+                <div className="column column-expand pbl">
+                  <div>
+                    <span>Contains any <b>third-party API access tokens</b> available to the skill. </span>
+                    <button type="button" className="button-raw" onClick={this.toggleApiAccessTokens}>
+                      {this.renderExpandLabelFor('Show list', 'apiAccessTokens')}
+                    </button>
+                  </div>
+                  <Collapsible revealWhen={this.hasExpandedItem('apiAccessTokens')}>
+                    {this.renderApiAccessTokenList()}
+                  </Collapsible>
+                </div>
+              </div>
+
+              <div className="column-row">
+                <div className="column column-shrink pbl prxl">
+                  <pre>{
+  `  teamInfo {
+      timeZone
+    }`
+                }</pre>
+                </div>
+                <div className="column column-expand pbl">
+                  <div>
+                    <span>The teamInfo object contains the time zone ID set for the team, e.g. <code>"America/New_York"</code></span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="column-row">
+                <div className="column column-shrink pbl prxl">
+                  <button type="button" className="button-block" onClick={this.toggleUserInfo}>
+                    <pre className="type-black">{'  userInfo \u007B'}</pre>
+                      <div className="link plxl">
+                        {this.renderExpandLabelFor('Show list', 'userInfo')}
+                      </div>
+                      <Collapsible revealWhen={this.hasExpandedItem('userInfo')}>
+                        <pre className="type-black">{
+  `    ellipsisUserId
+      messageInfo {
+        medium
+        channel
+        userId
+        details {
+          channelMembers[]
+          name
+          profile {
+            firstName
+            lastName
+            realName
+          }
+        }
+      }`
+                        }</pre>
+                      </Collapsible>
+                    <pre className="type-black">{`  \u007D`}</pre>
                   </button>
                 </div>
-                <Collapsible revealWhen={this.expandedItemMatches('success')}>
-                  <div className="box-code-example mvs">
-                    {'ellipsis.success("The answer is: " + answer);'}
+                <div className="column column-expand pbl">
+                  <div>
+                    <span>The userInfo object contains optional data specific to who runs an action, and where it was run.</span>
                   </div>
-                  <div className="box-code-example mvs">
-                    {"ellipsis.success(\u007B firstName: 'Abraham', lastName: 'Lincoln' \u007D);"}
-                  </div>
-                  <div className="box-code-example mvs">
-                    {"ellipsis.success(['Mercury', 'Venus', 'Earth', 'Mars', 'Jupiter', 'Saturn', 'Neptune', 'Uranus']);"}
-                  </div>
-                </Collapsible>
-              </div>
-            </div>
-
-            <div className="column-row">
-              <div className="column column-shrink pbl prxl"><pre>  error(message)</pre></div>
-              <div className="column column-expand pbl">
-                <div>
-                  <span>Ends the function by showing an error message to the user. </span>
-                  <span><span className="type-monospace type-bold">message</span> should be a string. </span>
-                  <button type="button" className="button-raw" onClick={this.toggleErrorExamples}>
-                    {this.renderExpandLabelFor('Example', 'error')}
-                  </button>
                 </div>
-                <Collapsible revealWhen={this.expandedItemMatches('error')}>
-                  <div className="box-code-example mvs">
-                    {'ellipsis.error("There was a problem with your request.");'}
-                  </div>
-                </Collapsible>
               </div>
-            </div>
 
-            <div className="column-row">
-              <div className="column column-shrink pbl prxl"><pre>  noResponse()</pre></div>
-              <div className="column column-expand pbl">
-                <span>Ends the function without sending a response.</span>
+              <div className="column-row">
+                <div className="column column-shrink pbl prxl"><pre>{"\u007D"}</pre></div>
+                <div className="column column-expand pbl"/>
               </div>
-            </div>
-
-            <div className="column-row">
-              <div className="column column-shrink pbl prxl"><pre>  env</pre></div>
-              <div className="column column-expand pbl">
-                <div>
-                  <span>Contains any configured <b>environment variables</b> as properties, accessible by name. </span>
-                  <button type="button" className="button-raw" onClick={this.toggleEnvVariables}>
-                    {this.renderExpandLabelFor('Show list', 'envVariables')}
-                  </button>
-                </div>
-                <Collapsible revealWhen={this.expandedItemMatches('envVariables')}>
-                  <div className="phs pvxs bg-blue-lightest type-weak border border-blue position-relative mbs">
-                    {this.renderEnvVarList()}
-                  </div>
-                  <button type="button" className="button-s" onClick={this.props.onAddNewEnvVariable}>
-                    Add new environment variable
-                  </button>
-                </Collapsible>
-              </div>
-            </div>
-
-            <div className="column-row">
-              <div className="column column-shrink pbl prxl"><pre>  accessTokens</pre></div>
-              <div className="column column-expand pbl">
-                <div>
-                  <span>Contains any <b>third-party API access tokens</b> available to the skill. </span>
-                  <button type="button" className="button-raw" onClick={this.toggleApiAccessTokens}>
-                    {this.renderExpandLabelFor('Show list', 'apiAccessTokens')}
-                  </button>
-                </div>
-                <Collapsible revealWhen={this.expandedItemMatches('apiAccessTokens')}>
-                  {this.renderApiAccessTokenList()}
-                </Collapsible>
-              </div>
-            </div>
-
-            <div className="column-row">
-              <div className="column column-shrink pbl prxl"><pre>  AWS</pre></div>
-              <div className="column column-expand pbl">
-                <span>Contains properties and methods of the <b>Amazon Web Services</b> (AWS) SDK, if in use. </span>
-                <a href="http://docs.aws.amazon.com/AWSJavaScriptSDK/guide/node-intro.html" target="_blank">Help</a>
-              </div>
-            </div>
-
-            <div className="column-row">
-              <div className="column column-shrink pbl prxl"><pre>{"\u007D"}</pre></div>
-              <div className="column column-expand pbl"></div>
             </div>
           </div>
-        </div>
+
+        </Collapsible>
 
       </HelpPanel>
     );

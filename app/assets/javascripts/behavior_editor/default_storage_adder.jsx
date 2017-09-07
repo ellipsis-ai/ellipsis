@@ -150,7 +150,7 @@ define(function(require) {
           <div className="container">
             <div className="columns">
               <div className="column column-page-sidebar">
-                <h4 className="type-weak">Add data to {this.props.behaviorVersion.getName() || "this data type"}</h4>
+                <h4 className="mtn type-weak">Add data to {this.props.behaviorVersion.getName() || "this data type"}</h4>
               </div>
               <div className="column column-page-main">
                 <Collapsible revealWhen={this.hasSavedItem()}>
