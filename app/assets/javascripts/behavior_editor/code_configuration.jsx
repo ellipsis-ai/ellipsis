@@ -19,6 +19,7 @@ define(function(require) {
       sectionNumber: React.PropTypes.string.isRequired,
       sectionHeading: React.PropTypes.string.isRequired,
       codeEditorHelp: React.PropTypes.node.isRequired,
+      codeHelpPanelName: React.PropTypes.string.isRequired,
 
       activePanelName: React.PropTypes.string.isRequired,
       activeDropdownName: React.PropTypes.string.isRequired,
@@ -82,8 +83,8 @@ define(function(require) {
       this.props.onToggleActivePanel('helpForAWS');
     },
 
-    toggleBoilerplateHelp: function() {
-      this.props.onToggleActivePanel('helpForBoilerplateParameters');
+    toggleBehaviorCodeHelp: function() {
+      this.props.onToggleActivePanel(this.props.codeHelpPanelName);
     },
 
     toggleEditorSettingsMenu: function() {
@@ -180,7 +181,7 @@ define(function(require) {
                 <SectionHeading number={this.props.sectionNumber}>
                   <span className="mrm">{this.props.sectionHeading}</span>
                   <span className="display-inline-block">
-                    <HelpButton onClick={this.toggleBoilerplateHelp} toggled={this.props.activePanelName === 'helpForBoilerplateParameters'} />
+                    <HelpButton onClick={this.toggleBehaviorCodeHelp} toggled={this.props.activePanelName === 'helpForBehaviorCode'} />
                   </span>
                 </SectionHeading>
               </div>

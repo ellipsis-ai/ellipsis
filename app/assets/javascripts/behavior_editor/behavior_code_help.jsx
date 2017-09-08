@@ -9,7 +9,8 @@ return React.createClass({
     envVariableNames: React.PropTypes.arrayOf(React.PropTypes.string),
     apiAccessTokens: React.PropTypes.arrayOf(React.PropTypes.object),
     onAddNewEnvVariable: React.PropTypes.func.isRequired,
-    onCollapseClick: React.PropTypes.func.isRequired
+    onCollapseClick: React.PropTypes.func.isRequired,
+    isDataType: React.PropTypes.bool
   },
   getInitialState: function() {
     return {
@@ -46,6 +47,9 @@ return React.createClass({
   },
   toggleEllipsisObject: function() {
     this.toggleExpandedItem('ellipsisObject');
+  },
+  toggleDataTypeSuccessExamples: function() {
+    this.toggleExpandedItem('dataTypeSuccess');
   },
   renderExpandLabelFor: function(labelText, itemName) {
     return (
@@ -87,16 +91,13 @@ return React.createClass({
       );
     }
   },
-  render: function() {
+  renderForAction: function() {
     return (
-      <HelpPanel
-        heading="Writing a function"
-        onCollapseClick={this.props.onCollapseClick}
-      >
+      <div>
         <p>
-          <span>Write a JavaScript function compatible with <a href={Constants.NODE_JS_DOCS_URL} target="_blank">Node.js {Constants.NODE_JS_VERSION}</a>. </span>
-          <span>The function will automatically receive the <code className="type-bold">ellipsis</code> object, which contains </span>
-          <span>important methods and properties, along with any inputs you've defined in the action.</span>
+          <span>The function will automatically receive the <code className="type-bold">ellipsis</code> </span>
+          <span>object, which contains important methods and properties, along with any inputs </span>
+          <span>you’ve defined in the action.</span>
         </p>
 
         <p>
@@ -107,6 +108,145 @@ return React.createClass({
         <div className="box-code-example mvl">ellipsis.success("It worked!");</div>
 
         <div className="box-code-example mvl">ellipsis.noResponse();</div>
+      </div>
+    );
+  },
+  renderCallbacksForActions: function() {
+    return (
+      <div className="column-group">
+        <div className="column-row">
+          <div className="column column-shrink pbl prxl"><pre>  success(successResult)</pre></div>
+          <div className="column column-expand pbl">
+            <div>
+              <span>Ends the function, passing <span className="type-monospace type-bold">successResult</span> to </span>
+              <span>the response template which is then displayed to the user. </span>
+              <span><span className="type-monospace type-bold">successResult</span> can be a string, array, </span>
+              <span>or object. </span>
+              <button type="button" className="button-raw" onClick={this.toggleSuccessExamples}>
+                {this.renderExpandLabelFor('Examples', 'success')}
+              </button>
+            </div>
+            <Collapsible revealWhen={this.hasExpandedItem('success')}>
+              <div className="box-code-example mvs">
+                {'ellipsis.success("The answer is: " + answer);'}
+              </div>
+              <div className="box-code-example mvs">
+                {"ellipsis.success(\u007B firstName: 'Abraham', lastName: 'Lincoln' \u007D);"}
+              </div>
+              <div className="box-code-example mvs">
+                {"ellipsis.success(['Mercury', 'Venus', 'Earth', 'Mars', 'Jupiter', 'Saturn', 'Neptune', 'Uranus']);"}
+              </div>
+            </Collapsible>
+          </div>
+        </div>
+
+        <div className="column-row">
+          <div className="column column-shrink pbl prxl"><pre>  noResponse()</pre></div>
+          <div className="column column-expand pbl">
+            <span>Ends the function without sending a response.</span>
+          </div>
+        </div>
+      </div>
+    );
+  },
+
+  renderForDataType: function() {
+    return (
+      <div>
+        <ul>
+          <li>
+            <span>The function will automatically receive the <code className="type-bold">ellipsis</code> </span>
+            <span>object, which contains important methods and properties.</span>
+          </li>
+          <li>
+            <span>If your data type requests input, your function will also receive a </span>
+            <span><code className="type-bold">searchQuery</code> parameter.</span>
+          </li>
+        </ul>
+
+        <p>
+          <span>Your function should call <code className="type-bold">ellipsis.success</code> with an array </span>
+          <span>of items to be shown to the user as a list of choices.</span>
+        </p>
+
+        <p>
+          <span>Each item must have <code className="type-bold">id</code> and </span>
+          <span><code className="type-bold">label</code> properties. <code>id</code> should be </span>
+          <span>unique and the <code>label</code> will be shown to the user.</span>
+        </p>
+
+        <p>
+          <button type="button" className="button-raw" onClick={this.toggleDataTypeSuccessExamples}>
+            {this.renderExpandLabelFor("Show examples", "dataTypeSuccess")}
+          </button>
+        </p>
+
+        <Collapsible revealWhen={this.hasExpandedItem("dataTypeSuccess")}>
+          <p>
+            The user will be asked to choose from 3 items:
+          </p>
+
+          <pre className="box-code-example mvl">{
+  `ellipsis.success([
+    { id: "A", label: "The letter A" },
+    { id: "B", label: "The letter B" },
+    { id: "C", label: "The letter C" }
+  ]);`
+          }</pre>
+
+          <p>
+            If you ask for user input first, you can return a single item if there's only one possible result:
+          </p>
+
+          <pre className="box-code-example mvl">{
+  `ellipsis.success([
+    { id: "A", label: "The letter A" }
+  ]);`
+          }</pre>
+
+          <p>
+            <span>If you ask for user input, and it was invalid or there are no matches, return an empty array. </span>
+            <span>The user will be asked to provide new input and then the function will run again.</span>
+          </p>
+
+          <pre className="box-code-example mvl">{
+  `ellipsis.success([]);`
+          }</pre>
+        </Collapsible>
+
+      </div>
+    );
+  },
+
+  renderCallbacksForDataTypes: function() {
+    return (
+      <div className="column-group">
+        <div className="column-row">
+          <div className="column column-shrink pbl prxl"><pre>  success(arrayOfItems)</pre></div>
+          <div className="column column-expand pbl">
+            <div>
+              <span>Ends the function with <span className="type-monospace type-bold">arrayOfItems</span> which </span>
+              <span>Ellipsis will present to the user as a list of choices. </span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    );
+  },
+
+  render: function() {
+    return (
+      <HelpPanel
+        heading={this.props.isDataType ? "Data type functions" : "Action functions"}
+        onCollapseClick={this.props.onCollapseClick}
+      >
+        <p>
+          <span>Write a JavaScript function compatible with </span>
+          <span><a href={Constants.NODE_JS_DOCS_URL} target="_blank">Node.js {Constants.NODE_JS_VERSION}</a>. </span>
+        </p>
+
+        {this.props.isDataType ? this.renderForDataType() : this.renderForAction()}
 
         <p>
           <span>To indicate an error, use the <code className="type-bold">ellipsis.Error</code> class, for example:</span>
@@ -138,33 +278,11 @@ return React.createClass({
                 <div className="column column-shrink pbl prxl"><pre>{"ellipsis \u007B"}</pre></div>
                 <div className="column column-expand pbl" />
               </div>
+            </div>
 
-              <div className="column-row">
-                <div className="column column-shrink pbl prxl"><pre>  success(successResult)</pre></div>
-                <div className="column column-expand pbl">
-                  <div>
-                    <span>Ends the function, passing <span className="type-monospace type-bold">successResult</span> to </span>
-                    <span>the response template which is then displayed to the user. </span>
-                    <span><span className="type-monospace type-bold">successResult</span> can be a string, array, </span>
-                    <span>or object. </span>
-                    <button type="button" className="button-raw" onClick={this.toggleSuccessExamples}>
-                      {this.renderExpandLabelFor('Examples', 'success')}
-                    </button>
-                  </div>
-                  <Collapsible revealWhen={this.hasExpandedItem('success')}>
-                    <div className="box-code-example mvs">
-                      {'ellipsis.success("The answer is: " + answer);'}
-                    </div>
-                    <div className="box-code-example mvs">
-                      {"ellipsis.success(\u007B firstName: 'Abraham', lastName: 'Lincoln' \u007D);"}
-                    </div>
-                    <div className="box-code-example mvs">
-                      {"ellipsis.success(['Mercury', 'Venus', 'Earth', 'Mars', 'Jupiter', 'Saturn', 'Neptune', 'Uranus']);"}
-                    </div>
-                  </Collapsible>
-                </div>
-              </div>
+            {this.props.isDataType ? this.renderCallbacksForDataTypes() : this.renderCallbacksForActions()}
 
+            <div className="column-group">
               <div className="column-row">
                 <div className="column column-shrink pbl prxl"><pre>  Error</pre></div>
                 <div className="column column-expand pbl">
@@ -183,13 +301,6 @@ return React.createClass({
                       {'throw new ellipsis.Error("API error", { userMessage: "Something went wrong." });'}
                     </div>
                   </Collapsible>
-                </div>
-              </div>
-
-              <div className="column-row">
-                <div className="column column-shrink pbl prxl"><pre>  noResponse()</pre></div>
-                <div className="column column-expand pbl">
-                  <span>Ends the function without sending a response.</span>
                 </div>
               </div>
 

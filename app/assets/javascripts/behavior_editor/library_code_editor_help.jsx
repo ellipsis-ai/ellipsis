@@ -7,9 +7,7 @@ define(function(require) {
     displayName: "LibraryCodeEditorHelp",
     propTypes: {
       functionBody: React.PropTypes.string.isRequired,
-      isFinished: React.PropTypes.bool.isRequired,
-      onToggleHelp: React.PropTypes.func.isRequired,
-      helpIsActive: React.PropTypes.bool.isRequired
+      isFinished: React.PropTypes.bool.isRequired
     },
 
     hasReturned: function() {
