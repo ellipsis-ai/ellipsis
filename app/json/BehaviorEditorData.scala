@@ -157,7 +157,6 @@ object BehaviorEditorData {
           Seq(),
           Seq(),
           Seq(),
-          Seq(),
           githubUrl = None,
           exportId = None,
           Some(OffsetDateTime.now)

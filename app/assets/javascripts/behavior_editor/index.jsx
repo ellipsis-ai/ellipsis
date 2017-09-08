@@ -26,6 +26,7 @@ var React = require('react'),
   Input = require('../models/input'),
   Formatter = require('../lib/formatter'),
   ID = require('../lib/id'),
+  NodeModuleVersion = require('../models/node_module_version'),
   NotificationData = require('../models/notification_data'),
   FormInput = require('../form/input'),
   LibraryCodeEditorHelp = require('./library_code_editor_help'),
@@ -726,7 +727,7 @@ const BehaviorEditor = React.createClass({
             group: BehaviorGroup.fromJson(json),
             onLoad: optionalCallback
           };
-          this.props.onSave(newProps, this.state);
+          this.onSave(newProps, this.state);
         } else {
           this.onSaveError();
         }
@@ -760,7 +761,7 @@ const BehaviorEditor = React.createClass({
               group: BehaviorGroup.fromJson(json),
               onLoad: optionalCallback
             };
-            this.props.onSave(newProps, this.state);
+            this.onSave(newProps, this.state);
           }
         } else {
           this.onSaveError();
@@ -1208,7 +1209,7 @@ const BehaviorEditor = React.createClass({
   },
 
   getNodeModuleVersions: function() {
-    return this.getBehaviorGroup().nodeModuleVersions;
+    return this.state.nodeModuleVersions || [];
   },
 
   hasInputs: function() {
@@ -1380,10 +1381,24 @@ const BehaviorEditor = React.createClass({
     });
   },
 
+  onSave: function(newProps, state) {
+    this.props.onSave(newProps, state);
+    this.loadNodeModuleVersions();
+  },
+
   resetNotificationsImmediately: function() {
     this.setState({
       notifications: this.buildNotifications()
     });
+  },
+
+  loadNodeModuleVersions: function() {
+    DataRequest.jsonGet(jsRoutes.controllers.BehaviorEditorController.nodeModuleVersionsFor(this.getBehaviorGroup().id).url)
+      .then(json => {
+        this.setState({
+          nodeModuleVersions: NodeModuleVersion.allFromJson(json)
+        });
+      });
   },
 
   resetNotifications: debounce(function() {
@@ -1396,6 +1411,7 @@ const BehaviorEditor = React.createClass({
     window.document.addEventListener('keydown', this.onDocumentKeyDown, false);
     window.addEventListener('resize', this.checkMobileLayout, false);
     window.addEventListener('scroll', debounce(this.updateBehaviorScrollPosition, 500), false);
+    this.loadNodeModuleVersions();
   },
 
   // componentDidUpdate: function() {
@@ -1429,7 +1445,8 @@ const BehaviorEditor = React.createClass({
       behaviorSwitcherVisible: this.isExistingGroup() && !this.windowIsMobile(),
       hasMobileLayout: this.windowIsMobile(),
       animationDisabled: false,
-      lastSavedDataStorageItem: null
+      lastSavedDataStorageItem: null,
+      nodeModuleVersions: []
     };
   },
 
