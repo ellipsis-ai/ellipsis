@@ -31,6 +31,7 @@ var React = require('react'),
   NotificationData = require('../models/notification_data'),
   FormInput = require('../form/input'),
   LibraryCodeEditorHelp = require('./library_code_editor_help'),
+  LibraryCodeHelp = require('./library_code_help'),
   LibraryVersion = require('../models/library_version'),
   ModalScrim = require('../shared_ui/modal_scrim'),
   Notifications = require('../notifications/notifications'),
@@ -967,8 +968,8 @@ const BehaviorEditor = React.createClass({
     });
   },
 
-  toggleBoilerplateHelp: function() {
-    this.toggleActivePanel('helpForBoilerplateParameters');
+  toggleBehaviorCodeHelp: function() {
+    this.toggleActivePanel('helpForBehaviorCode');
   },
 
   toggleCodeEditor: function() {
@@ -1498,6 +1499,7 @@ const BehaviorEditor = React.createClass({
         sectionNumber={props.sectionNumber}
         sectionHeading={props.sectionHeading}
         codeEditorHelp={props.codeEditorHelp}
+        codeHelpPanelName={props.codeHelpPanelName}
 
         activePanelName={this.props.activePanelName}
         activeDropdownName={this.getActiveDropdown()}
@@ -1596,7 +1598,7 @@ const BehaviorEditor = React.createClass({
             <TriggerHelp onCollapseClick={this.props.onClearActivePanel} />
           </Collapsible>
 
-          <Collapsible revealWhen={this.props.activePanelName === 'helpForBoilerplateParameters'} onChange={this.layoutDidUpdate}>
+          <Collapsible revealWhen={this.props.activePanelName === 'helpForBehaviorCode'} onChange={this.layoutDidUpdate}>
             <BehaviorCodeHelp
               envVariableNames={this.getEnvVariableNames()}
               apiAccessTokens={this.getApiApplications()}
@@ -1612,6 +1614,10 @@ const BehaviorEditor = React.createClass({
 
           <Collapsible revealWhen={this.props.activePanelName === 'helpForDataTypePrompt'} onChange={this.layoutDidUpdate}>
             <DataTypePromptHelp usesSearch={this.hasInputNamed('searchQuery')} onCollapseClick={this.props.onClearActivePanel} />
+          </Collapsible>
+
+          <Collapsible revealWhen={this.props.activePanelName === 'helpForLibraryCode'} onChange={this.layoutDidUpdate}>
+            <LibraryCodeHelp onCollapseClick={this.props.onClearActivePanel} libraryName={this.getEditableName()} />
           </Collapsible>
 
           <Collapsible revealWhen={this.props.activePanelName === 'helpForResponseTemplate'} onChange={this.layoutDidUpdate}>
@@ -2102,11 +2108,9 @@ const BehaviorEditor = React.createClass({
                       <CodeEditorHelp
                         isFinishedBehavior={this.isFinishedBehavior()}
                         functionBody={this.getFunctionBody()}
-                        onToggleHelp={this.toggleBoilerplateHelp}
-                        helpIsActive={this.props.activePanelName === 'helpForBoilerplateParameters'}
-                        hasInputs={this.hasInputs()}
                       />
-                    )
+                    ),
+                    codeHelpPanelName: 'helpForBehaviorCode'
                   })}
 
                   <hr className="man thin bg-gray-light" />
@@ -2209,10 +2213,9 @@ const BehaviorEditor = React.createClass({
             <LibraryCodeEditorHelp
               isFinished={this.isFinishedLibraryVersion()}
               functionBody={this.getFunctionBody()}
-              onToggleHelp={this.toggleBoilerplateHelp}
-              helpIsActive={this.props.activePanelName === 'helpForBoilerplateParameters'}
             />
           ),
+          codeHelpPanelName: 'helpForLibraryCode',
           functionExecutesImmediately: true
         })}
       </div>

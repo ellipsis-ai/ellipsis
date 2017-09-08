@@ -179,6 +179,7 @@ define(function(require) {
                 />
               </div>
             )}
+            codeHelpPanelName='helpForBehaviorCode'
 
             activePanelName={this.props.activePanelName}
             activeDropdownName={this.props.activeDropdownName}
