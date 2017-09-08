@@ -95,7 +95,6 @@ trait DBSpec extends PlaySpec with OneAppPerSuite with MockitoSugar {
       dataTypeInputs = Seq(),
       behaviorVersions = Seq(),
       libraryVersions = Seq(),
-      nodeModuleVersions = Seq(),
       requiredOAuth2ApiConfigs = Seq(),
       requiredSimpleTokenApis = Seq(),
       githubUrl = None,
