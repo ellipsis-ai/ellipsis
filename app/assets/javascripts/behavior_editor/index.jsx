@@ -8,7 +8,7 @@ var React = require('react'),
   BehaviorSwitcher = require('./behavior_switcher'),
   BehaviorTester = require('./behavior_tester'),
   DataTypeTester = require('./data_type_tester'),
-  BoilerplateParameterHelp = require('./boilerplate_parameter_help'),
+  BehaviorCodeHelp = require('./behavior_code_help'),
   ChangeSummary = require('./change_summary'),
   CodeConfiguration = require('./code_configuration'),
   CodeEditorHelp = require('./code_editor_help'),
@@ -1597,11 +1597,12 @@ const BehaviorEditor = React.createClass({
           </Collapsible>
 
           <Collapsible revealWhen={this.props.activePanelName === 'helpForBoilerplateParameters'} onChange={this.layoutDidUpdate}>
-            <BoilerplateParameterHelp
+            <BehaviorCodeHelp
               envVariableNames={this.getEnvVariableNames()}
               apiAccessTokens={this.getApiApplications()}
               onAddNewEnvVariable={this.onAddNewEnvVariable}
               onCollapseClick={this.props.onClearActivePanel}
+              isDataType={this.isDataTypeBehavior()}
             />
           </Collapsible>
 
