@@ -16,6 +16,8 @@ var React = require('react'),
   CollapseButton = require('../shared_ui/collapse_button'),
   DataRequest = require('../lib/data_request'),
   DataTypeEditor = require('./data_type_editor'),
+  DataTypePromptHelp = require('./data_type_prompt_help'),
+  DataTypeSourceHelp = require('./data_type_source_help'),
   DefaultStorageAdder = require('./default_storage_adder'),
   DefaultStorageBrowser = require('./default_storage_browser'),
   DynamicLabelButton = require('../form/dynamic_label_button'),
@@ -1601,6 +1603,14 @@ const BehaviorEditor = React.createClass({
               onAddNewEnvVariable={this.onAddNewEnvVariable}
               onCollapseClick={this.props.onClearActivePanel}
             />
+          </Collapsible>
+
+          <Collapsible revealWhen={this.props.activePanelName === 'helpForDataTypeSource'} onChange={this.layoutDidUpdate}>
+            <DataTypeSourceHelp onCollapseClick={this.props.onClearActivePanel} />
+          </Collapsible>
+
+          <Collapsible revealWhen={this.props.activePanelName === 'helpForDataTypePrompt'} onChange={this.layoutDidUpdate}>
+            <DataTypePromptHelp usesSearch={this.hasInputNamed('searchQuery')} onCollapseClick={this.props.onClearActivePanel} />
           </Collapsible>
 
           <Collapsible revealWhen={this.props.activePanelName === 'helpForResponseTemplate'} onChange={this.layoutDidUpdate}>

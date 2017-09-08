@@ -6,7 +6,7 @@ define(function(require) {
     propTypes: {
       children: React.PropTypes.node.isRequired,
       className: React.PropTypes.string,
-      disabledWhen: React.PropTypes.bool.isRequired
+      disabledWhen: React.PropTypes.bool
     },
     render: function() {
       return (
