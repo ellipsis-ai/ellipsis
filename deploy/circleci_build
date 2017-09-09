@@ -150,10 +150,6 @@ mkdir -p $PUBLIC_ASSETS_DIR
 rm -rf $PUBLIC_ASSETS_DIR/*
 unzip -qq target/docker/stage/opt/docker/lib/ellipsis.ellipsis-1.0-SNAPSHOT-assets.jar -d $PUBLIC_ASSETS_DIR/
 aws --profile $AWS_ELLIPSIS_PROFILE s3 sync $PUBLIC_ASSETS_DIR/public s3://assets-${ACCOUNT_ID}/ --acl=public-read --only-show-errors
-if [ "${TARGET_ENV}" = "prod" ]
-then
-  aws --profile $AWS_ELLIPSIS_PROFILE s3 sync $PUBLIC_ASSETS_DIR/public s3://ellipsis-assets/ --acl=public-read --only-show-errors
-fi
 if [ $? -eq 0 ]
 then
   printf "${GREEN}OK.${PLAIN}\n";
@@ -162,6 +158,19 @@ else
   announce_failure
   printf "Bye.\n"
   exit 1
+fi
+if [ "${TARGET_ENV}" = "prod" ]
+then
+  aws --profile $AWS_ELLIPSIS_PROFILE s3 sync $PUBLIC_ASSETS_DIR/public s3://ellipsis-assets/ --acl=public-read --only-show-errors
+  if [ $? -eq 0 ]
+  then
+    printf "${GREEN}OK.${PLAIN}\n";
+  else
+    printf "\n\n${RED}An error occurred!${PLAIN}\n";
+    announce_failure
+    printf "Bye.\n"
+    exit 1
+  fi
 fi
 
 printf "\n\n${GREEN}Uploading app bundle ${BUNDLE} to S3...${PLAIN}\n";
