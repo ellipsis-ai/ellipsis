@@ -24,7 +24,7 @@ case class OAuth2Application(
 
   def maybeAuthorizationRequestFor(state: String, redirectUrl: String, ws: WSClient): Option[WSRequest] = {
     maybeAuthorizationUrl.map { authorizationUrl =>
-      ws.url(authorizationUrl).withQueryString(
+      ws.url(authorizationUrl).withQueryStringParameters(
         "client_id" -> clientId,
         "redirect_uri" -> redirectUrl,
         "scope" -> scopeString,
@@ -39,7 +39,7 @@ case class OAuth2Application(
 
   private def clientCredentialsTokenResponseFor(ws: WSClient): Future[WSResponse] = {
     ws.url(accessTokenUrl).
-      withHeaders(HeaderNames.ACCEPT -> MimeTypes.JSON).
+      withHttpHeaders(HeaderNames.ACCEPT -> MimeTypes.JSON).
       post(Map(
         "client_id" -> Seq(clientId),
         "client_secret" -> Seq(clientSecret),
@@ -57,7 +57,7 @@ case class OAuth2Application(
 
   def accessTokenResponseFor(code: String, redirectUrl: String, ws: WSClient): Future[WSResponse] = {
     ws.url(accessTokenUrl).
-      withHeaders(HeaderNames.ACCEPT -> MimeTypes.JSON).
+      withHttpHeaders(HeaderNames.ACCEPT -> MimeTypes.JSON).
       post(Map(
         "client_id" -> Seq(clientId),
         "client_secret" -> Seq(clientSecret),
@@ -69,7 +69,7 @@ case class OAuth2Application(
 
   def refreshTokenResponseFor(refreshToken: String, ws: WSClient): Future[WSResponse] = {
     ws.url(accessTokenUrl).
-      withHeaders(HeaderNames.ACCEPT -> MimeTypes.JSON).
+      withHttpHeaders(HeaderNames.ACCEPT -> MimeTypes.JSON).
       post(Map(
         "refresh_token" -> Seq(refreshToken),
         "client_id" -> Seq(clientId),

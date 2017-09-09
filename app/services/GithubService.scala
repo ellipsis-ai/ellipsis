@@ -37,7 +37,7 @@ class GithubService @Inject() (
   def branchFor(maybeBranch: Option[String]) = maybeBranch.getOrElse("master")
 
   private def withTreeFor(url: String): Future[Option[Seq[JsValue]]] = {
-    ws.url(url).withQueryString(repoCredentials).get().map { response =>
+    ws.url(url).withQueryStringParameters(repoCredentials).get().map { response =>
       val json = Json.parse(response.body)
       (json \ "tree").asOpt[Seq[JsValue]]
     }
@@ -68,8 +68,8 @@ class GithubService @Inject() (
 
   private def fetchTextFor(url: String): Future[String] = {
     ws.url(url).
-      withQueryString(repoCredentials).
-      withHeaders(("Accept", "application/vnd.github.v3.json")).
+      withQueryStringParameters(repoCredentials).
+      withHttpHeaders(("Accept", "application/vnd.github.v3.json")).
       get().
       map { response =>
         (Json.parse(response.body) \ "content").validate[String].map { base64Content =>
