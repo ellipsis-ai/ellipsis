@@ -120,7 +120,7 @@ printf "_____________________________________________________ \n";
 BUNDLE_DIR=./target/eb-bundles
 touch conf/version.conf
 echo application.version=\"`git rev-parse --short HEAD`\" >conf/version.conf
-activator docker:stage
+cat /dev/null | activator docker:stage
 if [ $? -eq 1 ]
 then
   printf "\n\n${RED}Failed to package the build\n${PLAIN}";
