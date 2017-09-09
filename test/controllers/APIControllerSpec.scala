@@ -91,7 +91,7 @@ class APIControllerSpec extends PlaySpec with MockitoSugar {
     when(dataService.linkedAccounts.maybeForSlackFor(user)).thenReturn(Future.successful(Some(linkedAccount)))
     when(dataService.slackProfiles.find(loginInfo)).thenReturn(Future.successful(Some(slackProfile)))
     val mockSlackChannels = mock[SlackChannels]
-    when(dataService.slackBotProfiles.channelsFor(botProfile, cacheService)).thenReturn(mockSlackChannels)
+    when(dataService.slackBotProfiles.channelsFor(any[SlackBotProfile], any[CacheService])).thenReturn(mockSlackChannels)
     when(mockSlackChannels.maybeIdFor(defaultChannel)).thenReturn(Future.successful(Some(defaultChannel)))
 
     when(dataService.conversations.allOngoingFor(defaultSlackUserId, event.context, event.maybeChannel, event.maybeThreadId)).thenReturn(Future.successful(Seq()))
