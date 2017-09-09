@@ -60,7 +60,6 @@ case class RememberBehavior(event: Event, lambdaService: AWSLambdaService, dataS
             Seq(),
             Seq(),
             Seq(),
-            Seq(),
             None,
             None,
             Some(OffsetDateTime.now)

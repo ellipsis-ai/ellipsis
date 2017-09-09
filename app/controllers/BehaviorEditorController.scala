@@ -258,6 +258,27 @@ class BehaviorEditorController @Inject() (
     }
   }
 
+  def nodeModuleVersionsFor(behaviorGroupId: String) = silhouette.SecuredAction.async { implicit request =>
+    val user = request.identity
+    for {
+      maybeBehaviorGroup <- dataService.behaviorGroups.find(behaviorGroupId, user)
+      maybeCurrentGroupVersion <- maybeBehaviorGroup.map { group =>
+        dataService.behaviorGroups.maybeCurrentVersionFor(group)
+      }.getOrElse(Future.successful(None))
+      behaviorVersions <- maybeCurrentGroupVersion.map { groupVersion =>
+        dataService.behaviorVersions.allForGroupVersion(groupVersion)
+      }.getOrElse(Future.successful(Seq()))
+      _ <- Future.sequence(behaviorVersions.map { ea =>
+        dataService.run(services.lambdaService.ensureNodeModuleVersionsFor(ea))
+      })
+      nodeModuleVersions <- maybeCurrentGroupVersion.map { groupVersion =>
+        dataService.nodeModuleVersions.allFor(groupVersion)
+      }.getOrElse(Future.successful(Seq()))
+    } yield {
+      Ok(Json.toJson(nodeModuleVersions.map(NodeModuleVersionData.from)))
+    }
+  }
+
   case class TestTriggersInfo(behaviorId: String, message: String)
 
   private val testTriggersForm = Form(

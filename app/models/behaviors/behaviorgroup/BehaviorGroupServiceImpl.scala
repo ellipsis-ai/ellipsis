@@ -145,7 +145,6 @@ class BehaviorGroupServiceImpl @Inject() (
           dataTypeInputs,
           behaviorVersions,
           libraryVersions,
-          nodeModuleVersions = Seq(),
           requiredOAuth2ApiConfigs,
           requiredSimpleTokenApis,
           githubUrl = None,

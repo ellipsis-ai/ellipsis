@@ -227,7 +227,7 @@ define(function(require) {
             <div className="container">
               <div className="columns">
                 <div className="column column-page-sidebar">
-                  <h4 className="type-weak">Test the skill</h4>
+                  <h4 className="mtn type-weak">Test the skill</h4>
                 </div>
                 <div className="column column-three-quarters pll mobile-pln mobile-column-full">
                   {this.renderContent()}

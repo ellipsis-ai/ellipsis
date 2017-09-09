@@ -251,7 +251,7 @@ define(function(require) {
         return (
           <div className="column column-one-quarter mobile-column-full ptxl phn">
             <div className="phxl mobile-phl mbs">
-              <h5 className="display-inline-block prm">Filter by channel</h5>
+              <h5 className="mtn display-inline-block prm">Filter by channel</h5>
               <span>
                 <button type="button"
                   className="button-s button-shrink"
@@ -308,7 +308,7 @@ define(function(require) {
           <Collapsible key={`group-${group.channelName}`} revealWhen={this.shouldShowChannel(group.channelName)}>
             <div className="pvl">
               <div className={groupClassName}>
-                <h4>
+                <h4 className="mtn">
                   <span className="mrxs">{group.channelName}</span>
                   {this.renderGroupWarning(group)}
                 </h4>

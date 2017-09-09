@@ -8,7 +8,7 @@ var React = require('react'),
   BehaviorSwitcher = require('./behavior_switcher'),
   BehaviorTester = require('./behavior_tester'),
   DataTypeTester = require('./data_type_tester'),
-  BoilerplateParameterHelp = require('./boilerplate_parameter_help'),
+  BehaviorCodeHelp = require('./behavior_code_help'),
   ChangeSummary = require('./change_summary'),
   CodeConfiguration = require('./code_configuration'),
   CodeEditorHelp = require('./code_editor_help'),
@@ -16,6 +16,8 @@ var React = require('react'),
   CollapseButton = require('../shared_ui/collapse_button'),
   DataRequest = require('../lib/data_request'),
   DataTypeEditor = require('./data_type_editor'),
+  DataTypePromptHelp = require('./data_type_prompt_help'),
+  DataTypeSourceHelp = require('./data_type_source_help'),
   DefaultStorageAdder = require('./default_storage_adder'),
   DefaultStorageBrowser = require('./default_storage_browser'),
   DynamicLabelButton = require('../form/dynamic_label_button'),
@@ -26,9 +28,11 @@ var React = require('react'),
   Input = require('../models/input'),
   Formatter = require('../lib/formatter'),
   ID = require('../lib/id'),
+  NodeModuleVersion = require('../models/node_module_version'),
   NotificationData = require('../models/notification_data'),
   FormInput = require('../form/input'),
   LibraryCodeEditorHelp = require('./library_code_editor_help'),
+  LibraryCodeHelp = require('./library_code_help'),
   LibraryVersion = require('../models/library_version'),
   ModalScrim = require('../shared_ui/modal_scrim'),
   Notifications = require('../notifications/notifications'),
@@ -726,7 +730,7 @@ const BehaviorEditor = React.createClass({
             group: BehaviorGroup.fromJson(json),
             onLoad: optionalCallback
           };
-          this.props.onSave(newProps, this.state);
+          this.onSave(newProps, this.state);
         } else {
           this.onSaveError();
         }
@@ -760,7 +764,7 @@ const BehaviorEditor = React.createClass({
               group: BehaviorGroup.fromJson(json),
               onLoad: optionalCallback
             };
-            this.props.onSave(newProps, this.state);
+            this.onSave(newProps, this.state);
           }
         } else {
           this.onSaveError();
@@ -965,8 +969,8 @@ const BehaviorEditor = React.createClass({
     });
   },
 
-  toggleBoilerplateHelp: function() {
-    this.toggleActivePanel('helpForBoilerplateParameters');
+  toggleBehaviorCodeHelp: function() {
+    this.toggleActivePanel('helpForBehaviorCode');
   },
 
   toggleCodeEditor: function() {
@@ -1208,7 +1212,7 @@ const BehaviorEditor = React.createClass({
   },
 
   getNodeModuleVersions: function() {
-    return this.getBehaviorGroup().nodeModuleVersions;
+    return this.state.nodeModuleVersions || [];
   },
 
   hasInputs: function() {
@@ -1380,10 +1384,24 @@ const BehaviorEditor = React.createClass({
     });
   },
 
+  onSave: function(newProps, state) {
+    this.props.onSave(newProps, state);
+    this.loadNodeModuleVersions();
+  },
+
   resetNotificationsImmediately: function() {
     this.setState({
       notifications: this.buildNotifications()
     });
+  },
+
+  loadNodeModuleVersions: function() {
+    DataRequest.jsonGet(jsRoutes.controllers.BehaviorEditorController.nodeModuleVersionsFor(this.getBehaviorGroup().id).url)
+      .then(json => {
+        this.setState({
+          nodeModuleVersions: NodeModuleVersion.allFromJson(json)
+        });
+      });
   },
 
   resetNotifications: debounce(function() {
@@ -1396,6 +1414,7 @@ const BehaviorEditor = React.createClass({
     window.document.addEventListener('keydown', this.onDocumentKeyDown, false);
     window.addEventListener('resize', this.checkMobileLayout, false);
     window.addEventListener('scroll', debounce(this.updateBehaviorScrollPosition, 500), false);
+    this.loadNodeModuleVersions();
   },
 
   // componentDidUpdate: function() {
@@ -1429,7 +1448,8 @@ const BehaviorEditor = React.createClass({
       behaviorSwitcherVisible: this.isExistingGroup() && !this.windowIsMobile(),
       hasMobileLayout: this.windowIsMobile(),
       animationDisabled: false,
-      lastSavedDataStorageItem: null
+      lastSavedDataStorageItem: null,
+      nodeModuleVersions: []
     };
   },
 
@@ -1496,6 +1516,7 @@ const BehaviorEditor = React.createClass({
         sectionNumber={props.sectionNumber}
         sectionHeading={props.sectionHeading}
         codeEditorHelp={props.codeEditorHelp}
+        codeHelpPanelName={props.codeHelpPanelName}
 
         activePanelName={this.props.activePanelName}
         activeDropdownName={this.getActiveDropdown()}
@@ -1594,13 +1615,26 @@ const BehaviorEditor = React.createClass({
             <TriggerHelp onCollapseClick={this.props.onClearActivePanel} />
           </Collapsible>
 
-          <Collapsible revealWhen={this.props.activePanelName === 'helpForBoilerplateParameters'} onChange={this.layoutDidUpdate}>
-            <BoilerplateParameterHelp
+          <Collapsible revealWhen={this.props.activePanelName === 'helpForBehaviorCode'} onChange={this.layoutDidUpdate}>
+            <BehaviorCodeHelp
               envVariableNames={this.getEnvVariableNames()}
               apiAccessTokens={this.getApiApplications()}
               onAddNewEnvVariable={this.onAddNewEnvVariable}
               onCollapseClick={this.props.onClearActivePanel}
+              isDataType={this.isDataTypeBehavior()}
             />
+          </Collapsible>
+
+          <Collapsible revealWhen={this.props.activePanelName === 'helpForDataTypeSource'} onChange={this.layoutDidUpdate}>
+            <DataTypeSourceHelp onCollapseClick={this.props.onClearActivePanel} />
+          </Collapsible>
+
+          <Collapsible revealWhen={this.props.activePanelName === 'helpForDataTypePrompt'} onChange={this.layoutDidUpdate}>
+            <DataTypePromptHelp usesSearch={this.hasInputNamed('searchQuery')} onCollapseClick={this.props.onClearActivePanel} />
+          </Collapsible>
+
+          <Collapsible revealWhen={this.props.activePanelName === 'helpForLibraryCode'} onChange={this.layoutDidUpdate}>
+            <LibraryCodeHelp onCollapseClick={this.props.onClearActivePanel} libraryName={this.getEditableName()} />
           </Collapsible>
 
           <Collapsible revealWhen={this.props.activePanelName === 'helpForResponseTemplate'} onChange={this.layoutDidUpdate}>
@@ -2091,11 +2125,9 @@ const BehaviorEditor = React.createClass({
                       <CodeEditorHelp
                         isFinishedBehavior={this.isFinishedBehavior()}
                         functionBody={this.getFunctionBody()}
-                        onToggleHelp={this.toggleBoilerplateHelp}
-                        helpIsActive={this.props.activePanelName === 'helpForBoilerplateParameters'}
-                        hasInputs={this.hasInputs()}
                       />
-                    )
+                    ),
+                    codeHelpPanelName: 'helpForBehaviorCode'
                   })}
 
                   <hr className="man thin bg-gray-light" />
@@ -2198,10 +2230,9 @@ const BehaviorEditor = React.createClass({
             <LibraryCodeEditorHelp
               isFinished={this.isFinishedLibraryVersion()}
               functionBody={this.getFunctionBody()}
-              onToggleHelp={this.toggleBoilerplateHelp}
-              helpIsActive={this.props.activePanelName === 'helpForBoilerplateParameters'}
             />
           ),
+          codeHelpPanelName: 'helpForLibraryCode',
           functionExecutesImmediately: true
         })}
       </div>
@@ -2214,7 +2245,7 @@ const BehaviorEditor = React.createClass({
       return (
         <div>
           <div className="container container-wide ptl bg-white">
-            <h5 className="type-blue-faded mbn">{selected.getEditorTitle()}</h5>
+            <h5 className="type-blue-faded mvn">{selected.getEditorTitle()}</h5>
           </div>
 
           {this.renderNameAndManagementActions()}

@@ -32,10 +32,6 @@ define(function(require) {
       return !!(this.props.triggers.length > 0 && this.props.triggers[0].text);
     },
 
-    triggersUseParams: function() {
-      return this.props.triggers.some((trigger) => trigger.hasNonRegexParams());
-    },
-
     onTriggerEnterKey: function(index) {
       if (index + 1 < this.props.triggers.length) {
         this.focusOnTriggerIndex(index + 1);
@@ -109,10 +105,6 @@ define(function(require) {
               <Checklist disabledWhen={this.props.isFinishedBehavior}>
                 <Checklist.Item checkedWhen={this.hasPrimaryTrigger()} hiddenWhen={this.props.isFinishedBehavior}>
                   Write a question or phrase people should use to trigger a response.
-                </Checklist.Item>
-                <Checklist.Item checkedWhen={this.triggersUseParams()}>
-                  <span>A trigger can include “fill-in-the-blank” inputs, e.g. <code
-        className="plxs">{"Call me {name}"}</code></span>
                 </Checklist.Item>
               </Checklist>
             </div>

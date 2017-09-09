@@ -22,7 +22,6 @@ case class BehaviorGroupData(
                               dataTypeInputs: Seq[InputData],
                               behaviorVersions: Seq[BehaviorVersionData],
                               libraryVersions: Seq[LibraryVersionData],
-                              nodeModuleVersions: Seq[NodeModuleVersionData],
                               requiredOAuth2ApiConfigs: Seq[RequiredOAuth2ApiConfigData],
                               requiredSimpleTokenApis: Seq[RequiredSimpleTokenApiData],
                               githubUrl: Option[String],
@@ -137,7 +136,6 @@ object BehaviorGroupData {
       inputsData <- Future.sequence(inputs.map(ea => InputData.fromInput(ea, dataService)))
       libraryVersions <- dataService.libraries.allFor(version)
       libraryVersionsData <- Future.successful(libraryVersions.map(ea => LibraryVersionData.fromVersion(ea)))
-      nodeModuleVersions <- dataService.nodeModuleVersions.allFor(version)
       requiredOAuth2ApiConfigs <- dataService.requiredOAuth2ApiConfigs.allFor(version)
       requiredSimpleTokenApis <- dataService.requiredSimpleTokenApis.allFor(version)
     } yield {
@@ -154,7 +152,6 @@ object BehaviorGroupData {
         dataTypeInputsData,
         versionsData,
         libraryVersionsData,
-        nodeModuleVersions.map(NodeModuleVersionData.from),
         requiredOAuth2ApiConfigs.map(RequiredOAuth2ApiConfigData.from),
         requiredSimpleTokenApis.map(RequiredSimpleTokenApiData.from),
         None,

@@ -141,7 +141,6 @@ case class BehaviorGroupZipImporter(
           dataTypeInputs,
           versionsData,
           libraries,
-          nodeModuleVersions = Seq(),
           requiredOAuth2ApiConfigData,
           requiredSimpleTokenApiData,
           githubUrl = None,

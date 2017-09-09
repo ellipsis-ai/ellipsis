@@ -87,7 +87,7 @@ define(function(require) {
             <div className="container">
               <div className="columns">
                 <div className="column column-page-sidebar">
-                  <h4 className="type-weak">{selectedInput ? (
+                  <h4 className="mtn type-weak">{selectedInput ? (
                       <span>
                         <span>Saved answers for </span>
                         <span className="type-monospace type-regular">{selectedInput.name}</span>
