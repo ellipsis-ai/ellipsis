@@ -120,7 +120,7 @@ printf "_____________________________________________________ \n";
 BUNDLE_DIR=./target/eb-bundles
 touch conf/version.conf
 echo application.version=\"`git rev-parse --short HEAD`\" >conf/version.conf
-activator docker:stage
+cat /dev/null | activator docker:stage
 if [ $? -eq 1 ]
 then
   printf "\n\n${RED}Failed to package the build\n${PLAIN}";
@@ -143,15 +143,24 @@ zip -qq -r $BUNDLE_PATH .
 cd $TOP_DIR
 printf "\n${GREEN}OK.${PLAIN}\n"
 
+printf "\n\n${GREEN}Syncing assets with S3...${PLAIN}\n";
+printf "_____________________________________________________ \n";
+PUBLIC_ASSETS_DIR=/tmp/public-assets
+mkdir -p $PUBLIC_ASSETS_DIR
+rm -rf $PUBLIC_ASSETS_DIR/*
+unzip -qq target/docker/stage/opt/docker/lib/ellipsis.ellipsis-1.0-SNAPSHOT-assets.jar -d $PUBLIC_ASSETS_DIR/
+aws --profile $AWS_ELLIPSIS_PROFILE s3 sync $PUBLIC_ASSETS_DIR/public s3://assets-${ACCOUNT_ID}/ --acl=public-read --only-show-errors
+if [ $? -eq 0 ]
+then
+  printf "${GREEN}OK.${PLAIN}\n";
+else
+  printf "\n\n${RED}An error occurred!${PLAIN}\n";
+  announce_failure
+  printf "Bye.\n"
+  exit 1
+fi
 if [ "${TARGET_ENV}" = "prod" ]
 then
-  printf "\n\n${GREEN}Syncing assets with S3...${PLAIN}\n";
-  printf "_____________________________________________________ \n";
-  PUBLIC_ASSETS_DIR=/tmp/public-assets
-  mkdir -p $PUBLIC_ASSETS_DIR
-  rm -rf $PUBLIC_ASSETS_DIR/*
-  unzip -qq target/docker/stage/opt/docker/lib/ellipsis.ellipsis-1.0-SNAPSHOT-assets.jar -d $PUBLIC_ASSETS_DIR/
-  aws --profile $AWS_ELLIPSIS_PROFILE s3 sync $PUBLIC_ASSETS_DIR/public s3://assets-${ACCOUNT_ID}/ --acl=public-read --only-show-errors
   aws --profile $AWS_ELLIPSIS_PROFILE s3 sync $PUBLIC_ASSETS_DIR/public s3://ellipsis-assets/ --acl=public-read --only-show-errors
   if [ $? -eq 0 ]
   then

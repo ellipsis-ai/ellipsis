@@ -8,15 +8,17 @@ import drivers.SlickPostgresDriver.api._
 import play.api.Logger
 import services.DefaultServices
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration._
 
 object ConversationReminderActor {
   final val name = "conversationReminder"
 }
 
-class ConversationReminderActor @Inject()(val services: DefaultServices) extends Actor {
+class ConversationReminderActor @Inject()(
+                                           val services: DefaultServices,
+                                           implicit val ec: ExecutionContext
+                                         ) extends Actor {
 
   val dataService = services.dataService
   implicit val actorSystem = services.actorSystem

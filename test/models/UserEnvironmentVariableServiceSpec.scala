@@ -7,7 +7,7 @@ class UserEnvironmentVariableServiceSpec extends DBSpec {
 
   "UserEnvironmentVariableService.missingInAction" should {
     "return the set of missing user environment variables" in {
-      withEmptyDB(dataService, { db =>
+      withEmptyDB(dataService, { () =>
         val team = newSavedTeam
         val user = newSavedUserOn(team)
         val group = newSavedBehaviorGroupFor(team)

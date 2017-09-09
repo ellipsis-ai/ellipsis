@@ -11,8 +11,7 @@ import play.api.mvc.Results
 import services.DataService
 import drivers.SlickPostgresDriver.api._
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 case class RawLinkedOAuth2Token(
                                  accessToken: String,
@@ -39,7 +38,8 @@ class LinkedOAuth2TokensTable(tag: Tag) extends Table[RawLinkedOAuth2Token](tag,
 
 class LinkedOAuth2TokenServiceImpl @Inject() (
                                                dataServiceProvider: Provider[DataService],
-                                               ws: WSClient
+                                               ws: WSClient,
+                                               implicit val ec: ExecutionContext
                                            ) extends LinkedOAuth2TokenService {
 
   def dataService = dataServiceProvider.get

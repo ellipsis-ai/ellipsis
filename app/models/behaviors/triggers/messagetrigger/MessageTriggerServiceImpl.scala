@@ -11,8 +11,7 @@ import services.DataService
 import drivers.SlickPostgresDriver.api._
 import models.behaviors.behaviorgroup.BehaviorGroup
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 import scala.util.matching.Regex
 
 case class RawMessageTrigger(
@@ -38,7 +37,8 @@ class MessageTriggersTable(tag: Tag) extends Table[RawMessageTrigger](tag, "mess
 }
 
 class MessageTriggerServiceImpl @Inject() (
-                                             dataServiceProvider: Provider[DataService]
+                                             dataServiceProvider: Provider[DataService],
+                                             implicit val ec: ExecutionContext
                                            ) extends MessageTriggerService {
 
   def dataService = dataServiceProvider.get

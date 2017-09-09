@@ -7,8 +7,7 @@ import com.google.inject.Provider
 import drivers.SlickPostgresDriver.api._
 import services.DataService
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 case class RawRecurrence(
                           id: String,
@@ -93,7 +92,8 @@ class RecurrencesTable(tag: Tag) extends Table[RawRecurrence](tag, "recurrences"
 }
 
 class RecurrenceServiceImpl @Inject() (
-                                        dataServiceProvider: Provider[DataService]
+                                        dataServiceProvider: Provider[DataService],
+                                        implicit val ec: ExecutionContext
                                       ) extends RecurrenceService {
 
   def dataService = dataServiceProvider.get

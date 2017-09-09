@@ -12,8 +12,7 @@ import play.api.{Configuration, Logger}
 import services.{CacheService, DataService}
 import slack.api.SlackApiClient
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration._
 
 object ScheduledActor {
@@ -26,7 +25,8 @@ class ScheduledActor @Inject()(
                                         val eventHandler: EventHandler,
                                         val configuration: Configuration,
                                         val botResultService: BotResultService,
-                                        implicit val actorSystem: ActorSystem
+                                        implicit val actorSystem: ActorSystem,
+                                        implicit val ec: ExecutionContext
                                       ) extends Actor {
 
   // initial delay of 1 minute so that, in the case of errors & actor restarts, it doesn't hammer external APIs

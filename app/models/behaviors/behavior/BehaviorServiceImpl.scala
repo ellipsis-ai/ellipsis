@@ -13,8 +13,7 @@ import services.{AWSLambdaService, DataService}
 import drivers.SlickPostgresDriver.api._
 import models.behaviors.events.SlackMessageEvent
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 
 case class RawBehavior(
@@ -41,7 +40,8 @@ class BehaviorsTable(tag: Tag) extends Table[RawBehavior](tag, "behaviors") {
 
 class BehaviorServiceImpl @Inject() (
                                       dataServiceProvider: Provider[DataService],
-                                      lambdaServiceProvider: Provider[AWSLambdaService]
+                                      lambdaServiceProvider: Provider[AWSLambdaService],
+                                      implicit val ec: ExecutionContext
                                     ) extends BehaviorService {
 
   def dataService = dataServiceProvider.get

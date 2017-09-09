@@ -2,14 +2,14 @@ package json
 
 import java.time.OffsetDateTime
 
+import controllers.RemoteAssets
 import models.accounts.user.{User, UserTeamAccess}
 import models.behaviors.behaviorparameter.BehaviorParameterType
 import models.team.Team
 import play.api.libs.ws.WSClient
 import services.DataService
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 case class BehaviorEditorData(
                                teamAccess: UserTeamAccess,
@@ -31,8 +31,9 @@ object BehaviorEditorData {
                     groupId: String,
                     maybeSelectedId: Option[String],
                     dataService: DataService,
-                    ws: WSClient
-                  ): Future[Option[BehaviorEditorData]] = {
+                    ws: WSClient,
+                    assets: RemoteAssets
+                  )(implicit ec: ExecutionContext): Future[Option[BehaviorEditorData]] = {
 
     for {
       maybeGroupData <- BehaviorGroupData.maybeFor(groupId, user, maybeGithubUrl = None, dataService)
@@ -49,7 +50,8 @@ object BehaviorEditorData {
           maybeSelectedId,
           team,
           dataService,
-          ws
+          ws,
+          assets
         ).map(Some(_))
       }).getOrElse(Future.successful(None))
     } yield maybeEditorData
@@ -59,8 +61,9 @@ object BehaviorEditorData {
                   user: User,
                   maybeTeamId: Option[String],
                   dataService: DataService,
-                  ws: WSClient
-                 ): Future[Option[BehaviorEditorData]] = {
+                  ws: WSClient,
+                  assets: RemoteAssets
+                 )(implicit ec: ExecutionContext): Future[Option[BehaviorEditorData]] = {
 
     val teamId = maybeTeamId.getOrElse(user.teamId)
     for {
@@ -72,7 +75,8 @@ object BehaviorEditorData {
           maybeSelectedId = None,
           team,
           dataService,
-          ws
+          ws,
+          assets
         ).map(Some(_))
       }.getOrElse(Future.successful(None))
     } yield maybeData
@@ -82,7 +86,7 @@ object BehaviorEditorData {
                                      maybeBehaviorGroupData: Option[BehaviorGroupData],
                                      user: User,
                                      dataService: DataService
-                                     ): Future[Seq[InputSavedAnswerData]] = {
+                                     )(implicit ec: ExecutionContext): Future[Seq[InputSavedAnswerData]] = {
     maybeBehaviorGroupData.map { data =>
       data.id.map { groupId =>
         for {
@@ -108,8 +112,9 @@ object BehaviorEditorData {
                 maybeSelectedId: Option[String],
                 team: Team,
                 dataService: DataService,
-                ws: WSClient
-              ): Future[BehaviorEditorData] = {
+                ws: WSClient,
+                assets: RemoteAssets
+              )(implicit ec: ExecutionContext): Future[BehaviorEditorData] = {
     for {
       teamAccess <- dataService.users.teamAccessFor(user, Some(team.id))
       teamEnvironmentVariables <- dataService.teamEnvironmentVariables.allFor(team)
@@ -170,8 +175,8 @@ object BehaviorEditorData {
         teamEnvironmentVariables.map(EnvironmentVariableData.withoutValueFor),
         inputSavedAnswerData,
         oAuth2Applications.map(OAuth2ApplicationData.from),
-        oauth2Apis.map(OAuth2ApiData.from),
-        simpleTokenApis.map(SimpleTokenApiData.from),
+        oauth2Apis.map(ea => OAuth2ApiData.from(ea, assets)),
+        simpleTokenApis.map(ea => SimpleTokenApiData.from(ea, assets)),
         linkedOAuth2Tokens.map(_.application.id)
       )
     }

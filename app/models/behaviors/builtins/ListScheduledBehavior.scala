@@ -7,8 +7,7 @@ import models.behaviors.{BotResult, SimpleTextResult}
 import play.api.Configuration
 import services.{AWSLambdaService, DataService}
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 
 case class ListScheduledBehavior(
@@ -31,14 +30,14 @@ case class ListScheduledBehavior(
   }
 
   private def viewAllLink: String = {
-    configuration.getString("application.apiBaseUrl").map { baseUrl =>
+    configuration.getOptional[String]("application.apiBaseUrl").map { baseUrl =>
       val path = controllers.routes.ScheduledActionsController.index(None, None, Some(event.teamId))
       s"[View all scheduled items]($baseUrl$path)"
     }.getOrElse("")
   }
 
   private def newScheduleLink: String = {
-    configuration.getString("application.apiBaseUrl").map { baseUrl =>
+    configuration.getOptional[String]("application.apiBaseUrl").map { baseUrl =>
       val path = controllers.routes.ScheduledActionsController.index(None, Some(true), Some(event.teamId))
       s"[Schedule something new]($baseUrl$path)"
     }.getOrElse("")
@@ -56,7 +55,7 @@ case class ListScheduledBehavior(
     }
   }
 
-  def responseFor(scheduled: Seq[Scheduled]): Future[String] = {
+  def responseFor(scheduled: Seq[Scheduled])(implicit ec: ExecutionContext): Future[String] = {
     Future.sequence(scheduled.map(ea => ea.listResponse(ea.id, ea.team.id, dataService, configuration, maybeChannel.isEmpty))).map { listResponses =>
       s"""$intro
         |
@@ -67,7 +66,7 @@ case class ListScheduledBehavior(
     }
   }
 
-  def result(implicit actorSystem: ActorSystem): Future[BotResult] = {
+  def result(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[BotResult] = {
     for {
       maybeTeam <- dataService.teams.find(event.teamId)
       scheduled <- maybeTeam.map { team =>

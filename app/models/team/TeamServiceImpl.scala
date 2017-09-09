@@ -11,12 +11,12 @@ import play.api.Configuration
 import services.DataService
 import drivers.SlickPostgresDriver.api._
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 class TeamServiceImpl @Inject() (
                                   dataServiceProvider: Provider[DataService],
-                                  configuration: Configuration
+                                  configuration: Configuration,
+                                  implicit val ec: ExecutionContext
                                 ) extends TeamService {
 
   def dataService = dataServiceProvider.get

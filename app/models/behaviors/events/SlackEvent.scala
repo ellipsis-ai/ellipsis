@@ -8,15 +8,14 @@ import services.CacheService
 import slack.api.SlackApiClient
 import utils.SlackChannels
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 trait SlackEvent {
   val user: String
   val channel: String
   val profile: SlackBotProfile
   val client: SlackApiClient
-  def eventualMaybeDMChannel(cacheService: CacheService)(implicit actorSystem: ActorSystem): Future[Option[String]] = {
+  def eventualMaybeDMChannel(cacheService: CacheService)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[String]] = {
     SlackChannels(client, cacheService, profile.slackTeamId).listIms.map(_.find(_.user == user).map(_.id))
   }
 
@@ -37,7 +36,7 @@ trait SlackEvent {
     }
   }
 
-  def detailsFor(ws: WSClient, cacheService: CacheService)(implicit actorSystem: ActorSystem): Future[JsObject] = {
+  def detailsFor(ws: WSClient, cacheService: CacheService)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[JsObject] = {
     for {
       user <- client.getUserInfo(user)
       channelMembers <- SlackChannels(client, cacheService, profile.slackTeamId).getMembersFor(channel)

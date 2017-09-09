@@ -6,8 +6,7 @@ import models.behaviors.conversations.conversation.Conversation
 import models.team.Team
 import services.{DataService, DefaultServices}
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 import scala.util.matching.Regex
 
 trait MessageEvent extends Event {
@@ -22,7 +21,7 @@ trait MessageEvent extends Event {
                               maybeTeam: Option[Team],
                               maybeLimitToBehavior: Option[Behavior],
                               services: DefaultServices
-                            ): Future[Seq[BehaviorResponse]] = {
+                            )(implicit ec: ExecutionContext): Future[Seq[BehaviorResponse]] = {
     val dataService = services.dataService
     for {
       maybeLimitToBehaviorVersion <- maybeLimitToBehavior.map { limitToBehavior =>

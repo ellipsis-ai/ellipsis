@@ -6,7 +6,7 @@
 
 @import play.api.libs.json._
 
-@shared.requireJsConfig()
+@shared.requireJsConfig(config.assets)
 @shared.jsRoutes();
 
 (function() {

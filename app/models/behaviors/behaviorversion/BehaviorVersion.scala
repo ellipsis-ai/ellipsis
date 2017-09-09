@@ -21,8 +21,7 @@ import services.AWSLambdaConstants._
 import services.{AWSLambdaLogResult, DataService}
 import slick.dbio.DBIO
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 case class BehaviorVersion(
                             id: String,
@@ -39,7 +38,7 @@ case class BehaviorVersion(
 
   lazy val typeName = maybeName.getOrElse(GraphQLHelpers.fallbackTypeName)
 
-  def dataTypeFieldsAction(dataService: DataService): DBIO[Seq[DataTypeFieldForSchema]] = {
+  def dataTypeFieldsAction(dataService: DataService)(implicit ec: ExecutionContext): DBIO[Seq[DataTypeFieldForSchema]] = {
     dataService.dataTypeConfigs.maybeForAction(this).flatMap { maybeConfig =>
       maybeConfig.map { config =>
         dataService.dataTypeFields.allForAction(config)
@@ -47,7 +46,7 @@ case class BehaviorVersion(
     }
   }
 
-  def dataTypeFields(dataService: DataService): Future[Seq[DataTypeFieldForSchema]] = {
+  def dataTypeFields(dataService: DataService)(implicit ec: ExecutionContext): Future[Seq[DataTypeFieldForSchema]] = {
     dataService.run(dataTypeFieldsAction(dataService))
   }
 

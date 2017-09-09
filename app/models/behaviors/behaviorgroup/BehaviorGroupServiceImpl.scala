@@ -12,8 +12,7 @@ import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
 import models.team.Team
 import services.DataService
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 
 case class RawBehaviorGroup(
@@ -36,7 +35,8 @@ class BehaviorGroupsTable(tag: Tag) extends Table[RawBehaviorGroup](tag, "behavi
 }
 
 class BehaviorGroupServiceImpl @Inject() (
-                                          dataServiceProvider: Provider[DataService]
+                                          dataServiceProvider: Provider[DataService],
+                                          implicit val ec: ExecutionContext
                                         ) extends BehaviorGroupService {
 
   def dataService = dataServiceProvider.get

@@ -7,11 +7,11 @@ import com.mohiva.play.silhouette.impl.providers.OAuth2Info
 import com.mohiva.play.silhouette.persistence.daos.DelegableAuthInfoDAO
 import services.DataService
 
-import scala.concurrent.Future
-import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.{ExecutionContext, Future}
 
 class OAuth2InfoDAO @Inject() (
-                                dataService: DataService
+                                dataService: DataService,
+                                implicit val ec: ExecutionContext
                               ) extends DelegableAuthInfoDAO[OAuth2Info] {
 
   def find(loginInfo: LoginInfo): Future[Option[OAuth2Info]] = {

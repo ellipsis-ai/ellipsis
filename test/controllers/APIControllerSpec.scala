@@ -34,7 +34,7 @@ import slack.models.Attachment
 import support.ControllerTestContext
 import utils.{SlackChannels, SlackTimestamp}
 
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 class APIControllerSpec extends PlaySpec with MockitoSugar {
 
@@ -54,7 +54,7 @@ class APIControllerSpec extends PlaySpec with MockitoSugar {
                      cacheService: CacheService,
                      slackEventService: SlackEventService,
                      botResultService: BotResultService
-                   ) = {
+                   )(implicit ec: ExecutionContext) = {
     val token = IDs.next
     when(dataService.apiTokens.find(token)).thenReturn(Future.successful(None))
     val behaviorId = maybeTokenBehaviorId.getOrElse(IDs.next)
@@ -91,7 +91,7 @@ class APIControllerSpec extends PlaySpec with MockitoSugar {
     when(dataService.linkedAccounts.maybeForSlackFor(user)).thenReturn(Future.successful(Some(linkedAccount)))
     when(dataService.slackProfiles.find(loginInfo)).thenReturn(Future.successful(Some(slackProfile)))
     val mockSlackChannels = mock[SlackChannels]
-    when(dataService.slackBotProfiles.channelsFor(botProfile, cacheService)).thenReturn(mockSlackChannels)
+    when(dataService.slackBotProfiles.channelsFor(any[SlackBotProfile], any[CacheService])).thenReturn(mockSlackChannels)
     when(mockSlackChannels.maybeIdFor(defaultChannel)).thenReturn(Future.successful(Some(defaultChannel)))
 
     when(dataService.conversations.allOngoingFor(defaultSlackUserId, event.context, event.maybeChannel, event.maybeThreadId)).thenReturn(Future.successful(Seq()))

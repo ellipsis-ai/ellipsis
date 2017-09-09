@@ -4,8 +4,7 @@ import models.accounts.user.User
 import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
 import services.DataService
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 case class InputSavedAnswerData(
                             inputId: String,
@@ -15,7 +14,12 @@ case class InputSavedAnswerData(
 
 object InputSavedAnswerData {
 
-  def maybeFor(inputId: String, behaviorGroupVersion: BehaviorGroupVersion, user: User, dataService: DataService): Future[Option[InputSavedAnswerData]] = {
+  def maybeFor(
+                inputId: String,
+                behaviorGroupVersion: BehaviorGroupVersion,
+                user: User,
+                dataService: DataService
+              )(implicit ec: ExecutionContext): Future[Option[InputSavedAnswerData]] = {
     for {
       maybeInput <- dataService.inputs.findByInputId(inputId, behaviorGroupVersion)
       savedAnswers <- dataService.savedAnswers.allFor(inputId)

@@ -5,10 +5,12 @@ import javax.inject._
 import models.accounts.oauth2api.{AuthorizationCode, ClientCredentials, OAuth2Api}
 import services.DataService
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
-class OAuth2ApiPopulator @Inject() (dataService: DataService) {
+class OAuth2ApiPopulator @Inject() (
+                                     dataService: DataService,
+                                     implicit val ec: ExecutionContext
+                                   ) {
 
   val apis: Seq[OAuth2Api] = Seq(
     OAuth2Api(

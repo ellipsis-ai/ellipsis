@@ -4,8 +4,7 @@ import export.BehaviorGroupExporter
 import models.behaviors.datatypeconfig.DataTypeConfig
 import services.DataService
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 case class DataTypeConfigData(
                                fields: Seq[DataTypeFieldData],
@@ -42,7 +41,7 @@ case class DataTypeConfigData(
 
 object DataTypeConfigData {
 
-  def forConfig(config: DataTypeConfig, dataService: DataService): Future[DataTypeConfigData] = {
+  def forConfig(config: DataTypeConfig, dataService: DataService)(implicit ec: ExecutionContext): Future[DataTypeConfigData] = {
     for {
       fields <- dataService.dataTypeFields.allFor(config)
       withFieldType <- Future.sequence(fields.map { ea =>

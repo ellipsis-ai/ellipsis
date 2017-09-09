@@ -12,12 +12,12 @@ import models.team.Team
 import services._
 import slick.dbio.DBIO
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 class BehaviorResponseServiceImpl @Inject() (
                                             services: DefaultServices,
-                                            slackEventService: SlackEventService
+                                            slackEventService: SlackEventService,
+                                            implicit val ec: ExecutionContext
                                         ) extends BehaviorResponseService {
 
   val dataService = services.dataService

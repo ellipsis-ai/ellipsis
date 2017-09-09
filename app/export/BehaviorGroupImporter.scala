@@ -6,8 +6,7 @@ import models.behaviors.behaviorgroup.BehaviorGroup
 import models.team.Team
 import services.DataService
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 case class BehaviorGroupImporter(
                                    team: Team,
@@ -16,7 +15,7 @@ case class BehaviorGroupImporter(
                                    dataService: DataService
                                  ) {
 
-  def run: Future[Option[BehaviorGroup]] = {
+  def run(implicit ec: ExecutionContext): Future[Option[BehaviorGroup]] = {
     for {
       maybeExistingGroup <- data.id.map { groupId =>
         dataService.behaviorGroups.findWithoutAccessCheck(groupId)

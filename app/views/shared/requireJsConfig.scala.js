@@ -1,5 +1,9 @@
+@(
+  assets: RemoteAssets
+)
+
 requirejs.config({
   paths: {
-    'common': '@RemoteAssets.getUrl("javascripts/common.js").replaceFirst("\\.js$", "")'
+    'common': '@assets.getUrl("javascripts/common.js").replaceFirst("\\.js$", "")'
   }
 });

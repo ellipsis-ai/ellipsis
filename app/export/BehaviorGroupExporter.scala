@@ -10,8 +10,7 @@ import play.api.libs.json.Json
 import services.DataService
 import utils.SafeFileName
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 import scala.reflect.io.Path
 import scala.sys.process.Process
 
@@ -161,7 +160,7 @@ case class BehaviorGroupExporter(
 
 object BehaviorGroupExporter {
 
-  def maybeFor(groupId: String, user: User, dataService: DataService): Future[Option[BehaviorGroupExporter]] = {
+  def maybeFor(groupId: String, user: User, dataService: DataService)(implicit ec: ExecutionContext): Future[Option[BehaviorGroupExporter]] = {
     val mainParentPath = "/tmp/exports/"
     for {
       maybeGroup <- dataService.behaviorGroups.findWithoutAccessCheck(groupId)

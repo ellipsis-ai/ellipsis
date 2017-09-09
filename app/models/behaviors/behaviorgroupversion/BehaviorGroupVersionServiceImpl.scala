@@ -11,8 +11,7 @@ import models.accounts.user.User
 import models.behaviors.behaviorgroup.{BehaviorGroup, BehaviorGroupQueries}
 import services.DataService
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 case class RawBehaviorGroupVersion(
                                    id: String,
@@ -40,7 +39,8 @@ class BehaviorGroupVersionsTable(tag: Tag) extends Table[RawBehaviorGroupVersion
 }
 
 class BehaviorGroupVersionServiceImpl @Inject() (
-                                             dataServiceProvider: Provider[DataService]
+                                             dataServiceProvider: Provider[DataService],
+                                             implicit val ec: ExecutionContext
                                            ) extends BehaviorGroupVersionService {
 
   def dataService = dataServiceProvider.get

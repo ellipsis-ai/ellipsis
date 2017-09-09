@@ -9,8 +9,7 @@ import models.help._
 import services.{AWSLambdaService, CacheService, DataService}
 import utils._
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 case class DisplayHelpBehavior(
                          maybeHelpString: Option[String],
@@ -126,7 +125,7 @@ case class DisplayHelpBehavior(
     TextWithActionsResult(event, None, resultText, forcePrivateResponse = false, SlackMessageActions("help_no_result", actions, None, Some(Color.PINK)))
   }
 
-  def result(implicit actorSystem: ActorSystem): Future[BotResult] = {
+  def result(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[BotResult] = {
     for {
       maybeTeam <- dataService.teams.find(event.teamId)
       user <- event.ensureUser(dataService)

@@ -14,8 +14,7 @@ import models.behaviors.datatypefield.DataTypeField
 import play.api.libs.json._
 import services.DataService
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 case class RawDefaultStorageItem(
                                   id: String,
@@ -40,7 +39,8 @@ class DefaultStorageItemsTable(tag: Tag) extends Table[RawDefaultStorageItem](ta
 class CreationTypeNotFoundException extends Exception
 
 class DefaultStorageItemServiceImpl @Inject() (
-                                             dataServiceProvider: Provider[DataService]
+                                             dataServiceProvider: Provider[DataService],
+                                             implicit val ec: ExecutionContext
                                            ) extends DefaultStorageItemService {
 
   def dataService = dataServiceProvider.get

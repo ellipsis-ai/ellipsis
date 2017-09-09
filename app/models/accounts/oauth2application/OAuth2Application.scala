@@ -5,8 +5,7 @@ import org.apache.commons.lang.WordUtils
 import play.api.http.{HeaderNames, MimeTypes}
 import play.api.libs.ws.{WSClient, WSRequest, WSResponse}
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 case class OAuth2Application(
                               id: String,
@@ -25,7 +24,7 @@ case class OAuth2Application(
 
   def maybeAuthorizationRequestFor(state: String, redirectUrl: String, ws: WSClient): Option[WSRequest] = {
     maybeAuthorizationUrl.map { authorizationUrl =>
-      ws.url(authorizationUrl).withQueryString(
+      ws.url(authorizationUrl).withQueryStringParameters(
         "client_id" -> clientId,
         "redirect_uri" -> redirectUrl,
         "scope" -> scopeString,
@@ -40,7 +39,7 @@ case class OAuth2Application(
 
   private def clientCredentialsTokenResponseFor(ws: WSClient): Future[WSResponse] = {
     ws.url(accessTokenUrl).
-      withHeaders(HeaderNames.ACCEPT -> MimeTypes.JSON).
+      withHttpHeaders(HeaderNames.ACCEPT -> MimeTypes.JSON).
       post(Map(
         "client_id" -> Seq(clientId),
         "client_secret" -> Seq(clientSecret),
@@ -49,7 +48,7 @@ case class OAuth2Application(
       ))
   }
 
-  def getClientCredentialsTokenFor(ws: WSClient): Future[Option[String]] = {
+  def getClientCredentialsTokenFor(ws: WSClient)(implicit ec: ExecutionContext): Future[Option[String]] = {
     clientCredentialsTokenResponseFor(ws).map { response =>
       val json = response.json
       (json \ "access_token").asOpt[String]
@@ -58,7 +57,7 @@ case class OAuth2Application(
 
   def accessTokenResponseFor(code: String, redirectUrl: String, ws: WSClient): Future[WSResponse] = {
     ws.url(accessTokenUrl).
-      withHeaders(HeaderNames.ACCEPT -> MimeTypes.JSON).
+      withHttpHeaders(HeaderNames.ACCEPT -> MimeTypes.JSON).
       post(Map(
         "client_id" -> Seq(clientId),
         "client_secret" -> Seq(clientSecret),
@@ -70,7 +69,7 @@ case class OAuth2Application(
 
   def refreshTokenResponseFor(refreshToken: String, ws: WSClient): Future[WSResponse] = {
     ws.url(accessTokenUrl).
-      withHeaders(HeaderNames.ACCEPT -> MimeTypes.JSON).
+      withHttpHeaders(HeaderNames.ACCEPT -> MimeTypes.JSON).
       post(Map(
         "refresh_token" -> Seq(refreshToken),
         "client_id" -> Seq(clientId),

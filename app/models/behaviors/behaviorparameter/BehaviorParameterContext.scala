@@ -7,8 +7,7 @@ import models.behaviors.events.Event
 import services.{CacheService, DataService, DefaultServices}
 import slick.dbio.DBIO
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 case class BehaviorParameterContext(
                                      event: Event,
@@ -25,7 +24,7 @@ case class BehaviorParameterContext(
     services.dataService.behaviorParameters.isFirstForBehaviorVersionAction(parameter)
   }
 
-  def unfilledParamCount(paramState: ParamCollectionState): Future[Int] = {
+  def unfilledParamCount(paramState: ParamCollectionState)(implicit ec: ExecutionContext): Future[Int] = {
     maybeConversation.map { conversation =>
       paramState.allLeftToCollect(conversation).map(_.size)
     }.getOrElse(Future.successful(0))

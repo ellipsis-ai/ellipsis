@@ -5,8 +5,7 @@ import services.CacheService
 import slack.api.{ApiError, SlackApiClient}
 import slack.models.{Channel, Group, Im}
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 import scala.util.matching.Regex
 
 trait ChannelLike {
@@ -54,7 +53,7 @@ case class SlackDM(im: Im) extends ChannelLike {
 
 case class SlackChannels(client: SlackApiClient, cacheService: CacheService, slackTeamId: String) {
 
-  private def getInfoFor(channelLikeId: String)(implicit actorSystem: ActorSystem): Future[Option[ChannelLike]] = {
+  private def getInfoFor(channelLikeId: String)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[ChannelLike]] = {
     for {
       maybeChannel <- maybeChannelInfoFor(channelLikeId)
       maybeGroup <- if (maybeChannel.isEmpty) {
@@ -76,7 +75,7 @@ case class SlackChannels(client: SlackApiClient, cacheService: CacheService, sla
     }
   }
 
-  def getList(implicit actorSystem: ActorSystem): Future[Seq[ChannelLike]] = {
+  def getList(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Seq[ChannelLike]] = {
     for {
       channels <- client.listChannels()
       groups <- client.listGroups()
@@ -86,7 +85,7 @@ case class SlackChannels(client: SlackApiClient, cacheService: CacheService, sla
     }
   }
 
-  def getListForUser(maybeSlackUserId: Option[String])(implicit actorSystem: ActorSystem): Future[Seq[ChannelLike]] = {
+  def getListForUser(maybeSlackUserId: Option[String])(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Seq[ChannelLike]] = {
     maybeSlackUserId.map { slackUserId =>
       getList.map { channels =>
         channels.filter(ea => ea.visibleToUser(slackUserId))
@@ -94,7 +93,7 @@ case class SlackChannels(client: SlackApiClient, cacheService: CacheService, sla
     }.getOrElse(Future.successful(Seq()))
   }
 
-  def getMembersFor(channelOrGroupId: String)(implicit actorSystem: ActorSystem): Future[Seq[String]] = {
+  def getMembersFor(channelOrGroupId: String)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Seq[String]] = {
     getInfoFor(channelOrGroupId).map { maybeChannelLike =>
       maybeChannelLike.map(_.members).getOrElse(Seq())
     }
@@ -110,7 +109,7 @@ case class SlackChannels(client: SlackApiClient, cacheService: CacheService, sla
     }
   }
 
-  def maybeIdFor(channelLikeIdOrName: String)(implicit actorSystem: ActorSystem): Future[Option[String]] = {
+  def maybeIdFor(channelLikeIdOrName: String)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[String]] = {
     val unformattedChannelLikeIdOrName = unformatChannelText(channelLikeIdOrName)
     getInfoFor(unformattedChannelLikeIdOrName).flatMap { maybeChannelLike =>
       maybeChannelLike.map(c => Future.successful(Some(c.id))).getOrElse {
@@ -121,7 +120,7 @@ case class SlackChannels(client: SlackApiClient, cacheService: CacheService, sla
     }
   }
 
-  def maybeChannelInfoFor(channel: String)(implicit actorSystem: ActorSystem): Future[Option[Channel]] = {
+  def maybeChannelInfoFor(channel: String)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[Channel]] = {
     if (!channel.startsWith("C")) {
       Future.successful(None)
     } else {
@@ -142,7 +141,7 @@ case class SlackChannels(client: SlackApiClient, cacheService: CacheService, sla
     }
   }
 
-  def maybeGroupInfoFor(channel: String)(implicit actorSystem: ActorSystem): Future[Option[Group]] = {
+  def maybeGroupInfoFor(channel: String)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[Group]] = {
     if (!channel.startsWith("G")) {
       Future.successful(None)
     } else {
@@ -163,7 +162,7 @@ case class SlackChannels(client: SlackApiClient, cacheService: CacheService, sla
     }
   }
 
-  def listIms(implicit actorSystem: ActorSystem): Future[Seq[Im]] = {
+  def listIms(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Seq[Im]] = {
     cacheService.getSlackIMs(slackTeamId).map { ims =>
       Future.successful(ims)
     }.getOrElse {

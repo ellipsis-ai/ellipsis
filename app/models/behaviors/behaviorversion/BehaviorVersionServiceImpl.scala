@@ -22,8 +22,7 @@ import play.api.libs.ws.WSClient
 import play.api.{Configuration, Logger}
 import services.{AWSLambdaService, CacheService, DataService}
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 case class RawBehaviorVersion(
                                id: String,
@@ -71,7 +70,8 @@ class BehaviorVersionServiceImpl @Inject() (
                                       ws: WSClient,
                                       configuration: Configuration,
                                       cacheService: CacheService,
-                                      implicit val actorSystem: ActorSystem
+                                      implicit val actorSystem: ActorSystem,
+                                      implicit val ec: ExecutionContext
                                     ) extends BehaviorVersionService {
 
   def dataService = dataServiceProvider.get

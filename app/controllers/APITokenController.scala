@@ -2,6 +2,7 @@ package controllers
 
 import javax.inject.Inject
 
+import com.google.inject.Provider
 import com.mohiva.play.silhouette.api.Silhouette
 import json.Formatting._
 import json.{APITokenData, APITokenListConfig}
@@ -9,19 +10,18 @@ import models.silhouette.EllipsisEnv
 import play.api.Configuration
 import play.api.data.Form
 import play.api.data.Forms._
-import play.api.i18n.MessagesApi
 import play.api.libs.json.Json
 import play.filters.csrf.CSRF
 import services.DataService
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 class APITokenController @Inject() (
-                                     val messagesApi: MessagesApi,
                                      val silhouette: Silhouette[EllipsisEnv],
                                      val configuration: Configuration,
-                                     val dataService: DataService
+                                     val dataService: DataService,
+                                     val assetsProvider: Provider[RemoteAssets],
+                                     implicit val ec: ExecutionContext
                                    ) extends ReAuthable {
 
   private val createAPITokenForm = Form(
