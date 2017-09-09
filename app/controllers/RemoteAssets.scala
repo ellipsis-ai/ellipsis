@@ -2,7 +2,7 @@ package controllers
 
 import java.time.format.DateTimeFormatter
 import java.time.{OffsetDateTime, ZoneId}
-import javax.inject.{Inject, Singleton}
+import javax.inject.Inject
 
 import controllers.Assets.Asset
 import play.api.Configuration
@@ -10,7 +10,6 @@ import play.api.mvc._
 
 import scala.concurrent.ExecutionContext
 
-@Singleton
 class RemoteAssets @Inject() (
                              val configuration: Configuration,
                              val assets: Assets,
