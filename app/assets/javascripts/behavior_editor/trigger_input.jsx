@@ -48,58 +48,23 @@ return React.createClass({
     this.focus();
   },
   setNormalPhrase: function() {
-    if (!this.isNormalPhrase()) {
+    if (this.isRegex()) {
       this.changeTrigger({
-        isRegex: false,
-        caseSensitive: false
+        isRegex: false
       });
     }
   },
-  isNormalPhrase: function() {
-    return !this.props.trigger.isRegex && !this.props.trigger.caseSensitive;
+  isRegex: function() {
+    return this.props.trigger.isRegex;
   },
-  setCaseSensitivePhrase: function() {
-    if (!this.isCaseSensitivePhrase()) {
+  setRegex: function() {
+    if (!this.isRegex()) {
       this.changeTrigger({
-        isRegex: false,
-        caseSensitive: true
+        isRegex: true
       });
     }
-  },
-  isCaseSensitivePhrase: function() {
-    return !this.props.trigger.isRegex && this.props.trigger.caseSensitive;
-  },
-  setCaseInsensitiveRegex: function() {
-    if (!this.isCaseInsensitiveRegex()) {
-      this.changeTrigger({
-        isRegex: true,
-        caseSensitive: false
-      });
-    }
-  },
-  isCaseInsensitiveRegex: function() {
-    return this.props.trigger.isRegex && !this.props.trigger.caseSensitive;
-  },
-  setCaseSensitiveRegex: function() {
-    if (!this.isCaseSensitiveRegex()) {
-      this.changeTrigger({
-        isRegex: true,
-        caseSensitive: true
-      });
-    }
-  },
-  isCaseSensitiveRegex: function() {
-    return this.props.trigger.isRegex && this.props.trigger.caseSensitive;
   },
 
-  onBlur: function() {
-    if (this.props.trigger.hasCaseInsensitiveRegexFlagWhileCaseSensitive()) {
-      this.changeTrigger({
-        caseSensitive: false,
-        text: this.props.trigger.text.replace(/^\(\?i\)/, '')
-      });
-    }
-  },
   validateTrigger: debounce(function() {
     if (!this.props.trigger.text || !this.props.trigger.isRegex) {
       this.clearError();
@@ -123,8 +88,8 @@ return React.createClass({
   }, 500),
 
   getHelpForRegexError: function() {
-    var isIllegalRepetitionError = /^Illegal repetition/.test(this.state.regexError);
-    var containsProbableParamName = /\{.+?\}/.test(this.state.regexError);
+    var isIllegalRepetitionError = /^Illegal repetition/.test(this.state.regexError || "");
+    var containsProbableParamName = /\{.+?\}/.test(this.state.regexError || "");
     if (isIllegalRepetitionError && containsProbableParamName) {
       return (
         <div className="mts">
@@ -160,17 +125,7 @@ return React.createClass({
   },
 
   getPrefix: function() {
-    var label;
-    if (this.isCaseSensitiveRegex()) {
-      label = "Regex pattern (case-sensitive)";
-    } else if (this.isCaseInsensitiveRegex()) {
-      label = "Regex pattern (ignore case)";
-    } else if (this.isCaseSensitivePhrase()) {
-      label = "Case-sensitive phrase";
-    } else {
-      label = "Phrase";
-    }
-    return label;
+    return this.isRegex() ? "Regex pattern" : "Phrase";
   },
 
   componentDidMount: function() {
@@ -215,23 +170,13 @@ return React.createClass({
             >
               <DropdownMenu.Item
                 onClick={this.setNormalPhrase}
-                label="Normal phrase (ignore case)"
-                checkedWhen={this.isNormalPhrase()}
+                label="Normal phrase"
+                checkedWhen={!this.isRegex()}
               />
               <DropdownMenu.Item
-                onClick={this.setCaseSensitivePhrase}
-                label="Case-sensitive phrase"
-                checkedWhen={this.isCaseSensitivePhrase()}
-              />
-              <DropdownMenu.Item
-                onClick={this.setCaseInsensitiveRegex}
-                label="Regular expression (ignore case)"
-                checkedWhen={this.isCaseInsensitiveRegex()}
-              />
-              <DropdownMenu.Item
-                onClick={this.setCaseSensitiveRegex}
-                label="Regular expression (case-sensitive)"
-                checkedWhen={this.isCaseSensitiveRegex()}
+                onClick={this.setRegex}
+                label="Regular expression"
+                checkedWhen={this.isRegex()}
               />
             </DropdownMenu>
           </div>
@@ -246,7 +191,6 @@ return React.createClass({
               value={this.props.trigger.text}
               placeholder="Add a trigger phrase"
               onChange={this.onChange.bind(this, 'text')}
-              onBlur={this.onBlur}
               onEnterKey={this.props.onEnterKey}
             />
             <div className={

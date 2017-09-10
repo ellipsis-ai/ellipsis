@@ -6,14 +6,14 @@ import models.behaviors.events.Event
 import play.api.Configuration
 import services.{AWSLambdaService, CacheService, DataService}
 
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 trait BuiltinBehavior {
   val event: Event
   val lambdaService: AWSLambdaService
   val dataService: DataService
 
-  def result(implicit actorSystem: ActorSystem): Future[BotResult]
+  def result(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[BotResult]
 }
 
 object BuiltinBehavior {

@@ -26,6 +26,7 @@
   routes.javascript.BehaviorEditorController.testInvocation,
   routes.javascript.BehaviorEditorController.testTriggers,
   routes.javascript.BehaviorEditorController.versionInfoFor,
+  routes.javascript.BehaviorEditorController.nodeModuleVersionsFor,
   routes.javascript.BehaviorImportExportController.doImport,
   routes.javascript.BehaviorImportExportController.export,
   routes.javascript.EnvironmentVariablesController.list,

@@ -10,8 +10,7 @@ import models.team.Team
 import services.DataService
 import utils.{FuzzyMatchPattern, FuzzyMatchable, SimpleFuzzyMatchPattern}
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 case class BehaviorGroupData(
                               id: Option[String],
@@ -23,7 +22,6 @@ case class BehaviorGroupData(
                               dataTypeInputs: Seq[InputData],
                               behaviorVersions: Seq[BehaviorVersionData],
                               libraryVersions: Seq[LibraryVersionData],
-                              nodeModuleVersions: Seq[NodeModuleVersionData],
                               requiredAWSConfigs: Seq[RequiredAWSConfigData],
                               requiredOAuth2ApiConfigs: Seq[RequiredOAuth2ApiConfigData],
                               requiredSimpleTokenApis: Seq[RequiredSimpleTokenApiData],
@@ -127,7 +125,7 @@ case class BehaviorGroupData(
 
 object BehaviorGroupData {
 
-  def buildFor(version: BehaviorGroupVersion, user: User, dataService: DataService): Future[BehaviorGroupData] = {
+  def buildFor(version: BehaviorGroupVersion, user: User, dataService: DataService)(implicit ec: ExecutionContext): Future[BehaviorGroupData] = {
     for {
       behaviors <- dataService.behaviors.allForGroup(version.group)
       versionsData <- Future.sequence(behaviors.map { ea =>
@@ -139,7 +137,6 @@ object BehaviorGroupData {
       inputsData <- Future.sequence(inputs.map(ea => InputData.fromInput(ea, dataService)))
       libraryVersions <- dataService.libraries.allFor(version)
       libraryVersionsData <- Future.successful(libraryVersions.map(ea => LibraryVersionData.fromVersion(ea)))
-      nodeModuleVersions <- dataService.nodeModuleVersions.allFor(version)
       requiredAWSConfigs <- dataService.requiredAWSConfigs.allFor(version)
       requiredOAuth2ApiConfigs <- dataService.requiredOAuth2ApiConfigs.allFor(version)
       requiredSimpleTokenApis <- dataService.requiredSimpleTokenApis.allFor(version)
@@ -157,7 +154,6 @@ object BehaviorGroupData {
         dataTypeInputsData,
         versionsData,
         libraryVersionsData,
-        nodeModuleVersions.map(NodeModuleVersionData.from),
         requiredAWSConfigs.map(RequiredAWSConfigData.from),
         requiredOAuth2ApiConfigs.map(RequiredOAuth2ApiConfigData.from),
         requiredSimpleTokenApis.map(RequiredSimpleTokenApiData.from),
@@ -168,7 +164,7 @@ object BehaviorGroupData {
     }
   }
 
-  def maybeFor(id: String, user: User, maybeGithubUrl: Option[String], dataService: DataService): Future[Option[BehaviorGroupData]] = {
+  def maybeFor(id: String, user: User, maybeGithubUrl: Option[String], dataService: DataService)(implicit ec: ExecutionContext): Future[Option[BehaviorGroupData]] = {
     for {
       maybeGroup <- dataService.behaviorGroups.findWithoutAccessCheck(id)
       maybeLatestGroupVersion <- maybeGroup.flatMap { group =>

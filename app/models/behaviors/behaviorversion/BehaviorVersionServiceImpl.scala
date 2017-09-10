@@ -23,8 +23,7 @@ import play.api.libs.ws.WSClient
 import play.api.{Configuration, Logger}
 import services.{AWSLambdaService, ApiConfigInfo, CacheService, DataService}
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 case class RawBehaviorVersion(
                                id: String,
@@ -72,7 +71,8 @@ class BehaviorVersionServiceImpl @Inject() (
                                       ws: WSClient,
                                       configuration: Configuration,
                                       cacheService: CacheService,
-                                      implicit val actorSystem: ActorSystem
+                                      implicit val actorSystem: ActorSystem,
+                                      implicit val ec: ExecutionContext
                                     ) extends BehaviorVersionService {
 
   def dataService = dataServiceProvider.get
@@ -346,7 +346,7 @@ class BehaviorVersionServiceImpl @Inject() (
     for {
       missingTeamEnvVars <- dataService.teamEnvironmentVariables.missingInAction(behaviorVersion, dataService)
       requiredOAuth2ApiConfigs <- dataService.requiredOAuth2ApiConfigs.allForAction(behaviorVersion.groupVersion)
-      userInfo <- event.userInfoAction(ws, dataService)
+      userInfo <- event.userInfoAction(ws, dataService, cacheService)
       notReadyOAuth2Applications <- DBIO.successful(requiredOAuth2ApiConfigs.filterNot(_.isReady))
       missingOAuth2Applications <- DBIO.successful(requiredOAuth2ApiConfigs.flatMap(_.maybeApplication).filter { app =>
         !userInfo.links.exists(_.externalSystem == app.name)

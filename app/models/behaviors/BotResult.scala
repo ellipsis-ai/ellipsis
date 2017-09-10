@@ -17,8 +17,7 @@ import services.{AWSLambdaLogResult, CacheService, DataService}
 import slick.dbio.DBIO
 import utils.UploadFileSpec
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration._
 
 object ResultType extends Enumeration {
@@ -45,7 +44,7 @@ sealed trait BotResult {
     dataService.run(maybeChannelForSendAction(maybeConversation, dataService))
   }
 
-  def maybeOngoingConversation(dataService: DataService)(implicit actorSystem: ActorSystem): Future[Option[Conversation]] = {
+  def maybeOngoingConversation(dataService: DataService)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[Conversation]] = {
     maybeChannelForSend(None, dataService).flatMap { maybeChannel =>
       dataService.conversations.findOngoingFor(event.userIdForContext, event.context, maybeChannel, event.maybeThreadId)
     }
@@ -56,7 +55,7 @@ sealed trait BotResult {
     s"You haven't answered my question yet, but I have something new to $action you."
   }
 
-  def interruptOngoingConversationsForAction(dataService: DataService)(implicit actorSystem: ActorSystem): DBIO[Boolean] = {
+  def interruptOngoingConversationsForAction(dataService: DataService)(implicit actorSystem: ActorSystem, ec: ExecutionContext): DBIO[Boolean] = {
     if (maybeConversation.exists(_.maybeThreadId.isDefined)) {
       DBIO.successful(false)
     } else {
@@ -376,7 +375,7 @@ case class OAuth2TokenMissing(
   val forcePrivateResponse = true
 
   def authLink: String = {
-    val baseUrl = configuration.getString("application.apiBaseUrl").get
+    val baseUrl = configuration.get[String]("application.apiBaseUrl")
     val redirectPath = controllers.routes.APIAccessController.linkCustomOAuth2Service(oAuth2Application.id, None, None, Some(key), None)
     val redirect = s"$baseUrl$redirectPath"
     val authPath = controllers.routes.SocialAuthController.loginWithToken(loginToken.value, Some(redirect))

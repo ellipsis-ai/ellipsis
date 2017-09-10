@@ -38,7 +38,7 @@ define(function(require) {
               <span className="link">{this.getRecurrenceSummary()}</span>
             </span>
           </button>
-          <div className="mtl">
+          <div>
             <h5>Next two times:</h5>
             <div>
               {Formatter.formatTimestampLong(this.getFirstRecurrence())}

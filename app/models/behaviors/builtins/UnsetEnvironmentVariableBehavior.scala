@@ -5,8 +5,7 @@ import models.behaviors.events.Event
 import models.behaviors.{BotResult, SimpleTextResult}
 import services.{AWSLambdaService, DataService}
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 
 case class UnsetEnvironmentVariableBehavior(
@@ -16,7 +15,7 @@ case class UnsetEnvironmentVariableBehavior(
                                              dataService: DataService
                                            ) extends BuiltinBehavior {
 
-  def result(implicit actorSystem: ActorSystem): Future[BotResult] = {
+  def result(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[BotResult] = {
     for {
       maybeTeam <- dataService.teams.find(event.teamId)
       didDelete <- maybeTeam.map { team =>

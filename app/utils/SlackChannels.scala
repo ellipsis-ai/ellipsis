@@ -1,11 +1,11 @@
 package utils
 
 import akka.actor.ActorSystem
+import services.CacheService
 import slack.api.{ApiError, SlackApiClient}
 import slack.models.{Channel, Group, Im}
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 import scala.util.matching.Regex
 
 trait ChannelLike {
@@ -51,39 +51,41 @@ case class SlackDM(im: Im) extends ChannelLike {
   val isArchived: Boolean = im.is_user_deleted.getOrElse(false)
 }
 
-case class SlackChannels(client: SlackApiClient) {
+case class SlackChannels(client: SlackApiClient, cacheService: CacheService, slackTeamId: String) {
 
-  private def swallowingChannelNotFound[T](fn: () => Future[T]): Future[Option[T]] = {
-    fn().map(Some(_)).recover {
-      case e: ApiError => if (e.code == "channel_not_found") {
-        None
+  private def getInfoFor(channelLikeId: String)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[ChannelLike]] = {
+    for {
+      maybeChannel <- maybeChannelInfoFor(channelLikeId)
+      maybeGroup <- if (maybeChannel.isEmpty) {
+        maybeGroupInfoFor(channelLikeId)
       } else {
-        throw e
+        Future.successful(None)
+      }
+      maybeIm <- if (maybeChannel.isEmpty && maybeGroup.isEmpty) {
+        listIms.map(_.find(_.id == channelLikeId))
+      } else {
+        Future.successful(None)
+      }
+    } yield {
+      maybeChannel.map(SlackChannel.apply) orElse {
+        maybeGroup.map(SlackGroup.apply) orElse {
+          maybeIm.map(SlackDM.apply)
+        }
       }
     }
   }
 
-  private def getInfoFor(channelLikeId: String)(implicit actorSystem: ActorSystem): Future[Option[ChannelLike]] = {
-    for {
-      maybeChannel <- swallowingChannelNotFound(() => client.getChannelInfo(channelLikeId))
-      maybeGroup <- swallowingChannelNotFound(() => client.getGroupInfo(channelLikeId))
-      maybeIm <- client.listIms().map(_.find(_.id == channelLikeId))
-    } yield {
-      maybeChannel.map(SlackChannel.apply).orElse(maybeGroup.map(SlackGroup.apply)).orElse(maybeIm.map(SlackDM.apply))
-    }
-  }
-
-  def getList(implicit actorSystem: ActorSystem): Future[Seq[ChannelLike]] = {
+  def getList(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Seq[ChannelLike]] = {
     for {
       channels <- client.listChannels()
       groups <- client.listGroups()
-      dms <- client.listIms()
+      dms <- listIms
     } yield {
       channels.map(SlackChannel.apply) ++ groups.map(SlackGroup.apply) ++ dms.map(SlackDM.apply)
     }
   }
 
-  def getListForUser(maybeSlackUserId: Option[String])(implicit actorSystem: ActorSystem): Future[Seq[ChannelLike]] = {
+  def getListForUser(maybeSlackUserId: Option[String])(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Seq[ChannelLike]] = {
     maybeSlackUserId.map { slackUserId =>
       getList.map { channels =>
         channels.filter(ea => ea.visibleToUser(slackUserId))
@@ -91,7 +93,7 @@ case class SlackChannels(client: SlackApiClient) {
     }.getOrElse(Future.successful(Seq()))
   }
 
-  def getMembersFor(channelOrGroupId: String)(implicit actorSystem: ActorSystem): Future[Seq[String]] = {
+  def getMembersFor(channelOrGroupId: String)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Seq[String]] = {
     getInfoFor(channelOrGroupId).map { maybeChannelLike =>
       maybeChannelLike.map(_.members).getOrElse(Seq())
     }
@@ -107,13 +109,66 @@ case class SlackChannels(client: SlackApiClient) {
     }
   }
 
-  def maybeIdFor(channelLikeIdOrName: String)(implicit actorSystem: ActorSystem): Future[Option[String]] = {
+  def maybeIdFor(channelLikeIdOrName: String)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[String]] = {
     val unformattedChannelLikeIdOrName = unformatChannelText(channelLikeIdOrName)
     getInfoFor(unformattedChannelLikeIdOrName).flatMap { maybeChannelLike =>
       maybeChannelLike.map(c => Future.successful(Some(c.id))).getOrElse {
         getList.map { infos =>
           infos.find(_.name == unformattedChannelLikeIdOrName).map(_.id)
         }
+      }
+    }
+  }
+
+  def maybeChannelInfoFor(channel: String)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[Channel]] = {
+    if (!channel.startsWith("C")) {
+      Future.successful(None)
+    } else {
+      cacheService.getSlackChannelInfo(channel, slackTeamId).map { channelInfo =>
+        Future.successful(Some(channelInfo))
+      }.getOrElse {
+        client.getChannelInfo(channel).map { channelInfo =>
+          cacheService.cacheSlackChannelInfo(channel, slackTeamId, channelInfo)
+          Some(channelInfo)
+        }.recover {
+          case e: ApiError => if (e.code == "channel_not_found") {
+            None
+          } else {
+            throw e
+          }
+        }
+      }
+    }
+  }
+
+  def maybeGroupInfoFor(channel: String)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[Group]] = {
+    if (!channel.startsWith("G")) {
+      Future.successful(None)
+    } else {
+      cacheService.getSlackGroupInfo(channel, slackTeamId).map { groupInfo =>
+        Future.successful(Some(groupInfo))
+      }.getOrElse {
+        client.getGroupInfo(channel).map { groupInfo =>
+          cacheService.cacheSlackGroupInfo(channel, slackTeamId, groupInfo)
+          Some(groupInfo)
+        }.recover {
+          case e: ApiError => if (e.code == "channel_not_found") {
+            None
+          } else {
+            throw e
+          }
+        }
+      }
+    }
+  }
+
+  def listIms(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Seq[Im]] = {
+    cacheService.getSlackIMs(slackTeamId).map { ims =>
+      Future.successful(ims)
+    }.getOrElse {
+      client.listIms().map { ims =>
+        cacheService.cacheSlackIMs(ims, slackTeamId)
+        ims
       }
     }
   }

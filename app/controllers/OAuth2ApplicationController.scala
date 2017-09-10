@@ -2,6 +2,7 @@ package controllers
 
 import javax.inject.Inject
 
+import com.google.inject.Provider
 import com.mohiva.play.silhouette.api.Silhouette
 import json.Formatting._
 import json._
@@ -16,14 +17,14 @@ import play.api.libs.json.Json
 import play.filters.csrf.CSRF
 import services.DataService
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 class OAuth2ApplicationController @Inject() (
-                                              val messagesApi: MessagesApi,
                                               val silhouette: Silhouette[EllipsisEnv],
                                               val dataService: DataService,
-                                              val configuration: Configuration
+                                              val configuration: Configuration,
+                                              val assetsProvider: Provider[RemoteAssets],
+                                              implicit val ec: ExecutionContext
                                             ) extends ReAuthable {
 
   def list(maybeTeamId: Option[String]) = silhouette.SecuredAction.async { implicit request =>
@@ -42,7 +43,7 @@ class OAuth2ApplicationController @Inject() (
               containerId = "applicationList",
               csrfToken = CSRF.getToken(request).map(_.value),
               teamId = team.id,
-              apis = apis.map(api => OAuth2ApiData.from(api)),
+              apis = apis.map(api => OAuth2ApiData.from(api, assets)),
               applications = applications.map(app => OAuth2ApplicationData.from(app))
             )
             Ok(views.js.shared.pageConfig(viewConfig(Some(teamAccess)), "config/oauth2application/list", Json.toJson(config)))
@@ -80,7 +81,7 @@ class OAuth2ApplicationController @Inject() (
               containerId = "applicationEditor",
               csrfToken = CSRF.getToken(request).map(_.value),
               teamId = team.id,
-              apis = apis.map(OAuth2ApiData.from),
+              apis = apis.map(ea => OAuth2ApiData.from(ea, assets)),
               callbackUrl = routes.APIAccessController.linkCustomOAuth2Service(newApplicationId, None, None, None, None).absoluteURL(secure = true),
               mainUrl = routes.ApplicationController.index().absoluteURL(secure = true),
               applicationId = newApplicationId,
@@ -131,7 +132,7 @@ class OAuth2ApplicationController @Inject() (
               containerId = "applicationEditor",
               csrfToken = CSRF.getToken(request).map(_.value),
               teamId = team.id,
-              apis = apis.map(OAuth2ApiData.from),
+              apis = apis.map(ea => OAuth2ApiData.from(ea, assets)),
               callbackUrl = routes.APIAccessController.linkCustomOAuth2Service(application.id, None, None, None, None).absoluteURL(secure = true),
               mainUrl = routes.ApplicationController.index().absoluteURL(secure = true),
               applicationId = application.id,

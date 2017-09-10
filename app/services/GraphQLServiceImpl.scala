@@ -17,8 +17,7 @@ import sangria.parser.{QueryParser, SyntaxError}
 import sangria.schema.{Action, Context, DefaultAstSchemaBuilder, Schema}
 
 import scala.collection.immutable.ListMap
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}
 
 case class ItemNotFoundError(id: String) extends Exception with UserFacingError {
@@ -26,7 +25,8 @@ case class ItemNotFoundError(id: String) extends Exception with UserFacingError 
 }
 
 class GraphQLServiceImpl @Inject() (
-                                    dataService: DataService
+                                    dataService: DataService,
+                                    implicit val ec: ExecutionContext
                                   ) extends GraphQLService {
 
   private def buildSchemaStringFor(versions: Seq[BehaviorVersionForDataTypeSchema]): Future[String] = {

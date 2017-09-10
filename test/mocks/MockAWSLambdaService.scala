@@ -3,7 +3,6 @@ package mocks
 import javax.inject.Inject
 
 import com.amazonaws.services.lambda.AWSLambdaAsyncClient
-import models.Models
 import models.behaviors.behaviorversion.BehaviorVersion
 import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.events.Event
@@ -22,7 +21,6 @@ import scala.concurrent.Future
 
 class MockAWSLambdaService @Inject() (
                                        val configuration: Configuration,
-                                       val models: Models,
                                        val ws: WSClient,
                                        val dataService: DataService,
                                        val logsService: AWSLogsService

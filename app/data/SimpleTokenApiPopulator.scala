@@ -5,10 +5,12 @@ import javax.inject._
 import models.accounts.simpletokenapi.SimpleTokenApi
 import services.DataService
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
-class SimpleTokenApiPopulator @Inject() (dataService: DataService) {
+class SimpleTokenApiPopulator @Inject() (
+                                          dataService: DataService,
+                                          implicit val ec: ExecutionContext
+                                        ) {
 
   val apis: Seq[SimpleTokenApi] = Seq(
     SimpleTokenApi(

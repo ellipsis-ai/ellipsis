@@ -6,8 +6,7 @@ import models.behaviors.{BotResult, SimpleTextResult}
 import services.{AWSLambdaService, DataService}
 import utils.TimeZoneParser
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 
 case class SetDefaultTimeZoneBehavior(
@@ -17,7 +16,7 @@ case class SetDefaultTimeZoneBehavior(
                                        dataService: DataService
                                      ) extends BuiltinBehavior {
 
-  def result(implicit actorSystem: ActorSystem): Future[BotResult] = {
+  def result(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[BotResult] = {
     val maybeTz = TimeZoneParser.maybeZoneFor(tzString)
     maybeTz.map { tz =>
       for {

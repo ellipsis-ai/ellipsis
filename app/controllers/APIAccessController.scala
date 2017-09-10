@@ -3,6 +3,7 @@ package controllers
 import javax.inject.Inject
 
 import akka.actor.ActorSystem
+import com.google.inject.Provider
 import com.mohiva.play.silhouette.api.Silhouette
 import com.mohiva.play.silhouette.api.actions.SecuredRequest
 import models.IDs
@@ -13,16 +14,13 @@ import models.behaviors.BotResultService
 import models.behaviors.events.EventHandler
 import models.silhouette.EllipsisEnv
 import play.api.Configuration
-import play.api.i18n.MessagesApi
 import play.api.libs.ws.WSClient
 import play.api.mvc.{AnyContent, Result}
 import services.{CacheService, DataService}
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 class APIAccessController @Inject() (
-                                      val messagesApi: MessagesApi,
                                       val silhouette: Silhouette[EllipsisEnv],
                                       val configuration: Configuration,
                                       val dataService: DataService,
@@ -30,7 +28,9 @@ class APIAccessController @Inject() (
                                       val cacheService: CacheService,
                                       val eventHandler: EventHandler,
                                       val botResultService: BotResultService,
-                                      implicit val actorSystem: ActorSystem
+                                      val assetsProvider: Provider[RemoteAssets],
+                                      implicit val actorSystem: ActorSystem,
+                                      implicit val ec: ExecutionContext
                                     )
   extends ReAuthable {
 

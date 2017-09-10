@@ -12,16 +12,16 @@ import play.api.Configuration
 import play.api.libs.json.{JsError, JsSuccess, JsValue, Json}
 import play.api.libs.ws.WSClient
 
-import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
-import scala.concurrent.{Await, Future}
+import scala.concurrent.{Await, ExecutionContext, Future}
 
 @Singleton
 class GithubService @Inject() (
                                 ws: WSClient,
                                 config: Configuration,
                                 cacheService: CacheService,
-                                dataService: DataService
+                                dataService: DataService,
+                                implicit val ec: ExecutionContext
                               ) {
 
   val API_URL = "https://api.github.com"
@@ -31,13 +31,13 @@ class GithubService @Inject() (
 
   val PUBLISHED_BEHAVIORS_KEY = "github_published_behaviors"
 
-  val repoCredentials: (String, String) = ("access_token", config.getString("github.repoAccessToken").get)
-  val cacheTimeout: Duration = config.getInt("github.cacheTimeoutSeconds").get.seconds
+  val repoCredentials: (String, String) = ("access_token", config.get[String]("github.repoAccessToken"))
+  val cacheTimeout: Duration = config.get[Int]("github.cacheTimeoutSeconds").seconds
 
   def branchFor(maybeBranch: Option[String]) = maybeBranch.getOrElse("master")
 
   private def withTreeFor(url: String): Future[Option[Seq[JsValue]]] = {
-    ws.url(url).withQueryString(repoCredentials).get().map { response =>
+    ws.url(url).withQueryStringParameters(repoCredentials).get().map { response =>
       val json = Json.parse(response.body)
       (json \ "tree").asOpt[Seq[JsValue]]
     }
@@ -68,8 +68,8 @@ class GithubService @Inject() (
 
   private def fetchTextFor(url: String): Future[String] = {
     ws.url(url).
-      withQueryString(repoCredentials).
-      withHeaders(("Accept", "application/vnd.github.v3.json")).
+      withQueryStringParameters(repoCredentials).
+      withHttpHeaders(("Accept", "application/vnd.github.v3.json")).
       get().
       map { response =>
         (Json.parse(response.body) \ "content").validate[String].map { base64Content =>
@@ -204,7 +204,6 @@ class GithubService @Inject() (
               dataTypeInputs,
               behaviors,
               libraries,
-              nodeModuleVersions = Seq(),
               requiredAWSConfigData,
               requiredOAuth2ApiConfigData,
               requiredSimpleTokenApiData,

@@ -1,10 +1,8 @@
 package support
 
 import akka.actor.ActorSystem
-import com.typesafe.config.ConfigFactory
-import drivers.SlickPostgresDriver.api.{Database => PostgresDatabase}
 import json._
-import mocks.MockAWSLambdaService
+import mocks.{MockAWSLambdaService, MockCacheService}
 import models.IDs
 import models.accounts.oauth2api.{AuthorizationCode, OAuth2Api}
 import models.accounts.oauth2application.OAuth2Application
@@ -22,7 +20,7 @@ import models.team.Team
 import modules.ActorModule
 import org.scalatest.mock.MockitoSugar
 import org.scalatestplus.play.{OneAppPerSuite, PlaySpec}
-import play.api.db.Databases
+import play.api.db.DBApi
 import play.api.db.evolutions.Evolutions
 import play.api.inject.bind
 import play.api.inject.guice.GuiceApplicationBuilder
@@ -32,11 +30,12 @@ import services._
 import slick.dbio.DBIO
 
 import scala.concurrent.duration._
-import scala.concurrent.{Await, Future}
+import scala.concurrent.{Await, ExecutionContext, Future}
 
 trait DBSpec extends PlaySpec with OneAppPerSuite with MockitoSugar {
 
-  lazy val config = ConfigFactory.load()
+  lazy val config = app.injector.instanceOf(classOf[Configuration])
+  lazy val dbApi = app.injector.instanceOf(classOf[DBApi])
   lazy val cacheService = app.injector.instanceOf(classOf[CacheService])
   lazy val configuration = app.injector.instanceOf(classOf[Configuration])
   lazy val services = app.injector.instanceOf(classOf[DefaultServices])
@@ -46,6 +45,7 @@ trait DBSpec extends PlaySpec with OneAppPerSuite with MockitoSugar {
       overrides(bind[AWSLambdaService].to[MockAWSLambdaService]).
       overrides(bind[GithubService].toInstance(mock[GithubService])).
       overrides(bind[SlackEventService].toInstance(mock[SlackEventService])).
+      overrides(bind[CacheService].to[MockCacheService]).
       disable[ActorModule].
       build()
 
@@ -55,6 +55,7 @@ trait DBSpec extends PlaySpec with OneAppPerSuite with MockitoSugar {
   val slackEventService = app.injector.instanceOf(classOf[SlackEventService])
   val ws = app.injector.instanceOf(classOf[WSClient])
   val botResultService = app.injector.instanceOf(classOf[BotResultService])
+  implicit val ec: ExecutionContext = app.injector.instanceOf(classOf[ExecutionContext])
 
   def newSavedTeam: Team = runNow(dataService.teams.create(IDs.next))
 
@@ -96,7 +97,6 @@ trait DBSpec extends PlaySpec with OneAppPerSuite with MockitoSugar {
       dataTypeInputs = Seq(),
       behaviorVersions = Seq(),
       libraryVersions = Seq(),
-      nodeModuleVersions = Seq(),
       requiredAWSConfigs = Seq(),
       requiredOAuth2ApiConfigs = Seq(),
       requiredSimpleTokenApis = Seq(),
@@ -163,24 +163,17 @@ trait DBSpec extends PlaySpec with OneAppPerSuite with MockitoSugar {
     runNow(dataService.requiredAWSConfigs.createForAction(data, groupVersion))
   }
 
-  def withEmptyDB[T](dataService: PostgresDataService, fn: PostgresDatabase => T) = {
-    Databases.withDatabase(
-      driver = config.getString("slick.dbs.default.driver"),
-      url = config.getString("slick.dbs.default.url"),
-      config = Map(
-        "username" -> config.getString("slick.dbs.default.username"),
-        "password" -> config.getString("slick.dbs.default.password")
-      )
-    ) { database =>
-      Evolutions.withEvolutions(database) {
-        try {
-          fn(dataService.models.db)
-        } finally {
-          // Misguided legacy down evolutions will blow up if any of these exist, so delete them
-          runNow(dataService.slackProfiles.deleteAll())
-          runNow(dataService.collectedParameterValues.deleteAll())
-          runNow(dataService.conversations.deleteAll())
-        }
+  def withEmptyDB[T](dataService: PostgresDataService, fn: () => T) = {
+    val database = dbApi.database("default")
+
+    Evolutions.withEvolutions(database) {
+      try {
+        fn()
+      } finally {
+        // Misguided legacy down evolutions will blow up if any of these exist, so delete them
+        runNow(dataService.slackProfiles.deleteAll())
+        runNow(dataService.collectedParameterValues.deleteAll())
+        runNow(dataService.conversations.deleteAll())
       }
     }
   }

@@ -14,13 +14,12 @@ import models.behaviors.scheduling.recurrence.Recurrence
 import models.behaviors.{BotResult, BotResultService}
 import models.team.Team
 import play.api.{Configuration, Logger}
-import services.DataService
+import services.{CacheService, DataService}
 import slack.api.{ApiError, SlackApiClient}
 import slick.dbio.DBIO
 import utils.{FutureSequencer, SlackChannels}
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 trait Scheduled {
 
@@ -33,11 +32,11 @@ trait Scheduled {
   val nextSentAt: OffsetDateTime
   val createdAt: OffsetDateTime
 
-  def displayText(dataService: DataService): Future[String]
+  def displayText(dataService: DataService)(implicit ec: ExecutionContext): Future[String]
 
   def followingSentAt: OffsetDateTime = recurrence.nextAfter(nextSentAt)
 
-  def successResponse(dataService: DataService): Future[String] = {
+  def successResponse(dataService: DataService)(implicit ec: ExecutionContext): Future[String] = {
     displayText(dataService).map { displayText =>
       s"""OK, I will run $displayText $recurrenceAndChannel."""
     }
@@ -70,7 +69,7 @@ trait Scheduled {
   }
 
   def scheduleLinkFor(configuration: Configuration, scheduleId: String, teamId: String): String = {
-    configuration.getString("application.apiBaseUrl").map { baseUrl =>
+    configuration.getOptional[String]("application.apiBaseUrl").map { baseUrl =>
       val path = controllers.routes.ScheduledActionsController.index(Some(scheduleId), None, Some(teamId))
       s"_[✎ Edit]($baseUrl$path)_"
     }.getOrElse("")
@@ -113,7 +112,7 @@ trait Scheduled {
                     dataService: DataService,
                     configuration: Configuration,
                     includeChannel: Boolean
-                  ): Future[String] = {
+                  )(implicit ec: ExecutionContext): Future[String] = {
     val details = if (includeChannel) {
       recurrenceAndChannel
     } else {
@@ -159,11 +158,11 @@ trait Scheduled {
      """.stripMargin
   }
 
-  def botProfileAction(dataService: DataService): DBIO[Option[SlackBotProfile]] = {
+  def botProfileAction(dataService: DataService)(implicit ec: ExecutionContext): DBIO[Option[SlackBotProfile]] = {
     dataService.slackBotProfiles.allForAction(team).map(_.headOption)
   }
 
-  def maybeSlackProfile(dataService: DataService): Future[Option[SlackProfile]] = {
+  def maybeSlackProfile(dataService: DataService)(implicit ec: ExecutionContext): Future[Option[SlackProfile]] = {
     maybeUser.map { user =>
       for {
         maybeSlackLinkedAccount <- dataService.linkedAccounts.maybeForSlackFor(user)
@@ -182,11 +181,12 @@ trait Scheduled {
                                 client: SlackApiClient,
                                 profile: SlackBotProfile,
                                 dataService: DataService,
+                                cacheService: CacheService,
                                 configuration: Configuration,
                                 botResultService: BotResultService
-                              )(implicit actorSystem: ActorSystem): Future[Unit] = {
+                              )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Unit] = {
     for {
-      members <- SlackChannels(client).getMembersFor(channel)
+      members <- SlackChannels(client, cacheService, profile.slackTeamId).getMembersFor(channel)
       otherMembers <- Future.successful(members.filterNot(ea => ea == profile.userId))
       dmInfos <- Future.sequence(otherMembers.map { ea =>
         client.openIm(ea).map { dmChannel =>
@@ -214,7 +214,7 @@ trait Scheduled {
                dataService: DataService,
                configuration: Configuration,
                botResultService: BotResultService
-             )(implicit actorSystem: ActorSystem): Future[Unit] = {
+             )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Unit] = {
     val event = eventFor(channel, slackUserId, profile, client)
     for {
       results <- eventHandler.handle(event, None)
@@ -230,7 +230,7 @@ trait Scheduled {
                   dataService: DataService,
                   configuration: Configuration,
                   botResultService: BotResultService
-               )(implicit actorSystem: ActorSystem): SlackDMInfo => Future[Unit] = {
+               )(implicit actorSystem: ActorSystem, ec: ExecutionContext): SlackDMInfo => Future[Unit] = {
     info: SlackDMInfo => sendFor(info.channelId, info.userId, eventHandler, client, profile, dataService, configuration, botResultService)
   }
 
@@ -240,7 +240,7 @@ trait Scheduled {
                   configuration: Configuration,
                   dataService: DataService,
                   botResultService: BotResultService
-                )(implicit actorSystem: ActorSystem): Future[Unit] = {
+                )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Unit] = {
     for {
       displayText <- displayText(dataService)
       maybeIntroText <- Future.successful(maybeScheduleInfoTextFor(event, result, configuration, displayText, isForInterruption = false))
@@ -260,7 +260,7 @@ trait Scheduled {
                     configuration: Configuration,
                     dataService: DataService,
                     botResultService: BotResultService
-                  )(implicit actorSystem: ActorSystem): BotResult => Future[Unit] = {
+                  )(implicit actorSystem: ActorSystem, ec: ExecutionContext): BotResult => Future[Unit] = {
     result: BotResult => sendResult(result, event, configuration, dataService, botResultService)
   }
 
@@ -269,12 +269,13 @@ trait Scheduled {
             client: SlackApiClient,
             profile: SlackBotProfile,
             dataService: DataService,
+            cacheService: CacheService,
             configuration: Configuration,
             botResultService: BotResultService
-          )(implicit actorSystem: ActorSystem): Future[Unit] = {
+          )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Unit] = {
     maybeChannel.map { channel =>
       if (isForIndividualMembers) {
-        sendForIndividualMembers(channel, eventHandler, client, profile, dataService, configuration, botResultService)
+        sendForIndividualMembers(channel, eventHandler, client, profile, dataService, cacheService, configuration, botResultService)
       } else {
         maybeSlackProfile(dataService).flatMap { maybeSlackProfile =>
           val slackUserId = maybeSlackProfile.map(_.loginInfo.providerKey).getOrElse(profile.userId)
@@ -290,21 +291,21 @@ trait Scheduled {
 
 object Scheduled {
 
-  def allActiveForTeam(team: Team, dataService: DataService): Future[Seq[Scheduled]] = {
+  def allActiveForTeam(team: Team, dataService: DataService)(implicit ec: ExecutionContext): Future[Seq[Scheduled]] = {
     for {
       scheduledMessages <- dataService.scheduledMessages.allForTeam(team)
       scheduledBehaviors <- dataService.scheduledBehaviors.allActiveForTeam(team)
     } yield scheduledMessages ++ scheduledBehaviors
   }
 
-  def allActiveForChannel(team: Team, channel: String, dataService: DataService): Future[Seq[Scheduled]] = {
+  def allActiveForChannel(team: Team, channel: String, dataService: DataService)(implicit ec: ExecutionContext): Future[Seq[Scheduled]] = {
     for {
       scheduledMessages <- dataService.scheduledMessages.allForChannel(team, channel)
       scheduledBehaviors <- dataService.scheduledBehaviors.allActiveForChannel(team, channel)
     } yield scheduledMessages ++ scheduledBehaviors
   }
 
-  def maybeNextToBeSentAction(when: OffsetDateTime, dataService: DataService): DBIO[Option[Scheduled]] = {
+  def maybeNextToBeSentAction(when: OffsetDateTime, dataService: DataService)(implicit ec: ExecutionContext): DBIO[Option[Scheduled]] = {
     dataService.scheduledMessages.maybeNextToBeSentAction(when).flatMap { maybeNext =>
       maybeNext.map { next =>
         DBIO.successful(Some(next))

@@ -4,45 +4,42 @@ import akka.actor.ActorSystem
 import models.accounts.slack.botprofile.SlackBotProfile
 import play.api.libs.json.{JsArray, JsBoolean, JsObject, JsString}
 import play.api.libs.ws.WSClient
-import slack.api.{ApiError, SlackApiClient}
-import slack.models.Channel
+import services.CacheService
+import slack.api.SlackApiClient
+import utils.SlackChannels
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 trait SlackEvent {
   val user: String
   val channel: String
   val profile: SlackBotProfile
   val client: SlackApiClient
-  def eventualMaybeDMChannel(implicit actorSystem: ActorSystem) = {
-    client.listIms.map(_.find(_.user == user).map(_.id))
+  def eventualMaybeDMChannel(cacheService: CacheService)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[String]] = {
+    SlackChannels(client, cacheService, profile.slackTeamId).listIms.map(_.find(_.user == user).map(_.id))
   }
 
-  def isDirectMessage(channelId: String): Boolean = {
-    channelId.startsWith("D")
+  val isDirectMessage: Boolean = {
+    channel.startsWith("D")
   }
-  def isPrivateChannel(channelId: String): Boolean = {
-    channelId.startsWith("G")
+  val isPrivateChannel: Boolean = {
+    channel.startsWith("G")
   }
-  def messageRecipientPrefixFor(channelId: String): String = {
-    if (isDirectMessage(channelId)) {
+  val isPublicChannel: Boolean = {
+    !isDirectMessage && !isPrivateChannel
+  }
+  val messageRecipientPrefix: String = {
+    if (isDirectMessage) {
       ""
     } else {
       s"<@$user>: "
     }
   }
 
-  private def maybeChannelInfoFor(client: SlackApiClient)(implicit actorSystem: ActorSystem): Future[Option[Channel]] = {
-    client.getChannelInfo(channel).map(Some(_)).recover {
-      case e: ApiError => None
-    }
-  }
-
-  def detailsFor(ws: WSClient)(implicit actorSystem: ActorSystem): Future[JsObject] = {
+  def detailsFor(ws: WSClient, cacheService: CacheService)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[JsObject] = {
     for {
       user <- client.getUserInfo(user)
-      maybeChannel <- maybeChannelInfoFor(client)
+      channelMembers <- SlackChannels(client, cacheService, profile.slackTeamId).getMembersFor(channel)
     } yield {
       val profileData = user.profile.map { profile =>
         Seq(
@@ -50,9 +47,6 @@ trait SlackEvent {
           profile.last_name.map(v => "lastName" -> JsString(v)),
           profile.real_name.map(v => "realName" -> JsString(v))
         ).flatten
-      }.getOrElse(Seq())
-      val channelMembers = maybeChannel.flatMap { channel =>
-        channel.members.map(_.filterNot(_ == profile.userId))
       }.getOrElse(Seq())
       JsObject(
         Seq(

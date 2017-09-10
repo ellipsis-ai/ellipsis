@@ -8,11 +8,10 @@ import models.behaviors.events.Event
 import models.team.Team
 import play.api.libs.ws.WSClient
 import play.api.libs.json._
-import services.DataService
+import services.{CacheService, DataService}
 import slick.dbio.DBIO
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 case class LinkedInfo(externalSystem: String, accessToken: String) {
 
@@ -30,8 +29,13 @@ case class MessageInfo(medium: String, channel: Option[String], userId: String, 
 
 object MessageInfo {
 
-  def buildFor(event: Event, ws: WSClient, dataService: DataService)(implicit actorSystem: ActorSystem): Future[MessageInfo] = {
-    event.detailsFor(ws).map { details =>
+  def buildFor(
+                event: Event,
+                ws: WSClient,
+                dataService: DataService,
+                cacheService: CacheService
+              )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[MessageInfo] = {
+    event.detailsFor(ws, cacheService).map { details =>
       MessageInfo(event.name, event.maybeChannel, event.userIdForContext, details)
     }
   }
@@ -60,7 +64,13 @@ case class UserInfo(
 
 object UserInfo {
 
-  def buildForAction(user: User, event: Event, ws: WSClient, dataService: DataService)(implicit actorSystem: ActorSystem): DBIO[UserInfo] = {
+  def buildForAction(
+                      user: User,
+                      event: Event,
+                      ws: WSClient,
+                      dataService: DataService,
+                      cacheService: CacheService
+                    )(implicit actorSystem: ActorSystem, ec: ExecutionContext): DBIO[UserInfo] = {
     for {
       linkedOAuth2Tokens <- dataService.linkedOAuth2Tokens.allForUserAction(user, ws)
       linkedSimpleTokens <- dataService.linkedSimpleTokens.allForUserAction(user)
@@ -71,16 +81,22 @@ object UserInfo {
           LinkedInfo(ea.api.name, ea.accessToken)
         }
       }
-      messageInfo <- DBIO.from(event.messageInfo(ws, dataService))
+      messageInfo <- DBIO.from(event.messageInfo(ws, dataService, cacheService))
     } yield {
       UserInfo(user, links, Some(messageInfo))
     }
   }
 
-  def buildForAction(event: Event, teamId: String, ws: WSClient, dataService: DataService)(implicit actorSystem: ActorSystem): DBIO[UserInfo] = {
+  def buildForAction(
+                      event: Event,
+                      teamId: String,
+                      ws: WSClient,
+                      dataService: DataService,
+                      cacheService: CacheService
+                    )(implicit actorSystem: ActorSystem, ec: ExecutionContext): DBIO[UserInfo] = {
     for {
       user <- event.ensureUserAction(dataService)
-      info <- buildForAction(user, event, ws, dataService)
+      info <- buildForAction(user, event, ws, dataService, cacheService)
     } yield info
   }
 
@@ -107,7 +123,7 @@ case class TeamInfo(team: Team, links: Seq[LinkedInfo], awsConfigs: Seq[AWSConfi
 
 object TeamInfo {
 
-  def forConfig(apps: Seq[OAuth2Application], awsConfigs: Seq[AWSConfig], team: Team, ws: WSClient): Future[TeamInfo] = {
+  def forConfig(apps: Seq[OAuth2Application], awsConfigs: Seq[AWSConfig], team: Team, ws: WSClient)(implicit ec: ExecutionContext): Future[TeamInfo] = {
     Future.sequence(apps.map { ea =>
       ea.getClientCredentialsTokenFor(ws).map { maybeToken =>
         maybeToken.map { token =>

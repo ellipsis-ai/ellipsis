@@ -6,15 +6,13 @@ import java.util.zip.{ZipEntry, ZipInputStream}
 
 import json.Formatting._
 import json._
-import models.IDs
 import models.accounts.user.User
 import models.behaviors.behaviorgroup.BehaviorGroup
 import models.team.Team
 import play.api.libs.json.{JsError, JsSuccess, Json}
 import services.DataService
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 case class BehaviorGroupZipImporter(
                                      team: Team,
@@ -36,7 +34,7 @@ case class BehaviorGroupZipImporter(
     out.toString
   }
 
-  def run: Future[Option[BehaviorGroup]] = {
+  def run(implicit ec: ExecutionContext): Future[Option[BehaviorGroup]] = {
 
     val zipInputStream: ZipInputStream = new ZipInputStream(new FileInputStream(zipFile))
     var nextEntry: ZipEntry = zipInputStream.getNextEntry
@@ -145,7 +143,6 @@ case class BehaviorGroupZipImporter(
           dataTypeInputs,
           versionsData,
           libraries,
-          nodeModuleVersions = Seq(),
           requiredAWSConfigData,
           requiredOAuth2ApiConfigData,
           requiredSimpleTokenApiData,

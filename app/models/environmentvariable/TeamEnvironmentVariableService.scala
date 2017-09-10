@@ -5,8 +5,7 @@ import models.team.Team
 import services.DataService
 import slick.dbio.DBIO
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 trait TeamEnvironmentVariableService {
 
@@ -27,11 +26,11 @@ trait TeamEnvironmentVariableService {
     }.toSeq
   }
 
-  def knownUsedInAction(behaviorVersion: BehaviorVersion, dataService: DataService): DBIO[Set[String]] = {
+  def knownUsedInAction(behaviorVersion: BehaviorVersion, dataService: DataService)(implicit ec: ExecutionContext): DBIO[Set[String]] = {
     DBIO.successful(lookForInCode(behaviorVersion.functionBody).toSet)
   }
 
-  def missingInAction(behaviorVersion: BehaviorVersion, dataService: DataService): DBIO[Set[String]] = {
+  def missingInAction(behaviorVersion: BehaviorVersion, dataService: DataService)(implicit ec: ExecutionContext): DBIO[Set[String]] = {
     for {
       envVars <- allForAction(behaviorVersion.team)
       missing <- knownUsedInAction(behaviorVersion, dataService).map { usedNames =>

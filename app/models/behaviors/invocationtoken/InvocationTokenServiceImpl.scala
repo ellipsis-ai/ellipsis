@@ -11,8 +11,7 @@ import models.accounts.user.User
 import models.behaviors.behavior.Behavior
 import models.behaviors.scheduling.Scheduled
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 class InvocationTokensTable(tag: Tag) extends Table[InvocationToken](tag, "invocation_tokens") {
 
@@ -26,7 +25,8 @@ class InvocationTokensTable(tag: Tag) extends Table[InvocationToken](tag, "invoc
 }
 
 class InvocationTokenServiceImpl @Inject() (
-                                  dataServiceProvider: Provider[DataService]
+                                  dataServiceProvider: Provider[DataService],
+                                  implicit val ec: ExecutionContext
                                 ) extends InvocationTokenService {
 
   def dataService = dataServiceProvider.get

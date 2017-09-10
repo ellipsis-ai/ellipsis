@@ -2,6 +2,7 @@ package controllers
 
 import javax.inject.Inject
 
+import com.google.inject.Provider
 import com.mohiva.play.silhouette.api.Silhouette
 import export._
 import json._
@@ -10,19 +11,18 @@ import models.silhouette.EllipsisEnv
 import play.api.Configuration
 import play.api.data.Form
 import play.api.data.Forms._
-import play.api.i18n.MessagesApi
 import play.api.libs.json._
 import services.{AWSLambdaService, DataService}
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 class BehaviorImportExportController @Inject() (
-                                                 val messagesApi: MessagesApi,
                                                  val silhouette: Silhouette[EllipsisEnv],
                                                  val dataService: DataService,
                                                  val lambdaService: AWSLambdaService,
-                                                 val configuration: Configuration
+                                                 val configuration: Configuration,
+                                                 val assetsProvider: Provider[RemoteAssets],
+                                                 implicit val ec: ExecutionContext
                                                ) extends ReAuthable {
 
   def export(id: String) = silhouette.SecuredAction.async { implicit request =>

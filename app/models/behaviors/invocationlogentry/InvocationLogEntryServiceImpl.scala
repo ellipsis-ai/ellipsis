@@ -15,8 +15,7 @@ import models.behaviors.behavior.Behavior
 import models.behaviors.events.Event
 import play.api.libs.json.{JsValue, Json}
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 case class RawInvocationLogEntry(
                                   id: String,
@@ -51,7 +50,8 @@ class InvocationLogEntriesTable(tag: Tag) extends Table[RawInvocationLogEntry](t
 }
 
 class InvocationLogEntryServiceImpl @Inject() (
-                                             dataServiceProvider: Provider[DataService]
+                                             dataServiceProvider: Provider[DataService],
+                                             implicit val ec: ExecutionContext
                                            ) extends InvocationLogEntryService {
 
   def dataService = dataServiceProvider.get

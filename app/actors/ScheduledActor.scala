@@ -9,11 +9,10 @@ import models.behaviors.BotResultService
 import models.behaviors.events.EventHandler
 import models.behaviors.scheduling.Scheduled
 import play.api.{Configuration, Logger}
-import services.DataService
+import services.{CacheService, DataService}
 import slack.api.SlackApiClient
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration._
 
 object ScheduledActor {
@@ -22,10 +21,12 @@ object ScheduledActor {
 
 class ScheduledActor @Inject()(
                                         val dataService: DataService,
+                                        val cacheService: CacheService,
                                         val eventHandler: EventHandler,
                                         val configuration: Configuration,
                                         val botResultService: BotResultService,
-                                        implicit val actorSystem: ActorSystem
+                                        implicit val actorSystem: ActorSystem,
+                                        implicit val ec: ExecutionContext
                                       ) extends Actor {
 
   // initial delay of 1 minute so that, in the case of errors & actor restarts, it doesn't hammer external APIs
@@ -43,7 +44,7 @@ class ScheduledActor @Inject()(
           maybeProfile <- scheduled.botProfileAction(dataService)
           _ <- maybeProfile.map { profile =>
             scheduled.updateNextTriggeredForAction(dataService).flatMap { _ =>
-              DBIO.from(scheduled.send(eventHandler, new SlackApiClient(profile.token), profile, dataService, configuration, botResultService).recover {
+              DBIO.from(scheduled.send(eventHandler, new SlackApiClient(profile.token), profile, dataService, cacheService, configuration, botResultService).recover {
                 case t: Throwable => Logger.error(s"Exception handling scheduled message: $displayText", t)
               })
             }

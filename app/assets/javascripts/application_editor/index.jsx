@@ -436,7 +436,7 @@ define(function(require) {
 
                 <div className="columns mtl">
                   <div className="column column-one-half">
-                    <h5>Client ID</h5>
+                    <h5 className="mtn">Client ID</h5>
                     <Input className="form-input-borderless type-monospace"
                       placeholder="Enter identifier"
                       name="clientId"
@@ -446,7 +446,7 @@ define(function(require) {
                     />
                   </div>
                   <div className="column column-one-half">
-                    <h5>Client secret</h5>
+                    <h5 className="mtn">Client secret</h5>
                     <Input className="form-input-borderless type-monospace"
                       placeholder="Enter secret"
                       name="clientSecret"

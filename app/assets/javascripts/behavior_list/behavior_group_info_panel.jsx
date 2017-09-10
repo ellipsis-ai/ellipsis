@@ -84,7 +84,7 @@ define(function(require) {
       var behaviorCount = behaviors.length;
       return (
         <div className="type-s">
-          <h5 className="mbxs">{behaviorCount === 1 ? "1 action" : `${behaviorCount} actions`}</h5>
+          <h5 className="mtn mbxs">{behaviorCount === 1 ? "1 action" : `${behaviorCount} actions`}</h5>
           <div style={{ overflowY: "auto", maxHeight: "21em" }}>
             {behaviors.map((behavior, index) => (
               <div className="pvs" key={`group-${this.props.groupData.exportId}-behavior${index}`}>

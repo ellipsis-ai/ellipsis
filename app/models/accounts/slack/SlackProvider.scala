@@ -14,7 +14,7 @@ import scala.concurrent.Future
 import scala.util.{Failure, Success, Try}
 
 class SlackProvider(protected val httpLayer: HTTPLayer,
-                    protected val stateProvider: OAuth2StateProvider,
+                    protected val stateHandler: SocialStateHandler,
                     val settings: OAuth2Settings) extends OAuth2Provider with SlackProfileBuilder {
   import SlackProvider._
 
@@ -25,7 +25,7 @@ class SlackProvider(protected val httpLayer: HTTPLayer,
 
   override val profileParser = new SlackProfileParser
 
-  override def withSettings(f: (Settings) => Settings) = new SlackProvider(httpLayer, stateProvider, f(settings))
+  override def withSettings(f: (Settings) => Settings) = new SlackProvider(httpLayer, stateHandler, f(settings))
 
   protected def urls: Map[String, String] = Map("user" -> USER_API, "auth_test" -> AUTH_TEST_API, "identity" -> IDENTITY_API)
 

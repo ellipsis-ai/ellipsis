@@ -9,8 +9,7 @@ import services.{CacheService, DataService}
 import slack.api.{ApiError, SlackApiClient}
 import utils.{SlackMessageSender, UploadFileSpec}
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 import scala.util.matching.Regex
 
 case class SlackMessageEvent(
@@ -24,10 +23,9 @@ case class SlackMessageEvent(
                             ) extends MessageEvent with SlackEvent {
 
   lazy val isBotMessage: Boolean = profile.userId == user
-  lazy val isPublicChannel: Boolean = !isDirectMessage(channel) && !isPrivateChannel(channel)
 
-  override def botPrefix(cacheService: CacheService)(implicit actorSystem: ActorSystem): Future[String] = {
-    if (isDirectMessage(channel)) {
+  override def botPrefix(cacheService: CacheService)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[String] = {
+    if (isDirectMessage) {
       Future.successful("")
     } else {
       cacheService.getBotUsername(profile.userId).map { name =>
@@ -54,7 +52,7 @@ case class SlackMessageEvent(
   }
 
   lazy val includesBotMention: Boolean = {
-    isDirectMessage(channel) ||
+    isDirectMessage ||
       SlackMessageEvent.mentionRegexFor(profile.userId).findFirstMatchIn(message.originalText).nonEmpty ||
       MessageEvent.ellipsisRegex.findFirstMatchIn(message.originalText).nonEmpty
   }
@@ -62,12 +60,11 @@ case class SlackMessageEvent(
   override val isResponseExpected: Boolean = includesBotMention
   val teamId: String = profile.teamId
   val userIdForContext: String = user
-  val messageRecipientPrefix: String = messageRecipientPrefixFor(channel)
 
   lazy val maybeChannel = Some(channel)
   lazy val name: String = Conversation.SLACK_CONTEXT
 
-  def maybeOngoingConversation(dataService: DataService): Future[Option[Conversation]] = {
+  def maybeOngoingConversation(dataService: DataService)(implicit ec: ExecutionContext): Future[Option[Conversation]] = {
     dataService.conversations.findOngoingFor(user, context, maybeChannel, maybeThreadId).flatMap { maybeConvo =>
       maybeConvo.map(c => Future.successful(Some(c))).getOrElse(maybeConversationRootedHere(dataService))
     }
@@ -77,7 +74,7 @@ case class SlackMessageEvent(
     dataService.conversations.findOngoingFor(user, context, maybeChannel, Some(ts))
   }
 
-  override def recentMessages(dataService: DataService)(implicit actorSystem: ActorSystem): Future[Seq[String]] = {
+  override def recentMessages(dataService: DataService)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Seq[String]] = {
     for {
       maybeTeam <- dataService.teams.find(profile.teamId)
       maybeOAuthToken <- dataService.oauth2Tokens.maybeFullForSlackTeamId(profile.slackTeamId)
@@ -95,17 +92,17 @@ case class SlackMessageEvent(
     } yield messages
   }
 
-  def channelForSend(forcePrivate: Boolean, maybeConversation: Option[Conversation])(implicit actorSystem: ActorSystem): Future[String] = {
-    eventualMaybeDMChannel(actorSystem).map { maybeDMChannel =>
-      (if (forcePrivate) {
-        maybeDMChannel
-      } else {
-        None
-      }).orElse {
-        maybeConversation.flatMap { convo =>
-          convo.maybeChannel
-        }
-      }.getOrElse(channel)
+  def channelForSend(
+                      forcePrivate: Boolean,
+                      maybeConversation: Option[Conversation],
+                      cacheService: CacheService
+                    )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[String] = {
+    (if (forcePrivate) {
+      eventualMaybeDMChannel(cacheService)
+    } else {
+      Future.successful(maybeConversation.flatMap(_.maybeChannel))
+    }).map { maybeChannel =>
+      maybeChannel.getOrElse(channel)
     }
   }
 
@@ -115,9 +112,10 @@ case class SlackMessageEvent(
                    maybeShouldUnfurl: Option[Boolean],
                    maybeConversation: Option[Conversation],
                    maybeActions: Option[MessageActions] = None,
-                   files: Seq[UploadFileSpec] = Seq()
-                 )(implicit actorSystem: ActorSystem): Future[Option[String]] = {
-    channelForSend(forcePrivate, maybeConversation).flatMap { channelToUse =>
+                   files: Seq[UploadFileSpec] = Seq(),
+                   cacheService: CacheService
+                 )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[String]] = {
+    channelForSend(forcePrivate, maybeConversation, cacheService).flatMap { channelToUse =>
       SlackMessageSender(
         client,
         user,
@@ -134,7 +132,7 @@ case class SlackMessageEvent(
     }
   }
 
-  override def ensureUser(dataService: DataService): Future[User] = {
+  override def ensureUser(dataService: DataService)(implicit ec: ExecutionContext): Future[User] = {
     super.ensureUser(dataService).flatMap { user =>
       dataService.slackProfiles.save(SlackProfile(profile.slackTeamId, loginInfo)).map(_ => user)
     }

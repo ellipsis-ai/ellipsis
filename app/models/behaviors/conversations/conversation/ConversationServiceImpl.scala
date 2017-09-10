@@ -12,8 +12,7 @@ import play.api.libs.ws.WSClient
 import services._
 import slick.dbio.DBIO
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 case class RawConversation(
                             id: String,
@@ -53,7 +52,8 @@ class ConversationsTable(tag: Tag) extends Table[RawConversation](tag, Conversat
 }
 
 class ConversationServiceImpl @Inject() (
-                                          servicesProvider: Provider[DefaultServices]
+                                          servicesProvider: Provider[DefaultServices],
+                                          implicit val ec: ExecutionContext
                                          ) extends ConversationService {
 
   def services: DefaultServices = servicesProvider.get
@@ -174,7 +174,9 @@ class ConversationServiceImpl @Inject() (
           conversation.behaviorVersion.forcePrivateResponse,
           maybeShouldUnfurl = None,
           Some(conversation),
-          maybeActions = None
+          maybeActions = None,
+          files = Seq(),
+          cacheService
         ))
       }.getOrElse(DBIO.successful(None))
       _ <- maybeEvent.map { event =>

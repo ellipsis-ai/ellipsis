@@ -1,7 +1,7 @@
 define(function(require) {
   var React = require('react'),
     SectionHeading = require('../shared_ui/section_heading'),
-    Checklist = require('./checklist'),
+    HelpButton = require('../help/help_button'),
     ToggleGroup = require('../form/toggle_group');
 
   return React.createClass({
@@ -9,7 +9,9 @@ define(function(require) {
     propTypes: {
       usesSearch: React.PropTypes.bool.isRequired,
       onChange: React.PropTypes.func.isRequired,
-      isFinishedBehavior: React.PropTypes.bool.isRequired
+      isFinishedBehavior: React.PropTypes.bool.isRequired,
+      onToggleActivePanel: React.PropTypes.func.isRequired,
+      activePanelName: React.PropTypes.string
     },
 
     onUseSearch: function() {
@@ -20,39 +22,35 @@ define(function(require) {
       this.props.onChange(false);
     },
 
+    togglePromptHelp: function() {
+      this.props.onToggleActivePanel('helpForDataTypePrompt');
+    },
+
     render: function() {
       return (
         <div className="container ptxl pbxxl">
-          <SectionHeading number="2">How to prompt the user</SectionHeading>
+          <SectionHeading number="2">
+            <span className="mrm">How to prompt the user</span>
+            <span className="display-inline-block">
+              <HelpButton onClick={this.togglePromptHelp} toggled={this.props.activePanelName === 'helpForDataTypePrompt'} />
+            </span>
+          </SectionHeading>
 
-          <div className="mvxl">
+          <div className="mtxl">
             <ToggleGroup className="align-m">
               <ToggleGroup.Item
-                title="The user will be shown a list of choices, and be asked to select one."
-                label="Select from a list"
+                title="Your function should return a list of choices. The user will be asked to select one."
+                label="Run the function first"
                 activeWhen={!this.props.usesSearch}
                 onClick={this.onUseList}
               />
               <ToggleGroup.Item
-                title="The user will be asked for a search query to narrow down the choices."
-                label="Search for a match"
+                title="Your function will receive the input, and can use it to parse, filter or search before returning a list."
+                label="Ask for user input first"
                 activeWhen={this.props.usesSearch}
                 onClick={this.onUseSearch}
               />
             </ToggleGroup>
-          </div>
-
-          <div className="mtxl">
-            <Checklist disabledWhen={true}>
-              <Checklist.Item checkedWhen={!this.props.usesSearch}>
-                <span>Use <span className="type-semibold">Select from a list</span> when there are few choices.</span>
-                <span>The user will just pick from the whole list.</span>
-              </Checklist.Item>
-              <Checklist.Item checkedWhen={this.props.usesSearch}>
-                <span>Use <span className="type-semibold">Search for a match</span> when there are many choices.</span>
-                <span>The user will type in a search query and presented with matches to choose from.</span>
-              </Checklist.Item>
-            </Checklist>
           </div>
         </div>
       );

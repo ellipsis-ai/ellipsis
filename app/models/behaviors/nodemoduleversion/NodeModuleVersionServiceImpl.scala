@@ -8,8 +8,7 @@ import models.IDs
 import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
 import services.DataService
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 class NodeModuleVersionsTable(tag: Tag) extends Table[NodeModuleVersion](tag, "node_module_versions") {
 
@@ -23,7 +22,8 @@ class NodeModuleVersionsTable(tag: Tag) extends Table[NodeModuleVersion](tag, "n
 }
 
 class NodeModuleVersionServiceImpl @Inject() (
-                                            dataServiceProvider: Provider[DataService]
+                                            dataServiceProvider: Provider[DataService],
+                                            implicit val ec: ExecutionContext
                                           ) extends NodeModuleVersionService {
 
   def dataService = dataServiceProvider.get

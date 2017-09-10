@@ -3,37 +3,38 @@ package controllers
 import javax.inject.Inject
 
 import akka.actor.ActorSystem
+import com.google.inject.Provider
 import models.accounts.slack.botprofile.SlackBotProfile
 import models.accounts.slack.profile.SlackProfile
 import models.accounts.user.User
-import models.behaviors.{BotResultService, SimpleTextResult}
 import models.behaviors.events._
 import models.behaviors.invocationtoken.InvocationToken
 import models.behaviors.scheduling.scheduledmessage.ScheduledMessage
+import models.behaviors.{BotResultService, SimpleTextResult}
 import models.team.Team
 import play.api.data.Form
 import play.api.data.Forms._
-import play.api.i18n.MessagesApi
 import play.api.libs.json.Json
 import play.api.libs.ws.WSClient
-import play.api.mvc.{Action, AnyContent, Request, Result}
+import play.api.mvc.{AnyContent, Request, Result}
 import play.api.{Configuration, Logger}
-import services.{AWSLambdaService, DataService, SlackEventService}
+import services.{AWSLambdaService, CacheService, DataService, SlackEventService}
 import utils.SlackTimestamp
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 class APIController @Inject() (
-                                val messagesApi: MessagesApi,
                                 val configuration: Configuration,
                                 val dataService: DataService,
+                                val cacheService: CacheService,
                                 val lambdaService: AWSLambdaService,
                                 val ws: WSClient,
                                 val slackService: SlackEventService,
                                 val eventHandler: EventHandler,
                                 val botResultService: BotResultService,
-                                implicit val actorSystem: ActorSystem
+                                val assetsProvider: Provider[RemoteAssets],
+                                implicit val actorSystem: ActorSystem,
+                                implicit val ec: ExecutionContext
                               )
   extends EllipsisController {
 
@@ -59,7 +60,7 @@ class APIController @Inject() (
 
     def maybeSlackChannelIdFor(channel: String): Future[Option[String]] = {
       maybeBotProfile.map { botProfile =>
-        dataService.slackBotProfiles.channelsFor(botProfile).maybeIdFor(channel)
+        dataService.slackBotProfiles.channelsFor(botProfile, cacheService).maybeIdFor(channel)
       }.getOrElse(Future.successful(None))
     }
 

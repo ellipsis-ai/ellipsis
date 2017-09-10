@@ -4,8 +4,7 @@ import models.accounts.slack.SlackUserInfo
 import models.accounts.slack.botprofile.SlackBotProfile
 import services.SlackEventService
 
-import scala.concurrent.Future
-import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.{ExecutionContext, Future}
 
 case class SlackMessage(originalText: String, withoutBotPrefix: String, unformattedText: String)
 
@@ -59,7 +58,7 @@ object SlackMessage {
     """<@\w+>""".r.findFirstIn(text).isDefined
   }
 
-  def fromFormattedText(text: String, botProfile: SlackBotProfile, slackEventService: SlackEventService): Future[SlackMessage] = {
+  def fromFormattedText(text: String, botProfile: SlackBotProfile, slackEventService: SlackEventService)(implicit ec: ExecutionContext): Future[SlackMessage] = {
     val withoutBotPrefix = removeBotPrefix(text, botProfile.userId)
 
     for {

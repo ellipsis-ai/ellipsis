@@ -7,8 +7,7 @@ import drivers.SlickPostgresDriver.api._
 import models.team.Team
 import services.DataService
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 class AWSConfigsTable(tag: Tag) extends Table[AWSConfig](tag, "aws_configs") {
 
@@ -23,7 +22,8 @@ class AWSConfigsTable(tag: Tag) extends Table[AWSConfig](tag, "aws_configs") {
 }
 
 class AWSConfigServiceImpl @Inject() (
-                                       dataServiceProvider: Provider[DataService]
+                                       dataServiceProvider: Provider[DataService],
+                                       implicit val ec: ExecutionContext
                                      ) extends AWSConfigService {
 
   def dataService = dataServiceProvider.get

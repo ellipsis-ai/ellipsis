@@ -10,12 +10,11 @@ import play.api.libs.json.JsNull
 import services.{AWSLambdaService, DataService}
 import utils.QuestionAnswerExtractor
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 case class RememberBehavior(event: Event, lambdaService: AWSLambdaService, dataService: DataService) extends BuiltinBehavior {
 
-  def result(implicit actorSystem: ActorSystem): Future[BotResult] = {
+  def result(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[BotResult] = {
     for {
       maybeTeam <- dataService.teams.find(event.teamId)
       maybeUser <- maybeTeam.map { team =>
@@ -58,7 +57,6 @@ case class RememberBehavior(event: Event, lambdaService: AWSLambdaService, dataS
                 dataService
               )
             ),
-            Seq(),
             Seq(),
             Seq(),
             Seq(),

@@ -1,7 +1,6 @@
 package services
 
 import com.amazonaws.services.lambda.AWSLambdaAsync
-import models.Models
 import models.behaviors.behaviorversion.BehaviorVersion
 import models.behaviors.config.awsconfig.AWSConfig
 import models.behaviors.config.requiredawsconfig.RequiredAWSConfig
@@ -28,7 +27,6 @@ case class ApiConfigInfo(
 trait AWSLambdaService extends AWSService {
 
   val configuration: Configuration
-  val models: Models
 
   val client: AWSLambdaAsync
 

@@ -27,6 +27,4 @@ trait MessageTriggerService {
                        isCaseSensitive: Boolean
                      ): DBIO[MessageTrigger]
 
-  def allMatching(pattern: String, team: Team): Future[Seq[MessageTrigger]]
-
 }

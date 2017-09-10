@@ -18,12 +18,14 @@ case class TemplateMessageTrigger(
 
   val pattern: String = template
 
+  val trimmedPattern: String = template.trim
+
   val paramRegex: Regex = """\{.*?\}""".r
 
-  override val maybePattern: Option[String] = Some(paramRegex.replaceAllIn(pattern, ""))
+  override val maybePattern: Option[String] = Some(paramRegex.replaceAllIn(trimmedPattern, ""))
 
   def regex: Regex = {
-    var pattern = template
+    var pattern = trimmedPattern
     pattern = TemplateMessageTriggerUtils.escapeRegexCharactersIn(pattern)
     pattern = paramRegex.replaceAllIn(pattern, """(.+)""")
     pattern = """\s+""".r.replaceAllIn(pattern, """\\s+""")

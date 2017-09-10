@@ -5,8 +5,7 @@ import models.behaviors.defaultstorageitem.GraphQLHelpers
 import services.DataService
 import slick.dbio.DBIO
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 trait BehaviorVersionForDataTypeSchema {
 
@@ -19,27 +18,27 @@ trait BehaviorVersionForDataTypeSchema {
   lazy val outputName: String = GraphQLHelpers.formatTypeName(typeName)
   lazy val inputName: String = outputName ++ "Input"
 
-  def dataTypeFieldsAction(dataService: DataService): DBIO[Seq[DataTypeFieldForSchema]]
+  def dataTypeFieldsAction(dataService: DataService)(implicit ec: ExecutionContext): DBIO[Seq[DataTypeFieldForSchema]]
 
-  def dataTypeFields(dataService: DataService): Future[Seq[DataTypeFieldForSchema]]
+  def dataTypeFields(dataService: DataService)(implicit ec: ExecutionContext): Future[Seq[DataTypeFieldForSchema]]
 
-  def outputFields(dataService: DataService): Future[String] = {
+  def outputFields(dataService: DataService)(implicit ec: ExecutionContext): Future[String] = {
     dataTypeFields(dataService).map { fields =>
       "  " ++ fields.sortBy(_.name).map(_.output).mkString("\n  ")
     }
   }
 
-  def outputFieldNamesAction(dataService: DataService): DBIO[String] = {
+  def outputFieldNamesAction(dataService: DataService)(implicit ec: ExecutionContext): DBIO[String] = {
     dataTypeFieldsAction(dataService).map { fields =>
       "  " ++ fields.sortBy(_.name).map(_.outputName).mkString("\n  ")
     }
   }
 
-  def outputFieldNames(dataService: DataService): Future[String] = {
+  def outputFieldNames(dataService: DataService)(implicit ec: ExecutionContext): Future[String] = {
     dataService.run(outputFieldNamesAction(dataService))
   }
 
-  def output(dataService: DataService): Future[String] = {
+  def output(dataService: DataService)(implicit ec: ExecutionContext): Future[String] = {
     outputFields(dataService).map { fieldsStr =>
       s"""type ${outputName} {
          |$fieldsStr
@@ -47,13 +46,13 @@ trait BehaviorVersionForDataTypeSchema {
     }
   }
 
-  def inputFields(dataService: DataService): Future[String] = {
+  def inputFields(dataService: DataService)(implicit ec: ExecutionContext): Future[String] = {
     dataTypeFields(dataService).map { fields =>
       "  " ++ fields.sortBy(_.name).map(_.input).mkString("\n  ")
     }
   }
 
-  def input(dataService: DataService): Future[String] = {
+  def input(dataService: DataService)(implicit ec: ExecutionContext): Future[String] = {
     inputFields(dataService).map { fieldsStr =>
       s"""input ${inputName} {
          |$fieldsStr
@@ -61,7 +60,7 @@ trait BehaviorVersionForDataTypeSchema {
     }
   }
 
-  def graphQL(dataService: DataService): Future[String] = {
+  def graphQL(dataService: DataService)(implicit ec: ExecutionContext): Future[String] = {
     for {
       input <- input(dataService)
       output <- output(dataService)

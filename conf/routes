@@ -39,6 +39,7 @@ GET         /new_unsaved_library/:teamId              @controllers.BehaviorEdito
 POST        /save_default_storage_item                @controllers.BehaviorEditorController.saveDefaultStorageItem
 POST        /query_default_storage                    @controllers.BehaviorEditorController.queryDefaultStorage
 POST        /delete_default_storage_items             @controllers.BehaviorEditorController.deleteDefaultStorageItems
+GET         /node_module_versions/:groupId            @controllers.BehaviorEditorController.nodeModuleVersionsFor(groupId: String)
 
 POST        /reset_saved_answer_for_user              @controllers.SavedAnswerController.resetForUser
 POST        /reset_saved_answer_for_all               @controllers.SavedAnswerController.resetForTeam
