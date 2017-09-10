@@ -2,16 +2,16 @@ package controllers
 
 import javax.inject.Inject
 
+import com.google.inject.Provider
 import com.mohiva.play.silhouette.api.Silhouette
-import json._
 import json.Formatting._
+import json._
 import models._
 import models.behaviors.config.awsconfig.AWSConfig
 import models.silhouette.EllipsisEnv
 import play.api.Configuration
 import play.api.data.Form
 import play.api.data.Forms._
-import play.api.i18n.MessagesApi
 import play.api.libs.json.Json
 import play.filters.csrf.CSRF
 import services.DataService
@@ -20,10 +20,10 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
 class AWSConfigController @Inject() (
-                                      val messagesApi: MessagesApi,
                                       val silhouette: Silhouette[EllipsisEnv],
                                       val dataService: DataService,
-                                      val configuration: Configuration
+                                      val configuration: Configuration,
+                                      val assetsProvider: Provider[RemoteAssets]
                                     ) extends ReAuthable {
 
   val AWS_CONFIG_DOC_URL = "http://docs.aws.amazon.com/general/latest/gr/managing-aws-access-keys.html"

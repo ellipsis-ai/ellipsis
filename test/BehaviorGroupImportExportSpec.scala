@@ -433,7 +433,7 @@ class BehaviorGroupImportExportSpec extends DBSpec {
     }
 
     "export and import back in with a required aws config" in {
-      withEmptyDB(dataService, { db =>
+      withEmptyDB(dataService, { () =>
         val team = newSavedTeam
         val user = newSavedUserOn(team)
         val group = newSavedBehaviorGroupFor(team)
