@@ -175,7 +175,6 @@ else
 fi
 
 
-
 printf "\n\n${GREEN}Creating new app version ...${PLAIN}\n";
 printf "_____________________________________________________ \n";
 aws --profile $AWS_ELLIPSIS_PROFILE elasticbeanstalk create-application-version \
