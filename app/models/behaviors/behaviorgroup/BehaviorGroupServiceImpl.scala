@@ -136,7 +136,23 @@ class BehaviorGroupServiceImpl @Inject() (
         val libraryVersions = groupsData.flatMap(_.libraryVersions)
         val requiredOAuth2ApiConfigs = groupsData.flatMap(_.requiredOAuth2ApiConfigs)
         val requiredSimpleTokenApis = groupsData.flatMap(_.requiredSimpleTokenApis)
-        BehaviorGroupData(None, team.id, Some(mergedName), mergedDescription, maybeIcon, actionInputs, dataTypeInputs, behaviorVersions, libraryVersions, requiredOAuth2ApiConfigs, requiredSimpleTokenApis, githubUrl = None, exportId = None, None, Some(userData))
+        BehaviorGroupData(
+          None,
+          team.id,
+          Some(mergedName),
+          mergedDescription,
+          maybeIcon,
+          actionInputs,
+          dataTypeInputs,
+          behaviorVersions,
+          libraryVersions,
+          requiredOAuth2ApiConfigs,
+          requiredSimpleTokenApis,
+          githubUrl = None,
+          exportId = None,
+          None,
+          Some(userData)
+        )
       })
       _ <- Future.sequence(groupVersions.map { ea =>
         dataService.behaviorGroups.delete(ea.group)

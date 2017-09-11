@@ -125,7 +125,10 @@ trait DBSpec extends PlaySpec with OneAppPerSuite with MockitoSugar {
     val behaviorVersion2Data = BehaviorVersionData.newUnsavedFor(group.team.id, isDataType = false, maybeName = None, dataService).copy(
       inputIds = Seq(input2Data.inputId.get)
     )
-    newGroupVersionDataFor(group, user).copy(actionInputs = Seq(input1Data, input2Data), behaviorVersions = Seq(behaviorVersion1Data, behaviorVersion2Data))
+    newGroupVersionDataFor(group, user).copy(
+      actionInputs = Seq(input1Data, input2Data),
+      behaviorVersions = Seq(behaviorVersion1Data, behaviorVersion2Data)
+    )
   }
 
   def newSavedGroupVersionFor(group: BehaviorGroup, user: User, maybeData: Option[BehaviorGroupData] = None): BehaviorGroupVersion = {

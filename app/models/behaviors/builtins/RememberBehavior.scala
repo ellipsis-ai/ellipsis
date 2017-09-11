@@ -37,7 +37,14 @@ case class RememberBehavior(event: Event, lambdaService: AWSLambdaService, dataS
         }.getOrElse(Seq())
         Some(
           BehaviorGroupData(
-            Some(group.id), group.team.id, None, None, None, Seq(), Seq(), Seq(
+            Some(group.id),
+            group.team.id,
+            None,
+            None,
+            None,
+            Seq(),
+            Seq(),
+            Seq(
               BehaviorVersionData.buildFor(
                 None,
                 group.team.id,
@@ -55,7 +62,14 @@ case class RememberBehavior(event: Event, lambdaService: AWSLambdaService, dataS
                 None,
                 dataService
               )
-            ), Seq(), Seq(), Seq(), None, None, Some(OffsetDateTime.now), maybeUserData
+            ),
+            Seq(),
+            Seq(),
+            Seq(),
+            None,
+            None,
+            Some(OffsetDateTime.now),
+            maybeUserData
           )
 
         )
