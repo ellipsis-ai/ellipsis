@@ -8,6 +8,7 @@ define(function(require) {
     Notifications = require('../notifications/notifications'),
     NotificationData = require('../models/notification_data'),
     RequiredAWSConfig = require('../models/required_aws_config'),
+    RequiredOAuth2Application = require('../models/required_oauth2_application'),
     SectionHeading = require('../shared_ui/section_heading'),
     SVGSettingsIcon = require('../svg/settings'),
     debounce = require('javascript-debounce');
@@ -35,14 +36,7 @@ define(function(require) {
 
       requiredAWSConfigs: React.PropTypes.arrayOf(React.PropTypes.instanceOf(RequiredAWSConfig)).isRequired,
 
-      apiApplications: React.PropTypes.arrayOf(React.PropTypes.shape({
-        apiId: React.PropTypes.string.isRequired,
-        recommendedScope: React.PropTypes.string,
-        application: React.PropTypes.shape({
-          applicationId: React.PropTypes.string.isRequired,
-          displayName: React.PropTypes.string.isRequired
-        })
-      })).isRequired,
+      apiApplications: React.PropTypes.arrayOf(React.PropTypes.instanceOf(RequiredOAuth2Application)).isRequired,
 
       functionBody: React.PropTypes.string.isRequired,
       onChangeFunctionBody: React.PropTypes.func.isRequired,
@@ -118,12 +112,12 @@ define(function(require) {
       var oAuth2Notifications = [];
       var awsNotifications = [];
       this.props.apiApplications
-        .filter((ea) => ea && !this.hasUsedOAuth2Application(this.props.functionBody, ea.keyName))
+        .filter((ea) => ea && !this.hasUsedOAuth2Application(this.props.functionBody, ea.nameInCode))
         .forEach((ea) => {
           oAuth2Notifications.push(new NotificationData({
             kind: "oauth2_application_unused",
-            name: ea.displayName,
-            code: `ellipsis.accessTokens.${ea.keyName}`
+            name: ea.application.displayName,
+            code: `ellipsis.accessTokens.${ea.nameInCode}`
           }));
         });
       this.props.requiredAWSConfigs
@@ -138,7 +132,7 @@ define(function(require) {
     },
 
     getCodeAutocompletions: function() {
-      var apiTokens = this.props.apiApplications.map((application) => `ellipsis.accessTokens.${application.keyName}`);
+      var apiTokens = this.props.apiApplications.map((application) => `ellipsis.accessTokens.${application.nameInCode}`);
       var envVars = this.props.envVariableNames.map(function(name) {
         return `ellipsis.env.${name}`;
       });
