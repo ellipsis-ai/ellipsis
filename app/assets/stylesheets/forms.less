@@ -51,6 +51,10 @@ input.box-code-example {
   vertical-align: bottom; /* Prevents default bottom "margin" when textarea is only child of a box */
 }
 
+.form-input.form-input-inline {
+  width: auto;
+}
+
 .form-input-inverted {
   background-color: @blue-faded-darkest;
   border-color: @blue-medium !important;
@@ -158,7 +162,7 @@ input.box-code-example {
   border-radius: 0;
   padding-left: 0;
   padding-right: 0;
-  padding-bottom: (@form-padding-vertical - @border-width - @xs);
+  padding-bottom: (@form-padding-vertical - @xs);
   height: @form-input-height - @xs;
   margin-bottom: @xs;
 }
@@ -166,7 +170,7 @@ input.box-code-example {
 .form-input-borderless:focus {
   padding-left: 0;
   padding-right: 0;
-  padding-bottom: (@form-padding-vertical - @border-width-thick - @xs);
+  padding-bottom: (@form-padding-vertical - @xs);
 }
 
 .form-input-borderless[readonly] {

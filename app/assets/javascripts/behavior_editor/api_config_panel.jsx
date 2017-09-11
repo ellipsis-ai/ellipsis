@@ -203,7 +203,7 @@ define(function(require) {
     renderNameInCodeInputFor: function(required) {
       return (
         <Input
-          className="form-input-borderless type-monospace"
+          className="form-input-inline form-input-borderless type-monospace type-s type-bold"
           key={this.nameInCodeKeyFor(required)}
           ref={this.nameInCodeKeyFor(required)}
           value={required.nameInCode}
@@ -217,9 +217,15 @@ define(function(require) {
       return (
         <div>
           <div className="column"><img src="/assets/images/logos/aws_logo_web_300px.png" height="32"/></div>
-          <div className="column">ellipsis.aws.</div>
-          <div className="column">{this.renderNameInCodeInputFor(required)}</div>
-          <div className="column">{this.renderAWSConfigFor(required)}</div>
+          <div className="column box-code-example mhs">
+            <div className="columns">
+              <div className="column type-monospace type-s pvs prn">ellipsis.aws.</div>
+              <div className="column">
+                {this.renderNameInCodeInputFor(required)}
+              </div>
+            </div>
+          </div>
+          <div className="column pvs">{this.renderAWSConfigFor(required)}</div>
           <div className="column column-shrink align-t">
             <DeleteButton onClick={this.onDeleteAWSConfig.bind(this, required)} />
           </div>
