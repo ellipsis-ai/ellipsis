@@ -2,11 +2,12 @@ define(function() {
 
   class User {
     constructor(props) {
+      const defaultProps = Object.assign({}, props);
       Object.defineProperties(this, {
-        id: { value: props.id, enumerable: true },
-        accountName: { value: props.accountName, enumerable: true },
-        accountType: { value: props.accountType, enumerable: true },
-        accountId: { value: props.accountId, enumerable: true }
+        id: { value: defaultProps.id, enumerable: true },
+        accountName: { value: defaultProps.accountName, enumerable: true },
+        accountType: { value: defaultProps.accountType, enumerable: true },
+        accountId: { value: defaultProps.accountId, enumerable: true }
       });
     }
 

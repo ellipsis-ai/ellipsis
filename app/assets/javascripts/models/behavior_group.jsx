@@ -174,7 +174,7 @@ define(function(require) {
         actionInputs: Input.allFromJson(props.actionInputs || []),
         dataTypeInputs: Input.allFromJson(props.dataTypeInputs || []),
         libraryVersions: props.libraryVersions.map(ea => new LibraryVersion(Object.assign({}, ea, { groupId: props.id }))),
-        author: User.fromJson(props.author)
+        author: props.author ? User.fromJson(props.author) : null
       }));
     }
 
