@@ -20,14 +20,16 @@ return React.createClass({
       return "Loading…";
     } else if (versionIndex === 0) {
       return "Unsaved version";
-    } else if (versionIndex === 1) {
-      return `v${this.getVersionNumberForIndex(versionIndex)}. Last saved version (${this.getDateForVersion(this.props.versions[versionIndex])})`;
     } else {
-      return `v${this.getVersionNumberForIndex(versionIndex)}. ${this.getDateForVersion(this.props.versions[versionIndex])}`;
+      const version = this.props.versions[versionIndex];
+      return `v${this.getVersionNumberForIndex(versionIndex)} ${this.getDateForVersion(version)} by ${this.getAuthorForVersion(version)}`;
     }
   },
   getDateForVersion: function(version) {
     return Formatter.formatTimestampRelativeIfRecent(version.createdAt);
+  },
+  getAuthorForVersion: function(version) {
+    return version.author ? version.author.formattedName() : "unknown";
   },
   getInitialState: function() {
     return {

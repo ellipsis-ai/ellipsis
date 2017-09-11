@@ -28,11 +28,11 @@ case class SlackMessageEvent(
     if (isDirectMessage) {
       Future.successful("")
     } else {
-      cacheService.getBotUsername(profile.userId).map { name =>
+      cacheService.getSlackUsername(profile.userId, profile.slackTeamId).map { name =>
         Future.successful(s"@$name ")
       }.getOrElse {
         client.getUserInfo(profile.userId).map { slackUser =>
-          cacheService.cacheBotUsername(profile.userId, slackUser.name)
+          cacheService.cacheSlackUsername(profile.userId, slackUser.name, profile.slackTeamId)
           s"@${slackUser.name} "
         } recover {
           case e: ApiError => "..."

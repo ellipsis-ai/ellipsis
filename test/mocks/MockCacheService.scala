@@ -1,6 +1,6 @@
 package mocks
 
-import json.BehaviorGroupData
+import json.{BehaviorGroupData, UserData}
 import models.accounts.slack.SlackUserInfo
 import models.behaviors.behaviorparameter.ValidValue
 import models.behaviors.events.{Event, SlackMessageEvent}
@@ -51,8 +51,12 @@ class MockCacheService extends CacheService with MockitoSugar {
 
   def getSlackIMs(teamId: String): Option[Seq[Im]] = None
 
-  def cacheBotUsername(userId: String, username: String): Unit = {}
+  def cacheSlackUsername(userId: String, username: String, teamId: String): Unit = {}
 
-  def getBotUsername(userId: String): Option[String] = None
+  def getSlackUsername(userId: String, slackTeamId: String): Option[String] = None
+
+  def cacheSlackUserData(userData: UserData): Unit = {}
+
+  def getSlackUserData(userId: String, slackTeamId: String): Option[UserData] = None
 
 }

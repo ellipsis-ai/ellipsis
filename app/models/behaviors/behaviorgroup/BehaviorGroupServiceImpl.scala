@@ -128,6 +128,7 @@ class BehaviorGroupServiceImpl @Inject() (
       groupsData <- Future.sequence(groupVersions.map { ea =>
         BehaviorGroupData.buildFor(ea, user, dataService)
       })
+      userData <- dataService.users.userDataFor(user, team)
       mergedData <- Future.successful({
         val actionInputs = groupsData.flatMap(_.actionInputs)
         val dataTypeInputs = groupsData.flatMap(_.dataTypeInputs)
@@ -135,22 +136,7 @@ class BehaviorGroupServiceImpl @Inject() (
         val libraryVersions = groupsData.flatMap(_.libraryVersions)
         val requiredOAuth2ApiConfigs = groupsData.flatMap(_.requiredOAuth2ApiConfigs)
         val requiredSimpleTokenApis = groupsData.flatMap(_.requiredSimpleTokenApis)
-        BehaviorGroupData(
-          None,
-          team.id,
-          Some(mergedName),
-          mergedDescription,
-          maybeIcon,
-          actionInputs,
-          dataTypeInputs,
-          behaviorVersions,
-          libraryVersions,
-          requiredOAuth2ApiConfigs,
-          requiredSimpleTokenApis,
-          githubUrl = None,
-          exportId = None, // Don't think it makes sense to have an exportId for something merged
-          None
-        )
+        BehaviorGroupData(None, team.id, Some(mergedName), mergedDescription, maybeIcon, actionInputs, dataTypeInputs, behaviorVersions, libraryVersions, requiredOAuth2ApiConfigs, requiredSimpleTokenApis, githubUrl = None, exportId = None, None, Some(userData))
       })
       _ <- Future.sequence(groupVersions.map { ea =>
         dataService.behaviorGroups.delete(ea.group)

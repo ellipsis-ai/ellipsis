@@ -3,6 +3,7 @@ define(function(require) {
   var LibraryVersion = require('./library_version');
   var Input = require('./input');
   var DeepEqual = require('../lib/deep_equal');
+  var User = require('./user');
   const ONE_MINUTE = 60000;
 
   class BehaviorGroup {
@@ -21,7 +22,8 @@ define(function(require) {
         requiredOAuth2ApiConfigs: { value: props.requiredOAuth2ApiConfigs, enumerable: true },
         requiredSimpleTokenApis: { value: props.requiredSimpleTokenApis, enumerable: true },
         createdAt: { value: props.createdAt, enumerable: true },
-        exportId: { value: props.exportId, enumerable: true }
+        exportId: { value: props.exportId, enumerable: true },
+        author: { value: props.author, enumerable: true }
       });
     }
 
@@ -113,7 +115,8 @@ define(function(require) {
       return this.clone({
         behaviorVersions: this.sortedForComparison(this.behaviorVersions).map(BehaviorVersion.forEqualityComparison),
         libraryVersions: this.sortedForComparison(this.libraryVersions).map(LibraryVersion.forEqualityComparison),
-        createdAt: null
+        createdAt: null,
+        author: null
       });
     }
 
@@ -170,7 +173,8 @@ define(function(require) {
         behaviorVersions: props.behaviorVersions.map((ea) => BehaviorVersion.fromJson(Object.assign({}, ea, { groupId: props.id }))),
         actionInputs: Input.allFromJson(props.actionInputs || []),
         dataTypeInputs: Input.allFromJson(props.dataTypeInputs || []),
-        libraryVersions: props.libraryVersions.map(ea => new LibraryVersion(Object.assign({}, ea, { groupId: props.id })))
+        libraryVersions: props.libraryVersions.map(ea => new LibraryVersion(Object.assign({}, ea, { groupId: props.id }))),
+        author: User.fromJson(props.author)
       }));
     }
 

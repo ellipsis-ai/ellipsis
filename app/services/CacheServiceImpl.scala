@@ -2,7 +2,7 @@ package services
 
 import javax.inject.{Inject, Provider, Singleton}
 
-import json.BehaviorGroupData
+import json.{BehaviorGroupData, UserData}
 import json.Formatting._
 import models.accounts.slack.SlackUserInfo
 import models.accounts.slack.botprofile.SlackBotProfile
@@ -172,12 +172,29 @@ class CacheServiceImpl @Inject() (
     }
   }
 
-  def cacheBotUsername(userId: String, username: String): Unit = {
-    set(s"slack-username-for-id-${userId}", username, 5.minutes)
+  def cacheSlackUsername(userId: String, username: String, slackTeamId: String): Unit = {
+    set(s"slack-username-for-team-$slackTeamId-user-$userId", username, 5.minutes)
   }
 
-  def getBotUsername(userId: String): Option[String] = {
-    get(s"slack-username-for-id-${userId}")
+  def getSlackUsername(userId: String, slackTeamId: String): Option[String] = {
+    get(s"slack-username-for-team-$slackTeamId-user-$userId")
+  }
+
+  def cacheSlackUserData(userData: UserData): Unit = {
+    for {
+      accountTeamId <- userData.accountTeamId
+    } yield {
+      set(s"slack-user-data-team-$accountTeamId-user-${userData.id}", Json.toJson(userData))
+    }
+  }
+
+  def getSlackUserData(userId: String, slackTeamId: String): Option[UserData] = {
+    get[JsValue](s"slack-user-data-team-$slackTeamId-user-$userId").flatMap { json =>
+      json.validate[UserData] match {
+        case JsSuccess(data, jsPath) => Some(data)
+        case JsError(err) => None
+      }
+    }
   }
 
 }
