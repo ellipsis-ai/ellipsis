@@ -1,5 +1,8 @@
 define(function(require) {
-  var React = require('react');
+  var
+    React = require('react'),
+    OAuth2ApplicationRef = require('../models/oauth2_application_ref'),
+    RequiredOAuth2Application = require('../models/required_oauth2_application');
 
   return React.createClass({
     displayName: 'NotificationForMissingOAuth2Application',
@@ -7,25 +10,8 @@ define(function(require) {
       details: React.PropTypes.arrayOf(React.PropTypes.shape({
         kind: React.PropTypes.string.isRequired,
         name: React.PropTypes.string.isRequired,
-        existingOAuth2Applications: React.PropTypes.arrayOf(React.PropTypes.shape({
-          apiId: React.PropTypes.string.isRequired,
-          applicationId: React.PropTypes.string.isRequired,
-          displayName: React.PropTypes.string,
-          keyName: React.PropTypes.string,
-          scope: React.PropTypes.string
-        })).isRequired,
-        requiredApiConfig: React.PropTypes.shape({
-          id: React.PropTypes.string.isRequired,
-          apiId: React.PropTypes.string.isRequired,
-          recommendedScope: React.PropTypes.string,
-          application: React.PropTypes.shape({
-            apiId: React.PropTypes.string.isRequired,
-            applicationId: React.PropTypes.string.isRequired,
-            displayName: React.PropTypes.string,
-            keyName: React.PropTypes.string,
-            scope: React.PropTypes.string
-          })
-        }).isRequired,
+        existingOAuth2Applications: React.PropTypes.arrayOf(React.PropTypes.instanceOf(OAuth2ApplicationRef)).isRequired,
+        requiredApiConfig: React.PropTypes.shape(React.PropTypes.instanceOf(RequiredOAuth2Application)).isRequired,
         onAddOAuth2Application: React.PropTypes.func.isRequired,
         onNewOAuth2Application: React.PropTypes.func.isRequired
       })).isRequired

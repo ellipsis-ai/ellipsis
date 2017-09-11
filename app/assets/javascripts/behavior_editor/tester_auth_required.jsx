@@ -1,11 +1,11 @@
 define(function(require) {
   var React = require('react'),
-    oauth2ApplicationShape = require('./oauth2_application_shape');
+    RequiredOAuth2Application = require('../models/required_oauth2_application');
 
   return React.createClass({
     propTypes: {
       behaviorId: React.PropTypes.string.isRequired,
-      appsRequiringAuth: React.PropTypes.arrayOf(oauth2ApplicationShape).isRequired
+      appsRequiringAuth: React.PropTypes.arrayOf(React.PropTypes.instanceOf(RequiredOAuth2Application)).isRequired
     },
 
     renderAuthRequiredFor: function (app) {

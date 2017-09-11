@@ -7,7 +7,7 @@ case class OAuth2ApplicationData(
                                   applicationId: String,
                                   scope: Option[String],
                                   displayName: String,
-                                  keyName: String
+                                  nameInCode: String
                                   )
 
 object OAuth2ApplicationData {

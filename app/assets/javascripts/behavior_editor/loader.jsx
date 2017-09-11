@@ -1,9 +1,10 @@
 requirejs(['common'], function() {
   requirejs(
-    ['core-js', 'whatwg-fetch', 'react', 'react-dom', './lib/browser_utils', './behavior_editor/index', './models/behavior_group', 'config/behavioreditor/edit', './models/param_type', './models/aws_config_ref'],
-    function(Core, Fetch, React, ReactDOM, BrowserUtils, BehaviorEditor, BehaviorGroup, BehaviorEditorConfiguration, ParamType, AWSConfigRef) {
+    ['core-js', 'whatwg-fetch', 'react', 'react-dom', './lib/browser_utils', './behavior_editor/index', './models/behavior_group', 'config/behavioreditor/edit', './models/param_type', './models/aws_config_ref', './models/oauth2_application_ref'],
+    function(Core, Fetch, React, ReactDOM, BrowserUtils, BehaviorEditor, BehaviorGroup, BehaviorEditorConfiguration, ParamType, AWSConfigRef, OAuth2ApplicationRef) {
       var config = Object.assign({}, BehaviorEditorConfiguration, {
         awsConfigs: BehaviorEditorConfiguration.awsConfigs.map(AWSConfigRef.fromJson),
+        oauth2Applications: BehaviorEditorConfiguration.oauth2Applications.map(OAuth2ApplicationRef.fromJson),
         groupData: BehaviorEditorConfiguration.group,
         group: BehaviorGroup.fromJson(BehaviorEditorConfiguration.group),
         builtinParamTypes: BehaviorEditorConfiguration.builtinParamTypes.map(ParamType.fromJson),

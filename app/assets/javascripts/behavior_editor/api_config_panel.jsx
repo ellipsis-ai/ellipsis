@@ -4,7 +4,9 @@ define(function(require) {
     DeleteButton = require('../shared_ui/delete_button'),
     DropdownMenu = require('../shared_ui/dropdown_menu'),
     Input = require('../form/input'),
+    OAuth2ApplicationRef = require('../models/oauth2_application_ref'),
     RequiredAWSConfig = require('../models/required_aws_config'),
+    RequiredOAuth2Application = require('../models/required_oauth2_application'),
     Select = require('../form/select');
 
   return React.createClass({
@@ -12,18 +14,8 @@ define(function(require) {
       openWhen: React.PropTypes.bool.isRequired,
       allAWSConfigs: React.PropTypes.arrayOf(React.PropTypes.instanceOf(AWSConfigRef)),
       requiredAWSConfigs: React.PropTypes.arrayOf(React.PropTypes.instanceOf(RequiredAWSConfig)),
-      allOAuth2Applications: React.PropTypes.arrayOf(React.PropTypes.shape({
-        applicationId: React.PropTypes.string.isRequired,
-        displayName: React.PropTypes.string.isRequired
-      })).isRequired,
-      requiredOAuth2ApiConfigs: React.PropTypes.arrayOf(React.PropTypes.shape({
-        apiId: React.PropTypes.string.isRequired,
-        recommendedScope: React.PropTypes.string,
-        application: React.PropTypes.shape({
-          applicationId: React.PropTypes.string.isRequired,
-          displayName: React.PropTypes.string.isRequired
-        })
-      })).isRequired,
+      allOAuth2Applications: React.PropTypes.arrayOf(React.PropTypes.instanceOf(OAuth2ApplicationRef)).isRequired,
+      requiredOAuth2Applications: React.PropTypes.arrayOf(React.PropTypes.instanceOf(RequiredOAuth2Application)).isRequired,
       allSimpleTokenApis: React.PropTypes.arrayOf(React.PropTypes.shape({
         apiId: React.PropTypes.string.isRequired,
         name: React.PropTypes.string.isRequired
@@ -63,8 +55,8 @@ define(function(require) {
       );
     },
 
-    getSortedRequiredAWSConfigs: function() {
-      return this.props.requiredAWSConfigs.sort((a, b) => {
+    sortedById: function(arr) {
+      return arr.sort((a, b) => {
         if (a.id === b.id) {
           return 0;
         } else if (a.id < b.id) {
@@ -73,6 +65,56 @@ define(function(require) {
           return 1;
         }
       });
+    },
+
+    getSortedRequiredAWSConfigs: function() {
+      return this.sortedById(this.props.requiredAWSConfigs);
+    },
+
+    getSortedRequiredOAuth2Applications: function() {
+      return this.sortedById(this.props.requiredOAuth2Applications);
+    },
+
+    isRequiredOAuth2Application: function(app) {
+      var appIndex = this.props.requiredOAuth2Applications.findIndex(function(ea) {
+        return ea.application && ea.application.applicationId === app.applicationId;
+      });
+      return appIndex >= 0;
+    },
+
+    getAPISelectorLabelForApi: function(api, displayName) {
+      if (api && api.iconImageUrl) {
+        return (
+          <div className="columns columns-elastic">
+            <div className="column column-shrink prs align-m">
+              <img src={api.iconImageUrl} width="24" height="24"/>
+            </div>
+            <div className="column column-expand align-m">
+              {displayName}
+            </div>
+          </div>
+        );
+      } else if (api && api.logoImageUrl) {
+        return (
+          <div className="columns columns-elastic">
+            <div className="column column-shrink prs align-m">
+              <img src={api.logoImageUrl} height="18" />
+            </div>
+            <div className="column column-expand align-m">
+              {displayName}
+            </div>
+          </div>
+        );
+      } else {
+        return (
+          <span>{displayName}</span>
+        );
+      }
+    },
+
+    getAPISelectorLabelForApp: function(app) {
+      var api = this.props.getOAuth2ApiWithId(app.apiId);
+      return this.getAPISelectorLabelForApi(api, app.displayName);
     },
 
     render: function() {
@@ -86,6 +128,7 @@ define(function(require) {
               <div className="column column-page-main">
                 <div className="container pvl">
                   {this.renderAWSConfigs()}
+                  {this.renderOAuth2Applications()}
                 </div>
                 <div className="ptxl">
                   {this.renderAdder()}
@@ -105,7 +148,7 @@ define(function(require) {
           toggle={this.props.toggle}
           label="Add an API"
           labelClassName="button-s"
-          menuClassName="popup-dropdown-menu-wide popup-dropdown-menu-left mobile-popup-dropdown-menu-left"
+          menuClassName="popup-dropdown-menu-wide popup-dropdown-menu-left mobile-popup-dropdown-menu-left popup-dropdown-menu-above"
         >
           {this.props.allAWSConfigs.map((cfg, index) => {
             return (
@@ -116,16 +159,15 @@ define(function(require) {
               />
             );
           })}
-          {/*{this.props.allOAuth2Applications.map((app, index) => {*/}
-            {/*return (*/}
-              {/*<DropdownMenu.Item*/}
-                {/*key={"oauth2-app-" + index}*/}
-                {/*checkedWhen={this.isRequiredOAuth2Application(app)}*/}
-                {/*onClick={this.toggleOAuth2Application.bind(this, app)}*/}
-                {/*label={this.getAPISelectorLabelForApp(app)}*/}
-              {/*/>*/}
-            {/*);*/}
-          {/*})}*/}
+          {this.props.allOAuth2Applications.map((app, index) => {
+            return (
+              <DropdownMenu.Item
+                key={"oauth2-app-" + index}
+                onClick={this.onAddOAuth2Application.bind(this, app)}
+                label={this.getAPISelectorLabelForApp(app)}
+              />
+            );
+          })}
           {/*{this.props.allSimpleTokenApis.map((api, index) => {*/}
             {/*return (*/}
               {/*<DropdownMenu.Item*/}
@@ -151,7 +193,7 @@ define(function(require) {
           className="form-select-s form-select-light align-m mrm mbs"
           name="paramType"
           value={required.config ? required.config.id : null}
-          onChange={this.onConfigChange.bind(this, required)}
+          onChange={this.onAWSConfigChange.bind(this, required)}
         >
           <option value={null}>None selected</option>
           {this.props.allAWSConfigs.map(ea => <option value={ea.id}>{ea.displayName}</option>)}
@@ -159,7 +201,25 @@ define(function(require) {
       );
     },
 
-    updateRequiredConfig: function(oldRequired, newRequired) {
+    getOAuth2ApplicationsFor: function(apiId) {
+      return this.props.allOAuth2Applications.filter(ea => ea.apiId === apiId);
+    },
+
+    renderOAuth2ApplicationFor: function(required) {
+      return (
+        <Select
+          className="form-select-s form-select-light align-m mrm mbs"
+          name="paramType"
+          value={required.application ? required.application.applicationId : null}
+          onChange={this.onOAuth2ApplicationChange.bind(this, required)}
+        >
+          <option value={null}>None selected</option>
+          {this.getOAuth2ApplicationsFor(required.apiId).map(ea => <option value={ea.applicationId}>{ea.displayName}</option>)}
+        </Select>
+      );
+    },
+
+    updateRequiredAWSConfig: function(oldRequired, newRequired) {
       this.props.onRemoveAWSConfig(oldRequired, () => {
         this.props.onAddAWSConfig(newRequired, () => {
           if (oldRequired.nameInCode !== newRequired.nameInCode) {
@@ -172,15 +232,35 @@ define(function(require) {
       });
     },
 
-    onConfigChange: function(required, newConfigId) {
+    onAWSConfigChange: function(required, newConfigId) {
       const newConfig = this.props.allAWSConfigs.find(ea => ea.id === newConfigId);
-      this.updateRequiredConfig(required, required.clone({
+      this.updateRequiredAWSConfig(required, required.clone({
         config: newConfig
       }));
     },
 
+    updateRequiredOAuth2Application: function(oldRequired, newRequired) {
+      this.props.onRemoveOAuth2Application(oldRequired, () => {
+        this.props.onAddOAuth2Application(newRequired, () => {
+          if (oldRequired.nameInCode !== newRequired.nameInCode) {
+            const input = this.refs[this.nameInCodeKeyFor(newRequired)];
+            input.focus();
+            input.refs.input.selectionStart = input.props.value.length;
+            input.refs.input.selectionEnd = input.props.value.length;
+          }
+        });
+      });
+    },
+
+    onOAuth2ApplicationChange: function(required, newApplicationId) {
+      const newApplication = this.props.allOAuth2Applications.find(ea => ea.applicationId === newApplicationId);
+      this.updateRequiredOAuth2Application(required, required.clone({
+        application: newApplication
+      }));
+    },
+
     onNameInCodeChange: function(required, newNameInCode) {
-      this.updateRequiredConfig(required, required.clone({
+      this.updateRequiredAWSConfig(required, required.clone({
         nameInCode: newNameInCode
       }));
     },
@@ -194,6 +274,19 @@ define(function(require) {
         nameInCode: config.nameInCode,
         config: config
       }));
+    },
+
+    onAddOAuth2Application: function(app) {
+      this.props.onAddOAuth2Application(new RequiredOAuth2Application({
+        apiId: app.apiId,
+        recommendedScope: app.scope,
+        nameInCode: app.nameInCode,
+        application: app
+      }))
+    },
+
+    onDeleteRequiredOAuth2Application: function(required) {
+      this.props.onRemoveOAuth2Application(required);
     },
 
     nameInCodeKeyFor: function(required) {
@@ -213,10 +306,10 @@ define(function(require) {
       );
     },
 
-    renderRequiredAWSConfig: function(required) {
+    renderRequiredFor: function(required, apiLogoUrl, configPart, onDeleteFn) {
       return (
         <div>
-          <div className="column"><img src="/assets/images/logos/aws_logo_web_300px.png" height="32"/></div>
+          <div className="column"><img src={apiLogoUrl} height="32"/></div>
           <div className="column box-code-example mhs">
             <div className="columns">
               <div className="column type-monospace type-s pvs prn">ellipsis.aws.</div>
@@ -225,12 +318,22 @@ define(function(require) {
               </div>
             </div>
           </div>
-          <div className="column pvs">{this.renderAWSConfigFor(required)}</div>
+          <div className="column pvs">{configPart}</div>
           <div className="column column-shrink align-t">
-            <DeleteButton onClick={this.onDeleteAWSConfig.bind(this, required)} />
+            <DeleteButton onClick={onDeleteFn.bind(this, required)} />
           </div>
         </div>
       );
+    },
+
+    renderRequiredAWSConfig: function(required) {
+      return this.renderRequiredFor(required, "/assets/images/logos/aws_logo_web_300px.png", this.renderAWSConfigFor(required), this.onDeleteAWSConfig);
+    },
+
+    renderRequiredOAuth2Application: function(required) {
+      const api = this.props.getOAuth2ApiWithId(required.apiId);
+      const apiLogoUrl = (api && api.iconImageUrl) || (api && api.logoImageUrl);
+      return this.renderRequiredFor(required, apiLogoUrl, this.renderOAuth2ApplicationFor(required), this.onDeleteRequiredOAuth2Application);
     },
 
     renderAWSConfigs: function() {
@@ -239,7 +342,16 @@ define(function(require) {
           {this.getSortedRequiredAWSConfigs().map(this.renderRequiredAWSConfig)}
         </div>
       );
+    },
+
+    renderOAuth2Applications: function() {
+      return (
+        <div className="columns">
+          {this.getSortedRequiredOAuth2Applications().map(this.renderRequiredOAuth2Application)}
+        </div>
+      );
     }
+
   });
 
 });

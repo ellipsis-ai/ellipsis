@@ -8,7 +8,7 @@ define(function(require) {
     Input = require('../models/input'),
     Trigger = require('../models/trigger'),
     debounce = require('javascript-debounce'),
-    oauth2ApplicationShape = require('./oauth2_application_shape'),
+    RequiredOAuth2Application = require('../models/required_oauth2_application'),
     TesterAuthRequired = require('./tester_auth_required'),
     InvocationTestResult = require('../models/behavior_invocation_result'),
     InvocationResults = require('./behavior_tester_invocation_results');
@@ -21,7 +21,7 @@ define(function(require) {
       behaviorId: React.PropTypes.string,
       csrfToken: React.PropTypes.string.isRequired,
       onDone: React.PropTypes.func.isRequired,
-      appsRequiringAuth: React.PropTypes.arrayOf(oauth2ApplicationShape).isRequired
+      appsRequiringAuth: React.PropTypes.arrayOf(React.PropTypes.instanceOf(RequiredOAuth2Application)).isRequired
     },
 
     getInitialState: function() {
