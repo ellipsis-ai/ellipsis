@@ -65,7 +65,9 @@ define(function(require) {
                   key={`nodeModuleVersion${index}`}
                   className={`pvxs`}
                 >
-                  <div className="plxl mobile-pll">{version.from} – v{version.version}</div>
+                  <div className="phxl mobile-phl type-monospace">
+                    <span>{version.from}</span>
+                    <span className="type-weak"> —&nbsp;v{version.version}</span></div>
                 </div>
               ))}
             </div>
