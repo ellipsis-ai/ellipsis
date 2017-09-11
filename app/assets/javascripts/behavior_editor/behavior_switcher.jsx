@@ -57,7 +57,7 @@ define(function(require) {
         return (
           <div className="border-bottom mtl pbl">
             <div className="container container-wide mbs">
-              <h6>Required node modules</h6>
+              <h6>Required NPM modules</h6>
             </div>
             <div className="type-s">
               {this.props.nodeModuleVersions.map((version, index) => (
@@ -65,14 +65,16 @@ define(function(require) {
                   key={`nodeModuleVersion${index}`}
                   className={`pvxs`}
                 >
-                  <div className="plxl mobile-pll">{version.from} – v{version.version}</div>
+                  <div className="phxl mobile-phl type-monospace">
+                    <span>{version.from}</span>
+                    <span className="type-weak"> —&nbsp;v{version.version}</span></div>
                 </div>
               ))}
             </div>
             <div className="container container-wide mvm">
               <button type="button"
                       onClick={this.props.onUpdateNodeModules}
-                      className="button button-s button-shrink">Update node module versions</button>
+                      className="button button-s button-shrink">Update NPM module versions</button>
             </div>
           </div>
         );
