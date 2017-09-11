@@ -57,7 +57,7 @@ define(function(require) {
         return (
           <div className="border-bottom mtl pbl">
             <div className="container container-wide mbs">
-              <h6>Required node modules</h6>
+              <h6>Required NPM modules</h6>
             </div>
             <div className="type-s">
               {this.props.nodeModuleVersions.map((version, index) => (
@@ -72,7 +72,7 @@ define(function(require) {
             <div className="container container-wide mvm">
               <button type="button"
                       onClick={this.props.onUpdateNodeModules}
-                      className="button button-s button-shrink">Update node module versions</button>
+                      className="button button-s button-shrink">Update NPM module versions</button>
             </div>
           </div>
         );

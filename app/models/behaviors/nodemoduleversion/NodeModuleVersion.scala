@@ -5,4 +5,8 @@ case class NodeModuleVersion(
                               name: String,
                               version: String,
                               groupVersionId: String
-                            )
+                            ) {
+  val nameWithoutVersion: String = {
+    name.replaceFirst("""@.+$""", "")
+  }
+}
