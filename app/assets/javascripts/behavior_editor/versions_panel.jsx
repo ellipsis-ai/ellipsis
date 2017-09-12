@@ -22,11 +22,28 @@ return React.createClass({
       return "Unsaved version";
     } else {
       const version = this.props.versions[versionIndex];
-      return `v${this.getVersionNumberForIndex(versionIndex)} ${this.getDateForVersion(version)} by ${this.getAuthorForVersion(version)}`;
+      const prevVersion = versionIndex > 1 ? this.props.versions[versionIndex - 1] : null;
+      return this.getVersionDetails(versionIndex, version, prevVersion);
     }
   },
-  getDateForVersion: function(version) {
-    return Formatter.formatTimestampRelativeIfRecent(version.createdAt);
+  getVersionDetails: function(versionIndex, version, prevVersion) {
+    const date = Formatter.formatTimestampDate(version.createdAt);
+    const prevDate = prevVersion ? Formatter.formatTimestampDate(prevVersion.createdAt) : null;
+
+    const time = Formatter.formatTimestampTime(version.createdAt);
+
+    const author = this.getAuthorForVersion(version);
+    const prevAuthor = prevVersion ? this.getAuthorForVersion(prevVersion) : null;
+
+    const versionNumber = this.getVersionNumberForIndex(versionIndex);
+
+    return `v${versionNumber}: ${
+      versionIndex === 1 ? "Last saved " : ""
+    }${
+      date === prevDate ? "…" : date
+    } at ${time} ${
+      author === prevAuthor ? "…" : "by " + author 
+    }`;
   },
   getAuthorForVersion: function(version) {
     return version.author ? version.author.formattedName() : "unknown";

@@ -58,6 +58,14 @@ define(function(require) {
       return moment(timestamp).format('ll, LT');
     },
 
+    formatTimestampDate: function(timestamp) {
+      return moment(timestamp).format('ll');
+    },
+
+    formatTimestampTime: function(timestamp) {
+      return moment(timestamp).format('LT');
+    },
+
     formatCamelCaseIdentifier: function(phrase) {
       var split = phrase.split(' ').map((ea) => ea.replace(/[^\w$]/ig, ''));
       var firstWord = split[0].charAt(0).toLowerCase() + split[0].slice(1);
