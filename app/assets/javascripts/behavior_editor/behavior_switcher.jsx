@@ -151,8 +151,6 @@ define(function(require) {
                 isModified={this.props.isModified}
               />
 
-              {this.renderNodeModules()}
-
               <ApiConfigList
                 requiredAWSConfigs={this.props.requiredAWSConfigs}
                 requiredOAuth2Applications={this.props.requiredOAuth2Applications}
@@ -160,6 +158,8 @@ define(function(require) {
                 onApiConfigClick={this.props.onApiConfigClick}
                 onAddApiConfigClick={this.props.onAddApiConfigClick}
               />
+
+              {this.renderNodeModules()}
 
             </div>
           ) : null}

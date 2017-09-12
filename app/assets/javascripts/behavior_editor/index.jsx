@@ -162,6 +162,25 @@ const BehaviorEditor = React.createClass({
       .filter((config) => !!config.application);
   },
 
+  getSelectedApiConfig: function() {
+    return this.state ? this.state.selectedApiConfig : undefined;
+  },
+
+  getApiConfigsForSelected: function() {
+    const selected = this.getSelectedApiConfig();
+    return selected ? selected.getAllConfigsFrom(this) : [];
+  },
+
+  onAddConfigForSelected: function() {
+    const selected = this.getSelectedApiConfig();
+    return selected ? selected.onAddConfigFor(this) : undefined;
+  },
+
+  onRemoveConfigForSelected: function() {
+    const selected = this.getSelectedApiConfig();
+    return selected ? selected.onRemoveConfigFor(this) : undefined;
+  },
+
   getEditableName: function() {
     return this.getEditableProp('name') || "";
   },
@@ -1629,25 +1648,15 @@ const BehaviorEditor = React.createClass({
             </div>
           ) : null}
 
-          <Collapsible ref="configureApis" revealWhen={this.props.activePanelName === "configureApis"} onChange={this.layoutDidUpdate}>
+          <Collapsible ref="configureApi" revealWhen={this.props.activePanelName === "configureApi"} onChange={this.layoutDidUpdate}>
             <APIConfigPanel
               openWhen={this.getActiveDropdown() === 'apiConfigAdderDropdown'}
               toggle={this.toggleApiAdderDropdown}
               getActiveDropdown={this.getActiveDropdown}
-              allAWSConfigs={this.getAllAWSConfigs()}
-              requiredAWSConfigs={this.getRequiredAWSConfigs()}
-              allOAuth2Applications={this.getAllOAuth2Applications()}
-              requiredOAuth2Applications={this.getRequiredOAuth2ApiConfigs()}
-              allSimpleTokenApis={this.getAllSimpleTokenApis()}
-              requiredSimpleTokenApis={this.getRequiredSimpleTokenApis()}
-              onAddAWSConfig={this.onAddAWSConfig}
-              onRemoveAWSConfig={this.onRemoveAWSConfig}
-              onAddOAuth2Application={this.onAddOAuth2Application}
-              onRemoveOAuth2Application={this.onRemoveOAuth2Application}
-              onAddSimpleTokenApi={this.onAddSimpleTokenApi}
-              onRemoveSimpleTokenApi={this.onRemoveSimpleTokenApi}
-              onNewOAuth2Application={this.onNewOAuth2Application}
-              getOAuth2ApiWithId={this.getOAuth2ApiWithId}
+              requiredConfig={this.getSelectedApiConfig()}
+              allConfigs={this.getApiConfigsForSelected()}
+              onAddConfig={this.onAddConfigForSelected()}
+              onRemoveConfig={this.onRemoveConfigForSelected()}
               onDoneClick={this.props.onClearActivePanel}
             >
             </APIConfigPanel>
@@ -2020,7 +2029,9 @@ const BehaviorEditor = React.createClass({
   },
 
   onApiConfigClick: function(required) {
-    console.log("configure " + required.nameInCode);
+    this.setState({
+      selectedApiConfig: required
+    }, () => this.props.onToggleActivePanel('configureApi'))
   },
 
   onAddApiConfigClick: function() {

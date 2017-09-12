@@ -1,12 +1,12 @@
-define(function() {
-  class OAuth2ApplicationRef {
+define(function(require) {
+  const ApiConfigRef = require('./api_config_ref');
+
+  class OAuth2ApplicationRef extends ApiConfigRef {
     constructor(props) {
+      super(props);
       Object.defineProperties(this, {
-        applicationId: { value: props.applicationId, enumerable: true },
         apiId: { value: props.apiId, enumerable: true },
-        scope: { value: props.scope, enumerable: true },
-        displayName: { value: props.displayName, enumerable: true },
-        nameInCode: { value: props.nameInCode, enumerable: true }
+        scope: { value: props.scope, enumerable: true }
       });
     }
 

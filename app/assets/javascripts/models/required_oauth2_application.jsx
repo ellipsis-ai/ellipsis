@@ -11,8 +11,17 @@ define(function(require) {
       });
     }
 
-    apiLogoUrl() {
-      return this.props.apiLogoUrl;
+    onAddConfigFor(editor) {
+      return editor.onAddOAuth2Application.bind(this);
+    }
+
+    onRemoveConfigFor(editor) {
+      return editor.onRemoveOAuth2Application.bind(this);
+    }
+
+    getApiLogoUrl() {
+      const api = undefined; //this.props.getOAuth2ApiWithId(apiId);
+      return api ? (api.logoImageUrl || api.iconImageUrl) : undefined;
     }
 
     clone(props) {
