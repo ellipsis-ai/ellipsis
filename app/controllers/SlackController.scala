@@ -297,7 +297,7 @@ class SlackController @Inject() (
         "channel" -> nonEmptyText,
         "channel_type" -> nonEmptyText
       )(ChannelMembersChangedEventInfo.apply)(ChannelMembersChangedEventInfo.unapply)
-    )(ChannelMembersChangedRequestInfo.apply)(ChannelMembersChangedRequestInfo.unapply) verifying("Not a valid message event", fields => fields match {
+    )(ChannelMembersChangedRequestInfo.apply)(ChannelMembersChangedRequestInfo.unapply) verifying("Not a valid channel event", fields => fields match {
       case info => info.event.eventType.matches(channelMembersChangedPattern)
     })
   )
@@ -316,10 +316,45 @@ class SlackController @Inject() (
     })
   }
 
+  case class UserChangeInfo(id: String)
+  case class UserProfileChangedEventInfo(
+                                          eventType: String,
+                                          user: UserChangeInfo
+                                        ) extends EventInfo
+  case class UserProfileChangedRequestInfo(
+                                             teamId: String,
+                                             event: UserProfileChangedEventInfo
+                                           ) extends EventRequestInfo
+
+  private val userProfileChangedRequestForm = Form(
+    mapping(
+      "team_id" -> nonEmptyText,
+      "event" -> mapping(
+        "type" -> nonEmptyText,
+        "user" -> mapping(
+          "id" -> nonEmptyText
+        )(UserChangeInfo.apply)(UserChangeInfo.unapply)
+      )(UserProfileChangedEventInfo.apply)(UserProfileChangedEventInfo.unapply)
+    )(UserProfileChangedRequestInfo.apply)(UserProfileChangedRequestInfo.unapply) verifying("Not a valid user event", fields => fields match {
+      case info => info.event.eventType == "user_change"
+    })
+  )
+
+  private def maybeUserProfileChangedResult(implicit request: Request[AnyContent]): Option[Result] = {
+    maybeResultFor(userProfileChangedRequestForm, (info: UserProfileChangedRequestInfo) => {
+      val slackUserId = info.event.user.id
+      val slackTeamId = info.teamId
+      services.cacheService.uncacheSlackUserData(slackUserId, slackTeamId)
+      Ok(":+1:")
+    })
+  }
+
+
   private def maybeEventResult(implicit request: Request[AnyContent]): Option[Result] = {
     if (isValidEventRequest) {
       maybeMessageResult orElse
-        maybeChannelMembersChangedResult
+        maybeChannelMembersChangedResult orElse
+        maybeUserProfileChangedResult
     } else {
       None
     }

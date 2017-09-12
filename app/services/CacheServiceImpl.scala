@@ -180,16 +180,25 @@ class CacheServiceImpl @Inject() (
     get(s"slack-username-for-team-$slackTeamId-user-$userId")
   }
 
+  private def slackUserDataKey(slackUserId: String, slackTeamId: String): String = {
+    s"slack-user-data-team-$slackTeamId-user-$slackUserId"
+  }
+
   def cacheSlackUserData(userData: UserData): Unit = {
     for {
-      accountTeamId <- userData.accountTeamId
+      slackTeamId <- userData.accountTeamId
+      slackUserId <- userData.accountId
     } yield {
-      set(s"slack-user-data-team-$accountTeamId-user-${userData.id}", Json.toJson(userData))
+      set(slackUserDataKey(slackUserId, slackTeamId), Json.toJson(userData), 1.hour)
     }
   }
 
-  def getSlackUserData(userId: String, slackTeamId: String): Option[UserData] = {
-    get[JsValue](s"slack-user-data-team-$slackTeamId-user-$userId").flatMap { json =>
+  def uncacheSlackUserData(slackUserId: String, slackTeamId: String): Unit = {
+    remove(slackUserDataKey(slackUserId, slackTeamId))
+  }
+
+  def getSlackUserData(slackUserId: String, slackTeamId: String): Option[UserData] = {
+    get[JsValue](slackUserDataKey(slackUserId, slackTeamId)).flatMap { json =>
       json.validate[UserData] match {
         case JsSuccess(data, jsPath) => Some(data)
         case JsError(err) => None

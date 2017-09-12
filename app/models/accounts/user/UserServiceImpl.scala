@@ -120,23 +120,21 @@ class UserServiceImpl @Inject() (
     }
   }
 
-  private def maybeFetchSlackUserData(user: User, profile: SlackBotProfile): Future[Option[UserData]] = {
+  private def maybeFetchSlackUserData(user: User, profile: SlackBotProfile, slackAccount: LinkedAccount): Future[Option[UserData]] = {
+    val slackUserId = slackAccount.loginInfo.providerKey
     for {
-      maybeSlackAccount <- dataService.linkedAccounts.maybeForSlackFor(user)
-      maybeName <- maybeSlackAccount.map { acc =>
-        SlackApiClient(profile.token).getUserInfo(acc.loginInfo.providerKey).
-          map(info => Some(info.name)).
-          recover {
-            case e: ApiError => None
-          }
-      }.getOrElse(Future.successful(None))
+      maybeName <- SlackApiClient(profile.token).getUserInfo(slackUserId).
+        map(info => Some(info.name)).
+        recover {
+          case e: ApiError => None
+        }
     } yield {
       maybeName.map { name =>
         val userData = UserData(
           user.id,
           Some(name),
-          maybeSlackAccount.map(_.loginInfo.providerID),
-          maybeSlackAccount.map(_.loginInfo.providerKey),
+          Some(slackAccount.loginInfo.providerID),
+          Some(slackUserId),
           Some(profile.slackTeamId)
         )
         cacheService.cacheSlackUserData(userData)
@@ -148,13 +146,18 @@ class UserServiceImpl @Inject() (
   def userDataFor(user: User, team: Team): Future[UserData] = {
     for {
       maybeSlackBotProfile <- dataService.slackBotProfiles.allFor(team).map(_.headOption)
-      maybeUserData <- maybeSlackBotProfile.map { profile =>
-        cacheService.getSlackUserData(user.id, profile.slackTeamId).map { userData =>
+      maybeSlackAccount <- dataService.linkedAccounts.maybeForSlackFor(user)
+      maybeUserData <- (for {
+        slackBotProfile <- maybeSlackBotProfile
+        slackAccount <- maybeSlackAccount
+      } yield {
+        val slackUserId = slackAccount.loginInfo.providerKey
+        cacheService.getSlackUserData(slackUserId, slackBotProfile.slackTeamId).map { userData =>
           Future.successful(Some(userData))
         }.getOrElse {
-          maybeFetchSlackUserData(user, profile)
+          maybeFetchSlackUserData(user, slackBotProfile, slackAccount)
         }
-      }.getOrElse(Future.successful(None))
+      }).getOrElse(Future.successful(None))
     } yield {
       maybeUserData.getOrElse {
         UserData(user.id, None, None, None, None)
