@@ -1,6 +1,6 @@
 package services
 
-import json.{BehaviorGroupData, UserData}
+import json.{BehaviorGroupData, SlackUserData}
 import models.accounts.slack.SlackUserInfo
 import models.behaviors.behaviorparameter.ValidValue
 import models.behaviors.events.{Event, SlackMessageEvent}
@@ -53,9 +53,9 @@ trait CacheService {
 
   def getSlackUsername(userId: String, slackTeamId: String): Option[String]
 
-  def cacheSlackUserData(userData: UserData): Unit
+  def cacheSlackUserData(userData: SlackUserData): Unit
 
   def uncacheSlackUserData(slackUserId: String, slackTeamId: String): Unit
 
-  def getSlackUserData(userId: String, slackTeamId: String): Option[UserData]
+  def getSlackUserData(slackUserId: String, slackTeamId: String): Option[SlackUserData]
 }

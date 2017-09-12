@@ -146,7 +146,7 @@ trait Event {
                    cacheService: CacheService
                  )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[String]]
 
-  def botPrefix(cacheService: CacheService)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[String] = Future.successful("")
+  def botPrefix(dataService: DataService)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[String] = Future.successful("")
 
   val invocationLogText: String
 

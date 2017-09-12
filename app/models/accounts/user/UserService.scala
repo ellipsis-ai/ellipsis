@@ -2,7 +2,7 @@ package models.accounts.user
 
 import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.api.services.IdentityService
-import json.UserData
+import json.{SlackUserData, UserData}
 import models.behaviors.behavior.Behavior
 import models.behaviors.behaviorgroup.BehaviorGroup
 import models.behaviors.events.Event

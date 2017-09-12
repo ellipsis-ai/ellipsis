@@ -1,6 +1,8 @@
 package models.accounts.linkedaccount
 
 import com.mohiva.play.silhouette.api.LoginInfo
+import json.SlackUserData
+import models.accounts.slack.botprofile.SlackBotProfile
 import models.accounts.user.User
 import slick.dbio.DBIO
 
@@ -27,6 +29,8 @@ trait LinkedAccountService {
       maybeLinkedAccount.map(_.loginInfo.providerKey)
     }
   }
+
+  def maybeSlackUserDataFor(profile: SlackBotProfile, slackUserId: String): Future[Option[SlackUserData]]
 
   def isAdminAction(linkedAccount: LinkedAccount): DBIO[Boolean]
 

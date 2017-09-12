@@ -24,19 +24,16 @@ case class SlackMessageEvent(
 
   lazy val isBotMessage: Boolean = profile.userId == user
 
-  override def botPrefix(cacheService: CacheService)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[String] = {
+  override def botPrefix(dataService: DataService)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[String] = {
     if (isDirectMessage) {
       Future.successful("")
     } else {
-      cacheService.getSlackUsername(profile.userId, profile.slackTeamId).map { name =>
-        Future.successful(s"@$name ")
-      }.getOrElse {
-        client.getUserInfo(profile.userId).map { slackUser =>
-          cacheService.cacheSlackUsername(profile.userId, slackUser.name, profile.slackTeamId)
-          s"@${slackUser.name} "
-        } recover {
-          case e: ApiError => "..."
-        }
+      for {
+        maybeSlackUserData <- dataService.linkedAccounts.maybeSlackUserDataFor(profile, profile.userId)
+      } yield {
+        maybeSlackUserData.map { userData =>
+          s"@${userData.accountName} "
+        }.getOrElse("...")
       }
     }
   }

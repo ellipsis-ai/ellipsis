@@ -2,7 +2,7 @@ package services
 
 import javax.inject.{Inject, Provider, Singleton}
 
-import json.{BehaviorGroupData, UserData}
+import json.{BehaviorGroupData, SlackUserData}
 import json.Formatting._
 import models.accounts.slack.SlackUserInfo
 import models.accounts.slack.botprofile.SlackBotProfile
@@ -184,22 +184,17 @@ class CacheServiceImpl @Inject() (
     s"slack-user-data-team-$slackTeamId-user-$slackUserId"
   }
 
-  def cacheSlackUserData(userData: UserData): Unit = {
-    for {
-      slackTeamId <- userData.accountTeamId
-      slackUserId <- userData.accountId
-    } yield {
-      set(slackUserDataKey(slackUserId, slackTeamId), Json.toJson(userData), 1.hour)
-    }
+  def cacheSlackUserData(userData: SlackUserData): Unit = {
+    set(slackUserDataKey(userData.accountId, userData.accountTeamId), Json.toJson(userData), 1.hour)
   }
 
   def uncacheSlackUserData(slackUserId: String, slackTeamId: String): Unit = {
     remove(slackUserDataKey(slackUserId, slackTeamId))
   }
 
-  def getSlackUserData(slackUserId: String, slackTeamId: String): Option[UserData] = {
+  def getSlackUserData(slackUserId: String, slackTeamId: String): Option[SlackUserData] = {
     get[JsValue](slackUserDataKey(slackUserId, slackTeamId)).flatMap { json =>
-      json.validate[UserData] match {
+      json.validate[SlackUserData] match {
         case JsSuccess(data, jsPath) => Some(data)
         case JsError(err) => None
       }

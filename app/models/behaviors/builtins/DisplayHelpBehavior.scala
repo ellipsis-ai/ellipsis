@@ -143,7 +143,7 @@ case class DisplayHelpBehavior(
           BehaviorGroupData.maybeFor(group.id, user, None, dataService)
         }).map(_.flatten.sorted)
       }.getOrElse(Future.successful(Seq()))
-      botPrefix <- event.botPrefix(cacheService)
+      botPrefix <- event.botPrefix(dataService)
     } yield {
       val (named, unnamed) = groupData.partition(_.maybeNonEmptyName.isDefined)
       val namedGroupData = named.map(behaviorGroupData => SkillHelpGroupData(behaviorGroupData))

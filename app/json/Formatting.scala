@@ -67,6 +67,9 @@ object Formatting {
   implicit val nodeModuleVersionDataReads = Json.reads[NodeModuleVersionData]
   implicit val nodeModuleVersionDataWrites = Json.writes[NodeModuleVersionData]
 
+  implicit val slackUserDataReads = Json.reads[SlackUserData]
+  implicit val slackUserDataWrites = Json.writes[SlackUserData]
+
   implicit val userDataReads = Json.reads[UserData]
   implicit val userDataWrites = Json.writes[UserData]
 
