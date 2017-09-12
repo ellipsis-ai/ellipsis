@@ -5,8 +5,8 @@ define(function(require) {
     BehaviorVersion = require('../models/behavior_version'),
     LibraryVersion = require('../models/library_version'),
     NodeModuleVersion = require('../models/node_module_version'),
-    RequiredAWSConfig = require('../models/required_aws_config'),
-    RequiredOAuth2Application = require('../models/required_oauth2_application');
+    RequiredAWSConfig = require('../models/aws').RequiredAWSConfig,
+    RequiredOAuth2Application = require('../models/oauth2').RequiredOAuth2Application;
 
   return React.createClass({
     displayName: 'BehaviorSwitcher',

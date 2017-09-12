@@ -3,7 +3,7 @@ define(function(require) {
     BehaviorTest = require('./behavior_test'),
     Input = require('../form/input'),
     Collapsible = require('../shared_ui/collapsible'),
-    RequiredOAuth2Application = require('../models/required_oauth2_application'),
+    RequiredOAuth2Application = require('../models/oauth2').RequiredOAuth2Application,
     TesterAuthRequired = require('./tester_auth_required'),
     InvocationResults = require('./behavior_tester_invocation_results'),
     InvocationTestResult = require('../models/behavior_invocation_result');

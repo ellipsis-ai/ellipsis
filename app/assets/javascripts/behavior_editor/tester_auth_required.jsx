@@ -1,6 +1,6 @@
 define(function(require) {
   var React = require('react'),
-    RequiredOAuth2Application = require('../models/required_oauth2_application');
+    RequiredOAuth2Application = require('../models/oauth2').RequiredOAuth2Application;
 
   return React.createClass({
     propTypes: {

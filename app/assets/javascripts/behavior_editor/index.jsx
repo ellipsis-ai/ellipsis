@@ -1,8 +1,7 @@
 define((require) => {
 var React = require('react'),
   APIConfigPanel = require('./api_config_panel'),
-  APISelectorMenu = require('./api_selector_menu'),
-  AWSConfigRef = require('../models/aws_config_ref'),
+  AWSConfigRef = require('../models/aws').AWSConfigRef,
   AWSHelp = require('./aws_help'),
   BehaviorGroup = require('../models/behavior_group'),
   BehaviorGroupEditor = require('./behavior_group_editor'),
@@ -38,17 +37,16 @@ var React = require('react'),
   LibraryVersion = require('../models/library_version'),
   ModalScrim = require('../shared_ui/modal_scrim'),
   Notifications = require('../notifications/notifications'),
-  OAuth2ApplicationRef = require('../models/oauth2_application_ref'),
+  OAuth2ApplicationRef = require('../models/oauth2').OAuth2ApplicationRef,
   PageWithPanels = require('../shared_ui/page_with_panels'),
   ParamType = require('../models/param_type'),
-  RequiredAWSConfig = require('../models/required_aws_config'),
-  RequiredOAuth2Application = require('../models/required_oauth2_application'),
   ResponseTemplate = require('../models/response_template'),
   ResponseTemplateConfiguration = require('./response_template_configuration'),
   ResponseTemplateHelp = require('./response_template_help'),
   SavedAnswerEditor = require('./saved_answer_editor'),
   SequentialName = require('../lib/sequential_name'),
   SharedAnswerInputSelector = require('./shared_answer_input_selector'),
+  SimpleTokenApiRef = require('../models/simple_token_api_ref'),
   Sticky = require('../shared_ui/sticky'),
   SVGHamburger = require('../svg/hamburger'),
   Trigger = require('../models/trigger'),
@@ -94,10 +92,7 @@ const BehaviorEditor = React.createClass({
       apiId: React.PropTypes.string.isRequired,
       name: React.PropTypes.string.isRequired
     })),
-    simpleTokenApis: React.PropTypes.arrayOf(React.PropTypes.shape({
-      apiId: React.PropTypes.string.isRequired,
-      name: React.PropTypes.string.isRequired
-    })),
+    simpleTokenApis: React.PropTypes.arrayOf(React.PropTypes.instanceOf(SimpleTokenApiRef)),
     linkedOAuth2ApplicationIds: React.PropTypes.arrayOf(React.PropTypes.string).isRequired,
     savedAnswers: React.PropTypes.arrayOf(
       React.PropTypes.shape({
@@ -171,6 +166,12 @@ const BehaviorEditor = React.createClass({
     return this.getRequiredApiConfigWithId(selectedId);
   },
 
+  getAllConfigs: function() {
+    return this.getAllAWSConfigs()
+      .concat(this.getAllOAuth2Applications())
+      .concat(this.getAllSimpleTokenApis());
+  },
+
   getAllRequiredApiConfigs: function() {
     return this.getRequiredAWSConfigs()
       .concat(this.getRequiredOAuth2ApiConfigs())
@@ -183,7 +184,7 @@ const BehaviorEditor = React.createClass({
 
   getApiConfigsForSelected: function() {
     const selected = this.getSelectedApiConfig();
-    return selected ? selected.getAllConfigsFrom(this) : [];
+    return selected ? selected.getAllConfigsFrom(this) : this.getAllConfigs();
   },
 
   onAddConfigForSelected: function() {
@@ -1563,35 +1564,6 @@ const BehaviorEditor = React.createClass({
     );
   },
 
-  toggleAPISelectorMenu: function() {
-    this.toggleActiveDropdown('apiSelectorDropdown');
-  },
-
-  renderAPISelector: function() {
-    return (<div></div>);
-      {/*<APISelectorMenu*/}
-        {/*openWhen={this.getActiveDropdown() === 'apiSelectorDropdown'}*/}
-        {/*onAWSClick={this.toggleAWSConfig}*/}
-        {/*behaviorConfig={this.getBehaviorConfig()}*/}
-        {/*toggle={this.toggleAPISelectorMenu}*/}
-        {/*allAWSConfigs={this.getAllAWSConfigs()}*/}
-        {/*requiredAWSConfigs={this.getRequiredAWSConfigs()}*/}
-        {/*allOAuth2Applications={this.getAllOAuth2Applications()}*/}
-        {/*requiredOAuth2ApiConfigs={this.getRequiredOAuth2ApiConfigs()}*/}
-        {/*allSimpleTokenApis={this.getAllSimpleTokenApis()}*/}
-        {/*requiredSimpleTokenApis={this.getRequiredSimpleTokenApis()}*/}
-        {/*onAddAWSConfig={this.onAddAWSConfig}*/}
-        {/*onRemoveAWSConfig={this.onRemoveAWSConfig}*/}
-        {/*onAddOAuth2Application={this.onAddOAuth2Application}*/}
-        {/*onRemoveOAuth2Application={this.onRemoveOAuth2Application}*/}
-        {/*onAddSimpleTokenApi={this.onAddSimpleTokenApi}*/}
-        {/*onRemoveSimpleTokenApi={this.onRemoveSimpleTokenApi}*/}
-        {/*onNewOAuth2Application={this.onNewOAuth2Application}*/}
-        {/*getOAuth2ApiWithId={this.getOAuth2ApiWithId}*/}
-      {/*/>*/}
-    {/*);*/}
-  },
-
   renderCodeEditor: function(props) {
     return (
       <CodeConfiguration
@@ -1609,8 +1581,6 @@ const BehaviorEditor = React.createClass({
         animationIsDisabled={this.animationIsDisabled()}
 
         behaviorConfig={this.getBehaviorConfig()}
-
-        apiSelector={this.renderAPISelector()}
 
         inputs={this.getInputs()}
         systemParams={props.systemParams || this.getSystemParams()}
@@ -2060,11 +2030,13 @@ const BehaviorEditor = React.createClass({
   onApiConfigClick: function(required) {
     this.setState({
       selectedApiConfigId: required.id
-    }, () => this.props.onToggleActivePanel('configureApi'))
+    }, () => this.props.onToggleActivePanel('configureApi'));
   },
 
   onAddApiConfigClick: function() {
-
+    this.setState({
+      selectedApiConfigId: null
+    }, () => this.props.onToggleActivePanel('configureApi'));
   },
 
   renderBehaviorSwitcher: function() {

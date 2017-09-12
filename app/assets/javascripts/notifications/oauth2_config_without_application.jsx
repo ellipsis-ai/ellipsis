@@ -1,8 +1,9 @@
 define(function(require) {
   var
     React = require('react'),
-    OAuth2ApplicationRef = require('../models/oauth2_application_ref'),
-    RequiredOAuth2Application = require('../models/required_oauth2_application');
+    oauth2 = require('../models/oauth2'),
+    OAuth2ApplicationRef = oauth2.OAuth2ApplicationRef,
+    RequiredOAuth2Application = oauth2.RequiredOAuth2Application;
 
   return React.createClass({
     displayName: 'NotificationForMissingOAuth2Application',

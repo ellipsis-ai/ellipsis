@@ -112,6 +112,14 @@ define(function(require) {
       return this.getAPISelectorLabelForApi(api, app.displayName);
     },
 
+    getSelectorLabelForConfig: function(config) {
+      return config.getSelectorLabel();
+    },
+
+    onAddNewRequiredFor: function(config) {
+      this.props.onAddConfig(config.newRequired())
+    },
+
     render: function() {
       return (
         <div className="box-action phn">
@@ -143,34 +151,15 @@ define(function(require) {
           labelClassName="button-s"
           menuClassName="popup-dropdown-menu-wide popup-dropdown-menu-left mobile-popup-dropdown-menu-left popup-dropdown-menu-above"
         >
-          {this.props.allAWSConfigs.map((cfg, index) => {
+          {this.props.allConfigs.map((cfg, index) => {
             return (
               <DropdownMenu.Item
-                key={"aws-config-" + index}
-                onClick={this.onAddAWSConfig.bind(this, cfg)}
-                label={this.getAWSSelectorLabelForConfig(cfg)}
+                key={"api-config-" + index}
+                onClick={this.onAddNewRequiredFor.bind(this, cfg)}
+                label={this.getSelectorLabelForConfig(cfg)}
               />
             );
           })}
-          {this.props.allOAuth2Applications.map((app, index) => {
-            return (
-              <DropdownMenu.Item
-                key={"oauth2-app-" + index}
-                onClick={this.onAddOAuth2Application.bind(this, app)}
-                label={this.getAPISelectorLabelForApp(app)}
-              />
-            );
-          })}
-          {/*{this.props.allSimpleTokenApis.map((api, index) => {*/}
-            {/*return (*/}
-              {/*<DropdownMenu.Item*/}
-                {/*key={"simple-token-api-" + index}*/}
-                {/*checkedWhen={this.isRequiredSimpleTokenApi(api)}*/}
-                {/*onClick={this.toggleSimpleTokenApi.bind(this, api)}*/}
-                {/*label={this.getAPISelectorLabelForApi(api, api.name)}*/}
-              {/*/>*/}
-            {/*);*/}
-          {/*})}*/}
           {/*<DropdownMenu.Item*/}
             {/*onClick={this.addNewOAuth2Application}*/}
             {/*className="border-top"*/}
@@ -245,7 +234,7 @@ define(function(require) {
           </div>
         );
       } else {
-        return null;
+        return this.renderAdder();
       }
     }
 

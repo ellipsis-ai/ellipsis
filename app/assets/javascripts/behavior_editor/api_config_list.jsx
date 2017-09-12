@@ -1,7 +1,7 @@
 define(function(require) {
   var React = require('react'),
-    RequiredAWSConfig = require('../models/required_aws_config'),
-    RequiredOAuth2Application = require('../models/required_oauth2_application');
+    RequiredAWSConfig = require('../models/aws').RequiredAWSConfig,
+    RequiredOAuth2Application = require('../models/oauth2').RequiredOAuth2Application;
 
   return React.createClass({
     propTypes: {
@@ -52,7 +52,7 @@ define(function(require) {
           </div>
           <div className="container container-wide mvm">
             <button type="button"
-                    onClick={this.props.onAddConfiguration}
+                    onClick={this.props.onAddApiConfigClick}
                     className="button button-s button-shrink">Add an API integration</button>
           </div>
         </div>

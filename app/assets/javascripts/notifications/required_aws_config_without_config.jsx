@@ -1,7 +1,8 @@
 define(function(require) {
   var React = require('react'),
-    AWSConfigRef = require('../models/aws_config_ref'),
-    RequiredAWSConfig = require('../models/required_aws_config');
+    aws = require('../models/aws'),
+    AWSConfigRef = aws.AWSConfigRef,
+    RequiredAWSConfig = aws.RequiredAWSConfig;
 
   return React.createClass({
     displayName: 'NotificationForMissingAWSConfig',

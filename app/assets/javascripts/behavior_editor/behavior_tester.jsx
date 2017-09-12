@@ -8,7 +8,7 @@ define(function(require) {
     Input = require('../models/input'),
     Trigger = require('../models/trigger'),
     debounce = require('javascript-debounce'),
-    RequiredOAuth2Application = require('../models/required_oauth2_application'),
+    RequiredOAuth2Application = require('../models/oauth2').RequiredOAuth2Application,
     TesterAuthRequired = require('./tester_auth_required'),
     InvocationTestResult = require('../models/behavior_invocation_result'),
     InvocationResults = require('./behavior_tester_invocation_results');

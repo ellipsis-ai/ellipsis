@@ -8,7 +8,7 @@ define(function(require) {
     DataTypeSchemaConfig = require('./data_type_schema_config'),
     DataTypeSourceConfig = require('./data_type_source_config'),
     ID = require('../lib/id'),
-    RequiredAWSConfig = require('../models/required_aws_config'),
+    RequiredAWSConfig = require('../models/aws').RequiredAWSConfig,
     SectionHeading = require('../shared_ui/section_heading'),
     SequentialName = require('../lib/sequential_name'),
     BehaviorConfig = require('../models/behavior_config'),

@@ -3,8 +3,8 @@ define(function(require) {
   var LibraryVersion = require('./library_version');
   var Input = require('./input');
   var DeepEqual = require('../lib/deep_equal');
-  var RequiredAWSConfig = require('./required_aws_config');
-  var RequiredOAuth2Application = require('./required_oauth2_application');
+  var RequiredAWSConfig = require('./aws').RequiredAWSConfig;
+  var RequiredOAuth2Application = require('./oauth2').RequiredOAuth2Application;
   const ONE_MINUTE = 60000;
 
   class BehaviorGroup {

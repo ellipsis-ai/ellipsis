@@ -7,8 +7,8 @@ define(function(require) {
     Input = require('../models/input'),
     Notifications = require('../notifications/notifications'),
     NotificationData = require('../models/notification_data'),
-    RequiredAWSConfig = require('../models/required_aws_config'),
-    RequiredOAuth2Application = require('../models/required_oauth2_application'),
+    RequiredAWSConfig = require('../models/aws').RequiredAWSConfig,
+    RequiredOAuth2Application = require('../models/oauth2').RequiredOAuth2Application,
     SectionHeading = require('../shared_ui/section_heading'),
     SVGSettingsIcon = require('../svg/settings'),
     debounce = require('javascript-debounce');
@@ -28,8 +28,6 @@ define(function(require) {
       animationIsDisabled: React.PropTypes.bool.isRequired,
 
       behaviorConfig: React.PropTypes.instanceOf(BehaviorConfig),
-
-      apiSelector: React.PropTypes.node.isRequired,
 
       inputs: React.PropTypes.arrayOf(React.PropTypes.instanceOf(Input)).isRequired,
       systemParams: React.PropTypes.arrayOf(React.PropTypes.string).isRequired,

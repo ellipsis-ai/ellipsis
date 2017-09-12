@@ -1,7 +1,33 @@
 define(function(require) {
-  const OAuth2ApplicationRef = require('./oauth2_application_ref');
-  class RequiredOAuth2Application {
+  const ApiConfigRef = require('./api_config_ref');
+  const RequiredApiConfig = require('./required_api_config');
+
+  class OAuth2ApplicationRef extends ApiConfigRef {
     constructor(props) {
+      super(props);
+      Object.defineProperties(this, {
+        apiId: { value: props.apiId, enumerable: true },
+        scope: { value: props.scope, enumerable: true }
+      });
+    }
+
+    newRequired() {
+      return new RequiredOAuth2Application({
+        apiId: this.apiId,
+        recommendedScope: this.scope,
+        nameInCode: this.nameInCode,
+        application: this
+      });
+    }
+
+    static fromJson(props) {
+      return new OAuth2ApplicationRef(props);
+    }
+  }
+
+  class RequiredOAuth2Application extends RequiredApiConfig {
+    constructor(props) {
+      super(props);
       Object.defineProperties(this, {
         id: { value: props.id, enumerable: true },
         apiId: { value: props.apiId, enumerable: true },
@@ -35,5 +61,8 @@ define(function(require) {
     }
   }
 
-  return RequiredOAuth2Application;
+  return {
+    'OAuth2ApplicationRef': OAuth2ApplicationRef,
+    'RequiredOAuth2Application': RequiredOAuth2Application
+  };
 });

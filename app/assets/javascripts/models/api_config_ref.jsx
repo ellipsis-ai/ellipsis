@@ -7,6 +7,10 @@ define(function() {
         nameInCode: { value: props.nameInCode, enumerable: true }
       });
     }
+
+    getSelectorLabel() {
+      return this.displayName || "meh";
+    }
   }
 
   return ApiConfigRef;

@@ -1,6 +1,29 @@
 define(function(require) {
-  const AWSConfigRef = require('./aws_config_ref');
+  const ApiConfigRef = require('./api_config_ref');
   const RequiredApiConfig = require('./required_api_config');
+
+  class AWSConfigRef extends ApiConfigRef {
+    constructor(props) {
+      super(props);
+      Object.defineProperties(this, {
+        id: { value: props.id, enumerable: true },
+        displayName: { value: props.displayName, enumerable: true },
+        nameInCode: { value: props.nameInCode, enumerable: true }
+      });
+    }
+
+    newRequired() {
+      return new RequiredAWSConfig({
+        apiId: 'aws',
+        nameInCode: this.nameInCode,
+        config: this
+      });
+    }
+
+    static fromJson(props) {
+      return new AWSConfigRef(props);
+    }
+  }
 
   class RequiredAWSConfig extends RequiredApiConfig {
     constructor(props) {
@@ -61,5 +84,8 @@ define(function(require) {
     }
   }
 
-  return RequiredAWSConfig;
+  return {
+    'AWSConfigRef': AWSConfigRef,
+    'RequiredAWSConfig': RequiredAWSConfig
+  };
 });
