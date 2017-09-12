@@ -42,6 +42,14 @@ define(function(require) {
       return `ellipsis.aws.${this.nameInCode}`
     }
 
+    configString() {
+      if (this.config) {
+        return `using: ${this.config.displayName}`;
+      } else {
+        return "not yet configured"
+      }
+    }
+
     clone(props) {
       return new RequiredAWSConfig((Object.assign({}, this, props)));
     }
