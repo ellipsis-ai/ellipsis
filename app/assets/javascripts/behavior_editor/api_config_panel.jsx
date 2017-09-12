@@ -14,6 +14,7 @@ define(function(require) {
       allConfigs: React.PropTypes.arrayOf(React.PropTypes.instanceOf(ApiConfigRef)),
       onAddConfig: React.PropTypes.func,
       onRemoveConfig: React.PropTypes.func,
+      onUpdateConfig: React.PropTypes.func,
       toggle: React.PropTypes.func.isRequired,
       onDoneClick: React.PropTypes.func.isRequired
     },
@@ -185,38 +186,24 @@ define(function(require) {
         <Select
           className="form-select-s form-select-light align-m mrm mbs"
           name="paramType"
-          value={required.config ? required.config.id : null}
+          value={required.config ? required.config.id : undefined}
           onChange={this.onConfigChange}
         >
-          <option value={null}>None selected</option>
-          {this.getAllConfigs().map(ea => <option value={ea.id}>{ea.displayName}</option>)}
+          <option key="config-choice-none" value={null}>None selected</option>
+          {this.getAllConfigs().map(ea => <option key={`config-choice-${ea.id}`} value={ea.id}>{ea.displayName}</option>)}
         </Select>
       );
     },
 
-    updateRequiredConfigWith: function(updated) {
-      const existing = this.props.requiredConfig;
-      this.props.onRemoveConfig(existing, () => {
-        this.props.onAddConfig(updated, () => {
-          if (existing.nameInCode !== updated.nameInCode) {
-            const input = this.refs[this.nameInCodeKey];
-            input.focus();
-            input.refs.input.selectionStart = input.props.value.length;
-            input.refs.input.selectionEnd = input.props.value.length;
-          }
-        });
-      });
-    },
-
     onConfigChange: function(newConfigId) {
       const newConfig = this.getAllConfigs().find(ea => ea.id === newConfigId);
-      this.updateRequiredConfigWith(this.props.requiredConfig.clone({
+      this.props.onUpdateConfig(this.props.requiredConfig.clone({
         config: newConfig
       }));
     },
 
     onNameInCodeChange: function(newNameInCode) {
-      this.updateRequiredConfigWith(this.props.requiredConfig.clone({
+      this.props.onUpdateConfig(this.props.requiredConfig.clone({
         nameInCode: newNameInCode
       }));
     },

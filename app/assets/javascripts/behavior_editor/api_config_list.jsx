@@ -20,7 +20,7 @@ define(function(require) {
       return (
         <div className="plxl mobile-pll">
           <a onClick={this.onApiConfigClick.bind(this, required)} className="link-block">
-            {required.nameInCode}
+            {required.codePath()}
           </a>
         </div>
       );

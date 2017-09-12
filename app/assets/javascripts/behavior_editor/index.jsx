@@ -162,8 +162,23 @@ const BehaviorEditor = React.createClass({
       .filter((config) => !!config.application);
   },
 
+  getSelectedApiConfigId: function() {
+    return this.state ? this.state.selectedApiConfigId : undefined;
+  },
+
   getSelectedApiConfig: function() {
-    return this.state ? this.state.selectedApiConfig : undefined;
+    const selectedId = this.getSelectedApiConfigId();
+    return this.getRequiredApiConfigWithId(selectedId);
+  },
+
+  getAllRequiredApiConfigs: function() {
+    return this.getRequiredAWSConfigs()
+      .concat(this.getRequiredOAuth2ApiConfigs())
+        .concat(this.getRequiredSimpleTokenApis());
+  },
+
+  getRequiredApiConfigWithId: function(id) {
+    return this.getAllRequiredApiConfigs().find(ea => ea.id === id);
   },
 
   getApiConfigsForSelected: function() {
@@ -179,6 +194,11 @@ const BehaviorEditor = React.createClass({
   onRemoveConfigForSelected: function() {
     const selected = this.getSelectedApiConfig();
     return selected ? selected.onRemoveConfigFor(this) : undefined;
+  },
+
+  onUpdateConfigForSelected: function() {
+    const selected = this.getSelectedApiConfig();
+    return selected ? selected.onUpdateConfigFor(this) : undefined;
   },
 
   getEditableName: function() {
@@ -1367,6 +1387,13 @@ const BehaviorEditor = React.createClass({
     this.updateGroupStateWith(this.getBehaviorGroup().clone({ requiredAWSConfigs: newConfigs }), callback);
   },
 
+  onUpdateAWSConfig: function(config, callback) {
+    const configs = this.getRequiredAWSConfigs().slice();
+    const indexToReplace = configs.findIndex(ea => ea.id === config.id);
+    configs[indexToReplace] = config;
+    this.updateGroupStateWith(this.getBehaviorGroup().clone({ requiredAWSConfigs: configs }), callback);
+  },
+
   onAddOAuth2Application: function(toAdd, callback) {
     const existing = this.getRequiredOAuth2ApiConfigs();
     const newApplications = existing.concat([toAdd]);
@@ -1501,7 +1528,8 @@ const BehaviorEditor = React.createClass({
       hasMobileLayout: this.windowIsMobile(),
       animationDisabled: false,
       lastSavedDataStorageItem: null,
-      nodeModuleVersions: []
+      nodeModuleVersions: [],
+      selectedApiConfigId: null
     };
   },
 
@@ -1657,6 +1685,7 @@ const BehaviorEditor = React.createClass({
               allConfigs={this.getApiConfigsForSelected()}
               onAddConfig={this.onAddConfigForSelected()}
               onRemoveConfig={this.onRemoveConfigForSelected()}
+              onUpdateConfig={this.onUpdateConfigForSelected()}
               onDoneClick={this.props.onClearActivePanel}
             >
             </APIConfigPanel>
@@ -2030,7 +2059,7 @@ const BehaviorEditor = React.createClass({
 
   onApiConfigClick: function(required) {
     this.setState({
-      selectedApiConfig: required
+      selectedApiConfigId: required.id
     }, () => this.props.onToggleActivePanel('configureApi'))
   },
 

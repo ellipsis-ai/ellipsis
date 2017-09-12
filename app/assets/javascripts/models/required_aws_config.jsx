@@ -8,17 +8,26 @@ define(function(require) {
       Object.defineProperties(this, {
         id: { value: props.id, enumerable: true },
         nameInCode: { value: props.nameInCode, enumerable: true },
-        config: { value: props.config, enumerable: true },
-        attachedConfig: { value: props.config, enumerable: true }
+        config: { value: props.config, enumerable: true }
       });
     }
 
     onAddConfigFor(editor) {
-      return editor.onAddAWSConfig.bind(editor, this);
+      return (required, callback) => {
+        editor.onAddAWSConfig(required, callback);
+      }
     }
 
     onRemoveConfigFor(editor) {
-      return editor.onRemoveAWSConfig.bind(editor, this);
+      return (required, callback) => {
+        editor.onRemoveAWSConfig(required, callback);
+      }
+    }
+
+    onUpdateConfigFor(editor) {
+      return (required, callback) => {
+        editor.onUpdateAWSConfig(required, callback);
+      }
     }
 
     getApiLogoUrl() {
@@ -27,6 +36,10 @@ define(function(require) {
 
     getAllConfigsFrom(editor) {
       return editor.getAllAWSConfigs();
+    }
+
+    codePath() {
+      return `ellipsis.aws.${this.nameInCode}`
     }
 
     clone(props) {
