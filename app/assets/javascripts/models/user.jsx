@@ -5,14 +5,12 @@ define(function() {
       const defaultProps = Object.assign({}, props);
       Object.defineProperties(this, {
         id: { value: defaultProps.id, enumerable: true },
-        accountName: { value: defaultProps.accountName, enumerable: true },
-        accountType: { value: defaultProps.accountType, enumerable: true },
-        accountId: { value: defaultProps.accountId, enumerable: true }
+        name: { value: defaultProps.name, enumerable: true }
       });
     }
 
     formattedName() {
-      return this.accountName ? `@${this.accountName}` : "Unknown";
+      return this.name ? `@${this.name}` : "Unknown";
     }
 
     static fromJson(props) {
