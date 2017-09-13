@@ -1436,6 +1436,7 @@ const BehaviorEditor = React.createClass({
     window.document.addEventListener('keydown', this.onDocumentKeyDown, false);
     window.addEventListener('resize', this.checkMobileLayout, false);
     window.addEventListener('scroll', debounce(this.updateBehaviorScrollPosition, 500), false);
+    window.addEventListener('focus', this.checkForUpdates, false);
     this.startCheckingForUpdates();
     this.loadNodeModuleVersions();
   },
@@ -1444,24 +1445,26 @@ const BehaviorEditor = React.createClass({
   // },
 
   checkForUpdates: function() {
-    DataRequest.jsonGet(jsRoutes.controllers.BehaviorEditorController.metaData(this.getBehaviorGroup().id).url)
-      .then((json) => {
-        const serverDate = new Date(json.createdAt);
-        const savedDate = new Date(this.props.group.createdAt);
-        const newerVersion = serverDate > savedDate;
-        const wasOldError = this.state.errorReachingServer;
-        if (newerVersion || wasOldError) {
+    if (document.hasFocus()) {
+      DataRequest.jsonGet(jsRoutes.controllers.BehaviorEditorController.metaData(this.getBehaviorGroup().id).url)
+        .then((json) => {
+          const serverDate = new Date(json.createdAt);
+          const savedDate = new Date(this.props.group.createdAt);
+          const newerVersion = serverDate > savedDate;
+          const wasOldError = this.state.errorReachingServer;
+          if (newerVersion || wasOldError) {
+            this.setState({
+              newerVersionOnServer: newerVersion,
+              errorReachingServer: false
+            }, this.resetNotifications);
+          }
+        })
+        .catch(() => {
           this.setState({
-            newerVersionOnServer: newerVersion,
-            errorReachingServer: false
+            errorReachingServer: true
           }, this.resetNotifications);
-        }
-      })
-      .catch(() => {
-        this.setState({
-          errorReachingServer: true
-        }, this.resetNotifications);
-      });
+        });
+    }
   },
 
   startCheckingForUpdates: function() {
