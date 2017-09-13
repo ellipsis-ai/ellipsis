@@ -16,7 +16,6 @@ import play.api.libs.json._
 import play.api.mvc.{AnyContent, Request, Result}
 import play.utils.UriEncoding
 import services._
-import slack.models.{Channel, Group, Im}
 
 import scala.concurrent.{ExecutionContext, Future}
 
