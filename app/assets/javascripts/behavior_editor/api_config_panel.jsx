@@ -113,6 +113,10 @@ define(function(require) {
       this.props.onAddConfig(config.newRequired())
     },
 
+    onDeleteRequired: function() {
+      this.props.onRemoveConfig(this.props.requiredConfig);
+    },
+
     render: function() {
       return (
         <div className="box-action phn">
@@ -124,9 +128,6 @@ define(function(require) {
               <div className="column column-page-main">
                 <div className="container pvl">
                   {this.renderConfig()}
-                </div>
-                <div className="ptxl">
-                  <button className="button-primary mbs" type="button" onClick={this.props.onDoneClick}>Done</button>
                 </div>
               </div>
             </div>
@@ -211,8 +212,8 @@ define(function(require) {
       if (this.props.requiredConfig) {
         return (
           <div>
-            <div className="column"><img src={this.getApiLogoUrl()} height="32"/></div>
-            <div className="column box-code-example mhs">
+            <div><img src={this.getApiLogoUrl()} height="32"/></div>
+            <div className="box-code-example">
               <div className="columns">
                 <div className="column type-monospace type-s pvs prn">{this.props.requiredConfig.codePathPrefix()}</div>
                 <div className="column">
@@ -220,10 +221,11 @@ define(function(require) {
                 </div>
               </div>
             </div>
-            <div className="column pvs">{this.renderConfigChoice()}</div>
-            {/*<div className="column column-shrink align-t">*/}
-              {/*<DeleteButton onClick={onDeleteFn.bind(this, required)} />*/}
-            {/*</div>*/}
+            <div className="pvs">{this.renderConfigChoice()}</div>
+            <div className="ptxl">
+              <button className="button-primary mbs mrs" type="button" onClick={this.props.onDoneClick}>Done</button>
+              <button className="button mbs" type="button" onClick={this.onDeleteRequired}>Remove from this skill</button>
+            </div>
           </div>
         );
       } else {

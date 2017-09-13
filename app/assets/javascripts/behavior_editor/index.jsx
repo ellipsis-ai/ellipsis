@@ -1398,7 +1398,12 @@ const BehaviorEditor = React.createClass({
     const newConfigs = existing.filter(ea => {
       return ea.id !== config.id;
     });
-    this.updateGroupStateWith(this.getBehaviorGroup().clone({ requiredAWSConfigs: newConfigs }), callback);
+    this.updateGroupStateWith(this.getBehaviorGroup().clone({ requiredAWSConfigs: newConfigs }), () => {
+      this.props.onClearActivePanel();
+      if (callback) {
+        callback();
+      }
+    });
   },
 
   onUpdateAWSConfig: function(config, callback) {
@@ -1417,9 +1422,14 @@ const BehaviorEditor = React.createClass({
   onRemoveOAuth2Application: function(toRemove, callback) {
     const existing = this.getRequiredOAuth2ApiConfigs();
     const newApplications = existing.filter(function(ea) {
-      return ea.id === toRemove.id;
+      return ea.id !== toRemove.id;
     });
-    this.updateGroupStateWith(this.getBehaviorGroup().clone({ requiredOAuth2ApiConfigs: newApplications }), callback);
+    this.updateGroupStateWith(this.getBehaviorGroup().clone({ requiredOAuth2ApiConfigs: newApplications }), () => {
+      this.props.onClearActivePanel();
+      if (callback) {
+        callback();
+      }
+    });
   },
 
   onUpdateOAuth2Application: function(config, callback) {
