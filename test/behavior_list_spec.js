@@ -28,13 +28,7 @@ describe('BehaviorList', () => {
       "isRegex": false,
       "caseSensitive": false
     }],
-    "config": {
-      "aws": {
-        "accessKeyName": "AWS_ACCESS_KEY",
-        "secretKeyName": "AWS_SECRET_KEY",
-        "regionName": "AWS_REGION"
-      }
-    },
+    "config": {},
     "createdAt": 1468338136532
   });
   const behaviorVersionTask2 = Object.freeze({
@@ -50,13 +44,7 @@ describe('BehaviorList', () => {
       "isRegex": true,
       "caseSensitive": false
     }],
-    "config": {
-      "aws": {
-        "accessKeyName": "AWS_ACCESS_KEY",
-        "secretKeyName": "AWS_SECRET_KEY",
-        "regionName": "AWS_REGION"
-      }
-    },
+    "config": {},
     "createdAt": 1468359271138
   });
   const behaviorVersionKnowledge1 = Object.freeze({
@@ -77,6 +65,7 @@ describe('BehaviorList', () => {
     behaviorVersions: [behaviorVersionTask1],
     libraryVersions: [],
     requiredAWSConfigs: [],
+    requiredOAuth2ApiConfigs: [],
     createdAt: 1466109904858
   }));
   const group2 = Object.freeze(BehaviorGroup.fromJson({
@@ -86,6 +75,7 @@ describe('BehaviorList', () => {
     behaviorVersions: [behaviorVersionTask2],
     libraryVersions: [],
     requiredAWSConfigs: [],
+    requiredOAuth2ApiConfigs: [],
     createdAt: 1466109904858
   }));
   const group3 = Object.freeze(BehaviorGroup.fromJson({
@@ -95,6 +85,7 @@ describe('BehaviorList', () => {
     behaviorVersions: [behaviorVersionKnowledge1],
     libraryVersions: [],
     requiredAWSConfigs: [],
+    requiredOAuth2ApiConfigs: [],
     createdAt: 1466109904858
   }));
   const defaultConfig = Object.freeze({

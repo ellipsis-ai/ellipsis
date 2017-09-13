@@ -299,7 +299,6 @@ define(function(require) {
 
     behaviorConfig: React.PropTypes.instanceOf(BehaviorConfig).isRequired,
 
-    apiSelector: React.PropTypes.node.isRequired,
     systemParams: React.PropTypes.arrayOf(React.PropTypes.string).isRequired,
 
     requiredAWSConfigs: React.PropTypes.arrayOf(React.PropTypes.instanceOf(RequiredAWSConfig)).isRequired,

@@ -51,7 +51,8 @@ describe('BehaviorEditor', () => {
       ],
       libraryVersions: [],
       nodeModuleVersions: [],
-      requiredAWSConfigs: []
+      requiredAWSConfigs: [],
+      requiredOAuth2ApiConfigs: []
     },
     selectedId: "1",
     csrfToken: "2",

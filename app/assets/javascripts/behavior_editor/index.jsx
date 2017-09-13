@@ -2303,7 +2303,6 @@ const BehaviorEditor = React.createClass({
 
           behaviorConfig={this.getBehaviorConfig()}
 
-          apiSelector={this.renderAPISelector()}
           systemParams={this.getSystemParams()}
           requiredAWSConfigs={this.getRequiredAWSConfigs()}
           apiApplications={this.getApiApplications()}
