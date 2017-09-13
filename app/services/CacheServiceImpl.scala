@@ -121,10 +121,6 @@ class CacheServiceImpl @Inject() (
     set(slackChannelInfoKey(channel, teamId), Json.toJson(data), 1.hour)
   }
 
-  def uncacheSlackChannelInfo(channel: String, teamId: String): Unit = {
-    remove(slackChannelInfoKey(channel, teamId))
-  }
-
   def getSlackChannelInfo(channel: String, teamId: String): Option[Channel] = {
     get[JsValue](slackChannelInfoKey(channel, teamId)).flatMap { json =>
       json.validate[Channel] match {
@@ -140,10 +136,6 @@ class CacheServiceImpl @Inject() (
 
   def cacheSlackGroupInfo(group: String, teamId: String, data: Group): Unit = {
     set(slackGroupInfoKey(group, teamId), Json.toJson(data), 1.hour)
-  }
-
-  def uncacheSlackGroupInfo(group: String, teamId: String): Unit = {
-    remove(slackGroupInfoKey(group, teamId))
   }
 
   def getSlackGroupInfo(group: String, teamId: String): Option[Group] = {

@@ -319,7 +319,6 @@ class SlackController @Inject() (
       val userId = info.event.user
       if (channelType == "C") {
         val maybeOldChannel = services.cacheService.getSlackChannelInfo(channelId, teamId)
-        services.cacheService.uncacheSlackChannelInfo(channelId, teamId)
         maybeOldChannel.foreach { oldChannel =>
           val newChannel = oldChannel.copy(
             members = oldChannel.members.map((members) => updateMembers(eventType, members, userId))
@@ -328,7 +327,6 @@ class SlackController @Inject() (
         }
       } else if (channelType == "G") {
         val maybeOldGroup = services.cacheService.getSlackGroupInfo(channelId, teamId)
-        services.cacheService.uncacheSlackGroupInfo(channelId, teamId)
         maybeOldGroup.foreach { oldGroup =>
           val newGroup = oldGroup.copy(
             members = updateMembers(eventType, oldGroup.members, userId)
