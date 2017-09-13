@@ -57,7 +57,8 @@ define(function(require) {
           </div>
         </div>
       );
-    },
+    }
+
   });
 
 });

@@ -1,7 +1,6 @@
 define(function(require) {
   var React = require('react'),
     ApiConfigRef = require('../models/api_config_ref'),
-    DeleteButton = require('../shared_ui/delete_button'),
     DropdownMenu = require('../shared_ui/dropdown_menu'),
     Input = require('../form/input'),
     RequiredApiConfig = require('../models/required_api_config'),
@@ -24,26 +23,8 @@ define(function(require) {
       };
     },
 
-    getApiId: function() {
-      return this.props.renderConfig ? this.props.renderConfig.apiId : undefined;
-    },
-
     getApiLogoUrl: function() {
       return this.props.requiredConfig ? this.props.requiredConfig.getApiLogoUrl() : undefined;
-    },
-
-
-    getAWSSelectorLabelForConfig: function(cfg) {
-      return (
-        <div className="columns columns-elastic">
-          <div className="column column-shrink prs align-m">
-            <img src="/assets/images/logos/aws_logo_web_300px.png" height="32"/>
-          </div>
-          <div className="column column-expand align-m">
-            {cfg.displayName}
-          </div>
-        </div>
-      );
     },
 
     sortedById: function(arr) {
@@ -62,55 +43,12 @@ define(function(require) {
       return this.sortedById(this.props.allConfigs);
     },
 
-    getSortedRequiredAWSConfigs: function() {
-      return this.sortedById(this.props.requiredAWSConfigs);
-    },
-
-    getSortedRequiredOAuth2Applications: function() {
-      return this.sortedById(this.props.requiredOAuth2Applications);
-    },
-
-    getAPISelectorLabelForApi: function(api, displayName) {
-      if (api && api.iconImageUrl) {
-        return (
-          <div className="columns columns-elastic">
-            <div className="column column-shrink prs align-m">
-              <img src={api.iconImageUrl} width="24" height="24"/>
-            </div>
-            <div className="column column-expand align-m">
-              {displayName}
-            </div>
-          </div>
-        );
-      } else if (api && api.logoImageUrl) {
-        return (
-          <div className="columns columns-elastic">
-            <div className="column column-shrink prs align-m">
-              <img src={api.logoImageUrl} height="18" />
-            </div>
-            <div className="column column-expand align-m">
-              {displayName}
-            </div>
-          </div>
-        );
-      } else {
-        return (
-          <span>{displayName}</span>
-        );
-      }
-    },
-
-    getAPISelectorLabelForApp: function(app) {
-      var api = this.props.getOAuth2ApiWithId(app.apiId);
-      return this.getAPISelectorLabelForApi(api, app.displayName);
-    },
-
     getSelectorLabelForConfig: function(config) {
       return config.getSelectorLabel();
     },
 
     onAddNewRequiredFor: function(config) {
-      this.props.onAddConfig(config.newRequired())
+      this.props.onAddConfig(config.newRequired());
     },
 
     onDeleteRequired: function() {

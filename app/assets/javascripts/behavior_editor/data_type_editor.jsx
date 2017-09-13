@@ -189,12 +189,7 @@ define(function(require) {
             onToggleActivePanel={this.props.onToggleActivePanel}
             animationIsDisabled={this.props.animationIsDisabled}
 
-            onToggleAWSConfig={this.props.onToggleAWSConfig}
             behaviorConfig={this.props.behaviorConfig}
-            onAWSAddNewEnvVariable={this.props.onAWSAddNewEnvVariable}
-            onAWSConfigChange={this.props.onAWSConfigChange}
-
-            apiSelector={this.props.apiSelector}
 
             inputs={this.props.inputs}
             systemParams={this.props.systemParams}

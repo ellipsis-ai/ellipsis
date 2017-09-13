@@ -1,4 +1,4 @@
-define(function(require) {
+define(function() {
   class NodeModuleVersion {
     constructor(props) {
       Object.defineProperties(this, {

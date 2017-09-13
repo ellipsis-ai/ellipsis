@@ -2,21 +2,6 @@ define(function(require) {
   const ApiConfigRef = require('./api_config_ref');
   const RequiredApiConfig = require('./required_api_config');
 
-  class AWSConfigRef extends ApiConfigRef {
-
-    newRequired() {
-      return new RequiredAWSConfig({
-        apiId: 'aws',
-        nameInCode: this.nameInCode,
-        config: this
-      });
-    }
-
-    static fromJson(props) {
-      return new AWSConfigRef(props);
-    }
-  }
-
   class RequiredAWSConfig extends RequiredApiConfig {
 
     onAddConfigFor(editor) {
@@ -44,14 +29,14 @@ define(function(require) {
     }
 
     codePath() {
-      return `${this.codePathPrefix()}${this.nameInCode}`
+      return `${this.codePathPrefix()}${this.nameInCode}`;
     }
 
     configString() {
       if (this.config) {
         return `using: ${this.config.displayName}`;
       } else {
-        return "not yet configured"
+        return "not yet configured";
       }
     }
 
@@ -59,12 +44,28 @@ define(function(require) {
       return new RequiredAWSConfig((Object.assign({}, this, props)));
     }
 
+  }
+
+  class AWSConfigRef extends ApiConfigRef {
+
+    newRequired() {
+      return new RequiredAWSConfig({
+        apiId: 'aws',
+        nameInCode: this.nameInCode,
+        config: this
+      });
+    }
+
     static fromJson(props) {
-      return new RequiredAWSConfig(Object.assign({}, props, {
-        config: props.config ? AWSConfigRef.fromJson(props.config) : undefined
-      }));
+      return new AWSConfigRef(props);
     }
   }
+
+  RequiredAWSConfig.fromJson = function(props) {
+    return new RequiredAWSConfig(Object.assign({}, props, {
+      config: props.config ? AWSConfigRef.fromJson(props.config) : undefined
+    }));
+  };
 
   return {
     'AWSConfigRef': AWSConfigRef,

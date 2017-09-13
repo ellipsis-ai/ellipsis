@@ -2,29 +2,6 @@ define(function(require) {
   const ApiConfigRef = require('./api_config_ref');
   const RequiredApiConfig = require('./required_api_config');
 
-  class OAuth2ApplicationRef extends ApiConfigRef {
-    constructor(props) {
-      super(props);
-      Object.defineProperties(this, {
-        apiId: { value: props.apiId, enumerable: true },
-        scope: { value: props.scope, enumerable: true }
-      });
-    }
-
-    newRequired() {
-      return new RequiredOAuth2Application({
-        apiId: this.apiId,
-        recommendedScope: this.scope,
-        nameInCode: this.nameInCode,
-        config: this
-      });
-    }
-
-    static fromJson(props) {
-      return new OAuth2ApplicationRef(props);
-    }
-  }
-
   class RequiredOAuth2Application extends RequiredApiConfig {
     constructor(props) {
       super(props);
@@ -59,14 +36,14 @@ define(function(require) {
     }
 
     codePath() {
-      return `${this.codePathPrefix()}${this.nameInCode}`
+      return `${this.codePathPrefix()}${this.nameInCode}`;
     }
 
     configString() {
       if (this.config) {
         return `using: ${this.config.displayName}`;
       } else {
-        return "not yet configured"
+        return "not yet configured";
       }
     }
 
@@ -74,15 +51,40 @@ define(function(require) {
       return new RequiredOAuth2Application((Object.assign({}, this, props)));
     }
 
+  }
+
+  class OAuth2ApplicationRef extends ApiConfigRef {
+    constructor(props) {
+      super(props);
+      Object.defineProperties(this, {
+        apiId: { value: props.apiId, enumerable: true },
+        scope: { value: props.scope, enumerable: true }
+      });
+    }
+
+    newRequired() {
+      return new RequiredOAuth2Application({
+        apiId: this.apiId,
+        recommendedScope: this.scope,
+        nameInCode: this.nameInCode,
+        config: this
+      });
+    }
+
     static fromJson(props) {
-      return new RequiredOAuth2Application(Object.assign({}, props, {
-        config: props.config ? OAuth2ApplicationRef.fromJson(props.config) : undefined
-      }));
+      return new OAuth2ApplicationRef(props);
     }
   }
+
+  RequiredOAuth2Application.fromJson = function (props) {
+    return new RequiredOAuth2Application(Object.assign({}, props, {
+      config: props.config ? OAuth2ApplicationRef.fromJson(props.config) : undefined
+    }));
+  };
 
   return {
     'OAuth2ApplicationRef': OAuth2ApplicationRef,
     'RequiredOAuth2Application': RequiredOAuth2Application
   };
+
 });
