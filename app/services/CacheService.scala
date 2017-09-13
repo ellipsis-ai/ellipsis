@@ -49,10 +49,6 @@ trait CacheService {
 
   def getSlackIMs(teamId: String): Option[Seq[Im]]
 
-  def cacheSlackUsername(userId: String, username: String, slackTeamId: String): Unit
-
-  def getSlackUsername(userId: String, slackTeamId: String): Option[String]
-
   def cacheSlackUserData(userData: SlackUserData): Unit
 
   def uncacheSlackUserData(slackUserId: String, slackTeamId: String): Unit

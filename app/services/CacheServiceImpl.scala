@@ -172,14 +172,6 @@ class CacheServiceImpl @Inject() (
     }
   }
 
-  def cacheSlackUsername(userId: String, username: String, slackTeamId: String): Unit = {
-    set(s"slack-username-for-team-$slackTeamId-user-$userId", username, 5.minutes)
-  }
-
-  def getSlackUsername(userId: String, slackTeamId: String): Option[String] = {
-    get(s"slack-username-for-team-$slackTeamId-user-$userId")
-  }
-
   private def slackUserDataKey(slackUserId: String, slackTeamId: String): String = {
     s"slack-user-data-team-$slackTeamId-user-$slackUserId"
   }
