@@ -152,7 +152,7 @@ define(function(require) {
             if (group.length === 1 && groupName.toLowerCase() === group[0].displayName.toLowerCase()) {
               return (
                 <div key={`oAuthApplicationGroup${groupIndex}`} className="mvm">
-                  <h4><a href={route(group[0].applicationId).url}>{groupName}</a></h4>
+                  <h4><a href={route(group[0].id).url}>{groupName}</a></h4>
                 </div>
               );
             } else {
@@ -163,7 +163,7 @@ define(function(require) {
                     {group.map((app, appIndex) => {
                       return (
                         <li key={`oAuthApplicationGroup${groupIndex}-${appIndex}`}>
-                          <a href={route(app.applicationId, this.props.teamId).url}>{app.displayName}</a>
+                          <a href={route(app.id, this.props.teamId).url}>{app.displayName}</a>
                         </li>
                       );
                     })}
