@@ -340,7 +340,7 @@ class SlackController @Inject() (
     })
   }
 
-  case class UserChangeInfo(id: String)
+  case class UserChangeInfo(id: String, name: String)
   case class UserProfileChangedEventInfo(
                                           eventType: String,
                                           user: UserChangeInfo
@@ -356,7 +356,8 @@ class SlackController @Inject() (
       "event" -> mapping(
         "type" -> nonEmptyText,
         "user" -> mapping(
-          "id" -> nonEmptyText
+          "id" -> nonEmptyText,
+          "name" -> nonEmptyText
         )(UserChangeInfo.apply)(UserChangeInfo.unapply)
       )(UserProfileChangedEventInfo.apply)(UserProfileChangedEventInfo.unapply)
     )(UserProfileChangedRequestInfo.apply)(UserProfileChangedRequestInfo.unapply) verifying("Not a valid user event", fields => fields match {
@@ -368,7 +369,13 @@ class SlackController @Inject() (
     maybeResultFor(userProfileChangedRequestForm, (info: UserProfileChangedRequestInfo) => {
       val slackUserId = info.event.user.id
       val slackTeamId = info.teamId
-      services.cacheService.uncacheSlackUserData(slackUserId, slackTeamId)
+      val userName = info.event.user.name
+      val maybeOldUserData = services.cacheService.getSlackUserData(slackUserId, slackTeamId)
+      maybeOldUserData.foreach{ oldUserData =>
+        if (oldUserData.accountName != userName) {
+          services.cacheService.cacheSlackUserData(oldUserData.copy(accountName = userName))
+        }
+      }
       Ok(":+1:")
     })
   }

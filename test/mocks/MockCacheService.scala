@@ -51,10 +51,6 @@ class MockCacheService extends CacheService with MockitoSugar {
 
   def getSlackIMs(teamId: String): Option[Seq[Im]] = None
 
-  def cacheSlackUsername(userId: String, username: String, teamId: String): Unit = {}
-
-  def getSlackUsername(userId: String, slackTeamId: String): Option[String] = None
-
   def cacheSlackUserData(userData: SlackUserData): Unit = {}
 
   def uncacheSlackUserData(slackUserId: String, slackTeamId: String): Unit = {}
