@@ -47,7 +47,5 @@ trait CacheService {
 
   def cacheSlackUserData(userData: SlackUserData): Unit
 
-  def uncacheSlackUserData(slackUserId: String, slackTeamId: String): Unit
-
   def getSlackUserData(slackUserId: String, slackTeamId: String): Option[SlackUserData]
 }

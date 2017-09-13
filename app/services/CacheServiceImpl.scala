@@ -172,10 +172,6 @@ class CacheServiceImpl @Inject() (
     set(slackUserDataKey(userData.accountId, userData.accountTeamId), Json.toJson(userData), 1.hour)
   }
 
-  def uncacheSlackUserData(slackUserId: String, slackTeamId: String): Unit = {
-    remove(slackUserDataKey(slackUserId, slackTeamId))
-  }
-
   def getSlackUserData(slackUserId: String, slackTeamId: String): Option[SlackUserData] = {
     get[JsValue](slackUserDataKey(slackUserId, slackTeamId)).flatMap { json =>
       json.validate[SlackUserData] match {
