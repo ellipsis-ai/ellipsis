@@ -3,14 +3,6 @@ define(function(require) {
   const RequiredApiConfig = require('./required_api_config');
 
   class AWSConfigRef extends ApiConfigRef {
-    constructor(props) {
-      super(props);
-      Object.defineProperties(this, {
-        id: { value: props.id, enumerable: true },
-        displayName: { value: props.displayName, enumerable: true },
-        nameInCode: { value: props.nameInCode, enumerable: true }
-      });
-    }
 
     newRequired() {
       return new RequiredAWSConfig({
@@ -26,31 +18,17 @@ define(function(require) {
   }
 
   class RequiredAWSConfig extends RequiredApiConfig {
-    constructor(props) {
-      super(props);
-      Object.defineProperties(this, {
-        id: { value: props.id, enumerable: true },
-        nameInCode: { value: props.nameInCode, enumerable: true },
-        config: { value: props.config, enumerable: true }
-      });
-    }
 
     onAddConfigFor(editor) {
-      return (required, callback) => {
-        editor.onAddAWSConfig(required, callback);
-      }
+      return editor.onAddAWSConfig;
     }
 
     onRemoveConfigFor(editor) {
-      return (required, callback) => {
-        editor.onRemoveAWSConfig(required, callback);
-      }
+      return editor.onRemoveAWSConfig;
     }
 
     onUpdateConfigFor(editor) {
-      return (required, callback) => {
-        editor.onUpdateAWSConfig(required, callback);
-      }
+      return editor.onUpdateAWSConfig;
     }
 
     getApiLogoUrl() {
@@ -61,8 +39,12 @@ define(function(require) {
       return editor.getAllAWSConfigs();
     }
 
+    codePathPrefix() {
+      return "ellipsis.aws.";
+    }
+
     codePath() {
-      return `ellipsis.aws.${this.nameInCode}`
+      return `${this.codePathPrefix()}${this.nameInCode}`
     }
 
     configString() {

@@ -4,7 +4,7 @@ import models.accounts.oauth2application.OAuth2Application
 
 case class OAuth2ApplicationData(
                                   apiId: String,
-                                  applicationId: String,
+                                  id: String,
                                   scope: Option[String],
                                   displayName: String,
                                   nameInCode: String

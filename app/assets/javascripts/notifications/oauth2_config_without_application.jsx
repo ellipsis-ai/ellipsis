@@ -12,7 +12,7 @@ define(function(require) {
         kind: React.PropTypes.string.isRequired,
         name: React.PropTypes.string.isRequired,
         existingOAuth2Applications: React.PropTypes.arrayOf(React.PropTypes.instanceOf(OAuth2ApplicationRef)).isRequired,
-        requiredApiConfig: React.PropTypes.shape(React.PropTypes.instanceOf(RequiredOAuth2Application)).isRequired,
+        requiredApiConfig: React.PropTypes.instanceOf(RequiredOAuth2Application).isRequired,
         onAddOAuth2Application: React.PropTypes.func.isRequired,
         onNewOAuth2Application: React.PropTypes.func.isRequired
       })).isRequired

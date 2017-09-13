@@ -16,7 +16,7 @@ define(function(require) {
         apiId: this.apiId,
         recommendedScope: this.scope,
         nameInCode: this.nameInCode,
-        application: this
+        config: this
       });
     }
 
@@ -29,25 +29,45 @@ define(function(require) {
     constructor(props) {
       super(props);
       Object.defineProperties(this, {
-        id: { value: props.id, enumerable: true },
-        apiId: { value: props.apiId, enumerable: true },
-        recommendedScope: { value: props.recommendedScope, enumerable: true },
-        nameInCode: { value: props.nameInCode, enumerable: true },
-        application: { value: props.application, enumerable: true }
+        recommendedScope: { value: props.recommendedScope, enumerable: true }
       });
     }
 
     onAddConfigFor(editor) {
-      return editor.onAddOAuth2Application.bind(this);
+      return editor.onAddOAuth2Application;
     }
 
     onRemoveConfigFor(editor) {
-      return editor.onRemoveOAuth2Application.bind(this);
+      return editor.onRemoveOAuth2Application;
+    }
+
+    onUpdateConfigFor(editor) {
+      return editor.onUpdateOAuth2Application;
     }
 
     getApiLogoUrl() {
       const api = undefined; //this.props.getOAuth2ApiWithId(apiId);
       return api ? (api.logoImageUrl || api.iconImageUrl) : undefined;
+    }
+
+    getAllConfigsFrom(editor) {
+      return editor.getAllOAuth2Applications().filter(ea => ea.apiId === this.apiId);
+    }
+
+    codePathPrefix() {
+      return "ellipsis.accessTokens.";
+    }
+
+    codePath() {
+      return `${this.codePathPrefix()}${this.nameInCode}`
+    }
+
+    configString() {
+      if (this.config) {
+        return `using: ${this.config.displayName}`;
+      } else {
+        return "not yet configured"
+      }
     }
 
     clone(props) {

@@ -154,7 +154,7 @@ const BehaviorEditor = React.createClass({
 
   getApiApplications: function() {
     return this.getRequiredOAuth2ApiConfigs()
-      .filter((config) => !!config.application);
+      .filter(ea => !!ea.config);
   },
 
   getSelectedApiConfigId: function() {
@@ -187,19 +187,32 @@ const BehaviorEditor = React.createClass({
     return selected ? selected.getAllConfigsFrom(this) : this.getAllConfigs();
   },
 
+  onAddNewConfig(required, callback) {
+    required.onAddConfigFor(this)(required, callback);
+    this.selectRequiredApiConfig(required);
+  },
+
   onAddConfigForSelected: function() {
     const selected = this.getSelectedApiConfig();
-    return selected ? selected.onAddConfigFor(this) : undefined;
+    return selected ? selected.onAddConfigFor(this) : this.onAddNewConfig;
+  },
+
+  onRemoveNewConfig(required, callback) {
+    required.onRemoveConfigFor(this)(required, callback);
   },
 
   onRemoveConfigForSelected: function() {
     const selected = this.getSelectedApiConfig();
-    return selected ? selected.onRemoveConfigFor(this) : undefined;
+    return selected ? selected.onRemoveConfigFor(this) : this.onRemoveNewConfig;
+  },
+
+  onUpdateNewConfig(required, callback) {
+    required.onUpdateConfigFor(this)(required, callback);
   },
 
   onUpdateConfigForSelected: function() {
     const selected = this.getSelectedApiConfig();
-    return selected ? selected.onUpdateConfigFor(this) : undefined;
+    return selected ? selected.onUpdateConfigFor(this) : this.onUpdateNewConfig;
   },
 
   getEditableName: function() {
@@ -392,12 +405,12 @@ const BehaviorEditor = React.createClass({
   },
 
   getRequiredOAuth2ApiConfigsWithNoApplication: function() {
-    return this.getRequiredOAuth2ApiConfigs().filter(ea => !ea.application);
+    return this.getRequiredOAuth2ApiConfigs().filter(ea => !ea.config);
   },
 
   getOAuth2ApplicationsRequiringAuth: function() {
     return this.getApiApplications().filter(ea => {
-      return !this.props.linkedOAuth2ApplicationIds.includes(ea.applicationId);
+      return !this.props.linkedOAuth2ApplicationIds.includes(ea.id);
     });
   },
 
@@ -1409,6 +1422,13 @@ const BehaviorEditor = React.createClass({
     this.updateGroupStateWith(this.getBehaviorGroup().clone({ requiredOAuth2ApiConfigs: newApplications }), callback);
   },
 
+  onUpdateOAuth2Application: function(config, callback) {
+    const configs = this.getRequiredOAuth2ApiConfigs().slice();
+    const indexToReplace = configs.findIndex(ea => ea.id === config.id);
+    configs[indexToReplace] = config;
+    this.updateGroupStateWith(this.getBehaviorGroup().clone({ requiredOAuth2ApiConfigs: configs }), callback);
+  },
+
   onAddSimpleTokenApi: function(toAdd) {
     const newConfigs = this.getRequiredSimpleTokenApis().concat([toAdd]);
     this.updateGroupStateWith(this.getBehaviorGroup().clone({ requiredSimpleTokenApis: newConfigs }));
@@ -2027,10 +2047,14 @@ const BehaviorEditor = React.createClass({
     this.addNewLibraryImpl(libraryIdToClone);
   },
 
-  onApiConfigClick: function(required) {
+  selectRequiredApiConfig: function(required, callback) {
     this.setState({
       selectedApiConfigId: required.id
-    }, () => this.props.onToggleActivePanel('configureApi'));
+    }, callback);
+  },
+
+  onApiConfigClick: function(required) {
+    this.selectRequiredApiConfig(required, () => this.props.onToggleActivePanel('configureApi'));
   },
 
   onAddApiConfigClick: function() {

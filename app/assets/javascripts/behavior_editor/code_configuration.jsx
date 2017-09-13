@@ -114,7 +114,7 @@ define(function(require) {
         .forEach((ea) => {
           oAuth2Notifications.push(new NotificationData({
             kind: "oauth2_application_unused",
-            name: ea.application.displayName,
+            name: ea.config.displayName,
             code: `ellipsis.accessTokens.${ea.nameInCode}`
           }));
         });
@@ -130,7 +130,7 @@ define(function(require) {
     },
 
     getCodeAutocompletions: function() {
-      var apiTokens = this.props.apiApplications.map((application) => `ellipsis.accessTokens.${application.nameInCode}`);
+      var apiTokens = this.props.apiApplications.map(ea => `ellipsis.accessTokens.${ea.nameInCode}`);
       var envVars = this.props.envVariableNames.map(function(name) {
         return `ellipsis.env.${name}`;
       });

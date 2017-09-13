@@ -45,7 +45,7 @@ define(function(require) {
     }
 
     needsConfig() {
-      return this.getRequiredOAuth2ApiConfigs().filter(ea => !ea.application).length > 0;
+      return this.getRequiredOAuth2ApiConfigs().filter(ea => !ea.config).length > 0;
     }
 
     isRecentlySaved() {

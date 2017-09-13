@@ -9,6 +9,7 @@ define(function(require) {
     DataTypeSourceConfig = require('./data_type_source_config'),
     ID = require('../lib/id'),
     RequiredAWSConfig = require('../models/aws').RequiredAWSConfig,
+    RequiredOAuth2Application = require('../models/oauth2').RequiredOAuth2Application,
     SectionHeading = require('../shared_ui/section_heading'),
     SequentialName = require('../lib/sequential_name'),
     BehaviorConfig = require('../models/behavior_config'),
@@ -308,14 +309,7 @@ define(function(require) {
 
     requiredAWSConfigs: React.PropTypes.arrayOf(React.PropTypes.instanceOf(RequiredAWSConfig)).isRequired,
 
-    apiApplications: React.PropTypes.arrayOf(React.PropTypes.shape({
-      apiId: React.PropTypes.string.isRequired,
-      recommendedScope: React.PropTypes.string,
-      application: React.PropTypes.shape({
-        applicationId: React.PropTypes.string.isRequired,
-        displayName: React.PropTypes.string.isRequired
-      })
-    })).isRequired,
+    apiApplications: React.PropTypes.arrayOf(React.PropTypes.instanceOf(RequiredOAuth2Application)).isRequired,
 
     onCursorChange: React.PropTypes.func.isRequired,
     useLineWrapping: React.PropTypes.bool.isRequired,

@@ -66,13 +66,13 @@ describe('BehaviorEditor', () => {
       needsConfig: false
     }],
     oAuth2Applications: [{
-      applicationId: "567890",
+      id: "567890",
       displayName: "My awesome oauth app",
-      keyName: "myAwesomeOauthApp"
+      nameInCode: "myAwesomeOauthApp"
     }, {
-      applicationId: "098765",
+      id: "098765",
       displayName: "My other awesome oauth app",
-      keyName: "myOtherAwesomeOauthApp"
+      nameInCode: "myOtherAwesomeOauthApp"
     }],
     linkedOAuth2ApplicationIds: [],
     shouldRevealCodeEditor: true,

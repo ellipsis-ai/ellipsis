@@ -88,7 +88,7 @@ case class BehaviorGroupData(
       oauth2Applications.find { eaAvailable =>
         eaAvailable.api.id == eaRequired.apiId && eaRequired.recommendedScope == eaAvailable.maybeScope
       }.map { app =>
-        eaRequired.copy(application = Some(OAuth2ApplicationData.from(app)))
+        eaRequired.copy(config = Some(OAuth2ApplicationData.from(app)))
       }.getOrElse(eaRequired)
     }
     copy(requiredOAuth2ApiConfigs = oauth2)

@@ -70,13 +70,6 @@ define(function(require) {
       return this.sortedById(this.props.requiredOAuth2Applications);
     },
 
-    isRequiredOAuth2Application: function(app) {
-      var appIndex = this.props.requiredOAuth2Applications.findIndex(function(ea) {
-        return ea.application && ea.application.applicationId === app.applicationId;
-      });
-      return appIndex >= 0;
-    },
-
     getAPISelectorLabelForApi: function(api, displayName) {
       if (api && api.iconImageUrl) {
         return (
@@ -221,7 +214,7 @@ define(function(require) {
             <div className="column"><img src={this.getApiLogoUrl()} height="32"/></div>
             <div className="column box-code-example mhs">
               <div className="columns">
-                <div className="column type-monospace type-s pvs prn">ellipsis.aws.</div>
+                <div className="column type-monospace type-s pvs prn">{this.props.requiredConfig.codePathPrefix()}</div>
                 <div className="column">
                   {this.renderNameInCodeInput()}
                 </div>
