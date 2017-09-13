@@ -469,12 +469,34 @@ const BehaviorEditor = React.createClass({
     }
   },
 
+  buildServerNotifications: function() {
+    if (!this.state) return [];
+    const notifications = [];
+    if (this.state.newerVersionOnServer) {
+      notifications.push(new NotificationData({
+        kind: "server_data_warning",
+        type: "newer_version",
+        onClick: () => {
+          window.location.reload();
+        }
+      }));
+    }
+    if (this.state.errorReachingServer) {
+      notifications.push(new NotificationData({
+        kind: "server_data_warning",
+        type: "network_error"
+      }));
+    }
+    return notifications;
+  },
+
   buildNotifications: function() {
     return [].concat(
       this.buildEnvVarNotifications(),
       this.buildOAuthApplicationNotifications(),
       this.buildDataTypeNotifications(),
-      this.buildTemplateNotifications()
+      this.buildTemplateNotifications(),
+      this.buildServerNotifications()
     );
   },
 
@@ -1414,11 +1436,37 @@ const BehaviorEditor = React.createClass({
     window.document.addEventListener('keydown', this.onDocumentKeyDown, false);
     window.addEventListener('resize', this.checkMobileLayout, false);
     window.addEventListener('scroll', debounce(this.updateBehaviorScrollPosition, 500), false);
+    this.startCheckingForUpdates();
     this.loadNodeModuleVersions();
   },
 
   // componentDidUpdate: function() {
   // },
+
+  checkForUpdates: function() {
+    DataRequest.jsonGet(jsRoutes.controllers.BehaviorEditorController.metaData(this.getBehaviorGroup().id).url)
+      .then((json) => {
+        const serverDate = new Date(json.createdAt);
+        const savedDate = new Date(this.props.group.createdAt);
+        const newerVersion = serverDate > savedDate;
+        const wasOldError = this.state.errorReachingServer;
+        if (newerVersion || wasOldError) {
+          this.setState({
+            newerVersionOnServer: newerVersion,
+            errorReachingServer: false
+          }, this.resetNotifications);
+        }
+      })
+      .catch(() => {
+        this.setState({
+          errorReachingServer: true
+        }, this.resetNotifications);
+      });
+  },
+
+  startCheckingForUpdates: function() {
+    setInterval(this.checkForUpdates, 10000);
+  },
 
   getInitialEnvVariables: function() {
     return Sort.arrayAlphabeticalBy(this.props.envVariables || [], (variable) => variable.name);
@@ -1449,7 +1497,9 @@ const BehaviorEditor = React.createClass({
       hasMobileLayout: this.windowIsMobile(),
       animationDisabled: false,
       lastSavedDataStorageItem: null,
-      nodeModuleVersions: []
+      nodeModuleVersions: [],
+      newerVersionOnServer: false,
+      errorReachingServer: false
     };
   },
 

@@ -148,4 +148,6 @@ object Formatting {
 
   implicit val executionLogReads = Json.reads[ExecutionLogData]
   implicit val executionErrorValueReads = Json.reads[ExecutionErrorData]
+
+  implicit val behaviorGroupVersionMetaDataWrites = Json.writes[BehaviorGroupVersionMetaData]
 }

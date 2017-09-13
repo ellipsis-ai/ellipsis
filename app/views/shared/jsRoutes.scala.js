@@ -15,6 +15,7 @@
   routes.javascript.ApplicationController.setTeamTimeZone,
   routes.javascript.BehaviorEditorController.deleteDefaultStorageItems,
   routes.javascript.BehaviorEditorController.edit,
+  routes.javascript.BehaviorEditorController.metaData,
   routes.javascript.BehaviorEditorController.newGroup,
   routes.javascript.BehaviorEditorController.newUnsavedBehavior,
   routes.javascript.BehaviorEditorController.newUnsavedLibrary,
