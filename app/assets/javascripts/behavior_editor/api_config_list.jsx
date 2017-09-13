@@ -1,5 +1,6 @@
 define(function(require) {
   var React = require('react'),
+    Button = require('../form/button'),
     RequiredAWSConfig = require('../models/aws').RequiredAWSConfig,
     RequiredOAuth2Application = require('../models/oauth2').RequiredOAuth2Application;
 
@@ -19,9 +20,9 @@ define(function(require) {
     renderConfig: function(required) {
       return (
         <div className="plxl mobile-pll">
-          <a onClick={this.onApiConfigClick.bind(this, required)} className="link-block">
-            {required.codePath()} ({required.configString()})
-          </a>
+          <Button onClick={this.onApiConfigClick.bind(this, required)} className="button-block">
+            <span className="link">{required.codePath()} ({required.configString()})</span>
+          </Button>
         </div>
       );
     },
@@ -51,9 +52,8 @@ define(function(require) {
             {this.renderConfigs(this.props.requiredSimpleTokenApis)}
           </div>
           <div className="container container-wide mvm">
-            <button type="button"
-                    onClick={this.props.onAddApiConfigClick}
-                    className="button button-s button-shrink">Add an API integration</button>
+            <Button onClick={this.props.onAddApiConfigClick}
+                    className="button button-s button-shrink">Add an API integration</Button>
           </div>
         </div>
       );
