@@ -35,13 +35,9 @@ trait CacheService {
 
   def cacheSlackChannelInfo(channel: String, teamId: String, data: Channel): Unit
 
-  def uncacheSlackChannelInfo(channel: String, teamId: String): Unit
-
   def getSlackChannelInfo(channel: String, teamId: String): Option[Channel]
 
   def cacheSlackGroupInfo(group: String, teamId: String, data: Group): Unit
-
-  def uncacheSlackGroupInfo(group: String, teamId: String): Unit
 
   def getSlackGroupInfo(group: String, teamId: String): Option[Group]
 
