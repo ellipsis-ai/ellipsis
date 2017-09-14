@@ -2,33 +2,42 @@ define(function(require) {
   var React = require('react');
 
   class NotificationForServerDataWarning extends React.Component {
-    getErrorMessage(networkError) {
-      return networkError.error && networkError.error.message ? networkError.error.message : "";
+
+    getNetworkErrorMessage(networkError) {
+      const errorMessage = networkError.error && networkError.error.message ? networkError.error.message : "";
+      if (/^401/.test(errorMessage)) {
+        return "You have been signed out. Please reload the page.";
+      } else if (/^404/.test(errorMessage)) {
+        return "This skill may have been deleted on the server by someone else.";
+      } else if (/^5\d\d/.test(errorMessage)) {
+        return "The Ellipsis server responded with an error. You may need to reload the page.";
+      } else {
+        return "The Ellipsis server cannot be reached. Your connection may be down.";
+      }
+    }
+
+    getNewerVersionMessage(newerVersion) {
+      if (newerVersion.isSameUser) {
+        return "You have saved a newer version of this skill in another window.";
+      } else {
+        return "Someone else has saved a newer version of this skill.";
+      }
     }
 
     render() {
       const newerVersion = this.props.details.find((detail) => detail.type === "newer_version");
       const networkError = this.props.details.find((detail) => detail.type === "network_error");
-      let message = "Warning: ";
+      let message = "";
       if (networkError) {
-        const errorMessage = this.getErrorMessage(networkError);
-        if (/^401/.test(errorMessage)) {
-          message += "You have been signed out. Please reload the page.";
-        } else if (/^404/.test(errorMessage)) {
-          message += "This skill may have been deleted on the server by someone else.";
-        } else if (/^5\d\d/.test(errorMessage)) {
-          message += "The Ellipsis server responded with an error. You may need to reload the page.";
-        } else {
-          message += "The Ellipsis server cannot be reached. Your connection may be down.";
-        }
+        message += this.getNetworkErrorMessage(networkError) + " ";
       }
-      if (newerVersion && networkError) {
-        message += " Also, a newer version of this skill has been saved by someone else.";
-      } else if (newerVersion) {
-        message += "A newer version of this skill has been saved by someone else.";
+      if (newerVersion) {
+        message += this.getNewerVersionMessage(newerVersion);
       }
+
       return (
         <span>
+          <span className="type-label">Warning: </span>
           <span className="mrs">{message}</span>
           {newerVersion && newerVersion.onClick && !networkError ? (
             <button className="button-s" type="button" onClick={newerVersion.onClick}>Reload the editor</button>
@@ -43,7 +52,8 @@ define(function(require) {
       kind: React.PropTypes.string.isRequired,
       type: React.PropTypes.string.isRequired,
       onClick: React.PropTypes.func,
-      error: React.PropTypes.instanceOf(Error)
+      error: React.PropTypes.instanceOf(Error),
+      isSameUser: React.PropTypes.bool
     })).isRequired
   };
 

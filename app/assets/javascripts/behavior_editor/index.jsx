@@ -102,7 +102,8 @@ const BehaviorEditor = React.createClass({
     ).isRequired,
     onSave: React.PropTypes.func.isRequired,
     onForgetSavedAnswerForInput: React.PropTypes.func.isRequired,
-    onLoad: React.PropTypes.func
+    onLoad: React.PropTypes.func,
+    userId: React.PropTypes.string.isRequired
   }),
 
 
@@ -476,6 +477,7 @@ const BehaviorEditor = React.createClass({
       notifications.push(new NotificationData({
         kind: "server_data_warning",
         type: "newer_version",
+        isSameUser: this.state.newerVersionOnServer.authorId === this.props.userId,
         onClick: () => {
           window.location.reload();
         }
@@ -1449,13 +1451,16 @@ const BehaviorEditor = React.createClass({
     if (document.hasFocus()) {
       DataRequest.jsonGet(jsRoutes.controllers.BehaviorEditorController.metaData(this.getBehaviorGroup().id).url)
         .then((json) => {
+          if (!json.createdAt) {
+            throw new Error("Invalid response");
+          }
           const serverDate = new Date(json.createdAt);
           const savedDate = new Date(this.props.group.createdAt);
-          const newerVersion = serverDate > savedDate;
+          const isNewerVersion = serverDate > savedDate;
           const wasOldError = this.state.errorReachingServer;
-          if (newerVersion || wasOldError) {
+          if (isNewerVersion || wasOldError) {
             this.setState({
-              newerVersionOnServer: newerVersion,
+              newerVersionOnServer: isNewerVersion ? json : null,
               errorReachingServer: null
             }, this.resetNotifications);
           }
@@ -1502,7 +1507,7 @@ const BehaviorEditor = React.createClass({
       animationDisabled: false,
       lastSavedDataStorageItem: null,
       nodeModuleVersions: [],
-      newerVersionOnServer: false,
+      newerVersionOnServer: null,
       errorReachingServer: null
     };
   },
