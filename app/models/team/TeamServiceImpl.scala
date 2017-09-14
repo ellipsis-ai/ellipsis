@@ -64,12 +64,8 @@ class TeamServiceImpl @Inject() (
 
   def create(name: String): Future[Team] = save(Team(IDs.next, name, None))
 
-  def setInitialNameFor(team: Team, name: String): Future[Team] = {
-    if (team.maybeNonEmptyName.isEmpty) {
-      save(team.copy(name = name))
-    } else {
-      Future.successful(team)
-    }
+  def setNameFor(team: Team, name: String): Future[Team] = {
+    save(team.copy(name = name))
   }
 
   def setTimeZoneFor(team: Team, tz: ZoneId): Future[Team] = {
