@@ -33,27 +33,29 @@ class ErrorHandler @Inject() (
     implicit val r = request
     implicit val m = messagesApi.preferred(request)
     val maybeNonEmptyMessage = Option(message).filter(_.trim.nonEmpty)
-    Future.successful(
-      NotFound(
+    render.async {
+      case Accepts.JavaScript() => Future.successful(NotFound(message))
+      case Accepts.Html() => Future.successful(NotFound(
         views.html.error.notFound(
           ViewConfig(assets, None),
           None,
           maybeNonEmptyMessage
         )
-      )
-    )
+      ))
+    }
   }
 
   override def onProdServerError(request: RequestHeader, exception: UsefulException): Future[Result] = {
     implicit val r = request
     implicit val messages = messagesApi.preferred(request)
-    Future.successful(
-      InternalServerError(
+    render.async {
+      case Accepts.JavaScript() => Future.successful(InternalServerError(s"Error ID ${exception.id}"))
+      case Accepts.Html() => Future.successful(InternalServerError(
         views.html.error.serverError(
           ViewConfig(assets, None), Some(exception.id)
         )
-      )
-    )
+      ))
+    }
   }
 
   override def onDevServerError(request: RequestHeader, exception: UsefulException): Future[Result] = {
