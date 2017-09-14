@@ -1421,12 +1421,14 @@ const BehaviorEditor = React.createClass({
   },
 
   loadNodeModuleVersions: function() {
-    DataRequest.jsonGet(jsRoutes.controllers.BehaviorEditorController.nodeModuleVersionsFor(this.getBehaviorGroup().id).url)
-      .then(json => {
-        this.setState({
-          nodeModuleVersions: NodeModuleVersion.allFromJson(json)
+    if (this.isExistingGroup()) {
+      DataRequest.jsonGet(jsRoutes.controllers.BehaviorEditorController.nodeModuleVersionsFor(this.getBehaviorGroup().id).url)
+        .then(json => {
+          this.setState({
+            nodeModuleVersions: NodeModuleVersion.allFromJson(json)
+          });
         });
-      });
+    }
   },
 
   resetNotifications: debounce(function() {
@@ -1448,7 +1450,7 @@ const BehaviorEditor = React.createClass({
   // },
 
   checkForUpdates: function() {
-    if (document.hasFocus()) {
+    if (document.hasFocus() && this.isExistingGroup()) {
       DataRequest.jsonGet(jsRoutes.controllers.BehaviorEditorController.metaData(this.getBehaviorGroup().id).url)
         .then((json) => {
           if (!json.createdAt) {
@@ -1474,6 +1476,8 @@ const BehaviorEditor = React.createClass({
           }, this.resetNotifications);
           window.setTimeout(this.checkForUpdates, 30000);
         });
+    } else {
+      window.setTimeout(this.checkForUpdates, 30000);
     }
   },
 
