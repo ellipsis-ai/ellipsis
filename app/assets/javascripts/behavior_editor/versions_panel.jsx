@@ -70,11 +70,11 @@ return React.createClass({
     return `v${
       this.getVersionNumberForIndex(versionIndex)
     } ${
-      indexInGroup === 0 ? Formatter.formatTimestampDate(version.createdAt) : ""
+      versionIndex === 1 ? Formatter.formatTimestampDate(version.createdAt) : ""
     } ${
       Formatter.formatTimestampTime(version.createdAt)
     } ${
-      indexInGroup === 0 ? "by " + this.getAuthorForVersion(version) : ""
+      versionIndex === 1 ? "by " + this.getAuthorForVersion(version) : ""
     } ${
       versionIndex === 1 ? "(last saved version)" : ""
     }`;
@@ -83,7 +83,7 @@ return React.createClass({
     if (this.props.versions && this.props.versions.length > 1) {
       const groups = this.getGroupedVersions();
       return groups.map((group, groupIndex) => (
-        <optgroup key={group.label} label={group.label}>
+        <optgroup key={`versionGroup${groupIndex}`} label={group.label}>
           {group.versions.map((versionDetail, versionIndexInGroup) => (
             <option key={`g${groupIndex}v${versionIndexInGroup}`} value={versionDetail.index}>{
               versionDetail.index === 0 ?
