@@ -29,7 +29,11 @@ class CustomSecuredErrorHandler @Inject() (
     // TODO: platform-agnostic
     render.async {
       case Accepts.JavaScript() => {
-        Future.successful(Results.Unauthorized("Authorization required"))
+        Future.successful(
+          Results.Unauthorized("Authorization required\n").withHeaders(
+            "WWW-Authenticate" -> s"""Bearer realm="${request.host}""""
+          )
+        )
       }
       case Accepts.Html() => {
         Future.successful(Results.Redirect(controllers.routes.SlackController.signIn(maybeRedirect)))
