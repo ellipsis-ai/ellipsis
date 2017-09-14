@@ -1,6 +1,7 @@
 define(function(require) {
   const ApiConfigRef = require('./api_config_ref');
   const RequiredApiConfig = require('./required_api_config');
+  const ID = require('../lib/id');
 
   class RequiredAWSConfig extends RequiredApiConfig {
 
@@ -17,7 +18,7 @@ define(function(require) {
     }
 
     getApiLogoUrl() {
-      return "/assets/images/logos/aws_logo_web_300px.png";
+      return () => "/assets/images/logos/aws_logo_web_300px.png";
     }
 
     getAllConfigsFrom(editor) {
@@ -50,6 +51,7 @@ define(function(require) {
 
     newRequired() {
       return new RequiredAWSConfig({
+        id: ID.next(),
         apiId: 'aws',
         nameInCode: this.nameInCode,
         config: this

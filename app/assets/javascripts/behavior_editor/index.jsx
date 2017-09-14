@@ -215,6 +215,16 @@ const BehaviorEditor = React.createClass({
     return selected ? selected.onUpdateConfigFor(this) : this.onUpdateNewConfig;
   },
 
+  getOAuth2LogoUrl: function(required) {
+    const api = this.props.oauth2Apis.find(ea => ea.apiId === required.apiId);
+    return api ? (api.logoImageUrl || api.iconImageUrl) : undefined;
+  },
+
+  getApiLogoUrlForSelected: function() {
+    const selected = this.getSelectedApiConfig();
+    return selected ? selected.getApiLogoUrl(this) : undefined;
+  },
+
   getEditableName: function() {
     return this.getEditableProp('name') || "";
   },
@@ -1682,6 +1692,7 @@ const BehaviorEditor = React.createClass({
               toggle={this.toggleApiAdderDropdown}
               getActiveDropdown={this.getActiveDropdown}
               requiredConfig={this.getSelectedApiConfig()}
+              getApiLogoUrl={this.getApiLogoUrlForSelected()}
               allConfigs={this.getApiConfigsForSelected()}
               onAddConfig={this.onAddConfigForSelected()}
               onRemoveConfig={this.onRemoveConfigForSelected()}

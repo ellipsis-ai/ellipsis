@@ -1,6 +1,7 @@
 define(function(require) {
   const ApiConfigRef = require('./api_config_ref');
   const RequiredApiConfig = require('./required_api_config');
+  const ID = require('../lib/id');
 
   class RequiredOAuth2Application extends RequiredApiConfig {
     constructor(props) {
@@ -22,9 +23,8 @@ define(function(require) {
       return editor.onUpdateOAuth2Application;
     }
 
-    getApiLogoUrl() {
-      const api = undefined; //this.props.getOAuth2ApiWithId(apiId);
-      return api ? (api.logoImageUrl || api.iconImageUrl) : undefined;
+    getApiLogoUrl(editor) {
+      return editor.getOAuth2LogoUrl;
     }
 
     getAllConfigsFrom(editor) {
@@ -64,6 +64,7 @@ define(function(require) {
 
     newRequired() {
       return new RequiredOAuth2Application({
+        id: ID.next(),
         apiId: this.apiId,
         recommendedScope: this.scope,
         nameInCode: this.nameInCode,

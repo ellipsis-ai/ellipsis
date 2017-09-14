@@ -14,6 +14,7 @@ define(function(require) {
       onAddConfig: React.PropTypes.func,
       onRemoveConfig: React.PropTypes.func,
       onUpdateConfig: React.PropTypes.func,
+      getApiLogoUrl: React.PropTypes.func,
       toggle: React.PropTypes.func.isRequired,
       onDoneClick: React.PropTypes.func.isRequired
     },
@@ -21,10 +22,6 @@ define(function(require) {
     getInitialState: function() {
       return {
       };
-    },
-
-    getApiLogoUrl: function() {
-      return this.props.requiredConfig ? this.props.requiredConfig.getApiLogoUrl() : undefined;
     },
 
     sortedById: function(arr) {
@@ -41,6 +38,10 @@ define(function(require) {
 
     getAllConfigs: function() {
       return this.sortedById(this.props.allConfigs);
+    },
+
+    getApiLogoUrl: function() {
+      return this.props.getApiLogoUrl(this.props.requiredConfig);
     },
 
     getSelectorLabelForConfig: function(config) {
