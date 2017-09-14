@@ -76,7 +76,8 @@ describe('BehaviorEditor', () => {
     shouldRevealCodeEditor: true,
     onSave: jest.fn(),
     savedAnswers: [],
-    onForgetSavedAnswerForInput: jest.fn()
+    onForgetSavedAnswerForInput: jest.fn(),
+    userId: "1"
   };
 
   let editorConfig;

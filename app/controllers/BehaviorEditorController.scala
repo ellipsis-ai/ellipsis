@@ -12,7 +12,6 @@ import models.behaviors.triggers.messagetrigger.MessageTrigger
 import models.silhouette.EllipsisEnv
 import play.api.data.Form
 import play.api.data.Forms._
-import play.api.i18n.MessagesApi
 import play.api.libs.json._
 import play.api.mvc.{AnyContent, Result}
 import play.filters.csrf.CSRF
@@ -85,6 +84,22 @@ class BehaviorEditorController @Inject() (
         Future.successful(Ok(views.js.shared.pageConfig(viewConfig(Some(editorData.teamAccess)), "config/behavioreditor/edit", Json.toJson(config))))
       }.getOrElse {
         Future.successful(NotFound("Skill not found"))
+      }
+    }
+  }
+
+  def metaData(behaviorGroupId: String) = silhouette.SecuredAction.async { implicit request =>
+    val user = request.identity
+    for {
+      maybeBehaviorGroup <- dataService.behaviorGroups.find(behaviorGroupId, user)
+      maybeLastVersion <- maybeBehaviorGroup.flatMap(_.maybeCurrentVersionId).map { currentVersionId =>
+        dataService.behaviorGroupVersions.findWithoutAccessCheck(currentVersionId)
+      }.getOrElse(Future.successful(None))
+    } yield {
+      maybeLastVersion.map { groupVersion =>
+        Ok(Json.toJson(BehaviorGroupVersionMetaData(behaviorGroupId, groupVersion.createdAt, groupVersion.maybeAuthor.map(_.id))))
+      }.getOrElse {
+        NotFound("Skill not found")
       }
     }
   }

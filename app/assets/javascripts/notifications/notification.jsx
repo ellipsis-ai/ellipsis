@@ -15,6 +15,7 @@ define(function(require) {
     NotificationForParamNotInFunction = require('./param_not_in_function'),
     NotificationForInvalidParamInTrigger = require('./invalid_param_in_trigger'),
     NotificationForUnknownParamInTemplate = require('./unknown_param_in_template'),
+    NotificationForServerDataWarning = require('./server_data_warning'),
     NotificationDataGroup = require('../models/notification_data_group');
 
   return React.createClass({
@@ -118,7 +119,15 @@ define(function(require) {
           containerClass: "box-warning",
           icon: this.getWarningIcon(),
           message: (
-            <NotificationForInvalidParamInTrigger details={this.props.group.members} />
+            <NotificationForInvalidParamInTrigger details={this.props.group.members}/>
+          )
+        };
+      } else if (kind === "server_data_warning") {
+        return {
+          containerClass: "box-warning",
+          icon: this.getWarningIcon(),
+          message: (
+            <NotificationForServerDataWarning details={this.props.group.members} />
           )
         };
       } else {
