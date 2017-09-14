@@ -40,7 +40,7 @@ define(function(require) {
           <span className="type-label">Warning: </span>
           <span className="mrs">{message}</span>
           {newerVersion && newerVersion.onClick && !networkError ? (
-            <button className="button-s" type="button" onClick={newerVersion.onClick}>Reload the editor</button>
+            <button className="button-s button-inverted" type="button" onClick={newerVersion.onClick}>Reload the editor</button>
           ) : null}
         </span>
       );

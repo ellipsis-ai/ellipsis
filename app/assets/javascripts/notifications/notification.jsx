@@ -124,8 +124,8 @@ define(function(require) {
         };
       } else if (kind === "server_data_warning") {
         return {
-          containerClass: "box-warning",
-          icon: this.getWarningIcon(),
+          containerClass: "box-error",
+          icon: this.getErrorIcon(),
           message: (
             <NotificationForServerDataWarning details={this.props.group.members} />
           )
@@ -139,6 +139,14 @@ define(function(require) {
       return (
         <span className="display-inline-block align-b type-yellow" style={{ width: 22, height: 24 }}>
           <SVGWarning />
+        </span>
+      );
+    },
+
+    getErrorIcon: function() {
+      return (
+        <span className="display-inline-block align-b type-pink" style={{ width: 22, height: 24 }}>
+          <SVGWarning inverted={true} />
         </span>
       );
     },
