@@ -21,7 +21,8 @@ case class BehaviorEditorData(
                                oauth2Applications: Seq[OAuth2ApplicationData],
                                oauth2Apis: Seq[OAuth2ApiData],
                                simpleTokenApis: Seq[SimpleTokenApiData],
-                               linkedOAuth2ApplicationIds: Seq[String]
+                               linkedOAuth2ApplicationIds: Seq[String],
+                               userId: String
                               )
 
 object BehaviorEditorData {
@@ -179,7 +180,8 @@ object BehaviorEditorData {
         oAuth2Applications.map(OAuth2ApplicationData.from),
         oauth2Apis.map(ea => OAuth2ApiData.from(ea, assets)),
         simpleTokenApis.map(ea => SimpleTokenApiData.from(ea, assets)),
-        linkedOAuth2Tokens.map(_.application.id)
+        linkedOAuth2Tokens.map(_.application.id),
+        user.id
       )
     }
   }

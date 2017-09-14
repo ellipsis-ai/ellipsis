@@ -102,7 +102,8 @@ const BehaviorEditor = React.createClass({
     ).isRequired,
     onSave: React.PropTypes.func.isRequired,
     onForgetSavedAnswerForInput: React.PropTypes.func.isRequired,
-    onLoad: React.PropTypes.func
+    onLoad: React.PropTypes.func,
+    userId: React.PropTypes.string.isRequired
   }),
 
 
@@ -469,12 +470,36 @@ const BehaviorEditor = React.createClass({
     }
   },
 
+  buildServerNotifications: function() {
+    if (!this.state) return [];
+    const notifications = [];
+    if (this.state.newerVersionOnServer) {
+      notifications.push(new NotificationData({
+        kind: "server_data_warning",
+        type: "newer_version",
+        isSameUser: this.state.newerVersionOnServer.authorId === this.props.userId,
+        onClick: () => {
+          window.location.reload();
+        }
+      }));
+    }
+    if (this.state.errorReachingServer) {
+      notifications.push(new NotificationData({
+        kind: "server_data_warning",
+        type: "network_error",
+        error: this.state.errorReachingServer
+      }));
+    }
+    return notifications;
+  },
+
   buildNotifications: function() {
     return [].concat(
       this.buildEnvVarNotifications(),
       this.buildOAuthApplicationNotifications(),
       this.buildDataTypeNotifications(),
-      this.buildTemplateNotifications()
+      this.buildTemplateNotifications(),
+      this.buildServerNotifications()
     );
   },
 
@@ -1396,12 +1421,14 @@ const BehaviorEditor = React.createClass({
   },
 
   loadNodeModuleVersions: function() {
-    DataRequest.jsonGet(jsRoutes.controllers.BehaviorEditorController.nodeModuleVersionsFor(this.getBehaviorGroup().id).url)
-      .then(json => {
-        this.setState({
-          nodeModuleVersions: NodeModuleVersion.allFromJson(json)
+    if (this.isExistingGroup()) {
+      DataRequest.jsonGet(jsRoutes.controllers.BehaviorEditorController.nodeModuleVersionsFor(this.getBehaviorGroup().id).url)
+        .then(json => {
+          this.setState({
+            nodeModuleVersions: NodeModuleVersion.allFromJson(json)
+          });
         });
-      });
+    }
   },
 
   resetNotifications: debounce(function() {
@@ -1414,11 +1441,45 @@ const BehaviorEditor = React.createClass({
     window.document.addEventListener('keydown', this.onDocumentKeyDown, false);
     window.addEventListener('resize', this.checkMobileLayout, false);
     window.addEventListener('scroll', debounce(this.updateBehaviorScrollPosition, 500), false);
+    window.addEventListener('focus', this.checkForUpdates, false);
+    window.setTimeout(this.checkForUpdates, 30000);
     this.loadNodeModuleVersions();
   },
 
   // componentDidUpdate: function() {
   // },
+
+  checkForUpdates: function() {
+    if (document.hasFocus() && this.isExistingGroup()) {
+      DataRequest.jsonGet(jsRoutes.controllers.BehaviorEditorController.metaData(this.getBehaviorGroup().id).url)
+        .then((json) => {
+          if (!json.createdAt) {
+            throw new Error("Invalid response");
+          }
+          const serverDate = new Date(json.createdAt);
+          const savedDate = new Date(this.props.group.createdAt);
+          const isNewerVersion = serverDate > savedDate;
+          const wasOldError = this.state.errorReachingServer;
+          if (isNewerVersion || wasOldError) {
+            this.setState({
+              newerVersionOnServer: isNewerVersion ? json : null,
+              errorReachingServer: null
+            }, this.resetNotifications);
+          }
+          if (!isNewerVersion) {
+            window.setTimeout(this.checkForUpdates, 30000);
+          }
+        })
+        .catch((err) => {
+          this.setState({
+            errorReachingServer: err
+          }, this.resetNotifications);
+          window.setTimeout(this.checkForUpdates, 30000);
+        });
+    } else {
+      window.setTimeout(this.checkForUpdates, 30000);
+    }
+  },
 
   getInitialEnvVariables: function() {
     return Sort.arrayAlphabeticalBy(this.props.envVariables || [], (variable) => variable.name);
@@ -1449,7 +1510,9 @@ const BehaviorEditor = React.createClass({
       hasMobileLayout: this.windowIsMobile(),
       animationDisabled: false,
       lastSavedDataStorageItem: null,
-      nodeModuleVersions: []
+      nodeModuleVersions: [],
+      newerVersionOnServer: null,
+      errorReachingServer: null
     };
   },
 
