@@ -7,24 +7,28 @@ import akka.actor.ActorSystem
 import com.google.inject.Provider
 import com.mohiva.play.silhouette.api.LoginInfo
 import drivers.SlickPostgresDriver.api._
+import json.{SlackUserData, UserData}
 import models.IDs
 import models.accounts.linkedaccount.LinkedAccount
+import models.accounts.slack.botprofile.SlackBotProfile
 import models.behaviors.events.{Event, SlackMessageEvent}
 import models.team.Team
 import play.api.Configuration
-import services.DataService
-import slack.api.ApiError
+import services.{CacheService, DataService}
+import slack.api.{ApiError, SlackApiClient}
 
 import scala.concurrent.{ExecutionContext, Future}
 
 class UserServiceImpl @Inject() (
                                   dataServiceProvider: Provider[DataService],
+                                  cacheServiceProvider: Provider[CacheService],
                                   configuration: Configuration,
                                   implicit val actorSystem: ActorSystem,
                                   implicit val ec: ExecutionContext
                                 ) extends UserService {
 
   def dataService = dataServiceProvider.get
+  def cacheService = cacheServiceProvider.get
 
   import UserQueries._
 
@@ -116,15 +120,25 @@ class UserServiceImpl @Inject() (
     }
   }
 
-  def maybeNameFor(user: User, event: SlackMessageEvent): Future[Option[String]] = {
+  def userDataFor(user: User, team: Team): Future[UserData] = {
     for {
+      maybeSlackUserData <- maybeSlackUserDataFor(user, team)
+    } yield {
+      UserData(user.id, maybeSlackUserData.map(_.accountName))
+    }
+  }
+
+  private def maybeSlackUserDataFor(user: User, team: Team): Future[Option[SlackUserData]] = {
+    for {
+      maybeSlackBotProfile <- dataService.slackBotProfiles.allFor(team).map(_.headOption)
       maybeSlackAccount <- dataService.linkedAccounts.maybeForSlackFor(user)
-      maybeName <- maybeSlackAccount.map { acc =>
-        event.client.getUserInfo(acc.loginInfo.providerKey).map(info => Some(info.name)).recover {
-          case e: ApiError => None
-        }
-      }.getOrElse(Future.successful(None))
-    } yield maybeName
+      maybeUserData <- (for {
+        slackBotProfile <- maybeSlackBotProfile
+        slackAccount <- maybeSlackAccount
+      } yield {
+        dataService.linkedAccounts.maybeSlackUserDataFor(slackBotProfile, slackAccount.loginInfo.providerKey)
+      }).getOrElse(Future.successful(None))
+    } yield maybeUserData
   }
 
   def findForInvocationToken(tokenId: String): Future[Option[User]] = {

@@ -25,6 +25,12 @@ case class RememberBehavior(event: Event, lambdaService: AWSLambdaService, dataS
       maybeGroup <- maybeTeam.map { team =>
         dataService.behaviorGroups.createFor(None, team).map(Some(_))
       }.getOrElse(Future.successful(None))
+      maybeUserData <- (for {
+        team <- maybeTeam
+        user <- maybeUser
+      } yield {
+        dataService.users.userDataFor(user, team).map(Some(_))
+      }).getOrElse(Future.successful(None))
       maybeVersionData <- Future.successful(maybeGroup.map { group =>
         val triggerData = qaExtractor.maybeLastQuestion.map { lastQuestion =>
           Seq(BehaviorTriggerData(lastQuestion, requiresMention = false, isRegex = false, caseSensitive = false))
@@ -62,7 +68,8 @@ case class RememberBehavior(event: Event, lambdaService: AWSLambdaService, dataS
             Seq(),
             None,
             None,
-            Some(OffsetDateTime.now)
+            Some(OffsetDateTime.now),
+            maybeUserData
           )
 
         )

@@ -338,10 +338,52 @@ class SlackController @Inject() (
     })
   }
 
+  case class UserChangeInfo(id: String, name: String)
+  case class UserProfileChangedEventInfo(
+                                          eventType: String,
+                                          user: UserChangeInfo
+                                        ) extends EventInfo
+  case class UserProfileChangedRequestInfo(
+                                             teamId: String,
+                                             event: UserProfileChangedEventInfo
+                                           ) extends EventRequestInfo
+
+  private val userProfileChangedRequestForm = Form(
+    mapping(
+      "team_id" -> nonEmptyText,
+      "event" -> mapping(
+        "type" -> nonEmptyText,
+        "user" -> mapping(
+          "id" -> nonEmptyText,
+          "name" -> nonEmptyText
+        )(UserChangeInfo.apply)(UserChangeInfo.unapply)
+      )(UserProfileChangedEventInfo.apply)(UserProfileChangedEventInfo.unapply)
+    )(UserProfileChangedRequestInfo.apply)(UserProfileChangedRequestInfo.unapply) verifying("Not a valid user event", fields => fields match {
+      case info => info.event.eventType == "user_change"
+    })
+  )
+
+  private def maybeUserProfileChangedResult(implicit request: Request[AnyContent]): Option[Result] = {
+    maybeResultFor(userProfileChangedRequestForm, (info: UserProfileChangedRequestInfo) => {
+      val slackUserId = info.event.user.id
+      val slackTeamId = info.teamId
+      val userName = info.event.user.name
+      val maybeOldUserData = services.cacheService.getSlackUserData(slackUserId, slackTeamId)
+      maybeOldUserData.foreach{ oldUserData =>
+        if (oldUserData.accountName != userName) {
+          services.cacheService.cacheSlackUserData(oldUserData.copy(accountName = userName))
+        }
+      }
+      Ok(":+1:")
+    })
+  }
+
+
   private def maybeEventResult(implicit request: Request[AnyContent]): Option[Result] = {
     if (isValidEventRequest) {
       maybeMessageResult orElse
-        maybeChannelMembersChangedResult
+        maybeChannelMembersChangedResult orElse
+        maybeUserProfileChangedResult
     } else {
       None
     }

@@ -2,7 +2,7 @@ package services
 
 import javax.inject.{Inject, Provider, Singleton}
 
-import json.BehaviorGroupData
+import json.{BehaviorGroupData, SlackUserData}
 import json.Formatting._
 import models.accounts.slack.SlackUserInfo
 import models.accounts.slack.botprofile.SlackBotProfile
@@ -164,12 +164,21 @@ class CacheServiceImpl @Inject() (
     }
   }
 
-  def cacheBotUsername(userId: String, username: String): Unit = {
-    set(s"slack-username-for-id-${userId}", username, 5.minutes)
+  private def slackUserDataKey(slackUserId: String, slackTeamId: String): String = {
+    s"slack-user-data-team-$slackTeamId-user-$slackUserId"
   }
 
-  def getBotUsername(userId: String): Option[String] = {
-    get(s"slack-username-for-id-${userId}")
+  def cacheSlackUserData(userData: SlackUserData): Unit = {
+    set(slackUserDataKey(userData.accountId, userData.accountTeamId), Json.toJson(userData), 1.hour)
+  }
+
+  def getSlackUserData(slackUserId: String, slackTeamId: String): Option[SlackUserData] = {
+    get[JsValue](slackUserDataKey(slackUserId, slackTeamId)).flatMap { json =>
+      json.validate[SlackUserData] match {
+        case JsSuccess(data, jsPath) => Some(data)
+        case JsError(err) => None
+      }
+    }
   }
 
 }

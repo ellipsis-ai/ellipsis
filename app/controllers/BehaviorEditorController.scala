@@ -7,6 +7,7 @@ import com.mohiva.play.silhouette.api.Silhouette
 import com.mohiva.play.silhouette.api.actions.SecuredRequest
 import json.Formatting._
 import json._
+import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
 import models.behaviors.testing.{InvocationTester, TestEvent, TriggerTester}
 import models.behaviors.triggers.messagetrigger.MessageTrigger
 import models.silhouette.EllipsisEnv
@@ -16,6 +17,7 @@ import play.api.libs.json._
 import play.api.mvc.{AnyContent, Result}
 import play.filters.csrf.CSRF
 import services.DefaultServices
+import utils.FutureSequencer
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -265,9 +267,8 @@ class BehaviorEditorController @Inject() (
       versions <- maybeBehaviorGroup.map { group =>
        dataService.behaviorGroupVersions.allFor(group).map(_.sortBy(_.createdAt).reverse.take(20))
       }.getOrElse(Future.successful(Seq()))
-      versionsData <- Future.sequence(versions.map { ea =>
-       BehaviorGroupData.buildFor(ea, user, dataService)
-      })
+      // Todo: this can go back to being a regular Future.sequence (in parallel) if we
+      versionsData <- FutureSequencer.sequence(versions, (ea: BehaviorGroupVersion) => BehaviorGroupData.buildFor(ea, user, dataService))
     } yield {
       Ok(Json.toJson(versionsData))
     }

@@ -100,7 +100,8 @@ trait DBSpec extends PlaySpec with OneAppPerSuite with MockitoSugar {
       requiredSimpleTokenApis = Seq(),
       githubUrl = None,
       exportId = None,
-      createdAt = None
+      createdAt = None,
+      author = None
     )
   }
 
@@ -125,8 +126,8 @@ trait DBSpec extends PlaySpec with OneAppPerSuite with MockitoSugar {
       inputIds = Seq(input2Data.inputId.get)
     )
     newGroupVersionDataFor(group, user).copy(
-      behaviorVersions = Seq(behaviorVersion1Data, behaviorVersion2Data),
-      actionInputs = Seq(input1Data, input2Data)
+      actionInputs = Seq(input1Data, input2Data),
+      behaviorVersions = Seq(behaviorVersion1Data, behaviorVersion2Data)
     )
   }
 

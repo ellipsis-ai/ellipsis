@@ -148,6 +148,7 @@ object BehaviorEditorData {
         }
       }.getOrElse(Future.successful(None))
       builtinParamTypeData <- Future.sequence(BehaviorParameterType.allBuiltin.map(ea => BehaviorParameterTypeData.from(ea, dataService)))
+      userData <- dataService.users.userDataFor(user, team)
     } yield {
       val maybeVerifiedSelectedId = maybeVerifiedBehaviorId.orElse(maybeVerifiedLibraryId)
       val data = maybeGroupData.getOrElse {
@@ -165,7 +166,8 @@ object BehaviorEditorData {
           Seq(),
           githubUrl = None,
           exportId = None,
-          Some(OffsetDateTime.now)
+          Some(OffsetDateTime.now),
+          Some(userData)
         )
       }
       BehaviorEditorData(

@@ -3,10 +3,14 @@ package models.accounts.linkedaccount
 import java.time.OffsetDateTime
 import javax.inject._
 
+import akka.actor.ActorSystem
 import com.mohiva.play.silhouette.api.LoginInfo
 import models.accounts.user.User
-import services.DataService
+import services.{CacheService, DataService}
 import drivers.SlickPostgresDriver.api._
+import json.SlackUserData
+import models.accounts.slack.botprofile.SlackBotProfile
+import slack.api.{ApiError, SlackApiClient}
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -24,10 +28,13 @@ class LinkedAccountsTable(tag: Tag) extends Table[RawLinkedAccount](tag, "linked
 
 class LinkedAccountServiceImpl @Inject() (
                                            dataServiceProvider: Provider[DataService],
-                                           implicit val ec: ExecutionContext
+                                           cacheServiceProvider: Provider[CacheService],
+                                           implicit val ec: ExecutionContext,
+                                           implicit val actorSystem: ActorSystem
                                          ) extends LinkedAccountService {
 
   def dataService = dataServiceProvider.get
+  def cacheService = cacheServiceProvider.get
 
   import LinkedAccountQueries._
 
@@ -75,6 +82,26 @@ class LinkedAccountServiceImpl @Inject() (
 
   def maybeForSlackFor(user: User): Future[Option[LinkedAccount]] = {
     dataService.run(maybeForSlackForAction(user))
+  }
+
+  def maybeSlackUserDataFor(profile: SlackBotProfile, slackUserId: String): Future[Option[SlackUserData]] = {
+    cacheService.getSlackUserData(slackUserId, profile.slackTeamId).map { userData =>
+      Future.successful(Some(userData))
+    }.getOrElse {
+      for {
+        maybeInfo <- SlackApiClient(profile.token).getUserInfo(slackUserId).
+          map(Some(_)).
+          recover {
+            case e: ApiError => None
+          }
+      } yield {
+        maybeInfo.map { info =>
+          val userData = SlackUserData(slackUserId, profile.slackTeamId, info.name)
+          cacheService.cacheSlackUserData(userData)
+          Some(userData)
+        }.getOrElse(None)
+      }
+    }
   }
 
   def isAdminAction(linkedAccount: LinkedAccount): DBIO[Boolean] = {
