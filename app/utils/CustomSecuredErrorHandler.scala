@@ -4,15 +4,20 @@ import javax.inject.Inject
 
 import com.google.inject.Singleton
 import com.mohiva.play.silhouette.api.actions.SecuredErrorHandler
+import play.api.http.ContentTypes
 import play.api.i18n.{I18nSupport, MessagesApi}
-import play.api.mvc.{RequestHeader, Result, Results}
+import play.api.mvc._
 
 import scala.concurrent.Future
 
 @Singleton
 class CustomSecuredErrorHandler @Inject() (
                                             val messagesApi: MessagesApi
-                                          ) extends SecuredErrorHandler with I18nSupport  {
+                                          ) extends SecuredErrorHandler
+  with I18nSupport
+  with ContentTypes
+  with RequestExtractors
+  with Rendering {
 
   def onNotAuthenticated(implicit request: RequestHeader): Future[Result] = {
     val path = request.uri
@@ -22,7 +27,15 @@ class CustomSecuredErrorHandler @Inject() (
       Some(path)
     }
     // TODO: platform-agnostic
-    Future.successful(Results.Redirect(controllers.routes.SlackController.signIn(maybeRedirect)))
+    render.async {
+      case Accepts.JavaScript() => {
+        Future.successful(Results.Unauthorized("Authorization required"))
+      }
+      case Accepts.Html() => {
+        Future.successful(Results.Redirect(controllers.routes.SlackController.signIn(maybeRedirect)))
+      }
+    }
+
   }
 
   def onNotAuthorized(implicit request: RequestHeader): Future[Result] = {

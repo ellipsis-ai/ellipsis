@@ -484,7 +484,8 @@ const BehaviorEditor = React.createClass({
     if (this.state.errorReachingServer) {
       notifications.push(new NotificationData({
         kind: "server_data_warning",
-        type: "network_error"
+        type: "network_error",
+        error: this.state.errorReachingServer
       }));
     }
     return notifications;
@@ -1455,13 +1456,13 @@ const BehaviorEditor = React.createClass({
           if (newerVersion || wasOldError) {
             this.setState({
               newerVersionOnServer: newerVersion,
-              errorReachingServer: false
+              errorReachingServer: null
             }, this.resetNotifications);
           }
         })
-        .catch(() => {
+        .catch((err) => {
           this.setState({
-            errorReachingServer: true
+            errorReachingServer: err
           }, this.resetNotifications);
         });
     }
@@ -1502,7 +1503,7 @@ const BehaviorEditor = React.createClass({
       lastSavedDataStorageItem: null,
       nodeModuleVersions: [],
       newerVersionOnServer: false,
-      errorReachingServer: false
+      errorReachingServer: null
     };
   },
 
