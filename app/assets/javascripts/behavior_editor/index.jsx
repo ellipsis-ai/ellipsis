@@ -1440,7 +1440,7 @@ const BehaviorEditor = React.createClass({
     window.addEventListener('resize', this.checkMobileLayout, false);
     window.addEventListener('scroll', debounce(this.updateBehaviorScrollPosition, 500), false);
     window.addEventListener('focus', this.checkForUpdates, false);
-    this.startCheckingForUpdates();
+    window.setTimeout(this.checkForUpdates, 30000);
     this.loadNodeModuleVersions();
   },
 
@@ -1464,17 +1464,17 @@ const BehaviorEditor = React.createClass({
               errorReachingServer: null
             }, this.resetNotifications);
           }
+          if (!isNewerVersion) {
+            window.setTimeout(this.checkForUpdates, 30000);
+          }
         })
         .catch((err) => {
           this.setState({
             errorReachingServer: err
           }, this.resetNotifications);
+          window.setTimeout(this.checkForUpdates, 30000);
         });
     }
-  },
-
-  startCheckingForUpdates: function() {
-    setInterval(this.checkForUpdates, 10000);
   },
 
   getInitialEnvVariables: function() {
