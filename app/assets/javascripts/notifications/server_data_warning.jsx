@@ -1,5 +1,7 @@
 define(function(require) {
-  var React = require('react');
+  var React = require('react'),
+    Formatter = require('../lib/formatter'),
+    BehaviorGroupVersionMetaData = require('../models/behavior_group_version_meta_data');
 
   class NotificationForServerDataWarning extends React.Component {
 
@@ -16,31 +18,36 @@ define(function(require) {
       }
     }
 
-    getNewerVersionMessage(newerVersion) {
-      if (newerVersion.isSameUser) {
-        return "You have saved a newer version of this skill in another window.";
+    getNewerVersionMessage(notificationDetail) {
+      const versionData = notificationDetail.newerVersion;
+      const name = versionData.author && versionData.author.name ? versionData.author.formattedName() : "Someone else";
+      const timestamp = Formatter.formatTimestampRelativeIfRecent(versionData.createdAt);
+      if (versionData.author && versionData.author.id === notificationDetail.currentUserId) {
+        return `You saved a newer version of this skill in another window ${timestamp}.`;
+      } else if (name) {
+        return `${name} saved a newer version of this skill ${timestamp}.`;
       } else {
-        return "Someone else has saved a newer version of this skill.";
+        return `Someone saved a newer version of this skill ${timestamp}.`;
       }
     }
 
     render() {
-      const newerVersion = this.props.details.find((detail) => detail.type === "newer_version");
+      const newerVersionDetail = this.props.details.find((detail) => detail.type === "newer_version");
       const networkError = this.props.details.find((detail) => detail.type === "network_error");
       let message = "";
       if (networkError) {
         message += this.getNetworkErrorMessage(networkError) + " ";
       }
-      if (newerVersion) {
-        message += this.getNewerVersionMessage(newerVersion);
+      if (newerVersionDetail) {
+        message += this.getNewerVersionMessage(newerVersionDetail);
       }
 
       return (
         <span>
           <span className="type-label">Warning: </span>
           <span className="mrs">{message}</span>
-          {newerVersion && newerVersion.onClick && !networkError ? (
-            <button className="button-s button-inverted" type="button" onClick={newerVersion.onClick}>Reload the editor</button>
+          {newerVersionDetail && newerVersionDetail.onClick && !networkError ? (
+            <button className="button-s button-inverted" type="button" onClick={newerVersionDetail.onClick}>Reload the editor</button>
           ) : null}
         </span>
       );
@@ -53,7 +60,8 @@ define(function(require) {
       type: React.PropTypes.string.isRequired,
       onClick: React.PropTypes.func,
       error: React.PropTypes.instanceOf(Error),
-      isSameUser: React.PropTypes.bool
+      currentUserId: React.PropTypes.string,
+      newerVersion: React.PropTypes.instanceOf(BehaviorGroupVersionMetaData)
     })).isRequired
   };
 

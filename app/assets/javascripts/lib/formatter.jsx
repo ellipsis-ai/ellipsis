@@ -44,7 +44,7 @@ define(function(require) {
     },
 
     formatTimestampRelativeIfRecent: function(timestamp) {
-      var then = timestamp;
+      var then = typeof timestamp === "number" ? timestamp : new Date(timestamp).valueOf();
       var now = Date.now();
       var diff = now - then > 0 ? now - then : then - now;
       if (diff < ONE_WEEK_IN_MS) {

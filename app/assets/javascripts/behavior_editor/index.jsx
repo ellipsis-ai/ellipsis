@@ -3,6 +3,7 @@ var React = require('react'),
   APISelectorMenu = require('./api_selector_menu'),
   AWSHelp = require('./aws_help'),
   BehaviorGroup = require('../models/behavior_group'),
+  BehaviorGroupVersionMetaData = require('../models/behavior_group_version_meta_data'),
   BehaviorGroupEditor = require('./behavior_group_editor'),
   BehaviorVersion = require('../models/behavior_version'),
   BehaviorSwitcher = require('./behavior_switcher'),
@@ -477,7 +478,8 @@ const BehaviorEditor = React.createClass({
       notifications.push(new NotificationData({
         kind: "server_data_warning",
         type: "newer_version",
-        isSameUser: this.state.newerVersionOnServer.authorId === this.props.userId,
+        newerVersion: this.state.newerVersionOnServer,
+        currentUserId: this.props.userId,
         onClick: () => {
           window.location.reload();
         }
@@ -1442,7 +1444,7 @@ const BehaviorEditor = React.createClass({
     window.addEventListener('resize', this.checkMobileLayout, false);
     window.addEventListener('scroll', debounce(this.updateBehaviorScrollPosition, 500), false);
     window.addEventListener('focus', this.checkForUpdates, false);
-    window.setTimeout(this.checkForUpdates, 30000);
+    this.checkForUpdatesLater();
     this.loadNodeModuleVersions();
   },
 
@@ -1462,23 +1464,25 @@ const BehaviorEditor = React.createClass({
           const wasOldError = this.state.errorReachingServer;
           if (isNewerVersion || wasOldError) {
             this.setState({
-              newerVersionOnServer: isNewerVersion ? json : null,
+              newerVersionOnServer: isNewerVersion ? BehaviorGroupVersionMetaData.fromJson(json) : null,
               errorReachingServer: null
             }, this.resetNotifications);
           }
-          if (!isNewerVersion) {
-            window.setTimeout(this.checkForUpdates, 30000);
-          }
+          this.checkForUpdatesLater();
         })
         .catch((err) => {
           this.setState({
             errorReachingServer: err
           }, this.resetNotifications);
-          window.setTimeout(this.checkForUpdates, 30000);
+          this.checkForUpdatesLater();
         });
     } else {
-      window.setTimeout(this.checkForUpdates, 30000);
+      this.checkForUpdatesLater();
     }
+  },
+
+  checkForUpdatesLater: function() {
+    setTimeout(this.checkForUpdates, 30000);
   },
 
   getInitialEnvVariables: function() {
