@@ -33,45 +33,43 @@ class ErrorHandler @Inject() (
     implicit val r = request
     implicit val m = messagesApi.preferred(request)
     val maybeNonEmptyMessage = Option(message).filter(_.trim.nonEmpty)
-    Future.successful(
-      NotFound(
+    render.async {
+      case Accepts.JavaScript() => Future.successful(NotFound(maybeNonEmptyMessage.getOrElse("URI not found\n")))
+      case Accepts.Html() => Future.successful(NotFound(
         views.html.error.notFound(
           ViewConfig(assets, None),
           None,
           maybeNonEmptyMessage
         )
-      )
-    )
+      ))
+    }
   }
 
   override def onProdServerError(request: RequestHeader, exception: UsefulException): Future[Result] = {
     implicit val r = request
     implicit val messages = messagesApi.preferred(request)
-    Future.successful(
-      InternalServerError(
+    render.async {
+      case Accepts.JavaScript() => Future.successful(InternalServerError(s"Error ID ${exception.id}\n"))
+      case Accepts.Html() => Future.successful(InternalServerError(
         views.html.error.serverError(
           ViewConfig(assets, None), Some(exception.id)
         )
-      )
-    )
+      ))
+    }
   }
 
   override def onDevServerError(request: RequestHeader, exception: UsefulException): Future[Result] = {
     implicit val r = request
     implicit val messages = messagesApi.preferred(request)
+    // Uncomment this line to test production errors:
+    // onProdServerError(request, exception)
+
+    // Comment out these lines to test production errors:
     render.async {
       case Accepts.JavaScript() => {
         Future.successful(Ok(views.js.error.jsError(exception, assets)))
       }
       case Accepts.Html() => super.onDevServerError(request, exception)
     }
-// Use the code below to test production server errors
-//    Future.successful(
-//      InternalServerError(
-//        views.html.error.serverError(
-//          ViewConfig(config, None), Some(exception.id)
-//        )
-//      )
-//    )
   }
 }
