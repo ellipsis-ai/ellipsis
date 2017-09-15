@@ -410,7 +410,7 @@ const BehaviorEditor = React.createClass({
       name: ea.nameInCode,
       requiredAWSConfig: ea,
       existingAWSConfigs: this.getAllAWSConfigs(),
-      onAddAWSConfig: this.onAddAWSConfig,
+      onUpdateAWSConfig: this.onUpdateAWSConfig,
       onNewAWSConfig: this.onNewAWSConfig
     }));
   },

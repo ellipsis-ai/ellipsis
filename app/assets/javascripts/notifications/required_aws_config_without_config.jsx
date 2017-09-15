@@ -12,7 +12,7 @@ define(function(require) {
         name: React.PropTypes.string.isRequired,
         existingAWSConfigs: React.PropTypes.arrayOf(React.PropTypes.instanceOf(AWSConfigRef)).isRequired,
         requiredAWSConfig: React.PropTypes.instanceOf(RequiredAWSConfig).isRequired,
-        onAddAWSConfig: React.PropTypes.func.isRequired,
+        onUpdateAWSConfig: React.PropTypes.func.isRequired,
         onNewAWSConfig: React.PropTypes.func.isRequired
       })).isRequired
     },
@@ -25,7 +25,7 @@ define(function(require) {
             <button
               type="button"
               className="button-raw link button-s"
-              onClick={this.onAddAWSConfig.bind(this, detail, matchingConfig)}>
+              onClick={this.onUpdateAWSConfig.bind(this, detail, matchingConfig)}>
 
               Add {matchingConfig.displayName} to this skill
 
@@ -48,8 +48,10 @@ define(function(require) {
       }
     },
 
-    onAddAWSConfig: function(detail, cfg) {
-      detail.onAddAWSConfig(cfg);
+    onUpdateAWSConfig: function(detail, cfg) {
+      detail.onUpdateAWSConfig(detail.requiredAWSConfig.clone({
+        config: cfg
+      }));
     },
 
     onNewAWSConfig: function(detail, requiredAWSConfig) {
