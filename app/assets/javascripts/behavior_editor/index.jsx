@@ -1270,6 +1270,10 @@ const BehaviorEditor = React.createClass({
     return !!this.getBehaviorGroup().id;
   },
 
+  isLatestSavedVersion: function() {
+    return this.isExistingGroup() && !this.isSaving() && !this.isModified() && !this.state.newerVersionOnServer;
+  },
+
   isFinishedBehavior: function() {
     var originalSelected = this.getOriginalSelected();
     return !!(originalSelected && !originalSelected.isNew &&
@@ -1877,9 +1881,17 @@ const BehaviorEditor = React.createClass({
   },
 
   renderFooterStatus: function() {
-    if (this.isJustSaved() && !this.isSaving()) {
+    const group = this.getBehaviorGroup();
+    const lastSaved = group.createdAt;
+    const lastSavedByCurrentUser = group.author && group.author.id === this.props.userId;
+    const authorName = group.author && group.author.name ? group.author.formattedName() : null;
+    if (this.isLatestSavedVersion() && lastSaved) {
       return (
-        <span className="fade-in type-green type-bold type-italic">All changes saved</span>
+        <span className="fade-in type-green type-bold type-italic">
+          <span>{lastSavedByCurrentUser ? "You last saved" : "Last saved"} </span>
+          <span>{Formatter.formatTimestampRelativeIfRecent(lastSaved)}</span>
+          <span> {!lastSavedByCurrentUser && authorName ? `by ${authorName}` : ""}</span>
+        </span>
       );
     } else if (this.state.error === 'not_saved') {
       return (
