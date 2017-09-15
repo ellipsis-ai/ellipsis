@@ -96,13 +96,13 @@ define(function(require) {
       return this.getFirstLineNumberForCode() + numLines;
     },
 
-    hasUsedOAuth2Application: function(code, keyName) {
-      var pattern = new RegExp(`\\bellipsis\\.accessTokens\\.${keyName}\\b`);
+    hasUsedOAuth2Application: function(code, nameInCode) {
+      var pattern = new RegExp(`\\bellipsis\\.accessTokens\\.${nameInCode}\\b`);
       return pattern.test(code);
     },
 
-    hasUsedAWSConfig: function(code, keyName) {
-      var pattern = new RegExp(`\\bellipsis\\.aws\\.${keyName}\\b`);
+    hasUsedAWSConfig: function(code, nameInCode) {
+      var pattern = new RegExp(`\\bellipsis\\.aws\\.${nameInCode}\\b`);
       return pattern.test(code);
     },
 

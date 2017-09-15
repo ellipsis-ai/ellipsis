@@ -382,11 +382,6 @@ define(function(require) {
                   />
                 </div>
 
-                <div className="mtm type-s">
-                  <span className="type-weak mrxs">Name used in code: </span>
-                  <code className="box-code-example">{Formatter.formatCamelCaseIdentifier(this.getApplicationName())}</code>
-                </div>
-
               </div>
             </div>
 

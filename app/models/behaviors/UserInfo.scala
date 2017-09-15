@@ -1,14 +1,14 @@
 package models.behaviors
 
 import akka.actor.ActorSystem
-import models.accounts.oauth2application.OAuth2Application
 import models.accounts.user.User
 import models.behaviors.config.awsconfig.AWSConfig
+import models.behaviors.config.requiredawsconfig.RequiredAWSConfig
 import models.behaviors.events.Event
 import models.team.Team
 import play.api.libs.ws.WSClient
 import play.api.libs.json._
-import services.{CacheService, DataService}
+import services.{ApiConfigInfo, CacheService, DataService}
 import slick.dbio.DBIO
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -102,16 +102,22 @@ object UserInfo {
 
 }
 
-case class TeamInfo(team: Team, links: Seq[LinkedInfo], awsConfigs: Seq[AWSConfig]) {
+case class TeamInfo(team: Team, links: Seq[LinkedInfo], requiredAWSConfigs: Seq[RequiredAWSConfig]) {
+
+  val configuredRequiredAWSConfigs: Seq[(RequiredAWSConfig, AWSConfig)] = {
+    requiredAWSConfigs.flatMap { ea =>
+      ea.maybeConfig.map { cfg => (ea, cfg) }
+    }
+  }
 
   def toJson: JsObject = {
     val linkParts: Seq[(String, JsValue)] = Seq(
       "links" -> JsArray(links.map(_.toJson)),
-      "aws" -> JsObject(awsConfigs.map { ea =>
-        ea.keyName -> JsObject(Seq(
-          "accessKeyId" -> JsString(ea.accessKey),
-          "secretAccessKey" -> JsString(ea.secretKey),
-          "region" -> JsString(ea.region)
+      "aws" -> JsObject(configuredRequiredAWSConfigs.map { case(required, cfg) =>
+        required.nameInCode -> JsObject(Seq(
+          "accessKeyId" -> JsString(cfg.accessKey),
+          "secretAccessKey" -> JsString(cfg.secretKey),
+          "region" -> JsString(cfg.region)
         ))
       })
     )
@@ -123,7 +129,14 @@ case class TeamInfo(team: Team, links: Seq[LinkedInfo], awsConfigs: Seq[AWSConfi
 
 object TeamInfo {
 
-  def forConfig(apps: Seq[OAuth2Application], awsConfigs: Seq[AWSConfig], team: Team, ws: WSClient)(implicit ec: ExecutionContext): Future[TeamInfo] = {
+  def forConfig(apiConfigInfo: ApiConfigInfo, userInfo: UserInfo, team: Team, ws: WSClient)(implicit ec: ExecutionContext): Future[TeamInfo] = {
+    val oauth2ApplicationsNeedingRefresh =
+      apiConfigInfo.requiredOAuth2ApiConfigs.flatMap(_.maybeApplication).
+        filter { app =>
+          !userInfo.links.exists(_.externalSystem == app.name)
+        }.
+        filterNot(_.api.grantType.requiresAuth)
+    val apps = oauth2ApplicationsNeedingRefresh
     Future.sequence(apps.map { ea =>
       ea.getClientCredentialsTokenFor(ws).map { maybeToken =>
         maybeToken.map { token =>
@@ -131,7 +144,7 @@ object TeamInfo {
         }
       }
     }).map { linkMaybes =>
-      TeamInfo(team, linkMaybes.flatten, awsConfigs)
+      TeamInfo(team, linkMaybes.flatten, apiConfigInfo.requiredAWSConfigs)
     }
   }
 

@@ -79,8 +79,6 @@ case class OAuth2Application(
       ))
   }
 
-  def keyName: String = NameFormatter.formatConfigPropertyName(name)
-
   def toRaw = RawOAuth2Application(
     id,
     name,

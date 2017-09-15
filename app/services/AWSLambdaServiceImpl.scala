@@ -12,7 +12,7 @@ import json.Formatting._
 import json.NodeModuleVersionData
 import models.behaviors._
 import models.behaviors.behaviorversion.BehaviorVersion
-import models.behaviors.config.awsconfig.AWSConfig
+import models.behaviors.config.requiredawsconfig.RequiredAWSConfig
 import models.behaviors.config.requiredoauth2apiconfig.RequiredOAuth2ApiConfig
 import models.behaviors.config.requiredsimpletokenapi.RequiredSimpleTokenApi
 import models.behaviors.conversations.conversation.Conversation
@@ -132,14 +132,7 @@ class AWSLambdaServiceImpl @Inject() (
     for {
       userInfo <- event.userInfoAction(ws, dataService, cacheService)
       result <- {
-        val awsConfigs = apiConfigInfo.awsConfigs
-        val oauth2ApplicationsNeedingRefresh =
-          apiConfigInfo.requiredOAuth2ApiConfigs.flatMap(_.maybeApplication).
-            filter { app =>
-              !userInfo.links.exists(_.externalSystem == app.name)
-            }.
-            filterNot(_.api.grantType.requiresAuth)
-        DBIO.from(TeamInfo.forConfig(oauth2ApplicationsNeedingRefresh, awsConfigs, team, ws).flatMap { teamInfo =>
+        DBIO.from(TeamInfo.forConfig(apiConfigInfo, userInfo, team, ws).flatMap { teamInfo =>
           val payloadJson = JsObject(
             payloadData ++ contextParamDataFor(environmentVariables, userInfo, teamInfo, token)
           )
@@ -233,27 +226,29 @@ class AWSLambdaServiceImpl @Inject() (
     (requiredForCode ++ requiredForLibs).distinct
   }
 
-  private def awsCodeFor(awsConfig: AWSConfig): String = {
-    val teamInfoPath = s"event.$CONTEXT_PARAM.teamInfo.aws.${awsConfig.keyName}"
-    s"""$CONTEXT_PARAM.aws.${awsConfig.keyName} = {
-       |  accessKeyId: ${teamInfoPath}.accessKeyId,
-       |  secretAccessKey: ${teamInfoPath}.secretAccessKey,
-       |  region: ${teamInfoPath}.region,
-       |};
-       |
+  private def awsCodeFor(required: RequiredAWSConfig): String = {
+    if (required.isConfigured) {
+      val teamInfoPath = s"event.$CONTEXT_PARAM.teamInfo.aws.${required.nameInCode}"
+      s"""$CONTEXT_PARAM.aws.${required.nameInCode} = {
+         |  accessKeyId: ${teamInfoPath}.accessKeyId,
+         |  secretAccessKey: ${teamInfoPath}.secretAccessKey,
+         |  region: ${teamInfoPath}.region,
+         |};
+         |
      """.stripMargin
+    } else {
+      ""
+    }
   }
 
   private def awsCodeFor(apiConfigInfo: ApiConfigInfo): String = {
     if (apiConfigInfo.requiredAWSConfigs.isEmpty) {
       ""
     } else {
-      val requiredNames = apiConfigInfo.requiredAWSConfigs.map(_.nameInCode)
-      val awsConfigs = apiConfigInfo.awsConfigs.filter { ea => requiredNames.contains(ea.keyName) }
       s"""
          |ellipsis.aws = {};
          |
-         |${awsConfigs.map(awsCodeFor).mkString("\n")}
+         |${apiConfigInfo.requiredAWSConfigs.map(awsCodeFor).mkString("\n")}
        """.stripMargin
     }
   }
@@ -261,7 +256,7 @@ class AWSLambdaServiceImpl @Inject() (
   private def accessTokenCodeFor(app: RequiredOAuth2ApiConfig): String = {
     app.maybeApplication.map { application =>
       val infoKey =  if (application.api.grantType.requiresAuth) { "userInfo" } else { "teamInfo" }
-      s"""$CONTEXT_PARAM.accessTokens.${application.keyName} = event.$CONTEXT_PARAM.$infoKey.links.find((ea) => ea.externalSystem == "${application.name}").token;"""
+      s"""$CONTEXT_PARAM.accessTokens.${app.nameInCode} = event.$CONTEXT_PARAM.$infoKey.links.find((ea) => ea.externalSystem == "${application.name}").token;"""
     }.getOrElse("")
   }
 
@@ -270,8 +265,7 @@ class AWSLambdaServiceImpl @Inject() (
   }
 
   private def accessTokenCodeFor(required: RequiredSimpleTokenApi): String = {
-    val api = required.api
-    s"""$CONTEXT_PARAM.accessTokens.${api.keyName} = event.$CONTEXT_PARAM.userInfo.links.find((ea) => ea.externalSystem == "${api.name}").token;"""
+    s"""$CONTEXT_PARAM.accessTokens.${required.nameInCode} = event.$CONTEXT_PARAM.userInfo.links.find((ea) => ea.externalSystem == "${required.api.name}").token;"""
   }
 
   private def simpleTokensCodeFor(requiredSimpleTokenApis: Seq[RequiredSimpleTokenApi]): String = {

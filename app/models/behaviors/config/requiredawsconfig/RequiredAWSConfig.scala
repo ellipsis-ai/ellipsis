@@ -10,6 +10,8 @@ case class RequiredAWSConfig(
                             maybeConfig: Option[AWSConfig]
                             ) {
 
+  val isConfigured: Boolean = maybeConfig.isDefined
+
   def toRaw: RawRequiredAWSConfig = {
     RawRequiredAWSConfig(id, nameInCode, groupVersion.id, maybeConfig.map(_.id))
   }
