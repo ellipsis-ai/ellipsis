@@ -390,18 +390,23 @@ class AWSLambdaServiceImpl @Inject() (
 
   }
 
-  private def getNodeModuleInfoFor(functionName: String): JsValue = {
-    val dirName = dirNameFor(functionName)
-    val infoString = try {
-      Process(Seq("bash","-c",s"cd $dirName && npm list --depth=0 --json=true")).!!
-    } catch {
-      case t: Throwable => "{}"
+  private def getNodeModuleInfoFor(behaviorVersion: BehaviorVersion): JsValue = {
+    if (behaviorVersion.hasFunction) {
+      val functionName = behaviorVersion.functionName
+      val dirName = dirNameFor(functionName)
+      val infoString = try {
+        Process(Seq("bash", "-c", s"cd $dirName && npm list --depth=0 --json=true")).!!
+      } catch {
+        case t: Throwable => "{}"
+      }
+      Json.parse(infoString)
+    } else {
+      Json.parse("{}")
     }
-    Json.parse(infoString)
   }
 
   def ensureNodeModuleVersionsFor(behaviorVersion: BehaviorVersion): DBIO[Seq[NodeModuleVersion]] = {
-    val json = getNodeModuleInfoFor(behaviorVersion.functionName)
+    val json = getNodeModuleInfoFor(behaviorVersion)
     val maybeDependencies = (json \ "dependencies").asOpt[JsObject]
     maybeDependencies.map { dependencies =>
       DBIO.sequence(dependencies.values.toSeq.map { depJson =>

@@ -62,10 +62,8 @@ case class BehaviorVersion(
     maybeName.getOrElse(id)
   }
 
-  def isSkill: Boolean = {
-    maybeFunctionBody.exists { body =>
-      Option(body).exists(_.trim.nonEmpty)
-    }
+  def hasFunction: Boolean = {
+    maybeFunctionBody.exists(_.trim.nonEmpty)
   }
 
   def description: String = maybeDescription.getOrElse("")
