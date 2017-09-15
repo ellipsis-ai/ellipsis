@@ -24,7 +24,7 @@ define(function(require) {
     }
 
     getApiLogoUrl(editor) {
-      return editor.getOAuth2LogoUrl;
+      return editor.getOAuth2LogoUrlForRequired;
     }
 
     getAllConfigsFrom(editor) {
@@ -60,6 +60,10 @@ define(function(require) {
         apiId: { value: props.apiId, enumerable: true },
         scope: { value: props.scope, enumerable: true }
       });
+    }
+
+    getApiLogoUrl(editor) {
+      return editor.getOAuth2LogoUrlForConfig(this);
     }
 
     newRequired() {

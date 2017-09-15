@@ -18,7 +18,7 @@ define(function(require) {
     }
 
     getApiLogoUrl(editor) {
-      return editor.getSimpleTokenLogoUrl;
+      return editor.getSimpleTokenLogoUrlForRequired;
     }
 
     getAllConfigsFrom(editor) {
@@ -50,6 +50,10 @@ define(function(require) {
       Object.defineProperties(this, {
         logoImageUrl: { value: props.logoImageUrl, enumerable: true }
       });
+    }
+
+    getApiLogoUrl(editor) {
+      return editor.getSimpleTokenLogoUrlForConfig(this);
     }
 
     newRequired() {

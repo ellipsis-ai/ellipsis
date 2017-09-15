@@ -3,6 +3,8 @@ define(function(require) {
   const RequiredApiConfigWithConfig = require('./required_api_config_with_config');
   const ID = require('../lib/id');
 
+  const logoUrl = "/assets/images/logos/aws_logo_web_300px.png";
+
   class RequiredAWSConfig extends RequiredApiConfigWithConfig {
 
     onAddConfigFor(editor) {
@@ -18,7 +20,7 @@ define(function(require) {
     }
 
     getApiLogoUrl() {
-      return () => "/assets/images/logos/aws_logo_web_300px.png";
+      return () => logoUrl;
     }
 
     getAllConfigsFrom(editor) {
@@ -56,6 +58,10 @@ define(function(require) {
         nameInCode: this.defaultNameInCode(),
         config: this
       });
+    }
+
+    getApiLogoUrl() {
+      return logoUrl;
     }
 
     static fromJson(props) {

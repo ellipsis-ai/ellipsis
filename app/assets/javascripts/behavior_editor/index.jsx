@@ -215,19 +215,32 @@ const BehaviorEditor = React.createClass({
     return selected ? selected.onUpdateConfigFor(this) : this.onUpdateNewConfig;
   },
 
-  getOAuth2LogoUrl: function(required) {
+  getOAuth2LogoUrlForRequired: function(required) {
     const api = this.props.oauth2Apis.find(ea => ea.apiId === required.apiId);
     return api ? (api.logoImageUrl || api.iconImageUrl) : undefined;
   },
 
-  getSimpleTokenLogoUrl: function(required) {
+  getOAuth2LogoUrlForConfig: function(config) {
+    const api = this.props.oauth2Apis.find(ea => ea.apiId === config.apiId);
+    return api ? (api.logoImageUrl || api.iconImageUrl) : undefined;
+  },
+
+  getSimpleTokenLogoUrlForRequired: function(required) {
     const api = this.props.simpleTokenApis.find(ea => ea.id === required.apiId);
     return api ? (api.logoImageUrl || api.iconImageUrl) : undefined;
+  },
+
+  getSimpleTokenLogoUrlForConfig: function(config) {
+    return config.logoImageUrl || config.iconImageUrl;
   },
 
   getApiLogoUrlForSelected: function() {
     const selected = this.getSelectedApiConfig();
     return selected ? selected.getApiLogoUrl(this) : undefined;
+  },
+
+  getApiLogoUrlForConfig: function(config) {
+    return config.getApiLogoUrl(this);
   },
 
   getEditableName: function() {
@@ -1704,7 +1717,8 @@ const BehaviorEditor = React.createClass({
               toggle={this.toggleApiAdderDropdown}
               getActiveDropdown={this.getActiveDropdown}
               requiredConfig={this.getSelectedApiConfig()}
-              getApiLogoUrl={this.getApiLogoUrlForSelected()}
+              getApiLogoUrlForRequired={this.getApiLogoUrlForSelected()}
+              getApiLogoUrlForConfig={this.getApiLogoUrlForConfig}
               allConfigs={this.getApiConfigsForSelected()}
               onAddConfig={this.onAddConfigForSelected()}
               onRemoveConfig={this.onRemoveConfigForSelected()}

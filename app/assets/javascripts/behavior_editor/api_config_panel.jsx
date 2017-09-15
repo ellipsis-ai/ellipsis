@@ -1,5 +1,6 @@
 define(function(require) {
   var React = require('react'),
+    ifPresent = require('../lib/if_present'),
     ApiConfigRef = require('../models/api_config_ref'),
     DropdownMenu = require('../shared_ui/dropdown_menu'),
     Input = require('../form/input'),
@@ -14,7 +15,8 @@ define(function(require) {
       onAddConfig: React.PropTypes.func,
       onRemoveConfig: React.PropTypes.func,
       onUpdateConfig: React.PropTypes.func,
-      getApiLogoUrl: React.PropTypes.func,
+      getApiLogoUrlForRequired: React.PropTypes.func,
+      getApiLogoUrlForConfig: React.PropTypes.func,
       toggle: React.PropTypes.func.isRequired,
       onDoneClick: React.PropTypes.func.isRequired
     },
@@ -40,12 +42,29 @@ define(function(require) {
       return this.sortedById(this.props.allConfigs);
     },
 
-    getApiLogoUrl: function() {
-      return this.props.getApiLogoUrl(this.props.requiredConfig);
+    getApiLogoUrlForRequired: function() {
+      return this.props.getApiLogoUrlForRequired(this.props.requiredConfig);
+    },
+
+    getApiLogoUrlForConfig: function(config) {
+      return this.props.getApiLogoUrlForConfig(config);
     },
 
     getSelectorLabelForConfig: function(config) {
-      return config.getSelectorLabel();
+      return (
+        <div className="columns columns-elastic">
+          {ifPresent(this.getApiLogoUrlForConfig(config), url => {
+            return (
+              <div className="column column-shrink prs align-m">
+                <img src={url} height="24"/>
+              </div>
+            );
+          })}
+          <div className="column column-expand align-m">
+             {config.getSelectorLabel()}
+           </div>
+         </div>
+      );
     },
 
     onAddNewRequiredFor: function(config) {
@@ -155,7 +174,7 @@ define(function(require) {
       if (this.props.requiredConfig) {
         return (
           <div>
-            <div><img src={this.getApiLogoUrl()} height="32"/></div>
+            <div><img src={this.getApiLogoUrlForRequired()} height="32"/></div>
             <div className="box-code-example">
               <div className="columns">
                 <div className="column type-monospace type-s pvs prn">{this.props.requiredConfig.codePathPrefix()}</div>
