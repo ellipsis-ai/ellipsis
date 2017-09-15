@@ -20,7 +20,7 @@ jsRoutes.controllers.BehaviorEditorController.nodeModuleVersionsFor = jest.fn(()
 
 
 describe('BehaviorEditor', () => {
-  const defaultConfig = {
+  const defaultConfig = Object.freeze({
     teamId: "A",
     group: {
       id: '1',
@@ -79,7 +79,70 @@ describe('BehaviorEditor', () => {
     savedAnswers: [],
     onForgetSavedAnswerForInput: jest.fn(),
     userId: "1"
-  };
+  });
+
+  const newSkillConfig = Object.freeze({
+    "containerId": "editorContainer",
+    "csrfToken": "1234",
+    "group": {
+      "teamId": "B",
+      "actionInputs": [],
+      "dataTypeInputs": [],
+      "behaviorVersions": [{
+        "id": "1",
+        "teamId": "B",
+        "behaviorId": "2",
+        "isNew": true,
+        "functionBody": "",
+        "responseTemplate": "",
+        "inputIds": [],
+        "triggers": [{ "text": "", "requiresMention": true, "isRegex": false, "caseSensitive": false }],
+        "config": { "isDataType": false },
+        "knownEnvVarsUsed": []
+      }],
+      "libraryVersions": [],
+      "requiredOAuth2ApiConfigs": [],
+      "requiredSimpleTokenApis": [],
+      "createdAt": "2017-09-15T11:58:07.36-04:00",
+      "author": { "id": "3", "name": "attaboy" }
+    },
+    "builtinParamTypes": [{ "id": "Text", "exportId": "Text", "name": "Text", "needsConfig": false }, {
+      "id": "Number",
+      "exportId": "Number",
+      "name": "Number",
+      "needsConfig": false
+    }, { "id": "Yes/No", "exportId": "Yes/No", "name": "Yes/No", "needsConfig": false }],
+    "envVariables": [{
+      "name": "OH_REALLY",
+      "isAlreadySavedWithValue": false
+    }],
+    "savedAnswers": [],
+    "oauth2Applications": [{
+      "apiId": "RdG2Wm5DR0m2_4FZXf-yKA",
+      "applicationId": "Yy1QcMTcT96tZZmUoYLroQ",
+      "scope": "https://www.googleapis.com/auth/calendar",
+      "displayName": "Google Calendar",
+      "keyName": "googleCalendar"
+    }],
+    "oauth2Apis": [{
+      "apiId": "RdG2Wm5DR0m2_4FZXf-yKA",
+      "name": "Google",
+      "requiresAuth": true,
+      "newApplicationUrl": "https://console.developers.google.com/apis",
+      "scopeDocumentationUrl": "https://developers.google.com/identity/protocols/googlescopes"
+    }],
+    "simpleTokenApis": [{
+      "apiId": "pivotal-tracker",
+      "name": "Pivotal Tracker",
+      "tokenUrl": "https://www.pivotaltracker.com/profile",
+      "logoImageUrl": "/assets/images/logos/pivotal_tracker.png"
+    }],
+    "linkedOAuth2ApplicationIds": ["Yy1QcMTcT96tZZmUoYLroQ"],
+    "userId": "3",
+    selectedId: "2",
+    onSave: jest.fn(),
+    onForgetSavedAnswerForInput: jest.fn()
+  });
 
   let editorConfig;
   let firstBehavior;
@@ -249,23 +312,30 @@ describe('BehaviorEditor', () => {
   describe('render', () => {
     it("renders the normal editor when isDataType is false", () => {
       firstBehavior.config.isDataType = false;
-      let editor = createEditor(editorConfig);
-      editor.renderDataTypeBehavior = jest.fn();
-      editor.renderNormalBehavior = jest.fn();
+      const editor = createEditor(editorConfig);
+      const dataSpy = jest.spyOn(editor, 'renderDataTypeBehavior');
+      const normalSpy = jest.spyOn(editor, 'renderNormalBehavior');
       editor.render();
-      expect(editor.renderDataTypeBehavior).not.toBeCalled();
-      expect(editor.renderNormalBehavior).toBeCalled();
+      expect(dataSpy).not.toBeCalled();
+      expect(normalSpy).toBeCalled();
     });
     it("renders the data type editor when isDataType is true", () => {
       const bv = editorConfig.group.behaviorVersions[0];
       bv.config.isDataType = true;
       bv.dataTypeConfig = { fields: [] };
-      let editor = createEditor(editorConfig);
-      editor.renderDataTypeBehavior = jest.fn();
-      editor.renderNormalBehavior = jest.fn();
+      const editor = createEditor(editorConfig);
+      const dataSpy = jest.spyOn(editor, 'renderDataTypeBehavior');
+      const normalSpy = jest.spyOn(editor, 'renderNormalBehavior');
       editor.render();
-      expect(editor.renderDataTypeBehavior).toBeCalled();
-      expect(editor.renderNormalBehavior).not.toBeCalled();
+      expect(dataSpy).toBeCalled();
+      expect(normalSpy).not.toBeCalled();
+    });
+    it("renders for a new, unsaved skill with an action", () => {
+      const config = Object.assign({}, newSkillConfig);
+      const editor = createEditor(config);
+      const normalSpy = jest.spyOn(editor, 'renderNormalBehavior');
+      editor.render();
+      expect(normalSpy).toBeCalled();
     });
   });
 
