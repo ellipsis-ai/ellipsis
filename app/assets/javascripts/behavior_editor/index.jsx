@@ -769,6 +769,10 @@ const BehaviorEditor = React.createClass({
 
   backgroundSave: function(optionalCallback) {
     var form = new FormData(this.refs.behaviorForm);
+    this.setState({
+      newerVersionOnServer: null,
+      errorReachingServer: null
+    });
     fetch(this.getFormAction(), {
       credentials: 'same-origin',
       method: 'POST',
@@ -1416,6 +1420,7 @@ const BehaviorEditor = React.createClass({
   },
 
   onSave: function(newProps, state) {
+    this.resetNotifications();
     this.props.onSave(newProps, state);
     this.loadNodeModuleVersions();
   },
@@ -1456,7 +1461,7 @@ const BehaviorEditor = React.createClass({
   // },
 
   checkForUpdates: function() {
-    if (document.hasFocus() && this.isExistingGroup()) {
+    if (document.hasFocus() && this.isExistingGroup() && !this.isSaving()) {
       DataRequest.jsonGet(jsRoutes.controllers.BehaviorEditorController.metaData(this.getBehaviorGroup().id).url)
         .then((json) => {
           if (!json.createdAt) {
@@ -1466,7 +1471,7 @@ const BehaviorEditor = React.createClass({
           const savedDate = new Date(this.props.group.createdAt);
           const isNewerVersion = serverDate > savedDate;
           const wasOldError = this.state.errorReachingServer;
-          if (isNewerVersion || wasOldError) {
+          if (this.state.newerVersionOnServer || isNewerVersion || wasOldError) {
             this.setState({
               newerVersionOnServer: isNewerVersion ? BehaviorGroupVersionMetaData.fromJson(json) : null,
               errorReachingServer: null
