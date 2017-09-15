@@ -7,8 +7,7 @@ define(function(require) {
     Input = require('../form/input'),
     SettingsMenu = require('../shared_ui/settings_menu'),
     BrowserUtils = require('../lib/browser_utils'),
-    ifPresent = require('../lib/if_present'),
-    Formatter = require('../lib/formatter');
+    ifPresent = require('../lib/if_present');
 
   return React.createClass({
     displayName: 'ApplicationEditor',

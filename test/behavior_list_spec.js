@@ -66,6 +66,7 @@ describe('BehaviorList', () => {
     libraryVersions: [],
     requiredAWSConfigs: [],
     requiredOAuth2ApiConfigs: [],
+    requiredSimpleTokenApis: [],
     createdAt: 1466109904858
   }));
   const group2 = Object.freeze(BehaviorGroup.fromJson({
@@ -76,6 +77,7 @@ describe('BehaviorList', () => {
     libraryVersions: [],
     requiredAWSConfigs: [],
     requiredOAuth2ApiConfigs: [],
+    requiredSimpleTokenApis: [],
     createdAt: 1466109904858
   }));
   const group3 = Object.freeze(BehaviorGroup.fromJson({
@@ -86,6 +88,7 @@ describe('BehaviorList', () => {
     libraryVersions: [],
     requiredAWSConfigs: [],
     requiredOAuth2ApiConfigs: [],
+    requiredSimpleTokenApis: [],
     createdAt: 1466109904858
   }));
   const defaultConfig = Object.freeze({

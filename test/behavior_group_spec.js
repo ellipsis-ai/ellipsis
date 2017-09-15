@@ -11,6 +11,7 @@ const behaviorGroupData = Object.freeze({
   "libraryVersions": [],
   'requiredAWSConfigs': [],
   'requiredOAuth2ApiConfigs': [],
+  'requiredSimpleTokenApis': [],
   "createdAt": 1468338136532
 });
 
