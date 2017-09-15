@@ -66,13 +66,13 @@ class AWSConfigController @Inject() (
     }
   }
 
-  def newConfig(maybeTeamId: Option[String], maybeBehaviorId: Option[String], maybeRequiredAWSConfigId: Option[String]) = silhouette.SecuredAction.async { implicit request =>
+  def newConfig(maybeTeamId: Option[String], maybeBehaviorId: Option[String], maybeRequiredAWSConfigNameInCode: Option[String]) = silhouette.SecuredAction.async { implicit request =>
     val user = request.identity
     render.async {
       case Accepts.JavaScript() => {
         for {
           teamAccess <- dataService.users.teamAccessFor(user, maybeTeamId)
-          maybeRequiredAWSConfig <- maybeRequiredAWSConfigId.map { id =>
+          maybeRequiredAWSConfig <- maybeRequiredAWSConfigNameInCode.map { id =>
             dataService.requiredAWSConfigs.find(id)
           }.getOrElse(Future.successful(None))
         } yield {
@@ -85,6 +85,7 @@ class AWSConfigController @Inject() (
               configSaved = false,
               configId = newConfigId,
               name = maybeRequiredAWSConfig.map(_.nameInCode),
+              requiredNameInCode = maybeRequiredAWSConfigNameInCode,
               accessKeyId = None,
               secretAccessKey = None,
               region = None,
@@ -102,7 +103,7 @@ class AWSConfigController @Inject() (
           teamAccess <- dataService.users.teamAccessFor(user, maybeTeamId)
         } yield {
           teamAccess.maybeTargetTeam.map { team =>
-            val dataRoute = routes.AWSConfigController.newConfig(maybeTeamId, maybeBehaviorId, maybeRequiredAWSConfigId)
+            val dataRoute = routes.AWSConfigController.newConfig(maybeTeamId, maybeBehaviorId, maybeRequiredAWSConfigNameInCode)
             Ok(views.html.awsconfig.edit(viewConfig(Some(teamAccess)), "Add an AWS configuration", dataRoute))
           }.getOrElse {
             NotFound("Team not found")
@@ -136,6 +137,7 @@ class AWSConfigController @Inject() (
               configSaved = true,
               configId = config.id,
               name = Some(config.name),
+              requiredNameInCode = None,
               accessKeyId = config.maybeAccessKey,
               secretAccessKey = config.maybeSecretKey,
               region = config.maybeRegion,
@@ -171,6 +173,7 @@ class AWSConfigController @Inject() (
   case class AWSConfigInfo(
                             id: String,
                             name: String,
+                            requiredNameInCode: Option[String],
                             accessKeyId: Option[String],
                             secretAccessKey: Option[String],
                             region: Option[String],
@@ -182,6 +185,7 @@ class AWSConfigController @Inject() (
     mapping(
       "id" -> nonEmptyText,
       "name" -> nonEmptyText,
+      "requiredNameInCode" -> optional(nonEmptyText),
       "accessKeyId" -> optional(nonEmptyText),
       "secretAccessKey" -> optional(nonEmptyText),
       "region" -> optional(nonEmptyText),
@@ -212,6 +216,24 @@ class AWSConfigController @Inject() (
               }.getOrElse(Future.successful(None))
             }
           }.getOrElse(Future.successful(None))
+          _ <- (for {
+            nameInCode <- info.requiredNameInCode
+            groupVersion <- maybeBehaviorVersion.map(_.groupVersion)
+          } yield {
+            dataService.requiredAWSConfigs.findWithNameInCode(nameInCode, groupVersion).flatMap { maybeExisting =>
+              maybeExisting.map { existing =>
+                dataService.requiredAWSConfigs.save(existing.copy(maybeConfig = maybeConfig))
+              }.getOrElse {
+                val maybeConfigData = maybeConfig.map(AWSConfigData.from)
+                dataService.run(
+                  dataService.requiredAWSConfigs.createForAction(
+                    RequiredAWSConfigData(None, nameInCode, maybeConfigData),
+                    groupVersion
+                  )
+                )
+              }
+            }
+          }).getOrElse(Future.successful({}))
         } yield {
           maybeConfig.map { config =>
             maybeBehaviorVersion.map { behaviorVersion =>

@@ -199,6 +199,11 @@ const BehaviorEditor = React.createClass({
     return selected ? selected.onAddConfigFor(this) : this.onAddNewConfig;
   },
 
+  onAddNewConfigForSelected: function() {
+    const selected = this.getSelectedApiConfig();
+    return selected ? selected.onAddNewConfigFor(this) : undefined;
+  },
+
   onRemoveNewConfig(required, callback) {
     required.onRemoveConfigFor(this)(required, callback);
   },
@@ -865,7 +870,7 @@ const BehaviorEditor = React.createClass({
             window.location.href = jsRoutes.controllers.OAuth2ApplicationController.newApp(apiId, recommendedScope, this.getBehaviorGroup().teamId, this.getSelectedId()).url;
           } else if (this.state.shouldRedirectToAddNewAWSConfig) {
             const config = this.state.requiredAWSConfig;
-            window.location.href = jsRoutes.controllers.AWSConfigController.newConfig(this.getBehaviorGroup().teamId, this.getSelectedId(), config.id).url;
+            window.location.href = jsRoutes.controllers.AWSConfigController.newConfig(this.getBehaviorGroup().teamId, this.getSelectedId(), config.nameInCode).url;
           } else {
             const newProps = {
               group: BehaviorGroup.fromJson(json),
@@ -1443,11 +1448,12 @@ const BehaviorEditor = React.createClass({
     this.updateGroupStateWith(this.getBehaviorGroup().clone({ requiredAWSConfigs: configs }), callback);
   },
 
-  addNewAWSConfig: function() {
-    this.onNewAWSConfig(new RequiredAWSConfig({
+  addNewAWSConfig: function(required) {
+    const requiredToUse = required || new RequiredAWSConfig({
       id: ID.next(),
       apiId: 'aws'
-    }));
+    });
+    this.onNewAWSConfig(requiredToUse);
   },
 
   onAddOAuth2Application: function(toAdd, callback) {
@@ -1476,10 +1482,11 @@ const BehaviorEditor = React.createClass({
     this.updateGroupStateWith(this.getBehaviorGroup().clone({ requiredOAuth2ApiConfigs: configs }), callback);
   },
 
-  addNewOAuth2Application: function() {
-    this.onNewOAuth2Application(new RequiredOAuth2Application({
+  addNewOAuth2Application: function(required) {
+    const requiredToUse = required || new RequiredOAuth2Application({
       id: ID.next()
-    }));
+    });
+    this.onNewOAuth2Application(requiredToUse);
   },
 
   onAddSimpleTokenApi: function(toAdd) {
@@ -1736,6 +1743,7 @@ const BehaviorEditor = React.createClass({
               getApiLogoUrlForConfig={this.getApiLogoUrlForConfig}
               allConfigs={this.getApiConfigsForSelected()}
               onAddConfig={this.onAddConfigForSelected()}
+              onAddNewConfig={this.onAddNewConfigForSelected()}
               onRemoveConfig={this.onRemoveConfigForSelected()}
               onUpdateConfig={this.onUpdateConfigForSelected()}
               onDoneClick={this.props.onClearActivePanel}

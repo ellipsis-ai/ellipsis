@@ -11,6 +11,8 @@ trait RequiredAWSConfigService {
 
   def find(id: String): Future[Option[RequiredAWSConfig]]
 
+  def findWithNameInCode(nameInCode: String, groupVersion: BehaviorGroupVersion): Future[Option[RequiredAWSConfig]]
+
   def allForAction(groupVersion: BehaviorGroupVersion): DBIO[Seq[RequiredAWSConfig]]
 
   def allFor(groupVersion: BehaviorGroupVersion): Future[Seq[RequiredAWSConfig]]

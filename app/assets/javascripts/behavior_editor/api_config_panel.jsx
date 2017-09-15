@@ -13,6 +13,7 @@ define(function(require) {
       requiredConfig: React.PropTypes.instanceOf(RequiredApiConfig),
       allConfigs: React.PropTypes.arrayOf(React.PropTypes.instanceOf(ApiConfigRef)),
       onAddConfig: React.PropTypes.func,
+      onAddNewConfig: React.PropTypes.func,
       onRemoveConfig: React.PropTypes.func,
       onUpdateConfig: React.PropTypes.func,
       getApiLogoUrlForRequired: React.PropTypes.func,
@@ -140,6 +141,7 @@ define(function(require) {
           >
             <option key="config-choice-none" value={null}>None selected</option>
             {this.getAllConfigs().map(ea => <option key={`config-choice-${ea.id}`} value={ea.id}>{ea.displayName}</option>)}
+            <option key="config-choice-new" value={this.ADD_NEW_CONFIG_KEY}>Add a new configuration…</option>
           </Select>
         );
       } else {
@@ -147,11 +149,17 @@ define(function(require) {
       }
     },
 
+    ADD_NEW_CONFIG_KEY: "add_new_config",
+
     onConfigChange: function(newConfigId) {
-      const newConfig = this.getAllConfigs().find(ea => ea.id === newConfigId);
-      this.props.onUpdateConfig(this.props.requiredConfig.clone({
-        config: newConfig
-      }));
+      if (newConfigId === this.ADD_NEW_CONFIG_KEY) {
+        this.props.onAddNewConfig(this.props.requiredConfig);
+      } else {
+        const newConfig = this.getAllConfigs().find(ea => ea.id === newConfigId);
+        this.props.onUpdateConfig(this.props.requiredConfig.clone({
+          config: newConfig
+        }));
+      }
     },
 
     onNameInCodeChange: function(newNameInCode) {

@@ -68,6 +68,20 @@ class RequiredAWSConfigServiceImpl @Inject() (
     dataService.run(action)
   }
 
+  def uncompiledFindWithNameInCodeQuery(nameInCode: Rep[String], groupVersionId: Rep[String]) = {
+    allWithConfig.
+      filter { case((required, _), _) => required.groupVersionId === groupVersionId }.
+      filter { case((required, _), _) => required.nameInCode === nameInCode }
+  }
+  val findWithNameInCodeQuery = Compiled(uncompiledFindWithNameInCodeQuery _)
+
+  def findWithNameInCode(nameInCode: String, groupVersion: BehaviorGroupVersion): Future[Option[RequiredAWSConfig]] = {
+    val action = findWithNameInCodeQuery(nameInCode, groupVersion.id).result.map { r =>
+      r.headOption.map(tuple2RequiredAWSConfig)
+    }
+    dataService.run(action)
+  }
+
   def uncompiledAllForQuery(groupVersionId: Rep[String]) = {
     allWithConfig.filter { case((_, ((groupVersion, _), _)), _) => groupVersion.id === groupVersionId }
   }

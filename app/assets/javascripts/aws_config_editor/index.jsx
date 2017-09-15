@@ -12,6 +12,7 @@ define(function(require) {
     propTypes: {
       configId: React.PropTypes.string,
       name: React.PropTypes.string,
+      requiredNameInCode: React.PropTypes.string,
       accessKeyId: React.PropTypes.string,
       secretAccessKey: React.PropTypes.string,
       region: React.PropTypes.string,
@@ -118,6 +119,7 @@ define(function(require) {
           <CsrfTokenHiddenInput value={this.props.csrfToken} />
           <input type="hidden" name="id" value={this.props.configId} />
           <input type="hidden" name="teamId" value={this.props.teamId} />
+          <input type="hidden" name="requiredNameInCode" value={this.props.requiredNameInCode} />
           {this.renderBehaviorId()}
 
           <div className="bg-light">

@@ -15,6 +15,10 @@ define(function(require) {
       return editor.onAddOAuth2Application;
     }
 
+    onAddNewConfigFor(editor) {
+      return editor.addNewOAuth2Application;
+    }
+
     onRemoveConfigFor(editor) {
       return editor.onRemoveOAuth2Application;
     }

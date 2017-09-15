@@ -11,6 +11,10 @@ define(function(require) {
       return editor.onAddAWSConfig;
     }
 
+    onAddNewConfigFor(editor) {
+      return editor.addNewAWSConfig;
+    }
+
     onRemoveConfigFor(editor) {
       return editor.onRemoveAWSConfig;
     }

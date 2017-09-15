@@ -9,6 +9,10 @@ define(function(require) {
       return editor.onAddSimpleTokenApi;
     }
 
+    onAddNewConfigFor() {
+      return undefined; // N/A
+    }
+
     onRemoveConfigFor(editor) {
       return editor.onRemoveSimpleTokenApi;
     }

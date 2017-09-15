@@ -6,6 +6,7 @@ case class AWSConfigEditConfig(
                                 teamId: String,
                                 configId: String,
                                 name: Option[String],
+                                requiredNameInCode: Option[String],
                                 accessKeyId: Option[String],
                                 secretAccessKey: Option[String],
                                 region: Option[String],
