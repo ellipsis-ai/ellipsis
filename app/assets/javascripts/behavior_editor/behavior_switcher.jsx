@@ -6,7 +6,8 @@ define(function(require) {
     LibraryVersion = require('../models/library_version'),
     NodeModuleVersion = require('../models/node_module_version'),
     RequiredAWSConfig = require('../models/aws').RequiredAWSConfig,
-    RequiredOAuth2Application = require('../models/oauth2').RequiredOAuth2Application;
+    RequiredOAuth2Application = require('../models/oauth2').RequiredOAuth2Application,
+    RequiredSimpleTokenApi = require('../models/simple_token').RequiredSimpleTokenApi;
 
   return React.createClass({
     displayName: 'BehaviorSwitcher',
@@ -27,7 +28,7 @@ define(function(require) {
       onUpdateNodeModules: React.PropTypes.func.isRequired,
       requiredAWSConfigs: React.PropTypes.arrayOf(React.PropTypes.instanceOf(RequiredAWSConfig)).isRequired,
       requiredOAuth2Applications: React.PropTypes.arrayOf(React.PropTypes.instanceOf(RequiredOAuth2Application)).isRequired,
-      requiredSimpleTokenApis: React.PropTypes.arrayOf(React.PropTypes.object).isRequired, // TODO: use a class
+      requiredSimpleTokenApis: React.PropTypes.arrayOf(React.PropTypes.instanceOf(RequiredSimpleTokenApi)).isRequired,
       onApiConfigClick: React.PropTypes.func.isRequired,
       onAddApiConfigClick: React.PropTypes.func.isRequired
     },
