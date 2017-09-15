@@ -97,9 +97,14 @@ class BehaviorEditorController @Inject() (
       maybeLastVersion <- maybeBehaviorGroup.flatMap(_.maybeCurrentVersionId).map { currentVersionId =>
         dataService.behaviorGroupVersions.findWithoutAccessCheck(currentVersionId)
       }.getOrElse(Future.successful(None))
+      maybeUserData <- maybeLastVersion.flatMap { version =>
+        version.maybeAuthor.map { author =>
+          dataService.users.userDataFor(author, version.team).map(Some(_))
+        }
+      }.getOrElse(Future.successful(None))
     } yield {
       maybeLastVersion.map { groupVersion =>
-        Ok(Json.toJson(BehaviorGroupVersionMetaData(behaviorGroupId, groupVersion.createdAt, groupVersion.maybeAuthor.map(_.id))))
+        Ok(Json.toJson(BehaviorGroupVersionMetaData(behaviorGroupId, groupVersion.createdAt, maybeUserData)))
       }.getOrElse {
         NotFound("Skill not found")
       }
