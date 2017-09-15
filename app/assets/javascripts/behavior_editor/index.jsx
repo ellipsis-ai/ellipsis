@@ -865,9 +865,7 @@ const BehaviorEditor = React.createClass({
         if (json.id) {
           if (this.state.shouldRedirectToAddNewOAuth2App) {
             const config = this.state.requiredOAuth2ApiConfig;
-            const apiId = config && config.apiId;
-            const recommendedScope = config && config.recommendedScope;
-            window.location.href = jsRoutes.controllers.OAuth2ApplicationController.newApp(apiId, recommendedScope, this.getBehaviorGroup().teamId, this.getSelectedId()).url;
+            window.location.href = jsRoutes.controllers.OAuth2ApplicationController.newApp(this.getBehaviorGroup().teamId, this.getSelectedId(), config.nameInCode).url;
           } else if (this.state.shouldRedirectToAddNewAWSConfig) {
             const config = this.state.requiredAWSConfig;
             window.location.href = jsRoutes.controllers.AWSConfigController.newConfig(this.getBehaviorGroup().teamId, this.getSelectedId(), config.nameInCode).url;

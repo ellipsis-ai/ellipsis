@@ -106,6 +106,20 @@ class RequiredOAuth2ApiConfigServiceImpl @Inject() (
     dataService.run(action)
   }
 
+  def uncompiledFindWithNameInCodeQuery(nameInCode: Rep[String], groupVersionId: Rep[String]) = {
+    allWithApplication.
+      filter(_._1._1._1.nameInCode === nameInCode).
+      filter(_._1._1._1.groupVersionId === groupVersionId)
+  }
+  val findWithNameInCodeQuery = Compiled(uncompiledFindWithNameInCodeQuery _)
+
+  def findWithNameInCode(nameInCode: String, groupVersion: BehaviorGroupVersion): Future[Option[RequiredOAuth2ApiConfig]] = {
+    val action = findWithNameInCodeQuery(nameInCode, groupVersion.id).result.map { r =>
+      r.headOption.map(tuple2Required)
+    }
+    dataService.run(action)
+  }
+
   def uncompiledFindRawQuery(id: Rep[String]) = all.filter(_.id === id)
   val findRawQuery = Compiled(uncompiledFindRawQuery _)
 
