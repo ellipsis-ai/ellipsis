@@ -18,7 +18,9 @@ define(function(require) {
       getApiLogoUrlForRequired: React.PropTypes.func,
       getApiLogoUrlForConfig: React.PropTypes.func,
       toggle: React.PropTypes.func.isRequired,
-      onDoneClick: React.PropTypes.func.isRequired
+      onDoneClick: React.PropTypes.func.isRequired,
+      addNewAWSConfig: React.PropTypes.func.isRequired,
+      addNewOAuth2Application: React.PropTypes.func.isRequired
     },
 
     getInitialState: function() {
@@ -112,11 +114,16 @@ define(function(require) {
               />
             );
           })}
-          {/*<DropdownMenu.Item*/}
-            {/*onClick={this.addNewOAuth2Application}*/}
-            {/*className="border-top"*/}
-            {/*label="Add new API application…"*/}
-          {/*/>*/}
+          <DropdownMenu.Item
+            onClick={this.props.addNewAWSConfig}
+            className="border-top"
+            label="Add new AWS configuration…"
+          />
+          <DropdownMenu.Item
+            onClick={this.props.addNewOAuth2Application}
+            className="border-top"
+            label="Add new OAuth2 API application…"
+          />
         </DropdownMenu>
       );
     },

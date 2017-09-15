@@ -40,6 +40,8 @@ var React = require('react'),
   OAuth2ApplicationRef = require('../models/oauth2').OAuth2ApplicationRef,
   PageWithPanels = require('../shared_ui/page_with_panels'),
   ParamType = require('../models/param_type'),
+  RequiredAWSConfig = require('../models/aws').RequiredAWSConfig,
+  RequiredOAuth2Application = require('../models/oauth2').RequiredOAuth2Application,
   ResponseTemplate = require('../models/response_template'),
   ResponseTemplateConfiguration = require('./response_template_configuration'),
   ResponseTemplateHelp = require('./response_template_help'),
@@ -1441,6 +1443,13 @@ const BehaviorEditor = React.createClass({
     this.updateGroupStateWith(this.getBehaviorGroup().clone({ requiredAWSConfigs: configs }), callback);
   },
 
+  addNewAWSConfig: function() {
+    this.onNewAWSConfig(new RequiredAWSConfig({
+      id: ID.next(),
+      apiId: 'aws'
+    }));
+  },
+
   onAddOAuth2Application: function(toAdd, callback) {
     const existing = this.getRequiredOAuth2ApiConfigs();
     const newApplications = existing.concat([toAdd]);
@@ -1465,6 +1474,12 @@ const BehaviorEditor = React.createClass({
     const indexToReplace = configs.findIndex(ea => ea.id === config.id);
     configs[indexToReplace] = config;
     this.updateGroupStateWith(this.getBehaviorGroup().clone({ requiredOAuth2ApiConfigs: configs }), callback);
+  },
+
+  addNewOAuth2Application: function() {
+    this.onNewOAuth2Application(new RequiredOAuth2Application({
+      id: ID.next()
+    }));
   },
 
   onAddSimpleTokenApi: function(toAdd) {
@@ -1724,6 +1739,8 @@ const BehaviorEditor = React.createClass({
               onRemoveConfig={this.onRemoveConfigForSelected()}
               onUpdateConfig={this.onUpdateConfigForSelected()}
               onDoneClick={this.props.onClearActivePanel}
+              addNewAWSConfig={this.addNewAWSConfig}
+              addNewOAuth2Application={this.addNewOAuth2Application}
             >
             </APIConfigPanel>
           </Collapsible>
