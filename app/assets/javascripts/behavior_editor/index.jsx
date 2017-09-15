@@ -2117,14 +2117,19 @@ const BehaviorEditor = React.createClass({
     }, callback);
   },
 
+  ensureOpenConfigureApiPanel: function() {
+    const toggle = this.props.onToggleActivePanel;
+    this.props.onClearActivePanel(() => toggle('configureApi'))
+  },
+
   onApiConfigClick: function(required) {
-    this.selectRequiredApiConfig(required, () => this.props.onToggleActivePanel('configureApi'));
+    this.selectRequiredApiConfig(required, this.ensureOpenConfigureApiPanel.bind(this));
   },
 
   onAddApiConfigClick: function() {
     this.setState({
       selectedApiConfigId: null
-    }, () => this.props.onToggleActivePanel('configureApi'));
+    }, this.ensureOpenConfigureApiPanel);
   },
 
   renderBehaviorSwitcher: function() {
