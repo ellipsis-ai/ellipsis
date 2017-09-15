@@ -439,7 +439,7 @@ const BehaviorEditor = React.createClass({
       name: this.getOAuth2ApiWithId(ea.apiId).name,
       requiredApiConfig: ea,
       existingOAuth2Applications: this.getAllOAuth2Applications(),
-      onAddOAuth2Application: this.onAddOAuth2Application,
+      onUpdateOAuth2Application: this.onUpdateOAuth2Application,
       onNewOAuth2Application: this.onNewOAuth2Application
     }));
   },

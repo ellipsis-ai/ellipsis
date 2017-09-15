@@ -13,7 +13,7 @@ define(function(require) {
         name: React.PropTypes.string.isRequired,
         existingOAuth2Applications: React.PropTypes.arrayOf(React.PropTypes.instanceOf(OAuth2ApplicationRef)).isRequired,
         requiredApiConfig: React.PropTypes.instanceOf(RequiredOAuth2Application).isRequired,
-        onAddOAuth2Application: React.PropTypes.func.isRequired,
+        onUpdateOAuth2Application: React.PropTypes.func.isRequired,
         onNewOAuth2Application: React.PropTypes.func.isRequired
       })).isRequired
     },
@@ -35,7 +35,7 @@ define(function(require) {
             <button
               type="button"
               className="button-raw link button-s"
-              onClick={this.onAddOAuth2Application.bind(this, detail, matchingApplication)}>
+              onClick={this.onUpdateOAuth2Application.bind(this, detail, matchingApplication)}>
 
               Add {matchingApplication.displayName} to this skill
 
@@ -58,8 +58,10 @@ define(function(require) {
       }
     },
 
-    onAddOAuth2Application: function(detail, app) {
-      detail.onAddOAuth2Application(app);
+    onUpdateOAuth2Application: function(detail, app) {
+      detail.onUpdateOAuth2Application(detail.requiredApiConfig.clone({
+        config: app
+      }));
     },
 
     onNewOAuth2Application: function(detail, requiredOAuth2ApiConfig) {

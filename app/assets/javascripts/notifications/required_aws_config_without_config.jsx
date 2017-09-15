@@ -12,7 +12,7 @@ define(function(require) {
         name: React.PropTypes.string.isRequired,
         existingAWSConfigs: React.PropTypes.arrayOf(React.PropTypes.instanceOf(AWSConfigRef)).isRequired,
         requiredAWSConfig: React.PropTypes.instanceOf(RequiredAWSConfig).isRequired,
-        onAddAWSConfig: React.PropTypes.func, //.isRequired,
+        onAddAWSConfig: React.PropTypes.func.isRequired,
         onNewAWSConfig: React.PropTypes.func.isRequired
       })).isRequired
     },
