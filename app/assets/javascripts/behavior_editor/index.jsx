@@ -2123,7 +2123,7 @@ const BehaviorEditor = React.createClass({
   },
 
   onApiConfigClick: function(required) {
-    this.selectRequiredApiConfig(required, this.ensureOpenConfigureApiPanel.bind(this));
+    this.selectRequiredApiConfig(required, this.ensureOpenConfigureApiPanel);
   },
 
   onAddApiConfigClick: function() {
