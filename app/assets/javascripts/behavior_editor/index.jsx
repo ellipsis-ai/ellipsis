@@ -2119,7 +2119,7 @@ const BehaviorEditor = React.createClass({
 
   ensureOpenConfigureApiPanel: function() {
     const toggle = this.props.onToggleActivePanel;
-    this.props.onClearActivePanel(() => toggle('configureApi'))
+    this.props.onClearActivePanel(() => toggle('configureApi'));
   },
 
   onApiConfigClick: function(required) {
