@@ -21,7 +21,7 @@ define(function(require) {
       return (
         <div className="plxl mobile-pll">
           <Button onClick={this.onApiConfigClick.bind(this, required)} className="button-block">
-            <span className="link">{required.codePath()} ({required.configString()})</span>
+            <span className="link">{required.codePath()} {required.configString()}</span>
           </Button>
         </div>
       );

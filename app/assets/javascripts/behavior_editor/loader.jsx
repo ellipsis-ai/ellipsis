@@ -1,11 +1,11 @@
 requirejs(['common'], function() {
   requirejs(
-    ['core-js', 'whatwg-fetch', 'react', 'react-dom', './lib/browser_utils', './behavior_editor/index', './models/behavior_group', 'config/behavioreditor/edit', './models/param_type', './models/aws', './models/oauth2', './models/simple_token_api_ref'],
-    function(Core, Fetch, React, ReactDOM, BrowserUtils, BehaviorEditor, BehaviorGroup, BehaviorEditorConfiguration, ParamType, aws, oauth2, SimpleTokenApiRef) {
+    ['core-js', 'whatwg-fetch', 'react', 'react-dom', './lib/browser_utils', './behavior_editor/index', './models/behavior_group', 'config/behavioreditor/edit', './models/param_type', './models/aws', './models/oauth2', './models/simple_token'],
+    function(Core, Fetch, React, ReactDOM, BrowserUtils, BehaviorEditor, BehaviorGroup, BehaviorEditorConfiguration, ParamType, aws, oauth2, simpleToken) {
       var config = Object.assign({}, BehaviorEditorConfiguration, {
         awsConfigs: BehaviorEditorConfiguration.awsConfigs.map(aws.AWSConfigRef.fromJson),
         oauth2Applications: BehaviorEditorConfiguration.oauth2Applications.map(oauth2.OAuth2ApplicationRef.fromJson),
-        simpleTokenApis: BehaviorEditorConfiguration.simpleTokenApis.map(SimpleTokenApiRef.fromJson),
+        simpleTokenApis: BehaviorEditorConfiguration.simpleTokenApis.map(simpleToken.SimpleTokenApiRef.fromJson),
         groupData: BehaviorEditorConfiguration.group,
         group: BehaviorGroup.fromJson(BehaviorEditorConfiguration.group),
         builtinParamTypes: BehaviorEditorConfiguration.builtinParamTypes.map(ParamType.fromJson),

@@ -104,17 +104,21 @@ define(function(require) {
 
     renderConfigChoice: function() {
       const required = this.props.requiredConfig;
-      return (
-        <Select
-          className="form-select-s form-select-light align-m mrm mbs"
-          name="paramType"
-          value={required.config ? required.config.id : undefined}
-          onChange={this.onConfigChange}
-        >
-          <option key="config-choice-none" value={null}>None selected</option>
-          {this.getAllConfigs().map(ea => <option key={`config-choice-${ea.id}`} value={ea.id}>{ea.displayName}</option>)}
-        </Select>
-      );
+      if (required.canHaveConfig()) {
+        return (
+          <Select
+            className="form-select-s form-select-light align-m mrm mbs"
+            name="paramType"
+            value={required.config ? required.config.id : undefined}
+            onChange={this.onConfigChange}
+          >
+            <option key="config-choice-none" value={null}>None selected</option>
+            {this.getAllConfigs().map(ea => <option key={`config-choice-${ea.id}`} value={ea.id}>{ea.displayName}</option>)}
+          </Select>
+        );
+      } else {
+        return null;
+      }
     },
 
     onConfigChange: function(newConfigId) {

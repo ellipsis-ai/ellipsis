@@ -4,8 +4,8 @@ import controllers.RemoteAssets
 import models.accounts.simpletokenapi.SimpleTokenApi
 
 case class SimpleTokenApiData(
-                               apiId: String,
-                               name: String,
+                               id: String,
+                               displayName: String,
                                tokenUrl: Option[String],
                                iconImageUrl: Option[String],
                                logoImageUrl: Option[String]

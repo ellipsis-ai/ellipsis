@@ -1,9 +1,9 @@
 define(function(require) {
   const ApiConfigRef = require('./api_config_ref');
-  const RequiredApiConfig = require('./required_api_config');
+  const RequiredApiConfigWithConfig = require('./required_api_config_with_config');
   const ID = require('../lib/id');
 
-  class RequiredOAuth2Application extends RequiredApiConfig {
+  class RequiredOAuth2Application extends RequiredApiConfigWithConfig {
     constructor(props) {
       super(props);
       Object.defineProperties(this, {
@@ -41,9 +41,9 @@ define(function(require) {
 
     configString() {
       if (this.config) {
-        return `using: ${this.config.displayName}`;
+        return `(using: ${this.config.displayName})`;
       } else {
-        return "not yet configured";
+        return "(not yet configured)";
       }
     }
 
@@ -67,7 +67,7 @@ define(function(require) {
         id: ID.next(),
         apiId: this.apiId,
         recommendedScope: this.scope,
-        nameInCode: this.nameInCode,
+        nameInCode: this.defaultNameInCode(),
         config: this
       });
     }

@@ -1,9 +1,9 @@
 define(function(require) {
   const ApiConfigRef = require('./api_config_ref');
-  const RequiredApiConfig = require('./required_api_config');
+  const RequiredApiConfigWithConfig = require('./required_api_config_with_config');
   const ID = require('../lib/id');
 
-  class RequiredAWSConfig extends RequiredApiConfig {
+  class RequiredAWSConfig extends RequiredApiConfigWithConfig {
 
     onAddConfigFor(editor) {
       return editor.onAddAWSConfig;
@@ -35,9 +35,9 @@ define(function(require) {
 
     configString() {
       if (this.config) {
-        return `using: ${this.config.displayName}`;
+        return `(using: ${this.config.displayName})`;
       } else {
-        return "not yet configured";
+        return "(not yet configured)";
       }
     }
 
@@ -53,7 +53,7 @@ define(function(require) {
       return new RequiredAWSConfig({
         id: ID.next(),
         apiId: 'aws',
-        nameInCode: this.nameInCode,
+        nameInCode: this.defaultNameInCode(),
         config: this
       });
     }

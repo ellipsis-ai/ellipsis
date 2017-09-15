@@ -5,6 +5,8 @@ define(function(require) {
   var DeepEqual = require('../lib/deep_equal');
   var RequiredAWSConfig = require('./aws').RequiredAWSConfig;
   var RequiredOAuth2Application = require('./oauth2').RequiredOAuth2Application;
+  var RequiredSimpleTokenApi = require('./simple_token').RequiredSimpleTokenApi;
+
   const ONE_MINUTE = 60000;
 
   class BehaviorGroup {
@@ -176,6 +178,7 @@ define(function(require) {
       return new BehaviorGroup(Object.assign({}, props, {
         requiredAWSConfigs: props.requiredAWSConfigs.map(RequiredAWSConfig.fromJson),
         requiredOAuth2ApiConfigs: props.requiredOAuth2ApiConfigs.map(RequiredOAuth2Application.fromJson),
+        requiredSimpleTokenApis: props.requiredSimpleTokenApis.map(RequiredSimpleTokenApi.fromJson),
         behaviorVersions: props.behaviorVersions.map((ea) => BehaviorVersion.fromJson(Object.assign({}, ea, { groupId: props.id }))),
         actionInputs: Input.allFromJson(props.actionInputs || []),
         dataTypeInputs: Input.allFromJson(props.dataTypeInputs || []),

@@ -4,9 +4,12 @@ define(function() {
       Object.defineProperties(this, {
         id: { value: props.id, enumerable: true },
         apiId: { value: props.apiId, enumerable: true },
-        nameInCode: { value: props.nameInCode, enumerable: true },
-        config: { value: props.config, enumerable: true }
+        nameInCode: { value: props.nameInCode, enumerable: true }
       });
+    }
+
+    canHaveConfig() {
+      return false;
     }
   }
 

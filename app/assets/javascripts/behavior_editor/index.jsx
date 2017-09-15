@@ -46,7 +46,7 @@ var React = require('react'),
   SavedAnswerEditor = require('./saved_answer_editor'),
   SequentialName = require('../lib/sequential_name'),
   SharedAnswerInputSelector = require('./shared_answer_input_selector'),
-  SimpleTokenApiRef = require('../models/simple_token_api_ref'),
+  SimpleTokenApiRef = require('../models/simple_token').SimpleTokenApiRef,
   Sticky = require('../shared_ui/sticky'),
   SVGHamburger = require('../svg/hamburger'),
   Trigger = require('../models/trigger'),
@@ -217,6 +217,11 @@ const BehaviorEditor = React.createClass({
 
   getOAuth2LogoUrl: function(required) {
     const api = this.props.oauth2Apis.find(ea => ea.apiId === required.apiId);
+    return api ? (api.logoImageUrl || api.iconImageUrl) : undefined;
+  },
+
+  getSimpleTokenLogoUrl: function(required) {
+    const api = this.props.simpleTokenApis.find(ea => ea.id === required.apiId);
     return api ? (api.logoImageUrl || api.iconImageUrl) : undefined;
   },
 
@@ -1459,6 +1464,13 @@ const BehaviorEditor = React.createClass({
       return ea.apiId !== toRemove.apiId;
     });
     this.updateGroupStateWith(this.getBehaviorGroup().clone({ requiredSimpleTokenApis: newConfigs }));
+  },
+
+  onUpdateSimpleTokenApi: function(config, callback) {
+    const configs = this.getRequiredSimpleTokenApis().slice();
+    const indexToReplace = configs.findIndex(ea => ea.id === config.id);
+    configs[indexToReplace] = config;
+    this.updateGroupStateWith(this.getBehaviorGroup().clone({ requiredSimpleTokenApis: configs }), callback);
   },
 
   onNewAWSConfig: function(requiredAWSConfig) {

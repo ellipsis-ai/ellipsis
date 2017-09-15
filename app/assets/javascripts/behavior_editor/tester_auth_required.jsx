@@ -30,7 +30,7 @@ define(function(require) {
             <p>You need to authenticate with the following APIs in order to test:</p>
             {apps.map((ea, index) => {
               return (
-                <span className="phxs">
+                <span className="phxs" key={`auth-required-${index}`}>
                     <span>{this.renderAuthRequiredFor(ea)}</span>
                     <span>{index + 1 < numApps ? ", " : ""}</span>
                   </span>
