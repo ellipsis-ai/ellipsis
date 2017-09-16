@@ -422,7 +422,7 @@ const BehaviorEditor = React.createClass({
 
   buildAWSNotifications: function() {
     const behavior = this.getSelectedBehavior();
-    if (!behavior) {
+    if (!behavior || this.isConfiguringApi()) {
       return [];
     }
     return this.getRequiredAWSConfigsWithNoMatchingAWSConfig().map(ea => new NotificationData({
@@ -431,7 +431,8 @@ const BehaviorEditor = React.createClass({
       requiredAWSConfig: ea,
       existingAWSConfigs: this.getAllAWSConfigs(),
       onUpdateAWSConfig: this.onUpdateAWSConfig,
-      onNewAWSConfig: this.onNewAWSConfig
+      onNewAWSConfig: this.onNewAWSConfig,
+      onConfigClick: this.onApiConfigClick.bind(this, ea)
     }));
   },
 
@@ -449,9 +450,15 @@ const BehaviorEditor = React.createClass({
     });
   },
 
+  CONFIGURE_API_NAME: "configureApi",
+
+  isConfiguringApi: function() {
+    return this.props.activePanelName === this.CONFIGURE_API_NAME;
+  },
+
   buildOAuthApplicationNotifications: function() {
     const behavior = this.getSelectedBehavior();
-    if (!behavior) {
+    if (!behavior || this.isConfiguringApi()) {
       return [];
     }
     return this.getRequiredOAuth2ApiConfigsWithNoApplication().map(ea => new NotificationData({
@@ -460,7 +467,8 @@ const BehaviorEditor = React.createClass({
       requiredApiConfig: ea,
       existingOAuth2Applications: this.getAllOAuth2Applications(),
       onUpdateOAuth2Application: this.onUpdateOAuth2Application,
-      onNewOAuth2Application: this.onNewOAuth2Application
+      onNewOAuth2Application: this.onNewOAuth2Application,
+      onConfigClick: this.onApiConfigClick.bind(this, ea)
     }));
   },
 
@@ -1731,7 +1739,7 @@ const BehaviorEditor = React.createClass({
             </div>
           ) : null}
 
-          <Collapsible ref="configureApi" revealWhen={this.props.activePanelName === "configureApi"} onChange={this.layoutDidUpdate}>
+          <Collapsible ref={this.CONFIGURE_API_NAME} revealWhen={this.props.activePanelName === this.CONFIGURE_API_NAME} onChange={this.layoutDidUpdate}>
             <APIConfigPanel
               openWhen={this.getActiveDropdown() === 'apiConfigAdderDropdown'}
               toggle={this.toggleApiAdderDropdown}
@@ -2125,7 +2133,7 @@ const BehaviorEditor = React.createClass({
 
   ensureOpenConfigureApiPanel: function() {
     const toggle = this.props.onToggleActivePanel;
-    this.props.onClearActivePanel(() => toggle('configureApi'));
+    this.props.onClearActivePanel(() => toggle(this.CONFIGURE_API_NAME));
   },
 
   onApiConfigClick: function(required) {

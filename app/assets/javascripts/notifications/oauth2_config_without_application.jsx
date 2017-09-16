@@ -14,7 +14,8 @@ define(function(require) {
         existingOAuth2Applications: React.PropTypes.arrayOf(React.PropTypes.instanceOf(OAuth2ApplicationRef)).isRequired,
         requiredApiConfig: React.PropTypes.instanceOf(RequiredOAuth2Application).isRequired,
         onUpdateOAuth2Application: React.PropTypes.func.isRequired,
-        onNewOAuth2Application: React.PropTypes.func.isRequired
+        onNewOAuth2Application: React.PropTypes.func.isRequired,
+        onConfigClick: React.PropTypes.func.isRequired
       })).isRequired
     },
 
@@ -28,16 +29,30 @@ define(function(require) {
     },
 
     addOAuth2ApplicationPrompt: function(detail) {
-      var matchingApplication = detail.existingOAuth2Applications.find(ea => ea.apiId === detail.requiredApiConfig.apiId);
-      if (matchingApplication) {
+      var matchingApplications = detail.existingOAuth2Applications.filter(ea => ea.apiId === detail.requiredApiConfig.apiId);
+      if (matchingApplications.length === 1) {
+        const app = matchingApplications[0];
         return (
           <span className="mhxs">
             <button
               type="button"
               className="button-raw link button-s"
-              onClick={this.onUpdateOAuth2Application.bind(this, detail, matchingApplication)}>
+              onClick={this.onUpdateOAuth2Application.bind(this, detail, app)}>
 
-              Add {matchingApplication.displayName} to this skill
+              Add {app.displayName} to this skill
+
+            </button>
+          </span>
+        );
+      } else if (matchingApplications.length === 0) {
+        return (
+          <span className="mhxs">
+            <button
+              type="button"
+              className="button-raw link button-s"
+              onClick={this.onNewOAuth2Application.bind(this, detail, detail.requiredApiConfig)}>
+
+              Configure the {detail.name} API for this skill
 
             </button>
           </span>
@@ -48,9 +63,9 @@ define(function(require) {
             <button
               type="button"
               className="button-raw link button-s"
-              onClick={this.onNewOAuth2Application.bind(this, detail, detail.requiredApiConfig)}>
+              onClick={detail.onConfigClick.bind(this, detail.requiredApiConfig)}>
 
-              Configure the {detail.name} API for this skill
+              Choose a configuration for {detail.requiredApiConfig.codePath()}
 
             </button>
           </span>
@@ -66,6 +81,10 @@ define(function(require) {
 
     onNewOAuth2Application: function(detail, requiredOAuth2ApiConfig) {
       detail.onNewOAuth2Application(requiredOAuth2ApiConfig);
+    },
+
+    onConfigureOAuth2Application: function(detail, app) {
+
     },
 
     render: function() {

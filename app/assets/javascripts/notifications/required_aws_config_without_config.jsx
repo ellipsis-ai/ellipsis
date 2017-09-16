@@ -13,21 +13,36 @@ define(function(require) {
         existingAWSConfigs: React.PropTypes.arrayOf(React.PropTypes.instanceOf(AWSConfigRef)).isRequired,
         requiredAWSConfig: React.PropTypes.instanceOf(RequiredAWSConfig).isRequired,
         onUpdateAWSConfig: React.PropTypes.func.isRequired,
-        onNewAWSConfig: React.PropTypes.func.isRequired
+        onNewAWSConfig: React.PropTypes.func.isRequired,
+        onConfigClick: React.PropTypes.func.isRequired
       })).isRequired
     },
 
     addAWSConfigPrompt: function(detail) {
-      var matchingConfig = detail.existingAWSConfigs[0];
-      if (matchingConfig) {
+      var matchingConfigs = detail.existingAWSConfigs;
+      if (matchingConfigs.length === 1) {
+        const config = matchingConfigs[0];
         return (
           <span className="mhxs">
             <button
               type="button"
               className="button-raw link button-s"
-              onClick={this.onUpdateAWSConfig.bind(this, detail, matchingConfig)}>
+              onClick={this.onUpdateAWSConfig.bind(this, detail, config)}>
 
-              Add {matchingConfig.displayName} to this skill
+              Add {config.displayName} to this skill
+
+            </button>
+          </span>
+        );
+      } else if (matchingConfigs.length === 0) {
+        return (
+          <span className="mhxs">
+            <button
+              type="button"
+              className="button-raw link button-s"
+              onClick={this.onNewAWSConfig.bind(this, detail, detail.requiredAWSConfig)}>
+
+              Configure the AWS API for this skill
 
             </button>
           </span>
@@ -38,9 +53,9 @@ define(function(require) {
             <button
               type="button"
               className="button-raw link button-s"
-              onClick={this.onNewAWSConfig.bind(this, detail, detail.requiredAWSConfig)}>
+              onClick={detail.onConfigClick.bind(this, detail.requiredAWSConfig)}>
 
-              Configure the AWS API for this skill
+              Choose a configuration for {detail.requiredAWSConfig.codePath()}
 
             </button>
           </span>
