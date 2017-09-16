@@ -9,7 +9,7 @@ case class RequiredAWSConfigData(
                                 ) {
 
   def copyForExport: RequiredAWSConfigData = {
-    copy(id = None)
+    copy(id = None, config = None)
   }
 
 }
