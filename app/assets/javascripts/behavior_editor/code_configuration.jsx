@@ -143,10 +143,6 @@ define(function(require) {
       this.refs.codeEditor.refresh();
     },
 
-    configureApis: function() {
-      this.props.onToggleActivePanel('configureApis');
-    },
-
     render: function() {
       return (
         <div>
@@ -160,9 +156,6 @@ define(function(require) {
                     <HelpButton onClick={this.toggleBehaviorCodeHelp} toggled={this.props.activePanelName === 'helpForBehaviorCode'} />
                   </span>
                 </SectionHeading>
-              </div>
-              <div className="column column-shrink ptxs mobile-mbm">
-                <button type="button" className="button-s" onClick={this.configureApis}>Configure APIs</button>
               </div>
             </div>
 
