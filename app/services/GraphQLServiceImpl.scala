@@ -77,6 +77,7 @@ class GraphQLServiceImpl @Inject() (
         case opt: Option[Any] => opt.map(toJson).getOrElse(JsNull)
         case s: String => Json.toJson(s)
         case n: Double => JsNumber(BigDecimal(n))
+        case b: Boolean => JsBoolean(b)
         case arr: Array[Any] => JsArray(arr.map(toJson))
         case m: Map[String, Any] => {
           JsObject(m.map { ea => (ea._1, toJson(ea._2)) })
