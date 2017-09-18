@@ -6,6 +6,7 @@ import json.BehaviorGroupData
 import models.accounts.user.User
 import models.behaviors.behaviorgroup.BehaviorGroup
 import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
+import models.behaviors.behaviorparameter.YesNoType
 import models.behaviors.datatypeconfig.BehaviorVersionForDataTypeSchema
 import models.behaviors.defaultstorageitem.DefaultStorageItemService
 import play.api.libs.json._
@@ -76,10 +77,12 @@ class GraphQLServiceImpl @Inject() (
         case opt: Option[Any] => opt.map(toJson).getOrElse(JsNull)
         case s: String => Json.toJson(s)
         case n: Double => JsNumber(BigDecimal(n))
+        case b: Boolean => JsBoolean(b)
         case arr: Array[Any] => JsArray(arr.map(toJson))
         case m: Map[String, Any] => {
           JsObject(m.map { ea => (ea._1, toJson(ea._2)) })
         }
+        case _ => JsNull
       }
     }
 
@@ -138,12 +141,41 @@ class GraphQLServiceImpl @Inject() (
               case arr: JsArray => fromJson(arr)
               case JsNull => null
               case _ => {
-                (ctx.value.asInstanceOf[JsObject] \ (definition.name)).asOpt[JsValue].map(fromJson)
+                val maybeValue = (ctx.value.asInstanceOf[JsObject] \ (definition.name)).asOpt[JsValue].map(fromJson)
+                if (definition.fieldType.namedType.name == "Boolean") {
+                  parseBoolean(maybeValue)
+                } else {
+                  maybeValue
+                }
               }
             }
           }
         }
       }
+    }
+
+    private def parseBoolean(maybeValue: Option[Any]) = {
+      maybeValue.map {
+        case b: Boolean => b
+        case s: String =>
+          val trimmed = s.toLowerCase.trim
+          if (YesNoType.yesStrings.contains(trimmed)) {
+            true
+          } else if (YesNoType.noStrings.contains(trimmed)) {
+            false
+          } else {
+            null
+          }
+        case d: Double =>
+          if (d == 1) {
+            true
+          } else if (d == 0) {
+            false
+          } else {
+            null
+          }
+        case _ => null
+      }.orNull
     }
 
     def fromJson(v: JsValue) = v match {
