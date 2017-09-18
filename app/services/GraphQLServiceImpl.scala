@@ -157,15 +157,7 @@ class GraphQLServiceImpl @Inject() (
     private def parseBoolean(maybeValue: Option[Any]) = {
       maybeValue.map {
         case b: Boolean => b
-        case s: String =>
-          val trimmed = s.toLowerCase.trim
-          if (YesNoType.yesStrings.contains(trimmed)) {
-            true
-          } else if (YesNoType.noStrings.contains(trimmed)) {
-            false
-          } else {
-            null
-          }
+        case s: String => YesNoType.maybeValidValueFor(s).getOrElse(null)
         case d: Double =>
           if (d == 1) {
             true
