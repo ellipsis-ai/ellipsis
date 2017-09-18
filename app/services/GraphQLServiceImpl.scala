@@ -82,6 +82,7 @@ class GraphQLServiceImpl @Inject() (
         case m: Map[String, Any] => {
           JsObject(m.map { ea => (ea._1, toJson(ea._2)) })
         }
+        case _ => JsNull
       }
     }
 
