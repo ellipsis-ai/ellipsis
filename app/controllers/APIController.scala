@@ -586,11 +586,18 @@ class APIController @Inject() (
             botResultService.sendIn(botResult, None).map { _ =>
               Ok(Json.toJson(Seq(botResult.fullText)))
             }
-          }.getOrElse(Future.successful(NotFound("")))
+          }.getOrElse {
+            Future.successful(ServiceUnavailable("The request failed for an unknown reason. Please retry.\n"))
+          }
         } yield result
 
         eventualResult.recover {
-          case e: InvalidTokenException => BadRequest("Invalid token")
+          case e: InvalidTokenException => BadRequest("Invalid token\n")
+          case e: slack.api.ApiError => if (e.code == "channel_not_found") {
+            BadRequest(s"""Error: the channel "${info.channel}" could not be found.""" + "\n")
+          } else {
+            BadRequest(s"Slack API error: ${e.code}\n")
+          }
         }
       }
     )
