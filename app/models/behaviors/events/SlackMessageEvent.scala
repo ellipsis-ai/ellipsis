@@ -6,7 +6,7 @@ import models.accounts.slack.profile.SlackProfile
 import models.accounts.user.User
 import models.behaviors.conversations.conversation.Conversation
 import services.{CacheService, DataService}
-import slack.api.{ApiError, SlackApiClient}
+import slack.api.SlackApiClient
 import utils.{SlackMessageSender, UploadFileSpec}
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -29,7 +29,7 @@ case class SlackMessageEvent(
       Future.successful("")
     } else {
       for {
-        maybeSlackUserData <- dataService.linkedAccounts.maybeSlackUserDataFor(profile, profile.userId)
+        maybeSlackUserData <- dataService.linkedAccounts.maybeSlackUserDataFor(profile.userId, profile.slackTeamId, SlackApiClient(profile.token))
       } yield {
         maybeSlackUserData.map { userData =>
           s"@${userData.accountName} "

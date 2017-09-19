@@ -10,12 +10,11 @@ import drivers.SlickPostgresDriver.api._
 import json.{SlackUserData, UserData}
 import models.IDs
 import models.accounts.linkedaccount.LinkedAccount
-import models.accounts.slack.botprofile.SlackBotProfile
 import models.behaviors.events.{Event, SlackMessageEvent}
 import models.team.Team
 import play.api.Configuration
 import services.{CacheService, DataService}
-import slack.api.{ApiError, SlackApiClient}
+import slack.api.SlackApiClient
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -136,7 +135,7 @@ class UserServiceImpl @Inject() (
         slackBotProfile <- maybeSlackBotProfile
         slackAccount <- maybeSlackAccount
       } yield {
-        dataService.linkedAccounts.maybeSlackUserDataFor(slackBotProfile, slackAccount.loginInfo.providerKey)
+        dataService.linkedAccounts.maybeSlackUserDataFor(slackAccount.loginInfo.providerKey, slackBotProfile.slackTeamId, SlackApiClient(slackBotProfile.token))
       }).getOrElse(Future.successful(None))
     } yield maybeUserData
   }

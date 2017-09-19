@@ -30,8 +30,8 @@ case class ScheduledEvent(underlying: Event, scheduled: Scheduled) extends Event
     underlying.sendMessage(text, forcePrivate, maybeShouldUnfurl, maybeConversation, maybeActions, files, cacheService)
   }
 
-  override def detailsFor(ws: WSClient, cacheService: CacheService)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[JsObject] = {
-    underlying.detailsFor(ws, cacheService)
+  override def detailsFor(ws: WSClient, dataService: DataService, cacheService: CacheService)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[JsObject] = {
+    underlying.detailsFor(ws, dataService, cacheService)
   }
 
   lazy val maybeChannel: Option[String] = underlying.maybeChannel
