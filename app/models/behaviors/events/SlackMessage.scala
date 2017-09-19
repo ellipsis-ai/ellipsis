@@ -1,6 +1,6 @@
 package models.behaviors.events
 
-import models.accounts.slack.SlackUserInfo
+import json.SlackUserData
 import models.accounts.slack.botprofile.SlackBotProfile
 import services.SlackEventService
 
@@ -25,9 +25,9 @@ object SlackMessage {
     text.replaceAll("&amp;", "&").replaceAll("&lt;", "<").replaceAll("&gt;", ">")
   }
 
-  def augmentUserIdsWithNames(initialText: String, userList: Seq[SlackUserInfo]): String = {
+  def augmentUserIdsWithNames(initialText: String, userList: Set[SlackUserData]): String = {
     userList.foldLeft(initialText) { (resultText, user) =>
-      resultText.replace(s"""<@${user.userId}>""", s"""<@${user.userId}|${user.name}>""")
+      resultText.replace(s"""<@${user.accountId}>""", s"""<@${user.accountId}|${user.accountName}>""")
     }
   }
 
@@ -35,7 +35,7 @@ object SlackMessage {
     unescapeSlackHTMLEntities(unformatLinks(text))
   }
 
-  def unformatTextWithUsers(text: String, userList: Seq[SlackUserInfo]): String = {
+  def unformatTextWithUsers(text: String, userList: Set[SlackUserData]): String = {
     unformatText(augmentUserIdsWithNames(text, userList))
   }
 
@@ -49,31 +49,17 @@ object SlackMessage {
     SlackMessage(text, withoutBotPrefix, withoutBotPrefix)
   }
 
-  def fromFormattedTextWithUsers(text: String, botUserId: String, slackUserList: Seq[SlackUserInfo]): SlackMessage = {
-    val withoutBotPrefix = removeBotPrefix(text, botUserId)
-    SlackMessage(text, withoutBotPrefix, unformatTextWithUsers(withoutBotPrefix, slackUserList))
-  }
-
-  def textContainsRawUserIds(text: String): Boolean = {
-    """<@\w+>""".r.findFirstIn(text).isDefined
+  def userIdsInText(text: String): Set[String] = {
+    """<@(\w+)>""".r.findAllMatchIn(text).map(_.group(1)).toSet
   }
 
   def fromFormattedText(text: String, botProfile: SlackBotProfile, slackEventService: SlackEventService)(implicit ec: ExecutionContext): Future[SlackMessage] = {
     val withoutBotPrefix = removeBotPrefix(text, botProfile.userId)
-
+    val userList = userIdsInText(text)
     for {
-      maybeSlackUserList <- if (textContainsRawUserIds(withoutBotPrefix)) {
-        slackEventService.maybeSlackUserListFor(botProfile)
-      } else {
-        Future.successful(None)
-      }
+      slackUsers <- slackEventService.slackUserDataList(userList, botProfile)
     } yield {
-      maybeSlackUserList.map { slackUserList =>
-        SlackMessage(text, withoutBotPrefix, unformatTextWithUsers(withoutBotPrefix, slackUserList))
-      }.getOrElse {
-        // TODO: What should we do if a message contains users but the slack user list request failed?
-        SlackMessage(text, withoutBotPrefix, unformatText(withoutBotPrefix))
-      }
+      SlackMessage(text, withoutBotPrefix, unformatTextWithUsers(withoutBotPrefix, slackUsers))
     }
   }
 
