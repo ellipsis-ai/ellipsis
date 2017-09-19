@@ -5,11 +5,11 @@ import javax.inject._
 
 import akka.actor.ActorSystem
 import com.mohiva.play.silhouette.api.LoginInfo
-import models.accounts.user.User
-import services.{CacheService, DataService}
 import drivers.SlickPostgresDriver.api._
 import json.SlackUserData
-import models.accounts.slack.botprofile.SlackBotProfile
+import models.accounts.user.User
+import play.api.libs.json.{JsBoolean, JsObject, JsString}
+import services.{CacheService, DataService}
 import slack.api.{ApiError, SlackApiClient}
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -84,19 +84,34 @@ class LinkedAccountServiceImpl @Inject() (
     dataService.run(maybeForSlackForAction(user))
   }
 
-  def maybeSlackUserDataFor(profile: SlackBotProfile, slackUserId: String): Future[Option[SlackUserData]] = {
-    cacheService.getSlackUserData(slackUserId, profile.slackTeamId).map { userData =>
+  def maybeSlackUserDataFor(slackUserId: String, slackTeamId: String, client: SlackApiClient): Future[Option[SlackUserData]] = {
+    cacheService.getSlackUserData(slackUserId, slackTeamId).map { userData =>
       Future.successful(Some(userData))
     }.getOrElse {
       for {
-        maybeInfo <- SlackApiClient(profile.token).getUserInfo(slackUserId).
-          map(Some(_)).
-          recover {
-            case e: ApiError => None
-          }
+        maybeInfo <- client.getUserInfo(slackUserId).map(Some(_)).recover {
+          case e: ApiError => None
+        }
       } yield {
         maybeInfo.map { info =>
-          val userData = SlackUserData(slackUserId, profile.slackTeamId, info.name)
+          val profileNameData = info.profile.map { profile =>
+            Seq(
+              profile.first_name.map(v => "firstName" -> JsString(v)),
+              profile.last_name.map(v => "lastName" -> JsString(v)),
+              profile.real_name.map(v => "realName" -> JsString(v))
+            ).flatten
+          }.getOrElse(Seq())
+          val profileData = JsObject(
+            Seq(
+              "name" -> JsString(info.name),
+              "profile" -> JsObject(profileNameData),
+              "isPrimaryOwner" -> JsBoolean(info.is_primary_owner.getOrElse(false)),
+              "isOwner" -> JsBoolean(info.is_owner.getOrElse(false)),
+              "isRestricted" -> JsBoolean(info.is_restricted.getOrElse(false)),
+              "isUltraRestricted" -> JsBoolean(info.is_ultra_restricted.getOrElse(false))
+            )
+          )
+          val userData = SlackUserData(slackUserId, slackTeamId, info.name, profileData)
           cacheService.cacheSlackUserData(userData)
           Some(userData)
         }.getOrElse(None)
