@@ -11,38 +11,26 @@ CREATE TABLE required_aws_configs (
 
 CREATE INDEX required_aws_configs_group_version_id_index ON required_aws_configs(group_version_id);
 
+DELETE FROM aws_configs;
+
 ALTER TABLE aws_configs ADD COLUMN name TEXT NOT NULL DEFAULT 'Default';
-ALTER TABLE aws_configs ADD COLUMN team_id TEXT REFERENCES teams(id);
+ALTER TABLE aws_configs ADD COLUMN team_id TEXT NOT NULL REFERENCES teams(id);
 ALTER TABLE aws_configs ADD COLUMN access_key_id TEXT;
 ALTER TABLE aws_configs ADD COLUMN secret_access_key TEXT;
 ALTER TABLE aws_configs ADD COLUMN region TEXT;
-
-UPDATE aws_configs a SET team_id = (
-  SELECT b.team_id FROM behavior_versions bv JOIN behaviors b ON bv.behavior_id = b.id
-  WHERE a.behavior_version_id = bv.id
-  LIMIT 1
-);
-
-UPDATE aws_configs a SET access_key_id = (
-  SELECT e.value FROM environment_variables e WHERE e.team_id = a.team_id AND e.name = a.access_key_name LIMIT 1
-);
-
-UPDATE aws_configs a SET secret_access_key = (
-  SELECT e.value FROM environment_variables e WHERE e.team_id = a.team_id AND e.name = a.secret_key_name LIMIT 1
-);
-
-UPDATE aws_configs a SET region = (
-  SELECT e.value FROM environment_variables e WHERE e.team_id = a.team_id AND e.name = a.region_name LIMIT 1
-);
-
-ALTER TABLE aws_configs ALTER COLUMN team_id SET NOT NULL;
 ALTER TABLE aws_configs DROP COLUMN behavior_version_id;
+
+ALTER TABLE required_oauth2_api_configs ADD COLUMN name_in_code TEXT NOT NULL DEFAULT 'default';
+ALTER TABLE required_simple_token_apis ADD COLUMN name_in_code TEXT NOT NULL DEFAULT 'default';
 
 COMMIT;
 
 # --- !Downs
 
 BEGIN;
+
+ALTER TABLE required_oauth2_api_configs DROP COLUMN name_in_code;
+ALTER TABLE required_simple_token_apis DROP COLUMN name_in_code;
 
 DELETE FROM aws_configs;
 
