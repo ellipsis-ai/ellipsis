@@ -50,7 +50,7 @@ object SlackMessage {
   }
 
   def userIdsInText(text: String): Set[String] = {
-    """<@(\w+)>""".r.findAllMatchIn(text).map(_.group(1)).toSet
+    """<@(\w+)>""".r.findAllMatchIn(text).flatMap(_.subgroups).toSet
   }
 
   def fromFormattedText(text: String, botProfile: SlackBotProfile, slackEventService: SlackEventService)(implicit ec: ExecutionContext): Future[SlackMessage] = {
