@@ -5,6 +5,13 @@ define(function(require) {
 
   class RequiredSimpleTokenApi extends RequiredApiConfig {
 
+    constructor(props) {
+      super(props);
+      Object.defineProperties(this, {
+        displayName: { value: props.displayName, enumerable: true }
+      });
+    }
+
     onAddConfigFor(editor) {
       return editor.onAddSimpleTokenApi;
     }
@@ -38,7 +45,7 @@ define(function(require) {
     }
 
     configString() {
-      return "";
+      return this.displayName;
     }
 
     clone(props) {
@@ -52,7 +59,8 @@ define(function(require) {
     constructor(props) {
       super(props);
       Object.defineProperties(this, {
-        logoImageUrl: { value: props.logoImageUrl, enumerable: true }
+        logoImageUrl: { value: props.logoImageUrl, enumerable: true },
+        displayName: { value: props.displayName, enumerable: true }
       });
     }
 
@@ -65,7 +73,8 @@ define(function(require) {
         id: ID.next(),
         apiId: this.id,
         nameInCode: this.defaultNameInCode(),
-        config: this
+        config: this,
+        displayName: this.displayName
       });
     }
 

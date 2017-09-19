@@ -1700,10 +1700,7 @@ const BehaviorEditor = React.createClass({
   },
 
   toggleApiAdderDropdown: function() {
-    var alreadyOpen = this.getActiveDropdown() === "apiConfigAdderDropdown";
-    this.setState({
-      activeDropdown: alreadyOpen ? null : { name: "apiConfigAdderDropdown" }
-    });
+    this.toggleActiveDropdown("apiConfigAdderDropdown");
   },
 
   renderFooter: function() {
@@ -2131,19 +2128,18 @@ const BehaviorEditor = React.createClass({
     }, callback);
   },
 
-  ensureOpenConfigureApiPanel: function() {
-    const toggle = this.props.onToggleActivePanel;
-    this.props.onClearActivePanel(() => toggle(this.CONFIGURE_API_NAME));
+  toggleConfigureApiPanel: function() {
+    this.props.onToggleActivePanel(this.CONFIGURE_API_NAME, true);
   },
 
   onApiConfigClick: function(required) {
-    this.selectRequiredApiConfig(required, this.ensureOpenConfigureApiPanel);
+    this.selectRequiredApiConfig(required, this.toggleConfigureApiPanel);
   },
 
   onAddApiConfigClick: function() {
     this.setState({
       selectedApiConfigId: null
-    }, this.ensureOpenConfigureApiPanel);
+    }, this.toggleConfigureApiPanel);
   },
 
   renderBehaviorSwitcher: function() {

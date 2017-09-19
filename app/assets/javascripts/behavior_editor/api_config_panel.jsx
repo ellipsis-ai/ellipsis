@@ -3,7 +3,9 @@ define(function(require) {
     ifPresent = require('../lib/if_present'),
     ApiConfigRef = require('../models/api_config_ref'),
     DropdownMenu = require('../shared_ui/dropdown_menu'),
-    Input = require('../form/input'),
+    Collapsible = require('../shared_ui/collapsible'),
+    FormInput = require('../form/input'),
+    Button = require('../form/button'),
     RequiredApiConfig = require('../models/required_api_config'),
     Select = require('../form/select');
 
@@ -24,11 +26,6 @@ define(function(require) {
       addNewOAuth2Application: React.PropTypes.func.isRequired
     },
 
-    getInitialState: function() {
-      return {
-      };
-    },
-
     sortedById: function(arr) {
       return arr.sort((a, b) => {
         if (a.id === b.id) {
@@ -46,7 +43,11 @@ define(function(require) {
     },
 
     getApiLogoUrlForRequired: function() {
-      return this.props.getApiLogoUrlForRequired(this.props.requiredConfig);
+      if (this.props.requiredConfig) {
+        return this.props.getApiLogoUrlForRequired(this.props.requiredConfig);
+      } else {
+        return null;
+      }
     },
 
     getApiLogoUrlForConfig: function(config) {
@@ -78,29 +79,18 @@ define(function(require) {
       this.props.onRemoveConfig(this.props.requiredConfig);
     },
 
-    renderApiLogo: function() {
-      if (this.props.requiredConfig) {
-        return (
-          <div className="plxl ptl"><img src={this.getApiLogoUrlForRequired()} height="64"/></div>
-        );
-      } else {
-        return null;
-      }
-    },
-
     render: function() {
       return (
         <div className="box-action phn">
           <div className="container">
             <div className="columns">
               <div className="column column-page-sidebar">
-                <h4 className="type-weak">Configure an API integration</h4>
-                {this.renderApiLogo()}
+                <h4 className="type-weak mtn">Configure an API integration</h4>
               </div>
               <div className="column column-page-main">
-                <div className="container pvl">
-                  {this.renderConfig()}
-                </div>
+                {this.renderConfig()}
+
+                {this.renderButtons()}
               </div>
             </div>
           </div>
@@ -113,19 +103,17 @@ define(function(require) {
         <DropdownMenu
           openWhen={this.props.openWhen}
           toggle={this.props.toggle}
-          label="Add an API"
-          labelClassName="button-s"
-          menuClassName="popup-dropdown-menu-wide popup-dropdown-menu-left mobile-popup-dropdown-menu-left popup-dropdown-menu-above"
+          label="Select an API to use…"
+          labelClassName="button-dropdown-trigger-menu-above"
+          menuClassName="popup-dropdown-menu-wide popup-dropdown-menu-above"
         >
-          {this.props.allConfigs.map((cfg, index) => {
-            return (
-              <DropdownMenu.Item
-                key={"api-config-" + index}
-                onClick={this.onAddNewRequiredFor.bind(this, cfg)}
-                label={this.getSelectorLabelForConfig(cfg)}
-              />
-            );
-          })}
+          {this.props.allConfigs.map((cfg, index) => (
+            <DropdownMenu.Item
+              key={"api-config-" + index}
+              onClick={this.onAddNewRequiredFor.bind(this, cfg)}
+              label={this.getSelectorLabelForConfig(cfg)}
+            />
+          ))}
           <DropdownMenu.Item
             onClick={this.props.addNewAWSConfig}
             className="border-top"
@@ -133,7 +121,6 @@ define(function(require) {
           />
           <DropdownMenu.Item
             onClick={this.props.addNewOAuth2Application}
-            className="border-top"
             label="Add new OAuth2 API application…"
           />
         </DropdownMenu>
@@ -145,11 +132,10 @@ define(function(require) {
       if (required.canHaveConfig()) {
         return (
           <div>
-            <h4 className="mbn position-relative">
-              <span className="position-hanging-indent">2</span>
-              <span>Which configuration do you want to use for this API?</span>
-            </h4>
-            <p className="type-s">These configurations can be shared across skills</p>
+            <h5 className="mtn position-relative">
+              <span>Set API configuration to use</span>
+            </h5>
+            <p className="type-s">These configurations can be shared across skills.</p>
             <div>
               <Select
                 className="form-select-s form-select-light align-m mrm mbs"
@@ -158,14 +144,14 @@ define(function(require) {
                 onChange={this.onConfigChange}
               >
                 <option key="config-choice-none" value={null}>None selected</option>
-                {this.getAllConfigs().map(ea => <option key={`config-choice-${ea.id}`} value={ea.id}>{ea.displayName}</option>)}
+                {this.getAllConfigs().map(ea => (
+                  <option key={`config-choice-${ea.id}`} value={ea.id}>{ea.displayName}</option>
+                ))}
                 <option key="config-choice-new" value={this.ADD_NEW_CONFIG_KEY}>Add a new configuration…</option>
               </Select>
             </div>
           </div>
         );
-      } else {
-        return null;
       }
     },
 
@@ -188,56 +174,78 @@ define(function(require) {
       }));
     },
 
-    nameInCodeKey: function() {
-      return `requiredNameInCode${this.props.requiredConfig.id}`;
-    },
-
     renderNameInCode: function() {
       return (
-        <div className="columns">
-          <div className="column type-monospace type-m pvs prn">{this.props.requiredConfig.codePathPrefix()}</div>
-          <div className="column">
-            {this.renderNameInCodeInput()}
+        <div className="type-s">
+          <h5 className="mtn position-relative"><span>Set code path</span></h5>
+          <p className="mbxs">This determines how to access the configuration from code. It should be different from
+            any other API integration in this skill.</p>
+
+          <div>
+            <div className="align-form-input display-inline-block">
+              <span className="type-monospace">{this.props.requiredConfig.codePathPrefix()}</span>
+            </div>
+            <div className="align-form-input display-inline-block width-20">
+              <FormInput
+                className="form-input-borderless type-monospace"
+                value={this.props.requiredConfig.nameInCode}
+                placeholder="nameInCode"
+                onChange={this.onNameInCodeChange}
+              />
+            </div>
           </div>
         </div>
       );
     },
 
-    renderNameInCodeInput: function() {
+    renderConfig: function() {
+      const imageUrl = this.getApiLogoUrlForRequired();
       return (
-        <Input
-          className="form-input-inline form-input-borderless type-monospace type-m type-bold"
-          key={this.nameInCodeKey()}
-          ref={this.nameInCodeKey()}
-          value={this.props.requiredConfig.nameInCode}
-          placeholder="nameInCode"
-          onChange={this.onNameInCodeChange}
-        />
+        <div>
+          <Collapsible revealWhen={Boolean(this.props.requiredConfig)}>
+
+            {this.props.requiredConfig ? (
+              <div>
+                <div className="mbxl">
+                  {imageUrl ? <img className="mrs align-m" src={imageUrl} height="24"/> : null}
+                  <span>{this.props.requiredConfig.configString()}</span>
+                </div>
+
+                <div className="mvxl">
+                  {this.renderNameInCode()}
+                </div>
+
+                <div className="mvxl">
+                  {this.renderConfigChoice()}
+                </div>
+              </div>
+            ) : (
+              <div/>
+            )}
+          </Collapsible>
+
+          <Collapsible revealWhen={!this.props.requiredConfig}>
+            {this.renderAdder()}
+          </Collapsible>
+        </div>
       );
     },
 
-    renderConfig: function() {
-      if (this.props.requiredConfig) {
-        return (
-          <div>
-            <h4 className="mbn position-relative">
-              <span className="position-hanging-indent">1</span>
-              <span>How the configuration is accessed from your code</span>
-            </h4>
-            <p className="type-s">The path should be different from any other API integration in this skill.</p>
-
-            {this.renderNameInCode()}
-            <div className="pvs">{this.renderConfigChoice()}</div>
-            <div className="ptxl">
-              <button className="button-primary mbs mrs" type="button" onClick={this.props.onDoneClick}>Done</button>
-              <button className="button mbs" type="button" onClick={this.onDeleteRequired}>Remove from this skill</button>
-            </div>
-          </div>
-        );
-      } else {
-        return this.renderAdder();
-      }
+    renderButtons: function() {
+      return (
+        <div className="mtxl">
+          <Button className="button-primary mbs mrs" onClick={this.props.onDoneClick}>
+            {this.props.requiredConfig ? "Done" : "Cancel"}
+          </Button>
+          {this.props.requiredConfig ? (
+            <Button className="button mbs" onClick={this.onDeleteRequired}>Remove integration from skill</Button>
+          ) : null}
+        </div>
+      );
     }
+
+
+
 
   });
 
