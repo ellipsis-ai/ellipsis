@@ -74,7 +74,6 @@ class APIControllerSpec extends PlaySpec with MockitoSugar {
 
     val mockSlackClient = mock[SlackApiClient]
     when(slackEventService.clientFor(botProfile)).thenReturn(mockSlackClient)
-    when(slackEventService.maybeSlackUserListFor(botProfile)).thenReturn(Future.successful(Some(Seq())))
     when(mockSlackClient.listIms).thenReturn(Future.successful(Seq()))
     when(mockSlackClient.postChatMessage(anyString, anyString, any[Option[String]], any[Option[Boolean]], any[Option[String]],
       any[Option[String]], any[Option[Seq[Attachment]]], any[Option[Boolean]], any[Option[Boolean]],
