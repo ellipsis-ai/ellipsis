@@ -45,9 +45,9 @@ define(function(require) {
 
     configString() {
       if (this.config) {
-        return `(using: ${this.config.displayName})`;
+        return this.config.displayName;
       } else {
-        return "(not yet configured)";
+        return "Unconfigured";
       }
     }
 

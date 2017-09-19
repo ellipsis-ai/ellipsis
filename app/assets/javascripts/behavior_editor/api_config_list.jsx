@@ -21,9 +21,14 @@ define(function(require) {
     renderConfig: function(required) {
       return (
         <div className="plxl mobile-pll">
-          <Button onClick={this.onApiConfigClick.bind(this, required)} className="button-block">
-            <span className="link">{required.codePath()} {required.configString()}</span>
-          </Button>
+          <div className="display-limit-width display-overflow-hidden"
+            title={`${required.configString()}: ${required.codePath()}`}>
+            <Button onClick={this.onApiConfigClick.bind(this, required)}
+              className="button-block">
+              <span className="link">{required.configString()}: </span>
+              <code className="type-xs type-weak">{required.codePath()}</code>
+            </Button>
+          </div>
         </div>
       );
     },
@@ -45,7 +50,7 @@ define(function(require) {
       return (
         <div className="border-bottom mtl pbl">
           <div className="container container-wide mbs">
-            <h6>Api integrations</h6>
+            <h6>API integrations</h6>
           </div>
           <div className="type-s">
             {this.renderConfigs(this.props.requiredAWSConfigs)}
@@ -54,7 +59,7 @@ define(function(require) {
           </div>
           <div className="container container-wide mvm">
             <Button onClick={this.props.onAddApiConfigClick}
-                    className="button button-s button-shrink">Add an API integration</Button>
+                    className="button button-s button-shrink">Add new integration</Button>
           </div>
         </div>
       );
