@@ -6,14 +6,32 @@ import play.api.libs.json._
 
 case class Environment(maybeParent: Option[Environment], data: Map[String, JsValue], result: JsLookupResult) {
 
+//  def lookUp(substitution: Substitution): JsLookupResult = {
+//    if (substitution.hasSuccessResult) {
+//      substitution.getFrom(result)
+//    } else {
+//      maybeParent.map { parent =>
+//        parent.lookUp(substitution)
+//      }.getOrElse {
+//        data.get(substitution.pathString).map { v =>
+//          substitution.pathSegmentsToLookUpInEnvironment.foldLeft(JsDefined.apply(v):JsLookupResult)((a,b) => a \ b)
+//        }.getOrElse(JsUndefined(s"${substitution.pathString} not found"))
+//      }
+//    }
+//  }
+
   def lookUp(substitution: Substitution): JsLookupResult = {
-    data.get(substitution.nameToLookUpInEnvironment).map { v =>
-      substitution.pathSegmentsToLookUpInEnvironment.foldLeft(JsDefined.apply(v):JsLookupResult)((a,b) => a \ b)
-    }.getOrElse {
-      maybeParent.map { parent =>
-        parent.lookUp(substitution)
+    if (substitution.hasSuccessResult) {
+      substitution.getFrom(result)
+    } else {
+      data.get(substitution.nameToLookUpInEnvironment).map { v =>
+        substitution.pathSegmentsToLookUpInEnvironment.foldLeft(JsDefined.apply(v):JsLookupResult)((a,b) => a \ b)
       }.getOrElse {
-        substitution.getFrom(result)
+        maybeParent.map { parent =>
+          parent.lookUp(substitution)
+        }.getOrElse {
+          JsUndefined(s"${substitution.pathString} not found")
+        }
       }
     }
   }
