@@ -78,6 +78,16 @@ define(function(require) {
       this.props.onRemoveConfig(this.props.requiredConfig);
     },
 
+    renderApiLogo: function() {
+      if (this.props.requiredConfig) {
+        return (
+          <div className="plxl ptl"><img src={this.getApiLogoUrlForRequired()} height="64"/></div>
+        );
+      } else {
+        return null;
+      }
+    },
+
     render: function() {
       return (
         <div className="box-action phn">
@@ -85,6 +95,7 @@ define(function(require) {
             <div className="columns">
               <div className="column column-page-sidebar">
                 <h4 className="type-weak">Configure an API integration</h4>
+                {this.renderApiLogo()}
               </div>
               <div className="column column-page-main">
                 <div className="container pvl">
@@ -133,16 +144,25 @@ define(function(require) {
       const required = this.props.requiredConfig;
       if (required.canHaveConfig()) {
         return (
-          <Select
-            className="form-select-s form-select-light align-m mrm mbs"
-            name="paramType"
-            value={required.config ? required.config.id : undefined}
-            onChange={this.onConfigChange}
-          >
-            <option key="config-choice-none" value={null}>None selected</option>
-            {this.getAllConfigs().map(ea => <option key={`config-choice-${ea.id}`} value={ea.id}>{ea.displayName}</option>)}
-            <option key="config-choice-new" value={this.ADD_NEW_CONFIG_KEY}>Add a new configuration…</option>
-          </Select>
+          <div>
+            <h4 className="mbn position-relative">
+              <span className="position-hanging-indent">2</span>
+              <span>Which configuration do you want to use for this API?</span>
+            </h4>
+            <p className="type-s">These configurations can be shared across skills</p>
+            <div>
+              <Select
+                className="form-select-s form-select-light align-m mrm mbs"
+                name="paramType"
+                value={required.config ? required.config.id : undefined}
+                onChange={this.onConfigChange}
+              >
+                <option key="config-choice-none" value={null}>None selected</option>
+                {this.getAllConfigs().map(ea => <option key={`config-choice-${ea.id}`} value={ea.id}>{ea.displayName}</option>)}
+                <option key="config-choice-new" value={this.ADD_NEW_CONFIG_KEY}>Add a new configuration…</option>
+              </Select>
+            </div>
+          </div>
         );
       } else {
         return null;
@@ -172,10 +192,21 @@ define(function(require) {
       return `requiredNameInCode${this.props.requiredConfig.id}`;
     },
 
+    renderNameInCode: function() {
+      return (
+        <div className="columns">
+          <div className="column type-monospace type-m pvs prn">{this.props.requiredConfig.codePathPrefix()}</div>
+          <div className="column">
+            {this.renderNameInCodeInput()}
+          </div>
+        </div>
+      );
+    },
+
     renderNameInCodeInput: function() {
       return (
         <Input
-          className="form-input-inline form-input-borderless type-monospace type-s type-bold"
+          className="form-input-inline form-input-borderless type-monospace type-m type-bold"
           key={this.nameInCodeKey()}
           ref={this.nameInCodeKey()}
           value={this.props.requiredConfig.nameInCode}
@@ -189,15 +220,13 @@ define(function(require) {
       if (this.props.requiredConfig) {
         return (
           <div>
-            <div><img src={this.getApiLogoUrlForRequired()} height="32"/></div>
-            <div className="box-code-example">
-              <div className="columns">
-                <div className="column type-monospace type-s pvs prn">{this.props.requiredConfig.codePathPrefix()}</div>
-                <div className="column">
-                  {this.renderNameInCodeInput()}
-                </div>
-              </div>
-            </div>
+            <h4 className="mbn position-relative">
+              <span className="position-hanging-indent">1</span>
+              <span>How the configuration is accessed from your code</span>
+            </h4>
+            <p className="type-s">The path should be different from any other API integration in this skill.</p>
+
+            {this.renderNameInCode()}
             <div className="pvs">{this.renderConfigChoice()}</div>
             <div className="ptxl">
               <button className="button-primary mbs mrs" type="button" onClick={this.props.onDoneClick}>Done</button>
