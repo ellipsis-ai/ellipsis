@@ -30,7 +30,8 @@ define(function(require) {
       requiredOAuth2Applications: React.PropTypes.arrayOf(React.PropTypes.instanceOf(RequiredOAuth2Application)).isRequired,
       requiredSimpleTokenApis: React.PropTypes.arrayOf(React.PropTypes.instanceOf(RequiredSimpleTokenApi)).isRequired,
       onApiConfigClick: React.PropTypes.func.isRequired,
-      onAddApiConfigClick: React.PropTypes.func.isRequired
+      onAddApiConfigClick: React.PropTypes.func.isRequired,
+      getApiConfigName: React.PropTypes.func.isRequired
     },
 
     getSkillTitle: function() {
@@ -158,6 +159,7 @@ define(function(require) {
                 requiredSimpleTokenApis={this.props.requiredSimpleTokenApis}
                 onApiConfigClick={this.props.onApiConfigClick}
                 onAddApiConfigClick={this.props.onAddApiConfigClick}
+                getApiConfigName={this.props.getApiConfigName}
               />
 
               {this.renderNodeModules()}

@@ -228,7 +228,7 @@ const BehaviorEditor = React.createClass({
   },
 
   getSimpleTokenLogoUrlForRequired: function(required) {
-    const api = this.props.simpleTokenApis.find(ea => ea.id === required.apiId);
+    const api = this.getSimpleTokenApiWithId(required.apiId);
     return api ? (api.logoImageUrl || api.iconImageUrl) : undefined;
   },
 
@@ -243,6 +243,32 @@ const BehaviorEditor = React.createClass({
 
   getApiLogoUrlForConfig: function(config) {
     return config.getApiLogoUrl(this);
+  },
+
+  getApiNameForConfig: function(config) {
+    return config.getApiName(this);
+  },
+
+  getApiConfigName: function(config) {
+    const apiName = this.getApiNameForConfig(config);
+    const configName = config.configString();
+    if (configName.toLowerCase().includes(apiName.toLowerCase())) {
+      return configName;
+    } else if (configName) {
+      return `${apiName} — ${configName}`;
+    } else {
+      return apiName;
+    }
+  },
+
+  getOAuth2ApiNameForConfig: function(config) {
+    const api = this.getOAuth2ApiWithId(config.apiId);
+    return api ? api.name : "";
+  },
+
+  getSimpleTokenNameForConfig: function(config) {
+    const api = this.getSimpleTokenApiWithId(config.apiId);
+    return api ? api.displayName : "";
   },
 
   getEditableName: function() {
@@ -433,6 +459,10 @@ const BehaviorEditor = React.createClass({
 
   getOAuth2ApiWithId: function(apiId) {
     return this.props.oauth2Apis.find(ea => ea.apiId === apiId);
+  },
+
+  getSimpleTokenApiWithId: function(tokenId) {
+    return this.props.simpleTokenApis.find(ea => ea.id === tokenId);
   },
 
   getRequiredOAuth2ApiConfigsWithNoApplication: function() {
@@ -1739,6 +1769,7 @@ const BehaviorEditor = React.createClass({
               requiredConfig={this.getSelectedApiConfig()}
               getApiLogoUrlForRequired={this.getApiLogoUrlForSelected()}
               getApiLogoUrlForConfig={this.getApiLogoUrlForConfig}
+              getApiNameForConfig={this.getApiNameForConfig}
               allConfigs={this.getApiConfigsForSelected()}
               onAddConfig={this.onAddConfigForSelected()}
               onAddNewConfig={this.onAddNewConfigForSelected()}
@@ -2174,6 +2205,7 @@ const BehaviorEditor = React.createClass({
               requiredSimpleTokenApis={this.getRequiredSimpleTokenApis()}
               onApiConfigClick={this.onApiConfigClick}
               onAddApiConfigClick={this.onAddApiConfigClick}
+              getApiConfigName={this.getApiConfigName}
             />
           </Sticky>
         </Collapsible>

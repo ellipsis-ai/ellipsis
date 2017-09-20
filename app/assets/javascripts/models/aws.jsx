@@ -27,6 +27,10 @@ define(function(require) {
       return () => logoUrl;
     }
 
+    getApiName() {
+      return "Amazon Web Services (AWS)";
+    }
+
     getAllConfigsFrom(editor) {
       return editor.getAllAWSConfigs();
     }

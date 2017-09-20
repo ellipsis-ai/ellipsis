@@ -9,7 +9,7 @@ define(function(require) {
     RequiredApiConfig = require('../models/required_api_config'),
     Select = require('../form/select');
 
-  return React.createClass({
+  const ApiConfigPanel = React.createClass({
     propTypes: {
       openWhen: React.PropTypes.bool.isRequired,
       requiredConfig: React.PropTypes.instanceOf(RequiredApiConfig),
@@ -20,6 +20,7 @@ define(function(require) {
       onUpdateConfig: React.PropTypes.func,
       getApiLogoUrlForRequired: React.PropTypes.func,
       getApiLogoUrlForConfig: React.PropTypes.func,
+      getApiNameForConfig: React.PropTypes.func,
       toggle: React.PropTypes.func.isRequired,
       onDoneClick: React.PropTypes.func.isRequired,
       addNewAWSConfig: React.PropTypes.func.isRequired,
@@ -208,7 +209,7 @@ define(function(require) {
               <div>
                 <div className="mbxl">
                   {imageUrl ? <img className="mrs align-m" src={imageUrl} height="24"/> : null}
-                  <span>{this.props.requiredConfig.configString()}</span>
+                  <span>{this.props.getApiNameForConfig(this.props.requiredConfig)}</span>
                 </div>
 
                 <div className="mvxl">
@@ -249,4 +250,5 @@ define(function(require) {
 
   });
 
+  return ApiConfigPanel;
 });

@@ -11,7 +11,8 @@ define(function(require) {
       requiredOAuth2Applications: React.PropTypes.arrayOf(React.PropTypes.instanceOf(RequiredOAuth2Application)).isRequired,
       requiredSimpleTokenApis: React.PropTypes.arrayOf(React.PropTypes.instanceOf(RequiredSimpleTokenApi)).isRequired,
       onApiConfigClick: React.PropTypes.func.isRequired,
-      onAddApiConfigClick:  React.PropTypes.func.isRequired
+      onAddApiConfigClick:  React.PropTypes.func.isRequired,
+      getApiConfigName: React.PropTypes.func.isRequired
     },
 
     onApiConfigClick: function(required) {
@@ -19,15 +20,16 @@ define(function(require) {
     },
 
     renderConfig: function(required) {
+      const name = this.props.getApiConfigName(required);
+      const path = required.codePath();
+      const onClick = this.onApiConfigClick.bind(this, required);
       return (
         <div className="plxl mobile-pll">
-          <div className="display-limit-width display-overflow-hidden"
-            title={`${required.configString()}: ${required.codePath()}`}>
-            <Button onClick={this.onApiConfigClick.bind(this, required)}
-              className="button-block">
-              <span className="link">{required.configString()}: </span>
-              <code className="type-xs type-weak">{required.codePath()}</code>
-            </Button>
+          <Button onClick={onClick} className="button-block">
+            <span className="link">{name}</span>
+          </Button>
+          <div className="display-limit-width display-overflow-hidden" title={path}>
+            <code className="type-xs type-weak">{path}</code>
           </div>
         </div>
       );

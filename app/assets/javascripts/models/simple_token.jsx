@@ -5,13 +5,6 @@ define(function(require) {
 
   class RequiredSimpleTokenApi extends RequiredApiConfig {
 
-    constructor(props) {
-      super(props);
-      Object.defineProperties(this, {
-        displayName: { value: props.displayName, enumerable: true }
-      });
-    }
-
     onAddConfigFor(editor) {
       return editor.onAddSimpleTokenApi;
     }
@@ -32,6 +25,10 @@ define(function(require) {
       return editor.getSimpleTokenLogoUrlForRequired;
     }
 
+    getApiName(editor) {
+      return editor.getSimpleTokenNameForConfig(this);
+    }
+
     getAllConfigsFrom(editor) {
       return editor.getAllSimpleTokenApis().filter(ea => ea.id === this.apiId);
     }
@@ -45,7 +42,7 @@ define(function(require) {
     }
 
     configString() {
-      return this.displayName;
+      return "";
     }
 
     clone(props) {
@@ -59,8 +56,7 @@ define(function(require) {
     constructor(props) {
       super(props);
       Object.defineProperties(this, {
-        logoImageUrl: { value: props.logoImageUrl, enumerable: true },
-        displayName: { value: props.displayName, enumerable: true }
+        logoImageUrl: { value: props.logoImageUrl, enumerable: true }
       });
     }
 
@@ -73,8 +69,7 @@ define(function(require) {
         id: ID.next(),
         apiId: this.id,
         nameInCode: this.defaultNameInCode(),
-        config: this,
-        displayName: this.displayName
+        config: this
       });
     }
 

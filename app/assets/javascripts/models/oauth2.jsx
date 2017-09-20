@@ -31,6 +31,10 @@ define(function(require) {
       return editor.getOAuth2LogoUrlForConfig;
     }
 
+    getApiName(editor) {
+      return editor.getOAuth2ApiNameForConfig(this);
+    }
+
     getAllConfigsFrom(editor) {
       return editor.getAllOAuth2Applications().filter(ea => ea.apiId === this.apiId);
     }
