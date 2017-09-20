@@ -227,18 +227,8 @@ const BehaviorEditor = React.createClass({
     return api ? (api.logoImageUrl || api.iconImageUrl) : undefined;
   },
 
-  getSimpleTokenLogoUrlForRequired: function(required) {
-    const api = this.getSimpleTokenApiWithId(required.apiId);
-    return api ? (api.logoImageUrl || api.iconImageUrl) : undefined;
-  },
-
   getSimpleTokenLogoUrlForConfig: function(config) {
     return config.logoImageUrl || config.iconImageUrl;
-  },
-
-  getApiLogoUrlForSelected: function() {
-    const selected = this.getSelectedApiConfig();
-    return selected ? selected.getApiLogoUrl(this) : undefined;
   },
 
   getApiLogoUrlForConfig: function(config) {
@@ -1770,7 +1760,6 @@ const BehaviorEditor = React.createClass({
               toggle={this.toggleApiAdderDropdown}
               getActiveDropdown={this.getActiveDropdown}
               requiredConfig={this.getSelectedApiConfig()}
-              getApiLogoUrlForRequired={this.getApiLogoUrlForSelected()}
               getApiLogoUrlForConfig={this.getApiLogoUrlForConfig}
               getApiNameForConfig={this.getApiNameForConfig}
               allConfigs={this.getApiConfigsForSelected()}

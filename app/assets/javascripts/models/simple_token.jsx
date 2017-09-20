@@ -22,7 +22,7 @@ define(function(require) {
     }
 
     getApiLogoUrl(editor) {
-      return editor.getSimpleTokenLogoUrlForRequired;
+      return editor.getSimpleTokenLogoUrlForConfig(this);
     }
 
     getApiName(editor) {

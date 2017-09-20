@@ -24,7 +24,7 @@ define(function(require) {
     }
 
     getApiLogoUrl() {
-      return () => logoUrl;
+      return logoUrl;
     }
 
     getApiName() {

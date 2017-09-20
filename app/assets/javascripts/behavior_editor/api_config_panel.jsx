@@ -18,7 +18,6 @@ define(function(require) {
       onAddNewConfig: React.PropTypes.func,
       onRemoveConfig: React.PropTypes.func,
       onUpdateConfig: React.PropTypes.func,
-      getApiLogoUrlForRequired: React.PropTypes.func,
       getApiLogoUrlForConfig: React.PropTypes.func,
       getApiNameForConfig: React.PropTypes.func,
       toggle: React.PropTypes.func.isRequired,
@@ -41,14 +40,6 @@ define(function(require) {
 
     getAllConfigs: function() {
       return this.sortedById(this.props.allConfigs);
-    },
-
-    getApiLogoUrlForRequired: function() {
-      if (this.props.requiredConfig) {
-        return this.props.getApiLogoUrlForRequired(this.props.requiredConfig);
-      } else {
-        return null;
-      }
     },
 
     getApiLogoUrlForConfig: function(config) {
@@ -200,10 +191,11 @@ define(function(require) {
     },
 
     renderConfig: function() {
-      const imageUrl = this.getApiLogoUrlForRequired();
+      const hasConfig = Boolean(this.props.requiredConfig);
+      const imageUrl = hasConfig ? this.getApiLogoUrlForConfig(this.props.requiredConfig) : null;
       return (
         <div>
-          <Collapsible revealWhen={Boolean(this.props.requiredConfig)}>
+          <Collapsible revealWhen={hasConfig}>
 
             {this.props.requiredConfig ? (
               <div>
