@@ -124,7 +124,7 @@ class APIAccessController @Inject() (
 
   private def noApplicationResult(implicit request: SecuredRequest[EllipsisEnv, AnyContent]): Future[Result] = {
     Future.successful(
-      NotFound(views.html.error.notFound(viewConfig(None), Some("Can't find OAuth2 application"), None, None))
+      NotFound(views.html.error.notFound(viewConfig(None), Some("Can't find OAuth2 configuration"), None, None))
     )
   }
 

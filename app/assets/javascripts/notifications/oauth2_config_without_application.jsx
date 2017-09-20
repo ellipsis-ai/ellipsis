@@ -83,10 +83,6 @@ define(function(require) {
       detail.onNewOAuth2Application(requiredOAuth2ApiConfig);
     },
 
-    onConfigureOAuth2Application: function(detail, app) {
-
-    },
-
     render: function() {
       var numRequiredApiConfigs = this.props.details.length;
       if (numRequiredApiConfigs === 1) {
