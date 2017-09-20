@@ -12,10 +12,6 @@ define(function(require) {
     defaultNameInCode() {
       return Formatter.formatCamelCaseIdentifier(this.displayName);
     }
-
-    getSelectorLabel() {
-      return this.displayName || "meh";
-    }
   }
 
   return ApiConfigRef;

@@ -92,7 +92,7 @@ describe('BehaviorEditor', () => {
     }],
     "simpleTokenApis": [{
       "apiId": "pivotal-tracker",
-      "name": "Pivotal Tracker",
+      "displayName": "Pivotal Tracker",
       "tokenUrl": "https://www.pivotaltracker.com/profile",
       "logoImageUrl": "/assets/images/logos/pivotal_tracker.png"
     }],
@@ -163,7 +163,7 @@ describe('BehaviorEditor', () => {
     }],
     "simpleTokenApis": [{
       "apiId": "pivotal-tracker",
-      "name": "Pivotal Tracker",
+      "displayName": "Pivotal Tracker",
       "tokenUrl": "https://www.pivotaltracker.com/profile",
       "logoImageUrl": "/assets/images/logos/pivotal_tracker.png"
     }],
