@@ -5,11 +5,14 @@ global.fetch = require('./mocks/mock_fetch');
 
 import React from 'react';
 import TestUtils from 'react-addons-test-utils';
-const BehaviorEditor = require('../app/assets/javascripts/behavior_editor/index');
-const BehaviorVersion = require('../app/assets/javascripts/models/behavior_version');
-const BehaviorGroup = require('../app/assets/javascripts/models/behavior_group');
-const ResponseTemplate = require('../app/assets/javascripts/models/response_template');
-const ParamType = require('../app/assets/javascripts/models/param_type');
+const BehaviorEditor = require('../app/assets/javascripts/behavior_editor/index'),
+  BehaviorVersion = require('../app/assets/javascripts/models/behavior_version'),
+  BehaviorGroup = require('../app/assets/javascripts/models/behavior_group'),
+  ResponseTemplate = require('../app/assets/javascripts/models/response_template'),
+  ParamType = require('../app/assets/javascripts/models/param_type'),
+  aws = require('../app/assets/javascripts/models/aws'),
+  oauth2 = require('../app/assets/javascripts/models/oauth2'),
+  simpleToken = require('../app/assets/javascripts/models/simple_token');
 
 jsRoutes.controllers.BehaviorEditorController.edit = jest.fn(() => ({ url: '/mock_edit' }));
 jsRoutes.controllers.BehaviorEditorController.save = jest.fn(() => ({ url: '/mock_save' }));
@@ -22,7 +25,6 @@ jsRoutes.controllers.BehaviorEditorController.nodeModuleVersionsFor = jest.fn(()
 describe('BehaviorEditor', () => {
   const defaultConfig = Object.freeze({
     teamId: "A",
-    awsConfigs: [],
     group: {
       id: '1',
       actionInputs: [],
@@ -68,16 +70,33 @@ describe('BehaviorEditor', () => {
       name: 'Number',
       needsConfig: false
     }],
-    oAuth2Applications: [{
-      id: "567890",
-      displayName: "My awesome oauth app",
-      nameInCode: "myAwesomeOauthApp"
-    }, {
-      id: "098765",
-      displayName: "My other awesome oauth app",
-      nameInCode: "myOtherAwesomeOauthApp"
+    "awsConfigs": [{
+      "id": "aws",
+      "displayName": "main",
+      "accessKeyId": "a",
+      "secretAccessKey": "b",
+      "region": "c"
     }],
-    linkedOAuth2ApplicationIds: [],
+    "oauth2Applications": [{
+      "apiId": "RdG2Wm5DR0m2_4FZXf-yKA",
+      "applicationId": "Yy1QcMTcT96tZZmUoYLroQ",
+      "scope": "https://www.googleapis.com/auth/calendar",
+      "displayName": "Google Calendar"
+    }],
+    "oauth2Apis": [{
+      "apiId": "RdG2Wm5DR0m2_4FZXf-yKA",
+      "name": "Google",
+      "requiresAuth": true,
+      "newApplicationUrl": "https://console.developers.google.com/apis",
+      "scopeDocumentationUrl": "https://developers.google.com/identity/protocols/googlescopes"
+    }],
+    "simpleTokenApis": [{
+      "apiId": "pivotal-tracker",
+      "name": "Pivotal Tracker",
+      "tokenUrl": "https://www.pivotaltracker.com/profile",
+      "logoImageUrl": "/assets/images/logos/pivotal_tracker.png"
+    }],
+    "linkedOAuth2ApplicationIds": ["Yy1QcMTcT96tZZmUoYLroQ"],
     shouldRevealCodeEditor: true,
     onSave: jest.fn(),
     savedAnswers: [],
@@ -105,6 +124,7 @@ describe('BehaviorEditor', () => {
         "knownEnvVarsUsed": []
       }],
       "libraryVersions": [],
+      "requiredAWSConfigs": [],
       "requiredOAuth2ApiConfigs": [],
       "requiredSimpleTokenApis": [],
       "createdAt": "2017-09-15T11:58:07.36-04:00",
@@ -121,12 +141,18 @@ describe('BehaviorEditor', () => {
       "isAlreadySavedWithValue": false
     }],
     "savedAnswers": [],
+    "awsConfigs": [{
+      "id": "aws",
+      "displayName": "main",
+      "accessKeyId": "a",
+      "secretAccessKey": "b",
+      "region": "c"
+    }],
     "oauth2Applications": [{
       "apiId": "RdG2Wm5DR0m2_4FZXf-yKA",
       "applicationId": "Yy1QcMTcT96tZZmUoYLroQ",
       "scope": "https://www.googleapis.com/auth/calendar",
-      "displayName": "Google Calendar",
-      "keyName": "googleCalendar"
+      "displayName": "Google Calendar"
     }],
     "oauth2Apis": [{
       "apiId": "RdG2Wm5DR0m2_4FZXf-yKA",
@@ -159,6 +185,9 @@ describe('BehaviorEditor', () => {
   function createEditor(config) {
     const props = Object.assign({}, config, {
       group: BehaviorGroup.fromJson(config.group),
+      awsConfigs: config.awsConfigs.map(aws.AWSConfigRef.fromJson),
+      oauth2Applications: config.oauth2Applications.map(oauth2.OAuth2ApplicationRef.fromJson),
+      simpleTokenApis: config.simpleTokenApis.map(simpleToken.SimpleTokenApiRef.fromJson),
       builtinParamTypes: config.builtinParamTypes.map(ParamType.fromJson)
     });
     return TestUtils.renderIntoDocument(
