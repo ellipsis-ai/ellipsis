@@ -9,9 +9,10 @@ define(function(require) {
     },
 
     renderAuthRequiredFor: function (app) {
+      const editUrl = jsRoutes.controllers.BehaviorEditorController.edit(this.props.behaviorId).url;
+      const url = jsRoutes.controllers.APIAccessController.linkCustomOAuth2Service(app.config.id, null, null, null, editUrl).url;
       return (
-        <a
-          href={jsRoutes.controllers.APIAccessController.linkCustomOAuth2Service(app.applicationId, null, null, null, jsRoutes.controllers.BehaviorEditorController.edit(this.props.behaviorId).url).url}>{app.displayName}</a>
+        <a href={url}>{app.configString()}</a>
       );
     },
 

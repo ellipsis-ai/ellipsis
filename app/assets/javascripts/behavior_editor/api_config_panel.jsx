@@ -59,6 +59,7 @@ define(function(require) {
 
     onDeleteRequired: function() {
       this.props.onRemoveConfig(this.props.requiredConfig);
+      this.props.onDoneClick();
     },
 
     render: function() {
@@ -187,7 +188,7 @@ define(function(require) {
         <div>
           <Collapsible revealWhen={hasConfig}>
 
-            {this.props.requiredConfig ? (
+            {hasConfig ? (
               <div>
                 <div className="mbxl">
                   {imageUrl ? <img className="mrs align-m" src={imageUrl} height="24"/> : null}
@@ -226,9 +227,6 @@ define(function(require) {
         </div>
       );
     }
-
-
-
 
   });
 
