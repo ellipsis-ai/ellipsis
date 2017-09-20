@@ -114,7 +114,7 @@ class OAuth2ApplicationController @Inject() (
         } yield {
           teamAccess.maybeTargetTeam.map { team =>
             val dataRoute = routes.OAuth2ApplicationController.newApp(maybeTeamId, maybeBehaviorId, maybeRequiredNameInCode)
-            Ok(views.html.oauth2application.edit(viewConfig(Some(teamAccess)), "Add an API application", dataRoute))
+            Ok(views.html.oauth2application.edit(viewConfig(Some(teamAccess)), "Add an API configuration", dataRoute))
           }.getOrElse {
             NotFound(s"Team not found: ${maybeTeamId}")
           }
@@ -161,7 +161,7 @@ class OAuth2ApplicationController @Inject() (
             )
             Ok(views.js.shared.pageConfig(viewConfig(Some(teamAccess)), "config/oauth2application/edit", Json.toJson(config)))
           }).getOrElse {
-            NotFound("Unknown application")
+            NotFound("Unknown configuration")
           }
         }
         case Accepts.Html() => {
@@ -170,13 +170,13 @@ class OAuth2ApplicationController @Inject() (
             _ <- maybeApplication
           } yield {
             val dataRoute = routes.OAuth2ApplicationController.edit(id, maybeTeamId)
-            Ok(views.html.oauth2application.edit(viewConfig(Some(teamAccess)), "Edit API application", dataRoute))
+            Ok(views.html.oauth2application.edit(viewConfig(Some(teamAccess)), "Edit API configuration", dataRoute))
           }).getOrElse {
             NotFound(
               views.html.error.notFound(
                 viewConfig(Some(teamAccess)),
-                Some("OAuth2 application not found"),
-                Some("The OAuth2 application you are trying to access could not be found."),
+                Some("OAuth2 API configuration not found"),
+                Some("The OAuth2 API configuration you are trying to access could not be found."),
                 Some(reAuthLinkFor(request, None))
               ))
           }

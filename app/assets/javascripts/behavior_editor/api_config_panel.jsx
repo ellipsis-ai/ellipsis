@@ -122,7 +122,7 @@ define(function(require) {
           />
           <DropdownMenu.Item
             onClick={this.props.addNewOAuth2Application}
-            label="Add new OAuth2 API application…"
+            label="Add new OAuth2 API configuration…"
           />
         </DropdownMenu>
       );

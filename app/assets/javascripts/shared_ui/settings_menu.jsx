@@ -22,7 +22,7 @@ define(function (require) {
               <a href={jsRoutes.controllers.APITokenController.listTokens(null, this.props.teamId).url}>Ellipsis API tokens</a>
             </li>
             <li className={this.activeClassWhenPageName("oauthApplications")}>
-              <a href={jsRoutes.controllers.OAuth2ApplicationController.list(this.props.teamId).url}>Third-party API applications</a>
+              <a href={jsRoutes.controllers.OAuth2ApplicationController.list(this.props.teamId).url}>Third-party API configurations</a>
             </li>
             <li className={this.activeClassWhenPageName("awsConfigs")}>
               <a href={jsRoutes.controllers.AWSConfigController.list(this.props.teamId).url}>Amazon Web Services (AWS) configurations</a>

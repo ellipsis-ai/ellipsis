@@ -276,7 +276,7 @@ define(function(require) {
       return (
         <h3 className="mvn ptxxl type-weak display-ellipsis">
           <span className="mrs">
-            <a href={jsRoutes.controllers.OAuth2ApplicationController.list().url}>API applications</a>
+            <a href={jsRoutes.controllers.OAuth2ApplicationController.list().url}>API configurations</a>
           </span>
           <span className="mhs">→</span>
           {this.renderApplicationHeader()}
@@ -287,13 +287,13 @@ define(function(require) {
     renderApplicationHeader: function() {
       if (!this.apiIsSet()) {
         return (
-          <span className="mhs">Add an application</span>
+          <span className="mhs">Add a configuration</span>
         );
       } else if (!this.props.applicationSaved) {
         return (
           <span>
             <span className="mhs">
-              <button className="button-raw" onClick={this.reset}>Add an application</button>
+              <button className="button-raw" onClick={this.reset}>Add a configuration</button>
             </span>
             <span className="mhs">→</span>
             <span className="mhs">{this.getApplicationApiName()}</span>
@@ -302,7 +302,7 @@ define(function(require) {
       } else {
         return (
           <span>
-            <span className="mhs">Edit an application</span>
+            <span className="mhs">Edit a configuration</span>
             <span className="mhs">→</span>
             <span className="mhs">{this.getApplicationName() || (<span className="type-disabled">Untitled</span>)}</span>
           </span>
@@ -315,7 +315,7 @@ define(function(require) {
         <div>
           <p className="mtm">
             <span>Choose an API you would like to integrate with Ellipsis. This will allow your skills to read </span>
-            <span>and/or write data from that product. You can create multiple applications for a single API, each </span>
+            <span>and/or write data from that product. You can create multiple configurations for a single API, each </span>
             <span>with a different level of access.</span>
           </p>
 
@@ -359,14 +359,14 @@ define(function(require) {
     renderConfigureApplication: function() {
       return (
         <div>
-          <p className="mtm mbxl">Configure a new {this.getApplicationApiName()} application so your skills can access data from a {this.getApplicationApiName()} account.</p>
+          <p className="mtm mbxl">Configure a new {this.getApplicationApiName()} configuration so your skills can access data from a {this.getApplicationApiName()} account.</p>
 
           <div>
             <h4 className="mbn position-relative">
               <span className="position-hanging-indent">1</span>
-              <span> Enter a name for this application</span>
+              <span> Enter a name for this configuration</span>
             </h4>
-            <p className="type-s">The name should help differentiate this from any other {this.getApplicationApiName()} applications you may have with different kinds of access, or access to a different set of data.</p>
+            <p className="type-s">The name should help differentiate this from any other {this.getApplicationApiName()} configurations you may have with different kinds of access, or access to a different set of data.</p>
 
             <div className="mbxxl columns">
               <div className="column column-two-thirds">
@@ -466,7 +466,7 @@ define(function(require) {
                 {ifPresent(this.getApplicationApiScopeDocumentationUrl(), url => (
                   <p className="type-s">
                     <span>Use the <a href={url} target="_blank">scope documentation at {this.getApplicationApiName()}</a> to determine </span>
-                    <span>the correct value for your application.</span>
+                    <span>the correct value for your configuration.</span>
                   </p>
                 ))}
 
