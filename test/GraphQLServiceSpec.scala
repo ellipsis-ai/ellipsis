@@ -4,6 +4,7 @@ import json._
 import models.accounts.user.User
 import models.behaviors.behaviorgroup.BehaviorGroup
 import models.behaviors.behaviorparameter.{NumberType, TextType, YesNoType}
+import models.behaviors.defaultstorageitem.{IdPassedForCreationException, NoIdPassedForUpdateException}
 import play.api.libs.json._
 import services.{DataService, GraphQLService, ItemNotFoundError}
 import support.DBSpec
@@ -50,6 +51,11 @@ class GraphQLServiceSpec extends DBSpec {
           behaviorVersions = Seq(behaviorVersionData, behaviorVersionData2)
         )}
 
+  def assertResultHasNoData(result: JsValue) = {
+    val maybeData = (result \ "data").asOpt[JsValue]
+    (maybeData.isEmpty || maybeData.contains(JsNull)) mustBe true
+  }
+
   def assertResultContainsErrorMessages(result: JsValue, messages: Seq[String]) = {
     val errors = (result \ "errors").as[Seq[JsValue]].map(ea => (ea \ "message").as[String])
     errors must have length(messages.length)
@@ -82,10 +88,16 @@ class GraphQLServiceSpec extends DBSpec {
         filterArg.argumentType.namedType.name mustBe someType.behaviorVersion.inputName
 
         val mutation = schema.mutation.get
-        mutation.fields must have length(4)
+        mutation.fields must have length(6)
 
         val someTypeCreateField = mutation.fields.find(_.name == someType.behaviorVersion.createFieldName).get
         someTypeCreateField.arguments must have length(1)
+        val createArg = someTypeCreateField.arguments.head
+        createArg.name mustBe someType.behaviorVersion.fieldName
+        createArg.argumentType.namedType.name mustBe someType.behaviorVersion.inputName
+
+        val someTypeUpdateField = mutation.fields.find(_.name == someType.behaviorVersion.createFieldName).get
+        someTypeUpdateField.arguments must have length(1)
         val updateArg = someTypeCreateField.arguments.head
         updateArg.name mustBe someType.behaviorVersion.fieldName
         updateArg.argumentType.namedType.name mustBe someType.behaviorVersion.inputName
@@ -123,11 +135,17 @@ class GraphQLServiceSpec extends DBSpec {
         filterArg.argumentType.namedType.name mustBe someTypeBehaviorVersion.inputName
 
         val mutation = schema.mutation.get
-        mutation.fields must have length(4)
+        mutation.fields must have length(6)
 
         val someTypeCreateField = mutation.fields.find(_.name == someTypeBehaviorVersion.createFieldName).get
         someTypeCreateField.arguments must have length(1)
-        val updateArg = someTypeCreateField.arguments.head
+        val createArg = someTypeCreateField.arguments.head
+        createArg.name mustBe someTypeBehaviorVersion.fieldName
+        createArg.argumentType.namedType.name mustBe someTypeBehaviorVersion.inputName
+
+        val someTypeUpdateField = mutation.fields.find(_.name == someTypeBehaviorVersion.updateFieldName).get
+        someTypeUpdateField.arguments must have length(1)
+        val updateArg = someTypeUpdateField.arguments.head
         updateArg.name mustBe someTypeBehaviorVersion.fieldName
         updateArg.argumentType.namedType.name mustBe someTypeBehaviorVersion.inputName
 
@@ -288,6 +306,69 @@ class GraphQLServiceSpec extends DBSpec {
       })
     }
 
+    "save a new record, update it, query it" in {
+      withEmptyDB(dataService, { () =>
+        val team = newSavedTeam
+        val user = newSavedUserOn(team)
+        val group = newSavedBehaviorGroupFor(team)
+        val groupData = buildGroupDataFor(group, user)
+        val firstVersion = newSavedGroupVersionFor(group, user, Some(groupData))
+        val dataTypeConfigs = runNow(dataService.dataTypeConfigs.allFor(firstVersion))
+        val someType = dataTypeConfigs.find(_.behaviorVersion.typeName == "SomeType").get
+
+        val createMutation =
+          """mutation CreateSomeType($someType: SomeTypeInput!) {
+            |  createSomeType(someType: $someType) {
+            |    foo
+            |  }
+            |}
+          """.stripMargin
+        val jsonData = JsObject(Map("foo" -> JsString("bar")))
+        val mutationVariables = JsObject(Map("someType" -> jsonData)).toString
+        val mutationResult = runNow(graphQLService.runQuery(firstVersion.group, user, createMutation, None, Some(mutationVariables)))
+        val savedItems = runNow(dataService.defaultStorageItems.filter(someType.behaviorVersion.typeName, jsonData, group))
+        savedItems must have length(1)
+        val savedItem = savedItems.head
+        (savedItem.data \ "foo").as[String] mustBe "bar"
+        (savedItem.data \ "id").as[String] mustBe savedItem.id
+        (mutationResult \ "data").get mustBe JsObject(Map("createSomeType" -> JsObject(Map("foo" -> JsString("bar")))))
+
+        val updateMutation =
+          """mutation UpdateSomeType($someType: SomeTypeInput!) {
+            |  updateSomeType(someType: $someType) {
+            |    foo
+            |  }
+            |}
+          """.stripMargin
+        val updateVariables = JsObject(Map("someType" -> JsObject(Map("id" -> JsString(savedItem.id), "foo" -> JsString("updated"))))).toString
+
+        val updateResult = runNow(graphQLService.runQuery(firstVersion.group, user, updateMutation, None, Some(updateVariables)))
+        (updateResult \ "data").get mustBe JsObject(Map("updateSomeType" -> JsObject(Map("foo" -> JsString("updated")))))
+
+        val newValueQuery =
+          """{
+            |  someTypeList(filter: { foo: "updated" }) {
+            |    foo
+            |  }
+            |}
+          """.stripMargin
+        val newValueQueryResult = runNow(graphQLService.runQuery(firstVersion.group, user, newValueQuery, None, None))
+        (newValueQueryResult \ "data").get mustBe JsObject(Map("someTypeList" -> JsArray(Array(JsObject(Map("foo" -> JsString("updated")))))))
+
+        val oldValueQuery =
+          """{
+            |  someTypeList(filter: { foo: "bar" }) {
+            |    foo
+            |  }
+            |}
+          """.stripMargin
+        val oldValueQueryResult = runNow(graphQLService.runQuery(firstVersion.group, user, oldValueQuery, None, None))
+        // should be empty
+        (oldValueQueryResult \ "data").get mustBe JsObject(Map("someTypeList" -> JsArray.empty))
+
+      })
+    }
+
     "return an appropriate error trying to delete a nonexistent item" in {
       withEmptyDB(dataService, { () =>
         val team = newSavedTeam
@@ -323,7 +404,7 @@ class GraphQLServiceSpec extends DBSpec {
         val query: String = "some nonsense"
         val result = runNow(graphQLService.runQuery(firstVersion.group, user, query, None, None))
 
-        (result \ "data").toOption mustBe None
+        assertResultHasNoData(result)
         assertResultContainsErrorMessages(result, Seq("Syntax error while parsing GraphQL query"))
       })
     }
@@ -345,8 +426,78 @@ class GraphQLServiceSpec extends DBSpec {
           """.stripMargin
         val result = runNow(graphQLService.runQuery(firstVersion.group, user, query, None, None))
 
-        (result \ "data").toOption mustBe None
+        assertResultHasNoData(result)
         assertResultContainsErrorMessages(result, Seq("""Query does not pass validation. Violations:\s*Cannot query field 'nonExistent' on type 'SomeType'"""))
+      })
+    }
+
+    "return an appropriate error trying to create an item while passing in an ID" in {
+      withEmptyDB(dataService, { () =>
+
+        val team = newSavedTeam
+        val user = newSavedUserOn(team)
+        val group = newSavedBehaviorGroupFor(team)
+        val groupData = buildGroupDataFor(group, user)
+        val firstVersion = newSavedGroupVersionFor(group, user, Some(groupData))
+
+        val createMutation =
+          """mutation CreateSomeType($someType: SomeTypeInput!) {
+            |  createSomeType(someType: $someType) {
+            |    foo
+            |  }
+            |}
+          """.stripMargin
+        val id = "12345abcdef"
+        val jsonData = JsObject(Map("id" -> JsString(id), "foo" -> JsString("bar")))
+        val mutationVariables = JsObject(Map("someType" -> jsonData)).toString
+        val result = runNow(graphQLService.runQuery(firstVersion.group, user, createMutation, None, Some(mutationVariables)))
+
+        assertResultHasNoData(result)
+        assertResultContainsErrorMessages(result, Seq(new IdPassedForCreationException(id).getMessage))
+      })
+    }
+
+    "return an appropriate error trying to update an item without passing in an ID" in {
+      withEmptyDB(dataService, { () =>
+
+        val team = newSavedTeam
+        val user = newSavedUserOn(team)
+        val group = newSavedBehaviorGroupFor(team)
+        val groupData = buildGroupDataFor(group, user)
+        val firstVersion = newSavedGroupVersionFor(group, user, Some(groupData))
+        val dataTypeConfigs = runNow(dataService.dataTypeConfigs.allFor(firstVersion))
+        val someType = dataTypeConfigs.find(_.behaviorVersion.typeName == "SomeType").get
+
+        val createMutation =
+          """mutation CreateSomeType($someType: SomeTypeInput!) {
+            |  createSomeType(someType: $someType) {
+            |    foo
+            |  }
+            |}
+          """.stripMargin
+        val jsonData = JsObject(Map("foo" -> JsString("bar")))
+        val mutationVariables = JsObject(Map("someType" -> jsonData)).toString
+        val mutationResult = runNow(graphQLService.runQuery(firstVersion.group, user, createMutation, None, Some(mutationVariables)))
+        val savedItems = runNow(dataService.defaultStorageItems.filter(someType.behaviorVersion.typeName, jsonData, group))
+        savedItems must have length(1)
+        val savedItem = savedItems.head
+        (savedItem.data \ "foo").as[String] mustBe "bar"
+        (savedItem.data \ "id").as[String] mustBe savedItem.id
+        (mutationResult \ "data").get mustBe JsObject(Map("createSomeType" -> JsObject(Map("foo" -> JsString("bar")))))
+
+        val updateMutation =
+          """mutation UpdateSomeType($someType: SomeTypeInput!) {
+            |  updateSomeType(someType: $someType) {
+            |    foo
+            |  }
+            |}
+          """.stripMargin
+        val updateVariables = JsObject(Map("someType" -> JsObject(Map("foo" -> JsString("updated"))))).toString
+
+        val updateResult = runNow(graphQLService.runQuery(firstVersion.group, user, updateMutation, None, Some(updateVariables)))
+
+        assertResultHasNoData(updateResult)
+        assertResultContainsErrorMessages(updateResult, Seq(new NoIdPassedForUpdateException().getMessage))
       })
     }
   }
