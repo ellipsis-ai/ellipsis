@@ -243,7 +243,13 @@ define(function(require) {
       var apps = this.props.appsRequiringAuth;
       if (apps.length > 0) {
         return (
-          <TesterAuthRequired behaviorId={this.props.behaviorId} appsRequiringAuth={apps}/>
+          <div>
+            <TesterAuthRequired behaviorId={this.props.behaviorId} appsRequiringAuth={apps}/>
+
+            <div className="mtxl">
+              <button className="mrs" type="button" onClick={this.onDone}>Cancel</button>
+            </div>
+          </div>
         );
       } else {
         return this.renderTester();
@@ -278,6 +284,7 @@ define(function(require) {
               />
               <span className="align-button">{this.renderResultStatus()}</span>
             </div>
+
             <div className="column column-shrink">
               <button className="mrs" type="button" onClick={this.onDone}>Done</button>
             </div>
