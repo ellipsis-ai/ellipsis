@@ -72,6 +72,14 @@ define(function(require) {
       return logoUrl;
     }
 
+    getApiName(editor) {
+      return editor.getOAuth2ApiNameForConfig(this);
+    }
+
+    configString() {
+      return this.displayName;
+    }
+
     static fromJson(props) {
       return new AWSConfigRef(props);
     }

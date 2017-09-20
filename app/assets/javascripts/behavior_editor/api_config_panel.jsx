@@ -7,7 +7,8 @@ define(function(require) {
     FormInput = require('../form/input'),
     Button = require('../form/button'),
     RequiredApiConfig = require('../models/required_api_config'),
-    Select = require('../form/select');
+    Select = require('../form/select'),
+    Sort = require('../lib/sort');
 
   const ApiConfigPanel = React.createClass({
     propTypes: {
@@ -20,26 +21,15 @@ define(function(require) {
       onUpdateConfig: React.PropTypes.func,
       getApiLogoUrlForConfig: React.PropTypes.func,
       getApiNameForConfig: React.PropTypes.func,
+      getApiConfigName: React.PropTypes.func,
       toggle: React.PropTypes.func.isRequired,
       onDoneClick: React.PropTypes.func.isRequired,
       addNewAWSConfig: React.PropTypes.func.isRequired,
       addNewOAuth2Application: React.PropTypes.func.isRequired
     },
 
-    sortedById: function(arr) {
-      return arr.sort((a, b) => {
-        if (a.id === b.id) {
-          return 0;
-        } else if (a.id < b.id) {
-          return -1;
-        } else {
-          return 1;
-        }
-      });
-    },
-
     getAllConfigs: function() {
-      return this.sortedById(this.props.allConfigs);
+      return Sort.arrayAlphabeticalBy(this.props.allConfigs, (ea) => ea.displayName);
     },
 
     getApiLogoUrlForConfig: function(config) {
@@ -57,9 +47,9 @@ define(function(require) {
             );
           })}
           <div className="column column-expand align-m">
-             {config.getSelectorLabel()}
-           </div>
-         </div>
+            {this.props.getApiConfigName(config)}
+          </div>
+        </div>
       );
     },
 
@@ -99,7 +89,7 @@ define(function(require) {
           labelClassName="button-dropdown-trigger-menu-above"
           menuClassName="popup-dropdown-menu-wide popup-dropdown-menu-above"
         >
-          {this.props.allConfigs.map((cfg, index) => (
+          {this.getAllConfigs().map((cfg, index) => (
             <DropdownMenu.Item
               key={"api-config-" + index}
               onClick={this.onAddNewRequiredFor.bind(this, cfg)}

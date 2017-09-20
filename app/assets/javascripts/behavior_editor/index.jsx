@@ -224,13 +224,18 @@ const BehaviorEditor = React.createClass({
     return selected ? selected.onUpdateConfigFor(this) : this.onUpdateNewConfig;
   },
 
+  getApiLogoUrlForApi(api) {
+    return api ? (api.logoImageUrl || api.iconImageUrl) : null;
+  },
+
   getOAuth2LogoUrlForConfig: function(config) {
     const api = this.getOAuth2ApiWithId(config.apiId);
-    return api ? (api.logoImageUrl || api.iconImageUrl) : undefined;
+    return this.getApiLogoUrlForApi(api);
   },
 
   getSimpleTokenLogoUrlForConfig: function(config) {
-    return config.logoImageUrl || config.iconImageUrl;
+    const api = this.getSimpleTokenApiWithId(config.apiId);
+    return this.getApiLogoUrlForApi(api);
   },
 
   getApiLogoUrlForConfig: function(config) {
@@ -1838,6 +1843,7 @@ const BehaviorEditor = React.createClass({
               requiredConfig={this.getSelectedApiConfig()}
               getApiLogoUrlForConfig={this.getApiLogoUrlForConfig}
               getApiNameForConfig={this.getApiNameForConfig}
+              getApiConfigName={this.getApiConfigName}
               allConfigs={this.getApiConfigsForSelected()}
               onAddConfig={this.onAddConfigForSelected()}
               onAddNewConfig={this.onAddNewConfigForSelected()}

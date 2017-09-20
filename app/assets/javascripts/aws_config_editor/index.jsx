@@ -4,8 +4,7 @@ define(function(require) {
     CsrfTokenHiddenInput = require('../shared_ui/csrf_token_hidden_input'),
     SettingsMenu = require('../shared_ui/settings_menu'),
     ifPresent = require('../lib/if_present'),
-    Input = require('../form/input'),
-    Formatter = require('../lib/formatter');
+    Input = require('../form/input');
 
   return React.createClass({
     displayName: 'ConfigEditor',
@@ -87,12 +86,6 @@ define(function(require) {
       this.setState({
         isSaving: true
       });
-    },
-
-    onFocusExample: function(event) {
-      if (event) {
-        event.target.select();
-      }
     },
 
     reset: function() {
@@ -247,12 +240,6 @@ define(function(require) {
                     onEnterKey={this.onNameEnterKey}
                   />
                 </div>
-
-                <div className="mtm type-s">
-                  <span className="type-weak mrxs">To access this config in code: </span>
-                  <code className="box-code-example">ellipsis.aws.{Formatter.formatCamelCaseIdentifier(this.getName())}</code>
-                </div>
-
               </div>
             </div>
 

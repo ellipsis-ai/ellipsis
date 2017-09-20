@@ -36,16 +36,11 @@ define(function(require) {
     },
 
     renderConfigs: function(configs) {
-      return (
-        configs.map((required, index) => (
-          <div
-            key={`apiConfig${index}`}
-            className={`pvxs`}
-          >
-            {this.renderConfig(required)}
-          </div>
-        ))
-      );
+      return configs.map((required, index) => (
+        <div key={`apiConfig${index}`} className={`pvxs`}>
+          {this.renderConfig(required)}
+        </div>
+      ));
     },
 
     render: function() {

@@ -60,8 +60,16 @@ define(function(require) {
       });
     }
 
-    getApiLogoUrl(editor) {
-      return editor.getSimpleTokenLogoUrlForConfig(this);
+    getApiLogoUrl() {
+      return this.logoImageUrl;
+    }
+
+    getApiName() {
+      return this.displayName;
+    }
+
+    configString() {
+      return this.displayName;
     }
 
     newRequired() {

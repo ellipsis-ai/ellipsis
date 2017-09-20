@@ -74,6 +74,14 @@ define(function(require) {
       return editor.getOAuth2LogoUrlForConfig(this);
     }
 
+    getApiName(editor) {
+      return editor.getOAuth2ApiNameForConfig(this);
+    }
+
+    configString() {
+      return this.displayName;
+    }
+
     newRequired() {
       return new RequiredOAuth2Application({
         id: ID.next(),
