@@ -222,13 +222,8 @@ const BehaviorEditor = React.createClass({
     return selected ? selected.onUpdateConfigFor(this) : this.onUpdateNewConfig;
   },
 
-  getOAuth2LogoUrlForRequired: function(required) {
-    const api = this.props.oauth2Apis.find(ea => ea.apiId === required.apiId);
-    return api ? (api.logoImageUrl || api.iconImageUrl) : undefined;
-  },
-
   getOAuth2LogoUrlForConfig: function(config) {
-    const api = this.props.oauth2Apis.find(ea => ea.apiId === config.apiId);
+    const api = this.getOAuth2ApiWithId(config.apiId);
     return api ? (api.logoImageUrl || api.iconImageUrl) : undefined;
   },
 

@@ -28,7 +28,7 @@ define(function(require) {
     }
 
     getApiLogoUrl(editor) {
-      return editor.getOAuth2LogoUrlForRequired;
+      return editor.getOAuth2LogoUrlForConfig;
     }
 
     getAllConfigsFrom(editor) {
