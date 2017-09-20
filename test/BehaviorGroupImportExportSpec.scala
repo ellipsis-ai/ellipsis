@@ -9,8 +9,7 @@ import models.behaviors.behaviorparameter.{BehaviorBackedDataType, BehaviorParam
 import models.behaviors.behaviorversion.BehaviorVersion
 import support.DBSpec
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 class BehaviorGroupImportExportSpec extends DBSpec {
 
@@ -22,7 +21,7 @@ class BehaviorGroupImportExportSpec extends DBSpec {
     dataType.maybeName must contain(paramType.name)
   }
 
-  def exportAndImport(group: BehaviorGroup, exportUser: User, importUser: User): Unit = {
+  def exportAndImport(group: BehaviorGroup, exportUser: User, importUser: User)(implicit ec: ExecutionContext): Unit = {
     val maybeImportTeam = runNow(dataService.teams.find(importUser.teamId))
     val maybeExporter = runNow(BehaviorGroupExporter.maybeFor(group.id, exportUser, dataService))
     maybeExporter.isDefined mustBe(true)
@@ -35,14 +34,14 @@ class BehaviorGroupImportExportSpec extends DBSpec {
     runNow(importer.run)
   }
 
-  def checkImportedBehaviorsCorrectly(exported: BehaviorGroup, imported: BehaviorGroup): Unit = {
+  def checkImportedBehaviorsCorrectly(exported: BehaviorGroup, imported: BehaviorGroup)(implicit ec: ExecutionContext): Unit = {
     val exportedBehaviors = runNow(dataService.behaviors.regularForGroup(exported))
     val importedBehaviors = runNow(dataService.behaviors.regularForGroup(imported))
     exportedBehaviors.length mustBe importedBehaviors.length
     exportedBehaviors.map(_.id).intersect(importedBehaviors.map(_.id)) mustBe empty
   }
 
-  def checkImportedDataTypesCorrectly(exported: BehaviorGroup, imported: BehaviorGroup): Unit = {
+  def checkImportedDataTypesCorrectly(exported: BehaviorGroup, imported: BehaviorGroup)(implicit ec: ExecutionContext): Unit = {
     val exportedDataTypes = runNow(dataService.behaviors.dataTypesForGroup(exported))
     val importedDataTypes = runNow(dataService.behaviors.dataTypesForGroup(imported))
     exportedDataTypes.length mustBe importedDataTypes.length
@@ -56,7 +55,7 @@ class BehaviorGroupImportExportSpec extends DBSpec {
     exportedInputs.map(_.id).intersect(importedInputs.map(_.id)) mustBe empty
   }
 
-  def mustBeValidImport(exported: BehaviorGroup, imported: BehaviorGroup): Unit = {
+  def mustBeValidImport(exported: BehaviorGroup, imported: BehaviorGroup)(implicit ec: ExecutionContext): Unit = {
     val reloadedExported = runNow(dataService.behaviorGroups.findWithoutAccessCheck(exported.id).map(_.get))
     reloadedExported.id must not be(imported.id)
 
@@ -74,7 +73,7 @@ class BehaviorGroupImportExportSpec extends DBSpec {
   "BehaviorGroupExporter" should {
 
     "export and import back in" in {
-      withEmptyDB(dataService, { db =>
+      withEmptyDB(dataService, { () =>
         val team = newSavedTeam
         val user = newSavedUserOn(team)
         val group = newSavedBehaviorGroupFor(team)
@@ -112,7 +111,7 @@ class BehaviorGroupImportExportSpec extends DBSpec {
     }
 
     "export and import back in with shared param" in {
-      withEmptyDB(dataService, { db =>
+      withEmptyDB(dataService, { () =>
         val team = newSavedTeam
         val user = newSavedUserOn(team)
         val group = newSavedBehaviorGroupFor(team)
@@ -160,7 +159,7 @@ class BehaviorGroupImportExportSpec extends DBSpec {
     }
 
     "export and import back in with a data type" in {
-      withEmptyDB(dataService, { db =>
+      withEmptyDB(dataService, { () =>
         val team = newSavedTeam
         val user = newSavedUserOn(team)
         val group = newSavedBehaviorGroupFor(team)
@@ -223,7 +222,7 @@ class BehaviorGroupImportExportSpec extends DBSpec {
     }
 
     "export and import back in with a default-storage-backed data type" in {
-      withEmptyDB(dataService, { db =>
+      withEmptyDB(dataService, { () =>
         val team = newSavedTeam
         val user = newSavedUserOn(team)
         val group = newSavedBehaviorGroupFor(team)
@@ -272,7 +271,7 @@ class BehaviorGroupImportExportSpec extends DBSpec {
     }
 
     "export and import back in with a search data type" in {
-      withEmptyDB(dataService, { db =>
+      withEmptyDB(dataService, { () =>
         val team = newSavedTeam
         val user = newSavedUserOn(team)
         val group = newSavedBehaviorGroupFor(team)
@@ -319,7 +318,7 @@ class BehaviorGroupImportExportSpec extends DBSpec {
     }
 
     "export and import back in with a code library" in {
-      withEmptyDB(dataService, { db =>
+      withEmptyDB(dataService, { () =>
         val team = newSavedTeam
         val user = newSavedUserOn(team)
         val group = newSavedBehaviorGroupFor(team)
@@ -360,7 +359,7 @@ class BehaviorGroupImportExportSpec extends DBSpec {
     }
 
     "export and import back in with a required oauth2 config without the oauth2 app already existing for the team" in {
-      withEmptyDB(dataService, { db =>
+      withEmptyDB(dataService, { () =>
         val team = newSavedTeam
         val user = newSavedUserOn(team)
         val group = newSavedBehaviorGroupFor(team)
@@ -396,7 +395,7 @@ class BehaviorGroupImportExportSpec extends DBSpec {
     }
 
     "export and import back in with a required oauth2 config with an oauth2 app already existing for the team" in {
-      withEmptyDB(dataService, { db =>
+      withEmptyDB(dataService, { () =>
         val team = newSavedTeam
         val user = newSavedUserOn(team)
         val group = newSavedBehaviorGroupFor(team)

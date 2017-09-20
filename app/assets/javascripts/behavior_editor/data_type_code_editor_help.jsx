@@ -12,17 +12,7 @@ define(function(require) {
 
     hasCalledOnSuccess: function() {
       var code = this.props.functionBody;
-      return /\bonSuccess\([\s\S]*?\)/.test(code) ||
-        /\bellipsis\.success\([\s\S]*?\)/.test(code);
-    },
-
-    hasCalledRequire: function() {
-      var code = this.props.functionBody;
-      return /\brequire\(\s*\S.+?\)/.test(code);
-    },
-
-    hasCode: function() {
-      return /\S/.test(this.props.functionBody);
+      return /\bellipsis\.success\([\s\S]*?\)/.test(code);
     },
 
     codeUsesSearchQuery: function() {
@@ -34,30 +24,16 @@ define(function(require) {
       return (
         <div>
           <Checklist disabledWhen={this.props.isFinishedBehavior}>
-            <Checklist.Item hiddenWhen={this.hasCode()}>
+            <Checklist.Item hiddenWhen={this.hasCalledOnSuccess() || this.props.isFinishedBehavior}>
               <span>Write a Node.js (<a href={Constants.NODE_JS_DOCS_URL} target="_blank">{Constants.NODE_JS_VERSION}</a>) </span>
-              <span>function. You can <code>require()</code> any </span>
-              <span><a href="https://www.npmjs.com/" target="_blank">NPM package</a>.</span>
+              <span>function that calls <code className="type-bold">ellipsis.success()</code> with an array of items.</span>
             </Checklist.Item>
 
-            <Checklist.Item hiddenWhen={!this.hasCode() || this.hasCalledRequire()}>
-              <span>Use <code>require(…)</code> to load any NPM package or local library.</span>
+            <Checklist.Item hiddenWhen={this.props.isFinishedBehavior}>
+              <span>Each item should have an <code className="type-bold">id</code> and <code className="type-bold">label</code> property.</span>
             </Checklist.Item>
 
-            <Checklist.Item checkedWhen={this.hasCalledOnSuccess()} hiddenWhen={false}>
-              <span>End the function by calling </span>
-              <code className="type-bold">ellipsis.success(<span className="type-regular">…</span>)</code>
-              <span> with an array of objects, each with <code className="type-bold">id</code> and <code className="type-bold">label</code> properties.</span>
-              <pre className="box-code-example width-30"><code>
-{`ellipsis.success([
-  { label: 'one', id: '1' },
-  { label: 'two', id: '2' },
-  { label: 'three', id: '3' }
-]);`}
-              </code></pre>
-            </Checklist.Item>
-
-            <Checklist.Item checkedWhen={this.codeUsesSearchQuery()} hiddenWhen={!this.props.usesSearch}>
+            <Checklist.Item checkedWhen={this.codeUsesSearchQuery()} hiddenWhen={!this.props.usesSearch || this.props.isFinishedBehavior}>
               <span>You can use the <code className="type-bold">searchQuery</code> parameter to help filter the results</span>
             </Checklist.Item>
 

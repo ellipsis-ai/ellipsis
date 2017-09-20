@@ -15,8 +15,7 @@ import services.DataService
 import slick.dbio.DBIO
 import utils.NameFormatter
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 case class BehaviorVersionData(
                                 id: Option[String],
@@ -40,11 +39,11 @@ case class BehaviorVersionData(
 
   lazy val typeName: String = name.getOrElse(GraphQLHelpers.fallbackTypeName)
 
-  def dataTypeFieldsAction(dataService: DataService): DBIO[Seq[DataTypeFieldForSchema]] = {
+  def dataTypeFieldsAction(dataService: DataService)(implicit ec: ExecutionContext): DBIO[Seq[DataTypeFieldForSchema]] = {
     DBIO.successful(config.dataTypeConfig.map(_.fields).getOrElse(Seq()))
   }
 
-  def dataTypeFields(dataService: DataService): Future[Seq[DataTypeFieldForSchema]] = {
+  def dataTypeFields(dataService: DataService)(implicit ec: ExecutionContext): Future[Seq[DataTypeFieldForSchema]] = {
     dataService.run(dataTypeFieldsAction(dataService))
   }
 
@@ -98,7 +97,7 @@ case class BehaviorVersionData(
 
   lazy val maybeFirstTrigger: Option[String] = triggers.filterNot(_.isRegex).map(_.text.toLowerCase).sorted.headOption
 
-  def maybeFunction(dataService: DataService): Future[Option[String]] = {
+  def maybeFunction(dataService: DataService)(implicit ec: ExecutionContext): Future[Option[String]] = {
     id.map { behaviorVersionId =>
       dataService.behaviorVersions.findWithoutAccessCheck(behaviorVersionId).flatMap { maybeBehaviorVersion =>
         maybeBehaviorVersion.map { behaviorVersion =>
@@ -232,7 +231,7 @@ object BehaviorVersionData {
                 dataService: DataService,
                 maybeGroupVersion: Option[BehaviorGroupVersion],
                 maybeExportId: Option[String]
-              ): Future[Option[BehaviorVersionData]] = {
+              )(implicit ec: ExecutionContext): Future[Option[BehaviorVersionData]] = {
     for {
       maybeBehavior <- dataService.behaviors.find(behaviorId, user)
       maybeBehaviorVersion <- maybeBehavior.map { behavior =>

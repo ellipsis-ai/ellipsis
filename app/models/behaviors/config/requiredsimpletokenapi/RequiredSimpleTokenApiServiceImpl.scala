@@ -11,8 +11,7 @@ import models.accounts.user.User
 import models.behaviors.behaviorgroupversion.{BehaviorGroupVersion, BehaviorGroupVersionQueries}
 import services.DataService
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 case class RawRequiredSimpleTokenApi(
                                       id: String,
@@ -31,7 +30,8 @@ class RequiredSimpleTokenApisTable(tag: Tag) extends Table[RawRequiredSimpleToke
 }
 
 class RequiredSimpleTokenApiServiceImpl @Inject()(
-                                                         dataServiceProvider: Provider[DataService]
+                                                         dataServiceProvider: Provider[DataService],
+                                                         implicit val ec: ExecutionContext
                                                        ) extends RequiredSimpleTokenApiService {
 
   def dataService = dataServiceProvider.get

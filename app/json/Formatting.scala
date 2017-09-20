@@ -1,9 +1,10 @@
 package json
 
-import models.accounts.slack.SlackUserInfo
 import models.accounts.slack.botprofile.SlackBotProfile
+import models.behaviors.{ExecutionErrorData, ExecutionLogData}
 import models.behaviors.behaviorparameter.ValidValue
 import models.behaviors.events.SlackMessage
+import models.behaviors.testing.{InvocationTestReportOutput, ResultOutput}
 import play.api.libs.json._
 import services.SlackMessageEventData
 import utils.{CityInfo, UploadFileSpec}
@@ -64,6 +65,12 @@ object Formatting {
 
   implicit val nodeModuleVersionDataReads = Json.reads[NodeModuleVersionData]
   implicit val nodeModuleVersionDataWrites = Json.writes[NodeModuleVersionData]
+
+  implicit val slackUserDataReads = Json.reads[SlackUserData]
+  implicit val slackUserDataWrites = Json.writes[SlackUserData]
+
+  implicit val userDataReads = Json.reads[UserData]
+  implicit val userDataWrites = Json.writes[UserData]
 
   implicit val behaviorGroupReads = Json.reads[BehaviorGroupData]
   implicit val behaviorGroupWrites = Json.writes[BehaviorGroupData]
@@ -126,9 +133,6 @@ object Formatting {
   implicit val slackBotProfileReads = Json.reads[SlackBotProfile]
   implicit val slackBotProfileWrites = Json.writes[SlackBotProfile]
 
-  implicit val slackUserInfoReads = Json.reads[SlackUserInfo]
-  implicit val slackUserInfoWrites = Json.writes[SlackUserInfo]
-
   implicit val slackMessageReads = Json.reads[SlackMessage]
   implicit val slackMessageWrites = Json.writes[SlackMessage]
 
@@ -141,4 +145,11 @@ object Formatting {
   implicit val slackFileSpecReads = Json.reads[UploadFileSpec]
   implicit val slackFileSpecWrites = Json.writes[UploadFileSpec]
 
+  implicit val resultOutputWrites = Json.writes[ResultOutput]
+  implicit val testReportOutputWrites = Json.writes[InvocationTestReportOutput]
+
+  implicit val executionLogReads = Json.reads[ExecutionLogData]
+  implicit val executionErrorValueReads = Json.reads[ExecutionErrorData]
+
+  implicit val behaviorGroupVersionMetaDataWrites = Json.writes[BehaviorGroupVersionMetaData]
 }

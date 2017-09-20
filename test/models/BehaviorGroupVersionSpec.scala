@@ -9,26 +9,26 @@ import support.DBSpec
 
 class BehaviorGroupVersionSpec extends DBSpec {
 
-  def reloadGroup(db: PostgresDatabase, group: BehaviorGroup): BehaviorGroup = {
+  def reloadGroup(group: BehaviorGroup): BehaviorGroup = {
     runNow(dataService.behaviorGroups.findWithoutAccessCheck(group.id)).get
   }
 
   "createFor" should {
 
     "set the current version on the group" in {
-      withEmptyDB(dataService, { db =>
+      withEmptyDB(dataService, { () =>
         val team = newSavedTeam
         val user = newSavedUserOn(team)
         val group = newSavedBehaviorGroupFor(team)
         val firstVersion = runNow(dataService.behaviorGroupVersions.createFor(group, user))
-        reloadGroup(db, group).maybeCurrentVersionId mustBe Some(firstVersion.id)
+        reloadGroup(group).maybeCurrentVersionId mustBe Some(firstVersion.id)
         val secondVersion = runNow(dataService.behaviorGroupVersions.createFor(group, user))
-        reloadGroup(db, group).maybeCurrentVersionId mustBe Some(secondVersion.id)
+        reloadGroup(group).maybeCurrentVersionId mustBe Some(secondVersion.id)
       })
     }
 
     "maintain saved answers" in {
-      withEmptyDB(dataService, { db =>
+      withEmptyDB(dataService, { () =>
         val team = newSavedTeam
         val user = newSavedUserOn(team)
         val group = newSavedBehaviorGroupFor(team)
@@ -59,7 +59,7 @@ class BehaviorGroupVersionSpec extends DBSpec {
     }
 
     "keep data type behavior version id in sync with latest group version" in {
-      withEmptyDB(dataService, { db =>
+      withEmptyDB(dataService, { () =>
         val team = newSavedTeam
         val user = newSavedUserOn(team)
         val group = newSavedBehaviorGroupFor(team)
@@ -104,7 +104,7 @@ class BehaviorGroupVersionSpec extends DBSpec {
     }
 
     "ensures that data type names have the same format" in {
-      withEmptyDB(dataService, { db =>
+      withEmptyDB(dataService, { () =>
         val team = newSavedTeam
         val user = newSavedUserOn(team)
         val group = newSavedBehaviorGroupFor(team)
@@ -121,7 +121,7 @@ class BehaviorGroupVersionSpec extends DBSpec {
     }
 
     "maintains default storage data" in {
-      withEmptyDB(dataService, { db =>
+      withEmptyDB(dataService, { () =>
         val team = newSavedTeam
         val user = newSavedUserOn(team)
         val group = newSavedBehaviorGroupFor(team)

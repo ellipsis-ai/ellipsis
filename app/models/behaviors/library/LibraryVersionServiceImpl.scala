@@ -12,8 +12,7 @@ import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
 import services.DataService
 import slick.dbio.DBIO
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 class LibraryVersionsTable(tag: Tag) extends Table[LibraryVersion](tag, "library_versions") {
 
@@ -31,7 +30,8 @@ class LibraryVersionsTable(tag: Tag) extends Table[LibraryVersion](tag, "library
 }
 
 class LibraryVersionServiceImpl @Inject() (
-                                             dataServiceProvider: Provider[DataService]
+                                             dataServiceProvider: Provider[DataService],
+                                             implicit val ec: ExecutionContext
                                            ) extends LibraryVersionService {
 
   def dataService = dataServiceProvider.get

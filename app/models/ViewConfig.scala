@@ -1,14 +1,17 @@
 package models
 
+import controllers.RemoteAssets
 import models.accounts.user.UserTeamAccess
 import play.api.Configuration
 
 case class ViewConfig(
-                          configuration: Configuration,
+                          assets: RemoteAssets,
                           maybeTeamAccess: Option[UserTeamAccess]
                          ) {
 
-  val isDevelopment = configuration.getString("application.version").contains("Development")
+  val configuration: Configuration = assets.configuration
+
+  val isDevelopment = configuration.get[String]("application.version").contains("Development")
 
   val isProduction = !isDevelopment
 

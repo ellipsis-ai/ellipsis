@@ -8,8 +8,7 @@ import models.accounts.user.{User, UserQueries}
 import services.DataService
 import drivers.SlickPostgresDriver.api._
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 case class RawUserEnvironmentVariable(
                                    name: String,
@@ -29,7 +28,8 @@ class UserEnvironmentVariablesTable(tag: Tag) extends Table[RawUserEnvironmentVa
 }
 
 class UserEnvironmentVariableServiceImpl @Inject() (
-                                                 dataServiceProvider: Provider[DataService]
+                                                 dataServiceProvider: Provider[DataService],
+                                                 implicit val ec: ExecutionContext
                                                ) extends UserEnvironmentVariableService {
 
   def dataService = dataServiceProvider.get

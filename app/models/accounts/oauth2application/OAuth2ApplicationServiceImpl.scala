@@ -6,8 +6,7 @@ import models.team.Team
 import services.DataService
 import drivers.SlickPostgresDriver.api._
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 case class RawOAuth2Application(
                                  id: String,
@@ -36,7 +35,8 @@ class OAuth2ApplicationsTable(tag: Tag) extends Table[RawOAuth2Application](tag,
 }
 
 class OAuth2ApplicationServiceImpl @Inject() (
-                                               dataServiceProvider: Provider[DataService]
+                                               dataServiceProvider: Provider[DataService],
+                                               implicit val ec: ExecutionContext
                                              ) extends OAuth2ApplicationService {
 
   import OAuth2ApplicationQueries._

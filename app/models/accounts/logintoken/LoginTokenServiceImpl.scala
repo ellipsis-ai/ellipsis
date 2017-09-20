@@ -9,8 +9,7 @@ import models.IDs
 import services.DataService
 import drivers.SlickPostgresDriver.api._
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 class LoginTokensTable(tag: Tag) extends Table[LoginToken](tag, "login_tokens") {
   def value = column[String]("value")
@@ -20,7 +19,10 @@ class LoginTokensTable(tag: Tag) extends Table[LoginToken](tag, "login_tokens") 
   def * = (value, userId, createdAt) <> ((LoginToken.apply _).tupled, LoginToken.unapply _)
 }
 
-class LoginTokenServiceImpl @Inject() (dataServiceProvider: Provider[DataService]) extends LoginTokenService {
+class LoginTokenServiceImpl @Inject() (
+                                        dataServiceProvider: Provider[DataService],
+                                        implicit val ec: ExecutionContext
+                                      ) extends LoginTokenService {
 
   def dataService = dataServiceProvider.get
 

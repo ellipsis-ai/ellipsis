@@ -14,27 +14,28 @@ pipelineStages := Seq(rjs, digest, gzip)
 
 scalaVersion := "2.11.8"
 
-lazy val slackClientVersion = "d8e8debca2986d1553167c71dc772764717714f6"
+lazy val slackClientVersion = "cd123f514e2be7fa0a7df087197f7cccbba3ca75"
 lazy val slackClientProject = ProjectRef(uri(s"https://github.com/ellipsis-ai/slack-scala-client.git#$slackClientVersion"), "slack-scala-client")
 
 libraryDependencies ++= Seq(
   evolutions,
-  jdbc,
   filters,
-  cache,
+  cacheApi,
+  guice,
 //  "com.github.gilbertw1" %% "slack-scala-client" % "0.1.8",
   "com.github.nscala-time" %% "nscala-time" % "2.14.0",
-  "com.typesafe.slick" % "slick-hikaricp_2.11" % "3.1.1",
-  "com.github.tminglei" %% "slick-pg" % "0.14.4",
-  "com.github.tminglei" %% "slick-pg_date2" % "0.14.4",
-  "com.github.tminglei" %% "slick-pg_play-json" % "0.14.4",
+  "com.github.tminglei" %% "slick-pg" % "0.15.3",
+  "com.github.tminglei" %% "slick-pg_play-json" % "0.15.3",
   "org.scalatestplus.play" %% "scalatestplus-play" % "1.5.1" % Test,
   "org.mockito" % "mockito-core" % "1.8.5" % Test,
-  "com.mohiva" %% "play-silhouette" % "4.0.0",
-  "com.mohiva" %% "play-silhouette-persistence" % "4.0.0",
-  "com.mohiva" %% "play-silhouette-crypto-jca" % "4.0.0",
-  "com.mohiva" %% "play-silhouette-testkit" % "4.0.0" % Test,
-  "com.typesafe.slick" %% "slick" % "3.1.1",
+  "com.mohiva" %% "play-silhouette" % "5.0.0",
+  "com.mohiva" %% "play-silhouette-persistence" % "5.0.0",
+  "com.mohiva" %% "play-silhouette-crypto-jca" % "5.0.0",
+  "com.mohiva" %% "play-silhouette-testkit" % "5.0.0" % Test,
+  "com.typesafe.slick" %% "slick-hikaricp" % "3.2.1",
+  "com.typesafe.play" %% "play-slick" % "3.0.1",
+  "com.typesafe.play" %% "play-slick-evolutions" % "3.0.1",
+  "com.typesafe.play" %% "play-json" % "2.6.3",
   "org.postgresql" % "postgresql" % "9.4-1201-jdbc4",
   "net.codingwell" %% "scala-guice" % "4.0.0",
   "net.ceedubs" %% "ficus" % "1.1.2",
@@ -55,8 +56,8 @@ libraryDependencies ++= Seq(
   "com.joestelmach" % "natty" % "0.11",
   "com.rockymadden.stringmetric" %% "stringmetric-core" % "0.27.4",
   "org.sangria-graphql" %% "sangria" % "1.2.1",
-  "org.sangria-graphql" %% "sangria-play-json" % "1.0.0",
-  "com.github.mumoshu" %% "play2-memcached-play25" % "0.8.0",
+  "org.sangria-graphql" %% "sangria-play-json" % "1.0.3",
+  "com.github.mumoshu" %% "play2-memcached-play26" % "0.9.0",
   "net.logstash.logback" % "logstash-logback-encoder" % "4.11"
 )
 

@@ -1,6 +1,6 @@
 package json
 
-import controllers.RemoteAssets.getUrl
+import controllers.RemoteAssets
 import models.accounts.oauth2api.OAuth2Api
 
 case class OAuth2ApiData(
@@ -14,35 +14,35 @@ case class OAuth2ApiData(
                         )
 
 object OAuth2ApiData {
-  private def maybeIconImageUrlFor(apiName: String): Option[String] = {
+  private def maybeIconImageUrlFor(apiName: String, assets: RemoteAssets): Option[String] = {
     if (apiName.toLowerCase.contains("github")) {
-      Some(getUrl("images/logos/GitHub-Mark-64px.png"))
+      Some(assets.getUrl("images/logos/GitHub-Mark-64px.png"))
     } else if (apiName.toLowerCase.contains("todoist")) {
-      Some(getUrl("images/logos/todoist_icon.png"))
+      Some(assets.getUrl("images/logos/todoist_icon.png"))
     } else {
       None
     }
   }
 
-  private def maybeLogoImageUrlFor(apiName: String): Option[String] = {
+  private def maybeLogoImageUrlFor(apiName: String, assets: RemoteAssets): Option[String] = {
     if (apiName.toLowerCase.contains("todoist")) {
-      Some(getUrl("images/logos/todoist_logo.png"))
+      Some(assets.getUrl("images/logos/todoist_logo.png"))
     } else if (apiName.toLowerCase.contains("yelp")) {
-      Some(getUrl("images/logos/yelp.png"))
+      Some(assets.getUrl("images/logos/yelp.png"))
     } else {
       None
     }
   }
 
-  def from(api: OAuth2Api): OAuth2ApiData = {
+  def from(api: OAuth2Api, assets: RemoteAssets): OAuth2ApiData = {
     OAuth2ApiData(
       api.id,
       api.name,
       api.grantType.requiresAuth,
       api.maybeNewApplicationUrl,
       api.maybeScopeDocumentationUrl,
-      this.maybeIconImageUrlFor(api.name),
-      this.maybeLogoImageUrlFor(api.name)
+      this.maybeIconImageUrlFor(api.name, assets),
+      this.maybeLogoImageUrlFor(api.name, assets)
     )
   }
 }

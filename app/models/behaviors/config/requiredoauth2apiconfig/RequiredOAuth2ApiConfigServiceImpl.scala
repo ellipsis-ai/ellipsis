@@ -12,8 +12,7 @@ import models.behaviors.behaviorgroup.BehaviorGroup
 import models.behaviors.behaviorgroupversion.{BehaviorGroupVersion, BehaviorGroupVersionQueries}
 import services.DataService
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 case class RawRequiredOAuth2ApiConfig(
                                        id: String,
@@ -35,7 +34,8 @@ class RequiredOAuth2ApiConfigsTable(tag: Tag) extends Table[RawRequiredOAuth2Api
 }
 
 class RequiredOAuth2ApiConfigServiceImpl @Inject() (
-                                                     dataServiceProvider: Provider[DataService]
+                                                     dataServiceProvider: Provider[DataService],
+                                                     implicit val ec: ExecutionContext
                                                    ) extends RequiredOAuth2ApiConfigService {
 
   def dataService = dataServiceProvider.get

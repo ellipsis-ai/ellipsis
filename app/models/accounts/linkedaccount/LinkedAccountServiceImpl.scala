@@ -3,13 +3,16 @@ package models.accounts.linkedaccount
 import java.time.OffsetDateTime
 import javax.inject._
 
+import akka.actor.ActorSystem
 import com.mohiva.play.silhouette.api.LoginInfo
-import models.accounts.user.User
-import services.DataService
 import drivers.SlickPostgresDriver.api._
+import json.SlackUserData
+import models.accounts.user.User
+import play.api.libs.json.{JsBoolean, JsObject, JsString}
+import services.{CacheService, DataService}
+import slack.api.{ApiError, SlackApiClient}
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 case class RawLinkedAccount(userId: String, loginInfo: LoginInfo, createdAt: OffsetDateTime)
 
@@ -23,9 +26,15 @@ class LinkedAccountsTable(tag: Tag) extends Table[RawLinkedAccount](tag, "linked
   def * = (userId, loginInfo, createdAt) <> (RawLinkedAccount.tupled, RawLinkedAccount.unapply _)
 }
 
-class LinkedAccountServiceImpl @Inject() (dataServiceProvider: Provider[DataService]) extends LinkedAccountService {
+class LinkedAccountServiceImpl @Inject() (
+                                           dataServiceProvider: Provider[DataService],
+                                           cacheServiceProvider: Provider[CacheService],
+                                           implicit val ec: ExecutionContext,
+                                           implicit val actorSystem: ActorSystem
+                                         ) extends LinkedAccountService {
 
   def dataService = dataServiceProvider.get
+  def cacheService = cacheServiceProvider.get
 
   import LinkedAccountQueries._
 
@@ -73,6 +82,41 @@ class LinkedAccountServiceImpl @Inject() (dataServiceProvider: Provider[DataServ
 
   def maybeForSlackFor(user: User): Future[Option[LinkedAccount]] = {
     dataService.run(maybeForSlackForAction(user))
+  }
+
+  def maybeSlackUserDataFor(slackUserId: String, slackTeamId: String, client: SlackApiClient): Future[Option[SlackUserData]] = {
+    cacheService.getSlackUserData(slackUserId, slackTeamId).map { userData =>
+      Future.successful(Some(userData))
+    }.getOrElse {
+      for {
+        maybeInfo <- client.getUserInfo(slackUserId).map(Some(_)).recover {
+          case e: ApiError => None
+        }
+      } yield {
+        maybeInfo.map { info =>
+          val profileNameData = info.profile.map { profile =>
+            Seq(
+              profile.first_name.map(v => "firstName" -> JsString(v)),
+              profile.last_name.map(v => "lastName" -> JsString(v)),
+              profile.real_name.map(v => "realName" -> JsString(v))
+            ).flatten
+          }.getOrElse(Seq())
+          val profileData = JsObject(
+            Seq(
+              "name" -> JsString(info.name),
+              "profile" -> JsObject(profileNameData),
+              "isPrimaryOwner" -> JsBoolean(info.is_primary_owner.getOrElse(false)),
+              "isOwner" -> JsBoolean(info.is_owner.getOrElse(false)),
+              "isRestricted" -> JsBoolean(info.is_restricted.getOrElse(false)),
+              "isUltraRestricted" -> JsBoolean(info.is_ultra_restricted.getOrElse(false))
+            )
+          )
+          val userData = SlackUserData(slackUserId, slackTeamId, info.name, profileData)
+          cacheService.cacheSlackUserData(userData)
+          Some(userData)
+        }.getOrElse(None)
+      }
+    }
   }
 
   def isAdminAction(linkedAccount: LinkedAccount): DBIO[Boolean] = {

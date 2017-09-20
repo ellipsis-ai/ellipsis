@@ -7,8 +7,7 @@ import models.behaviors.events.{MessageActions, SlackMessageActions}
 import slack.api.SlackApiClient
 import slack.models.Attachment
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 import scala.reflect.io.File
 
 case class SlackMessageSender(
@@ -70,7 +69,7 @@ case class SlackMessageSender(
     }
   }
 
-  def sendPreamble(formattedText: String, channelToUse: String)(implicit actorSystem: ActorSystem): Future[Unit] = {
+  def sendPreamble(formattedText: String, channelToUse: String)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Unit] = {
     if (formattedText.nonEmpty) {
       for {
         _ <- if (maybeThreadId.isDefined && maybeConversation.flatMap(_.maybeThreadId).isEmpty) {
@@ -114,7 +113,7 @@ case class SlackMessageSender(
                                   maybeAttachments: Option[Seq[Attachment]],
                                   maybeConversation: Option[Conversation],
                                   maybePreviousTs: Option[String]
-                                )(implicit actorSystem: ActorSystem): Future[Option[String]] = {
+                                )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[String]] = {
     if (segments.isEmpty) {
       Future.successful(maybePreviousTs)
     } else {
@@ -141,7 +140,7 @@ case class SlackMessageSender(
     }
   }
 
-  def sendFile(spec: UploadFileSpec)(implicit actorSystem: ActorSystem): Future[Unit] = {
+  def sendFile(spec: UploadFileSpec)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Unit] = {
     val file = File.makeTemp().jfile
     client.uploadFile(
       file,
@@ -152,11 +151,11 @@ case class SlackMessageSender(
     ).map(_ => {})
   }
 
-  def sendFiles(implicit actorSystem: ActorSystem): Future[Unit] = {
+  def sendFiles(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Unit] = {
     Future.sequence(files.map(sendFile)).map(_ => {})
   }
 
-  def send(implicit actorSystem: ActorSystem): Future[Option[String]] = {
+  def send(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[String]] = {
     val formattedText = SlackMessageFormatter.bodyTextFor(unformattedText)
     val maybeAttachments = maybeActions.flatMap { actions =>
       actions match {

@@ -2,25 +2,25 @@ package controllers
 
 import javax.inject.Inject
 
+import com.google.inject.Provider
 import com.mohiva.play.silhouette.api.Silhouette
 import models.silhouette.EllipsisEnv
 import play.api.Configuration
 import play.api.data.Form
 import play.api.data.Forms._
-import play.api.i18n.MessagesApi
 import play.api.libs.json._
 import play.api.libs.ws.WSClient
 import services.DataService
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 class SavedAnswerController @Inject() (
-                                         val messagesApi: MessagesApi,
                                          val silhouette: Silhouette[EllipsisEnv],
                                          val configuration: Configuration,
                                          val dataService: DataService,
-                                         val ws: WSClient
+                                         val ws: WSClient,
+                                         val assetsProvider: Provider[RemoteAssets],
+                                         implicit val ec: ExecutionContext
                                        ) extends ReAuthable {
 
   private val resetForm = Form(

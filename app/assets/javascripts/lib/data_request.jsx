@@ -1,6 +1,14 @@
 define(function(require) {
   require('whatwg-fetch');
 
+  class ResponseError extends Error {
+    constructor(status, statusText) {
+      super(`${status} ${statusText}`);
+      this.status = status;
+      this.statusText = statusText;
+    }
+  }
+
   return {
     jsonGet: function(url) {
       return fetch(url, {
@@ -9,7 +17,7 @@ define(function(require) {
         if (response.ok) {
           return response.json();
         } else {
-          throw Error(response.statusText);
+          throw new ResponseError(response.status, response.statusText);
         }
       });
     },
@@ -29,7 +37,7 @@ define(function(require) {
         if (response.ok) {
           return response.json();
         } else {
-          throw Error(response.statusText);
+          throw new ResponseError(response.status, response.statusText);
         }
       });
     }

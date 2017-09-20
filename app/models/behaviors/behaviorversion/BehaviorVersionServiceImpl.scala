@@ -18,13 +18,11 @@ import models.behaviors.config.requiredsimpletokenapi.RequiredSimpleTokenApi
 import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.events.Event
 import models.team.Team
-import play.api.libs.json.JsValue
 import play.api.libs.ws.WSClient
 import play.api.{Configuration, Logger}
 import services.{AWSLambdaService, CacheService, DataService}
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 case class RawBehaviorVersion(
                                id: String,
@@ -72,7 +70,8 @@ class BehaviorVersionServiceImpl @Inject() (
                                       ws: WSClient,
                                       configuration: Configuration,
                                       cacheService: CacheService,
-                                      implicit val actorSystem: ActorSystem
+                                      implicit val actorSystem: ActorSystem,
+                                      implicit val ec: ExecutionContext
                                     ) extends BehaviorVersionService {
 
   def dataService = dataServiceProvider.get
@@ -258,17 +257,6 @@ class BehaviorVersionServiceImpl @Inject() (
         }
         ).map(_.flatten)
         libraries <- dataService.libraries.allForAction(groupVersion)
-        _ <- DBIO.from(lambdaService.deployFunctionFor(
-          updated,
-          data.functionBody,
-          withoutBuiltin(inputs.map(_.name).toArray),
-          libraries,
-          maybeAWSConfig,
-          requiredOAuth2ApiConfigs,
-          requiredSimpleTokenApis,
-          forceNodeModuleUpdate
-        )
-        )
         _ <- dataService.behaviorParameters.ensureForAction(updated, inputs)
         _ <- DBIO.sequence(
           data.triggers.
@@ -287,7 +275,19 @@ class BehaviorVersionServiceImpl @Inject() (
           dataService.dataTypeConfigs.createForAction(updated, configData)
         }.getOrElse(DBIO.successful(None))
         _ <- lambdaService.ensureNodeModuleVersionsFor(updated)
-      } yield Unit
+      } yield {
+        // deploy in the background
+        lambdaService.deployFunctionFor(
+          updated,
+          data.functionBody,
+          withoutBuiltin(inputs.map(_.name).toArray),
+          libraries,
+          maybeAWSConfig,
+          requiredOAuth2ApiConfigs,
+          requiredSimpleTokenApis,
+          forceNodeModuleUpdate
+        )
+      }
     } yield behaviorVersion
   }
 
@@ -352,12 +352,12 @@ class BehaviorVersionServiceImpl @Inject() (
     for {
       missingTeamEnvVars <- dataService.teamEnvironmentVariables.missingInAction(behaviorVersion, dataService)
       requiredOAuth2ApiConfigs <- dataService.requiredOAuth2ApiConfigs.allForAction(behaviorVersion.groupVersion)
-      userInfo <- event.userInfoAction(ws, dataService)
+      userInfo <- event.userInfoAction(ws, dataService, cacheService)
       notReadyOAuth2Applications <- DBIO.successful(requiredOAuth2ApiConfigs.filterNot(_.isReady))
       missingOAuth2Applications <- DBIO.successful(requiredOAuth2ApiConfigs.flatMap(_.maybeApplication).filter { app =>
         !userInfo.links.exists(_.externalSystem == app.name)
       })
-      botPrefix <- DBIO.from(event.botPrefix(cacheService))
+      botPrefix <- DBIO.from(event.botPrefix(dataService))
       maybeResult <- if (missingTeamEnvVars.nonEmpty) {
         DBIO.successful(Some(MissingTeamEnvVarsResult(
           event,
@@ -467,18 +467,6 @@ class BehaviorVersionServiceImpl @Inject() (
       currentVersions <- allCurrent
       _ <- redeployAllSequentially(currentVersions)
     } yield {}
-  }
-
-  private def isUnhandledError(json: JsValue): Boolean = {
-    (json \ "errorMessage").toOption.flatMap { m =>
-      "Process exited before completing request".r.findFirstIn(m.toString)
-    }.isDefined
-  }
-
-  private def isSyntaxError(json: JsValue): Boolean = {
-    (json \ "errorType").toOption.flatMap { m =>
-      "SyntaxError".r.findFirstIn(m.toString)
-    }.isDefined
   }
 
 }

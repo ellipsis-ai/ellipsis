@@ -124,6 +124,11 @@ class TemplateMessageTriggerSpec extends MessageTriggerSpec {
       val trigger = triggerFor("Double quotes are “cool”")
       matches(trigger, "Double quotes are \"cool\"") mustBe true
     }
+
+    "match even when there are trailing spaces in the trigger" in {
+      val trigger = triggerFor("   some space at the beginning and end ")
+      matches(trigger, "some space at the beginning and end") mustBe true
+    }
   }
 
 }

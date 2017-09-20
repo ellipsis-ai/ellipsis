@@ -6,12 +6,11 @@ import models.behaviors.BehaviorResponse
 import models.behaviors.behavior.Behavior
 import models.behaviors.conversations.conversation.Conversation
 import models.team.Team
-import services.{AWSLambdaConstants, DataService, DefaultServices}
+import services.{AWSLambdaConstants, CacheService, DataService, DefaultServices}
 import slack.api.SlackApiClient
-import utils.{UploadFileSpec, SlackMessageSender}
+import utils.{SlackMessageSender, UploadFileSpec}
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 case class RunEvent(
                      profile: SlackBotProfile,
@@ -31,11 +30,9 @@ case class RunEvent(
 
   val teamId: String = behavior.team.id
   val userIdForContext: String = user
-  val messageRecipientPrefix: String = messageRecipientPrefixFor(channel)
 
   lazy val maybeChannel = Some(channel)
   lazy val name: String = Conversation.SLACK_CONTEXT
-  lazy val isPublicChannel: Boolean = !isDirectMessage(channel) && !isPrivateChannel(channel)
 
   def allOngoingConversations(dataService: DataService): Future[Seq[Conversation]] = {
     dataService.conversations.allOngoingFor(userIdForContext, context, maybeChannel, maybeThreadId)
@@ -47,8 +44,9 @@ case class RunEvent(
                    maybeShouldUnfurl: Option[Boolean],
                    maybeConversation: Option[Conversation],
                    maybeActions: Option[MessageActions] = None,
-                   files: Seq[UploadFileSpec] = Seq()
-                 )(implicit actorSystem: ActorSystem): Future[Option[String]] = {
+                   files: Seq[UploadFileSpec] = Seq(),
+                   cacheService: CacheService
+                 )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[String]] = {
     SlackMessageSender(
       client,
       user,
@@ -68,7 +66,7 @@ case class RunEvent(
                                maybeTeam: Option[Team],
                                maybeLimitToBehavior: Option[Behavior],
                                services: DefaultServices
-                             ): Future[Seq[BehaviorResponse]] = {
+                             )(implicit ec: ExecutionContext): Future[Seq[BehaviorResponse]] = {
     val dataService = services.dataService
     for {
       maybeBehaviorVersion <- dataService.behaviors.maybeCurrentVersionFor(behavior)

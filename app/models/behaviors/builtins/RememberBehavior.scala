@@ -6,15 +6,15 @@ import akka.actor.ActorSystem
 import json.{BehaviorConfig, BehaviorGroupData, BehaviorTriggerData, BehaviorVersionData}
 import models.behaviors._
 import models.behaviors.events.Event
+import play.api.libs.json.JsNull
 import services.{AWSLambdaService, DataService}
 import utils.QuestionAnswerExtractor
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 case class RememberBehavior(event: Event, lambdaService: AWSLambdaService, dataService: DataService) extends BuiltinBehavior {
 
-  def result(implicit actorSystem: ActorSystem): Future[BotResult] = {
+  def result(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[BotResult] = {
     for {
       maybeTeam <- dataService.teams.find(event.teamId)
       maybeUser <- maybeTeam.map { team =>
@@ -25,6 +25,12 @@ case class RememberBehavior(event: Event, lambdaService: AWSLambdaService, dataS
       maybeGroup <- maybeTeam.map { team =>
         dataService.behaviorGroups.createFor(None, team).map(Some(_))
       }.getOrElse(Future.successful(None))
+      maybeUserData <- (for {
+        team <- maybeTeam
+        user <- maybeUser
+      } yield {
+        dataService.users.userDataFor(user, team).map(Some(_))
+      }).getOrElse(Future.successful(None))
       maybeVersionData <- Future.successful(maybeGroup.map { group =>
         val triggerData = qaExtractor.maybeLastQuestion.map { lastQuestion =>
           Seq(BehaviorTriggerData(lastQuestion, requiresMention = false, isRegex = false, caseSensitive = false))
@@ -60,10 +66,10 @@ case class RememberBehavior(event: Event, lambdaService: AWSLambdaService, dataS
             Seq(),
             Seq(),
             Seq(),
-            Seq(),
             None,
             None,
-            Some(OffsetDateTime.now)
+            Some(OffsetDateTime.now),
+            maybeUserData
           )
 
         )
@@ -87,7 +93,7 @@ case class RememberBehavior(event: Event, lambdaService: AWSLambdaService, dataS
         }
         SimpleTextResult(event, None, s"OK, I compiled recent messages into [a new skill]($link)", forcePrivateResponse = false)
       }.getOrElse{
-        NoResponseResult(event, None, None)
+        NoResponseResult(event, None, JsNull, None)
       }
     }
   }

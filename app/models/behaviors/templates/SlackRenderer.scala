@@ -19,13 +19,15 @@ class SlackRenderer(stringBuilder: StringBuilder) extends AbstractVisitor {
           child = child.getNext
           while (child != null) {
             child match {
-              case text: Text =>
-              case _ => stringBuilder.append(" ")
+              case s: SoftLineBreak => stringBuilder.append("\r> ")
+              case h: HardLineBreak => stringBuilder.append("\r> ")
+              case _ => child.accept(this)
             }
-            child.accept(this)
             child = child.getNext
           }
-          stringBuilder.append("\r> ")
+          if (node.getNext != null) {
+            stringBuilder.append("\r> ")
+          }
         }
         case _ => {
           stringBuilder.append("\r> ")
@@ -149,6 +151,7 @@ class SlackRenderer(stringBuilder: StringBuilder) extends AbstractVisitor {
   }
 
   override def visit(softLineBreak: SoftLineBreak) {
+    stringBuilder.append("\r")
     visitChildren(softLineBreak)
   }
 

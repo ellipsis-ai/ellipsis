@@ -11,7 +11,8 @@ case class BehaviorEditorEditConfig(
   oauth2Applications: Seq[OAuth2ApplicationData],
   oauth2Apis: Seq[OAuth2ApiData],
   simpleTokenApis: Seq[SimpleTokenApiData],
-  linkedOAuth2ApplicationIds: Seq[String]
+  linkedOAuth2ApplicationIds: Seq[String],
+  userId: String
 )
 
 object BehaviorEditorEditConfig {
@@ -27,7 +28,8 @@ object BehaviorEditorEditConfig {
       data.oauth2Applications,
       data.oauth2Apis,
       data.simpleTokenApis,
-      data.linkedOAuth2ApplicationIds
+      data.linkedOAuth2ApplicationIds,
+      data.userId
     )
   }
 }

@@ -12,7 +12,6 @@ import com.amazonaws.services.logs.model.{CreateLogGroupRequest, PutSubscription
 import com.amazonaws.services.logs.{AWSLogsAsync, AWSLogsAsyncClientBuilder}
 import json.Formatting._
 import json.NodeModuleVersionData
-import models.Models
 import models.behaviors._
 import models.behaviors.behaviorversion.BehaviorVersion
 import models.behaviors.config.awsconfig.AWSConfig
@@ -33,19 +32,19 @@ import sun.misc.BASE64Decoder
 import utils.JavaFutureConverter
 
 import scala.collection.JavaConversions.asScalaBuffer
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future, blocking}
 import scala.reflect.io.Path
 import scala.sys.process._
 import scala.util.{Failure, Success}
 
 class AWSLambdaServiceImpl @Inject() (
                                        val configuration: Configuration,
-                                       val models: Models,
                                        val ws: WSClient,
                                        val dataService: DataService,
+                                       val cacheService: CacheService,
                                        val logsService: AWSLogsService,
-                                       implicit val actorSystem: ActorSystem
+                                       implicit val actorSystem: ActorSystem,
+                                       implicit val ec: ExecutionContext
                                        ) extends AWSLambdaService {
 
   import AWSLambdaConstants._
@@ -62,7 +61,9 @@ class AWSLambdaServiceImpl @Inject() (
       withCredentials(credentialsProvider).
       build()
 
-  val apiBaseUrl: String = configuration.getString(s"application.$API_BASE_URL_KEY").get
+  val apiBaseUrl: String = configuration.get[String](s"application.$API_BASE_URL_KEY")
+
+  val invocationTimeoutSeconds: Int = configuration.get[Int]("aws.lambda.timeoutSeconds")
 
   def fetchFunctions(maybeNextMarker: Option[String]): Future[List[FunctionConfiguration]] = {
     val listRequest = new ListFunctionsRequest()
@@ -137,7 +138,7 @@ class AWSLambdaServiceImpl @Inject() (
                             isRetrying: Boolean
                           ): DBIO[BotResult] = {
     for {
-      userInfo <- event.userInfoAction(ws, dataService)
+      userInfo <- event.userInfoAction(ws, dataService, cacheService)
       result <- {
         val oauth2ApplicationsNeedingRefresh =
           requiredOAuth2ApiConfigs.flatMap(_.maybeApplication).
@@ -220,7 +221,7 @@ class AWSLambdaServiceImpl @Inject() (
 
   val alreadyIncludedModules = Array("aws-sdk", "dynamodb-doc")
 
-  private def requiredModulesIn(code: String, libraries: Seq[LibraryVersion], includeLibraryRequires: Boolean): Array[String] = {
+  private def requiredModulesIn(code: String, libraries: Seq[LibraryVersion], includeLibraryRequires: Boolean): Seq[String] = {
     val libraryNames = libraries.map(_.name)
     val requiredForCode =
       requireRegex.findAllMatchIn(code).
@@ -287,34 +288,39 @@ class AWSLambdaServiceImpl @Inject() (
                          ): String = {
     val paramsFromEvent = params.indices.map(i => s"event.${invocationParamFor(i)}")
     val invocationParamsString = (paramsFromEvent ++ Array(s"event.$CONTEXT_PARAM")).mkString(", ")
-
     // Note: this attempts to make line numbers in the lambda script line up with those displayed in the UI
     // Be careful changing either this or the UI line numbers
-    s"""exports.handler = function(event, context, callback) { var fn = ${functionWithParams(params, functionBody)};
-        |   var $CONTEXT_PARAM = event.$CONTEXT_PARAM;
-        |   $CONTEXT_PARAM.$NO_RESPONSE_KEY = function() {
-        |     callback(null, { $NO_RESPONSE_KEY: true });
-        |   };
-        |   $CONTEXT_PARAM.success = function(result, options) {
-        |     var resultWithOptions = Object.assign(
-        |       {},
-        |       { "result": result === undefined ? null : result },
-        |       options ? options : {}
-        |     );
-        |     callback(null, resultWithOptions);
-        |   };
-        |   $CONTEXT_PARAM.error = function(err) { callback(err || "(No error message or an empty error message was provided.)"); };
-        |   if (process.listeners('unhandledRejection').length === 0) {
-        |     process.on('unhandledRejection', function(reason, p) {
-        |       throw(reason);
-        |     });
-        |   }
-        |   ${awsCodeFor(maybeAwsConfig)}
-        |   $CONTEXT_PARAM.accessTokens = {};
-        |   ${accessTokensCodeFor(requiredOAuth2ApiConfigs)}
-        |   ${simpleTokensCodeFor(requiredSimpleTokenApis)}
-        |   fn($invocationParamsString);
-        |}
+    s"""exports.handler = function(event, context, lambdaCallback) { var fn = ${functionWithParams(params, functionBody)}
+       |  const $CONTEXT_PARAM = event.$CONTEXT_PARAM;
+       |
+       |  $OVERRIDE_CONSOLE
+       |  $CALLBACK_FUNCTION
+       |  const callback = ellipsisCallback;
+       |
+       |  $NO_RESPONSE_CALLBACK_FUNCTION
+       |  $SUCCESS_CALLBACK_FUNCTION
+       |  $ERROR_CLASS
+       |  $ERROR_CALLBACK_FUNCTION
+       |
+       |  $CONTEXT_PARAM.$NO_RESPONSE_KEY = ellipsisNoResponseCallback;
+       |  $CONTEXT_PARAM.success = ellipsisSuccessCallback;
+       |  $CONTEXT_PARAM.Error = EllipsisError;
+       |  $CONTEXT_PARAM.error = ellipsisErrorCallback;
+       |
+       |  process.removeAllListeners('unhandledRejection');
+       |  process.on('unhandledRejection', $CONTEXT_PARAM.error);
+       |
+       |  ${awsCodeFor(maybeAwsConfig)}
+       |  $CONTEXT_PARAM.accessTokens = {};
+       |  ${accessTokensCodeFor(requiredOAuth2ApiConfigs)}
+       |  ${simpleTokensCodeFor(requiredSimpleTokenApis)}
+       |
+       |  try {
+       |    fn($invocationParamsString);
+       |  } catch(err) {
+       |    $CONTEXT_PARAM.error(err);
+       |  }
+       |}
     """.stripMargin
   }
 
@@ -325,7 +331,7 @@ class AWSLambdaServiceImpl @Inject() (
     val requiredModules = requiredModulesIn(functionBody, libraries, includeLibraryRequires = true)
     val dirName = dirNameFor(functionName)
 
-    def canCopyModules(neededModules: Array[String]): Boolean = {
+    def canCopyModules(neededModules: Seq[String]): Boolean = {
       requiredModules.sameElements(neededModules) &&
         Files.exists(Paths.get(dirName))
     }
@@ -351,7 +357,7 @@ class AWSLambdaServiceImpl @Inject() (
                                        requiredSimpleTokenApis: Seq[RequiredSimpleTokenApi],
                                        maybePreviousFunctionInfo: Option[PreviousFunctionInfo],
                                        forceNodeModuleUpdate: Boolean
-                                     ): Unit = {
+                                     ): Future[Unit] = {
     val dirName = dirNameFor(functionName)
     val path = Path(dirName)
     path.createDirectory()
@@ -362,7 +368,7 @@ class AWSLambdaServiceImpl @Inject() (
     }
 
     val requiredModules = requiredModulesIn(functionBody, libraries, includeLibraryRequires = true)
-    val canUseCopyModules = maybePreviousFunctionInfo.forall { previousFunctionInfo =>
+    val canCopyModules = maybePreviousFunctionInfo.exists { previousFunctionInfo =>
       if (previousFunctionInfo.canCopyModules(requiredModules)) {
         previousFunctionInfo.copyModulesInto(dirName)
         true
@@ -370,28 +376,45 @@ class AWSLambdaServiceImpl @Inject() (
         false
       }
     }
-    if (forceNodeModuleUpdate || !canUseCopyModules) {
-      requiredModules.foreach { moduleName =>
-        // NPM wants to write a lockfile in $HOME; this makes it work for daemons
-        Process(Seq("bash","-c",s"cd $dirName && npm install $moduleName"), None, "HOME" -> "/tmp").!
+    for {
+      _ <- if (forceNodeModuleUpdate || !canCopyModules) {
+        Future.sequence(requiredModules.map { moduleName =>
+          // NPM wants to write a lockfile in $HOME; this makes it work for daemons
+          Future {
+            blocking(
+              Process(Seq("bash", "-c", s"cd $dirName && npm install $moduleName"), None, "HOME" -> "/tmp").!
+            )
+          }
+        })
+      } else {
+        Future.successful({})
       }
-    }
+      _ <- Future {
+        blocking(
+          Process(Seq("bash","-c",s"cd $dirName && zip -q -r ${zipFileNameFor(functionName)} *")).!
+        )
+      }
+    } yield {}
 
-    Process(Seq("bash","-c",s"cd $dirName && zip -q -r ${zipFileNameFor(functionName)} *")).!
   }
 
-  private def getNodeModuleInfoFor(functionName: String): JsValue = {
-    val dirName = dirNameFor(functionName)
-    val infoString = try {
-      Process(Seq("bash","-c",s"cd $dirName && npm list --depth=0 --json=true")).!!
-    } catch {
-      case t: Throwable => "{}"
+  private def getNodeModuleInfoFor(behaviorVersion: BehaviorVersion): JsValue = {
+    if (behaviorVersion.hasFunction) {
+      val functionName = behaviorVersion.functionName
+      val dirName = dirNameFor(functionName)
+      val infoString = try {
+        Process(Seq("bash", "-c", s"cd $dirName && npm list --depth=0 --json=true")).!!
+      } catch {
+        case t: Throwable => "{}"
+      }
+      Json.parse(infoString)
+    } else {
+      Json.parse("{}")
     }
-    Json.parse(infoString)
   }
 
   def ensureNodeModuleVersionsFor(behaviorVersion: BehaviorVersion): DBIO[Seq[NodeModuleVersion]] = {
-    val json = getNodeModuleInfoFor(behaviorVersion.functionName)
+    val json = getNodeModuleInfoFor(behaviorVersion)
     val maybeDependencies = (json \ "dependencies").asOpt[JsObject]
     maybeDependencies.map { dependencies =>
       DBIO.sequence(dependencies.values.toSeq.map { depJson =>
@@ -415,7 +438,7 @@ class AWSLambdaServiceImpl @Inject() (
                          requiredSimpleTokenApis: Seq[RequiredSimpleTokenApi],
                          maybePreviousFunctionInfo: Option[PreviousFunctionInfo],
                          forceNodeModuleUpdate: Boolean
-                       ): ByteBuffer = {
+                       ): Future[ByteBuffer] = {
     createZipWithModulesFor(
       functionName,
       functionBody,
@@ -426,9 +449,10 @@ class AWSLambdaServiceImpl @Inject() (
       requiredSimpleTokenApis,
       maybePreviousFunctionInfo,
       forceNodeModuleUpdate
-    )
-    val path = Paths.get(zipFileNameFor(functionName))
-    ByteBuffer.wrap(Files.readAllBytes(path))
+    ).map { _ =>
+      val path = Paths.get(zipFileNameFor(functionName))
+      ByteBuffer.wrap(Files.readAllBytes(path))
+    }
   }
 
   def deleteFunction(functionName: String): Future[Unit] = {
@@ -493,35 +517,37 @@ class AWSLambdaServiceImpl @Inject() (
                     ): Future[Unit] = {
 
     deleteFunction(functionName).andThen {
-      case Failure(t) => Future.successful(Unit)
+      case Failure(t) => Future.successful({})
       case Success(v) => if (functionBody.trim.isEmpty) {
         Future.successful(Unit)
       } else {
-        val functionCode =
-          new FunctionCode().
-            withZipFile(getZipFor(
-              functionName,
-              functionBody,
-              params,
-              libraries,
-              maybeAWSConfig,
-              requiredOAuth2ApiConfigs,
-              requiredSimpleTokenApis,
-              maybePreviousFunctionInfo,
-              forceNodeModuleUpdate
-            ))
-        val createFunctionRequest =
-          new CreateFunctionRequest().
-            withFunctionName(functionName).
-            withCode(functionCode).
-            withRole(configuration.getString("aws.role").get).
-            withRuntime(com.amazonaws.services.lambda.model.Runtime.Nodejs610).
-            withHandler("index.handler").
-            withTimeout(INVOCATION_TIMEOUT_SECONDS)
-
-        JavaFutureConverter.javaToScala(client.createFunctionAsync(createFunctionRequest)).flatMap { result =>
-          setUpLogSubscriptionFor(result.getFunctionName)
-        }
+        for {
+          functionCode <- getZipFor(
+            functionName,
+            functionBody,
+            params,
+            libraries,
+            maybeAWSConfig,
+            requiredOAuth2ApiConfigs,
+            requiredSimpleTokenApis,
+            maybePreviousFunctionInfo,
+            forceNodeModuleUpdate
+          ).map { zip => new FunctionCode().
+            withZipFile(zip)
+          }
+          createFunctionRequest <- Future.successful(
+            new CreateFunctionRequest().
+              withFunctionName(functionName).
+              withCode(functionCode).
+              withRole(configuration.get[String]("aws.role")).
+              withRuntime(com.amazonaws.services.lambda.model.Runtime.Nodejs610).
+              withHandler("index.handler").
+              withTimeout(invocationTimeoutSeconds)
+          )
+          _ <- JavaFutureConverter.javaToScala(client.createFunctionAsync(createFunctionRequest)).flatMap { result =>
+            setUpLogSubscriptionFor(result.getFunctionName)
+          }
+        } yield {}
       }
     }
   }

@@ -8,7 +8,7 @@ class BehaviorGroupServiceSpec extends DBSpec {
   "BehaviorGroupService.merge" should {
 
     "merge a list of groups into a new group" in {
-      withEmptyDB(dataService, { db =>
+      withEmptyDB(dataService, { () =>
         val team = newSavedTeam
         val user = newSavedUserOn(team)
 

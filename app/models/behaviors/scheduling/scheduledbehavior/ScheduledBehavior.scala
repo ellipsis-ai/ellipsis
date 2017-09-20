@@ -15,8 +15,7 @@ import slack.api.SlackApiClient
 import slick.dbio.DBIO
 import utils.SlackTimestamp
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 case class ScheduledBehavior(
                               id: String,
@@ -31,7 +30,7 @@ case class ScheduledBehavior(
                               createdAt: OffsetDateTime
                            ) extends Scheduled {
 
-  def maybeBehaviorName(dataService: DataService): Future[Option[String]] = {
+  def maybeBehaviorName(dataService: DataService)(implicit ec: ExecutionContext): Future[Option[String]] = {
     for {
       maybeBehaviorVersion <- dataService.behaviors.maybeCurrentVersionFor(behavior)
     } yield {
@@ -39,7 +38,7 @@ case class ScheduledBehavior(
     }
   }
 
-  def maybeBehaviorGroupName(dataService: DataService): Future[Option[String]] = {
+  def maybeBehaviorGroupName(dataService: DataService)(implicit ec: ExecutionContext): Future[Option[String]] = {
     for {
       maybeGroupVersion <- dataService.behaviorGroups.maybeCurrentVersionFor(behavior.group)
     } yield {
@@ -47,7 +46,7 @@ case class ScheduledBehavior(
     }
   }
 
-  def displayText(dataService: DataService): Future[String] = {
+  def displayText(dataService: DataService)(implicit ec: ExecutionContext): Future[String] = {
     for {
       maybeBehaviorName <- maybeBehaviorName(dataService)
       maybeBehaviorGroupName <- maybeBehaviorGroupName(dataService)

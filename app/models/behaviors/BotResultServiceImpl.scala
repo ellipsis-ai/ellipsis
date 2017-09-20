@@ -3,14 +3,15 @@ package models.behaviors
 import javax.inject.Inject
 
 import akka.actor.ActorSystem
-import services.DataService
+import services.{CacheService, DataService}
 import slick.dbio.DBIO
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 class BotResultServiceImpl @Inject() (
-                                        dataService: DataService
+                                        dataService: DataService,
+                                        cacheService: CacheService,
+                                        implicit val ec: ExecutionContext
                                       ) extends BotResultService {
 
   def sendInAction(
@@ -57,7 +58,8 @@ class BotResultServiceImpl @Inject() (
           maybeShouldUnfurl,
           maybeConversation,
           botResult.maybeActions,
-          files
+          files,
+          cacheService
         )
       )
     } yield sendResult

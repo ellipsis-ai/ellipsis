@@ -11,8 +11,7 @@ import play.api.mvc.Results
 import services.DataService
 import drivers.SlickPostgresDriver.api._
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 case class RawLinkedOAuth2Token(
                                  accessToken: String,
@@ -39,7 +38,8 @@ class LinkedOAuth2TokensTable(tag: Tag) extends Table[RawLinkedOAuth2Token](tag,
 
 class LinkedOAuth2TokenServiceImpl @Inject() (
                                                dataServiceProvider: Provider[DataService],
-                                               ws: WSClient
+                                               ws: WSClient,
+                                               implicit val ec: ExecutionContext
                                            ) extends LinkedOAuth2TokenService {
 
   def dataService = dataServiceProvider.get
@@ -78,30 +78,19 @@ class LinkedOAuth2TokenServiceImpl @Inject() (
   }
 
   private def refreshIfNecessaryAction(linkedOAuth2Token: LinkedOAuth2Token): DBIO[LinkedOAuth2Token] = {
-    val eventualMaybeNewInstance = if (linkedOAuth2Token.isExpiredOrExpiresSoon) {
-      linkedOAuth2Token.maybeRefreshToken.map { token =>
+    val eventualMaybeNewInstance = linkedOAuth2Token.maybeRefreshToken.map { token =>
+      if (linkedOAuth2Token.maybeExpirationTime.isEmpty || linkedOAuth2Token.isExpiredOrExpiresSoon) {
         val tokenResponse = linkedOAuth2Token.application.refreshTokenResponseFor(token, ws)
 
         DBIO.from(tokenResponse).flatMap { response =>
-          val json = response.json
-          (json \ "access_token").asOpt[String].map { accessToken =>
-            val maybeTokenType = (json \ "token_type").asOpt[String]
-            val maybeScopeGranted = (json \ "scope").asOpt[String]
-            val maybeExpirationTime = (json \ "expires_in").asOpt[Int].map { seconds =>
-              OffsetDateTime.now.plusSeconds(seconds)
-            }
-            saveAction(linkedOAuth2Token.copy(
-              accessToken = accessToken,
-              maybeScopeGranted = maybeScopeGranted,
-              maybeExpirationTime = maybeExpirationTime,
-              maybeTokenType = maybeTokenType
-            )).map(Some(_))
+          LinkedOAuth2TokenInfo.maybeFrom(response.json).map { info =>
+            saveAction(linkedOAuth2Token.copyFrom(info)).map(Some(_))
           }.getOrElse(DBIO.successful(None))
         }
-      }.getOrElse(DBIO.successful(None))
-    } else {
-      DBIO.successful(None)
-    }
+      } else {
+        DBIO.successful(None)
+      }
+    }.getOrElse(DBIO.successful(None))
 
     eventualMaybeNewInstance.map { maybeNewInstance =>
       maybeNewInstance.getOrElse(linkedOAuth2Token)
@@ -113,7 +102,8 @@ class LinkedOAuth2TokenServiceImpl @Inject() (
   }
   val findQuery = Compiled(uncompiledFindQuery _)
 
-  def saveAction(token: LinkedOAuth2Token): DBIO[LinkedOAuth2Token] = {
+  def saveAction(tokenWithoutExpirationTimeEnsured: LinkedOAuth2Token): DBIO[LinkedOAuth2Token] = {
+    val token = tokenWithoutExpirationTimeEnsured.copyWithExpirationTimeIfRefreshToken
     val query = findQuery(token.userId, token.application.id)
     val raw = token.toRaw
     query.result.headOption.flatMap {

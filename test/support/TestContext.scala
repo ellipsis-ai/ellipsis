@@ -1,7 +1,7 @@
 package support
 
 import akka.actor.ActorSystem
-import mocks.{MockAWSLambdaService, MockAWSLogsService, MockDataService}
+import mocks.{MockAWSLambdaService, MockAWSLogsService, MockCacheService, MockDataService}
 import models.IDs
 import models.accounts.user.User
 import models.behaviors.BotResultService
@@ -14,6 +14,8 @@ import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.ws.WSClient
 import play.api.{Application, Configuration}
 import services._
+
+import scala.concurrent.ExecutionContext
 
 trait TestContext extends MockitoSugar{
 
@@ -29,6 +31,7 @@ trait TestContext extends MockitoSugar{
       overrides(bind[GraphQLService].toInstance(mock[GraphQLService])).
       overrides(bind[SlackEventService].toInstance(mock[SlackEventService])).
       overrides(bind[BotResultService].toInstance(mock[BotResultService])).
+      overrides(bind[CacheService].to[MockCacheService]).
       disable[ActorModule]
   }
   lazy val teamId: String = IDs.next
@@ -47,5 +50,6 @@ trait TestContext extends MockitoSugar{
   val ws = app.injector.instanceOf(classOf[WSClient])
   val configuration = app.injector.instanceOf(classOf[Configuration])
   lazy val services = app.injector.instanceOf(classOf[DefaultServices])
+  lazy implicit val ec = app.injector.instanceOf(classOf[ExecutionContext])
 
 }

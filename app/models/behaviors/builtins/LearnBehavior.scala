@@ -5,7 +5,7 @@ import models.behaviors.events.Event
 import models.behaviors.{BotResult, SimpleTextResult}
 import services.{AWSLambdaService, DataService}
 
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 case class LearnBehavior(
                           event: Event,
@@ -13,7 +13,7 @@ case class LearnBehavior(
                           dataService: DataService
                         ) extends BuiltinBehavior {
 
-  def result(implicit actorSystem: ActorSystem): Future[BotResult] = {
+  def result(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[BotResult] = {
     Future.successful(SimpleTextResult(event, None, s"I love to learn. Come ${event.teachMeLinkFor(lambdaService)}.", forcePrivateResponse = false))
   }
 

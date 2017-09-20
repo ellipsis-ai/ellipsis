@@ -3,8 +3,7 @@ package models.behaviors.config.awsconfig
 import models.behaviors.behaviorversion.BehaviorVersion
 import slick.dbio.DBIO
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 trait AWSConfigService {
 
@@ -12,7 +11,7 @@ trait AWSConfigService {
 
   def maybeFor(behaviorVersion: BehaviorVersion): Future[Option[AWSConfig]]
 
-  def environmentVariablesUsedForAction(behaviorVersion: BehaviorVersion): DBIO[Seq[String]] = {
+  def environmentVariablesUsedForAction(behaviorVersion: BehaviorVersion)(implicit ec: ExecutionContext): DBIO[Seq[String]] = {
     maybeForAction(behaviorVersion).map { maybeAwsConfig =>
       maybeAwsConfig.map { awsConfig =>
         awsConfig.environmentVariableNames

@@ -80,7 +80,7 @@ jobs:
       - run:
           name: Run Activator tests
           command: |
-            activator test
+            cat /dev/null | activator test
       - save_cache:
           paths:
             - .ivy2

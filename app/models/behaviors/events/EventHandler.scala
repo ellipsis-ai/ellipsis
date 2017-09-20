@@ -9,12 +9,14 @@ import models.behaviors.{BehaviorResponse, BotResult, SimpleTextResult, TextWith
 import services.DefaultServices
 import utils.Color
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration._
 
 @Singleton
-class EventHandler @Inject() (services: DefaultServices) {
+class EventHandler @Inject() (
+                               services: DefaultServices,
+                               implicit val ec: ExecutionContext
+                             ) {
 
   val dataService = services.dataService
   val lambdaService = services.lambdaService

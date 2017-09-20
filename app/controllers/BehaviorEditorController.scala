@@ -2,28 +2,30 @@ package controllers
 
 import javax.inject.Inject
 
+import com.google.inject.Provider
 import com.mohiva.play.silhouette.api.Silhouette
 import com.mohiva.play.silhouette.api.actions.SecuredRequest
 import json.Formatting._
 import json._
+import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
 import models.behaviors.testing.{InvocationTester, TestEvent, TriggerTester}
 import models.behaviors.triggers.messagetrigger.MessageTrigger
 import models.silhouette.EllipsisEnv
 import play.api.data.Form
 import play.api.data.Forms._
-import play.api.i18n.MessagesApi
 import play.api.libs.json._
 import play.api.mvc.{AnyContent, Result}
 import play.filters.csrf.CSRF
 import services.DefaultServices
+import utils.FutureSequencer
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 class BehaviorEditorController @Inject() (
-                                           val messagesApi: MessagesApi,
                                            val silhouette: Silhouette[EllipsisEnv],
-                                           val services: DefaultServices
+                                           val services: DefaultServices,
+                                           val assetsProvider: Provider[RemoteAssets],
+                                           implicit val ec: ExecutionContext
                                          ) extends ReAuthable {
 
   val dataService = services.dataService
@@ -34,7 +36,7 @@ class BehaviorEditorController @Inject() (
     val user = request.identity
     render.async {
       case Accepts.JavaScript() => {
-        editorDataResult(BehaviorEditorData.buildForNew(user, maybeTeamId, dataService, ws))
+        editorDataResult(BehaviorEditorData.buildForNew(user, maybeTeamId, dataService, ws, assets))
       }
       case Accepts.Html() => {
         for {
@@ -54,7 +56,7 @@ class BehaviorEditorController @Inject() (
     val user = request.identity
     render.async {
       case Accepts.JavaScript() => {
-        editorDataResult(BehaviorEditorData.buildForEdit(user, groupId, maybeBehaviorId, dataService, ws))
+        editorDataResult(BehaviorEditorData.buildForEdit(user, groupId, maybeBehaviorId, dataService, ws, assets))
       }
       case Accepts.Html() => {
         for {
@@ -84,6 +86,27 @@ class BehaviorEditorController @Inject() (
         Future.successful(Ok(views.js.shared.pageConfig(viewConfig(Some(editorData.teamAccess)), "config/behavioreditor/edit", Json.toJson(config))))
       }.getOrElse {
         Future.successful(NotFound("Skill not found"))
+      }
+    }
+  }
+
+  def metaData(behaviorGroupId: String) = silhouette.SecuredAction.async { implicit request =>
+    val user = request.identity
+    for {
+      maybeBehaviorGroup <- dataService.behaviorGroups.find(behaviorGroupId, user)
+      maybeLastVersion <- maybeBehaviorGroup.flatMap(_.maybeCurrentVersionId).map { currentVersionId =>
+        dataService.behaviorGroupVersions.findWithoutAccessCheck(currentVersionId)
+      }.getOrElse(Future.successful(None))
+      maybeUserData <- maybeLastVersion.flatMap { version =>
+        version.maybeAuthor.map { author =>
+          dataService.users.userDataFor(author, version.team).map(Some(_))
+        }
+      }.getOrElse(Future.successful(None))
+    } yield {
+      maybeLastVersion.map { groupVersion =>
+        Ok(Json.toJson(BehaviorGroupVersionMetaData(behaviorGroupId, groupVersion.createdAt, maybeUserData)))
+      }.getOrElse {
+        NotFound("Skill not found")
       }
     }
   }
@@ -249,11 +272,31 @@ class BehaviorEditorController @Inject() (
       versions <- maybeBehaviorGroup.map { group =>
        dataService.behaviorGroupVersions.allFor(group).map(_.sortBy(_.createdAt).reverse.take(20))
       }.getOrElse(Future.successful(Seq()))
-      versionsData <- Future.sequence(versions.map { ea =>
-       BehaviorGroupData.buildFor(ea, user, dataService)
-      })
+      // Todo: this can go back to being a regular Future.sequence (in parallel) if we
+      versionsData <- FutureSequencer.sequence(versions, (ea: BehaviorGroupVersion) => BehaviorGroupData.buildFor(ea, user, dataService))
     } yield {
       Ok(Json.toJson(versionsData))
+    }
+  }
+
+  def nodeModuleVersionsFor(behaviorGroupId: String) = silhouette.SecuredAction.async { implicit request =>
+    val user = request.identity
+    for {
+      maybeBehaviorGroup <- dataService.behaviorGroups.find(behaviorGroupId, user)
+      maybeCurrentGroupVersion <- maybeBehaviorGroup.map { group =>
+        dataService.behaviorGroups.maybeCurrentVersionFor(group)
+      }.getOrElse(Future.successful(None))
+      behaviorVersions <- maybeCurrentGroupVersion.map { groupVersion =>
+        dataService.behaviorVersions.allForGroupVersion(groupVersion)
+      }.getOrElse(Future.successful(Seq()))
+      _ <- Future.sequence(behaviorVersions.map { ea =>
+        dataService.run(services.lambdaService.ensureNodeModuleVersionsFor(ea))
+      })
+      nodeModuleVersions <- maybeCurrentGroupVersion.map { groupVersion =>
+        dataService.nodeModuleVersions.allFor(groupVersion)
+      }.getOrElse(Future.successful(Seq()))
+    } yield {
+      Ok(Json.toJson(nodeModuleVersions.map(NodeModuleVersionData.from)))
     }
   }
 

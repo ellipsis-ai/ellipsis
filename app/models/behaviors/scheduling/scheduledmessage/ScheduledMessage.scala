@@ -13,7 +13,7 @@ import slack.api.SlackApiClient
 import slick.dbio.DBIO
 import utils.SlackTimestamp
 
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 case class ScheduledMessage(
                              id: String,
@@ -27,7 +27,7 @@ case class ScheduledMessage(
                              createdAt: OffsetDateTime
                            ) extends Scheduled {
 
-  def displayText(dataService: DataService): Future[String] = {
+  def displayText(dataService: DataService)(implicit ec: ExecutionContext): Future[String] = {
     Future.successful(s"`$text`")
   }
 

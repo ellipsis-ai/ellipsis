@@ -22,7 +22,7 @@ define(function(require) {
             <div className="container">
               <div className="columns">
                 <div className="column column-page-sidebar">
-                  <h4 className="type-weak">Select a saved answer to re-use</h4>
+                  <h4 className="mtn type-weak">Select a saved answer to re-use</h4>
                   <p className="type-weak type-s">
                     <span>You can re-use any input from another action that saves answers. Users </span>
                     <span>will only be asked to respond to such inputs once, with the answer saved for every action.</span>

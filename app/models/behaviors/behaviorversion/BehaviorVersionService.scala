@@ -13,8 +13,7 @@ import models.behaviors.{BotResult, ParameterWithValue}
 import models.team.Team
 import slick.dbio.DBIO
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 trait BehaviorVersionService {
 
@@ -28,13 +27,13 @@ trait BehaviorVersionService {
 
   def allCurrentForTeam(team: Team): Future[Seq[BehaviorVersion]]
 
-  def dataTypesForGroupVersionAction(groupVersion: BehaviorGroupVersion): DBIO[Seq[BehaviorVersion]] = {
+  def dataTypesForGroupVersionAction(groupVersion: BehaviorGroupVersion)(implicit ec: ExecutionContext): DBIO[Seq[BehaviorVersion]] = {
     allForGroupVersionAction(groupVersion).map { all =>
       all.filter(_.isDataType)
     }
   }
 
-  def dataTypesForTeam(team: Team): Future[Seq[BehaviorVersion]] = {
+  def dataTypesForTeam(team: Team)(implicit ec: ExecutionContext): Future[Seq[BehaviorVersion]] = {
     allCurrentForTeam(team).map { all =>
       all.filter(_.isDataType)
     }

@@ -125,7 +125,7 @@ define(function(require) {
             <div className="container phn">
               <div className="columns mtl">
                 <div className="column column-page-sidebar">
-                  <h4 className="type-weak">Test the data type</h4>
+                  <h4 className="mtn type-weak">Test the data type</h4>
                 </div>
                 <div className="column column-three-quarters pll mobile-pln mobile-column-full">
                   {this.renderContent()}

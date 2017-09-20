@@ -26,7 +26,7 @@ trait BehaviorGroupService {
   def delete(group: BehaviorGroup): Future[BehaviorGroup]
 
   def editLinkFor(groupId: String, configuration: Configuration): String = {
-    val baseUrl = configuration.getString("application.apiBaseUrl").get
+    val baseUrl = configuration.get[String]("application.apiBaseUrl")
     val path = controllers.routes.BehaviorEditorController.edit(groupId)
     s"$baseUrl$path"
   }

@@ -13,8 +13,7 @@ import services.{AWSLambdaService, DataService}
 import drivers.SlickPostgresDriver.api._
 import models.behaviors.events.SlackMessageEvent
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 
 case class RawBehavior(
@@ -41,7 +40,8 @@ class BehaviorsTable(tag: Tag) extends Table[RawBehavior](tag, "behaviors") {
 
 class BehaviorServiceImpl @Inject() (
                                       dataServiceProvider: Provider[DataService],
-                                      lambdaServiceProvider: Provider[AWSLambdaService]
+                                      lambdaServiceProvider: Provider[AWSLambdaService],
+                                      implicit val ec: ExecutionContext
                                     ) extends BehaviorService {
 
   def dataService = dataServiceProvider.get
@@ -176,16 +176,6 @@ class BehaviorServiceImpl @Inject() (
       _ <- Future.sequence(versions.map(v => dataService.behaviorVersions.unlearn(v)))
       _ <- delete(behavior)
     } yield {}
-  }
-
-  def authorNamesFor(behavior: Behavior, event: SlackMessageEvent): Future[Seq[String]] = {
-    for {
-      versions <- dataService.behaviorVersions.allFor(behavior)
-      authors <- Future.successful(versions.flatMap(_.maybeAuthor).distinct)
-      authorNames <- Future.sequence(authors.map { ea =>
-        dataService.users.maybeNameFor(ea, event)
-      }).map(_.flatten)
-    } yield authorNames
   }
 
 }

@@ -21,8 +21,7 @@ import services.AWSLambdaConstants._
 import services.{AWSLambdaLogResult, DataService}
 import slick.dbio.DBIO
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 case class BehaviorVersion(
                             id: String,
@@ -39,7 +38,7 @@ case class BehaviorVersion(
 
   lazy val typeName = maybeName.getOrElse(GraphQLHelpers.fallbackTypeName)
 
-  def dataTypeFieldsAction(dataService: DataService): DBIO[Seq[DataTypeFieldForSchema]] = {
+  def dataTypeFieldsAction(dataService: DataService)(implicit ec: ExecutionContext): DBIO[Seq[DataTypeFieldForSchema]] = {
     dataService.dataTypeConfigs.maybeForAction(this).flatMap { maybeConfig =>
       maybeConfig.map { config =>
         dataService.dataTypeFields.allForAction(config)
@@ -47,7 +46,7 @@ case class BehaviorVersion(
     }
   }
 
-  def dataTypeFields(dataService: DataService): Future[Seq[DataTypeFieldForSchema]] = {
+  def dataTypeFields(dataService: DataService)(implicit ec: ExecutionContext): Future[Seq[DataTypeFieldForSchema]] = {
     dataService.run(dataTypeFieldsAction(dataService))
   }
 
@@ -63,10 +62,8 @@ case class BehaviorVersion(
     maybeName.getOrElse(id)
   }
 
-  def isSkill: Boolean = {
-    maybeFunctionBody.exists { body =>
-      Option(body).exists(_.trim.nonEmpty)
-    }
+  def hasFunction: Boolean = {
+    maybeFunctionBody.exists(_.trim.nonEmpty)
   }
 
   def description: String = maybeDescription.getOrElse("")
@@ -74,12 +71,6 @@ case class BehaviorVersion(
   def functionBody: String = maybeFunctionBody.getOrElse("")
 
   def functionName: String = BehaviorVersion.functionNameFor(id)
-
-  private def isUnhandledError(json: JsValue): Boolean = {
-    (json \ "errorMessage").toOption.flatMap { m =>
-      "Process exited before completing request".r.findFirstIn(m.toString)
-    }.isDefined
-  }
 
   private def isSyntaxError(json: JsValue): Boolean = {
     (json \ "errorType").toOption.flatMap { m =>
@@ -104,16 +95,14 @@ case class BehaviorVersion(
       SuccessResult(event, maybeConversation, successResult, json, parametersWithValues, maybeResponseTemplate, logResultOption, forcePrivateResponse)
     }.getOrElse {
       if ((json \ NO_RESPONSE_KEY).toOption.exists(_.as[Boolean])) {
-        NoResponseResult(event, maybeConversation, logResultOption)
+        NoResponseResult(event, maybeConversation, json, logResultOption)
       } else {
-        if (isUnhandledError(json)) {
-          UnhandledErrorResult(event, maybeConversation, this, dataService, configuration, logResultOption)
-        } else if (json.toString == "null") {
+        if (json.toString == "null") {
           NoCallbackTriggeredResult(event, maybeConversation, this, dataService, configuration)
         } else if (isSyntaxError(json)) {
           SyntaxErrorResult(event, maybeConversation, this, dataService, configuration, json, logResultOption)
         } else {
-          HandledErrorResult(event, maybeConversation, this, dataService, configuration, json, logResultOption)
+          ExecutionErrorResult(event, maybeConversation, this, dataService, configuration, json, logResultOption)
         }
       }
     }

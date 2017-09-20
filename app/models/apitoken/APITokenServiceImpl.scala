@@ -9,8 +9,7 @@ import models.accounts.user.User
 import services.DataService
 import drivers.SlickPostgresDriver.api._
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 class APITokensTable(tag: Tag) extends Table[APIToken](tag, "api_tokens") {
 
@@ -25,7 +24,8 @@ class APITokensTable(tag: Tag) extends Table[APIToken](tag, "api_tokens") {
 }
 
 class APITokenServiceImpl @Inject() (
-                                  dataServiceProvider: Provider[DataService]
+                                  dataServiceProvider: Provider[DataService],
+                                  implicit val ec: ExecutionContext
                                 ) extends APITokenService {
 
   def dataService = dataServiceProvider.get
