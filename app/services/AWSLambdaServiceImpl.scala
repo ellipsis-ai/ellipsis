@@ -322,14 +322,15 @@ class AWSLambdaServiceImpl @Inject() (
   case class PreviousFunctionInfo(functionName: String, functionBody: String, libraries: Seq[LibraryVersion]) {
     val requiredModules = requiredModulesIn(functionBody, libraries, includeLibraryRequires = true)
     val dirName = dirNameFor(functionName)
+    val nodeModulesDirName = s"$dirName/node_modules"
 
     def canCopyModules(neededModules: Seq[String]): Boolean = {
       requiredModules.sameElements(neededModules) &&
-        Files.exists(Paths.get(dirName))
+        Files.exists(Paths.get(nodeModulesDirName))
     }
 
     def copyModulesInto(destinationDirName: String) = {
-      Process(Seq("bash","-c",s"cp -r $dirName/node_modules $destinationDirName/"), None, "HOME" -> "/tmp").!
+      Process(Seq("bash","-c",s"cp -r $nodeModulesDirName $destinationDirName/"), None, "HOME" -> "/tmp").!
     }
   }
 
