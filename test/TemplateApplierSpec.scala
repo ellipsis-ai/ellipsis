@@ -254,6 +254,24 @@ class TemplateApplierSpec extends PlaySpec {
       applier.apply.trim mustBe "The next number is:\n- first\n\nThe next number is:\n- second"
     }
 
+    "handle the same name used for both input param and successResult property" in {
+      val resultJson = Json.toJson(Map("sameName" -> "in result"))
+      val inputs = Seq(("sameName", JsString("from input")))
+      val applier = TemplateApplier(Some("In result: {successResult.sameName}, from input: {sameName}"), JsDefined(resultJson), inputs)
+      applier.apply mustBe "In result: in result, from input: from input"
+    }
+
+    "handle the same name used for both input param and (shadowing) iteration param" in {
+      val resultJson = Json.toJson(Map("items" -> Array("first", "second")))
+      val inputs = Seq(("sameName", JsString("from input")))
+      val applier = TemplateApplier(Some("""From input: {sameName}
+                                           |{for sameName in successResult.items}
+                                           |- {sameName}
+                                           |{endfor}
+                                         """.stripMargin), JsDefined(resultJson), inputs)
+      applier.apply.trim mustBe "From input: from input\n- first\n- second"
+    }
+
   }
 
 }

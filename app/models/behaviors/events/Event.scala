@@ -63,7 +63,7 @@ trait Event {
     MessageInfo.buildFor(this, ws, dataService, cacheService)
   }
 
-  def detailsFor(ws: WSClient, cacheService: CacheService)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[JsObject]
+  def detailsFor(ws: WSClient, dataService: DataService, cacheService: CacheService)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[JsObject]
 
   def recentMessages(dataService: DataService)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Seq[String]] = Future.successful(Seq())
 
@@ -146,7 +146,7 @@ trait Event {
                    cacheService: CacheService
                  )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[String]]
 
-  def botPrefix(cacheService: CacheService)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[String] = Future.successful("")
+  def botPrefix(dataService: DataService)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[String] = Future.successful("")
 
   val invocationLogText: String
 

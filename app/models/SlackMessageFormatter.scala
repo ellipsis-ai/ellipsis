@@ -2,7 +2,6 @@ package models
 
 import java.util
 
-import models.accounts.slack.SlackUserInfo
 import models.behaviors.templates.SlackRenderer
 import org.commonmark.ext.autolink.AutolinkExtension
 import org.commonmark.ext.gfm.strikethrough.StrikethroughExtension

@@ -86,7 +86,7 @@ class SlackBotProfileServiceImpl @Inject() (
           maybeTeam <- DBIO.from(dataService.teams.find(existing.teamId))
           _ <- query.update(profile)
           _ <- maybeTeam.map { team =>
-            DBIO.from(dataService.teams.setInitialNameFor(team, slackTeamName))
+            DBIO.from(dataService.teams.setNameFor(team, slackTeamName))
           }.getOrElse(DBIO.successful(Unit))
         } yield profile
       }

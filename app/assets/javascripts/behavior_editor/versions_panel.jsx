@@ -15,20 +15,6 @@ return React.createClass({
     versions: React.PropTypes.arrayOf(React.PropTypes.instanceOf(BehaviorGroup)).isRequired
   },
 
-  getVersionText: function(versionIndex) {
-    if (versionIndex === 0 && this.props.versions.length === 1) {
-      return "Loading…";
-    } else if (versionIndex === 0) {
-      return "Unsaved version";
-    } else if (versionIndex === 1) {
-      return `v${this.getVersionNumberForIndex(versionIndex)}. Last saved version (${this.getDateForVersion(this.props.versions[versionIndex])})`;
-    } else {
-      return `v${this.getVersionNumberForIndex(versionIndex)}. ${this.getDateForVersion(this.props.versions[versionIndex])}`;
-    }
-  },
-  getDateForVersion: function(version) {
-    return Formatter.formatTimestampRelativeIfRecent(version.createdAt);
-  },
   getInitialState: function() {
     return {
       isRestoring: false,
@@ -44,20 +30,69 @@ return React.createClass({
       return 0;
     }
   },
-  getVersionsMenu: function() {
-    if (this.props.versions) {
-      return this.props.versions.map(function(version, index) {
-        if (index === 0 && this.props.shouldFilterCurrentVersion) {
-          return null;
+  getAuthorForVersion: function(version) {
+    return version.author ? version.author.formattedName() : "unknown";
+  },
+  getDateAndAuthorForVersion: function(version) {
+    return `${Formatter.formatTimestampDate(version.createdAt)} by ${this.getAuthorForVersion(version)}`;
+  },
+  getGroupedVersions: function() {
+    const groupedVersions = [];
+    this.props.versions.reduce((prevDateAndAuthor, version, index) => {
+      const versionDetail = {
+        index: index,
+        version: version
+      };
+      if (index === 0 && this.props.shouldFilterCurrentVersion) {
+        return null;
+      } else if (index === 0) {
+        groupedVersions.push({
+          label: "Unsaved",
+          versions: [versionDetail]
+        });
+        return "Unsaved";
+      } else {
+        const dateAndAuthor = this.getDateAndAuthorForVersion(version);
+        if (dateAndAuthor === prevDateAndAuthor) {
+          groupedVersions[groupedVersions.length - 1].versions.push(versionDetail);
         } else {
-          return (
-            <option
-              key={"version" + index}
-              value={index}
-            >{this.getVersionText(index)}</option>
-          );
+          groupedVersions.push({
+            label: "Saved on " + dateAndAuthor,
+            versions: [versionDetail]
+          });
         }
-      }, this);
+        return dateAndAuthor;
+      }
+    }, null);
+    return groupedVersions;
+  },
+  getVersionOptionLabel: function(indexInGroup, versionIndex, version) {
+    return `v${
+      this.getVersionNumberForIndex(versionIndex)
+    } ${
+      versionIndex === 1 ? Formatter.formatTimestampDate(version.createdAt) : ""
+    } ${
+      Formatter.formatTimestampTime(version.createdAt)
+    } ${
+      versionIndex === 1 ? "by " + this.getAuthorForVersion(version) : ""
+    } ${
+      versionIndex === 1 ? "(last saved version)" : ""
+    }`;
+  },
+  getVersionsMenu: function() {
+    if (this.props.versions && this.props.versions.length > 1) {
+      const groups = this.getGroupedVersions();
+      return groups.map((group, groupIndex) => (
+        <optgroup key={`versionGroup${groupIndex}`} label={group.label}>
+          {group.versions.map((versionDetail, versionIndexInGroup) => (
+            <option key={`g${groupIndex}v${versionIndexInGroup}`} value={versionDetail.index}>{
+              versionDetail.index === 0 ?
+                "Current unsaved version" :
+                this.getVersionOptionLabel(versionIndexInGroup, versionDetail.index, versionDetail.version)
+            }</option>
+          ))}
+        </optgroup>
+      ));
     } else {
       return (
         <option value="">Loading…</option>

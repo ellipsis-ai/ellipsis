@@ -6,7 +6,7 @@ import models.accounts.slack.profile.SlackProfile
 import models.accounts.user.User
 import models.behaviors.conversations.conversation.Conversation
 import services.{CacheService, DataService}
-import slack.api.{ApiError, SlackApiClient}
+import slack.api.SlackApiClient
 import utils.{SlackMessageSender, UploadFileSpec}
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -24,19 +24,16 @@ case class SlackMessageEvent(
 
   lazy val isBotMessage: Boolean = profile.userId == user
 
-  override def botPrefix(cacheService: CacheService)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[String] = {
+  override def botPrefix(dataService: DataService)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[String] = {
     if (isDirectMessage) {
       Future.successful("")
     } else {
-      cacheService.getBotUsername(profile.userId).map { name =>
-        Future.successful(s"@$name ")
-      }.getOrElse {
-        client.getUserInfo(profile.userId).map { slackUser =>
-          cacheService.cacheBotUsername(profile.userId, slackUser.name)
-          s"@${slackUser.name} "
-        } recover {
-          case e: ApiError => "..."
-        }
+      for {
+        maybeSlackUserData <- dataService.linkedAccounts.maybeSlackUserDataFor(profile.userId, profile.slackTeamId, SlackApiClient(profile.token))
+      } yield {
+        maybeSlackUserData.map { userData =>
+          s"@${userData.accountName} "
+        }.getOrElse("...")
       }
     }
   }

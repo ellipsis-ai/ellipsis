@@ -297,29 +297,93 @@ class SlackController @Inject() (
         "channel" -> nonEmptyText,
         "channel_type" -> nonEmptyText
       )(ChannelMembersChangedEventInfo.apply)(ChannelMembersChangedEventInfo.unapply)
-    )(ChannelMembersChangedRequestInfo.apply)(ChannelMembersChangedRequestInfo.unapply) verifying("Not a valid message event", fields => fields match {
+    )(ChannelMembersChangedRequestInfo.apply)(ChannelMembersChangedRequestInfo.unapply) verifying("Not a valid channel event", fields => fields match {
       case info => info.event.eventType.matches(channelMembersChangedPattern)
     })
   )
 
+  private def updateMembers(eventType: String, oldMembers: Seq[String], member: String): Seq[String] = {
+    if (eventType == "member_joined_channel") {
+      oldMembers ++ Seq(member)
+    } else {
+      oldMembers.filterNot(_ == member)
+    }
+  }
+
   private def maybeChannelMembersChangedResult(implicit request: Request[AnyContent]): Option[Result] = {
     maybeResultFor(channelMembersChangedRequestForm, (info: ChannelMembersChangedRequestInfo) => {
-      val channel = info.event.channel
+      val channelId = info.event.channel
       val channelType = info.event.channelType
       val teamId = info.teamId
+      val eventType = info.event.eventType
+      val userId = info.event.user
       if (channelType == "C") {
-        services.cacheService.uncacheSlackChannelInfo(channel, teamId)
+        val maybeOldChannel = services.cacheService.getSlackChannelInfo(channelId, teamId)
+        maybeOldChannel.foreach { oldChannel =>
+          val newChannel = oldChannel.copy(
+            members = oldChannel.members.map((members) => updateMembers(eventType, members, userId))
+          )
+          services.cacheService.cacheSlackChannelInfo(channelId, teamId, newChannel)
+        }
       } else if (channelType == "G") {
-        services.cacheService.uncacheSlackGroupInfo(channel, teamId)
+        val maybeOldGroup = services.cacheService.getSlackGroupInfo(channelId, teamId)
+        maybeOldGroup.foreach { oldGroup =>
+          val newGroup = oldGroup.copy(
+            members = updateMembers(eventType, oldGroup.members, userId)
+          )
+          services.cacheService.cacheSlackGroupInfo(channelId, teamId, newGroup)
+        }
       }
       Ok(":+1:")
     })
   }
 
+  case class UserChangeInfo(id: String, name: String)
+  case class UserProfileChangedEventInfo(
+                                          eventType: String,
+                                          user: UserChangeInfo
+                                        ) extends EventInfo
+  case class UserProfileChangedRequestInfo(
+                                             teamId: String,
+                                             event: UserProfileChangedEventInfo
+                                           ) extends EventRequestInfo
+
+  private val userProfileChangedRequestForm = Form(
+    mapping(
+      "team_id" -> nonEmptyText,
+      "event" -> mapping(
+        "type" -> nonEmptyText,
+        "user" -> mapping(
+          "id" -> nonEmptyText,
+          "name" -> nonEmptyText
+        )(UserChangeInfo.apply)(UserChangeInfo.unapply)
+      )(UserProfileChangedEventInfo.apply)(UserProfileChangedEventInfo.unapply)
+    )(UserProfileChangedRequestInfo.apply)(UserProfileChangedRequestInfo.unapply) verifying("Not a valid user event", fields => fields match {
+      case info => info.event.eventType == "user_change"
+    })
+  )
+
+  private def maybeUserProfileChangedResult(implicit request: Request[AnyContent]): Option[Result] = {
+    maybeResultFor(userProfileChangedRequestForm, (info: UserProfileChangedRequestInfo) => {
+      val slackUserId = info.event.user.id
+      val slackTeamId = info.teamId
+      val userName = info.event.user.name
+      val maybeOldUserData = services.cacheService.getSlackUserData(slackUserId, slackTeamId)
+      maybeOldUserData.foreach{ oldUserData =>
+        if (oldUserData.accountName != userName) {
+          services.cacheService.cacheSlackUserData(oldUserData.copy(accountName = userName))
+        }
+      }
+      Ok(":+1:")
+    })
+  }
+
+
   private def maybeEventResult(implicit request: Request[AnyContent]): Option[Result] = {
     if (isValidEventRequest) {
       maybeMessageResult orElse
-        maybeChannelMembersChangedResult
+        maybeChannelMembersChangedResult orElse
+        maybeUserProfileChangedResult
     } else {
       None
     }

@@ -2,9 +2,8 @@ package services
 
 import javax.inject.{Inject, Provider, Singleton}
 
-import json.BehaviorGroupData
 import json.Formatting._
-import models.accounts.slack.SlackUserInfo
+import json.{BehaviorGroupData, SlackUserData}
 import models.accounts.slack.botprofile.SlackBotProfile
 import models.behaviors.behaviorparameter.ValidValue
 import models.behaviors.events.{Event, SlackMessage, SlackMessageEvent}
@@ -99,30 +98,12 @@ class CacheServiceImpl @Inject() (
     }
   }
 
-  def cacheSlackUserList(key: String, data: Seq[SlackUserInfo]): Unit = {
-    // TODO: we should probably make this last longer, and invalidate it based on events we receive from Slack
-    set(key, Json.toJson(data), 1.minute)
-  }
-
-  def getSlackUserList(key: String): Option[Seq[SlackUserInfo]] = {
-    get[JsValue](key).flatMap { json =>
-      json.validate[Seq[SlackUserInfo]] match {
-        case JsSuccess(data, jsPath) => Some(data)
-        case JsError(err) => None
-      }
-    }
-  }
-
   private def slackChannelInfoKey(channel: String, teamId: String): String = {
     s"slack-team-$teamId-channel-$channel-info"
   }
 
   def cacheSlackChannelInfo(channel: String, teamId: String, data: Channel): Unit = {
     set(slackChannelInfoKey(channel, teamId), Json.toJson(data), 1.hour)
-  }
-
-  def uncacheSlackChannelInfo(channel: String, teamId: String): Unit = {
-    remove(slackChannelInfoKey(channel, teamId))
   }
 
   def getSlackChannelInfo(channel: String, teamId: String): Option[Channel] = {
@@ -140,10 +121,6 @@ class CacheServiceImpl @Inject() (
 
   def cacheSlackGroupInfo(group: String, teamId: String, data: Group): Unit = {
     set(slackGroupInfoKey(group, teamId), Json.toJson(data), 1.hour)
-  }
-
-  def uncacheSlackGroupInfo(group: String, teamId: String): Unit = {
-    remove(slackGroupInfoKey(group, teamId))
   }
 
   def getSlackGroupInfo(group: String, teamId: String): Option[Group] = {
@@ -172,12 +149,21 @@ class CacheServiceImpl @Inject() (
     }
   }
 
-  def cacheBotUsername(userId: String, username: String): Unit = {
-    set(s"slack-username-for-id-${userId}", username, 5.minutes)
+  private def slackUserDataKey(slackUserId: String, slackTeamId: String): String = {
+    s"slack-user-profile-data-team-$slackTeamId-user-$slackUserId"
   }
 
-  def getBotUsername(userId: String): Option[String] = {
-    get(s"slack-username-for-id-${userId}")
+  def cacheSlackUserData(userData: SlackUserData): Unit = {
+    set(slackUserDataKey(userData.accountId, userData.accountTeamId), Json.toJson(userData), 1.hour)
+  }
+
+  def getSlackUserData(slackUserId: String, slackTeamId: String): Option[SlackUserData] = {
+    get[JsValue](slackUserDataKey(slackUserId, slackTeamId)).flatMap { json =>
+      json.validate[SlackUserData] match {
+        case JsSuccess(data, jsPath) => Some(data)
+        case JsError(err) => None
+      }
+    }
   }
 
 }

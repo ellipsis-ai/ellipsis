@@ -27,7 +27,8 @@ case class BehaviorGroupData(
                               requiredSimpleTokenApis: Seq[RequiredSimpleTokenApiData],
                               githubUrl: Option[String],
                               exportId: Option[String],
-                              createdAt: Option[OffsetDateTime]
+                              createdAt: Option[OffsetDateTime],
+                              author: Option[UserData]
                             ) extends Ordered[BehaviorGroupData] with FuzzyMatchable {
 
   val fuzzyMatchPatterns: Seq[FuzzyMatchPattern] = {
@@ -140,6 +141,9 @@ object BehaviorGroupData {
       requiredAWSConfigs <- dataService.requiredAWSConfigs.allFor(version)
       requiredOAuth2ApiConfigs <- dataService.requiredOAuth2ApiConfigs.allFor(version)
       requiredSimpleTokenApis <- dataService.requiredSimpleTokenApis.allFor(version)
+      maybeUserData <- version.maybeAuthor.map { author =>
+        dataService.users.userDataFor(author, version.team).map(Some(_))
+      }.getOrElse(Future.successful(None))
     } yield {
       val (dataTypeInputsData, actionInputsData) = inputsData.partition { ea =>
         versionsData.find(v => ea.inputId.exists(v.inputIds.contains)).exists(_.isDataType)
@@ -159,7 +163,8 @@ object BehaviorGroupData {
         requiredSimpleTokenApis.map(RequiredSimpleTokenApiData.from),
         None,
         version.group.maybeExportId,
-        Some(version.createdAt)
+        Some(version.createdAt),
+        maybeUserData
       )
     }
   }

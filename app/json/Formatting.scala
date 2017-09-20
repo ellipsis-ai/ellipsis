@@ -1,6 +1,5 @@
 package json
 
-import models.accounts.slack.SlackUserInfo
 import models.accounts.slack.botprofile.SlackBotProfile
 import models.behaviors.{ExecutionErrorData, ExecutionLogData}
 import models.behaviors.behaviorparameter.ValidValue
@@ -70,6 +69,12 @@ object Formatting {
   implicit val requiredAWSConfigDataReads = Json.reads[RequiredAWSConfigData]
   implicit val requiredAWSConfigDataWrites = Json.writes[RequiredAWSConfigData]
 
+  implicit val slackUserDataReads = Json.reads[SlackUserData]
+  implicit val slackUserDataWrites = Json.writes[SlackUserData]
+
+  implicit val userDataReads = Json.reads[UserData]
+  implicit val userDataWrites = Json.writes[UserData]
+
   implicit val behaviorGroupReads = Json.reads[BehaviorGroupData]
   implicit val behaviorGroupWrites = Json.writes[BehaviorGroupData]
 
@@ -131,9 +136,6 @@ object Formatting {
   implicit val slackBotProfileReads = Json.reads[SlackBotProfile]
   implicit val slackBotProfileWrites = Json.writes[SlackBotProfile]
 
-  implicit val slackUserInfoReads = Json.reads[SlackUserInfo]
-  implicit val slackUserInfoWrites = Json.writes[SlackUserInfo]
-
   implicit val slackMessageReads = Json.reads[SlackMessage]
   implicit val slackMessageWrites = Json.writes[SlackMessage]
 
@@ -157,4 +159,6 @@ object Formatting {
 
   implicit val executionLogReads = Json.reads[ExecutionLogData]
   implicit val executionErrorValueReads = Json.reads[ExecutionErrorData]
+
+  implicit val behaviorGroupVersionMetaDataWrites = Json.writes[BehaviorGroupVersionMetaData]
 }

@@ -178,14 +178,4 @@ class BehaviorServiceImpl @Inject() (
     } yield {}
   }
 
-  def authorNamesFor(behavior: Behavior, event: SlackMessageEvent): Future[Seq[String]] = {
-    for {
-      versions <- dataService.behaviorVersions.allFor(behavior)
-      authors <- Future.successful(versions.flatMap(_.maybeAuthor).distinct)
-      authorNames <- Future.sequence(authors.map { ea =>
-        dataService.users.maybeNameFor(ea, event)
-      }).map(_.flatten)
-    } yield authorNames
-  }
-
 }

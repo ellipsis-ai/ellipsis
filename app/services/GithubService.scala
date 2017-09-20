@@ -209,7 +209,8 @@ class GithubService @Inject() (
               requiredSimpleTokenApiData,
               Some(githubUrl),
               maybeExportId,
-              Some(OffsetDateTime.now)
+              Some(OffsetDateTime.now),
+              None
             )
           }).map(Some(_))
         }).getOrElse(Future.successful(None))

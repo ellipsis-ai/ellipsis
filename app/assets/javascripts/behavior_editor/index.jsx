@@ -4,6 +4,7 @@ var React = require('react'),
   AWSConfigRef = require('../models/aws').AWSConfigRef,
   AWSHelp = require('./aws_help'),
   BehaviorGroup = require('../models/behavior_group'),
+  BehaviorGroupVersionMetaData = require('../models/behavior_group_version_meta_data'),
   BehaviorGroupEditor = require('./behavior_group_editor'),
   BehaviorVersion = require('../models/behavior_version'),
   BehaviorSwitcher = require('./behavior_switcher'),
@@ -105,7 +106,8 @@ const BehaviorEditor = React.createClass({
     ).isRequired,
     onSave: React.PropTypes.func.isRequired,
     onForgetSavedAnswerForInput: React.PropTypes.func.isRequired,
-    onLoad: React.PropTypes.func
+    onLoad: React.PropTypes.func,
+    userId: React.PropTypes.string.isRequired
   }),
 
 
@@ -600,13 +602,38 @@ const BehaviorEditor = React.createClass({
     }
   },
 
+  buildServerNotifications: function() {
+    if (!this.state) return [];
+    const notifications = [];
+    if (this.state.newerVersionOnServer) {
+      notifications.push(new NotificationData({
+        kind: "server_data_warning",
+        type: "newer_version",
+        newerVersion: this.state.newerVersionOnServer,
+        currentUserId: this.props.userId,
+        onClick: () => {
+          window.location.reload();
+        }
+      }));
+    }
+    if (this.state.errorReachingServer) {
+      notifications.push(new NotificationData({
+        kind: "server_data_warning",
+        type: "network_error",
+        error: this.state.errorReachingServer
+      }));
+    }
+    return notifications;
+  },
+
   buildNotifications: function() {
     return [].concat(
       this.buildEnvVarNotifications(),
       this.buildAWSNotifications(),
       this.buildOAuthApplicationNotifications(),
       this.buildDataTypeNotifications(),
-      this.buildTemplateNotifications()
+      this.buildTemplateNotifications(),
+      this.buildServerNotifications()
     );
   },
 
@@ -874,6 +901,10 @@ const BehaviorEditor = React.createClass({
 
   backgroundSave: function(optionalCallback) {
     var form = new FormData(this.refs.behaviorForm);
+    this.setState({
+      newerVersionOnServer: null,
+      errorReachingServer: null
+    });
     fetch(this.getFormAction(), {
       credentials: 'same-origin',
       method: 'POST',
@@ -1375,6 +1406,10 @@ const BehaviorEditor = React.createClass({
     return !!this.getBehaviorGroup().id;
   },
 
+  isLatestSavedVersion: function() {
+    return this.isExistingGroup() && !this.isSaving() && !this.isModified() && !this.state.newerVersionOnServer;
+  },
+
   isFinishedBehavior: function() {
     var originalSelected = this.getOriginalSelected();
     return !!(originalSelected && !originalSelected.isNew &&
@@ -1574,6 +1609,7 @@ const BehaviorEditor = React.createClass({
   },
 
   onSave: function(newProps, state) {
+    this.resetNotifications();
     this.props.onSave(newProps, state);
     this.loadNodeModuleVersions();
   },
@@ -1585,12 +1621,14 @@ const BehaviorEditor = React.createClass({
   },
 
   loadNodeModuleVersions: function() {
-    DataRequest.jsonGet(jsRoutes.controllers.BehaviorEditorController.nodeModuleVersionsFor(this.getBehaviorGroup().id).url)
-      .then(json => {
-        this.setState({
-          nodeModuleVersions: NodeModuleVersion.allFromJson(json)
+    if (this.isExistingGroup()) {
+      DataRequest.jsonGet(jsRoutes.controllers.BehaviorEditorController.nodeModuleVersionsFor(this.getBehaviorGroup().id).url)
+        .then(json => {
+          this.setState({
+            nodeModuleVersions: NodeModuleVersion.allFromJson(json)
+          });
         });
-      });
+    }
   },
 
   resetNotifications: debounce(function() {
@@ -1603,11 +1641,47 @@ const BehaviorEditor = React.createClass({
     window.document.addEventListener('keydown', this.onDocumentKeyDown, false);
     window.addEventListener('resize', this.checkMobileLayout, false);
     window.addEventListener('scroll', debounce(this.updateBehaviorScrollPosition, 500), false);
+    window.addEventListener('focus', this.checkForUpdates, false);
+    this.checkForUpdatesLater();
     this.loadNodeModuleVersions();
   },
 
   // componentDidUpdate: function() {
   // },
+
+  checkForUpdates: function() {
+    if (document.hasFocus() && this.isExistingGroup() && !this.isSaving()) {
+      DataRequest.jsonGet(jsRoutes.controllers.BehaviorEditorController.metaData(this.getBehaviorGroup().id).url)
+        .then((json) => {
+          if (!json.createdAt) {
+            throw new Error("Invalid response");
+          }
+          const serverDate = new Date(json.createdAt);
+          const savedDate = new Date(this.props.group.createdAt);
+          const isNewerVersion = serverDate > savedDate;
+          const wasOldError = this.state.errorReachingServer;
+          if (this.state.newerVersionOnServer || isNewerVersion || wasOldError) {
+            this.setState({
+              newerVersionOnServer: isNewerVersion ? BehaviorGroupVersionMetaData.fromJson(json) : null,
+              errorReachingServer: null
+            }, this.resetNotifications);
+          }
+          this.checkForUpdatesLater();
+        })
+        .catch((err) => {
+          this.setState({
+            errorReachingServer: err
+          }, this.resetNotifications);
+          this.checkForUpdatesLater();
+        });
+    } else {
+      this.checkForUpdatesLater();
+    }
+  },
+
+  checkForUpdatesLater: function() {
+    setTimeout(this.checkForUpdates, 30000);
+  },
 
   getInitialEnvVariables: function() {
     return Sort.arrayAlphabeticalBy(this.props.envVariables || [], (variable) => variable.name);
@@ -1641,7 +1715,9 @@ const BehaviorEditor = React.createClass({
       animationDisabled: false,
       lastSavedDataStorageItem: null,
       nodeModuleVersions: [],
-      selectedApiConfigId: null
+      selectedApiConfigId: null,
+      newerVersionOnServer: null,
+      errorReachingServer: null
     };
   },
 
@@ -1997,9 +2073,17 @@ const BehaviorEditor = React.createClass({
   },
 
   renderFooterStatus: function() {
-    if (this.isJustSaved() && !this.isSaving()) {
+    const group = this.getBehaviorGroup();
+    const lastSaved = group.createdAt;
+    const lastSavedByCurrentUser = group.author && group.author.id === this.props.userId;
+    const authorName = group.author && group.author.name ? group.author.formattedName() : null;
+    if (this.isLatestSavedVersion() && lastSaved) {
       return (
-        <span className="fade-in type-green type-bold type-italic">All changes saved</span>
+        <span className="fade-in type-green type-bold type-italic">
+          <span>{lastSavedByCurrentUser ? "You last saved" : "Last saved"} </span>
+          <span>{Formatter.formatTimestampRelativeIfRecent(lastSaved)}</span>
+          <span> {!lastSavedByCurrentUser && authorName ? `by ${authorName}` : ""}</span>
+        </span>
       );
     } else if (this.state.error === 'not_saved') {
       return (

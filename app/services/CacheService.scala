@@ -1,7 +1,6 @@
 package services
 
-import json.BehaviorGroupData
-import models.accounts.slack.SlackUserInfo
+import json.{BehaviorGroupData, SlackUserData}
 import models.behaviors.behaviorparameter.ValidValue
 import models.behaviors.events.{Event, SlackMessageEvent}
 import slack.models.{Channel, Group, Im}
@@ -29,19 +28,11 @@ trait CacheService {
 
   def getBehaviorGroupData(key: String): Option[Seq[BehaviorGroupData]]
 
-  def cacheSlackUserList(key: String, data: Seq[SlackUserInfo]): Unit
-
-  def getSlackUserList(key: String): Option[Seq[SlackUserInfo]]
-
   def cacheSlackChannelInfo(channel: String, teamId: String, data: Channel): Unit
-
-  def uncacheSlackChannelInfo(channel: String, teamId: String): Unit
 
   def getSlackChannelInfo(channel: String, teamId: String): Option[Channel]
 
   def cacheSlackGroupInfo(group: String, teamId: String, data: Group): Unit
-
-  def uncacheSlackGroupInfo(group: String, teamId: String): Unit
 
   def getSlackGroupInfo(group: String, teamId: String): Option[Group]
 
@@ -49,8 +40,7 @@ trait CacheService {
 
   def getSlackIMs(teamId: String): Option[Seq[Im]]
 
-  def cacheBotUsername(userId: String, username: String): Unit
+  def cacheSlackUserData(userData: SlackUserData): Unit
 
-  def getBotUsername(userId: String): Option[String]
-
+  def getSlackUserData(slackUserId: String, slackTeamId: String): Option[SlackUserData]
 }

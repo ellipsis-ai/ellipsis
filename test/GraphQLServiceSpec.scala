@@ -3,7 +3,7 @@ package models
 import json._
 import models.accounts.user.User
 import models.behaviors.behaviorgroup.BehaviorGroup
-import models.behaviors.behaviorparameter.{NumberType, TextType}
+import models.behaviors.behaviorparameter.{NumberType, TextType, YesNoType}
 import play.api.libs.json._
 import services.{DataService, GraphQLService, ItemNotFoundError}
 import support.DBSpec
@@ -18,6 +18,10 @@ class GraphQLServiceSpec extends DBSpec {
 
   def numberTypeData(dataService: DataService): BehaviorParameterTypeData = {
     runNow(BehaviorParameterTypeData.from(NumberType, dataService))
+  }
+
+  def yesNoTypeData(dataService: DataService): BehaviorParameterTypeData = {
+    runNow(BehaviorParameterTypeData.from(YesNoType, dataService))
   }
 
   def buildBehaviorVersionDataFor(group: BehaviorGroup, maybeName: Option[String], fields: Seq[(String, BehaviorParameterTypeData)]): BehaviorVersionData = {
@@ -38,7 +42,8 @@ class GraphQLServiceSpec extends DBSpec {
         val behaviorVersionData = buildBehaviorVersionDataFor(group, Some("SomeType"), Seq(("foo", textTypeData(dataService))))
         val fieldsForData2 = Seq(
           ("someType", BehaviorParameterTypeData(behaviorVersionData.id, None, behaviorVersionData.name.get, None)),
-          ("bar", numberTypeData(dataService))
+          ("bar", numberTypeData(dataService)),
+          ("maybe", yesNoTypeData(dataService))
         )
         val behaviorVersionData2 = buildBehaviorVersionDataFor(group, Some("SomeType2"), fieldsForData2)
          newGroupVersionDataFor(group, user).copy(
@@ -204,10 +209,11 @@ class GraphQLServiceSpec extends DBSpec {
             |  createSomeType2(someType2: $someType2) {
             |    id
             |    bar
+            |    maybe
             |  }
             |}
           """.stripMargin
-        val jsonData = JsObject(Map("bar" -> JsNumber(2), "someType" -> JsObject(Map("foo" -> JsString("bar")))))
+        val jsonData = JsObject(Map("bar" -> JsNumber(2), "someType" -> JsObject(Map("foo" -> JsString("bar"))), "maybe" -> JsTrue))
         val mutationVariables = JsObject(Map("someType2" -> jsonData)).toString
         val mutationResult = runNow(graphQLService.runQuery(firstVersion.group, user, mutation, None, Some(mutationVariables)))
 
@@ -221,9 +227,10 @@ class GraphQLServiceSpec extends DBSpec {
         val savedSomeType2 = savedSomeType2s.head
         (savedSomeType2.data \ "bar").as[Double] mustBe 2
         (savedSomeType2.data \ "id").as[String] mustBe savedSomeType2.id
+        (savedSomeType2.data \ "maybe").as[Boolean] mustBe true
 
         (mutationResult \ "data").get mustBe JsObject(Map(
-          "createSomeType2" -> JsObject(Map("bar" -> JsNumber(2), "id" -> JsString(savedSomeType2.id)))))
+          "createSomeType2" -> JsObject(Map("bar" -> JsNumber(2), "id" -> JsString(savedSomeType2.id), "maybe" -> JsTrue))))
 
         val query =
         """{

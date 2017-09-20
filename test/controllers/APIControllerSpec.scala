@@ -74,7 +74,6 @@ class APIControllerSpec extends PlaySpec with MockitoSugar {
 
     val mockSlackClient = mock[SlackApiClient]
     when(slackEventService.clientFor(botProfile)).thenReturn(mockSlackClient)
-    when(slackEventService.maybeSlackUserListFor(botProfile)).thenReturn(Future.successful(Some(Seq())))
     when(mockSlackClient.listIms).thenReturn(Future.successful(Seq()))
     when(mockSlackClient.postChatMessage(anyString, anyString, any[Option[String]], any[Option[Boolean]], any[Option[String]],
       any[Option[String]], any[Option[Seq[Attachment]]], any[Option[Boolean]], any[Option[Boolean]],
@@ -290,7 +289,7 @@ class APIControllerSpec extends PlaySpec with MockitoSugar {
         val request = FakeRequest(controllers.routes.APIController.say()).withJsonBody(body)
         val result = route(app, request).get
         status(result) mustBe BAD_REQUEST
-        contentAsString(result) mustBe "Invalid token"
+        contentAsString(result).trim mustBe "Invalid token"
         verify(dataService.apiTokens, times(1)).find(token)
       }
     }

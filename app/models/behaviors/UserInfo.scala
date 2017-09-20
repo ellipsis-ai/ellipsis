@@ -35,7 +35,7 @@ object MessageInfo {
                 dataService: DataService,
                 cacheService: CacheService
               )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[MessageInfo] = {
-    event.detailsFor(ws, cacheService).map { details =>
+    event.detailsFor(ws, dataService, cacheService).map { details =>
       MessageInfo(event.name, event.maybeChannel, event.userIdForContext, details)
     }
   }
