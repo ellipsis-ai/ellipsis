@@ -66,7 +66,12 @@ class AWSConfigController @Inject() (
     }
   }
 
-  def newConfig(maybeTeamId: Option[String], maybeBehaviorId: Option[String], maybeRequiredAWSConfigNameInCode: Option[String]) = silhouette.SecuredAction.async { implicit request =>
+  def newConfig(
+                 maybeTeamId: Option[String],
+                 maybeBehaviorGroupId: Option[String],
+                 maybeBehaviorId: Option[String],
+                 maybeRequiredAWSConfigNameInCode: Option[String]
+               ) = silhouette.SecuredAction.async { implicit request =>
     val user = request.identity
     render.async {
       case Accepts.JavaScript() => {
@@ -90,6 +95,7 @@ class AWSConfigController @Inject() (
               secretAccessKey = None,
               region = None,
               documentationUrl = AWS_CONFIG_DOC_URL,
+              behaviorGroupId = maybeBehaviorGroupId,
               behaviorId = maybeBehaviorId
             )
             Ok(views.js.shared.pageConfig(viewConfig(Some(teamAccess)), "config/awsconfig/edit", Json.toJson(config)))
@@ -103,7 +109,7 @@ class AWSConfigController @Inject() (
           teamAccess <- dataService.users.teamAccessFor(user, maybeTeamId)
         } yield {
           teamAccess.maybeTargetTeam.map { team =>
-            val dataRoute = routes.AWSConfigController.newConfig(maybeTeamId, maybeBehaviorId, maybeRequiredAWSConfigNameInCode)
+            val dataRoute = routes.AWSConfigController.newConfig(maybeTeamId, maybeBehaviorGroupId, maybeBehaviorId, maybeRequiredAWSConfigNameInCode)
             Ok(views.html.awsconfig.edit(viewConfig(Some(teamAccess)), "Add an AWS configuration", dataRoute))
           }.getOrElse {
             NotFound("Team not found")
@@ -142,6 +148,7 @@ class AWSConfigController @Inject() (
               secretAccessKey = config.maybeSecretKey,
               region = config.maybeRegion,
               documentationUrl = AWS_CONFIG_DOC_URL,
+              behaviorGroupId = None,
               behaviorId = None
             )
             Ok(views.js.shared.pageConfig(viewConfig(Some(teamAccess)), "config/awsconfig/edit", Json.toJson(editConfig)))
@@ -178,6 +185,7 @@ class AWSConfigController @Inject() (
                             secretAccessKey: Option[String],
                             region: Option[String],
                             teamId: String,
+                            maybeBehaviorGroupId: Option[String],
                             maybeBehaviorId: Option[String]
                           )
 
@@ -190,6 +198,7 @@ class AWSConfigController @Inject() (
       "secretAccessKey" -> optional(nonEmptyText),
       "region" -> optional(nonEmptyText),
       "teamId" -> nonEmptyText,
+      "behaviorGroupId" -> optional(nonEmptyText),
       "behaviorId" -> optional(nonEmptyText)
     )(AWSConfigInfo.apply)(AWSConfigInfo.unapply)
   )
@@ -209,16 +218,15 @@ class AWSConfigController @Inject() (
             val instance = AWSConfig(info.id, info.name, info.teamId, info.accessKeyId, info.secretAccessKey, info.region)
             dataService.awsConfigs.save(instance).map(Some(_))
           }).getOrElse(Future.successful(None))
-          maybeBehaviorVersion <- info.maybeBehaviorId.map { behaviorId =>
-            dataService.behaviors.find(behaviorId, user).flatMap { maybeBehavior =>
-              maybeBehavior.map { behavior =>
-                dataService.behaviors.maybeCurrentVersionFor(behavior)
-              }.getOrElse(Future.successful(None))
-            }
+          maybeBehaviorGroup <- info.maybeBehaviorGroupId.map { groupId =>
+            dataService.behaviorGroups.find(groupId, user)
+          }.getOrElse(Future.successful(None))
+          maybeBehaviorGroupVersion <- maybeBehaviorGroup.map { group =>
+            dataService.behaviorGroups.maybeCurrentVersionFor(group)
           }.getOrElse(Future.successful(None))
           _ <- (for {
             nameInCode <- info.requiredNameInCode
-            groupVersion <- maybeBehaviorVersion.map(_.groupVersion)
+            groupVersion <- maybeBehaviorGroupVersion
           } yield {
             dataService.requiredAWSConfigs.findWithNameInCode(nameInCode, groupVersion).flatMap { maybeExisting =>
               maybeExisting.map { existing =>
@@ -236,9 +244,8 @@ class AWSConfigController @Inject() (
           }).getOrElse(Future.successful({}))
         } yield {
           maybeConfig.map { config =>
-            maybeBehaviorVersion.map { behaviorVersion =>
-              val behavior = behaviorVersion.behavior
-              Redirect(routes.BehaviorEditorController.edit(behavior.group.id, Some(behavior.id)))
+            maybeBehaviorGroup.map { group =>
+              Redirect(routes.BehaviorEditorController.edit(group.id, info.maybeBehaviorId))
             }.getOrElse {
               Redirect(routes.AWSConfigController.edit(config.id, Some(config.teamId)))
             }

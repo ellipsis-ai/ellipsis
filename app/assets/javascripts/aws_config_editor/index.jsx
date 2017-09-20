@@ -19,6 +19,7 @@ define(function(require) {
       configSaved: React.PropTypes.bool,
       csrfToken: React.PropTypes.string.isRequired,
       teamId: React.PropTypes.string.isRequired,
+      behaviorGroupId: React.PropTypes.string,
       behaviorId: React.PropTypes.string,
       documentationUrl: React.PropTypes.string.isRequired
     },
@@ -104,6 +105,15 @@ define(function(require) {
       });
     },
 
+    renderBehaviorGroupId: function() {
+      var id = this.props.behaviorGroupId;
+      if (id && id.length > 0) {
+        return (<input type="hidden" name="behaviorGroupId" value={id} />);
+      } else {
+        return null;
+      }
+    },
+
     renderBehaviorId: function() {
       var id = this.props.behaviorId;
       if (id && id.length > 0) {
@@ -120,6 +130,7 @@ define(function(require) {
           <input type="hidden" name="id" value={this.props.configId} />
           <input type="hidden" name="teamId" value={this.props.teamId} />
           <input type="hidden" name="requiredNameInCode" value={this.props.requiredNameInCode} />
+          {this.renderBehaviorGroupId()}
           {this.renderBehaviorId()}
 
           <div className="bg-light">

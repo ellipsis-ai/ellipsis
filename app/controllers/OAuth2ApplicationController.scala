@@ -67,21 +67,26 @@ class OAuth2ApplicationController @Inject() (
     }
   }
 
-  def newApp(maybeTeamId: Option[String], maybeBehaviorId: Option[String], maybeRequiredNameInCode: Option[String]) = silhouette.SecuredAction.async { implicit request =>
+  def newApp(
+              maybeTeamId: Option[String],
+              maybeBehaviorGroupId: Option[String],
+              maybeBehaviorId: Option[String],
+              maybeRequiredNameInCode: Option[String]
+            ) = silhouette.SecuredAction.async { implicit request =>
     val user = request.identity
     render.async {
       case Accepts.JavaScript() => {
         for {
           teamAccess <- dataService.users.teamAccessFor(user, maybeTeamId)
           apis <- dataService.oauth2Apis.allFor(teamAccess.maybeTargetTeam)
-          maybeBehavior <- maybeBehaviorId.map { behaviorId =>
-            dataService.behaviors.findWithoutAccessCheck(behaviorId)
+          maybeBehaviorGroup <- maybeBehaviorGroupId.map { groupId =>
+            dataService.behaviorGroups.find(groupId, user)
           }.getOrElse(Future.successful(None))
-          maybeBehaviorVersion <- maybeBehavior.map { behavior =>
-            dataService.behaviors.maybeCurrentVersionFor(behavior)
+          maybeBehaviorGroupVersion <- maybeBehaviorGroup.map { group =>
+            dataService.behaviorGroups.maybeCurrentVersionFor(group)
           }.getOrElse(Future.successful(None))
           maybeRequiredOAuth2Application <- (for {
-            groupVersion <- maybeBehaviorVersion.map(_.groupVersion)
+            groupVersion <- maybeBehaviorGroupVersion
             nameInCode <- maybeRequiredNameInCode
           } yield {
             dataService.requiredOAuth2ApiConfigs.findWithNameInCode(nameInCode, groupVersion)
@@ -100,6 +105,7 @@ class OAuth2ApplicationController @Inject() (
               applicationApiId = maybeRequiredOAuth2Application.map(_.api.id),
               recommendedScope = maybeRequiredOAuth2Application.flatMap(_.maybeRecommendedScope),
               requiredNameInCode = maybeRequiredNameInCode,
+              behaviorGroupId = maybeBehaviorGroupId,
               behaviorId = maybeBehaviorId
             )
             Ok(views.js.shared.pageConfig(viewConfig(Some(teamAccess)), "config/oauth2application/edit", Json.toJson(config)))
@@ -113,7 +119,7 @@ class OAuth2ApplicationController @Inject() (
           teamAccess <- dataService.users.teamAccessFor(user, maybeTeamId)
         } yield {
           teamAccess.maybeTargetTeam.map { team =>
-            val dataRoute = routes.OAuth2ApplicationController.newApp(maybeTeamId, maybeBehaviorId, maybeRequiredNameInCode)
+            val dataRoute = routes.OAuth2ApplicationController.newApp(maybeTeamId, maybeBehaviorGroupId, maybeBehaviorId, maybeRequiredNameInCode)
             Ok(views.html.oauth2application.edit(viewConfig(Some(teamAccess)), "Add an API configuration", dataRoute))
           }.getOrElse {
             NotFound(s"Team not found: ${maybeTeamId}")
@@ -193,6 +199,7 @@ class OAuth2ApplicationController @Inject() (
                                     clientSecret: String,
                                     maybeScope: Option[String],
                                     teamId: String,
+                                    maybeBehaviorGroupId: Option[String],
                                     maybeBehaviorId: Option[String],
                                     maybeIsShared: Option[String],
                                     maybeRequiredNameInCode: Option[String]
@@ -209,6 +216,7 @@ class OAuth2ApplicationController @Inject() (
       "clientSecret" -> nonEmptyText,
       "scope" -> optional(nonEmptyText),
       "teamId" -> nonEmptyText,
+      "behaviorGroupId" -> optional(nonEmptyText),
       "behaviorId" -> optional(nonEmptyText),
       "isShared" -> optional(nonEmptyText),
       "requiredNameInCode" -> optional(nonEmptyText)
@@ -234,16 +242,15 @@ class OAuth2ApplicationController @Inject() (
             val instance = OAuth2Application(info.id, info.name, api, info.clientId, info.clientSecret, info.maybeScope, info.teamId, isShared)
             dataService.oauth2Applications.save(instance).map(Some(_))
           }).getOrElse(Future.successful(None))
-          maybeBehaviorVersion <- info.maybeBehaviorId.map { behaviorId =>
-            dataService.behaviors.find(behaviorId, user).flatMap { maybeBehavior =>
-              maybeBehavior.map { behavior =>
-                dataService.behaviors.maybeCurrentVersionFor(behavior)
-              }.getOrElse(Future.successful(None))
-            }
+          maybeBehaviorGroup <- info.maybeBehaviorGroupId.map { groupId =>
+            dataService.behaviorGroups.find(groupId, user)
+          }.getOrElse(Future.successful(None))
+          maybeBehaviorGroupVersion <- maybeBehaviorGroup.map { group =>
+            dataService.behaviorGroups.maybeCurrentVersionFor(group)
           }.getOrElse(Future.successful(None))
           _ <- (for {
             nameInCode <- info.maybeRequiredNameInCode
-            groupVersion <- maybeBehaviorVersion.map(_.groupVersion)
+            groupVersion <- maybeBehaviorGroupVersion
           } yield {
             dataService.requiredOAuth2ApiConfigs.findWithNameInCode(nameInCode, groupVersion).flatMap { maybeExisting =>
               maybeExisting.map { existing =>
@@ -259,9 +266,8 @@ class OAuth2ApplicationController @Inject() (
           }).getOrElse(Future.successful({}))
         } yield {
           maybeApplication.map { application =>
-            maybeBehaviorVersion.map { behaviorVersion =>
-              val behavior = behaviorVersion.behavior
-              Redirect(routes.BehaviorEditorController.edit(behavior.group.id, Some(behavior.id)))
+            maybeBehaviorGroup.map { group =>
+              Redirect(routes.BehaviorEditorController.edit(group.id, info.maybeBehaviorId))
             }.getOrElse {
               Redirect(routes.OAuth2ApplicationController.edit(application.id, Some(application.teamId)))
             }
