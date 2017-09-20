@@ -29,7 +29,7 @@ define(function(require) {
             <span className="link">{name}</span>
           </Button>
           <div className="display-limit-width display-overflow-hidden" title={path}>
-            <code className="type-xs type-weak">{path}</code>
+            <code className="type-weak">{path}</code>
           </div>
         </div>
       );
