@@ -14,6 +14,7 @@ trait BehaviorVersionForDataTypeSchema {
   lazy val listName = GraphQLHelpers.formatFieldName(typeName) ++ "List"
   lazy val deleteFieldName = "delete" ++ outputName
   lazy val createFieldName = "create" ++ outputName
+  lazy val updateFieldName = "update" ++ outputName
 
   lazy val outputName: String = GraphQLHelpers.formatTypeName(typeName)
   lazy val inputName: String = outputName ++ "Input"
@@ -73,6 +74,7 @@ trait BehaviorVersionForDataTypeSchema {
 
   def mutationFieldsString: String = {
     s"""  $createFieldName($fieldName: $inputName!): $outputName!
+       |  $updateFieldName($fieldName: $inputName!): $outputName!
        |  $deleteFieldName(id: ID!): $outputName"""
   }
 }
