@@ -866,12 +866,15 @@ const BehaviorEditor = React.createClass({
     }).then((response) => response.json())
       .then((json) => {
         if (json.id) {
+          const group = this.getBehaviorGroup();
+          const teamId = group.teamId;
+          const groupId = group.id;
           if (this.state.shouldRedirectToAddNewOAuth2App) {
             const config = this.state.requiredOAuth2ApiConfig;
-            window.location.href = jsRoutes.controllers.OAuth2ApplicationController.newApp(this.getBehaviorGroup().teamId, this.getSelectedId(), config.nameInCode).url;
+            window.location.href = jsRoutes.controllers.OAuth2ApplicationController.newApp(teamId, groupId, this.getSelectedId(), config.nameInCode).url;
           } else if (this.state.shouldRedirectToAddNewAWSConfig) {
             const config = this.state.requiredAWSConfig;
-            window.location.href = jsRoutes.controllers.AWSConfigController.newConfig(this.getBehaviorGroup().teamId, this.getSelectedId(), config.nameInCode).url;
+            window.location.href = jsRoutes.controllers.AWSConfigController.newConfig(teamId, groupId, this.getSelectedId(), config.nameInCode).url;
           } else {
             const newProps = {
               group: BehaviorGroup.fromJson(json),

@@ -38,6 +38,7 @@ define(function(require) {
       callbackUrl: React.PropTypes.string.isRequired,
       mainUrl: React.PropTypes.string.isRequired,
       applicationId: React.PropTypes.string,
+      behaviorGroupId: React.PropTypes.string,
       behaviorId: React.PropTypes.string
     },
 
@@ -198,6 +199,15 @@ define(function(require) {
       });
     },
 
+    renderBehaviorGroupId: function() {
+      var id = this.props.behaviorGroupId;
+      if (id && id.length > 0) {
+        return (<input type="hidden" name="behaviorGroupId" value={id} />);
+      } else {
+        return null;
+      }
+    },
+
     renderBehaviorId: function() {
       var id = this.props.behaviorId;
       if (id && id.length > 0) {
@@ -215,6 +225,7 @@ define(function(require) {
           <input type="hidden" name="requiredNameInCode" value={this.props.requiredNameInCode} />
           <input type="hidden" name="id" value={this.props.applicationId} />
           <input type="hidden" name="teamId" value={this.props.teamId} />
+          {this.renderBehaviorGroupId()}
           {this.renderBehaviorId()}
 
           <div className="bg-light">
