@@ -1,10 +1,8 @@
 package models.accounts.oauth2application
 
 import models.accounts.oauth2api.OAuth2Api
-import org.apache.commons.lang.WordUtils
 import play.api.http.{HeaderNames, MimeTypes}
 import play.api.libs.ws.{WSClient, WSRequest, WSResponse}
-import utils.NameFormatter
 
 import scala.concurrent.{ExecutionContext, Future}
 
