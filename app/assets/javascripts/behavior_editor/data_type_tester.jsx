@@ -139,7 +139,7 @@ define(function(require) {
 
     renderContent: function() {
       var apps = this.props.appsRequiringAuth;
-      if (apps.length > 0) {
+      if (this.props.behaviorId && apps.length > 0) {
         return (
           <TesterAuthRequired behaviorId={this.props.behaviorId} appsRequiringAuth={apps}/>
         );
