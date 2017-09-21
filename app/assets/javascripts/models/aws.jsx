@@ -28,7 +28,7 @@ define(function(require) {
     }
 
     getApiName() {
-      return "Amazon Web Services (AWS)";
+      return "AWS";
     }
 
     getAllConfigsFrom(editor) {
