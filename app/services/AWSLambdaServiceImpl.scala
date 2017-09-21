@@ -246,7 +246,7 @@ class AWSLambdaServiceImpl @Inject() (
       ""
     } else {
       s"""
-         |ellipsis.aws = {};
+         |$CONTEXT_PARAM.aws = {};
          |
          |${apiConfigInfo.requiredAWSConfigs.map(awsCodeFor).mkString("\n")}
        """.stripMargin

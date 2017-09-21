@@ -180,7 +180,7 @@ define(function(require) {
       return (
         <div className="mvxl">
           <a className="button"
-            href={jsRoutes.controllers.OAuth2ApplicationController.newApp(null, null, this.props.teamId, null).url}
+            href={jsRoutes.controllers.OAuth2ApplicationController.newApp(this.props.teamId, null, null, null).url}
           >
             Add a new API configuration
           </a>
