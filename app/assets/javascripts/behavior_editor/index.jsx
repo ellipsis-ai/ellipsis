@@ -1833,7 +1833,11 @@ const BehaviorEditor = React.createClass({
             </div>
           ) : null}
 
-          <Collapsible ref={this.CONFIGURE_API_NAME} revealWhen={this.props.activePanelName === this.CONFIGURE_API_NAME} onChange={this.layoutDidUpdate}>
+          <Collapsible ref={this.CONFIGURE_API_NAME}
+            revealWhen={this.props.activePanelName === this.CONFIGURE_API_NAME}
+            onChange={this.layoutDidUpdate}
+            animationDisabled={this.state.animationDisabled}
+          >
             <APIConfigPanel
               openWhen={this.getActiveDropdown() === 'apiConfigAdderDropdown'}
               toggle={this.toggleApiAdderDropdown}
@@ -1850,6 +1854,7 @@ const BehaviorEditor = React.createClass({
               onDoneClick={this.props.onClearActivePanel}
               addNewAWSConfig={this.addNewAWSConfig}
               addNewOAuth2Application={this.addNewOAuth2Application}
+              animationDisabled={this.state.animationDisabled}
             >
             </APIConfigPanel>
           </Collapsible>

@@ -25,7 +25,8 @@ define(function(require) {
       toggle: React.PropTypes.func.isRequired,
       onDoneClick: React.PropTypes.func.isRequired,
       addNewAWSConfig: React.PropTypes.func.isRequired,
-      addNewOAuth2Application: React.PropTypes.func.isRequired
+      addNewOAuth2Application: React.PropTypes.func.isRequired,
+      animationDisabled: React.PropTypes.bool
     },
 
     getAllConfigs: function() {
@@ -186,7 +187,7 @@ define(function(require) {
       const imageUrl = hasConfig ? this.getApiLogoUrlForConfig(this.props.requiredConfig) : null;
       return (
         <div>
-          <Collapsible revealWhen={hasConfig}>
+          <Collapsible revealWhen={hasConfig} animationDisabled={this.props.animationDisabled}>
 
             {hasConfig ? (
               <div>
@@ -208,7 +209,7 @@ define(function(require) {
             )}
           </Collapsible>
 
-          <Collapsible revealWhen={!this.props.requiredConfig}>
+          <Collapsible revealWhen={!this.props.requiredConfig} animationDisabled={this.props.animationDisabled}>
             {this.renderAdder()}
           </Collapsible>
         </div>
