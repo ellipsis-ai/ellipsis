@@ -249,7 +249,7 @@ define(function(require) {
               <div className="mvm">
                 <h4 className="mbn position-relative">
                   <span className="position-hanging-indent">2</span>
-                  <span>Ensure that you have a profile et up on your AWS account. </span>
+                  <span>Ensure that you have set up a profile on your AWS account. </span>
                   {ifPresent(this.props.documentationUrl, url => (
                     <a href={url} target="_blank">Go to AWS ↗︎</a>
                   ))}
