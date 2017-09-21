@@ -248,7 +248,7 @@ const BehaviorEditor = React.createClass({
 
   getApiConfigName: function(config) {
     const apiName = this.getApiNameForConfig(config);
-    const configName = config.configString();
+    const configName = config.configName();
     if (configName.toLowerCase().includes(apiName.toLowerCase())) {
       return configName;
     } else if (configName) {

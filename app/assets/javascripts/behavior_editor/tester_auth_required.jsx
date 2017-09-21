@@ -12,7 +12,7 @@ define(function(require) {
       const editUrl = jsRoutes.controllers.BehaviorEditorController.edit(this.props.behaviorId).absoluteURL(true);
       const url = jsRoutes.controllers.APIAccessController.linkCustomOAuth2Service(app.config.id, null, null, null, editUrl).absoluteURL(true);
       return (
-        <a href={url}>{app.configString()}</a>
+        <a href={url}>{app.configName() || "(Unnamed)"}</a>
       );
     },
 

@@ -47,12 +47,12 @@ define(function(require) {
       return `${this.codePathPrefix()}${this.nameInCode}`;
     }
 
-    configString() {
-      if (this.config) {
-        return this.config.displayName;
-      } else {
-        return "Unconfigured";
-      }
+    configName() {
+      return this.config ? this.config.displayName : "";
+    }
+
+    isConfigured() {
+      return Boolean(this.config);
     }
 
     clone(props) {
@@ -78,7 +78,7 @@ define(function(require) {
       return editor.getOAuth2ApiNameForConfig(this);
     }
 
-    configString() {
+    configName() {
       return this.displayName;
     }
 

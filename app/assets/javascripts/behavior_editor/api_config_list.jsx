@@ -27,6 +27,9 @@ define(function(require) {
         <div className="plxl mobile-pll">
           <Button onClick={onClick} className="button-block">
             <span className="link">{name}</span>
+            <span className="type-pink type-bold type-italic">
+              {required.isConfigured() ? null : " — Unconfigured"}
+            </span>
           </Button>
           <div className="display-limit-width display-overflow-hidden" title={path}>
             <code className="type-weak">{path}</code>

@@ -377,7 +377,10 @@ define(function(require) {
               <span className="position-hanging-indent">1</span>
               <span> Enter a name for this configuration</span>
             </h4>
-            <p className="type-s">The name should help differentiate this from any other {this.getApplicationApiName()} configurations you may have with different kinds of access, or access to a different set of data.</p>
+            <p className="type-s">
+              <span>If you have multiple configurations for {this.getApplicationApiName()}, e.g. with different scopes, </span>
+              <span>the name should differentiate this one from others.</span>
+            </p>
 
             <div className="mbxxl columns">
               <div className="column column-two-thirds">
@@ -386,7 +389,7 @@ define(function(require) {
                     ref="applicationName"
                     name="name"
                     value={this.getApplicationName()}
-                    placeholder={"e.g. " + this.getApplicationApiName() + "ReadOnly"}
+                    placeholder={"e.g. " + this.getApplicationApiName()}
                     className="form-input-borderless form-input-l type-l"
                     onChange={this.setApplicationName}
                     onEnterKey={this.onApplicationNameEnterKey}

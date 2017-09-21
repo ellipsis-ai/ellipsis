@@ -41,8 +41,12 @@ define(function(require) {
       return `${this.codePathPrefix()}${this.nameInCode}`;
     }
 
-    configString() {
+    configName() {
       return "";
+    }
+
+    isConfigured() {
+      return true;
     }
 
     clone(props) {
@@ -68,7 +72,7 @@ define(function(require) {
       return this.displayName;
     }
 
-    configString() {
+    configName() {
       return this.displayName;
     }
 
