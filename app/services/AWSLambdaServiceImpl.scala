@@ -226,7 +226,7 @@ class AWSLambdaServiceImpl @Inject() (
     (requiredForCode ++ requiredForLibs).distinct
   }
 
-  private def awsCodeFor(required: RequiredAWSConfig): String = {
+  private def awsConfigCodeFor(required: RequiredAWSConfig): String = {
     if (required.isConfigured) {
       val teamInfoPath = s"event.$CONTEXT_PARAM.teamInfo.aws.${required.nameInCode}"
       s"""$CONTEXT_PARAM.aws.${required.nameInCode} = {
@@ -248,7 +248,7 @@ class AWSLambdaServiceImpl @Inject() (
       s"""
          |$CONTEXT_PARAM.aws = {};
          |
-         |${apiConfigInfo.requiredAWSConfigs.map(awsCodeFor).mkString("\n")}
+         |${apiConfigInfo.requiredAWSConfigs.map(awsConfigCodeFor).mkString("\n")}
        """.stripMargin
     }
   }
@@ -256,7 +256,7 @@ class AWSLambdaServiceImpl @Inject() (
   private def accessTokenCodeFor(app: RequiredOAuth2ApiConfig): String = {
     app.maybeApplication.map { application =>
       val infoKey =  if (application.api.grantType.requiresAuth) { "userInfo" } else { "teamInfo" }
-      s"""$CONTEXT_PARAM.accessTokens.${app.nameInCode} = event.$CONTEXT_PARAM.$infoKey.links.find((ea) => ea.externalSystem == "${application.name}").token;"""
+      s"""$CONTEXT_PARAM.accessTokens.${app.nameInCode} = event.$CONTEXT_PARAM.$infoKey.links.find((ea) => ea.externalSystem === "${application.name}").token;"""
     }.getOrElse("")
   }
 
@@ -265,7 +265,7 @@ class AWSLambdaServiceImpl @Inject() (
   }
 
   private def accessTokenCodeFor(required: RequiredSimpleTokenApi): String = {
-    s"""$CONTEXT_PARAM.accessTokens.${required.nameInCode} = event.$CONTEXT_PARAM.userInfo.links.find((ea) => ea.externalSystem == "${required.api.name}").token;"""
+    s"""$CONTEXT_PARAM.accessTokens.${required.nameInCode} = event.$CONTEXT_PARAM.userInfo.links.find((ea) => ea.externalSystem === "${required.api.name}").token;"""
   }
 
   private def simpleTokensCodeFor(requiredSimpleTokenApis: Seq[RequiredSimpleTokenApi]): String = {
