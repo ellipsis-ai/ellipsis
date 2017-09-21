@@ -12,6 +12,7 @@ import models.behaviors.behaviorgroup.BehaviorGroup
 import models.behaviors.behaviorparameter.{BehaviorBackedDataType, BuiltInType}
 import models.behaviors.datatypefield.DataTypeField
 import play.api.libs.json._
+import sangria.execution.UserFacingError
 import services.DataService
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -36,7 +37,15 @@ class DefaultStorageItemsTable(tag: Tag) extends Table[RawDefaultStorageItem](ta
     (id, behaviorId, updatedAt, updatedByUserId, data) <> ((RawDefaultStorageItem.apply _).tupled, RawDefaultStorageItem.unapply _)
 }
 
-class CreationTypeNotFoundException extends Exception
+case class CreationTypeNotFoundException(typeName: String) extends Exception with UserFacingError {
+  override def getMessage(): String = s"Can't create item: type with name `$typeName` not found"
+}
+case class IdPassedForCreationException(id: String) extends Exception with UserFacingError {
+  override def getMessage(): String = s"You can't pass in an ID when creating an item. An ID will be created for you."
+}
+class NoIdPassedForUpdateException extends Exception with UserFacingError {
+  override def getMessage(): String = "You must include an ID when attempting to update an item"
+}
 
 class DefaultStorageItemServiceImpl @Inject() (
                                              dataServiceProvider: Provider[DataService],
@@ -200,8 +209,8 @@ class DefaultStorageItemServiceImpl @Inject() (
     }
   }
 
-  private def createItemForBehaviorAction(behavior: Behavior, user: User, data: JsValue): DBIO[DefaultStorageItem] = {
-    val newID = IDs.next
+  private def saveItemForBehaviorAction(maybeExistingId: Option[String], behavior: Behavior, user: User, data: JsValue): DBIO[DefaultStorageItem] = {
+    val idToUse = maybeExistingId.getOrElse(IDs.next)
     val team = behavior.team
     val group = behavior.group
     for {
@@ -215,7 +224,7 @@ class DefaultStorageItemServiceImpl @Inject() (
       fieldsWithObjectType <- DBIO.successful(fields.filterNot(_.fieldType.isBuiltIn))
       nestedFieldItems <- DBIO.sequence(fieldsWithObjectType.flatMap { field =>
         (data \ field.name).toOption.map { fieldData =>
-          createItemAction(field.fieldType.name, user, fieldData, behavior.group).map { maybeItem =>
+          saveItemAction(field.fieldType.name, user, fieldData, behavior.group).map { maybeItem =>
             (field, maybeItem)
           }
         }
@@ -230,38 +239,59 @@ class DefaultStorageItemServiceImpl @Inject() (
         case _ => data
       })
       newDataWithFieldIds <- dataWithFieldIdsFor(newData, behavior.id)
-      newInstanceToSave <- DBIO.successful(DefaultStorageItem(newID, behavior, OffsetDateTime.now, user.id, newDataWithFieldIds))
+      newInstanceToSave <- DBIO.successful(DefaultStorageItem(idToUse, behavior, OffsetDateTime.now, user.id, newDataWithFieldIds))
       _ <- DBIO.successful(println(s"saving $newInstanceToSave"))
-      _ <- (all += newInstanceToSave.toRaw)
+      _ <- maybeExistingId.map { existingId =>
+        rawFindQueryFor(existingId).update(newInstanceToSave.toRaw)
+      }.getOrElse {
+        (all += newInstanceToSave.toRaw)
+      }
       newInstanceToReturn <- tuple2Item((newInstanceToSave.toRaw, ((behavior.toRaw, team), Some((group.toRaw, team)))))
     } yield newInstanceToReturn
   }
 
-  def createItemForBehavior(behavior: Behavior, user: User, data: JsValue): Future[DefaultStorageItem] = {
-    dataService.run(createItemForBehaviorAction(behavior, user, data))
-  }
+  private def maybeExistingIdFor(data: JsValue): Option[String] = (data \ "id").asOpt[String]
 
-  def createItemAction(typeName: String, user: User, data: JsValue, behaviorGroup: BehaviorGroup): DBIO[DefaultStorageItem] = {
+  def saveItemAction(typeName: String, user: User, data: JsValue, behaviorGroup: BehaviorGroup): DBIO[DefaultStorageItem] = {
+    val maybeExistingId = (data \ "id").asOpt[String]
     ((for {
       maybeBehavior <- dataService.behaviors.findByNameAction(typeName, behaviorGroup)
       maybeItem <- maybeBehavior.map { behavior =>
-        createItemForBehaviorAction(behavior, user, data).map(Some(_))
+        saveItemForBehaviorAction(maybeExistingId, behavior, user, data).map(Some(_))
       }.getOrElse(DBIO.successful(None))
     } yield maybeItem) transactionally).map { maybeNewItem =>
       maybeNewItem.getOrElse {
-        throw new CreationTypeNotFoundException()
+        throw new CreationTypeNotFoundException(typeName)
       }
     }
   }
 
+  def createItemForBehavior(behavior: Behavior, user: User, data: JsValue): Future[DefaultStorageItem] = {
+    dataService.run(saveItemForBehaviorAction(None, behavior, user, data))
+  }
+
   def createItem(typeName: String, user: User, data: JsValue, behaviorGroup: BehaviorGroup): Future[DefaultStorageItem] = {
-    dataService.run(createItemAction(typeName, user, data, behaviorGroup))
+    maybeExistingIdFor(data).map { existingId =>
+      throw new IdPassedForCreationException(existingId)
+    }.getOrElse {
+      val action = saveItemAction(typeName, user, data, behaviorGroup)
+      dataService.run(action)
+    }
+  }
+
+  def updateItem(typeName: String, user: User, data: JsValue, behaviorGroup: BehaviorGroup): Future[DefaultStorageItem] = {
+    if (maybeExistingIdFor(data).isEmpty) {
+      throw new NoIdPassedForUpdateException()
+    } else {
+      val action = saveItemAction(typeName, user, data, behaviorGroup)
+      dataService.run(action)
+    }
   }
 
   def deleteItemAction(id: String, behaviorGroup: BehaviorGroup): DBIO[Option[DefaultStorageItem]] = {
     for {
       maybeItem <- findByIdAction(id, behaviorGroup)
-      _ <- maybeItem.map(_ => deleteByIdQuery(id).delete).getOrElse(DBIO.successful({}))
+      _ <- maybeItem.map(_ => rawFindQueryFor(id).delete).getOrElse(DBIO.successful({}))
     } yield maybeItem
   }
 

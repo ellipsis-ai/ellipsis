@@ -43,8 +43,9 @@ object DefaultStorageItemQueries {
   }
   val allForQuery = Compiled(uncompiledAllForQuery _)
 
-  def uncompiledDeleteByIdQuery(id: Rep[String]) = {
+  def uncompiledRawFindQueryFor(id: Rep[String]) = {
     all.filter { case(item) => item.id === id }
   }
-  val deleteByIdQuery = Compiled(uncompiledDeleteByIdQuery _)
+  val rawFindQueryFor = Compiled(uncompiledRawFindQueryFor _)
+
 }

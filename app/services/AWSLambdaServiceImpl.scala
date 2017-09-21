@@ -8,6 +8,8 @@ import javax.inject.Inject
 import akka.actor.ActorSystem
 import com.amazonaws.services.lambda.model._
 import com.amazonaws.services.lambda.{AWSLambdaAsync, AWSLambdaAsyncClientBuilder}
+import com.amazonaws.services.logs.model.{CreateLogGroupRequest, PutSubscriptionFilterRequest}
+import com.amazonaws.services.logs.{AWSLogsAsync, AWSLogsAsyncClientBuilder}
 import json.Formatting._
 import json.NodeModuleVersionData
 import models.behaviors._
@@ -53,9 +55,20 @@ class AWSLambdaServiceImpl @Inject() (
       withCredentials(credentialsProvider).
       build()
 
+  val logsClient: AWSLogsAsync =
+    AWSLogsAsyncClientBuilder.standard().
+      withRegion(region).
+      withCredentials(credentialsProvider).
+      build()
+
   val apiBaseUrl: String = configuration.get[String](s"application.$API_BASE_URL_KEY")
 
   val invocationTimeoutSeconds: Int = configuration.get[Int]("aws.lambda.timeoutSeconds")
+
+  val logSubscriptionsEnabled: Boolean = configuration.get[Boolean]("aws.logSubscriptions.enabled")
+  val logSubscriptionsLambdaFunctionName: String = configuration.get[String]("aws.logSubscriptions.lambdaFunctionName")
+  val logSubscriptionsFilterPattern: String = configuration.get[String]("aws.logSubscriptions.filterPattern")
+  val logSubscriptionsFilterName: String = configuration.get[String]("aws.logSubscriptions.filterName")
 
   def fetchFunctions(maybeNextMarker: Option[String]): Future[List[FunctionConfiguration]] = {
     val listRequest = new ListFunctionsRequest()
@@ -327,14 +340,15 @@ class AWSLambdaServiceImpl @Inject() (
   case class PreviousFunctionInfo(functionName: String, functionBody: String, libraries: Seq[LibraryVersion]) {
     val requiredModules = requiredModulesIn(functionBody, libraries, includeLibraryRequires = true)
     val dirName = dirNameFor(functionName)
+    val nodeModulesDirName = s"$dirName/node_modules"
 
     def canCopyModules(neededModules: Seq[String]): Boolean = {
       requiredModules.sameElements(neededModules) &&
-        Files.exists(Paths.get(dirName))
+        Files.exists(Paths.get(nodeModulesDirName))
     }
 
     def copyModulesInto(destinationDirName: String) = {
-      Process(Seq("bash","-c",s"cp -r $dirName/node_modules $destinationDirName/"), None, "HOME" -> "/tmp").!
+      Process(Seq("bash","-c",s"cp -r $nodeModulesDirName $destinationDirName/"), None, "HOME" -> "/tmp").!
     }
   }
 
@@ -463,6 +477,41 @@ class AWSLambdaServiceImpl @Inject() (
     } yield {}
   }
 
+  def logGroupNameFor(functionName: String): String = s"/aws/lambda/$functionName"
+
+  def ensureLogGroupFor(functionName: String): Future[Any] = {
+    val createLogGroupRequest =
+      new CreateLogGroupRequest().withLogGroupName(logGroupNameFor(functionName))
+    JavaFutureConverter.javaToScala(logsClient.createLogGroupAsync(createLogGroupRequest)).recover {
+      case ex: ResourceConflictException => // no big deal if it's already created
+    }
+  }
+
+  def setUpLogSubscriptionFor(functionName: String): Future[Any] = {
+    if (logSubscriptionsEnabled) {
+      ensureLogGroupFor(functionName).flatMap { _ =>
+        val getFunctionRequest =
+          new GetFunctionRequest().withFunctionName(logSubscriptionsLambdaFunctionName)
+        JavaFutureConverter.javaToScala(client.getFunctionAsync(getFunctionRequest)).map { destinationFunctionResult =>
+          val destinationFunctionArn: String = destinationFunctionResult.getConfiguration.getFunctionArn
+          val request =
+            new PutSubscriptionFilterRequest().
+              withDestinationArn(destinationFunctionArn).
+              withLogGroupName(logGroupNameFor(functionName)).
+              withFilterName(logSubscriptionsFilterName).
+              withFilterPattern(logSubscriptionsFilterPattern)
+          logsClient.putSubscriptionFilter(request)
+        }.recover {
+          case t: Throwable => {
+            Logger.error("Error trying to set up log subscription", t)
+          }
+        }
+      }
+    } else {
+      Future.successful({})
+    }
+  }
+
   def deployFunction(
                       functionName: String,
                       functionBody: String,
@@ -497,7 +546,9 @@ class AWSLambdaServiceImpl @Inject() (
               withHandler("index.handler").
               withTimeout(invocationTimeoutSeconds)
           )
-          _ <-JavaFutureConverter.javaToScala(client.createFunctionAsync(createFunctionRequest))
+          _ <- JavaFutureConverter.javaToScala(client.createFunctionAsync(createFunctionRequest)).flatMap { result =>
+            setUpLogSubscriptionFor(result.getFunctionName)
+          }
         } yield {}
       }
     }
