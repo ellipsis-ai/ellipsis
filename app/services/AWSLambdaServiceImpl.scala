@@ -65,6 +65,11 @@ class AWSLambdaServiceImpl @Inject() (
 
   val invocationTimeoutSeconds: Int = configuration.get[Int]("aws.lambda.timeoutSeconds")
 
+  val logSubscriptionsEnabled: Boolean = configuration.get[Boolean]("aws.logSubscriptions.enabled")
+  val logSubscriptionsLambdaFunctionName: String = configuration.get[String]("aws.logSubscriptions.lambdaFunctionName")
+  val logSubscriptionsFilterPattern: String = configuration.get[String]("aws.logSubscriptions.filterPattern")
+  val logSubscriptionsFilterName: String = configuration.get[String]("aws.logSubscriptions.filterName")
+
   def fetchFunctions(maybeNextMarker: Option[String]): Future[List[FunctionConfiguration]] = {
     val listRequest = new ListFunctionsRequest()
     val listRequestWithMarker = maybeNextMarker.map { nextMarker =>
@@ -483,25 +488,28 @@ class AWSLambdaServiceImpl @Inject() (
   }
 
   def setUpLogSubscriptionFor(functionName: String): Future[Any] = {
-    ensureLogGroupFor(functionName).flatMap { _ =>
-      val getFunctionRequest =
-        new GetFunctionRequest().withFunctionName("LogsToElasticsearch_es-logs")
-      JavaFutureConverter.javaToScala(client.getFunctionAsync(getFunctionRequest)).map { destinationFunctionResult =>
-        val destinationFunctionArn: String = destinationFunctionResult.getConfiguration.getFunctionArn
-        val request =
-          new PutSubscriptionFilterRequest().
-            withDestinationArn(destinationFunctionArn).
-            withLogGroupName(logGroupNameFor(functionName)).
-            withFilterName("RecipientStream").
-            withFilterPattern("""{ $.eventType = "*" }""")
-        logsClient.putSubscriptionFilter(request)
-      }.recover {
-        case t: Throwable => {
-          println(t.getMessage)
+    if (logSubscriptionsEnabled) {
+      ensureLogGroupFor(functionName).flatMap { _ =>
+        val getFunctionRequest =
+          new GetFunctionRequest().withFunctionName(logSubscriptionsLambdaFunctionName)
+        JavaFutureConverter.javaToScala(client.getFunctionAsync(getFunctionRequest)).map { destinationFunctionResult =>
+          val destinationFunctionArn: String = destinationFunctionResult.getConfiguration.getFunctionArn
+          val request =
+            new PutSubscriptionFilterRequest().
+              withDestinationArn(destinationFunctionArn).
+              withLogGroupName(logGroupNameFor(functionName)).
+              withFilterName(logSubscriptionsFilterName).
+              withFilterPattern(logSubscriptionsFilterPattern)
+          logsClient.putSubscriptionFilter(request)
+        }.recover {
+          case t: Throwable => {
+            Logger.error("Error trying to set up log subscription", t)
+          }
         }
       }
+    } else {
+      Future.successful({})
     }
-
   }
 
   def deployFunction(
