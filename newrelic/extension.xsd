@@ -1,8 +1,8 @@
 <?xml version="1.1" encoding="UTF-8"?>
 <xs:schema targetNamespace="https://newrelic.com/docs/java/xsd/v1.0" elementFormDefault="qualified"
-    xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:urn="https://newrelic.com/docs/java/xsd/v1.0" 
+    xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:urn="https://newrelic.com/docs/java/xsd/v1.0"
     xmlns:jaxb="http://java.sun.com/xml/ns/jaxb" jaxb:version="2.0">
-    
+
     <xs:annotation>
       <xs:appinfo>
         <jaxb:schemaBindings>
@@ -27,7 +27,7 @@
                             <xs:element name="pointcut" minOccurs="0" maxOccurs="unbounded">
                                 <xs:annotation>
                                     <xs:documentation>
-                                        Pointcuts are used to inject timing measures into 
+                                        Pointcuts are used to inject timing measures into
                                         Java methods to add additional detail to transaction breakdowns.
                                     </xs:documentation>
                                 </xs:annotation>
@@ -36,7 +36,7 @@
                                         <xs:element name="nameTransaction" minOccurs="0">
                                             <xs:annotation>
                                                 <xs:documentation>
-                                                    If this element is present, the agent will name the transaction using the method(s) instrumented by this pointcut. 
+                                                    If this element is present, the agent will name the transaction using the method(s) instrumented by this pointcut.
                                                 </xs:documentation>
                                             </xs:annotation>
                                             <xs:complexType/>
@@ -45,7 +45,7 @@
                                             <xs:element name="methodAnnotation" type="xs:string">
                                                 <xs:annotation>
                                                     <xs:documentation>
-                                                        The full name of an annotation class including the package name.  All methods that are marked with this annotation will be matched. 
+                                                        The full name of an annotation class including the package name.  All methods that are marked with this annotation will be matched.
                                                     </xs:documentation>
                                                 </xs:annotation>
                                             </xs:element>
@@ -64,7 +64,7 @@
                                                                         <xs:annotation>
                                                                             <xs:documentation>
                                                                                 If false, this works as an exact class matcher.  If true, the
-                                                                                methods on the class with the matching name will be matched along 
+                                                                                methods on the class with the matching name will be matched along
                                                                                 with the matching methods on any child class of the class.
                                                                             </xs:documentation>
                                                                         </xs:annotation>
@@ -104,8 +104,8 @@
                                                                 <xs:element name="parameters" minOccurs="0" maxOccurs="1">
                                                                     <xs:annotation>
                                                                         <xs:documentation>
-                                                                            The parameter types of the method specified in order.  
-                                                                            If the parameters element is left off all methods 
+                                                                            The parameter types of the method specified in order.
+                                                                            If the parameters element is left off all methods
                                                                             matching the name will be matched including private
                                                                             and protected declarations.
                                                                         </xs:documentation>
@@ -116,7 +116,7 @@
                                                                                 <xs:annotation>
                                                                                     <xs:documentation>
                                                                                         A parameter type.  This is either a case sensitive class name
-                                                                                        including the package name or a primitive 
+                                                                                        including the package name or a primitive
                                                                                         type (boolean, char, int, float, double, etc).
                                                                                     </xs:documentation>
                                                                                 </xs:annotation>
@@ -126,13 +126,13 @@
                                                                 </xs:element>
                                                             </xs:sequence>
                                                         </xs:choice>
-                                                        
+
                                                     </xs:complexType>
                                                 </xs:element>
                                             </xs:sequence>
                                         </xs:choice>
                                     </xs:sequence>
-                        
+
                                     <xs:attribute name="transactionStartPoint" type="xs:boolean" default="false">
                                         <xs:annotation>
                                             <xs:documentation>

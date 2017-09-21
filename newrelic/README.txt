@@ -29,7 +29,7 @@ Using Java SE 5? You will need a different version of the agent. See below.
 
 Installation
 ------------
-Complete installation instructions and troubleshooting tips are available 
+Complete installation instructions and troubleshooting tips are available
 at:
 
   https://newrelic.com/docs/java/new-relic-for-java
