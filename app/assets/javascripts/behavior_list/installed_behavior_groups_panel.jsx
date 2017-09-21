@@ -98,12 +98,17 @@ define(function(require) {
       }
     },
 
+    getEditUrlFor: function(group) {
+      return jsRoutes.controllers.BehaviorEditorController.edit(group.id).url;
+    },
+
     onClickDone: function() {
       this.props.onToggle();
     },
 
     render: function() {
-      var numGroups = this.getInstalledBehaviorGroups().length;
+      const groups = this.getInstalledBehaviorGroups();
+      const numGroups = groups.length;
       if (numGroups === 0) {
         return null;
       }
@@ -130,9 +135,13 @@ define(function(require) {
             </ul>
 
             <div className="mtxl">
-              <a className="button mbs mrs" href={this.getSlackUrl()}>Open your Slack team</a>
-
               <button type="button" className="mbs mrs" onClick={this.onClickDone}>Done</button>
+
+              <a className="button mbs mrs button-primary" href={this.getSlackUrl()}>Open your Slack team</a>
+
+              {groups.map((group) => (
+                <a className="button mbs mrs" href={this.getEditUrlFor(group)}>Edit {group.name}</a>
+              ))}
             </div>
 
           </div>
