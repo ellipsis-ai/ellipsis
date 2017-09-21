@@ -124,14 +124,12 @@ class EnvironmentVariablesController @Inject() (
       case Accepts.Html() => {
         for {
           teamAccess <- dataService.users.teamAccessFor(user, maybeTeamId)
-          result <- teamAccess.maybeTargetTeam.map { team =>
-            val dataRoute = routes.EnvironmentVariablesController.list(maybeTeamId)
-            Future.successful(Ok(views.html.environmentvariables.list(viewConfig(Some(teamAccess)), dataRoute)))
-          }.getOrElse {
-            reAuthFor(request, maybeTeamId)
-          }
-
-        } yield result
+        } yield teamAccess.maybeTargetTeam.map { team =>
+          val dataRoute = routes.EnvironmentVariablesController.list(maybeTeamId)
+          Ok(views.html.environmentvariables.list(viewConfig(Some(teamAccess)), dataRoute))
+        }.getOrElse {
+          notFoundWithLoginFor(request, Some(teamAccess))
+        }
       }
     }
   }
