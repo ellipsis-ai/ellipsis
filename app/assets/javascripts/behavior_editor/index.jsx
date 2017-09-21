@@ -439,8 +439,7 @@ const BehaviorEditor = React.createClass({
   },
 
   buildAWSNotifications: function() {
-    const behavior = this.getSelectedBehavior();
-    if (!behavior || this.isConfiguringApi()) {
+    if (this.isConfiguringApi()) {
       return [];
     }
     return this.getRequiredAWSConfigsWithNoMatchingAWSConfig().map(ea => new NotificationData({
@@ -479,8 +478,7 @@ const BehaviorEditor = React.createClass({
   },
 
   buildOAuthApplicationNotifications: function() {
-    const behavior = this.getSelectedBehavior();
-    if (!behavior || this.isConfiguringApi()) {
+    if (this.isConfiguringApi()) {
       return [];
     }
     return this.getRequiredOAuth2ApiConfigsWithNoApplication().map(ea => new NotificationData({
