@@ -15,11 +15,11 @@ import org.mockito.Matchers._
 import org.mockito.Mockito._
 import org.scalatest.mock.MockitoSugar
 import org.scalatestplus.play.PlaySpec
-import play.api.http.MimeTypes
 import play.api.libs.json._
+import play.api.mvc.Call
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
-import support.ControllerTestContextWithLoggedInUser
+import support.{ControllerTestContextWithLoggedInUser, NotFoundForOtherTeamContext}
 
 import scala.concurrent.Future
 
@@ -43,7 +43,7 @@ class ApplicationControllerSpec extends PlaySpec with MockitoSugar {
         when(dataService.users.teamAccessFor(user, Some(team.id))).thenReturn(Future.successful(teamAccess))
         when(teamAccess.maybeTargetTeam).thenReturn(Some(team))
         when(dataService.behaviorGroups.allFor(team)).thenReturn(Future.successful(Seq(behaviorGroup)))
-        when(dataService.behaviorGroups.findWithoutAccessCheck(groupId)).thenReturn(Future.successful(Some(behaviorGroup)))
+        when(dataService.behaviorGroups.find(groupId, user)).thenReturn(Future.successful(Some(behaviorGroup)))
         when(dataService.behaviorGroupVersions.findWithoutAccessCheck(groupVersionId)).thenReturn(Future.successful(Some(behaviorGroupVersion)))
         when(dataService.behaviors.allForGroup(behaviorGroup)).thenReturn(Future.successful(Seq(behavior)))
         when(dataService.inputs.allForGroupVersion(behaviorGroupVersion)).thenReturn(Future.successful(Seq()))
@@ -108,37 +108,14 @@ class ApplicationControllerSpec extends PlaySpec with MockitoSugar {
 
   "index" should {
 
-    "show custom not found page when the wrong teamId supplied" in new ControllerTestContextWithLoggedInUser {
+    "show custom not found page when the wrong teamId supplied" in new NotFoundForOtherTeamContext {
 
-      running(app) {
-        val teamAccess = mock[UserTeamAccess]
-        val loggedInTeam = Team(IDs.next, "Logged in", None)
-        val otherTeam = Team(IDs.next, "Other team", None)
-        when(dataService.users.teamAccessFor(user, Some(otherTeam.id))).thenReturn(Future.successful(teamAccess))
-        when(teamAccess.maybeTargetTeam).thenReturn(None)
-        when(teamAccess.loggedInTeam).thenReturn(loggedInTeam)
-        when(teamAccess.maybeAdminAccessToTeam).thenReturn(None)
-        when(teamAccess.maybeAdminAccessToTeamId).thenReturn(None)
+      def buildCall: Call = controllers.routes.ApplicationController.index(Some(otherTeam.id))
 
-        val request =
-          FakeRequest(controllers.routes.ApplicationController.index(Some(otherTeam.id))).
-            withAuthenticator(user.loginInfo).
-            withHeaders(("Accept", MimeTypes.HTML))
-        val result = route(app, request).get
+      testNotFound
 
-        status(result) mustBe NOT_FOUND
-
-        val expectedSignInLink = routes.SocialAuthController.authenticateSlack(
-          Some(request.uri),
-          None,
-          None
-        ).url
-
-        val content = contentAsString(result)
-        content must include(expectedSignInLink)
-        content must include(loggedInTeam.name)
-      }
     }
+
   }
 
 }

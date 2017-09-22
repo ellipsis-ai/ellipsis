@@ -2,13 +2,13 @@ package controllers
 
 import com.mohiva.play.silhouette.test._
 import models.IDs
-import org.scalatest.mock.MockitoSugar
 import org.mockito.Mockito._
+import org.scalatest.mock.MockitoSugar
 import org.scalatestplus.play.PlaySpec
+import play.api.mvc.Call
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
-
-import support.ControllerTestContextWithLoggedInUser
+import support.{ControllerTestContextWithLoggedInUser, NotFoundForOtherTeamContext}
 
 import scala.concurrent.Future
 
@@ -50,6 +50,18 @@ class EnvironmentVariablesControllerSpec extends PlaySpec with MockitoSugar {
         status(result) mustBe OK
         verify(dataService.teamEnvironmentVariables, times(1)).deleteFor(existingEnvVarName, team)
       }
+    }
+
+    "EnvironmentVariablesController.list" should {
+
+      "show custom not found page when the wrong teamId supplied" in new NotFoundForOtherTeamContext {
+
+        def buildCall: Call = controllers.routes.EnvironmentVariablesController.list(Some(otherTeam.id))
+
+        testNotFound
+
+      }
+
     }
 
   }
