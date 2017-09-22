@@ -1,5 +1,7 @@
 package support
 
+import java.time.OffsetDateTime
+
 import akka.actor.ActorSystem
 import mocks.{MockAWSLambdaService, MockAWSLogsService, MockCacheService, MockDataService}
 import models.IDs
@@ -35,7 +37,7 @@ trait TestContext extends MockitoSugar{
       disable[ActorModule]
   }
   lazy val teamId: String = IDs.next
-  lazy val team: Team = Team(teamId, "", None)
+  lazy val team: Team = Team(teamId, "", None, OffsetDateTime.now())
   lazy val user: User = newUserFor(teamId)
   lazy implicit val app: Application = appBuilder.build()
   val dataService = app.injector.instanceOf(classOf[DataService])

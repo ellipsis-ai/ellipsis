@@ -1,5 +1,7 @@
 package controllers
 
+import java.time.OffsetDateTime
+
 import com.mohiva.play.silhouette.test._
 import models.IDs
 import models.accounts.oauth2api.{AuthorizationCode, OAuth2Api}
@@ -21,7 +23,7 @@ class OAuth2ApplicationControllerSpec extends PlaySpec with MockitoSugar {
 
     "404 for application from another team (even if it's shared)" in new MyContext {
       running(app) {
-        val someOtherTeam = Team(IDs.next, "", None)
+        val someOtherTeam = Team(IDs.next, "", None, OffsetDateTime.now())
         val oauth2AppForOtherTeam = OAuth2Application(IDs.next, "", oauth2Api, IDs.next, IDs.next, None, someOtherTeam.id, isShared = true)
         val teamAccess = UserTeamAccess(user, team, Some(team), isAdminAccess = false)
         when(dataService.users.teamAccessFor(user, None)).thenReturn(Future.successful(teamAccess))
