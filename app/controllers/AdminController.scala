@@ -21,7 +21,7 @@ class AdminController @Inject() (
                                   implicit val ec: ExecutionContext
                                 ) extends ReAuthable {
 
-  private def withIsAdminCheck(
+  protected def withIsAdminCheck(
                                 fn: () => Future[Result]
                               )(implicit request: SecuredRequest[EllipsisEnv, AnyContent]) = {
     dataService.users.isAdmin(request.identity).flatMap { isAdmin =>
@@ -59,4 +59,6 @@ class AdminController @Inject() (
       Future.successful(Redirect(routes.AdminController.lambdaFunctions()).flashing("success" -> "Redeploying in the background…"))
     })
   }
+
+
 }
