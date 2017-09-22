@@ -11,6 +11,8 @@ trait TeamService {
 
   def allTeams: Future[Seq[Team]]
 
+  def allTeamsWithPage(page: Int, size: Int): Future[Seq[Team]]
+
   def setNameFor(team: Team, name: String): Future[Team]
 
   def setTimeZoneFor(team: Team, tz: ZoneId): Future[Team]

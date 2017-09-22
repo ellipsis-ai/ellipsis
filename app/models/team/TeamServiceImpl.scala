@@ -1,6 +1,6 @@
 package models.team
 
-import java.time.ZoneId
+import java.time.{OffsetDateTime, ZoneId}
 import javax.inject.Inject
 
 import com.google.inject.Provider
@@ -25,6 +25,10 @@ class TeamServiceImpl @Inject() (
 
   def allTeams: Future[Seq[Team]] = {
     dataService.run(all.result)
+  }
+
+  def allTeamsWithPage(page: Int, size: Int): Future[Seq[Team]] = {
+    dataService.run(allWithPage(page, size).result)
   }
 
   def findAction(id: String): DBIO[Option[Team]] = {
@@ -62,7 +66,7 @@ class TeamServiceImpl @Inject() (
     } yield maybeTeam
   }
 
-  def create(name: String): Future[Team] = save(Team(IDs.next, name, None))
+  def create(name: String): Future[Team] = save(Team(IDs.next, name, None, OffsetDateTime.now()))
 
   def setNameFor(team: Team, name: String): Future[Team] = {
     save(team.copy(name = name))

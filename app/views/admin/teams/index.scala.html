@@ -1,9 +1,0 @@
-@import models.team.Team
-@(teams: Seq[Team])
-
-<ul>
-  @teams.map { team =>
-    <li>@team.name, @team.timeZone, @team.id </li>
-  }
-</ul>
-

@@ -19,19 +19,7 @@ class AdminController @Inject() (
                                   val configuration: Configuration,
                                   val assetsProvider: Provider[RemoteAssets],
                                   implicit val ec: ExecutionContext
-                                ) extends ReAuthable {
-
-  protected def withIsAdminCheck(
-                                fn: () => Future[Result]
-                              )(implicit request: SecuredRequest[EllipsisEnv, AnyContent]) = {
-    dataService.users.isAdmin(request.identity).flatMap { isAdmin =>
-      if (isAdmin) {
-        fn()
-      } else {
-        Future.successful(NotFound(views.html.error.notFound(viewConfig(None), None, None)))
-      }
-    }
-  }
+                                ) extends AuthAsAdmin {
 
   def lambdaFunctions() = silhouette.SecuredAction.async { implicit request =>
     withIsAdminCheck(() => {

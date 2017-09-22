@@ -1,0 +1,19 @@
+@import models.team.Team
+
+@(config: ViewConfig, teams: Seq[Team], pageCount: Int, pageSize: Int)(implicit messages: Messages, r: RequestHeader)
+
+
+@page.main("Existing Teams", config) {
+  <ul>
+  @teams.map { team =>
+    <li>
+      <a href="@controllers.routes.ApplicationController.teamHome(team.id).url">Team Home</a>
+      @team.createdAt,
+      @team.name,
+      @team.timeZone,
+      @team.id
+    </li>
+  }
+  </ul>
+}
+

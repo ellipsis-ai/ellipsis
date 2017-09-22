@@ -33,6 +33,10 @@ class ApplicationController @Inject() (
 
   import json.Formatting._
 
+  def teamHome(id: String, maybeBranch: Option[String] = None) = {
+     index(Option(id), maybeBranch)
+  }
+
   def index(maybeTeamId: Option[String], maybeBranch: Option[String] = None) = silhouette.SecuredAction.async { implicit request =>
     val user = request.identity
     val eventualTeamAccess = dataService.users.teamAccessFor(user, maybeTeamId)
