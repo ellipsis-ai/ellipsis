@@ -10,10 +10,10 @@ trait ReAuthable extends EllipsisController {
 
   val silhouette: Silhouette[EllipsisEnv]
 
-  protected def reAuthLinkFor(request: RequestHeader, maybeTeamId: Option[String]) = {
+  protected def reAuthLinkFor(request: RequestHeader, maybeSlackTeamId: Option[String]) = {
     routes.SocialAuthController.authenticateSlack(
       Some(request.uri),
-      maybeTeamId,
+      maybeSlackTeamId,
       None
     )
   }

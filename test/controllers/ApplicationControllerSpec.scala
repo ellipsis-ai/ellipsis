@@ -15,10 +15,12 @@ import org.mockito.Matchers._
 import org.mockito.Mockito._
 import org.scalatest.mock.MockitoSugar
 import org.scalatestplus.play.PlaySpec
+import play.api.http.MimeTypes
 import play.api.libs.json._
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
 import support.ControllerTestContextWithLoggedInUser
+
 import scala.concurrent.Future
 
 class ApplicationControllerSpec extends PlaySpec with MockitoSugar {
@@ -100,6 +102,41 @@ class ApplicationControllerSpec extends PlaySpec with MockitoSugar {
           }
           case e: JsError => assert(false, "Not valid time zone data")
         }
+      }
+    }
+  }
+
+  "index" should {
+
+    "show custom not found page when the wrong teamId supplied" in new ControllerTestContextWithLoggedInUser {
+
+      running(app) {
+        val teamAccess = mock[UserTeamAccess]
+        val loggedInTeam = Team(IDs.next, "Logged in", None)
+        val otherTeam = Team(IDs.next, "Other team", None)
+        when(dataService.users.teamAccessFor(user, Some(otherTeam.id))).thenReturn(Future.successful(teamAccess))
+        when(teamAccess.maybeTargetTeam).thenReturn(None)
+        when(teamAccess.loggedInTeam).thenReturn(loggedInTeam)
+        when(teamAccess.maybeAdminAccessToTeam).thenReturn(None)
+        when(teamAccess.maybeAdminAccessToTeamId).thenReturn(None)
+
+        val request =
+          FakeRequest(controllers.routes.ApplicationController.index(Some(otherTeam.id))).
+            withAuthenticator(user.loginInfo).
+            withHeaders(("Accept", MimeTypes.HTML))
+        val result = route(app, request).get
+
+        status(result) mustBe NOT_FOUND
+
+        val expectedSignInLink = routes.SocialAuthController.authenticateSlack(
+          Some(request.uri),
+          None,
+          None
+        ).url
+
+        val content = contentAsString(result)
+        content must include(expectedSignInLink)
+        content must include(loggedInTeam.name)
       }
     }
   }
