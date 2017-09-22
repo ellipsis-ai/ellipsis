@@ -41,13 +41,12 @@ class BehaviorEditorController @Inject() (
       case Accepts.Html() => {
         for {
           teamAccess <- dataService.users.teamAccessFor(user, maybeTeamId)
-          result <- teamAccess.maybeTargetTeam.map { team =>
-            val dataRoute = routes.BehaviorEditorController.newGroup(maybeTeamId)
-            Future.successful(Ok(views.html.behavioreditor.edit(viewConfig(Some(teamAccess)), dataRoute)))
-          }.getOrElse {
-            reAuthFor(request, maybeTeamId)
-          }
-        } yield result
+        } yield teamAccess.maybeTargetTeam.map { team =>
+          val dataRoute = routes.BehaviorEditorController.newGroup(maybeTeamId)
+          Ok(views.html.behavioreditor.edit(viewConfig(Some(teamAccess)), dataRoute))
+        }.getOrElse {
+          notFoundWithLoginFor(request, Some(teamAccess))
+        }
       }
     }
   }
@@ -112,17 +111,13 @@ class BehaviorEditorController @Inject() (
   }
 
   private def skillNotFound()(implicit request: SecuredRequest[EllipsisEnv, AnyContent]): Future[Result] = {
-    dataService.users.teamAccessFor(request.identity, None).flatMap { teamAccess =>
-      val response = NotFound(
-        views.html.error.notFound(
-          viewConfig(Some(teamAccess)),
-          Some("Skill not found"),
-          Some("The skill you are trying to access could not be found."),
-          Some(reAuthLinkFor(request, None))
-        )
+    dataService.users.teamAccessFor(request.identity, None).map { teamAccess =>
+      notFoundWithLoginFor(
+        request,
+        Some(teamAccess),
+        Some("Skill not found"),
+        Some("The skill you are trying to access could not be found.")
       )
-
-      withAuthDiscarded(request, response)
     }
   }
 
