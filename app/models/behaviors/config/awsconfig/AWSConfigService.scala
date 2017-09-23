@@ -1,28 +1,19 @@
 package models.behaviors.config.awsconfig
 
-import models.behaviors.behaviorversion.BehaviorVersion
+import models.team.Team
 import slick.dbio.DBIO
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.Future
 
 trait AWSConfigService {
 
-  def maybeForAction(behaviorVersion: BehaviorVersion): DBIO[Option[AWSConfig]]
+  def allForAction(team: Team): DBIO[Seq[AWSConfig]]
 
-  def maybeFor(behaviorVersion: BehaviorVersion): Future[Option[AWSConfig]]
+  def allFor(team: Team): Future[Seq[AWSConfig]]
 
-  def environmentVariablesUsedForAction(behaviorVersion: BehaviorVersion)(implicit ec: ExecutionContext): DBIO[Seq[String]] = {
-    maybeForAction(behaviorVersion).map { maybeAwsConfig =>
-      maybeAwsConfig.map { awsConfig =>
-        awsConfig.environmentVariableNames
-      }.getOrElse(Seq())
-    }
-  }
+  def findAction(id: String): DBIO[Option[AWSConfig]]
 
-  def createForAction(
-                 behaviorVersion: BehaviorVersion,
-                 maybeAccessKeyName: Option[String],
-                 maybeSecretKeyName: Option[String],
-                 maybeRegionName: Option[String]
-               ): DBIO[AWSConfig]
+  def find(id: String): Future[Option[AWSConfig]]
+
+  def save(config: AWSConfig): Future[AWSConfig]
 }

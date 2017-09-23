@@ -20,6 +20,8 @@ trait RequiredOAuth2ApiConfigService {
 
   def find(id: String): Future[Option[RequiredOAuth2ApiConfig]]
 
+  def findWithNameInCode(nameInCode: String, groupVersion: BehaviorGroupVersion): Future[Option[RequiredOAuth2ApiConfig]]
+
   def save(requiredOAuth2ApiConfig: RequiredOAuth2ApiConfig): Future[RequiredOAuth2ApiConfig]
 
   def maybeCreateForAction(data: RequiredOAuth2ApiConfigData, groupVersion: BehaviorGroupVersion): DBIO[Option[RequiredOAuth2ApiConfig]]

@@ -6,12 +6,13 @@ case class RequiredOAuth2ApiConfigData(
                                         id: Option[String],
                                         apiId: String,
                                         recommendedScope: Option[String],
-                                        application: Option[OAuth2ApplicationData]
+                                        nameInCode: String,
+                                        config: Option[OAuth2ApplicationData]
                                       ) {
 
   def copyForExport: RequiredOAuth2ApiConfigData = {
-    val maybeScope = recommendedScope.orElse(application.flatMap(_.scope))
-    copy(id = None, application = None, recommendedScope = maybeScope)
+    val maybeScope = recommendedScope.orElse(config.flatMap(_.scope))
+    copy(id = None, config = None, recommendedScope = maybeScope)
   }
 
 }
@@ -22,6 +23,7 @@ object RequiredOAuth2ApiConfigData {
       Some(required.id),
       required.api.id,
       required.maybeRecommendedScope,
+      required.nameInCode,
       required.maybeApplication.map(OAuth2ApplicationData.from)
     )
   }

@@ -22,6 +22,7 @@ case class BehaviorGroupData(
                               dataTypeInputs: Seq[InputData],
                               behaviorVersions: Seq[BehaviorVersionData],
                               libraryVersions: Seq[LibraryVersionData],
+                              requiredAWSConfigs: Seq[RequiredAWSConfigData],
                               requiredOAuth2ApiConfigs: Seq[RequiredOAuth2ApiConfigData],
                               requiredSimpleTokenApis: Seq[RequiredSimpleTokenApiData],
                               githubUrl: Option[String],
@@ -88,7 +89,7 @@ case class BehaviorGroupData(
       oauth2Applications.find { eaAvailable =>
         eaAvailable.api.id == eaRequired.apiId && eaRequired.recommendedScope == eaAvailable.maybeScope
       }.map { app =>
-        eaRequired.copy(application = Some(OAuth2ApplicationData.from(app)))
+        eaRequired.copy(config = Some(OAuth2ApplicationData.from(app)))
       }.getOrElse(eaRequired)
     }
     copy(requiredOAuth2ApiConfigs = oauth2)
@@ -137,6 +138,7 @@ object BehaviorGroupData {
       inputsData <- Future.sequence(inputs.map(ea => InputData.fromInput(ea, dataService)))
       libraryVersions <- dataService.libraries.allFor(version)
       libraryVersionsData <- Future.successful(libraryVersions.map(ea => LibraryVersionData.fromVersion(ea)))
+      requiredAWSConfigs <- dataService.requiredAWSConfigs.allFor(version)
       requiredOAuth2ApiConfigs <- dataService.requiredOAuth2ApiConfigs.allFor(version)
       requiredSimpleTokenApis <- dataService.requiredSimpleTokenApis.allFor(version)
       maybeUserData <- version.maybeAuthor.map { author =>
@@ -156,6 +158,7 @@ object BehaviorGroupData {
         dataTypeInputsData,
         versionsData,
         libraryVersionsData,
+        requiredAWSConfigs.map(RequiredAWSConfigData.from),
         requiredOAuth2ApiConfigs.map(RequiredOAuth2ApiConfigData.from),
         requiredSimpleTokenApis.map(RequiredSimpleTokenApiData.from),
         None,

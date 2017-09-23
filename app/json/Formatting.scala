@@ -66,6 +66,9 @@ object Formatting {
   implicit val nodeModuleVersionDataReads = Json.reads[NodeModuleVersionData]
   implicit val nodeModuleVersionDataWrites = Json.writes[NodeModuleVersionData]
 
+  implicit val requiredAWSConfigDataReads = Json.reads[RequiredAWSConfigData]
+  implicit val requiredAWSConfigDataWrites = Json.writes[RequiredAWSConfigData]
+
   implicit val slackUserDataReads = Json.reads[SlackUserData]
   implicit val slackUserDataWrites = Json.writes[SlackUserData]
 
@@ -147,6 +150,12 @@ object Formatting {
 
   implicit val resultOutputWrites = Json.writes[ResultOutput]
   implicit val testReportOutputWrites = Json.writes[InvocationTestReportOutput]
+
+  implicit val awsConfigEditConfigReads = Json.reads[AWSConfigEditConfig]
+  implicit val awsConfigEditConfigWrites = Json.writes[AWSConfigEditConfig]
+
+  implicit val awsConfigListConfigReads = Json.reads[AWSConfigListConfig]
+  implicit val awsConfigListConfigWrites = Json.writes[AWSConfigListConfig]
 
   implicit val executionLogReads = Json.reads[ExecutionLogData]
   implicit val executionErrorValueReads = Json.reads[ExecutionErrorData]
