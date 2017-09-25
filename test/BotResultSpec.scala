@@ -163,10 +163,10 @@ class BotResultSpec extends PlaySpec with MockitoSugar with DBSpec {
         runNow(dataService.slackBotProfiles.allFor(team)) mustBe Seq(profile)
 
         runNow(botResultService.sendIn(result, None)) mustBe Some(resultTs)
-//
-//        val updatedConversation = runNow(dataService.conversations.find(conversationToBeInterrupted.id)).get
-//
-//        updatedConversation.maybeThreadId.isDefined mustBe true
+
+        val updatedConversation = runNow(dataService.conversations.find(conversationToBeInterrupted.id)).get
+
+        updatedConversation.maybeThreadId.isDefined mustBe true
       })
     }
 
