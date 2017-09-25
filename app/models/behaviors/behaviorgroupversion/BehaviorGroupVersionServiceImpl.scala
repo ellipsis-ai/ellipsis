@@ -143,7 +143,6 @@ class BehaviorGroupVersionServiceImpl @Inject() (
       _ <- DBIO.sequence(data.actionInputs.map { ea =>
         dataService.inputs.ensureForAction(ea, groupVersion)
       })
-      apiConfig <- DBIO.successful(ApiConfigInfo(awsConfigs, requiredAWSConfigs, requiredOAuth2ApiConfigs, requiredSimpleTokenApis))
       _ <- DBIO.sequence(data.actionBehaviorVersions.map { ea =>
         ea.behaviorId.map { behaviorId =>
           for {
@@ -155,9 +154,6 @@ class BehaviorGroupVersionServiceImpl @Inject() (
           } yield Some(behaviorVersion)
         }.getOrElse(DBIO.successful(None))
       })
-      maybeAWSConfig <- data.awsConfig.map { c =>
-        dataService.awsConfigs.createForAction(groupVersion, c.accessKeyName, c.secretKeyName, c.regionName).map(Some(_))
-      }.getOrElse(DBIO.successful(None))
       libraries <- dataService.libraries.allForAction(groupVersion)
       behaviorVersions <- dataService.behaviorVersions.allForGroupVersionAction(groupVersion)
       behaviorVersionsWithParams <- DBIO.sequence(behaviorVersions.map { bv =>
@@ -170,9 +166,7 @@ class BehaviorGroupVersionServiceImpl @Inject() (
           groupVersion,
           libraries,
           behaviorVersionsWithParams,
-          maybeAWSConfig,
-          requiredOAuth2ApiConfigs,
-          requiredSimpleTokenApis,
+          apiConfig,
           forceNodeModuleUpdate
         )
       )
@@ -184,9 +178,11 @@ class BehaviorGroupVersionServiceImpl @Inject() (
 
   def redeploy(groupVersion: BehaviorGroupVersion): Future[Unit] = {
     for {
-      maybeAWSConfig <- Future.successful(None) //dataService.awsConfigs.maybeFor(behaviorVersion)
+      awsConfigs <- dataService.awsConfigs.allFor(groupVersion.team)
+      requiredAWSConfigs <- dataService.requiredAWSConfigs.allFor(groupVersion)
       requiredOAuth2ApiConfigs <- dataService.requiredOAuth2ApiConfigs.allFor(groupVersion)
       requiredSimpleTokenApis <- dataService.requiredSimpleTokenApis.allFor(groupVersion)
+      apiConfig <- Future.successful(ApiConfigInfo(awsConfigs, requiredAWSConfigs, requiredOAuth2ApiConfigs, requiredSimpleTokenApis))
       libraries <- dataService.libraries.allFor(groupVersion)
       behaviorVersions <- dataService.behaviorVersions.allForGroupVersion(groupVersion)
       behaviorVersionsWithParams <- Future.sequence(behaviorVersions.map { bv =>
@@ -198,9 +194,7 @@ class BehaviorGroupVersionServiceImpl @Inject() (
         groupVersion,
         libraries,
         behaviorVersionsWithParams,
-        maybeAWSConfig,
-        requiredOAuth2ApiConfigs,
-        requiredSimpleTokenApis,
+        apiConfig,
         forceNodeModuleUpdate = true
       )
     } yield {}

@@ -407,7 +407,7 @@ class AWSLambdaServiceImpl @Inject() (
     }
     for {
       _ <- if (forceNodeModuleUpdate || !canCopyModules) {
-        Future.sequence(requiredModules.map { moduleName =>
+        Future.sequence(requiredModules.toSeq.map { moduleName =>
           // NPM wants to write a lockfile in $HOME; this makes it work for daemons
           Future {
             blocking(
@@ -427,19 +427,14 @@ class AWSLambdaServiceImpl @Inject() (
 
   }
 
-  private def getNodeModuleInfoFor(behaviorVersion: BehaviorVersion): JsValue = {
-    if (behaviorVersion.hasFunction) {
-      val functionName = behaviorVersion.functionName
-      val dirName = dirNameFor(functionName)
-      val infoString = try {
-        Process(Seq("bash", "-c", s"cd $dirName && npm list --depth=0 --json=true")).!!
-      } catch {
-        case t: Throwable => "{}"
-      }
-      Json.parse(infoString)
-    } else {
-      Json.parse("{}")
+  private def getNodeModuleInfoFor(functionName: String): JsValue = {
+    val dirName = dirNameFor(functionName)
+    val infoString = try {
+      Process(Seq("bash", "-c", s"cd $dirName && npm list --depth=0 --json=true")).!!
+    } catch {
+      case t: Throwable => "{}"
     }
+    Json.parse(infoString)
   }
 
   def ensureNodeModuleVersionsFor(groupVersion: BehaviorGroupVersion): DBIO[Seq[NodeModuleVersion]] = {

@@ -81,9 +81,6 @@ object Formatting {
   lazy implicit val behaviorGroupReads = Json.reads[BehaviorGroupData]
   lazy implicit val behaviorGroupWrites = Json.writes[BehaviorGroupData]
 
-  lazy implicit val behaviorGroupReads = Json.reads[BehaviorGroupData]
-  lazy implicit val behaviorGroupWrites = Json.writes[BehaviorGroupData]
-
   lazy implicit val installedBehaviorReads = Json.reads[InstalledBehaviorGroupData]
   lazy implicit val installedBehaviorWrites = Json.writes[InstalledBehaviorGroupData]
 
@@ -138,9 +135,6 @@ object Formatting {
 
   lazy implicit val slackBotProfileReads = Json.reads[SlackBotProfile]
   lazy implicit val slackBotProfileWrites = Json.writes[SlackBotProfile]
-
-  implicit val slackMessageReads = Json.reads[SlackMessage]
-  implicit val slackMessageWrites = Json.writes[SlackMessage]
 
   lazy implicit val slackMessageReads = Json.reads[SlackMessage]
   lazy implicit val slackMessageWrites = Json.writes[SlackMessage]

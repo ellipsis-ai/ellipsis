@@ -23,7 +23,6 @@ case class BehaviorGroupData(
                               behaviorVersions: Seq[BehaviorVersionData],
                               libraryVersions: Seq[LibraryVersionData],
                               requiredAWSConfigs: Seq[RequiredAWSConfigData],
-                              awsConfig: Option[AWSConfigData],
                               requiredOAuth2ApiConfigs: Seq[RequiredOAuth2ApiConfigData],
                               requiredSimpleTokenApis: Seq[RequiredSimpleTokenApiData],
                               githubUrl: Option[String],

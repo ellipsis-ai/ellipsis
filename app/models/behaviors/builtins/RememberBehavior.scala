@@ -65,7 +65,6 @@ case class RememberBehavior(event: Event, lambdaService: AWSLambdaService, dataS
             ),
             Seq(),
             Seq(),
-            None,
             Seq(),
             Seq(),
             None,

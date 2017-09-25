@@ -145,7 +145,6 @@ case class BehaviorGroupZipImporter(
           versionsData,
           libraries,
           requiredAWSConfigData,
-          maybeAWSConfig,
           requiredOAuth2ApiConfigData,
           requiredSimpleTokenApiData,
           githubUrl = None,
