@@ -29,4 +29,8 @@ class MockSlackEventService extends SlackEventService with MockitoSugar {
     Future.successful(None)
   }
 
+  def maybeSlackUserDataFor(botProfile: SlackBotProfile): Future[Option[SlackUserData]] = {
+    Future.successful(None)
+  }
+
 }

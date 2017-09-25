@@ -29,7 +29,7 @@ case class SlackMessageEvent(
       Future.successful("")
     } else {
       for {
-        maybeSlackUserData <- services.slackEventService.maybeSlackUserDataFor(profile.userId, profile.slackTeamId, SlackApiClient(profile.token))
+        maybeSlackUserData <- services.slackEventService.maybeSlackUserDataFor(profile)
       } yield {
         maybeSlackUserData.map { userData =>
           s"@${userData.accountName} "
