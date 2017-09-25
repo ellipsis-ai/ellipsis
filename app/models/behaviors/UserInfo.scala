@@ -45,7 +45,8 @@ object MessageInfo {
 case class UserInfo(
                      user: User,
                      links: Seq[LinkedInfo],
-                     maybeMessageInfo: Option[MessageInfo]
+                     maybeMessageInfo: Option[MessageInfo],
+                     maybeTimeZone: Option[String]
                    ) {
 
   implicit val messageInfoWrites = Json.writes[MessageInfo]
@@ -58,7 +59,8 @@ case class UserInfo(
       Seq("messageInfo" -> Json.toJson(info))
     }.getOrElse(Seq())
     val userParts = Seq("ellipsisUserId" -> JsString(user.id))
-    JsObject(userParts ++ linkParts ++ messageInfoPart)
+    val timeZonePart = Seq("timeZone" -> Json.toJson(maybeTimeZone))
+    JsObject(userParts ++ linkParts ++ messageInfoPart ++ timeZonePart)
   }
 }
 
@@ -82,8 +84,12 @@ object UserInfo {
         }
       }
       messageInfo <- DBIO.from(event.messageInfo(ws, dataService, cacheService))
+      maybeTeam <- dataService.teams.findAction(user.teamId)
+      maybeUserData <- maybeTeam.map { team =>
+        DBIO.from(dataService.users.userDataFor(user, team)).map(Some(_))
+      }.getOrElse(DBIO.successful(None))
     } yield {
-      UserInfo(user, links, Some(messageInfo))
+      UserInfo(user, links, Some(messageInfo), maybeUserData.flatMap(_.tz))
     }
   }
 
