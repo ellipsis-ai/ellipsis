@@ -88,4 +88,9 @@ class SlackEventServiceImpl @Inject()(
         }.getOrElse(None)
       }
     }
-  }}
+  }
+
+  def maybeSlackUserDataFor(botProfile: SlackBotProfile): Future[Option[SlackUserData]] = {
+    maybeSlackUserDataFor(botProfile.userId, botProfile.slackTeamId, clientFor(botProfile))
+  }
+}
