@@ -322,7 +322,7 @@ class AWSLambdaServiceImpl @Inject() (
 
     // Note: this attempts to make line numbers in the lambda script line up with those displayed in the UI
     // Be careful changing either this or the UI line numbers
-    s"""exports.handler = function(event, context, callback) { ${behaviorsCodeFor(behaviorVersionsWithParams)};
+    s"""exports.handler = function(event, context, lambdaCallback) { ${behaviorsCodeFor(behaviorVersionsWithParams)};
         |  const $CONTEXT_PARAM = event.$CONTEXT_PARAM;
         |
         |  $OVERRIDE_CONSOLE
@@ -337,7 +337,7 @@ class AWSLambdaServiceImpl @Inject() (
         |  $CONTEXT_PARAM.$NO_RESPONSE_KEY = ellipsisNoResponseCallback;
         |  $CONTEXT_PARAM.success = ellipsisSuccessCallback;
         |  $CONTEXT_PARAM.Error = EllipsisError;
-        |  $CONTEXT_PARAM.error = ellipsisErrorCallback;        |
+        |  $CONTEXT_PARAM.error = ellipsisErrorCallback;
         |  process.removeAllListeners('unhandledRejection');
         |  process.on('unhandledRejection', $CONTEXT_PARAM.error);
         |
