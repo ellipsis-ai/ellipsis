@@ -29,7 +29,7 @@ trait TestContext extends MockitoSugar{
       overrides(bind[EventHandler].toInstance(mock[EventHandler])).
       overrides(bind[GithubService].toInstance(mock[GithubService])).
       overrides(bind[GraphQLService].toInstance(mock[GraphQLService])).
-      overrides(bind[SlackEventService].toInstance(mock[SlackEventService])).
+      overrides(bind[SlackEventService].toInstance(mock[SlackEventServiceImpl])).
       overrides(bind[BotResultService].toInstance(mock[BotResultService])).
       overrides(bind[CacheService].to[MockCacheService]).
       disable[ActorModule]
