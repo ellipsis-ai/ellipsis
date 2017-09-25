@@ -6,7 +6,7 @@ import models.behaviors.events.SlackMessageActionConstants._
 import models.behaviors.events._
 import models.behaviors.{BotResult, TextWithActionsResult}
 import models.help._
-import services.{AWSLambdaService, CacheService, DataService}
+import services.{AWSLambdaService, CacheService, DataService, DefaultServices}
 import utils._
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -19,10 +19,12 @@ case class DisplayHelpBehavior(
                          includeNonMatchingResults: Boolean,
                          isFirstTrigger: Boolean,
                          event: Event,
-                         lambdaService: AWSLambdaService,
-                         dataService: DataService,
-                         cacheService: CacheService
+                         services: DefaultServices
                        ) extends BuiltinBehavior {
+
+  val lambdaService: AWSLambdaService = services.lambdaService
+  val dataService: DataService = services.dataService
+  val cacheService: CacheService = services.cacheService
 
   private def maybeHelpSearch: Option[String] = {
     maybeHelpString.filter(_.trim.nonEmpty)
@@ -143,7 +145,7 @@ case class DisplayHelpBehavior(
           BehaviorGroupData.maybeFor(group.id, user, None, dataService)
         }).map(_.flatten.sorted)
       }.getOrElse(Future.successful(Seq()))
-      botPrefix <- event.botPrefix(dataService)
+      botPrefix <- event.botPrefix(services)
     } yield {
       val (named, unnamed) = groupData.partition(_.maybeNonEmptyName.isDefined)
       val namedGroupData = named.map(behaviorGroupData => SkillHelpGroupData(behaviorGroupData))

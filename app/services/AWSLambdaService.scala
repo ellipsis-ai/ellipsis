@@ -43,7 +43,8 @@ trait AWSLambdaService extends AWSService {
                     parametersWithValues: Seq[ParameterWithValue],
                     environmentVariables: Seq[EnvironmentVariable],
                     event: Event,
-                    maybeConversation: Option[Conversation]
+                    maybeConversation: Option[Conversation],
+                    defaultServices: DefaultServices
                   ): DBIO[BotResult]
 
   def deleteFunction(functionName: String): Future[Unit]

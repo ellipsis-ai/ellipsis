@@ -1,10 +1,11 @@
 package models.behaviors.events
 
 import akka.actor.ActorSystem
+import com.amazonaws.auth.policy.Principal.Services
 import models.accounts.slack.botprofile.SlackBotProfile
 import play.api.libs.json._
 import play.api.libs.ws.WSClient
-import services.{CacheService, DataService}
+import services.{CacheService, DataService, DefaultServices}
 import slack.api.SlackApiClient
 import utils.SlackChannels
 
@@ -36,10 +37,10 @@ trait SlackEvent {
     }
   }
 
-  def detailsFor(ws: WSClient, dataService: DataService, cacheService: CacheService)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[JsObject] = {
+  def detailsFor(services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[JsObject] = {
     for {
-      maybeUser <- dataService.linkedAccounts.maybeSlackUserDataFor(user, profile.slackTeamId, SlackApiClient(profile.token))
-      channelMembers <- SlackChannels(client, cacheService, profile.slackTeamId).getMembersFor(channel)
+      maybeUser <- services.slackEventService.maybeSlackUserDataFor(user, profile.slackTeamId, SlackApiClient(profile.token))
+      channelMembers <- SlackChannels(client, services.cacheService, profile.slackTeamId).getMembersFor(channel)
     } yield {
       val channelMembersObj = JsObject(Seq(
         "channelMembers" -> JsArray(channelMembers.map(JsString.apply))
