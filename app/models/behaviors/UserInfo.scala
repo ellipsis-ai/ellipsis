@@ -1,13 +1,14 @@
 package models.behaviors
 
 import akka.actor.ActorSystem
-import models.accounts.oauth2application.OAuth2Application
 import models.accounts.user.User
+import models.behaviors.config.awsconfig.AWSConfig
+import models.behaviors.config.requiredawsconfig.RequiredAWSConfig
 import models.behaviors.events.Event
 import models.team.Team
 import play.api.libs.ws.WSClient
 import play.api.libs.json._
-import services.{CacheService, DataService}
+import services.{ApiConfigInfo, CacheService, DataService}
 import slick.dbio.DBIO
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -44,7 +45,8 @@ object MessageInfo {
 case class UserInfo(
                      user: User,
                      links: Seq[LinkedInfo],
-                     maybeMessageInfo: Option[MessageInfo]
+                     maybeMessageInfo: Option[MessageInfo],
+                     maybeTimeZone: Option[String]
                    ) {
 
   implicit val messageInfoWrites = Json.writes[MessageInfo]
@@ -57,7 +59,8 @@ case class UserInfo(
       Seq("messageInfo" -> Json.toJson(info))
     }.getOrElse(Seq())
     val userParts = Seq("ellipsisUserId" -> JsString(user.id))
-    JsObject(userParts ++ linkParts ++ messageInfoPart)
+    val timeZonePart = Seq("timeZone" -> Json.toJson(maybeTimeZone))
+    JsObject(userParts ++ linkParts ++ messageInfoPart ++ timeZonePart)
   }
 }
 
@@ -81,8 +84,12 @@ object UserInfo {
         }
       }
       messageInfo <- DBIO.from(event.messageInfo(ws, dataService, cacheService))
+      maybeTeam <- dataService.teams.findAction(user.teamId)
+      maybeUserData <- maybeTeam.map { team =>
+        DBIO.from(dataService.users.userDataFor(user, team)).map(Some(_))
+      }.getOrElse(DBIO.successful(None))
     } yield {
-      UserInfo(user, links, Some(messageInfo))
+      UserInfo(user, links, Some(messageInfo), maybeUserData.flatMap(_.tz))
     }
   }
 
@@ -101,11 +108,24 @@ object UserInfo {
 
 }
 
-case class TeamInfo(team: Team, links: Seq[LinkedInfo]) {
+case class TeamInfo(team: Team, links: Seq[LinkedInfo], requiredAWSConfigs: Seq[RequiredAWSConfig]) {
+
+  val configuredRequiredAWSConfigs: Seq[(RequiredAWSConfig, AWSConfig)] = {
+    requiredAWSConfigs.flatMap { ea =>
+      ea.maybeConfig.map { cfg => (ea, cfg) }
+    }
+  }
 
   def toJson: JsObject = {
     val linkParts: Seq[(String, JsValue)] = Seq(
-      "links" -> JsArray(links.map(_.toJson))
+      "links" -> JsArray(links.map(_.toJson)),
+      "aws" -> JsObject(configuredRequiredAWSConfigs.map { case(required, cfg) =>
+        required.nameInCode -> JsObject(Seq(
+          "accessKeyId" -> JsString(cfg.accessKey),
+          "secretAccessKey" -> JsString(cfg.secretKey),
+          "region" -> JsString(cfg.region)
+        ))
+      })
     )
     val timeZonePart = Seq("timeZone" -> JsString(team.timeZone.toString))
     JsObject(linkParts ++ timeZonePart)
@@ -115,7 +135,14 @@ case class TeamInfo(team: Team, links: Seq[LinkedInfo]) {
 
 object TeamInfo {
 
-  def forOAuth2Apps(apps: Seq[OAuth2Application], team: Team, ws: WSClient)(implicit ec: ExecutionContext): Future[TeamInfo] = {
+  def forConfig(apiConfigInfo: ApiConfigInfo, userInfo: UserInfo, team: Team, ws: WSClient)(implicit ec: ExecutionContext): Future[TeamInfo] = {
+    val oauth2ApplicationsNeedingRefresh =
+      apiConfigInfo.requiredOAuth2ApiConfigs.flatMap(_.maybeApplication).
+        filter { app =>
+          !userInfo.links.exists(_.externalSystem == app.name)
+        }.
+        filterNot(_.api.grantType.requiresAuth)
+    val apps = oauth2ApplicationsNeedingRefresh
     Future.sequence(apps.map { ea =>
       ea.getClientCredentialsTokenFor(ws).map { maybeToken =>
         maybeToken.map { token =>
@@ -123,7 +150,7 @@ object TeamInfo {
         }
       }
     }).map { linkMaybes =>
-      TeamInfo(team, linkMaybes.flatten)
+      TeamInfo(team, linkMaybes.flatten, apiConfigInfo.requiredAWSConfigs)
     }
   }
 

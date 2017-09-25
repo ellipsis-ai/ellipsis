@@ -13,6 +13,7 @@ import models.behaviors._
 import models.behaviors.behavior.{Behavior, BehaviorQueries}
 import models.behaviors.behaviorgroup.BehaviorGroup
 import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
+import models.behaviors.config.requiredawsconfig.RequiredAWSConfig
 import models.behaviors.config.requiredoauth2apiconfig.RequiredOAuth2ApiConfig
 import models.behaviors.config.requiredsimpletokenapi.RequiredSimpleTokenApi
 import models.behaviors.conversations.conversation.Conversation
@@ -20,7 +21,7 @@ import models.behaviors.events.Event
 import models.team.Team
 import play.api.libs.ws.WSClient
 import play.api.{Configuration, Logger}
-import services.{AWSLambdaService, CacheService, DataService}
+import services.{AWSLambdaService, ApiConfigInfo, CacheService, DataService}
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -231,8 +232,7 @@ class BehaviorVersionServiceImpl @Inject() (
   def createForAction(
                        behavior: Behavior,
                        groupVersion: BehaviorGroupVersion,
-                       requiredOAuth2ApiConfigs: Seq[RequiredOAuth2ApiConfig],
-                       requiredSimpleTokenApis: Seq[RequiredSimpleTokenApi],
+                       apiConfigInfo: ApiConfigInfo,
                        maybeUser: Option[User],
                        data: BehaviorVersionData,
                        forceNodeModuleUpdate: Boolean
@@ -247,11 +247,7 @@ class BehaviorVersionServiceImpl @Inject() (
           maybeFunctionBody = Some(data.functionBody),
           maybeResponseTemplate = Some(data.responseTemplate),
           forcePrivateResponse = data.config.forcePrivateResponse.exists(identity)
-        )
-        )
-        maybeAWSConfig <- data.awsConfig.map { c =>
-          dataService.awsConfigs.createForAction(updated, c.accessKeyName, c.secretKeyName, c.regionName).map(Some(_))
-        }.getOrElse(DBIO.successful(None))
+        ))
         inputs <- DBIO.sequence(data.inputIds.map { inputId =>
           dataService.inputs.findByInputIdAction(inputId, groupVersion)
         }
@@ -282,9 +278,7 @@ class BehaviorVersionServiceImpl @Inject() (
           data.functionBody,
           withoutBuiltin(inputs.map(_.name).toArray),
           libraries,
-          maybeAWSConfig,
-          requiredOAuth2ApiConfigs,
-          requiredSimpleTokenApis,
+          apiConfigInfo,
           forceNodeModuleUpdate
         )
       }
@@ -424,18 +418,18 @@ class BehaviorVersionServiceImpl @Inject() (
     val groupVersion = behaviorVersion.groupVersion
     for {
       params <- dataService.behaviorParameters.allFor(behaviorVersion)
-      maybeAWSConfig <- dataService.awsConfigs.maybeFor(behaviorVersion)
+      awsConfigs <- dataService.awsConfigs.allFor(groupVersion.team)
+      requiredAWSConfigs <- dataService.requiredAWSConfigs.allFor(groupVersion)
       requiredOAuth2ApiConfigs <- dataService.requiredOAuth2ApiConfigs.allFor(groupVersion)
       requiredSimpleTokenApis <- dataService.requiredSimpleTokenApis.allFor(groupVersion)
+      apiConfig <- Future.successful(ApiConfigInfo(awsConfigs, requiredAWSConfigs, requiredOAuth2ApiConfigs, requiredSimpleTokenApis))
       libraries <- dataService.libraries.allFor(behaviorVersion.groupVersion)
       _ <- lambdaService.deployFunctionFor(
         behaviorVersion,
         behaviorVersion.functionBody,
         params.map(_.name).toArray,
         libraries,
-        maybeAWSConfig,
-        requiredOAuth2ApiConfigs,
-        requiredSimpleTokenApis,
+        apiConfig,
         forceNodeModuleUpdate = true
       )
     } yield {}

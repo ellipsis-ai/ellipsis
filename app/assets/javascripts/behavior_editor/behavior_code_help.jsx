@@ -82,7 +82,7 @@ return React.createClass({
     if (tokenList.length > 0) {
       return tokenList.map((token, index) => (
         <div key={`accessToken${index}`} className="mbs">
-          <code className="box-code-example">{token.keyName}</code> — {token.displayName}
+          <code className="box-code-example">{token.nameInCode}</code> — {token.displayName}
         </div>
       ));
     } else {

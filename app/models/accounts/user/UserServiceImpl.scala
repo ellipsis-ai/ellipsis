@@ -123,7 +123,8 @@ class UserServiceImpl @Inject() (
     for {
       maybeSlackUserData <- maybeSlackUserDataFor(user, team)
     } yield {
-      UserData(user.id, maybeSlackUserData.map(_.accountName))
+      val maybeTzString = maybeSlackUserData.flatMap(_.tz).orElse(team.maybeTimeZone.map(_.toString))
+      UserData(user.id, maybeSlackUserData.map(_.accountName), maybeTzString)
     }
   }
 

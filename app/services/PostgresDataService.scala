@@ -22,6 +22,7 @@ import models.behaviors.behaviorgroupversion.BehaviorGroupVersionService
 import models.behaviors.behaviorparameter.BehaviorParameterService
 import models.behaviors.behaviorversion.BehaviorVersionService
 import models.behaviors.config.awsconfig.AWSConfigService
+import models.behaviors.config.requiredawsconfig.RequiredAWSConfigService
 import models.behaviors.config.requiredoauth2apiconfig.RequiredOAuth2ApiConfigService
 import models.behaviors.config.requiredsimpletokenapi.RequiredSimpleTokenApiService
 import models.behaviors.conversations.collectedparametervalue.CollectedParameterValueService
@@ -78,6 +79,7 @@ class PostgresDataService @Inject() (
                                       val savedAnswersProvider: Provider[SavedAnswerService],
                                       val messageTriggersProvider: Provider[MessageTriggerService],
                                       val awsConfigsProvider: Provider[AWSConfigService],
+                                      val requiredAWSConfigsProvider: Provider[RequiredAWSConfigService],
                                       val requiredOAuth2ApiConfigsProvider: Provider[RequiredOAuth2ApiConfigService],
                                       val requiredSimpleTokenApiConfigsProvider: Provider[RequiredSimpleTokenApiService],
                                       val conversationsProvider: Provider[ConversationService],
@@ -119,6 +121,7 @@ class PostgresDataService @Inject() (
   val savedAnswers = savedAnswersProvider.get
   val messageTriggers = messageTriggersProvider.get
   val awsConfigs = awsConfigsProvider.get
+  val requiredAWSConfigs = requiredAWSConfigsProvider.get
   val requiredOAuth2ApiConfigs = requiredOAuth2ApiConfigsProvider.get
   val requiredSimpleTokenApis = requiredSimpleTokenApiConfigsProvider.get
   val conversations = conversationsProvider.get

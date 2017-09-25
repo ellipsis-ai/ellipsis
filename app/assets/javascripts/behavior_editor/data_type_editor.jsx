@@ -8,6 +8,8 @@ define(function(require) {
     DataTypeSchemaConfig = require('./data_type_schema_config'),
     DataTypeSourceConfig = require('./data_type_source_config'),
     ID = require('../lib/id'),
+    RequiredAWSConfig = require('../models/aws').RequiredAWSConfig,
+    RequiredOAuth2Application = require('../models/oauth2').RequiredOAuth2Application,
     SectionHeading = require('../shared_ui/section_heading'),
     SequentialName = require('../lib/sequential_name'),
     BehaviorConfig = require('../models/behavior_config'),
@@ -187,15 +189,11 @@ define(function(require) {
             onToggleActivePanel={this.props.onToggleActivePanel}
             animationIsDisabled={this.props.animationIsDisabled}
 
-            onToggleAWSConfig={this.props.onToggleAWSConfig}
             behaviorConfig={this.props.behaviorConfig}
-            onAWSAddNewEnvVariable={this.props.onAWSAddNewEnvVariable}
-            onAWSConfigChange={this.props.onAWSConfigChange}
-
-            apiSelector={this.props.apiSelector}
 
             inputs={this.props.inputs}
             systemParams={this.props.systemParams}
+            requiredAWSConfigs={this.props.requiredAWSConfigs}
             apiApplications={this.props.apiApplications}
 
             functionBody={this.getSelectedBehavior().getFunctionBody()}
@@ -299,21 +297,13 @@ define(function(require) {
     onToggleActivePanel: React.PropTypes.func.isRequired,
     animationIsDisabled: React.PropTypes.bool,
 
-    onToggleAWSConfig: React.PropTypes.func.isRequired,
     behaviorConfig: React.PropTypes.instanceOf(BehaviorConfig).isRequired,
-    onAWSAddNewEnvVariable: React.PropTypes.func.isRequired,
-    onAWSConfigChange: React.PropTypes.func.isRequired,
 
-    apiSelector: React.PropTypes.node.isRequired,
     systemParams: React.PropTypes.arrayOf(React.PropTypes.string).isRequired,
-    apiApplications: React.PropTypes.arrayOf(React.PropTypes.shape({
-      apiId: React.PropTypes.string.isRequired,
-      recommendedScope: React.PropTypes.string,
-      application: React.PropTypes.shape({
-        applicationId: React.PropTypes.string.isRequired,
-        displayName: React.PropTypes.string.isRequired
-      })
-    })).isRequired,
+
+    requiredAWSConfigs: React.PropTypes.arrayOf(React.PropTypes.instanceOf(RequiredAWSConfig)).isRequired,
+
+    apiApplications: React.PropTypes.arrayOf(React.PropTypes.instanceOf(RequiredOAuth2Application)).isRequired,
 
     onCursorChange: React.PropTypes.func.isRequired,
     useLineWrapping: React.PropTypes.bool.isRequired,

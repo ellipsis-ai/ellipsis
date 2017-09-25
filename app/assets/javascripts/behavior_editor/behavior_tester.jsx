@@ -8,7 +8,7 @@ define(function(require) {
     Input = require('../models/input'),
     Trigger = require('../models/trigger'),
     debounce = require('javascript-debounce'),
-    oauth2ApplicationShape = require('./oauth2_application_shape'),
+    RequiredOAuth2Application = require('../models/oauth2').RequiredOAuth2Application,
     TesterAuthRequired = require('./tester_auth_required'),
     InvocationTestResult = require('../models/behavior_invocation_result'),
     InvocationResults = require('./behavior_tester_invocation_results');
@@ -21,7 +21,7 @@ define(function(require) {
       behaviorId: React.PropTypes.string,
       csrfToken: React.PropTypes.string.isRequired,
       onDone: React.PropTypes.func.isRequired,
-      appsRequiringAuth: React.PropTypes.arrayOf(oauth2ApplicationShape).isRequired
+      appsRequiringAuth: React.PropTypes.arrayOf(React.PropTypes.instanceOf(RequiredOAuth2Application)).isRequired
     },
 
     getInitialState: function() {
@@ -241,9 +241,15 @@ define(function(require) {
 
     renderContent: function() {
       var apps = this.props.appsRequiringAuth;
-      if (apps.length > 0) {
+      if (this.props.behaviorId && apps.length > 0) {
         return (
-          <TesterAuthRequired behaviorId={this.props.behaviorId} appsRequiringAuth={apps}/>
+          <div>
+            <TesterAuthRequired behaviorId={this.props.behaviorId} appsRequiringAuth={apps}/>
+
+            <div className="mtxl">
+              <button className="mrs" type="button" onClick={this.onDone}>Cancel</button>
+            </div>
+          </div>
         );
       } else {
         return this.renderTester();
@@ -278,6 +284,7 @@ define(function(require) {
               />
               <span className="align-button">{this.renderResultStatus()}</span>
             </div>
+
             <div className="column column-shrink">
               <button className="mrs" type="button" onClick={this.onDone}>Done</button>
             </div>

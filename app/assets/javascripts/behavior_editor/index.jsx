@@ -1,6 +1,7 @@
 define((require) => {
 var React = require('react'),
-  APISelectorMenu = require('./api_selector_menu'),
+  APIConfigPanel = require('./api_config_panel'),
+  AWSConfigRef = require('../models/aws').AWSConfigRef,
   AWSHelp = require('./aws_help'),
   BehaviorGroup = require('../models/behavior_group'),
   BehaviorGroupVersionMetaData = require('../models/behavior_group_version_meta_data'),
@@ -37,14 +38,18 @@ var React = require('react'),
   LibraryVersion = require('../models/library_version'),
   ModalScrim = require('../shared_ui/modal_scrim'),
   Notifications = require('../notifications/notifications'),
+  OAuth2ApplicationRef = require('../models/oauth2').OAuth2ApplicationRef,
   PageWithPanels = require('../shared_ui/page_with_panels'),
   ParamType = require('../models/param_type'),
+  RequiredAWSConfig = require('../models/aws').RequiredAWSConfig,
+  RequiredOAuth2Application = require('../models/oauth2').RequiredOAuth2Application,
   ResponseTemplate = require('../models/response_template'),
   ResponseTemplateConfiguration = require('./response_template_configuration'),
   ResponseTemplateHelp = require('./response_template_help'),
   SavedAnswerEditor = require('./saved_answer_editor'),
   SequentialName = require('../lib/sequential_name'),
   SharedAnswerInputSelector = require('./shared_answer_input_selector'),
+  SimpleTokenApiRef = require('../models/simple_token').SimpleTokenApiRef,
   Sticky = require('../shared_ui/sticky'),
   SVGHamburger = require('../svg/hamburger'),
   Trigger = require('../models/trigger'),
@@ -61,9 +66,9 @@ var React = require('react'),
   ImmutableObjectUtils = require('../lib/immutable_object_utils'),
   debounce = require('javascript-debounce'),
   Sort = require('../lib/sort'),
-  Magic8Ball = require('../lib/magic_8_ball'),
-  oauth2ApplicationShape = require('./oauth2_application_shape');
-  require('codemirror/mode/markdown/markdown');
+  Magic8Ball = require('../lib/magic_8_ball');
+
+require('codemirror/mode/markdown/markdown');
 
 var AWSEnvVariableStrings = {
   accessKeyName: "AWS Access Key",
@@ -84,15 +89,13 @@ const BehaviorEditor = React.createClass({
     csrfToken: React.PropTypes.string.isRequired,
     builtinParamTypes: React.PropTypes.arrayOf(React.PropTypes.instanceOf(ParamType)).isRequired,
     envVariables: React.PropTypes.arrayOf(React.PropTypes.object),
-    oauth2Applications: React.PropTypes.arrayOf(oauth2ApplicationShape),
+    awsConfigs: React.PropTypes.arrayOf(React.PropTypes.instanceOf(AWSConfigRef)),
+    oauth2Applications: React.PropTypes.arrayOf(React.PropTypes.instanceOf(OAuth2ApplicationRef)),
     oauth2Apis: React.PropTypes.arrayOf(React.PropTypes.shape({
       apiId: React.PropTypes.string.isRequired,
       name: React.PropTypes.string.isRequired
     })),
-    simpleTokenApis: React.PropTypes.arrayOf(React.PropTypes.shape({
-      apiId: React.PropTypes.string.isRequired,
-      name: React.PropTypes.string.isRequired
-    })),
+    simpleTokenApis: React.PropTypes.arrayOf(React.PropTypes.instanceOf(SimpleTokenApiRef)),
     linkedOAuth2ApplicationIds: React.PropTypes.arrayOf(React.PropTypes.string).isRequired,
     savedAnswers: React.PropTypes.arrayOf(
       React.PropTypes.shape({
@@ -129,6 +132,14 @@ const BehaviorEditor = React.createClass({
     return UniqueBy.forArray(otherSavedInputs, 'inputId');
   },
 
+  getAllAWSConfigs: function() {
+    return this.props.awsConfigs || [];
+  },
+
+  getRequiredAWSConfigs: function() {
+    return this.getBehaviorGroup().getRequiredAWSConfigs();
+  },
+
   getAllOAuth2Applications: function() {
     return this.props.oauth2Applications || [];
   },
@@ -147,20 +158,114 @@ const BehaviorEditor = React.createClass({
 
   getApiApplications: function() {
     return this.getRequiredOAuth2ApiConfigs()
-      .filter((config) => !!config.application)
-      .map((config) => config.application);
+      .filter(ea => !!ea.config);
   },
 
-  getAWSConfig: function() {
-    var selectedBehavior = this.getSelectedBehavior();
-    if (this.state) {
-      var config = this.getBehaviorConfig();
-      return config && config['aws'];
-    } else if (selectedBehavior && selectedBehavior.config) {
-      return selectedBehavior.config.aws;
+  getSelectedApiConfigId: function() {
+    return this.state ? this.state.selectedApiConfigId : undefined;
+  },
+
+  getSelectedApiConfig: function() {
+    const selectedId = this.getSelectedApiConfigId();
+    return this.getRequiredApiConfigWithId(selectedId);
+  },
+
+  getAllConfigs: function() {
+    return this.getAllAWSConfigs()
+      .concat(this.getAllOAuth2Applications())
+      .concat(this.getAllSimpleTokenApis());
+  },
+
+  getAllRequiredApiConfigs: function() {
+    return this.getRequiredAWSConfigs()
+      .concat(this.getRequiredOAuth2ApiConfigs())
+        .concat(this.getRequiredSimpleTokenApis());
+  },
+
+  getRequiredApiConfigWithId: function(id) {
+    return this.getAllRequiredApiConfigs().find(ea => ea.id === id);
+  },
+
+  getApiConfigsForSelected: function() {
+    const selected = this.getSelectedApiConfig();
+    return selected ? selected.getAllConfigsFrom(this) : this.getAllConfigs();
+  },
+
+  onAddNewConfig(required, callback) {
+    required.onAddConfigFor(this)(required, callback);
+    this.selectRequiredApiConfig(required);
+  },
+
+  onAddConfigForSelected: function() {
+    const selected = this.getSelectedApiConfig();
+    return selected ? selected.onAddConfigFor(this) : this.onAddNewConfig;
+  },
+
+  onAddNewConfigForSelected: function() {
+    const selected = this.getSelectedApiConfig();
+    return selected ? selected.onAddNewConfigFor(this) : undefined;
+  },
+
+  onRemoveNewConfig(required, callback) {
+    required.onRemoveConfigFor(this)(required, callback);
+  },
+
+  onRemoveConfigForSelected: function() {
+    const selected = this.getSelectedApiConfig();
+    return selected ? selected.onRemoveConfigFor(this) : this.onRemoveNewConfig;
+  },
+
+  onUpdateNewConfig(required, callback) {
+    required.onUpdateConfigFor(this)(required, callback);
+  },
+
+  onUpdateConfigForSelected: function() {
+    const selected = this.getSelectedApiConfig();
+    return selected ? selected.onUpdateConfigFor(this) : this.onUpdateNewConfig;
+  },
+
+  getApiLogoUrlForApi(api) {
+    return api ? (api.logoImageUrl || api.iconImageUrl) : null;
+  },
+
+  getOAuth2LogoUrlForConfig: function(config) {
+    const api = this.getOAuth2ApiWithId(config.apiId);
+    return this.getApiLogoUrlForApi(api);
+  },
+
+  getSimpleTokenLogoUrlForConfig: function(config) {
+    const api = this.getSimpleTokenApiWithId(config.apiId);
+    return this.getApiLogoUrlForApi(api);
+  },
+
+  getApiLogoUrlForConfig: function(config) {
+    return config.getApiLogoUrl(this);
+  },
+
+  getApiNameForConfig: function(config) {
+    return config.getApiName(this);
+  },
+
+  getApiConfigName: function(config) {
+    const apiName = this.getApiNameForConfig(config);
+    const configName = config.configName();
+    if (configName.toLowerCase().includes(apiName.toLowerCase())) {
+      return configName;
+    } else if (configName) {
+      return `${apiName} — ${configName}`;
     } else {
-      return undefined;
+      return apiName;
     }
+  },
+
+  getOAuth2ApiNameForConfig: function(config) {
+    const api = this.getOAuth2ApiWithId(config.apiId);
+    return api ? api.name : "";
+  },
+
+  getSimpleTokenNameForConfig: function(config) {
+    const api = this.getSimpleTokenApiWithId(config.apiId);
+    return api ? api.displayName : "";
   },
 
   getEditableName: function() {
@@ -329,23 +434,51 @@ const BehaviorEditor = React.createClass({
     }
   },
 
+  getRequiredAWSConfigsWithNoMatchingAWSConfig: function() {
+    return this.getRequiredAWSConfigs().filter(ea => !ea.config);
+  },
+
+  buildAWSNotifications: function() {
+    if (this.isConfiguringApi()) {
+      return [];
+    }
+    return this.getRequiredAWSConfigsWithNoMatchingAWSConfig().map(ea => new NotificationData({
+      kind: "required_aws_config_without_config",
+      name: ea.nameInCode,
+      requiredAWSConfig: ea,
+      existingAWSConfigs: this.getAllAWSConfigs(),
+      onUpdateAWSConfig: this.onUpdateAWSConfig,
+      onNewAWSConfig: this.onNewAWSConfig,
+      onConfigClick: this.onApiConfigClick.bind(this, ea)
+    }));
+  },
+
   getOAuth2ApiWithId: function(apiId) {
     return this.props.oauth2Apis.find(ea => ea.apiId === apiId);
   },
 
+  getSimpleTokenApiWithId: function(tokenId) {
+    return this.props.simpleTokenApis.find(ea => ea.id === tokenId);
+  },
+
   getRequiredOAuth2ApiConfigsWithNoApplication: function() {
-    return this.getRequiredOAuth2ApiConfigs().filter(ea => !ea.application);
+    return this.getRequiredOAuth2ApiConfigs().filter(ea => !ea.config);
   },
 
   getOAuth2ApplicationsRequiringAuth: function() {
     return this.getApiApplications().filter(ea => {
-      return !this.props.linkedOAuth2ApplicationIds.includes(ea.applicationId);
+      return !this.props.linkedOAuth2ApplicationIds.includes(ea.config.id);
     });
   },
 
+  CONFIGURE_API_NAME: "configureApi",
+
+  isConfiguringApi: function() {
+    return this.props.activePanelName === this.CONFIGURE_API_NAME;
+  },
+
   buildOAuthApplicationNotifications: function() {
-    const behavior = this.getSelectedBehavior();
-    if (!behavior) {
+    if (this.isConfiguringApi()) {
       return [];
     }
     return this.getRequiredOAuth2ApiConfigsWithNoApplication().map(ea => new NotificationData({
@@ -353,8 +486,9 @@ const BehaviorEditor = React.createClass({
       name: this.getOAuth2ApiWithId(ea.apiId).name,
       requiredApiConfig: ea,
       existingOAuth2Applications: this.getAllOAuth2Applications(),
-      onAddOAuth2Application: this.onAddOAuth2Application,
-      onNewOAuth2Application: this.onNewOAuth2Application
+      onUpdateOAuth2Application: this.onUpdateOAuth2Application,
+      onNewOAuth2Application: this.onNewOAuth2Application,
+      onConfigClick: this.onApiConfigClick.bind(this, ea)
     }));
   },
 
@@ -498,6 +632,7 @@ const BehaviorEditor = React.createClass({
   buildNotifications: function() {
     return [].concat(
       this.buildEnvVarNotifications(),
+      this.buildAWSNotifications(),
       this.buildOAuthApplicationNotifications(),
       this.buildDataTypeNotifications(),
       this.buildTemplateNotifications(),
@@ -785,11 +920,15 @@ const BehaviorEditor = React.createClass({
     }).then((response) => response.json())
       .then((json) => {
         if (json.id) {
+          const group = this.getBehaviorGroup();
+          const teamId = group.teamId;
+          const groupId = group.id;
           if (this.state.shouldRedirectToAddNewOAuth2App) {
             const config = this.state.requiredOAuth2ApiConfig;
-            const apiId = config && config.apiId;
-            const recommendedScope = config && config.recommendedScope;
-            window.location.href = jsRoutes.controllers.OAuth2ApplicationController.newApp(apiId, recommendedScope, this.getBehaviorGroup().teamId, this.getSelectedId()).url;
+            window.location.href = jsRoutes.controllers.OAuth2ApplicationController.newApp(teamId, groupId, this.getSelectedId(), config.nameInCode).url;
+          } else if (this.state.shouldRedirectToAddNewAWSConfig) {
+            const config = this.state.requiredAWSConfig;
+            window.location.href = jsRoutes.controllers.AWSConfigController.newConfig(teamId, groupId, this.getSelectedId(), config.nameInCode).url;
           } else {
             const newProps = {
               group: BehaviorGroup.fromJson(json),
@@ -965,10 +1104,6 @@ const BehaviorEditor = React.createClass({
 
   toggleSharedAnswerInputSelector: function() {
     this.toggleActivePanel('sharedAnswerInputSelector', true);
-  },
-
-  toggleAWSConfig: function() {
-    this.setConfigProperty('aws', this.getAWSConfig() ? undefined : {});
   },
 
   toggleBehaviorSwitcher: function() {
@@ -1349,28 +1484,71 @@ const BehaviorEditor = React.createClass({
     });
   },
 
-  onAddOAuth2Application: function(appToAdd) {
-    const existing = this.getRequiredOAuth2ApiConfigs();
-    const indexToReplace = existing.findIndex(ea => ea.apiId === appToAdd.apiId && !ea.application);
-    const toReplace = existing[indexToReplace];
-    const configs = existing.slice();
-    if (indexToReplace >= 0) {
-      configs.splice(indexToReplace, 1);
-    }
-    const toAdd = Object.assign({}, toReplace, {
-      apiId: appToAdd.apiId,
-      application: appToAdd
-    });
-    const newConfigs =  configs.concat([toAdd]);
-    this.updateGroupStateWith(this.getBehaviorGroup().clone({ requiredOAuth2ApiConfigs: newConfigs }));
+  onAddAWSConfig: function(toAdd, callback) {
+    const existing = this.getRequiredAWSConfigs();
+    const newConfigs = existing.concat([toAdd]);
+    this.updateGroupStateWith(this.getBehaviorGroup().clone({ requiredAWSConfigs: newConfigs }), callback);
   },
 
-  onRemoveOAuth2Application: function(appToRemove) {
-    const existing = this.getRequiredOAuth2ApiConfigs();
-    const newConfigs = existing.filter(function(config) {
-      return config.application && config.application.applicationId !== appToRemove.applicationId;
+  onRemoveAWSConfig: function(config, callback) {
+    const existing = this.getRequiredAWSConfigs();
+    const newConfigs = existing.filter(ea => {
+      return ea.id !== config.id;
     });
-    this.updateGroupStateWith(this.getBehaviorGroup().clone({ requiredOAuth2ApiConfigs: newConfigs }));
+    this.updateGroupStateWith(this.getBehaviorGroup().clone({ requiredAWSConfigs: newConfigs }), () => {
+      this.props.onClearActivePanel();
+      if (callback) {
+        callback();
+      }
+    });
+  },
+
+  onUpdateAWSConfig: function(config, callback) {
+    const configs = this.getRequiredAWSConfigs().slice();
+    const indexToReplace = configs.findIndex(ea => ea.id === config.id);
+    configs[indexToReplace] = config;
+    this.updateGroupStateWith(this.getBehaviorGroup().clone({ requiredAWSConfigs: configs }), callback);
+  },
+
+  addNewAWSConfig: function(required) {
+    const requiredToUse = required || new RequiredAWSConfig({
+      id: ID.next(),
+      apiId: 'aws'
+    });
+    this.onNewAWSConfig(requiredToUse);
+  },
+
+  onAddOAuth2Application: function(toAdd, callback) {
+    const existing = this.getRequiredOAuth2ApiConfigs();
+    const newApplications = existing.concat([toAdd]);
+    this.updateGroupStateWith(this.getBehaviorGroup().clone({ requiredOAuth2ApiConfigs: newApplications }), callback);
+  },
+
+  onRemoveOAuth2Application: function(toRemove, callback) {
+    const existing = this.getRequiredOAuth2ApiConfigs();
+    const newApplications = existing.filter(function(ea) {
+      return ea.id !== toRemove.id;
+    });
+    this.updateGroupStateWith(this.getBehaviorGroup().clone({ requiredOAuth2ApiConfigs: newApplications }), () => {
+      this.props.onClearActivePanel();
+      if (callback) {
+        callback();
+      }
+    });
+  },
+
+  onUpdateOAuth2Application: function(config, callback) {
+    const configs = this.getRequiredOAuth2ApiConfigs().slice();
+    const indexToReplace = configs.findIndex(ea => ea.id === config.id);
+    configs[indexToReplace] = config;
+    this.updateGroupStateWith(this.getBehaviorGroup().clone({ requiredOAuth2ApiConfigs: configs }), callback);
+  },
+
+  addNewOAuth2Application: function(required) {
+    const requiredToUse = required || new RequiredOAuth2Application({
+      id: ID.next()
+    });
+    this.onNewOAuth2Application(requiredToUse);
   },
 
   onAddSimpleTokenApi: function(toAdd) {
@@ -1383,6 +1561,20 @@ const BehaviorEditor = React.createClass({
       return ea.apiId !== toRemove.apiId;
     });
     this.updateGroupStateWith(this.getBehaviorGroup().clone({ requiredSimpleTokenApis: newConfigs }));
+  },
+
+  onUpdateSimpleTokenApi: function(config, callback) {
+    const configs = this.getRequiredSimpleTokenApis().slice();
+    const indexToReplace = configs.findIndex(ea => ea.id === config.id);
+    configs[indexToReplace] = config;
+    this.updateGroupStateWith(this.getBehaviorGroup().clone({ requiredSimpleTokenApis: configs }), callback);
+  },
+
+  onNewAWSConfig: function(requiredAWSConfig) {
+    this.setState({
+      shouldRedirectToAddNewAWSConfig: true,
+      requiredAWSConfig: requiredAWSConfig
+    }, () => { this.checkDataAndCallback(this.onSaveBehaviorGroup); });
   },
 
   onNewOAuth2Application: function(requiredOAuth2ApiConfig) {
@@ -1514,6 +1706,8 @@ const BehaviorEditor = React.createClass({
       onNextNewEnvVar: null,
       envVariableAdderPrompt: null,
       redirectValue: "",
+      requiredAWSConfig: null,
+      shouldRedirectToAddNewAWSConfig: false,
       requiredOAuth2ApiConfig: null,
       shouldRedirectToAddNewOAuth2App: false,
       paramNameToSync: null,
@@ -1524,6 +1718,7 @@ const BehaviorEditor = React.createClass({
       animationDisabled: false,
       lastSavedDataStorageItem: null,
       nodeModuleVersions: [],
+      selectedApiConfigId: null,
       newerVersionOnServer: null,
       errorReachingServer: null
     };
@@ -1559,31 +1754,6 @@ const BehaviorEditor = React.createClass({
     );
   },
 
-  toggleAPISelectorMenu: function() {
-    this.toggleActiveDropdown('apiSelectorDropdown');
-  },
-
-  renderAPISelector: function() {
-    return (
-      <APISelectorMenu
-        openWhen={this.getActiveDropdown() === 'apiSelectorDropdown'}
-        onAWSClick={this.toggleAWSConfig}
-        behaviorConfig={this.getBehaviorConfig()}
-        toggle={this.toggleAPISelectorMenu}
-        allOAuth2Applications={this.getAllOAuth2Applications()}
-        requiredOAuth2ApiConfigs={this.getRequiredOAuth2ApiConfigs()}
-        allSimpleTokenApis={this.getAllSimpleTokenApis()}
-        requiredSimpleTokenApis={this.getRequiredSimpleTokenApis()}
-        onAddOAuth2Application={this.onAddOAuth2Application}
-        onRemoveOAuth2Application={this.onRemoveOAuth2Application}
-        onAddSimpleTokenApi={this.onAddSimpleTokenApi}
-        onRemoveSimpleTokenApi={this.onRemoveSimpleTokenApi}
-        onNewOAuth2Application={this.onNewOAuth2Application}
-        getOAuth2ApiWithId={this.getOAuth2ApiWithId}
-      />
-    );
-  },
-
   renderCodeEditor: function(props) {
     return (
       <CodeConfiguration
@@ -1600,15 +1770,11 @@ const BehaviorEditor = React.createClass({
         onToggleActivePanel={this.toggleActivePanel}
         animationIsDisabled={this.animationIsDisabled()}
 
-        onToggleAWSConfig={this.toggleAWSConfig}
         behaviorConfig={this.getBehaviorConfig()}
-        onAWSAddNewEnvVariable={this.onAWSAddNewEnvVariable}
-        onAWSConfigChange={this.setAWSEnvVar}
-
-        apiSelector={this.renderAPISelector()}
 
         inputs={this.getInputs()}
         systemParams={props.systemParams || this.getSystemParams()}
+        requiredAWSConfigs={this.getRequiredAWSConfigs()}
         apiApplications={this.getApiApplications()}
 
         functionBody={this.getFunctionBody()}
@@ -1628,6 +1794,10 @@ const BehaviorEditor = React.createClass({
   confirmDeleteText: function() {
     const selected = this.getSelected();
     return selected ? selected.confirmDeleteText() : "";
+  },
+
+  toggleApiAdderDropdown: function() {
+    this.toggleActiveDropdown("apiConfigAdderDropdown");
   },
 
   renderFooter: function() {
@@ -1662,6 +1832,32 @@ const BehaviorEditor = React.createClass({
               </Collapsible>
             </div>
           ) : null}
+
+          <Collapsible ref={this.CONFIGURE_API_NAME}
+            revealWhen={this.props.activePanelName === this.CONFIGURE_API_NAME}
+            onChange={this.layoutDidUpdate}
+            animationDisabled={this.state.animationDisabled}
+          >
+            <APIConfigPanel
+              openWhen={this.getActiveDropdown() === 'apiConfigAdderDropdown'}
+              toggle={this.toggleApiAdderDropdown}
+              getActiveDropdown={this.getActiveDropdown}
+              requiredConfig={this.getSelectedApiConfig()}
+              getApiLogoUrlForConfig={this.getApiLogoUrlForConfig}
+              getApiNameForConfig={this.getApiNameForConfig}
+              getApiConfigName={this.getApiConfigName}
+              allConfigs={this.getApiConfigsForSelected()}
+              onAddConfig={this.onAddConfigForSelected()}
+              onAddNewConfig={this.onAddNewConfigForSelected()}
+              onRemoveConfig={this.onRemoveConfigForSelected()}
+              onUpdateConfig={this.onUpdateConfigForSelected()}
+              onDoneClick={this.props.onClearActivePanel}
+              addNewAWSConfig={this.addNewAWSConfig}
+              addNewOAuth2Application={this.addNewOAuth2Application}
+              animationDisabled={this.state.animationDisabled}
+            >
+            </APIConfigPanel>
+          </Collapsible>
 
           <Collapsible ref="confirmUndo" revealWhen={this.props.activePanelName === 'confirmUndo'} onChange={this.layoutDidUpdate}>
             <ConfirmActionPanel confirmText="Undo changes" onConfirmClick={this.undoChanges} onCancelClick={this.props.onClearActivePanel}>
@@ -2037,6 +2233,26 @@ const BehaviorEditor = React.createClass({
     this.addNewLibraryImpl(libraryIdToClone);
   },
 
+  selectRequiredApiConfig: function(required, callback) {
+    this.setState({
+      selectedApiConfigId: required.id
+    }, callback);
+  },
+
+  toggleConfigureApiPanel: function() {
+    this.props.onToggleActivePanel(this.CONFIGURE_API_NAME, true);
+  },
+
+  onApiConfigClick: function(required) {
+    this.selectRequiredApiConfig(required, this.toggleConfigureApiPanel);
+  },
+
+  onAddApiConfigClick: function() {
+    this.setState({
+      selectedApiConfigId: null
+    }, this.toggleConfigureApiPanel);
+  },
+
   renderBehaviorSwitcher: function() {
     return (
       <div ref="leftColumn"
@@ -2069,6 +2285,12 @@ const BehaviorEditor = React.createClass({
               addNewLibrary={this.addNewLibrary}
               isModified={this.editableIsModified}
               onUpdateNodeModules={this.updateNodeModules}
+              requiredAWSConfigs={this.getRequiredAWSConfigs()}
+              requiredOAuth2Applications={this.getRequiredOAuth2ApiConfigs()}
+              requiredSimpleTokenApis={this.getRequiredSimpleTokenApis()}
+              onApiConfigClick={this.onApiConfigClick}
+              onAddApiConfigClick={this.onAddApiConfigClick}
+              getApiConfigName={this.getApiConfigName}
             />
           </Sticky>
         </Collapsible>
@@ -2260,13 +2482,10 @@ const BehaviorEditor = React.createClass({
           onToggleActivePanel={this.toggleActivePanel}
           animationIsDisabled={this.animationIsDisabled()}
 
-          onToggleAWSConfig={this.toggleAWSConfig}
           behaviorConfig={this.getBehaviorConfig()}
-          onAWSAddNewEnvVariable={this.onAWSAddNewEnvVariable}
-          onAWSConfigChange={this.setAWSEnvVar}
 
-          apiSelector={this.renderAPISelector()}
           systemParams={this.getSystemParams()}
+          requiredAWSConfigs={this.getRequiredAWSConfigs()}
           apiApplications={this.getApiApplications()}
 
           onCursorChange={this.ensureCursorVisible}

@@ -14,7 +14,7 @@ import json.Formatting._
 import json.NodeModuleVersionData
 import models.behaviors._
 import models.behaviors.behaviorversion.BehaviorVersion
-import models.behaviors.config.awsconfig.AWSConfig
+import models.behaviors.config.requiredawsconfig.RequiredAWSConfig
 import models.behaviors.config.requiredoauth2apiconfig.RequiredOAuth2ApiConfig
 import models.behaviors.config.requiredsimpletokenapi.RequiredSimpleTokenApi
 import models.behaviors.conversations.conversation.Conversation
@@ -136,7 +136,7 @@ class AWSLambdaServiceImpl @Inject() (
                             payloadData: Seq[(String, JsValue)],
                             team: Team,
                             event: Event,
-                            requiredOAuth2ApiConfigs: Seq[RequiredOAuth2ApiConfig],
+                            apiConfigInfo: ApiConfigInfo,
                             environmentVariables: Seq[EnvironmentVariable],
                             successFn: InvokeResult => BotResult,
                             maybeConversation: Option[Conversation],
@@ -145,13 +145,7 @@ class AWSLambdaServiceImpl @Inject() (
     for {
       userInfo <- event.userInfoAction(ws, dataService, cacheService)
       result <- {
-        val oauth2ApplicationsNeedingRefresh =
-          requiredOAuth2ApiConfigs.flatMap(_.maybeApplication).
-            filter { app =>
-              !userInfo.links.exists(_.externalSystem == app.name)
-            }.
-            filterNot(_.api.grantType.requiresAuth)
-        DBIO.from(TeamInfo.forOAuth2Apps(oauth2ApplicationsNeedingRefresh, team, ws).flatMap { teamInfo =>
+        DBIO.from(TeamInfo.forConfig(apiConfigInfo, userInfo, team, ws).flatMap { teamInfo =>
           val payloadJson = JsObject(
             payloadData ++ contextParamDataFor(environmentVariables, userInfo, teamInfo, token)
           )
@@ -169,7 +163,7 @@ class AWSLambdaServiceImpl @Inject() (
                   if (!isRetrying) {
                     Logger.info(s"retrying behavior invocation after resource not found")
                     Thread.sleep(2000)
-                    dataService.run(invokeFunctionAction(functionName, token, payloadData, team, event, requiredOAuth2ApiConfigs, environmentVariables, successFn, maybeConversation, isRetrying=true))
+                    dataService.run(invokeFunctionAction(functionName, token, payloadData, team, event, apiConfigInfo, environmentVariables, successFn, maybeConversation, isRetrying=true))
                   } else {
                     throw e
                   }
@@ -191,7 +185,10 @@ class AWSLambdaServiceImpl @Inject() (
                     maybeConversation: Option[Conversation]
                   ): DBIO[BotResult] = {
     for {
+      awsConfigs <- dataService.awsConfigs.allForAction(behaviorVersion.team)
+      requiredAWSConfigs <- dataService.requiredAWSConfigs.allForAction(behaviorVersion.groupVersion)
       requiredOAuth2ApiConfigs <- dataService.requiredOAuth2ApiConfigs.allForAction(behaviorVersion.groupVersion)
+      requiredSimpleTokenApis <- dataService.requiredSimpleTokenApis.allForAction(behaviorVersion.groupVersion)
       result <- if (behaviorVersion.functionBody.isEmpty) {
         DBIO.successful(SuccessResult(event, maybeConversation, JsNull, JsNull, parametersWithValues, behaviorVersion.maybeResponseTemplate, None, behaviorVersion.forcePrivateResponse))
       } else {
@@ -204,7 +201,7 @@ class AWSLambdaServiceImpl @Inject() (
             parametersWithValues.map { ea => (ea.invocationName, ea.preparedValue) },
             behaviorVersion.team,
             event,
-            requiredOAuth2ApiConfigs,
+            ApiConfigInfo(awsConfigs, requiredAWSConfigs, requiredOAuth2ApiConfigs, requiredSimpleTokenApis),
             environmentVariables,
             result => {
               val logString = new java.lang.String(new BASE64Decoder().decodeBuffer(result.getLogResult))
@@ -242,26 +239,37 @@ class AWSLambdaServiceImpl @Inject() (
     (requiredForCode ++ requiredForLibs).distinct
   }
 
-  private def awsCodeFor(maybeAwsConfig: Option[AWSConfig]): String = {
-    maybeAwsConfig.map { awsConfig =>
+  private def awsConfigCodeFor(required: RequiredAWSConfig): String = {
+    if (required.isConfigured) {
+      val teamInfoPath = s"event.$CONTEXT_PARAM.teamInfo.aws.${required.nameInCode}"
+      s"""$CONTEXT_PARAM.aws.${required.nameInCode} = {
+         |  accessKeyId: ${teamInfoPath}.accessKeyId,
+         |  secretAccessKey: ${teamInfoPath}.secretAccessKey,
+         |  region: ${teamInfoPath}.region,
+         |};
+         |
+     """.stripMargin
+    } else {
+      ""
+    }
+  }
+
+  private def awsCodeFor(apiConfigInfo: ApiConfigInfo): String = {
+    if (apiConfigInfo.requiredAWSConfigs.isEmpty) {
+      ""
+    } else {
       s"""
-         |var AWS = require('aws-sdk');
+         |$CONTEXT_PARAM.aws = {};
          |
-         |AWS.config.update({
-         |  ${awsConfig.maybeAccessKeyName.map(n => s"accessKeyId: $CONTEXT_PARAM.env.$n,").getOrElse("")}
-         |  ${awsConfig.maybeSecretKeyName.map(n => s"secretAccessKey: $CONTEXT_PARAM.env.$n,").getOrElse("")}
-         |  ${awsConfig.maybeRegionName.map(n => s"region: $CONTEXT_PARAM.env.$n").getOrElse("")}
-         | });
-         |
-         | $CONTEXT_PARAM.AWS = AWS;
+         |${apiConfigInfo.requiredAWSConfigs.map(awsConfigCodeFor).mkString("\n")}
        """.stripMargin
-    }.getOrElse("")
+    }
   }
 
   private def accessTokenCodeFor(app: RequiredOAuth2ApiConfig): String = {
     app.maybeApplication.map { application =>
       val infoKey =  if (application.api.grantType.requiresAuth) { "userInfo" } else { "teamInfo" }
-      s"""$CONTEXT_PARAM.accessTokens.${application.keyName} = event.$CONTEXT_PARAM.$infoKey.links.find((ea) => ea.externalSystem == "${application.name}").token;"""
+      s"""$CONTEXT_PARAM.accessTokens.${app.nameInCode} = event.$CONTEXT_PARAM.$infoKey.links.find((ea) => ea.externalSystem === "${application.name}").token;"""
     }.getOrElse("")
   }
 
@@ -270,8 +278,7 @@ class AWSLambdaServiceImpl @Inject() (
   }
 
   private def accessTokenCodeFor(required: RequiredSimpleTokenApi): String = {
-    val api = required.api
-    s"""$CONTEXT_PARAM.accessTokens.${api.keyName} = event.$CONTEXT_PARAM.userInfo.links.find((ea) => ea.externalSystem == "${api.name}").token;"""
+    s"""$CONTEXT_PARAM.accessTokens.${required.nameInCode} = event.$CONTEXT_PARAM.userInfo.links.find((ea) => ea.externalSystem === "${required.api.name}").token;"""
   }
 
   private def simpleTokensCodeFor(requiredSimpleTokenApis: Seq[RequiredSimpleTokenApi]): String = {
@@ -287,9 +294,7 @@ class AWSLambdaServiceImpl @Inject() (
   private def nodeCodeFor(
                            functionBody: String,
                            params: Array[String],
-                           maybeAwsConfig: Option[AWSConfig],
-                           requiredOAuth2ApiConfigs: Seq[RequiredOAuth2ApiConfig],
-                           requiredSimpleTokenApis: Seq[RequiredSimpleTokenApi]
+                           apiConfigInfo: ApiConfigInfo
                          ): String = {
     val paramsFromEvent = params.indices.map(i => s"event.${invocationParamFor(i)}")
     val invocationParamsString = (paramsFromEvent ++ Array(s"event.$CONTEXT_PARAM")).mkString(", ")
@@ -315,10 +320,10 @@ class AWSLambdaServiceImpl @Inject() (
        |  process.removeAllListeners('unhandledRejection');
        |  process.on('unhandledRejection', $CONTEXT_PARAM.error);
        |
-       |  ${awsCodeFor(maybeAwsConfig)}
+       |  ${awsCodeFor(apiConfigInfo)}
        |  $CONTEXT_PARAM.accessTokens = {};
-       |  ${accessTokensCodeFor(requiredOAuth2ApiConfigs)}
-       |  ${simpleTokensCodeFor(requiredSimpleTokenApis)}
+       |  ${accessTokensCodeFor(apiConfigInfo.requiredOAuth2ApiConfigs)}
+       |  ${simpleTokensCodeFor(apiConfigInfo.requiredSimpleTokenApis)}
        |
        |  try {
        |    fn($invocationParamsString);
@@ -358,9 +363,7 @@ class AWSLambdaServiceImpl @Inject() (
                                        functionBody: String,
                                        params: Array[String],
                                        libraries: Seq[LibraryVersion],
-                                       maybeAWSConfig: Option[AWSConfig],
-                                       requiredOAuth2ApiConfigs: Seq[RequiredOAuth2ApiConfig],
-                                       requiredSimpleTokenApis: Seq[RequiredSimpleTokenApi],
+                                       apiConfigInfo: ApiConfigInfo,
                                        maybePreviousFunctionInfo: Option[PreviousFunctionInfo],
                                        forceNodeModuleUpdate: Boolean
                                      ): Future[Unit] = {
@@ -368,7 +371,7 @@ class AWSLambdaServiceImpl @Inject() (
     val path = Path(dirName)
     path.createDirectory()
 
-    writeFileNamed(s"$dirName/index.js", nodeCodeFor(functionBody, params, maybeAWSConfig, requiredOAuth2ApiConfigs, requiredSimpleTokenApis))
+    writeFileNamed(s"$dirName/index.js", nodeCodeFor(functionBody, params, apiConfigInfo))
     libraries.foreach { ea =>
       writeFileNamed(s"$dirName/${ea.jsName}", ea.code)
     }
@@ -439,9 +442,7 @@ class AWSLambdaServiceImpl @Inject() (
                          functionBody: String,
                          params: Array[String],
                          libraries: Seq[LibraryVersion],
-                         maybeAWSConfig: Option[AWSConfig],
-                         requiredOAuth2ApiConfigs: Seq[RequiredOAuth2ApiConfig],
-                         requiredSimpleTokenApis: Seq[RequiredSimpleTokenApi],
+                         apiConfigInfo: ApiConfigInfo,
                          maybePreviousFunctionInfo: Option[PreviousFunctionInfo],
                          forceNodeModuleUpdate: Boolean
                        ): Future[ByteBuffer] = {
@@ -450,9 +451,7 @@ class AWSLambdaServiceImpl @Inject() (
       functionBody,
       params,
       libraries,
-      maybeAWSConfig,
-      requiredOAuth2ApiConfigs,
-      requiredSimpleTokenApis,
+      apiConfigInfo,
       maybePreviousFunctionInfo,
       forceNodeModuleUpdate
     ).map { _ =>
@@ -518,9 +517,7 @@ class AWSLambdaServiceImpl @Inject() (
                       functionBody: String,
                       params: Array[String],
                       libraries: Seq[LibraryVersion],
-                      maybeAWSConfig: Option[AWSConfig],
-                      requiredOAuth2ApiConfigs: Seq[RequiredOAuth2ApiConfig],
-                      requiredSimpleTokenApis: Seq[RequiredSimpleTokenApi],
+                      apiConfigInfo: ApiConfigInfo,
                       maybePreviousFunctionInfo: Option[PreviousFunctionInfo],
                       forceNodeModuleUpdate: Boolean
                     ): Future[Unit] = {
@@ -531,19 +528,15 @@ class AWSLambdaServiceImpl @Inject() (
         Future.successful(Unit)
       } else {
         for {
-          functionCode <- getZipFor(
-            functionName,
-            functionBody,
-            params,
-            libraries,
-            maybeAWSConfig,
-            requiredOAuth2ApiConfigs,
-            requiredSimpleTokenApis,
-            maybePreviousFunctionInfo,
-            forceNodeModuleUpdate
-          ).map { zip => new FunctionCode().
-            withZipFile(zip)
-          }
+          functionCode <-getZipFor(
+              functionName,
+              functionBody,
+              params,
+              libraries,
+              apiConfigInfo,
+              maybePreviousFunctionInfo,
+              forceNodeModuleUpdate
+            ).map { zip => new FunctionCode().withZipFile(zip) }
           createFunctionRequest <- Future.successful(
             new CreateFunctionRequest().
               withFunctionName(functionName).
@@ -566,9 +559,7 @@ class AWSLambdaServiceImpl @Inject() (
                          functionBody: String,
                          params: Array[String],
                          libraries: Seq[LibraryVersion],
-                         maybeAWSConfig: Option[AWSConfig],
-                         requiredOAuth2ApiConfigs: Seq[RequiredOAuth2ApiConfig],
-                         requiredSimpleTokenApis: Seq[RequiredSimpleTokenApi],
+                         apiConfigInfo: ApiConfigInfo,
                          forceNodeModuleUpdate: Boolean
                        ): Future[Unit] = {
     for {
@@ -584,9 +575,7 @@ class AWSLambdaServiceImpl @Inject() (
         functionBody,
         params,
         libraries,
-        maybeAWSConfig,
-        requiredOAuth2ApiConfigs,
-        requiredSimpleTokenApis,
+        apiConfigInfo,
         maybePreviousFunctionInfo,
         forceNodeModuleUpdate
       )

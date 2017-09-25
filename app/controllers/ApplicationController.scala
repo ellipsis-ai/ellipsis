@@ -79,12 +79,14 @@ class ApplicationController @Inject() (
       case Accepts.Html() => {
         for {
           teamAccess <- eventualTeamAccess
-          result <- teamAccess.maybeTargetTeam.map { team =>
-            Future.successful(Ok(views.html.application.index(viewConfig(Some(teamAccess)), maybeTeamId, maybeBranch)))
-          }.getOrElse {
-            reAuthFor(request, maybeTeamId)
-          }
-        } yield result
+        } yield teamAccess.maybeTargetTeam.map { team =>
+          Ok(views.html.application.index(viewConfig(Some(teamAccess)), maybeTeamId, maybeBranch))
+        }.getOrElse {
+          notFoundWithLoginFor(
+            request,
+            Some(teamAccess)
+          )
+        }
       }
     }
   }
@@ -100,12 +102,16 @@ class ApplicationController @Inject() (
       alreadyInstalledData <- Future.sequence(alreadyInstalled.map { group =>
         BehaviorGroupData.maybeFor(group.id, user, None, dataService)
       }).map(_.flatten)
-      result <- teamAccess.maybeTargetTeam.map { team =>
-        Future.successful(Ok(Json.toJson(githubService.publishedBehaviorGroupsFor(team, maybeBranch, alreadyInstalledData))))
+    } yield teamAccess.maybeTargetTeam.map { team =>
+      Ok(Json.toJson(githubService.publishedBehaviorGroupsFor(team, maybeBranch, alreadyInstalledData)))
+    }.getOrElse {
+      val message = maybeTeamId.map { teamId =>
+        s"You can't access this for team ${teamId}"
       }.getOrElse {
-        reAuthFor(request, maybeTeamId)
+        "You can't access this"
       }
-    } yield result
+      Forbidden(message)
+    }
   }
 
   case class SelectedBehaviorGroupsInfo(behaviorGroupIds: Seq[String])

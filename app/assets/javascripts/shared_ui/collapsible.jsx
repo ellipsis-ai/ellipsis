@@ -34,6 +34,11 @@ bounds, max-height/width and overflow get cleared after reveal, and reset before
     };
   },
 
+  animationDisabled: function() {
+    const container = this.refs.container;
+    return this.props.animationDisabled || !container || !container.parentElement.offsetHeight;
+  },
+
   setContainerStyle: function(name, value) {
     if (this.refs.container) {
       this.refs.container.style[name] = value;
@@ -51,7 +56,7 @@ bounds, max-height/width and overflow get cleared after reveal, and reset before
     return this.animationDurationSeconds() * 1000;
   },
   after: function(callback) {
-    if (this.props.animationDisabled) {
+    if (this.animationDisabled()) {
       callback();
     } else {
       this.timers.push(setTimeout(() => {
@@ -66,7 +71,7 @@ bounds, max-height/width and overflow get cleared after reveal, and reset before
         this.props.onChange();
       }
     };
-    if (this.props.animationDisabled) {
+    if (this.animationDisabled()) {
       f();
     } else {
       this.timers.push(setTimeout(f, this.animationDurationMilliseconds()));
@@ -75,7 +80,7 @@ bounds, max-height/width and overflow get cleared after reveal, and reset before
 
   addTransition: function() {
     var propName = this.isVertical() ? 'max-height' : 'max-width';
-    this.setContainerStyle("transition", this.props.animationDisabled ?
+    this.setContainerStyle("transition", this.animationDisabled() ?
       null : `${propName} ${this.animationDurationSeconds()}s ease`);
   },
   removeTransition: function() {
@@ -123,7 +128,7 @@ bounds, max-height/width and overflow get cleared after reveal, and reset before
 
   collapse: function() {
     this.setState({
-      isAnimating: !this.props.animationDisabled
+      isAnimating: !this.animationDisabled()
     }, () => {
       this.removeTransition();
       if (this.isVertical()) {
@@ -153,7 +158,7 @@ bounds, max-height/width and overflow get cleared after reveal, and reset before
 
   reveal: function() {
     this.setState({
-      isAnimating: !this.props.animationDisabled
+      isAnimating: !this.animationDisabled()
     }, () => {
       this.setVisible();
       this.addTransition();

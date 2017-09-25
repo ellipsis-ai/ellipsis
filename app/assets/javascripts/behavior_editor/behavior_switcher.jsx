@@ -1,9 +1,13 @@
 define(function(require) {
   var React = require('react'),
+    ApiConfigList = require('./api_config_list'),
     BehaviorSwitcherGroup = require('./behavior_switcher_group'),
     BehaviorVersion = require('../models/behavior_version'),
     LibraryVersion = require('../models/library_version'),
-    NodeModuleVersion = require('../models/node_module_version');
+    NodeModuleVersion = require('../models/node_module_version'),
+    RequiredAWSConfig = require('../models/aws').RequiredAWSConfig,
+    RequiredOAuth2Application = require('../models/oauth2').RequiredOAuth2Application,
+    RequiredSimpleTokenApi = require('../models/simple_token').RequiredSimpleTokenApi;
 
   return React.createClass({
     displayName: 'BehaviorSwitcher',
@@ -21,7 +25,13 @@ define(function(require) {
       addNewDataType: React.PropTypes.func.isRequired,
       addNewLibrary: React.PropTypes.func.isRequired,
       isModified: React.PropTypes.func.isRequired,
-      onUpdateNodeModules: React.PropTypes.func.isRequired
+      onUpdateNodeModules: React.PropTypes.func.isRequired,
+      requiredAWSConfigs: React.PropTypes.arrayOf(React.PropTypes.instanceOf(RequiredAWSConfig)).isRequired,
+      requiredOAuth2Applications: React.PropTypes.arrayOf(React.PropTypes.instanceOf(RequiredOAuth2Application)).isRequired,
+      requiredSimpleTokenApis: React.PropTypes.arrayOf(React.PropTypes.instanceOf(RequiredSimpleTokenApi)).isRequired,
+      onApiConfigClick: React.PropTypes.func.isRequired,
+      onAddApiConfigClick: React.PropTypes.func.isRequired,
+      getApiConfigName: React.PropTypes.func.isRequired
     },
 
     getSkillTitle: function() {
@@ -145,7 +155,17 @@ define(function(require) {
                 isModified={this.props.isModified}
               />
 
+              <ApiConfigList
+                requiredAWSConfigs={this.props.requiredAWSConfigs}
+                requiredOAuth2Applications={this.props.requiredOAuth2Applications}
+                requiredSimpleTokenApis={this.props.requiredSimpleTokenApis}
+                onApiConfigClick={this.props.onApiConfigClick}
+                onAddApiConfigClick={this.props.onAddApiConfigClick}
+                getApiConfigName={this.props.getApiConfigName}
+              />
+
               {this.renderNodeModules()}
+
             </div>
           ) : null}
 

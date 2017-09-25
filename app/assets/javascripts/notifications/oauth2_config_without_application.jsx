@@ -1,5 +1,9 @@
 define(function(require) {
-  var React = require('react');
+  var
+    React = require('react'),
+    oauth2 = require('../models/oauth2'),
+    OAuth2ApplicationRef = oauth2.OAuth2ApplicationRef,
+    RequiredOAuth2Application = oauth2.RequiredOAuth2Application;
 
   return React.createClass({
     displayName: 'NotificationForMissingOAuth2Application',
@@ -7,27 +11,11 @@ define(function(require) {
       details: React.PropTypes.arrayOf(React.PropTypes.shape({
         kind: React.PropTypes.string.isRequired,
         name: React.PropTypes.string.isRequired,
-        existingOAuth2Applications: React.PropTypes.arrayOf(React.PropTypes.shape({
-          apiId: React.PropTypes.string.isRequired,
-          applicationId: React.PropTypes.string.isRequired,
-          displayName: React.PropTypes.string,
-          keyName: React.PropTypes.string,
-          scope: React.PropTypes.string
-        })).isRequired,
-        requiredApiConfig: React.PropTypes.shape({
-          id: React.PropTypes.string.isRequired,
-          apiId: React.PropTypes.string.isRequired,
-          recommendedScope: React.PropTypes.string,
-          application: React.PropTypes.shape({
-            apiId: React.PropTypes.string.isRequired,
-            applicationId: React.PropTypes.string.isRequired,
-            displayName: React.PropTypes.string,
-            keyName: React.PropTypes.string,
-            scope: React.PropTypes.string
-          })
-        }).isRequired,
-        onAddOAuth2Application: React.PropTypes.func.isRequired,
-        onNewOAuth2Application: React.PropTypes.func.isRequired
+        existingOAuth2Applications: React.PropTypes.arrayOf(React.PropTypes.instanceOf(OAuth2ApplicationRef)).isRequired,
+        requiredApiConfig: React.PropTypes.instanceOf(RequiredOAuth2Application).isRequired,
+        onUpdateOAuth2Application: React.PropTypes.func.isRequired,
+        onNewOAuth2Application: React.PropTypes.func.isRequired,
+        onConfigClick: React.PropTypes.func.isRequired
       })).isRequired
     },
 
@@ -41,21 +29,22 @@ define(function(require) {
     },
 
     addOAuth2ApplicationPrompt: function(detail) {
-      var matchingApplication = detail.existingOAuth2Applications.find(ea => ea.apiId === detail.requiredApiConfig.apiId);
-      if (matchingApplication) {
+      var matchingApplications = detail.existingOAuth2Applications.filter(ea => ea.apiId === detail.requiredApiConfig.apiId);
+      if (matchingApplications.length === 1) {
+        const app = matchingApplications[0];
         return (
           <span className="mhxs">
             <button
               type="button"
               className="button-raw link button-s"
-              onClick={this.onAddOAuth2Application.bind(this, detail, matchingApplication)}>
+              onClick={this.onUpdateOAuth2Application.bind(this, detail, app)}>
 
-              Add {matchingApplication.displayName} to this skill
+              Add {app.displayName} to this skill
 
             </button>
           </span>
         );
-      } else {
+      } else if (matchingApplications.length === 0) {
         return (
           <span className="mhxs">
             <button
@@ -68,11 +57,26 @@ define(function(require) {
             </button>
           </span>
         );
+      } else {
+        return (
+          <span className="mhxs">
+            <button
+              type="button"
+              className="button-raw link button-s"
+              onClick={detail.onConfigClick.bind(this, detail.requiredApiConfig)}>
+
+              Choose a configuration for {detail.requiredApiConfig.codePath()}
+
+            </button>
+          </span>
+        );
       }
     },
 
-    onAddOAuth2Application: function(detail, app) {
-      detail.onAddOAuth2Application(app);
+    onUpdateOAuth2Application: function(detail, app) {
+      detail.onUpdateOAuth2Application(detail.requiredApiConfig.clone({
+        config: app
+      }));
     },
 
     onNewOAuth2Application: function(detail, requiredOAuth2ApiConfig) {

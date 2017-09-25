@@ -1,0 +1,105 @@
+define(function(require) {
+  const ApiConfigRef = require('./api_config_ref');
+  const RequiredApiConfig = require('./required_api_config');
+  const ID = require('../lib/id');
+
+  class RequiredSimpleTokenApi extends RequiredApiConfig {
+
+    onAddConfigFor(editor) {
+      return editor.onAddSimpleTokenApi;
+    }
+
+    onAddNewConfigFor() {
+      return undefined; // N/A
+    }
+
+    onRemoveConfigFor(editor) {
+      return editor.onRemoveSimpleTokenApi;
+    }
+
+    onUpdateConfigFor(editor) {
+      return editor.onUpdateSimpleTokenApi;
+    }
+
+    getApiLogoUrl(editor) {
+      return editor.getSimpleTokenLogoUrlForConfig(this);
+    }
+
+    getApiName(editor) {
+      return editor.getSimpleTokenNameForConfig(this);
+    }
+
+    getAllConfigsFrom(editor) {
+      return editor.getAllSimpleTokenApis().filter(ea => ea.id === this.apiId);
+    }
+
+    codePathPrefix() {
+      return "ellipsis.accessTokens.";
+    }
+
+    codePath() {
+      return `${this.codePathPrefix()}${this.nameInCode}`;
+    }
+
+    configName() {
+      return "";
+    }
+
+    isConfigured() {
+      return true;
+    }
+
+    clone(props) {
+      return new RequiredSimpleTokenApi((Object.assign({}, this, props)));
+    }
+
+  }
+
+  class SimpleTokenApiRef extends ApiConfigRef {
+
+    constructor(props) {
+      super(props);
+      Object.defineProperties(this, {
+        logoImageUrl: { value: props.logoImageUrl, enumerable: true }
+      });
+    }
+
+    getApiLogoUrl() {
+      return this.logoImageUrl;
+    }
+
+    getApiName() {
+      return this.displayName;
+    }
+
+    configName() {
+      return this.displayName;
+    }
+
+    newRequired() {
+      return new RequiredSimpleTokenApi({
+        id: ID.next(),
+        apiId: this.id,
+        nameInCode: this.defaultNameInCode(),
+        config: this
+      });
+    }
+
+    static fromJson(props) {
+      return new SimpleTokenApiRef(props);
+    }
+
+  }
+
+  RequiredSimpleTokenApi.fromJson = function (props) {
+    return new RequiredSimpleTokenApi(Object.assign({}, props, {
+      config: props.config ? SimpleTokenApiRef.fromJson(props.config) : undefined
+    }));
+  };
+
+  return {
+    'SimpleTokenApiRef': SimpleTokenApiRef,
+    'RequiredSimpleTokenApi': RequiredSimpleTokenApi
+  };
+
+});

@@ -1,7 +1,6 @@
 package models.accounts.oauth2application
 
 import models.accounts.oauth2api.OAuth2Api
-import org.apache.commons.lang.WordUtils
 import play.api.http.{HeaderNames, MimeTypes}
 import play.api.libs.ws.{WSClient, WSRequest, WSResponse}
 
@@ -76,18 +75,6 @@ case class OAuth2Application(
         "client_secret" -> Seq(clientSecret),
         "grant_type" -> Seq("refresh_token")
       ))
-  }
-
-  def keyName: String = {
-    // TODO: This replicates code on the client; we should just save the value from the client instead
-    val words = name.split(" ").map((ea) => ea.replaceAll("""[^\w$]""", ""))
-    val firstWord = WordUtils.uncapitalize(words.head)
-    val camel = firstWord + words.tail.map((ea) => WordUtils.capitalize(ea)).mkString("")
-    if (camel.head.toString.matches("""[A-Za-z_$]""")) {
-      camel
-    } else {
-      "_" + camel
-    }
   }
 
   def toRaw = RawOAuth2Application(

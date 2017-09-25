@@ -3,7 +3,7 @@ define(function(require) {
     BehaviorTest = require('./behavior_test'),
     Input = require('../form/input'),
     Collapsible = require('../shared_ui/collapsible'),
-    oauth2ApplicationShape = require('./oauth2_application_shape'),
+    RequiredOAuth2Application = require('../models/oauth2').RequiredOAuth2Application,
     TesterAuthRequired = require('./tester_auth_required'),
     InvocationResults = require('./behavior_tester_invocation_results'),
     InvocationTestResult = require('../models/behavior_invocation_result');
@@ -17,7 +17,7 @@ define(function(require) {
       isSearch: React.PropTypes.bool,
       csrfToken: React.PropTypes.string.isRequired,
       onDone: React.PropTypes.func.isRequired,
-      appsRequiringAuth: React.PropTypes.arrayOf(oauth2ApplicationShape).isRequired
+      appsRequiringAuth: React.PropTypes.arrayOf(React.PropTypes.instanceOf(RequiredOAuth2Application)).isRequired
     },
 
     getInitialState: function() {
@@ -139,7 +139,7 @@ define(function(require) {
 
     renderContent: function() {
       var apps = this.props.appsRequiringAuth;
-      if (apps.length > 0) {
+      if (this.props.behaviorId && apps.length > 0) {
         return (
           <TesterAuthRequired behaviorId={this.props.behaviorId} appsRequiringAuth={apps}/>
         );
