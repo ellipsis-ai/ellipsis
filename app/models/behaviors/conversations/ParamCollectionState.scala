@@ -9,8 +9,7 @@ import models.behaviors.{BotResult, SimpleTextResult}
 import services.{AWSLambdaConstants, DefaultServices}
 import slick.dbio.DBIO
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 case class ParamCollectionState(
                                  params: Seq[BehaviorParameter],
@@ -24,7 +23,7 @@ case class ParamCollectionState(
 
   val rankedParams = params.sortBy(_.rank)
 
-  def allLeftToCollect(conversation: Conversation): Future[Seq[(BehaviorParameter, Option[String])]] = {
+  def allLeftToCollect(conversation: Conversation)(implicit ec: ExecutionContext): Future[Seq[(BehaviorParameter, Option[String])]] = {
     val tuples = rankedParams.map { ea =>
       (ea, collected.find(_.parameter == ea), savedAnswers.find(_.inputId == ea.input.inputId))
     }
@@ -48,11 +47,11 @@ case class ParamCollectionState(
     }
   }
 
-  def maybeNextToCollect(conversation: Conversation): Future[Option[(BehaviorParameter, Option[String])]] = {
+  def maybeNextToCollect(conversation: Conversation)(implicit ec: ExecutionContext): Future[Option[(BehaviorParameter, Option[String])]] = {
     allLeftToCollect(conversation).map(_.headOption)
   }
 
-  def isCompleteIn(conversation: Conversation): Future[Boolean] = maybeNextToCollect(conversation).map(_.isEmpty)
+  def isCompleteIn(conversation: Conversation)(implicit ec: ExecutionContext): Future[Boolean] = maybeNextToCollect(conversation).map(_.isEmpty)
 
   def invocationMap: Map[String, String] = {
     rankedParams.zipWithIndex.map { case(ea, i) =>
@@ -63,7 +62,7 @@ case class ParamCollectionState(
     }.toMap
   }
 
-  def collectValueFrom(conversation: InvokeBehaviorConversation): Future[Conversation] = {
+  def collectValueFrom(conversation: InvokeBehaviorConversation)(implicit ec: ExecutionContext): Future[Conversation] = {
     for {
       maybeNextToCollect <- maybeNextToCollect(conversation)
       updatedConversation <- maybeNextToCollect.map { case(param, maybeValue) =>
@@ -74,7 +73,7 @@ case class ParamCollectionState(
     } yield updatedConversation
   }
 
-  def promptResultForAction(conversation: Conversation, isReminding: Boolean): DBIO[BotResult] = {
+  def promptResultForAction(conversation: Conversation, isReminding: Boolean)(implicit ec: ExecutionContext): DBIO[BotResult] = {
     for {
       maybeNextToCollect <- DBIO.from(maybeNextToCollect(conversation))
       result <- maybeNextToCollect.map { case(param, maybeValue) =>
@@ -96,7 +95,7 @@ object ParamCollectionState {
                   conversation: Conversation,
                   event: Event,
                   services: DefaultServices
-                ): DBIO[ParamCollectionState] = {
+                )(implicit ec: ExecutionContext): DBIO[ParamCollectionState] = {
     val dataService = services.dataService
     for {
       params <- dataService.behaviorParameters.allForAction(conversation.behaviorVersion)
@@ -110,7 +109,7 @@ object ParamCollectionState {
             conversation: Conversation,
             event: Event,
             services: DefaultServices
-          ): Future[ParamCollectionState] = {
+          )(implicit ec: ExecutionContext): Future[ParamCollectionState] = {
     services.dataService.run(fromAction(conversation, event, services))
   }
 

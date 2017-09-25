@@ -5,16 +5,14 @@ import models.accounts.user.User
 import models.behaviors.behavior.Behavior
 import models.behaviors.behaviorgroup.BehaviorGroup
 import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
-import models.behaviors.config.requiredoauth2apiconfig.RequiredOAuth2ApiConfig
-import models.behaviors.config.requiredsimpletokenapi.RequiredSimpleTokenApi
 import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.events.Event
 import models.behaviors.{BotResult, ParameterWithValue}
 import models.team.Team
+import services.ApiConfigInfo
 import slick.dbio.DBIO
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 trait BehaviorVersionService {
 
@@ -30,13 +28,13 @@ trait BehaviorVersionService {
 
   def allCurrentForTeam(team: Team): Future[Seq[BehaviorVersion]]
 
-  def dataTypesForGroupVersionAction(groupVersion: BehaviorGroupVersion): DBIO[Seq[BehaviorVersion]] = {
+  def dataTypesForGroupVersionAction(groupVersion: BehaviorGroupVersion)(implicit ec: ExecutionContext): DBIO[Seq[BehaviorVersion]] = {
     allForGroupVersionAction(groupVersion).map { all =>
       all.filter(_.isDataType)
     }
   }
 
-  def dataTypesForTeam(team: Team): Future[Seq[BehaviorVersion]] = {
+  def dataTypesForTeam(team: Team)(implicit ec: ExecutionContext): Future[Seq[BehaviorVersion]] = {
     allCurrentForTeam(team).map { all =>
       all.filter(_.isDataType)
     }
@@ -57,8 +55,7 @@ trait BehaviorVersionService {
   def createForAction(
                        behavior: Behavior,
                        groupVersion: BehaviorGroupVersion,
-                       requiredOAuth2ApiConfigs: Seq[RequiredOAuth2ApiConfig],
-                       requiredSimpleTokenApis: Seq[RequiredSimpleTokenApi],
+                       apiConfigInfo: ApiConfigInfo,
                        maybeUser: Option[User],
                        data: BehaviorVersionData,
                        forceNodeModuleUpdate: Boolean

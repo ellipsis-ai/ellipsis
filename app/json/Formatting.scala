@@ -1,9 +1,10 @@
 package json
 
-import models.accounts.slack.SlackUserInfo
 import models.accounts.slack.botprofile.SlackBotProfile
+import models.behaviors.{ExecutionErrorData, ExecutionLogData}
 import models.behaviors.behaviorparameter.ValidValue
 import models.behaviors.events.SlackMessage
+import models.behaviors.testing.{InvocationTestReportOutput, ResultOutput}
 import play.api.libs.json._
 import services.SlackMessageEventData
 import utils.{CityInfo, UploadFileSpec}
@@ -65,8 +66,20 @@ object Formatting {
   lazy implicit val nodeModuleVersionDataReads = Json.reads[NodeModuleVersionData]
   lazy implicit val nodeModuleVersionDataWrites = Json.writes[NodeModuleVersionData]
 
+  lazy implicit val requiredAWSConfigDataReads = Json.reads[RequiredAWSConfigData]
+  lazy implicit val requiredAWSConfigDataWrites = Json.writes[RequiredAWSConfigData]
+
+  lazy implicit val slackUserDataReads = Json.reads[SlackUserData]
+  lazy implicit val slackUserDataWrites = Json.writes[SlackUserData]
+
+  lazy implicit val userDataReads = Json.reads[UserData]
+  lazy implicit val userDataWrites = Json.writes[UserData]
+
   lazy implicit val behaviorGroupConfigReads = Json.reads[BehaviorGroupConfig]
   lazy implicit val behaviorGroupConfigWrites = Json.writes[BehaviorGroupConfig]
+
+  lazy implicit val behaviorGroupReads = Json.reads[BehaviorGroupData]
+  lazy implicit val behaviorGroupWrites = Json.writes[BehaviorGroupData]
 
   lazy implicit val behaviorGroupReads = Json.reads[BehaviorGroupData]
   lazy implicit val behaviorGroupWrites = Json.writes[BehaviorGroupData]
@@ -126,8 +139,8 @@ object Formatting {
   lazy implicit val slackBotProfileReads = Json.reads[SlackBotProfile]
   lazy implicit val slackBotProfileWrites = Json.writes[SlackBotProfile]
 
-  lazy implicit val slackUserInfoReads = Json.reads[SlackUserInfo]
-  lazy implicit val slackUserInfoWrites = Json.writes[SlackUserInfo]
+  implicit val slackMessageReads = Json.reads[SlackMessage]
+  implicit val slackMessageWrites = Json.writes[SlackMessage]
 
   lazy implicit val slackMessageReads = Json.reads[SlackMessage]
   lazy implicit val slackMessageWrites = Json.writes[SlackMessage]
@@ -141,4 +154,17 @@ object Formatting {
   lazy implicit val slackFileSpecReads = Json.reads[UploadFileSpec]
   lazy implicit val slackFileSpecWrites = Json.writes[UploadFileSpec]
 
+  implicit val resultOutputWrites = Json.writes[ResultOutput]
+  implicit val testReportOutputWrites = Json.writes[InvocationTestReportOutput]
+
+  implicit val awsConfigEditConfigReads = Json.reads[AWSConfigEditConfig]
+  implicit val awsConfigEditConfigWrites = Json.writes[AWSConfigEditConfig]
+
+  implicit val awsConfigListConfigReads = Json.reads[AWSConfigListConfig]
+  implicit val awsConfigListConfigWrites = Json.writes[AWSConfigListConfig]
+
+  implicit val executionLogReads = Json.reads[ExecutionLogData]
+  implicit val executionErrorValueReads = Json.reads[ExecutionErrorData]
+
+  implicit val behaviorGroupVersionMetaDataWrites = Json.writes[BehaviorGroupVersionMetaData]
 }

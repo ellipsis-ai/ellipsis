@@ -4,31 +4,31 @@ import java.time.format.TextStyle
 import java.util.Locale
 import javax.inject.Inject
 
+import com.google.inject.Provider
 import com.mohiva.play.silhouette.api.Silhouette
 import json._
 import models.silhouette.EllipsisEnv
 import play.api.Configuration
 import play.api.data.Form
 import play.api.data.Forms._
-import play.api.i18n.MessagesApi
 import play.api.libs.json.Json
 import play.api.libs.ws.WSClient
 import play.filters.csrf.CSRF
 import services.{AWSLambdaService, DataService, GithubService}
 import utils.{CitiesToTimeZones, FuzzyMatcher, TimeZoneParser}
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 class ApplicationController @Inject() (
-                                        val messagesApi: MessagesApi,
                                         val silhouette: Silhouette[EllipsisEnv],
                                         val configuration: Configuration,
                                         val dataService: DataService,
                                         val lambdaService: AWSLambdaService,
                                         val ws: WSClient,
                                         val githubService: GithubService,
-                                        val citiesToTimeZones: CitiesToTimeZones
+                                        val citiesToTimeZones: CitiesToTimeZones,
+                                        val assetsProvider: Provider[RemoteAssets],
+                                        implicit val ec: ExecutionContext
                                       ) extends ReAuthable {
 
   import json.Formatting._
@@ -75,12 +75,14 @@ class ApplicationController @Inject() (
       case Accepts.Html() => {
         for {
           teamAccess <- eventualTeamAccess
-          result <- teamAccess.maybeTargetTeam.map { team =>
-            Future.successful(Ok(views.html.application.index(viewConfig(Some(teamAccess)), maybeTeamId, maybeBranch)))
-          }.getOrElse {
-            reAuthFor(request, maybeTeamId)
-          }
-        } yield result
+        } yield teamAccess.maybeTargetTeam.map { team =>
+          Ok(views.html.application.index(viewConfig(Some(teamAccess)), maybeTeamId, maybeBranch))
+        }.getOrElse {
+          notFoundWithLoginFor(
+            request,
+            Some(teamAccess)
+          )
+        }
       }
     }
   }
@@ -96,12 +98,16 @@ class ApplicationController @Inject() (
       alreadyInstalledData <- Future.sequence(alreadyInstalled.map { group =>
         BehaviorGroupData.maybeFor(group.id, user, None, dataService)
       }).map(_.flatten)
-      result <- teamAccess.maybeTargetTeam.map { team =>
-        Future.successful(Ok(Json.toJson(githubService.publishedBehaviorGroupsFor(team, maybeBranch, alreadyInstalledData))))
+    } yield teamAccess.maybeTargetTeam.map { team =>
+      Ok(Json.toJson(githubService.publishedBehaviorGroupsFor(team, maybeBranch, alreadyInstalledData)))
+    }.getOrElse {
+      val message = maybeTeamId.map { teamId =>
+        s"You can't access this for team ${teamId}"
       }.getOrElse {
-        reAuthFor(request, maybeTeamId)
+        "You can't access this"
       }
-    } yield result
+      Forbidden(message)
+    }
   }
 
   case class SelectedBehaviorGroupsInfo(behaviorGroupIds: Seq[String])

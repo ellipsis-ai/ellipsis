@@ -6,15 +6,13 @@ import java.util.zip.{ZipEntry, ZipInputStream}
 
 import json.Formatting._
 import json._
-import models.IDs
 import models.accounts.user.User
 import models.behaviors.behaviorgroup.BehaviorGroup
 import models.team.Team
 import play.api.libs.json.{JsError, JsSuccess, Json}
 import services.DataService
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 case class BehaviorGroupZipImporter(
                                      team: Team,
@@ -36,7 +34,7 @@ case class BehaviorGroupZipImporter(
     out.toString
   }
 
-  def run: Future[Option[BehaviorGroup]] = {
+  def run(implicit ec: ExecutionContext): Future[Option[BehaviorGroup]] = {
 
     val zipInputStream: ZipInputStream = new ZipInputStream(new FileInputStream(zipFile))
     var nextEntry: ZipEntry = zipInputStream.getNextEntry
@@ -53,7 +51,7 @@ case class BehaviorGroupZipImporter(
     var maybeGroupDescription: Option[String] = None
     var maybeExportId: Option[String] = None
     var maybeIcon: Option[String] = None
-    var maybeAWSConfig: Option[AWSConfigData] = None
+    var requiredAWSConfigData: Seq[RequiredAWSConfigData] = Seq()
     var requiredOAuth2ApiConfigData: Seq[RequiredOAuth2ApiConfigData] = Seq()
     var requiredSimpleTokenApiData: Seq[RequiredSimpleTokenApiData] = Seq()
     var actionInputs: Seq[InputData] = Seq()
@@ -86,7 +84,7 @@ case class BehaviorGroupZipImporter(
             maybeGroupName = Some(data.name)
             maybeExportId = data.exportId
             maybeIcon = data.icon
-            maybeAWSConfig = data.awsConfig
+            requiredAWSConfigData = data.requiredAWSConfigs
             requiredOAuth2ApiConfigData = data.requiredOAuth2ApiConfigs
             requiredSimpleTokenApiData = data.requiredSimpleTokenApis
           }
@@ -134,6 +132,7 @@ case class BehaviorGroupZipImporter(
         BehaviorGroupData.maybeFor(group.id, user, None, dataService)
       }).map(_.flatten)
       maybeExistingGroupData <- Future.successful(alreadyInstalledData.find(_.exportId == maybeExportId))
+      userData <- dataService.users.userDataFor(user, team)
       data <- Future.successful(
         BehaviorGroupData(
           None,
@@ -145,13 +144,14 @@ case class BehaviorGroupZipImporter(
           dataTypeInputs,
           versionsData,
           libraries,
-          nodeModuleVersions = Seq(),
+          requiredAWSConfigData,
           maybeAWSConfig,
           requiredOAuth2ApiConfigData,
           requiredSimpleTokenApiData,
           githubUrl = None,
           exportId = maybeExportId,
-          Some(OffsetDateTime.now)
+          Some(OffsetDateTime.now),
+          Some(userData)
         ).copyForImportableForTeam(team, maybeExistingGroupData)
       )
       maybeImported <- BehaviorGroupImporter(team, user, data, dataService).run

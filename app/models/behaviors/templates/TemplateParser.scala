@@ -21,12 +21,12 @@ class TemplateParser extends RegexParsers with JavaTokenParsers {
   def block: Parser[Block] = rep(text | substitution | iteration | conditional) ^^ { children => Block(children) }
 
   def iteration: Parser[Iteration] =
-    """\{\s*for\s+""".r ~> identifier ~ """\s+in\s+""".r ~ path ~ """\s*\}""".r ~ block <~ """\{\s*endfor\s*\}""".r ^^ {
+    """\{\s*for\s+""".r ~> identifier ~ """\s+in\s+""".r ~ path ~ """\s*\}[ \t]*\n?""".r ~ block <~ """\{\s*endfor\s*\}[ \t]*\n?""".r ^^ {
     case itemIdentifier ~ _ ~ listPath ~ _ ~ block =>
       Iteration(itemIdentifier, listPath, block)
   }
 
-  def conditional: Parser[Conditional] = """\{\s*if\s+""".r ~> path ~ """\s*\}\s*""".r ~ block ~ (("""\{\s*else\s*\}\s*""".r ~> block)?) <~ """\{\s*endif\s*\}""".r ^^ {
+  def conditional: Parser[Conditional] = """\{\s*if\s+""".r ~> path ~ """\s*\}[ \t]*\n?""".r ~ block ~ (("""\{\s*else\s*\}\s*\n?""".r ~> block)?) <~ """\{\s*endif\s*\}[ \t]*\n?""".r ^^ {
     case condition ~ _ ~ block ~ maybeElseBlock => Conditional(condition, block, maybeElseBlock)
   }
 

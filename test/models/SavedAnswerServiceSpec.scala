@@ -8,7 +8,7 @@ class SavedAnswerServiceSpec extends DBSpec {
   "SavedAnswerService.deleteForUser" should {
 
     "delete only the saved answer for a given user, if any" in {
-      withEmptyDB(dataService, { db =>
+      withEmptyDB(dataService, { () =>
         val team = newSavedTeam
         val user = newSavedUserOn(team)
         val anotherUser = newSavedUserOn(team)
@@ -47,7 +47,7 @@ class SavedAnswerServiceSpec extends DBSpec {
   "SavedAnswerService.deleteAllFor" should {
 
     "delete for all users" in {
-      withEmptyDB(dataService, { db =>
+      withEmptyDB(dataService, { () =>
         val team = newSavedTeam
         val user = newSavedUserOn(team)
         val anotherUser = newSavedUserOn(team)
@@ -81,8 +81,8 @@ class SavedAnswerServiceSpec extends DBSpec {
       })
     }
 
-    "delete team saved answers" should {
-      withEmptyDB(dataService, { db =>
+    "delete team saved answers" in {
+      withEmptyDB(dataService, { () =>
         val team = newSavedTeam
         val user = newSavedUserOn(team)
         val group = newSavedBehaviorGroupFor(team)

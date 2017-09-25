@@ -5,8 +5,7 @@ import models.IDs
 import models.behaviors.library.LibraryVersion
 import services.DataService
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 case class LibraryVersionData(
                                id: Option[String],
@@ -77,7 +76,7 @@ object LibraryVersionData {
     functionBody = ""
   )
 
-  def maybeClonedFor(libraryIdToClone: String, dataService: DataService): Future[Option[LibraryVersionData]] = {
+  def maybeClonedFor(libraryIdToClone: String, dataService: DataService)(implicit ec: ExecutionContext): Future[Option[LibraryVersionData]] = {
     for {
       maybeExisting <- dataService.libraries.findCurrentByLibraryId(libraryIdToClone)
     } yield {

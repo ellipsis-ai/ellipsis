@@ -5,8 +5,7 @@ import models.behaviors.events.Event
 import models.behaviors.{BotResult, SimpleTextResult}
 import services.{AWSLambdaService, DataService}
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 
 case class ScheduleBehavior(
@@ -18,7 +17,7 @@ case class ScheduleBehavior(
                              dataService: DataService
                              ) extends BuiltinBehavior {
 
-  def result(implicit actorSystem: ActorSystem): Future[BotResult] = {
+  def result(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[BotResult] = {
     for {
       user <- event.ensureUser(dataService)
       maybeTeam <- dataService.teams.find(user.teamId)

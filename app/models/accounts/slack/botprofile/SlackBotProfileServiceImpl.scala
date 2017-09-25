@@ -12,8 +12,7 @@ import play.api.Logger
 import services.{DataService, SlackEventService}
 import utils.{SlackMessageReactionHandler, SlackTimestamp}
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 class SlackBotProfileTable(tag: Tag) extends Table[SlackBotProfile](tag, "slack_bot_profiles") {
   def userId = column[String]("user_id", O.PrimaryKey)
@@ -30,7 +29,8 @@ class SlackBotProfileServiceImpl @Inject() (
                                           dataServiceProvider: Provider[DataService],
                                           slackEventServiceProvider: Provider[SlackEventService],
                                           botResultServiceProvider: Provider[BotResultService],
-                                          implicit val actorSystem: ActorSystem
+                                          implicit val actorSystem: ActorSystem,
+                                          implicit val ec: ExecutionContext
                                         ) extends SlackBotProfileService {
 
   def dataService = dataServiceProvider.get
@@ -86,7 +86,7 @@ class SlackBotProfileServiceImpl @Inject() (
           maybeTeam <- DBIO.from(dataService.teams.find(existing.teamId))
           _ <- query.update(profile)
           _ <- maybeTeam.map { team =>
-            DBIO.from(dataService.teams.setInitialNameFor(team, slackTeamName))
+            DBIO.from(dataService.teams.setNameFor(team, slackTeamName))
           }.getOrElse(DBIO.successful(Unit))
         } yield profile
       }

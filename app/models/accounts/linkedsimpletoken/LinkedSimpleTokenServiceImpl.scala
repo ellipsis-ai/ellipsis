@@ -7,8 +7,7 @@ import models.accounts.simpletokenapi.{SimpleTokenApi, SimpleTokenApiQueries}
 import services.DataService
 import drivers.SlickPostgresDriver.api._
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 case class RawLinkedSimpleToken(
                                  accessToken: String,
@@ -26,7 +25,8 @@ class LinkedSimpleTokensTable(tag: Tag) extends Table[RawLinkedSimpleToken](tag,
 }
 
 class LinkedSimpleTokenServiceImpl @Inject() (
-                                               dataServiceProvider: Provider[DataService]
+                                               dataServiceProvider: Provider[DataService],
+                                               implicit val ec: ExecutionContext
                                              ) extends LinkedSimpleTokenService {
 
   def dataService = dataServiceProvider.get

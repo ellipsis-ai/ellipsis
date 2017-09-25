@@ -17,6 +17,7 @@ GET         /possible_cities_for                      @controllers.ApplicationCo
 
 GET         /new_skill                                @controllers.BehaviorEditorController.newGroup(teamId: Option[String] ?= None)
 GET         /edit_skill/:id                           @controllers.BehaviorEditorController.edit(id: String, actionId: Option[String] ?= None)
+GET         /skill_meta_data/:id                      @controllers.BehaviorEditorController.metaData(id: String)
 GET         /export_skill/:id                         @controllers.BehaviorImportExportController.export(id: String)
 GET         /export_behavior/:id                      @controllers.BehaviorImportExportController.export(id: String)
 GET         /import_skill_zip                         @controllers.BehaviorImportExportController.importZip(teamId: Option[String] ?= None)
@@ -39,6 +40,7 @@ GET         /new_unsaved_library/:teamId              @controllers.BehaviorEdito
 POST        /save_default_storage_item                @controllers.BehaviorEditorController.saveDefaultStorageItem
 POST        /query_default_storage                    @controllers.BehaviorEditorController.queryDefaultStorage
 POST        /delete_default_storage_items             @controllers.BehaviorEditorController.deleteDefaultStorageItems
+GET         /node_module_versions/:groupId            @controllers.BehaviorEditorController.nodeModuleVersionsFor(groupId: String)
 
 POST        /reset_saved_answer_for_user              @controllers.SavedAnswerController.resetForUser
 POST        /reset_saved_answer_for_all               @controllers.SavedAnswerController.resetForTeam
@@ -47,9 +49,14 @@ POST        /submit_environment_variables             @controllers.EnvironmentVa
 POST        /delete_environment_variable              @controllers.EnvironmentVariablesController.delete
 
 GET         /list_oauth2_applications                 @controllers.OAuth2ApplicationController.list(teamId: Option[String] ?= None)
-GET         /new_oauth2_application                   @controllers.OAuth2ApplicationController.newApp(apiId: Option[String] ?= None, recommendedScope: Option[String] ?= None, teamId: Option[String] ?= None, behaviorId: Option[String] ?= None)
+GET         /new_oauth2_application                   @controllers.OAuth2ApplicationController.newApp(teamId: Option[String] ?= None, behaviorGroupId: Option[String] ?= None, behaviorId: Option[String] ?= None, requiredNameInCode: Option[String] ?= None)
 GET         /edit_oauth2_application/:id              @controllers.OAuth2ApplicationController.edit(id: String, teamId: Option[String] ?= None)
 POST        /save_oauth2_application                  @controllers.OAuth2ApplicationController.save
+
+GET         /list_aws_configs                         @controllers.AWSConfigController.list(teamId: Option[String] ?= None)
+GET         /new_aws_config                           @controllers.AWSConfigController.newConfig(teamId: Option[String] ?= None, behaviorGroupId: Option[String] ?= None, behaviorId: Option[String] ?= None, requiredAWSConfigNameInCode: Option[String] ?= None)
+GET         /edit_aws_config/:id                      @controllers.AWSConfigController.edit(id: String, teamId: Option[String] ?= None)
+POST        /save_aws_config                          @controllers.AWSConfigController.save
 
 GET         /list_oauth2_apis                         @controllers.OAuth2ApiController.list(teamId: Option[String] ?= None)
 GET         /new_oauth2_api                           @controllers.OAuth2ApiController.newApi(teamId: Option[String] ?= None)

@@ -3,12 +3,8 @@ package mocks
 import javax.inject.Inject
 
 import com.amazonaws.services.lambda.AWSLambdaAsyncClient
-import models.Models
 import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
 import models.behaviors.behaviorversion.BehaviorVersion
-import models.behaviors.config.awsconfig.AWSConfig
-import models.behaviors.config.requiredoauth2apiconfig.RequiredOAuth2ApiConfig
-import models.behaviors.config.requiredsimpletokenapi.RequiredSimpleTokenApi
 import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.events.Event
 import models.behaviors.library.LibraryVersion
@@ -19,14 +15,13 @@ import org.scalatest.mock.MockitoSugar
 import play.api.Configuration
 import play.api.libs.json.{JsNull, JsString}
 import play.api.libs.ws.WSClient
-import services.{AWSLambdaService, AWSLogsService, DataService}
+import services.{AWSLambdaService, AWSLogsService, ApiConfigInfo, DataService}
 import slick.dbio.DBIO
 
 import scala.concurrent.Future
 
 class MockAWSLambdaService @Inject() (
                                        val configuration: Configuration,
-                                       val models: Models,
                                        val ws: WSClient,
                                        val dataService: DataService,
                                        val logsService: AWSLogsService
@@ -37,7 +32,7 @@ class MockAWSLambdaService @Inject() (
       event,
       maybeConversation,
       result = JsString("result"),
-      resultWithOptions = JsNull,
+      payloadJson = JsNull,
       parametersWithValues = Seq(),
       maybeResponseTemplate = None,
       maybeLogResult = None,
@@ -59,9 +54,7 @@ class MockAWSLambdaService @Inject() (
                                   groupVersion: BehaviorGroupVersion,
                                   libraries: Seq[LibraryVersion],
                                   behaviorVersionsWithParams: Seq[(BehaviorVersion, Array[String])],
-                                  maybeAWSConfig: Option[AWSConfig],
-                                  requiredOAuth2ApiConfigs: Seq[RequiredOAuth2ApiConfig],
-                                  requiredSimpleTokenApis: Seq[RequiredSimpleTokenApi],
+                                  apiConfigInfo: ApiConfigInfo,
                                   forceNodeModuleUpdate: Boolean
                                 ): Future[Unit] = Future.successful({})
 

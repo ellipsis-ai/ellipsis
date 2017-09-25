@@ -12,8 +12,7 @@ import models.behaviors.datatypeconfig.DataTypeConfig
 import services.DataService
 import slick.dbio.DBIO
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 case class RawDataTypeField(
                              id: String,
@@ -40,7 +39,8 @@ class DataTypeFieldsTable(tag: Tag) extends Table[RawDataTypeField](tag, "data_t
 }
 
 class DataTypeFieldServiceImpl @Inject() (
-                                           dataServiceProvider: Provider[DataService]
+                                           dataServiceProvider: Provider[DataService],
+                                           implicit val ec: ExecutionContext
                                          ) extends DataTypeFieldService {
 
   def dataService = dataServiceProvider.get

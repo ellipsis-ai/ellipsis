@@ -3,7 +3,7 @@ define(function(require) {
     BehaviorTest = require('./behavior_test'),
     Input = require('../form/input'),
     Collapsible = require('../shared_ui/collapsible'),
-    oauth2ApplicationShape = require('./oauth2_application_shape'),
+    RequiredOAuth2Application = require('../models/oauth2').RequiredOAuth2Application,
     TesterAuthRequired = require('./tester_auth_required'),
     InvocationResults = require('./behavior_tester_invocation_results'),
     InvocationTestResult = require('../models/behavior_invocation_result');
@@ -17,7 +17,7 @@ define(function(require) {
       isSearch: React.PropTypes.bool,
       csrfToken: React.PropTypes.string.isRequired,
       onDone: React.PropTypes.func.isRequired,
-      appsRequiringAuth: React.PropTypes.arrayOf(oauth2ApplicationShape).isRequired
+      appsRequiringAuth: React.PropTypes.arrayOf(React.PropTypes.instanceOf(RequiredOAuth2Application)).isRequired
     },
 
     getInitialState: function() {
@@ -35,7 +35,7 @@ define(function(require) {
 
     getParsedResponse: function(result) {
       try {
-        return JSON.parse(result.response);
+        return JSON.parse(result.responseText);
       } catch(e) {
         return null;
       }
@@ -96,9 +96,7 @@ define(function(require) {
         csrfToken: this.props.csrfToken,
         paramValues: this.params(),
         onSuccess: (json) => {
-          var newResults = this.state.results.concat(
-            new InvocationTestResult(json.result && json.result.fullText)
-          );
+          var newResults = this.state.results.concat(InvocationTestResult.fromReportJSON(json));
           this.setState({
             results: newResults,
             isTesting: false
@@ -127,7 +125,7 @@ define(function(require) {
             <div className="container phn">
               <div className="columns mtl">
                 <div className="column column-page-sidebar">
-                  <h4 className="type-weak">Test the data type</h4>
+                  <h4 className="mtn type-weak">Test the data type</h4>
                 </div>
                 <div className="column column-three-quarters pll mobile-pln mobile-column-full">
                   {this.renderContent()}
@@ -141,7 +139,7 @@ define(function(require) {
 
     renderContent: function() {
       var apps = this.props.appsRequiringAuth;
-      if (apps.length > 0) {
+      if (this.props.behaviorId && apps.length > 0) {
         return (
           <TesterAuthRequired behaviorId={this.props.behaviorId} appsRequiringAuth={apps}/>
         );
@@ -180,7 +178,10 @@ define(function(require) {
         );
       } else if (result) {
         return (
-          <span className="type-pink">Last response invalid: must be an array of objects, each with an <code className="type-black">id</code> and <code className="type-black">label</code> property.</span>
+          <span className="type-pink">
+            <span>Last response invalid: must call <code>ellipsis.success</code> with an array of objects, </span>
+            <span>each with an <code className="type-black">id</code> and <code className="type-black">label</code> property.</span>
+          </span>
         );
       } else {
         return (
@@ -195,7 +196,13 @@ define(function(require) {
         return this.renderValidResultTableWith(this.getParsedResponse(result));
       } else {
         return (
-          <pre className="display-overflow-scroll border border-pink bg-white pas">{result.response}</pre>
+          <div className="display-overflow-scroll border border-pink bg-white pas">
+            {result.responseText ? (
+              <pre>{result.responseText}</pre>
+            ) : (
+              <i>(No response occurred.)</i>
+            )}
+          </div>
         );
       }
     },
@@ -246,7 +253,7 @@ define(function(require) {
         );
       } else {
         return (
-          <div className="type-italic border pas border-green bg-white type-italic">An empty array was returned.</div>
+          <div className="type-italic border pas border-green bg-white">An empty list was returned.</div>
         );
       }
     },

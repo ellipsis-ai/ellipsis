@@ -13,18 +13,17 @@ import models.behaviors._
 import models.behaviors.behavior.{Behavior, BehaviorQueries}
 import models.behaviors.behaviorgroup.BehaviorGroup
 import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
+import models.behaviors.config.requiredawsconfig.RequiredAWSConfig
 import models.behaviors.config.requiredoauth2apiconfig.RequiredOAuth2ApiConfig
 import models.behaviors.config.requiredsimpletokenapi.RequiredSimpleTokenApi
 import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.events.Event
 import models.team.Team
-import play.api.libs.json.JsValue
 import play.api.libs.ws.WSClient
 import play.api.{Configuration, Logger}
-import services.{AWSLambdaService, CacheService, DataService}
+import services.{AWSLambdaService, ApiConfigInfo, CacheService, DataService}
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 case class RawBehaviorVersion(
                                id: String,
@@ -72,7 +71,8 @@ class BehaviorVersionServiceImpl @Inject() (
                                       ws: WSClient,
                                       configuration: Configuration,
                                       cacheService: CacheService,
-                                      implicit val actorSystem: ActorSystem
+                                      implicit val actorSystem: ActorSystem,
+                                      implicit val ec: ExecutionContext
                                     ) extends BehaviorVersionService {
 
   def dataService = dataServiceProvider.get
@@ -217,8 +217,7 @@ class BehaviorVersionServiceImpl @Inject() (
   def createForAction(
                        behavior: Behavior,
                        groupVersion: BehaviorGroupVersion,
-                       requiredOAuth2ApiConfigs: Seq[RequiredOAuth2ApiConfig],
-                       requiredSimpleTokenApis: Seq[RequiredSimpleTokenApi],
+                       apiConfigInfo: ApiConfigInfo,
                        maybeUser: Option[User],
                        data: BehaviorVersionData,
                        forceNodeModuleUpdate: Boolean
@@ -256,7 +255,7 @@ class BehaviorVersionServiceImpl @Inject() (
         _ <- data.config.dataTypeConfig.map { configData =>
           dataService.dataTypeConfigs.createForAction(updated, configData)
         }.getOrElse(DBIO.successful(None))
-      } yield Unit
+      } yield {}
     } yield behaviorVersion
   }
 
@@ -317,12 +316,12 @@ class BehaviorVersionServiceImpl @Inject() (
     for {
       missingTeamEnvVars <- dataService.teamEnvironmentVariables.missingInAction(behaviorVersion, dataService)
       requiredOAuth2ApiConfigs <- dataService.requiredOAuth2ApiConfigs.allForAction(behaviorVersion.groupVersion)
-      userInfo <- event.userInfoAction(ws, dataService)
+      userInfo <- event.userInfoAction(ws, dataService, cacheService)
       notReadyOAuth2Applications <- DBIO.successful(requiredOAuth2ApiConfigs.filterNot(_.isReady))
       missingOAuth2Applications <- DBIO.successful(requiredOAuth2ApiConfigs.flatMap(_.maybeApplication).filter { app =>
         !userInfo.links.exists(_.externalSystem == app.name)
       })
-      botPrefix <- DBIO.from(event.botPrefix(cacheService))
+      botPrefix <- DBIO.from(event.botPrefix(dataService))
       maybeResult <- if (missingTeamEnvVars.nonEmpty) {
         DBIO.successful(Some(MissingTeamEnvVarsResult(
           event,
@@ -383,18 +382,6 @@ class BehaviorVersionServiceImpl @Inject() (
                  maybeConversation: Option[Conversation]
                ): Future[BotResult] = {
     dataService.run(resultForAction(behaviorVersion, parametersWithValues, event, maybeConversation))
-  }
-
-  private def isUnhandledError(json: JsValue): Boolean = {
-    (json \ "errorMessage").toOption.flatMap { m =>
-      "Process exited before completing request".r.findFirstIn(m.toString)
-    }.isDefined
-  }
-
-  private def isSyntaxError(json: JsValue): Boolean = {
-    (json \ "errorType").toOption.flatMap { m =>
-      "SyntaxError".r.findFirstIn(m.toString)
-    }.isDefined
   }
 
 }

@@ -9,8 +9,7 @@ import models.behaviors.{BotResult, SimpleTextResult}
 import services.DefaultServices
 import slick.dbio.DBIO
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 case class SimpleTokenCollectionState(
                                        missingTokenApis: Seq[SimpleTokenApi],
@@ -30,9 +29,9 @@ case class SimpleTokenCollectionState(
     dataService.run(maybeNextToCollectAction)
   }
 
-  def isCompleteIn(conversation: Conversation): Future[Boolean] = maybeNextToCollect.map(_.isEmpty)
+  def isCompleteIn(conversation: Conversation)(implicit ec: ExecutionContext): Future[Boolean] = maybeNextToCollect.map(_.isEmpty)
 
-  def collectValueFrom(conversation: InvokeBehaviorConversation): Future[Conversation] = {
+  def collectValueFrom(conversation: InvokeBehaviorConversation)(implicit ec: ExecutionContext): Future[Conversation] = {
     for {
       maybeNextToCollect <- maybeNextToCollect
       user <- event.ensureUser(dataService)
@@ -44,7 +43,7 @@ case class SimpleTokenCollectionState(
     } yield updatedConversation
   }
 
-  def promptResultForAction(conversation: Conversation, isReminding: Boolean): DBIO[BotResult] = {
+  def promptResultForAction(conversation: Conversation, isReminding: Boolean)(implicit ec: ExecutionContext): DBIO[BotResult] = {
     maybeNextToCollectAction.map { maybeNextToCollect =>
       val prompt = maybeNextToCollect.map { api =>
         s"""
@@ -70,7 +69,7 @@ object SimpleTokenCollectionState {
                   conversation: Conversation,
                   event: Event,
                   services: DefaultServices
-          ): DBIO[SimpleTokenCollectionState] = {
+          )(implicit ec: ExecutionContext): DBIO[SimpleTokenCollectionState] = {
     val dataService = services.dataService
     for {
       tokens <- dataService.linkedSimpleTokens.allForUserAction(user)

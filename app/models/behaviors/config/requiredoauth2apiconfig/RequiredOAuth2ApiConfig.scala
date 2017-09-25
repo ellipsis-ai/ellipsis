@@ -9,6 +9,7 @@ case class RequiredOAuth2ApiConfig(
                                     groupVersion: BehaviorGroupVersion,
                                     api: OAuth2Api,
                                     maybeRecommendedScope: Option[String],
+                                    nameInCode: String,
                                     maybeApplication: Option[OAuth2Application]
                                   ) {
   // Could check scope too
@@ -20,6 +21,7 @@ case class RequiredOAuth2ApiConfig(
       groupVersion.id,
       api.id,
       maybeRecommendedScope,
+      nameInCode,
       maybeApplication.map(_.id)
     )
   }

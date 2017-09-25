@@ -1,17 +1,20 @@
 package services
 
 import javax.inject.Inject
+
 import com.amazonaws.services.dynamodbv2.model._
 import models.team.Team
 import play.api.Configuration
 import play.api.libs.json.JsValue
 import utils.JavaFutureConverter
+
 import collection.JavaConverters._
+import scala.concurrent.{ExecutionContext, Future}
 
-import scala.concurrent.Future
-import scala.concurrent.ExecutionContext.Implicits.global
-
-class AWSDynamoDBServiceImpl @Inject() (val configuration: Configuration) extends AWSDynamoDBService {
+class AWSDynamoDBServiceImpl @Inject() (
+                                         val configuration: Configuration,
+                                         implicit val ec: ExecutionContext
+                                       ) extends AWSDynamoDBService {
   import AWSDynamoDBConstants._
 
   def primaryKeyFor(itemId: String, itemType: String, team: Team): String = {

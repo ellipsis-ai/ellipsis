@@ -8,10 +8,12 @@ case class BehaviorEditorEditConfig(
   builtinParamTypes: Seq[BehaviorParameterTypeData],
   envVariables: Seq[EnvironmentVariableData],
   savedAnswers: Seq[InputSavedAnswerData],
+  awsConfigs: Seq[AWSConfigData],
   oauth2Applications: Seq[OAuth2ApplicationData],
   oauth2Apis: Seq[OAuth2ApiData],
   simpleTokenApis: Seq[SimpleTokenApiData],
-  linkedOAuth2ApplicationIds: Seq[String]
+  linkedOAuth2ApplicationIds: Seq[String],
+  userId: String
 )
 
 object BehaviorEditorEditConfig {
@@ -24,10 +26,12 @@ object BehaviorEditorEditConfig {
       data.builtinParamTypes,
       data.environmentVariables,
       data.savedAnswers,
+      data.awsConfigs,
       data.oauth2Applications,
       data.oauth2Apis,
       data.simpleTokenApis,
-      data.linkedOAuth2ApplicationIds
+      data.linkedOAuth2ApplicationIds,
+      data.userId
     )
   }
 }

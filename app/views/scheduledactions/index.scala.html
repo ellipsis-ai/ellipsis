@@ -8,8 +8,8 @@
 @page.main("Scheduling", config, selectedNav = "scheduling") {
   <div id="content" class="content">
     <div id="scheduling"></div>
-    <script src='@RemoteAssets.getUrl("lib/requirejs/require.min.js")'></script>
+    <script src='@config.assets.getUrl("lib/requirejs/require.min.js")'></script>
     <script src="@routes.ScheduledActionsController.index(maybeScheduledId, maybeNewSchedule, maybeTeamId)"></script>
-    <script src='@RemoteAssets.getUrl("javascripts/scheduling/loader.js")'></script>
+    <script src='@config.assets.getUrl("javascripts/scheduling/loader.js")'></script>
   </div>
 }

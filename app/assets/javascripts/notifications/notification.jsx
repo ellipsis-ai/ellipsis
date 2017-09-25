@@ -4,6 +4,7 @@ define(function(require) {
     SVGTip = require('../svg/tip'),
     SVGWarning = require('../svg/warning'),
     NotificationForEnvVarMissing = require('./env_var_not_defined'),
+    NotificationForRequiredAWSConfigWithoutConfig = require('./required_aws_config_without_config'),
     NotificationForMissingOAuth2Application = require('./oauth2_config_without_application'),
     NotificationForDataTypeNeedsConfig = require('./data_type_needs_config'),
     NotificationForDataTypeUnnamed = require('./data_type_unnamed'),
@@ -15,6 +16,7 @@ define(function(require) {
     NotificationForParamNotInFunction = require('./param_not_in_function'),
     NotificationForInvalidParamInTrigger = require('./invalid_param_in_trigger'),
     NotificationForUnknownParamInTemplate = require('./unknown_param_in_template'),
+    NotificationForServerDataWarning = require('./server_data_warning'),
     NotificationDataGroup = require('../models/notification_data_group');
 
   return React.createClass({
@@ -30,7 +32,15 @@ define(function(require) {
           containerClass: "box-warning",
           icon: this.getWarningIcon(),
           message: (
-            <NotificationForEnvVarMissing details={this.props.group.members} />
+            <NotificationForEnvVarMissing details={this.props.group.members}/>
+          )
+        };
+      } else if (kind === "required_aws_config_without_config") {
+        return {
+          containerClass: "box-warning",
+          icon: this.getWarningIcon(),
+          message: (
+            <NotificationForRequiredAWSConfigWithoutConfig details={this.props.group.members} />
           )
         };
       } else if (kind === "oauth2_config_without_application") {
@@ -118,7 +128,15 @@ define(function(require) {
           containerClass: "box-warning",
           icon: this.getWarningIcon(),
           message: (
-            <NotificationForInvalidParamInTrigger details={this.props.group.members} />
+            <NotificationForInvalidParamInTrigger details={this.props.group.members}/>
+          )
+        };
+      } else if (kind === "server_data_warning") {
+        return {
+          containerClass: "box-error",
+          icon: this.getErrorIcon(),
+          message: (
+            <NotificationForServerDataWarning details={this.props.group.members} />
           )
         };
       } else {
@@ -130,6 +148,14 @@ define(function(require) {
       return (
         <span className="display-inline-block align-b type-yellow" style={{ width: 22, height: 24 }}>
           <SVGWarning />
+        </span>
+      );
+    },
+
+    getErrorIcon: function() {
+      return (
+        <span className="display-inline-block align-b type-pink" style={{ width: 22, height: 24 }}>
+          <SVGWarning inverted={true} />
         </span>
       );
     },

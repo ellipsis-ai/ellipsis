@@ -6,8 +6,7 @@ import models.behaviors.datatypefield.FieldTypeForSchema
 import models.behaviors.defaultstorageitem.GraphQLHelpers
 import services.DataService
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 case class BehaviorParameterTypeData(
                                       id: Option[String],
@@ -47,7 +46,7 @@ case class BehaviorParameterTypeData(
 
 object BehaviorParameterTypeData {
 
-  def from(paramType: BehaviorParameterType, dataService: DataService): Future[BehaviorParameterTypeData] = {
+  def from(paramType: BehaviorParameterType, dataService: DataService)(implicit ec: ExecutionContext): Future[BehaviorParameterTypeData] = {
     paramType.needsConfig(dataService).map { needsConfig =>
       BehaviorParameterTypeData(Some(paramType.id), Some(paramType.exportId), paramType.name, Some(needsConfig))
     }

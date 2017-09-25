@@ -21,6 +21,7 @@ import models.behaviors.behaviorgroupversion.BehaviorGroupVersionService
 import models.behaviors.behaviorparameter.BehaviorParameterService
 import models.behaviors.behaviorversion.BehaviorVersionService
 import models.behaviors.config.awsconfig.AWSConfigService
+import models.behaviors.config.requiredawsconfig.RequiredAWSConfigService
 import models.behaviors.config.requiredoauth2apiconfig.RequiredOAuth2ApiConfigService
 import models.behaviors.config.requiredsimpletokenapi.RequiredSimpleTokenApiService
 import models.behaviors.conversations.collectedparametervalue.CollectedParameterValueService
@@ -79,6 +80,7 @@ class MockDataService extends DataService with MockitoSugar {
   val savedAnswers = mock[SavedAnswerService]
   val messageTriggers = mock[MessageTriggerService]
   val awsConfigs = mock[AWSConfigService]
+  val requiredAWSConfigs: RequiredAWSConfigService = mock[RequiredAWSConfigService]
   val requiredOAuth2ApiConfigs = mock[RequiredOAuth2ApiConfigService]
   val requiredSimpleTokenApis = mock[RequiredSimpleTokenApiService]
   val conversations = mock[ConversationService]

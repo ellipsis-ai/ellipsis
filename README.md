@@ -205,5 +205,5 @@ $ su postgres
 $ dropdb ellipsis-test
 ```
 
-### Ops
- Play App logs on the EB instance /var/log/eb-docker/containers/eb-current-app/
+
+#### Build and run the app locally in a container

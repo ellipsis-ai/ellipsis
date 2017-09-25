@@ -52,11 +52,11 @@ return React.createClass({
     return (
       <Checklist.Item checkedWhen={this.props.template && this.props.template.includesIteration()}>
         Iterate through a list/array of items:<br />
-        <div className="box-code-example">
-          {"{for item in successResult.items}"}<br />
-          * {"{item}"}<br />
-          {"{endfor}"}
-        </div>
+        <pre className="box-code-example">{
+`{for item in successResult.items}
+* {item}
+{endfor}`
+        }</pre>
       </Checklist.Item>
     );
   },
@@ -65,13 +65,13 @@ return React.createClass({
     return (
       <Checklist.Item checkedWhen={this.props.template && this.props.template.includesIfLogic()}>
         Use if/else logic with strict boolean values:<br />
-        <div className="box-code-example">
-          {"{if successResult.booleanValue}"}<br />
-          It worked<br/>
-          {"{else}"}
-          Something went wrong.<br/>
-          {"{endif}"}
-        </div>
+        <pre className="box-code-example">{
+`{if successResult.booleanValue}
+It worked
+{else}
+Something went wrong.
+{endif}`
+        }</pre>
       </Checklist.Item>
     );
   },

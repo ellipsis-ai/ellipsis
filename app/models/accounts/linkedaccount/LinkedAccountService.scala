@@ -1,11 +1,12 @@
 package models.accounts.linkedaccount
 
 import com.mohiva.play.silhouette.api.LoginInfo
+import json.SlackUserData
 import models.accounts.user.User
+import slack.api.SlackApiClient
 import slick.dbio.DBIO
 
-import scala.concurrent.Future
-import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.{ExecutionContext, Future}
 
 trait LinkedAccountService {
 
@@ -23,11 +24,13 @@ trait LinkedAccountService {
 
   def maybeForSlackFor(user: User): Future[Option[LinkedAccount]]
 
-  def maybeSlackUserIdFor(user: User): Future[Option[String]] = {
+  def maybeSlackUserIdFor(user: User)(implicit ec: ExecutionContext): Future[Option[String]] = {
     maybeForSlackFor(user).map { maybeLinkedAccount =>
       maybeLinkedAccount.map(_.loginInfo.providerKey)
     }
   }
+
+  def maybeSlackUserDataFor(slackUserId: String, slackTeamId: String, client: SlackApiClient): Future[Option[SlackUserData]]
 
   def isAdminAction(linkedAccount: LinkedAccount): DBIO[Boolean]
 

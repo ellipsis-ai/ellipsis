@@ -1,14 +1,14 @@
 define(function(require) {
   const React = require('react'),
-    AWSConfig = require('./aws_config'),
     BehaviorConfig = require('../models/behavior_config'),
     CodeEditor = require('./code_editor'),
-    Collapsible = require('../shared_ui/collapsible'),
     DropdownMenu = require('../shared_ui/dropdown_menu'),
     HelpButton = require('../help/help_button'),
     Input = require('../models/input'),
     Notifications = require('../notifications/notifications'),
     NotificationData = require('../models/notification_data'),
+    RequiredAWSConfig = require('../models/aws').RequiredAWSConfig,
+    RequiredOAuth2Application = require('../models/oauth2').RequiredOAuth2Application,
     SectionHeading = require('../shared_ui/section_heading'),
     SVGSettingsIcon = require('../svg/settings'),
     debounce = require('javascript-debounce');
@@ -19,6 +19,7 @@ define(function(require) {
       sectionNumber: React.PropTypes.string.isRequired,
       sectionHeading: React.PropTypes.string.isRequired,
       codeEditorHelp: React.PropTypes.node.isRequired,
+      codeHelpPanelName: React.PropTypes.string.isRequired,
 
       activePanelName: React.PropTypes.string.isRequired,
       activeDropdownName: React.PropTypes.string.isRequired,
@@ -26,24 +27,14 @@ define(function(require) {
       onToggleActivePanel: React.PropTypes.func.isRequired,
       animationIsDisabled: React.PropTypes.bool.isRequired,
 
-      awsConfig: React.PropTypes.object,
-      onToggleAWSConfig: React.PropTypes.func.isRequired,
       behaviorConfig: React.PropTypes.instanceOf(BehaviorConfig),
-      onAWSAddNewEnvVariable: React.PropTypes.func.isRequired,
-      onAWSConfigChange: React.PropTypes.func.isRequired,
-
-      apiSelector: React.PropTypes.node.isRequired,
 
       inputs: React.PropTypes.arrayOf(React.PropTypes.instanceOf(Input)).isRequired,
       systemParams: React.PropTypes.arrayOf(React.PropTypes.string).isRequired,
-      apiApplications: React.PropTypes.arrayOf(React.PropTypes.shape({
-        apiId: React.PropTypes.string.isRequired,
-        recommendedScope: React.PropTypes.string,
-        application: React.PropTypes.shape({
-          applicationId: React.PropTypes.string.isRequired,
-          displayName: React.PropTypes.string.isRequired
-        })
-      })).isRequired,
+
+      requiredAWSConfigs: React.PropTypes.arrayOf(React.PropTypes.instanceOf(RequiredAWSConfig)).isRequired,
+
+      apiApplications: React.PropTypes.arrayOf(React.PropTypes.instanceOf(RequiredOAuth2Application)).isRequired,
 
       functionBody: React.PropTypes.string.isRequired,
       onChangeFunctionBody: React.PropTypes.func.isRequired,
@@ -53,7 +44,8 @@ define(function(require) {
       canDeleteFunctionBody: React.PropTypes.bool.isRequired,
       onDeleteFunctionBody: React.PropTypes.func.isRequired,
 
-      envVariableNames: React.PropTypes.arrayOf(React.PropTypes.string).isRequired
+      envVariableNames: React.PropTypes.arrayOf(React.PropTypes.string).isRequired,
+      functionExecutesImmediately: React.PropTypes.bool
     },
 
     getInitialState: function() {
@@ -78,33 +70,12 @@ define(function(require) {
       }
     },
 
-    toggleAWSHelp: function() {
-      this.props.onToggleActivePanel('helpForAWS');
-    },
-
-    toggleBoilerplateHelp: function() {
-      this.props.onToggleActivePanel('helpForBoilerplateParameters');
+    toggleBehaviorCodeHelp: function() {
+      this.props.onToggleActivePanel(this.props.codeHelpPanelName);
     },
 
     toggleEditorSettingsMenu: function() {
       this.props.onToggleActiveDropdown('codeEditorSettings');
-    },
-
-    hasAwsConfig: function() {
-      return Boolean(this.getAwsConfig());
-    },
-
-    getAwsConfig: function() {
-      return this.props.awsConfig;
-    },
-
-    getAWSConfigProperty: function(property) {
-      const config = this.getAwsConfig();
-      if (config) {
-        return config[property];
-      } else {
-        return "";
-      }
     },
 
     getCodeFunctionParams: function() {
@@ -125,45 +96,47 @@ define(function(require) {
       return this.getFirstLineNumberForCode() + numLines;
     },
 
-    hasUsedOAuth2Application: function(code, keyName) {
-      var pattern = new RegExp(`\\bellipsis\\.accessTokens\\.${keyName}\\b`);
+    hasUsedOAuth2Application: function(code, nameInCode) {
+      var pattern = new RegExp(`\\bellipsis\\.accessTokens\\.${nameInCode}\\b`);
       return pattern.test(code);
     },
 
-    hasUsedAWSObject: function(code) {
-      return /\bellipsis\.AWS\b/.test(code);
+    hasUsedAWSConfig: function(code, nameInCode) {
+      var pattern = new RegExp(`\\bellipsis\\.aws\\.${nameInCode}\\b`);
+      return pattern.test(code);
     },
 
     buildNotifications: function() {
       var oAuth2Notifications = [];
       var awsNotifications = [];
       this.props.apiApplications
-        .filter((ea) => ea && !this.hasUsedOAuth2Application(this.props.functionBody, ea.keyName))
+        .filter((ea) => ea && !this.hasUsedOAuth2Application(this.props.functionBody, ea.nameInCode))
         .forEach((ea) => {
           oAuth2Notifications.push(new NotificationData({
             kind: "oauth2_application_unused",
-            name: ea.displayName,
-            code: `ellipsis.accessTokens.${ea.keyName}`
+            name: ea.config.displayName,
+            code: `ellipsis.accessTokens.${ea.nameInCode}`
           }));
         });
-      if (this.hasAwsConfig() && !this.hasUsedAWSObject(this.props.functionBody)) {
-        awsNotifications.push(new NotificationData({
-          kind: "aws_unused",
-          code: "ellipsis.AWS"
-        }));
-      }
+      this.props.requiredAWSConfigs
+        .filter(ea => !this.hasUsedAWSConfig(this.props.functionBody, ea.nameInCode))
+        .forEach(ea => {
+          awsNotifications.push(new NotificationData({
+            kind: "aws_unused",
+            code: `ellipsis.aws.${ea.nameInCode}`
+          }));
+        });
       return oAuth2Notifications.concat(awsNotifications);
     },
 
     getCodeAutocompletions: function() {
-      var apiTokens = this.props.apiApplications.map((application) => `ellipsis.accessTokens.${application.keyName}`);
+      var apiTokens = this.props.apiApplications.map(ea => `ellipsis.accessTokens.${ea.nameInCode}`);
       var envVars = this.props.envVariableNames.map(function(name) {
         return `ellipsis.env.${name}`;
       });
+      var awsTokens = this.props.requiredAWSConfigs.map(ea => `ellipsis.aws.${ea.nameInCode}`);
 
-      var aws = this.hasAwsConfig() ? ['ellipsis.AWS'] : [];
-
-      return this.getCodeFunctionParams().concat(apiTokens, aws, envVars);
+      return this.getCodeFunctionParams().concat(apiTokens, awsTokens, envVars);
     },
 
     refresh: function() {
@@ -180,32 +153,16 @@ define(function(require) {
                 <SectionHeading number={this.props.sectionNumber}>
                   <span className="mrm">{this.props.sectionHeading}</span>
                   <span className="display-inline-block">
-                    <HelpButton onClick={this.toggleBoilerplateHelp} toggled={this.props.activePanelName === 'helpForBoilerplateParameters'} />
+                    <HelpButton onClick={this.toggleBehaviorCodeHelp} toggled={this.props.activePanelName === 'helpForBehaviorCode'} />
                   </span>
                 </SectionHeading>
               </div>
-              <div className="column column-shrink ptxs mobile-mbm">{this.props.apiSelector}</div>
             </div>
 
             {this.props.codeEditorHelp}
           </div>
 
           <div>
-            <Collapsible revealWhen={this.hasAwsConfig()} animationDisabled={this.props.animationIsDisabled} className="debugger">
-              <div className="type-s plxxxl prs mbm">
-                <AWSConfig
-                  envVariableNames={this.props.envVariableNames}
-                  accessKeyName={this.getAWSConfigProperty('accessKeyName')}
-                  secretKeyName={this.getAWSConfigProperty('secretKeyName')}
-                  regionName={this.getAWSConfigProperty('regionName')}
-                  onAddNew={this.props.onAWSAddNewEnvVariable}
-                  onChange={this.props.onAWSConfigChange}
-                  onRemoveAWSConfig={this.props.onToggleAWSConfig}
-                  onToggleHelp={this.toggleAWSHelp}
-                  helpVisible={this.props.activePanelName === 'helpForAWS'}
-                />
-              </div>
-            </Collapsible>
 
             <div className="pbxs">
               <div className="columns columns-elastic">
@@ -214,7 +171,11 @@ define(function(require) {
                 </div>
                 <div className="column column-expand plxs">
                   <code className="type-s">
-                    <span className="type-s type-weak">{"module.exports = (function ("}</span>
+                    <span className="type-s type-weak">{
+                      this.props.functionExecutesImmediately ?
+                        "module.exports = (function(" :
+                        "module.exports = function("
+                    }</span>
                     {this.props.inputs.map((input, inputIndex) => (
                       <span key={`param${inputIndex}`}>{input.name}<span className="type-weak">, </span></span>
                     ))}
@@ -271,7 +232,9 @@ define(function(require) {
               <div className="column column-expand plxs">
                 <div className="columns columns-elastic">
                   <div className="column column-expand">
-                    <code className="type-weak type-s">{"\u007D()"}</code>
+                    <code className="type-weak type-s">{
+                      this.props.functionExecutesImmediately ? "\u007D)();" : "\u007D;"
+                    }</code>
                   </div>
                   <div className="column column-shrink prs align-r">
                     {this.props.canDeleteFunctionBody ? (

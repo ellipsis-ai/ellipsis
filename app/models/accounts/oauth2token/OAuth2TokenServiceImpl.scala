@@ -9,8 +9,7 @@ import models.accounts.slack.profile.SlackProfileQueries
 import services.DataService
 import drivers.SlickPostgresDriver.api._
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 class OAuth2TokensTable(tag: Tag) extends Table[OAuth2Token](tag, "oauth_2_tokens") {
   def accessToken = column[String]("access_token")
@@ -29,7 +28,8 @@ class OAuth2TokensTable(tag: Tag) extends Table[OAuth2Token](tag, "oauth_2_token
 }
 
 class OAuth2TokenServiceImpl @Inject() (
-                                         dataServiceProvider: Provider[DataService]
+                                         dataServiceProvider: Provider[DataService],
+                                         implicit val ec: ExecutionContext
                                        ) extends OAuth2TokenService {
 
   def dataService = dataServiceProvider.get

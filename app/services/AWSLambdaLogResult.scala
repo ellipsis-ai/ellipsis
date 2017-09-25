@@ -1,6 +1,12 @@
 package services
 
-case class AWSLambdaLogResult(source: String, userDefinedLogStatements: String, maybeError: Option[String]) {
+case class AWSLambdaLogResult(source: String, authorDefinedLogStatements: String, maybeErrorMessage: Option[String]) {
+  def maybeTranslated(functionLines: Int): Option[String] = {
+    maybeErrorMessage.map(error => AWSLambdaLogResult.translateErrors(functionLines, error))
+  }
+}
+
+object AWSLambdaLogResult {
 
   def shouldExcludeLine(line: String, functionLines: Int): Boolean = {
     """<your function>:(\d+):""".r.findFirstMatchIn(line).exists { m =>
@@ -13,21 +19,17 @@ case class AWSLambdaLogResult(source: String, userDefinedLogStatements: String, 
     }
   }
 
-  def maybeTranslated(functionLines: Int): Option[String] = {
-    maybeError.map { error =>
-      var translated = error
-      translated = """/var/task/index.js""".r.replaceAllIn(translated, "<your function>")
-      translated = """at fn|at exports\.handler""".r.replaceAllIn(translated, "at top level")
-      translated.
-        split("\n").
-        filterNot { line => shouldExcludeLine(line, functionLines) }.
-        mkString("\n")
-    }
+  def translateErrors(functionLines: Int, error: String): String = {
+    var translated = error
+    translated = """/var/task/index.js""".r.replaceAllIn(translated, "<your function>")
+    translated = """/var/task/(.+)\.js""".r.replaceAllIn(translated, "$1")
+    translated = """at fn|at exports\.handler""".r.replaceAllIn(translated, "at top level")
+    translated.
+      split("\n").
+      filterNot { line => shouldExcludeLine(line, functionLines) }.
+      mkString("\n").
+      stripPrefix("\t")
   }
-
-}
-
-object AWSLambdaLogResult {
 
   def extractErrorAndNonErrorContentFrom(text: String): (Option[String], String) = {
     var nonErrorContent = """(?s)(.*\n)END RequestId:""".r.findFirstMatchIn(text).flatMap { m =>
@@ -55,14 +57,14 @@ object AWSLambdaLogResult {
   def extractUserDefinedLogStatementsFrom(text: String): String = {
     val maybeUserDefinedLogStatementsContent = """(?s)(START.*?\n)?(.*)""".r.findFirstMatchIn(text).flatMap(_.subgroups.tail.headOption)
     maybeUserDefinedLogStatementsContent.map { content =>
-      content.split( """\S+\t\S+\t""")
+      content.split("""\S+\t\S+\t""")
     }.map { strings =>
-      strings.
-        map(_.trim).
-        filter(_.nonEmpty).
-        map(s => """\n""".r.replaceAllIn(s, "\n\t")).
-        map(s => s"\nYou logged:\n\n\t$s\n").
-        mkString("")
+      val logs = strings.map(_.trim).filter(_.nonEmpty)
+      if (logs.nonEmpty) {
+        logs.mkString("\n")
+      } else {
+        ""
+      }
     }.getOrElse("")
   }
 

@@ -1,9 +1,19 @@
 package json
 
+import models.behaviors.config.awsconfig.AWSConfig
+
 case class AWSConfigData(
-                          accessKeyName: Option[String],
-                          secretKeyName: Option[String],
-                          regionName: Option[String]
-                          ) {
-  val knownEnvVarsUsed: Seq[String] = Seq(accessKeyName, secretKeyName, regionName).flatten
+                          id: String,
+                          displayName: String,
+                          accessKeyId: Option[String],
+                          secretAccessKey: Option[String],
+                          region: Option[String]
+                          )
+
+object AWSConfigData {
+
+  def from(cfg: AWSConfig): AWSConfigData = {
+    AWSConfigData(cfg.id, cfg.name, cfg.maybeAccessKey, cfg.maybeSecretKey, cfg.maybeRegion)
+  }
+
 }

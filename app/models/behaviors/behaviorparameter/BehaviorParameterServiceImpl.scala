@@ -9,8 +9,7 @@ import models.behaviors.behaviorversion.BehaviorVersion
 import models.behaviors.input.Input
 import services.DataService
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 case class RawBehaviorParameter(
                                  id: String,
@@ -31,7 +30,8 @@ class BehaviorParametersTable(tag: Tag) extends Table[RawBehaviorParameter](tag,
 }
 
 class BehaviorParameterServiceImpl @Inject() (
-                                              dataServiceProvider: Provider[DataService]
+                                              dataServiceProvider: Provider[DataService],
+                                              implicit val ec: ExecutionContext
                                             ) extends BehaviorParameterService {
 
   def dataService = dataServiceProvider.get

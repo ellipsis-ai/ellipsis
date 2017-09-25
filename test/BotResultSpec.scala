@@ -120,7 +120,7 @@ class BotResultSpec extends PlaySpec with MockitoSugar with DBSpec {
   "sendIn" should {
 
     "send a response" in {
-      withEmptyDB(dataService, { db =>
+      withEmptyDB(dataService, { () =>
         val profile = newSavedBotProfile
         val team = runNow(dataService.teams.find(profile.teamId)).head
 
@@ -137,7 +137,7 @@ class BotResultSpec extends PlaySpec with MockitoSugar with DBSpec {
     }
 
     "interrupt ongoing conversations" in {
-      withEmptyDB(dataService, { db =>
+      withEmptyDB(dataService, { () =>
         val profile = newSavedBotProfile
         val team = runNow(dataService.teams.find(profile.teamId)).head
         val user = newSavedUserOn(team)
@@ -173,14 +173,14 @@ class BotResultSpec extends PlaySpec with MockitoSugar with DBSpec {
     }
 
     "not interrupt for noResponse()" in {
-      withEmptyDB(dataService, { db =>
+      withEmptyDB(dataService, { () =>
         val profile = newSavedBotProfile
         val team = runNow(dataService.teams.find(profile.teamId)).head
         val user = newSavedUserOn(team)
         val event: SlackMessageEvent = newEventFor(profile)
 
         val responseText = "response"
-        val result = NoResponseResult(event, None, None)
+        val result = NoResponseResult(event, None, JsNull, None)
         val resultTs: String = SlackTimestamp.now
 
         val conversation = newConversationFor(team, user, profile, event)
@@ -197,7 +197,7 @@ class BotResultSpec extends PlaySpec with MockitoSugar with DBSpec {
     }
 
     "not interrupt self conversation" in {
-      withEmptyDB(dataService, { db =>
+      withEmptyDB(dataService, { () =>
         val profile = newSavedBotProfile
         val team = runNow(dataService.teams.find(profile.teamId)).head
         val user = newSavedUserOn(team)
@@ -229,7 +229,7 @@ class BotResultSpec extends PlaySpec with MockitoSugar with DBSpec {
     }
 
     "not interrupt for message in thread" in {
-      withEmptyDB(dataService, { db =>
+      withEmptyDB(dataService, { () =>
         val profile = newSavedBotProfile
         val team = runNow(dataService.teams.find(profile.teamId)).head
         val user = newSavedUserOn(team)

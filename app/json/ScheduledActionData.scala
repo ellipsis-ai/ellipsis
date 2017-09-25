@@ -8,8 +8,7 @@ import models.team.Team
 import services.DataService
 import utils.ChannelLike
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 case class ScheduledActionArgumentData(name: String, value: String)
 
@@ -67,7 +66,7 @@ object ScheduledActionData {
     )
   }
 
-  def buildFor(maybeSlackUserId: Option[String], team: Team, channelList: Seq[ChannelLike], dataService: DataService): Future[Seq[ScheduledActionData]] = {
+  def buildFor(maybeSlackUserId: Option[String], team: Team, channelList: Seq[ChannelLike], dataService: DataService)(implicit ec: ExecutionContext): Future[Seq[ScheduledActionData]] = {
     /* TODO: once our scheduling models are medium-aware, make this filtering more intelligent for
        users with or without a Slack user ID */
     for {

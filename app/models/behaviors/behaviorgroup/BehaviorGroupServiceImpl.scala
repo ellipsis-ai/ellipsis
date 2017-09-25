@@ -12,8 +12,7 @@ import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
 import models.team.Team
 import services.DataService
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 
 case class RawBehaviorGroup(
@@ -36,7 +35,8 @@ class BehaviorGroupsTable(tag: Tag) extends Table[RawBehaviorGroup](tag, "behavi
 }
 
 class BehaviorGroupServiceImpl @Inject() (
-                                          dataServiceProvider: Provider[DataService]
+                                          dataServiceProvider: Provider[DataService],
+                                          implicit val ec: ExecutionContext
                                         ) extends BehaviorGroupService {
 
   def dataService = dataServiceProvider.get
@@ -128,12 +128,13 @@ class BehaviorGroupServiceImpl @Inject() (
       groupsData <- Future.sequence(groupVersions.map { ea =>
         BehaviorGroupData.buildFor(ea, user, dataService)
       })
+      userData <- dataService.users.userDataFor(user, team)
       mergedData <- Future.successful({
         val actionInputs = groupsData.flatMap(_.actionInputs)
         val dataTypeInputs = groupsData.flatMap(_.dataTypeInputs)
         val behaviorVersions = groupsData.flatMap(_.behaviorVersions)
         val libraryVersions = groupsData.flatMap(_.libraryVersions)
-        val maybeAWSConfig = groupsData.flatMap(_.awsConfig).headOption
+        val requiredAWSConfigs = groupsData.flatMap(_.requiredAWSConfigs)
         val requiredOAuth2ApiConfigs = groupsData.flatMap(_.requiredOAuth2ApiConfigs)
         val requiredSimpleTokenApis = groupsData.flatMap(_.requiredSimpleTokenApis)
         BehaviorGroupData(
@@ -146,13 +147,13 @@ class BehaviorGroupServiceImpl @Inject() (
           dataTypeInputs,
           behaviorVersions,
           libraryVersions,
-          nodeModuleVersions = Seq(),
-          maybeAWSConfig,
+          requiredAWSConfigs,
           requiredOAuth2ApiConfigs,
           requiredSimpleTokenApis,
           githubUrl = None,
-          exportId = None, // Don't think it makes sense to have an exportId for something merged
-          None
+          exportId = None,
+          None,
+          Some(userData)
         )
       })
       _ <- Future.sequence(groupVersions.map { ea =>

@@ -2,6 +2,7 @@ package controllers
 
 import javax.inject.Inject
 
+import com.google.inject.Provider
 import com.mohiva.play.silhouette.api.Silhouette
 import models._
 import models.accounts.oauth2api.{OAuth2Api, OAuth2GrantType}
@@ -9,17 +10,16 @@ import models.silhouette.EllipsisEnv
 import play.api.Configuration
 import play.api.data.Form
 import play.api.data.Forms._
-import play.api.i18n.MessagesApi
 import services.DataService
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 class OAuth2ApiController @Inject() (
-                                      val messagesApi: MessagesApi,
                                       val silhouette: Silhouette[EllipsisEnv],
                                       val dataService: DataService,
-                                      val configuration: Configuration
+                                      val configuration: Configuration,
+                                      val assetsProvider: Provider[RemoteAssets],
+                                      implicit val ec: ExecutionContext
                                     ) extends ReAuthable {
 
   def list(maybeTeamId: Option[String]) = silhouette.SecuredAction.async { implicit request =>

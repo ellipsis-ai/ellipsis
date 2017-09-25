@@ -1,12 +1,13 @@
-import models.accounts.slack.SlackUserInfo
+import json.SlackUserData
 import models.behaviors.events.SlackMessage
 import org.scalatestplus.play.PlaySpec
+import play.api.libs.json.JsObject
 
 class SlackMessageSpec extends PlaySpec {
 
   val userId = "U1234567"
-  val user = SlackUserInfo(userId, "attaboy", Some("America/Toronto"))
-  val userList = Seq(user)
+  val user = SlackUserData(userId, "T1234", "attaboy", Some("America/Toronto"), JsObject(Seq()))
+  val userList = Set(user)
 
   "unformatLinks" should {
     "unformat channels and users" in {
@@ -57,7 +58,7 @@ class SlackMessageSpec extends PlaySpec {
 
   "augmentUserIdsWithNames" should {
     "add user names to user links" in {
-      SlackMessage.augmentUserIdsWithNames(s"Hey <@${user.userId}>, what's shaking?", userList) mustBe s"Hey <@${user.userId}|${user.name}>, what's shaking?"
+      SlackMessage.augmentUserIdsWithNames(s"Hey <@${user.accountId}>, what's shaking?", userList) mustBe s"Hey <@${user.accountId}|${user.accountName}>, what's shaking?"
     }
   }
 
@@ -71,28 +72,21 @@ class SlackMessageSpec extends PlaySpec {
       val received =
         s"""Hey <!channel|channel>, has anyone seen <mailto:luke@ellipsis.ai|luke@ellipsis.ai>?
            |
-           |He &amp; I have a meeting. <@${user.userId}>, have you seen him?""".stripMargin
+           |He &amp; I have a meeting. <@${user.accountId}>, have you seen him?""".stripMargin
       val expected =
         s"""Hey @channel, has anyone seen luke@ellipsis.ai?
            |
-           |He & I have a meeting. @${user.name}, have you seen him?""".stripMargin
+           |He & I have a meeting. @${user.accountName}, have you seen him?""".stripMargin
       SlackMessage.unformatTextWithUsers(received, userList) mustBe expected
     }
 
   }
 
-  "textContainsRawUserIds" should {
-    "be true when the text has linked user IDs without display names" in {
-      SlackMessage.textContainsRawUserIds("Hi there, <@U12345678>.") mustBe true
-      SlackMessage.textContainsRawUserIds("<@W12345678> is a real piece of work.") mustBe true
-    }
-
-    "be false when the text has linked user IDs with display names" in {
-      SlackMessage.textContainsRawUserIds("Whoa, what is <@U12345678|attaboy> doing?") mustBe false
-    }
-
-    "be false when the text has no linked users" in {
-      SlackMessage.textContainsRawUserIds("Let's discuss this in <#C12345679|dev>.") mustBe false
+  "userIdsInText" should {
+    "return the user IDs as a set" in {
+      SlackMessage.userIdsInText("Hi there, <@U12345678>.") mustBe Set("U12345678")
+      SlackMessage.userIdsInText("<@W12345678> is a real piece of work.") mustBe Set("W12345678")
+      SlackMessage.userIdsInText("<@W12345678> is a real piece of work. Oh that <@W12345678>") mustBe Set("W12345678")
     }
   }
 

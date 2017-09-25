@@ -4,59 +4,59 @@ import javax.inject.Inject
 
 import com.google.inject.Provider
 import drivers.SlickPostgresDriver.api._
-import models.IDs
-import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
+import models.team.Team
 import services.DataService
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 class AWSConfigsTable(tag: Tag) extends Table[AWSConfig](tag, "aws_configs") {
 
   def id = column[String]("id", O.PrimaryKey)
-  def groupVersionId = column[String]("group_version_id")
-  def maybeAccessKeyName = column[Option[String]]("access_key_name")
-  def maybeSecretKeyName = column[Option[String]]("secret_key_name")
-  def maybeRegionName = column[Option[String]]("region_name")
+  def name = column[String]("name")
+  def teamId = column[String]("team_id")
+  def maybeAccessKeyId = column[Option[String]]("access_key_id")
+  def maybeSecretAccessKey = column[Option[String]]("secret_access_key")
+  def maybeRegion = column[Option[String]]("region")
 
-  def * = (id, groupVersionId, maybeAccessKeyName, maybeSecretKeyName, maybeRegionName) <> ((AWSConfig.apply _).tupled, AWSConfig.unapply _)
+  def * = (id, name, teamId, maybeAccessKeyId, maybeSecretAccessKey, maybeRegion) <> ((AWSConfig.apply _).tupled, AWSConfig.unapply _)
 }
 
 class AWSConfigServiceImpl @Inject() (
-                                       dataServiceProvider: Provider[DataService]
+                                       dataServiceProvider: Provider[DataService],
+                                       implicit val ec: ExecutionContext
                                      ) extends AWSConfigService {
 
   def dataService = dataServiceProvider.get
 
-  val all = TableQuery[AWSConfigsTable]
+  import AWSConfigQueries._
 
-  def uncompiledFindQuery(behaviorVersionId: Rep[String]) = all.filter(_.groupVersionId === behaviorVersionId)
-  val findQuery = Compiled(uncompiledFindQuery _)
-
-  def maybeForAction(groupVersion: BehaviorGroupVersion): DBIO[Option[AWSConfig]] = {
-    findQuery(groupVersion.id).result.map(_.headOption)
+  def allForAction(team: Team): DBIO[Seq[AWSConfig]] = {
+    allForQuery(team.id).result
   }
 
-  def maybeFor(groupVersion: BehaviorGroupVersion): Future[Option[AWSConfig]] = {
-    dataService.run(maybeForAction(groupVersion))
+  def allFor(team: Team): Future[Seq[AWSConfig]] = {
+    dataService.run(allForAction(team))
   }
 
-  def createForAction(
-                       groupVersion: BehaviorGroupVersion,
-                       maybeAccessKeyName: Option[String],
-                       maybeSecretKeyName: Option[String],
-                       maybeRegionName: Option[String]
-                     ): DBIO[AWSConfig] = {
+  def findAction(id: String): DBIO[Option[AWSConfig]] = {
+    findQuery(id).result.map { r =>
+      r.headOption
+    }
+  }
 
-    val newInstance = AWSConfig(
-      IDs.next,
-      groupVersion.id,
-      maybeAccessKeyName,
-      maybeSecretKeyName,
-      maybeRegionName
-    )
+  def find(id: String): Future[Option[AWSConfig]] = {
+    dataService.run(findAction(id))
+  }
 
-    (all += newInstance).map { _ => newInstance }
+  def save(config: AWSConfig): Future[AWSConfig] = {
+    find(config.id).flatMap { maybeExisting =>
+      maybeExisting.map { existing =>
+        dataService.run(findQuery(config.id).update(config))
+      }.getOrElse {
+        val action = (all += config)
+        dataService.run(action)
+      }
+    }.map { _ => config }
   }
 
 }

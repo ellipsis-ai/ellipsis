@@ -35,7 +35,7 @@ define(function(require) {
 
           <hr className="mvxl"/>
 
-          <h4 className="mtl mbn">Icon and title</h4>
+          <h4 className="mbn">Icon and title</h4>
           <div className="columns columns-elastic">
             <div className="column column-shrink">
               <Input

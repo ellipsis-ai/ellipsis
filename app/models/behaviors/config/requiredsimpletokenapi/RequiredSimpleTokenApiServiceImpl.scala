@@ -11,12 +11,12 @@ import models.accounts.user.User
 import models.behaviors.behaviorgroupversion.{BehaviorGroupVersion, BehaviorGroupVersionQueries}
 import services.DataService
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 case class RawRequiredSimpleTokenApi(
                                       id: String,
                                       groupVersionId: String,
+                                      nameInCode: String,
                                       apiId: String
                                          )
 
@@ -24,14 +24,16 @@ class RequiredSimpleTokenApisTable(tag: Tag) extends Table[RawRequiredSimpleToke
 
   def id = column[String]("id", O.PrimaryKey)
   def groupVersionId = column[String]("group_version_id")
+  def nameInCode = column[String]("name_in_code")
   def apiId = column[String]("api_id")
 
-  def * = (id, groupVersionId, apiId) <>
+  def * = (id, groupVersionId, nameInCode, apiId) <>
     ((RawRequiredSimpleTokenApi.apply _).tupled, RawRequiredSimpleTokenApi.unapply _)
 }
 
 class RequiredSimpleTokenApiServiceImpl @Inject()(
-                                                         dataServiceProvider: Provider[DataService]
+                                                         dataServiceProvider: Provider[DataService],
+                                                         implicit val ec: ExecutionContext
                                                        ) extends RequiredSimpleTokenApiService {
 
   def dataService = dataServiceProvider.get
@@ -48,6 +50,7 @@ class RequiredSimpleTokenApiServiceImpl @Inject()(
     RequiredSimpleTokenApi(
       raw.id,
       groupVersion,
+      raw.nameInCode,
       tuple._2
     )
   }
@@ -120,7 +123,7 @@ class RequiredSimpleTokenApiServiceImpl @Inject()(
     for {
       maybeApi <- DBIO.from(dataService.simpleTokenApis.find(data.apiId))
       maybeConfig <- maybeApi.map { api =>
-        val newInstance = RequiredSimpleTokenApi(IDs.next, groupVersion, api)
+        val newInstance = RequiredSimpleTokenApi(IDs.next, groupVersion, data.nameInCode, api)
         (all += newInstance.toRaw).map(_ => newInstance).map(Some(_))
       }.getOrElse(DBIO.successful(None))
     } yield maybeConfig

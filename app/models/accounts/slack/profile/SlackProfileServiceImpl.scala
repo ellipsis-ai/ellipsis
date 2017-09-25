@@ -6,8 +6,7 @@ import com.mohiva.play.silhouette.api.LoginInfo
 import services.DataService
 import drivers.SlickPostgresDriver.api._
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 
 class SlackProfileTable(tag: Tag) extends Table[SlackProfile](tag, "slack_profiles") {
@@ -24,7 +23,8 @@ class SlackProfileTable(tag: Tag) extends Table[SlackProfile](tag, "slack_profil
 }
 
 class SlackProfileServiceImpl @Inject() (
-                                         dataServiceProvider: Provider[DataService]
+                                         dataServiceProvider: Provider[DataService],
+                                         implicit val ec: ExecutionContext
                                        ) extends SlackProfileService {
 
   def dataService = dataServiceProvider.get

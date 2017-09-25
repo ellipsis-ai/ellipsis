@@ -17,13 +17,12 @@ import services.{AWSLambdaLogResult, CacheService, DataService}
 import slick.dbio.DBIO
 import utils.UploadFileSpec
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration._
 
 object ResultType extends Enumeration {
   type ResultType = Value
-  val Success, SimpleText, TextWithActions, ConversationPrompt, NoResponse, UnhandledError, HandledError, SyntaxError, NoCallbackTriggered, MissingTeamEnvVar, AWSDown, OAuth2TokenMissing, RequiredApiNotReady = Value
+  val Success, SimpleText, TextWithActions, ConversationPrompt, NoResponse, ExecutionError, SyntaxError, NoCallbackTriggered, MissingTeamEnvVar, AWSDown, OAuth2TokenMissing, RequiredApiNotReady = Value
 }
 
 sealed trait BotResult {
@@ -45,7 +44,7 @@ sealed trait BotResult {
     dataService.run(maybeChannelForSendAction(maybeConversation, dataService))
   }
 
-  def maybeOngoingConversation(dataService: DataService)(implicit actorSystem: ActorSystem): Future[Option[Conversation]] = {
+  def maybeOngoingConversation(dataService: DataService)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[Conversation]] = {
     maybeChannelForSend(None, dataService).flatMap { maybeChannel =>
       dataService.conversations.findOngoingFor(event.userIdForContext, event.context, maybeChannel, event.maybeThreadId)
     }
@@ -56,7 +55,7 @@ sealed trait BotResult {
     s"You haven't answered my question yet, but I have something new to $action you."
   }
 
-  def interruptOngoingConversationsForAction(dataService: DataService)(implicit actorSystem: ActorSystem): DBIO[Boolean] = {
+  def interruptOngoingConversationsForAction(dataService: DataService)(implicit actorSystem: ActorSystem, ec: ExecutionContext): DBIO[Boolean] = {
     if (maybeConversation.exists(_.maybeThreadId.isDefined)) {
       DBIO.successful(false)
     } else {
@@ -79,11 +78,32 @@ sealed trait BotResult {
 }
 
 trait BotResultWithLogResult extends BotResult {
+  val payloadJson: JsValue
   val maybeLogResult: Option[AWSLambdaLogResult]
-  val logStatements = maybeLogResult.map(_.userDefinedLogStatements).getOrElse("")
 
-  override def fullText: String = logStatements ++ text
+  private val maybeAuthorLogTextFromJson: Option[String] = {
+    val logged = (payloadJson \ "logs").validate[Seq[ExecutionLogData]] match {
+      case JsSuccess(logs, _) => logs.map(_.toString).mkString("\n")
+      case JsError(_) => ""
+    }
+    Option(logged).filter(_.nonEmpty)
+  }
 
+  val maybeAuthorLog: Option[String] = {
+    maybeAuthorLogTextFromJson orElse {
+      maybeLogResult.map(_.authorDefinedLogStatements).filter(_.nonEmpty)
+    }
+  }
+
+  val maybeAuthorLogFile: Option[UploadFileSpec] = {
+    maybeAuthorLog.map { log =>
+      UploadFileSpec(Some(log), Some("text"), Some("Developer log"))
+    }
+  }
+
+  override def files: Seq[UploadFileSpec] = {
+    super.files ++ Seq(maybeAuthorLogFile).flatten
+  }
 }
 
 case class InvalidFilesException(message: String) extends Exception {
@@ -110,7 +130,7 @@ case class SuccessResult(
                           event: Event,
                           maybeConversation: Option[Conversation],
                           result: JsValue,
-                          resultWithOptions: JsValue,
+                          payloadJson: JsValue,
                           parametersWithValues: Seq[ParameterWithValue],
                           maybeResponseTemplate: Option[String],
                           maybeLogResult: Option[AWSLambdaLogResult],
@@ -120,12 +140,13 @@ case class SuccessResult(
   val resultType = ResultType.Success
 
   override def files: Seq[UploadFileSpec] = {
-    (resultWithOptions \ "files").validateOpt[Seq[UploadFileSpec]] match {
+    val authoredFiles = (payloadJson \ "files").validateOpt[Seq[UploadFileSpec]] match {
       case JsSuccess(maybeFiles, _) => maybeFiles.getOrElse(Seq())
       case JsError(errs) => throw InvalidFilesException(errs.map { case (_, validationErrors) =>
         validationErrors.map(_.message).mkString(", ")
       }.mkString(", "))
     }
+    authoredFiles ++ super.files
   }
 
   def text: String = {
@@ -152,7 +173,12 @@ case class TextWithActionsResult(event: Event, maybeConversation: Option[Convers
   }
 }
 
-case class NoResponseResult(event: Event, maybeConversation: Option[Conversation], maybeLogResult: Option[AWSLambdaLogResult]) extends BotResultWithLogResult {
+case class NoResponseResult(
+                             event: Event,
+                             maybeConversation: Option[Conversation],
+                             payloadJson: JsValue,
+                             maybeLogResult: Option[AWSLambdaLogResult]
+                           ) extends BotResultWithLogResult {
 
   val resultType = ResultType.NoResponse
   val forcePrivateResponse = false // N/A
@@ -177,36 +203,41 @@ trait WithBehaviorLink {
   }
 }
 
-case class UnhandledErrorResult(
+case class ExecutionErrorResult(
                                  event: Event,
                                  maybeConversation: Option[Conversation],
                                  behaviorVersion: BehaviorVersion,
                                  dataService: DataService,
                                  configuration: Configuration,
+                                 payloadJson: JsValue,
                                  maybeLogResult: Option[AWSLambdaLogResult]
                                ) extends BotResultWithLogResult with WithBehaviorLink {
 
-  val resultType = ResultType.UnhandledError
+  val resultType = ResultType.ExecutionError
   val functionLines = behaviorVersion.functionBody.split("\n").length
+  val howToIncludeStackTraceMessage = "\n\nTo include a stack trace, throw an `Error` object in your code. For example:\n  throw new Error(\"Something went wrong.\")"
 
-  def text: String = {
-    val prompt = s"\nI encountered an error in ${linkToBehaviorFor("one of your skills")} before calling `$SUCCESS_CALLBACK `or `$ERROR_CALLBACK`"
-    Array(Some(prompt), maybeLogResult.flatMap(_.maybeTranslated(functionLines))).flatten.mkString(":\n\n")
+  private val maybeError: Option[ExecutionErrorData] = {
+    (payloadJson \ "error").validate[ExecutionErrorData] match {
+      case JsSuccess(errorValue, _) => Some(errorValue)
+      case JsError(_) => None
+    }
   }
 
-}
+  private val maybeUserErrorMessage: Option[String] = {
+    maybeError.flatMap(_.userMessage)
+  }
 
-case class HandledErrorResult(
-                               event: Event,
-                               maybeConversation: Option[Conversation],
-                               behaviorVersion: BehaviorVersion,
-                               dataService: DataService,
-                               configuration: Configuration,
-                               json: JsValue,
-                               maybeLogResult: Option[AWSLambdaLogResult]
-                             ) extends BotResultWithLogResult with WithBehaviorLink {
+  def text: String = {
+    s"I encountered an error in ${linkToBehaviorFor("one of your skills")}${
+      maybeUserErrorMessage.map(userError => s":\n\n$userError").getOrElse(".")
+    }"
+  }
 
-  val resultType = ResultType.HandledError
+  private def logContainsStackTrace(log: String): Boolean = {
+    val lines = log.lines.toList
+    lines.length > 1 && lines.tail.exists(_.matches("""^\s*at .+?\(.+?:\d+:\d+\)"""))
+  }
 
   private def dropEnclosingDoubleQuotes(text: String): String = """^"|"$""".r.replaceAllIn(text, "")
 
@@ -214,11 +245,37 @@ case class HandledErrorResult(
     dropEnclosingDoubleQuotes(result.as[String])
   }
 
-  def text: String = {
-    val detail = (json \ "errorMessage").toOption.map(processedResultFor).map { msg =>
-      s":\n\n```\n$msg\n```"
-    }.getOrElse("")
-    s"I encountered an error in ${linkToBehaviorFor("one of your skills")}$detail"
+  private val maybeCallbackErrorMessage: Option[String] = {
+    (payloadJson \ "errorMessage").toOption.map(processedResultFor).filterNot {
+      _.matches("""RequestId: \S+ Process exited before completing request""")
+    }
+  }
+
+  private val maybeThrownLogMessage: Option[String] = {
+    maybeLogResult.flatMap(_.maybeTranslated(functionLines))
+  }
+
+  private def maybeErrorLog: Option[String] = {
+    maybeError.map { error =>
+      val translatedStack = error.translateStack(functionLines)
+      if (translatedStack.nonEmpty) {
+        translatedStack
+      } else {
+        error.message + howToIncludeStackTraceMessage
+      }
+    } orElse {
+      val result = Seq(maybeCallbackErrorMessage, maybeThrownLogMessage).flatten.mkString("\n")
+      Option(result).filter(_.nonEmpty)
+    }
+  }
+
+  override def files: Seq[UploadFileSpec] = {
+    val log = maybeAuthorLog.map(_ + "\n").getOrElse("") + maybeErrorLog.getOrElse("")
+    if (log.nonEmpty) {
+      Seq(UploadFileSpec(Some(log), Some("text"), Some("Developer log")))
+    } else {
+      Seq()
+    }
   }
 }
 
@@ -228,7 +285,7 @@ case class SyntaxErrorResult(
                               behaviorVersion: BehaviorVersion,
                               dataService: DataService,
                               configuration: Configuration,
-                              json: JsValue,
+                              payloadJson: JsValue,
                               maybeLogResult: Option[AWSLambdaLogResult]
                             ) extends BotResultWithLogResult with WithBehaviorLink {
 
@@ -238,7 +295,9 @@ case class SyntaxErrorResult(
     s"""
        |There's a syntax error in your skill:
        |
-       |${(json \ "errorMessage").asOpt[String].getOrElse("")}
+       |````
+       |${(payloadJson \ "errorMessage").asOpt[String].getOrElse("")}
+       |````
        |
        |${linkToBehaviorFor("Take a look in the skill editor")} for more details.
      """.stripMargin
@@ -266,7 +325,7 @@ case class MissingTeamEnvVarsResult(
                                  behaviorVersion: BehaviorVersion,
                                  dataService: DataService,
                                  configuration: Configuration,
-                                 missingEnvVars: Seq[String],
+                                 missingEnvVars: Set[String],
                                  botPrefix: String
                                ) extends BotResult with WithBehaviorLink {
 
@@ -316,7 +375,7 @@ case class OAuth2TokenMissing(
   val forcePrivateResponse = true
 
   def authLink: String = {
-    val baseUrl = configuration.getString("application.apiBaseUrl").get
+    val baseUrl = configuration.get[String]("application.apiBaseUrl")
     val redirectPath = controllers.routes.APIAccessController.linkCustomOAuth2Service(oAuth2Application.id, None, None, Some(key), None)
     val redirect = s"$baseUrl$redirectPath"
     val authPath = controllers.routes.SocialAuthController.loginWithToken(loginToken.value, Some(redirect))

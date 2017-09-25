@@ -2,6 +2,7 @@ package controllers
 
 import javax.inject.Inject
 
+import com.google.inject.Provider
 import com.mohiva.play.silhouette.api.Silhouette
 import json._
 import json.Formatting._
@@ -14,14 +15,14 @@ import play.api.libs.json._
 import play.filters.csrf.CSRF
 import services.DataService
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 class EnvironmentVariablesController @Inject() (
-                                                 val messagesApi: MessagesApi,
                                                  val silhouette: Silhouette[EllipsisEnv],
                                                  val dataService: DataService,
-                                                 val configuration: Configuration
+                                                 val configuration: Configuration,
+                                                 val assetsProvider: Provider[RemoteAssets],
+                                                 implicit val ec: ExecutionContext
                                                ) extends ReAuthable {
 
   case class EnvironmentVariablesInfo(teamId: String, dataJson: String)
@@ -123,14 +124,12 @@ class EnvironmentVariablesController @Inject() (
       case Accepts.Html() => {
         for {
           teamAccess <- dataService.users.teamAccessFor(user, maybeTeamId)
-          result <- teamAccess.maybeTargetTeam.map { team =>
-            val dataRoute = routes.EnvironmentVariablesController.list(maybeTeamId)
-            Future.successful(Ok(views.html.environmentvariables.list(viewConfig(Some(teamAccess)), dataRoute)))
-          }.getOrElse {
-            reAuthFor(request, maybeTeamId)
-          }
-
-        } yield result
+        } yield teamAccess.maybeTargetTeam.map { team =>
+          val dataRoute = routes.EnvironmentVariablesController.list(maybeTeamId)
+          Ok(views.html.environmentvariables.list(viewConfig(Some(teamAccess)), dataRoute))
+        }.getOrElse {
+          notFoundWithLoginFor(request, Some(teamAccess))
+        }
       }
     }
   }

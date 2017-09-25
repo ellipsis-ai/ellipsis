@@ -1,9 +1,13 @@
 define(function(require) {
   var BehaviorVersion = require('./behavior_version');
   var LibraryVersion = require('./library_version');
-  var NodeModuleVersion = require('./node_module_version');
   var Input = require('./input');
   var DeepEqual = require('../lib/deep_equal');
+  var RequiredAWSConfig = require('./aws').RequiredAWSConfig;
+  var RequiredOAuth2Application = require('./oauth2').RequiredOAuth2Application;
+  var RequiredSimpleTokenApi = require('./simple_token').RequiredSimpleTokenApi;
+  var User = require('./user');
+
   const ONE_MINUTE = 60000;
 
   class BehaviorGroup {
@@ -19,17 +23,22 @@ define(function(require) {
         dataTypeInputs: { value: props.dataTypeInputs, enumerable: true },
         behaviorVersions: { value: props.behaviorVersions, enumerable: true },
         libraryVersions: { value: props.libraryVersions, enumerable: true },
-        nodeModuleVersions: { value: props.nodeModuleVersions, enumerable: true },
+        requiredAWSConfigs: { value: props.requiredAWSConfigs, enumerable: true },
         awsConfig: { value: props.awsConfig, enumerable: true },
         requiredOAuth2ApiConfigs: { value: props.requiredOAuth2ApiConfigs, enumerable: true },
         requiredSimpleTokenApis: { value: props.requiredSimpleTokenApis, enumerable: true },
         createdAt: { value: props.createdAt, enumerable: true },
-        exportId: { value: props.exportId, enumerable: true }
+        exportId: { value: props.exportId, enumerable: true },
+        author: { value: props.author, enumerable: true }
       });
     }
 
     getEditables() {
       return this.behaviorVersions.concat(this.libraryVersions);
+    }
+
+    getRequiredAWSConfigs() {
+      return this.requiredAWSConfigs || [];
     }
 
     getRequiredOAuth2ApiConfigs() {
@@ -41,7 +50,7 @@ define(function(require) {
     }
 
     needsConfig() {
-      return this.getRequiredOAuth2ApiConfigs().filter(ea => !ea.application).length > 0;
+      return this.getRequiredOAuth2ApiConfigs().filter(ea => !ea.config).length > 0;
     }
 
     isRecentlySaved() {
@@ -116,7 +125,8 @@ define(function(require) {
       return this.clone({
         behaviorVersions: this.sortedForComparison(this.behaviorVersions).map(BehaviorVersion.forEqualityComparison),
         libraryVersions: this.sortedForComparison(this.libraryVersions).map(LibraryVersion.forEqualityComparison),
-        createdAt: null
+        createdAt: null,
+        author: null
       });
     }
 
@@ -170,11 +180,14 @@ define(function(require) {
 
     static fromJson(props) {
       return new BehaviorGroup(Object.assign({}, props, {
+        requiredAWSConfigs: props.requiredAWSConfigs.map(RequiredAWSConfig.fromJson),
+        requiredOAuth2ApiConfigs: props.requiredOAuth2ApiConfigs.map(RequiredOAuth2Application.fromJson),
+        requiredSimpleTokenApis: props.requiredSimpleTokenApis.map(RequiredSimpleTokenApi.fromJson),
         behaviorVersions: props.behaviorVersions.map((ea) => BehaviorVersion.fromJson(Object.assign({}, ea, { groupId: props.id }))),
         actionInputs: Input.allFromJson(props.actionInputs || []),
         dataTypeInputs: Input.allFromJson(props.dataTypeInputs || []),
         libraryVersions: props.libraryVersions.map(ea => new LibraryVersion(Object.assign({}, ea, { groupId: props.id }))),
-        nodeModuleVersions: NodeModuleVersion.allFromJson(props.nodeModuleVersions || [])
+        author: props.author ? User.fromJson(props.author) : null
       }));
     }
 

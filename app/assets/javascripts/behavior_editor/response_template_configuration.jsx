@@ -1,6 +1,5 @@
 define(function(require) {
   var React = require('react'),
-    Checklist = require('./checklist'),
     Codemirror = require('../shared_ui/react-codemirror'),
     HelpButton = require('../help/help_button'),
     ResponseTemplate = require('../models/response_template'),
@@ -41,23 +40,6 @@ define(function(require) {
                 <HelpButton onClick={this.props.onToggleHelp} toggled={this.props.helpVisible}/>
               </span>
             </SectionHeading>
-
-            <div className="type-s">
-              <Checklist disabledWhen={this.props.isFinishedBehavior}>
-                <Checklist.Item checkedWhen={this.props.template.usesMarkdown()}>
-                  <span>Use <a href="http://commonmark.org/help/" target="_blank">Markdown</a> </span>
-                  <span>to format the response, add links, etc.</span>
-                </Checklist.Item>
-                {this.props.behaviorUsesCode ? (
-                    <Checklist.Item checkedWhen={this.props.template.includesData()}>
-                      <span>You can include data in your response. </span>
-                      <button type="button" className="button-raw" onClick={this.props.onToggleHelp}>Examples</button>
-                    </Checklist.Item>
-                  ) : (
-                    <Checklist.Item>Add code above if you want to collect user input before returning a response.</Checklist.Item>
-                  )}
-              </Checklist>
-            </div>
 
             <div className="border-top border-left border-right border-light pas">
               <ToggleGroup className="form-toggle-group-s align-m">

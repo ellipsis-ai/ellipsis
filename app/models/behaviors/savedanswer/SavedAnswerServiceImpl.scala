@@ -11,8 +11,7 @@ import models.behaviors.input.Input
 import services.DataService
 import drivers.SlickPostgresDriver.api._
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 class SavedAnswersTable(tag: Tag) extends Table[SavedAnswer](tag, "saved_answers") {
 
@@ -26,7 +25,8 @@ class SavedAnswersTable(tag: Tag) extends Table[SavedAnswer](tag, "saved_answers
 }
 
 class SavedAnswerServiceImpl @Inject() (
-                                         dataServiceProvider: Provider[DataService]
+                                         dataServiceProvider: Provider[DataService],
+                                         implicit val ec: ExecutionContext
                                        ) extends SavedAnswerService {
 
   def dataService = dataServiceProvider.get

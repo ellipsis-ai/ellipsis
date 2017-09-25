@@ -6,8 +6,7 @@ import models.behaviors.events.Event
 import models.behaviors.{BotResult, SimpleTextResult}
 import services.{AWSLambdaService, DataService}
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 case class UnlearnBehavior(
                             patternString: String,
@@ -16,7 +15,7 @@ case class UnlearnBehavior(
                             dataService: DataService
                             ) extends BuiltinBehavior {
 
-  def result(implicit actorSystem: ActorSystem): Future[BotResult] = {
+  def result(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[BotResult] = {
     val eventualReply = try {
       for {
         triggers <- dataService.messageTriggers.allWithExactPattern(patternString, event.teamId)

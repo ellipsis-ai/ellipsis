@@ -5,6 +5,8 @@ import models.behaviors.conversations.ParamCollectionState
 import models.behaviors.input.Input
 import slick.dbio.DBIO
 
+import scala.concurrent.ExecutionContext
+
 case class BehaviorParameter(
                               id: String,
                               rank: Int,
@@ -18,7 +20,12 @@ case class BehaviorParameter(
 
   def question: String = maybeQuestion.getOrElse(s"What is the value for `$name`?")
 
-  def promptAction(maybeValue: Option[String], context: BehaviorParameterContext, paramState: ParamCollectionState, isReminding: Boolean): DBIO[String] = {
+  def promptAction(
+                    maybeValue: Option[String],
+                    context: BehaviorParameterContext,
+                    paramState: ParamCollectionState,
+                    isReminding: Boolean
+                  )(implicit ec: ExecutionContext): DBIO[String] = {
     paramType.promptForAction(maybeValue, context, paramState, isReminding)
   }
 

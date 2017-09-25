@@ -3,9 +3,9 @@ package json
 import models.behaviors.config.requiredsimpletokenapi.RequiredSimpleTokenApi
 
 case class RequiredSimpleTokenApiData(
-                                        id: Option[String],
-                                        apiId: String,
-                                        name: String
+                                       id: Option[String],
+                                       apiId: String,
+                                       nameInCode: String
                                       ) {
 
   def copyForExport: RequiredSimpleTokenApiData = copy(id = None)
@@ -17,7 +17,7 @@ object RequiredSimpleTokenApiData {
     RequiredSimpleTokenApiData(
       Some(required.id),
       required.api.id,
-      required.api.name
+      required.nameInCode
     )
   }
 }

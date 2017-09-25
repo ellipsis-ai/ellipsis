@@ -1,3 +1,4 @@
+window.crypto = require('./mocks/mock_window_crypto');
 import React from 'react';
 import TestUtils from 'react-addons-test-utils';
 const TriggerConfiguration = require('../app/assets/javascripts/behavior_editor/trigger_configuration');

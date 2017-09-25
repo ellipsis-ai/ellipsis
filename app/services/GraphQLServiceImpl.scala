@@ -6,6 +6,7 @@ import json.BehaviorGroupData
 import models.accounts.user.User
 import models.behaviors.behaviorgroup.BehaviorGroup
 import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
+import models.behaviors.behaviorparameter.YesNoType
 import models.behaviors.datatypeconfig.BehaviorVersionForDataTypeSchema
 import models.behaviors.defaultstorageitem.DefaultStorageItemService
 import play.api.libs.json._
@@ -17,8 +18,7 @@ import sangria.parser.{QueryParser, SyntaxError}
 import sangria.schema.{Action, Context, DefaultAstSchemaBuilder, Schema}
 
 import scala.collection.immutable.ListMap
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}
 
 case class ItemNotFoundError(id: String) extends Exception with UserFacingError {
@@ -26,7 +26,8 @@ case class ItemNotFoundError(id: String) extends Exception with UserFacingError 
 }
 
 class GraphQLServiceImpl @Inject() (
-                                    dataService: DataService
+                                    dataService: DataService,
+                                    implicit val ec: ExecutionContext
                                   ) extends GraphQLService {
 
   private def buildSchemaStringFor(versions: Seq[BehaviorVersionForDataTypeSchema]): Future[String] = {
@@ -69,6 +70,7 @@ class GraphQLServiceImpl @Inject() (
 
     val listFieldRegex = """(\S+)List""".r
     val createFieldRegex = """create(\S+)""".r
+    val updateFieldRegex = """update(\S+)""".r
     val deleteFieldRegex = """delete(\S+)""".r
 
     private def toJson(v: Any): JsValue = {
@@ -76,10 +78,12 @@ class GraphQLServiceImpl @Inject() (
         case opt: Option[Any] => opt.map(toJson).getOrElse(JsNull)
         case s: String => Json.toJson(s)
         case n: Double => JsNumber(BigDecimal(n))
+        case b: Boolean => JsBoolean(b)
         case arr: Array[Any] => JsArray(arr.map(toJson))
         case m: Map[String, Any] => {
           JsObject(m.map { ea => (ea._1, toJson(ea._2)) })
         }
+        case _ => JsNull
       }
     }
 
@@ -114,6 +118,7 @@ class GraphQLServiceImpl @Inject() (
                                  ): Action[DefaultStorageItemService, _] = {
       definition.name match {
         case createFieldRegex(typeName) => ctx.ctx.createItem(typeName, user, valueFor(ctx, definition), group).map(_.data)
+        case updateFieldRegex(typeName) => ctx.ctx.updateItem(typeName, user, valueFor(ctx, definition), group).map(_.data)
         case deleteFieldRegex(_) => {
           val idToDelete: String = ctx.arg(definition.arguments.head.name)
           ctx.ctx.deleteItem(idToDelete, group).map { maybeItem =>
@@ -138,12 +143,33 @@ class GraphQLServiceImpl @Inject() (
               case arr: JsArray => fromJson(arr)
               case JsNull => null
               case _ => {
-                (ctx.value.asInstanceOf[JsObject] \ (definition.name)).asOpt[JsValue].map(fromJson)
+                val maybeValue = (ctx.value.asInstanceOf[JsObject] \ (definition.name)).asOpt[JsValue].map(fromJson)
+                if (definition.fieldType.namedType.name == "Boolean") {
+                  parseBoolean(maybeValue)
+                } else {
+                  maybeValue
+                }
               }
             }
           }
         }
       }
+    }
+
+    private def parseBoolean(maybeValue: Option[Any]) = {
+      maybeValue.map {
+        case b: Boolean => b
+        case s: String => YesNoType.maybeValidValueFor(s).getOrElse(null)
+        case d: Double =>
+          if (d == 1) {
+            true
+          } else if (d == 0) {
+            false
+          } else {
+            null
+          }
+        case _ => null
+      }.orNull
     }
 
     def fromJson(v: JsValue) = v match {
@@ -183,7 +209,7 @@ class GraphQLServiceImpl @Inject() (
                     vars: JsValue
                   ): Future[JsValue] = {
     Executor.execute(schema, query, operationName = op, variables = vars, userContext = dataService.defaultStorageItems).recover {
-      case e: sangria.execution.ValidationError => errorResultFor(e.getMessage)
+      case e: sangria.execution.UserFacingError => errorResultFor(e.getMessage)
     }
   }
 

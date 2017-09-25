@@ -1,7 +1,7 @@
 package support
 
 import com.google.inject.Provides
-import com.mohiva.play.silhouette.api.crypto.{Base64AuthenticatorEncoder, CookieSigner}
+import com.mohiva.play.silhouette.api.crypto.{Base64AuthenticatorEncoder, Signer}
 import com.mohiva.play.silhouette.api.{Environment, LoginInfo}
 import com.mohiva.play.silhouette.impl.authenticators.CookieAuthenticator
 import com.mohiva.play.silhouette.test.FakeEnvironment
@@ -16,16 +16,15 @@ import play.api.test.Helpers._
 import play.filters.csrf.CSRF.TokenProvider
 import play.filters.csrf.CSRFConfig
 
-import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.util.{Failure, Success}
 
 trait ControllerTestContext extends TestContext with MustMatchers {
 
   def assertUserJustLoggedIn(app: Application, user: User, result: Future[Result]): Unit = {
-    val cookieSigner = app.injector.instanceOf(BindingKey(classOf[CookieSigner]).qualifiedWith("authenticator-cookie-signer"))
+    val cookieSigner = app.injector.instanceOf(BindingKey(classOf[Signer]).qualifiedWith("authenticator-cookie-signer"))
     val encoder = new Base64AuthenticatorEncoder
-    val authenticatorCookieName = app.configuration.getString("silhouette.authenticator.cookieName").get
+    val authenticatorCookieName = app.configuration.get[String]("silhouette.authenticator.cookieName")
     val maybeAuthenticatorCookie = cookies(result).get(authenticatorCookieName)
     maybeAuthenticatorCookie mustNot be(None)
     CookieAuthenticator.unserialize(maybeAuthenticatorCookie.get.value, cookieSigner, encoder) match {
@@ -35,12 +34,12 @@ trait ControllerTestContext extends TestContext with MustMatchers {
   }
 
   def assertNotJustLoggedIn(app: Application, result: Future[Result]): Unit = {
-    val authenticatorCookieName = app.configuration.getString("silhouette.authenticator.cookieName").get
+    val authenticatorCookieName = app.configuration.get[String]("silhouette.authenticator.cookieName")
     cookies(result).get(authenticatorCookieName) mustBe None
   }
 
   def assertJustLoggedOut(app: Application, result: Future[Result]): Unit = {
-    val authenticatorCookieName = app.configuration.getString("silhouette.authenticator.cookieName").get
+    val authenticatorCookieName = app.configuration.get[String]("silhouette.authenticator.cookieName")
     cookies(result).get(authenticatorCookieName).map { cookie =>
       //noinspection UnitInMap
       cookie.value must have length(0)

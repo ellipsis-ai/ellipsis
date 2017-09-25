@@ -244,7 +244,7 @@ define(function(require) {
           <div className="container">
             <div className="columns">
               <div className="column column-page-sidebar">
-                <h4 className="type-weak">Browse data stored
+                <h4 className="mtn type-weak">Browse data stored
                   with {this.props.behaviorVersion.getName() || "this data type"}</h4>
               </div>
               <div className="column column-page-main">

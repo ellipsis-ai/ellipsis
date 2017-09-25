@@ -6,6 +6,6 @@ case class NodeModuleVersionData(from: String, version: String)
 
 object NodeModuleVersionData {
 
-  def from(version: NodeModuleVersion) = NodeModuleVersionData(version.name, version.version)
+  def from(version: NodeModuleVersion) = NodeModuleVersionData(version.nameWithoutVersion, version.version)
 
 }

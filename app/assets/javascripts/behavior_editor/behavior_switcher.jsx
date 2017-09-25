@@ -1,9 +1,13 @@
 define(function(require) {
   var React = require('react'),
+    ApiConfigList = require('./api_config_list'),
     BehaviorSwitcherGroup = require('./behavior_switcher_group'),
     BehaviorVersion = require('../models/behavior_version'),
     LibraryVersion = require('../models/library_version'),
-    NodeModuleVersion = require('../models/node_module_version');
+    NodeModuleVersion = require('../models/node_module_version'),
+    RequiredAWSConfig = require('../models/aws').RequiredAWSConfig,
+    RequiredOAuth2Application = require('../models/oauth2').RequiredOAuth2Application,
+    RequiredSimpleTokenApi = require('../models/simple_token').RequiredSimpleTokenApi;
 
   return React.createClass({
     displayName: 'BehaviorSwitcher',
@@ -21,13 +25,19 @@ define(function(require) {
       addNewDataType: React.PropTypes.func.isRequired,
       addNewLibrary: React.PropTypes.func.isRequired,
       isModified: React.PropTypes.func.isRequired,
-      onUpdateNodeModules: React.PropTypes.func.isRequired
+      onUpdateNodeModules: React.PropTypes.func.isRequired,
+      requiredAWSConfigs: React.PropTypes.arrayOf(React.PropTypes.instanceOf(RequiredAWSConfig)).isRequired,
+      requiredOAuth2Applications: React.PropTypes.arrayOf(React.PropTypes.instanceOf(RequiredOAuth2Application)).isRequired,
+      requiredSimpleTokenApis: React.PropTypes.arrayOf(React.PropTypes.instanceOf(RequiredSimpleTokenApi)).isRequired,
+      onApiConfigClick: React.PropTypes.func.isRequired,
+      onAddApiConfigClick: React.PropTypes.func.isRequired,
+      getApiConfigName: React.PropTypes.func.isRequired
     },
 
     getSkillTitle: function() {
       return (
         <div className="mbxs">
-          <h4 className="mbn">{this.props.groupName}</h4>
+          <h4 className="mvn">{this.props.groupName}</h4>
           <div className="type-s type-weak display-ellipsis display-limit-width"
             title={this.props.groupDescription}>
             {this.props.groupDescription}
@@ -57,7 +67,7 @@ define(function(require) {
         return (
           <div className="border-bottom mtl pbl">
             <div className="container container-wide mbs">
-              <h6>Required node modules</h6>
+              <h6>Required NPM modules</h6>
             </div>
             <div className="type-s">
               {this.props.nodeModuleVersions.map((version, index) => (
@@ -65,14 +75,16 @@ define(function(require) {
                   key={`nodeModuleVersion${index}`}
                   className={`pvxs`}
                 >
-                  <div className="plxl mobile-pll">{version.from} – v{version.version}</div>
+                  <div className="phxl mobile-phl type-monospace">
+                    <span>{version.from}</span>
+                    <span className="type-weak"> —&nbsp;v{version.version}</span></div>
                 </div>
               ))}
             </div>
             <div className="container container-wide mvm">
               <button type="button"
                       onClick={this.props.onUpdateNodeModules}
-                      className="button button-s button-shrink">Update node module versions</button>
+                      className="button button-s button-shrink">Update NPM module versions</button>
             </div>
           </div>
         );
@@ -143,7 +155,17 @@ define(function(require) {
                 isModified={this.props.isModified}
               />
 
+              <ApiConfigList
+                requiredAWSConfigs={this.props.requiredAWSConfigs}
+                requiredOAuth2Applications={this.props.requiredOAuth2Applications}
+                requiredSimpleTokenApis={this.props.requiredSimpleTokenApis}
+                onApiConfigClick={this.props.onApiConfigClick}
+                onAddApiConfigClick={this.props.onAddApiConfigClick}
+                getApiConfigName={this.props.getApiConfigName}
+              />
+
               {this.renderNodeModules()}
+
             </div>
           ) : null}
 

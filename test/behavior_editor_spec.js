@@ -1,23 +1,29 @@
 jest.mock('../app/assets/javascripts/behavior_editor/code_editor')
   .mock('../app/assets/javascripts/shared_ui/react-codemirror');
 window.crypto = require('./mocks/mock_window_crypto');
+global.fetch = require('./mocks/mock_fetch');
 
 import React from 'react';
 import TestUtils from 'react-addons-test-utils';
-const BehaviorEditor = require('../app/assets/javascripts/behavior_editor/index');
-const BehaviorVersion = require('../app/assets/javascripts/models/behavior_version');
-const BehaviorGroup = require('../app/assets/javascripts/models/behavior_group');
-const ResponseTemplate = require('../app/assets/javascripts/models/response_template');
-const ParamType = require('../app/assets/javascripts/models/param_type');
+const BehaviorEditor = require('../app/assets/javascripts/behavior_editor/index'),
+  BehaviorVersion = require('../app/assets/javascripts/models/behavior_version'),
+  BehaviorGroup = require('../app/assets/javascripts/models/behavior_group'),
+  ResponseTemplate = require('../app/assets/javascripts/models/response_template'),
+  ParamType = require('../app/assets/javascripts/models/param_type'),
+  aws = require('../app/assets/javascripts/models/aws'),
+  oauth2 = require('../app/assets/javascripts/models/oauth2'),
+  simpleToken = require('../app/assets/javascripts/models/simple_token');
 
 jsRoutes.controllers.BehaviorEditorController.edit = jest.fn(() => ({ url: '/mock_edit' }));
 jsRoutes.controllers.BehaviorEditorController.save = jest.fn(() => ({ url: '/mock_save' }));
 jsRoutes.controllers.BehaviorEditorController.newGroup = jest.fn(() => ({ url: '/mock_new_skill' }));
 jsRoutes.controllers.ApplicationController.deleteBehaviorGroups = jest.fn(() => ({ url: '/mock_delete_behavior_group' }));
 jsRoutes.controllers.BehaviorEditorController.edit = jest.fn(() => ({ url: '/mock_edit' }));
+jsRoutes.controllers.BehaviorEditorController.nodeModuleVersionsFor = jest.fn(() => ({ url: '/mock_node_module_versions_for' }));
+
 
 describe('BehaviorEditor', () => {
-  const defaultConfig = {
+  const defaultConfig = Object.freeze({
     teamId: "A",
     group: {
       id: '1',
@@ -47,7 +53,10 @@ describe('BehaviorEditor', () => {
         }
       ],
       libraryVersions: [],
-      nodeModuleVersions: []
+      nodeModuleVersions: [],
+      requiredAWSConfigs: [],
+      requiredOAuth2ApiConfigs: [],
+      requiredSimpleTokenApis: []
     },
     selectedId: "1",
     csrfToken: "2",
@@ -61,21 +70,109 @@ describe('BehaviorEditor', () => {
       name: 'Number',
       needsConfig: false
     }],
-    oAuth2Applications: [{
-      applicationId: "567890",
-      displayName: "My awesome oauth app",
-      keyName: "myAwesomeOauthApp"
-    }, {
-      applicationId: "098765",
-      displayName: "My other awesome oauth app",
-      keyName: "myOtherAwesomeOauthApp"
+    "awsConfigs": [{
+      "id": "aws",
+      "displayName": "main",
+      "accessKeyId": "a",
+      "secretAccessKey": "b",
+      "region": "c"
     }],
-    linkedOAuth2ApplicationIds: [],
+    "oauth2Applications": [{
+      "apiId": "RdG2Wm5DR0m2_4FZXf-yKA",
+      "applicationId": "Yy1QcMTcT96tZZmUoYLroQ",
+      "scope": "https://www.googleapis.com/auth/calendar",
+      "displayName": "Google Calendar"
+    }],
+    "oauth2Apis": [{
+      "apiId": "RdG2Wm5DR0m2_4FZXf-yKA",
+      "name": "Google",
+      "requiresAuth": true,
+      "newApplicationUrl": "https://console.developers.google.com/apis",
+      "scopeDocumentationUrl": "https://developers.google.com/identity/protocols/googlescopes"
+    }],
+    "simpleTokenApis": [{
+      "apiId": "pivotal-tracker",
+      "displayName": "Pivotal Tracker",
+      "tokenUrl": "https://www.pivotaltracker.com/profile",
+      "logoImageUrl": "/assets/images/logos/pivotal_tracker.png"
+    }],
+    "linkedOAuth2ApplicationIds": ["Yy1QcMTcT96tZZmUoYLroQ"],
     shouldRevealCodeEditor: true,
     onSave: jest.fn(),
     savedAnswers: [],
+    onForgetSavedAnswerForInput: jest.fn(),
+    userId: "1"
+  });
+
+  const newSkillConfig = Object.freeze({
+    "containerId": "editorContainer",
+    "csrfToken": "1234",
+    "group": {
+      "teamId": "B",
+      "actionInputs": [],
+      "dataTypeInputs": [],
+      "behaviorVersions": [{
+        "id": "1",
+        "teamId": "B",
+        "behaviorId": "2",
+        "isNew": true,
+        "functionBody": "",
+        "responseTemplate": "",
+        "inputIds": [],
+        "triggers": [{ "text": "", "requiresMention": true, "isRegex": false, "caseSensitive": false }],
+        "config": { "isDataType": false },
+        "knownEnvVarsUsed": []
+      }],
+      "libraryVersions": [],
+      "requiredAWSConfigs": [],
+      "requiredOAuth2ApiConfigs": [],
+      "requiredSimpleTokenApis": [],
+      "createdAt": "2017-09-15T11:58:07.36-04:00",
+      "author": { "id": "3", "name": "attaboy" }
+    },
+    "builtinParamTypes": [{ "id": "Text", "exportId": "Text", "name": "Text", "needsConfig": false }, {
+      "id": "Number",
+      "exportId": "Number",
+      "name": "Number",
+      "needsConfig": false
+    }, { "id": "Yes/No", "exportId": "Yes/No", "name": "Yes/No", "needsConfig": false }],
+    "envVariables": [{
+      "name": "OH_REALLY",
+      "isAlreadySavedWithValue": false
+    }],
+    "savedAnswers": [],
+    "awsConfigs": [{
+      "id": "aws",
+      "displayName": "main",
+      "accessKeyId": "a",
+      "secretAccessKey": "b",
+      "region": "c"
+    }],
+    "oauth2Applications": [{
+      "apiId": "RdG2Wm5DR0m2_4FZXf-yKA",
+      "applicationId": "Yy1QcMTcT96tZZmUoYLroQ",
+      "scope": "https://www.googleapis.com/auth/calendar",
+      "displayName": "Google Calendar"
+    }],
+    "oauth2Apis": [{
+      "apiId": "RdG2Wm5DR0m2_4FZXf-yKA",
+      "name": "Google",
+      "requiresAuth": true,
+      "newApplicationUrl": "https://console.developers.google.com/apis",
+      "scopeDocumentationUrl": "https://developers.google.com/identity/protocols/googlescopes"
+    }],
+    "simpleTokenApis": [{
+      "apiId": "pivotal-tracker",
+      "displayName": "Pivotal Tracker",
+      "tokenUrl": "https://www.pivotaltracker.com/profile",
+      "logoImageUrl": "/assets/images/logos/pivotal_tracker.png"
+    }],
+    "linkedOAuth2ApplicationIds": ["Yy1QcMTcT96tZZmUoYLroQ"],
+    "userId": "3",
+    selectedId: "2",
+    onSave: jest.fn(),
     onForgetSavedAnswerForInput: jest.fn()
-  };
+  });
 
   let editorConfig;
   let firstBehavior;
@@ -88,6 +185,9 @@ describe('BehaviorEditor', () => {
   function createEditor(config) {
     const props = Object.assign({}, config, {
       group: BehaviorGroup.fromJson(config.group),
+      awsConfigs: config.awsConfigs.map(aws.AWSConfigRef.fromJson),
+      oauth2Applications: config.oauth2Applications.map(oauth2.OAuth2ApplicationRef.fromJson),
+      simpleTokenApis: config.simpleTokenApis.map(simpleToken.SimpleTokenApiRef.fromJson),
       builtinParamTypes: config.builtinParamTypes.map(ParamType.fromJson)
     });
     return TestUtils.renderIntoDocument(
@@ -245,23 +345,30 @@ describe('BehaviorEditor', () => {
   describe('render', () => {
     it("renders the normal editor when isDataType is false", () => {
       firstBehavior.config.isDataType = false;
-      let editor = createEditor(editorConfig);
-      editor.renderDataTypeBehavior = jest.fn();
-      editor.renderNormalBehavior = jest.fn();
+      const editor = createEditor(editorConfig);
+      const dataSpy = jest.spyOn(editor, 'renderDataTypeBehavior');
+      const normalSpy = jest.spyOn(editor, 'renderNormalBehavior');
       editor.render();
-      expect(editor.renderDataTypeBehavior).not.toBeCalled();
-      expect(editor.renderNormalBehavior).toBeCalled();
+      expect(dataSpy).not.toBeCalled();
+      expect(normalSpy).toBeCalled();
     });
     it("renders the data type editor when isDataType is true", () => {
       const bv = editorConfig.group.behaviorVersions[0];
       bv.config.isDataType = true;
       bv.dataTypeConfig = { fields: [] };
-      let editor = createEditor(editorConfig);
-      editor.renderDataTypeBehavior = jest.fn();
-      editor.renderNormalBehavior = jest.fn();
+      const editor = createEditor(editorConfig);
+      const dataSpy = jest.spyOn(editor, 'renderDataTypeBehavior');
+      const normalSpy = jest.spyOn(editor, 'renderNormalBehavior');
       editor.render();
-      expect(editor.renderDataTypeBehavior).toBeCalled();
-      expect(editor.renderNormalBehavior).not.toBeCalled();
+      expect(dataSpy).toBeCalled();
+      expect(normalSpy).not.toBeCalled();
+    });
+    it("renders for a new, unsaved skill with an action", () => {
+      const config = Object.assign({}, newSkillConfig);
+      const editor = createEditor(config);
+      const normalSpy = jest.spyOn(editor, 'renderNormalBehavior');
+      editor.render();
+      expect(normalSpy).toBeCalled();
     });
   });
 
