@@ -8,7 +8,7 @@ import com.mohiva.play.silhouette.api.LoginInfo
 import drivers.SlickPostgresDriver.api._
 import json.SlackUserData
 import models.accounts.user.User
-import play.api.libs.json.{JsBoolean, JsObject, JsString}
+import play.api.libs.json._
 import services.{CacheService, DataService}
 import slack.api.{ApiError, SlackApiClient}
 
@@ -108,10 +108,11 @@ class LinkedAccountServiceImpl @Inject() (
               "isPrimaryOwner" -> JsBoolean(info.is_primary_owner.getOrElse(false)),
               "isOwner" -> JsBoolean(info.is_owner.getOrElse(false)),
               "isRestricted" -> JsBoolean(info.is_restricted.getOrElse(false)),
-              "isUltraRestricted" -> JsBoolean(info.is_ultra_restricted.getOrElse(false))
+              "isUltraRestricted" -> JsBoolean(info.is_ultra_restricted.getOrElse(false)),
+              "tz" -> info.tz.map(JsString).getOrElse(JsNull)
             )
           )
-          val userData = SlackUserData(slackUserId, slackTeamId, info.name, profileData)
+          val userData = SlackUserData(slackUserId, slackTeamId, info.name, info.tz, profileData)
           cacheService.cacheSlackUserData(userData)
           Some(userData)
         }.getOrElse(None)
