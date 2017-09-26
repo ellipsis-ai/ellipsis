@@ -3,15 +3,14 @@ package models.behaviors.builtins
 import akka.actor.ActorSystem
 import models.behaviors.BotResult
 import models.behaviors.events.Event
-import services.{AWSLambdaService, DataService, DefaultServices}
+import services.DefaultServices
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.matching.Regex
 
 trait BuiltinBehavior {
   val event: Event
-  val lambdaService: AWSLambdaService
-  val dataService: DataService
+  val services: DefaultServices
 
   def result(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[BotResult]
 }
@@ -37,15 +36,12 @@ object BuiltinBehavior {
   val revokeAuthRegex: Regex = s"""(?i)^revoke\\s+all\\s+tokens\\s+for\\s+(.*)""".r
 
   def maybeFrom(event: Event, services: DefaultServices): Option[BuiltinBehavior] = {
-    val lambdaService = services.lambdaService
-    val dataService = services.dataService
-    val configuration = services.configuration
     if (event.includesBotMention) {
       uneducateQuotes(event.relevantMessageText) match {
-        case setEnvironmentVariableRegex(name, value) => Some(SetEnvironmentVariableBehavior(name, value, event, lambdaService, dataService))
-        case unsetEnvironmentVariableRegex(name) => Some(UnsetEnvironmentVariableBehavior(name, event, lambdaService, dataService))
-        case startLearnConversationRegex() => Some(LearnBehavior(event, lambdaService, dataService))
-        case unlearnRegex(regexString) => Some(UnlearnBehavior(regexString, event, lambdaService, dataService))
+        case setEnvironmentVariableRegex(name, value) => Some(SetEnvironmentVariableBehavior(name, value, event, services))
+        case unsetEnvironmentVariableRegex(name) => Some(UnsetEnvironmentVariableBehavior(name, event, services))
+        case startLearnConversationRegex() => Some(LearnBehavior(event, services))
+        case unlearnRegex(regexString) => Some(UnlearnBehavior(regexString, event, services))
         case helpRegex(helpString) => Some(DisplayHelpBehavior(
           Some(helpString),
           None,
@@ -56,14 +52,14 @@ object BuiltinBehavior {
           event,
           services
         ))
-        case rememberRegex(cmd) => Some(RememberBehavior(event, lambdaService, dataService))
-        case scheduledRegex() => Some(ListScheduledBehavior(event, event.maybeChannel, lambdaService, dataService, configuration))
-        case allScheduledRegex() => Some(ListScheduledBehavior(event, None, lambdaService, dataService, configuration))
-        case scheduleRegex(_, text, individually, recurrence) => Some(ScheduleBehavior(text, (individually != null), recurrence, event, lambdaService, dataService))
-        case unscheduleRegex(_, text) => Some(UnscheduleBehavior(text, event, lambdaService, dataService, configuration))
-        case resetBehaviorsRegex() => Some(ResetBehaviorsBehavior(event, lambdaService, dataService))
-        case setTimeZoneRegex(tzString) => Some(SetDefaultTimeZoneBehavior(tzString, event, lambdaService, dataService))
-        case revokeAuthRegex(appName) => Some(RevokeAuthBehavior(appName, event, lambdaService, dataService))
+        case rememberRegex(cmd) => Some(RememberBehavior(event, services))
+        case scheduledRegex() => Some(ListScheduledBehavior(event, event.maybeChannel, services))
+        case allScheduledRegex() => Some(ListScheduledBehavior(event, None, services))
+        case scheduleRegex(_, text, individually, recurrence) => Some(ScheduleBehavior(text, (individually != null), recurrence, event, services))
+        case unscheduleRegex(_, text) => Some(UnscheduleBehavior(text, event, services))
+        case resetBehaviorsRegex() => Some(ResetBehaviorsBehavior(event, services))
+        case setTimeZoneRegex(tzString) => Some(SetDefaultTimeZoneBehavior(tzString, event, services))
+        case revokeAuthRegex(appName) => Some(RevokeAuthBehavior(appName, event, services))
         case _ => None
       }
     } else {
