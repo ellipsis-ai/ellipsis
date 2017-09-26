@@ -214,7 +214,6 @@ case class ExecutionErrorResult(
                                ) extends BotResultWithLogResult with WithBehaviorLink {
 
   val resultType = ResultType.ExecutionError
-  val functionLines = behaviorVersion.functionBody.split("\n").length
   val howToIncludeStackTraceMessage = "\n\nTo include a stack trace, throw an `Error` object in your code. For example:\n  throw new Error(\"Something went wrong.\")"
 
   private val maybeError: Option[ExecutionErrorData] = {
@@ -252,12 +251,12 @@ case class ExecutionErrorResult(
   }
 
   private val maybeThrownLogMessage: Option[String] = {
-    maybeLogResult.flatMap(_.maybeTranslated(functionLines))
+    maybeLogResult.flatMap(_.maybeTranslated)
   }
 
   private def maybeErrorLog: Option[String] = {
     maybeError.map { error =>
-      val translatedStack = error.translateStack(functionLines)
+      val translatedStack = error.translateStack
       if (translatedStack.nonEmpty) {
         translatedStack
       } else {
