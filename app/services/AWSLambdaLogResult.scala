@@ -12,9 +12,10 @@ object AWSLambdaLogResult {
 
   def translateErrors(error: String): String = {
     var translated = error
+    translated = """.*index\.js.*""".r.replaceAllIn(translated, "")
     translated = s"""/var/task/${BehaviorVersion.dirName}/(.+)\\.js""".r.replaceAllIn(translated, "<your function>")
     translated = """/var/task/(.+)\.js""".r.replaceAllIn(translated, "$1")
-    translated = """at fn|at exports\.handler""".r.replaceAllIn(translated, "at top level")
+    translated = """at fn|at exports\.handler|at module\.exports""".r.replaceAllIn(translated, "at top level")
     translated.
       split("\n").
       mkString("\n").
