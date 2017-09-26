@@ -446,18 +446,26 @@ class AWSLambdaServiceImpl @Inject() (
   }
 
   def ensureNodeModuleVersionsFor(groupVersion: BehaviorGroupVersion): DBIO[Seq[NodeModuleVersion]] = {
-    val json = getNodeModuleInfoFor(groupVersion.functionName)
-    val maybeDependencies = (json \ "dependencies").asOpt[JsObject]
-    maybeDependencies.map { dependencies =>
-      DBIO.sequence(dependencies.values.toSeq.map { depJson =>
-        depJson.validate[NodeModuleVersionData] match {
-          case JsSuccess(info, _) => {
-            dataService.nodeModuleVersions.ensureForAction(info.from, info.version, groupVersion).map(Some(_))
-          }
-          case JsError(err) => DBIO.successful(None)
-        }
-      }).map(_.flatten)
-    }.getOrElse(DBIO.successful(Seq()))
+    for {
+      behaviorVersions <- dataService.behaviorVersions.allForGroupVersionAction(groupVersion)
+      hasCode <- DBIO.successful(behaviorVersions.exists(_.hasFunction))
+      nodeModuleVersions <- if (hasCode) {
+        val json = getNodeModuleInfoFor(groupVersion.functionName)
+        val maybeDependencies = (json \ "dependencies").asOpt[JsObject]
+        maybeDependencies.map { dependencies =>
+          DBIO.sequence(dependencies.values.toSeq.map { depJson =>
+            depJson.validate[NodeModuleVersionData] match {
+              case JsSuccess(info, _) => {
+                dataService.nodeModuleVersions.ensureForAction(info.from, info.version, groupVersion).map(Some(_))
+              }
+              case JsError(err) => DBIO.successful(None)
+            }
+          }).map(_.flatten)
+        }.getOrElse(DBIO.successful(Seq()))
+      } else {
+        DBIO.successful(Seq())
+      }
+    } yield nodeModuleVersions
   }
 
   private def getZipFor(
