@@ -36,6 +36,8 @@ case class BehaviorVersion(
                             createdAt: OffsetDateTime
                           ) extends BehaviorVersionForDataTypeSchema {
 
+  lazy val jsName: String = s"${BehaviorVersion.dirName}/$id.js"
+
   lazy val typeName = maybeName.getOrElse(GraphQLHelpers.fallbackTypeName)
 
   def dataTypeFieldsAction(dataService: DataService)(implicit ec: ExecutionContext): DBIO[Seq[DataTypeFieldForSchema]] = {
@@ -119,6 +121,16 @@ case class BehaviorVersion(
       maybeAuthor.map(_.id),
       createdAt
     )
+  }
+
+}
+
+object BehaviorVersion {
+
+  val dirName: String = "behavior_versions"
+
+  def codeFor(functionBody: String): String = {
+    s"module.exports = (function() { return $functionBody; })();"
   }
 
 }

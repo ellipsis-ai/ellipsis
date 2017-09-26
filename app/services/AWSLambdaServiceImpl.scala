@@ -302,7 +302,7 @@ class AWSLambdaServiceImpl @Inject() (
     val paramsFromEvent = params.indices.map(i => s"event.${invocationParamFor(i)}")
     val invocationParamsString = (paramsFromEvent ++ Array(s"event.$CONTEXT_PARAM")).mkString(", ")
     s""""${behaviorVersion.id}": function() {
-       |  var fn = ${functionWithParams(params, behaviorVersion.functionBody)};
+       |  var fn = require("./${behaviorVersion.jsName}");
        |  return fn($invocationParamsString);
        |}
      """.stripMargin
@@ -392,6 +392,13 @@ class AWSLambdaServiceImpl @Inject() (
     path.createDirectory()
 
     writeFileNamed(s"$dirName/index.js", nodeCodeFor(behaviorVersionsWithParams, apiConfigInfo))
+
+    val behaviorVersionsDirName = s"$dirName/${BehaviorVersion.dirName}"
+    Path(behaviorVersionsDirName).createDirectory()
+    behaviorVersionsWithParams.foreach { case(behaviorVersion, params) =>
+      writeFileNamed(s"$dirName/${behaviorVersion.jsName}", BehaviorVersion.codeFor(functionWithParams(params, behaviorVersion.functionBody)))
+    }
+
     libraries.foreach { ea =>
       writeFileNamed(s"$dirName/${ea.jsName}", ea.code)
     }

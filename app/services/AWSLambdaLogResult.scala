@@ -1,5 +1,7 @@
 package services
 
+import models.behaviors.behaviorversion.BehaviorVersion
+
 case class AWSLambdaLogResult(source: String, authorDefinedLogStatements: String, maybeErrorMessage: Option[String]) {
   def maybeTranslated(functionLines: Int): Option[String] = {
     maybeErrorMessage.map(error => AWSLambdaLogResult.translateErrors(functionLines, error))
@@ -21,7 +23,7 @@ object AWSLambdaLogResult {
 
   def translateErrors(functionLines: Int, error: String): String = {
     var translated = error
-    translated = """/var/task/index.js""".r.replaceAllIn(translated, "<your function>")
+    translated = s"""/var/task/${BehaviorVersion.dirName}/(.+)\\.js""".r.replaceAllIn(translated, "<your function>")
     translated = """/var/task/(.+)\.js""".r.replaceAllIn(translated, "$1")
     translated = """at fn|at exports\.handler""".r.replaceAllIn(translated, "at top level")
     translated.
