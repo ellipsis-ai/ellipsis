@@ -130,7 +130,7 @@ object BehaviorVersion {
   val dirName: String = "behavior_versions"
 
   def codeFor(functionBody: String): String = {
-    s"module.exports = (function() { return $functionBody; })();"
+    s"module.exports = ${functionBody.trim};"
   }
 
 }
