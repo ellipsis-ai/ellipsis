@@ -1,5 +1,6 @@
 package support
 
+import java.time.OffsetDateTime
 import com.mohiva.play.silhouette.test._
 import controllers.routes
 import models.IDs
@@ -50,7 +51,7 @@ trait NotFoundWithLoginContext extends ControllerTestContextWithLoggedInUser {
 }
 
 trait NotFoundForOtherTeamContext extends NotFoundWithLoginContext {
-  val otherTeam: Team = Team(IDs.next, "Other team", None)
+  val otherTeam: Team = Team(IDs.next, "Other team", None, OffsetDateTime.now)
   def mockTeamAccessFor(teamAccess: UserTeamAccess) = {
     when(dataService.users.teamAccessFor(user, Some(otherTeam.id))).thenReturn(Future.successful(teamAccess))
   }
