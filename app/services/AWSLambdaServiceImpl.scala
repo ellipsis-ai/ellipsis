@@ -141,10 +141,11 @@ class AWSLambdaServiceImpl @Inject() (
                             environmentVariables: Seq[EnvironmentVariable],
                             successFn: InvokeResult => BotResult,
                             maybeConversation: Option[Conversation],
-                            isRetrying: Boolean
+                            isRetrying: Boolean,
+                            defaultServices: DefaultServices
                           ): DBIO[BotResult] = {
     for {
-      userInfo <- event.userInfoAction(ws, dataService, cacheService)
+      userInfo <- event.userInfoAction(defaultServices)
       result <- {
         DBIO.from(TeamInfo.forConfig(apiConfigInfo, userInfo, team, ws).flatMap { teamInfo =>
           val payloadJson = JsObject(
@@ -164,7 +165,7 @@ class AWSLambdaServiceImpl @Inject() (
                   if (!isRetrying) {
                     Logger.info(s"retrying behavior invocation after resource not found")
                     Thread.sleep(2000)
-                    dataService.run(invokeFunctionAction(behaviorVersion, token, payloadData, team, event, apiConfigInfo, environmentVariables, successFn, maybeConversation, isRetrying=true))
+                    dataService.run(invokeFunctionAction(behaviorVersion, token, payloadData, team, event, apiConfigInfo, environmentVariables, successFn, maybeConversation, isRetrying=true, defaultServices))
                   } else {
                     throw e
                   }
@@ -183,7 +184,8 @@ class AWSLambdaServiceImpl @Inject() (
                     parametersWithValues: Seq[ParameterWithValue],
                     environmentVariables: Seq[EnvironmentVariable],
                     event: Event,
-                    maybeConversation: Option[Conversation]
+                    maybeConversation: Option[Conversation],
+                    defaultServices: DefaultServices
                   ): DBIO[BotResult] = {
     for {
       awsConfigs <- dataService.awsConfigs.allForAction(behaviorVersion.team)
@@ -210,7 +212,8 @@ class AWSLambdaServiceImpl @Inject() (
               behaviorVersion.resultFor(result.getPayload, logResult, parametersWithValues, dataService, configuration, event, maybeConversation)
             },
             maybeConversation,
-            isRetrying = false
+            isRetrying = false,
+            defaultServices
           )
         } yield invocationResult
       }

@@ -4,7 +4,6 @@ import java.time.OffsetDateTime
 import javax.inject.Inject
 
 import akka.actor.ActorSystem
-import com.google.inject.Provider
 import drivers.SlickPostgresDriver.api._
 import json.BehaviorVersionData
 import models.IDs
@@ -13,15 +12,11 @@ import models.behaviors._
 import models.behaviors.behavior.{Behavior, BehaviorQueries}
 import models.behaviors.behaviorgroup.BehaviorGroup
 import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
-import models.behaviors.config.requiredawsconfig.RequiredAWSConfig
-import models.behaviors.config.requiredoauth2apiconfig.RequiredOAuth2ApiConfig
-import models.behaviors.config.requiredsimpletokenapi.RequiredSimpleTokenApi
 import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.events.Event
 import models.team.Team
-import play.api.libs.ws.WSClient
 import play.api.{Configuration, Logger}
-import services.{AWSLambdaService, ApiConfigInfo, CacheService, DataService}
+import services._
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -66,18 +61,15 @@ class BehaviorVersionsTable(tag: Tag) extends Table[RawBehaviorVersion](tag, "be
 }
 
 class BehaviorVersionServiceImpl @Inject() (
-                                      dataServiceProvider: Provider[DataService],
-                                      lambdaServiceProvider: Provider[AWSLambdaService],
-                                      ws: WSClient,
+                                      defaultServices: DefaultServices,
                                       configuration: Configuration,
                                       cacheService: CacheService,
                                       implicit val actorSystem: ActorSystem,
                                       implicit val ec: ExecutionContext
                                     ) extends BehaviorVersionService {
 
-  def dataService = dataServiceProvider.get
-
-  def lambdaService = lambdaServiceProvider.get
+  def dataService = defaultServices.dataService
+  def lambdaService = defaultServices.lambdaService
 
   import BehaviorVersionQueries._
 
@@ -312,12 +304,12 @@ class BehaviorVersionServiceImpl @Inject() (
     for {
       missingTeamEnvVars <- dataService.teamEnvironmentVariables.missingInAction(behaviorVersion, dataService)
       requiredOAuth2ApiConfigs <- dataService.requiredOAuth2ApiConfigs.allForAction(behaviorVersion.groupVersion)
-      userInfo <- event.userInfoAction(ws, dataService, cacheService)
+      userInfo <- event.userInfoAction(defaultServices)
       notReadyOAuth2Applications <- DBIO.successful(requiredOAuth2ApiConfigs.filterNot(_.isReady))
       missingOAuth2Applications <- DBIO.successful(requiredOAuth2ApiConfigs.flatMap(_.maybeApplication).filter { app =>
         !userInfo.links.exists(_.externalSystem == app.name)
       })
-      botPrefix <- DBIO.from(event.botPrefix(dataService))
+      botPrefix <- DBIO.from(event.botPrefix(defaultServices))
       maybeResult <- if (missingTeamEnvVars.nonEmpty) {
         DBIO.successful(Some(MissingTeamEnvVarsResult(
           event,
@@ -365,7 +357,7 @@ class BehaviorVersionServiceImpl @Inject() (
       result <- maybeNotReadyResultForAction(behaviorVersion, event).flatMap { maybeResult =>
         maybeResult.map(DBIO.successful).getOrElse {
           lambdaService
-            .invokeAction(behaviorVersion, parametersWithValues, (teamEnvVars ++ userEnvVars), event, maybeConversation)
+            .invokeAction(behaviorVersion, parametersWithValues, (teamEnvVars ++ userEnvVars), event, maybeConversation, defaultServices)
         }
       }
     } yield result

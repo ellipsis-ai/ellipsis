@@ -30,8 +30,6 @@ trait LinkedAccountService {
     }
   }
 
-  def maybeSlackUserDataFor(slackUserId: String, slackTeamId: String, client: SlackApiClient): Future[Option[SlackUserData]]
-
   def isAdminAction(linkedAccount: LinkedAccount): DBIO[Boolean]
 
   def isAdmin(linkedAccount: LinkedAccount): Future[Boolean]

@@ -55,15 +55,15 @@ trait Event {
     dataService.run(ensureUserAction(dataService))
   }
 
-  def userInfoAction(ws: WSClient, dataService: DataService, cacheService: CacheService)(implicit actorSystem: ActorSystem, ec: ExecutionContext): DBIO[UserInfo] = {
-    UserInfo.buildForAction(this, teamId, ws, dataService, cacheService)
+  def userInfoAction(services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): DBIO[UserInfo] = {
+    UserInfo.buildForAction(this, teamId, services)
   }
 
-  def messageInfo(ws: WSClient, dataService: DataService, cacheService: CacheService)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[MessageInfo] = {
-    MessageInfo.buildFor(this, ws, dataService, cacheService)
+  def messageInfo(services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[MessageInfo] = {
+    MessageInfo.buildFor(this, services)
   }
 
-  def detailsFor(ws: WSClient, dataService: DataService, cacheService: CacheService)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[JsObject]
+  def detailsFor(services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[JsObject]
 
   def recentMessages(dataService: DataService)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Seq[String]] = Future.successful(Seq())
 
@@ -95,11 +95,8 @@ trait Event {
     s"[install new skills]($installLink)"
   }
 
-  def noExactMatchResult(
-                          dataService: DataService,
-                          lambdaService: AWSLambdaService,
-                          cacheService: CacheService
-                        )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[BotResult] = {
+  def noExactMatchResult(services: DefaultServices)
+                        (implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[BotResult] = {
     DisplayHelpBehavior(
       Some(messageText),
       None,
@@ -108,9 +105,7 @@ trait Event {
       includeNonMatchingResults = false,
       isFirstTrigger = true,
       this,
-      lambdaService,
-      dataService,
-      cacheService
+      services
     ).result
   }
 
@@ -146,7 +141,7 @@ trait Event {
                    cacheService: CacheService
                  )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[String]]
 
-  def botPrefix(dataService: DataService)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[String] = Future.successful("")
+  def botPrefix(services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[String] = Future.successful("")
 
   val invocationLogText: String
 

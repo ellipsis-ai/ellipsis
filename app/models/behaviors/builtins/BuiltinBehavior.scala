@@ -4,7 +4,7 @@ import akka.actor.ActorSystem
 import models.behaviors.BotResult
 import models.behaviors.events.Event
 import play.api.Configuration
-import services.{AWSLambdaService, CacheService, DataService}
+import services.{AWSLambdaService, CacheService, DataService, DefaultServices}
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -36,7 +36,10 @@ object BuiltinBehavior {
   val setTimeZoneRegex = s"""(?i)^set default time\\s*zone to\\s(.*)$$""".r
   val revokeAuthRegex = s"""(?i)^revoke\\s+all\\s+tokens\\s+for\\s+(.*)""".r
 
-  def maybeFrom(event: Event, lambdaService: AWSLambdaService, dataService: DataService, cacheService: CacheService, configuration: Configuration): Option[BuiltinBehavior] = {
+  def maybeFrom(event: Event, services: DefaultServices): Option[BuiltinBehavior] = {
+    val lambdaService = services.lambdaService
+    val dataService = services.dataService
+    val configuration = services.configuration
     if (event.includesBotMention) {
       uneducateQuotes(event.relevantMessageText) match {
         case setEnvironmentVariableRegex(name, value) => Some(SetEnvironmentVariableBehavior(name, value, event, lambdaService, dataService))
@@ -51,9 +54,7 @@ object BuiltinBehavior {
           includeNonMatchingResults = false,
           isFirstTrigger = true,
           event,
-          lambdaService,
-          dataService,
-          cacheService
+          services
         ))
         case rememberRegex(cmd) => Some(RememberBehavior(event, lambdaService, dataService))
         case scheduledRegex() => Some(ListScheduledBehavior(event, event.maybeChannel, lambdaService, dataService, configuration))
