@@ -3,8 +3,7 @@ package models.behaviors.builtins
 import akka.actor.ActorSystem
 import models.behaviors.BotResult
 import models.behaviors.events.Event
-import play.api.Configuration
-import services.{AWSLambdaService, CacheService, DataService, DefaultServices}
+import services.{AWSLambdaService, DataService, DefaultServices}
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -22,19 +21,19 @@ object BuiltinBehavior {
     text.replaceAll("[“”]", "\"").replaceAll("[‘’]", "'")
   }
 
-  val setEnvironmentVariableRegex = s"""(?i)(?s)^set\\s+env\\s+(\\S+)\\s+(.*)$$""".r
-  val unsetEnvironmentVariableRegex = s"""(?i)^unset\\s+env\\s+(\\S+)\\s*$$""".r
-  val startLearnConversationRegex = s"""(?i)^learn\\s*$$""".r
-  val unlearnRegex = s"""(?i)^unlearn\\s+(\\S+)""".r
-  val helpRegex = s"""(?i)^help\\s*(\\S*.*)$$""".r
-  val rememberRegex = s"""(?i)^(remember|\\^)\\s*$$""".r
-  val scheduledRegex = s"""(?i)^scheduled$$""".r
-  val allScheduledRegex = s"""(?i)^all scheduled$$""".r
-  val scheduleRegex = s"""(?i)^schedule\\s+([`"'])(.*?)\\1(\\s+privately for everyone in this channel)?\\s+(.*)\\s*$$""".r
-  val unscheduleRegex = s"""(?i)^unschedule\\s+([`"'])(.*?)\\1\\s*$$""".r
-  val resetBehaviorsRegex = """(?i)reset behaviors really really really""".r
-  val setTimeZoneRegex = s"""(?i)^set default time\\s*zone to\\s(.*)$$""".r
-  val revokeAuthRegex = s"""(?i)^revoke\\s+all\\s+tokens\\s+for\\s+(.*)""".r
+  private val setEnvironmentVariableRegex = s"""(?i)(?s)^set\\s+env\\s+(\\S+)\\s+(.*)$$""".r
+  private val unsetEnvironmentVariableRegex = s"""(?i)^unset\\s+env\\s+(\\S+)\\s*$$""".r
+  private val startLearnConversationRegex = s"""(?i)^learn\\s*$$""".r
+  private val unlearnRegex = s"""(?i)^unlearn\\s+(\\S+)""".r
+  private val helpRegex = s"""(?i)^help\\s*(\\S*.*)$$""".r
+  private val rememberRegex = s"""(?i)^(remember|\\^)\\s*$$""".r
+  private val scheduledRegex = s"""(?i)^scheduled$$""".r
+  private val allScheduledRegex = s"""(?i)^all scheduled$$""".r
+  private val scheduleRegex = s"""(?i)^schedule\\s+([`"'])(.*?)\\1(\\s+privately for everyone in this channel)?\\s+(.*)\\s*$$""".r
+  private val unscheduleRegex = s"""(?i)^unschedule\\s+([`"'])(.*?)\\1\\s*$$""".r
+  private val resetBehaviorsRegex = """(?i)reset behaviors really really really""".r
+  private val setTimeZoneRegex = s"""(?i)^set default time\\s*zone to\\s(.*)$$""".r
+  private val revokeAuthRegex = s"""(?i)^revoke\\s+all\\s+tokens\\s+for\\s+(.*)""".r
 
   def maybeFrom(event: Event, services: DefaultServices): Option[BuiltinBehavior] = {
     val lambdaService = services.lambdaService
