@@ -5,7 +5,7 @@ import models.behaviors.events.Event
 import models.behaviors.scheduling.Scheduled
 import models.behaviors.{BotResult, SimpleTextResult}
 import play.api.Configuration
-import services.{AWSLambdaService, DataService}
+import services.{DataService, DefaultServices}
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -13,10 +13,11 @@ import scala.concurrent.{ExecutionContext, Future}
 case class ListScheduledBehavior(
                                   event: Event,
                                   maybeChannel: Option[String],
-                                  lambdaService: AWSLambdaService,
-                                  dataService: DataService,
-                                  configuration: Configuration
+                                  services: DefaultServices
                                  ) extends BuiltinBehavior {
+
+  val configuration: Configuration = services.configuration
+  val dataService: DataService = services.dataService
 
   private def noMessagesResponse: String = {
     if (maybeChannel.isDefined) {

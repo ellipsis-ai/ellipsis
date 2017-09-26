@@ -3,20 +3,19 @@ package models.behaviors.builtins
 import akka.actor.ActorSystem
 import models.behaviors.events.Event
 import models.behaviors.{BotResult, SimpleTextResult}
-import play.api.Configuration
-import services.{AWSLambdaService, DataService}
+import services.DefaultServices
 
 import scala.concurrent.{ExecutionContext, Future}
 
 case class UnscheduleBehavior(
                                text: String,
                                event: Event,
-                               lambdaService: AWSLambdaService,
-                               dataService: DataService,
-                               configuration: Configuration
+                               services: DefaultServices
                              ) extends BuiltinBehavior {
 
   def result(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[BotResult] = {
+    val configuration = services.configuration
+    val dataService = services.dataService
     for {
       maybeTeam <- dataService.teams.find(event.teamId)
       didDelete <- maybeTeam.map { team =>
