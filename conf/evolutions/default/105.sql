@@ -47,4 +47,3 @@ DROP INDEX IF EXISTS required_aws_configs_group_version_id_index;
 DROP TABLE IF EXISTS required_aws_configs;
 
 COMMIT;
->>>>>>> origin/master
