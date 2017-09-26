@@ -3,6 +3,7 @@ package mocks
 import javax.inject.Inject
 
 import com.amazonaws.services.lambda.AWSLambdaAsyncClient
+import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
 import models.behaviors.behaviorversion.BehaviorVersion
 import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.events.Event
@@ -41,19 +42,18 @@ class MockAWSLambdaService @Inject() (
 
   override val client: AWSLambdaAsyncClient = mock[AWSLambdaAsyncClient]
 
-  override def listBehaviorFunctionNames: Future[Seq[String]] = Future.successful(Seq())
+  override def listBehaviorGroupFunctionNames: Future[Seq[String]] = Future.successful(Seq())
 
-  def partionedBehaviorFunctionNames: Future[PartitionedFunctionNames] = {
+  def partionedBehaviorGroupFunctionNames: Future[PartitionedFunctionNames] = {
     Future.successful(PartitionedFunctionNames(Seq(), Seq(), Seq()))
   }
 
   override def deleteFunction(functionName: String): Future[Unit] = Future.successful({})
 
   override def deployFunctionFor(
-                                  behaviorVersion: BehaviorVersion,
-                                  functionBody: String,
-                                  params: Array[String],
+                                  groupVersion: BehaviorGroupVersion,
                                   libraries: Seq[LibraryVersion],
+                                  behaviorVersionsWithParams: Seq[(BehaviorVersion, Array[String])],
                                   apiConfigInfo: ApiConfigInfo,
                                   forceNodeModuleUpdate: Boolean
                                 ): Future[Unit] = Future.successful({})
@@ -69,5 +69,5 @@ class MockAWSLambdaService @Inject() (
 
   override def functionWithParams(params: Array[String], functionBody: String): String = ""
 
-  def ensureNodeModuleVersionsFor(behaviorVersion: BehaviorVersion): DBIO[Seq[NodeModuleVersion]] = DBIO.successful(Seq())
+  def ensureNodeModuleVersionsFor(groupVersion: BehaviorGroupVersion): DBIO[Seq[NodeModuleVersion]] = DBIO.successful(Seq())
 }

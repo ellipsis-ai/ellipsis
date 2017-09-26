@@ -13,6 +13,7 @@ import com.amazonaws.services.logs.{AWSLogsAsync, AWSLogsAsyncClientBuilder}
 import json.Formatting._
 import json.NodeModuleVersionData
 import models.behaviors._
+import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
 import models.behaviors.behaviorversion.BehaviorVersion
 import models.behaviors.config.requiredawsconfig.RequiredAWSConfig
 import models.behaviors.config.requiredoauth2apiconfig.RequiredOAuth2ApiConfig
@@ -86,24 +87,24 @@ class AWSLambdaServiceImpl @Inject() (
     }
   }
 
-  def listBehaviorFunctionNames: Future[Seq[String]] = {
+  def listBehaviorGroupFunctionNames: Future[Seq[String]] = {
     fetchFunctions(None).map { functions =>
       val allFunctionNames = functions.map(_.getFunctionName)
       val behaviorFunctionNames = allFunctionNames.filter { ea =>
-        ea.startsWith(BehaviorVersion.lambdaFunctionPrefix)
+        ea.startsWith(BehaviorGroupVersion.lambdaFunctionPrefix)
       }
       behaviorFunctionNames
     }
   }
 
-  def partionedBehaviorFunctionNames: Future[PartitionedFunctionNames] = {
+  def partionedBehaviorGroupFunctionNames: Future[PartitionedFunctionNames] = {
     for {
-      allBehaviorFunctionNames <- listBehaviorFunctionNames
-      currentFunctionNames <- dataService.behaviorVersions.currentFunctionNames
+      allBehaviorGroupFunctionNames <- listBehaviorGroupFunctionNames
+      currentFunctionNames <- dataService.behaviorGroupVersions.currentFunctionNames
     } yield {
-      val missing = currentFunctionNames.diff(allBehaviorFunctionNames)
-      val current = currentFunctionNames.intersect(allBehaviorFunctionNames)
-      val obsolete = allBehaviorFunctionNames.diff(currentFunctionNames)
+      val missing = currentFunctionNames.diff(allBehaviorGroupFunctionNames)
+      val current = currentFunctionNames.intersect(allBehaviorGroupFunctionNames)
+      val obsolete = allBehaviorGroupFunctionNames.diff(currentFunctionNames)
       PartitionedFunctionNames(current, missing, obsolete)
     }
   }
@@ -131,7 +132,7 @@ class AWSLambdaServiceImpl @Inject() (
   }
 
   def invokeFunctionAction(
-                            functionName: String,
+                            behaviorVersion: BehaviorVersion,
                             token: InvocationToken,
                             payloadData: Seq[(String, JsValue)],
                             team: Team,
@@ -148,12 +149,12 @@ class AWSLambdaServiceImpl @Inject() (
       result <- {
         DBIO.from(TeamInfo.forConfig(apiConfigInfo, userInfo, team, ws).flatMap { teamInfo =>
           val payloadJson = JsObject(
-            payloadData ++ contextParamDataFor(environmentVariables, userInfo, teamInfo, token)
+            payloadData ++ contextParamDataFor(environmentVariables, userInfo, teamInfo, token) ++ Seq(("behaviorVersionId", JsString(behaviorVersion.id)))
           )
           val invokeRequest =
             new InvokeRequest().
               withLogType(LogType.Tail).
-              withFunctionName(functionName).
+              withFunctionName(behaviorVersion.groupVersion.functionName).
               withInvocationType(InvocationType.RequestResponse).
               withPayload(payloadJson.toString())
           JavaFutureConverter.javaToScala(client.invokeAsync(invokeRequest)).map(successFn).recoverWith {
@@ -164,7 +165,7 @@ class AWSLambdaServiceImpl @Inject() (
                   if (!isRetrying) {
                     Logger.info(s"retrying behavior invocation after resource not found")
                     Thread.sleep(2000)
-                    dataService.run(invokeFunctionAction(functionName, token, payloadData, team, event, apiConfigInfo, environmentVariables, successFn, maybeConversation, isRetrying=true, defaultServices))
+                    dataService.run(invokeFunctionAction(behaviorVersion, token, payloadData, team, event, apiConfigInfo, environmentVariables, successFn, maybeConversation, isRetrying=true, defaultServices))
                   } else {
                     throw e
                   }
@@ -198,7 +199,7 @@ class AWSLambdaServiceImpl @Inject() (
           user <- event.ensureUserAction(dataService)
           token <- dataService.invocationTokens.createForAction(user, behaviorVersion.behavior, event.maybeScheduled)
           invocationResult <- invokeFunctionAction(
-            behaviorVersion.functionName,
+            behaviorVersion,
             token,
             parametersWithValues.map { ea => (ea.invocationName, ea.preparedValue) },
             behaviorVersion.team,
@@ -240,6 +241,12 @@ class AWSLambdaServiceImpl @Inject() (
       Seq()
     }
     (requiredForCode ++ requiredForLibs).distinct
+  }
+
+  private def requiredModulesIn(behaviorVersions: Seq[BehaviorVersion], libraries: Seq[LibraryVersion], includeLibraryRequires: Boolean): Array[String] = {
+    behaviorVersions.flatMap { ea =>
+      requiredModulesIn(ea.functionBody, libraries, includeLibraryRequires = true)
+    }.distinct.toArray
   }
 
   private def awsConfigCodeFor(required: RequiredAWSConfig): String = {
@@ -294,54 +301,66 @@ class AWSLambdaServiceImpl @Inject() (
         |}\n""".stripMargin
   }
 
-  private def nodeCodeFor(
-                           functionBody: String,
-                           params: Array[String],
-                           apiConfigInfo: ApiConfigInfo
-                         ): String = {
+  private def behaviorMappingFor(behaviorVersion: BehaviorVersion, params: Array[String]): String = {
     val paramsFromEvent = params.indices.map(i => s"event.${invocationParamFor(i)}")
     val invocationParamsString = (paramsFromEvent ++ Array(s"event.$CONTEXT_PARAM")).mkString(", ")
-    // Note: this attempts to make line numbers in the lambda script line up with those displayed in the UI
-    // Be careful changing either this or the UI line numbers
-    s"""exports.handler = function(event, context, lambdaCallback) { var fn = ${functionWithParams(params, functionBody)}
-       |  const $CONTEXT_PARAM = event.$CONTEXT_PARAM;
-       |
-       |  $OVERRIDE_CONSOLE
-       |  $CALLBACK_FUNCTION
-       |  const callback = ellipsisCallback;
-       |
-       |  $NO_RESPONSE_CALLBACK_FUNCTION
-       |  $SUCCESS_CALLBACK_FUNCTION
-       |  $ERROR_CLASS
-       |  $ERROR_CALLBACK_FUNCTION
-       |
-       |  $CONTEXT_PARAM.$NO_RESPONSE_KEY = ellipsisNoResponseCallback;
-       |  $CONTEXT_PARAM.success = ellipsisSuccessCallback;
-       |  $CONTEXT_PARAM.Error = EllipsisError;
-       |  $CONTEXT_PARAM.error = ellipsisErrorCallback;
-       |
-       |  process.removeAllListeners('unhandledRejection');
-       |  process.on('unhandledRejection', $CONTEXT_PARAM.error);
-       |
-       |  ${awsCodeFor(apiConfigInfo)}
-       |  $CONTEXT_PARAM.accessTokens = {};
-       |  ${accessTokensCodeFor(apiConfigInfo.requiredOAuth2ApiConfigs)}
-       |  ${simpleTokensCodeFor(apiConfigInfo.requiredSimpleTokenApis)}
-       |
-       |  try {
-       |    fn($invocationParamsString);
-       |  } catch(err) {
-       |    $CONTEXT_PARAM.error(err);
-       |  }
+    s""""${behaviorVersion.id}": function() {
+       |  var fn = require("./${behaviorVersion.jsName}");
+       |  return fn($invocationParamsString);
+       |}""".stripMargin
+  }
+
+  private def behaviorsMapFor(behaviorVersionsWithParams: Seq[(BehaviorVersion, Array[String])]): String = {
+    s"""var behaviors = {
+       |  ${behaviorVersionsWithParams.map { case(bv, params) => behaviorMappingFor(bv, params)}.mkString(", ")}
        |}
+     """.stripMargin
+  }
+
+  private def nodeCodeFor(
+                           behaviorVersionsWithParams: Seq[(BehaviorVersion, Array[String])],
+                           apiConfigInfo: ApiConfigInfo
+                         ): String = {
+    s"""exports.handler = function(event, context, lambdaCallback) {
+        |  ${behaviorsMapFor(behaviorVersionsWithParams)};
+        |
+        |  const $CONTEXT_PARAM = event.$CONTEXT_PARAM;
+        |
+        |  $OVERRIDE_CONSOLE
+        |  $CALLBACK_FUNCTION
+        |  const callback = ellipsisCallback;
+        |
+        |  $NO_RESPONSE_CALLBACK_FUNCTION
+        |  $SUCCESS_CALLBACK_FUNCTION
+        |  $ERROR_CLASS
+        |  $ERROR_CALLBACK_FUNCTION
+        |
+        |  $CONTEXT_PARAM.$NO_RESPONSE_KEY = ellipsisNoResponseCallback;
+        |  $CONTEXT_PARAM.success = ellipsisSuccessCallback;
+        |  $CONTEXT_PARAM.Error = EllipsisError;
+        |  $CONTEXT_PARAM.error = ellipsisErrorCallback;
+        |  process.removeAllListeners('unhandledRejection');
+        |  process.on('unhandledRejection', $CONTEXT_PARAM.error);
+        |
+        |  ${awsCodeFor(apiConfigInfo)}
+        |  $CONTEXT_PARAM.accessTokens = {};
+        |  ${accessTokensCodeFor(apiConfigInfo.requiredOAuth2ApiConfigs)}
+        |  ${simpleTokensCodeFor(apiConfigInfo.requiredSimpleTokenApis)}
+        |
+        |  try {
+        |    behaviors[event.behaviorVersionId]();
+        |  } catch(err) {
+        |    $CONTEXT_PARAM.error(err);
+        |  }
+        |}
     """.stripMargin
   }
 
   private def dirNameFor(functionName: String) = s"/tmp/$functionName"
   private def zipFileNameFor(functionName: String) = s"${dirNameFor(functionName)}.zip"
 
-  case class PreviousFunctionInfo(functionName: String, functionBody: String, libraries: Seq[LibraryVersion]) {
-    val requiredModules = requiredModulesIn(functionBody, libraries, includeLibraryRequires = true)
+  case class PreviousFunctionInfo(functionName: String, behaviorVersions: Seq[BehaviorVersion], libraries: Seq[LibraryVersion]) {
+    val requiredModules = requiredModulesIn(behaviorVersions, libraries, includeLibraryRequires = true)
     val dirName = dirNameFor(functionName)
     val nodeModulesDirName = s"$dirName/node_modules"
 
@@ -363,8 +382,7 @@ class AWSLambdaServiceImpl @Inject() (
 
   private def createZipWithModulesFor(
                                        functionName: String,
-                                       functionBody: String,
-                                       params: Array[String],
+                                       behaviorVersionsWithParams: Seq[(BehaviorVersion, Array[String])],
                                        libraries: Seq[LibraryVersion],
                                        apiConfigInfo: ApiConfigInfo,
                                        maybePreviousFunctionInfo: Option[PreviousFunctionInfo],
@@ -374,12 +392,19 @@ class AWSLambdaServiceImpl @Inject() (
     val path = Path(dirName)
     path.createDirectory()
 
-    writeFileNamed(s"$dirName/index.js", nodeCodeFor(functionBody, params, apiConfigInfo))
+    writeFileNamed(s"$dirName/index.js", nodeCodeFor(behaviorVersionsWithParams, apiConfigInfo))
+
+    val behaviorVersionsDirName = s"$dirName/${BehaviorVersion.dirName}"
+    Path(behaviorVersionsDirName).createDirectory()
+    behaviorVersionsWithParams.foreach { case(behaviorVersion, params) =>
+      writeFileNamed(s"$dirName/${behaviorVersion.jsName}", BehaviorVersion.codeFor(functionWithParams(params, behaviorVersion.functionBody)))
+    }
+
     libraries.foreach { ea =>
       writeFileNamed(s"$dirName/${ea.jsName}", ea.code)
     }
 
-    val requiredModules = requiredModulesIn(functionBody, libraries, includeLibraryRequires = true)
+    val requiredModules = requiredModulesIn(behaviorVersionsWithParams.map(_._1), libraries, includeLibraryRequires = true)
     val canCopyModules = maybePreviousFunctionInfo.exists { previousFunctionInfo =>
       if (previousFunctionInfo.canCopyModules(requiredModules)) {
         previousFunctionInfo.copyModulesInto(dirName)
@@ -390,7 +415,7 @@ class AWSLambdaServiceImpl @Inject() (
     }
     for {
       _ <- if (forceNodeModuleUpdate || !canCopyModules) {
-        Future.sequence(requiredModules.map { moduleName =>
+        Future.sequence(requiredModules.toSeq.map { moduleName =>
           // NPM wants to write a lockfile in $HOME; this makes it work for daemons
           Future {
             blocking(
@@ -410,40 +435,42 @@ class AWSLambdaServiceImpl @Inject() (
 
   }
 
-  private def getNodeModuleInfoFor(behaviorVersion: BehaviorVersion): JsValue = {
-    if (behaviorVersion.hasFunction) {
-      val functionName = behaviorVersion.functionName
-      val dirName = dirNameFor(functionName)
-      val infoString = try {
-        Process(Seq("bash", "-c", s"cd $dirName && npm list --depth=0 --json=true")).!!
-      } catch {
-        case t: Throwable => "{}"
-      }
-      Json.parse(infoString)
-    } else {
-      Json.parse("{}")
+  private def getNodeModuleInfoFor(functionName: String): JsValue = {
+    val dirName = dirNameFor(functionName)
+    val infoString = try {
+      Process(Seq("bash", "-c", s"cd $dirName && npm list --depth=0 --json=true")).!!
+    } catch {
+      case t: Throwable => "{}"
     }
+    Json.parse(infoString)
   }
 
-  def ensureNodeModuleVersionsFor(behaviorVersion: BehaviorVersion): DBIO[Seq[NodeModuleVersion]] = {
-    val json = getNodeModuleInfoFor(behaviorVersion)
-    val maybeDependencies = (json \ "dependencies").asOpt[JsObject]
-    maybeDependencies.map { dependencies =>
-      DBIO.sequence(dependencies.values.toSeq.map { depJson =>
-        depJson.validate[NodeModuleVersionData] match {
-          case JsSuccess(info, _) => {
-            dataService.nodeModuleVersions.ensureForAction(info.from, info.version, behaviorVersion.groupVersion).map(Some(_))
-          }
-          case JsError(err) => DBIO.successful(None)
-        }
-      }).map(_.flatten)
-    }.getOrElse(DBIO.successful(Seq()))
+  def ensureNodeModuleVersionsFor(groupVersion: BehaviorGroupVersion): DBIO[Seq[NodeModuleVersion]] = {
+    for {
+      behaviorVersions <- dataService.behaviorVersions.allForGroupVersionAction(groupVersion)
+      hasCode <- DBIO.successful(behaviorVersions.exists(_.hasFunction))
+      nodeModuleVersions <- if (hasCode) {
+        val json = getNodeModuleInfoFor(groupVersion.functionName)
+        val maybeDependencies = (json \ "dependencies").asOpt[JsObject]
+        maybeDependencies.map { dependencies =>
+          DBIO.sequence(dependencies.values.toSeq.map { depJson =>
+            depJson.validate[NodeModuleVersionData] match {
+              case JsSuccess(info, _) => {
+                dataService.nodeModuleVersions.ensureForAction(info.from, info.version, groupVersion).map(Some(_))
+              }
+              case JsError(err) => DBIO.successful(None)
+            }
+          }).map(_.flatten)
+        }.getOrElse(DBIO.successful(Seq()))
+      } else {
+        DBIO.successful(Seq())
+      }
+    } yield nodeModuleVersions
   }
 
   private def getZipFor(
                          functionName: String,
-                         functionBody: String,
-                         params: Array[String],
+                         behaviorVersionsWithParams: Seq[(BehaviorVersion, Array[String])],
                          libraries: Seq[LibraryVersion],
                          apiConfigInfo: ApiConfigInfo,
                          maybePreviousFunctionInfo: Option[PreviousFunctionInfo],
@@ -451,8 +478,7 @@ class AWSLambdaServiceImpl @Inject() (
                        ): Future[ByteBuffer] = {
     createZipWithModulesFor(
       functionName,
-      functionBody,
-      params,
+      behaviorVersionsWithParams,
       libraries,
       apiConfigInfo,
       maybePreviousFunctionInfo,
@@ -517,24 +543,24 @@ class AWSLambdaServiceImpl @Inject() (
 
   def deployFunction(
                       functionName: String,
-                      functionBody: String,
-                      params: Array[String],
+                      behaviorVersionsWithParams: Seq[(BehaviorVersion, Array[String])],
                       libraries: Seq[LibraryVersion],
                       apiConfigInfo: ApiConfigInfo,
                       maybePreviousFunctionInfo: Option[PreviousFunctionInfo],
                       forceNodeModuleUpdate: Boolean
                     ): Future[Unit] = {
 
+    val isNoCode: Boolean = behaviorVersionsWithParams.forall { case(bv, _) => bv.functionBody.trim.isEmpty }
+
     deleteFunction(functionName).andThen {
       case Failure(t) => Future.successful({})
-      case Success(v) => if (functionBody.trim.isEmpty) {
+      case Success(v) => if (isNoCode) {
         Future.successful(Unit)
       } else {
         for {
           functionCode <-getZipFor(
               functionName,
-              functionBody,
-              params,
+              behaviorVersionsWithParams,
               libraries,
               apiConfigInfo,
               maybePreviousFunctionInfo,
@@ -558,25 +584,26 @@ class AWSLambdaServiceImpl @Inject() (
   }
 
   def deployFunctionFor(
-                         behaviorVersion: BehaviorVersion,
-                         functionBody: String,
-                         params: Array[String],
+                         groupVersion: BehaviorGroupVersion,
                          libraries: Seq[LibraryVersion],
+                         behaviorVersionsWithParams: Seq[(BehaviorVersion, Array[String])],
                          apiConfigInfo: ApiConfigInfo,
                          forceNodeModuleUpdate: Boolean
                        ): Future[Unit] = {
     for {
-      maybePrevious <- dataService.behaviorVersions.maybePreviousFor(behaviorVersion)
+      maybePrevious <- dataService.behaviorGroupVersions.maybePreviousFor(groupVersion)
       previousLibraries <- maybePrevious.map { prev =>
-        dataService.libraries.allFor(prev.groupVersion)
+        dataService.libraries.allFor(prev)
+      }.getOrElse(Future.successful(Seq()))
+      previousBehaviorVersions <- maybePrevious.map { prev =>
+        dataService.behaviorVersions.allForGroupVersion(prev)
       }.getOrElse(Future.successful(Seq()))
       maybePreviousFunctionInfo <- Future.successful(maybePrevious.map { version =>
-        PreviousFunctionInfo(version.functionName, version.functionBody, previousLibraries)
+        PreviousFunctionInfo(version.functionName, previousBehaviorVersions, previousLibraries)
       })
       _ <- deployFunction(
-        behaviorVersion.functionName,
-        functionBody,
-        params,
+        groupVersion.functionName,
+        behaviorVersionsWithParams,
         libraries,
         apiConfigInfo,
         maybePreviousFunctionInfo,

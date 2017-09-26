@@ -19,6 +19,8 @@ case class BehaviorGroupVersion(
 
   val team: Team = group.team
 
+  val functionName: String = BehaviorGroupVersion.functionNameFor(id)
+
   def isCurrentVersion: Boolean = group.maybeCurrentVersionId.contains(id)
 
   def exportName: String = {
@@ -37,4 +39,9 @@ case class BehaviorGroupVersion(
     )
   }
 
+}
+
+object BehaviorGroupVersion {
+  val lambdaFunctionPrefix = "behavior-"
+  def functionNameFor(groupVersionId: String): String = s"$lambdaFunctionPrefix$groupVersionId"
 }

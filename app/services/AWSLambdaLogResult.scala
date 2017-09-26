@@ -1,32 +1,23 @@
 package services
 
+import models.behaviors.behaviorversion.BehaviorVersion
+
 case class AWSLambdaLogResult(source: String, authorDefinedLogStatements: String, maybeErrorMessage: Option[String]) {
-  def maybeTranslated(functionLines: Int): Option[String] = {
-    maybeErrorMessage.map(error => AWSLambdaLogResult.translateErrors(functionLines, error))
+  def maybeTranslated: Option[String] = {
+    maybeErrorMessage.map(error => AWSLambdaLogResult.translateErrors(error))
   }
 }
 
 object AWSLambdaLogResult {
 
-  def shouldExcludeLine(line: String, functionLines: Int): Boolean = {
-    """<your function>:(\d+):""".r.findFirstMatchIn(line).exists { m =>
-      try {
-        val lineNumber = m.subgroups.head.toInt
-        lineNumber > functionLines
-      } catch {
-        case e: NumberFormatException => false
-      }
-    }
-  }
-
-  def translateErrors(functionLines: Int, error: String): String = {
+  def translateErrors(error: String): String = {
     var translated = error
-    translated = """/var/task/index.js""".r.replaceAllIn(translated, "<your function>")
+    translated = """.*index\.js.*""".r.replaceAllIn(translated, "")
+    translated = s"""/var/task/${BehaviorVersion.dirName}/(.+)\\.js""".r.replaceAllIn(translated, "<your function>")
     translated = """/var/task/(.+)\.js""".r.replaceAllIn(translated, "$1")
-    translated = """at fn|at exports\.handler""".r.replaceAllIn(translated, "at top level")
+    translated = """at fn|at exports\.handler|at module\.exports""".r.replaceAllIn(translated, "at top level")
     translated.
       split("\n").
-      filterNot { line => shouldExcludeLine(line, functionLines) }.
       mkString("\n").
       stripPrefix("\t")
   }
