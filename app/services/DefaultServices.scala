@@ -27,6 +27,6 @@ class DefaultServices @Inject() (
   def graphQLService: GraphQLService = graphQLServiceProvider.get
   def configuration: Configuration = configurationProvider.get
   def ws: WSClient = wsProvider.get
-  def botResultService = botResultServiceProvider.get
-  def slackEventService = slackEventServiceProvider.get
+  def botResultService: BotResultService = botResultServiceProvider.get
+  def slackEventService: SlackEventService = slackEventServiceProvider.get
 }

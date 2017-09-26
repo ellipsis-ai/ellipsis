@@ -5,7 +5,7 @@ import models.accounts.slack.botprofile.SlackBotProfile
 import models.accounts.slack.profile.SlackProfile
 import models.accounts.user.User
 import models.behaviors.conversations.conversation.Conversation
-import services.{CacheService, DataService}
+import services.{CacheService, DataService, DefaultServices}
 import slack.api.SlackApiClient
 import utils.{SlackMessageSender, UploadFileSpec}
 
@@ -24,12 +24,12 @@ case class SlackMessageEvent(
 
   lazy val isBotMessage: Boolean = profile.userId == user
 
-  override def botPrefix(dataService: DataService)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[String] = {
+  override def botPrefix(services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[String] = {
     if (isDirectMessage) {
       Future.successful("")
     } else {
       for {
-        maybeSlackUserData <- dataService.linkedAccounts.maybeSlackUserDataFor(profile.userId, profile.slackTeamId, SlackApiClient(profile.token))
+        maybeSlackUserData <- services.slackEventService.maybeSlackUserDataFor(profile)
       } yield {
         maybeSlackUserData.map { userData =>
           s"@${userData.accountName} "

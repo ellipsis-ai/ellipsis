@@ -31,7 +31,7 @@ class EventHandler @Inject() (
       responses <- dataService.behaviorResponses.allFor(event, maybeTeam, None)
       results <- Future.sequence(responses.map(_.result)).flatMap { r =>
         if (r.isEmpty && event.isResponseExpected) {
-          event.noExactMatchResult(dataService, lambdaService, cacheService).map { noMatchResult =>
+          event.noExactMatchResult(services).map { noMatchResult =>
             Seq(noMatchResult)
           }
         } else {
@@ -98,7 +98,7 @@ class EventHandler @Inject() (
     maybeConversation.map { conversation =>
       handleInConversation(conversation, event).map(Seq(_))
     }.getOrElse {
-      BuiltinBehavior.maybeFrom(event, lambdaService, dataService, cacheService, services.configuration).map { builtin =>
+      BuiltinBehavior.maybeFrom(event, services).map { builtin =>
         builtin.result.map(Seq(_))
       }.getOrElse {
         startInvokeConversationFor(event)

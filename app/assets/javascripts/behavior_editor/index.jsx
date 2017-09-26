@@ -985,12 +985,6 @@ const BehaviorEditor = React.createClass({
     });
   },
 
-  setAWSEnvVar: function(property, envVarName) {
-    var awsConfig = Object.assign({}, this.getAWSConfig());
-    awsConfig[property] = envVarName;
-    this.setConfigProperty('aws', awsConfig);
-  },
-
   setEditableProp: function(key, value, callback) {
     var newProps = {};
     newProps[key] = value;
@@ -1472,16 +1466,6 @@ const BehaviorEditor = React.createClass({
 
   onAddNewEnvVariable: function() {
     this.showEnvVariableAdder();
-  },
-
-  onAWSAddNewEnvVariable: function(property) {
-    this.setState({
-      onNextNewEnvVar: function(newVar) {
-        this.setAWSEnvVar(property, newVar.name);
-      }.bind(this)
-    }, function() {
-      this.showEnvVariableAdder(this.getEnvVariableAdderPromptFor(property));
-    });
   },
 
   onAddAWSConfig: function(toAdd, callback) {

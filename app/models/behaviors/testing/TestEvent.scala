@@ -7,8 +7,7 @@ import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.events.{MessageActions, MessageEvent}
 import models.team.Team
 import play.api.libs.json.JsObject
-import play.api.libs.ws.WSClient
-import services.{CacheService, DataService}
+import services.{CacheService, DataService, DefaultServices}
 import slick.dbio.DBIO
 import utils.UploadFileSpec
 
@@ -50,18 +49,16 @@ case class TestEvent(
   }
 
   override def userInfoAction(
-                               ws: WSClient,
-                               dataService: DataService,
-                               cacheService: CacheService
+                               services: DefaultServices
                              )(implicit actorSystem: ActorSystem, ec: ExecutionContext): DBIO[UserInfo] = {
-    UserInfo.buildForAction(user, this, ws, dataService, cacheService)
+    UserInfo.buildForAction(user, this, services)
   }
 
   override def ensureUserAction(dataService: DataService): DBIO[User] = {
     DBIO.successful(user)
   }
 
-  def detailsFor(ws: WSClient, dataService: DataService, cacheService: CacheService)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[JsObject] = {
+  def detailsFor(services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[JsObject] = {
     Future.successful(JsObject(Seq()))
   }
 
