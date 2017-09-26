@@ -2,6 +2,6 @@ package models.behaviors.events
 
 import slack.models.ActionField
 
-trait SlackMessageAction extends MessageAction {
+trait SlackMessageAction {
   val actionField: ActionField
 }

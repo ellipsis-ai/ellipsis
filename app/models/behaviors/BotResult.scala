@@ -74,7 +74,7 @@ sealed trait BotResult {
 
   val shouldSend: Boolean = true
 
-  def maybeActions: Option[MessageActions] = None
+  def maybeAttachments: Option[Seq[MessageAttachments]] = None
 }
 
 trait BotResultWithLogResult extends BotResult {
@@ -163,13 +163,19 @@ case class SimpleTextResult(event: Event, maybeConversation: Option[Conversation
 
 }
 
-case class TextWithActionsResult(event: Event, maybeConversation: Option[Conversation], simpleText: String, forcePrivateResponse: Boolean, actions: MessageActions) extends BotResult {
+case class TextWithAttachmentsResult(
+                                      event: Event,
+                                      maybeConversation: Option[Conversation],
+                                      simpleText: String,
+                                      forcePrivateResponse: Boolean,
+                                      messageAttachments: Seq[MessageAttachments]
+                                    ) extends BotResult {
   val resultType = ResultType.TextWithActions
 
   def text: String = simpleText
 
-  override def maybeActions: Option[MessageActions] = {
-    Some(actions)
+  override def maybeAttachments: Option[Seq[MessageAttachments]] = {
+    Some(messageAttachments)
   }
 }
 

@@ -4,7 +4,7 @@ import akka.actor.ActorSystem
 import json.BehaviorGroupData
 import models.behaviors.events.SlackMessageActionConstants._
 import models.behaviors.events._
-import models.behaviors.{BotResult, TextWithActionsResult}
+import models.behaviors.{BotResult, TextWithAttachmentsResult}
 import models.help._
 import services.{AWSLambdaService, CacheService, DataService, DefaultServices}
 import utils._
@@ -42,9 +42,9 @@ case class DisplayHelpBehavior(
     val resultsRemaining = results.slice(endAt, results.length)
 
     val intro = if (startAt == 0 && maybeHelpString.isEmpty) {
-      s"OK, let’s start from the top. Here are some things I know about. ${event.navLinks(noSkills = false, lambdaService)}"
+      s"OK, let’s start from the top. Here are some things I know about."
     } else if (startAt == 0 && maybeHelpString.isDefined) {
-      s"OK, here’s what I know$matchString. ${event.navLinks(noSkills = false, lambdaService)}"
+      s"OK, here’s what I know$matchString."
     } else {
       s"OK, here are some more things I know$matchString."
     }
@@ -60,6 +60,7 @@ case class DisplayHelpBehavior(
       val buttonValue = HelpGroupSearchValue(result.group.helpActionId, maybeHelpSearch).toString
       SlackMessageActionButton(SHOW_BEHAVIOR_GROUP_HELP, label, buttonValue)
     })
+
     val remainingGroupCount = resultsRemaining.length
     val actions = if (remainingGroupCount > 0) {
       val label = if (remainingGroupCount == 1) { "1 more skill…" } else { s"$remainingGroupCount more skills…" }
@@ -68,7 +69,7 @@ case class DisplayHelpBehavior(
       skillActions
     }
     val attachment = SlackMessageActions(SHOW_HELP_INDEX, actions, maybeInstructions, Some(Color.PINK))
-    TextWithActionsResult(event, None, intro, forcePrivateResponse = false, attachment)
+    TextWithAttachmentsResult(event, None, intro, forcePrivateResponse = false, attachment)
   }
 
   def skillNameAndDescriptionFor(result: HelpResult): String = {
@@ -118,13 +119,13 @@ case class DisplayHelpBehavior(
 
     val messageActions = SlackMessageActions(SHOW_BEHAVIOR_GROUP_HELP, actionList, actionText, Some(Color.BLUE_LIGHT), None)
 
-    TextWithActionsResult(event, None, resultText, forcePrivateResponse = false, messageActions)
+    TextWithAttachmentsResult(event, None, resultText, forcePrivateResponse = false, messageActions)
   }
 
   def emptyResult: BotResult = {
     val actions = Seq(SlackMessageActionButton(SHOW_HELP_INDEX, "More help…", "0"))
     val resultText = s"I don’t know anything$matchString. ${event.navLinks(noSkills = true, lambdaService)}"
-    TextWithActionsResult(event, None, resultText, forcePrivateResponse = false, SlackMessageActions("help_no_result", actions, None, Some(Color.PINK)))
+    TextWithAttachmentsResult(event, None, resultText, forcePrivateResponse = false, SlackMessageActions("help_no_result", actions, None, Some(Color.PINK)))
   }
 
   def result(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[BotResult] = {

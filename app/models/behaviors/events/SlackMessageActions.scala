@@ -10,11 +10,11 @@ case class SlackMessageActions(
                                 maybeText: Option[String],
                                 maybeColor: Option[String],
                                 maybeTitle: Option[String] = None
-                              ) extends MessageActions {
+                              ) extends SlackMessageAttachments {
 
-  type T = SlackMessageAction
+  type T = Attachment
 
-  def attachments: Seq[Attachment] = {
+  val attachments: Seq[Attachment] = {
     val size = actions.length
     val maxPerGroup = SlackMessageSender.MAX_ACTIONS_PER_ATTACHMENT
     val groupSize = if (size % maxPerGroup == 1) { maxPerGroup - 1 } else { maxPerGroup }

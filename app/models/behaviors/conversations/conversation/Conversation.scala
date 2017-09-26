@@ -110,7 +110,7 @@ trait Conversation {
           val actions = Seq(SlackMessageActionButton(STOP_CONVERSATION, "Stop asking", id))
           val question = result.text
           val attachment = SlackMessageActions(STOP_CONVERSATION, actions, Some(question), None)
-          Some(TextWithActionsResult(result.event, Some(this), intro, result.forcePrivateResponse, attachment))
+          Some(TextWithAttachmentsResult(result.event, Some(this), intro, result.forcePrivateResponse, attachment))
         }
       }.getOrElse(DBIO.successful(None))
     }

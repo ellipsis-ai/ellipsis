@@ -136,7 +136,7 @@ trait Event {
                    forcePrivate: Boolean,
                    maybeShouldUnfurl: Option[Boolean],
                    maybeConversation: Option[Conversation],
-                   maybeActions: Option[MessageActions] = None,
+                   maybeAttachments: Option[Seq[MessageAttachments]] = None,
                    files: Seq[UploadFileSpec] = Seq(),
                    cacheService: CacheService
                  )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[String]]

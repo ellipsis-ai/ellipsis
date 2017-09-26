@@ -5,7 +5,7 @@ import javax.inject._
 import models.behaviors.builtins.BuiltinBehavior
 import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.events.SlackMessageActionConstants._
-import models.behaviors.{BehaviorResponse, BotResult, SimpleTextResult, TextWithActionsResult}
+import models.behaviors.{BehaviorResponse, BotResult, SimpleTextResult, TextWithAttachmentsResult}
 import services.DefaultServices
 import utils.Color
 
@@ -84,8 +84,8 @@ class EventHandler @Inject() (
             }.getOrElse {
               s"It’s been a while since I asked you the question above."
             } + s"\n\nJust so I’m sure, is this an answer?"
-            val attachment = SlackMessageActions("should_continue_conversation", actions, Some(event.relevantMessageTextWithFormatting), Some(Color.PINK))
-            TextWithActionsResult(event, Some(updatedConvo), prompt, forcePrivateResponse = false, attachment)
+            val attachments = SlackMessageActions("should_continue_conversation", actions, Some(event.relevantMessageTextWithFormatting), Some(Color.PINK))
+            TextWithAttachmentsResult(event, Some(updatedConvo), prompt, forcePrivateResponse = false, attachments)
           }
         } else {
           updatedConvo.resultFor(event, services)

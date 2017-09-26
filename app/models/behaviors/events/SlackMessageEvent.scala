@@ -108,7 +108,7 @@ case class SlackMessageEvent(
                    forcePrivate: Boolean,
                    maybeShouldUnfurl: Option[Boolean],
                    maybeConversation: Option[Conversation],
-                   maybeActions: Option[MessageActions] = None,
+                   maybeAttachments: Option[MessageAttachments] = None,
                    files: Seq[UploadFileSpec] = Seq(),
                    cacheService: CacheService
                  )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[String]] = {
@@ -123,7 +123,7 @@ case class SlackMessageEvent(
         maybeThreadId,
         maybeShouldUnfurl,
         maybeConversation,
-        maybeActions,
+        maybeAttachments,
         files
       ).send
     }

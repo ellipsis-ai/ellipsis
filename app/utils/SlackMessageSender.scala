@@ -3,7 +3,7 @@ package utils
 import akka.actor.ActorSystem
 import models.SlackMessageFormatter
 import models.behaviors.conversations.conversation.Conversation
-import models.behaviors.events.{MessageActions, SlackMessageActions}
+import models.behaviors.events.{MessageAttachments, SlackMessageAttachments}
 import slack.api.SlackApiClient
 import slack.models.Attachment
 
@@ -20,7 +20,7 @@ case class SlackMessageSender(
                                maybeThreadId: Option[String],
                                maybeShouldUnfurl: Option[Boolean],
                                maybeConversation: Option[Conversation],
-                               maybeActions: Option[MessageActions] = None,
+                               messageAttachments: Seq[MessageAttachments] = Seq(),
                                files: Seq[UploadFileSpec] = Seq()
                              ) {
 
@@ -157,12 +157,13 @@ case class SlackMessageSender(
 
   def send(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[String]] = {
     val formattedText = SlackMessageFormatter.bodyTextFor(unformattedText)
-    val maybeAttachments = maybeActions.flatMap { actions =>
-      actions match {
-        case a: SlackMessageActions => Some(a.attachments)
+    val attachmentsToSend = messageAttachments.flatMap { attachments =>
+      attachments match {
+        case a: SlackMessageAttachments => Some(a.attachments)
         case _ => None
       }
-    }
+    }.flatten
+    val maybeAttachments = Option(attachmentsToSend).filter(_.nonEmpty)
     for {
       _ <- sendPreamble(formattedText, channelToUse)
       maybeLastTs <- sendMessageSegmentsInOrder(messageSegmentsFor(formattedText), channelToUse, maybeShouldUnfurl, maybeAttachments, maybeConversation, None)

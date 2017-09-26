@@ -23,11 +23,11 @@ case class ScheduledEvent(underlying: Event, scheduled: Scheduled) extends Event
                    forcePrivate: Boolean,
                    maybeShouldUnfurl: Option[Boolean],
                    maybeConversation: Option[Conversation],
-                   maybeActions: Option[MessageActions],
+                   maybeAttachments: Option[MessageAttachments],
                    files: Seq[UploadFileSpec],
                    cacheService: CacheService
                  )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[String]] = {
-    underlying.sendMessage(text, forcePrivate, maybeShouldUnfurl, maybeConversation, maybeActions, files, cacheService)
+    underlying.sendMessage(text, forcePrivate, maybeShouldUnfurl, maybeConversation, maybeAttachments, files, cacheService)
   }
 
   override def detailsFor(services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[JsObject] = {
