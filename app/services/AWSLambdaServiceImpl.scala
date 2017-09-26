@@ -99,12 +99,12 @@ class AWSLambdaServiceImpl @Inject() (
 
   def partionedBehaviorGroupFunctionNames: Future[PartitionedFunctionNames] = {
     for {
-      allBehaviorFunctionNames <- listBehaviorGroupFunctionNames
+      allBehaviorGroupFunctionNames <- listBehaviorGroupFunctionNames
       currentFunctionNames <- dataService.behaviorGroupVersions.currentFunctionNames
     } yield {
-      val missing = currentFunctionNames.diff(allBehaviorFunctionNames)
-      val current = currentFunctionNames.intersect(allBehaviorFunctionNames)
-      val obsolete = allBehaviorFunctionNames.diff(currentFunctionNames)
+      val missing = currentFunctionNames.diff(allBehaviorGroupFunctionNames)
+      val current = currentFunctionNames.intersect(allBehaviorGroupFunctionNames)
+      val obsolete = allBehaviorGroupFunctionNames.diff(currentFunctionNames)
       PartitionedFunctionNames(current, missing, obsolete)
     }
   }
