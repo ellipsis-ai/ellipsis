@@ -301,7 +301,7 @@ class AWSLambdaServiceImpl @Inject() (
         |}\n""".stripMargin
   }
 
-  private def behaviorCodeFor(behaviorVersion: BehaviorVersion, params: Array[String]): String = {
+  private def behaviorMappingFor(behaviorVersion: BehaviorVersion, params: Array[String]): String = {
     val paramsFromEvent = params.indices.map(i => s"event.${invocationParamFor(i)}")
     val invocationParamsString = (paramsFromEvent ++ Array(s"event.$CONTEXT_PARAM")).mkString(", ")
     s""""${behaviorVersion.id}": function() {
@@ -310,9 +310,9 @@ class AWSLambdaServiceImpl @Inject() (
        |}""".stripMargin
   }
 
-  private def behaviorsCodeFor(behaviorVersionsWithParams: Seq[(BehaviorVersion, Array[String])]): String = {
+  private def behaviorsMapFor(behaviorVersionsWithParams: Seq[(BehaviorVersion, Array[String])]): String = {
     s"""var behaviors = {
-       |  ${behaviorVersionsWithParams.map { case(bv, params) => behaviorCodeFor(bv, params)}.mkString(", ")}
+       |  ${behaviorVersionsWithParams.map { case(bv, params) => behaviorMappingFor(bv, params)}.mkString(", ")}
        |}
      """.stripMargin
   }
@@ -321,10 +321,9 @@ class AWSLambdaServiceImpl @Inject() (
                            behaviorVersionsWithParams: Seq[(BehaviorVersion, Array[String])],
                            apiConfigInfo: ApiConfigInfo
                          ): String = {
-
-    // Note: this attempts to make line numbers in the lambda script line up with those displayed in the UI
-    // Be careful changing either this or the UI line numbers
-    s"""exports.handler = function(event, context, lambdaCallback) { ${behaviorsCodeFor(behaviorVersionsWithParams)};
+    s"""exports.handler = function(event, context, lambdaCallback) {
+        |  ${behaviorsMapFor(behaviorVersionsWithParams)};
+        |
         |  const $CONTEXT_PARAM = event.$CONTEXT_PARAM;
         |
         |  $OVERRIDE_CONSOLE
