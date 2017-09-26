@@ -160,8 +160,8 @@ class BehaviorGroupVersionServiceImpl @Inject() (
       behaviorVersions <- dataService.behaviorVersions.allForGroupVersionAction(groupVersion)
       behaviorVersionsWithParams <- DBIO.sequence(behaviorVersions.map { bv =>
         dataService.behaviorParameters.allForAction(bv).map { params =>
-          params.map(_.input.name)
-        }.map { paramNames => (bv, withoutBuiltin(paramNames.toArray)) }
+          (bv, params.map(_.input.name).toArray)
+        }
       })
     } yield {
       // deploy in the background
