@@ -92,6 +92,8 @@ class BehaviorGroupVersionServiceImpl @Inject() (
     dataService.run(createForAction(group, user, maybeName, maybeIcon, maybeDescription))
   }
 
+  def withoutBuiltin(params: Array[String]) = params.filterNot(ea => ea == services.AWSLambdaConstants.CONTEXT_PARAM)
+
   def createFor(
                  group: BehaviorGroup,
                  user: User,
@@ -159,7 +161,7 @@ class BehaviorGroupVersionServiceImpl @Inject() (
       behaviorVersionsWithParams <- DBIO.sequence(behaviorVersions.map { bv =>
         dataService.behaviorParameters.allForAction(bv).map { params =>
           params.map(_.input.name)
-        }.map { paramNames => (bv, dataService.behaviorVersions.withoutBuiltin(paramNames.toArray)) }
+        }.map { paramNames => (bv, withoutBuiltin(paramNames.toArray)) }
       })
       _ <- DBIO.from(
         lambdaService.deployFunctionFor(
@@ -188,7 +190,7 @@ class BehaviorGroupVersionServiceImpl @Inject() (
       behaviorVersionsWithParams <- Future.sequence(behaviorVersions.map { bv =>
         dataService.behaviorParameters.allFor(bv).map { params =>
           params.map(_.input.name)
-        }.map { paramNames => (bv, dataService.behaviorVersions.withoutBuiltin(paramNames.toArray)) }
+        }.map { paramNames => (bv, withoutBuiltin(paramNames.toArray)) }
       })
       _ <- lambdaService.deployFunctionFor(
         groupVersion,

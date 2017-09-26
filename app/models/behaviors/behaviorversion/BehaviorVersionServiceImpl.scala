@@ -224,38 +224,34 @@ class BehaviorVersionServiceImpl @Inject() (
                      ): DBIO[BehaviorVersion] = {
     for {
       behaviorVersion <- createForAction(behavior, groupVersion, maybeUser, data.id)
-      _ <-
-      for {
-        updated <- saveAction(behaviorVersion.copy(
-          maybeName = data.name,
-          maybeDescription = data.description,
-          maybeFunctionBody = Some(data.functionBody),
-          maybeResponseTemplate = Some(data.responseTemplate),
-          forcePrivateResponse = data.config.forcePrivateResponse.exists(identity)
-        )
-        )
-        inputs <- DBIO.sequence(data.inputIds.map { inputId =>
-          dataService.inputs.findByInputIdAction(inputId, groupVersion)
+      updated <- saveAction(behaviorVersion.copy(
+        maybeName = data.name,
+        maybeDescription = data.description,
+        maybeFunctionBody = Some(data.functionBody),
+        maybeResponseTemplate = Some(data.responseTemplate),
+        forcePrivateResponse = data.config.forcePrivateResponse.exists(identity)
+      ))
+      inputs <- DBIO.sequence(data.inputIds.map { inputId =>
+        dataService.inputs.findByInputIdAction(inputId, groupVersion)
+      }
+      ).map(_.flatten)
+      _ <- dataService.behaviorParameters.ensureForAction(updated, inputs)
+      _ <- DBIO.sequence(
+        data.triggers.
+          filterNot(_.text.trim.isEmpty)
+          map { trigger =>
+          dataService.messageTriggers.createForAction(
+            updated,
+            trigger.text,
+            trigger.requiresMention,
+            trigger.isRegex,
+            trigger.caseSensitive
+          )
         }
-        ).map(_.flatten)
-        _ <- dataService.behaviorParameters.ensureForAction(updated, inputs)
-        _ <- DBIO.sequence(
-          data.triggers.
-            filterNot(_.text.trim.isEmpty)
-            map { trigger =>
-            dataService.messageTriggers.createForAction(
-              updated,
-              trigger.text,
-              trigger.requiresMention,
-              trigger.isRegex,
-              trigger.caseSensitive
-            )
-          }
-        )
-        _ <- data.config.dataTypeConfig.map { configData =>
-          dataService.dataTypeConfigs.createForAction(updated, configData)
-        }.getOrElse(DBIO.successful(None))
-      } yield {}
+      )
+      _ <- data.config.dataTypeConfig.map { configData =>
+        dataService.dataTypeConfigs.createForAction(updated, configData)
+      }.getOrElse(DBIO.successful(None))
     } yield behaviorVersion
   }
 

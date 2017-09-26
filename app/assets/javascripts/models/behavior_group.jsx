@@ -24,7 +24,6 @@ define(function(require) {
         behaviorVersions: { value: props.behaviorVersions, enumerable: true },
         libraryVersions: { value: props.libraryVersions, enumerable: true },
         requiredAWSConfigs: { value: props.requiredAWSConfigs, enumerable: true },
-        awsConfig: { value: props.awsConfig, enumerable: true },
         requiredOAuth2ApiConfigs: { value: props.requiredOAuth2ApiConfigs, enumerable: true },
         requiredSimpleTokenApis: { value: props.requiredSimpleTokenApis, enumerable: true },
         createdAt: { value: props.createdAt, enumerable: true },

@@ -16,10 +16,6 @@ import scala.concurrent.{ExecutionContext, Future}
 
 trait BehaviorVersionService {
 
-  import services.AWSLambdaConstants._
-
-  def withoutBuiltin(params: Array[String]) = params.filterNot(ea => ea == CONTEXT_PARAM)
-
   def allFor(behavior: Behavior): Future[Seq[BehaviorVersion]]
 
   def allForGroupVersionAction(groupVersion: BehaviorGroupVersion): DBIO[Seq[BehaviorVersion]]
