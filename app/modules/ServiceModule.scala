@@ -98,7 +98,7 @@ class ServiceModule extends AbstractModule with ScalaModule {
     bind[CacheService].to[CacheServiceImpl]
     bind[GraphQLService].to[GraphQLServiceImpl]
     bind[Models].asEagerSingleton()
-    bind[SlackEventService].asEagerSingleton()
+    bind[SlackEventService].to[SlackEventServiceImpl]
     bind[EventHandler].asEagerSingleton()
     bind[GithubService].asEagerSingleton()
   }

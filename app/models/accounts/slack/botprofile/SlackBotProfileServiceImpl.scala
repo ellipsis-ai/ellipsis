@@ -26,11 +26,11 @@ class SlackBotProfileTable(tag: Tag) extends Table[SlackBotProfile](tag, "slack_
 }
 
 class SlackBotProfileServiceImpl @Inject() (
-                                          dataServiceProvider: Provider[DataService],
-                                          slackEventServiceProvider: Provider[SlackEventService],
-                                          botResultServiceProvider: Provider[BotResultService],
-                                          implicit val actorSystem: ActorSystem,
-                                          implicit val ec: ExecutionContext
+                                             dataServiceProvider: Provider[DataService],
+                                             slackEventServiceProvider: Provider[SlackEventService],
+                                             botResultServiceProvider: Provider[BotResultService],
+                                             implicit val actorSystem: ActorSystem,
+                                             implicit val ec: ExecutionContext
                                         ) extends SlackBotProfileService {
 
   def dataService = dataServiceProvider.get

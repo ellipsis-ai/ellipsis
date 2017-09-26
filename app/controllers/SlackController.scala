@@ -577,9 +577,7 @@ class SlackController @Inject() (
                     includeNonMatchingResults = false,
                     isFirstTrigger = false,
                     event,
-                    lambdaService,
-                    dataService,
-                    cacheService
+                    services
                   ).result.map(Some(_)),
                   info.team.id,
                   info.channel.id,
@@ -600,9 +598,7 @@ class SlackController @Inject() (
                     includeNonMatchingResults = false,
                     isFirstTrigger = false,
                     event,
-                    lambdaService,
-                    dataService,
-                    cacheService
+                    services
                   ).result.map(Some(_)),
                   info.team.id,
                   info.channel.id,
@@ -627,9 +623,7 @@ class SlackController @Inject() (
                     includeNonMatchingResults = true,
                     isFirstTrigger = false,
                     event,
-                    lambdaService,
-                    dataService,
-                    cacheService
+                    services
                   ).result.map(Some(_)),
                   info.team.id,
                   info.channel.id,

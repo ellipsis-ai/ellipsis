@@ -13,7 +13,7 @@ import models.accounts.linkedaccount.LinkedAccount
 import models.behaviors.events.{Event, SlackMessageEvent}
 import models.team.Team
 import play.api.Configuration
-import services.{CacheService, DataService}
+import services.{CacheService, DataService, SlackEventService}
 import slack.api.SlackApiClient
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -21,6 +21,7 @@ import scala.concurrent.{ExecutionContext, Future}
 class UserServiceImpl @Inject() (
                                   dataServiceProvider: Provider[DataService],
                                   cacheServiceProvider: Provider[CacheService],
+                                  slackEventServiceProvider: Provider[SlackEventService],
                                   configuration: Configuration,
                                   implicit val actorSystem: ActorSystem,
                                   implicit val ec: ExecutionContext
@@ -28,6 +29,7 @@ class UserServiceImpl @Inject() (
 
   def dataService = dataServiceProvider.get
   def cacheService = cacheServiceProvider.get
+  def slackEventService = slackEventServiceProvider.get
 
   import UserQueries._
 
@@ -136,7 +138,7 @@ class UserServiceImpl @Inject() (
         slackBotProfile <- maybeSlackBotProfile
         slackAccount <- maybeSlackAccount
       } yield {
-        dataService.linkedAccounts.maybeSlackUserDataFor(slackAccount.loginInfo.providerKey, slackBotProfile.slackTeamId, SlackApiClient(slackBotProfile.token))
+        slackEventService.maybeSlackUserDataFor(slackAccount.loginInfo.providerKey, slackBotProfile.slackTeamId, SlackApiClient(slackBotProfile.token))
       }).getOrElse(Future.successful(None))
     } yield maybeUserData
   }
