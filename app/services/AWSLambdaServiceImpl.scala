@@ -307,8 +307,7 @@ class AWSLambdaServiceImpl @Inject() (
     s""""${behaviorVersion.id}": function() {
        |  var fn = require("./${behaviorVersion.jsName}");
        |  return fn($invocationParamsString);
-       |}
-     """.stripMargin
+       |}""".stripMargin
   }
 
   private def behaviorsCodeFor(behaviorVersionsWithParams: Seq[(BehaviorVersion, Array[String])]): String = {
