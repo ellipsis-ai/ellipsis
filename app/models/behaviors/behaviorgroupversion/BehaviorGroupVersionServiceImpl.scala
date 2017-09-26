@@ -163,17 +163,17 @@ class BehaviorGroupVersionServiceImpl @Inject() (
           params.map(_.input.name)
         }.map { paramNames => (bv, withoutBuiltin(paramNames.toArray)) }
       })
-      _ <- DBIO.from(
-        lambdaService.deployFunctionFor(
-          groupVersion,
-          libraries,
-          behaviorVersionsWithParams,
-          apiConfig,
-          forceNodeModuleUpdate
-        )
+    } yield {
+      // deploy in the background
+      lambdaService.deployFunctionFor(
+        groupVersion,
+        libraries,
+        behaviorVersionsWithParams,
+        apiConfig,
+        forceNodeModuleUpdate
       )
-      _ <- lambdaService.ensureNodeModuleVersionsFor(groupVersion)
-    } yield groupVersion) transactionally
+      groupVersion
+    }) transactionally
 
     dataService.run(action)
   }
