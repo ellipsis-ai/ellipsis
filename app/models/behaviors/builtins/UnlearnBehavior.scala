@@ -4,18 +4,18 @@ import akka.actor.ActorSystem
 import com.amazonaws.AmazonServiceException
 import models.behaviors.events.Event
 import models.behaviors.{BotResult, SimpleTextResult}
-import services.{AWSLambdaService, DataService}
+import services.DefaultServices
 
 import scala.concurrent.{ExecutionContext, Future}
 
 case class UnlearnBehavior(
                             patternString: String,
                             event: Event,
-                            lambdaService: AWSLambdaService,
-                            dataService: DataService
-                            ) extends BuiltinBehavior {
+                            services: DefaultServices
+                          ) extends BuiltinBehavior {
 
   def result(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[BotResult] = {
+    val dataService = services.dataService
     val eventualReply = try {
       for {
         triggers <- dataService.messageTriggers.allWithExactPattern(patternString, event.teamId)

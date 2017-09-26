@@ -3,18 +3,20 @@ package models.behaviors.builtins
 import java.time.OffsetDateTime
 
 import akka.actor.ActorSystem
-import json.{BehaviorConfig, BehaviorGroupData, BehaviorTriggerData, BehaviorVersionData}
+import json._
 import models.behaviors._
 import models.behaviors.events.Event
 import play.api.libs.json.JsNull
-import services.{AWSLambdaService, DataService}
+import services.DefaultServices
 import utils.QuestionAnswerExtractor
 
 import scala.concurrent.{ExecutionContext, Future}
 
-case class RememberBehavior(event: Event, lambdaService: AWSLambdaService, dataService: DataService) extends BuiltinBehavior {
+case class RememberBehavior(event: Event, services: DefaultServices) extends BuiltinBehavior {
 
   def result(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[BotResult] = {
+    val dataService = services.dataService
+    val lambdaService = services.lambdaService
     for {
       maybeTeam <- dataService.teams.find(event.teamId)
       maybeUser <- maybeTeam.map { team =>
