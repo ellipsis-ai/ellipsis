@@ -389,10 +389,14 @@ class AWSLambdaServiceImpl @Inject() (
 
     val requiredModules = requiredModulesIn(behaviorVersionsWithParams.map(_._1), libraries, includeLibraryRequires = true)
     for {
-      _ <- Future {
-        blocking(
-          Process(Seq("bash", "-c", s"cd $dirName && npm init -f && npm install ${requiredModules.mkString(" ")}"), None, "HOME" -> "/tmp").!
-        )
+      _ <- if (requiredModules.isEmpty) {
+        Future.successful({})
+      } else {
+        Future {
+          blocking(
+            Process(Seq("bash", "-c", s"cd $dirName && npm init -f && npm install ${requiredModules.mkString(" ")}"), None, "HOME" -> "/tmp").!
+          )
+        }
       }
       _ <- Future {
         blocking(
