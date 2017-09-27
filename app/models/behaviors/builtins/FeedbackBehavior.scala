@@ -10,7 +10,7 @@ import services.{DataService, DefaultServices}
 
 import scala.concurrent.{ExecutionContext, Future}
 
-case class FeedbackBehavior(event: Event, services: DefaultServices) extends BuiltinBehavior {
+case class FeedbackBehavior(feedbackType: String, message: String, event: Event, services: DefaultServices) extends BuiltinBehavior {
   val dataService: DataService = services.dataService
 
   def result(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[BotResult] = {
@@ -21,9 +21,8 @@ case class FeedbackBehavior(event: Event, services: DefaultServices) extends Bui
         dataService.users.userDataFor(user, team).map(Some(_))
       }.getOrElse(Future.successful(None))
     } yield {
-      val msg = ":tada:"
       maybeTeam.map { team =>
-        sendFeedbackToAdminTeam(Feedback(team.id, team.name, user.id, maybeUserData).message(msg))
+        sendFeedbackToAdminTeam(Feedback(team.id, team.name, user.id, maybeUserData).message(feedbackType, message))
       }
       SimpleTextResult(event, None, "Thank you. Your feedback has been received.", forcePrivateResponse = true)
     }
@@ -54,8 +53,8 @@ case class Feedback(teamId: String, teamName: String, userId: String, maybeUserD
     }.getOrElse(s"User #$userId")
   }
 
-  def message(msg: String): String = {
-    s"""Feedback:
+  def message(feedbackType: String, msg: String): String = {
+    s"""${feedbackType.capitalize}:
        |
        |👤 $userInfo
        |💼 **$teamName** (#$teamId)
@@ -64,4 +63,3 @@ case class Feedback(teamId: String, teamName: String, userId: String, maybeUserD
      """.stripMargin
   }
 }
-
