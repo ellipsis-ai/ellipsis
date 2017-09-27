@@ -174,7 +174,7 @@ class ConversationServiceImpl @Inject() (
           conversation.behaviorVersion.forcePrivateResponse,
           maybeShouldUnfurl = None,
           Some(conversation),
-          maybeAttachments = None,
+          attachments = Seq(),
           files = Seq(),
           cacheService
         ))

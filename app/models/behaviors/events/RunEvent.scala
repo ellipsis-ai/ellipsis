@@ -43,7 +43,7 @@ case class RunEvent(
                    forcePrivate: Boolean,
                    maybeShouldUnfurl: Option[Boolean],
                    maybeConversation: Option[Conversation],
-                   maybeAttachments: Option[Seq[MessageAttachments]] = None,
+                   attachments: Seq[MessageAttachmentSet] = Seq(),
                    files: Seq[UploadFileSpec] = Seq(),
                    cacheService: CacheService
                  )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[String]] = {
@@ -57,7 +57,7 @@ case class RunEvent(
       maybeThreadId,
       maybeShouldUnfurl,
       maybeConversation,
-      maybeAttachments.getOrElse(Seq()),
+      attachments,
       files
     ).send
   }
