@@ -1,7 +1,6 @@
 package models.team
 
 import java.time.{OffsetDateTime, ZoneId}
-
 import drivers.SlickPostgresDriver.api._
 
 class TeamsTable(tag: Tag) extends Table[Team](tag, "teams") {
@@ -19,9 +18,11 @@ object TeamQueries {
 
   val all = TableQuery[TeamsTable]
 
-  def allPaged(page: Int, perPage: Int) = {
-    all.drop((page - 1) * perPage).take(perPage)
+  def uncompiledAllPagedQuery(offset: ConstColumn[Long], size: ConstColumn[Long]) = {
+    all.drop(offset).take(size)
   }
+  val allPagedQuery = Compiled(uncompiledAllPagedQuery _)
+
 
   def uncompiledFindQueryFor(id: Rep[String]) = {
     all.filter(_.id === id)

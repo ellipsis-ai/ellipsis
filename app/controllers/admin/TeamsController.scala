@@ -20,10 +20,10 @@ class TeamsController @Inject() (
                                   implicit val ec: ExecutionContext
                                 ) extends AuthAsAdmin {
 
-  def list(page: Int, size: Int) = silhouette.SecuredAction.async { implicit request =>
+  def list(currentPage: Int, perPage: Int) = silhouette.SecuredAction.async { implicit request =>
     withIsAdminCheck(() => {
-      dataService.teams.allTeamsWithPage(page, size).map { teams =>
-        Ok(views.html.admin.teams.list(viewConfig(None), teams, page, size))
+      dataService.teams.allTeamsPaged(currentPage, perPage).map { teams =>
+        Ok(views.html.admin.teams.list(viewConfig(None), teams, currentPage, perPage))
       }
     })
   }

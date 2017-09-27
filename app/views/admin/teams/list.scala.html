@@ -3,7 +3,7 @@
 @import java.time.LocalDateTime
 @import java.time.ZoneId
 
-@(config: ViewConfig, teams: Seq[Team], pageCount: Int, pageSize: Int)(implicit messages: Messages, r: RequestHeader)
+@(config: ViewConfig, teams: Seq[Team], currentPage: Int, pageSize: Int)(implicit messages: Messages, r: RequestHeader)
 
 
 @page.main("Existing Teams", config) {
