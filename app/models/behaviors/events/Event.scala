@@ -141,8 +141,8 @@ trait Event {
                    forcePrivate: Boolean,
                    maybeShouldUnfurl: Option[Boolean],
                    maybeConversation: Option[Conversation],
-                   attachments: Seq[MessageAttachmentSet] = Seq(),
-                   files: Seq[UploadFileSpec] = Seq(),
+                   attachmentsList: Seq[MessageAttachments],
+                   files: Seq[UploadFileSpec],
                    cacheService: CacheService
                  )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[String]]
 

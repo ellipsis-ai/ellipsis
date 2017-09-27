@@ -68,7 +68,7 @@ case class DisplayHelpBehavior(
     } else {
       skillActions
     }
-    val actionSet = SlackMessageActionSet(
+    val actionSet = SlackMessageActions(
       SHOW_HELP_INDEX,
       actions,
       maybeInstructions,
@@ -77,7 +77,7 @@ case class DisplayHelpBehavior(
       event.maybeSkillsListLinkFor(lambdaService)
     )
     val attachments = if (startAt == 0) {
-      val generalHelp = SlackMessageTextAttachmentSet(event.navLinks(lambdaService), Some("General"))
+      val generalHelp = SlackMessageTextAttachments(event.navLinks(lambdaService), Some("General"))
       Seq(actionSet, generalHelp)
     } else {
       Seq(actionSet)
@@ -130,7 +130,7 @@ case class DisplayHelpBehavior(
       Some("Select or type an action to run it now:")
     }
 
-    val actionSet = SlackMessageActionSet(SHOW_BEHAVIOR_GROUP_HELP, actionList, actionText, Some(Color.BLUE_LIGHT), None)
+    val actionSet = SlackMessageActions(SHOW_BEHAVIOR_GROUP_HELP, actionList, actionText, Some(Color.BLUE_LIGHT), None)
 
     TextWithAttachmentsResult(event, None, resultText, forcePrivateResponse = false, Seq(actionSet))
   }
@@ -138,7 +138,7 @@ case class DisplayHelpBehavior(
   def emptyResult: BotResult = {
     val actions = Seq(SlackMessageActionButton(SHOW_HELP_INDEX, "More help…", "0"))
     val resultText = s"I don’t know anything$matchString."
-    val actionSet = SlackMessageActionSet("help_no_result", actions, None, Some(Color.PINK))
+    val actionSet = SlackMessageActions("help_no_result", actions, None, Some(Color.PINK))
     TextWithAttachmentsResult(event, None, resultText, forcePrivateResponse = false, Seq(actionSet))
   }
 

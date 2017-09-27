@@ -1,5 +1,5 @@
 package models.behaviors.events
 
-trait SlackMessageAttachmentSet extends MessageAttachmentSet {
+trait SlackMessageAttachments extends MessageAttachments {
   override type T = SlackMessageAttachment
 }

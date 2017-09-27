@@ -57,7 +57,7 @@ class BotResultServiceImpl @Inject() (
           forcePrivateResponse,
           maybeShouldUnfurl,
           maybeConversation,
-          botResult.attachments,
+          botResult.attachmentsList,
           files,
           cacheService
         )

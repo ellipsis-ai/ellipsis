@@ -2,14 +2,14 @@ package models.behaviors.events
 
 import utils.SlackMessageSender
 
-case class SlackMessageActionSet(
+case class SlackMessageActions(
                                 id: String,
                                 actions: Seq[SlackMessageAction],
                                 maybeText: Option[String],
                                 maybeColor: Option[String],
                                 maybeTitle: Option[String] = None,
                                 maybeTitleLink: Option[String] = None
-                              ) extends SlackMessageAttachmentSet {
+                              ) extends SlackMessageAttachments {
 
   val attachments: Seq[SlackMessageAttachment] = {
     val size = actions.length

@@ -2,10 +2,10 @@ package models.behaviors.events
 
 import utils.Color
 
-case class SlackMessageTextAttachmentSet(
+case class SlackMessageTextAttachments(
                                           text: String,
                                           maybeTitle: Option[String] = None
-                                        ) extends SlackMessageAttachmentSet {
+                                        ) extends SlackMessageAttachments {
 
   val attachments: Seq[SlackMessageAttachment] = {
     Seq(SlackMessageAttachment(

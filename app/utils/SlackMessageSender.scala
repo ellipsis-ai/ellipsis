@@ -3,7 +3,7 @@ package utils
 import akka.actor.ActorSystem
 import models.SlackMessageFormatter
 import models.behaviors.conversations.conversation.Conversation
-import models.behaviors.events.{MessageAttachmentSet, SlackMessageAttachmentSet}
+import models.behaviors.events.{MessageAttachments, SlackMessageAttachments}
 import slack.api.SlackApiClient
 import slack.models.Attachment
 
@@ -20,7 +20,7 @@ case class SlackMessageSender(
                                maybeThreadId: Option[String],
                                maybeShouldUnfurl: Option[Boolean],
                                maybeConversation: Option[Conversation],
-                               messageAttachments: Seq[MessageAttachmentSet] = Seq(),
+                               attachmentsList: Seq[MessageAttachments] = Seq(),
                                files: Seq[UploadFileSpec] = Seq()
                              ) {
 
@@ -157,13 +157,13 @@ case class SlackMessageSender(
 
   def send(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[String]] = {
     val formattedText = SlackMessageFormatter.bodyTextFor(unformattedText)
-    val attachmentsToSend = messageAttachments.flatMap {
-      case a: SlackMessageAttachmentSet => a.attachments.map(_.underlying)
+    val attachments = attachmentsList.flatMap {
+      case a: SlackMessageAttachments => a.attachments.map(_.underlying)
       case _ => Seq()
     }
     for {
       _ <- sendPreamble(formattedText, channelToUse)
-      maybeLastTs <- sendMessageSegmentsInOrder(messageSegmentsFor(formattedText), channelToUse, maybeShouldUnfurl, attachmentsToSend, maybeConversation, None)
+      maybeLastTs <- sendMessageSegmentsInOrder(messageSegmentsFor(formattedText), channelToUse, maybeShouldUnfurl, attachments, maybeConversation, None)
       _ <- sendFiles
     } yield maybeLastTs
   }

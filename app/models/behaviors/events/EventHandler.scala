@@ -84,7 +84,7 @@ class EventHandler @Inject() (
             }.getOrElse {
               s"It’s been a while since I asked you the question above."
             } + s"\n\nJust so I’m sure, is this an answer?"
-            val actionSet = SlackMessageActionSet("should_continue_conversation", actions, Some(event.relevantMessageTextWithFormatting), Some(Color.PINK))
+            val actionSet = SlackMessageActions("should_continue_conversation", actions, Some(event.relevantMessageTextWithFormatting), Some(Color.PINK))
             TextWithAttachmentsResult(event, Some(updatedConvo), prompt, forcePrivateResponse = false, Seq(actionSet))
           }
         } else {

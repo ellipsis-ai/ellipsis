@@ -1,6 +1,6 @@
 package models.behaviors.events
 
-trait MessageAttachmentSet {
+trait MessageAttachments {
 
   type T <: MessageAttachment
 
