@@ -5,13 +5,15 @@ import json.UserData
 import models.accounts.linkedaccount.LinkedAccount
 import models.behaviors.events.Event
 import models.behaviors.{BotResult, SimpleTextResult}
-import play.api.Logger
+import models.team.Team
+import play.api.{Configuration, Logger}
 import services.{DataService, DefaultServices}
 
 import scala.concurrent.{ExecutionContext, Future}
 
-case class FeedbackBehavior(feedbackType: String, message: String, event: Event, services: DefaultServices) extends BuiltinBehavior {
+case class FeedbackBehavior(feedbackType: String, userMessage: String, event: Event, services: DefaultServices) extends BuiltinBehavior {
   val dataService: DataService = services.dataService
+  val configuration: Configuration = services.configuration
 
   def result(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[BotResult] = {
     for {
@@ -22,9 +24,15 @@ case class FeedbackBehavior(feedbackType: String, message: String, event: Event,
       }.getOrElse(Future.successful(None))
     } yield {
       maybeTeam.map { team =>
-        sendFeedbackToAdminTeam(Feedback(team.id, team.name, user.id, maybeUserData).message(feedbackType, message))
+        val message = feedbackMessage(teamInfo(team), userInfo(user.id, maybeUserData), feedbackType, userMessage)
+        sendFeedbackToAdminTeam(message)
       }
-      SimpleTextResult(event, None, "Thank you. Your feedback has been received.", forcePrivateResponse = true)
+      val response =
+        s"""Thank you. I’ve recorded this feedback and sent it to the authors:
+           |
+           |${userMessage.lines.mkString("> ", "\n", "")}
+         """.stripMargin
+      SimpleTextResult(event, None, response, forcePrivateResponse = true)
     }
   }
 
@@ -44,22 +52,31 @@ case class FeedbackBehavior(feedbackType: String, message: String, event: Event,
     }
   }
 
-}
-
-case class Feedback(teamId: String, teamName: String, userId: String, maybeUserData: Option[UserData]) {
-  def userInfo: String = {
+  private def userInfo(userId: String, maybeUserData: Option[UserData]): String = {
     maybeUserData.map { userData =>
-      s"""**${userData.fullName.getOrElse("Unknown")}** ${userData.userName.map(userName => s"@$userName").getOrElse("(unknown username)")} (#$userId)"""
+      s"**${userData.fullName.getOrElse("Unknown")}** ${userData.userName.map(userName => s"@$userName").getOrElse("(unknown username)")} (#$userId)"
     }.getOrElse(s"User #$userId")
   }
 
-  def message(feedbackType: String, msg: String): String = {
+  private def teamInfo(team: Team): String = {
+    val maybeTeamUrl = services.configuration.getOptional[String]("application.apiBaseUrl").map { baseUrl =>
+      baseUrl + controllers.routes.ApplicationController.index(Some(team.id))
+    }
+    maybeTeamUrl.map { url =>
+      s"**[${team.name}]($url)**"
+    }.getOrElse {
+      s"**${team.name} (#${team.id})"
+    }
+  }
+
+  private def feedbackMessage(teamInfo: String, userInfo: String, feedbackType: String, message: String): String = {
     s"""${feedbackType.capitalize}:
        |
        |👤 $userInfo
-       |💼 **$teamName** (#$teamId)
+       |💼 $teamInfo
        |
-       |${msg.lines.mkString("> ", "\n", "")}
+       |${message.lines.mkString("> ", "\n", "")}
      """.stripMargin
   }
+
 }
