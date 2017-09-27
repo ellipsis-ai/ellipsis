@@ -68,7 +68,7 @@ case class DisplayHelpBehavior(
     } else {
       skillActions
     }
-    val actions = SlackMessageActionsGroup(
+    val actionsGroup = SlackMessageActionsGroup(
       SHOW_HELP_INDEX,
       actionList,
       maybeInstructions,
@@ -76,14 +76,14 @@ case class DisplayHelpBehavior(
       if (startAt == 0) { Some("Skills") } else { None }
     )
     val attachments = if (startAt == 0) {
-      Seq(actions, generalHelp)
+      Seq(actionsGroup, generalHelpGroup)
     } else {
-      Seq(actions)
+      Seq(actionsGroup)
     }
     TextWithAttachmentsResult(event, None, intro, forcePrivateResponse = false, attachments)
   }
 
-  def generalHelp: SlackMessageAttachmentGroup = {
+  def generalHelpGroup: SlackMessageAttachmentGroup = {
     SlackMessageTextAttachmentGroup(event.navLinks(lambdaService), Some("General"))
   }
 
@@ -132,16 +132,16 @@ case class DisplayHelpBehavior(
       Some("Select or type an action to run it now:")
     }
 
-    val actions = SlackMessageActionsGroup(SHOW_BEHAVIOR_GROUP_HELP, actionList, actionText, Some(Color.BLUE_LIGHT), None)
+    val actionsGroup = SlackMessageActionsGroup(SHOW_BEHAVIOR_GROUP_HELP, actionList, actionText, Some(Color.BLUE_LIGHT), None)
 
-    TextWithAttachmentsResult(event, None, resultText, forcePrivateResponse = false, Seq(actions))
+    TextWithAttachmentsResult(event, None, resultText, forcePrivateResponse = false, Seq(actionsGroup))
   }
 
   def emptyResult: BotResult = {
     val actionList = Seq(SlackMessageActionButton(SHOW_HELP_INDEX, "More help…", "0"))
     val resultText = s"I don’t know anything$matchString."
-    val actions = SlackMessageActionsGroup("help_no_result", actionList, None, Some(Color.PINK))
-    TextWithAttachmentsResult(event, None, resultText, forcePrivateResponse = false, Seq(actions))
+    val actionsGroup = SlackMessageActionsGroup("help_no_result", actionList, None, Some(Color.PINK))
+    TextWithAttachmentsResult(event, None, resultText, forcePrivateResponse = false, Seq(actionsGroup))
   }
 
   def result(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[BotResult] = {
