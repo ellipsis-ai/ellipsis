@@ -167,10 +167,9 @@ class BehaviorGroupVersionServiceImpl @Inject() (
       // deploy in the background
       lambdaService.deployFunctionFor(
         groupVersion,
-        libraries,
         behaviorVersionsWithParams,
-        apiConfig,
-        forceNodeModuleUpdate
+        libraries,
+        apiConfig
       )
       groupVersion
     }) transactionally
@@ -194,10 +193,9 @@ class BehaviorGroupVersionServiceImpl @Inject() (
       })
       _ <- lambdaService.deployFunctionFor(
         groupVersion,
-        libraries,
         behaviorVersionsWithParams,
-        apiConfig,
-        forceNodeModuleUpdate = true
+        libraries,
+        apiConfig
       )
     } yield {}
   }

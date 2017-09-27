@@ -359,21 +359,6 @@ class AWSLambdaServiceImpl @Inject() (
   private def dirNameFor(functionName: String) = s"/tmp/$functionName"
   private def zipFileNameFor(functionName: String) = s"${dirNameFor(functionName)}.zip"
 
-  case class PreviousFunctionInfo(functionName: String, behaviorVersions: Seq[BehaviorVersion], libraries: Seq[LibraryVersion]) {
-    val requiredModules = requiredModulesIn(behaviorVersions, libraries, includeLibraryRequires = true)
-    val dirName = dirNameFor(functionName)
-    val nodeModulesDirName = s"$dirName/node_modules"
-
-    def canCopyModules(neededModules: Seq[String]): Boolean = {
-      requiredModules.sameElements(neededModules) &&
-        Files.exists(Paths.get(nodeModulesDirName))
-    }
-
-    def copyModulesInto(destinationDirName: String) = {
-      Process(Seq("bash","-c",s"cp -r $nodeModulesDirName $destinationDirName/"), None, "HOME" -> "/tmp").!
-    }
-  }
-
   private def writeFileNamed(path: String, content: String) = {
     val writer = new PrintWriter(new File(path))
     writer.write(content)
@@ -384,9 +369,7 @@ class AWSLambdaServiceImpl @Inject() (
                                        functionName: String,
                                        behaviorVersionsWithParams: Seq[(BehaviorVersion, Array[String])],
                                        libraries: Seq[LibraryVersion],
-                                       apiConfigInfo: ApiConfigInfo,
-                                       maybePreviousFunctionInfo: Option[PreviousFunctionInfo],
-                                       forceNodeModuleUpdate: Boolean
+                                       apiConfigInfo: ApiConfigInfo
                                      ): Future[Unit] = {
     val dirName = dirNameFor(functionName)
     val path = Path(dirName)
@@ -405,26 +388,11 @@ class AWSLambdaServiceImpl @Inject() (
     }
 
     val requiredModules = requiredModulesIn(behaviorVersionsWithParams.map(_._1), libraries, includeLibraryRequires = true)
-    val canCopyModules = maybePreviousFunctionInfo.exists { previousFunctionInfo =>
-      if (previousFunctionInfo.canCopyModules(requiredModules)) {
-        previousFunctionInfo.copyModulesInto(dirName)
-        true
-      } else {
-        false
-      }
-    }
     for {
-      _ <- if (forceNodeModuleUpdate || !canCopyModules) {
-        Future.sequence(requiredModules.toSeq.map { moduleName =>
-          // NPM wants to write a lockfile in $HOME; this makes it work for daemons
-          Future {
-            blocking(
-              Process(Seq("bash", "-c", s"cd $dirName && npm install $moduleName"), None, "HOME" -> "/tmp").!
-            )
-          }
-        })
-      } else {
-        Future.successful({})
+      _ <- Future {
+        blocking(
+          Process(Seq("bash", "-c", s"cd $dirName && npm init -f && npm install ${requiredModules.mkString(" ")}"), None, "HOME" -> "/tmp").!
+        )
       }
       _ <- Future {
         blocking(
@@ -448,8 +416,7 @@ class AWSLambdaServiceImpl @Inject() (
   def ensureNodeModuleVersionsFor(groupVersion: BehaviorGroupVersion): DBIO[Seq[NodeModuleVersion]] = {
     for {
       behaviorVersions <- dataService.behaviorVersions.allForGroupVersionAction(groupVersion)
-      hasCode <- DBIO.successful(behaviorVersions.exists(_.hasFunction))
-      nodeModuleVersions <- if (hasCode) {
+      nodeModuleVersions <- if (behaviorVersions.exists(_.hasFunction)) {
         val json = getNodeModuleInfoFor(groupVersion.functionName)
         val maybeDependencies = (json \ "dependencies").asOpt[JsObject]
         maybeDependencies.map { dependencies =>
@@ -472,17 +439,13 @@ class AWSLambdaServiceImpl @Inject() (
                          functionName: String,
                          behaviorVersionsWithParams: Seq[(BehaviorVersion, Array[String])],
                          libraries: Seq[LibraryVersion],
-                         apiConfigInfo: ApiConfigInfo,
-                         maybePreviousFunctionInfo: Option[PreviousFunctionInfo],
-                         forceNodeModuleUpdate: Boolean
+                         apiConfigInfo: ApiConfigInfo
                        ): Future[ByteBuffer] = {
     createZipWithModulesFor(
       functionName,
       behaviorVersionsWithParams,
       libraries,
-      apiConfigInfo,
-      maybePreviousFunctionInfo,
-      forceNodeModuleUpdate
+      apiConfigInfo
     ).map { _ =>
       val path = Paths.get(zipFileNameFor(functionName))
       ByteBuffer.wrap(Files.readAllBytes(path))
@@ -541,16 +504,15 @@ class AWSLambdaServiceImpl @Inject() (
     }
   }
 
-  def deployFunction(
-                      functionName: String,
+  def deployFunctionFor(
+                      groupVersion: BehaviorGroupVersion,
                       behaviorVersionsWithParams: Seq[(BehaviorVersion, Array[String])],
                       libraries: Seq[LibraryVersion],
-                      apiConfigInfo: ApiConfigInfo,
-                      maybePreviousFunctionInfo: Option[PreviousFunctionInfo],
-                      forceNodeModuleUpdate: Boolean
+                      apiConfigInfo: ApiConfigInfo
                     ): Future[Unit] = {
 
     val isNoCode: Boolean = behaviorVersionsWithParams.forall { case(bv, _) => bv.functionBody.trim.isEmpty }
+    val functionName = groupVersion.functionName
 
     deleteFunction(functionName).andThen {
       case Failure(t) => Future.successful({})
@@ -562,9 +524,7 @@ class AWSLambdaServiceImpl @Inject() (
               functionName,
               behaviorVersionsWithParams,
               libraries,
-              apiConfigInfo,
-              maybePreviousFunctionInfo,
-              forceNodeModuleUpdate
+              apiConfigInfo
             ).map { zip => new FunctionCode().withZipFile(zip) }
           createFunctionRequest <- Future.successful(
             new CreateFunctionRequest().
@@ -583,32 +543,4 @@ class AWSLambdaServiceImpl @Inject() (
     }
   }
 
-  def deployFunctionFor(
-                         groupVersion: BehaviorGroupVersion,
-                         libraries: Seq[LibraryVersion],
-                         behaviorVersionsWithParams: Seq[(BehaviorVersion, Array[String])],
-                         apiConfigInfo: ApiConfigInfo,
-                         forceNodeModuleUpdate: Boolean
-                       ): Future[Unit] = {
-    for {
-      maybePrevious <- dataService.behaviorGroupVersions.maybePreviousFor(groupVersion)
-      previousLibraries <- maybePrevious.map { prev =>
-        dataService.libraries.allFor(prev)
-      }.getOrElse(Future.successful(Seq()))
-      previousBehaviorVersions <- maybePrevious.map { prev =>
-        dataService.behaviorVersions.allForGroupVersion(prev)
-      }.getOrElse(Future.successful(Seq()))
-      maybePreviousFunctionInfo <- Future.successful(maybePrevious.map { version =>
-        PreviousFunctionInfo(version.functionName, previousBehaviorVersions, previousLibraries)
-      })
-      _ <- deployFunction(
-        groupVersion.functionName,
-        behaviorVersionsWithParams,
-        libraries,
-        apiConfigInfo,
-        maybePreviousFunctionInfo,
-        forceNodeModuleUpdate
-      )
-    } yield {}
-  }
 }
