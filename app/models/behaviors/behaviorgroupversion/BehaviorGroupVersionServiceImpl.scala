@@ -10,9 +10,10 @@ import models.IDs
 import models.accounts.user.User
 import models.behaviors.behaviorgroup.{BehaviorGroup, BehaviorGroupQueries}
 import play.api.Logger
-import services.{ApiConfigInfo, AWSLambdaService, DataService}
+import services.{AWSLambdaService, ApiConfigInfo, DataService}
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.{Await, ExecutionContext, Future}
+import scala.concurrent.duration._
 
 case class RawBehaviorGroupVersion(
                                    id: String,
@@ -97,8 +98,7 @@ class BehaviorGroupVersionServiceImpl @Inject() (
   def createFor(
                  group: BehaviorGroup,
                  user: User,
-                 data: BehaviorGroupData,
-                 forceNodeModuleUpdate: Boolean
+                 data: BehaviorGroupData
                ): Future[BehaviorGroupVersion] = {
     val action = (for {
       groupVersion <- createForAction(group, user, data.name, data.icon, data.description)
@@ -126,7 +126,7 @@ class BehaviorGroupVersionServiceImpl @Inject() (
             behavior <- maybeExistingBehavior.map(DBIO.successful).getOrElse {
               dataService.behaviors.createForAction(group, Some(behaviorId), ea.exportId, ea.config.isDataType)
             }
-            behaviorVersion <- dataService.behaviorVersions.createForAction(behavior, groupVersion, apiConfig, Some(user), ea, forceNodeModuleUpdate)
+            behaviorVersion <- dataService.behaviorVersions.createForAction(behavior, groupVersion, apiConfig, Some(user), ea)
           } yield Some((ea, behaviorVersion))
         }.getOrElse(DBIO.successful(None))
       }).map(_.flatten)
@@ -152,7 +152,7 @@ class BehaviorGroupVersionServiceImpl @Inject() (
             behavior <- maybeExistingBehavior.map(DBIO.successful).getOrElse {
               dataService.behaviors.createForAction(group, Some(behaviorId), ea.exportId, ea.config.isDataType)
             }
-            behaviorVersion <- dataService.behaviorVersions.createForAction(behavior, groupVersion, apiConfig, Some(user), ea, forceNodeModuleUpdate)
+            behaviorVersion <- dataService.behaviorVersions.createForAction(behavior, groupVersion, apiConfig, Some(user), ea)
           } yield Some(behaviorVersion)
         }.getOrElse(DBIO.successful(None))
       })
@@ -167,10 +167,9 @@ class BehaviorGroupVersionServiceImpl @Inject() (
       // deploy in the background
       lambdaService.deployFunctionFor(
         groupVersion,
-        libraries,
         behaviorVersionsWithParams,
-        apiConfig,
-        forceNodeModuleUpdate
+        libraries,
+        apiConfig
       )
       groupVersion
     }) transactionally
@@ -194,10 +193,9 @@ class BehaviorGroupVersionServiceImpl @Inject() (
       })
       _ <- lambdaService.deployFunctionFor(
         groupVersion,
-        libraries,
         behaviorVersionsWithParams,
-        apiConfig,
-        forceNodeModuleUpdate = true
+        libraries,
+        apiConfig
       )
     } yield {}
   }
@@ -215,10 +213,15 @@ class BehaviorGroupVersionServiceImpl @Inject() (
   }
 
   def redeployAllCurrentVersions: Future[Unit] = {
-    for {
-      currentVersions <- allCurrent
-      _ <- redeployAllSequentially(currentVersions)
-    } yield {}
+    allCurrent.map { currentVersions =>
+      for (v <- currentVersions) {
+        Await.ready(redeploy(v).recover {
+          case e: Exception => {
+            Logger.info(s"Error redeploying version with ID: ${v.id}: ${e.getMessage}")
+          }
+        }, 30.seconds)
+      }
+    }
   }
 
   def uncompiledAllCurrentQuery() = {

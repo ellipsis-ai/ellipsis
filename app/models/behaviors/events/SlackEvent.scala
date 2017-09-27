@@ -1,11 +1,9 @@
 package models.behaviors.events
 
 import akka.actor.ActorSystem
-import com.amazonaws.auth.policy.Principal.Services
 import models.accounts.slack.botprofile.SlackBotProfile
 import play.api.libs.json._
-import play.api.libs.ws.WSClient
-import services.{CacheService, DataService, DefaultServices}
+import services.{CacheService, DefaultServices}
 import slack.api.SlackApiClient
 import utils.SlackChannels
 

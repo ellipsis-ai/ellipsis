@@ -11,6 +11,8 @@ trait NodeModuleVersionService {
 
   def ensureForAction(name: String, version: String, groupVersion: BehaviorGroupVersion): DBIO[NodeModuleVersion]
 
+  def allForAction(groupVersion: BehaviorGroupVersion): DBIO[Seq[NodeModuleVersion]]
+
   def allFor(groupVersion: BehaviorGroupVersion): Future[Seq[NodeModuleVersion]]
 
 }
