@@ -10,9 +10,10 @@ import models.IDs
 import models.accounts.user.User
 import models.behaviors.behaviorgroup.{BehaviorGroup, BehaviorGroupQueries}
 import play.api.Logger
-import services.{ApiConfigInfo, AWSLambdaService, DataService}
+import services.{AWSLambdaService, ApiConfigInfo, DataService}
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.{Await, ExecutionContext, Future}
+import scala.concurrent.duration._
 
 case class RawBehaviorGroupVersion(
                                    id: String,
@@ -212,10 +213,15 @@ class BehaviorGroupVersionServiceImpl @Inject() (
   }
 
   def redeployAllCurrentVersions: Future[Unit] = {
-    for {
-      currentVersions <- allCurrent
-      _ <- redeployAllSequentially(currentVersions)
-    } yield {}
+    allCurrent.map { currentVersions =>
+      for (v <- currentVersions) {
+        Await.ready(redeploy(v).recover {
+          case e: Exception => {
+            Logger.info(s"Error redeploying version with ID: ${v.id}: ${e.getMessage}")
+          }
+        }, 30.seconds)
+      }
+    }
   }
 
   def uncompiledAllCurrentQuery() = {
