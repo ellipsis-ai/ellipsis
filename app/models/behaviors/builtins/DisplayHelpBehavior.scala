@@ -62,15 +62,15 @@ case class DisplayHelpBehavior(
     })
 
     val remainingGroupCount = resultsRemaining.length
-    val actions = if (remainingGroupCount > 0) {
+    val actionList = if (remainingGroupCount > 0) {
       val label = if (remainingGroupCount == 1) { "1 more skill…" } else { s"$remainingGroupCount more skills…" }
       skillActions :+ SlackMessageActionButton(SHOW_HELP_INDEX, label, endAt.toString, maybeStyle = Some("primary"))
     } else {
       skillActions
     }
-    val actionSet = SlackMessageActions(
+    val actions = SlackMessageActions(
       SHOW_HELP_INDEX,
-      actions,
+      actionList,
       maybeInstructions,
       Some(Color.PINK),
       if (startAt == 0) { Some("Skills") } else { None },
@@ -78,9 +78,9 @@ case class DisplayHelpBehavior(
     )
     val attachments = if (startAt == 0) {
       val generalHelp = SlackMessageTextAttachments(event.navLinks(lambdaService), Some("General"))
-      Seq(actionSet, generalHelp)
+      Seq(actions, generalHelp)
     } else {
-      Seq(actionSet)
+      Seq(actions)
     }
     TextWithAttachmentsResult(event, None, intro, forcePrivateResponse = false, attachments)
   }
@@ -130,16 +130,16 @@ case class DisplayHelpBehavior(
       Some("Select or type an action to run it now:")
     }
 
-    val actionSet = SlackMessageActions(SHOW_BEHAVIOR_GROUP_HELP, actionList, actionText, Some(Color.BLUE_LIGHT), None)
+    val actions = SlackMessageActions(SHOW_BEHAVIOR_GROUP_HELP, actionList, actionText, Some(Color.BLUE_LIGHT), None)
 
-    TextWithAttachmentsResult(event, None, resultText, forcePrivateResponse = false, Seq(actionSet))
+    TextWithAttachmentsResult(event, None, resultText, forcePrivateResponse = false, Seq(actions))
   }
 
   def emptyResult: BotResult = {
-    val actions = Seq(SlackMessageActionButton(SHOW_HELP_INDEX, "More help…", "0"))
+    val actionList = Seq(SlackMessageActionButton(SHOW_HELP_INDEX, "More help…", "0"))
     val resultText = s"I don’t know anything$matchString."
-    val actionSet = SlackMessageActions("help_no_result", actions, None, Some(Color.PINK))
-    TextWithAttachmentsResult(event, None, resultText, forcePrivateResponse = false, Seq(actionSet))
+    val actions = SlackMessageActions("help_no_result", actionList, None, Some(Color.PINK))
+    TextWithAttachmentsResult(event, None, resultText, forcePrivateResponse = false, Seq(actions))
   }
 
   def result(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[BotResult] = {

@@ -72,7 +72,7 @@ class EventHandler @Inject() (
             }
             val key = updatedConvo.pendingEventKey
             services.cacheService.cacheEvent(key, event, 5.minutes)
-            val actions = Seq(
+            val actionList = Seq(
               SlackMessageActionButton(CONFIRM_CONTINUE_CONVERSATION, "Yes, this is my answer", updatedConvo.id),
               SlackMessageActionButton(DONT_CONTINUE_CONVERSATION, "No, it’s not an answer", updatedConvo.id)
             )
@@ -84,8 +84,8 @@ class EventHandler @Inject() (
             }.getOrElse {
               s"It’s been a while since I asked you the question above."
             } + s"\n\nJust so I’m sure, is this an answer?"
-            val actionSet = SlackMessageActions("should_continue_conversation", actions, Some(event.relevantMessageTextWithFormatting), Some(Color.PINK))
-            TextWithAttachmentsResult(event, Some(updatedConvo), prompt, forcePrivateResponse = false, Seq(actionSet))
+            val actions = SlackMessageActions("should_continue_conversation", actionList, Some(event.relevantMessageTextWithFormatting), Some(Color.PINK))
+            TextWithAttachmentsResult(event, Some(updatedConvo), prompt, forcePrivateResponse = false, Seq(actions))
           }
         } else {
           updatedConvo.resultFor(event, services)
