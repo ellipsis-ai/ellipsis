@@ -52,10 +52,9 @@ class MockAWSLambdaService @Inject() (
 
   override def deployFunctionFor(
                                   groupVersion: BehaviorGroupVersion,
-                                  libraries: Seq[LibraryVersion],
                                   behaviorVersionsWithParams: Seq[(BehaviorVersion, Array[String])],
-                                  apiConfigInfo: ApiConfigInfo,
-                                  forceNodeModuleUpdate: Boolean
+                                  libraries: Seq[LibraryVersion],
+                                  apiConfigInfo: ApiConfigInfo
                                 ): Future[Unit] = Future.successful({})
 
   override def invokeAction(
