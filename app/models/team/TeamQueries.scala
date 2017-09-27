@@ -19,8 +19,8 @@ object TeamQueries {
 
   val all = TableQuery[TeamsTable]
 
-  def allWithPage(page: Int, size: Int) = {
-    all.drop((page - 1) * size).take(size)
+  def allPaged(page: Int, perPage: Int) = {
+    all.drop((page - 1) * perPage).take(perPage)
   }
 
   def uncompiledFindQueryFor(id: Rep[String]) = {

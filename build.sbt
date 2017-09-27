@@ -22,8 +22,6 @@ libraryDependencies ++= Seq(
   filters,
   cacheApi,
   guice,
-//  "com.github.gilbertw1" %% "slack-scala-client" % "0.1.8",
-  "com.github.nscala-time" %% "nscala-time" % "2.14.0",
   "com.github.tminglei" %% "slick-pg" % "0.15.3",
   "com.github.tminglei" %% "slick-pg_play-json" % "0.15.3",
   "org.scalatestplus.play" %% "scalatestplus-play" % "1.5.1" % Test,

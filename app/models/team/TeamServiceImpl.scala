@@ -27,8 +27,8 @@ class TeamServiceImpl @Inject() (
     dataService.run(all.result)
   }
 
-  def allTeamsWithPage(page: Int, size: Int): Future[Seq[Team]] = {
-    dataService.run(allWithPage(page, size).result)
+  def allTeamsWithPage(page: Int, perPage: Int): Future[Seq[Team]] = {
+    dataService.run(allPaged(page, perPage).result)
   }
 
   def findAction(id: String): DBIO[Option[Team]] = {
