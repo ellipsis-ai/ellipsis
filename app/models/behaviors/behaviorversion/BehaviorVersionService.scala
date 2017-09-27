@@ -53,8 +53,7 @@ trait BehaviorVersionService {
                        groupVersion: BehaviorGroupVersion,
                        apiConfigInfo: ApiConfigInfo,
                        maybeUser: Option[User],
-                       data: BehaviorVersionData,
-                       forceNodeModuleUpdate: Boolean
+                       data: BehaviorVersionData
                      ): DBIO[BehaviorVersion]
 
   def delete(behaviorVersion: BehaviorVersion): Future[BehaviorVersion]

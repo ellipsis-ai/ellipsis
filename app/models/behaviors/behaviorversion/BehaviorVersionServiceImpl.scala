@@ -211,8 +211,7 @@ class BehaviorVersionServiceImpl @Inject() (
                        groupVersion: BehaviorGroupVersion,
                        apiConfigInfo: ApiConfigInfo,
                        maybeUser: Option[User],
-                       data: BehaviorVersionData,
-                       forceNodeModuleUpdate: Boolean
+                       data: BehaviorVersionData
                      ): DBIO[BehaviorVersion] = {
     for {
       behaviorVersion <- createForAction(behavior, groupVersion, maybeUser, data.id)

@@ -51,10 +51,9 @@ trait AWSLambdaService extends AWSService {
   def deleteFunction(functionName: String): Future[Unit]
   def deployFunctionFor(
                          groupVersion: BehaviorGroupVersion,
-                         libraries: Seq[LibraryVersion],
                          behaviorVersionsWithParams: Seq[(BehaviorVersion, Array[String])],
-                         apiConfigInfo: ApiConfigInfo,
-                         forceNodeModuleUpdate: Boolean
+                         libraries: Seq[LibraryVersion],
+                         apiConfigInfo: ApiConfigInfo
                          ): Future[Unit]
 
   def ensureNodeModuleVersionsFor(groupVersion: BehaviorGroupVersion): DBIO[Seq[NodeModuleVersion]]

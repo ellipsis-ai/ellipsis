@@ -163,7 +163,7 @@ class BehaviorEditorController @Inject() (
                 } else {
                   dataForNewVersion
                 }
-                dataService.behaviorGroupVersions.createFor(group, user, dataToUse, forceNodeModuleUpdate = false).map(Some(_))
+                dataService.behaviorGroupVersions.createFor(group, user, dataToUse).map(Some(_))
               }.getOrElse(Future.successful(None))
               maybeGroupData <- maybeGroup.map { group =>
                 BehaviorGroupData.maybeFor(group.id, user, maybeGithubUrl = None, dataService)
@@ -206,7 +206,7 @@ class BehaviorEditorController @Inject() (
             group <- maybeGroup
             groupData <- maybeGroupData
           } yield {
-            dataService.behaviorGroupVersions.createFor(group, user, groupData.copyForNewVersionOf(group), forceNodeModuleUpdate = true).map(Some(_))
+            dataService.behaviorGroupVersions.createFor(group, user, groupData.copyForNewVersionOf(group)).map(Some(_))
           }).getOrElse(Future.successful(None))
           maybeUpdatedGroupData <- maybeSavedGroupVersion.map { groupVersion =>
             BehaviorGroupData.buildFor(groupVersion, user, dataService).map(Some(_))

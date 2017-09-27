@@ -27,8 +27,7 @@ case class BehaviorGroupImporter(
       _ <- dataService.behaviorGroupVersions.createFor(
         group,
         user,
-        data.copyForNewVersionOf(group).copyWithApiApplicationsIfAvailable(oauth2Applications),
-        forceNodeModuleUpdate = false
+        data.copyForNewVersionOf(group).copyWithApiApplicationsIfAvailable(oauth2Applications)
       )
     } yield Some(group)
 
