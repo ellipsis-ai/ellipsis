@@ -3,7 +3,7 @@ package utils
 import akka.actor.ActorSystem
 import models.SlackMessageFormatter
 import models.behaviors.conversations.conversation.Conversation
-import models.behaviors.events.{MessageAttachments, SlackMessageAttachments}
+import models.behaviors.events.{MessageAttachmentGroup, SlackMessageAttachmentGroup}
 import slack.api.SlackApiClient
 import slack.models.Attachment
 
@@ -20,7 +20,7 @@ case class SlackMessageSender(
                                maybeThreadId: Option[String],
                                maybeShouldUnfurl: Option[Boolean],
                                maybeConversation: Option[Conversation],
-                               attachmentsList: Seq[MessageAttachments] = Seq(),
+                               attachmentGroups: Seq[MessageAttachmentGroup] = Seq(),
                                files: Seq[UploadFileSpec] = Seq()
                              ) {
 
@@ -157,8 +157,8 @@ case class SlackMessageSender(
 
   def send(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[String]] = {
     val formattedText = SlackMessageFormatter.bodyTextFor(unformattedText)
-    val attachments = attachmentsList.flatMap {
-      case a: SlackMessageAttachments => a.attachments.map(_.underlying)
+    val attachments = attachmentGroups.flatMap {
+      case a: SlackMessageAttachmentGroup => a.attachments.map(_.underlying)
       case _ => Seq()
     }
     for {

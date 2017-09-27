@@ -109,7 +109,7 @@ trait Conversation {
           val intro = s"Hey <@$userIdForContext>, don’t forget, I’m still waiting for your answer to this:"
           val actionList = Seq(SlackMessageActionButton(STOP_CONVERSATION, "Stop asking", id))
           val question = result.text
-          val actions = SlackMessageActions(STOP_CONVERSATION, actionList, Some(question), None)
+          val actions = SlackMessageActionsGroup(STOP_CONVERSATION, actionList, Some(question), None)
           Some(TextWithAttachmentsResult(result.event, Some(this), intro, result.forcePrivateResponse, Seq(actions)))
         }
       }.getOrElse(DBIO.successful(None))

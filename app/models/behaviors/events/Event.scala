@@ -67,21 +67,23 @@ trait Event {
 
   def recentMessages(dataService: DataService)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Seq[String]] = Future.successful(Seq())
 
-  def navLinks(lambdaService: AWSLambdaService): String = {
+  def navLinkList(lambdaService: AWSLambdaService): Seq[(String, String)] = {
     lambdaService.configuration.getOptional[String]("application.apiBaseUrl").map { baseUrl =>
       val skillsListPath = baseUrl + controllers.routes.ApplicationController.index(Some(teamId))
       val schedulingPath = baseUrl + controllers.routes.ScheduledActionsController.index(None, None, Some(teamId))
       val settingsPath = baseUrl + controllers.routes.EnvironmentVariablesController.list(Some(teamId))
-      s"""[View and install skills]($skillsListPath)
-         |[Scheduling]($schedulingPath)
-         |[Team settings]($settingsPath)""".stripMargin
-    }.getOrElse("")
+      Seq(
+        "View and install skills" -> skillsListPath,
+        "Scheduling" -> schedulingPath,
+        "Team settings" -> settingsPath
+      )
+    }.getOrElse(Seq())
   }
 
-  def maybeSkillsListLinkFor(lambdaService: AWSLambdaService): Option[String] = {
-    lambdaService.configuration.getOptional[String]("application.apiBaseUrl").map { baseUrl =>
-      baseUrl + controllers.routes.ApplicationController.index(Some(teamId))
-    }
+  def navLinks(lambdaService: AWSLambdaService): String = {
+    navLinkList(lambdaService).map { case(title, path) =>
+      s"$title: $path"
+    }.mkString("\n")
   }
 
   def teachMeLinkFor(lambdaService: AWSLambdaService): String = {
@@ -141,7 +143,7 @@ trait Event {
                    forcePrivate: Boolean,
                    maybeShouldUnfurl: Option[Boolean],
                    maybeConversation: Option[Conversation],
-                   attachmentsList: Seq[MessageAttachments],
+                   attachmentGroups: Seq[MessageAttachmentGroup],
                    files: Seq[UploadFileSpec],
                    cacheService: CacheService
                  )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[String]]

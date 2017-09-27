@@ -4,7 +4,7 @@ import akka.actor.ActorSystem
 import models.accounts.user.User
 import models.behaviors.UserInfo
 import models.behaviors.conversations.conversation.Conversation
-import models.behaviors.events.{MessageAttachments, MessageEvent}
+import models.behaviors.events.{MessageAttachmentGroup, MessageEvent}
 import models.team.Team
 import play.api.libs.json.JsObject
 import services.{CacheService, DataService, DefaultServices}
@@ -41,7 +41,7 @@ case class TestEvent(
                    forcePrivate: Boolean,
                    maybeShouldUnfurl: Option[Boolean],
                    maybeConversation: Option[Conversation],
-                   attachmentsList: Seq[MessageAttachments],
+                   attachmentGroups: Seq[MessageAttachmentGroup],
                    files: Seq[UploadFileSpec],
                    cacheService: CacheService
                  )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[String]] = {

@@ -1,5 +1,5 @@
 package models.behaviors.events
 
-trait SlackMessageAttachments extends MessageAttachments {
+trait SlackMessageAttachmentGroup extends MessageAttachmentGroup {
   type T = SlackMessageAttachment
 }
