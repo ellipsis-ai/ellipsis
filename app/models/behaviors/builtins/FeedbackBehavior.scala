@@ -28,7 +28,7 @@ case class FeedbackBehavior(feedbackType: String, userMessage: String, event: Ev
         sendFeedbackToAdminTeam(message)
       }
       val response =
-        s"""Thank you. I’ve recorded this feedback and sent it to the authors:
+        s"""Thank you. I’ve recorded your comments and sent it to the team at Ellipsis.ai:
            |
            |${userMessage.lines.mkString("> ", "\n", "")}
          """.stripMargin
@@ -38,10 +38,14 @@ case class FeedbackBehavior(feedbackType: String, userMessage: String, event: Ev
 
   private def sendFeedbackToAdminTeam(msg: String)(implicit actorSystem: ActorSystem, ec: ExecutionContext) = {
     for {
-      maybeAdminTeamEvent <- dataService.slackBotProfiles.eventualMaybeEvent(LinkedAccount.ELLIPSIS_SLACK_TEAM_ID, LinkedAccount.ELLIPSIS_FEEDBACK_CHANNEL, None)
+      maybeAdminTeamEvent <- dataService.slackBotProfiles.eventualMaybeEvent(LinkedAccount.ELLIPSIS_SLACK_TEAM_ID, LinkedAccount.ELLIPSIS_SLACK_FEEDBACK_CHANNEL_ID, None)
       wasSent <- maybeAdminTeamEvent.map { adminTeamEvent =>
         val result = SimpleTextResult(adminTeamEvent, None, msg, forcePrivateResponse = false)
-        services.botResultService.sendIn(result, None).map(_.isDefined)
+        services.botResultService.sendIn(result, None).map(_.isDefined).recover {
+          case e: slack.api.ApiError => {
+            false
+          }
+        }
       }.getOrElse(Future.successful(false))
     } yield {
       if (wasSent) {
