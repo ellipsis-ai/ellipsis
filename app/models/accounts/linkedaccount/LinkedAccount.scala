@@ -11,4 +11,5 @@ case class LinkedAccount(user: User, loginInfo: LoginInfo, createdAt: OffsetDate
 
 object LinkedAccount {
   val ELLIPSIS_SLACK_TEAM_ID = "T0LP53H0A"
+  val ELLIPSIS_FEEDBACK_CHANNEL = "C79QYK4A0"
 }
