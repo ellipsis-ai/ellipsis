@@ -1,5 +1,5 @@
 package models.behaviors.events
 
-trait MessageAction {
+trait MessageAttachment {
 
 }

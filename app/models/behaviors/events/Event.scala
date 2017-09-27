@@ -67,16 +67,23 @@ trait Event {
 
   def recentMessages(dataService: DataService)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Seq[String]] = Future.successful(Seq())
 
-  def navLinks(noSkills: Boolean, lambdaService: AWSLambdaService): String = {
+  def navLinkList(lambdaService: AWSLambdaService): Seq[(String, String)] = {
     lambdaService.configuration.getOptional[String]("application.apiBaseUrl").map { baseUrl =>
-      val skillsListPath = controllers.routes.ApplicationController.index(Some(teamId))
-      val schedulingPath = controllers.routes.ScheduledActionsController.index(None, None, Some(teamId))
-      if (noSkills) {
-        s"""[Get started by teaching me something]($baseUrl$skillsListPath)"""
-      } else {
-        s"""[View all skills]($baseUrl$skillsListPath) · [Scheduling]($baseUrl$schedulingPath)"""
-      }
-    }.getOrElse("")
+      val skillsListPath = baseUrl + controllers.routes.ApplicationController.index(Some(teamId))
+      val schedulingPath = baseUrl + controllers.routes.ScheduledActionsController.index(None, None, Some(teamId))
+      val settingsPath = baseUrl + controllers.routes.EnvironmentVariablesController.list(Some(teamId))
+      Seq(
+        "View and install skills" -> skillsListPath,
+        "Scheduling" -> schedulingPath,
+        "Team settings" -> settingsPath
+      )
+    }.getOrElse(Seq())
+  }
+
+  def navLinks(lambdaService: AWSLambdaService): String = {
+    navLinkList(lambdaService).map { case(title, path) =>
+      s"$title: $path"
+    }.mkString("\n")
   }
 
   def teachMeLinkFor(lambdaService: AWSLambdaService): String = {
@@ -136,8 +143,8 @@ trait Event {
                    forcePrivate: Boolean,
                    maybeShouldUnfurl: Option[Boolean],
                    maybeConversation: Option[Conversation],
-                   maybeActions: Option[MessageActions] = None,
-                   files: Seq[UploadFileSpec] = Seq(),
+                   attachmentGroups: Seq[MessageAttachmentGroup],
+                   files: Seq[UploadFileSpec],
                    cacheService: CacheService
                  )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[String]]
 

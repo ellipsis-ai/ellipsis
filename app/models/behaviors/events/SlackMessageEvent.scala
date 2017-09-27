@@ -5,7 +5,7 @@ import models.accounts.slack.botprofile.SlackBotProfile
 import models.accounts.slack.profile.SlackProfile
 import models.accounts.user.User
 import models.behaviors.conversations.conversation.Conversation
-import services.{CacheService, DataService, DefaultServices}
+import services.{AWSLambdaService, CacheService, DataService, DefaultServices}
 import slack.api.SlackApiClient
 import utils.{SlackMessageSender, UploadFileSpec}
 
@@ -89,6 +89,12 @@ case class SlackMessageEvent(
     } yield messages
   }
 
+  override def navLinks(lambdaService: AWSLambdaService): String = {
+    navLinkList(lambdaService).map { case(title, path) =>
+      s"[$title]($path)"
+    }.mkString("  ·  ")
+  }
+
   def channelForSend(
                       forcePrivate: Boolean,
                       maybeConversation: Option[Conversation],
@@ -108,8 +114,8 @@ case class SlackMessageEvent(
                    forcePrivate: Boolean,
                    maybeShouldUnfurl: Option[Boolean],
                    maybeConversation: Option[Conversation],
-                   maybeActions: Option[MessageActions] = None,
-                   files: Seq[UploadFileSpec] = Seq(),
+                   attachmentGroups: Seq[MessageAttachmentGroup],
+                   files: Seq[UploadFileSpec],
                    cacheService: CacheService
                  )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[String]] = {
     channelForSend(forcePrivate, maybeConversation, cacheService).flatMap { channelToUse =>
@@ -123,7 +129,7 @@ case class SlackMessageEvent(
         maybeThreadId,
         maybeShouldUnfurl,
         maybeConversation,
-        maybeActions,
+        attachmentGroups,
         files
       ).send
     }

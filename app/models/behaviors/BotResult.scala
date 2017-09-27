@@ -74,7 +74,7 @@ sealed trait BotResult {
 
   val shouldSend: Boolean = true
 
-  def maybeActions: Option[MessageActions] = None
+  def attachmentGroups: Seq[MessageAttachmentGroup] = Seq()
 }
 
 trait BotResultWithLogResult extends BotResult {
@@ -163,14 +163,16 @@ case class SimpleTextResult(event: Event, maybeConversation: Option[Conversation
 
 }
 
-case class TextWithActionsResult(event: Event, maybeConversation: Option[Conversation], simpleText: String, forcePrivateResponse: Boolean, actions: MessageActions) extends BotResult {
+case class TextWithAttachmentsResult(
+                                      event: Event,
+                                      maybeConversation: Option[Conversation],
+                                      simpleText: String,
+                                      forcePrivateResponse: Boolean,
+                                      override val attachmentGroups: Seq[MessageAttachmentGroup]
+                                    ) extends BotResult {
   val resultType = ResultType.TextWithActions
 
   def text: String = simpleText
-
-  override def maybeActions: Option[MessageActions] = {
-    Some(actions)
-  }
 }
 
 case class NoResponseResult(
@@ -214,7 +216,6 @@ case class ExecutionErrorResult(
                                ) extends BotResultWithLogResult with WithBehaviorLink {
 
   val resultType = ResultType.ExecutionError
-  val functionLines = behaviorVersion.functionBody.split("\n").length
   val howToIncludeStackTraceMessage = "\n\nTo include a stack trace, throw an `Error` object in your code. For example:\n  throw new Error(\"Something went wrong.\")"
 
   private val maybeError: Option[ExecutionErrorData] = {
@@ -252,12 +253,12 @@ case class ExecutionErrorResult(
   }
 
   private val maybeThrownLogMessage: Option[String] = {
-    maybeLogResult.flatMap(_.maybeTranslated(functionLines))
+    maybeLogResult.flatMap(_.maybeTranslated)
   }
 
   private def maybeErrorLog: Option[String] = {
     maybeError.map { error =>
-      val translatedStack = error.translateStack(functionLines)
+      val translatedStack = error.translateStack
       if (translatedStack.nonEmpty) {
         translatedStack
       } else {

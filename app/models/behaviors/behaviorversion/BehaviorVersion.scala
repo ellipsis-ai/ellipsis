@@ -36,6 +36,8 @@ case class BehaviorVersion(
                             createdAt: OffsetDateTime
                           ) extends BehaviorVersionForDataTypeSchema {
 
+  lazy val jsName: String = s"${BehaviorVersion.dirName}/$id.js"
+
   lazy val typeName = maybeName.getOrElse(GraphQLHelpers.fallbackTypeName)
 
   def dataTypeFieldsAction(dataService: DataService)(implicit ec: ExecutionContext): DBIO[Seq[DataTypeFieldForSchema]] = {
@@ -69,8 +71,6 @@ case class BehaviorVersion(
   def description: String = maybeDescription.getOrElse("")
 
   def functionBody: String = maybeFunctionBody.getOrElse("")
-
-  def functionName: String = BehaviorVersion.functionNameFor(id)
 
   private def isSyntaxError(json: JsValue): Boolean = {
     (json \ "errorType").toOption.flatMap { m =>
@@ -126,6 +126,11 @@ case class BehaviorVersion(
 }
 
 object BehaviorVersion {
-  val lambdaFunctionPrefix = "behavior-"
-  def functionNameFor(behaviorVersionId: String): String = s"$lambdaFunctionPrefix$behaviorVersionId"
+
+  val dirName: String = "behavior_versions"
+
+  def codeFor(functionBody: String): String = {
+    s"module.exports = ${functionBody.trim};"
+  }
+
 }

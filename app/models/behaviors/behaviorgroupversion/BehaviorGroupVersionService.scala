@@ -3,8 +3,6 @@ package models.behaviors.behaviorgroupversion
 import json.BehaviorGroupData
 import models.accounts.user.User
 import models.behaviors.behaviorgroup.BehaviorGroup
-import models.behaviors.defaultstorageitem.DefaultStorageItemService
-import sangria.schema.Schema
 import slick.dbio.DBIO
 
 import scala.concurrent.Future
@@ -36,8 +34,15 @@ trait BehaviorGroupVersionService {
   def createFor(
                  group: BehaviorGroup,
                  user: User,
-                 data: BehaviorGroupData,
-                 forceNodeModuleUpdate: Boolean
+                 data: BehaviorGroupData
                ): Future[BehaviorGroupVersion]
+
+  def maybePreviousFor(groupVersion: BehaviorGroupVersion): Future[Option[BehaviorGroupVersion]]
+
+  def redeploy(groupVersion: BehaviorGroupVersion): Future[Unit]
+
+  def redeployAllCurrentVersions: Future[Unit]
+
+  def currentFunctionNames: Future[Seq[String]]
 
 }

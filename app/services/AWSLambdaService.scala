@@ -1,6 +1,7 @@
 package services
 
 import com.amazonaws.services.lambda.AWSLambdaAsync
+import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
 import models.behaviors.behaviorversion.BehaviorVersion
 import models.behaviors.config.awsconfig.AWSConfig
 import models.behaviors.config.requiredawsconfig.RequiredAWSConfig
@@ -30,11 +31,11 @@ trait AWSLambdaService extends AWSService {
 
   val client: AWSLambdaAsync
 
-  def listBehaviorFunctionNames: Future[Seq[String]]
+  def listBehaviorGroupFunctionNames: Future[Seq[String]]
 
   case class PartitionedFunctionNames(current: Seq[String], missing: Seq[String], obsolete: Seq[String])
 
-  def partionedBehaviorFunctionNames: Future[PartitionedFunctionNames]
+  def partionedBehaviorGroupFunctionNames: Future[PartitionedFunctionNames]
 
   def functionWithParams(params: Array[String], functionBody: String): String
 
@@ -49,13 +50,11 @@ trait AWSLambdaService extends AWSService {
 
   def deleteFunction(functionName: String): Future[Unit]
   def deployFunctionFor(
-                         behaviorVersion: BehaviorVersion,
-                         functionBody: String,
-                         params: Array[String],
+                         groupVersion: BehaviorGroupVersion,
+                         behaviorVersionsWithParams: Seq[(BehaviorVersion, Array[String])],
                          libraries: Seq[LibraryVersion],
-                         apiConfigInfo: ApiConfigInfo,
-                         forceNodeModuleUpdate: Boolean
+                         apiConfigInfo: ApiConfigInfo
                          ): Future[Unit]
 
-  def ensureNodeModuleVersionsFor(behaviorVersion: BehaviorVersion): DBIO[Seq[NodeModuleVersion]]
+  def ensureNodeModuleVersionsFor(groupVersion: BehaviorGroupVersion): DBIO[Seq[NodeModuleVersion]]
 }

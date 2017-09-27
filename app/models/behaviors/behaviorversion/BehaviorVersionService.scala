@@ -16,8 +16,6 @@ import scala.concurrent.{ExecutionContext, Future}
 
 trait BehaviorVersionService {
 
-  def currentFunctionNames: Future[Seq[String]]
-
   def allFor(behavior: Behavior): Future[Seq[BehaviorVersion]]
 
   def allForGroupVersionAction(groupVersion: BehaviorGroupVersion): DBIO[Seq[BehaviorVersion]]
@@ -55,8 +53,7 @@ trait BehaviorVersionService {
                        groupVersion: BehaviorGroupVersion,
                        apiConfigInfo: ApiConfigInfo,
                        maybeUser: Option[User],
-                       data: BehaviorVersionData,
-                       forceNodeModuleUpdate: Boolean
+                       data: BehaviorVersionData
                      ): DBIO[BehaviorVersion]
 
   def delete(behaviorVersion: BehaviorVersion): Future[BehaviorVersion]
@@ -82,9 +79,5 @@ trait BehaviorVersionService {
                ): Future[BotResult]
 
   def unlearn(behaviorVersion: BehaviorVersion): Future[Unit]
-
-  def redeploy(behaviorVersion: BehaviorVersion): Future[Unit]
-
-  def redeployAllCurrentVersions: Future[Unit]
 
 }

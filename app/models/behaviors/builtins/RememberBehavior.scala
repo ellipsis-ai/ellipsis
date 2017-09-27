@@ -82,7 +82,7 @@ case class RememberBehavior(event: Event, services: DefaultServices) extends Bui
         user <- maybeUser
         data <- maybeVersionData
       } yield {
-        dataService.behaviorGroupVersions.createFor(group, user, data, forceNodeModuleUpdate = false).map(Some(_))
+        dataService.behaviorGroupVersions.createFor(group, user, data).map(Some(_))
       }).getOrElse(Future.successful(None))
       maybeBehaviorVersion <- maybeGroupVersion.map { groupVersion =>
         dataService.behaviorVersions.allForGroupVersion(groupVersion).map(_.headOption)

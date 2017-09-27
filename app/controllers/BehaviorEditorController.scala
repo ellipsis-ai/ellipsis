@@ -163,7 +163,7 @@ class BehaviorEditorController @Inject() (
                 } else {
                   dataForNewVersion
                 }
-                dataService.behaviorGroupVersions.createFor(group, user, dataToUse, forceNodeModuleUpdate = false).map(Some(_))
+                dataService.behaviorGroupVersions.createFor(group, user, dataToUse).map(Some(_))
               }.getOrElse(Future.successful(None))
               maybeGroupData <- maybeGroup.map { group =>
                 BehaviorGroupData.maybeFor(group.id, user, maybeGithubUrl = None, dataService)
@@ -206,7 +206,7 @@ class BehaviorEditorController @Inject() (
             group <- maybeGroup
             groupData <- maybeGroupData
           } yield {
-            dataService.behaviorGroupVersions.createFor(group, user, groupData.copyForNewVersionOf(group), forceNodeModuleUpdate = true).map(Some(_))
+            dataService.behaviorGroupVersions.createFor(group, user, groupData.copyForNewVersionOf(group)).map(Some(_))
           }).getOrElse(Future.successful(None))
           maybeUpdatedGroupData <- maybeSavedGroupVersion.map { groupVersion =>
             BehaviorGroupData.buildFor(groupVersion, user, dataService).map(Some(_))
@@ -281,14 +281,8 @@ class BehaviorEditorController @Inject() (
       maybeCurrentGroupVersion <- maybeBehaviorGroup.map { group =>
         dataService.behaviorGroups.maybeCurrentVersionFor(group)
       }.getOrElse(Future.successful(None))
-      behaviorVersions <- maybeCurrentGroupVersion.map { groupVersion =>
-        dataService.behaviorVersions.allForGroupVersion(groupVersion)
-      }.getOrElse(Future.successful(Seq()))
-      _ <- Future.sequence(behaviorVersions.map { ea =>
-        dataService.run(services.lambdaService.ensureNodeModuleVersionsFor(ea))
-      })
       nodeModuleVersions <- maybeCurrentGroupVersion.map { groupVersion =>
-        dataService.nodeModuleVersions.allFor(groupVersion)
+        dataService.run(services.lambdaService.ensureNodeModuleVersionsFor(groupVersion))
       }.getOrElse(Future.successful(Seq()))
     } yield {
       Ok(Json.toJson(nodeModuleVersions.map(NodeModuleVersionData.from)))
