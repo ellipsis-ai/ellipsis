@@ -3,6 +3,7 @@ package services
 import java.io.{File, PrintWriter}
 import java.nio.ByteBuffer
 import java.nio.file.{Files, Paths}
+import java.time.OffsetDateTime
 import javax.inject.Inject
 
 import akka.actor.ActorSystem
@@ -10,8 +11,7 @@ import com.amazonaws.services.lambda.model._
 import com.amazonaws.services.lambda.{AWSLambdaAsync, AWSLambdaAsyncClientBuilder}
 import com.amazonaws.services.logs.model.{CreateLogGroupRequest, PutSubscriptionFilterRequest}
 import com.amazonaws.services.logs.{AWSLogsAsync, AWSLogsAsyncClientBuilder}
-import json.Formatting._
-import json.NodeModuleVersionData
+import com.fasterxml.jackson.core.JsonParseException
 import models.behaviors._
 import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
 import models.behaviors.behaviorversion.BehaviorVersion
@@ -34,6 +34,7 @@ import utils.JavaFutureConverter
 
 import scala.collection.JavaConversions.asScalaBuffer
 import scala.concurrent.{ExecutionContext, Future, blocking}
+import scala.io.Source
 import scala.reflect.io.Path
 import scala.sys.process._
 import scala.util.{Failure, Success}
@@ -70,6 +71,10 @@ class AWSLambdaServiceImpl @Inject() (
   val logSubscriptionsLambdaFunctionName: String = configuration.get[String]("aws.logSubscriptions.lambdaFunctionName")
   val logSubscriptionsFilterPattern: String = configuration.get[String]("aws.logSubscriptions.filterPattern")
   val logSubscriptionsFilterName: String = configuration.get[String]("aws.logSubscriptions.filterName")
+
+  def createdFileNameFor(groupVersion: BehaviorGroupVersion): String = {
+    dirNameFor(groupVersion.functionName) ++ "/created"
+  }
 
   def fetchFunctions(maybeNextMarker: Option[String]): Future[List[FunctionConfiguration]] = {
     val listRequest = new ListFunctionsRequest()
@@ -245,7 +250,7 @@ class AWSLambdaServiceImpl @Inject() (
 
   private def requiredModulesIn(behaviorVersions: Seq[BehaviorVersion], libraries: Seq[LibraryVersion], includeLibraryRequires: Boolean): Array[String] = {
     behaviorVersions.flatMap { ea =>
-      requiredModulesIn(ea.functionBody, libraries, includeLibraryRequires = true)
+      requiredModulesIn(ea.functionBody, libraries, includeLibraryRequires)
     }.distinct.toArray
   }
 
@@ -407,32 +412,51 @@ class AWSLambdaServiceImpl @Inject() (
 
   }
 
-  private def getNodeModuleInfoFor(functionName: String): JsValue = {
-    val dirName = dirNameFor(functionName)
-    val infoString = try {
-      Process(Seq("bash", "-c", s"cd $dirName && npm list --depth=0 --json=true")).!!
-    } catch {
-      case t: Throwable => "{}"
+  private def getNodeModuleInfoFor(groupVersion: BehaviorGroupVersion): JsValue = {
+    val dirName = dirNameFor(groupVersion.functionName)
+    val timeout = OffsetDateTime.now.plusSeconds(10)
+    while (timeout.isAfter(OffsetDateTime.now) && !Path(createdFileNameFor(groupVersion)).exists) {
+      Thread.sleep(1000)
     }
-    Json.parse(infoString)
+    val packageName = s"$dirName/package.json"
+    if (Path(packageName).exists) {
+      try {
+        Json.parse(Source.fromFile(packageName).getLines.mkString)
+      } catch {
+        case _: JsonParseException => JsObject.empty
+      }
+    } else {
+      JsObject.empty
+    }
+  }
+
+  def hasNodeModuleVersions(groupVersion: BehaviorGroupVersion): DBIO[Boolean] = {
+    for {
+      behaviorVersions <- dataService.behaviorVersions.allForGroupVersionAction(groupVersion)
+      libraries <- dataService.libraries.allForAction(groupVersion)
+    } yield {
+      behaviorVersions.exists(_.hasFunction) && requiredModulesIn(behaviorVersions, libraries, includeLibraryRequires = true).nonEmpty
+    }
   }
 
   def ensureNodeModuleVersionsFor(groupVersion: BehaviorGroupVersion): DBIO[Seq[NodeModuleVersion]] = {
     for {
-      behaviorVersions <- dataService.behaviorVersions.allForGroupVersionAction(groupVersion)
-      nodeModuleVersions <- if (behaviorVersions.exists(_.hasFunction)) {
-        val json = getNodeModuleInfoFor(groupVersion.functionName)
-        val maybeDependencies = (json \ "dependencies").asOpt[JsObject]
-        maybeDependencies.map { dependencies =>
-          DBIO.sequence(dependencies.values.toSeq.map { depJson =>
-            depJson.validate[NodeModuleVersionData] match {
-              case JsSuccess(info, _) => {
-                dataService.nodeModuleVersions.ensureForAction(info.from, info.version, groupVersion).map(Some(_))
-              }
-              case JsError(err) => DBIO.successful(None)
-            }
-          }).map(_.flatten)
-        }.getOrElse(DBIO.successful(Seq()))
+      hasNodeModuleVersions <- hasNodeModuleVersions(groupVersion)
+      nodeModuleVersions <- if (hasNodeModuleVersions) {
+        dataService.nodeModuleVersions.allForAction(groupVersion).flatMap { existing =>
+          if (existing.isEmpty) {
+            val json = getNodeModuleInfoFor(groupVersion)
+            val maybeDependencies = (json \ "dependencies").asOpt[JsObject]
+            maybeDependencies.map { dependencies =>
+              DBIO.sequence(dependencies.value.toSeq.map { case (name, version) =>
+                dataService.nodeModuleVersions.ensureForAction(name, version.as[String], groupVersion)
+              }).map(_.sortBy(_.nameWithoutVersion))
+            }.getOrElse(DBIO.successful(Seq()))
+          } else {
+            DBIO.successful(existing)
+          }
+        }
+
       } else {
         DBIO.successful(Seq())
       }
@@ -524,12 +548,13 @@ class AWSLambdaServiceImpl @Inject() (
         Future.successful(Unit)
       } else {
         for {
-          functionCode <-getZipFor(
+          functionCode <- getZipFor(
               functionName,
               behaviorVersionsWithParams,
               libraries,
               apiConfigInfo
             ).map { zip => new FunctionCode().withZipFile(zip) }
+          _ <- Future.successful(writeFileNamed(createdFileNameFor(groupVersion), OffsetDateTime.now.toString))
           createFunctionRequest <- Future.successful(
             new CreateFunctionRequest().
               withFunctionName(functionName).

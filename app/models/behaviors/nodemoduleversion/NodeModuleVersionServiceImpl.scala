@@ -45,9 +45,12 @@ class NodeModuleVersionServiceImpl @Inject() (
     }
   }
 
+  def allForAction(groupVersion: BehaviorGroupVersion): DBIO[Seq[NodeModuleVersion]] = {
+    allForQuery(groupVersion.id).result
+  }
+
   def allFor(groupVersion: BehaviorGroupVersion): Future[Seq[NodeModuleVersion]] = {
-    val action = allForQuery(groupVersion.id).result
-    dataService.run(action)
+    dataService.run(allForAction(groupVersion))
   }
 
 }
