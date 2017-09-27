@@ -4,5 +4,5 @@ trait MessageAttachmentSet {
 
   type T <: MessageAttachment
 
-  val attachments: Seq[T]
+  def attachments: Seq[T]
 }

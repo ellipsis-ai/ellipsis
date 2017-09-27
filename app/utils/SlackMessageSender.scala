@@ -123,7 +123,7 @@ case class SlackMessageSender(
         Future.successful(None)
       } else {
         val maybeAttachmentsForSegment = if (segments.tail.isEmpty) {
-          Some(attachments)
+          Some(attachments).filter(_.nonEmpty)
         } else {
           None
         }
@@ -157,12 +157,10 @@ case class SlackMessageSender(
 
   def send(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[String]] = {
     val formattedText = SlackMessageFormatter.bodyTextFor(unformattedText)
-    val attachmentsToSend = messageAttachments.flatMap { attachments =>
-      attachments match {
-        case a: SlackMessageAttachmentSet => Some(a.attachments.map(_.underlying))
-        case _ => None
-      }
-    }.flatten
+    val attachmentsToSend = messageAttachments.flatMap {
+      case a: SlackMessageAttachmentSet => a.attachments.map(_.underlying)
+      case _ => Seq()
+    }
     for {
       _ <- sendPreamble(formattedText, channelToUse)
       maybeLastTs <- sendMessageSegmentsInOrder(messageSegmentsFor(formattedText), channelToUse, maybeShouldUnfurl, attachmentsToSend, maybeConversation, None)

@@ -74,7 +74,7 @@ sealed trait BotResult {
 
   val shouldSend: Boolean = true
 
-  val attachments: Seq[MessageAttachmentSet] = Seq()
+  def attachments: Seq[MessageAttachmentSet] = Seq()
 }
 
 trait BotResultWithLogResult extends BotResult {
