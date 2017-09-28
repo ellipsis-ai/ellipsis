@@ -93,7 +93,7 @@ define(function(require) {
                 </div>
               </div>
             </div>
-            <div className="flex-column flex-column-right bg-white"></div>
+            <div className="flex-column flex-column-right bg-white" />
           </div>
         </div>
       );
