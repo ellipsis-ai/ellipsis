@@ -6,7 +6,7 @@ import play.api.libs.json.JsObject
 class SlackMessageSpec extends PlaySpec {
 
   val userId = "U1234567"
-  val user = SlackUserData(userId, "T1234", "attaboy", Some("America/Toronto"), JsObject(Seq()))
+  val user = SlackUserData(userId, "T1234", "attaboy", Some("Luke Andrews"), Some("America/Toronto"), JsObject(Seq()))
   val userList = Set(user)
 
   "unformatLinks" should {

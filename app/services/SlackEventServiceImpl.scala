@@ -82,7 +82,14 @@ class SlackEventServiceImpl @Inject()(
               "tz" -> info.tz.map(JsString).getOrElse(JsNull)
             )
           )
-          val userData = SlackUserData(slackUserId, slackTeamId, info.name, info.tz, profileData)
+          val userData = SlackUserData(
+            slackUserId,
+            slackTeamId,
+            info.name,
+            info.profile.flatMap(_.real_name),
+            info.tz,
+            profileData
+          )
           cacheService.cacheSlackUserData(userData)
           Some(userData)
         }.getOrElse(None)

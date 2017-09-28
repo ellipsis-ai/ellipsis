@@ -34,6 +34,7 @@ object BuiltinBehavior {
   val resetBehaviorsRegex: Regex = """(?i)reset behaviors really really really""".r
   val setTimeZoneRegex: Regex = s"""(?i)^set default time\\s*zone to\\s(.*)$$""".r
   val revokeAuthRegex: Regex = s"""(?i)^revoke\\s+all\\s+tokens\\s+for\\s+(.*)""".r
+  val feedbackRegex: Regex = s"""(?i)^(feedback|support): (.+)$$""".r
 
   def maybeFrom(event: Event, services: DefaultServices): Option[BuiltinBehavior] = {
     if (event.includesBotMention) {
@@ -60,6 +61,7 @@ object BuiltinBehavior {
         case resetBehaviorsRegex() => Some(ResetBehaviorsBehavior(event, services))
         case setTimeZoneRegex(tzString) => Some(SetDefaultTimeZoneBehavior(tzString, event, services))
         case revokeAuthRegex(appName) => Some(RevokeAuthBehavior(appName, event, services))
+        case feedbackRegex(feedbackType, message) => Some(FeedbackBehavior(feedbackType, message, event, services))
         case _ => None
       }
     } else {

@@ -30,7 +30,7 @@ trait SlackBotProfileService {
     SlackChannels(SlackApiClient(botProfile.token), cacheService, botProfile.slackTeamId)
   }
 
-  def eventualMaybeEvent(slackTeamId: String, channelId: String, userId: String): Future[Option[SlackMessageEvent]]
+  def eventualMaybeEvent(slackTeamId: String, channelId: String, maybeUserId: Option[String]): Future[Option[SlackMessageEvent]]
 
   def sendResultWithNewEvent(
     description: String,

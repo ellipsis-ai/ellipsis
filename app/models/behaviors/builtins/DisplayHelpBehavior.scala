@@ -51,7 +51,8 @@ case class DisplayHelpBehavior(
     val maybeInstructions = if (startAt > 0 || !isFirstTrigger) {
       None
     } else if (matchString.isEmpty) {
-      Some(s"Click a skill to learn more. You can also search by keyword, e.g. “${botPrefix}help bananas”")
+      Some(
+        s"Click a skill to learn more. You can also search by keyword. Example: `${botPrefix}help bananas`")
     } else {
       Some("Click a skill to learn more, or try searching a different keyword.")
     }
@@ -76,15 +77,22 @@ case class DisplayHelpBehavior(
       if (startAt == 0) { Some("Skills") } else { None }
     )
     val attachments = if (startAt == 0) {
-      Seq(actionsGroup, generalHelpGroup)
+      Seq(actionsGroup, generalHelpGroup(botPrefix))
     } else {
       Seq(actionsGroup)
     }
     TextWithAttachmentsResult(event, None, intro, forcePrivateResponse = false, attachments)
   }
 
-  def generalHelpGroup: SlackMessageAttachmentGroup = {
-    SlackMessageTextAttachmentGroup(event.navLinks(lambdaService), Some("General"))
+  def generalHelpText(botPrefix: String): String = {
+    s"""${event.navLinks(lambdaService)}
+       |
+       |🗣 Have feedback? Try `${botPrefix}feedback: Is this thing on?`
+     """.stripMargin
+  }
+
+  def generalHelpGroup(botPrefix: String): SlackMessageAttachmentGroup = {
+    SlackMessageTextAttachmentGroup(generalHelpText(botPrefix: String), Some("General"))
   }
 
   def skillNameAndDescriptionFor(result: HelpResult): String = {
