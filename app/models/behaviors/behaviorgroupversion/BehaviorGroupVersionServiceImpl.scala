@@ -197,6 +197,7 @@ class BehaviorGroupVersionServiceImpl @Inject() (
         libraries,
         apiConfig
       )
+      _ <- dataService.run(lambdaService.ensureNodeModuleVersionsFor(groupVersion))
     } yield {}
   }
 
