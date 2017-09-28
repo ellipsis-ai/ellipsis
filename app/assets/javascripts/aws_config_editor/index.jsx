@@ -118,7 +118,7 @@ define(function(require) {
 
     render: function() {
       return (
-        <form action={jsRoutes.controllers.AWSConfigController.save().url} method="POST">
+        <form action={jsRoutes.controllers.AWSConfigController.save().url} method="POST" className="flex-row-cascade">
           <CsrfTokenHiddenInput value={this.props.csrfToken} />
           <input type="hidden" name="id" value={this.props.configId} />
           <input type="hidden" name="teamId" value={this.props.teamId} />
@@ -132,18 +132,18 @@ define(function(require) {
             </div>
           </div>
 
-          <div className="flex-columns">
-            <div className="flex-column flex-column-left container container-wide prn">
-              <div className="columns">
-                <div className="column column-one-quarter">
+          <div className="flex-columns flex-row-expand">
+            <div className="flex-column flex-column-left flex-rows container container-wide prn">
+              <div className="columns flex-columns flex-row-expand">
+                <div className="column column-one-quarter flex-column">
                   <SettingsMenu activePage="awsConfigs" teamId={this.props.teamId} />
                 </div>
-                <div className="column column-three-quarters bg-white border-radius-bottom-left ptxl pbxxxxl phxxxxl">
+                <div className="column column-three-quarters flex-column bg-white ptxl pbxxxxl phxxxxl">
                   {this.renderConfigure()}
                 </div>
               </div>
             </div>
-            <div className="flex-column flex-column-right bg-white"></div>
+            <div className="flex-column flex-column-right bg-white" />
           </div>
 
           <footer className={

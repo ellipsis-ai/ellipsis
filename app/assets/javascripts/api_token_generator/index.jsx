@@ -61,19 +61,19 @@ define(function(require) {
 
     render: function() {
       return (
-        <div className="flex-rows">
+        <div className="flex-row-cascade">
           <div className="bg-light">
             <div className="container container-wide pbm">
               <h3 className="mvn ptxxl type-weak display-ellipsis">Ellipsis API tokens</h3>
             </div>
           </div>
-          <div className="flex-columns">
-            <div className="flex-column flex-column-left container container-wide prn">
-              <div className="columns">
-                <div className="column column-one-quarter">
+          <div className="flex-columns flex-row-expand">
+            <div className="flex-column flex-column-left flex-rows container container-wide prn">
+              <div className="columns flex-columns flex-row-expand">
+                <div className="column column-one-quarter flex-column">
                   <SettingsMenu activePage="apiTokens" teamId={this.props.teamId} />
                 </div>
-                <div className="column column-three-quarters bg-white border-radius-bottom-left ptxxl pbxxxxl phxxxxl">
+                <div className="column column-three-quarters flex-column bg-white ptxxl pbxxxxl phxxxxl">
                   <p>
                     <span>Generate API tokens to make requests to Ellipsis that trigger a response. </span>
                     <span>For better security, use each token only for a single purpose.</span>
@@ -91,7 +91,7 @@ define(function(require) {
                 </div>
               </div>
             </div>
-            <div className="flex-column flex-column-right bg-white"></div>
+            <div className="flex-column flex-column-right bg-white" />
           </div>
 
           <footer ref="footer" className="position-fixed-bottom position-z-front border-top">

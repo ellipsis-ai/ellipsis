@@ -28,19 +28,19 @@ define(function(require) {
 
     render: function() {
       return (
-        <div>
+        <div className="flex-row-cascade">
           <div className="bg-light">
             <div className="container container-wide pbm">
               {this.renderHeader()}
             </div>
           </div>
-          <div className="flex-columns">
-            <div className="flex-column flex-column-left container container-wide prn">
-              <div className="columns">
-                <div className="column column-one-quarter">
+          <div className="flex-columns flex-row-expand">
+            <div className="flex-column flex-column-left flex-rows container container-wide prn">
+              <div className="columns flex-columns flex-row-expand">
+                <div className="column column-one-quarter flex-column">
                   <SettingsMenu activePage="awsConfigs" teamId={this.props.teamId} />
                 </div>
-                <div className="column column-three-quarters bg-white border-radius-bottom-left ptxl pbxxxxl phxxxxl">
+                <div className="column column-three-quarters flex-column bg-white ptxl pbxxxxl phxxxxl">
 
                   <p>
                     <span>AWS configurations allow you to access your Amazon Web Services resources for a given profile.</span>
@@ -68,7 +68,7 @@ define(function(require) {
                 </div>
               </div>
             </div>
-            <div className="flex-column flex-column-right bg-white"></div>
+            <div className="flex-column flex-column-right bg-white" />
           </div>
 
           <footer ref="footer" className="position-fixed-bottom position-z-front border-top">
