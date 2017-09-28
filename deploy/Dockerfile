@@ -1,6 +1,8 @@
 FROM anapsix/alpine-java
 
 RUN apk add --update nodejs zip curl
+RUN npm install -g npm
+RUN npm install -g n
 
 ADD stage /
 
