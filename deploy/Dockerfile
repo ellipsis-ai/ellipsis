@@ -1,6 +1,6 @@
 FROM anapsix/alpine-java
 
-RUN apk add --update nodejs zip curl
+RUN apk add --update --upgrade nodejs zip curl
 
 ADD stage /
 
