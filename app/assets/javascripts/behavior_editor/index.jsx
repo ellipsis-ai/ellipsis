@@ -2066,7 +2066,7 @@ const BehaviorEditor = React.createClass({
   },
 
   renderFooterStatus: function() {
-    const group = this.getBehaviorGroup();
+    const group = this.props.group;
     const lastSaved = group.createdAt;
     const lastSavedByCurrentUser = group.author && group.author.id === this.props.userId;
     const authorName = group.author && group.author.name ? group.author.formattedName() : null;
