@@ -330,6 +330,14 @@ case class MissingTeamEnvVarsResult(
                                  botPrefix: String
                                ) extends BotResult with WithBehaviorLink {
 
+
+  val linkToEnvVarConfig: String = {
+    val baseUrl = configuration.get[String]("application.apiBaseUrl")
+    val path = controllers.routes.EnvironmentVariablesController.list(Some(event.teamId), Some(missingEnvVars.mkString(",")))
+    val url = s"$baseUrl$path"
+    s"[Configure environment variables](${url})"
+  }
+
   val resultType = ResultType.MissingTeamEnvVar
 
   def text = {
@@ -337,9 +345,7 @@ case class MissingTeamEnvVarsResult(
        |To use ${linkToBehaviorFor("this skill")}, you need the following environment variables defined:
        |${missingEnvVars.map( ea => s"\n- $ea").mkString("")}
        |
-       |You can define an environment variable by typing something like:
-       |
-       |`${botPrefix}set env ENV_VAR_NAME value`
+       |$linkToEnvVarConfig
     """.stripMargin
   }
 

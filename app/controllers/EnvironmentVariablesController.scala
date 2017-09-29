@@ -99,7 +99,7 @@ class EnvironmentVariablesController @Inject() (
     )
   }
 
-  def list(maybeTeamId: Option[String]) = silhouette.SecuredAction.async { implicit request =>
+  def list(maybeTeamId: Option[String], maybeNewVarsString: Option[String]) = silhouette.SecuredAction.async { implicit request =>
     val user = request.identity
     render.async {
       case Accepts.JavaScript() => {
@@ -110,10 +110,25 @@ class EnvironmentVariablesController @Inject() (
           }.getOrElse(Future.successful(Seq()))
         } yield {
           teamAccess.maybeTargetTeam.map { team =>
+            val maybeNewVars = maybeNewVarsString.map { varsString =>
+              varsString.
+                split(",").
+                map(_.trim).
+                filterNot(ea => environmentVariables.exists(_.name == ea)).
+                sorted.
+                toSeq
+            }
+            val newVarsData = maybeNewVars.map { vars =>
+              vars.map { ea =>
+                EnvironmentVariableData(ea, isAlreadySavedWithValue = false, None)
+              }
+            }.getOrElse(Seq())
+            val varsData = environmentVariables.map(ea => EnvironmentVariableData.withoutValueFor(ea))
             val config = EnvironmentVariablesListConfig(
               containerId = "environmentVariableList",
               csrfToken = CSRF.getToken(request).map(_.value),
-              data = EnvironmentVariablesData(team.id, environmentVariables.map(ea => EnvironmentVariableData.withoutValueFor(ea)))
+              data = EnvironmentVariablesData(team.id, varsData ++ newVarsData),
+              focus = maybeNewVars.flatMap(_.headOption)
             )
             Ok(views.js.shared.pageConfig(viewConfig(Some(teamAccess)), "config/environmentvariables/list", Json.toJson(config)))
           }.getOrElse{
@@ -125,7 +140,7 @@ class EnvironmentVariablesController @Inject() (
         for {
           teamAccess <- dataService.users.teamAccessFor(user, maybeTeamId)
         } yield teamAccess.maybeTargetTeam.map { team =>
-          val dataRoute = routes.EnvironmentVariablesController.list(maybeTeamId)
+          val dataRoute = routes.EnvironmentVariablesController.list(maybeTeamId, maybeNewVarsString)
           Ok(views.html.environmentvariables.list(viewConfig(Some(teamAccess)), dataRoute))
         }.getOrElse {
           notFoundWithLoginFor(request, Some(teamAccess))
