@@ -148,12 +148,10 @@ case class InvokeBehaviorConversation(
 object InvokeBehaviorConversation {
 
   val COLLECT_SIMPLE_TOKENS_STATE = "collect_simple_tokens"
-  val COLLECT_USER_ENV_VARS_STATE = "collect_user_env_vars"
   val COLLECT_PARAM_VALUES_STATE = "collect_param_values"
 
   val statesRequiringPrivateMessage = Seq(
     COLLECT_SIMPLE_TOKENS_STATE,
-    COLLECT_USER_ENV_VARS_STATE
   )
 
   def createFor(
