@@ -8,7 +8,11 @@ define(function(require) {
     constructor(props) {
       super(props);
       autobind(this);
-      this.state = {
+      this.state = this.getDefaultState();
+    }
+
+    getDefaultState() {
+      return {
         activePanelName: "",
         activePanelIsModal: false,
         previousPanelName: "",
@@ -44,7 +48,7 @@ define(function(require) {
 
     clearActivePanel(optionalCallback) {
       var callback = typeof(optionalCallback) === 'function' ? optionalCallback : null;
-      this.setState(this.getInitialState(), callback);
+      this.setState(this.getDefaultState(), callback);
     }
 
     handleEscKey() {
@@ -78,7 +82,7 @@ define(function(require) {
 
     getActiveModalElement() {
       if (this.state.activePanelName && this.state.activePanelIsModal) {
-        return ReactDOM.findDOMNode(this.refs.component.refs[this.state.activePanelName]);
+        return ReactDOM.findDOMNode(this.component.refs[this.state.activePanelName]);
       } else {
         return null;
       }
@@ -113,7 +117,8 @@ define(function(require) {
             activePanelName: this.state.activePanelName,
             activePanelIsModal: this.state.activePanelIsModal,
             onToggleActivePanel: this.toggleActivePanel,
-            onClearActivePanel: this.clearActivePanel
+            onClearActivePanel: this.clearActivePanel,
+            ref: (component) => this.component = component
           }))}
         </div>
       );
