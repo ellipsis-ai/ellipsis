@@ -21,8 +21,6 @@ object BuiltinBehavior {
     text.replaceAll("[“”]", "\"").replaceAll("[‘’]", "'")
   }
 
-  val setEnvironmentVariableRegex: Regex = s"""(?i)(?s)^set\\s+env\\s+(\\S+)\\s+(.*)$$""".r
-  val unsetEnvironmentVariableRegex: Regex = s"""(?i)^unset\\s+env\\s+(\\S+)\\s*$$""".r
   val helpRegex: Regex = s"""(?i)^help\\s*(\\S*.*)$$""".r
   val scheduledRegex: Regex = s"""(?i)^scheduled$$""".r
   val allScheduledRegex: Regex = s"""(?i)^all scheduled$$""".r
@@ -36,8 +34,6 @@ object BuiltinBehavior {
   def maybeFrom(event: Event, services: DefaultServices): Option[BuiltinBehavior] = {
     if (event.includesBotMention) {
       uneducateQuotes(event.relevantMessageText) match {
-        case setEnvironmentVariableRegex(name, value) => Some(SetEnvironmentVariableBehavior(name, value, event, services))
-        case unsetEnvironmentVariableRegex(name) => Some(UnsetEnvironmentVariableBehavior(name, event, services))
         case helpRegex(helpString) => Some(DisplayHelpBehavior(
           Some(helpString),
           None,
