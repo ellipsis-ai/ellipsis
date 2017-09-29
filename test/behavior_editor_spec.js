@@ -192,7 +192,7 @@ describe('BehaviorEditor', () => {
     });
     return TestUtils.renderIntoDocument(
       <BehaviorEditor {...props} />
-    ).refs.component;
+    );
   }
 
   describe('getFunctionBody', () => {
