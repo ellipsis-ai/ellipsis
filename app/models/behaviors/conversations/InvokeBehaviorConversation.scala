@@ -63,9 +63,8 @@ case class InvokeBehaviorConversation(
     for {
       user <- event.ensureUserAction(services.dataService)
       simpleTokenState <- SimpleTokenCollectionState.fromAction(user, this, event, services)
-      userEnvVarState <- UserEnvVarCollectionState.fromAction(user, this, event, services)
       paramState <- ParamCollectionState.fromAction(this, event, services)
-    } yield Seq(simpleTokenState, userEnvVarState, paramState)
+    } yield Seq(simpleTokenState, paramState)
   }
 
   def updateToNextState(event: Event, services: DefaultServices)(implicit ec: ExecutionContext): Future[Conversation] = {

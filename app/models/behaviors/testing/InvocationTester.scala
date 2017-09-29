@@ -33,18 +33,17 @@ case class InvocationTester(
       }
 
       missingSimpleTokens <- dataService.requiredSimpleTokenApis.missingFor(user, behaviorVersion.groupVersion)
-      missingUserEnvVars <- dataService.userEnvironmentVariables.missingFor(user, behaviorVersion, dataService)
 
-      report <- if (missingParams.isEmpty && missingSimpleTokens.isEmpty && missingUserEnvVars.isEmpty) {
+      report <- if (missingParams.isEmpty && missingSimpleTokens.isEmpty) {
         val invocationParamValues = paramValueMaybes.zipWithIndex.map { case ((param, v), i) =>
           (AWSLambdaConstants.invocationParamFor(i), v.get)
         }.toMap
         for {
           parametersWithValues <- dataService.behaviorResponses.parametersWithValuesFor(event, behaviorVersion, invocationParamValues, None)
           result <- dataService.behaviorVersions.resultFor(behaviorVersion, parametersWithValues, event, None)
-        } yield InvocationTestReport(behaviorVersion, Some(result), Seq(), Seq(), Set())
+        } yield InvocationTestReport(behaviorVersion, Some(result), Seq(), Seq())
       } else {
-        Future.successful(InvocationTestReport(behaviorVersion, None, missingParams, missingSimpleTokens, missingUserEnvVars))
+        Future.successful(InvocationTestReport(behaviorVersion, None, missingParams, missingSimpleTokens))
       }
     } yield report
   }

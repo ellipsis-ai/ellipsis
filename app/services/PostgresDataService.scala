@@ -9,10 +9,10 @@ import models.accounts.linkedsimpletoken.LinkedSimpleTokenService
 import models.accounts.logintoken.LoginTokenService
 import models.accounts.oauth2api.OAuth2ApiService
 import models.accounts.oauth2application.OAuth2ApplicationService
-import models.accounts.slack.profile.SlackProfileService
 import models.accounts.oauth2token.OAuth2TokenService
 import models.accounts.simpletokenapi.SimpleTokenApiService
 import models.accounts.slack.botprofile.SlackBotProfileService
+import models.accounts.slack.profile.SlackProfileService
 import models.accounts.user.UserService
 import models.apitoken.APITokenService
 import models.behaviors.BehaviorResponseService
@@ -32,15 +32,15 @@ import models.behaviors.datatypefield.DataTypeFieldService
 import models.behaviors.defaultstorageitem.DefaultStorageItemService
 import models.behaviors.input.InputService
 import models.behaviors.invocationlogentry.InvocationLogEntryService
-import models.behaviors.scheduling.scheduledmessage.ScheduledMessageService
-import models.behaviors.triggers.messagetrigger.MessageTriggerService
-import models.environmentvariable.{TeamEnvironmentVariableService, UserEnvironmentVariableService}
 import models.behaviors.invocationtoken.InvocationTokenService
 import models.behaviors.library.LibraryVersionService
 import models.behaviors.nodemoduleversion.NodeModuleVersionService
 import models.behaviors.savedanswer.SavedAnswerService
 import models.behaviors.scheduling.recurrence.RecurrenceService
 import models.behaviors.scheduling.scheduledbehavior.ScheduledBehaviorService
+import models.behaviors.scheduling.scheduledmessage.ScheduledMessageService
+import models.behaviors.triggers.messagetrigger.MessageTriggerService
+import models.environmentvariable.TeamEnvironmentVariableService
 import models.team.TeamService
 import slick.dbio.DBIO
 
@@ -55,7 +55,6 @@ class PostgresDataService @Inject() (
                                       val teamsProvider: Provider[TeamService],
                                       val apiTokensProvider: Provider[APITokenService],
                                       val environmentVariablesProvider: Provider[TeamEnvironmentVariableService],
-                                      val userEnvironmentVariablesProvider: Provider[UserEnvironmentVariableService],
                                       val invocationTokensProvider: Provider[InvocationTokenService],
                                       val linkedOAuth2TokensProvider: Provider[LinkedOAuth2TokenService],
                                       val linkedSimpleTokensProvider: Provider[LinkedSimpleTokenService],
@@ -97,7 +96,6 @@ class PostgresDataService @Inject() (
   val teams = teamsProvider.get
   val apiTokens = apiTokensProvider.get
   val teamEnvironmentVariables = environmentVariablesProvider.get
-  val userEnvironmentVariables = userEnvironmentVariablesProvider.get
   val invocationTokens = invocationTokensProvider.get
   val linkedOAuth2Tokens = linkedOAuth2TokensProvider.get
   val linkedSimpleTokens = linkedSimpleTokensProvider.get
