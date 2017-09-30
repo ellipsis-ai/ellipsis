@@ -151,7 +151,7 @@ object InvokeBehaviorConversation {
   val COLLECT_PARAM_VALUES_STATE = "collect_param_values"
 
   val statesRequiringPrivateMessage = Seq(
-    COLLECT_SIMPLE_TOKENS_STATE,
+    COLLECT_SIMPLE_TOKENS_STATE
   )
 
   def createFor(
