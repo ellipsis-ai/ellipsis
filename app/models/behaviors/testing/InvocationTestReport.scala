@@ -14,7 +14,6 @@ case class ResultOutput(kind: String, fullText: String, files: Seq[UploadFileSpe
 case class InvocationTestReportOutput(
                                       missingInputNames: Seq[String],
                                       missingSimpleTokens: Seq[String],
-                                      missingUserEnvVars: Set[String],
                                       result: Option[ResultOutput]
                                     )
 
@@ -22,15 +21,13 @@ case class InvocationTestReport(
                                  behaviorVersion: BehaviorVersion,
                                  maybeResult: Option[BotResult],
                                  missingParams: Seq[BehaviorParameter],
-                                 missingSimpleTokens: Seq[RequiredSimpleTokenApi],
-                                 missingUserEnvVars: Set[String]
+                                 missingSimpleTokens: Seq[RequiredSimpleTokenApi]
                               ) {
 
   def json: JsValue = {
     val data = InvocationTestReportOutput(
       missingParams.map(_.name),
       missingSimpleTokens.map(_.api.name),
-      missingUserEnvVars,
       maybeResult.map { r =>
         ResultOutput(r.resultType.toString, r.fullText, r.files)
       }

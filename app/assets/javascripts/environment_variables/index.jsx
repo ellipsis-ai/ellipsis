@@ -15,7 +15,8 @@ define(function(require) {
           name: React.PropTypes.string.isRequired,
           isAlreadySavedWithValue: React.PropTypes.bool.isRequired
         })).isRequired
-      })
+      }),
+      focus: React.PropTypes.string
     }),
 
     getDefaultProps: function() {
@@ -119,6 +120,7 @@ define(function(require) {
           onSave={this.onSave}
           vars={this.getVars()}
           isFullPage={true}
+          focus={this.props.focus}
         />
       );
     }

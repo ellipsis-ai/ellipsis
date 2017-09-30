@@ -45,13 +45,6 @@ case class BehaviorResponse(
     parametersWithValues.forall(_.hasValidValue)
   }
 
-  def hasAllUserEnvVarValues(implicit ec: ExecutionContext): Future[Boolean] = {
-    for {
-      user <- event.ensureUser(dataService)
-      missing <- dataService.userEnvironmentVariables.missingFor(user, behaviorVersion, dataService)
-    } yield missing.isEmpty
-  }
-
   def hasAllSimpleTokens(implicit ec: ExecutionContext): Future[Boolean] = {
     for {
       user <- event.ensureUser(dataService)
@@ -62,9 +55,8 @@ case class BehaviorResponse(
   def isReady(implicit ec: ExecutionContext): Future[Boolean] = {
     for {
       hasSimpleTokens <- hasAllSimpleTokens
-      hasUserEnvVars <- hasAllUserEnvVarValues
     } yield {
-      hasSimpleTokens && hasUserEnvVars && hasAllParamValues
+      hasSimpleTokens && hasAllParamValues
     }
   }
 
