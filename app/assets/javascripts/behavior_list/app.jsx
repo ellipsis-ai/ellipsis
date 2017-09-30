@@ -5,17 +5,21 @@ define(function(require) {
     PageNotification = require('../shared_ui/page_notification'),
     DataRequest = require('../lib/data_request'),
     ImmutableObjectUtils = require('../lib/immutable_object_utils'),
-    TimeZoneSetter = require('../time_zone/team_time_zone');
+    TimeZoneSetter = require('../time_zone/team_time_zone'),
+    Page = require('../shared_ui/page');
 
   return React.createClass({
-    displayName: 'BehaviorListApp',
-    propTypes: {
+    propTypes: Object.assign({}, Page.requiredPropTypes, {
       csrfToken: React.PropTypes.string.isRequired,
       behaviorGroups: React.PropTypes.arrayOf(React.PropTypes.object).isRequired,
       teamId: React.PropTypes.string.isRequired,
       slackTeamId: React.PropTypes.string.isRequired,
       teamTimeZone: React.PropTypes.string,
       branchName: React.PropTypes.string
+    }),
+
+    getDefaultProps: function() {
+      return Page.requiredPropDefaults();
     },
 
     componentDidMount: function() {
@@ -234,13 +238,17 @@ define(function(require) {
               localBehaviorGroups={this.props.behaviorGroups.map(BehaviorGroup.fromJson)}
               publishedBehaviorGroups={this.state.publishedBehaviorGroups.map(BehaviorGroup.fromJson)}
               recentlyInstalled={this.state.recentlyInstalled.map(BehaviorGroup.fromJson)}
-          currentlyInstalling={this.state.currentlyInstalling}
+              currentlyInstalling={this.state.currentlyInstalling}
               matchingResults={this.state.matchingResults.map(BehaviorGroup.fromJson)}
               currentSearchText={this.state.currentSearchText}
               isLoadingMatchingResults={this.state.isLoadingMatchingResults}
               publishedBehaviorGroupLoadStatus={this.state.publishedBehaviorGroupLoadStatus}
               teamId={this.props.teamId}
               slackTeamId={this.props.slackTeamId}
+              activePanelName={this.props.activePanelName}
+              activePanelIsModal={this.props.activePanelIsModal}
+              onToggleActivePanel={this.props.onToggleActivePanel}
+              onClearActivePanel={this.props.onClearActivePanel}
             />
           </div>
         );

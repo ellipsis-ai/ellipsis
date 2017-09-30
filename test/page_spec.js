@@ -1,9 +1,9 @@
 import React from 'react';
 import TestUtils from 'react-addons-test-utils';
 
-const PageWithPanels = require('../app/assets/javascripts/shared_ui/page_with_panels');
+const Page = require('../app/assets/javascripts/shared_ui/page');
 
-describe('PageWithPanels', () => {
+describe('Page', () => {
   const defaultComponentProps = {
     activePanelName: "",
     activePanelIsModal: false,
@@ -11,15 +11,16 @@ describe('PageWithPanels', () => {
     onClearActivePanel: jest.fn()
   };
 
-  const InnerComponent = React.createClass({
+  const SomeComponent = React.createClass({
     displayName: "SomeComponent",
-    propTypes: PageWithPanels.requiredPropTypes(),
+    propTypes: Object.assign({}, Page.requiredPropTypes),
+    getDefaultProps: function() {
+      return Page.requiredPropDefaults();
+    },
     render: function() {
       return (<div></div>);
     }
   });
-
-  const OuterComponent = PageWithPanels.with(InnerComponent);
 
   let props;
 
@@ -28,7 +29,11 @@ describe('PageWithPanels', () => {
   });
 
   function createPage() {
-    return TestUtils.renderIntoDocument(<OuterComponent props={props}/>);
+    return TestUtils.renderIntoDocument((
+      <Page>
+        <SomeComponent />
+      </Page>
+    ));
   }
 
   function createMockedPage() {
@@ -41,11 +46,12 @@ describe('PageWithPanels', () => {
     return page;
   }
 
-  describe('with', () => {
-    it('returns a wrapped component', () => {
+  describe('render', () => {
+    it('renders an augmented inner component', () => {
       var page = createPage();
-      var child = TestUtils.findRenderedComponentWithType(page, InnerComponent);
-      expect(TestUtils.isCompositeComponentWithType(child, InnerComponent)).toBe(true);
+      var child = TestUtils.findRenderedComponentWithType(page, SomeComponent);
+      expect(TestUtils.isCompositeComponentWithType(child, SomeComponent)).toBe(true);
+      expect(child.props.onToggleActivePanel).toBe(page.toggleActivePanel);
     });
   });
 
