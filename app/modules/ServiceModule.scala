@@ -56,7 +56,6 @@ class ServiceModule extends AbstractModule with ScalaModule {
     bind[TeamService].to[TeamServiceImpl]
     bind[APITokenService].to[APITokenServiceImpl]
     bind[TeamEnvironmentVariableService].to[TeamEnvironmentVariableServiceImpl]
-    bind[UserEnvironmentVariableService].to[UserEnvironmentVariableServiceImpl]
     bind[InvocationTokenService].to[InvocationTokenServiceImpl]
     bind[LinkedOAuth2TokenService].to[LinkedOAuth2TokenServiceImpl]
     bind[LinkedSimpleTokenService].to[LinkedSimpleTokenServiceImpl]

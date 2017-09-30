@@ -351,12 +351,10 @@ class BehaviorVersionServiceImpl @Inject() (
                      ): DBIO[BotResult] = {
     for {
       teamEnvVars <- dataService.teamEnvironmentVariables.allForAction(behaviorVersion.team)
-      user <- event.ensureUserAction(dataService)
-      userEnvVars <- dataService.userEnvironmentVariables.allForAction(user)
       result <- maybeNotReadyResultForAction(behaviorVersion, event).flatMap { maybeResult =>
         maybeResult.map(DBIO.successful).getOrElse {
           lambdaService
-            .invokeAction(behaviorVersion, parametersWithValues, (teamEnvVars ++ userEnvVars), event, maybeConversation, defaultServices)
+            .invokeAction(behaviorVersion, parametersWithValues, teamEnvVars, event, maybeConversation, defaultServices)
         }
       }
     } yield result
