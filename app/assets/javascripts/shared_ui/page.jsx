@@ -112,7 +112,7 @@ define(function(require) {
 
     render() {
       return (
-        <div className="flex-row-expand">
+        <div className="flex-row-cascade">
           {React.Children.map(this.props.children, (ea) => React.cloneElement(ea, {
             activePanelName: this.state.activePanelName,
             activePanelIsModal: this.state.activePanelIsModal,
