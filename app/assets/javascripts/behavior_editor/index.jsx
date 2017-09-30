@@ -2,7 +2,6 @@ define((require) => {
 var React = require('react'),
   APIConfigPanel = require('./api_config_panel'),
   AWSConfigRef = require('../models/aws').AWSConfigRef,
-  AWSHelp = require('./aws_help'),
   BehaviorGroup = require('../models/behavior_group'),
   BehaviorGroupVersionMetaData = require('../models/behavior_group_version_meta_data'),
   BehaviorGroupEditor = require('./behavior_group_editor'),
@@ -1900,10 +1899,6 @@ const BehaviorEditor = React.createClass({
               template={this.getBehaviorTemplate()}
               onCollapseClick={this.props.onClearActivePanel}
             />
-          </Collapsible>
-
-          <Collapsible revealWhen={this.props.activePanelName === 'helpForAWS'} onChange={this.layoutDidUpdate}>
-            <AWSHelp onCollapseClick={this.props.onClearActivePanel} />
           </Collapsible>
 
           <Collapsible ref="versionHistory" revealWhen={this.props.activePanelName === 'versionHistory'} onChange={this.layoutDidUpdate}>

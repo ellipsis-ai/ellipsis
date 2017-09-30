@@ -51,24 +51,6 @@ define(function(require) {
       );
     }
 
-    missingUserEnvVars() {
-      const missingUserEnvVars = this.props.result.missingUserEnvVars;
-      return (
-        <div>
-          {missingUserEnvVars.length === 1 ? (
-            <span>
-              If, like you, the user hasn't yet set a value for the environment variable <code className="type-bold">{missingUserEnvVars[0]}</code>, Ellipsis will ask for one.
-            </span>
-          ) : (
-            <span>
-              <span>If, like you, the user hasn't yet set values for these environment variables, Ellipsis will ask for them: </span>
-              <code className="type-bold mlxs">{missingUserEnvVars.join(", ")}</code>
-            </span>
-          )}
-        </div>
-      );
-    }
-
     renderText() {
       const result = this.props.result;
       if (result.responseText) {
@@ -83,7 +65,6 @@ define(function(require) {
         return (
           <div>
             {result.missingSimpleTokens.length > 0 ? this.missingSimpleTokens() : null}
-            {result.missingUserEnvVars.length > 0 ? this.missingUserEnvVars() : null}
             {result.missingInputNames.length > 0 ? this.missingInputs() : null}
           </div>
         );

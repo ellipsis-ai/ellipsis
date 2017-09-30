@@ -6,7 +6,6 @@ define(function() {
       this.kind = props.kind || null;
       this.missingInputNames = props.missingInputNames || [];
       this.missingSimpleTokens = props.missingSimpleTokens || [];
-      this.missingUserEnvVars = props.missingUserEnvVars || [];
       this.files = props.files || [];
     }
 
@@ -24,7 +23,6 @@ define(function() {
         kind: props.result && props.result.kind ? props.result.kind : null,
         missingInputNames: props.missingInputNames || [],
         missingSimpleTokens: props.missingSimpleTokens || [],
-        missingUserEnvVars: props.missingUserEnvVars || [],
         files: props.result && props.result.files ? props.result.files : []
       });
     }
