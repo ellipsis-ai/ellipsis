@@ -141,10 +141,7 @@ object BehaviorVersionData {
                 dataService: DataService
               ): BehaviorVersionData = {
 
-    val knownEnvVarsUsed =
-      dataService.teamEnvironmentVariables.lookForInCode(functionBody) ++
-        dataService.userEnvironmentVariables.lookForInCode(functionBody)
-
+    val knownEnvVarsUsed = dataService.teamEnvironmentVariables.lookForInCode(functionBody)
 
     BehaviorVersionData(
       id,

@@ -11,7 +11,7 @@ define(function(require) {
     InstalledBehaviorGroupsPanel = require('./installed_behavior_groups_panel'),
     ListHeading = require('./list_heading'),
     ModalScrim = require('../shared_ui/modal_scrim'),
-    PageWithPanels = require('../shared_ui/page_with_panels'),
+    Page = require('../shared_ui/page'),
     ResponsiveColumn = require('../shared_ui/responsive_column'),
     SubstringHighlighter = require('../shared_ui/substring_highlighter'),
     debounce = require('javascript-debounce');
@@ -19,8 +19,7 @@ define(function(require) {
   const ANIMATION_DURATION = 0.25;
 
   const BehaviorList = React.createClass({
-    displayName: "BehaviorList",
-    propTypes: Object.assign(PageWithPanels.requiredPropTypes(), {
+    propTypes: Object.assign({}, Page.requiredPropTypes, {
       onLoadPublishedBehaviorGroups: React.PropTypes.func.isRequired,
       onBehaviorGroupImport: React.PropTypes.func.isRequired,
       onBehaviorGroupUpdate: React.PropTypes.func.isRequired,
@@ -38,6 +37,10 @@ define(function(require) {
       teamId: React.PropTypes.string.isRequired,
       slackTeamId: React.PropTypes.string.isRequired
     }),
+
+    getDefaultProps: function() {
+      return Page.requiredPropDefaults();
+    },
 
     getInitialState: function() {
       return {
@@ -644,5 +647,5 @@ define(function(require) {
     }
   });
 
-  return PageWithPanels.with(BehaviorList);
+  return BehaviorList;
 });

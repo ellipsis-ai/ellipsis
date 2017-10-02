@@ -13,7 +13,8 @@ define(function(require) {
       onSave: React.PropTypes.func.isRequired,
       vars: React.PropTypes.arrayOf(React.PropTypes.object).isRequired,
       errorMessage: React.PropTypes.string,
-      isFullPage: React.PropTypes.bool
+      isFullPage: React.PropTypes.bool,
+      focus: React.PropTypes.string
     },
 
     getVars: function() {
@@ -35,6 +36,12 @@ define(function(require) {
         saveError: false,
         isSaving: false
       };
+    },
+
+    componentDidMount: function() {
+      if (this.props.focus) {
+        this.focusOnVarName(this.props.focus);
+      }
     },
 
     reset: function() {

@@ -21,12 +21,7 @@ object BuiltinBehavior {
     text.replaceAll("[“”]", "\"").replaceAll("[‘’]", "'")
   }
 
-  val setEnvironmentVariableRegex: Regex = s"""(?i)(?s)^set\\s+env\\s+(\\S+)\\s+(.*)$$""".r
-  val unsetEnvironmentVariableRegex: Regex = s"""(?i)^unset\\s+env\\s+(\\S+)\\s*$$""".r
-  val startLearnConversationRegex: Regex = s"""(?i)^learn\\s*$$""".r
-  val unlearnRegex: Regex = s"""(?i)^unlearn\\s+(\\S+)""".r
   val helpRegex: Regex = s"""(?i)^help\\s*(\\S*.*)$$""".r
-  val rememberRegex: Regex = s"""(?i)^(remember|\\^)\\s*$$""".r
   val scheduledRegex: Regex = s"""(?i)^scheduled$$""".r
   val allScheduledRegex: Regex = s"""(?i)^all scheduled$$""".r
   val scheduleRegex: Regex = s"""(?i)^schedule\\s+([`"'])(.*?)\\1(\\s+privately for everyone in this channel)?\\s+(.*)\\s*$$""".r
@@ -39,10 +34,6 @@ object BuiltinBehavior {
   def maybeFrom(event: Event, services: DefaultServices): Option[BuiltinBehavior] = {
     if (event.includesBotMention) {
       uneducateQuotes(event.relevantMessageText) match {
-        case setEnvironmentVariableRegex(name, value) => Some(SetEnvironmentVariableBehavior(name, value, event, services))
-        case unsetEnvironmentVariableRegex(name) => Some(UnsetEnvironmentVariableBehavior(name, event, services))
-        case startLearnConversationRegex() => Some(LearnBehavior(event, services))
-        case unlearnRegex(regexString) => Some(UnlearnBehavior(regexString, event, services))
         case helpRegex(helpString) => Some(DisplayHelpBehavior(
           Some(helpString),
           None,
@@ -53,7 +44,6 @@ object BuiltinBehavior {
           event,
           services
         ))
-        case rememberRegex(cmd) => Some(RememberBehavior(event, services))
         case scheduledRegex() => Some(ListScheduledBehavior(event, event.maybeChannel, services))
         case allScheduledRegex() => Some(ListScheduledBehavior(event, None, services))
         case scheduleRegex(_, text, individually, recurrence) => Some(ScheduleBehavior(text, (individually != null), recurrence, event, services))

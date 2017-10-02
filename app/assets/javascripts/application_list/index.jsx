@@ -3,18 +3,21 @@ define(function(require) {
     Collapsible = require('../shared_ui/collapsible'),
     HelpButton = require('../help/help_button'),
     HelpPanel = require('../help/panel'),
-    PageWithPanels = require('../shared_ui/page_with_panels'),
+    Page = require('../shared_ui/page'),
     SettingsMenu = require('../shared_ui/settings_menu'),
     Sort = require('../lib/sort');
 
   const ApplicationList = React.createClass({
-    displayName: 'ApplicationList',
-    propTypes: Object.assign(PageWithPanels.requiredPropTypes(), {
+    propTypes: Object.assign({}, Page.requiredPropTypes, {
       csrfToken: React.PropTypes.string.isRequired,
       teamId: React.PropTypes.string.isRequired,
       apis: React.PropTypes.arrayOf(React.PropTypes.object),
       applications: React.PropTypes.arrayOf(React.PropTypes.object)
     }),
+
+    getDefaultProps: function() {
+      return Page.requiredPropDefaults();
+    },
 
     hasApis: function() {
       return !!(this.props.apis && this.props.apis.length > 0);
@@ -242,5 +245,5 @@ define(function(require) {
     }
   });
 
-  return PageWithPanels.with(ApplicationList);
+  return ApplicationList;
 });

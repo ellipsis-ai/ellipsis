@@ -8,10 +8,10 @@ import models.accounts.linkedsimpletoken.LinkedSimpleTokenService
 import models.accounts.logintoken.LoginTokenService
 import models.accounts.oauth2api.OAuth2ApiService
 import models.accounts.oauth2application.OAuth2ApplicationService
-import models.accounts.slack.profile.SlackProfileService
 import models.accounts.oauth2token.OAuth2TokenService
 import models.accounts.simpletokenapi.SimpleTokenApiService
 import models.accounts.slack.botprofile.SlackBotProfileService
+import models.accounts.slack.profile.SlackProfileService
 import models.accounts.user.UserService
 import models.apitoken.APITokenService
 import models.behaviors.BehaviorResponseService
@@ -31,19 +31,19 @@ import models.behaviors.datatypefield.DataTypeFieldService
 import models.behaviors.defaultstorageitem.DefaultStorageItemService
 import models.behaviors.input.InputService
 import models.behaviors.invocationlogentry.InvocationLogEntryService
-import models.behaviors.scheduling.scheduledmessage.ScheduledMessageService
-import models.behaviors.triggers.messagetrigger.MessageTriggerService
-import models.environmentvariable.{TeamEnvironmentVariableService, UserEnvironmentVariableService}
 import models.behaviors.invocationtoken.InvocationTokenService
 import models.behaviors.library.LibraryVersionService
 import models.behaviors.nodemoduleversion.NodeModuleVersionService
 import models.behaviors.savedanswer.SavedAnswerService
 import models.behaviors.scheduling.recurrence.RecurrenceService
 import models.behaviors.scheduling.scheduledbehavior.ScheduledBehaviorService
+import models.behaviors.scheduling.scheduledmessage.ScheduledMessageService
+import models.behaviors.triggers.messagetrigger.MessageTriggerService
+import models.environmentvariable.TeamEnvironmentVariableService
 import models.team.TeamService
 import org.scalatest.mock.MockitoSugar
-import slick.dbio.DBIO
 import services.DataService
+import slick.dbio.DBIO
 
 import scala.concurrent.Future
 
@@ -56,7 +56,6 @@ class MockDataService extends DataService with MockitoSugar {
   val teams = mock[TeamService]
   val apiTokens = mock[APITokenService]
   val teamEnvironmentVariables = mock[TeamEnvironmentVariableService]
-  val userEnvironmentVariables = mock[UserEnvironmentVariableService]
   val invocationTokens = mock[InvocationTokenService]
   val linkedOAuth2Tokens = mock[LinkedOAuth2TokenService]
   val linkedSimpleTokens = mock[LinkedSimpleTokenService]

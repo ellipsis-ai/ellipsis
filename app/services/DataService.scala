@@ -29,15 +29,15 @@ import models.behaviors.datatypefield.DataTypeFieldService
 import models.behaviors.defaultstorageitem.DefaultStorageItemService
 import models.behaviors.input.InputService
 import models.behaviors.invocationlogentry.InvocationLogEntryService
-import models.behaviors.scheduling.scheduledmessage.ScheduledMessageService
-import models.behaviors.triggers.messagetrigger.MessageTriggerService
-import models.environmentvariable.{TeamEnvironmentVariableService, UserEnvironmentVariableService}
 import models.behaviors.invocationtoken.InvocationTokenService
 import models.behaviors.library.LibraryVersionService
 import models.behaviors.nodemoduleversion.NodeModuleVersionService
 import models.behaviors.savedanswer.SavedAnswerService
 import models.behaviors.scheduling.recurrence.RecurrenceService
 import models.behaviors.scheduling.scheduledbehavior.ScheduledBehaviorService
+import models.behaviors.scheduling.scheduledmessage.ScheduledMessageService
+import models.behaviors.triggers.messagetrigger.MessageTriggerService
+import models.environmentvariable.TeamEnvironmentVariableService
 import models.team.TeamService
 import slick.dbio.DBIO
 
@@ -51,7 +51,6 @@ trait DataService {
   val teams: TeamService
   val apiTokens: APITokenService
   val teamEnvironmentVariables: TeamEnvironmentVariableService
-  val userEnvironmentVariables: UserEnvironmentVariableService
   val invocationTokens: InvocationTokenService
   val linkedOAuth2Tokens: LinkedOAuth2TokenService
   val linkedSimpleTokens: LinkedSimpleTokenService

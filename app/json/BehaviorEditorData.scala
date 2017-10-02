@@ -120,7 +120,6 @@ object BehaviorEditorData {
     for {
       teamAccess <- dataService.users.teamAccessFor(user, Some(team.id))
       teamEnvironmentVariables <- dataService.teamEnvironmentVariables.allFor(team)
-      userEnvironmentVariables <- dataService.userEnvironmentVariables.allFor(user)
       awsConfigs <- dataService.awsConfigs.allFor(team)
       oAuth2Applications <- dataService.oauth2Applications.allUsableFor(team)
       oauth2Apis <- dataService.oauth2Apis.allFor(teamAccess.maybeTargetTeam)

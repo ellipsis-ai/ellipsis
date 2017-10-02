@@ -1,11 +1,12 @@
 requirejs(['common'], function() {
   requirejs(['core-js', 'whatwg-fetch', 'react', 'react-dom', './scheduling/index', 'config/scheduling/index',
-      './models/scheduled_action', './models/schedule_channel', './models/behavior_group', './lib/data_request', './lib/immutable_object_utils'],
+      './models/scheduled_action', './models/schedule_channel', './models/behavior_group', './lib/data_request',
+      './lib/immutable_object_utils', './shared_ui/page'],
     function(Core, Fetch, React, ReactDOM, Scheduling, SchedulingConfig,
-             ScheduledAction, ScheduleChannel, BehaviorGroup, DataRequest, ImmutableObjectUtils) {
+             ScheduledAction, ScheduleChannel, BehaviorGroup, DataRequest,
+             ImmutableObjectUtils, Page) {
 
       const SchedulingLoader = React.createClass({
-        displayName: 'SchedulingLoader',
         propTypes: {
           containerId: React.PropTypes.string.isRequired,
           csrfToken: React.PropTypes.string.isRequired,
@@ -112,24 +113,26 @@ requirejs(['common'], function() {
 
         render: function() {
           return (
-            <Scheduling
-              scheduledActions={this.state.scheduledActions}
-              channelList={this.state.channelList}
-              behaviorGroups={this.state.behaviorGroups}
-              onSave={this.onSave}
-              isSaving={this.state.isSaving}
-              justSavedAction={this.state.justSavedAction}
-              onDelete={this.onDelete}
-              isDeleting={this.state.isDeleting}
-              onClearErrors={this.onClearErrors}
-              error={this.state.error}
-              teamTimeZone={this.props.teamTimeZone}
-              teamTimeZoneName={this.props.teamTimeZoneName}
-              slackUserId={this.props.slackUserId}
-              slackBotUserId={this.props.slackBotUserId}
-              selectedScheduleId={this.props.selectedScheduleId}
-              newAction={this.props.newAction}
-            />
+            <Page>
+              <Scheduling
+                scheduledActions={this.state.scheduledActions}
+                channelList={this.state.channelList}
+                behaviorGroups={this.state.behaviorGroups}
+                onSave={this.onSave}
+                isSaving={this.state.isSaving}
+                justSavedAction={this.state.justSavedAction}
+                onDelete={this.onDelete}
+                isDeleting={this.state.isDeleting}
+                onClearErrors={this.onClearErrors}
+                error={this.state.error}
+                teamTimeZone={this.props.teamTimeZone}
+                teamTimeZoneName={this.props.teamTimeZoneName}
+                slackUserId={this.props.slackUserId}
+                slackBotUserId={this.props.slackBotUserId}
+                selectedScheduleId={this.props.selectedScheduleId}
+                newAction={this.props.newAction}
+              />
+            </Page>
           );
         }
       });

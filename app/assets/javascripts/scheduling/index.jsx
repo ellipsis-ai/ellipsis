@@ -6,7 +6,7 @@ define(function(require) {
     DynamicLabelButton = require('../form/dynamic_label_button'),
     FixedFooter = require('../shared_ui/fixed_footer'),
     ModalScrim = require('../shared_ui/modal_scrim'),
-    PageWithPanels = require('../shared_ui/page_with_panels'),
+    Page = require('../shared_ui/page'),
     BehaviorGroup = require('../models/behavior_group'),
     ScheduledAction = require('../models/scheduled_action'),
     ScheduleChannel = require('../models/schedule_channel'),
@@ -16,8 +16,7 @@ define(function(require) {
     Sort = require('../lib/sort');
 
   const Scheduling = React.createClass({
-    displayName: 'Scheduling',
-    propTypes: Object.assign(PageWithPanels.requiredPropTypes(), {
+    propTypes: Object.assign({}, Page.requiredPropTypes, {
       scheduledActions: React.PropTypes.arrayOf(React.PropTypes.instanceOf(ScheduledAction)).isRequired,
       channelList: React.PropTypes.arrayOf(React.PropTypes.instanceOf(ScheduleChannel)).isRequired,
       behaviorGroups: React.PropTypes.arrayOf(React.PropTypes.instanceOf(BehaviorGroup)).isRequired,
@@ -35,6 +34,10 @@ define(function(require) {
       selectedScheduleId: React.PropTypes.string,
       newAction: React.PropTypes.bool
     }),
+
+    getDefaultProps: function() {
+      return Page.requiredPropDefaults();
+    },
 
     getInitialState: function() {
       const selectedItem = this.getDefaultSelectedItem();
@@ -469,5 +472,5 @@ define(function(require) {
     }
   });
 
-  return PageWithPanels.with(Scheduling);
+  return Scheduling;
 });

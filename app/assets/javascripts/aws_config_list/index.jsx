@@ -3,16 +3,19 @@ define(function(require) {
     Collapsible = require('../shared_ui/collapsible'),
     HelpButton = require('../help/help_button'),
     HelpPanel = require('../help/panel'),
-    PageWithPanels = require('../shared_ui/page_with_panels'),
+    Page = require('../shared_ui/page'),
     SettingsMenu = require('../shared_ui/settings_menu');
 
   const ConfigList = React.createClass({
-    displayName: 'ConfigList',
-    propTypes: Object.assign(PageWithPanels.requiredPropTypes(), {
+    propTypes: Object.assign({}, Page.requiredPropTypes, {
       csrfToken: React.PropTypes.string.isRequired,
       teamId: React.PropTypes.string.isRequired,
       configs: React.PropTypes.arrayOf(React.PropTypes.object)
     }),
+
+    getDefaultProps: function() {
+      return Page.requiredPropDefaults();
+    },
 
     getConfigs: function() {
       return this.props.configs || [];
@@ -169,5 +172,5 @@ define(function(require) {
     }
   });
 
-  return PageWithPanels.with(ConfigList);
+  return ConfigList;
 });

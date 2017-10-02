@@ -1,8 +1,12 @@
 requirejs(['common'], function() {
-  requirejs(['core-js', 'whatwg-fetch', 'react', 'react-dom', './application_list/index', 'config/oauth2application/list'],
-  function(Core, Fetch, React, ReactDOM, ApplicationList, ApplicationListConfig) {
+  requirejs(['core-js', 'whatwg-fetch', 'react', 'react-dom', './application_list/index', 'config/oauth2application/list', './shared_ui/page'],
+  function(Core, Fetch, React, ReactDOM, ApplicationList, ApplicationListConfig, Page) {
     ReactDOM.render(
-      React.createElement(ApplicationList, ApplicationListConfig),
+      (
+        <Page>
+          <ApplicationList {...ApplicationListConfig} />
+        </Page>
+      ),
       document.getElementById(ApplicationListConfig.containerId)
     );
   });

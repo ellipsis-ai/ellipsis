@@ -4,11 +4,12 @@ define(function(require) {
     CsrfTokenHiddenInput = require('../shared_ui/csrf_token_hidden_input'),
     SettingsMenu = require('../shared_ui/settings_menu'),
     ifPresent = require('../lib/if_present'),
-    Input = require('../form/input');
+    Input = require('../form/input'),
+    Page = require('../shared_ui/page');
 
   return React.createClass({
     displayName: 'ConfigEditor',
-    propTypes: {
+    propTypes: Object.assign({}, Page.requiredPropTypes, {
       configId: React.PropTypes.string,
       name: React.PropTypes.string,
       requiredNameInCode: React.PropTypes.string,
@@ -21,6 +22,10 @@ define(function(require) {
       behaviorGroupId: React.PropTypes.string,
       behaviorId: React.PropTypes.string,
       documentationUrl: React.PropTypes.string.isRequired
+    }),
+
+    getDefaultProps: function() {
+      return Page.requiredPropDefaults();
     },
 
     getInitialState: function() {

@@ -113,7 +113,7 @@ describe('BehaviorList', () => {
   function createBehaviorList(config) {
     return TestUtils.renderIntoDocument(
       <BehaviorList {...config} />
-    ).refs.component;
+    );
   }
 
   let config = {};

@@ -2,7 +2,6 @@ define((require) => {
 var React = require('react'),
   APIConfigPanel = require('./api_config_panel'),
   AWSConfigRef = require('../models/aws').AWSConfigRef,
-  AWSHelp = require('./aws_help'),
   BehaviorGroup = require('../models/behavior_group'),
   BehaviorGroupVersionMetaData = require('../models/behavior_group_version_meta_data'),
   BehaviorGroupEditor = require('./behavior_group_editor'),
@@ -39,7 +38,7 @@ var React = require('react'),
   ModalScrim = require('../shared_ui/modal_scrim'),
   Notifications = require('../notifications/notifications'),
   OAuth2ApplicationRef = require('../models/oauth2').OAuth2ApplicationRef,
-  PageWithPanels = require('../shared_ui/page_with_panels'),
+  Page = require('../shared_ui/page'),
   ParamType = require('../models/param_type'),
   RequiredAWSConfig = require('../models/aws').RequiredAWSConfig,
   RequiredOAuth2Application = require('../models/oauth2').RequiredOAuth2Application,
@@ -81,9 +80,7 @@ var magic8BallResponse = Magic8Ball.response();
 var MOBILE_MAX_WIDTH = 768;
 
 const BehaviorEditor = React.createClass({
-  displayName: 'BehaviorEditor',
-
-  propTypes: Object.assign(PageWithPanels.requiredPropTypes(), {
+  propTypes: Object.assign({}, Page.requiredPropTypes, {
     group: React.PropTypes.instanceOf(BehaviorGroup).isRequired,
     selectedId: React.PropTypes.string,
     csrfToken: React.PropTypes.string.isRequired,
@@ -110,6 +107,9 @@ const BehaviorEditor = React.createClass({
     userId: React.PropTypes.string.isRequired
   }),
 
+  getDefaultProps: function() {
+    return Page.requiredPropDefaults();
+  },
 
   /* Getters */
 
@@ -1901,10 +1901,6 @@ const BehaviorEditor = React.createClass({
             />
           </Collapsible>
 
-          <Collapsible revealWhen={this.props.activePanelName === 'helpForAWS'} onChange={this.layoutDidUpdate}>
-            <AWSHelp onCollapseClick={this.props.onClearActivePanel} />
-          </Collapsible>
-
           <Collapsible ref="versionHistory" revealWhen={this.props.activePanelName === 'versionHistory'} onChange={this.layoutDidUpdate}>
             <VersionsPanel
               ref="versionsPanel"
@@ -2578,6 +2574,6 @@ const BehaviorEditor = React.createClass({
   }
 });
 
-return PageWithPanels.with(BehaviorEditor);
+return BehaviorEditor;
 
 });
