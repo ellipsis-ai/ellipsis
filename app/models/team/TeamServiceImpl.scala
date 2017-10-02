@@ -27,6 +27,10 @@ class TeamServiceImpl @Inject() (
     dataService.run(all.result)
   }
 
+  def allCount: Future[Int] = {
+    dataService.run(all.length.result)
+  }
+
   def allTeamsPaged(page: Int, perPage: Int): Future[Seq[Team]] = {
     dataService.run(allPagedQuery((page - 1) * perPage, perPage).result)
   }
