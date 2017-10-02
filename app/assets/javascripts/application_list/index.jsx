@@ -70,20 +70,15 @@ define(function(require) {
                 <div className="column column-three-quarters flex-column bg-white ptxl pbxxxxl phxxxxl">
 
                   <p>
-                    <span>API configurations allow you to use Ellipsis to access data from other products that </span>
-                    <span>you use, using another product’s API (application programming interface). </span>
-                  </p>
-
-                  <p>
-                    <span>Once a product is configured, each user can quickly grant permission for that </span>
-                    <span>product to share their data with Ellipsis.</span>
+                    <span>Create a new configuration to give Ellipsis access to third-party APIs, </span>
+                    <span>services, and data.</span>
                   </p>
 
                   <p>
                     <HelpButton className="mrs" onClick={this.toggleOAuth2ApplicationHelp}
                       toggled={this.props.activePanelName === 'oAuth2ApplicationHelp'}/>
                     <button type="button" className="button-raw" onClick={this.toggleOAuth2ApplicationHelp}>
-                      How API configurations work
+                      How Integrations work
                     </button>
                   </p>
 
@@ -185,7 +180,7 @@ define(function(require) {
           <a className="button"
             href={jsRoutes.controllers.OAuth2ApplicationController.newApp(this.props.teamId, null, null, null).url}
           >
-            Add a new API configuration
+            Add a new configuration
           </a>
         </div>
       );
@@ -194,15 +189,15 @@ define(function(require) {
     renderApplicationCountDescription: function(appCount, apiGroupCount) {
       if (appCount === 1) {
         return (
-          <p>There is one API configuration.</p>
+          <p>There is one configuration.</p>
         );
       } else if (apiGroupCount === 1) {
         return (
-          <p>There are {appCount} API configurations.</p>
+          <p>There are {appCount} configurations.</p>
         );
       } else {
         return (
-          <p>There are {appCount} API configurations for {apiGroupCount} products.</p>
+          <p>There are {appCount} configurations for {apiGroupCount} services.</p>
         );
       }
     },
@@ -210,7 +205,7 @@ define(function(require) {
     renderOAuth2ApplicationHelp: function() {
       return (
         <HelpPanel
-          heading="Configuring an OAuth2 API configuration"
+          heading="Creating a new configuration"
           onCollapseClick={this.toggleOAuth2ApplicationHelp}
         >
           <p>
