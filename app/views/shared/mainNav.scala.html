@@ -30,6 +30,8 @@
       href='@routes.EnvironmentVariablesController.list(config.maybeTeamAccess.flatMap(_.maybeAdminAccessToTeamId))'>
       Settings
     </a>
+
+    <span id="header-feedback"></span>
   </div>
   @config.maybeTeamAccess.map { teamAccess => @teamMenu(teamAccess) }
 </div>

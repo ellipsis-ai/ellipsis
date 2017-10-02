@@ -1795,6 +1795,7 @@ const BehaviorEditor = React.createClass({
           (this.mobileBehaviorSwitcherIsVisible() ? " mobile-position-behind-scrim " : "") +
           (this.isModified() ? " bg-white " : " bg-light-translucent ")
         }>
+          {this.props.footerChildren}
           {this.isDataTypeBehavior() ? (
             <div>
               <Collapsible ref="addDataStorageItems" revealWhen={this.props.activePanelName === 'addDataStorageItems'} onChange={this.layoutDidUpdate}>

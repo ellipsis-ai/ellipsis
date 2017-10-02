@@ -2,6 +2,9 @@ define(function(require) {
   const React = require('react'),
     ReactDOM = require('react-dom'),
     Event = require('../lib/event'),
+    FeedbackPanel = require('../panels/feedback'),
+    Collapsible = require('./collapsible'),
+    Button = require('../form/button'),
     autobind = require('../lib/autobind');
 
   class Page extends React.Component {
@@ -25,7 +28,8 @@ define(function(require) {
         activePanelName: "",
         activePanelIsModal: false,
         onToggleActivePanel: function() { void(0); },
-        onClearActivePanel: function() { void(0); }
+        onClearActivePanel: function() { void(0); },
+        footerChildren: []
       };
     }
 
@@ -108,6 +112,28 @@ define(function(require) {
     componentDidMount() {
       window.document.addEventListener('keydown', this.onDocumentKeyDown, false);
       window.document.addEventListener('focus', this.handleModalFocus, true);
+      ReactDOM.render(
+        this.renderFeedbackLink(),
+        document.getElementById(Page.feedbackContainerId)
+      );
+    }
+
+    toggleFeedback() {
+      this.toggleActivePanel('feedback', true);
+    }
+
+    renderFooter() {
+      return (
+        <Collapsible revealWhen={this.state.activePanelName === 'feedback'}>
+          <FeedbackPanel onDone={this.toggleFeedback} />
+        </Collapsible>
+      );
+    }
+
+    renderFeedbackLink() {
+      return (
+        <Button className="button-nav mhs pbm mobile-pbs" onClick={this.toggleFeedback}>Feedback</Button>
+      );
     }
 
     render() {
@@ -118,6 +144,7 @@ define(function(require) {
             activePanelIsModal: this.state.activePanelIsModal,
             onToggleActivePanel: this.toggleActivePanel,
             onClearActivePanel: this.clearActivePanel,
+            footerChildren: this.renderFooter(),
             ref: (component) => this.component = component
           }))}
         </div>
@@ -133,8 +160,11 @@ define(function(require) {
     activePanelName: React.PropTypes.string.isRequired,
     activePanelIsModal: React.PropTypes.bool.isRequired,
     onToggleActivePanel: React.PropTypes.func.isRequired,
-    onClearActivePanel: React.PropTypes.func.isRequired
+    onClearActivePanel: React.PropTypes.func.isRequired,
+    footerChildren: React.PropTypes.node.isRequired
   });
+
+  Page.feedbackContainerId = 'header-feedback';
 
   return Page;
 });
