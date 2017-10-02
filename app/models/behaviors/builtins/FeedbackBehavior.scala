@@ -3,6 +3,7 @@ package models.behaviors.builtins
 import akka.actor.ActorSystem
 import json.UserData
 import models.accounts.linkedaccount.LinkedAccount
+import models.accounts.user.User
 import models.behaviors.events.Event
 import models.behaviors.{BotResult, SimpleTextResult}
 import models.team.Team
@@ -19,13 +20,9 @@ case class FeedbackBehavior(feedbackType: String, userMessage: String, event: Ev
     for {
       user <- event.ensureUser(dataService)
       maybeTeam <- dataService.teams.find(user.teamId)
-      maybeUserData <- maybeTeam.map { team =>
-        dataService.users.userDataFor(user, team).map(Some(_))
-      }.getOrElse(Future.successful(None))
     } yield {
       maybeTeam.map { team =>
-        val message = feedbackMessage(teamInfo(team), userInfo(user.id, maybeUserData), feedbackType, userMessage)
-        sendFeedbackToAdminTeam(message)
+        FeedbackBehavior.feedbackFor(user, team, services, feedbackType, userMessage)
       }
       val response =
         s"""Thank you. I’ve recorded your comments and sent it to the team at Ellipsis.ai:
@@ -35,10 +32,24 @@ case class FeedbackBehavior(feedbackType: String, userMessage: String, event: Ev
       SimpleTextResult(event, None, response, forcePrivateResponse = true)
     }
   }
+}
 
-  private def sendFeedbackToAdminTeam(msg: String)(implicit actorSystem: ActorSystem, ec: ExecutionContext) = {
+object FeedbackBehavior {
+  def feedbackFor(user: User, team: Team, services: DefaultServices, feedbackType: String, userMessage: String)
+                 (implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Boolean] = {
     for {
-      maybeAdminTeamEvent <- dataService.slackBotProfiles.eventualMaybeEvent(LinkedAccount.ELLIPSIS_SLACK_TEAM_ID, LinkedAccount.ELLIPSIS_SLACK_FEEDBACK_CHANNEL_ID, None)
+      userData <- services.dataService.users.userDataFor(user, team)
+      wasSent <- sendFeedbackToAdminTeam(
+        feedbackMessage(teamInfo(team, services), userInfo(user.id, Some(userData)), feedbackType, userMessage),
+        services
+      )
+    } yield wasSent
+  }
+
+  private def sendFeedbackToAdminTeam(msg: String, services: DefaultServices)
+                                     (implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Boolean] = {
+    for {
+      maybeAdminTeamEvent <- services.dataService.slackBotProfiles.eventualMaybeEvent(LinkedAccount.ELLIPSIS_SLACK_TEAM_ID, LinkedAccount.ELLIPSIS_SLACK_FEEDBACK_CHANNEL_ID, None)
       wasSent <- maybeAdminTeamEvent.map { adminTeamEvent =>
         val result = SimpleTextResult(adminTeamEvent, None, msg, forcePrivateResponse = false)
         services.botResultService.sendIn(result, None).map(_.isDefined).recover {
@@ -53,6 +64,7 @@ case class FeedbackBehavior(feedbackType: String, userMessage: String, event: Ev
       } else {
         Logger.error(s"User feedback failed to send: $msg")
       }
+      wasSent
     }
   }
 
@@ -62,7 +74,7 @@ case class FeedbackBehavior(feedbackType: String, userMessage: String, event: Ev
     }.getOrElse(s"User #$userId")
   }
 
-  private def teamInfo(team: Team): String = {
+  private def teamInfo(team: Team, services: DefaultServices): String = {
     val maybeTeamUrl = services.configuration.getOptional[String]("application.apiBaseUrl").map { baseUrl =>
       baseUrl + controllers.routes.ApplicationController.index(Some(team.id))
     }
@@ -82,5 +94,4 @@ case class FeedbackBehavior(feedbackType: String, userMessage: String, event: Ev
        |${message.lines.mkString("> ", "\n", "")}
      """.stripMargin
   }
-
 }
