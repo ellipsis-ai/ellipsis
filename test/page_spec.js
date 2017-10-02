@@ -22,16 +22,17 @@ describe('Page', () => {
     }
   });
 
-  let props;
+  let props = {};
 
   beforeEach(() => {
     props = Object.assign({}, defaultComponentProps);
   });
 
   function createPage() {
+    const feedbackContainer = document.createElement('span');
     return TestUtils.renderIntoDocument((
-      <Page>
-        <SomeComponent />
+      <Page feedbackContainer={feedbackContainer}>
+        <SomeComponent {...props} />
       </Page>
     ));
   }

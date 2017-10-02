@@ -114,7 +114,7 @@ define(function(require) {
       window.document.addEventListener('focus', this.handleModalFocus, true);
       ReactDOM.render(
         this.renderFeedbackLink(),
-        document.getElementById(Page.feedbackContainerId)
+        this.props.feedbackContainer || document.getElementById(Page.feedbackContainerId)
       );
     }
 
@@ -153,7 +153,8 @@ define(function(require) {
   }
 
   Page.propTypes = {
-    children: React.PropTypes.node.isRequired
+    children: React.PropTypes.node.isRequired,
+    feedbackContainer: React.PropTypes.object
   };
 
   Page.requiredPropTypes = Object.freeze({
