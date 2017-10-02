@@ -1,8 +1,12 @@
 requirejs(['common'], function() {
-  requirejs(['core-js', 'whatwg-fetch', 'react', 'react-dom', './environment_variables/index', 'config/environmentvariables/list'],
-  function(Core, Fetch, React, ReactDOM, EnvironmentVariableList, EnvironmentVariableListConfig) {
+  requirejs(['core-js', 'whatwg-fetch', 'react', 'react-dom', './environment_variables/index', 'config/environmentvariables/list', './shared_ui/page'],
+  function(Core, Fetch, React, ReactDOM, EnvironmentVariableList, EnvironmentVariableListConfig, Page) {
     ReactDOM.render(
-      React.createElement(EnvironmentVariableList, EnvironmentVariableListConfig),
+      (
+        <Page>
+          <EnvironmentVariableList {...EnvironmentVariableListConfig} />
+        </Page>
+      ),
       document.getElementById(EnvironmentVariableListConfig.containerId)
     );
   });

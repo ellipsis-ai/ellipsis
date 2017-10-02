@@ -7,11 +7,11 @@ define(function(require) {
     Input = require('../form/input'),
     SettingsMenu = require('../shared_ui/settings_menu'),
     BrowserUtils = require('../lib/browser_utils'),
-    ifPresent = require('../lib/if_present');
+    ifPresent = require('../lib/if_present'),
+    Page = require('../shared_ui/page');
 
-  return React.createClass({
-    displayName: 'ApplicationEditor',
-    propTypes: {
+  const ApplicationEditor = React.createClass({
+    propTypes: Object.assign({}, Page.requiredPropTypes, {
       apis: React.PropTypes.arrayOf(React.PropTypes.shape({
         apiId: React.PropTypes.string.isRequired,
         name: React.PropTypes.string.isRequired,
@@ -40,6 +40,10 @@ define(function(require) {
       applicationId: React.PropTypes.string,
       behaviorGroupId: React.PropTypes.string,
       behaviorId: React.PropTypes.string
+    }),
+
+    getDefaultProps: function() {
+      return Page.requiredPropDefaults();
     },
 
     getInitialState: function() {
@@ -527,4 +531,6 @@ define(function(require) {
       );
     }
   });
+
+  return ApplicationEditor;
 });

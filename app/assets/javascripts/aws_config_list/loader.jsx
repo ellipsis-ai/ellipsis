@@ -1,8 +1,12 @@
 requirejs(['common'], function() {
-  requirejs(['core-js', 'whatwg-fetch', 'react', 'react-dom', './aws_config_list/index', 'config/awsconfig/list'],
-    function(Core, Fetch, React, ReactDOM, ConfigList, ConfigListConfig) {
+  requirejs(['core-js', 'whatwg-fetch', 'react', 'react-dom', './aws_config_list/index', 'config/awsconfig/list', './shared_ui/page'],
+    function(Core, Fetch, React, ReactDOM, ConfigList, ConfigListConfig, Page) {
       ReactDOM.render(
-        React.createElement(ConfigList, ConfigListConfig),
+        (
+          <Page>
+            <ConfigList {...ConfigListConfig} />
+          </Page>
+        ),
         document.getElementById(ConfigListConfig.containerId)
       );
     });

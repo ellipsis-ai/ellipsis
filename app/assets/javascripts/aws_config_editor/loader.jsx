@@ -1,8 +1,12 @@
 requirejs(['common'], function() {
-  requirejs(['core-js', 'whatwg-fetch', 'react', 'react-dom', './aws_config_editor/index', 'config/awsconfig/edit'],
-    function(Core, Fetch, React, ReactDOM, ConfigEditor, ConfigEditorConfig) {
+  requirejs(['core-js', 'whatwg-fetch', 'react', 'react-dom', './aws_config_editor/index', 'config/awsconfig/edit', './shared_ui/page'],
+    function(Core, Fetch, React, ReactDOM, ConfigEditor, ConfigEditorConfig, Page) {
       ReactDOM.render(
-        React.createElement(ConfigEditor, ConfigEditorConfig),
+        (
+          <Page>
+            <ConfigEditor {...ConfigEditorConfig} />
+          </Page>
+        ),
         document.getElementById(ConfigEditorConfig.containerId)
       );
     });

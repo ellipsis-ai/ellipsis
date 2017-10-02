@@ -6,27 +6,30 @@ define(function(require) {
       Formatter = require('../lib/formatter'),
       HelpButton = require('../help/help_button'),
       Input = require('../form/input'),
-      PageWithPanels = require('../shared_ui/page_with_panels'),
+      Page = require('../shared_ui/page'),
       SettingsMenu = require('../shared_ui/settings_menu');
 
   var revokeForm = jsRoutes.controllers.APITokenController.revokeToken();
   var createForm = jsRoutes.controllers.APITokenController.createToken();
 
   const ApiTokenGenerator = React.createClass({
-    displayName: "ApiTokenGenerator",
-    propTypes: Object.assign(PageWithPanels.requiredPropTypes(), {
+    propTypes: Object.assign({}, Page.requiredPropTypes, {
       csrfToken: React.PropTypes.string.isRequired,
       teamId: React.PropTypes.string.isRequired,
       tokens: React.PropTypes.arrayOf(React.PropTypes.shape({
         id: React.PropTypes.string.isRequired,
         label: React.PropTypes.string.isRequired,
-        lastUsed: React.PropTypes.number,
-        createdAt: React.PropTypes.number.isRequired,
+        lastUsed: React.PropTypes.string,
+        createdAt: React.PropTypes.string.isRequired,
         isRevoked: React.PropTypes.bool.isRequired
       })).isRequired,
       justCreatedTokenId: React.PropTypes.string,
       canGenerateTokens: React.PropTypes.bool.isRequired
     }),
+
+    getDefaultProps: function() {
+      return Page.requiredPropDefaults();
+    },
 
     sortByMostRecent: function(tokens) {
       return tokens.map(t => t).sort((a, b) => a.createdAt < b.createdAt);
@@ -197,5 +200,5 @@ define(function(require) {
     }
   });
 
-  return PageWithPanels.with(ApiTokenGenerator);
+  return ApiTokenGenerator;
 });

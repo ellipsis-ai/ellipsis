@@ -3,11 +3,11 @@ define(function(require) {
     SettingsMenu = require('../shared_ui/settings_menu'),
     Setter = require('./setter'),
     ifPresent = require('../lib/if_present'),
-    Sort = require('../lib/sort');
+    Sort = require('../lib/sort'),
+    Page = require("../shared_ui/page");
 
-  return React.createClass({
-    displayName: 'EnvironmentVariableList',
-    propTypes: {
+  const EnvironmentVariableList = React.createClass({
+    propTypes: Object.assign({}, Page.requiredPropTypes, {
       csrfToken: React.PropTypes.string.isRequired,
       data: React.PropTypes.shape({
         teamId: React.PropTypes.string.isRequired,
@@ -17,6 +17,10 @@ define(function(require) {
         })).isRequired
       }),
       focus: React.PropTypes.string
+    }),
+
+    getDefaultProps: function() {
+      return Page.requiredPropDefaults();
     },
 
     getInitialState: function() {
@@ -122,4 +126,6 @@ define(function(require) {
     }
 
   });
+
+  return EnvironmentVariableList;
 });

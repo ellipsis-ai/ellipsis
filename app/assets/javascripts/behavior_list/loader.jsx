@@ -1,9 +1,13 @@
 requirejs(['common'], function() {
   requirejs(
-    ['core-js', 'whatwg-fetch', 'react', 'react-dom', './behavior_list/app', 'config/index'],
-    function(Core, Fetch, React, ReactDOM, BehaviorListApp, BehaviorListConfig) {
+    ['core-js', 'whatwg-fetch', 'react', 'react-dom', './behavior_list/app', 'config/index', './shared_ui/page'],
+    function(Core, Fetch, React, ReactDOM, BehaviorListApp, BehaviorListConfig, Page) {
       ReactDOM.render(
-        React.createElement(BehaviorListApp, BehaviorListConfig),
+        (
+          <Page>
+            <BehaviorListApp {...BehaviorListConfig} />
+          </Page>
+        ),
         document.getElementById(BehaviorListConfig.containerId)
       );
     }

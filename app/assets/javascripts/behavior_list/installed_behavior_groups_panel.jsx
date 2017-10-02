@@ -139,8 +139,8 @@ define(function(require) {
 
               <a className="button mbs mrs button-primary" href={this.getSlackUrl()}>Open your Slack team</a>
 
-              {groups.map((group) => (
-                <a className="button mbs mrs" href={this.getEditUrlFor(group)}>Edit {group.name}</a>
+              {groups.map((group, index) => (
+                <a className="button mbs mrs" href={this.getEditUrlFor(group)} key={`group${index}`}>Edit {group.name}</a>
               ))}
             </div>
 
