@@ -1,7 +1,8 @@
 package models.behaviors.builtins
 
 import akka.actor.ActorSystem
-import models.behaviors.BotResult
+import models.behaviors.{BotResult, ParameterWithValue}
+import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.events.Event
 import services.DefaultServices
 
@@ -21,10 +22,17 @@ object BuiltinBehavior {
     text.replaceAll("[“”]", "\"").replaceAll("[‘’]", "'")
   }
 
-  def maybeFor(name: String, event: Event, services: DefaultServices): Option[BuiltinBehavior] = {
+  def maybeFor(
+                name: String,
+                event: Event,
+                parametersWithValues: Seq[ParameterWithValue],
+                maybeConversation: Option[Conversation],
+                services: DefaultServices
+              ): Option[BuiltinBehavior] = {
     name match {
       case ListScheduledBehavior.`forAllId` => Some(ListScheduledBehavior(event, services, isForAllChannels = true))
       case ListScheduledBehavior.`forChannelId` => Some(ListScheduledBehavior(event, services, isForAllChannels = false))
+      case ScheduleBehavior.builtinId => ScheduleBehavior.maybeFor(parametersWithValues, event, services)
       case _ => None
     }
   }

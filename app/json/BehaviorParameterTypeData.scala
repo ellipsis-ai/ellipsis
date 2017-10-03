@@ -1,7 +1,7 @@
 package json
 
 import export.BehaviorGroupExporter
-import models.behaviors.behaviorparameter.BehaviorParameterType
+import models.behaviors.behaviorparameter.{BehaviorParameterType, NumberType, TextType, YesNoType}
 import models.behaviors.datatypefield.FieldTypeForSchema
 import models.behaviors.defaultstorageitem.GraphQLHelpers
 import services.DataService
@@ -46,9 +46,17 @@ case class BehaviorParameterTypeData(
 
 object BehaviorParameterTypeData {
 
+  def text: BehaviorParameterTypeData = from(TextType, needsConfig = false)
+  def number: BehaviorParameterTypeData = from(NumberType, needsConfig = false)
+  def yesNo: BehaviorParameterTypeData = from(YesNoType, needsConfig = false)
+
+  def from(paramType: BehaviorParameterType, needsConfig: Boolean): BehaviorParameterTypeData = {
+    BehaviorParameterTypeData(Some(paramType.id), Some(paramType.exportId), paramType.name, Some(needsConfig))
+  }
+
   def from(paramType: BehaviorParameterType, dataService: DataService)(implicit ec: ExecutionContext): Future[BehaviorParameterTypeData] = {
     paramType.needsConfig(dataService).map { needsConfig =>
-      BehaviorParameterTypeData(Some(paramType.id), Some(paramType.exportId), paramType.name, Some(needsConfig))
+      from(paramType, needsConfig)
     }
   }
 

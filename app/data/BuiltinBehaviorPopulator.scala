@@ -6,7 +6,7 @@ import javax.inject._
 import json.{BehaviorGroupData, UserData}
 import models.accounts.linkedaccount.LinkedAccount
 import models.behaviors.behaviorgroup.BehaviorGroup
-import models.behaviors.builtins.ListScheduledBehavior
+import models.behaviors.builtins.{ListScheduledBehavior, ScheduleBehavior}
 import models.team.Team
 import services.DataService
 import slick.dbio.DBIO
@@ -21,39 +21,42 @@ class BuiltinBehaviorPopulator @Inject() (
   // bump to create a new version
   val versionNumber: Int = 1
 
-  def dataFor(team: Team, userData: UserData) = BehaviorGroupData(
-    None,
-    team.id,
-    name = Some("Builtins"),
-    description = None,
-    icon = None,
-    actionInputs = Seq(),
-    dataTypeInputs = Seq(),
-    Seq(
-      ListScheduledBehavior.newVersionDataFor(
-        ListScheduledBehavior.forAllId,
-        "List all scheduled actions",
-        s"""^all scheduled$$""",
-        team,
-        dataService
+  def dataFor(team: Team, userData: UserData): BehaviorGroupData = {
+    val data = BehaviorGroupData(
+      None,
+      team.id,
+      name = Some("Builtins"),
+      description = None,
+      icon = None,
+      actionInputs = Seq(),
+      dataTypeInputs = Seq(),
+      Seq(
+        ListScheduledBehavior.newVersionDataFor(
+          ListScheduledBehavior.forAllId,
+          "List all scheduled actions",
+          s"""^all scheduled$$""",
+          team,
+          dataService
+        ),
+        ListScheduledBehavior.newVersionDataFor(
+          ListScheduledBehavior.forChannelId,
+          "List scheduled actions for a channel",
+          s"""^scheduled$$""",
+          team,
+          dataService
+        )
       ),
-      ListScheduledBehavior.newVersionDataFor(
-        ListScheduledBehavior.forChannelId,
-        "List scheduled actions for a channel",
-        s"""^scheduled$$""",
-        team,
-        dataService
-      )
-    ),
-    Seq(),
-    Seq(),
-    Seq(),
-    Seq(),
-    githubUrl = None,
-    exportId = None,
-    Some(OffsetDateTime.now),
-    Some(userData)
-  )
+      Seq(),
+      Seq(),
+      Seq(),
+      Seq(),
+      githubUrl = None,
+      exportId = None,
+      Some(OffsetDateTime.now),
+      Some(userData)
+    )
+    ScheduleBehavior.addToGroupDataTo(data, team, dataService)
+  }
 
   def ensureGroup: DBIO[BehaviorGroup] = {
     dataService.behaviorGroups.maybeBuiltinAction.flatMap { maybeBuiltinGroup =>
@@ -73,31 +76,19 @@ class BuiltinBehaviorPopulator @Inject() (
     }
   }
 
-  def createNewVersion(): DBIO[Unit] = {
+  def createNewVersionFor(group: BehaviorGroup): DBIO[Unit] = {
+    val adminTeam = group.team
     for {
-      maybeAdminTeamId <- dataService.slackBotProfiles.allForSlackTeamIdAction(LinkedAccount.ELLIPSIS_SLACK_TEAM_ID).map(_.headOption.map(_.teamId))
-      maybeAdminTeam <- maybeAdminTeamId.map { adminTeamId =>
-        dataService.teams.findAction(adminTeamId)
-      }.getOrElse(DBIO.successful(None))
-      maybeBehaviorGroup <- maybeAdminTeam.map { adminTeam =>
-        dataService.behaviorGroups.createForAction(None, adminTeam, isBuiltin = true).map(Some(_))
-      }.getOrElse(DBIO.successful(None))
-      maybeAdminUser <- maybeAdminTeam.map { adminTeam =>
-        dataService.users.allForAction(adminTeam).map(_.headOption)
-      }.getOrElse(DBIO.successful(None))
-      _ <- (for {
-        behaviorGroup <- maybeBehaviorGroup
-        adminUser <- maybeAdminUser
-        adminTeam <- maybeAdminTeam
-      } yield {
+      maybeAdminUser <- dataService.users.allForAction(adminTeam).map(_.headOption)
+      _ <- maybeAdminUser.map { adminUser =>
         dataService.users.userDataForAction(adminUser, adminTeam).flatMap { userData =>
           dataService.behaviorGroupVersions.createForAction(
-            behaviorGroup,
+            group,
             adminUser,
             dataFor(adminTeam, userData)
           )
         }
-      }).getOrElse(DBIO.successful({}))
+      }.getOrElse(DBIO.successful({}))
     } yield {}
   }
 
@@ -106,15 +97,17 @@ class BuiltinBehaviorPopulator @Inject() (
   }
 
   def run(): Unit = {
-    for {
+    dataService.runNow(for {
       group <- ensureGroup
       versionsCount <- versionsCountFor(group)
-      _ <- if (versionsCount >= versionNumber) {
-        DBIO.successful({})
-      } else {
-        createNewVersion()
+      _ <- {
+        if (versionsCount >= versionNumber) {
+          DBIO.successful({})
+        } else {
+          createNewVersionFor(group)
+        }
       }
-    } yield {}
+    } yield {})
   }
 
   run()

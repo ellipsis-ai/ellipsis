@@ -56,9 +56,20 @@ case class BehaviorVersion(
 
   val maybeExportId: Option[String] = behavior.maybeExportId
 
-  def maybeBuiltinBehaviorFor(event: Event, services: DefaultServices): Option[BuiltinBehavior] = {
+  def maybeBuiltinBehaviorFor(
+                               event: Event,
+                               parametersWithValues: Seq[ParameterWithValue],
+                               maybeConversation: Option[Conversation],
+                               services: DefaultServices
+                             ): Option[BuiltinBehavior] = {
     maybeBuiltinName.flatMap { builtinName =>
-      BuiltinBehavior.maybeFor(builtinName, event, services)
+      BuiltinBehavior.maybeFor(
+        builtinName,
+        event,
+        parametersWithValues,
+        maybeConversation,
+        services
+      )
     }
   }
 
