@@ -31,7 +31,7 @@ describe('Page', () => {
   function createPage() {
     const feedbackContainer = document.createElement('span');
     return TestUtils.renderIntoDocument((
-      <Page feedbackContainer={feedbackContainer}>
+      <Page feedbackContainer={feedbackContainer} csrfToken={"1"}>
         <SomeComponent {...props} />
       </Page>
     ));
