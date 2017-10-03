@@ -37,7 +37,7 @@ case class ScheduleBehavior(
 
 }
 
-object ScheduleBehavior {
+object ScheduleBehavior extends BuiltinImplementationType {
 
   val builtinId: String = "schedule"
   val messageInputId: String = "message-input-id"

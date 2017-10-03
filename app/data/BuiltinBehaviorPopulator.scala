@@ -6,7 +6,7 @@ import javax.inject._
 import json.{BehaviorGroupData, UserData}
 import models.accounts.linkedaccount.LinkedAccount
 import models.behaviors.behaviorgroup.BehaviorGroup
-import models.behaviors.builtins.{ListScheduledBehavior, ScheduleBehavior}
+import models.behaviors.builtins.{BuiltinImplementationType, ListScheduledBehavior, ScheduleBehavior}
 import models.team.Team
 import services.DataService
 import slick.dbio.DBIO
@@ -21,6 +21,11 @@ class BuiltinBehaviorPopulator @Inject() (
   // bump to create a new version
   val versionNumber: Int = 1
 
+  val builtinImplementations: Seq[BuiltinImplementationType] = Seq(
+    ListScheduledBehavior,
+    ScheduleBehavior
+  )
+
   def dataFor(team: Team, userData: UserData): BehaviorGroupData = {
     val data = BehaviorGroupData(
       None,
@@ -30,22 +35,7 @@ class BuiltinBehaviorPopulator @Inject() (
       icon = None,
       actionInputs = Seq(),
       dataTypeInputs = Seq(),
-      Seq(
-        ListScheduledBehavior.newVersionDataFor(
-          ListScheduledBehavior.forAllId,
-          "List all scheduled actions",
-          s"""^all scheduled$$""",
-          team,
-          dataService
-        ),
-        ListScheduledBehavior.newVersionDataFor(
-          ListScheduledBehavior.forChannelId,
-          "List scheduled actions for a channel",
-          s"""^scheduled$$""",
-          team,
-          dataService
-        )
-      ),
+      Seq(),
       Seq(),
       Seq(),
       Seq(),
@@ -55,7 +45,9 @@ class BuiltinBehaviorPopulator @Inject() (
       Some(OffsetDateTime.now),
       Some(userData)
     )
-    ScheduleBehavior.addToGroupDataTo(data, team, dataService)
+    builtinImplementations.foldLeft(data) { case(groupData, b) =>
+      b.addToGroupDataTo(groupData, team, dataService)
+    }
   }
 
   def ensureGroup: DBIO[BehaviorGroup] = {

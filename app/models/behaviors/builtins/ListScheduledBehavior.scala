@@ -1,7 +1,7 @@
 package models.behaviors.builtins
 
 import akka.actor.ActorSystem
-import json.{BehaviorTriggerData, BehaviorVersionData}
+import json.{BehaviorGroupData, BehaviorTriggerData, BehaviorVersionData}
 import models.behaviors.events.Event
 import models.behaviors.scheduling.Scheduled
 import models.behaviors.{BotResult, SimpleTextResult}
@@ -94,15 +94,38 @@ case class ListScheduledBehavior(
 
 }
 
-object ListScheduledBehavior {
+object ListScheduledBehavior extends BuiltinImplementationType {
 
   val forAllId: String = "list-all-scheduled"
   val forChannelId: String = "list-channel-scheduled"
 
-  def newVersionDataFor(builtinId: String, behaviorVersionName: String, trigger: String, team: Team, dataService: DataService): BehaviorVersionData = {
+  def versionDataFor(builtinId: String, behaviorVersionName: String, trigger: String, team: Team, dataService: DataService): BehaviorVersionData = {
     BehaviorVersionData.newUnsavedFor(team.id, isDataType = false, Some(behaviorVersionName), dataService).copy(
       triggers = Seq(BehaviorTriggerData(trigger, requiresMention = true, isRegex = true, caseSensitive = false)),
       builtinName = Some(builtinId)
+    )
+  }
+
+  def behaviorVersionsDataFor(team: Team, dataService: DataService) = Seq(
+    versionDataFor(
+      forAllId,
+      "List all scheduled actions",
+      s"""^all scheduled$$""",
+      team,
+      dataService
+    ),
+    versionDataFor(
+      forChannelId,
+      "List scheduled actions for a channel",
+      s"""^scheduled$$""",
+      team,
+      dataService
+    )
+  )
+
+  def addToGroupDataTo(data: BehaviorGroupData, team: Team, dataService: DataService): BehaviorGroupData = {
+    data.copy(
+      behaviorVersions = data.behaviorVersions ++ behaviorVersionsDataFor(team, dataService)
     )
   }
 
