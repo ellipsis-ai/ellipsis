@@ -21,6 +21,13 @@ object BuiltinBehavior {
     text.replaceAll("[“”]", "\"").replaceAll("[‘’]", "'")
   }
 
+  def maybeFor(name: String, event: Event, services: DefaultServices): Option[BuiltinBehavior] = {
+    name match {
+      case ListScheduledBehavior.name => Some(ListScheduledBehavior(event, services))
+      case _ => None
+    }
+  }
+
   val helpRegex: Regex = s"""(?i)^help\\s*(\\S*.*)$$""".r
   val scheduledRegex: Regex = s"""(?i)^scheduled$$""".r
   val allScheduledRegex: Regex = s"""(?i)^all scheduled$$""".r
@@ -44,9 +51,8 @@ object BuiltinBehavior {
           event,
           services
         ))
-        case scheduledRegex() => Some(ListScheduledBehavior(event, event.maybeChannel, services))
-        case allScheduledRegex() => Some(ListScheduledBehavior(event, None, services))
-        case scheduleRegex(_, text, individually, recurrence) => Some(ScheduleBehavior(text, (individually != null), recurrence, event, services))
+//        case allScheduledRegex() => Some(ListScheduledBehavior(event, services))
+//        case scheduleRegex(_, text, individually, recurrence) => Some(ScheduleBehavior(text, (individually != null), recurrence, event, services))
         case unscheduleRegex(_, text) => Some(UnscheduleBehavior(text, event, services))
         case resetBehaviorsRegex() => Some(ResetBehaviorsBehavior(event, services))
         case setTimeZoneRegex(tzString) => Some(SetDefaultTimeZoneBehavior(tzString, event, services))

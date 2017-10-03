@@ -30,7 +30,8 @@ case class RawBehaviorVersion(
                                maybeResponseTemplate: Option[String],
                                forcePrivateResponse: Boolean,
                                maybeAuthorId: Option[String],
-                               createdAt: OffsetDateTime
+                               createdAt: OffsetDateTime,
+                               maybeBuiltinName: Option[String]
                              )
 
 class BehaviorVersionsTable(tag: Tag) extends Table[RawBehaviorVersion](tag, "behavior_versions") {
@@ -55,8 +56,10 @@ class BehaviorVersionsTable(tag: Tag) extends Table[RawBehaviorVersion](tag, "be
 
   def createdAt = column[OffsetDateTime]("created_at")
 
+  def maybeBuiltinName = column[Option[String]]("builtin_name")
+
   def * =
-    (id, behaviorId, groupVersionId, maybeDescription, maybeName, maybeFunctionBody, maybeResponseTemplate, forcePrivateResponse, maybeAuthorId, createdAt) <>
+    (id, behaviorId, groupVersionId, maybeDescription, maybeName, maybeFunctionBody, maybeResponseTemplate, forcePrivateResponse, maybeAuthorId, createdAt, maybeBuiltinName) <>
       ((RawBehaviorVersion.apply _).tupled, RawBehaviorVersion.unapply _)
 }
 
@@ -175,7 +178,8 @@ class BehaviorVersionServiceImpl @Inject() (
                        behavior: Behavior,
                        groupVersion: BehaviorGroupVersion,
                        maybeUser: Option[User],
-                       maybeId: Option[String]
+                       maybeId: Option[String],
+                       maybeBuiltinName: Option[String]
                      ): DBIO[BehaviorVersion] = {
     val raw = RawBehaviorVersion(
       maybeId.getOrElse(IDs.next),
@@ -187,7 +191,8 @@ class BehaviorVersionServiceImpl @Inject() (
       None,
       forcePrivateResponse = false,
       maybeUser.map(_.id),
-      OffsetDateTime.now
+      OffsetDateTime.now,
+      maybeBuiltinName
     )
 
     (all += raw).map { _ =>
@@ -201,7 +206,8 @@ class BehaviorVersionServiceImpl @Inject() (
         raw.maybeResponseTemplate,
         raw.forcePrivateResponse,
         maybeUser,
-        raw.createdAt
+        raw.createdAt,
+        raw.maybeBuiltinName
       )
     }
   }
@@ -214,7 +220,7 @@ class BehaviorVersionServiceImpl @Inject() (
                        data: BehaviorVersionData
                      ): DBIO[BehaviorVersion] = {
     for {
-      behaviorVersion <- createForAction(behavior, groupVersion, maybeUser, data.id)
+      behaviorVersion <- createForAction(behavior, groupVersion, maybeUser, data.id, data.builtinName)
       updated <- saveAction(behaviorVersion.copy(
         maybeName = data.name,
         maybeDescription = data.description,
@@ -353,8 +359,12 @@ class BehaviorVersionServiceImpl @Inject() (
       teamEnvVars <- dataService.teamEnvironmentVariables.allForAction(behaviorVersion.team)
       result <- maybeNotReadyResultForAction(behaviorVersion, event).flatMap { maybeResult =>
         maybeResult.map(DBIO.successful).getOrElse {
-          lambdaService
-            .invokeAction(behaviorVersion, parametersWithValues, teamEnvVars, event, maybeConversation, defaultServices)
+          behaviorVersion.maybeBuiltinBehaviorFor(event, defaultServices).map { builtin =>
+            DBIO.from(builtin.result)
+          }.getOrElse {
+            lambdaService
+              .invokeAction(behaviorVersion, parametersWithValues, teamEnvVars, event, maybeConversation, defaultServices)
+          }
         }
       }
     } yield result

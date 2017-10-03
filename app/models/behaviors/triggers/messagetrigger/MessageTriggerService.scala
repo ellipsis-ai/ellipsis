@@ -19,6 +19,8 @@ trait MessageTriggerService {
 
   def allActiveFor(behaviorGroup: BehaviorGroup): Future[Seq[MessageTrigger]]
 
+  def allBuiltin: Future[Seq[MessageTrigger]]
+
   def createForAction(
                        behaviorVersion: BehaviorVersion,
                        pattern: String,

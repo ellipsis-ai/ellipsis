@@ -9,6 +9,7 @@ import models.behaviors._
 import models.behaviors.behavior.Behavior
 import models.behaviors.behaviorgroup.BehaviorGroup
 import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
+import models.behaviors.builtins.BuiltinBehavior
 import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.datatypeconfig.BehaviorVersionForDataTypeSchema
 import models.behaviors.datatypefield.DataTypeFieldForSchema
@@ -18,7 +19,7 @@ import models.team.Team
 import play.api.Configuration
 import play.api.libs.json.{JsValue, Json}
 import services.AWSLambdaConstants._
-import services.{AWSLambdaLogResult, DataService}
+import services.{AWSLambdaLogResult, DataService, DefaultServices}
 import slick.dbio.DBIO
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -33,7 +34,8 @@ case class BehaviorVersion(
                             maybeResponseTemplate: Option[String],
                             forcePrivateResponse: Boolean,
                             maybeAuthor: Option[User],
-                            createdAt: OffsetDateTime
+                            createdAt: OffsetDateTime,
+                            maybeBuiltinName: Option[String]
                           ) extends BehaviorVersionForDataTypeSchema {
 
   lazy val jsName: String = s"${BehaviorVersion.dirName}/$id.js"
@@ -53,6 +55,12 @@ case class BehaviorVersion(
   }
 
   val maybeExportId: Option[String] = behavior.maybeExportId
+
+  def maybeBuiltinBehaviorFor(event: Event, services: DefaultServices): Option[BuiltinBehavior] = {
+    maybeBuiltinName.flatMap { builtinName =>
+      BuiltinBehavior.maybeFor(builtinName, event, services)
+    }
+  }
 
   def isDataType: Boolean = behavior.isDataType
 
@@ -119,7 +127,8 @@ case class BehaviorVersion(
       maybeResponseTemplate,
       forcePrivateResponse,
       maybeAuthor.map(_.id),
-      createdAt
+      createdAt,
+      maybeBuiltinName
     )
   }
 

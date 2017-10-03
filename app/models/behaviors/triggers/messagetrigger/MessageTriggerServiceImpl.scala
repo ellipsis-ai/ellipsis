@@ -55,6 +55,11 @@ class MessageTriggerServiceImpl @Inject() (
     dataService.run(action)
   }
 
+  def allBuiltin: Future[Seq[MessageTrigger]] = {
+    val action = allBuiltinQuery.result.map(_.map(tuple2Trigger))
+    dataService.run(action)
+  }
+
   def allWithExactPattern(pattern: String, teamId: String): Future[Seq[MessageTrigger]] = {
     val action = allWithBehaviorVersion.
       filter { case(_, (_, ((_, (_, team)), _))) => team.id === teamId }.

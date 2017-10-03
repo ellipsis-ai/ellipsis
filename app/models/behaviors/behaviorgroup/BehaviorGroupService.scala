@@ -4,12 +4,15 @@ import models.accounts.user.User
 import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
 import models.team.Team
 import play.api.Configuration
+import slick.dbio.DBIO
 
 import scala.concurrent.Future
 
 trait BehaviorGroupService {
 
-  def createFor(maybeExportId: Option[String], team: Team): Future[BehaviorGroup]
+  def createForAction(maybeExportId: Option[String], team: Team, isBuiltin: Boolean = false): DBIO[BehaviorGroup]
+
+  def createFor(maybeExportId: Option[String], team: Team, isBuiltin: Boolean = false): Future[BehaviorGroup]
 
   def allFor(team: Team): Future[Seq[BehaviorGroup]]
 

@@ -20,6 +20,7 @@ case class RawBehaviorGroup(
                              maybeExportId: Option[String],
                              teamId: String,
                              maybeCurrentVersionId: Option[String],
+                             isBuiltin: Boolean,
                              createdAt: OffsetDateTime
                            )
 
@@ -29,9 +30,10 @@ class BehaviorGroupsTable(tag: Tag) extends Table[RawBehaviorGroup](tag, "behavi
   def maybeExportId = column[Option[String]]("export_id")
   def teamId = column[String]("team_id")
   def maybeCurrentVersionId = column[Option[String]]("current_version_id")
+  def isBuiltin = column[Boolean]("is_builtin")
   def createdAt = column[OffsetDateTime]("created_at")
 
-  def * = (id, maybeExportId, teamId, maybeCurrentVersionId, createdAt) <> ((RawBehaviorGroup.apply _).tupled, RawBehaviorGroup.unapply _)
+  def * = (id, maybeExportId, teamId, maybeCurrentVersionId, isBuiltin, createdAt) <> ((RawBehaviorGroup.apply _).tupled, RawBehaviorGroup.unapply _)
 }
 
 class BehaviorGroupServiceImpl @Inject() (
@@ -43,10 +45,13 @@ class BehaviorGroupServiceImpl @Inject() (
 
   import BehaviorGroupQueries._
 
-  def createFor(maybeExportId: Option[String], team: Team): Future[BehaviorGroup] = {
-    val raw = RawBehaviorGroup(IDs.next, maybeExportId.orElse(Some(IDs.next)), team.id, None, OffsetDateTime.now)
-    val action = (all += raw).map(_ => tuple2Group((raw, team)))
-    dataService.run(action)
+  def createForAction(maybeExportId: Option[String], team: Team, isBuiltin: Boolean = false): DBIO[BehaviorGroup] = {
+    val raw = RawBehaviorGroup(IDs.next, maybeExportId.orElse(Some(IDs.next)), team.id, None, isBuiltin, OffsetDateTime.now)
+    (all += raw).map(_ => tuple2Group((raw, team)))
+  }
+
+  def createFor(maybeExportId: Option[String], team: Team, isBuiltin: Boolean = false): Future[BehaviorGroup] = {
+    dataService.run(createForAction(maybeExportId, team, isBuiltin))
   }
 
   def allFor(team: Team): Future[Seq[BehaviorGroup]] = {

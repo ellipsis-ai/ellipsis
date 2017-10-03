@@ -15,6 +15,7 @@ import models.team.Team
 import play.api.Configuration
 import services.{CacheService, DataService, SlackEventService}
 import slack.api.SlackApiClient
+import slick.dbio.DBIO
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -121,25 +122,27 @@ class UserServiceImpl @Inject() (
     }
   }
 
-  def userDataFor(user: User, team: Team): Future[UserData] = {
-    for {
-      maybeSlackUserData <- maybeSlackUserDataFor(user, team)
-    } yield {
+  def userDataForAction(user: User, team: Team): DBIO[UserData] = {
+    maybeSlackUserDataForAction(user, team).map { maybeSlackUserData =>
       val maybeTzString = maybeSlackUserData.flatMap(_.tz).orElse(team.maybeTimeZone.map(_.toString))
       UserData(user.id, maybeSlackUserData.map(_.accountName), maybeSlackUserData.flatMap(_.fullName), maybeTzString)
     }
   }
 
-  private def maybeSlackUserDataFor(user: User, team: Team): Future[Option[SlackUserData]] = {
+  def userDataFor(user: User, team: Team): Future[UserData] = {
+    dataService.run(userDataForAction(user, team))
+  }
+
+  private def maybeSlackUserDataForAction(user: User, team: Team): DBIO[Option[SlackUserData]] = {
     for {
-      maybeSlackBotProfile <- dataService.slackBotProfiles.allFor(team).map(_.headOption)
-      maybeSlackAccount <- dataService.linkedAccounts.maybeForSlackFor(user)
+      maybeSlackBotProfile <- dataService.slackBotProfiles.allForAction(team).map(_.headOption)
+      maybeSlackAccount <- dataService.linkedAccounts.maybeForSlackForAction(user)
       maybeUserData <- (for {
         slackBotProfile <- maybeSlackBotProfile
         slackAccount <- maybeSlackAccount
       } yield {
-        slackEventService.maybeSlackUserDataFor(slackAccount.loginInfo.providerKey, slackBotProfile.slackTeamId, SlackApiClient(slackBotProfile.token))
-      }).getOrElse(Future.successful(None))
+        DBIO.from(slackEventService.maybeSlackUserDataFor(slackAccount.loginInfo.providerKey, slackBotProfile.slackTeamId, SlackApiClient(slackBotProfile.token)))
+      }).getOrElse(DBIO.successful(None))
     } yield maybeUserData
   }
 
@@ -157,6 +160,14 @@ class UserServiceImpl @Inject() (
         }
       }
     } yield maybeUser
+  }
+
+  def allForAction(team: Team): DBIO[Seq[User]] = {
+    allForTeamQueryFor(team.id).result
+  }
+
+  def allFor(team: Team): Future[Seq[User]] = {
+    dataService.run(allForAction(team))
   }
 
 }

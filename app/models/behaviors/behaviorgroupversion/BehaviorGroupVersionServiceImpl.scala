@@ -95,12 +95,12 @@ class BehaviorGroupVersionServiceImpl @Inject() (
 
   def withoutBuiltin(params: Array[String]) = params.filterNot(ea => ea == services.AWSLambdaConstants.CONTEXT_PARAM)
 
-  def createFor(
+  def createForAction(
                  group: BehaviorGroup,
                  user: User,
                  data: BehaviorGroupData
-               ): Future[BehaviorGroupVersion] = {
-    val action = (for {
+               ): DBIO[BehaviorGroupVersion] = {
+    (for {
       groupVersion <- createForAction(group, user, data.name, data.icon, data.description)
       _ <- DBIO.sequence(data.dataTypeInputs.map { ea =>
         dataService.inputs.ensureForAction(ea, groupVersion)
@@ -173,8 +173,14 @@ class BehaviorGroupVersionServiceImpl @Inject() (
       )
       groupVersion
     }) transactionally
+  }
 
-    dataService.run(action)
+  def createFor(
+                 group: BehaviorGroup,
+                 user: User,
+                 data: BehaviorGroupData
+               ): Future[BehaviorGroupVersion] = {
+    dataService.run(createForAction(group, user, data))
   }
 
   def redeploy(groupVersion: BehaviorGroupVersion): Future[Unit] = {

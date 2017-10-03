@@ -6,6 +6,7 @@ import json.Formatting._
 import models.IDs
 import models.accounts.user.User
 import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
+import models.behaviors.builtins.BuiltinBehavior
 import models.behaviors.datatypeconfig.BehaviorVersionForDataTypeSchema
 import models.behaviors.datatypefield.DataTypeFieldForSchema
 import models.behaviors.defaultstorageitem.GraphQLHelpers
@@ -33,7 +34,8 @@ case class BehaviorVersionData(
                                 exportId: Option[String],
                                 githubUrl: Option[String],
                                 knownEnvVarsUsed: Seq[String],
-                                createdAt: Option[OffsetDateTime]
+                                createdAt: Option[OffsetDateTime],
+                                builtinName: Option[String] = None
                                 ) extends BehaviorVersionForDataTypeSchema {
 
   lazy val typeName: String = name.getOrElse(GraphQLHelpers.fallbackTypeName)

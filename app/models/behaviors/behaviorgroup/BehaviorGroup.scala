@@ -9,6 +9,7 @@ case class BehaviorGroup(
                           maybeExportId: Option[String],
                           team: Team,
                           maybeCurrentVersionId: Option[String],
+                          isBuiltin: Boolean,
                           createdAt: OffsetDateTime) {
 
   def toRaw: RawBehaviorGroup = RawBehaviorGroup(
@@ -16,6 +17,7 @@ case class BehaviorGroup(
     maybeExportId,
     team.id,
     maybeCurrentVersionId,
+    isBuiltin,
     createdAt
   )
 

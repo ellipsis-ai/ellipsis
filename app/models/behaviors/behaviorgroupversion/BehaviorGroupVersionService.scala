@@ -31,6 +31,12 @@ trait BehaviorGroupVersionService {
                  maybeDescription: Option[String] = None
                ): Future[BehaviorGroupVersion]
 
+  def createForAction(
+                       group: BehaviorGroup,
+                       user: User,
+                       data: BehaviorGroupData
+                     ): DBIO[BehaviorGroupVersion]
+
   def createFor(
                  group: BehaviorGroup,
                  user: User,

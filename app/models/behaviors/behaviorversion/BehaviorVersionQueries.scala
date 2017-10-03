@@ -32,7 +32,8 @@ object BehaviorVersionQueries {
       raw.maybeResponseTemplate,
       raw.forcePrivateResponse,
       tuple._1._1._2,
-      raw.createdAt
+      raw.createdAt,
+      raw.maybeBuiltinName
     )
   }
 

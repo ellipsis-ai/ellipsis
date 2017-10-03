@@ -17,5 +17,8 @@ object UserQueries {
 
   def uncompiledFindQueryFor(id: Rep[String]) = all.filter(_.id === id)
   val findQueryFor = Compiled(uncompiledFindQueryFor _)
+
+  def uncompiledAllForTeamQueryFor(teamId: Rep[String]) = all.filter(_.teamId === teamId)
+  val allForTeamQueryFor = Compiled(uncompiledAllForTeamQueryFor _)
 }
 

@@ -32,7 +32,13 @@ trait UserService extends IdentityService[User] {
   }
   def isAdmin(user: User): Future[Boolean]
 
+  def userDataForAction(user: User, team: Team): DBIO[UserData]
+
   def userDataFor(user: User, team: Team): Future[UserData]
 
   def findForInvocationToken(tokenId: String): Future[Option[User]]
+
+  def allForAction(team: Team): DBIO[Seq[User]]
+
+  def allFor(team: Team): Future[Seq[User]]
 }

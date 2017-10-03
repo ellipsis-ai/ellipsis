@@ -39,4 +39,11 @@ object MessageTriggerQueries {
   }
   val allForBehaviorVersionQuery = Compiled(uncompiledAllForBehaviorVersionQuery _)
 
+  def uncompiledAllBuiltinQuery() = {
+    allWithBehaviorVersion.
+      filter { case(_, (_, ((_, (group, _)), _))) => group.isBuiltin }.
+      filter { case(_, (_, ((groupVersion, (group, _)), _))) => group.maybeCurrentVersionId === groupVersion.id }
+  }
+  val allBuiltinQuery = Compiled(uncompiledAllBuiltinQuery)
+
 }
