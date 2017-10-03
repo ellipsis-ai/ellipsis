@@ -36,4 +36,6 @@ trait BehaviorGroupService {
 
   def maybeCurrentVersionFor(group: BehaviorGroup): Future[Option[BehaviorGroupVersion]]
 
+  def maybeBuiltinAction: DBIO[Option[BehaviorGroup]]
+
 }

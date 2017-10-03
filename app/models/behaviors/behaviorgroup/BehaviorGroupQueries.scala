@@ -31,4 +31,9 @@ object BehaviorGroupQueries {
     all.filter(_.id === id)
   }
   val rawFindQuery = Compiled(uncompiledRawFindQuery _)
+
+  def uncompiledAllBuiltinQuery() = {
+    allWithTeam.filter{ case(group, _) => group.isBuiltin }
+  }
+  val allBuiltinQuery = Compiled(uncompiledAllBuiltinQuery)
 }

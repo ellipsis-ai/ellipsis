@@ -11,6 +11,7 @@ import models.accounts.user.User
 import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
 import models.team.Team
 import services.DataService
+import slick.dbio.DBIO
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -186,6 +187,10 @@ class BehaviorGroupServiceImpl @Inject() (
     group.maybeCurrentVersionId.map { versionId =>
       dataService.behaviorGroupVersions.findWithoutAccessCheck(versionId)
     }.getOrElse(Future.successful(None))
+  }
+
+  def maybeBuiltinAction: DBIO[Option[BehaviorGroup]] = {
+    allBuiltinQuery.result.map(_.headOption.map(tuple2Group))
   }
 
 }

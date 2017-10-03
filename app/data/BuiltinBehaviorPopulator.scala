@@ -5,6 +5,7 @@ import javax.inject._
 
 import json.{BehaviorGroupData, UserData}
 import models.accounts.linkedaccount.LinkedAccount
+import models.behaviors.behaviorgroup.BehaviorGroup
 import models.behaviors.builtins.ListScheduledBehavior
 import models.team.Team
 import services.DataService
@@ -17,11 +18,11 @@ class BuiltinBehaviorPopulator @Inject() (
                                      implicit val ec: ExecutionContext
                                    ) {
 
-  // update to create a new version
-  val groupVersionId: String = "builtin-behavior-group-v1"
+  // bump to create a new version
+  val versionNumber: Int = 1
 
   def dataFor(team: Team, userData: UserData) = BehaviorGroupData(
-    Some(groupVersionId),
+    None,
     team.id,
     name = Some("Builtins"),
     description = None,
@@ -29,7 +30,20 @@ class BuiltinBehaviorPopulator @Inject() (
     actionInputs = Seq(),
     dataTypeInputs = Seq(),
     Seq(
-      ListScheduledBehavior.newVersionDataFor(team, dataService)
+      ListScheduledBehavior.newVersionDataFor(
+        ListScheduledBehavior.forAllId,
+        "List all scheduled actions",
+        s"""^all scheduled$$""",
+        team,
+        dataService
+      ),
+      ListScheduledBehavior.newVersionDataFor(
+        ListScheduledBehavior.forChannelId,
+        "List scheduled actions for a channel",
+        s"""^scheduled$$""",
+        team,
+        dataService
+      )
     ),
     Seq(),
     Seq(),
@@ -40,6 +54,24 @@ class BuiltinBehaviorPopulator @Inject() (
     Some(OffsetDateTime.now),
     Some(userData)
   )
+
+  def ensureGroup: DBIO[BehaviorGroup] = {
+    dataService.behaviorGroups.maybeBuiltinAction.flatMap { maybeBuiltinGroup =>
+      maybeBuiltinGroup.map(DBIO.successful).getOrElse {
+        for {
+          maybeAdminTeamId <- dataService.slackBotProfiles.allForSlackTeamIdAction(LinkedAccount.ELLIPSIS_SLACK_TEAM_ID).map(_.headOption.map(_.teamId))
+          maybeAdminTeam <- maybeAdminTeamId.map { adminTeamId =>
+            dataService.teams.findAction(adminTeamId)
+          }.getOrElse(DBIO.successful(None))
+          maybeBehaviorGroup <- maybeAdminTeam.map { adminTeam =>
+            dataService.behaviorGroups.createForAction(None, adminTeam, isBuiltin = true).map(Some(_))
+          }.getOrElse(DBIO.successful(None))
+        } yield {
+          maybeBehaviorGroup.get
+        }
+      }
+    }
+  }
 
   def createNewVersion(): DBIO[Unit] = {
     for {
@@ -69,14 +101,20 @@ class BuiltinBehaviorPopulator @Inject() (
     } yield {}
   }
 
+  def versionsCountFor(group: BehaviorGroup): DBIO[Int] = {
+    dataService.behaviorGroupVersions.allForAction(group).map(_.length)
+  }
+
   def run(): Unit = {
-    dataService.runNow(dataService.behaviorGroupVersions.findWithoutAccessCheckAction(groupVersionId).flatMap { maybeExisting =>
-      if (maybeExisting.isEmpty) {
-        createNewVersion()
-      } else {
+    for {
+      group <- ensureGroup
+      versionsCount <- versionsCountFor(group)
+      _ <- if (versionsCount >= versionNumber) {
         DBIO.successful({})
+      } else {
+        createNewVersion()
       }
-    })
+    } yield {}
   }
 
   run()

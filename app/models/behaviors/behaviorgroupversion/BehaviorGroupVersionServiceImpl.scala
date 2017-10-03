@@ -59,11 +59,14 @@ class BehaviorGroupVersionServiceImpl @Inject() (
     dataService.run(findWithoutAccessCheckAction(id))
   }
 
-  def allFor(group: BehaviorGroup): Future[Seq[BehaviorGroupVersion]] = {
-    val action = allForQuery(group.id).result.map { r =>
+  def allForAction(group: BehaviorGroup): DBIO[Seq[BehaviorGroupVersion]] = {
+    allForQuery(group.id).result.map { r =>
       r.map(tuple2BehaviorGroupVersion)
     }
-    dataService.run(action)
+  }
+
+  def allFor(group: BehaviorGroup): Future[Seq[BehaviorGroupVersion]] = {
+    dataService.run(allForAction(group))
   }
 
   def createForAction(

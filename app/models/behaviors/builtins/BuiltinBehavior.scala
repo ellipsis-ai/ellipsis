@@ -23,7 +23,8 @@ object BuiltinBehavior {
 
   def maybeFor(name: String, event: Event, services: DefaultServices): Option[BuiltinBehavior] = {
     name match {
-      case ListScheduledBehavior.name => Some(ListScheduledBehavior(event, services))
+      case ListScheduledBehavior.`forAllId` => Some(ListScheduledBehavior(event, services, isForAllChannels = true))
+      case ListScheduledBehavior.`forChannelId` => Some(ListScheduledBehavior(event, services, isForAllChannels = false))
       case _ => None
     }
   }

@@ -13,6 +13,8 @@ trait BehaviorGroupVersionService {
 
   def findWithoutAccessCheck(id: String): Future[Option[BehaviorGroupVersion]]
 
+  def allForAction(group: BehaviorGroup): DBIO[Seq[BehaviorGroupVersion]]
+
   def allFor(group: BehaviorGroup): Future[Seq[BehaviorGroupVersion]]
 
   def createForAction(
