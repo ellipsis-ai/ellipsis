@@ -125,7 +125,7 @@ define(function(require) {
     renderFooter() {
       return (
         <Collapsible revealWhen={this.state.activePanelName === 'feedback'}>
-          <FeedbackPanel onDone={this.toggleFeedback} />
+          <FeedbackPanel onDone={this.toggleFeedback} csrfToken={this.props.csrfToken} />
         </Collapsible>
       );
     }
@@ -154,6 +154,7 @@ define(function(require) {
 
   Page.propTypes = {
     children: React.PropTypes.node.isRequired,
+    csrfToken: React.PropTypes.string.isRequired,
     feedbackContainer: React.PropTypes.object
   };
 

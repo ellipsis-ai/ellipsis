@@ -74,7 +74,7 @@ requirejs(['common'], function() {
 
         render() {
           return (
-            <Page>
+            <Page csrfToken={this.props.csrfToken}>
               <BehaviorEditor
                 group={this.state.group}
                 selectedId={this.state.selectedId}
