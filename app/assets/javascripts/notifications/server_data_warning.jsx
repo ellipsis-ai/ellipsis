@@ -20,7 +20,7 @@ define(function(require) {
 
     getNewerVersionMessage(notificationDetail) {
       const versionData = notificationDetail.newerVersion;
-      const name = versionData.author && versionData.author.name ? versionData.author.formattedName() : "Someone else";
+      const name = versionData.author && versionData.author.formattedFullNameOrUserName();
       const timestamp = Formatter.formatTimestampRelativeIfRecent(versionData.createdAt);
       if (versionData.author && versionData.author.id === notificationDetail.currentUserId) {
         return `You saved a newer version of this skill in another window ${timestamp}.`;
