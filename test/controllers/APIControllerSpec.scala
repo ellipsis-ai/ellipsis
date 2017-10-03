@@ -199,7 +199,7 @@ class APIControllerSpec extends PlaySpec with MockitoSugar {
 
     "400 when neither actionName nor trigger" in new ControllerTestContext {
       running(app) {
-        val group = BehaviorGroup(IDs.next, None, team, None, OffsetDateTime.now)
+        val group = BehaviorGroup(IDs.next, None, team, None, isBuiltin = false, OffsetDateTime.now)
         val originatingBehavior = Behavior(IDs.next, team, Some(group), Some(IDs.next), isDataType = false, OffsetDateTime.now)
         val token = setUpMocksFor(team, user, isTokenValid = true, Some(originatingBehavior.id), app, eventHandler, dataService, cacheService, slackEventService, botResultService)
 
@@ -213,7 +213,7 @@ class APIControllerSpec extends PlaySpec with MockitoSugar {
 
     "400 when both actionName and trigger" in new ControllerTestContext {
       running(app) {
-        val group = BehaviorGroup(IDs.next, None, team, None, OffsetDateTime.now)
+        val group = BehaviorGroup(IDs.next, None, team, None, isBuiltin = false, OffsetDateTime.now)
         val originatingBehavior = Behavior(IDs.next, team, Some(group), Some(IDs.next), isDataType = false, OffsetDateTime.now)
         val token = setUpMocksFor(team, user, isTokenValid = true, Some(originatingBehavior.id), app, eventHandler, dataService, cacheService, slackEventService, botResultService)
 
@@ -227,7 +227,7 @@ class APIControllerSpec extends PlaySpec with MockitoSugar {
 
     "respond with a valid result for actionName" in new ControllerTestContext {
       running(app) {
-        val group = BehaviorGroup(IDs.next, None, team, None, OffsetDateTime.now)
+        val group = BehaviorGroup(IDs.next, None, team, None, isBuiltin = false, OffsetDateTime.now)
         val originatingBehavior = Behavior(IDs.next, team, Some(group), Some(IDs.next), isDataType = false, OffsetDateTime.now)
         val targetBehavior = Behavior(IDs.next, team, Some(group), Some(IDs.next), isDataType = false, OffsetDateTime.now)
         val token = setUpMocksFor(team, user, isTokenValid = true, Some(originatingBehavior.id), app, eventHandler, dataService, cacheService, slackEventService, botResultService)
@@ -255,7 +255,7 @@ class APIControllerSpec extends PlaySpec with MockitoSugar {
 
     "respond with a valid result for trigger" in new ControllerTestContext {
       running(app) {
-        val group = BehaviorGroup(IDs.next, None, team, None, OffsetDateTime.now)
+        val group = BehaviorGroup(IDs.next, None, team, None, isBuiltin = false, OffsetDateTime.now)
         val originatingBehavior = Behavior(IDs.next, team, Some(group), Some(IDs.next), isDataType = false, OffsetDateTime.now)
         val token = setUpMocksFor(team, user, isTokenValid = true, Some(originatingBehavior.id), app, eventHandler, dataService, cacheService, slackEventService, botResultService)
         val trigger = "foo"
@@ -376,7 +376,7 @@ class APIControllerSpec extends PlaySpec with MockitoSugar {
 
     "respond with a valid result for actionName" in new ControllerTestContext {
       running(app) {
-        val group = BehaviorGroup(IDs.next, None, team, None, OffsetDateTime.now)
+        val group = BehaviorGroup(IDs.next, None, team, None, isBuiltin = false, OffsetDateTime.now)
         val originatingBehavior = Behavior(IDs.next, team, Some(group), Some(IDs.next), isDataType = false, OffsetDateTime.now)
         val targetBehavior = Behavior(IDs.next, team, Some(group), Some(IDs.next), isDataType = false, OffsetDateTime.now)
         val token = setUpMocksFor(team, user, isTokenValid = true, Some(originatingBehavior.id), app, eventHandler, dataService, cacheService, slackEventService, botResultService)
@@ -421,7 +421,7 @@ class APIControllerSpec extends PlaySpec with MockitoSugar {
 
     "respond with a valid result for trigger" in new ControllerTestContext {
       running(app) {
-        val group = BehaviorGroup(IDs.next, None, team, None, OffsetDateTime.now)
+        val group = BehaviorGroup(IDs.next, None, team, None, isBuiltin = false, OffsetDateTime.now)
         val originatingBehavior = Behavior(IDs.next, team, Some(group), Some(IDs.next), isDataType = false, OffsetDateTime.now)
         val token = setUpMocksFor(team, user, isTokenValid = true, Some(originatingBehavior.id), app, eventHandler, dataService, cacheService, slackEventService, botResultService)
         val trigger = "foo"
@@ -514,7 +514,7 @@ class APIControllerSpec extends PlaySpec with MockitoSugar {
 
     "404 for invalid user id" in new ControllerTestContext {
       running(app) {
-        val group = BehaviorGroup(IDs.next, None, team, None, OffsetDateTime.now)
+        val group = BehaviorGroup(IDs.next, None, team, None, isBuiltin = false, OffsetDateTime.now)
         val originatingBehavior = Behavior(IDs.next, team, Some(group), Some(IDs.next), isDataType = false, OffsetDateTime.now)
         val targetBehavior = Behavior(IDs.next, team, Some(group), Some(IDs.next), isDataType = false, OffsetDateTime.now)
         val token = setUpMocksFor(team, user, isTokenValid = true, Some(originatingBehavior.id), app, eventHandler, dataService, cacheService, slackEventService, botResultService)
@@ -535,7 +535,7 @@ class APIControllerSpec extends PlaySpec with MockitoSugar {
 
     "respond with a valid result for actionName" in new ControllerTestContext {
       running(app) {
-        val group = BehaviorGroup(IDs.next, None, team, None, OffsetDateTime.now)
+        val group = BehaviorGroup(IDs.next, None, team, None, isBuiltin = false, OffsetDateTime.now)
         val originatingBehavior = Behavior(IDs.next, team, Some(group), Some(IDs.next), isDataType = false, OffsetDateTime.now)
         val targetBehavior = Behavior(IDs.next, team, Some(group), Some(IDs.next), isDataType = false, OffsetDateTime.now)
         val token = setUpMocksFor(team, user, isTokenValid = true, Some(originatingBehavior.id), app, eventHandler, dataService, cacheService, slackEventService, botResultService)
@@ -564,7 +564,7 @@ class APIControllerSpec extends PlaySpec with MockitoSugar {
 
     "respond with a valid result for trigger" in new ControllerTestContext {
       running(app) {
-        val group = BehaviorGroup(IDs.next, None, team, None, OffsetDateTime.now)
+        val group = BehaviorGroup(IDs.next, None, team, None, isBuiltin = false, OffsetDateTime.now)
         val originatingBehavior = Behavior(IDs.next, team, Some(group), Some(IDs.next), isDataType = false, OffsetDateTime.now)
         val token = setUpMocksFor(team, user, isTokenValid = true, Some(originatingBehavior.id), app, eventHandler, dataService, cacheService, slackEventService, botResultService)
         val trigger = "foo"
