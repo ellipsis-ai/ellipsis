@@ -2,37 +2,27 @@ import React from 'react';
 import TestUtils from 'react-addons-test-utils';
 
 const Page = require('../app/assets/javascripts/shared_ui/page');
+const FixedFooter = require('../app/assets/javascripts/shared_ui/fixed_footer');
 
 describe('Page', () => {
-  const defaultComponentProps = {
-    activePanelName: "",
-    activePanelIsModal: false,
-    onToggleActivePanel: jest.fn(),
-    onClearActivePanel: jest.fn()
-  };
-
-  const SomeComponent = React.createClass({
-    displayName: "SomeComponent",
-    propTypes: Object.assign({}, Page.requiredPropTypes),
-    getDefaultProps: function() {
-      return Page.requiredPropDefaults();
-    },
-    render: function() {
-      return (<div></div>);
+  class SomeComponent extends React.Component {
+    render() {
+      return (
+        <div>
+          {this.props.onRenderFooter(null)}
+        </div>
+      );
     }
-  });
+  }
 
-  let props = {};
-
-  beforeEach(() => {
-    props = Object.assign({}, defaultComponentProps);
-  });
+  SomeComponent.propTypes = Object.assign({}, Page.requiredPropTypes);
+  SomeComponent.defaultProps = Page.requiredPropDefaults();
 
   function createPage() {
     const feedbackContainer = document.createElement('span');
     return TestUtils.renderIntoDocument((
       <Page feedbackContainer={feedbackContainer} csrfToken={"1"}>
-        <SomeComponent {...props} />
+        <SomeComponent />
       </Page>
     ));
   }
@@ -51,8 +41,16 @@ describe('Page', () => {
     it('renders an augmented inner component', () => {
       var page = createPage();
       var child = TestUtils.findRenderedComponentWithType(page, SomeComponent);
-      expect(TestUtils.isCompositeComponentWithType(child, SomeComponent)).toBe(true);
+      expect(child).toBeDefined();
       expect(child.props.onToggleActivePanel).toBe(page.toggleActivePanel);
+    });
+  });
+
+  describe('onRenderFooter', () => {
+    it('when called by the child component it renders a FixedFooter', () => {
+      const page = createPage();
+      const footer = TestUtils.findRenderedComponentWithType(page, FixedFooter);
+      expect(footer).toBeDefined();
     });
   });
 

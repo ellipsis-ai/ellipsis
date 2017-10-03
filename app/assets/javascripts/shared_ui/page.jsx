@@ -169,7 +169,7 @@ define(function(require) {
     }
 
     static placeholderCallback() {
-      throw new Error("Placeholder callback function called");
+      void(0);
     }
   }
 
