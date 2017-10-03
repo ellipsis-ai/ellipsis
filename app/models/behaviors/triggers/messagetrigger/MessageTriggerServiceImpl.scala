@@ -45,14 +45,12 @@ class MessageTriggerServiceImpl @Inject() (
 
   import MessageTriggerQueries._
 
-  def allFor(team: Team): Future[Seq[MessageTrigger]] = {
-    val action = allForTeamQuery(team.id).result.map(_.map(tuple2Trigger))
-    dataService.run(action)
-  }
-
   def allActiveFor(team: Team): Future[Seq[MessageTrigger]] = {
     val action = allActiveForTeamQuery(team.id).result.map(_.map(tuple2Trigger))
-    dataService.run(action)
+    for {
+      own <- dataService.run(action)
+      builtin <- allBuiltin
+    } yield (own ++ builtin).distinct
   }
 
   def allBuiltin: Future[Seq[MessageTrigger]] = {

@@ -9,8 +9,6 @@ import scala.concurrent.Future
 
 trait MessageTriggerService {
 
-  def allFor(team: Team): Future[Seq[MessageTrigger]]
-
   def allActiveFor(team: Team): Future[Seq[MessageTrigger]]
 
   def allWithExactPattern(pattern: String, teamId: String): Future[Seq[MessageTrigger]]
