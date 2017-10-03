@@ -30,6 +30,11 @@
       href='@routes.EnvironmentVariablesController.list(config.maybeTeamAccess.flatMap(_.maybeAdminAccessToTeamId))'>
       Settings
     </a>
+
+    <span id="header-feedback">
+      @* Placeholder button replaced by React Page *@
+      <button class="button button-nav mhs pbm mobile-pbs" type="button">Feedback</button>
+    </span>
   </div>
   @config.maybeTeamAccess.map { teamAccess => @teamMenu(teamAccess) }
 </div>

@@ -3,7 +3,7 @@ requirejs(['common'], function() {
   function(Core, Fetch, React, ReactDOM, EnvironmentVariableList, EnvironmentVariableListConfig, Page) {
     ReactDOM.render(
       (
-        <Page>
+        <Page csrfToken={EnvironmentVariableListConfig.csrfToken}>
           <EnvironmentVariableList {...EnvironmentVariableListConfig} />
         </Page>
       ),

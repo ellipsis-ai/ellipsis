@@ -233,6 +233,19 @@ button.button-block {
   height: auto;
 }
 
+button.button-nav {
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+  border: none !important;
+  color: @white;
+  line-height: @xl;
+  height: auto;
+  .light-antialiasing();
+  min-width: 0;
+  font-size: inherit;
+  font-weight: inherit;
+}
+
 button.button-no-wrap {
   white-space: nowrap;
 }
@@ -444,6 +457,10 @@ button.button-block:focus {
 button.button-raw:focus,
 button.button-block:focus .link {
   color: @blue-medium-alt;
+}
+
+button.button-nav:hover {
+  color: @pink-light;
 }
 
 button:active {

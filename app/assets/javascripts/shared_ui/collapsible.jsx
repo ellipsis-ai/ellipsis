@@ -36,7 +36,8 @@ bounds, max-height/width and overflow get cleared after reveal, and reset before
 
   animationDisabled: function() {
     const container = this.refs.container;
-    return this.props.animationDisabled || !container || !container.parentElement.offsetHeight;
+    return this.props.animationDisabled || !container ||
+      (!container.parentElement.offsetHeight && !container.parentElement.offsetWidth);
   },
 
   setContainerStyle: function(name, value) {

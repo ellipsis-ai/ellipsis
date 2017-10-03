@@ -1,51 +1,42 @@
 define(function(require) {
-  var React = require('react');
+  var React = require('react'),
+    autobind = require('../lib/autobind');
 
-  return React.createClass({
-    propTypes: {
-      autoFocus: React.PropTypes.bool,
-      className: React.PropTypes.string,
-      id: React.PropTypes.oneOfType([
-        React.PropTypes.number,
-        React.PropTypes.string
-      ]),
-      onBlur: React.PropTypes.func,
-      onChange: React.PropTypes.func.isRequired,
-      onFocus: React.PropTypes.func,
-      placeholder: React.PropTypes.string,
-      rows: React.PropTypes.string,
-      value: React.PropTypes.string.isRequired
-    },
+  class Textarea extends React.Component {
+    constructor(props) {
+      super(props);
+      autobind(this);
+    }
 
-    onChange: function() {
+    onChange() {
       this.props.onChange(this.refs.input.value);
-    },
+    }
 
-    onBlur: function() {
-      if (typeof(this.props.onBlur) == 'function') {
+    onBlur() {
+      if (typeof(this.props.onBlur) === 'function') {
         this.props.onBlur(this.refs.input.value);
       }
-    },
+    }
 
-    onFocus: function() {
-      if (typeof(this.props.onFocus) == 'function') {
+    onFocus() {
+      if (typeof(this.props.onFocus) === 'function') {
         this.props.onFocus(this.refs.input.value);
       }
-    },
+    }
 
-    isEmpty: function() {
+    isEmpty() {
       return !this.refs.input.value;
-    },
+    }
 
-    focus: function() {
+    focus() {
       this.refs.input.focus();
-    },
+    }
 
-    select: function() {
+    select() {
       this.refs.input.select();
-    },
+    }
 
-    render: function() {
+    render() {
       return (
         <textarea
           className={"form-input " + (this.props.className || "")}
@@ -61,6 +52,23 @@ define(function(require) {
         />
       );
     }
-  });
+  }
+
+  Textarea.propTypes = {
+    autoFocus: React.PropTypes.bool,
+    className: React.PropTypes.string,
+    id: React.PropTypes.oneOfType([
+      React.PropTypes.number,
+      React.PropTypes.string
+    ]),
+    onBlur: React.PropTypes.func,
+    onChange: React.PropTypes.func.isRequired,
+    onFocus: React.PropTypes.func,
+    placeholder: React.PropTypes.string,
+    rows: React.PropTypes.string,
+    value: React.PropTypes.string.isRequired
+  };
+
+  return Textarea;
 
 });

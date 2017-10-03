@@ -24,7 +24,6 @@ var React = require('react'),
   DynamicLabelButton = require('../form/dynamic_label_button'),
   EnvVariableAdder = require('../environment_variables/adder'),
   EnvVariableSetter = require('../environment_variables/setter'),
-  FixedFooter = require('../shared_ui/fixed_footer'),
   HiddenJsonInput = require('./hidden_json_input'),
   Input = require('../models/input'),
   Formatter = require('../lib/formatter'),
@@ -763,7 +762,7 @@ const BehaviorEditor = React.createClass({
 
   getLeftPanelCoordinates: function() {
     var headerHeight = this.getHeaderHeight();
-    var footerHeight = this.getFooterHeight();
+    var footerHeight = this.props.activePanelIsModal ? 0 : this.props.onGetFooterHeight();
     var windowHeight = window.innerHeight;
 
     var availableHeight = windowHeight - headerHeight - footerHeight;
@@ -802,11 +801,6 @@ const BehaviorEditor = React.createClass({
   getHeaderHeight: function() {
     var mainHeader = document.getElementById('main-header');
     return mainHeader ? mainHeader.offsetHeight : 0;
-  },
-
-  getFooterHeight: function() {
-    var mainFooter = this.refs.footer;
-    return mainFooter ? mainFooter.getHeight() : 0;
   },
 
   updateBehaviorScrollPosition: function() {
@@ -856,7 +850,9 @@ const BehaviorEditor = React.createClass({
   },
 
   onDocumentClick: function() {
-    this.hideActiveDropdown();
+    if (this.getActiveDropdown()) {
+      this.hideActiveDropdown();
+    }
   },
 
   onDocumentKeyDown: function(event) {
@@ -1089,10 +1085,6 @@ const BehaviorEditor = React.createClass({
   },
 
   toggleActivePanel: function(name, beModal, optionalCallback) {
-    var alreadyOpen = this.props.activePanelName === name;
-    if (!alreadyOpen) {
-      this.refs.scrim.getElement().style.top = '';
-    }
     this.props.onToggleActivePanel(name, beModal, optionalCallback);
   },
 
@@ -1447,11 +1439,12 @@ const BehaviorEditor = React.createClass({
   /* Interaction and event handling */
 
   ensureCursorVisible: function(editor) {
-    if (!this.refs.footer) {
+    const height = this.props.onGetFooterHeight();
+    if (!height) {
       return;
     }
     var cursorBottom = editor.cursorCoords(false).bottom;
-    BrowserUtils.ensureYPosInView(cursorBottom, this.refs.footer.getHeight());
+    BrowserUtils.ensureYPosInView(cursorBottom, height);
   },
 
   focusOnInputIndex: function(index) {
@@ -1785,16 +1778,10 @@ const BehaviorEditor = React.createClass({
   },
 
   renderFooter: function() {
-    return (
+    const footerClassName = this.mobileBehaviorSwitcherIsVisible() ? "mobile-position-behind-scrim" : "";
+    return this.props.onRenderFooter((
       <div>
-        <ModalScrim ref="scrim"
-          isActive={this.props.activePanelIsModal || this.mobileBehaviorSwitcherIsVisible()}
-          onClick={this.props.onClearActivePanel}
-        />
-        <FixedFooter ref="footer" className={
-          (this.mobileBehaviorSwitcherIsVisible() ? " mobile-position-behind-scrim " : "") +
-          (this.isModified() ? " bg-white " : " bg-light-translucent ")
-        }>
+          <ModalScrim ref="mobileScrim" isActive={this.mobileBehaviorSwitcherIsVisible()} />
           {this.isDataTypeBehavior() ? (
             <div>
               <Collapsible ref="addDataStorageItems" revealWhen={this.props.activePanelName === 'addDataStorageItems'} onChange={this.layoutDidUpdate}>
@@ -2055,10 +2042,8 @@ const BehaviorEditor = React.createClass({
               </div>
             </div>
           </Collapsible>
-
-        </FixedFooter>
       </div>
-    );
+    ), footerClassName);
   },
 
   renderFooterStatus: function() {

@@ -4,8 +4,6 @@ define(function(require) {
     Collapsible = require('../shared_ui/collapsible'),
     ConfirmActionPanel = require('../panels/confirm_action'),
     DynamicLabelButton = require('../form/dynamic_label_button'),
-    FixedFooter = require('../shared_ui/fixed_footer'),
-    ModalScrim = require('../shared_ui/modal_scrim'),
     Page = require('../shared_ui/page'),
     BehaviorGroup = require('../models/behavior_group'),
     ScheduledAction = require('../models/scheduled_action'),
@@ -396,8 +394,8 @@ define(function(require) {
             />
           </Collapsible>
 
-          <ModalScrim isActive={this.props.activePanelIsModal} onClick={this.props.onClearActivePanel} />
-          <FixedFooter ref="footer" className="bg-white">
+          {this.props.onRenderFooter((
+            <div>
             <Collapsible revealWhen={this.props.activePanelName === 'confirmDelete'}>
               <ConfirmActionPanel
                 confirmText="Unschedule"
@@ -466,7 +464,8 @@ define(function(require) {
                 ) : null}
               </div>
             </Collapsible>
-          </FixedFooter>
+            </div>
+          ))}
         </div>
       );
     }
