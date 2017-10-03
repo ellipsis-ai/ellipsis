@@ -12,7 +12,8 @@ define(function(require) {
       csrfToken: React.PropTypes.string.isRequired,
       teamId: React.PropTypes.string.isRequired,
       apis: React.PropTypes.arrayOf(React.PropTypes.object),
-      applications: React.PropTypes.arrayOf(React.PropTypes.object)
+      applications: React.PropTypes.arrayOf(React.PropTypes.object),
+      AWSConfigs: React.PropTypes.arrayOf(React.PropTypes.object)
     }),
 
     getDefaultProps: function() {
@@ -47,6 +48,14 @@ define(function(require) {
 
     hasApplications: function() {
       return !!(this.props.applications && this.props.applications.length > 0);
+    },
+
+    hasAWSConfigs: function() {
+      return true;
+    },
+
+    getAWSConfigs: function() {
+      return this.props.AWSConfigs || [];
     },
 
     toggleOAuth2ApplicationHelp: function() {
@@ -92,9 +101,18 @@ define(function(require) {
                     {this.renderNoApplications()}
                   </Collapsible>
 
+                  <Collapsible revealWhen={this.hasAWSConfigs()}>
+                    {this.renderAWSConfigs()}
+                  </Collapsible>
+
+                  <Collapsible revealWhen={!this.hasAWSConfigs()}>
+                    {this.renderNoAwsConfigs()}
+                  </Collapsible>
+
                   <Collapsible revealWhen={this.hasApis()}>
                     {this.renderNewApplicationLink()}
                   </Collapsible>
+
                 </div>
               </div>
             </div>
@@ -169,6 +187,40 @@ define(function(require) {
                 </div>
               );
             }
+          })}
+        </div>
+      );
+    },
+
+    renderNoAwsConfigs: function() {
+      return (
+        <div>
+          <p><b>There are no AWS configurations.</b></p>
+
+          <p>
+            Each configuration specifies:
+          </p>
+
+          <ul className="list-space-s">
+            <li>the access key for the AWS profile</li>
+            <li>the secret key</li>
+            <li>and the region</li>
+          </ul>
+        </div>
+      );
+    },
+
+    renderAWSConfigs: function() {
+      var awsConfigs = this.getAWSConfigs();
+      var route = jsRoutes.controllers.AWSConfigController.edit;
+      return (
+        <div>
+          {awsConfigs.map((config, index) => {
+            return (
+              <div key={`awsConfig${index}`} className="mvm">
+                <h4><a href={route(config.id).url}>{config.displayName}</a></h4>
+              </div>
+            );
           })}
         </div>
       );
