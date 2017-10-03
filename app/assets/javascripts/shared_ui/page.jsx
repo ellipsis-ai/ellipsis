@@ -156,6 +156,21 @@ define(function(require) {
         </div>
       );
     }
+
+    static requiredPropDefaults() {
+      return {
+        activePanelName: "",
+        activePanelIsModal: false,
+        onToggleActivePanel: Page.placeholderCallback,
+        onClearActivePanel: Page.placeholderCallback,
+        onRenderFooter: Page.placeholderCallback,
+        onGetFooterHeight: Page.placeholderCallback
+      };
+    }
+
+    static placeholderCallback() {
+      throw new Error("Placeholder callback function called");
+    }
   }
 
   Page.propTypes = {
@@ -174,18 +189,6 @@ define(function(require) {
   });
 
   Page.feedbackContainerId = 'header-feedback';
-
-  Page.requiredPropDefaults = function() {
-    return {
-      activePanelName: "",
-      activePanelIsModal: false,
-      onToggleActivePanel: function() { void(0); },
-      onClearActivePanel: function() { void(0); },
-      onRenderFooter: function() { void(0); },
-      onGetFooterHeight: function() { void(0); }
-    };
-  };
-
 
   return Page;
 });
