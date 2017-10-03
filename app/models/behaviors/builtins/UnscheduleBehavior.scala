@@ -1,9 +1,11 @@
 package models.behaviors.builtins
 
 import akka.actor.ActorSystem
+import json.{BehaviorGroupData, BehaviorTriggerData, BehaviorVersionData}
 import models.behaviors.events.Event
 import models.behaviors.{BotResult, SimpleTextResult}
-import services.DefaultServices
+import models.team.Team
+import services.{DataService, DefaultServices}
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -38,6 +40,26 @@ case class UnscheduleBehavior(
       }
       SimpleTextResult(event, None, msg, forcePrivateResponse = false)
     }
+  }
+
+}
+
+object UnscheduleBehavior extends BuiltinImplementationType {
+
+  val builtinId: String = "unschedule"
+  val name: String = "Unschedule an action"
+
+  def behaviorVersionsDataFor(team: Team, dataService: DataService) = Seq(
+    BehaviorVersionData.newUnsavedFor(team.id, isDataType = false, Some(name), dataService).copy(
+      triggers = Seq(BehaviorTriggerData(s"""(?i)^unschedule\\s+([`"'])(.*?)\\1\\s*$$""", requiresMention = true, isRegex = true, caseSensitive = false)),
+      builtinName = Some(builtinId)
+    )
+  )
+
+  def addToGroupDataTo(data: BehaviorGroupData, team: Team, dataService: DataService): BehaviorGroupData = {
+    data.copy(
+      behaviorVersions = data.behaviorVersions ++ behaviorVersionsDataFor(team, dataService)
+    )
   }
 
 }

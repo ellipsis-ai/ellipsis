@@ -38,10 +38,6 @@ object BuiltinBehavior {
   }
 
   val helpRegex: Regex = s"""(?i)^help\\s*(\\S*.*)$$""".r
-  val scheduledRegex: Regex = s"""(?i)^scheduled$$""".r
-  val allScheduledRegex: Regex = s"""(?i)^all scheduled$$""".r
-  val scheduleRegex: Regex = s"""(?i)^schedule\\s+([`"'])(.*?)\\1(\\s+privately for everyone in this channel)?\\s+(.*)\\s*$$""".r
-  val unscheduleRegex: Regex = s"""(?i)^unschedule\\s+([`"'])(.*?)\\1\\s*$$""".r
   val resetBehaviorsRegex: Regex = """(?i)reset behaviors really really really""".r
   val setTimeZoneRegex: Regex = s"""(?i)^set default time\\s*zone to\\s(.*)$$""".r
   val revokeAuthRegex: Regex = s"""(?i)^revoke\\s+all\\s+tokens\\s+for\\s+(.*)""".r
@@ -60,9 +56,6 @@ object BuiltinBehavior {
           event,
           services
         ))
-//        case allScheduledRegex() => Some(ListScheduledBehavior(event, services))
-//        case scheduleRegex(_, text, individually, recurrence) => Some(ScheduleBehavior(text, (individually != null), recurrence, event, services))
-        case unscheduleRegex(_, text) => Some(UnscheduleBehavior(text, event, services))
         case resetBehaviorsRegex() => Some(ResetBehaviorsBehavior(event, services))
         case setTimeZoneRegex(tzString) => Some(SetDefaultTimeZoneBehavior(tzString, event, services))
         case revokeAuthRegex(appName) => Some(RevokeAuthBehavior(appName, event, services))
