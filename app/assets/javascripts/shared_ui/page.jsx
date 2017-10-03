@@ -137,7 +137,7 @@ define(function(require) {
 
     renderFeedbackLink() {
       return (
-        <Button className="button-nav mhs pbm mobile-pbs" onClick={this.toggleFeedback}>Feedback</Button>
+        <Button className="button-nav mhs pbm mobile-pbs fade-in" onClick={this.toggleFeedback}>Feedback</Button>
       );
     }
 
