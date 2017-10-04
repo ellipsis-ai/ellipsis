@@ -6,7 +6,7 @@ import javax.inject._
 import json.{BehaviorGroupData, UserData}
 import models.accounts.linkedaccount.LinkedAccount
 import models.behaviors.behaviorgroup.BehaviorGroup
-import models.behaviors.builtins.{BuiltinImplementationType, ListScheduledBehavior, ScheduleBehavior, UnscheduleBehavior}
+import models.behaviors.builtins.{BuiltinImplementationType, ListScheduledImplementation, ScheduleImplementation, UnscheduleImplementation}
 import models.team.Team
 import services.DataService
 import slick.dbio.DBIO
@@ -22,9 +22,9 @@ class BuiltinBehaviorPopulator @Inject() (
   val versionNumber: Int = 1
 
   val builtinImplementations: Seq[BuiltinImplementationType] = Seq(
-    ListScheduledBehavior,
-    ScheduleBehavior,
-    UnscheduleBehavior
+    ListScheduledImplementation,
+    ScheduleImplementation,
+    UnscheduleImplementation
   )
 
   def dataFor(team: Team, userData: UserData): BehaviorGroupData = {

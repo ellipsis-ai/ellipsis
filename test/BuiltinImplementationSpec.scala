@@ -1,7 +1,7 @@
-import models.behaviors.builtins.BuiltinBehavior._
+import models.behaviors.builtins.BuiltinImplementation._
 import org.scalatestplus.play.PlaySpec
 
-class BuiltinBehaviorSpec extends PlaySpec {
+class BuiltinImplementationSpec extends PlaySpec {
 
   "schedule and unschedule regex" should {
     "match backtick-quoted triggers" in {

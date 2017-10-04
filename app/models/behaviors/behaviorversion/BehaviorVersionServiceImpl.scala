@@ -359,7 +359,7 @@ class BehaviorVersionServiceImpl @Inject() (
       teamEnvVars <- dataService.teamEnvironmentVariables.allForAction(behaviorVersion.team)
       result <- maybeNotReadyResultForAction(behaviorVersion, event).flatMap { maybeResult =>
         maybeResult.map(DBIO.successful).getOrElse {
-          behaviorVersion.maybeBuiltinBehaviorFor(event, parametersWithValues, maybeConversation, defaultServices).map { builtin =>
+          behaviorVersion.maybeBuiltinImplementationFor(event, parametersWithValues, maybeConversation, defaultServices).map { builtin =>
             DBIO.from(builtin.result)
           }.getOrElse {
             lambdaService

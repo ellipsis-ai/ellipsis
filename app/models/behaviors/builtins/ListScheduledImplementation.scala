@@ -12,11 +12,11 @@ import services.{DataService, DefaultServices}
 import scala.concurrent.{ExecutionContext, Future}
 
 
-case class ListScheduledBehavior(
+case class ListScheduledImplementation(
                                   event: Event,
                                   services: DefaultServices,
                                   isForAllChannels: Boolean
-                                 ) extends BuiltinBehavior {
+                                 ) extends BuiltinImplementation {
 
   val configuration: Configuration = services.configuration
   val dataService: DataService = services.dataService
@@ -94,7 +94,7 @@ case class ListScheduledBehavior(
 
 }
 
-object ListScheduledBehavior extends BuiltinImplementationType {
+object ListScheduledImplementation extends BuiltinImplementationType {
 
   val forAllId: String = "list-all-scheduled"
   val forChannelId: String = "list-channel-scheduled"

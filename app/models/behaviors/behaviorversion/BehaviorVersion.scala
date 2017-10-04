@@ -9,7 +9,7 @@ import models.behaviors._
 import models.behaviors.behavior.Behavior
 import models.behaviors.behaviorgroup.BehaviorGroup
 import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
-import models.behaviors.builtins.BuiltinBehavior
+import models.behaviors.builtins.BuiltinImplementation
 import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.datatypeconfig.BehaviorVersionForDataTypeSchema
 import models.behaviors.datatypefield.DataTypeFieldForSchema
@@ -56,14 +56,14 @@ case class BehaviorVersion(
 
   val maybeExportId: Option[String] = behavior.maybeExportId
 
-  def maybeBuiltinBehaviorFor(
+  def maybeBuiltinImplementationFor(
                                event: Event,
                                parametersWithValues: Seq[ParameterWithValue],
                                maybeConversation: Option[Conversation],
                                services: DefaultServices
-                             ): Option[BuiltinBehavior] = {
+                             ): Option[BuiltinImplementation] = {
     maybeBuiltinName.flatMap { builtinName =>
-      BuiltinBehavior.maybeFor(
+      BuiltinImplementation.maybeFor(
         builtinName,
         event,
         parametersWithValues,

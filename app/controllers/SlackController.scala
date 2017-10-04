@@ -4,7 +4,7 @@ import javax.inject.Inject
 
 import com.google.inject.Provider
 import com.mohiva.play.silhouette.api.Silhouette
-import models.behaviors.builtins.DisplayHelpBehavior
+import models.behaviors.builtins.DisplayHelpImplementation
 import models.behaviors.events.SlackMessageActionConstants._
 import models.behaviors.events.{EventHandler, SlackMessage, SlackMessageEvent}
 import models.help.HelpGroupSearchValue
@@ -569,7 +569,7 @@ class SlackController @Inject() (
               info.maybeHelpIndexAt.foreach { index =>
                 dataService.slackBotProfiles.sendResultWithNewEvent(
                   "help index",
-                  (event) => DisplayHelpBehavior(
+                  (event) => DisplayHelpImplementation(
                     None,
                     None,
                     Some(index),
@@ -590,7 +590,7 @@ class SlackController @Inject() (
               info.maybeHelpForSkillIdWithMaybeSearch.foreach { searchValue =>
                 dataService.slackBotProfiles.sendResultWithNewEvent(
                   "skill help with maybe search",
-                  (event) => DisplayHelpBehavior(
+                  (event) => DisplayHelpImplementation(
                     searchValue.maybeSearchText,
                     Some(searchValue.helpGroupId),
                     None,
@@ -615,7 +615,7 @@ class SlackController @Inject() (
               info.maybeActionListForSkillId.foreach { searchValue =>
                 dataService.slackBotProfiles.sendResultWithNewEvent(
                   "for skill action list",
-                  event => DisplayHelpBehavior(
+                  event => DisplayHelpImplementation(
                     searchValue.maybeSearchText,
                     Some(searchValue.helpGroupId),
                     None,

@@ -9,11 +9,11 @@ import utils.TimeZoneParser
 import scala.concurrent.{ExecutionContext, Future}
 
 
-case class SetDefaultTimeZoneBehavior(
+case class SetDefaultTimeZoneImplementation(
                                        tzString: String,
                                        event: Event,
                                        services: DefaultServices
-                                     ) extends BuiltinBehavior {
+                                     ) extends BuiltinImplementation {
 
   def result(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[BotResult] = {
     val dataService = services.dataService

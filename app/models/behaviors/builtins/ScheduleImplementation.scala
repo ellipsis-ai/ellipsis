@@ -11,13 +11,13 @@ import services.{DataService, DefaultServices}
 import scala.concurrent.{ExecutionContext, Future}
 
 
-case class ScheduleBehavior(
+case class ScheduleImplementation(
                              text: String,
                              isForIndividualMembers: Boolean,
                              recurrence: String,
                              event: Event,
                              services: DefaultServices
-                           ) extends BuiltinBehavior {
+                           ) extends BuiltinImplementation {
 
   def result(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[BotResult] = {
     val dataService = services.dataService
@@ -37,7 +37,7 @@ case class ScheduleBehavior(
 
 }
 
-object ScheduleBehavior extends BuiltinImplementationType {
+object ScheduleImplementation extends BuiltinImplementationType {
 
   val builtinId: String = "schedule"
   val messageInputId: String = "message-input-id"
@@ -105,13 +105,13 @@ object ScheduleBehavior extends BuiltinImplementationType {
 
   def maybeMessageTextFor(parametersWithValues: Seq[ParameterWithValue]): Option[String] = {
     parametersWithValues.
-      find(_.parameter.input.name == ScheduleBehavior.messageInputName).
+      find(_.parameter.input.name == ScheduleImplementation.messageInputName).
       flatMap(_.maybeValue.map(_.text))
   }
 
   def isForIndividualMembersFor(parametersWithValues: Seq[ParameterWithValue]): Option[Boolean] = {
     parametersWithValues.
-      find(_.parameter.input.name == ScheduleBehavior.isForIndividualMembersInputName).
+      find(_.parameter.input.name == ScheduleImplementation.isForIndividualMembersInputName).
       map(pv => pv.preparedValue match {
         case JsBoolean(true) => true
         case _ => false
@@ -120,17 +120,17 @@ object ScheduleBehavior extends BuiltinImplementationType {
 
   def maybeRecurrenceFor(parametersWithValues: Seq[ParameterWithValue]): Option[String] = {
     parametersWithValues.
-      find(_.parameter.input.name == ScheduleBehavior.recurrenceInputName).
+      find(_.parameter.input.name == ScheduleImplementation.recurrenceInputName).
       flatMap(_.maybeValue.map(_.text))
   }
 
-  def maybeFor(parametersWithValues: Seq[ParameterWithValue], event: Event, services: DefaultServices): Option[ScheduleBehavior] = {
+  def maybeFor(parametersWithValues: Seq[ParameterWithValue], event: Event, services: DefaultServices): Option[ScheduleImplementation] = {
     for {
       message <- maybeMessageTextFor(parametersWithValues)
       isForIndividualMembers <- isForIndividualMembersFor(parametersWithValues)
       recurrence <- maybeRecurrenceFor(parametersWithValues)
     } yield {
-      ScheduleBehavior(message, isForIndividualMembers, recurrence, event, services)
+      ScheduleImplementation(message, isForIndividualMembers, recurrence, event, services)
     }
   }
 

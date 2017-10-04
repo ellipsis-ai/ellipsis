@@ -9,11 +9,11 @@ import services.{DataService, DefaultServices}
 
 import scala.concurrent.{ExecutionContext, Future}
 
-case class UnscheduleBehavior(
+case class UnscheduleImplementation(
                                text: String,
                                event: Event,
                                services: DefaultServices
-                             ) extends BuiltinBehavior {
+                             ) extends BuiltinImplementation {
 
   def result(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[BotResult] = {
     val configuration = services.configuration
@@ -44,7 +44,7 @@ case class UnscheduleBehavior(
 
 }
 
-object UnscheduleBehavior extends BuiltinImplementationType {
+object UnscheduleImplementation extends BuiltinImplementationType {
 
   val builtinId: String = "unschedule"
   val name: String = "Unschedule an action"

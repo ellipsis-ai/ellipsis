@@ -2,7 +2,7 @@ package models.behaviors.events
 
 import javax.inject._
 
-import models.behaviors.builtins.BuiltinBehavior
+import models.behaviors.builtins.BuiltinImplementation
 import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.events.SlackMessageActionConstants._
 import models.behaviors.{BehaviorResponse, BotResult, SimpleTextResult, TextWithAttachmentsResult}
@@ -98,7 +98,7 @@ class EventHandler @Inject() (
     maybeConversation.map { conversation =>
       handleInConversation(conversation, event).map(Seq(_))
     }.getOrElse {
-      BuiltinBehavior.maybeFrom(event, services).map { builtin =>
+      BuiltinImplementation.maybeFrom(event, services).map { builtin =>
         builtin.result.map(Seq(_))
       }.getOrElse {
         startInvokeConversationFor(event)

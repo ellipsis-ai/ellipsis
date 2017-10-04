@@ -11,7 +11,7 @@ import utils._
 
 import scala.concurrent.{ExecutionContext, Future}
 
-case class DisplayHelpBehavior(
+case class DisplayHelpImplementation(
                          maybeHelpString: Option[String],
                          maybeSkillId: Option[String],
                          maybeStartAtIndex: Option[Int],
@@ -20,7 +20,7 @@ case class DisplayHelpBehavior(
                          isFirstTrigger: Boolean,
                          event: Event,
                          services: DefaultServices
-                       ) extends BuiltinBehavior {
+                       ) extends BuiltinImplementation {
 
   val lambdaService: AWSLambdaService = services.lambdaService
   val dataService: DataService = services.dataService

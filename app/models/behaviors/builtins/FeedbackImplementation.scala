@@ -11,7 +11,7 @@ import services.{DataService, DefaultServices}
 
 import scala.concurrent.{ExecutionContext, Future}
 
-case class FeedbackBehavior(feedbackType: String, userMessage: String, event: Event, services: DefaultServices) extends BuiltinBehavior {
+case class FeedbackImplementation(feedbackType: String, userMessage: String, event: Event, services: DefaultServices) extends BuiltinImplementation {
   val dataService: DataService = services.dataService
   val configuration: Configuration = services.configuration
 

@@ -6,12 +6,11 @@ import models.accounts.user.User
 import models.behaviors._
 import models.behaviors.behavior.Behavior
 import models.behaviors.behaviorversion.BehaviorVersion
-import models.behaviors.builtins.DisplayHelpBehavior
+import models.behaviors.builtins.DisplayHelpImplementation
 import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.scheduling.Scheduled
 import models.team.Team
 import play.api.libs.json.JsObject
-import play.api.libs.ws.WSClient
 import services.{AWSLambdaService, DataService, CacheService, DefaultServices}
 import slick.dbio.DBIO
 import utils.UploadFileSpec
@@ -104,7 +103,7 @@ trait Event {
 
   def noExactMatchResult(services: DefaultServices)
                         (implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[BotResult] = {
-    DisplayHelpBehavior(
+    DisplayHelpImplementation(
       Some(messageText),
       None,
       Some(0),
