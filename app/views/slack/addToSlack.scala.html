@@ -1,11 +1,11 @@
 @(
-    config: ViewConfig,
-    scopes: String,
-    clientId: String,
-    redirectUrl: String
-    )(implicit r: RequestHeader, m: Messages)
+  config: ViewConfig,
+  scopes: String,
+  clientId: String,
+  redirectUrl: String
+)(implicit r: RequestHeader, m: Messages)
 
-@page.main("Add to Slack", config) {
+@page.main("Add to Slack", config, bodyClass = "bg-black", hideNav = true) {
 
   <div id="content" class="content">
     <div class="container ptxxxxl">

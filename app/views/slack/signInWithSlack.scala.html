@@ -1,24 +1,37 @@
 @(
-    config: ViewConfig,
-    scopes: String,
-    clientId: String,
-    redirectUrl: String
-    )(implicit r: RequestHeader, m: Messages)
+  config: ViewConfig,
+  scopes: String,
+  clientId: String,
+  redirectUrl: String
+)(implicit r: RequestHeader, m: Messages)
 
-@page.main("Sign in with Slack", config) {
+@page.main("Sign in with Slack", config, bodyClass = "bg-light", hideNav = true) {
 
-  <div id="content" class="content">
-    <div class="container ptxxxxl">
+  <div id="content">
+    <div class="bg-black type-white border-emphasis-bottom border-pink">
+      <div class="container container-narrow container-c pvxxxxl">
 
-      <h1 class="type-blue-faded">Sign in to Ellipsis</h1>
+        <h1>Sign in to Ellipsis</h1>
 
-      <p>You need to identify yourself to make changes to the bot. Click the button to sign
-      in with your @config.maybeTeamAccess.flatMap(_.maybeTargetTeam.map(_.name)).getOrElse("team") Slack account.</p>
+        <p>
+          <span class="type-pink-light">You need to identify yourself to use Ellipsis outside of chat. </span>
+        </p>
 
-      <p>
-        @signInWithSlackButton(scopes, clientId, redirectUrl)
-      </p>
+        <p class="mtxl mbxxl">
+          @signInWithSlackButton(scopes, clientId, redirectUrl)
+        </p>
 
+      </div>
+    </div>
+    <div class="bg-white type-black border-emphasis-bottom">
+      <div class="container container-narrow container-c pvxxxxl">
+
+        <p>Not sure if your Slack team is using Ellipsis? Learn more and add it to your team.</p>
+
+        <p class="mtxl mbxxl">
+          <a href="@{routes.SlackController.add()}" class="button button-l">Learn about Ellipsis</a>
+        </p>
+      </div>
     </div>
   </div>
 }
