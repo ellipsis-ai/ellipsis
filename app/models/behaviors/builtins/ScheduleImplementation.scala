@@ -48,7 +48,10 @@ object ScheduleImplementation extends BuiltinImplementationType {
   val isForIndividualMembersInputName: String = "isForIndividualMembers"
 
   def triggersData: Seq[BehaviorTriggerData] = {
-    Seq(BehaviorTriggerData("""^\s*schedule\s*$$""", requiresMention = true, isRegex = true, caseSensitive = false))
+    Seq(
+      BehaviorTriggerData("""^\s*schedule\s*$$""", requiresMention = true, isRegex = true, caseSensitive = false),
+      BehaviorTriggerData(s"""^schedule\\s+([`"'])(.*?)\\1(\\s+privately for everyone in this channel)?\\s+(.*)\\s*$$""", requiresMention = true, isRegex = true, caseSensitive = false)
+    )
   }
 
   def inputsData: Seq[InputData] = {
