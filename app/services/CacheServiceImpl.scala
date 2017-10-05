@@ -150,7 +150,7 @@ class CacheServiceImpl @Inject() (
   }
 
   private def slackUserDataKey(slackUserId: String, slackTeamId: String): String = {
-    s"slack-user-profile-data-v6-team-$slackTeamId-user-$slackUserId"
+    s"slack-user-profile-data-v7-team-$slackTeamId-user-$slackUserId"
   }
 
   def cacheSlackUserData(userData: SlackUserData): Unit = {

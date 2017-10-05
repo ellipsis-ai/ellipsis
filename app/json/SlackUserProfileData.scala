@@ -13,5 +13,5 @@ case class SlackUserProfileData(
 case class SlackUserProfileNameData(
                                      firstName: Option[String],
                                      lastName: Option[String],
-                                     fullName: Option[String]
+                                     realName: Option[String]
                                    )
