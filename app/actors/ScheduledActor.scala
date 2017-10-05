@@ -27,9 +27,6 @@ class ScheduledActor @Inject()(
                               ) extends Actor {
 
   val dataService: DataService = services.dataService
-  val cacheService: CacheService = services.cacheService
-  val configuration: Configuration = services.configuration
-  val botResultService: BotResultService = services.botResultService
 
   // initial delay of 1 minute so that, in the case of errors & actor restarts, it doesn't hammer external APIs
   val tick = context.system.scheduler.schedule(1 minute, 1 minute, self, "tick")
