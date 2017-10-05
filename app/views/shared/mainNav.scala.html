@@ -1,6 +1,8 @@
 @(
   config: ViewConfig,
-  selectedNav: String
+  selectedNav: String,
+  hideNav: Boolean,
+  navClass: String = ""
 )(implicit r: RequestHeader)
 @tabClassFor(tabId: String) = @{
   if (tabId == selectedNav) {
@@ -9,32 +11,36 @@
     "link-light display-inline-block align-button mhs pbm mobile-pbs"
   }
 }
-<div class="columns columns-elastic">
+<div class="container container-wide prm mobile-prs @navClass">
+  <div class="columns columns-elastic">
   <div class="column column-expand pts mobile-ptxs">
     <a class="link-pink display-inline-block align-b mrs"
       href='@routes.ApplicationController.index(config.maybeTeamAccess.flatMap(_.maybeAdminAccessToTeamId))'>
       @mainLogo(config)
     </a>
 
-    <a class="@tabClassFor("skills")"
-      href='@routes.ApplicationController.index(config.maybeTeamAccess.flatMap(_.maybeAdminAccessToTeamId))'>
-      Skills
-    </a>
+    @if(!hideNav) {
+      <a class="@tabClassFor("skills")"
+        href='@routes.ApplicationController.index(config.maybeTeamAccess.flatMap(_.maybeAdminAccessToTeamId))'>
+        Skills
+      </a>
 
-    <a class="@tabClassFor("scheduling")"
-      href='@routes.ScheduledActionsController.index(None, None, config.maybeTeamAccess.flatMap(_.maybeAdminAccessToTeamId))'>
-      Scheduling
-    </a>
+      <a class="@tabClassFor("scheduling")"
+        href='@routes.ScheduledActionsController.index(None, None, config.maybeTeamAccess.flatMap(_.maybeAdminAccessToTeamId))'>
+        Scheduling
+      </a>
 
-    <a class="@tabClassFor("settings")"
-      href='@routes.EnvironmentVariablesController.list(config.maybeTeamAccess.flatMap(_.maybeAdminAccessToTeamId))'>
-      Settings
-    </a>
+      <a class="@tabClassFor("settings")"
+        href='@routes.EnvironmentVariablesController.list(config.maybeTeamAccess.flatMap(_.maybeAdminAccessToTeamId))'>
+        Settings
+      </a>
 
-    <span id="header-feedback">
-      @* Placeholder button replaced by React Page *@
-      <button class="button button-nav mhs pbm mobile-pbs" type="button">Feedback</button>
-    </span>
+      <span id="header-feedback">
+        @* Placeholder button replaced by React Page *@
+        <button class="button button-nav mhs pbm mobile-pbs" type="button">Feedback</button>
+      </span>
+    }
   </div>
   @config.maybeTeamAccess.map { teamAccess => @teamMenu(teamAccess) }
+</div>
 </div>
