@@ -36,17 +36,20 @@ trait SlackEvent {
   }
 
   def detailsFor(services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[JsObject] = {
+    val slackChannels = SlackChannels(client, services.cacheService, profile.slackTeamId)
     for {
       maybeUser <- services.slackEventService.maybeSlackUserDataFor(user, profile.slackTeamId, SlackApiClient(profile.token))
-      channelMembers <- SlackChannels(client, services.cacheService, profile.slackTeamId).getMembersFor(channel)
+      maybeChannelInfo <- slackChannels.getInfoFor(channel)
     } yield {
-      val channelMembersObj = JsObject(Seq(
-        "channelMembers" -> JsArray(channelMembers.map(JsString.apply))
+      val channelMembers = maybeChannelInfo.map(_.members).getOrElse(Seq())
+      val channelObj = JsObject(Seq(
+        "channelMembers" -> JsArray(channelMembers.map(JsString.apply)),
+        "channelName" -> Json.toJson(maybeChannelInfo.map(_.name))
       ))
       maybeUser.map { user =>
-        user.profile ++ channelMembersObj
+        user.profile ++ channelObj
       }.getOrElse {
-        channelMembersObj
+        channelObj
       }
     }
   }
