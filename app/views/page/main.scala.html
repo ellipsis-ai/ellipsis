@@ -4,6 +4,7 @@
   pageId: String = "",
   selectedNav: String = "",
   bodyClass: String = "bg-lightest",
+  navClass: String = "",
   hideNav: Boolean = false
 )(content: Html)(implicit messages: Messages, r: RequestHeader)
 
@@ -39,9 +40,7 @@
         navBorderColorForPage +
         navBgColorForPage
     }'>
-      <div class="container container-wide prm mobile-prs">
-        @shared.mainNav(config, selectedNav, hideNav)
-      </div>
+      @shared.mainNav(config, selectedNav, hideNav, navClass)
     </header>
     @content
   </body>

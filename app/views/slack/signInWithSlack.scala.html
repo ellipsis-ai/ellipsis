@@ -5,7 +5,10 @@
   redirectUrl: String
 )(implicit r: RequestHeader, m: Messages)
 
-@page.main("Sign in with Slack", config, bodyClass = "bg-white", hideNav = true) {
+@page.main("Sign in with Slack", config,
+  bodyClass = "bg-white",
+  navClass = "container-narrow container-c",
+  hideNav = true) {
 
   <div id="content">
     <div class="bg-black type-white border-emphasis-bottom border-pink">

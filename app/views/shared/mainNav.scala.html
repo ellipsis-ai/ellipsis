@@ -1,7 +1,8 @@
 @(
   config: ViewConfig,
   selectedNav: String,
-  hideNav: Boolean
+  hideNav: Boolean,
+  navClass: String = ""
 )(implicit r: RequestHeader)
 @tabClassFor(tabId: String) = @{
   if (tabId == selectedNav) {
@@ -10,7 +11,8 @@
     "link-light display-inline-block align-button mhs pbm mobile-pbs"
   }
 }
-<div class="columns columns-elastic">
+<div class="container container-wide prm mobile-prs @navClass">
+  <div class="columns columns-elastic">
   <div class="column column-expand pts mobile-ptxs">
     <a class="link-pink display-inline-block align-b mrs"
       href='@routes.ApplicationController.index(config.maybeTeamAccess.flatMap(_.maybeAdminAccessToTeamId))'>
@@ -40,4 +42,5 @@
     }
   </div>
   @config.maybeTeamAccess.map { teamAccess => @teamMenu(teamAccess) }
+</div>
 </div>
