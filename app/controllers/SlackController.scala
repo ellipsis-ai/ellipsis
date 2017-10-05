@@ -339,12 +339,10 @@ class SlackController @Inject() (
     })
   }
 
-  case class UserProfileChangeInfo(first_name: Option[String], last_name: Option[String], real_name: Option[String])
-
   case class UserChangeInfo(
                              id: String,
                              name: String,
-                             profile: UserProfileChangeInfo,
+                             profile: SlackUserProfileNameData,
                              isPrimaryOwner: Option[Boolean],
                              isOwner: Option[Boolean],
                              isRestricted: Option[Boolean],
@@ -373,7 +371,7 @@ class SlackController @Inject() (
             "first_name" -> optional(nonEmptyText),
             "last_name" -> optional(nonEmptyText),
             "real_name" -> optional(nonEmptyText)
-          )(UserProfileChangeInfo.apply)(UserProfileChangeInfo.unapply),
+          )(SlackUserProfileNameData.apply)(SlackUserProfileNameData.unapply),
           "is_primary_owner" -> optional(boolean),
           "is_owner" -> optional(boolean),
           "is_restricted" -> optional(boolean),
@@ -394,10 +392,9 @@ class SlackController @Inject() (
       val slackTeamId = info.teamId
       val userName = user.name
       val profile = user.profile
-      val nameData = SlackUserProfileNameData(profile.first_name, profile.last_name, profile.real_name)
       val profileData = SlackUserProfileData(
         userName,
-        nameData,
+        profile,
         user.isPrimaryOwner.getOrElse(false),
         user.isOwner.getOrElse(false),
         user.isRestricted.getOrElse(false),
@@ -408,7 +405,7 @@ class SlackController @Inject() (
         slackUserId,
         slackTeamId,
         userName,
-        profile.real_name,
+        profile.realName,
         user.tz,
         deleted = user.deleted.getOrElse(false),
         profileData
