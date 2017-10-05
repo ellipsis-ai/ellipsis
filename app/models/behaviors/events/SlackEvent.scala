@@ -41,15 +41,14 @@ trait SlackEvent {
       maybeUser <- services.slackEventService.maybeSlackUserDataFor(user, profile.slackTeamId, SlackApiClient(profile.token))
       maybeChannelInfo <- slackChannels.getInfoFor(channel)
     } yield {
-      val channelMembers = maybeChannelInfo.map(_.members).getOrElse(Seq())
-      val channelObj = JsObject(Seq(
-        "channelMembers" -> JsArray(channelMembers.map(JsString.apply)),
+      val channelDetails = JsObject(Seq(
+        "channelMembers" -> Json.toJson(maybeChannelInfo.map(_.members).getOrElse(Seq())),
         "channelName" -> Json.toJson(maybeChannelInfo.map(_.name))
       ))
       maybeUser.map { user =>
-        user.profile ++ channelObj
+        user.profile ++ channelDetails
       }.getOrElse {
-        channelObj
+        channelDetails
       }
     }
   }
