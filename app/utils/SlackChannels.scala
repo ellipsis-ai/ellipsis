@@ -53,7 +53,7 @@ case class SlackDM(im: Im) extends ChannelLike {
 
 case class SlackChannels(client: SlackApiClient, cacheService: CacheService, slackTeamId: String) {
 
-  private def getInfoFor(channelLikeId: String)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[ChannelLike]] = {
+  def getInfoFor(channelLikeId: String)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[ChannelLike]] = {
     for {
       maybeChannel <- maybeChannelInfoFor(channelLikeId)
       maybeGroup <- if (maybeChannel.isEmpty) {
