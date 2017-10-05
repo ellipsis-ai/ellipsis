@@ -1,12 +1,29 @@
-import json.SlackUserData
+import json.{SlackUserData, SlackUserProfileData, SlackUserProfileNameData}
 import models.behaviors.events.SlackMessage
 import org.scalatestplus.play.PlaySpec
-import play.api.libs.json.JsObject
 
 class SlackMessageSpec extends PlaySpec {
 
   val userId = "U1234567"
-  val user = SlackUserData(userId, "T1234", "attaboy", Some("Luke Andrews"), Some("America/Toronto"), deleted = false, JsObject(Seq()))
+  val name = "attaboy"
+  val tz = Some("America/Toronto")
+  val user = SlackUserData(
+    userId,
+    "T1234",
+    name,
+    Some("Luke Andrews"),
+    tz,
+    deleted = false,
+    SlackUserProfileData(
+      name,
+      SlackUserProfileNameData(Some("Luke"), Some("Andrews"), Some("Luke Andrews")),
+      isPrimaryOwner = false,
+      isOwner = false,
+      isRestricted = false,
+      isUltraRestricted = false,
+      tz
+    )
+  )
   val userList = Set(user)
 
   "unformatLinks" should {
