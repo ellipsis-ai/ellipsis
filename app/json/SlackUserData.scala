@@ -8,5 +8,6 @@ case class SlackUserData(
                           accountName: String,
                           fullName: Option[String],
                           tz: Option[String],
+                          deleted: Boolean,
                           profile: JsObject
                         )

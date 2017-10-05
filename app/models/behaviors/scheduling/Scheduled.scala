@@ -182,12 +182,18 @@ trait Scheduled {
                                 profile: SlackBotProfile,
                                 services: DefaultServices
                               )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Unit] = {
+    val slackEventService = services.slackEventService
     for {
-      members <- SlackChannels(client, services.cacheService, profile.slackTeamId).getMembersFor(channel)
-      otherMembers <- Future.successful(members.filterNot(ea => ea == profile.userId))
-      dmInfos <- Future.sequence(otherMembers.map { ea =>
-        client.openIm(ea).map { dmChannel =>
-          Some(SlackDMInfo(ea, dmChannel))
+      memberIds <- SlackChannels(client, services.cacheService, profile.slackTeamId).getMembersFor(channel)
+      users <- Future.sequence(memberIds.map { id =>
+        slackEventService.maybeSlackUserDataFor(id, profile.slackTeamId, client)
+      })
+      activeNonBotUsers <- Future.successful(users.flatten.filter { user =>
+        user.accountId != profile.userId && !user.deleted
+      })
+      dmInfos <- Future.sequence(activeNonBotUsers.map { ea =>
+        client.openIm(ea.accountId).map { dmChannel =>
+          Some(SlackDMInfo(ea.accountId, dmChannel))
         }.recover {
           case e: ApiError => {
             val msg = s"Couldn't send DM to $ea due to Slack API error: ${e.code}"

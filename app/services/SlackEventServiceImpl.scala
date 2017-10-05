@@ -88,6 +88,7 @@ class SlackEventServiceImpl @Inject()(
             info.name,
             info.profile.flatMap(_.real_name),
             info.tz,
+            info.deleted.getOrElse(false),
             profileData
           )
           cacheService.cacheSlackUserData(userData)
