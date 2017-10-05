@@ -4,6 +4,7 @@ import javax.inject.Inject
 
 import com.google.inject.Provider
 import com.mohiva.play.silhouette.api.Silhouette
+import json.{SlackUserData, SlackUserProfileData, SlackUserProfileNameData}
 import models.behaviors.builtins.DisplayHelpBehavior
 import models.behaviors.events.SlackMessageActionConstants._
 import models.behaviors.events.{EventHandler, SlackMessage, SlackMessageEvent}
@@ -338,7 +339,19 @@ class SlackController @Inject() (
     })
   }
 
-  case class UserChangeInfo(id: String, name: String)
+  case class UserProfileChangeInfo(first_name: Option[String], last_name: Option[String], real_name: Option[String])
+
+  case class UserChangeInfo(
+                             id: String,
+                             name: String,
+                             profile: UserProfileChangeInfo,
+                             isPrimaryOwner: Option[Boolean],
+                             isOwner: Option[Boolean],
+                             isRestricted: Option[Boolean],
+                             isUltraRestricted: Option[Boolean],
+                             tz: Option[String],
+                             deleted: Option[Boolean]
+                           )
   case class UserProfileChangedEventInfo(
                                           eventType: String,
                                           user: UserChangeInfo
@@ -355,7 +368,18 @@ class SlackController @Inject() (
         "type" -> nonEmptyText,
         "user" -> mapping(
           "id" -> nonEmptyText,
-          "name" -> nonEmptyText
+          "name" -> nonEmptyText,
+          "profile" -> mapping(
+            "first_name" -> optional(nonEmptyText),
+            "last_name" -> optional(nonEmptyText),
+            "real_name" -> optional(nonEmptyText)
+          )(UserProfileChangeInfo.apply)(UserProfileChangeInfo.unapply),
+          "is_primary_owner" -> optional(boolean),
+          "is_owner" -> optional(boolean),
+          "is_restricted" -> optional(boolean),
+          "is_ultra_restricted" -> optional(boolean),
+          "tz" -> optional(nonEmptyText),
+          "deleted" -> optional(boolean)
         )(UserChangeInfo.apply)(UserChangeInfo.unapply)
       )(UserProfileChangedEventInfo.apply)(UserProfileChangedEventInfo.unapply)
     )(UserProfileChangedRequestInfo.apply)(UserProfileChangedRequestInfo.unapply) verifying("Not a valid user event", fields => fields match {
@@ -365,15 +389,32 @@ class SlackController @Inject() (
 
   private def maybeUserProfileChangedResult(implicit request: Request[AnyContent]): Option[Result] = {
     maybeResultFor(userProfileChangedRequestForm, (info: UserProfileChangedRequestInfo) => {
-      val slackUserId = info.event.user.id
+      val user = info.event.user
+      val slackUserId = user.id
       val slackTeamId = info.teamId
-      val userName = info.event.user.name
-      val maybeOldUserData = services.cacheService.getSlackUserData(slackUserId, slackTeamId)
-      maybeOldUserData.foreach{ oldUserData =>
-        if (oldUserData.accountName != userName) {
-          services.cacheService.cacheSlackUserData(oldUserData.copy(accountName = userName))
-        }
-      }
+      val userName = user.name
+      val profile = user.profile
+      val nameData = SlackUserProfileNameData(profile.first_name, profile.last_name, profile.real_name)
+      val profileData = SlackUserProfileData(
+        userName,
+        nameData,
+        user.isPrimaryOwner.getOrElse(false),
+        user.isOwner.getOrElse(false),
+        user.isRestricted.getOrElse(false),
+        user.isUltraRestricted.getOrElse(false),
+        user.tz
+      )
+      val userData = SlackUserData(
+        slackUserId,
+        slackTeamId,
+        userName,
+        profile.real_name,
+        user.tz,
+        deleted = user.deleted.getOrElse(false),
+        profileData
+      )
+      services.cacheService.cacheSlackUserData(userData)
+      Logger.info(s"Cached new Slack user data for team id $slackTeamId, user id $slackUserId")
       Ok(":+1:")
     })
   }
