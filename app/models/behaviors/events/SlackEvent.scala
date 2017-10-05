@@ -1,6 +1,7 @@
 package models.behaviors.events
 
 import akka.actor.ActorSystem
+import json.Formatting._
 import models.accounts.slack.botprofile.SlackBotProfile
 import play.api.libs.json._
 import services.{CacheService, DefaultServices}
@@ -46,7 +47,7 @@ trait SlackEvent {
         "channelName" -> Json.toJson(maybeChannelInfo.map(_.name))
       ))
       maybeUser.map { user =>
-        user.profile ++ channelDetails
+        Json.toJson(user.profile).as[JsObject] ++ channelDetails
       }.getOrElse {
         channelDetails
       }
