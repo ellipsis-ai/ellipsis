@@ -182,31 +182,9 @@ trait Scheduled {
                                 profile: SlackBotProfile,
                                 services: DefaultServices
                               )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Unit] = {
-    val slackEventService = services.slackEventService
     for {
       memberIds <- SlackChannels(client, services.cacheService, profile.slackTeamId).getMembersFor(channel)
-      users <- Future.sequence(memberIds.map { id =>
-        slackEventService.maybeSlackUserDataFor(id, profile.slackTeamId, client)
-      })
-      activeNonBotUsers <- Future.successful(users.flatten.filter { user =>
-        user.accountId != profile.userId && !user.deleted
-      })
-      dmInfos <- Future.sequence(activeNonBotUsers.map { ea =>
-        client.openIm(ea.accountId).map { dmChannel =>
-          Some(SlackDMInfo(ea.accountId, dmChannel))
-        }.recover {
-          case e: ApiError => {
-            val msg = s"Couldn't send DM to $ea due to Slack API error: ${e.code}"
-            if (e.code == "account_inactive") {
-              Logger.info(msg, e) // we expect these to happen for deactivated accounts
-            } else {
-              Logger.error(msg, e)
-            }
-            None
-          }
-        }
-      }).map(_.flatten)
-      _ <- FutureSequencer.sequence(dmInfos, sendForFn(eventHandler, client, profile, services))
+      _ <- FutureSequencer.sequence(memberIds, sendForFn(eventHandler, client, profile, services))
     } yield {}
   }
 
@@ -234,8 +212,33 @@ trait Scheduled {
                   client: SlackApiClient,
                   profile: SlackBotProfile,
                   services: DefaultServices
-               )(implicit actorSystem: ActorSystem, ec: ExecutionContext): SlackDMInfo => Future[Unit] = {
-    info: SlackDMInfo => sendFor(info.channelId, info.userId, eventHandler, client, profile, services)
+               )(implicit actorSystem: ActorSystem, ec: ExecutionContext): String => Future[Unit] = {
+    slackUserId: String => {
+      for {
+        maybeSlackUserData <- services.slackEventService.maybeSlackUserDataFor(slackUserId, profile.slackTeamId, client)
+        maybeDmInfo <- maybeSlackUserData.filter { userData =>
+          userData.accountId != profile.userId && !userData.deleted
+        }.map { userData =>
+          client.openIm(userData.accountId).map { dmChannel =>
+            Some(SlackDMInfo(userData.accountId, dmChannel))
+          }.recover {
+            case e: ApiError => {
+              val msg = s"Couldn't send DM to $userData.accountId due to Slack API error: ${e.code}"
+              if (e.code == "account_inactive") {
+                Logger.info(msg, e) // we expect these to happen for deactivated accounts
+              } else {
+                Logger.error(msg, e)
+              }
+              None
+            }
+          }
+        }.getOrElse(Future.successful(None))
+      } yield {
+        maybeDmInfo.foreach { info =>
+          sendFor(info.channelId, info.userId, eventHandler, client, profile, services)
+        }
+      }
+    }
   }
 
   def sendResult(
