@@ -34,6 +34,14 @@ class RequiredModulesInCodeSpec extends PlaySpec {
       checkModulesFor(code, Array("foo"))
     }
 
+    "ignore whitespace" in {
+      val code =
+        """
+          |const required = require(" foo  ");
+        """.stripMargin
+      checkModulesFor(code, Array("foo"))
+    }
+
     "ignore library names" in {
       val libName = "some_lib"
       val libraries = Seq(LibraryVersion(IDs.next, IDs.next, None, libName, None, "", IDs.next, OffsetDateTime.now))

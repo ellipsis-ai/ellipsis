@@ -5,9 +5,7 @@ import models.behaviors.library.LibraryVersion
 
 object RequiredModulesInCode {
 
-  val requireRegex = """.*require\s*\(['"]\s*(\S+)\s*['"]\).*""".r
-  val currentDirRegex = """^\.\/""".r
-
+  val requireRegex = """.*require\s*\(['"]\s*(?:\.\/)?(\S+)\s*['"]\).*""".r
   val alreadyIncludedModules = Array("aws-sdk", "dynamodb-doc")
 
   def requiredModulesIn(code: String, libraries: Seq[LibraryVersion], includeLibraryRequires: Boolean): Seq[String] = {
@@ -15,8 +13,6 @@ object RequiredModulesInCode {
     val requiredForCode =
       requireRegex.findAllMatchIn(code).
         flatMap(_.subgroups.headOption).
-        map(_.trim).
-        map(ea => currentDirRegex.replaceAllIn(ea, "")).
         toArray.
         diff(alreadyIncludedModules ++ libraryNames).
         sorted
