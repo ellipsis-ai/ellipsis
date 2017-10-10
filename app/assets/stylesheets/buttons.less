@@ -211,6 +211,12 @@ button.button-shrink {
   white-space: nowrap;
 }
 
+a.button-shrink.button-l,
+button.button-shrink.button-l {
+  padding-left: (@m - @border-width-thick);
+  padding-right: (@m - @border-width-thick);
+}
+
 button.button-symbol {
   width: 40px;
   min-width: 40px;
@@ -437,6 +443,12 @@ button.button-shrink:focus,
 button.button-symbol:focus {
   padding-left: (@s - @border-width-thick) !important;
   padding-right: (@s - @border-width-thick) !important;
+}
+
+button.button-shrink.button-l:focus,
+a.button-shrink.button-l:focus {
+  padding-left: (@m - @border-width-thick*2) !important;
+  padding-right: (@m - @border-width-thick*2) !important;
 }
 
 button.button-s.button-symbol:focus {
