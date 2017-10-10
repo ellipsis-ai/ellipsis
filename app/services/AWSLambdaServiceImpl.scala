@@ -30,7 +30,7 @@ import play.api.libs.ws.WSClient
 import play.api.{Configuration, Logger}
 import slick.dbio.DBIO
 import sun.misc.BASE64Decoder
-import utils.JavaFutureConverter
+import utils.{JavaFutureConverter, RequiredModulesInCode}
 
 import scala.collection.JavaConversions.asScalaBuffer
 import scala.concurrent.{ExecutionContext, Future, blocking}
@@ -224,32 +224,6 @@ class AWSLambdaServiceImpl @Inject() (
   val amazonServiceExceptionRegex = """.*com\.amazonaws\.AmazonServiceException.*""".r
   val resourceNotFoundExceptionRegex = """com\.amazonaws\.services\.lambda\.model\.ResourceNotFoundException.*""".r
 
-  val requireRegex = """.*require\s*\(['"]\s*(\S+)\s*['"]\).*""".r
-
-  val alreadyIncludedModules = Array("aws-sdk", "dynamodb-doc")
-
-  private def requiredModulesIn(code: String, libraries: Seq[LibraryVersion], includeLibraryRequires: Boolean): Seq[String] = {
-    val libraryNames = libraries.map(_.name)
-    val requiredForCode =
-      requireRegex.findAllMatchIn(code).
-        flatMap(_.subgroups.headOption).
-        toArray.
-        diff(alreadyIncludedModules ++ libraryNames).
-        sorted
-    val requiredForLibs = if (includeLibraryRequires) {
-      libraries.flatMap(ea => requiredModulesIn(ea.functionBody, libraries, includeLibraryRequires = false))
-    } else {
-      Seq()
-    }
-    (requiredForCode ++ requiredForLibs).distinct
-  }
-
-  private def requiredModulesIn(behaviorVersions: Seq[BehaviorVersion], libraries: Seq[LibraryVersion], includeLibraryRequires: Boolean): Array[String] = {
-    behaviorVersions.flatMap { ea =>
-      requiredModulesIn(ea.functionBody, libraries, includeLibraryRequires)
-    }.distinct.toArray
-  }
-
   private def awsConfigCodeFor(required: RequiredAWSConfig): String = {
     if (required.isConfigured) {
       val teamInfoPath = s"event.$CONTEXT_PARAM.teamInfo.aws.${required.nameInCode}"
@@ -388,7 +362,7 @@ class AWSLambdaServiceImpl @Inject() (
       writeFileNamed(s"$dirName/${ea.jsName}", ea.code)
     }
 
-    val requiredModules = requiredModulesIn(behaviorVersionsWithParams.map(_._1), libraries, includeLibraryRequires = true)
+    val requiredModules = RequiredModulesInCode.requiredModulesIn(behaviorVersionsWithParams.map(_._1), libraries, includeLibraryRequires = true)
     for {
       _ <- if (requiredModules.isEmpty) {
         Future.successful({})
@@ -431,7 +405,7 @@ class AWSLambdaServiceImpl @Inject() (
       behaviorVersions <- dataService.behaviorVersions.allForGroupVersionAction(groupVersion)
       libraries <- dataService.libraries.allForAction(groupVersion)
     } yield {
-      behaviorVersions.exists(_.hasFunction) && requiredModulesIn(behaviorVersions, libraries, includeLibraryRequires = true).nonEmpty
+      behaviorVersions.exists(_.hasFunction) && RequiredModulesInCode.requiredModulesIn(behaviorVersions, libraries, includeLibraryRequires = true).nonEmpty
     }
   }
 
