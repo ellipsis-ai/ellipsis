@@ -20,6 +20,10 @@ class SlackMessageFormatterSpec extends PlaySpec {
       format("my balogna has a first name\nit's O-S-C-A-R") mustBe "my balogna has a first name\rit's O-S-C-A-R"
     }
 
+    "insert soft hyphens around special characters that aren't used to format" in {
+      format("__this is `bold with~ special* char_acters__") mustBe "*this is \u00AD`\u00ADbold with\u00AD~\u00AD special\u00AD*\u00AD char\u00AD_\u00ADacters*"
+    }
+
   }
 
 }

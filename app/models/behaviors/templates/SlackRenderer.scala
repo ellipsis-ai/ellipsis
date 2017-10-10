@@ -72,8 +72,9 @@ class SlackRenderer(stringBuilder: StringBuilder) extends AbstractVisitor {
   }
 
   override def visit(heading: Heading) {
+    stringBuilder.append("*")
     visitChildren(heading)
-    stringBuilder.append("\r\r")
+    stringBuilder.append("*\r\r")
   }
 
   override def visit(thematicBreak: ThematicBreak) {
@@ -162,7 +163,10 @@ class SlackRenderer(stringBuilder: StringBuilder) extends AbstractVisitor {
   }
 
   override def visit(text: Text) {
-    stringBuilder.append(text.getLiteral)
+    /* HACK: any leftover formatting characters not parsed as Markdown get
+       surrounded by soft hyphens to disable accidental formatting in Slack */
+    val safeText = text.getLiteral.replaceAll("[*_`~]", "\u00AD$0\u00AD")
+    stringBuilder.append(safeText)
     visitChildren(text)
   }
 
