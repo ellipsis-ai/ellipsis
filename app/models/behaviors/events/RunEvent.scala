@@ -2,6 +2,7 @@ package models.behaviors.events
 
 import akka.actor.ActorSystem
 import models.accounts.slack.botprofile.SlackBotProfile
+import models.accounts.user.User
 import models.behaviors.BehaviorResponse
 import models.behaviors.behavior.Behavior
 import models.behaviors.conversations.conversation.Conversation
@@ -88,6 +89,12 @@ case class RunEvent(
         } yield Seq(response)
       }.getOrElse(Future.successful(Seq()))
     } yield responses
+  }
+
+  override def ensureUser(dataService: DataService)(implicit ec: ExecutionContext): Future[User] = {
+    super.ensureUser(dataService).flatMap { user =>
+      ensureSlackProfileFor(loginInfo, dataService).map(_ => user)
+    }
   }
 
 }
