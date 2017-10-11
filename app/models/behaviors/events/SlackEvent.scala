@@ -1,10 +1,12 @@
 package models.behaviors.events
 
 import akka.actor.ActorSystem
+import com.mohiva.play.silhouette.api.LoginInfo
 import json.Formatting._
 import models.accounts.slack.botprofile.SlackBotProfile
+import models.accounts.slack.profile.SlackProfile
 import play.api.libs.json._
-import services.{CacheService, DefaultServices}
+import services.{CacheService, DataService, DefaultServices}
 import slack.api.SlackApiClient
 import utils.SlackChannels
 
@@ -52,6 +54,10 @@ trait SlackEvent {
         channelDetails
       }
     }
+  }
+
+  def ensureSlackProfileFor(loginInfo: LoginInfo, dataService: DataService)(implicit ec: ExecutionContext): Future[SlackProfile] = {
+    dataService.slackProfiles.save(SlackProfile(profile.slackTeamId, loginInfo))
   }
 
 }
