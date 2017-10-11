@@ -9,4 +9,8 @@ case class NodeModuleVersion(
   val nameWithoutVersion: String = {
     name.replaceFirst("""@.+$""", "")
   }
+
+  val versionWithoutSemVerPrefix: String = {
+    version.replaceFirst("""^[\^~]""", "")
+  }
 }
