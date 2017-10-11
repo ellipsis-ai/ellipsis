@@ -132,6 +132,40 @@ class CacheServiceImpl @Inject() (
     }
   }
 
+  private def slackChannelsKey(teamId: String): String = {
+    s"slack-channels-team-$teamId"
+  }
+
+  def cacheSlackChannels(data: Seq[Channel], teamId: String): Unit = {
+    set(slackChannelsKey(teamId), Json.toJson(data), 10.seconds)
+  }
+
+  def getSlackChannels(teamId: String): Option[Seq[Channel]] = {
+    get[JsValue](slackChannelsKey(teamId)).flatMap { json =>
+      json.validate[Seq[Channel]] match {
+        case JsSuccess(data, jsPath) => Some(data)
+        case JsError(err) => None
+      }
+    }
+  }
+
+  private def slackGroupsKey(teamId: String): String = {
+    s"slack-groups-team-$teamId"
+  }
+
+  def cacheSlackGroups(data: Seq[Group], teamId: String): Unit = {
+    set(slackGroupsKey(teamId), Json.toJson(data), 10.seconds)
+  }
+
+  def getSlackGroups(teamId: String): Option[Seq[Group]] = {
+    get[JsValue](slackChannelsKey(teamId)).flatMap { json =>
+      json.validate[Seq[Group]] match {
+        case JsSuccess(data, jsPath) => Some(data)
+        case JsError(err) => None
+      }
+    }
+  }
+
   private def slackImsKey(teamId: String): String = {
     s"slack-ims-team-$teamId"
   }
