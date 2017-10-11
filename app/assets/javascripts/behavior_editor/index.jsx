@@ -1290,6 +1290,11 @@ const BehaviorEditor = React.createClass({
     });
   },
 
+  moveBehaviorInputAtIndex: function(index, newIndex) {
+    const oldInputs = this.getInputs();
+    this.setBehaviorInputs(ImmutableObjectUtils.arrayMoveElement(oldInputs, index, newIndex));
+  },
+
   updateForcePrivateResponse: function(newValue) {
     this.setConfigProperty('forcePrivateResponse', newValue);
   },
@@ -2342,6 +2347,7 @@ const BehaviorEditor = React.createClass({
                 <UserInputConfiguration
                   ref="userInputConfiguration"
                   onInputChange={this.updateBehaviorInputAtIndexWith}
+                  onInputMove={this.moveBehaviorInputAtIndex}
                   onInputDelete={this.deleteInputAtIndex}
                   onInputAdd={this.addNewInput}
                   onInputNameFocus={this.onInputNameFocus}
