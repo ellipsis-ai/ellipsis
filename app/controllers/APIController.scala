@@ -194,7 +194,10 @@ class APIController @Inject() (
             Ok(Json.toJson(results.map(_.fullText)))
           }
         } yield result
-      }.getOrElse(Future.successful(NotFound("")))
+      }.getOrElse {
+        printApiContextError(context)
+        Future.successful(InternalServerError("Request failed.\n"))
+      }
     } yield result
   }
 
@@ -587,7 +590,8 @@ class APIController @Inject() (
               Ok(Json.toJson(Seq(botResult.fullText)))
             }
           }.getOrElse {
-            Future.successful(ServiceUnavailable("The request failed for an unknown reason. Please retry.\n"))
+            printApiContextError(context)
+            Future.successful(InternalServerError("Request failed.\n"))
           }
         } yield result
 
@@ -604,5 +608,13 @@ class APIController @Inject() (
 
   }
 
-
+  private def printApiContextError(context: ApiMethodContext): Unit = {
+    Logger.error(
+      s"""Event creation likely failed for API context:
+         |
+         |Slack bot profile ID: ${context.maybeBotProfile.map(_.userId).getOrElse("not found")}
+         |Slack user profile ID: ${context.maybeSlackProfile.map(_.loginInfo.providerID).getOrElse("not found")}
+         |""".stripMargin
+    )
+  }
 }
