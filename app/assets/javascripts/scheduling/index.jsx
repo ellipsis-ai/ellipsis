@@ -1,6 +1,7 @@
 define(function(require) {
   const React = require('react'),
     BrowserUtils = require('../lib/browser_utils'),
+    Button = require('../form/button'),
     Collapsible = require('../shared_ui/collapsible'),
     ConfirmActionPanel = require('../panels/confirm_action'),
     DynamicLabelButton = require('../form/dynamic_label_button'),
@@ -57,7 +58,6 @@ define(function(require) {
       }
       if (justSaved) {
         this.setState({
-          filterChannel: null,
           selectedItem: newAction || this.state.selectedItem,
           justSaved: !nextProps.error,
           justDeleted: false,
@@ -65,7 +65,6 @@ define(function(require) {
         });
       } else if (justDeleted) {
         this.setState({
-          filterChannel: null,
           selectedItem: nextProps.error ? this.state.selectedItem : null,
           justSaved: false,
           justDeleted: !nextProps.error,
@@ -248,42 +247,41 @@ define(function(require) {
     },
 
     renderSidebar: function(groups) {
-      if (groups.length > 1) {
         return (
           <div className="column column-one-quarter mobile-column-full ptxl phn">
             <div className="phxl mobile-phl mbs">
               <h5 className="mtn display-inline-block prm">Filter by channel</h5>
-              <span>
-                <button type="button"
-                  className="button-s button-shrink"
-                  disabled={!this.state.filterChannel}
-                  onClick={this.clearFilters}
-                >
-                  Clear
-                </button>
-              </span>
             </div>
 
             <div>
+              <Button
+                className={`button-block width-full phxl mobile-phl pvxs mvxs ${
+                  this.state.filterChannel ? "type-link" : "bg-blue type-white"
+                }`}
+                onClick={this.clearFilters}
+              >
+                <span className={"type-bold"}>All channels</span>
+              </Button>
               {this.renderFilterList(groups)}
             </div>
           </div>
         );
-      }
     },
 
     renderFilterList: function(groups) {
-      return groups.map((group) => (
-        <button
-          className={`button-block width-full phxl mobile-phl pvxs mvxs ${
-            this.filterActiveFor(group.channelName) ? "bg-blue type-white " : "type-link "
-            }`}
-          key={`filter-${group.channelName}`}
-          onClick={() => this.toggleFilter(group.channelName)}
-        >
-          {group.channelName}
-        </button>
-      ));
+      if (groups.length > 1) {
+        return groups.map((group) => (
+          <Button
+            className={`button-block width-full phxl mobile-phl pvxs mvxs ${
+              this.filterActiveFor(group.channelName) ? "bg-blue type-white " : "type-link "
+              }`}
+            key={`filter-${group.channelName}`}
+            onClick={() => this.toggleFilter(group.channelName)}
+          >
+            {group.channelName}
+          </Button>
+        ));
+      }
     },
 
     renderGroupWarning: function(group) {
@@ -338,10 +336,7 @@ define(function(require) {
 
     renderScheduleList: function(groups) {
       return (
-        <div className={
-          "column mobile-column-full bg-white ptxl pbxxxxl " +
-          (groups.length > 1 ? "column-three-quarters border-radius-bottom-left " : "column-full")
-        }>
+        <div className="column mobile-column-full bg-white ptxl pbxxxxl column-three-quarters border-radius-bottom-left">
           {this.renderGroups(groups)}
         </div>
       );
