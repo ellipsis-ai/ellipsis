@@ -101,7 +101,7 @@ class ConversationServiceImpl @Inject() (
   }
 
   def allOngoingBehaviorGroupVersionIds: Future[Seq[String]] = {
-    val action = allOngoingVersionIdsQuery.result
+    val action = allOngoingVersionIdsQuery(Conversation.DONE_STATE).result
     dataService.run(action)
   }
 
@@ -137,7 +137,7 @@ class ConversationServiceImpl @Inject() (
   }
 
   def cancelOldConverations: Future[Unit] = {
-    val action = cancelOldConversationsQuery(OffsetDateTime.now.minusDays(1)).update(Conversation.DONE_STATE).map(_ => {})
+    val action = cancelOldConversationsQuery(OffsetDateTime.now.minusDays(1), Conversation.DONE_STATE).update(Conversation.DONE_STATE).map(_ => {})
     dataService.run(action)
   }
 
