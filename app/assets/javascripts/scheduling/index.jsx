@@ -57,7 +57,6 @@ define(function(require) {
       }
       if (justSaved) {
         this.setState({
-          filterChannel: null,
           selectedItem: newAction || this.state.selectedItem,
           justSaved: !nextProps.error,
           justDeleted: false,
@@ -65,7 +64,6 @@ define(function(require) {
         });
       } else if (justDeleted) {
         this.setState({
-          filterChannel: null,
           selectedItem: nextProps.error ? this.state.selectedItem : null,
           justSaved: false,
           justDeleted: !nextProps.error,
