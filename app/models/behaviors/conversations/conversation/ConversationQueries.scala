@@ -61,6 +61,23 @@ object ConversationQueries {
   }
   def allForegroundQuery = Compiled(uncompiledAllForegroundQuery)
 
+  def uncompiledAllOngoingVersionIdsQuery = {
+    allWithBehaviorVersion.
+      filterNot { case(convo, _) => convo.state === Conversation.DONE_STATE }.
+      map { case(_, (((bv, _), _), _)) => bv.groupVersionId }.
+      distinct
+  }
+  val allOngoingVersionIdsQuery = Compiled(uncompiledAllOngoingVersionIdsQuery)
+
+  def uncompiledRawOldConversationsQuery(cutoff: Rep[OffsetDateTime]) = {
+    all.
+      filterNot(_.state === Conversation.DONE_STATE).
+      filter(_.startedAt < cutoff).
+      filter(c => c.maybeLastInteractionAt.isEmpty || c.maybeLastInteractionAt < cutoff).
+      map(_.state)
+  }
+  val cancelOldConversationsQuery = Compiled(uncompiledRawOldConversationsQuery _)
+
   val tableName: String = "conversations"
   val startedAtName: String = "started_at"
   val lastInteractionAtName: String = "last_interaction_at"

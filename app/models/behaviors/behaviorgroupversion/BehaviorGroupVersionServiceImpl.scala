@@ -255,9 +255,9 @@ class BehaviorGroupVersionServiceImpl @Inject() (
     }
   }
 
-  def currentFunctionNames: Future[Seq[String]] = {
-    dataService.run(uncompiledAllCurrentIdsQuery().result).map { r =>
-      r.map(BehaviorGroupVersion.functionNameFor)
+  def activeFunctionNames: Future[Seq[String]] = {
+    dataService.conversations.allOngoingBehaviorGroupVersionIds.map { ids =>
+      ids.map(BehaviorGroupVersion.functionNameFor)
     }
   }
 
