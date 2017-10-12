@@ -451,6 +451,9 @@ class APIController @Inject() (
                                 context: ApiMethodContext
                               )(implicit request: Request[AnyContent]): Future[Result] = {
     for {
+      maybeSlackChannelId <- info.channel.map { channel =>
+        context.maybeSlackChannelIdFor(channel)
+      }.getOrElse(Future.successful(info.channel))
       maybeBehavior <- context.maybeBehaviorFor(actionName)
       maybeUser <- info.userId.map { userId =>
         dataService.users.find(userId)
@@ -459,7 +462,7 @@ class APIController @Inject() (
         if (info.userId.isDefined && maybeUser.isEmpty) {
           Future.successful(NotFound(s"Couldn't find a user with ID `${info.userId.get}`"))
         } else {
-          dataService.scheduledBehaviors.allForBehavior(behavior, maybeUser, info.channel).flatMap { scheduledBehaviors =>
+          dataService.scheduledBehaviors.allForBehavior(behavior, maybeUser, maybeSlackChannelId).flatMap { scheduledBehaviors =>
             if (scheduledBehaviors.isEmpty) {
               Future.successful(Ok("There was nothing to unschedule for this action"))
             } else {
