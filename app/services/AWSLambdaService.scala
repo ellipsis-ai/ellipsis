@@ -35,7 +35,7 @@ trait AWSLambdaService extends AWSService {
 
   case class PartitionedFunctionNames(current: Seq[String], missing: Seq[String], obsolete: Seq[String])
 
-  def partionedBehaviorGroupFunctionNames: Future[PartitionedFunctionNames]
+  def partitionedBehaviorGroupFunctionNames: Future[PartitionedFunctionNames]
 
   def functionWithParams(params: Array[String], functionBody: String): String
 
