@@ -42,7 +42,7 @@ define(function(require) {
     getInitialState: function() {
       const selectedItem = this.getDefaultSelectedItem();
       return {
-        filterChannel: null,
+        filterChannelId: null,
         selectedItem: selectedItem,
         justSaved: false,
         justDeleted: false,
@@ -65,7 +65,10 @@ define(function(require) {
           isEditing: Boolean(nextProps.error)
         });
       } else if (justDeleted) {
+        const hasRemainingActionsInFilteredChannel = this.state.filterChannelId ?
+          nextProps.scheduledActions.some((ea) => ea.channel === this.state.filterChannelId) : false;
         this.setState({
+          filterChannelId: hasRemainingActionsInFilteredChannel ? this.state.filterChannelId : null,
           selectedItem: nextProps.error ? this.state.selectedItem : null,
           justSaved: false,
           justDeleted: !nextProps.error,
@@ -142,28 +145,28 @@ define(function(require) {
       return sortedNames.map((channelName) => groupsByName[channelName]);
     },
 
-    shouldShowChannel: function(channelName) {
-      return !this.state.filterChannel || this.state.filterChannel === channelName;
+    shouldShowChannel: function(channelId) {
+      return !this.state.filterChannelId || this.state.filterChannelId === channelId;
     },
 
-    toggleFilter: function(channelName) {
+    toggleFilter: function(channelId) {
       const newState = {};
-      if (this.filterActiveFor(channelName)) {
-        newState.filterChannel = null;
+      if (this.filterActiveFor(channelId)) {
+        newState.filterChannelId = null;
       } else {
-        newState.filterChannel = channelName;
+        newState.filterChannelId = channelId;
       }
       this.setState(newState);
     },
 
     clearFilters: function() {
       this.setState({
-        filterChannel: null
+        filterChannelId: null
       });
     },
 
-    filterActiveFor: function(channelName) {
-      return this.state.filterChannel === channelName;
+    filterActiveFor: function(channelId) {
+      return this.state.filterChannelId === channelId;
     },
 
     toggleEditor: function(action) {
@@ -258,7 +261,7 @@ define(function(require) {
             <div>
               <Button
                 className={`button-block width-full phxl mobile-phl pvxs mvxs ${
-                  this.state.filterChannel ? "type-link" : "bg-blue type-white"
+                  this.state.filterChannelId ? "type-link" : "bg-blue type-white"
                 }`}
                 onClick={this.clearFilters}
               >
@@ -275,10 +278,10 @@ define(function(require) {
         return groups.map((group) => (
           <Button
             className={`button-block width-full phxl mobile-phl pvxs mvxs ${
-              this.filterActiveFor(group.channelName) ? "bg-blue type-white " : "type-link "
+              this.filterActiveFor(group.channelId) ? "bg-blue type-white " : "type-link "
               }`}
             key={`filter-${group.channelName}`}
-            onClick={() => this.toggleFilter(group.channelName)}
+            onClick={() => this.toggleFilter(group.channelId)}
           >
             {group.channelName}
           </Button>
@@ -305,7 +308,7 @@ define(function(require) {
     renderGroups: function(groups) {
       if (groups.length > 0) {
         return groups.map((group) => (
-          <Collapsible key={`group-${group.channelId || "unknown"}`} revealWhen={this.shouldShowChannel(group.channelName)}>
+          <Collapsible key={`group-${group.channelId || "unknown"}`} revealWhen={this.shouldShowChannel(group.channelId)}>
             <div className="ptxl pbxl">
               <div className="phxl mobile-phl">
                 <h4 className="mvn">
