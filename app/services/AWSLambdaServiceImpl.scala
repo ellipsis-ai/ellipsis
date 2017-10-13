@@ -102,7 +102,7 @@ class AWSLambdaServiceImpl @Inject() (
     }
   }
 
-  def partionedBehaviorGroupFunctionNames: Future[PartitionedFunctionNames] = {
+  def partitionedBehaviorGroupFunctionNames: Future[PartitionedFunctionNames] = {
     for {
       allBehaviorGroupFunctionNames <- listBehaviorGroupFunctionNames
       activeFunctionNames <- dataService.behaviorGroupVersions.activeFunctionNames
