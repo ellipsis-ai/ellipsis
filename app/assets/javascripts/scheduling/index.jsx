@@ -2,6 +2,7 @@ define(function(require) {
   const React = require('react'),
     BrowserUtils = require('../lib/browser_utils'),
     Button = require('../form/button'),
+    ChannelName = require('./channel_name'),
     Collapsible = require('../shared_ui/collapsible'),
     ConfirmActionPanel = require('../panels/confirm_action'),
     DynamicLabelButton = require('../form/dynamic_label_button'),
@@ -125,8 +126,9 @@ define(function(require) {
         const excludesBot = this.props.slackBotUserId && !channel.userCanAccess(this.props.slackBotUserId);
         if (!channel || channel.isPublic || includesUser) {
           const group = groupsByName[channelName] || {
+            channel: channel,
             channelName: channelName,
-            channelId: channel.id,
+            channelId: channel ? channel.id : "unknown",
             excludesBot: excludesBot,
             excludesUser: !includesUser,
             actions: []
@@ -250,7 +252,7 @@ define(function(require) {
         return (
           <div className="column column-one-quarter flex-column mobile-column-full ptxl phn bg-white border-right border-light">
             <div className="phxl mobile-phl mbs">
-              <h5 className="mtn display-inline-block prm">Filter by channel</h5>
+              <h5 className="mtn display-inline-block prm">Channel</h5>
             </div>
 
             <div>
@@ -303,11 +305,11 @@ define(function(require) {
     renderGroups: function(groups) {
       if (groups.length > 0) {
         return groups.map((group) => (
-          <Collapsible key={`group-${group.channelName}`} revealWhen={this.shouldShowChannel(group.channelName)}>
+          <Collapsible key={`group-${group.channelId || "unknown"}`} revealWhen={this.shouldShowChannel(group.channelName)}>
             <div className="ptxl pbxl">
               <div className="phxl mobile-phl">
                 <h4 className="mvn">
-                  <span className="mrxs">{group.channelName}</span>
+                  <span className="mrxs"><ChannelName channel={group.channel} /></span>
                   {this.renderGroupWarning(group)}
                 </h4>
               </div>
