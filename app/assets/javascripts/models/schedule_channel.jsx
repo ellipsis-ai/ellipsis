@@ -23,7 +23,7 @@ define(function() {
     }
 
     getPrefix() {
-      return this.isPublic ? "#" : "🔒";
+      return this.isPublic ? "#" : "🔒 ";
     }
 
     getSuffix() {
@@ -33,7 +33,7 @@ define(function() {
     getName(options) {
       const shouldFormat = options && options.formatting;
       const name = this.isDM() ? "Direct message to you" : this.name;
-      return shouldFormat ? `${this.getPrefix()} ${name} ${this.getSuffix()}`.trim() : name;
+      return shouldFormat ? `${this.getPrefix()}${name} ${this.getSuffix()}`.trim() : name;
     }
 
     isDM() {
@@ -50,6 +50,16 @@ define(function() {
 
     getFormattedName() {
       return this.getName({ formatting: true });
+    }
+
+    getDescription() {
+      if (this.isDM()) {
+        return "a direct message to you";
+      } else if (this.isPrivateGroup()) {
+        return `the private group ${this.getFormattedName()}`;
+      } else {
+        return `the channel ${this.getFormattedName()}`;
+      }
     }
 
     clone(props) {

@@ -350,6 +350,7 @@ define(function(require) {
     render: function() {
       const groups = this.getScheduleByChannel();
       const selectedItem = this.getSelectedItem();
+      const selectedItemChannel = selectedItem ? this.props.channelList.find((ea) => ea.id === selectedItem.channel) : null;
       const selectedItemIsValid = Boolean(selectedItem && selectedItem.isValid());
       const selectedItemIsNew = Boolean(selectedItem && selectedItem.isNew());
       return (
@@ -407,11 +408,39 @@ define(function(require) {
                 <div className="mbxl">
                   <p className="type-bold">Are you sure you want to unschedule this item?</p>
 
-                  {this.getSelectedItem() ? (
-                    <p className="type-s">
-                      <span><ScheduledItemTitle scheduledAction={this.getSelectedItem()} behaviorGroups={this.props.behaviorGroups}/> </span>
-                      <span>{this.getSelectedItem().recurrence.displayString}</span>
-                    </p>
+                  {selectedItem ? (
+                    <div className="columns columns-elastic type-s">
+                      <div className="column-group">
+                        <div className="column-row">
+                          <div className="column column-shrink">
+                            <h6 className="mtxs">What</h6>
+                          </div>
+                          <div className="column column-expand">
+                            <p>
+                              <ScheduledItemTitle scheduledAction={selectedItem} behaviorGroups={this.props.behaviorGroups}/>
+                            </p>
+                          </div>
+                        </div>
+                        {selectedItemChannel ? (
+                          <div className="column-row">
+                            <div className="column column-shrink">
+                              <h6 className="mtxs">Where</h6>
+                            </div>
+                            <div className="column column-expand">
+                              <p>In {selectedItemChannel.getDescription()}</p>
+                            </div>
+                          </div>
+                        ) : null}
+                        <div className="column-row">
+                          <div className="column column-shrink">
+                            <h6 className="mtxs">When</h6>
+                          </div>
+                          <div className="column column-expand">
+                            <p>{selectedItem.recurrence.displayString}</p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
                   ) : null}
                 </div>
               </ConfirmActionPanel>
