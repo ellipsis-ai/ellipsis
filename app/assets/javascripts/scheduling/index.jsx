@@ -248,7 +248,7 @@ define(function(require) {
 
     renderSidebar: function(groups) {
         return (
-          <div className="column column-one-quarter mobile-column-full ptxl phn">
+          <div className="column column-one-quarter flex-column mobile-column-full ptxl phn bg-white border-right border-light">
             <div className="phxl mobile-phl mbs">
               <h5 className="mtn display-inline-block prm">Filter by channel</h5>
             </div>
@@ -301,13 +301,12 @@ define(function(require) {
     },
 
     renderGroups: function(groups) {
-      const groupClassName = groups.length > 1 ? "phxxxl mobile-phl" : "container";
       if (groups.length > 0) {
         return groups.map((group) => (
           <Collapsible key={`group-${group.channelName}`} revealWhen={this.shouldShowChannel(group.channelName)}>
-            <div className="pvl">
-              <div className={groupClassName}>
-                <h4 className="mtn">
+            <div className="ptxl pbxl">
+              <div className="phxl mobile-phl">
+                <h4 className="mvn">
                   <span className="mrxs">{group.channelName}</span>
                   {this.renderGroupWarning(group)}
                 </h4>
@@ -315,9 +314,13 @@ define(function(require) {
 
               <div>
                 {group.actions.map((action) => (
-                  <div className={"pvxl border-top " + groupClassName} key={`${action.type}-${action.id}`}>
-                    <ScheduledItem scheduledAction={action} behaviorGroups={this.props.behaviorGroups} onClick={this.toggleEditor} />
-                  </div>
+                  <ScheduledItem
+                    key={`${action.type}-${action.id}`}
+                    className={`mhl mvs pal mobile-pam border border-light bg-white`}
+                    scheduledAction={action}
+                    behaviorGroups={this.props.behaviorGroups}
+                    onClick={this.toggleEditor}
+                  />
                 ))}
               </div>
             </div>
@@ -325,8 +328,8 @@ define(function(require) {
         ));
       } else {
         return (
-          <div className={"ptxxl " + groupClassName}>
-            <p className="type-bold">Nothing is currently scheduled on this team.</p>
+          <div className={"pvxxl"}>
+            <p className="type-bold">Nothing is currently scheduled in channels you can access on this team.</p>
 
             <p>You can schedule any action to run on a recurring basis in a particular channel.</p>
           </div>
@@ -336,7 +339,7 @@ define(function(require) {
 
     renderScheduleList: function(groups) {
       return (
-        <div className="column mobile-column-full bg-white ptxl pbxxxxl column-three-quarters border-radius-bottom-left">
+        <div className="column mobile-column-full pbxxxxl column-three-quarters flex-column">
           {this.renderGroups(groups)}
         </div>
       );
@@ -348,7 +351,7 @@ define(function(require) {
       const selectedItemIsValid = Boolean(selectedItem && selectedItem.isValid());
       const selectedItemIsNew = Boolean(selectedItem && selectedItem.isNew());
       return (
-        <div>
+        <div className="flex-row-cascade">
           <div className="bg-light">
             <div className="container container-wide pvxl">
               <div className="columns columns-elastic mobile-columns-float">
@@ -366,10 +369,10 @@ define(function(require) {
               </div>
             </div>
           </div>
-          <Collapsible revealWhen={!this.isEditing()}>
-            <div className="flex-columns">
-              <div className="flex-column flex-column-left container container-wide phn">
-                <div className="columns">
+          <Collapsible revealWhen={!this.isEditing()} className={"flex-row-cascade"}>
+            <div className="flex-columns flex-row-expand">
+              <div className="flex-column flex-column-left flex-rows container container-wide phn">
+                <div className="columns flex-columns flex-row-expand mobile-flex-no-columns">
                   {this.renderSidebar(groups)}
                   {this.renderScheduleList(groups)}
                 </div>
