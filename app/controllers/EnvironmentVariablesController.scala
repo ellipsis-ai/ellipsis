@@ -16,7 +16,7 @@ import play.filters.csrf.CSRF
 import services.DataService
 
 import scala.concurrent.{ExecutionContext, Future}
-import play.api.Logger
+
 class EnvironmentVariablesController @Inject() (
                                                  val silhouette: Silhouette[EllipsisEnv],
                                                  val dataService: DataService,
@@ -101,7 +101,6 @@ class EnvironmentVariablesController @Inject() (
 
   def list(maybeTeamId: Option[String], maybeNewVarsString: Option[String]) = silhouette.SecuredAction.async { implicit request =>
     val user = request.identity
-    Logger.error("This is a test")
     render.async {
       case Accepts.JavaScript() => {
         for {

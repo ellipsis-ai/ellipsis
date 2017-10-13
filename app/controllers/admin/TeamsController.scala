@@ -6,7 +6,7 @@ import com.google.inject.Provider
 import com.mohiva.play.silhouette.api.Silhouette
 import controllers.{AdminController, AuthAsAdmin, ReAuthable, RemoteAssets}
 import models.silhouette.EllipsisEnv
-import play.api.Configuration
+import play.api.{Configuration, Logger}
 import services.{AWSLambdaService, DataService}
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -23,6 +23,7 @@ class TeamsController @Inject() (
                                 ) extends AuthAsAdmin {
 
   def list(page: Int, perPage: Int) = silhouette.SecuredAction.async { implicit request =>
+    Logger.error("This is just a test - ignore it")
     withIsAdminCheck(() => {
       if (page < 0 || perPage < 0) {
         Future {
