@@ -42,7 +42,7 @@ define(function(require) {
     getInitialState: function() {
       const selectedItem = this.getDefaultSelectedItem();
       return {
-        filterChannelId: null,
+        filterChannelId: selectedItem ? selectedItem.channel : null,
         selectedItem: selectedItem,
         justSaved: false,
         justDeleted: false,
