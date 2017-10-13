@@ -252,25 +252,25 @@ define(function(require) {
     },
 
     renderSidebar: function(groups) {
-        return (
-          <div className="column column-one-quarter flex-column mobile-column-full ptxl phn bg-white border-right border-light">
-            <div className="phxl mobile-phl mbs">
-              <h5 className="mtn display-inline-block prm">Channel</h5>
-            </div>
-
-            <div>
-              <Button
-                className={`button-block width-full phxl mobile-phl pvxs mvxs ${
-                  this.state.filterChannelId ? "type-link" : "bg-blue type-white"
-                }`}
-                onClick={this.clearFilters}
-              >
-                <span className={"type-bold"}>All channels</span>
-              </Button>
-              {this.renderFilterList(groups)}
-            </div>
+      return (
+        <div>
+          <div className="phxl mobile-phl mbs">
+            <h5 className="mtn display-inline-block prm">Channel</h5>
           </div>
-        );
+
+          <div>
+            <Button
+              className={`button-block width-full phxl mobile-phl pvxs mvxs ${
+                this.state.filterChannelId ? "type-link" : "bg-blue type-white"
+              }`}
+              onClick={this.clearFilters}
+            >
+              <span className={"type-bold"}>All channels</span>
+            </Button>
+            {this.renderFilterList(groups)}
+          </div>
+        </div>
+      );
     },
 
     renderFilterList: function(groups) {
@@ -306,48 +306,44 @@ define(function(require) {
     },
 
     renderGroups: function(groups) {
-      if (groups.length > 0) {
-        return groups.map((group) => (
-          <Collapsible key={`group-${group.channelId || "unknown"}`} revealWhen={this.shouldShowChannel(group.channelId)}>
-            <div className="ptxl pbxl">
-              <div className="phxl mobile-phl">
-                <h4 className="mvn">
-                  <span className="mrxs"><ChannelName channel={group.channel} /></span>
-                  {this.renderGroupWarning(group)}
-                </h4>
-              </div>
-
-              <div>
-                {group.actions.map((action) => (
-                  <ScheduledItem
-                    key={`${action.type}-${action.id}`}
-                    className={`mhl mvs pal mobile-pam border border-light bg-white`}
-                    scheduledAction={action}
-                    behaviorGroups={this.props.behaviorGroups}
-                    onClick={this.toggleEditor}
-                  />
-                ))}
-              </div>
+      return groups.map((group) => (
+        <Collapsible key={`group-${group.channelId || "unknown"}`} revealWhen={this.shouldShowChannel(group.channelId)}>
+          <div className="ptxl pbxl">
+            <div className="phxl mobile-phl">
+              <h4 className="mvn">
+                <span className="mrxs"><ChannelName channel={group.channel} /></span>
+                {this.renderGroupWarning(group)}
+              </h4>
             </div>
-          </Collapsible>
-        ));
-      } else {
-        return (
-          <div className={"pvxxl"}>
-            <p className="type-bold">Nothing is currently scheduled in channels you can access on this team.</p>
 
-            <p>You can schedule any action to run on a recurring basis in a particular channel.</p>
+            <div>
+              {group.actions.map((action) => (
+                <ScheduledItem
+                  key={`${action.type}-${action.id}`}
+                  className={`mhl mvs pal mobile-pam border border-light bg-white`}
+                  scheduledAction={action}
+                  behaviorGroups={this.props.behaviorGroups}
+                  onClick={this.toggleEditor}
+                />
+              ))}
+            </div>
           </div>
-        );
-      }
+        </Collapsible>
+      ));
+    },
+
+    renderNoSchedules: function() {
+      return (
+        <div className={"pvxxl"}>
+          <p className="type-bold">Nothing is currently scheduled in channels you can access on this team.</p>
+
+          <p>You can schedule any action to run on a recurring basis in a particular channel.</p>
+        </div>
+      );
     },
 
     renderScheduleList: function(groups) {
-      return (
-        <div className="column mobile-column-full pbxxxxl column-three-quarters flex-column">
-          {this.renderGroups(groups)}
-        </div>
-      );
+      return groups.length > 0 ? this.renderGroups(groups) : this.renderNoSchedules();
     },
 
     render: function() {
@@ -379,8 +375,12 @@ define(function(require) {
             <div className="flex-columns flex-row-expand">
               <div className="flex-column flex-column-left flex-rows container container-wide phn">
                 <div className="columns flex-columns flex-row-expand mobile-flex-no-columns">
-                  {this.renderSidebar(groups)}
-                  {this.renderScheduleList(groups)}
+                  <div className="column column-one-quarter flex-column mobile-column-full ptxl phn bg-white border-right border-light">
+                    {this.renderSidebar(groups)}
+                  </div>
+                  <div className="column mobile-column-full pbxxxxl column-three-quarters flex-column">
+                   {this.renderScheduleList(groups)}
+                  </div>
                 </div>
               </div>
             </div>

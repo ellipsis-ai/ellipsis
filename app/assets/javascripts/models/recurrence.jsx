@@ -73,7 +73,7 @@ define(function(require) {
     }
 
     hasValidTimeZone() {
-      return this.timeZone.length > 0;
+      return this.timeZone && this.timeZone.length > 0;
     }
 
     isValidMinutely() {
