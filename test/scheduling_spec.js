@@ -7,7 +7,6 @@ const Scheduling = require('../app/assets/javascripts/scheduling/index'),
   Recurrence = require('../app/assets/javascripts/models/recurrence'),
   ScheduledAction = require('../app/assets/javascripts/models/scheduled_action'),
   ScheduleChannel = require('../app/assets/javascripts/models/schedule_channel'),
-  BehaviorGroup = require('../app/assets/javascripts/models/behavior_group'),
   ID = require('../app/assets/javascripts/lib/id');
 
 function createIndex(config) {
@@ -16,13 +15,12 @@ function createIndex(config) {
   );
 }
 
-const emptyFn = function() { void(0); }
-
+function emptyFn() { void(0); }
 
 const defaultChannelId = "C1234";
 const defaultUserId = "U1234";
 const defaultTimeZone = "America/New_York";
-const defaultTimeZoneName = "Eastern Time"
+const defaultTimeZoneName = "Eastern Time";
 
 const emptyConfig = Object.freeze({
   scheduledActions: [],
