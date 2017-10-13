@@ -1,5 +1,6 @@
 @()(implicit r: RequestHeader)
 @import play.api.routing.JavaScriptReverseRouter
+
 @JavaScriptReverseRouter("jsRoutes")(
   routes.javascript.APIAccessController.linkCustomOAuth2Service,
   routes.javascript.APIController.postMessage,
@@ -46,6 +47,7 @@
   routes.javascript.AWSConfigController.list,
   routes.javascript.AWSConfigController.newConfig,
   routes.javascript.AWSConfigController.edit,
-  routes.javascript.AWSConfigController.save
-
+  routes.javascript.AWSConfigController.save,
+  web.settings.routes.javascript.IntegrationsController.list,
+  web.settings.routes.javascript.IntegrationsController.add
 )

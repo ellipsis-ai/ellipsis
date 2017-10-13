@@ -19,13 +19,10 @@ define(function (require) {
               <a href={jsRoutes.controllers.APITokenController.listTokens(null, this.props.teamId).url}>Tokens</a>
             </li>
             <li className={this.activeClassWhenPageName("oauthApplications")}>
-              <a href={jsRoutes.controllers.OAuth2ApplicationController.list(this.props.teamId).url}>Integrations</a>
+              <a href={jsRoutes.controllers.web.settings.IntegrationsController.list(this.props.teamId).url}>Integrations</a>
             </li>
             <li className={this.activeClassWhenPageName("environmentVariables")}>
               <a href={jsRoutes.controllers.EnvironmentVariablesController.list(this.props.teamId).url}>Environment Variables</a>
-            </li>
-            <li className={this.activeClassWhenPageName("awsConfigs")}>
-            <a href={jsRoutes.controllers.AWSConfigController.list(this.props.teamId).url}>Amazon Web Services (AWS) configurations</a>
             </li>
           </ul>
         </nav>
