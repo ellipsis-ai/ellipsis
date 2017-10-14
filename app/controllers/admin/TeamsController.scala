@@ -25,6 +25,9 @@ class TeamsController @Inject() (
   def list(page: Int, perPage: Int) = silhouette.SecuredAction.async { implicit request =>
     Logger.error("This is just a test - ignore it")
     withIsAdminCheck(() => {
+      Logger.info("this is an INFO text")
+      Logger.error("this is an ERROR text")
+      Logger.warn("this is an WARN text")
       if (page < 0 || perPage < 0) {
         Future {
           BadRequest("page and perPage parameters cannot be less than zero!")
