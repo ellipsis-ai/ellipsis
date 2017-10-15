@@ -371,7 +371,7 @@ define(function(require) {
               </div>
             </div>
           </div>
-          <Collapsible revealWhen={!this.isEditing()} className={"flex-row-cascade"}>
+          <Collapsible revealWhen={!this.isEditing()} className={"flex-row-cascade mobile-flex-no-expand"}>
             <div className="flex-columns flex-row-expand">
               <div className="flex-column flex-column-left flex-rows container container-wide phn">
                 <div className="columns flex-columns flex-row-expand mobile-flex-no-columns">
