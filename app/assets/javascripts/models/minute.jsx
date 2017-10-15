@@ -4,7 +4,7 @@ define(function(require) {
   class Minute extends OptionalInt {
     toString() {
       if (this.isInteger()) {
-        return this.value.toString().padStart(2, "0");
+        return this.value.toString().replace(/^(\d)$/, "0$1");
       } else {
         return super.toString();
       }

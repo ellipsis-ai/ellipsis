@@ -2,6 +2,7 @@ define(function(require) {
   const React = require('react'),
     BrowserUtils = require('../lib/browser_utils'),
     Button = require('../form/button'),
+    ChannelName = require('./channel_name'),
     Collapsible = require('../shared_ui/collapsible'),
     ConfirmActionPanel = require('../panels/confirm_action'),
     DynamicLabelButton = require('../form/dynamic_label_button'),
@@ -41,7 +42,7 @@ define(function(require) {
     getInitialState: function() {
       const selectedItem = this.getDefaultSelectedItem();
       return {
-        filterChannel: null,
+        filterChannelId: selectedItem ? selectedItem.channel : null,
         selectedItem: selectedItem,
         justSaved: false,
         justDeleted: false,
@@ -64,7 +65,10 @@ define(function(require) {
           isEditing: Boolean(nextProps.error)
         });
       } else if (justDeleted) {
+        const hasRemainingActionsInFilteredChannel = this.state.filterChannelId ?
+          nextProps.scheduledActions.some((ea) => ea.channel === this.state.filterChannelId) : false;
         this.setState({
+          filterChannelId: hasRemainingActionsInFilteredChannel ? this.state.filterChannelId : null,
           selectedItem: nextProps.error ? this.state.selectedItem : null,
           justSaved: false,
           justDeleted: !nextProps.error,
@@ -125,8 +129,9 @@ define(function(require) {
         const excludesBot = this.props.slackBotUserId && !channel.userCanAccess(this.props.slackBotUserId);
         if (!channel || channel.isPublic || includesUser) {
           const group = groupsByName[channelName] || {
+            channel: channel,
             channelName: channelName,
-            channelId: channel.id,
+            channelId: channel ? channel.id : "unknown",
             excludesBot: excludesBot,
             excludesUser: !includesUser,
             actions: []
@@ -140,28 +145,28 @@ define(function(require) {
       return sortedNames.map((channelName) => groupsByName[channelName]);
     },
 
-    shouldShowChannel: function(channelName) {
-      return !this.state.filterChannel || this.state.filterChannel === channelName;
+    shouldShowChannel: function(channelId) {
+      return !this.state.filterChannelId || this.state.filterChannelId === channelId;
     },
 
-    toggleFilter: function(channelName) {
+    toggleFilter: function(channelId) {
       const newState = {};
-      if (this.filterActiveFor(channelName)) {
-        newState.filterChannel = null;
+      if (this.filterActiveFor(channelId)) {
+        newState.filterChannelId = null;
       } else {
-        newState.filterChannel = channelName;
+        newState.filterChannelId = channelId;
       }
       this.setState(newState);
     },
 
     clearFilters: function() {
       this.setState({
-        filterChannel: null
+        filterChannelId: null
       });
     },
 
-    filterActiveFor: function(channelName) {
-      return this.state.filterChannel === channelName;
+    filterActiveFor: function(channelId) {
+      return this.state.filterChannelId === channelId;
     },
 
     toggleEditor: function(action) {
@@ -247,25 +252,25 @@ define(function(require) {
     },
 
     renderSidebar: function(groups) {
-        return (
-          <div className="column column-one-quarter mobile-column-full ptxl phn">
-            <div className="phxl mobile-phl mbs">
-              <h5 className="mtn display-inline-block prm">Filter by channel</h5>
-            </div>
-
-            <div>
-              <Button
-                className={`button-block width-full phxl mobile-phl pvxs mvxs ${
-                  this.state.filterChannel ? "type-link" : "bg-blue type-white"
-                }`}
-                onClick={this.clearFilters}
-              >
-                <span className={"type-bold"}>All channels</span>
-              </Button>
-              {this.renderFilterList(groups)}
-            </div>
+      return (
+        <div>
+          <div className="phxl mobile-phl mbs">
+            <h5 className="mtn display-inline-block prm">Channel</h5>
           </div>
-        );
+
+          <div>
+            <Button
+              className={`button-block width-full phxl mobile-phl pvxs mvxs ${
+                this.state.filterChannelId ? "type-link" : "bg-blue type-white"
+              }`}
+              onClick={this.clearFilters}
+            >
+              <span className={"type-bold"}>All channels</span>
+            </Button>
+            {this.renderFilterList(groups)}
+          </div>
+        </div>
+      );
     },
 
     renderFilterList: function(groups) {
@@ -273,10 +278,10 @@ define(function(require) {
         return groups.map((group) => (
           <Button
             className={`button-block width-full phxl mobile-phl pvxs mvxs ${
-              this.filterActiveFor(group.channelName) ? "bg-blue type-white " : "type-link "
+              this.filterActiveFor(group.channelId) ? "bg-blue type-white " : "type-link "
               }`}
             key={`filter-${group.channelName}`}
-            onClick={() => this.toggleFilter(group.channelName)}
+            onClick={() => this.toggleFilter(group.channelId)}
           >
             {group.channelName}
           </Button>
@@ -301,54 +306,54 @@ define(function(require) {
     },
 
     renderGroups: function(groups) {
-      const groupClassName = groups.length > 1 ? "phxxxl mobile-phl" : "container";
-      if (groups.length > 0) {
-        return groups.map((group) => (
-          <Collapsible key={`group-${group.channelName}`} revealWhen={this.shouldShowChannel(group.channelName)}>
-            <div className="pvl">
-              <div className={groupClassName}>
-                <h4 className="mtn">
-                  <span className="mrxs">{group.channelName}</span>
-                  {this.renderGroupWarning(group)}
-                </h4>
-              </div>
-
-              <div>
-                {group.actions.map((action) => (
-                  <div className={"pvxl border-top " + groupClassName} key={`${action.type}-${action.id}`}>
-                    <ScheduledItem scheduledAction={action} behaviorGroups={this.props.behaviorGroups} onClick={this.toggleEditor} />
-                  </div>
-                ))}
-              </div>
+      return groups.map((group) => (
+        <Collapsible key={`group-${group.channelId || "unknown"}`} revealWhen={this.shouldShowChannel(group.channelId)}>
+          <div className="ptxl pbxl">
+            <div className="phxl mobile-phl">
+              <h4 className="mvn">
+                <span className="mrxs"><ChannelName channel={group.channel} /></span>
+                {this.renderGroupWarning(group)}
+              </h4>
             </div>
-          </Collapsible>
-        ));
-      } else {
-        return (
-          <div className={"ptxxl " + groupClassName}>
-            <p className="type-bold">Nothing is currently scheduled on this team.</p>
 
-            <p>You can schedule any action to run on a recurring basis in a particular channel.</p>
+            <div>
+              {group.actions.map((action) => (
+                <ScheduledItem
+                  key={`${action.type}-${action.id}`}
+                  className={`mhl mvs pal mobile-pam border border-light bg-white`}
+                  scheduledAction={action}
+                  behaviorGroups={this.props.behaviorGroups}
+                  onClick={this.toggleEditor}
+                />
+              ))}
+            </div>
           </div>
-        );
-      }
+        </Collapsible>
+      ));
+    },
+
+    renderNoSchedules: function() {
+      return (
+        <div className={"pvxxl"}>
+          <p className="type-bold">Nothing is currently scheduled in channels you can access on this team.</p>
+
+          <p>You can schedule any action to run on a recurring basis in a particular channel.</p>
+        </div>
+      );
     },
 
     renderScheduleList: function(groups) {
-      return (
-        <div className="column mobile-column-full bg-white ptxl pbxxxxl column-three-quarters border-radius-bottom-left">
-          {this.renderGroups(groups)}
-        </div>
-      );
+      return groups.length > 0 ? this.renderGroups(groups) : this.renderNoSchedules();
     },
 
     render: function() {
       const groups = this.getScheduleByChannel();
       const selectedItem = this.getSelectedItem();
+      const selectedItemChannel = selectedItem ? this.props.channelList.find((ea) => ea.id === selectedItem.channel) : null;
       const selectedItemIsValid = Boolean(selectedItem && selectedItem.isValid());
       const selectedItemIsNew = Boolean(selectedItem && selectedItem.isNew());
       return (
-        <div>
+        <div className="flex-row-cascade">
           <div className="bg-light">
             <div className="container container-wide pvxl">
               <div className="columns columns-elastic mobile-columns-float">
@@ -366,12 +371,16 @@ define(function(require) {
               </div>
             </div>
           </div>
-          <Collapsible revealWhen={!this.isEditing()}>
-            <div className="flex-columns">
-              <div className="flex-column flex-column-left container container-wide phn">
-                <div className="columns">
-                  {this.renderSidebar(groups)}
-                  {this.renderScheduleList(groups)}
+          <Collapsible revealWhen={!this.isEditing()} className={"flex-row-cascade mobile-flex-no-expand"}>
+            <div className="flex-columns flex-row-expand">
+              <div className="flex-column flex-column-left flex-rows container container-wide phn">
+                <div className="columns flex-columns flex-row-expand mobile-flex-no-columns">
+                  <div className="column column-one-quarter flex-column mobile-column-full ptxl phn bg-white border-right border-light">
+                    {this.renderSidebar(groups)}
+                  </div>
+                  <div className="column mobile-column-full pbxxxxl column-three-quarters flex-column">
+                   {this.renderScheduleList(groups)}
+                  </div>
                 </div>
               </div>
             </div>
@@ -402,11 +411,39 @@ define(function(require) {
                 <div className="mbxl">
                   <p className="type-bold">Are you sure you want to unschedule this item?</p>
 
-                  {this.getSelectedItem() ? (
-                    <p className="type-s">
-                      <span><ScheduledItemTitle scheduledAction={this.getSelectedItem()} behaviorGroups={this.props.behaviorGroups}/> </span>
-                      <span>{this.getSelectedItem().recurrence.displayString}</span>
-                    </p>
+                  {selectedItem ? (
+                    <div className="columns columns-elastic type-s">
+                      <div className="column-group">
+                        <div className="column-row">
+                          <div className="column column-shrink">
+                            <h6 className="mtxs">What</h6>
+                          </div>
+                          <div className="column column-expand">
+                            <p>
+                              <ScheduledItemTitle scheduledAction={selectedItem} behaviorGroups={this.props.behaviorGroups}/>
+                            </p>
+                          </div>
+                        </div>
+                        {selectedItemChannel ? (
+                          <div className="column-row">
+                            <div className="column column-shrink">
+                              <h6 className="mtxs">Where</h6>
+                            </div>
+                            <div className="column column-expand">
+                              <p>In {selectedItemChannel.getDescription()}</p>
+                            </div>
+                          </div>
+                        ) : null}
+                        <div className="column-row">
+                          <div className="column column-shrink">
+                            <h6 className="mtxs">When</h6>
+                          </div>
+                          <div className="column column-expand">
+                            <p>{selectedItem.recurrence.displayString}</p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
                   ) : null}
                 </div>
               </ConfirmActionPanel>

@@ -3,6 +3,8 @@ define(function(require) {
     Checkbox = require('../form/checkbox'),
     Collapsible = require('../shared_ui/collapsible'),
     SearchWithResults = require('../form/search_with_results'),
+    SVGCheckmark = require('../svg/checkmark'),
+    ChannelName = require('./channel_name'),
     ScheduledAction = require('../models/scheduled_action'),
     ScheduleChannel = require('../models/schedule_channel');
 
@@ -100,11 +102,8 @@ define(function(require) {
     },
 
     nameForChannel: function(channelId) {
-      const channel = this.props.channelList.find((ea) => ea.id === channelId);
-      return channel ? (
-        <span>{channel.getFormattedName()}</span>
-      ) : (
-        <span className="type-disabled">None</span>
+      return (
+        <ChannelName channel={this.props.channelList.find((ea) => ea.id === channelId)} />
       );
     },
 
@@ -127,19 +126,20 @@ define(function(require) {
       if (this.botMissingFromChannel()) {
         return (
           <span className="type-pink type-bold type-italic">
-            — Warning: Ellipsis must be invited to this channel to run any action.
+            Warning: Ellipsis must be invited to this channel to run any action.
           </span>
         );
       } else if (this.props.scheduledAction.channel) {
         return (
           <span className="type-green">
-            — Ellipsis can send messages in this channel.
+            <span className="display-inline-block height-l align-m mrs"><SVGCheckmark /></span>
+            <span className="display-inline-block align-m">Ellipsis can send messages in this channel.</span>
           </span>
         );
       } else {
         return (
           <span className="type-pink">
-            — Select a channel for Ellipsis to run this action.
+            Select a channel for Ellipsis to run this action.
           </span>
         );
       }
@@ -164,10 +164,11 @@ define(function(require) {
               onEnterKey={this.selectChannel}
             />
           </Collapsible>
-          <div className="type-s mtm mbs">
-            <span>Channel: </span>
-            <b className="mrxs">{this.nameForChannel(this.props.scheduledAction.channel)}</b>
-            {this.renderChannelWarning()}
+          <div className="mtm mbs">
+            <div className="border border-light bg-white display-inline-block pvxs phs mbs">
+              {this.nameForChannel(this.props.scheduledAction.channel)}
+            </div>
+            <div className="type-s">{this.renderChannelWarning()}</div>
           </div>
           <div className="type-s mvs">
             <Checkbox
