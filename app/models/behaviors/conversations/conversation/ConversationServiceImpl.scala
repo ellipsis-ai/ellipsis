@@ -100,6 +100,11 @@ class ConversationServiceImpl @Inject() (
     dataService.run(allOngoingForAction(userIdForContext, context, maybeChannel, maybeThreadId))
   }
 
+  def allOngoingBehaviorGroupVersionIds: Future[Seq[String]] = {
+    val action = allOngoingVersionIdsQuery(Conversation.DONE_STATE).result
+    dataService.run(action)
+  }
+
   def allForeground: Future[Seq[Conversation]] = {
     val action = allForegroundQuery.result.map { r =>
       r.map(tuple2Conversation)
@@ -129,6 +134,11 @@ class ConversationServiceImpl @Inject() (
 
   def cancel(conversation: Conversation): Future[Unit] = {
     dataService.run(cancelAction(conversation))
+  }
+
+  def cancelOldConverations: Future[Unit] = {
+    val action = cancelOldConversationsQuery(OffsetDateTime.now.minusDays(1), Conversation.DONE_STATE).update(Conversation.DONE_STATE).map(_ => {})
+    dataService.run(action)
   }
 
   def deleteAll(): Future[Unit] = {
