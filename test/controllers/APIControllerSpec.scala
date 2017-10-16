@@ -459,6 +459,7 @@ class APIControllerSpec extends PlaySpec with MockitoSugar {
                              maybeActionName: Option[String],
                              maybeTrigger: Option[String],
                              maybeUserId: Option[String],
+                             maybeChannel: Option[String],
                              token: String
                            ): JsValue = {
     var elements = Seq(
@@ -473,6 +474,9 @@ class APIControllerSpec extends PlaySpec with MockitoSugar {
     maybeUserId.foreach { uid =>
       elements = elements ++ Seq(("userId", JsString(uid)))
     }
+    maybeChannel.foreach { channel =>
+      elements = elements ++ Seq(("channel", JsString(channel)))
+    }
     JsObject(elements)
   }
 
@@ -481,7 +485,7 @@ class APIControllerSpec extends PlaySpec with MockitoSugar {
     "400 for invalid token" in new ControllerTestContext {
       running(app) {
         val token = setUpMocksFor(team, user, isTokenValid = false, None, app, eventHandler, dataService, cacheService, slackEventService, botResultService)
-        val body = unscheduleActionBodyFor(Some("foo"), None, None, token)
+        val body = unscheduleActionBodyFor(Some("foo"), None, None, None, token)
         val request = FakeRequest(controllers.routes.APIController.unscheduleAction()).withJsonBody(body)
         val result = route(app, request).get
         status(result) mustBe BAD_REQUEST
@@ -493,7 +497,7 @@ class APIControllerSpec extends PlaySpec with MockitoSugar {
     "400 for neither actionName nor trigger" in new ControllerTestContext {
       running(app) {
         val token = setUpMocksFor(team, user, isTokenValid = false, None, app, eventHandler, dataService, cacheService, slackEventService, botResultService)
-        val body = unscheduleActionBodyFor(None, None, None, token)
+        val body = unscheduleActionBodyFor(None, None, None, None, token)
         val request = FakeRequest(controllers.routes.APIController.unscheduleAction()).withJsonBody(body)
         val result = route(app, request).get
         status(result) mustBe BAD_REQUEST
@@ -504,7 +508,7 @@ class APIControllerSpec extends PlaySpec with MockitoSugar {
     "400 for both actionName and trigger" in new ControllerTestContext {
       running(app) {
         val token = setUpMocksFor(team, user, isTokenValid = false, None, app, eventHandler, dataService, cacheService, slackEventService, botResultService)
-        val body = unscheduleActionBodyFor(Some("foo"), Some("bar"), None, token)
+        val body = unscheduleActionBodyFor(Some("foo"), Some("bar"), None, None, token)
         val request = FakeRequest(controllers.routes.APIController.unscheduleAction()).withJsonBody(body)
         val result = route(app, request).get
         status(result) mustBe BAD_REQUEST
@@ -524,7 +528,7 @@ class APIControllerSpec extends PlaySpec with MockitoSugar {
         when(dataService.behaviors.findByIdOrName(org.mockito.Matchers.eq(actionName), any[BehaviorGroup])).thenReturn(Future.successful(Some(targetBehavior)))
         val invalidUserId = "invalid"
         when(dataService.users.find(invalidUserId)).thenReturn(Future.successful(None))
-        val body = unscheduleActionBodyFor(Some("foo"), None, Some(invalidUserId), token)
+        val body = unscheduleActionBodyFor(Some("foo"), None, Some(invalidUserId), None, token)
         val request = FakeRequest(controllers.routes.APIController.unscheduleAction()).withJsonBody(body)
         val result = route(app, request).get
         status(result) mustBe NOT_FOUND
@@ -553,7 +557,7 @@ class APIControllerSpec extends PlaySpec with MockitoSugar {
         when(mockScheduledBehavior.displayText(dataService)).thenReturn(Future.successful(s"an action named $actionName"))
         when(dataService.scheduledBehaviors.allForBehavior(targetBehavior, None, None)).thenReturn(Future.successful(Seq(mockScheduledBehavior)))
 
-        val body = unscheduleActionBodyFor(Some(actionName), None, None, token)
+        val body = unscheduleActionBodyFor(Some(actionName), None, None, None, token)
         val request = FakeRequest(controllers.routes.APIController.unscheduleAction()).withJsonBody(body)
         val result = route(app, request).get
         status(result) mustBe OK
@@ -570,15 +574,17 @@ class APIControllerSpec extends PlaySpec with MockitoSugar {
         val trigger = "foo"
         when(dataService.users.ensureUserFor(any[LoginInfo], anyString)).thenReturn(Future.successful(user))
         val mockScheduledMessage = mock[ScheduledMessage]
-        when(dataService.scheduledMessages.allForTeam(team)).thenReturn(Future.successful(Seq(mockScheduledMessage)))
-        when(dataService.scheduledMessages.deleteFor(trigger, team)).thenReturn(Future.successful(true))
+        when(mockScheduledMessage.displayText(dataService)).thenReturn(Future.successful("Run `foo` every day at 9:00 am"))
+        when(dataService.scheduledMessages.allForText(trigger, team, None, Some(defaultChannel))).thenReturn(Future.successful(Seq(mockScheduledMessage)))
+        when(dataService.scheduledMessages.delete(mockScheduledMessage)).thenReturn(Future.successful(true))
 
-        val body = unscheduleActionBodyFor(None, Some(trigger), None, token)
+        val body = unscheduleActionBodyFor(None, Some(trigger), None, Some(defaultChannel), token)
         val request = FakeRequest(controllers.routes.APIController.unscheduleAction()).withJsonBody(body)
         val result = route(app, request).get
         status(result) mustBe OK
 
-        verify(dataService.scheduledMessages, times(1)).deleteFor(trigger, team)
+        verify(dataService.scheduledMessages, times(1)).allForText(trigger, team, None, Some(defaultChannel))
+        verify(dataService.scheduledMessages, times(1)).delete(mockScheduledMessage)
       }
     }
 
