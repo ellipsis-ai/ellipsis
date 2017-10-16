@@ -44,7 +44,16 @@ class ScheduledActor @Inject()(
           _ <- maybeProfile.map { profile =>
             scheduled.updateNextTriggeredForAction(dataService).flatMap { _ =>
               DBIO.from(scheduled.send(eventHandler, new SlackApiClient(profile.token), profile, services).recover {
-                case t: Throwable => Logger.error(s"Exception handling scheduled message: $displayText", t)
+                case t: Throwable => {
+                  val message =
+                    s"""Exception handling scheduled message:
+                       |Team: ${scheduled.team.name} (${scheduled.team.id})
+                       |Channel: ${scheduled.maybeChannel.getOrElse("(missing)")}
+                       |Send privately: ${scheduled.isForIndividualMembers.toString}
+                       |Summary: $displayText
+                       |""".stripMargin
+                  Logger.error(message, t)
+                }
               })
             }
           }.getOrElse(DBIO.successful({}))
