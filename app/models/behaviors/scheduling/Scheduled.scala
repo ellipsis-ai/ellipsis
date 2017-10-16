@@ -223,12 +223,8 @@ trait Scheduled {
             Some(SlackDMInfo(userData.accountId, dmChannel))
           }.recover {
             case e: ApiError => {
-              val msg = s"Couldn't send DM to $userData.accountId due to Slack API error: ${e.code}"
-              if (e.code == "account_inactive") {
-                Logger.info(msg, e) // we expect these to happen for deactivated accounts
-              } else {
-                Logger.error(msg, e)
-              }
+              val msg = s"""Couldn't open DM for scheduled message to ${userData.fullName} (${userData.accountId}) on Slack team ${userData.accountTeamId} due to Slack API error: ${e.code}"""
+              Logger.error(msg, e)
               None
             }
           }
