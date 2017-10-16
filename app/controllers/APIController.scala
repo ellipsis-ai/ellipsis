@@ -504,18 +504,32 @@ class APIController @Inject() (
                                    info: UnscheduleActionInfo,
                                    context: ApiMethodContext
                                   )(implicit request: Request[AnyContent]): Future[Result] = {
-    context.maybeTeam.map { team =>
-      dataService.scheduledMessages.deleteFor(trigger, team).map { didDelete =>
-        if (didDelete) {
-          Ok(s"Ok, I unscheduled everything for `$trigger`")
-        } else {
-          Ok("There was nothing to unschedule for this trigger")
+    for {
+      maybeSlackChannelId <- info.channel.map { channel =>
+        context.maybeSlackChannelIdFor(channel)
+      }.getOrElse(Future.successful(info.channel))
+      maybeUser <- info.userId.map { userId =>
+        dataService.users.find(userId)
+      }.getOrElse(Future.successful(None))
+      result <- context.maybeTeam.map { team =>
+        dataService.scheduledMessages.allForText(trigger, team, maybeUser, maybeSlackChannelId).flatMap { scheduledMessages =>
+          if (scheduledMessages.isEmpty) {
+            Future.successful(Ok("There was nothing to unschedule for this trigger"))
+          } else {
+            for {
+              displayText <- scheduledMessages.head.displayText(dataService)
+              _ <- Future.sequence(scheduledMessages.map { ea =>
+                dataService.scheduledMessages.delete(ea)
+              })
+            } yield {
+              Ok(s"Ok, I unscheduled everything for $displayText")
+            }
+          }
         }
+      }.getOrElse {
+        Future.successful(notFound("Couldn't find team", Json.toJson(info)))
       }
-    }.getOrElse {
-      Future.successful(notFound("Couldn't find team", Json.toJson(info)))
-    }
-
+    } yield result
   }
 
   def unscheduleAction = Action.async { implicit request =>

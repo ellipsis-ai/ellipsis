@@ -314,6 +314,7 @@ class AWSLambdaServiceImpl @Inject() (
         |  $CONTEXT_PARAM.success = ellipsisSuccessCallback;
         |  $CONTEXT_PARAM.Error = EllipsisError;
         |  $CONTEXT_PARAM.error = ellipsisErrorCallback;
+        |  $CONTEXT_PARAM.require = function(module) { return require(module.replace(/@.+$$/, "")); }
         |  process.removeAllListeners('unhandledRejection');
         |  process.on('unhandledRejection', $CONTEXT_PARAM.error);
         |
