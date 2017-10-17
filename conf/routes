@@ -104,23 +104,23 @@ GET         /health_check                             @controllers.HealthControl
 #POST        /signUp                          controllers.SignUpController.signUp
 
 GET         /get_item/:itemId/:itemType/:token        @controllers.DefaultStorage.getItem(itemId: String, itemType: String, token: String)
+
+
+# API v0
 #NOCSRF
 POST        /put_item                                 @controllers.DefaultStorage.putItem
-#NOCSRF
 POST        /api/post_message                         @controllers.APIController.postMessage
-#NOCSRF
 POST        /api/run_action                           @controllers.APIController.runAction
-#NOCSRF
 POST        /api/schedule_action                      @controllers.APIController.scheduleAction
-#NOCSRF
 POST        /api/unschedule_action                    @controllers.APIController.unscheduleAction
-#NOCSRF
 POST        /api/say                                  @controllers.APIController.say
-#NOCSRF
 GET         /get_action_logs/:behaviorId/:token       @controllers.InvocationLogController.getLogs(behaviorId: String, token: String, from: Option[String] ?= None, to: Option[String] ?= None, userId: Option[String] ?= None)
-#NOCSRF
 POST        /api/graphql                              @controllers.GraphQLController.query
 
+# API v1
+#NOCSRF
+POST        /api/v1/action_requests                   @controllers.APIController.postMessage
+POST        /api/v1/messages                          @controllers.APIController.say
 
 # Map static resources from the /public folder to the /assets URL path
 GET         /assets/*file                             @controllers.RemoteAssets.getAsset(path="/public", file: Asset)
