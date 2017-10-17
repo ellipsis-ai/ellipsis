@@ -1,5 +1,7 @@
 package models.behaviors
 
+import models.behaviors.behaviorversion.BehaviorVersion
+
 case class ExecutionLogData(logged: String, stack: String) {
   private val stackTraceSourceRegex = """^\s+at\s+(?:\S*)\s*\(?/var/task/(.+)\.js:(\d+):(\d+)\)?""".r
 
@@ -14,7 +16,7 @@ case class ExecutionLogData(logged: String, stack: String) {
     val maybeSourceLine = lines.slice(1, 2).headOption
     maybeSourceLine.map {
       case stackTraceSourceRegex(sourceFile, lineNumber, charNumber) => {
-        val lineInfo = Option(sourceFile).filterNot(_.startsWith("behavior_versions/")).map { sourceName =>
+        val lineInfo = Option(sourceFile).filterNot(_.startsWith(s"${BehaviorVersion.dirName}/")).map { sourceName =>
           s"$sourceName:$lineNumber"
         }.getOrElse(lineNumber)
         s"${maybeLogMethod.getOrElse("")}$lineInfo: "
