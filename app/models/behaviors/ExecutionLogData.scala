@@ -14,7 +14,7 @@ case class ExecutionLogData(logged: String, stack: String) {
     val maybeSourceLine = lines.slice(1, 2).headOption
     maybeSourceLine.map {
       case stackTraceSourceRegex(sourceFile, lineNumber, charNumber) => {
-        val lineInfo = Option(sourceFile).filterNot(_.contains("behavior_versions")).map { sourceName =>
+        val lineInfo = Option(sourceFile).filterNot(_.startsWith("behavior_versions/")).map { sourceName =>
           s"$sourceName:$lineNumber"
         }.getOrElse(lineNumber)
         s"${maybeLogMethod.getOrElse("")}$lineInfo: "
