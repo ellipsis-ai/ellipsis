@@ -550,19 +550,27 @@ class APIControllerSpec extends PlaySpec with MockitoSugar {
         when(dataService.users.ensureUserFor(any[LoginInfo], anyString)).thenReturn(Future.successful(user))
         val mockVersion = mock[BehaviorGroupVersion]
         when(dataService.behaviorGroups.maybeCurrentVersionFor(group)).thenReturn(Future.successful(Some(mockVersion)))
-        val mockScheduledBehavior = mock[ScheduledBehavior]
-        when(dataService.scheduledBehaviors.allForBehavior(targetBehavior, None, None)).thenReturn(Future.successful(Seq(mockScheduledBehavior)))
+        val scheduledBehavior = ScheduledBehavior(
+          IDs.next,
+          targetBehavior,
+          Map(),
+          Some(user),
+          team,
+          Some(defaultChannel),
+          isForIndividualMembers = false,
+          Daily(IDs.next, 1, LocalTime.of(12, 0, 0), team.timeZone),
+          OffsetDateTime.now,
+          OffsetDateTime.now
+        )
+        when(dataService.scheduledBehaviors.allForBehavior(targetBehavior, None, Some(defaultChannel))).thenReturn(Future.successful(Seq(scheduledBehavior)))
+        when(dataService.scheduledBehaviors.delete(scheduledBehavior)).thenReturn(Future.successful(Some(scheduledBehavior)))
 
-        when(dataService.scheduledBehaviors.delete(mockScheduledBehavior)).thenReturn(Future.successful(Some(mockScheduledBehavior)))
-        when(mockScheduledBehavior.displayText(dataService)).thenReturn(Future.successful(s"an action named $actionName"))
-        when(dataService.scheduledBehaviors.allForBehavior(targetBehavior, None, None)).thenReturn(Future.successful(Seq(mockScheduledBehavior)))
-
-        val body = unscheduleActionBodyFor(Some(actionName), None, None, None, token)
+        val body = unscheduleActionBodyFor(Some(actionName), None, None, Some(defaultChannel), token)
         val request = FakeRequest(controllers.routes.APIController.unscheduleAction()).withJsonBody(body)
         val result = route(app, request).get
         status(result) mustBe OK
 
-        verify(dataService.scheduledBehaviors, times(1)).delete(mockScheduledBehavior)
+        verify(dataService.scheduledBehaviors, times(1)).delete(scheduledBehavior)
       }
     }
 
@@ -573,10 +581,22 @@ class APIControllerSpec extends PlaySpec with MockitoSugar {
         val token = setUpMocksFor(team, user, isTokenValid = true, Some(originatingBehavior.id), app, eventHandler, dataService, cacheService, slackEventService, botResultService)
         val trigger = "foo"
         when(dataService.users.ensureUserFor(any[LoginInfo], anyString)).thenReturn(Future.successful(user))
-        val mockScheduledMessage = mock[ScheduledMessage]
-        when(mockScheduledMessage.displayText(dataService)).thenReturn(Future.successful("Run `foo` every day at 9:00 am"))
-        when(dataService.scheduledMessages.allForText(trigger, team, None, Some(defaultChannel))).thenReturn(Future.successful(Seq(mockScheduledMessage)))
-        when(dataService.scheduledMessages.delete(mockScheduledMessage)).thenReturn(Future.successful(Some(mockScheduledMessage)))
+        val mockRecurrence = mock[Daily]
+        when(mockRecurrence.displayString).thenReturn("every day at 99 o'clock")
+        val scheduledMessage = ScheduledMessage(
+          IDs.next,
+          trigger,
+          Some(user),
+          team,
+          Some(defaultChannel),
+          isForIndividualMembers = false,
+          Daily(IDs.next, 1, LocalTime.of(12, 0, 0), team.timeZone),
+          OffsetDateTime.now,
+          OffsetDateTime.now
+        )
+
+        when(dataService.scheduledMessages.allForText(trigger, team, None, Some(defaultChannel))).thenReturn(Future.successful(Seq(scheduledMessage)))
+        when(dataService.scheduledMessages.delete(scheduledMessage)).thenReturn(Future.successful(Some(scheduledMessage)))
 
         val body = unscheduleActionBodyFor(None, Some(trigger), None, Some(defaultChannel), token)
         val request = FakeRequest(controllers.routes.APIController.unscheduleAction()).withJsonBody(body)
@@ -584,7 +604,7 @@ class APIControllerSpec extends PlaySpec with MockitoSugar {
         status(result) mustBe OK
 
         verify(dataService.scheduledMessages, times(1)).allForText(trigger, team, None, Some(defaultChannel))
-        verify(dataService.scheduledMessages, times(1)).delete(mockScheduledMessage)
+        verify(dataService.scheduledMessages, times(1)).delete(scheduledMessage)
       }
     }
 
