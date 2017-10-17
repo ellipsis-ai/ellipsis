@@ -553,7 +553,7 @@ class APIControllerSpec extends PlaySpec with MockitoSugar {
         val mockScheduledBehavior = mock[ScheduledBehavior]
         when(dataService.scheduledBehaviors.allForBehavior(targetBehavior, None, None)).thenReturn(Future.successful(Seq(mockScheduledBehavior)))
 
-        when(dataService.scheduledBehaviors.delete(mockScheduledBehavior)).thenReturn(Future.successful(true))
+        when(dataService.scheduledBehaviors.delete(mockScheduledBehavior)).thenReturn(Future.successful(Some(mockScheduledBehavior)))
         when(mockScheduledBehavior.displayText(dataService)).thenReturn(Future.successful(s"an action named $actionName"))
         when(dataService.scheduledBehaviors.allForBehavior(targetBehavior, None, None)).thenReturn(Future.successful(Seq(mockScheduledBehavior)))
 
@@ -576,7 +576,7 @@ class APIControllerSpec extends PlaySpec with MockitoSugar {
         val mockScheduledMessage = mock[ScheduledMessage]
         when(mockScheduledMessage.displayText(dataService)).thenReturn(Future.successful("Run `foo` every day at 9:00 am"))
         when(dataService.scheduledMessages.allForText(trigger, team, None, Some(defaultChannel))).thenReturn(Future.successful(Seq(mockScheduledMessage)))
-        when(dataService.scheduledMessages.delete(mockScheduledMessage)).thenReturn(Future.successful(true))
+        when(dataService.scheduledMessages.delete(mockScheduledMessage)).thenReturn(Future.successful(Some(mockScheduledMessage)))
 
         val body = unscheduleActionBodyFor(None, Some(trigger), None, Some(defaultChannel), token)
         val request = FakeRequest(controllers.routes.APIController.unscheduleAction()).withJsonBody(body)
