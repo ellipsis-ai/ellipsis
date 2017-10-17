@@ -41,11 +41,12 @@ case class BehaviorGroupZipImporter(
 
     val versionStringMaps = scala.collection.mutable.Map[String, scala.collection.mutable.Map[String, String]]()
 
-    val versionFileRegex = """^(actions|data_types)/([^/]+)/(.+)""".r
-    val readmeRegex = """^README$$""".r
-    val configRegex = """^config\.json$$""".r
-    val actionInputsRegex = """^action_inputs\.json$$""".r
-    val dataTypeInputsRegex = """^data_type_inputs\.json$$""".r
+    val optionalParentDir = """^(?:[^/]+\/)?"""
+    val versionFileRegex = raw"""${optionalParentDir}(actions|data_types)/([^/]+)/(.+)""".r
+    val readmeRegex = raw"""${optionalParentDir}README$$""".r
+    val configRegex = raw"""${optionalParentDir}config\.json$$""".r
+    val actionInputsRegex = raw"""${optionalParentDir}action_inputs\.json$$""".r
+    val dataTypeInputsRegex = raw"""${optionalParentDir}data_type_inputs\.json$$""".r
 
     var maybeGroupName: Option[String] = None
     var maybeGroupDescription: Option[String] = None

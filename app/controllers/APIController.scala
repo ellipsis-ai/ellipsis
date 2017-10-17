@@ -40,14 +40,23 @@ class APIController @Inject() (
 
   class InvalidTokenException extends Exception
 
-  private def badRequest(message: String, details: JsValue = JsObject.empty): Result = {
-    Logger.info(s"Returning a 400 BAD REQUEST for: $message\n${Json.prettyPrint(details)}")
-    BadRequest(message)
+  private def logAndRespondFor(status: Status, message: String, details: JsValue = JsObject.empty)(implicit r: Request[AnyContent]): Result = {
+    val result = status.apply(message)
+    Logger.info(
+      s"""Returning a ${result.header.status} for: $message
+         |
+         |Api info: ${Json.prettyPrint(details)}
+         |
+         |Request: ${r} with ${r.rawQueryString} ${r.body}""".stripMargin)
+    result
   }
 
-  private def notFound(message: String, details: JsValue = JsObject.empty): Result = {
-    Logger.info(s"Returning a 404 NOT FOUND for: $message\n${Json.prettyPrint(details)}")
-    NotFound(message)
+  private def badRequest(message: String, details: JsValue = JsObject.empty)(implicit r: Request[AnyContent]): Result = {
+    logAndRespondFor(BadRequest, message, details)
+  }
+
+  private def notFound(message: String, details: JsValue = JsObject.empty)(implicit r: Request[AnyContent]): Result = {
+    logAndRespondFor(NotFound, message, details)
   }
 
   trait ApiMethodInfo {
@@ -232,7 +241,7 @@ class APIController @Inject() (
     (info.actionName.isDefined || info.trigger.isDefined) && (info.actionName.isEmpty || info.trigger.isEmpty)
   }
 
-  private def resultForFormErrors[T <: ApiMethodInfo](formWithErrors: Form[T]): Result = {
+  private def resultForFormErrors[T <: ApiMethodInfo](formWithErrors: Form[T])(implicit r: Request[AnyContent]): Result = {
     badRequest(formWithErrors.errors.map(_.message).mkString(", "))
   }
 
@@ -291,7 +300,11 @@ class APIController @Inject() (
           slackService.clientFor(botProfile)
         )
       )
-      result <- runBehaviorFor(maybeEvent, context)
+      result <- if (maybeBehavior.isDefined) {
+        runBehaviorFor(maybeEvent, context)
+      } else {
+        Future.successful(notFound(s"Action named `$actionName` not found", Json.toJson(info)))
+      }
     } yield result
   }
 
@@ -504,18 +517,32 @@ class APIController @Inject() (
                                    info: UnscheduleActionInfo,
                                    context: ApiMethodContext
                                   )(implicit request: Request[AnyContent]): Future[Result] = {
-    context.maybeTeam.map { team =>
-      dataService.scheduledMessages.deleteFor(trigger, team).map { didDelete =>
-        if (didDelete) {
-          Ok(s"Ok, I unscheduled everything for `$trigger`")
-        } else {
-          Ok("There was nothing to unschedule for this trigger")
+    for {
+      maybeSlackChannelId <- info.channel.map { channel =>
+        context.maybeSlackChannelIdFor(channel)
+      }.getOrElse(Future.successful(info.channel))
+      maybeUser <- info.userId.map { userId =>
+        dataService.users.find(userId)
+      }.getOrElse(Future.successful(None))
+      result <- context.maybeTeam.map { team =>
+        dataService.scheduledMessages.allForText(trigger, team, maybeUser, maybeSlackChannelId).flatMap { scheduledMessages =>
+          if (scheduledMessages.isEmpty) {
+            Future.successful(Ok("There was nothing to unschedule for this trigger"))
+          } else {
+            for {
+              displayText <- scheduledMessages.head.displayText(dataService)
+              _ <- Future.sequence(scheduledMessages.map { ea =>
+                dataService.scheduledMessages.delete(ea)
+              })
+            } yield {
+              Ok(s"Ok, I unscheduled everything for $displayText")
+            }
+          }
         }
+      }.getOrElse {
+        Future.successful(notFound("Couldn't find team", Json.toJson(info)))
       }
-    }.getOrElse {
-      Future.successful(notFound("Couldn't find team", Json.toJson(info)))
-    }
-
+    } yield result
   }
 
   def unscheduleAction = Action.async { implicit request =>
