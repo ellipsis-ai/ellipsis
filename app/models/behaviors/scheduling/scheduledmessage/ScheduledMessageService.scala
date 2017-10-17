@@ -47,6 +47,6 @@ trait ScheduledMessageService {
 
   def deleteFor(text: String, team: Team): Future[Boolean]
 
-  def delete(scheduledMessage: ScheduledMessage): Future[Boolean]
+  def delete(scheduledMessage: ScheduledMessage): Future[Option[ScheduledMessage]]
 
 }

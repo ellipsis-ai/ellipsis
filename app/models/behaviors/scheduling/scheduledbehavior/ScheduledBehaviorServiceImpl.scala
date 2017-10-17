@@ -263,8 +263,16 @@ class ScheduledBehaviorServiceImpl @Inject() (
   }
   val rawFindQueryFor = Compiled(uncompiledRawFindQuery _)
 
-  def delete(scheduledBehavior: ScheduledBehavior): Future[Boolean] = {
+  def delete(scheduledBehavior: ScheduledBehavior): Future[Option[ScheduledBehavior]] = {
     // recurrence deletes cascade to scheduled behaviors
-    dataService.recurrences.delete(scheduledBehavior.recurrence.id)
+    for {
+      didDelete <- dataService.recurrences.delete(scheduledBehavior.recurrence.id)
+    } yield {
+      if (didDelete) {
+        Some(scheduledBehavior)
+      } else {
+        None
+      }
+    }
   }
 }

@@ -1,5 +1,6 @@
 package controllers
 
+import java.time.OffsetDateTime
 import javax.inject.Inject
 
 import akka.actor.ActorSystem
@@ -247,7 +248,7 @@ class APIController @Inject() (
 
   case class RunActionArgumentInfo(name: String, value: String)
 
-  implicit val runActionArgumentInfoWrites = Json.writes[RunActionArgumentInfo]
+  implicit val runActionArgumentInfoFormat = Json.format[RunActionArgumentInfo]
 
   case class RunActionInfo(
                             actionName: Option[String],
@@ -358,6 +359,25 @@ class APIController @Inject() (
 
   implicit val scheduleActionInfoWrites = Json.writes[ScheduleActionInfo]
 
+  case class ScheduleResult(
+                             scheduled: Option[ScheduleActionResult],
+                             unscheduled: Option[Seq[ScheduleActionResult]]
+                           )
+
+  case class ScheduleActionResult(
+                                   actionName: Option[String],
+                                   trigger: Option[String],
+                                   arguments: Option[Seq[RunActionArgumentInfo]],
+                                   recurrence: String,
+                                   firstRecurrence: Option[OffsetDateTime],
+                                   secondRecurrence: Option[OffsetDateTime],
+                                   useDM: Boolean,
+                                   channel: String
+                                 )
+
+  implicit val scheduleActionResultFormat = Json.format[ScheduleActionResult]
+  implicit val scheduleResultFormat = Json.format[ScheduleResult]
+
   private val scheduleActionForm = Form(
     mapping(
       "actionName" -> optional(nonEmptyText),
@@ -398,13 +418,28 @@ class APIController @Inject() (
             maybeSlackChannelId,
             info.useDM
           )
-          result <- maybeScheduled.map { scheduled =>
-            scheduled.successResponse(dataService).map(Ok(_))
+        } yield {
+          maybeScheduled.map { scheduled =>
+            Ok(Json.toJson(ScheduleResult(
+              scheduled = Some(ScheduleActionResult(
+                actionName = Some(actionName),
+                trigger = None,
+                arguments = Some(info.arguments),
+                recurrence = scheduled.recurrence.displayString,
+                firstRecurrence = Some(scheduled.nextSentAt),
+                secondRecurrence = Some(scheduled.followingSentAt),
+                useDM = scheduled.isForIndividualMembers,
+                channel = scheduled.maybeChannel.getOrElse("(missing)")
+              )),
+              unscheduled = None
+            )))
           }.getOrElse {
-            Future.successful(badRequest(s"Unable to schedule `$actionName` for `${info.recurrenceString}`", Json.toJson(info)))
+            badRequest(s"Unable to schedule `$actionName` for `${info.recurrenceString}`", Json.toJson(info))
           }
-        } yield result
-      }).getOrElse(Future.successful(notFound("Couldn't find an action to schedule", Json.toJson(info))))
+        }
+      }).getOrElse {
+        Future.successful(notFound("Couldn't find an action to schedule", Json.toJson(info)))
+      }
     } yield result
   }
 
@@ -421,12 +456,25 @@ class APIController @Inject() (
       } yield {
         dataService.scheduledMessages.maybeCreateWithRecurrenceText(trigger, info.recurrenceString, user, team, maybeSlackChannelId, info.useDM)
       }).getOrElse(Future.successful(None))
-      result <- maybeScheduled.map { scheduled =>
-        scheduled.successResponse(dataService).map(Ok(_))
+    } yield {
+      maybeScheduled.map { scheduled =>
+        Ok(Json.toJson(ScheduleResult(
+          scheduled = Some(ScheduleActionResult(
+            actionName = None,
+            trigger = Some(trigger),
+            arguments = None,
+            recurrence = scheduled.recurrence.displayString,
+            firstRecurrence = Some(scheduled.nextSentAt),
+            secondRecurrence = Some(scheduled.followingSentAt),
+            useDM = scheduled.isForIndividualMembers,
+            channel = scheduled.maybeChannel.getOrElse("(missing)")
+          )),
+          unscheduled = None
+        )))
       }.getOrElse {
-        Future.successful(badRequest(s"Unable to schedule `$trigger` for `${info.recurrenceString}`", Json.toJson(info)))
+        badRequest(s"Unable to schedule `$trigger` for `${info.recurrenceString}`", Json.toJson(info))
       }
-    } yield result
+    }
   }
 
   def scheduleAction = Action.async { implicit request =>
@@ -494,17 +542,26 @@ class APIController @Inject() (
           Future.successful(notFound(s"Couldn't find a user with ID `${info.userId.get}`", Json.toJson(info)))
         } else {
           dataService.scheduledBehaviors.allForBehavior(behavior, maybeUser, maybeSlackChannelId).flatMap { scheduledBehaviors =>
-            if (scheduledBehaviors.isEmpty) {
-              Future.successful(Ok("There was nothing to unschedule for this action"))
-            } else {
-              for {
-                displayText <- scheduledBehaviors.head.displayText(dataService)
-                _ <- Future.sequence(scheduledBehaviors.map { ea =>
-                  dataService.scheduledBehaviors.delete(ea)
-                })
-              } yield {
-                Ok(s"Ok, I unscheduled everything for $displayText")
-              }
+            for {
+              unscheduledList <- Future.sequence(scheduledBehaviors.map { ea =>
+                dataService.scheduledBehaviors.delete(ea)
+              })
+            } yield {
+              Ok(Json.toJson(ScheduleResult(
+                scheduled = None,
+                unscheduled = Some(unscheduledList.flatten.map(scheduled =>
+                  ScheduleActionResult(
+                    actionName = Some(actionName),
+                    trigger = None,
+                    arguments = Some(scheduled.arguments.map { case (key, value) => RunActionArgumentInfo(key, value) }.toSeq),
+                    recurrence = scheduled.recurrence.displayString,
+                    firstRecurrence = None,
+                    secondRecurrence = None,
+                    useDM = scheduled.isForIndividualMembers,
+                    channel = scheduled.maybeChannel.getOrElse("(unknown)")
+                  )
+                ))
+              )))
             }
           }
         }
@@ -526,17 +583,26 @@ class APIController @Inject() (
       }.getOrElse(Future.successful(None))
       result <- context.maybeTeam.map { team =>
         dataService.scheduledMessages.allForText(trigger, team, maybeUser, maybeSlackChannelId).flatMap { scheduledMessages =>
-          if (scheduledMessages.isEmpty) {
-            Future.successful(Ok("There was nothing to unschedule for this trigger"))
-          } else {
-            for {
-              displayText <- scheduledMessages.head.displayText(dataService)
-              _ <- Future.sequence(scheduledMessages.map { ea =>
-                dataService.scheduledMessages.delete(ea)
-              })
-            } yield {
-              Ok(s"Ok, I unscheduled everything for $displayText")
-            }
+          for {
+            unscheduledList <- Future.sequence(scheduledMessages.map { ea =>
+              dataService.scheduledMessages.delete(ea)
+            })
+          } yield {
+            Ok(Json.toJson(ScheduleResult(
+              scheduled = None,
+              unscheduled = Some(unscheduledList.flatten.map(scheduled =>
+                ScheduleActionResult(
+                  actionName = None,
+                  trigger = Some(trigger),
+                  arguments = None,
+                  recurrence = scheduled.recurrence.displayString,
+                  firstRecurrence = None,
+                  secondRecurrence = None,
+                  useDM = scheduled.isForIndividualMembers,
+                  channel = scheduled.maybeChannel.getOrElse("(unknown)")
+                )
+              ))
+            )))
           }
         }
       }.getOrElse {
