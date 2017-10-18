@@ -262,7 +262,7 @@ class ScheduledActionsController @Inject()(
     for {
       maybeExistingScheduledMessage <- dataService.scheduledMessages.findForTeam(id, team)
       didDeleteMessage <- maybeExistingScheduledMessage.map { scheduledMessage =>
-        dataService.scheduledMessages.delete(scheduledMessage)
+        dataService.scheduledMessages.delete(scheduledMessage).map(_.isDefined)
       }.getOrElse(Future.successful(false))
     } yield didDeleteMessage
   }
@@ -271,7 +271,7 @@ class ScheduledActionsController @Inject()(
     for {
       maybeExistingScheduledBehavior <- dataService.scheduledBehaviors.findForTeam(id, team)
       didDeleteBehavior <- maybeExistingScheduledBehavior.map { scheduledBehavior =>
-        dataService.scheduledBehaviors.delete(scheduledBehavior)
+        dataService.scheduledBehaviors.delete(scheduledBehavior).map(_.isDefined)
       }.getOrElse(Future.successful(false))
     } yield didDeleteBehavior
   }

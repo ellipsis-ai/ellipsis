@@ -236,8 +236,16 @@ class ScheduledMessageServiceImpl @Inject() (
     dataService.run(action)
   }
 
-  def delete(scheduledMessage: ScheduledMessage): Future[Boolean] = {
+  def delete(scheduledMessage: ScheduledMessage): Future[Option[ScheduledMessage]] = {
     // recurrence deletes cascade to scheduled behaviors
-    dataService.recurrences.delete(scheduledMessage.recurrence.id)
+    for {
+      didDelete <- dataService.recurrences.delete(scheduledMessage.recurrence.id)
+    } yield {
+      if (didDelete) {
+        Some(scheduledMessage)
+      } else {
+        None
+      }
+    }
   }
 }
