@@ -565,7 +565,7 @@ class APIController @Inject() (
             }
           }
         }
-      }.getOrElse(Future.successful(notFound(s"Couldn't find an action with name `${info.actionName}`", Json.toJson(info))))
+      }.getOrElse(Future.successful(notFound(s"Couldn't find an action with name `$actionName`", Json.toJson(info))))
     } yield result
   }
 
