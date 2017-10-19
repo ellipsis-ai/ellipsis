@@ -334,7 +334,7 @@ define(function(require) {
 
     renderNoSchedules: function() {
       return (
-        <div className={"pvxxl"}>
+        <div className={"pvxxl phxxl mobile-phxl"}>
           <p className="type-bold">Nothing is currently scheduled in channels you can access on this team.</p>
 
           <p>You can schedule any action to run on a recurring basis in a particular channel.</p>
