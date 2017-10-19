@@ -6,6 +6,7 @@ define(function(require) {
     propTypes: {
       isActive: React.PropTypes.bool.isRequired,
       onClick: React.PropTypes.func
+
     },
 
     onClick: function() {

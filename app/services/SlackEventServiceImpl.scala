@@ -3,7 +3,7 @@ package services
 import javax.inject._
 
 import akka.actor.ActorSystem
-import json.SlackUserData
+import json.{SlackUserData, SlackUserProfileData, SlackUserProfileNameData}
 import models.accounts.slack.botprofile.SlackBotProfile
 import models.behaviors.BotResultService
 import models.behaviors.events.{EventHandler, SlackMessageEvent}
@@ -65,22 +65,16 @@ class SlackEventServiceImpl @Inject()(
       } yield {
         maybeInfo.map { info =>
           val profileNameData = info.profile.map { profile =>
-            Seq(
-              profile.first_name.map(v => "firstName" -> JsString(v)),
-              profile.last_name.map(v => "lastName" -> JsString(v)),
-              profile.real_name.map(v => "realName" -> JsString(v))
-            ).flatten
-          }.getOrElse(Seq())
-          val profileData = JsObject(
-            Seq(
-              "name" -> JsString(info.name),
-              "profile" -> JsObject(profileNameData),
-              "isPrimaryOwner" -> JsBoolean(info.is_primary_owner.getOrElse(false)),
-              "isOwner" -> JsBoolean(info.is_owner.getOrElse(false)),
-              "isRestricted" -> JsBoolean(info.is_restricted.getOrElse(false)),
-              "isUltraRestricted" -> JsBoolean(info.is_ultra_restricted.getOrElse(false)),
-              "tz" -> info.tz.map(JsString).getOrElse(JsNull)
-            )
+            SlackUserProfileNameData(profile.first_name, profile.last_name, profile.real_name)
+          }.getOrElse(SlackUserProfileNameData(None, None, None))
+          val profileData = SlackUserProfileData(
+            info.name,
+            profileNameData,
+            isPrimaryOwner = info.is_primary_owner.getOrElse(false),
+            isOwner = info.is_owner.getOrElse(false),
+            isRestricted = info.is_restricted.getOrElse(false),
+            isUltraRestricted = info.is_ultra_restricted.getOrElse(false),
+            tz = info.tz
           )
           val userData = SlackUserData(
             slackUserId,
@@ -88,6 +82,7 @@ class SlackEventServiceImpl @Inject()(
             info.name,
             info.profile.flatMap(_.real_name),
             info.tz,
+            info.deleted.getOrElse(false),
             profileData
           )
           cacheService.cacheSlackUserData(userData)

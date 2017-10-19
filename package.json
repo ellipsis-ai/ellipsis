@@ -43,7 +43,8 @@
           "AWSConfigController": {},
           "BehaviorEditorController": {},
           "EnvironmentVariablesController": {},
-          "OAuth2ApplicationController": {}
+          "OAuth2ApplicationController": {},
+          "ScheduledActionsController": {}
         }
       }
     },

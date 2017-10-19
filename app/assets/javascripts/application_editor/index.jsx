@@ -1,6 +1,5 @@
 define(function(require) {
   var React = require('react'),
-    CSS = require('../lib/css'),
     Checkbox = require('../form/checkbox'),
     Collapsible = require('../shared_ui/collapsible'),
     CsrfTokenHiddenInput = require('../shared_ui/csrf_token_hidden_input'),
@@ -257,20 +256,17 @@ define(function(require) {
             <div className="flex-column flex-column-right bg-white" />
           </div>
 
-          <footer className={
-            "position-fixed-bottom position-z-front border-top ptm " +
-            (this.canBeSaved() ? "bg-white" : "bg-light-translucent" +
-            CSS.visibleWhen(this.shouldRevealApplicationUrl()))
-          }>
-            <div className="container">
-              <div className="columns mobile-columns-float">
-                <div className="column column-one-quarter"></div>
-                <div className="column column-three-quarters plxxxxl prm">
-                  <button type="submit"
-                    className={"button-primary mrs mbm " + (this.state.isSaving ? "button-activated" : "")}
-                    disabled={!this.canBeSaved()}
-                    onClick={this.onSaveClick}
-                  >
+          {this.props.onRenderFooter((
+            <Collapsible revealWhen={this.shouldRevealApplicationUrl() && !this.props.activePanelIsModal}>
+              <div className="container border-top ptm">
+                <div className="columns mobile-columns-float">
+                  <div className="column column-one-quarter" />
+                  <div className="column column-three-quarters plxxxxl prm">
+                    <button type="submit"
+                      className={"button-primary mrs mbm " + (this.state.isSaving ? "button-activated" : "")}
+                      disabled={!this.canBeSaved()}
+                      onClick={this.onSaveClick}
+                    >
                     <span className="button-labels">
                       <span className="button-normal-label">
                         <span className="mobile-display-none">Save changes</span>
@@ -278,11 +274,12 @@ define(function(require) {
                       </span>
                       <span className="button-activated-label">Saving…</span>
                     </span>
-                  </button>
+                    </button>
+                  </div>
                 </div>
               </div>
-            </div>
-          </footer>
+            </Collapsible>
+          ))}
         </form>
       );
     },

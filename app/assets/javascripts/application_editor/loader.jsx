@@ -3,7 +3,7 @@ requirejs(['common'], function() {
   function(Core, Fetch, React, ReactDOM, ApplicationEditor, ApplicationEditorConfig, Page) {
     ReactDOM.render(
       (
-        <Page>
+        <Page csrfToken={ApplicationEditorConfig.csrfToken}>
           <ApplicationEditor {...ApplicationEditorConfig} />
         </Page>
       ),

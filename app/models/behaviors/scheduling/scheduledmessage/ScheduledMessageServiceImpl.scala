@@ -118,6 +118,22 @@ class ScheduledMessageServiceImpl @Inject() (
     dataService.run(action)
   }
 
+  def uncompiledAllForTextQuery(text: Rep[String], teamId: Rep[String], maybeUserId: Rep[Option[String]], maybeChannelId: Rep[Option[String]]) = {
+    allWithUser.
+      filter { case(((msg, _), _), _) => msg.teamId === teamId }.
+      filter { case(((msg, _), _), _) => msg.text === text }.
+      filter { case(((msg, _), _), _) => maybeUserId.isEmpty || msg.maybeUserId === maybeUserId }.
+      filter { case(((msg, _), _), _) => maybeChannelId.isEmpty || msg.maybeChannel === maybeChannelId }
+  }
+  def allForTextQuery = Compiled(uncompiledAllForTextQuery _)
+
+  def allForText(text: String, team: Team, maybeUser: Option[User], maybeChannel: Option[String]): Future[Seq[ScheduledMessage]] = {
+    val action = allForTextQuery(text, team.id, maybeUser.map(_.id), maybeChannel).result.map { r =>
+      r.map(tuple2ScheduledMessage)
+    }
+    dataService.run(action)
+  }
+
   def uncompiledFindQueryFor(id: Rep[String]) = {
     allWithUser.filter { case(((msg, _), _), _) => msg.id === id }
   }
@@ -220,8 +236,16 @@ class ScheduledMessageServiceImpl @Inject() (
     dataService.run(action)
   }
 
-  def delete(scheduledMessage: ScheduledMessage): Future[Boolean] = {
+  def delete(scheduledMessage: ScheduledMessage): Future[Option[ScheduledMessage]] = {
     // recurrence deletes cascade to scheduled behaviors
-    dataService.recurrences.delete(scheduledMessage.recurrence.id)
+    for {
+      didDelete <- dataService.recurrences.delete(scheduledMessage.recurrence.id)
+    } yield {
+      if (didDelete) {
+        Some(scheduledMessage)
+      } else {
+        None
+      }
+    }
   }
 }

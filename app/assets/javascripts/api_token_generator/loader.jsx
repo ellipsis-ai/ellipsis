@@ -3,7 +3,7 @@ requirejs(['common'], function() {
   function(Core, Fetch, React, ReactDOM, ApiTokenGenerator, ApiTokenGeneratorConfig, Page) {
     ReactDOM.render(
       (
-        <Page>
+        <Page csrfToken={ApiTokenGeneratorConfig.csrfToken}>
           <ApiTokenGenerator {...ApiTokenGeneratorConfig} />
         </Page>
       ),

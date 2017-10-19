@@ -51,6 +51,6 @@ trait BehaviorGroupVersionService {
 
   def redeployAllCurrentVersions: Future[Unit]
 
-  def currentFunctionNames: Future[Seq[String]]
+  def activeFunctionNames: Future[Seq[String]]
 
 }

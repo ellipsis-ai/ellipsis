@@ -137,7 +137,7 @@ case class SlackMessageEvent(
 
   override def ensureUser(dataService: DataService)(implicit ec: ExecutionContext): Future[User] = {
     super.ensureUser(dataService).flatMap { user =>
-      dataService.slackProfiles.save(SlackProfile(profile.slackTeamId, loginInfo)).map(_ => user)
+      ensureSlackProfileFor(loginInfo, dataService).map(_ => user)
     }
   }
 

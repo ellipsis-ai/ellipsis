@@ -17,6 +17,8 @@ trait ScheduledMessageService {
 
   def allForChannel(team: Team, channel: String): Future[Seq[ScheduledMessage]]
 
+  def allForText(text: String, team: Team, maybeUser: Option[User], maybeChannel: Option[String]): Future[Seq[ScheduledMessage]]
+
   def find(id: String): Future[Option[ScheduledMessage]]
 
   def findForTeam(id: String, team: Team): Future[Option[ScheduledMessage]]
@@ -45,6 +47,6 @@ trait ScheduledMessageService {
 
   def deleteFor(text: String, team: Team): Future[Boolean]
 
-  def delete(scheduledMessage: ScheduledMessage): Future[Boolean]
+  def delete(scheduledMessage: ScheduledMessage): Future[Option[ScheduledMessage]]
 
 }

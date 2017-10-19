@@ -1,11 +1,11 @@
 define(function(require) {
   var React = require('react'),
+    Collapsible = require('../shared_ui/collapsible'),
     ImmutableObjectUtils = require('../lib/immutable_object_utils'),
     Input = require('../form/input'),
     Textarea = require('../form/textarea'),
     formatEnvVarName = require('../lib/formatter').formatEnvironmentVariableName,
-    ifPresent = require('../lib/if_present'),
-    SetterActions = require('./setter_actions');
+    ifPresent = require('../lib/if_present');
 
   return React.createClass({
     propTypes: {
@@ -13,8 +13,9 @@ define(function(require) {
       onSave: React.PropTypes.func.isRequired,
       vars: React.PropTypes.arrayOf(React.PropTypes.object).isRequired,
       errorMessage: React.PropTypes.string,
-      isFullPage: React.PropTypes.bool,
-      focus: React.PropTypes.string
+      focus: React.PropTypes.string,
+      onRenderFooter: React.PropTypes.func,
+      activePanelIsModal: React.PropTypes.bool
     },
 
     getVars: function() {
@@ -202,6 +203,58 @@ define(function(require) {
       );
     },
 
+    renderSetterActions: function() {
+      return (
+        <div>
+          <button type="button"
+            className={"button-primary mrs mbs " + (this.state.isSaving ? "button-activated" : "")}
+            disabled={!this.isValid()}
+            onClick={this.onSave}
+          >
+                <span className="button-labels">
+                  <span className="button-normal-label">Save</span>
+                  <span className="button-activated-label">Saving…</span>
+                </span>
+          </button>
+          <button className="mbs mrl"
+            type="button"
+            onClick={this.onCancel}
+            disabled={this.cancelShouldBeDisabled()}
+          >
+            Cancel
+          </button>
+          {ifPresent(this.state.saveError, () => (
+            <span className="mbs type-pink type-bold align-button fade-in">
+                  An error occurred while saving. Please try again.
+                </span>
+          ), () => (this.getDuplicateErrorMessage()))}
+        </div>
+      );
+    },
+
+    renderFooter: function() {
+      if (this.props.onRenderFooter) {
+        return this.props.onRenderFooter((
+          <Collapsible revealWhen={!this.props.activePanelIsModal}>
+            <div className="container pts border-top">
+              <div className="columns">
+                <div className="column column-one-quarter"/>
+                <div className="column column-three-quarters plxxxxl">
+                  {this.renderSetterActions()}
+                </div>
+              </div>
+            </div>
+          </Collapsible>
+        ));
+      } else {
+        return (
+          <div className="mtxl">
+            {this.renderSetterActions()}
+          </div>
+        );
+      }
+    },
+
     render: function() {
       return (
         <div>
@@ -272,30 +325,7 @@ define(function(require) {
               </button>
             </div>
 
-            <SetterActions isFullPage={this.props.isFullPage}>
-              <button type="button"
-                className={"button-primary mrs mbs " + (this.state.isSaving ? "button-activated" : "")}
-                disabled={!this.isValid()}
-                onClick={this.onSave}
-              >
-                <span className="button-labels">
-                  <span className="button-normal-label">Save</span>
-                  <span className="button-activated-label">Saving…</span>
-                </span>
-              </button>
-              <button className="mbs mrl"
-                type="button"
-                onClick={this.onCancel}
-                disabled={this.cancelShouldBeDisabled()}
-              >
-                Cancel
-              </button>
-              {ifPresent(this.state.saveError, () => (
-                <span className="mbs type-pink type-bold align-button fade-in">
-                  An error occurred while saving. Please try again.
-                </span>
-              ), () => (this.getDuplicateErrorMessage()))}
-            </SetterActions>
+            {this.renderFooter()}
         </div>
       );
     }

@@ -11,6 +11,8 @@ trait TeamService {
 
   def allTeams: Future[Seq[Team]]
 
+  def allCount: Future[Int]
+
   def allTeamsPaged(page: Int, size: Int): Future[Seq[Team]]
 
   def setNameFor(team: Team, name: String): Future[Team]

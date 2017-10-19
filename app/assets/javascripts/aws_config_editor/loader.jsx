@@ -3,7 +3,7 @@ requirejs(['common'], function() {
     function(Core, Fetch, React, ReactDOM, ConfigEditor, ConfigEditorConfig, Page) {
       ReactDOM.render(
         (
-          <Page>
+          <Page csrfToken={ConfigEditorConfig.csrfToken}>
             <ConfigEditor {...ConfigEditorConfig} />
           </Page>
         ),

@@ -1,7 +1,11 @@
 @(
-    scopes: String,
-    clientId: String,
-    redirectUrl: String
-    )(implicit messages: Messages)
+  scopes: String,
+  clientId: String,
+  redirectUrl: String
+)(implicit messages: Messages)
 
-<a href="https://slack.com/oauth/authorize?scope=@scopes&client_id=@clientId&redirect_uri=@redirectUrl"><img alt="Sign in with Slack" height="40" width="172" src="https://platform.slack-edge.com/img/sign_in_with_slack.png" srcset="https://platform.slack-edge.com/img/sign_in_with_slack.png 1x, https://platform.slack-edge.com/img/sign_in_with_slack@@2x.png 2x" /></a>
+<a href="https://slack.com/oauth/authorize?scope=@scopes&amp;client_id=@clientId&amp;redirect_uri=@redirectUrl"
+  class="button button-shrink button-primary button-l">
+  <span class="display-inline-block align-t mrs">@views.html.shared.svg.slackLogoMark()</span>
+  <span class="display-inline-block align-t">Sign in with Slack</span>
+</a>

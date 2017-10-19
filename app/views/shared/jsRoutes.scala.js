@@ -33,6 +33,7 @@
   routes.javascript.EnvironmentVariablesController.list,
   routes.javascript.EnvironmentVariablesController.submit,
   routes.javascript.EnvironmentVariablesController.submit,
+  routes.javascript.FeedbackController.send,
   routes.javascript.OAuth2ApplicationController.edit,
   routes.javascript.OAuth2ApplicationController.list,
   routes.javascript.OAuth2ApplicationController.newApp,

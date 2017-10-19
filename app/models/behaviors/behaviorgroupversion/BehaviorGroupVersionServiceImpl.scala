@@ -234,20 +234,22 @@ class BehaviorGroupVersionServiceImpl @Inject() (
     }
   }
 
-  def uncompiledAllCurrentQuery() = {
+  def uncompiledAllCurrentQuery = {
     allWithUser.filter {
       case ((groupVersion, (group, _)), _) => groupVersion.id === group.maybeCurrentVersionId
     }
   }
+  val allCurrentQuery = Compiled(uncompiledAllCurrentQuery)
 
   def uncompiledAllCurrentIdsQuery() = {
-    uncompiledAllCurrentQuery().map {
-      case ((groupVersion, (group, _)), _) => groupVersion.id
+    uncompiledAllCurrentQuery.map {
+      case ((groupVersion, _), _) => groupVersion.id
     }
   }
+  val allCurrentIdsQuery = Compiled(uncompiledAllCurrentIdsQuery)
 
   private def allCurrent: Future[Seq[BehaviorGroupVersion]] = {
-    val action = uncompiledAllCurrentQuery().result.map { r =>
+    val action = allCurrentQuery.result.map { r =>
       r.map(tuple2BehaviorGroupVersion)
     }
     dataService.run(action)
@@ -264,9 +266,24 @@ class BehaviorGroupVersionServiceImpl @Inject() (
     }
   }
 
-  def currentFunctionNames: Future[Seq[String]] = {
-    dataService.run(uncompiledAllCurrentIdsQuery().result).map { r =>
+  private def currentFunctionNames: Future[Seq[String]] = {
+    dataService.run(allCurrentIdsQuery.result).map { r =>
       r.map(BehaviorGroupVersion.functionNameFor)
+    }
+  }
+
+  private def activeConversationFunctionNames: Future[Seq[String]] = {
+    dataService.conversations.allOngoingBehaviorGroupVersionIds.map { ids =>
+      ids.map(BehaviorGroupVersion.functionNameFor)
+    }
+  }
+
+  def activeFunctionNames: Future[Seq[String]] = {
+    for {
+      current <- currentFunctionNames
+      activeConvo <- activeConversationFunctionNames
+    } yield {
+      (current ++ activeConvo).distinct
     }
   }
 

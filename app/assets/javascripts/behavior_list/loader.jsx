@@ -4,7 +4,7 @@ requirejs(['common'], function() {
     function(Core, Fetch, React, ReactDOM, BehaviorListApp, BehaviorListConfig, Page) {
       ReactDOM.render(
         (
-          <Page>
+          <Page csrfToken={BehaviorListConfig.csrfToken}>
             <BehaviorListApp {...BehaviorListConfig} />
           </Page>
         ),

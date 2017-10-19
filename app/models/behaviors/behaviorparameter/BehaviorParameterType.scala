@@ -29,9 +29,13 @@ sealed trait BehaviorParameterType extends FieldTypeForSchema {
 
   def invalidPromptModifier: String
 
+  def stopText: String = "`...stop`"
+
+  def stopInstructions: String = s"Or say $stopText to end the conversation."
+
   def invalidValueModifierFor(maybePreviousCollectedValue: Option[String]): String = {
     if (maybePreviousCollectedValue.isDefined) {
-      s" (${invalidPromptModifier})"
+      invalidPromptModifier
     } else {
       ""
     }
@@ -47,7 +51,8 @@ sealed trait BehaviorParameterType extends FieldTypeForSchema {
       isFirst <- context.isFirstParamAction
       paramCount <- DBIO.from(context.unfilledParamCount(paramState))
     } yield {
-      val preamble = if (isReminding || !isFirst || paramCount <= 1) {
+      val invalidModifier = invalidValueModifierFor(maybePreviousCollectedValue)
+      val preamble = if (isReminding || !isFirst || paramCount <= 1 || invalidModifier.nonEmpty) {
         ""
       } else {
         context.event.messageRecipientPrefix ++ (if (paramCount == 2) {
@@ -58,7 +63,11 @@ sealed trait BehaviorParameterType extends FieldTypeForSchema {
           s"I need to ask you some questions."
         })
       }
-      s"$preamble\n\n**${context.parameter.question}** ${invalidValueModifierFor(maybePreviousCollectedValue)}"
+      s"""$preamble
+         |
+         |$invalidModifier
+         |
+         |__${context.parameter.question.trim}__""".stripMargin
     }
   }
 
@@ -113,7 +122,7 @@ object TextType extends BuiltInType {
     }
   }
 
-  val invalidPromptModifier: String = "I need a valid answer"
+  val invalidPromptModifier: String = s"I need a valid answer. $stopInstructions"
 
 }
 
@@ -145,7 +154,7 @@ object NumberType extends BuiltInType {
     }
   }
 
-  val invalidPromptModifier: String = "I need a number"
+  val invalidPromptModifier: String = s"I need a number to answer this. $stopInstructions"
 }
 
 object YesNoType extends BuiltInType {
@@ -186,7 +195,7 @@ object YesNoType extends BuiltInType {
     }
   }
 
-  val invalidPromptModifier: String = "I need something like 'yes' or 'no'"
+  val invalidPromptModifier: String = s"I need an answer like “yes” or “no”. $stopInstructions"
 }
 
 case class ValidValue(id: String, label: String, data: Map[String, String])
@@ -333,7 +342,7 @@ case class BehaviorBackedDataType(dataTypeConfig: DataTypeConfig) extends Behavi
     }
   }
 
-  val invalidPromptModifier: String = s"I need a $name. Type one of the numbers or labels below or `...stop` to end this conversation."
+  val invalidPromptModifier: String = s"I need a $name. Type one of the numbers or labels below. $stopInstructions"
 
   private def valuesListCacheKeyFor(conversation: Conversation, parameter: BehaviorParameter): String = {
     s"values-list-${conversation.id}-${parameter.id}"
@@ -462,7 +471,7 @@ case class BehaviorBackedDataType(dataTypeConfig: DataTypeConfig) extends Behavi
         maybeSearchQuery.map { searchQuery =>
           val key = searchQueryCacheKeyFor(context.maybeConversation.get, context.parameter)
           context.cacheService.remove(key)
-          DBIO.successful(s"I couldn't find anything matching `$searchQuery`. Try searching again or type `…stop`.")
+          DBIO.successful(s"I couldn't find anything matching `$searchQuery`. Try searching again or type $stopText.")
         }.getOrElse {
           cancelAndRespondForAction(s"This data type isn't returning any values: ${editLinkFor(context)}", context)
         }

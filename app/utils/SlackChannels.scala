@@ -53,7 +53,7 @@ case class SlackDM(im: Im) extends ChannelLike {
 
 case class SlackChannels(client: SlackApiClient, cacheService: CacheService, slackTeamId: String) {
 
-  private def getInfoFor(channelLikeId: String)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[ChannelLike]] = {
+  def getInfoFor(channelLikeId: String)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[ChannelLike]] = {
     for {
       maybeChannel <- maybeChannelInfoFor(channelLikeId)
       maybeGroup <- if (maybeChannel.isEmpty) {
@@ -77,8 +77,8 @@ case class SlackChannels(client: SlackApiClient, cacheService: CacheService, sla
 
   def getList(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Seq[ChannelLike]] = {
     for {
-      channels <- client.listChannels()
-      groups <- client.listGroups()
+      channels <- listChannels
+      groups <- listGroups
       dms <- listIms
     } yield {
       channels.map(SlackChannel.apply) ++ groups.map(SlackGroup.apply) ++ dms.map(SlackDM.apply)
@@ -158,6 +158,28 @@ case class SlackChannels(client: SlackApiClient, cacheService: CacheService, sla
             throw e
           }
         }
+      }
+    }
+  }
+
+  def listChannels(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Seq[Channel]] = {
+    cacheService.getSlackChannels(slackTeamId).map { channels =>
+      Future.successful(channels)
+    }.getOrElse {
+      client.listChannels(excludeArchived = 1).map { channels =>
+        cacheService.cacheSlackChannels(channels, slackTeamId)
+        channels
+      }
+    }
+  }
+
+  def listGroups(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Seq[Group]] = {
+    cacheService.getSlackGroups(slackTeamId).map { groups =>
+      Future.successful(groups)
+    }.getOrElse {
+      client.listGroups(excludeArchived = 1).map { groups =>
+        cacheService.cacheSlackGroups(groups, slackTeamId)
+        groups
       }
     }
   }

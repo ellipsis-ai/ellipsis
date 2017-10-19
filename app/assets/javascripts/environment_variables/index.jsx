@@ -119,8 +119,9 @@ define(function(require) {
           ref="setter"
           onSave={this.onSave}
           vars={this.getVars()}
-          isFullPage={true}
           focus={this.props.focus}
+          onRenderFooter={this.props.onRenderFooter}
+          activePanelIsModal={this.props.activePanelIsModal}
         />
       );
     }

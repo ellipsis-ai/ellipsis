@@ -249,6 +249,8 @@ define(function(require) {
               activePanelIsModal={this.props.activePanelIsModal}
               onToggleActivePanel={this.props.onToggleActivePanel}
               onClearActivePanel={this.props.onClearActivePanel}
+              onRenderFooter={this.props.onRenderFooter}
+              onGetFooterHeight={this.props.onGetFooterHeight}
             />
           </div>
         );

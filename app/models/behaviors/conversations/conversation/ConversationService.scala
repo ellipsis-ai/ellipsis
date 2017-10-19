@@ -18,6 +18,8 @@ trait ConversationService {
 
   def allOngoingFor(userIdForContext: String, context: String, maybeChannel: Option[String], maybeThreadId: Option[String]): Future[Seq[Conversation]]
 
+  def allOngoingBehaviorGroupVersionIds: Future[Seq[String]]
+
   def allForeground: Future[Seq[Conversation]]
 
   def maybeNextNeedingReminderAction(when: OffsetDateTime): DBIO[Option[Conversation]]
@@ -35,6 +37,8 @@ trait ConversationService {
   def cancel(maybeConversation: Option[Conversation]): Future[Unit] = {
     maybeConversation.map(cancel).getOrElse(Future.successful({}))
   }
+
+  def cancelOldConverations: Future[Unit]
 
   def deleteAll(): Future[Unit]
 

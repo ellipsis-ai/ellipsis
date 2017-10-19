@@ -15,6 +15,12 @@
     <appender-ref ref="FILE" />
   </appender>
 
+  <appender name="Sentry" class="io.sentry.logback.SentryAppender">
+    <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+      <level>WARN</level>
+    </filter>
+  </appender>
+
   <logger name="play" level="WARN" />
   <logger name="application" level="INFO" />
   <logger name="slick.jdbc" level="WARN" />
@@ -23,6 +29,7 @@
   <root level="WARN">
     <appender-ref ref="STDOUT" />
     <appender-ref ref="ASYNCFILE" />
+    <appender-ref ref="Sentry" />
   </root>
 
 </configuration>
