@@ -99,7 +99,7 @@ object ScheduleImplementation extends BuiltinImplementationType {
     )
   }
 
-  def addToGroupDataTo(data: BehaviorGroupData, team: Team, dataService: DataService): BehaviorGroupData = {
+  def addToGroupData(data: BehaviorGroupData, team: Team, dataService: DataService): BehaviorGroupData = {
     data.copy(
       actionInputs = data.actionInputs ++ inputsData,
       behaviorVersions = data.behaviorVersions ++ behaviorVersionsDataFor(team, dataService)

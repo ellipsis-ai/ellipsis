@@ -47,7 +47,7 @@ class BuiltinBehaviorPopulator @Inject() (
       Some(userData)
     )
     builtinImplementations.foldLeft(data) { case(groupData, b) =>
-      b.addToGroupDataTo(groupData, team, dataService)
+      b.addToGroupData(groupData, team, dataService)
     }
   }
 

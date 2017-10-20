@@ -5,5 +5,5 @@ import models.team.Team
 import services.DataService
 
 trait BuiltinImplementationType {
-  def addToGroupDataTo(data: BehaviorGroupData, team: Team, dataService: DataService): BehaviorGroupData
+  def addToGroupData(data: BehaviorGroupData, team: Team, dataService: DataService): BehaviorGroupData
 }

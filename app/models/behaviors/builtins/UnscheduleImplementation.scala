@@ -75,7 +75,7 @@ object UnscheduleImplementation extends BuiltinImplementationType {
     )
   )
 
-  def addToGroupDataTo(data: BehaviorGroupData, team: Team, dataService: DataService): BehaviorGroupData = {
+  def addToGroupData(data: BehaviorGroupData, team: Team, dataService: DataService): BehaviorGroupData = {
     data.copy(
       behaviorVersions = data.behaviorVersions ++ behaviorVersionsDataFor(team, dataService)
     )
