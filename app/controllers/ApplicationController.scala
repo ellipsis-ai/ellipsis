@@ -1,5 +1,6 @@
 package controllers
 
+import java.time.OffsetDateTime
 import java.time.format.TextStyle
 import java.util.Locale
 import javax.inject.Inject
@@ -202,12 +203,15 @@ class ApplicationController @Inject() (
     Ok(Json.obj("matches" -> matches))
   }
 
+  case class TimeZoneFormInfo(tzName: String, maybeTeamId: Option[String])
+
+  implicit val timeZoneFormInfoReads = Json.reads[TimeZoneFormInfo]
+
   private val timeZoneForm = Form(
     mapping(
       "tzName" -> nonEmptyText,
-      "teamId" -> optional(nonEmptyText),
-      "formattedName" -> optional(nonEmptyText)
-    )(TeamTimeZoneData.apply)(TeamTimeZoneData.unapply)
+      "teamId" -> optional(nonEmptyText)
+    )(TimeZoneFormInfo.apply)(TimeZoneFormInfo.unapply)
   )
 
   def setTeamTimeZone = silhouette.SecuredAction.async { implicit request =>
@@ -227,7 +231,11 @@ class ApplicationController @Inject() (
         } yield {
           maybeTeam.map { team =>
             team.maybeTimeZone.map { tz =>
-              Ok(Json.toJson(TeamTimeZoneData(tz.toString, None, Some(tz.getDisplayName(TextStyle.FULL, Locale.ENGLISH)))).toString)
+              Ok(Json.toJson(TeamTimeZoneData(
+                tz.toString,
+                Some(tz.getDisplayName(TextStyle.FULL, Locale.ENGLISH)),
+                OffsetDateTime.now(tz).getOffset.getTotalSeconds
+              )).toString)
             }.getOrElse {
               BadRequest(Json.obj("message" -> "Invalid time zone").toString)
             }

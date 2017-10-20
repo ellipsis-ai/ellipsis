@@ -1,20 +1,25 @@
 define(function(require) {
   var React = require('react'),
+    DataRequest = require('../lib/data_request'),
     DynamicLabelButton = require('../form/dynamic_label_button'),
     TimeZoneSelector = require('./time_zone_selector');
 
   return React.createClass({
     displayName: 'TeamTimeZone',
     propTypes: {
-      onSetTimeZone: React.PropTypes.func.isRequired,
-      isSaving: React.PropTypes.bool,
-      error: React.PropTypes.string
+      csrfToken: React.PropTypes.string.isRequired,
+      teamId: React.PropTypes.string.isRequired,
+      onSave: React.PropTypes.func.isRequired,
+      teamTimeZone: React.PropTypes.string
     },
 
     getInitialState: function() {
       return {
         timeZoneId: "",
-        timeZoneName: ""
+        timeZoneName: "",
+        isSaving: false,
+        justSaved: false,
+        error: null
       };
     },
 
@@ -26,45 +31,81 @@ define(function(require) {
     },
 
     setTimeZone: function() {
-      this.props.onSetTimeZone(this.state.timeZoneId, this.state.timeZoneName);
+      const newTz = this.state.timeZoneId;
+      const displayName = this.state.timeZoneName;
+      this.setState({
+        isSaving: true,
+        error: null
+      }, () => {
+        const url = jsRoutes.controllers.ApplicationController.setTeamTimeZone().url;
+        DataRequest
+          .jsonPost(url, {
+            tzName: newTz,
+            teamId: this.props.teamId
+          }, this.props.csrfToken)
+          .then((json) => {
+            if (json.tzName) {
+              this.setState({
+                isSaving: false,
+                justSaved: true
+              });
+              setTimeout(() => {
+                this.setState({
+                  justSaved: false
+                });
+              }, 5000);
+              this.props.onSave(json.tzName, json.formattedName || displayName, json.currentOffset);
+            } else {
+              throw new Error(json.message || "");
+            }
+          })
+          .catch((err) => {
+            this.setState({
+              isSaving: false,
+              error: `An error occurred while saving${err.message ? ` (${err.message})` : ""}. Please try again.`
+            });
+          });
+      });
+    },
+
+    hasSelectedNewTimeZone: function(timeZoneId) {
+      return timeZoneId && timeZoneId !== this.props.teamTimeZone;
+    },
+
+    renderStatus: function() {
+      if (this.state.error) {
+        return (
+          <span className="align-button type-italic type-pink fade-in">— {this.state.error}</span>
+        );
+      } else if (this.state.justSaved) {
+        return (
+          <span className="align-button type-green type-bold fade-in">— Team time zone updated</span>
+        );
+      }
     },
 
     render: function() {
       return (
-        <div className="bg-white border-bottom border-bottom-thick pvxl">
-          <div className="container container-c container-narrow">
-            <h2>Welcome to Ellipsis!</h2>
+        <div>
 
-            <h3>Set your team’s time zone</h3>
-            <p>
-              Before you get started, pick a default time zone for your team.
-            </p>
-
-            <p>
-              This will be used when Ellipsis displays dates and times to a group, or whenever a time of day mentioned
-              isn’t otherwise obvious.
-            </p>
-
-            <TimeZoneSelector onChange={this.onChange} />
+            <TimeZoneSelector onChange={this.onChange} defaultTimeZone={this.props.teamTimeZone} />
 
             <div className="mvl">
               <DynamicLabelButton
                 className="button-primary mrm"
                 onClick={this.setTimeZone}
-                disabledWhen={this.props.isSaving || !this.state.timeZoneId}
+                disabledWhen={this.state.isSaving || !this.hasSelectedNewTimeZone(this.state.timeZoneId)}
                 labels={[{
                   text: "Set team time zone",
-                  displayWhen: !this.props.isSaving
+                  displayWhen: !this.state.isSaving
                 }, {
                   text: "Saving…",
-                  displayWhen: this.props.isSaving
+                  displayWhen: this.state.isSaving
                 }]}
               />
-              {this.props.error ? (
-                <span className="align-button type-italic type-pink fade-in">— {this.props.error}</span>
-              ) : null}
+              {this.renderStatus()}
             </div>
-          </div>
+
         </div>
       );
     }

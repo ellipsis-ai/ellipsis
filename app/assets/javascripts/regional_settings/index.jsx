@@ -1,7 +1,8 @@
 define(function(require) {
   const React = require('react'),
+    moment = require('moment'),
     SettingsPage = require('../shared_ui/settings_page'),
-    TimeZoneSelector = require('../time_zone/time_zone_selector'),
+    TeamTimeZone = require('../time_zone/team_time_zone'),
     autobind = require('../lib/autobind');
 
   class RegionalSettings extends React.Component {
@@ -9,24 +10,58 @@ define(function(require) {
       super(props);
       autobind(this);
       this.state = {
-        timeZoneId: "",
-        timeZoneName: ""
+        currentTime: this.getCurrentTime()
       };
     }
 
-    onChangeTimeZone(timeZoneId, timeZoneName) {
+    componentDidMount() {
+      setInterval(this.updateTime, 1000);
+    }
+
+    updateTime() {
       this.setState({
-        timeZoneId: timeZoneId,
-        timeZoneName: timeZoneName
+        currentTime: this.getCurrentTime()
       });
+    }
+
+    getCurrentTime() {
+      const time = moment().utc();
+      if (this.props.teamTimeZoneOffset) {
+        time.add(this.props.teamTimeZoneOffset, 'seconds');
+      }
+      return time;
+    }
+
+    renderCurrentTime() {
+      if (this.props.teamTimeZoneOffset) {
+        return (
+          <span> — {this.state.currentTime.format('h:mm:ss A')}</span>
+        );
+      }
     }
 
     render() {
       return (
         <SettingsPage teamId={this.props.teamId} activePage={"regionalSettings"} header={"Regional settings"}>
 
-          <h4>Team time zone</h4>
-          <TimeZoneSelector onChange={this.onChangeTimeZone} defaultTimeZone={this.props.teamTimeZone} />
+          <h5>Team time zone</h5>
+
+          <p>
+            {this.props.teamTimeZoneName ? (
+              <span className="type-bold">{this.props.teamTimeZoneName}</span>
+            ) : (
+              <span className="type-italic type-disabled">No time zone chosen</span>
+            )}
+            {this.renderCurrentTime()}
+          </p>
+
+          <TeamTimeZone
+            csrfToken={this.props.csrfToken}
+            teamId={this.props.teamId}
+            onSave={this.props.onSaveTimeZone}
+            teamTimeZone={this.props.teamTimeZone}
+          />
+
         </SettingsPage>
       );
     }
@@ -35,7 +70,10 @@ define(function(require) {
   RegionalSettings.propTypes = {
     csrfToken: React.PropTypes.string.isRequired,
     teamId: React.PropTypes.string.isRequired,
-    teamTimeZone: React.PropTypes.string
+    onSaveTimeZone: React.PropTypes.func.isRequired,
+    teamTimeZone: React.PropTypes.string,
+    teamTimeZoneName: React.PropTypes.string,
+    teamTimeZoneOffset: React.PropTypes.number
   };
 
   return RegionalSettings;

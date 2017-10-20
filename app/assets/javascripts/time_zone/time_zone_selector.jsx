@@ -10,8 +10,28 @@ define(function(require) {
       defaultTimeZone: React.PropTypes.string
     },
 
+    getDefaultTimeZone: function() {
+      return this.props.defaultTimeZone || this.guessTimeZone();
+    },
+
     componentDidMount: function() {
-      this.requestMatchingTimezones(this.state.defaultTimeZone);
+      this.requestMatchingTimezones(this.getDefaultTimeZone());
+    },
+
+    componentWillReceiveProps: function(nextProps) {
+      if (nextProps.defaultTimeZone !== this.props.defaultTimeZone) {
+        this.reset();
+      }
+    },
+
+    reset: function() {
+      this.searchInput.clearSearch();
+      this.setDefault();
+    },
+
+    setDefault: function() {
+      this.setState(this.getInitialState());
+      this.requestMatchingTimezones(this.getDefaultTimeZone());
     },
 
     guessTimeZone: function() {
@@ -25,9 +45,7 @@ define(function(require) {
     },
 
     getInitialState: function() {
-      var defaultTimeZone = this.props.defaultTimeZone || this.guessTimeZone();
       return {
-        defaultTimeZone: defaultTimeZone,
         selectedCity: "",
         selectedOption: null,
         isSearching: false,
@@ -116,10 +134,7 @@ define(function(require) {
       if (newQuery) {
         this.requestMatchingTimezones(newValue);
       } else {
-        this.setState({
-          noMatches: false,
-          cityResults: []
-        });
+        this.setDefault();
       }
     },
 

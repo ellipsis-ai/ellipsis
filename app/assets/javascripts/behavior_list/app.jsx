@@ -5,7 +5,8 @@ define(function(require) {
     PageNotification = require('../shared_ui/page_notification'),
     DataRequest = require('../lib/data_request'),
     ImmutableObjectUtils = require('../lib/immutable_object_utils'),
-    TimeZoneSetter = require('../time_zone/team_time_zone'),
+    TimeZoneWelcomePage = require('../time_zone/time_zone_welcome_page'),
+    TeamTimeZoneSetter = require('../time_zone/team_time_zone'),
     Page = require('../shared_ui/page');
 
   return React.createClass({
@@ -36,8 +37,6 @@ define(function(require) {
         currentSearchText: "",
         isLoadingMatchingResults: false,
         currentTeamTimeZone: this.props.teamTimeZone,
-        isSavingTeamTimeZone: false,
-        errorSavingTeamTimeZone: null,
         dismissedNotifications: []
       };
     },
@@ -172,36 +171,6 @@ define(function(require) {
       }
     },
 
-    setTimeZone: function(newTz, displayName) {
-      this.setState({
-        isSavingTeamTimeZone: true,
-        errorSavingTeamTimeZone: null
-      }, () => {
-        const url = jsRoutes.controllers.ApplicationController.setTeamTimeZone().url;
-        DataRequest
-          .jsonPost(url, {
-            tzName: newTz,
-            teamId: this.props.teamId
-          }, this.props.csrfToken)
-          .then((json) => {
-            if (json.tzName) {
-              this.setState({
-                currentTeamTimeZone: json.formattedName || displayName,
-                isSavingTeamTimeZone: false
-              });
-            } else {
-              throw new Error(json.message || "");
-            }
-          })
-          .catch((err) => {
-            this.setState({
-              isSavingTeamTimeZone: false,
-              errorSavingTeamTimeZone: `An error occurred while saving${err.message ? ` (${err.message})` : ""}. Please try again.`
-            });
-          });
-      });
-    },
-
     dismissNotification: function(notificationName) {
       this.setState({
         dismissedNotifications: this.state.dismissedNotifications.concat(notificationName)
@@ -214,6 +183,12 @@ define(function(require) {
 
     shouldNotifyTimeZone: function() {
       return !this.props.teamTimeZone && !!this.state.currentTeamTimeZone;
+    },
+
+    onSaveTimeZone: function(newTzId, newTzName) {
+      this.setState({
+        currentTeamTimeZone: newTzName
+      });
     },
 
     render: function() {
@@ -256,11 +231,13 @@ define(function(require) {
         );
       } else {
         return (
-          <TimeZoneSetter
-            onSetTimeZone={this.setTimeZone}
-            isSaving={this.state.isSavingTeamTimeZone}
-            error={this.state.errorSavingTeamTimeZone}
-          />
+          <TimeZoneWelcomePage>
+            <TeamTimeZoneSetter
+              csrfToken={this.props.csrfToken}
+              teamId={this.props.teamId}
+              onSave={this.onSaveTimeZone}
+            />
+          </TimeZoneWelcomePage>
         );
       }
     }

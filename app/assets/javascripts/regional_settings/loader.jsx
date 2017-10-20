@@ -9,6 +9,19 @@ requirejs(['common'], function() {
         constructor(props) {
           super(props);
           autobind(this);
+          this.state = {
+            teamTimeZone: this.props.teamTimeZone,
+            teamTimeZoneName: this.props.teamTimeZoneName,
+            teamTimeZoneOffset: this.props.teamTimeZoneOffset
+          };
+        }
+
+        onSaveTimeZone(newTz, newTzName, newOffset) {
+          this.setState({
+            teamTimeZone: newTz,
+            teamTimeZoneName: newTzName,
+            teamTimeZoneOffset: newOffset
+          });
         }
 
         render() {
@@ -17,7 +30,10 @@ requirejs(['common'], function() {
               <RegionalSettings
                 csrfToken={this.props.csrfToken}
                 teamId={this.props.teamId}
-                teamTimeZone={this.props.teamTimeZone}
+                teamTimeZone={this.state.teamTimeZone}
+                teamTimeZoneName={this.state.teamTimeZoneName}
+                teamTimeZoneOffset={this.state.teamTimeZoneOffset}
+                onSaveTimeZone={this.onSaveTimeZone}
               />
             </Page>
           );
@@ -28,7 +44,9 @@ requirejs(['common'], function() {
         containerId: React.PropTypes.string.isRequired,
         csrfToken: React.PropTypes.string.isRequired,
         teamId: React.PropTypes.string.isRequired,
-        teamTimeZone: React.PropTypes.string
+        teamTimeZone: React.PropTypes.string,
+        teamTimeZoneName: React.PropTypes.string,
+        teamTimeZoneOffset: React.PropTypes.number
       };
 
       ReactDOM.render(
