@@ -87,9 +87,9 @@ POST        /slack/action                             @controllers.SlackControll
 GET         /link_oauth2/:configId                    @controllers.APIAccessController.linkCustomOAuth2Service(configId: String, code: Option[String], state: Option[String], invocationId: Option[String], redirect: Option[String])
 GET         /authenticated/:message                   @controllers.APIAccessController.authenticated(message: String)
 
-GET         /admin/lambda_functions                   @controllers.admin.LambdasController.list()
-POST        /admin/redeploy/:versionId                @controllers.admin.LambdasController.redeploy(versionId: String)
-POST        /admin/redeploy_all                       @controllers.admin.LambdasController.redeployAll
+GET         /admin/lambdas                            @controllers.admin.LambdasController.list()
+POST        /admin/lambdas/:versionId/redeploy        @controllers.admin.LambdasController.redeploy(versionId: String)
+POST        /admin/lambdas/redeploy_all               @controllers.admin.LambdasController.redeployAll
 GET         /admin/teams                              @controllers.admin.TeamsController.list(page: Int ?= 0, perPage: Int ?= 10)
 
 GET         /metrics/invocations_for_date/:token/:year/:month/:day          @controllers.VisibilityAPIController.invocationCountsForDate(token: String, year: String, month: String, day: String)
