@@ -3,7 +3,7 @@ define(function(require) {
     Collapsible = require('../shared_ui/collapsible'),
     FormInput = require('../form/input'),
     MinuteInput = require('../form/minute_input'),
-    TimeZoneSetter = require('../time_zone/time_zone_selector'),
+    TimeZoneSelector = require('../time_zone/time_zone_selector'),
     Hour = require('../models/hour'),
     ToggleGroup = require('../form/toggle_group'),
     Recurrence = require('../models/recurrence');
@@ -124,8 +124,8 @@ define(function(require) {
       this.setState({
         showTimeZones: true
       }, () => {
-        if (this.timeZoneSetter) {
-          this.timeZoneSetter.focus();
+        if (this.timeZoneSelector) {
+          this.timeZoneSelector.focus();
         }
       });
     },
@@ -167,8 +167,8 @@ define(function(require) {
           </div>
           <Collapsible revealWhen={this.shouldShowTimeZones()}>
             {this.shouldShowTimeZones() ? (
-              <TimeZoneSetter
-                ref={(setter) => this.timeZoneSetter = setter}
+              <TimeZoneSelector
+                ref={(selector) => this.timeZoneSelector = selector}
                 defaultTimeZone={this.props.recurrence.timeZone}
                 onChange={this.updateSelectedTimeZone}
               />

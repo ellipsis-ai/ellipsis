@@ -7,7 +7,8 @@ define(function(require) {
     displayName: 'TimeZoneSelector',
     propTypes: {
       onChange: React.PropTypes.func.isRequired,
-      defaultTimeZone: React.PropTypes.string
+      defaultTimeZone: React.PropTypes.string,
+      resetWithNewDefault: React.PropTypes.bool
     },
 
     getDefaultTimeZone: function() {
@@ -19,7 +20,7 @@ define(function(require) {
     },
 
     componentWillReceiveProps: function(nextProps) {
-      if (nextProps.defaultTimeZone !== this.props.defaultTimeZone) {
+      if (nextProps.resetWithNewDefault && nextProps.defaultTimeZone !== this.props.defaultTimeZone) {
         this.reset();
       }
     },

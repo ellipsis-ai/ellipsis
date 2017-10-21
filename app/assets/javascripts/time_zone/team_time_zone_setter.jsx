@@ -88,7 +88,11 @@ define(function(require) {
       return (
         <div>
 
-            <TimeZoneSelector onChange={this.onChange} defaultTimeZone={this.props.teamTimeZone} />
+            <TimeZoneSelector
+              onChange={this.onChange}
+              defaultTimeZone={this.props.teamTimeZone}
+              resetWithNewDefault={true}
+            />
 
             <div className="mvl">
               <DynamicLabelButton
