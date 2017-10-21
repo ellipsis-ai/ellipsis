@@ -87,9 +87,9 @@ POST        /slack/action                             @controllers.SlackControll
 GET         /link_oauth2/:configId                    @controllers.APIAccessController.linkCustomOAuth2Service(configId: String, code: Option[String], state: Option[String], invocationId: Option[String], redirect: Option[String])
 GET         /authenticated/:message                   @controllers.APIAccessController.authenticated(message: String)
 
-GET         /admin/lambda_functions                   @controllers.AdminController.lambdaFunctions()
-POST        /admin/redeploy/:versionId                @controllers.AdminController.redeploy(versionId: String)
-POST        /admin/redeploy_all                       @controllers.AdminController.redeployAll
+GET         /admin/lambda_functions                   @controllers.admin.LambdasController.list()
+POST        /admin/redeploy/:versionId                @controllers.admin.LambdasController.redeploy(versionId: String)
+POST        /admin/redeploy_all                       @controllers.admin.LambdasController.redeployAll
 GET         /admin/teams                              @controllers.admin.TeamsController.list(page: Int ?= 0, perPage: Int ?= 10)
 
 GET         /metrics/invocations_for_date/:token/:year/:month/:day          @controllers.VisibilityAPIController.invocationCountsForDate(token: String, year: String, month: String, day: String)
@@ -109,38 +109,40 @@ GET         /get_item/:itemId/:itemType/:token        @controllers.DefaultStorag
 # API v0
 #NOCSRF
 POST        /put_item                                 @controllers.DefaultStorage.putItem
-
 #NOCSRF
 POST        /api/post_message                         @controllers.APIController.postMessage
-
 #NOCSRF
 POST        /api/run_action                           @controllers.APIController.runAction
-
 #NOCSRF
 POST        /api/schedule_action                      @controllers.APIController.scheduleAction
-
 #NOCSRF
 POST        /api/unschedule_action                    @controllers.APIController.unscheduleAction
-
 #NOCSRF
 POST        /api/say                                  @controllers.APIController.say
-
 #NOCSRF
 GET         /get_action_logs/:behaviorId/:token       @controllers.InvocationLogController.getLogs(behaviorId: String, token: String, from: Option[String] ?= None, to: Option[String] ?= None, userId: Option[String] ?= None)
-
 #NOCSRF
 POST        /api/graphql                              @controllers.GraphQLController.query
 
+
+
 # API v1
 #NOCSRF
-POST        /api/v1/action_requests                   @controllers.APIController.postMessage
+POST        /api/v1/commands/say                   @controllers.APIController.say
+#NOCSRF
+POST        /api/v1/commands/run_action            @controllers.APIController.postMessage
+
 
 #NOCSRF
-POST        /api/v1/messages                          @controllers.APIController.say
+POST        /api/v1/action_requests                @controllers.APIController.postMessage
+#NOCSRF
+POST        /api/v1/messages                       @controllers.APIController.say
+
+
+
 
 # Map static resources from the /public folder to the /assets URL path
 GET         /assets/*file                             @controllers.RemoteAssets.getAsset(path="/public", file: Asset)
 
 # Styleguide routes
-
 GET         /styleguide/colors                        @controllers.StyleguideController.colors
