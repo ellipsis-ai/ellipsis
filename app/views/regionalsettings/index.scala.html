@@ -4,7 +4,7 @@
 )(implicit messages: Messages, r: RequestHeader)
 
 @page.main("Regional settings", config, selectedNav = "settings") {
-  <div id="content" class="content flex-row-cascade">
+  <div id="content" class="flex-row-cascade">
     <div id="regionalSettings" class="flex-row-cascade"></div>
     <script src='@config.assets.getUrl("lib/requirejs/require.min.js")'></script>
     <script src="@dataRoute"></script>

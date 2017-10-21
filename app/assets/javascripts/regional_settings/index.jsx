@@ -19,9 +19,11 @@ define(function(require) {
     }
 
     updateTime() {
-      this.setState({
-        currentTime: this.getCurrentTime()
-      });
+      if (!document.hidden) {
+        this.setState({
+          currentTime: this.getCurrentTime()
+        });
+      }
     }
 
     getCurrentTime() {
