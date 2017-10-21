@@ -44,7 +44,7 @@ class MockAWSLambdaService @Inject() (
 
   override def listBehaviorGroupFunctionNames: Future[Seq[String]] = Future.successful(Seq())
 
-  def partionedBehaviorGroupFunctionNames: Future[PartitionedFunctionNames] = {
+  def partitionedBehaviorGroupFunctionNames: Future[PartitionedFunctionNames] = {
     Future.successful(PartitionedFunctionNames(Seq(), Seq(), Seq()))
   }
 

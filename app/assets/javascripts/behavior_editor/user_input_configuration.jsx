@@ -1,5 +1,7 @@
 define(function(require) {
   var React = require('react'),
+    Button = require('../form/button'),
+    SVGSwap = require('../svg/swap'),
     SectionHeading = require('../shared_ui/section_heading'),
     UserInputDefinition = require('./user_input_definition'),
     Checklist = require('./checklist'),
@@ -9,10 +11,10 @@ define(function(require) {
     ParamType = require('../models/param_type'),
     Trigger = require('../models/trigger');
 
-  return React.createClass({
-    displayName: 'UserInputConfiguration',
+  const UserInputConfiguration = React.createClass({
     propTypes: {
       onInputChange: React.PropTypes.func.isRequired,
+      onInputMove: React.PropTypes.func.isRequired,
       onInputDelete: React.PropTypes.func.isRequired,
       onInputAdd: React.PropTypes.func.isRequired,
       onInputNameFocus: React.PropTypes.func.isRequired,
@@ -37,6 +39,8 @@ define(function(require) {
       animationDisabled: React.PropTypes.bool,
       onConfigureType: React.PropTypes.func.isRequired
     },
+
+    swapButtons: [],
 
     onChange: function(index, data) {
       this.props.onInputChange(index, data);
@@ -113,6 +117,13 @@ define(function(require) {
       }
     },
 
+    moveInputDown: function(index) {
+      this.props.onInputMove(index, index + 1);
+      if (this.swapButtons[index]) {
+        this.swapButtons[index].blur();
+      }
+    },
+
     render: function() {
       return (
         <div>
@@ -180,7 +191,16 @@ define(function(require) {
                           onConfigureType={this.props.onConfigureType}
                         />
                         {inputIndex + 1 < this.props.userInputs.length ? (
-                          <div className="pvxs type-label type-disabled align-c">and</div>
+                          <div className="align-c pvxs type-weak">
+                            <Button
+                              ref={(el) => this.swapButtons[inputIndex] = el}
+                              className="button-s button-subtle button-symbol type-label"
+                              onClick={this.moveInputDown.bind(this, inputIndex)}
+                              title="Swap the order of the input above with the one below"
+                            >
+                              <SVGSwap />
+                            </Button>
+                          </div>
                         ) : null}
                       </div>
                     ))}
@@ -200,4 +220,6 @@ define(function(require) {
       );
     }
   });
+
+  return UserInputConfiguration;
 });

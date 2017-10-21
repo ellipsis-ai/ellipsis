@@ -6,11 +6,9 @@ define(function(require) {
     BehaviorGroupInfoPanel = require('./behavior_group_info_panel'),
     Collapsible = require('../shared_ui/collapsible'),
     ConfirmActionPanel = require('../panels/confirm_action'),
-    FixedFooter = require('../shared_ui/fixed_footer'),
     SearchInput = require('../form/search'),
     InstalledBehaviorGroupsPanel = require('./installed_behavior_groups_panel'),
     ListHeading = require('./list_heading'),
-    ModalScrim = require('../shared_ui/modal_scrim'),
     Page = require('../shared_ui/page'),
     ResponsiveColumn = require('../shared_ui/responsive_column'),
     SubstringHighlighter = require('../shared_ui/substring_highlighter'),
@@ -124,7 +122,7 @@ define(function(require) {
     },
 
     resetFooterHeight: function() {
-      var footerHeight = this.refs.footer.getHeight();
+      var footerHeight = this.props.onGetFooterHeight();
       if (this.state.footerHeight !== footerHeight) {
         this.setState({ footerHeight: footerHeight });
       }
@@ -572,8 +570,8 @@ define(function(require) {
             </div>
           </div>
 
-          <ModalScrim isActive={this.props.activePanelIsModal} onClick={this.clearActivePanel}/>
-          <FixedFooter ref="footer" className="bg-white">
+          {this.props.onRenderFooter((
+            <div>
             <Collapsible
               ref="moreInfo"
               revealWhen={this.getActivePanelName() === 'moreInfo'}
@@ -641,7 +639,8 @@ define(function(require) {
                 <p>{this.getTextForMergeBehaviorGroups(this.getCheckedGroupIds().length)}</p>
               </ConfirmActionPanel>
             </Collapsible>
-          </FixedFooter>
+            </div>
+          ))}
         </div>
       );
     }

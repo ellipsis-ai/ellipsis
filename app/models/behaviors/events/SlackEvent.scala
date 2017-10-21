@@ -1,9 +1,12 @@
 package models.behaviors.events
 
 import akka.actor.ActorSystem
+import com.mohiva.play.silhouette.api.LoginInfo
+import json.Formatting._
 import models.accounts.slack.botprofile.SlackBotProfile
+import models.accounts.slack.profile.SlackProfile
 import play.api.libs.json._
-import services.{CacheService, DefaultServices}
+import services.{CacheService, DataService, DefaultServices}
 import slack.api.SlackApiClient
 import utils.SlackChannels
 
@@ -36,19 +39,25 @@ trait SlackEvent {
   }
 
   def detailsFor(services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[JsObject] = {
+    val slackChannels = SlackChannels(client, services.cacheService, profile.slackTeamId)
     for {
       maybeUser <- services.slackEventService.maybeSlackUserDataFor(user, profile.slackTeamId, SlackApiClient(profile.token))
-      channelMembers <- SlackChannels(client, services.cacheService, profile.slackTeamId).getMembersFor(channel)
+      maybeChannelInfo <- slackChannels.getInfoFor(channel)
     } yield {
-      val channelMembersObj = JsObject(Seq(
-        "channelMembers" -> JsArray(channelMembers.map(JsString.apply))
+      val channelDetails = JsObject(Seq(
+        "channelMembers" -> Json.toJson(maybeChannelInfo.map(_.members).getOrElse(Seq())),
+        "channelName" -> Json.toJson(maybeChannelInfo.map(_.name))
       ))
       maybeUser.map { user =>
-        user.profile ++ channelMembersObj
+        Json.toJson(user.profile).as[JsObject] ++ channelDetails
       }.getOrElse {
-        channelMembersObj
+        channelDetails
       }
     }
+  }
+
+  def ensureSlackProfileFor(loginInfo: LoginInfo, dataService: DataService)(implicit ec: ExecutionContext): Future[SlackProfile] = {
+    dataService.slackProfiles.save(SlackProfile(profile.slackTeamId, loginInfo))
   }
 
 }

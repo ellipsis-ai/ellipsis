@@ -33,7 +33,7 @@ class CleanUpLambdaActor @Inject() (
   def receive = {
     case "tick" => {
       for {
-        partitioned <- lambdaService.partionedBehaviorGroupFunctionNames
+        partitioned <- lambdaService.partitionedBehaviorGroupFunctionNames
         _ <- Future.sequence(partitioned.obsolete.map { ea =>
           cleanUp(ea)
         })

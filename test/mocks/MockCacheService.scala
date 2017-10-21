@@ -38,6 +38,14 @@ class MockCacheService extends CacheService with MockitoSugar {
 
   def getSlackGroupInfo(group: String, teamId: String): Option[Group] = None
 
+  def cacheSlackChannels(data: Seq[Channel], teamId: String): Unit = {}
+
+  def getSlackChannels(teamId: String): Option[Seq[Channel]] = None
+
+  def cacheSlackGroups(data: Seq[Group], teamId: String): Unit = {}
+
+  def getSlackGroups(teamId: String): Option[Seq[Group]] = None
+
   def cacheSlackIMs(data: Seq[Im], teamId: String): Unit = {}
 
   def getSlackIMs(teamId: String): Option[Seq[Im]] = None

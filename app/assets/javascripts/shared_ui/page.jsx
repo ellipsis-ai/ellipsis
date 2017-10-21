@@ -2,6 +2,11 @@ define(function(require) {
   const React = require('react'),
     ReactDOM = require('react-dom'),
     Event = require('../lib/event'),
+    FeedbackPanel = require('../panels/feedback'),
+    Collapsible = require('./collapsible'),
+    FixedFooter = require('./fixed_footer'),
+    ModalScrim = require('./modal_scrim'),
+    Button = require('../form/button'),
     autobind = require('../lib/autobind');
 
   class Page extends React.Component {
@@ -9,6 +14,7 @@ define(function(require) {
       super(props);
       autobind(this);
       this.state = this.getDefaultState();
+      this.footer = null;
     }
 
     getDefaultState() {
@@ -17,15 +23,6 @@ define(function(require) {
         activePanelIsModal: false,
         previousPanelName: "",
         previousPanelIsModal: false
-      };
-    }
-
-    static requiredPropDefaults() {
-      return {
-        activePanelName: "",
-        activePanelIsModal: false,
-        onToggleActivePanel: function() { void(0); },
-        onClearActivePanel: function() { void(0); }
       };
     }
 
@@ -108,6 +105,40 @@ define(function(require) {
     componentDidMount() {
       window.document.addEventListener('keydown', this.onDocumentKeyDown, false);
       window.document.addEventListener('focus', this.handleModalFocus, true);
+      if (this.footer) {
+        ReactDOM.render(
+          this.renderFeedbackLink(),
+          this.props.feedbackContainer || document.getElementById(Page.feedbackContainerId)
+        );
+      }
+    }
+
+    getFooterHeight() {
+      return this.footer ? this.footer.getHeight() : 0;
+    }
+
+    toggleFeedback() {
+      this.toggleActivePanel('feedback', true);
+    }
+
+    onRenderFooter(content, footerClassName) {
+      return (
+        <div>
+          <ModalScrim isActive={this.state.activePanelIsModal} onClick={this.clearActivePanel} />
+          <FixedFooter ref={(el) => this.footer = el} className={`bg-white ${footerClassName || ""}`}>
+            <Collapsible revealWhen={this.state.activePanelName === 'feedback'}>
+              <FeedbackPanel onDone={this.toggleFeedback} csrfToken={this.props.csrfToken} />
+            </Collapsible>
+            {content}
+          </FixedFooter>
+        </div>
+      );
+    }
+
+    renderFeedbackLink() {
+      return (
+        <Button className="button-nav mhs pbm mobile-pbs" onClick={this.toggleFeedback}>Feedback</Button>
+      );
     }
 
     render() {
@@ -118,23 +149,46 @@ define(function(require) {
             activePanelIsModal: this.state.activePanelIsModal,
             onToggleActivePanel: this.toggleActivePanel,
             onClearActivePanel: this.clearActivePanel,
+            onRenderFooter: this.onRenderFooter,
+            onGetFooterHeight: this.getFooterHeight,
             ref: (component) => this.component = component
           }))}
         </div>
       );
     }
+
+    static requiredPropDefaults() {
+      return {
+        activePanelName: "",
+        activePanelIsModal: false,
+        onToggleActivePanel: Page.placeholderCallback,
+        onClearActivePanel: Page.placeholderCallback,
+        onRenderFooter: Page.placeholderCallback,
+        onGetFooterHeight: Page.placeholderCallback
+      };
+    }
+
+    static placeholderCallback() {
+      void(0);
+    }
   }
 
   Page.propTypes = {
-    children: React.PropTypes.node.isRequired
+    children: React.PropTypes.node.isRequired,
+    csrfToken: React.PropTypes.string.isRequired,
+    feedbackContainer: React.PropTypes.object
   };
 
   Page.requiredPropTypes = Object.freeze({
     activePanelName: React.PropTypes.string.isRequired,
     activePanelIsModal: React.PropTypes.bool.isRequired,
     onToggleActivePanel: React.PropTypes.func.isRequired,
-    onClearActivePanel: React.PropTypes.func.isRequired
+    onClearActivePanel: React.PropTypes.func.isRequired,
+    onRenderFooter: React.PropTypes.func.isRequired,
+    onGetFooterHeight: React.PropTypes.func.isRequired
   });
+
+  Page.feedbackContainerId = 'header-feedback';
 
   return Page;
 });

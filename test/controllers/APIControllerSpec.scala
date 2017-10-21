@@ -459,6 +459,7 @@ class APIControllerSpec extends PlaySpec with MockitoSugar {
                              maybeActionName: Option[String],
                              maybeTrigger: Option[String],
                              maybeUserId: Option[String],
+                             maybeChannel: Option[String],
                              token: String
                            ): JsValue = {
     var elements = Seq(
@@ -473,6 +474,9 @@ class APIControllerSpec extends PlaySpec with MockitoSugar {
     maybeUserId.foreach { uid =>
       elements = elements ++ Seq(("userId", JsString(uid)))
     }
+    maybeChannel.foreach { channel =>
+      elements = elements ++ Seq(("channel", JsString(channel)))
+    }
     JsObject(elements)
   }
 
@@ -481,7 +485,7 @@ class APIControllerSpec extends PlaySpec with MockitoSugar {
     "400 for invalid token" in new ControllerTestContext {
       running(app) {
         val token = setUpMocksFor(team, user, isTokenValid = false, None, app, eventHandler, dataService, cacheService, slackEventService, botResultService)
-        val body = unscheduleActionBodyFor(Some("foo"), None, None, token)
+        val body = unscheduleActionBodyFor(Some("foo"), None, None, None, token)
         val request = FakeRequest(controllers.routes.APIController.unscheduleAction()).withJsonBody(body)
         val result = route(app, request).get
         status(result) mustBe BAD_REQUEST
@@ -493,7 +497,7 @@ class APIControllerSpec extends PlaySpec with MockitoSugar {
     "400 for neither actionName nor trigger" in new ControllerTestContext {
       running(app) {
         val token = setUpMocksFor(team, user, isTokenValid = false, None, app, eventHandler, dataService, cacheService, slackEventService, botResultService)
-        val body = unscheduleActionBodyFor(None, None, None, token)
+        val body = unscheduleActionBodyFor(None, None, None, None, token)
         val request = FakeRequest(controllers.routes.APIController.unscheduleAction()).withJsonBody(body)
         val result = route(app, request).get
         status(result) mustBe BAD_REQUEST
@@ -504,7 +508,7 @@ class APIControllerSpec extends PlaySpec with MockitoSugar {
     "400 for both actionName and trigger" in new ControllerTestContext {
       running(app) {
         val token = setUpMocksFor(team, user, isTokenValid = false, None, app, eventHandler, dataService, cacheService, slackEventService, botResultService)
-        val body = unscheduleActionBodyFor(Some("foo"), Some("bar"), None, token)
+        val body = unscheduleActionBodyFor(Some("foo"), Some("bar"), None, None, token)
         val request = FakeRequest(controllers.routes.APIController.unscheduleAction()).withJsonBody(body)
         val result = route(app, request).get
         status(result) mustBe BAD_REQUEST
@@ -524,7 +528,7 @@ class APIControllerSpec extends PlaySpec with MockitoSugar {
         when(dataService.behaviors.findByIdOrName(org.mockito.Matchers.eq(actionName), any[BehaviorGroup])).thenReturn(Future.successful(Some(targetBehavior)))
         val invalidUserId = "invalid"
         when(dataService.users.find(invalidUserId)).thenReturn(Future.successful(None))
-        val body = unscheduleActionBodyFor(Some("foo"), None, Some(invalidUserId), token)
+        val body = unscheduleActionBodyFor(Some("foo"), None, Some(invalidUserId), None, token)
         val request = FakeRequest(controllers.routes.APIController.unscheduleAction()).withJsonBody(body)
         val result = route(app, request).get
         status(result) mustBe NOT_FOUND
@@ -533,7 +537,24 @@ class APIControllerSpec extends PlaySpec with MockitoSugar {
       }
     }
 
-    "respond with a valid result for actionName" in new ControllerTestContext {
+    "404 for invalid action name" in new ControllerTestContext {
+      val group = BehaviorGroup(IDs.next, None, team, None, OffsetDateTime.now)
+      val originatingBehavior = Behavior(IDs.next, team, Some(group), Some(IDs.next), isDataType = false, OffsetDateTime.now)
+      val token = setUpMocksFor(team, user, isTokenValid = true, Some(originatingBehavior.id), app, eventHandler, dataService, cacheService, slackEventService, botResultService)
+      val actionName = "foo"
+      when(dataService.behaviors.findWithoutAccessCheck(any[String])).thenReturn(Future.successful(None))
+      when(dataService.behaviors.findWithoutAccessCheck(originatingBehavior.id)).thenReturn(Future.successful(Some(originatingBehavior)))
+      when(dataService.behaviors.findByIdOrName(org.mockito.Matchers.eq(actionName), any[BehaviorGroup])).thenReturn(Future.successful(None))
+      when(dataService.users.ensureUserFor(any[LoginInfo], anyString)).thenReturn(Future.successful(user))
+      val body = unscheduleActionBodyFor(Some(actionName), None, None, Some(defaultChannel), token)
+      val request = FakeRequest(controllers.routes.APIController.unscheduleAction()).withJsonBody(body)
+      val result = route(app, request).get
+
+      status(result) mustBe NOT_FOUND
+      contentAsString(result) mustBe s"Couldn't find an action with name `$actionName`"
+    }
+
+    "respond with a valid result for a scheduled actionName" in new ControllerTestContext {
       running(app) {
         val group = BehaviorGroup(IDs.next, None, team, None, OffsetDateTime.now)
         val originatingBehavior = Behavior(IDs.next, team, Some(group), Some(IDs.next), isDataType = false, OffsetDateTime.now)
@@ -546,19 +567,52 @@ class APIControllerSpec extends PlaySpec with MockitoSugar {
         when(dataService.users.ensureUserFor(any[LoginInfo], anyString)).thenReturn(Future.successful(user))
         val mockVersion = mock[BehaviorGroupVersion]
         when(dataService.behaviorGroups.maybeCurrentVersionFor(group)).thenReturn(Future.successful(Some(mockVersion)))
-        val mockScheduledBehavior = mock[ScheduledBehavior]
-        when(dataService.scheduledBehaviors.allForBehavior(targetBehavior, None, None)).thenReturn(Future.successful(Seq(mockScheduledBehavior)))
+        val scheduledBehavior = ScheduledBehavior(
+          IDs.next,
+          targetBehavior,
+          Map(),
+          Some(user),
+          team,
+          Some(defaultChannel),
+          isForIndividualMembers = false,
+          Daily(IDs.next, 1, LocalTime.of(12, 0, 0), team.timeZone),
+          OffsetDateTime.now,
+          OffsetDateTime.now
+        )
+        when(dataService.scheduledBehaviors.allForBehavior(targetBehavior, None, Some(defaultChannel))).thenReturn(Future.successful(Seq(scheduledBehavior)))
+        when(dataService.scheduledBehaviors.delete(scheduledBehavior)).thenReturn(Future.successful(Some(scheduledBehavior)))
 
-        when(dataService.scheduledBehaviors.delete(mockScheduledBehavior)).thenReturn(Future.successful(true))
-        when(mockScheduledBehavior.displayText(dataService)).thenReturn(Future.successful(s"an action named $actionName"))
-        when(dataService.scheduledBehaviors.allForBehavior(targetBehavior, None, None)).thenReturn(Future.successful(Seq(mockScheduledBehavior)))
-
-        val body = unscheduleActionBodyFor(Some(actionName), None, None, token)
+        val body = unscheduleActionBodyFor(Some(actionName), None, None, Some(defaultChannel), token)
         val request = FakeRequest(controllers.routes.APIController.unscheduleAction()).withJsonBody(body)
         val result = route(app, request).get
         status(result) mustBe OK
 
-        verify(dataService.scheduledBehaviors, times(1)).delete(mockScheduledBehavior)
+        verify(dataService.scheduledBehaviors, times(1)).delete(scheduledBehavior)
+      }
+    }
+
+    "respond with a valid result for a valid actionName that isn't scheduled" in new ControllerTestContext {
+      running(app) {
+        val group = BehaviorGroup(IDs.next, None, team, None, OffsetDateTime.now)
+        val originatingBehavior = Behavior(IDs.next, team, Some(group), Some(IDs.next), isDataType = false, OffsetDateTime.now)
+        val targetBehavior = Behavior(IDs.next, team, Some(group), Some(IDs.next), isDataType = false, OffsetDateTime.now)
+        val token = setUpMocksFor(team, user, isTokenValid = true, Some(originatingBehavior.id), app, eventHandler, dataService, cacheService, slackEventService, botResultService)
+        val actionName = "foo"
+        when(dataService.behaviors.findWithoutAccessCheck(any[String])).thenReturn(Future.successful(None))
+        when(dataService.behaviors.findWithoutAccessCheck(originatingBehavior.id)).thenReturn(Future.successful(Some(originatingBehavior)))
+        when(dataService.behaviors.findByIdOrName(org.mockito.Matchers.eq(actionName), any[BehaviorGroup])).thenReturn(Future.successful(Some(targetBehavior)))
+        when(dataService.users.ensureUserFor(any[LoginInfo], anyString)).thenReturn(Future.successful(user))
+        val mockVersion = mock[BehaviorGroupVersion]
+        when(dataService.behaviorGroups.maybeCurrentVersionFor(group)).thenReturn(Future.successful(Some(mockVersion)))
+        when(dataService.scheduledBehaviors.allForBehavior(targetBehavior, None, Some(defaultChannel))).thenReturn(Future.successful(Seq()))
+        when(dataService.scheduledBehaviors.delete(any[ScheduledBehavior])).thenReturn(Future.successful(None))
+
+        val body = unscheduleActionBodyFor(Some(actionName), None, None, Some(defaultChannel), token)
+        val request = FakeRequest(controllers.routes.APIController.unscheduleAction()).withJsonBody(body)
+        val result = route(app, request).get
+        status(result) mustBe OK
+
+        verify(dataService.scheduledBehaviors, never()).delete(any[ScheduledBehavior])
       }
     }
 
@@ -569,16 +623,28 @@ class APIControllerSpec extends PlaySpec with MockitoSugar {
         val token = setUpMocksFor(team, user, isTokenValid = true, Some(originatingBehavior.id), app, eventHandler, dataService, cacheService, slackEventService, botResultService)
         val trigger = "foo"
         when(dataService.users.ensureUserFor(any[LoginInfo], anyString)).thenReturn(Future.successful(user))
-        val mockScheduledMessage = mock[ScheduledMessage]
-        when(dataService.scheduledMessages.allForTeam(team)).thenReturn(Future.successful(Seq(mockScheduledMessage)))
-        when(dataService.scheduledMessages.deleteFor(trigger, team)).thenReturn(Future.successful(true))
+        val scheduledMessage = ScheduledMessage(
+          IDs.next,
+          trigger,
+          Some(user),
+          team,
+          Some(defaultChannel),
+          isForIndividualMembers = false,
+          Daily(IDs.next, 1, LocalTime.of(12, 0, 0), team.timeZone),
+          OffsetDateTime.now,
+          OffsetDateTime.now
+        )
 
-        val body = unscheduleActionBodyFor(None, Some(trigger), None, token)
+        when(dataService.scheduledMessages.allForText(trigger, team, None, Some(defaultChannel))).thenReturn(Future.successful(Seq(scheduledMessage)))
+        when(dataService.scheduledMessages.delete(scheduledMessage)).thenReturn(Future.successful(Some(scheduledMessage)))
+
+        val body = unscheduleActionBodyFor(None, Some(trigger), None, Some(defaultChannel), token)
         val request = FakeRequest(controllers.routes.APIController.unscheduleAction()).withJsonBody(body)
         val result = route(app, request).get
         status(result) mustBe OK
 
-        verify(dataService.scheduledMessages, times(1)).deleteFor(trigger, team)
+        verify(dataService.scheduledMessages, times(1)).allForText(trigger, team, None, Some(defaultChannel))
+        verify(dataService.scheduledMessages, times(1)).delete(scheduledMessage)
       }
     }
 

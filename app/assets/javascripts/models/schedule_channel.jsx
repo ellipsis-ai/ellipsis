@@ -22,19 +22,26 @@ define(function() {
       });
     }
 
+    getPrefix() {
+      return this.isPublic ? "#" : "🔒 ";
+    }
+
+    getSuffix() {
+      return this.isPrivateGroup() ? "(private)" : "";
+    }
+
     getName(options) {
       const shouldFormat = options && options.formatting;
-      if (this.isPublic) {
-        return `${shouldFormat ? "#" : ""}${this.name}`;
-      } else if (this.members.length > 1) {
-        return `${shouldFormat ? "🔒 " : ""}${this.name} (private)`;
-      } else {
-        return `${shouldFormat ? "🔒 " : ""}Direct message to you`;
-      }
+      const name = this.isDM() ? "Direct message to you" : this.name;
+      return shouldFormat ? `${this.getPrefix()}${name} ${this.getSuffix()}`.trim() : name;
     }
 
     isDM() {
       return !this.isPublic && this.members.length < 2;
+    }
+
+    isPrivateGroup() {
+      return !this.isPublic && this.members.length > 1;
     }
 
     userCanAccess(slackUserId) {
@@ -43,6 +50,16 @@ define(function() {
 
     getFormattedName() {
       return this.getName({ formatting: true });
+    }
+
+    getDescription() {
+      if (this.isDM()) {
+        return "a direct message to you";
+      } else if (this.isPrivateGroup()) {
+        return `the private group ${this.getFormattedName()}`;
+      } else {
+        return `the channel ${this.getFormattedName()}`;
+      }
     }
 
     clone(props) {

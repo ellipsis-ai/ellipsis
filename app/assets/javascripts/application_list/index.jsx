@@ -119,11 +119,11 @@ define(function(require) {
             <div className="flex-column flex-column-right bg-white" />
           </div>
 
-          <footer ref="footer" className="position-fixed-bottom position-z-front border-top">
+          {this.props.onRenderFooter((
             <Collapsible ref="oAuth2ApplicationHelp" revealWhen={this.props.activePanelName === 'oAuth2ApplicationHelp'}>
               {this.renderOAuth2ApplicationHelp()}
             </Collapsible>
-          </footer>
+          ))}
         </div>
       );
     },

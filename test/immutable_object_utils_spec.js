@@ -18,4 +18,13 @@ describe('ImmutableObjectUtils', () => {
       expect(newArray).toEqual(['a', 'b']);
     });
   });
+
+  describe('arrayMoveElement', () => {
+    it("copies an array before changing an element's position", () => {
+      const longArray = ['a', 'b', 'c', 'd', 'e', 'f'];
+      const newArray = ImmutableObjectUtils.arrayMoveElement(longArray, 2, 4);
+      expect(longArray).toEqual(['a', 'b', 'c', 'd', 'e', 'f']);
+      expect(newArray).toEqual(['a', 'b', 'd', 'e', 'c', 'f']);
+    });
+  });
 });

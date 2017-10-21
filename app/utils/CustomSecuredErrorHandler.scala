@@ -21,7 +21,8 @@ class CustomSecuredErrorHandler @Inject() (
 
   def onNotAuthenticated(implicit request: RequestHeader): Future[Result] = {
     val path = request.uri
-    val maybeRedirect = if (path == "/") {
+    val isIndex = path == "/"
+    val maybeRedirect = if (isIndex) {
       None
     } else {
       Some(path)
@@ -29,17 +30,23 @@ class CustomSecuredErrorHandler @Inject() (
     // TODO: platform-agnostic
     render.async {
       case Accepts.JavaScript() => {
-        Future.successful(
-          Results.Unauthorized("Authorization required\n").withHeaders(
-            "WWW-Authenticate" -> s"""Bearer realm="${request.host}""""
+        if (isIndex) {
+          redirectToSignIn(maybeRedirect)
+        } else {
+          Future.successful(
+            Results.Unauthorized("Authorization required\n").withHeaders(
+              "WWW-Authenticate" -> s"""Bearer realm="${request.host}""""
+            )
           )
-        )
+        }
       }
-      case Accepts.Html() => {
-        Future.successful(Results.Redirect(controllers.routes.SlackController.signIn(maybeRedirect)))
-      }
+      case Accepts.Html() => redirectToSignIn(maybeRedirect)
     }
 
+  }
+
+  def redirectToSignIn(maybeRedirect: Option[String])(implicit request: RequestHeader): Future[Result] = {
+    Future.successful(Results.Redirect(controllers.routes.SlackController.signIn(maybeRedirect)))
   }
 
   def onNotAuthorized(implicit request: RequestHeader): Future[Result] = {

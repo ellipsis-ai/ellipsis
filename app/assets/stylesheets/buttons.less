@@ -211,6 +211,12 @@ button.button-shrink {
   white-space: nowrap;
 }
 
+a.button-shrink.button-l,
+button.button-shrink.button-l {
+  padding-left: (@m - @border-width-thick);
+  padding-right: (@m - @border-width-thick);
+}
+
 button.button-symbol {
   width: 40px;
   min-width: 40px;
@@ -231,6 +237,19 @@ button.button-block {
   font-style: inherit;
   line-height: inherit;
   height: auto;
+}
+
+button.button-nav {
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+  border: none !important;
+  color: @white;
+  line-height: @xl;
+  height: auto;
+  .light-antialiasing();
+  min-width: 0;
+  font-size: inherit;
+  font-weight: inherit;
 }
 
 button.button-no-wrap {
@@ -426,6 +445,12 @@ button.button-symbol:focus {
   padding-right: (@s - @border-width-thick) !important;
 }
 
+button.button-shrink.button-l:focus,
+a.button-shrink.button-l:focus {
+  padding-left: (@m - @border-width-thick*2) !important;
+  padding-right: (@m - @border-width-thick*2) !important;
+}
+
 button.button-s.button-symbol:focus {
   padding-left: (@xs - @border-width-thick) !important;
   padding-right: (@xs - @border-width-thick) !important;
@@ -444,6 +469,10 @@ button.button-block:focus {
 button.button-raw:focus,
 button.button-block:focus .link {
   color: @blue-medium-alt;
+}
+
+button.button-nav:hover {
+  color: @pink-light;
 }
 
 button:active {

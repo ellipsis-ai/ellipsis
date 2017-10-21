@@ -113,7 +113,7 @@ requirejs(['common'], function() {
 
         render: function() {
           return (
-            <Page>
+            <Page csrfToken={this.props.csrfToken}>
               <Scheduling
                 scheduledActions={this.state.scheduledActions}
                 channelList={this.state.channelList}

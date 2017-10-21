@@ -97,11 +97,11 @@ define(function(require) {
             <div className="flex-column flex-column-right bg-white" />
           </div>
 
-          <footer ref="footer" className="position-fixed-bottom position-z-front border-top">
+          {this.props.onRenderFooter((
             <Collapsible ref="ellipsisApiHelp" revealWhen={this.props.activePanelName === 'ellipsisApiHelp'}>
               <APIRequestHelp onCollapse={this.toggleApiHelp} />
             </Collapsible>
-          </footer>
+          ))}
         </div>
       );
     },
