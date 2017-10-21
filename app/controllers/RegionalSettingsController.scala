@@ -33,28 +33,17 @@ class RegionalSettingsController @Inject()(
           teamAccess <- dataService.users.teamAccessFor(user, maybeTeamId)
         } yield {
           teamAccess.maybeTargetTeam.map { team =>
-            val config = team.maybeTimeZone.map { tz =>
-              val now = OffsetDateTime.now(tz)
-              RegionalSettingsConfig(
-                "regionalSettings",
-                CSRF.getToken(request).map(_.value),
-                team.id,
-                Some(tz.toString),
-                Some(tz.getDisplayName(TextStyle.FULL, Locale.ENGLISH)),
-                Some(now.getOffset.getTotalSeconds)
-              )
-            }.getOrElse {
-              RegionalSettingsConfig(
-                "regionalSettings",
-                CSRF.getToken(request).map(_.value),
-                team.id,
-                None,
-                None,
-                None
-              )
-            }
+            val maybeTz = team.maybeTimeZone
+            val config = RegionalSettingsConfig(
+              "regionalSettings",
+              CSRF.getToken(request).map(_.value),
+              team.id,
+              maybeTz.map(_.toString),
+              maybeTz.map(_.getDisplayName(TextStyle.FULL, Locale.ENGLISH)),
+              maybeTz.map(tz => OffsetDateTime.now(tz).getOffset.getTotalSeconds)
+            )
             Ok(views.js.shared.pageConfig(viewConfig(Some(teamAccess)), "config/regionalsettings/index", Json.toJson(config)))
-          }.getOrElse{
+          }.getOrElse {
             NotFound("Team not found")
           }
         }

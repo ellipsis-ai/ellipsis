@@ -1,14 +1,8 @@
 define(function(require) {
   const React = require('react'),
-    SettingsMenu = require('./settings_menu'),
-    autobind = require('../lib/autobind');
+    SettingsMenu = require('./settings_menu');
 
   class SettingsPage extends React.Component {
-    constructor(props) {
-      super(props);
-      autobind(this);
-    }
-
     render() {
       const header = this.props.header;
       return (
