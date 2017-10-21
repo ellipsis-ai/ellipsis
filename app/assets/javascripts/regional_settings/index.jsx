@@ -2,7 +2,7 @@ define(function(require) {
   const React = require('react'),
     moment = require('moment'),
     SettingsPage = require('../shared_ui/settings_page'),
-    TeamTimeZone = require('../time_zone/team_time_zone'),
+    TeamTimeZoneSetter = require('../time_zone/team_time_zone_setter'),
     autobind = require('../lib/autobind');
 
   class RegionalSettings extends React.Component {
@@ -57,7 +57,7 @@ define(function(require) {
             {this.renderCurrentTime()}
           </p>
 
-          <TeamTimeZone
+          <TeamTimeZoneSetter
             csrfToken={this.props.csrfToken}
             teamId={this.props.teamId}
             onSave={this.props.onSaveTimeZone}

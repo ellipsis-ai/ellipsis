@@ -4,8 +4,8 @@ define(function(require) {
     DynamicLabelButton = require('../form/dynamic_label_button'),
     TimeZoneSelector = require('./time_zone_selector');
 
-  return React.createClass({
-    displayName: 'TeamTimeZone',
+  const TeamTimeZoneSetter = React.createClass({
+    displayName: '',
     propTypes: {
       csrfToken: React.PropTypes.string.isRequired,
       teamId: React.PropTypes.string.isRequired,
@@ -110,4 +110,6 @@ define(function(require) {
       );
     }
   });
+
+  return TeamTimeZoneSetter;
 });

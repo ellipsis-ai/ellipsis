@@ -6,7 +6,7 @@ define(function(require) {
     DataRequest = require('../lib/data_request'),
     ImmutableObjectUtils = require('../lib/immutable_object_utils'),
     TimeZoneWelcomePage = require('../time_zone/time_zone_welcome_page'),
-    TeamTimeZoneSetter = require('../time_zone/team_time_zone'),
+    TeamTimeZoneSetter = require('../time_zone/team_time_zone_setter'),
     Page = require('../shared_ui/page');
 
   return React.createClass({

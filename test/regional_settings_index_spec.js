@@ -3,7 +3,7 @@ import TestUtils from 'react-addons-test-utils';
 global.fetch = require('./mocks/mock_fetch');
 
 const RegionalSettings = require('../app/assets/javascripts/regional_settings/index');
-const TeamTimeZoneSetter = require('../app/assets/javascripts/time_zone/team_time_zone');
+const TeamTimeZoneSetter = require('../app/assets/javascripts/time_zone/team_time_zone_setter');
 
 jsRoutes.controllers.EnvironmentVariablesController.list = jest.fn(() => ({ url: '/mock_environment_variables_list' }));
 jsRoutes.controllers.APITokenController.listTokens = jest.fn(() => ({ url: '/mock_list_tokens' }));
