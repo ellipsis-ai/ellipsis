@@ -33,12 +33,22 @@ describe('RegionalSettings', () => {
   let config = {};
 
   beforeEach(() => {
-    config = Object.assign(config, defaultConfig);
+    config = Object.assign({}, defaultConfig);
   });
 
   describe('render', () => {
-    it('renders a team time zone setter', () => {
+    it('renders a team time zone setter when the time zone is set', () => {
       const index = createIndex(config);
+      const child = TestUtils.findRenderedComponentWithType(index, TeamTimeZoneSetter);
+      expect(child).toBeDefined();
+    });
+
+    it('renders a team time zone setter when there is no time zone', () => {
+      const index = createIndex(Object.assign(config, {
+        teamTimeZone: null,
+        teamTimeZoneName: null,
+        teamTimeZoneOffset: null
+      }));
       const child = TestUtils.findRenderedComponentWithType(index, TeamTimeZoneSetter);
       expect(child).toBeDefined();
     });
