@@ -5,6 +5,8 @@ import javax.inject.Inject
 
 import akka.actor.ActorSystem
 import com.google.inject.Provider
+import json.APITokenData
+import json.Formatting._
 import models.accounts.slack.botprofile.SlackBotProfile
 import models.accounts.slack.profile.SlackProfile
 import models.accounts.user.User
@@ -721,6 +723,53 @@ class APIController @Inject() (
             // TODO: 400 seems like maybe the wrong kind of error here
             badRequest(s"Slack API error: ${e.code}\n", Json.toJson(info))
           }
+        }
+      }
+    )
+
+  }
+
+  case class GenerateApiTokenInfo(
+                                   invocationToken: String,
+                                   expirySeconds: Option[Int],
+                                   isOneTime: Option[Boolean]
+                                  ) extends ApiMethodInfo {
+
+    val token: String = invocationToken
+  }
+
+  implicit val generateApiTokenInfoWrites = Json.writes[GenerateApiTokenInfo]
+
+  private val generateApiTokenForm = Form(
+    mapping(
+      "invocationToken" -> nonEmptyText,
+      "expirySeconds" -> optional(number),
+      "isOneTime" -> optional(boolean)
+    )(GenerateApiTokenInfo.apply)(GenerateApiTokenInfo.unapply)
+  )
+
+  def generateApiToken = Action.async { implicit request =>
+    generateApiTokenForm.bindFromRequest.fold(
+      formWithErrors => {
+        Future.successful(resultForFormErrors(formWithErrors))
+      },
+      info => {
+        val eventualResult = for {
+          context <- ApiMethodContext.createFor(info.token)
+          maybeNewToken <- context.maybeInvocationToken.map { invocationToken =>
+            dataService.apiTokens.createFor(invocationToken, info.expirySeconds, info.isOneTime.getOrElse(false)).map(Some(_))
+          }.getOrElse(Future.successful(None))
+        } yield {
+          maybeNewToken.map { newToken =>
+            Ok(Json.toJson(APITokenData.from(newToken)))
+          }.getOrElse {
+            Forbidden("Invocation token has expired")
+          }
+        }
+
+        eventualResult.recover {
+          // TODO: look into this and similar cases and maybe do something different
+          case e: InvalidTokenException => badRequest("Invalid token\n", Json.toJson(info))
         }
       }
     )
