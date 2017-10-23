@@ -660,7 +660,7 @@ class APIControllerSpec extends PlaySpec with MockitoSugar {
       running(app) {
         val token = setUpMocksFor(team, user, isTokenValid = false, None, app, eventHandler, dataService, cacheService, slackEventService, botResultService)
         val body = JsObject(Seq(
-          ("invocationToken", JsString(token))
+          ("token", JsString(token))
         ))
         val request = FakeRequest(controllers.routes.APIController.generateApiToken()).withJsonBody(body)
         val result = route(app, request).get
@@ -679,7 +679,7 @@ class APIControllerSpec extends PlaySpec with MockitoSugar {
         val newToken = APIToken(IDs.next, IDs.next, user.id, None, isOneTime = false, isRevoked = false, None, OffsetDateTime.now)
         when(dataService.apiTokens.createFor(invocationToken, None, false)).thenReturn(Future.successful(newToken))
         val body = JsObject(Seq(
-          ("invocationToken", JsString(token))
+          ("token", JsString(token))
         ))
         val request = FakeRequest(controllers.routes.APIController.generateApiToken()).withJsonBody(body)
         val result = route(app, request).get

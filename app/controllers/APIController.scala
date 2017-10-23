@@ -730,19 +730,16 @@ class APIController @Inject() (
   }
 
   case class GenerateApiTokenInfo(
-                                   invocationToken: String,
+                                   token: String,
                                    expirySeconds: Option[Int],
                                    isOneTime: Option[Boolean]
-                                  ) extends ApiMethodInfo {
-
-    val token: String = invocationToken
-  }
+                                  ) extends ApiMethodInfo
 
   implicit val generateApiTokenInfoWrites = Json.writes[GenerateApiTokenInfo]
 
   private val generateApiTokenForm = Form(
     mapping(
-      "invocationToken" -> nonEmptyText,
+      "token" -> nonEmptyText,
       "expirySeconds" -> optional(number),
       "isOneTime" -> optional(boolean)
     )(GenerateApiTokenInfo.apply)(GenerateApiTokenInfo.unapply)
