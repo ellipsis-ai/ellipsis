@@ -15,6 +15,9 @@ define(function (require) {
       return (
         <nav className="mvxxl">
           <ul className="list-nav">
+            <li className={this.activeClassWhenPageName("regionalSettings")}>
+              <a href={jsRoutes.controllers.RegionalSettingsController.index(this.props.teamId).url}>Regional settings</a>
+            </li>
             <li className={this.activeClassWhenPageName("environmentVariables")}>
               <a href={jsRoutes.controllers.EnvironmentVariablesController.list(this.props.teamId).url}>Environment variables</a>
             </li>

@@ -1,33 +1,18 @@
 define(function(require) {
   var React = require('react'),
     DataRequest = require('../lib/data_request'),
-    SearchWithResults = require('../form/search_with_results');
+    SearchWithResults = require('../form/search_with_results'),
+    autobind = require('../lib/autobind');
 
-  return React.createClass({
-    displayName: 'TimeZoneSelector',
-    propTypes: {
-      onChange: React.PropTypes.func.isRequired,
-      defaultTimeZone: React.PropTypes.string
-    },
+  class TimeZoneSelector extends React.PureComponent {
+    constructor(props) {
+      super(props);
+      autobind(this);
+      this.state = this.getDefaultState();
+    }
 
-    componentDidMount: function() {
-      this.requestMatchingTimezones(this.state.defaultTimeZone);
-    },
-
-    guessTimeZone: function() {
-      let guessed;
-      try {
-        guessed = Intl.DateTimeFormat().resolvedOptions().timeZone;
-      } catch (e) {
-        guessed = 'America/New_York';
-      }
-      return guessed;
-    },
-
-    getInitialState: function() {
-      var defaultTimeZone = this.props.defaultTimeZone || this.guessTimeZone();
+    getDefaultState() {
       return {
-        defaultTimeZone: defaultTimeZone,
         selectedCity: "",
         selectedOption: null,
         isSearching: false,
@@ -35,9 +20,43 @@ define(function(require) {
         cityResults: [],
         error: null
       };
-    },
+    }
 
-    requestMatchingTimezones: function(searchQuery) {
+    getDefaultTimeZone() {
+      return this.props.defaultTimeZone || this.guessTimeZone();
+    }
+
+    componentDidMount() {
+      this.requestMatchingTimezones(this.getDefaultTimeZone());
+    }
+
+    componentWillReceiveProps(nextProps) {
+      if (nextProps.resetWithNewDefault && nextProps.defaultTimeZone !== this.props.defaultTimeZone) {
+        this.reset();
+      }
+    }
+
+    reset() {
+      this.searchInput.clearSearch();
+      this.setDefault();
+    }
+
+    setDefault() {
+      this.setState(this.getDefaultState());
+      this.requestMatchingTimezones(this.getDefaultTimeZone());
+    }
+
+    guessTimeZone() {
+      let guessed;
+      try {
+        guessed = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      } catch (e) {
+        guessed = 'America/New_York';
+      }
+      return guessed;
+    }
+
+    requestMatchingTimezones(searchQuery) {
       const url = jsRoutes.controllers.ApplicationController.possibleCitiesFor(searchQuery).url;
       this.setState({
         isSearching: true,
@@ -72,14 +91,14 @@ define(function(require) {
             });
           });
       });
-    },
+    }
 
-    setSelectedTimeZoneFromCity: function(cityInfo) {
+    setSelectedTimeZoneFromCity(cityInfo) {
       const optionProps = this.getOptionPropsFromCityInfo(cityInfo);
       this.updateCityAndOption(optionProps.key, optionProps);
-    },
+    }
 
-    getOptionPropsFromCityInfo: function(cityInfo) {
+    getOptionPropsFromCityInfo(cityInfo) {
       const name = this.assembleName(cityInfo.name, cityInfo.admin, cityInfo.country);
       const timeZone = cityInfo.timeZoneId;
       const key = [name, timeZone].join("|");
@@ -89,51 +108,48 @@ define(function(require) {
         timeZoneName: cityInfo.timeZoneName,
         key: key
       };
-    },
+    }
 
-    getFilteredTzInfo: function() {
+    getFilteredTzInfo() {
       return this.state.cityResults.map(this.getOptionPropsFromCityInfo);
-    },
+    }
 
-    updateSelectedTimeZone: function(valueOrNull, newValueIndex) {
+    updateSelectedTimeZone(valueOrNull, newValueIndex) {
       var newResult = this.getFilteredTzInfo()[newValueIndex];
       if (newResult) {
         this.updateCityAndOption(newResult.key, newResult);
       }
-    },
+    }
 
-    updateCityAndOption: function(cityKey, option) {
+    updateCityAndOption(cityKey, option) {
       this.setState({
         selectedCity: cityKey,
         selectedOption: option
       }, () => {
         this.props.onChange(option.timeZone, option.name, option.timeZoneName);
       });
-    },
+    }
 
-    updateSearchText: function(newValue) {
+    updateSearchText(newValue) {
       const newQuery = newValue.trim();
       if (newQuery) {
         this.requestMatchingTimezones(newValue);
       } else {
-        this.setState({
-          noMatches: false,
-          cityResults: []
-        });
+        this.setDefault();
       }
-    },
+    }
 
-    assembleName: function(city, region, country) {
+    assembleName(city, region, country) {
       return `${city}${region && region !== city ? `, ${region}` : ""}, ${country}`;
-    },
+    }
 
-    focus: function() {
+    focus() {
       if (this.searchInput) {
         this.searchInput.focus();
       }
-    },
+    }
 
-    render: function() {
+    render() {
       return (
         <div>
           <SearchWithResults
@@ -161,5 +177,14 @@ define(function(require) {
         </div>
       );
     }
-  });
+  }
+
+  TimeZoneSelector.propTypes = {
+    onChange: React.PropTypes.func.isRequired,
+    defaultTimeZone: React.PropTypes.string,
+    resetWithNewDefault: React.PropTypes.bool
+  };
+
+  return TimeZoneSelector;
+
 });

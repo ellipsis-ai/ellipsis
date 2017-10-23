@@ -44,7 +44,8 @@
           "BehaviorEditorController": {},
           "EnvironmentVariablesController": {},
           "OAuth2ApplicationController": {},
-          "ScheduledActionsController": {}
+          "ScheduledActionsController": {},
+          "RegionalSettingsController": {}
         }
       }
     },
