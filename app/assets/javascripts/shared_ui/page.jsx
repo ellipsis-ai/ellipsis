@@ -7,7 +7,8 @@ define(function(require) {
     FixedFooter = require('./fixed_footer'),
     ModalScrim = require('./modal_scrim'),
     Button = require('../form/button'),
-    autobind = require('../lib/autobind');
+    autobind = require('../lib/autobind'),
+    PageFooterRenderingError = require('./page_footer_rendering_error');
 
   class Page extends React.Component {
     constructor(props) {
@@ -110,6 +111,8 @@ define(function(require) {
           this.renderFeedbackLink(),
           this.props.feedbackContainer || document.getElementById(Page.feedbackContainerId)
         );
+      } else {
+        throw new PageFooterRenderingError(this);
       }
     }
 
