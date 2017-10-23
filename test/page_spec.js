@@ -16,6 +16,9 @@ describe('Page', () => {
     }
   }
 
+  FooterRenderingComponent.propTypes = Object.assign({}, Page.requiredPropTypes);
+  FooterRenderingComponent.defaultProps = Page.requiredPropDefaults();
+
   class NoFooterComponent extends React.Component {
     render() {
       return (
@@ -23,9 +26,6 @@ describe('Page', () => {
       );
     }
   }
-
-  FooterRenderingComponent.propTypes = Object.assign({}, Page.requiredPropTypes);
-  FooterRenderingComponent.defaultProps = Page.requiredPropDefaults();
 
   function createPage(overrideComponent) {
     const feedbackContainer = document.createElement('span');
