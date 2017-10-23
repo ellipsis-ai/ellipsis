@@ -335,6 +335,11 @@ define(function(require) {
           </p>
 
           <div className="mvxl">
+            <button type="button" key={"apiTypeButton12"}
+                    className="button-l mrl mbl"
+            >
+              <span className="type-black">AWS</span>
+          </button>
             {this.props.apis.map((api, index) => (
               <button type="button" key={"apiTypeButton" + index}
                       className="button-l mrl mbl"

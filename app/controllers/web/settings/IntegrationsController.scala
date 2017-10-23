@@ -113,7 +113,7 @@ class IntegrationsController @Inject() (
               behaviorGroupId = maybeBehaviorGroupId,
               behaviorId = maybeBehaviorId
             )
-            Ok(views.js.shared.pageConfig(viewConfig(Some(teamAccess)), "pippo", Json.toJson(config)))
+            Ok(views.js.shared.pageConfig(viewConfig(Some(teamAccess)), "settings/integrations/editor", Json.toJson(config)))
           }.getOrElse {
             NotFound("Team not found")
           }
@@ -124,8 +124,8 @@ class IntegrationsController @Inject() (
           teamAccess <- dataService.users.teamAccessFor(user, maybeTeamId)
         } yield {
           teamAccess.maybeTargetTeam.map { team =>
-            val dataRoute = controllers.routes.OAuth2ApplicationController.newApp(maybeTeamId, maybeBehaviorGroupId, maybeBehaviorId, maybeRequiredNameInCode)
-            Ok(views.html.web.settings.integrations.edit(viewConfig(Some(teamAccess)), "Add an API configuration", dataRoute))
+            val dataRoute = controllers.web.settings.routes.IntegrationsController.add(maybeTeamId, maybeBehaviorGroupId, maybeBehaviorId, maybeRequiredNameInCode)
+            Ok(views.html.web.settings.integrations.edit(viewConfig(Some(teamAccess)), "New Integration", dataRoute))
           }.getOrElse {
             NotFound(s"Team not found: ${maybeTeamId}")
           }
