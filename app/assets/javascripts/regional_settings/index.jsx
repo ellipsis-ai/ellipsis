@@ -3,6 +3,7 @@ define(function(require) {
     moment = require('moment'),
     SettingsPage = require('../shared_ui/settings_page'),
     TeamTimeZoneSetter = require('../time_zone/team_time_zone_setter'),
+    Page = require('../shared_ui/page'),
     autobind = require('../lib/autobind');
 
   class RegionalSettings extends React.Component {
@@ -64,19 +65,22 @@ define(function(require) {
             teamTimeZone={this.props.teamTimeZone}
           />
 
+          {this.props.onRenderFooter()}
+
         </SettingsPage>
       );
     }
   }
 
-  RegionalSettings.propTypes = {
+  RegionalSettings.propTypes = Object.assign({}, Page.requiredPropTypes, {
     csrfToken: React.PropTypes.string.isRequired,
     teamId: React.PropTypes.string.isRequired,
     onSaveTimeZone: React.PropTypes.func.isRequired,
     teamTimeZone: React.PropTypes.string,
     teamTimeZoneName: React.PropTypes.string,
     teamTimeZoneOffset: React.PropTypes.number
-  };
+  });
+  RegionalSettings.defaultProps = Page.requiredPropDefaults();
 
   return RegionalSettings;
 });
