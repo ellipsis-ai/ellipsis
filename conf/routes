@@ -139,7 +139,7 @@ POST        /api/v1/action_requests                   @controllers.APIController
 POST        /api/v1/messages                          @controllers.APIController.say
 
 #NOCSRF
-POST        /api/v1/generate_token                    @controllers.APIController.generateApiToken
+POST        /api/v1/tokens                            @controllers.APIController.generateApiToken
 
 # Map static resources from the /public folder to the /assets URL path
 GET         /assets/*file                             @controllers.RemoteAssets.getAsset(path="/public", file: Asset)
