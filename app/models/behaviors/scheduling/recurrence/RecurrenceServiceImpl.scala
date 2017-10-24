@@ -100,8 +100,15 @@ class RecurrenceServiceImpl @Inject() (
 
   import RecurrenceQueries._
 
+  // TODO: Investigate why saving time-of-day midnight causes a PSQL error
+  // Exactly midnight causes a mapping error with an invalid `-infinity` value,
+  // so ensure it's always at least one nanosecond after midnight
+  private def ensureAfterMinTimeOfDay(raw: RawRecurrence): RawRecurrence = {
+    raw.copy(maybeTimeOfDay = raw.maybeTimeOfDay.map(_.plusNanos(1)))
+  }
+
   def save(recurrence: Recurrence): Future[Recurrence] = {
-    val raw = recurrence.toRaw
+    val raw = ensureAfterMinTimeOfDay(recurrence.toRaw)
     val query = all.filter(_.id === raw.id)
     val action = query.result.flatMap { r =>
       r.headOption.map { existing =>
