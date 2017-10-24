@@ -100,9 +100,12 @@ class RecurrenceServiceImpl @Inject() (
 
   import RecurrenceQueries._
 
-  // TODO: Investigate why saving time-of-day midnight causes a PSQL error
-  // Exactly midnight causes a mapping error with an invalid `-infinity` value,
-  // so ensure it's always at least one nanosecond after midnight
+  /* TODO: Investigate why saving time-of-day midnight causes a PostgreSQL error
+
+     Midnight causes a mapping error with an invalid `-infinity` value,
+     so we ensure time of day is at least one nanosecond later.
+
+     (PostgreSQL throws away nanoseconds anyway.) */
   private def ensureAfterMinTimeOfDay(raw: RawRecurrence): RawRecurrence = {
     raw.copy(maybeTimeOfDay = raw.maybeTimeOfDay.map(_.plusNanos(1)))
   }
