@@ -13,7 +13,7 @@ trait APITokenService {
 
   def createFor(invocationToken: InvocationToken, maybeExpirySeconds: Option[Int], isOneTime: Boolean): Future[APIToken]
 
-  def allFor(user: User): Future[Seq[APIToken]]
+  def allDisplayableFor(user: User): Future[Seq[APIToken]]
 
   def use(token: APIToken): Future[APIToken]
 
