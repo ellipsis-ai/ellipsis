@@ -20,6 +20,7 @@ define(function(require) {
       scheduledActions: React.PropTypes.arrayOf(React.PropTypes.instanceOf(ScheduledAction)).isRequired,
       channelList: React.PropTypes.arrayOf(React.PropTypes.instanceOf(ScheduleChannel)).isRequired,
       behaviorGroups: React.PropTypes.arrayOf(React.PropTypes.instanceOf(BehaviorGroup)).isRequired,
+      teamId: React.PropTypes.string.required,
       teamTimeZone: React.PropTypes.string,
       teamTimeZoneName: React.PropTypes.string,
       slackUserId: React.PropTypes.string,

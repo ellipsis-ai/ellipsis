@@ -125,6 +125,7 @@ requirejs(['common'], function() {
                 isDeleting={this.state.isDeleting}
                 onClearErrors={this.onClearErrors}
                 error={this.state.error}
+                teamId={this.props.teamId}
                 teamTimeZone={this.props.teamTimeZone}
                 teamTimeZoneName={this.props.teamTimeZoneName}
                 slackUserId={this.props.slackUserId}

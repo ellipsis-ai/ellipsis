@@ -90,7 +90,7 @@ class ScheduledActionsController @Inject()(
           teamAccess.maybeTargetTeam.map { _ =>
             Ok(views.html.scheduledactions.index(viewConfig(Some(teamAccess)), maybeScheduledId, maybeNewSchedule, maybeTeamId))
           }.getOrElse {
-            NotFound("Team not found")
+            NotFound(views.html.error.notFound(viewConfig(None), Some("Team not found"), None))
           }
         }
       }
