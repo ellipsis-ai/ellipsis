@@ -57,13 +57,17 @@ class APITokenServiceImpl @Inject() (
     create(newInstance)
   }
 
-  def uncompiledAllForQuery(userId: Rep[String]) = {
-    all.filter(_.userId === userId).filterNot(_.isRevoked)
+  def uncompiledAllDisplayableForQuery(userId: Rep[String]) = {
+    all.
+      filter(_.userId === userId).
+      filterNot(_.isRevoked).
+      filterNot(_.isOneTime).
+      filter(_.maybeExpirySeconds.isEmpty)
   }
-  val allForQuery = Compiled(uncompiledAllForQuery _)
+  val allDisplayableForQuery = Compiled(uncompiledAllDisplayableForQuery _)
 
-  def allFor(user: User): Future[Seq[APIToken]] = {
-    dataService.run(allForQuery(user.id).result)
+  def allDisplayableFor(user: User): Future[Seq[APIToken]] = {
+    dataService.run(allDisplayableForQuery(user.id).result)
   }
 
   def use(token: APIToken): Future[APIToken] = {

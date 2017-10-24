@@ -51,7 +51,7 @@ class APITokenController @Inject() (
           tokens <- if (teamAccess.isAdminAccess) {
             Future.successful(Seq())
           } else {
-            dataService.apiTokens.allFor(user)
+            dataService.apiTokens.allDisplayableFor(user)
           }
         } yield {
           teamAccess.maybeTargetTeam.map { team =>
