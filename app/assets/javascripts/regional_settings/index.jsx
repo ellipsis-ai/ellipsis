@@ -93,15 +93,17 @@ define(function(require) {
 
           <h5>Team time zone</h5>
 
-          <p>
+          <div className="mbs">
             {this.props.teamTimeZoneName ? (
               <span className="type-bold">{this.props.teamTimeZoneName}</span>
             ) : (
               <span className="type-italic type-disabled">No time zone chosen</span>
             )}
-            <span className="mrm">{this.renderCurrentTime()}</span>
-            <span><Button className="button-s" onClick={this.toggleTimeZoneSetter}>Change</Button></span>
-          </p>
+            {this.renderCurrentTime()}
+          </div>
+          <div>
+            <Button className="button-s" onClick={this.toggleTimeZoneSetter}>Change time zone</Button>
+          </div>
 
           {this.props.onRenderFooter(this.renderSetterPanel())}
 
