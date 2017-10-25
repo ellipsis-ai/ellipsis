@@ -3,9 +3,9 @@ import type {Node} from 'react';
 export type PageRequiredProps = {
   activePanelName: string,
   activePanelIsModal: boolean,
-  onToggleActivePanel: (name: string, beModal: ?boolean, optionalCallback: ?(() => void)) => void,
-  onClearActivePanel: (optionalCallback: ?(() => void)) => void,
-  onRenderFooter: (content: Node, footerClassName: ?string) => Node,
+  onToggleActivePanel: (name: string, beModal?: boolean, optionalCallback?: () => void) => void,
+  onClearActivePanel: (optionalCallback?: () => void) => void,
+  onRenderFooter: (content: Node, footerClassName?: string) => Node,
   onGetFooterHeight: () => number
 };
 
@@ -51,7 +51,7 @@ define(function(require) {
       };
     }
 
-    toggleActivePanel(name: string, beModal: ?boolean, optionalCallback: ?(() => void)): void {
+    toggleActivePanel(name: string, beModal?: boolean, optionalCallback?: () => void): void {
       var alreadyOpen = this.state.activePanelName === name;
       var callback = typeof(optionalCallback) === 'function' ?
         optionalCallback : (() => {
@@ -68,7 +68,7 @@ define(function(require) {
       }, callback);
     }
 
-    clearActivePanel(optionalCallback: ?(() => any)): void {
+    clearActivePanel(optionalCallback?: () => void): void {
       var callback = typeof(optionalCallback) === 'function' ? optionalCallback : null;
       this.setState(this.getDefaultState(), callback);
     }
@@ -148,7 +148,7 @@ define(function(require) {
       this.toggleActivePanel('feedback', true);
     }
 
-    onRenderFooter(content: React.Node, footerClassName: ?string) {
+    onRenderFooter(content?: React.Node, footerClassName?: string) {
       return (
         <div>
           <ModalScrim isActive={this.state.activePanelIsModal} onClick={this.clearActivePanel} />
