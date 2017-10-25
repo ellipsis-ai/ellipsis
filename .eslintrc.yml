@@ -15,6 +15,10 @@ parserOptions:
 plugins:
   - flowtype
   - react
+settings:
+  react:
+    version: 15.3
+    flowVersion: 0.57
 globals:
   requirejs: false
   define: false
@@ -116,7 +120,18 @@ rules:
   no-use-before-define:
     - error
     - functions: false
+  no-useless-escape:
+    - off
   react/prop-types:
     - warn
   react/display-name:
     - off
+  react/no-string-refs:
+    - warn
+  react/no-find-dom-node:
+    - off
+  react/jsx-no-target-blank:
+    - warn
+  react/no-unescaped-entities:
+    - warn
+

@@ -1,4 +1,6 @@
 // @flow
+import type {PageRequiredProps} from '../shared_ui/page';
+
 define(function(require) {
   const React = require('react'),
     moment = require('moment'),
@@ -9,7 +11,16 @@ define(function(require) {
     Page = require('../shared_ui/page'),
     autobind = require('../lib/autobind');
 
-  class RegionalSettings extends React.Component {
+  type Props = {
+    csrfToken: string,
+    teamId: string,
+    onSaveTimeZone: (tzName: string, formattedName: string, newOffset: number) => void,
+    teamTimeZone: ?string,
+    teamTimeZoneName: ?string,
+    teamTimeZoneOffset: ?number
+  }
+
+  class RegionalSettings extends React.Component<Props & PageRequiredProps> {
     constructor(props) {
       super(props);
       autobind(this);
@@ -113,14 +124,6 @@ define(function(require) {
     }
   }
 
-  RegionalSettings.propTypes = Object.assign({}, Page.requiredPropTypes, {
-    csrfToken: React.PropTypes.string.isRequired,
-    teamId: React.PropTypes.string.isRequired,
-    onSaveTimeZone: React.PropTypes.func.isRequired,
-    teamTimeZone: React.PropTypes.string,
-    teamTimeZoneName: React.PropTypes.string,
-    teamTimeZoneOffset: React.PropTypes.number
-  });
   RegionalSettings.defaultProps = Page.requiredPropDefaults();
 
   return RegionalSettings;

@@ -1,4 +1,14 @@
 // @flow
+import type {Node} from 'react';
+export type PageRequiredProps = {
+  activePanelName: string,
+  activePanelIsModal: boolean,
+  onToggleActivePanel: (name: string, beModal: ?boolean, optionalCallback: ?(() => void)) => void,
+  onClearActivePanel: (optionalCallback: ?(() => void)) => void,
+  onRenderFooter: (content: Node, footerClassName: ?string) => Node,
+  onGetFooterHeight: () => number
+};
+
 define(function(require) {
   const React = require('react'),
     ReactDOM = require('react-dom'),
@@ -41,7 +51,7 @@ define(function(require) {
       };
     }
 
-    toggleActivePanel(name: string, beModal: ?boolean, optionalCallback: ?(() => any)): void {
+    toggleActivePanel(name: string, beModal: ?boolean, optionalCallback: ?(() => void)): void {
       var alreadyOpen = this.state.activePanelName === name;
       var callback = typeof(optionalCallback) === 'function' ?
         optionalCallback : (() => {
