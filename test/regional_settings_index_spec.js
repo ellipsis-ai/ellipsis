@@ -2,6 +2,7 @@ import React from 'react';
 import TestUtils from 'react-addons-test-utils';
 global.fetch = require('./mocks/mock_fetch');
 
+const Page = require('../app/assets/javascripts/shared_ui/page');
 const RegionalSettings = require('../app/assets/javascripts/regional_settings/index');
 const TeamTimeZoneSetter = require('../app/assets/javascripts/time_zone/team_time_zone_setter');
 
@@ -26,8 +27,10 @@ describe('RegionalSettings', () => {
 
   function createIndex(config) {
     return TestUtils.renderIntoDocument(
-      <RegionalSettings {...config} />
-    );
+      <Page csrfToken={config.csrfToken} feedbackContainer={document.createElement('span')}>
+        <RegionalSettings {...config} />
+      </Page>
+    ).component;
   }
 
   let config = {};
@@ -39,8 +42,9 @@ describe('RegionalSettings', () => {
   describe('render', () => {
     it('renders a team time zone setter when the time zone is set', () => {
       const index = createIndex(config);
-      const child = TestUtils.findRenderedComponentWithType(index, TeamTimeZoneSetter);
-      expect(child).toBeDefined();
+      const spy = jest.spyOn(index, 'renderSetterPanel');
+      index.render();
+      expect(spy).toHaveBeenCalled();
     });
 
     it('renders a team time zone setter when there is no time zone', () => {
@@ -49,8 +53,9 @@ describe('RegionalSettings', () => {
         teamTimeZoneName: null,
         teamTimeZoneOffset: null
       }));
-      const child = TestUtils.findRenderedComponentWithType(index, TeamTimeZoneSetter);
-      expect(child).toBeDefined();
+      const spy = jest.spyOn(index, 'renderSetterPanel');
+      index.render();
+      expect(spy).toHaveBeenCalled();
     });
   });
 

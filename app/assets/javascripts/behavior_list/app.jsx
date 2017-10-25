@@ -237,6 +237,7 @@ define(function(require) {
               teamId={this.props.teamId}
               onSave={this.onSaveTimeZone}
             />
+            {this.props.onRenderFooter()}
           </TimeZoneWelcomePage>
         );
       }

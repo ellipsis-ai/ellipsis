@@ -58,6 +58,35 @@ define(function(require) {
       }
     }
 
+    renderSetterPanel() {
+      return (
+        <Collapsible revealWhen={this.props.activePanelName === "timeZoneSetter"}>
+          <div className="box-action phn">
+            <div className="container">
+              <div className="columns">
+                <div className="column column-page-sidebar">
+                  <h4 className="mtn type-weak">Set new team time zone</h4>
+                </div>
+                <div className="column column-page-main">
+
+                  <p>Search for a city to set a new team time zone.</p>
+
+                  <TeamTimeZoneSetter
+                    ref={(el) => this.teamTimeZoneSetter = el}
+                    csrfToken={this.props.csrfToken}
+                    teamId={this.props.teamId}
+                    onSave={this.onSaveTimeZone}
+                    teamTimeZone={this.props.teamTimeZone}
+                    onCancel={this.props.onClearActivePanel}
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        </Collapsible>
+      );
+    }
+
     render() {
       return (
         <SettingsPage teamId={this.props.teamId} activePage={"regionalSettings"} header={"Regional settings"}>
@@ -74,32 +103,7 @@ define(function(require) {
             <span><Button className="button-s" onClick={this.toggleTimeZoneSetter}>Change</Button></span>
           </p>
 
-          {this.props.onRenderFooter((
-            <Collapsible revealWhen={this.props.activePanelName === "timeZoneSetter"}>
-              <div className="box-action phn">
-                <div className="container">
-                  <div className="columns">
-                    <div className="column column-page-sidebar">
-                      <h4 className="mtn type-weak">Set new team time zone</h4>
-                    </div>
-                    <div className="column column-page-main">
-
-                      <p>Search for a city to set a new team time zone.</p>
-
-                      <TeamTimeZoneSetter
-                        ref={(el) => this.teamTimeZoneSetter = el}
-                        csrfToken={this.props.csrfToken}
-                        teamId={this.props.teamId}
-                        onSave={this.onSaveTimeZone}
-                        teamTimeZone={this.props.teamTimeZone}
-                        onCancel={this.props.onClearActivePanel}
-                      />
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </Collapsible>
-          ))}
+          {this.props.onRenderFooter(this.renderSetterPanel())}
 
         </SettingsPage>
       );
