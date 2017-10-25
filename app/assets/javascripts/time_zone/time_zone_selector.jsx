@@ -164,15 +164,15 @@ define(function(require) {
             onSelect={this.updateSelectedTimeZone}
           />
           <div className="mvl">
-            <span className="mrm">Selected time zone:</span>
-            <b>{this.state.selectedOption ? (
+            <span className="mrm">Time zone:</span>
+            {this.state.selectedOption ? (
               <span>
-                <span>{this.state.selectedOption.name}</span>
-                <span> ({this.state.selectedOption.timeZoneName})</span>
+                <b>{this.state.selectedOption.timeZoneName} </b>
+                <span>({this.state.selectedOption.name})</span>
               </span>
             ) : (
               <i className="type-disabled">None</i>
-            )}</b>
+            )}
           </div>
         </div>
       );
