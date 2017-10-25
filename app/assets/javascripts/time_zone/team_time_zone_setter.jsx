@@ -1,15 +1,16 @@
 define(function(require) {
   var React = require('react'),
     DataRequest = require('../lib/data_request'),
+    Button = require('../form/button'),
     DynamicLabelButton = require('../form/dynamic_label_button'),
     TimeZoneSelector = require('./time_zone_selector');
 
   const TeamTimeZoneSetter = React.createClass({
-    displayName: '',
     propTypes: {
       csrfToken: React.PropTypes.string.isRequired,
       teamId: React.PropTypes.string.isRequired,
       onSave: React.PropTypes.func.isRequired,
+      onCancel: React.PropTypes.func,
       teamTimeZone: React.PropTypes.string
     },
 
@@ -68,8 +69,10 @@ define(function(require) {
       });
     },
 
-    hasSelectedNewTimeZone: function(timeZoneId) {
-      return timeZoneId && timeZoneId !== this.props.teamTimeZone;
+    focus: function() {
+      if (this.timeZoneSelector) {
+        this.timeZoneSelector.focus();
+      }
     },
 
     renderStatus: function() {
@@ -89,6 +92,7 @@ define(function(require) {
         <div>
 
             <TimeZoneSelector
+              ref={(el) => this.timeZoneSelector = el}
               onChange={this.onChange}
               defaultTimeZone={this.props.teamTimeZone}
               resetWithNewDefault={true}
@@ -98,15 +102,18 @@ define(function(require) {
               <DynamicLabelButton
                 className="button-primary mrm"
                 onClick={this.setTimeZone}
-                disabledWhen={this.state.isSaving || !this.hasSelectedNewTimeZone(this.state.timeZoneId)}
+                disabledWhen={this.state.isSaving || !this.state.timeZoneId}
                 labels={[{
-                  text: "Set team time zone",
+                  text: "Save team time zone",
                   displayWhen: !this.state.isSaving
                 }, {
                   text: "Saving…",
                   displayWhen: this.state.isSaving
                 }]}
               />
+              {this.props.onCancel ? (
+                <Button onClick={this.props.onCancel} className="mrm">Cancel</Button>
+              ) : null}
               {this.renderStatus()}
             </div>
 
