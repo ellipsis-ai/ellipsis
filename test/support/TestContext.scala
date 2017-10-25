@@ -29,7 +29,6 @@ trait TestContext extends MockitoSugar{
       overrides(bind[DataService].to[MockDataService]).
       overrides(bind[AWSLambdaService].to[MockAWSLambdaService]).
       overrides(bind[EventHandler].toInstance(mock[EventHandler])).
-      overrides(bind[GithubService].toInstance(mock[GithubService])).
       overrides(bind[GraphQLService].toInstance(mock[GraphQLService])).
       overrides(bind[SlackEventService].toInstance(mock[SlackEventServiceImpl])).
       overrides(bind[BotResultService].toInstance(mock[BotResultService])).
@@ -44,7 +43,6 @@ trait TestContext extends MockitoSugar{
   val graphQLService = app.injector.instanceOf(classOf[GraphQLService])
   lazy val actorSystem = app.injector.instanceOf(classOf[ActorSystem])
   val eventHandler = app.injector.instanceOf(classOf[EventHandler])
-  val githubService = app.injector.instanceOf(classOf[GithubService])
   val lambdaService = app.injector.instanceOf(classOf[AWSLambdaService])
   val slackEventService = app.injector.instanceOf(classOf[SlackEventService])
   val botResultService = app.injector.instanceOf(classOf[BotResultService])

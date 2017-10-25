@@ -43,7 +43,6 @@ trait DBSpec extends PlaySpec with OneAppPerSuite with MockitoSugar {
   override implicit lazy val app: Application =
     GuiceApplicationBuilder().
       overrides(bind[AWSLambdaService].to[MockAWSLambdaService]).
-      overrides(bind[GithubService].toInstance(mock[GithubService])).
       overrides(bind[SlackEventService].to[MockSlackEventService]).
       overrides(bind[CacheService].to[MockCacheService]).
       disable[ActorModule].
