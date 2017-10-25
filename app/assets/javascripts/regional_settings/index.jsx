@@ -1,3 +1,4 @@
+// @flow
 define(function(require) {
   const React = require('react'),
     moment = require('moment'),
@@ -29,12 +30,12 @@ define(function(require) {
       }
     }
 
-    getCurrentTime() {
+    getCurrentTime(): string {
       const time = moment().utc();
       if (this.props.teamTimeZoneOffset) {
         time.add(this.props.teamTimeZoneOffset, 'seconds');
       }
-      return time;
+      return time.format('h:mm:ss A');
     }
 
     toggleTimeZoneSetter() {
@@ -45,7 +46,7 @@ define(function(require) {
       });
     }
 
-    onSaveTimeZone(tzName, formattedName, newOffset) {
+    onSaveTimeZone(tzName: string, formattedName: string, newOffset: number): void {
       this.props.onSaveTimeZone(tzName, formattedName, newOffset);
       this.props.onClearActivePanel();
     }
@@ -53,7 +54,7 @@ define(function(require) {
     renderCurrentTime() {
       if (this.props.teamTimeZoneOffset) {
         return (
-          <span> — {this.state.currentTime.format('h:mm:ss A')}</span>
+          <span> — {this.state.currentTime}</span>
         );
       }
     }

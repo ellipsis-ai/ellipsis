@@ -1,3 +1,4 @@
+// @flow
 define(function(require) {
   const React = require('react'),
     ReactDOM = require('react-dom'),
@@ -10,7 +11,20 @@ define(function(require) {
     autobind = require('../lib/autobind'),
     PageFooterRenderingError = require('./page_footer_rendering_error');
 
-  class Page extends React.Component {
+  type Props = {
+    children: React.Node,
+    csrfToken: string,
+    feedbackContainer: ?{}
+  }
+
+  type State = {
+    activePanelName: string,
+    activePanelIsModal: boolean,
+    previousPanelName: string,
+    previousPanelIsModal: boolean
+  }
+
+  class Page extends React.Component<Props, State> {
     constructor(props) {
       super(props);
       autobind(this);
@@ -18,7 +32,7 @@ define(function(require) {
       this.footer = null;
     }
 
-    getDefaultState() {
+    getDefaultState(): State {
       return {
         activePanelName: "",
         activePanelIsModal: false,
@@ -27,7 +41,7 @@ define(function(require) {
       };
     }
 
-    toggleActivePanel(name, beModal, optionalCallback) {
+    toggleActivePanel(name: string, beModal: ?boolean, optionalCallback: ?(() => any)): void {
       var alreadyOpen = this.state.activePanelName === name;
       var callback = typeof(optionalCallback) === 'function' ?
         optionalCallback : (() => {
@@ -44,24 +58,24 @@ define(function(require) {
       }, callback);
     }
 
-    clearActivePanel(optionalCallback) {
+    clearActivePanel(optionalCallback: ?(() => any)): void {
       var callback = typeof(optionalCallback) === 'function' ? optionalCallback : null;
       this.setState(this.getDefaultState(), callback);
     }
 
-    handleEscKey() {
+    handleEscKey(): void {
       if (this.state.activePanelName) {
         this.clearActivePanel();
       }
     }
 
-    onDocumentKeyDown(event) {
+    onDocumentKeyDown(event: any): void {
       if (Event.keyPressWasEsc(event)) {
-        this.handleEscKey(event);
+        this.handleEscKey();
       }
     }
 
-    handleModalFocus(event) {
+    handleModalFocus(event: any): void {
       var activeModal = this.getActiveModalElement();
       if (!activeModal) {
         return;
@@ -78,7 +92,7 @@ define(function(require) {
       }
     }
 
-    getActiveModalElement() {
+    getActiveModalElement(): any {
       if (this.state.activePanelName && this.state.activePanelIsModal) {
         return ReactDOM.findDOMNode(this.component.refs[this.state.activePanelName]);
       } else {
@@ -86,7 +100,7 @@ define(function(require) {
       }
     }
 
-    focusOnPrimaryOrFirstPossibleElement(parentElement) {
+    focusOnPrimaryOrFirstPossibleElement(parentElement: any): void {
       var primaryElement = parentElement.querySelector('button.button-primary');
       if (primaryElement) {
         primaryElement.focus();
@@ -95,7 +109,7 @@ define(function(require) {
       }
     }
 
-    focusOnFirstPossibleElement(parentElement) {
+    focusOnFirstPossibleElement(parentElement: any): void {
       var tabSelector = 'a[href], area[href], input:not([disabled]), button:not([disabled]), select:not([disabled]), textarea:not([disabled]), iframe, object, embed, *[tabindex], *[contenteditable]';
       var firstFocusableElement = parentElement.querySelector(tabSelector);
       if (firstFocusableElement) {
@@ -103,7 +117,7 @@ define(function(require) {
       }
     }
 
-    componentDidMount() {
+    componentDidMount(): void {
       window.document.addEventListener('keydown', this.onDocumentKeyDown, false);
       window.document.addEventListener('focus', this.handleModalFocus, true);
       if (this.footer) {
@@ -116,15 +130,15 @@ define(function(require) {
       }
     }
 
-    getFooterHeight() {
+    getFooterHeight(): number {
       return this.footer ? this.footer.getHeight() : 0;
     }
 
-    toggleFeedback() {
+    toggleFeedback(): void {
       this.toggleActivePanel('feedback', true);
     }
 
-    onRenderFooter(content, footerClassName) {
+    onRenderFooter(content: React.Node, footerClassName: ?string) {
       return (
         <div>
           <ModalScrim isActive={this.state.activePanelIsModal} onClick={this.clearActivePanel} />
@@ -138,13 +152,13 @@ define(function(require) {
       );
     }
 
-    renderFeedbackLink() {
+    renderFeedbackLink(): React.Node {
       return (
         <Button className="button-nav mhs pbm mobile-pbs" onClick={this.toggleFeedback}>Feedback</Button>
       );
     }
 
-    render() {
+    render(): React.Node {
       return (
         <div className="flex-row-cascade">
           {React.Children.map(this.props.children, (ea) => React.cloneElement(ea, {
