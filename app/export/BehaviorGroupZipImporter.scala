@@ -58,6 +58,7 @@ case class BehaviorGroupZipImporter(
     var actionInputs: Seq[InputData] = Seq()
     var dataTypeInputs: Seq[InputData] = Seq()
     var libraries: Seq[LibraryVersionData] = Seq()
+    val libFileRegex = """^lib\/(.+.js)""".r
 
     while (nextEntry != null) {
       val entryName = nextEntry.getName
@@ -71,8 +72,9 @@ case class BehaviorGroupZipImporter(
         })
         map.put(filename, readDataFrom(zipInputStream))
       }
-      LibraryVersionData.libFileRegex.findFirstMatchIn(entryName).foreach { _ =>
-        val newLib = LibraryVersionData.from(readDataFrom(zipInputStream), entryName)
+      libFileRegex.findFirstMatchIn(entryName).foreach { firstMatch =>
+        val filename = firstMatch.subgroups(0)
+        val newLib = LibraryVersionData.from(readDataFrom(zipInputStream), filename)
         libraries ++= Seq(newLib)
       }
       readmeRegex.findFirstMatchIn(entryName).foreach { _ =>

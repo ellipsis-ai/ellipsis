@@ -94,7 +94,7 @@ object LibraryVersionData {
     }
   }
 
-  val libFileRegex = """^lib\/(.+).js""".r
+  val libNameRegex = """^(.+)\.js""".r
   val libContentRegex = """(?s)\/\*\s*([^$]*)\s+@exportId\s+(\S+)\s*\*\/\s*(.*)""".r
 
   def from(content: String, filename: String): LibraryVersionData = {
@@ -106,7 +106,7 @@ object LibraryVersionData {
       maybeExportId = Some(firstMatch.subgroups(1))
       code = firstMatch.subgroups(2)
     }
-    val name = libFileRegex.findFirstMatchIn(filename).map { firstMatch =>
+    val name = libNameRegex.findFirstMatchIn(filename).map { firstMatch =>
       firstMatch.subgroups(0)
     }.getOrElse(filename)
     LibraryVersionData(

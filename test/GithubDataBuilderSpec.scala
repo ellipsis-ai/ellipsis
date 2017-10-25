@@ -35,6 +35,7 @@ class GithubDataBuilderSpec extends PlaySpec with MockitoSugar {
       when(dataService.teamEnvironmentVariables.lookForInCode(anyString)).thenReturn(Seq())
       val data = GithubDataBuilder(json, team, None, dataService).build
       data.libraryVersions must have length(1)
+      data.libraryVersions.head.name mustBe "adroll"
     }
 
   }
