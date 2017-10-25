@@ -72,7 +72,7 @@ case class BehaviorGroupZipImporter(
         map.put(filename, readDataFrom(zipInputStream))
       }
       LibraryVersionData.libFileRegex.findFirstMatchIn(entryName).foreach { _ =>
-        val newLib = LibraryVersionData.fromFile(readDataFrom(zipInputStream), entryName)
+        val newLib = LibraryVersionData.from(readDataFrom(zipInputStream), entryName)
         libraries ++= Seq(newLib)
       }
       readmeRegex.findFirstMatchIn(entryName).foreach { _ =>

@@ -94,10 +94,10 @@ object LibraryVersionData {
     }
   }
 
-  val libFileRegex = """^lib\/(.+).js""".r
+  val libFileRegex = """^(.+).js""".r
   val libContentRegex = """(?s)\/\*\s*([^$]*)\s+@exportId\s+(\S+)\s*\*\/\s*(.*)""".r
 
-  def fromFile(content: String, filename: String): LibraryVersionData = {
+  def from(content: String, filename: String): LibraryVersionData = {
     var maybeExportId: Option[String] = None
     var maybeDescription: Option[String] = None
     var code: String = ""
