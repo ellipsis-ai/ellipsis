@@ -141,7 +141,7 @@ define(function(require) {
     }
 
     getFooterHeight(): number {
-      return this.footer ? this.footer.getHeight() : null;
+      return this.footer ? this.footer.getHeight() : 0;
     }
 
     toggleFeedback(): void {
