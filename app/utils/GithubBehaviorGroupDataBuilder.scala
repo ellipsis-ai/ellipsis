@@ -8,7 +8,7 @@ import models.team.Team
 import play.api.libs.json._
 import services.DataService
 
-case class GithubDataBuilder(
+case class GithubBehaviorGroupDataBuilder(
                                 data: JsValue,
                                 team: Team,
                                 maybeBranch: Option[String],
