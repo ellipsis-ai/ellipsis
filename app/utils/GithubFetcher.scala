@@ -4,7 +4,7 @@ import models.team.Team
 import play.api.Configuration
 import play.api.libs.json._
 import play.api.libs.ws.WSClient
-import services.{CacheService, DataService, DefaultServices}
+import services._
 
 import scala.concurrent.duration._
 import scala.concurrent.{Await, ExecutionContext, Future}
@@ -16,6 +16,7 @@ trait GithubFetcher {
   val repoAccessToken: String
   val team: Team
   val maybeBranch: Option[String]
+  val githubService: GithubService
   val services: DefaultServices
   val ws: WSClient = services.ws
   val config: Configuration = services.configuration
@@ -38,12 +39,7 @@ trait GithubFetcher {
   }
 
   def fetch: Future[JsValue] = {
-    ws.url(API_URL).
-      withHttpHeaders(("Authorization", s"bearer $repoAccessToken")).
-      post(jsonQuery).
-      map { response =>
-        Json.parse(response.body)
-      }
+    githubService.execute(repoAccessToken, jsonQuery)
   }
 
   def blockingFetch: JsValue = {
@@ -54,9 +50,13 @@ trait GithubFetcher {
     val shouldTryCache = maybeBranch.isEmpty
     if (shouldTryCache) {
       cacheService.get(cacheKey).getOrElse {
-        val fetched = blockingFetch
-        cacheService.set(cacheKey, fetched, cacheTimeout)
-        fetched
+        try {
+          val fetched = blockingFetch
+          cacheService.set(cacheKey, fetched, cacheTimeout)
+          fetched
+        } catch {
+          case ex: GithubApiException => JsArray()
+        }
       }
     } else {
       blockingFetch

@@ -58,6 +58,7 @@ class ApplicationControllerSpec extends PlaySpec with MockitoSugar {
         when(dataService.requiredSimpleTokenApis.allFor(behaviorGroupVersion)).thenReturn(Future.successful(Seq()))
         when(dataService.teamEnvironmentVariables.lookForInCode(anyString)).thenReturn(Seq())
         when(dataService.dataTypeConfigs.maybeFor(behaviorVersion)).thenReturn(Future.successful(None))
+        when(githubService.execute(anyString, any[JsValue])).thenReturn(Future.successful(JsArray(Seq())))
 
         val query = "some"
         val request = FakeRequest(controllers.routes.ApplicationController.findBehaviorGroupsMatching(query)).withAuthenticator(user.loginInfo)

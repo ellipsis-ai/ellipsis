@@ -3,13 +3,14 @@ package utils
 import json._
 import models.team.Team
 import play.api.libs.json._
-import services.DefaultServices
+import services.{DefaultServices, GithubService}
 
 import scala.concurrent.ExecutionContext
 
 case class GithubPublishedBehaviorGroupsFetcher(
                                                   team: Team,
                                                   maybeBranch: Option[String],
+                                                  githubService: GithubService,
                                                   services: DefaultServices,
                                                   implicit val ec: ExecutionContext
                                                 ) extends GithubFetcher {

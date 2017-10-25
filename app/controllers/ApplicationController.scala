@@ -13,13 +13,14 @@ import play.api.data.Form
 import play.api.data.Forms._
 import play.api.libs.json.Json
 import play.filters.csrf.CSRF
-import services.DefaultServices
+import services.{DefaultServices, GithubService}
 import utils.{CitiesToTimeZones, FuzzyMatcher, GithubPublishedBehaviorGroupsFetcher, TimeZoneParser}
 
 import scala.concurrent.{ExecutionContext, Future}
 
 class ApplicationController @Inject() (
                                         val silhouette: Silhouette[EllipsisEnv],
+                                        val githubService: GithubService,
                                         val services: DefaultServices,
                                         val citiesToTimeZones: CitiesToTimeZones,
                                         val assetsProvider: Provider[RemoteAssets],
@@ -105,7 +106,7 @@ class ApplicationController @Inject() (
         BehaviorGroupData.maybeFor(group.id, user, None, dataService)
       }).map(_.flatten)
     } yield teamAccess.maybeTargetTeam.map { team =>
-      val fetcher = GithubPublishedBehaviorGroupsFetcher(team, maybeBranch, services, ec)
+      val fetcher = GithubPublishedBehaviorGroupsFetcher(team, maybeBranch, githubService, services, ec)
       Ok(Json.toJson(fetcher.publishedBehaviorGroupsFor(alreadyInstalledData)))
     }.getOrElse {
       val message = maybeTeamId.map { teamId =>
@@ -190,7 +191,7 @@ class ApplicationController @Inject() (
     } yield {
       maybeInstalledGroupData.map { installedGroupData =>
         val publishedGroupData = teamAccess.maybeTargetTeam.map { team =>
-          val fetcher = GithubPublishedBehaviorGroupsFetcher(team, maybeBranch, services, ec)
+          val fetcher = GithubPublishedBehaviorGroupsFetcher(team, maybeBranch, githubService, services, ec)
           fetcher.publishedBehaviorGroupsFor(installedGroupData)
         }.getOrElse(Seq())
         val matchResults = FuzzyMatcher[BehaviorGroupData](queryString, installedGroupData ++ publishedGroupData).run
