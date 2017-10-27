@@ -7,25 +7,22 @@ import services.{DefaultServices, GithubService}
 
 import scala.concurrent.ExecutionContext
 
-case class GithubPublishedBehaviorGroupsFetcher(
-                                                  team: Team,
-                                                  maybeBranch: Option[String],
-                                                  githubService: GithubService,
-                                                  services: DefaultServices,
-                                                  implicit val ec: ExecutionContext
-                                                ) extends GithubFetcher {
-
-  val owner: String = "ellipsis-ai"
-  val repoName: String = "behaviors"
-  val repoAccessToken: String = config.get[String]("github.repoAccessToken")
-
-  override val cacheKey: String = s"github_published_behaviors_${branch}"
+case class GithubSingleBehaviorGroupFetcher(
+                                             team: Team,
+                                             owner: String,
+                                             repoName: String,
+                                             repoAccessToken: String,
+                                             maybeBranch: Option[String],
+                                             githubService: GithubService,
+                                             services: DefaultServices,
+                                             implicit val ec: ExecutionContext
+                                           ) extends GithubFetcher {
 
   def query: String = {
     s"""
        |query {
        |  repository(name:"$repoName", owner:"$owner") {
-       |    object(expression:"$branch:published") {
+       |    object(expression:"$branch:") {
        |      ... on Tree {
        |        entries {
        |          name
@@ -72,21 +69,18 @@ case class GithubPublishedBehaviorGroupsFetcher(
      """.stripMargin
   }
 
-  def publishedBehaviorGroupsFor(alreadyInstalled: Seq[BehaviorGroupData]): Seq[BehaviorGroupData] = {
+  def maybeBehaviorGroup(maybeExistingGroup: Option[BehaviorGroupData]): Option[BehaviorGroupData] = {
     val data = get
-    val behaviorGroups = (data \ "data" \ "repository" \ "object" \ "entries") match {
-      case JsDefined(JsArray(arr)) => {
-        arr.map { ea =>
-          val groupPath = (ea \ "name").as[String]
-          GithubBehaviorGroupDataBuilder(groupPath, ea, team, maybeBranch, dataService).build
-        }
+    val obj = data \ "data" \ "repository"
+    val maybeGroup = obj match {
+      case JsDefined(v) => {
+        Some(GithubBehaviorGroupDataBuilder(repoName, v, team, maybeBranch, dataService).build)
       }
-      case _ => Seq()
+      case _ => None
     }
-    behaviorGroups.map { ea =>
-      val maybeExistingGroup = alreadyInstalled.find(_.exportId == ea.exportId)
-      ea.copyForImportableForTeam(team, maybeExistingGroup)
-    }.sorted
+    maybeGroup.map { group =>
+      group.copyForImportableForTeam(team, maybeExistingGroup)
+    }
   }
 
 }

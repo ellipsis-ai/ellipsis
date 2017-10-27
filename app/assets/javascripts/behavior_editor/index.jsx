@@ -2529,6 +2529,7 @@ const BehaviorEditor = React.createClass({
     } else {
       return (
         <BehaviorGroupEditor
+          csrfToken={this.props.csrfToken}
           group={this.getBehaviorGroup()}
           isModified={this.isModified()}
           onBehaviorGroupNameChange={this.onBehaviorGroupNameChange}

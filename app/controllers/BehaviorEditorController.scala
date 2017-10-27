@@ -16,13 +16,14 @@ import play.api.data.Forms._
 import play.api.libs.json._
 import play.api.mvc.{AnyContent, Result}
 import play.filters.csrf.CSRF
-import services.DefaultServices
-import utils.FutureSequencer
+import services.{DefaultServices, GithubService}
+import utils.{FutureSequencer, GithubSingleBehaviorGroupFetcher}
 
 import scala.concurrent.{ExecutionContext, Future}
 
 class BehaviorEditorController @Inject() (
                                            val silhouette: Silhouette[EllipsisEnv],
+                                           val githubService: GithubService,
                                            val services: DefaultServices,
                                            val assetsProvider: Provider[RemoteAssets],
                                            implicit val ec: ExecutionContext
@@ -463,6 +464,59 @@ class BehaviorEditorController @Inject() (
         } yield {
           maybeResult.map { result =>
             Ok(result.toString)
+          }.getOrElse(NotFound("Skill not found"))
+        }
+      }
+    )
+  }
+
+  case class UpdateFromGithubInfo(
+                                   behaviorGroupId: String,
+                                   owner: String,
+                                   repo: String,
+                                   branch: Option[String]
+                                 )
+
+  private val updateFromGithubForm = Form(
+    mapping(
+      "behaviorGroupId" -> nonEmptyText,
+      "owner" -> nonEmptyText,
+      "repo" -> nonEmptyText,
+      "branch" -> optional(nonEmptyText)
+    )(UpdateFromGithubInfo.apply)(UpdateFromGithubInfo.unapply)
+  )
+
+  def updateFromGithub = silhouette.SecuredAction.async { implicit request =>
+    val user = request.identity
+    updateFromGithubForm.bindFromRequest.fold(
+      formWithErrors => {
+        Future.successful(BadRequest(formWithErrors.errorsAsJson))
+      },
+      info => {
+        val repoAccessToken: String = services.configuration.get[String]("github.repoAccessToken")
+        for {
+          maybeBehaviorGroup <- dataService.behaviorGroups.find(info.behaviorGroupId, user)
+          maybeExistingGroupData <- maybeBehaviorGroup.map { group =>
+            dataService.behaviorGroups.maybeCurrentVersionFor(group).flatMap { maybeCurrentVersion =>
+              maybeCurrentVersion.map { currentVersion =>
+                BehaviorGroupData.buildFor(currentVersion, user, dataService).map(Some(_))
+              }.getOrElse(Future.successful(None))
+            }
+          }.getOrElse(Future.successful(None))
+          maybeGroupData <- Future.successful(maybeBehaviorGroup.map { group =>
+            val fetcher = GithubSingleBehaviorGroupFetcher(group.team, info.owner, info.repo, repoAccessToken, info.branch, githubService, services, ec)
+            fetcher.maybeBehaviorGroup(maybeExistingGroupData)
+          })
+          maybeResult <- (for {
+            group <- maybeBehaviorGroup
+            groupData <- maybeGroupData
+          } yield {
+            //dataService.behaviorGroupVersions.createFor(group, user, groupData).map(Some(_))
+            Future.successful(Some(groupData))
+          }).getOrElse(Future.successful(None))
+        } yield {
+          maybeResult.map { result =>
+            Ok(Json.toJson(result))
           }.getOrElse(NotFound("Skill not found"))
         }
       }

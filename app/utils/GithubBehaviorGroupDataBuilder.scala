@@ -9,13 +9,12 @@ import play.api.libs.json._
 import services.DataService
 
 case class GithubBehaviorGroupDataBuilder(
-                                data: JsValue,
-                                team: Team,
-                                maybeBranch: Option[String],
-                                dataService: DataService
-                              ) {
-
-  val groupPath: String = nameFor(data)
+                                          groupPath: String,
+                                          data: JsValue,
+                                          team: Team,
+                                          maybeBranch: Option[String],
+                                          dataService: DataService
+                                        ) {
 
   val API_URL = "https://api.github.com/graphql"
   val WEB_URL = "https://github.com"
