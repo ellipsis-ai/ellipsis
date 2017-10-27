@@ -39,6 +39,7 @@
   routes.javascript.OAuth2ApplicationController.newApp,
   routes.javascript.OAuth2ApplicationController.newApp,
   routes.javascript.OAuth2ApplicationController.save,
+  routes.javascript.RegionalSettingsController.index,
   routes.javascript.SavedAnswerController.resetForTeam,
   routes.javascript.SavedAnswerController.resetForUser,
   routes.javascript.ScheduledActionsController.index,

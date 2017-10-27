@@ -42,6 +42,7 @@ const emptyConfig = Object.freeze({
   scheduledActions: [],
   channelList: [],
   behaviorGroups: [],
+  teamId: "1234",
   teamTimeZone: defaultTimeZone,
   teamTimeZoneName: defaultTimeZoneName,
   slackUserId: defaultUserId,

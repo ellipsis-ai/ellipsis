@@ -167,4 +167,6 @@ object Formatting {
   implicit val executionErrorValueReads = Json.reads[ExecutionErrorData]
 
   implicit val behaviorGroupVersionMetaDataWrites = Json.writes[BehaviorGroupVersionMetaData]
+
+  implicit val regionalSettingsConfigFormat = Json.format[RegionalSettingsConfig]
 }
