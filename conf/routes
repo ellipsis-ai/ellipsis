@@ -129,21 +129,13 @@ POST        /api/graphql                              @controllers.GraphQLContro
 
 # API v1
 #NOCSRF
-POST        /api/v1/commands/say                   @controllers.APIController.say
-#NOCSRF
-POST        /api/v1/commands/run_action            @controllers.APIController.postMessage
-
-
-#NOCSRF
-POST        /api/v1/action_requests                @controllers.APIController.postMessage
-#NOCSRF
-POST        /api/v1/messages                       @controllers.APIController.say
-
-
-
-
-#NOCSRF
 POST        /api/v1/tokens                            @controllers.APIController.generateApiToken
+#NOCSRF
+POST        /api/v1/commands/say                      @controllers.APIController.say
+#NOCSRF
+POST        /api/v1/commands/run_action               @controllers.APIController.postMessage
+
+
 
 # Map static resources from the /public folder to the /assets URL path
 GET         /assets/*file                             @controllers.RemoteAssets.getAsset(path="/public", file: Asset)
