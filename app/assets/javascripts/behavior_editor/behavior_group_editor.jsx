@@ -14,7 +14,9 @@ define(function(require) {
       onBehaviorGroupNameChange: React.PropTypes.func.isRequired,
       onBehaviorGroupDescriptionChange: React.PropTypes.func.isRequired,
       onBehaviorGroupIconChange: React.PropTypes.func.isRequired,
-      onDeleteClick: React.PropTypes.func.isRequired
+      onDeleteClick: React.PropTypes.func.isRequired,
+      onSave: React.PropTypes.func.isRequired,
+      onSaveError: React.PropTypes.func.isRequired
     },
 
     focus: function() {
@@ -68,19 +70,14 @@ define(function(require) {
         this.props.csrfToken
       )
         .then((json) => {
-        console.log(json);
-          /*if (json.id) {
-            const newProps = {
-              group: BehaviorGroup.fromJson(json),
-              onLoad: optionalCallback
-            };
-            this.onSave(newProps, this.state);
+          if (json.id) {
+            this.props.onSave(BehaviorGroup.fromJson(json));
           } else {
-            this.onSaveError();
-          }*/
+            this.props.onSaveError();
+          }
         })
         .catch((error) => {
-          this.onSaveError(error);
+          this.props.onSaveError(error);
         });
     },
 

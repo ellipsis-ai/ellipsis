@@ -964,6 +964,10 @@ const BehaviorEditor = React.createClass({
     this.checkDataAndCallback(() => { this.backgroundSave(optionalCallback); });
   },
 
+  onReplaceBehaviorGroup: function(newGroupData, optionalCallback) {
+    this.setState({ group: newGroupData }, () => this.onSaveBehaviorGroup(optionalCallback));
+  },
+
   showVersionIndex: function(versionIndex, optionalCallback) {
     const version = this.getVersions()[versionIndex];
     const stateUpdates = {
@@ -2536,6 +2540,8 @@ const BehaviorEditor = React.createClass({
           onBehaviorGroupDescriptionChange={this.onBehaviorGroupDescriptionChange}
           onBehaviorGroupIconChange={this.onBehaviorGroupIconChange}
           onDeleteClick={this.confirmDeleteBehaviorGroup}
+          onSave={this.onReplaceBehaviorGroup}
+          onSaveError={this.onSaveError}
         />
       );
     }
