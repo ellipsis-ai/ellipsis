@@ -36,7 +36,7 @@ define(function(require) {
         githubOwner: "",
         githubRepo: "",
         githubBranch: null
-      }
+      };
     },
 
     getGithubOwner: function() {
@@ -65,7 +65,7 @@ define(function(require) {
         {
           behaviorGroupId: this.props.group.id,
           owner: this.getGithubOwner(),
-          repo: this.getGithubRepo(),
+          repo: this.getGithubRepo()
         },
         this.props.csrfToken
       )
