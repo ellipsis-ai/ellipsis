@@ -3,7 +3,7 @@ package models.accounts.github
 import com.mohiva.play.silhouette.api.util.HTTPLayer
 import com.mohiva.play.silhouette.impl.providers._
 import models.accounts.github.profile.{GithubProfile, GithubProfileBuilder, GithubProfileParser}
-import play.api.libs.json.{JsValue, Json}
+import play.api.libs.json.JsValue
 
 import scala.concurrent.Future
 
@@ -28,7 +28,6 @@ class GithubProvider(protected val httpLayer: HTTPLayer,
 
   protected def buildProfile(authInfo: A): Future[GithubProfile] = {
     httpLayer.url(urls("user").format(authInfo.accessToken)).get().flatMap { response =>
-      println(Json.prettyPrint(response.json))
       profileParser.parse(response.json, authInfo)
     }
   }

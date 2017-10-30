@@ -515,18 +515,9 @@ class BehaviorEditorController @Inject() (
               fetcher.maybeBehaviorGroup(maybeExistingGroupData)
             }
           )
-          maybeResult <- (for {
-            group <- maybeBehaviorGroup
-            groupData <- maybeGroupData
-          } yield {
-            //dataService.behaviorGroupVersions.createFor(group, user, groupData).map(Some(_))
-            Future.successful(Some(groupData))
-          }).getOrElse(Future.successful(None))
-        } yield {
-          maybeResult.map { result =>
-            Ok(Json.toJson(result))
-          }.getOrElse(NotFound("Skill not found"))
-        }
+        } yield maybeGroupData.map { groupData =>
+          Ok(Json.toJson(groupData))
+        }.getOrElse(NotFound("Skill not found"))
       }
     )
   }
