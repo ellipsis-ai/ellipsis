@@ -132,8 +132,6 @@ POST        /api/graphql                              @controllers.GraphQLContro
 POST        /api/v1/tokens                            @controllers.APIController.generateApiToken
 #NOCSRF
 POST        /api/v1/commands/say                      @controllers.APIController.say
-#NOCSRF
-POST        /api/v1/commands/run_action               @controllers.APIController.postMessage
 
 
 
