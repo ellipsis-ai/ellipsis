@@ -15,7 +15,7 @@
   }
 </ul>
 
-<form action="@routes.AdminController.redeployAll" method="POST">
+<form action="@controllers.admin.routes.LambdasController.redeployAll" method="POST">
   @CSRF.formField
   <input type="submit" value="Redeploy all"/>
 </form>
@@ -24,7 +24,7 @@
   @currentFunctions.map { fn =>
     <li>
       @fn
-      <form action="@routes.AdminController.redeploy(fn)" method="POST">
+      <form action="@controllers.admin.routes.LambdasController.redeploy(fn)" method="POST">
         @CSRF.formField
         <input type="submit" value="Redeploy"/>
       </form>

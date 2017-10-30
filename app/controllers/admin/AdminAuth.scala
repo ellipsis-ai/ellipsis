@@ -1,5 +1,6 @@
-package controllers
+package controllers.admin
 
+import controllers.EllipsisController
 import com.mohiva.play.silhouette.api.actions.SecuredRequest
 import models.silhouette.EllipsisEnv
 import play.api.mvc.{AnyContent, Result}
@@ -8,7 +9,7 @@ import services.DataService
 import scala.concurrent.{ExecutionContext, Future}
 
 
-trait AuthAsAdmin extends EllipsisController {
+trait AdminAuth extends EllipsisController {
 
   val dataService: DataService
   implicit val ec: ExecutionContext
