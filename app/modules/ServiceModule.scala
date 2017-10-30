@@ -2,6 +2,7 @@ package modules
 
 import com.google.inject.AbstractModule
 import models.Models
+import models.accounts.github.profile.{GithubProfileService, GithubProfileServiceImpl}
 import models.accounts.linkedaccount.{LinkedAccountService, LinkedAccountServiceImpl}
 import models.accounts.linkedoauth2token.{LinkedOAuth2TokenService, LinkedOAuth2TokenServiceImpl}
 import models.accounts.linkedsimpletoken.{LinkedSimpleTokenService, LinkedSimpleTokenServiceImpl}
@@ -62,6 +63,7 @@ class ServiceModule extends AbstractModule with ScalaModule {
     bind[OAuth2ApiService].to[OAuth2ApiServiceImpl]
     bind[OAuth2ApplicationService].to[OAuth2ApplicationServiceImpl]
     bind[SimpleTokenApiService].to[SimpleTokenApiServiceImpl]
+    bind[GithubProfileService].to[GithubProfileServiceImpl]
     bind[SlackProfileService].to[SlackProfileServiceImpl]
     bind[SlackBotProfileService].to[SlackBotProfileServiceImpl]
     bind[OAuth2TokenService].to[OAuth2TokenServiceImpl]

@@ -493,8 +493,11 @@ class BehaviorEditorController @Inject() (
         Future.successful(BadRequest(formWithErrors.errorsAsJson))
       },
       info => {
-        val repoAccessToken: String = services.configuration.get[String]("github.repoAccessToken")
         for {
+          maybeGithubLinkedAccount <- dataService.linkedAccounts.maybeForGithubFor(user)
+          maybeGithubProfile <- maybeGithubLinkedAccount.map { linked =>
+            dataService.githubProfiles.find(linked.loginInfo)
+          }.getOrElse(Future.successful(None))
           maybeBehaviorGroup <- dataService.behaviorGroups.find(info.behaviorGroupId, user)
           maybeExistingGroupData <- maybeBehaviorGroup.map { group =>
             dataService.behaviorGroups.maybeCurrentVersionFor(group).flatMap { maybeCurrentVersion =>
@@ -503,10 +506,15 @@ class BehaviorEditorController @Inject() (
               }.getOrElse(Future.successful(None))
             }
           }.getOrElse(Future.successful(None))
-          maybeGroupData <- Future.successful(maybeBehaviorGroup.map { group =>
-            val fetcher = GithubSingleBehaviorGroupFetcher(group.team, info.owner, info.repo, repoAccessToken, info.branch, githubService, services, ec)
-            fetcher.maybeBehaviorGroup(maybeExistingGroupData)
-          })
+          maybeGroupData <- Future.successful(
+            for {
+              group <- maybeBehaviorGroup
+              token <- maybeGithubProfile.map(_.token)
+            } yield {
+              val fetcher = GithubSingleBehaviorGroupFetcher(group.team, info.owner, info.repo, token, info.branch, githubService, services, ec)
+              fetcher.maybeBehaviorGroup(maybeExistingGroupData)
+            }
+          )
           maybeResult <- (for {
             group <- maybeBehaviorGroup
             groupData <- maybeGroupData

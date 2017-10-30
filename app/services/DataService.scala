@@ -1,5 +1,6 @@
 package services
 
+import models.accounts.github.profile.GithubProfileService
 import models.accounts.linkedaccount.LinkedAccountService
 import models.accounts.linkedoauth2token.LinkedOAuth2TokenService
 import models.accounts.linkedsimpletoken.LinkedSimpleTokenService
@@ -57,6 +58,7 @@ trait DataService {
   val oauth2Apis: OAuth2ApiService
   val oauth2Applications: OAuth2ApplicationService
   val simpleTokenApis: SimpleTokenApiService
+  val githubProfiles: GithubProfileService
   val slackProfiles: SlackProfileService
   val slackBotProfiles: SlackBotProfileService
   val oauth2Tokens: OAuth2TokenService

@@ -15,6 +15,7 @@ import com.mohiva.play.silhouette.api.services.AuthenticatorResult
 import com.mohiva.play.silhouette.impl.authenticators.CookieAuthenticator
 import models._
 import models.accounts.linkedaccount.LinkedAccount
+import models.accounts.github.GithubProvider
 import models.accounts.slack.SlackProvider
 import models.accounts.user.User
 import models.silhouette.EllipsisEnv
@@ -30,6 +31,7 @@ class SocialAuthController @Inject() (
                                        val models: Models,
                                        val assetsProvider: Provider[RemoteAssets],
                                        slackProvider: SlackProvider,
+                                       githubProvider: GithubProvider,
                                        dataService: DataService,
                                        authInfoRepository: AuthInfoRepository,
                                        implicit val ec: ExecutionContext
@@ -193,6 +195,52 @@ class SocialAuthController @Inject() (
           }
         } yield result
       }
+    }
+  }
+
+  def authenticateGithub(
+                         maybeRedirect: Option[String],
+                         maybeTeamId: Option[String],
+                         maybeChannelId: Option[String]
+                       ) = silhouette.SecuredAction.async { implicit request =>
+    val user = request.identity
+    val provider = githubProvider.withSettings { settings =>
+      val url = routes.SocialAuthController.authenticateGithub(maybeRedirect, maybeTeamId, maybeChannelId).absoluteURL(secure = true)
+      var authorizationParams = settings.authorizationParams
+      configuration.getOptional[String]("silhouette.github.scope").foreach { signInScope =>
+        authorizationParams = authorizationParams + ("scope" -> signInScope)
+      }
+      settings.copy(redirectURL = Some(url), authorizationParams = authorizationParams)
+    }
+    val authenticateResult = provider.authenticate() recover {
+//      case e: com.mohiva.play.silhouette.impl.exceptions.AccessDeniedException => {
+//        Left(Redirect(routes.SlackController.signIn(maybeRedirect)))
+//      }
+      case e: com.mohiva.play.silhouette.impl.exceptions.UnexpectedResponseException => {
+        println(e.getMessage)
+        Left(Redirect(routes.ApplicationController.index()))
+      }
+    }
+    authenticateResult.flatMap {
+      case Left(result) => Future.successful(result)
+      case Right(authInfo) => for {
+        profile <- githubProvider.retrieveProfile(authInfo)
+        result <- for {
+          savedProfile <- dataService.githubProfiles.save(profile)
+          loginInfo <- Future.successful(profile.loginInfo)
+          savedAuthInfo <- authInfoRepository.save(loginInfo, authInfo)
+          maybeExistingLinkedAccount <- dataService.linkedAccounts.find(profile.loginInfo, user.teamId)
+          linkedAccount <- maybeExistingLinkedAccount.map(Future.successful).getOrElse {
+            dataService.linkedAccounts.save(LinkedAccount(user, profile.loginInfo, OffsetDateTime.now))
+          }
+          result <- Future.successful {
+            maybeRedirect.map { redirect =>
+              Redirect(validatedRedirectUri(redirect))
+            }.getOrElse(Redirect(routes.ApplicationController.index()))
+          }
+          authenticatedResult <- authenticatorResultForUserAndResult(user, result)
+        } yield authenticatedResult
+      } yield result
     }
   }
 
