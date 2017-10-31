@@ -35,8 +35,8 @@ define(function(require) {
 
     getInitialState: function() {
       return {
-        githubOwner: "ellipsis-ai",
-        githubRepo: "github",
+        githubOwner: "",
+        githubRepo: "",
         githubBranch: null
       };
     },
