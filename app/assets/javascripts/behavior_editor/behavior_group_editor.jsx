@@ -11,6 +11,7 @@ define(function(require) {
       csrfToken: React.PropTypes.string.isRequired,
       group: React.PropTypes.instanceOf(BehaviorGroup).isRequired,
       isModified: React.PropTypes.bool.isRequired,
+      isAdmin: React.PropTypes.bool.isRequired,
       onBehaviorGroupNameChange: React.PropTypes.func.isRequired,
       onBehaviorGroupDescriptionChange: React.PropTypes.func.isRequired,
       onBehaviorGroupIconChange: React.PropTypes.func.isRequired,
@@ -81,6 +82,47 @@ define(function(require) {
         });
     },
 
+    renderGithubIntegration: function() {
+      if (this.props.isAdmin) {
+        return (
+          <div>
+            <div className="columns mtxxl">
+              <div className="column column-one-quarter">
+                <span className="display-inline-block align-m type-s type-weak mrm">Owner</span>
+                <Input
+                  ref="githubOwner"
+                  className="form-input-borderless type-monospace type-s width-15 mrm"
+                  placeholder="e.g. github"
+                  onChange={this.onGithubOwnerChange}
+                  value={this.getGithubOwner()}
+                />
+              </div>
+              <div className="column column-one-quarter">
+                <span className="display-inline-block align-m type-s type-weak mrm">Repo</span>
+                <Input
+                  ref="githubRepo"
+                  className="form-input-borderless type-monospace type-s width-15 mrm"
+                  placeholder="e.g. octocat"
+                  onChange={this.onGithubRepoChange}
+                  value={this.getGithubRepo()}
+                />
+              </div>
+            </div>
+            <div className="mtl">
+              <button type="button"
+                onClick={this.onUpdateFromGithub}
+                disabled={this.props.isModified}
+              >
+                Pull latest from Github…
+              </button>
+            </div>
+          </div>
+        );
+      } else {
+        return null;
+      }
+    },
+
     render: function() {
       return (
         <div className="container container-narrow mtl">
@@ -144,36 +186,8 @@ define(function(require) {
             </div>
           </div>
 
-          <div className="columns mtxxl">
-            <div className="column column-one-quarter">
-              <span className="display-inline-block align-m type-s type-weak mrm">Owner</span>
-              <Input
-                ref="githubOwner"
-                className="form-input-borderless type-monospace type-s width-15 mrm"
-                placeholder="e.g. github"
-                onChange={this.onGithubOwnerChange}
-                value={this.getGithubOwner()}
-              />
-            </div>
-            <div className="column column-one-quarter">
-              <span className="display-inline-block align-m type-s type-weak mrm">Repo</span>
-              <Input
-                ref="githubRepo"
-                className="form-input-borderless type-monospace type-s width-15 mrm"
-                placeholder="e.g. octocat"
-                onChange={this.onGithubRepoChange}
-                value={this.getGithubRepo()}
-              />
-            </div>
-          </div>
-          <div className="mtl">
-            <button type="button"
-                    onClick={this.onUpdateFromGithub}
-                    disabled={this.props.isModified}
-            >
-              Pull latest from Github…
-            </button>
-          </div>
+          {this.renderGithubIntegration()}
+
         </div>
       );
     }

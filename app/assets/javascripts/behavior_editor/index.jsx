@@ -103,7 +103,8 @@ const BehaviorEditor = React.createClass({
     onSave: React.PropTypes.func.isRequired,
     onForgetSavedAnswerForInput: React.PropTypes.func.isRequired,
     onLoad: React.PropTypes.func,
-    userId: React.PropTypes.string.isRequired
+    userId: React.PropTypes.string.isRequired,
+    isAdmin: React.PropTypes.bool.isRequired
   }),
 
   getDefaultProps: function() {
@@ -2536,6 +2537,7 @@ const BehaviorEditor = React.createClass({
           csrfToken={this.props.csrfToken}
           group={this.getBehaviorGroup()}
           isModified={this.isModified()}
+          isAdmin={this.props.isAdmin}
           onBehaviorGroupNameChange={this.onBehaviorGroupNameChange}
           onBehaviorGroupDescriptionChange={this.onBehaviorGroupDescriptionChange}
           onBehaviorGroupIconChange={this.onBehaviorGroupIconChange}

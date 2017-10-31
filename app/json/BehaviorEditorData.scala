@@ -23,7 +23,8 @@ case class BehaviorEditorData(
                                oauth2Apis: Seq[OAuth2ApiData],
                                simpleTokenApis: Seq[SimpleTokenApiData],
                                linkedOAuth2ApplicationIds: Seq[String],
-                               userId: String
+                               userId: String,
+                               isAdmin: Boolean
                               )
 
 object BehaviorEditorData {
@@ -150,6 +151,7 @@ object BehaviorEditorData {
       }.getOrElse(Future.successful(None))
       builtinParamTypeData <- Future.sequence(BehaviorParameterType.allBuiltin.map(ea => BehaviorParameterTypeData.from(ea, dataService)))
       userData <- dataService.users.userDataFor(user, team)
+      isAdmin <- dataService.users.isAdmin(user)
     } yield {
       val maybeVerifiedSelectedId = maybeVerifiedBehaviorId.orElse(maybeVerifiedLibraryId)
       val data = maybeGroupData.getOrElse {
@@ -184,7 +186,8 @@ object BehaviorEditorData {
         oauth2Apis.map(ea => OAuth2ApiData.from(ea, assets)),
         simpleTokenApis.map(ea => SimpleTokenApiData.from(ea, assets)),
         linkedOAuth2Tokens.map(_.application.id),
-        user.id
+        user.id,
+        isAdmin
       )
     }
   }
