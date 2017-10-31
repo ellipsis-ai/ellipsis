@@ -6,6 +6,11 @@ import play.api.libs.json._
 import services.{DefaultServices, GithubService}
 
 import scala.concurrent.ExecutionContext
+import scala.util.{Failure, Success, Try}
+
+case class GithubSingleBehaviorGroupFetchException(errors: Seq[String]) extends Exception {
+  override def getMessage: String = errors.mkString(", ")
+}
 
 case class GithubSingleBehaviorGroupFetcher(
                                              team: Team,
@@ -69,29 +74,27 @@ case class GithubSingleBehaviorGroupFetcher(
      """.stripMargin
   }
 
-  def fetch(maybeExistingGroup: Option[BehaviorGroupData]): Either[Seq[String], BehaviorGroupData] = {
+  def fetch(maybeExistingGroup: Option[BehaviorGroupData]): Try[BehaviorGroupData] = {
     try {
       val data = get
 
       val errors = data \ "errors"
       errors match {
-        case JsDefined(JsArray(arr)) => Left(arr.map(ea => (ea \ "message").as[String]))
+        case JsDefined(JsArray(arr)) => throw GithubSingleBehaviorGroupFetchException(arr.map(ea => (ea \ "message").as[String]))
         case _ => {
           val obj = data \ "data" \ "repository"
           obj match {
             case JsDefined(v) => {
-              val group =
-                GithubBehaviorGroupDataBuilder(repoName, v, team, maybeBranch, dataService).
-                  build.
-                  copyForImportableForTeam(team, maybeExistingGroup)
-              Right(group)
+              Success(GithubBehaviorGroupDataBuilder(repoName, v, team, maybeBranch, dataService).
+                build.
+                copyForImportableForTeam(team, maybeExistingGroup))
             }
-            case _ => Left(Seq("Can't do it"))
+            case _ => throw new GithubSingleBehaviorGroupFetchException(Seq("Could not create a new skill version"))
           }
         }
       }
     } catch {
-      case e: Exception => Left(Seq(e.getMessage))
+      case e: GithubSingleBehaviorGroupFetchException => Failure(e)
     }
   }
 

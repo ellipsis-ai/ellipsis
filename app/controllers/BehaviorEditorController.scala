@@ -20,6 +20,7 @@ import services.{DefaultServices, GithubService}
 import utils.{FutureSequencer, GithubSingleBehaviorGroupFetcher}
 
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.{Failure, Success}
 
 class BehaviorEditorController @Inject() (
                                            val silhouette: Silhouette[EllipsisEnv],
@@ -513,8 +514,8 @@ class BehaviorEditorController @Inject() (
           } yield {
             val fetcher = GithubSingleBehaviorGroupFetcher(group.team, info.owner, info.repo, token, info.branch, githubService, services, ec)
             fetcher.fetch(maybeExistingGroupData) match {
-              case Left(errors) => Ok(JsObject(Map("errors" -> JsString(errors.mkString(", ")))))
-              case Right(groupData) => Ok(JsObject(Map("data" -> Json.toJson(groupData))))
+              case Failure(err) => Ok(JsObject(Map("errors" -> JsString(err.getMessage))))
+              case Success(groupData) => Ok(JsObject(Map("data" -> Json.toJson(groupData))))
             }
           }).getOrElse(NotFound(""))
         }
