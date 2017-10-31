@@ -213,12 +213,9 @@ class SocialAuthController @Inject() (
       settings.copy(redirectURL = Some(url), authorizationParams = authorizationParams)
     }
     val authenticateResult = provider.authenticate() recover {
-//      case e: com.mohiva.play.silhouette.impl.exceptions.AccessDeniedException => {
-//        Left(Redirect(routes.SlackController.signIn(maybeRedirect)))
-//      }
-      case e: com.mohiva.play.silhouette.impl.exceptions.UnexpectedResponseException => {
-        println(e.getMessage)
-        Left(Redirect(routes.ApplicationController.index()))
+      case e: com.mohiva.play.silhouette.api.exceptions.ProviderException => {
+        val redirect = maybeRedirect.getOrElse(routes.ApplicationController.index().url)
+        Left(Redirect(validatedRedirectUri(redirect)))
       }
     }
     authenticateResult.flatMap {
@@ -226,11 +223,10 @@ class SocialAuthController @Inject() (
       case Right(authInfo) => for {
         profile <- githubProvider.retrieveProfile(authInfo)
         result <- for {
-          savedProfile <- dataService.githubProfiles.save(profile)
-          loginInfo <- Future.successful(profile.loginInfo)
-          savedAuthInfo <- authInfoRepository.save(loginInfo, authInfo)
+          _ <- dataService.githubProfiles.save(profile)
+          _ <- authInfoRepository.save(profile.loginInfo, authInfo)
           maybeExistingLinkedAccount <- dataService.linkedAccounts.find(profile.loginInfo, user.teamId)
-          linkedAccount <- maybeExistingLinkedAccount.map(Future.successful).getOrElse {
+          _ <- maybeExistingLinkedAccount.map(Future.successful).getOrElse {
             dataService.linkedAccounts.save(LinkedAccount(user, profile.loginInfo, OffsetDateTime.now))
           }
           result <- Future.successful {
