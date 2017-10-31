@@ -33,14 +33,14 @@ define(function(require) {
 
     getInitialState: function() {
       return {
-        githubOwner: "",
-        githubRepo: "",
+        githubOwner: "ellipsis-ai",
+        githubRepo: "github",
         githubBranch: null
       };
     },
 
     getGithubOwner: function() {
-      return this.state.githubOwner || "ellipsis-ai";
+      return this.state.githubOwner;
     },
 
     onGithubOwnerChange: function(owner) {
@@ -50,7 +50,7 @@ define(function(require) {
     },
 
     getGithubRepo: function() {
-      return this.state.githubRepo || "github";
+      return this.state.githubRepo;
     },
 
     onGithubRepoChange: function(repo) {
@@ -144,33 +144,35 @@ define(function(require) {
             </div>
           </div>
 
-          <div className="columns mtl">
+          <div className="columns mtxxl">
             <div className="column column-one-quarter">
+              <span className="display-inline-block align-m type-s type-weak mrm">Owner</span>
               <Input
                 ref="githubOwner"
-                className="form-input-borderless form-input-l type-semibold mbn"
-                placeholder="Github owner"
+                className="form-input-borderless type-monospace type-s width-15 mrm"
+                placeholder="e.g. github"
                 onChange={this.onGithubOwnerChange}
                 value={this.getGithubOwner()}
               />
             </div>
             <div className="column column-one-quarter">
+              <span className="display-inline-block align-m type-s type-weak mrm">Repo</span>
               <Input
                 ref="githubRepo"
-                className="form-input-borderless form-input-l type-semibold mbn"
-                placeholder="Github repo"
+                className="form-input-borderless type-monospace type-s width-15 mrm"
+                placeholder="e.g. octocat"
                 onChange={this.onGithubRepoChange}
                 value={this.getGithubRepo()}
               />
             </div>
-            <div className="column column-one-quarter">
-              <button type="button"
-                      onClick={this.onUpdateFromGithub}
-                      disabled={this.props.isModified}
-              >
-                Pull from Github…
-              </button>
-            </div>
+          </div>
+          <div className="mtl">
+            <button type="button"
+                    onClick={this.onUpdateFromGithub}
+                    disabled={this.props.isModified}
+            >
+              Pull latest from Github…
+            </button>
           </div>
         </div>
       );
