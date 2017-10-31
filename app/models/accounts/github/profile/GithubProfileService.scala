@@ -7,7 +7,7 @@ import scala.concurrent.Future
 
 trait GithubProfileService {
 
-  def save(slackProfile: GithubProfile): Future[GithubProfile]
+  def save(profile: GithubProfile): Future[GithubProfile]
 
   def findAction(loginInfo: LoginInfo): DBIO[Option[GithubProfile]]
 

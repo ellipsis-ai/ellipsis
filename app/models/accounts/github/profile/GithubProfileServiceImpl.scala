@@ -31,15 +31,15 @@ class GithubProfileServiceImpl @Inject() (
 
   import GithubProfileQueries._
 
-  def save(slackProfile: GithubProfile): Future[GithubProfile] = {
-    val query = findQuery(slackProfile.loginInfo.providerID, slackProfile.loginInfo.providerKey)
+  def save(profile: GithubProfile): Future[GithubProfile] = {
+    val query = findQuery(profile.loginInfo.providerID, profile.loginInfo.providerKey)
     val action = query.result.headOption.flatMap {
-      case Some(_) => query.update(slackProfile)
+      case Some(_) => query.update(profile)
       case None => {
-        all += slackProfile
+        all += profile
       }
     }.map { number =>
-      slackProfile
+      profile
     }
     dataService.run(action)
   }
