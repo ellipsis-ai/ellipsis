@@ -47,7 +47,7 @@ trait GithubFetcher {
   }
 
   def get: JsValue = {
-    val shouldTryCache = false || maybeBranch.isEmpty
+    val shouldTryCache = maybeBranch.isEmpty
     if (shouldTryCache) {
       cacheService.get(cacheKey).getOrElse {
         try {
