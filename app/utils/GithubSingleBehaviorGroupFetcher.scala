@@ -69,17 +69,29 @@ case class GithubSingleBehaviorGroupFetcher(
      """.stripMargin
   }
 
-  def maybeBehaviorGroup(maybeExistingGroup: Option[BehaviorGroupData]): Option[BehaviorGroupData] = {
-    val data = get
-    val obj = data \ "data" \ "repository"
-    val maybeGroup = obj match {
-      case JsDefined(v) => {
-        Some(GithubBehaviorGroupDataBuilder(repoName, v, team, maybeBranch, dataService).build)
+  def fetch(maybeExistingGroup: Option[BehaviorGroupData]): Either[Seq[String], BehaviorGroupData] = {
+    try {
+      val data = get
+
+      val errors = data \ "errors"
+      errors match {
+        case JsDefined(JsArray(arr)) => Left(arr.map(ea => (ea \ "message").as[String]))
+        case _ => {
+          val obj = data \ "data" \ "repository"
+          obj match {
+            case JsDefined(v) => {
+              val group =
+                GithubBehaviorGroupDataBuilder(repoName, v, team, maybeBranch, dataService).
+                  build.
+                  copyForImportableForTeam(team, maybeExistingGroup)
+              Right(group)
+            }
+            case _ => Left(Seq("Can't do it"))
+          }
+        }
       }
-      case _ => None
-    }
-    maybeGroup.map { group =>
-      group.copyForImportableForTeam(team, maybeExistingGroup)
+    } catch {
+      case e: Exception => Left(Seq(e.getMessage))
     }
   }
 

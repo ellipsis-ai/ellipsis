@@ -72,10 +72,10 @@ define(function(require) {
         this.props.csrfToken
       )
         .then((json) => {
-          if (json.id) {
-            this.props.onSave(BehaviorGroup.fromJson(json));
+          if (json.errors) {
+            this.props.onSaveError(json.errors);
           } else {
-            this.props.onSaveError();
+            this.props.onSave(BehaviorGroup.fromJson(json.data));
           }
         })
         .catch((error) => {
@@ -130,7 +130,7 @@ define(function(require) {
           <div className="mtl">
             <button type="button"
               onClick={this.onUpdateFromGithub}
-              disabled={this.props.isModified}
+              disabled={ this.props.isModified || !this.getGithubRepo() || !this.getGithubOwner() }
             >
               Pull latest from Github…
             </button>

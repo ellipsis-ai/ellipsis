@@ -869,10 +869,10 @@ const BehaviorEditor = React.createClass({
     }
   },
 
-  onSaveError: function(error) { // eslint-disable-line no-unused-vars
+  onSaveError: function(error) {
     this.props.onClearActivePanel();
     this.setState({
-      error: "not_saved"
+      error: error || "not_saved"
     });
   },
 
@@ -2062,19 +2062,26 @@ const BehaviorEditor = React.createClass({
     const lastSaved = group.createdAt;
     const lastSavedByCurrentUser = group.author && group.author.id === this.props.userId;
     const authorName = group.author && group.author.userName ? group.author.formattedFullNameOrUserName() : null;
-    if (this.isLatestSavedVersion() && lastSaved) {
+    if (this.state.error === 'not_saved') {
+      return (
+        <span className="fade-in type-pink type-bold type-italic">
+          <span style={{ height: 24 }} className="display-inline-block mrs align-b"><SVGWarning /></span>
+          <span>Error saving changes — please try again</span>
+        </span>
+      );
+    } else if (this.state.error) {
+      return (
+        <span className="fade-in type-pink type-bold type-italic">
+          <span style={{ height: 24 }} className="display-inline-block mrs align-b"><SVGWarning /></span>
+          <span>{this.state.error}</span>
+        </span>
+      );
+    } else if (this.isLatestSavedVersion() && lastSaved) {
       return (
         <span className="fade-in type-green type-bold type-italic">
           <span>{lastSavedByCurrentUser ? "You last saved" : "Last saved"} </span>
           <span>{Formatter.formatTimestampRelativeIfRecent(lastSaved)}</span>
           <span> {!lastSavedByCurrentUser && authorName ? `by ${authorName}` : ""}</span>
-        </span>
-      );
-    } else if (this.state.error === 'not_saved') {
-      return (
-        <span className="fade-in type-pink type-bold type-italic">
-          <span style={{ height: 24 }} className="display-inline-block mrs align-b"><SVGWarning /></span>
-          <span>Error saving changes — please try again</span>
         </span>
       );
     } else if (this.isModified()) {
