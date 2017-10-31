@@ -14,7 +14,8 @@ case class BehaviorEditorEditConfig(
   simpleTokenApis: Seq[SimpleTokenApiData],
   linkedOAuth2ApplicationIds: Seq[String],
   userId: String,
-  isAdmin: Boolean
+  isAdmin: Boolean,
+  isLinkedToGithub: Boolean
 )
 
 object BehaviorEditorEditConfig {
@@ -33,7 +34,8 @@ object BehaviorEditorEditConfig {
       data.simpleTokenApis,
       data.linkedOAuth2ApplicationIds,
       data.userId,
-      data.isAdmin
+      data.isAdmin,
+      data.isLinkedToGithub
     )
   }
 }

@@ -12,6 +12,7 @@ define(function(require) {
       group: React.PropTypes.instanceOf(BehaviorGroup).isRequired,
       isModified: React.PropTypes.bool.isRequired,
       isAdmin: React.PropTypes.bool.isRequired,
+      isLinkedToGithub: React.PropTypes.bool.isRequired,
       onBehaviorGroupNameChange: React.PropTypes.func.isRequired,
       onBehaviorGroupDescriptionChange: React.PropTypes.func.isRequired,
       onBehaviorGroupIconChange: React.PropTypes.func.isRequired,
@@ -82,42 +83,69 @@ define(function(require) {
         });
     },
 
-    renderGithubIntegration: function() {
-      if (this.props.isAdmin) {
-        return (
-          <div>
-            <div className="columns mtxxl">
-              <div className="column column-one-quarter">
-                <span className="display-inline-block align-m type-s type-weak mrm">Owner</span>
-                <Input
-                  ref="githubOwner"
-                  className="form-input-borderless type-monospace type-s width-15 mrm"
-                  placeholder="e.g. github"
-                  onChange={this.onGithubOwnerChange}
-                  value={this.getGithubOwner()}
-                />
-              </div>
-              <div className="column column-one-quarter">
-                <span className="display-inline-block align-m type-s type-weak mrm">Repo</span>
-                <Input
-                  ref="githubRepo"
-                  className="form-input-borderless type-monospace type-s width-15 mrm"
-                  placeholder="e.g. octocat"
-                  onChange={this.onGithubRepoChange}
-                  value={this.getGithubRepo()}
-                />
-              </div>
+    getGithubAuthUrl: function() {
+      const redirect = jsRoutes.controllers.BehaviorEditorController.edit(this.props.group.id).url;
+      return jsRoutes.controllers.SocialAuthController.authenticateGithub(redirect).url;
+    },
+
+    renderGithubAuth: function() {
+      return (
+        <div className="columns mtxxl">
+          <div className="column">
+            <img height="32" src="/assets/images/logos/GitHub-Mark-64px.png"/>
+          </div>
+          <div className="column align-m">
+            <span>To push code to or pull code from GitHub, you first need to </span>
+            <a href={this.getGithubAuthUrl()}>authenticate your GitHub account</a>
+          </div>
+        </div>
+      );
+    },
+
+    renderGithubConfig: function() {
+      return (
+        <div>
+          <div className="columns mtxxl">
+            <div className="column column-one-quarter">
+              <span className="display-inline-block align-m type-s type-weak mrm">Owner</span>
+              <Input
+                ref="githubOwner"
+                className="form-input-borderless type-monospace type-s width-15 mrm"
+                placeholder="e.g. github"
+                onChange={this.onGithubOwnerChange}
+                value={this.getGithubOwner()}
+              />
             </div>
-            <div className="mtl">
-              <button type="button"
-                onClick={this.onUpdateFromGithub}
-                disabled={this.props.isModified}
-              >
-                Pull latest from Github…
-              </button>
+            <div className="column column-one-quarter">
+              <span className="display-inline-block align-m type-s type-weak mrm">Repo</span>
+              <Input
+                ref="githubRepo"
+                className="form-input-borderless type-monospace type-s width-15 mrm"
+                placeholder="e.g. octocat"
+                onChange={this.onGithubRepoChange}
+                value={this.getGithubRepo()}
+              />
             </div>
           </div>
-        );
+          <div className="mtl">
+            <button type="button"
+              onClick={this.onUpdateFromGithub}
+              disabled={this.props.isModified}
+            >
+              Pull latest from Github…
+            </button>
+          </div>
+        </div>
+      );
+    },
+
+    renderGithubIntegration: function() {
+      if (this.props.isAdmin) {
+        if (this.props.isLinkedToGithub) {
+          return this.renderGithubConfig();
+        } else {
+          return this.renderGithubAuth();
+        }
       } else {
         return null;
       }

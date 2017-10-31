@@ -49,6 +49,7 @@
   routes.javascript.AWSConfigController.list,
   routes.javascript.AWSConfigController.newConfig,
   routes.javascript.AWSConfigController.edit,
-  routes.javascript.AWSConfigController.save
+  routes.javascript.AWSConfigController.save,
+  routes.javascript.SocialAuthController.authenticateGithub
 
 )

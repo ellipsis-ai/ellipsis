@@ -104,7 +104,8 @@ const BehaviorEditor = React.createClass({
     onForgetSavedAnswerForInput: React.PropTypes.func.isRequired,
     onLoad: React.PropTypes.func,
     userId: React.PropTypes.string.isRequired,
-    isAdmin: React.PropTypes.bool.isRequired
+    isAdmin: React.PropTypes.bool.isRequired,
+    isLinkedToGithub: React.PropTypes.bool.isRequired
   }),
 
   getDefaultProps: function() {
@@ -2538,6 +2539,7 @@ const BehaviorEditor = React.createClass({
           group={this.getBehaviorGroup()}
           isModified={this.isModified()}
           isAdmin={this.props.isAdmin}
+          isLinkedToGithub={this.props.isLinkedToGithub}
           onBehaviorGroupNameChange={this.onBehaviorGroupNameChange}
           onBehaviorGroupDescriptionChange={this.onBehaviorGroupDescriptionChange}
           onBehaviorGroupIconChange={this.onBehaviorGroupIconChange}
