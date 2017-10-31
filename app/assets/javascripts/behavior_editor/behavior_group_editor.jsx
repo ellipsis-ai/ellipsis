@@ -144,27 +144,33 @@ define(function(require) {
             </div>
           </div>
 
-          <div>
-            <Input
-              ref="githubOwner"
-              className="form-input-borderless form-input-l type-semibold mbn"
-              placeholder="Github owner"
-              onChange={this.onGithubOwnerChange}
-              value={this.getGithubOwner()}
-            />
-            <Input
-              ref="githubRepo"
-              className="form-input-borderless form-input-l type-semibold mbn"
-              placeholder="Github repo"
-              onChange={this.onGithubRepoChange}
-              value={this.getGithubRepo()}
-            />
-            <button type="button"
-                    onClick={this.onUpdateFromGithub}
-                    disabled={this.props.isModified}
-            >
-              Update from Github…
-            </button>
+          <div className="columns mtl">
+            <div className="column column-one-quarter">
+              <Input
+                ref="githubOwner"
+                className="form-input-borderless form-input-l type-semibold mbn"
+                placeholder="Github owner"
+                onChange={this.onGithubOwnerChange}
+                value={this.getGithubOwner()}
+              />
+            </div>
+            <div className="column column-one-quarter">
+              <Input
+                ref="githubRepo"
+                className="form-input-borderless form-input-l type-semibold mbn"
+                placeholder="Github repo"
+                onChange={this.onGithubRepoChange}
+                value={this.getGithubRepo()}
+              />
+            </div>
+            <div className="column column-one-quarter">
+              <button type="button"
+                      onClick={this.onUpdateFromGithub}
+                      disabled={this.props.isModified}
+              >
+                Pull from Github…
+              </button>
+            </div>
           </div>
         </div>
       );
