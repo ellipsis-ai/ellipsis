@@ -1,3 +1,6 @@
+// @flow
+import type {PageRequiredProps} from '../shared_ui/page';
+
 define(function(require) {
   const React = require('react'),
     moment = require('moment'),
@@ -8,7 +11,16 @@ define(function(require) {
     Page = require('../shared_ui/page'),
     autobind = require('../lib/autobind');
 
-  class RegionalSettings extends React.Component {
+  type Props = {
+    csrfToken: string,
+    teamId: string,
+    onSaveTimeZone: (tzName: string, formattedName: string, newOffset: number) => void,
+    teamTimeZone?: string,
+    teamTimeZoneName?: string,
+    teamTimeZoneOffset?: number
+  }
+
+  class RegionalSettings extends React.Component<Props & PageRequiredProps> {
     constructor(props) {
       super(props);
       autobind(this);
@@ -17,11 +29,11 @@ define(function(require) {
       };
     }
 
-    componentDidMount() {
+    componentDidMount(): void {
       setInterval(this.updateTime, 1000);
     }
 
-    updateTime() {
+    updateTime(): void {
       if (!document.hidden) {
         this.setState({
           currentTime: this.getCurrentTime()
@@ -29,15 +41,15 @@ define(function(require) {
       }
     }
 
-    getCurrentTime() {
+    getCurrentTime(): string {
       const time = moment().utc();
       if (this.props.teamTimeZoneOffset) {
         time.add(this.props.teamTimeZoneOffset, 'seconds');
       }
-      return time;
+      return time.format('h:mm:ss A');
     }
 
-    toggleTimeZoneSetter() {
+    toggleTimeZoneSetter(): void {
       this.props.onToggleActivePanel('timeZoneSetter', true, () => {
         if (this.teamTimeZoneSetter) {
           this.teamTimeZoneSetter.focus();
@@ -45,20 +57,20 @@ define(function(require) {
       });
     }
 
-    onSaveTimeZone(tzName, formattedName, newOffset) {
+    onSaveTimeZone(tzName: string, formattedName: string, newOffset: number): void {
       this.props.onSaveTimeZone(tzName, formattedName, newOffset);
       this.props.onClearActivePanel();
     }
 
-    renderCurrentTime() {
+    renderCurrentTime(): ?React.Node {
       if (this.props.teamTimeZoneOffset) {
         return (
-          <span> — {this.state.currentTime.format('h:mm:ss A')}</span>
+          <span> — {this.state.currentTime}</span>
         );
       }
     }
 
-    renderSetterPanel() {
+    renderSetterPanel(): React.Node {
       return (
         <Collapsible revealWhen={this.props.activePanelName === "timeZoneSetter"}>
           <div className="box-action phn">
@@ -87,7 +99,7 @@ define(function(require) {
       );
     }
 
-    render() {
+    render(): React.Node {
       return (
         <SettingsPage teamId={this.props.teamId} activePage={"regionalSettings"} header={"Regional settings"}>
 
@@ -112,14 +124,6 @@ define(function(require) {
     }
   }
 
-  RegionalSettings.propTypes = Object.assign({}, Page.requiredPropTypes, {
-    csrfToken: React.PropTypes.string.isRequired,
-    teamId: React.PropTypes.string.isRequired,
-    onSaveTimeZone: React.PropTypes.func.isRequired,
-    teamTimeZone: React.PropTypes.string,
-    teamTimeZoneName: React.PropTypes.string,
-    teamTimeZoneOffset: React.PropTypes.number
-  });
   RegionalSettings.defaultProps = Page.requiredPropDefaults();
 
   return RegionalSettings;

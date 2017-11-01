@@ -1,3 +1,4 @@
+// @flow
 define(function(require) {
   var React = require('react'),
     DataRequest = require('../lib/data_request'),
