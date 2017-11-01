@@ -12,6 +12,7 @@ import com.mohiva.play.silhouette.impl.providers.state.{CsrfStateItemHandler, Cs
 import com.mohiva.play.silhouette.persistence.repositories.DelegableAuthInfoRepository
 import com.mohiva.play.silhouette.impl.util._
 import com.mohiva.play.silhouette.persistence.daos.DelegableAuthInfoDAO
+import models.accounts.github.GithubProvider
 import models.accounts.slack.SlackProvider
 import models.silhouette._
 import net.ceedubs.ficus.Ficus._
@@ -45,11 +46,13 @@ trait AbstractSilhouetteModule extends ScalaModule {
 
   @Provides
   def provideSocialProviderRegistry(
-                                     slackProvider: SlackProvider
+                                     slackProvider: SlackProvider,
+                                     githubProvider: GithubProvider
                                    ): SocialProviderRegistry = {
 
     SocialProviderRegistry(Seq(
-      slackProvider
+      slackProvider,
+      githubProvider
     ))
   }
 
@@ -92,5 +95,14 @@ trait AbstractSilhouetteModule extends ScalaModule {
                             configuration: Configuration): SlackProvider = {
 
     new SlackProvider(httpLayer, stateHandler, configuration.underlying.as[OAuth2Settings]("silhouette.slack"))
+  }
+
+  @Provides
+  def provideGithubProvider(
+                            httpLayer: HTTPLayer,
+                            stateHandler: SocialStateHandler,
+                            configuration: Configuration): GithubProvider = {
+
+    new GithubProvider(httpLayer, stateHandler, configuration.underlying.as[OAuth2Settings]("silhouette.github"))
   }
 }

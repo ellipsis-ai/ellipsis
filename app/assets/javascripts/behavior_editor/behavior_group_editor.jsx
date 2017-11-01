@@ -1,18 +1,24 @@
 define(function(require) {
   var React = require('react'),
     BehaviorGroup = require('../models/behavior_group'),
+    DataRequest = require('../lib/data_request'),
     Input = require('../form/input'),
     Textarea = require('../form/textarea');
 
   return React.createClass({
     displayName: 'BehaviorGroupEditor',
     propTypes: {
+      csrfToken: React.PropTypes.string.isRequired,
       group: React.PropTypes.instanceOf(BehaviorGroup).isRequired,
       isModified: React.PropTypes.bool.isRequired,
+      isAdmin: React.PropTypes.bool.isRequired,
+      isLinkedToGithub: React.PropTypes.bool.isRequired,
       onBehaviorGroupNameChange: React.PropTypes.func.isRequired,
       onBehaviorGroupDescriptionChange: React.PropTypes.func.isRequired,
       onBehaviorGroupIconChange: React.PropTypes.func.isRequired,
-      onDeleteClick: React.PropTypes.func.isRequired
+      onDeleteClick: React.PropTypes.func.isRequired,
+      onSave: React.PropTypes.func.isRequired,
+      onSaveError: React.PropTypes.func.isRequired
     },
 
     focus: function() {
@@ -25,6 +31,124 @@ define(function(require) {
 
     export: function() {
       window.location = jsRoutes.controllers.BehaviorImportExportController.export(this.props.group.id).url;
+    },
+
+    getInitialState: function() {
+      return {
+        githubOwner: "",
+        githubRepo: "",
+        githubBranch: null
+      };
+    },
+
+    getGithubOwner: function() {
+      return this.state.githubOwner;
+    },
+
+    onGithubOwnerChange: function(owner) {
+      this.setState({
+        githubOwner: owner
+      });
+    },
+
+    getGithubRepo: function() {
+      return this.state.githubRepo;
+    },
+
+    onGithubRepoChange: function(repo) {
+      this.setState({
+        githubRepo: repo
+      });
+    },
+
+    onUpdateFromGithub: function() {
+      DataRequest.jsonPost(
+        jsRoutes.controllers.BehaviorEditorController.updateFromGithub().url,
+        {
+          behaviorGroupId: this.props.group.id,
+          owner: this.getGithubOwner(),
+          repo: this.getGithubRepo()
+        },
+        this.props.csrfToken
+      )
+        .then((json) => {
+          if (json.errors) {
+            this.props.onSaveError(json.errors);
+          } else {
+            this.props.onSave(BehaviorGroup.fromJson(json.data));
+          }
+        })
+        .catch((error) => {
+          this.props.onSaveError(error);
+        });
+    },
+
+    getGithubAuthUrl: function() {
+      const redirect = jsRoutes.controllers.BehaviorEditorController.edit(this.props.group.id).url;
+      return jsRoutes.controllers.SocialAuthController.authenticateGithub(redirect).url;
+    },
+
+    renderGithubAuth: function() {
+      return (
+        <div className="columns mtxxl">
+          <div className="column">
+            <img height="32" src="/assets/images/logos/GitHub-Mark-64px.png"/>
+          </div>
+          <div className="column align-m">
+            <span>To push code to or pull code from GitHub, you first need to </span>
+            <a href={this.getGithubAuthUrl()}>authenticate your GitHub account</a>
+          </div>
+        </div>
+      );
+    },
+
+    renderGithubConfig: function() {
+      return (
+        <div>
+          <div className="columns mtxxl">
+            <div className="column column-one-quarter">
+              <span className="display-inline-block align-m type-s type-weak mrm">Owner</span>
+              <Input
+                ref="githubOwner"
+                className="form-input-borderless type-monospace type-s width-15 mrm"
+                placeholder="e.g. github"
+                onChange={this.onGithubOwnerChange}
+                value={this.getGithubOwner()}
+              />
+            </div>
+            <div className="column column-one-quarter">
+              <span className="display-inline-block align-m type-s type-weak mrm">Repo</span>
+              <Input
+                ref="githubRepo"
+                className="form-input-borderless type-monospace type-s width-15 mrm"
+                placeholder="e.g. octocat"
+                onChange={this.onGithubRepoChange}
+                value={this.getGithubRepo()}
+              />
+            </div>
+          </div>
+          <div className="mtl">
+            <button type="button"
+              onClick={this.onUpdateFromGithub}
+              disabled={ this.props.isModified || !this.getGithubRepo() || !this.getGithubOwner() }
+            >
+              Pull latest from Github…
+            </button>
+          </div>
+        </div>
+      );
+    },
+
+    renderGithubIntegration: function() {
+      if (this.props.isAdmin) {
+        if (this.props.isLinkedToGithub) {
+          return this.renderGithubConfig();
+        } else {
+          return this.renderGithubAuth();
+        }
+      } else {
+        return null;
+      }
     },
 
     render: function() {
@@ -89,6 +213,9 @@ define(function(require) {
               </button>
             </div>
           </div>
+
+          {this.renderGithubIntegration()}
+
         </div>
       );
     }

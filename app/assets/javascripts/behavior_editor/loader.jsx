@@ -91,6 +91,8 @@ requirejs(['common'], function() {
                 onForgetSavedAnswerForInput={this.resetSavedAnswerForInput}
                 onLoad={this.state.onLoad}
                 userId={this.props.userId}
+                isAdmin={this.props.isAdmin}
+                isLinkedToGithub={this.props.isLinkedToGithub}
               />
             </Page>
           );
@@ -110,7 +112,9 @@ requirejs(['common'], function() {
         oauth2Apis: React.PropTypes.arrayOf(React.PropTypes.object).isRequired,
         simpleTokenApis: React.PropTypes.arrayOf(React.PropTypes.object).isRequired,
         linkedOAuth2ApplicationIds: React.PropTypes.arrayOf(React.PropTypes.string).isRequired,
-        userId: React.PropTypes.string.isRequired
+        userId: React.PropTypes.string.isRequired,
+        isAdmin: React.PropTypes.bool.isRequired,
+        isLinkedToGithub: React.PropTypes.bool.isRequired
       };
 
       ReactDOM.render(

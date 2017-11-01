@@ -28,6 +28,7 @@
   routes.javascript.BehaviorEditorController.testTriggers,
   routes.javascript.BehaviorEditorController.versionInfoFor,
   routes.javascript.BehaviorEditorController.nodeModuleVersionsFor,
+  routes.javascript.BehaviorEditorController.updateFromGithub,
   routes.javascript.BehaviorImportExportController.doImport,
   routes.javascript.BehaviorImportExportController.export,
   routes.javascript.EnvironmentVariablesController.list,
@@ -48,6 +49,7 @@
   routes.javascript.AWSConfigController.list,
   routes.javascript.AWSConfigController.newConfig,
   routes.javascript.AWSConfigController.edit,
-  routes.javascript.AWSConfigController.save
+  routes.javascript.AWSConfigController.save,
+  routes.javascript.SocialAuthController.authenticateGithub
 
 )

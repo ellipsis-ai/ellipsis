@@ -6,11 +6,10 @@ import javax.inject._
 import akka.actor.ActorSystem
 import com.mohiva.play.silhouette.api.LoginInfo
 import drivers.SlickPostgresDriver.api._
-import json.SlackUserData
+import models.accounts.github.GithubProvider
+import models.accounts.slack.SlackProvider
 import models.accounts.user.User
-import play.api.libs.json._
 import services.{CacheService, DataService}
-import slack.api.{ApiError, SlackApiClient}
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -75,13 +74,20 @@ class LinkedAccountServiceImpl @Inject() (
   }
 
   def maybeForSlackForAction(user: User): DBIO[Option[LinkedAccount]] = {
-    forSlackForQuery(user.id).result.map { r =>
+    forProviderForQuery(user.id, SlackProvider.ID).result.map { r =>
       r.headOption.map(tuple2LinkedAccount)
     }
   }
 
   def maybeForSlackFor(user: User): Future[Option[LinkedAccount]] = {
     dataService.run(maybeForSlackForAction(user))
+  }
+
+  def maybeForGithubFor(user: User): Future[Option[LinkedAccount]] = {
+    val action = forProviderForQuery(user.id, GithubProvider.ID).result.map { r =>
+      r.headOption.map(tuple2LinkedAccount)
+    }
+    dataService.run(action)
   }
 
   def isAdminAction(linkedAccount: LinkedAccount): DBIO[Boolean] = {

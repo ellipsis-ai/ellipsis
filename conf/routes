@@ -42,6 +42,7 @@ POST        /save_default_storage_item                @controllers.BehaviorEdito
 POST        /query_default_storage                    @controllers.BehaviorEditorController.queryDefaultStorage
 POST        /delete_default_storage_items             @controllers.BehaviorEditorController.deleteDefaultStorageItems
 GET         /node_module_versions/:groupId            @controllers.BehaviorEditorController.nodeModuleVersionsFor(groupId: String)
+POST        /update_from_github                       @controllers.BehaviorEditorController.updateFromGithub
 
 POST        /reset_saved_answer_for_user              @controllers.SavedAnswerController.resetForUser
 POST        /reset_saved_answer_for_all               @controllers.SavedAnswerController.resetForTeam
@@ -77,6 +78,7 @@ POST        /delete_schedule                          @controllers.ScheduledActi
 
 GET         /authenticate/slack                       @controllers.SocialAuthController.authenticateSlack(redirect: Option[String] ?= None, team: Option[String] ?= None, channel: Option[String] ?= None)
 GET         /install/slack                            @controllers.SocialAuthController.installForSlack(redirect: Option[String] ?= None, team: Option[String] ?= None, channel: Option[String] ?= None)
+GET         /authenticate/github                      @controllers.SocialAuthController.authenticateGithub(redirect: Option[String] ?= None, team: Option[String] ?= None, channel: Option[String] ?= None)
 POST        /sign_out                                 @controllers.SocialAuthController.signOut
 GET         /login_with_token/:token                  @controllers.SocialAuthController.loginWithToken(token: String, redirect: Option[String] ?= None)
 

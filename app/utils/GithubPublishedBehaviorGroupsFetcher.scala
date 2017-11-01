@@ -77,7 +77,8 @@ case class GithubPublishedBehaviorGroupsFetcher(
     val behaviorGroups = (data \ "data" \ "repository" \ "object" \ "entries") match {
       case JsDefined(JsArray(arr)) => {
         arr.map { ea =>
-          GithubBehaviorGroupDataBuilder(ea, team, maybeBranch, dataService).build
+          val groupPath = (ea \ "name").as[String]
+          GithubBehaviorGroupDataBuilder(groupPath, ea, team, maybeBranch, dataService).build
         }
       }
       case _ => Seq()
