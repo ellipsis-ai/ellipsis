@@ -508,16 +508,15 @@ class BehaviorEditorController @Inject() (
             }
           }.getOrElse(Future.successful(None))
         } yield {
-          (for {
-            group <- maybeBehaviorGroup
-            token <- maybeGithubProfile.map(_.token)
-          } yield {
-            val fetcher = GithubSingleBehaviorGroupFetcher(group.team, info.owner, info.repo, token, info.branch, githubService, services, ec)
-            fetcher.fetch(maybeExistingGroupData) match {
-              case Failure(err) => Ok(JsObject(Map("errors" -> JsString(err.getMessage))))
-              case Success(groupData) => Ok(JsObject(Map("data" -> Json.toJson(groupData))))
-            }
-          }).getOrElse(NotFound(""))
+          maybeBehaviorGroup.map { group =>
+            maybeGithubProfile.map { profile =>
+              val fetcher = GithubSingleBehaviorGroupFetcher(group.team, info.owner, info.repo, profile.token, info.branch, githubService, services, ec)
+              fetcher.fetch(maybeExistingGroupData) match {
+                case Failure(err) => Ok(JsObject(Map("errors" -> JsString(err.getMessage))))
+                case Success(groupData) => Ok(JsObject(Map("data" -> Json.toJson(groupData))))
+              }
+            }.getOrElse(Unauthorized(s"User is not correctly authed with GitHub"))
+          }.getOrElse(NotFound(s"Skill with ID ${info.behaviorGroupId} not found"))
         }
       }
     )
