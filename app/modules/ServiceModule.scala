@@ -45,6 +45,7 @@ import models.behaviors.scheduling.scheduledbehavior.{ScheduledBehaviorService, 
 import models.team.{TeamService, TeamServiceImpl}
 import services._
 import net.codingwell.scalaguice.ScalaModule
+import utils.SlackFileMap
 
 class ServiceModule extends AbstractModule with ScalaModule {
 
@@ -102,6 +103,7 @@ class ServiceModule extends AbstractModule with ScalaModule {
     bind[SlackEventService].to[SlackEventServiceImpl]
     bind[EventHandler].asEagerSingleton()
     bind[GithubService].asEagerSingleton()
+    bind[SlackFileMap].asEagerSingleton()
   }
 
 }

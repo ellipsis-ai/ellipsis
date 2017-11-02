@@ -7,6 +7,7 @@ import com.google.inject.Provider
 import models.behaviors.BotResultService
 import play.api.Configuration
 import play.api.libs.ws.WSClient
+import utils.SlackFileMap
 
 @Singleton
 class DefaultServices @Inject() (
@@ -18,6 +19,7 @@ class DefaultServices @Inject() (
                                   configurationProvider: Provider[Configuration],
                                   botResultServiceProvider: Provider[BotResultService],
                                   slackEventServiceProvider: Provider[SlackEventService],
+                                  slackFileMapProvider: Provider[SlackFileMap],
                                   val actorSystem: ActorSystem
                           ) {
 
@@ -29,4 +31,5 @@ class DefaultServices @Inject() (
   def ws: WSClient = wsProvider.get
   def botResultService: BotResultService = botResultServiceProvider.get
   def slackEventService: SlackEventService = slackEventServiceProvider.get
+  def slackFileMap: SlackFileMap = slackFileMapProvider.get
 }

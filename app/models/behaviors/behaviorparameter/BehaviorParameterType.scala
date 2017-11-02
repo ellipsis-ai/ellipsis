@@ -6,7 +6,7 @@ import models.behaviors.conversations.ParamCollectionState
 import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.datatypeconfig.DataTypeConfig
 import models.behaviors.datatypefield.FieldTypeForSchema
-import models.behaviors.events.Event
+import models.behaviors.events.{Event, SlackMessageEvent}
 import models.behaviors.{BotResult, ParameterValue, ParameterWithValue, SuccessResult}
 import play.api.libs.json._
 import services.{AWSLambdaConstants, DataService}
@@ -73,8 +73,10 @@ sealed trait BehaviorParameterType extends FieldTypeForSchema {
 
   def resolvedValueFor(text: String, context: BehaviorParameterContext)(implicit ec: ExecutionContext): Future[Option[String]]
 
+  def potentialValueFor(event: Event, context: BehaviorParameterContext): String = event.relevantMessageText
+
   def handleCollected(event: Event, context: BehaviorParameterContext)(implicit ec: ExecutionContext): Future[Unit] = {
-    val potentialValue = event.relevantMessageText
+    val potentialValue = potentialValueFor(event, context)
     val input = context.parameter.input
     if (input.isSaved) {
       resolvedValueFor(potentialValue, context).flatMap { maybeValueToSave =>
@@ -196,6 +198,37 @@ object YesNoType extends BuiltInType {
   }
 
   val invalidPromptModifier: String = s"I need an answer like “yes” or “no”. $stopInstructions"
+}
+
+object FileType extends BuiltInType {
+  val name = "File"
+
+  val outputName: String = "File"
+
+  def isValid(text: String, context: BehaviorParameterContext)(implicit ec: ExecutionContext): Future[Boolean] = Future.successful(true)
+
+  def prepareValue(text: String) = {
+    JsString(text)
+  }
+
+  def prepareJsValue(value: JsValue): JsValue = {
+    value match {
+      case obj: JsObject => obj
+      case s: JsString => prepareValue(s.value)
+      case v => v
+    }
+  }
+
+  override def potentialValueFor(event: Event, context: BehaviorParameterContext): String = {
+    event match {
+      case e: SlackMessageEvent => e.maybeFile.map { file =>
+        context.services.slackFileMap.save(file.url)
+      }.getOrElse(super.potentialValueFor(event, context))
+      case _ => super.potentialValueFor(event, context)
+    }
+  }
+
+  val invalidPromptModifier: String = s"I need you to upload a file. $stopInstructions"
 }
 
 case class ValidValue(id: String, label: String, data: Map[String, String])
@@ -563,7 +596,8 @@ object BehaviorParameterType {
   val allBuiltin = Seq(
     TextType,
     NumberType,
-    YesNoType
+    YesNoType,
+    FileType
   )
 
   def findBuiltIn(id: String): Option[BehaviorParameterType] = allBuiltin.find(_.id == id)

@@ -22,7 +22,7 @@ import play.api.libs.ws.WSClient
 import play.api.mvc.{AnyContent, Request, Result}
 import play.api.{Configuration, Logger}
 import services.{AWSLambdaService, CacheService, DataService, SlackEventService}
-import utils.SlackTimestamp
+import utils.{SlackFileMap, SlackTimestamp}
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -36,6 +36,7 @@ class APIController @Inject() (
                                 val eventHandler: EventHandler,
                                 val botResultService: BotResultService,
                                 val assetsProvider: Provider[RemoteAssets],
+                                val slackFileMap: SlackFileMap,
                                 implicit val actorSystem: ActorSystem,
                                 implicit val ec: ExecutionContext
                               )
@@ -110,6 +111,7 @@ class APIController @Inject() (
             None,
             slackProfile.loginInfo.providerKey,
             SlackMessage.fromUnformattedText(message, botProfile.userId),
+            None,
             SlackTimestamp.now,
             slackService.clientFor(botProfile)
           )
@@ -771,6 +773,24 @@ class APIController @Inject() (
       }
     )
 
+  }
+
+  def fetchFileInput(token: String, fileId: String) = Action.async { implicit request =>
+    val eventualResult = for {
+      context <- ApiMethodContext.createFor(token)
+      result <- (for {
+        botProfile <- context.maybeBotProfile
+        url <- slackFileMap.maybeUrlFor(fileId)
+      } yield {
+        ws.url(url).withHttpHeaders(("Authorization", s"Bearer ${botProfile.token}")).get.map { r =>
+          Ok(Json.parse(r.body))
+        }
+      }).getOrElse(Future.successful(NotFound(s"Unable to find a file with ID $fileId")))
+    } yield result
+
+    eventualResult.recover {
+      case e: InvalidTokenException => badRequest("Invalid token\n", Json.toJson(Map("token" -> token, "fileId" -> fileId)))
+    }
   }
 
   private def printApiContextError(context: ApiMethodContext): Unit = {
