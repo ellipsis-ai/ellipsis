@@ -17,6 +17,7 @@ import models.behaviors.{BotResultService, SimpleTextResult}
 import models.team.Team
 import play.api.data.Form
 import play.api.data.Forms._
+import play.api.http.HttpEntity
 import play.api.libs.json.{JsObject, JsValue, Json}
 import play.api.libs.ws.WSClient
 import play.api.mvc.{AnyContent, Request, Result}
@@ -783,7 +784,21 @@ class APIController @Inject() (
         url <- slackFileMap.maybeUrlFor(fileId)
       } yield {
         ws.url(url).withHttpHeaders(("Authorization", s"Bearer ${botProfile.token}")).get.map { r =>
-          Ok(r.body)
+          if (r.status == 200) {
+            val contentType =
+              r.headers.get("Content-Type").
+                flatMap(_.headOption).
+                getOrElse("application/octet-stream")
+
+            r.headers.get("Content-Length") match {
+              case Some(Seq(length)) =>
+                Ok.sendEntity(HttpEntity.Streamed(r.bodyAsSource, Some(length.toLong), Some(contentType)))
+              case _ =>
+                Ok.chunked(r.bodyAsSource).as(contentType)
+            }
+          } else {
+            BadGateway
+          }
         }
       }).getOrElse(Future.successful(NotFound(s"Unable to find a file with ID $fileId")))
     } yield result
