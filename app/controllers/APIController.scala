@@ -783,7 +783,7 @@ class APIController @Inject() (
         url <- slackFileMap.maybeUrlFor(fileId)
       } yield {
         ws.url(url).withHttpHeaders(("Authorization", s"Bearer ${botProfile.token}")).get.map { r =>
-          Ok(Json.parse(r.body))
+          Ok(r.body)
         }
       }).getOrElse(Future.successful(NotFound(s"Unable to find a file with ID $fileId")))
     } yield result
