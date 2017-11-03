@@ -776,7 +776,7 @@ class APIController @Inject() (
 
   }
 
-  def fetchFileInput(token: String, fileId: String) = Action.async { implicit request =>
+  def fetchFile(token: String, fileId: String) = Action.async { implicit request =>
     val eventualResult = for {
       context <- ApiMethodContext.createFor(token)
       result <- (for {

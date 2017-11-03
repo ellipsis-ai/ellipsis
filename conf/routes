@@ -123,7 +123,7 @@ POST        /api/unschedule_action                    @controllers.APIController
 #NOCSRF
 POST        /api/say                                  @controllers.APIController.say
 #NOCSRF
-GET         /api/v1/files                             @controllers.APIController.fetchFileInput(token: String, fileId: String)
+GET         /api/v1/files                             @controllers.APIController.fetchFile(token: String, fileId: String)
 #NOCSRF
 GET         /get_action_logs/:behaviorId/:token       @controllers.InvocationLogController.getLogs(behaviorId: String, token: String, from: Option[String] ?= None, to: Option[String] ?= None, userId: Option[String] ?= None)
 #NOCSRF
