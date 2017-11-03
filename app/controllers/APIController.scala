@@ -794,8 +794,6 @@ class APIController @Inject() (
               r.headers.get(CONTENT_DISPOSITION).
                 flatMap(_.headOption).
                 getOrElse("""attachment; filename="ellipsis.txt"""")
-            println(s"type: $contentType")
-            println(s"disposition: $contentDisposition")
             val result = r.headers.get("Content-Length") match {
               case Some(Seq(length)) =>
                 Ok.sendEntity(HttpEntity.Streamed(r.bodyAsSource, Some(length.toLong), Some(contentType)))
