@@ -234,7 +234,6 @@ object FileType extends BuiltInType {
 
   def prepareJsValue(value: JsValue): JsValue = {
     value match {
-      case obj: JsObject => obj
       case s: JsString => prepareValue(s.value)
       case v => v
     }
