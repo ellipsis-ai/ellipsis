@@ -786,16 +786,23 @@ class APIController @Inject() (
         ws.url(url).withHttpHeaders(("Authorization", s"Bearer ${botProfile.token}")).get.map { r =>
           if (r.status == 200) {
             val contentType =
-              r.headers.get("Content-Type").
+              r.headers.get(CONTENT_TYPE).
                 flatMap(_.headOption).
                 getOrElse("application/octet-stream")
 
-            r.headers.get("Content-Length") match {
+            val contentDisposition =
+              r.headers.get(CONTENT_DISPOSITION).
+                flatMap(_.headOption).
+                getOrElse("""attachment; filename="ellipsis.txt"""")
+            println(s"type: $contentType")
+            println(s"disposition: $contentDisposition")
+            val result = r.headers.get("Content-Length") match {
               case Some(Seq(length)) =>
                 Ok.sendEntity(HttpEntity.Streamed(r.bodyAsSource, Some(length.toLong), Some(contentType)))
               case _ =>
                 Ok.chunked(r.bodyAsSource).as(contentType)
             }
+            result.withHeaders(CONTENT_TYPE -> contentType, CONTENT_DISPOSITION -> contentDisposition)
           } else {
             BadGateway
           }
