@@ -41,6 +41,10 @@ sealed trait BehaviorParameterType extends FieldTypeForSchema {
     }
   }
 
+  def questionTextFor(context: BehaviorParameterContext): String = {
+    context.parameter.question.trim
+  }
+
   def promptForAction(
                  maybePreviousCollectedValue: Option[String],
                  context: BehaviorParameterContext,
@@ -67,7 +71,7 @@ sealed trait BehaviorParameterType extends FieldTypeForSchema {
          |
          |$invalidModifier
          |
-         |__${context.parameter.question.trim}__""".stripMargin
+         |__${questionTextFor(context)}__""".stripMargin
     }
   }
 
@@ -205,17 +209,27 @@ object FileType extends BuiltInType {
 
   val outputName: String = "File"
 
+  def isIntentionallyEmpty(text: String): Boolean = text.trim.toLowerCase == "none"
+
+  override def questionTextFor(context: BehaviorParameterContext): String = {
+    super.questionTextFor(context) ++ """ (or type "none" if you don't have one)"""
+  }
+
   def isValid(text: String, context: BehaviorParameterContext)(implicit ec: ExecutionContext): Future[Boolean] = {
     Future.successful {
       context.event match {
-        case e: SlackMessageEvent => e.maybeFile.nonEmpty
+        case e: SlackMessageEvent => e.maybeFile.nonEmpty || isIntentionallyEmpty(text)
         case _ => false
       }
     }
   }
 
   def prepareValue(text: String) = {
-    JsString(text)
+    if (isIntentionallyEmpty(text)) {
+      JsNull
+    } else {
+      JsString(text)
+    }
   }
 
   def prepareJsValue(value: JsValue): JsValue = {
