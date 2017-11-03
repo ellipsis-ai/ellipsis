@@ -783,7 +783,7 @@ class APIController @Inject() (
         botProfile <- context.maybeBotProfile
         url <- slackFileMap.maybeUrlFor(fileId)
       } yield {
-        ws.url(url).withHttpHeaders(("Authorization", s"Bearer ${botProfile.token}")).get.map { r =>
+        ws.url(url).withHttpHeaders((AUTHORIZATION, s"Bearer ${botProfile.token}")).get.map { r =>
           if (r.status == 200) {
             val contentType =
               r.headers.get(CONTENT_TYPE).
@@ -794,7 +794,7 @@ class APIController @Inject() (
               r.headers.get(CONTENT_DISPOSITION).
                 flatMap(_.headOption).
                 getOrElse("""attachment; filename="ellipsis.txt"""")
-            val result = r.headers.get("Content-Length") match {
+            val result = r.headers.get(CONTENT_LENGTH) match {
               case Some(Seq(length)) =>
                 Ok.sendEntity(HttpEntity.Streamed(r.bodyAsSource, Some(length.toLong), Some(contentType)))
               case _ =>
