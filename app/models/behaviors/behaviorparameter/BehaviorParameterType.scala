@@ -205,7 +205,14 @@ object FileType extends BuiltInType {
 
   val outputName: String = "File"
 
-  def isValid(text: String, context: BehaviorParameterContext)(implicit ec: ExecutionContext): Future[Boolean] = Future.successful(true)
+  def isValid(text: String, context: BehaviorParameterContext)(implicit ec: ExecutionContext): Future[Boolean] = {
+    Future.successful {
+      context.event match {
+        case e: SlackMessageEvent => e.maybeFile.nonEmpty
+        case _ => false
+      }
+    }
+  }
 
   def prepareValue(text: String) = {
     JsString(text)
