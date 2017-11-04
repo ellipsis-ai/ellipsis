@@ -63,8 +63,11 @@ class BehaviorParameterTypeSpec extends PlaySpec with MockitoSugar {
       FileType.prepareJsValue(JsString("none")) mustEqual JsNull
     }
 
-    "fallback to original for non-none values" in {
-      FileType.prepareJsValue(JsString("wtfbbq")) mustEqual JsString("wtfbbq")
+    "build an object with ID for non-none strings" in {
+      FileType.prepareJsValue(JsString("wtfbbq")) mustEqual Json.toJson(Map("id" -> JsString("wtfbbq")))
+    }
+
+    "fallback to original for non-strings" in {
       FileType.prepareJsValue(JsArray(Seq())) mustEqual JsArray(Seq())
       FileType.prepareJsValue(JsNull) mustEqual JsNull
     }
