@@ -25,7 +25,7 @@ module.exports = function(param, $CONTEXT_PARAM) {
         } else if (err) {
           reject(err);
         } else {
-          reject(`$${res.statusCode}: $${body}`);
+          reject(`${res.statusCode}: ${body}`);
         }
       });
     });
