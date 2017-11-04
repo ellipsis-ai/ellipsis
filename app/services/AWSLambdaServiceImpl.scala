@@ -277,10 +277,11 @@ class AWSLambdaServiceImpl @Inject() (
     }.mkString("")
   }
 
-  def functionWithParams(params: Seq[BehaviorParameter], functionBody: String): String = {
+  def functionWithParams(params: Seq[BehaviorParameter], functionBody: String, isForExport: Boolean): String = {
     val paramNames = params.map(_.input.name)
+    val paramDecoration = if (isForExport) { "" } else { decorateParams(params) }
     s"""function(${(paramNames ++ Array(CONTEXT_PARAM)).mkString(", ")}) {
-        |  ${decorateParams(params)}${functionBody.trim}
+        |  $paramDecoration${functionBody.trim}
         |}\n""".stripMargin
   }
 
@@ -376,7 +377,7 @@ class AWSLambdaServiceImpl @Inject() (
     val behaviorVersionsDirName = s"$dirName/${BehaviorVersion.dirName}"
     Path(behaviorVersionsDirName).createDirectory()
     behaviorVersionsWithParams.foreach { case(behaviorVersion, params) =>
-      writeFileNamed(s"$dirName/${behaviorVersion.jsName}", BehaviorVersion.codeFor(functionWithParams(params, behaviorVersion.functionBody)))
+      writeFileNamed(s"$dirName/${behaviorVersion.jsName}", BehaviorVersion.codeFor(functionWithParams(params, behaviorVersion.functionBody, isForExport = false)))
     }
 
     if (hasFileParams(behaviorVersionsWithParams)) {

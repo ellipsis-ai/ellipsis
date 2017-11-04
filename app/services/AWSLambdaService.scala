@@ -38,7 +38,7 @@ trait AWSLambdaService extends AWSService {
 
   def partitionedBehaviorGroupFunctionNames: Future[PartitionedFunctionNames]
 
-  def functionWithParams(params: Seq[BehaviorParameter], functionBody: String): String
+  def functionWithParams(params: Seq[BehaviorParameter], functionBody: String, isForExport: Boolean): String
 
   def invokeAction(
                     behaviorVersion: BehaviorVersion,
