@@ -9,11 +9,12 @@ import models.behaviors.datatypefield.FieldTypeForSchema
 import models.behaviors.events.{Event, SlackMessageEvent}
 import models.behaviors.{BotResult, ParameterValue, ParameterWithValue, SuccessResult}
 import play.api.libs.json._
+import services.AWSLambdaConstants._
 import services.{AWSLambdaConstants, DataService}
 import slick.dbio.DBIO
 
-import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration._
+import scala.concurrent.{ExecutionContext, Future}
 
 sealed trait BehaviorParameterType extends FieldTypeForSchema {
 
@@ -96,6 +97,8 @@ sealed trait BehaviorParameterType extends FieldTypeForSchema {
       }.getOrElse(Future.successful({}))
     }
   }
+
+  def decorationCodeFor(param: BehaviorParameter): String = ""
 
 }
 
@@ -228,7 +231,7 @@ object FileType extends BuiltInType {
     if (isIntentionallyEmpty(text)) {
       JsNull
     } else {
-      JsString(text)
+      Json.toJson(Map("id" -> text))
     }
   }
 
@@ -246,6 +249,11 @@ object FileType extends BuiltInType {
       }.getOrElse(super.potentialValueFor(event, context))
       case _ => super.potentialValueFor(event, context)
     }
+  }
+
+  override def decorationCodeFor(param: BehaviorParameter): String = {
+    val paramName = param.input.name;
+    raw"""$paramName.fetch = require("$FETCH_FUNCTION_FOR_FILE_PARAM_NAME")($paramName, $CONTEXT_PARAM);"""
   }
 
   val invalidPromptModifier: String = s"I need you to upload a file. $stopInstructions"

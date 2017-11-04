@@ -2,6 +2,7 @@ package services
 
 import com.amazonaws.services.lambda.AWSLambdaAsync
 import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
+import models.behaviors.behaviorparameter.BehaviorParameter
 import models.behaviors.behaviorversion.BehaviorVersion
 import models.behaviors.config.awsconfig.AWSConfig
 import models.behaviors.config.requiredawsconfig.RequiredAWSConfig
@@ -37,7 +38,7 @@ trait AWSLambdaService extends AWSService {
 
   def partitionedBehaviorGroupFunctionNames: Future[PartitionedFunctionNames]
 
-  def functionWithParams(params: Array[String], functionBody: String): String
+  def functionWithParams(params: Seq[BehaviorParameter], functionBody: String): String
 
   def invokeAction(
                     behaviorVersion: BehaviorVersion,
@@ -51,7 +52,7 @@ trait AWSLambdaService extends AWSService {
   def deleteFunction(functionName: String): Future[Unit]
   def deployFunctionFor(
                          groupVersion: BehaviorGroupVersion,
-                         behaviorVersionsWithParams: Seq[(BehaviorVersion, Array[String])],
+                         behaviorVersionsWithParams: Seq[(BehaviorVersion, Seq[BehaviorParameter])],
                          libraries: Seq[LibraryVersion],
                          apiConfigInfo: ApiConfigInfo
                          ): Future[Unit]
