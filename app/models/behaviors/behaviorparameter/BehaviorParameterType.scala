@@ -253,7 +253,7 @@ object FileType extends BuiltInType {
 
   override def decorationCodeFor(param: BehaviorParameter): String = {
     val paramName = param.input.name;
-    raw"""$paramName.fetch = require("$FETCH_FUNCTION_FOR_FILE_PARAM_NAME")($paramName, $CONTEXT_PARAM);"""
+    raw"""if ($paramName) { $paramName.fetch = require("$FETCH_FUNCTION_FOR_FILE_PARAM_NAME")($paramName, $CONTEXT_PARAM); }"""
   }
 
   val invalidPromptModifier: String = s"I need you to upload a file. $stopInstructions"
