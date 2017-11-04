@@ -10,6 +10,7 @@ case class InvocationLogEntry(
                                id: String,
                                behaviorVersion: BehaviorVersion,
                                resultType: String,
+                               scheduled: Boolean,
                                messageText: String,
                                paramValues: JsValue,
                                resultText: String,
