@@ -67,7 +67,7 @@ class MockAWSLambdaService @Inject() (
                        defaultServices: DefaultServices
                      ): DBIO[BotResult] = DBIO.successful(resultFor(event, maybeConversation))
 
-  override def functionWithParams(params: Seq[BehaviorParameter], functionBody: String): String = ""
+  override def functionWithParams(params: Seq[BehaviorParameter], functionBody: String, isForExport: Boolean): String = ""
 
   def ensureNodeModuleVersionsFor(groupVersion: BehaviorGroupVersion): DBIO[Seq[NodeModuleVersion]] = DBIO.successful(Seq())
 }
