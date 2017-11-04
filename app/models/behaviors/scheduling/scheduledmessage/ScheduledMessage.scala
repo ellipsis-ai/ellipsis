@@ -32,7 +32,7 @@ case class ScheduledMessage(
   }
 
   def eventFor(channel: String, slackUserId: String, profile: SlackBotProfile, client: SlackApiClient): ScheduledEvent = {
-    ScheduledEvent(SlackMessageEvent(profile, channel, None, slackUserId, SlackMessage.fromUnformattedText(text, profile.userId), SlackTimestamp.now, client), this)
+    ScheduledEvent(SlackMessageEvent(profile, channel, None, slackUserId, SlackMessage.fromUnformattedText(text, profile.userId), None, SlackTimestamp.now, client), this)
   }
 
   def withUpdatedNextTriggeredFor(when: OffsetDateTime): ScheduledMessage = {

@@ -17,12 +17,13 @@ import models.behaviors.{BotResultService, SimpleTextResult}
 import models.team.Team
 import play.api.data.Form
 import play.api.data.Forms._
+import play.api.http.HttpEntity
 import play.api.libs.json.{JsObject, JsValue, Json}
 import play.api.libs.ws.WSClient
 import play.api.mvc.{AnyContent, Request, Result}
 import play.api.{Configuration, Logger}
 import services.{AWSLambdaService, CacheService, DataService, SlackEventService}
-import utils.SlackTimestamp
+import utils.{SlackFileMap, SlackTimestamp}
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -36,6 +37,7 @@ class APIController @Inject() (
                                 val eventHandler: EventHandler,
                                 val botResultService: BotResultService,
                                 val assetsProvider: Provider[RemoteAssets],
+                                val slackFileMap: SlackFileMap,
                                 implicit val actorSystem: ActorSystem,
                                 implicit val ec: ExecutionContext
                               )
@@ -110,6 +112,7 @@ class APIController @Inject() (
             None,
             slackProfile.loginInfo.providerKey,
             SlackMessage.fromUnformattedText(message, botProfile.userId),
+            None,
             SlackTimestamp.now,
             slackService.clientFor(botProfile)
           )
@@ -771,6 +774,43 @@ class APIController @Inject() (
       }
     )
 
+  }
+
+  def fetchFile(token: String, fileId: String) = Action.async { implicit request =>
+    val eventualResult = for {
+      context <- ApiMethodContext.createFor(token)
+      result <- (for {
+        botProfile <- context.maybeBotProfile
+        url <- slackFileMap.maybeUrlFor(fileId)
+      } yield {
+        ws.url(url).withHttpHeaders((AUTHORIZATION, s"Bearer ${botProfile.token}")).get.map { r =>
+          if (r.status == 200) {
+            val contentType =
+              r.headers.get(CONTENT_TYPE).
+                flatMap(_.headOption).
+                getOrElse("application/octet-stream")
+
+            val contentDisposition =
+              r.headers.get(CONTENT_DISPOSITION).
+                flatMap(_.headOption).
+                getOrElse("""attachment; filename="ellipsis.txt"""")
+            val result = r.headers.get(CONTENT_LENGTH) match {
+              case Some(Seq(length)) =>
+                Ok.sendEntity(HttpEntity.Streamed(r.bodyAsSource, Some(length.toLong), Some(contentType)))
+              case _ =>
+                Ok.chunked(r.bodyAsSource).as(contentType)
+            }
+            result.withHeaders(CONTENT_TYPE -> contentType, CONTENT_DISPOSITION -> contentDisposition)
+          } else {
+            BadGateway
+          }
+        }
+      }).getOrElse(Future.successful(NotFound(s"Unable to find a file with ID $fileId")))
+    } yield result
+
+    eventualResult.recover {
+      case e: InvalidTokenException => badRequest("Invalid token\n", Json.toJson(Map("token" -> token, "fileId" -> fileId)))
+    }
   }
 
   private def printApiContextError(context: ApiMethodContext): Unit = {

@@ -283,7 +283,7 @@ class BehaviorVersionServiceImpl @Inject() (
       (for {
         params <- dataService.behaviorParameters.allFor(behaviorVersion)
       } yield {
-        lambdaService.functionWithParams(params.map(_.name).toArray, functionBody)
+        lambdaService.functionWithParams(params, functionBody)
       }).map(Some(_))
     }.getOrElse(Future.successful(None))
   }

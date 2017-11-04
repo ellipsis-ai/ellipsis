@@ -3,7 +3,7 @@ package json
 import models.accounts.slack.botprofile.SlackBotProfile
 import models.behaviors.{ExecutionErrorData, ExecutionLogData}
 import models.behaviors.behaviorparameter.ValidValue
-import models.behaviors.events.SlackMessage
+import models.behaviors.events.{SlackFile, SlackMessage}
 import models.behaviors.testing.{InvocationTestReportOutput, ResultOutput}
 import play.api.libs.json._
 import services.SlackMessageEventData
@@ -144,6 +144,9 @@ object Formatting {
 
   lazy implicit val slackMessageReads = Json.reads[SlackMessage]
   lazy implicit val slackMessageWrites = Json.writes[SlackMessage]
+
+  lazy implicit val slackFileReads = Json.reads[SlackFile]
+  lazy implicit val slackFileWrites = Json.writes[SlackFile]
 
   lazy implicit val slackMessageEventDataReads = Json.reads[SlackMessageEventData]
   lazy implicit val slackMessageEventDataWrites = Json.writes[SlackMessageEventData]

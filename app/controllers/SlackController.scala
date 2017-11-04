@@ -7,7 +7,7 @@ import com.mohiva.play.silhouette.api.Silhouette
 import json.{SlackUserData, SlackUserProfileData, SlackUserProfileNameData}
 import models.behaviors.builtins.DisplayHelpBehavior
 import models.behaviors.events.SlackMessageActionConstants._
-import models.behaviors.events.{EventHandler, SlackMessage, SlackMessageEvent}
+import models.behaviors.events.{EventHandler, SlackFile, SlackMessage, SlackMessageEvent}
 import models.help.HelpGroupSearchValue
 import models.silhouette.EllipsisEnv
 import play.api.Logger
@@ -145,13 +145,19 @@ class SlackController @Inject() (
     val ts: String
   }
 
+  case class FileInfo(
+                     createdAt: Long,
+                     downloadUrl: String
+                     )
+
   case class MessageSentEventInfo(
                                     eventType: String,
                                     ts: String,
                                     maybeThreadTs: Option[String],
                                     userId: String,
                                     channel: String,
-                                    text: String
+                                    text: String,
+                                    maybeFileInfo: Option[FileInfo]
                                   ) extends EventInfo
 
   case class MessageSentRequestInfo(
@@ -173,7 +179,11 @@ class SlackController @Inject() (
         "thread_ts" -> optional(nonEmptyText),
         "user" -> nonEmptyText,
         "channel" -> nonEmptyText,
-        "text" -> nonEmptyText
+        "text" -> nonEmptyText,
+        "file" -> optional(mapping(
+          "created" -> longNumber,
+          "url_private_download" -> nonEmptyText
+        )(FileInfo.apply)(FileInfo.unapply))
       )(MessageSentEventInfo.apply)(MessageSentEventInfo.unapply)
     )(MessageSentRequestInfo.apply)(MessageSentRequestInfo.unapply) verifying("Not a valid message event", fields => fields match {
       case info => info.event.eventType == "message"
@@ -247,6 +257,12 @@ class SlackController @Inject() (
         maybeSlackMessage <- maybeProfile.map { profile =>
           SlackMessage.fromFormattedText(info.message, profile, slackEventService).map(Some(_))
         }.getOrElse(Future.successful(None))
+        maybeFile <- Future.successful(
+          info.event match {
+            case e: MessageSentEventInfo => e.maybeFileInfo.map(i => SlackFile(i.downloadUrl))
+            case _ => None
+          }
+        )
         _ <- (for {
           profile <- maybeProfile
           slackMessage <- maybeSlackMessage
@@ -257,6 +273,7 @@ class SlackController @Inject() (
             info.maybeThreadTs,
             info.userId,
             slackMessage,
+            maybeFile,
             info.ts,
             slackEventService.clientFor(profile)
           ))

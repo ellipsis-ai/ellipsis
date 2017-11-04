@@ -103,7 +103,7 @@ class SlackBotProfileServiceImpl @Inject() (
       botProfiles.headOption.map { botProfile =>
         // TODO: Create a new class for placeholder events
         // https://github.com/ellipsis-ai/ellipsis/issues/1719
-        SlackMessageEvent(botProfile, channelId, None, maybeUserId.getOrElse(botProfile.userId), SlackMessage.blank, SlackTimestamp.now, slackEventService.clientFor(botProfile))
+        SlackMessageEvent(botProfile, channelId, None, maybeUserId.getOrElse(botProfile.userId), SlackMessage.blank, None, SlackTimestamp.now, slackEventService.clientFor(botProfile))
       }
     }
   }

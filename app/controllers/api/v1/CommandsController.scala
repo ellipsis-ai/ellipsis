@@ -90,6 +90,7 @@ class CommandsController @Inject() (
             None,
             slackProfile.loginInfo.providerKey,
             SlackMessage.fromUnformattedText(message, botProfile.userId),
+            None,
             SlackTimestamp.now,
             slackService.clientFor(botProfile)
           )
