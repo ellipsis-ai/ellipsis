@@ -30,4 +30,4 @@ module.exports = function(param, $CONTEXT_PARAM) {
       });
     });
   };
-}
+};
