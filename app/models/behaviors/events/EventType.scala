@@ -2,11 +2,6 @@ package models.behaviors.events
 
 import utils.Enum
 
-object EventType extends Enum[EventType] {
-  val values = List(ScheduledEventType, ApiEventType, TestEventType, ChatEventType)
-  def maybeFrom(maybeString: Option[String]): Option[EventType] = maybeString.flatMap(find)
-}
-
 sealed trait EventType extends EventType.Value {
   val value: String
 }
@@ -29,4 +24,11 @@ case object ChatEventType extends EventType {
 
 case object WebEventType extends EventType {
   val value: String = "web"
+}
+
+/* N.B. Don't forget to add new EventTypes to the list of EventType values */
+
+object EventType extends Enum[EventType] {
+  val values = List(ScheduledEventType, ApiEventType, TestEventType, ChatEventType, WebEventType)
+  def maybeFrom(maybeString: Option[String]): Option[EventType] = maybeString.flatMap(find)
 }
