@@ -21,9 +21,11 @@ case class RunEvent(
                      maybeThreadId: Option[String],
                      user: String,
                      ts: String,
-                     client: SlackApiClient
+                     client: SlackApiClient,
+                     maybeOriginalEventType: Option[EventType]
                   ) extends Event with SlackEvent {
 
+  val eventType: EventType = ApiEventType
   val messageText: String = ""
   val includesBotMention: Boolean = false
   val isResponseExpected: Boolean = false

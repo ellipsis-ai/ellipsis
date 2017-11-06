@@ -5,7 +5,7 @@ import java.time.OffsetDateTime
 import models.accounts.slack.botprofile.SlackBotProfile
 import models.accounts.user.User
 import models.behaviors.behavior.Behavior
-import models.behaviors.events.{RunEvent, ScheduledEvent}
+import models.behaviors.events.{RunEvent, ScheduledEvent, ScheduledEventType}
 import models.behaviors.scheduling.Scheduled
 import models.behaviors.scheduling.recurrence.Recurrence
 import models.team.Team
@@ -62,7 +62,20 @@ case class ScheduledBehavior(
   }
 
   def eventFor(channel: String, slackUserId: String, profile: SlackBotProfile, client: SlackApiClient): ScheduledEvent = {
-    ScheduledEvent(RunEvent(profile, behavior, arguments, channel, None, slackUserId, SlackTimestamp.now, client), this)
+    ScheduledEvent(
+      RunEvent(
+        profile,
+        behavior,
+        arguments,
+        channel,
+        None,
+        slackUserId,
+        SlackTimestamp.now,
+        client,
+        Some(ScheduledEventType)
+      ),
+      this
+    )
   }
 
   def withUpdatedNextTriggeredFor(when: OffsetDateTime): ScheduledBehavior = {

@@ -4,7 +4,6 @@ import akka.actor.ActorSystem
 import models.accounts.slack.botprofile.SlackBotProfile
 import models.accounts.user.User
 import models.behaviors.conversations.conversation.Conversation
-import models.behaviors.scheduling.Scheduled
 import services.{AWSLambdaService, CacheService, DataService, DefaultServices}
 import slack.api.SlackApiClient
 import utils.{SlackMessageSender, UploadFileSpec}
@@ -20,8 +19,11 @@ case class SlackMessageEvent(
                               message: SlackMessage,
                               maybeFile: Option[SlackFile],
                               ts: String,
-                              client: SlackApiClient
+                              client: SlackApiClient,
+                              maybeOriginalEventType: Option[EventType]
                             ) extends MessageEvent with SlackEvent {
+
+  val eventType: EventType = ChatEventType
 
   lazy val isBotMessage: Boolean = profile.userId == user
 
