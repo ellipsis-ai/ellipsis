@@ -66,8 +66,6 @@ class AWSLambdaServiceImpl @Inject() (
 
   val apiBaseUrl: String = configuration.get[String](s"application.$API_BASE_URL_KEY")
 
-  val invocationTimeoutSeconds: Int = configuration.get[Int]("aws.lambda.timeoutSeconds")
-
   val logSubscriptionsEnabled: Boolean = configuration.get[Boolean]("aws.logSubscriptions.enabled")
   val logSubscriptionsLambdaFunctionName: String = configuration.get[String]("aws.logSubscriptions.lambdaFunctionName")
   val logSubscriptionsFilterPattern: String = configuration.get[String]("aws.logSubscriptions.filterPattern")
