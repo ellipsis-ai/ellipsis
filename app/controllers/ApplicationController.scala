@@ -14,7 +14,8 @@ import play.api.data.Forms._
 import play.api.libs.json.Json
 import play.filters.csrf.CSRF
 import services.{DefaultServices, GithubService}
-import utils.{CitiesToTimeZones, FuzzyMatcher, GithubPublishedBehaviorGroupsFetcher, TimeZoneParser}
+import utils.github.GithubPublishedBehaviorGroupsFetcher
+import utils.{CitiesToTimeZones, FuzzyMatcher, TimeZoneParser}
 
 import scala.concurrent.{ExecutionContext, Future}
 

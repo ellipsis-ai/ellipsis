@@ -1,9 +1,9 @@
-package utils
+package utils.github
 
 import java.time.OffsetDateTime
 
-import json._
 import json.Formatting._
+import json._
 import models.team.Team
 import play.api.libs.json._
 import services.DataService

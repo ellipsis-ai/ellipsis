@@ -1,4 +1,4 @@
-package utils
+package utils.github
 
 import models.team.Team
 import play.api.Configuration

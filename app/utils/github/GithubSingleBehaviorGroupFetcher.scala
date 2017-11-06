@@ -1,4 +1,4 @@
-package utils
+package utils.github
 
 import json._
 import models.team.Team
