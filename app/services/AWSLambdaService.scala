@@ -30,6 +30,8 @@ trait AWSLambdaService extends AWSService {
 
   val configuration: Configuration
 
+  val invocationTimeoutSeconds: Int = configuration.get[Int]("aws.lambda.timeoutSeconds")
+
   val client: AWSLambdaAsync
 
   def listBehaviorGroupFunctionNames: Future[Seq[String]]
