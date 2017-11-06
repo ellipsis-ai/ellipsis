@@ -17,7 +17,8 @@ import play.api.libs.json._
 import play.api.mvc.{AnyContent, Result}
 import play.filters.csrf.CSRF
 import services.{DefaultServices, GithubService}
-import utils.{FutureSequencer, GithubSingleBehaviorGroupFetcher}
+import utils.FutureSequencer
+import utils.github.GithubSingleBehaviorGroupFetcher
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}
