@@ -7,7 +7,7 @@ import com.mohiva.play.silhouette.api.Silhouette
 import json.{SlackUserData, SlackUserProfileData, SlackUserProfileNameData}
 import models.behaviors.builtins.DisplayHelpBehavior
 import models.behaviors.events.SlackMessageActionConstants._
-import models.behaviors.events.{EventHandler, SlackFile, SlackMessage, SlackMessageEvent}
+import models.behaviors.events._
 import models.help.HelpGroupSearchValue
 import models.silhouette.EllipsisEnv
 import play.api.Logger
@@ -275,7 +275,8 @@ class SlackController @Inject() (
             slackMessage,
             maybeFile,
             info.ts,
-            slackEventService.clientFor(profile)
+            slackEventService.clientFor(profile),
+            None
           ))
         }).getOrElse {
           Future.successful({})

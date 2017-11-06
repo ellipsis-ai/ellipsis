@@ -3,7 +3,7 @@ package models.accounts.slack.botprofile
 import java.time.OffsetDateTime
 
 import models.behaviors.BotResult
-import models.behaviors.events.SlackMessageEvent
+import models.behaviors.events.{EventType, SlackMessageEvent}
 import models.team.Team
 import services.CacheService
 import slack.api.SlackApiClient
@@ -30,7 +30,7 @@ trait SlackBotProfileService {
     SlackChannels(SlackApiClient(botProfile.token), cacheService, botProfile.slackTeamId)
   }
 
-  def eventualMaybeEvent(slackTeamId: String, channelId: String, maybeUserId: Option[String]): Future[Option[SlackMessageEvent]]
+  def eventualMaybeEvent(slackTeamId: String, channelId: String, maybeUserId: Option[String], maybeOriginalEventType: Option[EventType]): Future[Option[SlackMessageEvent]]
 
   def sendResultWithNewEvent(
     description: String,

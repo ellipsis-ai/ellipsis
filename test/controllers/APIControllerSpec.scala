@@ -17,7 +17,7 @@ import models.behaviors.behavior.Behavior
 import models.behaviors.behaviorgroup.BehaviorGroup
 import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
 import models.behaviors.behaviorversion.BehaviorVersion
-import models.behaviors.events.{Event, EventHandler, SlackMessage, SlackMessageEvent}
+import models.behaviors.events._
 import models.behaviors.invocationtoken.InvocationToken
 import models.behaviors.scheduling.recurrence.Daily
 import models.behaviors.scheduling.scheduledbehavior.ScheduledBehavior
@@ -85,7 +85,7 @@ class APIControllerSpec extends PlaySpec with MockitoSugar {
       any[Option[String]], any[Option[Boolean]])(any[ActorSystem])).thenReturn(Future.successful(SlackTimestamp.now))
     when(mockSlackClient.listUsers).thenReturn(Future.successful(Seq()))
 
-    val event = SlackMessageEvent(botProfile, defaultChannel, None, defaultSlackUserId, SlackMessage.fromUnformattedText("foo", botProfile.userId), None, SlackTimestamp.now, mockSlackClient)
+    val event = SlackMessageEvent(botProfile, defaultChannel, None, defaultSlackUserId, SlackMessage.fromUnformattedText("foo", botProfile.userId), None, SlackTimestamp.now, mockSlackClient, Some(ApiEventType))
     when(dataService.slackBotProfiles.allFor(team)).thenReturn(Future.successful(Seq(botProfile)))
     val loginInfo = LoginInfo(defaultContext, defaultSlackUserId)
     val slackProfile = SlackProfile(defaultSlackTeamId, loginInfo)

@@ -78,7 +78,7 @@ class CommandsController @Inject() (
       } yield maybeBehavior
     }
 
-    def maybeMessageEventFor(message: String, channel: String): Future[Option[Event]] = {
+    def maybeMessageEventFor(message: String, channel: String, maybeOriginalEventType: Option[EventType]): Future[Option[Event]] = {
       maybeSlackChannelIdFor(channel).map { maybeSlackChannelId =>
         for {
           botProfile <- maybeBotProfile
@@ -92,7 +92,8 @@ class CommandsController @Inject() (
             SlackMessage.fromUnformattedText(message, botProfile.userId),
             None,
             SlackTimestamp.now,
-            slackService.clientFor(botProfile)
+            slackService.clientFor(botProfile),
+            maybeOriginalEventType
           )
           val event: Event = maybeScheduledMessage.map { scheduledMessage =>
             ScheduledEvent(slackEvent, scheduledMessage)
@@ -236,7 +237,8 @@ class CommandsController @Inject() (
                       message: String,
                       responseContext: String,
                       channel: String,
-                      token: String
+                      token: String,
+                      originalEventType: Option[String]
                     ) extends ApiMethodWithMessageInfo
 
   implicit val sayInfoWrites = Json.writes[SayInfo]
@@ -246,7 +248,8 @@ class CommandsController @Inject() (
       "message" -> nonEmptyText,
       "responseContext" -> nonEmptyText,
       "channel" -> nonEmptyText,
-      "token" -> nonEmptyText
+      "token" -> nonEmptyText,
+      "originalEventType" -> optional(nonEmptyText)
     )(SayInfo.apply)(SayInfo.unapply)
   )
 
@@ -258,7 +261,7 @@ class CommandsController @Inject() (
       info => {
         val eventualResult = for {
           context <- ApiMethodContext.createFor(info.token)
-          maybeEvent <- context.maybeMessageEventFor(info.message, info.channel)
+          maybeEvent <- context.maybeMessageEventFor(info.message, info.channel, EventType.maybeFrom(info.originalEventType))
           result <- maybeEvent.map { event =>
             val botResult = SimpleTextResult(event, None, info.message, forcePrivateResponse = false)
             botResultService.sendIn(botResult, None).map { _ =>
