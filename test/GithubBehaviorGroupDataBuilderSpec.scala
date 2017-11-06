@@ -9,7 +9,7 @@ import org.scalatest.mock.MockitoSugar
 import org.scalatestplus.play.PlaySpec
 import play.api.libs.json.{JsValue, Json}
 import support.TestContext
-import utils.GithubBehaviorGroupDataBuilder
+import utils.github.GithubBehaviorGroupDataBuilder
 
 class GithubBehaviorGroupDataBuilderSpec extends PlaySpec with MockitoSugar {
 
