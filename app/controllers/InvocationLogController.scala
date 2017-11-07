@@ -85,8 +85,14 @@ class InvocationLogController @Inject() (
         val from = maybeTimestampFor(maybeFrom).getOrElse(EARLIEST)
         val to = maybeTimestampFor(maybeTo).getOrElse(LATEST)
         val maybeValidOriginalEventType = EventType.maybeFrom(maybeOriginalEventType)
-        dataService.invocationLogEntries.allForBehavior(behavior, from, to, maybeUserId, maybeValidOriginalEventType).map { entries =>
-          Some(entries.filterNot(_.paramValues == JsNull))
+        if (maybeOriginalEventType.isDefined && maybeValidOriginalEventType.isEmpty) {
+          // Return an empty list if the original event type specified is invalid
+          Future.successful(Some(Seq()))
+        } else {
+          dataService.invocationLogEntries.allForBehavior(behavior, from, to, maybeUserId, maybeValidOriginalEventType)
+            .map { entries =>
+              Some(entries.filterNot(_.paramValues == JsNull))
+            }
         }
       }.getOrElse(Future.successful(None))
       maybeLogEntryData <- maybeLogEntries.map { logEntries =>
