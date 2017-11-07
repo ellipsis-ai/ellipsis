@@ -4,11 +4,11 @@ import java.time.{OffsetDateTime, ZoneOffset}
 import javax.inject.Inject
 
 import com.google.inject.Provider
-import com.mohiva.play.silhouette.api.LoginInfo
+import json.LogEntryData
 import models.behaviors.events.EventType
-import models.behaviors.invocationlogentry.InvocationLogEntry
 import play.api.Configuration
-import play.api.libs.json.{JsNull, JsValue, Json}
+import play.api.libs.json._
+import json.Formatting._
 import services.DataService
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -19,36 +19,6 @@ class InvocationLogController @Inject() (
                                  val assetsProvider: Provider[RemoteAssets],
                                  implicit val ec: ExecutionContext
                                ) extends EllipsisController {
-
-  case class LogEntryData(
-                           paramValues: JsValue,
-                           context: String,
-                           userIdForContext: Option[String],
-                           ellipsisUserId: Option[String],
-                           timestamp: OffsetDateTime,
-                           originalEventType: Option[String]
-                         )
-
-  object LogEntryData {
-    def forEntry(entry: InvocationLogEntry, dataService: DataService): Future[LogEntryData] = {
-      val eventualMaybeEllipsisUser = entry.maybeUserIdForContext.map { userIdForContext =>
-        dataService.linkedAccounts.find(LoginInfo(entry.context, userIdForContext), entry.behaviorVersion.team.id).map { maybeAcc =>
-          maybeAcc.map(_.user)
-        }
-      }.getOrElse(Future.successful(None))
-      eventualMaybeEllipsisUser.map { maybeUser =>
-        LogEntryData(
-          entry.paramValues,
-          entry.context,
-          entry.maybeUserIdForContext,
-          maybeUser.map(_.id),
-          entry.createdAt,
-          entry.maybeOriginalEventType.map(_.toString)
-        )
-      }
-    }
-  }
-  implicit val logEntryWrites = Json.writes[LogEntryData]
 
   private val EARLIEST = OffsetDateTime.of(2016, 1, 1, 0, 0, 0, 0, ZoneOffset.UTC)
   private val LATEST = OffsetDateTime.now
