@@ -127,7 +127,7 @@ GET         /api/v1/files                             @controllers.APIController
 #NOCSRF
 HEAD        /api/v1/files                             @controllers.APIController.fetchFile(token: String, fileId: String)
 #NOCSRF
-GET         /get_action_logs/:behaviorId/:token       @controllers.InvocationLogController.getLogs(behaviorId: String, token: String, from: Option[String] ?= None, to: Option[String] ?= None, userId: Option[String] ?= None)
+GET         /get_action_logs/:behaviorId/:token       @controllers.InvocationLogController.getLogs(behaviorId: String, token: String, from: Option[String] ?= None, to: Option[String] ?= None, userId: Option[String] ?= None, originalEventType: Option[String] ?= None)
 #NOCSRF
 POST        /api/graphql                              @controllers.GraphQLController.query
 

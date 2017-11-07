@@ -172,4 +172,6 @@ object Formatting {
   implicit val behaviorGroupVersionMetaDataWrites = Json.writes[BehaviorGroupVersionMetaData]
 
   implicit val regionalSettingsConfigFormat = Json.format[RegionalSettingsConfig]
+
+  implicit val logEntryDataFormat = Json.format[LogEntryData]
 }
