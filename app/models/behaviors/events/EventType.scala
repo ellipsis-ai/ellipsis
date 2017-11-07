@@ -13,5 +13,4 @@ object EventType extends Enum[EventType] {
 
   val values = List(scheduled, api, test, chat, web)
   def maybeFrom(maybeString: Option[String]): Option[EventType] = maybeString.flatMap(find)
-  def isValidType(string: String): Boolean = find(string).isDefined
 }

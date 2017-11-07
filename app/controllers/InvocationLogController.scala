@@ -4,11 +4,11 @@ import java.time.{OffsetDateTime, ZoneOffset}
 import javax.inject.Inject
 
 import com.google.inject.Provider
+import json.Formatting._
 import json.LogEntryData
 import models.behaviors.events.EventType
 import play.api.Configuration
 import play.api.libs.json._
-import json.Formatting._
 import services.DataService
 
 import scala.concurrent.{ExecutionContext, Future}
