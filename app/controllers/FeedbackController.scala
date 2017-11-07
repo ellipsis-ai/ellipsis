@@ -6,6 +6,7 @@ import akka.actor.ActorSystem
 import com.google.inject.Provider
 import com.mohiva.play.silhouette.api.Silhouette
 import models.behaviors.builtins.FeedbackBehavior
+import models.behaviors.events.EventType
 import models.silhouette.EllipsisEnv
 import play.api.Configuration
 import play.api.data.Form
@@ -46,7 +47,7 @@ class FeedbackController @Inject()(
         for {
           teamAccess <- dataService.users.teamAccessFor(user, None)
           maybeWasSent <- teamAccess.maybeTargetTeam.map { team =>
-            FeedbackBehavior.feedbackFor(user, team, services, "feedback", info.message).map(Some(_))
+            FeedbackBehavior.feedbackFor(user, team, services, "feedback", info.message, EventType.web).map(Some(_))
           }.getOrElse(Future.successful(None))
         } yield {
           maybeWasSent.map { wasSent =>

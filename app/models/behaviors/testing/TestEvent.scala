@@ -4,7 +4,7 @@ import akka.actor.ActorSystem
 import models.accounts.user.User
 import models.behaviors.UserInfo
 import models.behaviors.conversations.conversation.Conversation
-import models.behaviors.events.{MessageAttachmentGroup, MessageEvent}
+import models.behaviors.events._
 import models.team.Team
 import play.api.libs.json.JsObject
 import services.{CacheService, DataService, DefaultServices}
@@ -20,6 +20,10 @@ case class TestEvent(
                       messageText: String,
                       includesBotMention: Boolean
                     ) extends MessageEvent {
+
+  val eventType: EventType = EventType.test
+  val maybeOriginalEventType: Option[EventType] = None
+  def withOriginalEventType(originalEventType: EventType): Event = this
 
   val teamId = team.id
 

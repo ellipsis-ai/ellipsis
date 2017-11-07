@@ -4,7 +4,7 @@ import java.time.OffsetDateTime
 
 import models.accounts.slack.botprofile.SlackBotProfile
 import models.accounts.user.User
-import models.behaviors.events.{ScheduledEvent, SlackMessage, SlackMessageEvent}
+import models.behaviors.events._
 import models.behaviors.scheduling.Scheduled
 import models.behaviors.scheduling.recurrence.Recurrence
 import models.team.Team
@@ -32,7 +32,20 @@ case class ScheduledMessage(
   }
 
   def eventFor(channel: String, slackUserId: String, profile: SlackBotProfile, client: SlackApiClient): ScheduledEvent = {
-    ScheduledEvent(SlackMessageEvent(profile, channel, None, slackUserId, SlackMessage.fromUnformattedText(text, profile.userId), None, SlackTimestamp.now, client), this)
+    ScheduledEvent(
+      SlackMessageEvent(
+        profile,
+        channel,
+        None,
+        slackUserId,
+        SlackMessage.fromUnformattedText(text, profile.userId),
+        None,
+        SlackTimestamp.now,
+        client,
+        Some(EventType.scheduled)
+      ),
+      this
+    )
   }
 
   def withUpdatedNextTriggeredFor(when: OffsetDateTime): ScheduledMessage = {

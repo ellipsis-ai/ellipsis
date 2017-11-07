@@ -5,6 +5,7 @@ import java.time.OffsetDateTime
 import drivers.SlickPostgresDriver.api._
 import models.accounts.user.{User, UserQueries}
 import models.behaviors.behaviorversion.BehaviorVersionQueries
+import models.behaviors.events.EventType
 
 object InvocationLogEntryQueries {
 
@@ -21,6 +22,7 @@ object InvocationLogEntryQueries {
       raw.id,
       BehaviorVersionQueries.tuple2BehaviorVersion(tuple._2),
       raw.resultType,
+      EventType.maybeFrom(raw.maybeOriginalEventType),
       raw.messageText,
       raw.paramValues,
       raw.resultText,

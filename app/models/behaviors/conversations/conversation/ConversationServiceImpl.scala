@@ -27,7 +27,8 @@ case class RawConversation(
                             startedAt: OffsetDateTime,
                             maybeLastInteractionAt: Option[OffsetDateTime],
                             state: String,
-                            maybeScheduledMessageId: Option[String]
+                            maybeScheduledMessageId: Option[String],
+                            maybeOriginalEventType: Option[String]
                           )
 
 class ConversationsTable(tag: Tag) extends Table[RawConversation](tag, ConversationQueries.tableName) {
@@ -45,9 +46,10 @@ class ConversationsTable(tag: Tag) extends Table[RawConversation](tag, Conversat
   def maybeLastInteractionAt = column[Option[OffsetDateTime]](ConversationQueries.lastInteractionAtName)
   def state = column[String]("state")
   def maybeScheduledMessageId = column[Option[String]]("scheduled_message_id")
+  def maybeOriginalEventType = column[Option[String]]("original_event_type")
 
   def * =
-    (id, behaviorVersionId, maybeTriggerId, maybeTriggerMessage, conversationType, context, maybeChannel, maybeThreadId, userIdForContext, startedAt, maybeLastInteractionAt, state, maybeScheduledMessageId) <>
+    (id, behaviorVersionId, maybeTriggerId, maybeTriggerMessage, conversationType, context, maybeChannel, maybeThreadId, userIdForContext, startedAt, maybeLastInteractionAt, state, maybeScheduledMessageId, maybeOriginalEventType) <>
       ((RawConversation.apply _).tupled, RawConversation.unapply _)
 }
 

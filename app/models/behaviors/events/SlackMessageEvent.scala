@@ -19,8 +19,15 @@ case class SlackMessageEvent(
                               message: SlackMessage,
                               maybeFile: Option[SlackFile],
                               ts: String,
-                              client: SlackApiClient
+                              client: SlackApiClient,
+                              maybeOriginalEventType: Option[EventType]
                             ) extends MessageEvent with SlackEvent {
+
+  val eventType: EventType = EventType.chat
+
+  def withOriginalEventType(originalEventType: EventType): Event = {
+    this.copy(maybeOriginalEventType = Some(originalEventType))
+  }
 
   lazy val isBotMessage: Boolean = profile.userId == user
 

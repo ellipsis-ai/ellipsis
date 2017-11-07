@@ -12,7 +12,7 @@ import services.DataService
 import drivers.SlickPostgresDriver.api._
 import models.accounts.user.User
 import models.behaviors.behavior.Behavior
-import models.behaviors.events.Event
+import models.behaviors.events.{Event, EventType}
 import play.api.libs.json.{JsValue, Json}
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -21,6 +21,7 @@ case class RawInvocationLogEntry(
                                   id: String,
                                   behaviorVersionId: String,
                                   resultType: String,
+                                  maybeOriginalEventType: Option[String],
                                   messageText: String,
                                   paramValues: JsValue,
                                   resultText: String,
@@ -36,6 +37,7 @@ class InvocationLogEntriesTable(tag: Tag) extends Table[RawInvocationLogEntry](t
   def id = column[String]("id", O.PrimaryKey)
   def behaviorVersionId = column[String]("behavior_version_id")
   def resultType = column[String]("result_type")
+  def maybeOriginalEventType = column[Option[String]]("original_event_type")
   def messageText = column[String]("message_text")
   def paramValues = column[JsValue]("param_values")
   def resultText = column[String]("result_text")
@@ -45,7 +47,7 @@ class InvocationLogEntriesTable(tag: Tag) extends Table[RawInvocationLogEntry](t
   def runtimeInMilliseconds = column[Long]("runtime_in_milliseconds")
   def createdAt = column[OffsetDateTime]("created_at")
 
-  def * = (id, behaviorVersionId, resultType, messageText, paramValues, resultText, context, maybeUserIdForContext, userId, runtimeInMilliseconds, createdAt) <>
+  def * = (id, behaviorVersionId, resultType, maybeOriginalEventType, messageText, paramValues, resultText, context, maybeUserIdForContext, userId, runtimeInMilliseconds, createdAt) <>
     ((RawInvocationLogEntry.apply _).tupled, RawInvocationLogEntry.unapply _)
 }
 
@@ -103,6 +105,7 @@ class InvocationLogEntryServiceImpl @Inject() (
         IDs.next,
         behaviorVersion.id,
         result.resultType.toString,
+        Some(event.originalEventType.toString),
         event.invocationLogText,
         Json.toJson(parametersWithValues.map { ea =>
           ea.parameter.name -> ea.preparedValue
@@ -120,6 +123,7 @@ class InvocationLogEntryServiceImpl @Inject() (
         raw.id,
         behaviorVersion,
         raw.resultType,
+        Some(event.originalEventType),
         raw.messageText,
         raw.paramValues,
         raw.resultText,

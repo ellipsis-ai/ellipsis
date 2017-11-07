@@ -96,7 +96,9 @@ class EventHandler @Inject() (
 
   def handle(event: Event, maybeConversation: Option[Conversation]): Future[Seq[BotResult]] = {
     maybeConversation.map { conversation =>
-      handleInConversation(conversation, event).map(Seq(_))
+      handleInConversation(conversation, conversation.maybeOriginalEventType.map { eventType =>
+        event.withOriginalEventType(eventType)
+      }.getOrElse(event)).map(Seq(_))
     }.getOrElse {
       BuiltinBehavior.maybeFrom(event, services).map { builtin =>
         builtin.result.map(Seq(_))

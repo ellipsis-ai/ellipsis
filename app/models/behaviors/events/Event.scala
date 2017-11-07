@@ -29,11 +29,19 @@ trait Event {
   val relevantMessageTextWithFormatting: String = messageText
   val maybeMessageText: Option[String] = Option(messageText).filter(_.trim.nonEmpty)
   val maybeScheduled: Option[Scheduled] = None
+  val eventType: EventType
+  val maybeOriginalEventType: Option[EventType]
   val context = name
   val isResponseExpected: Boolean
   val includesBotMention: Boolean
   val messageRecipientPrefix: String
   val isPublicChannel: Boolean
+
+  def originalEventType: EventType = {
+    maybeOriginalEventType.getOrElse(eventType)
+  }
+
+  def withOriginalEventType(originalEventType: EventType): Event
 
   def logTextFor(result: BotResult): String = {
     val channelText = maybeChannel.map { channel =>

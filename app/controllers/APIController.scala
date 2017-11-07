@@ -100,7 +100,7 @@ class APIController @Inject() (
       } yield maybeBehavior
     }
 
-    def maybeMessageEventFor(message: String, channel: String): Future[Option[Event]] = {
+    def maybeMessageEventFor(message: String, channel: String, maybeOriginalEventType: Option[EventType]): Future[Option[Event]] = {
       maybeSlackChannelIdFor(channel).map { maybeSlackChannelId =>
         for {
           botProfile <- maybeBotProfile
@@ -114,7 +114,8 @@ class APIController @Inject() (
             SlackMessage.fromUnformattedText(message, botProfile.userId),
             None,
             SlackTimestamp.now,
-            slackService.clientFor(botProfile)
+            slackService.clientFor(botProfile),
+            maybeOriginalEventType
           )
           val event: Event = maybeScheduledMessage.map { scheduledMessage =>
             ScheduledEvent(slackEvent, scheduledMessage)
@@ -261,7 +262,8 @@ class APIController @Inject() (
                             arguments: Seq[RunActionArgumentInfo],
                             responseContext: String,
                             channel: String,
-                            token: String
+                            token: String,
+                            originalEventType: Option[String]
                           ) extends ApiMethodWithActionAndArgumentsInfo
 
   implicit val runActionInfoWrites = Json.writes[RunActionInfo]
@@ -278,7 +280,8 @@ class APIController @Inject() (
       ),
       "responseContext" -> nonEmptyText,
       "channel" -> nonEmptyText,
-      "token" -> nonEmptyText
+      "token" -> nonEmptyText,
+      "originalEventType" -> optional(nonEmptyText)
     )(RunActionInfo.apply)(RunActionInfo.unapply) verifying(actionNameAndTriggerError, checkActionNameAndTrigger _)
   )
 
@@ -303,7 +306,8 @@ class APIController @Inject() (
           None,
           slackProfile.loginInfo.providerKey,
           SlackTimestamp.now,
-          slackService.clientFor(botProfile)
+          slackService.clientFor(botProfile),
+          info.originalEventType.flatMap(EventType.find)
         )
       )
       result <- if (maybeBehavior.isDefined) {
@@ -320,7 +324,7 @@ class APIController @Inject() (
                          context: ApiMethodContext
                        )(implicit request: Request[AnyContent]): Future[Result] = {
     for {
-      maybeEvent <- context.maybeMessageEventFor(trigger, info.channel)
+      maybeEvent <- context.maybeMessageEventFor(trigger, info.channel, EventType.maybeFrom(info.originalEventType))
       result <- runBehaviorFor(maybeEvent, context)
     } yield result
   }
@@ -646,7 +650,8 @@ class APIController @Inject() (
                               message: String,
                               responseContext: String,
                               channel: String,
-                              token: String
+                              token: String,
+                              originalEventType: Option[String]
                             ) extends ApiMethodWithMessageInfo
 
   implicit val postMessageInfoWrites = Json.writes[PostMessageInfo]
@@ -656,7 +661,8 @@ class APIController @Inject() (
       "message" -> nonEmptyText,
       "responseContext" -> nonEmptyText,
       "channel" -> nonEmptyText,
-      "token" -> nonEmptyText
+      "token" -> nonEmptyText,
+      "originalEventType" -> optional(nonEmptyText)
     )(PostMessageInfo.apply)(PostMessageInfo.unapply)
   )
 
@@ -668,7 +674,7 @@ class APIController @Inject() (
       info => {
         val eventualResult = for {
           context <- ApiMethodContext.createFor(info.token)
-          maybeEvent <- context.maybeMessageEventFor(info.message, info.channel)
+          maybeEvent <- context.maybeMessageEventFor(info.message, info.channel, EventType.maybeFrom(info.originalEventType))
           result <- runBehaviorFor(maybeEvent, context)
         } yield result
 
@@ -684,7 +690,8 @@ class APIController @Inject() (
                       message: String,
                       responseContext: String,
                       channel: String,
-                      token: String
+                      token: String,
+                      originalEventType: Option[String]
                     ) extends ApiMethodWithMessageInfo
 
   implicit val sayInfoWrites = Json.writes[SayInfo]
@@ -694,7 +701,8 @@ class APIController @Inject() (
       "message" -> nonEmptyText,
       "responseContext" -> nonEmptyText,
       "channel" -> nonEmptyText,
-      "token" -> nonEmptyText
+      "token" -> nonEmptyText,
+      "originalEventType" -> optional(nonEmptyText)
     )(SayInfo.apply)(SayInfo.unapply)
   )
 
@@ -706,7 +714,7 @@ class APIController @Inject() (
       info => {
         val eventualResult = for {
           context <- ApiMethodContext.createFor(info.token)
-          maybeEvent <- context.maybeMessageEventFor(info.message, info.channel)
+          maybeEvent <- context.maybeMessageEventFor(info.message, info.channel, EventType.maybeFrom(info.originalEventType))
           result <- maybeEvent.map { event =>
             val botResult = SimpleTextResult(event, None, info.message, forcePrivateResponse = false)
             botResultService.sendIn(botResult, None).map { _ =>
