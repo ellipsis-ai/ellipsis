@@ -13,14 +13,14 @@ import scala.sys.process.{Process, ProcessLogger}
 case class EnsureGitRepoDirException(message: String) extends Exception {
   override def getMessage(): String = s"Can't initialize git repo: $message"
 }
-case class PrepareGitRepoException(message: String) extends Exception {
-  override def getMessage(): String = s"Can't prepare git repo: $message"
+case class GitPullException(message: String) extends Exception {
+  override def getMessage(): String = s"Can't pull git repo: $message"
 }
 case class ExportForPushException(message: String) extends Exception {
-  override def getMessage(): String = s"Can't initialize git repo: $message"
+  override def getMessage(): String = s"Can't export: $message"
 }
 case class GitPushException(message: String) extends Exception {
-  override def getMessage(): String = s"Can't initialize git repo: $message"
+  override def getMessage(): String = s"Can't push git repo: $message"
 }
 
 case class GithubPusher(
@@ -66,7 +66,7 @@ case class GithubPusher(
   }
 
   private def pullRepo: Future[Unit] = {
-    runCommand(s"cd $dirName && git init && git pull $remoteUrl $branch", PrepareGitRepoException.apply)
+    runCommand(s"cd $dirName && git init && git pull $remoteUrl $branch", GitPullException.apply)
   }
 
   private def export: Future[Unit] = {
