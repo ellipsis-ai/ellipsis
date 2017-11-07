@@ -568,7 +568,7 @@ class BehaviorEditorController @Inject() (
                   services,
                   ec
                 )
-              pusher.run.map(r => Ok(""))
+              pusher.run.map(r => Ok(Json.toJson(Map("message" -> "Pushed successfully"))))
             }.getOrElse(Future.successful(Unauthorized(s"User is not correctly authed with GitHub")))
           }.getOrElse(Future.successful(NotFound(s"Skill with ID ${info.behaviorGroupId} not found")))
         } yield result
