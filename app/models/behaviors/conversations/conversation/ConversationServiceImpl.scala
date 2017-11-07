@@ -7,6 +7,7 @@ import akka.actor.ActorSystem
 import com.google.inject.Provider
 import drivers.SlickPostgresDriver.api._
 import models.behaviors.BotResultService
+import models.behaviors.events.EventType
 import play.api.Configuration
 import play.api.libs.ws.WSClient
 import services._
@@ -19,6 +20,7 @@ case class RawConversation(
                             behaviorVersionId: String,
                             maybeTriggerId: Option[String],
                             maybeTriggerMessage: Option[String],
+                            maybeOriginalEventType: Option[EventType],
                             conversationType: String,
                             context: String,
                             maybeChannel: Option[String],
@@ -32,10 +34,16 @@ case class RawConversation(
 
 class ConversationsTable(tag: Tag) extends Table[RawConversation](tag, ConversationQueries.tableName) {
 
+  implicit val maybeOriginalEventTypeColumnType = MappedColumnType.base[Option[EventType], String](
+    { maybeEventType => maybeEventType.map(_.value).orNull },
+    { str => EventType.find(str) }
+  )
+
   def id = column[String]("id", O.PrimaryKey)
   def behaviorVersionId = column[String]("behavior_version_id")
   def maybeTriggerId = column[Option[String]]("trigger_id")
   def maybeTriggerMessage = column[Option[String]]("trigger_message")
+  def maybeOriginalEventType = column[Option[EventType]]("original_event_type")
   def conversationType = column[String]("conversation_type")
   def context = column[String]("context")
   def maybeChannel = column[Option[String]]("channel")
@@ -47,7 +55,7 @@ class ConversationsTable(tag: Tag) extends Table[RawConversation](tag, Conversat
   def maybeScheduledMessageId = column[Option[String]]("scheduled_message_id")
 
   def * =
-    (id, behaviorVersionId, maybeTriggerId, maybeTriggerMessage, conversationType, context, maybeChannel, maybeThreadId, userIdForContext, startedAt, maybeLastInteractionAt, state, maybeScheduledMessageId) <>
+    (id, behaviorVersionId, maybeTriggerId, maybeTriggerMessage, maybeOriginalEventType, conversationType, context, maybeChannel, maybeThreadId, userIdForContext, startedAt, maybeLastInteractionAt, state, maybeScheduledMessageId) <>
       ((RawConversation.apply _).tupled, RawConversation.unapply _)
 }
 

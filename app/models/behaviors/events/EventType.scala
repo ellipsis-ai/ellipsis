@@ -1,6 +1,7 @@
 package models.behaviors.events
 
 import utils.Enum
+import drivers.SlickPostgresDriver.api._
 
 sealed trait EventType extends EventType.Value {
   val value: String

@@ -26,6 +26,10 @@ case class RunEvent(
                   ) extends Event with SlackEvent {
 
   val eventType: EventType = ApiEventType
+  def withOriginalEventType(originalEventType: EventType): Event = {
+    this.copy(maybeOriginalEventType = Some(originalEventType))
+  }
+
   val messageText: String = ""
   val includesBotMention: Boolean = false
   val isResponseExpected: Boolean = false

@@ -26,6 +26,7 @@ object ConversationQueries {
       behaviorVersion,
       maybeTrigger,
       raw.maybeTriggerMessage,
+      raw.maybeOriginalEventType,
       raw.context,
       raw.maybeChannel,
       raw.maybeThreadId,

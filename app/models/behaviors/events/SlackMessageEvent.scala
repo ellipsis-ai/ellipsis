@@ -25,6 +25,10 @@ case class SlackMessageEvent(
 
   val eventType: EventType = ChatEventType
 
+  def withOriginalEventType(originalEventType: EventType): Event = {
+    this.copy(maybeOriginalEventType = Some(originalEventType))
+  }
+
   lazy val isBotMessage: Boolean = profile.userId == user
 
   override def botPrefix(services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[String] = {

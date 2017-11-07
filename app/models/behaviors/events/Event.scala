@@ -41,6 +41,8 @@ trait Event {
     maybeOriginalEventType.getOrElse(eventType)
   }
 
+  def withOriginalEventType(originalEventType: EventType): Event
+
   def logTextFor(result: BotResult): String = {
     val channelText = maybeChannel.map { channel =>
       s" in channel [${channel}]"

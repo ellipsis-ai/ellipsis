@@ -7,7 +7,7 @@ import models.behaviors.BotResult
 import models.behaviors.behaviorparameter.BehaviorParameter
 import models.behaviors.behaviorversion.BehaviorVersion
 import models.behaviors.conversations.conversation.Conversation
-import models.behaviors.events.{Event, SlackMessageEvent}
+import models.behaviors.events.{Event, EventType, SlackMessageEvent}
 import models.behaviors.triggers.messagetrigger.MessageTrigger
 import services.{DataService, DefaultServices}
 import slick.dbio.DBIO
@@ -20,6 +20,7 @@ case class InvokeBehaviorConversation(
                                        behaviorVersion: BehaviorVersion,
                                        maybeTrigger: Option[MessageTrigger],
                                        maybeTriggerMessage: Option[String],
+                                       maybeOriginalEventType: Option[EventType],
                                        context: String, // Slack, etc
                                        maybeChannel: Option[String],
                                        maybeThreadId: Option[String],
@@ -167,6 +168,7 @@ object InvokeBehaviorConversation {
         behaviorVersion,
         maybeActivatedTrigger,
         event.maybeMessageText,
+        Some(event.originalEventType),
         event.name,
         maybeChannel,
         None,

@@ -20,6 +20,7 @@ trait Conversation {
   val behaviorVersion: BehaviorVersion
   val maybeTrigger: Option[MessageTrigger]
   val maybeTriggerMessage: Option[String]
+  val maybeOriginalEventType: Option[EventType]
   val conversationType: String
   val context: String
   val maybeChannel: Option[String]
@@ -132,6 +133,7 @@ trait Conversation {
       behaviorVersion.id,
       maybeTrigger.map(_.id),
       maybeTriggerMessage,
+      maybeOriginalEventType,
       conversationType,
       context,
       maybeChannel,
