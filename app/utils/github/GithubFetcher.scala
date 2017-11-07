@@ -24,8 +24,6 @@ trait GithubFetcher {
   val cacheService: CacheService = services.cacheService
   implicit val ec: ExecutionContext
 
-  val API_URL = "https://api.github.com/graphql"
-
   val cacheKey: String = s"github_${owner}_${repoName}_${branch}"
 
   val cacheTimeout: Duration = config.get[Int]("github.cacheTimeoutSeconds").seconds

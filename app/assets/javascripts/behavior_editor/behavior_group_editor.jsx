@@ -35,9 +35,9 @@ define(function(require) {
 
     getInitialState: function() {
       return {
-        githubOwner: "",
-        githubRepo: "",
-        githubBranch: null
+        githubOwner: "ellipsis-ai",
+        githubRepo: "github",
+        githubBranch: "master"
       };
     },
 
@@ -61,13 +61,24 @@ define(function(require) {
       });
     },
 
+    getGithubBranch: function() {
+      return this.state.githubBranch;
+    },
+
+    onGithubBranchChange: function(branch) {
+      this.setState({
+        githubBranch: branch
+      });
+    },
+
     onUpdateFromGithub: function() {
       DataRequest.jsonPost(
         jsRoutes.controllers.BehaviorEditorController.updateFromGithub().url,
         {
           behaviorGroupId: this.props.group.id,
           owner: this.getGithubOwner(),
-          repo: this.getGithubRepo()
+          repo: this.getGithubRepo(),
+          branch: this.getGithubBranch()
         },
         this.props.csrfToken
       )
@@ -80,6 +91,23 @@ define(function(require) {
         })
         .catch((error) => {
           this.props.onSaveError(error);
+        });
+    },
+
+    onPushToGithub: function() {
+      DataRequest.jsonPost(
+        jsRoutes.controllers.BehaviorEditorController.pushToGithub().url,
+        {
+          behaviorGroupId: this.props.group.id,
+          owner: this.getGithubOwner(),
+          repo: this.getGithubRepo(),
+          branch: this.getGithubBranch(),
+          commitMessage: "Test commit"
+        },
+        this.props.csrfToken
+      )
+        .then(r => {
+          console.log(r);
         });
     },
 
@@ -126,14 +154,34 @@ define(function(require) {
                 value={this.getGithubRepo()}
               />
             </div>
+            <div className="column column-one-quarter">
+              <span className="display-inline-block align-m type-s type-weak mrm">Branch</span>
+              <Input
+                ref="githubBranch"
+                className="form-input-borderless type-monospace type-s width-15 mrm"
+                placeholder="e.g. master"
+                onChange={this.onGithubBranchChange}
+                value={this.getGithubBranch()}
+              />
+            </div>
           </div>
-          <div className="mtl">
-            <button type="button"
-              onClick={this.onUpdateFromGithub}
-              disabled={ this.props.isModified || !this.getGithubRepo() || !this.getGithubOwner() }
-            >
-              Pull latest from Github…
-            </button>
+          <div className="columns mtl">
+            <div className="column">
+              <button type="button"
+                onClick={this.onUpdateFromGithub}
+                disabled={ this.props.isModified || !this.getGithubRepo() || !this.getGithubOwner() }
+              >
+                Pull latest from Github
+              </button>
+            </div>
+            <div className="column mll">
+              <button type="button"
+                      onClick={this.onPushToGithub}
+                      disabled={ this.props.isModified || !this.getGithubRepo() || !this.getGithubOwner() || !this.getGithubBranch() }
+              >
+                Push this version to Github
+              </button>
+            </div>
           </div>
         </div>
       );
