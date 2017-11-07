@@ -4,7 +4,7 @@ import akka.actor.ActorSystem
 import json.UserData
 import models.accounts.linkedaccount.LinkedAccount
 import models.accounts.user.User
-import models.behaviors.events.{ChatEventType, Event, EventType}
+import models.behaviors.events.{Event, EventType}
 import models.behaviors.{BotResult, SimpleTextResult}
 import models.team.Team
 import play.api.{Configuration, Logger}
@@ -22,7 +22,7 @@ case class FeedbackBehavior(feedbackType: String, userMessage: String, event: Ev
       maybeTeam <- dataService.teams.find(user.teamId)
     } yield {
       maybeTeam.map { team =>
-        FeedbackBehavior.feedbackFor(user, team, services, feedbackType, userMessage, ChatEventType)
+        FeedbackBehavior.feedbackFor(user, team, services, feedbackType, userMessage, EventType.chat)
       }
       val response =
         s"""Thank you. I’ve recorded your comments and sent it to the team at Ellipsis.ai:

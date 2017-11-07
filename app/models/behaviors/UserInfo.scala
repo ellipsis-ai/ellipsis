@@ -151,5 +151,5 @@ object TeamInfo {
 }
 
 case class EventInfo(event: Event) {
-  def toJson: JsObject = Json.obj("originalEventType" -> event.originalEventType.value)
+  def toJson: JsObject = Json.obj("originalEventType" -> event.originalEventType.toString)
 }

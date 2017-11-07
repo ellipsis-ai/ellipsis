@@ -7,6 +7,7 @@ import models.behaviors.conversations.InvokeBehaviorConversation
 import models.behaviors.triggers.messagetrigger.MessageTriggerQueries
 import drivers.SlickPostgresDriver.api._
 import models.behaviors.behaviorversion.BehaviorVersionQueries
+import models.behaviors.events.EventType
 
 object ConversationQueries {
 
@@ -33,7 +34,8 @@ object ConversationQueries {
       raw.startedAt,
       raw.maybeLastInteractionAt,
       raw.state,
-      raw.maybeScheduledMessageId
+      raw.maybeScheduledMessageId,
+      EventType.maybeFrom(raw.maybeOriginalEventType)
     )
   }
 

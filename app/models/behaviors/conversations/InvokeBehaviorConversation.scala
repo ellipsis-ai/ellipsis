@@ -7,7 +7,7 @@ import models.behaviors.BotResult
 import models.behaviors.behaviorparameter.BehaviorParameter
 import models.behaviors.behaviorversion.BehaviorVersion
 import models.behaviors.conversations.conversation.Conversation
-import models.behaviors.events.{Event, SlackMessageEvent}
+import models.behaviors.events.{Event, EventType, SlackMessageEvent}
 import models.behaviors.triggers.messagetrigger.MessageTrigger
 import services.{DataService, DefaultServices}
 import slick.dbio.DBIO
@@ -27,7 +27,8 @@ case class InvokeBehaviorConversation(
                                        startedAt: OffsetDateTime,
                                        maybeLastInteractionAt: Option[OffsetDateTime],
                                        state: String = Conversation.NEW_STATE,
-                                       maybeScheduledMessageId: Option[String]
+                                       maybeScheduledMessageId: Option[String],
+                                       maybeOriginalEventType: Option[EventType]
                                       ) extends Conversation {
 
   val conversationType = Conversation.INVOKE_BEHAVIOR
@@ -174,7 +175,8 @@ object InvokeBehaviorConversation {
         OffsetDateTime.now,
         None,
         Conversation.NEW_STATE,
-        event.maybeScheduled.map(_.id)
+        event.maybeScheduled.map(_.id),
+        Some(event.originalEventType)
       )
     dataService.conversations.save(newInstance).map(_ => newInstance)
   }
