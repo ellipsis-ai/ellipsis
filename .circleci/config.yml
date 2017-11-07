@@ -38,8 +38,8 @@ jobs:
             cat npm_modules/*/package-lock.json > npm_modules/npm_checksum
       - restore_cache:
           keys:
-            - v5-node-{{ .Branch }}-{{ checksum "package-lock.json" }}
-            - v5-node-{{ checksum "package-lock.json" }}
+            - v6-node-{{ .Branch }}-{{ checksum "package-lock.json" }}
+            - v6-node-{{ checksum "package-lock.json" }}
       - restore_cache:
           keys:
             - v2-npm_modules-{{ checksum "npm_modules/npm_checksum" }}
@@ -50,11 +50,11 @@ jobs:
       - save_cache:
           paths:
             - node_modules
-          key: v5-node-{{ .Branch }}-{{ checksum "package-lock.json" }}
+          key: v6-node-{{ .Branch }}-{{ checksum "package-lock.json" }}
       - save_cache:
           paths:
             - node_modules
-          key: v5-node-{{ checksum "package-lock.json" }}
+          key: v6-node-{{ checksum "package-lock.json" }}
       - save_cache:
           paths:
             - npm_modules/ellipsis-action-logs/node_modules
@@ -79,8 +79,8 @@ jobs:
             npm test
       - restore_cache:
           keys:
-            - v6-playapp-{{ .Branch }}-{{ checksum "build.sbt" }}
-            - v6-playapp-{{ checksum "build.sbt" }}
+            - v7-playapp-{{ .Branch }}-{{ checksum "build.sbt" }}
+            - v7-playapp-{{ checksum "build.sbt" }}
       - run:
           name: Run Activator tests
           command: |
@@ -91,14 +91,14 @@ jobs:
             - .sbt
             - ~/.ivy2
             - ~/.sbt
-          key: v6-playapp-{{ .Branch }}-{{ checksum "build.sbt" }}
+          key: v7-playapp-{{ .Branch }}-{{ checksum "build.sbt" }}
       - save_cache:
           paths:
             - .ivy2
             - .sbt
             - ~/.ivy2
             - ~/.sbt
-          key: v6-playapp-{{ checksum "build.sbt" }}
+          key: v7-playapp-{{ checksum "build.sbt" }}
       - run:
           name: Maybe deploy on stag01
           command: |
