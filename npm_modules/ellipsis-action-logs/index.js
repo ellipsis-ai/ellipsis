@@ -25,6 +25,9 @@ module.exports = {
         if (args.userId) {
           queryParams.userId = args.userId;
         }
+        if (args.originalEventType) {
+          queryParams.originalEventType = args.originalEventType;
+        }
         request.
           get({
             url: url,

@@ -5,6 +5,7 @@ import javax.inject.Inject
 
 import com.google.inject.Provider
 import com.mohiva.play.silhouette.api.LoginInfo
+import models.behaviors.events.EventType
 import models.behaviors.invocationlogentry.InvocationLogEntry
 import play.api.Configuration
 import play.api.libs.json.{JsNull, JsValue, Json}
@@ -24,7 +25,8 @@ class InvocationLogController @Inject() (
                            context: String,
                            userIdForContext: Option[String],
                            ellipsisUserId: Option[String],
-                           timestamp: OffsetDateTime
+                           timestamp: OffsetDateTime,
+                           originalEventType: Option[String]
                          )
 
   object LogEntryData {
@@ -40,7 +42,8 @@ class InvocationLogController @Inject() (
           entry.context,
           entry.maybeUserIdForContext,
           maybeUser.map(_.id),
-          entry.createdAt
+          entry.createdAt,
+          entry.maybeOriginalEventType.map(_.toString)
         )
       }
     }
@@ -65,7 +68,8 @@ class InvocationLogController @Inject() (
                token: String,
                maybeFrom: Option[String],
                maybeTo: Option[String],
-               maybeUserId: Option[String]
+               maybeUserId: Option[String],
+               maybeOriginalEventType: Option[String]
              ) = Action.async { implicit request =>
     for {
       maybeInvocationToken <- dataService.invocationTokens.findNotExpired(token)
@@ -80,7 +84,8 @@ class InvocationLogController @Inject() (
       maybeLogEntries <- maybeBehavior.map { behavior =>
         val from = maybeTimestampFor(maybeFrom).getOrElse(EARLIEST)
         val to = maybeTimestampFor(maybeTo).getOrElse(LATEST)
-        dataService.invocationLogEntries.allForBehavior(behavior, from, to, maybeUserId).map { entries =>
+        val maybeValidOriginalEventType = EventType.maybeFrom(maybeOriginalEventType)
+        dataService.invocationLogEntries.allForBehavior(behavior, from, to, maybeUserId, maybeValidOriginalEventType).map { entries =>
           Some(entries.filterNot(_.paramValues == JsNull))
         }
       }.getOrElse(Future.successful(None))
