@@ -21,7 +21,7 @@ case class TestEvent(
                       includesBotMention: Boolean
                     ) extends MessageEvent {
 
-  val eventType: EventType = TestEventType
+  val eventType: EventType = EventType.test
   val maybeOriginalEventType: Option[EventType] = None
   def withOriginalEventType(originalEventType: EventType): Event = this
 

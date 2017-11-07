@@ -14,7 +14,7 @@ import scala.concurrent.{ExecutionContext, Future}
 
 case class ScheduledEvent(underlying: Event, scheduled: Scheduled) extends Event {
 
-  val eventType: EventType = ScheduledEventType
+  val eventType: EventType = EventType.scheduled
   val maybeOriginalEventType: Option[EventType] = None
   def withOriginalEventType(originalEventType: EventType): Event = this
 

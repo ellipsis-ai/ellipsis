@@ -133,7 +133,6 @@ trait Conversation {
       behaviorVersion.id,
       maybeTrigger.map(_.id),
       maybeTriggerMessage,
-      maybeOriginalEventType,
       conversationType,
       context,
       maybeChannel,
@@ -142,7 +141,8 @@ trait Conversation {
       startedAt,
       maybeLastInteractionAt,
       state,
-      maybeScheduledMessageId
+      maybeScheduledMessageId,
+      maybeOriginalEventType.map(_.toString)
     )
   }
 }

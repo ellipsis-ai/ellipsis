@@ -21,7 +21,7 @@ case class RawInvocationLogEntry(
                                   id: String,
                                   behaviorVersionId: String,
                                   resultType: String,
-                                  maybeOriginalEventType: Option[EventType],
+                                  maybeOriginalEventType: Option[String],
                                   messageText: String,
                                   paramValues: JsValue,
                                   resultText: String,
@@ -34,15 +34,10 @@ case class RawInvocationLogEntry(
 
 class InvocationLogEntriesTable(tag: Tag) extends Table[RawInvocationLogEntry](tag, "invocation_log_entries") {
 
-  implicit val maybeOriginalEventTypeColumnType = MappedColumnType.base[Option[EventType], String](
-    { maybeEventType => maybeEventType.map(_.value).orNull },
-    { str => EventType.find(str) }
-  )
-
   def id = column[String]("id", O.PrimaryKey)
   def behaviorVersionId = column[String]("behavior_version_id")
   def resultType = column[String]("result_type")
-  def maybeOriginalEventType = column[Option[EventType]]("original_event_type")
+  def maybeOriginalEventType = column[Option[String]]("original_event_type")
   def messageText = column[String]("message_text")
   def paramValues = column[JsValue]("param_values")
   def resultText = column[String]("result_text")
@@ -110,7 +105,7 @@ class InvocationLogEntryServiceImpl @Inject() (
         IDs.next,
         behaviorVersion.id,
         result.resultType.toString,
-        Some(event.originalEventType),
+        Some(event.originalEventType.toString),
         event.invocationLogText,
         Json.toJson(parametersWithValues.map { ea =>
           ea.parameter.name -> ea.preparedValue
@@ -128,7 +123,7 @@ class InvocationLogEntryServiceImpl @Inject() (
         raw.id,
         behaviorVersion,
         raw.resultType,
-        raw.maybeOriginalEventType,
+        Some(event.originalEventType),
         raw.messageText,
         raw.paramValues,
         raw.resultText,

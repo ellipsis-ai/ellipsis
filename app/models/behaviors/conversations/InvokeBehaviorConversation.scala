@@ -20,7 +20,6 @@ case class InvokeBehaviorConversation(
                                        behaviorVersion: BehaviorVersion,
                                        maybeTrigger: Option[MessageTrigger],
                                        maybeTriggerMessage: Option[String],
-                                       maybeOriginalEventType: Option[EventType],
                                        context: String, // Slack, etc
                                        maybeChannel: Option[String],
                                        maybeThreadId: Option[String],
@@ -28,7 +27,8 @@ case class InvokeBehaviorConversation(
                                        startedAt: OffsetDateTime,
                                        maybeLastInteractionAt: Option[OffsetDateTime],
                                        state: String = Conversation.NEW_STATE,
-                                       maybeScheduledMessageId: Option[String]
+                                       maybeScheduledMessageId: Option[String],
+                                       maybeOriginalEventType: Option[EventType]
                                       ) extends Conversation {
 
   val conversationType = Conversation.INVOKE_BEHAVIOR
@@ -168,7 +168,6 @@ object InvokeBehaviorConversation {
         behaviorVersion,
         maybeActivatedTrigger,
         event.maybeMessageText,
-        Some(event.originalEventType),
         event.name,
         maybeChannel,
         None,
@@ -176,7 +175,8 @@ object InvokeBehaviorConversation {
         OffsetDateTime.now,
         None,
         Conversation.NEW_STATE,
-        event.maybeScheduled.map(_.id)
+        event.maybeScheduled.map(_.id),
+        Some(event.originalEventType)
       )
     dataService.conversations.save(newInstance).map(_ => newInstance)
   }

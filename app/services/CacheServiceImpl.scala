@@ -48,7 +48,7 @@ class CacheServiceImpl @Inject() (
   def cacheEvent(key: String, event: Event, expiration: Duration = Duration.Inf): Unit = {
     event match {
       case ev: SlackMessageEvent => {
-        val eventData = SlackMessageEventData(ev.profile, ev.channel, ev.maybeThreadId, ev.user, ev.message, ev.maybeFile, ev.ts, ev.maybeOriginalEventType.map(_.value))
+        val eventData = SlackMessageEventData(ev.profile, ev.channel, ev.maybeThreadId, ev.user, ev.message, ev.maybeFile, ev.ts, ev.maybeOriginalEventType.map(_.toString))
         set(key, Json.toJson(eventData), expiration)
       }
       case _ =>
