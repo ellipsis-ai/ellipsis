@@ -218,12 +218,20 @@ object FileType extends BuiltInType {
     super.questionTextFor(context) ++ """ (or type "none" if you don't have one)"""
   }
 
+  private def eventHasFile(context: BehaviorParameterContext): Boolean = {
+    context.event match {
+      case e: SlackMessageEvent => e.maybeFile.nonEmpty
+      case _ => false
+    }
+  }
+
+  private def alreadyHasFile(text: String, context: BehaviorParameterContext): Boolean = {
+    context.services.slackFileMap.maybeUrlFor(text).nonEmpty
+  }
+
   def isValid(text: String, context: BehaviorParameterContext)(implicit ec: ExecutionContext): Future[Boolean] = {
     Future.successful {
-      context.event match {
-        case e: SlackMessageEvent => e.maybeFile.nonEmpty || isIntentionallyEmpty(text)
-        case _ => false
-      }
+      alreadyHasFile(text, context) || eventHasFile(context) || isIntentionallyEmpty(text)
     }
   }
 
