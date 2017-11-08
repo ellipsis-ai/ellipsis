@@ -5,6 +5,7 @@ import java.time.OffsetDateTime
 import drivers.SlickPostgresDriver.api._
 import models.accounts.user.{User, UserQueries}
 import models.behaviors.behaviorversion.BehaviorVersionQueries
+import models.behaviors.events.EventType
 
 object InvocationLogEntryQueries {
 
@@ -21,7 +22,7 @@ object InvocationLogEntryQueries {
       raw.id,
       BehaviorVersionQueries.tuple2BehaviorVersion(tuple._2),
       raw.resultType,
-      raw.maybeOriginalEventType,
+      EventType.maybeFrom(raw.maybeOriginalEventType),
       raw.messageText,
       raw.paramValues,
       raw.resultText,
@@ -79,12 +80,14 @@ object InvocationLogEntryQueries {
                                      behaviorId: Rep[String],
                                      from: Rep[OffsetDateTime],
                                      to: Rep[OffsetDateTime],
-                                     maybeUserId: Rep[Option[String]]
+                                     maybeUserId: Rep[Option[String]],
+                                     maybeOriginalEventType: Rep[Option[String]]
                                    ) = {
     allWithVersion.
       filter { case(_, (((version, _), _), _)) => version.behaviorId === behaviorId }.
       filter { case((entry, _), _) => entry.createdAt >= from && entry.createdAt <= to }.
-      filter { case((entry, _), _) => maybeUserId.isEmpty || entry.userId === maybeUserId }
+      filter { case((entry, _), _) => maybeUserId.isEmpty || entry.userId === maybeUserId }.
+      filter { case((entry, _), _) => maybeOriginalEventType.isEmpty || entry.maybeOriginalEventType === maybeOriginalEventType }
   }
   val allForBehaviorQuery = Compiled(uncompiledAllForBehaviorQuery _)
 }

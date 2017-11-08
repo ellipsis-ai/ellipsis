@@ -23,7 +23,11 @@ case class SlackMessageEvent(
                               maybeOriginalEventType: Option[EventType]
                             ) extends MessageEvent with SlackEvent {
 
-  val eventType: EventType = ChatEventType
+  val eventType: EventType = EventType.chat
+
+  def withOriginalEventType(originalEventType: EventType): Event = {
+    this.copy(maybeOriginalEventType = Some(originalEventType))
+  }
 
   lazy val isBotMessage: Boolean = profile.userId == user
 

@@ -174,8 +174,11 @@ object Formatting {
 
   implicit val regionalSettingsConfigFormat = Json.format[RegionalSettingsConfig]
 
-  implicit val logEntryDataFormat = Json.format[LogEntryData]
- 
+<<<<<<< HEAD
   implicit val integrationListReads = Json.reads[IntegrationList]
   implicit val integrationListWrites = Json.writes[IntegrationList]
+
+=======
+  implicit val logEntryDataFormat = Json.format[LogEntryData]
+>>>>>>> origin/master
 }

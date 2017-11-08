@@ -6,7 +6,7 @@ import models.accounts.user.User
 import models.behaviors.behavior.Behavior
 import models.behaviors.{BotResult, ParameterWithValue}
 import models.behaviors.behaviorversion.BehaviorVersion
-import models.behaviors.events.Event
+import models.behaviors.events.{Event, EventType}
 import models.team.Team
 import slick.dbio.DBIO
 
@@ -22,7 +22,7 @@ trait InvocationLogEntryService {
 
   def forTeamForDate(team: Team, date: OffsetDateTime): Future[Seq[InvocationLogEntry]]
 
-  def allForBehavior(behavior: Behavior, from: OffsetDateTime, to: OffsetDateTime, maybeUserId: Option[String]): Future[Seq[InvocationLogEntry]]
+  def allForBehavior(behavior: Behavior, from: OffsetDateTime, to: OffsetDateTime, maybeUserId: Option[String], maybeOriginalEventType: Option[EventType]): Future[Seq[InvocationLogEntry]]
 
   def createForAction(
                        behaviorVersion: BehaviorVersion,

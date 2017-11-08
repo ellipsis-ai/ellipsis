@@ -4,10 +4,11 @@ import java.time.{OffsetDateTime, ZoneOffset}
 import javax.inject.Inject
 
 import com.google.inject.Provider
-import com.mohiva.play.silhouette.api.LoginInfo
-import models.behaviors.invocationlogentry.InvocationLogEntry
+import json.Formatting._
+import json.LogEntryData
+import models.behaviors.events.EventType
 import play.api.Configuration
-import play.api.libs.json.{JsNull, JsValue, Json}
+import play.api.libs.json._
 import services.DataService
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -18,34 +19,6 @@ class InvocationLogController @Inject() (
                                  val assetsProvider: Provider[RemoteAssets],
                                  implicit val ec: ExecutionContext
                                ) extends EllipsisController {
-
-  case class LogEntryData(
-                           paramValues: JsValue,
-                           context: String,
-                           userIdForContext: Option[String],
-                           ellipsisUserId: Option[String],
-                           timestamp: OffsetDateTime
-                         )
-
-  object LogEntryData {
-    def forEntry(entry: InvocationLogEntry, dataService: DataService): Future[LogEntryData] = {
-      val eventualMaybeEllipsisUser = entry.maybeUserIdForContext.map { userIdForContext =>
-        dataService.linkedAccounts.find(LoginInfo(entry.context, userIdForContext), entry.behaviorVersion.team.id).map { maybeAcc =>
-          maybeAcc.map(_.user)
-        }
-      }.getOrElse(Future.successful(None))
-      eventualMaybeEllipsisUser.map { maybeUser =>
-        LogEntryData(
-          entry.paramValues,
-          entry.context,
-          entry.maybeUserIdForContext,
-          maybeUser.map(_.id),
-          entry.createdAt
-        )
-      }
-    }
-  }
-  implicit val logEntryWrites = Json.writes[LogEntryData]
 
   private val EARLIEST = OffsetDateTime.of(2016, 1, 1, 0, 0, 0, 0, ZoneOffset.UTC)
   private val LATEST = OffsetDateTime.now
@@ -65,7 +38,8 @@ class InvocationLogController @Inject() (
                token: String,
                maybeFrom: Option[String],
                maybeTo: Option[String],
-               maybeUserId: Option[String]
+               maybeUserId: Option[String],
+               maybeOriginalEventType: Option[String]
              ) = Action.async { implicit request =>
     for {
       maybeInvocationToken <- dataService.invocationTokens.findNotExpired(token)
@@ -80,8 +54,15 @@ class InvocationLogController @Inject() (
       maybeLogEntries <- maybeBehavior.map { behavior =>
         val from = maybeTimestampFor(maybeFrom).getOrElse(EARLIEST)
         val to = maybeTimestampFor(maybeTo).getOrElse(LATEST)
-        dataService.invocationLogEntries.allForBehavior(behavior, from, to, maybeUserId).map { entries =>
-          Some(entries.filterNot(_.paramValues == JsNull))
+        val maybeValidOriginalEventType = EventType.maybeFrom(maybeOriginalEventType)
+        if (maybeOriginalEventType.isDefined && maybeValidOriginalEventType.isEmpty) {
+          // Return an empty list if the original event type specified is invalid
+          Future.successful(Some(Seq()))
+        } else {
+          dataService.invocationLogEntries.allForBehavior(behavior, from, to, maybeUserId, maybeValidOriginalEventType)
+            .map { entries =>
+              Some(entries.filterNot(_.paramValues == JsNull))
+            }
         }
       }.getOrElse(Future.successful(None))
       maybeLogEntryData <- maybeLogEntries.map { logEntries =>

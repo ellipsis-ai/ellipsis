@@ -5,7 +5,7 @@ import java.time.OffsetDateTime
 import models.accounts.slack.botprofile.SlackBotProfile
 import models.accounts.user.User
 import models.behaviors.behavior.Behavior
-import models.behaviors.events.{RunEvent, ScheduledEvent, ScheduledEventType}
+import models.behaviors.events.{EventType, RunEvent, ScheduledEvent}
 import models.behaviors.scheduling.Scheduled
 import models.behaviors.scheduling.recurrence.Recurrence
 import models.team.Team
@@ -72,7 +72,7 @@ case class ScheduledBehavior(
         slackUserId,
         SlackTimestamp.now,
         client,
-        Some(ScheduledEventType)
+        Some(EventType.scheduled)
       ),
       this
     )
