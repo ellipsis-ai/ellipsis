@@ -74,7 +74,7 @@ define(function(require) {
         this.props.csrfToken
       )
         .then(r => {
-          console.log(r);
+          this.props.onDoneClick();
         });
     },
 
@@ -148,7 +148,7 @@ define(function(require) {
           <div className="container">
             <div className="columns">
               <div className="column column-page-sidebar">
-                <h4 className="type-weak mtn">Pull code from GitHub</h4>
+                <h4 className="type-weak mtn">Push code to GitHub</h4>
               </div>
               <div className="column column-page-main">
                 {this.renderContent()}

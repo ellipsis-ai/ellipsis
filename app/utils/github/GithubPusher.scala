@@ -45,7 +45,7 @@ case class GithubPusher(
 
   val remoteUrl: String = s"https://$repoAccessToken@github.com/$owner/$repoName.git"
 
-  private def runCommand(cmd: String, createException: String => Exception): Future[Unit] = {
+  private def runCommand(cmd: String, maybeCreateException: Option[String => Exception]): Future[Unit] = {
     Future {
       blocking {
         val buffer = new StringBuilder()
@@ -55,18 +55,16 @@ case class GithubPusher(
         )
         val exitValue = Process(Seq("bash", "-c", cmd)).!(processLogger)
         if (exitValue != 0) {
-          throw createException(buffer.mkString)
+          maybeCreateException.foreach { createException =>
+            throw createException(buffer.mkString)
+          }
         }
       }
     }
   }
 
-  private def ensureRepoDir: Future[Unit] = {
-    runCommand(s"rm -rf $dirName && mkdir -p $dirName && cd $dirName", EnsureGitRepoDirException.apply)
-  }
-
   private def pullRepo: Future[Unit] = {
-    runCommand(s"cd $dirName && git init && git pull $remoteUrl $branch", GitPullException.apply)
+    runCommand(s"mkdir -p $parentPath && cd $parentPath && rm -rf $exportName && git clone $remoteUrl $exportName && cd $exportName && git co $branch", Some(GitPullException.apply))
   }
 
   private def export: Future[Unit] = {
@@ -82,15 +80,19 @@ case class GithubPusher(
   }
 
   private def push: Future[Unit] = {
-    runCommand(raw"""cd $dirName && git commit -a -m "$commitMessage" && git push $remoteUrl $branch""", GitPushException.apply)
+    runCommand(raw"""cd $dirName && git commit -a -m "$commitMessage" && git push origin $branch""", Some(GitPushException.apply))
+  }
+
+  private def cleanUp: Future[Unit] = {
+    runCommand(s"rm -rf $dirName", None)
   }
 
   def run: Future[Unit] = {
     for {
-      _ <- ensureRepoDir
       _ <- pullRepo
       _ <- export
       _ <- push
+      _ <- cleanUp
     } yield {}
   }
 
