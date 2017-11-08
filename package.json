@@ -58,7 +58,12 @@
           "EnvironmentVariablesController": {},
           "OAuth2ApplicationController": {},
           "ScheduledActionsController": {},
-          "RegionalSettingsController": {}
+          "RegionalSettingsController": {},
+          "web": {
+            "settings": {
+              "IntegrationsController": {}
+            }
+          }
         }
       }
     },

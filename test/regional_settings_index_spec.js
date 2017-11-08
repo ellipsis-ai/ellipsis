@@ -12,6 +12,7 @@ jsRoutes.controllers.OAuth2ApplicationController.list = jest.fn(() => ({ url: '/
 jsRoutes.controllers.AWSConfigController.list = jest.fn(() => ({ url: '/mock_aws_config_list' }));
 jsRoutes.controllers.RegionalSettingsController.index = jest.fn(() => ({ url: '/mock_regional_settings' }));
 jsRoutes.controllers.ApplicationController.possibleCitiesFor = jest.fn(() => ({ url: '/mock_possible_cities' }));
+jsRoutes.controllers.web.settings.IntegrationsController.list = jest.fn(() => ({ url: '/mock_integrations' }));
 
 describe('RegionalSettings', () => {
   const onSaveTimeZone = jest.fn();
