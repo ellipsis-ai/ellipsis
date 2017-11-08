@@ -1,13 +1,15 @@
+import models.IDs
 import models.behaviors.behaviorparameter._
 import models.behaviors.events.{SlackFile, SlackMessageEvent}
+import org.mockito.Matchers._
 import org.mockito.Mockito._
 import org.scalatest.mock.MockitoSugar
 import org.scalatestplus.play.PlaySpec
 import play.api.libs.json._
 import support.TestContext
 
-import scala.concurrent.{Await, Future}
 import scala.concurrent.duration._
+import scala.concurrent.{Await, Future}
 
 class BehaviorParameterTypeSpec extends PlaySpec with MockitoSugar {
   "TextType" should {
@@ -77,6 +79,8 @@ class BehaviorParameterTypeSpec extends PlaySpec with MockitoSugar {
       when(event.maybeFile).thenReturn(None)
       val context = mock[BehaviorParameterContext]
       when(context.event).thenReturn(event)
+      when(context.services).thenReturn(services)
+      when(slackFileMap.maybeUrlFor(anyString)).thenReturn(None)
       runNow(FileType.isValid("none", context)) mustBe true
       runNow(FileType.isValid("wtfbbq", context)) mustBe false
     }
@@ -86,8 +90,21 @@ class BehaviorParameterTypeSpec extends PlaySpec with MockitoSugar {
       when(event.maybeFile).thenReturn(Some(SlackFile("https://fake-url.fake")))
       val context = mock[BehaviorParameterContext]
       when(context.event).thenReturn(event)
+      when(context.services).thenReturn(services)
+      when(slackFileMap.maybeUrlFor(anyString)).thenReturn(None)
       runNow(FileType.isValid("none", context)) mustBe true
       runNow(FileType.isValid("wtfbbq", context)) mustBe true
+    }
+
+    "if the text matches an existing file ID, it's valid" in new TestContext {
+      val event = mock[SlackMessageEvent]
+      when(event.maybeFile).thenReturn(None)
+      val context = mock[BehaviorParameterContext]
+      when(context.event).thenReturn(event)
+      when(context.services).thenReturn(services)
+      val fileId = IDs.next
+      when(slackFileMap.maybeUrlFor(fileId)).thenReturn(Some("https://fake-url.fake"))
+      runNow(FileType.isValid(fileId, context)) mustBe true
     }
   }
 }
