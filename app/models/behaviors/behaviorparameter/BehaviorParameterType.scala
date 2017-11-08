@@ -264,7 +264,7 @@ object FileType extends BuiltInType {
     raw"""if ($paramName) { $paramName.fetch = require("$FETCH_FUNCTION_FOR_FILE_PARAM_NAME")($paramName, $CONTEXT_PARAM); }"""
   }
 
-  val invalidPromptModifier: String = s"I need you to upload a file. $stopInstructions"
+  val invalidPromptModifier: String = raw"""I need you to upload a file or type `none` if you don't have one. $stopInstructions"""
 }
 
 case class ValidValue(id: String, label: String, data: Map[String, String])
