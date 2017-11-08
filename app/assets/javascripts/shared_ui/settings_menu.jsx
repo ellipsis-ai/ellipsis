@@ -29,7 +29,7 @@ define(function (require) {
             </li>
           </ul>
         </nav>
-      );p
+      );
     }
   });
 });
