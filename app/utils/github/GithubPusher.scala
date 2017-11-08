@@ -64,7 +64,7 @@ case class GithubPusher(
   }
 
   private def pullRepo: Future[Unit] = {
-    runCommand(s"mkdir -p $parentPath && cd $parentPath && rm -rf $exportName && git clone $remoteUrl $exportName && cd $exportName && git co $branch", Some(GitPullException.apply))
+    runCommand(s"mkdir -p $parentPath && cd $parentPath && rm -rf $exportName && git clone $remoteUrl $exportName && cd $exportName && git checkout $branch", Some(GitPullException.apply))
   }
 
   private def export: Future[Unit] = {
