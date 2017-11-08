@@ -16,13 +16,16 @@ import play.api.data.Forms._
 import play.api.libs.json._
 import play.api.mvc.{AnyContent, Result}
 import play.filters.csrf.CSRF
-import services.DefaultServices
+import services.{DefaultServices, GithubService}
 import utils.FutureSequencer
+import utils.github.GithubSingleBehaviorGroupFetcher
 
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.{Failure, Success}
 
 class BehaviorEditorController @Inject() (
                                            val silhouette: Silhouette[EllipsisEnv],
+                                           val githubService: GithubService,
                                            val services: DefaultServices,
                                            val assetsProvider: Provider[RemoteAssets],
                                            implicit val ec: ExecutionContext
@@ -464,6 +467,57 @@ class BehaviorEditorController @Inject() (
           maybeResult.map { result =>
             Ok(result.toString)
           }.getOrElse(NotFound("Skill not found"))
+        }
+      }
+    )
+  }
+
+  case class UpdateFromGithubInfo(
+                                   behaviorGroupId: String,
+                                   owner: String,
+                                   repo: String,
+                                   branch: Option[String]
+                                 )
+
+  private val updateFromGithubForm = Form(
+    mapping(
+      "behaviorGroupId" -> nonEmptyText,
+      "owner" -> nonEmptyText,
+      "repo" -> nonEmptyText,
+      "branch" -> optional(nonEmptyText)
+    )(UpdateFromGithubInfo.apply)(UpdateFromGithubInfo.unapply)
+  )
+
+  def updateFromGithub = silhouette.SecuredAction.async { implicit request =>
+    val user = request.identity
+    updateFromGithubForm.bindFromRequest.fold(
+      formWithErrors => {
+        Future.successful(BadRequest(formWithErrors.errorsAsJson))
+      },
+      info => {
+        for {
+          maybeGithubLinkedAccount <- dataService.linkedAccounts.maybeForGithubFor(user)
+          maybeGithubProfile <- maybeGithubLinkedAccount.map { linked =>
+            dataService.githubProfiles.find(linked.loginInfo)
+          }.getOrElse(Future.successful(None))
+          maybeBehaviorGroup <- dataService.behaviorGroups.find(info.behaviorGroupId, user)
+          maybeExistingGroupData <- maybeBehaviorGroup.map { group =>
+            dataService.behaviorGroups.maybeCurrentVersionFor(group).flatMap { maybeCurrentVersion =>
+              maybeCurrentVersion.map { currentVersion =>
+                BehaviorGroupData.buildFor(currentVersion, user, dataService).map(Some(_))
+              }.getOrElse(Future.successful(None))
+            }
+          }.getOrElse(Future.successful(None))
+        } yield {
+          maybeBehaviorGroup.map { group =>
+            maybeGithubProfile.map { profile =>
+              val fetcher = GithubSingleBehaviorGroupFetcher(group.team, info.owner, info.repo, profile.token, info.branch, githubService, services, ec)
+              fetcher.fetch(maybeExistingGroupData) match {
+                case Failure(err) => Ok(JsObject(Map("errors" -> JsString(err.getMessage))))
+                case Success(groupData) => Ok(JsObject(Map("data" -> Json.toJson(groupData))))
+              }
+            }.getOrElse(Unauthorized(s"User is not correctly authed with GitHub"))
+          }.getOrElse(NotFound(s"Skill with ID ${info.behaviorGroupId} not found"))
         }
       }
     )

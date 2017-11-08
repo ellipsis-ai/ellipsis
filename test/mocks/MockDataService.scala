@@ -2,6 +2,7 @@ package mocks
 
 import javax.inject.Singleton
 
+import models.accounts.github.profile.GithubProfileService
 import models.accounts.linkedaccount.LinkedAccountService
 import models.accounts.linkedoauth2token.LinkedOAuth2TokenService
 import models.accounts.linkedsimpletoken.LinkedSimpleTokenService
@@ -62,6 +63,7 @@ class MockDataService extends DataService with MockitoSugar {
   val oauth2Apis = mock[OAuth2ApiService]
   val oauth2Applications = mock[OAuth2ApplicationService]
   val simpleTokenApis = mock[SimpleTokenApiService]
+  val githubProfiles = mock[GithubProfileService]
   val slackProfiles = mock[SlackProfileService]
   val slackBotProfiles = mock[SlackBotProfileService]
   val oauth2Tokens = mock[OAuth2TokenService]

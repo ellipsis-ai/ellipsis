@@ -160,7 +160,7 @@ class BehaviorGroupVersionServiceImpl @Inject() (
       behaviorVersions <- dataService.behaviorVersions.allForGroupVersionAction(groupVersion)
       behaviorVersionsWithParams <- DBIO.sequence(behaviorVersions.map { bv =>
         dataService.behaviorParameters.allForAction(bv).map { params =>
-          (bv, params.map(_.input.name).toArray)
+          (bv, params)
         }
       })
     } yield {
@@ -187,9 +187,7 @@ class BehaviorGroupVersionServiceImpl @Inject() (
       libraries <- dataService.libraries.allFor(groupVersion)
       behaviorVersions <- dataService.behaviorVersions.allForGroupVersion(groupVersion)
       behaviorVersionsWithParams <- Future.sequence(behaviorVersions.map { bv =>
-        dataService.behaviorParameters.allFor(bv).map { params =>
-          params.map(_.input.name)
-        }.map { paramNames => (bv, withoutBuiltin(paramNames.toArray)) }
+        dataService.behaviorParameters.allFor(bv).map { params => (bv, params) }
       })
       _ <- lambdaService.deployFunctionFor(
         groupVersion,

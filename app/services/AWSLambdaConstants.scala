@@ -36,4 +36,9 @@ object AWSLambdaConstants {
   val ERROR_CLASS: String = loadStaticJs("error.js")
   val OVERRIDE_CONSOLE: String = loadStaticJs("console.js")
   val CALLBACK_FUNCTION: String = loadStaticJs("callback.js")
+
+  val FETCH_FUNCTION_FOR_FILE_PARAM_NAME = "fetch_function_for_file_param"
+  val FETCH_FUNCTION_FOR_FILE_PARAM: String = {
+    loadStaticJs(s"$FETCH_FUNCTION_FOR_FILE_PARAM_NAME.js").replace("$CONTEXT_PARAM", CONTEXT_PARAM)
+  }
 }

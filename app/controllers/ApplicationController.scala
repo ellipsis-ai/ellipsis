@@ -1,5 +1,6 @@
 package controllers
 
+import java.time.OffsetDateTime
 import java.time.format.TextStyle
 import java.util.Locale
 import javax.inject.Inject
@@ -8,30 +9,31 @@ import com.google.inject.Provider
 import com.mohiva.play.silhouette.api.Silhouette
 import json._
 import models.silhouette.EllipsisEnv
-import play.api.Configuration
 import play.api.data.Form
 import play.api.data.Forms._
 import play.api.libs.json.Json
-import play.api.libs.ws.WSClient
 import play.filters.csrf.CSRF
-import services.{AWSLambdaService, DataService, GithubService}
+import services.{DefaultServices, GithubService}
+import utils.github.GithubPublishedBehaviorGroupsFetcher
 import utils.{CitiesToTimeZones, FuzzyMatcher, TimeZoneParser}
 
 import scala.concurrent.{ExecutionContext, Future}
 
 class ApplicationController @Inject() (
                                         val silhouette: Silhouette[EllipsisEnv],
-                                        val configuration: Configuration,
-                                        val dataService: DataService,
-                                        val lambdaService: AWSLambdaService,
-                                        val ws: WSClient,
                                         val githubService: GithubService,
+                                        val services: DefaultServices,
                                         val citiesToTimeZones: CitiesToTimeZones,
                                         val assetsProvider: Provider[RemoteAssets],
                                         implicit val ec: ExecutionContext
                                       ) extends ReAuthable {
 
   import json.Formatting._
+
+  val configuration = services.configuration
+  val dataService = services.dataService
+  val lambdaService = services.lambdaService
+  val ws = services.ws
 
   def teamHome(id: String, maybeBranch: Option[String] = None) = {
      index(Option(id), maybeBranch)
@@ -91,8 +93,10 @@ class ApplicationController @Inject() (
     }
   }
 
-  def fetchPublishedBehaviorInfo(maybeTeamId: Option[String],
-                                    maybeBranch: Option[String] = None) = silhouette.SecuredAction.async { implicit request =>
+  def fetchPublishedBehaviorInfo(
+                                  maybeTeamId: Option[String],
+                                  maybeBranch: Option[String] = None
+                                ) = silhouette.SecuredAction.async { implicit request =>
     val user = request.identity
     for {
       teamAccess <- dataService.users.teamAccessFor(user, maybeTeamId)
@@ -103,7 +107,8 @@ class ApplicationController @Inject() (
         BehaviorGroupData.maybeFor(group.id, user, None, dataService)
       }).map(_.flatten)
     } yield teamAccess.maybeTargetTeam.map { team =>
-      Ok(Json.toJson(githubService.publishedBehaviorGroupsFor(team, maybeBranch, alreadyInstalledData)))
+      val fetcher = GithubPublishedBehaviorGroupsFetcher(team, maybeBranch, githubService, services, ec)
+      Ok(Json.toJson(fetcher.publishedBehaviorGroupsFor(alreadyInstalledData)))
     }.getOrElse {
       val message = maybeTeamId.map { teamId =>
         s"You can't access this for team ${teamId}"
@@ -187,7 +192,8 @@ class ApplicationController @Inject() (
     } yield {
       maybeInstalledGroupData.map { installedGroupData =>
         val publishedGroupData = teamAccess.maybeTargetTeam.map { team =>
-          githubService.publishedBehaviorGroupsFor(team, maybeBranch, installedGroupData)
+          val fetcher = GithubPublishedBehaviorGroupsFetcher(team, maybeBranch, githubService, services, ec)
+          fetcher.publishedBehaviorGroupsFor(installedGroupData)
         }.getOrElse(Seq())
         val matchResults = FuzzyMatcher[BehaviorGroupData](queryString, installedGroupData ++ publishedGroupData).run
         Ok(Json.toJson(matchResults.map(_.item)).toString)
@@ -202,12 +208,15 @@ class ApplicationController @Inject() (
     Ok(Json.obj("matches" -> matches))
   }
 
+  case class TimeZoneFormInfo(tzName: String, maybeTeamId: Option[String])
+
+  implicit val timeZoneFormInfoReads = Json.reads[TimeZoneFormInfo]
+
   private val timeZoneForm = Form(
     mapping(
       "tzName" -> nonEmptyText,
-      "teamId" -> optional(nonEmptyText),
-      "formattedName" -> optional(nonEmptyText)
-    )(TeamTimeZoneData.apply)(TeamTimeZoneData.unapply)
+      "teamId" -> optional(nonEmptyText)
+    )(TimeZoneFormInfo.apply)(TimeZoneFormInfo.unapply)
   )
 
   def setTeamTimeZone = silhouette.SecuredAction.async { implicit request =>
@@ -227,7 +236,11 @@ class ApplicationController @Inject() (
         } yield {
           maybeTeam.map { team =>
             team.maybeTimeZone.map { tz =>
-              Ok(Json.toJson(TeamTimeZoneData(tz.toString, None, Some(tz.getDisplayName(TextStyle.FULL, Locale.ENGLISH)))).toString)
+              Ok(Json.toJson(TeamTimeZoneData(
+                tz.toString,
+                Some(tz.getDisplayName(TextStyle.FULL, Locale.ENGLISH)),
+                OffsetDateTime.now(tz).getOffset.getTotalSeconds
+              )).toString)
             }.getOrElse {
               BadRequest(Json.obj("message" -> "Invalid time zone").toString)
             }

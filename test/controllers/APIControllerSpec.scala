@@ -4,17 +4,20 @@ import java.time.{LocalTime, OffsetDateTime}
 
 import akka.actor.ActorSystem
 import com.mohiva.play.silhouette.api.LoginInfo
+import json.APITokenData
+import json.Formatting._
 import models.IDs
 import models.accounts.linkedaccount.LinkedAccount
 import models.accounts.slack.botprofile.SlackBotProfile
 import models.accounts.slack.profile.SlackProfile
 import models.accounts.user.User
+import models.apitoken.APIToken
 import models.behaviors.{BotResult, BotResultService, SimpleTextResult}
 import models.behaviors.behavior.Behavior
 import models.behaviors.behaviorgroup.BehaviorGroup
 import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
 import models.behaviors.behaviorversion.BehaviorVersion
-import models.behaviors.events.{Event, EventHandler, SlackMessage, SlackMessageEvent}
+import models.behaviors.events._
 import models.behaviors.invocationtoken.InvocationToken
 import models.behaviors.scheduling.recurrence.Daily
 import models.behaviors.scheduling.scheduledbehavior.ScheduledBehavior
@@ -53,13 +56,14 @@ class APIControllerSpec extends PlaySpec with MockitoSugar {
                      dataService: DataService,
                      cacheService: CacheService,
                      slackEventService: SlackEventService,
-                     botResultService: BotResultService
+                     botResultService: BotResultService,
+                     now: OffsetDateTime = OffsetDateTime.now
                    )(implicit ec: ExecutionContext) = {
     val token = IDs.next
     when(dataService.apiTokens.find(token)).thenReturn(Future.successful(None))
     val behaviorId = maybeTokenBehaviorId.getOrElse(IDs.next)
     val maybeInvocationToken = if (isTokenValid) {
-      Some(InvocationToken(IDs.next, defaultSlackUserId, behaviorId, None, OffsetDateTime.now))
+      Some(InvocationToken(token, defaultSlackUserId, behaviorId, None, now))
     } else {
       None
     }
@@ -81,7 +85,7 @@ class APIControllerSpec extends PlaySpec with MockitoSugar {
       any[Option[String]], any[Option[Boolean]])(any[ActorSystem])).thenReturn(Future.successful(SlackTimestamp.now))
     when(mockSlackClient.listUsers).thenReturn(Future.successful(Seq()))
 
-    val event = SlackMessageEvent(botProfile, defaultChannel, None, defaultSlackUserId, SlackMessage.fromUnformattedText("foo", botProfile.userId), SlackTimestamp.now, mockSlackClient)
+    val event = SlackMessageEvent(botProfile, defaultChannel, None, defaultSlackUserId, SlackMessage.fromUnformattedText("foo", botProfile.userId), None, SlackTimestamp.now, mockSlackClient, Some(ApiEventType))
     when(dataService.slackBotProfiles.allFor(team)).thenReturn(Future.successful(Seq(botProfile)))
     val loginInfo = LoginInfo(defaultContext, defaultSlackUserId)
     val slackProfile = SlackProfile(defaultSlackTeamId, loginInfo)
@@ -648,6 +652,50 @@ class APIControllerSpec extends PlaySpec with MockitoSugar {
       }
     }
 
+  }
+
+  "generateApiToken" should {
+
+    "400 for invalid token" in new ControllerTestContext {
+      running(app) {
+        val token = setUpMocksFor(team, user, isTokenValid = false, None, app, eventHandler, dataService, cacheService, slackEventService, botResultService)
+        val body = JsObject(Seq(
+          ("token", JsString(token))
+        ))
+        val request = FakeRequest(controllers.routes.APIController.generateApiToken()).withJsonBody(body)
+        val result = route(app, request).get
+        status(result) mustBe BAD_REQUEST
+        contentAsString(result).trim mustBe "Invalid token"
+        verify(dataService.apiTokens, times(1)).find(token)
+      }
+    }
+
+    "respond with a valid result" in new ControllerTestContext {
+      running(app) {
+        val tokenBehaviorId = IDs.next
+        val now = OffsetDateTime.now
+        val token = setUpMocksFor(team, user, isTokenValid = true, Some(tokenBehaviorId), app, eventHandler, dataService, cacheService, slackEventService, botResultService, now)
+        val invocationToken = InvocationToken(token, defaultSlackUserId, tokenBehaviorId, None, now)
+        val newToken = APIToken(IDs.next, IDs.next, user.id, None, isOneTime = false, isRevoked = false, None, OffsetDateTime.now)
+        when(dataService.apiTokens.createFor(invocationToken, None, false)).thenReturn(Future.successful(newToken))
+        val body = JsObject(Seq(
+          ("token", JsString(token))
+        ))
+        val request = FakeRequest(controllers.routes.APIController.generateApiToken()).withJsonBody(body)
+        val result = route(app, request).get
+        status(result) mustBe OK
+        val resultJson = contentAsJson(result)
+        resultJson.validate[APITokenData] match {
+          case JsSuccess(data, jsPath) => {
+            data.isOneTime mustBe false
+            data.maybeExpirySeconds.isDefined mustBe false
+          }
+          case JsError(e) => {
+            assert(false, "Result didn't validate")
+          }
+        }
+      }
+    }
   }
 
 

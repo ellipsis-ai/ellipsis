@@ -6,14 +6,15 @@ import models.behaviors.conversations.ParamCollectionState
 import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.datatypeconfig.DataTypeConfig
 import models.behaviors.datatypefield.FieldTypeForSchema
-import models.behaviors.events.Event
+import models.behaviors.events.{Event, SlackMessageEvent}
 import models.behaviors.{BotResult, ParameterValue, ParameterWithValue, SuccessResult}
 import play.api.libs.json._
+import services.AWSLambdaConstants._
 import services.{AWSLambdaConstants, DataService}
 import slick.dbio.DBIO
 
-import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration._
+import scala.concurrent.{ExecutionContext, Future}
 
 sealed trait BehaviorParameterType extends FieldTypeForSchema {
 
@@ -39,6 +40,10 @@ sealed trait BehaviorParameterType extends FieldTypeForSchema {
     } else {
       ""
     }
+  }
+
+  def questionTextFor(context: BehaviorParameterContext): String = {
+    context.parameter.question.trim
   }
 
   def promptForAction(
@@ -67,14 +72,16 @@ sealed trait BehaviorParameterType extends FieldTypeForSchema {
          |
          |$invalidModifier
          |
-         |__${context.parameter.question.trim}__""".stripMargin
+         |__${questionTextFor(context)}__""".stripMargin
     }
   }
 
   def resolvedValueFor(text: String, context: BehaviorParameterContext)(implicit ec: ExecutionContext): Future[Option[String]]
 
+  def potentialValueFor(event: Event, context: BehaviorParameterContext): String = event.relevantMessageText
+
   def handleCollected(event: Event, context: BehaviorParameterContext)(implicit ec: ExecutionContext): Future[Unit] = {
-    val potentialValue = event.relevantMessageText
+    val potentialValue = potentialValueFor(event, context)
     val input = context.parameter.input
     if (input.isSaved) {
       resolvedValueFor(potentialValue, context).flatMap { maybeValueToSave =>
@@ -90,6 +97,8 @@ sealed trait BehaviorParameterType extends FieldTypeForSchema {
       }.getOrElse(Future.successful({}))
     }
   }
+
+  def decorationCodeFor(param: BehaviorParameter): String = ""
 
 }
 
@@ -196,6 +205,58 @@ object YesNoType extends BuiltInType {
   }
 
   val invalidPromptModifier: String = s"I need an answer like “yes” or “no”. $stopInstructions"
+}
+
+object FileType extends BuiltInType {
+  val name = "File"
+
+  val outputName: String = "File"
+
+  def isIntentionallyEmpty(text: String): Boolean = text.trim.toLowerCase == "none"
+
+  override def questionTextFor(context: BehaviorParameterContext): String = {
+    super.questionTextFor(context) ++ """ (or type "none" if you don't have one)"""
+  }
+
+  def isValid(text: String, context: BehaviorParameterContext)(implicit ec: ExecutionContext): Future[Boolean] = {
+    Future.successful {
+      context.event match {
+        case e: SlackMessageEvent => e.maybeFile.nonEmpty || isIntentionallyEmpty(text)
+        case _ => false
+      }
+    }
+  }
+
+  def prepareValue(text: String) = {
+    if (isIntentionallyEmpty(text)) {
+      JsNull
+    } else {
+      Json.toJson(Map("id" -> text))
+    }
+  }
+
+  def prepareJsValue(value: JsValue): JsValue = {
+    value match {
+      case s: JsString => prepareValue(s.value)
+      case v => v
+    }
+  }
+
+  override def potentialValueFor(event: Event, context: BehaviorParameterContext): String = {
+    event match {
+      case e: SlackMessageEvent => e.maybeFile.map { file =>
+        context.services.slackFileMap.save(file.url)
+      }.getOrElse(super.potentialValueFor(event, context))
+      case _ => super.potentialValueFor(event, context)
+    }
+  }
+
+  override def decorationCodeFor(param: BehaviorParameter): String = {
+    val paramName = param.input.name;
+    raw"""if ($paramName) { $paramName.fetch = require("$FETCH_FUNCTION_FOR_FILE_PARAM_NAME")($paramName, $CONTEXT_PARAM); }"""
+  }
+
+  val invalidPromptModifier: String = s"I need you to upload a file. $stopInstructions"
 }
 
 case class ValidValue(id: String, label: String, data: Map[String, String])
@@ -563,7 +624,8 @@ object BehaviorParameterType {
   val allBuiltin = Seq(
     TextType,
     NumberType,
-    YesNoType
+    YesNoType,
+    FileType
   )
 
   def findBuiltIn(id: String): Option[BehaviorParameterType] = allBuiltin.find(_.id == id)

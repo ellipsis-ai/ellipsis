@@ -52,7 +52,17 @@ trait Conversation {
         channel <- maybeChannel
       // TODO: Create a new class for placeholder events
       // https://github.com/ellipsis-ai/ellipsis/issues/1719
-      } yield SlackMessageEvent(botProfile, channel, None, userIdForContext, SlackMessage.blank, SlackTimestamp.now, services.slackEventService.clientFor(botProfile))
+      } yield SlackMessageEvent(
+        botProfile,
+        channel,
+        None,
+        userIdForContext,
+        SlackMessage.blank,
+        None,
+        SlackTimestamp.now,
+        services.slackEventService.clientFor(botProfile),
+        None // TODO: Pass the original event type down to here if we actually care about it, but it doesn't seem useful at present
+      )
     }
   }
 

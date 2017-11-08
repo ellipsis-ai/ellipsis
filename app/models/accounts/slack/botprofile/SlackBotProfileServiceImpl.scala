@@ -6,7 +6,7 @@ import javax.inject.{Inject, Provider}
 import akka.actor.ActorSystem
 import drivers.SlickPostgresDriver.api._
 import models.behaviors.{BotResult, BotResultService}
-import models.behaviors.events.{SlackMessage, SlackMessageEvent}
+import models.behaviors.events.{EventType, SlackMessage, SlackMessageEvent}
 import models.team.Team
 import play.api.Logger
 import services.{DataService, SlackEventService}
@@ -98,12 +98,22 @@ class SlackBotProfileServiceImpl @Inject() (
     dataService.run(action)
   }
 
-  def eventualMaybeEvent(slackTeamId: String, channelId: String, maybeUserId: Option[String]): Future[Option[SlackMessageEvent]] = {
+  def eventualMaybeEvent(slackTeamId: String, channelId: String, maybeUserId: Option[String], maybeOriginalEventType: Option[EventType]): Future[Option[SlackMessageEvent]] = {
     allForSlackTeamId(slackTeamId).map { botProfiles =>
       botProfiles.headOption.map { botProfile =>
         // TODO: Create a new class for placeholder events
         // https://github.com/ellipsis-ai/ellipsis/issues/1719
-        SlackMessageEvent(botProfile, channelId, None, maybeUserId.getOrElse(botProfile.userId), SlackMessage.blank, SlackTimestamp.now, slackEventService.clientFor(botProfile))
+        SlackMessageEvent(
+          botProfile,
+          channelId,
+          None,
+          maybeUserId.getOrElse(botProfile.userId),
+          SlackMessage.blank,
+          None,
+          SlackTimestamp.now,
+          slackEventService.clientFor(botProfile),
+          maybeOriginalEventType
+        )
       }
     }
   }
@@ -127,7 +137,7 @@ class SlackBotProfileServiceImpl @Inject() (
   ): Future[Unit] = {
     val delayMilliseconds = 1000
     (for {
-      maybeEvent <- eventualMaybeEvent(slackTeamId, channelId, Some(userId))
+      maybeEvent <- eventualMaybeEvent(slackTeamId, channelId, Some(userId), None)
       _ <- maybeEvent.map { event =>
         val eventualResult = getEventualMaybeResult(event)
         sendResult(eventualResult)

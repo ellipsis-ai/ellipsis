@@ -131,7 +131,7 @@ define(function(require) {
     renderHeader: function() {
       return (
         <h3 className="mvn ptxxl type-weak display-ellipsis">
-          <span className="mrs">API configurations</span>
+          <span className="mrs">Integrations</span>
         </h3>
       );
     },

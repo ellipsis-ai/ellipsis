@@ -29,6 +29,7 @@
   routes.javascript.BehaviorEditorController.testTriggers,
   routes.javascript.BehaviorEditorController.versionInfoFor,
   routes.javascript.BehaviorEditorController.nodeModuleVersionsFor,
+  routes.javascript.BehaviorEditorController.updateFromGithub,
   routes.javascript.BehaviorImportExportController.doImport,
   routes.javascript.BehaviorImportExportController.export,
   routes.javascript.EnvironmentVariablesController.list,
@@ -40,6 +41,7 @@
   routes.javascript.OAuth2ApplicationController.newApp,
   routes.javascript.OAuth2ApplicationController.newApp,
   routes.javascript.OAuth2ApplicationController.save,
+  routes.javascript.RegionalSettingsController.index,
   routes.javascript.SavedAnswerController.resetForTeam,
   routes.javascript.SavedAnswerController.resetForUser,
   routes.javascript.ScheduledActionsController.index,
@@ -49,6 +51,8 @@
   routes.javascript.AWSConfigController.newConfig,
   routes.javascript.AWSConfigController.edit,
   routes.javascript.AWSConfigController.save,
+  routes.javascript.SocialAuthController.authenticateGithub,
+
   web.settings.routes.javascript.IntegrationsController.list,
   web.settings.routes.javascript.IntegrationsController.add
 )

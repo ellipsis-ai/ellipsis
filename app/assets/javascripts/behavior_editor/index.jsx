@@ -103,7 +103,9 @@ const BehaviorEditor = React.createClass({
     onSave: React.PropTypes.func.isRequired,
     onForgetSavedAnswerForInput: React.PropTypes.func.isRequired,
     onLoad: React.PropTypes.func,
-    userId: React.PropTypes.string.isRequired
+    userId: React.PropTypes.string.isRequired,
+    isAdmin: React.PropTypes.bool.isRequired,
+    isLinkedToGithub: React.PropTypes.bool.isRequired
   }),
 
   getDefaultProps: function() {
@@ -867,10 +869,10 @@ const BehaviorEditor = React.createClass({
     }
   },
 
-  onSaveError: function(error) { // eslint-disable-line no-unused-vars
+  onSaveError: function(error) {
     this.props.onClearActivePanel();
     this.setState({
-      error: "not_saved"
+      error: error || "not_saved"
     });
   },
 
@@ -962,6 +964,10 @@ const BehaviorEditor = React.createClass({
     this.setState({ error: null });
     this.toggleActivePanel('saving', true);
     this.checkDataAndCallback(() => { this.backgroundSave(optionalCallback); });
+  },
+
+  onReplaceBehaviorGroup: function(newGroupData, optionalCallback) {
+    this.setState({ group: newGroupData }, () => this.onSaveBehaviorGroup(optionalCallback));
   },
 
   showVersionIndex: function(versionIndex, optionalCallback) {
@@ -2056,19 +2062,26 @@ const BehaviorEditor = React.createClass({
     const lastSaved = group.createdAt;
     const lastSavedByCurrentUser = group.author && group.author.id === this.props.userId;
     const authorName = group.author && group.author.userName ? group.author.formattedFullNameOrUserName() : null;
-    if (this.isLatestSavedVersion() && lastSaved) {
+    if (this.state.error === 'not_saved') {
+      return (
+        <span className="fade-in type-pink type-bold type-italic">
+          <span style={{ height: 24 }} className="display-inline-block mrs align-b"><SVGWarning /></span>
+          <span>Error saving changes — please try again</span>
+        </span>
+      );
+    } else if (this.state.error) {
+      return (
+        <span className="fade-in type-pink type-bold type-italic">
+          <span style={{ height: 24 }} className="display-inline-block mrs align-b"><SVGWarning /></span>
+          <span>{this.state.error}</span>
+        </span>
+      );
+    } else if (this.isLatestSavedVersion() && lastSaved) {
       return (
         <span className="fade-in type-green type-bold type-italic">
           <span>{lastSavedByCurrentUser ? "You last saved" : "Last saved"} </span>
           <span>{Formatter.formatTimestampRelativeIfRecent(lastSaved)}</span>
           <span> {!lastSavedByCurrentUser && authorName ? `by ${authorName}` : ""}</span>
-        </span>
-      );
-    } else if (this.state.error === 'not_saved') {
-      return (
-        <span className="fade-in type-pink type-bold type-italic">
-          <span style={{ height: 24 }} className="display-inline-block mrs align-b"><SVGWarning /></span>
-          <span>Error saving changes — please try again</span>
         </span>
       );
     } else if (this.isModified()) {
@@ -2529,12 +2542,17 @@ const BehaviorEditor = React.createClass({
     } else {
       return (
         <BehaviorGroupEditor
+          csrfToken={this.props.csrfToken}
           group={this.getBehaviorGroup()}
           isModified={this.isModified()}
+          isAdmin={this.props.isAdmin}
+          isLinkedToGithub={this.props.isLinkedToGithub}
           onBehaviorGroupNameChange={this.onBehaviorGroupNameChange}
           onBehaviorGroupDescriptionChange={this.onBehaviorGroupDescriptionChange}
           onBehaviorGroupIconChange={this.onBehaviorGroupIconChange}
           onDeleteClick={this.confirmDeleteBehaviorGroup}
+          onSave={this.onReplaceBehaviorGroup}
+          onSaveError={this.onSaveError}
         />
       );
     }

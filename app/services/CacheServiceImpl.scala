@@ -6,7 +6,7 @@ import json.Formatting._
 import json.{BehaviorGroupData, SlackUserData}
 import models.accounts.slack.botprofile.SlackBotProfile
 import models.behaviors.behaviorparameter.ValidValue
-import models.behaviors.events.{Event, SlackMessage, SlackMessageEvent}
+import models.behaviors.events._
 import play.api.cache.SyncCacheApi
 import play.api.libs.json.{JsError, JsSuccess, JsValue, Json}
 import slack.models.{Channel, Group, Im}
@@ -20,7 +20,9 @@ case class SlackMessageEventData(
                                   maybeThreadId: Option[String],
                                   user: String,
                                   message: SlackMessage,
-                                  ts: String
+                                  maybeFile: Option[SlackFile],
+                                  ts: String,
+                                  maybeOriginalEventType: Option[String]
                                 )
 
 @Singleton
@@ -46,7 +48,7 @@ class CacheServiceImpl @Inject() (
   def cacheEvent(key: String, event: Event, expiration: Duration = Duration.Inf): Unit = {
     event match {
       case ev: SlackMessageEvent => {
-        val eventData = SlackMessageEventData(ev.profile, ev.channel, ev.maybeThreadId, ev.user, ev.message, ev.ts)
+        val eventData = SlackMessageEventData(ev.profile, ev.channel, ev.maybeThreadId, ev.user, ev.message, ev.maybeFile, ev.ts, ev.maybeOriginalEventType.map(_.value))
         set(key, Json.toJson(eventData), expiration)
       }
       case _ =>
@@ -63,8 +65,10 @@ class CacheServiceImpl @Inject() (
             event.maybeThreadId,
             event.user,
             event.message,
+            event.maybeFile,
             event.ts,
-            slackEventService.clientFor(event.profile)
+            slackEventService.clientFor(event.profile),
+            EventType.maybeFrom(event.maybeOriginalEventType)
           ))
         }
         case JsError(err) => None

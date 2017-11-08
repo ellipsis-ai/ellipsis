@@ -14,6 +14,7 @@ import com.amazonaws.services.logs.{AWSLogsAsync, AWSLogsAsyncClientBuilder}
 import com.fasterxml.jackson.core.JsonParseException
 import models.behaviors._
 import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
+import models.behaviors.behaviorparameter.{BehaviorParameter, FileType}
 import models.behaviors.behaviorversion.BehaviorVersion
 import models.behaviors.config.requiredawsconfig.RequiredAWSConfig
 import models.behaviors.config.requiredoauth2apiconfig.RequiredOAuth2ApiConfig
@@ -64,8 +65,6 @@ class AWSLambdaServiceImpl @Inject() (
       build()
 
   val apiBaseUrl: String = configuration.get[String](s"application.$API_BASE_URL_KEY")
-
-  val invocationTimeoutSeconds: Int = configuration.get[Int]("aws.lambda.timeoutSeconds")
 
   val logSubscriptionsEnabled: Boolean = configuration.get[Boolean]("aws.logSubscriptions.enabled")
   val logSubscriptionsLambdaFunctionName: String = configuration.get[String]("aws.logSubscriptions.lambdaFunctionName")
@@ -270,13 +269,21 @@ class AWSLambdaServiceImpl @Inject() (
     requiredSimpleTokenApis.map(accessTokenCodeFor).mkString("\n")
   }
 
-  def functionWithParams(params: Array[String], functionBody: String): String = {
-    s"""function(${(params ++ Array(CONTEXT_PARAM)).mkString(", ")}) {
-        |  ${functionBody.trim}
+  def decorateParams(params: Seq[BehaviorParameter]): String = {
+    params.map { ea =>
+      ea.input.paramType.decorationCodeFor(ea)
+    }.mkString("")
+  }
+
+  def functionWithParams(params: Seq[BehaviorParameter], functionBody: String, isForExport: Boolean): String = {
+    val paramNames = params.map(_.input.name)
+    val paramDecoration = if (isForExport) { "" } else { decorateParams(params) }
+    s"""function(${(paramNames ++ Array(CONTEXT_PARAM)).mkString(", ")}) {
+        |  $paramDecoration${functionBody.trim}
         |}\n""".stripMargin
   }
 
-  private def behaviorMappingFor(behaviorVersion: BehaviorVersion, params: Array[String]): String = {
+  private def behaviorMappingFor(behaviorVersion: BehaviorVersion, params: Seq[BehaviorParameter]): String = {
     val paramsFromEvent = params.indices.map(i => s"event.${invocationParamFor(i)}")
     val invocationParamsString = (paramsFromEvent ++ Array(s"event.$CONTEXT_PARAM")).mkString(", ")
     s""""${behaviorVersion.id}": function() {
@@ -285,15 +292,19 @@ class AWSLambdaServiceImpl @Inject() (
        |}""".stripMargin
   }
 
-  private def behaviorsMapFor(behaviorVersionsWithParams: Seq[(BehaviorVersion, Array[String])]): String = {
+  private def behaviorsMapFor(behaviorVersionsWithParams: Seq[(BehaviorVersion, Seq[BehaviorParameter])]): String = {
     s"""var behaviors = {
        |  ${behaviorVersionsWithParams.map { case(bv, params) => behaviorMappingFor(bv, params)}.mkString(", ")}
        |}
      """.stripMargin
   }
 
+  private def hasFileParams(behaviorVersionsWithParams: Seq[(BehaviorVersion, Seq[BehaviorParameter])]): Boolean = {
+    behaviorVersionsWithParams.exists { case(_, params) => params.exists(_.input.paramType == FileType) }
+  }
+
   private def nodeCodeFor(
-                           behaviorVersionsWithParams: Seq[(BehaviorVersion, Array[String])],
+                           behaviorVersionsWithParams: Seq[(BehaviorVersion, Seq[BehaviorParameter])],
                            apiConfigInfo: ApiConfigInfo
                          ): String = {
     s"""exports.handler = function(event, context, lambdaCallback) {
@@ -341,9 +352,17 @@ class AWSLambdaServiceImpl @Inject() (
     writer.close()
   }
 
+  private def requiredModulesForFileParams(behaviorVersionsWithParams: Seq[(BehaviorVersion, Seq[BehaviorParameter])]): Seq[String] = {
+    if (hasFileParams(behaviorVersionsWithParams)) {
+      Seq("request")
+    } else {
+      Seq()
+    }
+  }
+
   private def createZipWithModulesFor(
                                        functionName: String,
-                                       behaviorVersionsWithParams: Seq[(BehaviorVersion, Array[String])],
+                                       behaviorVersionsWithParams: Seq[(BehaviorVersion, Seq[BehaviorParameter])],
                                        libraries: Seq[LibraryVersion],
                                        apiConfigInfo: ApiConfigInfo
                                      ): Future[Unit] = {
@@ -356,14 +375,19 @@ class AWSLambdaServiceImpl @Inject() (
     val behaviorVersionsDirName = s"$dirName/${BehaviorVersion.dirName}"
     Path(behaviorVersionsDirName).createDirectory()
     behaviorVersionsWithParams.foreach { case(behaviorVersion, params) =>
-      writeFileNamed(s"$dirName/${behaviorVersion.jsName}", BehaviorVersion.codeFor(functionWithParams(params, behaviorVersion.functionBody)))
+      writeFileNamed(s"$dirName/${behaviorVersion.jsName}", BehaviorVersion.codeFor(functionWithParams(params, behaviorVersion.functionBody, isForExport = false)))
+    }
+
+    if (hasFileParams(behaviorVersionsWithParams)) {
+      writeFileNamed(s"$dirName/$FETCH_FUNCTION_FOR_FILE_PARAM_NAME.js", FETCH_FUNCTION_FOR_FILE_PARAM)
     }
 
     libraries.foreach { ea =>
       writeFileNamed(s"$dirName/${ea.jsName}", ea.code)
     }
 
-    val requiredModules = RequiredModulesInCode.requiredModulesIn(behaviorVersionsWithParams.map(_._1), libraries, includeLibraryRequires = true)
+    val requiredModulesForBehaviorVersions = RequiredModulesInCode.requiredModulesIn(behaviorVersionsWithParams.map(_._1), libraries, includeLibraryRequires = true)
+    val requiredModules = (requiredModulesForBehaviorVersions ++ requiredModulesForFileParams(behaviorVersionsWithParams)).distinct
     for {
       _ <- if (requiredModules.isEmpty) {
         Future.successful({})
@@ -436,7 +460,7 @@ class AWSLambdaServiceImpl @Inject() (
 
   private def getZipFor(
                          functionName: String,
-                         behaviorVersionsWithParams: Seq[(BehaviorVersion, Array[String])],
+                         behaviorVersionsWithParams: Seq[(BehaviorVersion, Seq[BehaviorParameter])],
                          libraries: Seq[LibraryVersion],
                          apiConfigInfo: ApiConfigInfo
                        ): Future[ByteBuffer] = {
@@ -504,10 +528,10 @@ class AWSLambdaServiceImpl @Inject() (
   }
 
   def deployFunctionFor(
-                      groupVersion: BehaviorGroupVersion,
-                      behaviorVersionsWithParams: Seq[(BehaviorVersion, Array[String])],
-                      libraries: Seq[LibraryVersion],
-                      apiConfigInfo: ApiConfigInfo
+                         groupVersion: BehaviorGroupVersion,
+                         behaviorVersionsWithParams: Seq[(BehaviorVersion, Seq[BehaviorParameter])],
+                         libraries: Seq[LibraryVersion],
+                         apiConfigInfo: ApiConfigInfo
                     ): Future[Unit] = {
 
     val isNoCode: Boolean = behaviorVersionsWithParams.forall { case(bv, _) => bv.functionBody.trim.isEmpty }

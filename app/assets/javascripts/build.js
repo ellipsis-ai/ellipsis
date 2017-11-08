@@ -105,6 +105,10 @@ requirejs.config({
       include: ['environment_variables/index'],
       exclude: ['common']
     }, {
+      name: 'regional_settings/loader',
+      include: ['regional_settings/index'],
+      exclude: ['common']
+    }, {
       name: 'styleguide/colors/loader',
       include: ['styleguide/colors/index'],
       exclude: ['common']

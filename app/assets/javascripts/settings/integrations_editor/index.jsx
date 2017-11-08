@@ -291,7 +291,7 @@ define(function(require) {
       return (
         <h3 className="mvn ptxxl type-weak display-ellipsis">
           <span className="mrs">
-            <a href={jsRoutes.controllers.OAuth2ApplicationController.list().url}>Integrations</a>
+            <a href={jsRoutes.controllers.web.settings.IntegrationsController.list().url}>Integrations</a>
           </span>
           <span className="mhs">→</span>
           {this.renderApplicationHeader()}
@@ -317,12 +317,16 @@ define(function(require) {
       } else {
         return (
           <span>
-            <span className="mhs">Edit a configuration</span>
+            <span className="mhs">Edit</span>
             <span className="mhs">→</span>
             <span className="mhs">{this.getApplicationName() || (<span className="type-disabled">Untitled</span>)}</span>
           </span>
         );
       }
+    },
+
+    redirectToAWSEditor: function() {
+      window.location = '/new_aws_config';
     },
 
     renderChooseApi: function() {
@@ -335,9 +339,7 @@ define(function(require) {
           </p>
 
           <div className="mvxl">
-            <button type="button" key={"apiTypeButton12"}
-                    className="button-l mrl mbl"
-            >
+            <button type="button" key={"apiTypeButton12"} className="button-l mrl mbl" onClick={this.redirectToAWSEditor.bind(this)}>
               <span className="type-black">AWS</span>
           </button>
             {this.props.apis.map((api, index) => (

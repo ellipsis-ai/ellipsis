@@ -288,7 +288,7 @@ define(function(require) {
       return (
         <h3 className="mvn ptxxl type-weak display-ellipsis">
           <span className="mrs">
-            <a href={jsRoutes.controllers.OAuth2ApplicationController.list().url}>Integrations</a>
+             <a href={jsRoutes.controllers.web.settings.IntegrationsController.list().url}>Integrations</a>
           </span>
           <span className="mhs">→</span>
           {this.renderApplicationHeader()}

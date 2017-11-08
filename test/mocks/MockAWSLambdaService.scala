@@ -4,6 +4,7 @@ import javax.inject.Inject
 
 import com.amazonaws.services.lambda.AWSLambdaAsyncClient
 import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
+import models.behaviors.behaviorparameter.BehaviorParameter
 import models.behaviors.behaviorversion.BehaviorVersion
 import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.events.Event
@@ -52,7 +53,7 @@ class MockAWSLambdaService @Inject() (
 
   override def deployFunctionFor(
                                   groupVersion: BehaviorGroupVersion,
-                                  behaviorVersionsWithParams: Seq[(BehaviorVersion, Array[String])],
+                                  behaviorVersionsWithParams: Seq[(BehaviorVersion, Seq[BehaviorParameter])],
                                   libraries: Seq[LibraryVersion],
                                   apiConfigInfo: ApiConfigInfo
                                 ): Future[Unit] = Future.successful({})
@@ -66,7 +67,7 @@ class MockAWSLambdaService @Inject() (
                        defaultServices: DefaultServices
                      ): DBIO[BotResult] = DBIO.successful(resultFor(event, maybeConversation))
 
-  override def functionWithParams(params: Array[String], functionBody: String): String = ""
+  override def functionWithParams(params: Seq[BehaviorParameter], functionBody: String, isForExport: Boolean): String = ""
 
   def ensureNodeModuleVersionsFor(groupVersion: BehaviorGroupVersion): DBIO[Seq[NodeModuleVersion]] = DBIO.successful(Seq())
 }

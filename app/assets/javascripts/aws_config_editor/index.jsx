@@ -184,7 +184,7 @@ define(function(require) {
       return (
         <h3 className="mvn ptxxl type-weak display-ellipsis">
           <span className="mrs">
-            <a href={jsRoutes.controllers.AWSConfigController.list().url}>AWS configurations</a>
+             <a href={jsRoutes.controllers.web.settings.IntegrationsController.list().url}>Integrations</a>
           </span>
           <span className="mhs">→</span>
           {this.renderConfigHeader()}
@@ -206,13 +206,17 @@ define(function(require) {
           );
         } else {
           return (
-            <span className="mhs">Add a configuration</span>
+            <span>
+              <span className="mhs">Add a configuration</span>
+              <span className="mhs">→</span>
+              <span className="mhs">AWS</span>
+            </span>
           );
         }
       } else {
         return (
           <span>
-            <span className="mhs">Edit an AWS configuration</span>
+            <span className="mhs">Edit a configuration</span>
             <span className="mhs">→</span>
             <span className="mhs">{this.getName() || (<span className="type-disabled">Untitled</span>)}</span>
           </span>
