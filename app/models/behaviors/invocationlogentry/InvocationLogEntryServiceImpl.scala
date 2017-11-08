@@ -84,8 +84,14 @@ class InvocationLogEntryServiceImpl @Inject() (
     dataService.run(action)
   }
 
-  def allForBehavior(behavior: Behavior, from: OffsetDateTime, to: OffsetDateTime, maybeUserId: Option[String]): Future[Seq[InvocationLogEntry]] = {
-    val action = allForBehaviorQuery(behavior.id, from, to, maybeUserId).result.map { r =>
+  def allForBehavior(
+                      behavior: Behavior,
+                      from: OffsetDateTime,
+                      to: OffsetDateTime,
+                      maybeUserId: Option[String],
+                      maybeOriginalEventType: Option[EventType]
+                    ): Future[Seq[InvocationLogEntry]] = {
+    val action = allForBehaviorQuery(behavior.id, from, to, maybeUserId, maybeOriginalEventType.map(_.toString)).result.map { r =>
       r.map(tuple2Entry)
     }
     dataService.run(action)
