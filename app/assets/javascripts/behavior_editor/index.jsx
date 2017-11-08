@@ -24,6 +24,8 @@ var React = require('react'),
   DynamicLabelButton = require('../form/dynamic_label_button'),
   EnvVariableAdder = require('../environment_variables/adder'),
   EnvVariableSetter = require('../environment_variables/setter'),
+  GithubPullPanel = require('./github_pull_panel'),
+  GithubPushPanel = require('./github_push_panel'),
   HiddenJsonInput = require('./hidden_json_input'),
   Input = require('../models/input'),
   Formatter = require('../lib/formatter'),
@@ -473,6 +475,16 @@ const BehaviorEditor = React.createClass({
   },
 
   CONFIGURE_API_NAME: "configureApi",
+
+  GITHUB_PULL_PANEL_NAME: "githubPullPanel",
+  GITHUB_PUSH_PANEL_NAME: "githubPushPanel",
+
+  onGithubPullClick: function() {
+    this.toggleActivePanel(this.GITHUB_PULL_PANEL_NAME, true);
+  },
+  onGithubPushClick: function() {
+    this.toggleActivePanel(this.GITHUB_PUSH_PANEL_NAME, true);
+  },
 
   isConfiguringApi: function() {
     return this.props.activePanelName === this.CONFIGURE_API_NAME;
@@ -1841,6 +1853,32 @@ const BehaviorEditor = React.createClass({
             </APIConfigPanel>
           </Collapsible>
 
+          <Collapsible ref={this.GITHUB_PULL_PANEL_NAME}
+                       revealWhen={this.props.activePanelName === this.GITHUB_PULL_PANEL_NAME}
+                       onChange={this.layoutDidUpdate}
+                       animationDisabled={this.state.animationDisabled}
+          >
+            <GithubPullPanel
+              group={this.getBehaviorGroup()}
+              onDoneClick={this.props.onClearActivePanel}
+              csrfToken={this.props.csrfToken}
+            >
+            </GithubPullPanel>
+          </Collapsible>
+
+          <Collapsible ref={this.GITHUB_PUSH_PANEL_NAME}
+                       revealWhen={this.props.activePanelName === this.GITHUB_PUSH_PANEL_NAME}
+                       onChange={this.layoutDidUpdate}
+                       animationDisabled={this.state.animationDisabled}
+          >
+            <GithubPushPanel
+              group={this.getBehaviorGroup()}
+              onDoneClick={this.props.onClearActivePanel}
+              csrfToken={this.props.csrfToken}
+            >
+            </GithubPushPanel>
+          </Collapsible>
+
           <Collapsible ref="confirmUndo" revealWhen={this.props.activePanelName === 'confirmUndo'} onChange={this.layoutDidUpdate}>
             <ConfirmActionPanel confirmText="Undo changes" onConfirmClick={this.undoChanges} onCancelClick={this.props.onClearActivePanel}>
               <p>This will undo any changes you’ve made since last saving. Are you sure you want to do this?</p>
@@ -2553,6 +2591,8 @@ const BehaviorEditor = React.createClass({
           onDeleteClick={this.confirmDeleteBehaviorGroup}
           onSave={this.onReplaceBehaviorGroup}
           onSaveError={this.onSaveError}
+          onGithubPullClick={this.onGithubPullClick}
+          onGithubPushClick={this.onGithubPushClick}
         />
       );
     }

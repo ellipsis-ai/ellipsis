@@ -1,7 +1,6 @@
 define(function(require) {
   var React = require('react'),
     BehaviorGroup = require('../models/behavior_group'),
-    DataRequest = require('../lib/data_request'),
     Input = require('../form/input'),
     Textarea = require('../form/textarea');
 
@@ -18,7 +17,9 @@ define(function(require) {
       onBehaviorGroupIconChange: React.PropTypes.func.isRequired,
       onDeleteClick: React.PropTypes.func.isRequired,
       onSave: React.PropTypes.func.isRequired,
-      onSaveError: React.PropTypes.func.isRequired
+      onSaveError: React.PropTypes.func.isRequired,
+      onGithubPullClick: React.PropTypes.func.isRequired,
+      onGithubPushClick: React.PropTypes.func.isRequired
     },
 
     focus: function() {
@@ -31,95 +32,6 @@ define(function(require) {
 
     export: function() {
       window.location = jsRoutes.controllers.BehaviorImportExportController.export(this.props.group.id).url;
-    },
-
-    getInitialState: function() {
-      return {
-        githubOwner: "ellipsis-ai",
-        githubRepo: "github",
-        githubBranch: "master",
-        commitMessage: ""
-      };
-    },
-
-    getGithubOwner: function() {
-      return this.state.githubOwner;
-    },
-
-    onGithubOwnerChange: function(owner) {
-      this.setState({
-        githubOwner: owner
-      });
-    },
-
-    getGithubRepo: function() {
-      return this.state.githubRepo;
-    },
-
-    onGithubRepoChange: function(repo) {
-      this.setState({
-        githubRepo: repo
-      });
-    },
-
-    getGithubBranch: function() {
-      return this.state.githubBranch;
-    },
-
-    onGithubBranchChange: function(branch) {
-      this.setState({
-        githubBranch: branch
-      });
-    },
-
-    getGithubCommitMessage: function() {
-      return this.state.commitMessage;
-    },
-
-    onGithubCommitMessageChange: function(msg) {
-      this.setState({
-        commitMessage: msg
-      });
-    },
-
-    onUpdateFromGithub: function() {
-      DataRequest.jsonPost(
-        jsRoutes.controllers.BehaviorEditorController.updateFromGithub().url,
-        {
-          behaviorGroupId: this.props.group.id,
-          owner: this.getGithubOwner(),
-          repo: this.getGithubRepo(),
-          branch: this.getGithubBranch()
-        },
-        this.props.csrfToken
-      )
-        .then((json) => {
-          if (json.errors) {
-            this.props.onSaveError(json.errors);
-          } else {
-            this.props.onSave(BehaviorGroup.fromJson(json.data));
-          }
-        })
-        .catch((error) => {
-          this.props.onSaveError(error);
-        });
-    },
-
-    onPushToGithub: function() {
-      DataRequest.jsonPost(
-        jsRoutes.controllers.BehaviorEditorController.pushToGithub().url,
-        {
-          behaviorGroupId: this.props.group.id,
-          owner: this.getGithubOwner(),
-          repo: this.getGithubRepo(),
-          branch: this.getGithubBranch(),
-          commitMessage: this.getGithubCommitMessage()
-        },
-        this.props.csrfToken
-      )
-        .then(r => {
-          console.log(r);
-        });
     },
 
     getGithubAuthUrl: function() {
@@ -141,117 +53,33 @@ define(function(require) {
       );
     },
 
-    renderPullFromGithub: function() {
+    renderGithubActions: function() {
       return (
-        <div>
-          <div className="columns mtxxl">
-            <div className="column column-one-quarter">
-              <span className="display-inline-block align-m type-s type-weak mrm">Owner:</span>
-              <Input
-                ref="githubOwner"
-                className="form-input-borderless type-monospace type-s width-15 mrm"
-                placeholder="e.g. github"
-                onChange={this.onGithubOwnerChange}
-                value={this.getGithubOwner()}
-              />
-            </div>
-            <div className="column column-one-quarter">
-              <span className="display-inline-block align-m type-s type-weak mrm">Repo:</span>
-              <Input
-                ref="githubRepo"
-                className="form-input-borderless type-monospace type-s width-15 mrm"
-                placeholder="e.g. octocat"
-                onChange={this.onGithubRepoChange}
-                value={this.getGithubRepo()}
-              />
-            </div>
-            <div className="column column-one-quarter">
-              <span className="display-inline-block align-m type-s type-weak mrm">Branch:</span>
-              <Input
-                ref="githubBranch"
-                className="form-input-borderless type-monospace type-s width-15 mrm"
-                placeholder="e.g. master"
-                onChange={this.onGithubBranchChange}
-                value={this.getGithubBranch()}
-              />
-            </div>
-          </div>
-          <div className="mtl">
-            <button type="button"
-              onClick={this.onUpdateFromGithub}
-              disabled={ this.props.isModified || !this.getGithubRepo() || !this.getGithubOwner() }
-            >
-              Pull latest from Github
-            </button>
-          </div>
-        </div>
+        <span>
+          <button
+            className="mls"
+            type="button"
+            onClick={this.props.onGithubPullClick }
+            disabled={ this.props.isModified }
+          >
+            Pull code from Github…
+          </button>
+          <button
+            className="mls"
+            type="button"
+            onClick={this.props.onGithubPushClick }
+            disabled={ this.props.isModified }
+          >
+            Push code to Github…
+          </button>
+        </span>
       );
-    },
-
-    renderPushToGithub: function() {
-      return (
-        <div>
-          <div className="columns mtxxl">
-            <div className="column column-one-quarter">
-              <span className="display-inline-block align-m type-s type-weak mrm">Owner:</span>
-              <Input
-                ref="githubOwner"
-                className="form-input-borderless type-monospace type-s width-15 mrm"
-                placeholder="e.g. github"
-                onChange={this.onGithubOwnerChange}
-                value={this.getGithubOwner()}
-              />
-            </div>
-            <div className="column column-one-quarter">
-              <span className="display-inline-block align-m type-s type-weak mrm">Repo:</span>
-              <Input
-                ref="githubRepo"
-                className="form-input-borderless type-monospace type-s width-15 mrm"
-                placeholder="e.g. octocat"
-                onChange={this.onGithubRepoChange}
-                value={this.getGithubRepo()}
-              />
-            </div>
-            <div className="column column-one-quarter">
-              <span className="display-inline-block align-m type-s type-weak mrm">Branch:</span>
-              <Input
-                ref="githubBranch"
-                className="form-input-borderless type-monospace type-s width-15 mrm"
-                placeholder="e.g. master"
-                onChange={this.onGithubBranchChange}
-                value={this.getGithubBranch()}
-              />
-            </div>
-          </div>
-          <div className="mtl">
-            <span className="display-inline-block align-m type-s type-weak mrm">Commit message:</span>
-            <Input
-              ref="commitMessage"
-              className="form-input-borderless type-monospace type-s mrm"
-              onChange={this.onGithubCommitMessageChange}
-              value={this.getGithubCommitMessage()}
-            />
-          </div>
-          <div className="mtl">
-            <button type="button"
-                    onClick={this.onPushToGithub}
-                    disabled={ this.props.isModified || !this.getGithubRepo() || !this.getGithubOwner() || !this.getGithubBranch() }
-            >
-              Push this version to Github
-            </button>
-          </div>
-        </div>
-      );
-    },
-
-    renderGithubConfig: function() {
-      return this.renderPushToGithub();
     },
 
     renderGithubIntegration: function() {
       if (this.props.isAdmin) {
         if (this.props.isLinkedToGithub) {
-          return this.renderGithubConfig();
+          return this.renderGithubActions();
         } else {
           return this.renderGithubAuth();
         }
@@ -304,16 +132,17 @@ define(function(require) {
           <hr className="mvxxl"/>
 
           <div className="columns">
-            <div className="column column-one-half mobile-column-full">
+            <div className="column column-three-quarters mobile-column-full">
               <button type="button"
                 onClick={this.export}
                 disabled={this.props.isModified}
               >
                 Export skill as ZIP file
               </button>
+              {this.renderGithubIntegration()}
             </div>
 
-            <div className="column column-one-half align-r mobile-column-full mobile-align-l">
+            <div className="column align-r mobile-column-full mobile-align-l">
               <button type="button"
                 onClick={this.props.onDeleteClick}
                 disabled={this.props.isModified}
@@ -322,8 +151,6 @@ define(function(require) {
               </button>
             </div>
           </div>
-
-          {this.renderGithubIntegration()}
 
         </div>
       );
