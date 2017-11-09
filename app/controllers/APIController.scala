@@ -18,7 +18,7 @@ import models.team.Team
 import play.api.data.Form
 import play.api.data.Forms._
 import play.api.http.HttpEntity
-import play.api.libs.json.{JsObject, JsValue, Json}
+import play.api.libs.json._
 import play.api.libs.ws.WSClient
 import play.api.mvc.{AnyContent, Request, Result}
 import play.api.{Configuration, Logger}
@@ -45,23 +45,37 @@ class APIController @Inject() (
 
   class InvalidTokenException extends Exception
 
-  private def logAndRespondFor(status: Status, message: String, details: JsValue = JsObject.empty)(implicit r: Request[AnyContent]): Result = {
-    val result = status.apply(message)
+  private def logAndRespondFor(status: Status, maybeMessage: Option[String], maybeFormErrors: Option[JsValue], details: JsValue = JsObject.empty)(implicit r: Request[AnyContent]): Result = {
+    val formErrors = maybeFormErrors.map {
+      case a: JsArray => a
+      case v: JsValue => Json.arr(v)
+    }
+    val errorJson = Json.obj("errors" -> Json.obj(
+      "form" -> formErrors,
+      "message" -> maybeMessage
+    ))
+    val result = status.apply(errorJson)
     Logger.info(
-      s"""Returning a ${result.header.status} for: $message
+      s"""Returning a ${result.header.status} for: ${maybeMessage.getOrElse("")}
+         |
+         |${Json.prettyPrint(errorJson)}
          |
          |Api info: ${Json.prettyPrint(details)}
          |
-         |Request: ${r} with ${r.rawQueryString} ${r.body}""".stripMargin)
+         |Request: $r with ${r.rawQueryString} ${r.body}""".stripMargin)
     result
   }
 
-  private def badRequest(message: String, details: JsValue = JsObject.empty)(implicit r: Request[AnyContent]): Result = {
-    logAndRespondFor(BadRequest, message, details)
+  private def badRequest(maybeMessage: Option[String], maybeJsonErrors: Option[JsValue], details: JsValue = JsObject.empty)(implicit r: Request[AnyContent]): Result = {
+    logAndRespondFor(BadRequest, maybeMessage, maybeJsonErrors, details)
   }
 
   private def notFound(message: String, details: JsValue = JsObject.empty)(implicit r: Request[AnyContent]): Result = {
-    logAndRespondFor(NotFound, message, details)
+    logAndRespondFor(NotFound, Some(message), None, details)
+  }
+
+  private def invalidTokenRequest[T](details: T = None)(implicit r: Request[AnyContent], tjs: Writes[T]): Result = {
+    badRequest(Some("Invalid token"), None, Json.toJson(details))
   }
 
   trait ApiMethodInfo {
@@ -249,7 +263,7 @@ class APIController @Inject() (
   }
 
   private def resultForFormErrors[T <: ApiMethodInfo](formWithErrors: Form[T])(implicit r: Request[AnyContent]): Result = {
-    badRequest(formWithErrors.errors.map(_.message).mkString(", "))
+    badRequest(None, Some(formWithErrors.errorsAsJson))
   }
 
   case class RunActionArgumentInfo(name: String, value: String)
@@ -343,13 +357,13 @@ class APIController @Inject() (
             info.trigger.map { trigger =>
               runByTrigger(trigger, info, context)
             }.getOrElse {
-              Future.successful(badRequest(actionNameAndTriggerError, Json.toJson(info)))
+              Future.successful(badRequest(Some(actionNameAndTriggerError), None, Json.toJson(info)))
             }
           }
         } yield result
 
         eventualResult.recover {
-          case e: InvalidTokenException => badRequest("Invalid token", Json.toJson(info))
+          case e: InvalidTokenException => invalidTokenRequest(info)
         }
       }
     )
@@ -443,7 +457,7 @@ class APIController @Inject() (
               unscheduled = None
             )))
           }.getOrElse {
-            badRequest(s"Unable to schedule `$actionName` for `${info.recurrenceString}`", Json.toJson(info))
+            badRequest(Some(s"Unable to schedule `$actionName` for `${info.recurrenceString}`"), None, Json.toJson(info))
           }
         }
       }).getOrElse {
@@ -481,7 +495,7 @@ class APIController @Inject() (
           unscheduled = None
         )))
       }.getOrElse {
-        badRequest(s"Unable to schedule `$trigger` for `${info.recurrenceString}`", Json.toJson(info))
+        badRequest(Some(s"Unable to schedule `$trigger` for `${info.recurrenceString}`"), None, Json.toJson(info))
       }
     }
   }
@@ -500,13 +514,13 @@ class APIController @Inject() (
             info.trigger.map { trigger =>
               scheduleByTrigger(trigger, info, context)
             }.getOrElse {
-              Future.successful(badRequest(actionNameAndTriggerError, Json.toJson(info)))
+              Future.successful(badRequest(Some(actionNameAndTriggerError), None, Json.toJson(info)))
             }
           }
         } yield result
 
         eventualResult.recover {
-          case e: InvalidTokenException => badRequest("Invalid token", Json.toJson(info))
+          case e: InvalidTokenException => invalidTokenRequest(info)
         }
       }
     )
@@ -634,13 +648,13 @@ class APIController @Inject() (
             info.trigger.map { trigger =>
               unscheduleByTrigger(trigger, info, context)
             }.getOrElse {
-              Future.successful(badRequest(actionNameAndTriggerError, Json.toJson(info)))
+              Future.successful(badRequest(Some(actionNameAndTriggerError), None, Json.toJson(info)))
             }
           }
         } yield result
 
         eventualResult.recover {
-          case e: InvalidTokenException => badRequest("Invalid token", Json.toJson(info))
+          case e: InvalidTokenException => invalidTokenRequest(info)
         }
       }
     )
@@ -679,7 +693,7 @@ class APIController @Inject() (
         } yield result
 
         eventualResult.recover {
-          case e: InvalidTokenException => badRequest("Invalid token", Json.toJson(info))
+          case e: InvalidTokenException => invalidTokenRequest(info)
         }
       }
     )
@@ -727,12 +741,12 @@ class APIController @Inject() (
         } yield result
 
         eventualResult.recover {
-          case e: InvalidTokenException => badRequest("Invalid token\n", Json.toJson(info))
+          case e: InvalidTokenException => invalidTokenRequest(info)
           case e: slack.api.ApiError => if (e.code == "channel_not_found") {
-            badRequest(s"""Error: the channel "${info.channel}" could not be found.""" + "\n", Json.toJson(info))
+            badRequest(Some(s"""Error: the channel "${info.channel}" could not be found.""" + "\n"), None, Json.toJson(info))
           } else {
             // TODO: 400 seems like maybe the wrong kind of error here
-            badRequest(s"Slack API error: ${e.code}\n", Json.toJson(info))
+            badRequest(Some(s"Slack API error: ${e.code}\n"), None, Json.toJson(info))
           }
         }
       }
@@ -777,7 +791,7 @@ class APIController @Inject() (
 
         eventualResult.recover {
           // TODO: look into this and similar cases and maybe do something different
-          case e: InvalidTokenException => badRequest("Invalid token\n", Json.toJson(info))
+          case e: InvalidTokenException => invalidTokenRequest(info)
         }
       }
     )
@@ -817,7 +831,7 @@ class APIController @Inject() (
     } yield result
 
     eventualResult.recover {
-      case e: InvalidTokenException => badRequest("Invalid token\n", Json.toJson(Map("token" -> token, "fileId" -> fileId)))
+      case e: InvalidTokenException => invalidTokenRequest(Map("token" -> token, "fileId" -> fileId))
     }
   }
 

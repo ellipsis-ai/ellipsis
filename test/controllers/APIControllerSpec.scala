@@ -139,7 +139,7 @@ class APIControllerSpec extends PlaySpec with MockitoSugar {
         val request = FakeRequest(controllers.routes.APIController.postMessage()).withJsonBody(body)
         val result = route(app, request).get
         status(result) mustBe BAD_REQUEST
-        contentAsString(result) mustBe "Invalid token"
+        (contentAsJson(result) \ "errors" \ "message").toString mustBe "Invalid token"
         verify(dataService.apiTokens, times(1)).find(token)
       }
     }
@@ -196,7 +196,7 @@ class APIControllerSpec extends PlaySpec with MockitoSugar {
         val request = FakeRequest(controllers.routes.APIController.runAction()).withJsonBody(body)
         val result = route(app, request).get
         status(result) mustBe BAD_REQUEST
-        contentAsString(result) mustBe "Invalid token"
+        (contentAsJson(result) \ "errors" \ "message").toString mustBe "Invalid token"
         verify(dataService.apiTokens, times(1)).find(token)
       }
     }
@@ -211,7 +211,7 @@ class APIControllerSpec extends PlaySpec with MockitoSugar {
         val request = FakeRequest(controllers.routes.APIController.runAction()).withJsonBody(body)
         val result = route(app, request).get
         status(result) mustBe BAD_REQUEST
-        contentAsString(result) mustBe "One and only one of actionName and trigger must be set"
+        (contentAsJson(result) \ "errors" \ "message").toString mustBe "One and only one of actionName and trigger must be set"
       }
     }
 
@@ -225,7 +225,7 @@ class APIControllerSpec extends PlaySpec with MockitoSugar {
         val request = FakeRequest(controllers.routes.APIController.runAction()).withJsonBody(body)
         val result = route(app, request).get
         status(result) mustBe BAD_REQUEST
-        contentAsString(result) mustBe "One and only one of actionName and trigger must be set"
+        (contentAsJson(result) \ "errors" \ "message").toString mustBe "One and only one of actionName and trigger must be set"
       }
     }
 
@@ -293,7 +293,7 @@ class APIControllerSpec extends PlaySpec with MockitoSugar {
         val request = FakeRequest(controllers.routes.APIController.say()).withJsonBody(body)
         val result = route(app, request).get
         status(result) mustBe BAD_REQUEST
-        contentAsString(result).trim mustBe "Invalid token"
+        (contentAsJson(result) \ "errors" \ "message").toString mustBe "Invalid token"
         verify(dataService.apiTokens, times(1)).find(token)
       }
     }
@@ -351,7 +351,7 @@ class APIControllerSpec extends PlaySpec with MockitoSugar {
         val request = FakeRequest(controllers.routes.APIController.scheduleAction()).withJsonBody(body)
         val result = route(app, request).get
         status(result) mustBe BAD_REQUEST
-        contentAsString(result) mustBe "Invalid token"
+        (contentAsJson(result) \ "errors" \ "message").toString mustBe "Invalid token"
         verify(dataService.apiTokens, times(1)).find(token)
       }
     }
@@ -363,7 +363,7 @@ class APIControllerSpec extends PlaySpec with MockitoSugar {
         val request = FakeRequest(controllers.routes.APIController.scheduleAction()).withJsonBody(body)
         val result = route(app, request).get
         status(result) mustBe BAD_REQUEST
-        contentAsString(result) mustBe "One and only one of actionName and trigger must be set"
+        (contentAsJson(result) \ "errors" \ "message").toString mustBe "One and only one of actionName and trigger must be set"
       }
     }
 
@@ -374,7 +374,7 @@ class APIControllerSpec extends PlaySpec with MockitoSugar {
         val request = FakeRequest(controllers.routes.APIController.scheduleAction()).withJsonBody(body)
         val result = route(app, request).get
         status(result) mustBe BAD_REQUEST
-        contentAsString(result) mustBe "One and only one of actionName and trigger must be set"
+        (contentAsJson(result) \ "errors" \ "message").toString mustBe "One and only one of actionName and trigger must be set"
       }
     }
 
@@ -493,7 +493,7 @@ class APIControllerSpec extends PlaySpec with MockitoSugar {
         val request = FakeRequest(controllers.routes.APIController.unscheduleAction()).withJsonBody(body)
         val result = route(app, request).get
         status(result) mustBe BAD_REQUEST
-        contentAsString(result) mustBe "Invalid token"
+        (contentAsJson(result) \ "errors" \ "message").toString mustBe "Invalid token"
         verify(dataService.apiTokens, times(1)).find(token)
       }
     }
@@ -505,7 +505,7 @@ class APIControllerSpec extends PlaySpec with MockitoSugar {
         val request = FakeRequest(controllers.routes.APIController.unscheduleAction()).withJsonBody(body)
         val result = route(app, request).get
         status(result) mustBe BAD_REQUEST
-        contentAsString(result) mustBe "One and only one of actionName and trigger must be set"
+        (contentAsJson(result) \ "errors" \ "message").toString mustBe "One and only one of actionName and trigger must be set"
       }
     }
 
@@ -516,7 +516,7 @@ class APIControllerSpec extends PlaySpec with MockitoSugar {
         val request = FakeRequest(controllers.routes.APIController.unscheduleAction()).withJsonBody(body)
         val result = route(app, request).get
         status(result) mustBe BAD_REQUEST
-        contentAsString(result) mustBe "One and only one of actionName and trigger must be set"
+        (contentAsJson(result) \ "errors" \ "message").toString mustBe "One and only one of actionName and trigger must be set"
       }
     }
 
@@ -536,7 +536,7 @@ class APIControllerSpec extends PlaySpec with MockitoSugar {
         val request = FakeRequest(controllers.routes.APIController.unscheduleAction()).withJsonBody(body)
         val result = route(app, request).get
         status(result) mustBe NOT_FOUND
-        contentAsString(result) mustBe s"Couldn't find a user with ID `${invalidUserId}`"
+        (contentAsJson(result) \ "errors" \ "message").toString mustBe s"Couldn't find a user with ID `${invalidUserId}`"
         verify(dataService.apiTokens, times(1)).find(token)
       }
     }
@@ -665,7 +665,7 @@ class APIControllerSpec extends PlaySpec with MockitoSugar {
         val request = FakeRequest(controllers.routes.APIController.generateApiToken()).withJsonBody(body)
         val result = route(app, request).get
         status(result) mustBe BAD_REQUEST
-        contentAsString(result).trim mustBe "Invalid token"
+        (contentAsJson(result) \ "errors" \ "message").toString mustBe "Invalid token"
         verify(dataService.apiTokens, times(1)).find(token)
       }
     }
