@@ -16,6 +16,7 @@ import models.behaviors.scheduling.scheduledmessage.ScheduledMessage
 import models.behaviors.{BotResultService, SimpleTextResult}
 import models.team.Team
 import play.api.data.Form
+import play.api.data.FormError
 import play.api.data.Forms._
 import play.api.http.HttpEntity
 import play.api.libs.json._
@@ -45,10 +46,15 @@ class APIController @Inject() (
 
   class InvalidTokenException extends Exception
 
-  private def logAndRespondFor(status: Status, maybeMessage: Option[String], maybeFormErrors: Option[JsValue], details: JsValue = JsObject.empty)(implicit r: Request[AnyContent]): Result = {
-    val formErrors = maybeFormErrors.map {
-      case a: JsArray => a
-      case v: JsValue => Json.arr(v)
+  private def logAndRespondFor(status: Status, maybeMessage: Option[String], maybeFormErrors: Option[Seq[FormError]], details: JsValue = JsObject.empty)(implicit r: Request[AnyContent]): Result = {
+    val formErrors = maybeFormErrors.map { errors =>
+      errors.map { error =>
+        if (error.key.nonEmpty) {
+          Json.obj(error.key -> error.format)
+        } else {
+          Json.obj("error" -> error.format)
+        }
+      }
     }
     val errorJson = Json.obj("errors" -> Json.obj(
       "form" -> formErrors,
@@ -66,8 +72,8 @@ class APIController @Inject() (
     result
   }
 
-  private def badRequest(maybeMessage: Option[String], maybeJsonErrors: Option[JsValue], details: JsValue = JsObject.empty)(implicit r: Request[AnyContent]): Result = {
-    logAndRespondFor(BadRequest, maybeMessage, maybeJsonErrors, details)
+  private def badRequest(maybeMessage: Option[String], maybeFormErrors: Option[Seq[FormError]], details: JsValue = JsObject.empty)(implicit r: Request[AnyContent]): Result = {
+    logAndRespondFor(BadRequest, maybeMessage, maybeFormErrors, details)
   }
 
   private def notFound(message: String, details: JsValue = JsObject.empty)(implicit r: Request[AnyContent]): Result = {
@@ -263,7 +269,7 @@ class APIController @Inject() (
   }
 
   private def resultForFormErrors[T <: ApiMethodInfo](formWithErrors: Form[T])(implicit r: Request[AnyContent]): Result = {
-    badRequest(None, Some(formWithErrors.errorsAsJson))
+    badRequest(None, Some(formWithErrors.errors))
   }
 
   case class RunActionArgumentInfo(name: String, value: String)
