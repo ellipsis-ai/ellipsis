@@ -102,7 +102,7 @@ define(function(require) {
 
     render(): React.Node {
       return (
-        <SettingsPage teamId={this.props.teamId} activePage={"regionalSettings"} header={"Regional settings"}>
+        <SettingsPage teamId={this.props.teamId} activePage={"regionalSettings"} header={"Regional settings"} isAdmin={this.props.isAdmin}>
 
           <h5>Team time zone</h5>
 

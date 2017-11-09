@@ -8,11 +8,13 @@ jsRoutes.controllers.APITokenController.listTokens = jest.fn(() => ({ url: '/moc
 jsRoutes.controllers.OAuth2ApplicationController.list = jest.fn(() => ({ url: '/mock_oauth2_list' }));
 jsRoutes.controllers.AWSConfigController.list = jest.fn(() => ({ url: '/mock_aws_config_list' }));
 jsRoutes.controllers.RegionalSettingsController.index = jest.fn(() => ({ url: '/mock_regional_settings' }));
+jsRoutes.controllers.GithubConfigController.index = jest.fn(() => ({ url: '/mock_github_config' }));
 
 describe('EnvironmentVariables', () => {
 
   const defaultConfig = Object.freeze({
     csrfToken: "0",
+    isAdmin: false,
     data: {
       teamId: "1",
       variables: [{
