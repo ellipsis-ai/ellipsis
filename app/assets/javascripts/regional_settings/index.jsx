@@ -13,6 +13,7 @@ define(function(require) {
 
   type Props = {
     csrfToken: string,
+    isAdmin: boolean,
     teamId: string,
     onSaveTimeZone: (tzName: string, formattedName: string, newOffset: number) => void,
     teamTimeZone?: string,

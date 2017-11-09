@@ -9,6 +9,7 @@ define(function(require) {
   const EnvironmentVariableList = React.createClass({
     propTypes: Object.assign({}, Page.requiredPropTypes, {
       csrfToken: React.PropTypes.string.isRequired,
+      isAdmin: React.PropTypes.bool.isRequired,
       data: React.PropTypes.shape({
         teamId: React.PropTypes.string.isRequired,
         variables: React.PropTypes.arrayOf(React.PropTypes.shape({
@@ -89,7 +90,7 @@ define(function(require) {
             <div className="flex-column flex-column-left flex-rows container container-wide prn">
               <div className="columns flex-columns flex-row-expand">
                 <div className="column column-one-quarter flex-column">
-                  <SettingsMenu activePage="environmentVariables" teamId={this.props.data.teamId} />
+                  <SettingsMenu activePage="environmentVariables" teamId={this.props.data.teamId} isAdmin={this.props.isAdmin}/>
                 </div>
                 <div className="column column-three-quarters flex-column bg-white ptxl pbxxxxl phxxxxl">
 

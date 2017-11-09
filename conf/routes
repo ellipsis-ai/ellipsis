@@ -70,6 +70,9 @@ GET         /list_api_tokens                          @controllers.APITokenContr
 POST        /create_api_token                         @controllers.APITokenController.createToken
 POST        /revoke_api_token                         @controllers.APITokenController.revokeToken
 
+GET         /github_config                            @controllers.GithubConfigController.index(maybeTeamId: Option[String] ?= None)
+POST        /reset_github_config                      @controllers.GithubConfigController.reset
+
 GET         /list_environment_variables               @controllers.EnvironmentVariablesController.list(teamId: Option[String] ?= None, newVars: Option[String] ?= None)
 
 GET         /regional_settings                        @controllers.RegionalSettingsController.index(teamId: Option[String] ?= None)

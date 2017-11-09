@@ -36,6 +36,8 @@
   routes.javascript.EnvironmentVariablesController.submit,
   routes.javascript.EnvironmentVariablesController.submit,
   routes.javascript.FeedbackController.send,
+  routes.javascript.GithubConfigController.index,
+  routes.javascript.GithubConfigController.reset,
   routes.javascript.OAuth2ApplicationController.edit,
   routes.javascript.OAuth2ApplicationController.list,
   routes.javascript.OAuth2ApplicationController.newApp,

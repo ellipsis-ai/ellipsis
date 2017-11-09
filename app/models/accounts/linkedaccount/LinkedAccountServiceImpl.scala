@@ -90,6 +90,11 @@ class LinkedAccountServiceImpl @Inject() (
     dataService.run(action)
   }
 
+  def deleteGithubFor(user: User): Future[Boolean] = {
+    val action = rawForProviderForQuery(user.id, GithubProvider.ID).delete.map(_ > 0)
+    dataService.run(action)
+  }
+
   def isAdminAction(linkedAccount: LinkedAccount): DBIO[Boolean] = {
     dataService.slackProfiles.findAction(linkedAccount.loginInfo).map { maybeProfile =>
       maybeProfile.map(_.teamId).contains(LinkedAccount.ELLIPSIS_SLACK_TEAM_ID)
