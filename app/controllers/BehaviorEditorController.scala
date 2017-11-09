@@ -18,10 +18,9 @@ import play.api.mvc.{AnyContent, Result}
 import play.filters.csrf.CSRF
 import services.{DefaultServices, GithubService}
 import utils.FutureSequencer
-import utils.github.{GithubPusher, GithubSingleBehaviorGroupFetcher}
+import utils.github._
 
 import scala.concurrent.{ExecutionContext, Future}
-import scala.util.{Failure, Success}
 
 class BehaviorEditorController @Inject() (
                                            val silhouette: Silhouette[EllipsisEnv],
@@ -511,10 +510,12 @@ class BehaviorEditorController @Inject() (
         } yield {
           maybeBehaviorGroup.map { group =>
             maybeGithubProfile.map { profile =>
-              val fetcher = GithubSingleBehaviorGroupFetcher(group.team, info.owner, info.repo, profile.token, info.branch, githubService, services, ec)
-              fetcher.fetch(maybeExistingGroupData) match {
-                case Failure(err) => Ok(JsObject(Map("errors" -> JsString(err.getMessage))))
-                case Success(groupData) => Ok(JsObject(Map("data" -> Json.toJson(groupData))))
+              val fetcher = GithubSingleBehaviorGroupFetcher(group.team, info.owner, info.repo, profile.token, info.branch, maybeExistingGroupData, githubService, services, ec)
+              try {
+                val groupData = fetcher.result
+                Ok(JsObject(Map("data" -> Json.toJson(groupData))))
+              } catch {
+                case e: GitFetcherException => Ok(JsObject(Map("errors" -> JsString(e.getMessage))))
               }
             }.getOrElse(Unauthorized(s"User is not correctly authed with GitHub"))
           }.getOrElse(NotFound(s"Skill with ID ${info.behaviorGroupId} not found"))
@@ -556,6 +557,7 @@ class BehaviorEditorController @Inject() (
           maybeBehaviorGroup <- dataService.behaviorGroups.find(info.behaviorGroupId, user)
           result <- maybeBehaviorGroup.map { group =>
             maybeGithubProfile.map { profile =>
+              val committerInfo = GithubCommitterInfoFetcher(user, profile.token, githubService, services, ec).result
               val pusher =
                 GithubPusher(
                   info.owner,
@@ -563,6 +565,7 @@ class BehaviorEditorController @Inject() (
                   info.branch.getOrElse("master"),
                   info.commitMessage,
                   profile.token,
+                  committerInfo,
                   group,
                   user,
                   services,

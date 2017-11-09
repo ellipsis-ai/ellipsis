@@ -8,6 +8,8 @@ define(function(require) {
   const GithubPullPanel = React.createClass({
     propTypes: {
       group: React.PropTypes.instanceOf(BehaviorGroup).isRequired,
+      onSave: React.PropTypes.func.isRequired,
+      onSaveError: React.PropTypes.func.isRequired,
       onDoneClick: React.PropTypes.func.isRequired,
       csrfToken: React.PropTypes.string.isRequired
     },

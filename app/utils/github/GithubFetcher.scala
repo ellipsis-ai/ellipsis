@@ -1,6 +1,5 @@
 package utils.github
 
-import models.team.Team
 import play.api.Configuration
 import play.api.libs.json._
 import play.api.libs.ws.WSClient
@@ -9,13 +8,19 @@ import services._
 import scala.concurrent.duration._
 import scala.concurrent.{Await, ExecutionContext, Future}
 
-trait GithubFetcher {
+trait GitFetcherException extends Exception
 
-  val owner: String
-  val repoName: String
-  val repoAccessToken: String
-  val team: Team
-  val maybeBranch: Option[String]
+case class GithubResultFromDataException(message: String) extends GitFetcherException {
+  override def getMessage: String = message
+}
+
+case class GithubFetchDataException(errors: Seq[String]) extends GitFetcherException {
+  override def getMessage: String = errors.mkString(", ")
+}
+
+trait GithubFetcher[T] {
+
+  val token: String
   val githubService: GithubService
   val services: DefaultServices
   val ws: WSClient = services.ws
@@ -24,20 +29,18 @@ trait GithubFetcher {
   val cacheService: CacheService = services.cacheService
   implicit val ec: ExecutionContext
 
-  val cacheKey: String = s"github_${owner}_${repoName}_${branch}"
-
+  val cacheKey: String
   val cacheTimeout: Duration = config.get[Int]("github.cacheTimeoutSeconds").seconds
-
-  val branch: String = maybeBranch.getOrElse("master")
+  val shouldTryCache: Boolean = true
 
   def query: String
 
-  private def jsonQuery: JsValue = {
+  protected def jsonQuery: JsValue = {
     JsObject(Seq(("query", JsString(query))))
   }
 
   def fetch: Future[JsValue] = {
-    githubService.execute(repoAccessToken, jsonQuery)
+    githubService.execute(token, jsonQuery)
   }
 
   def blockingFetch: JsValue = {
@@ -45,12 +48,13 @@ trait GithubFetcher {
   }
 
   def get: JsValue = {
-    val shouldTryCache = maybeBranch.isEmpty
     if (shouldTryCache) {
       cacheService.get(cacheKey).getOrElse {
         try {
           val fetched = blockingFetch
-          cacheService.set(cacheKey, fetched, cacheTimeout)
+          if (isCacheable(fetched)) {
+            cacheService.set(cacheKey, fetched, cacheTimeout)
+          }
           fetched
         } catch {
           case ex: GithubApiException => JsArray()
@@ -60,5 +64,26 @@ trait GithubFetcher {
       blockingFetch
     }
   }
+
+  def resultFromResponse(data: JsValue): T = {
+    val errors = data \ "errors"
+    errors match {
+      case JsDefined(JsArray(arr)) => throw GithubFetchDataException(arr.map(ea => (ea \ "message").as[String]))
+      case _ => resultFromNonErrorResponse(data)
+    }
+  }
+
+  def resultFromNonErrorResponse(data: JsValue): T
+
+  def isCacheable(data: JsValue): Boolean = {
+    try {
+      resultFromResponse(data)
+      true
+    } catch {
+      case _: GitFetcherException => false
+    }
+  }
+
+  def result: T = resultFromNonErrorResponse(get)
 
 }

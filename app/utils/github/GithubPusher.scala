@@ -29,6 +29,7 @@ case class GithubPusher(
                        branch: String,
                        commitMessage: String,
                        repoAccessToken: String,
+                       committerInfo: GithubCommitterInfo,
                        behaviorGroup: BehaviorGroup,
                        user: User,
                        services: DefaultServices,
@@ -80,7 +81,7 @@ case class GithubPusher(
   }
 
   private def push: Future[Unit] = {
-    runCommand(raw"""cd $dirName && git commit -a -m "$commitMessage" && git push origin $branch""", Some(GitPushException.apply))
+    runCommand(raw"""cd $dirName && git -c user.name='${committerInfo.name}' -c user.email='${committerInfo.email}' commit -a -m "$commitMessage" && git push origin $branch""", Some(GitPushException.apply))
   }
 
   private def cleanUp: Future[Unit] = {

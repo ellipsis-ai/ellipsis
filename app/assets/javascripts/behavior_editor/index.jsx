@@ -1861,6 +1861,8 @@ const BehaviorEditor = React.createClass({
             <GithubPullPanel
               group={this.getBehaviorGroup()}
               onDoneClick={this.props.onClearActivePanel}
+              onSave={this.onReplaceBehaviorGroup}
+              onSaveError={this.onSaveError}
               csrfToken={this.props.csrfToken}
             >
             </GithubPullPanel>
