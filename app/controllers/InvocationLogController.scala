@@ -5,10 +5,12 @@ import javax.inject.Inject
 
 import com.google.inject.Provider
 import json.Formatting._
-import json.LogEntryData
+import json.{APIErrorData, APIErrorResultData, LogEntryData}
 import models.behaviors.events.EventType
+import models.behaviors.invocationtoken.InvocationToken
 import play.api.Configuration
 import play.api.libs.json._
+import play.api.mvc.Result
 import services.DataService
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -43,9 +45,25 @@ class InvocationLogController @Inject() (
              ) = Action.async { implicit request =>
     for {
       maybeInvocationToken <- dataService.invocationTokens.findNotExpired(token)
-      maybeOriginatingBehavior <- maybeInvocationToken.map { invocationToken =>
-        dataService.behaviors.findWithoutAccessCheck(invocationToken.behaviorId)
-      }.getOrElse(Future.successful(None))
+      result <- maybeInvocationToken.map { invocationToken =>
+        getLogsWithToken(behaviorIdOrNameOrTrigger, invocationToken, maybeFrom, maybeTo, maybeUserId, maybeOriginalEventType)
+      }.getOrElse {
+        val errorResult = APIErrorResultData(Seq(APIErrorData("Invalid or expired token", Some("token"))))
+        Future.successful(BadRequest(Json.toJson(errorResult)))
+      }
+    } yield result
+  }
+
+  private def getLogsWithToken(
+                                behaviorIdOrNameOrTrigger: String,
+                                invocationToken: InvocationToken,
+                                maybeFrom: Option[String],
+                                maybeTo: Option[String],
+                                maybeUserId: Option[String],
+                                maybeOriginalEventType: Option[String]
+                              ): Future[Result] = {
+    for {
+      maybeOriginatingBehavior <- dataService.behaviors.findWithoutAccessCheck(invocationToken.behaviorId)
       maybeBehavior <- maybeOriginatingBehavior.flatMap { behavior =>
         behavior.maybeGroup.map { group =>
           dataService.behaviors.findByIdOrNameOrTrigger(behaviorIdOrNameOrTrigger, group)
@@ -59,7 +77,8 @@ class InvocationLogController @Inject() (
           // Return an empty list if the original event type specified is invalid
           Future.successful(Some(Seq()))
         } else {
-          dataService.invocationLogEntries.allForBehavior(behavior, from, to, maybeUserId, maybeValidOriginalEventType)
+          dataService.invocationLogEntries
+            .allForBehavior(behavior, from, to, maybeUserId, maybeValidOriginalEventType)
             .map { entries =>
               Some(entries.filterNot(_.paramValues == JsNull))
             }
@@ -74,15 +93,19 @@ class InvocationLogController @Inject() (
       maybeLogEntryData.map { logEntryData =>
         Ok(Json.toJson(logEntryData))
       }.getOrElse {
-        NotFound(
-          s"""Couldn't find action for `${behaviorIdOrNameOrTrigger}`
-             |
-             |Possible reasons:
-             |- The token passed is invalid or expired
-             |- The action is neither a valid action ID, nor does it match an action in the same skill you are calling from
-           """.stripMargin)
+        val errorMessage = InvocationLogController.noActionFoundMessage(behaviorIdOrNameOrTrigger)
+        val errorResult = APIErrorResultData(Seq(APIErrorData(errorMessage, Some("behaviorId"))))
+        NotFound(Json.toJson(errorResult))
       }
     }
-  }
 
+  }
+}
+
+object InvocationLogController {
+  def noActionFoundMessage(nameOrId: String): String = {
+    s"""Couldn't find an action for `$nameOrId`.
+       |
+       |Either it’s invalid, or the action is not part of the same skill. Only logs for the current skill can be obtained.""".stripMargin
+  }
 }
