@@ -21,6 +21,10 @@ define(function(require) {
       };
     },
 
+    isLinkModified: function() {
+      return !this.props.linked || this.props.linked.getOwner() !== this.state.owner || this.props.linked.getRepo() !== this.state.repo;
+    },
+
     getOwner: function() {
       return this.state.owner || "";
     },
@@ -85,7 +89,7 @@ define(function(require) {
             <button
               type="button"
               onClick={this.onLinkClick}
-              disabled={ this.props.isModified || !this.getRepo() || !this.getOwner() }
+              disabled={ this.props.isModified || !this.getRepo() || !this.getOwner() || !this.isLinkModified() }
             >
               Link
             </button>
