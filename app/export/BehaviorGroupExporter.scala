@@ -128,7 +128,7 @@ case class BehaviorGroupExporter(
     }
   }
 
-  protected def writeFiles(): Unit = {
+  def writeFiles(): Unit = {
     writeFileFor(groupPath, "config.json", configString)
     groupData.description.foreach { desc =>
       writeFileFor(groupPath, "README", desc)
@@ -161,8 +161,13 @@ case class BehaviorGroupExporter(
 
 object BehaviorGroupExporter {
 
-  def maybeFor(groupId: String, user: User, dataService: DataService)(implicit ec: ExecutionContext): Future[Option[BehaviorGroupExporter]] = {
-    val mainParentPath = "/tmp/exports/"
+  def maybeFor(
+                groupId: String,
+                user: User,
+                dataService: DataService,
+                maybeParentPath: Option[String] = None,
+                maybeExportName: Option[String] = None
+              )(implicit ec: ExecutionContext): Future[Option[BehaviorGroupExporter]] = {
     for {
       maybeGroup <- dataService.behaviorGroups.findWithoutAccessCheck(groupId)
       maybeGroupVersion <- maybeGroup.map { group =>
@@ -181,7 +186,9 @@ object BehaviorGroupExporter {
         groupVersion <- maybeGroupVersion
         groupData <- maybeGroupData
       } yield {
-        BehaviorGroupExporter(groupData, functionMap, groupVersion.exportName, mainParentPath)
+        val parentPath = maybeParentPath.getOrElse("/tmp/exports/")
+        val exportName = maybeExportName.getOrElse(groupVersion.exportName)
+        BehaviorGroupExporter(groupData, functionMap, exportName, parentPath)
       }
     }
   }

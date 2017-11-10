@@ -12,6 +12,7 @@ jsRoutes.controllers.OAuth2ApplicationController.list = jest.fn(() => ({ url: '/
 jsRoutes.controllers.AWSConfigController.list = jest.fn(() => ({ url: '/mock_aws_config_list' }));
 jsRoutes.controllers.RegionalSettingsController.index = jest.fn(() => ({ url: '/mock_regional_settings' }));
 jsRoutes.controllers.ApplicationController.possibleCitiesFor = jest.fn(() => ({ url: '/mock_possible_cities' }));
+jsRoutes.controllers.GithubConfigController.index = jest.fn(() => ({ url: '/mock_github_config' }));
 
 describe('RegionalSettings', () => {
   const onSaveTimeZone = jest.fn();
@@ -19,6 +20,7 @@ describe('RegionalSettings', () => {
   const defaultConfig = Object.freeze({
     csrfToken: "0",
     teamId: "1",
+    isAdmin: false,
     onSaveTimeZone: onSaveTimeZone,
     teamTimeZone: "America/New_York",
     teamTimeZoneName: "Eastern Time",

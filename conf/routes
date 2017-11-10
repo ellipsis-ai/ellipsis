@@ -43,6 +43,7 @@ POST        /query_default_storage                    @controllers.BehaviorEdito
 POST        /delete_default_storage_items             @controllers.BehaviorEditorController.deleteDefaultStorageItems
 GET         /node_module_versions/:groupId            @controllers.BehaviorEditorController.nodeModuleVersionsFor(groupId: String)
 POST        /update_from_github                       @controllers.BehaviorEditorController.updateFromGithub
+POST        /push_to_github                           @controllers.BehaviorEditorController.pushToGithub
 
 POST        /reset_saved_answer_for_user              @controllers.SavedAnswerController.resetForUser
 POST        /reset_saved_answer_for_all               @controllers.SavedAnswerController.resetForTeam
@@ -68,6 +69,9 @@ POST        /save_oauth2_api                          @controllers.OAuth2ApiCont
 GET         /list_api_tokens                          @controllers.APITokenController.listTokens(tokenId: Option[String] ?= None, teamId: Option[String] ?= None)
 POST        /create_api_token                         @controllers.APITokenController.createToken
 POST        /revoke_api_token                         @controllers.APITokenController.revokeToken
+
+GET         /github_config                            @controllers.GithubConfigController.index(maybeTeamId: Option[String] ?= None)
+POST        /reset_github_config                      @controllers.GithubConfigController.reset
 
 GET         /list_environment_variables               @controllers.EnvironmentVariablesController.list(teamId: Option[String] ?= None, newVars: Option[String] ?= None)
 

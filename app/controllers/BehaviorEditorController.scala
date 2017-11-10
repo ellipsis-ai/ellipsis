@@ -18,10 +18,9 @@ import play.api.mvc.{AnyContent, Result}
 import play.filters.csrf.CSRF
 import services.{DefaultServices, GithubService}
 import utils.FutureSequencer
-import utils.github.GithubSingleBehaviorGroupFetcher
+import utils.github._
 
 import scala.concurrent.{ExecutionContext, Future}
-import scala.util.{Failure, Success}
 
 class BehaviorEditorController @Inject() (
                                            val silhouette: Silhouette[EllipsisEnv],
@@ -511,14 +510,71 @@ class BehaviorEditorController @Inject() (
         } yield {
           maybeBehaviorGroup.map { group =>
             maybeGithubProfile.map { profile =>
-              val fetcher = GithubSingleBehaviorGroupFetcher(group.team, info.owner, info.repo, profile.token, info.branch, githubService, services, ec)
-              fetcher.fetch(maybeExistingGroupData) match {
-                case Failure(err) => Ok(JsObject(Map("errors" -> JsString(err.getMessage))))
-                case Success(groupData) => Ok(JsObject(Map("data" -> Json.toJson(groupData))))
+              val fetcher = GithubSingleBehaviorGroupFetcher(group.team, info.owner, info.repo, profile.token, info.branch, maybeExistingGroupData, githubService, services, ec)
+              try {
+                val groupData = fetcher.result
+                Ok(JsObject(Map("data" -> Json.toJson(groupData))))
+              } catch {
+                case e: GitFetcherException => Ok(JsObject(Map("errors" -> JsString(e.getMessage))))
               }
             }.getOrElse(Unauthorized(s"User is not correctly authed with GitHub"))
           }.getOrElse(NotFound(s"Skill with ID ${info.behaviorGroupId} not found"))
         }
+      }
+    )
+  }
+
+  case class PushToGithubInfo(
+                               behaviorGroupId: String,
+                               owner: String,
+                               repo: String,
+                               branch: Option[String],
+                               commitMessage: String
+                             )
+
+  private val pushToGithubForm = Form(
+    mapping(
+      "behaviorGroupId" -> nonEmptyText,
+      "owner" -> nonEmptyText,
+      "repo" -> nonEmptyText,
+      "branch" -> optional(nonEmptyText),
+      "commitMessage" -> nonEmptyText
+    )(PushToGithubInfo.apply)(PushToGithubInfo.unapply)
+  )
+
+  def pushToGithub = silhouette.SecuredAction.async { implicit request =>
+    val user = request.identity
+    pushToGithubForm.bindFromRequest.fold(
+      formWithErrors => {
+        Future.successful(BadRequest(formWithErrors.errorsAsJson))
+      },
+      info => {
+        for {
+          maybeGithubLinkedAccount <- dataService.linkedAccounts.maybeForGithubFor(user)
+          maybeGithubProfile <- maybeGithubLinkedAccount.map { linked =>
+            dataService.githubProfiles.find(linked.loginInfo)
+          }.getOrElse(Future.successful(None))
+          maybeBehaviorGroup <- dataService.behaviorGroups.find(info.behaviorGroupId, user)
+          result <- maybeBehaviorGroup.map { group =>
+            maybeGithubProfile.map { profile =>
+              val committerInfo = GithubCommitterInfoFetcher(user, profile.token, githubService, services, ec).result
+              val pusher =
+                GithubPusher(
+                  info.owner,
+                  info.repo,
+                  info.branch.getOrElse("master"),
+                  info.commitMessage,
+                  profile.token,
+                  committerInfo,
+                  group,
+                  user,
+                  services,
+                  ec
+                )
+              pusher.run.map(r => Ok(Json.toJson(Map("message" -> "Pushed successfully"))))
+            }.getOrElse(Future.successful(Unauthorized(s"User is not correctly authed with GitHub")))
+          }.getOrElse(Future.successful(NotFound(s"Skill with ID ${info.behaviorGroupId} not found")))
+        } yield result
       }
     )
   }

@@ -25,6 +25,8 @@ jsRoutes.controllers.BehaviorEditorController.nodeModuleVersionsFor = jest.fn(()
 describe('BehaviorEditor', () => {
   const defaultConfig = Object.freeze({
     teamId: "A",
+    "isAdmin": false,
+    "isLinkedToGithub": false,
     group: {
       id: '1',
       actionInputs: [],
@@ -107,6 +109,8 @@ describe('BehaviorEditor', () => {
   const newSkillConfig = Object.freeze({
     "containerId": "editorContainer",
     "csrfToken": "1234",
+    "isAdmin": false,
+    "isLinkedToGithub": false,
     "group": {
       "teamId": "B",
       "actionInputs": [],

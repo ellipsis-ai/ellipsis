@@ -174,4 +174,8 @@ object Formatting {
   implicit val regionalSettingsConfigFormat = Json.format[RegionalSettingsConfig]
 
   implicit val logEntryDataFormat = Json.format[LogEntryData]
+
+  implicit val linkedAccountDataFormat = Json.format[LinkedAccountData]
+
+  implicit val githubConfigConfigFormat = Json.format[GithubConfigConfig]
 }
