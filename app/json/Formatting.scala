@@ -174,4 +174,7 @@ object Formatting {
   implicit val regionalSettingsConfigFormat = Json.format[RegionalSettingsConfig]
 
   implicit val logEntryDataFormat = Json.format[LogEntryData]
+
+  implicit val apiErrorDataFormat = Json.format[APIErrorData]
+  implicit val apiErrorResultDataFormat = Json.format[APIErrorResultData]
 }

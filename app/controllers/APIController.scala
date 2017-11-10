@@ -5,7 +5,7 @@ import javax.inject.Inject
 
 import akka.actor.ActorSystem
 import com.google.inject.Provider
-import json.APITokenData
+import json.{APIErrorData, APIErrorResultData, APITokenData}
 import json.Formatting._
 import models.accounts.slack.botprofile.SlackBotProfile
 import models.accounts.slack.profile.SlackProfile
@@ -46,25 +46,24 @@ class APIController @Inject() (
 
   class InvalidTokenException extends Exception
 
-  private def logAndRespondFor(status: Status, maybeMessage: Option[String], maybeFormErrors: Option[Seq[FormError]], details: JsValue = JsObject.empty)(implicit r: Request[AnyContent]): Result = {
+  private def logAndRespondFor(status: Status, maybeErrorData: Option[APIErrorData], maybeFormErrors: Option[Seq[FormError]], details: JsValue = JsObject.empty)(implicit r: Request[AnyContent]): Result = {
     val formErrors = maybeFormErrors.map { errors =>
       errors.map { error =>
-        if (error.key.nonEmpty) {
-          Json.obj(error.key -> error.format)
-        } else {
-          Json.obj("error" -> error.format)
-        }
+        APIErrorData(error.format, Some(error.key).filter(_.nonEmpty))
       }
-    }
-    val errorJson = Json.obj("errors" -> Json.obj(
-      "form" -> formErrors,
-      "message" -> maybeMessage
-    ))
-    val result = status.apply(errorJson)
+    }.getOrElse(Seq())
+    val errorMessage = maybeErrorData.map { data =>
+      data.field.map { field =>
+        s"$field: ${data.message}"
+      }.getOrElse(data.message)
+    }.getOrElse("")
+    val errorResultData = APIErrorResultData(formErrors ++ Seq(maybeErrorData).flatten)
+    val jsonErrorResultData = Json.toJson(errorResultData)
+    val result = status.apply(jsonErrorResultData)
     Logger.info(
-      s"""Returning a ${result.header.status} for: ${maybeMessage.getOrElse("")}
+      s"""Returning a ${result.header.status} for: $errorMessage
          |
-         |${Json.prettyPrint(errorJson)}
+         |${Json.prettyPrint(jsonErrorResultData)}
          |
          |Api info: ${Json.prettyPrint(details)}
          |
@@ -72,16 +71,16 @@ class APIController @Inject() (
     result
   }
 
-  private def badRequest(maybeMessage: Option[String], maybeFormErrors: Option[Seq[FormError]], details: JsValue = JsObject.empty)(implicit r: Request[AnyContent]): Result = {
-    logAndRespondFor(BadRequest, maybeMessage, maybeFormErrors, details)
+  private def badRequest(maybeApiErrorData: Option[APIErrorData], maybeFormErrors: Option[Seq[FormError]], details: JsValue = JsObject.empty)(implicit r: Request[AnyContent]): Result = {
+    logAndRespondFor(BadRequest, maybeApiErrorData, maybeFormErrors, details)
   }
 
-  private def notFound(message: String, details: JsValue = JsObject.empty)(implicit r: Request[AnyContent]): Result = {
-    logAndRespondFor(NotFound, Some(message), None, details)
+  private def notFound(apiErrorData: APIErrorData, details: JsValue = JsObject.empty)(implicit r: Request[AnyContent]): Result = {
+    logAndRespondFor(NotFound, Some(apiErrorData), None, details)
   }
 
   private def invalidTokenRequest[T](details: T = None)(implicit r: Request[AnyContent], tjs: Writes[T]): Result = {
-    badRequest(Some("Invalid token"), None, Json.toJson(details))
+    badRequest(Some(APIErrorData("Invalid token", Some("token"))), None, Json.toJson(details))
   }
 
   trait ApiMethodInfo {
@@ -333,7 +332,7 @@ class APIController @Inject() (
       result <- if (maybeBehavior.isDefined) {
         runBehaviorFor(maybeEvent, context)
       } else {
-        Future.successful(notFound(s"Action named `$actionName` not found", Json.toJson(info)))
+        Future.successful(notFound(APIErrorData(s"Action named `$actionName` not found", Some("actionName")), Json.toJson(info)))
       }
     } yield result
   }
@@ -363,7 +362,7 @@ class APIController @Inject() (
             info.trigger.map { trigger =>
               runByTrigger(trigger, info, context)
             }.getOrElse {
-              Future.successful(badRequest(Some(actionNameAndTriggerError), None, Json.toJson(info)))
+              Future.successful(badRequest(Some(APIErrorData(actionNameAndTriggerError, None)), None, Json.toJson(info)))
             }
           }
         } yield result
@@ -463,11 +462,11 @@ class APIController @Inject() (
               unscheduled = None
             )))
           }.getOrElse {
-            badRequest(Some(s"Unable to schedule `$actionName` for `${info.recurrenceString}`"), None, Json.toJson(info))
+            badRequest(Some(APIErrorData(s"Unable to schedule `$actionName` for `${info.recurrenceString}`", None)), None, Json.toJson(info))
           }
         }
       }).getOrElse {
-        Future.successful(notFound("Couldn't find an action to schedule", Json.toJson(info)))
+        Future.successful(notFound(APIErrorData(s"Couldn't find the action `$actionName` to schedule", Some("actionName")), Json.toJson(info)))
       }
     } yield result
   }
@@ -501,7 +500,7 @@ class APIController @Inject() (
           unscheduled = None
         )))
       }.getOrElse {
-        badRequest(Some(s"Unable to schedule `$trigger` for `${info.recurrenceString}`"), None, Json.toJson(info))
+        badRequest(Some(APIErrorData(s"Unable to schedule `$trigger` for `${info.recurrenceString}`", None)), None, Json.toJson(info))
       }
     }
   }
@@ -520,7 +519,7 @@ class APIController @Inject() (
             info.trigger.map { trigger =>
               scheduleByTrigger(trigger, info, context)
             }.getOrElse {
-              Future.successful(badRequest(Some(actionNameAndTriggerError), None, Json.toJson(info)))
+              Future.successful(badRequest(Some(APIErrorData(actionNameAndTriggerError, None)), None, Json.toJson(info)))
             }
           }
         } yield result
@@ -568,7 +567,7 @@ class APIController @Inject() (
       }.getOrElse(Future.successful(None))
       result <- maybeBehavior.map { behavior =>
         if (info.userId.isDefined && maybeUser.isEmpty) {
-          Future.successful(notFound(s"Couldn't find a user with ID `${info.userId.get}`", Json.toJson(info)))
+          Future.successful(notFound(APIErrorData(s"Couldn't find a user with ID `${info.userId.get}`", Some("userId")), Json.toJson(info)))
         } else {
           dataService.scheduledBehaviors.allForBehavior(behavior, maybeUser, maybeSlackChannelId).flatMap { scheduledBehaviors =>
             for {
@@ -594,7 +593,7 @@ class APIController @Inject() (
             }
           }
         }
-      }.getOrElse(Future.successful(notFound(s"Couldn't find an action with name `$actionName`", Json.toJson(info))))
+      }.getOrElse(Future.successful(notFound(APIErrorData(s"Couldn't find an action with name `$actionName`", Some("actionName")), Json.toJson(info))))
     } yield result
   }
 
@@ -635,7 +634,7 @@ class APIController @Inject() (
           }
         }
       }.getOrElse {
-        Future.successful(notFound("Couldn't find team", Json.toJson(info)))
+        Future.successful(notFound(APIErrorData("Couldn't find team", None), Json.toJson(info)))
       }
     } yield result
   }
@@ -654,7 +653,7 @@ class APIController @Inject() (
             info.trigger.map { trigger =>
               unscheduleByTrigger(trigger, info, context)
             }.getOrElse {
-              Future.successful(badRequest(Some(actionNameAndTriggerError), None, Json.toJson(info)))
+              Future.successful(badRequest(Some(APIErrorData(actionNameAndTriggerError, None)), None, Json.toJson(info)))
             }
           }
         } yield result
@@ -749,10 +748,10 @@ class APIController @Inject() (
         eventualResult.recover {
           case e: InvalidTokenException => invalidTokenRequest(info)
           case e: slack.api.ApiError => if (e.code == "channel_not_found") {
-            badRequest(Some(s"""Error: the channel "${info.channel}" could not be found.""" + "\n"), None, Json.toJson(info))
+            badRequest(Some(APIErrorData(s"""Error: the channel "${info.channel}" could not be found.""", Some("channel"))), None, Json.toJson(info))
           } else {
             // TODO: 400 seems like maybe the wrong kind of error here
-            badRequest(Some(s"Slack API error: ${e.code}\n"), None, Json.toJson(info))
+            badRequest(Some(APIErrorData(s"Slack API error: ${e.code}\n", None)), None, Json.toJson(info))
           }
         }
       }
