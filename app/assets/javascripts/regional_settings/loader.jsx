@@ -29,6 +29,7 @@ requirejs(['common'], function() {
             <Page csrfToken={this.props.csrfToken}>
               <RegionalSettings
                 csrfToken={this.props.csrfToken}
+                isAdmin={this.props.isAdmin}
                 teamId={this.props.teamId}
                 teamTimeZone={this.state.teamTimeZone}
                 teamTimeZoneName={this.state.teamTimeZoneName}
@@ -43,6 +44,7 @@ requirejs(['common'], function() {
       RegionalSettingsLoader.propTypes = {
         containerId: React.PropTypes.string.isRequired,
         csrfToken: React.PropTypes.string.isRequired,
+        isAdmin: React.PropTypes.bool.isRequired,
         teamId: React.PropTypes.string.isRequired,
         teamTimeZone: React.PropTypes.string,
         teamTimeZoneName: React.PropTypes.string,

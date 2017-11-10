@@ -116,6 +116,10 @@ requirejs.config({
       name: 'scheduling/loader',
       include: ['scheduling/index'],
       exclude: ['common']
+    }, {
+      name: 'github_config/loader',
+      include: ['github_config/index'],
+      exclude: ['common']
     }
   ]
 });

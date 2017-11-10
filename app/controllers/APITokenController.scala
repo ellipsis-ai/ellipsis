@@ -58,6 +58,7 @@ class APITokenController @Inject() (
             val config = APITokenListConfig(
               containerId = "apiTokenGenerator",
               csrfToken = CSRF.getToken(request).map(_.value),
+              teamAccess.isAdminAccess,
               teamId = team.id,
               tokens = tokens.map(APITokenData.from),
               justCreatedTokenId = maybeJustCreatedTokenId,

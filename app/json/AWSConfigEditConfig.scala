@@ -3,6 +3,7 @@ package json
 case class AWSConfigEditConfig(
                                 containerId: String,
                                 csrfToken: Option[String],
+                                isAdmin: Boolean,
                                 teamId: String,
                                 configId: String,
                                 name: Option[String],

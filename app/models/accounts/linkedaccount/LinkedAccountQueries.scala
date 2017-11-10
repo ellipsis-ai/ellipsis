@@ -33,6 +33,11 @@ object LinkedAccountQueries {
   }
   val forProviderForQuery = Compiled(uncompiledForProviderForQuery _)
 
+  def uncompiledRawForProviderForQuery(userId: Rep[String], providerId: Rep[String]) = {
+    all.filter(_.userId === userId).filter(_.providerId === providerId)
+  }
+  val rawForProviderForQuery = Compiled(uncompiledRawForProviderForQuery _)
+
   def uncompiledForSlackForQuery(userId: Rep[String]) = uncompiledForProviderForQuery(userId, SlackProvider.ID)
   val forSlackForQuery = Compiled(uncompiledForSlackForQuery _)
 

@@ -32,6 +32,7 @@ define(function(require) {
       applicationSaved: React.PropTypes.bool,
       applicationShared: React.PropTypes.bool.isRequired,
       applicationCanBeShared: React.PropTypes.bool.isRequired,
+      isAdmin: React.PropTypes.bool.isRequired,
       csrfToken: React.PropTypes.string.isRequired,
       teamId: React.PropTypes.string.isRequired,
       callbackUrl: React.PropTypes.string.isRequired,
@@ -241,7 +242,7 @@ define(function(require) {
             <div className="flex-column flex-column-left flex-rows container container-wide prn">
               <div className="columns flex-columns flex-row-expand">
                 <div className="column column-one-quarter flex-column">
-                  <SettingsMenu activePage="oauthApplications" teamId={this.props.teamId} />
+                  <SettingsMenu activePage="oauthApplications" teamId={this.props.teamId} isAdmin={this.props.isAdmin}/>
                 </div>
                 <div className="column column-three-quarters flex-column bg-white ptxl pbxxxxl phxxxxl">
                   <Collapsible revealWhen={!this.apiIsSet()}>

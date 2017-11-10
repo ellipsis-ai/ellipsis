@@ -3,6 +3,7 @@ package json
 case class OAuth2ApplicationEditConfig(
   containerId: String,
   csrfToken: Option[String],
+  isAdmin: Boolean,
   teamId: String,
   apis: Seq[OAuth2ApiData],
   callbackUrl: String,

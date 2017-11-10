@@ -177,4 +177,8 @@ object Formatting {
 
   implicit val apiErrorDataFormat = Json.format[APIErrorData]
   implicit val apiErrorResultDataFormat = Json.format[APIErrorResultData]
+
+  implicit val linkedAccountDataFormat = Json.format[LinkedAccountData]
+
+  implicit val githubConfigConfigFormat = Json.format[GithubConfigConfig]
 }

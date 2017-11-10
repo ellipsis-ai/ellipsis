@@ -86,6 +86,7 @@ class AWSConfigController @Inject() (
             val config = AWSConfigEditConfig(
               containerId = "configEditor",
               csrfToken = CSRF.getToken(request).map(_.value),
+              teamAccess.isAdminAccess,
               teamId = team.id,
               configSaved = false,
               configId = newConfigId,
@@ -139,6 +140,7 @@ class AWSConfigController @Inject() (
             val editConfig = AWSConfigEditConfig(
               containerId = "configEditor",
               csrfToken = CSRF.getToken(request).map(_.value),
+              teamAccess.isAdminAccess,
               teamId = team.id,
               configSaved = true,
               configId = config.id,

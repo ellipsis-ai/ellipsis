@@ -10,16 +10,18 @@ import scala.concurrent.ExecutionContext
 case class GithubPublishedBehaviorGroupsFetcher(
                                                   team: Team,
                                                   maybeBranch: Option[String],
+                                                  alreadyInstalled: Seq[BehaviorGroupData],
                                                   githubService: GithubService,
                                                   services: DefaultServices,
                                                   implicit val ec: ExecutionContext
-                                                ) extends GithubFetcher {
+                                                ) extends GithubRepoFetcher[Seq[BehaviorGroupData]] {
 
   val owner: String = "ellipsis-ai"
   val repoName: String = "behaviors"
-  val repoAccessToken: String = config.get[String]("github.repoAccessToken")
+  val token: String = config.get[String]("github.repoAccessToken")
 
   override val cacheKey: String = s"github_published_behaviors_${branch}"
+  override val shouldTryCache: Boolean = maybeBranch.isEmpty
 
   def query: String = {
     s"""
@@ -72,8 +74,7 @@ case class GithubPublishedBehaviorGroupsFetcher(
      """.stripMargin
   }
 
-  def publishedBehaviorGroupsFor(alreadyInstalled: Seq[BehaviorGroupData]): Seq[BehaviorGroupData] = {
-    val data = get
+  def resultFromNonErrorResponse(data: JsValue): Seq[BehaviorGroupData] = {
     val behaviorGroups = (data \ "data" \ "repository" \ "object" \ "entries") match {
       case JsDefined(JsArray(arr)) => {
         arr.map { ea =>
@@ -81,7 +82,7 @@ case class GithubPublishedBehaviorGroupsFetcher(
           GithubBehaviorGroupDataBuilder(groupPath, ea, team, maybeBranch, dataService).build
         }
       }
-      case _ => Seq()
+      case _ => throw GithubResultFromDataException("Could not build skills from response")
     }
     behaviorGroups.map { ea =>
       val maybeExistingGroup = alreadyInstalled.find(_.exportId == ea.exportId)

@@ -20,7 +20,7 @@ define(function(require) {
             <div className="flex-column flex-column-left flex-rows container container-wide prn">
               <div className="columns flex-columns flex-row-expand">
                 <div className="column column-one-quarter flex-column">
-                  <SettingsMenu activePage={this.props.activePage} teamId={this.props.teamId} />
+                  <SettingsMenu activePage={this.props.activePage} teamId={this.props.teamId} isAdmin={this.props.isAdmin}/>
                 </div>
                 <div className="column column-three-quarters flex-column bg-white ptxl pbxxxxl phxxxxl">
 
@@ -38,6 +38,7 @@ define(function(require) {
 
   SettingsPage.propTypes = {
     teamId: React.PropTypes.string.isRequired,
+    isAdmin: React.PropTypes.bool.isRequired,
     activePage: React.PropTypes.string,
     header: React.PropTypes.node.isRequired,
     children: React.PropTypes.node.isRequired

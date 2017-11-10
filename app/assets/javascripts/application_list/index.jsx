@@ -10,6 +10,7 @@ define(function(require) {
   const ApplicationList = React.createClass({
     propTypes: Object.assign({}, Page.requiredPropTypes, {
       csrfToken: React.PropTypes.string.isRequired,
+      isAdmin: React.PropTypes.bool.isRequired,
       teamId: React.PropTypes.string.isRequired,
       apis: React.PropTypes.arrayOf(React.PropTypes.object),
       applications: React.PropTypes.arrayOf(React.PropTypes.object)
@@ -65,7 +66,7 @@ define(function(require) {
             <div className="flex-column flex-column-left flex-rows container container-wide prn">
               <div className="columns flex-columns flex-row-expand">
                 <div className="column column-one-quarter flex-column">
-                  <SettingsMenu activePage="oauthApplications" teamId={this.props.teamId} />
+                  <SettingsMenu activePage="oauthApplications" teamId={this.props.teamId} isAdmin={this.props.isAdmin}/>
                 </div>
                 <div className="column column-three-quarters flex-column bg-white ptxl pbxxxxl phxxxxl">
 
