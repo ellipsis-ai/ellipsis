@@ -2,6 +2,7 @@ define(function(require) {
   var React = require('react'),
     BehaviorGroup = require('../models/behavior_group'),
     Input = require('../form/input'),
+    LinkedGithubRepo = require('../models/linked_github_repo'),
     Textarea = require('../form/textarea');
 
   return React.createClass({
@@ -12,14 +13,14 @@ define(function(require) {
       isModified: React.PropTypes.bool.isRequired,
       isAdmin: React.PropTypes.bool.isRequired,
       isLinkedToGithub: React.PropTypes.bool.isRequired,
+      linkedGithubRepo: React.PropTypes.instanceOf(LinkedGithubRepo),
       onBehaviorGroupNameChange: React.PropTypes.func.isRequired,
       onBehaviorGroupDescriptionChange: React.PropTypes.func.isRequired,
       onBehaviorGroupIconChange: React.PropTypes.func.isRequired,
       onDeleteClick: React.PropTypes.func.isRequired,
       onSave: React.PropTypes.func.isRequired,
       onSaveError: React.PropTypes.func.isRequired,
-      onGithubPullClick: React.PropTypes.func.isRequired,
-      onGithubPushClick: React.PropTypes.func.isRequired
+      onLinkToGithubClick: React.PropTypes.func.isRequired
     },
 
     focus: function() {
@@ -54,25 +55,16 @@ define(function(require) {
     },
 
     renderGithubActions: function() {
+      const buttonText = this.props.linkedGithubRepo ? `Linked to ${this.props.linkedGithubRepo.getPath()}` : "Link this skill to a GitHub repo…";
       return (
-        <span>
-          <button
-            className="mls"
-            type="button"
-            onClick={this.props.onGithubPullClick }
-            disabled={ this.props.isModified }
-          >
-            Pull code from Github…
-          </button>
-          <button
-            className="mls"
-            type="button"
-            onClick={this.props.onGithubPushClick }
-            disabled={ this.props.isModified }
-          >
-            Push code to Github…
-          </button>
-        </span>
+        <button
+          className="mls"
+          type="button"
+          onClick={this.props.onLinkToGithubClick }
+          disabled={ this.props.isModified }
+        >
+          {buttonText}
+        </button>
       );
     },
 

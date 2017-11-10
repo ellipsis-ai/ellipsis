@@ -38,6 +38,7 @@ import models.behaviors.triggers.messagetrigger.{MessageTriggerService, MessageT
 import models.environmentvariable._
 import models.behaviors.invocationtoken.{InvocationTokenService, InvocationTokenServiceImpl}
 import models.behaviors.library.{LibraryVersionService, LibraryVersionServiceImpl}
+import models.behaviors.linked_github_repo.{LinkedGithubRepoService, LinkedGithubRepoServiceImpl}
 import models.behaviors.nodemoduleversion.{NodeModuleVersionService, NodeModuleVersionServiceImpl}
 import models.behaviors.savedanswer.{SavedAnswerService, SavedAnswerServiceImpl}
 import models.behaviors.scheduling.recurrence.{RecurrenceService, RecurrenceServiceImpl}
@@ -84,6 +85,7 @@ class ServiceModule extends AbstractModule with ScalaModule {
     bind[RequiredAWSConfigService].to[RequiredAWSConfigServiceImpl]
     bind[RequiredOAuth2ApiConfigService].to[RequiredOAuth2ApiConfigServiceImpl]
     bind[RequiredSimpleTokenApiService].to[RequiredSimpleTokenApiServiceImpl]
+    bind[LinkedGithubRepoService].to[LinkedGithubRepoServiceImpl]
     bind[ConversationService].to[ConversationServiceImpl]
     bind[CollectedParameterValueService].to[CollectedParameterValueServiceImpl]
     bind[ScheduledMessageService].to[ScheduledMessageServiceImpl]

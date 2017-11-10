@@ -578,4 +578,43 @@ class BehaviorEditorController @Inject() (
       }
     )
   }
+
+  case class LinkToGithubRepoInfo(
+                               behaviorGroupId: String,
+                               owner: String,
+                               repo: String
+                             )
+
+  private val linkToGithubRepoForm = Form(
+    mapping(
+      "behaviorGroupId" -> nonEmptyText,
+      "owner" -> nonEmptyText,
+      "repo" -> nonEmptyText
+    )(LinkToGithubRepoInfo.apply)(LinkToGithubRepoInfo.unapply)
+  )
+
+  def linkToGithubRepo = silhouette.SecuredAction.async { implicit request =>
+    val user = request.identity
+    linkToGithubRepoForm.bindFromRequest.fold(
+      formWithErrors => {
+        Future.successful(BadRequest(formWithErrors.errorsAsJson))
+      },
+      info => {
+        for {
+          maybeGithubLinkedAccount <- dataService.linkedAccounts.maybeForGithubFor(user)
+          maybeGithubProfile <- maybeGithubLinkedAccount.map { linked =>
+            dataService.githubProfiles.find(linked.loginInfo)
+          }.getOrElse(Future.successful(None))
+          maybeBehaviorGroup <- dataService.behaviorGroups.find(info.behaviorGroupId, user)
+          result <- maybeBehaviorGroup.map { group =>
+            maybeGithubProfile.map { profile =>
+              dataService.linkedGithubRepos.link(group, info.owner, info.repo).map { linked =>
+                Ok(Json.toJson(LinkedGithubRepoData(linked.owner, linked.repo)))
+              }
+            }.getOrElse(Future.successful(Unauthorized(s"User is not correctly authed with GitHub")))
+          }.getOrElse(Future.successful(NotFound(s"Skill with ID ${info.behaviorGroupId} not found")))
+        } yield result
+      }
+    )
+  }
 }

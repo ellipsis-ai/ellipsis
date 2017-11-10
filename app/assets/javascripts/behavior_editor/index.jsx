@@ -24,6 +24,7 @@ var React = require('react'),
   DynamicLabelButton = require('../form/dynamic_label_button'),
   EnvVariableAdder = require('../environment_variables/adder'),
   EnvVariableSetter = require('../environment_variables/setter'),
+  GithubLinkPanel = require('./github_link_panel'),
   GithubPullPanel = require('./github_pull_panel'),
   GithubPushPanel = require('./github_push_panel'),
   HiddenJsonInput = require('./hidden_json_input'),
@@ -36,6 +37,7 @@ var React = require('react'),
   LibraryCodeEditorHelp = require('./library_code_editor_help'),
   LibraryCodeHelp = require('./library_code_help'),
   LibraryVersion = require('../models/library_version'),
+  LinkedGithubRepo = require('../models/linked_github_repo'),
   ModalScrim = require('../shared_ui/modal_scrim'),
   Notifications = require('../notifications/notifications'),
   OAuth2ApplicationRef = require('../models/oauth2').OAuth2ApplicationRef,
@@ -95,6 +97,7 @@ const BehaviorEditor = React.createClass({
     })),
     simpleTokenApis: React.PropTypes.arrayOf(React.PropTypes.instanceOf(SimpleTokenApiRef)),
     linkedOAuth2ApplicationIds: React.PropTypes.arrayOf(React.PropTypes.string).isRequired,
+    linkedGithubRepo: React.PropTypes.instanceOf(LinkedGithubRepo),
     savedAnswers: React.PropTypes.arrayOf(
       React.PropTypes.shape({
         inputId: React.PropTypes.string.isRequired,
@@ -478,7 +481,11 @@ const BehaviorEditor = React.createClass({
 
   GITHUB_PULL_PANEL_NAME: "githubPullPanel",
   GITHUB_PUSH_PANEL_NAME: "githubPushPanel",
+  GITHUB_LINK_PANEL_NAME: "githubLinkPanel",
 
+  onLinkToGithubClick: function() {
+    this.toggleActivePanel(this.GITHUB_LINK_PANEL_NAME, true);
+  },
   onGithubPullClick: function() {
     this.toggleActivePanel(this.GITHUB_PULL_PANEL_NAME, true);
   },
@@ -1853,6 +1860,20 @@ const BehaviorEditor = React.createClass({
             </APIConfigPanel>
           </Collapsible>
 
+          <Collapsible ref={this.GITHUB_LINK_PANEL_NAME}
+                       revealWhen={this.props.activePanelName === this.GITHUB_LINK_PANEL_NAME}
+                       onChange={this.layoutDidUpdate}
+                       animationDisabled={this.state.animationDisabled}
+          >
+            <GithubLinkPanel
+              group={this.getBehaviorGroup()}
+              linked={this.props.linkedGithubRepo}
+              onDoneClick={this.props.onClearActivePanel}
+              csrfToken={this.props.csrfToken}
+            >
+            </GithubLinkPanel>
+          </Collapsible>
+
           <Collapsible ref={this.GITHUB_PULL_PANEL_NAME}
                        revealWhen={this.props.activePanelName === this.GITHUB_PULL_PANEL_NAME}
                        onChange={this.layoutDidUpdate}
@@ -2587,14 +2608,14 @@ const BehaviorEditor = React.createClass({
           isModified={this.isModified()}
           isAdmin={this.props.isAdmin}
           isLinkedToGithub={this.props.isLinkedToGithub}
+          linkedGithubRepo={this.props.linkedGithubRepo}
           onBehaviorGroupNameChange={this.onBehaviorGroupNameChange}
           onBehaviorGroupDescriptionChange={this.onBehaviorGroupDescriptionChange}
           onBehaviorGroupIconChange={this.onBehaviorGroupIconChange}
           onDeleteClick={this.confirmDeleteBehaviorGroup}
           onSave={this.onReplaceBehaviorGroup}
           onSaveError={this.onSaveError}
-          onGithubPullClick={this.onGithubPullClick}
-          onGithubPushClick={this.onGithubPushClick}
+          onLinkToGithubClick={this.onLinkToGithubClick}
         />
       );
     }

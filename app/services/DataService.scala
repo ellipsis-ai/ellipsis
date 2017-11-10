@@ -32,6 +32,7 @@ import models.behaviors.input.InputService
 import models.behaviors.invocationlogentry.InvocationLogEntryService
 import models.behaviors.invocationtoken.InvocationTokenService
 import models.behaviors.library.LibraryVersionService
+import models.behaviors.linked_github_repo.LinkedGithubRepoService
 import models.behaviors.nodemoduleversion.NodeModuleVersionService
 import models.behaviors.savedanswer.SavedAnswerService
 import models.behaviors.scheduling.recurrence.RecurrenceService
@@ -79,6 +80,7 @@ trait DataService {
   val requiredAWSConfigs: RequiredAWSConfigService
   val requiredOAuth2ApiConfigs: RequiredOAuth2ApiConfigService
   val requiredSimpleTokenApis: RequiredSimpleTokenApiService
+  val linkedGithubRepos: LinkedGithubRepoService
   val conversations: ConversationService
   val collectedParameterValues: CollectedParameterValueService
   val scheduledMessages: ScheduledMessageService

@@ -30,6 +30,7 @@
   routes.javascript.BehaviorEditorController.nodeModuleVersionsFor,
   routes.javascript.BehaviorEditorController.updateFromGithub,
   routes.javascript.BehaviorEditorController.pushToGithub,
+  routes.javascript.BehaviorEditorController.linkToGithubRepo,
   routes.javascript.BehaviorImportExportController.doImport,
   routes.javascript.BehaviorImportExportController.export,
   routes.javascript.EnvironmentVariablesController.list,
