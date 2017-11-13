@@ -2,6 +2,7 @@ package models.behaviors.scheduling.recurrence
 
 import java.time._
 import java.time.format.{DateTimeFormatter, TextStyle}
+import java.time.temporal.TemporalAdjusters
 import java.util.{Calendar, Date, Locale, TimeZone}
 
 import com.joestelmach.natty._
@@ -360,13 +361,26 @@ case class MonthlyByDayOfMonth(id: String, frequency: Int, dayOfMonth: Int, time
   }
 
   def isEarlierInMonth(when: OffsetDateTime): Boolean = {
-    when.getDayOfMonth < dayOfMonth || (when.getDayOfMonth == dayOfMonth && when.toLocalTime.isBefore(timeOfDay))
+    when.getDayOfMonth < adjustedDayOfMonth(when) || (when.getDayOfMonth == adjustedDayOfMonth(when) && when.toLocalTime.isBefore(timeOfDay))
   }
   def isLaterInMonth(when: OffsetDateTime): Boolean = {
-    when.getDayOfMonth > dayOfMonth || (when.getDayOfMonth == dayOfMonth && when.toLocalTime.isAfter(timeOfDay))
+    when.getDayOfMonth > adjustedDayOfMonth(when) || (when.getDayOfMonth == adjustedDayOfMonth(when) && when.toLocalTime.isAfter(timeOfDay))
   }
 
-  def withAdjustments(when: OffsetDateTime): OffsetDateTime = withStandardAdjustments(when.withDayOfMonth(dayOfMonth))
+  private def adjustedDayOfMonth(when: OffsetDateTime): Int = {
+    // If the recurrence day of month is after the last possible day of the given month,
+    // use the last possible day (e.g. use November 30 if the desired day is 31)
+    val lastDayOfMonth = when.`with`(TemporalAdjusters.lastDayOfMonth()).getDayOfMonth
+    Math.min(dayOfMonth, lastDayOfMonth)
+  }
+
+  private def withAdjustedDayOfMonth(when: OffsetDateTime): OffsetDateTime = {
+    when.withDayOfMonth(adjustedDayOfMonth(when))
+  }
+
+  def withAdjustments(when: OffsetDateTime): OffsetDateTime = {
+    withStandardAdjustments(withAdjustedDayOfMonth(when))
+  }
 
   protected def nextAfterAssumingZone(previous: OffsetDateTime): OffsetDateTime = {
     val monthsToAdd = if (isEarlierInMonth(previous)) {
