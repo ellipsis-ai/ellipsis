@@ -3,7 +3,7 @@ package controllers
 import java.time.OffsetDateTime
 
 import json.Formatting._
-import json.{APIErrorData, APIErrorResultData, LogEntryData}
+import json.{APIErrorData, APIResultWithErrorsData, LogEntryData}
 import models.IDs
 import models.accounts.user.User
 import models.behaviors.ResultType
@@ -91,7 +91,7 @@ class InvocationLogControllerSpec extends PlaySpec with MockitoSugar {
   }
 
   def maybeErrorInResult(jsResult: JsValue): Option[APIErrorData] = {
-    jsResult.validate[APIErrorResultData] match {
+    jsResult.validate[APIResultWithErrorsData] match {
       case JsSuccess(data, _) => data.errors.headOption
       case JsError(_) => None
     }

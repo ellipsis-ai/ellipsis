@@ -5,7 +5,7 @@ import javax.inject.Inject
 
 import com.google.inject.Provider
 import json.Formatting._
-import json.{APIErrorData, APIErrorResultData, LogEntryData}
+import json.{APIErrorData, APIResultWithErrorsData, LogEntryData}
 import models.behaviors.events.EventType
 import models.behaviors.invocationtoken.InvocationToken
 import play.api.Configuration
@@ -48,7 +48,7 @@ class InvocationLogController @Inject() (
       result <- maybeInvocationToken.map { invocationToken =>
         getLogsWithToken(behaviorIdOrNameOrTrigger, invocationToken, maybeFrom, maybeTo, maybeUserId, maybeOriginalEventType)
       }.getOrElse {
-        val errorResult = APIErrorResultData(Seq(APIErrorData("Invalid or expired token", Some("token"))))
+        val errorResult = APIResultWithErrorsData(Seq(APIErrorData("Invalid or expired token", Some("token"))))
         Future.successful(BadRequest(Json.toJson(errorResult)))
       }
     } yield result
@@ -94,7 +94,7 @@ class InvocationLogController @Inject() (
         Ok(Json.toJson(logEntryData))
       }.getOrElse {
         val errorMessage = InvocationLogController.noActionFoundMessage(behaviorIdOrNameOrTrigger)
-        val errorResult = APIErrorResultData(Seq(APIErrorData(errorMessage, Some("behaviorId"))))
+        val errorResult = APIResultWithErrorsData(Seq(APIErrorData(errorMessage, Some("behaviorId"))))
         NotFound(Json.toJson(errorResult))
       }
     }

@@ -4,7 +4,7 @@ import java.time.{LocalTime, OffsetDateTime}
 
 import akka.actor.ActorSystem
 import com.mohiva.play.silhouette.api.LoginInfo
-import json.{APIErrorData, APIErrorResultData, APITokenData}
+import json.{APIErrorData, APIResultWithErrorsData, APITokenData}
 import json.Formatting._
 import models.IDs
 import models.accounts.linkedaccount.LinkedAccount
@@ -131,7 +131,7 @@ class APIControllerSpec extends PlaySpec with MockitoSugar {
   }
 
   def maybeErrorFrom(jsResult: JsValue): Option[APIErrorData] = {
-    jsResult.validate[APIErrorResultData] match {
+    jsResult.validate[APIResultWithErrorsData] match {
       case JsSuccess(data, jsPath) => data.errors.headOption
       case JsError(e) => None
     }

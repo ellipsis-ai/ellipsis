@@ -5,7 +5,7 @@ import javax.inject.Inject
 
 import akka.actor.ActorSystem
 import com.google.inject.Provider
-import json.{APIErrorData, APIErrorResultData, APITokenData}
+import json.{APIErrorData, APIResultWithErrorsData, APITokenData}
 import json.Formatting._
 import models.accounts.slack.botprofile.SlackBotProfile
 import models.accounts.slack.profile.SlackProfile
@@ -57,7 +57,7 @@ class APIController @Inject() (
         s"$field: ${data.message}"
       }.getOrElse(data.message)
     }.getOrElse("")
-    val errorResultData = APIErrorResultData(formErrors ++ Seq(maybeErrorData).flatten)
+    val errorResultData = APIResultWithErrorsData(formErrors ++ Seq(maybeErrorData).flatten)
     val jsonErrorResultData = Json.toJson(errorResultData)
     val result = status.apply(jsonErrorResultData)
     Logger.info(
