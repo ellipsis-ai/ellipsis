@@ -258,6 +258,11 @@ class RecurrenceSpec extends PlaySpec {
       recurrence.nextAfter(dateTimeOf(2010, 1, 31, 17, 1, timeZone)) mustBe dateTimeOf(2010, 2, 28, 17, 0, timeZone)
     }
 
+    "use the last day of the month in leap years when the day number is higher than the last day of the month" in {
+      val recurrence = MonthlyByDayOfMonth(IDs.next, 1, 31, fivePM, timeZone)
+      recurrence.nextAfter(dateTimeOf(2016, 1, 31, 17, 1, timeZone)) mustBe dateTimeOf(2016, 2, 29, 17, 0, timeZone)
+    }
+
     "use the last day of the month when the day number is higher than the last day of the month, and it is before the time requested on the last day of the month" in {
       val recurrence = MonthlyByDayOfMonth(IDs.next, 1, 31, fivePM, timeZone)
       recurrence.nextAfter(dateTimeOf(2010, 2, 28, 12, 1, timeZone)) mustBe dateTimeOf(2010, 2, 28, 17, 0, timeZone)
