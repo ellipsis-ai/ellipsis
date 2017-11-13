@@ -20,7 +20,7 @@ define(function(require) {
       onDeleteClick: React.PropTypes.func.isRequired,
       onSave: React.PropTypes.func.isRequired,
       onSaveError: React.PropTypes.func.isRequired,
-      onLinkToGithubClick: React.PropTypes.func.isRequired
+      onGithubIntegrationClick: React.PropTypes.func.isRequired
     },
 
     focus: function() {
@@ -60,7 +60,7 @@ define(function(require) {
         <button
           className="mls"
           type="button"
-          onClick={this.props.onLinkToGithubClick }
+          onClick={this.props.onGithubIntegrationClick }
           disabled={ this.props.isModified }
         >
           {buttonText}

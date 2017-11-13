@@ -2,10 +2,10 @@ requirejs(['common'], function() {
   requirejs(
     ['core-js', 'whatwg-fetch', 'react', 'react-dom', './lib/browser_utils', './behavior_editor/index',
       './models/behavior_group', 'config/behavioreditor/edit', './models/param_type', './models/aws',
-      './models/oauth2', './models/simple_token', './models/linked_github_repo', './lib/autobind', './shared_ui/page'],
+      './models/oauth2', './models/simple_token', './models/linked_github_repo', './lib/autobind', './shared_ui/page', './lib/data_request'],
     function(Core, Fetch, React, ReactDOM, BrowserUtils, BehaviorEditor,
              BehaviorGroup, BehaviorEditorConfiguration, ParamType, aws,
-             oauth2, simpleToken, LinkedGithubRepo, autobind, Page) {
+             oauth2, simpleToken, LinkedGithubRepo, autobind, Page, DataRequest) {
 
       class BehaviorEditorLoader extends React.Component {
         constructor(props) {
@@ -26,6 +26,22 @@ requirejs(['common'], function() {
           if (group.id && selectedId) {
             BrowserUtils.replaceURL(jsRoutes.controllers.BehaviorEditorController.edit(group.id, selectedId).url);
           }
+        }
+
+        onLinkGithubRepo(owner, repo, callback) {
+          DataRequest.jsonPost(
+            jsRoutes.controllers.BehaviorEditorController.linkToGithubRepo().url,
+            {
+              behaviorGroupId: this.props.group.id,
+              owner: owner,
+              repo: repo
+            },
+            this.props.csrfToken
+          )
+            .then(r => {
+              const linked = new LinkedGithubRepo({ owner: owner, repo: repo });
+              this.setState({ linkedGithubRepo: linked }, callback);
+            });
         }
 
         onSave(newProps, state) {
@@ -95,6 +111,7 @@ requirejs(['common'], function() {
                 isAdmin={this.props.isAdmin}
                 isLinkedToGithub={this.props.isLinkedToGithub}
                 linkedGithubRepo={this.state.linkedGithubRepo}
+                onLinkGithubRepo={this.onLinkGithubRepo}
               />
             </Page>
           );

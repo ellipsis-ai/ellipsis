@@ -11,6 +11,7 @@ define(function(require) {
       group: React.PropTypes.instanceOf(BehaviorGroup).isRequired,
       linked: React.PropTypes.instanceOf(LinkedGithubRepo),
       onDoneClick: React.PropTypes.func.isRequired,
+      onLinkGithubRepo: React.PropTypes.func.isRequired,
       csrfToken: React.PropTypes.string.isRequired
     },
 
@@ -46,24 +47,13 @@ define(function(require) {
     },
 
     onLinkClick: function() {
-      DataRequest.jsonPost(
-        jsRoutes.controllers.BehaviorEditorController.linkToGithubRepo().url,
-        {
-          behaviorGroupId: this.props.group.id,
-          owner: this.getOwner(),
-          repo: this.getRepo()
-        },
-        this.props.csrfToken
-      )
-        .then(r => {
-          this.props.onDoneClick();
-        });
+      this.props.onLinkGithubRepo(this.getOwner(), this.getRepo(), () => this.props.onDoneClick());
     },
 
     renderContent: function() {
       return (
         <div>
-          <div className="columns mtxxl">
+          <div className="columns">
             <div className="column column-one-quarter">
               <span className="display-inline-block align-m type-s type-weak mrm">Owner:</span>
               <Input

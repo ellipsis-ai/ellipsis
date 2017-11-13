@@ -43,7 +43,7 @@ class LinkedGithubRepoServiceImpl @Inject() (
     val action = for {
       maybeExisting <- maybeForAction(group)
       maybeAlreadyLinked <- maybeExisting.map { existing =>
-        if (existing.behaviorGroupId == group.id) {
+        if (existing.behaviorGroupId == group.id && existing.owner == owner && existing.repo == repo) {
           DBIO.successful(Some(existing))
         } else {
           unlinkAction(group).map(_ => None)
