@@ -273,17 +273,17 @@ class RecurrenceSpec extends PlaySpec {
       recurrence.nextAfter(dateTimeOf(2010, 2, 28, 18, 1, timeZone)) mustBe dateTimeOf(2010, 3, 31, 17, 0, timeZone)
     }
 
-    "have the initial time be the last day of the month be the when the day number is higher than the last day of the month" in {
+    "have the initial time be the last day of the month when the day number is higher than the last day of the month" in {
       val recurrence = MonthlyByDayOfMonth(IDs.next, 1, 31, fivePM, timeZone)
       recurrence.initialAfter(dateTimeOf(2010, 2, 1, 12, 1, timeZone)) mustBe dateTimeOf(2010, 2, 28, 17, 0, timeZone)
     }
 
-    "have the initial time be the last day of the month when the day number is higher than the last day of the month, and it is before the time requested on the last day of the month" in {
+    "have the initial time be the last day of this month when the day number is higher than the last day of this month, and it is before the time requested on the last day of this month" in {
       val recurrence = MonthlyByDayOfMonth(IDs.next, 1, 31, fivePM, timeZone)
       recurrence.initialAfter(dateTimeOf(2010, 2, 28, 12, 1, timeZone)) mustBe dateTimeOf(2010, 2, 28, 17, 0, timeZone)
     }
 
-    "have the initial time be the last day of next month when the day number is higher than the last day of the month, and it is past the time requested on the last day of the month" in {
+    "have the initial time be the appropriate day of the next month when the day number is higher than the last day of this month, and it is past the time requested on the last day of this month" in {
       val recurrence = MonthlyByDayOfMonth(IDs.next, 1, 31, fivePM, timeZone)
       recurrence.initialAfter(dateTimeOf(2010, 2, 28, 18, 1, timeZone)) mustBe dateTimeOf(2010, 3, 31, 17, 0, timeZone)
     }
