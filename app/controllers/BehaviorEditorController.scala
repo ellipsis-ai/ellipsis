@@ -507,12 +507,16 @@ class BehaviorEditorController @Inject() (
               }.getOrElse(Future.successful(None))
             }
           }.getOrElse(Future.successful(None))
+          teamAccess <- dataService.users.teamAccessFor(user, maybeBehaviorGroup.map(_.team.id))
+          oauth2Appications <- teamAccess.maybeTargetTeam.map { team =>
+            dataService.oauth2Applications.allUsableFor(team)
+          }.getOrElse(Future.successful(Seq()))
         } yield {
           maybeBehaviorGroup.map { group =>
             maybeGithubProfile.map { profile =>
               val fetcher = GithubSingleBehaviorGroupFetcher(group.team, info.owner, info.repo, profile.token, info.branch, maybeExistingGroupData, githubService, services, ec)
               try {
-                val groupData = fetcher.result
+                val groupData = fetcher.result.copyWithApiApplicationsIfAvailable(oauth2Appications)
                 Ok(JsObject(Map("data" -> Json.toJson(groupData))))
               } catch {
                 case e: GitFetcherException => Ok(JsObject(Map("errors" -> JsString(e.getMessage))))
