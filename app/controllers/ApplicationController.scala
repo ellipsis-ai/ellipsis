@@ -107,8 +107,8 @@ class ApplicationController @Inject() (
         BehaviorGroupData.maybeFor(group.id, user, None, dataService)
       }).map(_.flatten)
     } yield teamAccess.maybeTargetTeam.map { team =>
-      val fetcher = GithubPublishedBehaviorGroupsFetcher(team, maybeBranch, githubService, services, ec)
-      Ok(Json.toJson(fetcher.publishedBehaviorGroupsFor(alreadyInstalledData)))
+      val fetcher = GithubPublishedBehaviorGroupsFetcher(team, maybeBranch, alreadyInstalledData, githubService, services, ec)
+      Ok(Json.toJson(fetcher.result))
     }.getOrElse {
       val message = maybeTeamId.map { teamId =>
         s"You can't access this for team ${teamId}"
@@ -192,8 +192,8 @@ class ApplicationController @Inject() (
     } yield {
       maybeInstalledGroupData.map { installedGroupData =>
         val publishedGroupData = teamAccess.maybeTargetTeam.map { team =>
-          val fetcher = GithubPublishedBehaviorGroupsFetcher(team, maybeBranch, githubService, services, ec)
-          fetcher.publishedBehaviorGroupsFor(installedGroupData)
+          val fetcher = GithubPublishedBehaviorGroupsFetcher(team, maybeBranch, installedGroupData, githubService, services, ec)
+          fetcher.result
         }.getOrElse(Seq())
         val matchResults = FuzzyMatcher[BehaviorGroupData](queryString, installedGroupData ++ publishedGroupData).run
         Ok(Json.toJson(matchResults.map(_.item)).toString)

@@ -4,7 +4,8 @@ define(function (require) {
   return React.createClass({
     propTypes: {
       teamId: React.PropTypes.string.isRequired,
-      activePage: React.PropTypes.string
+      activePage: React.PropTypes.string,
+      isAdmin: React.PropTypes.bool.isRequired
     },
 
     activeClassWhenPageName: function(pageName) {
@@ -26,6 +27,9 @@ define(function (require) {
             </li>
             <li className={this.activeClassWhenPageName("oauthApplications")}>
               <a href={jsRoutes.controllers.web.settings.IntegrationsController.list(this.props.teamId).url}>Integrations</a>
+            </li>
+            <li className={this.activeClassWhenPageName("githubConfig")}>
+              <a href={jsRoutes.controllers.GithubConfigController.index(this.props.teamId).url}>GitHub configuration</a>
             </li>
           </ul>
         </nav>

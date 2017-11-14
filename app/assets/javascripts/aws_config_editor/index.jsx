@@ -21,7 +21,8 @@ define(function(require) {
       teamId: React.PropTypes.string.isRequired,
       behaviorGroupId: React.PropTypes.string,
       behaviorId: React.PropTypes.string,
-      documentationUrl: React.PropTypes.string.isRequired
+      documentationUrl: React.PropTypes.string.isRequired,
+      isAdmin: React.PropTypes.bool.isRequired
     }),
 
     getDefaultProps: function() {
@@ -141,7 +142,7 @@ define(function(require) {
             <div className="flex-column flex-column-left flex-rows container container-wide prn">
               <div className="columns flex-columns flex-row-expand">
                 <div className="column column-one-quarter flex-column">
-                  <SettingsMenu activePage="awsConfigs" teamId={this.props.teamId} />
+                  <SettingsMenu activePage="awsConfigs" teamId={this.props.teamId} isAdmin={this.props.isAdmin}/>
                 </div>
                 <div className="column column-three-quarters flex-column bg-white ptxl pbxxxxl phxxxxl">
                   {this.renderConfigure()}

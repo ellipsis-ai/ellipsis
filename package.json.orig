@@ -7,7 +7,13 @@
   "directories": {
     "test": "test"
   },
-  "dependencies": {},
+  "dependencies": {
+    "babel-core": "6.26.0",
+    "babel-eslint": "8.0.2",
+    "babel-polyfill": "6.26.0",
+    "eslint": "4.10.0",
+    "node-uuid": "1.4.8"
+  },
   "devDependencies": {
     "amdefine": "^1.0.0",
     "babel-cli": "^6.26.0",
@@ -53,12 +59,15 @@
           "OAuth2ApplicationController": {},
           "ScheduledActionsController": {},
           "RegionalSettingsController": {},
-          "GithubConfigController": {},
+<<<<<<< HEAD
           "web": {
             "settings": {
               "IntegrationsController": {}
             }
           }
+=======
+          "GithubConfigController": {}
+>>>>>>> origin/master
         }
       }
     },

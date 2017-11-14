@@ -37,6 +37,7 @@ class RegionalSettingsController @Inject()(
             val config = RegionalSettingsConfig(
               "regionalSettings",
               CSRF.getToken(request).map(_.value),
+              teamAccess.isAdminAccess,
               team.id,
               maybeTz.map(_.toString),
               maybeTz.map(_.getDisplayName(TextStyle.FULL, Locale.ENGLISH)),

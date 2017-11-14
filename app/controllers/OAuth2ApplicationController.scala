@@ -42,6 +42,7 @@ class OAuth2ApplicationController @Inject() (
             val config = OAuth2ApplicationListConfig(
               containerId = "applicationList",
               csrfToken = CSRF.getToken(request).map(_.value),
+              teamAccess.isAdminAccess,
               teamId = team.id,
               apis = apis.map(api => OAuth2ApiData.from(api, assets)),
               applications = applications.map(app => OAuth2ApplicationData.from(app))
@@ -97,6 +98,7 @@ class OAuth2ApplicationController @Inject() (
             val config = OAuth2ApplicationEditConfig(
               containerId = "applicationEditor",
               csrfToken = CSRF.getToken(request).map(_.value),
+              teamAccess.isAdminAccess,
               teamId = team.id,
               apis = apis.map(ea => OAuth2ApiData.from(ea, assets)),
               callbackUrl = routes.APIAccessController.linkCustomOAuth2Service(newApplicationId, None, None, None, None).absoluteURL(secure = true),
@@ -150,6 +152,7 @@ class OAuth2ApplicationController @Inject() (
             val config = OAuth2ApplicationEditConfig(
               containerId = "applicationEditor",
               csrfToken = CSRF.getToken(request).map(_.value),
+              teamAccess.isAdminAccess,
               teamId = team.id,
               apis = apis.map(ea => OAuth2ApiData.from(ea, assets)),
               callbackUrl = routes.APIAccessController.linkCustomOAuth2Service(application.id, None, None, None, None).absoluteURL(secure = true),

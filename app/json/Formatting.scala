@@ -175,7 +175,15 @@ object Formatting {
   implicit val regionalSettingsConfigFormat = Json.format[RegionalSettingsConfig]
 
   implicit val logEntryDataFormat = Json.format[LogEntryData]
- 
+
+  implicit val apiErrorDataFormat = Json.format[APIErrorData]
+  implicit val apiErrorResultDataFormat = Json.format[APIResultWithErrorsData]
+
+  implicit val linkedAccountDataFormat = Json.format[LinkedAccountData]
+
+  implicit val githubConfigConfigFormat = Json.format[GithubConfigConfig]
+
   implicit val integrationListReads = Json.reads[IntegrationList]
   implicit val integrationListWrites = Json.writes[IntegrationList]
+
 }

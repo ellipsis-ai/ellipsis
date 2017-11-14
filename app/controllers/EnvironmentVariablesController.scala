@@ -127,6 +127,7 @@ class EnvironmentVariablesController @Inject() (
             val config = EnvironmentVariablesListConfig(
               containerId = "environmentVariableList",
               csrfToken = CSRF.getToken(request).map(_.value),
+              teamAccess.isAdminAccess,
               data = EnvironmentVariablesData(team.id, varsData ++ newVarsData),
               focus = maybeNewVars.flatMap(_.headOption)
             )

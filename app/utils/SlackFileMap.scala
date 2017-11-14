@@ -20,7 +20,11 @@ class SlackFileMap @Inject() (
   }
 
   def maybeUrlFor(fileId: String): Option[String] = {
-    cacheService.get[String](keyFor(fileId))
+    try {
+      cacheService.get[String](keyFor(fileId))
+    } catch {
+      case e: IllegalArgumentException => None
+    }
   }
 
 }
