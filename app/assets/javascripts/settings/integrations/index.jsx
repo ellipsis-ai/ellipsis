@@ -50,11 +50,11 @@ define(function(require) {
       return !!(this.props.applications && this.props.applications.length > 0);
     },
 
-    hasAWSConfigs: function() {
+    hasAwsConfigs: function() {
       return !!(this.props.awsConfigs && this.props.awsConfigs.length > 0);
     },
 
-    getAWSConfigs: function() {
+    getAwsConfigs: function() {
       return this.props.awsConfigs || [];
     },
 
@@ -93,11 +93,11 @@ define(function(require) {
 
                   <hr />
 
-                  <Collapsible revealWhen={this.hasAWSConfigs()}>
-                    {this.renderAWSConfigs()}
+                  <Collapsible revealWhen={this.hasAwsConfigs()}>
+                    {this.renderAwsConfigs()}
                   </Collapsible>
 
-                  <Collapsible revealWhen={!this.hasAWSConfigs()}>
+                  <Collapsible revealWhen={!this.hasAwsConfigs()}>
                     {this.renderNoAwsConfigs()}
                   </Collapsible>
 
@@ -110,7 +110,7 @@ define(function(require) {
                   </Collapsible>
 
                   <Collapsible revealWhen={this.hasApis()}>
-                    {this.renderNewIntegrationLink2()}
+                    {this.renderNewIntegrationLink()}
                   </Collapsible>
 
                 </div>
@@ -209,8 +209,8 @@ define(function(require) {
       );
     },
 
-    renderAWSConfigs: function() {
-      var awsConfigs = this.getAWSConfigs();
+    renderAwsConfigs: function() {
+      var awsConfigs = this.getAwsConfigs();
       var route = jsRoutes.controllers.AWSConfigController.edit;
       return (
         <div className="mvm">
@@ -229,18 +229,6 @@ define(function(require) {
     },
 
     renderNewIntegrationLink: function() {
-      return (
-        <div className="mvxl">
-          <a className="button"
-             href={jsRoutes.controllers.web.settings.IntegrationsController.add(this.props.teamId, null, null, null).url}
-          >
-            Add a new integration
-          </a>
-        </div>
-      );
-    },
-
-    renderNewIntegrationLink2: function() {
       return (
         <div className="mvxl">
           <a className="button"

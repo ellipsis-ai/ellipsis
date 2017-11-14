@@ -14,7 +14,7 @@ define(function(require) {
       teamId: React.PropTypes.string.isRequired,
       apis: React.PropTypes.arrayOf(React.PropTypes.object),
       applications: React.PropTypes.arrayOf(React.PropTypes.object),
-      AWSConfigs: React.PropTypes.arrayOf(React.PropTypes.object)
+      awsConfigs: React.PropTypes.arrayOf(React.PropTypes.object)
     }),
 
     getDefaultProps: function() {
@@ -51,12 +51,12 @@ define(function(require) {
       return !!(this.props.applications && this.props.applications.length > 0);
     },
 
-    hasAWSConfigs: function() {
+    hasAwsConfigs: function() {
       return true;
     },
 
-    getAWSConfigs: function() {
-      return this.props.AWSConfigs || [];
+    getAwsConfigs: function() {
+      return this.props.awsConfigs || [];
     },
 
     toggleOAuth2ApplicationHelp: function() {
@@ -80,6 +80,7 @@ define(function(require) {
                 <div className="column column-three-quarters flex-column bg-white ptxl pbxxxxl phxxxxl">
 
                   <p>
+                    <h1>MINCHIONE</h1>
                     <span>Create a new configuration to give Ellipsis access to third-party APIs, </span>
                     <span>services, and data.</span>
                   </p>
@@ -88,7 +89,7 @@ define(function(require) {
                     <HelpButton className="mrs" onClick={this.toggleOAuth2ApplicationHelp}
                       toggled={this.props.activePanelName === 'oAuth2ApplicationHelp'}/>
                     <button type="button" className="button-raw" onClick={this.toggleOAuth2ApplicationHelp}>
-                      How Integrations work
+                      How integrations work
                     </button>
                   </p>
 
@@ -102,11 +103,11 @@ define(function(require) {
                     {this.renderNoApplications()}
                   </Collapsible>
 
-                  <Collapsible revealWhen={this.hasAWSConfigs()}>
-                    {this.renderAWSConfigs()}
+                  <Collapsible revealWhen={this.hasAwsConfigs()}>
+                    {this.renderAwsConfigs()}
                   </Collapsible>
 
-                  <Collapsible revealWhen={!this.hasAWSConfigs()}>
+                  <Collapsible revealWhen={!this.hasAwsConfigs()}>
                     {this.renderNoAwsConfigs()}
                   </Collapsible>
 
@@ -211,18 +212,18 @@ define(function(require) {
       );
     },
 
-    renderAWSConfigs: function() {
-      var awsConfigs = this.getAWSConfigs();
+
+    renderAwsConfigs: function() {
+      var awsConfigs = this.getAwsConfigs();
       var route = jsRoutes.controllers.AWSConfigController.edit;
+
       return (
         <div>
-          {awsConfigs.map((config, index) => {
-            return (
+          { awsConfigs.map((config, index) => (
               <div key={`awsConfig${index}`} className="mvm">
                 <h4><a href={route(config.id).url}>{config.displayName}</a></h4>
               </div>
-            );
-          })}
+            ))}
         </div>
       );
     },
