@@ -98,7 +98,7 @@ define(function(require) {
             <button
               type="button"
               onClick={this.onPushToGithub}
-              disabled={ this.props.isModified || !this.getRepo() || !this.getOwner() || !this.getBranch() || !this.getCommitMessage() }
+              disabled={ this.props.isModified || !this.getBranch() || !this.getCommitMessage() }
             >
               Push to Github
             </button>

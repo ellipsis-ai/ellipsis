@@ -32,7 +32,7 @@ define(function(require) {
             <button
               type="button"
               onClick={this.props.onPullClick}
-              disabled={ this.props.isModified || !this.getRepo() || !this.getOwner() }
+              disabled={ this.props.isModified }
             >
               Pull from Github…
             </button>
@@ -40,7 +40,7 @@ define(function(require) {
               className="mls"
               type="button"
               onClick={this.props.onPushClick}
-              disabled={ this.props.isModified || !this.getRepo() || !this.getOwner() }
+              disabled={ this.props.isModified }
             >
               Push to Github…
             </button>
@@ -49,7 +49,7 @@ define(function(require) {
               type="button"
               onClick={this.props.onDoneClick}
             >
-              Cancel
+              Done
             </button>
           </div>
         </div>

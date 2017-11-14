@@ -32,15 +32,19 @@ define(function(require) {
     },
 
     render: function() {
-      return (
-        <div>
-          <div className="align-m type-s type-weak mrm">Owner/Repo:</div>
-          <div className="display-inline-block align-form-input type-monospace type-s mrm">
-            <span>{this.getOwnerRepo()}</span>
-            {this.renderChangeLink()}
+      if (this.props.linked) {
+        return (
+          <div>
+            <div className="align-m type-s type-weak mrm">Owner/Repo:</div>
+            <div className="display-inline-block align-form-input type-monospace type-s mrm">
+              <span>{this.getOwnerRepo()}</span>
+              {this.renderChangeLink()}
             </div>
-        </div>
-      );
+          </div>
+        );
+      } else {
+        return null;
+      }
     },
 
   });

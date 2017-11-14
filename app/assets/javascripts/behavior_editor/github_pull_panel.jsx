@@ -86,7 +86,7 @@ define(function(require) {
             <button
               type="button"
               onClick={this.onUpdateFromGithub}
-              disabled={ this.props.isModified || !this.getRepo() || !this.getOwner() || !this.getBranch() }
+              disabled={ this.props.isModified || !this.getBranch() }
             >
               Pull from Github
             </button>
