@@ -2,10 +2,10 @@ requirejs(['common'], function() {
   requirejs(
     ['core-js', 'whatwg-fetch', 'react', 'react-dom', './lib/browser_utils', './behavior_editor/index',
       './models/behavior_group', 'config/behavioreditor/edit', './models/param_type', './models/aws',
-      './models/oauth2', './models/simple_token', './lib/autobind', './shared_ui/page'],
+      './models/oauth2', './models/simple_token', './models/linked_github_repo', './lib/autobind', './shared_ui/page', './lib/data_request'],
     function(Core, Fetch, React, ReactDOM, BrowserUtils, BehaviorEditor,
              BehaviorGroup, BehaviorEditorConfiguration, ParamType, aws,
-             oauth2, simpleToken, autobind, Page) {
+             oauth2, simpleToken, LinkedGithubRepo, autobind, Page, DataRequest) {
 
       class BehaviorEditorLoader extends React.Component {
         constructor(props) {
@@ -17,6 +17,7 @@ requirejs(['common'], function() {
             awsConfigs: this.props.awsConfigs.map(aws.AWSConfigRef.fromJson),
             oauth2Applications: this.props.oauth2Applications.map(oauth2.OAuth2ApplicationRef.fromJson),
             simpleTokenApis: this.props.simpleTokenApis.map(simpleToken.SimpleTokenApiRef.fromJson),
+            linkedGithubRepo: this.props.linkedGithubRepo ? LinkedGithubRepo.fromJson(this.props.linkedGithubRepo) : undefined,
             group: group,
             builtinParamTypes: this.props.builtinParamTypes.map(ParamType.fromJson),
             selectedId: selectedId,
@@ -25,6 +26,22 @@ requirejs(['common'], function() {
           if (group.id && selectedId) {
             BrowserUtils.replaceURL(jsRoutes.controllers.BehaviorEditorController.edit(group.id, selectedId).url);
           }
+        }
+
+        onLinkGithubRepo(owner, repo, callback) {
+          DataRequest.jsonPost(
+            jsRoutes.controllers.BehaviorEditorController.linkToGithubRepo().url,
+            {
+              behaviorGroupId: this.props.group.id,
+              owner: owner,
+              repo: repo
+            },
+            this.props.csrfToken
+          )
+            .then(r => {
+              const linked = new LinkedGithubRepo({ owner: owner, repo: repo });
+              this.setState({ linkedGithubRepo: linked }, callback);
+            });
         }
 
         onSave(newProps, state) {
@@ -93,6 +110,8 @@ requirejs(['common'], function() {
                 userId={this.props.userId}
                 isAdmin={this.props.isAdmin}
                 isLinkedToGithub={this.props.isLinkedToGithub}
+                linkedGithubRepo={this.state.linkedGithubRepo}
+                onLinkGithubRepo={this.onLinkGithubRepo}
               />
             </Page>
           );
@@ -114,7 +133,8 @@ requirejs(['common'], function() {
         linkedOAuth2ApplicationIds: React.PropTypes.arrayOf(React.PropTypes.string).isRequired,
         userId: React.PropTypes.string.isRequired,
         isAdmin: React.PropTypes.bool.isRequired,
-        isLinkedToGithub: React.PropTypes.bool.isRequired
+        isLinkedToGithub: React.PropTypes.bool.isRequired,
+        linkedGithubRepo: React.PropTypes.object
       };
 
       ReactDOM.render(

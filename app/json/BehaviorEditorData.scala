@@ -25,7 +25,8 @@ case class BehaviorEditorData(
                                linkedOAuth2ApplicationIds: Seq[String],
                                userId: String,
                                isAdmin: Boolean,
-                               isLinkedToGithub: Boolean
+                               isLinkedToGithub: Boolean,
+                               linkedGithubRepo: Option[LinkedGithubRepoData]
                               )
 
 object BehaviorEditorData {
@@ -154,6 +155,9 @@ object BehaviorEditorData {
       userData <- dataService.users.userDataFor(user, team)
       isAdmin <- dataService.users.isAdmin(user)
       isLinkedToGithub <- dataService.linkedAccounts.maybeForGithubFor(user).map(_.nonEmpty)
+      maybeLinkedGithubRepo <- maybeGroup.map { group =>
+        dataService.linkedGithubRepos.maybeFor(group)
+      }.getOrElse(Future.successful(None))
     } yield {
       val maybeVerifiedSelectedId = maybeVerifiedBehaviorId.orElse(maybeVerifiedLibraryId)
       val data = maybeGroupData.getOrElse {
@@ -190,7 +194,8 @@ object BehaviorEditorData {
         linkedOAuth2Tokens.map(_.application.id),
         user.id,
         isAdmin,
-        isLinkedToGithub
+        isLinkedToGithub,
+        maybeLinkedGithubRepo.map(r => LinkedGithubRepoData(r.owner, r.repo))
       )
     }
   }

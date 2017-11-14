@@ -35,6 +35,7 @@ import models.behaviors.input.InputService
 import models.behaviors.invocationlogentry.InvocationLogEntryService
 import models.behaviors.invocationtoken.InvocationTokenService
 import models.behaviors.library.LibraryVersionService
+import models.behaviors.linked_github_repo.LinkedGithubRepoService
 import models.behaviors.nodemoduleversion.NodeModuleVersionService
 import models.behaviors.savedanswer.SavedAnswerService
 import models.behaviors.scheduling.recurrence.RecurrenceService
@@ -83,6 +84,7 @@ class PostgresDataService @Inject() (
                                       val requiredAWSConfigsProvider: Provider[RequiredAWSConfigService],
                                       val requiredOAuth2ApiConfigsProvider: Provider[RequiredOAuth2ApiConfigService],
                                       val requiredSimpleTokenApiConfigsProvider: Provider[RequiredSimpleTokenApiService],
+                                      val linkedGithubReposProvider: Provider[LinkedGithubRepoService],
                                       val conversationsProvider: Provider[ConversationService],
                                       val collectedParameterValuesProvider: Provider[CollectedParameterValueService],
                                       val scheduledMessagesProvider: Provider[ScheduledMessageService],
@@ -125,6 +127,7 @@ class PostgresDataService @Inject() (
   val requiredAWSConfigs = requiredAWSConfigsProvider.get
   val requiredOAuth2ApiConfigs = requiredOAuth2ApiConfigsProvider.get
   val requiredSimpleTokenApis = requiredSimpleTokenApiConfigsProvider.get
+  val linkedGithubRepos = linkedGithubReposProvider.get
   val conversations = conversationsProvider.get
   val collectedParameterValues = collectedParameterValuesProvider.get
   val scheduledMessages = scheduledMessagesProvider.get
