@@ -3,7 +3,7 @@ package controllers
 import java.time.OffsetDateTime
 
 import json.Formatting._
-import json.LogEntryData
+import json.{APIErrorData, APIResultWithErrorsData, LogEntryData}
 import models.IDs
 import models.accounts.user.User
 import models.behaviors.ResultType
@@ -21,6 +21,7 @@ import org.mockito.Mockito._
 import org.scalatest.mock.MockitoSugar
 import org.scalatestplus.play.PlaySpec
 import play.api.libs.json._
+import play.api.mvc.Result
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
 import services.DataService
@@ -78,8 +79,10 @@ class InvocationLogControllerSpec extends PlaySpec with MockitoSugar {
 
     val logs = makeLogs(targetBehavior, user)
     when(dataService.invocationTokens.findNotExpired(token)).thenReturn(Future.successful(Some(invocationToken)))
+    when(dataService.invocationTokens.findNotExpired("wrong")).thenReturn(Future.successful(None))
     when(dataService.behaviors.findWithoutAccessCheck(invocationToken.behaviorId)).thenReturn(Future.successful(Some(originatingBehavior)))
     when(dataService.behaviors.findByIdOrNameOrTrigger(behaviorName, group)).thenReturn(Future.successful(Some(targetBehavior)))
+    when(dataService.behaviors.findByIdOrNameOrTrigger("wrong", group)).thenReturn(Future.successful(None))
     when(dataService.invocationLogEntries.allForBehavior(same(targetBehavior), any[OffsetDateTime], any[OffsetDateTime], same(None), same(None))).thenReturn(Future.successful(logs))
     when(dataService.invocationLogEntries.allForBehavior(same(targetBehavior), any[OffsetDateTime], any[OffsetDateTime], same(None), Matchers.eq(Some(EventType.chat)))).thenReturn {
       Future.successful(logs.filter(_.maybeOriginalEventType.exists(_ == EventType.chat)))
@@ -87,7 +90,38 @@ class InvocationLogControllerSpec extends PlaySpec with MockitoSugar {
     logs
   }
 
+  def maybeErrorInResult(jsResult: JsValue): Option[APIErrorData] = {
+    jsResult.validate[APIResultWithErrorsData] match {
+      case JsSuccess(data, _) => data.errors.headOption
+      case JsError(_) => None
+    }
+  }
+
   "getLogs" should {
+    "return a 400 with an invalid token" in new ControllerTestContext {
+      running(app) {
+        setupLogs(user, team, dataService)
+        val request = FakeRequest(controllers.routes.InvocationLogController.getLogs(
+          behaviorName, "wrong", None, None, None, None
+        ))
+        val result = route(app, request).get
+        status(result) mustBe BAD_REQUEST
+        maybeErrorInResult(contentAsJson(result)) mustEqual Some(APIErrorData("Invalid or expired token", Some("token")))
+      }
+    }
+
+    "return a 404 with a non-existent behavior" in new ControllerTestContext {
+      running(app) {
+        setupLogs(user, team, dataService)
+        val request = FakeRequest(controllers.routes.InvocationLogController.getLogs(
+          "wrong", token, None, None, None, None
+        ))
+        val result = route(app, request).get
+        status(result) mustBe NOT_FOUND
+        maybeErrorInResult(contentAsJson(result)) mustEqual Some(APIErrorData(InvocationLogController.noActionFoundMessage("wrong"), Some("behaviorId")))
+      }
+    }
+
     "return a list of log entries with a valid behavior and no event type" in new ControllerTestContext {
       running(app) {
         val logs = setupLogs(user, team, dataService)
