@@ -70,6 +70,11 @@ class AWSLambdaServiceImpl @Inject() (
   val logSubscriptionsLambdaFunctionName: String = configuration.get[String]("aws.logSubscriptions.lambdaFunctionName")
   val logSubscriptionsFilterPattern: String = configuration.get[String]("aws.logSubscriptions.filterPattern")
   val logSubscriptionsFilterName: String = configuration.get[String]("aws.logSubscriptions.filterName")
+  val initialInvocationRetrySeconds: Int = configuration.get[Int]("aws.lambda.initialInvocationRetrySeconds")
+  val numInvocationRetries: Int = configuration.get[Int]("aws.lambda.numInvocationRetries")
+  val invocationRetryIntervals: List[Long] = 0.until(numInvocationRetries).map { i =>
+    initialInvocationRetrySeconds * scala.math.pow(2, i).toLong
+  }.toList
 
   def createdFileNameFor(groupVersion: BehaviorGroupVersion): String = {
     dirNameFor(groupVersion.functionName) ++ "/created"
@@ -143,7 +148,7 @@ class AWSLambdaServiceImpl @Inject() (
                             environmentVariables: Seq[EnvironmentVariable],
                             successFn: InvokeResult => BotResult,
                             maybeConversation: Option[Conversation],
-                            retryIntervals: List[Int],
+                            retryIntervals: List[Long],
                             defaultServices: DefaultServices
                           ): DBIO[BotResult] = {
     for {
@@ -165,8 +170,8 @@ class AWSLambdaServiceImpl @Inject() (
                 case amazonServiceExceptionRegex() => Future.successful(AWSDownResult(event, maybeConversation))
                 case resourceNotFoundExceptionRegex() => {
                   retryIntervals.headOption.map { retryInterval =>
-                    Logger.info(s"retrying behavior invocation after resource not found with interval: $retryInterval")
-                    Thread.sleep(retryInterval)
+                    Logger.info(s"retrying behavior invocation after resource not found with interval: ${retryInterval}s")
+                    Thread.sleep(retryInterval*1000)
                     dataService.run(invokeFunctionAction(behaviorVersion, token, payloadData, team, event, apiConfigInfo, environmentVariables, successFn, maybeConversation, retryIntervals.tail, defaultServices))
                   }.getOrElse {
                     throw e
@@ -214,7 +219,7 @@ class AWSLambdaServiceImpl @Inject() (
               behaviorVersion.resultFor(result.getPayload, logResult, parametersWithValues, dataService, configuration, event, maybeConversation)
             },
             maybeConversation,
-            INVOCATION_RETRY_INTERVALS,
+            invocationRetryIntervals,
             defaultServices
           )
         } yield invocationResult
