@@ -9,8 +9,9 @@ import models.behaviors.{BotResult, BotResultService}
 import models.behaviors.events.{EventType, SlackMessage, SlackMessageEvent}
 import models.team.Team
 import play.api.Logger
-import services.{DataService, SlackEventService}
-import utils.{SlackMessageReactionHandler, SlackTimestamp}
+import services.{CacheService, DataService, SlackEventService}
+import slack.api.SlackApiClient
+import utils.{SlackChannels, SlackMessageReactionHandler, SlackTimestamp}
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -116,6 +117,10 @@ class SlackBotProfileServiceImpl @Inject() (
         )
       }
     }
+  }
+
+  def channelsFor(botProfile: SlackBotProfile, cacheService: CacheService): SlackChannels = {
+    SlackChannels(SlackApiClient(botProfile.token), cacheService, botProfile.slackTeamId)
   }
 
   private def sendResult(eventualMaybeResult: Future[Option[BotResult]]): Future[Option[String]] = {
