@@ -18,7 +18,7 @@ define(function(require) {
   const Scheduling = React.createClass({
     propTypes: Object.assign({}, Page.requiredPropTypes, {
       scheduledActions: React.PropTypes.arrayOf(React.PropTypes.instanceOf(ScheduledAction)).isRequired,
-      channelList: React.PropTypes.arrayOf(React.PropTypes.instanceOf(ScheduleChannel)).isRequired,
+      channelList: React.PropTypes.arrayOf(React.PropTypes.instanceOf(ScheduleChannel)),
       behaviorGroups: React.PropTypes.arrayOf(React.PropTypes.instanceOf(BehaviorGroup)).isRequired,
       teamId: React.PropTypes.string.isRequired,
       teamTimeZone: React.PropTypes.string,
@@ -43,7 +43,7 @@ define(function(require) {
     getInitialState: function() {
       const selectedItem = this.getDefaultSelectedItem();
       return {
-        filterChannelId: selectedItem ? selectedItem.channel : null,
+        filterChannelId: selectedItem && this.hasChannelList() ? selectedItem.channel : null,
         selectedItem: selectedItem,
         justSaved: false,
         justDeleted: false,
@@ -87,6 +87,10 @@ define(function(require) {
       }
     },
 
+    hasChannelList: function() {
+      return Boolean(this.props.channelList) && this.props.channelList.length > 0;
+    },
+
     getDefaultSelectedItem: function() {
       if (this.props.selectedScheduleId) {
         return this.props.scheduledActions.find((ea) => ea.id === this.props.selectedScheduleId);
@@ -121,20 +125,24 @@ define(function(require) {
       }, optionalCallback);
     },
 
+    findChannelFor: function(channelId) {
+      return this.hasChannelList() ? this.props.channelList.find((ea) => ea.id === channelId) : null;
+    },
+
     getScheduleByChannel: function() {
       const groupsByName = {};
       this.props.scheduledActions.forEach((action) => {
-        const channel = this.props.channelList.find((ea) => ea.id === action.channel);
+        const channel = this.findChannelFor(action.channel);
         const channelName = channel ? channel.getFormattedName() : "Unknown";
-        const includesUser = channel.userCanAccess(this.props.slackUserId);
-        const excludesBot = this.props.slackBotUserId && !channel.userCanAccess(this.props.slackBotUserId);
-        if (!channel || channel.isPublic || includesUser) {
+        const excludesUser = channel ? !channel.userCanAccess(this.props.slackUserId) : false;
+        const excludesBot = this.props.slackBotUserId && channel ? !channel.userCanAccess(this.props.slackBotUserId) : false;
+        if (!channel || channel.isPublic || !excludesUser) {
           const group = groupsByName[channelName] || {
             channel: channel,
             channelName: channelName,
             channelId: channel ? channel.id : "unknown",
             excludesBot: excludesBot,
-            excludesUser: !includesUser,
+            excludesUser: excludesUser,
             actions: []
           };
           group.actions.push(action);
@@ -241,6 +249,12 @@ define(function(require) {
             <span className="mhs">{selectedItem && !selectedItem.isNew() ? "Edit schedule" : "New schedule"}</span>
           </span>
         );
+      } else if (!this.hasChannelList()) {
+        return (
+          <span className="type-pink type-italic type-m align-m">
+            — Warning: An error occurred loading channel information
+          </span>
+        );
       }
     },
 
@@ -336,9 +350,20 @@ define(function(require) {
     renderNoSchedules: function() {
       return (
         <div className={"pvxxl phxxl mobile-phxl"}>
-          <p className="type-bold">Nothing is currently scheduled in channels you can access on this team.</p>
+          {this.hasChannelList() ? (
+            <div>
+              <p className="type-bold">Nothing is currently scheduled in channels you can access on this team.</p>
 
-          <p>You can schedule any action to run on a recurring basis in a particular channel.</p>
+              <p>You can schedule any action to run on a recurring basis in a particular channel.</p>
+
+            </div>
+          ) : (
+            <div>
+              <p className="type-bold">No scheduling information was found.</p>
+
+              <p>There may be an error, or you may not have access to this information.</p>
+            </div>
+          )}
         </div>
       );
     },
@@ -350,7 +375,7 @@ define(function(require) {
     render: function() {
       const groups = this.getScheduleByChannel();
       const selectedItem = this.getSelectedItem();
-      const selectedItemChannel = selectedItem ? this.props.channelList.find((ea) => ea.id === selectedItem.channel) : null;
+      const selectedItemChannel = selectedItem ? this.findChannelFor(selectedItem.channel) : null;
       const selectedItemIsValid = Boolean(selectedItem && selectedItem.isValid());
       const selectedItemIsNew = Boolean(selectedItem && selectedItem.isNew());
       return (
@@ -365,7 +390,7 @@ define(function(require) {
                   </h3>
                 </div>
                 <div className="column column-shrink mobile-ptm">
-                  <Collapsible revealWhen={!this.isEditing()}>
+                  <Collapsible revealWhen={!this.isEditing() && this.hasChannelList()}>
                     <button type="button" className="button-shrink" onClick={this.addNewItem}>Schedule something new</button>
                   </Collapsible>
                 </div>
@@ -425,16 +450,19 @@ define(function(require) {
                             </p>
                           </div>
                         </div>
-                        {selectedItemChannel ? (
-                          <div className="column-row">
-                            <div className="column column-shrink">
-                              <h6 className="mtxs">Where</h6>
-                            </div>
-                            <div className="column column-expand">
-                              <p>In {selectedItemChannel.getDescription()}</p>
-                            </div>
+                        <div className="column-row">
+                          <div className="column column-shrink">
+                            <h6 className="mtxs">Where</h6>
                           </div>
-                        ) : null}
+                          <div className="column column-expand">
+                            <p>
+                              {selectedItemChannel ?
+                                `In ${selectedItemChannel.getDescription()}` :
+                                `In channel ID ${selectedItem.channel}`
+                              }
+                            </p>
+                          </div>
+                        </div>
                         <div className="column-row">
                           <div className="column column-shrink">
                             <h6 className="mtxs">When</h6>

@@ -5,7 +5,7 @@ case class ScheduledActionsConfig(
                                    csrfToken: Option[String],
                                    teamId: String,
                                    scheduledActions: Seq[ScheduledActionData],
-                                   channelList: Seq[ScheduleChannelData],
+                                   channelList: Option[Seq[ScheduleChannelData]],
                                    behaviorGroups: Seq[BehaviorGroupData],
                                    teamTimeZone: Option[String],
                                    teamTimeZoneName: Option[String],

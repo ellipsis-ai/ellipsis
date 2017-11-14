@@ -66,18 +66,29 @@ object ScheduledActionData {
     )
   }
 
-  def buildFor(maybeSlackUserId: Option[String], team: Team, channelList: Seq[ChannelLike], dataService: DataService)(implicit ec: ExecutionContext): Future[Seq[ScheduledActionData]] = {
-    /* TODO: once our scheduling models are medium-aware, make this filtering more intelligent for
-       users with or without a Slack user ID */
+//  def buildFor(maybeSlackUserId: Option[String], team: Team, channelList: Seq[ChannelLike], dataService: DataService)(implicit ec: ExecutionContext): Future[Seq[ScheduledActionData]] = {
+//    /* TODO: once our scheduling models are medium-aware, make this filtering more intelligent for
+//       users with or without a Slack user ID */
+//    for {
+//      scheduledBehaviors <- dataService.scheduledBehaviors.allActiveForTeam(team)
+//      scheduledMessages <- dataService.scheduledMessages.allForTeam(team)
+//    } yield {
+//      maybeSlackUserId.map { slackUserId =>
+//        val scheduledMessageData = scheduledMessages.map(ScheduledActionData.fromScheduledMessage)
+//        val scheduledBehaviorData = scheduledBehaviors.map(ScheduledActionData.fromScheduledBehavior)
+//        (scheduledMessageData ++ scheduledBehaviorData).filter(_.visibleToSlackUser(slackUserId, channelList))
+//      }.getOrElse(Seq())
+//    }
+//  }
+
+  def buildFor(team: Team, dataService: DataService)(implicit ec: ExecutionContext): Future[Seq[ScheduledActionData]] = {
     for {
       scheduledBehaviors <- dataService.scheduledBehaviors.allActiveForTeam(team)
       scheduledMessages <- dataService.scheduledMessages.allForTeam(team)
     } yield {
-      maybeSlackUserId.map { slackUserId =>
-        val scheduledMessageData = scheduledMessages.map(ScheduledActionData.fromScheduledMessage)
-        val scheduledBehaviorData = scheduledBehaviors.map(ScheduledActionData.fromScheduledBehavior)
-        (scheduledMessageData ++ scheduledBehaviorData).filter(_.visibleToSlackUser(slackUserId, channelList))
-      }.getOrElse(Seq())
+      val scheduledMessageData = scheduledMessages.map(ScheduledActionData.fromScheduledMessage)
+      val scheduledBehaviorData = scheduledBehaviors.map(ScheduledActionData.fromScheduledBehavior)
+      scheduledMessageData ++ scheduledBehaviorData
     }
   }
 }

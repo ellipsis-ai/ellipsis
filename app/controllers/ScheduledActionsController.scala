@@ -51,21 +51,36 @@ class ScheduledActionsController @Inject()(
               } else {
                 dataService.linkedAccounts.maybeSlackUserIdFor(user)
               }
-              channelList <- maybeBotProfile.map { botProfile =>
-                dataService.slackBotProfiles.channelsFor(botProfile, cacheService).getListForUser(maybeSlackUserId)
-              }.getOrElse(Future.successful(Seq()))
-              scheduledActions <- ScheduledActionData.buildFor(maybeSlackUserId, team, channelList, dataService)
+              maybeChannelList <- maybeBotProfile.map { botProfile =>
+                dataService.slackBotProfiles.channelsFor(botProfile, cacheService).
+                  getListForUser(maybeSlackUserId).map(Some(_)).
+                  recover {
+                    case e: slack.api.ApiError => None
+                  }
+              }.getOrElse(Future.successful(None))
+              allScheduledActions <- ScheduledActionData.buildFor(team, dataService)
               behaviorGroups <- dataService.behaviorGroups.allFor(team)
               groupData <- Future.sequence(behaviorGroups.map { group =>
                 BehaviorGroupData.maybeFor(group.id, user, None, dataService)
               }).map(_.flatten.sorted)
             } yield {
+              val scheduledActions = if (teamAccess.isAdminAccess) {
+                allScheduledActions
+              } else {
+                maybeChannelList.flatMap { channelList =>
+                  maybeSlackUserId.map { slackUserId =>
+                    allScheduledActions.filter(_.visibleToSlackUser(slackUserId, channelList))
+                  }
+                }.getOrElse {
+                  Seq()
+                }
+              }
               val pageData = ScheduledActionsConfig(
                 containerId = "scheduling",
                 csrfToken = CSRF.getToken(request).map(_.value),
                 teamId = team.id,
                 scheduledActions = scheduledActions,
-                channelList = ScheduleChannelData.fromChannelLikeList(channelList),
+                channelList = maybeChannelList.map(ScheduleChannelData.fromChannelLikeList),
                 behaviorGroups = groupData,
                 teamTimeZone = team.maybeTimeZone.map(_.toString),
                 teamTimeZoneName = team.maybeTimeZone.map(_.getDisplayName(TextStyle.FULL, Locale.ENGLISH)),

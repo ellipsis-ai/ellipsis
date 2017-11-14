@@ -12,13 +12,19 @@ define(function(require) {
           <span className="type-weak">{channel.getSuffix()}</span>
         </span>
       ) : (
-        <span className="type-disabled">Unknown</span>
+        <span className="type-disabled">
+          {this.props.channelId ?
+            `Channel ID ${this.props.channelId}` :
+            "Unknown channel"
+          }
+        </span>
       );
     }
   }
 
   ChannelName.propTypes = {
-    channel: React.PropTypes.instanceOf(ScheduleChannel)
+    channel: React.PropTypes.instanceOf(ScheduleChannel),
+    channelId: React.PropTypes.string
   };
 
   return ChannelName;
