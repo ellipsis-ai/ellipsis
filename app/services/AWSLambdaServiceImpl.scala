@@ -143,7 +143,7 @@ class AWSLambdaServiceImpl @Inject() (
                             environmentVariables: Seq[EnvironmentVariable],
                             successFn: InvokeResult => BotResult,
                             maybeConversation: Option[Conversation],
-                            isRetrying: Boolean,
+                            retryIntervals: List[Int],
                             defaultServices: DefaultServices
                           ): DBIO[BotResult] = {
     for {
@@ -164,11 +164,11 @@ class AWSLambdaServiceImpl @Inject() (
               e.getMessage match {
                 case amazonServiceExceptionRegex() => Future.successful(AWSDownResult(event, maybeConversation))
                 case resourceNotFoundExceptionRegex() => {
-                  if (!isRetrying) {
-                    Logger.info(s"retrying behavior invocation after resource not found")
-                    Thread.sleep(2000)
-                    dataService.run(invokeFunctionAction(behaviorVersion, token, payloadData, team, event, apiConfigInfo, environmentVariables, successFn, maybeConversation, isRetrying=true, defaultServices))
-                  } else {
+                  retryIntervals.headOption.map { retryInterval =>
+                    Logger.info(s"retrying behavior invocation after resource not found with interval: $retryInterval")
+                    Thread.sleep(retryInterval)
+                    dataService.run(invokeFunctionAction(behaviorVersion, token, payloadData, team, event, apiConfigInfo, environmentVariables, successFn, maybeConversation, retryIntervals.tail, defaultServices))
+                  }.getOrElse {
                     throw e
                   }
                 }
@@ -214,7 +214,7 @@ class AWSLambdaServiceImpl @Inject() (
               behaviorVersion.resultFor(result.getPayload, logResult, parametersWithValues, dataService, configuration, event, maybeConversation)
             },
             maybeConversation,
-            isRetrying = false,
+            INVOCATION_RETRY_INTERVALS,
             defaultServices
           )
         } yield invocationResult

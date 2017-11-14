@@ -12,6 +12,7 @@ object AWSLambdaConstants {
   val ENV_KEY = "env"
   val API_BASE_URL_KEY = "apiBaseUrl"
   val RESULT_KEY = "successResult"
+  val INVOCATION_RETRY_INTERVALS: List[Int] = List(2000, 4000)
   def invocationParamFor(i: Int): String = s"param$i"
 
   def loadStaticJs(filename: String): String = {
