@@ -102,6 +102,7 @@ class IntegrationsController @Inject() (
             val config = OAuth2ApplicationEditConfig(
               containerId = "applicationEditor",
               csrfToken = CSRF.getToken(request).map(_.value),
+              isAdmin = teamAccess.isAdminAccess,
               teamId = team.id,
               apis = apis.map(ea => OAuth2ApiData.from(ea, assets)),
               callbackUrl = controllers.routes.APIAccessController.linkCustomOAuth2Service(newApplicationId, None, None, None, None).absoluteURL(secure = true),
