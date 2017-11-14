@@ -9,7 +9,7 @@ import com.google.inject.Provider
 import com.mohiva.play.silhouette.api.Silhouette
 import json.Formatting._
 import json._
-import models.accounts.user.User
+import models.accounts.user.{User, UserTeamAccess}
 import models.behaviors.scheduling.scheduledbehavior.ScheduledBehavior
 import models.behaviors.scheduling.scheduledmessage.ScheduledMessage
 import models.silhouette.EllipsisEnv
@@ -20,6 +20,7 @@ import play.api.data.Forms._
 import play.api.libs.json.{JsError, JsSuccess, Json}
 import play.filters.csrf.CSRF
 import services.{CacheService, DataService}
+import utils.ChannelLike
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -58,23 +59,13 @@ class ScheduledActionsController @Inject()(
                     case e: slack.api.ApiError => None
                   }
               }.getOrElse(Future.successful(None))
-              allScheduledActions <- ScheduledActionData.buildFor(team, dataService)
+              allScheduledActions <- ScheduledActionData.buildForAdmin(team, dataService)
               behaviorGroups <- dataService.behaviorGroups.allFor(team)
               groupData <- Future.sequence(behaviorGroups.map { group =>
                 BehaviorGroupData.maybeFor(group.id, user, None, dataService)
               }).map(_.flatten.sorted)
             } yield {
-              val scheduledActions = if (teamAccess.isAdminAccess) {
-                allScheduledActions
-              } else {
-                maybeChannelList.flatMap { channelList =>
-                  maybeSlackUserId.map { slackUserId =>
-                    allScheduledActions.filter(_.visibleToSlackUser(slackUserId, channelList))
-                  }
-                }.getOrElse {
-                  Seq()
-                }
-              }
+              val scheduledActions = scheduledActionsForSlackUser(allScheduledActions, teamAccess, maybeChannelList, maybeSlackUserId)
               val pageData = ScheduledActionsConfig(
                 containerId = "scheduling",
                 csrfToken = CSRF.getToken(request).map(_.value),
@@ -108,6 +99,26 @@ class ScheduledActionsController @Inject()(
             NotFound(views.html.error.notFound(viewConfig(None), Some("Team not found"), None))
           }
         }
+      }
+    }
+  }
+
+  private def scheduledActionsForSlackUser(
+                                            allScheduledActions: Seq[ScheduledActionData],
+                                            teamAccess: UserTeamAccess,
+                                            maybeChannelList: Option[Seq[ChannelLike]],
+                                            maybeSlackUserId: Option[String]
+                                          ): Seq[ScheduledActionData] = {
+    if (teamAccess.isAdminAccess) {
+      allScheduledActions
+    } else {
+      (for {
+        channelList <- maybeChannelList
+        slackUserId <- maybeSlackUserId
+      } yield {
+        allScheduledActions.filter(_.visibleToSlackUser(slackUserId, channelList))
+      }).getOrElse {
+        Seq()
       }
     }
   }
