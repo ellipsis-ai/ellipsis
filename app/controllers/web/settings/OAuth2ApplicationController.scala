@@ -1,18 +1,18 @@
-package controllers
+package controllers.web.settings
 
 import javax.inject.Inject
 
 import com.google.inject.Provider
 import com.mohiva.play.silhouette.api.Silhouette
-import json.Formatting._
+import controllers.{ReAuthable, RemoteAssets}
 import json._
+import json.Formatting._
 import models._
 import models.accounts.oauth2application.OAuth2Application
 import models.silhouette.EllipsisEnv
 import play.api.Configuration
 import play.api.data.Form
 import play.api.data.Forms._
-import play.api.i18n.MessagesApi
 import play.api.libs.json.Json
 import play.filters.csrf.CSRF
 import services.DataService
@@ -60,8 +60,8 @@ class OAuth2ApplicationController @Inject() (
               isAdmin = teamAccess.isAdminAccess,
               teamId = team.id,
               apis = apis.map(ea => OAuth2ApiData.from(ea, assets)),
-              callbackUrl = routes.APIAccessController.linkCustomOAuth2Service(newApplicationId, None, None, None, None).absoluteURL(secure = true),
-              mainUrl = routes.ApplicationController.index().absoluteURL(secure = true),
+              callbackUrl = controllers.routes.APIAccessController.linkCustomOAuth2Service(newApplicationId, None, None, None, None).absoluteURL(secure = true),
+              mainUrl = controllers.routes.ApplicationController.index().absoluteURL(secure = true),
               applicationId = newApplicationId,
               applicationApiId = maybeRequiredOAuth2Application.map(_.api.id),
               recommendedScope = maybeRequiredOAuth2Application.flatMap(_.maybeRecommendedScope),
@@ -114,8 +114,8 @@ class OAuth2ApplicationController @Inject() (
               isAdmin = teamAccess.isAdminAccess,
               teamId = team.id,
               apis = apis.map(ea => OAuth2ApiData.from(ea, assets)),
-              callbackUrl = routes.APIAccessController.linkCustomOAuth2Service(application.id, None, None, None, None).absoluteURL(secure = true),
-              mainUrl = routes.ApplicationController.index().absoluteURL(secure = true),
+              callbackUrl = controllers.routes.APIAccessController.linkCustomOAuth2Service(application.id, None, None, None, None).absoluteURL(secure = true),
+              mainUrl = controllers.routes.ApplicationController.index().absoluteURL(secure = true),
               applicationId = application.id,
               applicationName = Some(application.name),
               requiresAuth = Some(application.api.grantType.requiresAuth),
@@ -229,7 +229,7 @@ class OAuth2ApplicationController @Inject() (
         } yield {
           maybeApplication.map { application =>
             maybeBehaviorGroup.map { group =>
-              Redirect(routes.BehaviorEditorController.edit(group.id, info.maybeBehaviorId))
+              Redirect(controllers.routes.BehaviorEditorController.edit(group.id, info.maybeBehaviorId))
             }.getOrElse {
               Redirect(routes.OAuth2ApplicationController.edit(application.id, Some(application.teamId)))
             }

@@ -49,10 +49,10 @@
   routes.javascript.GithubConfigController.reset,
   web.settings.routes.javascript.IntegrationsController.list,
   web.settings.routes.javascript.IntegrationsController.add,
-  routes.javascript.AWSConfigController.add,
-  routes.javascript.AWSConfigController.edit,
-  routes.javascript.AWSConfigController.save,
-  routes.javascript.OAuth2ApplicationController.edit,
-  routes.javascript.OAuth2ApplicationController.add,
-  routes.javascript.OAuth2ApplicationController.save
+  web.settings.routes.javascript.AWSConfigController.add,
+  web.settings.routes.javascript.AWSConfigController.edit,
+  web.settings.routes.javascript.AWSConfigController.save,
+  web.settings.routes.javascript.OAuth2ApplicationController.edit,
+  web.settings.routes.javascript.OAuth2ApplicationController.add,
+  web.settings.routes.javascript.OAuth2ApplicationController.save
 )

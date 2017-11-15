@@ -8,11 +8,8 @@ import json._
 import json.Formatting._
 import json.web.settings.IntegrationList
 import models._
-import models.accounts.oauth2application.OAuth2Application
 import models.silhouette.EllipsisEnv
 import play.api.Configuration
-import play.api.data.Form
-import play.api.data.Forms._
 import play.api.libs.json.Json
 import play.filters.csrf.CSRF
 import services.DataService

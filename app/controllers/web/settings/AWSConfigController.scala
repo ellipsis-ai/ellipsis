@@ -1,11 +1,12 @@
-package controllers
+package controllers.web.settings
 
 import javax.inject.Inject
 
 import com.google.inject.Provider
 import com.mohiva.play.silhouette.api.Silhouette
-import json.Formatting._
+import controllers.{ReAuthable, RemoteAssets}
 import json._
+import json.Formatting._
 import models._
 import models.behaviors.config.awsconfig.AWSConfig
 import models.silhouette.EllipsisEnv
@@ -16,14 +17,14 @@ import play.api.libs.json.Json
 import play.filters.csrf.CSRF
 import services.DataService
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 class AWSConfigController @Inject() (
                                       val silhouette: Silhouette[EllipsisEnv],
                                       val dataService: DataService,
                                       val configuration: Configuration,
-                                      val assetsProvider: Provider[RemoteAssets]
+                                      val assetsProvider: Provider[RemoteAssets],
+                                      implicit val ec: ExecutionContext
                                     ) extends ReAuthable {
 
   val AWS_CONFIG_DOC_URL = "http://docs.aws.amazon.com/general/latest/gr/managing-aws-access-keys.html"
@@ -209,7 +210,7 @@ class AWSConfigController @Inject() (
         } yield {
           maybeConfig.map { config =>
             maybeBehaviorGroup.map { group =>
-              Redirect(routes.BehaviorEditorController.edit(group.id, info.maybeBehaviorId))
+              Redirect(controllers.routes.BehaviorEditorController.edit(group.id, info.maybeBehaviorId))
             }.getOrElse {
               Redirect(routes.AWSConfigController.edit(config.id, Some(config.teamId)))
             }
