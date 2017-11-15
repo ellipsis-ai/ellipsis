@@ -13,7 +13,7 @@ define(function(require) {
       const initialProps = Object.assign({
         id: null,
         displayString: "",
-        frequency: 0,
+        frequency: 1,
         typeName: "",
         timeOfDay: null,
         timeZone: null,
