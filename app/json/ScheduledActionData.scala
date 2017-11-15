@@ -2,6 +2,7 @@ package json
 
 import java.time.OffsetDateTime
 
+import models.accounts.user.UserTeamAccess
 import models.behaviors.scheduling.scheduledbehavior.ScheduledBehavior
 import models.behaviors.scheduling.scheduledmessage.ScheduledMessage
 import models.team.Team
@@ -74,6 +75,31 @@ object ScheduledActionData {
       val scheduledMessageData = scheduledMessages.map(ScheduledActionData.fromScheduledMessage)
       val scheduledBehaviorData = scheduledBehaviors.map(ScheduledActionData.fromScheduledBehavior)
       scheduledMessageData ++ scheduledBehaviorData
+    }
+  }
+
+  def buildForUserTeamAccess(
+                              team: Team,
+                              teamAccess: UserTeamAccess,
+                              dataService: DataService,
+                              maybeChannelList: Option[Seq[ChannelLike]],
+                              maybeSlackUserId: Option[String]
+                            )(implicit ec: ExecutionContext): Future[Seq[ScheduledActionData]] = {
+    for {
+      allScheduledActions <- buildForAdmin(team, dataService)
+    } yield {
+      if (teamAccess.isAdminAccess) {
+        allScheduledActions
+      } else {
+        (for {
+          channelList <- maybeChannelList
+          slackUserId <- maybeSlackUserId
+        } yield {
+          allScheduledActions.filter(_.visibleToSlackUser(slackUserId, channelList))
+        }).getOrElse {
+          Seq()
+        }
+      }
     }
   }
 }

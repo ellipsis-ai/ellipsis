@@ -5,8 +5,7 @@ import java.util.Locale
 
 import akka.actor.ActorSystem
 import models.accounts.user.{User, UserTeamAccess}
-import services.{DataService, DefaultServices}
-import utils.ChannelLike
+import services.DefaultServices
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -53,13 +52,12 @@ object ScheduledActionsConfig {
               case e: slack.api.ApiError => None
             }
         }.getOrElse(Future.successful(None))
-        allScheduledActions <- ScheduledActionData.buildForAdmin(team, dataService)
+        scheduledActions <- ScheduledActionData.buildForUserTeamAccess(team, teamAccess, dataService, maybeChannelList, maybeSlackUserId)
         behaviorGroups <- dataService.behaviorGroups.allFor(team)
         groupData <- Future.sequence(behaviorGroups.map { group =>
           BehaviorGroupData.maybeFor(group.id, user, None, dataService)
         }).map(_.flatten.sorted)
       } yield {
-        val scheduledActions = scheduledActionsForSlackUser(allScheduledActions, teamAccess, maybeChannelList, maybeSlackUserId)
         Some(ScheduledActionsConfig(
           containerId = "scheduling",
           csrfToken = maybeCsrfToken,
@@ -76,25 +74,5 @@ object ScheduledActionsConfig {
         ))
       }
     }.getOrElse(Future.successful(None))
-  }
-
-  private def scheduledActionsForSlackUser(
-                                            allScheduledActions: Seq[ScheduledActionData],
-                                            teamAccess: UserTeamAccess,
-                                            maybeChannelList: Option[Seq[ChannelLike]],
-                                            maybeSlackUserId: Option[String]
-                                          ): Seq[ScheduledActionData] = {
-    if (teamAccess.isAdminAccess) {
-      allScheduledActions
-    } else {
-      (for {
-        channelList <- maybeChannelList
-        slackUserId <- maybeSlackUserId
-      } yield {
-        allScheduledActions.filter(_.visibleToSlackUser(slackUserId, channelList))
-      }).getOrElse {
-        Seq()
-      }
-    }
   }
 }
