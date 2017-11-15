@@ -350,20 +350,28 @@ define(function(require) {
     renderNoSchedules: function() {
       return (
         <div className={"pvxxl phxxl mobile-phxl"}>
-          {this.hasChannelList() ? (
-            <div>
-              <p className="type-bold">Nothing is currently scheduled in channels you can access on this team.</p>
+          {this.hasChannelList() ? this.renderNoSchedulesMessage() : this.renderErrorMessage()}
+        </div>
+      );
+    },
 
-              <p>You can schedule any action to run on a recurring basis in a particular channel.</p>
+    renderNoSchedulesMessage: function() {
+      return (
+        <div>
+          <p className="type-bold">Nothing is currently scheduled in channels you can access on this team.</p>
 
-            </div>
-          ) : (
-            <div>
-              <p className="type-bold">No scheduling information was found.</p>
+          <p>You can schedule any action to run on a recurring basis in a particular channel.</p>
 
-              <p>There may be an error, or you may not have access to this information.</p>
-            </div>
-          )}
+        </div>
+      );
+    },
+
+    renderErrorMessage: function() {
+      return (
+        <div>
+          <p className="type-bold">No scheduling information was found.</p>
+
+          <p>There may be an error, or you may not have access to this information.</p>
         </div>
       );
     },
