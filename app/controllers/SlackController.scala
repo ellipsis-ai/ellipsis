@@ -513,6 +513,20 @@ class SlackController @Inject() (
       }
     }
 
+    def maybeInputChoice: Option[String] = {
+      val maybeAction = actions.find(_.name == INPUT_CHOICE)
+      val maybeValue = maybeAction.flatMap(_.value)
+      maybeValue.orElse {
+        for {
+          selectedOptions <- maybeAction.map(_.selected_options)
+          firstOption <- selectedOptions.map(_.headOption)
+          response <- firstOption.map(_.value)
+        } yield {
+          response
+        }
+      }
+    }
+
     def maybeHelpIndexAt: Option[Int] = {
       actions.find { info => info.name == SHOW_HELP_INDEX }.map { _.value.map { value =>
         try {
@@ -601,6 +615,36 @@ class SlackController @Inject() (
 
   implicit val actionsTriggeredReads = Json.reads[ActionsTriggeredInfo]
 
+  private def inputChoiceResultFor(value: String, info: ActionsTriggeredInfo)(implicit request: Request[AnyContent]): Result = {
+    for {
+      maybeProfile <- dataService.slackBotProfiles.allForSlackTeamId(info.team.id).map(_.headOption)
+      maybeSlackMessage <- maybeProfile.map { profile =>
+        SlackMessage.fromFormattedText(value, profile, slackEventService).map(Some(_))
+      }.getOrElse(Future.successful(None))
+      _ <- (for {
+        profile <- maybeProfile
+        slackMessage <- maybeSlackMessage
+      } yield {
+        slackEventService.onEvent(SlackMessageEvent(
+          profile,
+          info.channel.id,
+          None,
+          info.user.id,
+          slackMessage,
+          None,
+          info.action_ts,
+          slackEventService.clientFor(profile),
+          None
+        ))
+      }).getOrElse {
+        Future.successful({})
+      }
+    } yield {}
+
+    // respond immediately
+    Ok(":+1:")
+  }
+
   def action = Action { implicit request =>
     actionForm.bindFromRequest.fold(
       formWithErrors => {
@@ -621,6 +665,12 @@ class SlackController @Inject() (
               var resultText: String = "OK, let’s continue."
               var shouldRemoveActions = false
               val user = s"<@${info.user.id}>"
+
+              info.maybeInputChoice.foreach { response =>
+                inputChoiceResultFor(response, info)
+                resultText = s"$user chose $response"
+                shouldRemoveActions = true
+              }
 
               info.maybeHelpIndexAt.foreach { index =>
                 dataService.slackBotProfiles.sendResultWithNewEvent(

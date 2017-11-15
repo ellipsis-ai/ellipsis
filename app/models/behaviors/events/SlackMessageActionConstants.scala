@@ -8,4 +8,5 @@ object SlackMessageActionConstants {
   val DONT_CONTINUE_CONVERSATION = "dont_continue_conversation"
   val STOP_CONVERSATION = "stop_conversation"
   val RUN_BEHAVIOR_VERSION = "run_behavior_version"
+  val INPUT_CHOICE = "input_choice"
 }

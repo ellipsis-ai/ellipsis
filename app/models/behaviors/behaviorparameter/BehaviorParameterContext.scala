@@ -1,5 +1,6 @@
 package models.behaviors.behaviorparameter
 
+import models.behaviors.SimpleTextResult
 import models.behaviors.behaviorversion.BehaviorVersion
 import models.behaviors.conversations.ParamCollectionState
 import models.behaviors.conversations.conversation.Conversation
@@ -28,6 +29,21 @@ case class BehaviorParameterContext(
     maybeConversation.map { conversation =>
       paramState.allLeftToCollect(conversation).map(_.size)
     }.getOrElse(Future.successful(0))
+  }
+
+  def simpleTextResultFor(text: String): SimpleTextResult = {
+    SimpleTextResult(
+      event,
+      maybeConversation,
+      text,
+      behaviorVersion.forcePrivateResponse
+    )
+  }
+
+  def slackMessageActionsGroupId: String = {
+    val conversationPart = maybeConversation.map(c => c.id ++ "-").getOrElse("")
+    val paramPart = parameter.id
+    s"$conversationPart$paramPart"
   }
 
 }
