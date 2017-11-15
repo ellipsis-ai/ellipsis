@@ -28,7 +28,8 @@ define(function(require) {
         requiredSimpleTokenApis: { value: props.requiredSimpleTokenApis, enumerable: true },
         createdAt: { value: props.createdAt, enumerable: true },
         exportId: { value: props.exportId, enumerable: true },
-        author: { value: props.author, enumerable: true }
+        author: { value: props.author, enumerable: true },
+        gitSHA: { value: props.gitSHA, enumerable: true }
       });
     }
 

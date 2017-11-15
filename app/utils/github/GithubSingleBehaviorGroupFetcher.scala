@@ -23,6 +23,13 @@ case class GithubSingleBehaviorGroupFetcher(
     s"""
        |query {
        |  repository(name:"$repoName", owner:"$owner") {
+       |    ref(qualifiedName:"$branch") {
+       |      target {
+       |        ... on Commit {
+       |        	oid
+       |        }
+       |      }
+       |    }
        |    object(expression:"$branch:") {
        |      ... on Tree {
        |        entries {

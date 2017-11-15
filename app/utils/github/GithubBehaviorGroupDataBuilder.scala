@@ -127,6 +127,7 @@ case class GithubBehaviorGroupDataBuilder(
     val dataTypes = behaviorVersionsDataFromEntryNamed("data_types", entries)
     val behaviors = actions ++ dataTypes
     val libraries = findEntryNamed("lib", entries).map(json => libraryVersionsDataFrom(json)).getOrElse(Seq())
+    val maybeSHA = (data \ "ref" \ "target" \ "oid").asOpt[String]
     BehaviorGroupData(
       None,
       team.id,
@@ -141,6 +142,7 @@ case class GithubBehaviorGroupDataBuilder(
       requiredOAuth2ApiConfigData,
       requiredSimpleTokenApiData,
       Some(githubUrl),
+      maybeSHA,
       maybeExportId,
       Some(OffsetDateTime.now),
       None
