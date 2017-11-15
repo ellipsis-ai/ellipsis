@@ -1,7 +1,5 @@
 package controllers
 
-import java.time.format.TextStyle
-import java.util.Locale
 import javax.inject.Inject
 
 import akka.actor.ActorSystem
@@ -19,7 +17,7 @@ import play.api.data.Form
 import play.api.data.Forms._
 import play.api.libs.json.{JsError, JsSuccess, Json}
 import play.filters.csrf.CSRF
-import services.{CacheService, DataService}
+import services.DefaultServices
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -27,13 +25,13 @@ import scala.concurrent.{ExecutionContext, Future}
 class ScheduledActionsController @Inject()(
                                             val configuration: Configuration,
                                             val silhouette: Silhouette[EllipsisEnv],
-                                            val dataService: DataService,
-                                            val cacheService: CacheService,
+                                            val services: DefaultServices,
                                             val assetsProvider: Provider[RemoteAssets],
                                             implicit val actorSystem: ActorSystem,
                                             implicit val ec: ExecutionContext
                                           ) extends ReAuthable {
 
+  val dataService = services.dataService
   def index(maybeScheduledId: Option[String], maybeNewSchedule: Option[Boolean], maybeTeamId: Option[String]) = silhouette.SecuredAction.async { implicit request =>
     val user = request.identity
 
@@ -41,47 +39,21 @@ class ScheduledActionsController @Inject()(
       case Accepts.JavaScript() => {
         for {
           teamAccess <- dataService.users.teamAccessFor(user, maybeTeamId)
-          result <- teamAccess.maybeTargetTeam.map { team =>
-            for {
-              maybeBotProfile <- dataService.slackBotProfiles.allFor(team).map(_.headOption)
-              maybeSlackUserId <- if (teamAccess.isAdminAccess) {
-                maybeBotProfile.map { botProfile =>
-                  Future.successful(Some(botProfile.userId))
-                }.getOrElse(Future.successful(None))
-              } else {
-                dataService.linkedAccounts.maybeSlackUserIdFor(user)
-              }
-              channelList <- maybeBotProfile.map { botProfile =>
-                dataService.slackBotProfiles.channelsFor(botProfile, cacheService).getListForUser(maybeSlackUserId)
-              }.getOrElse(Future.successful(Seq()))
-              scheduledActions <- ScheduledActionData.buildFor(maybeSlackUserId, team, channelList, dataService)
-              behaviorGroups <- dataService.behaviorGroups.allFor(team)
-              groupData <- Future.sequence(behaviorGroups.map { group =>
-                BehaviorGroupData.maybeFor(group.id, user, None, dataService)
-              }).map(_.flatten.sorted)
-            } yield {
-              val pageData = ScheduledActionsConfig(
-                containerId = "scheduling",
-                csrfToken = CSRF.getToken(request).map(_.value),
-                teamId = team.id,
-                scheduledActions = scheduledActions,
-                channelList = ScheduleChannelData.fromChannelLikeList(channelList),
-                behaviorGroups = groupData,
-                teamTimeZone = team.maybeTimeZone.map(_.toString),
-                teamTimeZoneName = team.maybeTimeZone.map(_.getDisplayName(TextStyle.FULL, Locale.ENGLISH)),
-                slackUserId = maybeSlackUserId,
-                slackBotUserId = maybeBotProfile.map(_.userId),
-                selectedScheduleId = maybeScheduledId,
-                newAction = maybeNewSchedule
-              )
-              Ok(views.js.shared
-                .pageConfig(viewConfig(Some(teamAccess)), "config/scheduling/index", Json.toJson(pageData))
-              )
-            }
+          maybeConfig <- ScheduledActionsConfig.buildConfigFor(
+            user,
+            teamAccess,
+            services,
+            maybeScheduledId,
+            maybeNewSchedule,
+            CSRF.getToken(request).map(_.value)
+          )
+        } yield {
+          maybeConfig.map { config =>
+            Ok(views.js.shared.pageConfig(viewConfig(Some(teamAccess)), "config/scheduling/index", Json.toJson(config)))
           }.getOrElse {
-            Future.successful(NotFound("Team not found"))
+            NotFound("Team not found")
           }
-        } yield result
+        }
       }
       case Accepts.Html() => {
         for {
