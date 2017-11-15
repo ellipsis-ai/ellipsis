@@ -27,48 +27,7 @@ class OAuth2ApplicationController @Inject() (
                                               implicit val ec: ExecutionContext
                                             ) extends ReAuthable {
 
-  def list(maybeTeamId: Option[String]) = silhouette.SecuredAction.async { implicit request =>
-    val user = request.identity
-    render.async {
-      case Accepts.JavaScript() => {
-        for {
-          teamAccess <- dataService.users.teamAccessFor(user, maybeTeamId)
-          apis <- dataService.oauth2Apis.allFor(teamAccess.maybeTargetTeam)
-          applications <- teamAccess.maybeTargetTeam.map { team =>
-            dataService.oauth2Applications.allEditableFor(team)
-          }.getOrElse(Future.successful(Seq()))
-        } yield {
-          teamAccess.maybeTargetTeam.map { team =>
-            val config = OAuth2ApplicationListConfig(
-              containerId = "applicationList",
-              csrfToken = CSRF.getToken(request).map(_.value),
-              teamAccess.isAdminAccess,
-              teamId = team.id,
-              apis = apis.map(api => OAuth2ApiData.from(api, assets)),
-              applications = applications.map(app => OAuth2ApplicationData.from(app))
-            )
-            Ok(views.js.shared.pageConfig(viewConfig(Some(teamAccess)), "config/oauth2application/list", Json.toJson(config)))
-          }.getOrElse{
-            NotFound("Team not found")
-          }
-        }
-      }
-      case Accepts.Html() => {
-        for {
-          teamAccess <- dataService.users.teamAccessFor(user, maybeTeamId)
-        } yield {
-          teamAccess.maybeTargetTeam.map { team =>
-            val dataRoute = routes.OAuth2ApplicationController.list(maybeTeamId)
-            Ok(views.html.oauth2application.list(viewConfig(Some(teamAccess)), dataRoute))
-          }.getOrElse {
-            NotFound("Team not found")
-          }
-        }
-      }
-    }
-  }
-
-  def newApp(
+  def add(
               maybeTeamId: Option[String],
               maybeBehaviorGroupId: Option[String],
               maybeBehaviorId: Option[String],
@@ -121,8 +80,8 @@ class OAuth2ApplicationController @Inject() (
           teamAccess <- dataService.users.teamAccessFor(user, maybeTeamId)
         } yield {
           teamAccess.maybeTargetTeam.map { team =>
-            val dataRoute = routes.OAuth2ApplicationController.newApp(maybeTeamId, maybeBehaviorGroupId, maybeBehaviorId, maybeRequiredNameInCode)
-            Ok(views.html.oauth2application.edit(viewConfig(Some(teamAccess)), "Add an API configuration", dataRoute))
+            val dataRoute = routes.OAuth2ApplicationController.add(maybeTeamId, maybeBehaviorGroupId, maybeBehaviorId, maybeRequiredNameInCode)
+            Ok(views.html.web.settings.oauth2application.edit(viewConfig(Some(teamAccess)), "Add an API configuration", dataRoute))
           }.getOrElse {
             NotFound(s"Team not found: ${maybeTeamId}")
           }
@@ -179,7 +138,7 @@ class OAuth2ApplicationController @Inject() (
             _ <- maybeApplication
           } yield {
             val dataRoute = routes.OAuth2ApplicationController.edit(id, maybeTeamId)
-            Ok(views.html.oauth2application.edit(viewConfig(Some(teamAccess)), "Edit API configuration", dataRoute))
+            Ok(views.html.web.settings.oauth2application.edit(viewConfig(Some(teamAccess)), "Edit API configuration", dataRoute))
           }).getOrElse {
             NotFound(
               views.html.error.notFound(

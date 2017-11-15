@@ -51,15 +51,6 @@ POST        /reset_saved_answer_for_all               @controllers.SavedAnswerCo
 POST        /submit_environment_variables             @controllers.EnvironmentVariablesController.submit
 POST        /delete_environment_variable              @controllers.EnvironmentVariablesController.delete
 
-GET         /list_oauth2_applications                 @controllers.OAuth2ApplicationController.list(teamId: Option[String] ?= None)
-GET         /new_oauth2_application                   @controllers.OAuth2ApplicationController.newApp(teamId: Option[String] ?= None, behaviorGroupId: Option[String] ?= None, behaviorId: Option[String] ?= None, requiredNameInCode: Option[String] ?= None)
-GET         /edit_oauth2_application/:id              @controllers.OAuth2ApplicationController.edit(id: String, teamId: Option[String] ?= None)
-POST        /save_oauth2_application                  @controllers.OAuth2ApplicationController.save
-
-GET         /list_aws_configs                         @controllers.AWSConfigController.list(teamId: Option[String] ?= None)
-GET         /new_aws_config                           @controllers.AWSConfigController.newConfig(teamId: Option[String] ?= None, behaviorGroupId: Option[String] ?= None, behaviorId: Option[String] ?= None, requiredAWSConfigNameInCode: Option[String] ?= None)
-GET         /edit_aws_config/:id                      @controllers.AWSConfigController.edit(id: String, teamId: Option[String] ?= None)
-POST        /save_aws_config                          @controllers.AWSConfigController.save
 
 GET         /list_oauth2_apis                         @controllers.OAuth2ApiController.list(teamId: Option[String] ?= None)
 GET         /new_oauth2_api                           @controllers.OAuth2ApiController.newApi(teamId: Option[String] ?= None)
@@ -78,6 +69,15 @@ GET         /list_environment_variables               @controllers.EnvironmentVa
 GET         /regional_settings                        @controllers.RegionalSettingsController.index(teamId: Option[String] ?= None)
 GET         /settings/integrations                    @controllers.web.settings.IntegrationsController.list(teamId: Option[String] ?= None)
 GET         /settings/integrations/add                @controllers.web.settings.IntegrationsController.add(teamId: Option[String] ?= None, behaviorGroupId: Option[String] ?= None, behaviorId: Option[String] ?= None, requiredNameInCode: Option[String] ?= None)
+
+GET         /new_oauth2_application                   @controllers.OAuth2ApplicationController.add(teamId: Option[String] ?= None, behaviorGroupId: Option[String] ?= None, behaviorId: Option[String] ?= None, requiredNameInCode: Option[String] ?= None)
+GET         /edit_oauth2_application/:id              @controllers.OAuth2ApplicationController.edit(id: String, teamId: Option[String] ?= None)
+POST        /save_oauth2_application                  @controllers.OAuth2ApplicationController.save
+
+GET         /new_aws_config                           @controllers.AWSConfigController.add(teamId: Option[String] ?= None, behaviorGroupId: Option[String] ?= None, behaviorId: Option[String] ?= None, requiredAWSConfigNameInCode: Option[String] ?= None)
+GET         /edit_aws_config/:id                      @controllers.AWSConfigController.edit(id: String, teamId: Option[String] ?= None)
+POST        /save_aws_config                          @controllers.AWSConfigController.save
+
 
 GET         /scheduling                               @controllers.ScheduledActionsController.index(selectedId: Option[String] ?= None, newSchedule: Option[Boolean] ?= None, teamId: Option[String] ?= None)
 POST        /save_schedule                            @controllers.ScheduledActionsController.save

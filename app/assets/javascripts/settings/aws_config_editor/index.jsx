@@ -1,11 +1,11 @@
 define(function(require) {
   var React = require('react'),
-    Collapsible = require('../shared_ui/collapsible'),
-    CsrfTokenHiddenInput = require('../shared_ui/csrf_token_hidden_input'),
-    SettingsMenu = require('../shared_ui/settings_menu'),
-    ifPresent = require('../lib/if_present'),
-    Input = require('../form/input'),
-    Page = require('../shared_ui/page');
+    Collapsible = require('../../shared_ui/collapsible'),
+    CsrfTokenHiddenInput = require('../../shared_ui/csrf_token_hidden_input'),
+    SettingsMenu = require('../../shared_ui/settings_menu'),
+    ifPresent = require('../../lib/if_present'),
+    Input = require('../../form/input'),
+    Page = require('../../shared_ui/page');
 
   return React.createClass({
     displayName: 'ConfigEditor',
@@ -152,10 +152,7 @@ define(function(require) {
             <div className="flex-column flex-column-right bg-white" />
           </div>
 
-          <footer className={
-            "position-fixed-bottom position-z-front border-top ptm " +
-            (this.canBeSaved() ? "bg-white" : "bg-light-translucent")
-          }>
+          {this.props.onRenderFooter((
             <div className="container">
               <div className="columns mobile-columns-float">
                 <div className="column column-one-quarter"></div>
@@ -176,7 +173,7 @@ define(function(require) {
                 </div>
               </div>
             </div>
-          </footer>
+          ))}
         </form>
       );
     },

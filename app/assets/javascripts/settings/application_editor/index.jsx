@@ -1,13 +1,13 @@
 define(function(require) {
   var React = require('react'),
-    Checkbox = require('../form/checkbox'),
-    Collapsible = require('../shared_ui/collapsible'),
-    CsrfTokenHiddenInput = require('../shared_ui/csrf_token_hidden_input'),
-    Input = require('../form/input'),
-    SettingsMenu = require('../shared_ui/settings_menu'),
-    BrowserUtils = require('../lib/browser_utils'),
-    ifPresent = require('../lib/if_present'),
-    Page = require('../shared_ui/page');
+    Checkbox = require('../../form/checkbox'),
+    Collapsible = require('../../shared_ui/collapsible'),
+    CsrfTokenHiddenInput = require('../../shared_ui/csrf_token_hidden_input'),
+    Input = require('../../form/input'),
+    SettingsMenu = require('../../shared_ui/settings_menu'),
+    BrowserUtils = require('../../lib/browser_utils'),
+    ifPresent = require('../../lib/if_present'),
+    Page = require('../../shared_ui/page');
 
   const ApplicationEditor = React.createClass({
     propTypes: Object.assign({}, Page.requiredPropTypes, {

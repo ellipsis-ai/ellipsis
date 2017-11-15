@@ -28,45 +28,7 @@ class AWSConfigController @Inject() (
 
   val AWS_CONFIG_DOC_URL = "http://docs.aws.amazon.com/general/latest/gr/managing-aws-access-keys.html"
 
-  def list(maybeTeamId: Option[String]) = silhouette.SecuredAction.async { implicit request =>
-    val user = request.identity
-    render.async {
-      case Accepts.JavaScript() => {
-        for {
-          teamAccess <- dataService.users.teamAccessFor(user, maybeTeamId)
-          configs <- teamAccess.maybeTargetTeam.map { team =>
-            dataService.awsConfigs.allFor(team)
-          }.getOrElse(Future.successful(Seq()))
-        } yield {
-          teamAccess.maybeTargetTeam.map { team =>
-            val config = AWSConfigListConfig(
-              containerId = "configList",
-              csrfToken = CSRF.getToken(request).map(_.value),
-              teamId = team.id,
-              configs = configs.map(AWSConfigData.from)
-            )
-            Ok(views.js.shared.pageConfig(viewConfig(Some(teamAccess)), "config/awsconfig/list", Json.toJson(config)))
-          }.getOrElse{
-            NotFound("Team not found")
-          }
-        }
-      }
-      case Accepts.Html() => {
-        for {
-          teamAccess <- dataService.users.teamAccessFor(user, maybeTeamId)
-        } yield {
-          teamAccess.maybeTargetTeam.map { team =>
-            val dataRoute = routes.AWSConfigController.list(maybeTeamId)
-            Ok(views.html.awsconfig.list(viewConfig(Some(teamAccess)), dataRoute))
-          }.getOrElse {
-            NotFound("Team not found")
-          }
-        }
-      }
-    }
-  }
-
-  def newConfig(
+  def add(
                  maybeTeamId: Option[String],
                  maybeBehaviorGroupId: Option[String],
                  maybeBehaviorId: Option[String],
@@ -110,8 +72,8 @@ class AWSConfigController @Inject() (
           teamAccess <- dataService.users.teamAccessFor(user, maybeTeamId)
         } yield {
           teamAccess.maybeTargetTeam.map { team =>
-            val dataRoute = routes.AWSConfigController.newConfig(maybeTeamId, maybeBehaviorGroupId, maybeBehaviorId, maybeRequiredAWSConfigNameInCode)
-            Ok(views.html.awsconfig.edit(viewConfig(Some(teamAccess)), "Add an AWS configuration", dataRoute))
+            val dataRoute = routes.AWSConfigController.add(maybeTeamId, maybeBehaviorGroupId, maybeBehaviorId, maybeRequiredAWSConfigNameInCode)
+            Ok(views.html.web.settings.awsconfig.edit(viewConfig(Some(teamAccess)), "Add an AWS configuration", dataRoute))
           }.getOrElse {
             NotFound("Team not found")
           }
@@ -164,7 +126,7 @@ class AWSConfigController @Inject() (
             _ <- maybeConfig
           } yield {
             val dataRoute = routes.AWSConfigController.edit(id, maybeTeamId)
-            Ok(views.html.awsconfig.edit(viewConfig(Some(teamAccess)), "Edit AWS configuration", dataRoute))
+            Ok(views.html.web.settings.awsconfig.edit(viewConfig(Some(teamAccess)), "Edit AWS configuration", dataRoute))
           }).getOrElse {
             NotFound(
               views.html.error.notFound(
