@@ -1,7 +1,5 @@
 package controllers
 
-import java.time.format.TextStyle
-import java.util.Locale
 import javax.inject.Inject
 
 import akka.actor.ActorSystem
@@ -9,7 +7,7 @@ import com.google.inject.Provider
 import com.mohiva.play.silhouette.api.Silhouette
 import json.Formatting._
 import json._
-import models.accounts.user.{User, UserTeamAccess}
+import models.accounts.user.User
 import models.behaviors.scheduling.scheduledbehavior.ScheduledBehavior
 import models.behaviors.scheduling.scheduledmessage.ScheduledMessage
 import models.silhouette.EllipsisEnv
@@ -19,8 +17,7 @@ import play.api.data.Form
 import play.api.data.Forms._
 import play.api.libs.json.{JsError, JsSuccess, Json}
 import play.filters.csrf.CSRF
-import services.{CacheService, DataService}
-import utils.ChannelLike
+import services.DefaultServices
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -28,13 +25,13 @@ import scala.concurrent.{ExecutionContext, Future}
 class ScheduledActionsController @Inject()(
                                             val configuration: Configuration,
                                             val silhouette: Silhouette[EllipsisEnv],
-                                            val dataService: DataService,
-                                            val cacheService: CacheService,
+                                            val services: DefaultServices,
                                             val assetsProvider: Provider[RemoteAssets],
                                             implicit val actorSystem: ActorSystem,
                                             implicit val ec: ExecutionContext
                                           ) extends ReAuthable {
 
+  val dataService = services.dataService
   def index(maybeScheduledId: Option[String], maybeNewSchedule: Option[Boolean], maybeTeamId: Option[String]) = silhouette.SecuredAction.async { implicit request =>
     val user = request.identity
 
@@ -42,52 +39,21 @@ class ScheduledActionsController @Inject()(
       case Accepts.JavaScript() => {
         for {
           teamAccess <- dataService.users.teamAccessFor(user, maybeTeamId)
-          result <- teamAccess.maybeTargetTeam.map { team =>
-            for {
-              maybeBotProfile <- dataService.slackBotProfiles.allFor(team).map(_.headOption)
-              maybeSlackUserId <- if (teamAccess.isAdminAccess) {
-                maybeBotProfile.map { botProfile =>
-                  Future.successful(Some(botProfile.userId))
-                }.getOrElse(Future.successful(None))
-              } else {
-                dataService.linkedAccounts.maybeSlackUserIdFor(user)
-              }
-              maybeChannelList <- maybeBotProfile.map { botProfile =>
-                dataService.slackBotProfiles.channelsFor(botProfile, cacheService).
-                  getListForUser(maybeSlackUserId).map(Some(_)).
-                  recover {
-                    case e: slack.api.ApiError => None
-                  }
-              }.getOrElse(Future.successful(None))
-              allScheduledActions <- ScheduledActionData.buildForAdmin(team, dataService)
-              behaviorGroups <- dataService.behaviorGroups.allFor(team)
-              groupData <- Future.sequence(behaviorGroups.map { group =>
-                BehaviorGroupData.maybeFor(group.id, user, None, dataService)
-              }).map(_.flatten.sorted)
-            } yield {
-              val scheduledActions = scheduledActionsForSlackUser(allScheduledActions, teamAccess, maybeChannelList, maybeSlackUserId)
-              val pageData = ScheduledActionsConfig(
-                containerId = "scheduling",
-                csrfToken = CSRF.getToken(request).map(_.value),
-                teamId = team.id,
-                scheduledActions = scheduledActions,
-                channelList = maybeChannelList.map(ScheduleChannelData.fromChannelLikeList),
-                behaviorGroups = groupData,
-                teamTimeZone = team.maybeTimeZone.map(_.toString),
-                teamTimeZoneName = team.maybeTimeZone.map(_.getDisplayName(TextStyle.FULL, Locale.ENGLISH)),
-                slackUserId = maybeSlackUserId,
-                slackBotUserId = maybeBotProfile.map(_.userId),
-                selectedScheduleId = maybeScheduledId,
-                newAction = maybeNewSchedule
-              )
-              Ok(views.js.shared
-                .pageConfig(viewConfig(Some(teamAccess)), "config/scheduling/index", Json.toJson(pageData))
-              )
-            }
+          maybeConfig <- ScheduledActionsConfig.buildConfigFor(
+            user,
+            teamAccess,
+            services,
+            maybeScheduledId,
+            maybeNewSchedule,
+            CSRF.getToken(request).map(_.value)
+          )
+        } yield {
+          maybeConfig.map { config =>
+            Ok(views.js.shared.pageConfig(viewConfig(Some(teamAccess)), "config/scheduling/index", Json.toJson(config)))
           }.getOrElse {
-            Future.successful(NotFound("Team not found"))
+            NotFound("Team not found")
           }
-        } yield result
+        }
       }
       case Accepts.Html() => {
         for {
@@ -99,26 +65,6 @@ class ScheduledActionsController @Inject()(
             NotFound(views.html.error.notFound(viewConfig(None), Some("Team not found"), None))
           }
         }
-      }
-    }
-  }
-
-  private def scheduledActionsForSlackUser(
-                                            allScheduledActions: Seq[ScheduledActionData],
-                                            teamAccess: UserTeamAccess,
-                                            maybeChannelList: Option[Seq[ChannelLike]],
-                                            maybeSlackUserId: Option[String]
-                                          ): Seq[ScheduledActionData] = {
-    if (teamAccess.isAdminAccess) {
-      allScheduledActions
-    } else {
-      (for {
-        channelList <- maybeChannelList
-        slackUserId <- maybeSlackUserId
-      } yield {
-        allScheduledActions.filter(_.visibleToSlackUser(slackUserId, channelList))
-      }).getOrElse {
-        Seq()
       }
     }
   }
