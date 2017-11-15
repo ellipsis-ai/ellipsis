@@ -31,7 +31,7 @@ class OAuth2ApplicationControllerSpec extends PlaySpec with MockitoSugar {
         when(dataService.oauth2Apis.allFor(teamAccess.maybeTargetTeam)).thenReturn(Future.successful(Seq(oauth2Api)))
         when(dataService.oauth2Applications.find(oauth2AppForOtherTeam.id)).thenReturn(Future.successful(Some(oauth2AppForOtherTeam)))
         val request =
-          FakeRequest(controllers.routes.OAuth2ApplicationController.edit(oauth2AppForOtherTeam.id)).
+          FakeRequest(controllers.web.settings.routes.OAuth2ApplicationController.edit(oauth2AppForOtherTeam.id)).
             withAuthenticator(user.loginInfo)
         val result = route(app, request).get
         status(result) mustBe NOT_FOUND
