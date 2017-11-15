@@ -10,14 +10,12 @@ import models.behaviors.scheduling.scheduledmessage.ScheduledMessage
 import models.team.Team
 import org.mockito.Matchers._
 import org.mockito.Mockito._
-import org.mockito.invocation.InvocationOnMock
-import org.mockito.stubbing.Answer
 import org.scalatest.mock.MockitoSugar
 import org.scalatestplus.play.PlaySpec
 import play.api.test.Helpers._
 import services.{CacheService, DataService}
 import slack.models.{Group, GroupValue}
-import support.{ControllerTestContextWithLoggedInUser, TestContext}
+import support.TestContext
 import utils.{ChannelLike, SlackChannels, SlackGroup}
 
 import scala.concurrent.{ExecutionContext, Future}
