@@ -514,16 +514,20 @@ class SlackController @Inject() (
     }
 
     def maybeInputChoice: Option[String] = {
-      val maybeAction = actions.find(_.name == INPUT_CHOICE)
-      val maybeValue = maybeAction.flatMap(_.value)
-      maybeValue.orElse {
-        for {
-          selectedOptions <- maybeAction.map(_.selected_options)
-          firstOption <- selectedOptions.map(_.headOption)
-          response <- firstOption.map(_.value)
-        } yield {
-          response
+      if (callback_id == INPUT_CHOICE) {
+        val maybeAction = actions.headOption
+        val maybeValue = maybeAction.flatMap(_.value)
+        maybeValue.orElse {
+          for {
+            selectedOptions <- maybeAction.map(_.selected_options)
+            firstOption <- selectedOptions.map(_.headOption)
+            response <- firstOption.map(_.value)
+          } yield {
+            response
+          }
         }
+      } else {
+        None
       }
     }
 

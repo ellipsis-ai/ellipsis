@@ -40,10 +40,4 @@ case class BehaviorParameterContext(
     )
   }
 
-  def slackMessageActionsGroupId: String = {
-    val conversationPart = maybeConversation.map(c => c.id ++ "-").getOrElse("")
-    val paramPart = parameter.id
-    s"$conversationPart$paramPart"
-  }
-
 }
