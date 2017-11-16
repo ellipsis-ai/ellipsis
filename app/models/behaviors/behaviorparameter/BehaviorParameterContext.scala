@@ -5,6 +5,7 @@ import models.behaviors.behaviorversion.BehaviorVersion
 import models.behaviors.conversations.ParamCollectionState
 import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.events.Event
+import models.behaviors.events.SlackMessageActionConstants._
 import services.{CacheService, DataService, DefaultServices}
 import slick.dbio.DBIO
 
@@ -39,5 +40,7 @@ case class BehaviorParameterContext(
       behaviorVersion.forcePrivateResponse
     )
   }
+
+  def inputChoiceCallbackId: String = inputChoiceCallbackIdFor(event.userIdForContext)
 
 }

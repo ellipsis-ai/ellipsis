@@ -514,20 +514,23 @@ class SlackController @Inject() (
     }
 
     def maybeInputChoice: Option[String] = {
-      if (callback_id == INPUT_CHOICE) {
-        val maybeAction = actions.headOption
-        val maybeValue = maybeAction.flatMap(_.value)
-        maybeValue.orElse {
-          for {
-            selectedOptions <- maybeAction.map(_.selected_options)
-            firstOption <- selectedOptions.map(_.headOption)
-            response <- firstOption.map(_.value)
-          } yield {
-            response
+      val maybeSlackUserId = maybeUserIdForCallbackId(callback_id)
+      maybeSlackUserId.flatMap { slackUserId =>
+        if (user.id == slackUserId) {
+          val maybeAction = actions.headOption
+          val maybeValue = maybeAction.flatMap(_.value)
+          maybeValue.orElse {
+            for {
+              selectedOptions <- maybeAction.map(_.selected_options)
+              firstOption <- selectedOptions.map(_.headOption)
+              response <- firstOption.map(_.value)
+            } yield {
+              response
+            }
           }
+        } else {
+          None
         }
-      } else {
-        None
       }
     }
 
@@ -666,13 +669,13 @@ class SlackController @Inject() (
         Json.parse(unescapedPayload).validate[ActionsTriggeredInfo] match {
           case JsSuccess(info, jsPath) => {
             if (info.isValid) {
-              var resultText: String = "OK, let’s continue."
+              var maybeResultText: Option[String] = None
               var shouldRemoveActions = false
               val user = s"<@${info.user.id}>"
 
               info.maybeInputChoice.foreach { response =>
                 inputChoiceResultFor(response, info)
-                resultText = s"$user chose $response"
+                maybeResultText = Some(s"$user chose $response")
                 shouldRemoveActions = true
               }
 
@@ -694,7 +697,7 @@ class SlackController @Inject() (
                   info.user.id,
                   info.message_ts
                 )
-                resultText = s"$user clicked More help."
+                maybeResultText = Some(s"$user clicked More help.")
               }
 
               info.maybeHelpForSkillIdWithMaybeSearch.foreach { searchValue =>
@@ -715,11 +718,11 @@ class SlackController @Inject() (
                   info.user.id,
                   info.message_ts
                 )
-                resultText = info.findButtonLabelForNameAndValue(SHOW_BEHAVIOR_GROUP_HELP, searchValue.helpGroupId).map { text =>
+                maybeResultText = Some(info.findButtonLabelForNameAndValue(SHOW_BEHAVIOR_GROUP_HELP, searchValue.helpGroupId).map { text =>
                   s"$user clicked $text."
                 } getOrElse {
                   s"$user clicked a button."
-                }
+                })
               }
 
               info.maybeActionListForSkillId.foreach { searchValue =>
@@ -740,7 +743,7 @@ class SlackController @Inject() (
                   info.user.id,
                   info.message_ts
                 )
-                resultText = s"$user clicked List all actions"
+                maybeResultText = Some(s"$user clicked List all actions")
               }
 
               info.maybeConfirmContinueConversationId.foreach { conversationId =>
@@ -754,7 +757,7 @@ class SlackController @Inject() (
                   }.getOrElse(Future.successful({}))
                 }
                 shouldRemoveActions = true
-                resultText = s"$user clicked 'Yes'"
+                maybeResultText = Some(s"$user clicked 'Yes'")
               }
 
               info.maybeDontContinueConversationId.foreach { conversationId =>
@@ -774,7 +777,7 @@ class SlackController @Inject() (
                   }.getOrElse(Future.successful({}))
                 }
                 shouldRemoveActions = true
-                resultText = s"$user clicked 'No'"
+                maybeResultText = Some(s"$user clicked 'No'")
               }
 
               info.maybeStopConversationId.foreach { conversationId =>
@@ -784,7 +787,7 @@ class SlackController @Inject() (
                   }.getOrElse(Future.successful({}))
                 }
                 shouldRemoveActions = true
-                resultText = s"$user stopped the conversation"
+                maybeResultText = Some(s"$user stopped the conversation")
               }
 
               info.maybeRunBehaviorVersionId.foreach { behaviorVersionId =>
@@ -811,18 +814,18 @@ class SlackController @Inject() (
                   info.message_ts
                 )
 
-                resultText = info.findButtonLabelForNameAndValue(RUN_BEHAVIOR_VERSION, behaviorVersionId).map { text =>
+                maybeResultText = Some(info.findButtonLabelForNameAndValue(RUN_BEHAVIOR_VERSION, behaviorVersionId).map { text =>
                   s"$user clicked $text"
                 } orElse info.findOptionLabelForValue(behaviorVersionId).map { text =>
                   s"$user ran ${text.mkString("“", "", "”")}"
                 } getOrElse {
                   s"$user ran an action"
-                }
+                })
               }
 
               // respond immediately by appending a new attachment
               val maybeOriginalColor = info.original_message.attachments.headOption.flatMap(_.color)
-              val newAttachment = AttachmentInfo(Some(resultText), None, None, Some(Seq("text")), Some(info.callback_id), color = maybeOriginalColor, footer = Some(resultText))
+              val newAttachment = AttachmentInfo(maybeResultText, None, None, Some(Seq("text")), Some(info.callback_id), color = maybeOriginalColor, footer = maybeResultText)
               val originalAttachmentsToUse = if (shouldRemoveActions) {
                 info.original_message.attachments.map(ea => ea.copy(actions = None))
               } else {

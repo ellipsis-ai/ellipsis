@@ -553,9 +553,9 @@ case class BehaviorBackedDataType(dataTypeConfig: DataTypeConfig) extends Behavi
         val menuItems = validValues.zipWithIndex.map { case (ea, i) =>
           SlackMessageActionMenuItem(s"${i+1}. ${ea.label}", ea.label)
         }
-        val actionsList = Seq(SlackMessageActionMenu(INPUT_CHOICE, "Choose an option", menuItems))
+        val actionsList = Seq(SlackMessageActionMenu("ignored", "Choose an option", menuItems))
         val groups: Seq[MessageAttachmentGroup] = Seq(
-          SlackMessageActionsGroup(INPUT_CHOICE, actionsList, None, Some(Color.BLUE_LIGHT))
+          SlackMessageActionsGroup(context.inputChoiceCallbackId, actionsList, None, Some(Color.BLUE_LIGHT))
         )
         DBIO.successful(TextWithAttachmentsResult(context.event, context.maybeConversation, superPrompt, context.behaviorVersion.forcePrivateResponse, groups))
       }
