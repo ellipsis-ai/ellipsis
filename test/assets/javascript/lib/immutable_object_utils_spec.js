@@ -1,4 +1,4 @@
-var ImmutableObjectUtils = require('../../../app/assets/javascripts/lib/immutable_object_utils');
+var ImmutableObjectUtils = require('../../../../app/assets/javascripts/lib/immutable_object_utils');
 
 describe('ImmutableObjectUtils', () => {
   const array = ['a', 'b', 'c'];

@@ -1,4 +1,4 @@
-const autobind = require('../../../app/assets/javascripts/lib/autobind');
+const autobind = require('../../../../app/assets/javascripts/lib/autobind');
 
 describe("autobind", () => {
   class Foo {

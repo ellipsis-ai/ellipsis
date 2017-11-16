@@ -1,10 +1,10 @@
 import React from 'react';
 import TestUtils from 'react-addons-test-utils';
-global.fetch = require('./../../mocks/mock_fetch');
+global.fetch = require('./../../../mocks/mock_fetch');
 
-const Page = require('../../../app/assets/javascripts/shared_ui/page');
-const RegionalSettings = require('../../../app/assets/javascripts/settings/regional_settings/index');
-const TeamTimeZoneSetter = require('../../../app/assets/javascripts/time_zone/team_time_zone_setter');
+const Page = require('../../../../app/assets/javascripts/shared_ui/page');
+const RegionalSettings = require('../../../../app/assets/javascripts/settings/regional_settings/index');
+const TeamTimeZoneSetter = require('../../../../app/assets/javascripts/time_zone/team_time_zone_setter');
 
 jsRoutes.controllers.APITokenController.listTokens = jest.fn(() => ({ url: '/mock_list_tokens' }));
 jsRoutes.controllers.ApplicationController.possibleCitiesFor = jest.fn(() => ({ url: '/mock_possible_cities' }));

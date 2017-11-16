@@ -1,9 +1,9 @@
 import React from 'react';
 import TestUtils from 'react-addons-test-utils';
 
-const Page = require('../../../app/assets/javascripts/shared_ui/page');
-const PageFooterRenderingError = require('../../../app/assets/javascripts/shared_ui/page_footer_rendering_error');
-const FixedFooter = require('../../../app/assets/javascripts/shared_ui/fixed_footer');
+const Page = require('../../../../app/assets/javascripts/shared_ui/page');
+const PageFooterRenderingError = require('../../../../app/assets/javascripts/shared_ui/page_footer_rendering_error');
+const FixedFooter = require('../../../../app/assets/javascripts/shared_ui/fixed_footer');
 
 describe('Page', () => {
   class FooterRenderingComponent extends React.Component {

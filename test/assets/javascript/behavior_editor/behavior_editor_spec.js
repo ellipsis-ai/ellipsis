@@ -1,18 +1,18 @@
-jest.mock('../../../app/assets/javascripts/behavior_editor/code_editor')
-  .mock('../../../app/assets/javascripts/shared_ui/react-codemirror');
-window.crypto = require('./../../mocks/mock_window_crypto');
-global.fetch = require('./../../mocks/mock_fetch');
+jest.mock('../../../../app/assets/javascripts/behavior_editor/code_editor')
+  .mock('../../../../app/assets/javascripts/shared_ui/react-codemirror');
+window.crypto = require('./../../../mocks/mock_window_crypto');
+global.fetch = require('./../../../mocks/mock_fetch');
 
 import React from 'react';
 import TestUtils from 'react-addons-test-utils';
-const BehaviorEditor = require('../../../app/assets/javascripts/behavior_editor/index'),
-  BehaviorVersion = require('../../../app/assets/javascripts/models/behavior_version'),
-  BehaviorGroup = require('../../../app/assets/javascripts/models/behavior_group'),
-  ResponseTemplate = require('../../../app/assets/javascripts/models/response_template'),
-  ParamType = require('../../../app/assets/javascripts/models/param_type'),
-  aws = require('../../../app/assets/javascripts/models/aws'),
-  oauth2 = require('../../../app/assets/javascripts/models/oauth2'),
-  simpleToken = require('../../../app/assets/javascripts/models/simple_token');
+const BehaviorEditor = require('../../../../app/assets/javascripts/behavior_editor/index'),
+  BehaviorVersion = require('../../../../app/assets/javascripts/models/behavior_version'),
+  BehaviorGroup = require('../../../../app/assets/javascripts/models/behavior_group'),
+  ResponseTemplate = require('../../../../app/assets/javascripts/models/response_template'),
+  ParamType = require('../../../../app/assets/javascripts/models/param_type'),
+  aws = require('../../../../app/assets/javascripts/models/aws'),
+  oauth2 = require('../../../../app/assets/javascripts/models/oauth2'),
+  simpleToken = require('../../../../app/assets/javascripts/models/simple_token');
 
 jsRoutes.controllers.BehaviorEditorController.edit = jest.fn(() => ({ url: '/mock_edit' }));
 jsRoutes.controllers.BehaviorEditorController.save = jest.fn(() => ({ url: '/mock_save' }));

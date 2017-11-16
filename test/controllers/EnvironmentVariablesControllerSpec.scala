@@ -23,7 +23,7 @@ class EnvironmentVariablesControllerSpec extends PlaySpec with MockitoSugar {
         when(dataService.teamEnvironmentVariables.deleteFor(nonExistentEnvVarName, team)).thenReturn(Future.successful(false))
         val csrfToken = csrfProvider.generateToken
         val request =
-          FakeRequest(controllers.routes.EnvironmentVariablesController.delete()).
+          FakeRequest(controllers.web.settings.routes.EnvironmentVariablesController.delete()).
             withSession(csrfConfig.tokenName -> csrfToken).
             withHeaders(csrfConfig.headerName -> csrfToken).
             withFormUrlEncodedBody("name" -> nonExistentEnvVarName).
@@ -56,7 +56,7 @@ class EnvironmentVariablesControllerSpec extends PlaySpec with MockitoSugar {
 
       "show custom not found page when the wrong teamId supplied" in new NotFoundForOtherTeamContext {
 
-        def buildCall: Call = controllers.routes.EnvironmentVariablesController.list(Some(otherTeam.id))
+        def buildCall: Call = controllers.web.settings.routes.EnvironmentVariablesController.list(Some(otherTeam.id))
 
         testNotFound
 
