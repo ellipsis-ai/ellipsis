@@ -6,12 +6,14 @@ import models.behaviors.conversations.ParamCollectionState
 import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.datatypeconfig.DataTypeConfig
 import models.behaviors.datatypefield.FieldTypeForSchema
-import models.behaviors.events.{Event, SlackMessageEvent}
-import models.behaviors.{BotResult, ParameterValue, ParameterWithValue, SuccessResult}
+import models.behaviors.events._
+import models.behaviors.events.SlackMessageActionConstants._
+import models.behaviors._
 import play.api.libs.json._
 import services.AWSLambdaConstants._
 import services.{AWSLambdaConstants, DataService}
 import slick.dbio.DBIO
+import utils.Color
 
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
@@ -46,12 +48,12 @@ sealed trait BehaviorParameterType extends FieldTypeForSchema {
     context.parameter.question.trim
   }
 
-  def promptForAction(
+  def promptResultForAction(
                  maybePreviousCollectedValue: Option[String],
                  context: BehaviorParameterContext,
                  paramState: ParamCollectionState,
                  isReminding: Boolean
-               )(implicit ec: ExecutionContext): DBIO[String] = {
+               )(implicit ec: ExecutionContext): DBIO[BotResult] = {
     for {
       isFirst <- context.isFirstParamAction
       paramCount <- DBIO.from(context.unfilledParamCount(paramState))
@@ -68,11 +70,11 @@ sealed trait BehaviorParameterType extends FieldTypeForSchema {
           s"I need to ask you some questions."
         })
       }
-      s"""$preamble
+      context.simpleTextResultFor(s"""$preamble
          |
          |$invalidModifier
          |
-         |__${questionTextFor(context)}__""".stripMargin
+         |__${questionTextFor(context)}__""".stripMargin)
     }
   }
 
@@ -411,7 +413,7 @@ case class BehaviorBackedDataType(dataTypeConfig: DataTypeConfig) extends Behavi
     }
   }
 
-  val invalidPromptModifier: String = s"I need a $name. Type one of the numbers or labels below. $stopInstructions"
+  val invalidPromptModifier: String = s"I need a $name. Choose one of the options below. $stopInstructions"
 
   private def valuesListCacheKeyFor(conversation: Conversation, parameter: BehaviorParameter): String = {
     s"values-list-${conversation.id}-${parameter.id}"
@@ -518,29 +520,29 @@ case class BehaviorBackedDataType(dataTypeConfig: DataTypeConfig) extends Behavi
     }
   }
 
-  private def cancelAndRespondForAction(response: String, context: BehaviorParameterContext)(implicit ec: ExecutionContext): DBIO[String] = {
+  private def cancelAndRespondForAction(response: String, context: BehaviorParameterContext)(implicit ec: ExecutionContext): DBIO[BotResult] = {
     context.dataService.conversations.cancelAction(context.maybeConversation).map { _ =>
-      s"$response\n\n(Your current action has been cancelled. Try again after fixing the problem.)"
+      context.simpleTextResultFor(s"$response\n\n(Your current action has been cancelled. Try again after fixing the problem.)")
     }
   }
 
-  private def promptForListAllCaseAction(
+  private def promptResultForListAllCaseAction(
                                           maybeSearchQuery: Option[String],
                                           maybePreviousCollectedValue: Option[String],
                                           context: BehaviorParameterContext,
                                           paramState: ParamCollectionState,
                                           isReminding: Boolean
-                                        )(implicit ec: ExecutionContext): DBIO[String] = {
+                                        )(implicit ec: ExecutionContext): DBIO[BotResult] = {
     for {
       superPrompt <- maybeSearchQuery.map { searchQuery =>
         DBIO.successful(s"Here are some options for `$searchQuery`. Type a number to choose an option.")
-      }.getOrElse(super.promptForAction(maybePreviousCollectedValue, context, paramState, isReminding))
+      }.getOrElse(super.promptResultForAction(maybePreviousCollectedValue, context, paramState, isReminding).map(_.text))
       validValues <- fetchValidValuesAction(maybeSearchQuery, context)
       output <- if (validValues.isEmpty) {
         maybeSearchQuery.map { searchQuery =>
           val key = searchQueryCacheKeyFor(context.maybeConversation.get, context.parameter)
           context.cacheService.remove(key)
-          DBIO.successful(s"I couldn't find anything matching `$searchQuery`. Try searching again or type $stopText.")
+          DBIO.successful(context.simpleTextResultFor(s"I couldn't find anything matching `$searchQuery`. Try searching again or type $stopText."))
         }.getOrElse {
           cancelAndRespondForAction(s"This data type isn't returning any values: ${editLinkFor(context)}", context)
         }
@@ -548,10 +550,14 @@ case class BehaviorBackedDataType(dataTypeConfig: DataTypeConfig) extends Behavi
         context.maybeConversation.foreach { conversation =>
           context.cacheService.cacheValidValues(valuesListCacheKeyFor(conversation, context.parameter), validValues)
         }
-        val valuesPrompt = validValues.zipWithIndex.map { case (ea, i) =>
-          s"\n\n$i. ${ea.label}"
-        }.mkString
-        DBIO.successful(superPrompt ++ valuesPrompt)
+        val menuItems = validValues.zipWithIndex.map { case (ea, i) =>
+          SlackMessageActionMenuItem(s"${i+1}. ${ea.label}", ea.label)
+        }
+        val actionsList = Seq(SlackMessageActionMenu("ignored", "Choose an option", menuItems))
+        val groups: Seq[MessageAttachmentGroup] = Seq(
+          SlackMessageActionsGroup(context.inputChoiceCallbackId, actionsList, None, Some(Color.BLUE_LIGHT))
+        )
+        DBIO.successful(TextWithAttachmentsResult(context.event, context.maybeConversation, superPrompt, context.behaviorVersion.forcePrivateResponse, groups))
       }
     } yield output
   }
@@ -562,19 +568,17 @@ case class BehaviorBackedDataType(dataTypeConfig: DataTypeConfig) extends Behavi
     }.getOrElse(None)
   }
 
-  private def promptForSearchCaseAction(
+  private def promptResultForSearchCaseAction(
                                          maybePreviousCollectedValue: Option[String],
                                          context: BehaviorParameterContext,
                                          paramState: ParamCollectionState,
                                          isReminding: Boolean
-                                       )(implicit ec: ExecutionContext): DBIO[String] = {
+                                       )(implicit ec: ExecutionContext): DBIO[BotResult] = {
 
     maybeCachedSearchQueryFor(context).map { searchQuery =>
-      promptForListAllCaseAction(Some(searchQuery), maybePreviousCollectedValue, context, paramState, isReminding)
+      promptResultForListAllCaseAction(Some(searchQuery), maybePreviousCollectedValue, context, paramState, isReminding)
     }.getOrElse {
-      super.promptForAction(maybePreviousCollectedValue, context, paramState, isReminding).map { superPrompt =>
-        superPrompt ++ " Enter a search query:"
-      }
+      super.promptResultForAction(maybePreviousCollectedValue, context, paramState, isReminding)
     }
   }
 
@@ -592,17 +596,17 @@ case class BehaviorBackedDataType(dataTypeConfig: DataTypeConfig) extends Behavi
     context.dataService.run(usesSearchAction(context))
   }
 
-  override def promptForAction(
+  override def promptResultForAction(
                                maybePreviousCollectedValue: Option[String],
                                context: BehaviorParameterContext,
                                paramState: ParamCollectionState,
                                isReminding: Boolean
-                             )(implicit ec: ExecutionContext): DBIO[String] = {
+                             )(implicit ec: ExecutionContext): DBIO[BotResult] = {
     usesSearchAction(context).flatMap { usesSearch =>
       if (usesSearch) {
-        promptForSearchCaseAction(maybePreviousCollectedValue, context, paramState, isReminding)
+        promptResultForSearchCaseAction(maybePreviousCollectedValue, context, paramState, isReminding)
       } else {
-        promptForListAllCaseAction(None, maybePreviousCollectedValue, context, paramState, isReminding)
+        promptResultForListAllCaseAction(None, maybePreviousCollectedValue, context, paramState, isReminding)
       }
     }
   }
@@ -627,7 +631,7 @@ object BehaviorParameterType {
   val ID_PROPERTY = "id"
   val LABEL_PROPERTY = "label"
   val DATA_PROPERTY = "data"
-  val SEARCH_COUNT_THRESHOLD = 10
+  val SEARCH_COUNT_THRESHOLD = 30
 
   val allBuiltin = Seq(
     TextType,

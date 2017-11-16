@@ -13,6 +13,7 @@ import models.silhouette.EllipsisEnv
 import play.api.Logger
 import play.api.data.Form
 import play.api.data.Forms._
+import play.api.http.{HeaderNames, MimeTypes}
 import play.api.libs.json._
 import play.api.mvc.{AnyContent, Request, Result}
 import play.utils.UriEncoding
@@ -33,6 +34,7 @@ class SlackController @Inject() (
   val configuration = services.configuration
   val lambdaService = services.lambdaService
   val cacheService = services.cacheService
+  val ws = services.ws
   implicit val actorSystem = services.actorSystem
 
   private def maybeResultFor[T](form: Form[T], resultFn: T => Result)
@@ -513,6 +515,46 @@ class SlackController @Inject() (
       }
     }
 
+    def maybeInputChoice: Option[String] = {
+      val maybeSlackUserId = maybeUserIdForCallbackId(callback_id)
+      maybeSlackUserId.flatMap { slackUserId =>
+        if (user.id == slackUserId) {
+          val maybeAction = actions.headOption
+          val maybeValue = maybeAction.flatMap(_.value)
+          maybeValue.orElse {
+            for {
+              selectedOptions <- maybeAction.map(_.selected_options)
+              firstOption <- selectedOptions.map(_.headOption)
+              response <- firstOption.map(_.value)
+            } yield {
+              response
+            }
+          }
+        } else {
+          None
+        }
+      }
+    }
+
+    def maybeIncorrectUserIdTryingInputChoice: Option[String] = {
+      val maybeSlackUserId = maybeUserIdForCallbackId(callback_id)
+      maybeSlackUserId.flatMap { slackUserId =>
+        if (user.id != slackUserId) {
+          Some(slackUserId)
+        } else {
+          None
+        }
+      }
+    }
+
+    def isForInputChoiceForDoneConversation: Future[Boolean] = {
+      maybeConversationIdForCallbackId(callback_id).map { convoId =>
+        dataService.conversations.find(convoId).map { maybeConvo =>
+          maybeConvo.exists(_.isDone)
+        }
+      }.getOrElse(Future.successful(false))
+    }
+
     def maybeHelpIndexAt: Option[Int] = {
       actions.find { info => info.name == SHOW_HELP_INDEX }.map { _.value.map { value =>
         try {
@@ -601,6 +643,90 @@ class SlackController @Inject() (
 
   implicit val actionsTriggeredReads = Json.reads[ActionsTriggeredInfo]
 
+  private def sendEphemeralMessage(message: String, info: ActionsTriggeredInfo): Future[Unit] = {
+    for {
+      maybeProfile <- dataService.slackBotProfiles.allForSlackTeamId(info.team.id).map(_.headOption)
+      _ <- (for {
+        profile <- maybeProfile
+      } yield {
+        ws.
+          url("https://slack.com/api/chat.postEphemeral").
+          withHttpHeaders(HeaderNames.ACCEPT -> MimeTypes.JSON).
+          post(Map(
+            "token" -> Seq(profile.token),
+            "channel" -> Seq(info.channel.id),
+            "text" -> Seq(message),
+            "user" -> Seq(info.user.id)
+          ))
+      }).getOrElse {
+        Future.successful({})
+      }
+    } yield {}
+  }
+
+  private def updateActionsMessageFor(
+                                       info: ActionsTriggeredInfo,
+                                       maybeResultText: Option[String],
+                                       shouldRemoveActions: Boolean
+                                     ): Future[Unit] = {
+    val maybeOriginalColor = info.original_message.attachments.headOption.flatMap(_.color)
+    val newAttachment = AttachmentInfo(maybeResultText, None, None, Some(Seq("text")), Some(info.callback_id), color = maybeOriginalColor, footer = maybeResultText)
+    val originalAttachmentsToUse = if (shouldRemoveActions) {
+      info.original_message.attachments.map(ea => ea.copy(actions = None))
+    } else {
+      info.original_message.attachments
+    }
+    val updated = info.original_message.copy(attachments = originalAttachmentsToUse :+ newAttachment)
+    for {
+      maybeProfile <- dataService.slackBotProfiles.allForSlackTeamId(info.team.id).map(_.headOption)
+      _ <- (for {
+        profile <- maybeProfile
+      } yield {
+        ws.
+          url("https://slack.com/api/chat.update").
+          withHttpHeaders(HeaderNames.ACCEPT -> MimeTypes.JSON).
+          post(Map(
+            "token" -> Seq(profile.token),
+            "channel" -> Seq(info.channel.id),
+            "text" -> Seq(updated.text),
+            "attachments" -> Seq(Json.prettyPrint(Json.toJson(updated.attachments))),
+            "as_user" -> Seq("true"),
+            "ts" -> Seq(info.message_ts),
+            "user" -> Seq(info.user.id)
+          ))
+      }).getOrElse {
+        Future.successful({})
+      }
+    } yield {}
+  }
+
+  private def inputChoiceResultFor(value: String, info: ActionsTriggeredInfo)(implicit request: Request[AnyContent]): Future[Unit] = {
+    for {
+      maybeProfile <- dataService.slackBotProfiles.allForSlackTeamId(info.team.id).map(_.headOption)
+      maybeSlackMessage <- maybeProfile.map { profile =>
+        SlackMessage.fromFormattedText(value, profile, slackEventService).map(Some(_))
+      }.getOrElse(Future.successful(None))
+      _ <- (for {
+        profile <- maybeProfile
+        slackMessage <- maybeSlackMessage
+      } yield {
+        slackEventService.onEvent(SlackMessageEvent(
+          profile,
+          info.channel.id,
+          None,
+          info.user.id,
+          slackMessage,
+          None,
+          info.action_ts,
+          slackEventService.clientFor(profile),
+          None
+        ))
+      }).getOrElse {
+        Future.successful({})
+      }
+    } yield {}
+  }
+
   def action = Action { implicit request =>
     actionForm.bindFromRequest.fold(
       formWithErrors => {
@@ -618,9 +744,26 @@ class SlackController @Inject() (
         Json.parse(unescapedPayload).validate[ActionsTriggeredInfo] match {
           case JsSuccess(info, jsPath) => {
             if (info.isValid) {
-              var resultText: String = "OK, let’s continue."
+              var maybeResultText: Option[String] = None
               var shouldRemoveActions = false
               val user = s"<@${info.user.id}>"
+
+              info.maybeInputChoice.foreach { response =>
+                info.isForInputChoiceForDoneConversation.flatMap { shouldStop =>
+                  if (shouldStop) {
+                    updateActionsMessageFor(info, Some(s"This conversation is no longer active"), shouldRemoveActions = true)
+                  } else {
+                    inputChoiceResultFor(response, info)
+                  }
+                }
+                maybeResultText = Some(s"$user chose $response")
+                shouldRemoveActions = true
+              }
+
+              info.maybeIncorrectUserIdTryingInputChoice.foreach { correctUserId =>
+                val correctUser = s"<@${correctUserId}>"
+                sendEphemeralMessage(s"Only $correctUser can answer this", info)
+              }
 
               info.maybeHelpIndexAt.foreach { index =>
                 dataService.slackBotProfiles.sendResultWithNewEvent(
@@ -640,7 +783,7 @@ class SlackController @Inject() (
                   info.user.id,
                   info.message_ts
                 )
-                resultText = s"$user clicked More help."
+                maybeResultText = Some(s"$user clicked More help.")
               }
 
               info.maybeHelpForSkillIdWithMaybeSearch.foreach { searchValue =>
@@ -661,11 +804,11 @@ class SlackController @Inject() (
                   info.user.id,
                   info.message_ts
                 )
-                resultText = info.findButtonLabelForNameAndValue(SHOW_BEHAVIOR_GROUP_HELP, searchValue.helpGroupId).map { text =>
+                maybeResultText = Some(info.findButtonLabelForNameAndValue(SHOW_BEHAVIOR_GROUP_HELP, searchValue.helpGroupId).map { text =>
                   s"$user clicked $text."
                 } getOrElse {
                   s"$user clicked a button."
-                }
+                })
               }
 
               info.maybeActionListForSkillId.foreach { searchValue =>
@@ -686,7 +829,7 @@ class SlackController @Inject() (
                   info.user.id,
                   info.message_ts
                 )
-                resultText = s"$user clicked List all actions"
+                maybeResultText = Some(s"$user clicked List all actions")
               }
 
               info.maybeConfirmContinueConversationId.foreach { conversationId =>
@@ -700,7 +843,7 @@ class SlackController @Inject() (
                   }.getOrElse(Future.successful({}))
                 }
                 shouldRemoveActions = true
-                resultText = s"$user clicked 'Yes'"
+                maybeResultText = Some(s"$user clicked 'Yes'")
               }
 
               info.maybeDontContinueConversationId.foreach { conversationId =>
@@ -720,7 +863,7 @@ class SlackController @Inject() (
                   }.getOrElse(Future.successful({}))
                 }
                 shouldRemoveActions = true
-                resultText = s"$user clicked 'No'"
+                maybeResultText = Some(s"$user clicked 'No'")
               }
 
               info.maybeStopConversationId.foreach { conversationId =>
@@ -730,7 +873,7 @@ class SlackController @Inject() (
                   }.getOrElse(Future.successful({}))
                 }
                 shouldRemoveActions = true
-                resultText = s"$user stopped the conversation"
+                maybeResultText = Some(s"$user stopped the conversation")
               }
 
               info.maybeRunBehaviorVersionId.foreach { behaviorVersionId =>
@@ -757,18 +900,18 @@ class SlackController @Inject() (
                   info.message_ts
                 )
 
-                resultText = info.findButtonLabelForNameAndValue(RUN_BEHAVIOR_VERSION, behaviorVersionId).map { text =>
+                maybeResultText = Some(info.findButtonLabelForNameAndValue(RUN_BEHAVIOR_VERSION, behaviorVersionId).map { text =>
                   s"$user clicked $text"
                 } orElse info.findOptionLabelForValue(behaviorVersionId).map { text =>
                   s"$user ran ${text.mkString("“", "", "”")}"
                 } getOrElse {
                   s"$user ran an action"
-                }
+                })
               }
 
               // respond immediately by appending a new attachment
               val maybeOriginalColor = info.original_message.attachments.headOption.flatMap(_.color)
-              val newAttachment = AttachmentInfo(Some(resultText), None, None, Some(Seq("text")), Some(info.callback_id), color = maybeOriginalColor, footer = Some(resultText))
+              val newAttachment = AttachmentInfo(maybeResultText, None, None, Some(Seq("text")), Some(info.callback_id), color = maybeOriginalColor, footer = maybeResultText)
               val originalAttachmentsToUse = if (shouldRemoveActions) {
                 info.original_message.attachments.map(ea => ea.copy(actions = None))
               } else {
