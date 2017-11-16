@@ -27,8 +27,14 @@
           </div>
           <div class="column column-expand">
             <span class="align-button-l">
-              <span class="mrl"><a href="" class="link-light-blue">Privacy policy</a></span>
-              <span class="mll"><a href="" class="link-light-blue">Terms of service</a></span>
+              <label for="agree">
+                <input id="agree" type="checkbox" value="agree" checked />
+                <span>I agree to the </span>
+                <a target="legal" href="@routes.LegalController.privacyPolicy()" class="link-light-blue">Privacy Policy</a>
+                <span> and </span>
+                <a target="legal" href="@routes.LegalController.userAgreement()" class="link-light-blue">User Agreement</a>
+                <span>.</span>
+              </label>
             </span>
           </div>
         </div>
