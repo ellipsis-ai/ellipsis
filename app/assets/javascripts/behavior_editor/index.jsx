@@ -22,8 +22,8 @@ var React = require('react'),
   DefaultStorageAdder = require('./default_storage_adder'),
   DefaultStorageBrowser = require('./default_storage_browser'),
   DynamicLabelButton = require('../form/dynamic_label_button'),
-  EnvVariableAdder = require('../environment_variables/adder'),
-  EnvVariableSetter = require('../environment_variables/setter'),
+  EnvVariableAdder = require('./adder'),
+  EnvVariableSetter = require('./setter'),
   GithubPullPanel = require('./github_pull_panel'),
   GithubPushPanel = require('./github_push_panel'),
   HiddenJsonInput = require('./hidden_json_input'),
@@ -935,10 +935,10 @@ const BehaviorEditor = React.createClass({
           const groupId = group.id;
           if (this.state.shouldRedirectToAddNewOAuth2App) {
             const config = this.state.requiredOAuth2ApiConfig;
-            window.location.href = jsRoutes.controllers.OAuth2ApplicationController.newApp(teamId, groupId, this.getSelectedId(), config.nameInCode).url;
+            window.location.href = jsRoutes.controllers.web.settings.OAuth2ApplicationController.add(teamId, groupId, this.getSelectedId(), config.nameInCode).url;
           } else if (this.state.shouldRedirectToAddNewAWSConfig) {
             const config = this.state.requiredAWSConfig;
-            window.location.href = jsRoutes.controllers.AWSConfigController.newConfig(teamId, groupId, this.getSelectedId(), config.nameInCode).url;
+            window.location.href = jsRoutes.controllers.web.settings.AWSConfigController.add(teamId, groupId, this.getSelectedId(), config.nameInCode).url;
           } else {
             const newProps = {
               group: BehaviorGroup.fromJson(json),
@@ -1216,7 +1216,7 @@ const BehaviorEditor = React.createClass({
   },
 
   updateEnvVariables: function(envVars, options) {
-    var url = jsRoutes.controllers.EnvironmentVariablesController.submit().url;
+    var url = jsRoutes.controllers.web.settings.EnvironmentVariablesController.submit().url;
     var data = {
       teamId: this.getBehaviorGroup().teamId,
       variables: envVars

@@ -124,7 +124,7 @@ define(function(require) {
 
     render: function() {
       return (
-        <form action={jsRoutes.controllers.AWSConfigController.save().url} method="POST" className="flex-row-cascade">
+        <form action={jsRoutes.controllers.web.settings.AWSConfigController.save().url} method="POST" className="flex-row-cascade">
           <CsrfTokenHiddenInput value={this.props.csrfToken} />
           <input type="hidden" name="id" value={this.props.configId} />
           <input type="hidden" name="teamId" value={this.props.teamId} />

@@ -1,11 +1,11 @@
 define(function(require) {
   var React = require('react'),
-    Collapsible = require('../shared_ui/collapsible'),
-    ImmutableObjectUtils = require('../lib/immutable_object_utils'),
-    Input = require('../form/input'),
-    Textarea = require('../form/textarea'),
-    formatEnvVarName = require('../lib/formatter').formatEnvironmentVariableName,
-    ifPresent = require('../lib/if_present');
+    Collapsible = require('../../shared_ui/collapsible'),
+    ImmutableObjectUtils = require('../../lib/immutable_object_utils'),
+    Input = require('../../form/input'),
+    Textarea = require('../../form/textarea'),
+    formatEnvVarName = require('../../lib/formatter').formatEnvironmentVariableName,
+    ifPresent = require('../../lib/if_present');
 
   return React.createClass({
     propTypes: {

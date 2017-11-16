@@ -7,7 +7,7 @@ define(function(require) {
     SettingsMenu = require('../../shared_ui/settings_menu'),
     Sort = require('../../lib/sort');
 
-  const ApplicationList = React.createClass({
+  const IntegrationList = React.createClass({
     propTypes: Object.assign({}, Page.requiredPropTypes, {
       csrfToken: React.PropTypes.string.isRequired,
       teamId: React.PropTypes.string.isRequired,
@@ -157,7 +157,7 @@ define(function(require) {
 
     renderApplicationList: function() {
       var grouped = this.getGroupedApplications();
-      var route = jsRoutes.controllers.OAuth2ApplicationController.edit;
+      var route = jsRoutes.controllers.web.settings.OAuth2ApplicationController.edit;
       var groupKeys = Object.keys(grouped);
       return (
         <div>
@@ -212,7 +212,7 @@ define(function(require) {
 
     renderAwsConfigs: function() {
       var awsConfigs = this.getAwsConfigs();
-      var route = jsRoutes.controllers.AWSConfigController.edit;
+      var route = jsRoutes.controllers.web.settings.AWSConfigController.edit;
       return (
         <div className="mvm">
           <h4>AWS</h4>
@@ -295,5 +295,5 @@ define(function(require) {
     }
   });
 
-  return ApplicationList;
+  return IntegrationList;
 });

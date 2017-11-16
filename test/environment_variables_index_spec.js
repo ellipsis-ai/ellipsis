@@ -1,15 +1,15 @@
 import React from 'react';
 import TestUtils from 'react-addons-test-utils';
 
-const EnvironmentVariables = require('../app/assets/javascripts/environment_variables/index');
+const EnvironmentVariables = require('assets/javascripts/settings/environment_variables/index');
 
-jsRoutes.controllers.EnvironmentVariablesController.list = jest.fn(() => ({ url: '/mock_environment_variables_list' }));
 jsRoutes.controllers.APITokenController.listTokens = jest.fn(() => ({ url: '/mock_list_tokens' }));
-jsRoutes.controllers.OAuth2ApplicationController.list = jest.fn(() => ({ url: '/mock_oauth2_list' }));
-jsRoutes.controllers.AWSConfigController.list = jest.fn(() => ({ url: '/mock_aws_config_list' }));
-jsRoutes.controllers.RegionalSettingsController.index = jest.fn(() => ({ url: '/mock_regional_settings' }));
 jsRoutes.controllers.GithubConfigController.index = jest.fn(() => ({ url: '/mock_github_config' }));
+jsRoutes.controllers.web.settings.EnvironmentVariablesController.list = jest.fn(() => ({ url: '/mock_environment_variables_list' }));
+jsRoutes.controllers.web.settings.RegionalSettingsController.index = jest.fn(() => ({ url: '/mock_regional_settings' }));
 jsRoutes.controllers.web.settings.IntegrationsController.list = jest.fn(() => ({ url: '/mock_integrations' }));
+jsRoutes.controllers.web.settings.AWSConfigController.list = jest.fn(() => ({ url: '/mock_aws_config_list' }));
+jsRoutes.controllers.web.settings.OAuth2ApplicationController.list = jest.fn(() => ({ url: '/mock_oauth2_list' }));
 
 describe('EnvironmentVariables', () => {
 

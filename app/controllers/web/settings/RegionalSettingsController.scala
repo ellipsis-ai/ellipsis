@@ -1,4 +1,4 @@
-package controllers
+package controllers.web.settings
 
 import java.time.OffsetDateTime
 import java.time.format.TextStyle
@@ -7,8 +7,9 @@ import javax.inject.Inject
 
 import com.google.inject.Provider
 import com.mohiva.play.silhouette.api.Silhouette
+import controllers.{ReAuthable, RemoteAssets}
 import json.Formatting._
-import json._
+import json.RegionalSettingsConfig
 import models.silhouette.EllipsisEnv
 import play.api.Configuration
 import play.api.libs.json._
@@ -43,7 +44,7 @@ class RegionalSettingsController @Inject()(
               maybeTz.map(_.getDisplayName(TextStyle.FULL, Locale.ENGLISH)),
               maybeTz.map(tz => OffsetDateTime.now(tz).getOffset.getTotalSeconds)
             )
-            Ok(views.js.shared.pageConfig(viewConfig(Some(teamAccess)), "config/regionalsettings/index", Json.toJson(config)))
+            Ok(views.js.shared.pageConfig(viewConfig(Some(teamAccess)), "settings/regionalsettings/index", Json.toJson(config)))
           }.getOrElse {
             NotFound("Team not found")
           }
@@ -54,7 +55,7 @@ class RegionalSettingsController @Inject()(
           teamAccess <- dataService.users.teamAccessFor(user, maybeTeamId)
         } yield teamAccess.maybeTargetTeam.map { team =>
           val dataRoute = routes.RegionalSettingsController.index(maybeTeamId)
-          Ok(views.html.regionalsettings.index(viewConfig(Some(teamAccess)), dataRoute))
+          Ok(views.html.web.settings.regionalsettings.index(viewConfig(Some(teamAccess)), dataRoute))
         }.getOrElse {
           notFoundWithLoginFor(request, Some(teamAccess))
         }

@@ -1,10 +1,10 @@
 define(function(require) {
   var React = require('react'),
-    SettingsMenu = require('../shared_ui/settings_menu'),
+    SettingsMenu = require('../../shared_ui/settings_menu'),
     Setter = require('./setter'),
-    ifPresent = require('../lib/if_present'),
-    Sort = require('../lib/sort'),
-    Page = require("../shared_ui/page");
+    ifPresent = require('../../lib/if_present'),
+    Sort = require('../../lib/sort'),
+    Page = require("../../shared_ui/page");
 
   const EnvironmentVariableList = React.createClass({
     propTypes: Object.assign({}, Page.requiredPropTypes, {
@@ -46,7 +46,7 @@ define(function(require) {
     },
 
     save: function(envVars) {
-      var url = jsRoutes.controllers.EnvironmentVariablesController.submit().url;
+      var url = jsRoutes.controllers.web.settings.EnvironmentVariablesController.submit().url;
       var data = {
         teamId: this.props.data.teamId,
         variables: envVars

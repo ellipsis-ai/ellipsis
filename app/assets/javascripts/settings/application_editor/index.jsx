@@ -223,7 +223,7 @@ define(function(require) {
 
     render: function() {
       return (
-        <form action={jsRoutes.controllers.OAuth2ApplicationController.save().url} method="POST" className="flex-row-cascade">
+        <form action={jsRoutes.controllers.web.settings.OAuth2ApplicationController.save().url} method="POST" className="flex-row-cascade">
           <CsrfTokenHiddenInput value={this.props.csrfToken} />
           <input type="hidden" name="apiId" value={this.getApplicationApiId()} />
           <input type="hidden" name="requiredNameInCode" value={this.props.requiredNameInCode} />

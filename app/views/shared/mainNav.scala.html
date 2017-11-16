@@ -31,7 +31,7 @@
       </a>
 
       <a class="@tabClassFor("settings")"
-        href='@routes.RegionalSettingsController.index(config.maybeTeamAccess.flatMap(_.maybeAdminAccessToTeamId))'>
+        href='@controllers.web.settings.routes.RegionalSettingsController.index(config.maybeTeamAccess.flatMap(_.maybeAdminAccessToTeamId))'>
         Settings
       </a>
 

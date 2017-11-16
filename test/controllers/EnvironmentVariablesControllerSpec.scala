@@ -41,7 +41,7 @@ class EnvironmentVariablesControllerSpec extends PlaySpec with MockitoSugar {
         when(dataService.teamEnvironmentVariables.deleteFor(existingEnvVarName, team)).thenReturn(Future.successful(true))
         val csrfToken = csrfProvider.generateToken
         val request =
-          FakeRequest(controllers.routes.EnvironmentVariablesController.delete()).
+          FakeRequest(controllers.web.settings.routes.EnvironmentVariablesController.delete()).
             withSession(csrfConfig.tokenName -> csrfToken).
             withHeaders(csrfConfig.headerName -> csrfToken).
             withFormUrlEncodedBody("name" -> existingEnvVarName).

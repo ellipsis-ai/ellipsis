@@ -1,15 +1,15 @@
 // @flow
-import type {PageRequiredProps} from '../shared_ui/page';
+import type {PageRequiredProps} from '../../shared_ui/page';
 
 define(function(require) {
   const React = require('react'),
     moment = require('moment'),
-    Collapsible = require('../shared_ui/collapsible'),
-    Button = require('../form/button'),
-    SettingsPage = require('../shared_ui/settings_page'),
-    TeamTimeZoneSetter = require('../time_zone/team_time_zone_setter'),
-    Page = require('../shared_ui/page'),
-    autobind = require('../lib/autobind');
+    Collapsible = require('../../shared_ui/collapsible'),
+    Button = require('../../form/button'),
+    SettingsPage = require('../../shared_ui/settings_page'),
+    TeamTimeZoneSetter = require('../../time_zone/team_time_zone_setter'),
+    Page = require('../../shared_ui/page'),
+    autobind = require('../../lib/autobind');
 
   type Props = {
     csrfToken: string,

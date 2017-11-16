@@ -10,7 +10,7 @@ define(function(require) {
     ifPresent = require('../../lib/if_present'),
     Page = require('../../shared_ui/page');
 
-  const ApplicationEditor = React.createClass({
+  const IntegrationEditor = React.createClass({
     propTypes: Object.assign({}, Page.requiredPropTypes, {
       apis: React.PropTypes.arrayOf(React.PropTypes.shape({
         apiId: React.PropTypes.string.isRequired,
@@ -223,7 +223,7 @@ define(function(require) {
 
     render: function() {
       return (
-        <form action={jsRoutes.controllers.OAuth2ApplicationController.save().url} method="POST" className="flex-row-cascade">
+        <form action={jsRoutes.controllers.web.settings.OAuth2ApplicationController.save().url} method="POST" className="flex-row-cascade">
           <CsrfTokenHiddenInput value={this.props.csrfToken} />
           <input type="hidden" name="apiId" value={this.getApplicationApiId()} />
           <input type="hidden" name="requiredNameInCode" value={this.props.requiredNameInCode} />
@@ -326,7 +326,7 @@ define(function(require) {
     },
 
     redirectToAWSEditor: function() {
-      window.location = '/new_aws_config';
+      window.location = jsRoutes.controllers.web.settings.AWSConfigController.add().url;
     },
 
     renderChooseApi: function() {
@@ -539,5 +539,5 @@ define(function(require) {
     }
   });
 
-  return ApplicationEditor;
+  return IntegrationEditor;
 });

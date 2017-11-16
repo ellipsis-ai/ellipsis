@@ -42,11 +42,12 @@
   routes.javascript.SocialAuthController.authenticateGithub,
 
   // Settings
-  routes.javascript.EnvironmentVariablesController.list,
-  routes.javascript.EnvironmentVariablesController.submit,
-  routes.javascript.RegionalSettingsController.index,
   routes.javascript.GithubConfigController.index,
   routes.javascript.GithubConfigController.reset,
+
+  web.settings.routes.javascript.EnvironmentVariablesController.list,
+  web.settings.routes.javascript.EnvironmentVariablesController.submit,
+  web.settings.routes.javascript.RegionalSettingsController.index,
   web.settings.routes.javascript.IntegrationsController.list,
   web.settings.routes.javascript.IntegrationsController.add,
   web.settings.routes.javascript.AWSConfigController.add,
