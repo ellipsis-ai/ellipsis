@@ -61,7 +61,7 @@ GET         /github_config                            @controllers.GithubConfigC
 POST        /reset_github_config                      @controllers.GithubConfigController.reset
 
 GET         /settings/environment_variables           @controllers.web.settings.EnvironmentVariablesController.list(teamId: Option[String] ?= None, newVars: Option[String] ?= None)
-POST        /settings/environment_variables           @controllers.web.settings.EnvironmentVariablesController.submit
+POST        /settings /environment_variables           @controllers.web.settings.EnvironmentVariablesController.submit
 POST        /settings/delete_environment_variable     @controllers.web.settings.EnvironmentVariablesController.delete
 
 GET         /settings/regional_settings               @controllers.web.settings.RegionalSettingsController.index(teamId: Option[String] ?= None)
