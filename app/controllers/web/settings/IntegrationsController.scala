@@ -6,7 +6,7 @@ import controllers.{ReAuthable, RemoteAssets}
 import javax.inject.Inject
 import json._
 import json.Formatting._
-import json.web.settings.IntegrationList
+import json.web.settings.IntegrationListConfig
 import models._
 import models.silhouette.EllipsisEnv
 import play.api.Configuration
@@ -40,7 +40,7 @@ class IntegrationsController @Inject() (
           }.getOrElse(Future.successful(Seq()))
         } yield {
           teamAccess.maybeTargetTeam.map { team =>
-            val config = IntegrationList(
+            val config = IntegrationListConfig(
               containerId = "applicationList",
               csrfToken = CSRF.getToken(request).map(_.value),
               teamId = team.id,

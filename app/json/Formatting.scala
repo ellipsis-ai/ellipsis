@@ -1,6 +1,6 @@
 package json
 
-import json.web.settings.IntegrationList
+import json.web.settings.IntegrationListConfig
 import models.accounts.slack.botprofile.SlackBotProfile
 import models.behaviors.{ExecutionErrorData, ExecutionLogData}
 import models.behaviors.behaviorparameter.ValidValue
@@ -183,7 +183,7 @@ object Formatting {
 
   implicit val githubConfigConfigFormat = Json.format[GithubConfigConfig]
 
-  implicit val integrationListReads = Json.reads[IntegrationList]
-  implicit val integrationListWrites = Json.writes[IntegrationList]
+  implicit val integrationListReads = Json.reads[IntegrationListConfig]
+  implicit val integrationListWrites = Json.writes[IntegrationListConfig]
 
 }
