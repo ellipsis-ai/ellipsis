@@ -664,6 +664,42 @@ class SlackController @Inject() (
     } yield {}
   }
 
+  private def updateActionsMessageFor(
+                                       info: ActionsTriggeredInfo,
+                                       maybeResultText: Option[String],
+                                       shouldRemoveActions: Boolean
+                                     ): Future[Unit] = {
+    val maybeOriginalColor = info.original_message.attachments.headOption.flatMap(_.color)
+    val newAttachment = AttachmentInfo(maybeResultText, None, None, Some(Seq("text")), Some(info.callback_id), color = maybeOriginalColor, footer = maybeResultText)
+    val originalAttachmentsToUse = if (shouldRemoveActions) {
+      info.original_message.attachments.map(ea => ea.copy(actions = None))
+    } else {
+      info.original_message.attachments
+    }
+    val updated = info.original_message.copy(attachments = originalAttachmentsToUse :+ newAttachment)
+    for {
+      maybeProfile <- dataService.slackBotProfiles.allForSlackTeamId(info.team.id).map(_.headOption)
+      _ <- (for {
+        profile <- maybeProfile
+      } yield {
+        ws.
+          url("https://slack.com/api/chat.update").
+          withHttpHeaders(HeaderNames.ACCEPT -> MimeTypes.JSON).
+          post(Map(
+            "token" -> Seq(profile.token),
+            "channel" -> Seq(info.channel.id),
+            "text" -> Seq(updated.text),
+            "attachments" -> Seq(Json.prettyPrint(Json.toJson(updated.attachments))),
+            "as_user" -> Seq("true"),
+            "ts" -> Seq(info.message_ts),
+            "user" -> Seq(info.user.id)
+          ))
+      }).getOrElse {
+        Future.successful({})
+      }
+    } yield {}
+  }
+
   private def inputChoiceResultFor(value: String, info: ActionsTriggeredInfo)(implicit request: Request[AnyContent]): Future[Unit] = {
     for {
       maybeProfile <- dataService.slackBotProfiles.allForSlackTeamId(info.team.id).map(_.headOption)
@@ -715,7 +751,7 @@ class SlackController @Inject() (
               info.maybeInputChoice.foreach { response =>
                 info.isForInputChoiceForDoneConversation.flatMap { shouldStop =>
                   if (shouldStop) {
-                    sendEphemeralMessage(s"This conversation is no longer active", info)
+                    updateActionsMessageFor(info, Some(s"This conversation is no longer active"), shouldRemoveActions = true)
                   } else {
                     inputChoiceResultFor(response, info)
                   }
