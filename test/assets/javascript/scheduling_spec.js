@@ -1,14 +1,14 @@
 import React from 'react';
 import TestUtils from 'react-addons-test-utils';
-window.crypto = require('./mocks/mock_window_crypto');
-global.fetch = require('./mocks/mock_fetch');
+window.crypto = require('./../../mocks/mock_window_crypto');
+global.fetch = require('./../../mocks/mock_fetch');
 
-jest.mock('../app/assets/javascripts/lib/browser_utils');
-const Scheduling = require('../app/assets/javascripts/scheduling/index'),
-  Recurrence = require('../app/assets/javascripts/models/recurrence'),
-  ScheduledAction = require('../app/assets/javascripts/models/scheduled_action'),
-  ScheduleChannel = require('../app/assets/javascripts/models/schedule_channel'),
-  ID = require('../app/assets/javascripts/lib/id');
+jest.mock('../../../app/assets/javascripts/lib/browser_utils');
+const Scheduling = require('../../../app/assets/javascripts/scheduling/index'),
+  Recurrence = require('../../../app/assets/javascripts/models/recurrence'),
+  ScheduledAction = require('../../../app/assets/javascripts/models/scheduled_action'),
+  ScheduleChannel = require('../../../app/assets/javascripts/models/schedule_channel'),
+  ID = require('../../../app/assets/javascripts/lib/id');
 
 jsRoutes.controllers.ScheduledActionsController.index = () => ({ url: "/test" });
 

@@ -1,5 +1,5 @@
-window.crypto = require('./mocks/mock_window_crypto');
-const BehaviorVersion = require('../app/assets/javascripts/models/behavior_version');
+window.crypto = require('./../../mocks/mock_window_crypto');
+const BehaviorVersion = require('../../../app/assets/javascripts/models/behavior_version');
 
 const behaviorVersionTask1 = Object.freeze({
   "id": "abcdef",

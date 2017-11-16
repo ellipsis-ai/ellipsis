@@ -1,4 +1,4 @@
-const Sort = require('../app/assets/javascripts/lib/sort');
+const Sort = require('../../../app/assets/javascripts/lib/sort');
 
 describe('Sort', () => {
   describe('arrayAlphaBy', () => {

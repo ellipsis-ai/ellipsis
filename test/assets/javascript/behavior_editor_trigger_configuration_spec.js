@@ -1,9 +1,9 @@
-window.crypto = require('./mocks/mock_window_crypto');
+window.crypto = require('./../../mocks/mock_window_crypto');
 import React from 'react';
 import TestUtils from 'react-addons-test-utils';
-const TriggerConfiguration = require('../app/assets/javascripts/behavior_editor/trigger_configuration');
-const Trigger = require('../app/assets/javascripts/models/trigger');
-const NotificationData = require('../app/assets/javascripts/models/notification_data');
+const TriggerConfiguration = require('../../../app/assets/javascripts/behavior_editor/trigger_configuration');
+const Trigger = require('../../../app/assets/javascripts/models/trigger');
+const NotificationData = require('../../../app/assets/javascripts/models/notification_data');
 
 describe('TriggerConfiguration', () => {
   const defaultConfig = {

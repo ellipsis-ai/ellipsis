@@ -1,5 +1,5 @@
-const NotificationData = require("../app/assets/javascripts/models/notification_data");
-const NotificationDataGroup = require("../app/assets/javascripts/models/notification_data_group");
+const NotificationData = require("../../../app/assets/javascripts/models/notification_data");
+const NotificationDataGroup = require("../../../app/assets/javascripts/models/notification_data_group");
 
 describe("NotificationDataGroup", () => {
 

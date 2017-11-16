@@ -1,6 +1,6 @@
 import React from 'react';
 import TestUtils from 'react-addons-test-utils';
-const CodeEditorHelp = require('../app/assets/javascripts/behavior_editor/code_editor_help');
+const CodeEditorHelp = require('../../../app/assets/javascripts/behavior_editor/code_editor_help');
 
 describe('CodeEditorHelp', () => {
   const defaultProps = Object.freeze({

@@ -1,4 +1,4 @@
-const Formatter = require('../app/assets/javascripts/lib/formatter');
+const Formatter = require('../../../app/assets/javascripts/lib/formatter');
 
 describe("Formatter", () => {
   describe("formatCamelCaseIdentifier", () => {
