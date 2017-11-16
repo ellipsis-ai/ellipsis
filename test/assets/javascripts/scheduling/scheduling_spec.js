@@ -90,13 +90,35 @@ function newChannel(props) {
 
 describe('Scheduling', () => {
   describe('render', () => {
-    it('renders with no scheduled items', () => {
-      const wrapper = createIndexWrapper(Object.assign({}, emptyConfig));
+    it('renders an error message when there are no scheduled items and no channels', () => {
+      const wrapper = createIndexWrapper(Object.assign({}, emptyConfig, {
+        channelList: null
+      }));
       const page = wrapper.page;
       const noScheduleSpy = jest.spyOn(page, 'renderNoSchedules');
+      const errorMessageSpy = jest.spyOn(page, 'renderErrorMessage');
+      const noScheduleMessageSpy = jest.spyOn(page, 'renderNoSchedulesMessage');
       const groupSpy = jest.spyOn(page, 'renderGroups');
       page.render();
       expect(noScheduleSpy).toHaveBeenCalled();
+      expect(errorMessageSpy).toHaveBeenCalled();
+      expect(noScheduleMessageSpy).not.toHaveBeenCalled();
+      expect(groupSpy).not.toHaveBeenCalled();
+    });
+
+    it('renders the no schedules message with channels but with no scheduled items', () => {
+      const wrapper = createIndexWrapper(Object.assign({}, emptyConfig, {
+        channelList: [newChannel()]
+      }));
+      const page = wrapper.page;
+      const noScheduleSpy = jest.spyOn(page, 'renderNoSchedules');
+      const errorMessageSpy = jest.spyOn(page, 'renderErrorMessage');
+      const noScheduleMessageSpy = jest.spyOn(page, 'renderNoSchedulesMessage');
+      const groupSpy = jest.spyOn(page, 'renderGroups');
+      page.render();
+      expect(noScheduleSpy).toHaveBeenCalled();
+      expect(errorMessageSpy).not.toHaveBeenCalled();
+      expect(noScheduleMessageSpy).toHaveBeenCalled();
       expect(groupSpy).not.toHaveBeenCalled();
     });
 
@@ -107,9 +129,13 @@ describe('Scheduling', () => {
       }));
       const page = wrapper.page;
       const noScheduleSpy = jest.spyOn(page, 'renderNoSchedules');
+      const errorMessageSpy = jest.spyOn(page, 'renderErrorMessage');
+      const noScheduleMessageSpy = jest.spyOn(page, 'renderNoSchedulesMessage');
       const groupSpy = jest.spyOn(page, 'renderGroups');
       page.render();
       expect(noScheduleSpy).not.toHaveBeenCalled();
+      expect(errorMessageSpy).not.toHaveBeenCalled();
+      expect(noScheduleMessageSpy).not.toHaveBeenCalled();
       expect(groupSpy).toHaveBeenCalled();
     });
   });

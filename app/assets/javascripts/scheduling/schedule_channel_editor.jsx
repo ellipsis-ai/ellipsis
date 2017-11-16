@@ -12,7 +12,7 @@ define(function(require) {
     displayName: 'ScheduleChannelEditor',
     propTypes: {
       scheduledAction: React.PropTypes.instanceOf(ScheduledAction).isRequired,
-      channelList: React.PropTypes.arrayOf(React.PropTypes.instanceOf(ScheduleChannel)).isRequired,
+      channelList: React.PropTypes.arrayOf(React.PropTypes.instanceOf(ScheduleChannel)),
       slackUserId: React.PropTypes.string.isRequired,
       slackBotUserId: React.PropTypes.string.isRequired,
       onChange: React.PropTypes.func.isRequired
@@ -23,6 +23,14 @@ define(function(require) {
         searchText: "",
         showChannels: false
       };
+    },
+
+    hasChannelList: function() {
+      return Boolean(this.props.channelList) && this.props.channelList.length > 0;
+    },
+
+    findChannelFor: function(channelId) {
+      return this.hasChannelList() ? this.props.channelList.find((ea) => ea.id === channelId) : null;
     },
 
     componentWillUpdate: function(newProps) {
@@ -45,15 +53,22 @@ define(function(require) {
     },
 
     getFilteredChannelList: function() {
-      const channels = this.props.channelList.filter(
+      const channels = this.hasChannelList() ? this.props.channelList.filter(
         (ea) => this.canSelectChannel(ea) && this.searchIncludes(ea, this.state.searchText)
-      );
+      ) : [];
       const channelList = channels.map((ea) => ({
         name: ea.getFormattedName(),
         value: ea.id
       }));
-      if (this.props.channelList.length > 0 && this.props.scheduledAction.channel) {
-        return channelList;
+      if (this.props.scheduledAction.channel) {
+        if (this.hasChannelList()) {
+          return channelList;
+        } else {
+          return [{
+            name: `Channel ID ${this.props.scheduledAction.channel}`,
+            value: this.props.scheduledAction.channel
+          }];
+        }
       } else {
         return [{
           name: "No channel selected",
@@ -63,9 +78,10 @@ define(function(require) {
     },
 
     updateSearch: function(newValue) {
-      const selectedChannel = this.props.channelList.find((ea) => ea.id === this.props.scheduledAction.channel);
+      const selectedChannel = this.findChannelFor(this.props.scheduledAction.channel);
       if (!selectedChannel || !this.searchIncludes(selectedChannel, newValue)) {
-        const newChannel = this.props.channelList.find((ea) => this.canSelectChannel(ea) && this.searchIncludes(ea, newValue));
+        const newChannel = this.hasChannelList() ?
+          this.props.channelList.find((ea) => this.canSelectChannel(ea) && this.searchIncludes(ea, newValue)) : null;
         this.selectChannel(newChannel ? newChannel.id : "");
       }
       this.setState({
@@ -82,14 +98,14 @@ define(function(require) {
       if (!channelId) {
         return false;
       }
-      const selectedChannel = this.props.channelList.find((ea) => ea.id === channelId);
+      const selectedChannel = this.findChannelFor(channelId);
       return Boolean(selectedChannel && selectedChannel.isDM());
     },
 
     botMissingFromChannel: function() {
       const channelId = this.props.scheduledAction.channel;
       if (channelId && this.props.slackBotUserId) {
-        const channelInfo = this.props.channelList.find((ea) => ea.id === channelId);
+        const channelInfo = this.findChannelFor(channelId);
         if (channelInfo) {
           return !channelInfo.userCanAccess(this.props.slackBotUserId);
         }
@@ -102,8 +118,9 @@ define(function(require) {
     },
 
     nameForChannel: function(channelId) {
+      const foundChannel = channelId ? this.findChannelFor(channelId) : null;
       return (
-        <ChannelName channel={this.props.channelList.find((ea) => ea.id === channelId)} />
+        <ChannelName channel={foundChannel} channelId={channelId} />
       );
     },
 
@@ -132,8 +149,14 @@ define(function(require) {
       } else if (this.props.scheduledAction.channel) {
         return (
           <span className="type-green">
-            <span className="display-inline-block height-l align-m mrs"><SVGCheckmark /></span>
+            <span className="display-inline-block height-l align-m mrs"><SVGCheckmark/></span>
             <span className="display-inline-block align-m">Ellipsis can send messages in this channel.</span>
+          </span>
+        );
+      } else if (!this.hasChannelList()) {
+        return (
+          <span className="type-pink type-bold type-italic">
+            Warning: An error occurred while trying to load the list of channels
           </span>
         );
       } else {
@@ -172,14 +195,14 @@ define(function(require) {
           </div>
           <div className="type-s mvs">
             <Checkbox
-              disabledWhen={isDM}
+              disabledWhen={isDM || !this.hasChannelList()}
               checked={this.props.scheduledAction.useDM}
               onChange={this.updateDM}
               label="Send to each channel member privately"
               className={isDM ? "type-disabled" : ""}
             />
           </div>
-          <Collapsible revealWhen={!this.shouldShowChannels()}>
+          <Collapsible revealWhen={!this.shouldShowChannels() && this.hasChannelList()}>
             <div>
               <button type="button" className="button-s" onClick={this.showChannels}>
                 Change channel

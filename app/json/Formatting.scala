@@ -42,6 +42,8 @@ object Formatting {
   lazy implicit val oAuth2ApplicationReads = Json.reads[OAuth2ApplicationData]
   lazy implicit val oAuth2ApplicationWrites = Json.writes[OAuth2ApplicationData]
 
+  lazy implicit val linkedGithubRepoDataFormat = Json.format[LinkedGithubRepoData]
+
   lazy implicit val oAuth2ApplicationListConfigWrites = Json.writes[OAuth2ApplicationListConfig]
 
   lazy implicit val oAuth2ApplicationEditConfigWrites = Json.writes[OAuth2ApplicationEditConfig]

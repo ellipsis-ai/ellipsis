@@ -14,8 +14,8 @@ define(function(require) {
         id: null,
         displayString: "",
         frequency: 1,
-        typeName: "daily",
-        timeOfDay: Recurrence.defaultTimeOfDay(),
+        typeName: "",
+        timeOfDay: null,
         timeZone: null,
         timeZoneName: null,
         minuteOfHour: null,
@@ -64,7 +64,7 @@ define(function(require) {
     }
 
     hasValidTimeOfDay() {
-      return this.timeOfDay && this.hasValidTimeZone() && Minute.isValid(this.timeOfDay.minute) &&
+      return Boolean(this.timeOfDay) && this.hasValidTimeZone() && Minute.isValid(this.timeOfDay.minute) &&
         Hour.isValid(this.timeOfDay.hour);
     }
 
@@ -73,7 +73,7 @@ define(function(require) {
     }
 
     hasValidTimeZone() {
-      return this.timeZone && this.timeZone.length > 0;
+      return Boolean(this.timeZone) && this.timeZone.length > 0;
     }
 
     isValidMinutely() {
@@ -81,7 +81,7 @@ define(function(require) {
     }
 
     isValidHourly() {
-      return this.typeName === "hourly" && this.hasValidFrequency() && Hour.isValid(this.minuteOfHour);
+      return this.typeName === "hourly" && this.hasValidFrequency() && Minute.isValid(this.minuteOfHour);
     }
 
     isValidDaily() {

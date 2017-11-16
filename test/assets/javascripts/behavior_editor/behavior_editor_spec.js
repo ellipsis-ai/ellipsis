@@ -103,7 +103,8 @@ describe('BehaviorEditor', () => {
     onSave: jest.fn(),
     savedAnswers: [],
     onForgetSavedAnswerForInput: jest.fn(),
-    userId: "1"
+    userId: "1",
+    onLinkGithubRepo: jest.fn()
   });
 
   const newSkillConfig = Object.freeze({
@@ -175,7 +176,8 @@ describe('BehaviorEditor', () => {
     "userId": "3",
     selectedId: "2",
     onSave: jest.fn(),
-    onForgetSavedAnswerForInput: jest.fn()
+    onForgetSavedAnswerForInput: jest.fn(),
+    onLinkGithubRepo: jest.fn()
   });
 
   let editorConfig;

@@ -22,10 +22,15 @@ var React = require('react'),
   DefaultStorageAdder = require('./default_storage_adder'),
   DefaultStorageBrowser = require('./default_storage_browser'),
   DynamicLabelButton = require('../form/dynamic_label_button'),
+<<<<<<< HEAD
   EnvVariableAdder = require('../settings/environment_variables/adder'),
   EnvVariableSetter = require('../settings/environment_variables/setter'),
+=======
+  EnvVariableAdder = require('../environment_variables/adder'),
+  EnvVariableSetter = require('../environment_variables/setter'),
   GithubChangesPanel = require('./github_changes_panel'),
   GithubLinkPanel = require('./github_link_panel'),
+>>>>>>> origin/master
   GithubPullPanel = require('./github_pull_panel'),
   GithubPushPanel = require('./github_push_panel'),
   HiddenJsonInput = require('./hidden_json_input'),

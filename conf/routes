@@ -44,6 +44,7 @@ POST        /delete_default_storage_items             @controllers.BehaviorEdito
 GET         /node_module_versions/:groupId            @controllers.BehaviorEditorController.nodeModuleVersionsFor(groupId: String)
 POST        /update_from_github                       @controllers.BehaviorEditorController.updateFromGithub
 POST        /push_to_github                           @controllers.BehaviorEditorController.pushToGithub
+POST        /linked_github_repos                      @controllers.BehaviorEditorController.linkToGithubRepo
 
 POST        /reset_saved_answer_for_user              @controllers.SavedAnswerController.resetForUser
 POST        /reset_saved_answer_for_all               @controllers.SavedAnswerController.resetForTeam
