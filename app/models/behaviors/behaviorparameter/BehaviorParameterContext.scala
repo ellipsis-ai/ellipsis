@@ -41,6 +41,6 @@ case class BehaviorParameterContext(
     )
   }
 
-  def inputChoiceCallbackId: String = inputChoiceCallbackIdFor(event.userIdForContext)
+  def inputChoiceCallbackId: String = inputChoiceCallbackIdFor(event.userIdForContext, maybeConversation.map(_.id))
 
 }

@@ -547,6 +547,14 @@ class SlackController @Inject() (
       }
     }
 
+    def isForInputChoiceForDoneConversation: Future[Boolean] = {
+      maybeConversationIdForCallbackId(callback_id).map { convoId =>
+        dataService.conversations.find(convoId).map { maybeConvo =>
+          maybeConvo.exists(_.isDone)
+        }
+      }.getOrElse(Future.successful(false))
+    }
+
     def maybeHelpIndexAt: Option[Int] = {
       actions.find { info => info.name == SHOW_HELP_INDEX }.map { _.value.map { value =>
         try {
@@ -635,7 +643,7 @@ class SlackController @Inject() (
 
   implicit val actionsTriggeredReads = Json.reads[ActionsTriggeredInfo]
 
-  private def sendEphemeralMessage(message: String, info: ActionsTriggeredInfo) = {
+  private def sendEphemeralMessage(message: String, info: ActionsTriggeredInfo): Future[Unit] = {
     for {
       maybeProfile <- dataService.slackBotProfiles.allForSlackTeamId(info.team.id).map(_.headOption)
       _ <- (for {
@@ -654,12 +662,9 @@ class SlackController @Inject() (
         Future.successful({})
       }
     } yield {}
-
-    // respond immediately
-    Ok(":+1:")
   }
 
-  private def inputChoiceResultFor(value: String, info: ActionsTriggeredInfo)(implicit request: Request[AnyContent]): Result = {
+  private def inputChoiceResultFor(value: String, info: ActionsTriggeredInfo)(implicit request: Request[AnyContent]): Future[Unit] = {
     for {
       maybeProfile <- dataService.slackBotProfiles.allForSlackTeamId(info.team.id).map(_.headOption)
       maybeSlackMessage <- maybeProfile.map { profile =>
@@ -684,9 +689,6 @@ class SlackController @Inject() (
         Future.successful({})
       }
     } yield {}
-
-    // respond immediately
-    Ok(":+1:")
   }
 
   def action = Action { implicit request =>
@@ -711,7 +713,13 @@ class SlackController @Inject() (
               val user = s"<@${info.user.id}>"
 
               info.maybeInputChoice.foreach { response =>
-                inputChoiceResultFor(response, info)
+                info.isForInputChoiceForDoneConversation.flatMap { shouldStop =>
+                  if (shouldStop) {
+                    sendEphemeralMessage(s"This conversation is no longer active", info)
+                  } else {
+                    inputChoiceResultFor(response, info)
+                  }
+                }
                 maybeResultText = Some(s"$user chose $response")
                 shouldRemoveActions = true
               }

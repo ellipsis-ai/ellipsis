@@ -33,6 +33,7 @@ trait Conversation {
   val isScheduled: Boolean = maybeScheduledMessageId.isDefined
 
   def isPending: Boolean = state == Conversation.PENDING_STATE
+  def isDone: Boolean = state == Conversation.DONE_STATE
 
   def staleCutoff: OffsetDateTime = OffsetDateTime.now.minusHours(1)
 

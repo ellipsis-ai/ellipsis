@@ -10,7 +10,15 @@ object SlackMessageActionConstants {
   val RUN_BEHAVIOR_VERSION = "run_behavior_version"
   val INPUT_CHOICE = "input_choice"
 
-  def inputChoiceCallbackIdFor(slackUserId: String): String = INPUT_CHOICE ++ "-" ++ slackUserId
-  val userIdForCallbackIdRegex = raw"""^$INPUT_CHOICE\-(\S+)$$""".r
-  def maybeUserIdForCallbackId(callbackId: String): Option[String] = userIdForCallbackIdRegex.findFirstMatchIn(callbackId).flatMap(_.subgroups.headOption)
+  def inputChoiceCallbackIdFor(slackUserId: String, maybeConversationId: Option[String]): String = {
+    val conversationId = maybeConversationId.getOrElse("")
+    s"$INPUT_CHOICE/$slackUserId/$conversationId"
+  }
+  val inputChoiceCallbackIdRegex = raw"""^$INPUT_CHOICE\/([^\/]+)\/([^\/]+)$$""".r
+  def maybeUserIdForCallbackId(callbackId: String): Option[String] = {
+    inputChoiceCallbackIdRegex.findFirstMatchIn(callbackId).flatMap(_.subgroups.headOption)
+  }
+  def maybeConversationIdForCallbackId(callbackId: String): Option[String] = {
+    inputChoiceCallbackIdRegex.findFirstMatchIn(callbackId).flatMap(_.subgroups.tail.headOption)
+  }
 }
