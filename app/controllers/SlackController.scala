@@ -13,6 +13,7 @@ import models.silhouette.EllipsisEnv
 import play.api.Logger
 import play.api.data.Form
 import play.api.data.Forms._
+import play.api.http.{HeaderNames, MimeTypes}
 import play.api.libs.json._
 import play.api.mvc.{AnyContent, Request, Result}
 import play.utils.UriEncoding
@@ -33,6 +34,7 @@ class SlackController @Inject() (
   val configuration = services.configuration
   val lambdaService = services.lambdaService
   val cacheService = services.cacheService
+  val ws = services.ws
   implicit val actorSystem = services.actorSystem
 
   private def maybeResultFor[T](form: Form[T], resultFn: T => Result)
@@ -534,6 +536,17 @@ class SlackController @Inject() (
       }
     }
 
+    def maybeIncorrectUserIdTryingInputChoice: Option[String] = {
+      val maybeSlackUserId = maybeUserIdForCallbackId(callback_id)
+      maybeSlackUserId.flatMap { slackUserId =>
+        if (user.id != slackUserId) {
+          Some(slackUserId)
+        } else {
+          None
+        }
+      }
+    }
+
     def maybeHelpIndexAt: Option[Int] = {
       actions.find { info => info.name == SHOW_HELP_INDEX }.map { _.value.map { value =>
         try {
@@ -622,6 +635,30 @@ class SlackController @Inject() (
 
   implicit val actionsTriggeredReads = Json.reads[ActionsTriggeredInfo]
 
+  private def sendEphemeralMessage(message: String, info: ActionsTriggeredInfo) = {
+    for {
+      maybeProfile <- dataService.slackBotProfiles.allForSlackTeamId(info.team.id).map(_.headOption)
+      _ <- (for {
+        profile <- maybeProfile
+      } yield {
+        ws.
+          url("https://slack.com/api/chat.postEphemeral").
+          withHttpHeaders(HeaderNames.ACCEPT -> MimeTypes.JSON).
+          post(Map(
+            "token" -> Seq(profile.token),
+            "channel" -> Seq(info.channel.id),
+            "text" -> Seq(message),
+            "user" -> Seq(info.user.id)
+          ))
+      }).getOrElse {
+        Future.successful({})
+      }
+    } yield {}
+
+    // respond immediately
+    Ok(":+1:")
+  }
+
   private def inputChoiceResultFor(value: String, info: ActionsTriggeredInfo)(implicit request: Request[AnyContent]): Result = {
     for {
       maybeProfile <- dataService.slackBotProfiles.allForSlackTeamId(info.team.id).map(_.headOption)
@@ -677,6 +714,11 @@ class SlackController @Inject() (
                 inputChoiceResultFor(response, info)
                 maybeResultText = Some(s"$user chose $response")
                 shouldRemoveActions = true
+              }
+
+              info.maybeIncorrectUserIdTryingInputChoice.foreach { correctUserId =>
+                val correctUser = s"<@${correctUserId}>"
+                sendEphemeralMessage(s"Only $correctUser can answer this", info)
               }
 
               info.maybeHelpIndexAt.foreach { index =>

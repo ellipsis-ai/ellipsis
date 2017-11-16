@@ -631,7 +631,7 @@ object BehaviorParameterType {
   val ID_PROPERTY = "id"
   val LABEL_PROPERTY = "label"
   val DATA_PROPERTY = "data"
-  val SEARCH_COUNT_THRESHOLD = 10
+  val SEARCH_COUNT_THRESHOLD = 30
 
   val allBuiltin = Seq(
     TextType,
