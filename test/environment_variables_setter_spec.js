@@ -1,7 +1,7 @@
 import React from 'react';
 import TestUtils from 'react-addons-test-utils';
 
-const EnvironmentVariableSetter = require('assets/javascripts/settings/environment_variables/setter');
+const EnvironmentVariableSetter = require('../app/assets/javascripts/settings/environment_variables/setter');
 
 describe('EnvironmentVariableSetter', () => {
   const defaultConfig = Object.freeze({
