@@ -48,10 +48,6 @@ POST        /push_to_github                           @controllers.BehaviorEdito
 POST        /reset_saved_answer_for_user              @controllers.SavedAnswerController.resetForUser
 POST        /reset_saved_answer_for_all               @controllers.SavedAnswerController.resetForTeam
 
-POST        /submit_environment_variables             @controllers.web.settings.EnvironmentVariablesController.submit
-POST        /delete_environment_variable              @controllers.web.settings.EnvironmentVariablesController.delete
-
-
 GET         /list_oauth2_apis                         @controllers.OAuth2ApiController.list(teamId: Option[String] ?= None)
 GET         /new_oauth2_api                           @controllers.OAuth2ApiController.newApi(teamId: Option[String] ?= None)
 GET         /edit_oauth2_api/:id                      @controllers.OAuth2ApiController.edit(id: String, teamId: Option[String] ?= None)
@@ -64,7 +60,9 @@ POST        /revoke_api_token                         @controllers.APITokenContr
 GET         /github_config                            @controllers.GithubConfigController.index(maybeTeamId: Option[String] ?= None)
 POST        /reset_github_config                      @controllers.GithubConfigController.reset
 
-GET         /list_environment_variables               @controllers.web.settings.EnvironmentVariablesController.list(teamId: Option[String] ?= None, newVars: Option[String] ?= None)
+GET         /settings/environment_variables           @controllers.web.settings.EnvironmentVariablesController.list(teamId: Option[String] ?= None, newVars: Option[String] ?= None)
+POST        /settings/environment_variables           @controllers.web.settings.EnvironmentVariablesController.submit
+POST        /settings/delete_environment_variable     @controllers.web.settings.EnvironmentVariablesController.delete
 
 GET         /settings/regional_settings               @controllers.web.settings.RegionalSettingsController.index(teamId: Option[String] ?= None)
 GET         /settings/integrations                    @controllers.web.settings.IntegrationsController.list(teamId: Option[String] ?= None)
