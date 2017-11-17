@@ -54,7 +54,7 @@ a.button,
   width: 100%;
 }
 
-a.button, .form-toggle-group {
+a.button, .form-toggle-group, .checkbox-button {
   display: inline-block;
 }
 
@@ -139,7 +139,7 @@ button.button-s,
   border-radius: @border-radius-small;
 }
 
-button.button-l, a.button-l {
+button.button-l, a.button-l, .checkbox-button-l {
   font-size: @type-button-l;
   font-weight: 600;
   line-height: @xxl;
@@ -149,6 +149,10 @@ button.button-l, a.button-l {
   padding-bottom: @m - @border-width-thick;
   min-width: @m * 20;
   border-radius: @border-radius-large;
+}
+
+.checkbox-button-l {
+  font-size: @type-m;
 }
 
 button.button-dropdown-trigger.button-s,
@@ -514,7 +518,8 @@ a.button-primary,
 button.button-error,
 a.button-error,
 button.button-inverted,
-a.button-inverted {
+a.button-inverted,
+.checkbox-button.button-inverted {
   font-weight: 600;
   color: @white;
   .light-antialiasing();
@@ -566,6 +571,17 @@ a.button-inverted {
   color: @white;
 }
 
+.checkbox-button.button-inverted {
+  border-color: @blue-medium !important;
+  color: @white;
+}
+
+.checkbox-button-checked.button-inverted {
+  background-color: @blue-darkest;
+  border-color: @blue-darkest !important;
+  color: @white;
+}
+
 button.button-inverted:hover,
 a.button-inverted:hover {
   background-color: @white-subtle;
@@ -573,8 +589,8 @@ a.button-inverted:hover {
 
 button.button-primary[disabled],
 button.button-error[disabled] {
-  background-color: @gray-light !important;
-  border-color: @gray-light !important;
+  background-color: @gray-medium-translucent !important;
+  border-color: transparent !important;
   color: @white !important;
 }
 
