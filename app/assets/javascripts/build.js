@@ -81,7 +81,7 @@ requirejs.config({
       include: ['behavior_list/app'],
       exclude: ['common']
     }, {
-      name: 'application_editor/loader',
+      name: 'settings/application_editor/loader',
       include: ['application_editor/index'],
       exclude: ['common']
     }, {
