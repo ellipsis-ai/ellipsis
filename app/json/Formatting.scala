@@ -185,7 +185,6 @@ object Formatting {
 
   implicit val githubConfigConfigFormat = Json.format[GithubConfigConfig]
 
-  implicit val integrationListReads = Json.reads[IntegrationListConfig]
-  implicit val integrationListWrites = Json.writes[IntegrationListConfig]
+  implicit val integrationListConfigFormat = Json.format[IntegrationListConfig]
 
 }

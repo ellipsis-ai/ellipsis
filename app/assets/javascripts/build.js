@@ -85,15 +85,15 @@ requirejs.config({
       include: ['application_editor/index'],
       exclude: ['common']
     }, {
-      name: 'application_list/loader',
-      include: ['application_list/index'],
+      name: 'settings/integrations/loader',
+      include: ['integrations/index'],
       exclude: ['common']
     }, {
-      name: 'aws_config_editor/loader',
+      name: 'settings/aws_config_editor/loader',
       include: ['aws_config_editor/index'],
       exclude: ['common']
     }, {
-      name: 'aws_config_list/loader',
+      name: 'settings/aws_config_list/loader',
       include: ['aws_config_list/index'],
       exclude: ['common']
     }, {
@@ -101,11 +101,11 @@ requirejs.config({
       include: ['api_token_generator/index'],
       exclude: ['common']
     }, {
-      name: 'environment_variables/loader',
+      name: 'settings/environment_variables/loader',
       include: ['environment_variables/index'],
       exclude: ['common']
     }, {
-      name: 'regional_settings/loader',
+      name: 'settings/regional_settings/loader',
       include: ['regional_settings/index'],
       exclude: ['common']
     }, {

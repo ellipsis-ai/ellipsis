@@ -8,8 +8,6 @@ jsRoutes.controllers.GithubConfigController.index = jest.fn(() => ({ url: '/mock
 jsRoutes.controllers.web.settings.EnvironmentVariablesController.list = jest.fn(() => ({ url: '/mock_environment_variables_list' }));
 jsRoutes.controllers.web.settings.RegionalSettingsController.index = jest.fn(() => ({ url: '/mock_regional_settings' }));
 jsRoutes.controllers.web.settings.IntegrationsController.list = jest.fn(() => ({ url: '/mock_integrations' }));
-jsRoutes.controllers.web.settings.AWSConfigController.list = jest.fn(() => ({ url: '/mock_aws_config_list' }));
-jsRoutes.controllers.web.settings.OAuth2ApplicationController.list = jest.fn(() => ({ url: '/mock_oauth2_list' }));
 
 describe('EnvironmentVariables', () => {
 
