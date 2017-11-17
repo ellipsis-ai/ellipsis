@@ -81,6 +81,10 @@ requirejs.config({
       include: ['behavior_list/app'],
       exclude: ['common']
     }, {
+      name: 'api_token_generator/loader',
+      include: ['api_token_generator/index'],
+      exclude: ['common']
+    }, {
       name: 'settings/application_editor/loader',
       include: ['application_editor/index'],
       exclude: ['common']
@@ -91,14 +95,6 @@ requirejs.config({
     }, {
       name: 'settings/aws_config_editor/loader',
       include: ['aws_config_editor/index'],
-      exclude: ['common']
-    }, {
-      name: 'settings/aws_config_list/loader',
-      include: ['aws_config_list/index'],
-      exclude: ['common']
-    }, {
-      name: 'api_token_generator/loader',
-      include: ['api_token_generator/index'],
       exclude: ['common']
     }, {
       name: 'settings/environment_variables/loader',
