@@ -18,24 +18,20 @@
 
         <p>
           <span class="type-pink-light">To use Ellipsis, you need to add it to your Slack workspace. </span>
-          <span>Click the button below to authorize Ellipsis to join your workspace.</span>
         </p>
 
         <div class="mtxl columns columns-elastic mobile-columns-float">
-          <div class="column column-shrink prxxxl mobile-mbs">
+          <div class="column column-shrink prxxl mobile-mbs">
             @addToSlackButton(scopes, clientId, redirectUrl)
           </div>
           <div class="column column-expand">
-            <span class="align-button-l">
-              <label for="agree">
-                <input id="agree" type="checkbox" value="agree" checked />
-                <span>I agree to the </span>
-                <a target="legal" href="@routes.LegalController.privacyPolicy()" class="link-light-blue">Privacy Policy</a>
-                <span> and </span>
-                <a target="legal" href="@routes.LegalController.userAgreement()" class="link-light-blue">User Agreement</a>
-                <span>.</span>
-              </label>
-            </span>
+            <div class="align-button-l type-s type-italic">
+              <span>By clicking to authorize Ellipsis for your workspace, you agree to the </span>
+              <a target="legal" href="@routes.LegalController.privacyPolicy()" class="link-light-blue">privacy policy</a>
+              <span> and the </span>
+              <a target="legal" href="@routes.LegalController.userAgreement()" class="link-light-blue">user agreement</a>
+              <span>.</span>
+           </div>
           </div>
         </div>
 
