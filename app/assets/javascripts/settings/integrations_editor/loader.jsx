@@ -3,7 +3,7 @@ requirejs(['common'], function() {
   function(Core, Fetch, React, ReactDOM, IntegrationEditor, IntegrationEditorConfig, Page) {
     ReactDOM.render(
       (
-        <Page>
+        <Page csrfToken={IntegrationEditorConfig.csrfToken}>
           <IntegrationEditor {...IntegrationEditorConfig} />
         </Page>
       ),

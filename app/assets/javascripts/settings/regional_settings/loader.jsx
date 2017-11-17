@@ -1,7 +1,7 @@
 requirejs(['common'], function() {
   requirejs(
     ['core-js', 'whatwg-fetch', 'react', 'react-dom', './settings/regional_settings/index',
-      'settings/regionalsettings/index', './shared_ui/page', './lib/autobind'],
+      'config/regionalsettings/index', './shared_ui/page', './lib/autobind'],
     function(Core, Fetch, React, ReactDOM, RegionalSettings,
              RegionalSettingsConfiguration, Page, autobind) {
 
