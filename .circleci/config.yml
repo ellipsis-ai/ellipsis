@@ -38,11 +38,11 @@ jobs:
             cat npm_modules/*/package-lock.json > npm_modules/npm_checksum
       - restore_cache:
           keys:
-            - v6-node-{{ .Branch }}-{{ checksum "package-lock.json" }}
-            - v6-node-{{ checksum "package-lock.json" }}
+            - v6-node-model_1-{{ .Branch }}-{{ checksum "package-lock.json" }}
+            - v6-node-model_1-{{ checksum "package-lock.json" }}
       - restore_cache:
           keys:
-            - v2-npm_modules-{{ checksum "npm_modules/npm_checksum" }}
+            - v2-npm_modules-model_1-{{ checksum "npm_modules/npm_checksum" }}
       - run:
           name: Install npm dependencies
           command: |
@@ -50,11 +50,11 @@ jobs:
       - save_cache:
           paths:
             - node_modules
-          key: v6-node-{{ .Branch }}-{{ checksum "package-lock.json" }}
+          key: v6-node-model_1-{{ .Branch }}-{{ checksum "package-lock.json" }}
       - save_cache:
           paths:
             - node_modules
-          key: v6-node-{{ checksum "package-lock.json" }}
+          key: v6-node-model_1-{{ checksum "package-lock.json" }}
       - save_cache:
           paths:
             - npm_modules/ellipsis-action-logs/node_modules
