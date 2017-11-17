@@ -86,23 +86,23 @@ requirejs.config({
       exclude: ['common']
     }, {
       name: 'settings/application_editor/loader',
-      include: ['application_editor/index'],
-      exclude: ['common']
-    }, {
-      name: 'settings/integrations/loader',
-      include: ['integrations/index'],
+      include: ['settings/application_editor/index'],
       exclude: ['common']
     }, {
       name: 'settings/aws_config_editor/loader',
-      include: ['aws_config_editor/index'],
+      include: ['settings/aws_config_editor/index'],
       exclude: ['common']
     }, {
       name: 'settings/environment_variables/loader',
-      include: ['environment_variables/index'],
+      include: ['settings/environment_variables/index'],
+      exclude: ['common']
+    }, {
+      name: 'settings/integrations/loader',
+      include: ['settings/integrations/index'],
       exclude: ['common']
     }, {
       name: 'settings/regional_settings/loader',
-      include: ['regional_settings/index'],
+      include: ['settings/regional_settings/index'],
       exclude: ['common']
     }, {
       name: 'styleguide/colors/loader',
