@@ -467,7 +467,13 @@ class SlackController @Inject() (
   case class TeamInfo(id: String, domain: String)
   case class ChannelInfo(id: String, name: String)
   case class UserInfo(id: String, name: String)
-  case class OriginalMessageInfo(text: String, attachments: Seq[AttachmentInfo], response_type: Option[String], replace_original: Option[Boolean])
+  case class OriginalMessageInfo(
+                                  text: String,
+                                  attachments: Seq[AttachmentInfo],
+                                  response_type: Option[String],
+                                  replace_original: Option[Boolean],
+                                  thread_ts: Option[String]
+                                )
   case class AttachmentInfo(
                              fallback: Option[String] = None,
                              title: Option[String] = None,
@@ -713,7 +719,7 @@ class SlackController @Inject() (
         slackEventService.onEvent(SlackMessageEvent(
           profile,
           info.channel.id,
-          None,
+          info.original_message.thread_ts,
           info.user.id,
           slackMessage,
           None,
@@ -730,7 +736,6 @@ class SlackController @Inject() (
   def action = Action { implicit request =>
     actionForm.bindFromRequest.fold(
       formWithErrors => {
-        println(formWithErrors.errorsAsJson)
         BadRequest(formWithErrors.errorsAsJson)
       },
       payload => {
