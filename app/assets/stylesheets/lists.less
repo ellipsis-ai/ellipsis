@@ -88,3 +88,56 @@ ul {
   }
 }
 
+ol {
+  padding-left: 1.5em;
+  margin: 0.5em 0 0.5em 0;
+}
+
+ol.outline-nav,
+ol.outline-nav ol {
+  padding: 0;
+  margin: 0.5em 0 0.5em 0;
+}
+
+ol.outline-nav li {
+  list-style-position: inside;
+  padding-left: 1.5em;
+}
+
+ol.outline-nav a {
+  color: inherit;
+}
+
+ol li {
+  margin-bottom: 0.5em;
+}
+
+ol.upper-roman {
+  list-style-type: upper-roman;
+}
+
+ol.upper-roman ol,
+ol.upper-alpha {
+  list-style-type: upper-alpha;
+}
+
+ol,
+ol.decimal,
+ol.upper-alpha ol {
+  list-style-type: decimal;
+}
+
+ol.lower-alpha,
+ol.decimal ol,
+ol.upper-alpha ol ol,
+ol ol {
+  list-style-type: lower-alpha;
+}
+
+ol.lower-roman,
+ol.lower-alpha ol,
+ol.decimal ol ol,
+ol.upper-alpha ol ol ol,
+ol ol ol {
+  list-style-type: lower-roman;
+}
