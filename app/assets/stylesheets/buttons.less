@@ -58,6 +58,12 @@ a.button, .form-toggle-group, .checkbox-button {
   display: inline-block;
 }
 
+.checkbox-button {
+  min-width: 0;
+  height: auto;
+  min-height: @button-height;
+}
+
 a.button:hover {
   text-decoration: none;
 }
@@ -153,6 +159,11 @@ button.button-l, a.button-l, .checkbox-button-l {
 
 .checkbox-button-l {
   font-size: @type-m;
+  line-height: @xl;
+  padding-top: @xs + @m - @border-width-thick;
+  padding-bottom: @xs + @m - @border-width-thick;
+  min-height: @button-large-height;
+  height: auto;
 }
 
 button.button-dropdown-trigger.button-s,
@@ -689,6 +700,8 @@ button.button-activated {
 .checkbox-button-s {
   vertical-align: middle;
   padding: 3px @xs;
+  height: auto;
+  min-height: @button-small-height;
 }
 
 .form-toggle-group-s {
