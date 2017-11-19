@@ -101,6 +101,10 @@ requirejs.config({
       include: ['settings/integrations/index'],
       exclude: ['common']
     }, {
+      name: 'settings/integrations_editor/loader',
+      include: ['settings/integrations_editor/index'],
+      exclude: ['common']
+    }, {
       name: 'settings/regional_settings/loader',
       include: ['settings/regional_settings/index'],
       exclude: ['common']
