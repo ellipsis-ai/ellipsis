@@ -1,0 +1,243 @@
+@(
+  config: ViewConfig
+)(implicit r: RequestHeader, m: Messages)
+
+@page.main("User agreement", config,
+  bodyClass = "bg-light",
+  navClass = "container-narrow container-c",
+  hideNav = true) {
+
+  <div class="container-narrow container-c pvxxxxl">
+
+    <h1>User Agreement</h1>
+
+    <h4>Last Updated: October 23, 2017</h4>
+
+    <p>THIS AGREEMENT (TOGETHER, WITH PROVIDER’S <a href="@routes.LegalController.privacyPolicy()">PRIVACY POLICY</a>) GOVERNS YOUR ACQUISITION AND USE OF SERVICES. BY CLICKING “I AGREE” OR CHECKING THE BOX PROVIDED, YOU AGREE TO THE TERMS OF THIS AGREEMENT. IF YOU ARE ACCESSING THE SERVICES ON BEHALF OF A COMPANY OR OTHER LEGAL ENTITY, THEN YOU REPRESENT THAT YOU HAVE THE AUTHORITY TO BIND THAT COMPANY OR OTHER LEGAL ENTITY TO THIS AGREEMENT.</p>
+
+    <p>AS FURTHER DESCRIBED BELOW, THIS AGREEMENT REQUIRES THE USE OF ARBITRATION ON AN INDIVIDUAL BASIS TO RESOLVE DISPUTES, RATHER THAN JURY TRIALS OR CLASS ACTIONS, AND ALSO LIMITS THE REMEDIES AVAILABLE TO YOU IN THE EVENT OF A DISPUTE.</p>
+
+    <ol>
+      <li>
+        <h3>SCOPE OF AGREEMENT.</h3>
+        <p>This Agreement governs Ellipsis Co’s (<b>“Provider”</b> or <b>“we”</b>) provision of services to you (<b>“Services”</b>), which include access to Provider’s ellipsis.ai platform (the <b>“Platform”</b>) and related documentation. Provider will provide the Services you select during the registration process. You understand and agree that Provider may change this Agreement at any time without prior notice; provided that Provider will endeavor to provide you with prior notice of any material changes. The revised Agreement will become effective at the time of posting. Any use of the Services after such date will constitute your acceptance of such revised Agreement. Notwithstanding the preceding sentences, no revisions to this Agreement will apply to any dispute between you and Provider that arose prior to the effective date of such revision.</p>
+      </li>
+      <li>
+        <h3>PROPRIETARY RIGHTS</h3>
+        <ol>
+          <li>
+            <h4>License.</h4>
+            <p>Subject to the terms and conditions of this Agreement, Provider grants to you during the Term a non-exclusive, non-transferable, non-sublicensable, license to access and use the Services you select solely for the purpose of developing conversational applications (<b>“Applications”</b>).</p>
+          </li>
+          <li>
+            <h4>Restrictions.</h4>
+            <p>The Services are licensed to you for internal use only. In connection with your use of the Services, you will comply with all applicable laws, rules and regulations. You will not, and will not permit any third party to: (i) copy, modify, translate, or create derivative works of the Services; (ii) reverse engineer, decompile, disassemble or otherwise attempt to reconstruct, identify or discover any source code, underlying ideas, underlying user interface techniques, or algorithms of the Services; (iii) lend, lease, offer for sale, sell or otherwise use the Services for the benefit of third parties; or (iv) attempt to circumvent any license, timing or use restrictions that are built into the Services.</p>
+          </li>
+          <li>
+            <h4>Provider Ownership.</h4>
+            <p>Except for the rights granted in Section 2(a) above, Provider retains all right, title and interest, including all intellectual property rights, in and to the Services. You acknowledge that the Services include Provider’s valuable trade secrets and improper use or disclosure would cause Provider irreparable harm. Accordingly, you agree to use the Services solely as authorized in this Agreement. You further acknowledge that the license granted pursuant to this Agreement is not a sale and does not transfer to you title or ownership of the Services or a copy of the Services, but only a right of limited use. ALL RIGHTS NOT EXPRESSLY GRANTED HEREUNDER ARE RESERVED TO PROVIDER.</p>
+          </li>
+          <li>
+            <h4>Data.</h4>
+            <ol>
+              <li>Subject to the terms and conditions of this Agreement, you grant to Provider a limited, non-transferable license to use (including to analyze, modify, reproduce, publish, share, and create derivative works of) the information and data entered into the Services by you and/or your personnel, or by any third parties acting on your behalf or at your request (<b>“Data”</b>) for the purpose of providing the Services, including to improve the functionality of the Services. Data includes communications sent to Provider and any records you have stored on the Services (<b>“Conversations”</b>). Notwithstanding anything to the contrary in this Agreement, the foregoing license to Data includes the right for Provider to (A) use and disclose your Conversations as necessary to provide the Services, and (B) use Conversations for Provider’s internal business purposes.</li>
+              <li>You represent and warrant that: (x) you own the Data you post on or through the Services or otherwise have the right to grant the license set forth in this Section 2(d); (y) the posting and use of Data on or through the Services does not violate the privacy rights, publicity rights, copyrights, contract rights, intellectual property rights, or any other rights of any person; and (z) the posting of Data on the Services does not result in a breach of contract between you and any third party. Before collecting any Data or other information from end users, you must provide adequate notice of what Data and other information you collect and how it will be used and/or shared and obtain any necessary consents. You (and your Applications) must comply with all privacy laws and regulations in connection with your access and use of the Services. You will provide and adhere to a privacy policy for your Application that: (A) complies with all applicable laws, rules, and regulations, (B) is conspicuously displayed to all Application end users, and (C) clearly and accurately describes to end users what Data and other user information you collect (such as personally identifiable information, login information, etc.) and how you use and share such information with Provider and third parties.</li>
+              <li>Subject to the licenses granted to Provider in this Section, you retain ownership of your Data. Any analytics, statistics or other data related to or derived from your Data and/or your use of the Services for any purpose in aggregate and anonymized form (<b>“Aggregate Data”</b>) will belong to Provider. To the extent you have any ownership interest in any Aggregate Data, you hereby assign to Provider all such right, title, and interest in and to such Aggregate Data and output data, including all intellectual property rights therein.</li>
+            </ol>
+          </li>
+        </ol>
+      </li>
+      <li>
+        <h3>USE OF THE SERVICES</h3>
+        <ol>
+          <li>
+            <h4>Registration.</h4>
+            <p>To access most features of the Service, you must register for an account. When you register for an account, you may be required to provide us with some information about yourself, such as your email address or other contact information. You agree that the information you provide to us is accurate and that you will keep it accurate and up-to-date at all times. When you register, you will be asked to provide a password. You are solely responsible for maintaining the confidentiality of your account and password, and you accept responsibility for all activities that occur under your account. If you have reason to believe that your account is no longer secure, then you must immediately notify us at <a href="mailto:accounts@@ellipsis.ai">accounts@@ellipsis.ai</a>. THE SERVICES ARE NOT FOR PERSONS UNDER THE AGE OF 13 OR FOR ANY USERS PREVIOUSLY SUSPENDED OR REMOVED FROM THE SERVICES BY PROVIDER. IF YOU ARE UNDER 13 YEARS OF AGE, THEN YOU MUST NOT USE OR ACCESS THE SERVICES AT ANY TIME OR IN ANY MANNER.</p>
+          </li>
+          <li>
+            <h4>User Content.</h4>
+            <p>The Services may have features, such as forums, that allow you to post content (<b>“User Content”</b>) publicly. By posting or publishing User Content, you grant Provider a worldwide, non-exclusive, royalty-free, fully paid right and license (with the right to sublicense) to host, store, transfer, display, perform, reproduce, modify for the purpose of formatting for display, and distribute your User Content, in whole or in part, in any media formats and through any media channels now known or hereafter developed. You are solely responsible for your User Content and the consequences of posting or publishing User Content. By posting or publishing User Content, you affirm, represent, and warrant that: (i) you are the creator and owner of the User Content, or have the necessary licenses, rights, consents, and permissions to authorize Provider and users of the Services to use and distribute your User Content as necessary to exercise the licenses granted by you in this section, in the manner contemplated by Provider, the Services, and this Agreement; and (ii) your User Content, and the use of your User Content as contemplated by this Agreement, does not and will not: (x) infringe, violate, or misappropriate any third-party right, including any copyright, trademark, patent, trade secret, moral right, privacy right, right of publicity, or any other intellectual property or proprietary right; (y) slander, defame, libel, or invade the right of privacy, publicity or other property rights of any other person; or (z) cause Provider to violate any law or regulation.</p>
+          </li>
+          <li>
+            <h4>User Content Disclaimer.</h4>
+            <p>We are under no obligation to edit or control User Content that you or other users post or publish, and will not be in any way responsible or liable for User Content. Provider may, however, at any time and without prior notice, screen, remove, edit, or block any User Content that in our sole judgment violates this Agreement or is otherwise objectionable. You understand that when using the Services you will be exposed to User Content from a variety of sources and acknowledge that User Content may be inaccurate, offensive, indecent, or objectionable. You agree to waive, and do waive, any legal or equitable right or remedy you have or may have against Provider with respect to User Content. We expressly disclaim any and all liability in connection with User Content. If notified by a user or content owner that User Content allegedly does not conform to this Agreement, we may investigate the allegation and determine in our sole discretion whether to remove the User Content, which we reserve the right to do at any time and without notice. For clarity, Provider does not permit copyright-infringing activities on the Services.</p>
+          </li>
+          <li>
+            <h4>Your Responsibilities.</h4>
+            <p>You will (i) be responsible for your (and as applicable, your personnel’s) compliance with this Agreement, (ii) use commercially reasonable efforts to prevent unauthorized access to or use of the Services, and notify Provider immediately of any such unauthorized access and/or use of which you become aware, and (iii) use the Services only in accordance with this Agreement and all applicable laws and government regulations. You will not (iv) make the Services available to any third party (except for any third parties acting on your behalf or at your request, such as recruiting agencies), (v) sell, resell, rent or lease the Services, (vi) interfere with or disrupt the integrity or performance of the Services or any third-party data contained on the Services, including, as applicable, the third-party data of your employees, or (vii) attempt to gain unauthorized access to the Services or their related systems or networks.</p>
+          </li>
+          <li>
+            <h4>Attribution.</h4>
+            <p>Depending on the Services you select, you may be required to provide us with attribution in your Application. You agree to display any attributions we require, as described in documentation for the Services. This may include displaying “Powered by ellipsis.ai” and including a hyperlink to <a href="https://ellipsis.ai/">ellipsis.ai</a> in any Application connected to the Services. Provider grants you a limited, revocable (at any time and for any reason), non-transferable, non-sublicensable, non-exclusive license during your subscription term to display Provider’s name and trademark solely to promote or advertise that your Application uses the Services.</p>
+          </li>
+          <li>
+            <h4>Marketing and Promotion.</h4>
+            <p>You grant Provider a worldwide, non-exclusive, royalty-free, fully paid right and license (with the right to sublicense) to reproduce, host, store, transfer, display, perform, modify for the purpose of formatting for display, and distribute incidental depictions, such as screenshots, video or other content from your Application, including your company or product name and logo, for the sole purpose of promoting, marketing or demonstrating the Services.</p>
+          </li>
+        </ol>
+      </li>
+      <li>
+        <h3>FEES</h3>
+        <ol>
+          <li>
+            <h4>Fees.</h4>
+            <p>You will pay Provider the fees set forth on the Platform (the <b>“Fees”</b>). Fees may be modified by Provider from time-to-time. Your continued use of the Services constitutes your acceptance of any modified Fees. Except as otherwise set forth on the Platform, all Fees are due in advance and are based on Services ordered rather than actual usage. Payment obligations are non-cancelable and Fees paid are non-refundable.</p>
+          </li>
+          <li>
+            <h4>Subscriptions.</h4>
+            <p>You may need a subscription to use certain Services. <b>Subscriptions last for a month from the sign-up date, and they automatically renew for successive monthly terms until cancelled by you as further described below.</b></p>
+            <ol>
+              <li>
+                <h5>You Agree To Pay For Your Selected Subscription and Other Purchases.</h5> You agree to pay for the subscription that you select for the Services and any other purchases you agree to make on the Services.
+              </li>
+              <li>
+                <h5>Monthly Invoicing.</h5>
+                <p>We provide monthly subscriptions. You authorize us to automatically charge the payment method our service provider has on file for your monthly payments.</p>
+              </li>
+              <li>
+                <h5>Monthly Auto-Renewal.</h5>
+                <p>YOU MUST PAY FOR YOUR SUBSCRIPTION TO THE SERVICES PRIOR TO USING THE SERVICES. BY PURCHASING A SUBSCRIPTION, YOU AGREE THAT, ONCE YOUR SUBSCRIPTION EXPIRES, YOUR SUBSCRIPTION WILL AUTOMATICALLY RENEW FOR SUCCESSIVE MONTHLY PERIODS UNLESS YOU CANCEL YOUR SUBSCRIPTION AS FURTHER DESCRIBED BELOW. YOU AUTHORIZE PROVIDER TO CHARGE THE PAYMENT METHOD THAT OUR SERVICE PROVIDER HAS ON FILE FOR YOU TO PAY FOR ANY RENEWAL SUBSCRIPTION. YOU WILL BE BILLED FOR THE SAME SUBSCRIPTION PLAN (OR THE MOST SIMILAR SUBSCRIPTION PLAN, IF YOUR PRIOR PLAN IS NO LONGER AVAILABLE) AT THE THEN-CURRENT MONTHLY SUBSCRIPTION PRICE PLUS ANY APPLICABLE TAXES. WE WILL PROCESS YOUR PAYMENTS FOR ANY RENEWAL SUBSCRIPTION USING THE SAME BILLING CYCLE AS YOUR CURRENT SUBSCRIPTION. IN OTHER WORDS, IF WE PROCESS YOUR PAYMENT FOR YOUR CURRENT SUBSCRIPTION ON THE 20TH OF EACH MONTH, THEN WE WILL CONTINUE TO PROCESS YOUR PAYMENT ON THAT DAY FOR ANY RENEWAL SUBSCRIPTION. ADDITIONAL TERMS AND CONDITIONS MAY APPLY UPON RENEWAL, AND SUBSCRIPTION FEES MAY CHANGE AT ANY TIME, TO THE FULLEST EXTENT PERMITTED BY LAW.</p>
+              </li>
+              <li>
+                <h5>Cancellation Refund Policy.</h5>
+                <p>Provider does not provide refunds or credits for partial months of Services, upgrades, downgrades, or unused month. If you cancel your subscription, cancellation will be effective at the end of the then-current subscription term.</p>
+              </li>
+              <li>
+                <h5>Additional Terms or Agreements.</h5>
+                <p>You acknowledge that you may be required to agree to additional or superseding terms or agreements if your subscription is automatically renewed as described above. For example, if you would like a subscription to the Services that is different from Providers standard subscription, then you may be required to agree to an additional set of terms.</p>
+              </li>
+              <li>
+                <h5>Taxes.</h5>
+                <p>You will be responsible for payment of all sales, use, property, value-added, withholding, or other federal, state or local taxes except for taxes based solely on Provider’s net income. If Provider is required to pay any such taxes based on the licenses granted in this Agreement or on your use of the Services, then such taxes will be billed to and paid by you. For the avoidance of doubt, all Fees listed herein are exclusive of California State Sales Tax.</p>
+              </li>
+            </ol>
+          </li>
+        </ol>
+      </li>
+      <li>
+        <h3>CONFIDENTIAL INFORMATION</h3>
+        <ol>
+          <li>
+            <h4>Definition of Confidential Information.</h4>
+            <p>As used herein, <b>“Confidential Information”</b> means all confidential information disclosed by a party (<b>“Disclosing Party”</b>) to the other party (<b>“Receiving Party”</b>), whether orally or in writing, that is designated as confidential or that reasonably should be understood to be confidential given the nature of the information and the circumstances of disclosure. Your Confidential Information will include Data; our Confidential Information will include the Services; and Confidential Information of each party will include business and marketing plans, technology and technical information, product plans and designs, and business processes disclosed by such party. However, Confidential Information (other than Data) will not include any information that (i) is or becomes generally known to the public without breach of any obligation owed to the Disclosing Party, (ii) was known to the Receiving Party prior to its disclosure by the Disclosing Party without breach of any obligation owed to the Disclosing Party, (iii) is received from a third party without breach of any obligation owed to the Disclosing Party, or (iv) was independently developed by the Receiving Party.</p>
+          </li>
+          <li>
+            <h4>Protection of Confidential Information.</h4>
+            <p>The Receiving Party will use the same degree of care that it uses to protect the confidentiality of its own confidential information of like kind (but in no event less than reasonable care). The Receiving Party agrees (i) not to use any Confidential Information of the Disclosing Party for any purpose outside the scope of this Agreement, and (ii) except as otherwise authorized by the Disclosing Party in writing, to limit access to Confidential Information of the Disclosing Party to those of its and its affiliates’ employees, contractors and agents who need such access for purposes consistent with this Agreement and who have signed confidentiality agreements with the Receiving Party containing protections no less stringent than those herein. Neither party will disclose the terms of this Agreement or any Order Form to any third party other than its affiliates and their legal counsel and accountants without the other party’s prior written consent.</p>
+          </li>
+          <li>
+            <h4>Compelled Disclosure.</h4>
+            <p>The Receiving Party may disclose Confidential Information of the Disclosing Party if it is compelled by law to do so, provided the Receiving Party gives the Disclosing Party prior notice of such compelled disclosure (to the extent legally permitted) and reasonable assistance, at the Disclosing Party's cost, if the Disclosing Party wishes to contest the disclosure. If the Receiving Party is compelled by law to disclose the Disclosing Party’s Confidential Information as part of a civil proceeding to which the Disclosing Party is a party, and the Disclosing Party is not contesting the disclosure, the Disclosing Party will reimburse the Receiving Party for its reasonable cost of compiling and providing secure access to such Confidential Information.</p>
+          </li>
+        </ol>
+      </li>
+      <li>
+        <h3>TERM AND TERMINATION</h3>
+        <ol>
+          <li>
+            <h4>Term; Termination.</h4>
+            <p>You may terminate your account at any time by contacting customer service at <a href="mailto:accounts@@ellipsis.ai">accounts@@ellipsis.ai</a>. If you terminate your account, you remain obligated to pay all outstanding Fees, if any, incurred prior to termination relating to your use of the Services. If you violate any provision of this Agreement, your permission from us to use the Services will terminate automatically. In addition, Provider may in its sole discretion terminate your user account on the Services or suspend or terminate your access to the Services at any time for any reason or no reason, with or without notice. We also reserve the right to modify or discontinue the Services at any time (including by limiting or discontinuing certain features of the Services), temporarily or permanently, without notice to you. We will have no liability whatsoever on account of any change to the Services or any suspension or termination of your access to or use of the Services.</p>
+          </li>
+          <li>
+            <h4>Effect of Termination.</h4>
+            <p>Upon expiration or termination of this Agreement for any reason, the rights, licenses and access to the Services granted to you under this Agreement will terminate at the end of the then-current subscription term. In no event will expiration or termination of this Agreement relieve you of any obligation to pay Fees payable for the period prior to the date of termination.</p>
+          </li>
+        </ol>
+      </li>
+      <li>
+        <h3>WARRANTY DISCLAIMER.</h3>
+        <p>THE SERVICES AND ALL MATERIALS AND CONTENT AVAILABLE THROUGH THE SERVICES ARE PROVIDED <b>“AS IS”</b> AND ON AN <b>“AS AVAILABLE”</b> BASIS, WITHOUT WARRANTY OR CONDITION OF ANY KIND, EITHER EXPRESS OR IMPLIED. TO THE FULLEST EXTENT PERMITTED BY LAW, PROVIDER, ITS AFFILIATES, AND THEIR RESPECTIVE OFFICERS, DIRECTORS, EMPLOYEES, AGENTS, SUPPLIERS AND LICENSORS (THE <b>“PROVIDER ENTITIES”</b>) DISCLAIM ALL WARRANTIES OF ANY KIND, WHETHER EXPRESS OR IMPLIED, RELATING TO THE SERVICES AND ALL MATERIALS AND CONTENT AVAILABLE THROUGH THE SERVICES, INCLUDING: (A) ANY IMPLIED WARRANTY OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, TITLE, QUIET ENJOYMENT, OR NON-INFRINGEMENT; AND (B) ANY WARRANTY ARISING OUT OF COURSE OF DEALING, USAGE, OR TRADE. TO THE FULLEST EXTENT PERMITTED BY LAW, THE PROVIDER ENTITIES DO NOT WARRANT THAT THE SERVICES OR ANY PORTION OF THE SERVICES, OR ANY MATERIALS OR CONTENT OFFERED THROUGH THE SERVICES, WILL BE UNINTERRUPTED, SECURE, OR FREE OF ERRORS, VIRUSES, OR OTHER HARMFUL COMPONENTS, AND DO NOT WARRANT THAT ANY OF THOSE ISSUES WILL BE CORRECTED.  </p>
+        <p>NO ADVICE OR INFORMATION, WHETHER ORAL OR WRITTEN, OBTAINED BY YOU FROM THE SERVICES OR ANY MATERIALS OR CONTENT AVAILABLE THROUGH THE SERVICES WILL CREATE ANY WARRANTY REGARDING ANY OF THE PROVIDER ENTITIES OR THE SERVICES THAT IS NOT EXPRESSLY STATED IN this agreement. TO THE FULLEST EXTENT PERMITTED BY LAW, YOU ASSUME ALL RISK FOR ANY DAMAGE THAT MAY RESULT FROM YOUR USE OF OR ACCESS TO THE SERVICES, YOUR DEALING WITH ANY OTHER SERVICES USER, AND ANY MATERIALS OR CONTENT AVAILABLE THROUGH THE SERVICES. YOU UNDERSTAND AND AGREE THAT YOU USE THE SERVICES, AND USE, ACCESS, DOWNLOAD, OR OTHERWISE OBTAIN MATERIALS OR CONTENT THROUGH THE SERVICES AND ANY ASSOCIATED SITES OR SERVICES, AT YOUR OWN DISCRETION AND RISK, AND, TO THE FULLEST EXTENT PERMITTED BY LAW, THAT YOU ARE SOLELY RESPONSIBLE FOR ANY DAMAGE TO YOUR PROPERTY (INCLUDING YOUR COMPUTER SYSTEM OR MOBILE DEVICE USED IN CONNECTION WITH THE SERVICES), OR THE LOSS OF DATA THAT RESULTS FROM THE USE OF THE SERVICES OR THE DOWNLOAD OR USE OF THAT MATERIAL OR CONTENT.</p>
+      </li>
+      <li>
+        <h3>LIMITATION OF LIABILITY.</h3>
+        <p>TO THE FULLEST EXTENT PERMITTED BY LAW, IN NO EVENT WILL THE PROVIDER ENTITIES BE LIABLE TO YOU FOR ANY INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL OR PUNITIVE DAMAGES (INCLUDING DAMAGES FOR LOSS OF PROFITS, GOODWILL, OR ANY OTHER INTANGIBLE LOSS) ARISING OUT OF OR RELATING TO YOUR ACCESS TO OR USE OF, OR YOUR INABILITY TO ACCESS OR USE, THE SERVICES OR ANY MATERIALS OR CONTENT ON THE SERVICES, WHETHER BASED ON WARRANTY, CONTRACT, TORT (INCLUDING NEGLIGENCE), STATUTE, OR ANY OTHER LEGAL THEORY, AND WHETHER OR NOT ANY PROVIDER ENTITY HAS BEEN INFORMED OF THE POSSIBILITY OF DAMAGE.</p>
+
+        <p>TO THE FULLEST EXTENT PERMITTED BY LAW, THE AGGREGATE LIABILITY OF THE PROVIDER ENTITIES TO YOU FOR ALL CLAIMS ARISING OUT OF OR RELATING TO THE USE OF OR ANY INABILITY TO USE ANY PORTION OF THE SERVICES OR OTHERWISE UNDER THIS AGREEMENT, WHETHER IN CONTRACT, TORT, OR OTHERWISE, IS LIMITED TO THE GREATER OF: (A) THE FEES YOU HAVE PAID TO PROVIDER IN THE 12 MONTHS PRIOR TO THE EVENT(S) OR CIRCUMSTANCES GIVING RISE TO CLAIM; AND (B) $100. </p>
+
+        <p>EACH PROVISION OF THIS AGREEMENT THAT PROVIDES FOR A LIMITATION OF LIABILITY, DISCLAIMER OF WARRANTIES, OR EXCLUSION OF DAMAGES IS INTENDED TO AND DOES ALLOCATE THE RISKS BETWEEN THE PARTIES UNDER THIS AGREEMENT. THIS ALLOCATION IS AN ESSENTIAL ELEMENT OF THE BASIS OF THE BARGAIN BETWEEN THE PARTIES. EACH OF THESE PROVISIONS IS SEVERABLE AND INDEPENDENT OF ALL OTHER PROVISIONS OF THIS AGREEMENT. THE LIMITATIONS IN THIS SECTION 8 WILL APPLY EVEN IF ANY LIMITED REMEDY FAILS OF ITS ESSENTIAL PURPOSE. </p>
+      </li>
+
+      <li>
+        <h3>DMCA NOTIFICATION.</h3>
+        <p>We comply with the provisions of the Digital Millennium Copyright Act applicable to Internet service providers (17 U.S.C. §512, as amended). If you have an intellectual property rights-related complaint about material posted on the Services, you may contact our Designated Agent at the following address: </p>
+
+        <p>
+          Ellipsis Co.<br>
+          ATTN: Legal Department (Copyright Notification)<br>
+          812 Woodland Ave<br>
+          Menlo Park, CA 94025<br>
+          Email: <a href="mailto:legal@@ellipsis.ai">legal@@ellipsis.ai</a><br>
+        </p>
+
+        <p>Any notice alleging that materials hosted by or distributed through the Services infringe intellectual property rights must include the following information:</p>
+
+        <ul>
+          <li>an electronic or physical signature of the person authorized to act on behalf of the owner of the copyright or other right being infringed;</li>
+          <li>a description of the copyright-protected work or other intellectual property right that you claim has been infringed;</li>
+          <li>a description of the material that you claim is infringing and where it is located on the Service;</li>
+          <li>your address, telephone number, and email address;</li>
+          <li>a statement by you that you have a good faith belief that the use of those materials on the Service is not authorized by the copyright owner, its agent, or the law; and</li>
+          <li>a statement by you that the above information in your notice is accurate and that, under penalty of perjury, you are the copyright or intellectual property owner or authorized to act on the copyright or intellectual property owner's behalf.</li>
+        </ul>
+
+        <p>Provider will promptly terminate without notice the accounts of users that it determines to be “Repeat Infringers.” A Repeat Infringer is a user who has been notified of infringing activity or has had User Content removed from the Services at least twice.</p>
+      </li>
+
+      <li>
+        <h3>INDEMNIFICATION.</h3>
+        <p>To the fullest extent permitted by law, you are responsible for your use of the Service, and you will defend and indemnify the Provider Entities from and against every claim, liability, damage, loss, and expense, including reasonable attorneys’ fees and costs, arising out of or in any way connected with: (a) your access to, use of, or alleged use of, the Services; (b) your violation of any portion of this Agreement, any representation, warranty, or agreement referenced in this Agreement, or any applicable law or regulation; (c) your violation of any third-party right, including any intellectual property right or publicity, confidentiality, other property, or privacy right; or (d) any dispute or issue between you and any third party. We reserve the right, at our own expense, to assume the exclusive defense and control of any matter otherwise subject to indemnification by you (without limiting your indemnification obligations with respect to that matter), and in that case, you agree to cooperate with our defense of that claim.</p>
+      </li>
+
+      <li>
+        <h3>DISPUTE RESOLUTION.</h3>
+        <ol>
+          <li>
+            <h4>Generally.</h4>
+            <p>In the interest of resolving disputes between you and Provider in the most expedient and cost effective manner, you and Provider agree that any dispute arising out of or in any way related to this Agreement or your use of the Services will be resolved by binding arbitration. Arbitration is less formal than a lawsuit in court. Arbitration uses a neutral arbitrator instead of a judge or jury, may allow for more limited discovery than in court, and can be subject to very limited review by courts. Arbitrators can award the same damages and relief that a court can award. This agreement to arbitrate disputes includes all claims arising out of or in any way related to this Agreement or your use of the Services, whether based in contract, tort, statute, fraud, misrepresentation, or any other legal theory, and regardless of whether a claim arises during or after the termination of this Agreement. YOU UNDERSTAND AND AGREE THAT, BY ENTERING INTO THIS AGREEMENT, YOU AND PROVIDER ARE EACH WAIVING THE RIGHT TO A TRIAL BY JURY OR TO PARTICIPATE IN A CLASS ACTION AND THAT THIS AGREEMENT WILL BE SUBJECT TO AND GOVERNED BY THE FEDERAL ARBITRATION ACT.</p>
+          </li>
+          <li>
+            <h4>Exceptions.</h4>
+            <p>Despite the provisions of the Section entitled “Generally” directly above, nothing in this Agreement will be deemed to waive, preclude, or otherwise limit the right of either party to: (i) bring an individual action in small claims court; (ii) pursue an enforcement action through the applicable federal, state, or local agency if that action is available; (iii) seek injunctive relief in aid of arbitration from a court of competent jurisdiction; or (iv) to file suit in a court of law to address an intellectual property infringement claim.</p>
+          </li>
+          <li>
+            <h4>Arbitrator.</h4>
+            <p>Any arbitration between you and Provider will be governed by the Federal Arbitration Act, and governed by the Commercial Dispute Resolution Procedures and the Supplementary Procedures for Consumer Related Disputes (collectively, <b>“AAA Rules”</b>) of the American Arbitration Association (<b>“AAA”</b>), as modified by this Agreement, and will be administered by the AAA. The AAA Rules and filing forms are available online at www.adr.org, by calling the AAA at 1-800-778-7879, or by contacting Provider. The arbitrator has exclusive authority to resolve any dispute relating to the interpretation, applicability, or enforceability of this binding arbitration agreement.</p>
+          </li>
+          <li>
+            <h4>Notice; Process.</h4>
+            <p>A party who intends to seek arbitration must first send a written notice of the dispute to the other party by U.S. Mail or electronic mail (<b>“Notice”</b>). Provider’s address for Notice is: 812 Woodland Ave, Menlo Park, CA, 94025, United States or <a href="mailto:legal@@ellipsis.ai">legal@@ellipsis.ai</a>. The Notice must: (a) describe the nature and basis of the claim or dispute; and (b) set forth the specific relief sought (<b>“Demand”</b>). The parties will make good faith efforts to resolve the claim directly, but if the parties do not reach an agreement to do so within 30 days after the Notice is received, you or Provider may commence an arbitration proceeding. During the arbitration, the amount of any settlement offer made by you or Provider must not be disclosed to the arbitrator until after the arbitrator makes a final decision and award, if any. If the dispute is finally resolved through arbitration in your favor with a monetary award that exceeds the last written settlement amount offered by Provider prior to selection of an arbitrator, Provider will pay you the highest of the following: (i) the amount awarded by the arbitrator, if any; (ii) the last written settlement amount offered by Provider in settlement of the dispute prior to the arbitrator’s award; or (iii) $15,000.</p>
+          </li>
+          <li>
+            <h4>Fees.</h4>
+            <p>If you commence arbitration in accordance with this Agreement, then Provider will reimburse you for your payment of the filing fee, unless your claim is for more than $10,000 or as set forth below, in which case the payment of any fees will be decided by the AAA Rules. Any arbitration hearing will take place at a location to be agreed upon in Menlo Park, California, but if the claim is for $10,000 or less, you may choose whether the arbitration will be conducted: (i) solely on the basis of documents submitted to the arbitrator; (ii) through a non-appearance based telephone hearing; or (iii) by an in-person hearing as established by the AAA Rules in the county (or parish) of your billing address. If the arbitrator finds that either the substance of your claim or the relief sought in the Demand is frivolous or brought for an improper purpose (as measured by the standards set forth in Federal Rule of Civil Procedure 11(b)), then the payment of all fees will be governed by the AAA Rules. In that case, you agree to reimburse Provider for all monies previously disbursed by it that are otherwise your obligation to pay under the AAA Rules. Regardless of the manner in which the arbitration is conducted, the arbitrator must issue a reasoned written decision sufficient to explain the essential findings and conclusions on which the decision and award, if any, are based. Each party agrees that such written decision, and information exchanged during arbitration, will be kept confidential except to the extent necessary to enforce or permit limited judicial review of the award. The arbitrator may make rulings and resolve disputes as to the payment and reimbursement of fees or expenses at any time during the proceeding and upon request from either party made within 14 days of the arbitrator’s ruling on the merits.</p>
+          </li>
+          <li>
+            <h4>No Class Actions.</h4>
+            <p>YOU AND PROVIDER AGREE THAT EACH MAY BRING CLAIMS AGAINST THE OTHER ONLY IN YOUR OR ITS INDIVIDUAL CAPACITY AND NOT AS A PLAINTIFF OR CLASS MEMBER IN ANY PURPORTED CLASS OR REPRESENTATIVE PROCEEDING. Further, unless both you and Provider agree otherwise, the arbitrator may not consolidate more than one person’s claims, and may not otherwise preside over any form of a representative or class proceeding.</p>
+          </li>
+          <li>
+            <h4>Modifications to this Arbitration Provision.</h4>
+            <p>If Provider makes any future change to this arbitration provision, other than a change to Provider’s address for Notice, you may reject the change by sending us written notice within 30 days of the change to Provider’s address for Notice, in which case this arbitration provision, as in effect immediately prior to the changes you rejected, will continue to govern any disputes between you and Provider.</p>
+          </li>
+          <li>
+            <h4>Enforceability.</h4>
+            <p>If the Section entitled “No Class Actions” is found to be unenforceable or if the entirety of this Section 11 is found to be unenforceable, then the entirety of this Section 11 will be null.</p>
+          </li>
+          <li>
+            <h4>Choice of Law.</h4>
+            <p>This Agreement will be governed and construed in accordance with the laws of the State of California, excluding its conflicts of law rules.</p>
+          </li>
+        </ol>
+      </li>
+      <li>
+        <h3>FEEDBACK.</h3>
+        <p>If you choose to provide input and suggestions regarding problems with or proposed modifications or improvements to the Services (<b>“Feedback”</b>), then you hereby grant Provider an unrestricted, perpetual, irrevocable, non-exclusive, fully-paid, royalty-free right to exploit the Feedback in any manner and for any purpose, including to improve the Services and create other products and services.</p>
+      </li>
+      <li>
+        <h3>GENERAL.</h3>
+        <p>This Agreement, together with the Privacy Policy and any other agreements expressly incorporated by reference into this Agreement, are the entire and exclusive understanding and agreement between you and Provider regarding your use of the Services. Except as expressly permitted above, this Agreement may be amended only by a written agreement signed by authorized representatives of all parties to this Agreement. You may not assign or transfer this Agreement or your rights under this Agreement, in whole or in part, by operation of law or otherwise, without our prior written consent. We may assign this Agreement at any time without notice or consent. The failure to require performance of any provision will not affect our right to require performance at any other time after that, nor will a waiver by us of any breach or default of this Agreement, or any provision of this Agreement, be a waiver of any subsequent breach or default or a waiver of the provision itself. Use of section headers in this Agreement is for convenience only and will not have any impact on the interpretation of any provision. If any part of this Agreement is held to be invalid or unenforceable, the unenforceable part will be given effect to the fullest extent permitted by law, and the remaining parts will remain in full force and effect. Upon termination of this Agreement, Sections 2(b), 2(c), 2(d)(ii), 2(d)(iii), 3(c), 3(d), 5, 6(b), and 7 – 13 along with the Privacy Policy and any other accompanying agreements, will survive.</p>
+      </li>
+    </ol>
+  </div>
+}

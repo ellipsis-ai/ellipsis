@@ -1,0 +1,99 @@
+@(
+  config: ViewConfig
+)(implicit r: RequestHeader, m: Messages)
+
+@page.main("Privacy policy", config,
+  bodyClass = "bg-light",
+  navClass = "container-narrow container-c",
+  hideNav = true) {
+
+  <div class="container-narrow container-c pvxxxxl">
+
+    <h1>Privacy Policy</h1>
+
+    <h4>Effective Date: October 23, 2017</h4>
+
+    <p>
+      This Privacy Policy is incorporated by reference into the <a href="@routes.LegalController.userAgreement()">Ellipsis.ai User Agreement</a> (the <b>“Agreement”</b>). The terms <b>“Provider,” “we,” “us,”</b> and <b>“our”</b> include Ellipsis Co. and our affiliates and subsidiaries. This Privacy Policy applies to our ellipsis.ai website, related applications, and any other online services or properties owned or controlled by Provider (the <b>“Services”</b>). The Privacy Policy explains how Provider may collect, use, and disclose information we obtain through the Services. All other terms not defined herein will have the meanings set forth in the Agreement.
+    </p>
+
+    <h3>The Services Collect Your Information</h3>
+    <h4>Registration.</h4>
+    <p>
+      You must register to use the Services. To register, you will need to provide information, such as your name and Slack username. You may also provide other optional information, such as your company, phone number, or address.</p>
+    <h4>Third Party Sign-On.</h4>
+    <p>
+      We will collect information about you from third parties when you use third party credentials (such as Slack) to sign on to the Services. For example, we may collect information you have made publicly available on that third party’s site. The information we receive from these third parties is governed by the third parties’ privacy policies, and you should review these third parties’ privacy policies to learn about their privacy and data security practices.</p>
+    <h4>Using the Services.</h4> <p>
+    We collect information you post on or through the Services. For example, when you interact with other users by posting on a forum, the Services will collect the information you provide in such submissions. We also collect information in the Data provided by our customers, such as communications between our customer and their end users, through their use of the Services.</p>
+    <h4>Making Payments.</h4> <p>
+    When you make payments through the Services, you will need to provide information to our third-party service providers, such as your credit card number.</p>
+    <h4>Customer Support.</h4> <p>
+    We collect information that you provide to us through your communications with our customer-support team.</p>
+    <h4>Device Information.</h4> <p>
+    We receive information from devices you use to connect to or the Services. The information we receive from your device may include IP address, operating system, device information.</p>
+    <h4>Cookies, Automatic Data Collection, and Related Technologies.</h4> <p>
+    The Services collect and store information that is generated automatically as you use it, including your preferences and anonymous usage statistics.</p>
+    <p>
+      When you visit the Services, we and our third-party service providers receive and record information on our server logs from your browser, including your IP address, and from cookies and similar technology. Our service providers may collect information about your online activities over time and across different online services. Cookies are small text files placed on your computer browser when you visit a website. Most browsers allow you to block and delete cookies. However, if you do that, the Services may not work properly.</p>
+
+    <h3>How PROVIDER Uses Your Information</h3>
+    <h4>Providing the Services.</h4> <p>
+    We use the information we collect to provide, personalize, and improve the Services.</p>
+    <h4>Internal and Service-Related Usage.</h4> <p>
+    We use information, including unique identifiers, for internal and service-related purposes, such as data analytics.</p>
+    <h4>Communications.</h4> <p>
+    We use your information to communicate with you, including to provide you with updates and news about Provider and/or the Services and for operational purposes, such as account management, customer service, or system maintenance.</p>
+    <h4>Aggregate Data.</h4> <p>
+    We may anonymize and aggregate data (including aggregated and anonymized Data) collected through the Services and use it for any purpose.</p>
+
+    <h3>PROVIDER May Disclose Your Information</h3>
+    <h4>We Use Vendors and Service Providers.</h4> <p>
+    We may share any information we receive with vendors and service providers retained in connection with the provision of the Services. One of the service providers that we use for data analytics is Google Analytics. If you do not want Google Analytics to collect and use information about your use of the Services, then you can install an opt-out in your web browser (https://tools.google.com/dlpage/gaoptout/).</p>
+    <h4>Displaying to Other Users.</h4> <p>
+    Any User Content you post to the Services may be displayed on the Services and viewable to other Users and the general public (depending on your account settings). We are not responsible for privacy practices of the other users who will view and use the posted information.</p>
+    <h4>Aggregate Data.</h4> <p>
+    We may share or disclose anonymized and aggregated data collected through the Services.</p>
+    <h4>As Required By Law and Similar Disclosures.</h4> <p>
+    We may disclose your information and User Content if we believe doing so is required or appropriate to: (i) comply with law enforcement requests or legal process, such as a court order or subpoena; (ii) respond to your requests; (iii) enforce this Privacy Policy, the Agreement, or any other agreements, or (iv) protect yours’, ours’ or others’ rights, property, or safety.</p>
+    <h4>Merger, Sale, or Other Asset Transfers.</h4> <p>
+    If we are involved in a merger, acquisition, financing due diligence, reorganization, bankruptcy, receivership, sale of company assets, or transition of service to another provider, then your information may be sold or transferred as part of such a transaction as permitted by law and/or contract. The use of your information following any of the foregoing events should be governed by the provisions of this Privacy Policy in effect at the time such information was collected.</p>
+    <h4>With Your Consent.</h4> <p>We may also disclose your information with your permission.</p>
+
+    <h3>Choices you have with your information</h3>
+    <h4>Opt-out.</h4> <p>
+    You can unsubscribe from promotional emails from us via the unsubscribe link provided in the email. Even if you opt out from receiving promotional messages from us, you will continue to receive administrative messages from us.</p>
+    <h4>Changes to you information.</h4> <p>
+    If you would like to update or correct any information that you have provided to us during the registration process for the Services, please send an e-mail to <a href="mailto:privacy@@ellipsis.ai">
+    privacy@@ellipsis.ai</a>.</p>
+    <h4>DO NOT TRACK</h4>
+    <p>
+      Some web browsers incorporate a “Do Not Track” feature. Because there is not yet an accepted standard for how to respond to Do Not Track signals, our website does not currently respond to such signals.</p>
+    <h4>Security of Your Information</h4>
+    <p>
+      We take steps to ensure that your information is treated securely and in accordance with this Privacy Policy. Unfortunately, the Internet cannot be guaranteed to be 100% secure, and we cannot ensure or warrant the security of any information you provide to us.</p>
+    <h4>Children’s Privacy</h4>
+    <p>
+      We do not knowingly collect, maintain, or use Personal Information from children under 13 years of age, and no part of the Services is directed to children under the age of 13. If you learn that your child has provided us with their information without your consent, you may alert us at <a href="mailto:privacy@@ellipsis.ai">
+      privacy@@ellipsis.ai</a>
+      . If we learn that we have collected any information from children under 13, we will promptly take steps to delete such information and terminate the child’s account.</p>
+    <h4>International users</h4>
+    <p>
+      If you are visiting from a country outside of the United States, please note that you are agreeing to the transfer and processing of your information in the United States. By providing your information you consent to any transfer and processing in accordance with this Policy.</p>
+
+    <h3>CHANGES TO OUR PRIVACY POLICY AND PRACTICES</h3>
+    <p>
+      We may make changes to this Privacy Policy from time to time. If we do revise this Privacy Policy, we will update the “Effective Date” at the top of this Privacy Policy. In the event that the changes materially alter your rights or obligations under this Privacy Policy, we will make reasonable efforts to notify you of the change. For example, we may send a message to your email address, if we have one on file, or generate a pop-up or similar notification when you access our Services for the first time after such material changes are made. Your continued use of our Services constitutes your acceptance of the terms of the Privacy Policy as amended or revised by us from time to time.</p>
+    <h3>Contact Information</h3>
+    <p>
+      If you have any questions about your information, this Privacy Policy, or our privacy practices, please contact us at</p>
+    <p>
+      Ellipsis Co.<br>
+      812 Woodland Ave<br>
+      Menlo Park CA 94025<br>
+      United States<br>
+      <a href="mailto:privacy@@ellipsis.ai">privacy@@ellipsis.ai</a><br>
+    </p>
+
+  </div>
+}

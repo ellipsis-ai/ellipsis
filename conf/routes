@@ -109,6 +109,9 @@ POST        /feedback/send                            @controllers.FeedbackContr
 
 GET         /health_check                             @controllers.HealthController.check
 
+GET         /legal/privacy_policy                     @controllers.LegalController.privacyPolicy
+GET         /legal/user_agreement                     @controllers.LegalController.userAgreement
+
 #POST        /authenticate/credentials        controllers.CredentialsAuthController.authenticate
 #POST        /signUp                          controllers.SignUpController.signUp
 
