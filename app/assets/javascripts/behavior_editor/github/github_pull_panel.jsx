@@ -1,24 +1,24 @@
 define(function(require) {
   var React = require('react'),
-    BehaviorGroup = require('../models/behavior_group'),
-    DataRequest = require('../lib/data_request'),
-    Input = require('../form/input'),
-    LinkedGithubRepo = require('../models/linked_github_repo'),
-    OwnerRepoReadonly = require('./github_owner_repo_readonly')
-  ;
+    BehaviorGroup = require('../../models/behavior_group'),
+    DataRequest = require('../../lib/data_request'),
+    Input = require('../../form/input'),
+    LinkedGithubRepo = require('../../models/linked_github_repo'),
+    OwnerRepoReadonly = require('./github_owner_repo_readonly');
 
   const GithubPullPanel = React.createClass({
     propTypes: {
       group: React.PropTypes.instanceOf(BehaviorGroup).isRequired,
       linked: React.PropTypes.instanceOf(LinkedGithubRepo),
+      onSave: React.PropTypes.func.isRequired,
+      onSaveError: React.PropTypes.func.isRequired,
       onDoneClick: React.PropTypes.func.isRequired,
       csrfToken: React.PropTypes.string.isRequired
     },
 
     getInitialState: function() {
       return {
-        branch: "master",
-        commitMessage: ""
+        branch: "master"
       };
     },
 
@@ -40,30 +40,26 @@ define(function(require) {
       });
     },
 
-    getCommitMessage: function() {
-      return this.state.commitMessage;
-    },
-
-    onCommitMessageChange: function(msg) {
-      this.setState({
-        commitMessage: msg
-      });
-    },
-
-    onPushToGithub: function() {
+    onUpdateFromGithub: function() {
       DataRequest.jsonPost(
-        jsRoutes.controllers.BehaviorEditorController.pushToGithub().url,
+        jsRoutes.controllers.BehaviorEditorController.updateFromGithub().url,
         {
           behaviorGroupId: this.props.group.id,
           owner: this.getOwner(),
           repo: this.getRepo(),
-          branch: this.getBranch(),
-          commitMessage: this.getCommitMessage()
+          branch: this.getBranch()
         },
         this.props.csrfToken
       )
-        .then(r => {
-          this.props.onDoneClick();
+        .then((json) => {
+          if (json.errors) {
+            this.props.onSaveError(json.errors);
+          } else {
+            this.props.onSave(BehaviorGroup.fromJson(json.data));
+          }
+        })
+        .catch((error) => {
+          this.props.onSaveError(error);
         });
     },
 
@@ -86,21 +82,12 @@ define(function(require) {
             </div>
           </div>
           <div className="mtl">
-            <span className="display-inline-block align-m type-s type-weak mrm">Commit message:</span>
-            <Input
-              ref="commitMessage"
-              className="form-input-borderless type-monospace type-s mrm"
-              onChange={this.onCommitMessageChange}
-              value={this.getCommitMessage()}
-            />
-          </div>
-          <div className="mtl">
             <button
               type="button"
-              onClick={this.onPushToGithub}
-              disabled={ this.props.isModified || !this.getBranch() || !this.getCommitMessage() }
+              onClick={this.onUpdateFromGithub}
+              disabled={ this.props.isModified || !this.getBranch() }
             >
-              Push to Github
+              Pull from Github
             </button>
             <button
               className="mls"
@@ -120,7 +107,7 @@ define(function(require) {
           <div className="container">
             <div className="columns">
               <div className="column column-page-sidebar">
-                <h4 className="type-weak mtn">Push code to GitHub</h4>
+                <h4 className="type-weak mtn">Pull code from GitHub</h4>
               </div>
               <div className="column column-page-main">
                 {this.renderContent()}
