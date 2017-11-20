@@ -1,24 +1,21 @@
+// @flow
+type JsRoute = {
+  url: string
+}
+
 declare var jsRoutes: {
   controllers: {
     ApplicationController: {
-      setTeamTimeZone: () => {
-        url: string
-      }
+      setTeamTimeZone: () => JsRoute
     },
     BehaviorEditorController: {
-      edit: (string) => {
-        url: string
-      }
+      edit: (string) => JsRoute
     },
     BehaviorImportExportController: {
-      "export": (string) => {
-        url: string
-      }
+      "export": (string) => JsRoute
     },
     SocialAuthController: {
-      authenticateGithub: (string) => {
-        url: string
-      }
+      authenticateGithub: (string) => JsRoute
     }
   }
 };
