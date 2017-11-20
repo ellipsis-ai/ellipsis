@@ -536,7 +536,7 @@ case class BehaviorBackedDataType(dataTypeConfig: DataTypeConfig) extends Behavi
   }
 
   private def promptResultForOtherCaseAction(context: BehaviorParameterContext): DBIO[BotResult] = {
-    DBIO.successful(context.simpleTextResultFor(s"OK, you can type in whatever answer you like."))
+    DBIO.successful(context.simpleTextResultFor(s"OK, you chose “other”. What do you want to say instead?"))
   }
 
   private def promptResultForListAllCaseAction(
