@@ -1901,6 +1901,7 @@ const BehaviorEditor = React.createClass({
               onPushClick={this.onGithubPushClick}
               onChangeLinkClick={this.onGithubLinkClick}
               csrfToken={this.props.csrfToken}
+              isModified={this.isModified()}
             >
             </GithubChangesPanel>
           </Collapsible>

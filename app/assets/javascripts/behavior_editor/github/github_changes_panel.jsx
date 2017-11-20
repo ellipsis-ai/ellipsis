@@ -1,67 +1,65 @@
+// @flow
 define(function(require) {
-  var React = require('react'),
+  const React = require('react'),
+    Button = require('../../form/button'),
     BehaviorGroup = require('../../models/behavior_group'),
     OwnerRepoReadonly = require('./github_owner_repo_readonly'),
-    LinkedGithubRepo = require('../../models/linked_github_repo');
+    LinkedGithubRepo = require('../../models/linked_github_repo'),
+    autobind = require('../../lib/autobind');
 
-  const GithubChangesPanel = React.createClass({
-    propTypes: {
-      group: React.PropTypes.instanceOf(BehaviorGroup).isRequired,
-      linked: React.PropTypes.instanceOf(LinkedGithubRepo),
-      onDoneClick: React.PropTypes.func.isRequired,
-      onChangeLinkClick: React.PropTypes.func.isRequired,
-      onPullClick: React.PropTypes.func.isRequired,
-      onPushClick: React.PropTypes.func.isRequired,
-      csrfToken: React.PropTypes.string.isRequired
-    },
+  type Props = {
+    group: BehaviorGroup,
+    linked?: LinkedGithubRepo,
+    onDoneClick: () => void,
+    onChangeLinkClick: () => void,
+    onPullClick: () => void,
+    onPushClick: () => void,
+    isModified: boolean,
+    csrfToken: string
+  }
 
-    getOwner: function() {
-      return this.props.linked.getOwner();
-    },
+  class GithubChangesPanel extends React.PureComponent<Props> {
+    constructor(props) {
+      super(props);
+      autobind(this);
+    }
 
-    getRepo: function() {
-      return this.props.linked.getRepo();
-    },
-
-    renderContent: function() {
+    renderContent(): React.Node {
       return (
         <div>
           <OwnerRepoReadonly linked={this.props.linked} onChangeLinkClick={this.props.onChangeLinkClick}/>
           <div className="mtl">
-            <button
-              type="button"
+            <Button
               onClick={this.props.onPullClick}
-              disabled={ this.props.isModified }
+              disabled={this.props.isModified}
             >
-              Pull from Github…
-            </button>
-            <button
+              Pull from GitHub…
+            </Button>
+            <Button
               className="mls"
-              type="button"
               onClick={this.props.onPushClick}
-              disabled={ this.props.isModified }
+              disabled={this.props.isModified}
             >
-              Push to Github…
-            </button>
-            <button
+              Push to GitHub…
+            </Button>
+            <Button
               className="mls"
-              type="button"
               onClick={this.props.onDoneClick}
             >
               Done
-            </button>
+            </Button>
           </div>
         </div>
       );
-    },
+    }
 
-    render: function() {
+    render(): React.Node {
       return (
         <div className="box-action phn">
           <div className="container">
             <div className="columns">
               <div className="column column-page-sidebar">
-                <h4 className="type-weak mtn">Github integration</h4>
+                <h4 className="type-weak mtn">GitHub integration</h4>
               </div>
               <div className="column column-page-main">
                 {this.renderContent()}
@@ -70,9 +68,8 @@ define(function(require) {
           </div>
         </div>
       );
-    },
-
-  });
+    }
+  }
 
   return GithubChangesPanel;
 });
