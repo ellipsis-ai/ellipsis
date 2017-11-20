@@ -1,55 +1,60 @@
+// @flow
 define(function(require) {
   var React = require('react'),
+    Button = require('../../form/button'),
     BehaviorGroup = require('../../models/behavior_group'),
     DataRequest = require('../../lib/data_request'),
-    Input = require('../../form/input'),
+    FormInput = require('../../form/input'),
     LinkedGithubRepo = require('../../models/linked_github_repo'),
-    OwnerRepoReadonly = require('./github_owner_repo_readonly');
+    OwnerRepoReadonly = require('./github_owner_repo_readonly'),
+    autobind = require('../../lib/autobind');
 
-  const GithubPullPanel = React.createClass({
-    propTypes: {
-      group: React.PropTypes.instanceOf(BehaviorGroup).isRequired,
-      linked: React.PropTypes.instanceOf(LinkedGithubRepo),
-      onDoneClick: React.PropTypes.func.isRequired,
-      csrfToken: React.PropTypes.string.isRequired
-    },
+  type Props = {
+    group: BehaviorGroup,
+    linked?: LinkedGithubRepo,
+    onDoneClick: () => void,
+    csrfToken: string
+  }
 
-    getInitialState: function() {
-      return {
+  class GithubPullPanel extends React.Component<Props> {
+    constructor(props) {
+      super(props);
+      autobind(this);
+      this.state = {
         branch: "master",
         commitMessage: ""
       };
-    },
+    }
 
-    getOwner: function() {
+    getOwner(): string {
       return this.props.linked.getOwner();
-    },
+    }
 
-    getRepo: function() {
+    getRepo(): string {
       return this.props.linked.getRepo();
-    },
+    }
 
-    getBranch: function() {
+    getBranch(): string {
       return this.state.branch;
-    },
+    }
 
-    onBranchChange: function(branch) {
+    onBranchChange(branch: string): void {
       this.setState({
         branch: branch
       });
-    },
+    }
 
-    getCommitMessage: function() {
+    getCommitMessage(): string {
       return this.state.commitMessage;
-    },
+    }
 
-    onCommitMessageChange: function(msg) {
+    onCommitMessageChange(msg: string): void {
       this.setState({
         commitMessage: msg
       });
-    },
+    }
 
-    onPushToGithub: function() {
+    onPushToGithub(): void {
       DataRequest.jsonPost(
         jsRoutes.controllers.BehaviorEditorController.pushToGithub().url, {
           behaviorGroupId: this.props.group.id,
@@ -62,9 +67,9 @@ define(function(require) {
       ).then(() => {
         this.props.onDoneClick();
       });
-    },
+    }
 
-    renderContent: function() {
+    renderContent(): React.Node {
       return (
         <div>
           <div className="columns">
@@ -73,8 +78,7 @@ define(function(require) {
             </div>
             <div className="column column-one-quarter">
               <span className="display-inline-block align-m type-s type-weak mrm">Branch:</span>
-              <Input
-                ref="githubBranch"
+              <FormInput
                 className="form-input-borderless type-monospace type-s width-15 mrm"
                 placeholder="e.g. master"
                 onChange={this.onBranchChange}
@@ -84,34 +88,31 @@ define(function(require) {
           </div>
           <div className="mtl">
             <span className="display-inline-block align-m type-s type-weak mrm">Commit message:</span>
-            <Input
-              ref="commitMessage"
+            <FormInput
               className="form-input-borderless type-monospace type-s mrm"
               onChange={this.onCommitMessageChange}
               value={this.getCommitMessage()}
             />
           </div>
           <div className="mtl">
-            <button
-              type="button"
+            <Button
               onClick={this.onPushToGithub}
-              disabled={ this.props.isModified || !this.getBranch() || !this.getCommitMessage() }
+              disabled={!this.getBranch() || !this.getCommitMessage()}
             >
               Push to Github
-            </button>
-            <button
+            </Button>
+            <Button
               className="mls"
-              type="button"
               onClick={this.props.onDoneClick}
             >
               Cancel
-            </button>
+            </Button>
           </div>
         </div>
       );
-    },
+    }
 
-    render: function() {
+    render(): React.Node {
       return (
         <div className="box-action phn">
           <div className="container">
@@ -126,9 +127,8 @@ define(function(require) {
           </div>
         </div>
       );
-    },
-
-  });
+    }
+  }
 
   return GithubPullPanel;
 });
