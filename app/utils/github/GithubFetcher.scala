@@ -31,7 +31,7 @@ trait GithubFetcher[T] {
 
   val cacheKey: String
   val cacheTimeout: Duration = config.get[Int]("github.cacheTimeoutSeconds").seconds
-  val shouldTryCache: Boolean = true
+  val shouldTryCache: Boolean = false
 
   def query: String
 
