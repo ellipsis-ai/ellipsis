@@ -16,6 +16,8 @@ class MockCacheService extends CacheService with MockitoSugar {
 
   def get[T : ClassTag](key: String): Option[T] = None
 
+  def hasKey(key: String): Boolean = false
+
   def remove(key: String) = {}
 
   def cacheEvent(key: String, event: Event, expiration: Duration = Duration.Inf): Unit = {}
