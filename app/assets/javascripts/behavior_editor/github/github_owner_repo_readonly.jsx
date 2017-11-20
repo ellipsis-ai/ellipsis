@@ -1,7 +1,6 @@
 define(function(require) {
   var React = require('react'),
-    LinkedGithubRepo = require('../models/linked_github_repo')
-  ;
+    LinkedGithubRepo = require('../../models/linked_github_repo');
 
   const GithubOwnerRepoReadonly = React.createClass({
     propTypes: {

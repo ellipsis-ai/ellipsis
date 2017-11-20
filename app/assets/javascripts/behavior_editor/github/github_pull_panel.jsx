@@ -1,9 +1,9 @@
 define(function(require) {
   var React = require('react'),
-    BehaviorGroup = require('../models/behavior_group'),
-    DataRequest = require('../lib/data_request'),
-    Input = require('../form/input'),
-    LinkedGithubRepo = require('../models/linked_github_repo'),
+    BehaviorGroup = require('../../models/behavior_group'),
+    DataRequest = require('../../lib/data_request'),
+    Input = require('../../form/input'),
+    LinkedGithubRepo = require('../../models/linked_github_repo'),
     OwnerRepoReadonly = require('./github_owner_repo_readonly')
   ;
 
