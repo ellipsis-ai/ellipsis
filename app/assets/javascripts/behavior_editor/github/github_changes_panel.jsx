@@ -2,8 +2,7 @@ define(function(require) {
   var React = require('react'),
     BehaviorGroup = require('../../models/behavior_group'),
     OwnerRepoReadonly = require('./github_owner_repo_readonly'),
-    LinkedGithubRepo = require('../../models/linked_github_repo')
-  ;
+    LinkedGithubRepo = require('../../models/linked_github_repo');
 
   const GithubChangesPanel = React.createClass({
     propTypes: {

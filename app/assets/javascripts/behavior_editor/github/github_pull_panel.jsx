@@ -4,8 +4,7 @@ define(function(require) {
     DataRequest = require('../../lib/data_request'),
     Input = require('../../form/input'),
     LinkedGithubRepo = require('../../models/linked_github_repo'),
-    OwnerRepoReadonly = require('./github_owner_repo_readonly')
-  ;
+    OwnerRepoReadonly = require('./github_owner_repo_readonly');
 
   const GithubPullPanel = React.createClass({
     propTypes: {

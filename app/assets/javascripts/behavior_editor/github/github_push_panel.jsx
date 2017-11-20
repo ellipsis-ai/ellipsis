@@ -4,8 +4,7 @@ define(function(require) {
     DataRequest = require('../../lib/data_request'),
     Input = require('../../form/input'),
     LinkedGithubRepo = require('../../models/linked_github_repo'),
-    OwnerRepoReadonly = require('./github_owner_repo_readonly')
-  ;
+    OwnerRepoReadonly = require('./github_owner_repo_readonly');
 
   const GithubPullPanel = React.createClass({
     propTypes: {
@@ -52,8 +51,7 @@ define(function(require) {
 
     onPushToGithub: function() {
       DataRequest.jsonPost(
-        jsRoutes.controllers.BehaviorEditorController.pushToGithub().url,
-        {
+        jsRoutes.controllers.BehaviorEditorController.pushToGithub().url, {
           behaviorGroupId: this.props.group.id,
           owner: this.getOwner(),
           repo: this.getRepo(),
@@ -61,10 +59,9 @@ define(function(require) {
           commitMessage: this.getCommitMessage()
         },
         this.props.csrfToken
-      )
-        .then(r => {
-          this.props.onDoneClick();
-        });
+      ).then(() => {
+        this.props.onDoneClick();
+      });
     },
 
     renderContent: function() {

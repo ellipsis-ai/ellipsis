@@ -2,8 +2,7 @@ define(function(require) {
   var React = require('react'),
     BehaviorGroup = require('../../models/behavior_group'),
     LinkedGithubRepo = require('../../models/linked_github_repo'),
-    Input = require('../../form/input')
-  ;
+    Input = require('../../form/input');
 
   const GithubLinkPanel = React.createClass({
     propTypes: {
