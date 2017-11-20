@@ -1884,8 +1884,7 @@ const BehaviorEditor = React.createClass({
               onDoneClick={this.onGithubIntegrationClick}
               onLinkGithubRepo={this.props.onLinkGithubRepo}
               csrfToken={this.props.csrfToken}
-            >
-            </GithubLinkPanel>
+            />
           </Collapsible>
 
           <Collapsible ref={this.GITHUB_CHANGES_PANEL_NAME}
@@ -1901,9 +1900,7 @@ const BehaviorEditor = React.createClass({
               onPushClick={this.onGithubPushClick}
               onChangeLinkClick={this.onGithubLinkClick}
               csrfToken={this.props.csrfToken}
-              isModified={this.isModified()}
-            >
-            </GithubChangesPanel>
+            />
           </Collapsible>
 
           <Collapsible ref={this.GITHUB_PULL_PANEL_NAME}
@@ -1918,8 +1915,7 @@ const BehaviorEditor = React.createClass({
               onSave={this.onReplaceBehaviorGroup}
               onSaveError={this.onSaveError}
               csrfToken={this.props.csrfToken}
-            >
-            </GithubPullPanel>
+            />
           </Collapsible>
 
           <Collapsible ref={this.GITHUB_PUSH_PANEL_NAME}

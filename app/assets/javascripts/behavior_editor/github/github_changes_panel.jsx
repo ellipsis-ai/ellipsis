@@ -14,7 +14,6 @@ define(function(require) {
     onChangeLinkClick: () => void,
     onPullClick: () => void,
     onPushClick: () => void,
-    isModified: boolean,
     csrfToken: string
   }
 
@@ -31,14 +30,12 @@ define(function(require) {
           <div className="mtl">
             <Button
               onClick={this.props.onPullClick}
-              disabled={this.props.isModified}
             >
               Pull from GitHub…
             </Button>
             <Button
               className="mls"
               onClick={this.props.onPushClick}
-              disabled={this.props.isModified}
             >
               Push to GitHub…
             </Button>
