@@ -7,7 +7,6 @@ import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.datatypeconfig.DataTypeConfig
 import models.behaviors.datatypefield.FieldTypeForSchema
 import models.behaviors.events._
-import models.behaviors.events.SlackMessageActionConstants._
 import models.behaviors._
 import play.api.libs.json._
 import services.AWSLambdaConstants._
@@ -365,10 +364,14 @@ case class BehaviorBackedDataType(dataTypeConfig: DataTypeConfig) extends Behavi
         maybeValidValueForSavedAnswer(validValue, context)
       }
     }.getOrElse {
-      cachedValidValueFor(text, context).map { v =>
-        Future.successful(Some(v))
-      }.getOrElse {
-        fetchMatchFor(text, context)
+      if (isCollectingOther(context)) {
+        Future.successful(Some(ValidValue(BehaviorParameterType.otherId, text, Map())))
+      } else {
+        cachedValidValueFor(text, context).map { v =>
+          Future.successful(Some(v))
+        }.getOrElse {
+          fetchMatchFor(text, context)
+        }
       }
     }
   }
@@ -421,6 +424,12 @@ case class BehaviorBackedDataType(dataTypeConfig: DataTypeConfig) extends Behavi
 
   private def searchQueryCacheKeyFor(conversation: Conversation, parameter: BehaviorParameter): String = {
     s"search-query-${conversation.id}-${parameter.id}"
+  }
+
+  private def maybeCollectingOtherCacheKeyFor(context: BehaviorParameterContext): Option[String] = {
+    context.maybeConversation.map { convo =>
+      s"collecting-other-${convo.id}-${context.parameter.id}"
+    }
   }
 
   private def fetchValidValuesResultAction(maybeSearchQuery: Option[String], context: BehaviorParameterContext)(implicit ec: ExecutionContext): DBIO[Option[BotResult]] = {
@@ -526,6 +535,10 @@ case class BehaviorBackedDataType(dataTypeConfig: DataTypeConfig) extends Behavi
     }
   }
 
+  private def promptResultForOtherCaseAction(context: BehaviorParameterContext): DBIO[BotResult] = {
+    DBIO.successful(context.simpleTextResultFor(s"OK, you chose “other”. What do you want to say instead?"))
+  }
+
   private def promptResultForListAllCaseAction(
                                           maybeSearchQuery: Option[String],
                                           maybePreviousCollectedValue: Option[String],
@@ -568,6 +581,12 @@ case class BehaviorBackedDataType(dataTypeConfig: DataTypeConfig) extends Behavi
     }.getOrElse(None)
   }
 
+  private def isCollectingOther(context: BehaviorParameterContext): Boolean = {
+    maybeCollectingOtherCacheKeyFor(context).exists { key =>
+      context.cacheService.hasKey(key)
+    }
+  }
+
   private def promptResultForSearchCaseAction(
                                          maybePreviousCollectedValue: Option[String],
                                          context: BehaviorParameterContext,
@@ -605,9 +624,17 @@ case class BehaviorBackedDataType(dataTypeConfig: DataTypeConfig) extends Behavi
     usesSearchAction(context).flatMap { usesSearch =>
       if (usesSearch) {
         promptResultForSearchCaseAction(maybePreviousCollectedValue, context, paramState, isReminding)
+      } else if (isCollectingOther(context)) {
+        promptResultForOtherCaseAction(context)
       } else {
         promptResultForListAllCaseAction(None, maybePreviousCollectedValue, context, paramState, isReminding)
       }
+    }
+  }
+
+  def isOther(context: BehaviorParameterContext): Boolean = {
+    cachedValidValueFor(context.event.relevantMessageText, context).exists { v =>
+      v.id == BehaviorParameterType.otherId
     }
   }
 
@@ -617,6 +644,11 @@ case class BehaviorBackedDataType(dataTypeConfig: DataTypeConfig) extends Behavi
         val key = searchQueryCacheKeyFor(context.maybeConversation.get, context.parameter)
         val searchQuery = event.relevantMessageText
         context.cacheService.set(key, searchQuery, 5.minutes)
+        Future.successful({})
+      } else if (!isCollectingOther(context) && isOther(context) && context.maybeConversation.isDefined) {
+        maybeCollectingOtherCacheKeyFor(context).foreach { key =>
+          context.cacheService.set(key, "true", 5.minutes)
+        }
         Future.successful({})
       } else {
         super.handleCollected(event, context)
@@ -632,6 +664,7 @@ object BehaviorParameterType {
   val LABEL_PROPERTY = "label"
   val DATA_PROPERTY = "data"
   val SEARCH_COUNT_THRESHOLD = 30
+  val otherId: String = "other"
 
   val allBuiltin = Seq(
     TextType,

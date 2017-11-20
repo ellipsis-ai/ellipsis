@@ -41,6 +41,10 @@ class CacheServiceImpl @Inject() (
     cache.get[T](key)
   }
 
+  def hasKey(key: String): Boolean = {
+    cache.get(key).isDefined
+  }
+
   def remove(key: String) = {
     cache.remove(key)
   }

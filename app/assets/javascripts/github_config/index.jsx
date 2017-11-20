@@ -38,7 +38,7 @@ define(function(require) {
         <div className="flex-row-cascade">
           <div className="bg-light">
             <div className="container container-wide pbm">
-              <h3 className="mvn ptxxl type-weak display-ellipsis">Ellipsis API tokens</h3>
+              <h3 className="mvn ptxxl type-weak display-ellipsis">GitHub Configuration</h3>
             </div>
           </div>
           <div className="flex-columns flex-row-expand">

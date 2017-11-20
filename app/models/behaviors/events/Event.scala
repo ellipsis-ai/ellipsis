@@ -11,8 +11,7 @@ import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.scheduling.Scheduled
 import models.team.Team
 import play.api.libs.json.JsObject
-import play.api.libs.ws.WSClient
-import services.{AWSLambdaService, DataService, CacheService, DefaultServices}
+import services.{AWSLambdaService, CacheService, DataService, DefaultServices}
 import slick.dbio.DBIO
 import utils.UploadFileSpec
 
@@ -79,7 +78,7 @@ trait Event {
     lambdaService.configuration.getOptional[String]("application.apiBaseUrl").map { baseUrl =>
       val skillsListPath = baseUrl + controllers.routes.ApplicationController.index(Some(teamId))
       val schedulingPath = baseUrl + controllers.routes.ScheduledActionsController.index(None, None, Some(teamId))
-      val settingsPath = baseUrl + controllers.routes.EnvironmentVariablesController.list(Some(teamId))
+      val settingsPath = baseUrl + controllers.web.settings.routes.EnvironmentVariablesController.list(Some(teamId))
       Seq(
         "View and install skills" -> skillsListPath,
         "Scheduling" -> schedulingPath,
