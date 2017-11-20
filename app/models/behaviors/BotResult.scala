@@ -333,7 +333,7 @@ case class MissingTeamEnvVarsResult(
 
   val linkToEnvVarConfig: String = {
     val baseUrl = configuration.get[String]("application.apiBaseUrl")
-    val path = controllers.routes.EnvironmentVariablesController.list(Some(event.teamId), Some(missingEnvVars.mkString(",")))
+    val path = controllers.web.settings.routes.EnvironmentVariablesController.list(Some(event.teamId), Some(missingEnvVars.mkString(",")))
     val url = s"$baseUrl$path"
     s"[Configure environment variables](${url})"
   }

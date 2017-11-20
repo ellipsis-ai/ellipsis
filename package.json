@@ -47,13 +47,18 @@
         "controllers": {
           "APITokenController": {},
           "ApplicationController": {},
-          "AWSConfigController": {},
           "BehaviorEditorController": {},
-          "EnvironmentVariablesController": {},
-          "OAuth2ApplicationController": {},
           "ScheduledActionsController": {},
-          "RegionalSettingsController": {},
-          "GithubConfigController": {}
+          "GithubConfigController": {},
+          "web": {
+            "settings": {
+              "IntegrationsController": {},
+              "EnvironmentVariablesController": {},
+              "RegionalSettingsController": {},
+              "OAuth2ApplicationController": {},
+              "AWSConfigController": {}
+            }
+          }
         }
       }
     },

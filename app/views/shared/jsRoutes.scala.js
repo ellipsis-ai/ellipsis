@@ -1,5 +1,6 @@
 @()(implicit r: RequestHeader)
 @import play.api.routing.JavaScriptReverseRouter
+
 @JavaScriptReverseRouter("jsRoutes")(
   routes.javascript.APIAccessController.linkCustomOAuth2Service,
   routes.javascript.APIController.postMessage,
@@ -33,27 +34,27 @@
   routes.javascript.BehaviorEditorController.linkToGithubRepo,
   routes.javascript.BehaviorImportExportController.doImport,
   routes.javascript.BehaviorImportExportController.export,
-  routes.javascript.EnvironmentVariablesController.list,
-  routes.javascript.EnvironmentVariablesController.submit,
-  routes.javascript.EnvironmentVariablesController.submit,
   routes.javascript.FeedbackController.send,
-  routes.javascript.GithubConfigController.index,
-  routes.javascript.GithubConfigController.reset,
-  routes.javascript.OAuth2ApplicationController.edit,
-  routes.javascript.OAuth2ApplicationController.list,
-  routes.javascript.OAuth2ApplicationController.newApp,
-  routes.javascript.OAuth2ApplicationController.newApp,
-  routes.javascript.OAuth2ApplicationController.save,
-  routes.javascript.RegionalSettingsController.index,
   routes.javascript.SavedAnswerController.resetForTeam,
   routes.javascript.SavedAnswerController.resetForUser,
   routes.javascript.ScheduledActionsController.index,
   routes.javascript.ScheduledActionsController.delete,
   routes.javascript.ScheduledActionsController.save,
-  routes.javascript.AWSConfigController.list,
-  routes.javascript.AWSConfigController.newConfig,
-  routes.javascript.AWSConfigController.edit,
-  routes.javascript.AWSConfigController.save,
-  routes.javascript.SocialAuthController.authenticateGithub
+  routes.javascript.SocialAuthController.authenticateGithub,
 
+  // Settings
+  routes.javascript.GithubConfigController.index,
+  routes.javascript.GithubConfigController.reset,
+
+  web.settings.routes.javascript.EnvironmentVariablesController.list,
+  web.settings.routes.javascript.EnvironmentVariablesController.submit,
+  web.settings.routes.javascript.RegionalSettingsController.index,
+  web.settings.routes.javascript.IntegrationsController.list,
+  web.settings.routes.javascript.IntegrationsController.add,
+  web.settings.routes.javascript.AWSConfigController.add,
+  web.settings.routes.javascript.AWSConfigController.edit,
+  web.settings.routes.javascript.AWSConfigController.save,
+  web.settings.routes.javascript.OAuth2ApplicationController.edit,
+  web.settings.routes.javascript.OAuth2ApplicationController.add,
+  web.settings.routes.javascript.OAuth2ApplicationController.save
 )

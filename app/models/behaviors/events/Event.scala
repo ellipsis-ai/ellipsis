@@ -78,7 +78,7 @@ trait Event {
     lambdaService.configuration.getOptional[String]("application.apiBaseUrl").map { baseUrl =>
       val skillsListPath = baseUrl + controllers.routes.ApplicationController.index(Some(teamId))
       val schedulingPath = baseUrl + controllers.routes.ScheduledActionsController.index(None, None, Some(teamId))
-      val settingsPath = baseUrl + controllers.routes.EnvironmentVariablesController.list(Some(teamId))
+      val settingsPath = baseUrl + controllers.web.settings.routes.EnvironmentVariablesController.list(Some(teamId))
       Seq(
         "View and install skills" -> skillsListPath,
         "Scheduling" -> schedulingPath,
