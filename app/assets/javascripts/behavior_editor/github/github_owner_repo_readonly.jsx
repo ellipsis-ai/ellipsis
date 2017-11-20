@@ -1,52 +1,59 @@
+// @flow
 define(function(require) {
-  var React = require('react'),
-    LinkedGithubRepo = require('../../models/linked_github_repo');
+  const React = require('react'),
+    Button = require('../../form/button'),
+    LinkedGithubRepo = require('../../models/linked_github_repo'),
+    autobind = require('../../lib/autobind');
 
-  const GithubOwnerRepoReadonly = React.createClass({
-    propTypes: {
-      linked: React.PropTypes.instanceOf(LinkedGithubRepo),
-      onChangeLinkClick: React.PropTypes.func
-    },
+  type Props = {
+    linked?: LinkedGithubRepo,
+    onChangeLinkClick: () => void
+  }
 
-    getOwner: function() {
+  class GithubOwnerRepoReadonly extends React.PureComponent<Props> {
+    constructor(props) {
+      super(props);
+      autobind(this);
+    }
+
+    getOwner(): string {
       return this.props.linked.getOwner();
-    },
+    }
 
-    getRepo: function() {
+    getRepo(): string {
       return this.props.linked.getRepo();
-    },
+    }
 
-    getOwnerRepo: function() {
+    getOwnerRepo(): string {
       return `${this.getOwner()}/${this.getRepo()}`;
-    },
+    }
 
-    renderChangeLink: function() {
+    renderChangeLink(): React.Node {
       if (this.props.onChangeLinkClick) {
         return (
-          <a className="pll link" onClick={this.props.onChangeLinkClick}>[Change]</a>
+          <Button className="button-s mll" onClick={this.props.onChangeLinkClick}>Change</Button>
         );
       } else {
         return null;
       }
-    },
+    }
 
-    render: function() {
+    render(): React.Node {
       if (this.props.linked) {
         return (
           <div>
-            <div className="align-m type-s type-weak mrm">Owner/Repo:</div>
-            <div className="display-inline-block align-form-input type-monospace type-s mrm">
+            <div className="display-inline-block align-m type-s type-weak mrm">Owner/Repo:</div>
+            <div className="display-inline-block align-m type-monospace type-s mrm">
               <span>{this.getOwnerRepo()}</span>
-              {this.renderChangeLink()}
             </div>
+            {this.renderChangeLink()}
           </div>
         );
       } else {
         return null;
       }
-    },
-
-  });
+    }
+  }
 
   return GithubOwnerRepoReadonly;
 });

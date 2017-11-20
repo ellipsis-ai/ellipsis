@@ -3,7 +3,7 @@ define(function(require) {
   const React = require('react'),
     Button = require('../../form/button'),
     BehaviorGroup = require('../../models/behavior_group'),
-    OwnerRepoReadonly = require('./github_owner_repo_readonly'),
+    GithubOwnerRepoReadonly = require('./github_owner_repo_readonly'),
     LinkedGithubRepo = require('../../models/linked_github_repo'),
     autobind = require('../../lib/autobind');
 
@@ -26,7 +26,7 @@ define(function(require) {
     renderContent(): React.Node {
       return (
         <div>
-          <OwnerRepoReadonly linked={this.props.linked} onChangeLinkClick={this.props.onChangeLinkClick}/>
+          <GithubOwnerRepoReadonly linked={this.props.linked} onChangeLinkClick={this.props.onChangeLinkClick}/>
           <div className="mtl">
             <Button
               onClick={this.props.onPullClick}
