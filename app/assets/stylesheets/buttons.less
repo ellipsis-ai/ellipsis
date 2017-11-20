@@ -221,9 +221,15 @@ button[disabled] {
 a.button-shrink,
 button.button-shrink {
   min-width: 0;
+  padding-left: (@m - @border-width);
+  padding-right: (@m - @border-width);
+  white-space: nowrap;
+}
+
+a.button-shrink.button-s,
+button.button-shrink.button-s {
   padding-left: (@s - @border-width);
   padding-right: (@s - @border-width);
-  white-space: nowrap;
 }
 
 a.button-shrink.button-l,
@@ -456,6 +462,12 @@ button.button-dropdown-trigger-menu-open:focus {
 a.button-shrink:focus,
 button.button-shrink:focus,
 button.button-symbol:focus {
+  padding-left: (@m - @border-width-thick) !important;
+  padding-right: (@m - @border-width-thick) !important;
+}
+
+button.button-shrink.button-s:focus,
+a.button-shrink.button-s:focus {
   padding-left: (@s - @border-width-thick) !important;
   padding-right: (@s - @border-width-thick) !important;
 }

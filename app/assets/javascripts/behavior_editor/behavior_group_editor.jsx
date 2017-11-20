@@ -1,46 +1,55 @@
+// @flow
 define(function(require) {
   var React = require('react'),
     BehaviorGroup = require('../models/behavior_group'),
-    Input = require('../form/input'),
+    Button = require('../form/button'),
+    FormInput = require('../form/input'),
     LinkedGithubRepo = require('../models/linked_github_repo'),
-    Textarea = require('../form/textarea');
+    Textarea = require('../form/textarea'),
+    autobind = require('../lib/autobind');
 
-  return React.createClass({
-    displayName: 'BehaviorGroupEditor',
-    propTypes: {
-      csrfToken: React.PropTypes.string.isRequired,
-      group: React.PropTypes.instanceOf(BehaviorGroup).isRequired,
-      isModified: React.PropTypes.bool.isRequired,
-      isAdmin: React.PropTypes.bool.isRequired,
-      isLinkedToGithub: React.PropTypes.bool.isRequired,
-      linkedGithubRepo: React.PropTypes.instanceOf(LinkedGithubRepo),
-      onBehaviorGroupNameChange: React.PropTypes.func.isRequired,
-      onBehaviorGroupDescriptionChange: React.PropTypes.func.isRequired,
-      onBehaviorGroupIconChange: React.PropTypes.func.isRequired,
-      onDeleteClick: React.PropTypes.func.isRequired,
-      onSave: React.PropTypes.func.isRequired,
-      onSaveError: React.PropTypes.func.isRequired,
-      onGithubIntegrationClick: React.PropTypes.func.isRequired
-    },
+  type Props = {
+    csrfToken: string,
+    group: BehaviorGroup,
+    isModified: boolean,
+    isAdmin: boolean,
+    isLinkedToGithub: boolean,
+    linkedGithubRepo?: LinkedGithubRepo,
+    onBehaviorGroupNameChange: ((string) => void),
+    onBehaviorGroupDescriptionChange: ((string) => void),
+    onBehaviorGroupIconChange: ((string) => void),
+    onDeleteClick: (() => void),
+    onSave: ((BehaviorGroup, (() => void)) => void),
+    onSaveError: ((string) => void),
+    onGithubIntegrationClick: (() => void)
+  }
 
-    focus: function() {
+  class BehaviorGroupEditor extends React.PureComponent<Props> {
+    constructor(props) {
+      super(props);
+      autobind(this);
+      this.skillDescription = null;
+      this.skillName = null;
+    }
+
+    focus(): void {
       if (this.props.group.name) {
-        this.refs.skillDescription.focus();
+        this.skillDescription.focus();
       } else {
-        this.refs.skillName.focus();
+        this.skillName.focus();
       }
-    },
+    }
 
-    export: function() {
+    exportGroup(): void {
       window.location = jsRoutes.controllers.BehaviorImportExportController.export(this.props.group.id).url;
-    },
+    }
 
-    getGithubAuthUrl: function() {
+    getGithubAuthUrl(): string {
       const redirect = jsRoutes.controllers.BehaviorEditorController.edit(this.props.group.id).url;
       return jsRoutes.controllers.SocialAuthController.authenticateGithub(redirect).url;
-    },
+    }
 
-    renderGithubAuth: function() {
+    renderGithubAuth(): React.Node {
       return (
         <div className="columns mtxxl">
           <div className="column">
@@ -52,9 +61,9 @@ define(function(require) {
           </div>
         </div>
       );
-    },
+    }
 
-    renderGithubActions: function() {
+    renderGithubActions(): React.Node {
       const buttonText = this.props.linkedGithubRepo ? `Linked to ${this.props.linkedGithubRepo.getPath()}` : "Link this skill to a GitHub repo…";
       return (
         <button
@@ -66,9 +75,9 @@ define(function(require) {
           {buttonText}
         </button>
       );
-    },
+    }
 
-    renderGithubIntegration: function() {
+    renderGithubIntegration(): React.Node {
       if (this.props.isAdmin) {
         if (this.props.isLinkedToGithub) {
           return this.renderGithubActions();
@@ -78,9 +87,9 @@ define(function(require) {
       } else {
         return null;
       }
-    },
+    }
 
-    render: function() {
+    render(): React.Node {
       return (
         <div className="container container-narrow mtl">
 
@@ -91,7 +100,7 @@ define(function(require) {
           <h4 className="mbn">Icon and title</h4>
           <div className="columns columns-elastic">
             <div className="column column-shrink">
-              <Input
+              <FormInput
                 className="form-input-borderless form-input-l type-l mbn width-2"
                 placeholder="Icon"
                 onChange={this.props.onBehaviorGroupIconChange}
@@ -99,8 +108,8 @@ define(function(require) {
               />
             </div>
             <div className="column column-expand">
-              <Input
-                ref="skillName"
+              <FormInput
+                ref={(el) => this.skillName = el}
                 className="form-input-borderless form-input-l type-l type-semibold mbn width-20"
                 placeholder="Add a title (optional)"
                 onChange={this.props.onBehaviorGroupNameChange}
@@ -112,7 +121,7 @@ define(function(require) {
           <h4 className="mtxxl mbs">Description</h4>
           <div>
             <Textarea
-              ref="skillDescription"
+              ref={(el) => this.skillDescription = el}
               className="form-input-height-auto"
               placeholder="Describe the general purpose of this skill (optional). The description is displayed in help."
               onChange={this.props.onBehaviorGroupDescriptionChange}
@@ -123,29 +132,33 @@ define(function(require) {
 
           <hr className="mvxxl"/>
 
-          <div className="columns">
-            <div className="column column-three-quarters mobile-column-full">
-              <button type="button"
-                onClick={this.export}
+          <div className="columns columns-elastic mobile-columns-float">
+            <div className="column column-expand mobile-mbm">
+              <Button
+                onClick={this.exportGroup}
                 disabled={this.props.isModified}
               >
                 Export skill as ZIP file
-              </button>
+              </Button>
               {this.renderGithubIntegration()}
             </div>
 
-            <div className="column align-r mobile-column-full mobile-align-l">
-              <button type="button"
+            <div className="column column-shrink">
+              <Button
+                className={"button-shrink"}
                 onClick={this.props.onDeleteClick}
                 disabled={this.props.isModified}
               >
                 Delete entire skill…
-              </button>
+              </Button>
             </div>
           </div>
 
         </div>
       );
     }
-  });
+  }
+
+  return BehaviorGroupEditor;
 });
+
