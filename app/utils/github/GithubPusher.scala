@@ -14,6 +14,9 @@ import scala.sys.process.{Process, ProcessLogger}
 case class EnsureGitRepoDirException(message: String) extends Exception {
   override def getMessage(): String = s"Can't initialize git repo: $message"
 }
+case class GitCloneException(message: String) extends Exception {
+  override def getMessage(): String = s"Can't clone git repo: $message"
+}
 case class GitPullException(message: String) extends Exception {
   override def getMessage(): String = s"Can't pull git repo: $message"
 }
@@ -71,8 +74,20 @@ case class GithubPusher(
     }
   }
 
-  private def pullRepo: Future[Unit] = {
-    runCommand(s"mkdir -p $parentPath && cd $parentPath && rm -rf $exportName && git clone $remoteUrl $exportName && cd $exportName && git checkout $escapedBranch", Some(GitPullException.apply))
+  private def cloneRepo: Future[Unit] = {
+    runCommand(s"mkdir -p $parentPath && cd $parentPath && rm -rf $exportName && git clone $remoteUrl $exportName", Some(GitCloneException.apply))
+  }
+
+  private def ensureBranch: Future[Unit] = {
+    runCommand(s"cd $dirName && git checkout -b $escapedBranch && git push origin $escapedBranch", None)
+  }
+
+  private def ensureBranchCheckedOut: Future[Unit] = {
+    runCommand(s"cd $dirName && git checkout $escapedBranch", None)
+  }
+
+  private def pullLatest: Future[Unit] = {
+    runCommand(s"cd $dirName && git pull origin $escapedBranch", Some(GitPullException.apply))
   }
 
   private def export: Future[Unit] = {
@@ -97,7 +112,10 @@ case class GithubPusher(
 
   def run: Future[Unit] = {
     for {
-      _ <- pullRepo
+      _ <- cloneRepo
+      _ <- ensureBranch
+      _ <- ensureBranchCheckedOut
+      _ <- pullLatest
       _ <- export
       _ <- push
       _ <- cleanUp
