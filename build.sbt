@@ -75,7 +75,7 @@ RjsKeys.mainConfig := "build"
 RjsKeys.mainModule := "build"
 updateOptions := updateOptions.value.withCachedResolution(true)
 BabelKeys.options := WebJs.JS.Object(
-  "presets" -> List("flow", "react", "es2015")
+  "presets" -> List("es2015", "react")
 )
 
 scalacOptions in Compile ++= Seq("-Xmax-classfile-name", "128")
