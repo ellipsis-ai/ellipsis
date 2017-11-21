@@ -4,7 +4,7 @@ define(function(require) {
     BehaviorGroup = require('../models/behavior_group'),
     Button = require('../form/button'),
     FormInput = require('../form/input'),
-    GithubOwnerRepoReadonly = require('./github/github_owner_repo_readonly'),
+    GithubActions = require('./github/github_actions'),
     LinkedGithubRepo = require('../models/linked_github_repo'),
     Textarea = require('../form/textarea'),
     autobind = require('../lib/autobind');
@@ -83,23 +83,12 @@ define(function(require) {
     renderGithubActions(): React.Node {
       if (this.props.isAdmin && this.props.isLinkedToGithub && this.props.linkedGithubRepo) {
         return (
-          <div>
-            <hr className="mvxxl rule-subtle"/>
-
-            <div className="container container-narrow">
-
-              <h4>Link to GitHub</h4>
-
-              <GithubOwnerRepoReadonly linked={this.props.linkedGithubRepo}
-                onChangeLinkClick={this.props.onChangeGithubLinkClick} />
-
-              <div className="mvl">
-                <Button className="mrs" onClick={this.props.onGithubPullClick}>Pull to replace current version…</Button>
-                <Button className="mrs" onClick={this.props.onGithubPushClick}>Push current version to GitHub…</Button>
-              </div>
-
-            </div>
-          </div>
+          <GithubActions
+            linkedGithubRepo={this.props.linkedGithubRepo}
+            onChangeGithubLinkClick={this.props.onChangeGithubLinkClick}
+            onGithubPullClick={this.props.onGithubPullClick}
+            onGithubPushClick={this.props.onGithubPushClick}
+          />
         );
       }
     }
