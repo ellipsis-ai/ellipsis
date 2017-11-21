@@ -2432,7 +2432,7 @@ const BehaviorEditor = React.createClass({
                   </div>
                 </div>
 
-                <hr className="mtn mbn thin bg-gray-light" />
+                <hr className="mtn mbn rule-subtle" />
 
                 <TriggerConfiguration
                   isFinishedBehavior={this.isFinishedBehavior()}
@@ -2472,7 +2472,7 @@ const BehaviorEditor = React.createClass({
                 />
 
                 <Collapsible revealWhen={this.getSelectedBehavior().shouldRevealCodeEditor} animationDuration={0}>
-                  <hr className="man thin bg-gray-light" />
+                  <hr className="man rule-subtle" />
                 </Collapsible>
 
                 <Collapsible revealWhen={!this.getSelectedBehavior().shouldRevealCodeEditor} animationDisabled={this.animationIsDisabled()}>
@@ -2511,7 +2511,7 @@ const BehaviorEditor = React.createClass({
                     codeHelpPanelName: 'helpForBehaviorCode'
                   })}
 
-                  <hr className="man thin bg-gray-light" />
+                  <hr className="man rule-subtle" />
 
                 </Collapsible>
 
@@ -2536,7 +2536,7 @@ const BehaviorEditor = React.createClass({
     return (
       <div className="pbxxxl">
         <div className="bg-white pbl" />
-        <hr className="mtn mbn thin bg-gray-light" />
+        <hr className="mtn mbn rule-subtle" />
 
         <DataTypeEditor
           ref="dataTypeEditor"
@@ -2598,7 +2598,7 @@ const BehaviorEditor = React.createClass({
           </div>
         </div>
 
-        <hr className="man thin bg-gray-light" />
+        <hr className="man rule-subtle" />
 
         {this.renderCodeEditor({
           systemParams: [],

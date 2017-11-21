@@ -148,7 +148,7 @@ define(function(require) {
 
           <Collapsible revealWhen={this.hasInputs()} animationDisabled={this.props.animationDisabled}>
 
-            <hr className="mtn thin bg-gray-light" />
+            <hr className="mtn rule-subtle" />
 
             <div className="columns container container-narrow">
               <div className="mbxxl">
