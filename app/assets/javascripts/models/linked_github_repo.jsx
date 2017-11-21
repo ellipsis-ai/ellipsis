@@ -1,5 +1,9 @@
+// @flow
 define(function() {
   class LinkedGithubRepo {
+    owner: string;
+    repo: string;
+
     constructor(props) {
       Object.defineProperties(this, {
         owner: { value: props.owner, enumerable: true },
@@ -7,23 +11,31 @@ define(function() {
       });
     }
 
-    getOwner() {
+    getOwner(): string {
       return this.owner || "";
     }
 
-    getRepo() {
+    getRepo(): string {
       return this.repo || "";
     }
 
-    getPath() {
+    getOwnerAndRepo(): string {
       return `${this.getOwner()}/${this.getRepo()}`;
     }
 
-    clone(props) {
+    getPath(): string {
+      return `github.com/${this.getOwnerAndRepo()}`;
+    }
+
+    getUrl(): string {
+      return `https://${this.getPath()}`;
+    }
+
+    clone(props): LinkedGithubRepo {
       return new LinkedGithubRepo(Object.assign({}, this, props));
     }
 
-    static fromJson(props) {
+    static fromJson(props): LinkedGithubRepo {
       return new LinkedGithubRepo(props);
     }
 
