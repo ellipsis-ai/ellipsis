@@ -35,7 +35,7 @@ define(function(require) {
       };
     }
 
-    focus() {
+    focus(): void {
       if (this.ownerInput && !this.state.owner) {
         this.ownerInput.focus();
       } else if (this.repoInput) {
