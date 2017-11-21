@@ -24,7 +24,6 @@ var React = require('react'),
   DynamicLabelButton = require('../form/dynamic_label_button'),
   EnvVariableAdder = require('../settings/environment_variables/adder'),
   EnvVariableSetter = require('../settings/environment_variables/setter'),
-  GithubChangesPanel = require('./github/github_changes_panel'),
   GithubLinkPanel = require('./github/github_link_panel'),
   GithubPullPanel = require('./github/github_pull_panel'),
   GithubPushPanel = require('./github/github_push_panel'),
@@ -484,20 +483,9 @@ const BehaviorEditor = React.createClass({
   GITHUB_PULL_PANEL_NAME: "githubPullPanel",
   GITHUB_PUSH_PANEL_NAME: "githubPushPanel",
   GITHUB_LINK_PANEL_NAME: "githubLinkPanel",
-  GITHUB_CHANGES_PANEL_NAME: "githubChangesPanel",
 
-  onGithubIntegrationClick: function() {
-    if (this.props.linkedGithubRepo) {
-      this.onGithubChangesClick();
-    } else {
-      this.onGithubLinkClick();
-    }
-  },
   onGithubLinkClick: function() {
     this.toggleActivePanel(this.GITHUB_LINK_PANEL_NAME, true);
-  },
-  onGithubChangesClick: function() {
-    this.toggleActivePanel(this.GITHUB_CHANGES_PANEL_NAME, true);
   },
   onGithubPullClick: function() {
     this.toggleActivePanel(this.GITHUB_PULL_PANEL_NAME, true);
@@ -1876,29 +1864,12 @@ const BehaviorEditor = React.createClass({
           <Collapsible ref={this.GITHUB_LINK_PANEL_NAME}
                        revealWhen={this.props.activePanelName === this.GITHUB_LINK_PANEL_NAME}
                        onChange={this.layoutDidUpdate}
-                       animationDisabled={this.state.animationDisabled}
           >
             <GithubLinkPanel
               group={this.getBehaviorGroup()}
               linked={this.props.linkedGithubRepo}
-              onDoneClick={this.onGithubIntegrationClick}
-              onLinkGithubRepo={this.props.onLinkGithubRepo}
-              csrfToken={this.props.csrfToken}
-            />
-          </Collapsible>
-
-          <Collapsible ref={this.GITHUB_CHANGES_PANEL_NAME}
-                       revealWhen={this.props.activePanelName === this.GITHUB_CHANGES_PANEL_NAME}
-                       onChange={this.layoutDidUpdate}
-                       animationDisabled={this.state.animationDisabled}
-          >
-            <GithubChangesPanel
-              group={this.getBehaviorGroup()}
-              linked={this.props.linkedGithubRepo}
               onDoneClick={this.props.onClearActivePanel}
-              onPullClick={this.onGithubPullClick}
-              onPushClick={this.onGithubPushClick}
-              onChangeLinkClick={this.onGithubLinkClick}
+              onLinkGithubRepo={this.props.onLinkGithubRepo}
               csrfToken={this.props.csrfToken}
             />
           </Collapsible>
@@ -1906,12 +1877,11 @@ const BehaviorEditor = React.createClass({
           <Collapsible ref={this.GITHUB_PULL_PANEL_NAME}
                        revealWhen={this.props.activePanelName === this.GITHUB_PULL_PANEL_NAME}
                        onChange={this.layoutDidUpdate}
-                       animationDisabled={this.state.animationDisabled}
           >
             <GithubPullPanel
               group={this.getBehaviorGroup()}
               linked={this.props.linkedGithubRepo}
-              onDoneClick={this.onGithubIntegrationClick}
+              onDoneClick={this.props.onClearActivePanel}
               onSave={this.onReplaceBehaviorGroup}
               onSaveError={this.onSaveError}
               csrfToken={this.props.csrfToken}
@@ -1921,15 +1891,13 @@ const BehaviorEditor = React.createClass({
           <Collapsible ref={this.GITHUB_PUSH_PANEL_NAME}
                        revealWhen={this.props.activePanelName === this.GITHUB_PUSH_PANEL_NAME}
                        onChange={this.layoutDidUpdate}
-                       animationDisabled={this.state.animationDisabled}
           >
             <GithubPushPanel
               group={this.getBehaviorGroup()}
               linked={this.props.linkedGithubRepo}
-              onDoneClick={this.onGithubIntegrationClick}
+              onDoneClick={this.props.onClearActivePanel}
               csrfToken={this.props.csrfToken}
-            >
-            </GithubPushPanel>
+            />
           </Collapsible>
 
           <Collapsible ref="confirmUndo" revealWhen={this.props.activePanelName === 'confirmUndo'} onChange={this.layoutDidUpdate}>
@@ -2645,7 +2613,9 @@ const BehaviorEditor = React.createClass({
           onDeleteClick={this.confirmDeleteBehaviorGroup}
           onSave={this.onReplaceBehaviorGroup}
           onSaveError={this.onSaveError}
-          onGithubIntegrationClick={this.onGithubIntegrationClick}
+          onGithubPushClick={this.onGithubPushClick}
+          onGithubPullClick={this.onGithubPullClick}
+          onChangeGithubLinkClick={this.onGithubLinkClick}
         />
       );
     }

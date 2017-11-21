@@ -6,7 +6,7 @@ define(function(require) {
     DataRequest = require('../../lib/data_request'),
     FormInput = require('../../form/input'),
     LinkedGithubRepo = require('../../models/linked_github_repo'),
-    OwnerRepoReadonly = require('./github_owner_repo_readonly'),
+    GithubOwnerRepoReadonly = require('./github_owner_repo_readonly'),
     autobind = require('../../lib/autobind');
 
   type Props = {
@@ -16,7 +16,7 @@ define(function(require) {
     csrfToken: string
   }
 
-  class GithubPullPanel extends React.Component<Props> {
+  class GithubPushPanel extends React.Component<Props> {
     constructor(props) {
       super(props);
       autobind(this);
@@ -74,9 +74,6 @@ define(function(require) {
         <div>
           <div className="columns">
             <div className="column column-one-quarter">
-              <OwnerRepoReadonly linked={this.props.linked}/>
-            </div>
-            <div className="column column-one-quarter">
               <span className="display-inline-block align-m type-s type-weak mrm">Branch:</span>
               <FormInput
                 className="form-input-borderless type-monospace type-s width-15 mrm"
@@ -119,6 +116,7 @@ define(function(require) {
             <div className="columns">
               <div className="column column-page-sidebar">
                 <h4 className="type-weak mtn">Push code to GitHub</h4>
+                <GithubOwnerRepoReadonly linked={this.props.linked}/>
               </div>
               <div className="column column-page-main">
                 {this.renderContent()}
@@ -130,5 +128,5 @@ define(function(require) {
     }
   }
 
-  return GithubPullPanel;
+  return GithubPushPanel;
 });

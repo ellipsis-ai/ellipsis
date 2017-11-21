@@ -11,7 +11,7 @@ define(function(require) {
     group: BehaviorGroup,
     linked?: LinkedGithubRepo,
     onDoneClick: () => void,
-    onLinkGithubRepo: () => void,
+    onLinkGithubRepo: (string, string, () => void) => void,
     csrfToken: string
   }
 

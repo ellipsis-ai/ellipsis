@@ -70,9 +70,6 @@ define(function(require) {
         <div>
           <div className="columns">
             <div className="column column-one-quarter">
-              <GithubOwnerRepoReadonly linked={this.props.linked} />
-            </div>
-            <div className="column column-one-quarter">
               <span className="display-inline-block align-m type-s type-weak mrm">Branch:</span>
               <FormInput
                 className="form-input-borderless type-monospace type-s width-15 mrm"
@@ -107,6 +104,7 @@ define(function(require) {
             <div className="columns">
               <div className="column column-page-sidebar">
                 <h4 className="type-weak mtn">Pull code from GitHub</h4>
+                <GithubOwnerRepoReadonly linked={this.props.linked} />
               </div>
               <div className="column column-page-main">
                 {this.renderContent()}
