@@ -1,5 +1,6 @@
 package models.behaviors.behaviorparameter
 
+import models.behaviors.BotResult
 import models.behaviors.behaviorversion.BehaviorVersion
 import models.behaviors.conversations.ParamCollectionState
 import models.behaviors.input.Input
@@ -20,13 +21,13 @@ case class BehaviorParameter(
 
   def question: String = maybeQuestion.getOrElse(s"What is the value for `$name`?")
 
-  def promptAction(
+  def promptResultAction(
                     maybeValue: Option[String],
                     context: BehaviorParameterContext,
                     paramState: ParamCollectionState,
                     isReminding: Boolean
-                  )(implicit ec: ExecutionContext): DBIO[String] = {
-    paramType.promptForAction(maybeValue, context, paramState, isReminding)
+                  )(implicit ec: ExecutionContext): DBIO[BotResult] = {
+    paramType.promptResultForAction(maybeValue, context, paramState, isReminding)
   }
 
   def toRaw: RawBehaviorParameter = {

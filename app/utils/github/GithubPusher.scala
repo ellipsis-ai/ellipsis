@@ -6,12 +6,16 @@ import models.behaviors.behaviorgroup.BehaviorGroup
 import models.team.Team
 import play.api.Configuration
 import services._
+import utils.ShellEscaping
 
 import scala.concurrent.{ExecutionContext, Future, blocking}
 import scala.sys.process.{Process, ProcessLogger}
 
 case class EnsureGitRepoDirException(message: String) extends Exception {
   override def getMessage(): String = s"Can't initialize git repo: $message"
+}
+case class GitCloneException(message: String) extends Exception {
+  override def getMessage(): String = s"Can't clone git repo: $message"
 }
 case class GitPullException(message: String) extends Exception {
   override def getMessage(): String = s"Can't pull git repo: $message"
@@ -44,9 +48,15 @@ case class GithubPusher(
   val exportName: String = behaviorGroup.id
   val dirName: String = s"$parentPath/$exportName"
 
-  val remoteUrl: String = s"https://$repoAccessToken@github.com/$owner/$repoName.git"
+  val remoteUrl: String = ShellEscaping.escapeWithSingleQuotes(s"https://$repoAccessToken@github.com/$owner/$repoName.git")
+
+  val escapedBranch: String = ShellEscaping.escapeWithSingleQuotes(branch)
+  val escapedCommitMessage: String = ShellEscaping.escapeWithSingleQuotes(commitMessage)
+  val escapedCommitterName: String = ShellEscaping.escapeWithSingleQuotes(committerInfo.name)
+  val escapedCommitterEmail: String = ShellEscaping.escapeWithSingleQuotes(committerInfo.email)
 
   private def runCommand(cmd: String, maybeCreateException: Option[String => Exception]): Future[Unit] = {
+    println(cmd)
     Future {
       blocking {
         val buffer = new StringBuilder()
@@ -64,8 +74,20 @@ case class GithubPusher(
     }
   }
 
-  private def pullRepo: Future[Unit] = {
-    runCommand(s"mkdir -p $parentPath && cd $parentPath && rm -rf $exportName && git clone $remoteUrl $exportName && cd $exportName && git checkout $branch", Some(GitPullException.apply))
+  private def cloneRepo: Future[Unit] = {
+    runCommand(s"mkdir -p $parentPath && cd $parentPath && rm -rf $exportName && git clone $remoteUrl $exportName", Some(GitCloneException.apply))
+  }
+
+  private def ensureBranch: Future[Unit] = {
+    runCommand(s"cd $dirName && git checkout -b $escapedBranch && git push origin $escapedBranch", None)
+  }
+
+  private def ensureBranchCheckedOut: Future[Unit] = {
+    runCommand(s"cd $dirName && git checkout $escapedBranch", None)
+  }
+
+  private def pullLatest: Future[Unit] = {
+    runCommand(s"cd $dirName && git pull origin $escapedBranch", Some(GitPullException.apply))
   }
 
   private def export: Future[Unit] = {
@@ -81,7 +103,7 @@ case class GithubPusher(
   }
 
   private def push: Future[Unit] = {
-    runCommand(raw"""cd $dirName && git -c user.name='${committerInfo.name}' -c user.email='${committerInfo.email}' commit -a -m "$commitMessage" && git push origin $branch""", Some(GitPushException.apply))
+    runCommand(raw"""cd $dirName && git add . && git -c user.name=$escapedCommitterName -c user.email=$escapedCommitterEmail commit -a -m $escapedCommitMessage && git push origin $escapedBranch""", Some(GitPushException.apply))
   }
 
   private def cleanUp: Future[Unit] = {
@@ -90,7 +112,10 @@ case class GithubPusher(
 
   def run: Future[Unit] = {
     for {
-      _ <- pullRepo
+      _ <- cloneRepo
+      _ <- ensureBranch
+      _ <- ensureBranchCheckedOut
+      _ <- pullLatest
       _ <- export
       _ <- push
       _ <- cleanUp

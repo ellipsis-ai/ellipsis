@@ -11,9 +11,9 @@ requirejs(['common'], function() {
           containerId: React.PropTypes.string.isRequired,
           csrfToken: React.PropTypes.string.isRequired,
           teamId: React.PropTypes.string.isRequired,
-          scheduledActions: React.PropTypes.arrayOf(React.PropTypes.object),
+          scheduledActions: React.PropTypes.arrayOf(React.PropTypes.object).isRequired,
+          behaviorGroups: React.PropTypes.arrayOf(React.PropTypes.object).isRequired,
           channelList: React.PropTypes.arrayOf(React.PropTypes.object),
-          behaviorGroups: React.PropTypes.arrayOf(React.PropTypes.object),
           teamTimeZone: React.PropTypes.string,
           teamTimeZoneName: React.PropTypes.string,
           slackUserId: React.PropTypes.string,
@@ -25,7 +25,6 @@ requirejs(['common'], function() {
         getInitialState: function() {
           return {
             scheduledActions: this.props.scheduledActions.map(ScheduledAction.fromJson),
-            channelList: this.props.channelList.map(ScheduleChannel.fromJson),
             behaviorGroups: this.props.behaviorGroups.map(BehaviorGroup.fromJson),
             isSaving: false,
             justSavedAction: null,
@@ -116,7 +115,7 @@ requirejs(['common'], function() {
             <Page csrfToken={this.props.csrfToken}>
               <Scheduling
                 scheduledActions={this.state.scheduledActions}
-                channelList={this.state.channelList}
+                channelList={this.props.channelList ? this.props.channelList.map(ScheduleChannel.fromJson) : null}
                 behaviorGroups={this.state.behaviorGroups}
                 onSave={this.onSave}
                 isSaving={this.state.isSaving}

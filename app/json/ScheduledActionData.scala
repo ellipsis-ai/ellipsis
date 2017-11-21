@@ -2,6 +2,7 @@ package json
 
 import java.time.OffsetDateTime
 
+import models.accounts.user.UserTeamAccess
 import models.behaviors.scheduling.scheduledbehavior.ScheduledBehavior
 import models.behaviors.scheduling.scheduledmessage.ScheduledMessage
 import models.team.Team
@@ -66,18 +67,39 @@ object ScheduledActionData {
     )
   }
 
-  def buildFor(maybeSlackUserId: Option[String], team: Team, channelList: Seq[ChannelLike], dataService: DataService)(implicit ec: ExecutionContext): Future[Seq[ScheduledActionData]] = {
-    /* TODO: once our scheduling models are medium-aware, make this filtering more intelligent for
-       users with or without a Slack user ID */
+  def buildForAdmin(team: Team, dataService: DataService)(implicit ec: ExecutionContext): Future[Seq[ScheduledActionData]] = {
     for {
       scheduledBehaviors <- dataService.scheduledBehaviors.allActiveForTeam(team)
       scheduledMessages <- dataService.scheduledMessages.allForTeam(team)
     } yield {
-      maybeSlackUserId.map { slackUserId =>
-        val scheduledMessageData = scheduledMessages.map(ScheduledActionData.fromScheduledMessage)
-        val scheduledBehaviorData = scheduledBehaviors.map(ScheduledActionData.fromScheduledBehavior)
-        (scheduledMessageData ++ scheduledBehaviorData).filter(_.visibleToSlackUser(slackUserId, channelList))
-      }.getOrElse(Seq())
+      val scheduledMessageData = scheduledMessages.map(ScheduledActionData.fromScheduledMessage)
+      val scheduledBehaviorData = scheduledBehaviors.map(ScheduledActionData.fromScheduledBehavior)
+      scheduledMessageData ++ scheduledBehaviorData
+    }
+  }
+
+  def buildForUserTeamAccess(
+                              team: Team,
+                              teamAccess: UserTeamAccess,
+                              dataService: DataService,
+                              maybeChannelList: Option[Seq[ChannelLike]],
+                              maybeSlackUserId: Option[String]
+                            )(implicit ec: ExecutionContext): Future[Seq[ScheduledActionData]] = {
+    for {
+      allScheduledActions <- buildForAdmin(team, dataService)
+    } yield {
+      if (teamAccess.isAdminAccess) {
+        allScheduledActions
+      } else {
+        (for {
+          channelList <- maybeChannelList
+          slackUserId <- maybeSlackUserId
+        } yield {
+          allScheduledActions.filter(_.visibleToSlackUser(slackUserId, channelList))
+        }).getOrElse {
+          Seq()
+        }
+      }
     }
   }
 }

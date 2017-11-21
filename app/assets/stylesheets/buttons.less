@@ -54,8 +54,14 @@ a.button,
   width: 100%;
 }
 
-a.button, .form-toggle-group {
+a.button, .form-toggle-group, .checkbox-button {
   display: inline-block;
+}
+
+.checkbox-button {
+  min-width: 0;
+  height: auto;
+  min-height: @button-height;
 }
 
 a.button:hover {
@@ -139,7 +145,7 @@ button.button-s,
   border-radius: @border-radius-small;
 }
 
-button.button-l, a.button-l {
+button.button-l, a.button-l, .checkbox-button-l {
   font-size: @type-button-l;
   font-weight: 600;
   line-height: @xxl;
@@ -149,6 +155,15 @@ button.button-l, a.button-l {
   padding-bottom: @m - @border-width-thick;
   min-width: @m * 20;
   border-radius: @border-radius-large;
+}
+
+.checkbox-button-l {
+  font-size: @type-m;
+  line-height: @xl;
+  padding-top: @xs + @m - @border-width-thick;
+  padding-bottom: @xs + @m - @border-width-thick;
+  min-height: @button-large-height;
+  height: auto;
 }
 
 button.button-dropdown-trigger.button-s,
@@ -206,9 +221,15 @@ button[disabled] {
 a.button-shrink,
 button.button-shrink {
   min-width: 0;
+  padding-left: (@m - @border-width);
+  padding-right: (@m - @border-width);
+  white-space: nowrap;
+}
+
+a.button-shrink.button-s,
+button.button-shrink.button-s {
   padding-left: (@s - @border-width);
   padding-right: (@s - @border-width);
-  white-space: nowrap;
 }
 
 a.button-shrink.button-l,
@@ -441,6 +462,12 @@ button.button-dropdown-trigger-menu-open:focus {
 a.button-shrink:focus,
 button.button-shrink:focus,
 button.button-symbol:focus {
+  padding-left: (@m - @border-width-thick) !important;
+  padding-right: (@m - @border-width-thick) !important;
+}
+
+button.button-shrink.button-s:focus,
+a.button-shrink.button-s:focus {
   padding-left: (@s - @border-width-thick) !important;
   padding-right: (@s - @border-width-thick) !important;
 }
@@ -514,7 +541,8 @@ a.button-primary,
 button.button-error,
 a.button-error,
 button.button-inverted,
-a.button-inverted {
+a.button-inverted,
+.checkbox-button.button-inverted {
   font-weight: 600;
   color: @white;
   .light-antialiasing();
@@ -566,6 +594,17 @@ a.button-inverted {
   color: @white;
 }
 
+.checkbox-button.button-inverted {
+  border-color: @blue-medium !important;
+  color: @white;
+}
+
+.checkbox-button-checked.button-inverted {
+  background-color: @blue-darkest;
+  border-color: @blue-darkest !important;
+  color: @white;
+}
+
 button.button-inverted:hover,
 a.button-inverted:hover {
   background-color: @white-subtle;
@@ -573,8 +612,8 @@ a.button-inverted:hover {
 
 button.button-primary[disabled],
 button.button-error[disabled] {
-  background-color: @gray-light !important;
-  border-color: @gray-light !important;
+  background-color: @gray-medium-translucent !important;
+  border-color: transparent !important;
   color: @white !important;
 }
 
@@ -673,6 +712,8 @@ button.button-activated {
 .checkbox-button-s {
   vertical-align: middle;
   padding: 3px @xs;
+  height: auto;
+  min-height: @button-small-height;
 }
 
 .form-toggle-group-s {

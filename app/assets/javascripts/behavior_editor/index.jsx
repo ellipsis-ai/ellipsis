@@ -22,12 +22,11 @@ var React = require('react'),
   DefaultStorageAdder = require('./default_storage_adder'),
   DefaultStorageBrowser = require('./default_storage_browser'),
   DynamicLabelButton = require('../form/dynamic_label_button'),
-  EnvVariableAdder = require('../environment_variables/adder'),
-  EnvVariableSetter = require('../environment_variables/setter'),
-  GithubChangesPanel = require('./github_changes_panel'),
-  GithubLinkPanel = require('./github_link_panel'),
-  GithubPullPanel = require('./github_pull_panel'),
-  GithubPushPanel = require('./github_push_panel'),
+  EnvVariableAdder = require('../settings/environment_variables/adder'),
+  EnvVariableSetter = require('../settings/environment_variables/setter'),
+  GithubLinkPanel = require('./github/github_link_panel'),
+  GithubPullPanel = require('./github/github_pull_panel'),
+  GithubPushPanel = require('./github/github_push_panel'),
   HiddenJsonInput = require('./hidden_json_input'),
   Input = require('../models/input'),
   Formatter = require('../lib/formatter'),
@@ -484,26 +483,27 @@ const BehaviorEditor = React.createClass({
   GITHUB_PULL_PANEL_NAME: "githubPullPanel",
   GITHUB_PUSH_PANEL_NAME: "githubPushPanel",
   GITHUB_LINK_PANEL_NAME: "githubLinkPanel",
-  GITHUB_CHANGES_PANEL_NAME: "githubChangesPanel",
 
-  onGithubIntegrationClick: function() {
-    if (this.props.linkedGithubRepo) {
-      this.onGithubChangesClick();
-    } else {
-      this.onGithubLinkClick();
-    }
-  },
   onGithubLinkClick: function() {
-    this.toggleActivePanel(this.GITHUB_LINK_PANEL_NAME, true);
-  },
-  onGithubChangesClick: function() {
-    this.toggleActivePanel(this.GITHUB_CHANGES_PANEL_NAME, true);
+    this.toggleActivePanel(this.GITHUB_LINK_PANEL_NAME, true, () => {
+      if (this.githubLinkPanel) {
+        this.githubLinkPanel.focus();
+      }
+    });
   },
   onGithubPullClick: function() {
-    this.toggleActivePanel(this.GITHUB_PULL_PANEL_NAME, true);
+    this.toggleActivePanel(this.GITHUB_PULL_PANEL_NAME, true, () => {
+      if (this.githubPullPanel) {
+        this.githubPullPanel.focus();
+      }
+    });
   },
   onGithubPushClick: function() {
-    this.toggleActivePanel(this.GITHUB_PUSH_PANEL_NAME, true);
+    this.toggleActivePanel(this.GITHUB_PUSH_PANEL_NAME, true, () => {
+      if (this.githubPushPanel) {
+        this.githubPushPanel.focus();
+      }
+    });
   },
 
   isConfiguringApi: function() {
@@ -955,10 +955,10 @@ const BehaviorEditor = React.createClass({
           const groupId = group.id;
           if (this.state.shouldRedirectToAddNewOAuth2App) {
             const config = this.state.requiredOAuth2ApiConfig;
-            window.location.href = jsRoutes.controllers.OAuth2ApplicationController.newApp(teamId, groupId, this.getSelectedId(), config.nameInCode).url;
+            window.location.href = jsRoutes.controllers.web.settings.OAuth2ApplicationController.add(teamId, groupId, this.getSelectedId(), config.nameInCode).url;
           } else if (this.state.shouldRedirectToAddNewAWSConfig) {
             const config = this.state.requiredAWSConfig;
-            window.location.href = jsRoutes.controllers.AWSConfigController.newConfig(teamId, groupId, this.getSelectedId(), config.nameInCode).url;
+            window.location.href = jsRoutes.controllers.web.settings.AWSConfigController.add(teamId, groupId, this.getSelectedId(), config.nameInCode).url;
           } else {
             const newProps = {
               group: BehaviorGroup.fromJson(json),
@@ -1236,7 +1236,7 @@ const BehaviorEditor = React.createClass({
   },
 
   updateEnvVariables: function(envVars, options) {
-    var url = jsRoutes.controllers.EnvironmentVariablesController.submit().url;
+    var url = jsRoutes.controllers.web.settings.EnvironmentVariablesController.submit().url;
     var data = {
       teamId: this.getBehaviorGroup().teamId,
       variables: envVars
@@ -1876,63 +1876,43 @@ const BehaviorEditor = React.createClass({
           <Collapsible ref={this.GITHUB_LINK_PANEL_NAME}
                        revealWhen={this.props.activePanelName === this.GITHUB_LINK_PANEL_NAME}
                        onChange={this.layoutDidUpdate}
-                       animationDisabled={this.state.animationDisabled}
           >
             <GithubLinkPanel
-              group={this.getBehaviorGroup()}
-              linked={this.props.linkedGithubRepo}
-              onDoneClick={this.onGithubIntegrationClick}
-              onLinkGithubRepo={this.props.onLinkGithubRepo}
-              csrfToken={this.props.csrfToken}
-            >
-            </GithubLinkPanel>
-          </Collapsible>
-
-          <Collapsible ref={this.GITHUB_CHANGES_PANEL_NAME}
-                       revealWhen={this.props.activePanelName === this.GITHUB_CHANGES_PANEL_NAME}
-                       onChange={this.layoutDidUpdate}
-                       animationDisabled={this.state.animationDisabled}
-          >
-            <GithubChangesPanel
+              ref={(el) => this.githubLinkPanel = el}
               group={this.getBehaviorGroup()}
               linked={this.props.linkedGithubRepo}
               onDoneClick={this.props.onClearActivePanel}
-              onPullClick={this.onGithubPullClick}
-              onPushClick={this.onGithubPushClick}
-              onChangeLinkClick={this.onGithubLinkClick}
+              onLinkGithubRepo={this.props.onLinkGithubRepo}
               csrfToken={this.props.csrfToken}
-            >
-            </GithubChangesPanel>
+            />
           </Collapsible>
 
           <Collapsible ref={this.GITHUB_PULL_PANEL_NAME}
                        revealWhen={this.props.activePanelName === this.GITHUB_PULL_PANEL_NAME}
                        onChange={this.layoutDidUpdate}
-                       animationDisabled={this.state.animationDisabled}
           >
             <GithubPullPanel
+              ref={(el) => this.githubPullPanel = el}
               group={this.getBehaviorGroup()}
               linked={this.props.linkedGithubRepo}
-              onDoneClick={this.onGithubIntegrationClick}
+              onDoneClick={this.props.onClearActivePanel}
               onSave={this.onReplaceBehaviorGroup}
               onSaveError={this.onSaveError}
               csrfToken={this.props.csrfToken}
-            >
-            </GithubPullPanel>
+            />
           </Collapsible>
 
           <Collapsible ref={this.GITHUB_PUSH_PANEL_NAME}
                        revealWhen={this.props.activePanelName === this.GITHUB_PUSH_PANEL_NAME}
                        onChange={this.layoutDidUpdate}
-                       animationDisabled={this.state.animationDisabled}
           >
             <GithubPushPanel
+              ref={(el) => this.githubPushPanel = el}
               group={this.getBehaviorGroup()}
               linked={this.props.linkedGithubRepo}
-              onDoneClick={this.onGithubIntegrationClick}
+              onDoneClick={this.props.onClearActivePanel}
               csrfToken={this.props.csrfToken}
-            >
-            </GithubPushPanel>
+            />
           </Collapsible>
 
           <Collapsible ref="confirmUndo" revealWhen={this.props.activePanelName === 'confirmUndo'} onChange={this.layoutDidUpdate}>
@@ -2435,7 +2415,7 @@ const BehaviorEditor = React.createClass({
                   </div>
                 </div>
 
-                <hr className="mtn mbn thin bg-gray-light" />
+                <hr className="mtn mbn rule-subtle" />
 
                 <TriggerConfiguration
                   isFinishedBehavior={this.isFinishedBehavior()}
@@ -2475,7 +2455,7 @@ const BehaviorEditor = React.createClass({
                 />
 
                 <Collapsible revealWhen={this.getSelectedBehavior().shouldRevealCodeEditor} animationDuration={0}>
-                  <hr className="man thin bg-gray-light" />
+                  <hr className="man rule-subtle" />
                 </Collapsible>
 
                 <Collapsible revealWhen={!this.getSelectedBehavior().shouldRevealCodeEditor} animationDisabled={this.animationIsDisabled()}>
@@ -2514,7 +2494,7 @@ const BehaviorEditor = React.createClass({
                     codeHelpPanelName: 'helpForBehaviorCode'
                   })}
 
-                  <hr className="man thin bg-gray-light" />
+                  <hr className="man rule-subtle" />
 
                 </Collapsible>
 
@@ -2539,7 +2519,7 @@ const BehaviorEditor = React.createClass({
     return (
       <div className="pbxxxl">
         <div className="bg-white pbl" />
-        <hr className="mtn mbn thin bg-gray-light" />
+        <hr className="mtn mbn rule-subtle" />
 
         <DataTypeEditor
           ref="dataTypeEditor"
@@ -2601,7 +2581,7 @@ const BehaviorEditor = React.createClass({
           </div>
         </div>
 
-        <hr className="man thin bg-gray-light" />
+        <hr className="man rule-subtle" />
 
         {this.renderCodeEditor({
           systemParams: [],
@@ -2648,7 +2628,9 @@ const BehaviorEditor = React.createClass({
           onDeleteClick={this.confirmDeleteBehaviorGroup}
           onSave={this.onReplaceBehaviorGroup}
           onSaveError={this.onSaveError}
-          onGithubIntegrationClick={this.onGithubIntegrationClick}
+          onGithubPushClick={this.onGithubPushClick}
+          onGithubPullClick={this.onGithubPullClick}
+          onChangeGithubLinkClick={this.onGithubLinkClick}
         />
       );
     }

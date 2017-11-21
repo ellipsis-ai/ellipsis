@@ -78,11 +78,9 @@ case class ParamCollectionState(
       maybeNextToCollect <- DBIO.from(maybeNextToCollect(conversation))
       result <- maybeNextToCollect.map { case(param, maybeValue) =>
         val paramContext = BehaviorParameterContext(event, Some(conversation), param, services)
-        param.promptAction(maybeValue, paramContext, this, isReminding)
+        param.promptResultAction(maybeValue, paramContext, this, isReminding)
       }.getOrElse {
-        DBIO.successful("All done!")
-      }.map { prompt =>
-        SimpleTextResult(event, Some(conversation), prompt, conversation.behaviorVersion.forcePrivateResponse)
+        DBIO.successful(SimpleTextResult(event, Some(conversation), "All done!", conversation.behaviorVersion.forcePrivateResponse))
       }
     } yield result
   }

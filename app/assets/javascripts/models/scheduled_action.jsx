@@ -113,7 +113,11 @@ define(function(require) {
       return new ScheduledAction({
         scheduleType: "message",
         trigger: "",
-        recurrence: new Recurrence({ timeZone: timeZone, timeZoneName: timeZoneName }).becomeDaily()
+        recurrence: new Recurrence({
+          frequency: 1,
+          timeZone: timeZone,
+          timeZoneName: timeZoneName
+        }).becomeDaily()
       });
     }
   }

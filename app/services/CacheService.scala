@@ -14,6 +14,8 @@ trait CacheService {
 
   def get[T : ClassTag](key: String): Option[T]
 
+  def hasKey(key: String): Boolean
+
   def remove(key: String)
 
   def cacheEvent(key: String, event: Event, expiration: Duration = Duration.Inf): Unit

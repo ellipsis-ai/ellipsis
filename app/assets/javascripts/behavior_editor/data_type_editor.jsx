@@ -243,7 +243,7 @@ define(function(require) {
               )}
             </div>
 
-            <hr className="man thin bg-gray-light" />
+            <hr className="man rule-subtle" />
 
             {this.usesCode() ? (
               <DataTypeResultConfig
@@ -267,7 +267,7 @@ define(function(require) {
               />
             )}
 
-            <hr className="man thin bg-gray-light" />
+            <hr className="man rule-subtle" />
 
             {this.usesCode() ? this.renderCodeEditor() : null
             /* Disabled data collection config settings until operative (

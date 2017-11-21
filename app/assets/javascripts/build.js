@@ -81,32 +81,32 @@ requirejs.config({
       include: ['behavior_list/app'],
       exclude: ['common']
     }, {
-      name: 'application_editor/loader',
-      include: ['application_editor/index'],
-      exclude: ['common']
-    }, {
-      name: 'application_list/loader',
-      include: ['application_list/index'],
-      exclude: ['common']
-    }, {
-      name: 'aws_config_editor/loader',
-      include: ['aws_config_editor/index'],
-      exclude: ['common']
-    }, {
-      name: 'aws_config_list/loader',
-      include: ['aws_config_list/index'],
-      exclude: ['common']
-    }, {
       name: 'api_token_generator/loader',
       include: ['api_token_generator/index'],
       exclude: ['common']
     }, {
-      name: 'environment_variables/loader',
-      include: ['environment_variables/index'],
+      name: 'settings/application_editor/loader',
+      include: ['settings/application_editor/index'],
       exclude: ['common']
     }, {
-      name: 'regional_settings/loader',
-      include: ['regional_settings/index'],
+      name: 'settings/aws_config_editor/loader',
+      include: ['settings/aws_config_editor/index'],
+      exclude: ['common']
+    }, {
+      name: 'settings/environment_variables/loader',
+      include: ['settings/environment_variables/index'],
+      exclude: ['common']
+    }, {
+      name: 'settings/integrations/loader',
+      include: ['settings/integrations/index'],
+      exclude: ['common']
+    }, {
+      name: 'settings/integrations_editor/loader',
+      include: ['settings/integrations_editor/index'],
+      exclude: ['common']
+    }, {
+      name: 'settings/regional_settings/loader',
+      include: ['settings/regional_settings/index'],
       exclude: ['common']
     }, {
       name: 'styleguide/colors/loader',

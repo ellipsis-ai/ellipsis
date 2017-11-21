@@ -12,7 +12,7 @@ define(function(require) {
     displayName: 'ScheduledItemEditor',
     propTypes: {
       scheduledAction: React.PropTypes.instanceOf(ScheduledAction),
-      channelList: React.PropTypes.arrayOf(React.PropTypes.instanceOf(ScheduleChannel)).isRequired,
+      channelList: React.PropTypes.arrayOf(React.PropTypes.instanceOf(ScheduleChannel)),
       behaviorGroups: React.PropTypes.arrayOf(React.PropTypes.instanceOf(BehaviorGroup)).isRequired,
       onChange: React.PropTypes.func.isRequired,
       teamTimeZone: React.PropTypes.string.isRequired,
