@@ -1,7 +1,9 @@
 // @flow
 define(function(require) {
   var React = require('react'),
+    Formatter = require('../../lib/formatter'),
     Button = require('../../form/button'),
+    DynamicLabelButton = require('../../form/dynamic_label_button'),
     BehaviorGroup = require('../../models/behavior_group'),
     DataRequest = require('../../lib/data_request'),
     FormInput = require('../../form/input'),
@@ -18,7 +20,10 @@ define(function(require) {
 
   type State = {
     branch: string,
-    commitMessage: string
+    commitMessage: string,
+    isSaving: boolean,
+    lastSaved: ?Date,
+    error: ?string
   };
 
   class GithubPushPanel extends React.Component<Props, State> {
@@ -32,7 +37,10 @@ define(function(require) {
       autobind(this);
       this.state = {
         branch: "master",
-        commitMessage: ""
+        commitMessage: "",
+        isSaving: false,
+        lastSaved: null,
+        error: null
       };
     }
 
@@ -65,8 +73,18 @@ define(function(require) {
     }
 
     onPushToGithub(): void {
-      const owner = this.props.linked ? this.props.linked.getOwner() : "";
-      const repo = this.props.linked ? this.props.linked.getRepo() : "";
+      if (this.props.linked) {
+        const linked = this.props.linked;
+        const owner = linked.getOwner();
+        const repo = linked.getRepo();
+        this.setState({
+          isSaving: true,
+          error: null
+        }, () => this.pushToGithub(owner, repo));
+      }
+    }
+
+    pushToGithub(owner: string, repo: string): void {
       DataRequest.jsonPost(
         jsRoutes.controllers.BehaviorEditorController.pushToGithub().url, {
           behaviorGroupId: this.props.group.id,
@@ -77,16 +95,36 @@ define(function(require) {
         },
         this.props.csrfToken
       ).then(() => {
-        this.props.onDoneClick();
+        this.setState({
+          commitMessage: "",
+          isSaving: false,
+          lastSaved: new Date()
+        });
+      }).catch((err: DataRequest.ResponseError) => {
+        this.setState({
+          isSaving: false,
+          error: `An error occurred while pushing to Git (${err.status})`
+        });
       });
+    }
+
+    onDone(): void {
+      this.setState({
+        commitMessage: "",
+        isSaving: false
+      }, this.props.onDoneClick);
     }
 
     renderContent(): React.Node {
       return (
         <div>
+
+          <h4>Push to GitHub</h4>
+          <p>To push the current version of the skill to GitHub, verify the target branch name and write a commit message.</p>
+
           <div className="columns">
             <div className="column column-one-quarter">
-              <span className="display-inline-block align-m type-s type-weak mrm">Branch:</span>
+              <span className="display-inline-block align-m type-s type-weak mrm">Branch name:</span>
               <FormInput
                 ref={(el) => this.branchInput = el}
                 className="form-input-borderless type-monospace type-s width-15 mrm"
@@ -101,23 +139,38 @@ define(function(require) {
             <FormInput
               ref={(el) => this.commitMessageInput = el}
               className="form-input-borderless type-monospace type-s mrm"
+              placeholder="Summarize what has changed"
               onChange={this.onCommitMessageChange}
               value={this.getCommitMessage()}
             />
           </div>
           <div className="mtl">
-            <Button
+            <DynamicLabelButton
+              className="button-primary mrs mbs"
               onClick={this.onPushToGithub}
-              disabled={!this.getBranch() || !this.getCommitMessage()}
-            >
-              Push to Github
-            </Button>
+              disabledWhen={this.state.isSaving || !this.getBranch() || !this.getCommitMessage()}
+              labels={[{
+                text: "Commit and push…",
+                displayWhen: !this.state.isSaving
+              }, {
+                text: "Pushing…",
+                displayWhen: this.state.isSaving
+              }]}
+            />
             <Button
-              className="mls"
-              onClick={this.props.onDoneClick}
+              className="mrs mbs"
+              onClick={this.onDone}
             >
-              Cancel
+              Done
             </Button>
+            {!this.state.error && this.state.lastSaved && !this.state.isSaving ? (
+              <span className="align-button mbs type-green">
+                — Successfully pushed {Formatter.formatTimestampRelative(this.state.lastSaved)}
+              </span>
+            ) : null}
+            {this.state.error ? (
+              <span className="align-button mbs type-pink type-bold type-italic">— {this.state.error}</span>
+            ) : null}
           </div>
         </div>
       );
@@ -129,7 +182,7 @@ define(function(require) {
           <div className="container">
             <div className="columns">
               <div className="column column-page-sidebar">
-                <h4 className="type-weak mtn">Push code to GitHub</h4>
+                <h4 className="type-weak mtn">GitHub</h4>
                 <GithubOwnerRepoReadonly linked={this.props.linked}/>
               </div>
               <div className="column column-page-main">

@@ -118,7 +118,7 @@ define(function(require) {
           <div className="container">
             <div className="columns">
               <div className="column column-page-sidebar">
-                <h4 className="type-weak mtn">Pull code from GitHub</h4>
+                <h4 className="type-weak mtn">GitHub</h4>
                 <GithubOwnerRepoReadonly linked={this.props.linked} />
               </div>
               <div className="column column-page-main">

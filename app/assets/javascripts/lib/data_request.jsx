@@ -1,11 +1,17 @@
+// @flow
 define(function(require) {
   require('whatwg-fetch');
 
   class ResponseError extends Error {
-    constructor(status, statusText) {
+    status: number;
+    statusText: string;
+    json: ?{};
+
+    constructor(status, statusText, json) {
       super(`${status} ${statusText}`);
       this.status = status;
       this.statusText = statusText;
+      this.json = json;
     }
   }
 
@@ -40,6 +46,8 @@ define(function(require) {
           throw new ResponseError(response.status, response.statusText);
         }
       });
-    }
+    },
+
+    ResponseError: ResponseError
   };
 });
