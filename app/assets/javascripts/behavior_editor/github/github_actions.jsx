@@ -30,8 +30,13 @@ define(function(require) {
 
             <h4>Link to GitHub</h4>
 
-            <GithubOwnerRepoReadonly linked={this.props.linkedGithubRepo}
-              onChangeLinkClick={this.props.onChangeGithubLinkClick} />
+            <div>
+              <span className="display-inline-block align-m mrm">
+                <span className="type-label mrs">Current repo:</span>
+                <GithubOwnerRepoReadonly linked={this.props.linkedGithubRepo} />
+              </span>
+              <Button className="button-s button-shrink" onClick={this.props.onChangeGithubLinkClick}>Change repo…</Button>
+            </div>
 
             <div className="mvl">
               <Button className="mrs" onClick={this.props.onGithubPullClick}>Pull latest version from GitHub…</Button>

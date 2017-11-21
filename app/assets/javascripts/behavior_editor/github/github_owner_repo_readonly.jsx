@@ -1,41 +1,22 @@
 // @flow
 define(function(require) {
   const React = require('react'),
-    Button = require('../../form/button'),
-    LinkedGithubRepo = require('../../models/linked_github_repo'),
-    autobind = require('../../lib/autobind');
+    LinkedGithubRepo = require('../../models/linked_github_repo');
 
   type Props = {
-    linked?: LinkedGithubRepo,
-    onChangeLinkClick?: () => void
+    linked: LinkedGithubRepo
   }
 
   class GithubOwnerRepoReadonly extends React.PureComponent<Props> {
     props: Props;
 
-    constructor(props) {
-      super(props);
-      autobind(this);
-    }
-
     render(): React.Node {
-      if (this.props.linked) {
-        const linked = this.props.linked;
-        const path = linked.getOwnerAndRepo();
-        const url = linked.getUrl();
-        return (
-          <div>
-            <span className="display-inline-block align-m type-s">
-              <a href={url} target="github" className="type-monospace mrm">{path}</a>
-              {this.props.onChangeLinkClick ? (
-                <Button className="button-s button-shrink" onClick={this.props.onChangeLinkClick}>Change repo</Button>
-              ) : null}
-            </span>
-          </div>
-        );
-      } else {
-        return null;
-      }
+      const linked = this.props.linked;
+      const path = linked.getOwnerAndRepo();
+      const url = linked.getUrl();
+      return (
+        <a href={url} target="github" className="type-s type-monospace">{path}</a>
+      );
     }
   }
 
