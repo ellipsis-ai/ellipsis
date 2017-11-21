@@ -13,9 +13,19 @@ define(function(require) {
     onDoneClick: () => void,
     onLinkGithubRepo: (string, string, () => void) => void,
     csrfToken: string
-  }
+  };
 
-  class GithubLinkPanel extends React.Component<Props> {
+  type State = {
+    owner: string,
+    repo: string
+  };
+
+  class GithubLinkPanel extends React.Component<Props, State> {
+    props: Props;
+    state: State;
+    ownerInput: ?FormInput;
+    repoInput: ?FormInput;
+
     constructor(props) {
       super(props);
       autobind(this);
@@ -23,6 +33,14 @@ define(function(require) {
         owner: this.props.linked ? this.props.linked.getOwner() : "",
         repo: this.props.linked ? this.props.linked.getRepo(): ""
       };
+    }
+
+    focus() {
+      if (this.ownerInput && !this.state.owner) {
+        this.ownerInput.focus();
+      } else if (this.repoInput) {
+        this.repoInput.focus();
+      }
     }
 
     isLinkModified(): boolean {
@@ -60,6 +78,7 @@ define(function(require) {
             <div className="column column-one-quarter">
               <span className="display-inline-block align-m type-s type-weak mrm">Owner:</span>
               <FormInput
+                ref={(el) => this.ownerInput = el}
                 className="form-input-borderless type-monospace type-s width-15 mrm"
                 placeholder="e.g. github"
                 onChange={this.onOwnerChange}
@@ -69,6 +88,7 @@ define(function(require) {
             <div className="column column-one-quarter">
               <span className="display-inline-block align-m type-s type-weak mrm">Repo:</span>
               <FormInput
+                ref={(el) => this.repoInput = el}
                 className="form-input-borderless type-monospace type-s width-15 mrm"
                 placeholder="e.g. octocat"
                 onChange={this.onRepoChange}

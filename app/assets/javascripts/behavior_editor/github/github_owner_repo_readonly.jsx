@@ -11,6 +11,8 @@ define(function(require) {
   }
 
   class GithubOwnerRepoReadonly extends React.PureComponent<Props> {
+    props: Props;
+
     constructor(props) {
       super(props);
       autobind(this);
@@ -18,8 +20,9 @@ define(function(require) {
 
     render(): React.Node {
       if (this.props.linked) {
-        const path = this.props.linked.getOwnerAndRepo();
-        const url = this.props.linked.getUrl();
+        const linked = this.props.linked;
+        const path = linked.getOwnerAndRepo();
+        const url = linked.getUrl();
         return (
           <div>
             <span className="display-inline-block align-m type-s">

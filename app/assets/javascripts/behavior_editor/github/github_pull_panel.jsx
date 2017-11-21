@@ -12,13 +12,21 @@ define(function(require) {
   type Props = {
     group: BehaviorGroup,
     linked?: LinkedGithubRepo,
-    onSave: () => void,
+    onSave: (BehaviorGroup, callback?: () => void) => void,
     onSaveError: (string) => void,
     onDoneClick: () => void,
     csrfToken: string
   }
 
-  class GithubPullPanel extends React.Component<Props> {
+  type State = {
+    branch: string
+  }
+
+  class GithubPullPanel extends React.Component<Props, State> {
+    props: Props;
+    state: State;
+    branchInput: ?FormInput;
+
     constructor(props) {
       super(props);
       autobind(this);
@@ -27,12 +35,18 @@ define(function(require) {
       };
     }
 
+    focus(): void {
+      if (this.branchInput) {
+        this.branchInput.focus();
+      }
+    }
+
     getOwner(): string {
-      return this.props.linked.getOwner();
+      return this.props.linked ? this.props.linked.getOwner() : "";
     }
 
     getRepo(): string {
-      return this.props.linked.getRepo();
+      return this.props.linked ? this.props.linked.getRepo() : "";
     }
 
     getBranch(): string {
@@ -72,6 +86,7 @@ define(function(require) {
             <div className="column column-one-quarter">
               <span className="display-inline-block align-m type-s type-weak mrm">Branch:</span>
               <FormInput
+                ref={(el) => this.branchInput = el}
                 className="form-input-borderless type-monospace type-s width-15 mrm"
                 placeholder="e.g. master"
                 onChange={this.onBranchChange}

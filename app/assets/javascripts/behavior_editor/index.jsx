@@ -485,13 +485,25 @@ const BehaviorEditor = React.createClass({
   GITHUB_LINK_PANEL_NAME: "githubLinkPanel",
 
   onGithubLinkClick: function() {
-    this.toggleActivePanel(this.GITHUB_LINK_PANEL_NAME, true);
+    this.toggleActivePanel(this.GITHUB_LINK_PANEL_NAME, true, () => {
+      if (this.githubLinkPanel) {
+        this.githubLinkPanel.focus();
+      }
+    });
   },
   onGithubPullClick: function() {
-    this.toggleActivePanel(this.GITHUB_PULL_PANEL_NAME, true);
+    this.toggleActivePanel(this.GITHUB_PULL_PANEL_NAME, true, () => {
+      if (this.githubPullPanel) {
+        this.githubPullPanel.focus();
+      }
+    });
   },
   onGithubPushClick: function() {
-    this.toggleActivePanel(this.GITHUB_PUSH_PANEL_NAME, true);
+    this.toggleActivePanel(this.GITHUB_PUSH_PANEL_NAME, true, () => {
+      if (this.githubPushPanel) {
+        this.githubPushPanel.focus();
+      }
+    });
   },
 
   isConfiguringApi: function() {
@@ -1866,6 +1878,7 @@ const BehaviorEditor = React.createClass({
                        onChange={this.layoutDidUpdate}
           >
             <GithubLinkPanel
+              ref={(el) => this.githubLinkPanel = el}
               group={this.getBehaviorGroup()}
               linked={this.props.linkedGithubRepo}
               onDoneClick={this.props.onClearActivePanel}
@@ -1879,6 +1892,7 @@ const BehaviorEditor = React.createClass({
                        onChange={this.layoutDidUpdate}
           >
             <GithubPullPanel
+              ref={(el) => this.githubPullPanel = el}
               group={this.getBehaviorGroup()}
               linked={this.props.linkedGithubRepo}
               onDoneClick={this.props.onClearActivePanel}
@@ -1893,6 +1907,7 @@ const BehaviorEditor = React.createClass({
                        onChange={this.layoutDidUpdate}
           >
             <GithubPushPanel
+              ref={(el) => this.githubPushPanel = el}
               group={this.getBehaviorGroup()}
               linked={this.props.linkedGithubRepo}
               onDoneClick={this.props.onClearActivePanel}

@@ -28,6 +28,8 @@ define(function(require) {
   }
 
   class BehaviorGroupEditor extends React.PureComponent<Props> {
+    props: Props;
+
     constructor(props) {
       super(props);
       autobind(this);

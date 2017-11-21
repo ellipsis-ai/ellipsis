@@ -14,9 +14,19 @@ define(function(require) {
     linked?: LinkedGithubRepo,
     onDoneClick: () => void,
     csrfToken: string
-  }
+  };
 
-  class GithubPushPanel extends React.Component<Props> {
+  type State = {
+    branch: string,
+    commitMessage: string
+  };
+
+  class GithubPushPanel extends React.Component<Props, State> {
+    props: Props;
+    state: State;
+    branchInput: ?FormInput;
+    commitMessageInput: ?FormInput;
+
     constructor(props) {
       super(props);
       autobind(this);
@@ -26,12 +36,12 @@ define(function(require) {
       };
     }
 
-    getOwner(): string {
-      return this.props.linked.getOwner();
-    }
-
-    getRepo(): string {
-      return this.props.linked.getRepo();
+    focus(): void {
+      if (this.branchInput && !this.getBranch()) {
+        this.branchInput.focus();
+      } else if (this.commitMessageInput) {
+        this.commitMessageInput.focus();
+      }
     }
 
     getBranch(): string {
@@ -55,11 +65,13 @@ define(function(require) {
     }
 
     onPushToGithub(): void {
+      const owner = this.props.linked ? this.props.linked.getOwner() : "";
+      const repo = this.props.linked ? this.props.linked.getRepo() : "";
       DataRequest.jsonPost(
         jsRoutes.controllers.BehaviorEditorController.pushToGithub().url, {
           behaviorGroupId: this.props.group.id,
-          owner: this.getOwner(),
-          repo: this.getRepo(),
+          owner: owner,
+          repo: repo,
           branch: this.getBranch(),
           commitMessage: this.getCommitMessage()
         },
@@ -76,6 +88,7 @@ define(function(require) {
             <div className="column column-one-quarter">
               <span className="display-inline-block align-m type-s type-weak mrm">Branch:</span>
               <FormInput
+                ref={(el) => this.branchInput = el}
                 className="form-input-borderless type-monospace type-s width-15 mrm"
                 placeholder="e.g. master"
                 onChange={this.onBranchChange}
@@ -86,6 +99,7 @@ define(function(require) {
           <div className="mtl">
             <span className="display-inline-block align-m type-s type-weak mrm">Commit message:</span>
             <FormInput
+              ref={(el) => this.commitMessageInput = el}
               className="form-input-borderless type-monospace type-s mrm"
               onChange={this.onCommitMessageChange}
               value={this.getCommitMessage()}
