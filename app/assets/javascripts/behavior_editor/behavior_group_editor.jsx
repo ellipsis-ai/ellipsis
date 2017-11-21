@@ -62,7 +62,7 @@ define(function(require) {
           </div>
           <div className="column align-m">
             <span>To push code to or pull code from GitHub, you first need to </span>
-            <a href={this.getGithubAuthUrl()}>authenticate your GitHub account</a>
+            <a href={this.getGithubAuthUrl()}>authenticate your GitHub account.</a>
           </div>
         </div>
       );
@@ -93,15 +93,13 @@ define(function(require) {
       }
     }
 
-    renderGithubIntegration(): React.Node {
-      if (this.props.isAdmin && !this.props.linkedGithubRepo) {
-        if (this.props.isLinkedToGithub) {
+    renderGithubIntegrationButton(): React.Node {
+      if (this.props.isAdmin) {
+        if (this.props.isLinkedToGithub && !this.props.linkedGithubRepo) {
           return this.renderGithubButton();
-        } else {
+        } else if (!this.props.isLinkedToGithub) {
           return this.renderGithubAuth();
         }
-      } else {
-        return null;
       }
     }
 
@@ -160,7 +158,7 @@ define(function(require) {
                   Export skill as ZIP file
                 </Button>
 
-                {this.renderGithubIntegration()}
+                {this.renderGithubIntegrationButton()}
               </div>
 
               <div className="column column-shrink">

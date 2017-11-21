@@ -4,19 +4,23 @@ define(function(require) {
     LinkedGithubRepo = require('../../models/linked_github_repo');
 
   type Props = {
-    linked: LinkedGithubRepo
+    linked?: LinkedGithubRepo
   }
 
   class GithubOwnerRepoReadonly extends React.PureComponent<Props> {
     props: Props;
 
     render(): React.Node {
-      const linked = this.props.linked;
-      const path = linked.getOwnerAndRepo();
-      const url = linked.getUrl();
-      return (
-        <a href={url} target="github" className="type-s type-monospace">{path}</a>
-      );
+      if (this.props.linked) {
+        const linked = this.props.linked;
+        const path = linked.getOwnerAndRepo();
+        const url = linked.getUrl();
+        return (
+          <a href={url} target="github" className="type-s type-monospace">{path}</a>
+        );
+      } else {
+        return null;
+      }
     }
   }
 
