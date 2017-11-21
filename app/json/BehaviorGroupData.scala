@@ -163,7 +163,7 @@ object BehaviorGroupData {
         requiredOAuth2ApiConfigs.map(RequiredOAuth2ApiConfigData.from),
         requiredSimpleTokenApis.map(RequiredSimpleTokenApiData.from),
         None,
-        version.maybeGitSHA,
+        None, // don't include SHA when building new data from existing version
         version.group.maybeExportId,
         Some(version.createdAt),
         maybeUserData
