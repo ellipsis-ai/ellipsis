@@ -8,6 +8,7 @@ define(function(require) {
     DataRequest = require('../../lib/data_request'),
     FormInput = require('../../form/input'),
     LinkedGithubRepo = require('../../models/linked_github_repo'),
+    GithubErrorNotification = require('./github_error_notification'),
     GithubOwnerRepoReadonly = require('./github_owner_repo_readonly'),
     autobind = require('../../lib/autobind');
 
@@ -84,7 +85,7 @@ define(function(require) {
         this.props.csrfToken
       ).then((json) => {
         if (json.errors) {
-          this.onError(branch, json.errors.join(", "));
+          this.onError(branch, json.errors);
         } else {
           this.setState({
             isFetching: false,
@@ -151,7 +152,7 @@ define(function(require) {
     renderResult(): React.Node {
       if (this.state.error) {
         return (
-          <span className="align-button mbs type-pink type-bold type-italic">— {this.state.error}</span>
+          <GithubErrorNotification error={this.state.error} />
         );
       } else if (this.state.lastFetched) {
         const branch = this.state.lastFetchedBranch ? `from branch ${this.state.lastFetchedBranch}` : "";

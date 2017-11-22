@@ -175,6 +175,7 @@ object BehaviorEditorData {
           Seq(),
           Seq(),
           githubUrl = None,
+          maybeGroupVersion.flatMap(_.maybeGitSHA),
           exportId = None,
           Some(OffsetDateTime.now),
           Some(userData)

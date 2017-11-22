@@ -36,7 +36,7 @@ class ApplicationControllerSpec extends PlaySpec with MockitoSugar {
         val groupName = "some skill"
         val behaviorGroup = BehaviorGroup(groupId, None, team, Some(groupVersionId), OffsetDateTime.now)
         val behavior = Behavior(behaviorId, team, Some(behaviorGroup), None, false, OffsetDateTime.now)
-        val behaviorGroupVersion = BehaviorGroupVersion(groupVersionId, behaviorGroup, groupName, None, None, None, OffsetDateTime.now)
+        val behaviorGroupVersion = BehaviorGroupVersion(groupVersionId, behaviorGroup, groupName, None, None, None, None, OffsetDateTime.now)
         val behaviorVersion = BehaviorVersion(IDs.next, behavior, behaviorGroupVersion, None, None, None, None, false, None, OffsetDateTime.now)
         val teamAccess = mock[UserTeamAccess]
 

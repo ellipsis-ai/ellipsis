@@ -23,6 +23,13 @@ case class GithubSingleBehaviorGroupFetcher(
     s"""
        |query {
        |  repository(name:"$repoName", owner:"$owner") {
+       |    ref(qualifiedName:"$branch") {
+       |      target {
+       |        ... on Commit {
+       |        	oid
+       |        }
+       |      }
+       |    }
        |    object(expression:"$branch:") {
        |      ... on Tree {
        |        entries {
@@ -71,14 +78,14 @@ case class GithubSingleBehaviorGroupFetcher(
   }
 
   def resultFromNonErrorResponse(data: JsValue): BehaviorGroupData = {
-    val obj = data \ "data" \ "repository"
-    obj match {
-      case JsDefined(v) => {
-        GithubBehaviorGroupDataBuilder(repoName, v, team, maybeBranch, dataService).
+    val repoData = data \ "data" \ "repository"
+    repoData \ "object" \ "entries" match {
+      case JsDefined(_) => {
+        GithubBehaviorGroupDataBuilder(repoName, repoData.get, team, maybeBranch, dataService).
           build.
           copyForImportableForTeam(team, maybeExistingGroup)
       }
-      case _ => throw GithubResultFromDataException("Could not build a skill from response")
+      case _ => throw GithubResultFromDataException(s"Branch '$branch' doesn't exist for $owner/$repoName")
     }
   }
 

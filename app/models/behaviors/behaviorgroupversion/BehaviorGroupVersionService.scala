@@ -20,7 +20,8 @@ trait BehaviorGroupVersionService {
                        user: User,
                        maybeName: Option[String] = None,
                        maybeIcon: Option[String] = None,
-                       maybeDescription: Option[String] = None
+                       maybeDescription: Option[String] = None,
+                       maybeGitSHA: Option[String] = None
                      ): DBIO[BehaviorGroupVersion]
 
   def createFor(
@@ -28,7 +29,8 @@ trait BehaviorGroupVersionService {
                  user: User,
                  maybeName: Option[String] = None,
                  maybeIcon: Option[String] = None,
-                 maybeDescription: Option[String] = None
+                 maybeDescription: Option[String] = None,
+                 maybeGitSHA: Option[String] = None
                ): Future[BehaviorGroupVersion]
 
   def createFor(

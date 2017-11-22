@@ -8,6 +8,7 @@ define(function(require) {
     DataRequest = require('../../lib/data_request'),
     FormInput = require('../../form/input'),
     LinkedGithubRepo = require('../../models/linked_github_repo'),
+    GithubErrorNotification = require('./github_error_notification'),
     GithubOwnerRepoReadonly = require('./github_owner_repo_readonly'),
     autobind = require('../../lib/autobind');
 
@@ -103,7 +104,7 @@ define(function(require) {
       }).catch((err: DataRequest.ResponseError) => {
         this.setState({
           isSaving: false,
-          error: `An error occurred while pushing to Git (${err.status})`
+          error: err.body
         });
       });
     }
@@ -169,7 +170,7 @@ define(function(require) {
               </span>
             ) : null}
             {this.state.error ? (
-              <span className="align-button mbs type-pink type-bold type-italic">— {this.state.error}</span>
+              <GithubErrorNotification error={this.state.error} />
             ) : null}
           </div>
         </div>
