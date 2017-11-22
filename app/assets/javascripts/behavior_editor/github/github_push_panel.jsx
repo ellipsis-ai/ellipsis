@@ -6,8 +6,8 @@ define(function(require) {
     DataRequest = require('../../lib/data_request'),
     FormInput = require('../../form/input'),
     LinkedGithubRepo = require('../../models/linked_github_repo'),
+    GithubErrorNotification = require('./github_error_notification'),
     GithubOwnerRepoReadonly = require('./github_owner_repo_readonly'),
-    SVGWarning = require('../../svg/warning'),
     autobind = require('../../lib/autobind');
 
   type Props = {
@@ -89,21 +89,6 @@ define(function(require) {
       });
     }
 
-    renderErrors(): React.Node {
-      if (this.state.error) {
-        return (
-          <div className="display-inline-block align-button mlm">
-            <span className="fade-in type-pink type-bold type-italic">
-              <span style={{ height: 24 }} className="display-inline-block mrs align-b"><SVGWarning /></span>
-              <span>{this.state.error}</span>
-            </span>
-          </div>
-        );
-      } else {
-        return null;
-      }
-    }
-
     renderContent(): React.Node {
       return (
         <div>
@@ -141,7 +126,7 @@ define(function(require) {
             >
               Cancel
             </Button>
-            {this.renderErrors()}
+            <GithubErrorNotification error={this.state.error} />
           </div>
         </div>
       );
