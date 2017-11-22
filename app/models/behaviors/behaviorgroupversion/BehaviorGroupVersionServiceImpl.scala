@@ -22,6 +22,7 @@ case class RawBehaviorGroupVersion(
                                    maybeIcon: Option[String],
                                    maybeDescription: Option[String],
                                    maybeAuthorId: Option[String],
+                                   maybeGitSHA: Option[String],
                                    createdAt: OffsetDateTime
                                  )
 
@@ -33,10 +34,11 @@ class BehaviorGroupVersionsTable(tag: Tag) extends Table[RawBehaviorGroupVersion
   def maybeIcon = column[Option[String]]("icon")
   def maybeDescription = column[Option[String]]("description")
   def maybeAuthorId = column[Option[String]]("author_id")
+  def maybeGitSHA = column[Option[String]]("git_sha")
   def createdAt = column[OffsetDateTime]("created_at")
 
   def * =
-    (id, groupId, name, maybeIcon, maybeDescription, maybeAuthorId, createdAt) <>
+    (id, groupId, name, maybeIcon, maybeDescription, maybeAuthorId, maybeGitSHA, createdAt) <>
       ((RawBehaviorGroupVersion.apply _).tupled, RawBehaviorGroupVersion.unapply _)
 }
 
@@ -71,14 +73,15 @@ class BehaviorGroupVersionServiceImpl @Inject() (
                  user: User,
                  maybeName: Option[String] = None,
                  maybeIcon: Option[String] = None,
-                 maybeDescription: Option[String] = None
+                 maybeDescription: Option[String] = None,
+                 maybeGitSHA: Option[String] = None
                ): DBIO[BehaviorGroupVersion] = {
-    val raw = RawBehaviorGroupVersion(IDs.next, group.id, maybeName.getOrElse(""), maybeIcon, maybeDescription, Some(user.id), OffsetDateTime.now)
+    val raw = RawBehaviorGroupVersion(IDs.next, group.id, maybeName.getOrElse(""), maybeIcon, maybeDescription, Some(user.id), maybeGitSHA, OffsetDateTime.now)
 
     (all += raw).flatMap { _ =>
       BehaviorGroupQueries.findQuery(group.id).result.map { r =>
         val reloadedGroup = r.headOption.map(BehaviorGroupQueries.tuple2Group).get // must exist; reload so it has current versionid
-        BehaviorGroupVersion(raw.id, reloadedGroup, raw.name, raw.maybeIcon, raw.maybeDescription, Some(user), raw.createdAt)
+        BehaviorGroupVersion(raw.id, reloadedGroup, raw.name, raw.maybeIcon, raw.maybeDescription, Some(user), raw.maybeGitSHA, raw.createdAt)
       }
     }
   }
@@ -88,9 +91,10 @@ class BehaviorGroupVersionServiceImpl @Inject() (
                  user: User,
                  maybeName: Option[String] = None,
                  maybeIcon: Option[String] = None,
-                 maybeDescription: Option[String] = None
+                 maybeDescription: Option[String] = None,
+                 maybeGitSHA: Option[String] = None
                ): Future[BehaviorGroupVersion] = {
-    dataService.run(createForAction(group, user, maybeName, maybeIcon, maybeDescription))
+    dataService.run(createForAction(group, user, maybeName, maybeIcon, maybeDescription, maybeGitSHA))
   }
 
   def withoutBuiltin(params: Array[String]) = params.filterNot(ea => ea == services.AWSLambdaConstants.CONTEXT_PARAM)
@@ -101,7 +105,7 @@ class BehaviorGroupVersionServiceImpl @Inject() (
                  data: BehaviorGroupData
                ): Future[BehaviorGroupVersion] = {
     val action = (for {
-      groupVersion <- createForAction(group, user, data.name, data.icon, data.description)
+      groupVersion <- createForAction(group, user, data.name, data.icon, data.description, data.gitSHA)
       _ <- DBIO.sequence(data.dataTypeInputs.map { ea =>
         dataService.inputs.ensureForAction(ea, groupVersion)
       })

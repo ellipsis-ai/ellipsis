@@ -151,6 +151,7 @@ class BehaviorGroupServiceImpl @Inject() (
           requiredOAuth2ApiConfigs,
           requiredSimpleTokenApis,
           githubUrl = None,
+          gitSHA = None,
           exportId = None,
           None,
           Some(userData)

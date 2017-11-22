@@ -26,6 +26,7 @@ case class BehaviorGroupData(
                               requiredOAuth2ApiConfigs: Seq[RequiredOAuth2ApiConfigData],
                               requiredSimpleTokenApis: Seq[RequiredSimpleTokenApiData],
                               githubUrl: Option[String],
+                              gitSHA: Option[String],
                               exportId: Option[String],
                               createdAt: Option[OffsetDateTime],
                               author: Option[UserData]
@@ -162,6 +163,7 @@ object BehaviorGroupData {
         requiredOAuth2ApiConfigs.map(RequiredOAuth2ApiConfigData.from),
         requiredSimpleTokenApis.map(RequiredSimpleTokenApiData.from),
         None,
+        None, // don't include SHA when building new data from existing version
         version.group.maybeExportId,
         Some(version.createdAt),
         maybeUserData

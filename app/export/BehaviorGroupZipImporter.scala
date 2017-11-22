@@ -151,6 +151,7 @@ case class BehaviorGroupZipImporter(
           requiredOAuth2ApiConfigData,
           requiredSimpleTokenApiData,
           githubUrl = None,
+          gitSHA = None,
           exportId = maybeExportId,
           Some(OffsetDateTime.now),
           Some(userData)
