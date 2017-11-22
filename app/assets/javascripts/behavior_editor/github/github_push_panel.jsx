@@ -81,7 +81,7 @@ define(function(require) {
       ).catch(err => {
         this.setState({
           error: err.body
-        })
+        });
       }).then(() => {
         if (!this.state.error) {
           this.props.onDoneClick();
