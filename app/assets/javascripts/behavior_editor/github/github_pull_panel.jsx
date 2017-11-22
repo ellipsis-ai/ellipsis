@@ -7,6 +7,7 @@ define(function(require) {
     FormInput = require('../../form/input'),
     LinkedGithubRepo = require('../../models/linked_github_repo'),
     GithubOwnerRepoReadonly = require('./github_owner_repo_readonly'),
+    SVGWarning = require('../../svg/warning'),
     autobind = require('../../lib/autobind');
 
   type Props = {
@@ -70,13 +71,30 @@ define(function(require) {
         this.props.csrfToken
       ).then((json) => {
         if (json.errors) {
-          this.props.onSaveError(json.errors);
+          this.setState({
+            error: json.errors
+          });
         } else {
           this.props.onSave(BehaviorGroup.fromJson(json.data));
         }
       }).catch((error) => {
         this.props.onSaveError(error);
       });
+    }
+
+    renderErrors(): React.Node {
+      if (this.state.error) {
+        return (
+          <div className="display-inline-block align-button mlm">
+            <span className="fade-in type-pink type-bold type-italic">
+              <span style={{ height: 24 }} className="display-inline-block mrs align-b"><SVGWarning /></span>
+              <span>{this.state.error}</span>
+            </span>
+          </div>
+        );
+      } else {
+        return null;
+      }
     }
 
     renderContent(): React.Node {
@@ -107,6 +125,7 @@ define(function(require) {
             >
               Cancel
             </Button>
+            {this.renderErrors()}
           </div>
         </div>
       );

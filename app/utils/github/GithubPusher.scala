@@ -20,13 +20,13 @@ case class GitCloneException(message: String) extends GitCommandException {
   override def getMessage(): String = s"Can't clone git repo: $message"
 }
 case class GitPullException(message: String) extends GitCommandException {
-  override def getMessage(): String = s"Can't pull git repo: $message"
+  override def getMessage(): String = s"Can't pull from GitHub: $message"
 }
 case class ExportForPushException(message: String) extends GitCommandException {
   override def getMessage(): String = s"Can't export: $message"
 }
 case class GitPushException(message: String) extends GitCommandException {
-  override def getMessage(): String = s"Can't push git repo: $message"
+  override def getMessage(): String = s"Can't push to GitHub: $message"
 }
 
 case class GithubPusher(
