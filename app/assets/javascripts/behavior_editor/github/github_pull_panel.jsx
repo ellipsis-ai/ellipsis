@@ -109,7 +109,7 @@ define(function(require) {
       return (
         <div>
 
-          <h4>Pull from GitHub</h4>
+          <h4 className="mtn">Pull from GitHub</h4>
           <p>Confirm the branch name, then pull to save that branch as the current skill version.</p>
 
           <div className="columns">
@@ -124,7 +124,7 @@ define(function(require) {
               />
             </div>
           </div>
-          <div className="mtl">
+          <div className="mvl">
             <DynamicLabelButton
               className="mrs mbs"
               onClick={this.onUpdateFromGithub}
@@ -143,6 +143,8 @@ define(function(require) {
             >
               Done
             </Button>
+          </div>
+          <div className="mtl">
             {this.renderResult()}
           </div>
         </div>
@@ -156,9 +158,13 @@ define(function(require) {
         );
       } else if (this.state.lastFetched) {
         const branch = this.state.lastFetchedBranch ? `from branch ${this.state.lastFetchedBranch}` : "";
-        const text = `— Last pulled ${branch} ${Formatter.formatTimestampRelative(this.state.lastFetched)}`;
+        const text = `Pulled ${branch} ${Formatter.formatTimestampRelative(this.state.lastFetched)}`;
         return (
-          <span className="align-button mbs type-green">{text}</span>
+          <div className="fade-in type-green">{text}</div>
+        );
+      } else {
+        return (
+          <div>&nbsp;</div>
         );
       }
     }

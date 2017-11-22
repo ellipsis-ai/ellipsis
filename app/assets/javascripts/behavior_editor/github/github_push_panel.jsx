@@ -24,6 +24,7 @@ define(function(require) {
     commitMessage: string,
     isSaving: boolean,
     lastSaved: ?Date,
+    lastSavedBranch: ?string,
     error: ?string
   };
 
@@ -41,6 +42,7 @@ define(function(require) {
         commitMessage: "",
         isSaving: false,
         lastSaved: null,
+        lastSavedBranch: null,
         error: null
       };
     }
@@ -86,12 +88,13 @@ define(function(require) {
     }
 
     pushToGithub(owner: string, repo: string): void {
+      const branch = this.getBranch();
       DataRequest.jsonPost(
         jsRoutes.controllers.BehaviorEditorController.pushToGithub().url, {
           behaviorGroupId: this.props.group.id,
           owner: owner,
           repo: repo,
-          branch: this.getBranch(),
+          branch: branch,
           commitMessage: this.getCommitMessage()
         },
         this.props.csrfToken
@@ -99,7 +102,8 @@ define(function(require) {
         this.setState({
           commitMessage: "",
           isSaving: false,
-          lastSaved: new Date()
+          lastSaved: new Date(),
+          lastSavedBranch: branch
         });
       }).catch((err: DataRequest.ResponseError) => {
         this.setState({
@@ -112,7 +116,8 @@ define(function(require) {
     onDone(): void {
       this.setState({
         commitMessage: "",
-        isSaving: false
+        isSaving: false,
+        error: null
       }, this.props.onDoneClick);
     }
 
@@ -120,7 +125,7 @@ define(function(require) {
       return (
         <div>
 
-          <h4>Push to GitHub</h4>
+          <h4 className="mtn">Push to GitHub</h4>
           <p>To push the current version of the skill to GitHub, verify the target branch name and write a commit message.</p>
 
           <div className="columns">
@@ -145,9 +150,9 @@ define(function(require) {
               value={this.getCommitMessage()}
             />
           </div>
-          <div className="mtl">
+          <div className="mvl">
             <DynamicLabelButton
-              className="button-primary mrs mbs"
+              className="button-primary mrs"
               onClick={this.onPushToGithub}
               disabledWhen={this.state.isSaving || !this.getBranch() || !this.getCommitMessage()}
               labels={[{
@@ -159,22 +164,36 @@ define(function(require) {
               }]}
             />
             <Button
-              className="mrs mbs"
+              className="mrs"
               onClick={this.onDone}
             >
               Done
             </Button>
-            {!this.state.error && this.state.lastSaved && !this.state.isSaving ? (
-              <span className="align-button mbs type-green">
-                — Successfully pushed {Formatter.formatTimestampRelative(this.state.lastSaved)}
-              </span>
-            ) : null}
-            {this.state.error ? (
-              <GithubErrorNotification error={this.state.error} />
-            ) : null}
+          </div>
+          <div className="mtl">
+            {this.renderResult()}
           </div>
         </div>
       );
+    }
+
+    renderResult(): React.Node {
+      if (this.state.error) {
+        return (
+          <GithubErrorNotification error={this.state.error} />
+        );
+      } else if (this.state.lastSaved && !this.state.isSaving) {
+        const branch = this.state.lastSavedBranch ? `to branch ${this.state.lastSavedBranch}` : "";
+        return (
+          <div className="fade-in">
+            Pushed {branch} {Formatter.formatTimestampRelative(this.state.lastSaved)}
+          </div>
+        );
+      } else {
+        return (
+          <div>&nbsp;</div>
+        );
+      }
     }
 
     render(): React.Node {
