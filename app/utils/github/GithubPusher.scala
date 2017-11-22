@@ -11,19 +11,21 @@ import utils.ShellEscaping
 import scala.concurrent.{ExecutionContext, Future, blocking}
 import scala.sys.process.{Process, ProcessLogger}
 
-case class EnsureGitRepoDirException(message: String) extends Exception {
+trait GitCommandException extends Exception
+
+case class EnsureGitRepoDirException(message: String) extends GitCommandException {
   override def getMessage(): String = s"Can't initialize git repo: $message"
 }
-case class GitCloneException(message: String) extends Exception {
+case class GitCloneException(message: String) extends GitCommandException {
   override def getMessage(): String = s"Can't clone git repo: $message"
 }
-case class GitPullException(message: String) extends Exception {
+case class GitPullException(message: String) extends GitCommandException {
   override def getMessage(): String = s"Can't pull git repo: $message"
 }
-case class ExportForPushException(message: String) extends Exception {
+case class ExportForPushException(message: String) extends GitCommandException {
   override def getMessage(): String = s"Can't export: $message"
 }
-case class GitPushException(message: String) extends Exception {
+case class GitPushException(message: String) extends GitCommandException {
   override def getMessage(): String = s"Can't push git repo: $message"
 }
 
@@ -61,8 +63,7 @@ case class GithubPusher(
       blocking {
         val buffer = new StringBuilder()
         val processLogger = ProcessLogger(
-          _ => {},
-          logText => buffer.append(logText)
+          logText => buffer.append(s"$logText\n")
         )
         val exitValue = Process(Seq("bash", "-c", cmd)).!(processLogger)
         if (exitValue != 0) {
