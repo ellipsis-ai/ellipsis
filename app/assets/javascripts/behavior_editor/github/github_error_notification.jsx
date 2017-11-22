@@ -1,20 +1,14 @@
 // @flow
 define(function(require) {
   const React = require('react'),
-    SVGWarning = require('../../svg/warning'),
-    autobind = require('../../lib/autobind');
+    SVGWarning = require('../../svg/warning');
 
   type Props = {
     error: string
   };
 
-  class GithubErrorNotification extends React.Component<Props> {
+  class GithubErrorNotification extends React.PureComponent<Props> {
     props: Props;
-
-    constructor(props) {
-      super(props);
-      autobind(this);
-    }
 
     render() {
       if (this.props.error) {

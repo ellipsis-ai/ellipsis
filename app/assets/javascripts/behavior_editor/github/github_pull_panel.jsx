@@ -101,7 +101,7 @@ define(function(require) {
     onError(branch: string, error?: string): void {
       this.setState({
         isFetching: false,
-        error: `An error occurred while pulling “${branch}” from GitHub ${error ? `(${error})` : ""}`
+        error: error ? `Error: ${error}` : `An error occurred while pulling “${branch}” from GitHub`
       });
     }
 
