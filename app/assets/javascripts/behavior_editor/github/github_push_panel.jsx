@@ -1,11 +1,14 @@
 // @flow
 define(function(require) {
   var React = require('react'),
+    Formatter = require('../../lib/formatter'),
     Button = require('../../form/button'),
+    DynamicLabelButton = require('../../form/dynamic_label_button'),
     BehaviorGroup = require('../../models/behavior_group'),
     DataRequest = require('../../lib/data_request'),
     FormInput = require('../../form/input'),
     LinkedGithubRepo = require('../../models/linked_github_repo'),
+    GithubErrorNotification = require('./github_error_notification'),
     GithubOwnerRepoReadonly = require('./github_owner_repo_readonly'),
     autobind = require('../../lib/autobind');
 
@@ -18,7 +21,11 @@ define(function(require) {
 
   type State = {
     branch: string,
-    commitMessage: string
+    commitMessage: string,
+    isSaving: boolean,
+    lastSaved: ?Date,
+    lastSavedBranch: ?string,
+    error: ?string
   };
 
   class GithubPushPanel extends React.Component<Props, State> {
@@ -32,7 +39,11 @@ define(function(require) {
       autobind(this);
       this.state = {
         branch: "master",
-        commitMessage: ""
+        commitMessage: "",
+        isSaving: false,
+        lastSaved: null,
+        lastSavedBranch: null,
+        error: null
       };
     }
 
@@ -50,7 +61,7 @@ define(function(require) {
 
     onBranchChange(branch: string): void {
       this.setState({
-        branch: branch
+        branch: Formatter.formatGitBranchIdentifier(branch)
       });
     }
 
@@ -65,28 +76,61 @@ define(function(require) {
     }
 
     onPushToGithub(): void {
-      const owner = this.props.linked ? this.props.linked.getOwner() : "";
-      const repo = this.props.linked ? this.props.linked.getRepo() : "";
+      if (this.props.linked) {
+        const linked = this.props.linked;
+        const owner = linked.getOwner();
+        const repo = linked.getRepo();
+        this.setState({
+          isSaving: true,
+          error: null
+        }, () => this.pushToGithub(owner, repo));
+      }
+    }
+
+    pushToGithub(owner: string, repo: string): void {
+      const branch = this.getBranch();
       DataRequest.jsonPost(
         jsRoutes.controllers.BehaviorEditorController.pushToGithub().url, {
           behaviorGroupId: this.props.group.id,
           owner: owner,
           repo: repo,
-          branch: this.getBranch(),
+          branch: branch,
           commitMessage: this.getCommitMessage()
         },
         this.props.csrfToken
       ).then(() => {
-        this.props.onDoneClick();
+        this.setState({
+          commitMessage: "",
+          isSaving: false,
+          lastSaved: new Date(),
+          lastSavedBranch: branch
+        });
+      }).catch((err: DataRequest.ResponseError) => {
+        this.setState({
+          isSaving: false,
+          error: err.body
+        });
       });
+    }
+
+    onDone(): void {
+      this.setState({
+        commitMessage: "",
+        isSaving: false,
+        error: null
+      }, this.props.onDoneClick);
     }
 
     renderContent(): React.Node {
       return (
         <div>
+
+          <h4 className="mtn">Push to GitHub</h4>
+          <p>To push the current version of the skill to GitHub, verify the target branch name and write a commit message.</p>
+
           <div className="columns">
             <div className="column column-one-quarter">
-              <span className="display-inline-block align-m type-s type-weak mrm">Branch:</span>
+              <span className="display-inline-block align-m type-s type-weak mrm">Branch name:</span>
               <FormInput
                 ref={(el) => this.branchInput = el}
                 className="form-input-borderless type-monospace type-s width-15 mrm"
@@ -101,26 +145,55 @@ define(function(require) {
             <FormInput
               ref={(el) => this.commitMessageInput = el}
               className="form-input-borderless type-monospace type-s mrm"
+              placeholder="Summarize what has changed"
               onChange={this.onCommitMessageChange}
               value={this.getCommitMessage()}
             />
           </div>
-          <div className="mtl">
-            <Button
+          <div className="mvl">
+            <DynamicLabelButton
+              className="button-primary mrs"
               onClick={this.onPushToGithub}
-              disabled={!this.getBranch() || !this.getCommitMessage()}
-            >
-              Push to Github
-            </Button>
+              disabledWhen={this.state.isSaving || !this.getBranch() || !this.getCommitMessage()}
+              labels={[{
+                text: "Commit and push…",
+                displayWhen: !this.state.isSaving
+              }, {
+                text: "Pushing…",
+                displayWhen: this.state.isSaving
+              }]}
+            />
             <Button
-              className="mls"
-              onClick={this.props.onDoneClick}
+              className="mrs"
+              onClick={this.onDone}
             >
-              Cancel
+              Done
             </Button>
+          </div>
+          <div className="mtl">
+            {this.renderResult()}
           </div>
         </div>
       );
+    }
+
+    renderResult(): React.Node {
+      if (this.state.error) {
+        return (
+          <GithubErrorNotification error={this.state.error} />
+        );
+      } else if (this.state.lastSaved && !this.state.isSaving) {
+        const branch = this.state.lastSavedBranch ? `to branch ${this.state.lastSavedBranch}` : "";
+        return (
+          <div className="fade-in">
+            Pushed {branch} {Formatter.formatTimestampRelative(this.state.lastSaved)}
+          </div>
+        );
+      } else {
+        return (
+          <div>&nbsp;</div>
+        );
+      }
     }
 
     render(): React.Node {
@@ -129,7 +202,7 @@ define(function(require) {
           <div className="container">
             <div className="columns">
               <div className="column column-page-sidebar">
-                <h4 className="type-weak mtn">Push code to GitHub</h4>
+                <h4 className="type-weak mtn">Link with GitHub</h4>
                 <GithubOwnerRepoReadonly linked={this.props.linked}/>
               </div>
               <div className="column column-page-main">

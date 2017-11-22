@@ -1,11 +1,17 @@
+// @flow
 define(function(require) {
   require('whatwg-fetch');
 
   class ResponseError extends Error {
-    constructor(status, statusText) {
+    status: number;
+    statusText: string;
+    body: ?string;
+
+    constructor(status, statusText, body) {
       super(`${status} ${statusText}`);
       this.status = status;
       this.statusText = statusText;
+      this.body = body;
     }
   }
 
@@ -17,12 +23,14 @@ define(function(require) {
         if (response.ok) {
           return response.json();
         } else {
-          throw new ResponseError(response.status, response.statusText);
+          return response.text().then(body => {
+            throw new ResponseError(response.status, response.statusText, body);
+          });
         }
       });
     },
 
-    jsonPost: function(url, body, csrfToken) {
+    jsonPost: function(url, requestBody, csrfToken) {
       return fetch(url, {
         credentials: 'same-origin',
         method: 'POST',
@@ -32,14 +40,18 @@ define(function(require) {
           'Csrf-Token': csrfToken,
           'x-requested-with': 'XMLHttpRequest'
         },
-        body: JSON.stringify(body)
+        body: JSON.stringify(requestBody)
       }).then((response) => {
         if (response.ok) {
           return response.json();
         } else {
-          throw new ResponseError(response.status, response.statusText);
+          return response.text().then(resultBody => {
+            throw new ResponseError(response.status, response.statusText, resultBody);
+          });
         }
       });
-    }
+    },
+
+    ResponseError: ResponseError
   };
 });

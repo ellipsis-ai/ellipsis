@@ -132,6 +132,18 @@ define(function(require) {
       const beforeDecimal = pieces[0];
       const afterDecimal = pieces.length > 1 ? "." + pieces.slice(1).join("") : "";
       return minus + beforeDecimal + afterDecimal;
+    },
+
+    formatGitBranchIdentifier: function(value) {
+      // See https://git-scm.com/docs/git-check-ref-format
+      return value
+        .replace(/^[.\/]+/, "") // no leading dots or slashes
+        .replace(/\.+/g, ".") // no double dots
+        .replace(/\/+/g, "/") // no double slashes
+        .replace(/(\/|\.lock|\.)+$/, "") // no trailing slash or .lock or dot
+        .replace(/[~^:?*[\\\s]/g, "") // no ASCII control characters, backslashes, spaces, etc
+        .replace(/@{/g, "") // no @{
+        .replace(/^@$/, ""); // no single @
     }
   };
 

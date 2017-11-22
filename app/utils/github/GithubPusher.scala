@@ -10,21 +10,32 @@ import utils.ShellEscaping
 
 import scala.concurrent.{ExecutionContext, Future, blocking}
 import scala.sys.process.{Process, ProcessLogger}
+import scala.util.matching.Regex
 
-case class EnsureGitRepoDirException(message: String) extends Exception {
-  override def getMessage(): String = s"Can't initialize git repo: $message"
+trait GitCommandException extends Exception
+
+case class EnsureGitRepoDirException(message: String) extends GitCommandException {
+  override def getMessage: String = s"Error initializing git repo: $message"
 }
-case class GitCloneException(message: String) extends Exception {
-  override def getMessage(): String = s"Can't clone git repo: $message"
+case class GitCloneException(message: String) extends GitCommandException {
+  override def getMessage: String = s"Error cloning git repo: $message"
 }
-case class GitPullException(message: String) extends Exception {
-  override def getMessage(): String = s"Can't pull git repo: $message"
+case class GitPullException(message: String) extends GitCommandException {
+  override def getMessage: String = s"Error pulling from GitHub: $message"
 }
-case class ExportForPushException(message: String) extends Exception {
-  override def getMessage(): String = s"Can't export: $message"
+case class ExportForPushException(message: String) extends GitCommandException {
+  override def getMessage: String = s"Error exporting skill: $message"
 }
-case class GitPushException(message: String) extends Exception {
-  override def getMessage(): String = s"Can't push git repo: $message"
+case class GitPushException(branch: String, message: String) extends GitCommandException {
+  private val nothingToCommitRegex: Regex = """nothing to commit, working directory clean\s*\Z""".r
+  override def getMessage: String = {
+    val errorDetails = if (nothingToCommitRegex.findFirstIn(message).isDefined) {
+      s"branch $branch has no changes to commit"
+    } else {
+      message.trim
+    }
+    s"Error pushing to GitHub: $errorDetails"
+  }
 }
 
 case class GithubPusher(
@@ -61,8 +72,7 @@ case class GithubPusher(
       blocking {
         val buffer = new StringBuilder()
         val processLogger = ProcessLogger(
-          _ => {},
-          logText => buffer.append(logText)
+          logText => buffer.append(s"$logText\n")
         )
         val exitValue = Process(Seq("bash", "-c", cmd)).!(processLogger)
         if (exitValue != 0) {
@@ -103,7 +113,10 @@ case class GithubPusher(
   }
 
   private def push: Future[Unit] = {
-    runCommand(raw"""cd $dirName && git add . && git -c user.name=$escapedCommitterName -c user.email=$escapedCommitterEmail commit -a -m $escapedCommitMessage && git push origin $escapedBranch""", Some(GitPushException.apply))
+    runCommand(
+      raw"""cd $dirName && git add . && git -c user.name=$escapedCommitterName -c user.email=$escapedCommitterEmail commit -a -m $escapedCommitMessage && git push origin $escapedBranch""",
+      Some((message) => GitPushException(escapedBranch, message))
+    )
   }
 
   private def cleanUp: Future[Unit] = {

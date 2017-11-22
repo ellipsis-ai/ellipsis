@@ -75,7 +75,7 @@ define(function(require) {
           onClick={this.props.onChangeGithubLinkClick}
           disabled={this.props.isModified}
         >
-          Link skill to GitHub…
+          Link skill with GitHub…
         </Button>
       );
     }

@@ -28,11 +28,11 @@ define(function(require) {
 
           <div className="container container-narrow">
 
-            <h4>Link to GitHub</h4>
+            <h4>Link with GitHub</h4>
 
             <div>
               <span className="display-inline-block align-m mrm">
-                <span className="type-label mrs">Current repo:</span>
+                <span className="type-label mrs">Repo:</span>
                 <GithubOwnerRepoReadonly linked={this.props.linkedGithubRepo} />
               </span>
               <Button className="button-s button-shrink" onClick={this.props.onChangeGithubLinkClick}>Change repo…</Button>
