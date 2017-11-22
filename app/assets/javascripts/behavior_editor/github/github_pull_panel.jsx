@@ -20,7 +20,8 @@ define(function(require) {
   }
 
   type State = {
-    branch: string
+    branch: string,
+    error: ?string
   }
 
   class GithubPullPanel extends React.Component<Props, State> {
@@ -32,7 +33,8 @@ define(function(require) {
       super(props);
       autobind(this);
       this.state = {
-        branch: "master"
+        branch: "master",
+        error: null
       };
     }
 

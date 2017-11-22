@@ -19,7 +19,8 @@ define(function(require) {
 
   type State = {
     branch: string,
-    commitMessage: string
+    commitMessage: string,
+    error: ?string
   };
 
   class GithubPushPanel extends React.Component<Props, State> {
