@@ -58,7 +58,7 @@ define(function(require) {
 
     onBranchChange(branch: string): void {
       this.setState({
-        branch: branch
+        branch: Formatter.formatGitBranchIdentifier(branch)
       });
     }
 
@@ -182,7 +182,7 @@ define(function(require) {
           <div className="container">
             <div className="columns">
               <div className="column column-page-sidebar">
-                <h4 className="type-weak mtn">GitHub</h4>
+                <h4 className="type-weak mtn">Link with GitHub</h4>
                 <GithubOwnerRepoReadonly linked={this.props.linked}/>
               </div>
               <div className="column column-page-main">

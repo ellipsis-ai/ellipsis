@@ -1897,7 +1897,6 @@ const BehaviorEditor = React.createClass({
               linked={this.props.linkedGithubRepo}
               onDoneClick={this.props.onClearActivePanel}
               onSave={this.onReplaceBehaviorGroup}
-              onSaveError={this.onSaveError}
               csrfToken={this.props.csrfToken}
             />
           </Collapsible>
