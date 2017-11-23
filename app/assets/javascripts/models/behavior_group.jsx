@@ -1,83 +1,121 @@
+// @flow
 define(function(require) {
-  var BehaviorVersion = require('./behavior_version');
-  var LibraryVersion = require('./library_version');
-  var Input = require('./input');
-  var DeepEqual = require('../lib/deep_equal');
-  var RequiredAWSConfig = require('./aws').RequiredAWSConfig;
-  var RequiredOAuth2Application = require('./oauth2').RequiredOAuth2Application;
-  var RequiredSimpleTokenApi = require('./simple_token').RequiredSimpleTokenApi;
-  var User = require('./user');
+  const BehaviorVersion = require('./behavior_version');
+  const Editable = require('./editable');
+  const LibraryVersion = require('./library_version');
+  const Input = require('./input');
+  const DeepEqual = require('../lib/deep_equal');
+  const RequiredAWSConfig = require('./aws').RequiredAWSConfig;
+  const RequiredOAuth2Application = require('./oauth2').RequiredOAuth2Application;
+  const RequiredSimpleTokenApi = require('./simple_token').RequiredSimpleTokenApi;
+  const User = require('./user');
 
   const ONE_MINUTE = 60000;
 
   class BehaviorGroup {
-    constructor(props) {
+    id: string;
+    teamId: string;
+    name: ?string;
+    icon: ?string;
+    description: ?string;
+    githubUrl: ?string;
+    actionInputs: Array<Input>;
+    dataTypeInputs: Array<Input>;
+    behaviorVersions: Array<BehaviorVersion>;
+    libraryVersions: Array<LibraryVersion>;
+    requiredAWSConfigs: Array<RequiredAWSConfig>;
+    requiredOAuth2ApiConfigs: Array<RequiredOAuth2Application>;
+    requiredSimpleTokenApis: Array<RequiredSimpleTokenApi>;
+    createdAt: ?number;
+    exportId: ?string;
+    author: ?User;
+    gitSHA: ?string;
+
+    constructor(
+      id: string,
+      teamId: string,
+      name: ?string,
+      icon: ?string,
+      description: ?string,
+      githubUrl: ?string,
+      actionInputs: Array<Input>,
+      dataTypeInputs: Array<Input>,
+      behaviorVersions: Array<BehaviorVersion>,
+      libraryVersions: Array<LibraryVersion>,
+      requiredAWSConfigs: Array<RequiredAWSConfig>,
+      requiredOAuth2ApiConfigs: Array<RequiredOAuth2Application>,
+      requiredSimpleTokenApis: Array<RequiredSimpleTokenApi>,
+      createdAt: ?number,
+      exportId: ?string,
+      author: ?User,
+      gitSHA: ?string
+    ) {
       Object.defineProperties(this, {
-        id: { value: props.id, enumerable: true },
-        teamId: { value: props.teamId, enumerable: true },
-        name: { value: props.name, enumerable: true },
-        icon: { value: props.icon, enumerable: true },
-        description: { value: props.description, enumerable: true },
-        githubUrl: { value: props.githubUrl, enumerable: true },
-        actionInputs: { value: props.actionInputs, enumerable: true },
-        dataTypeInputs: { value: props.dataTypeInputs, enumerable: true },
-        behaviorVersions: { value: props.behaviorVersions, enumerable: true },
-        libraryVersions: { value: props.libraryVersions, enumerable: true },
-        requiredAWSConfigs: { value: props.requiredAWSConfigs, enumerable: true },
-        requiredOAuth2ApiConfigs: { value: props.requiredOAuth2ApiConfigs, enumerable: true },
-        requiredSimpleTokenApis: { value: props.requiredSimpleTokenApis, enumerable: true },
-        createdAt: { value: props.createdAt, enumerable: true },
-        exportId: { value: props.exportId, enumerable: true },
-        author: { value: props.author, enumerable: true },
-        gitSHA: { value: props.gitSHA, enumerable: true }
+        id: { value: id, enumerable: true },
+        teamId: { value: teamId, enumerable: true },
+        name: { value: name, enumerable: true },
+        icon: { value: icon, enumerable: true },
+        description: { value: description, enumerable: true },
+        githubUrl: { value: githubUrl, enumerable: true },
+        actionInputs: { value: actionInputs, enumerable: true },
+        dataTypeInputs: { value: dataTypeInputs, enumerable: true },
+        behaviorVersions: { value: behaviorVersions, enumerable: true },
+        libraryVersions: { value: libraryVersions, enumerable: true },
+        requiredAWSConfigs: { value: requiredAWSConfigs, enumerable: true },
+        requiredOAuth2ApiConfigs: { value: requiredOAuth2ApiConfigs, enumerable: true },
+        requiredSimpleTokenApis: { value: requiredSimpleTokenApis, enumerable: true },
+        createdAt: { value: createdAt, enumerable: true },
+        exportId: { value: exportId, enumerable: true },
+        author: { value: author, enumerable: true },
+        gitSHA: { value: gitSHA, enumerable: true }
       });
     }
 
-    getEditables() {
+    getEditables(): Array<Editable> {
       return this.behaviorVersions.concat(this.libraryVersions);
     }
 
-    getRequiredAWSConfigs() {
+    getRequiredAWSConfigs(): Array<RequiredAWSConfig> {
       return this.requiredAWSConfigs || [];
     }
 
-    getRequiredOAuth2ApiConfigs() {
+    getRequiredOAuth2ApiConfigs(): Array<RequiredOAuth2Application> {
       return this.requiredOAuth2ApiConfigs || [];
     }
 
-    getRequiredSimpleTokenApis() {
+    getRequiredSimpleTokenApis(): Array<RequiredSimpleTokenApi> {
       return this.requiredSimpleTokenApis || [];
     }
 
-    needsConfig() {
+    needsConfig(): boolean {
       return this.getRequiredOAuth2ApiConfigs().filter(ea => !ea.config).length > 0;
     }
 
-    isRecentlySaved() {
+    isRecentlySaved(): boolean {
       return !!this.createdAt && new Date(this.createdAt) > (new Date() - ONE_MINUTE);
     }
 
-    getName() {
+    getName(): string {
       return this.name || "Untitled skill";
     }
 
-    getDescription() {
+    getDescription(): string {
       return this.description || "";
     }
 
-    getActions() {
+    getActions(): Array<BehaviorVersion> {
       return this.behaviorVersions.filter(ea => !ea.isDataType());
     }
 
-    getDataTypes() {
+    getDataTypes(): Array<BehaviorVersion> {
       return this.behaviorVersions.filter(ea => ea.isDataType());
     }
 
-    getInputs() {
+    getInputs(): Array<Input> {
       return this.actionInputs.concat(this.dataTypeInputs);
     }
 
-    getAllInputIdsFromBehaviorVersions() {
+    getAllInputIdsFromBehaviorVersions(): Set<string> {
       let inputIds = new Set();
       this.behaviorVersions.forEach(ea => {
         ea.inputIds.forEach(eaId => inputIds.add(eaId));
@@ -85,7 +123,7 @@ define(function(require) {
       return inputIds;
     }
 
-    copyWithObsoleteInputsRemoved() {
+    copyWithObsoleteInputsRemoved(): BehaviorGroup {
       const inputIdsUsed = this.getAllInputIdsFromBehaviorVersions();
       return this.clone({
         actionInputs: this.actionInputs.filter(ea => inputIdsUsed.has(ea.inputId)),
@@ -93,30 +131,34 @@ define(function(require) {
       });
     }
 
-    clone(props) {
-      return new BehaviorGroup(Object.assign({}, this, props));
+    clone(props): BehaviorGroup {
+      return BehaviorGroup.fromProps(Object.assign({}, this, props));
     }
 
-    copyWithNewTimestamp() {
+    copyWithNewTimestamp(): BehaviorGroup {
       return this.clone({ createdAt: Date.now() });
     }
 
-    copyWithInputsForBehaviorVersion(inputsForBehavior, behaviorVersion) {
-      const inputsKey = behaviorVersion.isDataType() ? "dataTypeInputs" : "actionInputs";
+    copyWithInputsForBehaviorVersion(inputsForBehavior, behaviorVersion): BehaviorGroup {
       const inputIdsForBehavior = inputsForBehavior.map(ea => ea.inputId);
       const newBehaviorVersion = behaviorVersion.clone({ inputIds: inputIdsForBehavior }).copyWithNewTimestamp();
+      const inputs = behaviorVersion.isDataType() ? this.dataTypeInputs : this.actionInputs;
       const newInputs =
-        this[inputsKey].
+        inputs.
           filter(ea => inputIdsForBehavior.indexOf(ea.inputId) === -1).
           concat(inputsForBehavior);
       const newBehaviorVersions =
         this.behaviorVersions.
           filter(ea => ea.behaviorId !== newBehaviorVersion.behaviorId).
           concat([newBehaviorVersion]);
-      const newGroupProps = {
+      const newGroupProps: { behaviorVersions: Array<BehaviorVersion>, dataTypeInputs?: Array<Input>, actionInputs?: Array<Input> } = {
         behaviorVersions: newBehaviorVersions
       };
-      newGroupProps[inputsKey] = newInputs;
+      if (behaviorVersion.isDataType()) {
+        newGroupProps.dataTypeInputs = newInputs;
+      } else {
+        newGroupProps.actionInputs = newInputs;
+      }
       return this.clone(newGroupProps).copyWithObsoleteInputsRemoved();
     }
 
@@ -134,39 +176,39 @@ define(function(require) {
       return this.toJSON();
     }
 
-    isIdenticalTo(group) {
+    isIdenticalTo(group): boolean {
       return DeepEqual.isEqual(this.forEqualityComparison(), group.forEqualityComparison());
     }
 
-    isValidForDataStorage() {
+    isValidForDataStorage(): boolean {
       return this.getDataTypes().every(ea => {
         return ea.name && ea.name.length > 0 && ea.getDataTypeConfig().isValidForDataStorage();
       });
     }
 
-    withNewBehaviorVersion(behaviorVersion) {
+    withNewBehaviorVersion(behaviorVersion): BehaviorGroup {
       return this.clone({
         behaviorVersions: this.behaviorVersions.concat([behaviorVersion])
       });
     }
 
-    withNewLibraryVersion(libraryVersion) {
+    withNewLibraryVersion(libraryVersion): BehaviorGroup {
       return this.clone({
         libraryVersions: this.libraryVersions.concat([libraryVersion])
       });
     }
 
-    hasBehaviorVersionWithId(behaviorId) {
+    hasBehaviorVersionWithId(behaviorId): boolean {
       return !!this.behaviorVersions.find(ea => ea.behaviorId === behaviorId);
     }
 
-    getCustomParamTypes() {
+    getCustomParamTypes(): Array<BehaviorVersion> {
       return this.behaviorVersions.
         filter(ea => ea.isDataType()).
         map(ea => ea.toParamType());
     }
 
-    sortedForComparison(versions) {
+    sortedForComparison(versions): Array<BehaviorVersion> {
       return versions.sort((a, b) => {
         if (a.getPersistentId() < b.getPersistentId()) {
           return -1;
@@ -178,8 +220,30 @@ define(function(require) {
       });
     }
 
-    static fromJson(props) {
-      return new BehaviorGroup(Object.assign({}, props, {
+    static fromProps(props): BehaviorGroup {
+      return new BehaviorGroup(
+        props.id,
+        props.teamId,
+        props.name,
+        props.icon,
+        props.description,
+        props.githubUrl,
+        props.actionInputs,
+        props.dataTypeInputs,
+        props.behaviorVersions,
+        props.libraryVersions,
+        props.requiredAWSConfigs,
+        props.requiredOAuth2ApiConfigs,
+        props.requiredSimpleTokenApis,
+        props.createdAt,
+        props.exportId,
+        props.author,
+        props.gitSHA
+      )
+    }
+
+    static fromJson(props): BehaviorGroup {
+      return BehaviorGroup.fromProps(Object.assign({}, props, {
         requiredAWSConfigs: props.requiredAWSConfigs.map(RequiredAWSConfig.fromJson),
         requiredOAuth2ApiConfigs: props.requiredOAuth2ApiConfigs.map(RequiredOAuth2Application.fromJson),
         requiredSimpleTokenApis: props.requiredSimpleTokenApis.map(RequiredSimpleTokenApi.fromJson),
@@ -191,11 +255,7 @@ define(function(require) {
       }));
     }
 
-    static groupsIncludeId(groups, groupId) {
-      return groups.some((ea) => ea.id === groupId);
-    }
-
-    static groupsIncludeExportId(groups, exportId) {
+    static groupsIncludeExportId(groups, exportId): Array<BehaviorGroup> {
       return groups.some((ea) => ea.exportId === exportId);
     }
   }

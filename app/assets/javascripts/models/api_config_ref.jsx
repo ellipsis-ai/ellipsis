@@ -1,7 +1,11 @@
+// @flow
 define(function(require) {
   const Formatter = require('../lib/formatter');
 
   class ApiConfigRef {
+    id: string;
+    displayName: string;
+
     constructor(props) {
       Object.defineProperties(this, {
         id: { value: props.id, enumerable: true },
@@ -9,7 +13,7 @@ define(function(require) {
       });
     }
 
-    defaultNameInCode() {
+    defaultNameInCode(): string {
       return Formatter.formatCamelCaseIdentifier(this.displayName);
     }
   }

@@ -3,24 +3,28 @@ define(function(require) {
 
   class Editable {
 
-    constructor(props) {
-      const initialProps = Object.assign({
-        name: '',
-        description: '',
-        functionBody: '',
-        editorScrollPosition: 0
-      }, props);
+    constructor(
+      id: ?string,
+      groupId: string,
+      teamId: string,
+      isNew: boolean,
+      name: ?string,
+      description: ?string,
+      functionBody: string,
+      exportId: ?string,
+      editorScrollPosition: ?number
+    ) {
 
       Object.defineProperties(this, {
-        id: { value: initialProps.id, enumerable: true },
-        groupId: { value: initialProps.groupId, enumerable: true },
-        teamId: { value: initialProps.teamId, enumerable: true },
-        isNew: { value: initialProps.isNew, enumerable: true },
-        name: { value: initialProps.name, enumerable: true },
-        description: { value: initialProps.description, enumerable: true },
-        functionBody: { value: initialProps.functionBody, enumerable: true },
-        exportId: { value: initialProps.exportId, enumerable: true },
-        editorScrollPosition: { value: initialProps.editorScrollPosition, enumerable: true }
+        id: { value: id, enumerable: true },
+        groupId: { value: groupId, enumerable: true },
+        teamId: { value: teamId, enumerable: true },
+        isNew: { value: isNew, enumerable: true },
+        name: { value: name, enumerable: true },
+        description: { value: description, enumerable: true },
+        functionBody: { value: functionBody, enumerable: true },
+        exportId: { value: exportId, enumerable: true },
+        editorScrollPosition: { value: editorScrollPosition || 0, enumerable: true }
       });
     }
 

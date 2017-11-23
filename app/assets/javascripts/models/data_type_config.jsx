@@ -1,44 +1,51 @@
+// @flow
 define(function(require) {
 
   const DataTypeField = require('./data_type_field'),
     SequentialName = require("../lib/sequential_name"),
     ID = require("../lib/id");
 
+  const ID_FIELD_INDEX = 0
+
+  type DataTypeConfigProps = {
+    fields: Array<DataTypeField>,
+    usesCode: boolean
+  };
+
   class DataTypeConfig {
-    constructor(props) {
-      var initialProps = Object.assign({
-        fields: [],
-        usesCode: true
-      }, props);
+    fields: Array<DataTypeField>;
+    usesCode: boolean;
+
+    constructor(props: DataTypeConfigProps) {
       Object.defineProperties(this, {
         fields: {
-          value: initialProps.fields,
+          value: props.fields,
           enumerable: true
         },
         usesCode: {
-          value: initialProps.usesCode,
+          value: props.usesCode,
           enumerable: true
         }
       });
     }
 
-    requiresFields() {
+    requiresFields(): boolean {
       return !this.usesCode;
     }
 
-    hasTextFields() {
+    hasTextFields(): boolean {
       return this.fields.some((ea) => ea.name !== "id" && ea.fieldType.id === "Text");
     }
 
-    isIdField(field, index) {
-      return field.name === "id" && index === DataTypeConfig.ID_FIELD_INDEX;
+    isIdField(field, index): boolean {
+      return field.name === "id" && index === ID_FIELD_INDEX;
     }
 
-    hasIdField() {
+    hasIdField(): boolean {
       return this.fields.some(this.isIdField);
     }
 
-    withRequiredFieldsEnsured(requiredFieldType) {
+    withRequiredFieldsEnsured(requiredFieldType): DataTypeConfig {
       if (!this.requiresFields()) {
         return this;
       }
@@ -55,19 +62,19 @@ define(function(require) {
       return this.clone({ fields: fieldsToUse });
     }
 
-    isMissingFields() {
+    isMissingFields(): boolean {
       return this.requiresFields() && !this.hasTextFields();
     }
 
-    isValidForDataStorage() {
+    isValidForDataStorage(): boolean {
       return this.usesCode || this.hasIdField() && this.hasTextFields() && this.fields.every((ea) => ea.name.length > 0);
     }
 
-    getFields() {
+    getFields(): Array<DataTypeField> {
       return this.fields;
     }
 
-    getWritableFields() {
+    getWritableFields(): Array<DataTypeField> {
       const fields = this.getFields();
       if (fields.length > 0) {
         return fields.filter((ea, index) => !this.isIdField(ea, index));
@@ -76,11 +83,11 @@ define(function(require) {
       }
     }
 
-    clone(props) {
+    clone(props): DataTypeConfig {
       return new DataTypeConfig(Object.assign({}, this, props));
     }
 
-    static fromJson(props) {
+    static fromJson(props: DataTypeConfigProps): DataTypeConfig {
       const materializedProps = Object.assign({}, props);
       if (props.fields) {
         materializedProps.fields = DataTypeField.fieldsFromJson(props.fields);
@@ -89,8 +96,6 @@ define(function(require) {
     }
 
   }
-
-  DataTypeConfig.ID_FIELD_INDEX = 0;
 
   return DataTypeConfig;
 });

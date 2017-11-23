@@ -1,6 +1,13 @@
+// @flow
 define(function() {
 
   class BehaviorInvocationTestResult {
+    responseText: string;
+    kind: ?string;
+    missingInputNames: Array<string>;
+    missingSimpleTokens: Array<string>;
+    files: Array<string>;
+
     constructor(props) {
       this.responseText = props.responseText || "";
       this.kind = props.kind || null;
@@ -9,15 +16,15 @@ define(function() {
       this.files = props.files || [];
     }
 
-    wasSuccessful() {
+    wasSuccessful(): boolean {
       return this.kind === "Success";
     }
 
-    wasNoResponse() {
+    wasNoResponse(): boolean {
       return this.kind === "NoResponse";
     }
 
-    static fromReportJSON(props) {
+    static fromReportJSON(props): BehaviorInvocationTestResult {
       return new BehaviorInvocationTestResult({
         responseText: props.result && props.result.fullText ? props.result.fullText : "",
         kind: props.result && props.result.kind ? props.result.kind : null,

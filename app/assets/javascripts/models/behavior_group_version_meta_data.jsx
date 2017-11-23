@@ -1,7 +1,12 @@
+// @flow
 define(function(require) {
   const User = require('./user');
 
   class BehaviorGroupVersionMetaData {
+    behaviorGroupId: string;
+    createdAt: number;
+    author: ?User;
+
     constructor(props) {
       const initialProps = Object.assign({}, props);
       Object.defineProperties(this, {

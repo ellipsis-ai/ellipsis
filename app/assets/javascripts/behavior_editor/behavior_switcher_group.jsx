@@ -24,7 +24,7 @@ define(function(require) {
     },
 
     getEditableList: function() {
-      return Sort.arrayAlphabeticalBy(this.props.editables, ea => ea.sortKey);
+      return Sort.arrayAlphabeticalBy(this.props.editables, ea => ea.sortKey());
     },
 
     isSelected: function(editable) {

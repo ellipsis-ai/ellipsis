@@ -1,3 +1,4 @@
+// @flow
 define(function(require) {
   const ApiConfigRef = require('./api_config_ref');
   const RequiredApiConfigWithConfig = require('./required_api_config_with_config');
@@ -23,11 +24,11 @@ define(function(require) {
       return editor.onUpdateAWSConfig;
     }
 
-    getApiLogoUrl() {
+    getApiLogoUrl(): string {
       return logoUrl;
     }
 
-    getApiName() {
+    getApiName(): string {
       return "AWS";
     }
 
@@ -35,23 +36,23 @@ define(function(require) {
       return editor.getAllAWSConfigs();
     }
 
-    codePathPrefix() {
+    codePathPrefix(): string {
       return "ellipsis.aws.";
     }
 
-    codePath() {
+    codePath(): string {
       return `${this.codePathPrefix()}${this.nameInCode}`;
     }
 
-    configName() {
+    configName(): string {
       return this.config ? this.config.displayName : "";
     }
 
-    isConfigured() {
+    isConfigured(): boolean {
       return Boolean(this.config);
     }
 
-    clone(props) {
+    clone(props): RequiredAWSConfig {
       return new RequiredAWSConfig((Object.assign({}, this, props)));
     }
 
@@ -59,7 +60,7 @@ define(function(require) {
 
   class AWSConfigRef extends ApiConfigRef {
 
-    newRequired() {
+    newRequired(): RequiredAWSConfig {
       return new RequiredAWSConfig({
         id: ID.next(),
         apiId: 'aws',
@@ -68,24 +69,24 @@ define(function(require) {
       });
     }
 
-    getApiLogoUrl() {
+    getApiLogoUrl(): string {
       return logoUrl;
     }
 
-    getApiName(editor) {
+    getApiName(editor): string {
       return editor.getOAuth2ApiNameForConfig(this);
     }
 
-    configName() {
+    configName(): string {
       return this.displayName;
     }
 
-    static fromJson(props) {
+    static fromJson(props): AWSConfigRef {
       return new AWSConfigRef(props);
     }
   }
 
-  RequiredAWSConfig.fromJson = function(props) {
+  RequiredAWSConfig.fromJson = function(props): RequiredAWSConfig {
     return new RequiredAWSConfig(Object.assign({}, props, {
       config: props.config ? AWSConfigRef.fromJson(props.config) : undefined
     }));
