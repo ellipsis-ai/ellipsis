@@ -1,60 +1,68 @@
+// @flow
 define(function(require) {
   const ParamType = require('./param_type');
 
   class DataTypeField {
-    constructor(props) {
-      var initialProps = Object.assign({
-        fieldId: null,
-        fieldVersionId: null,
-        name: "",
-        fieldType: null,
-        isLabel: false
-      }, props);
+    fieldId: string;
+    fieldVersionId: ?string;
+    name: string;
+    fieldType: string;
+    isLabel: boolean;
 
-      if (!initialProps.fieldId) {
-        throw new Error("New DataTypeField must have an fieldId property");
-      }
-      if (!initialProps.fieldType) {
-        throw new Error("New DataTypeField object must have a type set");
-      }
-
+    constructor(
+      fieldId: string,
+      fieldVersionId: ?string,
+      name: ?string,
+      fieldType: string,
+      isLabel: ?boolean
+    ) {
       Object.defineProperties(this, {
         fieldVersionId: {
-          value: initialProps.fieldVersionId,
+          value: fieldVersionId,
           emumerable: true
         },
         fieldId: {
-          value: initialProps.fieldId,
+          value: fieldId,
           enumerable: true
         },
         name: {
-          value: initialProps.name,
+          value: name || "",
           enumerable: true
         },
         fieldType: {
-          value: initialProps.fieldType,
+          value: fieldType,
           enumerable: true
         },
         isLabel: {
-          value: initialProps.isLabel,
+          value: !!isLabel,
           enumerable: true
         }
       });
     }
 
-    clone(props) {
-      return new DataTypeField(Object.assign({}, this, props));
+    clone(props): DataTypeField {
+      return DataTypeField.fromProps(Object.assign({}, this, props));
     }
 
-    static fromJson(props) {
+    static fromProps(props): DataTypeField {
+      return new DataTypeField(
+        props.fieldId,
+        props.fieldVersionId,
+        props.name,
+        props.fieldType,
+        props.isLabel
+      );
+    }
+
+    static fromJson(props): DataTypeField {
       const materializedProps = Object.assign({}, props);
       if (props.fieldType) {
         materializedProps.fieldType = ParamType.fromJson(props.fieldType);
       }
-      return new DataTypeField(materializedProps);
+      return DataTypeField.fromProps(materializedProps);
     }
 
-    static fieldsFromJson(jsonArray) {
+    static fieldsFromJson(jsonArray): Array<DataTypeField> {
       return jsonArray.map(DataTypeField.fromJson);
     }
 

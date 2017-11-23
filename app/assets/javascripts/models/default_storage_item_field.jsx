@@ -1,6 +1,11 @@
+// @flow
 define(function() {
   class DefaultStorageItemField {
-    constructor(name, value) {
+    name: string;
+    value: any;
+    stringValue: string;
+
+    constructor(name: string, value: any) {
       Object.defineProperties(this, {
         name: {
           value: name,

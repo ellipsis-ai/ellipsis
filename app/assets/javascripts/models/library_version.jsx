@@ -1,44 +1,57 @@
+// @flow
 define(function(require) {
   const Editable = require('./editable');
 
   class LibraryVersion extends Editable {
-    constructor(props) {
-      super(props);
+    id: ?string;
+    behaviorId: string;
+    responseTemplate: ?string;
+    functionBody: string;
+    libraryId: string;
+
+    constructor(
+      id: ?string,
+      behaviorId: string,
+      groupId: string,
+      teamId: string,
+      libraryId: string
+    ) {
+      super(id, behaviorId, groupId, teamId);
 
       Object.defineProperties(this, {
-        libraryId: { value: props.libraryId, enumerable: true }
+        libraryId: { value: libraryId, enumerable: true }
       });
     }
 
-    namePlaceholderText() {
+    namePlaceholderText(): string {
       return "Library name";
     }
 
-    cloneActionText() {
+    cloneActionText(): string {
       return "Clone library…";
     }
 
-    deleteActionText() {
+    deleteActionText(): string {
       return "Delete library…";
     }
 
-    confirmDeleteText() {
+    confirmDeleteText(): string {
       return "Are you sure you want to delete this library?";
     }
 
-    getNewEditorTitle() {
+    getNewEditorTitle(): string {
       return "New library";
     }
 
-    getExistingEditorTitle() {
+    getExistingEditorTitle(): string {
       return "Edit library";
     }
 
-    cancelNewText() {
+    cancelNewText(): string {
       return "Cancel new library";
     }
 
-    buildUpdatedGroupFor(group, props) {
+    buildUpdatedGroupFor(group, props): LibraryVersion {
       const updated = this.clone(props);
       const updatedVersions = group.libraryVersions.
         filter(ea => ea.libraryId !== updated.libraryId ).
@@ -46,16 +59,26 @@ define(function(require) {
       return group.clone({ libraryVersions: updatedVersions });
     }
 
-    getPersistentId() {
+    getPersistentId(): string {
       return this.libraryId;
     }
 
-    isLibraryVersion() {
+    isLibraryVersion(): boolean {
       return true;
     }
 
-    clone(props) {
-      return new LibraryVersion(Object.assign({}, this, props));
+    clone(props): LibraryVersion {
+      return LibraryVersion.fromProps(Object.assign({}, this, props));
+    }
+
+    static fromProps(props): LibraryVersion {
+      return new LibraryVersion(
+        props.id,
+        props.behaviorId,
+        props.groupId,
+        props.teamId,
+        props.libaryId
+      )
     }
 
   }

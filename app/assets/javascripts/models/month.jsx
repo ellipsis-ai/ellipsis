@@ -1,34 +1,36 @@
+// @flow
 define(function(require) {
   const OptionalInt = require('./optional_int');
 
   class Month extends OptionalInt {
-    name() {
+    name(): string {
       return this.isValid() ? Month.NAMES[this.value - 1] : "";
     }
 
-    shortName() {
+    shortName(): string {
       return this.isValid() ? Month.SHORT_NAMES[this.value - 1] : "";
     }
 
-    maxDays() {
+    maxDays(): ?number {
       return this.isValid() ? Month.MAX_DAYS[this.value - 1] : null;
     }
 
-    limitDaytoMax(day) {
-      return Math.min(this.maxDays(), day) || day;
+    limitDaytoMax(day): ?number {
+      const days = this.maxDays();
+      return days ? Math.min(days, day) : day;
     }
 
-    isValid() {
+    isValid(): boolean {
       return this.is((int) => int >= 1 && int <= 12);
     }
 
-    static fromString(string) {
+    static fromString(string): Month {
       const parsed = string.match(/^(1[0-2]|[1-9])$/);
       const int = super.fromStringWithDefault(parsed ? parsed[1] : "", Month.JANUARY.value);
       return new Month(int.value);
     }
 
-    static isValid(intOrNull) {
+    static isValid(intOrNull): boolean {
       return new Month(intOrNull).isValid();
     }
   }
