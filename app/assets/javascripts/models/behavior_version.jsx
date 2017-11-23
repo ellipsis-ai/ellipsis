@@ -18,7 +18,7 @@ define(function(require) {
     triggers: Array<Trigger>;
     config: BehaviorConfig;
     knownEnvVarsUsed: Array<string>;
-    createdAt: number;
+    createdAt: ?number;
     shouldRevealCodeEditor: boolean;
     isNew: ?boolean;
 
@@ -36,7 +36,7 @@ define(function(require) {
       config: BehaviorConfig,
       exportId: ?string,
       knownEnvVarsUsed: Array<string>,
-      createdAt: number,
+      createdAt: ?number,
       shouldRevealCodeEditor: ?boolean,
       isNew: ?boolean,
       editorScrollPosition: number
@@ -211,7 +211,7 @@ define(function(require) {
     }
 
     timestampForAlphabeticalSort(): string {
-      const timestampString = Number(new Date(this.createdAt)).toString();
+      const timestampString = this.createdAt ? Number(new Date(this.createdAt)).toString() : "";
       const pad = new Array(16).join("0");
       return pad.substring(0, pad.length - timestampString.length) + timestampString;
     }

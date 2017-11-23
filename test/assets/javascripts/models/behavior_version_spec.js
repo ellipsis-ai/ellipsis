@@ -130,11 +130,11 @@ describe('BehaviorVersion', () => {
       expect(version.triggers.map(ea => ea.text)).toEqual(["B", "C"]);
     });
 
-    it('sets createdAt if not provided', () => {
+    it('doesn\'t set createdAt if not provided', () => {
       const withoutTimestamp = Object.assign({}, behaviorVersionTask1);
       delete withoutTimestamp.createdAt;
       const version = BehaviorVersion.fromJson(withoutTimestamp);
-      expect(version.createdAt).toBeTruthy();
+      expect(version.createdAt).toBeFalsy();
     });
 
     it('respects createdAt if provided', () => {
@@ -191,14 +191,14 @@ describe('BehaviorVersion', () => {
       const version1 = BehaviorVersion.fromJson(replaceTrigger).clone({ name: "Name" });
       const version2 = BehaviorVersion.fromJson(replaceTrigger).clone({ triggers: [] });
       const version3 = BehaviorVersion.fromJson(replaceTrigger);
-      expect(version1.sortKey).toBe("AName");
-      expect(version2.sortKey).toEqual("A" + version2.timestampForAlphabeticalSort());
-      expect(version3.sortKey).toBe("ATrigger!");
+      expect(version1.sortKey()).toBe("AName");
+      expect(version2.sortKey()).toEqual("A" + version2.timestampForAlphabeticalSort());
+      expect(version3.sortKey()).toBe("ATrigger!");
     });
 
     it('sorts new by timestamp only, with a leading Z', () => {
       const version1 = BehaviorVersion.fromJson(behaviorVersionTask1).clone({ name: "Name", isNew: true });
-      expect(version1.sortKey).toEqual("Z" + version1.timestampForAlphabeticalSort());
+      expect(version1.sortKey()).toEqual("Z" + version1.timestampForAlphabeticalSort());
     });
   });
 

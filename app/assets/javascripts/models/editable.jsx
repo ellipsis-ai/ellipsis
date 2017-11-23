@@ -34,7 +34,7 @@ define(function(require) {
         description: { value: description, enumerable: true },
         functionBody: { value: functionBody, enumerable: true },
         exportId: { value: exportId, enumerable: true },
-        editorScrollPosition: { value: editorScrollPosition || 0, enumerable: true }
+        editorScrollPosition: { value: editorScrollPosition, enumerable: true }
       });
     }
 
