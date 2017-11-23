@@ -45,7 +45,7 @@ define(function(require) {
         props.forcePrivateResponse,
         props.isDataType,
         props.dataTypeConfig
-      )
+      );
     }
 
     static fromJson(props): BehaviorConfig {

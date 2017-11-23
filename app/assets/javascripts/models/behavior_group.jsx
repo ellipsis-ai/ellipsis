@@ -239,7 +239,7 @@ define(function(require) {
         props.exportId,
         props.author,
         props.gitSHA
-      )
+      );
     }
 
     static fromJson(props): BehaviorGroup {

@@ -5,7 +5,7 @@ define(function(require) {
     SequentialName = require("../lib/sequential_name"),
     ID = require("../lib/id");
 
-  const ID_FIELD_INDEX = 0
+  const ID_FIELD_INDEX = 0;
 
   type DataTypeConfigProps = {
     fields: Array<DataTypeField>,
