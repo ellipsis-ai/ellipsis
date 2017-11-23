@@ -78,7 +78,7 @@ define(function(require) {
         props.groupId,
         props.teamId,
         props.libaryId
-      )
+      );
     }
 
   }

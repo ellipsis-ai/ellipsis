@@ -1,5 +1,5 @@
 // @flow
-define(function() {
+define(function(require) {
 
   const ParamType = require('./param_type');
 
