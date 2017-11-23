@@ -1,7 +1,17 @@
+// @flow
 define(function(require) {
   var DeepEqual = require('../lib/deep_equal');
 
   class Editable {
+    id: ?string;
+    groupId: string;
+    teamId: string;
+    isNew: boolean;
+    name: ?string;
+    description: ?string;
+    functionBody: string;
+    exportId: ?string;
+    editorScrollPosition: ?number;
 
     constructor(
       id: ?string,
@@ -28,62 +38,66 @@ define(function(require) {
       });
     }
 
-    isBehaviorVersion() {
+    isBehaviorVersion(): boolean {
       return false;
     }
 
-    isDataType() {
+    isDataType(): boolean {
       return false;
     }
 
-    isLibraryVersion() {
+    isLibraryVersion(): boolean {
       return false;
     }
 
-    namePlaceholderText() {
+    namePlaceholderText(): string {
       return "Item name";
     }
 
-    cloneActionText() {
+    cloneActionText(): string {
       return "Clone item…";
     }
 
-    deleteActionText() {
+    deleteActionText(): string {
       return "Delete item…";
     }
 
-    confirmDeleteText() {
+    confirmDeleteText(): string {
       return "Are you sure you want to delete this item?";
     }
 
-    getEditorTitle() {
+    getEditorTitle(): string {
       return this.isNew ? this.getNewEditorTitle() : this.getExistingEditorTitle();
     }
 
-    getNewEditorTitle() {
+    getNewEditorTitle(): string {
       return "New item";
     }
 
-    getExistingEditorTitle() {
+    getExistingEditorTitle(): string {
       return "Edit item";
     }
 
-    getName() {
+    getName(): string {
       return this.name || "";
     }
 
-    getDescription() {
+    getDescription(): string {
       return this.description || "";
     }
 
-    cancelNewText() {
+    cancelNewText(): string {
       return "Cancel new item";
     }
 
-    includesText(queryString) {
+    includesText(queryString): boolean {
       var lowercase = queryString.toLowerCase().trim();
       return this.getName().toLowerCase().includes(lowercase) ||
         this.getDescription().toLowerCase().includes(lowercase);
+    }
+
+    clone(props): Editable {
+      throw "Needs to be implemented in subclasses";
     }
 
     // Used by JSON.stringify for submitting data to the server
@@ -97,7 +111,7 @@ define(function(require) {
       return this.toJSON();
     }
 
-    isIdenticalToVersion(version) {
+    isIdenticalToVersion(version): boolean {
       return DeepEqual.isEqual(this.forEqualityComparison(), version.forEqualityComparison());
     }
 
