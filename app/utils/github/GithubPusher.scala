@@ -17,8 +17,16 @@ trait GitCommandException extends Exception
 case class EnsureGitRepoDirException(message: String) extends GitCommandException {
   override def getMessage: String = s"Error initializing git repo: $message"
 }
-case class GitCloneException(message: String) extends GitCommandException {
-  override def getMessage: String = s"Error cloning git repo: $message"
+case class GitCloneException(owner: String, repo: String, message: String) extends GitCommandException {
+  private val repoDoesntExistRegex = """Repository not found""".r
+  override def getMessage: String = {
+    val errorDetails = if (repoDoesntExistRegex.findFirstIn(message).isDefined) {
+      s"Repo '$repo' doesn't exist for $owner"
+    } else {
+      message.trim
+    }
+    s"Error cloning git repo: $errorDetails"
+  }
 }
 case class GitPullException(message: String) extends GitCommandException {
   override def getMessage: String = s"Error pulling from GitHub: $message"
@@ -85,7 +93,10 @@ case class GithubPusher(
   }
 
   private def cloneRepo: Future[Unit] = {
-    runCommand(s"mkdir -p $parentPath && cd $parentPath && rm -rf $exportName && git clone $remoteUrl $exportName", Some(GitCloneException.apply))
+    runCommand(
+      s"mkdir -p $parentPath && cd $parentPath && rm -rf $exportName && git clone $remoteUrl $exportName",
+      Some(message => GitCloneException(owner, repoName, message))
+    )
   }
 
   private def ensureBranch: Future[Unit] = {
