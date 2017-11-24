@@ -225,7 +225,7 @@ define(function(require) {
     }
 
     toParamType(): ParamType {
-      return new ParamType({
+      return ParamType.fromProps({
         id: this.id,
         exportId: this.exportId,
         name: this.name || "Unnamed data type"
