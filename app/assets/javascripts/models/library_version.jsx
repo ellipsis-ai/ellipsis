@@ -3,22 +3,35 @@ define(function(require) {
   const Editable = require('./editable');
 
   class LibraryVersion extends Editable {
-    id: ?string;
-    behaviorId: string;
-    responseTemplate: ?string;
     functionBody: string;
     libraryId: string;
 
     constructor(
       id: ?string,
-      behaviorId: string,
+      name: ?string,
+      description: ?string,
+      functionBody: string,
       groupId: string,
       teamId: string,
-      libraryId: string
+      libraryId: string,
+      exportId: ?string,
+      isNew: boolean,
+      editorScrollPosition: ?number
     ) {
-      super(id, behaviorId, groupId, teamId);
+      super(
+        id,
+        groupId,
+        teamId,
+        isNew,
+        name,
+        description,
+        functionBody,
+        exportId,
+        editorScrollPosition
+      );
 
       Object.defineProperties(this, {
+        functionBody: { value: functionBody, enumerable: true },
         libraryId: { value: libraryId, enumerable: true }
       });
     }
@@ -74,10 +87,15 @@ define(function(require) {
     static fromProps(props): LibraryVersion {
       return new LibraryVersion(
         props.id,
-        props.behaviorId,
+        props.name,
+        props.description,
+        props.functionBody,
         props.groupId,
         props.teamId,
-        props.libaryId
+        props.libaryId,
+        props.exportId,
+        props.isNew,
+        props.editorScrollPosition
       );
     }
 

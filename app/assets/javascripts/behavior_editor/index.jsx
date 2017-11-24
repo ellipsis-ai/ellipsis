@@ -2273,7 +2273,7 @@ const BehaviorEditor = React.createClass({
     fetch(url, { credentials: 'same-origin' })
       .then((response) => response.json())
       .then((json) => {
-        const newVersion = new LibraryVersion(Object.assign({}, json, { groupId: group.id }));
+        const newVersion = LibraryVersion.fromProps(Object.assign({}, json, { groupId: group.id }));
         const groupWithNewLibrary = group.withNewLibraryVersion(newVersion);
         this.updateGroupStateWith(groupWithNewLibrary, () => {
           this.onSelect(groupWithNewLibrary.id, newVersion.libraryId);
