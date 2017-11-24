@@ -7,23 +7,21 @@ define(function(require) {
 
   const ID_FIELD_INDEX = 0;
 
-  type DataTypeConfigProps = {
-    fields: Array<DataTypeField>,
-    usesCode: boolean
-  };
-
   class DataTypeConfig {
     fields: Array<DataTypeField>;
     usesCode: boolean;
 
-    constructor(props: DataTypeConfigProps) {
+    constructor(
+      fields: Array<DataTypeField>,
+      usesCode: ?boolean
+    ) {
       Object.defineProperties(this, {
         fields: {
-          value: props.fields,
+          value: fields,
           enumerable: true
         },
         usesCode: {
-          value: props.usesCode,
+          value: usesCode === undefined ? true : !!usesCode,
           enumerable: true
         }
       });
@@ -52,12 +50,12 @@ define(function(require) {
 
       let fieldsToUse = this.fields.slice();
       if (!this.hasIdField()) {
-        const newIdField = new DataTypeField({ name: "id", fieldId: "id", fieldType: requiredFieldType });
+        const newIdField = DataTypeField.fromProps({ name: "id", fieldId: "id", fieldType: requiredFieldType });
         fieldsToUse = [newIdField].concat(fieldsToUse);
       }
       if (!this.hasTextFields()) {
         const newName = SequentialName.nextFor(this.fields, (ea) => ea.name, "field");
-        fieldsToUse.push(new DataTypeField({ name: newName, fieldId: ID.next(), fieldType: requiredFieldType }));
+        fieldsToUse.push(DataTypeField.fromProps({ name: newName, fieldId: ID.next(), fieldType: requiredFieldType }));
       }
       return this.clone({ fields: fieldsToUse });
     }
@@ -84,15 +82,22 @@ define(function(require) {
     }
 
     clone(props): DataTypeConfig {
-      return new DataTypeConfig(Object.assign({}, this, props));
+      return DataTypeConfig.fromProps(Object.assign({}, this, props));
     }
 
-    static fromJson(props: DataTypeConfigProps): DataTypeConfig {
+    static fromProps(props): DataTypeConfig {
+      return new DataTypeConfig(
+        props.fields,
+        props.usesCode
+      );
+    }
+
+    static fromJson(props): DataTypeConfig {
       const materializedProps = Object.assign({}, props);
       if (props.fields) {
         materializedProps.fields = DataTypeField.fieldsFromJson(props.fields);
       }
-      return new DataTypeConfig(materializedProps);
+      return DataTypeConfig.fromProps(materializedProps);
     }
 
   }

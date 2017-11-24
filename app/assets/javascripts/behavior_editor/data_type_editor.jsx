@@ -120,7 +120,7 @@ define(function(require) {
 
     addNewDataTypeField() {
       const newName = SequentialName.nextFor(this.getDataTypeFields().slice(1), (ea) => ea.name, "field");
-      this.addDataTypeField(new DataTypeField({
+      this.addDataTypeField(DataTypeField.fromProps({
         fieldId: ID.next(),
         name: newName,
         fieldType: this.getDefaultFieldType()

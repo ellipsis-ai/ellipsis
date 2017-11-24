@@ -6,7 +6,7 @@ define(function(require) {
     fieldId: string;
     fieldVersionId: ?string;
     name: string;
-    fieldType: string;
+    fieldType: ParamType;
     isLabel: boolean;
 
     constructor(
