@@ -1,3 +1,4 @@
+// @flow
 define(function(require) {
   const ApiConfigRef = require('./api_config_ref');
   const RequiredApiConfig = require('./required_api_config');
