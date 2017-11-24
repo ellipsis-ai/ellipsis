@@ -717,7 +717,7 @@ const BehaviorEditor = React.createClass({
 
   addNewInput: function(optionalNewName) {
     const newName = optionalNewName || SequentialName.nextFor(this.getInputs(), (ea) => ea.name, "userInput");
-    this.addInput(new Input({
+    this.addInput(Input.fromProps({
       inputId: ID.next(),
       name: newName,
       paramType: this.props.builtinParamTypes.find((ea) => ea.id === "Text")

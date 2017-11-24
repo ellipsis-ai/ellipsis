@@ -17,8 +17,8 @@ define(function(require) {
       name: ?string,
       question: ?string,
       paramType: string,
-      isSavedForTeam: boolean,
-      isSavedForUser: boolean,
+      isSavedForTeam: ?boolean,
+      isSavedForUser: ?boolean,
       inputId: string,
       inputVersionId: string,
       exportId: string
@@ -38,11 +38,11 @@ define(function(require) {
           enumerable: true
         },
         isSavedForTeam: {
-          value: isSavedForTeam,
+          value: !!isSavedForTeam,
           enumerable: true
         },
         isSavedForUser: {
-          value: isSavedForUser,
+          value: !!isSavedForUser,
           enumerable: true
         },
         inputId: {
