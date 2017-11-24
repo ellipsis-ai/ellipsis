@@ -49,18 +49,23 @@ define(function(require) {
       return true;
     }
 
-    clone(props) {
-      return new RequiredSimpleTokenApi((Object.assign({}, this, props)));
+    clone(props): RequiredSimpleTokenApi {
+      return RequiredSimpleTokenApi.fromProps(Object.assign({}, this, props));
+    }
+
+    static fromProps(props): RequiredSimpleTokenApi {
+      return new RequiredSimpleTokenApi(props.id, props.apiId, props.nameInCode, props.config);
     }
 
   }
 
   class SimpleTokenApiRef extends ApiConfigRef {
+    logoImageUrl: string;
 
-    constructor(props) {
-      super(props);
+    constructor(id: string, displayName: string, logoImageUrl: string) {
+      super(id, displayName);
       Object.defineProperties(this, {
-        logoImageUrl: { value: props.logoImageUrl, enumerable: true }
+        logoImageUrl: { value: logoImageUrl, enumerable: true }
       });
     }
 
@@ -77,22 +82,22 @@ define(function(require) {
     }
 
     newRequired() {
-      return new RequiredSimpleTokenApi({
-        id: ID.next(),
-        apiId: this.id,
-        nameInCode: this.defaultNameInCode(),
-        config: this
-      });
+      return new RequiredSimpleTokenApi(
+        ID.next(),
+        this.id,
+        this.defaultNameInCode(),
+        this
+      );
     }
 
     static fromJson(props) {
-      return new SimpleTokenApiRef(props);
+      return new SimpleTokenApiRef(props.id, props.displayName, props.logoImageUrl);
     }
 
   }
 
   RequiredSimpleTokenApi.fromJson = function (props) {
-    return new RequiredSimpleTokenApi(Object.assign({}, props, {
+    return RequiredSimpleTokenApi.fromProps(Object.assign({}, props, {
       config: props.config ? SimpleTokenApiRef.fromJson(props.config) : undefined
     }));
   };

@@ -53,7 +53,11 @@ define(function(require) {
     }
 
     clone(props): RequiredAWSConfig {
-      return new RequiredAWSConfig((Object.assign({}, this, props)));
+      return RequiredAWSConfig.fromProps((Object.assign({}, this, props)));
+    }
+
+    static fromProps(props) {
+      return new RequiredAWSConfig(props.id, props.apiId, props.nameInCode, props.config);
     }
 
   }
@@ -61,12 +65,12 @@ define(function(require) {
   class AWSConfigRef extends ApiConfigRef {
 
     newRequired(): RequiredAWSConfig {
-      return new RequiredAWSConfig({
-        id: ID.next(),
-        apiId: 'aws',
-        nameInCode: this.defaultNameInCode(),
-        config: this
-      });
+      return new RequiredAWSConfig(
+        ID.next(),
+        'aws',
+        this.defaultNameInCode(),
+        this
+      );
     }
 
     getApiLogoUrl(): string {
@@ -82,14 +86,13 @@ define(function(require) {
     }
 
     static fromJson(props): AWSConfigRef {
-      return new AWSConfigRef(props);
+      return new AWSConfigRef(props.id, props.displayName);
     }
   }
 
   RequiredAWSConfig.fromJson = function(props): RequiredAWSConfig {
-    return new RequiredAWSConfig(Object.assign({}, props, {
-      config: props.config ? AWSConfigRef.fromJson(props.config) : undefined
-    }));
+    const config = props.config ? AWSConfigRef.fromJson(props.config) : undefined;
+    return new RequiredAWSConfig(props.id, props.apiId, props.nameInCode, config);
   };
 
   return {

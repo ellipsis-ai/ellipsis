@@ -1,14 +1,19 @@
+// @flow
 define(function() {
   class RequiredApiConfig {
-    constructor(props) {
+    id: string;
+    apiId: string;
+    nameInCode: string;
+
+    constructor(id: string, apiId: string, nameInCode: string) {
       Object.defineProperties(this, {
-        id: { value: props.id, enumerable: true },
-        apiId: { value: props.apiId, enumerable: true },
-        nameInCode: { value: props.nameInCode, enumerable: true }
+        id: { value: id, enumerable: true },
+        apiId: { value: apiId, enumerable: true },
+        nameInCode: { value: nameInCode, enumerable: true }
       });
     }
 
-    canHaveConfig() {
+    canHaveConfig(): boolean {
       return false;
     }
   }

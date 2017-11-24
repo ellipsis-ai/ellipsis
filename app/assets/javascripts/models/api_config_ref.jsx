@@ -6,10 +6,10 @@ define(function(require) {
     id: string;
     displayName: string;
 
-    constructor(props) {
+    constructor(id: string, displayName: string) {
       Object.defineProperties(this, {
-        id: { value: props.id, enumerable: true },
-        displayName: { value: props.displayName, enumerable: true }
+        id: { value: id, enumerable: true },
+        displayName: { value: displayName, enumerable: true }
       });
     }
 
