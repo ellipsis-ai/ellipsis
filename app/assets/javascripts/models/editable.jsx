@@ -1,85 +1,103 @@
+// @flow
 define(function(require) {
   var DeepEqual = require('../lib/deep_equal');
 
   class Editable {
+    id: ?string;
+    groupId: string;
+    teamId: string;
+    isNew: boolean;
+    name: ?string;
+    description: ?string;
+    functionBody: string;
+    exportId: ?string;
+    editorScrollPosition: ?number;
 
-    constructor(props) {
-      const initialProps = Object.assign({
-        name: '',
-        description: '',
-        functionBody: '',
-        editorScrollPosition: 0
-      }, props);
+    constructor(
+      id: ?string,
+      groupId: string,
+      teamId: string,
+      isNew: boolean,
+      name: ?string,
+      description: ?string,
+      functionBody: string,
+      exportId: ?string,
+      editorScrollPosition: ?number
+    ) {
 
       Object.defineProperties(this, {
-        id: { value: initialProps.id, enumerable: true },
-        groupId: { value: initialProps.groupId, enumerable: true },
-        teamId: { value: initialProps.teamId, enumerable: true },
-        isNew: { value: initialProps.isNew, enumerable: true },
-        name: { value: initialProps.name, enumerable: true },
-        description: { value: initialProps.description, enumerable: true },
-        functionBody: { value: initialProps.functionBody, enumerable: true },
-        exportId: { value: initialProps.exportId, enumerable: true },
-        editorScrollPosition: { value: initialProps.editorScrollPosition, enumerable: true }
+        id: { value: id, enumerable: true },
+        groupId: { value: groupId, enumerable: true },
+        teamId: { value: teamId, enumerable: true },
+        isNew: { value: isNew, enumerable: true },
+        name: { value: name, enumerable: true },
+        description: { value: description, enumerable: true },
+        functionBody: { value: functionBody, enumerable: true },
+        exportId: { value: exportId, enumerable: true },
+        editorScrollPosition: { value: editorScrollPosition, enumerable: true }
       });
     }
 
-    isBehaviorVersion() {
+    isBehaviorVersion(): boolean {
       return false;
     }
 
-    isDataType() {
+    isDataType(): boolean {
       return false;
     }
 
-    isLibraryVersion() {
+    isLibraryVersion(): boolean {
       return false;
     }
 
-    namePlaceholderText() {
+    namePlaceholderText(): string {
       return "Item name";
     }
 
-    cloneActionText() {
+    cloneActionText(): string {
       return "Clone item…";
     }
 
-    deleteActionText() {
+    deleteActionText(): string {
       return "Delete item…";
     }
 
-    confirmDeleteText() {
+    confirmDeleteText(): string {
       return "Are you sure you want to delete this item?";
     }
 
-    getEditorTitle() {
+    getEditorTitle(): string {
       return this.isNew ? this.getNewEditorTitle() : this.getExistingEditorTitle();
     }
 
-    getNewEditorTitle() {
+    getNewEditorTitle(): string {
       return "New item";
     }
 
-    getExistingEditorTitle() {
+    getExistingEditorTitle(): string {
       return "Edit item";
     }
 
-    getName() {
+    getName(): string {
       return this.name || "";
     }
 
-    getDescription() {
+    getDescription(): string {
       return this.description || "";
     }
 
-    cancelNewText() {
+    cancelNewText(): string {
       return "Cancel new item";
     }
 
-    includesText(queryString) {
+    includesText(queryString): boolean {
       var lowercase = queryString.toLowerCase().trim();
       return this.getName().toLowerCase().includes(lowercase) ||
         this.getDescription().toLowerCase().includes(lowercase);
+    }
+
+    clone(props): Editable {
+      throw "Needs to be implemented in subclasses";
     }
 
     // Used by JSON.stringify for submitting data to the server
@@ -93,7 +111,7 @@ define(function(require) {
       return this.toJSON();
     }
 
-    isIdenticalToVersion(version) {
+    isIdenticalToVersion(version): boolean {
       return DeepEqual.isEqual(this.forEqualityComparison(), version.forEqualityComparison());
     }
 

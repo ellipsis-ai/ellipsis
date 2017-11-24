@@ -1,38 +1,51 @@
+// @flow
 define(function(require) {
   const DefaultStorageItemField = require('./default_storage_item_field');
 
   class DefaultStorageItem {
-    constructor(props) {
-      const initialProps = Object.assign({}, props);
+    id: string;
+    behaviorId: string;
+    updatedAt: number;
+    updatedByUserId: string;
+    data: any;
+    fields: Array<DefaultStorageItemField>;
+
+    constructor(
+      id: string,
+      behaviorId: string,
+      updatedAt: number,
+      updatedByUserId: string,
+      data: any
+    ) {
       Object.defineProperties(this, {
         id: {
-          value: initialProps.id || null,
+          value: id,
           enumerable: true
         },
         behaviorId: {
-          value: initialProps.behaviorId || null,
+          value: behaviorId,
           enumerable: true
         },
         updatedAt: {
-          value: initialProps.updatedAt || null,
+          value: updatedAt,
           enumerable: true
         },
         updatedByUserId: {
-          value: initialProps.updatedByUserId || null,
+          value: updatedByUserId,
           enumerable: true
         },
         data: {
-          value: Object.assign({}, initialProps.data),
+          value: data,
           enumerable: true
         },
         fields: {
-          value: DefaultStorageItem.dataJsonToFields(initialProps.data),
+          value: DefaultStorageItem.dataJsonToFields(data),
           enumerable: true
         }
       });
     }
 
-    static dataJsonToFields(json) {
+    static dataJsonToFields(json): Array<DefaultStorageItemField> {
       if (!json) {
         return [];
       }

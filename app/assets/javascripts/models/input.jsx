@@ -1,76 +1,93 @@
-define(function() {
+// @flow
+define(function(require) {
+
+  const ParamType = require('./param_type');
 
   class Input {
-    constructor(props) {
-      var initialProps = Object.assign({
-        name: '',
-        question: '',
-        paramType: null,
-        isSavedForTeam: false,
-        isSavedForUser: false,
-        inputId: null,
-        inputVersionId: null,
-        exportId: null
-      }, props);
+    name: string;
+    question: string;
+    paramType: ParamType;
+    isSavedForTeam: boolean;
+    isSavedForUser: boolean;
+    inputId: string;
+    inputVersionId: string;
+    exportId: string;
 
-      if (!initialProps.inputId) {
-        throw new Error("New Input must have an inputId property");
-      }
-      if (!initialProps.paramType) {
-        throw new Error("New Input object must have a param type set");
-      }
+    constructor(
+      name: ?string,
+      question: ?string,
+      paramType: string,
+      isSavedForTeam: ?boolean,
+      isSavedForUser: ?boolean,
+      inputId: string,
+      inputVersionId: string,
+      exportId: string
+    ) {
 
       Object.defineProperties(this, {
         name: {
-          value: initialProps.name,
+          value: name || '',
           enumerable: true
         },
         question: {
-          value: initialProps.question,
+          value: question || '',
           enumerable: true
         },
         paramType: {
-          value: initialProps.paramType,
+          value: paramType,
           enumerable: true
         },
         isSavedForTeam: {
-          value: initialProps.isSavedForTeam,
+          value: !!isSavedForTeam,
           enumerable: true
         },
         isSavedForUser: {
-          value: initialProps.isSavedForUser,
+          value: !!isSavedForUser,
           enumerable: true
         },
         inputId: {
-          value: initialProps.inputId,
+          value: inputId,
           enumerable: true
         },
         inputVersionId: {
-          value: initialProps.inputVersionId,
+          value: inputVersionId,
           enumerable: true
         },
         exportId: {
-          value: initialProps.exportId,
+          value: exportId,
           enumerable: true
         }
       });
     }
 
-    isSaved() {
+    isSaved(): boolean {
       return this.isSavedForUser || this.isSavedForTeam;
     }
 
-    isSameNameAndTypeAs(other) {
+    isSameNameAndTypeAs(other: Input): boolean {
       return this.name === other.name &&
         this.paramType.id === other.paramType.id;
     }
 
     clone(props) {
-      return new Input(Object.assign({}, this, props));
+      return Input.fromProps(Object.assign({}, this, props));
+    }
+
+    static fromProps(props) {
+      return new Input(
+        props.name,
+        props.question,
+        props.paramType,
+        props.isSavedForTeam,
+        props.isSavedForUser,
+        props.inputId,
+        props.inputVersionId,
+        props.exportId
+      );
     }
 
     static allFromJson(jsonArray) {
-      return jsonArray.map((triggerObj) => new Input(triggerObj));
+      return jsonArray.map((triggerObj) => Input.fromProps(triggerObj));
     }
   }
 

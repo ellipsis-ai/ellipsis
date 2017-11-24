@@ -1,27 +1,32 @@
+// @flow
 define(function(require) {
-  var
+  const
     DataTypeConfig = require('./data_type_config');
 
   class BehaviorConfig {
-    constructor(props) {
-      var initialProps = Object.assign({
-        exportId: null,
-        name: null,
-        forcePrivateResponse: false,
-        isDataType: false,
-        dataTypeConfig: null
-      }, props);
+    exportId: string;
+    name: string;
+    forcePrivateResponse: boolean;
+    isDataType: boolean;
+    dataTypeConfig: DataTypeConfig;
 
+    constructor(
+      exportId: string,
+      name: string,
+      forcePrivateResponse: boolean,
+      isDataType: boolean,
+      dataTypeConfig: DataTypeConfig
+    ) {
       Object.defineProperties(this, {
-        exportId: { value: initialProps.exportId, enumerable: true },
-        name: { value: initialProps.name, enumerable: true },
-        forcePrivateResponse: { value: initialProps.forcePrivateResponse, enumerable: true },
-        isDataType: { value: initialProps.isDataType, enumerable: true },
-        dataTypeConfig: { value: initialProps.dataTypeConfig, enumerable: true }
+        exportId: { value: exportId, enumerable: true },
+        name: { value: name, enumerable: true },
+        forcePrivateResponse: { value: forcePrivateResponse, enumerable: true },
+        isDataType: { value: isDataType, enumerable: true },
+        dataTypeConfig: { value: dataTypeConfig, enumerable: true }
       });
     }
 
-    getDataTypeConfig() {
+    getDataTypeConfig(): DataTypeConfig {
       return this.dataTypeConfig;
     }
 
@@ -29,16 +34,26 @@ define(function(require) {
       return this.getDataTypeConfig() ? this.getDataTypeConfig().getFields() : [];
     }
 
-    clone(props) {
-      return new BehaviorConfig(Object.assign({}, this, props));
+    clone(props): BehaviorConfig {
+      return BehaviorConfig.fromProps(Object.assign({}, this, props));
     }
 
-    static fromJson(props) {
+    static fromProps(props): BehaviorConfig {
+      return new BehaviorConfig(
+        props.exportId,
+        props.name,
+        props.forcePrivateResponse,
+        props.isDataType,
+        props.dataTypeConfig
+      );
+    }
+
+    static fromJson(props): BehaviorConfig {
       const materializedProps = Object.assign({}, props);
       if (props.dataTypeConfig) {
         materializedProps.dataTypeConfig = DataTypeConfig.fromJson(props.dataTypeConfig);
       }
-      return new BehaviorConfig(materializedProps);
+      return BehaviorConfig.fromProps(materializedProps);
     }
 
   }

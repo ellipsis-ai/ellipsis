@@ -1,22 +1,23 @@
+// @flow
 define(function(require) {
   const OptionalInt = require('./optional_int');
 
   class DayOfWeek extends OptionalInt {
-    name() {
+    name(): string {
       return DayOfWeek.NAMES[this.value - 1] || "";
     }
 
-    shortName() {
+    shortName(): string {
       return DayOfWeek.SHORT_NAMES[this.value - 1] || "";
     }
 
-    static fromString(string) {
+    static fromString(string): DayOfWeek {
       const parsed = string.match(/^([1-7])$/);
       const int = super.fromStringWithDefault(parsed ? parsed[1] : "", DayOfWeek.MONDAY.value);
       return new DayOfWeek(int.value);
     }
 
-    static isValid(intOrNull) {
+    static isValid(intOrNull): boolean {
       const d = new DayOfWeek(intOrNull);
       return d.is((ea) => ea >= 1 && ea <= 7);
     }

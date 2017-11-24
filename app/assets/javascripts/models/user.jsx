@@ -1,24 +1,32 @@
+// @flow
 define(function() {
 
   class User {
-    constructor(props) {
-      const defaultProps = Object.assign({}, props);
+    id: string;
+    userName: string;
+    fullName: string;
+
+    constructor(
+      id: string,
+      userName: string,
+      fullName: string
+    ) {
       Object.defineProperties(this, {
-        id: { value: defaultProps.id, enumerable: true },
-        userName: { value: defaultProps.userName, enumerable: true },
-        fullName: { value: defaultProps.fullName, enumerable: true }
+        id: { value: id, enumerable: true },
+        userName: { value: userName, enumerable: true },
+        fullName: { value: fullName, enumerable: true }
       });
     }
 
-    formattedUserName() {
+    formattedUserName(): string {
       return this.userName ? `@${this.userName}` : "Unknown";
     }
 
-    formattedName() {
+    formattedName(): string {
       return this.formattedNameIfKnown() || "Unknown";
     }
 
-    formattedNameIfKnown() {
+    formattedNameIfKnown(): string {
       if (this.fullName && this.userName) {
         return `${this.fullName} (@${this.userName})`;
       } else if (this.fullName) {
@@ -30,12 +38,20 @@ define(function() {
       }
     }
 
-    formattedFullNameOrUserName() {
+    formattedFullNameOrUserName(): string {
       return this.fullName || this.formattedUserName();
     }
 
-    static fromJson(props) {
-      return new User(props);
+    static fromProps(props): User {
+      return new User(
+        props.id,
+        props.name,
+        props.fullName
+      );
+    }
+
+    static fromJson(props): User {
+      return User.fromProps(props);
     }
   }
 

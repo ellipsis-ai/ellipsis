@@ -47,7 +47,7 @@ define(function(require) {
       group.behaviorVersions.find((version) => {
         return version.triggers.some((trigger) => {
           if (!trigger.isRegex && /\bhelp\b/i.test(trigger.text)) {
-            triggerText = trigger.displayText;
+            triggerText = trigger.displayText();
             return true;
           } else {
             return false;
@@ -58,7 +58,7 @@ define(function(require) {
         group.behaviorVersions.find((version) => {
           return version.triggers.find((trigger) => {
             if (trigger.text) {
-              triggerText = trigger.displayText;
+              triggerText = trigger.displayText();
               return true;
             } else {
               return false;

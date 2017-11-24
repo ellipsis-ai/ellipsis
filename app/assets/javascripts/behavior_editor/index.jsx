@@ -382,9 +382,9 @@ const BehaviorEditor = React.createClass({
   },
 
   getDefaultBehaviorTemplate: function() {
-    return new ResponseTemplate({
-      text: this.getSelectedBehavior().shouldRevealCodeEditor ? 'The answer is: {successResult}.' : magic8BallResponse
-    });
+    return new ResponseTemplate(
+      this.getSelectedBehavior().shouldRevealCodeEditor ? 'The answer is: {successResult}.' : magic8BallResponse
+    );
   },
 
   getEnvVariables: function() {
@@ -717,7 +717,7 @@ const BehaviorEditor = React.createClass({
 
   addNewInput: function(optionalNewName) {
     const newName = optionalNewName || SequentialName.nextFor(this.getInputs(), (ea) => ea.name, "userInput");
-    this.addInput(new Input({
+    this.addInput(Input.fromProps({
       inputId: ID.next(),
       name: newName,
       paramType: this.props.builtinParamTypes.find((ea) => ea.id === "Text")
@@ -725,7 +725,7 @@ const BehaviorEditor = React.createClass({
   },
 
   addTrigger: function(callback) {
-    this.setEditableProp('triggers', this.getBehaviorTriggers().concat(new Trigger()), callback);
+    this.setEditableProp('triggers', this.getBehaviorTriggers().concat(Trigger.fromProps({})), callback);
   },
 
   cancelVersionPanel: function() {
@@ -2273,7 +2273,7 @@ const BehaviorEditor = React.createClass({
     fetch(url, { credentials: 'same-origin' })
       .then((response) => response.json())
       .then((json) => {
-        const newVersion = new LibraryVersion(Object.assign({}, json, { groupId: group.id }));
+        const newVersion = LibraryVersion.fromProps(Object.assign({}, json, { groupId: group.id }));
         const groupWithNewLibrary = group.withNewLibraryVersion(newVersion);
         this.updateGroupStateWith(groupWithNewLibrary, () => {
           this.onSelect(groupWithNewLibrary.id, newVersion.libraryId);

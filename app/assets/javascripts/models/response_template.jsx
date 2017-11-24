@@ -1,3 +1,4 @@
+// @flow
 define(function() {
   var validTemplateKeywordPatterns = [
     /^for\s+\S+\s+in\s+.+$/,
@@ -12,23 +13,22 @@ define(function() {
   }
 
   class ResponseTemplate {
-    constructor(props) {
-      var initialProps = Object.assign({
-        text: ""
-      }, props);
+    text: string;
+
+    constructor(maybeText: ?string) {
       Object.defineProperties(this, {
         text: {
-          value: initialProps.text,
+          value: maybeText || "",
           enumerable: true
         }
       });
     }
 
-    clone(props) {
-      return new ResponseTemplate(Object.assign({}, this, props));
+    clone(props): ResponseTemplate {
+      return new ResponseTemplate(props.text);
     }
 
-    toString() {
+    toString(): string {
       return this.text;
     }
 
@@ -37,17 +37,17 @@ define(function() {
       return this.toString();
     }
 
-    getParamsUsed() {
+    getParamsUsed(): Array<string> {
       var matches = this.text.match(/\{.+?\}/g);
       return matches ? matches.map((ea) => ea.replace(/^\{\s*|\s*\}$/g, '')) : [];
     }
 
-    getVarsDefinedInTemplateLoops() {
+    getVarsDefinedInTemplateLoops(): Array<string> {
       var matches = this.text.match(/\{for\s+\S+\s+in\s+.+\}/g);
       return matches ? matches.map((ea) => ea.replace(/^\{for\s+|\s+in\s+.+\}$/g, '')) : [];
     }
 
-    getUnknownParamsExcluding(validParams) {
+    getUnknownParamsExcluding(validParams): Array<string> {
       var varsDefinedInForLoops = this.getVarsDefinedInTemplateLoops();
       return this.getParamsUsed().filter((param) => {
         return !validParams.some((validParam) => stringStartsWithVarName(param, validParam)) &&
@@ -56,7 +56,7 @@ define(function() {
       });
     }
 
-    replaceParamName(oldName, newName) {
+    replaceParamName(oldName, newName): ResponseTemplate {
       var newText = this.text.split(`{${oldName}}`).join(`{${newName}}`);
       if (newText !== this.text) {
         return this.clone({
@@ -67,37 +67,37 @@ define(function() {
       }
     }
 
-    includesAnyParam() {
+    includesAnyParam(): boolean {
       var matches = this.text.match(/\{\S+?\}/g);
-      return matches && matches.some((ea) => {
+      return !!matches && matches.some((ea) => {
         var paramName = ea.replace(/^\{|}$/g, '');
         return !validTemplateKeywordPatterns.some((pattern) => pattern.test(paramName)) &&
           !/^successResult(\.\S+)?$/.test(paramName);
       });
     }
 
-    includesIteration() {
+    includesIteration(): boolean {
       return /\{endfor\}/.test(this.text);
     }
 
-    includesPath() {
+    includesPath(): boolean {
       return /\{(\S+\.\S+)+?\}/.test(this.text);
     }
 
-    includesSuccessResult() {
+    includesSuccessResult(): boolean {
       return /\{successResult.*?\}/.test(this.text);
     }
 
-    includesIfLogic() {
+    includesIfLogic(): boolean {
       return /\{if \S.*?\}/.test(this.text) &&
         /\{endif\}/.test(this.text);
     }
 
-    includesData() {
+    includesData(): boolean {
       return this.includesAnyParam() || this.includesSuccessResult();
     }
 
-    usesMarkdown() {
+    usesMarkdown(): boolean {
       /* Big ugly flaming pile of regex to try and guess at Markdown usage: */
       var matches = [
         '\\*.+?\\*', /* Bold/italics */
@@ -117,8 +117,8 @@ define(function() {
       return matchRegExp.test(this.text);
     }
 
-    static fromString(string) {
-      return new ResponseTemplate({ text: string });
+    static fromString(string): ResponseTemplate {
+      return new ResponseTemplate(string);
     }
   }
 

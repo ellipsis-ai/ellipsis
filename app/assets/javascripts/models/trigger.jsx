@@ -1,12 +1,18 @@
+// @flow
 define(function() {
   class Trigger {
-    constructor(props) {
-      var initialProps = Object.assign({
-        caseSensitive: false,
-        isRegex: false,
-        requiresMention: true,
-        text: ""
-      }, props);
+    text: string;
+    isRegex: boolean;
+    requiresMention: boolean;
+    caseSensitive: boolean;
+
+    constructor(
+      text: ?string,
+      maybeIsRegex: ?boolean,
+      maybeRequiresMention: ?boolean
+    ) {
+      const isRegex: boolean = typeof maybeIsRegex === "boolean" ? Boolean(maybeIsRegex) : false;
+      const requiresMention: boolean = typeof maybeRequiresMention === "boolean" ? Boolean(maybeRequiresMention) : true;
       Object.defineProperties(this, {
         /* Case sensitivity disabled in the UI, so force it to be false */
         caseSensitive: {
@@ -14,46 +20,46 @@ define(function() {
           enumerable: true
         },
         isRegex: {
-          value: initialProps.isRegex,
+          value: isRegex,
           enumerable: true
         },
         requiresMention: {
-          value: initialProps.requiresMention,
+          value: requiresMention,
           enumerable: true
         },
         text: {
-          value: initialProps.text,
+          value: text || "",
           enumerable: true
         }
       });
     }
 
-    getText() {
-      return this.text || "";
+    getText(): string {
+      return this.text;
     }
 
-    get paramNames() {
-      var names = [];
-      var matches = this.getText().match(/\{.+?\}/g);
+    paramNames(): Array<string> {
+      let names = [];
+      const matches = this.getText().match(/\{.+?\}/g);
       if (!this.isRegex && matches) {
         names = matches.map((name) => name.replace(/^\{|\}$/g, ''));
       }
       return names;
     }
 
-    get displayText() {
+    displayText(): string {
       return this.getText();
     }
 
-    hasNonRegexParams() {
+    hasNonRegexParams(): boolean {
       return !this.isRegex && /\{.+?\}/.test(this.getText());
     }
 
-    usesInputName(name) {
+    usesInputName(name): boolean {
       return !this.isRegex && this.getText().includes(`{${name}}`);
     }
 
-    capturesInputIndex(index) {
+    capturesInputIndex(index): boolean {
       if (!this.isRegex) {
         return false;
       }
@@ -61,11 +67,11 @@ define(function() {
       return !!(matches && matches[index]);
     }
 
-    hasRegexCapturingParens() {
+    hasRegexCapturingParens(): boolean {
       return this.isRegex && /\(.+?\)/.test(this.getText());
     }
 
-    getTextWithNewInputName(oldName, newName) {
+    getTextWithNewInputName(oldName, newName): string {
       if (!this.isRegex) {
         return this.getText().split(`{${oldName}}`).join(`{${newName}}`);
       } else {
@@ -73,13 +79,21 @@ define(function() {
       }
     }
 
-    clone(props) {
-      return new Trigger(Object.assign({}, this, props));
+    clone(props): Trigger {
+      return Trigger.fromProps(Object.assign({}, this, props));
+    }
+
+    static fromProps(props): Trigger {
+      return new Trigger(
+        props.text,
+        props.isRegex,
+        props.requiresMention
+      );
     }
 
     static triggersFromJson(jsonArrayOrNull) {
       if (jsonArrayOrNull) {
-        return jsonArrayOrNull.map((triggerObj) => new Trigger(triggerObj));
+        return jsonArrayOrNull.map((triggerObj) => Trigger.fromProps(triggerObj));
       } else {
         return null;
       }
