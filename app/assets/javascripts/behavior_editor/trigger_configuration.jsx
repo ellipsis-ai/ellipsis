@@ -70,7 +70,7 @@ define(function(require) {
     },
 
     getNotificationsFor: function(trigger) {
-      const unknownParamNames = trigger.paramNames.filter((ea) => !this.props.inputNames.includes(ea));
+      const unknownParamNames = trigger.paramNames().filter((ea) => !this.props.inputNames.includes(ea));
       return unknownParamNames.map((name) => {
         if (Formatter.isValidNameForCode(name)) {
           return new NotificationData({

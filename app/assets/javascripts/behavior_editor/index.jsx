@@ -725,7 +725,7 @@ const BehaviorEditor = React.createClass({
   },
 
   addTrigger: function(callback) {
-    this.setEditableProp('triggers', this.getBehaviorTriggers().concat(new Trigger()), callback);
+    this.setEditableProp('triggers', this.getBehaviorTriggers().concat(Trigger.fromProps({})), callback);
   },
 
   cancelVersionPanel: function() {

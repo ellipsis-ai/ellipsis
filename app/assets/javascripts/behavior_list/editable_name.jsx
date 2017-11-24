@@ -27,7 +27,7 @@ define(function(require) {
       if (trigger && trigger.text) {
         return (
           <span className={`${className} ${this.getTriggerClass()} mrs`}>
-            <SubstringHighlighter text={trigger.displayText} substring={this.props.highlightText} />
+            <SubstringHighlighter text={trigger.displayText()} substring={this.props.highlightText} />
           </span>
         );
       } else if (this.props.version.isNew && !this.props.isImportable) {
@@ -46,7 +46,7 @@ define(function(require) {
         if (trigger.text) {
           return (
             <span className={`${this.getTriggerClass()} mrs`} key={"regularTrigger" + index}>
-              <SubstringHighlighter text={trigger.displayText} substring={this.props.highlightText} />
+              <SubstringHighlighter text={trigger.displayText()} substring={this.props.highlightText} />
             </span>
           );
         } else {
@@ -56,7 +56,7 @@ define(function(require) {
     },
 
     getNonRegexTriggerText: function(triggers) {
-      return triggers.filter((trigger) => !trigger.isRegex).map((ea) => ea.displayText).filter((ea) => !!ea.trim()).join("\n");
+      return triggers.filter((trigger) => !trigger.isRegex).map((ea) => ea.displayText()).filter((ea) => !!ea.trim()).join("\n");
     },
 
     getRegexTriggerText: function(triggers) {
@@ -86,7 +86,7 @@ define(function(require) {
     getBehaviorSummary: function(firstTrigger, otherTriggers) {
       var name = this.props.version.name;
       var description = this.props.version.description;
-      var firstTriggerText = firstTrigger ? firstTrigger.displayText : "(None)";
+      var firstTriggerText = firstTrigger ? firstTrigger.displayText() : "(None)";
       var nonRegex = this.getNonRegexTriggerText(otherTriggers);
       var regex = this.getRegexTriggerText(otherTriggers);
       return (name ? `Name: ${name}\n\n` : "") +
