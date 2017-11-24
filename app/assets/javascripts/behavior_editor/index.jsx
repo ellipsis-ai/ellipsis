@@ -382,9 +382,9 @@ const BehaviorEditor = React.createClass({
   },
 
   getDefaultBehaviorTemplate: function() {
-    return new ResponseTemplate({
-      text: this.getSelectedBehavior().shouldRevealCodeEditor ? 'The answer is: {successResult}.' : magic8BallResponse
-    });
+    return new ResponseTemplate(
+      this.getSelectedBehavior().shouldRevealCodeEditor ? 'The answer is: {successResult}.' : magic8BallResponse
+    );
   },
 
   getEnvVariables: function() {

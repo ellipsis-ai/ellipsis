@@ -1,33 +1,37 @@
+// @flow
 define(function(require) {
   const Formatter = require('../lib/formatter');
 
-  class ParamType {
-    constructor(props) {
-      const initialProps = Object.assign({
-        name: "",
-        needsConfig: false
-      }, props);
+  const builtinTypes: Array<string> = ['Text', 'Number', 'Yes/No'];
 
-      const isBuiltIn = ParamType.builtinTypes.includes(initialProps.id) && initialProps.id === initialProps.name;
+  class ParamType {
+    id: string;
+    exportId: string;
+    isBuiltIn: boolean;
+    name: string;
+    needsConfig: boolean;
+
+    constructor(id: string, exportId: string, maybeName: ?string, maybeNeedsConfig: ?boolean) {
+      const isBuiltIn = builtinTypes.includes(id) && id === maybeName;
 
       Object.defineProperties(this, {
-        id: { value: initialProps.id, enumerable: true },
-        exportId: { value: initialProps.exportId, enumerable: true },
+        id: { value: id, enumerable: true },
+        exportId: { value: exportId, enumerable: true },
         isBuiltIn: { value: isBuiltIn, enumerable: true },
-        name: { value: initialProps.name, enumerable: true },
-        needsConfig: { value: initialProps.needsConfig, enumerable: true }
+        name: { value: (typeof maybeName === "string" ? maybeName : ""), enumerable: true },
+        needsConfig: { value: (typeof maybeNeedsConfig === "boolean" ? maybeNeedsConfig : false), enumerable: true }
       });
     }
 
-    isNumberType() {
+    isNumberType(): boolean {
       return this.isBuiltIn && this.id === "Number";
     }
 
-    isYesNoType() {
+    isYesNoType(): boolean {
       return this.isBuiltIn && this.id === "Yes/No";
     }
 
-    formatValue(value) {
+    formatValue(value): string {
       if (this.isNumberType()) {
         return Formatter.formatPossibleNumber(value);
       } else {
@@ -35,7 +39,7 @@ define(function(require) {
       }
     }
 
-    getDefaultValue() {
+    getDefaultValue(): string {
       if (this.isYesNoType()) {
         return "true";
       } else {
@@ -43,7 +47,7 @@ define(function(require) {
       }
     }
 
-    getInputPlaceholder() {
+    getInputPlaceholder(): ?string {
       if (this.isNumberType()) {
         return "Enter a number";
       } else {
@@ -51,7 +55,7 @@ define(function(require) {
       }
     }
 
-    getOptions() {
+    getOptions(): ?Array<{ label: string, value: string }> {
       if (this.isBuiltIn && this.id === "Yes/No") {
         return [{
           label: "Yes",
@@ -65,16 +69,23 @@ define(function(require) {
       }
     }
 
-    clone(newProps) {
-      return new ParamType(Object.assign({}, this, newProps));
+    clone(newProps): ParamType {
+      return ParamType.fromProps(Object.assign({}, this, newProps));
     }
 
-    static fromJson(props) {
-      return new ParamType(props);
+    static fromProps(props): ParamType {
+      return new ParamType(
+        props.id,
+        props.exportId,
+        props.name,
+        props.needsConfig
+      );
+    }
+
+    static fromJson(props): ParamType {
+      return ParamType.fromProps(props);
     }
   }
-
-  ParamType.builtinTypes = ['Text', 'Number', 'Yes/No'];
 
   return ParamType;
 });
