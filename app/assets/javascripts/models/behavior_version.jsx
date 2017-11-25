@@ -3,6 +3,7 @@ define(function(require) {
   const
     BehaviorConfig = require('./behavior_config'),
     DataTypeConfig = require('./data_type_config'),
+    diffs = require('./diffs'),
     DeepEqual = require('../lib/deep_equal'),
     Editable = require('./editable'),
     ParamType = require('./param_type'),
@@ -12,7 +13,7 @@ define(function(require) {
   class BehaviorVersion extends Editable {
     id: ?string;
     behaviorId: string;
-    responseTemplate: ?string;
+    responseTemplate: ?ResponseTemplate;
     functionBody: string;
     inputIds: Array<string>;
     triggers: Array<Trigger>;
@@ -65,6 +66,23 @@ define(function(require) {
         createdAt: { value: createdAt, enumerable: true },
         shouldRevealCodeEditor: { value: revealCodeEditor, enumerable: true }
       });
+    }
+
+    responseTemplateText(): string {
+      return this.responseTemplate ? this.responseTemplate.text : "";
+    }
+
+    maybeDiffFor(other: BehaviorVersion): ?diffs.ModifiedDiff<BehaviorVersion> {
+      if (this.isIdenticalToVersion(other)) {
+        return null;
+      } else {
+        const children: Array<diffs.Diff<any>> = [
+          diffs.TextDiff.maybeFor("Name", this.name, other.name),
+          diffs.TextDiff.maybeFor("Description", this.description, other.description),
+          diffs.TextDiff.maybeFor("Response template", this.responseTemplateText(), other.responseTemplateText())
+        ].filter(ea => Boolean(ea));
+        return new diffs.ModifiedDiff("Behavior version", children, this, other);
+      }
     }
 
     namePlaceholderText(): string {

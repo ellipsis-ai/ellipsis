@@ -58,6 +58,10 @@ requirejs.config({
       name: 'urijs',
       location: '../lib/urijs/src',
       main: 'URI'
+    }, {
+      name: 'diff',
+      location: '../lib/diff/lib',
+      main: 'index'
     }
   ],
   modules: [
@@ -70,6 +74,7 @@ requirejs.config({
         'react',
         'react-dom',
         'urijs',
+        "diff",
         'whatwg-fetch'
       ]
     }, {
