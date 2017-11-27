@@ -139,6 +139,14 @@ return React.createClass({
     this.selectVersionIndex(this.props.versions.length - 1);
   },
   selectVersionIndex: function(index) {
+    const newVersion = this.props.versions[index];
+    const oldVersion = this.props.versions[this.getSelectedVersionIndex()];
+    if (newVersion && oldVersion) {
+      const diff = oldVersion.maybeDiffFor(newVersion);
+      if (diff) {
+        console.log(diff.displayText());
+      }
+    }
     this.setState({ selectedVersionIndex: index });
     this.props.onSwitchVersions(index);
   },
