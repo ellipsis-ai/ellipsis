@@ -61,7 +61,7 @@ requirejs.config({
     }, {
       name: 'diff',
       location: '../lib/diff/dist',
-      main: 'diff.min'
+      main: 'diff'
     }
   ],
   modules: [
