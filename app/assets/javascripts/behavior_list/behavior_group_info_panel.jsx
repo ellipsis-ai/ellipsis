@@ -12,8 +12,8 @@ define(function(require) {
 
   type Props = {
     groupData: ?BehaviorGroup,
-    onBehaviorGroupImport: ?((BehaviorGroup) => void),
-    onBehaviorGroupUpdate: ?((originalGroup: BehaviorGroup, updatedGroup: BehaviorGroup) => void),
+    onBehaviorGroupImport: (BehaviorGroup) => void,
+    onBehaviorGroupUpdate: (originalGroup: BehaviorGroup, updatedGroup: BehaviorGroup) => void,
     updatedData: ?BehaviorGroup,
     onToggle: () => void,
     isImportable: boolean,
@@ -22,23 +22,29 @@ define(function(require) {
   }
 
   class BehaviorGroupInfoPanel extends React.Component<Props> {
+    props: Props;
+
     getBehaviors(): Array<BehaviorVersion> {
       var behaviorVersions = this.props.groupData && this.props.groupData.behaviorVersions || [];
       return Sort.arrayAlphabeticalBy(behaviorVersions.filter((version) => !version.isDataType()), (version) => version.sortKey());
     }
 
     getName(): React.Node {
-      return this.props.groupData.name || (
-          <span className="type-italic type-disabled">Untitled skill</span>
+      return this.props.groupData && this.props.groupData.name || (
+        <span className="type-italic type-disabled">Untitled skill</span>
       );
     }
 
     onImport(): void {
-      this.props.onBehaviorGroupImport(this.props.groupData);
+      if (this.props.groupData) {
+        this.props.onBehaviorGroupImport(this.props.groupData);
+      }
     }
 
     onUpdate(): void {
-      this.props.onBehaviorGroupUpdate(this.props.groupData, this.props.updatedData);
+      if (this.props.groupData && this.props.updatedData) {
+        this.props.onBehaviorGroupUpdate(this.props.groupData, this.props.updatedData);
+      }
     }
 
     toggle(): void {
@@ -64,9 +70,9 @@ define(function(require) {
                 {this.renderMetaInfo()}
               </div>
               <div className="column column-page-main">
-                {ifPresent(this.props.groupData.description, (desc) => (
-                  <p className="mbl">{desc}</p>
-                ))}
+                {this.props.groupData && this.props.groupData.description ? (
+                  <p className="mbl">{this.props.groupData.description}</p>
+                ) : null}
 
                 {this.renderBehaviors()}
                 <div className="mvxl">
@@ -81,17 +87,19 @@ define(function(require) {
     }
 
     renderBehaviors(): React.Node {
-      var behaviors = this.getBehaviors();
-      var behaviorCount = behaviors.length;
+      const behaviors = this.getBehaviors();
+      const behaviorCount = behaviors.length;
+      const exportId = this.props.groupData ? this.props.groupData.exportId : "";
+      const hasGroupId = Boolean(this.props.groupData && this.props.groupData.id);
       return (
         <div className="type-s">
           <h5 className="mtn mbxs">{behaviorCount === 1 ? "1 action" : `${behaviorCount} actions`}</h5>
           <div style={{ overflowY: "auto", maxHeight: "21em" }}>
             {behaviors.map((behavior, index) => (
-              <div className="pvs" key={`group-${this.props.groupData.exportId}-behavior${index}`}>
+              <div className="pvs" key={`group-${exportId}-behavior${index}`}>
                 <EditableName
                   version={behavior}
-                  disableLink={!this.props.groupData.id || !behavior.behaviorId}
+                  disableLink={!hasGroupId || !behavior.behaviorId}
                   isImportable={true}
                 />
               </div>
@@ -132,7 +140,7 @@ define(function(require) {
     }
 
     renderInstallInfo(): React.Node {
-      if (this.props.groupData.githubUrl) {
+      if (this.props.groupData && this.props.groupData.githubUrl) {
         return (
           <div className="type-s mvm">
             <a target="_blank" href={this.props.groupData.githubUrl}>
@@ -161,7 +169,7 @@ define(function(require) {
     }
 
     renderLastModified(): React.Node {
-      if (this.props.localId && this.props.groupData.createdAt) {
+      if (this.props.localId && this.props.groupData && this.props.groupData.createdAt) {
         return (
           <div className="type-weak type-s mvm">
             Last modified {Formatter.formatTimestampRelativeIfRecent(this.props.groupData.createdAt)}
