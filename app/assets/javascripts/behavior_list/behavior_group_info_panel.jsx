@@ -1,6 +1,8 @@
+// @flow
 define(function(require) {
-  var React = require('react'),
+  const React = require('react'),
     BehaviorGroup = require('../models/behavior_group'),
+    BehaviorVersion = require('../models/behavior_version'),
     EditableName = require('./editable_name'),
     Formatter = require('../lib/formatter'),
     SVGInstall = require('../svg/install'),
@@ -8,43 +10,42 @@ define(function(require) {
     ifPresent = require('../lib/if_present'),
     Sort = require('../lib/sort');
 
-  return React.createClass({
-    displayName: 'BehaviorGroupInfoPanel',
-    propTypes: {
-      groupData: React.PropTypes.instanceOf(BehaviorGroup),
-      onBehaviorGroupImport: React.PropTypes.func,
-      onBehaviorGroupUpdate: React.PropTypes.func,
-      updatedData: React.PropTypes.instanceOf(BehaviorGroup),
-      onToggle: React.PropTypes.func.isRequired,
-      isImportable: React.PropTypes.bool.isRequired,
-      wasImported: React.PropTypes.bool,
-      localId: React.PropTypes.string
-    },
+  type Props = {
+    groupData: ?BehaviorGroup,
+    onBehaviorGroupImport: ?((BehaviorGroup) => void),
+    onBehaviorGroupUpdate: ?((originalGroup: BehaviorGroup, updatedGroup: BehaviorGroup) => void),
+    updatedData: ?BehaviorGroup,
+    onToggle: () => void,
+    isImportable: boolean,
+    wasImported: ?boolean,
+    localId: ?string
+  }
 
-    getBehaviors: function() {
+  class BehaviorGroupInfoPanel extends React.Component<Props> {
+    getBehaviors(): Array<BehaviorVersion> {
       var behaviorVersions = this.props.groupData && this.props.groupData.behaviorVersions || [];
       return Sort.arrayAlphabeticalBy(behaviorVersions.filter((version) => !version.isDataType()), (version) => version.sortKey());
-    },
+    }
 
-    getName: function() {
+    getName(): React.Node {
       return this.props.groupData.name || (
           <span className="type-italic type-disabled">Untitled skill</span>
-        );
-    },
+      );
+    }
 
-    onImport: function() {
+    onImport(): void {
       this.props.onBehaviorGroupImport(this.props.groupData);
-    },
+    }
 
-    onUpdate: function() {
+    onUpdate(): void {
       this.props.onBehaviorGroupUpdate(this.props.groupData, this.props.updatedData);
-    },
+    }
 
-    toggle: function() {
+    toggle(): void {
       this.props.onToggle();
-    },
+    }
 
-    render: function() {
+    render(): React.Node {
       if (!this.props.groupData) {
         return null;
       }
@@ -77,9 +78,9 @@ define(function(require) {
           </div>
         </div>
       );
-    },
+    }
 
-    renderBehaviors: function() {
+    renderBehaviors(): React.Node {
       var behaviors = this.getBehaviors();
       var behaviorCount = behaviors.length;
       return (
@@ -98,9 +99,9 @@ define(function(require) {
           </div>
         </div>
       );
-    },
+    }
 
-    renderPrimaryAction: function() {
+    renderPrimaryAction(): React.Node {
       if (this.props.localId) {
         return (
           <a href={jsRoutes.controllers.BehaviorEditorController.edit(this.props.localId).url} className="button mrs mbs">
@@ -116,9 +117,9 @@ define(function(require) {
           </button>
         );
       }
-    },
+    }
 
-    renderUpdate: function() {
+    renderUpdate(): React.Node {
       if (this.props.updatedData) {
         return (
           <div className="mvl fade-in">
@@ -128,9 +129,9 @@ define(function(require) {
       } else {
         return null;
       }
-    },
+    }
 
-    renderInstallInfo: function() {
+    renderInstallInfo(): React.Node {
       if (this.props.groupData.githubUrl) {
         return (
           <div className="type-s mvm">
@@ -147,9 +148,9 @@ define(function(require) {
           </div>
         );
       }
-    },
+    }
 
-    renderMetaInfo: function() {
+    renderMetaInfo(): React.Node {
       return (
         <div>
           {this.renderLastModified()}
@@ -157,9 +158,9 @@ define(function(require) {
           {this.renderUpdate()}
         </div>
       );
-    },
+    }
 
-    renderLastModified: function() {
+    renderLastModified(): React.Node {
       if (this.props.localId && this.props.groupData.createdAt) {
         return (
           <div className="type-weak type-s mvm">
@@ -168,5 +169,7 @@ define(function(require) {
         );
       }
     }
-  });
+  }
+
+  return BehaviorGroupInfoPanel;
 });
