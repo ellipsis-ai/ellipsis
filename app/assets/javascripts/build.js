@@ -60,8 +60,8 @@ requirejs.config({
       main: 'URI'
     }, {
       name: 'diff',
-      location: '../lib/diff/dist',
-      main: 'diff'
+      location: '../lib/diff/lib',
+      main: 'index'
     }
   ],
   modules: [
