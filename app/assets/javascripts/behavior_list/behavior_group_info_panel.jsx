@@ -23,7 +23,7 @@ define(function(require) {
 
     getBehaviors: function() {
       var behaviorVersions = this.props.groupData && this.props.groupData.behaviorVersions || [];
-      return Sort.arrayAlphabeticalBy(behaviorVersions.filter((version) => !version.isDataType()), (version) => version.sortKey);
+      return Sort.arrayAlphabeticalBy(behaviorVersions.filter((version) => !version.isDataType()), (version) => version.sortKey());
     },
 
     getName: function() {

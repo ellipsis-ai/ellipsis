@@ -13,7 +13,8 @@ describe('BehaviorList', () => {
   const behaviorVersionTask1 = Object.freeze({
     "teamId": "abcdef",
     "groupId": "sfgsdf",
-    "behaviorId": "ghijkl",
+    "behaviorId": "b1",
+    "name": "THE task",
     "functionBody": "use strict;",
     "responseTemplate": "A template",
     "params": [],
@@ -34,7 +35,8 @@ describe('BehaviorList', () => {
   const behaviorVersionTask2 = Object.freeze({
     "teamId": "abcdef",
     "groupId": "gsdfgsg",
-    "behaviorId": "mnopqr",
+    "behaviorId": "b2",
+    "name": "Some task",
     "functionBody": "use strict;",
     "responseTemplate": "A template",
     "params": [],
@@ -47,10 +49,28 @@ describe('BehaviorList', () => {
     "config": {},
     "createdAt": 1468359271138
   });
+  const behaviorVersionTask3 = Object.freeze({
+    "teamId": "abcdef",
+    "groupId": "gsdfgsg",
+    "behaviorId": "b3",
+    "name": "A task",
+    "functionBody": "use strict;",
+    "responseTemplate": "A template",
+    "params": [],
+    "triggers": [{
+      "text": "A",
+      "requiresMention": true,
+      "isRegex": true,
+      "caseSensitive": false
+    }],
+    "config": {},
+    "createdAt": 1511817369237
+  });
   const behaviorVersionKnowledge1 = Object.freeze({
     "teamId": "abcdef",
     "groupId": "jfghjfg",
-    "behaviorId": "stuvwx",
+    "behaviorId": "b4",
+    "name": "Knowledge 1",
     "functionBody": "",
     "responseTemplate": "The magic 8-ball says:\n\n“Concentrate and ask again.”",
     "params": [],
@@ -58,11 +78,23 @@ describe('BehaviorList', () => {
     "config": {},
     "createdAt": 1466109904858
   });
+  const behaviorVersionKnowledge2 = Object.freeze({
+    "teamId": "abcdef",
+    "groupId": "klmnop",
+    "behaviorId": "b5",
+    "name": "Knowledge 2",
+    "functionBody": "",
+    "responseTemplate": "The magic 8-ball says:\n\n“Concentrate and ask again.”",
+    "params": [],
+    "triggers": [],
+    "config": {},
+    "createdAt": 1511816895686
+  });
   const group1 = Object.freeze(BehaviorGroup.fromJson({
     id: "a",
     name: "A",
     description: "",
-    behaviorVersions: [behaviorVersionTask1],
+    behaviorVersions: [behaviorVersionTask1, behaviorVersionTask3],
     libraryVersions: [],
     requiredAWSConfigs: [],
     requiredOAuth2ApiConfigs: [],
@@ -84,7 +116,7 @@ describe('BehaviorList', () => {
     id: "c",
     name: "",
     description: "",
-    behaviorVersions: [behaviorVersionKnowledge1],
+    behaviorVersions: [behaviorVersionKnowledge2, behaviorVersionKnowledge1],
     libraryVersions: [],
     requiredAWSConfigs: [],
     requiredOAuth2ApiConfigs: [],
@@ -110,9 +142,24 @@ describe('BehaviorList', () => {
     slackTeamId: "1"
   });
 
+  class Footer extends React.Component {
+    renderFooter(content) {
+      return (
+        <div>{content}</div>
+      );
+    }
+
+    render() {
+      return (
+        <div />
+      );
+    }
+  }
+
   function createBehaviorList(config) {
+    const footer = TestUtils.renderIntoDocument(<Footer/>);
     return TestUtils.renderIntoDocument(
-      <BehaviorList {...config} />
+      <BehaviorList onRenderFooter={footer.renderFooter} {...config} />
     );
   }
 
