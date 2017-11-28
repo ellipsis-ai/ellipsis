@@ -81,7 +81,7 @@ define(function(require) {
           diffs.TextDiff.maybeFor("Description", this.description, other.description),
           diffs.TextDiff.maybeFor("Response template", this.responseTemplateText(), other.responseTemplateText())
         ].filter(ea => Boolean(ea));
-        return new diffs.ModifiedDiff("Behavior version", children, this, other);
+        return new diffs.ModifiedDiff("Modified action", children, this, other);
       }
     }
 

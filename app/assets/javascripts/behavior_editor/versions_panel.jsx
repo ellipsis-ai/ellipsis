@@ -132,17 +132,20 @@ return React.createClass({
       this.selectVersionIndex(newIndex);
     }
   },
+  newestVersionIndex: function() {
+    return this.props.shouldFilterCurrentVersion ? 1 : 0;
+  },
   selectNewestVersion: function() {
-    this.selectVersionIndex(this.props.shouldFilterCurrentVersion ? 1 : 0);
+    this.selectVersionIndex(this.newestVersionIndex());
   },
   selectOldestVersion: function() {
     this.selectVersionIndex(this.props.versions.length - 1);
   },
   selectVersionIndex: function(index) {
-    const newVersion = this.props.versions[index];
-    const oldVersion = this.props.versions[this.getSelectedVersionIndex()];
-    if (newVersion && oldVersion) {
-      const diff = oldVersion.maybeDiffFor(newVersion);
+    const versionToSelect = this.props.versions[index];
+    const currentVersion = this.props.versions[this.newestVersionIndex()];
+    if (versionToSelect && currentVersion) {
+      const diff = currentVersion.maybeDiffFor(versionToSelect);
       if (diff) {
         console.log(diff.displayText());
       }

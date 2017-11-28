@@ -13,12 +13,17 @@ define(function(require) {
       });
     }
 
-    displayText() {
-      return `${this.label}:\n\n${this.displayTextContent()}`;
+    displayText(): string {
+      const content = this.displayTextContent();
+      if (content.trim().length) {
+        return `${this.label}: ${this.displayTextContent()}`;
+      } else {
+        return "";
+      }
     }
 
-    displayTextContent() {
-      return "";
+    displayTextContent(): string {
+      return this.children.map(ea => ea.displayText()).join("\n");
     }
 
   }
@@ -62,7 +67,7 @@ define(function(require) {
   }
 
   class TextDiff extends ModifiedDiff<string> {
-    displayTextContent() {
+    displayTextContent(): string {
       const parts = JsDiff.diffChars(this.original, this.modified, {});
       return parts.map(ea => {
         const text = ea.value;

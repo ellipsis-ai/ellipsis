@@ -1,6 +1,7 @@
 // @flow
 define(function(require) {
   const BehaviorVersion = require('./behavior_version');
+  const diffs = require('./diffs');
   const Editable = require('./editable');
   const LibraryVersion = require('./library_version');
   const Input = require('./input');
@@ -218,6 +219,44 @@ define(function(require) {
           return 0;
         }
       });
+    }
+
+    behaviorVersionDiffsFor(other: BehaviorGroup): Array<diffs.ModifiedDiff<BehaviorVersion>> {
+      const myIds = this.behaviorVersions.map(ea => ea.behaviorId);
+      const otherIds = other.behaviorVersions.map(ea => ea.behaviorId);
+
+      const modifiedIds = myIds.filter(ea => !!otherIds.indexOf(ea));
+      const addedIds = myIds.filter(ea => !otherIds.indexOf(ea));
+      const removedIds = otherIds.filter(ea => !myIds.indexOf(ea));
+
+      const added = addedIds.map(eaId => {
+        return this.behaviorVersions.find(ea => ea.behaviorId === eaId);
+      })
+        .filter(ea => !!ea)
+        .map(ea => new diffs.AddedDiff("Added action", [], ea));
+
+      const removed = removedIds.map(eaId => {
+        return other.behaviorVersions.find(ea => ea.behaviorId === eaId);
+      })
+        .filter(ea => !!ea)
+        .map(ea => new diffs.RemovedDiff("Removed action", [], ea));
+
+      const modified = modifiedIds.map(eaId => {
+        const myVersion = this.behaviorVersions.find(ea => ea.behaviorId === eaId);
+        const otherVersion = other.behaviorVersions.find(ea => ea.behaviorId === eaId);
+        return myVersion ? myVersion.maybeDiffFor(otherVersion): null;
+      }).filter(ea => !!ea);
+
+      return added.concat(removed.concat(modified));
+    }
+
+    maybeDiffFor(other: BehaviorGroup): ?diffs.ModifiedDiff<BehaviorGroup> {
+      if (this.isIdenticalTo(other)) {
+        return null;
+      } else {
+        const children: Array<diffs.Diff<any>> = this.behaviorVersionDiffsFor(other);
+        return new diffs.ModifiedDiff("Modified skill", children, this, other);
+      }
     }
 
     static fromProps(props): BehaviorGroup {
