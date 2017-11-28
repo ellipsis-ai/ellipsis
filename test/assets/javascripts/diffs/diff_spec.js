@@ -98,9 +98,9 @@ describe('BehaviorVersion', () => {
       const maybeDiff = version1.maybeDiffFor(version2);
       expect(maybeDiff).toBeTruthy();
       const childDiffs = maybeDiff.children.map(ea => ea.displayText());
-      expect(childDiffs).toContain("Name:\n\n[-First][+Second] name");
-      expect(childDiffs).toContain("Description:\n\n[+A description]");
-      expect(childDiffs).toContain("Response template:\n\nA[+nother] template");
+      expect(childDiffs).toContain("Name: [-First][+Second] name");
+      expect(childDiffs).toContain("Description: [+A description]");
+      expect(childDiffs).toContain("Response template: A[+nother] template");
 
       childDiffs.forEach(ea => console.log(ea));
     });
