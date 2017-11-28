@@ -88,6 +88,7 @@ define(function(require) {
             onChangeGithubLinkClick={this.props.onChangeGithubLinkClick}
             onGithubPullClick={this.props.onGithubPullClick}
             onGithubPushClick={this.props.onGithubPushClick}
+            isModified={this.props.isModified}
           />
         );
       }

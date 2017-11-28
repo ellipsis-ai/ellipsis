@@ -5,6 +5,7 @@ define(function(require) {
     BehaviorGroup = require('../../models/behavior_group'),
     LinkedGithubRepo = require('../../models/linked_github_repo'),
     FormInput = require('../../form/input'),
+    Formatter = require('../../lib/formatter'),
     autobind = require('../../lib/autobind');
 
   type Props = {
@@ -53,7 +54,7 @@ define(function(require) {
 
     onOwnerChange(owner: string): void {
       this.setState({
-        owner: owner
+        owner: Formatter.formatGithubUserName(owner)
       });
     }
 
@@ -63,7 +64,7 @@ define(function(require) {
 
     onRepoChange(repo: string): void {
       this.setState({
-        repo: repo
+        repo: Formatter.formatGithubRepoName(repo)
       });
     }
 
@@ -74,23 +75,33 @@ define(function(require) {
     renderContent(): React.Node {
       return (
         <div>
-          <div className="columns">
-            <div className="column column-one-quarter">
-              <span className="display-inline-block align-m type-s type-weak mrm">Owner:</span>
+          <div className="columns columns-elastic">
+            <div className="column column-shrink align-b prxs">
+              <div className="type-monospace type-s align-form-input">
+                github.com://
+              </div>
+            </div>
+            <div className="column column-shrink align-b prxs">
+              <div className="type-label">Org/user name</div>
               <FormInput
                 ref={(el) => this.ownerInput = el}
-                className="form-input-borderless type-monospace type-s width-15 mrm"
-                placeholder="e.g. github"
+                className="form-input-borderless type-monospace width-15 type-s"
+                placeholder="e.g. mycompany"
                 onChange={this.onOwnerChange}
                 value={this.getOwner()}
               />
             </div>
-            <div className="column column-one-quarter">
-              <span className="display-inline-block align-m type-s type-weak mrm">Repo:</span>
+            <div className="column column-shrink align-b prxs">
+              <div className="type-monospace type-s align-form-input">
+                /
+              </div>
+            </div>
+            <div className="column column-shrink align-b">
+              <div className="type-label">Repository name</div>
               <FormInput
                 ref={(el) => this.repoInput = el}
-                className="form-input-borderless type-monospace type-s width-15 mrm"
-                placeholder="e.g. octocat"
+                className="form-input-borderless type-monospace width-15 type-s"
+                placeholder="e.g. myrepo"
                 onChange={this.onRepoChange}
                 value={this.getRepo()}
               />
@@ -98,6 +109,7 @@ define(function(require) {
           </div>
           <div className="mtl">
             <Button
+              className="button-primary"
               onClick={this.onLinkClick}
               disabled={!this.getRepo() || !this.getOwner() || !this.isLinkModified() }
             >
@@ -120,7 +132,7 @@ define(function(require) {
           <div className="container">
             <div className="columns">
               <div className="column column-page-sidebar">
-                <h4 className="type-weak mtn">Link this skill to a GitHub repo</h4>
+                <h4 className="type-weak mtn">Link this skill to a GitHub repository</h4>
               </div>
               <div className="column column-page-main">
                 {this.renderContent()}

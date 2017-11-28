@@ -10,7 +10,8 @@ define(function(require) {
     linkedGithubRepo: LinkedGithubRepo,
     onChangeGithubLinkClick: () => void,
     onGithubPullClick: () => void,
-    onGithubPushClick: () => void
+    onGithubPushClick: () => void,
+    isModified: boolean
   };
 
   class GithubActions extends React.Component<Props> {
@@ -28,20 +29,32 @@ define(function(require) {
 
           <div className="container container-narrow">
 
-            <h4>Link with GitHub</h4>
+            <h4>Sync with GitHub</h4>
 
             <div>
               <span className="display-inline-block align-m mrm">
-                <span className="type-label mrs">Repo:</span>
+                <span className="type-label mrs">Repository:</span>
                 <GithubOwnerRepoReadonly linked={this.props.linkedGithubRepo} />
               </span>
               <Button className="button-s button-shrink" onClick={this.props.onChangeGithubLinkClick}>Change repo…</Button>
             </div>
 
             <div className="mvl">
-              <Button className="mrs" onClick={this.props.onGithubPullClick}>Pull latest version from GitHub…</Button>
-              <Button className="mrs" onClick={this.props.onGithubPushClick}>Push current version to GitHub…</Button>
+              <Button className="mrs"
+                onClick={this.props.onGithubPullClick}
+                disabled={this.props.isModified}
+              >Pull latest version from GitHub…</Button>
+              <Button className="mrs"
+                onClick={this.props.onGithubPushClick}
+                disabled={this.props.isModified}
+              >Push current version to GitHub…</Button>
             </div>
+
+            {this.props.isModified ? (
+              <div className="fade-in type-bold">
+                Save or undo changes to this skill before syncing with GitHub.
+              </div>
+            ) : null}
 
           </div>
         </div>
