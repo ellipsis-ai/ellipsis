@@ -33,7 +33,7 @@ define(function(require) {
 
             <div>
               <span className="display-inline-block align-m mrm">
-                <span className="type-label mrs">Repo:</span>
+                <span className="type-label mrs">Repository:</span>
                 <GithubOwnerRepoReadonly linked={this.props.linkedGithubRepo} />
               </span>
               <Button className="button-s button-shrink" onClick={this.props.onChangeGithubLinkClick}>Change repo…</Button>

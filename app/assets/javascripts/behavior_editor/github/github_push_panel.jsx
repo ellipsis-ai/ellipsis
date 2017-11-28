@@ -125,8 +125,11 @@ define(function(require) {
       return (
         <div>
 
-          <h4 className="mtn">Push to GitHub</h4>
-          <p>To push the current version of the skill to GitHub, verify the target branch name and write a commit message.</p>
+          <h5 className="mtn">Push current version to GitHub</h5>
+          <p>
+            <span>Verify the branch name you want to use. All changes between the current version of the </span>
+            <span>skill and the copy on GitHub will be committed and pushed.</span>
+          </p>
 
           <div className="columns">
             <div className="column column-one-quarter">
@@ -202,7 +205,7 @@ define(function(require) {
           <div className="container">
             <div className="columns">
               <div className="column column-page-sidebar">
-                <h4 className="type-weak mtn">Sync with GitHub</h4>
+                <h4 className="type-weak mtn">Sync with GitHub repository</h4>
                 <GithubOwnerRepoReadonly linked={this.props.linked}/>
               </div>
               <div className="column column-page-main">
