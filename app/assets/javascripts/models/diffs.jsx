@@ -91,7 +91,7 @@ define(function(require) {
 
     displayText(): string {
       const parts = JsDiff.diffChars(this.original.value, this.modified.value, {});
-      return parts.map(ea => {
+      const partsString = parts.map(ea => {
         const text = ea.value;
         if (ea.added) {
           return `[+${text}]`;
@@ -101,6 +101,7 @@ define(function(require) {
           return text;
         }
       }).join("");
+      return `${this.label}: ${partsString}`;
     }
 
     static maybeFor(label: string, maybeOriginal: ?string, maybeModified: ?string): ?TextDiff {
