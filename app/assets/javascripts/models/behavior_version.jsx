@@ -1,3 +1,5 @@
+import type {Diff, Diffable} from "./diffs";
+
 // @flow
 define(function(require) {
   const
@@ -10,7 +12,7 @@ define(function(require) {
     ResponseTemplate = require('./response_template'),
     Trigger = require('./trigger');
 
-  class BehaviorVersion extends Editable {
+  class BehaviorVersion extends Editable implements Diffable {
     id: ?string;
     behaviorId: string;
     responseTemplate: ?ResponseTemplate;
@@ -76,12 +78,12 @@ define(function(require) {
       if (this.isIdenticalToVersion(other)) {
         return null;
       } else {
-        const children: Array<diffs.Diff<any>> = [
+        const children: Array<Diff> = [
           diffs.TextDiff.maybeFor("Name", this.name, other.name),
           diffs.TextDiff.maybeFor("Description", this.description, other.description),
           diffs.TextDiff.maybeFor("Response template", this.responseTemplateText(), other.responseTemplateText())
         ].filter(ea => Boolean(ea));
-        return new diffs.ModifiedDiff("Modified action", children, this, other);
+        return new diffs.ModifiedDiff(children, this, other);
       }
     }
 
@@ -134,12 +136,20 @@ define(function(require) {
       return !this.isDataType() || this.getDataTypeConfig().usesCode;
     }
 
+    getBehaviorVersionTypeName(): string {
+      return this.isDataType() ? "data type" : "action";
+    }
+
+    itemType(): string {
+      return this.getBehaviorVersionTypeName();
+    }
+
     getNewEditorTitle(): string {
-      return this.isDataType() ? "New data type" : "New action";
+      return `New ${this.getBehaviorVersionTypeName()}`;
     }
 
     getExistingEditorTitle(): string {
-      return this.isDataType() ? "Edit data type" : "Edit action";
+      return `Edit ${this.getBehaviorVersionTypeName()}`;
     }
 
     getDataTypeConfig(): DataTypeConfig {

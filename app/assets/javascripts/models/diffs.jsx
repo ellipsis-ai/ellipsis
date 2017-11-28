@@ -1,74 +1,96 @@
 // @flow
+
+export interface Diffable {
+  itemType(): string;
+}
+
+export interface Diff {
+  displayText(): string;
+}
+
 define(function(require) {
   const JsDiff = require("diff");
 
-  class Diff<T> {
-    label: string;
-    children: Array<Diff<any>>;
+  class AddedOrRemovedDiff<T: Diffable> implements Diff {
+    item: T;
 
-    constructor(label: string, children: Array<Diff<any>>) {
+    constructor(item: T) {
       Object.defineProperties(this, {
-        label: { value: label, enumerable: true },
+        item: { value: item, enumerable: true }
+      });
+    }
+
+    displayText(): string {
+      return "";
+    }
+
+    label(): string {
+      return this.item.itemType();
+    }
+
+  }
+
+  class AddedDiff<T: Diffable> extends AddedOrRemovedDiff<T> {
+
+    displayText(): string {
+      return `Added ${this.label()}`;
+    }
+
+  }
+
+  class RemovedDiff<T: Diffable> extends AddedOrRemovedDiff<T> {
+
+    displayText(): string {
+      return `Removed ${this.item.itemType()}`;
+    }
+
+  }
+
+  class ModifiedDiff<T: Diffable> implements Diff {
+    original: T;
+    modified: T;
+    children: Array<Diff>;
+
+    constructor(children: Array<Diff>, original: T, modified: T) {
+      Object.defineProperties(this, {
+        original: { value: original, enumerable: true },
+        modified: { value: modified, enumerable: true },
         children: { value: children, enumerable: true }
       });
     }
 
     displayText(): string {
-      const content = this.displayTextContent();
-      if (content.trim().length) {
-        return `${this.label}: ${this.displayTextContent()}`;
-      } else {
-        return "";
-      }
-    }
-
-    displayTextContent(): string {
       return this.children.map(ea => ea.displayText()).join("\n");
     }
 
   }
 
-  class AddedDiff<T> extends Diff<T> {
-    item: T;
+  class Text implements Diffable {
+    value: string;
 
-    constructor(label: string, children: Array<Diff<any>>, item: T) {
-      super(label, children);
+    constructor(value: string) {
       Object.defineProperties(this, {
-        item: { value: item, enumerable: true }
+        value: { value: value, enumerable: true }
       });
     }
 
+    itemType(): string {
+      return "";
+    }
   }
 
-  class RemovedDiff<T> extends Diff<T> {
-    item: T;
+  class TextDiff extends ModifiedDiff<Text> {
+    label: string;
 
-    constructor(label: string, children: Array<Diff<any>>, item: T) {
-      super(label, children);
+    constructor(label: string, original: Text, modified: Text) {
+      super([], original, modified);
       Object.defineProperties(this, {
-        item: { value: item, enumerable: true }
+        label: { value: label, enumerable: true }
       });
     }
 
-  }
-
-  class ModifiedDiff<T> extends Diff<T> {
-    original: T;
-    modified: T;
-
-    constructor(label: string, children: Array<Diff<any>>, original: T, modified: T) {
-      super(label, children);
-      Object.defineProperties(this, {
-        original: { value: original, enumerable: true },
-        modified: { value: modified, enumerable: true }
-      });
-    }
-
-  }
-
-  class TextDiff extends ModifiedDiff<string> {
-    displayTextContent(): string {
-      const parts = JsDiff.diffChars(this.original, this.modified, {});
+    displayText(): string {
+      const parts = JsDiff.diffChars(this.original.value, this.modified.value, {});
       return parts.map(ea => {
         const text = ea.value;
         if (ea.added) {
@@ -82,12 +104,12 @@ define(function(require) {
     }
 
     static maybeFor(label: string, maybeOriginal: ?string, maybeModified: ?string): ?TextDiff {
-      const original = maybeOriginal || "";
-      const modified = maybeModified || "";
-      if (original === modified) {
+      const originalValue = maybeOriginal || "";
+      const modifiedValue = maybeModified || "";
+      if (originalValue === modifiedValue) {
         return null;
       } else {
-        return new TextDiff(label, [], original, modified);
+        return new TextDiff(label, new Text(originalValue), new Text(modifiedValue));
       }
     }
   }

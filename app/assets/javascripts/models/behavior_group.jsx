@@ -1,3 +1,5 @@
+import type {Diff, Diffable} from 'diffs';
+
 // @flow
 define(function(require) {
   const BehaviorVersion = require('./behavior_version');
@@ -13,7 +15,7 @@ define(function(require) {
 
   const ONE_MINUTE = 60000;
 
-  class BehaviorGroup {
+  class BehaviorGroup implements Diffable {
     id: string;
     teamId: string;
     name: ?string;
@@ -226,20 +228,20 @@ define(function(require) {
       const otherIds = other.behaviorVersions.map(ea => ea.behaviorId);
 
       const modifiedIds = myIds.filter(ea => !!otherIds.indexOf(ea));
-      const addedIds = myIds.filter(ea => !otherIds.indexOf(ea));
-      const removedIds = otherIds.filter(ea => !myIds.indexOf(ea));
+      const addedIds = myIds.filter(ea => otherIds.indexOf(ea) === -1);
+      const removedIds = otherIds.filter(ea => myIds.indexOf(ea) === -1);
 
       const added = addedIds.map(eaId => {
         return this.behaviorVersions.find(ea => ea.behaviorId === eaId);
       })
         .filter(ea => !!ea)
-        .map(ea => new diffs.AddedDiff("Added action", [], ea));
+        .map(ea => new diffs.AddedDiff(ea));
 
       const removed = removedIds.map(eaId => {
         return other.behaviorVersions.find(ea => ea.behaviorId === eaId);
       })
         .filter(ea => !!ea)
-        .map(ea => new diffs.RemovedDiff("Removed action", [], ea));
+        .map(ea => new diffs.RemovedDiff(ea));
 
       const modified = modifiedIds.map(eaId => {
         const myVersion = this.behaviorVersions.find(ea => ea.behaviorId === eaId);
@@ -254,8 +256,8 @@ define(function(require) {
       if (this.isIdenticalTo(other)) {
         return null;
       } else {
-        const children: Array<diffs.Diff<any>> = this.behaviorVersionDiffsFor(other);
-        return new diffs.ModifiedDiff("Modified skill", children, this, other);
+        const children: Array<Diff> = this.behaviorVersionDiffsFor(other);
+        return new diffs.ModifiedDiff(children, this, other);
       }
     }
 
