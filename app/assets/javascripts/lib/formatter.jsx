@@ -144,6 +144,22 @@ define(function(require) {
         .replace(/[~^:?*[\\\s]/g, "") // no ASCII control characters, backslashes, spaces, etc
         .replace(/@{/g, "") // no @{
         .replace(/^@$/, ""); // no single @
+    },
+
+    formatGithubRepoName: function(value) {
+      return value.replace(/[^a-z0-9\-_.]/gi, "");
+    },
+
+    formatGithubUserName: function(value) {
+      // Github's join page says:
+      //  Username may only contain alphanumeric characters or single hyphens,
+      //  and cannot begin or end with a hyphen
+      //
+      // However, we cannot strip trailing hyphens since a user might keep typing
+      return value
+        .replace(/[^a-z0-9-]/gi, "")
+        .replace(/-+/, "-")
+        .replace(/^-+/, "");
     }
   };
 
