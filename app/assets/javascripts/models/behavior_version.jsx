@@ -107,6 +107,10 @@ define(function(require) {
       return added.concat(removed.concat(modified));
     }
 
+    dataTypeUsesCode(): boolean {
+      return this.config.dataTypeConfig && this.config.dataTypeConfig.usesCode;
+    }
+
     maybeDiffFor(other: BehaviorVersion): ?diffs.ModifiedDiff<BehaviorVersion> {
       if (this.isIdenticalToVersion(other)) {
         return null;
@@ -115,7 +119,9 @@ define(function(require) {
           diffs.TextPropertyDiff.maybeFor("Name", this.name, other.name),
           diffs.TextPropertyDiff.maybeFor("Description", this.description, other.description),
           diffs.TextPropertyDiff.maybeFor("Response template", this.responseTemplateText(), other.responseTemplateText()),
-          diffs.TextPropertyDiff.maybeFor("Code", this.functionBody, other.functionBody)
+          diffs.TextPropertyDiff.maybeFor("Code", this.functionBody, other.functionBody),
+          diffs.BooleanPropertyDiff.maybeFor("Always responds privately", this.config.forcePrivateResponse, other.config.forcePrivateResponse),
+          diffs.BooleanPropertyDiff.maybeFor("Code-backed data type", this.dataTypeUsesCode(), other.dataTypeUsesCode())
         ].filter(ea => Boolean(ea));
         return new diffs.ModifiedDiff(children.concat(this.triggerDiffsFor(other)), this, other);
       }

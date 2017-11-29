@@ -20,6 +20,7 @@ const behaviorVersion1 = Object.freeze({
     "caseSensitive": false
   }],
   "config": {
+    "forcePrivateResponse": false,
     "aws": {
       "accessKeyName": "AWS_ACCESS_KEY",
       "secretKeyName": "AWS_SECRET_KEY",
@@ -49,6 +50,7 @@ const behaviorVersion2 = Object.freeze({
     "caseSensitive": false
   }],
   "config": {
+    "forcePrivateResponse": true,
     "aws": {
       "accessKeyName": "AWS_ACCESS_KEY",
       "secretKeyName": "AWS_SECRET_KEY",
