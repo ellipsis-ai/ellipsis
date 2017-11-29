@@ -53,8 +53,8 @@ define(function(require) {
         return null;
       } else {
         const children: Array<Diff> = [
-          diffs.TextDiff.maybeFor("Treat as regex", this.isRegex.toString(), other.isRegex.toString()),
-          diffs.TextDiff.maybeFor("Require bot mention", this.requiresMention.toString(), other.requiresMention.toString())
+          diffs.BooleanPropertyDiff.maybeFor("Treat as regex", this.isRegex, other.isRegex),
+          diffs.BooleanPropertyDiff.maybeFor("Require bot mention", this.requiresMention, other.requiresMention)
         ].filter(ea => Boolean(ea));
         return new diffs.ModifiedDiff(children, this, other);
       }

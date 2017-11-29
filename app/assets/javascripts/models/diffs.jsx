@@ -74,18 +74,26 @@ define(function(require) {
 
   }
 
-  class TextDiff implements Diff {
+  class PropertyDiff<T> implements Diff {
     label: string;
-    original: string;
-    modified: string;
+    original: T;
+    modified: T;
 
-    constructor(label: string, original: string, modified: string) {
+    constructor(label: string, original: T, modified: T) {
       Object.defineProperties(this, {
         label: { value: label, enumerable: true },
         original: { value: original, enumerable: true },
         modified: { value: modified, enumerable: true }
       });
     }
+
+    displayText(): string {
+      throw "Should be implemented by subclasses";
+    }
+
+  }
+
+  class TextDiff extends PropertyDiff<string> {
 
     displayText(): string {
       const parts = JsDiff.diffChars(this.original, this.modified, {});
@@ -113,8 +121,25 @@ define(function(require) {
     }
   }
 
+  class BooleanPropertyDiff extends PropertyDiff<boolean> {
+
+    displayText(): string {
+      const valueString = this.original ? "false" : "true";
+      return `${this.label}: changed to ${valueString}`;
+    }
+
+    static maybeFor(label: string, original: boolean, modified: boolean): ?BooleanPropertyDiff {
+      if (original === modified) {
+        return null;
+      } else {
+        return new BooleanPropertyDiff(label, original, modified);
+      }
+    }
+  }
+
   return {
     'AddedDiff': AddedDiff,
+    'BooleanPropertyDiff': BooleanPropertyDiff,
     'RemovedDiff': RemovedDiff,
     'ModifiedDiff': ModifiedDiff,
     'TextDiff': TextDiff

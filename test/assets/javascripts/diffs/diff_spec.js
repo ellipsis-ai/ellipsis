@@ -106,6 +106,10 @@ describe('BehaviorVersion', () => {
       expect(diffText).toContain("Description: [+A description]");
       expect(diffText).toContain("Response template: A[+nother] template");
       expect(diffText).toContain("Code: use strict;[+ // so strict]");
+      expect(diffText).toContain("Added trigger \"C\"");
+      expect(diffText).toContain("Removed trigger \".+\"");
+      expect(diffText).toContain("Modified trigger \"B\":\nRequire bot mention: changed to true");
+
     });
 
   });
