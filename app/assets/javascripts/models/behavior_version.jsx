@@ -112,10 +112,10 @@ define(function(require) {
         return null;
       } else {
         const children: Array<Diff> = [
-          diffs.TextDiff.maybeFor("Name", this.name, other.name),
-          diffs.TextDiff.maybeFor("Description", this.description, other.description),
-          diffs.TextDiff.maybeFor("Response template", this.responseTemplateText(), other.responseTemplateText()),
-          diffs.TextDiff.maybeFor("Code", this.functionBody, other.functionBody)
+          diffs.TextPropertyDiff.maybeFor("Name", this.name, other.name),
+          diffs.TextPropertyDiff.maybeFor("Description", this.description, other.description),
+          diffs.TextPropertyDiff.maybeFor("Response template", this.responseTemplateText(), other.responseTemplateText()),
+          diffs.TextPropertyDiff.maybeFor("Code", this.functionBody, other.functionBody)
         ].filter(ea => Boolean(ea));
         return new diffs.ModifiedDiff(children.concat(this.triggerDiffsFor(other)), this, other);
       }

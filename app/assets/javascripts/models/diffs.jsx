@@ -93,7 +93,7 @@ define(function(require) {
 
   }
 
-  class TextDiff extends PropertyDiff<string> {
+  class TextPropertyDiff extends PropertyDiff<string> {
 
     displayText(): string {
       const parts = JsDiff.diffChars(this.original, this.modified, {});
@@ -110,13 +110,13 @@ define(function(require) {
       return `${this.label}: ${partsString}`;
     }
 
-    static maybeFor(label: string, maybeOriginal: ?string, maybeModified: ?string): ?TextDiff {
+    static maybeFor(label: string, maybeOriginal: ?string, maybeModified: ?string): ?TextPropertyDiff {
       const original = maybeOriginal || "";
       const modified = maybeModified || "";
       if (original === modified) {
         return null;
       } else {
-        return new TextDiff(label, original, modified);
+        return new TextPropertyDiff(label, original, modified);
       }
     }
   }
@@ -142,6 +142,6 @@ define(function(require) {
     'BooleanPropertyDiff': BooleanPropertyDiff,
     'RemovedDiff': RemovedDiff,
     'ModifiedDiff': ModifiedDiff,
-    'TextDiff': TextDiff
+    'TextPropertyDiff': TextPropertyDiff
   };
 });
