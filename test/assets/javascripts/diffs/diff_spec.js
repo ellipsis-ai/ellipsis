@@ -34,7 +34,7 @@ const behaviorVersion2 = Object.freeze({
   "description": "A description",
   "groupId": "gsdfgsg",
   "behaviorId": "mnopqr",
-  "functionBody": "use strict;",
+  "functionBody": "use strict; // so strict",
   "responseTemplate": "Another template",
   "params": [],
   "triggers": [{
@@ -105,6 +105,7 @@ describe('BehaviorVersion', () => {
       expect(diffText).toContain("Name: [-First][+Second] name");
       expect(diffText).toContain("Description: [+A description]");
       expect(diffText).toContain("Response template: A[+nother] template");
+      expect(diffText).toContain("Code: use strict;[+ // so strict]")
     });
 
   });

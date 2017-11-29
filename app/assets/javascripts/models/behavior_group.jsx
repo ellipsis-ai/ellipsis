@@ -1,6 +1,7 @@
-import type {Diff, Diffable} from 'diffs';
-
 // @flow
+
+import type {Diff, Diffable} from './diffs';
+
 define(function(require) {
   const BehaviorVersion = require('./behavior_version');
   const diffs = require('./diffs');
@@ -223,7 +224,11 @@ define(function(require) {
       });
     }
 
-    behaviorVersionDiffsFor(other: BehaviorGroup): Array<diffs.ModifiedDiff<BehaviorVersion>> {
+    diffLabel(): string {
+      return "skill";
+    }
+
+    behaviorVersionDiffsFor(other: BehaviorGroup): Array<Diff> {
       const myIds = this.behaviorVersions.map(ea => ea.behaviorId);
       const otherIds = other.behaviorVersions.map(ea => ea.behaviorId);
 
@@ -231,23 +236,26 @@ define(function(require) {
       const addedIds = myIds.filter(ea => otherIds.indexOf(ea) === -1);
       const removedIds = otherIds.filter(ea => myIds.indexOf(ea) === -1);
 
-      const added = addedIds.map(eaId => {
+      const added: Array<Diff> = addedIds.map(eaId => {
         return this.behaviorVersions.find(ea => ea.behaviorId === eaId);
       })
         .filter(ea => !!ea)
         .map(ea => new diffs.AddedDiff(ea));
 
-      const removed = removedIds.map(eaId => {
+      const removed: Array<Diff> = removedIds.map(eaId => {
         return other.behaviorVersions.find(ea => ea.behaviorId === eaId);
       })
         .filter(ea => !!ea)
         .map(ea => new diffs.RemovedDiff(ea));
 
-      const modified = modifiedIds.map(eaId => {
+      const modified: Array<Diff> = [];
+      modifiedIds.forEach(eaId => {
         const myVersion = this.behaviorVersions.find(ea => ea.behaviorId === eaId);
         const otherVersion = other.behaviorVersions.find(ea => ea.behaviorId === eaId);
-        return myVersion ? myVersion.maybeDiffFor(otherVersion): null;
-      }).filter(ea => !!ea);
+        if (myVersion) {
+          modified.push(myVersion.maybeDiffFor(otherVersion));
+        }
+      });
 
       return added.concat(removed.concat(modified));
     }

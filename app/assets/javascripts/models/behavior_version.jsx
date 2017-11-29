@@ -1,6 +1,7 @@
+// @flow
+
 import type {Diff, Diffable} from "./diffs";
 
-// @flow
 define(function(require) {
   const
     BehaviorConfig = require('./behavior_config'),
@@ -81,7 +82,8 @@ define(function(require) {
         const children: Array<Diff> = [
           diffs.TextDiff.maybeFor("Name", this.name, other.name),
           diffs.TextDiff.maybeFor("Description", this.description, other.description),
-          diffs.TextDiff.maybeFor("Response template", this.responseTemplateText(), other.responseTemplateText())
+          diffs.TextDiff.maybeFor("Response template", this.responseTemplateText(), other.responseTemplateText()),
+          diffs.TextDiff.maybeFor("Code", this.functionBody, other.functionBody)
         ].filter(ea => Boolean(ea));
         return new diffs.ModifiedDiff(children, this, other);
       }
