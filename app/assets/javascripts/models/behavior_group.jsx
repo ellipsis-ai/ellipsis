@@ -232,7 +232,9 @@ define(function(require) {
       if (this.isIdenticalTo(other)) {
         return null;
       } else {
-        const children: Array<Diff> = diffs.diffsFor(this, other, 'behaviorVersions', 'behaviorId');
+        const behaviorVersionDiffs = diffs.diffsFor(this, other, 'behaviorVersions', 'behaviorId');
+        const libraryDiffs = diffs.diffsFor(this, other, 'libraryVersions', 'libraryId');
+        const children = behaviorVersionDiffs.concat(libraryDiffs);
         return new diffs.ModifiedDiff(children, this, other);
       }
     }

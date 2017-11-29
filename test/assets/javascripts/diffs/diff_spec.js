@@ -1,5 +1,5 @@
 window.crypto = require('./../../../mocks/mock_window_crypto');
-const BehaviorVersion = require('../../../../app/assets/javascripts/models/behavior_version');
+const BehaviorGroup = require('../../../../app/assets/javascripts/models/behavior_group');
 
 const behaviorVersion1 = Object.freeze({
   "id": "abcdef",
@@ -34,7 +34,7 @@ const behaviorVersion2 = Object.freeze({
   "name": "Second name",
   "description": "A description",
   "groupId": "gsdfgsg",
-  "behaviorId": "mnopqr",
+  "behaviorId": "ghijkl",
   "functionBody": "use strict; // so strict",
   "responseTemplate": "Another template",
   "params": [],
@@ -90,13 +90,33 @@ const defaultStorageDataType = Object.freeze({
   }
 });
 
-describe('BehaviorVersion', () => {
+const behaviorGroupVersion1 = Object.freeze({
+  behaviorVersions: [behaviorVersion1],
+  requiredAWSConfigs: [],
+  requiredOAuth2ApiConfigs: [],
+  requiredSimpleTokenApis: [],
+  actionInputs: [],
+  dataTypeInputs: [],
+  libraryVersions: []
+});
+
+const behaviorGroupVersion2 = Object.freeze({
+  behaviorVersions: [behaviorVersion2],
+  requiredAWSConfigs: [],
+  requiredOAuth2ApiConfigs: [],
+  requiredSimpleTokenApis: [],
+  actionInputs: [],
+  dataTypeInputs: [],
+  libraryVersions: []
+});
+
+describe('BehaviorGroupVersion', () => {
 
   describe('maybeDiffFor', () => {
 
     it('builds the correct diff', () => {
-      const version1 = BehaviorVersion.fromJson(behaviorVersion1);
-      const version2 = BehaviorVersion.fromJson(behaviorVersion2);
+      const version1 = BehaviorGroup.fromJson(behaviorGroupVersion1);
+      const version2 = BehaviorGroup.fromJson(behaviorGroupVersion2);
       const maybeDiff = version1.maybeDiffFor(version2);
       expect(maybeDiff).toBeTruthy();
       const diffText = maybeDiff.displayText();
