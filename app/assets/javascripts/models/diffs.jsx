@@ -137,7 +137,42 @@ define(function(require) {
     }
   }
 
+  function diffsFor<T: Diffable>(first: T, second: T, collectionProperty: string, idProperty: string): Array<Diff> {
+    const firstItems = (first: Object)[collectionProperty];
+    const secondItems = (second: Object)[collectionProperty];
+    const myIds = firstItems.map(ea => ea[idProperty]);
+    const otherIds = secondItems.map(ea => ea[idProperty]);
+
+    const modifiedIds = myIds.filter(ea => otherIds.indexOf(ea) >= 0);
+    const addedIds = myIds.filter(ea => otherIds.indexOf(ea) === -1);
+    const removedIds = otherIds.filter(ea => myIds.indexOf(ea) === -1);
+
+    const added: Array<Diff> = addedIds.map(eaId => {
+      return firstItems.find(ea => ea[idProperty] === eaId);
+    })
+      .filter(ea => !!ea)
+      .map(ea => new AddedDiff(ea));
+
+    const removed: Array<Diff> = removedIds.map(eaId => {
+      return secondItems.find(ea => ea[idProperty] === eaId);
+    })
+      .filter(ea => !!ea)
+      .map(ea => new RemovedDiff(ea));
+
+    const modified: Array<Diff> = [];
+    modifiedIds.forEach(eaId => {
+      const firstItem = firstItems.find(ea => ea[idProperty] === eaId);
+      const secondItem = secondItems.find(ea => ea[idProperty] === eaId);
+      if (firstItem) {
+        modified.push(firstItem.maybeDiffFor(secondItem));
+      }
+    });
+
+    return added.concat(removed.concat(modified));
+  }
+
   return {
+    'diffsFor': diffsFor,
     'AddedDiff': AddedDiff,
     'BooleanPropertyDiff': BooleanPropertyDiff,
     'RemovedDiff': RemovedDiff,

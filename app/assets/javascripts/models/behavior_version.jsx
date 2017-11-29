@@ -75,38 +75,6 @@ define(function(require) {
       return this.responseTemplate ? this.responseTemplate.text : "";
     }
 
-    triggerDiffsFor(other: BehaviorVersion): Array<Diff> {
-      const myTriggerStrings = this.triggers.map(ea => ea.text);
-      const otherTriggerStrings = other.triggers.map(ea => ea.text);
-
-      const modifiedStrings = myTriggerStrings.filter(ea => otherTriggerStrings.indexOf(ea) >= 0);
-      const addedStrings = myTriggerStrings.filter(ea => otherTriggerStrings.indexOf(ea) === -1);
-      const removedStrings = otherTriggerStrings.filter(ea => myTriggerStrings.indexOf(ea) === -1);
-
-      const added: Array<Diff> = addedStrings.map(eaString => {
-        return this.triggers.find(ea => ea.text === eaString);
-      })
-        .filter(ea => !!ea)
-        .map(ea => new diffs.AddedDiff(ea));
-
-      const removed: Array<Diff> = removedStrings.map(eaString => {
-        return other.triggers.find(ea => ea.text === eaString);
-      })
-        .filter(ea => !!ea)
-        .map(ea => new diffs.RemovedDiff(ea));
-
-      const modified: Array<Diff> = [];
-      modifiedStrings.forEach(eaString => {
-        const myTrigger = this.triggers.find(ea => ea.text === eaString);
-        const otherTrigger = other.triggers.find(ea => ea.text === eaString);
-        if (myTrigger) {
-          modified.push(myTrigger.maybeDiffFor(otherTrigger));
-        }
-      });
-
-      return added.concat(removed.concat(modified));
-    }
-
     dataTypeUsesCode(): boolean {
       return this.config.dataTypeConfig && this.config.dataTypeConfig.usesCode;
     }
@@ -123,7 +91,8 @@ define(function(require) {
           diffs.BooleanPropertyDiff.maybeFor("Always responds privately", this.config.forcePrivateResponse, other.config.forcePrivateResponse),
           diffs.BooleanPropertyDiff.maybeFor("Code-backed data type", this.dataTypeUsesCode(), other.dataTypeUsesCode())
         ].filter(ea => Boolean(ea));
-        return new diffs.ModifiedDiff(children.concat(this.triggerDiffsFor(other)), this, other);
+        const triggerDiffs = diffs.diffsFor(this, other, 'triggers', 'text');
+        return new diffs.ModifiedDiff(children.concat(triggerDiffs), this, other);
       }
     }
 

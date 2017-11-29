@@ -228,43 +228,11 @@ define(function(require) {
       return "skill";
     }
 
-    behaviorVersionDiffsFor(other: BehaviorGroup): Array<Diff> {
-      const myIds = this.behaviorVersions.map(ea => ea.behaviorId);
-      const otherIds = other.behaviorVersions.map(ea => ea.behaviorId);
-
-      const modifiedIds = myIds.filter(ea => !!otherIds.indexOf(ea));
-      const addedIds = myIds.filter(ea => otherIds.indexOf(ea) === -1);
-      const removedIds = otherIds.filter(ea => myIds.indexOf(ea) === -1);
-
-      const added: Array<Diff> = addedIds.map(eaId => {
-        return this.behaviorVersions.find(ea => ea.behaviorId === eaId);
-      })
-        .filter(ea => !!ea)
-        .map(ea => new diffs.AddedDiff(ea));
-
-      const removed: Array<Diff> = removedIds.map(eaId => {
-        return other.behaviorVersions.find(ea => ea.behaviorId === eaId);
-      })
-        .filter(ea => !!ea)
-        .map(ea => new diffs.RemovedDiff(ea));
-
-      const modified: Array<Diff> = [];
-      modifiedIds.forEach(eaId => {
-        const myVersion = this.behaviorVersions.find(ea => ea.behaviorId === eaId);
-        const otherVersion = other.behaviorVersions.find(ea => ea.behaviorId === eaId);
-        if (myVersion) {
-          modified.push(myVersion.maybeDiffFor(otherVersion));
-        }
-      });
-
-      return added.concat(removed.concat(modified));
-    }
-
     maybeDiffFor(other: BehaviorGroup): ?diffs.ModifiedDiff<BehaviorGroup> {
       if (this.isIdenticalTo(other)) {
         return null;
       } else {
-        const children: Array<Diff> = this.behaviorVersionDiffsFor(other);
+        const children: Array<Diff> = diffs.diffsFor(this, other, 'behaviorVersions', 'behaviorId');
         return new diffs.ModifiedDiff(children, this, other);
       }
     }
