@@ -97,12 +97,14 @@ describe('BehaviorVersion', () => {
       const version2 = BehaviorVersion.fromJson(behaviorVersion2);
       const maybeDiff = version1.maybeDiffFor(version2);
       expect(maybeDiff).toBeTruthy();
-      const childDiffs = maybeDiff.children.map(ea => ea.displayText());
-      expect(childDiffs).toContain("Name: [-First][+Second] name");
-      expect(childDiffs).toContain("Description: [+A description]");
-      expect(childDiffs).toContain("Response template: A[+nother] template");
+      const diffText = maybeDiff.displayText();
 
-      childDiffs.forEach(ea => console.log(ea));
+      console.log(diffText);
+
+      expect(diffText).toContain("Modified action:");
+      expect(diffText).toContain("Name: [-First][+Second] name");
+      expect(diffText).toContain("Description: [+A description]");
+      expect(diffText).toContain("Response template: A[+nother] template");
     });
 
   });

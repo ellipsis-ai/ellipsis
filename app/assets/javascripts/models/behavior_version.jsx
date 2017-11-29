@@ -140,7 +140,7 @@ define(function(require) {
       return this.isDataType() ? "data type" : "action";
     }
 
-    itemType(): string {
+    diffLabel(): string {
       return this.getBehaviorVersionTypeName();
     }
 

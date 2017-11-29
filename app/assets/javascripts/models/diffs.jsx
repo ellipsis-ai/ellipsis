@@ -1,7 +1,7 @@
 // @flow
 
 export interface Diffable {
-  itemType(): string;
+  diffLabel(): string;
 }
 
 export interface Diff {
@@ -21,27 +21,31 @@ define(function(require) {
     }
 
     displayText(): string {
-      return "";
+      return this.label();
+    }
+
+    diffType(): string {
+      throw "Should be implemented by subclasses";
     }
 
     label(): string {
-      return this.item.itemType();
+      return `${this.diffType()} ${this.item.diffLabel()}`;
     }
 
   }
 
   class AddedDiff<T: Diffable> extends AddedOrRemovedDiff<T> {
 
-    displayText(): string {
-      return `Added ${this.label()}`;
+    diffType(): string {
+      return "Added";
     }
 
   }
 
   class RemovedDiff<T: Diffable> extends AddedOrRemovedDiff<T> {
 
-    displayText(): string {
-      return `Removed ${this.item.itemType()}`;
+    diffType(): string {
+      return "Removed";
     }
 
   }
@@ -59,38 +63,32 @@ define(function(require) {
       });
     }
 
+    label(): string {
+      return `Modified ${this.original.diffLabel()}`;
+    }
+
     displayText(): string {
-      return this.children.map(ea => ea.displayText()).join("\n");
+      const childDisplayText = this.children.map(ea => ea.displayText()).join("\n");
+      return `${this.label()}:\n${childDisplayText}`;
     }
 
   }
 
-  class Text implements Diffable {
-    value: string;
-
-    constructor(value: string) {
-      Object.defineProperties(this, {
-        value: { value: value, enumerable: true }
-      });
-    }
-
-    itemType(): string {
-      return "";
-    }
-  }
-
-  class TextDiff extends ModifiedDiff<Text> {
+  class TextDiff implements Diff {
     label: string;
+    original: string;
+    modified: string;
 
-    constructor(label: string, original: Text, modified: Text) {
-      super([], original, modified);
+    constructor(label: string, original: string, modified: string) {
       Object.defineProperties(this, {
-        label: { value: label, enumerable: true }
+        label: { value: label, enumerable: true },
+        original: { value: original, enumerable: true },
+        modified: { value: modified, enumerable: true }
       });
     }
 
     displayText(): string {
-      const parts = JsDiff.diffChars(this.original.value, this.modified.value, {});
+      const parts = JsDiff.diffChars(this.original, this.modified, {});
       const partsString = parts.map(ea => {
         const text = ea.value;
         if (ea.added) {
@@ -105,12 +103,12 @@ define(function(require) {
     }
 
     static maybeFor(label: string, maybeOriginal: ?string, maybeModified: ?string): ?TextDiff {
-      const originalValue = maybeOriginal || "";
-      const modifiedValue = maybeModified || "";
-      if (originalValue === modifiedValue) {
+      const original = maybeOriginal || "";
+      const modified = maybeModified || "";
+      if (original === modified) {
         return null;
       } else {
-        return new TextDiff(label, new Text(originalValue), new Text(modifiedValue));
+        return new TextDiff(label, original, modified);
       }
     }
   }
