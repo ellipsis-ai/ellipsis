@@ -75,6 +75,38 @@ define(function(require) {
       return this.responseTemplate ? this.responseTemplate.text : "";
     }
 
+    triggerDiffsFor(other: BehaviorVersion): Array<Diff> {
+      const myTriggerStrings = this.triggers.map(ea => ea.text);
+      const otherTriggerStrings = other.triggers.map(ea => ea.text);
+
+      const modifiedStrings = myTriggerStrings.filter(ea => otherTriggerStrings.indexOf(ea) >= 0);
+      const addedStrings = myTriggerStrings.filter(ea => otherTriggerStrings.indexOf(ea) === -1);
+      const removedStrings = otherTriggerStrings.filter(ea => myTriggerStrings.indexOf(ea) === -1);
+
+      const added: Array<Diff> = addedStrings.map(eaString => {
+        return this.triggers.find(ea => ea.text === eaString);
+      })
+        .filter(ea => !!ea)
+        .map(ea => new diffs.AddedDiff(ea));
+
+      const removed: Array<Diff> = removedStrings.map(eaString => {
+        return other.triggers.find(ea => ea.text === eaString);
+      })
+        .filter(ea => !!ea)
+        .map(ea => new diffs.RemovedDiff(ea));
+
+      const modified: Array<Diff> = [];
+      modifiedStrings.forEach(eaString => {
+        const myTrigger = this.triggers.find(ea => ea.text === eaString);
+        const otherTrigger = other.triggers.find(ea => ea.text === eaString);
+        if (myTrigger) {
+          modified.push(myTrigger.maybeDiffFor(otherTrigger));
+        }
+      });
+
+      return added.concat(removed.concat(modified));
+    }
+
     maybeDiffFor(other: BehaviorVersion): ?diffs.ModifiedDiff<BehaviorVersion> {
       if (this.isIdenticalToVersion(other)) {
         return null;
@@ -85,7 +117,7 @@ define(function(require) {
           diffs.TextDiff.maybeFor("Response template", this.responseTemplateText(), other.responseTemplateText()),
           diffs.TextDiff.maybeFor("Code", this.functionBody, other.functionBody)
         ].filter(ea => Boolean(ea));
-        return new diffs.ModifiedDiff(children, this, other);
+        return new diffs.ModifiedDiff(children.concat(this.triggerDiffsFor(other)), this, other);
       }
     }
 
