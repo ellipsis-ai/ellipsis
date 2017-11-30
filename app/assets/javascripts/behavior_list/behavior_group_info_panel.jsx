@@ -8,7 +8,8 @@ define(function(require) {
     SVGInstall = require('../svg/install'),
     SVGInstalled = require('../svg/installed'),
     ifPresent = require('../lib/if_present'),
-    Sort = require('../lib/sort');
+    Sort = require('../lib/sort'),
+    autobind = require('../lib/autobind');
 
   type Props = {
     groupData: ?BehaviorGroup,
@@ -23,6 +24,11 @@ define(function(require) {
 
   class BehaviorGroupInfoPanel extends React.Component<Props> {
     props: Props;
+
+    constructor(props) {
+      super(props);
+      autobind(this);
+    }
 
     getBehaviors(): Array<BehaviorVersion> {
       var behaviorVersions = this.props.groupData && this.props.groupData.behaviorVersions || [];
