@@ -1,6 +1,6 @@
 // @flow
 
-import {Diff, Diffable} from "./diffs";
+import type {Diff, Diffable} from "./diffs";
 
 define(function(require) {
   const DeepEqual = require('../lib/deep_equal');
