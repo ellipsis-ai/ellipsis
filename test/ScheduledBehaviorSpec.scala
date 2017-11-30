@@ -65,13 +65,13 @@ class ScheduledBehaviorSpec extends PlaySpec with MockitoSugar {
       }
     }
 
-    "include just the behavior name if no group name" in new TestContext {
+    "say an unnamed skill if no group name" in new TestContext {
       running(app) {
         val behavior = mockBehavior
         mockNames(dataService, behavior, Some("foo"), None)
         val sb = mockScheduledBehavior(behavior, team)
         val text = sb.displayText(dataService)
-        runNow(text) mustBe """an action named `foo`"""
+        runNow(text) mustBe """an action named `foo` in an unnamed skill"""
       }
     }
 
@@ -81,7 +81,7 @@ class ScheduledBehaviorSpec extends PlaySpec with MockitoSugar {
         mockNames(dataService, behavior, None, None)
         val sb = mockScheduledBehavior(behavior, team)
         val text = sb.displayText(dataService)
-        runNow(text) mustBe """an unnamed action"""
+        runNow(text) mustBe """an unnamed action in an unnamed skill"""
       }
     }
 
@@ -92,6 +92,17 @@ class ScheduledBehaviorSpec extends PlaySpec with MockitoSugar {
         val sb = mockScheduledBehavior(behavior, team)
         val text = sb.displayText(dataService)
         runNow(text) mustBe """an unnamed action in skill `bar`"""
+      }
+    }
+
+    "say a deleted action/skill if there is none" in new TestContext {
+      running(app) {
+        val behavior = mockBehavior
+        when(dataService.behaviorGroups.maybeCurrentVersionFor(behavior.group)).thenReturn(Future.successful(None))
+        when(dataService.behaviors.maybeCurrentVersionFor(behavior)).thenReturn(Future.successful(None))
+        val sb = mockScheduledBehavior(behavior, team)
+        val text = sb.displayText(dataService)
+        runNow(text) mustBe """a deleted action in a deleted skill"""
       }
     }
   }
