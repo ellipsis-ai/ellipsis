@@ -147,7 +147,7 @@ return React.createClass({
     if (versionToSelect && currentVersion) {
       const diff = currentVersion.maybeDiffFor(versionToSelect);
       if (diff) {
-        console.log(diff.displayText());
+        console.log(diff);
       }
     }
     this.setState({ selectedVersionIndex: index });
