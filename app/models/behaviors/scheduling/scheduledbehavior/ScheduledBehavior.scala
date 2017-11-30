@@ -30,33 +30,23 @@ case class ScheduledBehavior(
                               createdAt: OffsetDateTime
                            ) extends Scheduled {
 
-  def maybeBehaviorName(dataService: DataService)(implicit ec: ExecutionContext): Future[Option[String]] = {
-    for {
-      maybeBehaviorVersion <- dataService.behaviors.maybeCurrentVersionFor(behavior)
-    } yield {
-      maybeBehaviorVersion.flatMap(_.maybeName)
-    }
-  }
-
-  def maybeBehaviorGroupName(dataService: DataService)(implicit ec: ExecutionContext): Future[Option[String]] = {
-    for {
-      maybeGroupVersion <- dataService.behaviorGroups.maybeCurrentVersionFor(behavior.group)
-    } yield {
-      maybeGroupVersion.flatMap(version => Option(version.name).filter(_.trim.nonEmpty))
-    }
-  }
-
   def displayText(dataService: DataService)(implicit ec: ExecutionContext): Future[String] = {
     for {
-      maybeBehaviorName <- maybeBehaviorName(dataService)
-      maybeBehaviorGroupName <- maybeBehaviorGroupName(dataService)
+      maybeBehaviorVersion <- dataService.behaviors.maybeCurrentVersionFor(behavior)
+      maybeBehaviorGroupVersion <- dataService.behaviorGroups.maybeCurrentVersionFor(behavior.group)
     } yield {
-      val actionText = maybeBehaviorName.map { name =>
-        s"""an action named `${name}`"""
-      }.getOrElse("an unnamed action")
-      val groupText = maybeBehaviorGroupName.map { name =>
-        s" in skill `$name`"
-      }.getOrElse("")
+      val actionText = maybeBehaviorVersion.map { behaviorVersion =>
+        behaviorVersion.maybeName.map { name =>
+          s"""an action named `$name`"""
+        }.getOrElse("an unnamed action")
+      }.getOrElse("a deleted action")
+      val groupText = maybeBehaviorGroupVersion.map { groupVersion =>
+        if (groupVersion.name.trim.nonEmpty) {
+          s" in skill `${groupVersion.name}`"
+        } else {
+          s" in an unnamed skill"
+        }
+      }.getOrElse(" in a deleted skill")
       actionText ++ groupText
     }
   }
