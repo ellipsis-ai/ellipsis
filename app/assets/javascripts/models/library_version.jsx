@@ -112,7 +112,7 @@ define(function(require) {
         props.functionBody,
         props.groupId,
         props.teamId,
-        props.libaryId,
+        props.libraryId,
         props.exportId,
         props.isNew,
         props.editorScrollPosition

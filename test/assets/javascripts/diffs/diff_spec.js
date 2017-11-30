@@ -151,7 +151,179 @@ describe('BehaviorGroupVersion', () => {
       expect(maybeDiff).toBeTruthy();
       const diffText = maybeDiff.displayText();
 
-      console.log(diffText);
+      console.log(JSON.stringify(maybeDiff, null, 2));
+
+      const expectedDiffTree = {
+        // "original": {},
+        // "modified": {},
+        "children": [
+          {
+            "original": {}, // ignore
+            "modified": {}, // ignore
+            "children": [
+              {
+                "label": "Name",
+                "original": "First name",
+                "modified": "Second name",
+                "parts": [
+                  {
+                    "value": "First",
+                    "kind": "removed"
+                  },
+                  {
+                    "value": "Second",
+                    "kind": "added"
+                  },
+                  {
+                    "value": " name",
+                    "kind": "unchanged"
+                  }
+                ]
+              },
+              {
+                "label": "Description",
+                "original": "",
+                "modified": "A description",
+                "parts": [
+                  {
+                    "value": "A description",
+                    "kind": "added"
+                  }
+                ]
+              },
+              {
+                "label": "Response template",
+                "original": "A template",
+                "modified": "Another template",
+                "parts": [
+                  {
+                    "value": "A",
+                    "kind": "unchanged"
+                  },
+                  {
+                    "value": "nother",
+                    "kind": "added"
+                  },
+                  {
+                    "value": " template",
+                    "kind": "unchanged"
+                  }
+                ]
+              },
+              {
+                "label": "Code",
+                "original": "use strict;",
+                "modified": "use strict; // so strict",
+                "parts": [
+                  {
+                    "value": "use strict;",
+                    "kind": "unchanged"
+                  },
+                  {
+                    "value": " // so strict",
+                    "kind": "added"
+                  }
+                ]
+              },
+              {
+                "label": "Always responds privately",
+                "original": false,
+                "modified": true
+              },
+              {
+                "item": {
+                  "caseSensitive": false,
+                  "isRegex": false,
+                  "requiresMention": false,
+                  "text": "C"
+                }
+              },
+              {
+                "item": {
+                  "caseSensitive": false,
+                  "isRegex": true,
+                  "requiresMention": false,
+                  "text": ".+"
+                }
+              },
+              {
+                "original": {
+                  "caseSensitive": false,
+                  "isRegex": true,
+                  "requiresMention": false,
+                  "text": "B"
+                },
+                "modified": {
+                  "caseSensitive": false,
+                  "isRegex": true,
+                  "requiresMention": true,
+                  "text": "B"
+                },
+                "children": [
+                  {
+                    "label": "Require bot mention",
+                    "original": false,
+                    "modified": true
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "original": {}, // ignore
+            "modified": {}, // ignore
+            "children": [
+              {
+                "label": "Name",
+                "original": "some-lib",
+                "modified": "some-lib-revised",
+                "parts": [
+                  {
+                    "value": "some-lib",
+                    "kind": "unchanged"
+                  },
+                  {
+                    "value": "-revised",
+                    "kind": "added"
+                  }
+                ]
+              },
+              {
+                "label": "Description",
+                "original": "A library",
+                "modified": "A library (revised)",
+                "parts": [
+                  {
+                    "value": "A library",
+                    "kind": "unchanged"
+                  },
+                  {
+                    "value": " (revised)",
+                    "kind": "added"
+                  }
+                ]
+              },
+              {
+                "label": "Code",
+                "original": "return \"foo\"",
+                "modified": "return \"foo\";",
+                "parts": [
+                  {
+                    "value": "return \"foo\"",
+                    "kind": "unchanged"
+                  },
+                  {
+                    "value": ";",
+                    "kind": "added"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      };
+
+      expect(maybeDiff).toMatchObject(expectedDiffTree);
 
       expect(diffText).toContain("Modified action:");
       expect(diffText).toContain("Name: [-First][+Second] name");

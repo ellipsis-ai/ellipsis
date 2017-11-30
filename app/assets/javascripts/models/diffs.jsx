@@ -8,6 +8,8 @@ export interface Diff {
   displayText(): string;
 }
 
+export type TextPartKind = "added" | "removed" | "unchanged";
+
 define(function(require) {
   const JsDiff = require("diff");
 
@@ -93,15 +95,55 @@ define(function(require) {
 
   }
 
+  const TEXT_ADDED = "added";
+  const TEXT_REMOVED = "removed";
+  const TEXT_UNCHANGED = "unchanged";
+
+  class TextPart {
+    value: string;
+    kind: TextPartKind;
+
+    constructor(value: string, added: ?boolean, removed: ?boolean) {
+      if (added && removed) {
+        throw "Can't be both added and removed";
+      } else {
+        const kind = added ? TEXT_ADDED : (removed ? TEXT_REMOVED : TEXT_UNCHANGED);
+        Object.defineProperties(this, {
+          value: { value: value, enumerable: true },
+          kind: { value: kind, enumerable: true }
+        });
+      }
+    }
+
+    isAdded(): boolean {
+      return this.kind === TEXT_ADDED;
+    }
+
+    isRemoved(): boolean {
+      return this.kind === TEXT_REMOVED;
+    }
+
+  }
+
   class TextPropertyDiff extends PropertyDiff<string> {
+    parts: Array<TextPart>;
+
+    constructor(label: string, original: string, modified: string) {
+      super(label, original, modified);
+      const parts = JsDiff.diffChars(original, modified, {}).map(ea => {
+        return new TextPart(ea.value, ea.added, ea.removed);
+      });
+      Object.defineProperties(this, {
+        parts: { value: parts, enumerable: true }
+      });
+    }
 
     displayText(): string {
-      const parts = JsDiff.diffChars(this.original, this.modified, {});
-      const partsString = parts.map(ea => {
+      const partsString = this.parts.map(ea => {
         const text = ea.value;
-        if (ea.added) {
+        if (ea.isAdded()) {
           return `[+${text}]`;
-        } else if (ea.removed) {
+        } else if (ea.isRemoved()) {
           return `[-${text}]`;
         } else {
           return text;
