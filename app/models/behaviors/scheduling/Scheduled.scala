@@ -229,11 +229,10 @@ trait Scheduled {
             }
           }
         }.getOrElse(Future.successful(None))
-      } yield {
-        maybeDmInfo.foreach { info =>
+        _ <- maybeDmInfo.map { info =>
           sendFor(info.channelId, info.userId, eventHandler, client, profile, services)
-        }
-      }
+        }.getOrElse(Future.successful({}))
+      } yield {}
     }
   }
 

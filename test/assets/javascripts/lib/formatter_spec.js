@@ -108,4 +108,33 @@ describe("Formatter", () => {
       expect(Formatter.formatPossibleNumber("0000.010000")).toEqual("0.010000");
     });
   });
+
+  describe("formatGithubRepoName", () => {
+    it("preserves valid characters", () => {
+      expect(Formatter.formatGithubRepoName("ABC-abc_1.2.3")).toEqual("ABC-abc_1.2.3");
+    });
+    it("strips invalid characters", () => {
+      expect(Formatter.formatGithubRepoName(" *** É L I T E *** \n *** N A M E ***")).toEqual("LITENAME");
+    });
+  });
+
+  describe("formatGithubUserName", () => {
+    it("preserves valid characters", () => {
+      expect(Formatter.formatGithubUserName("ABC-abc123")).toEqual("ABC-abc123");
+    });
+    it("strips invalid characters", () => {
+      expect(Formatter.formatGithubUserName("-ABC-abc_1.2.3-")).toEqual("ABC-abc123-");
+      expect(Formatter.formatGithubUserName(" *** É L I T E *** \n *** N A M E ***")).toEqual("LITENAME");
+    });
+  });
+
+  describe("formatGitBranchIdentifier", () => {
+    it("preserves valid characters", () => {
+      expect(Formatter.formatGitBranchIdentifier("je-suis_un_nom/éxtraordinaire!")).toEqual("je-suis_un_nom/éxtraordinaire!");
+    });
+    it("strips invalid characters", () => {
+      expect(Formatter.formatGitBranchIdentifier(". ^@{*a.. :// ?[\\")).toEqual("a./");
+      expect(Formatter.formatGitBranchIdentifier("..//..test")).toEqual("test");
+    });
+  });
 });

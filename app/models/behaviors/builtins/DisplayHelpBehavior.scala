@@ -41,7 +41,9 @@ case class DisplayHelpBehavior(
     val resultsToShow = results.slice(startAt, endAt)
     val resultsRemaining = results.slice(endAt, results.length)
 
-    val intro = if (startAt == 0 && maybeHelpString.isEmpty) {
+    val intro = if (startAt == 0 && results.isEmpty) {
+      "I don’t have any skills installed right now. Try installing a skill to make me more useful."
+    } else if (startAt == 0 && maybeHelpString.isEmpty) {
       s"OK, let’s start from the top. Here are some things I know about."
     } else if (startAt == 0 && maybeHelpString.isDefined) {
       s"OK, here’s what I know$matchString."
@@ -152,6 +154,12 @@ case class DisplayHelpBehavior(
     TextWithAttachmentsResult(event, None, resultText, forcePrivateResponse = false, Seq(actionsGroup))
   }
 
+  def searchedHelp: Boolean = maybeHelpSearch.isDefined
+  def clickedSkill: Boolean = maybeSkillId.isDefined
+  def shouldShowSingleSkill(matchingGroupData: Seq[HelpResult]): Boolean = {
+    (searchedHelp || clickedSkill) && matchingGroupData.length == 1
+  }
+
   def result(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[BotResult] = {
     for {
       maybeTeam <- dataService.teams.find(event.teamId)
@@ -182,9 +190,10 @@ case class DisplayHelpBehavior(
       val matchingGroupData = maybeHelpSearch.map { helpSearch =>
         FuzzyMatcher[HelpGroupData](helpSearch, flattenedGroupData).run.map(matchResult => HelpSearchResult(helpSearch, matchResult, event, dataService, lambdaService, botPrefix))
       }.getOrElse(flattenedGroupData.map(group => SimpleHelpResult(group, event, dataService, lambdaService, botPrefix)))
-      if (matchingGroupData.isEmpty) {
+
+      if (searchedHelp && matchingGroupData.isEmpty) {
         emptyResult
-      } else if (matchingGroupData.length == 1) {
+      } else if (shouldShowSingleSkill(matchingGroupData)) {
         skillResultFor(matchingGroupData.head)
       } else {
         introResultFor(matchingGroupData, maybeStartAtIndex.getOrElse(0), botPrefix)

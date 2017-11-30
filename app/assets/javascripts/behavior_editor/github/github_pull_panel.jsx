@@ -109,8 +109,11 @@ define(function(require) {
       return (
         <div>
 
-          <h4 className="mtn">Pull from GitHub</h4>
-          <p>Confirm the branch name, then pull to save that branch as the current skill version.</p>
+          <h5 className="mtn">Pull latest from GitHub</h5>
+          <p>
+            <span>Choose a branch to pull. The version of the skill in that branch will be saved </span>
+            <span>as the current version for Ellipsis. (You can always revert later if necessary.)</span>
+          </p>
 
           <div className="columns">
             <div className="column column-one-quarter">
@@ -175,7 +178,7 @@ define(function(require) {
           <div className="container">
             <div className="columns">
               <div className="column column-page-sidebar">
-                <h4 className="type-weak mtn">Link with GitHub</h4>
+                <h4 className="type-weak mtn">Sync with GitHub repository</h4>
                 <GithubOwnerRepoReadonly linked={this.props.linked} />
               </div>
               <div className="column column-page-main">
