@@ -1,10 +1,16 @@
 window.crypto = require('./../../../mocks/mock_window_crypto');
 const BehaviorGroup = require('../../../../app/assets/javascripts/models/behavior_group');
 
+const teamId = 'team123456';
+const groupId = 'group123456';
+const behaviorId = 'ghijkl';
+const libraryId = 'lib123456';
+
 const behaviorVersion1 = Object.freeze({
   "id": "abcdef",
   "name": "First name",
-  "behaviorId": "ghijkl",
+  "groupId": groupId,
+  "behaviorId": behaviorId,
   "functionBody": "use strict;",
   "responseTemplate": "A template",
   "params": [],
@@ -33,8 +39,8 @@ const behaviorVersion2 = Object.freeze({
   "id": "abcdef",
   "name": "Second name",
   "description": "A description",
-  "groupId": "gsdfgsg",
-  "behaviorId": "ghijkl",
+  "groupId": groupId,
+  "behaviorId": behaviorId,
   "functionBody": "use strict; // so strict",
   "responseTemplate": "Another template",
   "params": [],
@@ -58,6 +64,28 @@ const behaviorVersion2 = Object.freeze({
     }
   },
   "createdAt": 1468359271138
+});
+
+const libraryVersion1 = Object.freeze({
+  id: 'abcdef',
+  name: 'some-lib',
+  description: 'A library',
+  functionBody: 'return "foo"',
+  groupId: groupId,
+  teamId: teamId,
+  libaryId: libraryId,
+  editorScrollPosition: 0
+});
+
+const libraryVersion2 = Object.freeze({
+  id: 'abcdef',
+  name: 'some-lib-revised',
+  description: 'A library (revised)',
+  functionBody: 'return "foo";',
+  groupId: groupId,
+  teamId: teamId,
+  libaryId: libraryId,
+  editorScrollPosition: 10
 });
 
 const defaultStorageDataType = Object.freeze({
@@ -91,23 +119,25 @@ const defaultStorageDataType = Object.freeze({
 });
 
 const behaviorGroupVersion1 = Object.freeze({
+  groupId: 'group123456',
   behaviorVersions: [behaviorVersion1],
   requiredAWSConfigs: [],
   requiredOAuth2ApiConfigs: [],
   requiredSimpleTokenApis: [],
   actionInputs: [],
   dataTypeInputs: [],
-  libraryVersions: []
+  libraryVersions: [libraryVersion1]
 });
 
 const behaviorGroupVersion2 = Object.freeze({
+  groupId: 'group123456',
   behaviorVersions: [behaviorVersion2],
   requiredAWSConfigs: [],
   requiredOAuth2ApiConfigs: [],
   requiredSimpleTokenApis: [],
   actionInputs: [],
   dataTypeInputs: [],
-  libraryVersions: []
+  libraryVersions: [libraryVersion2]
 });
 
 describe('BehaviorGroupVersion', () => {
@@ -131,6 +161,10 @@ describe('BehaviorGroupVersion', () => {
       expect(diffText).toContain("Added trigger \"C\"");
       expect(diffText).toContain("Removed trigger \".+\"");
       expect(diffText).toContain("Modified trigger \"B\":\nRequire bot mention: changed to true");
+      expect(diffText).toContain("Modified library \"some-lib\":");
+      expect(diffText).toContain("Name: some-lib[+-revised]");
+      expect(diffText).toContain("Description: A library[+ (revised)]");
+      expect(diffText).toContain("Code: return \"foo\"[+;]");
 
     });
 

@@ -164,7 +164,10 @@ define(function(require) {
       const firstItem = firstItems.find(ea => ea[idProperty] === eaId);
       const secondItem = secondItems.find(ea => ea[idProperty] === eaId);
       if (firstItem) {
-        modified.push(firstItem.maybeDiffFor(secondItem));
+        const diff = firstItem.maybeDiffFor(secondItem);
+        if (diff) {
+          modified.push(diff);
+        }
       }
     });
 
