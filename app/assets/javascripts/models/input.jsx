@@ -1,9 +1,14 @@
 // @flow
+
+import type Diffable, {Diff} from './diffs';
+
 define(function(require) {
 
+  const DeepEqual = require('../lib/deep_equal');
+  const diffs = require('./diffs');
   const ParamType = require('./param_type');
 
-  class Input {
+  class Input implements Diffable {
     name: string;
     question: string;
     paramType: ParamType;
@@ -58,6 +63,37 @@ define(function(require) {
           enumerable: true
         }
       });
+    }
+
+    forEqualityComparison() {
+      return this;
+    }
+
+    isIdenticalToVersion(version): boolean {
+      return DeepEqual.isEqual(this.forEqualityComparison(), version.forEqualityComparison());
+    }
+
+    diffLabel(): string {
+      return `input "${this.name}"`;
+    }
+
+    getIdForDiff(): string {
+      return this.inputId;
+    }
+
+    maybeDiffFor(other: Input): ?diffs.ModifiedDiff<Input> {
+      if (this.isIdenticalToVersion(other)) {
+        return null;
+      } else {
+        const children: Array<Diff> = [
+          diffs.TextPropertyDiff.maybeFor("Name", this.name, other.name),
+          diffs.TextPropertyDiff.maybeFor("Question", this.question, other.question),
+          diffs.TextPropertyDiff.maybeFor("Type", this.paramType.name, other.paramType.name),
+          diffs.BooleanPropertyDiff.maybeFor("Saved for whole team", this.isSavedForTeam, other.isSavedForTeam),
+          diffs.BooleanPropertyDiff.maybeFor("Saved per user", this.isSavedForUser, other.isSavedForUser)
+        ].filter(ea => Boolean(ea));
+        return new diffs.ModifiedDiff(children, this, other);
+      }
     }
 
     isSaved(): boolean {

@@ -5,6 +5,7 @@ const teamId = 'team123456';
 const groupId = 'group123456';
 const behaviorId = 'ghijkl';
 const libraryId = 'lib123456';
+const inputId = 'input123456';
 
 const behaviorVersion1 = Object.freeze({
   "id": "abcdef",
@@ -118,13 +119,39 @@ const defaultStorageDataType = Object.freeze({
   }
 });
 
+const actionInput1 = Object.freeze({
+  name: 'clown',
+  question: 'what drives the car?',
+  paramType: {
+    id: 'Text',
+    name: 'Text',
+    needsConfig: false
+  },
+  isSavedForTeam: false,
+  isSavedForUser: true,
+  inputId: inputId,
+});
+
+const actionInput2 = Object.freeze({
+  name: 'clown',
+  question: 'who drives the car?',
+  paramType: {
+    id: 'Text',
+    name: 'Text',
+    needsConfig: false
+  },
+  isSavedForTeam: true,
+  isSavedForUser: false,
+  inputId: inputId
+});
+
 const behaviorGroupVersion1 = Object.freeze({
   groupId: 'group123456',
   behaviorVersions: [behaviorVersion1],
   requiredAWSConfigs: [],
   requiredOAuth2ApiConfigs: [],
   requiredSimpleTokenApis: [],
-  actionInputs: [],
+  actionInputs: [actionInput1],
   dataTypeInputs: [],
   libraryVersions: [libraryVersion1]
 });
@@ -135,7 +162,7 @@ const behaviorGroupVersion2 = Object.freeze({
   requiredAWSConfigs: [],
   requiredOAuth2ApiConfigs: [],
   requiredSimpleTokenApis: [],
-  actionInputs: [],
+  actionInputs: [actionInput2],
   dataTypeInputs: [],
   libraryVersions: [libraryVersion2]
 });
@@ -153,82 +180,79 @@ describe('BehaviorGroupVersion', () => {
 
       console.log(JSON.stringify(maybeDiff, null, 2));
 
+      // the empty objects for original and modified objects are ignored in the match
       const expectedDiffTree = {
-        // "original": {},
-        // "modified": {},
         "children": [
           {
-            "original": {}, // ignore
-            "modified": {}, // ignore
             "children": [
               {
                 "label": "Name",
-                "original": "First name",
                 "modified": "Second name",
+                "original": "First name",
                 "parts": [
                   {
-                    "value": "First",
-                    "kind": "removed"
+                    "kind": "removed",
+                    "value": "First"
                   },
                   {
-                    "value": "Second",
-                    "kind": "added"
+                    "kind": "added",
+                    "value": "Second"
                   },
                   {
-                    "value": " name",
-                    "kind": "unchanged"
+                    "kind": "unchanged",
+                    "value": " name"
                   }
                 ]
               },
               {
                 "label": "Description",
-                "original": "",
                 "modified": "A description",
+                "original": "",
                 "parts": [
                   {
-                    "value": "A description",
-                    "kind": "added"
+                    "kind": "added",
+                    "value": "A description"
                   }
                 ]
               },
               {
                 "label": "Response template",
-                "original": "A template",
                 "modified": "Another template",
+                "original": "A template",
                 "parts": [
                   {
-                    "value": "A",
-                    "kind": "unchanged"
+                    "kind": "unchanged",
+                    "value": "A"
                   },
                   {
-                    "value": "nother",
-                    "kind": "added"
+                    "kind": "added",
+                    "value": "nother"
                   },
                   {
-                    "value": " template",
-                    "kind": "unchanged"
+                    "kind": "unchanged",
+                    "value": " template"
                   }
                 ]
               },
               {
                 "label": "Code",
-                "original": "use strict;",
                 "modified": "use strict; // so strict",
+                "original": "use strict;",
                 "parts": [
                   {
-                    "value": "use strict;",
-                    "kind": "unchanged"
+                    "kind": "unchanged",
+                    "value": "use strict;"
                   },
                   {
-                    "value": " // so strict",
-                    "kind": "added"
+                    "kind": "added",
+                    "value": " // so strict"
                   }
                 ]
               },
               {
                 "label": "Always responds privately",
-                "original": false,
-                "modified": true
+                "modified": true,
+                "original": false
               },
               {
                 "item": {
@@ -247,80 +271,123 @@ describe('BehaviorGroupVersion', () => {
                 }
               },
               {
-                "original": {
-                  "caseSensitive": false,
-                  "isRegex": true,
-                  "requiresMention": false,
-                  "text": "B"
-                },
+                "children": [
+                  {
+                    "label": "Require bot mention",
+                    "modified": true,
+                    "original": false
+                  }
+                ],
                 "modified": {
                   "caseSensitive": false,
                   "isRegex": true,
                   "requiresMention": true,
                   "text": "B"
                 },
-                "children": [
-                  {
-                    "label": "Require bot mention",
-                    "original": false,
-                    "modified": true
-                  }
-                ]
+                "original": {
+                  "caseSensitive": false,
+                  "isRegex": true,
+                  "requiresMention": false,
+                  "text": "B"
+                }
               }
-            ]
+            ],
+            "modified": {},
+            "original": {}
           },
           {
-            "original": {}, // ignore
-            "modified": {}, // ignore
             "children": [
               {
                 "label": "Name",
-                "original": "some-lib",
                 "modified": "some-lib-revised",
+                "original": "some-lib",
                 "parts": [
                   {
-                    "value": "some-lib",
-                    "kind": "unchanged"
+                    "kind": "unchanged",
+                    "value": "some-lib"
                   },
                   {
-                    "value": "-revised",
-                    "kind": "added"
+                    "kind": "added",
+                    "value": "-revised"
                   }
                 ]
               },
               {
                 "label": "Description",
-                "original": "A library",
                 "modified": "A library (revised)",
+                "original": "A library",
                 "parts": [
                   {
-                    "value": "A library",
-                    "kind": "unchanged"
+                    "kind": "unchanged",
+                    "value": "A library"
                   },
                   {
-                    "value": " (revised)",
-                    "kind": "added"
+                    "kind": "added",
+                    "value": " (revised)"
                   }
                 ]
               },
               {
                 "label": "Code",
-                "original": "return \"foo\"",
                 "modified": "return \"foo\";",
+                "original": "return \"foo\"",
                 "parts": [
                   {
-                    "value": "return \"foo\"",
-                    "kind": "unchanged"
+                    "kind": "unchanged",
+                    "value": "return \"foo\""
                   },
                   {
-                    "value": ";",
-                    "kind": "added"
+                    "kind": "added",
+                    "value": ";"
                   }
                 ]
               }
-            ]
+            ],
+            "modified": {},
+            "original": {}
+          },
+          {
+            "children": [
+              {
+                "label": "Question",
+                "modified": "who drives the car?",
+                "original": "what drives the car?",
+                "parts": [
+                  {
+                    "kind": "unchanged",
+                    "value": "wh"
+                  },
+                  {
+                    "kind": "removed",
+                    "value": "at"
+                  },
+                  {
+                    "kind": "added",
+                    "value": "o"
+                  },
+                  {
+                    "kind": "unchanged",
+                    "value": " drives the car?"
+                  }
+                ]
+              },
+              {
+                "label": "Saved for whole team",
+                "modified": true,
+                "original": false
+              },
+              {
+                "label": "Saved per user",
+                "modified": false,
+                "original": true
+              }
+            ],
+            "modified": {},
+            "original": {}
           }
-        ]
+        ],
+        "modified": {},
+        "original": {}
       };
 
       expect(maybeDiff).toMatchObject(expectedDiffTree);

@@ -238,7 +238,9 @@ define(function(require) {
       } else {
         const behaviorVersionDiffs = diffs.diffsFor(this.behaviorVersions, other.behaviorVersions);
         const libraryDiffs = diffs.diffsFor(this.libraryVersions, other.libraryVersions);
-        const children = behaviorVersionDiffs.concat(libraryDiffs);
+        const actionInputDiffs = diffs.diffsFor(this.actionInputs, other.actionInputs);
+        const dataTypeInputDiffs = diffs.diffsFor(this.dataTypeInputs, other.dataTypeInputs);
+        const children = behaviorVersionDiffs.concat(libraryDiffs).concat(actionInputDiffs).concat(dataTypeInputDiffs);
         return new diffs.ModifiedDiff(children, this, other);
       }
     }
