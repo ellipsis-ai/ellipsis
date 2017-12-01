@@ -108,10 +108,7 @@ define(function(require) {
     }
 
     forEqualityComparison() {
-      return this.toJSON().clone({
-        id: null,
-        isNew: null
-      });
+      return this.toJSON();
     }
 
     isIdenticalToVersion(version): boolean {
