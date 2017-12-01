@@ -88,7 +88,7 @@ define(function(require) {
         const children: Array<Diff> = [
           diffs.TextPropertyDiff.maybeFor("Name", this.name, other.name),
           diffs.TextPropertyDiff.maybeFor("Question", this.question, other.question),
-          diffs.TextPropertyDiff.maybeFor("Type", this.paramType.name, other.paramType.name),
+          diffs.CategoricalPropertyDiff.maybeFor("Type", this.paramType.name, other.paramType.name),
           diffs.BooleanPropertyDiff.maybeFor("Saved for whole team", this.isSavedForTeam, other.isSavedForTeam),
           diffs.BooleanPropertyDiff.maybeFor("Saved per user", this.isSavedForUser, other.isSavedForUser)
         ].filter(ea => Boolean(ea));

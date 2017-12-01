@@ -136,8 +136,8 @@ const actionInput2 = Object.freeze({
   name: 'clown',
   question: 'who drives the car?',
   paramType: {
-    id: 'Text',
-    name: 'Text',
+    id: 'sdflkjafks',
+    name: 'Person',
     needsConfig: false
   },
   isSavedForTeam: true,
@@ -291,9 +291,7 @@ describe('BehaviorGroupVersion', () => {
                   "text": "B"
                 }
               }
-            ],
-            "modified": {},
-            "original": {}
+            ]
           },
           {
             "children": [
@@ -342,9 +340,7 @@ describe('BehaviorGroupVersion', () => {
                   }
                 ]
               }
-            ],
-            "modified": {},
-            "original": {}
+            ]
           },
           {
             "children": [
@@ -372,6 +368,11 @@ describe('BehaviorGroupVersion', () => {
                 ]
               },
               {
+                "label": "Type",
+                "modified": "Person",
+                "original": "Text"
+              },
+              {
                 "label": "Saved for whole team",
                 "modified": true,
                 "original": false
@@ -381,13 +382,9 @@ describe('BehaviorGroupVersion', () => {
                 "modified": false,
                 "original": true
               }
-            ],
-            "modified": {},
-            "original": {}
+            ]
           }
-        ],
-        "modified": {},
-        "original": {}
+        ]
       };
 
       expect(maybeDiff).toMatchObject(expectedDiffTree);

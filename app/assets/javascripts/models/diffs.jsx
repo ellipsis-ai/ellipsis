@@ -180,6 +180,22 @@ define(function(require) {
     }
   }
 
+  class CategoricalPropertyDiff extends PropertyDiff<string> {
+
+    displayText(): string {
+      return `${this.label}: changed from ${this.original} to ${this.modified}`;
+    }
+
+    static maybeFor(label: string, original: string, modified: string): ?CategoricalPropertyDiff {
+      if (original === modified) {
+        return null;
+      } else {
+        return new CategoricalPropertyDiff(label, original, modified);
+      }
+    }
+
+  }
+
   function diffsFor<T: Diffable>(firstItems: Array<T>, secondItems: Array<T>): Array<Diff> {
     const myIds = firstItems.map(ea => ea.getIdForDiff());
     const otherIds = secondItems.map(ea => ea.getIdForDiff());
@@ -223,6 +239,7 @@ define(function(require) {
     'diffsFor': diffsFor,
     'AddedDiff': AddedDiff,
     'BooleanPropertyDiff': BooleanPropertyDiff,
+    'CategoricalPropertyDiff': CategoricalPropertyDiff,
     'RemovedDiff': RemovedDiff,
     'ModifiedDiff': ModifiedDiff,
     'TextPropertyDiff': TextPropertyDiff
