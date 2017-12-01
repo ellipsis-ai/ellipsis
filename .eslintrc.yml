@@ -19,6 +19,8 @@ settings:
   react:
     version: 15.3
     flowVersion: 0.57
+  flowtype:
+    onlyFilesWithFlowAnnotation: true
 globals:
   requirejs: false
   define: false
@@ -132,4 +134,3 @@ rules:
     - off
   react/no-unescaped-entities:
     - warn
-

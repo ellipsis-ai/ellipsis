@@ -3,6 +3,7 @@ var React = require('react'),
   APIConfigPanel = require('./api_config_panel'),
   AWSConfigRef = require('../models/aws').AWSConfigRef,
   BehaviorGroup = require('../models/behavior_group'),
+  BehaviorGroupSaveInfo = require('./behavior_group_save_info'),
   BehaviorGroupVersionMetaData = require('../models/behavior_group_version_meta_data'),
   BehaviorGroupEditor = require('./behavior_group_editor'),
   BehaviorVersion = require('../models/behavior_version'),
@@ -2147,10 +2148,6 @@ const BehaviorEditor = React.createClass({
   },
 
   renderFooterStatus: function() {
-    const group = this.props.group;
-    const lastSaved = group.createdAt;
-    const lastSavedByCurrentUser = group.author && group.author.id === this.props.userId;
-    const authorName = group.author && group.author.userName ? group.author.formattedFullNameOrUserName() : null;
     if (this.state.error === 'not_saved') {
       return (
         <span className="fade-in type-pink type-bold type-italic">
@@ -2165,13 +2162,14 @@ const BehaviorEditor = React.createClass({
           <span>{this.state.error}</span>
         </span>
       );
-    } else if (this.isLatestSavedVersion() && lastSaved) {
+    } else if (this.isLatestSavedVersion() && this.props.group.createdAt) {
       return (
-        <span className="fade-in type-green type-bold type-italic">
-          <span>{lastSavedByCurrentUser ? "You last saved" : "Last saved"} </span>
-          <span>{Formatter.formatTimestampRelativeIfRecent(lastSaved)}</span>
-          <span> {!lastSavedByCurrentUser && authorName ? `by ${authorName}` : ""}</span>
-        </span>
+        <BehaviorGroupSaveInfo
+          className="fade-in type-green type-bold type-italic"
+          group={this.props.group}
+          currentUserId={this.props.userId}
+          isCurrentVersion={true}
+        />
       );
     } else if (this.isModified()) {
       return (
@@ -2685,7 +2683,9 @@ const BehaviorEditor = React.createClass({
     return (
       <VersionBrowser
         currentGroup={this.getBehaviorGroup()}
+        currentUserId={this.props.userId}
         versions={this.getVersions()}
+        onRestoreClick={this.restoreVersionIndex}
         onClearActivePanel={this.props.onClearActivePanel}
       />
     );
