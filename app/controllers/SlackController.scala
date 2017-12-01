@@ -263,7 +263,7 @@ class SlackController @Inject() (
         }.getOrElse(Future.successful(None))
         maybeFile <- Future.successful(
           info.event match {
-            case e: MessageSentEventInfo => e.maybeFileInfo.map(i => SlackFile(i.downloadUrl))
+            case e: MessageSentEventInfo => e.maybeFileInfo.map(i => SlackFile(i.maybeThumbnailUrl.getOrElse(i.downloadUrl)))
             case _ => None
           }
         )
