@@ -82,16 +82,16 @@ define(function(require) {
     }
 
     maybeDiffFor(other: Input): ?diffs.ModifiedDiff<Input> {
-      if (this.isIdenticalToVersion(other)) {
+      const children: Array<Diff> = [
+        diffs.TextPropertyDiff.maybeFor("Name", this.name, other.name),
+        diffs.TextPropertyDiff.maybeFor("Question", this.question, other.question),
+        diffs.CategoricalPropertyDiff.maybeFor("Type", this.paramType.name, other.paramType.name),
+        diffs.BooleanPropertyDiff.maybeFor("Saved for whole team", this.isSavedForTeam, other.isSavedForTeam),
+        diffs.BooleanPropertyDiff.maybeFor("Saved per user", this.isSavedForUser, other.isSavedForUser)
+      ].filter(ea => Boolean(ea));
+      if (children.length === 0) {
         return null;
       } else {
-        const children: Array<Diff> = [
-          diffs.TextPropertyDiff.maybeFor("Name", this.name, other.name),
-          diffs.TextPropertyDiff.maybeFor("Question", this.question, other.question),
-          diffs.CategoricalPropertyDiff.maybeFor("Type", this.paramType.name, other.paramType.name),
-          diffs.BooleanPropertyDiff.maybeFor("Saved for whole team", this.isSavedForTeam, other.isSavedForTeam),
-          diffs.BooleanPropertyDiff.maybeFor("Saved per user", this.isSavedForUser, other.isSavedForUser)
-        ].filter(ea => Boolean(ea));
         return new diffs.ModifiedDiff(children, this, other);
       }
     }

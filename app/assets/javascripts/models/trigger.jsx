@@ -48,18 +48,14 @@ define(function(require) {
       return this.text;
     }
 
-    isIdenticalTo(other): boolean {
-      return DeepEqual.isEqual(this, other);
-    }
-
     maybeDiffFor(other: Trigger): ?diffs.ModifiedDiff<Trigger> {
-      if (this.isIdenticalTo(other)) {
+      const children: Array<Diff> = [
+        diffs.BooleanPropertyDiff.maybeFor("Treat as regex", this.isRegex, other.isRegex),
+        diffs.BooleanPropertyDiff.maybeFor("Require bot mention", this.requiresMention, other.requiresMention)
+      ].filter(ea => Boolean(ea));
+      if (children.length === 0) {
         return null;
       } else {
-        const children: Array<Diff> = [
-          diffs.BooleanPropertyDiff.maybeFor("Treat as regex", this.isRegex, other.isRegex),
-          diffs.BooleanPropertyDiff.maybeFor("Require bot mention", this.requiresMention, other.requiresMention)
-        ].filter(ea => Boolean(ea));
         return new diffs.ModifiedDiff(children, this, other);
       }
     }

@@ -233,12 +233,12 @@ define(function(require) {
     }
 
     maybeDiffFor(other: BehaviorGroup): ?diffs.ModifiedDiff<BehaviorGroup> {
-      if (this.isIdenticalTo(other)) {
+      const behaviorVersionDiffs = diffs.diffsFor(this.behaviorVersions, other.behaviorVersions, { mine: this, other: other });
+      const libraryDiffs = diffs.diffsFor(this.libraryVersions, other.libraryVersions);
+      const children = behaviorVersionDiffs.concat(libraryDiffs);
+      if (children.length === 0) {
         return null;
       } else {
-        const behaviorVersionDiffs = diffs.diffsFor(this.behaviorVersions, other.behaviorVersions, { mine: this, other: other });
-        const libraryDiffs = diffs.diffsFor(this.libraryVersions, other.libraryVersions);
-        const children = behaviorVersionDiffs.concat(libraryDiffs);
         return new diffs.ModifiedDiff(children, this, other);
       }
     }

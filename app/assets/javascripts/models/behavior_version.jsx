@@ -89,20 +89,21 @@ define(function(require) {
     }
 
     maybeDiffFor(other: BehaviorVersion, parents/*?: { mine: BehaviorGroup, other: BehaviorGroup }*/): ?diffs.ModifiedDiff<BehaviorVersion> {
-      if (this.isIdenticalToVersion(other)) {
+      const simpleDiffs: Array<Diff> = [
+        diffs.TextPropertyDiff.maybeFor("Name", this.name, other.name),
+        diffs.TextPropertyDiff.maybeFor("Description", this.description, other.description),
+        diffs.TextPropertyDiff.maybeFor("Response template", this.responseTemplateText(), other.responseTemplateText()),
+        diffs.TextPropertyDiff.maybeFor("Code", this.functionBody, other.functionBody),
+        diffs.BooleanPropertyDiff.maybeFor("Always responds privately", this.config.forcePrivateResponse, other.config.forcePrivateResponse),
+        diffs.BooleanPropertyDiff.maybeFor("Code-backed data type", this.dataTypeUsesCode(), other.dataTypeUsesCode())
+      ].filter(ea => Boolean(ea));
+      const triggerDiffs = diffs.diffsFor(this.triggers, other.triggers);
+      const inputDiffs = parents ? diffs.diffsFor(this.inputsFor(parents.mine), other.inputsFor(parents.other)) : [];
+      const allDiffs = simpleDiffs.concat(triggerDiffs).concat(inputDiffs);
+      if (allDiffs.length === 0) {
         return null;
       } else {
-        const children: Array<Diff> = [
-          diffs.TextPropertyDiff.maybeFor("Name", this.name, other.name),
-          diffs.TextPropertyDiff.maybeFor("Description", this.description, other.description),
-          diffs.TextPropertyDiff.maybeFor("Response template", this.responseTemplateText(), other.responseTemplateText()),
-          diffs.TextPropertyDiff.maybeFor("Code", this.functionBody, other.functionBody),
-          diffs.BooleanPropertyDiff.maybeFor("Always responds privately", this.config.forcePrivateResponse, other.config.forcePrivateResponse),
-          diffs.BooleanPropertyDiff.maybeFor("Code-backed data type", this.dataTypeUsesCode(), other.dataTypeUsesCode())
-        ].filter(ea => Boolean(ea));
-        const triggerDiffs = diffs.diffsFor(this.triggers, other.triggers);
-        const inputDiffs = parents ? diffs.diffsFor(this.inputsFor(parents.mine), other.inputsFor(parents.other)) : [];
-        return new diffs.ModifiedDiff(children.concat(triggerDiffs).concat(inputDiffs), this, other);
+        return new diffs.ModifiedDiff(allDiffs, this, other);
       }
     }
 

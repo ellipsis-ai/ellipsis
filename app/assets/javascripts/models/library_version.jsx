@@ -48,14 +48,14 @@ define(function(require) {
     }
 
     maybeDiffFor(other: LibraryVersion): ?diffs.ModifiedDiff<LibraryVersion> {
-      if (this.isIdenticalToVersion(other)) {
+      const children: Array<Diff> = [
+        diffs.TextPropertyDiff.maybeFor("Name", this.name, other.name),
+        diffs.TextPropertyDiff.maybeFor("Description", this.description, other.description),
+        diffs.TextPropertyDiff.maybeFor("Code", this.functionBody, other.functionBody)
+      ].filter(ea => Boolean(ea));
+      if (children.length === 0) {
         return null;
       } else {
-        const children: Array<Diff> = [
-          diffs.TextPropertyDiff.maybeFor("Name", this.name, other.name),
-          diffs.TextPropertyDiff.maybeFor("Description", this.description, other.description),
-          diffs.TextPropertyDiff.maybeFor("Code", this.functionBody, other.functionBody)
-        ].filter(ea => Boolean(ea));
         return new diffs.ModifiedDiff(children, this, other);
       }
     }
