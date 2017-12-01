@@ -1,6 +1,6 @@
 // @flow
 
-import type Diffable, {Diff} from './diffs';
+import type {Diffable, Diff} from './diffs';
 
 define(function(require) {
 
