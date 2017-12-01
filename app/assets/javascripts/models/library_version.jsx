@@ -43,6 +43,10 @@ define(function(require) {
       return `library "${this.name}"`;
     }
 
+    getIdForDiff(): string {
+      return this.libraryId;
+    }
+
     maybeDiffFor(other: LibraryVersion): ?diffs.ModifiedDiff<LibraryVersion> {
       if (this.isIdenticalToVersion(other)) {
         return null;

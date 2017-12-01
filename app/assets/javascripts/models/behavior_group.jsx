@@ -228,12 +228,16 @@ define(function(require) {
       return "skill";
     }
 
+    getIdForDiff(): string {
+      return this.id;
+    }
+
     maybeDiffFor(other: BehaviorGroup): ?diffs.ModifiedDiff<BehaviorGroup> {
       if (this.isIdenticalTo(other)) {
         return null;
       } else {
-        const behaviorVersionDiffs = diffs.diffsFor(this, other, 'behaviorVersions', 'behaviorId');
-        const libraryDiffs = diffs.diffsFor(this, other, 'libraryVersions', 'libraryId');
+        const behaviorVersionDiffs = diffs.diffsFor(this.behaviorVersions, other.behaviorVersions);
+        const libraryDiffs = diffs.diffsFor(this.libraryVersions, other.libraryVersions);
         const children = behaviorVersionDiffs.concat(libraryDiffs);
         return new diffs.ModifiedDiff(children, this, other);
       }

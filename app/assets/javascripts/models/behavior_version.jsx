@@ -91,7 +91,7 @@ define(function(require) {
           diffs.BooleanPropertyDiff.maybeFor("Always responds privately", this.config.forcePrivateResponse, other.config.forcePrivateResponse),
           diffs.BooleanPropertyDiff.maybeFor("Code-backed data type", this.dataTypeUsesCode(), other.dataTypeUsesCode())
         ].filter(ea => Boolean(ea));
-        const triggerDiffs = diffs.diffsFor(this, other, 'triggers', 'text');
+        const triggerDiffs = diffs.diffsFor(this.triggers, other.triggers);
         return new diffs.ModifiedDiff(children.concat(triggerDiffs), this, other);
       }
     }
@@ -126,6 +126,10 @@ define(function(require) {
     }
 
     getPersistentId(): string {
+      return this.behaviorId;
+    }
+
+    getIdForDiff(): string {
       return this.behaviorId;
     }
 

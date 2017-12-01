@@ -44,6 +44,10 @@ define(function(require) {
       return `trigger "${this.text}"`;
     }
 
+    getIdForDiff(): string {
+      return this.text;
+    }
+
     isIdenticalTo(other): boolean {
       return DeepEqual.isEqual(this, other);
     }

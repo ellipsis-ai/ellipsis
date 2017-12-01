@@ -1,11 +1,12 @@
 // @flow
 
-export interface Diffable {
-  diffLabel(): string;
-}
-
 export interface Diff {
   displayText(): string;
+}
+
+export interface Diffable {
+  diffLabel(): string;
+  getIdForDiff(): string;
 }
 
 export type TextPartKind = "added" | "removed" | "unchanged";
@@ -179,34 +180,36 @@ define(function(require) {
     }
   }
 
-  function diffsFor<T: Diffable>(first: T, second: T, collectionProperty: string, idProperty: string): Array<Diff> {
-    const firstItems = (first: Object)[collectionProperty];
-    const secondItems = (second: Object)[collectionProperty];
-    const myIds = firstItems.map(ea => ea[idProperty]);
-    const otherIds = secondItems.map(ea => ea[idProperty]);
+  function diffsFor<T: Diffable>(firstItems: Array<T>, secondItems: Array<T>): Array<Diff> {
+    const myIds = firstItems.map(ea => ea.getIdForDiff());
+    const otherIds = secondItems.map(ea => ea.getIdForDiff());
 
     const modifiedIds = myIds.filter(ea => otherIds.indexOf(ea) >= 0);
     const addedIds = myIds.filter(ea => otherIds.indexOf(ea) === -1);
     const removedIds = otherIds.filter(ea => myIds.indexOf(ea) === -1);
 
-    const added: Array<Diff> = addedIds.map(eaId => {
-      return firstItems.find(ea => ea[idProperty] === eaId);
-    })
-      .filter(ea => !!ea)
-      .map(ea => new AddedDiff(ea));
+    const added: Array<Diff> = [];
+    addedIds.forEach(eaId => {
+      const item = firstItems.find(ea => ea.getIdForDiff() === eaId);
+      if (item) {
+        added.push(new AddedDiff(item));
+      }
+    });
 
-    const removed: Array<Diff> = removedIds.map(eaId => {
-      return secondItems.find(ea => ea[idProperty] === eaId);
-    })
-      .filter(ea => !!ea)
-      .map(ea => new RemovedDiff(ea));
+    const removed: Array<Diff> = [];
+    removedIds.forEach(eaId => {
+      const item = secondItems.find(ea => ea.getIdForDiff() === eaId);
+      if (item) {
+        removed.push(new RemovedDiff(item));
+      }
+    });
 
     const modified: Array<Diff> = [];
     modifiedIds.forEach(eaId => {
-      const firstItem = firstItems.find(ea => ea[idProperty] === eaId);
-      const secondItem = secondItems.find(ea => ea[idProperty] === eaId);
-      if (firstItem) {
-        const diff = firstItem.maybeDiffFor(secondItem);
+      const firstItem = firstItems.find(ea => ea.getIdForDiff() === eaId);
+      const secondItem = secondItems.find(ea => ea.getIdForDiff() === eaId);
+      if (firstItem && secondItem) {
+        const diff = (firstItem: Object).maybeDiffFor(secondItem); // TODO: figure out how to add this method to Diffable
         if (diff) {
           modified.push(diff);
         }
