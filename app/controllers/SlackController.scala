@@ -149,7 +149,8 @@ class SlackController @Inject() (
 
   case class FileInfo(
                      createdAt: Long,
-                     downloadUrl: String
+                     downloadUrl: String,
+                     maybeThumbnailUrl: Option[String]
                      )
 
   case class MessageSentEventInfo(
@@ -184,7 +185,8 @@ class SlackController @Inject() (
         "text" -> nonEmptyText,
         "file" -> optional(mapping(
           "created" -> longNumber,
-          "url_private_download" -> nonEmptyText
+          "url_private_download" -> nonEmptyText,
+          "thumb_1024" -> optional(nonEmptyText)
         )(FileInfo.apply)(FileInfo.unapply))
       )(MessageSentEventInfo.apply)(MessageSentEventInfo.unapply)
     )(MessageSentRequestInfo.apply)(MessageSentRequestInfo.unapply) verifying("Not a valid message event", fields => fields match {
