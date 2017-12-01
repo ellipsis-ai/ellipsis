@@ -12,7 +12,7 @@ define(function(require) {
   class BehaviorVersion extends Editable {
     id: ?string;
     behaviorId: string;
-    responseTemplate: ?string;
+    responseTemplate: ?ResponseTemplate;
     functionBody: string;
     inputIds: Array<string>;
     triggers: Array<Trigger>;

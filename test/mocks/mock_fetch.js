@@ -1,3 +1,3 @@
 module.exports = jest.fn(() => {
-  return new Promise((resolve, reject) => {});
+  return new Promise(() => { return true; });
 });

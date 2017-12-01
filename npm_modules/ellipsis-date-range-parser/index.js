@@ -19,7 +19,7 @@ const chrono = require('chrono-node');
 
 const defaultTimeZone = 'UTC';
 
-// This is an helper method. It should alwasy be private.
+// This is an helper method. It should always be private.
 const setMomentObject = (momentDate, parsedComponent) => {
     return momentDate
       .set('year', parsedComponent.get('year'))
@@ -161,12 +161,8 @@ const DateRangeParser = {
 
   defaultTimeZone: defaultTimeZone,
 
-  parse: (text, timeZone=defaultTimeZone) => {
-    if ( moment.tz.names().includes(timeZone) ) {
-      // do nothing, timeZone is valid
-    } else {
-      timeZone = defaultTimeZone;
-    }
+  parse: (text, timeZoneToParse) => {
+    const timeZone = timeZoneToParse && moment.tz.names().includes(timeZoneToParse) ? timeZoneToParse : defaultTimeZone;
 
     const r = customChrono(timeZone).parse(text);
     if (r.length === 0 ) return null;

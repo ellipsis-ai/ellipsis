@@ -254,7 +254,7 @@ object FileType extends BuiltInType {
   override def potentialValueFor(event: Event, context: BehaviorParameterContext): String = {
     event match {
       case e: SlackMessageEvent => e.maybeFile.map { file =>
-        context.services.slackFileMap.save(file.url)
+        context.services.slackFileMap.save(file)
       }.getOrElse(super.potentialValueFor(event, context))
       case _ => super.potentialValueFor(event, context)
     }

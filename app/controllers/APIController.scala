@@ -20,7 +20,7 @@ import play.api.data.FormError
 import play.api.data.Forms._
 import play.api.http.HttpEntity
 import play.api.libs.json._
-import play.api.libs.ws.WSClient
+import play.api.libs.ws.{WSClient, WSResponse}
 import play.api.mvc.{AnyContent, Request, Result}
 import play.api.{Configuration, Logger}
 import services.{AWSLambdaService, CacheService, DataService, SlackEventService}
@@ -803,33 +803,57 @@ class APIController @Inject() (
 
   }
 
+  private def contentDispositionForContentType(contentType: String): String = {
+    val extension = """image/(.*)""".r.findFirstMatchIn(contentType).flatMap { r =>
+      r.subgroups.headOption
+    }.getOrElse("txt")
+    s"""attachment; filename="ellipsis.${extension}""""
+  }
+
+  private def contentDispositionFor(response: WSResponse, contentType: String, httpHeaders: (String, String), maybeOriginalUrl: Option[String]): Future[String] = {
+    val maybeDispositionFromResponse = response.headers.get(CONTENT_DISPOSITION).flatMap(_.headOption)
+    maybeDispositionFromResponse.map(Future.successful).getOrElse {
+      maybeOriginalUrl.map { originalUrl =>
+        ws.url(originalUrl).withHttpHeaders(httpHeaders).head.map { r =>
+          r.headers.get(CONTENT_DISPOSITION).flatMap(_.headOption).getOrElse {
+            contentDispositionForContentType(contentType)
+          }
+        }
+      }.getOrElse {
+        Future.successful(contentDispositionForContentType(contentType))
+      }
+    }
+  }
+
   def fetchFile(token: String, fileId: String) = Action.async { implicit request =>
     val eventualResult = for {
       context <- ApiMethodContext.createFor(token)
       result <- (for {
         botProfile <- context.maybeBotProfile
-        url <- slackFileMap.maybeUrlFor(fileId)
+        originalUrl <- slackFileMap.maybeUrlFor(fileId)
       } yield {
-        ws.url(url).withHttpHeaders((AUTHORIZATION, s"Bearer ${botProfile.token}")).get.map { r =>
+        val maybeThumbnailUrl = slackFileMap.maybeThumbnailUrlFor(fileId)
+        val urlToUse = maybeThumbnailUrl.getOrElse(originalUrl)
+        val httpHeaders = (AUTHORIZATION, s"Bearer ${botProfile.token}")
+        ws.url(urlToUse).withHttpHeaders(httpHeaders).get.flatMap { r =>
           if (r.status == 200) {
             val contentType =
               r.headers.get(CONTENT_TYPE).
                 flatMap(_.headOption).
                 getOrElse("application/octet-stream")
 
-            val contentDisposition =
-              r.headers.get(CONTENT_DISPOSITION).
-                flatMap(_.headOption).
-                getOrElse("""attachment; filename="ellipsis.txt"""")
-            val result = r.headers.get(CONTENT_LENGTH) match {
-              case Some(Seq(length)) =>
-                Ok.sendEntity(HttpEntity.Streamed(r.bodyAsSource, Some(length.toLong), Some(contentType)))
-              case _ =>
-                Ok.chunked(r.bodyAsSource).as(contentType)
+            contentDispositionFor(r, contentType, httpHeaders, maybeThumbnailUrl.map(_ => originalUrl)).map { contentDisposition =>
+              val result = r.headers.get(CONTENT_LENGTH) match {
+                case Some(Seq(length)) =>
+                  Ok.sendEntity(HttpEntity.Streamed(r.bodyAsSource, Some(length.toLong), Some(contentType)))
+                case _ =>
+                  Ok.chunked(r.bodyAsSource).as(contentType)
+              }
+              result.withHeaders(CONTENT_TYPE -> contentType, CONTENT_DISPOSITION -> contentDisposition)
             }
-            result.withHeaders(CONTENT_TYPE -> contentType, CONTENT_DISPOSITION -> contentDisposition)
+
           } else {
-            BadGateway
+            Future.successful(BadGateway)
           }
         }
       }).getOrElse(Future.successful(NotFound(s"Unable to find a file with ID $fileId")))
