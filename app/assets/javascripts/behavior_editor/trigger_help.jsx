@@ -26,7 +26,7 @@ return React.createClass({
           <li>
             <p>
               <span><b>Regular expression</b> — Interpret a trigger as a </span>
-              <a href="https://docs.oracle.com/javase/8/docs/api/java/util/regex/Pattern.html" target="_blank">regular expression pattern</a>
+              <a href="https://docs.oracle.com/javase/8/docs/api/java/util/regex/Pattern.html" target="_blank" rel="noreferrer noopener">regular expression pattern</a>
               <span>.</span>
             </p>
           </li>
