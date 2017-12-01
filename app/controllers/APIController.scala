@@ -820,7 +820,12 @@ class APIController @Inject() (
             val contentDisposition =
               r.headers.get(CONTENT_DISPOSITION).
                 flatMap(_.headOption).
-                getOrElse("""attachment; filename="ellipsis.txt"""")
+                getOrElse {
+                  val extension = """image/(.*)""".r.findFirstMatchIn(contentType).flatMap { r =>
+                    r.subgroups.headOption
+                  }.getOrElse("txt")
+                  s"""attachment; filename="ellipsis.${extension}""""
+                }
             val result = r.headers.get(CONTENT_LENGTH) match {
               case Some(Seq(length)) =>
                 Ok.sendEntity(HttpEntity.Streamed(r.bodyAsSource, Some(length.toLong), Some(contentType)))
