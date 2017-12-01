@@ -67,10 +67,7 @@ define(function(require) {
       const result = [addedResult, removedResult, modifiedResult].filter((ea) => ea.length > 0).join("; ");
 
       return (
-        <span className="fade-in type-pink type-italic">
-          <span className="type-bold">Unsaved changes </span>
-          <span>{result ? `(${result})` : ""}</span>
-        </span>
+        <span>{result ? `(${result})` : ""}</span>
       );
     }
   });

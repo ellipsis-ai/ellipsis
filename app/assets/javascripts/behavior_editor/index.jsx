@@ -2173,11 +2173,14 @@ const BehaviorEditor = React.createClass({
       );
     } else if (this.isModified()) {
       return (
-        <ChangeSummary
-          currentGroupVersion={this.getBehaviorGroup()}
-          originalGroupVersion={this.props.group}
-          isModified={this.editableIsModified}
-        />
+        <span className="fade-in type-pink type-italic">
+          <span className="type-bold">Unsaved changes </span>
+            <ChangeSummary
+              currentGroupVersion={this.getBehaviorGroup()}
+              originalGroupVersion={this.props.group}
+              isModified={this.editableIsModified}
+            />
+        </span>
       );
     } else {
       return "";
@@ -2687,6 +2690,7 @@ const BehaviorEditor = React.createClass({
         versions={this.getVersions()}
         onRestoreClick={this.restoreVersionIndex}
         onClearActivePanel={this.props.onClearActivePanel}
+        editableIsModified={this.editableIsModified}
       />
     );
   },

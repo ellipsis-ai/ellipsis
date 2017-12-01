@@ -5,6 +5,8 @@ define(function(require: (string) => *): React.ElementType {
     BehaviorGroup = require('../../models/behavior_group'),
     BehaviorGroupSaveInfo = require('../behavior_group_save_info'),
     Button = require('../../form/button'),
+    Editable = require('../../models/editable'),
+    ChangeSummary = require('../change_summary'),
     Formatter = require('../../lib/formatter'),
     SidebarButton = require('../../form/sidebar_button'),
     autobind = require('../../lib/autobind');
@@ -14,7 +16,8 @@ define(function(require: (string) => *): React.ElementType {
     currentUserId: string,
     versions: Array<BehaviorGroup>,
     onClearActivePanel: () => void,
-    onRestoreClick: (index: number) => void
+    onRestoreClick: (index: number) => void,
+    editableIsModified: (editable: Editable) => boolean
   };
 
   type State = {
@@ -154,6 +157,12 @@ define(function(require: (string) => *): React.ElementType {
               />
             )}
           </div>
+
+          <ChangeSummary
+            currentGroupVersion={this.props.currentGroup}
+            originalGroupVersion={version}
+            isModified={this.props.editableIsModified}
+          />
         </div>
       );
     }
