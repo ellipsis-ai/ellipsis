@@ -87,7 +87,7 @@ class BehaviorParameterTypeSpec extends PlaySpec with MockitoSugar {
 
     "if file included, be valid regardless of the text" in new TestContext {
       val event = mock[SlackMessageEvent]
-      when(event.maybeFile).thenReturn(Some(SlackFile("https://fake-url.fake")))
+      when(event.maybeFile).thenReturn(Some(SlackFile("https://fake-url.fake", None)))
       val context = mock[BehaviorParameterContext]
       when(context.event).thenReturn(event)
       when(context.services).thenReturn(services)

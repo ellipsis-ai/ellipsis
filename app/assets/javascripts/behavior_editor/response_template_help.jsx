@@ -84,7 +84,7 @@ Something went wrong.
       >
         <p>
           <span>Write a response for Ellipsis to send when the action is complete. You can use </span>
-          <span><a href="http://commonmark.org/help/" target="_blank">Markdown</a> formatting, if desired.</span>
+          <span><a href="http://commonmark.org/help/" target="_blank" rel="noreferrer noopener">Markdown</a> formatting, if desired.</span>
         </p>
 
         <p>Use the following methods to insert data and add basic logic:</p>

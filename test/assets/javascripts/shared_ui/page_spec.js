@@ -1,38 +1,47 @@
-import React from 'react';
+// @flow
+import * as React from 'react';
 import TestUtils from 'react-addons-test-utils';
+import type {PageRequiredProps} from '../../../../app/assets/javascripts/shared_ui/page';
 
-const Page = require('../../../../app/assets/javascripts/shared_ui/page');
+// TODO: remove `any` when we're using ES6 modules
+const Page: any = require('../../../../app/assets/javascripts/shared_ui/page');
 const PageFooterRenderingError = require('../../../../app/assets/javascripts/shared_ui/page_footer_rendering_error');
 const FixedFooter = require('../../../../app/assets/javascripts/shared_ui/fixed_footer');
 
+class FooterRenderingComponent extends React.Component<PageRequiredProps> {
+  render() {
+    return (
+      <div>
+        {this.props.onRenderFooter(null)}
+      </div>
+    );
+  }
+}
+
+const FooterRenderingComponentDefaultProps = Object.freeze({
+  activePanelName: "",
+  activePanelIsModal: false,
+  onToggleActivePanel: jest.fn(),
+  onClearActivePanel: jest.fn(),
+  onRenderFooter: jest.fn(),
+  onGetFooterHeight: jest.fn()
+});
+
+class NoFooterComponent extends React.Component<{}> {
+  render() {
+    return (
+      <div />
+    );
+  }
+}
+
 describe('Page', () => {
-  class FooterRenderingComponent extends React.Component {
-    render() {
-      return (
-        <div>
-          {this.props.onRenderFooter(null)}
-        </div>
-      );
-    }
-  }
-
-  FooterRenderingComponent.propTypes = Object.assign({}, Page.requiredPropTypes);
-  FooterRenderingComponent.defaultProps = Page.requiredPropDefaults();
-
-  class NoFooterComponent extends React.Component {
-    render() {
-      return (
-        <div />
-      );
-    }
-  }
-
   function createPage(overrideComponent) {
     const feedbackContainer = document.createElement('span');
     return TestUtils.renderIntoDocument((
       <Page feedbackContainer={feedbackContainer} csrfToken={"1"}>
         {overrideComponent || (
-          <FooterRenderingComponent/>
+          <FooterRenderingComponent {...FooterRenderingComponentDefaultProps} />
         )}
       </Page>
     ));
@@ -53,7 +62,7 @@ describe('Page', () => {
       var page = createPage();
       var child = TestUtils.findRenderedComponentWithType(page, FooterRenderingComponent);
       expect(child).toBeDefined();
-      expect(child.props.onToggleActivePanel).toBe(page.toggleActivePanel);
+      expect(child && child.props.onToggleActivePanel).toBe(page.toggleActivePanel);
     });
   });
 
@@ -67,7 +76,7 @@ describe('Page', () => {
     it('when not called by the child component, it throws a PageFooterRenderingError', () => {
       expect.assertions(1);
       try {
-        const page = createPage((
+        createPage((
           <NoFooterComponent/>
         ));
       } catch(e) {

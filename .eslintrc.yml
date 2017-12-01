@@ -130,8 +130,6 @@ rules:
     - warn
   react/no-find-dom-node:
     - off
-  react/jsx-no-target-blank:
-    - warn
   react/no-unescaped-entities:
     - warn
 
