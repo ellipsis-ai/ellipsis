@@ -236,11 +236,9 @@ define(function(require) {
       if (this.isIdenticalTo(other)) {
         return null;
       } else {
-        const behaviorVersionDiffs = diffs.diffsFor(this.behaviorVersions, other.behaviorVersions);
+        const behaviorVersionDiffs = diffs.diffsFor(this.behaviorVersions, other.behaviorVersions, { mine: this, other: other });
         const libraryDiffs = diffs.diffsFor(this.libraryVersions, other.libraryVersions);
-        const actionInputDiffs = diffs.diffsFor(this.actionInputs, other.actionInputs);
-        const dataTypeInputDiffs = diffs.diffsFor(this.dataTypeInputs, other.dataTypeInputs);
-        const children = behaviorVersionDiffs.concat(libraryDiffs).concat(actionInputDiffs).concat(dataTypeInputDiffs);
+        const children = behaviorVersionDiffs.concat(libraryDiffs);
         return new diffs.ModifiedDiff(children, this, other);
       }
     }

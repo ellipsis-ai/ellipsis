@@ -9,6 +9,7 @@ define(function(require) {
     diffs = require('./diffs'),
     DeepEqual = require('../lib/deep_equal'),
     Editable = require('./editable'),
+    Input = require('./input'),
     ParamType = require('./param_type'),
     ResponseTemplate = require('./response_template'),
     Trigger = require('./trigger');
@@ -79,7 +80,15 @@ define(function(require) {
       return this.config.dataTypeConfig && this.config.dataTypeConfig.usesCode;
     }
 
-    maybeDiffFor(other: BehaviorVersion): ?diffs.ModifiedDiff<BehaviorVersion> {
+    inputsFor(group): Array<Input> {
+      if (group) {
+        return group.getInputs().filter(ea => this.inputIds.indexOf(ea.inputId) >= 0);
+      } else {
+        return [];
+      }
+    }
+
+    maybeDiffFor(other: BehaviorVersion, parents/*?: { mine: BehaviorGroup, other: BehaviorGroup }*/): ?diffs.ModifiedDiff<BehaviorVersion> {
       if (this.isIdenticalToVersion(other)) {
         return null;
       } else {
@@ -92,7 +101,8 @@ define(function(require) {
           diffs.BooleanPropertyDiff.maybeFor("Code-backed data type", this.dataTypeUsesCode(), other.dataTypeUsesCode())
         ].filter(ea => Boolean(ea));
         const triggerDiffs = diffs.diffsFor(this.triggers, other.triggers);
-        return new diffs.ModifiedDiff(children.concat(triggerDiffs), this, other);
+        const inputDiffs = parents ? diffs.diffsFor(this.inputsFor(parents.mine), other.inputsFor(parents.other)) : [];
+        return new diffs.ModifiedDiff(children.concat(triggerDiffs).concat(inputDiffs), this, other);
       }
     }
 

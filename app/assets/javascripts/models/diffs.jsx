@@ -196,7 +196,7 @@ define(function(require) {
 
   }
 
-  function diffsFor<T: Diffable>(firstItems: Array<T>, secondItems: Array<T>): Array<Diff> {
+  function diffsFor<T: Diffable, P: Diffable>(firstItems: Array<T>, secondItems: Array<T>, parents?: { mine: P, other: P }): Array<Diff> {
     const myIds = firstItems.map(ea => ea.getIdForDiff());
     const otherIds = secondItems.map(ea => ea.getIdForDiff());
 
@@ -225,7 +225,7 @@ define(function(require) {
       const firstItem = firstItems.find(ea => ea.getIdForDiff() === eaId);
       const secondItem = secondItems.find(ea => ea.getIdForDiff() === eaId);
       if (firstItem && secondItem) {
-        const diff = (firstItem: Object).maybeDiffFor(secondItem); // TODO: figure out how to add this method to Diffable
+        const diff = (firstItem: Object).maybeDiffFor(secondItem, parents); // TODO: figure out how to add this method to Diffable
         if (diff) {
           modified.push(diff);
         }

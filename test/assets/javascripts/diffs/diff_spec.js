@@ -26,6 +26,7 @@ const behaviorVersion1 = Object.freeze({
     "isRegex": false,
     "caseSensitive": false
   }],
+  "inputIds": [inputId],
   "config": {
     "forcePrivateResponse": false,
     "aws": {
@@ -56,6 +57,7 @@ const behaviorVersion2 = Object.freeze({
     "isRegex": true,
     "caseSensitive": false
   }],
+  "inputIds": [inputId],
   "config": {
     "forcePrivateResponse": true,
     "aws": {
@@ -290,6 +292,48 @@ describe('BehaviorGroupVersion', () => {
                   "requiresMention": false,
                   "text": "B"
                 }
+              },
+              {
+                "children": [
+                  {
+                    "label": "Question",
+                    "modified": "who drives the car?",
+                    "original": "what drives the car?",
+                    "parts": [
+                      {
+                        "kind": "unchanged",
+                        "value": "wh"
+                      },
+                      {
+                        "kind": "removed",
+                        "value": "at"
+                      },
+                      {
+                        "kind": "added",
+                        "value": "o"
+                      },
+                      {
+                        "kind": "unchanged",
+                        "value": " drives the car?"
+                      }
+                    ]
+                  },
+                  {
+                    "label": "Type",
+                    "modified": "Person",
+                    "original": "Text"
+                  },
+                  {
+                    "label": "Saved for whole team",
+                    "modified": true,
+                    "original": false
+                  },
+                  {
+                    "label": "Saved per user",
+                    "modified": false,
+                    "original": true
+                  }
+                ]
               }
             ]
           },
@@ -339,48 +383,6 @@ describe('BehaviorGroupVersion', () => {
                     "value": ";"
                   }
                 ]
-              }
-            ]
-          },
-          {
-            "children": [
-              {
-                "label": "Question",
-                "modified": "who drives the car?",
-                "original": "what drives the car?",
-                "parts": [
-                  {
-                    "kind": "unchanged",
-                    "value": "wh"
-                  },
-                  {
-                    "kind": "removed",
-                    "value": "at"
-                  },
-                  {
-                    "kind": "added",
-                    "value": "o"
-                  },
-                  {
-                    "kind": "unchanged",
-                    "value": " drives the car?"
-                  }
-                ]
-              },
-              {
-                "label": "Type",
-                "modified": "Person",
-                "original": "Text"
-              },
-              {
-                "label": "Saved for whole team",
-                "modified": true,
-                "original": false
-              },
-              {
-                "label": "Saved per user",
-                "modified": false,
-                "original": true
               }
             ]
           }
