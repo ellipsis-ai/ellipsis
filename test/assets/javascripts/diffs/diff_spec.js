@@ -148,6 +148,8 @@ const actionInput2 = Object.freeze({
 });
 
 const behaviorGroupVersion1 = Object.freeze({
+  name: "Some skill",
+  icon: "🚀",
   groupId: 'group123456',
   behaviorVersions: [behaviorVersion1],
   requiredAWSConfigs: [],
@@ -159,6 +161,8 @@ const behaviorGroupVersion1 = Object.freeze({
 });
 
 const behaviorGroupVersion2 = Object.freeze({
+  name: "Some updated skill",
+  description: "With a description",
   groupId: 'group123456',
   behaviorVersions: [behaviorVersion2],
   requiredAWSConfigs: [],
@@ -185,6 +189,47 @@ describe('BehaviorGroupVersion', () => {
       // the empty objects for original and modified objects are ignored in the match
       const expectedDiffTree = {
         "children": [
+          {
+            "label": "Skill name",
+            "modified": "Some updated skill",
+            "original": "Some skill",
+            "parts": [
+              {
+                "kind": "unchanged",
+                "value": "Some "
+              },
+              {
+                "kind": "added",
+                "value": "updated "
+              },
+              {
+                "kind": "unchanged",
+                "value": "skill"
+              }
+            ]
+          },
+          {
+            "label": "Skill description",
+            "modified": "With a description",
+            "original": "",
+            "parts": [
+              {
+                "kind": "added",
+                "value": "With a description"
+              },
+            ],
+          },
+          {
+            "label": "Icon",
+            "modified": "",
+            "original": "🚀",
+            "parts": [
+              {
+                "kind": "removed",
+                 "value": "🚀"
+               }
+            ]
+          },
           {
             "children": [
               {
