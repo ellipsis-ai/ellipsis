@@ -7,7 +7,11 @@
   "directories": {
     "test": "test"
   },
-  "dependencies": {},
+  "dependencies": {
+    "babel-eslint": "8.0.3",
+    "eslint": "4.12.1",
+    "eslint-plugin-react": "7.5.1"
+  },
   "devDependencies": {
     "amdefine": "^1.0.0",
     "babel-cli": "^6.26.0",
