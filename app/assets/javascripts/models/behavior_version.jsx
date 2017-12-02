@@ -88,7 +88,7 @@ define(function(require) {
       }
     }
 
-    maybeDiffFor(other: BehaviorVersion, parents/*?: { mine: BehaviorGroup, other: BehaviorGroup }*/): ?diffs.ModifiedDiff<BehaviorVersion> {
+    maybeDiffFor(other: BehaviorVersion, parents): ?diffs.ModifiedDiff<BehaviorVersion> {
       const simpleDiffs: Array<Diff> = [
         diffs.TextPropertyDiff.maybeFor("Name", this.name, other.name),
         diffs.TextPropertyDiff.maybeFor("Description", this.description, other.description),
