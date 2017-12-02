@@ -42,6 +42,10 @@ requirejs.config({
       name: 'urijs',
       location: '../lib/urijs/src',
       main: 'URI'
+    }, {
+      name: 'diff',
+      location: '../lib/diff/dist',
+      main: 'diff'
     }
   ],
   config: {

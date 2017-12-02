@@ -1,6 +1,10 @@
 // @flow
+
+import type {Diff, Diffable} from './diffs';
+
 define(function(require) {
   const BehaviorVersion = require('./behavior_version');
+  const diffs = require('./diffs');
   const Editable = require('./editable');
   const LibraryVersion = require('./library_version');
   const Input = require('./input');
@@ -12,7 +16,7 @@ define(function(require) {
 
   const ONE_MINUTE = 60000;
 
-  class BehaviorGroup {
+  class BehaviorGroup implements Diffable {
     id: string;
     teamId: string;
     name: ?string;
@@ -218,6 +222,25 @@ define(function(require) {
           return 0;
         }
       });
+    }
+
+    diffLabel(): string {
+      return "skill";
+    }
+
+    getIdForDiff(): string {
+      return this.id;
+    }
+
+    maybeDiffFor(other: BehaviorGroup): ?diffs.ModifiedDiff<BehaviorGroup> {
+      const behaviorVersionDiffs = diffs.diffsFor(this.behaviorVersions, other.behaviorVersions, { mine: this, other: other });
+      const libraryDiffs = diffs.diffsFor(this.libraryVersions, other.libraryVersions);
+      const children = behaviorVersionDiffs.concat(libraryDiffs);
+      if (children.length === 0) {
+        return null;
+      } else {
+        return new diffs.ModifiedDiff(children, this, other);
+      }
     }
 
     static fromProps(props): BehaviorGroup {
