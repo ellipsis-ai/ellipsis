@@ -235,7 +235,12 @@ define(function(require) {
     maybeDiffFor(other: BehaviorGroup): ?diffs.ModifiedDiff<BehaviorGroup> {
       const behaviorVersionDiffs = diffs.diffsFor(this.behaviorVersions, other.behaviorVersions, { mine: this, other: other });
       const libraryDiffs = diffs.diffsFor(this.libraryVersions, other.libraryVersions);
-      const children = behaviorVersionDiffs.concat(libraryDiffs);
+      const simpleDiffs = [
+        diffs.TextPropertyDiff.maybeFor("Skill name", this.name, other.name),
+        diffs.TextPropertyDiff.maybeFor("Skill description", this.description, other.description),
+        diffs.TextPropertyDiff.maybeFor("Icon", this.icon, other.icon)
+      ].filter(ea => Boolean(ea));
+      const children = simpleDiffs.concat(behaviorVersionDiffs).concat(libraryDiffs);
       if (children.length === 0) {
         return null;
       } else {
