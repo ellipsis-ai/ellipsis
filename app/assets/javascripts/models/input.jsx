@@ -65,14 +65,6 @@ define(function(require) {
       });
     }
 
-    forEqualityComparison() {
-      return this;
-    }
-
-    isIdenticalToVersion(version): boolean {
-      return DeepEqual.isEqual(this.forEqualityComparison(), version.forEqualityComparison());
-    }
-
     diffLabel(): string {
       return `input "${this.name}"`;
     }
