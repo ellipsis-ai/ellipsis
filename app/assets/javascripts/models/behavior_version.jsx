@@ -1,15 +1,20 @@
 // @flow
+
+import type {Diff, Diffable} from "./diffs";
+
 define(function(require) {
   const
     BehaviorConfig = require('./behavior_config'),
     DataTypeConfig = require('./data_type_config'),
+    diffs = require('./diffs'),
     DeepEqual = require('../lib/deep_equal'),
     Editable = require('./editable'),
+    Input = require('./input'),
     ParamType = require('./param_type'),
     ResponseTemplate = require('./response_template'),
     Trigger = require('./trigger');
 
-  class BehaviorVersion extends Editable {
+  class BehaviorVersion extends Editable implements Diffable {
     id: ?string;
     behaviorId: string;
     responseTemplate: ?ResponseTemplate;
@@ -67,6 +72,41 @@ define(function(require) {
       });
     }
 
+    responseTemplateText(): string {
+      return this.responseTemplate ? this.responseTemplate.text : "";
+    }
+
+    dataTypeUsesCode(): boolean {
+      return this.config.dataTypeConfig && this.config.dataTypeConfig.usesCode;
+    }
+
+    inputsFor(group): Array<Input> {
+      if (group) {
+        return group.getInputs().filter(ea => this.inputIds.indexOf(ea.inputId) >= 0);
+      } else {
+        return [];
+      }
+    }
+
+    maybeDiffFor(other: BehaviorVersion, parents): ?diffs.ModifiedDiff<BehaviorVersion> {
+      const simpleDiffs: Array<Diff> = [
+        diffs.TextPropertyDiff.maybeFor("Name", this.name, other.name),
+        diffs.TextPropertyDiff.maybeFor("Description", this.description, other.description),
+        diffs.TextPropertyDiff.maybeFor("Response template", this.responseTemplateText(), other.responseTemplateText()),
+        diffs.TextPropertyDiff.maybeFor("Code", this.functionBody, other.functionBody),
+        diffs.BooleanPropertyDiff.maybeFor("Always responds privately", this.config.forcePrivateResponse, other.config.forcePrivateResponse),
+        diffs.BooleanPropertyDiff.maybeFor("Code-backed data type", this.dataTypeUsesCode(), other.dataTypeUsesCode())
+      ].filter(ea => Boolean(ea));
+      const triggerDiffs = diffs.diffsFor(this.triggers, other.triggers);
+      const inputDiffs = parents ? diffs.diffsFor(this.inputsFor(parents.mine), other.inputsFor(parents.other)) : [];
+      const allDiffs = simpleDiffs.concat(triggerDiffs).concat(inputDiffs);
+      if (allDiffs.length === 0) {
+        return null;
+      } else {
+        return new diffs.ModifiedDiff(allDiffs, this, other);
+      }
+    }
+
     namePlaceholderText(): string {
       return this.isDataType() ? "Data type name (required)" : "Action name (optional)";
     }
@@ -100,6 +140,10 @@ define(function(require) {
       return this.behaviorId;
     }
 
+    getIdForDiff(): string {
+      return this.behaviorId;
+    }
+
     isBehaviorVersion(): boolean {
       return true;
     }
@@ -116,12 +160,20 @@ define(function(require) {
       return !this.isDataType() || this.getDataTypeConfig().usesCode;
     }
 
+    getBehaviorVersionTypeName(): string {
+      return this.isDataType() ? "data type" : "action";
+    }
+
+    diffLabel(): string {
+      return this.getBehaviorVersionTypeName();
+    }
+
     getNewEditorTitle(): string {
-      return this.isDataType() ? "New data type" : "New action";
+      return `New ${this.getBehaviorVersionTypeName()}`;
     }
 
     getExistingEditorTitle(): string {
-      return this.isDataType() ? "Edit data type" : "Edit action";
+      return `Edit ${this.getBehaviorVersionTypeName()}`;
     }
 
     getDataTypeConfig(): DataTypeConfig {
