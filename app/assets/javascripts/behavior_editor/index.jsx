@@ -2656,7 +2656,7 @@ const BehaviorEditor = React.createClass({
     return (
       <div className="flex-row-cascade">
         <form className="flex-row-cascade" action={this.getFormAction()} method="POST" ref="behaviorForm">
-          <div className="flex-columns flex-row-expand">
+          <div className="flex-columns flex-columns-left flex-row-expand">
             <div className="flex-column flex-column-left flex-rows">
               <div className={`columns flex-columns flex-row-expand mobile-flex-no-columns ${
                 (this.props.activePanelName === 'versionBrowser' || this.state.versionBrowserOpen) ? "position-frozen" : ""
