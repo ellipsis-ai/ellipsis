@@ -128,12 +128,11 @@ case class SlackMessageSender(
           None
         }
         val maybeThreadTsToUse = maybeConversation.flatMap(_.maybeThreadId)
-        val replyBroadcast = maybeThreadTsToUse.isDefined && maybeConversation.exists(_.state == Conversation.DONE_STATE)
 
         postChatMessage(
           segment,
           maybeThreadTsToUse,
-          Some(replyBroadcast),
+          maybeReplyBroadcast = Some(false),
           maybeAttachmentsForSegment
         )
       }.flatMap { ts => sendMessageSegmentsInOrder(segments.tail, channelToUse, maybeShouldUnfurl, attachments, maybeConversation, Some(ts))}
