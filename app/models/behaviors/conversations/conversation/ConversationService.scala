@@ -14,6 +14,8 @@ trait ConversationService {
 
   def save(conversation: Conversation): Future[Conversation]
 
+  def maybeWithThreadId(threadId: String, userIdForContext: String, context: String): Future[Option[Conversation]]
+
   def allOngoingForAction(userIdForContext: String, context: String, maybeChannel: Option[String], maybeThreadId: Option[String]): DBIO[Seq[Conversation]]
 
   def allOngoingFor(userIdForContext: String, context: String, maybeChannel: Option[String], maybeThreadId: Option[String]): Future[Seq[Conversation]]

@@ -1,8 +1,11 @@
 // @flow
+import type {Diff, Diffable} from "./diffs";
+
 define(function(require) {
   const Editable = require('./editable');
+  const diffs = require('./diffs');
 
-  class LibraryVersion extends Editable {
+  class LibraryVersion extends Editable implements Diffable {
     functionBody: string;
     libraryId: string;
 
@@ -34,6 +37,27 @@ define(function(require) {
         functionBody: { value: functionBody, enumerable: true },
         libraryId: { value: libraryId, enumerable: true }
       });
+    }
+
+    diffLabel(): string {
+      return `library "${this.name}"`;
+    }
+
+    getIdForDiff(): string {
+      return this.libraryId;
+    }
+
+    maybeDiffFor(other: LibraryVersion): ?diffs.ModifiedDiff<LibraryVersion> {
+      const children: Array<Diff> = [
+        diffs.TextPropertyDiff.maybeFor("Name", this.name, other.name),
+        diffs.TextPropertyDiff.maybeFor("Description", this.description, other.description),
+        diffs.TextPropertyDiff.maybeFor("Code", this.functionBody, other.functionBody)
+      ].filter(ea => Boolean(ea));
+      if (children.length === 0) {
+        return null;
+      } else {
+        return new diffs.ModifiedDiff(children, this, other);
+      }
     }
 
     namePlaceholderText(): string {

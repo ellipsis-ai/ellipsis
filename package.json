@@ -23,6 +23,7 @@
     "babel-preset-react": "^6.24.1",
     "codemirror": "5.15.2",
     "core-js": "2.4.1",
+    "diff": "3.4.0",
     "eslint": "^4.9.0",
     "eslint-plugin-flowtype": "^2.39.1",
     "eslint-plugin-react": "^7.4.0",
