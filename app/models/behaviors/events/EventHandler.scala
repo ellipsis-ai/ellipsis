@@ -94,6 +94,32 @@ class EventHandler @Inject() (
     }
   }
 
+  def maybeHandleInExpiredThread(event: Event): Future[Option[BotResult]] = {
+    event match {
+      case e: SlackMessageEvent => {
+        e.maybeThreadId.map { threadId =>
+          dataService.conversations.maybeWithThreadId(threadId, e.userIdForContext, e.context).map { maybeConvo =>
+            maybeConvo.flatMap { convo =>
+              if (convo.isDone) {
+                val channelText = if (e.isDirectMessage) {
+                  "the DM channel"
+                } else {
+                  event.maybeChannel.map { channel =>
+                    s"<#$channel>"
+                  }.getOrElse("the main channel")
+                }
+                Some(SimpleTextResult(event, Some(convo), s"This conversation is either done or has expired. You can start a new one back in $channelText.", forcePrivateResponse = false))
+              } else {
+                None
+              }
+            }
+          }
+        }.getOrElse(Future.successful(None))
+      }
+    }
+
+  }
+
   def handle(event: Event, maybeConversation: Option[Conversation]): Future[Seq[BotResult]] = {
     maybeConversation.map { conversation =>
       handleInConversation(conversation, conversation.maybeOriginalEventType.map { eventType =>
@@ -103,17 +129,7 @@ class EventHandler @Inject() (
       BuiltinBehavior.maybeFrom(event, services).map { builtin =>
         builtin.result.map(Seq(_))
       }.getOrElse {
-        event.maybeThreadId.map { threadId =>
-          dataService.conversations.maybeWithThreadId(threadId, event.userIdForContext, event.context).map { maybeConvo =>
-            maybeConvo.flatMap { convo =>
-              if (convo.isDone) {
-                Some(SimpleTextResult(event, Some(convo), "This conversation is either done or has expired. You can start a new one back in the main channel.", forcePrivateResponse = false))
-              } else {
-                None
-              }
-            }
-          }
-        }.getOrElse(Future.successful(None)).flatMap { maybeExpiredThreadResult =>
+        maybeHandleInExpiredThread(event).flatMap { maybeExpiredThreadResult =>
           maybeExpiredThreadResult.map(r => Future.successful(Seq(r))).getOrElse {
             startInvokeConversationFor(event)
           }
