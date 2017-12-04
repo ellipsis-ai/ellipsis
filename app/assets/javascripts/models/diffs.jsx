@@ -2,6 +2,7 @@
 
 export interface Diff {
   displayText(): string;
+  summaryText(): string;
 }
 
 export interface Diffable {
@@ -24,6 +25,10 @@ define(function(require) {
     }
 
     displayText(): string {
+      return this.label();
+    }
+
+    summaryText(): string {
       return this.label();
     }
 
@@ -70,6 +75,10 @@ define(function(require) {
       return `Modified ${this.original.diffLabel()}`;
     }
 
+    summaryText(): string {
+      return this.label();
+    }
+
     displayText(): string {
       const childDisplayText = this.children.map(ea => ea.displayText()).join("\n");
       return `${this.label()}:\n${childDisplayText}`;
@@ -91,6 +100,10 @@ define(function(require) {
     }
 
     displayText(): string {
+      throw "Should be implemented by subclasses";
+    }
+
+    summaryText(): string {
       throw "Should be implemented by subclasses";
     }
 
@@ -153,6 +166,24 @@ define(function(require) {
       return `${this.label}: ${partsString}`;
     }
 
+    getTextChangeType(): string {
+      const hasAddedParts = this.parts.some((ea) => ea.isAdded());
+      const hasRemovedParts = this.parts.some((ea) => ea.isRemoved());
+      if (hasAddedParts && hasRemovedParts) {
+        return "changed";
+      } else if (hasAddedParts) {
+        return "added";
+      } else if (hasRemovedParts) {
+        return "removed";
+      } else {
+        return "unchanged";
+      }
+    }
+
+    summaryText(): string {
+      return `${this.label} ${this.getTextChangeType()}`;
+    }
+
     static maybeFor(label: string, maybeOriginal: ?string, maybeModified: ?string): ?TextPropertyDiff {
       const original = maybeOriginal || "";
       const modified = maybeModified || "";
@@ -171,6 +202,10 @@ define(function(require) {
       return `${this.label}: changed to ${valueString}`;
     }
 
+    summaryText(): string {
+      return this.displayText();
+    }
+
     static maybeFor(label: string, original: boolean, modified: boolean): ?BooleanPropertyDiff {
       if (original === modified) {
         return null;
@@ -184,6 +219,10 @@ define(function(require) {
 
     displayText(): string {
       return `${this.label}: changed from ${this.original} to ${this.modified}`;
+    }
+
+    summaryText(): string {
+      return this.displayText();
     }
 
     static maybeFor(label: string, original: string, modified: string): ?CategoricalPropertyDiff {
@@ -236,13 +275,14 @@ define(function(require) {
   }
 
   return {
-    'diffsFor': diffsFor,
-    'AddedDiff': AddedDiff,
-    'BooleanPropertyDiff': BooleanPropertyDiff,
-    'CategoricalPropertyDiff': CategoricalPropertyDiff,
-    'RemovedDiff': RemovedDiff,
-    'ModifiedDiff': ModifiedDiff,
-    'TextPropertyDiff': TextPropertyDiff,
-    'TextPart': TextPart
+    diffsFor: diffsFor,
+    AddedOrRemovedDiff: AddedOrRemovedDiff,
+    AddedDiff: AddedDiff,
+    BooleanPropertyDiff: BooleanPropertyDiff,
+    CategoricalPropertyDiff: CategoricalPropertyDiff,
+    RemovedDiff: RemovedDiff,
+    ModifiedDiff: ModifiedDiff,
+    TextPropertyDiff: TextPropertyDiff,
+    TextPart: TextPart
   };
 });
