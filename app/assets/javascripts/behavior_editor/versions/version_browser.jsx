@@ -3,12 +3,14 @@ import type {Node, Element, ElementType} from 'react';
 define(function(require: (string) => *): React.ElementType {
   const React = require('react'),
     BehaviorGroup = require('../../models/behavior_group'),
+    BehaviorGroupDiff = require('./behavior_group_diff'),
     BehaviorGroupSaveInfo = require('../behavior_group_save_info'),
     Button = require('../../form/button'),
     Editable = require('../../models/editable'),
-    ChangeSummary = require('../change_summary'),
     Formatter = require('../../lib/formatter'),
     SidebarButton = require('../../form/sidebar_button'),
+    ToggleGroup = require('../../form/toggle_group'),
+    diffs = require('../../models/diffs'),
     autobind = require('../../lib/autobind');
 
   type Props = {
@@ -21,7 +23,8 @@ define(function(require: (string) => *): React.ElementType {
   };
 
   type State = {
-    selectedMenuItem: ?string
+    selectedMenuItem: ?string,
+    diffFromSelectedToCurrent: boolean
   }
 
   class VersionBrowser extends React.Component<Props> {
@@ -32,7 +35,8 @@ define(function(require: (string) => *): React.ElementType {
       super(props);
       autobind(this);
       this.state = {
-        selectedMenuItem: null
+        selectedMenuItem: null,
+        diffFromSelectedToCurrent: true
       };
     }
 
@@ -49,7 +53,7 @@ define(function(require: (string) => *): React.ElementType {
     nameForVersion(version: BehaviorGroup, index: number, previousItem: ?BehaviorGroup, shouldFilterLastSavedVersion: boolean): string {
       if (index === 0) {
         if (shouldFilterLastSavedVersion) {
-          return "Current version (no changes)";
+          return "Current version (saved)";
         } else {
           return "Current version (unsaved changes)";
         }
@@ -119,6 +123,18 @@ define(function(require: (string) => *): React.ElementType {
       return this.props.versions[index] || this.props.currentGroup;
     }
 
+    setDiffDirectionFromSelected(): void {
+      this.setState({
+        diffFromSelectedToCurrent: true
+      });
+    }
+
+    setDiffDirectionFromCurrent(): void {
+      this.setState({
+        diffFromSelectedToCurrent: false
+      });
+    }
+
     renderCurrentVersionInfo(shouldFilterLastSavedVersion: boolean): ElementType {
       const lastSavedVersion = this.getLastSavedVersion();
       if (lastSavedVersion && shouldFilterLastSavedVersion) {
@@ -140,31 +156,73 @@ define(function(require: (string) => *): React.ElementType {
       }
     }
 
+    getDiffForSelectedVersion(selectedVersion: ?BehaviorGroup): ?diffs.ModifiedDiff<BehaviorGroup> {
+      // original.maybeDiffFor(modified) shows changes from original to modified
+      if (selectedVersion) {
+        return this.state.diffFromSelectedToCurrent ?
+          selectedVersion.maybeDiffFor(this.props.currentGroup) :
+          this.props.currentGroup.maybeDiffFor(selectedVersion);
+      } else {
+        return null;
+      }
+    }
+
     renderSelectedVersion(shouldFilterLastSavedVersion: boolean): ElementType {
       const versionIndex = this.getSelectedVersionIndex();
-      const version = this.getSelectedVersion(versionIndex);
+      const selectedVersion = this.getSelectedVersion(versionIndex);
       const isLastSaved = versionIndex === 1;
       const isCurrent = versionIndex === 0;
+      const diff = this.getDiffForSelectedVersion(selectedVersion);
+      console.log(diff);
       return (
         <div className="container container-wide pvxl">
-          <h5 className="mtn">Version info</h5>
           <div>
             {isCurrent ? this.renderCurrentVersionInfo(shouldFilterLastSavedVersion) : (
               <BehaviorGroupSaveInfo
-                group={version}
+                group={selectedVersion}
                 currentUserId={this.props.currentUserId}
                 isLastSavedVersion={isLastSaved}
               />
             )}
           </div>
 
-          <ChangeSummary
-            currentGroupVersion={this.props.currentGroup}
-            originalGroupVersion={version}
-            isModified={this.props.editableIsModified}
-          />
+          {selectedVersion && versionIndex > 0 ? (
+            <div>
+              <h4>Differences</h4>
+
+              {diff ? (
+                <div className="mbm">
+                  <ToggleGroup>
+                    <ToggleGroup.Item
+                      activeWhen={this.state.diffFromSelectedToCurrent}
+                      label="What changed since this version"
+                      onClick={this.setDiffDirectionFromSelected}
+                    />
+                    <ToggleGroup.Item
+                      activeWhen={!this.state.diffFromSelectedToCurrent}
+                      label="What would change if you reverted"
+                      onClick={this.setDiffDirectionFromCurrent}
+                    />
+                  </ToggleGroup>
+                </div>
+              ) : null}
+              {this.renderDiff(diff)}
+            </div>
+          ) : null}
         </div>
       );
+    }
+
+    renderDiff(diff: ?diffs.ModifiedDiff<BehaviorGroup>): Node {
+      if (diff) {
+        return (
+          <BehaviorGroupDiff diff={diff} />
+        );
+      } else {
+        return (
+          <div>The selected version of the skill is identical to the current version.</div>
+        );
+      }
     }
 
     render(): ElementType {

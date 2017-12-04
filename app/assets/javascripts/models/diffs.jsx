@@ -242,6 +242,7 @@ define(function(require) {
     'CategoricalPropertyDiff': CategoricalPropertyDiff,
     'RemovedDiff': RemovedDiff,
     'ModifiedDiff': ModifiedDiff,
-    'TextPropertyDiff': TextPropertyDiff
+    'TextPropertyDiff': TextPropertyDiff,
+    'TextPart': TextPart
   };
 });

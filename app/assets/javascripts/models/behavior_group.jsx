@@ -232,6 +232,7 @@ define(function(require) {
       return this.id;
     }
 
+    // Shows a diff with changes from self to other
     maybeDiffFor(other: BehaviorGroup): ?diffs.ModifiedDiff<BehaviorGroup> {
       const behaviorVersionDiffs = diffs.diffsFor(this.behaviorVersions, other.behaviorVersions, { mine: this, other: other });
       const libraryDiffs = diffs.diffsFor(this.libraryVersions, other.libraryVersions);
