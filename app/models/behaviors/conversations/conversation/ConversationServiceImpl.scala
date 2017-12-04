@@ -85,6 +85,13 @@ class ConversationServiceImpl @Inject() (
     dataService.run(saveAction(conversation))
   }
 
+  def maybeWithThreadId(threadId: String, userIdForContext: String, context: String): Future[Option[Conversation]] = {
+    val action = withThreadIdQuery(threadId, userIdForContext, context).result.map { r =>
+      r.map(tuple2Conversation).headOption
+    }
+    dataService.run(action)
+  }
+
   def allOngoingForAction(userIdForContext: String, context: String, maybeChannel: Option[String], maybeThreadId: Option[String]): DBIO[Seq[Conversation]] = {
     allOngoingQueryFor(userIdForContext, context).result.map { r =>
       r.map(tuple2Conversation)
@@ -139,7 +146,7 @@ class ConversationServiceImpl @Inject() (
   }
 
   def cancelOldConverations: Future[Unit] = {
-    val action = cancelOldConversationsQuery(OffsetDateTime.now.minusDays(1), Conversation.DONE_STATE).update(Conversation.DONE_STATE).map(_ => {})
+    val action = cancelOldConversationsQuery(oldConversationCutoff, Conversation.DONE_STATE).update(Conversation.DONE_STATE).map(_ => {})
     dataService.run(action)
   }
 

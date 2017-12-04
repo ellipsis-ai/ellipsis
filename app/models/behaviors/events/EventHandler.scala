@@ -103,7 +103,21 @@ class EventHandler @Inject() (
       BuiltinBehavior.maybeFrom(event, services).map { builtin =>
         builtin.result.map(Seq(_))
       }.getOrElse {
-        startInvokeConversationFor(event)
+        event.maybeThreadId.map { threadId =>
+          dataService.conversations.maybeWithThreadId(threadId, event.userIdForContext, event.context).map { maybeConvo =>
+            maybeConvo.flatMap { convo =>
+              if (convo.isDone) {
+                Some(SimpleTextResult(event, Some(convo), "This conversation is either done or has expired. You can start a new one back in the main channel.", forcePrivateResponse = false))
+              } else {
+                None
+              }
+            }
+          }
+        }.getOrElse(Future.successful(None)).flatMap { maybeExpiredThreadResult =>
+          maybeExpiredThreadResult.map(r => Future.successful(Seq(r))).getOrElse {
+            startInvokeConversationFor(event)
+          }
+        }
       }
     }
   }

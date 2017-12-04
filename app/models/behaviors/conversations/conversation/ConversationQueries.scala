@@ -52,6 +52,14 @@ object ConversationQueries {
   }
   val allOngoingQueryFor = Compiled(uncompiledAllOngoingQueryFor _)
 
+  def uncompiledWithThreadIdQuery(threadId: Rep[String], userIdForContext: Rep[String], context: Rep[String]) = {
+    allWithTrigger.
+      filter { case((convo, _), _) => convo.userIdForContext === userIdForContext }.
+      filter { case((convo, _), _) => convo.context === context }.
+      filter { case((convo, _), _) => convo.maybeThreadId === threadId }
+  }
+  val withThreadIdQuery = Compiled(uncompiledWithThreadIdQuery _)
+
   def uncompiledAllPendingQuery = {
     val doneValue: Rep[String] = Conversation.DONE_STATE
     allWithTrigger.filterNot { case((convo, _), _) => convo.state === doneValue }
@@ -97,5 +105,7 @@ object ConversationQueries {
          LIMIT 1
        """.as[String]
   }
+
+  def oldConversationCutoff: OffsetDateTime = OffsetDateTime.now.minusDays(1)
 
 }
