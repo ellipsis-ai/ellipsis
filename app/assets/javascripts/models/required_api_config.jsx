@@ -26,7 +26,7 @@ define(function(require) {
     }
 
     maybeNameInCodeDiffFor(other: RequiredApiConfig): ?diffs.CategoricalPropertyDiff {
-      return diffs.TextPropertyDiff.maybeFor("Name used in code", this.nameInCode, other.nameInCode)
+      return diffs.TextPropertyDiff.maybeFor("Name used in code", this.nameInCode, other.nameInCode);
     }
 
     canHaveConfig(): boolean {
