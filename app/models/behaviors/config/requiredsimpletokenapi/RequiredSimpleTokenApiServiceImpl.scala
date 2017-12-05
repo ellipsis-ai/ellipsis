@@ -15,6 +15,7 @@ import scala.concurrent.{ExecutionContext, Future}
 
 case class RawRequiredSimpleTokenApi(
                                       id: String,
+                                      requiredId: String,
                                       groupVersionId: String,
                                       nameInCode: String,
                                       apiId: String
@@ -23,11 +24,12 @@ case class RawRequiredSimpleTokenApi(
 class RequiredSimpleTokenApisTable(tag: Tag) extends Table[RawRequiredSimpleTokenApi](tag, "required_simple_token_apis") {
 
   def id = column[String]("id", O.PrimaryKey)
+  def requiredId = column[String]("required_id")
   def groupVersionId = column[String]("group_version_id")
   def nameInCode = column[String]("name_in_code")
   def apiId = column[String]("api_id")
 
-  def * = (id, groupVersionId, nameInCode, apiId) <>
+  def * = (id, requiredId, groupVersionId, nameInCode, apiId) <>
     ((RawRequiredSimpleTokenApi.apply _).tupled, RawRequiredSimpleTokenApi.unapply _)
 }
 
@@ -49,6 +51,7 @@ class RequiredSimpleTokenApiServiceImpl @Inject()(
     val groupVersion = BehaviorGroupVersionQueries.tuple2BehaviorGroupVersion(tuple._1._2)
     RequiredSimpleTokenApi(
       raw.id,
+      raw.requiredId,
       groupVersion,
       raw.nameInCode,
       tuple._2
@@ -123,7 +126,7 @@ class RequiredSimpleTokenApiServiceImpl @Inject()(
     for {
       maybeApi <- DBIO.from(dataService.simpleTokenApis.find(data.apiId))
       maybeConfig <- maybeApi.map { api =>
-        val newInstance = RequiredSimpleTokenApi(IDs.next, groupVersion, data.nameInCode, api)
+        val newInstance = RequiredSimpleTokenApi(IDs.next, data.requiredId, groupVersion, data.nameInCode, api)
         (all += newInstance.toRaw).map(_ => newInstance).map(Some(_))
       }.getOrElse(DBIO.successful(None))
     } yield maybeConfig

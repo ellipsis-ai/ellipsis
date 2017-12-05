@@ -17,6 +17,7 @@ import scala.concurrent.Future
 
 case class RawRequiredAWSConfig(
                                  id: String,
+                                 requiredId: String,
                                  nameInCode: String,
                                  groupVersionId: String,
                                  maybeConfigId: Option[String]
@@ -25,11 +26,12 @@ case class RawRequiredAWSConfig(
 class RequiredAWSConfigsTable(tag: Tag) extends Table[RawRequiredAWSConfig](tag, "required_aws_configs") {
 
   def id = column[String]("id", O.PrimaryKey)
+  def requiredId = column[String]("required_id")
   def nameInCode = column[String]("name_in_code")
   def groupVersionId = column[String]("group_version_id")
   def maybeConfigId = column[Option[String]]("config_id")
 
-  def * = (id, nameInCode, groupVersionId, maybeConfigId) <> ((RawRequiredAWSConfig.apply _).tupled, RawRequiredAWSConfig.unapply _)
+  def * = (id, requiredId, nameInCode, groupVersionId, maybeConfigId) <> ((RawRequiredAWSConfig.apply _).tupled, RawRequiredAWSConfig.unapply _)
 }
 
 class RequiredAWSConfigServiceImpl @Inject() (
@@ -50,6 +52,7 @@ class RequiredAWSConfigServiceImpl @Inject() (
     val maybeConfig = tuple._2
     RequiredAWSConfig(
       raw.id,
+      raw.requiredId,
       raw.nameInCode,
       groupVersion,
       maybeConfig
@@ -126,7 +129,7 @@ class RequiredAWSConfigServiceImpl @Inject() (
         dataService.awsConfigs.findAction(configData.id)
       }.getOrElse(DBIO.successful(None))
       required <- {
-        val newInstance = RequiredAWSConfig(IDs.next, data.nameInCode, groupVersion, maybeConfig)
+        val newInstance = RequiredAWSConfig(IDs.next, data.requiredId, data.nameInCode, groupVersion, maybeConfig)
         (all += newInstance.toRaw).map(_ => newInstance)
       }
     } yield required

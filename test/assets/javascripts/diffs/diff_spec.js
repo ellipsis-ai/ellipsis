@@ -28,12 +28,7 @@ const behaviorVersion1 = Object.freeze({
   }],
   "inputIds": [inputId],
   "config": {
-    "forcePrivateResponse": false,
-    "aws": {
-      "accessKeyName": "AWS_ACCESS_KEY",
-      "secretKeyName": "AWS_SECRET_KEY",
-      "regionName": "AWS_REGION"
-    }
+    "forcePrivateResponse": false
   },
   "createdAt": 1468338136532
 });
@@ -59,12 +54,7 @@ const behaviorVersion2 = Object.freeze({
   }],
   "inputIds": [inputId],
   "config": {
-    "forcePrivateResponse": true,
-    "aws": {
-      "accessKeyName": "AWS_ACCESS_KEY",
-      "secretKeyName": "AWS_SECRET_KEY",
-      "regionName": "AWS_REGION"
-    }
+    "forcePrivateResponse": true
   },
   "createdAt": 1468359271138
 });
@@ -147,14 +137,65 @@ const actionInput2 = Object.freeze({
   inputId: inputId
 });
 
+const requiredAWSConfig1 = Object.freeze({
+  id: 'aws123',
+  apiId: 'aws',
+  nameInCode: 'prod',
+  config: undefined
+});
+
+const requiredAWSConfig2 = Object.freeze({
+  id: 'aws123',
+  apiId: 'aws',
+  nameInCode: 'prod',
+  config: {
+    id: 'aws-prod',
+    displayName: 'AWS Prod'
+  }
+});
+
+const requiredOAuth2Config1 = Object.freeze({
+  id: 'github123',
+  apiId: 'github',
+  nameInCode: 'github',
+  config: undefined,
+  recommendedScope: 'repo'
+});
+
+const requiredOAuth2Config2 = Object.freeze({
+  id: 'github123',
+  apiId: 'github',
+  nameInCode: 'githubReadonly',
+  recommendedScope: 'repo:readonly'
+});
+
+const requiredOAuth2Config3 = Object.freeze({
+  id: 'github12345',
+  apiId: 'github',
+  nameInCode: 'githubReadwrite',
+  recommendedScope: 'repo'
+});
+
+const requiredSimpleTokenApi1 = Object.freeze({
+  id: 'pivotalTracker123',
+  apiId: 'pivotalTracker',
+  nameInCode: 'pivotalTracker',
+});
+
+const requiredSimpleTokenApi2 = Object.freeze({
+  id: 'pivotalTracker123',
+  apiId: 'pivotalTracker',
+  nameInCode: 'pivotalTracker2',
+});
+
 const behaviorGroupVersion1 = Object.freeze({
   name: "Some skill",
   icon: "🚀",
   groupId: 'group123456',
   behaviorVersions: [behaviorVersion1],
-  requiredAWSConfigs: [],
-  requiredOAuth2ApiConfigs: [],
-  requiredSimpleTokenApis: [],
+  requiredAWSConfigs: [requiredAWSConfig1],
+  requiredOAuth2ApiConfigs: [requiredOAuth2Config1, requiredOAuth2Config3],
+  requiredSimpleTokenApis: [requiredSimpleTokenApi1],
   actionInputs: [actionInput1],
   dataTypeInputs: [],
   libraryVersions: [libraryVersion1]
@@ -165,9 +206,9 @@ const behaviorGroupVersion2 = Object.freeze({
   description: "With a description",
   groupId: 'group123456',
   behaviorVersions: [behaviorVersion2],
-  requiredAWSConfigs: [],
-  requiredOAuth2ApiConfigs: [],
-  requiredSimpleTokenApis: [],
+  requiredAWSConfigs: [requiredAWSConfig2],
+  requiredOAuth2ApiConfigs: [requiredOAuth2Config2, requiredOAuth2Config3],
+  requiredSimpleTokenApis: [requiredSimpleTokenApi2],
   actionInputs: [actionInput2],
   dataTypeInputs: [],
   libraryVersions: [libraryVersion2]
@@ -428,6 +469,36 @@ describe('BehaviorGroupVersion', () => {
                     "value": ";"
                   }
                 ]
+              }
+            ]
+          },
+
+          {
+            "children": [
+              {
+                "label": "Configuration to use",
+                "modified": "AWS Prod",
+                "original": ""
+              }
+            ]
+          },
+
+          {
+            "children": [
+              {
+                "label": "Name used in code",
+                "modified": "githubReadonly",
+                "original": "github"
+              }
+            ]
+          },
+
+          {
+            "children": [
+              {
+                "label": "Name used in code",
+                "modified": "pivotalTracker2",
+                "original": "pivotalTracker"
               }
             ]
           }

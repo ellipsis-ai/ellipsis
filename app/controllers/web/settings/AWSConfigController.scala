@@ -200,7 +200,7 @@ class AWSConfigController @Inject() (
                 val maybeConfigData = maybeConfig.map(AWSConfigData.from)
                 dataService.run(
                   dataService.requiredAWSConfigs.createForAction(
-                    RequiredAWSConfigData(None, nameInCode, maybeConfigData),
+                    RequiredAWSConfigData(None, IDs.next, nameInCode, maybeConfigData),
                     groupVersion
                   )
                 )

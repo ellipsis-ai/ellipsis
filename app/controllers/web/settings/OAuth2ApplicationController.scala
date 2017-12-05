@@ -220,7 +220,7 @@ class OAuth2ApplicationController @Inject() (
               }.getOrElse {
                 val maybeApplicationData = maybeApplication.map(OAuth2ApplicationData.from)
                 dataService.requiredOAuth2ApiConfigs.maybeCreateFor(
-                  RequiredOAuth2ApiConfigData(None, info.apiId, info.maybeScope, nameInCode, maybeApplicationData),
+                  RequiredOAuth2ApiConfigData(None, IDs.next, info.apiId, info.maybeScope, nameInCode, maybeApplicationData),
                   groupVersion
                 )
               }

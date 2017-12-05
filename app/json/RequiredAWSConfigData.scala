@@ -4,6 +4,7 @@ import models.behaviors.config.requiredawsconfig.RequiredAWSConfig
 
 case class RequiredAWSConfigData(
                                   id: Option[String],
+                                  requiredId: String,
                                   nameInCode: String,
                                   config: Option[AWSConfigData]
                                 ) {
@@ -17,7 +18,7 @@ case class RequiredAWSConfigData(
 object RequiredAWSConfigData {
 
   def from(config: RequiredAWSConfig): RequiredAWSConfigData = {
-    RequiredAWSConfigData(Some(config.id), config.nameInCode, config.maybeConfig.map(AWSConfigData.from))
+    RequiredAWSConfigData(Some(config.id), config.requiredId, config.nameInCode, config.maybeConfig.map(AWSConfigData.from))
   }
 
 }

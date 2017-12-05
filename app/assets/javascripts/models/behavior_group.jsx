@@ -235,12 +235,21 @@ define(function(require) {
     maybeDiffFor(other: BehaviorGroup): ?diffs.ModifiedDiff<BehaviorGroup> {
       const behaviorVersionDiffs = diffs.diffsFor(this.behaviorVersions, other.behaviorVersions, { mine: this, other: other });
       const libraryDiffs = diffs.diffsFor(this.libraryVersions, other.libraryVersions);
+      const requiredAWSConfigDiffs = diffs.diffsFor(this.requiredAWSConfigs, other.requiredAWSConfigs);
+      const requiredOAuth2ApiConfigDiffs = diffs.diffsFor(this.requiredOAuth2ApiConfigs, other.requiredOAuth2ApiConfigs);
+      const requiredSimpleTokenApiDiffs = diffs.diffsFor(this.requiredSimpleTokenApis, other.requiredSimpleTokenApis);
       const simpleDiffs = [
         diffs.TextPropertyDiff.maybeFor("Skill name", this.name, other.name),
         diffs.TextPropertyDiff.maybeFor("Skill description", this.description, other.description),
         diffs.TextPropertyDiff.maybeFor("Icon", this.icon, other.icon)
       ].filter(ea => Boolean(ea));
-      const children = simpleDiffs.concat(behaviorVersionDiffs).concat(libraryDiffs);
+      const children =
+        simpleDiffs
+          .concat(behaviorVersionDiffs)
+          .concat(libraryDiffs)
+          .concat(requiredAWSConfigDiffs)
+          .concat(requiredOAuth2ApiConfigDiffs)
+          .concat(requiredSimpleTokenApiDiffs);
       if (children.length === 0) {
         return null;
       } else {
