@@ -144,7 +144,7 @@ define(function(require) {
 
     constructor(label: string, original: string, modified: string) {
       super(label, original, modified);
-      const parts = JsDiff.diffChars(original, modified, {}).map(ea => {
+      const parts = JsDiff.diffWordsWithSpace(original, modified, {}).map(ea => {
         return new TextPart(ea.value, ea.added, ea.removed);
       });
       Object.defineProperties(this, {
@@ -283,6 +283,11 @@ define(function(require) {
     RemovedDiff: RemovedDiff,
     ModifiedDiff: ModifiedDiff,
     TextPropertyDiff: TextPropertyDiff,
-    TextPart: TextPart
+    TextPart: TextPart,
+    constants: {
+      TEXT_ADDED: TEXT_ADDED,
+      TEXT_REMOVED: TEXT_REMOVED,
+      TEXT_UNCHANGED: TEXT_UNCHANGED
+    }
   };
 });

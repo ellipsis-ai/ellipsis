@@ -164,6 +164,16 @@ define(function(require) {
         .replace(/[^a-z0-9\-]/gi, "")
         .replace(/-+/, "-")
         .replace(/^-+/, "");
+    },
+
+    leftPad(value: number | string, length: number): string {
+      const asString = String(value);
+      const numSpaces = length - asString.length;
+      if (numSpaces > 0) {
+        return new Array(numSpaces + 1).join("\u00A0") + asString;
+      } else {
+        return asString;
+      }
     }
   };
 

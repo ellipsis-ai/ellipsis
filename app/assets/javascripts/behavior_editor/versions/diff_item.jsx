@@ -15,7 +15,7 @@ define(function(require) {
         <div className="mbl">
           <div className="type-italic type-weak mbxs">{this.props.label}</div>
           {React.Children.map(this.props.children, (child) => (
-            <div className="border pas bg-white type-s mbneg1">{child}</div>
+            <div className="border bg-white type-s mbneg1">{child}</div>
           ))}
         </div>
       );
