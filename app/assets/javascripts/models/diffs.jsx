@@ -235,17 +235,17 @@ define(function(require) {
 
   }
 
-  function diffsFor<T: Diffable, P: Diffable>(firstItems: Array<T>, secondItems: Array<T>, parents?: { mine: P, other: P }): Array<Diff> {
-    const myIds = firstItems.map(ea => ea.getIdForDiff());
-    const otherIds = secondItems.map(ea => ea.getIdForDiff());
+  function diffsFor<T: Diffable, P: Diffable>(originalItems: Array<T>, newItems: Array<T>, parents?: { mine: P, other: P }): Array<Diff> {
+    const originalIds = originalItems.map(ea => ea.getIdForDiff());
+    const newIds = newItems.map(ea => ea.getIdForDiff());
 
-    const modifiedIds = myIds.filter(ea => otherIds.indexOf(ea) >= 0);
-    const addedIds = myIds.filter(ea => otherIds.indexOf(ea) === -1);
-    const removedIds = otherIds.filter(ea => myIds.indexOf(ea) === -1);
+    const modifiedIds = originalIds.filter(ea => newIds.indexOf(ea) >= 0);
+    const addedIds = newIds.filter(ea => originalIds.indexOf(ea) === -1);
+    const removedIds = originalIds.filter(ea => newIds.indexOf(ea) === -1);
 
     const added: Array<Diff> = [];
     addedIds.forEach(eaId => {
-      const item = firstItems.find(ea => ea.getIdForDiff() === eaId);
+      const item = newItems.find(ea => ea.getIdForDiff() === eaId);
       if (item) {
         added.push(new AddedDiff(item));
       }
@@ -253,7 +253,7 @@ define(function(require) {
 
     const removed: Array<Diff> = [];
     removedIds.forEach(eaId => {
-      const item = secondItems.find(ea => ea.getIdForDiff() === eaId);
+      const item = originalItems.find(ea => ea.getIdForDiff() === eaId);
       if (item) {
         removed.push(new RemovedDiff(item));
       }
@@ -261,10 +261,10 @@ define(function(require) {
 
     const modified: Array<Diff> = [];
     modifiedIds.forEach(eaId => {
-      const firstItem = firstItems.find(ea => ea.getIdForDiff() === eaId);
-      const secondItem = secondItems.find(ea => ea.getIdForDiff() === eaId);
-      if (firstItem && secondItem) {
-        const diff = (firstItem: Object).maybeDiffFor(secondItem, parents); // TODO: figure out how to add this method to Diffable
+      const originalItem = originalItems.find(ea => ea.getIdForDiff() === eaId);
+      const newItem = newItems.find(ea => ea.getIdForDiff() === eaId);
+      if (originalItem && newItem) {
+        const diff = (originalItem: Object).maybeDiffFor(newItem, parents); // TODO: figure out how to add this method to Diffable
         if (diff) {
           modified.push(diff);
         }
