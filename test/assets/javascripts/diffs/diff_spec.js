@@ -304,17 +304,17 @@ describe('BehaviorGroupVersion', () => {
               {
                 "item": {
                   "caseSensitive": false,
-                  "isRegex": false,
+                  "isRegex": true,
                   "requiresMention": false,
-                  "text": "C"
+                  "text": ".+"
                 }
               },
               {
                 "item": {
                   "caseSensitive": false,
-                  "isRegex": true,
+                  "isRegex": false,
                   "requiresMention": false,
-                  "text": ".+"
+                  "text": "C"
                 }
               },
               {
@@ -441,8 +441,8 @@ describe('BehaviorGroupVersion', () => {
       expect(diffText).toContain("Description: [+A description]");
       expect(diffText).toContain("Response template: A[+nother] template");
       expect(diffText).toContain("Code: use strict;[+ // so strict]");
-      expect(diffText).toContain("Added trigger \"C\"");
-      expect(diffText).toContain("Removed trigger \".+\"");
+      expect(diffText).toContain("Removed trigger \"C\"");
+      expect(diffText).toContain("Added trigger \".+\"");
       expect(diffText).toContain("Modified trigger \"B\":\nRequire bot mention: changed to true");
       expect(diffText).toContain("Modified library \"some-lib\":");
       expect(diffText).toContain("Name: some-lib[+-revised]");
