@@ -27,7 +27,7 @@ case class HelloBehavior(
       appVersion <- version(services)
     } yield {
       val greeting = (messageInfo.details \ "name").asOpt[String].map(name => (s"Hello @$name")).getOrElse("Hello")
-      val message = appVersion.map(v => (s"This is Ellipsis version $v")).getOrElse("This is Ellipis, I am ready to help.")
+      val message = appVersion.map(v => (s"This is Ellipsis version $v")).getOrElse("This is Ellipsis, I am ready to help.")
       val reply = s"$greeting\n$message"
       SimpleTextResult(event, None, reply , forcePrivateResponse = true)
     }
