@@ -33,7 +33,7 @@ class SlackEventServiceImpl @Inject()(
         _ <- eventHandler.handle(event, maybeConversation).flatMap { results =>
           Future.sequence(
             results.map(result => botResultService.sendIn(result, None).map { _ =>
-              Logger.info(event.logTextFor(result))
+              Logger.info(event.logTextFor(result, None))
             })
           )
         }

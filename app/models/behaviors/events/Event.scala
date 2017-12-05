@@ -42,14 +42,37 @@ trait Event {
 
   def withOriginalEventType(originalEventType: EventType): Event
 
-  def logTextFor(result: BotResult): String = {
+  def logTextForResultSource: String = "in response to slack message"
+
+  def logTextFor(result: BotResult, maybeSource: Option[String]): String = {
     val channelText = maybeChannel.map { channel =>
       s" in channel [${channel}]"
     }.getOrElse("")
     val convoText = result.maybeConversation.map { convo =>
       s" in conversation [${convo.id}]"
     }.getOrElse("")
-    s"Sending result [${result.fullText}] in response to slack message [${messageText}]$channelText$convoText"
+    val sourceText = maybeSource.getOrElse(logTextForResultSource)
+    val logIntro = s"Sending result [${result.fullText}] $sourceText [${messageText}]$channelText$convoText"
+    if (result.files.nonEmpty) {
+      val fileText = result.files.map { fileSpec =>
+        val filename = fileSpec.filename.getOrElse("File")
+        val filetype = fileSpec.filetype.getOrElse("unknown type")
+        val content = fileSpec.content.map { content =>
+          val lines = content.split("\n")
+          if (lines.length > 10) {
+            lines.slice(0, 10).mkString("", "\n", "\n...(truncated)")
+          } else {
+            lines.mkString("\n")
+          }
+        }.getOrElse("(empty)")
+        s"""$filename ($filetype):
+           |$content
+         """.stripMargin
+      }.mkString("\n\n")
+      s"$logIntro\n\n$fileText"
+    } else {
+      logIntro
+    }
   }
 
   def loginInfo: LoginInfo = LoginInfo(name, userIdForContext)
