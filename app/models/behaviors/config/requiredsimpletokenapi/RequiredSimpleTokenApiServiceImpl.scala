@@ -126,7 +126,7 @@ class RequiredSimpleTokenApiServiceImpl @Inject()(
     for {
       maybeApi <- DBIO.from(dataService.simpleTokenApis.find(data.apiId))
       maybeConfig <- maybeApi.map { api =>
-        val newInstance = RequiredSimpleTokenApi(IDs.next, data.requiredId, groupVersion, data.nameInCode, api)
+        val newInstance = RequiredSimpleTokenApi(IDs.next, data.requiredId.getOrElse(IDs.next), groupVersion, data.nameInCode, api)
         (all += newInstance.toRaw).map(_ => newInstance).map(Some(_))
       }.getOrElse(DBIO.successful(None))
     } yield maybeConfig

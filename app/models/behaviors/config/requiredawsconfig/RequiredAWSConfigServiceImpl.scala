@@ -129,7 +129,7 @@ class RequiredAWSConfigServiceImpl @Inject() (
         dataService.awsConfigs.findAction(configData.id)
       }.getOrElse(DBIO.successful(None))
       required <- {
-        val newInstance = RequiredAWSConfig(IDs.next, data.requiredId, data.nameInCode, groupVersion, maybeConfig)
+        val newInstance = RequiredAWSConfig(IDs.next, data.requiredId.getOrElse(IDs.next), data.nameInCode, groupVersion, maybeConfig)
         (all += newInstance.toRaw).map(_ => newInstance)
       }
     } yield required

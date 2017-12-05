@@ -146,7 +146,7 @@ class RequiredOAuth2ApiConfigServiceImpl @Inject() (
         DBIO.from(dataService.oauth2Applications.find(appData.id))
       }.getOrElse(DBIO.successful(None))
       maybeConfig <- maybeApi.map { api =>
-        val newInstance = RequiredOAuth2ApiConfig(IDs.next, data.requiredId, groupVersion, api, data.recommendedScope, data.nameInCode, maybeApplication)
+        val newInstance = RequiredOAuth2ApiConfig(IDs.next, data.requiredId.getOrElse(IDs.next), groupVersion, api, data.recommendedScope, data.nameInCode, maybeApplication)
         (all += newInstance.toRaw).map(_ => newInstance).map(Some(_))
       }.getOrElse(DBIO.successful(None))
     } yield maybeConfig

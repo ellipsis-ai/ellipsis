@@ -4,7 +4,7 @@ import models.behaviors.config.requiredsimpletokenapi.RequiredSimpleTokenApi
 
 case class RequiredSimpleTokenApiData(
                                        id: Option[String],
-                                       requiredId: String,
+                                       requiredId: Option[String],
                                        apiId: String,
                                        nameInCode: String
                                       ) {
@@ -17,7 +17,7 @@ object RequiredSimpleTokenApiData {
   def from(required: RequiredSimpleTokenApi): RequiredSimpleTokenApiData = {
     RequiredSimpleTokenApiData(
       Some(required.id),
-      required.requiredId,
+      Some(required.requiredId),
       required.api.id,
       required.nameInCode
     )
