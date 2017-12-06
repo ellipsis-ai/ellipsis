@@ -42,14 +42,18 @@ trait Event {
 
   def withOriginalEventType(originalEventType: EventType): Event
 
-  def logTextFor(result: BotResult): String = {
+  def logTextForResultSource: String = "in response to slack message"
+
+  def logTextFor(result: BotResult, maybeSource: Option[String]): String = {
     val channelText = maybeChannel.map { channel =>
       s" in channel [${channel}]"
     }.getOrElse("")
     val convoText = result.maybeConversation.map { convo =>
       s" in conversation [${convo.id}]"
     }.getOrElse("")
-    s"Sending result [${result.fullText}] in response to slack message [${messageText}]$channelText$convoText"
+    val sourceText = maybeSource.getOrElse(logTextForResultSource)
+    val logIntro = s"Sending result [${result.fullText}] $sourceText [${messageText}]$channelText$convoText"
+    s"$logIntro\n${result.filesAsLogText}"
   }
 
   def loginInfo: LoginInfo = LoginInfo(name, userIdForContext)

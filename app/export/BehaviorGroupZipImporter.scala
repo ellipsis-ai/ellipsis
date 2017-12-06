@@ -13,6 +13,7 @@ import play.api.libs.json.{JsError, JsSuccess, Json}
 import services.DataService
 
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.matching.Regex
 
 case class BehaviorGroupZipImporter(
                                      team: Team,
@@ -41,13 +42,6 @@ case class BehaviorGroupZipImporter(
 
     val versionStringMaps = scala.collection.mutable.Map[String, scala.collection.mutable.Map[String, String]]()
 
-    val optionalParentDir = """^(?:[^/]+\/)?"""
-    val versionFileRegex = raw"""${optionalParentDir}(actions|data_types)/([^/]+)/(.+)""".r
-    val readmeRegex = raw"""${optionalParentDir}README$$""".r
-    val configRegex = raw"""${optionalParentDir}config\.json$$""".r
-    val actionInputsRegex = raw"""${optionalParentDir}action_inputs\.json$$""".r
-    val dataTypeInputsRegex = raw"""${optionalParentDir}data_type_inputs\.json$$""".r
-
     var maybeGroupName: Option[String] = None
     var maybeGroupDescription: Option[String] = None
     var maybeExportId: Option[String] = None
@@ -58,11 +52,10 @@ case class BehaviorGroupZipImporter(
     var actionInputs: Seq[InputData] = Seq()
     var dataTypeInputs: Seq[InputData] = Seq()
     var libraries: Seq[LibraryVersionData] = Seq()
-    val libFileRegex = """^lib\/(.+.js)""".r
 
     while (nextEntry != null) {
       val entryName = nextEntry.getName
-      versionFileRegex.findFirstMatchIn(entryName).foreach { firstMatch =>
+      BehaviorGroupZipImporter.versionFileRegex.findFirstMatchIn(entryName).foreach { firstMatch =>
         val versionId = firstMatch.subgroups(1)
         val filename = firstMatch.subgroups(2)
         val map = versionStringMaps.getOrElse(versionId, {
@@ -72,15 +65,15 @@ case class BehaviorGroupZipImporter(
         })
         map.put(filename, readDataFrom(zipInputStream))
       }
-      libFileRegex.findFirstMatchIn(entryName).foreach { firstMatch =>
+      BehaviorGroupZipImporter.libFileRegex.findFirstMatchIn(entryName).foreach { firstMatch =>
         val filename = firstMatch.subgroups(0)
         val newLib = LibraryVersionData.from(readDataFrom(zipInputStream), filename)
         libraries ++= Seq(newLib)
       }
-      readmeRegex.findFirstMatchIn(entryName).foreach { _ =>
+      BehaviorGroupZipImporter.readmeRegex.findFirstMatchIn(entryName).foreach { _ =>
         maybeGroupDescription = Some(readDataFrom(zipInputStream))
       }
-      configRegex.findFirstMatchIn(entryName).foreach { _ =>
+      BehaviorGroupZipImporter.configRegex.findFirstMatchIn(entryName).foreach { _ =>
         val readData = readDataFrom(zipInputStream)
         Json.parse(readData).validate[BehaviorGroupConfig] match {
           case JsSuccess(data, _) => {
@@ -94,7 +87,7 @@ case class BehaviorGroupZipImporter(
           case e: JsError =>
         }
       }
-      actionInputsRegex.findFirstMatchIn(entryName).foreach { firstMatch =>
+      BehaviorGroupZipImporter.actionInputsRegex.findFirstMatchIn(entryName).foreach { firstMatch =>
         val readData = readDataFrom(zipInputStream)
         Json.parse(readData).validate[Seq[InputData]] match {
           case JsSuccess(data, jsPath) => {
@@ -103,7 +96,7 @@ case class BehaviorGroupZipImporter(
           case e: JsError =>
         }
       }
-      dataTypeInputsRegex.findFirstMatchIn(entryName).foreach { firstMatch =>
+      BehaviorGroupZipImporter.dataTypeInputsRegex.findFirstMatchIn(entryName).foreach { firstMatch =>
         val readData = readDataFrom(zipInputStream)
         Json.parse(readData).validate[Seq[InputData]] match {
           case JsSuccess(data, jsPath) => {
@@ -161,4 +154,14 @@ case class BehaviorGroupZipImporter(
     } yield maybeImported
   }
 
+}
+
+object BehaviorGroupZipImporter {
+  private val optionalParentDir = """^(?:[^/]+\/)?"""
+  val versionFileRegex: Regex = raw"""${optionalParentDir}(actions|data_types)/([^/]+)/(.+)""".r
+  val readmeRegex: Regex = raw"""${optionalParentDir}README$$""".r
+  val configRegex: Regex = raw"""${optionalParentDir}config\.json$$""".r
+  val actionInputsRegex: Regex = raw"""${optionalParentDir}action_inputs\.json$$""".r
+  val dataTypeInputsRegex: Regex = raw"""${optionalParentDir}data_type_inputs\.json$$""".r
+  val libFileRegex: Regex = raw"""${optionalParentDir}lib\/(.+.js)""".r
 }

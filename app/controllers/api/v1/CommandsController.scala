@@ -191,8 +191,7 @@ class CommandsController @Inject() (
               val maybeIntro = maybeIntroTextFor(event, context, isForInterruption = false)
               val maybeInterruptionIntro = maybeIntroTextFor(event, context, isForInterruption = true)
               botResultService.sendIn(result, None, maybeIntro, maybeInterruptionIntro).map { _ =>
-                val channelText = event.maybeChannel.map(c => s" in channel [$c]").getOrElse("")
-                Logger.info(s"Sending result [${result.fullText}] in response to /api/post_message [${event.messageText}]$channelText")
+                Logger.info(event.logTextFor(result, Some("in response to /api/post_message")))
               }
             }
             Ok(Json.toJson(results.map(_.fullText)))

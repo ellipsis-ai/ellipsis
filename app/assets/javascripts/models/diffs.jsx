@@ -5,9 +5,17 @@ export interface Diff {
   summaryText(): string;
 }
 
+type DiffableParent<T> = {
+  mine: T,
+  other: T
+};
+
 export interface Diffable {
   diffLabel(): string;
   getIdForDiff(): string;
+
+  // TODO: `other` should be a type that implements Diffable; using Diffable directly doesn't allow classes to override with themselves
+  maybeDiffFor<P: Diffable>(other: *, parents?: DiffableParent<P>): ?Diff;
 }
 
 export type TextPartKind = "added" | "removed" | "unchanged";
@@ -235,7 +243,7 @@ define(function(require) {
 
   }
 
-  function diffsFor<T: Diffable, P: Diffable>(originalItems: Array<T>, newItems: Array<T>, parents?: { mine: P, other: P }): Array<Diff> {
+  function diffsFor<T: Diffable, P: Diffable>(originalItems: Array<T>, newItems: Array<T>, parents?: DiffableParent<P>): Array<Diff> {
     const originalIds = originalItems.map(ea => ea.getIdForDiff());
     const newIds = newItems.map(ea => ea.getIdForDiff());
 
@@ -264,7 +272,7 @@ define(function(require) {
       const originalItem = originalItems.find(ea => ea.getIdForDiff() === eaId);
       const newItem = newItems.find(ea => ea.getIdForDiff() === eaId);
       if (originalItem && newItem) {
-        const diff = (originalItem: Object).maybeDiffFor(newItem, parents); // TODO: figure out how to add this method to Diffable
+        const diff = originalItem.maybeDiffFor(newItem, parents);
         if (diff) {
           modified.push(diff);
         }
@@ -282,8 +290,8 @@ define(function(require) {
     CategoricalPropertyDiff: CategoricalPropertyDiff,
     RemovedDiff: RemovedDiff,
     ModifiedDiff: ModifiedDiff,
-    TextPropertyDiff: TextPropertyDiff,
     TextPart: TextPart,
+    TextPropertyDiff: TextPropertyDiff,
     constants: {
       TEXT_ADDED: TEXT_ADDED,
       TEXT_REMOVED: TEXT_REMOVED,
