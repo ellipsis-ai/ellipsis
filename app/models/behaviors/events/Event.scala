@@ -53,33 +53,7 @@ trait Event {
     }.getOrElse("")
     val sourceText = maybeSource.getOrElse(logTextForResultSource)
     val logIntro = s"Sending result [${result.fullText}] $sourceText [${messageText}]$channelText$convoText"
-    if (result.files.nonEmpty) {
-      val files = result.files.map { fileSpec =>
-        val filename = fileSpec.filename.getOrElse("File")
-        val filetype = fileSpec.filetype.getOrElse("unknown type")
-        val content = fileSpec.content.map { content =>
-          val lines = content.split("\n")
-          if (lines.length > 10) {
-            lines.slice(0, 10).mkString("", "\n", "\n...(truncated)")
-          } else {
-            lines.mkString("\n")
-          }
-        }.getOrElse("(empty)")
-        s"""$filename ($filetype):
-           |$content
-         """.stripMargin
-      }
-      val fileString = files.mkString("\n======\n")
-      s"""$logIntro
-         |======
-         |Files:
-         |======
-         |$fileString
-         |======
-         |""".stripMargin
-    } else {
-      logIntro
-    }
+    s"$logIntro\n${result.filesAsLogText}"
   }
 
   def loginInfo: LoginInfo = LoginInfo(name, userIdForContext)

@@ -36,6 +36,28 @@ sealed trait BotResult {
   def fullText: String = text
   def hasText: Boolean = fullText.trim.nonEmpty
 
+  def filesAsLogText: String = {
+    if (files.nonEmpty) {
+      files.map { fileSpec =>
+        val filename = fileSpec.filename.getOrElse("File")
+        val filetype = fileSpec.filetype.getOrElse("unknown type")
+        val content = fileSpec.content.map { content =>
+          val lines = content.split("\n")
+          if (lines.length > 10) {
+            lines.slice(0, 10).mkString("", "\n", "\n...(truncated)")
+          } else {
+            lines.mkString("\n")
+          }
+        }.getOrElse("(empty)")
+        s"""$filename ($filetype):
+           |$content
+           """.stripMargin
+      }.mkString("======\nFiles:\n======\n", "\n======\n", "\n======\n")
+    } else {
+      ""
+    }
+  }
+
   def maybeChannelForSendAction(maybeConversation: Option[Conversation], dataService: DataService)(implicit actorSystem: ActorSystem): DBIO[Option[String]] = {
     event.maybeChannelForSendAction(forcePrivateResponse, maybeConversation, dataService)
   }
