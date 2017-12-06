@@ -6,7 +6,7 @@ define(function(require) {
   const DeepEqual = require('../lib/deep_equal');
   const diffs = require('./diffs');
 
-  class Trigger implements Diffable<void> {
+  class Trigger implements Diffable {
     text: string;
     isRegex: boolean;
     requiresMention: boolean;
@@ -48,7 +48,7 @@ define(function(require) {
       return this.text;
     }
 
-    maybeDiffFor(other: Trigger): ?diffs.ModifiedDiff<void, Trigger> {
+    maybeDiffFor(other: Trigger): ?diffs.ModifiedDiff<Trigger> {
       const children: Array<Diff> = [
         diffs.BooleanPropertyDiff.maybeFor("Treat as regex", this.isRegex, other.isRegex),
         diffs.BooleanPropertyDiff.maybeFor("Require bot mention", this.requiresMention, other.requiresMention)

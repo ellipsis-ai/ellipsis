@@ -8,7 +8,7 @@ define(function(require) {
   const diffs = require('./diffs');
   const ParamType = require('./param_type');
 
-  class Input implements Diffable<void> {
+  class Input implements Diffable {
     name: string;
     question: string;
     paramType: ParamType;
@@ -73,7 +73,7 @@ define(function(require) {
       return this.inputId;
     }
 
-    maybeDiffFor(other: Input): ?diffs.ModifiedDiff<void, Input> {
+    maybeDiffFor(other: Input): ?diffs.ModifiedDiff<Input> {
       const children: Array<Diff> = [
         diffs.TextPropertyDiff.maybeFor("Name", this.name, other.name),
         diffs.TextPropertyDiff.maybeFor("Question", this.question, other.question),

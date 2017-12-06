@@ -5,7 +5,7 @@ define(function(require) {
   const Editable = require('./editable');
   const diffs = require('./diffs');
 
-  class LibraryVersion extends Editable implements Diffable<void> {
+  class LibraryVersion extends Editable implements Diffable {
     functionBody: string;
     libraryId: string;
 
@@ -47,7 +47,7 @@ define(function(require) {
       return this.libraryId;
     }
 
-    maybeDiffFor(other: LibraryVersion): ?diffs.ModifiedDiff<void, LibraryVersion> {
+    maybeDiffFor(other: LibraryVersion): ?diffs.ModifiedDiff<LibraryVersion> {
       const children: Array<Diff> = [
         diffs.TextPropertyDiff.maybeFor("Name", this.name, other.name),
         diffs.TextPropertyDiff.maybeFor("Description", this.description, other.description),

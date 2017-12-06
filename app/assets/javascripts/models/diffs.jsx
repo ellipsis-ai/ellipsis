@@ -4,15 +4,17 @@ export interface Diff {
   displayText(): string;
 }
 
-type DiffableParent<T> = void | {
+type DiffableParent<T> = {
   mine: T,
   other: T
 };
 
-export interface Diffable<P> {
+export interface Diffable {
   diffLabel(): string;
   getIdForDiff(): string;
-  maybeDiffFor(other: *, parents?: DiffableParent<P>): ?Diff;
+
+  // TODO: `other` should be a type that implements Diffable; using Diffable directly doesn't allow classes to override with themselves
+  maybeDiffFor<P: Diffable>(other: *, parents?: DiffableParent<P>): ?Diff;
 }
 
 export type TextPartKind = "added" | "removed" | "unchanged";
@@ -20,7 +22,7 @@ export type TextPartKind = "added" | "removed" | "unchanged";
 define(function(require) {
   const JsDiff = require("diff");
 
-  class AddedOrRemovedDiff<P, T: Diffable<P>> implements Diff {
+  class AddedOrRemovedDiff<T: Diffable> implements Diff {
     item: T;
 
     constructor(item: T) {
@@ -43,7 +45,7 @@ define(function(require) {
 
   }
 
-  class AddedDiff<P, T: Diffable<P>> extends AddedOrRemovedDiff<P, T> {
+  class AddedDiff<T: Diffable> extends AddedOrRemovedDiff<T> {
 
     diffType(): string {
       return "Added";
@@ -51,7 +53,7 @@ define(function(require) {
 
   }
 
-  class RemovedDiff<P, T: Diffable<P>> extends AddedOrRemovedDiff<P, T> {
+  class RemovedDiff<T: Diffable> extends AddedOrRemovedDiff<T> {
 
     diffType(): string {
       return "Removed";
@@ -59,7 +61,7 @@ define(function(require) {
 
   }
 
-  class ModifiedDiff<P, T: Diffable<P>> implements Diff {
+  class ModifiedDiff<T: Diffable> implements Diff {
     original: T;
     modified: T;
     children: Array<Diff>;
@@ -202,7 +204,7 @@ define(function(require) {
 
   }
 
-  function diffsFor<P, T: Diffable<P>>(originalItems: Array<T>, newItems: Array<T>, parents?: DiffableParent<P>): Array<Diff> {
+  function diffsFor<T: Diffable, P: Diffable>(originalItems: Array<T>, newItems: Array<T>, parents?: DiffableParent<P>): Array<Diff> {
     const originalIds = originalItems.map(ea => ea.getIdForDiff());
     const newIds = newItems.map(ea => ea.getIdForDiff());
 

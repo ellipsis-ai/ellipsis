@@ -15,7 +15,7 @@ define(function(require) {
     ResponseTemplate = require('./response_template'),
     Trigger = require('./trigger');
 
-  class BehaviorVersion extends Editable implements Diffable<BehaviorGroup> {
+  class BehaviorVersion extends Editable implements Diffable {
     id: ?string;
     behaviorId: string;
     responseTemplate: ?ResponseTemplate;
@@ -89,7 +89,7 @@ define(function(require) {
       }
     }
 
-    maybeDiffFor(other: BehaviorVersion, parents?: { mine: BehaviorGroup, other: BehaviorGroup }): ?diffs.ModifiedDiff<BehaviorGroup, BehaviorVersion> {
+    maybeDiffFor(other: BehaviorVersion, parents?: { mine: BehaviorGroup, other: BehaviorGroup }): ?diffs.ModifiedDiff<BehaviorVersion> {
       const simpleDiffs: Array<Diff> = [
         diffs.TextPropertyDiff.maybeFor("Name", this.name, other.name),
         diffs.TextPropertyDiff.maybeFor("Description", this.description, other.description),
