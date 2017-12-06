@@ -1,11 +1,10 @@
 // @flow
 
-import type {Diff, Diffable} from "./diffs";
+import type {Diff, Diffable, HasInputs} from "./diffs";
 
 define(function(require) {
   const
     BehaviorConfig = require('./behavior_config'),
-    BehaviorGroup = require('./behavior_group'),
     DataTypeConfig = require('./data_type_config'),
     diffs = require('./diffs'),
     DeepEqual = require('../lib/deep_equal'),
@@ -89,7 +88,7 @@ define(function(require) {
       }
     }
 
-    maybeDiffFor(other: BehaviorVersion, parents?: { mine: BehaviorGroup, other: BehaviorGroup }): ?diffs.ModifiedDiff<BehaviorVersion> {
+    maybeDiffFor<T: HasInputs>(other: BehaviorVersion, parents?: { mine: T, other: T }): ?diffs.ModifiedDiff<BehaviorVersion> {
       const simpleDiffs: Array<Diff> = [
         diffs.TextPropertyDiff.maybeFor("Name", this.name, other.name),
         diffs.TextPropertyDiff.maybeFor("Description", this.description, other.description),

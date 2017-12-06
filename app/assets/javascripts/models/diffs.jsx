@@ -14,7 +14,12 @@ export interface Diffable {
   getIdForDiff(): string;
 
   // TODO: `other` should be a type that implements Diffable; using Diffable directly doesn't allow classes to override with themselves
-  maybeDiffFor<P: Diffable>(other: *, parents?: DiffableParent<P>): ?Diff;
+  maybeDiffFor<T: *>(other: *, parents?: DiffableParent<T>): ?Diff;
+}
+
+// TODO: This is a hack since we can't import BehaviorGroup here or inside BehaviorVersion (because it would be a circular dependency)
+export interface HasInputs extends Diffable {
+  getInputs(): Array<*>
 }
 
 export type TextPartKind = "added" | "removed" | "unchanged";
@@ -204,7 +209,7 @@ define(function(require) {
 
   }
 
-  function diffsFor<T: Diffable, P: Diffable>(originalItems: Array<T>, newItems: Array<T>, parents?: DiffableParent<P>): Array<Diff> {
+  function diffsFor<T: Diffable, P: HasInputs>(originalItems: Array<T>, newItems: Array<T>, parents?: DiffableParent<P>): Array<Diff> {
     const originalIds = originalItems.map(ea => ea.getIdForDiff());
     const newIds = newItems.map(ea => ea.getIdForDiff());
 
