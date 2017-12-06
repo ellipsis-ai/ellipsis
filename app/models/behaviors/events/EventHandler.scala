@@ -116,6 +116,7 @@ class EventHandler @Inject() (
           }
         }.getOrElse(Future.successful(None))
       }
+      case _ => Future.successful(None)
     }
 
   }
