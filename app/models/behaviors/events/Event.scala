@@ -54,7 +54,7 @@ trait Event {
     val sourceText = maybeSource.getOrElse(logTextForResultSource)
     val logIntro = s"Sending result [${result.fullText}] $sourceText [${messageText}]$channelText$convoText"
     if (result.files.nonEmpty) {
-      val fileText = result.files.map { fileSpec =>
+      val files = result.files.map { fileSpec =>
         val filename = fileSpec.filename.getOrElse("File")
         val filetype = fileSpec.filetype.getOrElse("unknown type")
         val content = fileSpec.content.map { content =>
@@ -68,8 +68,15 @@ trait Event {
         s"""$filename ($filetype):
            |$content
          """.stripMargin
-      }.mkString("\n\n")
-      s"$logIntro\n\n$fileText"
+      }
+      val fileString = files.mkString("\n======\n")
+      s"""$logIntro
+         |======
+         |Files:
+         |======
+         |$fileString
+         |======
+         |""".stripMargin
     } else {
       logIntro
     }
