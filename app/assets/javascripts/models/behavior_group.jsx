@@ -16,7 +16,7 @@ define(function(require) {
 
   const ONE_MINUTE = 60000;
 
-  class BehaviorGroup implements Diffable {
+  class BehaviorGroup implements Diffable<void> {
     id: string;
     teamId: string;
     name: ?string;
@@ -232,7 +232,7 @@ define(function(require) {
       return this.id;
     }
 
-    maybeDiffFor(other: BehaviorGroup): ?diffs.ModifiedDiff<BehaviorGroup> {
+    maybeDiffFor(other: BehaviorGroup): ?diffs.ModifiedDiff<void, BehaviorGroup> {
       const behaviorVersionDiffs = diffs.diffsFor(this.behaviorVersions, other.behaviorVersions, { mine: this, other: other });
       const libraryDiffs = diffs.diffsFor(this.libraryVersions, other.libraryVersions);
       const simpleDiffs = [

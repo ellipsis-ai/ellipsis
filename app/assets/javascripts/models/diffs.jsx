@@ -4,9 +4,15 @@ export interface Diff {
   displayText(): string;
 }
 
-export interface Diffable {
+type DiffableParent<T> = void | {
+  mine: T,
+  other: T
+};
+
+export interface Diffable<P> {
   diffLabel(): string;
   getIdForDiff(): string;
+  maybeDiffFor(other: *, parents?: DiffableParent<P>): ?Diff;
 }
 
 export type TextPartKind = "added" | "removed" | "unchanged";
@@ -14,7 +20,7 @@ export type TextPartKind = "added" | "removed" | "unchanged";
 define(function(require) {
   const JsDiff = require("diff");
 
-  class AddedOrRemovedDiff<T: Diffable> implements Diff {
+  class AddedOrRemovedDiff<P, T: Diffable<P>> implements Diff {
     item: T;
 
     constructor(item: T) {
@@ -37,7 +43,7 @@ define(function(require) {
 
   }
 
-  class AddedDiff<T: Diffable> extends AddedOrRemovedDiff<T> {
+  class AddedDiff<P, T: Diffable<P>> extends AddedOrRemovedDiff<P, T> {
 
     diffType(): string {
       return "Added";
@@ -45,7 +51,7 @@ define(function(require) {
 
   }
 
-  class RemovedDiff<T: Diffable> extends AddedOrRemovedDiff<T> {
+  class RemovedDiff<P, T: Diffable<P>> extends AddedOrRemovedDiff<P, T> {
 
     diffType(): string {
       return "Removed";
@@ -53,7 +59,7 @@ define(function(require) {
 
   }
 
-  class ModifiedDiff<T: Diffable> implements Diff {
+  class ModifiedDiff<P, T: Diffable<P>> implements Diff {
     original: T;
     modified: T;
     children: Array<Diff>;
@@ -196,7 +202,7 @@ define(function(require) {
 
   }
 
-  function diffsFor<T: Diffable, P: Diffable>(originalItems: Array<T>, newItems: Array<T>, parents?: { mine: P, other: P }): Array<Diff> {
+  function diffsFor<P, T: Diffable<P>>(originalItems: Array<T>, newItems: Array<T>, parents?: DiffableParent<P>): Array<Diff> {
     const originalIds = originalItems.map(ea => ea.getIdForDiff());
     const newIds = newItems.map(ea => ea.getIdForDiff());
 
@@ -225,7 +231,7 @@ define(function(require) {
       const originalItem = originalItems.find(ea => ea.getIdForDiff() === eaId);
       const newItem = newItems.find(ea => ea.getIdForDiff() === eaId);
       if (originalItem && newItem) {
-        const diff = (originalItem: Object).maybeDiffFor(newItem, parents); // TODO: figure out how to add this method to Diffable
+        const diff = originalItem.maybeDiffFor(newItem, parents);
         if (diff) {
           modified.push(diff);
         }
@@ -236,12 +242,12 @@ define(function(require) {
   }
 
   return {
-    'diffsFor': diffsFor,
-    'AddedDiff': AddedDiff,
-    'BooleanPropertyDiff': BooleanPropertyDiff,
-    'CategoricalPropertyDiff': CategoricalPropertyDiff,
-    'RemovedDiff': RemovedDiff,
-    'ModifiedDiff': ModifiedDiff,
-    'TextPropertyDiff': TextPropertyDiff
+    diffsFor: diffsFor,
+    AddedDiff: AddedDiff,
+    BooleanPropertyDiff: BooleanPropertyDiff,
+    CategoricalPropertyDiff: CategoricalPropertyDiff,
+    RemovedDiff: RemovedDiff,
+    ModifiedDiff: ModifiedDiff,
+    TextPropertyDiff: TextPropertyDiff
   };
 });
