@@ -254,7 +254,7 @@ trait Scheduled {
         event.maybeChannel.
           map { channel => s" in channel $channel" }.
           getOrElse("")
-      Logger.info(s"Sending result [${result.fullText}] for scheduled message [$displayText]$channelInfo")
+      Logger.info(event.logTextFor(result, Some(s"for scheduled message [$displayText]")))
     }
   }
 

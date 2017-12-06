@@ -861,7 +861,7 @@ class SlackController @Inject() (
                         eventHandler.handle(event, None).flatMap { results =>
                           Future.sequence(
                             results.map(result => services.botResultService.sendIn(result, None).map { _ =>
-                              Logger.info(event.logTextFor(result))
+                              Logger.info(event.logTextFor(result, None))
                             })
                           )
                         }
