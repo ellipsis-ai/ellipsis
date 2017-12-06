@@ -47,6 +47,7 @@ case class BehaviorGroupZipImporter(
     val configRegex = raw"""${optionalParentDir}config\.json$$""".r
     val actionInputsRegex = raw"""${optionalParentDir}action_inputs\.json$$""".r
     val dataTypeInputsRegex = raw"""${optionalParentDir}data_type_inputs\.json$$""".r
+    val libFileRegex = raw"""${optionalParentDir}lib\/(.+.js)""".r
 
     var maybeGroupName: Option[String] = None
     var maybeGroupDescription: Option[String] = None
@@ -58,7 +59,6 @@ case class BehaviorGroupZipImporter(
     var actionInputs: Seq[InputData] = Seq()
     var dataTypeInputs: Seq[InputData] = Seq()
     var libraries: Seq[LibraryVersionData] = Seq()
-    val libFileRegex = """^lib\/(.+.js)""".r
 
     while (nextEntry != null) {
       val entryName = nextEntry.getName
