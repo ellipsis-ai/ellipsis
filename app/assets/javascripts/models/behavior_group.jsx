@@ -1,6 +1,6 @@
 // @flow
 
-import type {Diff, Diffable} from './diffs';
+import type {HasInputs} from './diffs';
 
 define(function(require) {
   const BehaviorVersion = require('./behavior_version');
@@ -16,7 +16,7 @@ define(function(require) {
 
   const ONE_MINUTE = 60000;
 
-  class BehaviorGroup implements Diffable {
+  class BehaviorGroup implements HasInputs<Input> {
     id: string;
     teamId: string;
     name: ?string;
