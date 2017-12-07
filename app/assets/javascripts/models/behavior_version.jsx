@@ -165,7 +165,9 @@ define(function(require) {
     }
 
     diffLabel(): string {
-      return this.getBehaviorVersionTypeName();
+      const name = this.getName();
+      const typeName = this.getBehaviorVersionTypeName();
+      return name ? `${typeName} “${name}”` : `unnamed ${typeName}`;
     }
 
     getNewEditorTitle(): string {

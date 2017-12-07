@@ -41,7 +41,7 @@ define(function(require) {
     }
 
     diffLabel(): string {
-      return `trigger "${this.text}"`;
+      return `trigger “${this.text}”`;
     }
 
     getIdForDiff(): string {
@@ -50,8 +50,8 @@ define(function(require) {
 
     maybeDiffFor(other: Trigger): ?diffs.ModifiedDiff<Trigger> {
       const children: Array<Diff> = [
-        diffs.BooleanPropertyDiff.maybeFor("Treat as regex", this.isRegex, other.isRegex),
-        diffs.BooleanPropertyDiff.maybeFor("Require bot mention", this.requiresMention, other.requiresMention)
+        diffs.BooleanPropertyDiff.maybeFor("Treat as regex pattern", this.isRegex, other.isRegex),
+        diffs.BooleanPropertyDiff.maybeFor("Require user to mention Ellipsis", this.requiresMention, other.requiresMention)
       ].filter(ea => Boolean(ea));
       if (children.length === 0) {
         return null;

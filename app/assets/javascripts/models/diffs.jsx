@@ -86,7 +86,10 @@ define(function(require) {
     }
 
     label(): string {
-      return `Modified ${this.original.diffLabel()}`;
+      const original = this.original.diffLabel();
+      const modified = this.modified.diffLabel();
+      const label = original === modified ? original : `${original} → ${modified}`;
+      return `Modified ${label}`;
     }
 
     summaryText(): string {
@@ -151,6 +154,10 @@ define(function(require) {
       return this.kind === TEXT_REMOVED;
     }
 
+    valueIsEmpty(): boolean {
+      return !this.value;
+    }
+
   }
 
   class TextPropertyDiff extends PropertyDiff<string> {
@@ -212,7 +219,7 @@ define(function(require) {
   class BooleanPropertyDiff extends PropertyDiff<boolean> {
 
     displayText(): string {
-      const valueString = this.original ? "false" : "true";
+      const valueString = this.original ? "off" : "on";
       return `${this.label}: changed to ${valueString}`;
     }
 

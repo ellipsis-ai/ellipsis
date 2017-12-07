@@ -40,16 +40,20 @@ define(function(require) {
       return this.props.parts.filter((ea) => ea.kind === DiffConstants.TEXT_ADDED || ea.kind === DiffConstants.TEXT_UNCHANGED);
     }
 
-    renderLines(line: Array<TextPart>, lineIndex: number, totalLines: number): React.Node {
+    renderLine(line: Array<TextPart>, lineIndex: number, totalLines: number): React.Node {
+      const maxNumDigits = String(totalLines).length;
+      const isEmpty = line.length === 0 || line.length === 1 && line[0].valueIsEmpty();
       return (
-        <div className="columns columns-elastic" key={`line${lineIndex}`}>
+        <div className="columns columns-elastic border-bottom" key={`line${lineIndex}`}>
           {totalLines > 1 ? (
             <div className="column column-shrink type-monospace type-weak bg-light paxs">
-              {Formatter.leftPad(lineIndex + 1, String(totalLines).length)}
+              {Formatter.leftPad(lineIndex + 1, maxNumDigits)}
             </div>
           ) : null}
           <div className="column column-expand paxs">
-            {line.map((part, partIndex) => (
+            {isEmpty ? (
+              <div className="type-disabled type-italic">(blank)</div>
+            ) : line.map((part, partIndex) => (
               <TextDiffPart key={`part${partIndex}`} part={part} />
             ))}
           </div>
@@ -61,14 +65,15 @@ define(function(require) {
       const oldPartsByLine = this.getPartsByLine(this.getOldParts());
       const newPartsByLine = this.getPartsByLine(this.getNewParts());
       const totalLines = Math.max(oldPartsByLine.length, newPartsByLine.length);
+      const renderLine = (line, index) => this.renderLine(line, index, totalLines);
       return (
         <div className={this.props.className || ""}>
           <div className="columns">
-            <div className="column column-one-half">
-              {oldPartsByLine.map((line, index) => this.renderLines(line, index, totalLines))}
+            <div className="column column-one-half prn">
+              {oldPartsByLine.map(renderLine)}
             </div>
             <div className="column column-one-half border-left">
-              {newPartsByLine.map((line, index) => this.renderLines(line, index, totalLines))}
+              {newPartsByLine.map(renderLine)}
             </div>
           </div>
         </div>

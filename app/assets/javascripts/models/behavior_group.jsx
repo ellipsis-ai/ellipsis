@@ -225,7 +225,8 @@ define(function(require) {
     }
 
     diffLabel(): string {
-      return "skill";
+      const name = this.getName();
+      return name ? `skill “${name}”` : `untitled skill`;
     }
 
     getIdForDiff(): string {

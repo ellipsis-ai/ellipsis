@@ -40,7 +40,7 @@ define(function(require) {
     }
 
     diffLabel(): string {
-      return `library "${this.name}"`;
+      return `library “${this.name}”`;
     }
 
     getIdForDiff(): string {

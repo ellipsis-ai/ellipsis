@@ -4,7 +4,8 @@ define(function(require) {
 
   type Props = {
     label: React.Node,
-    children: Array<React.Node>
+    children: Array<React.Node>,
+    className?: string
   };
 
   class DiffItem extends React.PureComponent<Props> {
@@ -12,10 +13,10 @@ define(function(require) {
 
     render(): React.Node {
       return (
-        <div className="mbl">
-          <div className="type-italic type-weak mbxs">{this.props.label}</div>
+        <div className={this.props.className || "pas border-bottom mbneg1"}>
+          <div>{this.props.label}</div>
           {React.Children.map(this.props.children, (child) => (
-            <div className="border bg-white type-s mbneg1">{child}</div>
+            <div className="mtxs border bg-lightest type-s">{child}</div>
           ))}
         </div>
       );
