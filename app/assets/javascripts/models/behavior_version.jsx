@@ -88,7 +88,7 @@ define(function(require) {
       }
     }
 
-    maybeDiffFor<T: HasInputs<Input>>(other: BehaviorVersion, parents?: { mine: T, other: T }): ?diffs.ModifiedDiff<BehaviorVersion> {
+    maybeDiffFor<T: BehaviorVersion, P: HasInputs<Input>>(other: Diffable & T, parents?: { mine: P, other: P }): ?diffs.ModifiedDiff<BehaviorVersion> {
       const simpleDiffs: Array<Diff> = [
         diffs.TextPropertyDiff.maybeFor("Name", this.name, other.name),
         diffs.TextPropertyDiff.maybeFor("Description", this.description, other.description),

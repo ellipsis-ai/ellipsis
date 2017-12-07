@@ -4,12 +4,11 @@ define(function(require: (string) => *): React.ElementType {
   const React = require('react'),
     BehaviorGroup = require('../../models/behavior_group'),
     BehaviorGroupDiff = require('./behavior_group_diff'),
-    BehaviorGroupSaveInfo = require('../behavior_group_save_info'),
     Button = require('../../form/button'),
     Editable = require('../../models/editable'),
     Formatter = require('../../lib/formatter'),
     SidebarButton = require('../../form/sidebar_button'),
-    ToggleGroup = require('../../form/toggle_group'),
+    Select = require('../../form/select'),
     diffs = require('../../models/diffs'),
     autobind = require('../../lib/autobind');
 
@@ -23,7 +22,7 @@ define(function(require: (string) => *): React.ElementType {
   };
 
   type State = {
-    selectedMenuItem: ?string,
+    selectedMenuItem: string,
     diffFromSelectedToCurrent: boolean
   }
 
@@ -35,12 +34,20 @@ define(function(require: (string) => *): React.ElementType {
       super(props);
       autobind(this);
       this.state = {
-        selectedMenuItem: null,
+        selectedMenuItem: "loading",
         diffFromSelectedToCurrent: true
       };
     }
 
-    onClickMenuItem(key: ?string): void {
+    componentWillReceiveProps(nextProps: Props): void {
+      if (nextProps.versions.length > this.props.versions.length && nextProps.versions.length > 1) {
+        this.setState({
+          selectedMenuItem: "version1"
+        });
+      }
+    }
+
+    onClickMenuItem(key: string): void {
       this.setState({
         selectedMenuItem: key
       });
@@ -50,61 +57,36 @@ define(function(require: (string) => *): React.ElementType {
       return this.props.versions[1];
     }
 
-    nameForVersion(version: BehaviorGroup, index: number, previousItem: ?BehaviorGroup, shouldFilterLastSavedVersion: boolean): string {
-      if (index === 0) {
-        if (shouldFilterLastSavedVersion) {
-          return "Current version (saved)";
-        } else {
-          return "Current version (unsaved changes)";
-        }
-      } else if (index === 1) {
-        return "Last saved version";
-      } else if (index === 2) {
-        return Formatter.formatTimestampShort(version.createdAt);
+    nameForVersion(version: BehaviorGroup, index: number): string {
+      const author = version.author ? `by ${version.author.formattedName()}` : "";
+      if (index === 1) {
+        return `Most recently saved (${author})`;
       } else {
-        const previousDay = previousItem ? Formatter.formatTimestampDate(previousItem.createdAt) : null;
-        const thisDay = Formatter.formatTimestampDate(version.createdAt);
-        if (previousDay === thisDay) {
-          return Formatter.formatTimestampTime(version.createdAt);
-        } else {
-          return Formatter.formatTimestampShort(version.createdAt);
-        }
+        return `${Formatter.formatTimestampShort(version.createdAt)} ${author}`;
       }
     }
 
-    renderVersions(shouldFilterLastSavedVersion: boolean): Node {
+    renderVersionOptions(): Node {
       if (this.props.versions.length > 1) {
         return (
-          <div>
-            <SidebarButton
-              selected={!this.state.selectedMenuItem}
-              onClick={this.onClickMenuItem.bind(this, null)}
-            >
-              {this.nameForVersion(this.props.currentGroup, 0, null, shouldFilterLastSavedVersion)}
-            </SidebarButton>
+          <optgroup label="Local versions">
             {this.props.versions.map((version: BehaviorGroup, index: number): ?Element<SidebarButton> => {
               if (index === 0) {
                 return null;
-              } else if (index === 1 && shouldFilterLastSavedVersion) {
-                return null;
               } else {
                 const key = `version${index}`;
-                const previousItem = this.props.versions[index - 1];
                 return (
-                  <SidebarButton
-                    key={key}
-                    selected={this.state.selectedMenuItem === key}
-                    onClick={this.onClickMenuItem.bind(this, key)}
-                  >
-                    {this.nameForVersion(version, index, previousItem, shouldFilterLastSavedVersion)}
-                  </SidebarButton>
+                  <option key={key} value={key}>
+                    {this.nameForVersion(version, index)}
+                  </option>
                 );
               }
             })}
-          </div>);
+          </optgroup>
+        );
       } else {
         return (
-          <div className="phxl mobile-phl pulse type-disabled">Loading versions…</div>
+          <option className="pulse type-disabled" value="loading">Loading versions…</option>
         );
       }
     }
@@ -123,37 +105,10 @@ define(function(require: (string) => *): React.ElementType {
       return this.props.versions[index] || this.props.currentGroup;
     }
 
-    setDiffDirectionFromSelected(): void {
+    invertDiffDirection(): void {
       this.setState({
-        diffFromSelectedToCurrent: true
+        diffFromSelectedToCurrent: !this.state.diffFromSelectedToCurrent
       });
-    }
-
-    setDiffDirectionFromCurrent(): void {
-      this.setState({
-        diffFromSelectedToCurrent: false
-      });
-    }
-
-    renderCurrentVersionInfo(shouldFilterLastSavedVersion: boolean): ElementType {
-      const lastSavedVersion = this.getLastSavedVersion();
-      if (lastSavedVersion && shouldFilterLastSavedVersion) {
-        return (
-          <BehaviorGroupSaveInfo
-            group={lastSavedVersion}
-            currentUserId={this.props.currentUserId}
-            isLastSavedVersion={true}
-          />
-        );
-      } else if (lastSavedVersion) {
-        return (
-          <span>You have made unsaved changes to this skill.</span>
-        );
-      } else {
-        return (
-          <span className="pulse">Loading…</span>
-        );
-      }
     }
 
     getDiffForSelectedVersion(selectedVersion: ?BehaviorGroup): ?diffs.ModifiedDiff<BehaviorGroup> {
@@ -167,48 +122,29 @@ define(function(require: (string) => *): React.ElementType {
       }
     }
 
-    renderSelectedVersion(shouldFilterLastSavedVersion: boolean): ElementType {
+    renderSelectedVersion(hasNoChanges: boolean): ElementType {
       const versionIndex = this.getSelectedVersionIndex();
       const selectedVersion = this.getSelectedVersion(versionIndex);
-      const isLastSaved = versionIndex === 1;
-      const isCurrent = versionIndex === 0;
       const diff = this.getDiffForSelectedVersion(selectedVersion);
-      console.log(diff);
       return (
-        <div className="container container-wide pvxl">
-          <div>
-            {isCurrent ? this.renderCurrentVersionInfo(shouldFilterLastSavedVersion) : (
-              <BehaviorGroupSaveInfo
-                group={selectedVersion}
-                currentUserId={this.props.currentUserId}
-                isLastSavedVersion={isLastSaved}
-              />
-            )}
-          </div>
-
+        <div>
           {selectedVersion && versionIndex > 0 ? (
             <div>
               <h4>Differences</h4>
 
-              {diff ? (
-                <div className="mbm">
-                  <ToggleGroup>
-                    <ToggleGroup.Item
-                      activeWhen={this.state.diffFromSelectedToCurrent}
-                      label="What changed since this version"
-                      onClick={this.setDiffDirectionFromSelected}
-                    />
-                    <ToggleGroup.Item
-                      activeWhen={!this.state.diffFromSelectedToCurrent}
-                      label="What would change if you reverted"
-                      onClick={this.setDiffDirectionFromCurrent}
-                    />
-                  </ToggleGroup>
-                </div>
-              ) : null}
+              <div className="mbl">
+                <div className="align-button">From original version:</div>
+                {this.state.diffFromSelectedToCurrent ? this.renderSelectableVersion() : this.renderCurrentVersionPlaceholder(hasNoChanges)}
+                <div className="align-button">to new version:</div>
+                {this.state.diffFromSelectedToCurrent ? this.renderCurrentVersionPlaceholder(hasNoChanges) : this.renderSelectableVersion()}
+                <Button onClick={this.invertDiffDirection}>Switch direction</Button>
+              </div>
+
               {this.renderDiff(diff)}
             </div>
-          ) : null}
+          ) : (
+            <span className="pulse">Loading…</span>
+          )}
         </div>
       );
     }
@@ -225,9 +161,24 @@ define(function(require: (string) => *): React.ElementType {
       }
     }
 
+    renderSelectableVersion(): ElementType {
+      return (
+        <Select className="align-b mhs" value={this.state.selectedMenuItem} onChange={this.onClickMenuItem}>
+          {this.renderVersionOptions()}
+        </Select>
+      );
+    }
+
+    renderCurrentVersionPlaceholder(noChanges: boolean): ElementType {
+      return (
+        <div className="align-button align-button-border mhs">{
+          noChanges ? "Current" : "Current (with unsaved changes)"
+        }</div>
+      );
+    }
     render(): ElementType {
       const lastSavedVersion = this.getLastSavedVersion();
-      const shouldFilterLastSavedVersion = Boolean(lastSavedVersion && lastSavedVersion.isIdenticalTo(this.props.currentGroup));
+      const hasNoChanges = Boolean(lastSavedVersion && lastSavedVersion.isIdenticalTo(this.props.currentGroup));
       return (
         <div className="flex-row-cascade pbxxxxl">
           <div className="bg-white container container-wide pvm border-bottom border-light">
@@ -238,19 +189,9 @@ define(function(require: (string) => *): React.ElementType {
 
           </div>
           <div className="flex-columns flex-row-expand">
-            <div className="flex-column flex-column-left flex-rows container container-wide phn">
-              <div className="columns flex-columns flex-row-expand mobile-flex-no-columns">
-                <div className="column column-one-quarter flex-column mobile-column-full ptxl phn bg-white border-right border-light">
-
-                  <h5 className="mtn phxl mobile-phl">Versions</h5>
-
-                  <div className="type-s">
-                    {this.renderVersions(shouldFilterLastSavedVersion)}
-                  </div>
-                </div>
-                <div className="column mobile-column-full pbxxxxl column-three-quarters flex-column bg-lightest">
-                  {this.renderSelectedVersion(shouldFilterLastSavedVersion)}
-                </div>
+            <div className="flex-column flex-column-left flex-rows bg-white">
+              <div className="container container container-wide pvm">
+                {this.renderSelectedVersion(hasNoChanges)}
               </div>
             </div>
           </div>
