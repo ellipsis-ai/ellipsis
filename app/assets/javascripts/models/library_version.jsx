@@ -51,7 +51,7 @@ define(function(require) {
       const children: Array<Diff> = [
         diffs.TextPropertyDiff.maybeFor("Name", this.name, other.name),
         diffs.TextPropertyDiff.maybeFor("Description", this.description, other.description),
-        diffs.TextPropertyDiff.maybeFor("Code", this.functionBody, other.functionBody)
+        diffs.TextPropertyDiff.maybeFor("Code", this.functionBody, other.functionBody, { isCode: true })
       ].filter(ea => Boolean(ea));
       if (children.length === 0) {
         return null;

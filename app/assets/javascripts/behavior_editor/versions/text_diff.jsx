@@ -9,7 +9,8 @@ define(function(require) {
 
   type Props = {
     className: ?string,
-    parts: Array<TextPart>
+    parts: Array<TextPart>,
+    isCode: boolean
   };
 
   class TextDiff extends React.PureComponent<Props> {
@@ -40,40 +41,70 @@ define(function(require) {
       return this.props.parts.filter((ea) => ea.kind === DiffConstants.TEXT_ADDED || ea.kind === DiffConstants.TEXT_UNCHANGED);
     }
 
-    renderLine(line: Array<TextPart>, lineIndex: number, totalLines: number): React.Node {
-      const maxNumDigits = String(totalLines).length;
+    renderBlankLine(onlyLine: boolean): React.Node {
+      return onlyLine ? (
+        <div className="type-disabled type-italic">(blank)</div>
+      ) : (
+        <div>&nbsp;</div>
+      );
+    }
+
+    renderLine(line: Array<TextPart>, onlyLine: boolean): React.Node {
       const isEmpty = line.length === 0 || line.length === 1 && line[0].valueIsEmpty();
       return (
-        <div className="columns columns-elastic border-bottom" key={`line${lineIndex}`}>
-          {totalLines > 1 ? (
-            <div className="column column-shrink type-monospace type-weak bg-light paxs">
-              {Formatter.leftPad(lineIndex + 1, maxNumDigits)}
-            </div>
-          ) : null}
-          <div className="column column-expand paxs">
-            {isEmpty ? (
-              <div className="type-disabled type-italic">(blank)</div>
-            ) : line.map((part, partIndex) => (
+        <div className={`type-wrap-words ${this.props.isCode ? "type-monospace" : ""}`}>
+          {isEmpty ?
+            this.renderBlankLine(onlyLine) :
+            line.map((part, partIndex) => (
               <TextDiffPart key={`part${partIndex}`} part={part} />
             ))}
-          </div>
         </div>
       );
+    }
+
+    renderLines(oldParts, newParts, totalLines: number): React.Node {
+      const maxNumDigits = String(totalLines).length;
+      const lineCounter = new Array(totalLines).fill("");
+      const oldIsOneLine = oldParts.length === 1;
+      const newIsOneLine = newParts.length === 1;
+      return lineCounter.map((nothing, lineIndex) => {
+        const lineNumber = Formatter.leftPad(lineIndex + 1, maxNumDigits);
+        const isLastLine = lineIndex + 1 === totalLines;
+        const lineClass = isLastLine ? "border-bottom" : "";
+        const oldPart = oldParts[lineIndex];
+        const newPart = newParts[lineIndex];
+        return (
+          <div key={`line${lineIndex}`} className="column-row">
+            {totalLines > 1 ? (
+              <div className="column column-shrink type-monospace type-weak bg-light phxs border-bottom">
+                {oldPart ? lineNumber : ""}
+              </div>
+            ) : null}
+            <div className={`column column-one-half phxs ${lineClass}`}>
+              {oldPart ? this.renderLine(oldPart, oldIsOneLine && lineIndex === 0) : null}
+            </div>
+            {totalLines > 1 ? (
+              <div className="column column-shrink type-monospace type-weak bg-light phxs border-bottom border-left">
+                {newPart ? lineNumber : ""}
+              </div>
+            ) : null}
+            <div className={`column column-one-half phxs ${lineClass} ${totalLines === 1 ? "border-left" : ""}`}>
+              {newPart ? this.renderLine(newPart, newIsOneLine && lineIndex === 0) : null}
+            </div>
+          </div>
+        );
+      });
     }
 
     render(): React.Node {
       const oldPartsByLine = this.getPartsByLine(this.getOldParts());
       const newPartsByLine = this.getPartsByLine(this.getNewParts());
       const totalLines = Math.max(oldPartsByLine.length, newPartsByLine.length);
-      const renderLine = (line, index) => this.renderLine(line, index, totalLines);
       return (
         <div className={this.props.className || ""}>
-          <div className="columns">
-            <div className="column column-one-half prn">
-              {oldPartsByLine.map(renderLine)}
-            </div>
-            <div className="column column-one-half border-left">
-              {newPartsByLine.map(renderLine)}
+          <div className="columns columns-elastic">
+            <div className="column-group">
+              {this.renderLines(oldPartsByLine, newPartsByLine, totalLines)}
             </div>
           </div>
         </div>

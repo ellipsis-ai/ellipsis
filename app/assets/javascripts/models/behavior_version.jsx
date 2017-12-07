@@ -92,8 +92,8 @@ define(function(require) {
       const simpleDiffs: Array<Diff> = [
         diffs.TextPropertyDiff.maybeFor("Name", this.name, other.name),
         diffs.TextPropertyDiff.maybeFor("Description", this.description, other.description),
-        diffs.TextPropertyDiff.maybeFor("Response template", this.responseTemplateText(), other.responseTemplateText()),
-        diffs.TextPropertyDiff.maybeFor("Code", this.functionBody, other.functionBody),
+        diffs.TextPropertyDiff.maybeFor("Response template", this.responseTemplateText(), other.responseTemplateText(), { isCode: true }),
+        diffs.TextPropertyDiff.maybeFor("Code", this.functionBody, other.functionBody, { isCode: true }),
         diffs.BooleanPropertyDiff.maybeFor("Always responds privately", this.config.forcePrivateResponse, other.config.forcePrivateResponse),
         diffs.BooleanPropertyDiff.maybeFor("Code-backed data type", this.dataTypeUsesCode(), other.dataTypeUsesCode())
       ].filter(ea => Boolean(ea));

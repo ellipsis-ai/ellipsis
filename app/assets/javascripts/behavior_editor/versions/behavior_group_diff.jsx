@@ -31,7 +31,7 @@ define(function(require) {
     renderTextDiff(diff: TextPropertyDiff, index: number, className: ?string): ElementType {
       return (
         <DiffItem className={className} key={`diff${index}`} label={`${diff.label} changed:`}>
-          <TextDiff parts={diff.parts} className="bg-white mbneg1" />
+          <TextDiff parts={diff.parts} isCode={diff.isCode} className="bg-white mbneg1" />
         </DiffItem>
       );
     }

@@ -160,16 +160,22 @@ define(function(require) {
 
   }
 
+  type TextPropertyOptions = {
+    isCode?: boolean
+  };
+
   class TextPropertyDiff extends PropertyDiff<string> {
     parts: Array<TextPart>;
+    isCode: boolean;
 
-    constructor(label: string, original: string, modified: string) {
+    constructor(label: string, original: string, modified: string, options?: TextPropertyOptions) {
       super(label, original, modified);
       const parts = JsDiff.diffWordsWithSpace(original, modified, {}).map(ea => {
         return new TextPart(ea.value, ea.added, ea.removed);
       });
       Object.defineProperties(this, {
-        parts: { value: parts, enumerable: true }
+        parts: { value: parts, enumerable: true },
+        isCode: { value: Boolean(options && options.isCode), enumerable: true }
       });
     }
 
@@ -205,13 +211,13 @@ define(function(require) {
       return `${this.label} ${this.getTextChangeType()}`;
     }
 
-    static maybeFor(label: string, maybeOriginal: ?string, maybeModified: ?string): ?TextPropertyDiff {
+    static maybeFor(label: string, maybeOriginal: ?string, maybeModified: ?string, options?: TextPropertyOptions): ?TextPropertyDiff {
       const original = maybeOriginal || "";
       const modified = maybeModified || "";
       if (original === modified) {
         return null;
       } else {
-        return new TextPropertyDiff(label, original, modified);
+        return new TextPropertyDiff(label, original, modified, options);
       }
     }
   }
