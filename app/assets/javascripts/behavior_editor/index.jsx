@@ -61,7 +61,6 @@ var React = require('react'),
   TriggerHelp = require('./trigger_help'),
   UniqueBy = require('../lib/unique_by'),
   UserInputConfiguration = require('./user_input_configuration'),
-  VersionsPanel = require('./versions_panel'),
   VersionBrowser = require('./versions/version_browser'),
   SVGWarning = require('../svg/warning'),
   Collapsible = require('../shared_ui/collapsible'),
@@ -1464,14 +1463,12 @@ const BehaviorEditor = React.createClass({
 
   isModified: function() {
     var currentMatchesInitial = this.props.group.isIdenticalTo(this.getBehaviorGroup());
-    var previewingVersions = this.props.activePanelName === 'versionHistory';
-    return !currentMatchesInitial && !previewingVersions;
+    return !currentMatchesInitial;
   },
 
   editableIsModified: function(current) {
     var original = this.props.group.getEditables().find((ea) => ea.getPersistentId() === current.getPersistentId());
-    var previewingVersions = this.props.activePanelName === 'versionHistory';
-    return !previewingVersions && !(original && current.isIdenticalToVersion(original));
+    return !(original && current.isIdenticalToVersion(original));
   },
 
   isSaving: function() {
@@ -1978,19 +1975,6 @@ const BehaviorEditor = React.createClass({
               firstParamName={this.getFirstBehaviorInputName()}
               template={this.getBehaviorTemplate()}
               onCollapseClick={this.props.onClearActivePanel}
-            />
-          </Collapsible>
-
-          <Collapsible ref="versionHistory" revealWhen={this.props.activePanelName === 'versionHistory'} onChange={this.layoutDidUpdate}>
-            <VersionsPanel
-              ref="versionsPanel"
-              menuToggle={this.toggleVersionListMenu}
-              onCancelClick={this.cancelVersionPanel}
-              onRestoreClick={this.restoreVersionIndex}
-              onSwitchVersions={this.showVersionIndex}
-              openMenuWhen={this.getActiveDropdown() === 'versionList'}
-              shouldFilterCurrentVersion={this.shouldFilterCurrentVersion()}
-              versions={this.getVersions()}
             />
           </Collapsible>
 
@@ -2654,7 +2638,7 @@ const BehaviorEditor = React.createClass({
                 (this.props.activePanelName === 'versionBrowser' || this.state.versionBrowserOpen) ? "position-frozen" : ""
                }`}>
                 {this.renderBehaviorSwitcher()}
-                <div className="column column-page-main-wide flex-column flex-column-main">
+                <div className="column column-page-main-wide flex-column flex-column-main pbxxl">
                   {this.renderSwitcherToggle()}
 
                   {this.renderEditor()}
