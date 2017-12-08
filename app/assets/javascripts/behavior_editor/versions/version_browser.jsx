@@ -17,7 +17,7 @@ define(function(require: (string) => *): React.ElementType {
     currentUserId: string,
     versions: Array<BehaviorGroup>,
     onClearActivePanel: () => void,
-    onRestoreClick: (index: number) => void,
+    onRestoreClick: (index: number, optionalCallback?: () => void) => void,
     editableIsModified: (editable: Editable) => boolean
   };
 
@@ -40,9 +40,9 @@ define(function(require: (string) => *): React.ElementType {
     }
 
     componentWillReceiveProps(nextProps: Props): void {
-      if (nextProps.versions.length > this.props.versions.length && nextProps.versions.length > 1) {
+      if (nextProps.versions.length !== this.props.versions.length) {
         this.setState({
-          selectedMenuItem: "version1"
+          selectedMenuItem: nextProps.versions.length > 1 ? "version1" : "loading"
         });
       }
     }
@@ -63,6 +63,14 @@ define(function(require: (string) => *): React.ElementType {
         return `Most recently saved (${author})`;
       } else {
         return `${Formatter.formatTimestampShort(version.createdAt)} ${author}`;
+      }
+    }
+
+    shortNameForVersion(version: BehaviorGroup, index: number): string {
+      if (index === 1) {
+        return `last saved version`;
+      } else {
+        return `${Formatter.formatTimestampShort(version.createdAt)}`;
       }
     }
 
@@ -101,7 +109,7 @@ define(function(require: (string) => *): React.ElementType {
       }
     }
 
-    getSelectedVersion(index: number): ?BehaviorGroup {
+    getVersionIndex(index: number): ?BehaviorGroup {
       return this.props.versions[index] || this.props.currentGroup;
     }
 
@@ -122,9 +130,14 @@ define(function(require: (string) => *): React.ElementType {
       }
     }
 
+    revertToSelected(): void {
+      this.props.onRestoreClick(this.getSelectedVersionIndex());
+      this.props.onClearActivePanel();
+    }
+
     renderSelectedVersion(hasNoChanges: boolean): ElementType {
       const versionIndex = this.getSelectedVersionIndex();
-      const selectedVersion = this.getSelectedVersion(versionIndex);
+      const selectedVersion = this.getVersionIndex(versionIndex);
       const diff = this.getDiffForSelectedVersion(selectedVersion);
       return (
         <div>
@@ -132,7 +145,7 @@ define(function(require: (string) => *): React.ElementType {
             <div>
               <h4>Differences</h4>
 
-              <div className="mbl">
+              <div className="mbxl">
                 <div className="align-button">From original version:</div>
                 {this.state.diffFromSelectedToCurrent ? this.renderSelectableVersion() : this.renderCurrentVersionPlaceholder(hasNoChanges)}
                 <div className="align-button">to new version:</div>
@@ -156,7 +169,7 @@ define(function(require: (string) => *): React.ElementType {
         );
       } else {
         return (
-          <div>The selected version of the skill is identical to the current version.</div>
+          <div className="type-italic">The selected version of the skill is identical to the current version.</div>
         );
       }
     }
@@ -176,6 +189,21 @@ define(function(require: (string) => *): React.ElementType {
         }</div>
       );
     }
+
+    renderRevertButton(): React.Node {
+      const index = this.getSelectedVersionIndex();
+      const selectedVersion = this.getVersionIndex(index);
+      if (selectedVersion && !selectedVersion.isIdenticalTo(this.props.currentGroup)) {
+        return (
+          <Button className="mrs mbm" onClick={this.revertToSelected}>Revert to {this.shortNameForVersion(selectedVersion, index)}</Button>
+        );
+      } else {
+        return (
+          <Button className="mrs mbm" disabled={true}>Revert…</Button>
+        );
+      }
+    }
+
     render(): ElementType {
       const lastSavedVersion = this.getLastSavedVersion();
       const hasNoChanges = Boolean(lastSavedVersion && lastSavedVersion.isIdenticalTo(this.props.currentGroup));
@@ -194,6 +222,11 @@ define(function(require: (string) => *): React.ElementType {
                 {this.renderSelectedVersion(hasNoChanges)}
               </div>
             </div>
+          </div>
+
+          <div className="position-fixed-bottom container container-wide ptm border-top bg-white-translucent">
+            <Button className="mrs mbm button-primary" onClick={this.props.onClearActivePanel}>Done</Button>
+            {this.renderRevertButton()}
           </div>
         </div>
       );

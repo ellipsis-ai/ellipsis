@@ -1016,10 +1016,10 @@ const BehaviorEditor = React.createClass({
     this.setState(stateUpdates, optionalCallback);
   },
 
-  restoreVersionIndex: function(versionIndex) {
+  restoreVersionIndex: function(versionIndex, optionalCallback) {
     this.showVersionIndex(versionIndex, function() {
       this.onSaveBehaviorGroup();
-    });
+    }, optionalCallback);
   },
 
   setEditableProp: function(key, value, callback) {
@@ -2082,14 +2082,6 @@ const BehaviorEditor = React.createClass({
                 <p className="align-c">
                   <b className="pulse">Saving changes…</b>
                 </p>
-              </div>
-            </div>
-          </Collapsible>
-
-          <Collapsible revealWhen={this.props.activePanelName === 'versionBrowser'} onChange={this.layoutDidUpdate}>
-            <div className="container container-wide ptm border-top">
-              <div>
-                <Button className="mrs mbm" onClick={this.props.onClearActivePanel}>Done</Button>
               </div>
             </div>
           </Collapsible>
