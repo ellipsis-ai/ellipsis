@@ -730,11 +730,6 @@ const BehaviorEditor = React.createClass({
     this.setEditableProp('triggers', this.getBehaviorTriggers().concat(Trigger.fromProps({})), callback);
   },
 
-  cancelVersionPanel: function() {
-    this.props.onClearActivePanel();
-    this.showVersionIndex(0);
-  },
-
   cloneEditable: function() {
     const editable = this.getSelected();
     if (editable) {
@@ -1212,10 +1207,6 @@ const BehaviorEditor = React.createClass({
     this.toggleActivePanel('helpForTriggerParameters');
   },
 
-  toggleVersionListMenu: function() {
-    this.toggleActiveDropdown('versionList');
-  },
-
   updateCode: function(newCode) {
     this.setEditableProp('functionBody', newCode);
   },
@@ -1473,12 +1464,6 @@ const BehaviorEditor = React.createClass({
 
   isSaving: function() {
     return this.props.activePanelName === 'saving';
-  },
-
-  shouldFilterCurrentVersion: function() {
-    var firstTwoVersions = this.getVersions().slice(0, 2);
-    return firstTwoVersions.length === 2 &&
-      firstTwoVersions[0].isIdenticalTo(firstTwoVersions[1]);
   },
 
   versionsMaybeLoaded: function() {
