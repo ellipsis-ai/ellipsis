@@ -460,7 +460,12 @@ case class BehaviorBackedDataType(dataTypeConfig: DataTypeConfig) extends Behavi
           extractValidValueFrom(ea)
         }
       }
-      case _: JsError => Seq()
+      case _: JsError => {
+        result.result.validate[Seq[String]] match {
+          case JsSuccess(strings, _) => strings.map { ea => ValidValue(ea, ea, Map()) }
+          case _: JsError => Seq()
+        }
+      }
     }
   }
 
