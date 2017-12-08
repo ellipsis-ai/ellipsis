@@ -184,8 +184,6 @@ describe('BehaviorGroupVersion', () => {
       expect(maybeDiff).toBeTruthy();
       const diffText = maybeDiff.displayText();
 
-      console.log(JSON.stringify(maybeDiff, null, 2));
-
       // the empty objects for original and modified objects are ignored in the match
       const expectedDiffTree = {
         "children": [
@@ -268,12 +266,12 @@ describe('BehaviorGroupVersion', () => {
                 "original": "A template",
                 "parts": [
                   {
-                    "kind": "unchanged",
+                    "kind": "removed",
                     "value": "A"
                   },
                   {
                     "kind": "added",
-                    "value": "nother"
+                    "value": "Another"
                   },
                   {
                     "kind": "unchanged",
@@ -346,16 +344,12 @@ describe('BehaviorGroupVersion', () => {
                     "original": "what drives the car?",
                     "parts": [
                       {
-                        "kind": "unchanged",
-                        "value": "wh"
-                      },
-                      {
                         "kind": "removed",
-                        "value": "at"
+                        "value": "what"
                       },
                       {
                         "kind": "added",
-                        "value": "o"
+                        "value": "who"
                       },
                       {
                         "kind": "unchanged",
@@ -421,11 +415,15 @@ describe('BehaviorGroupVersion', () => {
                 "parts": [
                   {
                     "kind": "unchanged",
-                    "value": "return \"foo\""
+                    "value": "return \"foo"
+                  },
+                  {
+                    "kind": "removed",
+                    "value": "\""
                   },
                   {
                     "kind": "added",
-                    "value": ";"
+                    "value": "\";"
                   }
                 ]
               }
@@ -439,7 +437,7 @@ describe('BehaviorGroupVersion', () => {
       expect(diffText).toContain("Modified action:");
       expect(diffText).toContain("Name: [-First][+Second] name");
       expect(diffText).toContain("Description: [+A description]");
-      expect(diffText).toContain("Response template: A[+nother] template");
+      expect(diffText).toContain("Response template: [-A][+Another] template");
       expect(diffText).toContain("Code: use strict;[+ // so strict]");
       expect(diffText).toContain("Removed trigger \"C\"");
       expect(diffText).toContain("Added trigger \".+\"");
@@ -447,7 +445,7 @@ describe('BehaviorGroupVersion', () => {
       expect(diffText).toContain("Modified library \"some-lib\":");
       expect(diffText).toContain("Name: some-lib[+-revised]");
       expect(diffText).toContain("Description: A library[+ (revised)]");
-      expect(diffText).toContain("Code: return \"foo\"[+;]");
+      expect(diffText).toContain("Code: return \"foo[-\"][+\";]");
 
     });
 

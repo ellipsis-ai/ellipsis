@@ -145,7 +145,7 @@ define(function(require) {
 
     constructor(label: string, original: string, modified: string) {
       super(label, original, modified);
-      const parts = JsDiff.diffChars(original, modified, {}).map(ea => {
+      const parts = JsDiff.diffWordsWithSpace(original, modified, {}).map(ea => {
         return new TextPart(ea.value, ea.added, ea.removed);
       });
       Object.defineProperties(this, {
