@@ -1,5 +1,5 @@
 // @flow
-import type {Node, Element, ElementType} from 'react';
+import type {Node, ElementType} from 'react';
 define(function(require: (string) => *): React.ElementType {
   const React = require('react'),
     BehaviorGroup = require('../../models/behavior_group'),
@@ -7,7 +7,6 @@ define(function(require: (string) => *): React.ElementType {
     Button = require('../../form/button'),
     Editable = require('../../models/editable'),
     Formatter = require('../../lib/formatter'),
-    SidebarButton = require('../../form/sidebar_button'),
     Select = require('../../form/select'),
     diffs = require('../../models/diffs'),
     autobind = require('../../lib/autobind');
@@ -24,6 +23,17 @@ define(function(require: (string) => *): React.ElementType {
   type State = {
     selectedMenuItem: string,
     diffFromSelectedToCurrent: boolean
+  }
+
+  type GroupedVersion = {
+    key: string,
+    label: string,
+    version: BehaviorGroup
+  }
+
+  type VersionGroup = {
+    label: string,
+    versions: Array<GroupedVersion>
   }
 
   class VersionBrowser extends React.Component<Props> {
@@ -57,13 +67,9 @@ define(function(require: (string) => *): React.ElementType {
       return this.props.versions[1];
     }
 
-    nameForVersion(version: BehaviorGroup, index: number): string {
-      const author = version.author ? `by ${version.author.formattedName()}` : "";
-      if (index === 1) {
-        return `Most recently saved (${author})`;
-      } else {
-        return `${Formatter.formatTimestampShort(version.createdAt)} ${author}`;
-      }
+    authorForVersion(version: BehaviorGroup): string {
+      const isCurrentUser = version.author && version.author.id === this.props.currentUserId;
+      return version.author ? `by ${isCurrentUser ? "you" : version.author.formattedName()}` : "";
     }
 
     shortNameForVersion(version: BehaviorGroup, index: number): string {
@@ -74,24 +80,52 @@ define(function(require: (string) => *): React.ElementType {
       }
     }
 
+    getGroupedVersions(versions: Array<BehaviorGroup>): Array<VersionGroup> {
+      const groups: Array<VersionGroup> = [];
+      versions.forEach((version, versionIndex) => {
+        if (versionIndex === 1) {
+          groups.push({
+            label: `Most recent saved version (${this.authorForVersion(version)})`,
+            versions: [{
+              label: Formatter.formatTimestampShort(version.createdAt),
+              key: "version1",
+              version: version
+            }]
+          });
+        } else if (versionIndex > 1) {
+          const author = version.author;
+          const day = Formatter.formatTimestampDate(version.createdAt);
+          const prevVersion = versions[versionIndex - 1];
+          const prevAuthor = prevVersion && prevVersion.author;
+          const prevDay = prevVersion && Formatter.formatTimestampDate(prevVersion.createdAt);
+          const groupedVersion = {
+            label: Formatter.formatTimestampShort(version.createdAt),
+            key: `version${versionIndex}`,
+            version: version
+          };
+          if (versionIndex > 2 && author.isSameUser(prevAuthor) && day === prevDay) {
+            const lastGroup = groups[groups.length - 1];
+            lastGroup.versions.push(groupedVersion);
+          } else {
+            groups.push({
+              label: `Saved on ${day} ${this.authorForVersion(version)}`,
+              versions: [groupedVersion]
+            });
+          }
+        }
+      });
+      return groups;
+    }
+
     renderVersionOptions(): Node {
       if (this.props.versions.length > 1) {
-        return (
-          <optgroup label="Local versions">
-            {this.props.versions.map((version: BehaviorGroup, index: number): ?Element<SidebarButton> => {
-              if (index === 0) {
-                return null;
-              } else {
-                const key = `version${index}`;
-                return (
-                  <option key={key} value={key}>
-                    {this.nameForVersion(version, index)}
-                  </option>
-                );
-              }
-            })}
+        return this.getGroupedVersions(this.props.versions).map((versionGroup, groupIndex) => (
+          <optgroup label={versionGroup.label} key={`versionGroup${groupIndex}`}>
+            {versionGroup.versions.map((groupedVersion) => (
+              <option key={groupedVersion.key} value={groupedVersion.key}>{groupedVersion.label}</option>
+            ))}
           </optgroup>
-        );
+        ));
       } else {
         return (
           <option className="pulse type-disabled" value="loading">Loading versions…</option>
@@ -190,7 +224,7 @@ define(function(require: (string) => *): React.ElementType {
       );
     }
 
-    renderRevertButton(): React.Node {
+    renderRevertButton(): ElementType {
       const index = this.getSelectedVersionIndex();
       const selectedVersion = this.getVersionIndex(index);
       if (selectedVersion && !selectedVersion.isIdenticalTo(this.props.currentGroup)) {
