@@ -449,13 +449,18 @@ case class BehaviorBackedDataType(dataTypeConfig: DataTypeConfig) extends Behavi
   private def extractValidValueFrom(json: JsValue): Option[ValidValue] = {
     json.validate[ValidValue] match {
       case JsSuccess(data, _) => Some(data)
-      case e: JsError => None
+      case _: JsError => None
     }
   }
 
   private def extractValidValues(result: SuccessResult): Seq[ValidValue] = {
-    result.result.as[Seq[JsObject]].flatMap { ea =>
-      extractValidValueFrom(ea)
+    result.result.validate[Seq[JsObject]] match {
+      case JsSuccess(data, _) => {
+        data.flatMap { ea =>
+          extractValidValueFrom(ea)
+        }
+      }
+      case _: JsError => Seq()
     }
   }
 
