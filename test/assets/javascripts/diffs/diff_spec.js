@@ -1,5 +1,6 @@
 window.crypto = require('./../../../mocks/mock_window_crypto');
 const BehaviorGroup = require('../../../../app/assets/javascripts/models/behavior_group');
+const diffs = require('../../../../app/assets/javascripts/models/diffs');
 
 const teamId = 'team123456';
 const groupId = 'group123456';
@@ -173,14 +174,14 @@ const behaviorGroupVersion2 = Object.freeze({
   libraryVersions: [libraryVersion2]
 });
 
-describe('BehaviorGroupVersion', () => {
+describe('diffs', () => {
 
   describe('maybeDiffFor', () => {
 
-    it('builds the correct diff', () => {
+    it('builds the correct diff for a behavior group', () => {
       const version1 = BehaviorGroup.fromJson(behaviorGroupVersion1);
       const version2 = BehaviorGroup.fromJson(behaviorGroupVersion2);
-      const maybeDiff = version1.maybeDiffFor(version2);
+      const maybeDiff = diffs.maybeDiffFor(version1, version2);
       expect(maybeDiff).toBeTruthy();
       const diffText = maybeDiff.displayText();
 
@@ -221,7 +222,7 @@ describe('BehaviorGroupVersion', () => {
           },
           {
             "isCode": false,
-            "label": "Icon",
+            "label": "Skill icon",
             "modified": "",
             "original": "🚀",
             "parts": [

@@ -157,8 +157,8 @@ define(function(require: (string) => *): React.ElementType {
       // original.maybeDiffFor(modified) shows changes from original to modified
       if (selectedVersion) {
         return this.state.diffFromSelectedToCurrent ?
-          selectedVersion.maybeDiffFor(this.props.currentGroup) :
-          this.props.currentGroup.maybeDiffFor(selectedVersion);
+          diffs.maybeDiffFor(selectedVersion, this.props.currentGroup) :
+          diffs.maybeDiffFor(this.props.currentGroup, selectedVersion);
       } else {
         return null;
       }

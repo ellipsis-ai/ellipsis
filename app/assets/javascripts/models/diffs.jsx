@@ -1,30 +1,37 @@
 // @flow
 
+/* eslint-disable no-use-before-define */
 export interface Diff {
   displayText(): string;
   summaryText(): string;
 }
 
-type DiffableParent<T> = {
-  mine: T,
-  other: T
-};
+// TODO: This is a hack since we can't import BehaviorGroup here or inside BehaviorVersion (because it would be a circular dependency)
+export interface HasInputs {
+  getInputs<T>(): Array<T>
+}
+
+export type DiffableProp = {
+  name: string,
+  value: Array<Diffable> | string | boolean,
+  parent?: HasInputs,
+  isCategorical?: boolean,
+  isCode?: boolean
+}
 
 export interface Diffable {
   diffLabel(): string;
   getIdForDiff(): string;
-
-  // TODO: `other` should be a type that implements Diffable; using Diffable directly doesn't allow classes to override with themselves
-  // T should probably be a Diffable or HasInputs
-  maybeDiffFor<T: *>(other: *, parents?: DiffableParent<T>): ?Diff;
+  diffProps(parent?: HasInputs): Array<DiffableProp>;
 }
 
-// TODO: This is a hack since we can't import BehaviorGroup here or inside BehaviorVersion (because it would be a circular dependency)
-export interface HasInputs<T> extends Diffable {
-  getInputs(): Array<T>
-}
+export type DiffableParent = {
+  mine: HasInputs,
+  other: HasInputs
+};
 
 export type TextPartKind = "added" | "removed" | "unchanged";
+/* eslint-enable no-use-before-define */
 
 define(function(require) {
   const JsDiff = require("diff");
@@ -262,7 +269,7 @@ define(function(require) {
 
   }
 
-  function diffsFor<T: Diffable, I, P: HasInputs<I>>(originalItems: Array<T>, newItems: Array<T>, parents?: DiffableParent<P>): Array<Diff> {
+  function diffsFor<T: Diffable>(originalItems: Array<T>, newItems: Array<T>, parents?: DiffableParent): Array<Diff> {
     const originalIds = originalItems.map(ea => ea.getIdForDiff());
     const newIds = newItems.map(ea => ea.getIdForDiff());
 
@@ -291,7 +298,7 @@ define(function(require) {
       const originalItem = originalItems.find(ea => ea.getIdForDiff() === eaId);
       const newItem = newItems.find(ea => ea.getIdForDiff() === eaId);
       if (originalItem && newItem) {
-        const diff = originalItem.maybeDiffFor(newItem, parents);
+        const diff = maybeDiffFor(originalItem, newItem, parents);
         if (diff) {
           modified.push(diff);
         }
@@ -301,8 +308,41 @@ define(function(require) {
     return added.concat(removed.concat(modified));
   }
 
+  function maybeDiffFor(original: Diffable, modified: Diffable, parents?: DiffableParent): ?Diff {
+    const diffProps = parents ? original.diffProps(parents.mine) : original.diffProps();
+    const diffs = diffProps.map((originalProp) => {
+      const originalValue = originalProp.value;
+      const modifiedProps = parents ? modified.diffProps(parents.other) : modified.diffProps();
+      const modifiedProp = modifiedProps.find((otherProp) => otherProp.name === originalProp.name);
+      const modifiedValue = modifiedProp ? modifiedProp.value : null;
+      if (typeof originalValue === "string") {
+        const modifiedString = modifiedValue ? String(modifiedValue) : "";
+        if (originalProp.isCategorical) {
+          return CategoricalPropertyDiff.maybeFor(originalProp.name, originalValue, String(modifiedString));
+        } else {
+          return TextPropertyDiff.maybeFor(originalProp.name, originalValue, modifiedString, { isCode: originalProp.isCode || false });
+        }
+      } else if (typeof originalValue === "boolean") {
+        return BooleanPropertyDiff.maybeFor(originalProp.name, originalValue, Boolean(modifiedValue));
+      } else if (Array.isArray(originalValue)) {
+        const modifiedArray = Array.isArray(modifiedValue) ? modifiedValue : [];
+        const propParents = originalProp.parent && modifiedProp && modifiedProp.parent ? { mine: originalProp.parent, other: modifiedProp.parent } : undefined;
+        return diffsFor(originalValue, modifiedArray, propParents);
+      } else {
+        return null;
+      }
+    }).reduce((a, b) => {
+      return b ? a.concat(b) : a;
+    }, []);
+    if (diffs.length === 0) {
+      return null;
+    } else {
+      return new ModifiedDiff(diffs, original, modified);
+    }
+  }
+
   return {
-    diffsFor: diffsFor,
+    maybeDiffFor: maybeDiffFor,
     AddedOrRemovedDiff: AddedOrRemovedDiff,
     AddedDiff: AddedDiff,
     BooleanPropertyDiff: BooleanPropertyDiff,
