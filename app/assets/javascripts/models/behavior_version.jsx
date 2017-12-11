@@ -90,17 +90,17 @@ define(function(require) {
     diffProps(parent?: HasInputs): Array<DiffableProp> {
       return [{
         name: "Name",
-        value: this.name || ""
+        value: this.getName()
       }, {
         name: "Description",
-        value: this.description || ""
+        value: this.getDescription()
       }, {
         name: "Response template",
         value: this.responseTemplateText(),
         isCode: true
       }, {
         name: "Code",
-        value: this.functionBody,
+        value: this.getFunctionBody(),
         isCode: true
       }, {
         name: "Always responds privately",
@@ -110,7 +110,7 @@ define(function(require) {
         value: this.dataTypeUsesCode()
       }, {
         name: "Triggers",
-        value: this.triggers
+        value: this.getTriggers()
       }, {
         name: "Inputs",
         value: this.inputsFor(parent)
