@@ -1,10 +1,9 @@
 // @flow
 
-import type {HasInputs} from './diffs';
+import type {Diffable, HasInputs, DiffableProp} from './diffs';
 
 define(function(require) {
   const BehaviorVersion = require('./behavior_version');
-  const diffs = require('./diffs');
   const Editable = require('./editable');
   const LibraryVersion = require('./library_version');
   const Input = require('./input');
@@ -16,7 +15,7 @@ define(function(require) {
 
   const ONE_MINUTE = 60000;
 
-  class BehaviorGroup implements HasInputs<Input> {
+  class BehaviorGroup implements Diffable, HasInputs {
     id: string;
     teamId: string;
     name: ?string;
@@ -225,27 +224,32 @@ define(function(require) {
     }
 
     diffLabel(): string {
-      return "skill";
+      const name = this.getName();
+      return name ? `skill “${name}”` : `untitled skill`;
     }
 
     getIdForDiff(): string {
       return this.id;
     }
 
-    maybeDiffFor(other: BehaviorGroup): ?diffs.ModifiedDiff<BehaviorGroup> {
-      const behaviorVersionDiffs = diffs.diffsFor(this.behaviorVersions, other.behaviorVersions, { mine: this, other: other });
-      const libraryDiffs = diffs.diffsFor(this.libraryVersions, other.libraryVersions);
-      const simpleDiffs = [
-        diffs.TextPropertyDiff.maybeFor("Skill name", this.name, other.name),
-        diffs.TextPropertyDiff.maybeFor("Skill description", this.description, other.description),
-        diffs.TextPropertyDiff.maybeFor("Icon", this.icon, other.icon)
-      ].filter(ea => Boolean(ea));
-      const children = simpleDiffs.concat(behaviorVersionDiffs).concat(libraryDiffs);
-      if (children.length === 0) {
-        return null;
-      } else {
-        return new diffs.ModifiedDiff(children, this, other);
-      }
+    diffProps(): Array<DiffableProp> {
+      return [{
+        name: "Skill name",
+        value: this.name || ""
+      }, {
+        name: "Skill description",
+        value: this.description || ""
+      }, {
+        name: "Skill icon",
+        value: this.icon || ""
+      }, {
+        name: "Actions and data types",
+        value: this.behaviorVersions,
+        parent: this
+      }, {
+        name: "Libraries",
+        value: this.libraryVersions
+      }];
     }
 
     static fromProps(props): BehaviorGroup {
