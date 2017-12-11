@@ -238,7 +238,7 @@ define(function(require) {
         value: this.name || ""
       }, {
         name: "Skill description",
-        value: this.description || ""
+        value: this.getDescription()
       }, {
         name: "Skill icon",
         value: this.icon || ""
