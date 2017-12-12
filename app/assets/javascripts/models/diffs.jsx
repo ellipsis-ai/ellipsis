@@ -167,9 +167,88 @@ define(function(require) {
 
   }
 
+  type LinesOfTextParts = Array<Array<TextPart>>;
+
   type TextPropertyOptions = {
     isCode?: boolean
   };
+
+  class MultiLineTextPropertyDiff extends PropertyDiff<string> {
+    lines: LinesOfTextParts;
+    isCode: boolean;
+
+    constructor(label: string, original: string, modified: string, options?: TextPropertyOptions) {
+      super(label, original, modified);
+      const parts = JsDiff.diffWordsWithSpace(original, modified, {});
+      const lines = [[]];
+      parts.forEach((part) => {
+        const partLines = part.value.split("\n");
+        const lastLineIndex = Math.max(lines.length - 1);
+        lines[lastLineIndex].push(new TextPart(partLines[0], part.added, part.removed));
+        partLines.slice(1).forEach((line) => {
+          lines.push([new TextPart(line, part.added, part.removed)]);
+        });
+      });
+      Object.defineProperties(this, {
+        lines: { value: lines, enumerable: true },
+        isCode: { value: Boolean(options && options.isCode), enumerable: true }
+      });
+    }
+
+    getUnifiedLines(): LinesOfTextParts {
+      return this.lines;
+    }
+
+    getOriginalLines(): LinesOfTextParts {
+      return this.lines.map((line) => line.filter((part) => !part.isAdded()));
+    }
+
+    getModifiedLines(): LinesOfTextParts {
+      return this.lines.map((line) => line.filter((part) => !part.isRemoved()));
+    }
+
+    getTextChangeType(): string {
+      const hasAddedParts = this.lines.some((line) => line.some((part) => part.isAdded()));
+      const hasRemovedParts = this.lines.some((line) => line.some((part) => part.isRemoved()));
+      if (hasAddedParts && hasRemovedParts) {
+        return "changed";
+      } else if (hasAddedParts) {
+        return "added";
+      } else if (hasRemovedParts) {
+        return "removed";
+      } else {
+        return "unchanged";
+      }
+    }
+
+    displayText(): string {
+      return this.lines.map((line) => {
+        return line.map((part) => {
+          if (part.isAdded()) {
+            return `[+${part.value}]`;
+          } else if (part.isRemoved()) {
+            return `[-${part.value}]`;
+          } else {
+            return part.value;
+          }
+        }).join("");
+      }).join("\n");
+    }
+
+    summaryText(): string {
+      return `${this.label} ${this.getTextChangeType()}`;
+    }
+
+    static maybeFor(label: string, maybeOriginal: ?string, maybeModified: ?string, options?: TextPropertyOptions): ?MultiLineTextPropertyDiff {
+      const original = maybeOriginal || "";
+      const modified = maybeModified || "";
+      if (original === modified) {
+        return null;
+      } else {
+        return new MultiLineTextPropertyDiff(label, original, modified, options);
+      }
+    }
+  }
 
   class TextPropertyDiff extends PropertyDiff<string> {
     parts: Array<TextPart>;
@@ -332,7 +411,7 @@ define(function(require) {
         const modifiedString = modifiedValue ? String(modifiedValue) : "";
         return originalProp.isCategorical ?
           CategoricalPropertyDiff.maybeFor(propName, originalValue, modifiedString) :
-          TextPropertyDiff.maybeFor(propName, originalValue, modifiedString, { isCode: Boolean(originalProp.isCode) });
+          MultiLineTextPropertyDiff.maybeFor(propName, originalValue, modifiedString, { isCode: Boolean(originalProp.isCode) });
       } else if (typeof originalValue === "boolean") {
         return BooleanPropertyDiff.maybeFor(propName, originalValue, Boolean(modifiedValue));
       } else if (Array.isArray(originalValue)) {
@@ -360,6 +439,7 @@ define(function(require) {
     ModifiedDiff: ModifiedDiff,
     TextPart: TextPart,
     TextPropertyDiff: TextPropertyDiff,
+    MultiLineTextPropertyDiff: MultiLineTextPropertyDiff,
     constants: {
       TEXT_ADDED: TEXT_ADDED,
       TEXT_REMOVED: TEXT_REMOVED,

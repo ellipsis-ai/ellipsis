@@ -12,7 +12,8 @@ define(function(require) {
     autobind = require('../../lib/autobind'),
     AddedOrRemovedDiff = diffs.AddedOrRemovedDiff,
     ModifiedDiff = diffs.ModifiedDiff,
-    TextPropertyDiff = diffs.TextPropertyDiff;
+    TextPropertyDiff = diffs.TextPropertyDiff,
+    MultiLineTextPropertyDiff = diffs.MultiLineTextPropertyDiff;
 
   type Props = {
     diff: ModifiedDiff<BehaviorGroup>
@@ -28,10 +29,10 @@ define(function(require) {
       autobind(this);
     }
 
-    renderTextDiff(diff: TextPropertyDiff, index: number, className: ?string): ElementType {
+    renderTextDiff(diff: MultiLineTextPropertyDiff, index: number, className: ?string): ElementType {
       return (
         <DiffItem className={className} key={`diff${index}`} label={`${diff.label} changed:`}>
-          <TextDiff parts={diff.parts} isCode={diff.isCode} className="bg-white mbneg1" />
+          <TextDiff diff={diff} className="bg-white mbneg1" />
         </DiffItem>
       );
     }
@@ -45,7 +46,7 @@ define(function(require) {
     }
 
     renderSingleDiff(diff: Diff, index: number, childClassName: ?string): React.Node {
-      if (diff instanceof TextPropertyDiff) {
+      if (diff instanceof MultiLineTextPropertyDiff) {
         return this.renderTextDiff(diff, index, childClassName);
       } else {
         return this.renderAddedRemovedModifiedDiff(diff, index, childClassName);
