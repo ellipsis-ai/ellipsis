@@ -38,37 +38,30 @@ define(function(require) {
 
     renderAddedRemovedModifiedDiff(diff: AddedRemovedModifiedDiff, index: number, className: ?string): ElementType {
       return (
-        <DiffItem className={className} key={`diff${index}`} label={this.getLabelForDiff(diff)}>
-          {this.renderDiffDetails(diff)}
+        <DiffItem className={className} key={`diff${index}`} label={diff.summaryText()}>
+          {this.renderDiffChildren(diff)}
         </DiffItem>
       );
     }
 
-    getLabelForDiff(diff: AddedRemovedModifiedDiff): React.Node {
-      return diff.summaryText();
+    renderSingleDiff(diff: Diff, index: number, childClassName: ?string): React.Node {
+      if (diff instanceof TextPropertyDiff) {
+        return this.renderTextDiff(diff, index, childClassName);
+      } else {
+        return this.renderAddedRemovedModifiedDiff(diff, index, childClassName);
+      }
     }
 
-    renderDiffDetails(diff: Diff, childClassName: ?string): React.Node {
+    renderDiffChildren(diff: Diff, childClassName: ?string): React.Node {
       if (diff instanceof ModifiedDiff) {
-        const children = diff.children;
-        return (
-          <div>
-            {children.map((ea, index) => {
-              if (ea instanceof TextPropertyDiff) {
-                return this.renderTextDiff(ea, index, childClassName);
-              } else {
-                return this.renderAddedRemovedModifiedDiff(ea, index, childClassName);
-              }
-            })}
-          </div>
-        );
+        return diff.children.map((ea, index) => this.renderSingleDiff(ea, index, childClassName));
       }
     }
 
     render(): React.Node {
       return (
         <div>
-          {this.renderDiffDetails(this.props.diff, "pal border mbneg1 bg-white")}
+          {this.renderDiffChildren(this.props.diff, "pal border mbneg1 bg-white")}
         </div>
       );
     }
