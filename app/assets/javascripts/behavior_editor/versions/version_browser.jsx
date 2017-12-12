@@ -52,7 +52,7 @@ define(function(require: (string) => *): React.ElementType {
     componentWillReceiveProps(nextProps: Props): void {
       if (nextProps.versions.length !== this.props.versions.length) {
         this.setState({
-          selectedMenuItem: nextProps.versions.length > 1 ? "version1" : "loading"
+          selectedMenuItem: nextProps.versions.length > 0 ? "version0" : "loading"
         });
       }
     }
@@ -64,7 +64,7 @@ define(function(require: (string) => *): React.ElementType {
     }
 
     getLastSavedVersion(): ?BehaviorGroup {
-      return this.props.versions[1];
+      return this.props.versions[0];
     }
 
     authorForVersion(version: BehaviorGroup): string {
@@ -73,7 +73,7 @@ define(function(require: (string) => *): React.ElementType {
     }
 
     shortNameForVersion(version: BehaviorGroup, index: number): string {
-      if (index === 1) {
+      if (index === 0) {
         return `last saved version`;
       } else {
         return `${Formatter.formatTimestampShort(version.createdAt)}`;
@@ -83,16 +83,16 @@ define(function(require: (string) => *): React.ElementType {
     getGroupedVersions(versions: Array<BehaviorGroup>): Array<VersionGroup> {
       const groups: Array<VersionGroup> = [];
       versions.forEach((version, versionIndex) => {
-        if (versionIndex === 1) {
+        if (versionIndex === 0) {
           groups.push({
             label: `Most recent saved version (${this.authorForVersion(version)})`,
             versions: [{
               label: Formatter.formatTimestampShort(version.createdAt),
-              key: "version1",
+              key: "version0",
               version: version
             }]
           });
-        } else if (versionIndex > 1) {
+        } else if (versionIndex > 0) {
           const author = version.author;
           const day = Formatter.formatTimestampDate(version.createdAt);
           const prevVersion = versions[versionIndex - 1];
@@ -103,7 +103,7 @@ define(function(require: (string) => *): React.ElementType {
             key: `version${versionIndex}`,
             version: version
           };
-          if (versionIndex > 2 && author.isSameUser(prevAuthor) && day === prevDay) {
+          if (versionIndex > 1 && author.isSameUser(prevAuthor) && day === prevDay) {
             const lastGroup = groups[groups.length - 1];
             lastGroup.versions.push(groupedVersion);
           } else {
@@ -118,7 +118,7 @@ define(function(require: (string) => *): React.ElementType {
     }
 
     renderVersionOptions(): Node {
-      if (this.props.versions.length > 1) {
+      if (this.props.versions.length > 0) {
         return this.getGroupedVersions(this.props.versions).map((versionGroup, groupIndex) => (
           <optgroup label={versionGroup.label} key={`versionGroup${groupIndex}`}>
             {versionGroup.versions.map((groupedVersion) => (
@@ -144,7 +144,7 @@ define(function(require: (string) => *): React.ElementType {
     }
 
     getVersionIndex(index: number): ?BehaviorGroup {
-      return this.props.versions[index] || this.props.currentGroup;
+      return this.props.versions[index];
     }
 
     invertDiffDirection(): void {
@@ -175,7 +175,7 @@ define(function(require: (string) => *): React.ElementType {
       const diff = this.getDiffForSelectedVersion(selectedVersion);
       return (
         <div>
-          {selectedVersion && versionIndex > 0 ? (
+          {selectedVersion ? (
             <div>
               <h4>Differences</h4>
 

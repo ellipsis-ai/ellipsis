@@ -856,7 +856,7 @@ const BehaviorEditor = React.createClass({
           return BehaviorGroup.fromJson(version);
         });
         this.setState({
-          versions: this.state.versions.concat(versions),
+          versions: versions,
           versionsLoadStatus: 'loaded'
         });
         this.refs.versionsPanel.reset();
@@ -1065,11 +1065,8 @@ const BehaviorEditor = React.createClass({
       selectedIdAfter = selectedIdBefore;
     }
 
-    const updatedVersions = ImmutableObjectUtils.arrayWithNewElementAtIndex(this.state.versions, timestampedGroup, 0);
-
     this.setState({
       group: timestampedGroup,
-      versions: updatedVersions,
       selectedId: selectedIdAfter
     }, () => {
       if (callback) {
@@ -1712,7 +1709,7 @@ const BehaviorEditor = React.createClass({
       envVariables: this.getInitialEnvVariables(),
       hasModifiedTemplate: hasModifiedTemplate,
       notifications: this.buildNotifications(),
-      versions: [this.props.group.copyWithNewTimestamp()],
+      versions: [],
       versionsLoadStatus: null,
       onNextNewEnvVar: null,
       envVariableAdderPrompt: null,
@@ -1740,7 +1737,7 @@ const BehaviorEditor = React.createClass({
       var newGroup = nextProps.group;
       var newState = {
         group: newGroup,
-        versions: [newGroup.copyWithNewTimestamp()],
+        versions: [],
         versionsLoadStatus: null,
         error: null
       };
