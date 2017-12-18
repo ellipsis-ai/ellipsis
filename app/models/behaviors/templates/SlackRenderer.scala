@@ -82,7 +82,7 @@ class SlackRenderer(stringBuilder: StringBuilder) extends AbstractVisitor {
   }
 
   override def visit(html: HtmlInline) {
-    stringBuilder.append(html.getLiteral)
+    stringBuilder.append(escapeControlEntities(html.getLiteral))
     visitChildren(html)
   }
 
@@ -168,7 +168,7 @@ class SlackRenderer(stringBuilder: StringBuilder) extends AbstractVisitor {
     val safeText = text.getLiteral.
       replaceAll("""(\S)([*_`~])(\s|$)""", "$1\u00AD$2\u00AD$3").
       replaceAll("""(\s|^)([*_`~])(\S)""", "$1\u00AD$2\u00AD$3")
-    stringBuilder.append(safeText)
+    stringBuilder.append(escapeControlEntities(safeText))
     visitChildren(text)
   }
 
