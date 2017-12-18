@@ -79,8 +79,8 @@ jobs:
             npm test
       - restore_cache:
           keys:
-            - v9-playapp-{{ arch }}-{{ .Branch }}-{{ checksum "build.sbt" }}
-            - v9-playapp-{{ arch }}-{{ checksum "build.sbt" }}
+            - v10-playapp-{{ arch }}-{{ .Branch }}-{{ checksum "build.sbt" }}
+            - v10-playapp-{{ arch }}-{{ checksum "build.sbt" }}
       - run:
           name: Run Activator tests
           command: |
@@ -95,14 +95,14 @@ jobs:
             - .sbt
             - ~/.ivy2
             - ~/.sbt
-          key: v9-playapp-{{ arch }}-{{ .Branch }}-{{ checksum "build.sbt" }}
+          key: v10-playapp-{{ arch }}-{{ .Branch }}-{{ checksum "build.sbt" }}
       - save_cache:
           paths:
             - .ivy2
             - .sbt
             - ~/.ivy2
             - ~/.sbt
-          key: v9-playapp-{{ arch }}-{{ checksum "build.sbt" }}
+          key: v10-playapp-{{ arch }}-{{ checksum "build.sbt" }}
       - run:
           name: Maybe deploy on stag01
           command: |
