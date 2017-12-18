@@ -82,7 +82,7 @@ class SlackRenderer(stringBuilder: StringBuilder) extends AbstractVisitor {
   }
 
   override def visit(html: HtmlInline) {
-    stringBuilder.append(html.getLiteral)
+    stringBuilder.append(escapeControlEntities(html.getLiteral))
     visitChildren(html)
   }
 
