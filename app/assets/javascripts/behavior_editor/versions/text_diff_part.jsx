@@ -1,5 +1,4 @@
 // @flow
-import type {Element} from 'react';
 
 define(function(require) {
   const React = require('react'),
@@ -23,19 +22,18 @@ define(function(require) {
       }
     }
 
-    getText(): Array<Element<'span'>> {
-      const text = this.props.part.value;
-      const lines = text.split("\n");
-      return lines.map((ea, index) => (
-        <span key={`line${index}`}>{ea}{index + 1 < lines.length ? (
-          <br />
-        ) : null}</span>
-      ));
+    getText(): string {
+      return this.props.part.value;
     }
 
     render(): React.Node {
       return (
-        <span className={this.getPartClass()}>{this.getText()}</span>
+        <span className={`type-preserve-spaces ${this.getPartClass()}`}>
+          {this.getText()}
+          {this.props.part.endsWithNewLine ? (
+            <span className="type-weak">↩︎</span>
+          ) : null}
+        </span>
       );
     }
   }

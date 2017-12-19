@@ -51,7 +51,7 @@ define(function(require) {
         <div className={this.props.className || "pas border-bottom mbneg1"}>
           <div>
             {this.props.children ? (
-              <Button className="button-block" onClick={this.toggleExpanded}>
+              <Button className="button-block width-full" onClick={this.toggleExpanded}>
                 <span className="display-inline-block align-m height-xl mrs">
                   <SVGExpand expanded={this.state.expanded} />
                 </span>

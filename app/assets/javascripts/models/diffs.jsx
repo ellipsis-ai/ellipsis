@@ -140,15 +140,17 @@ define(function(require) {
   class TextPart {
     value: string;
     kind: TextPartKind;
+    endsWithNewLine: boolean;
 
-    constructor(value: string, added: ?boolean, removed: ?boolean) {
+    constructor(value: string, added: ?boolean, removed: ?boolean, endsWithNewLine: ?boolean) {
       if (added && removed) {
         throw "Can't be both added and removed";
       } else {
         const kind = added ? TEXT_ADDED : (removed ? TEXT_REMOVED : TEXT_UNCHANGED);
         Object.defineProperties(this, {
           value: { value: value, enumerable: true },
-          kind: { value: kind, enumerable: true }
+          kind: { value: kind, enumerable: true },
+          endsWithNewLine: { value: Boolean(endsWithNewLine), enumerable: true }
         });
       }
     }
@@ -184,9 +186,9 @@ define(function(require) {
       parts.forEach((part) => {
         const partLines = part.value.split("\n");
         const lastLineIndex = Math.max(lines.length - 1);
-        lines[lastLineIndex].push(new TextPart(partLines[0], part.added, part.removed));
+        lines[lastLineIndex].push(new TextPart(partLines[0], part.added, part.removed, partLines.length > 1));
         partLines.slice(1).forEach((line) => {
-          lines.push([new TextPart(line, part.added, part.removed)]);
+          lines.push([new TextPart(line, part.added, part.removed, true)]);
         });
       });
       Object.defineProperties(this, {
