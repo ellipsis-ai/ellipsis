@@ -27,12 +27,17 @@ define(function(require) {
     }
 
     render(): React.Node {
+      const pieces = this.props.part.value.split("\n");
       return (
         <span className={`type-preserve-spaces ${this.getPartClass()}`}>
-          {this.getText()}
-          {this.props.part.endsWithNewLine ? (
-            <span className="type-weak">↩︎</span>
-          ) : null}
+          {pieces.map((text, index) => (
+            <span key={`part${index}`}>
+              {text}
+              {index + 1 < pieces.length ? (
+                <span className="type-weak">↩︎</span>
+              ) : null}
+            </span>
+          ))}
         </span>
       );
     }

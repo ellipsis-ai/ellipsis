@@ -140,17 +140,15 @@ define(function(require) {
   class TextPart {
     value: string;
     kind: TextPartKind;
-    endsWithNewLine: boolean;
 
-    constructor(value: string, added: ?boolean, removed: ?boolean, endsWithNewLine: ?boolean) {
+    constructor(value: string, added: ?boolean, removed: ?boolean) {
       if (added && removed) {
         throw "Can't be both added and removed";
       } else {
         const kind = added ? TEXT_ADDED : (removed ? TEXT_REMOVED : TEXT_UNCHANGED);
         Object.defineProperties(this, {
           value: { value: value, enumerable: true },
-          kind: { value: kind, enumerable: true },
-          endsWithNewLine: { value: Boolean(endsWithNewLine), enumerable: true }
+          kind: { value: kind, enumerable: true }
         });
       }
     }
@@ -176,42 +174,92 @@ define(function(require) {
   };
 
   class MultiLineTextPropertyDiff extends PropertyDiff<string> {
-    lines: LinesOfTextParts;
+    oldLines: LinesOfTextParts;
+    newLines: LinesOfTextParts;
+    unifiedLines: LinesOfTextParts;
     isCode: boolean;
 
     constructor(label: string, original: string, modified: string, options?: TextPropertyOptions) {
       super(label, original, modified);
       const parts = JsDiff.diffWordsWithSpace(original, modified, {});
-      const lines = [[]];
+      const oldLines = [[]];
+      const newLines = [[]];
+      const unifiedLines = [[]];
+      let newLineCounter = 0;
       parts.forEach((part) => {
-        const partLines = part.value.split("\n");
-        const lastLineIndex = Math.max(lines.length - 1);
-        lines[lastLineIndex].push(new TextPart(partLines[0], part.added, part.removed, partLines.length > 1));
-        partLines.slice(1).forEach((line) => {
-          lines.push([new TextPart(line, part.added, part.removed, true)]);
+        const lines = part.value.split("\n");
+        const numNewLines = lines.length - 1;
+        const firstLine = lines[0] + (lines.length > 1 ? "\n" : "");
+        let oldLineIndex = oldLines.length - 1;
+        let newLineIndex = newLines.length - 1;
+        const unifiedLineIndex = unifiedLines.length - 1;
+        const firstPart = new TextPart(firstLine, part.added, part.removed);
+        if (!part.added) {
+          let linesMissing = 0;
+          if (part.removed) {
+            oldLines[oldLineIndex].push(firstPart);
+          }
+          if (newLineCounter > 0) {
+            linesMissing = part.removed ? newLineCounter - numNewLines : numNewLines;
+            for (let i = 0; i < linesMissing; i++) {
+              oldLines.push([]);
+              oldLineIndex++;
+            }
+          }
+          if (!part.removed) {
+            oldLines[oldLineIndex].push(firstPart);
+          }
+          if (part.removed) {
+            newLineCounter = -(numNewLines - linesMissing);
+          }
+        }
+        if (!part.removed) {
+          let linesMissing = 0;
+          if (part.added) {
+            newLines[newLineIndex].push(firstPart);
+          }
+          if (newLineCounter < 0) {
+            linesMissing = part.added ? (-newLineCounter) - numNewLines : numNewLines;
+            for (let i = 0; i < linesMissing; i++) {
+              newLines.push([]);
+              newLineIndex++;
+            }
+          }
+          if (!part.added) {
+            newLines[newLineIndex].push(firstPart);
+          }
+          if (part.added) {
+            newLineCounter = (numNewLines - linesMissing);
+          }
+        }
+        unifiedLines[unifiedLineIndex].push(firstPart);
+        if (!part.added && !part.removed) {
+          newLineCounter = 0;
+        }
+        const restOfLines = lines.slice(1);
+        restOfLines.forEach((line, index) => {
+          const text = index + 1 < restOfLines.length ? line + "\n" : line;
+          const newPart = text ? new TextPart(text, part.added, part.removed) : null;
+          if (!part.added) {
+            oldLines.push(newPart ? [newPart] : []);
+          }
+          if (!part.removed) {
+            newLines.push(newPart ? [newPart] : []);
+          }
+          unifiedLines.push(newPart ? [newPart] : []);
         });
       });
       Object.defineProperties(this, {
-        lines: { value: lines, enumerable: true },
+        oldLines: { value: oldLines, enumerable: true },
+        newLines: { value: newLines, enumerable: true },
+        unifiedLines: { value: unifiedLines, enumerable: true },
         isCode: { value: Boolean(options && options.isCode), enumerable: true }
       });
     }
 
-    getUnifiedLines(): LinesOfTextParts {
-      return this.lines;
-    }
-
-    getOriginalLines(): LinesOfTextParts {
-      return this.lines.map((line) => line.filter((part) => !part.isAdded()));
-    }
-
-    getModifiedLines(): LinesOfTextParts {
-      return this.lines.map((line) => line.filter((part) => !part.isRemoved()));
-    }
-
     getTextChangeType(): string {
-      const hasAddedParts = this.lines.some((line) => line.some((part) => part.isAdded()));
-      const hasRemovedParts = this.lines.some((line) => line.some((part) => part.isRemoved()));
+      const hasAddedParts = this.unifiedLines.some((line) => line.some((part) => part.isAdded()));
+      const hasRemovedParts = this.unifiedLines.some((line) => line.some((part) => part.isRemoved()));
       if (hasAddedParts && hasRemovedParts) {
         return "changed";
       } else if (hasAddedParts) {
@@ -224,7 +272,7 @@ define(function(require) {
     }
 
     displayText(): string {
-      return this.lines.map((line) => {
+      return this.unifiedLines.map((line) => {
         return line.map((part) => {
           if (part.isAdded()) {
             return `[+${part.value}]`;

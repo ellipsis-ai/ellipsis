@@ -22,34 +22,35 @@ define(function(require) {
       );
     }
 
-    renderLine(line: Array<TextPart>, onlyLine: boolean): React.Node {
-      const isEmpty = line.length === 0 || line.length === 1 && line[0].valueIsEmpty();
+    renderLine(line?: Array<TextPart>, onlyLine: boolean): React.Node {
+      const isEmpty = !line || line.length === 0 || line.length === 1 && line[0].valueIsEmpty();
       return (
         <div className={`type-wrap-words ${this.props.diff.isCode ? "type-monospace" : ""}`}>
           {isEmpty ?
             this.renderBlankLine(onlyLine) :
-            line.map((part, partIndex) => (
+            line && line.map((part, partIndex) => (
               <TextDiffPart key={`part${partIndex}`} part={part} />
             ))}
         </div>
       );
     }
 
-    renderLines(lines): React.Node {
-      const totalLines = lines.length;
+    renderLines(diff): React.Node {
+      const totalLines = Math.max(diff.oldLines.length, diff.newLines.length);
+      const longerSide = diff.oldLines.length > diff.newLines.length ? diff.oldLines : diff.newLines;
       const maxNumDigits = String(totalLines).length;
-      const oldIsOneLine = lines.filter((line) => line.some((part) => !part.isAdded())).length === 1;
-      const newIsOneLine = lines.filter((line) => line.some((part) => !part.isRemoved())).length === 1;
+      const oldIsOneLine = diff.oldLines.filter((line) => line.length > 0).length < 2;
+      const newIsOneLine = diff.newLines.filter((line) => line.length > 0).length < 2;
       let oldLineIndex = 0;
       let newLineIndex = 0;
-      return lines.map((line, lineIndex) => {
+      return longerSide.map((nothing, lineIndex) => {
         const isLastLine = lineIndex + 1 === totalLines;
         const lineClass = isLastLine ? "border-bottom" : "";
-        const oldLine = line.filter((part) => !part.isAdded());
-        const oldLineExists = oldLine.length > 0;
+        const oldLine = diff.oldLines[lineIndex];
+        const oldLineExists = oldLine && oldLine.length > 0;
         const oldLineNumber = oldLineExists ? Formatter.leftPad(++oldLineIndex, maxNumDigits) : "";
-        const newLine = line.filter((part) => !part.isRemoved());
-        const newLineExists = newLine.length > 0;
+        const newLine = diff.newLines[lineIndex];
+        const newLineExists = newLine && newLine.length > 0;
         const newLineNumber = newLineExists ? Formatter.leftPad(++newLineIndex, maxNumDigits) : "";
         return (
           <div key={`line${lineIndex}`} className="column-row">
@@ -79,7 +80,7 @@ define(function(require) {
         <div className={this.props.className || ""}>
           <div className="columns columns-elastic">
             <div className="column-group">
-              {this.renderLines(this.props.diff.lines)}
+              {this.renderLines(this.props.diff)}
             </div>
           </div>
         </div>
