@@ -151,7 +151,7 @@ define(function(require) {
     }
 
     getIdForDiff(): string {
-      return this.behaviorId;
+      return this.config.exportId;
     }
 
     isBehaviorVersion(): boolean {

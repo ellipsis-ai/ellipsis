@@ -43,7 +43,7 @@ define(function(require) {
     }
 
     getIdForDiff(): string {
-      return this.libraryId;
+      return this.exportId;
     }
 
     diffProps(): Array<DiffableProp> {
