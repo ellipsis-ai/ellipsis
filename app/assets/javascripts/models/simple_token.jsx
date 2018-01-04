@@ -11,7 +11,7 @@ define(function(require) {
 
     diffProps(): Array<DiffableProp> {
       return [{
-        name: "Name in code",
+        name: "Name used in code",
         value: this.nameInCode || ""
       }];
     }

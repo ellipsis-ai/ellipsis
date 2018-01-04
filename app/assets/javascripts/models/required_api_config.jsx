@@ -17,6 +17,10 @@ define(function() {
       });
     }
 
+    diffLabel(): string {
+      return `required ${this.apiId} configuration "${this.nameInCode}"`;
+    }
+
     getIdForDiff(): string {
       return this.requiredId;
     }

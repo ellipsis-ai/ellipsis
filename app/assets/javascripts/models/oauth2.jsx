@@ -18,10 +18,10 @@ define(function(require) {
 
     diffProps(): Array<DiffableProp> {
       return [{
-        name: "Name in code",
+        name: "Name used in code",
         value: this.nameInCode || ""
       }, {
-        name: "Configuration to user",
+        name: "Configuration to use",
         value: this.configName()
       }, {
         name: "Recommended scope",
