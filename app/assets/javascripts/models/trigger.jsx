@@ -1,11 +1,8 @@
 // @flow
 
-import type {Diff, Diffable} from "./diffs";
+import type {Diffable, DiffableProp} from "./diffs";
 
-define(function(require) {
-  const DeepEqual = require('../lib/deep_equal');
-  const diffs = require('./diffs');
-
+define(function() {
   class Trigger implements Diffable {
     text: string;
     isRegex: boolean;
@@ -41,23 +38,21 @@ define(function(require) {
     }
 
     diffLabel(): string {
-      return `trigger "${this.text}"`;
+      return `trigger “${this.text}”`;
     }
 
     getIdForDiff(): string {
       return this.text;
     }
 
-    maybeDiffFor(other: Trigger): ?diffs.ModifiedDiff<Trigger> {
-      const children: Array<Diff> = [
-        diffs.BooleanPropertyDiff.maybeFor("Treat as regex", this.isRegex, other.isRegex),
-        diffs.BooleanPropertyDiff.maybeFor("Require bot mention", this.requiresMention, other.requiresMention)
-      ].filter(ea => Boolean(ea));
-      if (children.length === 0) {
-        return null;
-      } else {
-        return new diffs.ModifiedDiff(children, this, other);
-      }
+    diffProps(): Array<DiffableProp> {
+      return [{
+        name: "Treat as regex pattern",
+        value: this.isRegex
+      }, {
+        name: "Require user to mention Ellipsis",
+        value: this.requiresMention
+      }];
     }
 
     getText(): string {
