@@ -12,7 +12,6 @@ define(function(require) {
     autobind = require('../../lib/autobind'),
     AddedOrRemovedDiff = diffs.AddedOrRemovedDiff,
     ModifiedDiff = diffs.ModifiedDiff,
-    TextPropertyDiff = diffs.TextPropertyDiff,
     MultiLineTextPropertyDiff = diffs.MultiLineTextPropertyDiff;
 
   type Props = {

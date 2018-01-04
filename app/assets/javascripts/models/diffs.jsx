@@ -196,18 +196,13 @@ define(function(require) {
         const firstPart = new TextPart(firstLine, part.added, part.removed);
         if (!part.added) {
           let linesMissing = 0;
-          if (part.removed) {
-            oldLines[oldLineIndex].push(firstPart);
-          }
+          oldLines[oldLineIndex].push(firstPart);
           if (newLineCounter > 0) {
-            linesMissing = part.removed ? newLineCounter - numNewLines : numNewLines;
+            linesMissing = part.removed ? newLineCounter - numNewLines : newLineCounter;
             for (let i = 0; i < linesMissing; i++) {
               oldLines.push([]);
               oldLineIndex++;
             }
-          }
-          if (!part.removed) {
-            oldLines[oldLineIndex].push(firstPart);
           }
           if (part.removed) {
             newLineCounter = -(numNewLines - linesMissing);
@@ -215,18 +210,13 @@ define(function(require) {
         }
         if (!part.removed) {
           let linesMissing = 0;
-          if (part.added) {
-            newLines[newLineIndex].push(firstPart);
-          }
+          newLines[newLineIndex].push(firstPart);
           if (newLineCounter < 0) {
-            linesMissing = part.added ? (-newLineCounter) - numNewLines : numNewLines;
+            linesMissing = part.added ? (-newLineCounter) - numNewLines : (-newLineCounter);
             for (let i = 0; i < linesMissing; i++) {
               newLines.push([]);
               newLineIndex++;
             }
-          }
-          if (!part.added) {
-            newLines[newLineIndex].push(firstPart);
           }
           if (part.added) {
             newLineCounter = (numNewLines - linesMissing);
@@ -272,7 +262,7 @@ define(function(require) {
     }
 
     displayText(): string {
-      return this.unifiedLines.map((line) => {
+      const diff = this.unifiedLines.map((line) => {
         return line.map((part) => {
           if (part.isAdded()) {
             return `[+${part.value}]`;
@@ -283,6 +273,7 @@ define(function(require) {
           }
         }).join("");
       }).join("\n");
+      return `${this.label}: ${diff}`;
     }
 
     summaryText(): string {
@@ -296,64 +287,6 @@ define(function(require) {
         return null;
       } else {
         return new MultiLineTextPropertyDiff(label, original, modified, options);
-      }
-    }
-  }
-
-  class TextPropertyDiff extends PropertyDiff<string> {
-    parts: Array<TextPart>;
-    isCode: boolean;
-
-    constructor(label: string, original: string, modified: string, options?: TextPropertyOptions) {
-      super(label, original, modified);
-      const parts = JsDiff.diffWordsWithSpace(original, modified, {}).map(ea => {
-        return new TextPart(ea.value, ea.added, ea.removed);
-      });
-      Object.defineProperties(this, {
-        parts: { value: parts, enumerable: true },
-        isCode: { value: Boolean(options && options.isCode), enumerable: true }
-      });
-    }
-
-    displayText(): string {
-      const partsString = this.parts.map(ea => {
-        const text = ea.value;
-        if (ea.isAdded()) {
-          return `[+${text}]`;
-        } else if (ea.isRemoved()) {
-          return `[-${text}]`;
-        } else {
-          return text;
-        }
-      }).join("");
-      return `${this.label}: ${partsString}`;
-    }
-
-    getTextChangeType(): string {
-      const hasAddedParts = this.parts.some((ea) => ea.isAdded());
-      const hasRemovedParts = this.parts.some((ea) => ea.isRemoved());
-      if (hasAddedParts && hasRemovedParts) {
-        return "changed";
-      } else if (hasAddedParts) {
-        return "added";
-      } else if (hasRemovedParts) {
-        return "removed";
-      } else {
-        return "unchanged";
-      }
-    }
-
-    summaryText(): string {
-      return `${this.label} ${this.getTextChangeType()}`;
-    }
-
-    static maybeFor(label: string, maybeOriginal: ?string, maybeModified: ?string, options?: TextPropertyOptions): ?TextPropertyDiff {
-      const original = maybeOriginal || "";
-      const modified = maybeModified || "";
-      if (original === modified) {
-        return null;
-      } else {
-        return new TextPropertyDiff(label, original, modified, options);
       }
     }
   }
@@ -488,7 +421,6 @@ define(function(require) {
     RemovedDiff: RemovedDiff,
     ModifiedDiff: ModifiedDiff,
     TextPart: TextPart,
-    TextPropertyDiff: TextPropertyDiff,
     MultiLineTextPropertyDiff: MultiLineTextPropertyDiff,
     constants: {
       TEXT_ADDED: TEXT_ADDED,

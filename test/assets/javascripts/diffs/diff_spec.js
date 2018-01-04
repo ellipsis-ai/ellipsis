@@ -193,7 +193,7 @@ describe('diffs', () => {
             "label": "Skill name",
             "modified": "Some updated skill",
             "original": "Some skill",
-            "parts": [
+            "unifiedLines": [[
               {
                 "kind": "unchanged",
                 "value": "Some "
@@ -206,31 +206,31 @@ describe('diffs', () => {
                 "kind": "unchanged",
                 "value": "skill"
               }
-            ]
+            ]]
           },
           {
             "isCode": false,
             "label": "Skill description",
             "modified": "With a description",
             "original": "",
-            "parts": [
+            "unifiedLines": [[
               {
                 "kind": "added",
                 "value": "With a description"
               },
-            ],
+            ]],
           },
           {
             "isCode": false,
             "label": "Skill icon",
             "modified": "",
             "original": "🚀",
-            "parts": [
+            "unifiedLines": [[
               {
                 "kind": "removed",
                  "value": "🚀"
                }
-            ]
+            ]]
           },
           {
             "children": [
@@ -239,7 +239,7 @@ describe('diffs', () => {
                 "label": "Name",
                 "modified": "Second name",
                 "original": "First name",
-                "parts": [
+                "unifiedLines": [[
                   {
                     "kind": "removed",
                     "value": "First"
@@ -252,26 +252,26 @@ describe('diffs', () => {
                     "kind": "unchanged",
                     "value": " name"
                   }
-                ]
+                ]]
               },
               {
                 "isCode": false,
                 "label": "Description",
                 "modified": "A description",
                 "original": "",
-                "parts": [
+                "unifiedLines": [[
                   {
                     "kind": "added",
                     "value": "A description"
                   }
-                ]
+                ]]
               },
               {
                 "isCode": true,
                 "label": "Response template",
                 "modified": "Another template",
                 "original": "A template",
-                "parts": [
+                "unifiedLines": [[
                   {
                     "kind": "removed",
                     "value": "A"
@@ -284,14 +284,14 @@ describe('diffs', () => {
                     "kind": "unchanged",
                     "value": " template"
                   }
-                ]
+                ]]
               },
               {
                 "isCode": true,
                 "label": "Code",
                 "modified": "use strict; // so strict",
                 "original": "use strict;",
-                "parts": [
+                "unifiedLines": [[
                   {
                     "kind": "unchanged",
                     "value": "use strict;"
@@ -300,7 +300,7 @@ describe('diffs', () => {
                     "kind": "added",
                     "value": " // so strict"
                   }
-                ]
+                ]]
               },
               {
                 "label": "Always responds privately",
@@ -351,7 +351,7 @@ describe('diffs', () => {
                     "label": "Question",
                     "modified": "who drives the car?",
                     "original": "what drives the car?",
-                    "parts": [
+                    "unifiedLines": [[
                       {
                         "kind": "removed",
                         "value": "what"
@@ -364,7 +364,7 @@ describe('diffs', () => {
                         "kind": "unchanged",
                         "value": " drives the car?"
                       }
-                    ]
+                    ]]
                   },
                   {
                     "label": "Data type",
@@ -392,7 +392,7 @@ describe('diffs', () => {
                 "label": "Name",
                 "modified": "some-lib-revised",
                 "original": "some-lib",
-                "parts": [
+                "unifiedLines": [[
                   {
                     "kind": "unchanged",
                     "value": "some-lib"
@@ -401,14 +401,14 @@ describe('diffs', () => {
                     "kind": "added",
                     "value": "-revised"
                   }
-                ]
+                ]]
               },
               {
                 "isCode": false,
                 "label": "Description",
                 "modified": "A library (revised)",
                 "original": "A library",
-                "parts": [
+                "unifiedLines": [[
                   {
                     "kind": "unchanged",
                     "value": "A library"
@@ -417,14 +417,14 @@ describe('diffs', () => {
                     "kind": "added",
                     "value": " (revised)"
                   }
-                ]
+                ]]
               },
               {
                 "isCode": true,
                 "label": "Code",
                 "modified": "return \"foo\";",
                 "original": "return \"foo\"",
-                "parts": [
+                "unifiedLines": [[
                   {
                     "kind": "unchanged",
                     "value": "return \"foo"
@@ -437,7 +437,7 @@ describe('diffs', () => {
                     "kind": "added",
                     "value": "\";"
                   }
-                ]
+                ]]
               }
             ]
           }
