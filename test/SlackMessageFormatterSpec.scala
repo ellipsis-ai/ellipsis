@@ -24,6 +24,12 @@ class SlackMessageFormatterSpec extends PlaySpec {
       format("__this is `bold with~ special char_acters*__") mustBe "*this is \u00AD`\u00ADbold with\u00AD~\u00AD special char_acters\u00AD*\u00AD*"
     }
 
+    "escape any lingering < > & characters in non-formatted text" in {
+      format("__1 is < than 2 & 4 > 3__") mustBe "*1 is &lt; than 2 &amp; 4 &gt; 3*"
+      format("[This is a <special> link](http://special.com)") mustBe "<http://special.com|This is a &lt;special&gt; link>"
+      format("[This is a \\<special\\> link](http://special.com)") mustBe "<http://special.com|This is a &lt;special&gt; link>"
+    }
+
   }
 
 }

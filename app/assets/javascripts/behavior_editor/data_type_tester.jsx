@@ -35,7 +35,14 @@ define(function(require) {
 
     getParsedResponse: function(result) {
       try {
-        return JSON.parse(result.responseText);
+        const parsed = JSON.parse(result.responseText);
+        if (parsed.every(ea => typeof ea === "string")) {
+          return parsed.map(ea => {
+            return { label: ea, id: ea };
+          });
+        } else {
+          return parsed;
+        }
       } catch(e) {
         return null;
       }

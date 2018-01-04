@@ -72,6 +72,21 @@ class BehaviorGroupImportExportSpec extends DBSpec {
 
   "BehaviorGroupExporter" should {
 
+    "should allow an optional parent directory in the path" in {
+      BehaviorGroupZipImporter.versionFileRegex.findFirstMatchIn("actions/foo/bar").isDefined mustBe true
+      BehaviorGroupZipImporter.versionFileRegex.findFirstMatchIn("skill/actions/foo/bar").isDefined mustBe true
+      BehaviorGroupZipImporter.readmeRegex.findFirstMatchIn("README").isDefined mustBe true
+      BehaviorGroupZipImporter.readmeRegex.findFirstMatchIn("skill/README").isDefined mustBe true
+      BehaviorGroupZipImporter.configRegex.findFirstMatchIn("config.json").isDefined mustBe true
+      BehaviorGroupZipImporter.configRegex.findFirstMatchIn("skill/config.json").isDefined mustBe true
+      BehaviorGroupZipImporter.actionInputsRegex.findFirstMatchIn("action_inputs.json").isDefined mustBe true
+      BehaviorGroupZipImporter.actionInputsRegex.findFirstMatchIn("skill/action_inputs.json").isDefined mustBe true
+      BehaviorGroupZipImporter.dataTypeInputsRegex.findFirstMatchIn("data_type_inputs.json").isDefined mustBe true
+      BehaviorGroupZipImporter.dataTypeInputsRegex.findFirstMatchIn("skill/data_type_inputs.json").isDefined mustBe true
+      BehaviorGroupZipImporter.libFileRegex.findFirstMatchIn("lib/my_library.js").isDefined mustBe true
+      BehaviorGroupZipImporter.libFileRegex.findFirstMatchIn("skill/lib/my_library.js").isDefined mustBe true
+    }
+
     "export and import back in" in {
       withEmptyDB(dataService, { () =>
         val team = newSavedTeam

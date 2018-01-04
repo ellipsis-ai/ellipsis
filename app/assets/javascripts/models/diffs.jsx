@@ -1,15 +1,37 @@
 // @flow
 
+/* eslint-disable no-use-before-define */
 export interface Diff {
   displayText(): string;
+  summaryText(): string;
+}
+
+// TODO: This is a hack since we can't import BehaviorGroup here or inside BehaviorVersion (because it would be a circular dependency)
+export interface HasInputs {
+  getInputs<T>(): Array<T>
+}
+
+export type DiffableProp = {
+  name: string,
+  value: Array<Diffable> | string | boolean,
+  parent?: HasInputs,
+  isCategorical?: boolean,
+  isCode?: boolean
 }
 
 export interface Diffable {
   diffLabel(): string;
   getIdForDiff(): string;
+  diffProps(parent?: HasInputs): Array<DiffableProp>;
 }
 
+export type DiffableParent = {
+  mine: HasInputs,
+  other: HasInputs
+};
+
 export type TextPartKind = "added" | "removed" | "unchanged";
+/* eslint-enable no-use-before-define */
 
 define(function(require) {
   const JsDiff = require("diff");
@@ -24,6 +46,10 @@ define(function(require) {
     }
 
     displayText(): string {
+      return this.label();
+    }
+
+    summaryText(): string {
       return this.label();
     }
 
@@ -67,7 +93,14 @@ define(function(require) {
     }
 
     label(): string {
-      return `Modified ${this.original.diffLabel()}`;
+      const original = this.original.diffLabel();
+      const modified = this.modified.diffLabel();
+      const label = original === modified ? original : `${original} → ${modified}`;
+      return `Modified ${label}`;
+    }
+
+    summaryText(): string {
+      return this.label();
     }
 
     displayText(): string {
@@ -91,6 +124,10 @@ define(function(require) {
     }
 
     displayText(): string {
+      throw "Should be implemented by subclasses";
+    }
+
+    summaryText(): string {
       throw "Should be implemented by subclasses";
     }
 
@@ -124,18 +161,28 @@ define(function(require) {
       return this.kind === TEXT_REMOVED;
     }
 
+    valueIsEmpty(): boolean {
+      return !this.value;
+    }
+
   }
+
+  type TextPropertyOptions = {
+    isCode?: boolean
+  };
 
   class TextPropertyDiff extends PropertyDiff<string> {
     parts: Array<TextPart>;
+    isCode: boolean;
 
-    constructor(label: string, original: string, modified: string) {
+    constructor(label: string, original: string, modified: string, options?: TextPropertyOptions) {
       super(label, original, modified);
-      const parts = JsDiff.diffChars(original, modified, {}).map(ea => {
+      const parts = JsDiff.diffWordsWithSpace(original, modified, {}).map(ea => {
         return new TextPart(ea.value, ea.added, ea.removed);
       });
       Object.defineProperties(this, {
-        parts: { value: parts, enumerable: true }
+        parts: { value: parts, enumerable: true },
+        isCode: { value: Boolean(options && options.isCode), enumerable: true }
       });
     }
 
@@ -153,13 +200,31 @@ define(function(require) {
       return `${this.label}: ${partsString}`;
     }
 
-    static maybeFor(label: string, maybeOriginal: ?string, maybeModified: ?string): ?TextPropertyDiff {
+    getTextChangeType(): string {
+      const hasAddedParts = this.parts.some((ea) => ea.isAdded());
+      const hasRemovedParts = this.parts.some((ea) => ea.isRemoved());
+      if (hasAddedParts && hasRemovedParts) {
+        return "changed";
+      } else if (hasAddedParts) {
+        return "added";
+      } else if (hasRemovedParts) {
+        return "removed";
+      } else {
+        return "unchanged";
+      }
+    }
+
+    summaryText(): string {
+      return `${this.label} ${this.getTextChangeType()}`;
+    }
+
+    static maybeFor(label: string, maybeOriginal: ?string, maybeModified: ?string, options?: TextPropertyOptions): ?TextPropertyDiff {
       const original = maybeOriginal || "";
       const modified = maybeModified || "";
       if (original === modified) {
         return null;
       } else {
-        return new TextPropertyDiff(label, original, modified);
+        return new TextPropertyDiff(label, original, modified, options);
       }
     }
   }
@@ -167,8 +232,12 @@ define(function(require) {
   class BooleanPropertyDiff extends PropertyDiff<boolean> {
 
     displayText(): string {
-      const valueString = this.original ? "false" : "true";
+      const valueString = this.original ? "off" : "on";
       return `${this.label}: changed to ${valueString}`;
+    }
+
+    summaryText(): string {
+      return this.displayText();
     }
 
     static maybeFor(label: string, original: boolean, modified: boolean): ?BooleanPropertyDiff {
@@ -186,6 +255,10 @@ define(function(require) {
       return `${this.label}: changed from ${this.original} to ${this.modified}`;
     }
 
+    summaryText(): string {
+      return this.displayText();
+    }
+
     static maybeFor(label: string, original: string, modified: string): ?CategoricalPropertyDiff {
       if (original === modified) {
         return null;
@@ -196,17 +269,17 @@ define(function(require) {
 
   }
 
-  function diffsFor<T: Diffable, P: Diffable>(firstItems: Array<T>, secondItems: Array<T>, parents?: { mine: P, other: P }): Array<Diff> {
-    const myIds = firstItems.map(ea => ea.getIdForDiff());
-    const otherIds = secondItems.map(ea => ea.getIdForDiff());
+  function diffsFor<T: Diffable>(originalItems: Array<T>, newItems: Array<T>, parents: ?DiffableParent): Array<Diff> {
+    const originalIds = originalItems.map(ea => ea.getIdForDiff());
+    const newIds = newItems.map(ea => ea.getIdForDiff());
 
-    const modifiedIds = myIds.filter(ea => otherIds.indexOf(ea) >= 0);
-    const addedIds = myIds.filter(ea => otherIds.indexOf(ea) === -1);
-    const removedIds = otherIds.filter(ea => myIds.indexOf(ea) === -1);
+    const modifiedIds = originalIds.filter(ea => newIds.indexOf(ea) >= 0);
+    const addedIds = newIds.filter(ea => originalIds.indexOf(ea) === -1);
+    const removedIds = originalIds.filter(ea => newIds.indexOf(ea) === -1);
 
     const added: Array<Diff> = [];
     addedIds.forEach(eaId => {
-      const item = firstItems.find(ea => ea.getIdForDiff() === eaId);
+      const item = newItems.find(ea => ea.getIdForDiff() === eaId);
       if (item) {
         added.push(new AddedDiff(item));
       }
@@ -214,7 +287,7 @@ define(function(require) {
 
     const removed: Array<Diff> = [];
     removedIds.forEach(eaId => {
-      const item = secondItems.find(ea => ea.getIdForDiff() === eaId);
+      const item = originalItems.find(ea => ea.getIdForDiff() === eaId);
       if (item) {
         removed.push(new RemovedDiff(item));
       }
@@ -222,10 +295,10 @@ define(function(require) {
 
     const modified: Array<Diff> = [];
     modifiedIds.forEach(eaId => {
-      const firstItem = firstItems.find(ea => ea.getIdForDiff() === eaId);
-      const secondItem = secondItems.find(ea => ea.getIdForDiff() === eaId);
-      if (firstItem && secondItem) {
-        const diff = (firstItem: Object).maybeDiffFor(secondItem, parents); // TODO: figure out how to add this method to Diffable
+      const originalItem = originalItems.find(ea => ea.getIdForDiff() === eaId);
+      const newItem = newItems.find(ea => ea.getIdForDiff() === eaId);
+      if (originalItem && newItem) {
+        const diff = maybeDiffFor(originalItem, newItem, parents);
         if (diff) {
           modified.push(diff);
         }
@@ -235,13 +308,62 @@ define(function(require) {
     return added.concat(removed.concat(modified));
   }
 
+  function maybeParentsFor(originalProp: DiffableProp, modifiedProp: ?DiffableProp): ?DiffableParent {
+    if (originalProp.parent && modifiedProp && modifiedProp.parent) {
+      return { mine: originalProp.parent, other: modifiedProp.parent };
+    }
+  }
+
+  function flattenDiffs(someDiffs: Array<?Diff | Array<Diff>>): Array<Diff> {
+    return someDiffs.reduce((a, b) => {
+      return b ? a.concat(b) : a;
+    }, []);
+  }
+
+  function maybeDiffFor(original: Diffable, modified: Diffable, parents: ?DiffableParent): ?ModifiedDiff<*> {
+    const originalProps = parents ? original.diffProps(parents.mine) : original.diffProps();
+    const modifiedProps = parents ? modified.diffProps(parents.other) : modified.diffProps();
+    const unflattenedDiffs: Array<?Diff | Array<Diff>> = originalProps.map((originalProp) => {
+      const propName = originalProp.name;
+      const originalValue = originalProp.value;
+      const modifiedProp = modifiedProps.find((otherProp) => otherProp.name === originalProp.name);
+      const modifiedValue = modifiedProp ? modifiedProp.value : null;
+      if (typeof originalValue === "string") {
+        const modifiedString = modifiedValue ? String(modifiedValue) : "";
+        return originalProp.isCategorical ?
+          CategoricalPropertyDiff.maybeFor(propName, originalValue, modifiedString) :
+          TextPropertyDiff.maybeFor(propName, originalValue, modifiedString, { isCode: Boolean(originalProp.isCode) });
+      } else if (typeof originalValue === "boolean") {
+        return BooleanPropertyDiff.maybeFor(propName, originalValue, Boolean(modifiedValue));
+      } else if (Array.isArray(originalValue)) {
+        const modifiedArray = Array.isArray(modifiedValue) ? modifiedValue : [];
+        return diffsFor(originalValue, modifiedArray, maybeParentsFor(originalProp, modifiedProp));
+      } else {
+        return null;
+      }
+    });
+    const flattened = flattenDiffs(unflattenedDiffs);
+    if (flattened.length === 0) {
+      return null;
+    } else {
+      return new ModifiedDiff(flattened, original, modified);
+    }
+  }
+
   return {
-    'diffsFor': diffsFor,
-    'AddedDiff': AddedDiff,
-    'BooleanPropertyDiff': BooleanPropertyDiff,
-    'CategoricalPropertyDiff': CategoricalPropertyDiff,
-    'RemovedDiff': RemovedDiff,
-    'ModifiedDiff': ModifiedDiff,
-    'TextPropertyDiff': TextPropertyDiff
+    maybeDiffFor: maybeDiffFor,
+    AddedOrRemovedDiff: AddedOrRemovedDiff,
+    AddedDiff: AddedDiff,
+    BooleanPropertyDiff: BooleanPropertyDiff,
+    CategoricalPropertyDiff: CategoricalPropertyDiff,
+    RemovedDiff: RemovedDiff,
+    ModifiedDiff: ModifiedDiff,
+    TextPart: TextPart,
+    TextPropertyDiff: TextPropertyDiff,
+    constants: {
+      TEXT_ADDED: TEXT_ADDED,
+      TEXT_REMOVED: TEXT_REMOVED,
+      TEXT_UNCHANGED: TEXT_UNCHANGED
+    }
   };
 });

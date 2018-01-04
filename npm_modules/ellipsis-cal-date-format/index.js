@@ -27,7 +27,7 @@ const EventFormatter = {
   formatAttendeesFor(event) {
     const attendees = event.attendees || [];
     const attendeesWithoutSelf = attendees.filter(ea => !ea.self);
-    return attendeesWithoutSelf.length ? (" - " + attendeesWithoutSelf.map(ea => ea.email).join(", ")) : "";
+    return attendeesWithoutSelf.length ? (" - " + attendeesWithoutSelf.map(ea => ea.displayName || ea.email).join(", ")) : "";
   },
 
   formatEvent: function(event, tz, optionalTodayYMD, options) {
@@ -36,6 +36,12 @@ const EventFormatter = {
     } else {
       return this.formatEventWithoutDetails(event, tz, optionalTodayYMD, options);
     }
+  },
+
+  summaryLink: function(event) {
+    const linkText = `${event.summary}${this.formatAttendeesFor(event)}`;
+    const escaped = linkText.replace(/([\[\]<>])/g, "\\$1");
+    return `[${escaped}](${event.htmlLink})`;
   },
 
   formatEventWithDetails: function(event, tz, optionalTodayYMD, options) {
@@ -47,12 +53,12 @@ const EventFormatter = {
     if (event.location) {
       optionalData += `_Where: ${event.location}_  \n`;
     }
-    return `${time}  \n**[${event.summary}${this.formatAttendeesFor(event)}](${event.htmlLink})**  \n${optionalData}${this.formatHangoutLinkFor(event, options)}`;
+    return `${time}  \n**${this.summaryLink(event)}**  \n${optionalData}${this.formatHangoutLinkFor(event, options)}`;
   },
 
   formatEventWithoutDetails: function(event, tz, optionalTodayYMD, options) {
     const time = this.formatEventDateTime(event, tz, optionalTodayYMD);
-    return `${time}: **[${event.summary}${this.formatAttendeesFor(event)}](${event.htmlLink})**${this.formatHangoutLinkFor(event, options)}`;
+    return `${time}: **${this.summaryLink(event)}**${this.formatHangoutLinkFor(event, options)}`;
   },
 
   formatEventDateTime: function(event, tz, optionalTodayYMD) {

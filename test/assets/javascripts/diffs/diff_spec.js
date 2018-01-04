@@ -1,5 +1,6 @@
 window.crypto = require('./../../../mocks/mock_window_crypto');
 const BehaviorGroup = require('../../../../app/assets/javascripts/models/behavior_group');
+const diffs = require('../../../../app/assets/javascripts/models/diffs');
 
 const teamId = 'team123456';
 const groupId = 'group123456';
@@ -224,23 +225,22 @@ const behaviorGroupVersion2 = Object.freeze({
   libraryVersions: [libraryVersion2]
 });
 
-describe('BehaviorGroupVersion', () => {
+describe('diffs', () => {
 
   describe('maybeDiffFor', () => {
 
-    it('builds the correct diff', () => {
+    it('builds the correct diff for a behavior group', () => {
       const version1 = BehaviorGroup.fromJson(behaviorGroupVersion1);
       const version2 = BehaviorGroup.fromJson(behaviorGroupVersion2);
-      const maybeDiff = version1.maybeDiffFor(version2);
+      const maybeDiff = diffs.maybeDiffFor(version1, version2);
       expect(maybeDiff).toBeTruthy();
       const diffText = maybeDiff.displayText();
-
-      console.log(JSON.stringify(maybeDiff, null, 2));
 
       // the empty objects for original and modified objects are ignored in the match
       const expectedDiffTree = {
         "children": [
           {
+            "isCode": false,
             "label": "Skill name",
             "modified": "Some updated skill",
             "original": "Some skill",
@@ -260,6 +260,7 @@ describe('BehaviorGroupVersion', () => {
             ]
           },
           {
+            "isCode": false,
             "label": "Skill description",
             "modified": "With a description",
             "original": "",
@@ -271,7 +272,8 @@ describe('BehaviorGroupVersion', () => {
             ],
           },
           {
-            "label": "Icon",
+            "isCode": false,
+            "label": "Skill icon",
             "modified": "",
             "original": "🚀",
             "parts": [
@@ -284,6 +286,7 @@ describe('BehaviorGroupVersion', () => {
           {
             "children": [
               {
+                "isCode": false,
                 "label": "Name",
                 "modified": "Second name",
                 "original": "First name",
@@ -303,6 +306,7 @@ describe('BehaviorGroupVersion', () => {
                 ]
               },
               {
+                "isCode": false,
                 "label": "Description",
                 "modified": "A description",
                 "original": "",
@@ -314,17 +318,18 @@ describe('BehaviorGroupVersion', () => {
                 ]
               },
               {
+                "isCode": true,
                 "label": "Response template",
                 "modified": "Another template",
                 "original": "A template",
                 "parts": [
                   {
-                    "kind": "unchanged",
+                    "kind": "removed",
                     "value": "A"
                   },
                   {
                     "kind": "added",
-                    "value": "nother"
+                    "value": "Another"
                   },
                   {
                     "kind": "unchanged",
@@ -333,6 +338,7 @@ describe('BehaviorGroupVersion', () => {
                 ]
               },
               {
+                "isCode": true,
                 "label": "Code",
                 "modified": "use strict; // so strict",
                 "original": "use strict;",
@@ -355,23 +361,23 @@ describe('BehaviorGroupVersion', () => {
               {
                 "item": {
                   "caseSensitive": false,
-                  "isRegex": false,
-                  "requiresMention": false,
-                  "text": "C"
-                }
-              },
-              {
-                "item": {
-                  "caseSensitive": false,
                   "isRegex": true,
                   "requiresMention": false,
                   "text": ".+"
                 }
               },
               {
+                "item": {
+                  "caseSensitive": false,
+                  "isRegex": false,
+                  "requiresMention": false,
+                  "text": "C"
+                }
+              },
+              {
                 "children": [
                   {
-                    "label": "Require bot mention",
+                    "label": "Require user to mention Ellipsis",
                     "modified": true,
                     "original": false
                   }
@@ -392,21 +398,18 @@ describe('BehaviorGroupVersion', () => {
               {
                 "children": [
                   {
+                    "isCode": false,
                     "label": "Question",
                     "modified": "who drives the car?",
                     "original": "what drives the car?",
                     "parts": [
                       {
-                        "kind": "unchanged",
-                        "value": "wh"
-                      },
-                      {
                         "kind": "removed",
-                        "value": "at"
+                        "value": "what"
                       },
                       {
                         "kind": "added",
-                        "value": "o"
+                        "value": "who"
                       },
                       {
                         "kind": "unchanged",
@@ -415,17 +418,17 @@ describe('BehaviorGroupVersion', () => {
                     ]
                   },
                   {
-                    "label": "Type",
+                    "label": "Data type",
                     "modified": "Person",
                     "original": "Text"
                   },
                   {
-                    "label": "Saved for whole team",
+                    "label": "Save and re-use answer for the team",
                     "modified": true,
                     "original": false
                   },
                   {
-                    "label": "Saved per user",
+                    "label": "Save and re-use answer for each user",
                     "modified": false,
                     "original": true
                   }
@@ -436,6 +439,7 @@ describe('BehaviorGroupVersion', () => {
           {
             "children": [
               {
+                "isCode": false,
                 "label": "Name",
                 "modified": "some-lib-revised",
                 "original": "some-lib",
@@ -451,6 +455,7 @@ describe('BehaviorGroupVersion', () => {
                 ]
               },
               {
+                "isCode": false,
                 "label": "Description",
                 "modified": "A library (revised)",
                 "original": "A library",
@@ -466,17 +471,22 @@ describe('BehaviorGroupVersion', () => {
                 ]
               },
               {
+                "isCode": true,
                 "label": "Code",
                 "modified": "return \"foo\";",
                 "original": "return \"foo\"",
                 "parts": [
                   {
                     "kind": "unchanged",
-                    "value": "return \"foo\""
+                    "value": "return \"foo"
+                  },
+                  {
+                    "kind": "removed",
+                    "value": "\""
                   },
                   {
                     "kind": "added",
-                    "value": ";"
+                    "value": "\";"
                   }
                 ]
               }
@@ -517,18 +527,18 @@ describe('BehaviorGroupVersion', () => {
 
       expect(maybeDiff).toMatchObject(expectedDiffTree);
 
-      expect(diffText).toContain("Modified action:");
+      expect(diffText).toContain("Modified action “First name”");
       expect(diffText).toContain("Name: [-First][+Second] name");
       expect(diffText).toContain("Description: [+A description]");
-      expect(diffText).toContain("Response template: A[+nother] template");
+      expect(diffText).toContain("Response template: [-A][+Another] template");
       expect(diffText).toContain("Code: use strict;[+ // so strict]");
-      expect(diffText).toContain("Added trigger \"C\"");
-      expect(diffText).toContain("Removed trigger \".+\"");
-      expect(diffText).toContain("Modified trigger \"B\":\nRequire bot mention: changed to true");
-      expect(diffText).toContain("Modified library \"some-lib\":");
+      expect(diffText).toContain("Removed trigger “C”");
+      expect(diffText).toContain("Added trigger “.+”");
+      expect(diffText).toContain("Modified trigger “B”:\nRequire user to mention Ellipsis: changed to on");
+      expect(diffText).toContain("Modified library “some-lib”");
       expect(diffText).toContain("Name: some-lib[+-revised]");
       expect(diffText).toContain("Description: A library[+ (revised)]");
-      expect(diffText).toContain("Code: return \"foo\"[+;]");
+      expect(diffText).toContain("Code: return \"foo[-\"][+\";]");
 
     });
 
