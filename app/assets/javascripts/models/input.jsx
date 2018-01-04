@@ -68,7 +68,7 @@ define(function(require) {
     }
 
     getIdForDiff(): string {
-      return this.inputId;
+      return this.exportId;
     }
 
     diffProps(): Array<DiffableProp> {
