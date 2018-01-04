@@ -1,7 +1,6 @@
 // @flow
 define(function(require) {
   const ApiConfigRef = require('./api_config_ref');
-  const diffs = require('./diffs');
   const RequiredApiConfig = require('./required_api_config');
 
   class RequiredApiConfigWithConfig extends RequiredApiConfig {
@@ -20,10 +19,6 @@ define(function(require) {
       } else {
         return null;
       }
-    }
-
-    maybeConfigToUseDiffFor(other: RequiredApiConfigWithConfig): ?diffs.CategoricalPropertyDiff {
-      return diffs.CategoricalPropertyDiff.maybeFor("Configuration to use", this.configName(), other.configName());
     }
 
     canHaveConfig(): boolean {

@@ -1,8 +1,6 @@
 // @flow
-import type {Diffable, DiffableProp} from './diffs';
 
-define(function(require) {
-  const diffs = require('./diffs');
+define(function() {
 
   class RequiredApiConfig {
     id: string;
@@ -19,16 +17,8 @@ define(function(require) {
       });
     }
 
-    diffLabel(): string {
-      return `required ${this.apiId} configuration "${this.nameInCode}"`;
-    }
-
     getIdForDiff(): string {
       return this.requiredId;
-    }
-
-    maybeNameInCodeDiffFor(other: RequiredApiConfig): ?diffs.CategoricalPropertyDiff {
-      return diffs.TextPropertyDiff.maybeFor("Name used in code", this.nameInCode, other.nameInCode);
     }
 
     canHaveConfig(): boolean {
