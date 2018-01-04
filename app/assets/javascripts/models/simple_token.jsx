@@ -1,24 +1,19 @@
 // @flow
 
-import type {Diff, Diffable} from "./diffs";
+import type {Diffable, DiffableProp} from "./diffs";
 
 define(function(require) {
   const ApiConfigRef = require('./api_config_ref');
-  const diffs = require('./diffs');
   const RequiredApiConfig = require('./required_api_config');
   const ID = require('../lib/id');
 
   class RequiredSimpleTokenApi extends RequiredApiConfig implements Diffable {
 
-    maybeDiffFor(other: RequiredSimpleTokenApi): ?diffs.ModifiedDiff<RequiredSimpleTokenApi> {
-      const children: Array<Diff> = [
-        this.maybeNameInCodeDiffFor(other)
-      ].filter(ea => Boolean(ea));
-      if (children.length === 0) {
-        return null;
-      } else {
-        return new diffs.ModifiedDiff(children, this, other);
-      }
+    diffProps(): Array<DiffableProp> {
+      return [{
+        name: "Name in code",
+        value: this.nameInCode || ""
+      }];
     }
 
     onAddConfigFor(editor) {

@@ -1,4 +1,6 @@
 // @flow
+import type {Diffable, DiffableProp} from './diffs';
+
 define(function(require) {
   const diffs = require('./diffs');
 
