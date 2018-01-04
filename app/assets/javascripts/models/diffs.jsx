@@ -185,60 +185,58 @@ define(function(require) {
       const oldLines = [[]];
       const newLines = [[]];
       const unifiedLines = [[]];
-      let newLineCounter = 0;
       parts.forEach((part) => {
         const lines = part.value.split("\n");
-        const numNewLines = lines.length - 1;
-        const firstLine = lines[0] + (lines.length > 1 ? "\n" : "");
-        let oldLineIndex = oldLines.length - 1;
-        let newLineIndex = newLines.length - 1;
+        const oldLineIndex = oldLines.length - 1;
+        const newLineIndex = newLines.length - 1;
         const unifiedLineIndex = unifiedLines.length - 1;
+
+        const numNewLines = lines.length - 1;
+        const firstLine = lines[0] + (numNewLines > 0 ? "\n" : "");
         const firstPart = new TextPart(firstLine, part.added, part.removed);
+
+        unifiedLines[unifiedLineIndex].push(firstPart);
         if (!part.added) {
-          let linesMissing = 0;
           oldLines[oldLineIndex].push(firstPart);
-          if (newLineCounter > 0) {
-            linesMissing = part.removed ? newLineCounter - numNewLines : newLineCounter;
-            for (let i = 0; i < linesMissing; i++) {
-              oldLines.push([]);
-              oldLineIndex++;
-            }
-          }
-          if (part.removed) {
-            newLineCounter = -(numNewLines - linesMissing);
-          }
         }
         if (!part.removed) {
-          let linesMissing = 0;
           newLines[newLineIndex].push(firstPart);
-          if (newLineCounter < 0) {
-            linesMissing = part.added ? (-newLineCounter) - numNewLines : (-newLineCounter);
-            for (let i = 0; i < linesMissing; i++) {
-              newLines.push([]);
-              newLineIndex++;
-            }
-          }
-          if (part.added) {
-            newLineCounter = (numNewLines - linesMissing);
-          }
         }
-        unifiedLines[unifiedLineIndex].push(firstPart);
-        if (!part.added && !part.removed) {
-          newLineCounter = 0;
-        }
+
         const restOfLines = lines.slice(1);
         restOfLines.forEach((line, index) => {
           const text = index + 1 < restOfLines.length ? line + "\n" : line;
           const newPart = text ? new TextPart(text, part.added, part.removed) : null;
+
+          unifiedLines.push(newPart ? [newPart] : []);
           if (!part.added) {
             oldLines.push(newPart ? [newPart] : []);
           }
           if (!part.removed) {
             newLines.push(newPart ? [newPart] : []);
           }
-          unifiedLines.push(newPart ? [newPart] : []);
         });
       });
+
+      unifiedLines.forEach((unifiedLine) => {
+        const firstUnchangedPart = unifiedLine.find((part) => part.kind === TEXT_UNCHANGED);
+        if (firstUnchangedPart) {
+          const oldLineIndex = oldLines.findIndex((line) => line.some((part) => part === firstUnchangedPart));
+          const newLineIndex = newLines.findIndex((line) => line.some((part) => part === firstUnchangedPart));
+          const diff = newLineIndex - oldLineIndex;
+          const numLinesToAdd = Math.abs(diff);
+          if (diff < 0) {
+            for (let i = 0; i < numLinesToAdd; i++) {
+              newLines.splice(newLineIndex, 0, []);
+            }
+          } else if (diff > 0) {
+            for (let i = 0; i < numLinesToAdd; i++) {
+              oldLines.splice(oldLineIndex, 0, []);
+            }
+          }
+        }
+      });
+
       Object.defineProperties(this, {
         oldLines: { value: oldLines, enumerable: true },
         newLines: { value: newLines, enumerable: true },

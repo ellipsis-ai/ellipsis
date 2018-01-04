@@ -174,6 +174,10 @@ const behaviorGroupVersion2 = Object.freeze({
   libraryVersions: [libraryVersion2]
 });
 
+function textDiff(left, right) {
+  return diffs.MultiLineTextPropertyDiff.maybeFor("", left, right);
+}
+
 describe('diffs', () => {
 
   describe('maybeDiffFor', () => {
@@ -461,6 +465,76 @@ describe('diffs', () => {
 
     });
 
+  });
+
+  describe('MultiLineTextPropertyDiff', () => {
+    it('handles a single line', () => {
+      const left = `cat`;
+      const right = `dog`;
+      const result = textDiff(left, right);
+      expect(result.oldLines).toEqual([[{ kind: "removed", value: "cat" }]]);
+      expect(result.newLines).toEqual([[{ kind: "added", value: "dog" }]]);
+      expect(result.unifiedLines).toEqual([[{ kind: "removed", value: "cat" }, { kind: "added", value: "dog" }]]);
+    });
+
+    it('handles removing a line', () => {
+      const left = `cat
+dog
+bear
+`;
+      const right = `cat
+bear
+`;
+      const result = textDiff(left, right);
+      expect(result.oldLines).toEqual([
+        [{ kind: "unchanged", value: "cat\n" }],
+        [{ kind: "removed", value: "dog\n" }],
+        [{ kind: "unchanged", value: "bear\n" }],
+        []
+      ]);
+      expect(result.newLines).toEqual([
+        [{ kind: "unchanged", value: "cat\n" }],
+        [],
+        [{ kind: "unchanged", value: "bear\n" }],
+        []
+      ]);
+      expect(result.unifiedLines).toEqual([
+        [{ kind: "unchanged", value: "cat\n" }],
+        [{ kind: "removed", value: "dog\n" }],
+        [{ kind: "unchanged", value: "bear\n" }],
+        []
+      ]);
+    });
+
+    it('handles removing new lines', () => {
+      const left = `cat
+
+
+dog`;
+      const right = `cat
+dog`;
+
+      const result = textDiff(left, right);
+      expect(result.oldLines).toEqual([
+        [{ kind: "unchanged", value: "cat" }, { kind: "removed", value: "\n" }],
+        [{ kind: "removed", value: "\n" }],
+        [{ kind: "removed", value: "\n" }],
+        [{ kind: "unchanged", value: "dog" }]
+      ]);
+      expect(result.newLines).toEqual([
+        [{ kind: "unchanged", value: "cat" }, { kind: "added", value: "\n" }],
+        [],
+        [],
+        [{ kind: "unchanged", value: "dog" }]
+      ]);
+      expect(result.unifiedLines).toEqual([
+        [{ kind: "unchanged", value: "cat" }, { kind: "removed", value: "\n" }],
+        [{ kind: "removed", value: "\n" }],
+        [{ kind: "removed", value: "\n" }],
+        [{ kind: "added", value: "\n" }],
+        [{ kind: "unchanged", value: "dog" }]
+      ]);
+    });
   });
 
 });
