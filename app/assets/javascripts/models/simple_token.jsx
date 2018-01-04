@@ -65,7 +65,7 @@ define(function(require) {
     }
 
     static fromProps(props): RequiredSimpleTokenApi {
-      return new RequiredSimpleTokenApi(props.id, props.requiredId, props.apiId, props.nameInCode, props.config);
+      return new RequiredSimpleTokenApi(props.id, props.exportId, props.apiId, props.nameInCode, props.config);
     }
 
   }

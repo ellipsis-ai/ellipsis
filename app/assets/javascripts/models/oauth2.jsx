@@ -9,8 +9,8 @@ define(function(require) {
   class RequiredOAuth2Application extends RequiredApiConfigWithConfig implements Diffable {
     recommendedScope: string;
 
-    constructor(id: string, requiredId: string, apiId: string, nameInCode: string, config: ApiConfigRef, recommendedScope: string) {
-      super(id, requiredId, apiId, nameInCode, config);
+    constructor(id: string, exportId: string, apiId: string, nameInCode: string, config: ApiConfigRef, recommendedScope: string) {
+      super(id, exportId, apiId, nameInCode, config);
       Object.defineProperties(this, {
         recommendedScope: { value: recommendedScope, enumerable: true }
       });
@@ -80,7 +80,7 @@ define(function(require) {
     static fromProps(props) {
       return new RequiredOAuth2Application(
         props.id,
-        props.requiredId,
+        props.exportId,
         props.apiId,
         props.nameInCode,
         props.config,
@@ -132,7 +132,7 @@ define(function(require) {
 
   RequiredOAuth2Application.fromJson = function (props) {
     const config = props.config ? OAuth2ApplicationRef.fromJson(props.config) : undefined;
-    return new RequiredOAuth2Application(props.id, props.requiredId, props.apiId, props.nameInCode, config, props.scope);
+    return new RequiredOAuth2Application(props.id, props.exportId, props.apiId, props.nameInCode, config, props.scope);
   };
 
   return {

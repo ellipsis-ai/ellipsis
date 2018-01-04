@@ -143,7 +143,7 @@ const actionInput2 = Object.freeze({
 
 const requiredAWSConfig1 = Object.freeze({
   id: 'aws123',
-  requiredId: requiredAWSConfigId,
+  exportId: requiredAWSConfigId,
   apiId: 'aws',
   nameInCode: 'prod',
   config: undefined
@@ -151,7 +151,7 @@ const requiredAWSConfig1 = Object.freeze({
 
 const requiredAWSConfig2 = Object.freeze({
   id: 'aws123',
-  requiredId: requiredAWSConfigId,
+  exportId: requiredAWSConfigId,
   apiId: 'aws',
   nameInCode: 'prod',
   config: {
@@ -162,7 +162,7 @@ const requiredAWSConfig2 = Object.freeze({
 
 const requiredOAuth2Config1 = Object.freeze({
   id: 'github123',
-  requiredId: requiredGithubConfigId,
+  exportId: requiredGithubConfigId,
   apiId: 'github',
   nameInCode: 'github',
   config: undefined,
@@ -171,7 +171,7 @@ const requiredOAuth2Config1 = Object.freeze({
 
 const requiredOAuth2Config2 = Object.freeze({
   id: 'github123',
-  requiredId: requiredGithubConfigId,
+  exportId: requiredGithubConfigId,
   apiId: 'github',
   nameInCode: 'githubReadonly',
   recommendedScope: 'repo:readonly'
@@ -179,7 +179,7 @@ const requiredOAuth2Config2 = Object.freeze({
 
 const requiredOAuth2Config3 = Object.freeze({
   id: 'github12345',
-  requiredId: 'requiredGithubabcdef',
+  exportId: 'requiredGithubabcdef',
   apiId: 'github',
   nameInCode: 'githubReadwrite',
   recommendedScope: 'repo'
@@ -187,14 +187,14 @@ const requiredOAuth2Config3 = Object.freeze({
 
 const requiredSimpleTokenApi1 = Object.freeze({
   id: 'pivotalTracker123',
-  requiredId: requiredPivotalTrackerConfigId,
+  exportId: requiredPivotalTrackerConfigId,
   apiId: 'pivotalTracker',
   nameInCode: 'pivotalTracker',
 });
 
 const requiredSimpleTokenApi2 = Object.freeze({
   id: 'pivotalTracker123',
-  requiredId: requiredPivotalTrackerConfigId,
+  exportId: requiredPivotalTrackerConfigId,
   apiId: 'pivotalTracker',
   nameInCode: 'pivotalTracker2',
 });

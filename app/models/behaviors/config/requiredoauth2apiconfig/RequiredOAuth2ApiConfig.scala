@@ -6,7 +6,7 @@ import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
 
 case class RequiredOAuth2ApiConfig(
                                     id: String,
-                                    requiredId: String,
+                                    exportId: String,
                                     groupVersion: BehaviorGroupVersion,
                                     api: OAuth2Api,
                                     maybeRecommendedScope: Option[String],
@@ -19,7 +19,7 @@ case class RequiredOAuth2ApiConfig(
   def toRaw: RawRequiredOAuth2ApiConfig = {
     RawRequiredOAuth2ApiConfig(
       id,
-      requiredId,
+      exportId,
       groupVersion.id,
       api.id,
       maybeRecommendedScope,

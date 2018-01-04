@@ -4,14 +4,14 @@ define(function() {
 
   class RequiredApiConfig {
     id: string;
-    requiredId: string;
+    exportId: string;
     apiId: string;
     nameInCode: string;
 
-    constructor(id: string, requiredId: string, apiId: string, nameInCode: string) {
+    constructor(id: string, exportId: string, apiId: string, nameInCode: string) {
       Object.defineProperties(this, {
         id: { value: id, enumerable: true },
-        requiredId: { value: requiredId, enumerable: true },
+        exportId: { value: exportId, enumerable: true },
         apiId: { value: apiId, enumerable: true },
         nameInCode: { value: nameInCode, enumerable: true }
       });
@@ -22,7 +22,7 @@ define(function() {
     }
 
     getIdForDiff(): string {
-      return this.requiredId;
+      return this.exportId;
     }
 
     canHaveConfig(): boolean {

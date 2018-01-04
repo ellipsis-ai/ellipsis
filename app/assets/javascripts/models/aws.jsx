@@ -69,7 +69,7 @@ define(function(require) {
     }
 
     static fromProps(props) {
-      return new RequiredAWSConfig(props.id, props.requiredId, props.apiId, props.nameInCode, props.config);
+      return new RequiredAWSConfig(props.id, props.exportId, props.apiId, props.nameInCode, props.config);
     }
 
   }
@@ -105,7 +105,7 @@ define(function(require) {
 
   RequiredAWSConfig.fromJson = function(props): RequiredAWSConfig {
     const config = props.config ? AWSConfigRef.fromJson(props.config) : undefined;
-    return new RequiredAWSConfig(props.id, props.requiredId, props.apiId, props.nameInCode, config);
+    return new RequiredAWSConfig(props.id, props.exportId, props.apiId, props.nameInCode, config);
   };
 
   return {

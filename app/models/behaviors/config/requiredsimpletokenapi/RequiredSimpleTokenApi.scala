@@ -5,7 +5,7 @@ import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
 
 case class RequiredSimpleTokenApi(
                                    id: String,
-                                   requiredId: String,
+                                   exportId: String,
                                    groupVersion: BehaviorGroupVersion,
                                    nameInCode: String,
                                    api: SimpleTokenApi
@@ -15,7 +15,7 @@ case class RequiredSimpleTokenApi(
   def toRaw: RawRequiredSimpleTokenApi = {
     RawRequiredSimpleTokenApi(
       id,
-      requiredId,
+      exportId,
       groupVersion.id,
       nameInCode,
       api.id

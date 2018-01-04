@@ -16,7 +16,7 @@ import scala.concurrent.{ExecutionContext, Future}
 
 case class RawRequiredOAuth2ApiConfig(
                                        id: String,
-                                       requiredId: String,
+                                       exportId: String,
                                        groupVersionId: String,
                                        apiId: String,
                                        maybeRecommendedScope: Option[String],
@@ -27,14 +27,14 @@ case class RawRequiredOAuth2ApiConfig(
 class RequiredOAuth2ApiConfigsTable(tag: Tag) extends Table[RawRequiredOAuth2ApiConfig](tag, "required_oauth2_api_configs") {
 
   def id = column[String]("id", O.PrimaryKey)
-  def requiredId = column[String]("required_id")
+  def exportId = column[String]("export_id")
   def groupVersionId = column[String]("group_version_id")
   def apiId = column[String]("api_id")
   def maybeRecommendedScope = column[Option[String]]("recommended_scope")
   def nameInCode = column[String]("name_in_code")
   def maybeApplicationId = column[Option[String]]("application_id")
 
-  def * = (id, requiredId, groupVersionId, apiId, maybeRecommendedScope, nameInCode, maybeApplicationId) <> ((RawRequiredOAuth2ApiConfig.apply _).tupled, RawRequiredOAuth2ApiConfig.unapply _)
+  def * = (id, exportId, groupVersionId, apiId, maybeRecommendedScope, nameInCode, maybeApplicationId) <> ((RawRequiredOAuth2ApiConfig.apply _).tupled, RawRequiredOAuth2ApiConfig.unapply _)
 }
 
 class RequiredOAuth2ApiConfigServiceImpl @Inject() (
@@ -56,7 +56,7 @@ class RequiredOAuth2ApiConfigServiceImpl @Inject() (
     val groupVersion = BehaviorGroupVersionQueries.tuple2BehaviorGroupVersion(tuple._1._1._2)
     RequiredOAuth2ApiConfig(
       raw.id,
-      raw.requiredId,
+      raw.exportId,
       groupVersion,
       tuple._1._2,
       raw.maybeRecommendedScope,
@@ -146,7 +146,7 @@ class RequiredOAuth2ApiConfigServiceImpl @Inject() (
         DBIO.from(dataService.oauth2Applications.find(appData.id))
       }.getOrElse(DBIO.successful(None))
       maybeConfig <- maybeApi.map { api =>
-        val newInstance = RequiredOAuth2ApiConfig(IDs.next, data.requiredId.getOrElse(IDs.next), groupVersion, api, data.recommendedScope, data.nameInCode, maybeApplication)
+        val newInstance = RequiredOAuth2ApiConfig(IDs.next, data.exportId.getOrElse(IDs.next), groupVersion, api, data.recommendedScope, data.nameInCode, maybeApplication)
         (all += newInstance.toRaw).map(_ => newInstance).map(Some(_))
       }.getOrElse(DBIO.successful(None))
     } yield maybeConfig

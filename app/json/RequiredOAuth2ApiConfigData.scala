@@ -4,7 +4,7 @@ import models.behaviors.config.requiredoauth2apiconfig.RequiredOAuth2ApiConfig
 
 case class RequiredOAuth2ApiConfigData(
                                         id: Option[String],
-                                        requiredId: Option[String],
+                                        exportId: Option[String],
                                         apiId: String,
                                         recommendedScope: Option[String],
                                         nameInCode: String,
@@ -22,7 +22,7 @@ object RequiredOAuth2ApiConfigData {
   def from(required: RequiredOAuth2ApiConfig): RequiredOAuth2ApiConfigData = {
     RequiredOAuth2ApiConfigData(
       Some(required.id),
-      Some(required.requiredId),
+      Some(required.exportId),
       required.api.id,
       required.maybeRecommendedScope,
       required.nameInCode,

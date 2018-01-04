@@ -6,8 +6,8 @@ define(function(require) {
   class RequiredApiConfigWithConfig extends RequiredApiConfig {
     config: ApiConfigRef;
 
-    constructor(id: string, requiredId: string, apiId: string, nameInCode: string, config: ApiConfigRef) {
-      super(id, requiredId, apiId, nameInCode);
+    constructor(id: string, exportId: string, apiId: string, nameInCode: string, config: ApiConfigRef) {
+      super(id, exportId, apiId, nameInCode);
       Object.defineProperties(this, {
         config: {value: config, enumerable: true}
       });

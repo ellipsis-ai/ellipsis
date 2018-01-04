@@ -5,7 +5,7 @@ import models.behaviors.config.awsconfig.AWSConfig
 
 case class RequiredAWSConfig(
                             id: String,
-                            requiredId: String,
+                            exportId: String,
                             nameInCode: String,
                             groupVersion: BehaviorGroupVersion,
                             maybeConfig: Option[AWSConfig]
@@ -14,6 +14,6 @@ case class RequiredAWSConfig(
   val isConfigured: Boolean = maybeConfig.isDefined
 
   def toRaw: RawRequiredAWSConfig = {
-    RawRequiredAWSConfig(id, requiredId, nameInCode, groupVersion.id, maybeConfig.map(_.id))
+    RawRequiredAWSConfig(id, exportId, nameInCode, groupVersion.id, maybeConfig.map(_.id))
   }
 }
