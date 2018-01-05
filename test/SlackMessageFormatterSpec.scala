@@ -31,6 +31,10 @@ class SlackMessageFormatterSpec extends PlaySpec {
       format("1 < 2 but this is a <@U1234> link to a “<#channel>”!") mustBe "1 &lt; 2 but this is a <@U1234> link to a “<#channel>”!"
     }
 
+    "handle formatting inside links" in {
+      format("[**This is a bold link**](http://ohsobold.com)") mustBe "<http://ohsobold.com|*This is a bold link*>"
+    }
+
   }
 
 }
