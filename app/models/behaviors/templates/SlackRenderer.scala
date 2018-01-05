@@ -5,7 +5,15 @@ import org.commonmark.node._
 
 class SlackRenderer(stringBuilder: StringBuilder) extends AbstractVisitor {
   def escapeControlEntities(text: String): String = {
-    text.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;")
+    val ampersandsEscaped = text.replaceAll("&", "&amp;")
+    """\S+""".r.replaceAllIn(ampersandsEscaped, m => {
+      val str = m.matched
+      if (str.matches(".*<[@#].+>.*")) {
+        str
+      } else {
+        str.replaceAll("<", "&lt;").replaceAll(">", "&gt;")
+      }
+    })
   }
 
   override def visit(blockQuote: BlockQuote) {
@@ -102,20 +110,24 @@ class SlackRenderer(stringBuilder: StringBuilder) extends AbstractVisitor {
 
   }
 
+  def linkWithTitle(link: Link): Unit = {
+    stringBuilder.append("<")
+    stringBuilder.append(s"${link.getDestination}")
+    stringBuilder.append("|")
+    visitChildren(link)
+    stringBuilder.append(">")
+  }
+
   override def visit(link: Link) {
     link.getFirstChild match {
       case e: Text => {
         if (e.getLiteral == link.getDestination) {
           stringBuilder.append(s"<${link.getDestination}>")
         } else {
-          stringBuilder.append("<")
-          stringBuilder.append(s"${link.getDestination}")
-          stringBuilder.append("|")
-          visitChildren(link)
-          stringBuilder.append(">")
+          linkWithTitle(link)
         }
       }
-      case _ => visitChildren(link)
+      case _ => linkWithTitle(link)
     }
   }
 
@@ -168,7 +180,7 @@ class SlackRenderer(stringBuilder: StringBuilder) extends AbstractVisitor {
     val safeText = text.getLiteral.
       replaceAll("""(\S)([*_`~])(\s|$)""", "$1\u00AD$2\u00AD$3").
       replaceAll("""(\s|^)([*_`~])(\S)""", "$1\u00AD$2\u00AD$3")
-    stringBuilder.append(safeText)
+    stringBuilder.append(escapeControlEntities(safeText))
     visitChildren(text)
   }
 
