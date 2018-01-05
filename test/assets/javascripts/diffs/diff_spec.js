@@ -1,6 +1,7 @@
 window.crypto = require('./../../../mocks/mock_window_crypto');
 const BehaviorGroup = require('../../../../app/assets/javascripts/models/behavior_group');
 const diffs = require('../../../../app/assets/javascripts/models/diffs');
+const TextPart = diffs.TextPart;
 
 const teamId = 'team123456';
 const groupId = 'group123456';
@@ -553,9 +554,9 @@ describe('diffs', () => {
       const left = `cat`;
       const right = `dog`;
       const result = textDiff(left, right);
-      expect(result.oldLines).toEqual([[{ kind: "removed", value: "cat" }]]);
-      expect(result.newLines).toEqual([[{ kind: "added", value: "dog" }]]);
-      expect(result.unifiedLines).toEqual([[{ kind: "removed", value: "cat" }, { kind: "added", value: "dog" }]]);
+      expect(result.oldLines).toEqual([[new TextPart("cat", false, true)]]);
+      expect(result.newLines).toEqual([[new TextPart("dog", true)]]);
+      expect(result.unifiedLines).toEqual([[new TextPart("cat", false, true), new TextPart("dog", true)]]);
     });
 
     it('handles removing a line', () => {
@@ -568,21 +569,21 @@ bear
 `;
       const result = textDiff(left, right);
       expect(result.oldLines).toEqual([
-        [{ kind: "unchanged", value: "cat\n" }],
-        [{ kind: "removed", value: "dog\n" }],
-        [{ kind: "unchanged", value: "bear\n" }],
+        [new TextPart("cat\n")],
+        [new TextPart("dog\n", false, true)],
+        [new TextPart("bear\n")],
         []
       ]);
       expect(result.newLines).toEqual([
-        [{ kind: "unchanged", value: "cat\n" }],
+        [new TextPart("cat\n")],
         [],
-        [{ kind: "unchanged", value: "bear\n" }],
+        [new TextPart("bear\n")],
         []
       ]);
       expect(result.unifiedLines).toEqual([
-        [{ kind: "unchanged", value: "cat\n" }],
-        [{ kind: "removed", value: "dog\n" }],
-        [{ kind: "unchanged", value: "bear\n" }],
+        [new TextPart("cat\n")],
+        [new TextPart("dog\n", false, true)],
+        [new TextPart("bear\n")],
         []
       ]);
     });
@@ -597,23 +598,23 @@ dog`;
 
       const result = textDiff(left, right);
       expect(result.oldLines).toEqual([
-        [{ kind: "unchanged", value: "cat" }, { kind: "unchanged", value: "\n" }],
-        [{ kind: "removed", value: "\n" }],
-        [{ kind: "removed", value: "\n" }],
-        [{ kind: "unchanged", value: "dog" }]
+        [new TextPart("cat"), new TextPart("\n")],
+        [new TextPart("\n", false, true)],
+        [new TextPart("\n", false, true)],
+        [new TextPart("dog")]
       ]);
       expect(result.newLines).toEqual([
-        [{ kind: "unchanged", value: "cat" }, { kind: "unchanged", value: "\n" }],
+        [new TextPart("cat"), new TextPart("\n")],
         [],
         [],
-        [{ kind: "unchanged", value: "dog" }]
+        [new TextPart("dog")]
       ]);
       expect(result.unifiedLines).toEqual([
-        [{ kind: "unchanged", value: "cat" }, { kind: "removed", value: "\n" }],
-        [{ kind: "removed", value: "\n" }],
-        [{ kind: "removed", value: "\n" }],
-        [{ kind: "added", value: "\n" }],
-        [{ kind: "unchanged", value: "dog" }]
+        [new TextPart("cat"), new TextPart("\n", false, true)],
+        [new TextPart("\n", false, true)],
+        [new TextPart("\n", false, true)],
+        [new TextPart("\n", true)],
+        [new TextPart("dog")]
       ]);
     });
 
@@ -627,23 +628,23 @@ dog
 `;
       const result = textDiff(left, right);
       expect(result.oldLines).toEqual([
-        [{ kind: "unchanged", value: "cat" }, { kind: "unchanged", value: "\n" }],
+        [new TextPart("cat"), new TextPart("\n")],
         [],
         [{ kind: "unchanged", value: "dog"}]
       ]);
       expect(result.newLines).toEqual([
-        [{ kind: "unchanged", value: "cat" }, { kind: "unchanged", value: "\n" }],
-        [{ kind: "added", value: "\n" }],
-        [{ kind: "unchanged", value: "dog"}, { kind: "added", value: "\n" }],
-        [{ kind: "added", value: "\n" }],
+        [new TextPart("cat"), new TextPart("\n")],
+        [new TextPart("\n", true)],
+        [{ kind: "unchanged", value: "dog"}, new TextPart("\n", true)],
+        [new TextPart("\n", true)],
         []
       ]);
       expect(result.unifiedLines).toEqual([
-        [{ kind: "unchanged", value: "cat" }, { kind: "removed", value: "\n" }],
-        [{ kind: "added", value: "\n" }],
-        [{ kind: "added", value: "\n" }],
-        [{ kind: "unchanged", value: "dog" }, { kind: "added", value: "\n" }],
-        [{ kind: "added", value: "\n" }],
+        [new TextPart("cat"), new TextPart("\n", false, true)],
+        [new TextPart("\n", true)],
+        [new TextPart("\n", true)],
+        [new TextPart("dog"), new TextPart("\n", true)],
+        [new TextPart("\n", true)],
         []
       ]);
     });
@@ -660,25 +661,23 @@ lived twelve little boys
 with two straight sticks`;
       const result = textDiff(left, right);
       expect(result.oldLines).toEqual([
-        [{ kind: "unchanged", value: "in " }, { kind: "removed", value: "an" },
-          { kind: "unchanged", value: " " }, { kind: "removed", value: "old" },
-          { kind: "unchanged", value: " house in " }, { kind: "removed", value: "paris\n" }],
-        [{ kind: "unchanged", value: "all covered with " }, { kind: "removed", value: "vines\n" }],
+        [new TextPart("in "), new TextPart("an", false, true),
+          new TextPart(" "), new TextPart("old", false, true),
+          new TextPart(" house in "), new TextPart("paris\n", false, true)],
+        [new TextPart("all covered with "), new TextPart("vines\n", false, true)],
+        [new TextPart("lived twelve little "), new TextPart("girls\n", false, true)],
         [],
-        [{ kind: "unchanged", value: "lived twelve little "}, { kind: "removed", value: "girls\n" }],
-        [],
-        [{ kind: "removed", value: "in"}, { kind: "unchanged", value: " two straight "}, { kind: "removed", value: "lines" }]
+        [new TextPart("in", false, true), new TextPart(" two straight "), new TextPart("lines", false, true)]
       ]);
       expect(result.newLines).toEqual([
-        [],
-        [{ kind: "unchanged", value: "in " }, { kind: "added", value: "a" },
+        [new TextPart("in "), new TextPart("a", true),
           { kind: "unchanged", value: " "}, { kind: "added", value: "new"},
-          { kind: "unchanged", value: " house in " }, { kind: "added", value: "nice, "},
-          { kind: "unchanged", value: "all covered with "}, { kind: "added", value: "bricks\n" }],
-        [{ kind: "added", value: "\n" }],
+          new TextPart(" house in "), { kind: "added", value: "nice, "},
+          { kind: "unchanged", value: "all covered with "}, new TextPart("bricks\n", true)],
+        [new TextPart("\n", true)],
         [{ kind: "unchanged", value: "lived twelve little "}, { kind: "added", value: "boys\n"}],
-        [{ kind: "added", value: "\n" }],
-        [{ kind: "added", value: "with" }, { kind: "unchanged", value: " two straight "}, { kind: "added", value: "sticks" }]
+        [new TextPart("\n", true)],
+        [new TextPart("with", true), { kind: "unchanged", value: " two straight "}, new TextPart("sticks", true)]
       ]);
     });
   });

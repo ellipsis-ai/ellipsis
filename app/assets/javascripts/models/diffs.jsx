@@ -235,9 +235,17 @@ define(function(require) {
       const equalizeLineNumbers = function(unifiedLine) {
         const firstUnchangedPart = unifiedLine.find((part) => part.isUnchanged());
         if (firstUnchangedPart) {
-          const oldLineIndex = oldLines.findIndex((line) => line.some((part) => part === firstUnchangedPart));
-          const newLineIndex = newLines.findIndex((line) => line.some((part) => part === firstUnchangedPart));
-          if (oldLineIndex < 0 || newLineIndex < 0) {
+          let oldPartIndex = -1;
+          let newPartIndex = -1;
+          const oldLineIndex = oldLines.findIndex((line) => {
+            oldPartIndex = line.findIndex((part) => part === firstUnchangedPart);
+            return oldPartIndex >= 0;
+          });
+          const newLineIndex = newLines.findIndex((line) => {
+            newPartIndex = line.findIndex((part) => part === firstUnchangedPart);
+            return newPartIndex >= 0;
+          });
+          if (oldLineIndex < 0 || newLineIndex < 0 || oldPartIndex !== newPartIndex) {
             return;
           }
           const diff = newLineIndex - oldLineIndex;
