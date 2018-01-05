@@ -22,10 +22,20 @@ define(function(require) {
       );
     }
 
+    getBgColorForLine(line?: Array<TextPart>): string {
+      if (line && line.some((part) => part.isRemoved())) {
+        return "bg-pink-lightest";
+      } else if (line && line.some((part) => part.isAdded())) {
+        return "bg-green-lightest";
+      } else {
+        return "";
+      }
+    }
+
     renderLine(line?: Array<TextPart>, onlyLine: boolean): React.Node {
       const isEmpty = !line || line.length === 0 || line.length === 1 && line[0].valueIsEmpty();
       return (
-        <div className={`type-wrap-words ${this.props.diff.isCode ? "type-monospace" : ""}`}>
+        <div className={`type-wrap-words ${this.props.diff.isCode ? "type-monospace" : ""} ${this.getBgColorForLine(line)}`}>
           {isEmpty ?
             this.renderBlankLine(onlyLine) :
             line && line.map((part, partIndex) => (
