@@ -535,6 +535,71 @@ dog`;
         [{ kind: "unchanged", value: "dog" }]
       ]);
     });
+
+    it('handles adding new lines', () => {
+      const left = `cat
+dog`;
+      const right = `cat
+
+dog
+
+`;
+      const result = textDiff(left, right);
+      expect(result.oldLines).toEqual([
+        [{ kind: "unchanged", value: "cat" }, { kind: "unchanged", value: "\n" }],
+        [],
+        [{ kind: "unchanged", value: "dog"}]
+      ]);
+      expect(result.newLines).toEqual([
+        [{ kind: "unchanged", value: "cat" }, { kind: "unchanged", value: "\n" }],
+        [{ kind: "added", value: "\n" }],
+        [{ kind: "unchanged", value: "dog"}, { kind: "added", value: "\n" }],
+        [{ kind: "added", value: "\n" }],
+        []
+      ]);
+      expect(result.unifiedLines).toEqual([
+        [{ kind: "unchanged", value: "cat" }, { kind: "removed", value: "\n" }],
+        [{ kind: "added", value: "\n" }],
+        [{ kind: "added", value: "\n" }],
+        [{ kind: "unchanged", value: "dog" }, { kind: "added", value: "\n" }],
+        [{ kind: "added", value: "\n" }],
+        []
+      ]);
+    });
+
+    it('mixed changes', () => {
+      const left = `in an old house in paris
+all covered with vines
+lived twelve little girls
+in two straight lines`;
+      const right = `in a new house in nice, all covered with bricks
+
+lived twelve little boys
+
+with two straight sticks`;
+      const result = textDiff(left, right);
+      expect(result.oldLines).toEqual([
+        [{ kind: "unchanged", value: "in " }, { kind: "removed", value: "an" },
+          { kind: "unchanged", value: " " }, { kind: "removed", value: "old" },
+          { kind: "unchanged", value: " house in " }, { kind: "removed", value: "paris\n" }],
+        [{ kind: "unchanged", value: "all covered with " }, { kind: "removed", value: "vines\n" }],
+        [],
+        [{ kind: "unchanged", value: "lived twelve little "}, { kind: "removed", value: "girls\n" }],
+        [],
+        [{ kind: "removed", value: "in"}, { kind: "unchanged", value: " two straight "}, { kind: "removed", value: "lines" }]
+      ]);
+      expect(result.newLines).toEqual([
+        [],
+        [{ kind: "unchanged", value: "in " }, { kind: "added", value: "a" },
+          { kind: "unchanged", value: " "}, { kind: "added", value: "new"},
+          { kind: "unchanged", value: " house in " }, { kind: "added", value: "nice, "},
+          { kind: "unchanged", value: "all covered with "}, { kind: "added", value: "bricks\n" }],
+        [{ kind: "added", value: "\n" }],
+        [{ kind: "unchanged", value: "lived twelve little "}, { kind: "added", value: "boys\n"}],
+        [{ kind: "added", value: "\n" }],
+        [{ kind: "added", value: "with" }, { kind: "unchanged", value: " two straight "}, { kind: "added", value: "sticks" }]
+      ]);
+    });
   });
 
 });
