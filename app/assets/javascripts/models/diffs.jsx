@@ -161,6 +161,14 @@ define(function(require) {
       return this.kind === TEXT_REMOVED;
     }
 
+    isUnchanged(): boolean {
+      return this.kind === TEXT_UNCHANGED;
+    }
+
+    isSingleNewLine(): boolean {
+      return this.value === "\n";
+    }
+
     valueIsEmpty(): boolean {
       return !this.value;
     }
@@ -172,6 +180,12 @@ define(function(require) {
   type TextPropertyOptions = {
     isCode?: boolean
   };
+
+  function arrayInsertEmptyRows(arr: LinesOfTextParts, numRows: number, index: number) {
+    const newRows = Array(numRows).fill([]);
+    const args: Array<any> = [index, 0].concat(newRows);
+    arr.splice.apply(arr, args);
+  }
 
   class MultiLineTextPropertyDiff extends PropertyDiff<string> {
     oldLines: LinesOfTextParts;
@@ -192,7 +206,7 @@ define(function(require) {
         const unifiedLineIndex = unifiedLines.length - 1;
 
         const numNewLines = lines.length - 1;
-        const firstLine = lines[0] + (numNewLines > 0 ? "\n" : "");
+        const firstLine = numNewLines > 0 ? lines[0] + "\n" : lines[0];
         const firstPart = new TextPart(firstLine, part.added, part.removed);
 
         unifiedLines[unifiedLineIndex].push(firstPart);
@@ -218,43 +232,51 @@ define(function(require) {
         });
       });
 
-      unifiedLines.forEach((unifiedLine) => {
-        const firstUnchangedPart = unifiedLine.find((part) => part.kind === TEXT_UNCHANGED);
+      const equalizeLineNumbers = function(unifiedLine) {
+        const firstUnchangedPart = unifiedLine.find((part) => part.isUnchanged());
         if (firstUnchangedPart) {
           const oldLineIndex = oldLines.findIndex((line) => line.some((part) => part === firstUnchangedPart));
           const newLineIndex = newLines.findIndex((line) => line.some((part) => part === firstUnchangedPart));
+          if (oldLineIndex < 0 || newLineIndex < 0) {
+            return;
+          }
           const diff = newLineIndex - oldLineIndex;
-          const numLinesToAdd = Math.abs(diff);
-          if (numLinesToAdd > 0) {
-            for (let i = 0; i < numLinesToAdd; i++) {
-              if (diff < 0) {
-                newLines.splice(newLineIndex, 0, []);
-              } else if (diff > 0) {
-                oldLines.splice(oldLineIndex, 0, []);
-              }
-            }
+          if (diff < 0) {
+            arrayInsertEmptyRows(newLines, -diff, newLineIndex);
+          } else if (diff > 0) {
+            arrayInsertEmptyRows(oldLines, diff, oldLineIndex);
           }
         }
-      });
+      };
 
-      oldLines.forEach((oldLine, index) => {
-        if (oldLine.length > 0) {
-          const lastOldPartIndex = oldLine.length - 1;
-          const lastOldPart = oldLine[lastOldPartIndex];
-          if (/\n/.test(lastOldPart.value) && lastOldPart.kind === TEXT_REMOVED) {
-            const newLine = newLines[index];
-            if (newLine && newLine.length > 0) {
-              const lastNewPartIndex = newLine.length - 1;
-              const lastNewPart = newLine[lastNewPartIndex];
-              if (/\n/.test(lastNewPart.value) && lastNewPart.kind === TEXT_ADDED) {
-                const replacementPart = new TextPart("\n", false, false);
-                oldLine[lastOldPartIndex] = replacementPart;
-                newLine[lastNewPartIndex] = replacementPart;
-              }
-            }
-          }
+      unifiedLines.forEach(equalizeLineNumbers);
+
+      // JsDiff treats consecutive new lines as a single word, so "\n" to "\n\n" results in
+      // two changes: remove "\n" and add "\n\n" (instead of just add "\n")
+      //
+      // Since we split changes into lines, we want to find any case where a line includes
+      // both removing and adding "\n", and replace them with "unchanged" parts
+      const replaceRedundantNewLineChanges = function(oldLine, index) {
+        const newLine = newLines[index];
+        if (oldLine.length === 0 || !newLine || newLine.length === 0) {
+          return;
         }
-      });
+
+        const lastOldPartIndex = oldLine.length - 1;
+        const lastOldPart = oldLine[lastOldPartIndex];
+
+        const lastNewPartIndex = newLine.length - 1;
+        const lastNewPart = newLine[lastNewPartIndex];
+
+        if (lastOldPart.isSingleNewLine() && lastOldPart.isRemoved() &&
+          lastNewPart.isSingleNewLine() && lastNewPart.isAdded()) {
+          const replacementPart = new TextPart("\n", false, false);
+          oldLine[lastOldPartIndex] = replacementPart;
+          newLine[lastNewPartIndex] = replacementPart;
+        }
+      };
+
+      oldLines.forEach(replaceRedundantNewLineChanges);
 
       Object.defineProperties(this, {
         oldLines: { value: oldLines, enumerable: true },
