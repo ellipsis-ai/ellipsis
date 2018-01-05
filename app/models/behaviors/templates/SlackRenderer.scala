@@ -168,7 +168,7 @@ class SlackRenderer(stringBuilder: StringBuilder) extends AbstractVisitor {
     val safeText = text.getLiteral.
       replaceAll("""(\S)([*_`~])(\s|$)""", "$1\u00AD$2\u00AD$3").
       replaceAll("""(\s|^)([*_`~])(\S)""", "$1\u00AD$2\u00AD$3")
-    stringBuilder.append(escapeControlEntities(safeText))
+    stringBuilder.append(safeText)
     visitChildren(text)
   }
 
