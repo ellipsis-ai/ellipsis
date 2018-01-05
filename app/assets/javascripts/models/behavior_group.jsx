@@ -249,6 +249,15 @@ define(function(require) {
       }, {
         name: "Libraries",
         value: this.libraryVersions
+      }, {
+        name: "Required AWS configurations",
+        value: this.requiredAWSConfigs
+      }, {
+        name: "Required OAuth2 configurations",
+        value: this.requiredOAuth2ApiConfigs
+      }, {
+        name: "Required simple token API configurations",
+        value: this.requiredSimpleTokenApis
       }];
     }
 

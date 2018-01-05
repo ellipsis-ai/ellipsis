@@ -1,4 +1,6 @@
 // @flow
+import type {Diffable, DiffableProp} from "./diffs";
+
 define(function(require) {
   const ApiConfigRef = require('./api_config_ref');
   const RequiredApiConfigWithConfig = require('./required_api_config_with_config');
@@ -6,7 +8,17 @@ define(function(require) {
 
   const logoUrl = "/assets/images/logos/aws_logo_web_300px.png";
 
-  class RequiredAWSConfig extends RequiredApiConfigWithConfig {
+  class RequiredAWSConfig extends RequiredApiConfigWithConfig implements Diffable {
+
+    diffProps(): Array<DiffableProp> {
+      return [{
+        name: "Name used in code",
+        value: this.nameInCode || ""
+      }, {
+        name: "Configuration to use",
+        value: this.configName()
+      }];
+    }
 
     onAddConfigFor(editor) {
       return editor.onAddAWSConfig;
@@ -57,7 +69,7 @@ define(function(require) {
     }
 
     static fromProps(props) {
-      return new RequiredAWSConfig(props.id, props.apiId, props.nameInCode, props.config);
+      return new RequiredAWSConfig(props.id, props.exportId, props.apiId, props.nameInCode, props.config);
     }
 
   }
@@ -66,6 +78,7 @@ define(function(require) {
 
     newRequired(): RequiredAWSConfig {
       return new RequiredAWSConfig(
+        ID.next(),
         ID.next(),
         'aws',
         this.defaultNameInCode(),
@@ -92,7 +105,7 @@ define(function(require) {
 
   RequiredAWSConfig.fromJson = function(props): RequiredAWSConfig {
     const config = props.config ? AWSConfigRef.fromJson(props.config) : undefined;
-    return new RequiredAWSConfig(props.id, props.apiId, props.nameInCode, config);
+    return new RequiredAWSConfig(props.id, props.exportId, props.apiId, props.nameInCode, config);
   };
 
   return {

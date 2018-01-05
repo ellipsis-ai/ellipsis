@@ -1,10 +1,20 @@
 // @flow
+
+import type {Diffable, DiffableProp} from "./diffs";
+
 define(function(require) {
   const ApiConfigRef = require('./api_config_ref');
   const RequiredApiConfig = require('./required_api_config');
   const ID = require('../lib/id');
 
-  class RequiredSimpleTokenApi extends RequiredApiConfig {
+  class RequiredSimpleTokenApi extends RequiredApiConfig implements Diffable {
+
+    diffProps(): Array<DiffableProp> {
+      return [{
+        name: "Name used in code",
+        value: this.nameInCode || ""
+      }];
+    }
 
     onAddConfigFor(editor) {
       return editor.onAddSimpleTokenApi;
@@ -55,7 +65,7 @@ define(function(require) {
     }
 
     static fromProps(props): RequiredSimpleTokenApi {
-      return new RequiredSimpleTokenApi(props.id, props.apiId, props.nameInCode, props.config);
+      return new RequiredSimpleTokenApi(props.id, props.exportId, props.apiId, props.nameInCode, props.config);
     }
 
   }
@@ -84,6 +94,7 @@ define(function(require) {
 
     newRequired() {
       return new RequiredSimpleTokenApi(
+        ID.next(),
         ID.next(),
         this.id,
         this.defaultNameInCode(),

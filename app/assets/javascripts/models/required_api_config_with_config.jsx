@@ -6,11 +6,19 @@ define(function(require) {
   class RequiredApiConfigWithConfig extends RequiredApiConfig {
     config: ApiConfigRef;
 
-    constructor(id: string, apiId: string, nameInCode: string, config: ApiConfigRef) {
-      super(id, apiId, nameInCode);
+    constructor(id: string, exportId: string, apiId: string, nameInCode: string, config: ApiConfigRef) {
+      super(id, exportId, apiId, nameInCode);
       Object.defineProperties(this, {
         config: {value: config, enumerable: true}
       });
+    }
+
+    configName(): ?string {
+      if (this.config) {
+        return this.config.displayName;
+      } else {
+        return null;
+      }
     }
 
     canHaveConfig(): boolean {
