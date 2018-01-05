@@ -516,13 +516,13 @@ dog`;
 
       const result = textDiff(left, right);
       expect(result.oldLines).toEqual([
-        [{ kind: "unchanged", value: "cat" }, { kind: "removed", value: "\n" }],
+        [{ kind: "unchanged", value: "cat" }, { kind: "unchanged", value: "\n" }],
         [{ kind: "removed", value: "\n" }],
         [{ kind: "removed", value: "\n" }],
         [{ kind: "unchanged", value: "dog" }]
       ]);
       expect(result.newLines).toEqual([
-        [{ kind: "unchanged", value: "cat" }, { kind: "added", value: "\n" }],
+        [{ kind: "unchanged", value: "cat" }, { kind: "unchanged", value: "\n" }],
         [],
         [],
         [{ kind: "unchanged", value: "dog" }]

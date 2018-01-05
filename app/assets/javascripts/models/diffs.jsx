@@ -225,13 +225,32 @@ define(function(require) {
           const newLineIndex = newLines.findIndex((line) => line.some((part) => part === firstUnchangedPart));
           const diff = newLineIndex - oldLineIndex;
           const numLinesToAdd = Math.abs(diff);
-          if (diff < 0) {
+          if (numLinesToAdd > 0) {
             for (let i = 0; i < numLinesToAdd; i++) {
-              newLines.splice(newLineIndex, 0, []);
+              if (diff < 0) {
+                newLines.splice(newLineIndex, 0, []);
+              } else if (diff > 0) {
+                oldLines.splice(oldLineIndex, 0, []);
+              }
             }
-          } else if (diff > 0) {
-            for (let i = 0; i < numLinesToAdd; i++) {
-              oldLines.splice(oldLineIndex, 0, []);
+          }
+        }
+      });
+
+      oldLines.forEach((oldLine, index) => {
+        if (oldLine.length > 0) {
+          const lastOldPartIndex = oldLine.length - 1;
+          const lastOldPart = oldLine[lastOldPartIndex];
+          if (/\n/.test(lastOldPart.value) && lastOldPart.kind === TEXT_REMOVED) {
+            const newLine = newLines[index];
+            if (newLine && newLine.length > 0) {
+              const lastNewPartIndex = newLine.length - 1;
+              const lastNewPart = newLine[lastNewPartIndex];
+              if (/\n/.test(lastNewPart.value) && lastNewPart.kind === TEXT_ADDED) {
+                const replacementPart = new TextPart("\n", false, false);
+                oldLine[lastOldPartIndex] = replacementPart;
+                newLine[lastNewPartIndex] = replacementPart;
+              }
             }
           }
         }
