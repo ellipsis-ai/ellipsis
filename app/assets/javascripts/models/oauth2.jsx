@@ -1,17 +1,32 @@
 // @flow
+import type {Diffable, DiffableProp} from "./diffs";
+
 define(function(require) {
   const ApiConfigRef = require('./api_config_ref');
   const RequiredApiConfigWithConfig = require('./required_api_config_with_config');
   const ID = require('../lib/id');
 
-  class RequiredOAuth2Application extends RequiredApiConfigWithConfig {
+  class RequiredOAuth2Application extends RequiredApiConfigWithConfig implements Diffable {
     recommendedScope: string;
 
-    constructor(id: string, apiId: string, nameInCode: string, config: ApiConfigRef, recommendedScope: string) {
-      super(id, apiId, nameInCode, config);
+    constructor(id: string, exportId: string, apiId: string, nameInCode: string, config: ApiConfigRef, recommendedScope: string) {
+      super(id, exportId, apiId, nameInCode, config);
       Object.defineProperties(this, {
         recommendedScope: { value: recommendedScope, enumerable: true }
       });
+    }
+
+    diffProps(): Array<DiffableProp> {
+      return [{
+        name: "Name used in code",
+        value: this.nameInCode || ""
+      }, {
+        name: "Configuration to use",
+        value: this.configName()
+      }, {
+        name: "Recommended scope",
+        value: this.recommendedScope
+      }];
     }
 
     onAddConfigFor(editor) {
@@ -65,6 +80,7 @@ define(function(require) {
     static fromProps(props) {
       return new RequiredOAuth2Application(
         props.id,
+        props.exportId,
         props.apiId,
         props.nameInCode,
         props.config,
@@ -101,6 +117,7 @@ define(function(require) {
     newRequired() {
       return new RequiredOAuth2Application(
         ID.next(),
+        ID.next(),
         this.apiId,
         this.defaultNameInCode(),
         this,
@@ -115,7 +132,7 @@ define(function(require) {
 
   RequiredOAuth2Application.fromJson = function (props) {
     const config = props.config ? OAuth2ApplicationRef.fromJson(props.config) : undefined;
-    return new RequiredOAuth2Application(props.id, props.apiId, props.nameInCode, config, props.scope);
+    return new RequiredOAuth2Application(props.id, props.exportId, props.apiId, props.nameInCode, config, props.scope);
   };
 
   return {
