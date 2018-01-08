@@ -48,6 +48,9 @@ class ScheduledActor @Inject()(
                   val message =
                     s"""Exception handling scheduled message:
                        |Team: ${scheduled.team.name} (${scheduled.team.id})
+                       |User: ${scheduled.maybeUser.map { user =>
+                          s"Ellipsis ID ${user.id} / Provider key ${user.loginInfo.providerKey}"
+                        }.getOrElse("(none)")}
                        |Channel: ${scheduled.maybeChannel.getOrElse("(missing)")}
                        |Send privately: ${scheduled.isForIndividualMembers.toString}
                        |Summary: $displayText
