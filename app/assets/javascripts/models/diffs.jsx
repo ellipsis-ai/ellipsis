@@ -35,6 +35,35 @@ export type TextPartKind = "added" | "removed" | "unchanged";
 
 define(function(require) {
   const JsDiff = require("diff");
+  const DeepEqual = require('../lib/deep_equal');
+
+  class OrderingDiff<T: Diffable> implements Diff {
+    beforeItems: Array<T>;
+    afterItems: Array<T>;
+
+    constructor(beforeItems: Array<T>, afterItems: Array<T>) {
+      Object.defineProperties(this, {
+        beforeItems: { value: beforeItems, enumerable: true },
+        afterItems: { value: afterItems, enumerable: true }
+      });
+    }
+
+    displayText(): string {
+      return this.label();
+    }
+
+    summaryText(): string {
+      return this.label();
+    }
+
+    textForItems(items: Array<T>): string {
+      return items.map(ea => ea.diffLabel()).join(", ");
+    }
+
+    label(): string {
+      return `Changed order: ${this.textForItems(this.beforeItems)} to ${this.textForItems(this.afterItems)}`;
+    }
+  }
 
   class AddedOrRemovedDiff<T: Diffable> implements Diff {
     item: T;
@@ -429,6 +458,24 @@ define(function(require) {
     }, []);
   }
 
+  function idsFor(items: Array<Diffable>): Array<string> {
+    return items.map(ea => ea.getIdForDiff());
+  }
+
+  function orderingDiffsFor(originalItems: Array<Diffable>, newItems: Array<Diffable>): Array<OrderingDiff<*>> {
+    const originalIds = idsFor(originalItems);
+    const newIds = idsFor(newItems);
+    const originalIdsWithoutRemoved = originalIds.filter(ea => newIds.includes(ea));
+
+    const newIdsWithoutAdded = newIds.filter(ea => originalIds.includes(ea));
+
+    if (DeepEqual.isEqual(originalIdsWithoutRemoved, newIdsWithoutAdded)) {
+      return [];
+    } else {
+      return [new OrderingDiff(originalItems, newItems)];
+    }
+  }
+
   function maybeDiffFor(original: Diffable, modified: Diffable, parents: ?DiffableParent): ?ModifiedDiff<*> {
     const originalProps = parents ? original.diffProps(parents.mine) : original.diffProps();
     const modifiedProps = parents ? modified.diffProps(parents.other) : modified.diffProps();
@@ -446,7 +493,8 @@ define(function(require) {
         return BooleanPropertyDiff.maybeFor(propName, originalValue, Boolean(modifiedValue));
       } else if (Array.isArray(originalValue)) {
         const modifiedArray = Array.isArray(modifiedValue) ? modifiedValue : [];
-        return diffsFor(originalValue, modifiedArray, maybeParentsFor(originalProp, modifiedProp));
+        const orderingDiffs = orderingDiffsFor(originalValue, modifiedArray);
+        return diffsFor(originalValue, modifiedArray, maybeParentsFor(originalProp, modifiedProp)).concat(orderingDiffs);
       } else {
         return null;
       }

@@ -8,6 +8,7 @@ const groupId = 'group123456';
 const behaviorId = 'ghijkl';
 const libraryId = 'lib123456';
 const inputId = 'input123456';
+const inputId2 = 'input234567';
 const requiredAWSConfigId = 'requiredAWS123456';
 const requiredGithubConfigId = 'requiredGithub123456';
 const requiredPivotalTrackerConfigId = 'requiredPivotalTracker123456';
@@ -31,7 +32,7 @@ const behaviorVersion1 = Object.freeze({
     "isRegex": false,
     "caseSensitive": false
   }],
-  "inputIds": [inputId],
+  "inputIds": [inputId, inputId2],
   "config": {
     "forcePrivateResponse": false
   },
@@ -57,7 +58,7 @@ const behaviorVersion2 = Object.freeze({
     "isRegex": true,
     "caseSensitive": false
   }],
-  "inputIds": [inputId],
+  "inputIds": [inputId2, inputId],
   "config": {
     "forcePrivateResponse": true
   },
@@ -127,9 +128,10 @@ const actionInput1 = Object.freeze({
   isSavedForTeam: false,
   isSavedForUser: true,
   inputId: inputId,
+  exportId: inputId
 });
 
-const actionInput2 = Object.freeze({
+const actionInputChanged = Object.freeze({
   name: 'clown',
   question: 'who drives the car?',
   paramType: {
@@ -139,7 +141,22 @@ const actionInput2 = Object.freeze({
   },
   isSavedForTeam: true,
   isSavedForUser: false,
-  inputId: inputId
+  inputId: inputId,
+  exportId: inputId
+});
+
+const actionInput2 = Object.freeze({
+  name: 'somethingElse',
+  question: 'and now for something?',
+  paramType: {
+    id: 'Text',
+    name: 'Text',
+    needsConfig: false
+  },
+  isSavedForTeam: false,
+  isSavedForUser: false,
+  inputId: inputId2,
+  exportId: inputId2
 });
 
 const requiredAWSConfig1 = Object.freeze({
@@ -208,7 +225,7 @@ const behaviorGroupVersion1 = Object.freeze({
   requiredAWSConfigs: [requiredAWSConfig1],
   requiredOAuth2ApiConfigs: [requiredOAuth2Config1, requiredOAuth2Config3],
   requiredSimpleTokenApis: [requiredSimpleTokenApi1],
-  actionInputs: [actionInput1],
+  actionInputs: [actionInput1, actionInput2],
   dataTypeInputs: [],
   libraryVersions: [libraryVersion1]
 });
@@ -221,7 +238,7 @@ const behaviorGroupVersion2 = Object.freeze({
   requiredAWSConfigs: [requiredAWSConfig2],
   requiredOAuth2ApiConfigs: [requiredOAuth2Config2, requiredOAuth2Config3],
   requiredSimpleTokenApis: [requiredSimpleTokenApi2],
-  actionInputs: [actionInput2],
+  actionInputs: [actionInputChanged, actionInput2],
   dataTypeInputs: [],
   libraryVersions: [libraryVersion2]
 });
@@ -436,6 +453,64 @@ describe('diffs', () => {
                     "label": "Save and re-use answer for each user",
                     "modified": false,
                     "original": true
+                  }
+                ]
+              },
+              {
+                "afterItems": [
+                  {
+                    name: 'somethingElse',
+                    question: 'and now for something?',
+                    paramType: {
+                      id: 'Text',
+                      name: 'Text',
+                      needsConfig: false
+                    },
+                    isSavedForTeam: false,
+                    isSavedForUser: false,
+                    inputId: inputId2,
+                    exportId: inputId2
+                  },
+                  {
+                    name: 'clown',
+                    question: 'who drives the car?',
+                    paramType: {
+                      id: 'sdflkjafks',
+                      name: 'Person',
+                      needsConfig: false
+                    },
+                    isSavedForTeam: true,
+                    isSavedForUser: false,
+                    inputId: inputId,
+                    exportId: inputId
+                  }
+                ],
+                "beforeItems": [
+                  {
+                    name: 'clown',
+                    question: 'what drives the car?',
+                    paramType: {
+                      id: 'Text',
+                      name: 'Text',
+                      needsConfig: false
+                    },
+                    isSavedForTeam: false,
+                    isSavedForUser: true,
+                    inputId: inputId,
+                    exportId: inputId
+                  },
+                  {
+                    name: 'somethingElse',
+                    question: 'and now for something?',
+                    paramType: {
+                      id: 'Text',
+                      name: 'Text',
+                      needsConfig: false
+                    },
+                    isSavedForTeam: false,
+                    isSavedForUser: false,
+                    inputId: inputId2,
+                    exportId: inputId2
                   }
                 ]
               }

@@ -59,7 +59,9 @@ class RequiredSimpleTokenApiServiceImpl @Inject()(
   }
 
   def uncompiledAllForQuery(behaviorVersionId: Rep[String]) = {
-    allWithApi.filter { case((required, _), _) => required.groupVersionId === behaviorVersionId }
+    allWithApi.
+      filter { case((required, _), _) => required.groupVersionId === behaviorVersionId }.
+      sortBy { case((required, _), _) => required.nameInCode }
   }
   val allForQuery = Compiled(uncompiledAllForQuery _)
 

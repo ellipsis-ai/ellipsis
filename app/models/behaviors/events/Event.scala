@@ -48,11 +48,12 @@ trait Event {
     val channelText = maybeChannel.map { channel =>
       s" in channel [${channel}]"
     }.getOrElse("")
+    val userText = s" for context user ID [${result.event.userIdForContext}]"
     val convoText = result.maybeConversation.map { convo =>
       s" in conversation [${convo.id}]"
     }.getOrElse("")
     val sourceText = maybeSource.getOrElse(logTextForResultSource)
-    val logIntro = s"Sending result [${result.fullText}] $sourceText [${messageText}]$channelText$convoText"
+    val logIntro = s"Sending result $sourceText [${messageText}]$channelText$userText$convoText: [${result.fullText}]"
     s"$logIntro\n${result.filesAsLogText}"
   }
 
