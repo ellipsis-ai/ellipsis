@@ -66,7 +66,9 @@ class RequiredOAuth2ApiConfigServiceImpl @Inject() (
   }
 
   def uncompiledAllForQuery(groupVersionId: Rep[String]) = {
-    allWithApplication.filter { case(((required, _), _), _) => required.groupVersionId === groupVersionId }
+    allWithApplication.
+      filter { case(((required, _), _), _) => required.groupVersionId === groupVersionId }.
+      sortBy { case(((required, _), _), _) => required.nameInCode }
   }
   val allForQuery = Compiled(uncompiledAllForQuery _)
 

@@ -81,7 +81,15 @@ define(function(require) {
 
     inputsFor(group?: HasInputs): Array<Input> {
       if (group) {
-        return group.getInputs().filter(ea => this.inputIds.indexOf(ea.inputId) >= 0);
+        const allInputs = group.getInputs();
+        const inputs = [];
+        this.inputIds.forEach(eaId => {
+          const match = allInputs.find(ea => ea.inputId === eaId);
+          if (match) {
+            inputs.push(match);
+          }
+        });
+        return inputs;
       } else {
         return [];
       }
