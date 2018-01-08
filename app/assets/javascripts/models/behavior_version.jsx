@@ -178,9 +178,17 @@ define(function(require) {
     }
 
     diffLabel(): string {
-      const name = this.getName();
-      const typeName = this.getBehaviorVersionTypeName();
-      return name ? `${typeName} “${name}”` : `unnamed ${typeName}`;
+      const itemLabel = this.itemLabel();
+      const kindLabel = this.kindLabel();
+      return itemLabel ? `${kindLabel} “${itemLabel}”` : `unnamed ${kindLabel}`;
+    }
+
+    itemLabel(): ?string {
+      return this.getName();
+    }
+
+    kindLabel(): string {
+      return this.getBehaviorVersionTypeName();
     }
 
     getNewEditorTitle(): string {

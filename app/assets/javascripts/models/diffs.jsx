@@ -21,6 +21,8 @@ export type DiffableProp = {
 
 export interface Diffable {
   diffLabel(): string;
+  itemLabel(): ?string;
+  kindLabel(): string;
   getIdForDiff(): string;
   diffProps(parent?: HasInputs): Array<DiffableProp>;
 }
@@ -57,11 +59,16 @@ define(function(require) {
     }
 
     textForItems(items: Array<T>): string {
-      return items.map(ea => ea.diffLabel()).join(", ");
+      return items.map(ea => ea.itemLabel()).join(", ");
     }
 
     label(): string {
-      return `Changed order: ${this.textForItems(this.beforeItems)} to ${this.textForItems(this.afterItems)}`;
+      const anyItem = this.beforeItems[0];
+      if (anyItem) {
+        return `Changed ${anyItem.kindLabel()} order: ${this.textForItems(this.beforeItems)} to ${this.textForItems(this.afterItems)}`;
+      } else {
+        return 'No change';
+      }
     }
   }
 

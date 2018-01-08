@@ -38,7 +38,17 @@ define(function() {
     }
 
     diffLabel(): string {
-      return `trigger “${this.text}”`;
+      const itemLabel = this.itemLabel();
+      const kindLabel = this.kindLabel();
+      return itemLabel ? `${kindLabel} “${itemLabel}”` : `empty ${kindLabel}`;
+    }
+
+    itemLabel(): ?string {
+      return this.text;
+    }
+
+    kindLabel(): string {
+      return "trigger";
     }
 
     getIdForDiff(): string {
