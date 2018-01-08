@@ -10,6 +10,17 @@ import slack.models.Attachment
 import scala.concurrent.{ExecutionContext, Future}
 import scala.reflect.io.File
 
+case class SlackMessageSenderException(underlying: Throwable, user: String, text: String)
+  extends Exception(
+    s"""Bad response from Slack while sending a message to user $user
+       |Message:
+       |$text
+       |
+       |Underlying cause:
+       |${underlying.getCause}
+     """.stripMargin, underlying) {
+}
+
 case class SlackMessageSender(
                                client: SlackApiClient,
                                user: String,
@@ -30,7 +41,7 @@ case class SlackMessageSender(
                                maybeReplyBroadcast: Option[Boolean] = None,
                                maybeAttachments: Option[Seq[Attachment]] = None,
                                maybeChannelToForce: Option[String] = None
-                             )(implicit actorSystem: ActorSystem): Future[String] = {
+                             )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[String] = {
     client.postChatMessage(
       maybeChannelToForce.getOrElse(maybeThreadTs.map(_ => originatingChannel).getOrElse(channelToUse)),
       text,
@@ -47,7 +58,9 @@ case class SlackMessageSender(
       deleteOriginal = None,
       threadTs = maybeThreadTs,
       replyBroadcast = maybeReplyBroadcast
-    )
+    ).recover {
+      case t: Throwable => throw SlackMessageSenderException(t, user, text)
+    }
   }
 
   private def isDirectMessage(channelId: String): Boolean = {

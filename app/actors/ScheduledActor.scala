@@ -45,12 +45,13 @@ class ScheduledActor @Inject()(
             scheduled.updateNextTriggeredForAction(dataService).flatMap { _ =>
               DBIO.from(scheduled.send(eventHandler, new SlackApiClient(profile.token), profile, services).recover {
                 case t: Throwable => {
+                  val user = scheduled.maybeUser.map { user =>
+                    s"Ellipsis ID ${user.id} / Provider key ${user.loginInfo.providerKey}"
+                  }.getOrElse("(none)")
                   val message =
                     s"""Exception handling scheduled message:
                        |Team: ${scheduled.team.name} (${scheduled.team.id})
-                       |User: ${scheduled.maybeUser.map { user =>
-                          s"Ellipsis ID ${user.id} / Provider key ${user.loginInfo.providerKey}"
-                        }.getOrElse("(none)")}
+                       |User: $user
                        |Channel: ${scheduled.maybeChannel.getOrElse("(missing)")}
                        |Send privately: ${scheduled.isForIndividualMembers.toString}
                        |Summary: $displayText
