@@ -86,7 +86,9 @@ class RequiredAWSConfigServiceImpl @Inject() (
   }
 
   def uncompiledAllForQuery(groupVersionId: Rep[String]) = {
-    allWithConfig.filter { case((_, ((groupVersion, _), _)), _) => groupVersion.id === groupVersionId }
+    allWithConfig.
+      filter { case((_, ((groupVersion, _), _)), _) => groupVersion.id === groupVersionId }.
+      sortBy { case((required, _), _) => required.nameInCode }
   }
   val allForQuery = Compiled(uncompiledAllForQuery _)
 
