@@ -8,6 +8,48 @@ import slack.models.{Channel, Group, Im}
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.matching.Regex
 
+sealed trait SlackChannelException {
+  val underlying: Throwable
+  val slackTeamId: String
+}
+
+case class ChannelInfoException(
+                                 channel: String,
+                                 slackTeamId: String,
+                                 underlying: Throwable
+                               ) extends Exception(
+  s"Error fetching info for Slack channel $channel on team $slackTeamId because $underlying",
+  underlying) with SlackChannelException
+
+case class GroupInfoException(
+                               group: String,
+                               slackTeamId: String,
+                               underlying: Throwable
+                             ) extends Exception(
+  s"Error fetching info for Slack group $group on team $slackTeamId because $underlying",
+  underlying) with SlackChannelException
+
+case class ListChannelsException(
+                                  slackTeamId: String,
+                                  underlying: Throwable
+                                ) extends Exception(
+  s"Error fetching list of Slack channels on team $slackTeamId because $underlying",
+  underlying) with SlackChannelException
+
+case class ListGroupsException(
+                                slackTeamId: String,
+                                underlying: Throwable
+                              ) extends Exception(
+  s"Error fetching list of Slack groups on team $slackTeamId because $underlying",
+  underlying) with SlackChannelException
+
+case class DMInfoException(
+                            slackTeamId: String,
+                            underlying: Throwable
+                          ) extends Exception(
+  s"Error fetching list of Slack DM channels on team $slackTeamId because $underlying",
+  underlying) with SlackChannelException
+
 trait ChannelLike {
   val members: Seq[String]
   val id: String
@@ -134,7 +176,7 @@ case class SlackChannels(client: SlackApiClient, cacheService: CacheService, sla
           case e: ApiError => if (e.code == "channel_not_found") {
             None
           } else {
-            throw e
+            throw ChannelInfoException(channel, slackTeamId, e)
           }
         }
       }
@@ -155,7 +197,7 @@ case class SlackChannels(client: SlackApiClient, cacheService: CacheService, sla
           case e: ApiError => if (e.code == "channel_not_found") {
             None
           } else {
-            throw e
+            throw GroupInfoException(channel, slackTeamId, e)
           }
         }
       }
@@ -169,6 +211,8 @@ case class SlackChannels(client: SlackApiClient, cacheService: CacheService, sla
       client.listChannels(excludeArchived = 1).map { channels =>
         cacheService.cacheSlackChannels(channels, slackTeamId)
         channels
+      }.recover {
+        case t: Throwable => throw ListChannelsException(slackTeamId, t)
       }
     }
   }
@@ -180,6 +224,8 @@ case class SlackChannels(client: SlackApiClient, cacheService: CacheService, sla
       client.listGroups(excludeArchived = 1).map { groups =>
         cacheService.cacheSlackGroups(groups, slackTeamId)
         groups
+      }.recover {
+        case t: Throwable => throw ListGroupsException(slackTeamId, t)
       }
     }
   }
@@ -191,6 +237,8 @@ case class SlackChannels(client: SlackApiClient, cacheService: CacheService, sla
       client.listIms().map { ims =>
         cacheService.cacheSlackIMs(ims, slackTeamId)
         ims
+      }.recover {
+        case t: Throwable => throw DMInfoException(slackTeamId, t)
       }
     }
   }
