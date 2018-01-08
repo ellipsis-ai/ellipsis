@@ -82,14 +82,9 @@ define(function(require) {
     inputsFor(group?: HasInputs): Array<Input> {
       if (group) {
         const allInputs = group.getInputs();
-        const inputs = [];
-        this.inputIds.forEach(eaId => {
-          const match = allInputs.find(ea => ea.inputId === eaId);
-          if (match) {
-            inputs.push(match);
-          }
-        });
-        return inputs;
+        return this.inputIds.
+          map(eaId => allInputs.find(ea => ea.inputId === eaId)).
+          filter(ea => !!ea);
       } else {
         return [];
       }
