@@ -224,8 +224,17 @@ define(function(require) {
     }
 
     diffLabel(): string {
-      const name = this.getName();
-      return name ? `skill “${name}”` : `untitled skill`;
+      const itemLabel = this.itemLabel();
+      const kindLabel = this.kindLabel();
+      return itemLabel ? `${kindLabel} “${itemLabel}”` : `untitled ${kindLabel}`;
+    }
+
+    itemLabel(): ?string {
+      return this.getName();
+    }
+
+    kindLabel(): string {
+      return "skill";
     }
 
     getIdForDiff(): string {

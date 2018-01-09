@@ -81,6 +81,10 @@ b, .type-bold {
   color: @blue-faded-dark;
 }
 
+.type-pink-dark {
+  color: @pink-dark !important;
+}
+
 .type-pink {
   color: @pink-medium !important;
 }
@@ -122,8 +126,14 @@ code, pre {
   white-space: normal;
 }
 
+.type-preserve-spaces {
+  white-space: pre-wrap;
+}
+
 .type-wrap-words {
   word-wrap: break-word;
+  word-break: break-all;
+  overflow-wrap: break-word;
 }
 
 pre {

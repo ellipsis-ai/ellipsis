@@ -64,7 +64,17 @@ define(function(require) {
     }
 
     diffLabel(): string {
-      return `input “${this.name}”`;
+      const name = this.itemLabel();
+      const kindLabel = this.kindLabel();
+      return name ? `${kindLabel} “${name}”` : `unnamed ${kindLabel}`;
+    }
+
+    itemLabel(): ?string {
+      return this.name;
+    }
+
+    kindLabel(): string {
+      return "input";
     }
 
     getIdForDiff(): string {

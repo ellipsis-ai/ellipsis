@@ -1,10 +1,26 @@
-define(function(require) {
-  const React = require('react');
+// @flow
+import type {ElementType} from 'react';
+export type ButtonProps = {
+  children: ElementType,
+  className?: string,
+  disabled?: boolean,
+  onClick: () => void,
+  title?: string
+};
 
-  class Button extends React.Component {
+define(function(require) {
+  const React = require('react'),
+    autobind = require('../lib/autobind');
+
+  type Props = ButtonProps;
+
+  class Button extends React.PureComponent<Props> {
+    props: Props;
+    button: ?React.Element<'button'>;
+
     constructor(props) {
       super(props);
-      this.onClick = this.onClick.bind(this);
+      autobind(this);
       this.button = null;
     }
 
@@ -38,14 +54,6 @@ define(function(require) {
       );
     }
   }
-
-  Button.propTypes = {
-    children: React.PropTypes.node.isRequired,
-    className: React.PropTypes.string,
-    disabled: React.PropTypes.bool,
-    onClick: React.PropTypes.func.isRequired,
-    title: React.PropTypes.string
-  };
 
   return Button;
 });

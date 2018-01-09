@@ -3,13 +3,13 @@ define(function() {
 
   class User {
     id: string;
-    userName: string;
-    fullName: string;
+    userName: ?string;
+    fullName: ?string;
 
     constructor(
       id: string,
-      userName: string,
-      fullName: string
+      userName?: string,
+      fullName?: string
     ) {
       Object.defineProperties(this, {
         id: { value: id, enumerable: true },
@@ -40,6 +40,10 @@ define(function() {
 
     formattedFullNameOrUserName(): string {
       return this.fullName || this.formattedUserName();
+    }
+
+    isSameUser(otherUser?: User): boolean {
+      return Boolean(otherUser && this.id === otherUser.id);
     }
 
     static fromProps(props): User {

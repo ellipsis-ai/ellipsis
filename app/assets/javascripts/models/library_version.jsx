@@ -39,7 +39,17 @@ define(function(require) {
     }
 
     diffLabel(): string {
-      return `library “${this.name}”`;
+      const itemLabel = this.itemLabel();
+      const kindLabel = this.kindLabel();
+      return itemLabel ? `${kindLabel} “${itemLabel}”` : `unnamed ${kindLabel}`;
+    }
+
+    itemLabel(): ?string {
+      return this.name;
+    }
+
+    kindLabel(): string {
+      return "library";
     }
 
     getIdForDiff(): string {
