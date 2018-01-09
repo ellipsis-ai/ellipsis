@@ -35,13 +35,17 @@ define(function(require) {
     render(): React.Node {
       return (
         <div className={this.props.className || ""}>
-          <div className="bg-pink-lightest pvxs phs">
-            <span>from</span>
-            {this.getFromOrder()}
-          </div>
-          <div className="bg-green-lightest pvxs phs">
-            <span>to</span>
-            {this.getToOrder()}
+          <div className="columns columns-elastic">
+            <div className="column-group">
+              <div className="column-row">
+                <div className="column column-shrink bg-pink-light pvxs phs align-r"><span className="type-label">Before</span></div>
+                <div className="column column-expand bg-pink-lightest pvxs phs">{this.getFromOrder()}</div>
+              </div>
+              <div className="column-row">
+                <div className="column column-shrink bg-green-light pvxs phs align-r"><span className="type-label">After</span></div>
+                <div className="column column-expand bg-green-lightest pvxs phs">{this.getToOrder()}</div>
+              </div>
+            </div>
           </div>
         </div>
       );
