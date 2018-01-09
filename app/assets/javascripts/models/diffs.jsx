@@ -51,7 +51,11 @@ define(function(require) {
     }
 
     displayText(): string {
-      return this.label();
+      if (this.beforeItems[0]) {
+        return `${this.label()}: from ${this.textForItems(this.beforeItems)} to ${this.textForItems(this.afterItems)}`;
+      } else {
+        return this.label();
+      }
     }
 
     summaryText(): string {
@@ -59,13 +63,17 @@ define(function(require) {
     }
 
     textForItems(items: Array<T>): string {
-      return items.map(ea => ea.itemLabel()).join(", ");
+      return items.map((ea, index) => {
+        const number = index + 1;
+        const name = ea.itemLabel() || ea.diffLabel();
+        return `${number}. ${name}`;
+      }).join(" ");
     }
 
     label(): string {
       const anyItem = this.beforeItems[0];
       if (anyItem) {
-        return `Changed ${anyItem.kindLabel()} order: ${this.textForItems(this.beforeItems)} to ${this.textForItems(this.afterItems)}`;
+        return `Changed ${anyItem.kindLabel()} order`;
       } else {
         return 'No change';
       }
@@ -522,6 +530,7 @@ define(function(require) {
     CategoricalPropertyDiff: CategoricalPropertyDiff,
     RemovedDiff: RemovedDiff,
     ModifiedDiff: ModifiedDiff,
+    OrderingDiff: OrderingDiff,
     TextPart: TextPart,
     MultiLineTextPropertyDiff: MultiLineTextPropertyDiff,
     constants: {
