@@ -36,7 +36,7 @@ define(function(require: (string) => *): React.ElementType {
     versions: Array<GroupedVersion>
   }
 
-  class VersionBrowser extends React.Component<Props> {
+  class VersionBrowser extends React.Component<Props, State> {
     props: Props;
     state: State;
 
