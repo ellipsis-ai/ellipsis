@@ -116,7 +116,8 @@ define(function(require) {
         value: this.getTriggers()
       }, {
         name: "Inputs",
-        value: this.inputsFor(parent)
+        value: this.inputsFor(parent),
+        isOrderable: true
       }];
     }
 

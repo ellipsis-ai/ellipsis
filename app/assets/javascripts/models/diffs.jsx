@@ -16,7 +16,8 @@ export type DiffableProp = {
   value: Array<Diffable> | string | boolean,
   parent?: HasInputs,
   isCategorical?: boolean,
-  isCode?: boolean
+  isCode?: boolean,
+  isOrderable?: boolean
 }
 
 export interface Diffable {
@@ -477,17 +478,21 @@ define(function(require) {
     return items.map(ea => ea.getIdForDiff());
   }
 
-  function orderingDiffsFor(originalItems: Array<Diffable>, newItems: Array<Diffable>): Array<OrderingDiff<*>> {
-    const originalIds = idsFor(originalItems);
-    const newIds = idsFor(newItems);
-    const originalIdsWithoutRemoved = originalIds.filter(ea => newIds.includes(ea));
+  function orderingDiffsFor(prop: DiffableProp, originalItems: Array<Diffable>, newItems: Array<Diffable>): Array<OrderingDiff<*>> {
+    if (prop.isOrderable) {
+      const originalIds = idsFor(originalItems);
+      const newIds = idsFor(newItems);
+      const originalIdsWithoutRemoved = originalIds.filter(ea => newIds.includes(ea));
 
-    const newIdsWithoutAdded = newIds.filter(ea => originalIds.includes(ea));
+      const newIdsWithoutAdded = newIds.filter(ea => originalIds.includes(ea));
 
-    if (DeepEqual.isEqual(originalIdsWithoutRemoved, newIdsWithoutAdded)) {
-      return [];
+      if (DeepEqual.isEqual(originalIdsWithoutRemoved, newIdsWithoutAdded)) {
+        return [];
+      } else {
+        return [new OrderingDiff(originalItems, newItems)];
+      }
     } else {
-      return [new OrderingDiff(originalItems, newItems)];
+      return [];
     }
   }
 
@@ -508,7 +513,7 @@ define(function(require) {
         return BooleanPropertyDiff.maybeFor(propName, originalValue, Boolean(modifiedValue));
       } else if (Array.isArray(originalValue)) {
         const modifiedArray = Array.isArray(modifiedValue) ? modifiedValue : [];
-        const orderingDiffs = orderingDiffsFor(originalValue, modifiedArray);
+        const orderingDiffs = orderingDiffsFor(originalProp, originalValue, modifiedArray);
         return diffsFor(originalValue, modifiedArray, maybeParentsFor(originalProp, modifiedProp)).concat(orderingDiffs);
       } else {
         return null;
