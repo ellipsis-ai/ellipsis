@@ -8,6 +8,7 @@ define(function(require: (string) => *): React.ElementType {
     Editable = require('../../models/editable'),
     Formatter = require('../../lib/formatter'),
     Select = require('../../form/select'),
+    SidebarButton = require('../../form/sidebar_button'),
     diffs = require('../../models/diffs'),
     autobind = require('../../lib/autobind');
 
@@ -169,23 +170,13 @@ define(function(require: (string) => *): React.ElementType {
       this.props.onClearActivePanel();
     }
 
-    renderSelectedVersion(hasNoChanges: boolean): ElementType {
-      const versionIndex = this.getSelectedVersionIndex();
-      const selectedVersion = this.getVersionIndex(versionIndex);
+    renderSelectedVersion(selectedVersion: ?BehaviorGroup): ElementType {
       const diff = this.getDiffForSelectedVersion(selectedVersion);
       return (
         <div>
           {selectedVersion ? (
             <div>
               <h4>Differences</h4>
-
-              <div className="mbxl">
-                <div className="align-button">From original version:</div>
-                {this.state.diffFromSelectedToCurrent ? this.renderSelectableVersion() : this.renderCurrentVersionPlaceholder(hasNoChanges)}
-                <div className="align-button">to new version:</div>
-                {this.state.diffFromSelectedToCurrent ? this.renderCurrentVersionPlaceholder(hasNoChanges) : this.renderSelectableVersion()}
-                <Button onClick={this.invertDiffDirection}>Switch direction</Button>
-              </div>
 
               {this.renderDiff(diff)}
             </div>
@@ -241,6 +232,8 @@ define(function(require: (string) => *): React.ElementType {
     render(): ElementType {
       const lastSavedVersion = this.getLastSavedVersion();
       const hasNoChanges = Boolean(lastSavedVersion && lastSavedVersion.isIdenticalTo(this.props.currentGroup));
+      const versionIndex = this.getSelectedVersionIndex();
+      const selectedVersion = this.getVersionIndex(versionIndex);
       return (
         <div className="flex-row-cascade pbxxxxl">
           <div className="bg-lightest">
@@ -251,26 +244,48 @@ define(function(require: (string) => *): React.ElementType {
               <span>Skill versions</span>
             </div>
 
-            <div className="tabs">
-              <div className="tab-row container container-wide">
-                <button type="button" className="tab tab-active">Versions saved in Ellipsis</button>
-                <button type="button" className="tab">Versions on GitHub</button>
-              </div>
-            </div>
-
           </div>
 
           <div className="flex-columns flex-row-expand">
             <div className="flex-column flex-column-left flex-rows bg-white">
-              <div className="container container container-wide pvm">
-                {this.renderSelectedVersion(hasNoChanges)}
+              <div className="container container container-wide ptm pbxxxxl">
+                {this.renderSelectedVersion(selectedVersion)}
               </div>
             </div>
           </div>
 
-          <div className="position-fixed-bottom container container-wide ptm border-top bg-white-translucent">
-            <Button className="mrs mbm button-primary" onClick={this.props.onClearActivePanel}>Done</Button>
-            {this.renderRevertButton()}
+          <div className="position-fixed-bottom">
+
+            <div className="bg-white-translucent border-top">
+              <div className="columns">
+                <div className="column column-page-sidebar pvxl">
+                  <h5 className="phxl mobile-phl">Compare versions</h5>
+                  <div className="type-s">
+                    <SidebarButton selected={true}>Versions saved in Ellipsis</SidebarButton>
+                    <SidebarButton>Versions on GitHub</SidebarButton>
+                  </div>
+                </div>
+                <div className="column column-page-main-wide pvxl container container-wide">
+
+                  {selectedVersion ? (
+                    <div>
+                      <div className="align-button">From original version:</div>
+                      {this.state.diffFromSelectedToCurrent ? this.renderSelectableVersion() : this.renderCurrentVersionPlaceholder(hasNoChanges)}
+                      <div className="align-button">to new version:</div>
+                      {this.state.diffFromSelectedToCurrent ? this.renderCurrentVersionPlaceholder(hasNoChanges) : this.renderSelectableVersion()}
+                      <Button onClick={this.invertDiffDirection}>Switch direction</Button>
+                    </div>
+                  ) : null}
+
+                </div>
+              </div>
+            </div>
+
+            <div className="ptm bg-lightest border-top border-light container container-wide">
+              <Button className="mrs mbm button-primary" onClick={this.props.onClearActivePanel}>Done</Button>
+              {this.renderRevertButton()}
+            </div>
+
           </div>
         </div>
       );
