@@ -10,20 +10,21 @@ import slack.models.Attachment
 import scala.concurrent.{ExecutionContext, Future}
 import scala.reflect.io.File
 
-case class SlackMessageSenderException(underlying: Throwable, user: String, text: String)
+case class SlackMessageSenderException(underlying: Throwable, channel: String, teamId: String, userId: String, text: String)
   extends Exception(
-    s"""Bad response from Slack while sending a message to user $user
+    s"""Bad response from Slack while sending a message to user $userId in channel $channel on team $teamId
        |Message:
        |$text
        |
        |Underlying cause:
-       |${underlying.getCause}
+       |${underlying.toString}
      """.stripMargin, underlying) {
 }
 
 case class SlackMessageSender(
                                client: SlackApiClient,
                                user: String,
+                               teamId: String,
                                unformattedText: String,
                                forcePrivate: Boolean,
                                originatingChannel: String,
@@ -42,8 +43,9 @@ case class SlackMessageSender(
                                maybeAttachments: Option[Seq[Attachment]] = None,
                                maybeChannelToForce: Option[String] = None
                              )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[String] = {
+    val channel = maybeChannelToForce.getOrElse(maybeThreadTs.map(_ => originatingChannel).getOrElse(channelToUse))
     client.postChatMessage(
-      maybeChannelToForce.getOrElse(maybeThreadTs.map(_ => originatingChannel).getOrElse(channelToUse)),
+      channel,
       text,
       username = None,
       asUser = Some(true),
@@ -59,7 +61,7 @@ case class SlackMessageSender(
       threadTs = maybeThreadTs,
       replyBroadcast = maybeReplyBroadcast
     ).recover {
-      case t: Throwable => throw SlackMessageSenderException(t, user, text)
+      case t: Throwable => throw SlackMessageSenderException(t, channel, teamId, user, text)
     }
   }
 

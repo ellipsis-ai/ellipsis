@@ -57,6 +57,7 @@ case class RunEvent(
     SlackMessageSender(
       client,
       user,
+      profile.slackTeamId,
       unformattedText,
       forcePrivate,
       channel,
