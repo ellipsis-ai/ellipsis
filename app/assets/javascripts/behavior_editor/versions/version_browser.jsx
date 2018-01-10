@@ -275,7 +275,7 @@ define(function(require: (string) => *): React.ElementType {
       const versionIndex = this.getSelectedVersionIndex();
       const selectedVersion = this.getVersionIndex(versionIndex);
       return (
-        <div ref={(el) => this.scrollContainer = el} className="flex-row-cascade" style={{ paddingBottom: this.getFooterHeight() }}>
+        <div ref={(el) => this.scrollContainer = el} className="flex-row-cascade" style={{ paddingBottom: `${this.getFooterHeight()}px` }}>
           <div className="bg-lightest">
 
             <div className="container container-wide pvm">
