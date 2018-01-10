@@ -6,7 +6,7 @@ export type PageRequiredProps = {
   onToggleActivePanel: (name: string, beModal?: boolean, optionalCallback?: () => void) => void,
   onClearActivePanel: (optionalCallback?: () => void) => void,
   onRenderFooter: (content: Node, footerClassName?: string) => Node,
-  onGetFooterHeight: () => number
+  footerHeight: number
 };
 
 define(function(require) {
@@ -31,10 +31,12 @@ define(function(require) {
     activePanelName: string,
     activePanelIsModal: boolean,
     previousPanelName: string,
-    previousPanelIsModal: boolean
+    previousPanelIsModal: boolean,
+    footerHeight: number
   }
 
   class Page extends React.Component<Props, State> {
+
     constructor(props) {
       super(props);
       autobind(this);
@@ -47,7 +49,8 @@ define(function(require) {
         activePanelName: "",
         activePanelIsModal: false,
         previousPanelName: "",
-        previousPanelIsModal: false
+        previousPanelIsModal: false,
+        footerHeight: 0
       };
     }
 
@@ -141,7 +144,13 @@ define(function(require) {
     }
 
     getFooterHeight(): number {
-      return this.footer ? this.footer.getHeight() : 0;
+      return this.state.footerHeight;
+    }
+
+    setFooterHeight(number): void {
+      this.setState({
+        footerHeight: number
+      });
     }
 
     toggleFeedback(): void {
@@ -152,7 +161,7 @@ define(function(require) {
       return (
         <div>
           <ModalScrim isActive={this.state.activePanelIsModal} onClick={this.clearActivePanel} />
-          <FixedFooter ref={(el) => this.footer = el} className={`bg-white ${footerClassName || ""}`}>
+          <FixedFooter ref={(el) => this.footer = el} className={`bg-white ${footerClassName || ""}`} onHeightChange={this.setFooterHeight}>
             <Collapsible revealWhen={this.state.activePanelName === 'feedback'}>
               <FeedbackPanel onDone={this.toggleFeedback} csrfToken={this.props.csrfToken} />
             </Collapsible>
@@ -177,7 +186,7 @@ define(function(require) {
             onToggleActivePanel: this.toggleActivePanel,
             onClearActivePanel: this.clearActivePanel,
             onRenderFooter: this.onRenderFooter,
-            onGetFooterHeight: this.getFooterHeight,
+            footerHeight: this.getFooterHeight(),
             ref: (component) => this.component = component
           }))}
         </div>
@@ -191,7 +200,7 @@ define(function(require) {
         onToggleActivePanel: Page.placeholderCallback,
         onClearActivePanel: Page.placeholderCallback,
         onRenderFooter: Page.placeholderCallback,
-        onGetFooterHeight: Page.placeholderCallback
+        footerHeight: 0
       };
     }
 
@@ -212,7 +221,7 @@ define(function(require) {
     onToggleActivePanel: React.PropTypes.func.isRequired,
     onClearActivePanel: React.PropTypes.func.isRequired,
     onRenderFooter: React.PropTypes.func.isRequired,
-    onGetFooterHeight: React.PropTypes.func.isRequired
+    footerHeight: React.PropTypes.number.isRequired
   });
 
   Page.feedbackContainerId = 'header-feedback';

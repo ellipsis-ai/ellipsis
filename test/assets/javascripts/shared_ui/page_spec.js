@@ -24,7 +24,7 @@ const FooterRenderingComponentDefaultProps = Object.freeze({
   onToggleActivePanel: jest.fn(),
   onClearActivePanel: jest.fn(),
   onRenderFooter: jest.fn(),
-  onGetFooterHeight: jest.fn()
+  footerHeight: 0
 });
 
 class NoFooterComponent extends React.Component<{}> {
