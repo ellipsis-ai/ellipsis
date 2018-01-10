@@ -6,11 +6,17 @@ define(function(require: (string) => *): React.ElementType {
     BehaviorGroupDiff = require('./behavior_group_diff'),
     Button = require('../../form/button'),
     Editable = require('../../models/editable'),
+    FixedFooter = require('../../shared_ui/fixed_footer'),
     Formatter = require('../../lib/formatter'),
     Select = require('../../form/select'),
     SidebarButton = require('../../form/sidebar_button'),
     diffs = require('../../models/diffs'),
     autobind = require('../../lib/autobind');
+
+  const versionSources = {
+    local: "local",
+    github: "github"
+  };
 
   type Props = {
     currentGroup: BehaviorGroup,
@@ -21,9 +27,13 @@ define(function(require: (string) => *): React.ElementType {
     editableIsModified: (editable: Editable) => boolean
   };
 
+  type VersionSource = $Keys<typeof versionSources>;
+
   type State = {
     selectedMenuItem: string,
-    diffFromSelectedToCurrent: boolean
+    diffFromSelectedToCurrent: boolean,
+    versionSource: VersionSource,
+    footerHeight: number
   }
 
   type GroupedVersion = {
@@ -40,14 +50,30 @@ define(function(require: (string) => *): React.ElementType {
   class VersionBrowser extends React.Component<Props, State> {
     props: Props;
     state: State;
+    footer: ?HTMLDivElement;
+    scrollContainer: ?HTMLDivElement;
 
     constructor(props: Props): void {
       super(props);
       autobind(this);
       this.state = {
         selectedMenuItem: "loading",
-        diffFromSelectedToCurrent: true
+        diffFromSelectedToCurrent: true,
+        versionSource: versionSources.local,
+        footerHeight: 0
       };
+    }
+
+    setVersionSourceToLocal(): void {
+      this.setState({
+        versionSource: versionSources.local
+      });
+    }
+
+    setVersionSourceToGitHub(): void {
+      this.setState({
+        versionSource: versionSources.github
+      });
     }
 
     componentWillReceiveProps(nextProps: Props): void {
@@ -165,6 +191,20 @@ define(function(require: (string) => *): React.ElementType {
       }
     }
 
+    getVersionSource(): VersionSource {
+      return this.state.versionSource;
+    }
+
+    getFooterHeight(): number {
+      return this.state.footerHeight;
+    }
+
+    setFooterHeight(height: number): void {
+      this.setState({
+        footerHeight: height
+      });
+    }
+
     revertToSelected(): void {
       this.props.onRestoreClick(this.getSelectedVersionIndex());
       this.props.onClearActivePanel();
@@ -235,7 +275,7 @@ define(function(require: (string) => *): React.ElementType {
       const versionIndex = this.getSelectedVersionIndex();
       const selectedVersion = this.getVersionIndex(versionIndex);
       return (
-        <div className="flex-row-cascade pbxxxxl">
+        <div ref={(el) => this.scrollContainer = el} className="flex-row-cascade" style={{ paddingBottom: this.getFooterHeight() }}>
           <div className="bg-lightest">
 
             <div className="container container-wide pvm">
@@ -248,21 +288,27 @@ define(function(require: (string) => *): React.ElementType {
 
           <div className="flex-columns flex-row-expand">
             <div className="flex-column flex-column-left flex-rows bg-white">
-              <div className="container container container-wide ptm pbxxxxl">
+              <div className="container container container-wide ptm pbxl">
                 {this.renderSelectedVersion(selectedVersion)}
               </div>
             </div>
           </div>
 
-          <div className="position-fixed-bottom">
+          <FixedFooter ref={(el) => this.footer = el} onHeightChange={this.setFooterHeight}>
 
-            <div className="bg-white-translucent border-top">
+            <div className="bg-white-translucent border-emphasis-top border-pink">
               <div className="columns">
-                <div className="column column-page-sidebar pvxl">
+                <div className="column column-page-sidebar pts pbm border-right border-light prn">
                   <h5 className="phxl mobile-phl">Compare versions</h5>
                   <div className="type-s">
-                    <SidebarButton selected={true}>Versions saved in Ellipsis</SidebarButton>
-                    <SidebarButton>Versions on GitHub</SidebarButton>
+                    <SidebarButton
+                      selected={this.getVersionSource() === versionSources.local}
+                      onClick={this.setVersionSourceToLocal}
+                    >Versions saved in Ellipsis</SidebarButton>
+                    <SidebarButton
+                      selected={this.getVersionSource() === versionSources.github}
+                      onClick={this.setVersionSourceToGitHub}
+                    >Versions on GitHub</SidebarButton>
                   </div>
                 </div>
                 <div className="column column-page-main-wide pvxl container container-wide">
@@ -286,7 +332,7 @@ define(function(require: (string) => *): React.ElementType {
               {this.renderRevertButton()}
             </div>
 
-          </div>
+          </FixedFooter>
         </div>
       );
     }
