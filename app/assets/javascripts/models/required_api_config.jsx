@@ -28,7 +28,7 @@ define(function() {
     }
 
     kindLabel(): string {
-      return `required ${this.apiId} configuration`;
+      return `required API configuration`;
     }
 
     getIdForDiff(): string {
