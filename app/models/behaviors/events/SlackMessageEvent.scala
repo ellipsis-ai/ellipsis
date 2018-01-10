@@ -129,6 +129,7 @@ case class SlackMessageEvent(
       SlackMessageSender(
         client,
         user,
+        profile.slackTeamId,
         unformattedText,
         forcePrivate,
         channel,

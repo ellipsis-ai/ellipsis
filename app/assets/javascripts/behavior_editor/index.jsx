@@ -793,7 +793,7 @@ const BehaviorEditor = React.createClass({
 
   getLeftPanelCoordinates: function() {
     var headerHeight = this.getHeaderHeight();
-    var footerHeight = this.props.activePanelIsModal ? 0 : this.props.onGetFooterHeight();
+    var footerHeight = this.props.activePanelIsModal ? 0 : this.props.footerHeight;
     var windowHeight = window.innerHeight;
 
     var availableHeight = windowHeight - headerHeight - footerHeight;
@@ -1470,7 +1470,7 @@ const BehaviorEditor = React.createClass({
   /* Interaction and event handling */
 
   ensureCursorVisible: function(editor) {
-    const height = this.props.onGetFooterHeight();
+    const height = this.props.footerHeight;
     if (!height) {
       return;
     }

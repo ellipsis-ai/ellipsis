@@ -1,45 +1,65 @@
+// @flow
 define(function(require) {
-  var React = require('react');
+  const React = require('react'),
+    autobind = require('../lib/autobind');
 
-  return React.createClass({
-    displayName: 'FixedFooter',
-    intervalId: null,
-    propTypes: {
-      children: React.PropTypes.node.isRequired,
-      className: React.PropTypes.string
-    },
+  type Props = {
+    children: React.Node,
+    className: ?string,
+    onHeightChange: (number) => void
+  }
 
-    getInitialState: function() {
-      return {
+  type State = {
+    exceedsWindowHeight: boolean
+  }
+
+  class FixedFooter extends React.Component<Props, State> {
+    intervalId: ?number;
+    footer: ?HTMLDivElement;
+    currentScrollHeight: number;
+    props: Props;
+    state: State;
+
+    constructor(props) {
+      super(props);
+      autobind(this);
+      this.intervalId = null;
+      this.footer = null;
+      this.currentScrollHeight = 0;
+      this.state = {
         exceedsWindowHeight: false
       };
-    },
+    }
 
-    checkHeight: function() {
-      var footerScrollHeight = this.refs.footer.scrollHeight;
+    checkHeight(): void {
+      var footerScrollHeight = this.footer ? this.footer.scrollHeight : 0;
       var windowHeight = window.innerHeight;
       var exceedsWindowHeight = footerScrollHeight > windowHeight;
       if (this.state.exceedsWindowHeight !== exceedsWindowHeight) {
         this.setState({ exceedsWindowHeight: exceedsWindowHeight });
       }
-    },
+      if (footerScrollHeight !== this.currentScrollHeight) {
+        this.currentScrollHeight = footerScrollHeight;
+        if (this.props.onHeightChange) {
+          this.props.onHeightChange(this.currentScrollHeight);
+        }
+      }
+    }
 
-    getHeight: function() {
-      return this.refs.footer ? this.refs.footer.clientHeight : 0;
-    },
+    componentDidMount(): void {
+      this.intervalId = setInterval(this.checkHeight, 150);
+    }
 
-    componentDidMount: function() {
-      this.intervalId = window.setInterval(this.checkHeight, 100);
-    },
+    componentWillUnmount(): void {
+      if (this.intervalId) {
+        clearInterval(this.intervalId);
+      }
+    }
 
-    componentWillUnmount: function() {
-      window.clearInterval(this.intervalId);
-    },
-
-    render: function() {
+    render(): React.Node {
       return (
         <footer
-          ref="footer"
+          ref={(el) => this.footer = el}
           className={`position-fixed-bottom position-z-front ${this.props.className || ""}`}
           style={(this.state.exceedsWindowHeight ? { overflowY: 'auto' } : {})}
         >
@@ -47,5 +67,7 @@ define(function(require) {
         </footer>
       );
     }
-  });
+  }
+
+  return FixedFooter;
 });
