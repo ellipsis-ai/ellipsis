@@ -243,13 +243,23 @@ define(function(require: (string) => *): React.ElementType {
       const hasNoChanges = Boolean(lastSavedVersion && lastSavedVersion.isIdenticalTo(this.props.currentGroup));
       return (
         <div className="flex-row-cascade pbxxxxl">
-          <div className="bg-white container container-wide pvm border-bottom border-light">
+          <div className="bg-lightest">
 
-            <Button className="button-raw" onClick={this.props.onClearActivePanel}>{this.props.currentGroup.getName()}</Button>
-            <span className="mhs type-weak">→</span>
-            <span>Skill versions</span>
+            <div className="container container-wide pvm">
+              <Button className="button-raw" onClick={this.props.onClearActivePanel}>{this.props.currentGroup.getName()}</Button>
+              <span className="mhs type-weak">→</span>
+              <span>Skill versions</span>
+            </div>
+
+            <div className="tabs">
+              <div className="tab-row container container-wide">
+                <button type="button" className="tab tab-active">Versions saved in Ellipsis</button>
+                <button type="button" className="tab">Versions on GitHub</button>
+              </div>
+            </div>
 
           </div>
+
           <div className="flex-columns flex-row-expand">
             <div className="flex-column flex-column-left flex-rows bg-white">
               <div className="container container container-wide pvm">
