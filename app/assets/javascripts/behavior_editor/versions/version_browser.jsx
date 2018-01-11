@@ -9,7 +9,7 @@ define(function(require: (string) => *): React.ElementType {
     FixedFooter = require('../../shared_ui/fixed_footer'),
     Formatter = require('../../lib/formatter'),
     Select = require('../../form/select'),
-    SidebarButton = require('../../form/sidebar_button'),
+    ToggleGroup = require('../../form/toggle_group'),
     diffs = require('../../models/diffs'),
     autobind = require('../../lib/autobind');
 
@@ -99,12 +99,8 @@ define(function(require: (string) => *): React.ElementType {
       return version.author ? `by ${isCurrentUser ? "you" : version.author.formattedName()}` : "";
     }
 
-    shortNameForVersion(version: BehaviorGroup, index: number): string {
-      if (index === 0) {
-        return `last saved version`;
-      } else {
-        return `${Formatter.formatTimestampShort(version.createdAt)}`;
-      }
+    shortNameForVersion(version: BehaviorGroup): string {
+      return Formatter.formatTimestampShort(version.createdAt);
     }
 
     getGroupedVersions(versions: Array<BehaviorGroup>): Array<VersionGroup> {
@@ -160,13 +156,29 @@ define(function(require: (string) => *): React.ElementType {
       }
     }
 
+    compareLocalVersions(): boolean {
+      return this.getVersionSource() === versionSources.local;
+    }
+
+    compareGitHubVersions(): boolean {
+      return this.getVersionSource() === versionSources.github;
+    }
+
     getSelectedVersionIndex(): number {
-      if (this.getVersionSource() === versionSources.local && this.state.selectedMenuItem) {
+      if (this.compareLocalVersions() && this.state.selectedMenuItem) {
         const match = this.state.selectedMenuItem.match(/version(\d+)/);
         const index = match ? parseInt(match[1], 10) : null;
         return index || 0;
       } else {
         return 0;
+      }
+    }
+
+    getSelectedVersion(): ?BehaviorGroup {
+      if (this.compareLocalVersions()) {
+        return this.getVersionIndex(this.getSelectedVersionIndex());
+      } else {
+        return null;
       }
     }
 
@@ -206,7 +218,7 @@ define(function(require: (string) => *): React.ElementType {
     }
 
     revertToSelected(): void {
-      const selected = this.getVersionIndex(this.getSelectedVersionIndex());
+      const selected = this.getSelectedVersion();
       if (selected) {
         this.props.onRestoreVersionClick(selected);
         this.props.onClearActivePanel();
@@ -214,20 +226,26 @@ define(function(require: (string) => *): React.ElementType {
     }
 
     renderSelectedVersion(selectedVersion: ?BehaviorGroup): ElementType {
-      const diff = this.getDiffForSelectedVersion(selectedVersion);
-      return (
-        <div>
-          {selectedVersion ? (
-            <div>
-              <h4>Differences</h4>
-
-              {this.renderDiff(diff)}
-            </div>
-          ) : (
-            <span className="pulse">Loading…</span>
-          )}
-        </div>
-      );
+      if (selectedVersion) {
+        const diff = this.getDiffForSelectedVersion(selectedVersion);
+        return (
+          <div>
+            {this.renderDiff(diff)}
+          </div>
+        );
+      } else if (this.compareLocalVersions() && this.props.versions.length === 0) {
+        return (
+          <div className="pulse">Loading version history…</div>
+        );
+      } else if (this.compareGitHubVersions()) {
+        return (
+          <div className="type-italic">Select a GitHub branch to compare.</div>
+        );
+      } else {
+        return (
+          <div className="type-italic">Select another version to compare.</div>
+        );
+      }
     }
 
     renderDiff(diff: ?diffs.ModifiedDiff<BehaviorGroup>): Node {
@@ -259,11 +277,10 @@ define(function(require: (string) => *): React.ElementType {
     }
 
     renderRevertButton(): ElementType {
-      const index = this.getSelectedVersionIndex();
-      const selectedVersion = this.getVersionIndex(index);
+      const selectedVersion = this.getSelectedVersion();
       if (selectedVersion && !selectedVersion.isIdenticalTo(this.props.currentGroup)) {
         return (
-          <Button className="mrs mbm" onClick={this.revertToSelected}>Revert to {this.shortNameForVersion(selectedVersion, index)}</Button>
+          <Button className="mrs mbm" onClick={this.revertToSelected}>Revert to {this.shortNameForVersion(selectedVersion)}</Button>
         );
       } else {
         return (
@@ -273,7 +290,7 @@ define(function(require: (string) => *): React.ElementType {
     }
 
     renderVersionSelector(selectedVersion: ?BehaviorGroup, hasNoChanges: boolean): Node {
-      if (this.getVersionSource() === versionSources.local && selectedVersion) {
+      if (this.compareLocalVersions() && selectedVersion) {
         return (
           <div>
             <div className="align-button">From original version:</div>
@@ -291,8 +308,8 @@ define(function(require: (string) => *): React.ElementType {
     render(): ElementType {
       const lastSavedVersion = this.getLastSavedVersion();
       const hasNoChanges = Boolean(lastSavedVersion && lastSavedVersion.isIdenticalTo(this.props.currentGroup));
-      const versionIndex = this.getSelectedVersionIndex();
-      const selectedVersion = this.getVersionIndex(versionIndex);
+
+      const selectedVersion = this.getSelectedVersion();
       return (
         <div ref={(el) => this.scrollContainer = el} className="flex-row-cascade" style={{ paddingBottom: `${this.getFooterHeight()}px` }}>
           <div className="bg-lightest">
@@ -300,7 +317,7 @@ define(function(require: (string) => *): React.ElementType {
             <div className="container container-wide pvm">
               <Button className="button-raw" onClick={this.props.onClearActivePanel}>{this.props.currentGroup.getName()}</Button>
               <span className="mhs type-weak">→</span>
-              <span>Skill versions</span>
+              <span>Compare skill versions</span>
             </div>
 
           </div>
@@ -308,6 +325,9 @@ define(function(require: (string) => *): React.ElementType {
           <div className="flex-columns flex-row-expand">
             <div className="flex-column flex-column-left flex-rows bg-white">
               <div className="container container container-wide ptm pbxl">
+
+                <h4>Differences</h4>
+
                 {this.renderSelectedVersion(selectedVersion)}
               </div>
             </div>
@@ -315,26 +335,30 @@ define(function(require: (string) => *): React.ElementType {
 
           <FixedFooter ref={(el) => this.footer = el} onHeightChange={this.setFooterHeight}>
 
-            <div className="bg-white-translucent border-emphasis-top border-pink">
-              <div className="columns">
-                <div className="column column-page-sidebar pts pbm border-right border-light prn">
-                  <h5 className="phxl mobile-phl">Compare versions</h5>
-                  <div className="type-s">
-                    <SidebarButton
-                      selected={this.getVersionSource() === versionSources.local}
-                      onClick={this.setVersionSourceToLocal}
-                    >Versions saved in Ellipsis</SidebarButton>
-                    <SidebarButton
-                      selected={this.getVersionSource() === versionSources.github}
-                      onClick={this.setVersionSourceToGitHub}
-                    >Versions on GitHub</SidebarButton>
-                  </div>
-                </div>
-                <div className="column column-page-main-wide pvxl container container-wide">
+            <div className="bg-white-translucent border-emphasis-top border-pink pvl container container-wide">
 
-                  {this.renderVersionSelector(selectedVersion, hasNoChanges)}
+              <div className="mbl">
+                <span className="align-button mrs">
+                  Compare with:
+                </span>
+                <ToggleGroup>
+                  <ToggleGroup.Item
+                    onClick={this.setVersionSourceToLocal}
+                    activeWhen={this.compareLocalVersions()}
+                    label={"Versions saved in Ellipsis"}
+                  />
+                  <ToggleGroup.Item
+                    onClick={this.setVersionSourceToGitHub}
+                    activeWhen={this.compareGitHubVersions()}
+                    label={"Versions on GitHub"}
+                  />
+                </ToggleGroup>
+              </div>
 
-                </div>
+              <div className="mtl">
+
+                {this.renderVersionSelector(selectedVersion, hasNoChanges)}
+
               </div>
             </div>
 
