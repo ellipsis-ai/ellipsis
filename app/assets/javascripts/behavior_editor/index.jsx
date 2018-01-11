@@ -2632,12 +2632,19 @@ const BehaviorEditor = React.createClass({
   renderVersionBrowser: function() {
     return (
       <VersionBrowser
+        csrfToken={this.props.csrfToken}
         currentGroup={this.getBehaviorGroup()}
+        currentGroupIsModified={this.isModified()}
         currentUserId={this.props.userId}
         versions={this.getVersions()}
         onRestoreVersionClick={this.onReplaceBehaviorGroup}
         onClearActivePanel={this.props.onClearActivePanel}
         editableIsModified={this.editableIsModified}
+        isLinkedToGithub={this.props.isLinkedToGithub}
+        linkedGithubRepo={this.props.linkedGithubRepo}
+        onGithubPushClick={this.onGithubPushClick}
+        onGithubPullClick={this.onGithubPullClick}
+        onLinkGithubRepo={this.props.onLinkGithubRepo}
       />
     );
   },
