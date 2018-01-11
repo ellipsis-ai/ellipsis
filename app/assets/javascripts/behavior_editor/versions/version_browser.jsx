@@ -23,7 +23,7 @@ define(function(require: (string) => *): React.ElementType {
     currentUserId: string,
     versions: Array<BehaviorGroup>,
     onClearActivePanel: () => void,
-    onRestoreClick: (index: number, optionalCallback?: () => void) => void,
+    onRestoreVersionClick: (version: BehaviorGroup, optionalCallback?: () => void) => void,
     editableIsModified: (editable: Editable) => boolean
   };
 
@@ -161,7 +161,7 @@ define(function(require: (string) => *): React.ElementType {
     }
 
     getSelectedVersionIndex(): number {
-      if (this.state.selectedMenuItem) {
+      if (this.getVersionSource() === versionSources.local && this.state.selectedMenuItem) {
         const match = this.state.selectedMenuItem.match(/version(\d+)/);
         const index = match ? parseInt(match[1], 10) : null;
         return index || 0;
@@ -206,8 +206,11 @@ define(function(require: (string) => *): React.ElementType {
     }
 
     revertToSelected(): void {
-      this.props.onRestoreClick(this.getSelectedVersionIndex());
-      this.props.onClearActivePanel();
+      const selected = this.getVersionIndex(this.getSelectedVersionIndex());
+      if (selected) {
+        this.props.onRestoreVersionClick(selected);
+        this.props.onClearActivePanel();
+      }
     }
 
     renderSelectedVersion(selectedVersion: ?BehaviorGroup): ElementType {
@@ -269,6 +272,22 @@ define(function(require: (string) => *): React.ElementType {
       }
     }
 
+    renderVersionSelector(selectedVersion: ?BehaviorGroup, hasNoChanges: boolean): Node {
+      if (this.getVersionSource() === versionSources.local && selectedVersion) {
+        return (
+          <div>
+            <div className="align-button">From original version:</div>
+            {this.state.diffFromSelectedToCurrent ? this.renderSelectableVersion() : this.renderCurrentVersionPlaceholder(hasNoChanges)}
+            <div className="align-button">to new version:</div>
+            {this.state.diffFromSelectedToCurrent ? this.renderCurrentVersionPlaceholder(hasNoChanges) : this.renderSelectableVersion()}
+            <Button onClick={this.invertDiffDirection}>Switch direction</Button>
+          </div>
+        );
+      } else {
+        return null;
+      }
+    }
+
     render(): ElementType {
       const lastSavedVersion = this.getLastSavedVersion();
       const hasNoChanges = Boolean(lastSavedVersion && lastSavedVersion.isIdenticalTo(this.props.currentGroup));
@@ -313,15 +332,7 @@ define(function(require: (string) => *): React.ElementType {
                 </div>
                 <div className="column column-page-main-wide pvxl container container-wide">
 
-                  {selectedVersion ? (
-                    <div>
-                      <div className="align-button">From original version:</div>
-                      {this.state.diffFromSelectedToCurrent ? this.renderSelectableVersion() : this.renderCurrentVersionPlaceholder(hasNoChanges)}
-                      <div className="align-button">to new version:</div>
-                      {this.state.diffFromSelectedToCurrent ? this.renderCurrentVersionPlaceholder(hasNoChanges) : this.renderSelectableVersion()}
-                      <Button onClick={this.invertDiffDirection}>Switch direction</Button>
-                    </div>
-                  ) : null}
+                  {this.renderVersionSelector(selectedVersion, hasNoChanges)}
 
                 </div>
               </div>

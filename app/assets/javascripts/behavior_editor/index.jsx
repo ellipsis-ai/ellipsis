@@ -995,25 +995,14 @@ const BehaviorEditor = React.createClass({
     this.checkDataAndCallback(() => { this.backgroundSave(optionalCallback); });
   },
 
-  onReplaceBehaviorGroup: function(newGroupData, optionalCallback) {
-    this.setState({ group: newGroupData }, () => this.onSaveBehaviorGroup(optionalCallback));
-  },
-
-  showVersionIndex: function(versionIndex, optionalCallback) {
-    const version = this.getVersions()[versionIndex];
-    const stateUpdates = {
-      group: version
+  onReplaceBehaviorGroup: function(newBehaviorGroup, optionalCallback) {
+    const newState = {
+      group: newBehaviorGroup
     };
-    if (!version.hasBehaviorVersionWithId(this.getSelectedId())) {
-      stateUpdates.selectedId = null;
+    if (!newBehaviorGroup.hasBehaviorVersionWithId(this.getSelectedId())) {
+      newState.selectedId = null;
     }
-    this.setState(stateUpdates, optionalCallback);
-  },
-
-  restoreVersionIndex: function(versionIndex, optionalCallback) {
-    this.showVersionIndex(versionIndex, function() {
-      this.onSaveBehaviorGroup();
-    }, optionalCallback);
+    this.setState(newState, () => this.onSaveBehaviorGroup(optionalCallback));
   },
 
   setEditableProp: function(key, value, callback) {
@@ -2646,7 +2635,7 @@ const BehaviorEditor = React.createClass({
         currentGroup={this.getBehaviorGroup()}
         currentUserId={this.props.userId}
         versions={this.getVersions()}
-        onRestoreClick={this.restoreVersionIndex}
+        onRestoreVersionClick={this.onReplaceBehaviorGroup}
         onClearActivePanel={this.props.onClearActivePanel}
         editableIsModified={this.editableIsModified}
       />
