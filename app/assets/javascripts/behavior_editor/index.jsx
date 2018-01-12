@@ -2643,7 +2643,6 @@ const BehaviorEditor = React.createClass({
         isLinkedToGithub={this.props.isLinkedToGithub}
         linkedGithubRepo={this.props.linkedGithubRepo}
         onGithubPushClick={this.onGithubPushClick}
-        onGithubPullClick={this.onGithubPullClick}
         onLinkGithubRepo={this.props.onLinkGithubRepo}
       />
     );

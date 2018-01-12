@@ -16,7 +16,8 @@ define(function(require) {
     group: BehaviorGroup,
     linked?: LinkedGithubRepo,
     onDoneClick: () => void,
-    csrfToken: string
+    csrfToken: string,
+    branch: ?string
   };
 
   type State = {
@@ -38,13 +39,25 @@ define(function(require) {
       super(props);
       autobind(this);
       this.state = {
-        branch: "master",
+        branch: this.getDefaultBranch(),
         commitMessage: "",
         isSaving: false,
         lastSaved: null,
         lastSavedBranch: null,
         error: null
       };
+    }
+
+    componentWillReceiveProps(newProps) {
+      if (newProps.branch !== this.props.branch) {
+        this.setState({
+          branch: newProps.branch
+        });
+      }
+    }
+
+    getDefaultBranch(): string {
+      return this.props.branch || "master";
     }
 
     focus(): void {
@@ -125,10 +138,14 @@ define(function(require) {
       return (
         <div>
 
-          <h5 className="mtn">Push current version to GitHub</h5>
+          <h4 className="mtn">Push to GitHub</h4>
+          <div>
+            <span className="type-label mrs">Repository:</span>
+            <GithubOwnerRepoReadonly linked={this.props.linked} />
+          </div>
+
           <p>
-            <span>Verify the branch name you want to use. All changes between the current version of the </span>
-            <span>skill and the copy on GitHub will be committed and pushed.</span>
+            <span>Verify the branch you want to use.</span>
           </p>
 
           <div className="columns">
@@ -202,16 +219,8 @@ define(function(require) {
     render(): React.Node {
       return (
         <div className="box-action phn">
-          <div className="container">
-            <div className="columns">
-              <div className="column column-page-sidebar">
-                <h4 className="type-weak mtn">Sync with GitHub repository</h4>
-                <GithubOwnerRepoReadonly linked={this.props.linked}/>
-              </div>
-              <div className="column column-page-main">
-                {this.renderContent()}
-              </div>
-            </div>
+          <div className="container container-wide">
+            {this.renderContent()}
           </div>
         </div>
       );

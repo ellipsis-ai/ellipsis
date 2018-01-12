@@ -14,6 +14,7 @@ define(function(require: (string) => *): React.ElementType {
     FormInput = require('../../form/input'),
     GithubErrorNotification = require('../github/github_error_notification'),
     GithubOwnerRepoReadonly = require('../github/github_owner_repo_readonly'),
+    GithubPushPanel = require('../github/github_push_panel'),
     LinkGithubRepo = require('./link_github_repo'),
     LinkedGithubRepo = require('../../models/linked_github_repo'),
     Select = require('../../form/select'),
@@ -37,7 +38,6 @@ define(function(require: (string) => *): React.ElementType {
     isLinkedToGithub: boolean,
     linkedGithubRepo?: LinkedGithubRepo,
     onChangeGithubLinkClick: () => void,
-    onGithubPullClick: () => void,
     onGithubPushClick: () => void,
     onLinkGithubRepo: (string, string, () => void) => void
   };
@@ -55,6 +55,7 @@ define(function(require: (string) => *): React.ElementType {
     lastFetched: ?Date,
     lastFetchedBranch: ?string,
     githubVersion: ?BehaviorGroup,
+    isCommitting: boolean,
     error: ?string
   }
 
@@ -89,8 +90,15 @@ define(function(require: (string) => *): React.ElementType {
         lastFetched: null,
         lastFetchedBranch: null,
         githubVersion: null,
+        isCommitting: false,
         error: null
       };
+    }
+
+    toggleCommitting(): void {
+      this.setState({
+        isCommitting: !this.state.isCommitting
+      });
     }
 
     getBranch(): string {
@@ -379,20 +387,38 @@ define(function(require: (string) => *): React.ElementType {
       );
     }
 
-    renderRevertButton(): ElementType {
-      const selectedVersion = this.getSelectedVersion();
-      if (selectedVersion && !selectedVersion.isIdenticalTo(this.props.currentGroup)) {
-        return (
-          <Button className="mrs mbm" onClick={this.revertToSelected}>
-            <span>{this.compareGitHubVersions() ? "Pull " : "Revert to "}</span>
-            {this.shortNameForVersion(selectedVersion)}
-          </Button>
-        );
+    renderRevertButton(selectedVersion: ?BehaviorGroup, hasChanges: boolean): ElementType {
+      return (
+        <Button className="mrs mbm" onClick={this.revertToSelected} disabled={!hasChanges}>
+          {this.renderRevertButtonTitle(selectedVersion, hasChanges)}
+        </Button>
+      );
+    }
+
+    renderRevertButtonTitle(selectedVersion: ?BehaviorGroup, hasChanges: boolean): Node {
+      if (this.compareGitHubVersions()) {
+        if (selectedVersion && hasChanges && this.state.lastFetchedBranch) {
+          return (
+            <span>Pull changes from <span className="type-monospace">{this.state.lastFetchedBranch}</span>…</span>
+          );
+        } else {
+          return "Pull…";
+        }
       } else {
+        if (selectedVersion && hasChanges) {
+          return (
+            <span>Revert to {this.shortNameForVersion(selectedVersion)}…</span>
+          );
+        } else {
+          return "Revert…";
+        }
+      }
+    }
+
+    renderCommitButton(hasChanges: boolean): Node {
+      if (this.props.linkedGithubRepo) {
         return (
-          <Button className="mrs mbm" disabled={true}>
-            <span>{this.compareGitHubVersions() ? "Pull…" : "Revert…"}</span>
-          </Button>
+          <Button onClick={this.toggleCommitting} disabled={!hasChanges} className="mrs mbm">Commit changes to GitHub…</Button>
         );
       }
     }
@@ -556,6 +582,7 @@ define(function(require: (string) => *): React.ElementType {
 
     render(): ElementType {
       const selectedVersion = this.getSelectedVersion();
+      const hasChanges = Boolean(selectedVersion && !selectedVersion.isIdenticalTo(this.props.currentGroup));
       return (
         <div ref={(el) => this.scrollContainer = el} className="flex-row-cascade" style={{ paddingBottom: `${this.getFooterHeight()}px` }}>
           <div className="bg-lightest">
@@ -581,62 +608,73 @@ define(function(require: (string) => *): React.ElementType {
 
           <FixedFooter ref={(el) => this.footer = el} onHeightChange={this.setFooterHeight}>
 
-            <div className="bg-lightest border-emphasis-top border-pink pvl container container-wide">
+            <Collapsible revealWhen={!this.state.isCommitting}>
+              <div className="bg-lightest border-emphasis-top border-pink pvl container container-wide">
 
-              <div className="columns">
-                <div className="column column-one-half">
-                  {this.props.linkedGithubRepo && this.props.isLinkedToGithub ? (
-                    <div>
-                      <span className="type-label align-m display-inline-block mrs">
-                        Compare with:
-                      </span>
-                      <ToggleGroup className="form-toggle-group-s mrm">
-                        <ToggleGroup.Item
-                          onClick={this.setVersionSourceToLocal}
-                          activeWhen={this.compareLocalVersions()}
-                          label={"Versions saved in Ellipsis"}
-                        />
-                        <ToggleGroup.Item
-                          onClick={this.setVersionSourceToGitHub}
-                          activeWhen={this.compareGitHubVersions()}
-                          label={"Versions on GitHub"}
-                        />
-                      </ToggleGroup>
-                    </div>
-                  ) : (
-                    <span className="type-label">Compare with saved versions:</span>
-                  )}
+                <div className="columns">
+                  <div className="column column-one-half">
+                    {this.props.linkedGithubRepo && this.props.isLinkedToGithub ? (
+                      <div>
+                        <span className="type-label align-m display-inline-block mrs">
+                          Compare with:
+                        </span>
+                        <ToggleGroup className="form-toggle-group-s mrm">
+                          <ToggleGroup.Item
+                            onClick={this.setVersionSourceToLocal}
+                            activeWhen={this.compareLocalVersions()}
+                            label={"Versions saved in Ellipsis"}
+                          />
+                          <ToggleGroup.Item
+                            onClick={this.setVersionSourceToGitHub}
+                            activeWhen={this.compareGitHubVersions()}
+                            label={"Versions on GitHub"}
+                          />
+                        </ToggleGroup>
+                      </div>
+                    ) : (
+                      <span className="type-label">Compare with saved versions:</span>
+                    )}
+                  </div>
+                  <div className="column column-one-half align-r">
+                    {this.renderGithubRepo()}
+                  </div>
                 </div>
-                <div className="column column-one-half align-r">
-                  {this.renderGithubRepo()}
-                </div>
+
+                <Collapsible revealWhen={this.state.isModifyingGithubRepo}>
+                  <div className="ptxl">
+                    <LinkGithubRepo
+                      group={this.props.currentGroup}
+                      linked={this.props.linkedGithubRepo}
+                      onDoneClick={this.onLinkedGithubRepo}
+                      onLinkGithubRepo={this.props.onLinkGithubRepo}
+                      csrfToken={this.props.csrfToken}
+                    />
+                  </div>
+                </Collapsible>
+
               </div>
 
-              <Collapsible revealWhen={this.state.isModifyingGithubRepo}>
-                <div className="ptxl">
-                  <LinkGithubRepo
-                    group={this.props.currentGroup}
-                    linked={this.props.linkedGithubRepo}
-                    onDoneClick={this.onLinkedGithubRepo}
-                    onLinkGithubRepo={this.props.onLinkGithubRepo}
-                    csrfToken={this.props.csrfToken}
-                  />
-                </div>
-              </Collapsible>
+              <div className="bg-white-translucent border-top pvl border-light container container-wide">
 
-            </div>
+                {this.renderVersionSelector(selectedVersion)}
 
-            <div className="bg-white-translucent border-top pvl border-light container container-wide">
+              </div>
 
-              {this.renderVersionSelector(selectedVersion)}
-
-            </div>
-
-            <div className="ptm bg-lightest border-top border-light container container-wide">
-              <Button className="mrs mbm button-primary" onClick={this.props.onClearActivePanel}>Done</Button>
-              {this.renderRevertButton()}
-            </div>
-
+              <div className="ptm bg-lightest border-top border-light container container-wide">
+                <Button className="mrs mbm button-primary" onClick={this.props.onClearActivePanel}>Done</Button>
+                {this.renderRevertButton(selectedVersion, hasChanges)}
+                {this.renderCommitButton(hasChanges)}
+              </div>
+            </Collapsible>
+            <Collapsible revealWhen={this.state.isCommitting}>
+              <GithubPushPanel
+                group={this.props.currentGroup}
+                linked={this.props.linkedGithubRepo}
+                onDoneClick={this.toggleCommitting}
+                csrfToken={this.props.csrfToken}
+                branch={this.state.lastFetchedBranch}
+              />
+            </Collapsible>
           </FixedFooter>
         </div>
       );
