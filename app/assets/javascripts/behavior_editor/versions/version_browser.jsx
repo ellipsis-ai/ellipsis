@@ -390,7 +390,9 @@ define(function(require: (string) => *): React.ElementType {
         );
       } else {
         return (
-          <Button className="mrs mbm" disabled={true}>Revert…</Button>
+          <Button className="mrs mbm" disabled={true}>
+            <span>{this.compareGitHubVersions() ? "Pull…" : "Revert…"}</span>
+          </Button>
         );
       }
     }
@@ -483,9 +485,8 @@ define(function(require: (string) => *): React.ElementType {
     renderBranchTitle(branchName: string, timestamp: Timestamp): Node {
       return (
         <span>
-          <span>GitHub branch </span>
           <span className="type-monospace">{branchName}</span>
-          <span> (from {Formatter.formatTimestampShort(timestamp)})</span>
+          <span> branch ({Formatter.formatTimestampShort(timestamp)})</span>
         </span>
       );
     }
