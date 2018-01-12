@@ -416,34 +416,18 @@ define(function(require: (string) => *): React.ElementType {
       } else {
         return (
           <div>
-            <div className="mbl">
-              <span className="align-button mrm">
+            <div className="mts mbxl">
+              <span className="mrm">
                 <span className="mrs">Repository:</span>
                 <GithubOwnerRepoReadonly linked={this.props.linkedGithubRepo} />
               </span>
-              <Button className="button-shrink" onClick={this.onChangeGithubLinkClick}>Change repo…</Button>
+              <Button className="button-s button-shrink" onClick={this.onChangeGithubLinkClick}>Change repo…</Button>
             </div>
             <div className="mbl">
-              <span className="align-button mrs">Branch:</span>
-              <FormInput
-                ref={(el) => this.branchInput = el}
-                className="form-input-borderless type-monospace type-s width-15 mrm"
-                placeholder="e.g. master"
-                onChange={this.onBranchChange}
-                value={this.getBranch()}
-              />
-              <DynamicLabelButton
-                className="mrm"
-                onClick={this.onUpdateFromGithub}
-                disabledWhen={this.state.isFetching || !this.getBranch()}
-                labels={[{
-                  text: "Fetch",
-                  displayWhen: !this.state.isFetching
-                }, {
-                  text: "Fetching…",
-                  displayWhen: this.state.isFetching
-                }]}
-              />
+              <span className="align-button mrs">{this.state.diffFromSelectedToCurrent ? "From branch:" : "From:"}</span>
+              {this.state.diffFromSelectedToCurrent ? this.renderFromBranch() : this.renderCurrentVersionPlaceholder()}
+              <span className="align-button mrs">{this.state.diffFromSelectedToCurrent ? "to:" : "to branch:"}</span>
+              {this.state.diffFromSelectedToCurrent ? this.renderCurrentVersionPlaceholder() : this.renderFromBranch()}
               <Button onClick={this.invertDiffDirection} className="mrm" disabled={this.state.isFetching || !this.getSelectedVersion()}>Switch direction</Button>
               <div className="align-button">
                 {this.renderGithubStatus()}
@@ -452,6 +436,32 @@ define(function(require: (string) => *): React.ElementType {
           </div>
         );
       }
+    }
+
+    renderFromBranch(): ElementType {
+      return (
+        <div className="display-inline-block">
+          <FormInput
+            ref={(el) => this.branchInput = el}
+            className="form-input-borderless type-monospace type-s width-15 mrs"
+            placeholder="e.g. master"
+            onChange={this.onBranchChange}
+            value={this.getBranch()}
+          />
+          <DynamicLabelButton
+            className="button-shrink mrm"
+            onClick={this.onUpdateFromGithub}
+            disabledWhen={this.state.isFetching || !this.getBranch()}
+            labels={[{
+              text: "Fetch",
+              displayWhen: !this.state.isFetching
+            }, {
+              text: "Fetching…",
+              displayWhen: this.state.isFetching
+            }]}
+          />
+        </div>
+      );
     }
 
     renderGithubStatus(): Node {
@@ -486,7 +496,7 @@ define(function(require: (string) => *): React.ElementType {
           <h4>
             <span>Differences from branch </span>
             <code>{this.state.lastFetchedBranch}</code>
-            <span> ({Formatter.formatTimestampShort(this.state.lastFetched)})</span>
+            <span> ({Formatter.formatTimestampShort(this.state.lastFetched)}) on GitHub</span>
           </h4>
         );
       } else if (this.compareLocalVersions() && this.getSelectedVersionIndex() > 0) {
