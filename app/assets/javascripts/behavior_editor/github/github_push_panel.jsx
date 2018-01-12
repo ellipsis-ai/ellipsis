@@ -139,38 +139,49 @@ define(function(require) {
         <div>
 
           <h4 className="mtn">Push to GitHub</h4>
-          <div>
-            <span className="type-label mrs">Repository:</span>
-            <GithubOwnerRepoReadonly linked={this.props.linked} />
-          </div>
 
-          <p>
-            <span>Verify the branch you want to use.</span>
-          </p>
-
-          <div className="columns">
-            <div className="column column-one-quarter">
-              <span className="display-inline-block align-m type-s type-weak mrm">Branch name:</span>
-              <FormInput
-                ref={(el) => this.branchInput = el}
-                className="form-input-borderless type-monospace type-s width-15 mrm"
-                placeholder="e.g. master"
-                onChange={this.onBranchChange}
-                value={this.getBranch()}
-              />
+          <div className="columns columns-elastic">
+            <div className="column-group">
+              <div className="column-row">
+                <div className="column column-shrink align-button">
+                  <span className="type-label mrs">Repository:</span>
+                </div>
+                <div className="column column-expand align-button">
+                  <GithubOwnerRepoReadonly linked={this.props.linked} />
+                </div>
+              </div>
+              <div className="column-row">
+                <div className="column column-shrink align-button">
+                  <span className="type-label mrs">Branch:</span>
+                </div>
+                <div className="column column-expand">
+                  <FormInput
+                    ref={(el) => this.branchInput = el}
+                    className="form-input-borderless type-monospace type-s width-15 mrm"
+                    placeholder="e.g. master"
+                    onChange={this.onBranchChange}
+                    value={this.getBranch()}
+                  />
+                </div>
+              </div>
+              <div className="column-row">
+                <div className="column column-shrink align-button">
+                  <span className="type-label">Commit&nbsp;message:</span>
+                </div>
+                <div className="column column-expand">
+                  <FormInput
+                    ref={(el) => this.commitMessageInput = el}
+                    className="form-input-borderless type-monospace type-s mrm"
+                    placeholder="Summarize what has changed"
+                    onChange={this.onCommitMessageChange}
+                    value={this.getCommitMessage()}
+                  />
+                </div>
+              </div>
             </div>
           </div>
-          <div className="mtl">
-            <span className="display-inline-block align-m type-s type-weak mrm">Commit message:</span>
-            <FormInput
-              ref={(el) => this.commitMessageInput = el}
-              className="form-input-borderless type-monospace type-s mrm"
-              placeholder="Summarize what has changed"
-              onChange={this.onCommitMessageChange}
-              value={this.getCommitMessage()}
-            />
-          </div>
-          <div className="mvl">
+
+          <div className="mtxl">
             <DynamicLabelButton
               className="button-primary mrs"
               onClick={this.onPushToGithub}
@@ -190,7 +201,7 @@ define(function(require) {
               Done
             </Button>
           </div>
-          <div className="mtl">
+          <div className="mtxl">
             {this.renderResult()}
           </div>
         </div>

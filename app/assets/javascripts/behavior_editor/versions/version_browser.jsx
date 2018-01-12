@@ -373,7 +373,7 @@ define(function(require: (string) => *): React.ElementType {
 
     renderSelectableVersion(): ElementType {
       return (
-        <Select className="align-b mhs" value={this.state.selectedMenuItem} onChange={this.onClickMenuItem}>
+        <Select className="align-b mrs" value={this.state.selectedMenuItem} onChange={this.onClickMenuItem}>
           {this.renderVersionOptions()}
         </Select>
       );
@@ -381,7 +381,7 @@ define(function(require: (string) => *): React.ElementType {
 
     renderCurrentVersionPlaceholder(): ElementType {
       return (
-        <div className="align-button align-button-border mhs">{
+        <div className="align-button align-button-border mrs">{
           this.props.currentGroupIsModified ? "Current (with unsaved changes)" : "Current"
         }</div>
       );
@@ -490,9 +490,9 @@ define(function(require: (string) => *): React.ElementType {
       if (this.compareLocalVersions() && selectedVersion) {
         return (
           <div>
-            <div className="align-button">From original version:</div>
+            <div className="align-button mrs">From original version:</div>
             {this.state.diffFromSelectedToCurrent ? this.renderSelectableVersion() : this.renderCurrentVersionPlaceholder()}
-            <div className="align-button">to new version:</div>
+            <div className="align-button mrs">to new version:</div>
             {this.state.diffFromSelectedToCurrent ? this.renderCurrentVersionPlaceholder() : this.renderSelectableVersion()}
             <Button onClick={this.invertDiffDirection}>Switch direction</Button>
           </div>
