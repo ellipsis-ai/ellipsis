@@ -95,6 +95,13 @@ define(function(require: (string) => *): React.ElementType {
       };
     }
 
+    onPushBranch(): void {
+      this.setState({
+        githubVersion: this.props.currentGroup,
+        lastFetched: new Date()
+      });
+    }
+
     toggleCommitting(): void {
       this.setState({
         isCommitting: !this.state.isCommitting
@@ -670,6 +677,7 @@ define(function(require: (string) => *): React.ElementType {
               <GithubPushPanel
                 group={this.props.currentGroup}
                 linked={this.props.linkedGithubRepo}
+                onPushBranch={this.onPushBranch}
                 onDoneClick={this.toggleCommitting}
                 csrfToken={this.props.csrfToken}
                 branch={this.state.lastFetchedBranch}

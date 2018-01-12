@@ -15,6 +15,7 @@ define(function(require) {
   type Props = {
     group: BehaviorGroup,
     linked?: LinkedGithubRepo,
+    onPushBranch: () => void,
     onDoneClick: () => void,
     csrfToken: string,
     branch: ?string
@@ -118,6 +119,7 @@ define(function(require) {
           lastSaved: new Date(),
           lastSavedBranch: branch
         });
+        this.props.onPushBranch();
       }).catch((err: DataRequest.ResponseError) => {
         this.setState({
           isSaving: false,
