@@ -50,7 +50,7 @@ define(function(require: (string) => *): React.ElementType {
     versionSource: VersionSource,
     footerHeight: number,
     isModifyingGithubRepo: boolean,
-    githubBranch: string,
+    branch: string,
     isFetching: boolean,
     lastFetched: ?Date,
     lastFetchedBranch: ?string,
@@ -85,7 +85,7 @@ define(function(require: (string) => *): React.ElementType {
         versionSource: versionSources.local,
         footerHeight: 0,
         isModifyingGithubRepo: false,
-        githubBranch: "master",
+        branch: "master",
         isFetching: false,
         lastFetched: null,
         lastFetchedBranch: null,
@@ -102,7 +102,7 @@ define(function(require: (string) => *): React.ElementType {
     }
 
     getBranch(): string {
-      return this.state.githubBranch;
+      return this.state.branch;
     }
 
     onBranchChange(branch: string): void {
