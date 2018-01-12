@@ -158,8 +158,12 @@ class BehaviorVersionServiceImpl @Inject() (
   }
 
   def findCurrentByNameAction(name: String, group: BehaviorGroup): DBIO[Option[BehaviorVersion]] = {
-    findCurrentByNameQuery(name, group.id).result.map { r =>
-      r.headOption.map(tuple2BehaviorVersion)
+    dataService.behaviorGroupVersions.maybeCurrentForAction(group).flatMap { maybeGroupVersion =>
+      maybeGroupVersion.map { groupVersion =>
+        findWithNameQuery(name, groupVersion.id).result.map { r =>
+          r.headOption.map(tuple2BehaviorVersion)
+        }
+      }.getOrElse(DBIO.successful(None))
     }
   }
 

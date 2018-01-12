@@ -36,12 +36,11 @@ object BehaviorVersionQueries {
     )
   }
 
-  def uncompiledFindCurrentByNameQuery(name: Rep[String], groupId: Rep[String]) = {
+  def uncompiledFindWithNameQuery(name: Rep[String], groupVersionId: Rep[String]) = {
     allWithGroupVersion.
       filter { case(((version, _), _), _) => version.maybeName === name }.
-      filter { case(_, ((groupVersion, _), _)) => groupVersion.groupId === groupId }.
-      filter { case(_, ((groupVersion, (group, _)), _)) => groupVersion.id === group.maybeCurrentVersionId }
+      filter { case(_, ((groupVersion, _), _)) => groupVersion.id === groupVersionId }
   }
-  val findCurrentByNameQuery = Compiled(uncompiledFindCurrentByNameQuery _)
+  val findWithNameQuery = Compiled(uncompiledFindWithNameQuery _)
 
 }

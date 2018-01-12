@@ -41,4 +41,24 @@ object BehaviorGroupVersionQueries {
   }
   val allForQuery = Compiled(uncompiledAllForQuery _)
 
+  private def uncompiledCurrentIdForQuery(groupId: Rep[String]) = {
+    all.filter(_.groupId === groupId).sortBy(_.createdAt.desc).take(1).map(_.id)
+  }
+  val currentIdForQuery = Compiled(uncompiledCurrentIdForQuery _)
+
+  private def uncompiledAllCurrentQuery = {
+    // distinctOn() is broken in Slick as of v3.2.1, so we use a subquery
+    allWithUser.filter { case((outerVersion, _), _) =>
+      !all.filter { innerVersion =>
+        innerVersion.groupId === outerVersion.groupId && innerVersion.createdAt > outerVersion.createdAt
+      }.exists
+    }
+  }
+  val allCurrentQuery = Compiled(uncompiledAllCurrentQuery)
+
+  private def uncompiledAllCurrentIdsQuery = {
+    uncompiledAllCurrentQuery.map { case((version, _), _) => version.id }
+  }
+  val allCurrentIdsQuery = Compiled(uncompiledAllCurrentIdsQuery)
+
 }

@@ -10,7 +10,6 @@ object BehaviorQueries {
   def all = TableQuery[BehaviorsTable]
   def allWithTeam = all.join(TeamQueries.all).on(_.teamId === _.id)
   def allWithGroup = allWithTeam.joinLeft(BehaviorGroupQueries.allWithTeam).on(_._1.groupId === _._1.id)
-  def allWithCurrentGroupVersion = allWithGroup.joinLeft(BehaviorGroupVersionQueries.allWithUser).on(_._2.flatMap(_._1.maybeCurrentVersionId) === _._1._1.id)
 
   type TupleType = ((RawBehavior, Team), Option[BehaviorGroupQueries.TupleType])
   type TableTupleType = ((BehaviorsTable, TeamsTable), Rep[Option[BehaviorGroupQueries.TableTupleType]])
