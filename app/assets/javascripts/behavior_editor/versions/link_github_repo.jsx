@@ -30,7 +30,11 @@ define(function(require) {
     constructor(props) {
       super(props);
       autobind(this);
-      this.state = {
+      this.state = this.getDefaultState();
+    }
+
+    getDefaultState(): State {
+      return {
         owner: this.props.linked ? this.props.linked.getOwner() : "",
         repo: this.props.linked ? this.props.linked.getRepo(): ""
       };
@@ -69,7 +73,10 @@ define(function(require) {
     }
 
     onLinkClick(): void {
-      this.props.onLinkGithubRepo(this.getOwner(), this.getRepo(), () => this.props.onDoneClick());
+      this.props.onLinkGithubRepo(this.getOwner(), this.getRepo(), () => {
+        this.props.onDoneClick();
+        this.setState(this.getDefaultState());
+      });
     }
 
     render(): React.Node {

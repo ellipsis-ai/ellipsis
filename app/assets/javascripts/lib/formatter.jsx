@@ -1,6 +1,6 @@
 // @flow
+export type Timestamp = string | number | Date
 define(function(require) {
-  type Timestamp = string | number | Date
 
   const moment = require('moment');
   const ONE_WEEK_IN_MS = 1000 * 60 * 60 * 24 * 7;

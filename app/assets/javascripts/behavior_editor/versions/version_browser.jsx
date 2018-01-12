@@ -1,10 +1,12 @@
 // @flow
 import type {Node, ElementType} from 'react';
+import type {Timestamp} from '../../lib/formatter';
 define(function(require: (string) => *): React.ElementType {
   const React = require('react'),
     BehaviorGroup = require('../../models/behavior_group'),
     BehaviorGroupDiff = require('./behavior_group_diff'),
     Button = require('../../form/button'),
+    Collapsible = require('../../shared_ui/collapsible'),
     DataRequest = require('../../lib/data_request'),
     DynamicLabelButton = require('../../form/dynamic_label_button'),
     FixedFooter = require('../../shared_ui/fixed_footer'),
@@ -173,15 +175,13 @@ define(function(require: (string) => *): React.ElementType {
 
     renderGithubAuth(): Node {
       return (
-        <div className="columns mtxxl">
-          <div className="column">
-            <img height="32" src="/assets/images/logos/GitHub-Mark-64px.png"/>
-          </div>
-          <div className="column align-m">
-            <span>To push code to or pull code from GitHub, you first need to </span>
-            <a href={this.getGithubAuthUrl()}>authenticate your GitHub account.</a>
-          </div>
-        </div>
+        <span className="type-s">
+          <a href={this.getGithubAuthUrl()}>
+            <img height="24" src="/assets/images/logos/GitHub-Mark-64px.png" className="mrs align-m" />
+            <span>Authenticate with GitHub</span>
+          </a>
+          <span> to sync this skill with a GitHub repo</span>
+        </span>
       );
     }
 
@@ -196,8 +196,12 @@ define(function(require: (string) => *): React.ElementType {
       return version.author ? `by ${isCurrentUser ? "you" : version.author.formattedName()}` : "";
     }
 
-    shortNameForVersion(version: BehaviorGroup): string {
-      return Formatter.formatTimestampShort(version.createdAt);
+    shortNameForVersion(version: BehaviorGroup): Node {
+      if (this.compareGitHubVersions() && this.state.lastFetched && this.state.lastFetchedBranch) {
+        return this.renderBranchTitle(this.state.lastFetchedBranch, this.state.lastFetched);
+      } else {
+        return this.renderLocalVersionTitle(version.createdAt);
+      }
     }
 
     getGroupedVersions(versions: Array<BehaviorGroup>): Array<VersionGroup> {
@@ -370,7 +374,7 @@ define(function(require: (string) => *): React.ElementType {
     renderCurrentVersionPlaceholder(): ElementType {
       return (
         <div className="align-button align-button-border mhs">{
-          this.props.currentGroupIsModified ? "Current" : "Current (with unsaved changes)"
+          this.props.currentGroupIsModified ? "Current (with unsaved changes)" : "Current"
         }</div>
       );
     }
@@ -379,7 +383,10 @@ define(function(require: (string) => *): React.ElementType {
       const selectedVersion = this.getSelectedVersion();
       if (selectedVersion && !selectedVersion.isIdenticalTo(this.props.currentGroup)) {
         return (
-          <Button className="mrs mbm" onClick={this.revertToSelected}>Revert to {this.shortNameForVersion(selectedVersion)}</Button>
+          <Button className="mrs mbm" onClick={this.revertToSelected}>
+            <span>{this.compareGitHubVersions() ? "Pull " : "Revert to "}</span>
+            {this.shortNameForVersion(selectedVersion)}
+          </Button>
         );
       } else {
         return (
@@ -401,37 +408,16 @@ define(function(require: (string) => *): React.ElementType {
     }
 
     renderGithubVersionSelector(): Node {
-      if (!this.props.isLinkedToGithub) {
-        return this.renderGithubAuth();
-      } else if (!this.props.linkedGithubRepo || this.state.isModifyingGithubRepo) {
-        return (
-          <LinkGithubRepo
-            group={this.props.currentGroup}
-            linked={this.props.linkedGithubRepo}
-            onDoneClick={this.onLinkedGithubRepo}
-            onLinkGithubRepo={this.props.onLinkGithubRepo}
-            csrfToken={this.props.csrfToken}
-          />
-        );
-      } else {
+      if (this.props.isLinkedToGithub && this.props.linkedGithubRepo) {
         return (
           <div>
-            <div className="mts mbxl">
-              <span className="mrm">
-                <span className="mrs">Repository:</span>
-                <GithubOwnerRepoReadonly linked={this.props.linkedGithubRepo} />
-              </span>
-              <Button className="button-s button-shrink" onClick={this.onChangeGithubLinkClick}>Change repo…</Button>
-            </div>
-            <div className="mbl">
-              <span className="align-button mrs">{this.state.diffFromSelectedToCurrent ? "From branch:" : "From:"}</span>
-              {this.state.diffFromSelectedToCurrent ? this.renderFromBranch() : this.renderCurrentVersionPlaceholder()}
-              <span className="align-button mrs">{this.state.diffFromSelectedToCurrent ? "to:" : "to branch:"}</span>
-              {this.state.diffFromSelectedToCurrent ? this.renderCurrentVersionPlaceholder() : this.renderFromBranch()}
-              <Button onClick={this.invertDiffDirection} className="mrm" disabled={this.state.isFetching || !this.getSelectedVersion()}>Switch direction</Button>
-              <div className="align-button">
-                {this.renderGithubStatus()}
-              </div>
+            <span className="align-button mrs">{this.state.diffFromSelectedToCurrent ? "From GitHub branch:" : "From:"}</span>
+            {this.state.diffFromSelectedToCurrent ? this.renderFromBranch() : this.renderCurrentVersionPlaceholder()}
+            <span className="align-button mrs">{this.state.diffFromSelectedToCurrent ? "to:" : "to GitHub branch:"}</span>
+            {this.state.diffFromSelectedToCurrent ? this.renderCurrentVersionPlaceholder() : this.renderFromBranch()}
+            <Button onClick={this.invertDiffDirection} className="mrm" disabled={this.state.isFetching || !this.getSelectedVersion()}>Switch direction</Button>
+            <div className="align-button">
+              {this.renderGithubStatus()}
             </div>
           </div>
         );
@@ -486,28 +472,85 @@ define(function(require: (string) => *): React.ElementType {
       } else if (this.compareGitHubVersions()) {
         return this.renderGithubVersionSelector();
       } else {
-        return null;
+        return (
+          <div>
+            <div className="align-button pulse type-italic type-weak">Loading…</div>
+          </div>
+        );
       }
     }
 
+    renderBranchTitle(branchName: string, timestamp: Timestamp): Node {
+      return (
+        <span>
+          <span>GitHub branch </span>
+          <span className="type-monospace">{branchName}</span>
+          <span> (from {Formatter.formatTimestampShort(timestamp)})</span>
+        </span>
+      );
+    }
+
+    renderLocalVersionTitle(timestamp: Timestamp): Node {
+      return (
+        <span>version dated {Formatter.formatTimestampShort(timestamp)}</span>
+      );
+    }
+
     renderDiffTitle(): Node {
+      const version = this.getSelectedVersion();
       if (this.compareGitHubVersions() && this.state.lastFetched && this.state.lastFetchedBranch) {
+        const branchTitle = this.renderBranchTitle(this.state.lastFetchedBranch, this.state.lastFetched);
         return (
           <h4>
-            <span>Differences from branch </span>
-            <code>{this.state.lastFetchedBranch}</code>
-            <span> ({Formatter.formatTimestampShort(this.state.lastFetched)}) on GitHub</span>
+            {this.state.diffFromSelectedToCurrent ? (
+              <span>Changes from {branchTitle} to current</span>
+            ) : (
+              <span>Changes from current to {branchTitle}</span>
+            )}
           </h4>
         );
-      } else if (this.compareLocalVersions() && this.getSelectedVersionIndex() > 0) {
+      } else if (this.compareLocalVersions() && this.getSelectedVersionIndex() > 0 && version) {
+        const localTitle = this.renderLocalVersionTitle(version.createdAt);
         return (
-          <h4>Differences from version dated {this.shortNameForVersion(this.getSelectedVersion())}</h4>
+          <h4>
+            {this.state.diffFromSelectedToCurrent ? (
+              <span>Changes from {localTitle} to current</span>
+            ) : (
+              <span>Changes from current to {localTitle}</span>
+            )}
+          </h4>
         );
       } else {
         return (
-          <h4>Differences</h4>
+          <h4>Changes</h4>
         );
       }
+    }
+
+    renderGithubRepo(): Node {
+      if (this.props.linkedGithubRepo && this.props.isLinkedToGithub) {
+        return (
+          <div>
+            <span className="mrm">
+              <span className="type-label mrs">GitHub repository:</span>
+              <GithubOwnerRepoReadonly linked={this.props.linkedGithubRepo}/>
+            </span>
+            {this.renderChangeRepoButton()}
+          </div>
+        );
+      } else if (!this.props.isLinkedToGithub) {
+        return this.renderGithubAuth();
+      } else if (!this.props.linkedGithubRepo) {
+        return this.renderChangeRepoButton();
+      }
+    }
+
+    renderChangeRepoButton(): Node {
+      return (
+        <Button className="button-s button-shrink" onClick={this.onChangeGithubLinkClick} disabled={this.state.isModifyingGithubRepo}>
+          {this.props.linkedGithubRepo ? "Change repo…" : "Link GitHub repo…"}
+        </Button>
+      );
     }
 
     render(): ElementType {
@@ -539,23 +582,46 @@ define(function(require: (string) => *): React.ElementType {
 
             <div className="bg-lightest border-emphasis-top border-pink pvl container container-wide">
 
-              <div>
-                <span className="align-button mrs">
-                  Compare with:
-                </span>
-                <ToggleGroup>
-                  <ToggleGroup.Item
-                    onClick={this.setVersionSourceToLocal}
-                    activeWhen={this.compareLocalVersions()}
-                    label={"Versions saved in Ellipsis"}
-                  />
-                  <ToggleGroup.Item
-                    onClick={this.setVersionSourceToGitHub}
-                    activeWhen={this.compareGitHubVersions()}
-                    label={"Versions on GitHub"}
-                  />
-                </ToggleGroup>
+              <div className="columns">
+                <div className="column column-one-half">
+                  {this.props.linkedGithubRepo && this.props.isLinkedToGithub ? (
+                    <div>
+                      <span className="type-label align-m display-inline-block mrs">
+                        Compare with:
+                      </span>
+                      <ToggleGroup className="form-toggle-group-s mrm">
+                        <ToggleGroup.Item
+                          onClick={this.setVersionSourceToLocal}
+                          activeWhen={this.compareLocalVersions()}
+                          label={"Versions saved in Ellipsis"}
+                        />
+                        <ToggleGroup.Item
+                          onClick={this.setVersionSourceToGitHub}
+                          activeWhen={this.compareGitHubVersions()}
+                          label={"Versions on GitHub"}
+                        />
+                      </ToggleGroup>
+                    </div>
+                  ) : (
+                    <span className="type-label">Compare with saved versions:</span>
+                  )}
+                </div>
+                <div className="column column-one-half align-r">
+                  {this.renderGithubRepo()}
+                </div>
               </div>
+
+              <Collapsible revealWhen={this.state.isModifyingGithubRepo}>
+                <div className="ptxl">
+                  <LinkGithubRepo
+                    group={this.props.currentGroup}
+                    linked={this.props.linkedGithubRepo}
+                    onDoneClick={this.onLinkedGithubRepo}
+                    onLinkGithubRepo={this.props.onLinkGithubRepo}
+                    csrfToken={this.props.csrfToken}
+                  />
+                </div>
+              </Collapsible>
 
             </div>
 
