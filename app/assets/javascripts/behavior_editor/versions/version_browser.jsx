@@ -371,7 +371,7 @@ define(function(require: (string) => *): React.ElementType {
         );
       } else {
         return (
-          <div className="type-italic">The selected version of the skill is identical to the current version.</div>
+          <div className="type-italic">These versions are identical.</div>
         );
       }
     }
@@ -541,8 +541,8 @@ define(function(require: (string) => *): React.ElementType {
             )}
           </h4>
         );
-      } else if (this.compareLocalVersions() && this.getSelectedVersionIndex() > 0 && version) {
-        const localTitle = this.renderLocalVersionTitle(version.createdAt);
+      } else if (this.compareLocalVersions() && version) {
+        const localTitle = this.getSelectedVersionIndex() === 0 ? "last saved version" : this.renderLocalVersionTitle(version.createdAt);
         return (
           <h4>
             {this.state.diffFromSelectedToCurrent ? (
