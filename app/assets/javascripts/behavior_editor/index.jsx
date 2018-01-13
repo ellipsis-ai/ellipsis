@@ -26,9 +26,6 @@ var React = require('react'),
   DynamicLabelButton = require('../form/dynamic_label_button'),
   EnvVariableAdder = require('../settings/environment_variables/adder'),
   EnvVariableSetter = require('../settings/environment_variables/setter'),
-  GithubLinkPanel = require('./github/github_link_panel'),
-  GithubPullPanel = require('./github/github_pull_panel'),
-  GithubPushPanel = require('./github/github_push_panel'),
   HiddenJsonInput = require('./hidden_json_input'),
   Input = require('../models/input'),
   Formatter = require('../lib/formatter'),
@@ -403,16 +400,6 @@ const BehaviorEditor = React.createClass({
     });
   },
 
-  getEnvVariableAdderPromptFor: function(property) {
-    var adderString = AWSEnvVariableStrings[property];
-    if (adderString) {
-      return "Add a new environment variable to hold a value for the " + adderString;
-    } else {
-      return null;
-    }
-
-  },
-
   getInputWithSavedAnswers: function() {
     if (this.state.selectedSavedAnswerInputId) {
       return this.getInputs().find(ea => ea.inputId === this.state.selectedSavedAnswerInputId);
@@ -481,32 +468,6 @@ const BehaviorEditor = React.createClass({
   },
 
   CONFIGURE_API_NAME: "configureApi",
-
-  GITHUB_PULL_PANEL_NAME: "githubPullPanel",
-  GITHUB_PUSH_PANEL_NAME: "githubPushPanel",
-  GITHUB_LINK_PANEL_NAME: "githubLinkPanel",
-
-  onGithubLinkClick: function() {
-    this.toggleActivePanel(this.GITHUB_LINK_PANEL_NAME, true, () => {
-      if (this.githubLinkPanel) {
-        this.githubLinkPanel.focus();
-      }
-    });
-  },
-  onGithubPullClick: function() {
-    this.toggleActivePanel(this.GITHUB_PULL_PANEL_NAME, true, () => {
-      if (this.githubPullPanel) {
-        this.githubPullPanel.focus();
-      }
-    });
-  },
-  onGithubPushClick: function() {
-    this.toggleActivePanel(this.GITHUB_PUSH_PANEL_NAME, true, () => {
-      if (this.githubPushPanel) {
-        this.githubPushPanel.focus();
-      }
-    });
-  },
 
   isConfiguringApi: function() {
     return this.props.activePanelName === this.CONFIGURE_API_NAME;
@@ -1407,10 +1368,6 @@ const BehaviorEditor = React.createClass({
     return this.getSelectedBehavior() && this.getSelectedBehavior().isDataType();
   },
 
-  isLibrary: function() {
-    return !!this.getSelectedLibrary();
-  },
-
   isSearchDataTypeBehavior: function() {
     return this.isDataTypeBehavior() && this.hasInputNamed('searchQuery');
   },
@@ -1850,47 +1807,6 @@ const BehaviorEditor = React.createClass({
             </APIConfigPanel>
           </Collapsible>
 
-          <Collapsible ref={this.GITHUB_LINK_PANEL_NAME}
-                       revealWhen={this.props.activePanelName === this.GITHUB_LINK_PANEL_NAME}
-                       onChange={this.layoutDidUpdate}
-          >
-            <GithubLinkPanel
-              ref={(el) => this.githubLinkPanel = el}
-              group={this.getBehaviorGroup()}
-              linked={this.props.linkedGithubRepo}
-              onDoneClick={this.props.onClearActivePanel}
-              onLinkGithubRepo={this.props.onLinkGithubRepo}
-              csrfToken={this.props.csrfToken}
-            />
-          </Collapsible>
-
-          <Collapsible ref={this.GITHUB_PULL_PANEL_NAME}
-                       revealWhen={this.props.activePanelName === this.GITHUB_PULL_PANEL_NAME}
-                       onChange={this.layoutDidUpdate}
-          >
-            <GithubPullPanel
-              ref={(el) => this.githubPullPanel = el}
-              group={this.getBehaviorGroup()}
-              linked={this.props.linkedGithubRepo}
-              onDoneClick={this.props.onClearActivePanel}
-              onSave={this.onReplaceBehaviorGroup}
-              csrfToken={this.props.csrfToken}
-            />
-          </Collapsible>
-
-          <Collapsible ref={this.GITHUB_PUSH_PANEL_NAME}
-                       revealWhen={this.props.activePanelName === this.GITHUB_PUSH_PANEL_NAME}
-                       onChange={this.layoutDidUpdate}
-          >
-            <GithubPushPanel
-              ref={(el) => this.githubPushPanel = el}
-              group={this.getBehaviorGroup()}
-              linked={this.props.linkedGithubRepo}
-              onDoneClick={this.props.onClearActivePanel}
-              csrfToken={this.props.csrfToken}
-            />
-          </Collapsible>
-
           <Collapsible ref="confirmUndo" revealWhen={this.props.activePanelName === 'confirmUndo'} onChange={this.layoutDidUpdate}>
             <ConfirmActionPanel confirmText="Undo changes" onConfirmClick={this.undoChanges} onCancelClick={this.props.onClearActivePanel}>
               <p>This will undo any changes you’ve made since last saving. Are you sure you want to do this?</p>
@@ -2080,7 +1996,7 @@ const BehaviorEditor = React.createClass({
                     <Button
                       className="mrl mbm"
                       onClick={this.showVersions}>
-                      Version history…
+                      {this.isModified() ? "Review changes…" : "Compare versions…"}
                     </Button>
                   ) : null}
                   <div className="display-inline-block align-button mbm">
@@ -2579,21 +2495,12 @@ const BehaviorEditor = React.createClass({
     } else {
       return (
         <BehaviorGroupEditor
-          csrfToken={this.props.csrfToken}
           group={this.getBehaviorGroup()}
           isModified={this.isModified()}
-          isAdmin={this.props.isAdmin}
-          isLinkedToGithub={this.props.isLinkedToGithub}
-          linkedGithubRepo={this.props.linkedGithubRepo}
           onBehaviorGroupNameChange={this.onBehaviorGroupNameChange}
           onBehaviorGroupDescriptionChange={this.onBehaviorGroupDescriptionChange}
           onBehaviorGroupIconChange={this.onBehaviorGroupIconChange}
           onDeleteClick={this.confirmDeleteBehaviorGroup}
-          onSave={this.onReplaceBehaviorGroup}
-          onSaveError={this.onSaveError}
-          onGithubPushClick={this.onGithubPushClick}
-          onGithubPullClick={this.onGithubPullClick}
-          onChangeGithubLinkClick={this.onGithubLinkClick}
         />
       );
     }
@@ -2642,7 +2549,6 @@ const BehaviorEditor = React.createClass({
         editableIsModified={this.editableIsModified}
         isLinkedToGithub={this.props.isLinkedToGithub}
         linkedGithubRepo={this.props.linkedGithubRepo}
-        onGithubPushClick={this.onGithubPushClick}
         onLinkGithubRepo={this.props.onLinkGithubRepo}
       />
     );

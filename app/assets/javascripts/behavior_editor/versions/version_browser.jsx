@@ -37,8 +37,6 @@ define(function(require: (string) => *): React.ElementType {
     onRestoreVersionClick: (version: BehaviorGroup, optionalCallback?: () => void) => void,
     isLinkedToGithub: boolean,
     linkedGithubRepo?: LinkedGithubRepo,
-    onChangeGithubLinkClick: () => void,
-    onGithubPushClick: () => void,
     onLinkGithubRepo: (string, string, () => void) => void
   };
 
