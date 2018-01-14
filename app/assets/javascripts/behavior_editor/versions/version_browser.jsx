@@ -341,9 +341,8 @@ define(function(require: (string) => *): React.ElementType {
       }
     }
 
-    renderSelectedVersion(selectedVersion: ?BehaviorGroup): ElementType {
+    renderSelectedVersion(selectedVersion: ?BehaviorGroup, diff: ?diffs.ModifiedDiff<BehaviorGroup>): ElementType {
       if (selectedVersion) {
-        const diff = this.getDiffForSelectedVersion(selectedVersion);
         return (
           <div>
             {this.renderDiff(diff)}
@@ -528,8 +527,7 @@ define(function(require: (string) => *): React.ElementType {
       );
     }
 
-    renderDiffTitle(): Node {
-      const version = this.getSelectedVersion();
+    renderDiffTitle(version: ?BehaviorGroup): Node {
       if (this.compareGitHubVersions() && this.state.lastFetched && this.state.lastFetchedBranch) {
         const branchTitle = this.renderBranchTitle(this.state.lastFetchedBranch, this.state.lastFetched);
         return (
@@ -587,7 +585,8 @@ define(function(require: (string) => *): React.ElementType {
 
     render(): ElementType {
       const selectedVersion = this.getSelectedVersion();
-      const hasChanges = Boolean(selectedVersion && !selectedVersion.isIdenticalTo(this.props.currentGroup));
+      const diff = this.getDiffForSelectedVersion(selectedVersion);
+      const hasChanges = Boolean(diff);
       return (
         <div ref={(el) => this.scrollContainer = el} className="flex-row-cascade" style={{ paddingBottom: `${this.getFooterHeight()}px` }}>
           <div className="bg-lightest">
@@ -604,9 +603,9 @@ define(function(require: (string) => *): React.ElementType {
             <div className="flex-column flex-column-left flex-rows bg-white">
               <div className="container container container-wide ptm pbxl">
 
-                {this.renderDiffTitle()}
+                {this.renderDiffTitle(selectedVersion)}
 
-                {this.renderSelectedVersion(selectedVersion)}
+                {this.renderSelectedVersion(selectedVersion, diff)}
               </div>
             </div>
           </div>
