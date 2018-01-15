@@ -15,6 +15,10 @@ trait BehaviorGroupVersionService {
 
   def allFor(group: BehaviorGroup): Future[Seq[BehaviorGroupVersion]]
 
+  def maybeCurrentForAction(group: BehaviorGroup): DBIO[Option[BehaviorGroupVersion]]
+
+  def maybeCurrentFor(group: BehaviorGroup): Future[Option[BehaviorGroupVersion]]
+
   def createForAction(
                        group: BehaviorGroup,
                        user: User,

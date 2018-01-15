@@ -95,8 +95,8 @@ class BehaviorEditorController @Inject() (
     val user = request.identity
     for {
       maybeBehaviorGroup <- dataService.behaviorGroups.find(behaviorGroupId, user)
-      maybeLastVersion <- maybeBehaviorGroup.flatMap(_.maybeCurrentVersionId).map { currentVersionId =>
-        dataService.behaviorGroupVersions.findWithoutAccessCheck(currentVersionId)
+      maybeLastVersion <- maybeBehaviorGroup.map { group =>
+        dataService.behaviorGroupVersions.maybeCurrentFor(group)
       }.getOrElse(Future.successful(None))
       maybeUserData <- maybeLastVersion.flatMap { version =>
         version.maybeAuthor.map { author =>
