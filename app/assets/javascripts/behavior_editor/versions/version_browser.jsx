@@ -425,7 +425,7 @@ define(function(require: (string) => *): React.ElementType {
     }
 
     renderCommitButton(hasChanges: boolean): Node {
-      if (this.props.linkedGithubRepo) {
+      if (this.props.linkedGithubRepo && this.compareGitHubVersions()) {
         return (
           <Button onClick={this.toggleCommitting} disabled={!hasChanges} className="mrs mbm">Commit changes to GitHub…</Button>
         );
