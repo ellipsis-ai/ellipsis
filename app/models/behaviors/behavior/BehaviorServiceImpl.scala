@@ -157,9 +157,7 @@ class BehaviorServiceImpl @Inject() (
 
   def maybeCurrentVersionForAction(behavior: Behavior): DBIO[Option[BehaviorVersion]] = {
     for {
-      maybeCurrentGroupVersion <- behavior.group.maybeCurrentVersionId.map { versionId =>
-        dataService.behaviorGroupVersions.findWithoutAccessCheckAction(versionId)
-      }.getOrElse(DBIO.successful(None))
+      maybeCurrentGroupVersion <- dataService.behaviorGroupVersions.maybeCurrentForAction(behavior.group)
       maybeCurrentBehaviorVersion <- maybeCurrentGroupVersion.map { groupVersion =>
         dataService.behaviorVersions.findForAction(behavior, groupVersion)
       }.getOrElse(DBIO.successful(None))

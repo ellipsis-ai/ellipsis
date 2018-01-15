@@ -1,6 +1,7 @@
 package models.behaviors.triggers.messagetrigger
 
 import drivers.SlickPostgresDriver.api._
+import models.behaviors.behaviorgroupversion.BehaviorGroupVersionQueries
 import models.behaviors.behaviorversion.BehaviorVersionQueries
 import models.behaviors.triggers.{RegexMessageTrigger, TemplateMessageTrigger}
 import models.team.TeamsTable
@@ -28,9 +29,9 @@ object MessageTriggerQueries {
   val allForTeamQuery = Compiled(uncompiledAllForTeamQuery _)
 
   def uncompiledAllActiveForTeamQuery(teamId: Rep[String]) = {
-    allWithBehaviorVersion.
-      filter { case(_, (_, ((_, (_, team)), _))) => team.id === teamId }.
-      filter { case(_, (_, ((groupVersion, (group, _)), _))) => group.maybeCurrentVersionId === groupVersion.id }
+    allWithBehaviorVersion.join(BehaviorGroupVersionQueries.uncompiledAllCurrentQuery).on(_._2._1._1._1.groupVersionId === _._1._1.id).
+      filter { case((_, (_, ((_, (_, team)), _))), _) => team.id === teamId }.
+      map { case(messageTrigger, _) => messageTrigger }
   }
   val allActiveForTeamQuery = Compiled(uncompiledAllActiveForTeamQuery _)
 

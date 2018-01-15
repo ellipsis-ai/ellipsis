@@ -174,10 +174,8 @@ object BehaviorGroupData {
   def maybeFor(id: String, user: User, maybeGithubUrl: Option[String], dataService: DataService)(implicit ec: ExecutionContext): Future[Option[BehaviorGroupData]] = {
     for {
       maybeGroup <- dataService.behaviorGroups.find(id, user)
-      maybeLatestGroupVersion <- maybeGroup.flatMap { group =>
-        group.maybeCurrentVersionId.map { versionId =>
-          dataService.behaviorGroupVersions.findWithoutAccessCheck(versionId)
-        }
+      maybeLatestGroupVersion <- maybeGroup.map { group =>
+          dataService.behaviorGroupVersions.maybeCurrentFor(group)
       }.getOrElse(Future.successful(None))
       data <- maybeLatestGroupVersion.map { version =>
         buildFor(version, user, dataService).map(Some(_))
