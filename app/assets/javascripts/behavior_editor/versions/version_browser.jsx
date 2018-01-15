@@ -527,31 +527,32 @@ define(function(require: (string) => *): React.ElementType {
     }
 
     renderLocalVersionTitle(timestamp: Timestamp): Node {
-      return (
+      return this.getSelectedVersionIndex() === 0 ? (
+        <span>last saved version</span>
+      ) : (
         <span>version dated {Formatter.formatTimestampShort(timestamp)}</span>
       );
     }
 
-    renderDiffTitle(version: ?BehaviorGroup): Node {
+    renderVersionTitle(version: ?BehaviorGroup): Node {
       if (this.compareGitHubVersions() && this.state.lastFetched && this.state.lastFetchedBranch) {
-        const branchTitle = this.renderBranchTitle(this.state.lastFetchedBranch, this.state.lastFetched);
-        return (
-          <h4>
-            {this.state.diffFromSelectedToCurrent ? (
-              <span>Changes from {branchTitle} to current</span>
-            ) : (
-              <span>Changes from current to {branchTitle}</span>
-            )}
-          </h4>
-        );
+        return this.renderBranchTitle(this.state.lastFetchedBranch, this.state.lastFetched);
       } else if (this.compareLocalVersions() && version) {
-        const localTitle = this.getSelectedVersionIndex() === 0 ? "last saved version" : this.renderLocalVersionTitle(version.createdAt);
+        return this.renderLocalVersionTitle(version.createdAt);
+      } else {
+        return null;
+      }
+    }
+
+    renderDiffTitle(version: ?BehaviorGroup): Node {
+      const versionTitle = this.renderVersionTitle(version);
+      if (versionTitle) {
         return (
           <h4>
             {this.state.diffFromSelectedToCurrent ? (
-              <span>Changes from {localTitle} to current</span>
+              <span>Changes from {versionTitle} to current</span>
             ) : (
-              <span>Changes from current to {localTitle}</span>
+              <span>Changes from current to {versionTitle}</span>
             )}
           </h4>
         );
