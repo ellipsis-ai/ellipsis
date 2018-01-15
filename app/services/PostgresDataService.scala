@@ -42,6 +42,7 @@ import models.behaviors.scheduling.recurrence.RecurrenceService
 import models.behaviors.scheduling.scheduledbehavior.ScheduledBehaviorService
 import models.behaviors.scheduling.scheduledmessage.ScheduledMessageService
 import models.behaviors.triggers.messagetrigger.MessageTriggerService
+import models.billing.account.AccountService
 import models.environmentvariable.TeamEnvironmentVariableService
 import models.team.TeamService
 import slick.dbio.DBIO
@@ -91,7 +92,8 @@ class PostgresDataService @Inject() (
                                       val scheduledBehaviorsProvider: Provider[ScheduledBehaviorService],
                                       val recurrencesProvider: Provider[RecurrenceService],
                                       val invocationLogEntriesProvider: Provider[InvocationLogEntryService],
-                                      val behaviorResponsesProvider: Provider[BehaviorResponseService]
+                                      val behaviorResponsesProvider: Provider[BehaviorResponseService],
+                                      val billingAccountsProvider: Provider[AccountService]
                             ) extends DataService {
 
   val users = usersProvider.get
@@ -134,6 +136,8 @@ class PostgresDataService @Inject() (
   val scheduledBehaviors = scheduledBehaviorsProvider.get
   val recurrences = recurrencesProvider.get
   val invocationLogEntries = invocationLogEntriesProvider.get
+  val billingAccounts = billingAccountsProvider.get
+
   def behaviorResponses = behaviorResponsesProvider.get
 
   def run[T](action: DBIO[T]): Future[T] = models.run(action)

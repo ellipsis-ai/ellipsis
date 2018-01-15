@@ -39,6 +39,7 @@ import models.behaviors.scheduling.recurrence.RecurrenceService
 import models.behaviors.scheduling.scheduledbehavior.ScheduledBehaviorService
 import models.behaviors.scheduling.scheduledmessage.ScheduledMessageService
 import models.behaviors.triggers.messagetrigger.MessageTriggerService
+import models.billing.account.AccountService
 import models.environmentvariable.TeamEnvironmentVariableService
 import models.team.TeamService
 import slick.dbio.DBIO
@@ -87,6 +88,9 @@ trait DataService {
   val scheduledBehaviors: ScheduledBehaviorService
   val recurrences: RecurrenceService
   val invocationLogEntries: InvocationLogEntryService
+  val billingAccounts: AccountService
+
+
   def behaviorResponses: BehaviorResponseService
 
   def run[T](action: DBIO[T]): Future[T]
