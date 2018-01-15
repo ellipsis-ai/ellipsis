@@ -2550,6 +2550,7 @@ const BehaviorEditor = React.createClass({
         isLinkedToGithub={this.props.isLinkedToGithub}
         linkedGithubRepo={this.props.linkedGithubRepo}
         onLinkGithubRepo={this.props.onLinkGithubRepo}
+        onSaveChanges={this.onSaveClick}
       />
     );
   },

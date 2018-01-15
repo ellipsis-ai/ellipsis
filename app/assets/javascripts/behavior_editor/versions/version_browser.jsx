@@ -37,7 +37,8 @@ define(function(require: (string) => *): React.ElementType {
     onRestoreVersionClick: (version: BehaviorGroup, optionalCallback?: () => void) => void,
     isLinkedToGithub: boolean,
     linkedGithubRepo?: LinkedGithubRepo,
-    onLinkGithubRepo: (string, string, () => void) => void
+    onLinkGithubRepo: (string, string, () => void) => void,
+    onSaveChanges: () => void
   };
 
   type VersionSource = $Keys<typeof versionSources>;
@@ -130,11 +131,11 @@ define(function(require: (string) => *): React.ElementType {
         this.setState({
           isFetching: true,
           error: null
-        }, () => this.updateFromGitHub(owner, repo, branch));
+        }, () => this.updateFromGithub(owner, repo, branch));
       }
     }
 
-    updateFromGitHub(owner: string, repo: string, branch: string): void {
+    updateFromGithub(owner: string, repo: string, branch: string): void {
       DataRequest.jsonPost(
         jsRoutes.controllers.BehaviorEditorController.updateFromGithub().url, {
           behaviorGroupId: this.props.currentGroup.id,
@@ -172,7 +173,7 @@ define(function(require: (string) => *): React.ElementType {
       });
     }
 
-    setVersionSourceToGitHub(): void {
+    setVersionSourceToGithub(): void {
       this.setState({
         versionSource: versionSources.github
       });
@@ -215,7 +216,7 @@ define(function(require: (string) => *): React.ElementType {
     }
 
     shortNameForVersion(version: BehaviorGroup): Node {
-      if (this.compareGitHubVersions() && this.state.lastFetched && this.state.lastFetchedBranch) {
+      if (this.compareGithubVersions() && this.state.lastFetched && this.state.lastFetchedBranch) {
         return this.renderBranchTitle(this.state.lastFetchedBranch, this.state.lastFetched);
       } else {
         return this.renderLocalVersionTitle(version.createdAt);
@@ -279,7 +280,7 @@ define(function(require: (string) => *): React.ElementType {
       return this.getVersionSource() === versionSources.local;
     }
 
-    compareGitHubVersions(): boolean {
+    compareGithubVersions(): boolean {
       return this.getVersionSource() === versionSources.github;
     }
 
@@ -296,7 +297,7 @@ define(function(require: (string) => *): React.ElementType {
     getSelectedVersion(): ?BehaviorGroup {
       if (this.compareLocalVersions()) {
         return this.getVersionIndex(this.getSelectedVersionIndex());
-      } else if (this.compareGitHubVersions()) {
+      } else if (this.compareGithubVersions()) {
         return this.state.githubVersion;
       } else {
         return null;
@@ -357,7 +358,7 @@ define(function(require: (string) => *): React.ElementType {
         return (
           <div className="pulse">Loading version history…</div>
         );
-      } else if (this.compareGitHubVersions()) {
+      } else if (this.compareGithubVersions()) {
         return (
           <div className="type-italic">Fetch a GitHub branch to compare.</div>
         );
@@ -396,6 +397,16 @@ define(function(require: (string) => *): React.ElementType {
       );
     }
 
+    renderSaveButton(): Node {
+      if (this.props.currentGroupIsModified) {
+        return (
+          <Button className="mrs mbm" onClick={this.props.onSaveChanges}>
+            Save changes
+          </Button>
+        );
+      }
+    }
+
     renderRevertButton(selectedVersion: ?BehaviorGroup, hasChanges: boolean): ElementType {
       return (
         <Button className="mrs mbm" onClick={this.revertToSelected} disabled={!hasChanges}>
@@ -405,7 +416,7 @@ define(function(require: (string) => *): React.ElementType {
     }
 
     renderRevertButtonTitle(selectedVersion: ?BehaviorGroup, hasChanges: boolean): Node {
-      if (this.compareGitHubVersions()) {
+      if (this.compareGithubVersions()) {
         if (selectedVersion && hasChanges && this.state.lastFetchedBranch) {
           return (
             <span>Pull changes from <span className="type-monospace">{this.state.lastFetchedBranch}</span>…</span>
@@ -425,9 +436,9 @@ define(function(require: (string) => *): React.ElementType {
     }
 
     renderCommitButton(hasChanges: boolean): Node {
-      if (this.props.linkedGithubRepo && this.compareGitHubVersions()) {
+      if (this.props.linkedGithubRepo && this.compareGithubVersions()) {
         return (
-          <Button onClick={this.toggleCommitting} disabled={!hasChanges} className="mrs mbm">Commit changes to GitHub…</Button>
+          <Button onClick={this.toggleCommitting} disabled={!hasChanges || this.props.currentGroupIsModified} className="mrs mbm">Commit changes to GitHub…</Button>
         );
       }
     }
@@ -506,7 +517,7 @@ define(function(require: (string) => *): React.ElementType {
             <Button onClick={this.invertDiffDirection}>Switch direction</Button>
           </div>
         );
-      } else if (this.compareGitHubVersions()) {
+      } else if (this.compareGithubVersions()) {
         return this.renderGithubVersionSelector();
       } else {
         return (
@@ -535,7 +546,7 @@ define(function(require: (string) => *): React.ElementType {
     }
 
     renderVersionTitle(version: ?BehaviorGroup): Node {
-      if (this.compareGitHubVersions() && this.state.lastFetched && this.state.lastFetchedBranch) {
+      if (this.compareGithubVersions() && this.state.lastFetched && this.state.lastFetchedBranch) {
         return this.renderBranchTitle(this.state.lastFetchedBranch, this.state.lastFetched);
       } else if (this.compareLocalVersions() && version) {
         return this.renderLocalVersionTitle(version.createdAt);
@@ -574,7 +585,7 @@ define(function(require: (string) => *): React.ElementType {
             {this.renderChangeRepoButton()}
           </div>
         );
-      } else if (!this.props.isLinkedToGithub) {
+      } else if (!this.props.isLinkedToGithub && !this.props.currentGroupIsModified) {
         return this.renderGithubAuth();
       } else if (!this.props.linkedGithubRepo) {
         return this.renderChangeRepoButton();
@@ -635,8 +646,8 @@ define(function(require: (string) => *): React.ElementType {
                             label={"Versions saved in Ellipsis"}
                           />
                           <ToggleGroup.Item
-                            onClick={this.setVersionSourceToGitHub}
-                            activeWhen={this.compareGitHubVersions()}
+                            onClick={this.setVersionSourceToGithub}
+                            activeWhen={this.compareGithubVersions()}
                             label={"Versions on GitHub"}
                           />
                         </ToggleGroup>
@@ -672,6 +683,7 @@ define(function(require: (string) => *): React.ElementType {
 
               <div className="ptm bg-lightest border-top border-light container container-wide">
                 <Button className="mrs mbm button-primary" onClick={this.props.onClearActivePanel}>Done</Button>
+                {this.renderSaveButton()}
                 {this.renderRevertButton(selectedVersion, hasChanges)}
                 {this.renderCommitButton(hasChanges)}
               </div>
