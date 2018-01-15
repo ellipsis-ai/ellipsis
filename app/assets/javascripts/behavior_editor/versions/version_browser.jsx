@@ -73,6 +73,7 @@ define(function(require: (string) => *): React.ElementType {
     state: State;
     footer: ?HTMLDivElement;
     scrollContainer: ?HTMLDivElement;
+    pushPanel: ?GithubPushPanel;
 
     constructor(props: Props): void {
       super(props);
@@ -103,6 +104,10 @@ define(function(require: (string) => *): React.ElementType {
     toggleCommitting(): void {
       this.setState({
         isCommitting: !this.state.isCommitting
+      }, () => {
+        if (this.state.isCommitting && this.pushPanel) {
+          this.pushPanel.focus();
+        }
       });
     }
 
@@ -672,6 +677,7 @@ define(function(require: (string) => *): React.ElementType {
             </Collapsible>
             <Collapsible revealWhen={this.state.isCommitting}>
               <GithubPushPanel
+                ref={(el) => this.pushPanel = el}
                 group={this.props.currentGroup}
                 linked={this.props.linkedGithubRepo}
                 onPushBranch={this.onPushBranch}
