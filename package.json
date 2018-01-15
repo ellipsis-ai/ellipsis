@@ -50,6 +50,7 @@
           "BehaviorEditorController": {},
           "ScheduledActionsController": {},
           "GithubConfigController": {},
+          "SocialAuthController": {},
           "web": {
             "settings": {
               "IntegrationsController": {},

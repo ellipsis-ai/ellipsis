@@ -21,7 +21,7 @@ define(function(require) {
     repo: string
   };
 
-  class GithubLinkPanel extends React.Component<Props, State> {
+  class LinkGithubRepo extends React.Component<Props, State> {
     props: Props;
     state: State;
     ownerInput: ?FormInput;
@@ -30,7 +30,11 @@ define(function(require) {
     constructor(props) {
       super(props);
       autobind(this);
-      this.state = {
+      this.state = this.getDefaultState();
+    }
+
+    getDefaultState(): State {
+      return {
         owner: this.props.linked ? this.props.linked.getOwner() : "",
         repo: this.props.linked ? this.props.linked.getRepo(): ""
       };
@@ -69,10 +73,13 @@ define(function(require) {
     }
 
     onLinkClick(): void {
-      this.props.onLinkGithubRepo(this.getOwner(), this.getRepo(), () => this.props.onDoneClick());
+      this.props.onLinkGithubRepo(this.getOwner(), this.getRepo(), () => {
+        this.props.onDoneClick();
+        this.setState(this.getDefaultState());
+      });
     }
 
-    renderContent(): React.Node {
+    render(): React.Node {
       return (
         <div>
           <div className="columns columns-elastic">
@@ -125,24 +132,7 @@ define(function(require) {
         </div>
       );
     }
-
-    render(): React.Node {
-      return (
-        <div className="box-action phn">
-          <div className="container">
-            <div className="columns">
-              <div className="column column-page-sidebar">
-                <h4 className="type-weak mtn">Link this skill to a GitHub repository</h4>
-              </div>
-              <div className="column column-page-main">
-                {this.renderContent()}
-              </div>
-            </div>
-          </div>
-        </div>
-      );
-    }
   }
 
-  return GithubLinkPanel;
+  return LinkGithubRepo;
 });
