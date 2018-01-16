@@ -777,7 +777,7 @@ const BehaviorEditor = React.createClass({
   checkMobileLayout: function() {
     if (this.hasMobileLayout() !== this.windowIsMobile()) {
       this.setState({
-        behaviorSwitcherVisible: this.isExistingGroup() && !this.windowIsMobile(),
+        behaviorSwitcherVisible: !this.windowIsMobile(),
         hasMobileLayout: this.windowIsMobile()
       });
     }
@@ -1667,7 +1667,7 @@ const BehaviorEditor = React.createClass({
       paramNameToSync: null,
       error: null,
       selectedSavedAnswerInputId: null,
-      behaviorSwitcherVisible: this.isExistingGroup() && !this.windowIsMobile(),
+      behaviorSwitcherVisible: !this.windowIsMobile(),
       hasMobileLayout: this.windowIsMobile(),
       animationDisabled: false,
       lastSavedDataStorageItem: null,
@@ -1687,9 +1687,6 @@ const BehaviorEditor = React.createClass({
         versionsLoadStatus: null,
         error: null
       };
-      if (!this.props.group.id && nextProps.group.id  && !this.windowIsMobile()) {
-        newState.behaviorSwitcherVisible = true;
-      }
       this.props.onClearActivePanel();
       this.setState(newState);
       if (typeof(nextProps.onLoad) === 'function') {
@@ -2070,7 +2067,7 @@ const BehaviorEditor = React.createClass({
   },
 
   renderSwitcherToggle: function() {
-    if ((!this.behaviorSwitcherIsVisible() || this.windowIsMobile()) && this.isExistingGroup()) {
+    if (this.windowIsMobile()) {
       return (
         <div className="bg-white container container-wide type-weak border-bottom display-ellipsis display-limit-width">
           <Button className="button-tab button-tab-subtle" onClick={this.toggleBehaviorSwitcher}>
@@ -2078,15 +2075,9 @@ const BehaviorEditor = React.createClass({
               <SVGHamburger />
             </span>
             <h4 className="type-black display-inline-block align-m man">
-              {this.getBehaviorGroup().getName()}
+              {this.isExistingGroup() ? this.getBehaviorGroup().getName() : "New skill"}
             </h4>
           </Button>
-        </div>
-      );
-    } else if (!this.isExistingGroup()) {
-      return (
-        <div className="bg-white container container-wide pvm border-bottom">
-          <h4 className="man">New skill</h4>
         </div>
       );
     }
@@ -2097,7 +2088,7 @@ const BehaviorEditor = React.createClass({
     return selected ? selected.editorScrollPosition : 0;
   },
 
-  onSelect: function(groupId, id, optionalCallback) {
+  onSelect: function(optionalGroupId, id, optionalCallback) {
     var newState = {
       animationDisabled: true,
       selectedId: id
@@ -2106,8 +2097,8 @@ const BehaviorEditor = React.createClass({
       newState.behaviorSwitcherVisible = false;
     }
     this.setState(newState, () => {
-      if (groupId) {
-        BrowserUtils.replaceURL(jsRoutes.controllers.BehaviorEditorController.edit(groupId, id).url);
+      if (optionalGroupId) {
+        BrowserUtils.replaceURL(jsRoutes.controllers.BehaviorEditorController.edit(optionalGroupId, id).url);
       }
       var newScrollPosition = this.getEditorScrollPosition();
       window.scrollTo(window.scrollX, typeof(newScrollPosition) === 'number' ? newScrollPosition : 0);
@@ -2194,15 +2185,16 @@ const BehaviorEditor = React.createClass({
       <div ref="leftColumn"
         className={
           "column column-page-sidebar flex-column flex-column-left bg-white " +
-          "border-right prn position-relative mobile-position-fixed-top-full mobile-position-z-front " +
-          (this.behaviorSwitcherIsVisible() || this.hasMobileLayout()  ? "" : "display-none")
+          "border-right prn position-relative mobile-position-fixed-top-full mobile-position-z-front "
         }
       >
         <Collapsible revealWhen={this.behaviorSwitcherIsVisible()} animationDisabled={!this.hasMobileLayout()}>
           <Sticky ref="leftPanel" onGetCoordinates={this.getLeftPanelCoordinates} innerClassName="position-z-above" disabledWhen={this.hasMobileLayout()}>
-            <div className="position-absolute position-top-right mtm mobile-mts mobile-mrs">
-              <CollapseButton onClick={this.toggleBehaviorSwitcher} direction={this.windowIsMobile() ? "up" : "left"} />
-            </div>
+            {this.windowIsMobile() ? (
+              <div className="position-absolute position-top-right mtm mobile-mts mobile-mrs">
+                <CollapseButton onClick={this.toggleBehaviorSwitcher} direction={"up"} />
+              </div>
+            ) : null}
             <BehaviorSwitcher
               ref="behaviorSwitcher"
               actionBehaviors={this.getActionBehaviors()}

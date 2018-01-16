@@ -99,7 +99,11 @@ define(function(require) {
     }
 
     getName(): string {
-      return this.name || "Untitled skill";
+      return this.name || this.getUntitledName();
+    }
+
+    getUntitledName(): string {
+      return this.id ? "Untitled skill" : "New skill";
     }
 
     getDescription(): string {
