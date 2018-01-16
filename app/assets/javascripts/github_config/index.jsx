@@ -1,9 +1,8 @@
 define(function(require) {
   var React = require('react'),
     CSRFTokenHiddenInput = require('../shared_ui/csrf_token_hidden_input'),
-    Input = require('../form/input'),
     Page = require('../shared_ui/page'),
-    SettingsMenu = require('../shared_ui/settings_menu');
+    SettingsPage = require('../shared_ui/settings_page');
 
   const resetForm = jsRoutes.controllers.GithubConfigController.reset();
 
@@ -35,29 +34,10 @@ define(function(require) {
 
     render: function() {
       return (
-        <div className="flex-row-cascade">
-          <div className="bg-light">
-            <div className="container container-wide pbm">
-              <h3 className="mvn ptxxl type-weak display-ellipsis">GitHub Configuration</h3>
-            </div>
-          </div>
-          <div className="flex-columns flex-row-expand">
-            <div className="flex-column flex-column-left flex-rows container container-wide prn">
-              <div className="columns flex-columns flex-row-expand">
-                <div className="column column-one-quarter flex-column">
-                  <SettingsMenu activePage="githubConfig" teamId={this.props.teamId} isAdmin={this.props.isAdmin}/>
-                </div>
-                <div className="column column-three-quarters flex-column bg-white ptxxl pbxxxxl phxxxxl">
-
-                  {this.getLinkedAccount() ? this.renderLinkedAccount() : this.renderNoLinkedAccount()}
-
-                </div>
-              </div>
-            </div>
-            <div className="flex-column flex-column-right bg-white" />
-          </div>
+        <SettingsPage teamId={this.props.teamId} isAdmin={this.props.isAdmin} header={"GitHub Configuration"} activePage={"githubConfig"}>
+          {this.getLinkedAccount() ? this.renderLinkedAccount() : this.renderNoLinkedAccount()}
           {this.props.onRenderFooter()}
-        </div>
+        </SettingsPage>
       );
     },
 
