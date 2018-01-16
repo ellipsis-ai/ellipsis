@@ -42,6 +42,8 @@ define(function(require) {
       behaviorId: React.PropTypes.string
     }),
 
+    applicationNameInput: null,
+
     getDefaultProps: function() {
       return Page.requiredPropDefaults();
     },
@@ -100,7 +102,9 @@ define(function(require) {
 
     setApplicationApi: function(api) {
       this.setState({ applicationApi: api }, function() {
-        this.refs.applicationName.focus();
+        if (this.applicationNameInput) {
+          this.applicationNameInput.focus();
+        }
         BrowserUtils.replaceQueryParam('apiId', api.apiId);
       });
     },
@@ -134,7 +138,9 @@ define(function(require) {
     onApplicationNameEnterKey: function() {
       if (!this.applicationNameIsEmpty()) {
         this.revealApplicationURL();
-        this.refs.applicationName.blur();
+        if (this.applicationNameInput) {
+          this.applicationNameInput.blur();
+        }
       }
     },
 
@@ -372,7 +378,7 @@ define(function(require) {
               <div className="column column-two-thirds">
                 <div>
                   <FormInput
-                    ref="applicationName"
+                    ref={(el) => this.applicationNameInput = el}
                     name="name"
                     value={this.getApplicationName()}
                     placeholder={"e.g. " + this.getApplicationApiName()}
