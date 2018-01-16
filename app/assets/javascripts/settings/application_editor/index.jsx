@@ -3,8 +3,8 @@ define(function(require) {
     Checkbox = require('../../form/checkbox'),
     Collapsible = require('../../shared_ui/collapsible'),
     CsrfTokenHiddenInput = require('../../shared_ui/csrf_token_hidden_input'),
-    Input = require('../../form/input'),
-    SettingsMenu = require('../../shared_ui/settings_menu'),
+    FormInput = require('../../form/input'),
+    SettingsPage = require('../../shared_ui/settings_page'),
     BrowserUtils = require('../../lib/browser_utils'),
     ifPresent = require('../../lib/if_present'),
     Page = require('../../shared_ui/page');
@@ -223,65 +223,49 @@ define(function(require) {
 
     render: function() {
       return (
-        <form action={jsRoutes.controllers.web.settings.OAuth2ApplicationController.save().url} method="POST" className="flex-row-cascade">
-          <CsrfTokenHiddenInput value={this.props.csrfToken} />
-          <input type="hidden" name="apiId" value={this.getApplicationApiId()} />
-          <input type="hidden" name="requiredNameInCode" value={this.props.requiredNameInCode} />
-          <input type="hidden" name="id" value={this.props.applicationId} />
-          <input type="hidden" name="teamId" value={this.props.teamId} />
-          {this.renderBehaviorGroupId()}
-          {this.renderBehaviorId()}
+        <SettingsPage teamId={this.props.teamId} isAdmin={this.props.isAdmin} activePage={"oauthApplications"} header={this.renderHeader()}>
+          <form action={jsRoutes.controllers.web.settings.OAuth2ApplicationController.save().url} method="POST" className="flex-row-cascade">
+            <CsrfTokenHiddenInput value={this.props.csrfToken} />
+            <input type="hidden" name="apiId" value={this.getApplicationApiId()} />
+            <input type="hidden" name="requiredNameInCode" value={this.props.requiredNameInCode} />
+            <input type="hidden" name="id" value={this.props.applicationId} />
+            <input type="hidden" name="teamId" value={this.props.teamId} />
+            {this.renderBehaviorGroupId()}
+            {this.renderBehaviorId()}
 
-          <div className="bg-light">
-            <div className="container container-wide pbm">
-              {this.renderHeader()}
-            </div>
-          </div>
+            <Collapsible revealWhen={!this.apiIsSet()}>
+              {this.renderChooseApi()}
+            </Collapsible>
+            <Collapsible revealWhen={this.apiIsSet()}>
+              {this.renderConfigureApplication()}
+            </Collapsible>
 
-          <div className="flex-columns flex-row-expand">
-            <div className="flex-column flex-column-left flex-rows container container-wide prn">
-              <div className="columns flex-columns flex-row-expand">
-                <div className="column column-one-quarter flex-column">
-                  <SettingsMenu activePage="oauthApplications" teamId={this.props.teamId} isAdmin={this.props.isAdmin}/>
-                </div>
-                <div className="column column-three-quarters flex-column bg-white ptxl pbxxxxl phxxxxl">
-                  <Collapsible revealWhen={!this.apiIsSet()}>
-                    {this.renderChooseApi()}
-                  </Collapsible>
-                  <Collapsible revealWhen={this.apiIsSet()}>
-                    {this.renderConfigureApplication()}
-                  </Collapsible>
-                </div>
-              </div>
-            </div>
-            <div className="flex-column flex-column-right bg-white" />
-          </div>
-
-          {this.props.onRenderFooter((
-            <Collapsible revealWhen={this.shouldRevealApplicationUrl() && !this.props.activePanelIsModal}>
-              <div className="container border-top ptm">
-                <div className="columns mobile-columns-float">
-                  <div className="column column-one-quarter" />
-                  <div className="column column-three-quarters plxxxxl prm">
-                    <button type="submit"
-                      className={"button-primary mrs mbm " + (this.state.isSaving ? "button-activated" : "")}
-                      disabled={!this.canBeSaved()}
-                      onClick={this.onSaveClick}
-                    >
-                    <span className="button-labels">
-                      <span className="button-normal-label">
-                        <span className="mobile-display-none">Save changes</span>
-                        <span className="mobile-display-only">Save</span>
+            {this.props.onRenderFooter((
+              <Collapsible revealWhen={this.shouldRevealApplicationUrl() && !this.props.activePanelIsModal}>
+                <div className="container border-top ptm">
+                  <div className="columns mobile-columns-float">
+                    <div className="column column-one-quarter" />
+                    <div className="column column-three-quarters plxxxxl prm">
+                      <button type="submit"
+                        className={"button-primary mrs mbm " + (this.state.isSaving ? "button-activated" : "")}
+                        disabled={!this.canBeSaved()}
+                        onClick={this.onSaveClick}
+                      >
+                      <span className="button-labels">
+                        <span className="button-normal-label">
+                          <span className="mobile-display-none">Save changes</span>
+                          <span className="mobile-display-only">Save</span>
+                        </span>
+                        <span className="button-activated-label">Saving…</span>
                       </span>
-                      <span className="button-activated-label">Saving…</span>
-                    </span>
-                    </button>
+                      </button>
+                    </div>
                   </div>
                 </div>
-              </div>
-            </Collapsible>
-          ))}
-        </form>
+              </Collapsible>
+            ))}
+          </form>
+        </SettingsPage>
       );
     },
 
@@ -387,7 +371,7 @@ define(function(require) {
             <div className="mbxxl columns">
               <div className="column column-two-thirds">
                 <div>
-                  <Input
+                  <FormInput
                     ref="applicationName"
                     name="name"
                     value={this.getApplicationName()}
@@ -448,7 +432,7 @@ define(function(require) {
                 <div className="columns mtl">
                   <div className="column column-one-half">
                     <h5 className="mtn">Client ID</h5>
-                    <Input className="form-input-borderless type-monospace"
+                    <FormInput className="form-input-borderless type-monospace"
                       placeholder="Enter identifier"
                       name="clientId"
                       value={this.getApplicationClientId()}
@@ -458,7 +442,7 @@ define(function(require) {
                   </div>
                   <div className="column column-one-half">
                     <h5 className="mtn">Client secret</h5>
-                    <Input className="form-input-borderless type-monospace"
+                    <FormInput className="form-input-borderless type-monospace"
                       placeholder="Enter secret"
                       name="clientSecret"
                       value={this.getApplicationClientSecret()}
@@ -488,7 +472,7 @@ define(function(require) {
 
                 <div className="columns">
                   <div className="column column-one-third">
-                    <Input className="form-input-borderless type-monospace"
+                    <FormInput className="form-input-borderless type-monospace"
                       name="scope"
                       value={this.getApplicationScope()}
                       onChange={this.setApplicationScope}
