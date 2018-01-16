@@ -4,12 +4,13 @@ define(function(require) {
     HelpButton = require('../../help/help_button'),
     HelpPanel = require('../../help/panel'),
     Page = require('../../shared_ui/page'),
-    SettingsMenu = require('../../shared_ui/settings_menu'),
+    SettingsPage = require('../../shared_ui/settings_page'),
     Sort = require('../../lib/sort');
 
   const IntegrationList = React.createClass({
     propTypes: Object.assign({}, Page.requiredPropTypes, {
       csrfToken: React.PropTypes.string.isRequired,
+      isAdmin: React.PropTypes.bool.isRequired,
       teamId: React.PropTypes.string.isRequired,
       apis: React.PropTypes.arrayOf(React.PropTypes.object),
       applications: React.PropTypes.arrayOf(React.PropTypes.object),
@@ -64,68 +65,49 @@ define(function(require) {
 
     render: function() {
       return (
-        <div className="flex-row-cascade">
-          <div className="bg-light">
-            <div className="container container-wide pbm">
-              {this.renderHeader()}
-            </div>
-          </div>
-          <div className="flex-columns flex-row-expand">
-            <div className="flex-column flex-column-left flex-rows container container-wide prn">
-              <div className="columns flex-columns flex-row-expand">
-                <div className="column column-one-quarter flex-column">
-                  <SettingsMenu activePage="oauthApplications" teamId={this.props.teamId} />
-                </div>
-                <div className="column column-three-quarters flex-column bg-white ptxl pbxxxxl phxxxxl">
+        <SettingsPage teamId={this.props.teamId} isAdmin={this.props.isAdmin} header={this.renderHeader()} activePage={"oauthApplications"}>
 
-                  <p>
-                    <span>Create a new configuration to give Ellipsis access to third-party APIs, </span>
-                    <span>services, and data.</span>
-                  </p>
+          <p>
+            <span>Create a new configuration to give Ellipsis access to third-party APIs, </span>
+            <span>services, and data.</span>
+          </p>
 
-                  <p>
-                    <HelpButton className="mrs" onClick={this.toggleOAuth2ApplicationHelp}
-                                toggled={this.props.activePanelName === 'oAuth2ApplicationHelp'}/>
-                    <button type="button" className="button-raw" onClick={this.toggleOAuth2ApplicationHelp}>
-                      How Integrations work
-                    </button>
-                  </p>
+          <p>
+            <HelpButton className="mrs" onClick={this.toggleOAuth2ApplicationHelp}
+                        toggled={this.props.activePanelName === 'oAuth2ApplicationHelp'}/>
+            <button type="button" className="button-raw" onClick={this.toggleOAuth2ApplicationHelp}>
+              How Integrations work
+            </button>
+          </p>
 
-                  <hr />
+          <hr />
 
-                  <Collapsible revealWhen={this.hasAwsConfigs()}>
-                    {this.renderAwsConfigs()}
-                  </Collapsible>
+          <Collapsible revealWhen={this.hasAwsConfigs()}>
+            {this.renderAwsConfigs()}
+          </Collapsible>
 
-                  <Collapsible revealWhen={!this.hasAwsConfigs()}>
-                    {this.renderNoAwsConfigs()}
-                  </Collapsible>
+          <Collapsible revealWhen={!this.hasAwsConfigs()}>
+            {this.renderNoAwsConfigs()}
+          </Collapsible>
 
-                  <Collapsible revealWhen={this.hasApplications()}>
-                    {this.renderApplicationList()}
-                  </Collapsible>
+          <Collapsible revealWhen={this.hasApplications()}>
+            {this.renderApplicationList()}
+          </Collapsible>
 
-                  <Collapsible revealWhen={!this.hasApplications()}>
-                    {this.renderNoApplications()}
-                  </Collapsible>
+          <Collapsible revealWhen={!this.hasApplications()}>
+            {this.renderNoApplications()}
+          </Collapsible>
 
-                  <Collapsible revealWhen={this.hasApis()}>
-                    {this.renderNewIntegrationLink()}
-                  </Collapsible>
-
-                </div>
-              </div>
-            </div>
-            <div className="flex-column flex-column-right bg-white" />
-          </div>
-
+          <Collapsible revealWhen={this.hasApis()}>
+            {this.renderNewIntegrationLink()}
+          </Collapsible>
 
           {this.props.onRenderFooter((
-            <Collapsible ref="oAuth2ApplicationHelp" revealWhen={this.props.activePanelName === 'oAuth2ApplicationHelp'}>
+            <Collapsible revealWhen={this.props.activePanelName === 'oAuth2ApplicationHelp'}>
               {this.renderOAuth2ApplicationHelp()}
             </Collapsible>
           ))}
-        </div>
+        </SettingsPage>
       );
     },
 

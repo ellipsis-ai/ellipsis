@@ -1,6 +1,6 @@
 define(function(require) {
   var React = require('react'),
-    SettingsMenu = require('../../shared_ui/settings_menu'),
+    SettingsPage = require('../../shared_ui/settings_page'),
     Setter = require('./setter'),
     ifPresent = require('../../lib/if_present'),
     Sort = require('../../lib/sort'),
@@ -19,6 +19,8 @@ define(function(require) {
       }),
       focus: React.PropTypes.string
     }),
+
+    setterComponent: null,
 
     getDefaultProps: function() {
       return Page.requiredPropDefaults();
@@ -67,7 +69,9 @@ define(function(require) {
             environmentVariables: json.variables,
             justSaved: true
           }, () => {
-            this.refs.setter.reset();
+            if (this.setterComponent) {
+              this.setterComponent.reset();
+            }
           });
         }).catch(() => {
           this.refs.envVariableSetterPanel.onSaveError();
@@ -80,28 +84,10 @@ define(function(require) {
 
     render: function() {
       return (
-        <div className="flex-row-cascade">
-          <div className="bg-light">
-            <div className="container container-wide pbm">
-              {this.renderHeader()}
-            </div>
-          </div>
-          <div className="flex-columns flex-row-expand">
-            <div className="flex-column flex-column-left flex-rows container container-wide prn">
-              <div className="columns flex-columns flex-row-expand">
-                <div className="column column-one-quarter flex-column">
-                  <SettingsMenu activePage="environmentVariables" teamId={this.props.data.teamId} isAdmin={this.props.isAdmin}/>
-                </div>
-                <div className="column column-three-quarters flex-column bg-white ptxl pbxxxxl phxxxxl">
-
-                  {this.renderEnvVarList()}
-
-                </div>
-              </div>
-            </div>
-            <div className="flex-column flex-column-right bg-white" />
-          </div>
-        </div>
+        <SettingsPage teamId={this.props.data.teamId} isAdmin={this.props.isAdmin} header={this.renderHeader()} activePage={"environmentVariables"}>
+          {this.renderEnvVarList()}
+          {this.props.onRenderFooter()}
+        </SettingsPage>
       );
     },
 
@@ -117,7 +103,7 @@ define(function(require) {
     renderEnvVarList: function() {
       return (
         <Setter
-          ref="setter"
+          ref={(el) => this.setterComponent = el}
           onSave={this.onSave}
           vars={this.getVars()}
           focus={this.props.focus}
