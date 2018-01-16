@@ -2,9 +2,9 @@ define(function(require) {
   var React = require('react'),
     Collapsible = require('../../shared_ui/collapsible'),
     CsrfTokenHiddenInput = require('../../shared_ui/csrf_token_hidden_input'),
-    SettingsMenu = require('../../shared_ui/settings_menu'),
+    SettingsPage = require('../../shared_ui/settings_page'),
     ifPresent = require('../../lib/if_present'),
-    Input = require('../../form/input'),
+    FormInput = require('../../form/input'),
     Page = require('../../shared_ui/page');
 
   return React.createClass({
@@ -24,6 +24,8 @@ define(function(require) {
       documentationUrl: React.PropTypes.string.isRequired,
       isAdmin: React.PropTypes.bool.isRequired
     }),
+
+    configNameInput: null,
 
     getDefaultProps: function() {
       return Page.requiredPropDefaults();
@@ -54,7 +56,9 @@ define(function(require) {
 
     onNameEnterKey: function() {
       if (!this.nameIsEmpty()) {
-        this.refs.configName.blur();
+        if (this.configNameInput) {
+          this.configNameInput.blur();
+        }
       }
     },
 
@@ -124,57 +128,41 @@ define(function(require) {
 
     render: function() {
       return (
-        <form action={jsRoutes.controllers.web.settings.AWSConfigController.save().url} method="POST" className="flex-row-cascade">
-          <CsrfTokenHiddenInput value={this.props.csrfToken} />
-          <input type="hidden" name="id" value={this.props.configId} />
-          <input type="hidden" name="teamId" value={this.props.teamId} />
-          <input type="hidden" name="requiredNameInCode" value={this.props.requiredNameInCode} />
-          {this.renderBehaviorGroupId()}
-          {this.renderBehaviorId()}
+        <SettingsPage teamId={this.props.teamId} activePage={"oauthApplications"} header={this.renderHeader()} isAdmin={this.props.isAdmin}>
+          <form action={jsRoutes.controllers.web.settings.AWSConfigController.save().url} method="POST" className="flex-row-cascade">
+            <CsrfTokenHiddenInput value={this.props.csrfToken} />
+            <input type="hidden" name="id" value={this.props.configId} />
+            <input type="hidden" name="teamId" value={this.props.teamId} />
+            <input type="hidden" name="requiredNameInCode" value={this.props.requiredNameInCode} />
+            {this.renderBehaviorGroupId()}
+            {this.renderBehaviorId()}
 
-          <div className="bg-light">
-            <div className="container container-wide pbm">
-              {this.renderHeader()}
-            </div>
-          </div>
+            {this.renderConfigure()}
 
-          <div className="flex-columns flex-row-expand">
-            <div className="flex-column flex-column-left flex-rows container container-wide prn">
-              <div className="columns flex-columns flex-row-expand">
-                <div className="column column-one-quarter flex-column">
-                  <SettingsMenu activePage="awsConfigs" teamId={this.props.teamId} isAdmin={this.props.isAdmin}/>
-                </div>
-                <div className="column column-three-quarters flex-column bg-white ptxl pbxxxxl phxxxxl">
-                  {this.renderConfigure()}
-                </div>
-              </div>
-            </div>
-            <div className="flex-column flex-column-right bg-white" />
-          </div>
-
-          {this.props.onRenderFooter((
-            <div className="container">
-              <div className="columns mobile-columns-float">
-                <div className="column column-one-quarter"></div>
-                <div className="column column-three-quarters plxxxxl prm">
-                  <button type="submit"
-                          className={"button-primary mrs mbm " + (this.state.isSaving ? "button-activated" : "")}
-                          disabled={!this.canBeSaved()}
-                          onClick={this.onSaveClick}
-                  >
-                    <span className="button-labels">
-                      <span className="button-normal-label">
-                        <span className="mobile-display-none">Save changes</span>
-                        <span className="mobile-display-only">Save</span>
+            {this.props.onRenderFooter((
+              <div className="container">
+                <div className="columns mobile-columns-float">
+                  <div className="column column-one-quarter" />
+                  <div className="column column-three-quarters plxxxxl prm">
+                    <button type="submit"
+                            className={"button-primary mrs mbm " + (this.state.isSaving ? "button-activated" : "")}
+                            disabled={!this.canBeSaved()}
+                            onClick={this.onSaveClick}
+                    >
+                      <span className="button-labels">
+                        <span className="button-normal-label">
+                          <span className="mobile-display-none">Save changes</span>
+                          <span className="mobile-display-only">Save</span>
+                        </span>
+                        <span className="button-activated-label">Saving…</span>
                       </span>
-                      <span className="button-activated-label">Saving…</span>
-                    </span>
-                  </button>
+                    </button>
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
-        </form>
+            ))}
+          </form>
+        </SettingsPage>
       );
     },
 
@@ -237,8 +225,8 @@ define(function(require) {
             <div className="mbxxl columns">
               <div className="column column-two-thirds">
                 <div>
-                  <Input
-                    ref="configName"
+                  <FormInput
+                    ref={(el) => this.configNameInput = el}
                     name="name"
                     value={this.getName()}
                     placeholder={"e.g. Default"}
@@ -278,7 +266,7 @@ define(function(require) {
                   <div className="columns mtl">
                     <div className="column column-one-half">
                       <h5>Access Key ID</h5>
-                      <Input className="form-input-borderless type-monospace"
+                      <FormInput className="form-input-borderless type-monospace"
                              placeholder="Enter access key ID"
                              name="accessKeyId"
                              value={this.getAccessKeyId()}
@@ -292,7 +280,7 @@ define(function(require) {
                   <div className="columns mtl">
                   <div className="column column-one-half">
                     <h5>Secret Access Key</h5>
-                    <Input className="form-input-borderless type-monospace"
+                    <FormInput className="form-input-borderless type-monospace"
                            placeholder="Enter secret access key"
                            name="secretAccessKey"
                            value={this.getSecretAccessKey()}
@@ -307,7 +295,7 @@ define(function(require) {
                 <div className="columns mtl">
                   <div className="column column-one-half">
                     <h5>Region</h5>
-                    <Input className="form-input-borderless type-monospace"
+                    <FormInput className="form-input-borderless type-monospace"
                            placeholder="Enter the region"
                            name="region"
                            value={this.getRegion()}
