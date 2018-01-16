@@ -2074,9 +2074,7 @@ const BehaviorEditor = React.createClass({
             <span className="display-inline-block align-t mrm" style={{ height: "24px" }}>
               <SVGHamburger />
             </span>
-            <h4 className="type-black display-inline-block align-m man">
-              {this.isExistingGroup() ? this.getBehaviorGroup().getName() : "New skill"}
-            </h4>
+            <h4 className="type-black display-inline-block align-m man">{this.getBehaviorGroup().getName()}</h4>
           </Button>
         </div>
       );
