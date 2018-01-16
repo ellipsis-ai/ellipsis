@@ -15,9 +15,19 @@ object BehaviorGroupDeploymentQueries {
   }
   val allForTeamQuery = Compiled(uncompiledAllForTeamQuery _)
 
-  private def uncompiledFindForBehaviorGroupQuery(groupId: Rep[String]) = {
+  private def uncompiledAllForBehaviorGroupQuery(groupId: Rep[String]) = {
     all.filter(_.groupId === groupId)
   }
-  val findForBehaviorGroupQuery = Compiled(uncompiledFindForBehaviorGroupQuery _)
+  val allForBehaviorGroupQuery = Compiled(uncompiledAllForBehaviorGroupQuery _)
+
+  private def uncompiledMostRecentForBehaviorGroupQuery(groupId: Rep[String]) = {
+    uncompiledAllForBehaviorGroupQuery(groupId).sortBy(_.createdAt.desc).take(1)
+  }
+  val mostRecentForBehaviorGroupQuery = Compiled(uncompiledMostRecentForBehaviorGroupQuery _)
+
+  private def uncompiledFindForBehaviorGroupVersionQuery(groupVersionId: Rep[String]) = {
+    all.filter(_.groupVersionId === groupVersionId)
+  }
+  val findForBehaviorGroupVersionQuery = Compiled(uncompiledFindForBehaviorGroupVersionQuery _)
 
 }

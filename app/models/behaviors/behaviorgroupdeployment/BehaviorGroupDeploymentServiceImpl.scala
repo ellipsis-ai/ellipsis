@@ -6,6 +6,7 @@ import javax.inject.Inject
 import com.google.inject.Provider
 import drivers.SlickPostgresDriver.api._
 import models.IDs
+import models.behaviors.behaviorgroup.BehaviorGroup
 import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
 import models.team.Team
 import services.{AWSLambdaService, DataService}
@@ -50,12 +51,21 @@ class BehaviorGroupDeploymentServiceImpl @Inject() (
     dataService.run(allForTeamQuery(team.id).result)
   }
 
+  def maybeMostRecentFor(group: BehaviorGroup): Future[Option[BehaviorGroupDeployment]] = {
+    val action = mostRecentForBehaviorGroupQuery(group.id).result.map { r =>
+      r.headOption
+    }
+    dataService.run(action)
+  }
+
   def deploy(version: BehaviorGroupVersion, userId: String, maybeComment: Option[String]): Future[BehaviorGroupDeployment] = {
-    val newInstance = BehaviorGroupDeployment(IDs.next, version.group.id, version.id, maybeComment, userId, OffsetDateTime.now)
     val action = for {
-      _ <- findForBehaviorGroupQuery(version.group.id).delete
-      _ <- all += newInstance
-    } yield newInstance
+      maybeExisting <- findForBehaviorGroupVersionQuery(version.id).result.map(r => r.headOption)
+      instance <- maybeExisting.map(DBIO.successful).getOrElse {
+        val newInstance = BehaviorGroupDeployment(IDs.next, version.group.id, version.id, maybeComment, userId, OffsetDateTime.now)
+        (all += newInstance).map(_ => newInstance)
+      }
+    } yield instance
     dataService.run(action.transactionally)
   }
 

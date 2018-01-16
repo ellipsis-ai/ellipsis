@@ -6,7 +6,8 @@ CREATE TABLE behavior_group_deployments (
   group_version_id TEXT NOT NULL REFERENCES behavior_group_versions(id) ON DELETE CASCADE,
   comment TEXT,
   user_id TEXT NOT NULL REFERENCES users(id),
-  created_at TIMESTAMPTZ NOT NULL
+  created_at TIMESTAMPTZ NOT NULL,
+  UNIQUE (group_version_id)
 );
 
 CREATE INDEX behavior_group_deployments_group_id_index ON behavior_group_deployments(group_id);
