@@ -1,13 +1,13 @@
 define(function(require) {
   var React = require('react'),
       APIRequestHelp = require('./api_request_help'),
-      Collapsible = require('../shared_ui/collapsible'),
-      CSRFTokenHiddenInput = require('../shared_ui/csrf_token_hidden_input'),
-      Formatter = require('../lib/formatter'),
-      HelpButton = require('../help/help_button'),
-      FormInput = require('../form/input'),
-      Page = require('../shared_ui/page'),
-      SettingsPage = require('../shared_ui/settings_page');
+      Collapsible = require('../../shared_ui/collapsible'),
+      CSRFTokenHiddenInput = require('../../shared_ui/csrf_token_hidden_input'),
+      Formatter = require('../../lib/formatter'),
+      HelpButton = require('../../help/help_button'),
+      FormInput = require('../../form/input'),
+      Page = require('../../shared_ui/page'),
+      SettingsPage = require('../../shared_ui/settings_page');
 
   var revokeForm = jsRoutes.controllers.APITokenController.revokeToken();
   var createForm = jsRoutes.controllers.APITokenController.createToken();

@@ -1,8 +1,8 @@
 define(function(require) {
   var React = require('react'),
-    Collapsible = require('../shared_ui/collapsible'),
-    ExpandButton = require('../shared_ui/expand_button'),
-    HelpPanel = require('../help/panel');
+    Collapsible = require('../../shared_ui/collapsible'),
+    ExpandButton = require('../../shared_ui/expand_button'),
+    HelpPanel = require('../../help/panel');
 
   return React.createClass({
     displayName: 'APIRequestHelp',
