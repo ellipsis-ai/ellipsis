@@ -18,7 +18,8 @@ define(function(require) {
       libraryId: string,
       exportId: ?string,
       isNew: boolean,
-      editorScrollPosition: ?number
+      editorScrollPosition: ?number,
+      createdAt: ?number
     ) {
       super(
         id,
@@ -29,13 +30,18 @@ define(function(require) {
         description,
         functionBody,
         exportId,
-        editorScrollPosition
+        editorScrollPosition,
+        createdAt
       );
 
       Object.defineProperties(this, {
         functionBody: { value: functionBody, enumerable: true },
         libraryId: { value: libraryId, enumerable: true }
       });
+    }
+
+    sortKey(): string {
+      return this.sortKeyFor(this.name);
     }
 
     diffLabel(): string {
@@ -129,7 +135,8 @@ define(function(require) {
         props.libraryId,
         props.exportId,
         props.isNew,
-        props.editorScrollPosition
+        props.editorScrollPosition,
+        props.createdAt
       );
     }
 
