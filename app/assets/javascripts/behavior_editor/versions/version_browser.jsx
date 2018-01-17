@@ -423,7 +423,7 @@ define(function(require: (string) => *): React.ElementType {
       if (this.compareGithubVersions()) {
         if (selectedVersion && hasChanges && this.state.lastFetchedBranch) {
           return (
-            <span>Checkout <span className="type-monospace">{this.state.lastFetchedBranch}</span>…</span>
+            <span>Checkout <span className="type-monospace">{this.state.lastFetchedBranch}</span> as current version…</span>
           );
         } else {
           return "Checkout…";
@@ -439,10 +439,10 @@ define(function(require: (string) => *): React.ElementType {
       }
     }
 
-    renderCommitButton(hasChanges: boolean): Node {
+    renderCommitButton(): Node {
       if (this.props.linkedGithubRepo && this.compareGithubVersions()) {
         return (
-          <Button onClick={this.toggleCommitting} disabled={!hasChanges || this.props.currentGroupIsModified} className="mrs mbm">Commit changes to GitHub…</Button>
+          <Button onClick={this.toggleCommitting} disabled={this.props.currentGroupIsModified} className="mrs mbm">Commit current version to GitHub…</Button>
         );
       }
     }
@@ -516,7 +516,7 @@ define(function(require: (string) => *): React.ElementType {
                 <div>
                   {this.state.diffFromSelectedToCurrent ?
                     this.renderSelectableVersion(this.renderLeftCaption()) :
-                    this.renderCurrentVersionPlaceholder(this.renderRightCaption())
+                    this.renderCurrentVersionPlaceholder(this.renderLeftCaption())
                   }
                 </div>
               </div>
@@ -524,7 +524,7 @@ define(function(require: (string) => *): React.ElementType {
                 <div className="columns columns-elastic">
                   <div className="column column-expand">
                     {this.state.diffFromSelectedToCurrent ?
-                      this.renderCurrentVersionPlaceholder(this.renderLeftCaption()) :
+                      this.renderCurrentVersionPlaceholder(this.renderRightCaption()) :
                       this.renderSelectableVersion(this.renderRightCaption())
                     }
                   </div>
@@ -702,7 +702,7 @@ define(function(require: (string) => *): React.ElementType {
                 <Button className="mrs mbm button-primary" onClick={this.props.onClearActivePanel}>Done</Button>
                 {this.renderSaveButton()}
                 {this.renderRevertButton(selectedVersion, hasChanges)}
-                {this.renderCommitButton(hasChanges)}
+                {this.renderCommitButton()}
               </div>
             </Collapsible>
             <Collapsible revealWhen={this.state.isCommitting}>
