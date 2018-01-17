@@ -52,12 +52,28 @@ class BehaviorGroupDeploymentServiceImpl @Inject() (
     dataService.run(allForTeamQuery(team.id).result)
   }
 
+  def maybeActiveBehaviorGroupVersionFor(group: BehaviorGroup, context: String, channel: String): Future[Option[BehaviorGroupVersion]] = {
+    for {
+      maybeDevModeChannel <- dataService.devModeChannels.find(context, channel, group.team)
+      maybeGroupVersion <- if (maybeDevModeChannel.nonEmpty) {
+        dataService.behaviorGroups.maybeCurrentVersionFor(group)
+      } else {
+        for {
+          maybeDeployment <- maybeMostRecentFor(group)
+          maybeVersion <- maybeDeployment.map { ea =>
+            dataService.behaviorGroupVersions.findWithoutAccessCheck(ea.groupVersionId)
+          }.getOrElse(Future.successful(None))
+        } yield maybeVersion
+      }
+    } yield maybeGroupVersion
+  }
+
   def allActiveTriggersFor(context: String, channel: String, team: Team): Future[Seq[MessageTrigger]] = {
     for {
       maybeDevModeChannel <- dataService.devModeChannels.find(context, channel, team)
-      triggers <- maybeDevModeChannel.map { devModeChannel =>
+      triggers <- if (maybeDevModeChannel.nonEmpty) {
         dataService.messageTriggers.allActiveFor(team)
-      }.getOrElse {
+      } else {
         for {
           deployments <- allForTeam(team)
           groupVersions <- Future.sequence(deployments.map { ea =>
