@@ -8,6 +8,7 @@ import drivers.SlickPostgresDriver.api._
 import models.IDs
 import models.behaviors.behaviorgroup.BehaviorGroup
 import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
+import models.behaviors.triggers.messagetrigger.MessageTrigger
 import models.team.Team
 import services.{AWSLambdaService, DataService}
 
@@ -49,6 +50,28 @@ class BehaviorGroupDeploymentServiceImpl @Inject() (
 
   def allForTeam(team: Team): Future[Seq[BehaviorGroupDeployment]] = {
     dataService.run(allForTeamQuery(team.id).result)
+  }
+
+  def allActiveTriggersFor(context: String, channel: String, team: Team): Future[Seq[MessageTrigger]] = {
+    for {
+      maybeDevModeChannel <- dataService.devModeChannels.find(context, channel, team)
+      triggers <- maybeDevModeChannel.map { devModeChannel =>
+        dataService.messageTriggers.allActiveFor(team)
+      }.getOrElse {
+        for {
+          deployments <- allForTeam(team)
+          groupVersions <- Future.sequence(deployments.map { ea =>
+            dataService.behaviorGroupVersions.findWithoutAccessCheck(ea.groupVersionId)
+          }).map(_.flatten)
+          behaviorVersions <- Future.sequence(groupVersions.map { ea =>
+            dataService.behaviorVersions.allForGroupVersion(ea)
+          }).map(_.flatten)
+          triggers <- Future.sequence(behaviorVersions.map { ea =>
+            dataService.messageTriggers.allFor(ea)
+          }).map(_.flatten)
+        } yield triggers
+      }
+    } yield triggers
   }
 
   def maybeMostRecentFor(group: BehaviorGroup): Future[Option[BehaviorGroupDeployment]] = {

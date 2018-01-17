@@ -19,6 +19,7 @@ import models.apitoken.APITokenService
 import models.behaviors.BehaviorResponseService
 import models.behaviors.behavior.BehaviorService
 import models.behaviors.behaviorgroup.BehaviorGroupService
+import models.behaviors.behaviorgroupdeployment.BehaviorGroupDeploymentService
 import models.behaviors.behaviorgroupversion.BehaviorGroupVersionService
 import models.behaviors.behaviorparameter.BehaviorParameterService
 import models.behaviors.behaviorversion.BehaviorVersionService
@@ -93,6 +94,7 @@ class PostgresDataService @Inject() (
                                       val recurrencesProvider: Provider[RecurrenceService],
                                       val invocationLogEntriesProvider: Provider[InvocationLogEntryService],
                                       val devModeChannelsProvider: Provider[DevModeChannelService],
+                                      val behaviorGroupDeploymentsProvider: Provider[BehaviorGroupDeploymentService],
                                       val behaviorResponsesProvider: Provider[BehaviorResponseService]
                             ) extends DataService {
 
@@ -137,6 +139,7 @@ class PostgresDataService @Inject() (
   val recurrences = recurrencesProvider.get
   val invocationLogEntries = invocationLogEntriesProvider.get
   val devModeChannels = devModeChannelsProvider.get
+  val behaviorGroupDeployments = behaviorGroupDeploymentsProvider.get
   def behaviorResponses = behaviorResponsesProvider.get
 
   def run[T](action: DBIO[T]): Future[T] = models.run(action)
