@@ -111,7 +111,6 @@ const BehaviorEditor = React.createClass({
     userId: React.PropTypes.string.isRequired,
     isAdmin: React.PropTypes.bool.isRequired,
     isLinkedToGithub: React.PropTypes.bool.isRequired,
-    isDeployed: React.PropTypes.bool.isRequired,
     onDeploy: React.PropTypes.func.isRequired
   }),
 
@@ -952,6 +951,10 @@ const BehaviorEditor = React.createClass({
     this.setState({ error: null });
     this.toggleActivePanel('deploying', false);
     this.props.onDeploy();
+  },
+
+  isDeployed: function() {
+    return Boolean(this.getBehaviorGroup().deployment);
   },
 
   onSaveClick: function() {
@@ -1985,7 +1988,7 @@ const BehaviorEditor = React.createClass({
                     <span className="mobile-display-none">Undo changes</span>
                     <span className="mobile-display-only">Undo</span>
                   </Button>
-                  {this.isExistingGroup() && !this.isModified() && !this.props.isDeployed? (
+                  {this.isExistingGroup() && !this.isModified() && !this.isDeployed() ? (
                     <Button
                       className="mrs mbm"
                       onClick={this.deploy}>

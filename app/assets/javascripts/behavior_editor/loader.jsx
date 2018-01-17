@@ -1,10 +1,10 @@
 requirejs(['common'], function() {
   requirejs(
     ['core-js', 'whatwg-fetch', 'react', 'react-dom', './lib/browser_utils', './behavior_editor/index',
-      './models/behavior_group', 'config/behavioreditor/edit', './models/param_type', './models/aws',
+      './models/behavior_group', './models/behavior_group_deployment', 'config/behavioreditor/edit', './models/param_type', './models/aws',
       './models/oauth2', './models/simple_token', './models/linked_github_repo', './lib/autobind', './shared_ui/page', './lib/data_request'],
     function(Core, Fetch, React, ReactDOM, BrowserUtils, BehaviorEditor,
-             BehaviorGroup, BehaviorEditorConfiguration, ParamType, aws,
+             BehaviorGroup, BehaviorGroupDeployment, BehaviorEditorConfiguration, ParamType, aws,
              oauth2, simpleToken, LinkedGithubRepo, autobind, Page, DataRequest) {
 
       class BehaviorEditorLoader extends React.Component {
@@ -21,7 +21,6 @@ requirejs(['common'], function() {
             group: group,
             builtinParamTypes: this.props.builtinParamTypes.map(ParamType.fromJson),
             selectedId: selectedId,
-            isDeployed: props.isDeployed,
             onLoad: null
           };
           if (group.id && selectedId) {
@@ -72,8 +71,10 @@ requirejs(['common'], function() {
             this.props.csrfToken
           )
             .then((json) => {
-              if (json.deploymentId) {
-                this.setState({ isDeployed: true });
+              if (json.id) {
+                this.setState({
+                  group: this.state.group.clone({ deployment: BehaviorGroupDeployment.fromProps(json) })
+                });
               } else {
                 this.onSaveError();
               }
@@ -131,7 +132,6 @@ requirejs(['common'], function() {
                 isLinkedToGithub={this.props.isLinkedToGithub}
                 linkedGithubRepo={this.state.linkedGithubRepo}
                 onLinkGithubRepo={this.onLinkGithubRepo}
-                isDeployed={this.state.isDeployed}
                 onDeploy={this.deploy}
               />
             </Page>

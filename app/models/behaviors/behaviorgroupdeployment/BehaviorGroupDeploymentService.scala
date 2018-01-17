@@ -15,6 +15,8 @@ trait BehaviorGroupDeploymentService {
 
   def maybeMostRecentFor(group: BehaviorGroup): Future[Option[BehaviorGroupDeployment]]
 
+  def findForBehaviorGroupVersion(version: BehaviorGroupVersion): Future[Option[BehaviorGroupDeployment]]
+
   def mostRecentBehaviorGroupVersionIds: Future[Seq[String]]
 
   def deploy(version: BehaviorGroupVersion, userId: String, maybeComment: Option[String]): Future[BehaviorGroupDeployment]

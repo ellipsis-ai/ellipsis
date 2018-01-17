@@ -29,7 +29,8 @@ case class BehaviorGroupData(
                               gitSHA: Option[String],
                               exportId: Option[String],
                               createdAt: Option[OffsetDateTime],
-                              author: Option[UserData]
+                              author: Option[UserData],
+                              deployment: Option[BehaviorGroupDeploymentData]
                             ) extends Ordered[BehaviorGroupData] with FuzzyMatchable {
 
   val fuzzyMatchPatterns: Seq[FuzzyMatchPattern] = {
@@ -145,6 +146,7 @@ object BehaviorGroupData {
       maybeUserData <- version.maybeAuthor.map { author =>
         dataService.users.userDataFor(author, version.team).map(Some(_))
       }.getOrElse(Future.successful(None))
+      maybeDeployment <- dataService.behaviorGroupDeployments.findForBehaviorGroupVersion(version)
     } yield {
       val (dataTypeInputsData, actionInputsData) = inputsData.partition { ea =>
         versionsData.find(v => ea.inputId.exists(v.inputIds.contains)).exists(_.isDataType)
@@ -166,7 +168,8 @@ object BehaviorGroupData {
         None, // don't include SHA when building new data from existing version
         version.group.maybeExportId,
         Some(version.createdAt),
-        maybeUserData
+        maybeUserData,
+        maybeDeployment.map(BehaviorGroupDeploymentData.fromDeployment)
       )
     }
   }

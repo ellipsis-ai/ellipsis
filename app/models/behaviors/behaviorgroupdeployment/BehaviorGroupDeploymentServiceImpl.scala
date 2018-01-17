@@ -97,6 +97,10 @@ class BehaviorGroupDeploymentServiceImpl @Inject() (
     dataService.run(action)
   }
 
+  def findForBehaviorGroupVersion(version: BehaviorGroupVersion): Future[Option[BehaviorGroupDeployment]] = {
+    dataService.run(findForBehaviorGroupVersionQuery(version.id).result.map(_.headOption))
+  }
+
   def mostRecentBehaviorGroupVersionIds: Future[Seq[String]] = {
     dataService.run(mostRecentBehaviorGroupVersionIdsQuery.result)
   }

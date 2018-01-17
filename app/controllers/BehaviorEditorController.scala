@@ -652,7 +652,7 @@ class BehaviorEditorController @Inject() (
             dataService.behaviorGroupDeployments.deploy(groupVersion, user.id, None).map(Some(_))
           }.getOrElse(Future.successful(None))
         } yield maybeDeployment.map { deployment =>
-          Ok(Json.toJson(Map("deploymentId" -> deployment.id)))
+          Ok(Json.toJson(BehaviorGroupDeploymentData.fromDeployment(deployment)))
         }.getOrElse {
           NotFound(":shrug:")
         }
