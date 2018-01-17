@@ -86,8 +86,8 @@ requirejs.config({
       include: ['behavior_list/app'],
       exclude: ['common']
     }, {
-      name: 'api_token_generator/loader',
-      include: ['api_token_generator/index'],
+      name: 'settings/api_token_generator/loader',
+      include: ['settings/api_token_generator/index'],
       exclude: ['common']
     }, {
       name: 'settings/application_editor/loader',

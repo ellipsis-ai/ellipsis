@@ -43,6 +43,7 @@ class IntegrationsController @Inject() (
             val config = IntegrationListConfig(
               containerId = "applicationList",
               csrfToken = CSRF.getToken(request).map(_.value),
+              isAdmin = teamAccess.isAdminAccess,
               teamId = team.id,
               apis = apis.map(api => OAuth2ApiData.from(api, assets)),
               applications = applications.map(app => OAuth2ApplicationData.from(app)),

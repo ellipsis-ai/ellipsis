@@ -45,10 +45,10 @@ define(function(require) {
 
             <div className="columns columns-elastic">
               <div className="column column-shrink">
-                <h5>Icon</h5>
+                <h5>Emoji</h5>
                 <FormInput
                   className="form-input-borderless form-input-l type-l mbn width-2"
-                  placeholder="Icon"
+                  placeholder="☺"
                   onChange={this.props.onBehaviorGroupIconChange}
                   value={this.props.group.icon || ""}
                 />
@@ -58,7 +58,7 @@ define(function(require) {
                 <FormInput
                   ref={(el) => this.skillName = el}
                   className="form-input-borderless form-input-l type-l type-semibold mbn width-20"
-                  placeholder="Add a title (optional)"
+                  placeholder="Untitled"
                   onChange={this.props.onBehaviorGroupNameChange}
                   value={this.props.group.name || ""}
                 />
@@ -70,7 +70,7 @@ define(function(require) {
               <Textarea
                 ref={(el) => this.skillDescription = el}
                 className="form-input-height-auto"
-                placeholder="Describe the general purpose of this skill (optional). The description is displayed in help."
+                placeholder="Describe the general purpose of this skill. The description is displayed in help."
                 onChange={this.props.onBehaviorGroupDescriptionChange}
                 value={this.props.group.description || ""}
                 rows={"3"}

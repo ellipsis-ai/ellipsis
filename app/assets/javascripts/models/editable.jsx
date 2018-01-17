@@ -12,6 +12,7 @@ define(function(require) {
     functionBody: string;
     exportId: ?string;
     editorScrollPosition: ?number;
+    createdAt: ?number;
 
     constructor(
       id: ?string,
@@ -22,7 +23,8 @@ define(function(require) {
       description: ?string,
       functionBody: string,
       exportId: ?string,
-      editorScrollPosition: ?number
+      editorScrollPosition: ?number,
+      createdAt: ?number
     ) {
 
       Object.defineProperties(this, {
@@ -34,7 +36,8 @@ define(function(require) {
         description: { value: description, enumerable: true },
         functionBody: { value: functionBody, enumerable: true },
         exportId: { value: exportId, enumerable: true },
-        editorScrollPosition: { value: editorScrollPosition, enumerable: true }
+        editorScrollPosition: { value: editorScrollPosition, enumerable: true },
+        createdAt: {value: createdAt, enumerable: true }
       });
     }
 
@@ -48,6 +51,24 @@ define(function(require) {
 
     isLibraryVersion(): boolean {
       return false;
+    }
+
+    timestampForAlphabeticalSort(): string {
+      const timestampString = this.createdAt ? Number(new Date(this.createdAt)).toString() : "";
+      const pad = new Array(16).join("0");
+      return pad.substring(0, pad.length - timestampString.length) + timestampString;
+    }
+
+    sortKeyForExisting(): ?string {
+      return null; // override in subclasses
+    }
+
+    sortKey(): string {
+      if (this.isNew) {
+        return "Z" + this.timestampForAlphabeticalSort();
+      } else {
+        return "A" + (this.sortKeyForExisting() || this.timestampForAlphabeticalSort());
+      }
     }
 
     namePlaceholderText(): string {
