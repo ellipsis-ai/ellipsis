@@ -9,13 +9,13 @@ import scala.concurrent.Future
 
 trait BehaviorGroupDeploymentService {
 
-  def allForTeam(team: Team): Future[Seq[BehaviorGroupDeployment]]
-
   def maybeActiveBehaviorGroupVersionFor(group: BehaviorGroup, context: String, channel: String): Future[Option[BehaviorGroupVersion]]
 
   def allActiveTriggersFor(context: String, channel: String, team: Team): Future[Seq[MessageTrigger]]
 
   def maybeMostRecentFor(group: BehaviorGroup): Future[Option[BehaviorGroupDeployment]]
+
+  def mostRecentBehaviorGroupVersionIds: Future[Seq[String]]
 
   def deploy(version: BehaviorGroupVersion, userId: String, maybeComment: Option[String]): Future[BehaviorGroupDeployment]
 

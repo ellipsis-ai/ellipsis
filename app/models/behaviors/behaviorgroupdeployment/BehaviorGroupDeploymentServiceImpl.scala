@@ -48,8 +48,8 @@ class BehaviorGroupDeploymentServiceImpl @Inject() (
 
   import BehaviorGroupDeploymentQueries._
 
-  def allForTeam(team: Team): Future[Seq[BehaviorGroupDeployment]] = {
-    dataService.run(allForTeamQuery(team.id).result)
+  def mostRecentForTeam(team: Team): Future[Seq[BehaviorGroupDeployment]] = {
+    dataService.run(mostRecentForTeamQuery(team.id).result)
   }
 
   def maybeActiveBehaviorGroupVersionFor(group: BehaviorGroup, context: String, channel: String): Future[Option[BehaviorGroupVersion]] = {
@@ -75,7 +75,7 @@ class BehaviorGroupDeploymentServiceImpl @Inject() (
         dataService.messageTriggers.allActiveFor(team)
       } else {
         for {
-          deployments <- allForTeam(team)
+          deployments <- mostRecentForTeam(team)
           groupVersions <- Future.sequence(deployments.map { ea =>
             dataService.behaviorGroupVersions.findWithoutAccessCheck(ea.groupVersionId)
           }).map(_.flatten)
@@ -95,6 +95,10 @@ class BehaviorGroupDeploymentServiceImpl @Inject() (
       r.headOption
     }
     dataService.run(action)
+  }
+
+  def mostRecentBehaviorGroupVersionIds: Future[Seq[String]] = {
+    dataService.run(mostRecentBehaviorGroupVersionIdsQuery.result)
   }
 
   def deploy(version: BehaviorGroupVersion, userId: String, maybeComment: Option[String]): Future[BehaviorGroupDeployment] = {

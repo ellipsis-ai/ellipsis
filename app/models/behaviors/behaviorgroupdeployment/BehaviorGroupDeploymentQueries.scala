@@ -8,13 +8,6 @@ object BehaviorGroupDeploymentQueries {
   val all = TableQuery[BehaviorGroupDeploymentsTable]
   val allWithUser = all.join(UserQueries.all).on(_.userId === _.id)
 
-  private def uncompiledAllForTeamQuery(teamId: Rep[String]) = {
-    allWithUser.
-      filter { case(_, user) => user.teamId === teamId }.
-      map { case(dep, _) => dep }
-  }
-  val allForTeamQuery = Compiled(uncompiledAllForTeamQuery _)
-
   private def uncompiledAllForBehaviorGroupQuery(groupId: Rep[String]) = {
     all.filter(_.groupId === groupId)
   }
@@ -29,5 +22,26 @@ object BehaviorGroupDeploymentQueries {
     all.filter(_.groupVersionId === groupVersionId)
   }
   val findForBehaviorGroupVersionQuery = Compiled(uncompiledFindForBehaviorGroupVersionQuery _)
+
+  private def uncompiledAllMostRecentQuery() = {
+    // distinctOn() is broken in Slick as of v3.2.1, so we use a subquery
+    all.filter { outer =>
+      !all.filter { inner =>
+        inner.groupId === outer.groupId && inner.createdAt > outer.createdAt
+      }.exists
+    }
+  }
+
+  private def uncompiledMostRecentBehaviorGroupVersionIdsQuery() = {
+    uncompiledAllMostRecentQuery().map(_.groupVersionId)
+  }
+  val mostRecentBehaviorGroupVersionIdsQuery = Compiled(uncompiledMostRecentBehaviorGroupVersionIdsQuery)
+
+  private def uncompiledMostRecentForTeamQuery(teamId: Rep[String]) = {
+    uncompiledAllMostRecentQuery.join(UserQueries.all).on(_.userId === _.id).
+      filter { case(_, user) => user.teamId === teamId }.
+      map { case(dep, _) => dep }
+  }
+  val mostRecentForTeamQuery = Compiled(uncompiledMostRecentForTeamQuery _)
 
 }
