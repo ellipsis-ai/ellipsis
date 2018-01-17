@@ -24,6 +24,7 @@ label {
 
 @form-padding-vertical: @s;
 @form-padding-horizontal: @s;
+@form-input-height-s: @xl;
 @form-input-height: @s * 2 + @xl;
 @form-input-height-large: @m * 2 + @xxl;
 @form-input-height-h2: @s * 2 + @xxxl;
@@ -165,6 +166,12 @@ input.box-code-example {
   padding-bottom: (@form-padding-vertical - @xs);
   height: @form-input-height - @xs;
   margin-bottom: @xs;
+}
+
+.form-input-borderless.form-input-s {
+  height: @xl;
+  padding: 0 0 @xxs 0 !important;
+  margin-bottom: 0;
 }
 
 .form-input-borderless:focus {

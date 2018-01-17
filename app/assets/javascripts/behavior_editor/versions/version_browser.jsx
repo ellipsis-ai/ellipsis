@@ -9,6 +9,7 @@ define(function(require: (string) => *): React.ElementType {
     Collapsible = require('../../shared_ui/collapsible'),
     DataRequest = require('../../lib/data_request'),
     DynamicLabelButton = require('../../form/dynamic_label_button'),
+    FixedHeader = require('../../shared_ui/fixed_header'),
     FixedFooter = require('../../shared_ui/fixed_footer'),
     Formatter = require('../../lib/formatter'),
     FormInput = require('../../form/input'),
@@ -18,7 +19,6 @@ define(function(require: (string) => *): React.ElementType {
     LinkGithubRepo = require('./link_github_repo'),
     LinkedGithubRepo = require('../../models/linked_github_repo'),
     Select = require('../../form/select'),
-    ToggleGroup = require('../../form/toggle_group'),
     diffs = require('../../models/diffs'),
     autobind = require('../../lib/autobind');
 
@@ -41,12 +41,10 @@ define(function(require: (string) => *): React.ElementType {
     onSaveChanges: () => void
   };
 
-  type VersionSource = $Keys<typeof versionSources>;
-
   type State = {
     selectedMenuItem: string,
     diffFromSelectedToCurrent: boolean,
-    versionSource: VersionSource,
+    headerHeight: number,
     footerHeight: number,
     isModifyingGithubRepo: boolean,
     branch: string,
@@ -60,8 +58,7 @@ define(function(require: (string) => *): React.ElementType {
 
   type GroupedVersion = {
     key: string,
-    label: string,
-    version: BehaviorGroup
+    label: string
   }
 
   type VersionGroup = {
@@ -72,8 +69,6 @@ define(function(require: (string) => *): React.ElementType {
   class VersionBrowser extends React.Component<Props, State> {
     props: Props;
     state: State;
-    footer: ?HTMLDivElement;
-    scrollContainer: ?HTMLDivElement;
     pushPanel: ?GithubPushPanel;
 
     constructor(props: Props): void {
@@ -82,7 +77,7 @@ define(function(require: (string) => *): React.ElementType {
       this.state = {
         selectedMenuItem: "loading",
         diffFromSelectedToCurrent: true,
-        versionSource: versionSources.local,
+        headerHeight: 0,
         footerHeight: 0,
         isModifyingGithubRepo: false,
         branch: "master",
@@ -167,18 +162,6 @@ define(function(require: (string) => *): React.ElementType {
       });
     }
 
-    setVersionSourceToLocal(): void {
-      this.setState({
-        versionSource: versionSources.local
-      });
-    }
-
-    setVersionSourceToGithub(): void {
-      this.setState({
-        versionSource: versionSources.github
-      });
-    }
-
     componentWillReceiveProps(nextProps: Props): void {
       if (nextProps.versions.length !== this.props.versions.length) {
         this.setState({
@@ -225,14 +208,22 @@ define(function(require: (string) => *): React.ElementType {
 
     getGroupedVersions(versions: Array<BehaviorGroup>): Array<VersionGroup> {
       const groups: Array<VersionGroup> = [];
+      if (this.props.linkedGithubRepo && this.props.isLinkedToGithub) {
+        groups.push({
+          label: "GitHub",
+          versions: [{
+            label: this.props.linkedGithubRepo.getOwnerAndRepo(),
+            key: versionSources.github
+          }]
+        });
+      }
       versions.forEach((version, versionIndex) => {
         if (versionIndex === 0) {
           groups.push({
             label: `Most recent saved version (${this.authorForVersion(version)})`,
             versions: [{
               label: Formatter.formatTimestampShort(version.createdAt),
-              key: "version0",
-              version: version
+              key: "version0"
             }]
           });
         } else if (versionIndex > 0) {
@@ -243,8 +234,7 @@ define(function(require: (string) => *): React.ElementType {
           const prevDay = prevVersion && Formatter.formatTimestampDate(prevVersion.createdAt);
           const groupedVersion = {
             label: Formatter.formatTimestampShort(version.createdAt),
-            key: `version${versionIndex}`,
-            version: version
+            key: `version${versionIndex}`
           };
           if (versionIndex > 1 && author.isSameUser(prevAuthor) && day === prevDay) {
             const lastGroup = groups[groups.length - 1];
@@ -277,11 +267,11 @@ define(function(require: (string) => *): React.ElementType {
     }
 
     compareLocalVersions(): boolean {
-      return this.getVersionSource() === versionSources.local;
+      return this.state.selectedMenuItem !== versionSources.github;
     }
 
     compareGithubVersions(): boolean {
-      return this.getVersionSource() === versionSources.github;
+      return this.state.selectedMenuItem === versionSources.github;
     }
 
     getSelectedVersionIndex(): number {
@@ -325,12 +315,18 @@ define(function(require: (string) => *): React.ElementType {
       }
     }
 
-    getVersionSource(): VersionSource {
-      return this.state.versionSource;
+    getHeaderHeight(): number {
+      return this.state.headerHeight;
     }
 
     getFooterHeight(): number {
       return this.state.footerHeight;
+    }
+
+    setHeaderHeight(height: number): void {
+      this.setState({
+        headerHeight: height
+      });
     }
 
     setFooterHeight(height: number): void {
@@ -360,7 +356,7 @@ define(function(require: (string) => *): React.ElementType {
         );
       } else if (this.compareGithubVersions()) {
         return (
-          <div className="type-italic">Fetch a GitHub branch to compare.</div>
+          <div className="type-italic">Select a GitHub branch to compare.</div>
         );
       } else {
         return (
@@ -381,19 +377,27 @@ define(function(require: (string) => *): React.ElementType {
       }
     }
 
-    renderSelectableVersion(): ElementType {
+    renderSelectableVersion(caption: Node): ElementType {
       return (
-        <Select className="align-b mrs" value={this.state.selectedMenuItem} onChange={this.onClickMenuItem}>
-          {this.renderVersionOptions()}
-        </Select>
+        <div>
+          {caption}
+          <Select className="align-b form-select-s mrs mbs" value={this.state.selectedMenuItem} onChange={this.onClickMenuItem}>
+            {this.renderVersionOptions()}
+          </Select>
+          {this.compareGithubVersions() ? this.renderGithubBranchInput() : null}
+          {this.compareGithubVersions() ? this.renderGithubStatus() : null}
+        </div>
       );
     }
 
-    renderCurrentVersionPlaceholder(): ElementType {
+    renderCurrentVersionPlaceholder(caption: Node): ElementType {
       return (
-        <div className="align-button align-button-border mrs">{
-          this.props.currentGroupIsModified ? "Current (with unsaved changes)" : "Current"
-        }</div>
+        <div>
+          {caption}
+          <div className="align-button align-button-s align-button-border mrs mbs">{
+            this.props.currentGroupIsModified ? "Current version (unsaved)" : "Current version"
+          }</div>
+        </div>
       );
     }
 
@@ -419,10 +423,10 @@ define(function(require: (string) => *): React.ElementType {
       if (this.compareGithubVersions()) {
         if (selectedVersion && hasChanges && this.state.lastFetchedBranch) {
           return (
-            <span>Pull changes from <span className="type-monospace">{this.state.lastFetchedBranch}</span>…</span>
+            <span>Checkout <span className="type-monospace">{this.state.lastFetchedBranch}</span>…</span>
           );
         } else {
-          return "Pull…";
+          return "Checkout…";
         }
       } else {
         if (selectedVersion && hasChanges) {
@@ -455,39 +459,22 @@ define(function(require: (string) => *): React.ElementType {
       });
     }
 
-    renderGithubVersionSelector(): Node {
-      if (this.props.isLinkedToGithub && this.props.linkedGithubRepo) {
-        return (
-          <div>
-            <span className="align-button mrs">{this.state.diffFromSelectedToCurrent ? "From GitHub branch:" : "From:"}</span>
-            {this.state.diffFromSelectedToCurrent ? this.renderFromBranch() : this.renderCurrentVersionPlaceholder()}
-            <span className="align-button mrs">{this.state.diffFromSelectedToCurrent ? "to:" : "to GitHub branch:"}</span>
-            {this.state.diffFromSelectedToCurrent ? this.renderCurrentVersionPlaceholder() : this.renderFromBranch()}
-            <Button onClick={this.invertDiffDirection} className="mrm" disabled={this.state.isFetching || !this.getSelectedVersion()}>Switch direction</Button>
-            <div className="align-button">
-              {this.renderGithubStatus()}
-            </div>
-          </div>
-        );
-      }
-    }
-
-    renderFromBranch(): ElementType {
+    renderGithubBranchInput(): ElementType {
       return (
-        <div className="display-inline-block">
+        <div className="display-inline-block mbs">
           <FormInput
             ref={(el) => this.branchInput = el}
-            className="form-input-borderless type-monospace type-s width-15 mrs"
-            placeholder="e.g. master"
+            className="form-input-borderless form-input-s type-monospace width-15 mrs"
+            placeholder="Branch (e.g. master)"
             onChange={this.onBranchChange}
             value={this.getBranch()}
           />
           <DynamicLabelButton
-            className="button-shrink mrm"
+            className="button-shrink button-s"
             onClick={this.onUpdateFromGithub}
             disabledWhen={this.state.isFetching || !this.getBranch()}
             labels={[{
-              text: "Fetch",
+              text: this.state.lastFetchedBranch === this.getBranch() ? "Refresh branch" : "Select branch",
               displayWhen: !this.state.isFetching
             }, {
               text: "Fetching…",
@@ -501,28 +488,58 @@ define(function(require: (string) => *): React.ElementType {
     renderGithubStatus(): Node {
       if (this.state.error) {
         return (
-          <GithubErrorNotification error={this.state.error}/>
+          <div className="align-button align-button-s mbs">
+            <GithubErrorNotification error={this.state.error}/>
+          </div>
         );
       }
     }
 
-    renderVersionSelector(selectedVersion: ?BehaviorGroup): Node {
-      if (this.compareLocalVersions() && selectedVersion) {
+    renderLeftCaption(): Node {
+      return (
+        <div className="align-button align-button-s mrs mbs">Compare</div>
+      );
+    }
+
+    renderRightCaption(): Node {
+      return (
+        <div className="align-button align-button-s mrs mbs">To</div>
+      );
+    }
+
+    renderVersionSelector(): Node {
+      if (this.props.versions.length > 0) {
         return (
           <div>
-            <div className="align-button mrs">From original version:</div>
-            {this.state.diffFromSelectedToCurrent ? this.renderSelectableVersion() : this.renderCurrentVersionPlaceholder()}
-            <div className="align-button mrs">to new version:</div>
-            {this.state.diffFromSelectedToCurrent ? this.renderCurrentVersionPlaceholder() : this.renderSelectableVersion()}
-            <Button onClick={this.invertDiffDirection}>Switch direction</Button>
+            <div className="columns type-s">
+              <div className="column column-one-half border-right mrneg1 ptl pbs">
+                <div>
+                  {this.state.diffFromSelectedToCurrent ?
+                    this.renderSelectableVersion(this.renderLeftCaption()) :
+                    this.renderCurrentVersionPlaceholder(this.renderRightCaption())
+                  }
+                </div>
+              </div>
+              <div className="column column-one-half border-left pll ptl pbs">
+                <div className="columns columns-elastic">
+                  <div className="column column-expand">
+                    {this.state.diffFromSelectedToCurrent ?
+                      this.renderCurrentVersionPlaceholder(this.renderLeftCaption()) :
+                      this.renderSelectableVersion(this.renderRightCaption())
+                    }
+                  </div>
+                  <div className="column column-shrink">
+                    <Button onClick={this.invertDiffDirection} className="button-s button-shrink" title="Invert the direction changes are shown">⇄</Button>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         );
-      } else if (this.compareGithubVersions()) {
-        return this.renderGithubVersionSelector();
       } else {
         return (
-          <div>
-            <div className="align-button pulse type-italic type-weak">Loading…</div>
+          <div className="pvl">
+            <div className="align-button align-button-s pulse type-italic type-weak">Loading…</div>
           </div>
         );
       }
@@ -559,13 +576,28 @@ define(function(require: (string) => *): React.ElementType {
       const versionTitle = this.renderVersionTitle(version);
       if (versionTitle) {
         return (
-          <h4>
-            {this.state.diffFromSelectedToCurrent ? (
-              <span>Changes from {versionTitle} to current</span>
-            ) : (
-              <span>Changes from current to {versionTitle}</span>
-            )}
-          </h4>
+          <div className="columns">
+            <div className="column column-one-half">
+              {this.state.diffFromSelectedToCurrent ? (
+                <h4>
+                  <span>From </span>
+                  <span>{versionTitle}</span>
+                </h4>
+              ) : (
+                <h4>From current version</h4>
+              )}
+            </div>
+            <div className="column column-one-half">
+              {this.state.diffFromSelectedToCurrent ? (
+                <h4>To current version</h4>
+              ) : (
+                <h4>
+                  <span>To </span>
+                  <span>{versionTitle}</span>
+                </h4>
+              )}
+            </div>
+          </div>
         );
       } else {
         return (
@@ -600,88 +632,73 @@ define(function(require: (string) => *): React.ElementType {
       );
     }
 
+    getMainHeaderHeight(): number {
+      const mainHeader = document.getElementById("main-header");
+      return mainHeader ? mainHeader.offsetHeight : 0;
+    }
+
+    getContainerStyle() {
+      const myHeaderHeight = this.getHeaderHeight();
+      const mainHeaderHeight = this.getMainHeaderHeight();
+      const headerHeight = Math.max(0, myHeaderHeight - mainHeaderHeight);
+      const footerHeight = this.getFooterHeight();
+      return {
+        paddingTop: `${headerHeight}px`,
+        paddingBottom: `${footerHeight}px`
+      };
+    }
+
     render(): ElementType {
       const selectedVersion = this.getSelectedVersion();
       const diff = this.getDiffForSelectedVersion(selectedVersion);
       const hasChanges = Boolean(diff);
       return (
-        <div ref={(el) => this.scrollContainer = el} className="flex-row-cascade" style={{ paddingBottom: `${this.getFooterHeight()}px` }}>
-          <div className="bg-lightest">
+        <div className="flex-row-cascade" style={this.getContainerStyle()}>
+          <FixedHeader onHeightChange={this.setHeaderHeight}>
 
-            <div className="container container-wide pvm">
-              <Button className="button-raw" onClick={this.props.onClearActivePanel}>{this.props.currentGroup.getName()}</Button>
-              <span className="mhs type-weak">→</span>
-              <span>Compare skill versions</span>
+            <div className="bg-light border-bottom border-light container container-wide pvm">
+              <div className="columns">
+                <div className="column column-one-half">
+                  <Button className="button-raw" onClick={this.props.onClearActivePanel}>{this.props.currentGroup.getName()}</Button>
+                  <span className="mhs type-weak">→</span>
+                  <span>Compare skill versions</span>
+                </div>
+                <div className="column column-one-half align-r">
+                  {this.renderGithubRepo()}
+                </div>
+              </div>
             </div>
 
-          </div>
+            <Collapsible revealWhen={this.state.isModifyingGithubRepo}>
+              <div className="bg-white border-bottom border-light container container-wide pvm">
+                <LinkGithubRepo
+                  group={this.props.currentGroup}
+                  linked={this.props.linkedGithubRepo}
+                  onDoneClick={this.onLinkedGithubRepo}
+                  onLinkGithubRepo={this.props.onLinkGithubRepo}
+                  csrfToken={this.props.csrfToken}
+                />
+              </div>
+            </Collapsible>
+
+            <div className="bg-lightest border-emphasis-bottom border-pink container container-wide">
+              {this.renderVersionSelector()}
+            </div>
+
+          </FixedHeader>
 
           <div className="flex-columns flex-row-expand">
             <div className="flex-column flex-column-left flex-rows bg-white">
-              <div className="container container container-wide ptm pbxl">
-
-                {this.renderDiffTitle(selectedVersion)}
-
+              <div className="container container container-wide pvxl">
                 {this.renderSelectedVersion(selectedVersion, diff)}
               </div>
             </div>
           </div>
 
-          <FixedFooter ref={(el) => this.footer = el} onHeightChange={this.setFooterHeight}>
+          <FixedFooter onHeightChange={this.setFooterHeight}>
 
             <Collapsible revealWhen={!this.state.isCommitting}>
-              <div className="bg-lightest border-emphasis-top border-pink pvl container container-wide">
-
-                <div className="columns">
-                  <div className="column column-one-half">
-                    {this.props.linkedGithubRepo && this.props.isLinkedToGithub ? (
-                      <div>
-                        <span className="type-label align-m display-inline-block mrs">
-                          Compare with:
-                        </span>
-                        <ToggleGroup className="form-toggle-group-s mrm">
-                          <ToggleGroup.Item
-                            onClick={this.setVersionSourceToLocal}
-                            activeWhen={this.compareLocalVersions()}
-                            label={"Versions saved in Ellipsis"}
-                          />
-                          <ToggleGroup.Item
-                            onClick={this.setVersionSourceToGithub}
-                            activeWhen={this.compareGithubVersions()}
-                            label={"Versions on GitHub"}
-                          />
-                        </ToggleGroup>
-                      </div>
-                    ) : (
-                      <span className="type-label">Compare with saved versions:</span>
-                    )}
-                  </div>
-                  <div className="column column-one-half align-r">
-                    {this.renderGithubRepo()}
-                  </div>
-                </div>
-
-                <Collapsible revealWhen={this.state.isModifyingGithubRepo}>
-                  <div className="ptxl">
-                    <LinkGithubRepo
-                      group={this.props.currentGroup}
-                      linked={this.props.linkedGithubRepo}
-                      onDoneClick={this.onLinkedGithubRepo}
-                      onLinkGithubRepo={this.props.onLinkGithubRepo}
-                      csrfToken={this.props.csrfToken}
-                    />
-                  </div>
-                </Collapsible>
-
-              </div>
-
-              <div className="bg-white-translucent border-top pvl border-light container container-wide">
-
-                {this.renderVersionSelector(selectedVersion)}
-
-              </div>
-
-              <div className="ptm bg-lightest border-top border-light container container-wide">
+              <div className="ptm bg-lightest border-emphasis-top border-pink container container-wide">
                 <Button className="mrs mbm button-primary" onClick={this.props.onClearActivePanel}>Done</Button>
                 {this.renderSaveButton()}
                 {this.renderRevertButton(selectedVersion, hasChanges)}
