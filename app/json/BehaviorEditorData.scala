@@ -26,7 +26,8 @@ case class BehaviorEditorData(
                                userId: String,
                                isAdmin: Boolean,
                                isLinkedToGithub: Boolean,
-                               linkedGithubRepo: Option[LinkedGithubRepoData]
+                               linkedGithubRepo: Option[LinkedGithubRepoData],
+                               isDeployed: Boolean
                               )
 
 object BehaviorEditorData {
@@ -158,6 +159,11 @@ object BehaviorEditorData {
       maybeLinkedGithubRepo <- maybeGroup.map { group =>
         dataService.linkedGithubRepos.maybeFor(group)
       }.getOrElse(Future.successful(None))
+      isDeployed <- maybeGroupVersion.map { groupVersion =>
+        dataService.behaviorGroupDeployments.maybeMostRecentFor(groupVersion.group).map { maybeDeployment =>
+          maybeDeployment.map(_.groupVersionId).contains(groupVersion.id)
+        }
+      }.getOrElse(Future.successful(false))
     } yield {
       val maybeVerifiedSelectedId = maybeVerifiedBehaviorId.orElse(maybeVerifiedLibraryId)
       val data = maybeGroupData.getOrElse {
@@ -196,7 +202,8 @@ object BehaviorEditorData {
         user.id,
         isAdmin,
         isLinkedToGithub,
-        maybeLinkedGithubRepo.map(r => LinkedGithubRepoData(r.owner, r.repo))
+        maybeLinkedGithubRepo.map(r => LinkedGithubRepoData(r.owner, r.repo)),
+        isDeployed
       )
     }
   }

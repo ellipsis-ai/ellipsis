@@ -16,7 +16,8 @@ case class BehaviorEditorEditConfig(
   userId: String,
   isAdmin: Boolean,
   isLinkedToGithub: Boolean,
-  linkedGithubRepo: Option[LinkedGithubRepoData]
+  linkedGithubRepo: Option[LinkedGithubRepoData],
+  isDeployed: Boolean
 )
 
 object BehaviorEditorEditConfig {
@@ -37,7 +38,8 @@ object BehaviorEditorEditConfig {
       data.userId,
       data.isAdmin,
       data.isLinkedToGithub,
-      data.linkedGithubRepo
+      data.linkedGithubRepo,
+      data.isDeployed
     )
   }
 }

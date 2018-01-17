@@ -21,6 +21,7 @@ requirejs(['common'], function() {
             group: group,
             builtinParamTypes: this.props.builtinParamTypes.map(ParamType.fromJson),
             selectedId: selectedId,
+            isDeployed: props.isDeployed,
             onLoad: null
           };
           if (group.id && selectedId) {
@@ -63,6 +64,24 @@ requirejs(['common'], function() {
           }
           this.setState(newState);
         }
+
+        deploy() {
+          DataRequest.jsonPost(
+            jsRoutes.controllers.BehaviorEditorController.deploy().url,
+            { behaviorGroupId: this.props.group.id },
+            this.props.csrfToken
+          )
+            .then((json) => {
+              if (json.deploymentId) {
+                this.setState({ isDeployed: true });
+              } else {
+                this.onSaveError();
+              }
+            })
+            .catch((error) => {
+              this.onSaveError(error);
+            });
+      }
 
         fallbackSelectedIdFor(group) {
           var isSimpleBehaviorGroup = !group.name && !group.description && group.behaviorVersions.length === 1;
@@ -112,6 +131,8 @@ requirejs(['common'], function() {
                 isLinkedToGithub={this.props.isLinkedToGithub}
                 linkedGithubRepo={this.state.linkedGithubRepo}
                 onLinkGithubRepo={this.onLinkGithubRepo}
+                isDeployed={this.state.isDeployed}
+                onDeploy={this.deploy}
               />
             </Page>
           );

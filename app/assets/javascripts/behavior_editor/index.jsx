@@ -110,7 +110,9 @@ const BehaviorEditor = React.createClass({
     onLoad: React.PropTypes.func,
     userId: React.PropTypes.string.isRequired,
     isAdmin: React.PropTypes.bool.isRequired,
-    isLinkedToGithub: React.PropTypes.bool.isRequired
+    isLinkedToGithub: React.PropTypes.bool.isRequired,
+    isDeployed: React.PropTypes.bool.isRequired,
+    onDeploy: React.PropTypes.func.isRequired
   }),
 
   getDefaultProps: function() {
@@ -944,6 +946,12 @@ const BehaviorEditor = React.createClass({
     } else {
       callback();
     }
+  },
+
+  deploy: function() {
+    this.setState({ error: null });
+    this.toggleActivePanel('deploying', false);
+    this.props.onDeploy();
   },
 
   onSaveClick: function() {
@@ -1977,6 +1985,13 @@ const BehaviorEditor = React.createClass({
                     <span className="mobile-display-none">Undo changes</span>
                     <span className="mobile-display-only">Undo</span>
                   </Button>
+                  {this.isExistingGroup() && !this.isModified() && !this.props.isDeployed? (
+                    <Button
+                      className="mrs mbm"
+                      onClick={this.deploy}>
+                      Deploy
+                    </Button>
+                  ) : null}
                   {this.isTestable() ? (
                     <DynamicLabelButton
                       labels={[{

@@ -623,4 +623,40 @@ class BehaviorEditorController @Inject() (
       }
     )
   }
+
+  case class DeployInfo(
+                         behaviorGroupId: String,
+                         comment: Option[String]
+                       )
+
+  private val deployForm = Form(
+    mapping(
+      "behaviorGroupId" -> nonEmptyText,
+      "comment" -> optional(nonEmptyText)
+    )(DeployInfo.apply)(DeployInfo.unapply)
+  )
+
+  def deploy = silhouette.SecuredAction.async { implicit request =>
+    val user = request.identity
+    deployForm.bindFromRequest.fold(
+      formWithErrors => {
+        Future.successful(BadRequest(formWithErrors.errorsAsJson))
+      },
+      info => {
+        for {
+          maybeGroup <- dataService.behaviorGroups.find(info.behaviorGroupId, user)
+          maybeCurrentGroupVersion <- maybeGroup.map { group =>
+            dataService.behaviorGroups.maybeCurrentVersionFor(group)
+          }.getOrElse(Future.successful(None))
+          maybeDeployment <- maybeCurrentGroupVersion.map { groupVersion =>
+            dataService.behaviorGroupDeployments.deploy(groupVersion, user.id, None).map(Some(_))
+          }.getOrElse(Future.successful(None))
+        } yield maybeDeployment.map { deployment =>
+          Ok(Json.toJson(Map("deploymentId" -> deployment.id)))
+        }.getOrElse {
+          NotFound(":shrug:")
+        }
+      }
+    )
+  }
 }
