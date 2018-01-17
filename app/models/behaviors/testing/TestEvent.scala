@@ -31,7 +31,7 @@ case class TestEvent(
 
   lazy val userIdForContext = user.id
   lazy val name = "test"
-  lazy val maybeChannel = None
+  lazy val maybeChannel = Some("C123456")
   lazy val maybeThreadId = None
   def eventualMaybeDMChannel(cacheService: CacheService)(implicit actorSystem: ActorSystem, ec: ExecutionContext) = Future.successful(None)
   val isResponseExpected = true
