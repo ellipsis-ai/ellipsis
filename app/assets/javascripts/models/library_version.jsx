@@ -40,8 +40,8 @@ define(function(require) {
       });
     }
 
-    sortKey(): string {
-      return this.sortKeyFor(this.name);
+    sortKeyForExisting(): ?string {
+      return this.name;
     }
 
     diffLabel(): string {

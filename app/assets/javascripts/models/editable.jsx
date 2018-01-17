@@ -59,11 +59,15 @@ define(function(require) {
       return pad.substring(0, pad.length - timestampString.length) + timestampString;
     }
 
-    sortKeyFor(existingItemSortPart: ?string): string {
+    sortKeyForExisting(): ?string {
+      return null; // override in subclasses
+    }
+
+    sortKey(): string {
       if (this.isNew) {
         return "Z" + this.timestampForAlphabeticalSort();
       } else {
-        return "A" + (existingItemSortPart || this.timestampForAlphabeticalSort());
+        return "A" + (this.sortKeyForExisting() || this.timestampForAlphabeticalSort());
       }
     }
 

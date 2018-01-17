@@ -285,8 +285,8 @@ define(function(require) {
       return DeepEqual.isEqual(this.forEqualityComparison(), behaviorVersion.forEqualityComparison());
     }
 
-    sortKey(): string {
-      return this.sortKeyFor(this.name || this.getFirstTriggerText());
+    sortKeyForExisting(): ?string {
+      return this.name || this.getFirstTriggerText();
     }
 
     toParamType(): ParamType {
