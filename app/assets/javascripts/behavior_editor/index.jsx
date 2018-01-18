@@ -110,7 +110,8 @@ const BehaviorEditor = React.createClass({
     onLoad: React.PropTypes.func,
     userId: React.PropTypes.string.isRequired,
     isAdmin: React.PropTypes.bool.isRequired,
-    isLinkedToGithub: React.PropTypes.bool.isRequired
+    isLinkedToGithub: React.PropTypes.bool.isRequired,
+    showVersions: React.PropTypes.bool
   }),
 
   getDefaultProps: function() {
@@ -1062,6 +1063,12 @@ const BehaviorEditor = React.createClass({
   updateVersionBrowserOpenState: function() {
     this.setState({
       versionBrowserOpen: this.props.activePanelName === 'versionBrowser'
+    }, () => {
+      if (this.state.versionBrowserOpen) {
+        BrowserUtils.replaceQueryParam("showVersions", "true");
+      } else {
+        BrowserUtils.removeQueryParam("showVersions");
+      }
     });
   },
 
@@ -1601,6 +1608,9 @@ const BehaviorEditor = React.createClass({
     window.addEventListener('focus', this.checkForUpdates, false);
     this.checkForUpdatesLater();
     this.loadNodeModuleVersions();
+    if (this.props.showVersions) {
+      this.showVersions();
+    }
   },
 
   // componentDidUpdate: function() {
@@ -1674,7 +1684,8 @@ const BehaviorEditor = React.createClass({
       nodeModuleVersions: [],
       selectedApiConfigId: null,
       newerVersionOnServer: null,
-      errorReachingServer: null
+      errorReachingServer: null,
+      versionBrowserOpen: false
     };
   },
 
@@ -2533,6 +2544,7 @@ const BehaviorEditor = React.createClass({
         currentGroup={this.getBehaviorGroup()}
         currentGroupIsModified={this.isModified()}
         currentUserId={this.props.userId}
+        currentSelectedId={this.getSelectedId()}
         versions={this.getVersions()}
         onRestoreVersionClick={this.onReplaceBehaviorGroup}
         onClearActivePanel={this.props.onClearActivePanel}
