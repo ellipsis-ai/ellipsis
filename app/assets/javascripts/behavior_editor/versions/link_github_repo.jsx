@@ -5,7 +5,6 @@ define(function(require) {
     BehaviorGroup = require('../../models/behavior_group'),
     LinkedGithubRepo = require('../../models/linked_github_repo'),
     FormInput = require('../../form/input'),
-    Formatter = require('../../lib/formatter'),
     autobind = require('../../lib/autobind');
 
   type Props = {
@@ -18,33 +17,36 @@ define(function(require) {
 
   type State = {
     owner: string,
-    repo: string
+    repo: string,
+    repoUrl: string,
+    invalidUrl: boolean
   };
 
   class LinkGithubRepo extends React.Component<Props, State> {
     props: Props;
     state: State;
-    ownerInput: ?FormInput;
-    repoInput: ?FormInput;
+    repoUrlInput: ?FormInput;
+    timerId: ?number;
 
     constructor(props) {
       super(props);
       autobind(this);
       this.state = this.getDefaultState();
+      this.timerId = null;
     }
 
     getDefaultState(): State {
       return {
         owner: this.props.linked ? this.props.linked.getOwner() : "",
-        repo: this.props.linked ? this.props.linked.getRepo(): ""
+        repo: this.props.linked ? this.props.linked.getRepo() : "",
+        repoUrl: this.props.linked ? this.props.linked.getUrl()  : "",
+        invalidUrl: false
       };
     }
 
     focus(): void {
-      if (this.ownerInput && !this.state.owner) {
-        this.ownerInput.focus();
-      } else if (this.repoInput) {
-        this.repoInput.focus();
+      if (this.repoUrlInput) {
+        this.repoUrlInput.focus();
       }
     }
 
@@ -53,23 +55,34 @@ define(function(require) {
     }
 
     getOwner(): string {
-      return this.state.owner || "";
-    }
-
-    onOwnerChange(owner: string): void {
-      this.setState({
-        owner: Formatter.formatGithubUserName(owner)
-      });
+      return this.state.owner;
     }
 
     getRepo(): string {
-      return this.state.repo || "";
+      return this.state.repo;
     }
 
-    onRepoChange(repo: string): void {
+    getRepoUrl(): string {
+      return this.state.repoUrl;
+    }
+
+    checkValidUrl(url: string, owner: string, repo: string): void {
       this.setState({
-        repo: Formatter.formatGithubRepoName(repo)
+        invalidUrl: url && !(owner && repo)
       });
+    }
+
+    onRepoUrlChange(url: string): void {
+      const match = this.matchOwnerAndRepoFromUrl(url);
+      const owner = match ? match[1] : "";
+      const repo = match ? match[2] : "";
+      this.setState({
+        repoUrl: url,
+        owner: owner,
+        repo: repo
+      });
+      clearTimeout(this.timerId);
+      this.timerId = setTimeout(() => this.checkValidUrl(url, owner, repo), 1000);
     }
 
     onLinkClick(): void {
@@ -79,40 +92,53 @@ define(function(require) {
       });
     }
 
+    onCancelClick(): void {
+      this.props.onDoneClick();
+      this.setState(this.getDefaultState());
+    }
+
+    matchOwnerAndRepoFromUrl(url: string): ?Array<string> {
+      return url.trim().replace(/\.git$/, "").match(/^(?:https:\/\/github\.com\/|git@github\.com:)([a-z0-9_][a-z0-9_\-]*)\/([a-z0-9\-_.]+)/i);
+    }
+
+    renderOwnerAndRepo(): React.Node {
+      const owner = this.getOwner();
+      const repo = this.getRepo();
+      if (owner && repo) {
+        return (
+          <p>
+            <span className="mrxs">Link to the </span>
+            <span className="border type-monospace type-s mrxs phxs">{repo}</span>
+            <span className="mrxs"> repo owned by </span>
+            <span className="border type-monospace type-s mrxs phxs">{owner}</span>
+          </p>
+        );
+      } else if (this.state.invalidUrl) {
+        return (
+          <p><span className="type-pink type-bold type-italic">Invalid repository — copy and paste a valid GitHub URL</span></p>
+        );
+      } else {
+        return (
+          <p>Copy and paste an existing GitHub repository URL.</p>
+        );
+      }
+    }
+
     render(): React.Node {
       return (
         <div>
-          <div className="columns columns-elastic">
-            <div className="column column-shrink align-b prxs">
-              <div className="type-monospace type-s align-form-input">
-                github.com://
-              </div>
-            </div>
-            <div className="column column-shrink align-b prxs">
-              <div className="type-label">Org/user name</div>
-              <FormInput
-                ref={(el) => this.ownerInput = el}
-                className="form-input-borderless type-monospace width-15 type-s"
-                placeholder="e.g. mycompany"
-                onChange={this.onOwnerChange}
-                value={this.getOwner()}
-              />
-            </div>
-            <div className="column column-shrink align-b prxs">
-              <div className="type-monospace type-s align-form-input">
-                /
-              </div>
-            </div>
-            <div className="column column-shrink align-b">
-              <div className="type-label">Repository name</div>
-              <FormInput
-                ref={(el) => this.repoInput = el}
-                className="form-input-borderless type-monospace width-15 type-s"
-                placeholder="e.g. myrepo"
-                onChange={this.onRepoChange}
-                value={this.getRepo()}
-              />
-            </div>
+          <div>
+            {this.renderOwnerAndRepo()}
+          </div>
+          <div>
+            <div className="align-button type-label mrs">Repository URL:</div>
+            <FormInput
+              className="form-input-borderless type-monospace width-30"
+              ref={(el) => this.repoUrlInput = el}
+              onChange={this.onRepoUrlChange}
+              placeholder={"e.g. https://github.com/your_company/your_repo"}
+              value={this.getRepoUrl()}
+            />
           </div>
           <div className="mtl">
             <Button
@@ -124,7 +150,7 @@ define(function(require) {
             </Button>
             <Button
               className="mls"
-              onClick={this.props.onDoneClick}
+              onClick={this.onCancelClick}
             >
               Cancel
             </Button>
