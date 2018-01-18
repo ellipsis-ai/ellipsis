@@ -626,6 +626,19 @@ const BehaviorEditor = React.createClass({
     return notifications;
   },
 
+  buildDeploymentNotifications: function() {
+    if (!this.state) return [];
+    const notifications = [];
+    if (this.isExistingGroup() && !this.isModified() && !this.isDeployed()) {
+      notifications.push(new NotificationData({
+        kind: "deployment_warning",
+        type: "saved_version_not_deployed",
+        onClick: this.deploy
+      }));
+    }
+    return notifications;
+  },
+
   buildNotifications: function() {
     return [].concat(
       this.buildEnvVarNotifications(),
@@ -633,7 +646,8 @@ const BehaviorEditor = React.createClass({
       this.buildOAuthApplicationNotifications(),
       this.buildDataTypeNotifications(),
       this.buildTemplateNotifications(),
-      this.buildServerNotifications()
+      this.buildServerNotifications(),
+      this.buildDeploymentNotifications()
     );
   },
 
@@ -949,9 +963,7 @@ const BehaviorEditor = React.createClass({
 
   deploy: function() {
     this.setState({ error: null, isDeploying: true });
-    this.props.onDeploy(() => {
-      this.setState({ isDeploying: false });
-    });
+    this.props.onDeploy(this.resetNotifications);
   },
 
   isDeployed: function() {
@@ -1686,8 +1698,7 @@ const BehaviorEditor = React.createClass({
       nodeModuleVersions: [],
       selectedApiConfigId: null,
       newerVersionOnServer: null,
-      errorReachingServer: null,
-      isDeploying: false
+      errorReachingServer: null
     };
   },
 
@@ -1990,13 +2001,6 @@ const BehaviorEditor = React.createClass({
                     <span className="mobile-display-none">Undo changes</span>
                     <span className="mobile-display-only">Undo</span>
                   </Button>
-                  {this.isExistingGroup() && !this.isModified() && !this.isDeployed() ? (
-                    <Button
-                      className="mrs mbm"
-                      onClick={this.deploy}>
-                      {this.state.isDeploying? "Deploying…" : "Deploy"}
-                    </Button>
-                  ) : null}
                   {this.isTestable() ? (
                     <DynamicLabelButton
                       labels={[{
