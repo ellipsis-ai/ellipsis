@@ -948,9 +948,10 @@ const BehaviorEditor = React.createClass({
   },
 
   deploy: function() {
-    this.setState({ error: null });
-    this.toggleActivePanel('deploying', false);
-    this.props.onDeploy();
+    this.setState({ error: null, isDeploying: true });
+    this.props.onDeploy(() => {
+      this.setState({ isDeploying: false });
+    });
   },
 
   isDeployed: function() {
@@ -1685,7 +1686,8 @@ const BehaviorEditor = React.createClass({
       nodeModuleVersions: [],
       selectedApiConfigId: null,
       newerVersionOnServer: null,
-      errorReachingServer: null
+      errorReachingServer: null,
+      isDeploying: false
     };
   },
 
@@ -1992,7 +1994,7 @@ const BehaviorEditor = React.createClass({
                     <Button
                       className="mrs mbm"
                       onClick={this.deploy}>
-                      Deploy
+                      {this.state.isDeploying? "Deploying…" : "Deploy"}
                     </Button>
                   ) : null}
                   {this.isTestable() ? (

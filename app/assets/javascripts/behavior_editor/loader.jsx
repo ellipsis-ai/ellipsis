@@ -64,7 +64,7 @@ requirejs(['common'], function() {
           this.setState(newState);
         }
 
-        deploy() {
+        deploy(callback) {
           DataRequest.jsonPost(
             jsRoutes.controllers.BehaviorEditorController.deploy().url,
             { behaviorGroupId: this.props.group.id },
@@ -74,7 +74,7 @@ requirejs(['common'], function() {
               if (json.id) {
                 this.setState({
                   group: this.state.group.clone({ deployment: BehaviorGroupDeployment.fromProps(json) })
-                });
+                }, callback);
               } else {
                 this.onSaveError();
               }
