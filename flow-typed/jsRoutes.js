@@ -9,7 +9,7 @@ declare var jsRoutes: {
       setTeamTimeZone: () => JsRoute
     },
     BehaviorEditorController: {
-      edit: (string) => JsRoute,
+      edit: (groupId: string, selectedId?: string, showVersions?: boolean) => JsRoute,
       pushToGithub: () => JsRoute,
       updateFromGithub: () => JsRoute
     },

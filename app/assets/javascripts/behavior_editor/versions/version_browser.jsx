@@ -32,6 +32,7 @@ define(function(require: (string) => *): React.ElementType {
     currentGroup: BehaviorGroup,
     currentGroupIsModified: boolean,
     currentUserId: string,
+    currentSelectedId?: string,
     versions: Array<BehaviorGroup>,
     onClearActivePanel: () => void,
     onRestoreVersionClick: (version: BehaviorGroup, optionalCallback?: () => void) => void,
@@ -171,7 +172,7 @@ define(function(require: (string) => *): React.ElementType {
     }
 
     getGithubAuthUrl(): string {
-      const redirect = jsRoutes.controllers.BehaviorEditorController.edit(this.props.currentGroup.id).url;
+      const redirect = jsRoutes.controllers.BehaviorEditorController.edit(this.props.currentGroup.id, this.props.currentSelectedId, true).url;
       return jsRoutes.controllers.SocialAuthController.authenticateGithub(redirect).url;
     }
 
