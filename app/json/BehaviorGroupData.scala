@@ -147,6 +147,9 @@ object BehaviorGroupData {
         dataService.users.userDataFor(author, version.team).map(Some(_))
       }.getOrElse(Future.successful(None))
       maybeDeployment <- dataService.behaviorGroupDeployments.findForBehaviorGroupVersion(version)
+      maybeDeploymentData <- maybeDeployment.map { deployment =>
+        BehaviorGroupDeploymentData.fromDeployment(deployment, dataService).map(Some(_))
+      }.getOrElse(Future.successful(None))
     } yield {
       val (dataTypeInputsData, actionInputsData) = inputsData.partition { ea =>
         versionsData.find(v => ea.inputId.exists(v.inputIds.contains)).exists(_.isDataType)
@@ -169,7 +172,7 @@ object BehaviorGroupData {
         version.group.maybeExportId,
         Some(version.createdAt),
         maybeUserData,
-        maybeDeployment.map(BehaviorGroupDeploymentData.fromDeployment)
+        maybeDeploymentData
       )
     }
   }

@@ -161,6 +161,9 @@ object BehaviorEditorData {
       maybeDeployment <- maybeGroupVersion.map { groupVersion =>
         dataService.behaviorGroupDeployments.findForBehaviorGroupVersion(groupVersion)
       }.getOrElse(Future.successful(None))
+      maybeDeploymentData <- maybeDeployment.map { deployment =>
+        BehaviorGroupDeploymentData.fromDeployment(deployment, dataService).map(Some(_))
+      }.getOrElse(Future.successful(None))
     } yield {
       val maybeVerifiedSelectedId = maybeVerifiedBehaviorId.orElse(maybeVerifiedLibraryId)
       val data = maybeGroupData.getOrElse {
@@ -182,7 +185,7 @@ object BehaviorEditorData {
           exportId = None,
           Some(OffsetDateTime.now),
           Some(userData),
-          maybeDeployment.map(BehaviorGroupDeploymentData.fromDeployment)
+          maybeDeploymentData
         )
       }
       BehaviorEditorData(
