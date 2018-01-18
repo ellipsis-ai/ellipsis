@@ -31,8 +31,7 @@ class APIAccessController @Inject() (
                                       val assetsProvider: Provider[RemoteAssets],
                                       implicit val actorSystem: ActorSystem,
                                       implicit val ec: ExecutionContext
-                                    )
-  extends ReAuthable {
+                                    ) extends ReAuthable {
 
   private def getToken(code: String, application: OAuth2Application, user: User, redirectUrl: String): Future[Option[LinkedOAuth2Token]] = {
     application.accessTokenResponseFor(code, redirectUrl, ws).flatMap { response =>

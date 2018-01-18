@@ -4,6 +4,7 @@ import java.time.OffsetDateTime
 
 
 case class Subscription(
+                         id: String,
                          chargebeePlanId: String,
                          accountId: String,
                          teamId: String,

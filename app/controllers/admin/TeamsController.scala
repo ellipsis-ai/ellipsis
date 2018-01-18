@@ -1,12 +1,11 @@
 package controllers.admin
 
 import javax.inject.Inject
-
 import com.google.inject.Provider
 import com.mohiva.play.silhouette.api.Silhouette
 import controllers.RemoteAssets
 import models.silhouette.EllipsisEnv
-import play.api.{Configuration, Logger}
+import play.api.Configuration
 import services.{AWSLambdaService, DataService}
 
 import scala.concurrent.{ExecutionContext, Future}

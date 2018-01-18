@@ -1,5 +1,6 @@
 package controllers.admin
 
+
 import controllers.EllipsisController
 import com.mohiva.play.silhouette.api.actions.SecuredRequest
 import models.silhouette.EllipsisEnv

@@ -7,6 +7,7 @@ CREATE TABLE billing_accounts (
 );
 
 CREATE TABLE billing_subscriptions (
+  id TEXT PRIMARY KEY,
   chargebee_plan_id TEXT NOT NULL,
   billing_account_id TEXT NOT NULL REFERENCES billing_accounts(id) ON DELETE CASCADE,
   team_id TEXT NOT NULL REFERENCES teams(id),
