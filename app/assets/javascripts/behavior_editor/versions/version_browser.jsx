@@ -507,7 +507,7 @@ define(function(require: (string) => *): React.ElementType {
       );
     }
 
-    renderVersionSelector(): Node {
+    renderVersionSelector(hasChanges: boolean): Node {
       if (this.props.versions.length > 0) {
         return (
           <div>
@@ -529,7 +529,9 @@ define(function(require: (string) => *): React.ElementType {
                     }
                   </div>
                   <div className="column column-shrink">
-                    <Button onClick={this.invertDiffDirection} className="button-s button-shrink" title="Invert the direction changes are shown">⇄</Button>
+                    {hasChanges ? (
+                      <Button onClick={this.invertDiffDirection} className="button-s button-shrink" title="Invert the direction changes are shown">⇄</Button>
+                    ) : null}
                   </div>
                 </div>
               </div>
@@ -661,7 +663,7 @@ define(function(require: (string) => *): React.ElementType {
                 <div className="column column-one-half">
                   <Button className="button-raw" onClick={this.props.onClearActivePanel}>{this.props.currentGroup.getName()}</Button>
                   <span className="mhs type-weak">→</span>
-                  <span>Compare skill versions</span>
+                  <span>Skill versions</span>
                 </div>
                 <div className="column column-one-half align-r">
                   {this.renderGithubRepo()}
@@ -682,7 +684,7 @@ define(function(require: (string) => *): React.ElementType {
             </Collapsible>
 
             <div className="bg-lightest border-emphasis-bottom border-pink container container-wide">
-              {this.renderVersionSelector()}
+              {this.renderVersionSelector(hasChanges)}
             </div>
 
           </FixedHeader>
