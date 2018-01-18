@@ -18,7 +18,7 @@ define(function(require) {
       if (this.props.error) {
         return (
           <div className="fade-in type-pink type-bold type-italic">
-            <span style={{ height: 24 }} className="display-inline-block mrs align-b"><SVGWarning /></span>
+            <span style={{ height: 24 }} className="display-inline-block mrs align-m"><SVGWarning /></span>
             <span>{this.getErrorText()}</span>
           </div>
         );
