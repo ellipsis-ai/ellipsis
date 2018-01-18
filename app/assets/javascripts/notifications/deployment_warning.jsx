@@ -32,7 +32,7 @@ define(function(require) {
         <span>
           <span className="type-label">Warning: </span>
           <span className="mrs">This latest version is not available for everyone to use until it has been deployed. </span>
-          <button className="button-s button-inverted" type="button" onClick={this.deploy}>
+          <button className="button-s" type="button" onClick={this.deploy}>
             {this.isDeploying() ? "Deploying…" : "Deploy now"}
           </button>
         </span>
