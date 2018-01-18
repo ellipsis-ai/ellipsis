@@ -194,7 +194,8 @@ describe('BehaviorEditor', () => {
       awsConfigs: config.awsConfigs.map(aws.AWSConfigRef.fromJson),
       oauth2Applications: config.oauth2Applications.map(oauth2.OAuth2ApplicationRef.fromJson),
       simpleTokenApis: config.simpleTokenApis.map(simpleToken.SimpleTokenApiRef.fromJson),
-      builtinParamTypes: config.builtinParamTypes.map(ParamType.fromJson)
+      builtinParamTypes: config.builtinParamTypes.map(ParamType.fromJson),
+      onDeploy: jest.fn()
     });
     return TestUtils.renderIntoDocument(
       <BehaviorEditor {...props} />
