@@ -384,10 +384,23 @@ define(function(require: (string) => *): React.ElementType {
           <Select className="align-b form-select-s mrs mbs" value={this.state.selectedMenuItem} onChange={this.onClickMenuItem}>
             {this.renderVersionOptions()}
           </Select>
+          {this.renderVersionNote()}
           {this.compareGithubVersions() ? this.renderGithubBranchInput() : null}
           {this.compareGithubVersions() ? this.renderGithubStatus() : null}
         </div>
       );
+    }
+
+    latestVersionIsSelected(): boolean {
+      return this.state.selectedMenuItem === "version0";
+    }
+
+    renderVersionNote(): Node {
+      if (this.latestVersionIsSelected()) {
+        return (
+          <span className="align-button align-button-s mrs mbs type-weak">(most recent saved version)</span>
+        );
+      }
     }
 
     renderCurrentVersionPlaceholder(caption: Node): ElementType {
