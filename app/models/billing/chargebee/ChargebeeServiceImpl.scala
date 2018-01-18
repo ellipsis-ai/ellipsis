@@ -20,13 +20,16 @@ class ChargebeeServiceImpl @Inject()(
                                     ) extends ChargebeeService {
 
   def dataService = dataServiceProvider.get
+  val site: String = config.get[String]("chargebee.site")
+  val apiKey: String = config.get[String]("chargebee.api_key")
 
   def allPlans: Future[Seq[models.billing.chargebee.Plan]] = {
-    Environment.configure("{site}","{site_api_key}")
+    val listOfPlans: Seq[models.billing.chargebee.Plan] = Seq[models.billing.chargebee.Plan]()
 
-    ListResult result = com.chargebee.models.Plan.list().limit(5).request()
+    Environment.configure(site,apiKey)
+    ListResult result = com.chargebee.models.Plan.list().limit(100).request()
     val iterator = result.iterator().asScala
-    val listOfPlans: Seq[models.billing.chargebee.Plan] = Seq[models.billing.chargebee.Plan]
+
     iterator.foreach { entry =>
       val entity = entry.plan()
       val json = entity.toJson.replace("\"id\"", "\"_id\"")
