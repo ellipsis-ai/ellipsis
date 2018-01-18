@@ -16,11 +16,14 @@ define(function(require) {
   };
 
   type State = {
-    owner: string,
-    repo: string,
     repoUrl: string,
     invalidUrl: boolean
   };
+
+  type GithubRepoMatch = {
+    owner: ?string,
+    repo: ?string
+  }
 
   class LinkGithubRepo extends React.Component<Props, State> {
     props: Props;
@@ -37,8 +40,6 @@ define(function(require) {
 
     getDefaultState(): State {
       return {
-        owner: this.props.linked ? this.props.linked.getOwner() : "",
-        repo: this.props.linked ? this.props.linked.getRepo() : "",
         repoUrl: this.props.linked ? this.props.linked.getUrl()  : "",
         invalidUrl: false
       };
@@ -51,45 +52,49 @@ define(function(require) {
     }
 
     isLinkModified(): boolean {
-      return !this.props.linked || this.props.linked.getOwner() !== this.state.owner || this.props.linked.getRepo() !== this.state.repo;
+      const match = this.matchOwnerAndRepoFromUrl(this.getRepoUrl());
+      return !this.props.linked || this.props.linked.getOwner() !== match.owner || this.props.linked.getRepo() !== match.repo;
     }
 
     getOwner(): string {
-      return this.state.owner;
+      const match = this.matchOwnerAndRepoFromUrl(this.getRepoUrl());
+      return match.owner || "";
     }
 
     getRepo(): string {
-      return this.state.repo;
+      const match = this.matchOwnerAndRepoFromUrl(this.getRepoUrl());
+      return match.repo || "";
     }
 
     getRepoUrl(): string {
       return this.state.repoUrl;
     }
 
-    checkValidUrl(url: string, owner: string, repo: string): void {
+    checkValidUrl(url: string): void {
+      const match = this.matchOwnerAndRepoFromUrl(url);
+      const owner = match && match.owner;
+      const repo = match && match.repo;
       this.setState({
         invalidUrl: url && !(owner && repo)
       });
     }
 
     onRepoUrlChange(url: string): void {
-      const match = this.matchOwnerAndRepoFromUrl(url);
-      const owner = match ? match[1] : "";
-      const repo = match ? match[2] : "";
       this.setState({
-        repoUrl: url,
-        owner: owner,
-        repo: repo
+        repoUrl: url
       });
       clearTimeout(this.timerId);
-      this.timerId = setTimeout(() => this.checkValidUrl(url, owner, repo), 1000);
+      this.timerId = setTimeout(() => this.checkValidUrl(url), 1000);
     }
 
     onLinkClick(): void {
-      this.props.onLinkGithubRepo(this.getOwner(), this.getRepo(), () => {
-        this.props.onDoneClick();
-        this.setState(this.getDefaultState());
-      });
+      const match = this.matchOwnerAndRepoFromUrl(this.getRepoUrl());
+      if (match.owner && match.repo) {
+        this.props.onLinkGithubRepo(match.owner, match.repo, () => {
+          this.props.onDoneClick();
+          this.setState(this.getDefaultState());
+        });
+      }
     }
 
     onCancelClick(): void {
@@ -97,20 +102,23 @@ define(function(require) {
       this.setState(this.getDefaultState());
     }
 
-    matchOwnerAndRepoFromUrl(url: string): ?Array<string> {
-      return url.trim().replace(/\.git$/, "").match(/^(?:https:\/\/github\.com\/|git@github\.com:)([a-z0-9_][a-z0-9_\-]*)\/([a-z0-9\-_.]+)/i);
+    matchOwnerAndRepoFromUrl(url: string): GithubRepoMatch {
+      const match = url.trim().replace(/\.git$/, "").match(/^(?:(?:https?:\/\/|git@)?github\.com[\/:]?)?([a-z0-9_][a-z0-9_\-]*)\/([a-z0-9\-_.]+)/i);
+      return {
+        owner: match && match[1],
+        repo: match && match[2]
+      };
     }
 
     renderOwnerAndRepo(): React.Node {
-      const owner = this.getOwner();
-      const repo = this.getRepo();
-      if (owner && repo) {
+      const match = this.matchOwnerAndRepoFromUrl(this.getRepoUrl());
+      if (match.owner && match.repo) {
         return (
           <p>
             <span className="mrxs">Link to the </span>
-            <span className="border type-monospace type-s mrxs phxs">{repo}</span>
+            <span className="border type-monospace type-s mrxs phxs">{match.repo}</span>
             <span className="mrxs"> repo owned by </span>
-            <span className="border type-monospace type-s mrxs phxs">{owner}</span>
+            <span className="border type-monospace type-s mrxs phxs">{match.owner}</span>
           </p>
         );
       } else if (this.state.invalidUrl) {
@@ -125,6 +133,8 @@ define(function(require) {
     }
 
     render(): React.Node {
+      const match = this.matchOwnerAndRepoFromUrl(this.getRepoUrl());
+      const validRepo = match && match.repo && match.owner;
       return (
         <div>
           <div>
@@ -144,7 +154,7 @@ define(function(require) {
             <Button
               className="button-primary"
               onClick={this.onLinkClick}
-              disabled={!this.getRepo() || !this.getOwner() || !this.isLinkModified() }
+              disabled={!validRepo || !this.isLinkModified() }
             >
               Link
             </Button>
