@@ -5,12 +5,13 @@ import javax.inject.Inject
 import com.google.inject.Provider
 import com.mohiva.play.silhouette.api.Silhouette
 import controllers.RemoteAssets
-import models.silhouette.EllipsisEnv
 import controllers.admin.AdminAuth
+import models.billing.chargebee.ChargebeeService
+import models.silhouette.EllipsisEnv
 import play.api.Configuration
 import services.DataService
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.ExecutionContext
 
 
 class PlansController @Inject() (
@@ -18,14 +19,15 @@ class PlansController @Inject() (
                                   val dataService: DataService,
                                   val configuration: Configuration,
                                   val assetsProvider: Provider[RemoteAssets],
+                                  val chargebee: ChargebeeService,
                                   implicit val ec: ExecutionContext
                                 ) extends AdminAuth {
 
 
   def list() =  silhouette.SecuredAction.async { implicit request =>
     withIsAdminCheck(() => {
-      Future {
-        Ok(views.html.admin.billing.plans.list(viewConfig(None)))
+      chargebee.allPlans.map { plans =>
+        Ok(views.html.admin.billing.plans.list(plans, viewConfig(None)))
       }
     })
   }

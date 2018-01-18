@@ -1,4 +1,6 @@
+@import com.chargebee.models.Plan
 @(
+  plans: Seq[Plan],
   config: ViewConfig
   )(implicit messages: Messages, r: RequestHeader
 )
@@ -6,8 +8,10 @@
 @page.main("Plans", config) {
   <h4>ChargeBee Plans</h4>
   <ol>
-    <li>
-      pippo
-    </li>
+    @plans.map { ea =>
+      <li>
+       @ea.name()
+      </li>
+    }
   </ol>
 }

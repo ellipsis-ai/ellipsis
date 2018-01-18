@@ -108,6 +108,7 @@ class ServiceModule extends AbstractModule with ScalaModule {
     bind[GraphQLService].to[GraphQLServiceImpl]
     bind[Models].asEagerSingleton()
     bind[SlackEventService].to[SlackEventServiceImpl]
+    bind[ChargebeeService].to[ChargebeeServiceImpl]
     bind[EventHandler].asEagerSingleton()
     bind[GithubService].asEagerSingleton()
     bind[SlackFileMap].asEagerSingleton()
