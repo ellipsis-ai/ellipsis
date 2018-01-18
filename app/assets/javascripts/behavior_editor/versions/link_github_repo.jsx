@@ -5,7 +5,6 @@ define(function(require) {
     BehaviorGroup = require('../../models/behavior_group'),
     LinkedGithubRepo = require('../../models/linked_github_repo'),
     FormInput = require('../../form/input'),
-    Formatter = require('../../lib/formatter'),
     autobind = require('../../lib/autobind');
 
   type Props = {
@@ -17,114 +16,151 @@ define(function(require) {
   };
 
   type State = {
-    owner: string,
-    repo: string
+    repoUrl: string,
+    invalidUrl: boolean
   };
+
+  type GithubRepoMatch = {
+    owner: ?string,
+    repo: ?string
+  }
 
   class LinkGithubRepo extends React.Component<Props, State> {
     props: Props;
     state: State;
-    ownerInput: ?FormInput;
-    repoInput: ?FormInput;
+    repoUrlInput: ?FormInput;
+    timerId: ?number;
 
     constructor(props) {
       super(props);
       autobind(this);
       this.state = this.getDefaultState();
+      this.timerId = null;
     }
 
     getDefaultState(): State {
       return {
-        owner: this.props.linked ? this.props.linked.getOwner() : "",
-        repo: this.props.linked ? this.props.linked.getRepo(): ""
+        repoUrl: this.props.linked ? this.props.linked.getUrl()  : "",
+        invalidUrl: false
       };
     }
 
     focus(): void {
-      if (this.ownerInput && !this.state.owner) {
-        this.ownerInput.focus();
-      } else if (this.repoInput) {
-        this.repoInput.focus();
+      if (this.repoUrlInput) {
+        this.repoUrlInput.focus();
       }
     }
 
     isLinkModified(): boolean {
-      return !this.props.linked || this.props.linked.getOwner() !== this.state.owner || this.props.linked.getRepo() !== this.state.repo;
+      const match = this.matchOwnerAndRepoFromUrl(this.getRepoUrl());
+      return !this.props.linked || this.props.linked.getOwner() !== match.owner || this.props.linked.getRepo() !== match.repo;
     }
 
     getOwner(): string {
-      return this.state.owner || "";
-    }
-
-    onOwnerChange(owner: string): void {
-      this.setState({
-        owner: Formatter.formatGithubUserName(owner)
-      });
+      const match = this.matchOwnerAndRepoFromUrl(this.getRepoUrl());
+      return match.owner || "";
     }
 
     getRepo(): string {
-      return this.state.repo || "";
+      const match = this.matchOwnerAndRepoFromUrl(this.getRepoUrl());
+      return match.repo || "";
     }
 
-    onRepoChange(repo: string): void {
+    getRepoUrl(): string {
+      return this.state.repoUrl;
+    }
+
+    checkValidUrl(url: string): void {
+      const match = this.matchOwnerAndRepoFromUrl(url);
+      const owner = match && match.owner;
+      const repo = match && match.repo;
       this.setState({
-        repo: Formatter.formatGithubRepoName(repo)
+        invalidUrl: url && !(owner && repo)
       });
+    }
+
+    onRepoUrlChange(url: string): void {
+      this.setState({
+        repoUrl: url
+      });
+      clearTimeout(this.timerId);
+      this.timerId = setTimeout(() => this.checkValidUrl(url), 1000);
     }
 
     onLinkClick(): void {
-      this.props.onLinkGithubRepo(this.getOwner(), this.getRepo(), () => {
-        this.props.onDoneClick();
-        this.setState(this.getDefaultState());
-      });
+      const match = this.matchOwnerAndRepoFromUrl(this.getRepoUrl());
+      if (match.owner && match.repo) {
+        this.props.onLinkGithubRepo(match.owner, match.repo, () => {
+          this.props.onDoneClick();
+          this.setState(this.getDefaultState());
+        });
+      }
+    }
+
+    onCancelClick(): void {
+      this.props.onDoneClick();
+      this.setState(this.getDefaultState());
+    }
+
+    matchOwnerAndRepoFromUrl(url: string): GithubRepoMatch {
+      const match = url.trim().replace(/\.git$/, "").match(/^(?:(?:https?:\/\/|git@)?github\.com[\/:]?)?([a-z0-9_][a-z0-9_\-]*)\/([a-z0-9\-_.]+)/i);
+      return {
+        owner: match && match[1],
+        repo: match && match[2]
+      };
+    }
+
+    renderOwnerAndRepo(): React.Node {
+      const match = this.matchOwnerAndRepoFromUrl(this.getRepoUrl());
+      if (match.owner && match.repo) {
+        return (
+          <p>
+            <span className="mrxs">Link to the </span>
+            <span className="border type-monospace type-s mrxs phxs">{match.repo}</span>
+            <span className="mrxs"> repo owned by </span>
+            <span className="border type-monospace type-s mrxs phxs">{match.owner}</span>
+          </p>
+        );
+      } else if (this.state.invalidUrl) {
+        return (
+          <p><span className="type-pink type-bold type-italic">Invalid repository — copy and paste a valid GitHub URL</span></p>
+        );
+      } else {
+        return (
+          <p>Copy and paste an existing GitHub repository URL.</p>
+        );
+      }
     }
 
     render(): React.Node {
+      const match = this.matchOwnerAndRepoFromUrl(this.getRepoUrl());
+      const validRepo = match && match.repo && match.owner;
       return (
         <div>
-          <div className="columns columns-elastic">
-            <div className="column column-shrink align-b prxs">
-              <div className="type-monospace type-s align-form-input">
-                github.com://
-              </div>
-            </div>
-            <div className="column column-shrink align-b prxs">
-              <div className="type-label">Org/user name</div>
-              <FormInput
-                ref={(el) => this.ownerInput = el}
-                className="form-input-borderless type-monospace width-15 type-s"
-                placeholder="e.g. mycompany"
-                onChange={this.onOwnerChange}
-                value={this.getOwner()}
-              />
-            </div>
-            <div className="column column-shrink align-b prxs">
-              <div className="type-monospace type-s align-form-input">
-                /
-              </div>
-            </div>
-            <div className="column column-shrink align-b">
-              <div className="type-label">Repository name</div>
-              <FormInput
-                ref={(el) => this.repoInput = el}
-                className="form-input-borderless type-monospace width-15 type-s"
-                placeholder="e.g. myrepo"
-                onChange={this.onRepoChange}
-                value={this.getRepo()}
-              />
-            </div>
+          <div>
+            {this.renderOwnerAndRepo()}
+          </div>
+          <div>
+            <div className="align-button type-label mrs">Repository URL:</div>
+            <FormInput
+              className="form-input-borderless type-monospace width-30"
+              ref={(el) => this.repoUrlInput = el}
+              onChange={this.onRepoUrlChange}
+              placeholder={"e.g. https://github.com/your_company/your_repo"}
+              value={this.getRepoUrl()}
+            />
           </div>
           <div className="mtl">
             <Button
               className="button-primary"
               onClick={this.onLinkClick}
-              disabled={!this.getRepo() || !this.getOwner() || !this.isLinkModified() }
+              disabled={!validRepo || !this.isLinkModified() }
             >
               Link
             </Button>
             <Button
               className="mls"
-              onClick={this.props.onDoneClick}
+              onClick={this.onCancelClick}
             >
               Cancel
             </Button>

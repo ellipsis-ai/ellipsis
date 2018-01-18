@@ -71,6 +71,7 @@ define(function(require: (string) => *): React.ElementType {
     props: Props;
     state: State;
     pushPanel: ?GithubPushPanel;
+    linkGitHubRepoComponent: ?LinkGithubRepo;
 
     constructor(props: Props): void {
       super(props);
@@ -470,7 +471,13 @@ define(function(require: (string) => *): React.ElementType {
     onChangeGithubLinkClick(): void {
       this.setState({
         isModifyingGithubRepo: true
-      });
+      }, this.focusOnGithubRepo);
+    }
+
+    focusOnGithubRepo(): void {
+      if (this.linkGitHubRepoComponent) {
+        this.linkGitHubRepoComponent.focus();
+      }
     }
 
     renderGithubBranchInput(): ElementType {
@@ -688,6 +695,7 @@ define(function(require: (string) => *): React.ElementType {
             <Collapsible revealWhen={this.state.isModifyingGithubRepo}>
               <div className="bg-white border-bottom border-light container container-wide pvm">
                 <LinkGithubRepo
+                  ref={(el) => this.linkGitHubRepoComponent = el}
                   group={this.props.currentGroup}
                   linked={this.props.linkedGithubRepo}
                   onDoneClick={this.onLinkedGithubRepo}

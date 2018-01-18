@@ -150,22 +150,6 @@ define(function(require) {
         .replace(/^[.\/]+/, ""); // no leading dots or slashes
     },
 
-    formatGithubRepoName: function(value: string): string {
-      return value.replace(/[^a-z0-9\-_.]/gi, "");
-    },
-
-    formatGithubUserName: function(value: string): string {
-      // Github's join page says:
-      //  Username may only contain alphanumeric characters or single hyphens,
-      //  and cannot begin or end with a hyphen
-      //
-      // However, we cannot strip trailing hyphens since a user might keep typing
-      return value
-        .replace(/[^a-z0-9\-]/gi, "")
-        .replace(/-+/, "-")
-        .replace(/^-+/, "");
-    },
-
     leftPad(value: number | string, length: number): string {
       const asString = String(value);
       const numSpaces = length - asString.length;
