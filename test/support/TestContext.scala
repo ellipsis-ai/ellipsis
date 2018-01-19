@@ -39,7 +39,7 @@ trait TestContext extends MockitoSugar{
       disable[ActorModule]
   }
   lazy val teamId: String = IDs.next
-  lazy val team: Team = Team(teamId, "", None, OffsetDateTime.now())
+  lazy val team: Team = Team(teamId, "", None, None, OffsetDateTime.now())
   lazy val user: User = newUserFor(teamId)
   lazy implicit val app: Application = appBuilder.build()
   val dataService = app.injector.instanceOf(classOf[DataService])

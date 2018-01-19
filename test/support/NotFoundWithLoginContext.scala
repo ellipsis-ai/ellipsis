@@ -51,7 +51,7 @@ trait NotFoundWithLoginContext extends ControllerTestContextWithLoggedInUser {
 }
 
 trait NotFoundForOtherTeamContext extends NotFoundWithLoginContext {
-  val otherTeam: Team = Team(IDs.next, "Other team", None, OffsetDateTime.now)
+  val otherTeam: Team = Team(IDs.next, "Other team", None, None, OffsetDateTime.now)
   def mockTeamAccessFor(teamAccess: UserTeamAccess) = {
     when(dataService.users.teamAccessFor(user, Some(otherTeam.id))).thenReturn(Future.successful(teamAccess))
   }
