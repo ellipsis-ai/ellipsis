@@ -1,8 +1,11 @@
+// @flow
+
 define(function(require) {
   const React = require('react');
+  const moment = require('moment');
   const autobind = require('../lib/autobind');
 
-  class NotificationForDeploymentWarning extends React.Component {
+    class NotificationForDeploymentWarning extends React.Component {
 
     constructor(props) {
       super(props);
@@ -12,12 +15,15 @@ define(function(require) {
       };
     }
 
+    detail() {
+      return this.props.details.find((detail) => detail.type === "saved_version_not_deployed");
+    }
+
     deploy() {
       this.setState({
         isDeploying: true
       }, () => {
-        const detail = this.props.details.find((detail) => detail.type === "saved_version_not_deployed");
-        detail.onClick(() => {
+        this.detail().onClick(() => {
           this.setState({ isDeploying: false });
         });
       });
@@ -27,12 +33,17 @@ define(function(require) {
       return this.state && this.state.isDeploying;
     }
 
+    timestampText() {
+      return moment(this.detail().lastDeployTimestamp).from(new Date(this.detail().lastSaveTimestamp), true);
+    }
+
     render() {
       return (
         <span>
-          <span className="type-label">Warning: </span>
-          <span className="mrs">This latest version is not available for everyone to use until it has been deployed. </span>
-          <button className="button-s" type="button" onClick={this.deploy}>
+          <span>This version is {this.timestampText()} newer than the last deployed version. Use </span>
+          <button className="button-raw" type="button" onClick={this.detail().onDevModeChannelsClick}>dev mode channels</button>
+          <span> to test until it has been deployed.</span>
+          <button className="button-s button-shrink mlm" type="button" onClick={this.deploy}>
             {this.isDeploying() ? "Deploying…" : "Deploy now"}
           </button>
         </span>
@@ -44,6 +55,9 @@ define(function(require) {
     details: React.PropTypes.arrayOf(React.PropTypes.shape({
       kind: React.PropTypes.string.isRequired,
       type: React.PropTypes.string.isRequired,
+      lastSaveTimestamp: React.PropTypes.string.isRequired,
+      lastDeployTimestamp: React.PropTypes.string.isRequired,
+      onDevModeChannelsClick: React.PropTypes.func.isRequired,
       onClick: React.PropTypes.func.isRequired
     })).isRequired
   };

@@ -23,6 +23,7 @@ var React = require('react'),
   DataTypeSourceHelp = require('./data_type_source_help'),
   DefaultStorageAdder = require('./default_storage_adder'),
   DefaultStorageBrowser = require('./default_storage_browser'),
+  DevModeChannelsHelp = require('./dev_mode_channels_help'),
   DynamicLabelButton = require('../form/dynamic_label_button'),
   EnvVariableAdder = require('../settings/environment_variables/adder'),
   EnvVariableSetter = require('../settings/environment_variables/setter'),
@@ -112,7 +113,8 @@ const BehaviorEditor = React.createClass({
     isAdmin: React.PropTypes.bool.isRequired,
     isLinkedToGithub: React.PropTypes.bool.isRequired,
     showVersions: React.PropTypes.bool,
-    onDeploy: React.PropTypes.func.isRequired
+    onDeploy: React.PropTypes.func.isRequired,
+    lastDeployTimestamp: React.PropTypes.string
   }),
 
   getDefaultProps: function() {
@@ -634,6 +636,9 @@ const BehaviorEditor = React.createClass({
       notifications.push(new NotificationData({
         kind: "deployment_warning",
         type: "saved_version_not_deployed",
+        lastSaveTimestamp: this.props.group.createdAt,
+        lastDeployTimestamp: this.props.lastDeployTimestamp,
+        onDevModeChannelsClick: this.toggleDevModeChannelsHelp,
         onClick: this.deploy
       }));
     }
@@ -1167,6 +1172,10 @@ const BehaviorEditor = React.createClass({
 
   toggleResponseTemplateHelp: function() {
     this.toggleActivePanel('helpForResponseTemplate');
+  },
+
+  toggleDevModeChannelsHelp: function() {
+    this.toggleActivePanel('helpForDevModeChannels');
   },
 
   toggleSavedAnswerEditor: function(savedAnswerId) {
@@ -1874,6 +1883,12 @@ const BehaviorEditor = React.createClass({
               onAddNewEnvVariable={this.onAddNewEnvVariable}
               onCollapseClick={this.props.onClearActivePanel}
               isDataType={this.isDataTypeBehavior()}
+            />
+          </Collapsible>
+
+          <Collapsible revealWhen={this.props.activePanelName === 'helpForDevModeChannels'} onChange={this.layoutDidUpdate}>
+            <DevModeChannelsHelp
+              onCollapseClick={this.props.onClearActivePanel}
             />
           </Collapsible>
 

@@ -134,6 +134,7 @@ requirejs(['common'], function() {
                 onLinkGithubRepo={this.onLinkGithubRepo}
                 showVersions={this.props.showVersions}
                 onDeploy={this.deploy}
+                lastDeployTimestamp={this.props.lastDeployTimestamp}
               />
             </Page>
           );
@@ -157,7 +158,8 @@ requirejs(['common'], function() {
         isAdmin: React.PropTypes.bool.isRequired,
         isLinkedToGithub: React.PropTypes.bool.isRequired,
         linkedGithubRepo: React.PropTypes.object,
-        showVersions: React.PropTypes.bool
+        showVersions: React.PropTypes.bool,
+        lastDeployTimestamp: React.PropTypes.string
       };
 
       ReactDOM.render(
