@@ -164,10 +164,17 @@ define(function(require: (string) => *): React.ElementType {
       });
     }
 
+    getDefaultSelectedItem(props: Props): string {
+      return props.versions.length > 0 ? "version0" : "loading";
+    }
+
     componentWillReceiveProps(nextProps: Props): void {
-      if (nextProps.versions.length !== this.props.versions.length) {
+      const versionsChanged = nextProps.versions.length !== this.props.versions.length;
+      const currentGroupChanged = nextProps.currentGroup !== this.props.currentGroup &&
+        !nextProps.currentGroup.isIdenticalTo(this.props.currentGroup);
+      if (versionsChanged || currentGroupChanged) {
         this.setState({
-          selectedMenuItem: nextProps.versions.length > 0 ? "version0" : "loading"
+          selectedMenuItem: this.getDefaultSelectedItem(nextProps)
         });
       }
     }
