@@ -44,6 +44,7 @@ import models.behaviors.scheduling.scheduledmessage.ScheduledMessageService
 import models.behaviors.triggers.messagetrigger.MessageTriggerService
 import models.devmodechannel.DevModeChannelService
 import models.environmentvariable.TeamEnvironmentVariableService
+import models.organization.OrganizationService
 import models.team.TeamService
 import slick.dbio.DBIO
 
@@ -55,6 +56,7 @@ class PostgresDataService @Inject() (
                                       val usersProvider: Provider[UserService],
                                       val loginTokensProvider: Provider[LoginTokenService],
                                       val linkedAccountsProvider: Provider[LinkedAccountService],
+                                      val organizationsProvider: Provider[OrganizationService],
                                       val teamsProvider: Provider[TeamService],
                                       val apiTokensProvider: Provider[APITokenService],
                                       val environmentVariablesProvider: Provider[TeamEnvironmentVariableService],
@@ -94,12 +96,12 @@ class PostgresDataService @Inject() (
                                       val invocationLogEntriesProvider: Provider[InvocationLogEntryService],
                                       val devModeChannelsProvider: Provider[DevModeChannelService],
                                       val behaviorResponsesProvider: Provider[BehaviorResponseService]
-                                      val billingAccountsProvider: Provider[CustomerService]
                             ) extends DataService {
 
   val users = usersProvider.get
   val loginTokens = loginTokensProvider.get
   val linkedAccounts = linkedAccountsProvider.get
+  val organizations = organizationsProvider.get
   val teams = teamsProvider.get
   val apiTokens = apiTokensProvider.get
   val teamEnvironmentVariables = environmentVariablesProvider.get
@@ -138,7 +140,7 @@ class PostgresDataService @Inject() (
   val recurrences = recurrencesProvider.get
   val invocationLogEntries = invocationLogEntriesProvider.get
   val devModeChannels = devModeChannelsProvider.get
-  val billingAccounts = billingAccountsProvider.get
+
   def behaviorResponses = behaviorResponsesProvider.get
 
   def run[T](action: DBIO[T]): Future[T] = models.run(action)

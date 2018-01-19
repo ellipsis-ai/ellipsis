@@ -1,25 +1,16 @@
 # --- !Ups
 
-CREATE TABLE billing_accounts (
+CREATE TABLE organizations (
   id TEXT PRIMARY KEY,
-  chargebee_id TEXT NOT NULL,
+  chargebee_customer_id TEXT NOT NULL,
+  name TEXT NOT NULL,
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TABLE billing_subscriptions (
-  id TEXT PRIMARY KEY,
-  chargebee_plan_id TEXT NOT NULL,
-  billing_account_id TEXT NOT NULL REFERENCES billing_accounts(id) ON DELETE CASCADE,
-  team_id TEXT NOT NULL REFERENCES teams(id),
-  seats_count INTEGER,
-  status TEXT,
-  status_updated_at TIMESTAMP,
-  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
-);
+ALTER TABLE teams ADD COLUMN organization_id TEXT;
 
 # --- !Downs
 
-DROP TABLE IF EXISTS billing_subscriptions;
-DROP TABLE IF EXISTS billing_accounts;
-
+DROP TABLE IF EXISTS organizations;
+ALTER TABLE teams DROP COLUMN IF EXISTS organization_idq  ;
 

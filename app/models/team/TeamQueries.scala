@@ -8,10 +8,11 @@ class TeamsTable(tag: Tag) extends Table[Team](tag, "teams") {
   def id = column[String]("id", O.PrimaryKey)
   def name = column[String]("name")
   def maybeTimeZone = column[Option[ZoneId]]("time_zone")
+  def maybeOrganizationId = column[Option[String]]("organization_id")
   def createdAt = column[OffsetDateTime]("created_at")
 
   def * =
-    (id, name, maybeTimeZone, createdAt) <> ((Team.apply _).tupled, Team.unapply _)
+    (id, name, maybeTimeZone, maybeOrganizationId, createdAt) <> ((Team.apply _).tupled, Team.unapply _)
 }
 
 object TeamQueries {

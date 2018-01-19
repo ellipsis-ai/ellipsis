@@ -6,6 +6,7 @@ case class Team(
                  id: String,
                  name: String,
                  maybeTimeZone: Option[ZoneId],
+                 maybeOrganizationId: Option[String],
                  createdAt: OffsetDateTime
                ) {
 

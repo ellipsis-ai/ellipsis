@@ -45,9 +45,9 @@ import models.behaviors.scheduling.recurrence.{RecurrenceService, RecurrenceServ
 import models.behaviors.scheduling.scheduledbehavior.{ScheduledBehaviorService, ScheduledBehaviorServiceImpl}
 import models.devmodechannel.{DevModeChannelService, DevModeChannelServiceImpl}
 import models.team.{TeamService, TeamServiceImpl}
-import models.billing.account.{CustomerService, CustomerServiceImpl}
+import models.organization.{OrganizationService, OrganizationServiceImpl}
 import models.billing.chargebee.{ChargebeeService, ChargebeeServiceImpl}
-import models.billing.subscription.{SubscriptionService, SubscriptionServiceImpl}
+import models.organization.OrganizationService
 import services._
 import net.codingwell.scalaguice.ScalaModule
 import utils.SlackFileMap
@@ -60,6 +60,7 @@ class ServiceModule extends AbstractModule with ScalaModule {
     bind[UserService].to[UserServiceImpl]
     bind[LoginTokenService].to[LoginTokenServiceImpl]
     bind[LinkedAccountService].to[LinkedAccountServiceImpl]
+    bind[OrganizationService].to[OrganizationServiceImpl]
     bind[TeamService].to[TeamServiceImpl]
     bind[APITokenService].to[APITokenServiceImpl]
     bind[TeamEnvironmentVariableService].to[TeamEnvironmentVariableServiceImpl]
@@ -101,10 +102,8 @@ class ServiceModule extends AbstractModule with ScalaModule {
     bind[BotResultService].to[BotResultServiceImpl]
     bind[NodeModuleVersionService].to[NodeModuleVersionServiceImpl]
     bind[DevModeChannelService].to[DevModeChannelServiceImpl]
-    bind[CustomerService].to[CustomerServiceImpl]
-    bind[SubscriptionService].to[SubscriptionServiceImpl]
     bind[ChargebeeService].to[ChargebeeServiceImpl]
-    
+
     bind[AWSLambdaService].to[AWSLambdaServiceImpl]
     bind[AWSLogsService].to[AWSLogsServiceImpl]
     bind[CacheService].to[CacheServiceImpl]
