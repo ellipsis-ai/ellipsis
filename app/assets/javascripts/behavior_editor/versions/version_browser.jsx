@@ -285,27 +285,23 @@ define(function(require: (string) => *): React.ElementType {
       }
     }
 
-    compareLocalVersions(): boolean {
-      return this.state.selectedMenuItem !== versionSources.github;
-    }
-
     compareGithubVersions(): boolean {
       return this.state.selectedMenuItem === versionSources.github;
     }
 
-    getSelectedVersionIndex(): number {
-      if (this.compareLocalVersions() && this.state.selectedMenuItem) {
+    getSelectedVersionIndex(): ?number {
+      if (this.state.selectedMenuItem) {
         const match = this.state.selectedMenuItem.match(/version(\d+)/);
-        const index = match ? parseInt(match[1], 10) : null;
-        return index || 0;
+        return match ? parseInt(match[1], 10) : null;
       } else {
-        return 0;
+        return null;
       }
     }
 
     getSelectedVersion(): ?BehaviorGroup {
-      if (this.compareLocalVersions()) {
-        return this.getVersionIndex(this.getSelectedVersionIndex());
+      const index = this.getSelectedVersionIndex();
+      if (typeof index === "number") {
+        return this.getVersionIndex(index);
       } else if (this.compareGithubVersions()) {
         return this.state.githubVersion;
       } else {
@@ -369,7 +365,7 @@ define(function(require: (string) => *): React.ElementType {
             {this.renderDiff(diff)}
           </div>
         );
-      } else if (this.compareLocalVersions() && this.props.versions.length === 0) {
+      } else if (this.props.versions.length === 0) {
         return (
           <div className="pulse">Loading version history…</div>
         );
@@ -385,7 +381,7 @@ define(function(require: (string) => *): React.ElementType {
     }
 
     summarizeNoDiff(): string {
-      if (this.compareLocalVersions() && this.getSelectedVersionIndex() === 0 && !this.props.currentGroupIsModified) {
+      if (this.getSelectedVersionIndex() === 0 && !this.props.currentGroupIsModified) {
         return "Select another version to compare to the current saved version.";
       } else {
         return "These versions are identical.";
