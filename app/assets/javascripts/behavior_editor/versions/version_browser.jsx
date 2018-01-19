@@ -35,6 +35,7 @@ define(function(require: (string) => *): React.ElementType {
     currentSelectedId?: string,
     versions: Array<BehaviorGroup>,
     onClearActivePanel: () => void,
+    onUndoChanges: () => void,
     onRestoreVersionClick: (version: BehaviorGroup, optionalCallback?: () => void) => void,
     isLinkedToGithub: boolean,
     linkedGithubRepo?: LinkedGithubRepo,
@@ -352,7 +353,9 @@ define(function(require: (string) => *): React.ElementType {
 
     revertToSelected(): void {
       const selected = this.getSelectedVersion();
-      if (selected) {
+      if (selected && this.latestVersionIsSelected() && this.props.currentGroupIsModified) {
+        this.props.onUndoChanges();
+      } else if (selected) {
         this.props.onRestoreVersionClick(selected);
         this.props.onClearActivePanel();
       }
