@@ -1,6 +1,7 @@
 window.crypto = require('./../../../mocks/mock_window_crypto');
 const BehaviorGroup = require('../../../../app/assets/javascripts/models/behavior_group');
 const diffs = require('../../../../app/assets/javascripts/models/diffs');
+const TextPart = diffs.TextPart;
 
 const teamId = 'team123456';
 const groupId = 'group123456';
@@ -242,6 +243,10 @@ const behaviorGroupVersion2 = Object.freeze({
   libraryVersions: [libraryVersion2]
 });
 
+function textDiff(left, right) {
+  return diffs.MultiLineTextPropertyDiff.maybeFor("", left, right);
+}
+
 describe('diffs', () => {
 
   describe('maybeDiffFor', () => {
@@ -261,7 +266,7 @@ describe('diffs', () => {
             "label": "Skill name",
             "modified": "Some updated skill",
             "original": "Some skill",
-            "parts": [
+            "unifiedLines": [[
               {
                 "kind": "unchanged",
                 "value": "Some "
@@ -274,31 +279,31 @@ describe('diffs', () => {
                 "kind": "unchanged",
                 "value": "skill"
               }
-            ]
+            ]]
           },
           {
             "isCode": false,
             "label": "Skill description",
             "modified": "With a description",
             "original": "",
-            "parts": [
+            "unifiedLines": [[
               {
                 "kind": "added",
                 "value": "With a description"
               },
-            ],
+            ]],
           },
           {
             "isCode": false,
             "label": "Skill icon",
             "modified": "",
             "original": "🚀",
-            "parts": [
+            "unifiedLines": [[
               {
                 "kind": "removed",
                  "value": "🚀"
                }
-            ]
+            ]]
           },
           {
             "children": [
@@ -307,7 +312,7 @@ describe('diffs', () => {
                 "label": "Name",
                 "modified": "Second name",
                 "original": "First name",
-                "parts": [
+                "unifiedLines": [[
                   {
                     "kind": "removed",
                     "value": "First"
@@ -320,26 +325,26 @@ describe('diffs', () => {
                     "kind": "unchanged",
                     "value": " name"
                   }
-                ]
+                ]]
               },
               {
                 "isCode": false,
                 "label": "Description",
                 "modified": "A description",
                 "original": "",
-                "parts": [
+                "unifiedLines": [[
                   {
                     "kind": "added",
                     "value": "A description"
                   }
-                ]
+                ]]
               },
               {
                 "isCode": true,
                 "label": "Response template",
                 "modified": "Another template",
                 "original": "A template",
-                "parts": [
+                "unifiedLines": [[
                   {
                     "kind": "removed",
                     "value": "A"
@@ -352,14 +357,14 @@ describe('diffs', () => {
                     "kind": "unchanged",
                     "value": " template"
                   }
-                ]
+                ]]
               },
               {
                 "isCode": true,
                 "label": "Code",
                 "modified": "use strict; // so strict",
                 "original": "use strict;",
-                "parts": [
+                "unifiedLines": [[
                   {
                     "kind": "unchanged",
                     "value": "use strict;"
@@ -368,7 +373,7 @@ describe('diffs', () => {
                     "kind": "added",
                     "value": " // so strict"
                   }
-                ]
+                ]]
               },
               {
                 "label": "Always responds privately",
@@ -419,7 +424,7 @@ describe('diffs', () => {
                     "label": "Question",
                     "modified": "who drives the car?",
                     "original": "what drives the car?",
-                    "parts": [
+                    "unifiedLines": [[
                       {
                         "kind": "removed",
                         "value": "what"
@@ -432,7 +437,7 @@ describe('diffs', () => {
                         "kind": "unchanged",
                         "value": " drives the car?"
                       }
-                    ]
+                    ]]
                   },
                   {
                     "label": "Data type",
@@ -518,7 +523,7 @@ describe('diffs', () => {
                 "label": "Name",
                 "modified": "some-lib-revised",
                 "original": "some-lib",
-                "parts": [
+                "unifiedLines": [[
                   {
                     "kind": "unchanged",
                     "value": "some-lib"
@@ -527,14 +532,14 @@ describe('diffs', () => {
                     "kind": "added",
                     "value": "-revised"
                   }
-                ]
+                ]]
               },
               {
                 "isCode": false,
                 "label": "Description",
                 "modified": "A library (revised)",
                 "original": "A library",
-                "parts": [
+                "unifiedLines": [[
                   {
                     "kind": "unchanged",
                     "value": "A library"
@@ -543,14 +548,14 @@ describe('diffs', () => {
                     "kind": "added",
                     "value": " (revised)"
                   }
-                ]
+                ]]
               },
               {
                 "isCode": true,
                 "label": "Code",
                 "modified": "return \"foo\";",
                 "original": "return \"foo\"",
-                "parts": [
+                "unifiedLines": [[
                   {
                     "kind": "unchanged",
                     "value": "return \"foo"
@@ -563,7 +568,7 @@ describe('diffs', () => {
                     "kind": "added",
                     "value": "\";"
                   }
-                ]
+                ]]
               }
             ]
           },
@@ -617,6 +622,139 @@ describe('diffs', () => {
 
     });
 
+  });
+
+  describe('MultiLineTextPropertyDiff', () => {
+    it('handles a single line', () => {
+      const left = `cat`;
+      const right = `dog`;
+      const result = textDiff(left, right);
+      expect(result.oldLines).toEqual([[new TextPart("cat", false, true)]]);
+      expect(result.newLines).toEqual([[new TextPart("dog", true)]]);
+      expect(result.unifiedLines).toEqual([[new TextPart("cat", false, true), new TextPart("dog", true)]]);
+    });
+
+    it('handles removing a line', () => {
+      const left = `cat
+dog
+bear
+`;
+      const right = `cat
+bear
+`;
+      const result = textDiff(left, right);
+      expect(result.oldLines).toEqual([
+        [new TextPart("cat\n")],
+        [new TextPart("dog\n", false, true)],
+        [new TextPart("bear\n")],
+        []
+      ]);
+      expect(result.newLines).toEqual([
+        [new TextPart("cat\n")],
+        [],
+        [new TextPart("bear\n")],
+        []
+      ]);
+      expect(result.unifiedLines).toEqual([
+        [new TextPart("cat\n")],
+        [new TextPart("dog\n", false, true)],
+        [new TextPart("bear\n")],
+        []
+      ]);
+    });
+
+    it('handles removing new lines', () => {
+      const left = `cat
+
+
+dog`;
+      const right = `cat
+dog`;
+
+      const result = textDiff(left, right);
+      expect(result.oldLines).toEqual([
+        [new TextPart("cat"), new TextPart("\n")],
+        [new TextPart("\n", false, true)],
+        [new TextPart("\n", false, true)],
+        [new TextPart("dog")]
+      ]);
+      expect(result.newLines).toEqual([
+        [new TextPart("cat"), new TextPart("\n")],
+        [],
+        [],
+        [new TextPart("dog")]
+      ]);
+      expect(result.unifiedLines).toEqual([
+        [new TextPart("cat"), new TextPart("\n", false, true)],
+        [new TextPart("\n", false, true)],
+        [new TextPart("\n", false, true)],
+        [new TextPart("\n", true)],
+        [new TextPart("dog")]
+      ]);
+    });
+
+    it('handles adding new lines', () => {
+      const left = `cat
+dog`;
+      const right = `cat
+
+dog
+
+`;
+      const result = textDiff(left, right);
+      expect(result.oldLines).toEqual([
+        [new TextPart("cat"), new TextPart("\n")],
+        [],
+        [{ kind: "unchanged", value: "dog"}]
+      ]);
+      expect(result.newLines).toEqual([
+        [new TextPart("cat"), new TextPart("\n")],
+        [new TextPart("\n", true)],
+        [{ kind: "unchanged", value: "dog"}, new TextPart("\n", true)],
+        [new TextPart("\n", true)],
+        []
+      ]);
+      expect(result.unifiedLines).toEqual([
+        [new TextPart("cat"), new TextPart("\n", false, true)],
+        [new TextPart("\n", true)],
+        [new TextPart("\n", true)],
+        [new TextPart("dog"), new TextPart("\n", true)],
+        [new TextPart("\n", true)],
+        []
+      ]);
+    });
+
+    it('mixed changes', () => {
+      const left = `in an old house in paris
+all covered with vines
+lived twelve little girls
+in two straight lines`;
+      const right = `in a new house in nice, all covered with bricks
+
+lived twelve little boys
+
+with two straight sticks`;
+      const result = textDiff(left, right);
+      expect(result.oldLines).toEqual([
+        [new TextPart("in "), new TextPart("an", false, true),
+          new TextPart(" "), new TextPart("old", false, true),
+          new TextPart(" house in "), new TextPart("paris\n", false, true)],
+        [new TextPart("all covered with "), new TextPart("vines\n", false, true)],
+        [new TextPart("lived twelve little "), new TextPart("girls\n", false, true)],
+        [],
+        [new TextPart("in", false, true), new TextPart(" two straight "), new TextPart("lines", false, true)]
+      ]);
+      expect(result.newLines).toEqual([
+        [new TextPart("in "), new TextPart("a", true),
+          { kind: "unchanged", value: " "}, { kind: "added", value: "new"},
+          new TextPart(" house in "), { kind: "added", value: "nice, "},
+          { kind: "unchanged", value: "all covered with "}, new TextPart("bricks\n", true)],
+        [new TextPart("\n", true)],
+        [{ kind: "unchanged", value: "lived twelve little "}, { kind: "added", value: "boys\n"}],
+        [new TextPart("\n", true)],
+        [new TextPart("with", true), { kind: "unchanged", value: " two straight "}, new TextPart("sticks", true)]
+      ]);
+    });
   });
 
 });

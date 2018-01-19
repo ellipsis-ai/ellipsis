@@ -4,27 +4,16 @@ define(function(require) {
     BehaviorGroup = require('../models/behavior_group'),
     Button = require('../form/button'),
     FormInput = require('../form/input'),
-    GithubActions = require('./github/github_actions'),
-    LinkedGithubRepo = require('../models/linked_github_repo'),
     Textarea = require('../form/textarea'),
     autobind = require('../lib/autobind');
 
   type Props = {
-    csrfToken: string,
     group: BehaviorGroup,
     isModified: boolean,
-    isAdmin: boolean,
-    isLinkedToGithub: boolean,
-    linkedGithubRepo?: LinkedGithubRepo,
     onBehaviorGroupNameChange: (string) => void,
     onBehaviorGroupDescriptionChange: (string) => void,
     onBehaviorGroupIconChange: (string) => void,
-    onDeleteClick: () => void,
-    onSave: (BehaviorGroup, callback?: () => void) => void,
-    onSaveError: (string) => void,
-    onGithubPushClick: () => void,
-    onGithubPullClick: () => void,
-    onChangeGithubLinkClick: () => void
+    onDeleteClick: () => void
   }
 
   class BehaviorGroupEditor extends React.PureComponent<Props> {
@@ -49,61 +38,6 @@ define(function(require) {
       window.location = jsRoutes.controllers.BehaviorImportExportController.export(this.props.group.id).url;
     }
 
-    getGithubAuthUrl(): string {
-      const redirect = jsRoutes.controllers.BehaviorEditorController.edit(this.props.group.id).url;
-      return jsRoutes.controllers.SocialAuthController.authenticateGithub(redirect).url;
-    }
-
-    renderGithubAuth(): React.Node {
-      return (
-        <div className="columns mtxxl">
-          <div className="column">
-            <img height="32" src="/assets/images/logos/GitHub-Mark-64px.png"/>
-          </div>
-          <div className="column align-m">
-            <span>To push code to or pull code from GitHub, you first need to </span>
-            <a href={this.getGithubAuthUrl()}>authenticate your GitHub account.</a>
-          </div>
-        </div>
-      );
-    }
-
-    renderGithubButton(): React.Node {
-      return (
-        <Button
-          className="mrs"
-          onClick={this.props.onChangeGithubLinkClick}
-          disabled={this.props.isModified}
-        >
-          Link skill with GitHub…
-        </Button>
-      );
-    }
-
-    renderGithubActions(): React.Node {
-      if (this.props.isAdmin && this.props.isLinkedToGithub && this.props.linkedGithubRepo) {
-        return (
-          <GithubActions
-            linkedGithubRepo={this.props.linkedGithubRepo}
-            onChangeGithubLinkClick={this.props.onChangeGithubLinkClick}
-            onGithubPullClick={this.props.onGithubPullClick}
-            onGithubPushClick={this.props.onGithubPushClick}
-            isModified={this.props.isModified}
-          />
-        );
-      }
-    }
-
-    renderGithubIntegrationButton(): React.Node {
-      if (this.props.isAdmin) {
-        if (this.props.isLinkedToGithub && !this.props.linkedGithubRepo) {
-          return this.renderGithubButton();
-        } else if (!this.props.isLinkedToGithub) {
-          return this.renderGithubAuth();
-        }
-      }
-    }
-
     render(): React.Node {
       return (
         <div>
@@ -111,10 +45,10 @@ define(function(require) {
 
             <div className="columns columns-elastic">
               <div className="column column-shrink">
-                <h5>Icon</h5>
+                <h5>Emoji</h5>
                 <FormInput
                   className="form-input-borderless form-input-l type-l mbn width-2"
-                  placeholder="Icon"
+                  placeholder="☺"
                   onChange={this.props.onBehaviorGroupIconChange}
                   value={this.props.group.icon || ""}
                 />
@@ -124,7 +58,7 @@ define(function(require) {
                 <FormInput
                   ref={(el) => this.skillName = el}
                   className="form-input-borderless form-input-l type-l type-semibold mbn width-20"
-                  placeholder="Add a title (optional)"
+                  placeholder="Untitled"
                   onChange={this.props.onBehaviorGroupNameChange}
                   value={this.props.group.name || ""}
                 />
@@ -136,7 +70,7 @@ define(function(require) {
               <Textarea
                 ref={(el) => this.skillDescription = el}
                 className="form-input-height-auto"
-                placeholder="Describe the general purpose of this skill (optional). The description is displayed in help."
+                placeholder="Describe the general purpose of this skill. The description is displayed in help."
                 onChange={this.props.onBehaviorGroupDescriptionChange}
                 value={this.props.group.description || ""}
                 rows={"3"}
@@ -158,8 +92,6 @@ define(function(require) {
                 >
                   Export skill as ZIP file
                 </Button>
-
-                {this.renderGithubIntegrationButton()}
               </div>
 
               <div className="column column-shrink">
@@ -173,8 +105,6 @@ define(function(require) {
               </div>
             </div>
           </div>
-
-          {this.renderGithubActions()}
         </div>
 
 

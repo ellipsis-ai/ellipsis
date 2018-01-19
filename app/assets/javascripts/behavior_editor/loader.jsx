@@ -24,7 +24,7 @@ requirejs(['common'], function() {
             onLoad: null
           };
           if (group.id && selectedId) {
-            BrowserUtils.replaceURL(jsRoutes.controllers.BehaviorEditorController.edit(group.id, selectedId).url);
+            BrowserUtils.replaceURL(jsRoutes.controllers.BehaviorEditorController.edit(group.id, selectedId, this.props.showVersions || null).url);
           }
         }
 
@@ -38,7 +38,7 @@ requirejs(['common'], function() {
             },
             this.props.csrfToken
           )
-            .then(r => {
+            .then(() => {
               const linked = new LinkedGithubRepo({ owner: owner, repo: repo });
               this.setState({ linkedGithubRepo: linked }, callback);
             });
@@ -112,6 +112,7 @@ requirejs(['common'], function() {
                 isLinkedToGithub={this.props.isLinkedToGithub}
                 linkedGithubRepo={this.state.linkedGithubRepo}
                 onLinkGithubRepo={this.onLinkGithubRepo}
+                showVersions={this.props.showVersions}
               />
             </Page>
           );
@@ -134,7 +135,8 @@ requirejs(['common'], function() {
         userId: React.PropTypes.string.isRequired,
         isAdmin: React.PropTypes.bool.isRequired,
         isLinkedToGithub: React.PropTypes.bool.isRequired,
-        linkedGithubRepo: React.PropTypes.object
+        linkedGithubRepo: React.PropTypes.object,
+        showVersions: React.PropTypes.bool
       };
 
       ReactDOM.render(

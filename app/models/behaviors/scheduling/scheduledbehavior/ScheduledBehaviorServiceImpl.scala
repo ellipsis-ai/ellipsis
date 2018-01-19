@@ -114,9 +114,7 @@ class ScheduledBehaviorServiceImpl @Inject() (
       all <- allForTeam(team)
       groups <- dataService.behaviorGroups.allFor(team)
       currentGroupVersions <- Future.sequence(groups.map { g =>
-        g.maybeCurrentVersionId.map { versionId =>
-          dataService.behaviorGroupVersions.findWithoutAccessCheck(versionId)
-        }.getOrElse(Future.successful(None))
+        dataService.behaviorGroupVersions.maybeCurrentFor(g)
       }).map(_.flatten)
       currentBehaviorVersions <- Future.sequence(currentGroupVersions.map { gv =>
         dataService.behaviorVersions.allForGroupVersion(gv)

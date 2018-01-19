@@ -16,11 +16,12 @@ case class BehaviorEditorEditConfig(
   userId: String,
   isAdmin: Boolean,
   isLinkedToGithub: Boolean,
-  linkedGithubRepo: Option[LinkedGithubRepoData]
+  linkedGithubRepo: Option[LinkedGithubRepoData],
+  showVersions: Option[Boolean]
 )
 
 object BehaviorEditorEditConfig {
-  def fromEditorData(containerId: String, csrfToken: Option[String], data: BehaviorEditorData): BehaviorEditorEditConfig = {
+  def fromEditorData(containerId: String, csrfToken: Option[String], data: BehaviorEditorData, maybeShowVersions: Option[Boolean]): BehaviorEditorEditConfig = {
     BehaviorEditorEditConfig(
       containerId,
       csrfToken,
@@ -37,7 +38,8 @@ object BehaviorEditorEditConfig {
       data.userId,
       data.isAdmin,
       data.isLinkedToGithub,
-      data.linkedGithubRepo
+      data.linkedGithubRepo,
+      maybeShowVersions
     )
   }
 }

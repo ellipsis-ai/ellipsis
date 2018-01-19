@@ -225,7 +225,7 @@ define(function(require) {
               onToggleActivePanel={this.props.onToggleActivePanel}
               onClearActivePanel={this.props.onClearActivePanel}
               onRenderFooter={this.props.onRenderFooter}
-              onGetFooterHeight={this.props.onGetFooterHeight}
+              footerHeight={this.props.footerHeight}
             />
           </div>
         );

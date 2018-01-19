@@ -22,7 +22,6 @@ define(function(require) {
     triggers: Array<Trigger>;
     config: BehaviorConfig;
     knownEnvVarsUsed: Array<string>;
-    createdAt: ?number;
     shouldRevealCodeEditor: boolean;
     isNew: ?boolean;
 
@@ -54,7 +53,8 @@ define(function(require) {
         description,
         functionBody,
         exportId,
-        editorScrollPosition
+        editorScrollPosition,
+        createdAt
       );
 
       const revealCodeEditor: boolean = shouldRevealCodeEditor || !!functionBody && functionBody.length > 0;
@@ -66,7 +66,6 @@ define(function(require) {
         triggers: { value: triggers || [], enumerable: true },
         config: { value: config, enumerable: true },
         knownEnvVarsUsed: { value: knownEnvVarsUsed || [], enumerable: true },
-        createdAt: { value: createdAt, enumerable: true },
         shouldRevealCodeEditor: { value: revealCodeEditor, enumerable: true }
       });
     }
@@ -116,12 +115,13 @@ define(function(require) {
         value: this.getTriggers()
       }, {
         name: "Inputs",
-        value: this.inputsFor(parent)
+        value: this.inputsFor(parent),
+        isOrderable: true
       }];
     }
 
     namePlaceholderText(): string {
-      return this.isDataType() ? "Data type name (required)" : "Action name (optional)";
+      return this.isDataType() ? "Data type name" : "Action name";
     }
 
     cloneActionText(): string {
@@ -178,9 +178,17 @@ define(function(require) {
     }
 
     diffLabel(): string {
-      const name = this.getName();
-      const typeName = this.getBehaviorVersionTypeName();
-      return name ? `${typeName} “${name}”` : `unnamed ${typeName}`;
+      const itemLabel = this.itemLabel();
+      const kindLabel = this.kindLabel();
+      return itemLabel ? `${kindLabel} “${itemLabel}”` : `unnamed ${kindLabel}`;
+    }
+
+    itemLabel(): ?string {
+      return this.getName();
+    }
+
+    kindLabel(): string {
+      return this.getBehaviorVersionTypeName();
     }
 
     getNewEditorTitle(): string {
@@ -277,18 +285,8 @@ define(function(require) {
       return DeepEqual.isEqual(this.forEqualityComparison(), behaviorVersion.forEqualityComparison());
     }
 
-    timestampForAlphabeticalSort(): string {
-      const timestampString = this.createdAt ? Number(new Date(this.createdAt)).toString() : "";
-      const pad = new Array(16).join("0");
-      return pad.substring(0, pad.length - timestampString.length) + timestampString;
-    }
-
-    sortKey(): string {
-      if (this.isNew) {
-        return "Z" + this.timestampForAlphabeticalSort();
-      } else {
-        return "A" + (this.name || this.getFirstTriggerText() || this.timestampForAlphabeticalSort());
-      }
+    sortKeyForExisting(): ?string {
+      return this.name || this.getFirstTriggerText();
     }
 
     toParamType(): ParamType {

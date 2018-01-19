@@ -41,12 +41,15 @@ class ScheduledActor @Inject()(
         for {
           displayText <- DBIO.from(scheduled.displayText(dataService))
           maybeProfile <- scheduled.botProfileAction(dataService)
+          maybeSlackUserId <- scheduled.maybeUser.map { user =>
+            DBIO.from(dataService.linkedAccounts.maybeSlackUserIdFor(user))
+          }.getOrElse(DBIO.successful(None))
           _ <- maybeProfile.map { profile =>
             scheduled.updateNextTriggeredForAction(dataService).flatMap { _ =>
               DBIO.from(scheduled.send(eventHandler, new SlackApiClient(profile.token), profile, services).recover {
                 case t: Throwable => {
                   val user = scheduled.maybeUser.map { user =>
-                    s"Ellipsis ID ${user.id} / Provider key ${user.loginInfo.providerKey}"
+                    s"Ellipsis ID ${user.id} / Slack ID ${maybeSlackUserId.getOrElse("(unknown)")}"
                   }.getOrElse("(none)")
                   val message =
                     s"""Exception handling scheduled message:

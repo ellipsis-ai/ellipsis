@@ -1,6 +1,6 @@
 // @flow
+export type Timestamp = string | number | Date
 define(function(require) {
-  type Timestamp = string | number | Date
 
   const moment = require('moment');
   const ONE_WEEK_IN_MS = 1000 * 60 * 60 * 24 * 7;
@@ -150,20 +150,14 @@ define(function(require) {
         .replace(/^[.\/]+/, ""); // no leading dots or slashes
     },
 
-    formatGithubRepoName: function(value: string): string {
-      return value.replace(/[^a-z0-9\-_.]/gi, "");
-    },
-
-    formatGithubUserName: function(value: string): string {
-      // Github's join page says:
-      //  Username may only contain alphanumeric characters or single hyphens,
-      //  and cannot begin or end with a hyphen
-      //
-      // However, we cannot strip trailing hyphens since a user might keep typing
-      return value
-        .replace(/[^a-z0-9\-]/gi, "")
-        .replace(/-+/, "-")
-        .replace(/^-+/, "");
+    leftPad(value: number | string, length: number): string {
+      const asString = String(value);
+      const numSpaces = length - asString.length;
+      if (numSpaces > 0) {
+        return new Array(numSpaces + 1).join("\u00A0") + asString;
+      } else {
+        return asString;
+      }
     }
   };
 

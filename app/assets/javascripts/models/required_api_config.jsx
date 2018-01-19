@@ -18,7 +18,17 @@ define(function() {
     }
 
     diffLabel(): string {
-      return `required ${this.apiId} configuration "${this.nameInCode}"`;
+      const itemLabel = this.itemLabel();
+      const kindLabel = this.kindLabel();
+      return itemLabel ? `${kindLabel} "${itemLabel}"`: `unnamed ${kindLabel}`;
+    }
+
+    itemLabel(): ?string {
+      return this.nameInCode;
+    }
+
+    kindLabel(): string {
+      return `required API configuration`;
     }
 
     getIdForDiff(): string {

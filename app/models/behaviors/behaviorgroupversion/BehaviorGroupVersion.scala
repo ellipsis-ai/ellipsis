@@ -22,8 +22,6 @@ case class BehaviorGroupVersion(
 
   val functionName: String = BehaviorGroupVersion.functionNameFor(id)
 
-  def isCurrentVersion: Boolean = group.maybeCurrentVersionId.contains(id)
-
   def exportName: String = {
     Option(SafeFileName.forName(name)).filter(_.nonEmpty).getOrElse(id)
   }

@@ -45,7 +45,6 @@ define(function(require) {
         selectedBehaviorGroup: null,
         checkedGroupIds: [],
         isSubmitting: false,
-        footerHeight: 0,
         searchText: ""
       };
     },
@@ -119,13 +118,6 @@ define(function(require) {
 
     getLocalBehaviorGroupsJustInstalled: function() {
       return this.props.recentlyInstalled;
-    },
-
-    resetFooterHeight: function() {
-      var footerHeight = this.props.onGetFooterHeight();
-      if (this.state.footerHeight !== footerHeight) {
-        this.setState({ footerHeight: footerHeight });
-      }
     },
 
     getCheckedGroupIds: function() {
@@ -556,7 +548,7 @@ define(function(require) {
     render: function() {
       return (
         <div>
-          <div style={{ paddingBottom: `${this.state.footerHeight}px` }}>
+          <div style={{ paddingBottom: `${this.props.footerHeight}px` }}>
             {this.renderIntro()}
 
             <div className={(this.hasLocalBehaviorGroups() ? "bg-lightest" : "")}>
@@ -576,7 +568,6 @@ define(function(require) {
               ref="moreInfo"
               revealWhen={this.getActivePanelName() === 'moreInfo'}
               animationDuration={this.getAnimationDuration()}
-              onChange={this.resetFooterHeight}
             >
               <BehaviorGroupInfoPanel
                 groupData={this.getSelectedBehaviorGroup()}
@@ -593,7 +584,6 @@ define(function(require) {
               ref="afterInstall"
               revealWhen={this.hasRecentlyInstalledBehaviorGroups() && this.getActivePanelName() === 'afterInstall'}
               animationDuration={this.getAnimationDuration()}
-              onChange={this.resetFooterHeight}
             >
               <InstalledBehaviorGroupsPanel
                 installedBehaviorGroups={this.getLocalBehaviorGroupsJustInstalled()}
@@ -603,7 +593,6 @@ define(function(require) {
             </Collapsible>
             <Collapsible
               revealWhen={!this.props.activePanelIsModal && this.getCheckedGroupIds().length > 0}
-              onChange={this.resetFooterHeight}
             >
               <div className="border-top">
                 <div className="container container-c ptm">
@@ -613,7 +602,6 @@ define(function(require) {
             </Collapsible>
             <Collapsible ref="confirmDeleteBehaviorGroups"
               revealWhen={this.getActivePanelName() === 'confirmDeleteBehaviorGroups'}
-              onChange={this.resetFooterHeight}
             >
               <ConfirmActionPanel
                 confirmText="Delete"
@@ -627,7 +615,6 @@ define(function(require) {
             </Collapsible>
             <Collapsible ref="confirmMergeBehaviorGroups"
               revealWhen={this.getActivePanelName() === 'confirmMergeBehaviorGroups'}
-              onChange={this.resetFooterHeight}
             >
               <ConfirmActionPanel
                 confirmText="Merge"

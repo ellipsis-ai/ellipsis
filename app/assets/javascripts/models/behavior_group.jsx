@@ -99,7 +99,11 @@ define(function(require) {
     }
 
     getName(): string {
-      return this.name || "Untitled skill";
+      return this.name || this.getUntitledName();
+    }
+
+    getUntitledName(): string {
+      return this.id ? "Untitled skill" : "New skill";
     }
 
     getDescription(): string {
@@ -224,8 +228,17 @@ define(function(require) {
     }
 
     diffLabel(): string {
-      const name = this.getName();
-      return name ? `skill “${name}”` : `untitled skill`;
+      const itemLabel = this.itemLabel();
+      const kindLabel = this.kindLabel();
+      return itemLabel ? `${kindLabel} “${itemLabel}”` : `untitled ${kindLabel}`;
+    }
+
+    itemLabel(): ?string {
+      return this.getName();
+    }
+
+    kindLabel(): string {
+      return "skill";
     }
 
     getIdForDiff(): string {

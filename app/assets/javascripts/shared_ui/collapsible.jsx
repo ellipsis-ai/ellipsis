@@ -69,7 +69,7 @@ bounds, max-height/width and overflow get cleared after reveal, and reset before
     var f = () => {
       callback();
       if (this.props.onChange) {
-        this.props.onChange();
+        this.props.onChange(this.props.revealWhen);
       }
     };
     if (this.animationDisabled()) {

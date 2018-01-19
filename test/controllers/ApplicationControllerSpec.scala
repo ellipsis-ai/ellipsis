@@ -34,7 +34,7 @@ class ApplicationControllerSpec extends PlaySpec with MockitoSugar {
         val behaviorId = IDs.next
         val groupVersionId = IDs.next
         val groupName = "some skill"
-        val behaviorGroup = BehaviorGroup(groupId, None, team, Some(groupVersionId), OffsetDateTime.now)
+        val behaviorGroup = BehaviorGroup(groupId, None, team, OffsetDateTime.now)
         val behavior = Behavior(behaviorId, team, Some(behaviorGroup), None, false, OffsetDateTime.now)
         val behaviorGroupVersion = BehaviorGroupVersion(groupVersionId, behaviorGroup, groupName, None, None, None, None, OffsetDateTime.now)
         val behaviorVersion = BehaviorVersion(IDs.next, behavior, behaviorGroupVersion, None, None, None, None, false, None, OffsetDateTime.now)
@@ -45,6 +45,7 @@ class ApplicationControllerSpec extends PlaySpec with MockitoSugar {
         when(dataService.behaviorGroups.allFor(team)).thenReturn(Future.successful(Seq(behaviorGroup)))
         when(dataService.behaviorGroups.find(groupId, user)).thenReturn(Future.successful(Some(behaviorGroup)))
         when(dataService.behaviorGroupVersions.findWithoutAccessCheck(groupVersionId)).thenReturn(Future.successful(Some(behaviorGroupVersion)))
+        when(dataService.behaviorGroupVersions.maybeCurrentFor(behaviorGroup)).thenReturn(Future.successful(Some(behaviorGroupVersion)))
         when(dataService.behaviors.allForGroup(behaviorGroup)).thenReturn(Future.successful(Seq(behavior)))
         when(dataService.inputs.allForGroupVersion(behaviorGroupVersion)).thenReturn(Future.successful(Seq()))
         when(dataService.libraries.allFor(behaviorGroupVersion)).thenReturn(Future.successful(Seq()))

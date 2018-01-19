@@ -3,6 +3,7 @@ var React = require('react'),
   APIConfigPanel = require('./api_config_panel'),
   AWSConfigRef = require('../models/aws').AWSConfigRef,
   BehaviorGroup = require('../models/behavior_group'),
+  BehaviorGroupSaveInfo = require('./behavior_group_save_info'),
   BehaviorGroupVersionMetaData = require('../models/behavior_group_version_meta_data'),
   BehaviorGroupEditor = require('./behavior_group_editor'),
   BehaviorVersion = require('../models/behavior_version'),
@@ -10,6 +11,7 @@ var React = require('react'),
   BehaviorTester = require('./behavior_tester'),
   DataTypeTester = require('./data_type_tester'),
   BehaviorCodeHelp = require('./behavior_code_help'),
+  Button = require('../form/button'),
   ChangeSummary = require('./change_summary'),
   CodeConfiguration = require('./code_configuration'),
   CodeEditorHelp = require('./code_editor_help'),
@@ -24,9 +26,6 @@ var React = require('react'),
   DynamicLabelButton = require('../form/dynamic_label_button'),
   EnvVariableAdder = require('../settings/environment_variables/adder'),
   EnvVariableSetter = require('../settings/environment_variables/setter'),
-  GithubLinkPanel = require('./github/github_link_panel'),
-  GithubPullPanel = require('./github/github_pull_panel'),
-  GithubPushPanel = require('./github/github_push_panel'),
   HiddenJsonInput = require('./hidden_json_input'),
   Input = require('../models/input'),
   Formatter = require('../lib/formatter'),
@@ -59,7 +58,7 @@ var React = require('react'),
   TriggerHelp = require('./trigger_help'),
   UniqueBy = require('../lib/unique_by'),
   UserInputConfiguration = require('./user_input_configuration'),
-  VersionsPanel = require('./versions_panel'),
+  VersionBrowser = require('./versions/version_browser'),
   SVGWarning = require('../svg/warning'),
   Collapsible = require('../shared_ui/collapsible'),
   CsrfTokenHiddenInput = require('../shared_ui/csrf_token_hidden_input'),
@@ -111,7 +110,8 @@ const BehaviorEditor = React.createClass({
     onLoad: React.PropTypes.func,
     userId: React.PropTypes.string.isRequired,
     isAdmin: React.PropTypes.bool.isRequired,
-    isLinkedToGithub: React.PropTypes.bool.isRequired
+    isLinkedToGithub: React.PropTypes.bool.isRequired,
+    showVersions: React.PropTypes.bool
   }),
 
   getDefaultProps: function() {
@@ -401,16 +401,6 @@ const BehaviorEditor = React.createClass({
     });
   },
 
-  getEnvVariableAdderPromptFor: function(property) {
-    var adderString = AWSEnvVariableStrings[property];
-    if (adderString) {
-      return "Add a new environment variable to hold a value for the " + adderString;
-    } else {
-      return null;
-    }
-
-  },
-
   getInputWithSavedAnswers: function() {
     if (this.state.selectedSavedAnswerInputId) {
       return this.getInputs().find(ea => ea.inputId === this.state.selectedSavedAnswerInputId);
@@ -479,32 +469,6 @@ const BehaviorEditor = React.createClass({
   },
 
   CONFIGURE_API_NAME: "configureApi",
-
-  GITHUB_PULL_PANEL_NAME: "githubPullPanel",
-  GITHUB_PUSH_PANEL_NAME: "githubPushPanel",
-  GITHUB_LINK_PANEL_NAME: "githubLinkPanel",
-
-  onGithubLinkClick: function() {
-    this.toggleActivePanel(this.GITHUB_LINK_PANEL_NAME, true, () => {
-      if (this.githubLinkPanel) {
-        this.githubLinkPanel.focus();
-      }
-    });
-  },
-  onGithubPullClick: function() {
-    this.toggleActivePanel(this.GITHUB_PULL_PANEL_NAME, true, () => {
-      if (this.githubPullPanel) {
-        this.githubPullPanel.focus();
-      }
-    });
-  },
-  onGithubPushClick: function() {
-    this.toggleActivePanel(this.GITHUB_PUSH_PANEL_NAME, true, () => {
-      if (this.githubPushPanel) {
-        this.githubPushPanel.focus();
-      }
-    });
-  },
 
   isConfiguringApi: function() {
     return this.props.activePanelName === this.CONFIGURE_API_NAME;
@@ -728,11 +692,6 @@ const BehaviorEditor = React.createClass({
     this.setEditableProp('triggers', this.getBehaviorTriggers().concat(Trigger.fromProps({})), callback);
   },
 
-  cancelVersionPanel: function() {
-    this.props.onClearActivePanel();
-    this.showVersionIndex(0);
-  },
-
   cloneEditable: function() {
     const editable = this.getSelected();
     if (editable) {
@@ -796,7 +755,7 @@ const BehaviorEditor = React.createClass({
 
   getLeftPanelCoordinates: function() {
     var headerHeight = this.getHeaderHeight();
-    var footerHeight = this.props.activePanelIsModal ? 0 : this.props.onGetFooterHeight();
+    var footerHeight = this.props.activePanelIsModal ? 0 : this.props.footerHeight;
     var windowHeight = window.innerHeight;
 
     var availableHeight = windowHeight - headerHeight - footerHeight;
@@ -819,7 +778,7 @@ const BehaviorEditor = React.createClass({
   checkMobileLayout: function() {
     if (this.hasMobileLayout() !== this.windowIsMobile()) {
       this.setState({
-        behaviorSwitcherVisible: this.isExistingGroup() && !this.windowIsMobile(),
+        behaviorSwitcherVisible: !this.windowIsMobile(),
         hasMobileLayout: this.windowIsMobile()
       });
     }
@@ -859,7 +818,7 @@ const BehaviorEditor = React.createClass({
           return BehaviorGroup.fromJson(version);
         });
         this.setState({
-          versions: this.state.versions.concat(versions),
+          versions: versions,
           versionsLoadStatus: 'loaded'
         });
         this.refs.versionsPanel.reset();
@@ -998,25 +957,14 @@ const BehaviorEditor = React.createClass({
     this.checkDataAndCallback(() => { this.backgroundSave(optionalCallback); });
   },
 
-  onReplaceBehaviorGroup: function(newGroupData, optionalCallback) {
-    this.setState({ group: newGroupData }, () => this.onSaveBehaviorGroup(optionalCallback));
-  },
-
-  showVersionIndex: function(versionIndex, optionalCallback) {
-    const version = this.getVersions()[versionIndex];
-    const stateUpdates = {
-      group: version
+  onReplaceBehaviorGroup: function(newBehaviorGroup, optionalCallback) {
+    const newState = {
+      group: newBehaviorGroup
     };
-    if (!version.hasBehaviorVersionWithId(this.getSelectedId())) {
-      stateUpdates.selectedId = null;
+    if (!newBehaviorGroup.hasBehaviorVersionWithId(this.getSelectedId())) {
+      newState.selectedId = null;
     }
-    this.setState(stateUpdates, optionalCallback);
-  },
-
-  restoreVersionIndex: function(versionIndex) {
-    this.showVersionIndex(versionIndex, function() {
-      this.onSaveBehaviorGroup();
-    });
+    this.setState(newState, () => this.onSaveBehaviorGroup(optionalCallback));
   },
 
   setEditableProp: function(key, value, callback) {
@@ -1068,11 +1016,8 @@ const BehaviorEditor = React.createClass({
       selectedIdAfter = selectedIdBefore;
     }
 
-    const updatedVersions = ImmutableObjectUtils.arrayWithNewElementAtIndex(this.state.versions, timestampedGroup, 0);
-
     this.setState({
       group: timestampedGroup,
-      versions: updatedVersions,
       selectedId: selectedIdAfter
     }, () => {
       if (callback) {
@@ -1112,7 +1057,19 @@ const BehaviorEditor = React.createClass({
     if (!this.versionsMaybeLoaded()) {
       this.loadVersions();
     }
-    this.toggleActivePanel('versionHistory', true);
+    this.toggleActivePanel('versionBrowser', false, this.updateVersionBrowserOpenState);
+  },
+
+  updateVersionBrowserOpenState: function() {
+    this.setState({
+      versionBrowserOpen: this.props.activePanelName === 'versionBrowser'
+    }, () => {
+      if (this.state.versionBrowserOpen) {
+        BrowserUtils.replaceQueryParam("showVersions", "true");
+      } else {
+        BrowserUtils.removeQueryParam("showVersions");
+      }
+    });
   },
 
   toggleActiveDropdown: function(name) {
@@ -1202,10 +1159,6 @@ const BehaviorEditor = React.createClass({
 
   toggleTriggerHelp: function() {
     this.toggleActivePanel('helpForTriggerParameters');
-  },
-
-  toggleVersionListMenu: function() {
-    this.toggleActiveDropdown('versionList');
   },
 
   updateCode: function(newCode) {
@@ -1422,10 +1375,6 @@ const BehaviorEditor = React.createClass({
     return this.getSelectedBehavior() && this.getSelectedBehavior().isDataType();
   },
 
-  isLibrary: function() {
-    return !!this.getSelectedLibrary();
-  },
-
   isSearchDataTypeBehavior: function() {
     return this.isDataTypeBehavior() && this.hasInputNamed('searchQuery');
   },
@@ -1455,24 +1404,16 @@ const BehaviorEditor = React.createClass({
 
   isModified: function() {
     var currentMatchesInitial = this.props.group.isIdenticalTo(this.getBehaviorGroup());
-    var previewingVersions = this.props.activePanelName === 'versionHistory';
-    return !currentMatchesInitial && !previewingVersions;
+    return !currentMatchesInitial;
   },
 
   editableIsModified: function(current) {
     var original = this.props.group.getEditables().find((ea) => ea.getPersistentId() === current.getPersistentId());
-    var previewingVersions = this.props.activePanelName === 'versionHistory';
-    return !previewingVersions && !(original && current.isIdenticalToVersion(original));
+    return !(original && current.isIdenticalToVersion(original));
   },
 
   isSaving: function() {
     return this.props.activePanelName === 'saving';
-  },
-
-  shouldFilterCurrentVersion: function() {
-    var firstTwoVersions = this.getVersions().slice(0, 2);
-    return firstTwoVersions.length === 2 &&
-      firstTwoVersions[0].isIdenticalTo(firstTwoVersions[1]);
   },
 
   versionsMaybeLoaded: function() {
@@ -1482,7 +1423,7 @@ const BehaviorEditor = React.createClass({
   /* Interaction and event handling */
 
   ensureCursorVisible: function(editor) {
-    const height = this.props.onGetFooterHeight();
+    const height = this.props.footerHeight;
     if (!height) {
       return;
     }
@@ -1667,6 +1608,9 @@ const BehaviorEditor = React.createClass({
     window.addEventListener('focus', this.checkForUpdates, false);
     this.checkForUpdatesLater();
     this.loadNodeModuleVersions();
+    if (this.props.showVersions) {
+      this.showVersions();
+    }
   },
 
   // componentDidUpdate: function() {
@@ -1721,7 +1665,7 @@ const BehaviorEditor = React.createClass({
       envVariables: this.getInitialEnvVariables(),
       hasModifiedTemplate: hasModifiedTemplate,
       notifications: this.buildNotifications(),
-      versions: [this.props.group.copyWithNewTimestamp()],
+      versions: [],
       versionsLoadStatus: null,
       onNextNewEnvVar: null,
       envVariableAdderPrompt: null,
@@ -1733,14 +1677,15 @@ const BehaviorEditor = React.createClass({
       paramNameToSync: null,
       error: null,
       selectedSavedAnswerInputId: null,
-      behaviorSwitcherVisible: this.isExistingGroup() && !this.windowIsMobile(),
+      behaviorSwitcherVisible: !this.windowIsMobile(),
       hasMobileLayout: this.windowIsMobile(),
       animationDisabled: false,
       lastSavedDataStorageItem: null,
       nodeModuleVersions: [],
       selectedApiConfigId: null,
       newerVersionOnServer: null,
-      errorReachingServer: null
+      errorReachingServer: null,
+      versionBrowserOpen: false
     };
   },
 
@@ -1749,13 +1694,10 @@ const BehaviorEditor = React.createClass({
       var newGroup = nextProps.group;
       var newState = {
         group: newGroup,
-        versions: [newGroup.copyWithNewTimestamp()],
+        versions: [],
         versionsLoadStatus: null,
         error: null
       };
-      if (!this.props.group.id && nextProps.group.id  && !this.windowIsMobile()) {
-        newState.behaviorSwitcherVisible = true;
-      }
       this.props.onClearActivePanel();
       this.setState(newState);
       if (typeof(nextProps.onLoad) === 'function') {
@@ -1873,47 +1815,6 @@ const BehaviorEditor = React.createClass({
             </APIConfigPanel>
           </Collapsible>
 
-          <Collapsible ref={this.GITHUB_LINK_PANEL_NAME}
-                       revealWhen={this.props.activePanelName === this.GITHUB_LINK_PANEL_NAME}
-                       onChange={this.layoutDidUpdate}
-          >
-            <GithubLinkPanel
-              ref={(el) => this.githubLinkPanel = el}
-              group={this.getBehaviorGroup()}
-              linked={this.props.linkedGithubRepo}
-              onDoneClick={this.props.onClearActivePanel}
-              onLinkGithubRepo={this.props.onLinkGithubRepo}
-              csrfToken={this.props.csrfToken}
-            />
-          </Collapsible>
-
-          <Collapsible ref={this.GITHUB_PULL_PANEL_NAME}
-                       revealWhen={this.props.activePanelName === this.GITHUB_PULL_PANEL_NAME}
-                       onChange={this.layoutDidUpdate}
-          >
-            <GithubPullPanel
-              ref={(el) => this.githubPullPanel = el}
-              group={this.getBehaviorGroup()}
-              linked={this.props.linkedGithubRepo}
-              onDoneClick={this.props.onClearActivePanel}
-              onSave={this.onReplaceBehaviorGroup}
-              csrfToken={this.props.csrfToken}
-            />
-          </Collapsible>
-
-          <Collapsible ref={this.GITHUB_PUSH_PANEL_NAME}
-                       revealWhen={this.props.activePanelName === this.GITHUB_PUSH_PANEL_NAME}
-                       onChange={this.layoutDidUpdate}
-          >
-            <GithubPushPanel
-              ref={(el) => this.githubPushPanel = el}
-              group={this.getBehaviorGroup()}
-              linked={this.props.linkedGithubRepo}
-              onDoneClick={this.props.onClearActivePanel}
-              csrfToken={this.props.csrfToken}
-            />
-          </Collapsible>
-
           <Collapsible ref="confirmUndo" revealWhen={this.props.activePanelName === 'confirmUndo'} onChange={this.layoutDidUpdate}>
             <ConfirmActionPanel confirmText="Undo changes" onConfirmClick={this.undoChanges} onCancelClick={this.props.onClearActivePanel}>
               <p>This will undo any changes you’ve made since last saving. Are you sure you want to do this?</p>
@@ -1969,19 +1870,6 @@ const BehaviorEditor = React.createClass({
               firstParamName={this.getFirstBehaviorInputName()}
               template={this.getBehaviorTemplate()}
               onCollapseClick={this.props.onClearActivePanel}
-            />
-          </Collapsible>
-
-          <Collapsible ref="versionHistory" revealWhen={this.props.activePanelName === 'versionHistory'} onChange={this.layoutDidUpdate}>
-            <VersionsPanel
-              ref="versionsPanel"
-              menuToggle={this.toggleVersionListMenu}
-              onCancelClick={this.cancelVersionPanel}
-              onRestoreClick={this.restoreVersionIndex}
-              onSwitchVersions={this.showVersionIndex}
-              openMenuWhen={this.getActiveDropdown() === 'versionList'}
-              shouldFilterCurrentVersion={this.shouldFilterCurrentVersion()}
-              versions={this.getVersions()}
             />
           </Collapsible>
 
@@ -2077,7 +1965,7 @@ const BehaviorEditor = React.createClass({
             </div>
           </Collapsible>
 
-          <Collapsible revealWhen={!this.props.activePanelIsModal} onChange={this.layoutDidUpdate} animationDisabled={this.animationIsDisabled()}>
+          <Collapsible revealWhen={!this.props.activePanelIsModal && this.props.activePanelName !== 'versionBrowser'} onChange={this.layoutDidUpdate} animationDisabled={this.animationIsDisabled()}>
             <Notifications notifications={this.getNotifications()} />
             <div className="container container-wide ptm border-top">
               <div>
@@ -2096,10 +1984,10 @@ const BehaviorEditor = React.createClass({
                     className="button-primary mrs mbm"
                     disabledWhen={!this.isModified() || this.isSaving()}
                   />
-                  <button className="mrs mbm" type="button" disabled={!this.isModified() || this.isSaving()} onClick={this.confirmUndo}>
+                  <Button className="mrs mbm" disabled={!this.isModified() || this.isSaving()} onClick={this.confirmUndo}>
                     <span className="mobile-display-none">Undo changes</span>
                     <span className="mobile-display-only">Undo</span>
-                  </button>
+                  </Button>
                   {this.isTestable() ? (
                     <DynamicLabelButton
                       labels={[{
@@ -2113,11 +2001,11 @@ const BehaviorEditor = React.createClass({
                       className={`mbm ${this.isExistingGroup() ? "mrs" : "mrl"}`} onClick={this.checkIfModifiedAndTest}
                     />) : null}
                   {this.isExistingGroup() ? (
-                    <button type="button"
+                    <Button
                       className="mrl mbm"
                       onClick={this.showVersions}>
-                      Version history…
-                    </button>
+                      {this.isModified() ? "Review changes…" : "Compare versions…"}
+                    </Button>
                   ) : null}
                   <div className="display-inline-block align-button mbm">
                     {this.renderFooterStatus()}
@@ -2131,10 +2019,6 @@ const BehaviorEditor = React.createClass({
   },
 
   renderFooterStatus: function() {
-    const group = this.props.group;
-    const lastSaved = group.createdAt;
-    const lastSavedByCurrentUser = group.author && group.author.id === this.props.userId;
-    const authorName = group.author && group.author.userName ? group.author.formattedFullNameOrUserName() : null;
     if (this.state.error === 'not_saved') {
       return (
         <span className="fade-in type-pink type-bold type-italic">
@@ -2149,21 +2033,25 @@ const BehaviorEditor = React.createClass({
           <span>{this.state.error}</span>
         </span>
       );
-    } else if (this.isLatestSavedVersion() && lastSaved) {
+    } else if (this.isLatestSavedVersion() && this.props.group.createdAt) {
       return (
-        <span className="fade-in type-green type-bold type-italic">
-          <span>{lastSavedByCurrentUser ? "You last saved" : "Last saved"} </span>
-          <span>{Formatter.formatTimestampRelativeIfRecent(lastSaved)}</span>
-          <span> {!lastSavedByCurrentUser && authorName ? `by ${authorName}` : ""}</span>
-        </span>
+        <BehaviorGroupSaveInfo
+          className="fade-in type-green type-bold type-italic"
+          group={this.props.group}
+          currentUserId={this.props.userId}
+          isCurrentVersion={true}
+        />
       );
     } else if (this.isModified()) {
       return (
-        <ChangeSummary
-          currentGroupVersion={this.getBehaviorGroup()}
-          originalGroupVersion={this.props.group}
-          isModified={this.editableIsModified}
-        />
+        <span className="fade-in type-pink type-italic">
+          <span className="type-bold">Unsaved changes </span>
+            <ChangeSummary
+              currentGroupVersion={this.getBehaviorGroup()}
+              originalGroupVersion={this.props.group}
+              isModified={this.editableIsModified}
+            />
+        </span>
       );
     } else {
       return "";
@@ -2190,23 +2078,15 @@ const BehaviorEditor = React.createClass({
   },
 
   renderSwitcherToggle: function() {
-    if ((!this.behaviorSwitcherIsVisible() || this.windowIsMobile()) && this.isExistingGroup()) {
+    if (this.windowIsMobile()) {
       return (
         <div className="bg-white container container-wide type-weak border-bottom display-ellipsis display-limit-width">
-          <button type="button" className="button-tab button-tab-subtle" onClick={this.toggleBehaviorSwitcher}>
+          <Button className="button-tab button-tab-subtle" onClick={this.toggleBehaviorSwitcher}>
             <span className="display-inline-block align-t mrm" style={{ height: "24px" }}>
               <SVGHamburger />
             </span>
-            <h4 className="type-black display-inline-block align-m man">
-              {this.getBehaviorGroup().getName()}
-            </h4>
-          </button>
-        </div>
-      );
-    } else if (!this.isExistingGroup()) {
-      return (
-        <div className="bg-white container container-wide pvm border-bottom">
-          <h4 className="man">New skill</h4>
+            <h4 className="type-black display-inline-block align-m man">{this.getBehaviorGroup().getName()}</h4>
+          </Button>
         </div>
       );
     }
@@ -2217,7 +2097,7 @@ const BehaviorEditor = React.createClass({
     return selected ? selected.editorScrollPosition : 0;
   },
 
-  onSelect: function(groupId, id, optionalCallback) {
+  onSelect: function(optionalGroupId, id, optionalCallback) {
     var newState = {
       animationDisabled: true,
       selectedId: id
@@ -2226,8 +2106,8 @@ const BehaviorEditor = React.createClass({
       newState.behaviorSwitcherVisible = false;
     }
     this.setState(newState, () => {
-      if (groupId) {
-        BrowserUtils.replaceURL(jsRoutes.controllers.BehaviorEditorController.edit(groupId, id).url);
+      if (optionalGroupId) {
+        BrowserUtils.replaceURL(jsRoutes.controllers.BehaviorEditorController.edit(optionalGroupId, id).url);
       }
       var newScrollPosition = this.getEditorScrollPosition();
       window.scrollTo(window.scrollX, typeof(newScrollPosition) === 'number' ? newScrollPosition : 0);
@@ -2314,15 +2194,16 @@ const BehaviorEditor = React.createClass({
       <div ref="leftColumn"
         className={
           "column column-page-sidebar flex-column flex-column-left bg-white " +
-          "border-right prn position-relative mobile-position-fixed-top-full mobile-position-z-front " +
-          (this.behaviorSwitcherIsVisible() || this.hasMobileLayout()  ? "" : "display-none")
+          "border-right prn position-relative mobile-position-fixed-top-full mobile-position-z-front "
         }
       >
         <Collapsible revealWhen={this.behaviorSwitcherIsVisible()} animationDisabled={!this.hasMobileLayout()}>
           <Sticky ref="leftPanel" onGetCoordinates={this.getLeftPanelCoordinates} innerClassName="position-z-above" disabledWhen={this.hasMobileLayout()}>
-            <div className="position-absolute position-top-right mtm mobile-mts mobile-mrs">
-              <CollapseButton onClick={this.toggleBehaviorSwitcher} direction={this.windowIsMobile() ? "up" : "left"} />
-            </div>
+            {this.windowIsMobile() ? (
+              <div className="position-absolute position-top-right mtm mobile-mts mobile-mrs">
+                <CollapseButton onClick={this.toggleBehaviorSwitcher} direction={"up"} />
+              </div>
+            ) : null}
             <BehaviorSwitcher
               ref="behaviorSwitcher"
               actionBehaviors={this.getActionBehaviors()}
@@ -2371,26 +2252,26 @@ const BehaviorEditor = React.createClass({
             {this.isExisting() ? (
               <div>
                 <div className="mobile-display-inline-block mobile-mrs align-t">
-                  <button type="button"
+                  <Button
                     className="button-s mbs"
                     onClick={this.cloneEditable}>
                     {this.getSelected().cloneActionText()}
-                  </button>
+                  </Button>
                 </div>
                 <div className="mobile-display-inline-block align-t">
-                  <button type="button"
+                  <Button
                     className="button-s"
                     onClick={this.confirmDeleteEditable}>
                     {this.getSelected().deleteActionText()}
-                  </button>
+                  </Button>
                 </div>
               </div>
             ) : (
               <div>
-                <button type="button"
+                <Button
                   className="button-s"
                   onClick={this.deleteEditable}
-                >{this.getSelected().cancelNewText()}</button>
+                >{this.getSelected().cancelNewText()}</Button>
               </div>
             )}
           </div>
@@ -2468,9 +2349,9 @@ const BehaviorEditor = React.createClass({
                           </p>
                         </div>
                         <div className="column column-shrink align-m mobile-mtm">
-                          <button type="button" className="button-s" onClick={this.toggleCodeEditor}>
+                          <Button className="button-s" onClick={this.toggleCodeEditor}>
                             Add code
-                          </button>
+                          </Button>
                         </div>
                       </div>
                     </div>
@@ -2615,36 +2496,33 @@ const BehaviorEditor = React.createClass({
     } else {
       return (
         <BehaviorGroupEditor
-          csrfToken={this.props.csrfToken}
           group={this.getBehaviorGroup()}
           isModified={this.isModified()}
-          isAdmin={this.props.isAdmin}
-          isLinkedToGithub={this.props.isLinkedToGithub}
-          linkedGithubRepo={this.props.linkedGithubRepo}
           onBehaviorGroupNameChange={this.onBehaviorGroupNameChange}
           onBehaviorGroupDescriptionChange={this.onBehaviorGroupDescriptionChange}
           onBehaviorGroupIconChange={this.onBehaviorGroupIconChange}
           onDeleteClick={this.confirmDeleteBehaviorGroup}
-          onSave={this.onReplaceBehaviorGroup}
-          onSaveError={this.onSaveError}
-          onGithubPushClick={this.onGithubPushClick}
-          onGithubPullClick={this.onGithubPullClick}
-          onChangeGithubLinkClick={this.onGithubLinkClick}
         />
       );
     }
   },
 
-  render: function() {
+  renderEditorPage: function() {
     return (
-      <div>
-        <form action={this.getFormAction()} method="POST" ref="behaviorForm">
-          <div className="columns flex-columns flex-columns-left mobile-flex-no-columns">
-            {this.renderBehaviorSwitcher()}
-            <div className="column column-page-main-wide flex-column flex-column-main">
-              {this.renderSwitcherToggle()}
+      <div className="flex-row-cascade">
+        <form className="flex-row-cascade" action={this.getFormAction()} method="POST" ref="behaviorForm">
+          <div className="flex-row-cascade">
+            <div className="flex-column flex-column-left flex-rows">
+              <div className={`columns flex-columns flex-row-expand mobile-flex-no-columns ${
+                (this.props.activePanelName === 'versionBrowser' || this.state.versionBrowserOpen) ? "position-frozen" : ""
+               }`}>
+                {this.renderBehaviorSwitcher()}
+                <div className="column column-page-main column-page-main-wide flex-column flex-column-main pbxxl">
+                  {this.renderSwitcherToggle()}
 
-              {this.renderEditor()}
+                  {this.renderEditor()}
+                </div>
+              </div>
             </div>
           </div>
 
@@ -2655,6 +2533,41 @@ const BehaviorEditor = React.createClass({
 
         {this.renderHiddenForms()}
 
+      </div>
+    );
+  },
+
+  renderVersionBrowser: function() {
+    return (
+      <VersionBrowser
+        csrfToken={this.props.csrfToken}
+        currentGroup={this.getBehaviorGroup()}
+        currentGroupIsModified={this.isModified()}
+        currentUserId={this.props.userId}
+        currentSelectedId={this.getSelectedId()}
+        versions={this.getVersions()}
+        onRestoreVersionClick={this.onReplaceBehaviorGroup}
+        onClearActivePanel={this.props.onClearActivePanel}
+        editableIsModified={this.editableIsModified}
+        isLinkedToGithub={this.props.isLinkedToGithub}
+        linkedGithubRepo={this.props.linkedGithubRepo}
+        onLinkGithubRepo={this.props.onLinkGithubRepo}
+        onSaveChanges={this.onSaveClick}
+      />
+    );
+  },
+
+  render: function() {
+    const versionBrowserShouldOpen = this.props.activePanelName === 'versionBrowser';
+    return (
+      <div className="position-relative flex-row-cascade">
+        <Collapsible className="flex-row-cascade" revealWhen={versionBrowserShouldOpen} onChange={this.updateVersionBrowserOpenState}>
+          {this.renderVersionBrowser()}
+        </Collapsible>
+
+        <div className={versionBrowserShouldOpen ? "" : "flex-row-cascade"}>
+          {this.renderEditorPage()}
+        </div>
       </div>
     );
   }

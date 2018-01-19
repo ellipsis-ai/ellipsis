@@ -20,7 +20,8 @@ jsRoutes.controllers.BehaviorEditorController.newGroup = jest.fn(() => ({ url: '
 jsRoutes.controllers.ApplicationController.deleteBehaviorGroups = jest.fn(() => ({ url: '/mock_delete_behavior_group' }));
 jsRoutes.controllers.BehaviorEditorController.edit = jest.fn(() => ({ url: '/mock_edit' }));
 jsRoutes.controllers.BehaviorEditorController.nodeModuleVersionsFor = jest.fn(() => ({ url: '/mock_node_module_versions_for' }));
-
+jsRoutes.controllers.SocialAuthController.authenticateGithub = jest.fn(() => ({ url: '/mock_authenticate_github' }));
+jsRoutes.controllers.BehaviorEditorController.versionInfoFor = jest.fn(() => ({ url: '/mock_version_info' }));
 
 describe('BehaviorEditor', () => {
   const defaultConfig = Object.freeze({
@@ -465,6 +466,22 @@ describe('BehaviorEditor', () => {
       const newConfig = editor.setEditableProp.mock.calls[0][1];
       expect(newConfig.constructor.name).toBe("BehaviorConfig");
       expect(newConfig.forcePrivateResponse).toBe(true);
+    });
+  });
+
+  describe('componentDidMount', () => {
+    it("does not show the version browser if the initial props do not have showVersions: true", () => {
+      const editor = createEditor(editorConfig);
+      editor.showVersions = jest.fn();
+      editor.componentDidMount();
+      expect(editor.showVersions).not.toHaveBeenCalled();
+    });
+    it("shows the version browser if the initial props have showVersions: true", () => {
+      editorConfig.showVersions = true;
+      const editor = createEditor(editorConfig);
+      editor.showVersions = jest.fn();
+      editor.componentDidMount();
+      expect(editor.showVersions).toHaveBeenCalled();
     });
   });
 });

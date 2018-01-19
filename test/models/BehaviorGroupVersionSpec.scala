@@ -15,18 +15,6 @@ class BehaviorGroupVersionSpec extends DBSpec {
 
   "createFor" should {
 
-    "set the current version on the group" in {
-      withEmptyDB(dataService, { () =>
-        val team = newSavedTeam
-        val user = newSavedUserOn(team)
-        val group = newSavedBehaviorGroupFor(team)
-        val firstVersion = runNow(dataService.behaviorGroupVersions.createFor(group, user))
-        reloadGroup(group).maybeCurrentVersionId mustBe Some(firstVersion.id)
-        val secondVersion = runNow(dataService.behaviorGroupVersions.createFor(group, user))
-        reloadGroup(group).maybeCurrentVersionId mustBe Some(secondVersion.id)
-      })
-    }
-
     "maintain saved answers" in {
       withEmptyDB(dataService, { () =>
         val team = newSavedTeam

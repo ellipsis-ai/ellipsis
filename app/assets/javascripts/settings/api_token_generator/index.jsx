@@ -1,13 +1,13 @@
 define(function(require) {
   var React = require('react'),
       APIRequestHelp = require('./api_request_help'),
-      Collapsible = require('../shared_ui/collapsible'),
-      CSRFTokenHiddenInput = require('../shared_ui/csrf_token_hidden_input'),
-      Formatter = require('../lib/formatter'),
-      HelpButton = require('../help/help_button'),
-      Input = require('../form/input'),
-      Page = require('../shared_ui/page'),
-      SettingsMenu = require('../shared_ui/settings_menu');
+      Collapsible = require('../../shared_ui/collapsible'),
+      CSRFTokenHiddenInput = require('../../shared_ui/csrf_token_hidden_input'),
+      Formatter = require('../../lib/formatter'),
+      HelpButton = require('../../help/help_button'),
+      FormInput = require('../../form/input'),
+      Page = require('../../shared_ui/page'),
+      SettingsPage = require('../../shared_ui/settings_page');
 
   var revokeForm = jsRoutes.controllers.APITokenController.revokeToken();
   var createForm = jsRoutes.controllers.APITokenController.createToken();
@@ -65,45 +65,27 @@ define(function(require) {
 
     render: function() {
       return (
-        <div className="flex-row-cascade">
-          <div className="bg-light">
-            <div className="container container-wide pbm">
-              <h3 className="mvn ptxxl type-weak display-ellipsis">Ellipsis API tokens</h3>
-            </div>
-          </div>
-          <div className="flex-columns flex-row-expand">
-            <div className="flex-column flex-column-left flex-rows container container-wide prn">
-              <div className="columns flex-columns flex-row-expand">
-                <div className="column column-one-quarter flex-column">
-                  <SettingsMenu activePage="apiTokens" teamId={this.props.teamId} isAdmin={this.props.isAdmin}/>
-                </div>
-                <div className="column column-three-quarters flex-column bg-white ptxxl pbxxxxl phxxxxl">
-                  <p>
-                    <span>Generate API tokens to make requests to Ellipsis that trigger a response. </span>
-                    <span>For better security, use each token only for a single purpose.</span>
-                  </p>
+        <SettingsPage teamId={this.props.teamId} activePage={"apiTokens"} header={"Ellipsis API tokens"} isAdmin={this.props.isAdmin}>
+          <p>
+            <span>Generate API tokens to make requests to Ellipsis that trigger a response. </span>
+            <span>For better security, use each token only for a single purpose.</span>
+          </p>
 
-                  <p>
-                    <HelpButton className="mrs" onClick={this.toggleApiHelp} toggled={this.props.activePanelName === 'ellipsisApiHelp'} />
-                    <button type="button" className="button-raw" onClick={this.toggleApiHelp}>How to make requests</button>
-                  </p>
+          <p>
+            <HelpButton className="mrs" onClick={this.toggleApiHelp} toggled={this.props.activePanelName === 'ellipsisApiHelp'} />
+            <button type="button" className="button-raw" onClick={this.toggleApiHelp}>How to make requests</button>
+          </p>
 
-                  {this.getTokens().length > 0 ? this.renderTokenList() : this.renderNoTokens()}
+          {this.getTokens().length > 0 ? this.renderTokenList() : this.renderNoTokens()}
 
-                  {this.renderTokenCreator()}
-
-                </div>
-              </div>
-            </div>
-            <div className="flex-column flex-column-right bg-white" />
-          </div>
+          {this.renderTokenCreator()}
 
           {this.props.onRenderFooter((
-            <Collapsible ref="ellipsisApiHelp" revealWhen={this.props.activePanelName === 'ellipsisApiHelp'}>
+            <Collapsible revealWhen={this.props.activePanelName === 'ellipsisApiHelp'}>
               <APIRequestHelp onCollapse={this.toggleApiHelp} />
             </Collapsible>
           ))}
-        </div>
+        </SettingsPage>
       );
     },
 
@@ -180,7 +162,7 @@ define(function(require) {
 
               <div className="columns mbm">
                 <div className="column column-one-third">
-                  <Input name="label" value={this.getNewTokenLabel()} onChange={this.setNewTokenLabel}/>
+                  <FormInput name="label" value={this.getNewTokenLabel()} onChange={this.setNewTokenLabel}/>
                 </div>
                 <div className="column column-one-third">
                   <button type="submit" className="button-primary" disabled={!this.getNewTokenLabel()}>Generate</button>

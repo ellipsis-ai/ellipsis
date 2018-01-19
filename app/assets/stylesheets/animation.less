@@ -9,6 +9,11 @@
   animation: fadein 0.2s;
 }
 
+.fade-out {
+  -webkit-animation: fadeout 0.2s;
+  animation: fadeout 0.2;
+}
+
 .blink-twice {
   -webkit-animation: blink 0.4s;
   animation: blink 0.4s;
@@ -39,9 +44,14 @@
   to { opacity: 1; }
 }
 
-@-ms-keyframes fadein {
-  from { opacity: 0; }
-  to { opacity: 1; }
+@keyframes fadeout {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+@-webkit-keyframes fadeout {
+  from { opacity: 1; }
+  to { opacity: 0; }
 }
 
 @keyframes blink {
@@ -101,25 +111,6 @@
   }
 }
 
-@-ms-keyframes blink {
-  0% {
-    background-color: @black;
-    color: @white;
-  }
-  33% {
-    background-color: transparent;
-    color: inherit;
-  }
-  66% {
-    background-color: @black;
-    color: @white;
-  }
-  100% {
-    background-color: transparent;
-    color: inherit;
-  }
-}
-
 @keyframes pulse {
   0% { opacity: 1; }
   50% { opacity: 0.5; }
@@ -132,12 +123,6 @@
   100% { opacity: 1; }
 }
 
-@-ms-keyframes pulse {
-  0% { opacity: 1; }
-  50% { opacity: 0.5; }
-  100% { opacity: 1; }
-}
-
 @keyframes pulse-faded {
   0% { opacity: 0.66; }
   50% { opacity: 0.33; }
@@ -145,12 +130,6 @@
 }
 
 @-webkit-keyframes pulse-faded {
-  0% { opacity: 0.66; }
-  50% { opacity: 0.33; }
-  100% { opacity: 0.66; }
-}
-
-@-ms-keyframes pulse-faded {
   0% { opacity: 0.66; }
   50% { opacity: 0.33; }
   100% { opacity: 0.66; }

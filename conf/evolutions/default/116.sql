@@ -19,6 +19,7 @@ CREATE TABLE billing_subscriptions (
 
 # --- !Downs
 
-DROP TABLE IF EXISTS billing_accounts;
 DROP TABLE IF EXISTS billing_subscriptions;
+DROP TABLE IF EXISTS billing_accounts;
+
 

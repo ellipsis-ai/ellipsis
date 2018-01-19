@@ -117,57 +117,52 @@ define(function(require) {
             </div>
           </div>
 
-          {this.props.groupId ? (
-            <div>
-              <BehaviorSwitcherGroup
-                ref="actionSwitcher"
-                heading="Actions"
-                editables={this.props.actionBehaviors}
-                selectedId={this.props.selectedId}
-                onAddNew={this.props.addNewAction}
-                addNewLabel="Add new action"
-                emptyMessage="Add actions to provide a response using custom data types for input."
-                onSelect={this.props.onSelect}
-                isModified={this.props.isModified}
-              />
+          <div>
+            <BehaviorSwitcherGroup
+              heading="Actions"
+              editables={this.props.actionBehaviors}
+              selectedId={this.props.selectedId}
+              onAddNew={this.props.addNewAction}
+              addNewLabel="Add new action"
+              emptyMessage="Add actions to provide a response using custom data types for input."
+              onSelect={this.props.onSelect}
+              isModified={this.props.isModified}
+            />
 
-              <BehaviorSwitcherGroup
-                ref="dataTypeSwitcher"
-                heading="Data types"
-                editables={this.props.dataTypeBehaviors}
-                selectedId={this.props.selectedId}
-                onAddNew={this.props.addNewDataType}
-                addNewLabel="Add new data type"
-                emptyMessage="Custom data types allow you to limit user input to a set of choices, backed by custom data."
-                onSelect={this.props.onSelect}
-                isModified={this.props.isModified}
-              />
+            <BehaviorSwitcherGroup
+              heading="Data types"
+              editables={this.props.dataTypeBehaviors}
+              selectedId={this.props.selectedId}
+              onAddNew={this.props.addNewDataType}
+              addNewLabel="Add new data type"
+              emptyMessage="Custom data types allow you to limit user input to a set of choices, backed by custom data."
+              onSelect={this.props.onSelect}
+              isModified={this.props.isModified}
+            />
 
-              <BehaviorSwitcherGroup
-                ref="librarySwitcher"
-                heading="Libraries"
-                editables={this.props.libraries}
-                selectedId={this.props.selectedId}
-                onAddNew={this.props.addNewLibrary}
-                addNewLabel="Add new library"
-                emptyMessage="Libraries are shareable bits of code that you can require() from elsewhere in the skill"
-                onSelect={this.props.onSelect}
-                isModified={this.props.isModified}
-              />
+            <BehaviorSwitcherGroup
+              heading="Libraries"
+              editables={this.props.libraries}
+              selectedId={this.props.selectedId}
+              onAddNew={this.props.addNewLibrary}
+              addNewLabel="Add new library"
+              emptyMessage="Libraries are shareable bits of code that you can require() from elsewhere in the skill"
+              onSelect={this.props.onSelect}
+              isModified={this.props.isModified}
+            />
 
-              <ApiConfigList
-                requiredAWSConfigs={this.props.requiredAWSConfigs}
-                requiredOAuth2Applications={this.props.requiredOAuth2Applications}
-                requiredSimpleTokenApis={this.props.requiredSimpleTokenApis}
-                onApiConfigClick={this.props.onApiConfigClick}
-                onAddApiConfigClick={this.props.onAddApiConfigClick}
-                getApiConfigName={this.props.getApiConfigName}
-              />
+            <ApiConfigList
+              requiredAWSConfigs={this.props.requiredAWSConfigs}
+              requiredOAuth2Applications={this.props.requiredOAuth2Applications}
+              requiredSimpleTokenApis={this.props.requiredSimpleTokenApis}
+              onApiConfigClick={this.props.onApiConfigClick}
+              onAddApiConfigClick={this.props.onAddApiConfigClick}
+              getApiConfigName={this.props.getApiConfigName}
+            />
 
-              {this.renderNodeModules()}
+            {this.renderNodeModules()}
 
-            </div>
-          ) : null}
+          </div>
 
         </div>
       );

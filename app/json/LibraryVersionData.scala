@@ -1,5 +1,7 @@
 package json
 
+import java.time.OffsetDateTime
+
 import export.BehaviorGroupExporter
 import models.IDs
 import models.behaviors.library.LibraryVersion
@@ -14,7 +16,8 @@ case class LibraryVersionData(
                                isNew: Option[Boolean],
                                name: String,
                                description: Option[String],
-                               functionBody: String
+                               functionBody: String,
+                               createdAt: OffsetDateTime
                             ) {
 
   val code: String = LibraryVersion.codeFor(functionBody)
@@ -63,7 +66,16 @@ case class LibraryVersionData(
 object LibraryVersionData {
 
   def fromVersion(version: LibraryVersion): LibraryVersionData = {
-    LibraryVersionData(Some(version.id), Some(version.libraryId), version.maybeExportId, isNew = Some(false), version.name, version.maybeDescription, version.functionBody)
+    LibraryVersionData(
+      Some(version.id),
+      Some(version.libraryId),
+      version.maybeExportId,
+      isNew = Some(false),
+      version.name,
+      version.maybeDescription,
+      version.functionBody,
+      version.createdAt
+    )
   }
 
   def newUnsaved: LibraryVersionData = LibraryVersionData(
@@ -73,7 +85,8 @@ object LibraryVersionData {
     isNew = Some(true),
     name = "",
     description = None,
-    functionBody = ""
+    functionBody = "",
+    OffsetDateTime.now
   )
 
   def maybeClonedFor(libraryIdToClone: String, dataService: DataService)(implicit ec: ExecutionContext): Future[Option[LibraryVersionData]] = {
@@ -88,7 +101,8 @@ object LibraryVersionData {
           isNew = Some(true),
           name = s"${existing.name}-copy",
           description = existing.maybeDescription,
-          functionBody = existing.functionBody
+          functionBody = existing.functionBody,
+          createdAt = OffsetDateTime.now
         )
       }
     }
@@ -116,7 +130,8 @@ object LibraryVersionData {
       isNew = Some(false),
       name,
       maybeDescription,
-      LibraryVersion.functionBodyFrom(code)
+      LibraryVersion.functionBodyFrom(code),
+      OffsetDateTime.now
     )
   }
 }

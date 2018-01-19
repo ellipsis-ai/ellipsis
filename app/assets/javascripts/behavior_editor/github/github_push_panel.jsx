@@ -15,8 +15,10 @@ define(function(require) {
   type Props = {
     group: BehaviorGroup,
     linked?: LinkedGithubRepo,
+    onPushBranch: () => void,
     onDoneClick: () => void,
-    csrfToken: string
+    csrfToken: string,
+    branch: ?string
   };
 
   type State = {
@@ -38,13 +40,25 @@ define(function(require) {
       super(props);
       autobind(this);
       this.state = {
-        branch: "master",
+        branch: this.getDefaultBranch(),
         commitMessage: "",
         isSaving: false,
         lastSaved: null,
         lastSavedBranch: null,
         error: null
       };
+    }
+
+    componentWillReceiveProps(newProps) {
+      if (newProps.branch !== this.props.branch) {
+        this.setState({
+          branch: newProps.branch
+        });
+      }
+    }
+
+    getDefaultBranch(): string {
+      return this.props.branch || "master";
     }
 
     focus(): void {
@@ -105,6 +119,7 @@ define(function(require) {
           lastSaved: new Date(),
           lastSavedBranch: branch
         });
+        this.props.onPushBranch();
       }).catch((err: DataRequest.ResponseError) => {
         this.setState({
           isSaving: false,
@@ -125,41 +140,56 @@ define(function(require) {
       return (
         <div>
 
-          <h5 className="mtn">Push current version to GitHub</h5>
-          <p>
-            <span>Verify the branch name you want to use. All changes between the current version of the </span>
-            <span>skill and the copy on GitHub will be committed and pushed.</span>
-          </p>
+          <h4 className="mtn">Push current version to GitHub</h4>
 
-          <div className="columns">
-            <div className="column column-one-quarter">
-              <span className="display-inline-block align-m type-s type-weak mrm">Branch name:</span>
-              <FormInput
-                ref={(el) => this.branchInput = el}
-                className="form-input-borderless type-monospace type-s width-15 mrm"
-                placeholder="e.g. master"
-                onChange={this.onBranchChange}
-                value={this.getBranch()}
-              />
+          <div className="columns columns-elastic">
+            <div className="column-group">
+              <div className="column-row">
+                <div className="column column-shrink align-button">
+                  <span className="type-label mrs">Repository:</span>
+                </div>
+                <div className="column column-expand align-button">
+                  <GithubOwnerRepoReadonly linked={this.props.linked} />
+                </div>
+              </div>
+              <div className="column-row">
+                <div className="column column-shrink align-button">
+                  <span className="type-label mrs">Branch:</span>
+                </div>
+                <div className="column column-expand">
+                  <FormInput
+                    ref={(el) => this.branchInput = el}
+                    className="form-input-borderless type-monospace type-s width-15 mrm"
+                    placeholder="e.g. master"
+                    onChange={this.onBranchChange}
+                    value={this.getBranch()}
+                  />
+                </div>
+              </div>
+              <div className="column-row">
+                <div className="column column-shrink align-button">
+                  <span className="type-label">Commit&nbsp;message:</span>
+                </div>
+                <div className="column column-expand">
+                  <FormInput
+                    ref={(el) => this.commitMessageInput = el}
+                    className="form-input-borderless type-monospace type-s mrm"
+                    placeholder="Summarize what has changed"
+                    onChange={this.onCommitMessageChange}
+                    value={this.getCommitMessage()}
+                  />
+                </div>
+              </div>
             </div>
           </div>
-          <div className="mtl">
-            <span className="display-inline-block align-m type-s type-weak mrm">Commit message:</span>
-            <FormInput
-              ref={(el) => this.commitMessageInput = el}
-              className="form-input-borderless type-monospace type-s mrm"
-              placeholder="Summarize what has changed"
-              onChange={this.onCommitMessageChange}
-              value={this.getCommitMessage()}
-            />
-          </div>
-          <div className="mvl">
+
+          <div className="mtxl">
             <DynamicLabelButton
               className="button-primary mrs"
               onClick={this.onPushToGithub}
               disabledWhen={this.state.isSaving || !this.getBranch() || !this.getCommitMessage()}
               labels={[{
-                text: "Commit and push…",
+                text: "Force push…",
                 displayWhen: !this.state.isSaving
               }, {
                 text: "Pushing…",
@@ -173,7 +203,7 @@ define(function(require) {
               Done
             </Button>
           </div>
-          <div className="mtl">
+          <div className="mtxl">
             {this.renderResult()}
           </div>
         </div>
@@ -202,16 +232,8 @@ define(function(require) {
     render(): React.Node {
       return (
         <div className="box-action phn">
-          <div className="container">
-            <div className="columns">
-              <div className="column column-page-sidebar">
-                <h4 className="type-weak mtn">Sync with GitHub repository</h4>
-                <GithubOwnerRepoReadonly linked={this.props.linked}/>
-              </div>
-              <div className="column column-page-main">
-                {this.renderContent()}
-              </div>
-            </div>
+          <div className="container container-wide">
+            {this.renderContent()}
           </div>
         </div>
       );

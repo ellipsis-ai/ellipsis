@@ -68,6 +68,18 @@ class BehaviorGroupVersionServiceImpl @Inject() (
     dataService.run(action)
   }
 
+  def maybeCurrentForAction(group: BehaviorGroup): DBIO[Option[BehaviorGroupVersion]] = {
+    currentIdForQuery(group.id).result.flatMap { r =>
+      r.headOption.map { mostRecentId =>
+        findWithoutAccessCheckAction(mostRecentId)
+      }.getOrElse(DBIO.successful(None))
+    }
+  }
+
+  def maybeCurrentFor(group: BehaviorGroup): Future[Option[BehaviorGroupVersion]] = {
+    dataService.run(maybeCurrentForAction(group))
+  }
+
   def createForAction(
                  group: BehaviorGroup,
                  user: User,
@@ -216,30 +228,16 @@ class BehaviorGroupVersionServiceImpl @Inject() (
   }
 
   def redeployAllCurrentVersions: Future[Unit] = {
-    allCurrent.map { currentVersions =>
-      for (v <- currentVersions) {
-        Await.ready(redeploy(v).recover {
+    allCurrent.map { current =>
+      for (version <- current) {
+        Await.ready(redeploy(version).recover {
           case e: Exception => {
-            Logger.info(s"Error redeploying version with ID: ${v.id}: ${e.getMessage}")
+            Logger.info(s"Error redeploying version with ID: ${version.id}: ${e.getMessage}")
           }
         }, 30.seconds)
       }
     }
   }
-
-  def uncompiledAllCurrentQuery = {
-    allWithUser.filter {
-      case ((groupVersion, (group, _)), _) => groupVersion.id === group.maybeCurrentVersionId
-    }
-  }
-  val allCurrentQuery = Compiled(uncompiledAllCurrentQuery)
-
-  def uncompiledAllCurrentIdsQuery() = {
-    uncompiledAllCurrentQuery.map {
-      case ((groupVersion, _), _) => groupVersion.id
-    }
-  }
-  val allCurrentIdsQuery = Compiled(uncompiledAllCurrentIdsQuery)
 
   private def allCurrent: Future[Seq[BehaviorGroupVersion]] = {
     val action = allCurrentQuery.result.map { r =>

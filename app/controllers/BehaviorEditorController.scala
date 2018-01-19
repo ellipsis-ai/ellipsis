@@ -38,7 +38,7 @@ class BehaviorEditorController @Inject() (
     val user = request.identity
     render.async {
       case Accepts.JavaScript() => {
-        editorDataResult(BehaviorEditorData.buildForNew(user, maybeTeamId, dataService, ws, assets))
+        editorDataResult(BehaviorEditorData.buildForNew(user, maybeTeamId, dataService, ws, assets), None)
       }
       case Accepts.Html() => {
         for {
@@ -53,11 +53,11 @@ class BehaviorEditorController @Inject() (
     }
   }
 
-  def edit(groupId: String, maybeBehaviorId: Option[String]) = silhouette.SecuredAction.async { implicit request =>
+  def edit(groupId: String, maybeBehaviorId: Option[String], maybeShowVersions: Option[Boolean]) = silhouette.SecuredAction.async { implicit request =>
     val user = request.identity
     render.async {
       case Accepts.JavaScript() => {
-        editorDataResult(BehaviorEditorData.buildForEdit(user, groupId, maybeBehaviorId, dataService, ws, assets))
+        editorDataResult(BehaviorEditorData.buildForEdit(user, groupId, maybeBehaviorId, dataService, ws, assets), maybeShowVersions)
       }
       case Accepts.Html() => {
         for {
@@ -67,7 +67,7 @@ class BehaviorEditorController @Inject() (
           }.getOrElse(Future.successful(None))
           result <- maybeTeam.map { team =>
             dataService.users.teamAccessFor(user, Some(team.id)).map { teamAccess =>
-              val dataRoute = routes.BehaviorEditorController.edit(groupId, maybeBehaviorId)
+              val dataRoute = routes.BehaviorEditorController.edit(groupId, maybeBehaviorId, maybeShowVersions)
               Ok(views.html.behavioreditor.edit(viewConfig(Some(teamAccess)), dataRoute))
             }
           }.getOrElse { skillNotFound }
@@ -76,13 +76,14 @@ class BehaviorEditorController @Inject() (
     }
   }
 
-  private def editorDataResult(eventualMaybeEditorData: Future[Option[BehaviorEditorData]])(implicit request: SecuredRequest[EllipsisEnv, AnyContent]): Future[Result] = {
+  private def editorDataResult(eventualMaybeEditorData: Future[Option[BehaviorEditorData]], maybeShowVersions: Option[Boolean])(implicit request: SecuredRequest[EllipsisEnv, AnyContent]): Future[Result] = {
     eventualMaybeEditorData.flatMap { maybeEditorData =>
       maybeEditorData.map { editorData =>
         val config = BehaviorEditorEditConfig.fromEditorData(
           containerId = "editorContainer",
           csrfToken = CSRF.getToken(request).map(_.value),
-          data = editorData
+          data = editorData,
+          maybeShowVersions
         )
         Future.successful(Ok(views.js.shared.pageConfig(viewConfig(Some(editorData.teamAccess)), "config/behavioreditor/edit", Json.toJson(config))))
       }.getOrElse {
@@ -95,8 +96,8 @@ class BehaviorEditorController @Inject() (
     val user = request.identity
     for {
       maybeBehaviorGroup <- dataService.behaviorGroups.find(behaviorGroupId, user)
-      maybeLastVersion <- maybeBehaviorGroup.flatMap(_.maybeCurrentVersionId).map { currentVersionId =>
-        dataService.behaviorGroupVersions.findWithoutAccessCheck(currentVersionId)
+      maybeLastVersion <- maybeBehaviorGroup.map { group =>
+        dataService.behaviorGroupVersions.maybeCurrentFor(group)
       }.getOrElse(Future.successful(None))
       maybeUserData <- maybeLastVersion.flatMap { version =>
         version.maybeAuthor.map { author =>
