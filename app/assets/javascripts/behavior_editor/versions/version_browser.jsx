@@ -385,7 +385,7 @@ define(function(require: (string) => *): React.ElementType {
     }
 
     summarizeNoDiff(): string {
-      if (this.getSelectedVersionIndex() === 0 && !this.props.currentGroupIsModified) {
+      if (this.compareLocalVersions() && this.getSelectedVersionIndex() === 0 && !this.props.currentGroupIsModified) {
         return "Select another version to compare to the current saved version.";
       } else {
         return "These versions are identical.";
