@@ -140,7 +140,7 @@ define(function(require) {
       return (
         <div>
 
-          <h4 className="mtn">Push to GitHub</h4>
+          <h4 className="mtn">Push current version to GitHub</h4>
 
           <div className="columns columns-elastic">
             <div className="column-group">
@@ -189,7 +189,7 @@ define(function(require) {
               onClick={this.onPushToGithub}
               disabledWhen={this.state.isSaving || !this.getBranch() || !this.getCommitMessage()}
               labels={[{
-                text: "Commit and push…",
+                text: "Force push…",
                 displayWhen: !this.state.isSaving
               }, {
                 text: "Pushing…",
