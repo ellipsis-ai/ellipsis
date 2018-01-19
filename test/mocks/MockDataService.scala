@@ -43,6 +43,7 @@ import models.behaviors.scheduling.scheduledmessage.ScheduledMessageService
 import models.behaviors.triggers.messagetrigger.MessageTriggerService
 import models.devmodechannel.DevModeChannelService
 import models.environmentvariable.TeamEnvironmentVariableService
+import models.organization.OrganizationService
 import models.team.TeamService
 import org.scalatest.mock.MockitoSugar
 import services.DataService
@@ -56,6 +57,7 @@ class MockDataService extends DataService with MockitoSugar {
   val users = mock[UserService]
   val loginTokens = mock[LoginTokenService]
   val linkedAccounts = mock[LinkedAccountService]
+  val organizations = mock[OrganizationService]
   val teams = mock[TeamService]
   val apiTokens = mock[APITokenService]
   val teamEnvironmentVariables = mock[TeamEnvironmentVariableService]

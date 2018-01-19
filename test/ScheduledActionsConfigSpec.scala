@@ -28,8 +28,7 @@ class ScheduledActionsConfigSpec extends PlaySpec with MockitoSugar {
   val channel1Id = "G1234"
   val channel2Id = "G5678"
   val aTimestamp: Long = OffsetDateTime.now.minusYears(1).toEpochSecond
-  val otherTeamId = IDs.next
-  val otherTeam = Team(otherTeamId, "Other team", None, OffsetDateTime.now)
+  val otherTeam = new Team("Other team")
   val channels = Seq(
     makeSlackGroup(channel1Id, "general", includeUser = true),
     makeSlackGroup(channel2Id, "other", includeUser = false)
