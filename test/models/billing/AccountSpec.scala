@@ -3,7 +3,7 @@ package models.billing
 import java.time.OffsetDateTime
 
 import models.IDs
-import models.billing.account.Account
+import models.billing.account.Customer
 import support.DBSpec
 
 class AccountSpec extends DBSpec {
@@ -12,7 +12,7 @@ class AccountSpec extends DBSpec {
 
       "be valid with valid params" in {
         withEmptyDB(dataService, { () =>
-          val account = Account(IDs.next, IDs.next, OffsetDateTime.now)
+          val account = Customer(IDs.next, IDs.next, OffsetDateTime.now)
           dataService.billingAccount.save(account)
         })
       }

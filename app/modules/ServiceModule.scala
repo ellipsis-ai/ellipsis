@@ -44,7 +44,7 @@ import models.behaviors.savedanswer.{SavedAnswerService, SavedAnswerServiceImpl}
 import models.behaviors.scheduling.recurrence.{RecurrenceService, RecurrenceServiceImpl}
 import models.behaviors.scheduling.scheduledbehavior.{ScheduledBehaviorService, ScheduledBehaviorServiceImpl}
 import models.team.{TeamService, TeamServiceImpl}
-import models.billing.account.{AccountService, AccountServiceImpl}
+import models.billing.account.{CustomerService, CustomerServiceImpl}
 import models.billing.chargebee.{ChargebeeService, ChargebeeServiceImpl}
 import models.billing.subscription.{SubscriptionService, SubscriptionServiceImpl}
 import services._
@@ -99,7 +99,7 @@ class ServiceModule extends AbstractModule with ScalaModule {
     bind[BehaviorResponseService].to[BehaviorResponseServiceImpl]
     bind[BotResultService].to[BotResultServiceImpl]
     bind[NodeModuleVersionService].to[NodeModuleVersionServiceImpl]
-    bind[AccountService].to[AccountServiceImpl]
+    bind[CustomerService].to[CustomerServiceImpl]
     bind[SubscriptionService].to[SubscriptionServiceImpl]
     bind[ChargebeeService].to[ChargebeeServiceImpl]
     bind[AWSLambdaService].to[AWSLambdaServiceImpl]

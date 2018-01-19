@@ -8,16 +8,16 @@ import services.DataService
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class AccountServiceImpl @Inject()(
+class CustomerServiceImpl @Inject()(
                                     dataServiceProvider: Provider[DataService],
                                     implicit val ec: ExecutionContext
-                                  ) extends AccountService {
+                                  ) extends CustomerService {
 
   def dataService = dataServiceProvider.get
 
-  import AccountQueries._
+  import CustomerQueries._
 
-  def allAccounts: Future[Seq[Account]] = {
+  def allAccounts: Future[Seq[Customer]] = {
     dataService.run(all.result)
   }
 
@@ -25,7 +25,7 @@ class AccountServiceImpl @Inject()(
     dataService.run(all.length.result)
   }
 
-  def find(id: String): Future[Option[Account]] = {
+  def find(id: String): Future[Option[Customer]] = {
     dataService.run(findQueryFor(id).result.map(_.headOption))
   }
 

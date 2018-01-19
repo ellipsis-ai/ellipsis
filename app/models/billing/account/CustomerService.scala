@@ -2,13 +2,13 @@ package models.billing.account
 
 import scala.concurrent.Future
 
-trait AccountService {
+trait CustomerService {
 
-    def allAccounts: Future[Seq[Account]]
+    def allAccounts: Future[Seq[Customer]]
 
     def count: Future[Int]
 
-    def find(id: String): Future[Option[Account]]
+    def find(id: String): Future[Option[Customer]]
 
 //    def findChargebeeId(chargeBeeId: String): Future[Option[Account]]
 //

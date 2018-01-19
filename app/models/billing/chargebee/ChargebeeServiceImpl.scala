@@ -4,6 +4,7 @@ package models.billing.chargebee
 import javax.inject.Inject
 
 import com.chargebee.Environment
+import com.chargebee.models.Plan
 import com.google.inject.Provider
 import play.api.Configuration
 import services.DataService
@@ -25,10 +26,10 @@ class ChargebeeServiceImpl @Inject()(
 
   val chargebeeEnv = new Environment(site, apiKey)
 
-  def allPlans: Future[Seq[com.chargebee.models.Plan]] = {
+  def allPlans: Future[Seq[Plan]] = {
     Future {
       blocking {
-        com.chargebee.models.Plan.list().limit(5).request(chargebeeEnv)
+        Plan.list().limit(100).request(chargebeeEnv)
       }
     }.map { result =>
       val buffer = ListBuffer[com.chargebee.models.Plan]()
@@ -38,6 +39,31 @@ class ChargebeeServiceImpl @Inject()(
       buffer
     }
   }
+
+//  def initializePlans: Future[Seq[Plan]] = {
+//    val defaultPlans = Seq[com.chargebee.models.Plan](
+//      new Plan(
+//        """ {
+//            "id": "free-v1",
+//            "name": "Free",
+//            "price": 0,
+//            "period_unit": "month",
+//            "charge_model": "flat_fee",
+//            "free_quantity": 0,
+//            "status": "active",
+//            "enabled_in_hosted_pages": true,
+//            "enabled_in_portal": true,
+//            "updated_at": 1515494920,
+//            "resource_version": 1515494920000,
+//            "taxable": true,
+//            "currency_code": "USD"
+//        """.stripMargin)
+//    )
+//
+//
+//  }
+
+
 }
 
 
