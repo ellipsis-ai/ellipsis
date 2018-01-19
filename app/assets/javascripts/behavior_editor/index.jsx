@@ -715,7 +715,7 @@ const BehaviorEditor = React.createClass({
     this.toggleActivePanel('confirmDeleteCode', true);
   },
 
-  confirmUndo: function() {
+  toggleConfirmUndo: function() {
     this.toggleActivePanel('confirmUndo', true);
   },
 
@@ -1816,7 +1816,7 @@ const BehaviorEditor = React.createClass({
           </Collapsible>
 
           <Collapsible ref="confirmUndo" revealWhen={this.props.activePanelName === 'confirmUndo'} onChange={this.layoutDidUpdate}>
-            <ConfirmActionPanel confirmText="Undo changes" onConfirmClick={this.undoChanges} onCancelClick={this.props.onClearActivePanel}>
+            <ConfirmActionPanel confirmText="Undo changes" onConfirmClick={this.undoChanges} onCancelClick={this.toggleConfirmUndo}>
               <p>This will undo any changes you’ve made since last saving. Are you sure you want to do this?</p>
             </ConfirmActionPanel>
           </Collapsible>
@@ -1984,7 +1984,7 @@ const BehaviorEditor = React.createClass({
                     className="button-primary mrs mbm"
                     disabledWhen={!this.isModified() || this.isSaving()}
                   />
-                  <Button className="mrs mbm" disabled={!this.isModified() || this.isSaving()} onClick={this.confirmUndo}>
+                  <Button className="mrs mbm" disabled={!this.isModified() || this.isSaving()} onClick={this.toggleConfirmUndo}>
                     <span className="mobile-display-none">Undo changes</span>
                     <span className="mobile-display-only">Undo</span>
                   </Button>
@@ -2547,6 +2547,7 @@ const BehaviorEditor = React.createClass({
         currentSelectedId={this.getSelectedId()}
         versions={this.getVersions()}
         onRestoreVersionClick={this.onReplaceBehaviorGroup}
+        onUndoChanges={this.toggleConfirmUndo}
         onClearActivePanel={this.props.onClearActivePanel}
         editableIsModified={this.editableIsModified}
         isLinkedToGithub={this.props.isLinkedToGithub}
