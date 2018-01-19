@@ -77,7 +77,7 @@ define(function(require: (string) => *): React.ElementType {
       super(props);
       autobind(this);
       this.state = {
-        selectedMenuItem: "loading",
+        selectedMenuItem: this.getDefaultSelectedItem(props),
         diffFromSelectedToCurrent: true,
         headerHeight: 0,
         footerHeight: 0,
