@@ -10,6 +10,7 @@ import models.accounts.user.User
 import play.api.Configuration
 import services.DataService
 import drivers.SlickPostgresDriver.api._
+import models.organization.Organization
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -72,12 +73,20 @@ class TeamServiceImpl @Inject() (
 
   def create(name: String): Future[Team] = save(new Team(name))
 
+  def create(name: String, organization: Organization): Future[Team] = {
+    save(Team(IDs.next, name, None, Some(organization.id), OffsetDateTime.now))
+  }
+
   def setNameFor(team: Team, name: String): Future[Team] = {
     save(team.copy(name = name))
   }
 
   def setTimeZoneFor(team: Team, tz: ZoneId): Future[Team] = {
     save(team.copy(maybeTimeZone = Some(tz)))
+  }
+
+  def setOrganizationIdFor(team: Team, organizationId: String): Future[Team] = {
+    save(team.copy(maybeOrganizationId = Some(organizationId)))
   }
 
   def save(team: Team): Future[Team] = {

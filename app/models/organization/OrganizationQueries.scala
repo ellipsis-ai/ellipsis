@@ -4,7 +4,7 @@ import java.time.OffsetDateTime
 
 import drivers.SlickPostgresDriver.api._
 
-class OrganizationsTable(tag: Tag) extends Table[Organization](tag, "organization") {
+class OrganizationsTable(tag: Tag) extends Table[Organization](tag, "organizations") {
 
   def id = column[String]("id", O.PrimaryKey)
   def name = column[String]("name")

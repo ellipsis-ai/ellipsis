@@ -3,6 +3,7 @@ package models.team
 import java.time.ZoneId
 
 import models.accounts.user.User
+import models.organization.Organization
 import slick.dbio.DBIO
 
 import scala.concurrent.Future
@@ -30,6 +31,8 @@ trait TeamService {
   def findForInvocationToken(tokenId: String): Future[Option[Team]]
 
   def create(name: String): Future[Team]
+
+  def create(name: String, organization: Organization): Future[Team]
 
   def save(team: Team): Future[Team]
 

@@ -12,6 +12,7 @@ import models.accounts.oauth2api.{OAuth2ApiService, OAuth2ApiServiceImpl}
 import models.accounts.oauth2application.{OAuth2ApplicationService, OAuth2ApplicationServiceImpl}
 import models.accounts.slack.profile.{SlackProfileService, SlackProfileServiceImpl}
 import models.accounts.oauth2token.{OAuth2TokenService, OAuth2TokenServiceImpl}
+import models.accounts.registration.{RegistrationService, RegistrationServiceImpl}
 import models.accounts.simpletokenapi.{SimpleTokenApiService, SimpleTokenApiServiceImpl}
 import models.accounts.slack.botprofile.{SlackBotProfileService, SlackBotProfileServiceImpl}
 import models.apitoken.{APITokenService, APITokenServiceImpl}
@@ -47,7 +48,6 @@ import models.devmodechannel.{DevModeChannelService, DevModeChannelServiceImpl}
 import models.team.{TeamService, TeamServiceImpl}
 import models.organization.{OrganizationService, OrganizationServiceImpl}
 import models.billing.chargebee.{ChargebeeService, ChargebeeServiceImpl}
-import models.organization.OrganizationService
 import services._
 import net.codingwell.scalaguice.ScalaModule
 import utils.SlackFileMap
@@ -56,10 +56,10 @@ class ServiceModule extends AbstractModule with ScalaModule {
 
   override def configure() = {
     bind[DataService].to[PostgresDataService]
-
     bind[UserService].to[UserServiceImpl]
     bind[LoginTokenService].to[LoginTokenServiceImpl]
     bind[LinkedAccountService].to[LinkedAccountServiceImpl]
+    bind[RegistrationService].to[RegistrationServiceImpl]
     bind[OrganizationService].to[OrganizationServiceImpl]
     bind[TeamService].to[TeamServiceImpl]
     bind[APITokenService].to[APITokenServiceImpl]

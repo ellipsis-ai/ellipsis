@@ -16,7 +16,13 @@ class RegistrationServiceImpl @Inject() (
 
   def dataService = dataServiceProvider.get
 
-  def registerNewTeam(teamName: String): Future[Team] = {
-    dataService.teams.create(teamName)
+  def registerNewTeam(name: String): Future[Team] = {
+    for {
+      org <- dataService.organizations.create(name)
+      team <- dataService.teams.create(name, org)
+    } yield {
+      team
+    }
+
   }
 }
