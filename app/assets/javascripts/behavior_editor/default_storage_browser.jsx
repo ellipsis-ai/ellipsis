@@ -59,10 +59,18 @@ define(function(require) {
     onLoadedData(json) {
       const queryName = this.props.behaviorVersion.getGraphQLListQueryName();
       try {
-        const items = json.data[queryName];
+        const items = json.data[queryName].map((data) => {
+          return new DefaultStorageItem(
+            data.id,
+            this.props.behaviorVersion.behaviorId,
+            data.updatedAt,
+            data.updatedByUserId,
+            data
+          );
+        });
         this.setState({
           isLoading: false,
-          items: items.map((ea) => new DefaultStorageItem({ data: ea }))
+          items: items
         });
       } catch(err) {
         this.onErrorLoadingData();

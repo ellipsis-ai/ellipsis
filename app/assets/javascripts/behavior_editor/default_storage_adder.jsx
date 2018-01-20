@@ -91,7 +91,13 @@ define(function(require) {
 
     onSavedNewItem(savedItemData) {
       this.setState({
-        lastSavedItem: new DefaultStorageItem(savedItemData),
+        lastSavedItem: new DefaultStorageItem(
+          savedItemData.id,
+          this.props.behaviorVersion.behaviorId,
+          savedItemData.updatedAt,
+          savedItemData.updatedByUserId,
+          savedItemData.data
+        ),
         isSaving: false,
         fieldValues: this.getDefaultValuesFor(this.props.behaviorVersion)
       }, this.focusFirstInput);

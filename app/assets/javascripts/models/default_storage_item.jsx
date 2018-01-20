@@ -5,16 +5,16 @@ define(function(require) {
   class DefaultStorageItem {
     id: string;
     behaviorId: string;
-    updatedAt: number;
-    updatedByUserId: string;
+    updatedAt: ?number;
+    updatedByUserId: ?string;
     data: any;
     fields: Array<DefaultStorageItemField>;
 
     constructor(
       id: string,
       behaviorId: string,
-      updatedAt: number,
-      updatedByUserId: string,
+      updatedAt: ?number,
+      updatedByUserId: ?string,
       data: any
     ) {
       Object.defineProperties(this, {
