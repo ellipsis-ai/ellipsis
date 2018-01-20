@@ -1,3 +1,4 @@
+// @flow
 define(function(require) {
   const React = require('react'),
     BehaviorVersion = require('../models/behavior_version'),
@@ -6,12 +7,29 @@ define(function(require) {
     Button = require('../form/button'),
     DynamicLabelButton = require('../form/dynamic_label_button'),
     DataRequest = require('../lib/data_request'),
+    DataTypeField = require('../models/data_type_field'),
     DefaultStorageItem = require('../models/default_storage_item'),
     ImmutableObjectUtils = require('../lib/immutable_object_utils'),
     autobind = require('../lib/autobind');
 
-  class DefaultStorageAdder extends React.Component {
-    constructor(props) {
+  type Props = {
+    csrfToken: string,
+    behaviorVersion: BehaviorVersion,
+    onCancelClick: () => void
+  }
+
+  type State = {
+    fieldValues: Array<any>,
+    lastSavedItem: DefaultStorageItem,
+    isSaving: boolean,
+    error: ?string
+  }
+
+  class DefaultStorageAdder extends React.Component<Props, State> {
+    props: Props;
+    state: State;
+
+    constructor(props: Props) {
       super(props);
       this.state = {
         fieldValues: this.getDefaultValuesFor(props.behaviorVersion),
@@ -24,7 +42,7 @@ define(function(require) {
       autobind(this);
     }
 
-    componentWillReceiveProps(newProps) {
+    componentWillReceiveProps(newProps: Props) {
       if (newProps.behaviorVersion.id !== this.props.behaviorVersion.id ||
           newProps.behaviorVersion.getDataTypeFields() !== this.props.behaviorVersion.getDataTypeFields()) {
         this.setState({
@@ -35,33 +53,33 @@ define(function(require) {
       }
     }
 
-    getDefaultValuesFor(behaviorVersion) {
+    getDefaultValuesFor(behaviorVersion): Array<any> {
       return this.getWritableFieldsFor(behaviorVersion).map((field) => field.fieldType.getDefaultValue());
     }
 
-    getWritableFieldsFor(behaviorVersion) {
+    getWritableFieldsFor(behaviorVersion): Array<DataTypeField> {
       return behaviorVersion.getWritableDataTypeFields();
     }
 
-    getLastSavedItemFields() {
+    getLastSavedItemFields(): Array<DataTypeField> {
       return this.state.lastSavedItem.fields;
     }
 
-    updateFieldValue(index, newValue) {
+    updateFieldValue(index: number, newValue: any): void {
       this.setState({
         fieldValues: ImmutableObjectUtils.arrayWithNewElementAtIndex(this.state.fieldValues, newValue, index)
       });
     }
 
-    hasValues() {
+    hasValues(): boolean {
       return this.state.fieldValues.some((ea) => ea.length > 0);
     }
 
-    hasSavedItem() {
+    hasSavedItem(): boolean {
       return this.state.lastSavedItem.fields.length > 0;
     }
 
-    save() {
+    save(): void {
       this.setState({
         error: null,
         isSaving: true
@@ -89,30 +107,36 @@ define(function(require) {
       });
     }
 
-    onSavedNewItem(savedItemData) {
+    onSavedNewItem(savedItemData: { [string]: any }): void {
       this.setState({
-        lastSavedItem: new DefaultStorageItem(savedItemData),
+        lastSavedItem: new DefaultStorageItem(
+          savedItemData.id,
+          this.props.behaviorVersion.behaviorId,
+          savedItemData.updatedAt,
+          savedItemData.updatedByUserId,
+          savedItemData.data
+        ),
         isSaving: false,
         fieldValues: this.getDefaultValuesFor(this.props.behaviorVersion)
       }, this.focusFirstInput);
     }
 
-    onErrorSaving() {
+    onErrorSaving(): void {
       this.setState({
         isSaving: false,
         error: "An error occurred while saving. Please try again."
       });
     }
 
-    isSaving() {
+    isSaving(): boolean {
       return this.state.isSaving;
     }
 
-    cancel() {
+    cancel(): void {
       this.props.onCancelClick();
     }
 
-    onEnterKey(index) {
+    onEnterKey(index: number): void {
       if (this.inputs[index + 1]) {
         this.inputs[index + 1].focus();
       } else if (this.saveButton) {
@@ -120,19 +144,19 @@ define(function(require) {
       }
     }
 
-    focusFirstInput() {
+    focusFirstInput(): void {
       if (this.inputs[0]) {
         this.inputs[0].focus();
       }
     }
 
-    renderError() {
+    renderError(): React.Node {
       return this.state.error ? (
         <div className="align-button mbs fade-in type-pink type-bold type-italic">{this.state.error}</div>
       ) : null;
     }
 
-    renderLastSavedItem() {
+    renderLastSavedItem(): React.Node {
       return this.getLastSavedItemFields().map((field) => (
         <DefaultStorageAdderField
           key={`lastSaved-${field.name}`}
@@ -143,7 +167,7 @@ define(function(require) {
       ));
     }
 
-    render() {
+    render(): React.Node {
       this.inputs = [];
       return (
         <div className="box-action phn">
@@ -213,12 +237,6 @@ define(function(require) {
       );
     }
   }
-
-  DefaultStorageAdder.propTypes = {
-    csrfToken: React.PropTypes.string.isRequired,
-    behaviorVersion: React.PropTypes.instanceOf(BehaviorVersion).isRequired,
-    onCancelClick: React.PropTypes.func.isRequired
-  };
 
   return DefaultStorageAdder;
 });
