@@ -11,11 +11,9 @@ import scala.concurrent.{ExecutionContext, Future}
 
 
 class RegistrationServiceImpl @Inject() (
-                                          dataServiceProvider: Provider[DataService],
+                                          val dataService: DataService,
                                           implicit val ec: ExecutionContext
                                         ) extends RegistrationService {
-
-  def dataService = dataServiceProvider.get
 
   def registerNewTeam(name: String): Future[Team] = {
     for {

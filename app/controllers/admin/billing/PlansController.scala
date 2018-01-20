@@ -6,11 +6,12 @@ import com.google.inject.Provider
 import com.mohiva.play.silhouette.api.Silhouette
 import controllers.RemoteAssets
 import controllers.admin.AdminAuth
-import models.billing.ChargebeeService
-import models.billing.subscription.SubscriptionService
-import models.silhouette.EllipsisEnv
 import play.api.Configuration
 import services.DataService
+import models.silhouette.EllipsisEnv
+import models.billing.plan.PlanService
+
+
 
 import scala.concurrent.ExecutionContext
 
@@ -20,7 +21,7 @@ class PlansController @Inject() (
                                   val dataService: DataService,
                                   val configuration: Configuration,
                                   val assetsProvider: Provider[RemoteAssets],
-                                  val planService: SubscriptionService,
+                                  val planService: PlanService,
                                   implicit val ec: ExecutionContext
                                 ) extends AdminAuth {
 

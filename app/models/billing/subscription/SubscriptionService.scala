@@ -11,6 +11,4 @@ trait SubscriptionService extends ChargebeeService {
 
   def createFreeSubscription(teamId: String, organizationId: String, customerId: String): Future[Subscription]
 
-  def allPlans: Future[Seq[Plan]]
-
 }

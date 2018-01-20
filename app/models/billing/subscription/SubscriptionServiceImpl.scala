@@ -18,20 +18,6 @@ class SubscriptionServiceImpl @Inject()(
 
   val freePlanId: String = configuration.get[String]("chargebee.free_plan_id")
 
-  def allPlans: Future[Seq[Plan]] = {
-      Future {
-        blocking {
-          Plan.list().limit(100).request(chargebeeEnv)
-        }
-      }.map { result =>
-        val buffer = ListBuffer[com.chargebee.models.Plan]()
-        for (entry <- result) {
-          buffer += entry.plan
-        }
-        buffer
-      }
-  }
-
   def createFreeSubscription(teamId: String, organizationId: String, customerId: String): Future[Subscription] = {
     Future {
       blocking {

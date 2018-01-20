@@ -47,6 +47,7 @@ import models.behaviors.scheduling.scheduledbehavior.{ScheduledBehaviorService, 
 import models.devmodechannel.{DevModeChannelService, DevModeChannelServiceImpl}
 import models.team.{TeamService, TeamServiceImpl}
 import models.organization.{OrganizationService, OrganizationServiceImpl}
+import models.billing.plan.{PlanService, PlanServiceImpl}
 import models.billing.subscription.{SubscriptionService, SubscriptionServiceImpl}
 import services._
 import net.codingwell.scalaguice.ScalaModule
@@ -102,6 +103,7 @@ class ServiceModule extends AbstractModule with ScalaModule {
     bind[BotResultService].to[BotResultServiceImpl]
     bind[NodeModuleVersionService].to[NodeModuleVersionServiceImpl]
     bind[DevModeChannelService].to[DevModeChannelServiceImpl]
+    bind[PlanService].to[PlanServiceImpl]
     bind[SubscriptionService].to[SubscriptionServiceImpl]
     bind[AWSLambdaService].to[AWSLambdaServiceImpl]
     bind[AWSLogsService].to[AWSLogsServiceImpl]
