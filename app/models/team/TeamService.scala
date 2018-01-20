@@ -16,9 +16,13 @@ trait TeamService {
 
   def allTeamsPaged(page: Int, size: Int): Future[Seq[Team]]
 
+  def allTeamsWithoutOrg: Future[Seq[Team]]
+
   def setNameFor(team: Team, name: String): Future[Team]
 
   def setTimeZoneFor(team: Team, tz: ZoneId): Future[Team]
+
+  def setOrganizationIdFor(team: Team, organizationId: String): Future[Team]
 
   def findAction(id: String): DBIO[Option[Team]]
 

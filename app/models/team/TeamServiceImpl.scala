@@ -36,6 +36,10 @@ class TeamServiceImpl @Inject() (
     dataService.run(allPagedQuery((page - 1) * perPage, perPage).result)
   }
 
+  def allTeamsWithoutOrg: Future[Seq[Team]] = {
+    dataService.run(withoutOrg.result)
+  }
+
   def findAction(id: String): DBIO[Option[Team]] = {
     findQueryFor(id).result.map(_.headOption)
   }

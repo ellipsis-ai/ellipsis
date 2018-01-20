@@ -35,4 +35,8 @@ object TeamQueries {
   }
   val findByNameQueryFor = Compiled(uncompiledFindByNameQueryFor _)
 
+  def withoutOrg = {
+     all.filter(_.maybeOrganizationId.isEmpty)
+  }
+
 }
