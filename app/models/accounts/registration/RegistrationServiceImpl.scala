@@ -2,9 +2,10 @@ package models.accounts.registration
 
 import javax.inject.{Inject, Provider}
 
+import models.billing.ChargebeeService
+import services.DataService
 import models.organization.Organization
 import models.team.Team
-import services.DataService
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -23,6 +24,8 @@ class RegistrationServiceImpl @Inject() (
     } yield {
       team
     }
-
   }
+
 }
+
+

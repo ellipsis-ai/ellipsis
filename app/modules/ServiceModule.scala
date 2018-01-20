@@ -47,7 +47,7 @@ import models.behaviors.scheduling.scheduledbehavior.{ScheduledBehaviorService, 
 import models.devmodechannel.{DevModeChannelService, DevModeChannelServiceImpl}
 import models.team.{TeamService, TeamServiceImpl}
 import models.organization.{OrganizationService, OrganizationServiceImpl}
-import models.billing.chargebee.{ChargebeeService, ChargebeeServiceImpl}
+import models.billing.subscription.{SubscriptionService, SubscriptionServiceImpl}
 import services._
 import net.codingwell.scalaguice.ScalaModule
 import utils.SlackFileMap
@@ -102,15 +102,13 @@ class ServiceModule extends AbstractModule with ScalaModule {
     bind[BotResultService].to[BotResultServiceImpl]
     bind[NodeModuleVersionService].to[NodeModuleVersionServiceImpl]
     bind[DevModeChannelService].to[DevModeChannelServiceImpl]
-    bind[ChargebeeService].to[ChargebeeServiceImpl]
-
+    bind[SubscriptionService].to[SubscriptionServiceImpl]
     bind[AWSLambdaService].to[AWSLambdaServiceImpl]
     bind[AWSLogsService].to[AWSLogsServiceImpl]
     bind[CacheService].to[CacheServiceImpl]
     bind[GraphQLService].to[GraphQLServiceImpl]
     bind[Models].asEagerSingleton()
     bind[SlackEventService].to[SlackEventServiceImpl]
-    bind[ChargebeeService].to[ChargebeeServiceImpl]
     bind[EventHandler].asEagerSingleton()
     bind[GithubService].asEagerSingleton()
     bind[SlackFileMap].asEagerSingleton()
