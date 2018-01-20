@@ -2,12 +2,14 @@
 define(function(require) {
   const DefaultStorageItemField = require('./default_storage_item_field');
 
+  type DefaultStorageItemData = { [string]: any };
+
   class DefaultStorageItem {
     id: string;
     behaviorId: string;
     updatedAt: ?number;
     updatedByUserId: ?string;
-    data: any;
+    data: DefaultStorageItemData;
     fields: Array<DefaultStorageItemField>;
 
     constructor(
@@ -15,7 +17,7 @@ define(function(require) {
       behaviorId: string,
       updatedAt: ?number,
       updatedByUserId: ?string,
-      data: any
+      data: DefaultStorageItemData
     ) {
       Object.defineProperties(this, {
         id: {
@@ -45,7 +47,7 @@ define(function(require) {
       });
     }
 
-    static dataJsonToFields(json): Array<DefaultStorageItemField> {
+    static dataJsonToFields(json: DefaultStorageItemData): Array<DefaultStorageItemField> {
       if (!json) {
         return [];
       }
