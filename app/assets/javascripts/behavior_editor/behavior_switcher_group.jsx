@@ -1,37 +1,36 @@
+// @flow
 define(function(require) {
-  var React = require('react'),
-    AddNewBehaviorToGroup = require('./add_new_behavior_to_group'),
+  const React = require('react'),
+    AddButton = require('../form/add_button'),
     EditableName = require('../behavior_list/editable_name'),
     Editable = require('../models/editable'),
-    ifPresent = require('../lib/if_present'),
     Sort = require('../lib/sort');
 
-  return React.createClass({
-    displayName: 'BehaviorSwitcherGroup',
-    propTypes: {
-      heading: React.PropTypes.string.isRequired,
-      editables: React.PropTypes.arrayOf(React.PropTypes.instanceOf(Editable)).isRequired,
-      selectedId: React.PropTypes.string,
-      onAddNew: React.PropTypes.func.isRequired,
-      addNewLabel: React.PropTypes.string,
-      emptyMessage: React.PropTypes.string.isRequired,
-      onSelect: React.PropTypes.func.isRequired,
-      isModified: React.PropTypes.func.isRequired
-    },
+  type Props = {
+    heading: string,
+    editables: Array<Editable>,
+    selectedId?: string,
+    onAddNew: () => void,
+    addNewLabel?: string,
+    onSelect: (groupId: string, selectableId: string) => void,
+    isModified: (Editable) => boolean
+  }
 
-    getSelected: function() {
+  class BehaviorSwitcherGroup extends React.Component<Props> {
+    getSelected(): ?Editable {
       return this.props.editables.find(ea => this.props.selectedId && ea.getPersistentId() === this.props.selectedId );
-    },
+    }
 
-    getEditableList: function() {
+    getEditableList(): Array<Editable> {
       return Sort.arrayAlphabeticalBy(this.props.editables, ea => ea.sortKey());
-    },
+    }
 
-    isSelected: function(editable) {
-      return !!this.getSelected() && editable.getPersistentId() === this.getSelected().getPersistentId();
-    },
+    isSelected(editable): boolean {
+      const selected = this.getSelected();
+      return Boolean(selected && editable.getPersistentId() === selected.getPersistentId());
+    }
 
-    renderNameFor: function(editable) {
+    renderNameFor(editable): React.Node {
       return (
         <EditableName
           className="plxl mobile-pll"
@@ -42,16 +41,28 @@ define(function(require) {
           onClick={this.props.onSelect}
         />
       );
-    },
+    }
 
-    render: function() {
+    render(): React.Node {
+      const editables = this.getEditableList();
+      const hasEditables = editables.length > 0;
       return (
-        <div className="border-bottom mtl pbl">
-          <div className="container container-wide mbs">
-            <h6>{this.props.heading}</h6>
+        <div className="border-bottom pbl">
+          <div className="container container-wide prl">
+            <div className="columns columns-elastic">
+              <div className="column column-expand ptl">
+                <h6>{this.props.heading}</h6>
+              </div>
+              <div className="column column-shrink ptm type-link">
+                <AddButton
+                  onClick={this.props.onAddNew}
+                  label={this.props.addNewLabel}
+                />
+              </div>
+            </div>
           </div>
-          <div className="type-s">
-            {ifPresent(this.getEditableList(), editables => editables.map((editable, index) => (
+          <div className={`type-s ${hasEditables ? "mts" : ""}`}>
+            {editables.map((editable, index) => (
               <div
                 key={`behavior${index}`}
                 className={`pvxs ${this.isSelected(editable) ? "bg-blue border-blue-medium type-white" : ""}`}
@@ -61,18 +72,12 @@ define(function(require) {
                 </div>
                 {this.renderNameFor(editable)}
               </div>
-            )), () => (
-              <p className="container container-wide type-weak">{this.props.emptyMessage}</p>
             ))}
-          </div>
-          <div className="container container-wide mvm">
-            <AddNewBehaviorToGroup
-              onClick={this.props.onAddNew}
-              label={this.props.addNewLabel}
-            />
           </div>
         </div>
       );
     }
-  });
+  }
+
+  return BehaviorSwitcherGroup;
 });
