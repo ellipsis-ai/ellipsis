@@ -32,7 +32,7 @@ define(function(require) {
 
     renderTextDiff(diff: MultiLineTextPropertyDiff, index: number, className: ?string): ElementType {
       return (
-        <DiffItem className={className} key={`diff${index}`} label={`${diff.label} changed:`}>
+        <DiffItem className={className} key={`diff${index}`} label={`${diff.label} changed`}>
           <TextDiff diff={diff} className="bg-white mbneg1" />
         </DiffItem>
       );
