@@ -1,5 +1,6 @@
 define(function(require) {
   var React = require('react'),
+    AddButton = require('../form/add_button'),
     Button = require('../form/button'),
     RequiredAWSConfig = require('../models/aws').RequiredAWSConfig,
     RequiredOAuth2Application = require('../models/oauth2').RequiredOAuth2Application,
@@ -47,19 +48,29 @@ define(function(require) {
     },
 
     render: function() {
+      const awsConfigs = this.renderConfigs(this.props.requiredAWSConfigs);
+      const oAuth2Configs = this.renderConfigs(this.props.requiredOAuth2Applications);
+      const simpleTokenConfigs = this.renderConfigs(this.props.requiredSimpleTokenApis);
+      const hasConfigs = awsConfigs.length > 0 || oAuth2Configs.length > 0 || simpleTokenConfigs.length > 0;
       return (
-        <div className="border-bottom mtl pbl">
-          <div className="container container-wide mbs">
-            <h6>API integrations</h6>
+        <div className="border-bottom pbl">
+          <div className="container container-wide prl">
+            <div className="columns columns-elastic">
+              <div className="column column-expand ptl">
+                <h6>API integrations</h6>
+              </div>
+              <div className="column column-shrink ptm type-link">
+                <AddButton
+                  onClick={this.props.onAddApiConfigClick}
+                  label={"Add new integration"}
+                />
+              </div>
+            </div>
           </div>
-          <div className="type-s">
-            {this.renderConfigs(this.props.requiredAWSConfigs)}
-            {this.renderConfigs(this.props.requiredOAuth2Applications)}
-            {this.renderConfigs(this.props.requiredSimpleTokenApis)}
-          </div>
-          <div className="container container-wide mvm">
-            <Button onClick={this.props.onAddApiConfigClick}
-                    className="button button-s button-shrink">Add new integration</Button>
+          <div className={`type-s ${hasConfigs ? "mts" : ""}`}>
+            {awsConfigs}
+            {oAuth2Configs}
+            {simpleTokenConfigs}
           </div>
         </div>
       );
