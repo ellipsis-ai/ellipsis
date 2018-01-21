@@ -51,7 +51,7 @@ plans = [
     "Description" : "3 custom Skill with support for 12 months.",
     "period": 1,
     "period_unit": "year",
-    "price" : 12000,
+    "price" : 1200000,
     "currency_code": "USD"
   },
   {
@@ -61,7 +61,7 @@ plans = [
     "Description" : "The ultimate package for custom Skills",
     "period": 1,
     "period_unit": "year",
-    "price" : 50000,
+    "price" : 5000000,
     "currency_code": "USD"
   }
 ]
