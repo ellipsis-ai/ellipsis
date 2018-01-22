@@ -59,6 +59,7 @@ class BotResultServiceImpl @Inject() (
           maybeConversation,
           botResult.attachmentGroups,
           files,
+          botResult.isForUndeployed,
           cacheService
         )
       )

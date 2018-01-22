@@ -123,6 +123,7 @@ case class SlackMessageEvent(
                    maybeConversation: Option[Conversation],
                    attachmentGroups: Seq[MessageAttachmentGroup],
                    files: Seq[UploadFileSpec],
+                   isForUndeployed: Boolean,
                    cacheService: CacheService
                  )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[String]] = {
     channelForSend(forcePrivate, maybeConversation, cacheService).flatMap { channelToUse =>
@@ -132,6 +133,7 @@ case class SlackMessageEvent(
         profile.slackTeamId,
         unformattedText,
         forcePrivate,
+        isForUndeployed,
         channel,
         channelToUse,
         maybeThreadId,

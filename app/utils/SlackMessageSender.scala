@@ -3,7 +3,7 @@ package utils
 import akka.actor.ActorSystem
 import models.SlackMessageFormatter
 import models.behaviors.conversations.conversation.Conversation
-import models.behaviors.events.{MessageAttachmentGroup, SlackMessageAttachmentGroup}
+import models.behaviors.events.{MessageAttachmentGroup, SlackMessageAttachmentGroup, SlackMessageTextAttachmentGroup}
 import slack.api.SlackApiClient
 import slack.models.Attachment
 
@@ -27,6 +27,7 @@ case class SlackMessageSender(
                                teamId: String,
                                unformattedText: String,
                                forcePrivate: Boolean,
+                               isForUndeployed: Boolean,
                                originatingChannel: String,
                                channelToUse: String,
                                maybeThreadId: Option[String],
@@ -35,6 +36,12 @@ case class SlackMessageSender(
                                attachmentGroups: Seq[MessageAttachmentGroup] = Seq(),
                                files: Seq[UploadFileSpec] = Seq()
                              ) {
+
+  val attachmentGroupsToUse = if (isForUndeployed) {
+    attachmentGroups ++ Seq(SlackMessageTextAttachmentGroup("\uD83D\uDEA7 Note: this is a developer preview \uD83D\uDEA7", None))
+  } else {
+    attachmentGroups
+  }
 
   private def postChatMessage(
                                text: String,
@@ -171,7 +178,7 @@ case class SlackMessageSender(
 
   def send(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[String]] = {
     val formattedText = SlackMessageFormatter.bodyTextFor(unformattedText)
-    val attachments = attachmentGroups.flatMap {
+    val attachments = attachmentGroupsToUse.flatMap {
       case a: SlackMessageAttachmentGroup => a.attachments.map(_.underlying)
       case _ => Seq()
     }

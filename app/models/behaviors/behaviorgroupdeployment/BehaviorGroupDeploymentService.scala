@@ -4,6 +4,7 @@ import models.behaviors.behaviorgroup.BehaviorGroup
 import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
 import models.behaviors.triggers.messagetrigger.MessageTrigger
 import models.team.Team
+import slick.dbio.DBIO
 
 import scala.concurrent.Future
 
@@ -14,6 +15,8 @@ trait BehaviorGroupDeploymentService {
   def allActiveTriggersFor(context: String, channel: String, team: Team): Future[Seq[MessageTrigger]]
 
   def maybeMostRecentFor(group: BehaviorGroup): Future[Option[BehaviorGroupDeployment]]
+
+  def findForBehaviorGroupVersionAction(version: BehaviorGroupVersion): DBIO[Option[BehaviorGroupDeployment]]
 
   def findForBehaviorGroupVersion(version: BehaviorGroupVersion): Future[Option[BehaviorGroupDeployment]]
 

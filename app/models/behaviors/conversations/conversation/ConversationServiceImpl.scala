@@ -195,6 +195,7 @@ class ConversationServiceImpl @Inject() (
           Some(conversation),
           attachmentGroups = Seq(),
           files = Seq(),
+          isForUndeployed = false,
           cacheService
         ))
       }.getOrElse(DBIO.successful(None))
