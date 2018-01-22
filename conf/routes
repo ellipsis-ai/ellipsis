@@ -120,6 +120,9 @@ GET         /legal/user_agreement                     @controllers.LegalControll
 GET         /get_item/:itemId/:itemType/:token        @controllers.DefaultStorage.getItem(itemId: String, itemType: String, token: String)
 
 
+# Webhooks
+POST        /webhooks/chargebee/events                @controllers.webhooks.chargebee.EventsController.create
+
 # API v0
 #NOCSRF
 POST        /put_item                                 @controllers.DefaultStorage.putItem

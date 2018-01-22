@@ -6,7 +6,6 @@ import com.mohiva.play.silhouette.api.actions.SecuredRequest
 import models.silhouette.EllipsisEnv
 import play.api.mvc.{AnyContent, Result}
 import services.DataService
-
 import scala.concurrent.{ExecutionContext, Future}
 
 

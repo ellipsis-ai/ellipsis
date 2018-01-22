@@ -1,31 +1,34 @@
 package models.billing.subscription
 
+
 import javax.inject.Inject
-import scala.collection.JavaConversions._
-import scala.collection.mutable.ListBuffer
 import scala.concurrent.{ExecutionContext, Future, blocking}
 import play.api.Configuration
 import services.DataService
-import com.chargebee.models.Plan
 import com.chargebee.models.Subscription
+import com.google.inject.Provider
+import models.billing.ChargebeeService
+import models.organization.Organization
+import models.team.Team
 
 
 class SubscriptionServiceImpl @Inject()(
+                                         val dataServiceProvider: Provider[DataService],
                                          val configuration: Configuration,
-                                         val dataService: DataService,
                                          implicit val ec: ExecutionContext
-                                       ) extends SubscriptionService {
+                                       ) extends SubscriptionService with ChargebeeService {
+  def dataService = dataServiceProvider.get
 
-  val freePlanId: String = configuration.get[String]("chargebee.free_plan_id")
-
-  def createFreeSubscription(teamId: String, organizationId: String, customerId: String): Future[Subscription] = {
+  def createFreeSubscription(team: Team, organization: Organization): Future[Subscription] = {
     Future {
       blocking {
         Subscription.create()
           .planId(freePlanId)
-          .param("subscription[teamId]", teamId)
-          .customerId(customerId)
-          .param("customer[organizationId]", organizationId)
+          .param("cf_team_id", team.id)
+          .param("subscription[cf_team_name]", team.name)
+          .customerId(organization.maybeChargebeeCustomerId.get)
+          .param("customer[cf_organization_id]", organization.id)
+          .param("customer[cf_organization_name]", organization.name)
           .request(chargebeeEnv)
       }
     }.map { result =>

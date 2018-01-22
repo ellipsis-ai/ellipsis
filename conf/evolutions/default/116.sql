@@ -12,5 +12,5 @@ ALTER TABLE teams ADD COLUMN organization_id TEXT;
 # --- !Downs
 
 DROP TABLE IF EXISTS organizations;
-ALTER TABLE teams DROP COLUMN IF EXISTS organization_idq  ;
+ALTER TABLE teams DROP COLUMN IF EXISTS organization_id  ;
 

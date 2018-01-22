@@ -1,5 +1,6 @@
 package models.billing.plan
 
+
 import javax.inject.Inject
 import com.chargebee.models.Plan
 import play.api.Configuration

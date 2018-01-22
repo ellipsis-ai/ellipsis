@@ -3,6 +3,7 @@ package models.organization
 
 import scala.concurrent.Future
 
+
 trait OrganizationService {
 
     def allAccounts: Future[Seq[Organization]]
@@ -13,6 +14,8 @@ trait OrganizationService {
 
     def create(name: String): Future[Organization]
 
-    def save(account: Organization): Future[Organization]
+    def save(organization: Organization): Future[Organization]
+
+    def setChargebeeCustomerIdFor(organization: Organization, customerId: Option[String]): Future[Organization]
 
 }

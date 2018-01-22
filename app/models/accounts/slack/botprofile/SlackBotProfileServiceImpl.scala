@@ -91,6 +91,9 @@ class SlackBotProfileServiceImpl @Inject() (
           }.getOrElse(DBIO.successful(Unit))
         } yield profile
       }
+      // TODO: how to handle an error in creating a team? Let's say that we cannot
+      // create a subscription due to Chargebee API outage, we need to stop the registration process.
+      //
       case None => DBIO.from(dataService.teams.create(slackTeamName)).flatMap { team =>
         val newProfile = SlackBotProfile(userId, team.id, slackTeamId, token, OffsetDateTime.now)
         (all += newProfile).map { _ => newProfile }

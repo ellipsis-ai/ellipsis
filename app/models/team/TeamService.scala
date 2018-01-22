@@ -1,12 +1,12 @@
 package models.team
 
-import java.time.ZoneId
 
+import java.time.ZoneId
 import models.accounts.user.User
 import models.organization.Organization
 import slick.dbio.DBIO
-
 import scala.concurrent.Future
+
 
 trait TeamService {
 
@@ -22,7 +22,7 @@ trait TeamService {
 
   def setTimeZoneFor(team: Team, tz: ZoneId): Future[Team]
 
-  def setOrganizationIdFor(team: Team, organizationId: String): Future[Team]
+  def setOrganizationIdFor(team: Team, organizationId: Option[String]): Future[Team]
 
   def findAction(id: String): DBIO[Option[Team]]
 

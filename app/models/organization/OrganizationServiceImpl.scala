@@ -1,13 +1,14 @@
 package models.organization
 
+
 import java.time.OffsetDateTime
 import javax.inject.Inject
-
 import com.google.inject.Provider
 import drivers.SlickPostgresDriver.api._
 import models.IDs
 import services.DataService
 import scala.concurrent.{ExecutionContext, Future}
+
 
 class OrganizationServiceImpl @Inject()(
                                     dataServiceProvider: Provider[DataService],
@@ -34,7 +35,7 @@ class OrganizationServiceImpl @Inject()(
     Organization(
       IDs.next,
       name,
-      IDs.next,
+      Some(IDs.next),
       OffsetDateTime.now()
     )
   )
@@ -49,6 +50,14 @@ class OrganizationServiceImpl @Inject()(
       }.map { _ => organization }
     }
     dataService.run(action)
+  }
+
+  def setChargebeeCustomerIdFor(organization: Organization, chargebeeCustomerId: Option[String]): Future[Organization] = {
+    save(organization.copy(maybeChargebeeCustomerId = chargebeeCustomerId))
+  }
+
+  def setChargebeeCustomerIdFor(organization: Organization, chargebeeCustomerId: String): Future[Organization] = {
+    save(organization.copy(maybeChargebeeCustomerId = Some(chargebeeCustomerId)))
   }
 
 }

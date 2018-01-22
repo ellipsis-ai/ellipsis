@@ -1,7 +1,7 @@
 package controllers.admin.billing
 
-import javax.inject.Inject
 
+import javax.inject.Inject
 import com.google.inject.Provider
 import com.mohiva.play.silhouette.api.Silhouette
 import controllers.RemoteAssets
@@ -10,9 +10,6 @@ import play.api.Configuration
 import services.DataService
 import models.silhouette.EllipsisEnv
 import models.billing.plan.PlanService
-
-
-
 import scala.concurrent.ExecutionContext
 
 

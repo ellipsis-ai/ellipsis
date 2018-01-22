@@ -2,7 +2,6 @@ package models.team
 
 import java.time.{OffsetDateTime, ZoneId}
 import javax.inject.Inject
-
 import com.google.inject.Provider
 import models.accounts.linkedaccount.LinkedAccount
 import models.IDs
@@ -15,7 +14,7 @@ import models.organization.Organization
 import scala.concurrent.{ExecutionContext, Future}
 
 class TeamServiceImpl @Inject() (
-                                  dataServiceProvider: Provider[DataService],
+                                  val dataServiceProvider: Provider[DataService],
                                   configuration: Configuration,
                                   implicit val ec: ExecutionContext
                                 ) extends TeamService {
@@ -89,8 +88,8 @@ class TeamServiceImpl @Inject() (
     save(team.copy(maybeTimeZone = Some(tz)))
   }
 
-  def setOrganizationIdFor(team: Team, organizationId: String): Future[Team] = {
-    save(team.copy(maybeOrganizationId = Some(organizationId)))
+  def setOrganizationIdFor(team: Team, organizationId: Option[String]): Future[Team] = {
+    save(team.copy(maybeOrganizationId = organizationId))
   }
 
   def save(team: Team): Future[Team] = {

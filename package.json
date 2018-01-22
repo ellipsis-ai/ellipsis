@@ -7,11 +7,7 @@
   "directories": {
     "test": "test"
   },
-  "dependencies": {
-    "babel-eslint": "8.2.1",
-    "eslint": "4.15.0",
-    "eslint-plugin-flowtype": "2.41.0"
-  },
+  "dependencies": {},
   "devDependencies": {
     "amdefine": "^1.0.0",
     "babel-cli": "^6.26.0",

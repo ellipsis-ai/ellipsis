@@ -1,14 +1,14 @@
 package models.billing.subscription
 
-import com.chargebee.models.Subscription
-import com.chargebee.models.Plan
-import models.billing.ChargebeeService
 
 import scala.concurrent.Future
+import com.chargebee.models.Subscription
+import models.organization.Organization
+import models.team.Team
 
 
-trait SubscriptionService extends ChargebeeService {
+trait SubscriptionService {
 
-  def createFreeSubscription(teamId: String, organizationId: String, customerId: String): Future[Subscription]
+  def createFreeSubscription(team: Team, organization: Organization): Future[Subscription]
 
 }

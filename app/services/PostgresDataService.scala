@@ -46,6 +46,7 @@ import models.devmodechannel.DevModeChannelService
 import models.environmentvariable.TeamEnvironmentVariableService
 import models.organization.OrganizationService
 import models.team.TeamService
+import models.billing.subscription.SubscriptionService
 import slick.dbio.DBIO
 
 import scala.concurrent.Future
@@ -95,7 +96,8 @@ class PostgresDataService @Inject() (
                                       val recurrencesProvider: Provider[RecurrenceService],
                                       val invocationLogEntriesProvider: Provider[InvocationLogEntryService],
                                       val devModeChannelsProvider: Provider[DevModeChannelService],
-                                      val behaviorResponsesProvider: Provider[BehaviorResponseService]
+                                      val behaviorResponsesProvider: Provider[BehaviorResponseService],
+                                      val subscriptionsProvider: Provider[SubscriptionService]
                             ) extends DataService {
 
   val users = usersProvider.get
@@ -140,6 +142,7 @@ class PostgresDataService @Inject() (
   val recurrences = recurrencesProvider.get
   val invocationLogEntries = invocationLogEntriesProvider.get
   val devModeChannels = devModeChannelsProvider.get
+  val subscriptions = subscriptionsProvider.get
 
   def behaviorResponses = behaviorResponsesProvider.get
 
