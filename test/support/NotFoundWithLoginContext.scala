@@ -22,7 +22,7 @@ trait NotFoundWithLoginContext extends ControllerTestContextWithLoggedInUser {
   def testNotFound = {
     running(app) {
       val teamAccess = mock[UserTeamAccess]
-      val loggedInTeam = new Team("Logged in")
+      val loggedInTeam = Team("Logged in")
       mockTeamAccessFor(teamAccess)
       when(teamAccess.maybeTargetTeam).thenReturn(None)
       when(teamAccess.loggedInTeam).thenReturn(loggedInTeam)

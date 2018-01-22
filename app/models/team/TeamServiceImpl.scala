@@ -74,7 +74,7 @@ class TeamServiceImpl @Inject() (
     } yield maybeTeam
   }
 
-  def create(name: String): Future[Team] = save(new Team(name))
+  def create(name: String): Future[Team] = save(Team(name))
 
   def create(name: String, organization: Organization): Future[Team] = {
     save(Team(IDs.next, name, None, Some(organization.id), OffsetDateTime.now))

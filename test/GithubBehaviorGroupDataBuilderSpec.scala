@@ -13,7 +13,7 @@ import utils.github.GithubBehaviorGroupDataBuilder
 
 class GithubBehaviorGroupDataBuilderSpec extends PlaySpec with MockitoSugar {
 
-  val team: Team = new Team("Test team")
+  val team: Team = Team("Test team")
 
   "build" should {
 
