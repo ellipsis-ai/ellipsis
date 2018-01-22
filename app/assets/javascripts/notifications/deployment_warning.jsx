@@ -37,10 +37,18 @@ define(function(require) {
       return moment(this.detail().lastDeployTimestamp).from(new Date(this.detail().lastSaveTimestamp), true);
     }
 
+    versionStatusText() {
+      if (this.detail().lastDeployTimestamp) {
+        return `This version is ${this.timestampText()} newer than the last deployed version.`;
+      } else {
+        return `This skill hasn't yet been deployed, so it isn't generally available to users.`
+      }
+    }
+
     render() {
       return (
         <span>
-          <span>This version is {this.timestampText()} newer than the last deployed version. Use </span>
+          <span>{this.versionStatusText()} Use </span>
           <button className="button-raw" type="button" onClick={this.detail().onDevModeChannelsClick}>dev mode channels</button>
           <span> to test until it has been deployed.</span>
           <button className="button-s button-shrink mlm" type="button" onClick={this.deploy}>
@@ -56,7 +64,7 @@ define(function(require) {
       kind: React.PropTypes.string.isRequired,
       type: React.PropTypes.string.isRequired,
       lastSaveTimestamp: React.PropTypes.string.isRequired,
-      lastDeployTimestamp: React.PropTypes.string.isRequired,
+      lastDeployTimestamp: React.PropTypes.string,
       onDevModeChannelsClick: React.PropTypes.func.isRequired,
       onClick: React.PropTypes.func.isRequired
     })).isRequired
