@@ -13,7 +13,7 @@ class RegistrationServiceImpl @Inject() (
                                         ) extends RegistrationService {
 
   def registerNewTeam(name: String): Future[Option[Team]] = {
-    (for {
+    for {
       org <- dataService.organizations.create(name)
       team <- dataService.teams.create(name, org)
       sub <- dataService.subscriptions.createFreeSubscription(team,org)
