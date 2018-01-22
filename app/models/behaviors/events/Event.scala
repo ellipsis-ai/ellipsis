@@ -10,6 +10,7 @@ import models.behaviors.builtins.DisplayHelpBehavior
 import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.scheduling.Scheduled
 import models.team.Team
+import play.api.Configuration
 import play.api.libs.json.JsObject
 import services.{AWSLambdaService, CacheService, DataService, DefaultServices}
 import slick.dbio.DBIO
@@ -158,7 +159,8 @@ trait Event {
                    attachmentGroups: Seq[MessageAttachmentGroup],
                    files: Seq[UploadFileSpec],
                    isForUndeployed: Boolean,
-                   cacheService: CacheService
+                   cacheService: CacheService,
+                   configuration: Configuration
                  )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[String]]
 
   def botPrefix(services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[String] = Future.successful("")

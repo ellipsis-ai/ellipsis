@@ -6,6 +6,7 @@ import models.behaviors.UserInfo
 import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.events._
 import models.team.Team
+import play.api.Configuration
 import play.api.libs.json.JsObject
 import services.{CacheService, DataService, DefaultServices}
 import slick.dbio.DBIO
@@ -48,7 +49,8 @@ case class TestEvent(
                    attachmentGroups: Seq[MessageAttachmentGroup],
                    files: Seq[UploadFileSpec],
                    isForUndeployed: Boolean,
-                   cacheService: CacheService
+                   cacheService: CacheService,
+                   configuration: Configuration
                  )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[String]] = {
     Future.successful(messageBuffer += text).map(_ => None)
   }

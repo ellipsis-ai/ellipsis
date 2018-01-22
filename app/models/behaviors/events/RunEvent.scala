@@ -7,6 +7,7 @@ import models.behaviors.BehaviorResponse
 import models.behaviors.behavior.Behavior
 import models.behaviors.conversations.conversation.Conversation
 import models.team.Team
+import play.api.Configuration
 import services.{AWSLambdaConstants, CacheService, DataService, DefaultServices}
 import slack.api.SlackApiClient
 import utils.{SlackMessageSender, UploadFileSpec}
@@ -53,7 +54,8 @@ case class RunEvent(
                    attachmentGroups: Seq[MessageAttachmentGroup],
                    files: Seq[UploadFileSpec],
                    isForUndeployed: Boolean,
-                   cacheService: CacheService
+                   cacheService: CacheService,
+                   configuration: Configuration
                  )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[String]] = {
     SlackMessageSender(
       client,
@@ -68,7 +70,8 @@ case class RunEvent(
       maybeShouldUnfurl,
       maybeConversation,
       attachmentGroups,
-      files
+      files,
+      configuration
     ).send
   }
 

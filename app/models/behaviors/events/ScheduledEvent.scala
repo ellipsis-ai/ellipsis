@@ -5,6 +5,7 @@ import models.behaviors.behavior.Behavior
 import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.scheduling.Scheduled
 import models.team.Team
+import play.api.Configuration
 import play.api.libs.json.JsObject
 import play.api.libs.ws.WSClient
 import services.{CacheService, DataService, DefaultServices}
@@ -30,9 +31,10 @@ case class ScheduledEvent(underlying: Event, scheduled: Scheduled) extends Event
                    attachmentGroups: Seq[MessageAttachmentGroup],
                    files: Seq[UploadFileSpec],
                    isForUndeployed: Boolean,
-                   cacheService: CacheService
+                   cacheService: CacheService,
+                   configuration: Configuration
                  )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[String]] = {
-    underlying.sendMessage(text, forcePrivate, maybeShouldUnfurl, maybeConversation, attachmentGroups, files, isForUndeployed, cacheService)
+    underlying.sendMessage(text, forcePrivate, maybeShouldUnfurl, maybeConversation, attachmentGroups, files, isForUndeployed, cacheService, configuration)
   }
 
   override def detailsFor(services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[JsObject] = {

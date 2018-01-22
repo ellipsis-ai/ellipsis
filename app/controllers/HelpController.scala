@@ -18,6 +18,14 @@ class HelpController @Inject() (
                                    implicit val ec: ExecutionContext
                                  ) extends EllipsisController {
 
+  def devMode = silhouette.UserAwareAction.async { implicit request =>
+    request.identity.map { user =>
+      dataService.users.teamAccessFor(user, None).map(Some(_))
+    }.getOrElse(Future.successful(None)).map { maybeTeamAccess =>
+      Ok(views.html.help.devMode("Dev mode", viewConfig(maybeTeamAccess)))
+    }
+  }
+
   def scheduledMessages = silhouette.UserAwareAction.async { implicit request =>
     request.identity.map { user =>
       dataService.users.teamAccessFor(user, None).map(Some(_))

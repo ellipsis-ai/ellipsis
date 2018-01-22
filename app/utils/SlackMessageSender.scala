@@ -4,6 +4,7 @@ import akka.actor.ActorSystem
 import models.SlackMessageFormatter
 import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.events.{MessageAttachmentGroup, SlackMessageAttachmentGroup, SlackMessageTextAttachmentGroup}
+import play.api.Configuration
 import slack.api.SlackApiClient
 import slack.models.Attachment
 
@@ -34,11 +35,15 @@ case class SlackMessageSender(
                                maybeShouldUnfurl: Option[Boolean],
                                maybeConversation: Option[Conversation],
                                attachmentGroups: Seq[MessageAttachmentGroup] = Seq(),
-                               files: Seq[UploadFileSpec] = Seq()
+                               files: Seq[UploadFileSpec] = Seq(),
+                               configuration: Configuration
                              ) {
 
   val attachmentGroupsToUse = if (isForUndeployed) {
-    attachmentGroups ++ Seq(SlackMessageTextAttachmentGroup("\uD83D\uDEA7 Note: this is a developer preview \uD83D\uDEA7", None))
+    val baseUrl = configuration.get[String]("application.apiBaseUrl")
+    val path = controllers.routes.HelpController.devMode().url
+    val link = s"[development]($baseUrl$path)"
+    attachmentGroups ++ Seq(SlackMessageTextAttachmentGroup(s"\uD83D\uDEA7 Skill in $link \uD83D\uDEA7", None))
   } else {
     attachmentGroups
   }

@@ -105,6 +105,7 @@ GET         /admin/teams                              @controllers.admin.TeamsCo
 GET         /metrics/invocations_for_date/:token/:year/:month/:day          @controllers.VisibilityAPIController.invocationCountsForDate(token: String, year: String, month: String, day: String)
 GET         /metrics/for_team_for_date/:token/:teamName/:year/:month/:day   @controllers.VisibilityAPIController.forTeamForDate(token: String, teamName: String, year: String, month: String, day: String)
 
+GET         /help/devmode                             @controllers.HelpController.devMode
 GET         /help/scheduling                          @controllers.HelpController.scheduledMessages
 POST        /feedback/send                            @controllers.FeedbackController.send
 
