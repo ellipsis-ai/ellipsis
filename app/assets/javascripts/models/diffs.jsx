@@ -441,9 +441,13 @@ define(function(require) {
         if (prop.isCategorical) {
           return new CategoricalPropertyDiff(prop.name, isAdded ? "" : value, isAdded ? value : "");
         } else {
-          return new MultiLineTextPropertyDiff(prop.name, isAdded ? "" : value, isAdded ? value : "", {
-            isCode: prop.isCode
-          });
+          if (value) { // Only create a text diff if there is text to show
+            return new MultiLineTextPropertyDiff(prop.name, isAdded ? "" : value, isAdded ? value : "", {
+              isCode: prop.isCode
+            });
+          } else {
+            return null;
+          }
         }
       } else if (Array.isArray(value)) {
         return value.map((child) => addedOrRemovedDiffFor(child, isAdded));
