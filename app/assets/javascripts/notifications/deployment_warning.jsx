@@ -41,7 +41,7 @@ define(function(require) {
       if (this.detail().lastDeployTimestamp) {
         return `This version is ${this.timestampText()} newer than the last deployed version.`;
       } else {
-        return `This skill hasn't yet been deployed, so it isn't generally available to users.`
+        return `This skill hasn't yet been deployed, so it isn't generally available to users.`;
       }
     }
 
@@ -50,8 +50,8 @@ define(function(require) {
         <span>
           <span>{this.versionStatusText()} Use </span>
           <button className="button-raw" type="button" onClick={this.detail().onDevModeChannelsClick}>dev mode channels</button>
-          <span> to test until it has been deployed.</span>
-          <button className="button-s button-shrink mlm" type="button" onClick={this.deploy}>
+          <span> to test until it has been deployed , or</span>
+          <button className="button-s button-shrink mls" type="button" onClick={this.deploy}>
             {this.isDeploying() ? "Deploying…" : "Deploy now"}
           </button>
         </span>
