@@ -14,14 +14,20 @@ define(function(require) {
           onCollapseClick={this.props.onCollapseClick}
         >
           <div className="mtm">
-            To let you work on a skill without interfering with its users, Ellipsis gives you the ability to only deploy a skill version when you are ready.
+            <span>To avoid interfering with other users of a skill, Ellipsis allows you to make changes and test them before they are generally visible. </span>
+            <span>Once you feel the skill is ready, you can deploy the latest version to make it available to everyone. </span>
           </div>
 
           <div className="mtl">
-            <span>You can test the latest version of a not-yet-deployed skill here in the editor using the <span className="type-bold">Test…</span> button below. </span>
+            You can test the latest version of a not-yet-deployed skill in 2 ways:
           </div>
+
           <div className="mtl">
-            <div>Additionally, you can enable "dev mode" in any channel in Slack by typing:</div>
+            <span className="type-bold">Here in the editor</span> using the <span className="type-monospace">Test…</span> button below.
+          </div>
+
+          <div className="mtl">
+            <div><span className="type-bold">In Slack</span>, you can enable dev mode in any channel by typing:</div>
             <div className="box-code-example mts">…enable dev mode</div>
             <div className="mts">In this mode, the most recently saved versions of your skills will be available, rather than the most recently deployed ones.</div>
           </div>
