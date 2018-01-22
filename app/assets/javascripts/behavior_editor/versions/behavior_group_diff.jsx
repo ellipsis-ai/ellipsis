@@ -32,7 +32,7 @@ define(function(require) {
 
     renderTextDiff(diff: MultiLineTextPropertyDiff, index: number, className: ?string): ElementType {
       return (
-        <DiffItem className={className} key={`diff${index}`} label={`${diff.label} changed`}>
+        <DiffItem className={className} key={`diff${index}`} label={diff.summaryText()}>
           <TextDiff diff={diff} className="bg-white mbneg1" />
         </DiffItem>
       );
@@ -65,7 +65,7 @@ define(function(require) {
     }
 
     renderDiffChildren(diff: Diff, childClassName: ?string): React.Node {
-      if (diff instanceof ModifiedDiff) {
+      if (diff instanceof ModifiedDiff || diff instanceof AddedOrRemovedDiff) {
         return diff.children.map((ea, index) => this.renderSingleDiff(ea, index, childClassName));
       }
     }

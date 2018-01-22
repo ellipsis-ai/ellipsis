@@ -83,10 +83,12 @@ define(function(require) {
 
   class AddedOrRemovedDiff<T: Diffable> implements Diff {
     item: T;
+    children: Array<Diff>;
 
-    constructor(item: T) {
+    constructor(item: T, children?: Array<Diff>) {
       Object.defineProperties(this, {
-        item: { value: item, enumerable: true }
+        item: { value: item, enumerable: true },
+        children: { value: children || [], enumerable: true}
       });
     }
 
@@ -406,7 +408,15 @@ define(function(require) {
   class CategoricalPropertyDiff extends PropertyDiff<string> {
 
     displayText(): string {
-      return `${this.label}: changed from ${this.original} to ${this.modified}`;
+      if (this.original && this.modified) {
+        return `${this.label}: changed from “${this.original}” to “${this.modified}”`;
+      } else if (this.modified) {
+        return `${this.label}: set to “${this.modified}”`;
+      } else if (this.original) {
+        return `${this.label}: “${this.original}” cleared`;
+      } else {
+        return `${this.label}: cleared`;
+      }
     }
 
     summaryText(): string {
@@ -423,6 +433,33 @@ define(function(require) {
 
   }
 
+  function addedOrRemovedDiffFor<T: Diffable>(item: T, isAdded: boolean): AddedOrRemovedDiff<T> {
+    const children = item.diffProps().map((prop) => {
+      const value = prop.value;
+      // TODO: allow diffs with null: see https://github.com/ellipsis-ai/ellipsis/issues/2196
+      if (typeof value === "string") {
+        if (prop.isCategorical) {
+          return new CategoricalPropertyDiff(prop.name, isAdded ? "" : value, isAdded ? value : "");
+        } else {
+          return new MultiLineTextPropertyDiff(prop.name, isAdded ? "" : value, isAdded ? value : "", {
+            isCode: prop.isCode
+          });
+        }
+      } else if (Array.isArray(value)) {
+        return value.map((child) => addedOrRemovedDiffFor(child, isAdded));
+      } else {
+        return null;
+      }
+    }).reduce((arr, ea) => {
+      return ea ? arr.concat(ea) : arr;
+    }, []);
+    if (isAdded) {
+      return new AddedDiff(item, children);
+    } else {
+      return new RemovedDiff(item, children);
+    }
+  }
+
   function diffsFor<T: Diffable>(originalItems: Array<T>, newItems: Array<T>, parents: ?DiffableParent): Array<Diff> {
     const originalIds = originalItems.map(ea => ea.getIdForDiff());
     const newIds = newItems.map(ea => ea.getIdForDiff());
@@ -435,7 +472,7 @@ define(function(require) {
     addedIds.forEach(eaId => {
       const item = newItems.find(ea => ea.getIdForDiff() === eaId);
       if (item) {
-        added.push(new AddedDiff(item));
+        added.push(addedOrRemovedDiffFor(item, true));
       }
     });
 
@@ -443,7 +480,7 @@ define(function(require) {
     removedIds.forEach(eaId => {
       const item = originalItems.find(ea => ea.getIdForDiff() === eaId);
       if (item) {
-        removed.push(new RemovedDiff(item));
+        removed.push(addedOrRemovedDiffFor(item, false));
       }
     });
 
