@@ -64,25 +64,11 @@ requirejs(['common'], function() {
           this.setState(newState);
         }
 
-        deploy(callback) {
-          DataRequest.jsonPost(
-            jsRoutes.controllers.BehaviorEditorController.deploy().url,
-            { behaviorGroupId: this.props.group.id },
-            this.props.csrfToken
-          )
-            .then((json) => {
-              if (json.id) {
-                this.setState({
-                  group: this.state.group.clone({ deployment: BehaviorGroupDeployment.fromProps(json) })
-                }, callback);
-              } else {
-                this.onSaveError();
-              }
-            })
-            .catch((error) => {
-              this.onSaveError(error);
-            });
-      }
+        onDeploy(deploymentProps, callback) {
+          this.setState({
+            group: this.state.group.clone({ deployment: BehaviorGroupDeployment.fromProps(deploymentProps) })
+          }, callback);
+        }
 
         fallbackSelectedIdFor(group) {
           var isSimpleBehaviorGroup = !group.name && !group.description && group.behaviorVersions.length === 1;
@@ -133,7 +119,7 @@ requirejs(['common'], function() {
                 linkedGithubRepo={this.state.linkedGithubRepo}
                 onLinkGithubRepo={this.onLinkGithubRepo}
                 showVersions={this.props.showVersions}
-                onDeploy={this.deploy}
+                onDeploy={this.onDeploy}
                 lastDeployTimestamp={this.props.lastDeployTimestamp}
               />
             </Page>

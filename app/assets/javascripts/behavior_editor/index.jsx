@@ -886,6 +886,34 @@ const BehaviorEditor = React.createClass({
     });
   },
 
+  onDeployError: function(error, callback) {
+    this.setState({
+      error: (error ? error.body : null) || "not_deployed"
+    }, callback);
+  },
+
+  deploy: function(callback) {
+    this.setState({ error: null });
+    DataRequest.jsonPost(
+      jsRoutes.controllers.BehaviorEditorController.deploy().url,
+      { behaviorGroupId: this.getBehaviorGroup().id },
+      this.props.csrfToken
+    )
+      .then((json) => {
+        if (json.id) {
+          this.props.onDeploy(json);
+        } else {
+          this.onDeployError(null, callback);
+        }
+      })
+      .catch(error => {
+        this.onDeployError(error, callback);
+      })
+      .finally(() => {
+        this.resetNotifications();
+      });
+  },
+
   updateNodeModules: function(optionalCallback) {
     this.setState({ error: null });
     this.toggleActivePanel('saving', true);
@@ -964,11 +992,6 @@ const BehaviorEditor = React.createClass({
     } else {
       callback();
     }
-  },
-
-  deploy: function() {
-    this.setState({ error: null, isDeploying: true });
-    this.props.onDeploy(this.resetNotifications);
   },
 
   isDeployed: function() {
@@ -2062,6 +2085,13 @@ const BehaviorEditor = React.createClass({
         <span className="fade-in type-pink type-bold type-italic">
           <span style={{ height: 24 }} className="display-inline-block mrs align-b"><SVGWarning /></span>
           <span>Error saving changes — please try again</span>
+        </span>
+      );
+    } else if (this.state.error === 'not_deployed') {
+      return (
+        <span className="fade-in type-pink type-bold type-italic">
+          <span style={{ height: 24 }} className="display-inline-block mrs align-b"><SVGWarning /></span>
+          <span>Error deploying — please try again</span>
         </span>
       );
     } else if (this.state.error) {
