@@ -859,7 +859,7 @@ const BehaviorEditor = React.createClass({
             group: BehaviorGroup.fromJson(json),
             onLoad: optionalCallback
           };
-          this.onSave(newProps, this.state);
+          this.onSave(newProps);
         } else {
           this.onSaveError();
         }
@@ -901,7 +901,7 @@ const BehaviorEditor = React.createClass({
               group: BehaviorGroup.fromJson(json),
               onLoad: optionalCallback
             };
-            this.onSave(newProps, this.state);
+            this.onSave(newProps);
           }
         } else {
           this.onSaveError();
@@ -1515,9 +1515,9 @@ const BehaviorEditor = React.createClass({
     });
   },
 
-  onSave: function(newProps, state) {
+  onSave: function(newProps) {
     this.resetNotifications();
-    this.props.onSave(newProps, state);
+    this.props.onSave(newProps);
     this.loadNodeModuleVersions();
   },
 
@@ -1920,9 +1920,12 @@ const BehaviorEditor = React.createClass({
                     ref="saveButton"
                     onClick={this.onSaveClick}
                     labels={[{
+                      text: 'Save',
+                      displayWhen: !this.isExistingGroup()
+                    }, {
                       text: 'Save changes',
                       mobileText: 'Save',
-                      displayWhen: !this.isJustSaved()
+                      displayWhen: this.isExistingGroup() && !this.isJustSaved()
                     }, {
                       text: 'Saved',
                       displayWhen: this.isJustSaved()
@@ -1930,10 +1933,12 @@ const BehaviorEditor = React.createClass({
                     className="button-primary mrs mbm"
                     disabledWhen={!this.isModified() || this.isSaving()}
                   />
-                  <Button className="mrs mbm" disabled={!this.isModified() || this.isSaving()} onClick={this.toggleConfirmUndo}>
-                    <span className="mobile-display-none">Undo changes</span>
-                    <span className="mobile-display-only">Undo</span>
-                  </Button>
+                  {this.isExistingGroup() ? (
+                    <Button className="mrs mbm" disabled={!this.isModified() || this.isSaving()} onClick={this.toggleConfirmUndo}>
+                      <span className="mobile-display-none">Undo changes</span>
+                      <span className="mobile-display-only">Undo</span>
+                    </Button>
+                  ) : null}
                   {this.isTestable() ? (
                     <DynamicLabelButton
                       labels={[{
@@ -1988,7 +1993,7 @@ const BehaviorEditor = React.createClass({
           isCurrentVersion={true}
         />
       );
-    } else if (this.isModified()) {
+    } else if (this.isExistingGroup() && this.isModified()) {
       return (
         <span className="fade-in type-pink type-italic">
           <span className="type-bold">Unsaved changes </span>
