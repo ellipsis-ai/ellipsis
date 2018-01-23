@@ -630,19 +630,18 @@ const BehaviorEditor = React.createClass({
   },
 
   buildDeploymentNotifications: function() {
-    if (!this.state) return [];
-    const notifications = [];
-    if (this.isExistingGroup() && !this.isModified() && !this.isDeployed()) {
-      notifications.push(new NotificationData({
+    if (this.state && this.isExistingGroup() && !this.isModified() && !this.isDeployed()) {
+      return [new NotificationData({
         kind: "deployment_warning",
         type: "saved_version_not_deployed",
         lastSaveTimestamp: this.props.group.createdAt,
         lastDeployTimestamp: this.props.lastDeployTimestamp,
         onDevModeChannelsClick: this.toggleDevModeChannelsHelp,
         onClick: this.deploy
-      }));
+      })];
+    } else {
+      return [];
     }
-    return notifications;
   },
 
   buildNotifications: function() {
