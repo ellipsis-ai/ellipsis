@@ -1,18 +1,24 @@
 package models.organization
 
+import drivers.SlickPostgresDriver.api._
+import models.team.Team
 
 import scala.concurrent.Future
 
 
 trait OrganizationService {
 
-    def allAccounts: Future[Seq[Organization]]
+    def allOrganizations: Future[Seq[Organization]]
+
+    def allOrgsWithEmptyChargebeeId: Future[Seq[Organization]]
 
     def count: Future[Int]
 
     def find(id: String): Future[Option[Organization]]
 
     def create(name: String): Future[Organization]
+
+    def createAction(name: String): DBIO[Organization]
 
     def save(organization: Organization): Future[Organization]
 

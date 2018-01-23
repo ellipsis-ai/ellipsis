@@ -39,4 +39,9 @@ object TeamQueries {
      all.filter(_.maybeOrganizationId.isEmpty)
   }
 
+  def uncompiledWithOrganizationId(id: Rep[String]) = {
+    all.filter(_.maybeOrganizationId === id)
+  }
+  val withOrganizationId = Compiled(uncompiledWithOrganizationId _)
+
 }

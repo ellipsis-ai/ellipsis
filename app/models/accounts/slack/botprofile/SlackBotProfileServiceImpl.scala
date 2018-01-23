@@ -5,6 +5,7 @@ import javax.inject.{Inject, Provider}
 
 import akka.actor.ActorSystem
 import drivers.SlickPostgresDriver.api._
+import models.accounts.registration.RegistrationService
 import models.behaviors.{BotResult, BotResultService}
 import models.behaviors.events.{EventType, SlackMessage, SlackMessageEvent}
 import models.team.Team
@@ -30,6 +31,7 @@ class SlackBotProfileServiceImpl @Inject() (
                                              dataServiceProvider: Provider[DataService],
                                              slackEventServiceProvider: Provider[SlackEventService],
                                              botResultServiceProvider: Provider[BotResultService],
+                                             registrationServiceProvider: Provider[RegistrationService],
                                              implicit val actorSystem: ActorSystem,
                                              implicit val ec: ExecutionContext
                                         ) extends SlackBotProfileService {
@@ -37,6 +39,8 @@ class SlackBotProfileServiceImpl @Inject() (
   def dataService = dataServiceProvider.get
   def slackEventService = slackEventServiceProvider.get
   def botResultService = botResultServiceProvider.get
+  def registrationService = registrationServiceProvider.get
+
 
   val all = TableQuery[SlackBotProfileTable]
 
@@ -91,10 +95,7 @@ class SlackBotProfileServiceImpl @Inject() (
           }.getOrElse(DBIO.successful(Unit))
         } yield profile
       }
-      // TODO: how to handle an error in creating a team? Let's say that we cannot
-      // create a subscription due to Chargebee API outage, we need to stop the registration process.
-      //
-      case None => DBIO.from(dataService.teams.create(slackTeamName)).flatMap { team =>
+      case None => DBIO.from(registrationService.registerNewTeam(slackTeamName)).flatMap { team =>
         val newProfile = SlackBotProfile(userId, team.id, slackTeamId, token, OffsetDateTime.now)
         (all += newProfile).map { _ => newProfile }
       }

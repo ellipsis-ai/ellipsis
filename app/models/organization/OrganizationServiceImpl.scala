@@ -3,10 +3,12 @@ package models.organization
 
 import java.time.OffsetDateTime
 import javax.inject.Inject
+
 import com.google.inject.Provider
 import drivers.SlickPostgresDriver.api._
 import models.IDs
 import services.DataService
+
 import scala.concurrent.{ExecutionContext, Future}
 
 
@@ -19,8 +21,12 @@ class OrganizationServiceImpl @Inject()(
 
   import OrganizationQueries._
 
-  def allAccounts: Future[Seq[Organization]] = {
+  def allOrganizations: Future[Seq[Organization]] = {
     dataService.run(all.result)
+  }
+
+  def allOrgsWithEmptyChargebeeId: Future[Seq[Organization]] = {
+    dataService.run(withEmptyChargebeeId.result)
   }
 
   def count: Future[Int] = {
@@ -40,16 +46,17 @@ class OrganizationServiceImpl @Inject()(
     )
   )
 
+  def createAction(name: String): DBIO[Organization] = saveAction(
+    Organization(
+      IDs.next,
+      name,
+      Some(IDs.next),
+      OffsetDateTime.now()
+    )
+  )
+
   def save(organization: Organization): Future[Organization] = {
-    val query = findQueryFor(organization.id)
-    val action = query.result.flatMap { result =>
-      result.headOption.map { existing =>
-        all.filter(_.id === organization.id).update(organization)
-      }.getOrElse {
-        all += organization
-      }.map { _ => organization }
-    }
-    dataService.run(action)
+    dataService.run(saveAction(organization))
   }
 
   def setChargebeeCustomerIdFor(organization: Organization, chargebeeCustomerId: Option[String]): Future[Organization] = {
@@ -58,6 +65,17 @@ class OrganizationServiceImpl @Inject()(
 
   def setChargebeeCustomerIdFor(organization: Organization, chargebeeCustomerId: String): Future[Organization] = {
     save(organization.copy(maybeChargebeeCustomerId = Some(chargebeeCustomerId)))
+  }
+
+
+  private def saveAction(organization: Organization): DBIO[Organization] = {
+    findQueryFor(organization.id).result.flatMap { result =>
+      result.headOption.map { existing =>
+        all.filter(_.id === organization.id).update(organization)
+      }.getOrElse {
+        all += organization
+      }.map { _ => organization }
+    }
   }
 
 }

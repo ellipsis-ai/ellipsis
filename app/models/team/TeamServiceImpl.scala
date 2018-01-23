@@ -2,6 +2,7 @@ package models.team
 
 import java.time.{OffsetDateTime, ZoneId}
 import javax.inject.Inject
+
 import com.google.inject.Provider
 import models.accounts.linkedaccount.LinkedAccount
 import models.IDs
@@ -37,6 +38,10 @@ class TeamServiceImpl @Inject() (
 
   def allTeamsWithoutOrg: Future[Seq[Team]] = {
     dataService.run(withoutOrg.result)
+  }
+
+  def allTeamsFor(organization: Organization): Future[Seq[Team]] = {
+    dataService.run(withOrganizationId(organization.id).result)
   }
 
   def findAction(id: String): DBIO[Option[Team]] = {
@@ -80,6 +85,10 @@ class TeamServiceImpl @Inject() (
     save(Team(IDs.next, name, None, Some(organization.id), OffsetDateTime.now))
   }
 
+  def createAction(name: String, organization: Organization): DBIO[Team] = {
+    saveAction(Team(IDs.next, name, None, Some(organization.id), OffsetDateTime.now))
+  }
+
   def setNameFor(team: Team, name: String): Future[Team] = {
     save(team.copy(name = name))
   }
@@ -93,20 +102,22 @@ class TeamServiceImpl @Inject() (
   }
 
   def save(team: Team): Future[Team] = {
-    val query = findQueryFor(team.id)
-    val action = query.result.flatMap { result =>
-      result.headOption.map { existing =>
-        all.filter(_.id === team.id).update(team)
-      }.getOrElse {
-        all += team
-      }.map { _ => team }
-    }
-    dataService.run(action)
+    dataService.run(saveAction(team))
   }
 
   def isAdmin(team: Team): Future[Boolean] = {
     dataService.slackBotProfiles.allFor(team).map { botProfiles =>
       botProfiles.exists(_.slackTeamId == LinkedAccount.ELLIPSIS_SLACK_TEAM_ID)
+    }
+  }
+
+  private def saveAction(team: Team): DBIO[Team] = {
+    findQueryFor(team.id).result.flatMap { result =>
+      result.headOption.map { existing =>
+        all.filter(_.id === team.id).update(team)
+      }.getOrElse {
+        all += team
+      }.map { _ => team }
     }
   }
 }

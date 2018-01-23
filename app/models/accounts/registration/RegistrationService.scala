@@ -7,6 +7,6 @@ import scala.concurrent.Future
 
 trait RegistrationService {
 
-  def registerNewTeam(teamName: String): Future[Option[Team]]
+  def registerNewTeam(teamName: String): Future[Team]
 
 }

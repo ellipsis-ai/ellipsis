@@ -9,6 +9,6 @@ import models.team.Team
 
 trait SubscriptionService {
 
-  def createFreeSubscription(team: Team, organization: Organization): Future[Subscription]
+  def createFreeSubscription(team: Team, organization: Organization): Future[Option[Subscription]]
 
 }

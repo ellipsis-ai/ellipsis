@@ -25,4 +25,7 @@ object OrganizationQueries{
   }
   val findQueryFor = Compiled(uncompiledFindQueryFor _)
 
+  def withEmptyChargebeeId = {
+    all.filter(_.maybeChargebeeCustomerId.isEmpty)
+  }
 }

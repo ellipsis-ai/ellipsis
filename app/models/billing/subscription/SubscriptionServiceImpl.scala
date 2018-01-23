@@ -2,8 +2,9 @@ package models.billing.subscription
 
 
 import javax.inject.Inject
+
 import scala.concurrent.{ExecutionContext, Future, blocking}
-import play.api.Configuration
+import play.api.{Configuration, Logger}
 import services.DataService
 import com.chargebee.models.Subscription
 import com.google.inject.Provider
@@ -19,7 +20,7 @@ class SubscriptionServiceImpl @Inject()(
                                        ) extends SubscriptionService with ChargebeeService {
   def dataService = dataServiceProvider.get
 
-  def createFreeSubscription(team: Team, organization: Organization): Future[Subscription] = {
+  def createFreeSubscription(team: Team, organization: Organization): Future[Option[Subscription]] = {
     Future {
       blocking {
         Subscription.create()
@@ -32,7 +33,11 @@ class SubscriptionServiceImpl @Inject()(
           .request(chargebeeEnv)
       }
     }.map { result =>
-      result.subscription()
+      Some(result.subscription())
+    }.recover {
+      case e: Throwable => None
     }
   }
+
 }
+

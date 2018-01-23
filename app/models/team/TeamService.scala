@@ -18,6 +18,8 @@ trait TeamService {
 
   def allTeamsWithoutOrg: Future[Seq[Team]]
 
+  def allTeamsFor(organization: Organization): Future[Seq[Team]]
+
   def setNameFor(team: Team, name: String): Future[Team]
 
   def setTimeZoneFor(team: Team, tz: ZoneId): Future[Team]
@@ -35,6 +37,8 @@ trait TeamService {
   def findForInvocationToken(tokenId: String): Future[Option[Team]]
 
   def create(name: String): Future[Team]
+
+  def createAction(name: String, organization: Organization): DBIO[Team]
 
   def create(name: String, organization: Organization): Future[Team]
 
