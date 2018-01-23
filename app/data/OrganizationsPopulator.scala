@@ -14,10 +14,12 @@ class OrganizationsPopulator @Inject() (
                                    ) {
 
   def createMissingOrgs: Future[Seq[Organization]] = {
-    Logger.info("Running Organization Populator")
     for {
       teamsWithoutOrgs <- dataService.teams.allTeamsWithoutOrg.map { teams =>
-        Logger.info(s"Teams without Orgs: ${teams.length}")
+        if (teams.length > 0 ) {
+          Logger.info(s"Teams without Orgs: ${teams.length}.")
+          Logger.info(s"Creating ${teams.length} organizations and adding the teams to them.")
+        }
         teams
       }
       organizations <- Future.sequence(teamsWithoutOrgs.map(createOrg(_)))
