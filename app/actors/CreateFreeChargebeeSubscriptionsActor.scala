@@ -29,7 +29,10 @@ class CreateFreeChargebeeSubscriptionsActor @Inject() (
   def receive = {
     case "tick" => {
       for {
-        orgs <- dataService.organizations.allOrgsWithEmptyChargebeeId
+        orgs <- dataService.organizations.allOrgsWithEmptyChargebeeId.map { orgs =>
+          Logger.info(s"Found ${orgs.length} organizations without a Chargebee customer id." )
+          orgs
+        }
         subs <- createSubsFor(orgs)
       } yield {}
     }
@@ -56,6 +59,11 @@ class CreateFreeChargebeeSubscriptionsActor @Inject() (
 
   private def createSub(team: Team, org: Organization): Future[Option[Subscription]] = {
     dataService.subscriptions.createFreeSubscription(team, org)
+      .map { maybeSubscription =>
+        Logger.info(s"Created Chargebee free subscription for team ${team.name}, " +
+          s"organization id: ${org.id}, Chargebee customer id: ${org.maybeChargebeeCustomerId}")
+        maybeSubscription
+      }
       .recover {
         case e: Throwable => {
           Logger.error(s"Error while creating a free subscription for team ${team.name}", e)

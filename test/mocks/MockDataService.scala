@@ -41,6 +41,7 @@ import models.behaviors.scheduling.recurrence.RecurrenceService
 import models.behaviors.scheduling.scheduledbehavior.ScheduledBehaviorService
 import models.behaviors.scheduling.scheduledmessage.ScheduledMessageService
 import models.behaviors.triggers.messagetrigger.MessageTriggerService
+import models.billing.subscription.SubscriptionService
 import models.devmodechannel.DevModeChannelService
 import models.environmentvariable.TeamEnvironmentVariableService
 import models.organization.OrganizationService
@@ -97,6 +98,7 @@ class MockDataService extends DataService with MockitoSugar {
   val invocationLogEntries = mock[InvocationLogEntryService]
   val devModeChannels = mock[DevModeChannelService]
   val behaviorResponses = mock[BehaviorResponseService]
+  val subscriptions = mock[SubscriptionService]
 
   private def dontCallMe = throw new Exception("Don't call me")
 
