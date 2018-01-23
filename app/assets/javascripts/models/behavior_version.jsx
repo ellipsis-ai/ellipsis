@@ -22,7 +22,6 @@ define(function(require) {
     triggers: Array<Trigger>;
     config: BehaviorConfig;
     knownEnvVarsUsed: Array<string>;
-    shouldRevealCodeEditor: boolean;
     isNew: ?boolean;
 
     constructor(
@@ -40,7 +39,6 @@ define(function(require) {
       exportId: ?string,
       knownEnvVarsUsed: Array<string>,
       createdAt: ?number,
-      shouldRevealCodeEditor: ?boolean,
       isNew: ?boolean,
       editorScrollPosition: number
     ) {
@@ -57,16 +55,13 @@ define(function(require) {
         createdAt
       );
 
-      const revealCodeEditor: boolean = shouldRevealCodeEditor || !!functionBody && functionBody.length > 0;
-
       Object.defineProperties(this, {
         behaviorId: { value: behaviorId, enumerable: true },
         responseTemplate: { value: responseTemplate, enumerable: true },
         inputIds: { value: inputIds || [], enumerable: true },
         triggers: { value: triggers || [], enumerable: true },
         config: { value: config, enumerable: true },
-        knownEnvVarsUsed: { value: knownEnvVarsUsed || [], enumerable: true },
-        shouldRevealCodeEditor: { value: revealCodeEditor, enumerable: true }
+        knownEnvVarsUsed: { value: knownEnvVarsUsed || [], enumerable: true }
       });
     }
 
@@ -317,7 +312,6 @@ define(function(require) {
         props.exportId,
         props.knownEnvVarsUsed,
         props.createdAt,
-        props.shouldRevealCodeEditor,
         props.isNew,
         props.editorScrollPosition
       );

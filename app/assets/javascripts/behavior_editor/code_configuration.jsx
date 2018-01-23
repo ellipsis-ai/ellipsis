@@ -41,8 +41,6 @@ define(function(require) {
       onCursorChange: React.PropTypes.func.isRequired,
       useLineWrapping: React.PropTypes.bool.isRequired,
       onToggleCodeEditorLineWrapping: React.PropTypes.func.isRequired,
-      canDeleteFunctionBody: React.PropTypes.bool.isRequired,
-      onDeleteFunctionBody: React.PropTypes.func.isRequired,
 
       envVariableNames: React.PropTypes.arrayOf(React.PropTypes.string).isRequired,
       functionExecutesImmediately: React.PropTypes.bool
@@ -235,11 +233,6 @@ define(function(require) {
                     <code className="type-weak type-s">{
                       this.props.functionExecutesImmediately ? "\u007D)();" : "\u007D;"
                     }</code>
-                  </div>
-                  <div className="column column-shrink prs align-r">
-                    {this.props.canDeleteFunctionBody ? (
-                      <button type="button" className="button-s" onClick={this.props.onDeleteFunctionBody}>Remove code</button>
-                    ) : null}
                   </div>
                 </div>
               </div>

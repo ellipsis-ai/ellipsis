@@ -51,8 +51,7 @@ describe('BehaviorEditor', () => {
             }
           },
           knownEnvVarsUsed: [],
-          groupId: '1',
-          shouldRevealCodeEditor: true
+          groupId: '1'
         }
       ],
       libraryVersions: [],
@@ -100,7 +99,6 @@ describe('BehaviorEditor', () => {
       "logoImageUrl": "/assets/images/logos/pivotal_tracker.png"
     }],
     "linkedOAuth2ApplicationIds": ["Yy1QcMTcT96tZZmUoYLroQ"],
-    shouldRevealCodeEditor: true,
     onSave: jest.fn(),
     savedAnswers: [],
     onForgetSavedAnswerForInput: jest.fn(),
@@ -211,7 +209,6 @@ describe('BehaviorEditor', () => {
 
     it('returns a string even when no function is defined', () => {
       delete firstBehavior.functionBody;
-      firstBehavior.shouldRevealCodeEditor = false;
       let editor = createEditor(editorConfig);
       expect(editor.getFunctionBody()).toEqual("");
     });

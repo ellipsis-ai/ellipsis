@@ -44,23 +44,11 @@ requirejs(['common'], function() {
             });
         }
 
-        onSave(newProps, state) {
+        onSave(newProps) {
           const newState = {
             group: newProps.group,
             onLoad: newProps.onLoad
           };
-          if (state) {
-            newState.group = newState.group.clone({
-              behaviorVersions: newState.group.behaviorVersions.map(ea => {
-                const versionState = state.group.behaviorVersions.find(v => v.behaviorId === ea.behaviorId);
-                if (versionState) {
-                  return ea.clone({ shouldRevealCodeEditor: versionState.shouldRevealCodeEditor });
-                } else {
-                  return ea;
-                }
-              })
-            });
-          }
           this.setState(newState);
         }
 
