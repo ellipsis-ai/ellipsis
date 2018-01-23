@@ -11,8 +11,13 @@ class TeamsTable(tag: Tag) extends Table[Team](tag, "teams") {
   def maybeOrganizationId = column[Option[String]]("organization_id")
   def createdAt = column[OffsetDateTime]("created_at")
 
-  def * =
-    (id, name, maybeTimeZone, maybeOrganizationId, createdAt) <> ((Team.apply _).tupled, Team.unapply _)
+  def * = {
+    // need to tell the compiler which apply method to use
+    val applyFn = (Team.apply : (String, String, Option[ZoneId], Option[String], OffsetDateTime) => Team).tupled
+    (id, name, maybeTimeZone, maybeOrganizationId, createdAt) <>
+      (applyFn, Team.unapply _)
+  }
+
 }
 
 object TeamQueries {

@@ -11,10 +11,20 @@ case class Team(
                  createdAt: OffsetDateTime
                ) {
 
-  def this(name: String) = this(IDs.next, name, None, None, OffsetDateTime.now)
-
   def maybeNonEmptyName: Option[String] = Option(name).filter(_.trim.nonEmpty)
 
   def timeZone: ZoneId = maybeTimeZone.getOrElse(ZoneId.systemDefault)
+
+}
+
+object Team {
+
+  def apply(name: String): Team = Team(
+    IDs.next,
+    name,
+    None,
+    None,
+    OffsetDateTime.now
+  )
 
 }
