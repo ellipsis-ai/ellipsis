@@ -658,7 +658,7 @@ class BehaviorEditorController @Inject() (
         } yield maybeDeploymentData.map { deployment =>
           Ok(Json.toJson(deployment))
         }.getOrElse {
-          NotFound(":shrug:")
+          NotFound(s"Couldn't find skill with ID: ${info.behaviorGroupId}")
         }
       }
     )
