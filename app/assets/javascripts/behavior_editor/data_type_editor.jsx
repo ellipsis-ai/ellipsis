@@ -59,11 +59,12 @@ define(function(require) {
       this.setDataTypeConfig(newConfig);
       this.setState({
         dataTypeSourceChosen: true
+      }, () => {
+        const dataType = this.props.behaviorVersion;
+        if (usesCode && !dataType.getFunctionBody()) {
+          this.props.onChangeCode(BehaviorVersion.defaultDataTypeCode());
+        }
       });
-      const dataType = this.props.behaviorVersion;
-      if (usesCode && !dataType.getFunctionBody()) {
-        this.props.onChangeCode(BehaviorVersion.defaultDataTypeCode());
-      }
     }
 
     getDataTypeConfig() {

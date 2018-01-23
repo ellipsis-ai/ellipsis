@@ -916,15 +916,6 @@ const BehaviorEditor = React.createClass({
     return this.getBehaviorGroup().isRecentlySaved() && !this.isModified();
   },
 
-  checkDataAndCallback: function(callback) {
-    var template = this.getBehaviorTemplate();
-    if (template && template.toString() === this.getDefaultBehaviorTemplate().toString()) {
-      this.setEditableProp('responseTemplate', this.getBehaviorTemplate(), callback);
-    } else {
-      callback();
-    }
-  },
-
   onSaveClick: function() {
     this.onSaveBehaviorGroup();
   },
@@ -932,7 +923,7 @@ const BehaviorEditor = React.createClass({
   onSaveBehaviorGroup: function(optionalCallback) {
     this.setState({ error: null });
     this.toggleActivePanel('saving', true);
-    this.checkDataAndCallback(() => { this.backgroundSave(optionalCallback); });
+    this.backgroundSave(optionalCallback);
   },
 
   onReplaceBehaviorGroup: function(newBehaviorGroup, optionalCallback) {
@@ -1354,11 +1345,6 @@ const BehaviorEditor = React.createClass({
       (originalSelected.functionBody || originalSelected.responseTemplate.text));
   },
 
-  isFinishedLibraryVersion: function() {
-    var originalSelected = this.getOriginalSelected();
-    return !!(originalSelected && !originalSelected.isNew && originalSelected.functionBody);
-  },
-
   isModified: function() {
     var currentMatchesInitial = this.props.group.isIdenticalTo(this.getBehaviorGroup());
     return !currentMatchesInitial;
@@ -1492,14 +1478,14 @@ const BehaviorEditor = React.createClass({
     this.setState({
       shouldRedirectToAddNewAWSConfig: true,
       requiredAWSConfig: requiredAWSConfig
-    }, () => { this.checkDataAndCallback(this.onSaveBehaviorGroup); });
+    }, this.onSaveBehaviorGroup);
   },
 
   onNewOAuth2Application: function(requiredOAuth2ApiConfig) {
     this.setState({
       shouldRedirectToAddNewOAuth2App: true,
       requiredOAuth2ApiConfig: requiredOAuth2ApiConfig
-    }, () => { this.checkDataAndCallback(this.onSaveBehaviorGroup); });
+    }, this.onSaveBehaviorGroup);
   },
 
   onInputEnterKey: function(index) {

@@ -239,7 +239,7 @@ describe('BehaviorEditor', () => {
   });
 
   describe('getBehaviorTemplate', () => {
-    it('returns the template the defined template when it’s non-empty', () => {
+    it('returns the template when it’s non-empty', () => {
       firstBehavior.responseTemplate = 'clowncar';
       let editor = createEditor(editorConfig);
       expect(editor.getBehaviorTemplate().toString()).toEqual('clowncar');
@@ -248,42 +248,24 @@ describe('BehaviorEditor', () => {
     it('returns a default template when no template is defined', () => {
       delete firstBehavior.responseTemplate;
       let editor = createEditor(editorConfig);
-      editor.getDefaultBehaviorTemplate = jest.fn();
-      editor.getDefaultBehaviorTemplate.mockReturnValue(ResponseTemplate.fromString('default'));
-      expect(editor.getBehaviorTemplate().toString()).toEqual('default');
-    });
+      expect(editor.getBehaviorTemplate().toString()).toEqual('');
+   });
 
     it('returns a default template when the template is blank', () => {
       firstBehavior.responseTemplate = '';
       let editor = createEditor(editorConfig);
-      editor.getDefaultBehaviorTemplate = jest.fn();
-      editor.getDefaultBehaviorTemplate.mockReturnValue(ResponseTemplate.fromString('default'));
-      expect(editor.getBehaviorTemplate().toString()).toEqual('default');
-    });
-
-    it('returns the original template when it has been modified', () => {
-      firstBehavior.responseTemplate = '';
-      let editor = createEditor(editorConfig);
-      editor.hasModifiedTemplate = jest.fn();
-      editor.hasModifiedTemplate.mockReturnValue(true);
       expect(editor.getBehaviorTemplate().toString()).toEqual('');
     });
-  });
 
-  describe('checkDataAndCallback', () => {
-    it('sets the default template when that\'s all there is', () => {
+    it('returns the template when it’s empty on an existing skill', () => {
       firstBehavior.responseTemplate = '';
       let editor = createEditor(editorConfig);
-      let defaultTemplate = ResponseTemplate.fromString('default');
-      editor.getDefaultBehaviorTemplate = jest.fn();
-      editor.getDefaultBehaviorTemplate.mockReturnValue(defaultTemplate);
-      editor.setEditableProp = jest.fn();
-      let callback = jest.fn();
-      editor.checkDataAndCallback(callback);
-      let mock = editor.setEditableProp.mock;
-      expect(mock.calls.length).toBe(1);
-      let firstCallArgs = mock.calls[0];
-      expect(firstCallArgs).toEqual(['responseTemplate', defaultTemplate, callback]);
+      expect(editor.getBehaviorTemplate().toString()).toEqual('');
+    });
+
+    it('returns the default template on a new, empty skill', () => {
+      let editor = createEditor(newSkillConfig);
+      expect(editor.getBehaviorTemplate().toString()).toEqual(BehaviorVersion.defaultActionProps().responseTemplate.toString());
     });
   });
 
@@ -331,18 +313,6 @@ describe('BehaviorEditor', () => {
       editor.onInputEnterKey(1);
       expect(editor.focusOnInputIndex.mock.calls.length).toBe(0);
       expect(editor.addNewInput.mock.calls.length).toBe(0);
-    });
-  });
-
-  describe('updateTemplate', () => {
-    it('sets a callback to mark the template as modified', () => {
-      let editor = createEditor(editorConfig);
-      editor.setEditableProp = jest.fn();
-      editor.setState = jest.fn();
-      editor.updateTemplate('new template');
-      const callback = editor.setEditableProp.mock.calls[0][2];
-      callback();
-      expect(editor.setState).toBeCalledWith({ hasModifiedTemplate: true });
     });
   });
 
