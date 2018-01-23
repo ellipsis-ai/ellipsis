@@ -2,7 +2,7 @@
 
 CREATE TABLE organizations (
   id TEXT PRIMARY KEY,
-  chargebee_customer_id TEXT NOT NULL,
+  chargebee_customer_id TEXT,
   name TEXT NOT NULL,
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );

@@ -2,15 +2,11 @@ package data
 
 
 import javax.inject._
-
-import models.IDs
-import com.chargebee.models.Subscription
 import models.organization.Organization
 import models.team.Team
 import services.DataService
-
 import scala.concurrent.{ExecutionContext, Future}
-
+import play.api.Logger
 
 class OrganizationsPopulator @Inject() (
                                      dataService: DataService,
@@ -18,8 +14,12 @@ class OrganizationsPopulator @Inject() (
                                    ) {
 
   def createMissingOrgs: Future[Seq[Organization]] = {
+    Logger.info("Running Organization Populator")
     for {
-      teamsWithoutOrgs <- dataService.teams.allTeamsWithoutOrg
+      teamsWithoutOrgs <- dataService.teams.allTeamsWithoutOrg.map { teams =>
+        Logger.info(s"Teams without Orgs: ${teams.length}")
+        teams
+      }
       organizations <- Future.sequence(teamsWithoutOrgs.map(createOrg(_)))
     } yield organizations
   }

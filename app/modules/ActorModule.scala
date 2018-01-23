@@ -1,6 +1,6 @@
 package modules
 
-import actors.{CleanUpLambdaActor, ConversationReminderActor, ExpireConversationsActor, ScheduledActor}
+import actors._
 import com.google.inject.AbstractModule
 import play.api.libs.concurrent.AkkaGuiceSupport
 
@@ -10,5 +10,6 @@ class ActorModule extends AbstractModule with AkkaGuiceSupport {
     bindActor[CleanUpLambdaActor](CleanUpLambdaActor.name)
     bindActor[ConversationReminderActor](ConversationReminderActor.name)
     bindActor[ExpireConversationsActor](ExpireConversationsActor.name)
+    bindActor[CreateFreeChargebeeSubscriptionsActor](CreateFreeChargebeeSubscriptionsActor.name)
   }
 }

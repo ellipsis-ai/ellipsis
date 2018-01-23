@@ -206,4 +206,12 @@ $ dropdb ellipsis-test
 ```
 
 
-#### Build and run the app locally in a container
+#### Charbee Setup
+In Ellipsis payments are handles by Chargebee. If you do not touch any of the
+payments code there is nothing to do. The billing pages will simply not be visible
+in your development server.
+
+If you need to touch the payments code you need to:
+- get access to Ellipsis account on Chargebee
+- configure the new account:
+1. 

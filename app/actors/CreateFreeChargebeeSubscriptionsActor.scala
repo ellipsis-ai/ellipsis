@@ -1,6 +1,7 @@
 package actors
 
 import javax.inject.Inject
+
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
 import play.api.Logger
@@ -9,6 +10,7 @@ import models.organization.Organization
 import models.team.Team
 import services.DataService
 import com.chargebee.models.Subscription
+import models.IDs
 
 object CreateFreeChargebeeSubscriptionsActor {
   final val name = "setup-chargebee-for-orgs"
@@ -20,7 +22,7 @@ class CreateFreeChargebeeSubscriptionsActor @Inject() (
                                    ) extends Actor {
 
   // initial delay of 1 minute so that, in the case of errors & actor restarts, it doesn't hammer external APIs
-  val tick = context.system.scheduler.schedule(1 minute, 1 hour, self, "tick")
+  val tick = context.system.scheduler.schedule(1 minute, 30 seconds, self, "tick")
 
   override def postStop() = {
     tick.cancel()
@@ -30,7 +32,9 @@ class CreateFreeChargebeeSubscriptionsActor @Inject() (
     case "tick" => {
       for {
         orgs <- dataService.organizations.allOrgsWithEmptyChargebeeId.map { orgs =>
-          Logger.info(s"Found ${orgs.length} organizations without a Chargebee customer id." )
+          if (orgs.length > 0) {
+            Logger.info(s"Found ${orgs.length} organizations without a Chargebee customer id.")
+          }
           orgs
         }
         subs <- createSubsFor(orgs)
@@ -44,8 +48,9 @@ class CreateFreeChargebeeSubscriptionsActor @Inject() (
       // Seq[Future[Seq[Option[Subscription]]]]
       organizations.map { org =>
         for {
-          teams <- dataService.teams.allTeamsFor(org)
-          subs <- teamsToSubs(teams, org)
+          orgWithId <- dataService.organizations.setChargebeeCustomerIdFor(org, Some(IDs.next))
+          teams <- dataService.teams.allTeamsFor(orgWithId)
+          subs <- teamsToSubs(teams, orgWithId)
         } yield {
           subs
         }
