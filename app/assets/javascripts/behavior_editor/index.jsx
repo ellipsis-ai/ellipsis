@@ -630,7 +630,7 @@ const BehaviorEditor = React.createClass({
   },
 
   buildDeploymentNotifications: function() {
-    if (this.state && this.isExistingGroup() && !this.isModified() && !this.isDeployed()) {
+    if (this.isExistingGroup() && !this.isModified() && !this.isDeployed()) {
       return [new NotificationData({
         kind: "deployment_warning",
         type: "saved_version_not_deployed",
