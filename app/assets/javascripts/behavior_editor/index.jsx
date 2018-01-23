@@ -14,7 +14,6 @@ var React = require('react'),
   Button = require('../form/button'),
   ChangeSummary = require('./change_summary'),
   CodeConfiguration = require('./code_configuration'),
-  CodeEditorHelp = require('./code_editor_help'),
   ConfirmActionPanel = require('../panels/confirm_action'),
   CollapseButton = require('../shared_ui/collapse_button'),
   DataRequest = require('../lib/data_request'),
@@ -33,7 +32,6 @@ var React = require('react'),
   NodeModuleVersion = require('../models/node_module_version'),
   NotificationData = require('../models/notification_data'),
   FormInput = require('../form/input'),
-  LibraryCodeEditorHelp = require('./library_code_editor_help'),
   LibraryCodeHelp = require('./library_code_help'),
   LibraryVersion = require('../models/library_version'),
   LinkedGithubRepo = require('../models/linked_github_repo'),
@@ -349,8 +347,8 @@ const BehaviorEditor = React.createClass({
       return null;
     }
     var template = this.getEditableProp('responseTemplate');
-    if ((!template || !template.text) && !this.hasModifiedTemplate() && !this.isDataTypeBehavior()) {
-      return this.getDefaultBehaviorTemplate();
+    if (!template && !this.isDataTypeBehavior()) {
+      return new ResponseTemplate();
     } else {
       return template;
     }
@@ -373,7 +371,7 @@ const BehaviorEditor = React.createClass({
   },
 
   getDefaultBehaviorTemplate: function() {
-    return new ResponseTemplate('The answer is: {successResult}.');
+    return BehaviorVersion.defaultActionProps().responseTemplate;
   },
 
   getEnvVariables: function() {
@@ -660,18 +658,23 @@ const BehaviorEditor = React.createClass({
     this.updateGroupStateWith(newGroup, callback);
   },
 
-  addInput: function(input) {
+  addInput: function(input, callback) {
     const newInputs = this.getInputs().concat([input]);
-    this.setBehaviorInputs(newInputs, this.focusOnLastInput);
+    this.setBehaviorInputs(newInputs, () => {
+      this.focusOnLastInput();
+      if (callback) {
+        callback();
+      }
+    });
   },
 
-  addNewInput: function(optionalNewName) {
+  addNewInput: function(optionalNewName, callback) {
     const newName = optionalNewName || SequentialName.nextFor(this.getInputs(), (ea) => ea.name, "userInput");
     this.addInput(Input.fromProps({
       inputId: ID.next(),
       name: newName,
       paramType: this.props.builtinParamTypes.find((ea) => ea.id === "Text")
-    }));
+    }), callback);
   },
 
   addTrigger: function(callback) {
@@ -719,8 +722,8 @@ const BehaviorEditor = React.createClass({
     this.setEditableProp('inputIds', ImmutableObjectUtils.arrayRemoveElementAtIndex(this.getInputIds(), index));
   },
 
-  deleteAllInputs: function() {
-    this.setEditableProp('inputIds', []);
+  deleteAllInputs: function(callback) {
+    this.setEditableProp('inputIds', [], callback);
   },
 
   deleteTriggerAtIndex: function(index) {
@@ -1251,9 +1254,7 @@ const BehaviorEditor = React.createClass({
   },
 
   updateTemplate: function(newTemplateString) {
-    this.setEditableProp('responseTemplate', this.getBehaviorTemplate().clone({ text: newTemplateString }), () => {
-      this.setState({ hasModifiedTemplate: true });
-    });
+    this.setEditableProp('responseTemplate', this.getBehaviorTemplate().clone({ text: newTemplateString }));
   },
 
   syncParamNamesAndCount: function(oldName, newName) {
@@ -1298,10 +1299,6 @@ const BehaviorEditor = React.createClass({
   },
 
   /* Booleans */
-
-  hasModifiedTemplate: function() {
-    return this.state && this.state.hasModifiedTemplate;
-  },
 
   isTestable: function() {
     return Boolean(this.getSelectedBehavior() && this.getSelectedBehavior().usesCode());
@@ -1560,6 +1557,21 @@ const BehaviorEditor = React.createClass({
   }, 250),
 
     /* Component API methods */
+
+  componentWillMount() {
+    if (!this.isExistingGroup()) {
+      const actions = this.getActionBehaviors();
+      const updatedGroup = actions.reduce((group, action, index) => {
+        if (action.isEmpty()) {
+          return action.buildUpdatedGroupFor(group, BehaviorVersion.defaultActionProps(`action${index + 1}`));
+        } else {
+          return group;
+        }
+      }, this.getBehaviorGroup());
+      this.updateGroupStateWith(updatedGroup);
+    }
+  },
+
   componentDidMount: function() {
     window.document.addEventListener('click', this.onDocumentClick, false);
     window.document.addEventListener('keydown', this.onDocumentKeyDown, false);
@@ -1615,15 +1627,12 @@ const BehaviorEditor = React.createClass({
   },
 
   getInitialState: function() {
-    const selectedBehavior = this.getSelectedBehavior();
-    const hasModifiedTemplate = !!(selectedBehavior && selectedBehavior.responseTemplate && selectedBehavior.responseTemplate.text);
     return {
       group: this.props.group,
       selectedId: this.props.selectedId,
       activeDropdown: null,
       codeEditorUseLineWrapping: false,
       envVariables: this.getInitialEnvVariables(),
-      hasModifiedTemplate: hasModifiedTemplate,
       notifications: this.buildNotifications(),
       versions: [],
       versionsLoadStatus: null,
@@ -1683,7 +1692,6 @@ const BehaviorEditor = React.createClass({
 
         sectionNumber={codeConfigProps.sectionNumber}
         sectionHeading={codeConfigProps.sectionHeading}
-        codeEditorHelp={codeConfigProps.codeEditorHelp}
         codeHelpPanelName={codeConfigProps.codeHelpPanelName}
 
         activePanelName={this.props.activePanelName}
@@ -2076,14 +2084,14 @@ const BehaviorEditor = React.createClass({
     return this.state.animationDisabled;
   },
 
-  addNewBehavior: function(isDataType, behaviorIdToClone) {
+  addNewBehavior: function(isDataType, behaviorIdToClone, optionalDefaultProps) {
     const group = this.getBehaviorGroup();
-    const newName = isDataType ? SequentialName.nextFor(this.getDataTypeBehaviors(), (ea) => ea.name, "DataType") : null;
+    const newName = optionalDefaultProps ? optionalDefaultProps.name : null;
     const url = jsRoutes.controllers.BehaviorEditorController.newUnsavedBehavior(isDataType, group.teamId, behaviorIdToClone, newName).url;
     fetch(url, { credentials: 'same-origin' })
       .then((response) => response.json())
       .then((json) => {
-        const newVersion = BehaviorVersion.fromJson(Object.assign({}, json, { groupId: group.id }));
+        const newVersion = BehaviorVersion.fromJson(Object.assign({}, json, { groupId: group.id })).clone(optionalDefaultProps || {});
         const groupWithNewBehavior = group.withNewBehaviorVersion(newVersion);
         this.updateGroupStateWith(groupWithNewBehavior, () => {
           this.onSelect(groupWithNewBehavior.id, newVersion.behaviorId);
@@ -2092,20 +2100,22 @@ const BehaviorEditor = React.createClass({
   },
 
   addNewAction: function() {
-    this.addNewBehavior(false);
+    const nextActionName = SequentialName.nextFor(this.getActionBehaviors(), (ea) => ea.name, "action");
+    this.addNewBehavior(false, null, BehaviorVersion.defaultActionProps(nextActionName));
   },
 
   addNewDataType: function() {
-    this.addNewBehavior(true);
+    const nextDataTypeName = SequentialName.nextFor(this.getDataTypeBehaviors(), (ea) => ea.name, "DataType");
+    this.addNewBehavior(true, null, { name: nextDataTypeName });
   },
 
-  addNewLibraryImpl: function(libraryIdToClone) {
+  addNewLibraryImpl: function(libraryIdToClone, optionalProps) {
     const group = this.getBehaviorGroup();
     const url = jsRoutes.controllers.BehaviorEditorController.newUnsavedLibrary(group.teamId, libraryIdToClone).url;
     fetch(url, { credentials: 'same-origin' })
       .then((response) => response.json())
       .then((json) => {
-        const newVersion = LibraryVersion.fromProps(Object.assign({}, json, { groupId: group.id }));
+        const newVersion = LibraryVersion.fromProps(Object.assign({}, json, { groupId: group.id })).clone(optionalProps || {});
         const groupWithNewLibrary = group.withNewLibraryVersion(newVersion);
         this.updateGroupStateWith(groupWithNewLibrary, () => {
           this.onSelect(groupWithNewLibrary.id, newVersion.libraryId);
@@ -2114,7 +2124,11 @@ const BehaviorEditor = React.createClass({
   },
 
   addNewLibrary: function() {
-    this.addNewLibraryImpl();
+    const nextLibraryName = SequentialName.nextFor(this.getLibraries(), (ea) => ea.name, "library");
+    this.addNewLibraryImpl(null, {
+      name: nextLibraryName,
+      functionBody: LibraryVersion.defaultLibraryCode()
+    });
   },
 
   cloneLibrary: function(libraryIdToClone) {
@@ -2292,12 +2306,6 @@ const BehaviorEditor = React.createClass({
                   {this.renderCodeEditor({
                     sectionNumber: this.hasInputs() ? "3" : "2",
                     sectionHeading: "Run code",
-                    codeEditorHelp: (
-                      <CodeEditorHelp
-                        isFinishedBehavior={this.isFinishedBehavior()}
-                        functionBody={this.getFunctionBody()}
-                      />
-                    ),
                     codeHelpPanelName: 'helpForBehaviorCode'
                   })}
 
@@ -2393,12 +2401,6 @@ const BehaviorEditor = React.createClass({
           systemParams: [],
           sectionNumber: "1",
           sectionHeading: "Write code to define a module",
-          codeEditorHelp: (
-            <LibraryCodeEditorHelp
-              isFinished={this.isFinishedLibraryVersion()}
-              functionBody={this.getFunctionBody()}
-            />
-          ),
           codeHelpPanelName: 'helpForLibraryCode',
           functionExecutesImmediately: true
         })}

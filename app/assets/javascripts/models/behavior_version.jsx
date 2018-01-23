@@ -13,6 +13,12 @@ define(function(require) {
     ResponseTemplate = require('./response_template'),
     Trigger = require('./trigger');
 
+  type DefaultActionProps = {|
+    name?: string,    triggers: Array<Trigger>,
+    functionBody: string,
+    responseTemplate: ResponseTemplate
+  |}
+
   class BehaviorVersion extends Editable implements Diffable {
     id: ?string;
     behaviorId: string;
@@ -292,6 +298,22 @@ define(function(require) {
       });
     }
 
+    isEmpty(): boolean {
+      const name = this.getName();
+      const triggers = this.getTriggers();
+      const inputs = this.inputIds;
+      const code = this.getFunctionBody();
+      const template = this.responseTemplateText();
+
+      return (
+        (!name) &&
+        (triggers.length === 0 || triggers.every((trigger) => !trigger.getText())) &&
+        (inputs.length === 0) &&
+        (!code) &&
+        (!template)
+      );
+    }
+
     clone(props): BehaviorVersion {
       return BehaviorVersion.fromProps(Object.assign({}, this, props));
     }
@@ -328,6 +350,41 @@ define(function(require) {
         materializedProps.triggers = Trigger.triggersFromJson(props.triggers);
       }
       return BehaviorVersion.fromProps(materializedProps);
+    }
+
+    static defaultActionProps(optionalName): DefaultActionProps {
+      const functionBody = (
+`// Write a Node.js (6.10.2) function that calls ellipsis.success() with a result.
+// You can require any NPM package. 
+const name = ellipsis.userInfo.fullName || "friend";
+ellipsis.success(name);
+`);
+      const template = ResponseTemplate.fromString("Hello, {successResult}");
+      const triggers = [new Trigger(`run ${optionalName || "action"}`, false, true)];
+      const props: DefaultActionProps = {
+        triggers: triggers,
+        functionBody: functionBody,
+        responseTemplate: template
+      };
+      if (optionalName) {
+        props.name = optionalName;
+      }
+      return props;
+    }
+
+    static defaultDataTypeCode(usesSearch): string {
+      return (
+`// Write a Node.js (6.10.2) function that calls ellipsis.success() with an array of items.
+// ${usesSearch ? "Use searchQuery to filter on the user’s input." : ""}
+// Each item should have a "label" and "id" property.
+//
+// Example:
+//
+// ellipsis.success([
+//   { id: "1", label: "One" },
+//   { id: "2", label: "Two" }
+// ]);
+`);
     }
 
   }

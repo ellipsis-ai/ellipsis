@@ -18,7 +18,6 @@ define(function(require) {
     propTypes: {
       sectionNumber: React.PropTypes.string.isRequired,
       sectionHeading: React.PropTypes.string.isRequired,
-      codeEditorHelp: React.PropTypes.node.isRequired,
       codeHelpPanelName: React.PropTypes.string.isRequired,
 
       activePanelName: React.PropTypes.string.isRequired,
@@ -156,8 +155,6 @@ define(function(require) {
                 </SectionHeading>
               </div>
             </div>
-
-            {this.props.codeEditorHelp}
           </div>
 
           <div>
