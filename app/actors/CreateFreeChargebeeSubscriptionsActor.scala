@@ -10,11 +10,11 @@ import models.team.Team
 import services.DataService
 import com.chargebee.models.Subscription
 
-object SetupChargebeeForOrgsActor {
+object CreateFreeChargebeeSubscriptionsActor {
   final val name = "setup-chargebee-for-orgs"
 }
 
-class SetupChargeebeForOrgsActor @Inject() (
+class CreateFreeChargebeeSubscriptionsActor @Inject() (
                                              dataService: DataService,
                                              implicit val ec: ExecutionContext
                                    ) extends Actor {
