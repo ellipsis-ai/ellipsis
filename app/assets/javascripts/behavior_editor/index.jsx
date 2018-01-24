@@ -882,11 +882,10 @@ const BehaviorEditor = React.createClass({
         } else {
           this.onDeployError(null, callback);
         }
+        this.resetNotifications();
       })
       .catch(error => {
         this.onDeployError(error, callback);
-      })
-      .finally(() => {
         this.resetNotifications();
       });
   },
