@@ -14,7 +14,8 @@ define(function(require) {
     Trigger = require('./trigger');
 
   type DefaultActionProps = {|
-    name?: string,    triggers: Array<Trigger>,
+    name?: string,
+    triggers: Array<Trigger>,
     functionBody: string,
     responseTemplate: ResponseTemplate
   |}
