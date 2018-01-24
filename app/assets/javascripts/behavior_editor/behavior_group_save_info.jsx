@@ -51,7 +51,7 @@ define(function(require) {
     }
 
     deployedString(deployment: BehaviorGroupDeployment): string {
-      return this.buildStringFor(deployment.createdAt, deployment.user, this.deployedByCurrentUser(), this.deployedPrefix());
+      return this.buildStringFor(deployment.createdAt, deployment.deployer, this.deployedByCurrentUser(), this.deployedPrefix());
     }
 
     savedByCurrentUser(): boolean {
@@ -59,7 +59,7 @@ define(function(require) {
     }
 
     deployedByCurrentUser(): boolean {
-      return this.props.group.deployment && this.props.group.deployment.userId === this.props.currentUserId;
+      return this.props.group.deployment && this.props.group.deployment.deployer && (this.props.group.deployment.deployer.id === this.props.currentUserId);
     }
 
     statusString(): string {
