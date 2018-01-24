@@ -832,7 +832,6 @@ const BehaviorEditor = React.createClass({
     } else if (Event.keyPressWasSaveShortcut(event)) {
       event.preventDefault();
       if (this.isModified()) {
-        this.refs.saveButton.focus();
         this.onSaveBehaviorGroup();
       }
     }
@@ -1917,7 +1916,6 @@ const BehaviorEditor = React.createClass({
               <div>
                 <div>
                   <DynamicLabelButton
-                    ref="saveButton"
                     onClick={this.onSaveClick}
                     labels={[{
                       text: 'Save',
