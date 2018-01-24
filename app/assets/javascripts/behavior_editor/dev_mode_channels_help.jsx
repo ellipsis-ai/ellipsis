@@ -14,8 +14,8 @@ define(function(require) {
           onCollapseClick={this.props.onCollapseClick}
         >
           <div className="mtm">
-            <span>To avoid interfering with other users of a skill, Ellipsis allows you to make changes and test them before they are generally visible. </span>
-            <span>Once you feel the skill is ready, you can deploy the latest version to make it available to everyone. </span>
+            <span>To avoid interfering with other users of a skill, Ellipsis allows you to make changes and test them before they are available to everyone. </span>
+            <span>Once you feel the skill is ready, you can deploy the latest version to the whole team. </span>
           </div>
 
           <div className="mtl">
