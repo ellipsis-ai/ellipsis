@@ -22,20 +22,24 @@ define(function(require) {
       autobind(this);
     }
 
+    buildStringFor(createdAt, user, isCurrentUser, prefix): string {
+      const ts = Formatter.formatTimestampRelativeIfRecent(createdAt);
+      const userName = user && user.userName ? user.formattedFullNameOrUserName() : null;
+      const userString = !isCurrentUser && userName ? `by ${userName}` : "";
+      return `${prefix} ${ts} ${userString}`;
+    }
+
     savedPrefix(): string {
       if (this.props.isLastSavedVersion) {
         return this.savedByCurrentUser() ? "You last saved this skill" : "Skill last saved";
       } else {
         return this.savedByCurrentUser() ? "You saved this version" : "Version saved";
-  }
+      }
     }
 
     savedString(): string {
       const group = this.props.group;
-      const ts = Formatter.formatTimestampRelativeIfRecent(group.createdAt);
-      const authorName = group.author && group.author.userName ? group.author.formattedFullNameOrUserName() : null;
-      const authorString = !this.savedByCurrentUser() && authorName ? `by ${authorName}` : "";
-      return `${this.savedPrefix()} ${ts} ${authorString}`;
+      return this.buildStringFor(group.createdAt, group.author, this.savedByCurrentUser(), this.savedPrefix());
     }
 
     deployedPrefix(): string {
@@ -47,10 +51,7 @@ define(function(require) {
     }
 
     deployedString(deployment: BehaviorGroupDeployment): string {
-      const ts = Formatter.formatTimestampRelativeIfRecent(deployment.createdAt);
-      const deployerName = deployment.user && deployment.user.userName ? deployment.user.formattedFullNameOrUserName() : null;
-      const deployerString = !this.deployedByCurrentUser() && deployerName ? `by ${deployerName}` : "";
-      return `${this.deployedPrefix()} ${ts} ${deployerString}`;
+      return this.buildStringFor(deployment.createdAt, deployment.user, this.deployedByCurrentUser(), this.deployedPrefix());
     }
 
     savedByCurrentUser(): boolean {
