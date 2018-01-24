@@ -2,6 +2,7 @@ package models.behaviors.behaviorgroupdeployment
 
 import drivers.SlickPostgresDriver.api._
 import models.accounts.user.UserQueries
+import models.behaviors.behaviorgroup.BehaviorGroupQueries
 
 object BehaviorGroupDeploymentQueries {
 
@@ -38,8 +39,8 @@ object BehaviorGroupDeploymentQueries {
   val mostRecentBehaviorGroupVersionIdsQuery = Compiled(uncompiledMostRecentBehaviorGroupVersionIdsQuery)
 
   private def uncompiledMostRecentForTeamQuery(teamId: Rep[String]) = {
-    uncompiledAllMostRecentQuery.join(UserQueries.all).on(_.userId === _.id).
-      filter { case(_, user) => user.teamId === teamId }.
+    uncompiledAllMostRecentQuery.join(BehaviorGroupQueries.all).on(_.groupId === _.id).
+      filter { case(_, group) => group.teamId === teamId }.
       map { case(dep, _) => dep }
   }
   val mostRecentForTeamQuery = Compiled(uncompiledMostRecentForTeamQuery _)
