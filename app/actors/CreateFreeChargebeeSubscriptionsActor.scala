@@ -22,7 +22,7 @@ class CreateFreeChargebeeSubscriptionsActor @Inject() (
                                    ) extends Actor {
 
   // initial delay of 1 minute so that, in the case of errors & actor restarts, it doesn't hammer external APIs
-  val tick = context.system.scheduler.schedule(1 minute, 30 seconds, self, "tick")
+  val tick = context.system.scheduler.schedule(1 minute, 10 minutes, self, "tick")
 
   override def postStop() = {
     tick.cancel()
