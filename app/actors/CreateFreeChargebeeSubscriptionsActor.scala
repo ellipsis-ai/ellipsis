@@ -48,9 +48,9 @@ class CreateFreeChargebeeSubscriptionsActor @Inject() (
       // Seq[Future[Seq[Option[Subscription]]]]
       organizations.map { org =>
         for {
-          orgWithId <- dataService.organizations.setChargebeeCustomerIdFor(org, Some(IDs.next))
-          teams <- dataService.teams.allTeamsFor(orgWithId)
-          subs <- teamsToSubs(teams, orgWithId)
+          org <- dataService.organizations.setChargebeeCustomerIdFor(org, Some(IDs.next))
+          teams <- dataService.teams.allTeamsFor(org)
+          subs <- teamsToSubs(teams, org)
         } yield {
           subs
         }
@@ -63,17 +63,10 @@ class CreateFreeChargebeeSubscriptionsActor @Inject() (
   }
 
   private def createSub(team: Team, org: Organization): Future[Option[Subscription]] = {
-    dataService.subscriptions.createFreeSubscription(team, org)
-      .map { maybeSubscription =>
-        Logger.info(s"Created Chargebee free subscription for team ${team.name}, " +
-          s"organization id: ${org.id}, Chargebee customer id: ${org.maybeChargebeeCustomerId}")
-        maybeSubscription
-      }
-      .recover {
-        case e: Throwable => {
-          Logger.error(s"Error while creating a free subscription for team ${team.name}", e)
-          None
-      }
+    dataService.subscriptions.createFreeSubscription(team, org).map { maybeSubscription =>
+      Logger.info(s"Created Chargebee free subscription for team ${team.name}, " +
+        s"organization id: ${org.id}, Chargebee customer id: ${org.maybeChargebeeCustomerId}")
+      maybeSubscription
     }
   }
 

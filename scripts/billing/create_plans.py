@@ -1,6 +1,7 @@
 #!/usr/bin/python
 import sys
 import chargebee
+import json
 
 plans = [
   {
@@ -67,7 +68,10 @@ plans = [
   }
 ]
 
-chargebee.configure("test_O0nTVksTuwXi9mevZXdID2M7Bznw0vMj","ellipsis-test")
+import json
+# .local_dev is in the .gitignore file
+credentials = json.load(open('.local_dev/credentials.json'))
+chargebee.configure(credentials['chargebee']['api_key'],credentials['chargebee']['site'] )
 
 for plan in plans:
     result = chargebee.Plan.create(plan)

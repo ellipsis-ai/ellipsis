@@ -35,7 +35,12 @@ class SubscriptionServiceImpl @Inject()(
     }.map { result =>
       Some(result.subscription())
     }.recover {
-      case e: Throwable => None
+      // If the Chargebee API fails we log a message an re-throw. This is cause a 500 and Sentry will
+      // let us know. If the Chargebee API is not very reliable then we can change this.
+      case e: Throwable => {
+        Logger.error(s"Error while creating a free subscription for team ${team.name}", e)
+        throw e
+      }
     }
   }
 

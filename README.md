@@ -212,6 +212,17 @@ payments code there is nothing to do. The billing pages will simply not be visib
 in your development server.
 
 If you need to touch the payments code you need to:
-- get access to Ellipsis account on Chargebee
-- configure the new account:
-1. 
+1. Create a new free Chargebee account
+2. Get the test site URL and generate a new API key
+3. Add 2 env. variables to your IntellJ run configuration: CHARGEBEE_SITE and CHARGEBEE_API_KEY. 
+Note that the CHARGEBEE_SITE is not the full URL but just the subdomain.
+4. Configure the Chargebee webhooks:  go to Settings › API & Webhooks › Webhook Settings, in 
+Webhook URL put: https://<your-dev-server-url/webhooks/chargebee/events, for instance 
+_https://ellipsis-matteo.ngrok.io/webhooks/chargebee/events_. 
+[More info.](https://www.chargebee.com/docs/webhook_settings.html)
+5. Enable metered billing: go to Settings > SITE SETTINGS > Site Info & Billing Rules, 
+enable Notify and wait to close Invoices and to save the changes made click Update Site
+Info & Billing Rules. [More info](https://www.chargebee.com/docs/metered_billing.html)
+6. Create the Plans in Chargebee: run the script ./scripts/billing/create_plans.py.
+The script needs to access the Chargebee credentials and it assumes they are stored in a json
+file in .local_dev/credentials.json (.local_dev is in the .gitignore file). 
