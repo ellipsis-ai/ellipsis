@@ -30,9 +30,12 @@ trait MessageEvent extends Event {
       triggers <- maybeLimitToBehaviorVersion.map { limitToBehaviorVersion =>
         dataService.messageTriggers.allFor(limitToBehaviorVersion)
       }.getOrElse {
-        maybeTeam.map { team =>
-          dataService.messageTriggers.allActiveFor(team)
-        }.getOrElse(Future.successful(Seq()))
+        (for {
+          team <- maybeTeam
+          channel <- maybeChannel
+        } yield {
+          dataService.behaviorGroupDeployments.allActiveTriggersFor(context, channel, team)
+        }).getOrElse(Future.successful(Seq()))
       }
       activatedTriggerLists <- Future.successful {
         triggers.

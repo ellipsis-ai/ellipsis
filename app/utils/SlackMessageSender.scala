@@ -3,7 +3,8 @@ package utils
 import akka.actor.ActorSystem
 import models.SlackMessageFormatter
 import models.behaviors.conversations.conversation.Conversation
-import models.behaviors.events.{MessageAttachmentGroup, SlackMessageAttachmentGroup}
+import models.behaviors.events.{MessageAttachmentGroup, SlackMessageAttachmentGroup, SlackMessageTextAttachmentGroup}
+import play.api.Configuration
 import slack.api.SlackApiClient
 import slack.models.Attachment
 
@@ -27,14 +28,25 @@ case class SlackMessageSender(
                                teamId: String,
                                unformattedText: String,
                                forcePrivate: Boolean,
+                               isForUndeployed: Boolean,
                                originatingChannel: String,
                                channelToUse: String,
                                maybeThreadId: Option[String],
                                maybeShouldUnfurl: Option[Boolean],
                                maybeConversation: Option[Conversation],
                                attachmentGroups: Seq[MessageAttachmentGroup] = Seq(),
-                               files: Seq[UploadFileSpec] = Seq()
+                               files: Seq[UploadFileSpec] = Seq(),
+                               configuration: Configuration
                              ) {
+
+  val attachmentGroupsToUse = if (isForUndeployed) {
+    val baseUrl = configuration.get[String]("application.apiBaseUrl")
+    val path = controllers.routes.HelpController.devMode().url
+    val link = s"[development]($baseUrl$path)"
+    attachmentGroups ++ Seq(SlackMessageTextAttachmentGroup(s"\uD83D\uDEA7 Skill in $link \uD83D\uDEA7", None))
+  } else {
+    attachmentGroups
+  }
 
   private def postChatMessage(
                                text: String,
@@ -171,7 +183,7 @@ case class SlackMessageSender(
 
   def send(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[String]] = {
     val formattedText = SlackMessageFormatter.bodyTextFor(unformattedText)
-    val attachments = attachmentGroups.flatMap {
+    val attachments = attachmentGroupsToUse.flatMap {
       case a: SlackMessageAttachmentGroup => a.attachments.map(_.underlying)
       case _ => Seq()
     }

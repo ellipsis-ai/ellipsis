@@ -3,6 +3,7 @@
 import type {Diffable, HasInputs, DiffableProp} from './diffs';
 
 define(function(require) {
+  const BehaviorGroupDeployment = require('./behavior_group_deployment');
   const BehaviorVersion = require('./behavior_version');
   const Editable = require('./editable');
   const LibraryVersion = require('./library_version');
@@ -33,6 +34,7 @@ define(function(require) {
     exportId: ?string;
     author: ?User;
     gitSHA: ?string;
+    deployment: ?BehaviorGroupDeployment;
 
     constructor(
       id: string,
@@ -51,7 +53,8 @@ define(function(require) {
       createdAt: ?number,
       exportId: ?string,
       author: ?User,
-      gitSHA: ?string
+      gitSHA: ?string,
+      deployment: ?BehaviorGroupDeployment
     ) {
       Object.defineProperties(this, {
         id: { value: id, enumerable: true },
@@ -70,7 +73,8 @@ define(function(require) {
         createdAt: { value: createdAt, enumerable: true },
         exportId: { value: exportId, enumerable: true },
         author: { value: author, enumerable: true },
-        gitSHA: { value: gitSHA, enumerable: true }
+        gitSHA: { value: gitSHA, enumerable: true },
+        deployment: { value: deployment, enumerable: true }
       });
     }
 
@@ -175,7 +179,8 @@ define(function(require) {
         behaviorVersions: this.sortedForComparison(this.behaviorVersions).map(BehaviorVersion.forEqualityComparison),
         libraryVersions: this.sortedForComparison(this.libraryVersions).map(LibraryVersion.forEqualityComparison),
         createdAt: null,
-        author: null
+        author: null,
+        deployment: null
       });
     }
 
@@ -292,7 +297,8 @@ define(function(require) {
         props.createdAt,
         props.exportId,
         props.author,
-        props.gitSHA
+        props.gitSHA,
+        props.deployment
       );
     }
 
@@ -305,7 +311,8 @@ define(function(require) {
         actionInputs: Input.allFromJson(props.actionInputs || []),
         dataTypeInputs: Input.allFromJson(props.dataTypeInputs || []),
         libraryVersions: props.libraryVersions.map(ea => LibraryVersion.fromProps(Object.assign({}, ea, { groupId: props.id }))),
-        author: props.author ? User.fromJson(props.author) : null
+        author: props.author ? User.fromJson(props.author) : null,
+        deployment: props.deployment ? BehaviorGroupDeployment.fromProps(props.deployment) : null
       }));
     }
 

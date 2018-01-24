@@ -84,6 +84,8 @@ object Formatting {
   lazy implicit val userDataReads = Json.reads[UserData]
   lazy implicit val userDataWrites = Json.writes[UserData]
 
+  lazy implicit val behaviorGroupDeploymentDataFormat = Json.format[BehaviorGroupDeploymentData]
+
   lazy implicit val behaviorGroupReads = Json.reads[BehaviorGroupData]
   lazy implicit val behaviorGroupWrites = Json.writes[BehaviorGroupData]
 

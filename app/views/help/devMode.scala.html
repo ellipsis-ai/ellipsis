@@ -1,0 +1,40 @@
+@(
+  heading: String,
+  config: ViewConfig
+)(implicit messages: Messages, r: RequestHeader)
+
+@page.main(heading, config) {
+
+  <div id="content" class="content">
+    <div class="bg-pink border-emphasis-bottom border-pink bg-large-logo">
+      <div class="container ptxxxxl pbl">
+        <h1 class="type-white">
+          <span>Help: @heading</span>
+        </h1>
+      </div>
+    </div>
+    <div class="bg-white border-bottom pvxxxl">
+      <div class="container">
+        <div class="columns">
+          <div class="column column-three-quarters">
+            <p class="type-l mbxxl">
+              When a channel is in <span class="type-semibold">dev mode</span> you can use versions of skills that are in active development and are not yet deployed for everyone.
+            </p>
+            <p class="type-semibold">
+              You can enable dev mode for a channel by typing:
+            </p>
+            <p class="mbxxl"><code>
+            @@ellipsis enable dev mode
+            </code></p>
+            <p class="type-semibold">
+              To turn off dev mode for that channel, you can type:
+            </p>
+            <p class="mbxxl"><code>
+            @@ellipsis disable dev mode
+            </code></p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+}

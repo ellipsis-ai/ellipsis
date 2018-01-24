@@ -269,12 +269,19 @@ class BehaviorGroupVersionServiceImpl @Inject() (
     }
   }
 
+  private def deployedFunctionNames: Future[Seq[String]] = {
+    dataService.behaviorGroupDeployments.mostRecentBehaviorGroupVersionIds.map { ids =>
+      ids.map(BehaviorGroupVersion.functionNameFor)
+    }
+  }
+
   def activeFunctionNames: Future[Seq[String]] = {
     for {
       current <- currentFunctionNames
+      deployed <- deployedFunctionNames
       activeConvo <- activeConversationFunctionNames
     } yield {
-      (current ++ activeConvo).distinct
+      (current ++ deployed ++ activeConvo).distinct
     }
   }
 

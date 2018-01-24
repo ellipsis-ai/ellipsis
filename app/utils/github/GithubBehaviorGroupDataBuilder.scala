@@ -145,6 +145,7 @@ case class GithubBehaviorGroupDataBuilder(
       maybeSHA,
       maybeExportId,
       Some(OffsetDateTime.now),
+      None,
       None
     )
   }

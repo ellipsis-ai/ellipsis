@@ -26,7 +26,8 @@ case class BehaviorEditorData(
                                userId: String,
                                isAdmin: Boolean,
                                isLinkedToGithub: Boolean,
-                               linkedGithubRepo: Option[LinkedGithubRepoData]
+                               linkedGithubRepo: Option[LinkedGithubRepoData],
+                               lastDeployTimestamp: Option[OffsetDateTime]
                               )
 
 object BehaviorEditorData {
@@ -158,6 +159,21 @@ object BehaviorEditorData {
       maybeLinkedGithubRepo <- maybeGroup.map { group =>
         dataService.linkedGithubRepos.maybeFor(group)
       }.getOrElse(Future.successful(None))
+      maybeDeployment <- maybeGroupVersion.map { groupVersion =>
+        dataService.behaviorGroupDeployments.findForBehaviorGroupVersion(groupVersion)
+      }.getOrElse(Future.successful(None))
+      maybeDeploymentData <- maybeDeployment.map { deployment =>
+        BehaviorGroupDeploymentData.fromDeployment(deployment, dataService).map(Some(_))
+      }.getOrElse(Future.successful(None))
+      maybeLastDeployTimestamp <- maybeDeployment.map { deployment =>
+        Future.successful(Some(deployment.createdAt))
+      }.getOrElse {
+        maybeGroup.map { group =>
+          dataService.behaviorGroupDeployments.maybeMostRecentFor(group).map { maybeDeployment =>
+            maybeDeployment.map(_.createdAt)
+          }
+        }.getOrElse(Future.successful(None))
+      }
     } yield {
       val maybeVerifiedSelectedId = maybeVerifiedBehaviorId.orElse(maybeVerifiedLibraryId)
       val data = maybeGroupData.getOrElse {
@@ -178,7 +194,8 @@ object BehaviorEditorData {
           maybeGroupVersion.flatMap(_.maybeGitSHA),
           exportId = None,
           Some(OffsetDateTime.now),
-          Some(userData)
+          Some(userData),
+          maybeDeploymentData
         )
       }
       BehaviorEditorData(
@@ -196,7 +213,8 @@ object BehaviorEditorData {
         user.id,
         isAdmin,
         isLinkedToGithub,
-        maybeLinkedGithubRepo.map(r => LinkedGithubRepoData(r.owner, r.repo))
+        maybeLinkedGithubRepo.map(r => LinkedGithubRepoData(r.owner, r.repo)),
+        maybeLastDeployTimestamp
       )
     }
   }

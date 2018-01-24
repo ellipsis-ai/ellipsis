@@ -173,11 +173,18 @@ case class DisplayHelpBehavior(
       }.getOrElse {
         Future.successful(None)
       }
-      groupData <- maybeBehaviorGroups.map { groups =>
+      groupData <- (for {
+        channel <- event.maybeChannel
+        groups <- maybeBehaviorGroups
+      } yield {
         Future.sequence(groups.map { group =>
-          BehaviorGroupData.maybeFor(group.id, user, None, dataService)
+          dataService.behaviorGroupDeployments.maybeActiveBehaviorGroupVersionFor(group, event.context, channel).flatMap { maybeGroupVersion =>
+            maybeGroupVersion.map { groupVersion =>
+              BehaviorGroupData.buildFor(groupVersion, user, dataService).map(Some(_))
+            }.getOrElse(Future.successful(None))
+          }
         }).map(_.flatten.sorted)
-      }.getOrElse(Future.successful(Seq()))
+      }).getOrElse(Future.successful(Seq()))
       botPrefix <- event.botPrefix(services)
     } yield {
       val (named, unnamed) = groupData.partition(_.maybeNonEmptyName.isDefined)

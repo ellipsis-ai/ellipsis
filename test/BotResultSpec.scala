@@ -76,7 +76,7 @@ class BotResultSpec extends PlaySpec with MockitoSugar with DBSpec {
 
         val event: SlackMessageEvent = newEventFor(profile)
         val responseText = "response"
-        val result = SuccessResult(event, None, JsString("result"), JsNull, Seq(), Some(responseText), None, forcePrivateResponse = false)
+        val result = SuccessResult(event, None, JsString("result"), JsNull, Seq(), Some(responseText), None, forcePrivateResponse = false, isForUndeployed = false)
         val resultTs: String = SlackTimestamp.now
 
         mockPostChatMessage(responseText, event, resultTs, None)
@@ -95,7 +95,7 @@ class BotResultSpec extends PlaySpec with MockitoSugar with DBSpec {
 
         val responseText = "response"
         val resultJs = JsString("result")
-        val result = SuccessResult(event, None, resultJs, JsNull, Seq(), Some(responseText), None, forcePrivateResponse = false)
+        val result = SuccessResult(event, None, resultJs, JsNull, Seq(), Some(responseText), None, forcePrivateResponse = false, isForUndeployed = false)
         val resultTs: String = SlackTimestamp.now
 
         val conversationToBeInterrupted = newConversationFor(team, user, profile, event)
@@ -157,7 +157,7 @@ class BotResultSpec extends PlaySpec with MockitoSugar with DBSpec {
         val selfConversation = newConversationFor(team, user, profile, event)
         val conversationToInterrupt = newConversationFor(team, user, profile, event)
 
-        val result = SuccessResult(event, Some(selfConversation), resultJs, JsNull, Seq(), Some(responseText), None, forcePrivateResponse = false)
+        val result = SuccessResult(event, Some(selfConversation), resultJs, JsNull, Seq(), Some(responseText), None, forcePrivateResponse = false, isForUndeployed = false)
 
         mockPostChatMessage(responseText, event, resultTs, None)
         mockPostChatMessage(resultJs.toString, event, resultTs, Some(resultTs))
@@ -191,7 +191,7 @@ class BotResultSpec extends PlaySpec with MockitoSugar with DBSpec {
         runNow(dataService.conversations.save(threadedConversation.copyWithMaybeThreadId(Some(threadId))))
         threadedConversation = runNow(dataService.conversations.find(threadedConversation.id)).get
 
-        val result = SuccessResult(event, Some(threadedConversation), JsString("result"), JsNull, Seq(), Some(responseText), None, forcePrivateResponse = false)
+        val result = SuccessResult(event, Some(threadedConversation), JsString("result"), JsNull, Seq(), Some(responseText), None, forcePrivateResponse = false, isForUndeployed = false)
 
         val otherConversation = newConversationFor(team, user, profile, event)
 

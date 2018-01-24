@@ -4,6 +4,7 @@ import akka.actor.ActorSystem
 import models.accounts.slack.botprofile.SlackBotProfile
 import models.accounts.user.User
 import models.behaviors.conversations.conversation.Conversation
+import play.api.Configuration
 import services.{AWSLambdaService, CacheService, DataService, DefaultServices}
 import slack.api.SlackApiClient
 import utils.{SlackMessageSender, UploadFileSpec}
@@ -123,7 +124,9 @@ case class SlackMessageEvent(
                    maybeConversation: Option[Conversation],
                    attachmentGroups: Seq[MessageAttachmentGroup],
                    files: Seq[UploadFileSpec],
-                   cacheService: CacheService
+                   isForUndeployed: Boolean,
+                   cacheService: CacheService,
+                   configuration: Configuration
                  )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[String]] = {
     channelForSend(forcePrivate, maybeConversation, cacheService).flatMap { channelToUse =>
       SlackMessageSender(
@@ -132,13 +135,15 @@ case class SlackMessageEvent(
         profile.slackTeamId,
         unformattedText,
         forcePrivate,
+        isForUndeployed,
         channel,
         channelToUse,
         maybeThreadId,
         maybeShouldUnfurl,
         maybeConversation,
         attachmentGroups,
-        files
+        files,
+        configuration
       ).send
     }
   }

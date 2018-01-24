@@ -1,5 +1,7 @@
 package json
 
+import java.time.OffsetDateTime
+
 case class BehaviorEditorEditConfig(
   containerId: String,
   csrfToken: Option[String],
@@ -17,7 +19,8 @@ case class BehaviorEditorEditConfig(
   isAdmin: Boolean,
   isLinkedToGithub: Boolean,
   linkedGithubRepo: Option[LinkedGithubRepoData],
-  showVersions: Option[Boolean]
+  showVersions: Option[Boolean],
+  lastDeployTimestamp: Option[OffsetDateTime]
 )
 
 object BehaviorEditorEditConfig {
@@ -39,7 +42,8 @@ object BehaviorEditorEditConfig {
       data.isAdmin,
       data.isLinkedToGithub,
       data.linkedGithubRepo,
-      maybeShowVersions
+      maybeShowVersions,
+      data.lastDeployTimestamp
     )
   }
 }
