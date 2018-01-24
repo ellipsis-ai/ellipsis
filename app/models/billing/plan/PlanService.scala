@@ -8,6 +8,6 @@ import scala.concurrent.Future
 
 trait PlanService extends ChargebeeService {
 
-  def allPlans: Future[Seq[Plan]]
+  def allPlans(count: Int = 100): Future[Seq[Plan]]
 
 }

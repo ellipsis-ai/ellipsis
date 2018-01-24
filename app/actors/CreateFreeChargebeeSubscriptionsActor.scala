@@ -43,9 +43,7 @@ class CreateFreeChargebeeSubscriptionsActor @Inject() (
   }
 
   private def createSubsFor(organizations: Seq[Organization]): Future[Seq[Option[Subscription]]] = {
-    // Future[Seq[Seq[Option[Subscription]]]]
     Future.sequence {
-      // Seq[Future[Seq[Option[Subscription]]]]
       organizations.map { org =>
         for {
           org <- dataService.organizations.setChargebeeCustomerIdFor(org, Some(IDs.next))

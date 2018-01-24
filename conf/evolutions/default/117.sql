@@ -4,7 +4,7 @@ CREATE TABLE organizations (
   id TEXT PRIMARY KEY,
   chargebee_customer_id TEXT,
   name TEXT NOT NULL,
-  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+  created_at TIMESTAMPTZ NOT NULL
 );
 
 ALTER TABLE teams ADD COLUMN organization_id TEXT;

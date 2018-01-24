@@ -25,7 +25,7 @@ class PlansController @Inject() (
 
   def list() =  silhouette.SecuredAction.async { implicit request =>
     withIsAdminCheck(() => {
-      planService.allPlans.map { plans =>
+      planService.allPlans().map { plans =>
         Ok(views.html.admin.billing.plans.list(plans, viewConfig(None)))
       }
     })

@@ -16,10 +16,10 @@ class PlanServiceImpl @Inject()(
                                  implicit val ec: ExecutionContext
                                ) extends PlanService {
 
-  def allPlans: Future[Seq[Plan]] = {
+  def allPlans(count: Int = 100): Future[Seq[Plan]] = {
       Future {
         blocking {
-          Plan.list().limit(100).request(chargebeeEnv)
+          Plan.list().limit(count).request(chargebeeEnv)
         }
       }.map { result =>
         val buffer = ListBuffer[com.chargebee.models.Plan]()
