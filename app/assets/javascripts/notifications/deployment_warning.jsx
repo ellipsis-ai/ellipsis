@@ -1,6 +1,7 @@
 // @flow
 
 define(function(require) {
+  const DynamicLabelButton = require('../form/dynamic_label_button');
   const React = require('react');
   const moment = require('moment');
   const autobind = require('../lib/autobind');
@@ -16,7 +17,7 @@ define(function(require) {
     }
 
     detail() {
-      return this.props.details.find((detail) => detail.type === "saved_version_not_deployed");
+      return this.props.details.find((detail) => detail.type === "saved_version_not_deployed") || {};
     }
 
     deploy() {
@@ -29,20 +30,33 @@ define(function(require) {
       });
     }
 
-    isDeploying() {
+    isDeploying(): boolean {
       return this.state && this.state.isDeploying;
     }
 
-    timestampText() {
+    timestampText(): string {
       return moment(this.detail().lastDeployTimestamp).from(new Date(this.detail().lastSaveTimestamp), true);
     }
 
-    versionStatusText() {
+    versionStatusText(): string {
       if (this.detail().lastDeployTimestamp) {
         return `This version is ${this.timestampText()} newer than the last deployed version.`;
       } else {
         return `This skill hasn't yet been deployed, so it isn't generally available to users.`;
       }
+    }
+
+    getConfirmButtonLabels() {
+      return [
+        {
+          text: "Deploying…",
+          displayWhen: this.isDeploying()
+        },
+        {
+          text: "Deploy now",
+          displayWhen: !this.isDeploying()
+        }
+      ];
     }
 
     render() {
@@ -51,9 +65,11 @@ define(function(require) {
           <span>{this.versionStatusText()} Use </span>
           <button className="button-raw" type="button" onClick={this.detail().onDevModeChannelsClick}>dev mode channels</button>
           <span> to test until it has been deployed , or</span>
-          <button className="button-s button-shrink mls" type="button" onClick={this.deploy}>
-            {this.isDeploying() ? "Deploying…" : "Deploy now"}
-          </button>
+          <DynamicLabelButton
+            className="button-s button-shrink mls"
+            onClick={this.deploy}
+            labels={this.getConfirmButtonLabels()}>
+          </DynamicLabelButton>
         </span>
       );
     }

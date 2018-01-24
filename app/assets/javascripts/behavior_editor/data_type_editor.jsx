@@ -2,7 +2,6 @@ define(function(require) {
   var React = require('react'),
     CodeConfiguration = require('./code_configuration'),
     Collapsible = require('../shared_ui/collapsible'),
-    DataTypeCodeEditorHelp = require('./data_type_code_editor_help'),
     DataTypeDataSummary = require('./data_type_data_summary'),
     DataTypeResultConfig = require('./data_type_result_config'),
     DataTypeSchemaConfig = require('./data_type_schema_config'),
@@ -60,6 +59,11 @@ define(function(require) {
       this.setDataTypeConfig(newConfig);
       this.setState({
         dataTypeSourceChosen: true
+      }, () => {
+        const dataType = this.props.behaviorVersion;
+        if (usesCode && !dataType.getFunctionBody()) {
+          this.props.onChangeCode(BehaviorVersion.defaultDataTypeCode());
+        }
       });
     }
 
@@ -132,10 +136,16 @@ define(function(require) {
     }
 
     updateDataTypeResultConfig(shouldUseSearch) {
+      const code = this.props.behaviorVersion.getFunctionBody();
+      const callback = () => {
+        if (!code || code === BehaviorVersion.defaultDataTypeCode(!shouldUseSearch)) {
+          this.props.onChangeCode(BehaviorVersion.defaultDataTypeCode(shouldUseSearch));
+        }
+      };
       if (shouldUseSearch) {
-        this.props.onAddNewInput('searchQuery');
+        this.props.onAddNewInput('searchQuery', callback);
       } else {
-        this.props.onDeleteInputs();
+        this.props.onDeleteInputs(callback);
       }
     }
 
@@ -172,15 +182,6 @@ define(function(require) {
           <CodeConfiguration
             sectionNumber={"3"}
             sectionHeading={"Run code to generate a list"}
-            codeEditorHelp={(
-              <div className="mbxl">
-                <DataTypeCodeEditorHelp
-                  functionBody={this.getSelectedBehavior().getFunctionBody()}
-                  usesSearch={this.hasInputNamed('searchQuery')}
-                  isFinishedBehavior={this.isFinishedBehavior()}
-                />
-              </div>
-            )}
             codeHelpPanelName='helpForBehaviorCode'
 
             activePanelName={this.props.activePanelName}

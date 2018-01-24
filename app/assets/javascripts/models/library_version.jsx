@@ -140,6 +140,22 @@ define(function(require) {
       );
     }
 
+    static defaultLibraryCode(): string {
+      return (
+`// Write a Node.js (6.10.2) function that returns code you want to share.
+// Other components in your skill can require the library to use the code.
+//
+// Example:
+//
+// return {
+//   getANumber: function() {
+//     return Math.floor(Math.random() * 10);
+//   }
+// };
+`
+      );
+    }
+
   }
 
   return LibraryVersion;

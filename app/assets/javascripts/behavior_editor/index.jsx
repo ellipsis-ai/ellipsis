@@ -14,7 +14,6 @@ var React = require('react'),
   Button = require('../form/button'),
   ChangeSummary = require('./change_summary'),
   CodeConfiguration = require('./code_configuration'),
-  CodeEditorHelp = require('./code_editor_help'),
   ConfirmActionPanel = require('../panels/confirm_action'),
   CollapseButton = require('../shared_ui/collapse_button'),
   DataRequest = require('../lib/data_request'),
@@ -34,7 +33,6 @@ var React = require('react'),
   NodeModuleVersion = require('../models/node_module_version'),
   NotificationData = require('../models/notification_data'),
   FormInput = require('../form/input'),
-  LibraryCodeEditorHelp = require('./library_code_editor_help'),
   LibraryCodeHelp = require('./library_code_help'),
   LibraryVersion = require('../models/library_version'),
   LinkedGithubRepo = require('../models/linked_github_repo'),
@@ -67,18 +65,9 @@ var React = require('react'),
   Event = require('../lib/event'),
   ImmutableObjectUtils = require('../lib/immutable_object_utils'),
   debounce = require('javascript-debounce'),
-  Sort = require('../lib/sort'),
-  Magic8Ball = require('../lib/magic_8_ball');
+  Sort = require('../lib/sort');
 
 require('codemirror/mode/markdown/markdown');
-
-var AWSEnvVariableStrings = {
-  accessKeyName: "AWS Access Key",
-  secretKeyName: "AWS Secret Key",
-  regionName: "AWS Region"
-};
-
-var magic8BallResponse = Magic8Ball.response();
 
 var MOBILE_MAX_WIDTH = 768;
 
@@ -361,8 +350,8 @@ const BehaviorEditor = React.createClass({
       return null;
     }
     var template = this.getEditableProp('responseTemplate');
-    if ((!template || !template.text) && !this.hasModifiedTemplate() && !this.isDataTypeBehavior()) {
-      return this.getDefaultBehaviorTemplate();
+    if (!template && !this.isDataTypeBehavior()) {
+      return new ResponseTemplate();
     } else {
       return template;
     }
@@ -385,9 +374,7 @@ const BehaviorEditor = React.createClass({
   },
 
   getDefaultBehaviorTemplate: function() {
-    return new ResponseTemplate(
-      this.getSelectedBehavior().shouldRevealCodeEditor ? 'The answer is: {successResult}.' : magic8BallResponse
-    );
+    return BehaviorVersion.defaultActionProps().responseTemplate;
   },
 
   getEnvVariables: function() {
@@ -666,13 +653,10 @@ const BehaviorEditor = React.createClass({
 
   getResponseTemplateSectionNumber: function() {
     var hasInputs = this.hasInputs();
-    var hasCode = this.getSelectedBehavior().shouldRevealCodeEditor;
-    if (hasInputs && hasCode) {
+    if (hasInputs) {
       return "4";
-    } else if (hasInputs || hasCode) {
-      return "3";
     } else {
-      return "2";
+      return "3";
     }
   },
 
@@ -693,18 +677,23 @@ const BehaviorEditor = React.createClass({
     this.updateGroupStateWith(newGroup, callback);
   },
 
-  addInput: function(input) {
+  addInput: function(input, callback) {
     const newInputs = this.getInputs().concat([input]);
-    this.setBehaviorInputs(newInputs, this.focusOnLastInput);
+    this.setBehaviorInputs(newInputs, () => {
+      this.focusOnLastInput();
+      if (callback) {
+        callback();
+      }
+    });
   },
 
-  addNewInput: function(optionalNewName) {
+  addNewInput: function(optionalNewName, callback) {
     const newName = optionalNewName || SequentialName.nextFor(this.getInputs(), (ea) => ea.name, "userInput");
     this.addInput(Input.fromProps({
       inputId: ID.next(),
       name: newName,
       paramType: this.props.builtinParamTypes.find((ea) => ea.id === "Text")
-    }));
+    }), callback);
   },
 
   addTrigger: function(callback) {
@@ -730,11 +719,7 @@ const BehaviorEditor = React.createClass({
     this.toggleActivePanel('confirmDeleteBehaviorGroup', true);
   },
 
-  confirmDeleteCode: function() {
-    this.toggleActivePanel('confirmDeleteCode', true);
-  },
-
-  confirmUndo: function() {
+  toggleConfirmUndo: function() {
     this.toggleActivePanel('confirmUndo', true);
   },
 
@@ -752,19 +737,12 @@ const BehaviorEditor = React.createClass({
     this.refs.deleteBehaviorGroupForm.submit();
   },
 
-  deleteCode: function() {
-    this.setEditableProp('inputIds', []);
-    this.setEditableProp('functionBody', '');
-    this.toggleCodeEditor();
-    this.props.onClearActivePanel();
-  },
-
   deleteInputAtIndex: function(index) {
     this.setEditableProp('inputIds', ImmutableObjectUtils.arrayRemoveElementAtIndex(this.getInputIds(), index));
   },
 
-  deleteAllInputs: function() {
-    this.setEditableProp('inputIds', []);
+  deleteAllInputs: function(callback) {
+    this.setEditableProp('inputIds', [], callback);
   },
 
   deleteTriggerAtIndex: function(index) {
@@ -873,7 +851,6 @@ const BehaviorEditor = React.createClass({
     } else if (Event.keyPressWasSaveShortcut(event)) {
       event.preventDefault();
       if (this.isModified()) {
-        this.refs.saveButton.focus();
         this.onSaveBehaviorGroup();
       }
     }
@@ -928,7 +905,7 @@ const BehaviorEditor = React.createClass({
             group: BehaviorGroup.fromJson(json),
             onLoad: optionalCallback
           };
-          this.onSave(newProps, this.state);
+          this.onSave(newProps);
         } else {
           this.onSaveError();
         }
@@ -970,7 +947,7 @@ const BehaviorEditor = React.createClass({
               group: BehaviorGroup.fromJson(json),
               onLoad: optionalCallback
             };
-            this.onSave(newProps, this.state);
+            this.onSave(newProps);
           }
         } else {
           this.onSaveError();
@@ -985,15 +962,6 @@ const BehaviorEditor = React.createClass({
     return this.getBehaviorGroup().isRecentlySaved() && !this.isModified();
   },
 
-  checkDataAndCallback: function(callback) {
-    var template = this.getBehaviorTemplate();
-    if (template && template.toString() === this.getDefaultBehaviorTemplate().toString()) {
-      this.setEditableProp('responseTemplate', this.getBehaviorTemplate(), callback);
-    } else {
-      callback();
-    }
-  },
-
   isDeployed: function() {
     return Boolean(this.getBehaviorGroup().deployment);
   },
@@ -1005,7 +973,7 @@ const BehaviorEditor = React.createClass({
   onSaveBehaviorGroup: function(optionalCallback) {
     this.setState({ error: null });
     this.toggleActivePanel('saving', true);
-    this.checkDataAndCallback(() => { this.backgroundSave(optionalCallback); });
+    this.backgroundSave(optionalCallback);
   },
 
   onReplaceBehaviorGroup: function(newBehaviorGroup, optionalCallback) {
@@ -1171,21 +1139,6 @@ const BehaviorEditor = React.createClass({
     this.toggleActivePanel('helpForBehaviorCode');
   },
 
-  toggleCodeEditor: function() {
-    const updatedBehaviorVersions = this.getBehaviorGroup().behaviorVersions.map(ea => {
-      if (ea.behaviorId === this.getSelectedId()) {
-        return ea.clone({ shouldRevealCodeEditor: !ea.shouldRevealCodeEditor });
-      } else {
-        return ea;
-      }
-    });
-    const updatedGroup = this.getBehaviorGroup().clone({ behaviorVersions: updatedBehaviorVersions });
-    this.updateGroupStateWith(updatedGroup, () => {
-      this.resetNotifications();
-      this.refreshCodeEditor();
-    });
-  },
-
   toggleCodeEditorLineWrapping: function() {
     this.setState({
       codeEditorUseLineWrapping: !this.state.codeEditorUseLineWrapping
@@ -1346,9 +1299,7 @@ const BehaviorEditor = React.createClass({
   },
 
   updateTemplate: function(newTemplateString) {
-    this.setEditableProp('responseTemplate', this.getBehaviorTemplate().clone({ text: newTemplateString }), () => {
-      this.setState({ hasModifiedTemplate: true });
-    });
+    this.setEditableProp('responseTemplate', this.getBehaviorTemplate().clone({ text: newTemplateString }));
   },
 
   syncParamNamesAndCount: function(oldName, newName) {
@@ -1393,10 +1344,6 @@ const BehaviorEditor = React.createClass({
   },
 
   /* Booleans */
-
-  hasModifiedTemplate: function() {
-    return this.state && this.state.hasModifiedTemplate;
-  },
 
   isTestable: function() {
     return Boolean(this.getSelectedBehavior() && this.getSelectedBehavior().usesCode());
@@ -1450,11 +1397,6 @@ const BehaviorEditor = React.createClass({
     var originalSelected = this.getOriginalSelected();
     return !!(originalSelected && !originalSelected.isNew &&
       (originalSelected.functionBody || originalSelected.responseTemplate.text));
-  },
-
-  isFinishedLibraryVersion: function() {
-    var originalSelected = this.getOriginalSelected();
-    return !!(originalSelected && !originalSelected.isNew && originalSelected.functionBody);
   },
 
   isModified: function() {
@@ -1590,14 +1532,14 @@ const BehaviorEditor = React.createClass({
     this.setState({
       shouldRedirectToAddNewAWSConfig: true,
       requiredAWSConfig: requiredAWSConfig
-    }, () => { this.checkDataAndCallback(this.onSaveBehaviorGroup); });
+    }, this.onSaveBehaviorGroup);
   },
 
   onNewOAuth2Application: function(requiredOAuth2ApiConfig) {
     this.setState({
       shouldRedirectToAddNewOAuth2App: true,
       requiredOAuth2ApiConfig: requiredOAuth2ApiConfig
-    }, () => { this.checkDataAndCallback(this.onSaveBehaviorGroup); });
+    }, this.onSaveBehaviorGroup);
   },
 
   onInputEnterKey: function(index) {
@@ -1627,9 +1569,9 @@ const BehaviorEditor = React.createClass({
     });
   },
 
-  onSave: function(newProps, state) {
+  onSave: function(newProps) {
     this.resetNotifications();
-    this.props.onSave(newProps, state);
+    this.props.onSave(newProps);
     this.loadNodeModuleVersions();
   },
 
@@ -1655,6 +1597,21 @@ const BehaviorEditor = React.createClass({
   }, 250),
 
     /* Component API methods */
+
+  componentWillMount() {
+    if (!this.isExistingGroup()) {
+      const actions = this.getActionBehaviors();
+      const updatedGroup = actions.reduce((group, action, index) => {
+        if (action.isEmpty()) {
+          return action.buildUpdatedGroupFor(group, BehaviorVersion.defaultActionProps(`action${index + 1}`));
+        } else {
+          return group;
+        }
+      }, this.getBehaviorGroup());
+      this.updateGroupStateWith(updatedGroup);
+    }
+  },
+
   componentDidMount: function() {
     window.document.addEventListener('click', this.onDocumentClick, false);
     window.document.addEventListener('keydown', this.onDocumentKeyDown, false);
@@ -1710,15 +1667,12 @@ const BehaviorEditor = React.createClass({
   },
 
   getInitialState: function() {
-    const selectedBehavior = this.getSelectedBehavior();
-    const hasModifiedTemplate = !!(selectedBehavior && selectedBehavior.responseTemplate && selectedBehavior.responseTemplate.text);
     return {
       group: this.props.group,
       selectedId: this.props.selectedId,
       activeDropdown: null,
       codeEditorUseLineWrapping: false,
       envVariables: this.getInitialEnvVariables(),
-      hasModifiedTemplate: hasModifiedTemplate,
       notifications: this.buildNotifications(),
       versions: [],
       versionsLoadStatus: null,
@@ -1771,15 +1725,14 @@ const BehaviorEditor = React.createClass({
     );
   },
 
-  renderCodeEditor: function(props) {
+  renderCodeEditor: function(codeConfigProps) {
     return (
       <CodeConfiguration
         ref="codeEditor"
 
-        sectionNumber={props.sectionNumber}
-        sectionHeading={props.sectionHeading}
-        codeEditorHelp={props.codeEditorHelp}
-        codeHelpPanelName={props.codeHelpPanelName}
+        sectionNumber={codeConfigProps.sectionNumber}
+        sectionHeading={codeConfigProps.sectionHeading}
+        codeHelpPanelName={codeConfigProps.codeHelpPanelName}
 
         activePanelName={this.props.activePanelName}
         activeDropdownName={this.getActiveDropdown()}
@@ -1790,7 +1743,7 @@ const BehaviorEditor = React.createClass({
         behaviorConfig={this.getBehaviorConfig()}
 
         inputs={this.getInputs()}
-        systemParams={props.systemParams || this.getSystemParams()}
+        systemParams={codeConfigProps.systemParams || this.getSystemParams()}
         requiredAWSConfigs={this.getRequiredAWSConfigs()}
         apiApplications={this.getApiApplications()}
 
@@ -1799,11 +1752,9 @@ const BehaviorEditor = React.createClass({
         onCursorChange={this.ensureCursorVisible}
         useLineWrapping={this.state.codeEditorUseLineWrapping}
         onToggleCodeEditorLineWrapping={this.toggleCodeEditorLineWrapping}
-        canDeleteFunctionBody={!this.isDataTypeBehavior() && !this.getSelectedLibrary()}
-        onDeleteFunctionBody={this.confirmDeleteCode}
 
         envVariableNames={this.getEnvVariableNames()}
-        functionExecutesImmediately={props.functionExecutesImmediately || false}
+        functionExecutesImmediately={codeConfigProps.functionExecutesImmediately || false}
       />
     );
   },
@@ -1871,7 +1822,7 @@ const BehaviorEditor = React.createClass({
           </Collapsible>
 
           <Collapsible ref="confirmUndo" revealWhen={this.props.activePanelName === 'confirmUndo'} onChange={this.layoutDidUpdate}>
-            <ConfirmActionPanel confirmText="Undo changes" onConfirmClick={this.undoChanges} onCancelClick={this.props.onClearActivePanel}>
+            <ConfirmActionPanel confirmText="Undo changes" onConfirmClick={this.undoChanges} onCancelClick={this.toggleConfirmUndo}>
               <p>This will undo any changes you’ve made since last saving. Are you sure you want to do this?</p>
             </ConfirmActionPanel>
           </Collapsible>
@@ -1885,12 +1836,6 @@ const BehaviorEditor = React.createClass({
           <Collapsible ref="confirmDeleteBehaviorGroup" revealWhen={this.props.activePanelName === 'confirmDeleteBehaviorGroup'} onChange={this.layoutDidUpdate}>
             <ConfirmActionPanel confirmText="Delete" onConfirmClick={this.deleteBehaviorGroup} onCancelClick={this.props.onClearActivePanel}>
               <p>Are you sure you want to delete this skill and all of its actions and data types?</p>
-            </ConfirmActionPanel>
-          </Collapsible>
-
-          <Collapsible ref="confirmDeleteCode" revealWhen={this.props.activePanelName === 'confirmDeleteCode'} onChange={this.layoutDidUpdate}>
-            <ConfirmActionPanel confirmText="Remove" onConfirmClick={this.deleteCode} onCancelClick={this.props.onClearActivePanel}>
-              <p>Are you sure you want to remove all of the code?</p>
             </ConfirmActionPanel>
           </Collapsible>
 
@@ -2032,12 +1977,14 @@ const BehaviorEditor = React.createClass({
               <div>
                 <div>
                   <DynamicLabelButton
-                    ref="saveButton"
                     onClick={this.onSaveClick}
                     labels={[{
+                      text: 'Save',
+                      displayWhen: !this.isExistingGroup()
+                    }, {
                       text: 'Save changes',
                       mobileText: 'Save',
-                      displayWhen: !this.isJustSaved()
+                      displayWhen: this.isExistingGroup() && !this.isJustSaved()
                     }, {
                       text: 'Saved',
                       displayWhen: this.isJustSaved()
@@ -2045,10 +1992,12 @@ const BehaviorEditor = React.createClass({
                     className="button-primary mrs mbm"
                     disabledWhen={!this.isModified() || this.isSaving()}
                   />
-                  <Button className="mrs mbm" disabled={!this.isModified() || this.isSaving()} onClick={this.confirmUndo}>
-                    <span className="mobile-display-none">Undo changes</span>
-                    <span className="mobile-display-only">Undo</span>
-                  </Button>
+                  {this.isExistingGroup() ? (
+                    <Button className="mrs mbm" disabled={!this.isModified() || this.isSaving()} onClick={this.toggleConfirmUndo}>
+                      <span className="mobile-display-none">Undo changes</span>
+                      <span className="mobile-display-only">Undo</span>
+                    </Button>
+                  ) : null}
                   {this.isTestable() ? (
                     <DynamicLabelButton
                       labels={[{
@@ -2110,7 +2059,7 @@ const BehaviorEditor = React.createClass({
           isCurrentVersion={true}
         />
       );
-    } else if (this.isModified()) {
+    } else if (this.isExistingGroup() && this.isModified()) {
       return (
         <span className="fade-in type-pink type-italic">
           <span className="type-bold">Unsaved changes </span>
@@ -2192,14 +2141,14 @@ const BehaviorEditor = React.createClass({
     return this.state.animationDisabled;
   },
 
-  addNewBehavior: function(isDataType, behaviorIdToClone) {
+  addNewBehavior: function(isDataType, behaviorIdToClone, optionalDefaultProps) {
     const group = this.getBehaviorGroup();
-    const newName = isDataType ? SequentialName.nextFor(this.getDataTypeBehaviors(), (ea) => ea.name, "DataType") : null;
+    const newName = optionalDefaultProps ? optionalDefaultProps.name : null;
     const url = jsRoutes.controllers.BehaviorEditorController.newUnsavedBehavior(isDataType, group.teamId, behaviorIdToClone, newName).url;
     fetch(url, { credentials: 'same-origin' })
       .then((response) => response.json())
       .then((json) => {
-        const newVersion = BehaviorVersion.fromJson(Object.assign({}, json, { groupId: group.id }));
+        const newVersion = BehaviorVersion.fromJson(Object.assign({}, json, { groupId: group.id })).clone(optionalDefaultProps || {});
         const groupWithNewBehavior = group.withNewBehaviorVersion(newVersion);
         this.updateGroupStateWith(groupWithNewBehavior, () => {
           this.onSelect(groupWithNewBehavior.id, newVersion.behaviorId);
@@ -2208,20 +2157,22 @@ const BehaviorEditor = React.createClass({
   },
 
   addNewAction: function() {
-    this.addNewBehavior(false);
+    const nextActionName = SequentialName.nextFor(this.getActionBehaviors(), (ea) => ea.name, "action");
+    this.addNewBehavior(false, null, BehaviorVersion.defaultActionProps(nextActionName));
   },
 
   addNewDataType: function() {
-    this.addNewBehavior(true);
+    const nextDataTypeName = SequentialName.nextFor(this.getDataTypeBehaviors(), (ea) => ea.name, "DataType");
+    this.addNewBehavior(true, null, { name: nextDataTypeName });
   },
 
-  addNewLibraryImpl: function(libraryIdToClone) {
+  addNewLibraryImpl: function(libraryIdToClone, optionalProps) {
     const group = this.getBehaviorGroup();
     const url = jsRoutes.controllers.BehaviorEditorController.newUnsavedLibrary(group.teamId, libraryIdToClone).url;
     fetch(url, { credentials: 'same-origin' })
       .then((response) => response.json())
       .then((json) => {
-        const newVersion = LibraryVersion.fromProps(Object.assign({}, json, { groupId: group.id }));
+        const newVersion = LibraryVersion.fromProps(Object.assign({}, json, { groupId: group.id })).clone(optionalProps || {});
         const groupWithNewLibrary = group.withNewLibraryVersion(newVersion);
         this.updateGroupStateWith(groupWithNewLibrary, () => {
           this.onSelect(groupWithNewLibrary.id, newVersion.libraryId);
@@ -2230,7 +2181,11 @@ const BehaviorEditor = React.createClass({
   },
 
   addNewLibrary: function() {
-    this.addNewLibraryImpl();
+    const nextLibraryName = SequentialName.nextFor(this.getLibraries(), (ea) => ea.name, "library");
+    this.addNewLibraryImpl(null, {
+      name: nextLibraryName,
+      functionBody: LibraryVersion.defaultLibraryCode()
+    });
   },
 
   cloneLibrary: function(libraryIdToClone) {
@@ -2393,7 +2348,7 @@ const BehaviorEditor = React.createClass({
                   paramTypes={this.getParamTypes()}
                   triggers={this.getBehaviorTriggers()}
                   isFinishedBehavior={this.isFinishedBehavior()}
-                  behaviorHasCode={this.getSelectedBehavior().shouldRevealCodeEditor}
+                  behaviorHasCode={this.getFunctionBody().length > 0}
                   hasSharedAnswers={this.getOtherSavedInputsInGroup().length > 0}
                   otherBehaviorsInGroup={this.otherBehaviorsInGroup()}
                   onToggleSharedAnswer={this.toggleSharedAnswerInputSelector}
@@ -2402,55 +2357,23 @@ const BehaviorEditor = React.createClass({
                   animationDisabled={this.animationIsDisabled()}
                 />
 
-                <Collapsible revealWhen={this.getSelectedBehavior().shouldRevealCodeEditor} animationDuration={0}>
-                  <hr className="man rule-subtle" />
-                </Collapsible>
+                <hr className="man rule-subtle" />
 
-                <Collapsible revealWhen={!this.getSelectedBehavior().shouldRevealCodeEditor} animationDisabled={this.animationIsDisabled()}>
-                  <div className="bg-blue-lighter border-top border-bottom border-blue pvl">
-                    <div className="container container-wide">
-                      <div className="columns columns-elastic narrow-columns-float">
-                        <div className="column column-expand">
-                          <p className="mbs">
-                            <span>You can run code to determine a result, using any inputs you’ve specified above, </span>
-                            <span>or provide a simple response below.</span>
-                          </p>
-                        </div>
-                        <div className="column column-shrink align-m mobile-mtm">
-                          <Button className="button-s" onClick={this.toggleCodeEditor}>
-                            Add code
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </Collapsible>
-
-                <Collapsible revealWhen={this.getSelectedBehavior().shouldRevealCodeEditor}
-                  animationDuration={0.5}
-                  animationDisabled={this.animationIsDisabled()}
-                >
+                <div>
                   {this.renderCodeEditor({
                     sectionNumber: this.hasInputs() ? "3" : "2",
                     sectionHeading: "Run code",
-                    codeEditorHelp: (
-                      <CodeEditorHelp
-                        isFinishedBehavior={this.isFinishedBehavior()}
-                        functionBody={this.getFunctionBody()}
-                      />
-                    ),
                     codeHelpPanelName: 'helpForBehaviorCode'
                   })}
 
                   <hr className="man rule-subtle" />
-
-                </Collapsible>
+                </div>
 
                 <ResponseTemplateConfiguration
                   template={this.getBehaviorTemplate()}
                   onChangeTemplate={this.updateTemplate}
                   isFinishedBehavior={this.isFinishedBehavior()}
-                  behaviorUsesCode={!!this.getSelectedBehavior().shouldRevealCodeEditor}
+                  behaviorUsesCode={this.getFunctionBody().length > 0}
                   shouldForcePrivateResponse={this.shouldForcePrivateResponse()}
                   onChangeForcePrivateResponse={this.updateForcePrivateResponse}
                   onCursorChange={this.ensureCursorVisible}
@@ -2535,12 +2458,6 @@ const BehaviorEditor = React.createClass({
           systemParams: [],
           sectionNumber: "1",
           sectionHeading: "Write code to define a module",
-          codeEditorHelp: (
-            <LibraryCodeEditorHelp
-              isFinished={this.isFinishedLibraryVersion()}
-              functionBody={this.getFunctionBody()}
-            />
-          ),
           codeHelpPanelName: 'helpForLibraryCode',
           functionExecutesImmediately: true
         })}
@@ -2615,6 +2532,7 @@ const BehaviorEditor = React.createClass({
         currentSelectedId={this.getSelectedId()}
         versions={this.getVersions()}
         onRestoreVersionClick={this.onReplaceBehaviorGroup}
+        onUndoChanges={this.toggleConfirmUndo}
         onClearActivePanel={this.props.onClearActivePanel}
         editableIsModified={this.editableIsModified}
         isLinkedToGithub={this.props.isLinkedToGithub}

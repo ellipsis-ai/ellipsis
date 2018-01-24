@@ -9,8 +9,11 @@ declare var jsRoutes: {
       setTeamTimeZone: () => JsRoute
     },
     BehaviorEditorController: {
+      deleteDefaultStorageItems: () => JsRoute,
       edit: (groupId: string, selectedId?: string, showVersions?: boolean) => JsRoute,
       pushToGithub: () => JsRoute,
+      queryDefaultStorage: () => JsRoute,
+      saveDefaultStorageItem: () => JsRoute,
       updateFromGithub: () => JsRoute
     },
     BehaviorImportExportController: {
