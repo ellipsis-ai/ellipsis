@@ -104,7 +104,8 @@ trait DBSpec extends PlaySpec with OneAppPerSuite with MockitoSugar {
       gitSHA = None,
       exportId = None,
       createdAt = None,
-      author = None
+      author = None,
+      deployment = None
     )
   }
 

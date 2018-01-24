@@ -152,7 +152,8 @@ class BehaviorGroupServiceImpl @Inject() (
           gitSHA = None,
           exportId = None,
           None,
-          Some(userData)
+          Some(userData),
+          None
         )
       })
       _ <- Future.sequence(groupVersions.map { ea =>

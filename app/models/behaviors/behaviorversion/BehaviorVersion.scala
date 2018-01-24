@@ -85,14 +85,15 @@ case class BehaviorVersion(
                  dataService: DataService,
                  configuration: Configuration,
                  event: Event,
-                 maybeConversation: Option[Conversation]
+                 maybeConversation: Option[Conversation],
+                 isForUndeployed: Boolean
                ): BotResult = {
     val bytes = payload.array
     val jsonString = new java.lang.String( bytes, Charset.forName("UTF-8") )
     val json = Json.parse(jsonString)
     val logResultOption = Some(logResult)
     (json \ "result").toOption.map { successResult =>
-      SuccessResult(event, maybeConversation, successResult, json, parametersWithValues, maybeResponseTemplate, logResultOption, forcePrivateResponse)
+      SuccessResult(event, maybeConversation, successResult, json, parametersWithValues, maybeResponseTemplate, logResultOption, forcePrivateResponse, isForUndeployed)
     }.getOrElse {
       if ((json \ NO_RESPONSE_KEY).toOption.exists(_.as[Boolean])) {
         NoResponseResult(event, maybeConversation, json, logResultOption)

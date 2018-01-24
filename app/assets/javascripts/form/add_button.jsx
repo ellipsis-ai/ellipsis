@@ -23,4 +23,3 @@ define(function(require) {
   return AddButton;
 
 });
-

@@ -195,7 +195,9 @@ class ConversationServiceImpl @Inject() (
           Some(conversation),
           attachmentGroups = Seq(),
           files = Seq(),
-          cacheService
+          isForUndeployed = false,
+          cacheService,
+          configuration
         ))
       }.getOrElse(DBIO.successful(None))
       _ <- maybeEvent.map { event =>

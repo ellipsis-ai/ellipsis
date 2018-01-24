@@ -6,6 +6,7 @@ import models.behaviors.UserInfo
 import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.events._
 import models.team.Team
+import play.api.Configuration
 import play.api.libs.json.JsObject
 import services.{CacheService, DataService, DefaultServices}
 import slick.dbio.DBIO
@@ -31,7 +32,7 @@ case class TestEvent(
 
   lazy val userIdForContext = user.id
   lazy val name = "test"
-  lazy val maybeChannel = None
+  lazy val maybeChannel = Some("C123456")
   lazy val maybeThreadId = None
   def eventualMaybeDMChannel(cacheService: CacheService)(implicit actorSystem: ActorSystem, ec: ExecutionContext) = Future.successful(None)
   val isResponseExpected = true
@@ -47,7 +48,9 @@ case class TestEvent(
                    maybeConversation: Option[Conversation],
                    attachmentGroups: Seq[MessageAttachmentGroup],
                    files: Seq[UploadFileSpec],
-                   cacheService: CacheService
+                   isForUndeployed: Boolean,
+                   cacheService: CacheService,
+                   configuration: Configuration
                  )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[String]] = {
     Future.successful(messageBuffer += text).map(_ => None)
   }

@@ -18,6 +18,7 @@ import models.apitoken.{APITokenService, APITokenServiceImpl}
 import models.behaviors.{BehaviorResponseService, BehaviorResponseServiceImpl, BotResultService, BotResultServiceImpl}
 import models.behaviors.behavior.{BehaviorService, BehaviorServiceImpl}
 import models.behaviors.behaviorgroup.{BehaviorGroupService, BehaviorGroupServiceImpl}
+import models.behaviors.behaviorgroupdeployment.{BehaviorGroupDeploymentService, BehaviorGroupDeploymentServiceImpl}
 import models.behaviors.behaviorgroupversion.{BehaviorGroupVersionService, BehaviorGroupVersionServiceImpl}
 import models.behaviors.behaviorparameter.{BehaviorParameterService, BehaviorParameterServiceImpl}
 import models.behaviors.behaviorversion.{BehaviorVersionService, BehaviorVersionServiceImpl}
@@ -98,6 +99,7 @@ class ServiceModule extends AbstractModule with ScalaModule {
     bind[BotResultService].to[BotResultServiceImpl]
     bind[NodeModuleVersionService].to[NodeModuleVersionServiceImpl]
     bind[DevModeChannelService].to[DevModeChannelServiceImpl]
+    bind[BehaviorGroupDeploymentService].to[BehaviorGroupDeploymentServiceImpl]
 
     bind[AWSLambdaService].to[AWSLambdaServiceImpl]
     bind[AWSLogsService].to[AWSLogsServiceImpl]

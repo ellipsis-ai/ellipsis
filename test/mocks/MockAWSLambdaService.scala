@@ -37,7 +37,8 @@ class MockAWSLambdaService @Inject() (
       parametersWithValues = Seq(),
       maybeResponseTemplate = None,
       maybeLogResult = None,
-      forcePrivateResponse = false
+      forcePrivateResponse = false,
+      isForUndeployed = false
     )
   }
 

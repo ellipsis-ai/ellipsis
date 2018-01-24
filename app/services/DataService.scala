@@ -16,6 +16,7 @@ import models.apitoken.APITokenService
 import models.behaviors.BehaviorResponseService
 import models.behaviors.behavior.BehaviorService
 import models.behaviors.behaviorgroup.BehaviorGroupService
+import models.behaviors.behaviorgroupdeployment.BehaviorGroupDeploymentService
 import models.behaviors.behaviorgroupversion.BehaviorGroupVersionService
 import models.behaviors.behaviorparameter.BehaviorParameterService
 import models.behaviors.behaviorversion.BehaviorVersionService
@@ -89,6 +90,7 @@ trait DataService {
   val recurrences: RecurrenceService
   val invocationLogEntries: InvocationLogEntryService
   val devModeChannels: DevModeChannelService
+  val behaviorGroupDeployments: BehaviorGroupDeploymentService
   def behaviorResponses: BehaviorResponseService
 
   def run[T](action: DBIO[T]): Future[T]

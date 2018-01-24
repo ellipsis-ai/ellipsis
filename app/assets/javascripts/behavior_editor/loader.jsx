@@ -1,10 +1,10 @@
 requirejs(['common'], function() {
   requirejs(
     ['core-js', 'whatwg-fetch', 'react', 'react-dom', './lib/browser_utils', './behavior_editor/index',
-      './models/behavior_group', 'config/behavioreditor/edit', './models/param_type', './models/aws',
+      './models/behavior_group', './models/behavior_group_deployment', 'config/behavioreditor/edit', './models/param_type', './models/aws',
       './models/oauth2', './models/simple_token', './models/linked_github_repo', './lib/autobind', './shared_ui/page', './lib/data_request'],
     function(Core, Fetch, React, ReactDOM, BrowserUtils, BehaviorEditor,
-             BehaviorGroup, BehaviorEditorConfiguration, ParamType, aws,
+             BehaviorGroup, BehaviorGroupDeployment, BehaviorEditorConfiguration, ParamType, aws,
              oauth2, simpleToken, LinkedGithubRepo, autobind, Page, DataRequest) {
 
       class BehaviorEditorLoader extends React.Component {
@@ -50,6 +50,13 @@ requirejs(['common'], function() {
             onLoad: newProps.onLoad
           };
           this.setState(newState);
+        }
+
+        onDeploy(deploymentProps, callback) {
+          this.setState({
+            group: this.state.group.clone({ deployment: BehaviorGroupDeployment.fromProps(deploymentProps) }),
+            onLoad: null
+          }, callback);
         }
 
         fallbackSelectedIdFor(group) {
@@ -101,6 +108,8 @@ requirejs(['common'], function() {
                 linkedGithubRepo={this.state.linkedGithubRepo}
                 onLinkGithubRepo={this.onLinkGithubRepo}
                 showVersions={this.props.showVersions}
+                onDeploy={this.onDeploy}
+                lastDeployTimestamp={this.props.lastDeployTimestamp}
               />
             </Page>
           );
@@ -124,7 +133,8 @@ requirejs(['common'], function() {
         isAdmin: React.PropTypes.bool.isRequired,
         isLinkedToGithub: React.PropTypes.bool.isRequired,
         linkedGithubRepo: React.PropTypes.object,
-        showVersions: React.PropTypes.bool
+        showVersions: React.PropTypes.bool,
+        lastDeployTimestamp: React.PropTypes.string
       };
 
       ReactDOM.render(

@@ -22,6 +22,7 @@ var React = require('react'),
   DataTypeSourceHelp = require('./data_type_source_help'),
   DefaultStorageAdder = require('./default_storage_adder'),
   DefaultStorageBrowser = require('./default_storage_browser'),
+  DevModeChannelsHelp = require('./dev_mode_channels_help'),
   DynamicLabelButton = require('../form/dynamic_label_button'),
   EnvVariableAdder = require('../settings/environment_variables/adder'),
   EnvVariableSetter = require('../settings/environment_variables/setter'),
@@ -100,7 +101,9 @@ const BehaviorEditor = React.createClass({
     userId: React.PropTypes.string.isRequired,
     isAdmin: React.PropTypes.bool.isRequired,
     isLinkedToGithub: React.PropTypes.bool.isRequired,
-    showVersions: React.PropTypes.bool
+    showVersions: React.PropTypes.bool,
+    onDeploy: React.PropTypes.func.isRequired,
+    lastDeployTimestamp: React.PropTypes.string
   }),
 
   getDefaultProps: function() {
@@ -613,6 +616,21 @@ const BehaviorEditor = React.createClass({
     return notifications;
   },
 
+  buildDeploymentNotifications: function() {
+    if (this.isExistingGroup() && !this.isModified() && !this.isDeployed()) {
+      return [new NotificationData({
+        kind: "deployment_warning",
+        type: "saved_version_not_deployed",
+        lastSaveTimestamp: this.props.group.createdAt,
+        lastDeployTimestamp: this.props.lastDeployTimestamp,
+        onDevModeChannelsClick: this.toggleDevModeChannelsHelp,
+        onClick: this.deploy
+      })];
+    } else {
+      return [];
+    }
+  },
+
   buildNotifications: function() {
     return [].concat(
       this.buildEnvVarNotifications(),
@@ -620,7 +638,8 @@ const BehaviorEditor = React.createClass({
       this.buildOAuthApplicationNotifications(),
       this.buildDataTypeNotifications(),
       this.buildTemplateNotifications(),
-      this.buildServerNotifications()
+      this.buildServerNotifications(),
+      this.buildDeploymentNotifications()
     );
   },
 
@@ -844,6 +863,34 @@ const BehaviorEditor = React.createClass({
     });
   },
 
+  onDeployError: function(error, callback) {
+    this.setState({
+      error: (error ? error.body : null) || "not_deployed"
+    }, callback);
+  },
+
+  deploy: function(callback) {
+    this.setState({ error: null });
+    DataRequest.jsonPost(
+      jsRoutes.controllers.BehaviorEditorController.deploy().url,
+      { behaviorGroupId: this.getBehaviorGroup().id },
+      this.props.csrfToken
+    )
+      .then((json) => {
+        if (json.id) {
+          this.props.onDeploy(json);
+        } else {
+          this.onDeployError(null, callback);
+        }
+      })
+      .catch(error => {
+        this.onDeployError(error, callback);
+      })
+      .finally(() => {
+        this.resetNotifications();
+      });
+  },
+
   updateNodeModules: function(optionalCallback) {
     this.setState({ error: null });
     this.toggleActivePanel('saving', true);
@@ -913,6 +960,10 @@ const BehaviorEditor = React.createClass({
 
   isJustSaved: function() {
     return this.getBehaviorGroup().isRecentlySaved() && !this.isModified();
+  },
+
+  isDeployed: function() {
+    return Boolean(this.getBehaviorGroup().deployment);
   },
 
   onSaveClick: function() {
@@ -1096,6 +1147,10 @@ const BehaviorEditor = React.createClass({
 
   toggleResponseTemplateHelp: function() {
     this.toggleActivePanel('helpForResponseTemplate');
+  },
+
+  toggleDevModeChannelsHelp: function() {
+    this.toggleActivePanel('helpForDevModeChannels');
   },
 
   toggleSavedAnswerEditor: function(savedAnswerId) {
@@ -1798,6 +1853,12 @@ const BehaviorEditor = React.createClass({
             />
           </Collapsible>
 
+          <Collapsible revealWhen={this.props.activePanelName === 'helpForDevModeChannels'} onChange={this.layoutDidUpdate}>
+            <DevModeChannelsHelp
+              onCollapseClick={this.props.onClearActivePanel}
+            />
+          </Collapsible>
+
           <Collapsible revealWhen={this.props.activePanelName === 'helpForDataTypeSource'} onChange={this.layoutDidUpdate}>
             <DataTypeSourceHelp onCollapseClick={this.props.onClearActivePanel} />
           </Collapsible>
@@ -1973,6 +2034,13 @@ const BehaviorEditor = React.createClass({
         <span className="fade-in type-pink type-bold type-italic">
           <span style={{ height: 24 }} className="display-inline-block mrs align-b"><SVGWarning /></span>
           <span>Error saving changes — please try again</span>
+        </span>
+      );
+    } else if (this.state.error === 'not_deployed') {
+      return (
+        <span className="fade-in type-pink type-bold type-italic">
+          <span style={{ height: 24 }} className="display-inline-block mrs align-b"><SVGWarning /></span>
+          <span>Error deploying — please try again</span>
         </span>
       );
     } else if (this.state.error) {

@@ -18,6 +18,7 @@ import models.apitoken.APITokenService
 import models.behaviors.BehaviorResponseService
 import models.behaviors.behavior.BehaviorService
 import models.behaviors.behaviorgroup.BehaviorGroupService
+import models.behaviors.behaviorgroupdeployment.BehaviorGroupDeploymentService
 import models.behaviors.behaviorgroupversion.BehaviorGroupVersionService
 import models.behaviors.behaviorparameter.BehaviorParameterService
 import models.behaviors.behaviorversion.BehaviorVersionService
@@ -94,6 +95,7 @@ class MockDataService extends DataService with MockitoSugar {
   val recurrences = mock[RecurrenceService]
   val invocationLogEntries = mock[InvocationLogEntryService]
   val devModeChannels = mock[DevModeChannelService]
+  val behaviorGroupDeployments = mock[BehaviorGroupDeploymentService]
   val behaviorResponses = mock[BehaviorResponseService]
 
   private def dontCallMe = throw new Exception("Don't call me")
