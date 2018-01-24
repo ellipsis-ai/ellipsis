@@ -41,7 +41,7 @@ class OrganizationServiceImpl @Inject()(
     Organization(
       IDs.next,
       name,
-      Some(IDs.next),
+      None,
       OffsetDateTime.now()
     )
   )
@@ -50,7 +50,7 @@ class OrganizationServiceImpl @Inject()(
     Organization(
       IDs.next,
       name,
-      Some(IDs.next),
+      None,
       OffsetDateTime.now()
     )
   )
