@@ -13,28 +13,47 @@ define(function(require) {
           heading="Dev mode channels"
           onCollapseClick={this.props.onCollapseClick}
         >
-          <div className="mtm">
-            <span>To avoid interfering with other users of a skill, Ellipsis allows you to make changes and test them before they are available to everyone. </span>
-            <span>Once you feel the skill is ready, you can deploy the latest version to the whole team. </span>
-          </div>
+          <p>
+            <span>To avoid impacting other users of a skill, Ellipsis allows you to make changes </span>
+            <span>and test them before they are available to everyone. </span>
+            <span>When the updated skill is ready, you can deploy it to the whole team. </span>
+          </p>
 
-          <div className="mtl">
-            You can test the latest version of a not-yet-deployed skill in two ways:
-          </div>
+          <p>
+            You can test an undeployed skill in two ways:
+          </p>
 
-          <div className="mtl">
-            <span className="type-bold">Here in the editor</span> using the <span className="type-monospace">Test…</span> button below.
-          </div>
+          <ul className="list-space-l">
+            <li>
+              <p><span className="type-bold">In this editor using the <span className="type-blue-faded">Test…</span> button</span> (on any action)</p>
+            </li>
+            <li>
+              <p><span className="type-bold">In Slack using dev mode:</span></p>
 
-          <div className="mtl">
-            <div><span className="type-bold">In Slack</span>, you can enable dev mode in any channel by typing:</div>
-            <div><span className="box-chat box-chat-selected type-white mts">@ellipsis enable dev mode</span></div>
-            <div className="mts">In this mode, the most recently saved versions of your skills will be available, rather than the most recently deployed ones.</div>
-          </div>
-          <div className="mtl mbl">
-            <span>When you are done, you can put the channel back to normal by typing:</span>
-            <div><span className="box-chat box-chat-selected type-white mts">@ellipsis disable dev mode</span></div>
-          </div>
+              <p>
+                <span>In dev mode, the most recently saved version of each skill will be triggered, </span>
+                <span>rather than the deployed version.</span>
+              </p>
+
+              <ul>
+                <li>
+                  <p>
+                    <span>Type </span>
+                    <span className="box-chat box-chat-help mrs">@ellipsis enable dev mode</span>
+                    <span> in any channel to turn it on</span>
+                  </p>
+                </li>
+
+                <li>
+                  <p>
+                    <span>Type </span>
+                    <span className="box-chat box-chat-help mrs">@ellipsis disable dev mode</span>
+                    <span> in any channel to turn it off</span>
+                  </p>
+                </li>
+              </ul>
+            </li>
+          </ul>
 
         </HelpPanel>
       );
