@@ -66,7 +66,8 @@ requirejs(['common'], function() {
 
         onDeploy(deploymentProps, callback) {
           this.setState({
-            group: this.state.group.clone({ deployment: BehaviorGroupDeployment.fromProps(deploymentProps) })
+            group: this.state.group.clone({ deployment: BehaviorGroupDeployment.fromProps(deploymentProps) }),
+            onLoad: null
           }, callback);
         }
 

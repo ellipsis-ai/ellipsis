@@ -16,7 +16,7 @@ define(function(require) {
     }
 
     detail() {
-      return this.props.details.find((detail) => detail.type === "saved_version_not_deployed");
+      return this.props.details.find((detail) => detail.type === "saved_version_not_deployed") || {};
     }
 
     deploy() {
@@ -29,15 +29,15 @@ define(function(require) {
       });
     }
 
-    isDeploying() {
+    isDeploying(): boolean {
       return this.state && this.state.isDeploying;
     }
 
-    timestampText() {
+    timestampText(): string {
       return moment(this.detail().lastDeployTimestamp).from(new Date(this.detail().lastSaveTimestamp), true);
     }
 
-    versionStatusText() {
+    versionStatusText(): string {
       if (this.detail().lastDeployTimestamp) {
         return `This version is ${this.timestampText()} newer than the last deployed version.`;
       } else {
