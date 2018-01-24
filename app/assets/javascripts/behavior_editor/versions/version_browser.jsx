@@ -35,6 +35,7 @@ define(function(require: (string) => *): React.ElementType {
     currentSelectedId?: string,
     versions: Array<BehaviorGroup>,
     onClearActivePanel: () => void,
+    onUndoChanges: () => void,
     onRestoreVersionClick: (version: BehaviorGroup, optionalCallback?: () => void) => void,
     isLinkedToGithub: boolean,
     linkedGithubRepo?: LinkedGithubRepo,
@@ -63,7 +64,7 @@ define(function(require: (string) => *): React.ElementType {
   }
 
   type VersionGroup = {
-    label: string,
+    label?: string,
     versions: Array<GroupedVersion>
   }
 
@@ -77,7 +78,7 @@ define(function(require: (string) => *): React.ElementType {
       super(props);
       autobind(this);
       this.state = {
-        selectedMenuItem: "loading",
+        selectedMenuItem: this.getDefaultSelectedItem(props),
         diffFromSelectedToCurrent: true,
         headerHeight: 0,
         footerHeight: 0,
@@ -164,10 +165,17 @@ define(function(require: (string) => *): React.ElementType {
       });
     }
 
+    getDefaultSelectedItem(props: Props): string {
+      return props.versions.length > 0 ? "version0" : "loading";
+    }
+
     componentWillReceiveProps(nextProps: Props): void {
-      if (nextProps.versions.length !== this.props.versions.length) {
+      const versionsChanged = nextProps.versions.length !== this.props.versions.length;
+      const currentGroupChanged = nextProps.currentGroup !== this.props.currentGroup &&
+        !nextProps.currentGroup.isIdenticalTo(this.props.currentGroup);
+      if (versionsChanged || currentGroupChanged) {
         this.setState({
-          selectedMenuItem: nextProps.versions.length > 0 ? "version0" : "loading"
+          selectedMenuItem: this.getDefaultSelectedItem(nextProps)
         });
       }
     }
@@ -208,8 +216,18 @@ define(function(require: (string) => *): React.ElementType {
       }
     }
 
+    getLabelForLastSavedVersion(): string {
+      return this.props.currentGroupIsModified ? "Most recent saved version" : "Select a version…";
+    }
+
     getGroupedVersions(versions: Array<BehaviorGroup>): Array<VersionGroup> {
       const groups: Array<VersionGroup> = [];
+      groups.push({
+        versions: [{
+          label: this.getLabelForLastSavedVersion(),
+          key: "version0"
+        }]
+      });
       if (this.props.linkedGithubRepo && this.props.isLinkedToGithub) {
         groups.push({
           label: "GitHub",
@@ -219,48 +237,48 @@ define(function(require: (string) => *): React.ElementType {
           }]
         });
       }
-      versions.forEach((version, versionIndex) => {
-        if (versionIndex === 0) {
+      versions.slice(1).forEach((version, versionIndex) => {
+        const author = version.author;
+        const day = Formatter.formatTimestampDate(version.createdAt);
+        const prevVersion = versions[versionIndex - 1];
+        const prevAuthor = prevVersion && prevVersion.author;
+        const prevDay = prevVersion && Formatter.formatTimestampDate(prevVersion.createdAt);
+        const groupedVersion = {
+          label: Formatter.formatTimestampShort(version.createdAt),
+          key: `version${versionIndex + 1}`
+        };
+        if (versionIndex > 0 && author.isSameUser(prevAuthor) && day === prevDay) {
+          const lastGroup = groups[groups.length - 1];
+          lastGroup.versions.push(groupedVersion);
+        } else {
           groups.push({
-            label: `Most recent saved version (${this.authorForVersion(version)})`,
-            versions: [{
-              label: Formatter.formatTimestampShort(version.createdAt),
-              key: "version0"
-            }]
+            label: `Saved on ${day} ${this.authorForVersion(version)}`,
+            versions: [groupedVersion]
           });
-        } else if (versionIndex > 0) {
-          const author = version.author;
-          const day = Formatter.formatTimestampDate(version.createdAt);
-          const prevVersion = versions[versionIndex - 1];
-          const prevAuthor = prevVersion && prevVersion.author;
-          const prevDay = prevVersion && Formatter.formatTimestampDate(prevVersion.createdAt);
-          const groupedVersion = {
-            label: Formatter.formatTimestampShort(version.createdAt),
-            key: `version${versionIndex}`
-          };
-          if (versionIndex > 1 && author.isSameUser(prevAuthor) && day === prevDay) {
-            const lastGroup = groups[groups.length - 1];
-            lastGroup.versions.push(groupedVersion);
-          } else {
-            groups.push({
-              label: `Saved on ${day} ${this.authorForVersion(version)}`,
-              versions: [groupedVersion]
-            });
-          }
         }
       });
       return groups;
     }
 
+    renderVersionGroup(versions: Array<GroupedVersion>): Node {
+      return versions.map((groupedVersion) => (
+        <option key={groupedVersion.key} value={groupedVersion.key}>{groupedVersion.label}</option>
+      ));
+    }
+
     renderVersionOptions(): Node {
       if (this.props.versions.length > 0) {
-        return this.getGroupedVersions(this.props.versions).map((versionGroup, groupIndex) => (
-          <optgroup label={versionGroup.label} key={`versionGroup${groupIndex}`}>
-            {versionGroup.versions.map((groupedVersion) => (
-              <option key={groupedVersion.key} value={groupedVersion.key}>{groupedVersion.label}</option>
-            ))}
-          </optgroup>
-        ));
+        return this.getGroupedVersions(this.props.versions).map((versionGroup, groupIndex) => {
+          if (versionGroup.label) {
+            return (
+              <optgroup label={versionGroup.label} key={`versionGroup${groupIndex}`}>
+                {this.renderVersionGroup(versionGroup.versions)}
+              </optgroup>
+            );
+          } else {
+            return this.renderVersionGroup(versionGroup.versions);
+          }
+        });
       } else {
         return (
           <option className="pulse type-disabled" value="loading">Loading versions…</option>
@@ -268,27 +286,23 @@ define(function(require: (string) => *): React.ElementType {
       }
     }
 
-    compareLocalVersions(): boolean {
-      return this.state.selectedMenuItem !== versionSources.github;
-    }
-
     compareGithubVersions(): boolean {
       return this.state.selectedMenuItem === versionSources.github;
     }
 
-    getSelectedVersionIndex(): number {
-      if (this.compareLocalVersions() && this.state.selectedMenuItem) {
+    getSelectedVersionIndex(): ?number {
+      if (this.state.selectedMenuItem) {
         const match = this.state.selectedMenuItem.match(/version(\d+)/);
-        const index = match ? parseInt(match[1], 10) : null;
-        return index || 0;
+        return match ? parseInt(match[1], 10) : null;
       } else {
-        return 0;
+        return null;
       }
     }
 
     getSelectedVersion(): ?BehaviorGroup {
-      if (this.compareLocalVersions()) {
-        return this.getVersionIndex(this.getSelectedVersionIndex());
+      const index = this.getSelectedVersionIndex();
+      if (typeof index === "number") {
+        return this.getVersionIndex(index);
       } else if (this.compareGithubVersions()) {
         return this.state.githubVersion;
       } else {
@@ -339,7 +353,9 @@ define(function(require: (string) => *): React.ElementType {
 
     revertToSelected(): void {
       const selected = this.getSelectedVersion();
-      if (selected) {
+      if (selected && this.latestVersionIsSelected() && this.props.currentGroupIsModified) {
+        this.props.onUndoChanges();
+      } else if (selected) {
         this.props.onRestoreVersionClick(selected);
         this.props.onClearActivePanel();
       }
@@ -352,7 +368,7 @@ define(function(require: (string) => *): React.ElementType {
             {this.renderDiff(diff)}
           </div>
         );
-      } else if (this.compareLocalVersions() && this.props.versions.length === 0) {
+      } else if (this.props.versions.length === 0) {
         return (
           <div className="pulse">Loading version history…</div>
         );
@@ -367,6 +383,14 @@ define(function(require: (string) => *): React.ElementType {
       }
     }
 
+    summarizeNoDiff(): string {
+      if (this.getSelectedVersionIndex() === 0 && !this.props.currentGroupIsModified) {
+        return "Select another version to compare to the current saved version.";
+      } else {
+        return "These versions are identical.";
+      }
+    }
+
     renderDiff(diff: ?diffs.ModifiedDiff<BehaviorGroup>): Node {
       if (diff) {
         return (
@@ -374,7 +398,7 @@ define(function(require: (string) => *): React.ElementType {
         );
       } else {
         return (
-          <div className="type-italic">These versions are identical.</div>
+          <div className="type-italic">{this.summarizeNoDiff()}</div>
         );
       }
     }
@@ -386,7 +410,7 @@ define(function(require: (string) => *): React.ElementType {
           <Select className="align-b form-select-s mrs mbs" value={this.state.selectedMenuItem} onChange={this.onClickMenuItem}>
             {this.renderVersionOptions()}
           </Select>
-          {this.renderVersionNote()}
+          {this.renderSelectedVersionNote()}
           {this.compareGithubVersions() ? this.renderGithubBranchInput() : null}
           {this.compareGithubVersions() ? this.renderGithubStatus() : null}
         </div>
@@ -397,11 +421,22 @@ define(function(require: (string) => *): React.ElementType {
       return this.state.selectedMenuItem === "version0";
     }
 
-    renderVersionNote(): Node {
-      if (this.latestVersionIsSelected()) {
-        return (
-          <span className="align-button align-button-s mrs mbs type-weak">(most recent saved version)</span>
-        );
+    renderNoteForVersion(version: BehaviorGroup): Node {
+      return (
+        <span className="align-button align-button-s mrs mbs type-weak">({Formatter.formatTimestampShort(version.createdAt)})</span>
+      );
+    }
+
+    renderSelectedVersionNote(): Node {
+      const version = this.props.versions[0];
+      if (this.latestVersionIsSelected() && version && this.props.currentGroupIsModified) {
+        return this.renderNoteForVersion(version);
+      }
+    }
+
+    renderCurrentVersionNote(): Node {
+      if (!this.props.currentGroupIsModified) {
+        return this.renderNoteForVersion(this.props.currentGroup);
       }
     }
 
@@ -409,9 +444,10 @@ define(function(require: (string) => *): React.ElementType {
       return (
         <div>
           {caption}
-          <div className="align-button align-button-s align-button-border mrs mbs">{
-            this.props.currentGroupIsModified ? "Current version (unsaved)" : "Current version"
-          }</div>
+          <div className="align-button align-button-s align-button-border mrs mbs">
+            {this.props.currentGroupIsModified ? "Current version (unsaved)" : "Current saved version"}
+          </div>
+          {this.renderCurrentVersionNote()}
         </div>
       );
     }
@@ -583,50 +619,6 @@ define(function(require: (string) => *): React.ElementType {
       ) : (
         <span>version dated {Formatter.formatTimestampShort(timestamp)}</span>
       );
-    }
-
-    renderVersionTitle(version: ?BehaviorGroup): Node {
-      if (this.compareGithubVersions() && this.state.lastFetched && this.state.lastFetchedBranch) {
-        return this.renderBranchTitle(this.state.lastFetchedBranch, this.state.lastFetched);
-      } else if (this.compareLocalVersions() && version) {
-        return this.renderLocalVersionTitle(version.createdAt);
-      } else {
-        return null;
-      }
-    }
-
-    renderDiffTitle(version: ?BehaviorGroup): Node {
-      const versionTitle = this.renderVersionTitle(version);
-      if (versionTitle) {
-        return (
-          <div className="columns">
-            <div className="column column-one-half">
-              {this.state.diffFromSelectedToCurrent ? (
-                <h4>
-                  <span>From </span>
-                  <span>{versionTitle}</span>
-                </h4>
-              ) : (
-                <h4>From current version</h4>
-              )}
-            </div>
-            <div className="column column-one-half">
-              {this.state.diffFromSelectedToCurrent ? (
-                <h4>To current version</h4>
-              ) : (
-                <h4>
-                  <span>To </span>
-                  <span>{versionTitle}</span>
-                </h4>
-              )}
-            </div>
-          </div>
-        );
-      } else {
-        return (
-          <h4>Changes</h4>
-        );
-      }
     }
 
     renderGithubRepo(): Node {

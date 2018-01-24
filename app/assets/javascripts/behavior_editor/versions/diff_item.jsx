@@ -28,6 +28,10 @@ define(function(require) {
       };
     }
 
+    hasChildren(): boolean {
+      return React.Children.count(this.props.children) > 0;
+    }
+
     toggleExpanded(): void {
       this.setState({
         expanded: !this.state.expanded
@@ -35,7 +39,7 @@ define(function(require) {
     }
 
     renderChildren(): React.Node {
-      if (this.props.children) {
+      if (this.hasChildren()) {
         return (
           <Collapsible revealWhen={this.state.expanded}>
             {React.Children.map(this.props.children, (child) => (
@@ -50,7 +54,7 @@ define(function(require) {
       return (
         <div className={this.props.className || "pas border-bottom mbneg1"}>
           <div>
-            {this.props.children ? (
+            {this.hasChildren() ? (
               <Button className="button-block width-full" onClick={this.toggleExpanded}>
                 <span className="display-inline-block align-m height-xl mrs">
                   <SVGExpand expanded={this.state.expanded} />

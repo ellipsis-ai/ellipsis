@@ -1,14 +1,35 @@
+// @flow
 define(function(require) {
   const React = require('react'),
     BehaviorVersion = require('../models/behavior_version'),
     Button = require('../form/button'),
     Checkbox = require('../form/checkbox'),
     DataRequest = require('../lib/data_request'),
+    DataTypeField = require('../models/data_type_field'),
     DefaultStorageItem = require('../models/default_storage_item'),
+    DefaultStorageItemField = require('../models/default_storage_item_field'),
     autobind = require('../lib/autobind');
 
-  class DefaultStorageBrowser extends React.Component {
-    constructor(props) {
+  type Props = {
+    csrfToken: string,
+    behaviorVersion: BehaviorVersion,
+    behaviorGroupId: string,
+    onCancelClick: () => void,
+    isVisible: boolean
+  }
+
+  type State = {
+    items: Array<DefaultStorageItem>,
+    isLoading: boolean,
+    error: ?string,
+    checkedIds: Array<string>
+  }
+
+  class DefaultStorageBrowser extends React.Component<Props, State> {
+    props: Props;
+    state: State;
+
+    constructor(props: Props) {
       super(props);
       autobind(this);
       this.state = {
@@ -19,17 +40,17 @@ define(function(require) {
       };
     }
 
-    componentWillReceiveProps(newProps) {
+    componentWillReceiveProps(newProps: Props) {
       if (!this.props.isVisible && newProps.isVisible) {
         this.loadItems();
       }
     }
 
-    static getTableRowCount() {
+    static getTableRowCount(): number {
       return 20;
     }
 
-    getGraphQLQuery() {
+    getGraphQLQuery(): ?string {
       try {
         return this.props.behaviorVersion.buildGraphQLListQuery();
       } catch(err) {
@@ -37,7 +58,7 @@ define(function(require) {
       }
     }
 
-    loadItems() {
+    loadItems(): void {
       this.setState({
         items: [],
         isLoading: true,
@@ -56,35 +77,43 @@ define(function(require) {
       });
     }
 
-    onLoadedData(json) {
+    onLoadedData(json: { [string]: any }): void {
       const queryName = this.props.behaviorVersion.getGraphQLListQueryName();
       try {
-        const items = json.data[queryName];
+        const items = json.data[queryName].map((data) => {
+          return new DefaultStorageItem(
+            data.id,
+            this.props.behaviorVersion.behaviorId,
+            data.updatedAt,
+            data.updatedByUserId,
+            data
+          );
+        });
         this.setState({
           isLoading: false,
-          items: items.map((ea) => new DefaultStorageItem({ data: ea }))
+          items: items
         });
       } catch(err) {
         this.onErrorLoadingData();
       }
     }
 
-    onErrorLoadingData() {
+    onErrorLoadingData(): void {
       this.setState({
         isLoading: false,
         error: "An error occurred while loading the data."
       });
     }
 
-    getItems() {
+    getItems(): Array<DefaultStorageItem> {
       return this.state.items;
     }
 
-    getFields() {
+    getFields(): Array<DataTypeField> {
       return this.props.behaviorVersion.getDataTypeConfig().getFields();
     }
 
-    getTableStatusText(itemCount, maxItemCount) {
+    getTableStatusText(itemCount: number, maxItemCount: number): string {
       if (this.state.isLoading) {
         return "Loading…";
       } else if (itemCount === 0) {
@@ -98,7 +127,7 @@ define(function(require) {
       }
     }
 
-    renderItem(item, fields, index, isLastItem) {
+    renderItem(item: DefaultStorageItem, fields: Array<DefaultStorageItemField>, index: number, isLastItem: boolean): React.Node {
       return (
         <tr key={`row${index}`}>
           {this.renderCheckboxCell(item)}
@@ -107,7 +136,7 @@ define(function(require) {
       );
     }
 
-    renderItems(fields) {
+    renderItems(fields: Array<DefaultStorageItemField>): React.Node {
       const items = this.getItems();
       const maxItemCount = DefaultStorageBrowser.getTableRowCount();
       const maxRowCount = maxItemCount + 1;
@@ -133,7 +162,7 @@ define(function(require) {
       return tableRows;
     }
 
-    renderFieldHeader(field) {
+    renderFieldHeader(field: DefaultStorageItemField): React.Node {
       return (
         <th key={field.fieldId}
           className="bg-light border-bottom border-light type-monospace type-weak phxs"
@@ -141,11 +170,11 @@ define(function(require) {
       );
     }
 
-    isEmptyValue(value) {
+    isEmptyValue(value: any): boolean {
       return value === null || value === undefined || value === "";
     }
 
-    renderValue(value) {
+    renderValue(value: any): React.Node {
       const className = this.isEmptyValue(value) ? "type-disabled" : "";
       const asString = String(value) || "(empty)";
       return (
@@ -153,15 +182,15 @@ define(function(require) {
       );
     }
 
-    getCheckedIds() {
+    getCheckedIds(): Array<string> {
       return this.state.checkedIds || [];
     }
 
-    checkedItemsCount() {
+    checkedItemsCount(): number {
       return this.getCheckedIds().length;
     }
 
-    onDeleteItemsClick() {
+    onDeleteItemsClick(): void {
       const url = jsRoutes.controllers.BehaviorEditorController.deleteDefaultStorageItems().url;
 
       DataRequest.jsonPost(url, {
@@ -174,13 +203,12 @@ define(function(require) {
         .catch(this.onErrorSaving);
     }
 
-    isChecked(item) {
+    isChecked(item: DefaultStorageItem): boolean {
       return this.getCheckedIds().indexOf(item.data.id) >= 0;
     }
 
-    toggleChecked(checked, itemId) {
-      const checkedIdsBefore = this.getCheckedIds();
-      let checkedIdsAfter = checkedIdsBefore;
+    toggleChecked(checked: boolean, itemId: string): void {
+      let checkedIdsAfter = this.getCheckedIds();
       if (checked) {
         checkedIdsAfter = checkedIdsAfter.concat([itemId]);
       } else {
@@ -192,7 +220,7 @@ define(function(require) {
       });
     }
 
-    renderCheckboxCell(item) {
+    renderCheckboxCell(item: DefaultStorageItem): React.Node {
       const itemId = item.data.id;
       return (
         <td
@@ -209,7 +237,7 @@ define(function(require) {
       );
     }
 
-    renderFieldCell(item, field, index, isLast) {
+    renderFieldCell(item: DefaultStorageItem, field: DefaultStorageItemField, index: number, isLast: boolean) {
       const value = item.data[field.name];
       const className = `phxs type-monospace border-light border-right ${
         isLast ? "border-bottom " : ""
@@ -226,7 +254,7 @@ define(function(require) {
       );
     }
 
-    getDeleteButtonText() {
+    getDeleteButtonText(): string {
       const count = this.checkedItemsCount();
       if (count === 0) {
         return "Delete items";
@@ -237,7 +265,7 @@ define(function(require) {
       }
     }
 
-    render() {
+    render(): React.Node {
       const fields = this.getFields();
       return (
         <div className="box-action phn">
@@ -254,7 +282,7 @@ define(function(require) {
                 }`}>
                   <thead>
                     <tr>
-                      <th className="bg-light border-bottom border-light type-monospace type-weak phxs"></th>
+                      <th className="bg-light border-bottom border-light type-monospace type-weak phxs" />
                       {fields.map(this.renderFieldHeader)}
                     </tr>
                   </thead>
@@ -285,14 +313,6 @@ define(function(require) {
       );
     }
   }
-
-  DefaultStorageBrowser.propTypes = {
-    csrfToken: React.PropTypes.string.isRequired,
-    behaviorVersion: React.PropTypes.instanceOf(BehaviorVersion).isRequired,
-    behaviorGroupId: React.PropTypes.string.isRequired,
-    onCancelClick: React.PropTypes.func.isRequired,
-    isVisible: React.PropTypes.bool.isRequired
-  };
 
   return DefaultStorageBrowser;
 });
