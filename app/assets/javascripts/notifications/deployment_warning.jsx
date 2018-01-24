@@ -1,6 +1,7 @@
 // @flow
 
 define(function(require) {
+  const DynamicLabelButton = require('../form/dynamic_label_button');
   const React = require('react');
   const moment = require('moment');
   const autobind = require('../lib/autobind');
@@ -45,15 +46,30 @@ define(function(require) {
       }
     }
 
+    getConfirmButtonLabels() {
+      return [
+        {
+          text: "Deploying…",
+          displayWhen: this.isDeploying()
+        },
+        {
+          text: "Deploy now",
+          displayWhen: !this.isDeploying()
+        }
+      ];
+    }
+
     render() {
       return (
         <span>
           <span>{this.versionStatusText()} Use </span>
           <button className="button-raw" type="button" onClick={this.detail().onDevModeChannelsClick}>dev mode channels</button>
           <span> to test until it has been deployed , or</span>
-          <button className="button-s button-shrink mls" type="button" onClick={this.deploy}>
-            {this.isDeploying() ? "Deploying…" : "Deploy now"}
-          </button>
+          <DynamicLabelButton
+            className="button-s button-shrink mls"
+            onClick={this.deploy}
+            labels={this.getConfirmButtonLabels()}>
+          </DynamicLabelButton>
         </span>
       );
     }
