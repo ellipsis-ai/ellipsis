@@ -30,7 +30,7 @@ define(function(require) {
       return (
         <div className="container ptxl pbxxl">
           <SectionHeading number="2">
-            <span className="mrm">How to prompt the user</span>
+            <span className="mrm">Prompt style</span>
             <span className="display-inline-block">
               <HelpButton onClick={this.togglePromptHelp} toggled={this.props.activePanelName === 'helpForDataTypePrompt'} />
             </span>

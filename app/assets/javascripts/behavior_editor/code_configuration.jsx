@@ -17,7 +17,6 @@ define(function(require) {
     displayName: 'CodeConfiguration',
     propTypes: {
       sectionNumber: React.PropTypes.string.isRequired,
-      sectionHeading: React.PropTypes.string.isRequired,
       codeHelpPanelName: React.PropTypes.string.isRequired,
 
       activePanelName: React.PropTypes.string.isRequired,
@@ -148,7 +147,7 @@ define(function(require) {
             <div className="ptxl columns columns-elastic mobile-columns-float">
               <div className="column column-expand">
                 <SectionHeading number={this.props.sectionNumber}>
-                  <span className="mrm">{this.props.sectionHeading}</span>
+                  <span className="mrm">Code</span>
                   <span className="display-inline-block">
                     <HelpButton onClick={this.toggleBehaviorCodeHelp} toggled={this.props.activePanelName === 'helpForBehaviorCode'} />
                   </span>

@@ -30,7 +30,7 @@ define(function(require) {
           </p>
 
           <SectionHeading number="1">
-            <span className="mrm">Where should the data come from?</span>
+            <span className="mrm">Data source</span>
             <span className="display-inline-block">
               <HelpButton onClick={this.toggleSourceHelp} toggled={this.props.activePanelName === 'helpForDataTypeSource'} />
             </span>
