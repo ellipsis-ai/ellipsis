@@ -58,7 +58,7 @@ define(function(require) {
           <div className="columns container container-narrow">
             <div className="mbxxl">
               <div>
-                <SectionHeading number="2">Define fields for the items being stored</SectionHeading>
+                <SectionHeading number="2">Data fields</SectionHeading>
                 <div className="mbm">
                   {this.props.fields.map((field, index) => (
                     <div key={`dataTypeField${index}`} className="mbs">

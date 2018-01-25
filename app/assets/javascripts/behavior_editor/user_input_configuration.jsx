@@ -153,7 +153,7 @@ define(function(require) {
             <div className="columns container container-narrow">
               <div className="mbxxl">
                 <div>
-                  <SectionHeading number="2">Collect input</SectionHeading>
+                  <SectionHeading number="2">Inputs</SectionHeading>
                   <div>
                     <Checklist disabledWhen={this.props.isFinishedBehavior}>
                       <Checklist.Item hiddenWhen={this.props.isFinishedBehavior} checkedWhen={this.props.behaviorHasCode}>

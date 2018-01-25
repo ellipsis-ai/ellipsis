@@ -95,7 +95,7 @@ define(function(require) {
           <div className="mbxxl">
             <SectionHeading number="1">
               <span>
-                <span className="mrm">When someone says</span>
+                <span className="mrm">Triggers</span>
                 <span className="display-inline-block">
                   <HelpButton onClick={this.props.onToggleHelp} toggled={this.props.helpVisible}/>
                 </span>

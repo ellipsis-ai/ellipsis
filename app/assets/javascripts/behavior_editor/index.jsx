@@ -103,7 +103,8 @@ const BehaviorEditor = React.createClass({
     isLinkedToGithub: React.PropTypes.bool.isRequired,
     showVersions: React.PropTypes.bool,
     onDeploy: React.PropTypes.func.isRequired,
-    lastDeployTimestamp: React.PropTypes.string
+    lastDeployTimestamp: React.PropTypes.string,
+    slackTeamId: React.PropTypes.string
   }),
 
   getDefaultProps: function() {
@@ -1730,7 +1731,6 @@ const BehaviorEditor = React.createClass({
         ref="codeEditor"
 
         sectionNumber={codeConfigProps.sectionNumber}
-        sectionHeading={codeConfigProps.sectionHeading}
         codeHelpPanelName={codeConfigProps.codeHelpPanelName}
 
         activePanelName={this.props.activePanelName}
@@ -1855,6 +1855,7 @@ const BehaviorEditor = React.createClass({
           <Collapsible revealWhen={this.props.activePanelName === 'helpForDevModeChannels'} onChange={this.layoutDidUpdate}>
             <DevModeChannelsHelp
               onCollapseClick={this.props.onClearActivePanel}
+              slackTeamId={this.props.slackTeamId}
             />
           </Collapsible>
 
@@ -2361,7 +2362,6 @@ const BehaviorEditor = React.createClass({
                 <div>
                   {this.renderCodeEditor({
                     sectionNumber: this.hasInputs() ? "3" : "2",
-                    sectionHeading: "Run code",
                     codeHelpPanelName: 'helpForBehaviorCode'
                   })}
 
@@ -2387,7 +2387,7 @@ const BehaviorEditor = React.createClass({
 
   renderDataTypeBehavior: function() {
     return (
-      <div className="pbxxxl">
+      <div>
         <div className="bg-white pbl" />
         <hr className="mtn mbn rule-subtle" />
 
@@ -2456,7 +2456,6 @@ const BehaviorEditor = React.createClass({
         {this.renderCodeEditor({
           systemParams: [],
           sectionNumber: "1",
-          sectionHeading: "Write code to define a module",
           codeHelpPanelName: 'helpForLibraryCode',
           functionExecutesImmediately: true
         })}
@@ -2501,7 +2500,10 @@ const BehaviorEditor = React.createClass({
                 (this.props.activePanelName === 'versionBrowser' || this.state.versionBrowserOpen) ? "position-frozen" : ""
                }`}>
                 {this.renderBehaviorSwitcher()}
-                <div className="column column-page-main column-page-main-wide flex-column flex-column-main pbxxl">
+                <div
+                  className="column column-page-main column-page-main-wide flex-column flex-column-main"
+                  style={{ paddingBottom: `${this.props.footerHeight}px `}}
+                >
                   {this.renderSwitcherToggle()}
 
                   {this.renderEditor()}
