@@ -2,18 +2,32 @@ package models.behaviors.templates
 
 import org.commonmark.ext.gfm.strikethrough.Strikethrough
 import org.commonmark.node._
+import play.api.Logger
 
 class SlackRenderer(stringBuilder: StringBuilder) extends AbstractVisitor {
   def escapeControlEntities(text: String): String = {
     val ampersandsEscaped = text.replaceAll("&", "&amp;")
-    """\S+""".r.replaceAllIn(ampersandsEscaped, m => {
-      val str = m.matched
-      if (str.matches(".*<[@#].+>.*")) {
-        str
-      } else {
-        str.replaceAll("<", "&lt;").replaceAll(">", "&gt;")
+    try {
+      """\S+""".r.replaceAllIn(
+        ampersandsEscaped, m => {
+          val str = m.matched
+          if (str == null || str.isEmpty) {
+            ""
+          } else if (str.matches(".*<[@#].+>.*")) {
+            str
+          } else {
+            str.replaceAll("<", "&lt;").replaceAll(">", "&gt;")
+          }
+        })
+    } catch {
+      case e: Throwable => {
+        Logger.error(
+          s"""Error trying to escape entities. Giving up and returning original text: [
+             |$text
+             |]""".stripMargin, e)
+        text
       }
-    })
+    }
   }
 
   override def visit(blockQuote: BlockQuote) {
