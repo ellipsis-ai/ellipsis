@@ -868,6 +868,7 @@ const BehaviorEditor = React.createClass({
     this.setState({
       error: (error ? error.body : null) || "not_deployed"
     }, callback);
+    this.resetNotificationsImmediately();
   },
 
   deploy: function(callback) {
@@ -883,11 +884,9 @@ const BehaviorEditor = React.createClass({
         } else {
           this.onDeployError(null, callback);
         }
-        this.resetNotifications();
       })
       .catch(error => {
         this.onDeployError(error, callback);
-        this.resetNotifications();
       });
   },
 
@@ -916,11 +915,14 @@ const BehaviorEditor = React.createClass({
   },
 
   backgroundSave: function(optionalCallback) {
-    var form = new FormData(this.refs.behaviorForm);
+    var formData = new FormData(this.refs.behaviorForm);
     this.setState({
       newerVersionOnServer: null,
       errorReachingServer: null
-    });
+    }, () => this.doBackgroundSave(formData, optionalCallback));
+  },
+
+  doBackgroundSave: function(formData, optionalCallback) {
     fetch(this.getFormAction(), {
       credentials: 'same-origin',
       method: 'POST',
@@ -929,7 +931,7 @@ const BehaviorEditor = React.createClass({
         'Csrf-Token': this.props.csrfToken,
         'x-requested-with': 'XMLHttpRequest'
       },
-      body: form
+      body: formData
     }).then((response) => response.json())
       .then((json) => {
         if (json.id) {
@@ -971,9 +973,11 @@ const BehaviorEditor = React.createClass({
   },
 
   onSaveBehaviorGroup: function(optionalCallback) {
-    this.setState({ error: null });
-    this.toggleActivePanel('saving', true);
-    this.backgroundSave(optionalCallback);
+    this.setState({ error: null }, () => {
+      this.toggleActivePanel('saving', true, () => {
+        this.backgroundSave(optionalCallback);
+      });
+    });
   },
 
   onReplaceBehaviorGroup: function(newBehaviorGroup, optionalCallback) {
@@ -1042,7 +1046,7 @@ const BehaviorEditor = React.createClass({
       if (callback) {
         callback();
       }
-      this.resetNotifications();
+      this.resetNotificationsEventually();
     });
   },
 
@@ -1210,7 +1214,7 @@ const BehaviorEditor = React.createClass({
         this.setState({
           envVariables: json.variables
         }, () => {
-          this.resetNotifications();
+          this.resetNotificationsImmediately();
           this.refs.envVariableSetterPanel.reset();
           if (options && options.saveCallback) {
             options.saveCallback();
@@ -1339,7 +1343,7 @@ const BehaviorEditor = React.createClass({
   undoChanges: function() {
     this.updateGroupStateWith(this.props.group, () => {
       this.props.onClearActivePanel();
-      this.resetNotifications();
+      this.resetNotificationsEventually();
     });
   },
 
@@ -1570,7 +1574,6 @@ const BehaviorEditor = React.createClass({
   },
 
   onSave: function(newProps) {
-    this.resetNotifications();
     this.props.onSave(newProps);
     this.loadNodeModuleVersions();
   },
@@ -1592,9 +1595,9 @@ const BehaviorEditor = React.createClass({
     }
   },
 
-  resetNotifications: debounce(function() {
+  resetNotificationsEventually: debounce(function() {
     this.resetNotificationsImmediately();
-  }, 250),
+  }, 500),
 
     /* Component API methods */
 
@@ -1643,14 +1646,14 @@ const BehaviorEditor = React.createClass({
             this.setState({
               newerVersionOnServer: isNewerVersion ? BehaviorGroupVersionMetaData.fromJson(json) : null,
               errorReachingServer: null
-            }, this.resetNotifications);
+            }, this.resetNotificationsEventually);
           }
           this.checkForUpdatesLater();
         })
         .catch((err) => {
           this.setState({
             errorReachingServer: err
-          }, this.resetNotifications);
+          }, this.resetNotificationsEventually);
           this.checkForUpdatesLater();
         });
     } else {
@@ -1708,7 +1711,7 @@ const BehaviorEditor = React.createClass({
         error: null
       };
       this.props.onClearActivePanel();
-      this.setState(newState);
+      this.setState(newState, this.resetNotificationsImmediately);
       if (typeof(nextProps.onLoad) === 'function') {
         nextProps.onLoad();
       }
