@@ -1,11 +1,11 @@
 define(function(require) {
   var React = require('react'),
     Button = require('../form/button'),
+    HelpButton = require('../help/help_button'),
     SVGSwap = require('../svg/swap'),
     SectionHeading = require('../shared_ui/section_heading'),
     UserInputDefinition = require('./user_input_definition'),
     Checklist = require('./checklist'),
-    Collapsible = require('../shared_ui/collapsible'),
     BehaviorVersion = require('../models/behavior_version'),
     Input = require('../models/input'),
     ParamType = require('../models/param_type'),
@@ -36,8 +36,9 @@ define(function(require) {
         })
       ).isRequired,
       onToggleSavedAnswer: React.PropTypes.func.isRequired,
-      animationDisabled: React.PropTypes.bool,
-      onConfigureType: React.PropTypes.func.isRequired
+      onConfigureType: React.PropTypes.func.isRequired,
+      onToggleInputHelp: React.PropTypes.func.isRequired,
+      helpInputVisible: React.PropTypes.bool.isRequired
     },
 
     swapButtons: [],
@@ -66,10 +67,6 @@ define(function(require) {
 
     focusIndex: function(index) {
       this.refs['input' + index].focus();
-    },
-
-    hasInputs: function() {
-      return this.props.userInputs.length > 0;
     },
 
     isShared: function(input) {
@@ -105,12 +102,12 @@ define(function(require) {
       var props = Object.assign({}, optionalProperties);
       if (this.props.hasSharedAnswers) {
         return (
-          <button type="button"
+          <Button
             className={"button-s " + (props.className || "")}
             onClick={this.props.onToggleSharedAnswer}
           >
             Use a saved answer from another action…
-          </button>
+          </Button>
         );
       } else {
         return null;
@@ -127,33 +124,18 @@ define(function(require) {
     render: function() {
       return (
         <div>
-          <Collapsible revealWhen={!this.hasInputs()} animationDisabled={this.props.animationDisabled}>
-            <div className="bg-blue-lighter border-top border-blue ptl pbs">
-              <div className="container container-wide">
-                <div className="columns columns-elastic narrow-columns-float">
-                  <div className="column column-expand">
-                    <p className="mbs">
-                      <span>You can add inputs to ask for additional information from the user, or </span>
-                      <span>to clarify what kind of input will come from the trigger.</span>
-                    </p>
-                  </div>
-                  <div className="column column-shrink align-r align-m narrow-align-l display-ellipsis mobile-display-no-ellipsis">
-                    <button type="button" className="button-s mbs mobile-mrm" onClick={this.addInput}>Add an input</button>
-                    {this.renderReuseInput({ className: "mlm mobile-mln mbs" })}
-                  </div>
-                </div>
-              </div>
-            </div>
-          </Collapsible>
-
-          <Collapsible revealWhen={this.hasInputs()} animationDisabled={this.props.animationDisabled}>
-
+          <div>
             <hr className="mtn rule-subtle" />
 
             <div className="columns container container-narrow">
               <div className="mbxxl">
                 <div>
-                  <SectionHeading number="2">Inputs</SectionHeading>
+                  <SectionHeading number="2">
+                    <span className="mrm">Inputs</span>
+                    <span className="display-inline-block">
+                      <HelpButton onClick={this.props.onToggleInputHelp} toggled={this.props.helpInputVisible} />
+                    </span>
+                  </SectionHeading>
                   <div>
                     <Checklist disabledWhen={this.props.isFinishedBehavior}>
                       <Checklist.Item hiddenWhen={this.props.isFinishedBehavior} checkedWhen={this.props.behaviorHasCode}>
@@ -206,17 +188,16 @@ define(function(require) {
                     ))}
                   </div>
                   <div>
-                    <button type="button" className="button-s mrm mbs" onClick={this.addInput}>
-                      Add another input
-                    </button>
+                    <Button className="button-s mrm mbs" onClick={this.addInput}>
+                      Add an input
+                    </Button>
                     {this.renderReuseInput({ className: "mbs" })}
                   </div>
                 </div>
               </div>
             </div>
-          </Collapsible>
+          </div>
         </div>
-
       );
     }
   });
