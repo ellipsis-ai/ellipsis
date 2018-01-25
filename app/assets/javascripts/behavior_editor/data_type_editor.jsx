@@ -181,7 +181,7 @@ define(function(require) {
         <div>
           <CodeConfiguration
             sectionNumber={"3"}
-            sectionHeading={"Run code to generate a list"}
+            sectionHeading={"Code"}
             codeHelpPanelName='helpForBehaviorCode'
 
             activePanelName={this.props.activePanelName}

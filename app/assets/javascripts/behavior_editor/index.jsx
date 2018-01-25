@@ -2363,7 +2363,7 @@ const BehaviorEditor = React.createClass({
                 <div>
                   {this.renderCodeEditor({
                     sectionNumber: this.hasInputs() ? "3" : "2",
-                    sectionHeading: "Run code",
+                    sectionHeading: "Code",
                     codeHelpPanelName: 'helpForBehaviorCode'
                   })}
 
@@ -2458,7 +2458,7 @@ const BehaviorEditor = React.createClass({
         {this.renderCodeEditor({
           systemParams: [],
           sectionNumber: "1",
-          sectionHeading: "Write code to define a module",
+          sectionHeading: "Code",
           codeHelpPanelName: 'helpForLibraryCode',
           functionExecutesImmediately: true
         })}

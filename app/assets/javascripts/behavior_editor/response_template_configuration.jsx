@@ -35,7 +35,7 @@ define(function(require) {
 
           <div className="mbl ptxl">
             <SectionHeading number={this.props.sectionNumber}>
-              <span className="mrm">Then respond</span>
+              <span className="mrm">Response</span>
               <span className="display-inline-block">
                 <HelpButton onClick={this.props.onToggleHelp} toggled={this.props.helpVisible}/>
               </span>
