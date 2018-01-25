@@ -268,7 +268,7 @@ class BehaviorEditorController @Inject() (
     for {
       maybeBehaviorGroup <- dataService.behaviorGroups.findWithoutAccessCheck(behaviorGroupId)
       versions <- maybeBehaviorGroup.map { group =>
-       dataService.behaviorGroupVersions.allFor(group).map(_.sortBy(_.createdAt).reverse.take(20))
+       dataService.behaviorGroupVersions.batchFor(group)
       }.getOrElse(Future.successful(Seq()))
       // Todo: this can go back to being a regular Future.sequence (in parallel) if we
       versionsData <- FutureSequencer.sequence(versions, (ea: BehaviorGroupVersion) => BehaviorGroupData.buildFor(ea, user, dataService))

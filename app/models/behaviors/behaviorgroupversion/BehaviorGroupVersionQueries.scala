@@ -34,12 +34,15 @@ object BehaviorGroupVersionQueries {
   }
   val findQuery = Compiled(uncompiledFindQuery _)
 
-  def uncompiledAllForQuery(groupId: Rep[String]) = {
+  def uncompiledBatchForQuery(groupId: Rep[String], batchSize: ConstColumn[Long], offset: ConstColumn[Long]) = {
     allWithUser.
       filter { case((version, _), _) => version.groupId === groupId }.
-      sortBy { case((version, _), _) => version.createdAt.desc }
+      sortBy { case((version, _), _) => version.createdAt.desc }.
+      drop(offset).
+      take(batchSize)
+
   }
-  val allForQuery = Compiled(uncompiledAllForQuery _)
+  val batchForQuery = Compiled(uncompiledBatchForQuery _)
 
   private def uncompiledCurrentIdForQuery(groupId: Rep[String]) = {
     all.filter(_.groupId === groupId).sortBy(_.createdAt.desc).take(1).map(_.id)

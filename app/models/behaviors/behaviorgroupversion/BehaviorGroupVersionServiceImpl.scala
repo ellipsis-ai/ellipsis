@@ -61,8 +61,8 @@ class BehaviorGroupVersionServiceImpl @Inject() (
     dataService.run(findWithoutAccessCheckAction(id))
   }
 
-  def allFor(group: BehaviorGroup): Future[Seq[BehaviorGroupVersion]] = {
-    val action = allForQuery(group.id).result.map { r =>
+  def batchFor(group: BehaviorGroup, batchSize: Int = 20, offset: Int = 0): Future[Seq[BehaviorGroupVersion]] = {
+    val action = batchForQuery(group.id, batchSize, offset).result.map { r =>
       r.map(tuple2BehaviorGroupVersion)
     }
     dataService.run(action)
@@ -244,17 +244,6 @@ class BehaviorGroupVersionServiceImpl @Inject() (
       r.map(tuple2BehaviorGroupVersion)
     }
     dataService.run(action)
-  }
-
-  def maybePreviousFor(groupVersion: BehaviorGroupVersion): Future[Option[BehaviorGroupVersion]] = {
-    allFor(groupVersion.group).map { versions =>
-      val index = versions.indexWhere(_.id == groupVersion.id)
-      if (index == versions.size - 1) {
-        None
-      } else {
-        Some(versions(index + 1))
-      }
-    }
   }
 
   private def currentFunctionNames: Future[Seq[String]] = {

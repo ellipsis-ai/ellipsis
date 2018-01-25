@@ -71,7 +71,7 @@ class BehaviorGroupVersionSpec extends DBSpec {
         )
         newSavedGroupVersionFor(group, user, Some(groupData))
 
-        val groupVersionsBefore = runNow(dataService.behaviorGroupVersions.allFor(group))
+        val groupVersionsBefore = runNow(dataService.behaviorGroupVersions.batchFor(group))
         groupVersionsBefore must have length 1
         val firstDataTypeBehaviorVersion = runNow(dataService.behaviorVersions.allForGroupVersion(groupVersionsBefore.head)).filter(_.isDataType).head
 
@@ -79,7 +79,7 @@ class BehaviorGroupVersionSpec extends DBSpec {
 
         newSavedGroupVersionFor(group, user, newGroupData)
 
-        val groupVersionsAfter = runNow(dataService.behaviorGroupVersions.allFor(group))
+        val groupVersionsAfter = runNow(dataService.behaviorGroupVersions.batchFor(group))
         groupVersionsAfter must have length 2
 
         val secondGroupVersion = groupVersionsAfter.sortBy(_.createdAt).reverse.head

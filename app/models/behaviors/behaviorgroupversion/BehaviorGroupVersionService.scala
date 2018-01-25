@@ -13,7 +13,7 @@ trait BehaviorGroupVersionService {
 
   def findWithoutAccessCheck(id: String): Future[Option[BehaviorGroupVersion]]
 
-  def allFor(group: BehaviorGroup): Future[Seq[BehaviorGroupVersion]]
+  def batchFor(group: BehaviorGroup, batchSize: Int = 20, offset: Int = 0): Future[Seq[BehaviorGroupVersion]]
 
   def maybeCurrentForAction(group: BehaviorGroup): DBIO[Option[BehaviorGroupVersion]]
 
@@ -42,8 +42,6 @@ trait BehaviorGroupVersionService {
                  user: User,
                  data: BehaviorGroupData
                ): Future[BehaviorGroupVersion]
-
-  def maybePreviousFor(groupVersion: BehaviorGroupVersion): Future[Option[BehaviorGroupVersion]]
 
   def redeploy(groupVersion: BehaviorGroupVersion): Future[Unit]
 
