@@ -166,7 +166,13 @@ define(function(require: (string) => *): React.ElementType {
     }
 
     getDefaultSelectedItem(props: Props): string {
-      return props.versions.length > 0 ? "version0" : "loading";
+      if (!props.versions.length) {
+        return "loading";
+      } else if (props.currentGroupIsModified) {
+        return "version0";
+      } else {
+        return "select";
+      }
     }
 
     componentWillReceiveProps(nextProps: Props): void {
@@ -217,15 +223,15 @@ define(function(require: (string) => *): React.ElementType {
     }
 
     getLabelForLastSavedVersion(): string {
-      return this.props.currentGroupIsModified ? "Most recent saved version" : "Select a version…";
+      return "Most recent saved version";
     }
 
     getGroupedVersions(versions: Array<BehaviorGroup>): Array<VersionGroup> {
       const groups: Array<VersionGroup> = [];
       groups.push({
         versions: [{
-          label: this.getLabelForLastSavedVersion(),
-          key: "version0"
+          label: "Select a version…",
+          key: "select"
         }]
       });
       if (this.props.linkedGithubRepo && this.props.isLinkedToGithub) {
@@ -237,17 +243,23 @@ define(function(require: (string) => *): React.ElementType {
           }]
         });
       }
-      versions.slice(1).forEach((version, versionIndex) => {
+      versions.forEach((version, versionIndex) => {
         const author = version.author;
         const day = Formatter.formatTimestampDate(version.createdAt);
         const prevVersion = versions[versionIndex - 1];
         const prevAuthor = prevVersion && prevVersion.author;
         const prevDay = prevVersion && Formatter.formatTimestampDate(prevVersion.createdAt);
+        const versionLabel = Formatter.formatTimestampShort(version.createdAt);
         const groupedVersion = {
-          label: Formatter.formatTimestampShort(version.createdAt),
-          key: `version${versionIndex + 1}`
+          label: versionLabel,
+          key: `version${versionIndex}`
         };
-        if (versionIndex > 0 && author.isSameUser(prevAuthor) && day === prevDay) {
+        if (versionIndex === 0) {
+          groups.push({
+            label: 'Most recent saved version',
+            versions: [groupedVersion]
+          });
+        } else if (versionIndex > 1 && author.isSameUser(prevAuthor) && day === prevDay) {
           const lastGroup = groups[groups.length - 1];
           lastGroup.versions.push(groupedVersion);
         } else {
@@ -384,8 +396,10 @@ define(function(require: (string) => *): React.ElementType {
     }
 
     summarizeNoDiff(): string {
-      if (this.getSelectedVersionIndex() === 0 && !this.props.currentGroupIsModified) {
-        return "Select another version to compare to the current saved version.";
+      if (this.state.selectedMenuItem === "select") {
+        return "Select a version of this skill to compare to the current version.";
+      } else if (this.getSelectedVersionIndex() === 0 && !this.props.currentGroupIsModified) {
+        return "No changes have been made since this version was saved.";
       } else {
         return "These versions are identical.";
       }
@@ -421,22 +435,22 @@ define(function(require: (string) => *): React.ElementType {
       return this.state.selectedMenuItem === "version0";
     }
 
-    renderNoteForVersion(version: BehaviorGroup): Node {
+    renderNoteForVersion(note: string): Node {
       return (
-        <span className="align-button align-button-s mrs mbs type-weak">({Formatter.formatTimestampShort(version.createdAt)})</span>
+        <span className="align-button align-button-s mrs mbs type-weak">({note})</span>
       );
     }
 
     renderSelectedVersionNote(): Node {
       const version = this.props.versions[0];
-      if (this.latestVersionIsSelected() && version && this.props.currentGroupIsModified) {
-        return this.renderNoteForVersion(version);
+      if (this.latestVersionIsSelected() && version) {
+        return this.renderNoteForVersion(this.getLabelForLastSavedVersion());
       }
     }
 
     renderCurrentVersionNote(): Node {
       if (!this.props.currentGroupIsModified) {
-        return this.renderNoteForVersion(this.props.currentGroup);
+        return this.renderNoteForVersion(Formatter.formatTimestampShort(this.props.currentGroup.createdAt));
       }
     }
 
