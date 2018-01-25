@@ -1,12 +1,14 @@
 // @flow
 
 define(function(require) {
-  const DynamicLabelButton = require('../form/dynamic_label_button');
   const React = require('react');
+  const Button = require('../form/button');
+  const DynamicLabelButton = require('../form/dynamic_label_button');
+  const HelpButton = require('../help/help_button');
   const moment = require('moment');
   const autobind = require('../lib/autobind');
 
-    class NotificationForDeploymentWarning extends React.Component {
+  class NotificationForDeploymentWarning extends React.Component {
 
     constructor(props) {
       super(props);
@@ -63,13 +65,15 @@ define(function(require) {
       return (
         <span>
           <span>{this.versionStatusText()} Use </span>
-          <button className="button-raw" type="button" onClick={this.detail().onDevModeChannelsClick}>dev mode channels</button>
-          <span> to test until it has been deployed , or</span>
+          <Button className="button-raw prxs" onClick={this.detail().onDevModeChannelsClick}>dev mode channels</Button>
+          <HelpButton onClick={this.detail().onDevModeChannelsClick} className="mrxs" />
+          <span> to test until it has been deployed.</span>
           <DynamicLabelButton
             className="button-s button-shrink mls"
             onClick={this.deploy}
-            labels={this.getConfirmButtonLabels()}>
-          </DynamicLabelButton>
+            labels={this.getConfirmButtonLabels()}
+            disabledWhen={this.isDeploying()}
+          />
         </span>
       );
     }
