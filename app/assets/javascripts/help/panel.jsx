@@ -21,9 +21,11 @@ return React.createClass({
         </div>
         <div className="columns">
           <div className="column column-page-sidebar mtl mobile-prxl">
-            <h4 className="mtn type-weak">
-              {this.props.heading}
-            </h4>
+            {typeof this.props.heading === "string" ? (
+              <h4 className="mtn type-weak">
+                {this.props.heading}
+              </h4>
+            ) : this.props.heading}
           </div>
           <div className="column column-page-main prxl">
             <div className="mtl mobile-mtn">

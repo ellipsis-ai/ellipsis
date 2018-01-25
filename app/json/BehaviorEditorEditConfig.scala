@@ -20,7 +20,8 @@ case class BehaviorEditorEditConfig(
   isLinkedToGithub: Boolean,
   linkedGithubRepo: Option[LinkedGithubRepoData],
   showVersions: Option[Boolean],
-  lastDeployTimestamp: Option[OffsetDateTime]
+  lastDeployTimestamp: Option[OffsetDateTime],
+  slackTeamId: Option[String]
 )
 
 object BehaviorEditorEditConfig {
@@ -43,7 +44,8 @@ object BehaviorEditorEditConfig {
       data.isLinkedToGithub,
       data.linkedGithubRepo,
       maybeShowVersions,
-      data.lastDeployTimestamp
+      data.lastDeployTimestamp,
+      data.maybeSlackTeamId
     )
   }
 }

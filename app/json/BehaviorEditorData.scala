@@ -27,7 +27,8 @@ case class BehaviorEditorData(
                                isAdmin: Boolean,
                                isLinkedToGithub: Boolean,
                                linkedGithubRepo: Option[LinkedGithubRepoData],
-                               lastDeployTimestamp: Option[OffsetDateTime]
+                               lastDeployTimestamp: Option[OffsetDateTime],
+                               maybeSlackTeamId: Option[String]
                               )
 
 object BehaviorEditorData {
@@ -123,6 +124,7 @@ object BehaviorEditorData {
               )(implicit ec: ExecutionContext): Future[BehaviorEditorData] = {
     for {
       teamAccess <- dataService.users.teamAccessFor(user, Some(team.id))
+      maybeSlackBotProfile <- dataService.slackBotProfiles.allFor(team).map(_.headOption)
       teamEnvironmentVariables <- dataService.teamEnvironmentVariables.allFor(team)
       awsConfigs <- dataService.awsConfigs.allFor(team)
       oAuth2Applications <- dataService.oauth2Applications.allUsableFor(team)
@@ -214,7 +216,8 @@ object BehaviorEditorData {
         isAdmin,
         isLinkedToGithub,
         maybeLinkedGithubRepo.map(r => LinkedGithubRepoData(r.owner, r.repo)),
-        maybeLastDeployTimestamp
+        maybeLastDeployTimestamp,
+        maybeSlackBotProfile.map(_.slackTeamId)
       )
     }
   }
