@@ -81,7 +81,7 @@ define(function(require) {
 
           <hr className="mvxxl rule-subtle" />
 
-          <div className="container container-narrow">
+          <div className="container container-narrow mbxl">
 
             <div className="columns columns-elastic mobile-columns-float">
               <div className="column column-expand mobile-mbm">

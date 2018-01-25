@@ -2389,7 +2389,7 @@ const BehaviorEditor = React.createClass({
 
   renderDataTypeBehavior: function() {
     return (
-      <div className="pbxxxl">
+      <div>
         <div className="bg-white pbl" />
         <hr className="mtn mbn rule-subtle" />
 
@@ -2503,7 +2503,10 @@ const BehaviorEditor = React.createClass({
                 (this.props.activePanelName === 'versionBrowser' || this.state.versionBrowserOpen) ? "position-frozen" : ""
                }`}>
                 {this.renderBehaviorSwitcher()}
-                <div className="column column-page-main column-page-main-wide flex-column flex-column-main pbxxl">
+                <div
+                  className="column column-page-main column-page-main-wide flex-column flex-column-main"
+                  style={{ paddingBottom: `${this.props.footerHeight}px `}}
+                >
                   {this.renderSwitcherToggle()}
 
                   {this.renderEditor()}
