@@ -142,8 +142,8 @@ define(function(require) {
         };
       } else if (kind === "deployment_warning") {
         return {
-          containerClass: "box-warning",
-          icon: this.getWarningIcon(),
+          containerClass: "box-tip",
+          icon: this.getTipIcon(),
           message: (
             <NotificationForDeploymentWarning details={this.props.group.members} />
           )
