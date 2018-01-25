@@ -1,7 +1,8 @@
 define(function(require) {
   var React = require('react'),
     Formatter = require('../lib/formatter'),
-    SVGCheckmark = require('../svg/checkmark');
+    SVGCheckmark = require('../svg/checkmark'),
+    URLCreator = require('../lib/url_creator');
 
   return React.createClass({
     displayName: 'InstalledBehaviorGroupsPanel',
@@ -91,11 +92,7 @@ define(function(require) {
     },
 
     getSlackUrl: function() {
-      if (this.props.slackTeamId) {
-        return `slack://open?team=${this.props.slackTeamId}`;
-      } else {
-        return "slack://open";
-      }
+      return URLCreator.forSlack(this.props.slackTeamId);
     },
 
     getEditUrlFor: function(group) {

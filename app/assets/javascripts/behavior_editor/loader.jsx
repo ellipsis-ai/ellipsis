@@ -110,6 +110,7 @@ requirejs(['common'], function() {
                 showVersions={this.props.showVersions}
                 onDeploy={this.onDeploy}
                 lastDeployTimestamp={this.props.lastDeployTimestamp}
+                slackTeamId={this.props.slackTeamId}
               />
             </Page>
           );
@@ -134,7 +135,8 @@ requirejs(['common'], function() {
         isLinkedToGithub: React.PropTypes.bool.isRequired,
         linkedGithubRepo: React.PropTypes.object,
         showVersions: React.PropTypes.bool,
-        lastDeployTimestamp: React.PropTypes.string
+        lastDeployTimestamp: React.PropTypes.string,
+        slackTeamId: React.PropTypes.string
       };
 
       ReactDOM.render(

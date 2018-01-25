@@ -103,7 +103,8 @@ const BehaviorEditor = React.createClass({
     isLinkedToGithub: React.PropTypes.bool.isRequired,
     showVersions: React.PropTypes.bool,
     onDeploy: React.PropTypes.func.isRequired,
-    lastDeployTimestamp: React.PropTypes.string
+    lastDeployTimestamp: React.PropTypes.string,
+    slackTeamId: React.PropTypes.string
   }),
 
   getDefaultProps: function() {
@@ -1855,6 +1856,7 @@ const BehaviorEditor = React.createClass({
           <Collapsible revealWhen={this.props.activePanelName === 'helpForDevModeChannels'} onChange={this.layoutDidUpdate}>
             <DevModeChannelsHelp
               onCollapseClick={this.props.onClearActivePanel}
+              slackTeamId={this.props.slackTeamId}
             />
           </Collapsible>
 

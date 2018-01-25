@@ -1,16 +1,33 @@
+// @flow
 define(function(require) {
-  var React = require('react'),
-    HelpPanel = require('../help/panel');
+  const React = require('react'),
+    HelpPanel = require('../help/panel'),
+    URLCreator = require('../lib/url_creator');
 
-  return React.createClass({
-    propTypes: {
-      onCollapseClick: React.PropTypes.func.isRequired
-    },
+  type Props = {
+    onCollapseClick: () => void,
+    slackTeamId?: string
+  }
 
-    render: function() {
+  class DevModeChannelsHelp extends React.PureComponent<Props> {
+    props: Props;
+
+    renderHeading() {
+      return (
+        <div>
+          <h4 className="mtn type-weak">Dev mode channels</h4>
+
+          <p>
+            <a className="button button-shrink button-s" href={URLCreator.forSlack(this.props.slackTeamId)}>Open Slack</a>
+          </p>
+        </div>
+      );
+    }
+
+    render() {
       return (
         <HelpPanel
-          heading="Dev mode channels"
+          heading={this.renderHeading()}
           onCollapseClick={this.props.onCollapseClick}
         >
           <p>
@@ -28,7 +45,9 @@ define(function(require) {
               <p><span className="type-bold">In this editor using the <span className="type-blue-faded">Test…</span> button</span> (on any action)</p>
             </li>
             <li>
-              <p><span className="type-bold">In Slack using dev mode:</span></p>
+              <p className="type-bold">
+                <span>In Slack using dev mode:</span>
+              </p>
 
               <p>
                 <span>In dev mode, the most recently saved version of each skill will be triggered, </span>
@@ -52,12 +71,15 @@ define(function(require) {
                   </p>
                 </li>
               </ul>
+
             </li>
           </ul>
 
         </HelpPanel>
       );
     }
-  });
+  }
+
+  return DevModeChannelsHelp;
 
 });
