@@ -33,7 +33,7 @@ define(function(require) {
       return (
         <div className="columns container container-wide">
 
-          <div className="mbxxxl ptxl">
+          <div className="mbl ptxl">
             <SectionHeading number={this.props.sectionNumber}>
               <span className="mrm">Then respond</span>
               <span className="display-inline-block">
