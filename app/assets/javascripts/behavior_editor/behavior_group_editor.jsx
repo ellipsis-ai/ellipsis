@@ -1,6 +1,6 @@
 // @flow
 define(function(require) {
-  var React = require('react'),
+  const React = require('react'),
     BehaviorGroup = require('../models/behavior_group'),
     Button = require('../form/button'),
     BehaviorGroupDetailsEditor = require('./behavior_group_details_editor'),
@@ -17,8 +17,9 @@ define(function(require) {
 
   class BehaviorGroupEditor extends React.PureComponent<Props> {
     props: Props;
+    detailsEditor: ?BehaviorGroupDetailsEditor;
 
-    constructor(props) {
+    constructor(props: Props) {
       super(props);
       autobind(this);
       this.detailsEditor = null;

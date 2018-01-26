@@ -15,8 +15,10 @@ define(function(require) {
 
   class BehaviorGroupDetailsEditor extends React.PureComponent<Props> {
     props: Props;
+    skillName: ?FormInput;
+    skillDescription: ?Textarea;
 
-    constructor(props): void {
+    constructor(props: Props): void {
       super(props);
       autobind(this);
       this.skillDescription = null;
