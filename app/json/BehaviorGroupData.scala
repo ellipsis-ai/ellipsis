@@ -7,7 +7,7 @@ import models.accounts.user.User
 import models.behaviors.behaviorgroup.BehaviorGroup
 import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
 import models.team.Team
-import services.DataService
+import services.{CacheService, DataService}
 import utils.{FuzzyMatchPattern, FuzzyMatchable, SimpleFuzzyMatchPattern}
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -128,63 +128,67 @@ case class BehaviorGroupData(
 
 object BehaviorGroupData {
 
-  def buildFor(version: BehaviorGroupVersion, user: User, dataService: DataService)(implicit ec: ExecutionContext): Future[BehaviorGroupData] = {
-    for {
-      behaviors <- dataService.behaviors.allForGroup(version.group)
-      versionsData <- Future.sequence(behaviors.map { ea =>
-        BehaviorVersionData.maybeFor(ea.id, user, dataService, Some(version), ea.maybeExportId)
-      }).map(_.flatten.sortBy { ea =>
-        (ea.isDataType, ea.maybeFirstTrigger)
-      })
-      inputs <- dataService.inputs.allForGroupVersion(version)
-      inputsData <- Future.sequence(inputs.map(ea => InputData.fromInput(ea, dataService)))
-      libraryVersions <- dataService.libraries.allFor(version)
-      libraryVersionsData <- Future.successful(libraryVersions.map(ea => LibraryVersionData.fromVersion(ea)))
-      requiredAWSConfigs <- dataService.requiredAWSConfigs.allFor(version)
-      requiredOAuth2ApiConfigs <- dataService.requiredOAuth2ApiConfigs.allFor(version)
-      requiredSimpleTokenApis <- dataService.requiredSimpleTokenApis.allFor(version)
-      maybeUserData <- version.maybeAuthor.map { author =>
-        dataService.users.userDataFor(author, version.team).map(Some(_))
-      }.getOrElse(Future.successful(None))
-      maybeDeployment <- dataService.behaviorGroupDeployments.findForBehaviorGroupVersion(version)
-      maybeDeploymentData <- maybeDeployment.map { deployment =>
-        BehaviorGroupDeploymentData.fromDeployment(deployment, dataService).map(Some(_))
-      }.getOrElse(Future.successful(None))
-    } yield {
-      val (dataTypeInputsData, actionInputsData) = inputsData.partition { ea =>
-        versionsData.find(v => ea.inputId.exists(v.inputIds.contains)).exists(_.isDataType)
+  def buildFor(version: BehaviorGroupVersion, user: User, dataService: DataService, cacheService: CacheService)(implicit ec: ExecutionContext): Future[BehaviorGroupData] = {
+    cacheService.getBehaviorGroupData(version.id).map(Future.successful).getOrElse {
+      for {
+        behaviors <- dataService.behaviors.allForGroup(version.group)
+        versionsData <- Future.sequence(behaviors.map { ea =>
+          BehaviorVersionData.maybeFor(ea.id, user, dataService, Some(version), ea.maybeExportId)
+        }).map(_.flatten.sortBy { ea =>
+          (ea.isDataType, ea.maybeFirstTrigger)
+        })
+        inputs <- dataService.inputs.allForGroupVersion(version)
+        inputsData <- Future.sequence(inputs.map(ea => InputData.fromInput(ea, dataService)))
+        libraryVersions <- dataService.libraries.allFor(version)
+        libraryVersionsData <- Future.successful(libraryVersions.map(ea => LibraryVersionData.fromVersion(ea)))
+        requiredAWSConfigs <- dataService.requiredAWSConfigs.allFor(version)
+        requiredOAuth2ApiConfigs <- dataService.requiredOAuth2ApiConfigs.allFor(version)
+        requiredSimpleTokenApis <- dataService.requiredSimpleTokenApis.allFor(version)
+        maybeUserData <- version.maybeAuthor.map { author =>
+          dataService.users.userDataFor(author, version.team).map(Some(_))
+        }.getOrElse(Future.successful(None))
+        maybeDeployment <- dataService.behaviorGroupDeployments.findForBehaviorGroupVersion(version)
+        maybeDeploymentData <- maybeDeployment.map { deployment =>
+          BehaviorGroupDeploymentData.fromDeployment(deployment, dataService).map(Some(_))
+        }.getOrElse(Future.successful(None))
+      } yield {
+        val (dataTypeInputsData, actionInputsData) = inputsData.partition { ea =>
+          versionsData.find(v => ea.inputId.exists(v.inputIds.contains)).exists(_.isDataType)
+        }
+        val data = BehaviorGroupData(
+          Some(version.group.id),
+          version.team.id,
+          Option(version.name).filter(_.trim.nonEmpty),
+          version.maybeDescription,
+          version.maybeIcon,
+          actionInputsData,
+          dataTypeInputsData,
+          versionsData,
+          libraryVersionsData,
+          requiredAWSConfigs.map(RequiredAWSConfigData.from),
+          requiredOAuth2ApiConfigs.map(RequiredOAuth2ApiConfigData.from),
+          requiredSimpleTokenApis.map(RequiredSimpleTokenApiData.from),
+          None,
+          None, // don't include SHA when building new data from existing version
+          version.group.maybeExportId,
+          Some(version.createdAt),
+          maybeUserData,
+          maybeDeploymentData
+        )
+        cacheService.cacheBehaviorGroupData(version.id, data)
+        data
       }
-      BehaviorGroupData(
-        Some(version.group.id),
-        version.team.id,
-        Option(version.name).filter(_.trim.nonEmpty),
-        version.maybeDescription,
-        version.maybeIcon,
-        actionInputsData,
-        dataTypeInputsData,
-        versionsData,
-        libraryVersionsData,
-        requiredAWSConfigs.map(RequiredAWSConfigData.from),
-        requiredOAuth2ApiConfigs.map(RequiredOAuth2ApiConfigData.from),
-        requiredSimpleTokenApis.map(RequiredSimpleTokenApiData.from),
-        None,
-        None, // don't include SHA when building new data from existing version
-        version.group.maybeExportId,
-        Some(version.createdAt),
-        maybeUserData,
-        maybeDeploymentData
-      )
     }
   }
 
-  def maybeFor(id: String, user: User, maybeGithubUrl: Option[String], dataService: DataService)(implicit ec: ExecutionContext): Future[Option[BehaviorGroupData]] = {
+  def maybeFor(id: String, user: User, maybeGithubUrl: Option[String], dataService: DataService, cacheService: CacheService)(implicit ec: ExecutionContext): Future[Option[BehaviorGroupData]] = {
     for {
       maybeGroup <- dataService.behaviorGroups.find(id, user)
       maybeLatestGroupVersion <- maybeGroup.map { group =>
           dataService.behaviorGroupVersions.maybeCurrentFor(group)
       }.getOrElse(Future.successful(None))
       data <- maybeLatestGroupVersion.map { version =>
-        buildFor(version, user, dataService).map(Some(_))
+        buildFor(version, user, dataService, cacheService).map(Some(_))
       }.getOrElse(Future.successful(None))
     } yield data
   }

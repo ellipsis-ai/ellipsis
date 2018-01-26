@@ -93,19 +93,6 @@ class CacheServiceImpl @Inject() (
     }
   }
 
-  def cacheBehaviorGroupData(key: String, data: Seq[BehaviorGroupData], expiration: Duration = Duration.Inf): Unit = {
-    set(key, Json.toJson(data), expiration)
-  }
-
-  def getBehaviorGroupData(key: String): Option[Seq[BehaviorGroupData]] = {
-    get[JsValue](key).flatMap { json =>
-      json.validate[Seq[BehaviorGroupData]] match {
-        case JsSuccess(data, jsPath) => Some(data)
-        case JsError(err) => None
-      }
-    }
-  }
-
   private def slackChannelInfoKey(channel: String, teamId: String): String = {
     s"slack-team-$teamId-channel-$channel-info"
   }
@@ -203,6 +190,23 @@ class CacheServiceImpl @Inject() (
     get[JsValue](slackUserDataKey(slackUserId, slackTeamId)).flatMap { json =>
       json.validate[SlackUserData] match {
         case JsSuccess(data, jsPath) => Some(data)
+        case JsError(err) => None
+      }
+    }
+  }
+
+  def cacheBehaviorGroupData(groupVersionId: String, data: BehaviorGroupData): Unit = {
+    set(groupVersionId, Json.toJson(data))
+  }
+
+  def getBehaviorGroupData(groupVersionId: String): Option[BehaviorGroupData] = {
+    println(s"trying to find cached BehaviorGroupData with ID: $groupVersionId")
+    get[JsValue](groupVersionId).flatMap { json =>
+      json.validate[BehaviorGroupData] match {
+        case JsSuccess(data, _) => {
+          println(s"found BehaviorGroupData with ID: ${data.id}")
+          Some(data)
+        }
         case JsError(err) => None
       }
     }

@@ -55,7 +55,7 @@ object ScheduledActionsConfig {
         scheduledActions <- ScheduledActionData.buildForUserTeamAccess(team, teamAccess, dataService, maybeChannelList, maybeSlackUserId)
         behaviorGroups <- dataService.behaviorGroups.allFor(team)
         groupData <- Future.sequence(behaviorGroups.map { group =>
-          BehaviorGroupData.maybeFor(group.id, user, None, dataService)
+          BehaviorGroupData.maybeFor(group.id, user, None, dataService, cacheService)
         }).map(_.flatten.sorted)
       } yield {
         Some(ScheduledActionsConfig(

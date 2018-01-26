@@ -26,10 +26,6 @@ trait CacheService {
 
   def getValidValues(key: String): Option[Seq[ValidValue]]
 
-  def cacheBehaviorGroupData(key: String, data: Seq[BehaviorGroupData], expiration: Duration = Duration.Inf): Unit
-
-  def getBehaviorGroupData(key: String): Option[Seq[BehaviorGroupData]]
-
   def cacheSlackChannelInfo(channel: String, teamId: String, data: Channel): Unit
 
   def getSlackChannelInfo(channel: String, teamId: String): Option[Channel]
@@ -53,4 +49,8 @@ trait CacheService {
   def cacheSlackUserData(userData: SlackUserData): Unit
 
   def getSlackUserData(slackUserId: String, slackTeamId: String): Option[SlackUserData]
+
+  def cacheBehaviorGroupData(groupvVersionId: String, data: BehaviorGroupData): Unit
+
+  def getBehaviorGroupData(groupVersionId: String): Option[BehaviorGroupData]
 }

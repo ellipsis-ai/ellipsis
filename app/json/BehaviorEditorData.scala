@@ -7,7 +7,7 @@ import models.accounts.user.{User, UserTeamAccess}
 import models.behaviors.behaviorparameter.BehaviorParameterType
 import models.team.Team
 import play.api.libs.ws.WSClient
-import services.DataService
+import services.{CacheService, DataService}
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -38,12 +38,13 @@ object BehaviorEditorData {
                     groupId: String,
                     maybeSelectedId: Option[String],
                     dataService: DataService,
+                    cacheService: CacheService,
                     ws: WSClient,
                     assets: RemoteAssets
                   )(implicit ec: ExecutionContext): Future[Option[BehaviorEditorData]] = {
 
     for {
-      maybeGroupData <- BehaviorGroupData.maybeFor(groupId, user, maybeGithubUrl = None, dataService)
+      maybeGroupData <- BehaviorGroupData.maybeFor(groupId, user, maybeGithubUrl = None, dataService, cacheService)
       maybeTeam <- maybeGroupData.map { data =>
         dataService.teams.find(data.teamId, user)
       }.getOrElse(Future.successful(None))
