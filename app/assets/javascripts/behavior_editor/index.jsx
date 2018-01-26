@@ -634,6 +634,18 @@ const BehaviorEditor = React.createClass({
     }
   },
 
+  buildSkillDetailsNotifications: function() {
+    if (this.isExistingGroup() && !this.getBehaviorGroup().name) {
+      return [new NotificationData({
+        kind: "skill_details_warning",
+        type: "no_skill_name",
+        onClick: this.toggleRequestSkillDetails
+      })];
+    } else {
+      return [];
+    }
+  },
+
   buildNotifications: function() {
     return [].concat(
       this.buildEnvVarNotifications(),
@@ -642,7 +654,8 @@ const BehaviorEditor = React.createClass({
       this.buildDataTypeNotifications(),
       this.buildTemplateNotifications(),
       this.buildServerNotifications(),
-      this.buildDeploymentNotifications()
+      this.buildDeploymentNotifications(),
+      this.buildSkillDetailsNotifications()
     );
   },
 
@@ -1101,6 +1114,14 @@ const BehaviorEditor = React.createClass({
 
   toggleSharedAnswerInputSelector: function() {
     this.toggleActivePanel('sharedAnswerInputSelector', true);
+  },
+
+  toggleRequestSkillDetails: function() {
+    this.toggleActivePanel('requestBehaviorGroupDetails', true, () => {
+      if (this.behaviorGroupDetailsPanel) {
+        this.behaviorGroupDetailsPanel.focus();
+      }
+    });
   },
 
   toggleBehaviorSwitcher: function() {
@@ -1605,11 +1626,7 @@ const BehaviorEditor = React.createClass({
         }
       }, this.getBehaviorGroup());
       this.updateGroupStateWith(updatedGroup);
-      this.toggleActivePanel('requestBehaviorGroupDetails', true, () => {
-        if (this.behaviorGroupDetailsPanel) {
-          this.behaviorGroupDetailsPanel.focus();
-        }
-      });
+      this.toggleRequestSkillDetails();
     }
   },
 

@@ -17,6 +17,7 @@ define(function(require) {
     NotificationForInvalidParamInTrigger = require('./invalid_param_in_trigger'),
     NotificationForUnknownParamInTemplate = require('./unknown_param_in_template'),
     NotificationForServerDataWarning = require('./server_data_warning'),
+    NotificationForSkillDetailsWarning = require('./skill_details_warning'),
     NotificationForDeploymentWarning = require('./deployment_warning'),
     NotificationDataGroup = require('../models/notification_data_group');
 
@@ -145,7 +146,15 @@ define(function(require) {
           containerClass: "box-tip",
           icon: this.getTipIcon(),
           message: (
-            <NotificationForDeploymentWarning details={this.props.group.members} />
+            <NotificationForDeploymentWarning details={this.props.group.members}/>
+          )
+        };
+      } else if (kind === "skill_details_warning") {
+        return {
+          containerClass: "box-warning",
+          icon: this.getWarningIcon(),
+          message: (
+            <NotificationForSkillDetailsWarning details={this.props.group.members} />
           )
         };
       } else {

@@ -41,7 +41,7 @@ define(function(require) {
               <div className="column column-page-main">
 
                 <p>
-                  <span>Before you begin, enter a title for this new skill.</span>
+                  <span>Enter a title for this skill.</span>
                 </p>
 
                 <p>
