@@ -3,7 +3,7 @@ package services
 import javax.inject.{Inject, Provider, Singleton}
 
 import json.Formatting._
-import json.{BehaviorGroupData, SlackUserData}
+import json.{ImmutableBehaviorGroupVersionData, SlackUserData}
 import models.accounts.slack.botprofile.SlackBotProfile
 import models.behaviors.behaviorparameter.ValidValue
 import models.behaviors.events._
@@ -195,16 +195,16 @@ class CacheServiceImpl @Inject() (
     }
   }
 
-  def cacheBehaviorGroupData(groupVersionId: String, data: BehaviorGroupData): Unit = {
-    set(groupVersionId, Json.toJson(data))
+  def cacheBehaviorGroupVersionData(data: ImmutableBehaviorGroupVersionData): Unit = {
+    set(data.id, Json.toJson(data))
   }
 
-  def getBehaviorGroupData(groupVersionId: String): Option[BehaviorGroupData] = {
-    println(s"trying to find cached BehaviorGroupData with ID: $groupVersionId")
+  def getBehaviorGroupVersionData(groupVersionId: String): Option[ImmutableBehaviorGroupVersionData] = {
+    println(s"trying to find cached ImmutableBehaviorGroupVersionData with ID: $groupVersionId")
     get[JsValue](groupVersionId).flatMap { json =>
-      json.validate[BehaviorGroupData] match {
+      json.validate[ImmutableBehaviorGroupVersionData] match {
         case JsSuccess(data, _) => {
-          println(s"found BehaviorGroupData with ID: ${data.id}")
+          println(s"found ImmutableBehaviorGroupVersionData with ID: ${data.id}")
           Some(data)
         }
         case JsError(err) => None

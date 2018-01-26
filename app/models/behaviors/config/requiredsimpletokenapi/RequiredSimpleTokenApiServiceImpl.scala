@@ -65,8 +65,16 @@ class RequiredSimpleTokenApiServiceImpl @Inject()(
   }
   val allForQuery = Compiled(uncompiledAllForQuery _)
 
+  def allForIdAction(groupVersionId: String): DBIO[Seq[RequiredSimpleTokenApi]] = {
+    allForQuery(groupVersionId).result.map(r => r.map(tuple2Required))
+  }
+
   def allForAction(groupVersion: BehaviorGroupVersion): DBIO[Seq[RequiredSimpleTokenApi]] = {
-    allForQuery(groupVersion.id).result.map(r => r.map(tuple2Required))
+    allForIdAction(groupVersion.id)
+  }
+
+  def allForId(groupVersionId: String): Future[Seq[RequiredSimpleTokenApi]] = {
+    dataService.run(allForIdAction(groupVersionId))
   }
 
   def allFor(groupVersion: BehaviorGroupVersion): Future[Seq[RequiredSimpleTokenApi]] = {

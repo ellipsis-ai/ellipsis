@@ -17,6 +17,8 @@ trait RequiredAWSConfigService {
 
   def allFor(groupVersion: BehaviorGroupVersion): Future[Seq[RequiredAWSConfig]]
 
+  def allForId(groupVersionId: String): Future[Seq[RequiredAWSConfig]]
+
   def allFor(group: BehaviorGroup): Future[Seq[RequiredAWSConfig]]
 
   def save(requiredConfig: RequiredAWSConfig): Future[RequiredAWSConfig]

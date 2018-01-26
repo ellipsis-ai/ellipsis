@@ -1,6 +1,6 @@
 package services
 
-import json.{BehaviorGroupData, SlackUserData}
+import json.{ImmutableBehaviorGroupVersionData, SlackUserData}
 import models.behaviors.behaviorparameter.ValidValue
 import models.behaviors.events.{Event, SlackMessageEvent}
 import slack.models.{Channel, Group, Im}
@@ -50,7 +50,7 @@ trait CacheService {
 
   def getSlackUserData(slackUserId: String, slackTeamId: String): Option[SlackUserData]
 
-  def cacheBehaviorGroupData(groupvVersionId: String, data: BehaviorGroupData): Unit
+  def cacheBehaviorGroupVersionData(data: ImmutableBehaviorGroupVersionData): Unit
 
-  def getBehaviorGroupData(groupVersionId: String): Option[BehaviorGroupData]
+  def getBehaviorGroupVersionData(groupVersionId: String): Option[ImmutableBehaviorGroupVersionData]
 }

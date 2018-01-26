@@ -128,8 +128,61 @@ case class BehaviorGroupData(
 
 object BehaviorGroupData {
 
-  def buildFor(version: BehaviorGroupVersion, user: User, dataService: DataService, cacheService: CacheService)(implicit ec: ExecutionContext): Future[BehaviorGroupData] = {
-    cacheService.getBehaviorGroupData(version.id).map(Future.successful).getOrElse {
+  def buildForImmutableData(
+                             immutableData: ImmutableBehaviorGroupVersionData,
+                             user: User,
+                             dataService: DataService
+                           )(implicit ec: ExecutionContext): Future[BehaviorGroupData] = {
+    val versionId = immutableData.id
+    for {
+      requiredAWSConfigs <- dataService.requiredAWSConfigs.allForId(versionId)
+      requiredOAuth2ApiConfigs <- dataService.requiredOAuth2ApiConfigs.allForId(versionId)
+      requiredSimpleTokenApis <- dataService.requiredSimpleTokenApis.allForId(versionId)
+      maybeAuthor <- immutableData.authorId.map { authorId =>
+        dataService.users.find(authorId)
+      }.getOrElse(Future.successful(None))
+      maybeTeam <- dataService.teams.find(immutableData.teamId)
+      maybeUserData <- (for {
+        author <- maybeAuthor
+        team <- maybeTeam
+      } yield {
+        dataService.users.userDataFor(author, team).map(Some(_))
+      }).getOrElse(Future.successful(None))
+      maybeDeployment <- dataService.behaviorGroupDeployments.findForBehaviorGroupVersionId(versionId)
+      maybeDeploymentData <- maybeDeployment.map { deployment =>
+        BehaviorGroupDeploymentData.fromDeployment(deployment, dataService).map(Some(_))
+      }.getOrElse(Future.successful(None))
+    } yield {
+      BehaviorGroupData(
+        Some(immutableData.groupId),
+        immutableData.teamId,
+        immutableData.name.filter(_.trim.nonEmpty),
+        immutableData.description,
+        immutableData.icon,
+        immutableData.actionInputs,
+        immutableData.dataTypeInputs,
+        immutableData.behaviorVersions,
+        immutableData.libraryVersions,
+        requiredAWSConfigs.map(RequiredAWSConfigData.from),
+        requiredOAuth2ApiConfigs.map(RequiredOAuth2ApiConfigData.from),
+        requiredSimpleTokenApis.map(RequiredSimpleTokenApiData.from),
+        None,
+        None, // don't include SHA when building new data from existing version
+        immutableData.exportId,
+        immutableData.createdAt,
+        maybeUserData,
+        maybeDeploymentData
+      )
+    }
+  }
+
+  def buildFor(
+                version: BehaviorGroupVersion,
+                user: User,
+                dataService: DataService,
+                cacheService: CacheService
+              )(implicit ec: ExecutionContext): Future[BehaviorGroupData] = {
+    cacheService.getBehaviorGroupVersionData(version.id).map(d => buildForImmutableData(d, user, dataService)).getOrElse {
       for {
         behaviors <- dataService.behaviors.allForGroup(version.group)
         versionsData <- Future.sequence(behaviors.map { ea =>
@@ -175,7 +228,8 @@ object BehaviorGroupData {
           maybeUserData,
           maybeDeploymentData
         )
-        cacheService.cacheBehaviorGroupData(version.id, data)
+        val immutableData = ImmutableBehaviorGroupVersionData.buildFor(version.id, version.group.id, data)
+        cacheService.cacheBehaviorGroupVersionData(immutableData)
         data
       }
     }
