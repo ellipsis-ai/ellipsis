@@ -72,8 +72,16 @@ class RequiredOAuth2ApiConfigServiceImpl @Inject() (
   }
   val allForQuery = Compiled(uncompiledAllForQuery _)
 
+  def allForIdAction(groupVersionId: String): DBIO[Seq[RequiredOAuth2ApiConfig]] = {
+    allForQuery(groupVersionId).result.map(r => r.map(tuple2Required))
+  }
+
   def allForAction(groupVersion: BehaviorGroupVersion): DBIO[Seq[RequiredOAuth2ApiConfig]] = {
-    allForQuery(groupVersion.id).result.map(r => r.map(tuple2Required))
+    allForIdAction(groupVersion.id)
+  }
+
+  def allForId(groupVersionId: String): Future[Seq[RequiredOAuth2ApiConfig]] = {
+    dataService.run(allForIdAction(groupVersionId))
   }
 
   def allFor(groupVersion: BehaviorGroupVersion): Future[Seq[RequiredOAuth2ApiConfig]] = {

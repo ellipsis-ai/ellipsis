@@ -31,6 +31,7 @@ class BehaviorEditorController @Inject() (
                                          ) extends ReAuthable {
 
   val dataService = services.dataService
+  val cacheService = services.cacheService
   val configuration = services.configuration
   val ws = services.ws
 
@@ -57,11 +58,11 @@ class BehaviorEditorController @Inject() (
     val user = request.identity
     render.async {
       case Accepts.JavaScript() => {
-        editorDataResult(BehaviorEditorData.buildForEdit(user, groupId, maybeBehaviorId, dataService, ws, assets), maybeShowVersions)
+        editorDataResult(BehaviorEditorData.buildForEdit(user, groupId, maybeBehaviorId, dataService, cacheService, ws, assets), maybeShowVersions)
       }
       case Accepts.Html() => {
         for {
-          maybeGroupData <- BehaviorGroupData.maybeFor(groupId, user, maybeGithubUrl = None, dataService)
+          maybeGroupData <- BehaviorGroupData.maybeFor(groupId, user, maybeGithubUrl = None, dataService, cacheService)
           maybeTeam <- maybeGroupData.map { data =>
             dataService.teams.find(data.teamId, user)
           }.getOrElse(Future.successful(None))
@@ -169,7 +170,7 @@ class BehaviorEditorController @Inject() (
                 dataService.behaviorGroupVersions.createFor(group, user, dataToUse).map(Some(_))
               }.getOrElse(Future.successful(None))
               maybeGroupData <- maybeGroup.map { group =>
-                BehaviorGroupData.maybeFor(group.id, user, maybeGithubUrl = None, dataService)
+                BehaviorGroupData.maybeFor(group.id, user, maybeGithubUrl = None, dataService, cacheService)
               }.getOrElse(Future.successful(None))
             } yield {
               maybeGroupData.map { groupData =>
@@ -204,7 +205,7 @@ class BehaviorEditorController @Inject() (
       info => {
         for {
           maybeGroup <- dataService.behaviorGroups.find(info.behaviorGroupId, user)
-          maybeGroupData <- BehaviorGroupData.maybeFor(info.behaviorGroupId, user, maybeGithubUrl = None, dataService)
+          maybeGroupData <- BehaviorGroupData.maybeFor(info.behaviorGroupId, user, maybeGithubUrl = None, dataService, cacheService)
           maybeSavedGroupVersion <- (for {
             group <- maybeGroup
             groupData <- maybeGroupData
@@ -212,7 +213,7 @@ class BehaviorEditorController @Inject() (
             dataService.behaviorGroupVersions.createFor(group, user, groupData.copyForNewVersionOf(group)).map(Some(_))
           }).getOrElse(Future.successful(None))
           maybeUpdatedGroupData <- maybeSavedGroupVersion.map { groupVersion =>
-            BehaviorGroupData.buildFor(groupVersion, user, dataService).map(Some(_))
+            BehaviorGroupData.buildFor(groupVersion, user, dataService, cacheService).map(Some(_))
           }.getOrElse(Future.successful(None))
         } yield {
           maybeUpdatedGroupData.map { groupData =>
@@ -271,7 +272,7 @@ class BehaviorEditorController @Inject() (
        dataService.behaviorGroupVersions.batchFor(group)
       }.getOrElse(Future.successful(Seq()))
       // Todo: this can go back to being a regular Future.sequence (in parallel) if we
-      versionsData <- FutureSequencer.sequence(versions, (ea: BehaviorGroupVersion) => BehaviorGroupData.buildFor(ea, user, dataService))
+      versionsData <- FutureSequencer.sequence(versions, (ea: BehaviorGroupVersion) => BehaviorGroupData.buildFor(ea, user, dataService, cacheService))
     } yield {
       Ok(Json.toJson(versionsData))
     }
@@ -504,7 +505,7 @@ class BehaviorEditorController @Inject() (
           maybeExistingGroupData <- maybeBehaviorGroup.map { group =>
             dataService.behaviorGroups.maybeCurrentVersionFor(group).flatMap { maybeCurrentVersion =>
               maybeCurrentVersion.map { currentVersion =>
-                BehaviorGroupData.buildFor(currentVersion, user, dataService).map(Some(_))
+                BehaviorGroupData.buildFor(currentVersion, user, dataService, cacheService).map(Some(_))
               }.getOrElse(Future.successful(None))
             }
           }.getOrElse(Future.successful(None))

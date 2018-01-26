@@ -33,6 +33,7 @@ class ApplicationController @Inject() (
   val configuration = services.configuration
   val dataService = services.dataService
   val lambdaService = services.lambdaService
+  val cacheService = services.cacheService
   val ws = services.ws
 
   def teamHome(id: String, maybeBranch: Option[String] = None) = {
@@ -58,7 +59,7 @@ class ApplicationController @Inject() (
           }.getOrElse(Future.successful(None))
           groupData <- maybeBehaviorGroups.map { groups =>
             Future.sequence(groups.map { group =>
-              BehaviorGroupData.maybeFor(group.id, user, None, dataService)
+              BehaviorGroupData.maybeFor(group.id, user, None, dataService, cacheService)
             }).map(_.flatten.sorted)
           }.getOrElse(Future.successful(Seq()))
         } yield {
@@ -104,7 +105,7 @@ class ApplicationController @Inject() (
         dataService.behaviorGroups.allFor(team)
       }.getOrElse(Future.successful(Seq()))
       alreadyInstalledData <- Future.sequence(alreadyInstalled.map { group =>
-        BehaviorGroupData.maybeFor(group.id, user, None, dataService)
+        BehaviorGroupData.maybeFor(group.id, user, None, dataService, cacheService)
       }).map(_.flatten)
     } yield teamAccess.maybeTargetTeam.map { team =>
       val fetcher = GithubPublishedBehaviorGroupsFetcher(team, maybeBranch, alreadyInstalledData, githubService, services, ec)
@@ -139,7 +140,7 @@ class ApplicationController @Inject() (
             dataService.behaviorGroups.findWithoutAccessCheck(id)
           }).map(_.flatten)
           merged <- dataService.behaviorGroups.merge(groups, user)
-          maybeData <- BehaviorGroupData.maybeFor(merged.id, user, None, dataService)
+          maybeData <- BehaviorGroupData.maybeFor(merged.id, user, None, dataService, cacheService)
         } yield maybeData.map { data =>
           Ok(Json.toJson(data))
         }.getOrElse {
@@ -181,7 +182,7 @@ class ApplicationController @Inject() (
       }
       maybeInstalledGroupData <- maybeInstalledBehaviorGroups.map { groups =>
         val eventualMaybeGroupData = groups.map { group =>
-          BehaviorGroupData.maybeFor(group.id, user, None, dataService)
+          BehaviorGroupData.maybeFor(group.id, user, None, dataService, cacheService)
         }
         Future.sequence(eventualMaybeGroupData).map { maybeGroups =>
           Some(maybeGroups.flatten.sorted)

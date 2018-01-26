@@ -10,7 +10,7 @@ import models.IDs
 import models.accounts.user.User
 import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
 import models.team.Team
-import services.DataService
+import services.{CacheService, DataService}
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -34,10 +34,12 @@ class BehaviorGroupsTable(tag: Tag) extends Table[RawBehaviorGroup](tag, "behavi
 
 class BehaviorGroupServiceImpl @Inject() (
                                           dataServiceProvider: Provider[DataService],
+                                          cacheServiceProvider: Provider[CacheService],
                                           implicit val ec: ExecutionContext
                                         ) extends BehaviorGroupService {
 
   def dataService = dataServiceProvider.get
+  def cacheService = cacheServiceProvider.get
 
   import BehaviorGroupQueries._
 
@@ -124,7 +126,7 @@ class BehaviorGroupServiceImpl @Inject() (
 
     for {
       groupsData <- Future.sequence(groupVersions.map { ea =>
-        BehaviorGroupData.buildFor(ea, user, dataService)
+        BehaviorGroupData.buildFor(ea, user, dataService, cacheService)
       })
       userData <- dataService.users.userDataFor(user, team)
       mergedData <- Future.successful({

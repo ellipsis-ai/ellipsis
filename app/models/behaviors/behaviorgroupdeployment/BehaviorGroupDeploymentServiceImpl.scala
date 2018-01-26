@@ -97,8 +97,16 @@ class BehaviorGroupDeploymentServiceImpl @Inject() (
     dataService.run(action)
   }
 
+  def findForBehaviorGroupVersionIdAction(groupVersionId: String): DBIO[Option[BehaviorGroupDeployment]] = {
+    findForBehaviorGroupVersionQuery(groupVersionId).result.map(_.headOption)
+  }
+
   def findForBehaviorGroupVersionAction(version: BehaviorGroupVersion): DBIO[Option[BehaviorGroupDeployment]] = {
-    findForBehaviorGroupVersionQuery(version.id).result.map(_.headOption)
+    findForBehaviorGroupVersionIdAction(version.id)
+  }
+
+  def findForBehaviorGroupVersionId(groupVersionId: String): Future[Option[BehaviorGroupDeployment]] = {
+    dataService.run(findForBehaviorGroupVersionIdAction(groupVersionId))
   }
 
   def findForBehaviorGroupVersion(version: BehaviorGroupVersion): Future[Option[BehaviorGroupDeployment]] = {

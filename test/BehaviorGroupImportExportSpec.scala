@@ -23,14 +23,14 @@ class BehaviorGroupImportExportSpec extends DBSpec {
 
   def exportAndImport(group: BehaviorGroup, exportUser: User, importUser: User)(implicit ec: ExecutionContext): Unit = {
     val maybeImportTeam = runNow(dataService.teams.find(importUser.teamId))
-    val maybeExporter = runNow(BehaviorGroupExporter.maybeFor(group.id, exportUser, dataService))
+    val maybeExporter = runNow(BehaviorGroupExporter.maybeFor(group.id, exportUser, dataService, cacheService))
     maybeExporter.isDefined mustBe(true)
     val file = maybeExporter.get.getZipFile
 
     // change the existing export ID so it's not a re-install
     runNow(dataService.run(BehaviorGroupQueries.all.filter(_.id === group.id).map(_.maybeExportId).update(Some(IDs.next))))
 
-    val importer = BehaviorGroupZipImporter(maybeImportTeam.get, importUser, file, dataService)
+    val importer = BehaviorGroupZipImporter(maybeImportTeam.get, importUser, file, dataService, cacheService)
     runNow(importer.run)
   }
 

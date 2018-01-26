@@ -3,7 +3,7 @@ package services
 import javax.inject.{Inject, Provider, Singleton}
 
 import json.Formatting._
-import json.{BehaviorGroupData, SlackUserData}
+import json.{ImmutableBehaviorGroupVersionData, SlackUserData}
 import models.accounts.slack.botprofile.SlackBotProfile
 import models.behaviors.behaviorparameter.ValidValue
 import models.behaviors.events._
@@ -88,19 +88,6 @@ class CacheServiceImpl @Inject() (
     get[JsValue](key).flatMap { json =>
       json.validate[Seq[ValidValue]] match {
         case JsSuccess(values, jsPath) => Some(values)
-        case JsError(err) => None
-      }
-    }
-  }
-
-  def cacheBehaviorGroupData(key: String, data: Seq[BehaviorGroupData], expiration: Duration = Duration.Inf): Unit = {
-    set(key, Json.toJson(data), expiration)
-  }
-
-  def getBehaviorGroupData(key: String): Option[Seq[BehaviorGroupData]] = {
-    get[JsValue](key).flatMap { json =>
-      json.validate[Seq[BehaviorGroupData]] match {
-        case JsSuccess(data, jsPath) => Some(data)
         case JsError(err) => None
       }
     }
@@ -204,6 +191,19 @@ class CacheServiceImpl @Inject() (
       json.validate[SlackUserData] match {
         case JsSuccess(data, jsPath) => Some(data)
         case JsError(err) => None
+      }
+    }
+  }
+
+  def cacheBehaviorGroupVersionData(data: ImmutableBehaviorGroupVersionData): Unit = {
+    set(data.id, Json.toJson(data))
+  }
+
+  def getBehaviorGroupVersionData(groupVersionId: String): Option[ImmutableBehaviorGroupVersionData] = {
+    get[JsValue](groupVersionId).flatMap { json =>
+      json.validate[ImmutableBehaviorGroupVersionData] match {
+        case JsSuccess(data, _) => Some(data)
+        case JsError(_) => None
       }
     }
   }

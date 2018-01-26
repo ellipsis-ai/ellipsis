@@ -1,6 +1,6 @@
 package services
 
-import json.{BehaviorGroupData, SlackUserData}
+import json.{ImmutableBehaviorGroupVersionData, SlackUserData}
 import models.behaviors.behaviorparameter.ValidValue
 import models.behaviors.events.{Event, SlackMessageEvent}
 import slack.models.{Channel, Group, Im}
@@ -26,10 +26,6 @@ trait CacheService {
 
   def getValidValues(key: String): Option[Seq[ValidValue]]
 
-  def cacheBehaviorGroupData(key: String, data: Seq[BehaviorGroupData], expiration: Duration = Duration.Inf): Unit
-
-  def getBehaviorGroupData(key: String): Option[Seq[BehaviorGroupData]]
-
   def cacheSlackChannelInfo(channel: String, teamId: String, data: Channel): Unit
 
   def getSlackChannelInfo(channel: String, teamId: String): Option[Channel]
@@ -53,4 +49,8 @@ trait CacheService {
   def cacheSlackUserData(userData: SlackUserData): Unit
 
   def getSlackUserData(slackUserId: String, slackTeamId: String): Option[SlackUserData]
+
+  def cacheBehaviorGroupVersionData(data: ImmutableBehaviorGroupVersionData): Unit
+
+  def getBehaviorGroupVersionData(groupVersionId: String): Option[ImmutableBehaviorGroupVersionData]
 }

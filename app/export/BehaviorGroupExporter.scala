@@ -7,7 +7,7 @@ import json.{BehaviorGroupConfig, BehaviorGroupData, BehaviorVersionData, Librar
 import models.IDs
 import models.accounts.user.User
 import play.api.libs.json.Json
-import services.DataService
+import services.{CacheService, DataService}
 import utils.SafeFileName
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -165,6 +165,7 @@ object BehaviorGroupExporter {
                 groupId: String,
                 user: User,
                 dataService: DataService,
+                cacheService: CacheService,
                 maybeParentPath: Option[String] = None,
                 maybeExportName: Option[String] = None
               )(implicit ec: ExecutionContext): Future[Option[BehaviorGroupExporter]] = {
@@ -173,7 +174,7 @@ object BehaviorGroupExporter {
       maybeGroupVersion <- maybeGroup.map { group =>
         dataService.behaviorGroups.maybeCurrentVersionFor(group)
       }.getOrElse(Future.successful(None))
-      maybeGroupData <- BehaviorGroupData.maybeFor(groupId, user, None, dataService)
+      maybeGroupData <- BehaviorGroupData.maybeFor(groupId, user, None, dataService, cacheService)
       functionMap <- maybeGroupData.map { groupData =>
         Future.sequence(groupData.behaviorVersions.map { ea =>
           ea.maybeFunction(dataService).map { maybeFunction =>

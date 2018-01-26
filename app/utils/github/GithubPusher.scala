@@ -62,6 +62,7 @@ case class GithubPusher(
   val team: Team = behaviorGroup.team
   val config: Configuration = services.configuration
   val dataService: DataService = services.dataService
+  val cacheService: CacheService = services.cacheService
 
   val parentPath: String = s"/tmp/ellipsis-git/${team.id}/${user.id}"
   val exportName: String = behaviorGroup.id
@@ -113,7 +114,7 @@ case class GithubPusher(
 
   private def export: Future[Unit] = {
     for {
-      maybeExporter <- BehaviorGroupExporter.maybeFor(behaviorGroup.id, user, dataService, Some(parentPath), Some(exportName))
+      maybeExporter <- BehaviorGroupExporter.maybeFor(behaviorGroup.id, user, dataService, cacheService, Some(parentPath), Some(exportName))
     } yield {
       maybeExporter.map { exporter =>
         exporter.writeFiles()

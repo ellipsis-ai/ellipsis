@@ -12,13 +12,14 @@ import play.api.Configuration
 import play.api.data.Form
 import play.api.data.Forms._
 import play.api.libs.json._
-import services.{AWSLambdaService, DataService}
+import services.{AWSLambdaService, CacheService, DataService}
 
 import scala.concurrent.{ExecutionContext, Future}
 
 class BehaviorImportExportController @Inject() (
                                                  val silhouette: Silhouette[EllipsisEnv],
                                                  val dataService: DataService,
+                                                 val cacheService: CacheService,
                                                  val lambdaService: AWSLambdaService,
                                                  val configuration: Configuration,
                                                  val assetsProvider: Provider[RemoteAssets],
@@ -26,7 +27,7 @@ class BehaviorImportExportController @Inject() (
                                                ) extends ReAuthable {
 
   def export(id: String) = silhouette.SecuredAction.async { implicit request =>
-    BehaviorGroupExporter.maybeFor(id, request.identity, dataService).map { maybeExporter =>
+    BehaviorGroupExporter.maybeFor(id, request.identity, dataService, cacheService).map { maybeExporter =>
       maybeExporter.map { exporter =>
         Ok.sendFile(exporter.getZipFile)
       }.getOrElse {
@@ -67,7 +68,7 @@ class BehaviorImportExportController @Inject() (
           for {
             maybeTeam <- dataService.teams.find(info.teamId, request.identity)
             maybeImporter <- Future.successful(maybeTeam.map { team =>
-              BehaviorGroupZipImporter(team, request.identity, zipFile.ref.file, dataService)
+              BehaviorGroupZipImporter(team, request.identity, zipFile.ref.file, dataService, cacheService)
             })
             maybeBehaviorGroup <- maybeImporter.map { importer =>
               importer.run
@@ -119,7 +120,7 @@ class BehaviorImportExportController @Inject() (
                 dataService.behaviors.allForGroup(group).map(_.headOption)
               }.getOrElse(Future.successful(None))
               maybeBehaviorGroupData <- maybeBehaviorGroup.map { group =>
-                BehaviorGroupData.maybeFor(group.id, user, None, dataService)
+                BehaviorGroupData.maybeFor(group.id, user, None, dataService, cacheService)
               }.getOrElse(Future.successful(None))
             } yield {
               maybeBehaviorGroupData.map { groupData =>

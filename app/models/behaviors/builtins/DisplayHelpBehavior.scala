@@ -180,7 +180,7 @@ case class DisplayHelpBehavior(
         Future.sequence(groups.map { group =>
           dataService.behaviorGroupDeployments.maybeActiveBehaviorGroupVersionFor(group, event.context, channel).flatMap { maybeGroupVersion =>
             maybeGroupVersion.map { groupVersion =>
-              BehaviorGroupData.buildFor(groupVersion, user, dataService).map(Some(_))
+              BehaviorGroupData.buildFor(groupVersion, user, dataService, cacheService).map(Some(_))
             }.getOrElse(Future.successful(None))
           }
         }).map(_.flatten.sorted)

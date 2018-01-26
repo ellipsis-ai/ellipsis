@@ -41,6 +41,7 @@ class ApplicationControllerSpec extends PlaySpec with MockitoSugar {
         val teamAccess = mock[UserTeamAccess]
 
         when(dataService.users.teamAccessFor(user, Some(team.id))).thenReturn(Future.successful(teamAccess))
+        when(dataService.teams.find(team.id)).thenReturn(Future.successful(Some(team)))
         when(teamAccess.maybeTargetTeam).thenReturn(Some(team))
         when(dataService.behaviorGroups.allFor(team)).thenReturn(Future.successful(Seq(behaviorGroup)))
         when(dataService.behaviorGroups.find(groupId, user)).thenReturn(Future.successful(Some(behaviorGroup)))
@@ -54,12 +55,12 @@ class ApplicationControllerSpec extends PlaySpec with MockitoSugar {
         when(dataService.behaviorVersions.findFor(behavior, behaviorGroupVersion)).thenReturn(Future.successful(Some(behaviorVersion)))
         when(dataService.behaviorParameters.allFor(behaviorVersion)).thenReturn(Future.successful(Seq()))
         when(dataService.messageTriggers.allFor(behaviorVersion)).thenReturn(Future.successful(Seq()))
-        when(dataService.requiredAWSConfigs.allFor(behaviorGroupVersion)).thenReturn(Future.successful(Seq()))
-        when(dataService.requiredOAuth2ApiConfigs.allFor(behaviorGroupVersion)).thenReturn(Future.successful(Seq()))
-        when(dataService.requiredSimpleTokenApis.allFor(behaviorGroupVersion)).thenReturn(Future.successful(Seq()))
+        when(dataService.requiredAWSConfigs.allForId(behaviorGroupVersion.id)).thenReturn(Future.successful(Seq()))
+        when(dataService.requiredOAuth2ApiConfigs.allForId(behaviorGroupVersion.id)).thenReturn(Future.successful(Seq()))
+        when(dataService.requiredSimpleTokenApis.allForId(behaviorGroupVersion.id)).thenReturn(Future.successful(Seq()))
         when(dataService.teamEnvironmentVariables.lookForInCode(anyString)).thenReturn(Seq())
         when(dataService.dataTypeConfigs.maybeFor(behaviorVersion)).thenReturn(Future.successful(None))
-        when(dataService.behaviorGroupDeployments.findForBehaviorGroupVersion(behaviorGroupVersion)).thenReturn(Future.successful(None))
+        when(dataService.behaviorGroupDeployments.findForBehaviorGroupVersionId(behaviorGroupVersion.id)).thenReturn(Future.successful(None))
         when(githubService.execute(anyString, any[JsValue])).thenReturn {
           Future.successful {
             Json.parse(

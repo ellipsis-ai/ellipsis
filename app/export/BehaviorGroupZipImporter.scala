@@ -10,7 +10,7 @@ import models.accounts.user.User
 import models.behaviors.behaviorgroup.BehaviorGroup
 import models.team.Team
 import play.api.libs.json.{JsError, JsSuccess, Json}
-import services.DataService
+import services.{CacheService, DataService}
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.matching.Regex
@@ -19,7 +19,8 @@ case class BehaviorGroupZipImporter(
                                      team: Team,
                                      user: User,
                                      zipFile: File,
-                                     dataService: DataService
+                                     dataService: DataService,
+                                     cacheService: CacheService
                                    ) {
 
   protected def readDataFrom(zipInputStream: ZipInputStream): String = {
@@ -125,7 +126,7 @@ case class BehaviorGroupZipImporter(
     for {
       alreadyInstalled <- dataService.behaviorGroups.allFor(team)
       alreadyInstalledData <- Future.sequence(alreadyInstalled.map { group =>
-        BehaviorGroupData.maybeFor(group.id, user, None, dataService)
+        BehaviorGroupData.maybeFor(group.id, user, None, dataService, cacheService)
       }).map(_.flatten)
       maybeExistingGroupData <- Future.successful(alreadyInstalledData.find(_.exportId == maybeExportId))
       userData <- dataService.users.userDataFor(user, team)
