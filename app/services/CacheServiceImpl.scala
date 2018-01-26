@@ -200,14 +200,10 @@ class CacheServiceImpl @Inject() (
   }
 
   def getBehaviorGroupVersionData(groupVersionId: String): Option[ImmutableBehaviorGroupVersionData] = {
-    println(s"trying to find cached ImmutableBehaviorGroupVersionData with ID: $groupVersionId")
     get[JsValue](groupVersionId).flatMap { json =>
       json.validate[ImmutableBehaviorGroupVersionData] match {
-        case JsSuccess(data, _) => {
-          println(s"found ImmutableBehaviorGroupVersionData with ID: ${data.id}")
-          Some(data)
-        }
-        case JsError(err) => None
+        case JsSuccess(data, _) => Some(data)
+        case JsError(_) => None
       }
     }
   }
