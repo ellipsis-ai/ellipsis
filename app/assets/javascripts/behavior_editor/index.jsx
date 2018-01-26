@@ -2354,7 +2354,7 @@ const BehaviorEditor = React.createClass({
                   savedAnswers={this.props.savedAnswers}
                   onToggleSavedAnswer={this.toggleSavedAnswerEditor}
                   onToggleInputHelp={this.toggleUserInputHelp}
-                  helpInputVisible={this.props.activePanelName === 'helpForBehaviorCode'}
+                  helpInputVisible={this.props.activePanelName === 'helpForUserInput'}
                 />
 
                 <hr className="man rule-subtle" />
