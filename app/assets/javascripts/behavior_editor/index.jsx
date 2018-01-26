@@ -2320,7 +2320,6 @@ const BehaviorEditor = React.createClass({
                 <hr className="mtn mbn rule-subtle" />
 
                 <TriggerConfiguration
-                  isFinishedBehavior={this.isFinishedBehavior()}
                   triggers={this.getBehaviorTriggers()}
                   inputNames={this.getInputs().map((ea) => ea.name)}
                   onToggleHelp={this.toggleTriggerHelp}
@@ -2346,8 +2345,6 @@ const BehaviorEditor = React.createClass({
                   userInputs={this.getInputs()}
                   paramTypes={this.getParamTypes()}
                   triggers={this.getBehaviorTriggers()}
-                  isFinishedBehavior={this.isFinishedBehavior()}
-                  behaviorHasCode={this.getFunctionBody().length > 0}
                   hasSharedAnswers={this.getOtherSavedInputsInGroup().length > 0}
                   otherBehaviorsInGroup={this.otherBehaviorsInGroup()}
                   onToggleSharedAnswer={this.toggleSharedAnswerInputSelector}

@@ -5,7 +5,6 @@ define(function(require) {
     SVGSwap = require('../svg/swap'),
     SectionHeading = require('../shared_ui/section_heading'),
     UserInputDefinition = require('./user_input_definition'),
-    Checklist = require('./checklist'),
     BehaviorVersion = require('../models/behavior_version'),
     Input = require('../models/input'),
     ParamType = require('../models/param_type'),
@@ -23,8 +22,6 @@ define(function(require) {
       userInputs: React.PropTypes.arrayOf(React.PropTypes.instanceOf(Input)).isRequired,
       paramTypes: React.PropTypes.arrayOf(React.PropTypes.instanceOf(ParamType)).isRequired,
       triggers: React.PropTypes.arrayOf(React.PropTypes.instanceOf(Trigger)).isRequired,
-      isFinishedBehavior: React.PropTypes.bool.isRequired,
-      behaviorHasCode: React.PropTypes.bool.isRequired,
       hasSharedAnswers: React.PropTypes.bool.isRequired,
       otherBehaviorsInGroup: React.PropTypes.arrayOf(React.PropTypes.instanceOf(BehaviorVersion)).isRequired,
       onToggleSharedAnswer: React.PropTypes.func.isRequired,
@@ -80,30 +77,16 @@ define(function(require) {
       return this.props.triggers.filter((trigger) => trigger.usesInputName(inputName) || trigger.capturesInputIndex(inputIndex)).length;
     },
 
-    hasLinkedTriggers: function() {
-      return this.props.userInputs.some(ea => {
-        return this.props.triggers.some(trigger => trigger.usesInputName(ea.name));
-      });
-    },
-
-    hasRegexCapturingTriggers: function() {
-      return this.props.triggers.some((trigger) => trigger.hasRegexCapturingParens());
-    },
-
-    hasRegexTriggers: function() {
-      return this.props.triggers.some((trigger) => trigger.isRegex);
-    },
-
     getSavedAnswersFor: function(inputId) {
       return this.props.savedAnswers.find((answers) => answers.inputId === inputId);
     },
 
     renderReuseInput: function(optionalProperties) {
-      var props = Object.assign({}, optionalProperties);
+      var buttonProps = Object.assign({}, optionalProperties);
       if (this.props.hasSharedAnswers) {
         return (
           <Button
-            className={"button-s " + (props.className || "")}
+            className={"button-s " + (buttonProps.className || "")}
             onClick={this.props.onToggleSharedAnswer}
           >
             Use a saved answer from another action…
@@ -136,22 +119,6 @@ define(function(require) {
                       <HelpButton onClick={this.props.onToggleInputHelp} toggled={this.props.helpInputVisible} />
                     </span>
                   </SectionHeading>
-                  <div>
-                    <Checklist disabledWhen={this.props.isFinishedBehavior}>
-                      <Checklist.Item hiddenWhen={this.props.isFinishedBehavior} checkedWhen={this.props.behaviorHasCode}>
-                        <span>If the action runs code, each input will be sent to the function as a parameter </span>
-                        <span>with the same name.</span>
-                      </Checklist.Item>
-                      <Checklist.Item hiddenWhen={this.props.isFinishedBehavior} checkedWhen={this.hasLinkedTriggers()}>
-                        <span>User input can also come from triggers that include matching fill-in-the-blank </span>
-                        <code>{"{labels}"}</code>
-                      </Checklist.Item>
-                      <Checklist.Item hiddenWhen={this.props.isFinishedBehavior || !this.hasRegexTriggers()} checkedWhen={this.hasRegexCapturingTriggers()}>
-                        <span>Regex triggers will send text captured in parentheses in the same order as </span>
-                        <span>the inputs are defined.</span>
-                      </Checklist.Item>
-                    </Checklist>
-                  </div>
                   <div className="mbm">
                     {this.props.userInputs.map((input, inputIndex) => (
                       <div key={`userInput${inputIndex}`}>

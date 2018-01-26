@@ -1,6 +1,5 @@
 define(function(require) {
   var React = require('react'),
-    Checklist = require('./checklist'),
     HelpButton = require('../help/help_button'),
     Formatter = require('../lib/formatter'),
     Notifications = require('../notifications/notifications'),
@@ -11,7 +10,6 @@ define(function(require) {
 
   return React.createClass({
     propTypes: {
-      isFinishedBehavior: React.PropTypes.bool.isRequired,
       triggers: React.PropTypes.arrayOf(React.PropTypes.instanceOf(Trigger)).isRequired,
       inputNames: React.PropTypes.arrayOf(React.PropTypes.string).isRequired,
       onToggleHelp: React.PropTypes.func.isRequired,
@@ -22,10 +20,6 @@ define(function(require) {
       onTriggerDropdownToggle: React.PropTypes.func.isRequired,
       onAddNewInput: React.PropTypes.func.isRequired,
       openDropdownName: React.PropTypes.string.isRequired
-    },
-
-    hasMultipleTriggers: function() {
-      return this.props.triggers.length > 1;
     },
 
     hasPrimaryTrigger: function() {
@@ -101,13 +95,6 @@ define(function(require) {
                 </span>
               </span>
             </SectionHeading>
-            <div>
-              <Checklist disabledWhen={this.props.isFinishedBehavior}>
-                <Checklist.Item checkedWhen={this.hasPrimaryTrigger()} hiddenWhen={this.props.isFinishedBehavior}>
-                  Write a question or phrase people should use to trigger a response.
-                </Checklist.Item>
-              </Checklist>
-            </div>
             <div className="mbm">
               {this.props.triggers.map(function(trigger, index) {
                 const notifications = this.getNotificationsFor(trigger);
@@ -119,7 +106,6 @@ define(function(require) {
                       id={`trigger${index}`}
                       ref={`trigger${index}`}
                       trigger={trigger}
-                      hideDelete={!this.hasMultipleTriggers()}
                       onChange={this.changeTrigger.bind(this, index)}
                       onDelete={this.deleteTrigger.bind(this, index)}
                       onEnterKey={this.onTriggerEnterKey.bind(this, index)}
@@ -137,7 +123,7 @@ define(function(require) {
                 );
               }, this)}
               <div className="mtm">
-                <button type="button" className="button-s" onClick={this.addTrigger}>Add another trigger</button>
+                <button type="button" className="button-s" onClick={this.addTrigger}>Add a trigger</button>
               </div>
             </div>
           </div>
