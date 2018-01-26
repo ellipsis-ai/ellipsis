@@ -28,10 +28,6 @@ class MockCacheService extends CacheService with MockitoSugar {
 
   def getValidValues(key: String): Option[Seq[ValidValue]] = None
 
-  def cacheBehaviorGroupData(key: String, data: Seq[BehaviorGroupData], expiration: Duration = Duration.Inf): Unit = {}
-
-  def getBehaviorGroupData(key: String): Option[Seq[BehaviorGroupData]] = None
-
   def cacheSlackChannelInfo(channel: String, teamId: String, data: Channel): Unit = {}
 
   def getSlackChannelInfo(channel: String, teamId: String): Option[Channel] = None
@@ -55,5 +51,9 @@ class MockCacheService extends CacheService with MockitoSugar {
   def cacheSlackUserData(userData: SlackUserData): Unit = {}
 
   def getSlackUserData(userId: String, slackTeamId: String): Option[SlackUserData] = None
+
+  def cacheBehaviorGroupData(groupvVersionId: String, data: BehaviorGroupData): Unit = {}
+
+  def getBehaviorGroupData(groupVersionId: String): Option[BehaviorGroupData] = None
 
 }
