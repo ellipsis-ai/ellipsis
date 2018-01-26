@@ -1,11 +1,9 @@
 define(function(require) {
 var React = require('react'),
-  CSS = require('../lib/css'),
   SVGXIcon = require('../svg/x');
 
 return React.createClass({
   propTypes: {
-    hidden: React.PropTypes.bool,
     onClick: React.PropTypes.func.isRequired,
     title: React.PropTypes.string
   },
@@ -18,7 +16,7 @@ return React.createClass({
     return (
       <span className="type-weak"><button type="button"
         ref="button"
-        className={"button-subtle button-symbol" + CSS.visibleWhen(!this.props.hidden)}
+        className="button-subtle button-symbol"
         onClick={this.onClick}
         title={this.props.title || "Delete"}
       >

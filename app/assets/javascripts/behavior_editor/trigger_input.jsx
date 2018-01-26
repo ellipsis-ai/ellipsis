@@ -14,7 +14,6 @@ return React.createClass({
     trigger: React.PropTypes.instanceOf(Trigger).isRequired,
     dropdownIsOpen: React.PropTypes.bool.isRequired,
     helpVisible: React.PropTypes.bool.isRequired,
-    hideDelete: React.PropTypes.bool.isRequired,
     id: React.PropTypes.oneOfType([
       React.PropTypes.number,
       React.PropTypes.string
@@ -228,7 +227,7 @@ return React.createClass({
           </ToggleGroup>
         </div>
         <div className="column column-shrink align-t">
-          <DeleteButton onClick={this.props.onDelete} hidden={this.props.hideDelete} />
+          <DeleteButton onClick={this.props.onDelete} />
         </div>
       </div>
       </div>
