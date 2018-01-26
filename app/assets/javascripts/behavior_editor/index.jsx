@@ -57,6 +57,7 @@ var React = require('react'),
   TriggerHelp = require('./trigger_help'),
   UniqueBy = require('../lib/unique_by'),
   UserInputConfiguration = require('./user_input_configuration'),
+  UserInputHelp = require('./user_input_help'),
   VersionBrowser = require('./versions/version_browser'),
   SVGWarning = require('../svg/warning'),
   Collapsible = require('../shared_ui/collapsible'),
@@ -652,15 +653,6 @@ const BehaviorEditor = React.createClass({
     return this.state.versions;
   },
 
-  getResponseTemplateSectionNumber: function() {
-    var hasInputs = this.hasInputs();
-    if (hasInputs) {
-      return "4";
-    } else {
-      return "3";
-    }
-  },
-
   getParamTypes: function() {
     var customTypes = Sort.arrayAlphabeticalBy(this.getBehaviorGroup().getCustomParamTypes(), (ea) => ea.name);
     return this.props.builtinParamTypes.concat(customTypes);
@@ -1169,6 +1161,10 @@ const BehaviorEditor = React.createClass({
     }
   },
 
+  toggleUserInputHelp: function() {
+    this.toggleActivePanel('helpForUserInput');
+  },
+
   toggleTriggerHelp: function() {
     this.toggleActivePanel('helpForTriggerParameters');
   },
@@ -1367,10 +1363,6 @@ const BehaviorEditor = React.createClass({
 
   getNodeModuleVersions: function() {
     return this.state.nodeModuleVersions || [];
-  },
-
-  hasInputs: function() {
-    return this.getInputs() && this.getInputs().length > 0;
   },
 
   hasInputNamed: function(name) {
@@ -1843,6 +1835,10 @@ const BehaviorEditor = React.createClass({
 
           <Collapsible revealWhen={this.props.activePanelName === 'helpForTriggerParameters'} onChange={this.layoutDidUpdate}>
             <TriggerHelp onCollapseClick={this.props.onClearActivePanel} />
+          </Collapsible>
+
+          <Collapsible revealWhen={this.props.activePanelName === 'helpForUserInput'} onChange={this.layoutDidUpdate}>
+            <UserInputHelp onCollapseClick={this.props.onClearActivePanel} />
           </Collapsible>
 
           <Collapsible revealWhen={this.props.activePanelName === 'helpForBehaviorCode'} onChange={this.layoutDidUpdate}>
@@ -2357,14 +2353,15 @@ const BehaviorEditor = React.createClass({
                   onToggleSharedAnswer={this.toggleSharedAnswerInputSelector}
                   savedAnswers={this.props.savedAnswers}
                   onToggleSavedAnswer={this.toggleSavedAnswerEditor}
-                  animationDisabled={this.animationIsDisabled()}
+                  onToggleInputHelp={this.toggleUserInputHelp}
+                  helpInputVisible={this.props.activePanelName === 'helpForUserInput'}
                 />
 
                 <hr className="man rule-subtle" />
 
                 <div>
                   {this.renderCodeEditor({
-                    sectionNumber: this.hasInputs() ? "3" : "2",
+                    sectionNumber: "3",
                     codeHelpPanelName: 'helpForBehaviorCode'
                   })}
 
@@ -2381,7 +2378,7 @@ const BehaviorEditor = React.createClass({
                   onCursorChange={this.ensureCursorVisible}
                   onToggleHelp={this.toggleResponseTemplateHelp}
                   helpVisible={this.props.activePanelName === 'helpForResponseTemplate'}
-                  sectionNumber={this.getResponseTemplateSectionNumber()}
+                  sectionNumber={"4"}
                 />
 
       </div>
