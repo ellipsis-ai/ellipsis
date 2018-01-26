@@ -5,6 +5,7 @@ var React = require('react'),
   BehaviorGroup = require('../models/behavior_group'),
   BehaviorGroupSaveInfo = require('./behavior_group_save_info'),
   BehaviorGroupVersionMetaData = require('../models/behavior_group_version_meta_data'),
+  BehaviorGroupDetailsPanel = require('./behavior_group_details_panel'),
   BehaviorGroupEditor = require('./behavior_group_editor'),
   BehaviorVersion = require('../models/behavior_version'),
   BehaviorSwitcher = require('./behavior_switcher'),
@@ -1604,6 +1605,11 @@ const BehaviorEditor = React.createClass({
         }
       }, this.getBehaviorGroup());
       this.updateGroupStateWith(updatedGroup);
+      this.toggleActivePanel('requestBehaviorGroupDetails', true, () => {
+        if (this.behaviorGroupDetailsPanel) {
+          this.behaviorGroupDetailsPanel.focus();
+        }
+      });
     }
   },
 
@@ -1788,6 +1794,17 @@ const BehaviorEditor = React.createClass({
               </Collapsible>
             </div>
           ) : null}
+
+          <Collapsible revealWhen={this.props.activePanelName === 'requestBehaviorGroupDetails'}>
+            <BehaviorGroupDetailsPanel
+              ref={(el) => this.behaviorGroupDetailsPanel = el}
+              group={this.getBehaviorGroup()}
+              onBehaviorGroupNameChange={this.onBehaviorGroupNameChange}
+              onBehaviorGroupDescriptionChange={this.onBehaviorGroupDescriptionChange}
+              onBehaviorGroupIconChange={this.onBehaviorGroupIconChange}
+              onDone={this.props.onClearActivePanel}
+            />
+          </Collapsible>
 
           <Collapsible ref={this.CONFIGURE_API_NAME}
             revealWhen={this.props.activePanelName === this.CONFIGURE_API_NAME}
