@@ -344,12 +344,12 @@ define(function(require) {
     getTextChangeType(): string {
       const hasAddedParts = this.unifiedLines.some((line) => line.some((part) => part.isAdded()));
       const hasRemovedParts = this.unifiedLines.some((line) => line.some((part) => part.isRemoved()));
-      if (hasAddedParts && hasRemovedParts) {
-        return "changed";
-      } else if (hasAddedParts) {
+      if (hasAddedParts && this.original.length === 0) {
         return "added";
-      } else if (hasRemovedParts) {
+      } else if (hasRemovedParts && this.modified.length === 0) {
         return "removed";
+      } else if (hasAddedParts || hasRemovedParts) {
+        return "changed";
       } else {
         return "unchanged";
       }
