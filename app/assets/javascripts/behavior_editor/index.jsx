@@ -730,6 +730,36 @@ const BehaviorEditor = React.createClass({
     this.toggleActivePanel('confirmUndo', true);
   },
 
+  confirmRevert: function(newBehaviorGroup, newBehaviorGroupTitle) {
+    this.setState({
+      revertToVersion: newBehaviorGroup,
+      revertToVersionTitle: newBehaviorGroupTitle
+    }, this.toggleConfirmRevert);
+  },
+
+  doRevert: function() {
+    if (this.state.revertToVersion) {
+      const newGroup = this.state.revertToVersion;
+      this.setState({
+        revertToVersion: null,
+        revertToVersionTitle: null
+      }, () => {
+        this.onReplaceBehaviorGroup(newGroup);
+      });
+    }
+  },
+
+  toggleConfirmRevert: function() {
+    this.toggleActivePanel('confirmRevert', true, () => {
+      if (this.props.activePanelName !== 'confirmRevert') {
+        this.setState({
+          revertToVersion: null,
+          revertToVersionTitle: null
+        });
+      }
+    });
+  },
+
   deleteEditable: function() {
     this.props.onClearActivePanel();
     const group = this.getBehaviorGroup();
@@ -986,14 +1016,14 @@ const BehaviorEditor = React.createClass({
     });
   },
 
-  onReplaceBehaviorGroup: function(newBehaviorGroup, optionalCallback) {
+  onReplaceBehaviorGroup: function(newBehaviorGroup) {
     const newState = {
       group: newBehaviorGroup
     };
     if (!newBehaviorGroup.hasBehaviorVersionWithId(this.getSelectedId())) {
       newState.selectedId = null;
     }
-    this.setState(newState, () => this.onSaveBehaviorGroup(optionalCallback));
+    this.setState(newState, this.onSaveBehaviorGroup);
   },
 
   setEditableProp: function(key, value, callback) {
@@ -1712,7 +1742,9 @@ const BehaviorEditor = React.createClass({
       selectedApiConfigId: null,
       newerVersionOnServer: null,
       errorReachingServer: null,
-      versionBrowserOpen: false
+      versionBrowserOpen: false,
+      revertToVersion: null,
+      revertToVersionTitle: null
     };
   },
 
@@ -1779,6 +1811,27 @@ const BehaviorEditor = React.createClass({
   confirmDeleteText: function() {
     const selected = this.getSelected();
     return selected ? selected.confirmDeleteText() : "";
+  },
+
+  confirmRevertText: function() {
+    const versionText = this.state.revertToVersion && this.state.revertToVersionTitle ? (
+      <p>
+        <span>Are you sure you want to switch to the </span>
+        <span>{this.state.revertToVersionTitle}?</span>
+      </p>
+    ) : (
+      <p>Are you sure you want to switch versions?</p>
+    );
+    return (
+      <div>
+        {versionText}
+        {this.isModified() ? (
+          <p>The changes you’ve made since last saving will be lost.</p>
+        ) : (
+          <p>The current version will be replaced, but it will still be available later if you need it.</p>
+        )}
+      </div>
+    );
   },
 
   toggleApiAdderDropdown: function() {
@@ -1852,6 +1905,12 @@ const BehaviorEditor = React.createClass({
           <Collapsible ref="confirmUndo" revealWhen={this.props.activePanelName === 'confirmUndo'} onChange={this.layoutDidUpdate}>
             <ConfirmActionPanel confirmText="Undo changes" onConfirmClick={this.undoChanges} onCancelClick={this.toggleConfirmUndo}>
               <p>This will undo any changes you’ve made since last saving. Are you sure you want to do this?</p>
+            </ConfirmActionPanel>
+          </Collapsible>
+
+          <Collapsible ref="confirmDeleteEditable" revealWhen={this.props.activePanelName === 'confirmRevert'} onChange={this.layoutDidUpdate}>
+            <ConfirmActionPanel confirmText="Switch versions" onConfirmClick={this.doRevert} onCancelClick={this.toggleConfirmRevert}>
+              {this.confirmRevertText()}
             </ConfirmActionPanel>
           </Collapsible>
 
@@ -2563,7 +2622,7 @@ const BehaviorEditor = React.createClass({
         currentUserId={this.props.userId}
         currentSelectedId={this.getSelectedId()}
         versions={this.getVersions()}
-        onRestoreVersionClick={this.onReplaceBehaviorGroup}
+        onRestoreVersionClick={this.confirmRevert}
         onUndoChanges={this.toggleConfirmUndo}
         onClearActivePanel={this.props.onClearActivePanel}
         editableIsModified={this.editableIsModified}
