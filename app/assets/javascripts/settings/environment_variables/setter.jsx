@@ -104,10 +104,6 @@ define(function(require) {
       }
     },
 
-    focusOnVarIndex: function(index) {
-      this.refs['envVarValue' + index].focus();
-    },
-
     cancelShouldBeDisabled: function() {
       return !this.props.onCancelClick && !this.hasChanges();
     },

@@ -1,12 +1,13 @@
 // @flow
-import type {Node} from 'react';
+import type {Node, ElementType} from 'react';
 export type PageRequiredProps = {
   activePanelName: string,
   activePanelIsModal: boolean,
   onToggleActivePanel: (name: string, beModal?: boolean, optionalCallback?: () => void) => void,
   onClearActivePanel: (optionalCallback?: () => void) => void,
   onRenderFooter: (content: Node, footerClassName?: string) => Node,
-  footerHeight: number
+  footerHeight: number,
+  onRenderPanel: (panelName: string, panel: ElementType) => void
 };
 
 define(function(require) {
@@ -36,8 +37,11 @@ define(function(require) {
   }
 
   class Page extends React.Component<Props, State> {
+    props: Props;
+    state: State;
+    panels: { [string]: ?ElementType };
 
-    constructor(props) {
+    constructor(props: Props) {
       super(props);
       autobind(this);
       this.state = this.getDefaultState();
@@ -76,6 +80,12 @@ define(function(require) {
       this.setState(this.getDefaultState(), callback);
     }
 
+    onRenderPanel(panelName: string, panel: ElementType): void {
+      const newPanel = {};
+      newPanel[panelName] = panel;
+      this.panels = Object.assign({}, this.panels, newPanel);
+    }
+
     handleEscKey(): void {
       if (this.state.activePanelName) {
         this.clearActivePanel();
@@ -106,11 +116,9 @@ define(function(require) {
     }
 
     getActiveModalElement(): any {
-      if (this.state.activePanelName && this.state.activePanelIsModal) {
-        return ReactDOM.findDOMNode(this.component.refs[this.state.activePanelName]);
-      } else {
-        return null;
-      }
+      const panel = this.state.activePanelName && this.state.activePanelIsModal ?
+        this.panels[this.state.activePanelName] : null;
+      return panel ? ReactDOM.findDOMNode(panel) : null;
     }
 
     focusOnPrimaryOrFirstPossibleElement(parentElement: any): void {
@@ -186,6 +194,7 @@ define(function(require) {
             onToggleActivePanel: this.toggleActivePanel,
             onClearActivePanel: this.clearActivePanel,
             onRenderFooter: this.onRenderFooter,
+            onRenderPanel: this.onRenderPanel,
             footerHeight: this.getFooterHeight(),
             ref: (component) => this.component = component
           }))}

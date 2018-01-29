@@ -145,7 +145,6 @@ define(function(require) {
     paramTypes: React.PropTypes.arrayOf(React.PropTypes.instanceOf(ParamType)).isRequired,
     onChange: React.PropTypes.func.isRequired,
     onDelete: React.PropTypes.func.isRequired,
-    shouldGrabFocus: React.PropTypes.bool,
     onConfigureType: React.PropTypes.func.isRequired
   };
 

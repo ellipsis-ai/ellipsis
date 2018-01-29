@@ -46,10 +46,6 @@ define(function(require) {
       return this.hasNameAndValue() && !this.nameIsDuplicate();
     },
 
-    focusOnVarName: function() {
-      this.refs['envVarName'].focus();
-    },
-
     onCancel: function() {
       this.reset();
       this.props.onCancelClick();
@@ -116,19 +112,17 @@ define(function(require) {
     getNameInput: function() {
       return (
         <Input
-          ref={"envVarName"}
           className="form-input-left"
           placeholder="Enter name"
           value={this.getName() || ""}
           onChange={this.onChangeVarName}
-          />
+        />
       );
     },
 
     getValueInput: function() {
       return (
         <Textarea
-          ref={"envVarValue"}
           className="form-input-right"
           placeholder="Enter value"
           value={this.getValue() || ""}
