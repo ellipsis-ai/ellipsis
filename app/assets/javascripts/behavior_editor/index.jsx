@@ -730,9 +730,10 @@ const BehaviorEditor = React.createClass({
     this.toggleActivePanel('confirmUndo', true);
   },
 
-  confirmRevert: function(newBehaviorGroup) {
+  confirmRevert: function(newBehaviorGroup, newBehaviorGroupTitle) {
     this.setState({
-      revertToVersion: newBehaviorGroup
+      revertToVersion: newBehaviorGroup,
+      revertToVersionTitle: newBehaviorGroupTitle
     }, this.toggleConfirmRevert);
   },
 
@@ -740,7 +741,8 @@ const BehaviorEditor = React.createClass({
     if (this.state.revertToVersion) {
       const newGroup = this.state.revertToVersion;
       this.setState({
-        revertToVersion: null
+        revertToVersion: null,
+        revertToVersionTitle: null
       }, () => {
         this.onReplaceBehaviorGroup(newGroup);
       });
@@ -751,7 +753,8 @@ const BehaviorEditor = React.createClass({
     this.toggleActivePanel('confirmRevert', true, () => {
       if (this.props.activePanelName !== 'confirmRevert') {
         this.setState({
-          revertToVersion: null
+          revertToVersion: null,
+          revertToVersionTitle: null
         });
       }
     });
@@ -1740,7 +1743,8 @@ const BehaviorEditor = React.createClass({
       newerVersionOnServer: null,
       errorReachingServer: null,
       versionBrowserOpen: false,
-      revertToVersion: null
+      revertToVersion: null,
+      revertToVersionTitle: null
     };
   },
 
@@ -1810,13 +1814,24 @@ const BehaviorEditor = React.createClass({
   },
 
   confirmRevertText: function() {
-    const versionText = this.state.revertToVersion ?
-      `Are you sure you want to revert to the version dated ${Formatter.formatTimestampShort(this.state.revertToVersion.createdAt)}?` : "Are you sure?";
-    if (this.isModified()) {
-      return `The changes you’ve made since the last save will be lost. ${versionText}?`;
-    } else {
-      return `${versionText} (The current version will be replaced, but it will still be available later if you need it.)`;
-    }
+    const versionText = this.state.revertToVersion && this.state.revertToVersionTitle ? (
+      <p>
+        <span>Are you sure you want to switch to the </span>
+        <span>{this.state.revertToVersionTitle}?</span>
+      </p>
+    ) : (
+      <p>Are you sure you want to switch versions?</p>
+    );
+    return (
+      <div>
+        {versionText}
+        {this.isModified() ? (
+          <p>The changes you’ve made since last saving will be lost.</p>
+        ) : (
+          <p>The current version will be replaced, but it will still be available later if you need it.</p>
+        )}
+      </div>
+    );
   },
 
   toggleApiAdderDropdown: function() {
@@ -1894,8 +1909,8 @@ const BehaviorEditor = React.createClass({
           </Collapsible>
 
           <Collapsible ref="confirmDeleteEditable" revealWhen={this.props.activePanelName === 'confirmRevert'} onChange={this.layoutDidUpdate}>
-            <ConfirmActionPanel confirmText="Revert" onConfirmClick={this.doRevert} onCancelClick={this.toggleConfirmRevert}>
-              <p>{this.confirmRevertText()}</p>
+            <ConfirmActionPanel confirmText="Switch versions" onConfirmClick={this.doRevert} onCancelClick={this.toggleConfirmRevert}>
+              {this.confirmRevertText()}
             </ConfirmActionPanel>
           </Collapsible>
 

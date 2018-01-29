@@ -36,7 +36,7 @@ define(function(require: (string) => *): React.ElementType {
     versions: Array<BehaviorGroup>,
     onClearActivePanel: () => void,
     onUndoChanges: () => void,
-    onRestoreVersionClick: (version: BehaviorGroup) => void,
+    onRestoreVersionClick: (version: BehaviorGroup, title: Node) => void,
     isLinkedToGithub: boolean,
     linkedGithubRepo?: LinkedGithubRepo,
     onLinkGithubRepo: (string, string, () => void) => void,
@@ -368,7 +368,8 @@ define(function(require: (string) => *): React.ElementType {
       if (selected && this.latestVersionIsSelected() && this.props.currentGroupIsModified) {
         this.props.onUndoChanges();
       } else if (selected) {
-        this.props.onRestoreVersionClick(selected);
+        const title = this.shortNameForVersion(selected);
+        this.props.onRestoreVersionClick(selected, title);
       }
     }
 
