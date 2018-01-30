@@ -45,7 +45,7 @@ define(function(require: (string) => *): React.ElementType {
     isLinkedToGithub: boolean,
     linkedGithubRepo?: LinkedGithubRepo,
     onLinkGithubRepo: (owner: string, repo: string, branch: ?string, callback: () => void) => void,
-    onUpdateFromGithub: (owner: string, repo: string, branch: string, callback: ({}) => void, onError: (GithubFetchError) => void) => void,
+    onUpdateFromGithub: (owner: string, repo: string, branch: string, callback: ({ data: {} }) => void, onError: (branch: string, error?: GithubFetchError) => void) => void,
     onSaveChanges: () => void
   };
 
@@ -132,20 +132,17 @@ define(function(require: (string) => *): React.ElementType {
         const owner = linked.getOwner();
         const repo = linked.getRepo();
         const branch = this.getBranch();
+        const onUpdateCallback = (json) => this.setState({
+          isFetching: false,
+          lastFetched: new Date(),
+          githubVersion: BehaviorGroup.fromJson(json.data)
+        });
         this.setState({
           isFetching: true,
           error: null
-        }, () =>
-          this.props.onUpdateFromGithub(
-            owner,
-            repo,
-            branch,
-            (json) => this.setState({
-              isFetching: false,
-              lastFetched: new Date(),
-              githubVersion: BehaviorGroup.fromJson(json.data)
-            }),
-            err => this.onError(branch, err)));
+        }, () => {
+          this.props.onUpdateFromGithub(owner, repo, branch, onUpdateCallback, this.onError);
+        });
       }
     }
 
@@ -546,7 +543,6 @@ define(function(require: (string) => *): React.ElementType {
       return (
         <div className="display-inline-block mbs">
           <FormInput
-            ref={(el) => this.branchInput = el}
             className="form-input-borderless form-input-s type-monospace width-15 mrs"
             placeholder="Branch (e.g. master)"
             onChange={this.onBranchChange}

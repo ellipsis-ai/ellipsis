@@ -62,7 +62,7 @@ requirejs(['common'], function() {
               }, callback(json));
             }
           }).catch(() => {
-            onError(branch);
+            onError(branch, null);
           });
         }
 
