@@ -30,7 +30,6 @@ define(function(require) {
         this.skillDescription.focus();
       } else if (this.skillName) {
         this.skillName.focus();
-        console.log(this.skillName, "focus!");
       }
     }
 
