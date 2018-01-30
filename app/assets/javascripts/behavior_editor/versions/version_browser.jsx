@@ -82,7 +82,7 @@ define(function(require: (string) => *): React.ElementType {
         headerHeight: 0,
         footerHeight: 0,
         isModifyingGithubRepo: false,
-        branch: props.linkedGithubRepo ? props.linkedGithubRepo.currentBranch : "master",
+        branch: props.linkedGithubRepo && props.linkedGithubRepo.currentBranch ? props.linkedGithubRepo.currentBranch : "master",
         isFetching: false,
         lastFetched: null,
         githubVersion: null,

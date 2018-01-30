@@ -3,22 +3,22 @@ define(function() {
   class LinkedGithubRepo {
     owner: string;
     repo: string;
-    currentBranch: ?string;
+    currentBranch: string;
 
-    constructor(props) {
+    constructor(owner: string, repo: string, currentBranch: string) {
       Object.defineProperties(this, {
-        owner: { value: props.owner, enumerable: true },
-        repo: { value: props.repo, enumerable: true },
-        currentBranch: { value: props.currentBranch, enumerable: true }
+        owner: { value: owner, enumerable: true },
+        repo: { value: repo, enumerable: true },
+        currentBranch: { value: currentBranch, enumerable: true }
       });
     }
 
     getOwner(): string {
-      return this.owner || "";
+      return this.owner;
     }
 
     getRepo(): string {
-      return this.repo || "";
+      return this.repo;
     }
 
     getOwnerAndRepo(): string {
@@ -34,11 +34,19 @@ define(function() {
     }
 
     clone(props): LinkedGithubRepo {
-      return new LinkedGithubRepo(Object.assign({}, this, props));
+      return LinkedGithubRepo.fromProps(Object.assign({}, this, props));
+    }
+
+    static fromProps(props): LinkedGithubRepo {
+      return new LinkedGithubRepo(
+        props.owner || "",
+        props.repo || "",
+        props.currentBranch || ""
+      );
     }
 
     static fromJson(props): LinkedGithubRepo {
-      return new LinkedGithubRepo(props);
+      return LinkedGithubRepo.fromProps(Object.assign({}, props));
     }
 
   }

@@ -40,7 +40,7 @@ requirejs(['common'], function() {
             this.props.csrfToken
           )
             .then(() => {
-              const linked = new LinkedGithubRepo({ owner: owner, repo: repo });
+              const linked = new LinkedGithubRepo(owner, repo, branch);
               this.setState({ linkedGithubRepo: linked }, callback);
             });
         }
@@ -59,7 +59,7 @@ requirejs(['common'], function() {
               onError(branch, json.errors);
             } else {
               this.setState({
-                linkedGithubRepo: new LinkedGithubRepo({ owner: owner, repo: repo, currentBranch: branch })
+                linkedGithubRepo: new LinkedGithubRepo(owner, repo, branch)
               }, callback(json));
             }
           }).catch(() => {
