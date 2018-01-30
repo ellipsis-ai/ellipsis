@@ -491,12 +491,12 @@ class BehaviorEditorController @Inject() (
 
   case class UpdateFromGithubSuccessResponse(data: BehaviorGroupData)
 
-  case class UpdateFromGithubErrorData(message: String, _type: Option[String], details: Option[JsObject])
+  case class UpdateFromGithubErrorData(message: String, `type`: Option[String], details: Option[JsObject])
 
   case class UpdateFromGithubErrorResponse(errors: UpdateFromGithubErrorData)
   object UpdateFromGithubErrorResponse {
-    def jsonFrom(message: String, _type: Option[String], details: Option[JsObject]): JsValue = {
-      Json.toJson(UpdateFromGithubErrorResponse(UpdateFromGithubErrorData(message, _type, details)))
+    def jsonFrom(message: String, `type`: Option[String], details: Option[JsObject]): JsValue = {
+      Json.toJson(UpdateFromGithubErrorResponse(UpdateFromGithubErrorData(message, `type`, details)))
     }
   }
 
