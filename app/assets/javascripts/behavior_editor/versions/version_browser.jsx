@@ -26,6 +26,12 @@ define(function(require: (string) => *): React.ElementType {
     github: "github"
   };
 
+  type GithubFetchError = {
+    message: string,
+    type?: string,
+    details?: {}
+  }
+
   type Props = {
     csrfToken: string,
     currentGroup: BehaviorGroup,
@@ -38,8 +44,8 @@ define(function(require: (string) => *): React.ElementType {
     onRestoreVersionClick: (version: BehaviorGroup, title: Node) => void,
     isLinkedToGithub: boolean,
     linkedGithubRepo?: LinkedGithubRepo,
-    onLinkGithubRepo: (string, string, () => void) => void,
-    onUpdateFromGithub: (string, string, string, (any) => void, (string, ?{ errors: string }) => void) => void,
+    onLinkGithubRepo: (owner: string, repo: string, branch: ?string, callback: () => void) => void,
+    onUpdateFromGithub: (owner: string, repo: string, branch: string, callback: ({}) => void, onError: (GithubFetchError) => void) => void,
     onSaveChanges: () => void
   };
 
@@ -52,6 +58,7 @@ define(function(require: (string) => *): React.ElementType {
     branch: string,
     isFetching: boolean,
     lastFetched: ?Date,
+    isNewBranch: boolean,
     githubVersion: ?BehaviorGroup,
     isCommitting: boolean,
     error: ?string
@@ -85,6 +92,7 @@ define(function(require: (string) => *): React.ElementType {
         branch: props.linkedGithubRepo && props.linkedGithubRepo.currentBranch ? props.linkedGithubRepo.currentBranch : "master",
         isFetching: false,
         lastFetched: null,
+        isNewBranch: false,
         githubVersion: null,
         isCommitting: false,
         error: null
@@ -141,11 +149,24 @@ define(function(require: (string) => *): React.ElementType {
       }
     }
 
-    onError(branch: string, error?: string): void {
-      this.setState({
-        isFetching: false,
-        error: error ? `Error: ${error}` : `An error occurred while pulling “${branch}” from GitHub`
-      });
+    onError(branch: string, error?: GithubFetchError): void {
+      if (error && error.type && error.type === "NoBranchFound") {
+        this.setState({
+          isFetching: false,
+          lastFetchedBranch: null,
+          lastFetched: null,
+          isNewBranch: true
+        });
+      } else {
+        const newState = {};
+        newState.isFetching = false;
+        newState.error = error ? `Error: ${error.message}` : `An error occurred while pulling “${branch}” from GitHub`;
+        if (this.state.lastFetchedBranch !== branch) {
+          newState.lastFetchedBranch = null;
+          newState.lastFetched = null;
+        }
+        this.setState(newState);
+      }
     }
 
     getDefaultSelectedItem(props: Props): string {
@@ -189,6 +210,10 @@ define(function(require: (string) => *): React.ElementType {
     onClickMenuItem(key: string): void {
       this.setState({
         selectedMenuItem: key
+      }, () => {
+        if (key === versionSources.github && !this.state.lastFetched) {
+          this.onUpdateFromGithub();
+        }
       });
     }
 

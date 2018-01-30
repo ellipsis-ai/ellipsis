@@ -489,6 +489,21 @@ class BehaviorEditorController @Inject() (
     )(UpdateFromGithubInfo.apply)(UpdateFromGithubInfo.unapply)
   )
 
+  case class UpdateFromGithubSuccessResponse(data: BehaviorGroupData)
+
+  case class UpdateFromGithubErrorData(message: String, `type`: Option[String], details: Option[JsObject])
+
+  case class UpdateFromGithubErrorResponse(errors: UpdateFromGithubErrorData)
+  object UpdateFromGithubErrorResponse {
+    def jsonFrom(message: String, `type`: Option[String], details: Option[JsObject]): JsValue = {
+      Json.toJson(UpdateFromGithubErrorResponse(UpdateFromGithubErrorData(message, `type`, details)))
+    }
+  }
+
+  implicit val updateFromGithubSuccessResponseWrites = Json.writes[UpdateFromGithubSuccessResponse]
+  implicit val updateFromGithubErrorDataWrites = Json.writes[UpdateFromGithubErrorData]
+  implicit val updateFromGithubErrorResponseWrites = Json.writes[UpdateFromGithubErrorResponse]
+
   def updateFromGithub = silhouette.SecuredAction.async { implicit request =>
     val user = request.identity
     updateFromGithubForm.bindFromRequest.fold(
@@ -520,9 +535,10 @@ class BehaviorEditorController @Inject() (
               val fetcher = GithubSingleBehaviorGroupFetcher(group.team, info.owner, info.repo, profile.token, info.branch, maybeExistingGroupData, githubService, services, ec)
               try {
                 val groupData = fetcher.result.copyWithApiApplicationsIfAvailable(oauth2Appications)
-                Ok(JsObject(Map("data" -> Json.toJson(groupData))))
+                Ok(Json.toJson(UpdateFromGithubSuccessResponse(groupData)))
               } catch {
-                case e: GitFetcherException => Ok(JsObject(Map("errors" -> JsString(e.getMessage))))
+                case e: GithubResultFromDataException => Ok(UpdateFromGithubErrorResponse.jsonFrom(e.getMessage, Some(e.exceptionType.toString), Some(e.details)))
+                case e: GithubFetchDataException => Ok(UpdateFromGithubErrorResponse.jsonFrom(e.getMessage, None, None))
               }
             }.getOrElse(Unauthorized(s"User is not correctly authed with GitHub"))
           }.getOrElse(NotFound(s"Skill with ID ${info.behaviorGroupId} not found"))

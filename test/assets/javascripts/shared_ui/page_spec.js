@@ -24,6 +24,7 @@ const FooterRenderingComponentDefaultProps = Object.freeze({
   onToggleActivePanel: jest.fn(),
   onClearActivePanel: jest.fn(),
   onRenderFooter: jest.fn(),
+  onRenderPanel: jest.fn(),
   footerHeight: 0
 });
 
@@ -85,7 +86,7 @@ describe('Page', () => {
     });
   });
 
-  describe('toggleWithActivePanel', () => {
+  describe('toggleActivePanel', () => {
     it('passes a callback to setState if a valid function is passed', () => {
       const page = createMockedPage();
       const callback = jest.fn();
@@ -99,6 +100,15 @@ describe('Page', () => {
       const notACallback = {};
       page.toggleActivePanel('foo', false, notACallback);
       expect(page.setState.mock.calls[0][1]).not.toBe(notACallback);
+    });
+
+    it('finds the active modal if a panel is toggled on modally', () => {
+      const page = createMockedPage();
+      const fooElement = document.createElement('div');
+      page.onRenderPanel('foo', fooElement);
+      const spy = jest.spyOn(page, 'getActiveModalElement');
+      page.toggleActivePanel('foo', true);
+      expect(spy).toHaveBeenCalledWith('foo');
     });
   });
 
