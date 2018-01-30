@@ -11,7 +11,7 @@ define(function(require) {
     group: BehaviorGroup,
     linked?: LinkedGithubRepo,
     onDoneClick: () => void,
-    onLinkGithubRepo: (string, string, () => void) => void,
+    onLinkGithubRepo: (owner: string, repo: string, branch: ?string, callback: () => void) => void,
     csrfToken: string
   };
 
@@ -90,7 +90,7 @@ define(function(require) {
     onLinkClick(): void {
       const match = this.matchOwnerAndRepoFromUrl(this.getRepoUrl());
       if (match.owner && match.repo) {
-        this.props.onLinkGithubRepo(match.owner, match.repo, () => {
+        this.props.onLinkGithubRepo(match.owner, match.repo, null, () => {
           this.props.onDoneClick();
           this.setState(this.getDefaultState());
         });

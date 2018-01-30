@@ -29,16 +29,15 @@ requirejs(['common'], function() {
         }
 
         onLinkGithubRepo(owner, repo, branch, callback) {
-          DataRequest.jsonPost(
-            jsRoutes.controllers.BehaviorEditorController.linkToGithubRepo().url,
-            {
-              behaviorGroupId: this.props.group.id,
-              owner: owner,
-              repo: repo,
-              branch: branch
-            },
-            this.props.csrfToken
-          )
+          const url = jsRoutes.controllers.BehaviorEditorController.linkToGithubRepo().url;
+          const params = {};
+          params.behaviorGroupId = this.props.group.id;
+          params.owner = owner;
+          params.repo = repo;
+          if (branch) {
+            params.currentBranch = branch;
+          }
+          DataRequest.jsonPost(url, params, this.props.csrfToken)
             .then(() => {
               const linked = new LinkedGithubRepo(owner, repo, branch);
               this.setState({ linkedGithubRepo: linked }, callback);
