@@ -56,6 +56,7 @@ define(function(require: (string) => *): React.ElementType {
     footerHeight: number,
     isModifyingGithubRepo: boolean,
     branch: string,
+    isChangingBranchName: boolean,
     isFetching: boolean,
     lastFetched: ?Date,
     isNewBranch: boolean,
@@ -79,6 +80,7 @@ define(function(require: (string) => *): React.ElementType {
     state: State;
     pushPanel: ?GithubPushPanel;
     linkGitHubRepoComponent: ?LinkGithubRepo;
+    newBranchInput: ?FormInput;
 
     constructor(props: Props): void {
       super(props);
@@ -91,6 +93,7 @@ define(function(require: (string) => *): React.ElementType {
         isModifyingGithubRepo: false,
         branch: props.linkedGithubRepo && props.linkedGithubRepo.currentBranch ? props.linkedGithubRepo.currentBranch : "master",
         isFetching: false,
+        isChangingBranchName: false,
         lastFetched: null,
         isNewBranch: false,
         githubVersion: null,
@@ -419,7 +422,7 @@ define(function(require: (string) => *): React.ElementType {
         );
       } else if (this.compareGithubVersions()) {
         return (
-          <div>The current version is identical to the version in <span className="type-monospace">{this.getSavedBranch()}</span> on GitHub.</div>
+          <div>The current version is identical to the version in the {this.renderBranchTitle(this.getSavedBranch())} on GitHub.</div>
         );
       } else {
         return (
@@ -439,15 +442,19 @@ define(function(require: (string) => *): React.ElementType {
     }
 
     renderSelectableVersion(caption: Node): ElementType {
+      const githubMode = this.compareGithubVersions();
       return (
         <div>
-          {caption}
-          <Select className="align-b form-select-s mrs mbs" value={this.state.selectedMenuItem} onChange={this.onClickMenuItem}>
-            {this.renderVersionOptions()}
-          </Select>
-          {this.renderSelectedVersionNote()}
-          {this.compareGithubVersions() ? this.renderGithubBranchInput() : null}
-          {this.compareGithubVersions() ? this.renderGithubStatus() : null}
+          <Collapsible revealWhen={!this.state.isChangingBranchName}>
+            {caption}
+            <Select className="align-b form-select-s mrs mbs" value={this.state.selectedMenuItem} onChange={this.onClickMenuItem}>
+              {this.renderVersionOptions()}
+            </Select>
+            {this.renderSelectedVersionNote()}
+            {githubMode ? this.renderGithubBranch() : null}
+            {githubMode ? this.renderGithubStatus() : null}
+          </Collapsible>
+          {githubMode ? this.renderGithubBranchInput() : null}
         </div>
       );
     }
@@ -560,28 +567,80 @@ define(function(require: (string) => *): React.ElementType {
       return this.props.linkedGithubRepo ? this.getSavedBranch() === this.getCurrentBranch() : false;
     }
 
-    renderGithubBranchInput(): ElementType {
+    changeBranch(): void {
+      this.setState({
+        isChangingBranchName: true
+      }, () => {
+        if (this.newBranchInput) {
+          this.newBranchInput.select();
+        }
+      });
+    }
+
+    cancelChangeBranch(): void {
+      this.setState({
+        isChangingBranchName: false,
+        branch: this.getSavedBranch()
+      });
+    }
+
+    doBranchChange(): void {
+      this.setState({
+        isChangingBranchName: false
+      }, this.onUpdateFromGithub);
+    }
+
+    renderGithubBranch(): ElementType {
       return (
         <div className="display-inline-block mbs">
-          <FormInput
-            className="form-input-borderless form-input-s type-monospace width-15 mrs"
-            placeholder="Branch (e.g. master)"
-            onChange={this.onBranchChange}
-            value={this.getCurrentBranch()}
-          />
+          <div className="align-button align-button-s align-button-border mrs">
+            <span className="type-monospace type-xs">{this.getCurrentBranch() || "(no branch)"}</span>
+          </div>
           <DynamicLabelButton
-            className="button-shrink button-s"
+            className="button-shrink button-s mrs"
             onClick={this.onUpdateFromGithub}
             disabledWhen={this.state.isFetching || !this.getCurrentBranch()}
             labels={[{
-              text: this.isBranchUnchanged() ? "Refresh branch" : "Change branch",
+              text: "Refresh",
               displayWhen: !this.state.isFetching
             }, {
               text: "Fetching…",
               displayWhen: this.state.isFetching
             }]}
           />
+          <Button onClick={this.changeBranch} className="button-shrink button-s mrs">Change branch</Button>
         </div>
+      );
+    }
+
+    renderGithubBranchInput(): ElementType {
+      return (
+        <Collapsible revealWhen={this.state.isChangingBranchName}>
+          <span className="align-button align-button-s type-label mrs">Enter branch name:</span>
+          <FormInput
+            ref={(el) => this.newBranchInput = el}
+            className="form-input-borderless form-input-s type-monospace width-15 mrs"
+            placeholder="Branch (e.g. master)"
+            onChange={this.onBranchChange}
+            value={this.getCurrentBranch()}
+          />
+          <DynamicLabelButton
+            className="button-shrink button-s mrs"
+            onClick={this.doBranchChange}
+            disabledWhen={this.state.isFetching || !this.getCurrentBranch() || this.isBranchUnchanged()}
+            labels={[{
+              text: "Select branch",
+              displayWhen: !this.state.isFetching
+            }, {
+              text: "Updating…",
+              displayWhen: this.state.isFetching
+            }]}
+          />
+          <Button
+            className="button-shrink button-s"
+            onClick={this.cancelChangeBranch}
+          >Cancel</Button>
+        </Collapsible>
       );
     }
 
