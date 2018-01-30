@@ -222,7 +222,7 @@ define(function(require: (string) => *): React.ElementType {
 
     shortNameForVersion(version: BehaviorGroup): Node {
       if (this.compareGithubVersions() && this.state.lastFetched) {
-        return this.renderBranchTitle(this.getCurrentBranch(), this.state.lastFetched);
+        return this.renderBranchTitle(this.getSavedBranch());
       } else {
         return this.renderLocalVersionTitle(version.createdAt);
       }
@@ -405,13 +405,23 @@ define(function(require: (string) => *): React.ElementType {
       }
     }
 
-    summarizeNoDiff(): string {
+    summarizeNoDiff(): Node {
       if (this.state.selectedMenuItem === "select") {
-        return "Select a version of this skill to compare to the current version.";
+        return (
+          <div className="type-italic">Select a version of this skill to compare to the current version.</div>
+        );
       } else if (this.getSelectedVersionIndex() === 0 && !this.props.currentGroupIsModified) {
-        return "No changes have been made since this version was saved.";
+        return (
+          <div>No changes have been made since this version was saved.</div>
+        );
+      } else if (this.compareGithubVersions()) {
+        return (
+          <div>The current version is identical to the version in <span className="type-monospace">{this.getSavedBranch()}</span> on GitHub.</div>
+        );
       } else {
-        return "These versions are identical.";
+        return (
+          <div>These two versions are identical.</div>
+        );
       }
     }
 
@@ -421,9 +431,7 @@ define(function(require: (string) => *): React.ElementType {
           <BehaviorGroupDiff diff={diff} />
         );
       } else {
-        return (
-          <div className="type-italic">{this.summarizeNoDiff()}</div>
-        );
+        return this.summarizeNoDiff();
       }
     }
 
@@ -496,17 +504,16 @@ define(function(require: (string) => *): React.ElementType {
 
     renderRevertButtonTitle(selectedVersion: ?BehaviorGroup, hasChanges: boolean): Node {
       if (this.compareGithubVersions()) {
-        if (selectedVersion && hasChanges && this.getCurrentBranch()) {
-          return (
-            <span>Switch current version to <span className="type-monospace">{this.getCurrentBranch()}</span> on GitHub…</span>
-          );
-        } else {
-          return "Checkout…";
-        }
+        const branch = this.getSavedBranch();
+        return branch ? (
+            <span>Switch current version to {this.renderBranchTitle(branch)}…</span>
+        ) : (
+          <span>Switch…</span>
+        );
       } else {
         if (selectedVersion && hasChanges) {
           return (
-            <span>Revert to {this.shortNameForVersion(selectedVersion)}…</span>
+            <span>Switch to {this.shortNameForVersion(selectedVersion)}…</span>
           );
         } else {
           return "Revert…";
@@ -515,15 +522,15 @@ define(function(require: (string) => *): React.ElementType {
     }
 
     renderCommitButton(selectedVersion: ?BehaviorGroup, hasChanges: boolean): Node {
-      const versionHasChanges = this.compareGithubVersions() && selectedVersion && hasChanges;
-      const isNewBranch = this.compareGithubVersions() && this.state.isNewBranch;
-      if (this.props.linkedGithubRepo && (versionHasChanges || isNewBranch)) {
+      if (this.props.linkedGithubRepo && this.compareGithubVersions()) {
+        const unsavedChanges = this.props.currentGroupIsModified;
+        const githubVersionIsIdentical = selectedVersion && !hasChanges;
         return (
           <Button
             onClick={this.toggleCommitting}
-            disabled={this.props.currentGroupIsModified}
+            disabled={unsavedChanges || githubVersionIsIdentical}
             className="mrs mbm"
-          >Commit current version to <span className="type-monospace">{this.getSavedBranch()}</span> on GitHub…</Button>
+          >Update {this.renderBranchTitle(this.getSavedBranch())} with current version…</Button>
         );
       }
     }
@@ -564,7 +571,7 @@ define(function(require: (string) => *): React.ElementType {
             onClick={this.onUpdateFromGithub}
             disabledWhen={this.state.isFetching || !this.getCurrentBranch()}
             labels={[{
-              text: this.isBranchUnchanged() ? "Refresh branch" : "Select branch",
+              text: this.isBranchUnchanged() ? "Refresh branch" : "Change branch",
               displayWhen: !this.state.isFetching
             }, {
               text: "Fetching…",
@@ -637,11 +644,11 @@ define(function(require: (string) => *): React.ElementType {
       }
     }
 
-    renderBranchTitle(branchName: string, timestamp: ?Timestamp): Node {
+    renderBranchTitle(branchName: string): Node {
       return (
         <span>
-          <span className="type-monospace">{branchName}</span>
-          <span> branch ({Formatter.formatTimestampShort(timestamp)})</span>
+          <span className="type-monospace type-bold mhxs">{branchName}</span>
+          <span> branch</span>
         </span>
       );
     }
