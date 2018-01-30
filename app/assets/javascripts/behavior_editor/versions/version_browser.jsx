@@ -486,7 +486,7 @@ define(function(require: (string) => *): React.ElementType {
       return (
         <div>
           {caption}
-          <div className="align-button align-button-s align-button-border mrs mbs">
+          <div className="align-button align-button-s type-bold mrs mbs">
             {this.props.currentGroupIsModified ? "Current version (unsaved)" : "Current saved version"}
           </div>
           {this.renderCurrentVersionNote()}
@@ -516,17 +516,19 @@ define(function(require: (string) => *): React.ElementType {
       if (this.compareGithubVersions()) {
         const branch = this.getSavedBranch();
         return branch ? (
-          <span>Switch current version to {this.renderBranchTitle(branch)}…</span>
+          <span>Revert current version to {this.renderBranchTitle(branch)}…</span>
         ) : (
-          <span>Switch…</span>
+          <span>Revert…</span>
         );
       } else {
         if (selectedVersion && hasChanges) {
           return (
-            <span>Switch to {this.shortNameForVersion(selectedVersion)}…</span>
+            <span>Revert to {this.shortNameForVersion(selectedVersion)}…</span>
           );
         } else {
-          return "Revert…";
+          return (
+            <span>Revert…</span>
+          );
         }
       }
     }
@@ -593,8 +595,8 @@ define(function(require: (string) => *): React.ElementType {
     renderGithubBranch(): ElementType {
       return (
         <div className="display-inline-block mbs">
-          <div className="align-button align-button-s align-button-border mrs">
-            <span className="type-monospace type-xs">{this.getCurrentBranch() || "(no branch)"}</span>
+          <div className="align-button align-button-s mrs">
+            <div className="type-monospace type-bold">{this.getCurrentBranch() || "(no branch)"}</div>
           </div>
           <DynamicLabelButton
             className="button-shrink button-s mrs"
@@ -616,16 +618,16 @@ define(function(require: (string) => *): React.ElementType {
     renderGithubBranchInput(): ElementType {
       return (
         <Collapsible revealWhen={this.state.isChangingBranchName}>
-          <span className="align-button align-button-s type-label mrs">Enter branch name:</span>
+          <span className="align-button align-button-s type-label mrs mbs">Enter branch name:</span>
           <FormInput
             ref={(el) => this.newBranchInput = el}
-            className="form-input-borderless form-input-s type-monospace width-15 mrs"
+            className="form-input-borderless form-input-s type-monospace width-15 mrs mbs"
             placeholder="Branch (e.g. master)"
             onChange={this.onBranchChange}
             value={this.getCurrentBranch()}
           />
           <DynamicLabelButton
-            className="button-shrink button-s mrs"
+            className="button-shrink button-s mrs mbs"
             onClick={this.doBranchChange}
             disabledWhen={this.state.isFetching || !this.getCurrentBranch() || this.isBranchUnchanged()}
             labels={[{
@@ -637,7 +639,7 @@ define(function(require: (string) => *): React.ElementType {
             }]}
           />
           <Button
-            className="button-shrink button-s"
+            className="button-shrink button-s mbs"
             onClick={this.cancelChangeBranch}
           >Cancel</Button>
         </Collapsible>
@@ -662,7 +664,7 @@ define(function(require: (string) => *): React.ElementType {
 
     renderRightCaption(): Node {
       return (
-        <div className="align-button align-button-s mrs mbs">To</div>
+        <div className="align-button align-button-s mrs mbs">to</div>
       );
     }
 
