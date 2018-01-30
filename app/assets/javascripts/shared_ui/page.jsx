@@ -62,9 +62,11 @@ define(function(require) {
       var alreadyOpen = this.state.activePanelName === name;
       var callback = typeof(optionalCallback) === 'function' ?
         optionalCallback : (() => {
-          var activeModal = this.getActiveModalElement();
-          if (activeModal) {
-            this.focusOnPrimaryOrFirstPossibleElement(activeModal);
+          if (!alreadyOpen && beModal) {
+            var activeModal = this.getActiveModalElement(name);
+            if (activeModal) {
+              this.focusOnPrimaryOrFirstPossibleElement(activeModal);
+            }
           }
         });
       this.setState({
@@ -99,7 +101,7 @@ define(function(require) {
     }
 
     handleModalFocus(event: any): void {
-      var activeModal = this.getActiveModalElement();
+      var activeModal = this.state.activePanelIsModal ? this.getActiveModalElement(this.state.activePanelName) : null;
       if (!activeModal) {
         return;
       }
@@ -115,9 +117,8 @@ define(function(require) {
       }
     }
 
-    getActiveModalElement(): any {
-      const panel = this.state.activePanelName && this.state.activePanelIsModal ?
-        this.panels[this.state.activePanelName] : null;
+    getActiveModalElement(panelName: string): any {
+      const panel = this.panels[panelName];
       return panel ? ReactDOM.findDOMNode(panel) : null;
     }
 
