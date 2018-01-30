@@ -54,13 +54,15 @@ requirejs(['common'], function() {
             },
             this.props.csrfToken
           ).then((json) => {
-            if (json.errors) {
-              onError(branch, json.errors);
-            } else {
-              this.setState({
-                linkedGithubRepo: new LinkedGithubRepo(owner, repo, branch)
-              }, callback(json));
-            }
+            this.setState({
+              linkedGithubRepo: new LinkedGithubRepo(owner, repo, branch)
+            }, () => {
+              if (json.errors) {
+                onError(branch, json.errors);
+              } else {
+                callback(json);
+              }
+            });
           }).catch(() => {
             onError(branch, null);
           });
