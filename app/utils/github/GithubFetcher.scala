@@ -8,9 +8,14 @@ import services._
 import scala.concurrent.duration._
 import scala.concurrent.{Await, ExecutionContext, Future}
 
-trait GitFetcherException extends Exception
+sealed trait GitFetcherException extends Exception
 
-case class GithubResultFromDataException(message: String) extends GitFetcherException {
+object GitFetcherExceptionType extends Enumeration {
+  type GitFetcherExceptionType = Value
+  val NoCommiterInfoFound, NoRepoFound, NoBranchFound, NoValidSkillFound = Value
+}
+
+case class GithubResultFromDataException(exceptionType: GitFetcherExceptionType.Value, message: String, details: JsObject) extends GitFetcherException {
   override def getMessage: String = message
 }
 

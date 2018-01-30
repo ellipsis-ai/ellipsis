@@ -521,7 +521,18 @@ class BehaviorEditorController @Inject() (
                 val groupData = fetcher.result.copyWithApiApplicationsIfAvailable(oauth2Appications)
                 Ok(JsObject(Map("data" -> Json.toJson(groupData))))
               } catch {
-                case e: GitFetcherException => Ok(JsObject(Map("errors" -> JsString(e.getMessage))))
+                case e: GithubResultFromDataException => Ok(Json.obj(
+                  "errors" -> Json.obj(
+                    "type" -> e.exceptionType.toString,
+                    "message" -> e.getMessage,
+                    "details" -> e.details
+                  )
+                ))
+                case e: GithubFetchDataException => Ok(Json.obj(
+                  "errors" -> Json.obj(
+                    "message" -> e.getMessage
+                  )
+                ))
               }
             }.getOrElse(Unauthorized(s"User is not correctly authed with GitHub"))
           }.getOrElse(NotFound(s"Skill with ID ${info.behaviorGroupId} not found"))

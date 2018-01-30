@@ -68,6 +68,12 @@ define(function(require: (string) => *): React.ElementType {
     versions: Array<GroupedVersion>
   }
 
+  type GithubFetchError = {
+    message: string,
+    type?: string,
+    details?: {}
+  }
+
   class VersionBrowser extends React.Component<Props, State> {
     props: Props;
     state: State;
@@ -158,10 +164,10 @@ define(function(require: (string) => *): React.ElementType {
       });
     }
 
-    onError(branch: string, error?: string): void {
+    onError(branch: string, error?: GithubFetchError): void {
       this.setState({
         isFetching: false,
-        error: error ? `Error: ${error}` : `An error occurred while pulling “${branch}” from GitHub`
+        error: error ? `Error: ${error.message}` : `An error occurred while pulling “${branch}” from GitHub`
       });
     }
 
