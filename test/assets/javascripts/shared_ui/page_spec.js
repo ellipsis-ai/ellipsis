@@ -104,9 +104,11 @@ describe('Page', () => {
 
     it('finds the active modal if a panel is toggled on modally', () => {
       const page = createMockedPage();
+      const fooElement = document.createElement('div');
+      page.onRenderPanel('foo', fooElement);
       const spy = jest.spyOn(page, 'getActiveModalElement');
       page.toggleActivePanel('foo', true);
-      expect(spy).toHaveBeenCalledWith();
+      expect(spy).toHaveBeenCalledWith('foo');
     });
   });
 
