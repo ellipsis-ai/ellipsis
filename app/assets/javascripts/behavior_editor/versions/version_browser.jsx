@@ -206,6 +206,10 @@ define(function(require: (string) => *): React.ElementType {
     onClickMenuItem(key: string): void {
       this.setState({
         selectedMenuItem: key
+      }, () => {
+        if (key === versionSources.github && !this.state.lastFetched) {
+          this.onUpdateFromGithub();
+        }
       });
     }
 
