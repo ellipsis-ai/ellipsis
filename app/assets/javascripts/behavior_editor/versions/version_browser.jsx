@@ -53,6 +53,7 @@ define(function(require: (string) => *): React.ElementType {
     isFetching: boolean,
     lastFetched: ?Date,
     lastFetchedBranch: ?string,
+    isNewBranch: boolean,
     githubVersion: ?BehaviorGroup,
     isCommitting: boolean,
     error: ?string
@@ -93,6 +94,7 @@ define(function(require: (string) => *): React.ElementType {
         isFetching: false,
         lastFetched: null,
         lastFetchedBranch: null,
+        isNewBranch: false,
         githubVersion: null,
         isCommitting: false,
         error: null
@@ -165,10 +167,23 @@ define(function(require: (string) => *): React.ElementType {
     }
 
     onError(branch: string, error?: GithubFetchError): void {
-      this.setState({
-        isFetching: false,
-        error: error ? `Error: ${error.message}` : `An error occurred while pulling “${branch}” from GitHub`
-      });
+      if (error && error.type && error.type === "NoBranchFound") {
+        this.setState({
+          isFetching: false,
+          lastFetchedBranch: null,
+          lastFetched: null,
+          isNewBranch: true
+        });
+      } else {
+        const newState = {};
+        newState.isFetching = false;
+        newState.error = error ? `Error: ${error.message}` : `An error occurred while pulling “${branch}” from GitHub`;
+        if (this.state.lastFetchedBranch !== branch) {
+          newState.lastFetchedBranch = null;
+          newState.lastFetched = null;
+        }
+        this.setState(newState);
+      }
     }
 
     getDefaultSelectedItem(props: Props): string {
