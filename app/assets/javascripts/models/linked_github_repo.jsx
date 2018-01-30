@@ -3,11 +3,13 @@ define(function() {
   class LinkedGithubRepo {
     owner: string;
     repo: string;
+    currentBranch: ?string;
 
     constructor(props) {
       Object.defineProperties(this, {
         owner: { value: props.owner, enumerable: true },
-        repo: { value: props.repo, enumerable: true }
+        repo: { value: props.repo, enumerable: true },
+        currentBranch: { value: props.currentBranch, enumerable: true }
       });
     }
 

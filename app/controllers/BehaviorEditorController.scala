@@ -502,6 +502,7 @@ class BehaviorEditorController @Inject() (
             dataService.githubProfiles.find(linked.loginInfo)
           }.getOrElse(Future.successful(None))
           maybeBehaviorGroup <- dataService.behaviorGroups.find(info.behaviorGroupId, user)
+          _ <- dataService.linkedGithubRepos.maybeSetCurrentBranch(maybeBehaviorGroup, info.branch)
           maybeExistingGroupData <- maybeBehaviorGroup.map { group =>
             dataService.behaviorGroups.maybeCurrentVersionFor(group).flatMap { maybeCurrentVersion =>
               maybeCurrentVersion.map { currentVersion =>
@@ -561,6 +562,7 @@ class BehaviorEditorController @Inject() (
             dataService.githubProfiles.find(linked.loginInfo)
           }.getOrElse(Future.successful(None))
           maybeBehaviorGroup <- dataService.behaviorGroups.find(info.behaviorGroupId, user)
+          _ <- dataService.linkedGithubRepos.maybeSetCurrentBranch(maybeBehaviorGroup, info.branch)
           result <- maybeBehaviorGroup.map { group =>
             maybeGithubProfile.map { profile =>
               val committerInfo = GithubCommitterInfoFetcher(user, profile.token, githubService, services, ec).result
@@ -590,14 +592,16 @@ class BehaviorEditorController @Inject() (
   case class LinkToGithubRepoInfo(
                                behaviorGroupId: String,
                                owner: String,
-                               repo: String
+                               repo: String,
+                               currentBranch: Option[String]
                              )
 
   private val linkToGithubRepoForm = Form(
     mapping(
       "behaviorGroupId" -> nonEmptyText,
       "owner" -> nonEmptyText,
-      "repo" -> nonEmptyText
+      "repo" -> nonEmptyText,
+      "currentBranch" -> optional(nonEmptyText)
     )(LinkToGithubRepoInfo.apply)(LinkToGithubRepoInfo.unapply)
   )
 
@@ -616,8 +620,8 @@ class BehaviorEditorController @Inject() (
           maybeBehaviorGroup <- dataService.behaviorGroups.find(info.behaviorGroupId, user)
           result <- maybeBehaviorGroup.map { group =>
             maybeGithubProfile.map { profile =>
-              dataService.linkedGithubRepos.link(group, info.owner, info.repo).map { linked =>
-                Ok(Json.toJson(LinkedGithubRepoData(linked.owner, linked.repo)))
+              dataService.linkedGithubRepos.ensureLink(group, info.owner, info.repo, info.currentBranch).map { linked =>
+                Ok(Json.toJson(LinkedGithubRepoData(linked.owner, linked.repo, linked.maybeCurrentBranch)))
               }
             }.getOrElse(Future.successful(Unauthorized(s"User is not correctly authed with GitHub")))
           }.getOrElse(Future.successful(NotFound(s"Skill with ID ${info.behaviorGroupId} not found")))

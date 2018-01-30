@@ -28,13 +28,14 @@ requirejs(['common'], function() {
           }
         }
 
-        onLinkGithubRepo(owner, repo, callback) {
+        onLinkGithubRepo(owner, repo, branch, callback) {
           DataRequest.jsonPost(
             jsRoutes.controllers.BehaviorEditorController.linkToGithubRepo().url,
             {
               behaviorGroupId: this.props.group.id,
               owner: owner,
-              repo: repo
+              repo: repo,
+              branch: branch
             },
             this.props.csrfToken
           )
@@ -42,6 +43,28 @@ requirejs(['common'], function() {
               const linked = new LinkedGithubRepo({ owner: owner, repo: repo });
               this.setState({ linkedGithubRepo: linked }, callback);
             });
+        }
+
+        onUpdateFromGithub(owner, repo, branch, callback, onError) {
+          DataRequest.jsonPost(
+            jsRoutes.controllers.BehaviorEditorController.updateFromGithub().url, {
+              behaviorGroupId: this.props.group.id,
+              owner: owner,
+              repo: repo,
+              branch: branch
+            },
+            this.props.csrfToken
+          ).then((json) => {
+            if (json.errors) {
+              onError(branch, json.errors);
+            } else {
+              this.setState({
+                linkedGithubRepo: new LinkedGithubRepo({ owner: owner, repo: repo, currentBranch: branch })
+              }, callback(json));
+            }
+          }).catch(() => {
+            onError(branch);
+          });
         }
 
         onSave(newProps) {
@@ -107,6 +130,7 @@ requirejs(['common'], function() {
                 isLinkedToGithub={this.props.isLinkedToGithub}
                 linkedGithubRepo={this.state.linkedGithubRepo}
                 onLinkGithubRepo={this.onLinkGithubRepo}
+                onUpdateFromGithub={this.onUpdateFromGithub}
                 showVersions={this.props.showVersions}
                 onDeploy={this.onDeploy}
                 lastDeployTimestamp={this.props.lastDeployTimestamp}

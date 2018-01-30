@@ -216,7 +216,7 @@ object BehaviorEditorData {
         user.id,
         isAdmin,
         isLinkedToGithub,
-        maybeLinkedGithubRepo.map(r => LinkedGithubRepoData(r.owner, r.repo)),
+        maybeLinkedGithubRepo.map(r => LinkedGithubRepoData(r.owner, r.repo, r.maybeCurrentBranch)),
         maybeLastDeployTimestamp,
         maybeSlackBotProfile.map(_.slackTeamId)
       )

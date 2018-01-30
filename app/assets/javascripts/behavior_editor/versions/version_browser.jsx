@@ -7,7 +7,6 @@ define(function(require: (string) => *): React.ElementType {
     BehaviorGroupDiff = require('./behavior_group_diff'),
     Button = require('../../form/button'),
     Collapsible = require('../../shared_ui/collapsible'),
-    DataRequest = require('../../lib/data_request'),
     DynamicLabelButton = require('../../form/dynamic_label_button'),
     FixedHeader = require('../../shared_ui/fixed_header'),
     FixedFooter = require('../../shared_ui/fixed_footer'),
@@ -40,6 +39,7 @@ define(function(require: (string) => *): React.ElementType {
     isLinkedToGithub: boolean,
     linkedGithubRepo?: LinkedGithubRepo,
     onLinkGithubRepo: (string, string, () => void) => void,
+    onUpdateFromGithub: (string, string, string, (any) => void, (string, ?{ errors: string }) => void) => void,
     onSaveChanges: () => void
   };
 
@@ -52,7 +52,6 @@ define(function(require: (string) => *): React.ElementType {
     branch: string,
     isFetching: boolean,
     lastFetched: ?Date,
-    lastFetchedBranch: ?string,
     githubVersion: ?BehaviorGroup,
     isCommitting: boolean,
     error: ?string
@@ -83,10 +82,9 @@ define(function(require: (string) => *): React.ElementType {
         headerHeight: 0,
         footerHeight: 0,
         isModifyingGithubRepo: false,
-        branch: "master",
+        branch: props.linkedGithubRepo ? props.linkedGithubRepo.currentBranch : "master",
         isFetching: false,
         lastFetched: null,
-        lastFetchedBranch: null,
         githubVersion: null,
         isCommitting: false,
         error: null
@@ -129,33 +127,18 @@ define(function(require: (string) => *): React.ElementType {
         this.setState({
           isFetching: true,
           error: null
-        }, () => this.updateFromGithub(owner, repo, branch));
+        }, () =>
+          this.props.onUpdateFromGithub(
+            owner,
+            repo,
+            branch,
+            (json) => this.setState({
+              isFetching: false,
+              lastFetched: new Date(),
+              githubVersion: BehaviorGroup.fromJson(json.data)
+            }),
+            err => this.onError(branch, err)));
       }
-    }
-
-    updateFromGithub(owner: string, repo: string, branch: string): void {
-      DataRequest.jsonPost(
-        jsRoutes.controllers.BehaviorEditorController.updateFromGithub().url, {
-          behaviorGroupId: this.props.currentGroup.id,
-          owner: owner,
-          repo: repo,
-          branch: branch
-        },
-        this.props.csrfToken
-      ).then((json) => {
-        if (json.errors) {
-          this.onError(branch, json.errors);
-        } else {
-          this.setState({
-            isFetching: false,
-            lastFetched: new Date(),
-            lastFetchedBranch: branch,
-            githubVersion: BehaviorGroup.fromJson(json.data)
-          });
-        }
-      }).catch(() => {
-        this.onError(branch);
-      });
     }
 
     onError(branch: string, error?: string): void {
@@ -215,8 +198,8 @@ define(function(require: (string) => *): React.ElementType {
     }
 
     shortNameForVersion(version: BehaviorGroup): Node {
-      if (this.compareGithubVersions() && this.state.lastFetched && this.state.lastFetchedBranch) {
-        return this.renderBranchTitle(this.state.lastFetchedBranch, this.state.lastFetched);
+      if (this.compareGithubVersions() && this.state.lastFetched) {
+        return this.renderBranchTitle(this.getBranch(), this.state.lastFetched);
       } else {
         return this.renderLocalVersionTitle(version.createdAt);
       }
@@ -486,9 +469,9 @@ define(function(require: (string) => *): React.ElementType {
 
     renderRevertButtonTitle(selectedVersion: ?BehaviorGroup, hasChanges: boolean): Node {
       if (this.compareGithubVersions()) {
-        if (selectedVersion && hasChanges && this.state.lastFetchedBranch) {
+        if (selectedVersion && hasChanges && this.getBranch()) {
           return (
-            <span>Checkout <span className="type-monospace">{this.state.lastFetchedBranch}</span> as current version…</span>
+            <span>Checkout <span className="type-monospace">{this.getBranch()}</span> as current version…</span>
           );
         } else {
           return "Checkout…";
@@ -504,8 +487,8 @@ define(function(require: (string) => *): React.ElementType {
       }
     }
 
-    renderCommitButton(): Node {
-      if (this.props.linkedGithubRepo && this.compareGithubVersions()) {
+    renderCommitButton(selectedVersion: ?BehaviorGroup, hasChanges: boolean): Node {
+      if (this.props.linkedGithubRepo && this.compareGithubVersions() && selectedVersion && hasChanges) {
         return (
           <Button onClick={this.toggleCommitting} disabled={this.props.currentGroupIsModified} className="mrs mbm">Commit current version to GitHub…</Button>
         );
@@ -530,6 +513,10 @@ define(function(require: (string) => *): React.ElementType {
       }
     }
 
+    isBranchUnchanged(): boolean {
+      return this.props.linkedGithubRepo ? this.props.linkedGithubRepo.currentBranch === this.getBranch() : false;
+    }
+
     renderGithubBranchInput(): ElementType {
       return (
         <div className="display-inline-block mbs">
@@ -545,7 +532,7 @@ define(function(require: (string) => *): React.ElementType {
             onClick={this.onUpdateFromGithub}
             disabledWhen={this.state.isFetching || !this.getBranch()}
             labels={[{
-              text: this.state.lastFetchedBranch === this.getBranch() ? "Refresh branch" : "Select branch",
+              text: this.isBranchUnchanged() ? "Refresh branch" : "Select branch",
               displayWhen: !this.state.isFetching
             }, {
               text: "Fetching…",
@@ -618,7 +605,7 @@ define(function(require: (string) => *): React.ElementType {
       }
     }
 
-    renderBranchTitle(branchName: string, timestamp: Timestamp): Node {
+    renderBranchTitle(branchName: string, timestamp: ?Timestamp): Node {
       return (
         <span>
           <span className="type-monospace">{branchName}</span>
@@ -732,7 +719,7 @@ define(function(require: (string) => *): React.ElementType {
                 <Button className="mrs mbm button-primary" onClick={this.props.onClearActivePanel}>Done</Button>
                 {this.renderSaveButton()}
                 {this.renderRevertButton(selectedVersion, hasChanges)}
-                {this.renderCommitButton()}
+                {this.renderCommitButton(selectedVersion, hasChanges)}
               </div>
             </Collapsible>
             <Collapsible revealWhen={this.state.isCommitting}>
@@ -743,7 +730,6 @@ define(function(require: (string) => *): React.ElementType {
                 onPushBranch={this.onPushBranch}
                 onDoneClick={this.toggleCommitting}
                 csrfToken={this.props.csrfToken}
-                branch={this.state.lastFetchedBranch}
               />
             </Collapsible>
           </FixedFooter>
