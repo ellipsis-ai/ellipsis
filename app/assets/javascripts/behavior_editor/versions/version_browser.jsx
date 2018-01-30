@@ -133,6 +133,12 @@ define(function(require: (string) => *): React.ElementType {
       });
     }
 
+    onBranchEnterKey(): void {
+      if (this.getCurrentBranch()) {
+        this.doBranchChange();
+      }
+    }
+
     onUpdateFromGithub(): void {
       if (this.props.linkedGithubRepo) {
         const linked = this.props.linkedGithubRepo;
@@ -624,6 +630,7 @@ define(function(require: (string) => *): React.ElementType {
             className="form-input-borderless form-input-s type-monospace width-15 mrs mbs"
             placeholder="Branch (e.g. master)"
             onChange={this.onBranchChange}
+            onEnterKey={this.onBranchEnterKey}
             value={this.getCurrentBranch()}
           />
           <DynamicLabelButton
