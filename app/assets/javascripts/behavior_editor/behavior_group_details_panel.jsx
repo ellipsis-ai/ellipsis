@@ -11,7 +11,8 @@ define(function(require) {
     onBehaviorGroupIconChange: (string) => void,
     onBehaviorGroupNameChange: (string) => void,
     onBehaviorGroupDescriptionChange: (string) => void,
-    onDone: () => void
+    onDone: () => void,
+    visible: boolean
   };
 
   class BehaviorGroupDetailsPanel extends React.Component<Props> {
@@ -22,6 +23,12 @@ define(function(require) {
       super(props);
       autobind(this);
       this.detailsEditor = null;
+    }
+
+    componentDidUpdate(prevProps: Props) {
+      if (!prevProps.visible && this.props.visible) {
+        this.focus();
+      }
     }
 
     focus(): void {

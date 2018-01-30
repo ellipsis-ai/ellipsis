@@ -18,7 +18,6 @@ define(function(require) {
       onInputAdd: React.PropTypes.func.isRequired,
       onInputNameFocus: React.PropTypes.func.isRequired,
       onInputNameBlur: React.PropTypes.func.isRequired,
-      onEnterKey: React.PropTypes.func.isRequired,
       userInputs: React.PropTypes.arrayOf(React.PropTypes.instanceOf(Input)).isRequired,
       paramTypes: React.PropTypes.arrayOf(React.PropTypes.instanceOf(ParamType)).isRequired,
       triggers: React.PropTypes.arrayOf(React.PropTypes.instanceOf(Trigger)).isRequired,
@@ -38,6 +37,12 @@ define(function(require) {
       helpInputVisible: React.PropTypes.bool.isRequired
     },
 
+    componentDidUpdate: function(prevProps) {
+      if (this.props.userInputs.length > prevProps.userInputs.length) {
+        this.focusIndex(this.props.userInputs.length - 1);
+      }
+    },
+
     swapButtons: [],
 
     onChange: function(index, data) {
@@ -47,7 +52,11 @@ define(function(require) {
       this.props.onInputDelete(index);
     },
     onEnterKey: function(index) {
-      this.props.onEnterKey(index);
+      if (index + 1 < this.props.userInputs.length) {
+        this.focusIndex(index + 1);
+      } else if (this.props.userInputs[index].question) {
+        this.addInput();
+      }
     },
 
     onNameFocus: function(index) {

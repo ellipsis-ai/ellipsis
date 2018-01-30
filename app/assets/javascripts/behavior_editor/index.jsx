@@ -461,10 +461,8 @@ const BehaviorEditor = React.createClass({
     });
   },
 
-  CONFIGURE_API_NAME: "configureApi",
-
   isConfiguringApi: function() {
-    return this.props.activePanelName === this.CONFIGURE_API_NAME;
+    return this.props.activePanelName === "configureApi";
   },
 
   buildOAuthApplicationNotifications: function() {
@@ -507,8 +505,8 @@ const BehaviorEditor = React.createClass({
           kind: "data_type_unnamed",
           onClick: () => {
             this.onSelect(this.getBehaviorGroup().id, ea.behaviorId, () => {
-              if (this.refs.editableNameInput) {
-                this.refs.editableNameInput.focus();
+              if (this.editableNameInput) {
+                this.editableNameInput.focus();
               }
             });
           }
@@ -523,8 +521,8 @@ const BehaviorEditor = React.createClass({
           name: ea.getName(),
           onClick: () => {
             this.onSelect(this.getBehaviorGroup().id, ea.behaviorId, () => {
-              if (this.refs.dataTypeEditor) {
-                this.refs.dataTypeEditor.addNewDataTypeField();
+              if (this.dataTypeEditor) {
+                this.dataTypeEditor.addNewDataTypeField();
               }
             });
           }
@@ -539,8 +537,8 @@ const BehaviorEditor = React.createClass({
           name: ea.getName(),
           onClick: () => {
             this.onSelect(this.getBehaviorGroup().id, ea.behaviorId, () => {
-              if (this.refs.dataTypeEditor) {
-                this.refs.dataTypeEditor.focusOnFirstBlankField();
+              if (this.dataTypeEditor) {
+                this.dataTypeEditor.focusOnFirstBlankField();
               }
             });
           }
@@ -563,8 +561,8 @@ const BehaviorEditor = React.createClass({
           name: ea.getName(),
           onClick: () => {
             this.onSelect(this.getBehaviorGroup().id, ea.behaviorId, () => {
-              if (this.refs.dataTypeEditor) {
-                this.refs.dataTypeEditor.focusOnDuplicateField();
+              if (this.dataTypeEditor) {
+                this.dataTypeEditor.focusOnDuplicateField();
               }
             });
           }
@@ -686,12 +684,7 @@ const BehaviorEditor = React.createClass({
 
   addInput: function(input, callback) {
     const newInputs = this.getInputs().concat([input]);
-    this.setBehaviorInputs(newInputs, () => {
-      this.focusOnLastInput();
-      if (callback) {
-        callback();
-      }
-    });
+    this.setBehaviorInputs(newInputs, callback);
   },
 
   addNewInput: function(optionalNewName, callback) {
@@ -771,7 +764,9 @@ const BehaviorEditor = React.createClass({
   },
 
   deleteBehaviorGroup: function() {
-    this.refs.deleteBehaviorGroupForm.submit();
+    if (this.deleteBehaviorGroupForm) {
+      this.deleteBehaviorGroupForm.submit();
+    }
   },
 
   deleteInputAtIndex: function(index) {
@@ -819,9 +814,8 @@ const BehaviorEditor = React.createClass({
   },
 
   layoutDidUpdate: function() {
-    var panel = this.refs.leftPanel;
-    if (panel) {
-      panel.resetCoordinates();
+    if (this.leftPanel) {
+      this.leftPanel.resetCoordinates();
     }
   },
 
@@ -834,10 +828,6 @@ const BehaviorEditor = React.createClass({
     if (this.getSelected()) {
       this.setEditableProp('editorScrollPosition', window.scrollY);
     }
-  },
-
-  refreshCodeEditor: function() {
-    this.refs.codeEditor.refresh();
   },
 
   loadVersions: function() {
@@ -855,7 +845,6 @@ const BehaviorEditor = React.createClass({
           versions: versions,
           versionsLoadStatus: 'loaded'
         });
-        this.refs.versionsPanel.reset();
       }).catch(() => {
         // TODO: figure out what to do if there's a request error
         this.setState({
@@ -951,7 +940,7 @@ const BehaviorEditor = React.createClass({
   },
 
   backgroundSave: function(optionalCallback) {
-    var formData = new FormData(this.refs.behaviorForm);
+    var formData = new FormData(this.behaviorForm);
     this.setState({
       newerVersionOnServer: null,
       errorReachingServer: null
@@ -1097,17 +1086,14 @@ const BehaviorEditor = React.createClass({
     this.setState({
       envVariableAdderPrompt: prompt
     }, function () {
-      this.toggleActivePanel('envVariableAdder', true, function () {
-        var panel = this.refs.envVariableAdderPanel;
-        panel.focusOnVarName();
-      }.bind(this));
+      this.toggleActivePanel('envVariableAdder', true);
     });
   },
 
   showEnvVariableSetter: function(nameToFocus) {
     this.toggleActivePanel('envVariableSetter', true, () => {
-      if (nameToFocus) {
-        this.refs.envVariableSetterPanel.focusOnVarName(nameToFocus);
+      if (nameToFocus && this.envVariableSetterPanel) {
+        this.envVariableSetterPanel.focusOnVarName(nameToFocus);
       }
     });
   },
@@ -1147,11 +1133,7 @@ const BehaviorEditor = React.createClass({
   },
 
   toggleRequestSkillDetails: function() {
-    this.toggleActivePanel('requestBehaviorGroupDetails', true, () => {
-      if (this.behaviorGroupDetailsPanel) {
-        this.behaviorGroupDetailsPanel.focus();
-      }
-    });
+    this.toggleActivePanel('requestBehaviorGroupDetails', true);
   },
 
   toggleBehaviorSwitcher: function() {
@@ -1176,11 +1158,7 @@ const BehaviorEditor = React.createClass({
   },
 
   toggleTester: function(ref) {
-    this.toggleActivePanel(ref, true, () => {
-      if (this.props.activePanelName === ref) {
-        this.refs[ref].focus();
-      }
-    });
+    this.toggleActivePanel(ref, true);
   },
 
   toggleBehaviorCodeHelp: function() {
@@ -1234,7 +1212,9 @@ const BehaviorEditor = React.createClass({
         }
       },
       errorCallback: () => {
-        this.refs.envVariableAdderPanel.onSaveError();
+        if (this.envVariableAdderPanel) {
+          this.envVariableAdderPanel.onSaveError();
+        }
       }
     });
   },
@@ -1258,18 +1238,24 @@ const BehaviorEditor = React.createClass({
       .then((response) => response.json())
       .then((json) => {
         this.props.onClearActivePanel();
-        this.refs.envVariableAdderPanel.reset();
+        if (this.envVariableAdderPanel) {
+          this.envVariableAdderPanel.reset();
+        }
         this.setState({
           envVariables: json.variables
         }, () => {
           this.resetNotificationsImmediately();
-          this.refs.envVariableSetterPanel.reset();
+          if (this.envVariableSetterPanel) {
+            this.envVariableSetterPanel.reset();
+          }
           if (options && options.saveCallback) {
             options.saveCallback();
           }
         });
       }).catch(() => {
-        this.refs.envVariableSetterPanel.onSaveError();
+        if (this.envVariableSetterPanel) {
+          this.envVariableSetterPanel.onSaveError();
+        }
         if (options && options.errorCallback) {
           options.errorCallback();
         }
@@ -1476,16 +1462,6 @@ const BehaviorEditor = React.createClass({
     BrowserUtils.ensureYPosInView(cursorBottom, height);
   },
 
-  focusOnInputIndex: function(index) {
-    if (this.refs.userInputConfiguration) {
-      this.refs.userInputConfiguration.focusIndex(index);
-    }
-  },
-
-  focusOnLastInput: function() {
-    this.focusOnInputIndex(this.getInputs().length - 1);
-  },
-
   onAddNewEnvVariable: function() {
     this.showEnvVariableAdder();
   },
@@ -1588,14 +1564,6 @@ const BehaviorEditor = React.createClass({
       shouldRedirectToAddNewOAuth2App: true,
       requiredOAuth2ApiConfig: requiredOAuth2ApiConfig
     }, this.onSaveBehaviorGroup);
-  },
-
-  onInputEnterKey: function(index) {
-    if (index + 1 < this.getInputs().length) {
-      this.focusOnInputIndex(index + 1);
-    } else if (this.getInputs()[index].question) {
-      this.addNewInput();
-    }
   },
 
   onConfigureType: function(paramTypeId) {
@@ -1778,8 +1746,6 @@ const BehaviorEditor = React.createClass({
   renderCodeEditor: function(codeConfigProps) {
     return (
       <CodeConfiguration
-        ref="codeEditor"
-
         sectionNumber={codeConfigProps.sectionNumber}
         codeHelpPanelName={codeConfigProps.codeHelpPanelName}
 
@@ -1842,10 +1808,10 @@ const BehaviorEditor = React.createClass({
     const footerClassName = this.mobileBehaviorSwitcherIsVisible() ? "mobile-position-behind-scrim" : "";
     return this.props.onRenderFooter((
       <div>
-          <ModalScrim ref="mobileScrim" isActive={this.mobileBehaviorSwitcherIsVisible()} />
+          <ModalScrim isActive={this.mobileBehaviorSwitcherIsVisible()} />
           {this.isDataTypeBehavior() ? (
             <div>
-              <Collapsible ref="addDataStorageItems" revealWhen={this.props.activePanelName === 'addDataStorageItems'} onChange={this.layoutDidUpdate}>
+              <Collapsible ref={(el) => this.props.onRenderPanel("addDataStorageItems", el)} revealWhen={this.props.activePanelName === 'addDataStorageItems'} onChange={this.layoutDidUpdate}>
                 <DefaultStorageAdder
                   csrfToken={this.props.csrfToken}
                   behaviorVersion={this.getSelectedBehavior()}
@@ -1853,7 +1819,7 @@ const BehaviorEditor = React.createClass({
                 />
               </Collapsible>
 
-              <Collapsible ref="browseDataStorage" revealWhen={this.props.activePanelName === 'browseDataStorage'} onChange={this.layoutDidUpdate}>
+              <Collapsible ref={(el) => this.props.onRenderPanel("browseDataStorage", el)} revealWhen={this.props.activePanelName === 'browseDataStorage'} onChange={this.layoutDidUpdate}>
                 <DefaultStorageBrowser
                   csrfToken={this.props.csrfToken}
                   behaviorVersion={this.getSelectedBehavior()}
@@ -1865,19 +1831,19 @@ const BehaviorEditor = React.createClass({
             </div>
           ) : null}
 
-          <Collapsible revealWhen={this.props.activePanelName === 'requestBehaviorGroupDetails'}>
+          <Collapsible ref={(el) => this.props.onRenderPanel("requestBehaviorGroupDetails", el)} revealWhen={this.props.activePanelName === 'requestBehaviorGroupDetails'}>
             <BehaviorGroupDetailsPanel
-              ref={(el) => this.behaviorGroupDetailsPanel = el}
               group={this.getBehaviorGroup()}
               onBehaviorGroupNameChange={this.onBehaviorGroupNameChange}
               onBehaviorGroupDescriptionChange={this.onBehaviorGroupDescriptionChange}
               onBehaviorGroupIconChange={this.onBehaviorGroupIconChange}
               onDone={this.props.onClearActivePanel}
+              visible={this.props.activePanelName === 'requestBehaviorGroupDetails'}
             />
           </Collapsible>
 
-          <Collapsible ref={this.CONFIGURE_API_NAME}
-            revealWhen={this.props.activePanelName === this.CONFIGURE_API_NAME}
+          <Collapsible ref={(el) => this.props.onRenderPanel("configureApi", el)}
+            revealWhen={this.props.activePanelName === "configureApi"}
             onChange={this.layoutDidUpdate}
             animationDisabled={this.state.animationDisabled}
           >
@@ -1902,25 +1868,25 @@ const BehaviorEditor = React.createClass({
             </APIConfigPanel>
           </Collapsible>
 
-          <Collapsible ref="confirmUndo" revealWhen={this.props.activePanelName === 'confirmUndo'} onChange={this.layoutDidUpdate}>
+          <Collapsible ref={(el) => this.props.onRenderPanel("confirmUndo", el)} revealWhen={this.props.activePanelName === 'confirmUndo'} onChange={this.layoutDidUpdate}>
             <ConfirmActionPanel confirmText="Undo changes" onConfirmClick={this.undoChanges} onCancelClick={this.toggleConfirmUndo}>
               <p>This will undo any changes you’ve made since last saving. Are you sure you want to do this?</p>
             </ConfirmActionPanel>
           </Collapsible>
 
-          <Collapsible ref="confirmDeleteEditable" revealWhen={this.props.activePanelName === 'confirmRevert'} onChange={this.layoutDidUpdate}>
+          <Collapsible ref={(el) => this.props.onRenderPanel("confirmDeleteEditable", el)} revealWhen={this.props.activePanelName === 'confirmRevert'} onChange={this.layoutDidUpdate}>
             <ConfirmActionPanel confirmText="Switch versions" onConfirmClick={this.doRevert} onCancelClick={this.toggleConfirmRevert}>
               {this.confirmRevertText()}
             </ConfirmActionPanel>
           </Collapsible>
 
-          <Collapsible ref="confirmDeleteEditable" revealWhen={this.props.activePanelName === 'confirmDeleteEditable'} onChange={this.layoutDidUpdate}>
+          <Collapsible ref={(el) => this.props.onRenderPanel("confirmDeleteEditable", el)} revealWhen={this.props.activePanelName === 'confirmDeleteEditable'} onChange={this.layoutDidUpdate}>
             <ConfirmActionPanel confirmText="Delete" onConfirmClick={this.deleteEditable} onCancelClick={this.props.onClearActivePanel}>
               <p>{this.confirmDeleteText()}</p>
             </ConfirmActionPanel>
           </Collapsible>
 
-          <Collapsible ref="confirmDeleteBehaviorGroup" revealWhen={this.props.activePanelName === 'confirmDeleteBehaviorGroup'} onChange={this.layoutDidUpdate}>
+          <Collapsible ref={(el) => this.props.onRenderPanel("confirmDeleteBehaviorGroup", el)} revealWhen={this.props.activePanelName === 'confirmDeleteBehaviorGroup'} onChange={this.layoutDidUpdate}>
             <ConfirmActionPanel confirmText="Delete" onConfirmClick={this.deleteBehaviorGroup} onCancelClick={this.props.onClearActivePanel}>
               <p>Are you sure you want to delete this skill and all of its actions and data types?</p>
             </ConfirmActionPanel>
@@ -1971,14 +1937,14 @@ const BehaviorEditor = React.createClass({
             />
           </Collapsible>
 
-          <Collapsible ref="envVariableSetter" revealWhen={this.props.activePanelName === 'envVariableSetter'} onChange={this.layoutDidUpdate}>
+          <Collapsible ref={(el) => this.props.onRenderPanel("envVariableSetter", el)} revealWhen={this.props.activePanelName === 'envVariableSetter'} onChange={this.layoutDidUpdate}>
             <div className="box-action phn">
               <div className="container">
                 <div className="columns">
                   <div className="column column-page-sidebar" />
                   <div className="column column-page-main">
                     <EnvVariableSetter
-                      ref="envVariableSetterPanel"
+                      ref={(el) => this.envVariableSetterPanel = el}
                       vars={this.getEnvVariables()}
                       onCancelClick={this.props.onClearActivePanel}
                       onSave={this.updateEnvVariables}
@@ -1989,14 +1955,14 @@ const BehaviorEditor = React.createClass({
             </div>
           </Collapsible>
 
-          <Collapsible ref="envVariableAdder" revealWhen={this.props.activePanelName === 'envVariableAdder'} onChange={this.layoutDidUpdate}>
+          <Collapsible ref={(el) => this.props.onRenderPanel("envVariableAdder", el)} revealWhen={this.props.activePanelName === 'envVariableAdder'} onChange={this.layoutDidUpdate}>
             <div className="box-action phn">
               <div className="container">
                 <div className="columns">
                   <div className="column column-page-sidebar" />
                   <div className="column column-page-main">
                     <EnvVariableAdder
-                      ref="envVariableAdderPanel"
+                      ref={(el) => this.envVariableAdderPanel = el}
                       onCancelClick={this.props.onClearActivePanel}
                       onSave={this.addEnvVar}
                       prompt={this.state.envVariableAdderPrompt}
@@ -2010,7 +1976,7 @@ const BehaviorEditor = React.createClass({
 
           <Collapsible revealWhen={this.props.activePanelName === 'behaviorTester'} onChange={this.layoutDidUpdate}>
             <BehaviorTester
-              ref="behaviorTester"
+              ref={(el) => this.props.onRenderPanel("behaviorTester", el)}
               triggers={this.getBehaviorTriggers()}
               inputs={this.getInputs()}
               behaviorId={this.getSelectedId()}
@@ -2022,7 +1988,7 @@ const BehaviorEditor = React.createClass({
 
           <Collapsible revealWhen={this.props.activePanelName === 'dataTypeTester'} onChange={this.layoutDidUpdate}>
             <DataTypeTester
-              ref="dataTypeTester"
+              ref={(el) => this.props.onRenderPanel("dataTypeTester", el)}
               behaviorId={this.getSelectedId()}
               isSearch={this.isSearchDataTypeBehavior()}
               csrfToken={this.props.csrfToken}
@@ -2032,9 +1998,8 @@ const BehaviorEditor = React.createClass({
           </Collapsible>
 
           {this.getOtherSavedInputsInGroup().length > 0 ? (
-            <Collapsible revealWhen={this.props.activePanelName === 'sharedAnswerInputSelector'} onChange={this.layoutDidUpdate}>
+            <Collapsible ref={(el) => this.props.onRenderPanel("sharedAnswerInputSelector", el)} revealWhen={this.props.activePanelName === 'sharedAnswerInputSelector'} onChange={this.layoutDidUpdate}>
               <SharedAnswerInputSelector
-                ref="sharedAnswerInputSelector"
                 onToggle={this.toggleSharedAnswerInputSelector}
                 onSelect={this.addInput}
                 inputs={this.getOtherSavedInputsInGroup()}
@@ -2042,9 +2007,8 @@ const BehaviorEditor = React.createClass({
             </Collapsible>
           ) : null}
 
-          <Collapsible revealWhen={this.props.activePanelName === 'savedAnswerEditor'} onChange={this.layoutDidUpdate}>
+          <Collapsible ref={(el) => this.props.onRenderPanel("savedAnswerEditor", el)} revealWhen={this.props.activePanelName === 'savedAnswerEditor'} onChange={this.layoutDidUpdate}>
             <SavedAnswerEditor
-              ref="savedAnswerEditor"
               onToggle={this.toggleSavedAnswerEditor}
               savedAnswers={this.props.savedAnswers}
               selectedInput={this.getInputWithSavedAnswers()}
@@ -2053,7 +2017,7 @@ const BehaviorEditor = React.createClass({
             />
           </Collapsible>
 
-          <Collapsible ref="saving" revealWhen={this.isSaving()} onChange={this.layoutDidUpdate}>
+          <Collapsible ref={(el) => this.props.onRenderPanel("saving", el)} revealWhen={this.isSaving()} onChange={this.layoutDidUpdate}>
             <div className="box-action">
               <div className="container phn">
                 <p className="align-c">
@@ -2170,7 +2134,7 @@ const BehaviorEditor = React.createClass({
   renderHiddenForms: function() {
     return (
       <div>
-        <form ref="deleteBehaviorGroupForm" action={jsRoutes.controllers.ApplicationController.deleteBehaviorGroups().url} method="POST">
+        <form ref={(el) => this.deleteBehaviorGroupForm = el} action={jsRoutes.controllers.ApplicationController.deleteBehaviorGroups().url} method="POST">
           <CsrfTokenHiddenInput value={this.props.csrfToken} />
           <input type="hidden" name="behaviorGroupIds[0]" value={this.getBehaviorGroup().id || ""} />
         </form>
@@ -2291,7 +2255,7 @@ const BehaviorEditor = React.createClass({
   },
 
   toggleConfigureApiPanel: function() {
-    this.props.onToggleActivePanel(this.CONFIGURE_API_NAME, true);
+    this.props.onToggleActivePanel("configureApi", true);
   },
 
   onApiConfigClick: function(required) {
@@ -2306,21 +2270,19 @@ const BehaviorEditor = React.createClass({
 
   renderBehaviorSwitcher: function() {
     return (
-      <div ref="leftColumn"
-        className={
+      <div className={
           "column column-page-sidebar flex-column flex-column-left bg-white " +
           "border-right prn position-relative mobile-position-fixed-top-full mobile-position-z-front "
         }
       >
         <Collapsible revealWhen={this.behaviorSwitcherIsVisible()} animationDisabled={!this.hasMobileLayout()}>
-          <Sticky ref="leftPanel" onGetCoordinates={this.getLeftPanelCoordinates} innerClassName="position-z-above" disabledWhen={this.hasMobileLayout()}>
+          <Sticky ref={(el) => this.leftPanel = el} onGetCoordinates={this.getLeftPanelCoordinates} innerClassName="position-z-above" disabledWhen={this.hasMobileLayout()}>
             {this.windowIsMobile() ? (
               <div className="position-absolute position-top-right mtm mobile-mts mobile-mrs">
                 <CollapseButton onClick={this.toggleBehaviorSwitcher} direction={"up"} />
               </div>
             ) : null}
             <BehaviorSwitcher
-              ref="behaviorSwitcher"
               actionBehaviors={this.getActionBehaviors()}
               dataTypeBehaviors={this.getDataTypeBehaviors()}
               libraries={this.getLibraries()}
@@ -2357,7 +2319,7 @@ const BehaviorEditor = React.createClass({
           <div className="column column-shrink">
             <FormInput
               className="form-input-borderless form-input-l type-l type-semibold width-15 mobile-width-full"
-              ref="editableNameInput"
+              ref={(el) => this.editableNameInput = el}
               value={this.getEditableName()}
               placeholder={this.getSelected().namePlaceholderText()}
               onChange={this.updateName}
@@ -2426,14 +2388,12 @@ const BehaviorEditor = React.createClass({
                 />
 
                 <UserInputConfiguration
-                  ref="userInputConfiguration"
                   onInputChange={this.updateBehaviorInputAtIndexWith}
                   onInputMove={this.moveBehaviorInputAtIndex}
                   onInputDelete={this.deleteInputAtIndex}
                   onInputAdd={this.addNewInput}
                   onInputNameFocus={this.onInputNameFocus}
                   onInputNameBlur={this.onInputNameBlur}
-                  onEnterKey={this.onInputEnterKey}
                   onConfigureType={this.onConfigureType}
                   userInputs={this.getInputs()}
                   paramTypes={this.getParamTypes()}
@@ -2482,7 +2442,7 @@ const BehaviorEditor = React.createClass({
         <hr className="mtn mbn rule-subtle" />
 
         <DataTypeEditor
-          ref="dataTypeEditor"
+          ref={(el) => this.dataTypeEditor = el}
           group={this.getBehaviorGroup()}
           behaviorVersion={this.getSelectedBehavior()}
           paramTypes={this.getParamTypesForDataTypes()}
@@ -2583,7 +2543,7 @@ const BehaviorEditor = React.createClass({
   renderEditorPage: function() {
     return (
       <div className="flex-row-cascade">
-        <form className="flex-row-cascade" action={this.getFormAction()} method="POST" ref="behaviorForm">
+        <form className="flex-row-cascade" action={this.getFormAction()} method="POST" ref={(el) => this.behaviorForm = el}>
           <div className="flex-row-cascade">
             <div className="flex-column flex-column-left flex-rows">
               <div className={`columns flex-columns flex-row-expand mobile-flex-no-columns ${

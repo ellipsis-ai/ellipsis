@@ -270,53 +270,6 @@ describe('BehaviorEditor', () => {
     });
   });
 
-  describe('onInputEnterKey', () => {
-    it('focuses on the next param if there is one', () => {
-      editorConfig.group.actionInputs = [{
-        name: 'param1', question: 'What am I?', paramType: editorConfig.builtinParamTypes[0], inputId: "abc123"
-      }, {
-        name: 'param2', question: 'Who are you?', paramType: editorConfig.builtinParamTypes[0], inputId: "abc124"
-      }];
-      firstBehavior.inputIds = editorConfig.group.actionInputs.map(ea => ea.inputId);
-      const editor = createEditor(editorConfig);
-      editor.focusOnInputIndex = jest.fn();
-      editor.addNewInput = jest.fn();
-      editor.onInputEnterKey(0);
-      expect(editor.focusOnInputIndex.mock.calls[0][0]).toBe(1);
-      expect(editor.addNewInput.mock.calls.length).toBe(0);
-    });
-
-    it('adds a param if this is the last one and it has a question', () => {
-      editorConfig.group.actionInputs = [{
-        name: 'param1', question: 'What am I?', paramType: editorConfig.builtinParamTypes[0], inputId: "abc123"
-      }, {
-        name: 'param2', question: 'Who are you?', paramType: editorConfig.builtinParamTypes[0], inputId: "abc124"
-      }];
-      firstBehavior.inputIds = editorConfig.group.actionInputs.map(ea => ea.inputId);
-      const editor = createEditor(editorConfig);
-      editor.focusOnInputIndex = jest.fn();
-      editor.addNewInput = jest.fn();
-      editor.onInputEnterKey(1);
-      expect(editor.focusOnInputIndex.mock.calls.length).toBe(0);
-      expect(editor.addNewInput.mock.calls.length).toBe(1);
-    });
-
-    it('does nothing if this is the last one and has no question', () => {
-      editorConfig.group.actionInputs = [{
-        name: 'param1', question: 'What am I?', paramType: editorConfig.builtinParamTypes[0], inputId: "abc123"
-      }, {
-        name: 'param2', question: '', paramType: editorConfig.builtinParamTypes[0], inputId: "def456"
-      }];
-      firstBehavior.inputIds = editorConfig.group.actionInputs.map(ea => ea.inputId);
-      const editor = createEditor(editorConfig);
-      editor.focusOnInputIndex = jest.fn();
-      editor.addNewInput = jest.fn();
-      editor.onInputEnterKey(1);
-      expect(editor.focusOnInputIndex.mock.calls.length).toBe(0);
-      expect(editor.addNewInput.mock.calls.length).toBe(0);
-    });
-  });
-
   describe('render', () => {
     it("renders the normal editor when isDataType is false", () => {
       firstBehavior.config.isDataType = false;

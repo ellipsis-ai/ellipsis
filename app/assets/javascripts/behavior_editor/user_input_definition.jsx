@@ -30,7 +30,6 @@ return React.createClass({
     onNameFocus: React.PropTypes.func.isRequired,
     onNameBlur: React.PropTypes.func.isRequired,
     numLinkedTriggers: React.PropTypes.number.isRequired,
-    shouldGrabFocus: React.PropTypes.bool,
     savedAnswers: React.PropTypes.shape({
       myValueString: React.PropTypes.string,
       userAnswerCount: React.PropTypes.number.isRequired
@@ -210,7 +209,6 @@ return React.createClass({
               id={"question" + this.props.id}
               ref="question"
               placeholder="Write a question to ask the user for this input"
-              autoFocus={this.props.shouldGrabFocus}
               value={this.props.input.question}
               onChange={this.onQuestionChange}
               onEnterKey={this.props.onEnterKey}

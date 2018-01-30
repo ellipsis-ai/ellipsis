@@ -54,7 +54,9 @@ class FormInput extends React.Component {
   }
 
   focus() {
-    this.refs.input.focus();
+    setTimeout(() => {
+      this.refs.input.focus();
+    }, 1);
   }
 
   blur() {
