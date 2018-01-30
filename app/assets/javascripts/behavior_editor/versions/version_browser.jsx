@@ -136,19 +136,22 @@ define(function(require: (string) => *): React.ElementType {
         const owner = linked.getOwner();
         const repo = linked.getRepo();
         const branch = this.getCurrentBranch();
-        const onUpdateCallback = (json) => this.setState({
-          isFetching: false,
-          lastFetched: new Date(),
-          isNewBranch: false,
-          githubVersion: BehaviorGroup.fromJson(json.data)
-        });
         this.setState({
           isFetching: true,
           error: null
         }, () => {
-          this.props.onUpdateFromGithub(owner, repo, branch, onUpdateCallback, this.onError);
+          this.props.onUpdateFromGithub(owner, repo, branch, this.onUpdated, this.onError);
         });
       }
+    }
+
+    onUpdated(json: { data: {} }): void {
+      this.setState({
+        isFetching: false,
+        lastFetched: new Date(),
+        isNewBranch: false,
+        githubVersion: BehaviorGroup.fromJson(json.data)
+      });
     }
 
     onError(branch: string, error?: GithubFetchError): void {
@@ -506,7 +509,7 @@ define(function(require: (string) => *): React.ElementType {
       if (this.compareGithubVersions()) {
         const branch = this.getSavedBranch();
         return branch ? (
-            <span>Switch current version to {this.renderBranchTitle(branch)}…</span>
+          <span>Switch current version to {this.renderBranchTitle(branch)}…</span>
         ) : (
           <span>Switch…</span>
         );
