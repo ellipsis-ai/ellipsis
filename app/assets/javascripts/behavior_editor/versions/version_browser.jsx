@@ -103,10 +103,13 @@ define(function(require: (string) => *): React.ElementType {
     }
 
     onPushBranch(): void {
-      this.setState({
-        githubVersion: this.props.currentGroup,
-        lastFetched: new Date()
-      });
+      const newState = {};
+      newState.githubVersion = this.props.currentGroup;
+      newState.lastFetched = new Date();
+      if (this.state.isNewBranch) {
+        newState.isNewBranch = false;
+      }
+      this.setState(newState);
     }
 
     toggleCommitting(): void {
