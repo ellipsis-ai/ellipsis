@@ -473,6 +473,18 @@ class BehaviorEditorController @Inject() (
     )
   }
 
+
+  case class GithubActionErrorData(message: String, `type`: Option[String], details: Option[JsObject])
+
+  case class GithubActionErrorResponse(errors: GithubActionErrorData)
+  object GithubActionErrorResponse {
+    def jsonFrom(message: String, `type`: Option[String], details: Option[JsObject]): JsValue = {
+      Json.toJson(GithubActionErrorResponse(GithubActionErrorData(message, `type`, details)))
+    }
+  }
+  implicit val githubActionErrorDataWrites = Json.writes[GithubActionErrorData]
+  implicit val githubActionErrorResponseWrites = Json.writes[GithubActionErrorResponse]
+
   case class UpdateFromGithubInfo(
                                    behaviorGroupId: String,
                                    owner: String,
@@ -491,18 +503,7 @@ class BehaviorEditorController @Inject() (
 
   case class UpdateFromGithubSuccessResponse(data: BehaviorGroupData)
 
-  case class UpdateFromGithubErrorData(message: String, `type`: Option[String], details: Option[JsObject])
-
-  case class UpdateFromGithubErrorResponse(errors: UpdateFromGithubErrorData)
-  object UpdateFromGithubErrorResponse {
-    def jsonFrom(message: String, `type`: Option[String], details: Option[JsObject]): JsValue = {
-      Json.toJson(UpdateFromGithubErrorResponse(UpdateFromGithubErrorData(message, `type`, details)))
-    }
-  }
-
   implicit val updateFromGithubSuccessResponseWrites = Json.writes[UpdateFromGithubSuccessResponse]
-  implicit val updateFromGithubErrorDataWrites = Json.writes[UpdateFromGithubErrorData]
-  implicit val updateFromGithubErrorResponseWrites = Json.writes[UpdateFromGithubErrorResponse]
 
   def updateFromGithub = silhouette.SecuredAction.async { implicit request =>
     val user = request.identity
@@ -537,8 +538,8 @@ class BehaviorEditorController @Inject() (
                 val groupData = fetcher.result.copyWithApiApplicationsIfAvailable(oauth2Appications)
                 Ok(Json.toJson(UpdateFromGithubSuccessResponse(groupData)))
               } catch {
-                case e: GithubResultFromDataException => Ok(UpdateFromGithubErrorResponse.jsonFrom(e.getMessage, Some(e.exceptionType.toString), Some(e.details)))
-                case e: GithubFetchDataException => Ok(UpdateFromGithubErrorResponse.jsonFrom(e.getMessage, None, None))
+                case e: GithubResultFromDataException => Ok(GithubActionErrorResponse.jsonFrom(e.getMessage, Some(e.exceptionType.toString), Some(e.details)))
+                case e: GithubFetchDataException => Ok(GithubActionErrorResponse.jsonFrom(e.getMessage, None, None))
               }
             }.getOrElse(Unauthorized(s"User is not correctly authed with GitHub"))
           }.getOrElse(NotFound(s"Skill with ID ${info.behaviorGroupId} not found"))
@@ -565,6 +566,12 @@ class BehaviorEditorController @Inject() (
     )(PushToGithubInfo.apply)(PushToGithubInfo.unapply)
   )
 
+  case class PushToGithubSuccessData(branch: String)
+  case class PushToGithubSuccessResponse(data: PushToGithubSuccessData)
+
+  implicit val pushToGithubSuccessDataWrites = Json.writes[PushToGithubSuccessData]
+  implicit val pushToGithubSuccessResponseWrites = Json.writes[PushToGithubSuccessResponse]
+
   def pushToGithub = silhouette.SecuredAction.async { implicit request =>
     val user = request.identity
     pushToGithubForm.bindFromRequest.fold(
@@ -582,11 +589,12 @@ class BehaviorEditorController @Inject() (
           result <- maybeBehaviorGroup.map { group =>
             maybeGithubProfile.map { profile =>
               val committerInfo = GithubCommitterInfoFetcher(user, profile.token, githubService, services, ec).result
+              val branch = info.branch.getOrElse("master")
               val pusher =
                 GithubPusher(
                   info.owner,
                   info.repo,
-                  info.branch.getOrElse("master"),
+                  branch,
                   info.commitMessage,
                   profile.token,
                   committerInfo,
@@ -595,8 +603,15 @@ class BehaviorEditorController @Inject() (
                   services,
                   ec
                 )
-              pusher.run.map(r => Ok(Json.toJson(Map("message" -> "Pushed successfully")))).recover {
-                case e: GitCommandException => BadRequest(e.getMessage)
+              pusher.run.map { r =>
+                Ok(Json.toJson(PushToGithubSuccessResponse(PushToGithubSuccessData(branch))))
+              }.recover {
+                case e: GitPushException => {
+                  Ok(GithubActionErrorResponse.jsonFrom(e.getMessage, Some(e.exceptionType.toString), Some(e.details)))
+                }
+                case e: GitCommandException => {
+                  BadRequest(e.getMessage)
+                }
               }
             }.getOrElse(Future.successful(Unauthorized(s"User is not correctly authed with GitHub")))
           }.getOrElse(Future.successful(NotFound(s"Skill with ID ${info.behaviorGroupId} not found")))
