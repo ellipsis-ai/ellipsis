@@ -1,21 +1,23 @@
-import WebJs._
-import RjsKeys._
-
 name := """ellipsis"""
-
 version := "1.0-SNAPSHOT"
+scalaVersion := "2.11.8"
+pipelineStages := Seq(rjs, digest, gzip)
+
+lazy val slackClientVersion = "cd123f514e2be7fa0a7df087197f7cccbba3ca75"
+lazy val slackClientProject = ProjectRef(uri(s"https://github.com/ellipsis-ai/slack-scala-client.git#$slackClientVersion"), "slack-scala-client")
 
 lazy val root =
   (project in file(".")).
     dependsOn(slackClientProject).
     enablePlugins(PlayScala, SbtWeb)
 
-pipelineStages := Seq(rjs, digest, gzip)
+javaOptions in Test += "-Dconfig.file=conf/test.conf"
+scalacOptions in Compile ++= Seq("-Xmax-classfile-name", "128")
+updateOptions := updateOptions.value.withCachedResolution(true)
+fork in run := true
 
-scalaVersion := "2.11.8"
-
-lazy val slackClientVersion = "cd123f514e2be7fa0a7df087197f7cccbba3ca75"
-lazy val slackClientProject = ProjectRef(uri(s"https://github.com/ellipsis-ai/slack-scala-client.git#$slackClientVersion"), "slack-scala-client")
+resolvers += "scalaz-bintray" at "http://dl.bintray.com/scalaz/releases"
+resolvers += "Atlassian Releases" at "https://maven.atlassian.com/public/"
 
 libraryDependencies ++= Seq(
   evolutions,
@@ -62,24 +64,12 @@ libraryDependencies ++= Seq(
   "com.chargebee" % "chargebee-java" % "2.3.8"
 )
 
-
-javaOptions in Test += "-Dconfig.file=conf/test.conf"
-
-resolvers += "scalaz-bintray" at "http://dl.bintray.com/scalaz/releases"
-
-routesGenerator := InjectedRoutesGenerator
-
-resolvers += "Atlassian Releases" at "https://maven.atlassian.com/public/"
-
+// JavaScript configuration begins
 JsEngineKeys.engineType := JsEngineKeys.EngineType.Node
 
 RjsKeys.mainConfig := "build"
 RjsKeys.mainModule := "build"
-updateOptions := updateOptions.value.withCachedResolution(true)
 BabelKeys.options := WebJs.JS.Object(
   "presets" -> List("es2015", "react")
 )
-
-scalacOptions in Compile ++= Seq("-Xmax-classfile-name", "128")
-
-fork in run := true
+// JavaScript configuration ends
