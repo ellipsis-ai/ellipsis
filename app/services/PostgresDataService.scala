@@ -43,6 +43,8 @@ import models.behaviors.scheduling.recurrence.RecurrenceService
 import models.behaviors.scheduling.scheduledbehavior.ScheduledBehaviorService
 import models.behaviors.scheduling.scheduledmessage.ScheduledMessageService
 import models.behaviors.triggers.messagetrigger.MessageTriggerService
+import models.billing.invoice.InvoiceService
+import models.billing.plan.PlanService
 import models.devmodechannel.DevModeChannelService
 import models.environmentvariable.TeamEnvironmentVariableService
 import models.organization.OrganizationService
@@ -99,7 +101,10 @@ class PostgresDataService @Inject() (
                                       val devModeChannelsProvider: Provider[DevModeChannelService],
                                       val behaviorGroupDeploymentsProvider: Provider[BehaviorGroupDeploymentService],
                                       val behaviorResponsesProvider: Provider[BehaviorResponseService],
-                                      val subscriptionsProvider: Provider[SubscriptionService]
+                                      val subscriptionsProvider: Provider[SubscriptionService],
+                                      val plansProvider: Provider[PlanService],
+                                      val invoiceProvider: Provider[InvoiceService]
+
                                     ) extends DataService {
 
   val users = usersProvider.get
@@ -146,6 +151,8 @@ class PostgresDataService @Inject() (
   val devModeChannels = devModeChannelsProvider.get
   val behaviorGroupDeployments = behaviorGroupDeploymentsProvider.get
   val subscriptions = subscriptionsProvider.get
+  val plans = plansProvider.get
+  val invoices = invoiceProvider.get
   def behaviorResponses = behaviorResponsesProvider.get
 
   def run[T](action: DBIO[T]): Future[T] = models.run(action)

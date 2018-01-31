@@ -43,6 +43,8 @@ import models.behaviors.triggers.messagetrigger.MessageTriggerService
 import models.devmodechannel.DevModeChannelService
 import models.environmentvariable.TeamEnvironmentVariableService
 import models.organization.OrganizationService
+import models.billing.invoice.InvoiceService
+import models.billing.plan.PlanService
 import models.billing.subscription.SubscriptionService
 import models.team.TeamService
 import slick.dbio.DBIO
@@ -94,6 +96,8 @@ trait DataService {
   val invocationLogEntries: InvocationLogEntryService
   val devModeChannels: DevModeChannelService
   val subscriptions: SubscriptionService
+  val invoices: InvoiceService
+  val plans: PlanService
   val behaviorGroupDeployments: BehaviorGroupDeploymentService
   def behaviorResponses: BehaviorResponseService
 

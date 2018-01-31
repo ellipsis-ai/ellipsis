@@ -50,8 +50,12 @@ import models.team.{TeamService, TeamServiceImpl}
 import models.organization.{OrganizationService, OrganizationServiceImpl}
 import models.billing.plan.{PlanService, PlanServiceImpl}
 import models.billing.subscription.{SubscriptionService, SubscriptionServiceImpl}
+import models.billing.invoice.{InvoiceService, InvoiceServiceImpl}
+import services.billing.{BillingService, BillingServiceImpl}
+
 import services._
 import net.codingwell.scalaguice.ScalaModule
+
 import utils.SlackFileMap
 
 class ServiceModule extends AbstractModule with ScalaModule {
@@ -106,14 +110,21 @@ class ServiceModule extends AbstractModule with ScalaModule {
     bind[DevModeChannelService].to[DevModeChannelServiceImpl]
     bind[BehaviorGroupDeploymentService].to[BehaviorGroupDeploymentServiceImpl]
 
-    bind[PlanService].to[PlanServiceImpl]
-    bind[SubscriptionService].to[SubscriptionServiceImpl]
+
     bind[AWSLambdaService].to[AWSLambdaServiceImpl]
     bind[AWSLogsService].to[AWSLogsServiceImpl]
     bind[CacheService].to[CacheServiceImpl]
     bind[GraphQLService].to[GraphQLServiceImpl]
-    bind[Models].asEagerSingleton()
     bind[SlackEventService].to[SlackEventServiceImpl]
+
+    //  Services for billing
+    bind[PlanService].to[PlanServiceImpl]
+    bind[SubscriptionService].to[SubscriptionServiceImpl]
+    bind[InvoiceService].to[InvoiceServiceImpl]
+    bind[BillingService].to[BillingServiceImpl]
+
+    bind[Models].asEagerSingleton()
+    bind[PlanService].to[PlanServiceImpl]
     bind[EventHandler].asEagerSingleton()
     bind[GithubService].asEagerSingleton()
     bind[SlackFileMap].asEagerSingleton()
