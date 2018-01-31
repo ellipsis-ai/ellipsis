@@ -546,12 +546,18 @@ define(function(require: (string) => *): React.ElementType {
       if (this.props.linkedGithubRepo && this.compareGithubVersions()) {
         const unsavedChanges = this.props.currentGroupIsModified;
         const githubVersionIsIdentical = selectedVersion && !hasChanges;
+        const branchTitle = this.renderBranchTitle(this.getSavedBranch());
+        const label = this.state.isNewBranch ? (
+          <span>Push new {branchTitle} to GitHub…</span>
+        ) : (
+          <span>Update {branchTitle} with current version…</span>
+        );
         return (
           <Button
             onClick={this.toggleCommitting}
             disabled={unsavedChanges || githubVersionIsIdentical}
             className="mrs mbm"
-          >Update {this.renderBranchTitle(this.getSavedBranch())} with current version…</Button>
+          >{label}</Button>
         );
       }
     }

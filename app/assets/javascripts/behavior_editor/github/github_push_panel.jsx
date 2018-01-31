@@ -103,7 +103,7 @@ define(function(require) {
             this.setState({
               isSaving: false,
               lastSaved: new Date(),
-              warning: "Warning: nothing was committed because this branch has no changes from master"
+              warning: "Warning: nothing was committed because this branch has no changes from master."
             });
             this.props.onPushBranch();
           } else {
@@ -175,7 +175,7 @@ define(function(require) {
               onClick={this.onPushToGithub}
               disabledWhen={this.state.isSaving || !this.getCommitMessage()}
               labels={[{
-                text: "Force push…",
+                text: "Push…",
                 displayWhen: !this.state.isSaving
               }, {
                 text: "Pushing…",
@@ -186,7 +186,7 @@ define(function(require) {
               className="mrs"
               onClick={this.onDone}
             >
-              Done
+              {this.state.lastSaved ? "Done" : "Cancel"}
             </Button>
           </div>
           <div className="mtxl">
@@ -202,7 +202,6 @@ define(function(require) {
           <GithubErrorNotification error={this.state.error} />
         );
       } else if (this.state.lastSaved && !this.state.isSaving) {
-        const branch = `to branch ${this.getBranch()}`;
         return (
           <div className="fade-in type-s">
             {this.state.warning ? (
@@ -211,7 +210,7 @@ define(function(require) {
                 <b>{this.state.warning} </b>
               </span>
             ) : null}
-            <span>Pushed {branch} {Formatter.formatTimestampRelative(this.state.lastSaved)}</span>
+            <span>Branch {this.getBranch()} successfully pushed {Formatter.formatTimestampRelative(this.state.lastSaved)}.</span>
           </div>
         );
       } else {
