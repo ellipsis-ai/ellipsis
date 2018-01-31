@@ -17,66 +17,40 @@ define(function(require) {
     linked?: LinkedGithubRepo,
     onPushBranch: () => void,
     onDoneClick: () => void,
-    csrfToken: string,
-    branch: ?string
+    csrfToken: string
   };
 
   type State = {
-    branch: string,
     commitMessage: string,
     isSaving: boolean,
     lastSaved: ?Date,
-    lastSavedBranch: ?string,
     error: ?string
   };
 
   class GithubPushPanel extends React.Component<Props, State> {
     props: Props;
     state: State;
-    branchInput: ?FormInput;
     commitMessageInput: ?FormInput;
 
     constructor(props) {
       super(props);
       autobind(this);
       this.state = {
-        branch: this.getDefaultBranch(),
         commitMessage: "",
         isSaving: false,
         lastSaved: null,
-        lastSavedBranch: null,
         error: null
       };
     }
 
-    componentWillReceiveProps(newProps) {
-      if (newProps.branch !== this.props.branch) {
-        this.setState({
-          branch: newProps.branch
-        });
-      }
-    }
-
-    getDefaultBranch(): string {
-      return this.props.branch || "master";
-    }
-
     focus(): void {
-      if (this.branchInput && !this.getBranch()) {
-        this.branchInput.focus();
-      } else if (this.commitMessageInput) {
+      if (this.commitMessageInput) {
         this.commitMessageInput.focus();
       }
     }
 
     getBranch(): string {
-      return this.state.branch;
-    }
-
-    onBranchChange(branch: string): void {
-      this.setState({
-        branch: Formatter.formatGitBranchIdentifier(branch)
-      });
+      return (this.props.linked && this.props.linked.currentBranch) || "master";
     }
 
     getCommitMessage(): string {
@@ -116,8 +90,7 @@ define(function(require) {
         this.setState({
           commitMessage: "",
           isSaving: false,
-          lastSaved: new Date(),
-          lastSavedBranch: branch
+          lastSaved: new Date()
         });
         this.props.onPushBranch();
       }).catch((err: DataRequest.ResponseError) => {
@@ -156,14 +129,8 @@ define(function(require) {
                 <div className="column column-shrink align-button">
                   <span className="type-label mrs">Branch:</span>
                 </div>
-                <div className="column column-expand">
-                  <FormInput
-                    ref={(el) => this.branchInput = el}
-                    className="form-input-borderless type-monospace type-s width-15 mrm"
-                    placeholder="e.g. master"
-                    onChange={this.onBranchChange}
-                    value={this.getBranch()}
-                  />
+                <div className="column column-expand align-button">
+                  <span className="type-monospace type-s width-15 mrm">{this.getBranch()}</span>
                 </div>
               </div>
               <div className="column-row">
@@ -187,7 +154,7 @@ define(function(require) {
             <DynamicLabelButton
               className="button-primary mrs"
               onClick={this.onPushToGithub}
-              disabledWhen={this.state.isSaving || !this.getBranch() || !this.getCommitMessage()}
+              disabledWhen={this.state.isSaving || !this.getCommitMessage()}
               labels={[{
                 text: "Force push…",
                 displayWhen: !this.state.isSaving
@@ -216,7 +183,7 @@ define(function(require) {
           <GithubErrorNotification error={this.state.error} />
         );
       } else if (this.state.lastSaved && !this.state.isSaving) {
-        const branch = this.state.lastSavedBranch ? `to branch ${this.state.lastSavedBranch}` : "";
+        const branch = this.getBranch() ? `to branch ${this.getBranch()}` : "";
         return (
           <div className="fade-in">
             Pushed {branch} {Formatter.formatTimestampRelative(this.state.lastSaved)}

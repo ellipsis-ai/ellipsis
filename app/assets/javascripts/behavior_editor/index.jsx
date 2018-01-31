@@ -98,6 +98,7 @@ const BehaviorEditor = React.createClass({
     ).isRequired,
     onSave: React.PropTypes.func.isRequired,
     onLinkGithubRepo: React.PropTypes.func.isRequired,
+    onUpdateFromGithub: React.PropTypes.func.isRequired,
     onForgetSavedAnswerForInput: React.PropTypes.func.isRequired,
     onLoad: React.PropTypes.func,
     userId: React.PropTypes.string.isRequired,
@@ -2589,6 +2590,7 @@ const BehaviorEditor = React.createClass({
         isLinkedToGithub={this.props.isLinkedToGithub}
         linkedGithubRepo={this.props.linkedGithubRepo}
         onLinkGithubRepo={this.props.onLinkGithubRepo}
+        onUpdateFromGithub={this.props.onUpdateFromGithub}
         onSaveChanges={this.onSaveClick}
       />
     );

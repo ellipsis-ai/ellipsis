@@ -16,9 +16,10 @@ class LinkedGithubReposTable(tag: Tag) extends Table[LinkedGithubRepo](tag, "lin
   def owner = column[String]("owner")
   def repo = column[String]("repo")
   def behaviorGroupId = column[String]("group_id")
+  def maybeCurrentBranch = column[Option[String]]("current_branch")
   def createdAt = column[OffsetDateTime]("created_at")
 
-  def * = (owner, repo, behaviorGroupId, createdAt) <>
+  def * = (owner, repo, behaviorGroupId, maybeCurrentBranch, createdAt) <>
     ((LinkedGithubRepo.apply _).tupled, LinkedGithubRepo.unapply _)
 }
 
@@ -39,7 +40,7 @@ class LinkedGithubRepoServiceImpl @Inject() (
     dataService.run(maybeForAction(group))
   }
 
-  def link(group: BehaviorGroup, owner: String, repo: String): Future[LinkedGithubRepo] = {
+  def ensureLink(group: BehaviorGroup, owner: String, repo: String, maybeCurrentBranch: Option[String]): Future[LinkedGithubRepo] = {
     val action = for {
       maybeExisting <- maybeForAction(group)
       maybeAlreadyLinked <- maybeExisting.map { existing =>
@@ -49,13 +50,24 @@ class LinkedGithubRepoServiceImpl @Inject() (
           unlinkAction(group).map(_ => None)
         }
       }.getOrElse(DBIO.successful(None))
-      linked <- maybeAlreadyLinked.map(DBIO.successful).getOrElse {
-        val newInstance = LinkedGithubRepo(owner, repo, group.id, OffsetDateTime.now)
+      linked <- maybeAlreadyLinked.map { existing =>
+        val updated = existing.copy(owner = owner, repo = repo, maybeCurrentBranch = maybeCurrentBranch)
+        findQuery(group.id).update(updated).map(_ => updated)
+      }.getOrElse {
+        val newInstance = LinkedGithubRepo(owner, repo, group.id, maybeCurrentBranch, OffsetDateTime.now)
         (all += newInstance).map(_ => newInstance)
       }
     } yield linked
 
     dataService.run(action)
+  }
+
+  def maybeSetCurrentBranch(group: BehaviorGroup, branch: String): Future[Option[LinkedGithubRepo]] = {
+    maybeFor(group).flatMap { maybeExisting =>
+      maybeExisting.map { existing =>
+        ensureLink(group, existing.owner, existing.repo, Some(branch)).map(Some(_))
+      }.getOrElse(Future.successful(None))
+    }
   }
 
   def unlinkAction(group: BehaviorGroup): DBIO[Unit] = {

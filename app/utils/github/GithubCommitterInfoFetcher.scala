@@ -1,7 +1,7 @@
 package utils.github
 
 import models.accounts.user.User
-import play.api.libs.json.{JsDefined, JsValue}
+import play.api.libs.json.{JsDefined, JsObject, JsValue, Json}
 import services.{DefaultServices, GithubService}
 
 import scala.concurrent.ExecutionContext
@@ -37,7 +37,13 @@ case class GithubCommitterInfoFetcher(
         val email = Option((obj \ "email").as[String]).map(_.trim).filter(_.nonEmpty).getOrElse("<>")
         GithubCommitterInfo(name, email)
       }
-      case _ => throw GithubResultFromDataException("Could not fetch committer info")
+      case _ => {
+        throw GithubResultFromDataException(
+          GitFetcherExceptionType.NoCommiterInfoFound,
+          "Could not fetch committer info",
+          Json.obj("userId" -> user.id)
+        )
+      }
     }
   }
 

@@ -80,7 +80,13 @@ case class GithubSingleBehaviorGroupFetcher(
   def resultFromNonErrorResponse(data: JsValue): BehaviorGroupData = {
     val repoData = data \ "data" \ "repository"
     repoData match {
-      case JsDefined(JsNull) => throw GithubResultFromDataException(s"Repo `$repoName' doesn't exist for $owner")
+      case JsDefined(JsNull) => {
+        throw GithubResultFromDataException(
+          GitFetcherExceptionType.NoRepoFound,
+          s"Repo `$repoName' doesn't exist for $owner",
+          Json.obj("repo" -> repoName, "owner" -> owner)
+        )
+      }
       case _ => {
         repoData \ "object" \ "entries" match {
           case JsDefined(_) => {
@@ -88,7 +94,11 @@ case class GithubSingleBehaviorGroupFetcher(
               build.
               copyForImportableForTeam(team, maybeExistingGroup)
           }
-          case _ => throw GithubResultFromDataException(s"Branch '$branch' doesn't exist for $owner/$repoName")
+          case _ => throw GithubResultFromDataException(
+            GitFetcherExceptionType.NoBranchFound,
+            s"Branch '$branch' doesn't exist for $owner/$repoName",
+            Json.obj("repo" -> repoName, "owner" -> owner, "branch" -> branch)
+          )
         }
       }
     }

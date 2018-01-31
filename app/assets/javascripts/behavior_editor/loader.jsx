@@ -28,20 +28,44 @@ requirejs(['common'], function() {
           }
         }
 
-        onLinkGithubRepo(owner, repo, callback) {
-          DataRequest.jsonPost(
-            jsRoutes.controllers.BehaviorEditorController.linkToGithubRepo().url,
-            {
-              behaviorGroupId: this.props.group.id,
-              owner: owner,
-              repo: repo
-            },
-            this.props.csrfToken
-          )
+        onLinkGithubRepo(owner, repo, branch, callback) {
+          const url = jsRoutes.controllers.BehaviorEditorController.linkToGithubRepo().url;
+          const params = {};
+          params.behaviorGroupId = this.props.group.id;
+          params.owner = owner;
+          params.repo = repo;
+          if (branch) {
+            params.currentBranch = branch;
+          }
+          DataRequest.jsonPost(url, params, this.props.csrfToken)
             .then(() => {
-              const linked = new LinkedGithubRepo({ owner: owner, repo: repo });
+              const linked = new LinkedGithubRepo(owner, repo, branch);
               this.setState({ linkedGithubRepo: linked }, callback);
             });
+        }
+
+        onUpdateFromGithub(owner, repo, branch, callback, onError) {
+          DataRequest.jsonPost(
+            jsRoutes.controllers.BehaviorEditorController.updateFromGithub().url, {
+              behaviorGroupId: this.props.group.id,
+              owner: owner,
+              repo: repo,
+              branch: branch
+            },
+            this.props.csrfToken
+          ).then((json) => {
+            this.setState({
+              linkedGithubRepo: new LinkedGithubRepo(owner, repo, branch)
+            }, () => {
+              if (json.errors) {
+                onError(branch, json.errors);
+              } else {
+                callback(json);
+              }
+            });
+          }).catch(() => {
+            onError(branch, null);
+          });
         }
 
         onSave(newProps) {
@@ -107,6 +131,7 @@ requirejs(['common'], function() {
                 isLinkedToGithub={this.props.isLinkedToGithub}
                 linkedGithubRepo={this.state.linkedGithubRepo}
                 onLinkGithubRepo={this.onLinkGithubRepo}
+                onUpdateFromGithub={this.onUpdateFromGithub}
                 showVersions={this.props.showVersions}
                 onDeploy={this.onDeploy}
                 lastDeployTimestamp={this.props.lastDeployTimestamp}

@@ -489,6 +489,21 @@ class BehaviorEditorController @Inject() (
     )(UpdateFromGithubInfo.apply)(UpdateFromGithubInfo.unapply)
   )
 
+  case class UpdateFromGithubSuccessResponse(data: BehaviorGroupData)
+
+  case class UpdateFromGithubErrorData(message: String, `type`: Option[String], details: Option[JsObject])
+
+  case class UpdateFromGithubErrorResponse(errors: UpdateFromGithubErrorData)
+  object UpdateFromGithubErrorResponse {
+    def jsonFrom(message: String, `type`: Option[String], details: Option[JsObject]): JsValue = {
+      Json.toJson(UpdateFromGithubErrorResponse(UpdateFromGithubErrorData(message, `type`, details)))
+    }
+  }
+
+  implicit val updateFromGithubSuccessResponseWrites = Json.writes[UpdateFromGithubSuccessResponse]
+  implicit val updateFromGithubErrorDataWrites = Json.writes[UpdateFromGithubErrorData]
+  implicit val updateFromGithubErrorResponseWrites = Json.writes[UpdateFromGithubErrorResponse]
+
   def updateFromGithub = silhouette.SecuredAction.async { implicit request =>
     val user = request.identity
     updateFromGithubForm.bindFromRequest.fold(
@@ -502,6 +517,7 @@ class BehaviorEditorController @Inject() (
             dataService.githubProfiles.find(linked.loginInfo)
           }.getOrElse(Future.successful(None))
           maybeBehaviorGroup <- dataService.behaviorGroups.find(info.behaviorGroupId, user)
+          _ <- dataService.linkedGithubRepos.maybeSetCurrentBranch(maybeBehaviorGroup, info.branch)
           maybeExistingGroupData <- maybeBehaviorGroup.map { group =>
             dataService.behaviorGroups.maybeCurrentVersionFor(group).flatMap { maybeCurrentVersion =>
               maybeCurrentVersion.map { currentVersion =>
@@ -519,9 +535,10 @@ class BehaviorEditorController @Inject() (
               val fetcher = GithubSingleBehaviorGroupFetcher(group.team, info.owner, info.repo, profile.token, info.branch, maybeExistingGroupData, githubService, services, ec)
               try {
                 val groupData = fetcher.result.copyWithApiApplicationsIfAvailable(oauth2Appications)
-                Ok(JsObject(Map("data" -> Json.toJson(groupData))))
+                Ok(Json.toJson(UpdateFromGithubSuccessResponse(groupData)))
               } catch {
-                case e: GitFetcherException => Ok(JsObject(Map("errors" -> JsString(e.getMessage))))
+                case e: GithubResultFromDataException => Ok(UpdateFromGithubErrorResponse.jsonFrom(e.getMessage, Some(e.exceptionType.toString), Some(e.details)))
+                case e: GithubFetchDataException => Ok(UpdateFromGithubErrorResponse.jsonFrom(e.getMessage, None, None))
               }
             }.getOrElse(Unauthorized(s"User is not correctly authed with GitHub"))
           }.getOrElse(NotFound(s"Skill with ID ${info.behaviorGroupId} not found"))
@@ -561,6 +578,7 @@ class BehaviorEditorController @Inject() (
             dataService.githubProfiles.find(linked.loginInfo)
           }.getOrElse(Future.successful(None))
           maybeBehaviorGroup <- dataService.behaviorGroups.find(info.behaviorGroupId, user)
+          _ <- dataService.linkedGithubRepos.maybeSetCurrentBranch(maybeBehaviorGroup, info.branch)
           result <- maybeBehaviorGroup.map { group =>
             maybeGithubProfile.map { profile =>
               val committerInfo = GithubCommitterInfoFetcher(user, profile.token, githubService, services, ec).result
@@ -590,14 +608,16 @@ class BehaviorEditorController @Inject() (
   case class LinkToGithubRepoInfo(
                                behaviorGroupId: String,
                                owner: String,
-                               repo: String
+                               repo: String,
+                               currentBranch: Option[String]
                              )
 
   private val linkToGithubRepoForm = Form(
     mapping(
       "behaviorGroupId" -> nonEmptyText,
       "owner" -> nonEmptyText,
-      "repo" -> nonEmptyText
+      "repo" -> nonEmptyText,
+      "currentBranch" -> optional(nonEmptyText)
     )(LinkToGithubRepoInfo.apply)(LinkToGithubRepoInfo.unapply)
   )
 
@@ -616,8 +636,8 @@ class BehaviorEditorController @Inject() (
           maybeBehaviorGroup <- dataService.behaviorGroups.find(info.behaviorGroupId, user)
           result <- maybeBehaviorGroup.map { group =>
             maybeGithubProfile.map { profile =>
-              dataService.linkedGithubRepos.link(group, info.owner, info.repo).map { linked =>
-                Ok(Json.toJson(LinkedGithubRepoData(linked.owner, linked.repo)))
+              dataService.linkedGithubRepos.ensureLink(group, info.owner, info.repo, info.currentBranch).map { linked =>
+                Ok(Json.toJson(LinkedGithubRepoData(linked.owner, linked.repo, linked.maybeCurrentBranch)))
               }
             }.getOrElse(Future.successful(Unauthorized(s"User is not correctly authed with GitHub")))
           }.getOrElse(Future.successful(NotFound(s"Skill with ID ${info.behaviorGroupId} not found")))
