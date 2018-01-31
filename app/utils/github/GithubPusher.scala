@@ -5,6 +5,7 @@ import models.accounts.user.User
 import models.behaviors.behaviorgroup.BehaviorGroup
 import models.team.Team
 import play.api.Configuration
+import play.api.libs.json.{JsObject, Json}
 import services._
 import utils.ShellEscaping
 
@@ -40,8 +41,9 @@ case class ExportForPushException(message: String) extends GitCommandException {
   override def getMessage: String = s"Error exporting skill: $message"
 }
 
-case class GitPushException(`type`: GitPushExceptionType.Value, message: String, branch: String) extends GitCommandException {
-  override def getMessage: String = s"Error pushing to GitHub: $message"
+case class GitPushException(exceptionType: GitPushExceptionType.Value, message: String, branch: String) extends GitCommandException {
+  val details: JsObject = Json.obj("branch" -> branch)
+  override def getMessage: String = message
 }
 
 object GitPushException {
@@ -49,9 +51,9 @@ object GitPushException {
 
   def fromMessage(branch: String, originalMessage: String): GitPushException = {
     if (nothingToCommitRegex.findFirstIn(originalMessage).isDefined) {
-      GitPushException(GitPushExceptionType.NoChanges, s"branch $branch has no changes to commit", branch)
+      GitPushException(GitPushExceptionType.NoChanges, s"Warning: branch $branch has no changes from master to commit.", branch)
     } else {
-      GitPushException(GitPushExceptionType.Unknown, originalMessage.trim, branch)
+      GitPushException(GitPushExceptionType.Unknown, s"Error pushing to GitHub: ${originalMessage.trim}", branch)
     }
   }
 }

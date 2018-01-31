@@ -10,6 +10,7 @@ define(function(require) {
     LinkedGithubRepo = require('../../models/linked_github_repo'),
     GithubErrorNotification = require('./github_error_notification'),
     GithubOwnerRepoReadonly = require('./github_owner_repo_readonly'),
+    SVGWarning = require('../../svg/warning'),
     autobind = require('../../lib/autobind');
 
   type Props = {
@@ -39,7 +40,8 @@ define(function(require) {
         commitMessage: "",
         isSaving: false,
         lastSaved: null,
-        error: null
+        error: null,
+        warning: null
       };
     }
 
@@ -70,7 +72,8 @@ define(function(require) {
         const repo = linked.getRepo();
         this.setState({
           isSaving: true,
-          error: null
+          error: null,
+          warning: null
         }, () => this.pushToGithub(owner, repo));
       }
     }
@@ -86,18 +89,34 @@ define(function(require) {
           commitMessage: this.getCommitMessage()
         },
         this.props.csrfToken
-      ).then(() => {
-        this.setState({
-          commitMessage: "",
-          isSaving: false,
-          lastSaved: new Date()
-        });
-        this.props.onPushBranch();
-      }).catch((err: DataRequest.ResponseError) => {
-        this.setState({
-          isSaving: false,
-          error: err.body
-        });
+      ).then((json) => {
+        if (json.data) {
+          this.setState({
+            commitMessage: "",
+            isSaving: false,
+            lastSaved: new Date()
+          });
+          this.props.onPushBranch();
+        } else if (json.errors) {
+          const error = json.errors;
+          if (error.type && error.type === "NoChanges") {
+            this.setState({
+              isSaving: false,
+              lastSaved: new Date(),
+              warning: "Warning: nothing was committed because this branch has no changes from master"
+            });
+            this.props.onPushBranch();
+          } else {
+            this.onPushError(json.errors.message);
+          }
+        }
+      }).catch((err: DataRequest.ResponseError) => this.onPushError(err.body));
+    }
+
+    onPushError(errorMessage: string) {
+      this.setState({
+        isSaving: false,
+        error: errorMessage
       });
     }
 
@@ -183,10 +202,16 @@ define(function(require) {
           <GithubErrorNotification error={this.state.error} />
         );
       } else if (this.state.lastSaved && !this.state.isSaving) {
-        const branch = this.getBranch() ? `to branch ${this.getBranch()}` : "";
+        const branch = `to branch ${this.getBranch()}`;
         return (
-          <div className="fade-in">
-            Pushed {branch} {Formatter.formatTimestampRelative(this.state.lastSaved)}
+          <div className="fade-in type-s">
+            {this.state.warning ? (
+              <span>
+                <span className="display-inline-block height-xl mrs type-yellow align-m"><SVGWarning /></span>
+                <b>{this.state.warning} </b>
+              </span>
+            ) : null}
+            <span>Pushed {branch} {Formatter.formatTimestampRelative(this.state.lastSaved)}</span>
           </div>
         );
       } else {
