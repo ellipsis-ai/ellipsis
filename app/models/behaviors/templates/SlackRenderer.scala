@@ -1,5 +1,7 @@
 package models.behaviors.templates
 
+import java.util.regex.Matcher
+
 import org.commonmark.ext.gfm.strikethrough.Strikethrough
 import org.commonmark.node._
 import play.api.Logger
@@ -9,7 +11,7 @@ class SlackRenderer(stringBuilder: StringBuilder) extends AbstractVisitor {
     val ampersandsEscaped = text.replaceAll("&", "&amp;")
     try {
       """\S+""".r.replaceAllIn(
-        ampersandsEscaped, m => {
+        Matcher.quoteReplacement(ampersandsEscaped), m => {
           val str = m.matched
           if (str == null || str.isEmpty) {
             ""

@@ -35,6 +35,10 @@ class SlackMessageFormatterSpec extends PlaySpec {
       format("[**This is a bold link**](http://ohsobold.com)") mustBe "<http://ohsobold.com|*This is a bold link*>"
     }
 
+    "handle regex chars" in {
+      format("The $latest is the <latest>") mustBe "The $latest is the &lt;latest&gt;"
+    }
+
   }
 
 }
