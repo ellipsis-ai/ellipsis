@@ -1,16 +1,35 @@
+// @flow
+
+type HSL = {
+  h: number,
+  s: number,
+  l: number
+}
+
+type RGB = {
+  r: number,
+  g: number,
+  b: number
+}
+
   class RgbaColor {
-    constructor(r, g, b, a) {
+    r: number;
+    g: number;
+    b: number;
+    a: number;
+
+    constructor(r: number, g: number, b: number, a: ?number) {
       this.r = r;
       this.g = g;
       this.b = b;
-      this.a = a;
+      this.a = typeof a === "number" ? a : 1;
     }
 
-    hasAlpha() {
+    hasAlpha(): boolean {
       return typeof (this.a) === "number";
     }
 
-    toHex() {
+    toHex(): string {
       const hex = `#${this.r.toString(16)}${this.g.toString(16)}${this.b.toString(16)}`;
       if (this.hasAlpha()) {
         return hex + Math.round(this.a * 256).toString(16);
@@ -19,7 +38,7 @@
       }
     }
 
-    toRGBA() {
+    toRGBA(): string {
       const rgb = `${this.r}, ${this.g}, ${this.b}`;
       if (this.hasAlpha()) {
         return `rgba(${rgb}, ${this.a.toFixed(2)})`;
@@ -28,7 +47,7 @@
       }
     }
 
-    toHSLA() {
+    toHSLA(): string {
       const hsl = RgbaColor.rgbToHsl(this.r, this.g, this.b);
       const hslString = `${hsl.h}, ${hsl.s}%, ${hsl.l}%`;
       if (this.hasAlpha()) {
@@ -38,7 +57,7 @@
       }
     }
 
-    static fromCSS(colorValue) {
+    static fromCSS(colorValue: string): ?RgbaColor {
       let r, g, b, a;
       const rgbMatch = colorValue.match(/rgba?\s*\(\s*(\d+)[\s,]*(\d+)[\s,]*(\d+)[\s,]*(\d+.?\d*)?/i);
       const hexMatch = colorValue.match(/#([0-9a-f]){3,6}/i);
@@ -70,10 +89,14 @@
         b = rgb.b;
         a = isNaN(maybeAlpha) ? null : maybeAlpha;
       }
-      return new RgbaColor(r, g, b, a);
+      if (typeof r === "number" && typeof g === "number" && typeof b === "number") {
+        return new RgbaColor(r, g, b, a);
+      } else {
+        return null;
+      }
     }
 
-    static rgbToHsl(rInt, gInt, bInt) {
+    static rgbToHsl(rInt: number, gInt: number, bInt: number): HSL {
       const r = rInt / 255;
       const g = gInt / 255;
       const b = bInt / 255;
@@ -94,7 +117,7 @@
           case g:
             h = (b - r) / d + 2;
             break;
-          case b:
+          default:
             h = (r - g) / d + 4;
             break;
         }
@@ -108,7 +131,7 @@
       };
     }
 
-    static hslToRgb(hInt, sInt, lInt) {
+    static hslToRgb(hInt, sInt, lInt): RGB {
       let h = hInt / 360;
       let s = parseInt(sInt, 10) / 100;
       let l = parseInt(lInt, 10) / 100;

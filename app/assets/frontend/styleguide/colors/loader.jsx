@@ -1,11 +1,18 @@
-/* global ColorsConfig */
+// @flow
+declare var ColorsConfig: {
+  containerId: string
+};
+
 import 'core-js';
 import 'whatwg-fetch';
 import React from 'react';
 import ReactDOM from 'react-dom';
 import Colors from './index';
 
-ReactDOM.render(
-  React.createElement(Colors, ColorsConfig),
-  document.getElementById(ColorsConfig.containerId)
-);
+const container = document.getElementById(ColorsConfig.containerId);
+if (container) {
+  ReactDOM.render(
+    React.createElement(Colors, ColorsConfig),
+    container
+  );
+}
