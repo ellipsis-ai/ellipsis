@@ -37,7 +37,13 @@ class RemoteAssets @Inject() (
           val withoutAssetsPrefix = controllers.routes.RemoteAssets.getAsset(asset).url.substring(7)
           contentUrl + withoutAssetsPrefix
         }
-        case None => controllers.routes.RemoteAssets.getAsset(asset).url
+        case None => {
+          if (file.startsWith("bundles/")) {
+            "/" + file
+          } else {
+            controllers.routes.RemoteAssets.getAsset(asset).url
+          }
+        }
       }
     }
   }

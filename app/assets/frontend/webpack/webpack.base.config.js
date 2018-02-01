@@ -2,21 +2,31 @@
 var webpack = require('webpack');
 var path = require('path');
 console.log(__dirname);
-var buildPath = path.resolve(__dirname, '../../../public/bundles/');
-var nodeModulesPath = path.resolve(__dirname, '../../../node_modules');
+var buildPath = path.resolve(__dirname, '../../../../target/web/stage/public/bundles/');
+var nodeModulesPath = path.resolve(__dirname, '../../../../node_modules');
 
 /**
  * Base configuration object for Webpack
  */
 var config = {
   entry: {
-    styleguideColors: './app/frontend/styleguide/colors/loader.jsx'
+    vendor: [
+      'core-js',
+      'javascript-debounce',
+      'node-uuid',
+      'react',
+      'react-dom',
+      'urijs',
+      'diff',
+      'whatwg-fetch'
+    ],
+    styleguideColors: './app/assets/frontend/styleguide/colors/loader'
   },
   output: {
     path: buildPath,
     filename: '[name].js',
     sourceMapFilename: '[name].map',
-    publicPath: '/bundles/'
+    publicPath: '/assets/bundles/'
   },
   externals: {
   },
@@ -57,13 +67,17 @@ var config = {
     extensions: ['.jsx', '.ts', '.js', '.json', '.css', '.html']
   },
   plugins: [
-    new webpack.ContextReplacementPlugin(
-      /angular(\\|\/)core(\\|\/)@angular/,
-      path.resolve(__dirname, './app')
-    ),
-    new webpack.ProvidePlugin({
-      'fetch': 'imports?this=>global!exports?global.fetch!whatwg-fetch'
+    new webpack.optimize.CommonsChunkPlugin({
+      name: 'vendor',
+      minChunks: Infinity
     })
+    // new webpack.ContextReplacementPlugin(
+    //   /angular(\\|\/)core(\\|\/)@angular/,
+    //   path.resolve(__dirname, './app')
+    // ),
+    // new webpack.ProvidePlugin({
+    //   'fetch': 'imports?this=>global!exports?global.fetch!whatwg-fetch'
+    // })
   ]
 };
 

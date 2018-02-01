@@ -77,7 +77,7 @@ BabelKeys.options := WebJs.JS.Object(
 )
 
 // Starts: Webpack build task
-val appPath = "./app/frontend"
+val appPath = "./app/assets/frontend"
 val webpackBuild = taskKey[Unit]("Webpack build task.")
 
 webpackBuild := {

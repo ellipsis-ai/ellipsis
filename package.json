@@ -43,8 +43,8 @@
     "test": "jest --runInBand",
     "postinstall": "find ./npm_modules/* -maxdepth 2 -name package.json -exec sh -c 'cd $(dirname \"{}\"); npm install' \\;",
     "flow": "flow",
-    "build": "webpack -p --config ./app/frontend/webpack/webpack.base.config.js",
-    "start": "node ./app/frontend/webpack/webpack.server"
+    "build": "webpack -p --config ./app/assets/frontend/webpack/webpack.base.config.js",
+    "start": "node ./app/assets/frontend/webpack/webpack.server"
   },
   "jest": {
     "globals": {
