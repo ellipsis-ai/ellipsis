@@ -81,9 +81,9 @@ BabelKeys.options := WebJs.JS.Object(
 val appPath = "./app/assets/frontend"
 val webpackBuild = taskKey[Pipeline.Stage]("Webpack build task.")
 
-webpackBuild := { _ =>
+webpackBuild := { mappings =>
   Process("npm run build", file(appPath)).run
-  Seq()
+  mappings
 }
 
 (packageBin in Universal) := ((packageBin in Universal) dependsOn webpackBuild).value
