@@ -16,9 +16,12 @@ class StyleguideController @Inject() (
 
   def colors = silhouette.UserAwareAction { implicit request =>
     render {
-      case Accepts.JavaScript() => Ok(views.js.shared.pageConfig(viewConfig(None), "config/styleguide/colors", Json.obj(
-        "containerId" -> "colorContainer"
-      )))
+      case Accepts.JavaScript() => {
+        Ok(views.js.shared.webpackLoader(
+          viewConfig(None), "ColorsConfig", "styleguideColors", Json.obj(
+            "containerId" -> "colorContainer"
+          )))
+      }
       case Accepts.Html() => Ok(views.html.styleguide.colors(viewConfig(None)))
     }
   }

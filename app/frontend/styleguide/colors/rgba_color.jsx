@@ -1,5 +1,3 @@
-define(function() {
-
   class RgbaColor {
     constructor(r, g, b, a) {
       this.r = r;
@@ -145,6 +143,4 @@ define(function() {
     }
   }
 
-  return RgbaColor;
-
-});
+export default RgbaColor;

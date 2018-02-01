@@ -14,6 +14,7 @@
     "babel-core": "^6.24.1",
     "babel-eslint": "^8.0.1",
     "babel-jest": "^19.0.0",
+    "babel-loader": "^7.1.2",
     "babel-preset-es2015": "^6.24.1",
     "babel-preset-jest": "^21.2.0",
     "babel-preset-react": "^6.24.1",
@@ -33,13 +34,17 @@
     "react-addons-test-utils": "15.3.1",
     "react-dom": "15.3.1",
     "urijs": "1.18.1",
+    "webpack": "^3.10.0",
+    "webpack-dev-server": "^2.11.1",
     "whatwg-fetch": "1.0.0"
   },
   "scripts": {
     "lint": "scripts/run_eslint",
     "test": "jest --runInBand",
     "postinstall": "find ./npm_modules/* -maxdepth 2 -name package.json -exec sh -c 'cd $(dirname \"{}\"); npm install' \\;",
-    "flow": "flow"
+    "flow": "flow",
+    "build": "webpack -p --config ./app/frontend/webpack/webpack.base.config.js",
+    "start": "node ./app/frontend/webpack/webpack.server"
   },
   "jest": {
     "globals": {

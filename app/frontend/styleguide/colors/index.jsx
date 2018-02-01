@@ -1,8 +1,7 @@
-define(function(require) {
-  const React = require("react"),
-    RgbaColor = require('./rgba_color');
+import React from "react";
+import RgbaColor from './rgba_color';
 
-  return React.createClass({
+const Colors = React.createClass({
     getColorClasses: function() {
       const colorList = [].slice.call(document.styleSheets).reduce((all, styleSheet) => {
         if (styleSheet.cssRules) {
@@ -75,4 +74,5 @@ define(function(require) {
       );
     }
   });
-});
+
+export default Colors;

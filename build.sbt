@@ -1,3 +1,5 @@
+import play.sbt.PlayImport.PlayKeys.playRunHooks
+
 name := """ellipsis"""
 version := "1.0-SNAPSHOT"
 scalaVersion := "2.11.8"
@@ -51,6 +53,7 @@ libraryDependencies ++= Seq(
   "org.webjars.bower" % "urijs" % "1.18.1",
   "org.webjars.npm" % "diff" % "3.4.0",
   "org.webjars.bower" % "node-uuid" % "1.4.7",
+  "org.webjars.npm" % "little-loader" % "0.2.0",
   "com.atlassian.commonmark" % "commonmark" % "0.6.0",
   "com.atlassian.commonmark" % "commonmark-ext-gfm-strikethrough" % "0.6.0",
   "com.atlassian.commonmark" % "commonmark-ext-autolink" % "0.6.0",
@@ -72,4 +75,20 @@ RjsKeys.mainModule := "build"
 BabelKeys.options := WebJs.JS.Object(
   "presets" -> List("es2015", "react")
 )
+
+// Starts: Webpack build task
+val appPath = "./app/frontend"
+val webpackBuild = taskKey[Unit]("Webpack build task.")
+
+webpackBuild := {
+  Process("npm run build", file(appPath)).run
+}
+
+(packageBin in Universal) := ((packageBin in Universal) dependsOn webpackBuild).value
+// Ends.
+
+// Starts: Webpack server process when running locally and build actions for production bundle
+lazy val frontendDirectory = baseDirectory {_ / appPath}
+playRunHooks += frontendDirectory.map(WebpackServer(_)).value
+// Ends.
 // JavaScript configuration ends

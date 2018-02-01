@@ -161,3 +161,6 @@ GET         /assets/*file                             @controllers.RemoteAssets.
 
 # Styleguide routes
 GET         /styleguide/colors                        @controllers.StyleguideController.colors
+
+# Webpack routes
+GET         /bundles/*file                            @controllers.FrontendController.bundle(file)

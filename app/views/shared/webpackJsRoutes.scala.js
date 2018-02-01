@@ -1,0 +1,3 @@
+@()(implicit r: RequestHeader)
+
+@jsRoutes();
