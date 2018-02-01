@@ -82,7 +82,7 @@ val appPath = "./app/assets/frontend"
 val webpackBuild = taskKey[Pipeline.Stage]("Webpack build task.")
 
 webpackBuild := { mappings =>
-  Process("npm run build", file(appPath)).run
+  Process("npm run build", file(appPath)).!
   mappings
 }
 
