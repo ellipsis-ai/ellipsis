@@ -1,7 +1,7 @@
 // @flow
 const webpack = require('webpack');
 const path = require('path');
-const buildPath = path.resolve(__dirname, '../../bundles');
+const buildPath = path.resolve(__dirname, '../../../../target/web/public/main/bundles');
 
 /**
  * Base configuration object for Webpack
