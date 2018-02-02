@@ -38,14 +38,20 @@ class RemoteAssets @Inject() (
           contentUrl + withoutAssetsPrefix
         }
         case None => {
-          if (file.startsWith("bundles/")) {
-            "/" + file
-          } else {
-            controllers.routes.RemoteAssets.getAsset(asset).url
-          }
+          controllers.routes.RemoteAssets.getAsset(asset).url
         }
       }
     }
   }
 
+  def getWebpackBundle(file: String): String = {
+    configuration.getOptional[String]("cdn_url") match {
+      case Some(_) => {
+        getUrl(file)
+      }
+      case None => {
+        "/" + file
+      }
+    }
+  }
 }

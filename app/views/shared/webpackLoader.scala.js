@@ -15,5 +15,5 @@ let @{configName} = {};
     console.info("*** DEVELOPMENT MODE ***\n\nPage configuration for @configName:\n", config);
   }
   @{configName} = config;
-  window._lload('@{config.assets.getUrl("bundles/" + moduleToLoad + ".js")}');
+  window._lload('@{config.assets.getWebpackBundle("bundles/" + moduleToLoad + ".js")}');
 })();
