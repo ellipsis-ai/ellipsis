@@ -45,6 +45,11 @@ class RemoteAssets @Inject() (
   }
 
   def getWebpackBundle(file: String): String = {
-    routes.WebpackController.bundle(file).url
+    // In development, bundles are served by the WebpackController
+    if (environment.mode == Mode.Dev) {
+      routes.WebpackController.bundle(file).url
+    } else {
+      getUrl("bundles/" + file)
+    }
   }
 }
