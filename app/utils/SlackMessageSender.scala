@@ -4,7 +4,8 @@ import akka.actor.ActorSystem
 import models.SlackMessageFormatter
 import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.events.{MessageAttachmentGroup, SlackMessageAttachmentGroup, SlackMessageTextAttachmentGroup}
-import play.api.Configuration
+import models.loggedevent.{LoggedEvent, LoggedEventContext, MessageContext}
+import services.DefaultServices
 import slack.api.SlackApiClient
 import slack.models.Attachment
 
@@ -36,8 +37,12 @@ case class SlackMessageSender(
                                maybeConversation: Option[Conversation],
                                attachmentGroups: Seq[MessageAttachmentGroup] = Seq(),
                                files: Seq[UploadFileSpec] = Seq(),
-                               configuration: Configuration
+                               services: DefaultServices
                              ) {
+
+  val configuration = services.configuration
+  val cacheService = services.cacheService
+  val dataService = services.dataService
 
   val attachmentGroupsToUse = if (isForUndeployed) {
     val baseUrl = configuration.get[String]("application.apiBaseUrl")
@@ -72,9 +77,14 @@ case class SlackMessageSender(
       deleteOriginal = None,
       threadTs = maybeThreadTs,
       replyBroadcast = maybeReplyBroadcast
-    ).recover {
-      case t: Throwable => throw SlackMessageSenderException(t, channel, teamId, user, text)
-    }
+    ).
+      flatMap { res =>
+        val context = LoggedEventContext(None, Some(MessageContext(Conversation.SLACK_CONTEXT, channelToUse)))
+        dataService.loggedEvents.log(LoggedEvent.forBotMessageSent(text, context)).map(_ => res)
+      }.
+      recover {
+        case t: Throwable => throw SlackMessageSenderException(t, channel, teamId, user, text)
+      }
   }
 
   private def isDirectMessage(channelId: String): Boolean = {

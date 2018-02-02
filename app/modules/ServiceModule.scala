@@ -50,6 +50,7 @@ import models.team.{TeamService, TeamServiceImpl}
 import models.organization.{OrganizationService, OrganizationServiceImpl}
 import models.billing.plan.{PlanService, PlanServiceImpl}
 import models.billing.subscription.{SubscriptionService, SubscriptionServiceImpl}
+import models.loggedevent.{LoggedEventService, LoggedEventServiceImpl}
 import services._
 import net.codingwell.scalaguice.ScalaModule
 import utils.SlackFileMap
@@ -105,6 +106,7 @@ class ServiceModule extends AbstractModule with ScalaModule {
     bind[NodeModuleVersionService].to[NodeModuleVersionServiceImpl]
     bind[DevModeChannelService].to[DevModeChannelServiceImpl]
     bind[BehaviorGroupDeploymentService].to[BehaviorGroupDeploymentServiceImpl]
+    bind[LoggedEventService].to[LoggedEventServiceImpl]
 
     bind[PlanService].to[PlanServiceImpl]
     bind[SubscriptionService].to[SubscriptionServiceImpl]

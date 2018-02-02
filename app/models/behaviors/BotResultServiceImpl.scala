@@ -4,17 +4,20 @@ import javax.inject.Inject
 
 import akka.actor.ActorSystem
 import play.api.Configuration
-import services.{CacheService, DataService}
+import services.{CacheService, DataService, DefaultServices}
 import slick.dbio.DBIO
 
 import scala.concurrent.{ExecutionContext, Future}
 
 class BotResultServiceImpl @Inject() (
-                                        dataService: DataService,
-                                        cacheService: CacheService,
-                                        configuration: Configuration,
-                                        implicit val ec: ExecutionContext
-                                      ) extends BotResultService {
+                                       services: DefaultServices,
+                                       implicit val ec: ExecutionContext
+                                     ) extends BotResultService {
+
+
+  val dataService: DataService = services.dataService
+  val cacheService: CacheService = services.cacheService
+  val configuration: Configuration = services.configuration
 
   def sendInAction(
                     botResult: BotResult,
@@ -62,8 +65,7 @@ class BotResultServiceImpl @Inject() (
           botResult.attachmentGroups,
           files,
           botResult.isForUndeployed,
-          cacheService,
-          configuration
+          services
         )
       )
     } yield sendResult

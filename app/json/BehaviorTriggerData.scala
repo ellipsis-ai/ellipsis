@@ -25,3 +25,14 @@ case class BehaviorTriggerData(
     }
   }
 }
+
+object BehaviorTriggerData {
+
+  def buildFor(trigger: MessageTrigger) = BehaviorTriggerData(
+    trigger.pattern,
+    trigger.requiresBotMention,
+    trigger.shouldTreatAsRegex,
+    trigger.isCaseSensitive
+  )
+
+}

@@ -44,6 +44,7 @@ import models.devmodechannel.DevModeChannelService
 import models.environmentvariable.TeamEnvironmentVariableService
 import models.organization.OrganizationService
 import models.billing.subscription.SubscriptionService
+import models.loggedevent.LoggedEventService
 import models.team.TeamService
 import slick.dbio.DBIO
 
@@ -95,6 +96,7 @@ trait DataService {
   val devModeChannels: DevModeChannelService
   val subscriptions: SubscriptionService
   val behaviorGroupDeployments: BehaviorGroupDeploymentService
+  val loggedEvents: LoggedEventService
   def behaviorResponses: BehaviorResponseService
 
   def run[T](action: DBIO[T]): Future[T]

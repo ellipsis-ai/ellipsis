@@ -5,15 +5,15 @@ import javax.inject.Inject
 
 import akka.actor.{Actor, ActorSystem}
 import drivers.SlickPostgresDriver.api._
-import models.behaviors.BotResultService
 import models.behaviors.events.EventHandler
 import models.behaviors.scheduling.Scheduled
-import play.api.{Configuration, Logger}
-import services.{CacheService, DataService, DefaultServices}
+import models.loggedevent.LoggedEvent
+import play.api.Logger
+import services.{DataService, DefaultServices}
 import slack.api.SlackApiClient
 
-import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration._
+import scala.concurrent.{ExecutionContext, Future}
 
 object ScheduledActor {
   final val name = "scheduled"
@@ -39,6 +39,7 @@ class ScheduledActor @Inject()(
     val action: DBIO[Boolean] = Scheduled.maybeNextToBeSentAction(when, dataService).flatMap { maybeNext =>
       maybeNext.map { scheduled =>
         for {
+          _ <- DBIO.from(dataService.loggedEvents.log(LoggedEvent.forScheduledRun(scheduled)))
           displayText <- DBIO.from(scheduled.displayText(dataService))
           maybeProfile <- scheduled.botProfileAction(dataService)
           maybeSlackUserId <- scheduled.maybeUser.map { user =>

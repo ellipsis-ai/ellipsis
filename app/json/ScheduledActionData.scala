@@ -3,6 +3,7 @@ package json
 import java.time.OffsetDateTime
 
 import models.accounts.user.UserTeamAccess
+import models.behaviors.scheduling.Scheduled
 import models.behaviors.scheduling.scheduledbehavior.ScheduledBehavior
 import models.behaviors.scheduling.scheduledmessage.ScheduledMessage
 import models.team.Team
@@ -65,6 +66,13 @@ object ScheduledActionData {
       useDM = scheduledBehavior.isForIndividualMembers,
       channel = scheduledBehavior.maybeChannel.getOrElse("")
     )
+  }
+
+  def fromScheduled(scheduled: Scheduled): ScheduledActionData = {
+    scheduled match {
+      case s: ScheduledBehavior => fromScheduledBehavior(s)
+      case s: ScheduledMessage => fromScheduledMessage(s)
+    }
   }
 
   def buildForAdmin(team: Team, dataService: DataService)(implicit ec: ExecutionContext): Future[Seq[ScheduledActionData]] = {
