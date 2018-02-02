@@ -87,10 +87,10 @@ val webpackBuild = taskKey[Pipeline.Stage]("Webpack build task.")
 
 webpackBuild := { mappings =>
   Process("npm run build", file(appPath)).!
-  val files = IO.listFiles(file("./target/web/public/main/bundles"))
+  val files = IO.listFiles(file("./target/web/webpack/bundles"))
   val newMappings = files.map(file => {
     println(file.getPath)
-    (file, file.getPath)
+    (file, file.getPath.replace("target/web/webpack/bundles", "bundles"))
   })
   mappings ++ newMappings
 }
