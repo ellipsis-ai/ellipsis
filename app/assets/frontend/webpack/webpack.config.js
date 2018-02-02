@@ -1,20 +1,15 @@
-const path = require('path');
 const webpack = require('webpack');
 
 module.exports = exports = Object.create(require('./webpack.base.config.js'));
 
-exports.devtool = 'source-map';
+exports.devtool = 'nosources-source-map';
 exports.entry = Object.assign({
   devServer: 'webpack/hot/dev-server',
   devServerClient: 'webpack-dev-server/client?http://localhost:8080'
 }, exports.entry);
+exports.output = Object.assign(exports.output, {
+  devtoolModuleFilenameTemplate: "file://[absolute-resource-path]"
+});
 exports.plugins = [
-  new webpack.ContextReplacementPlugin(
-    /angular(\\|\/)core(\\|\/)@angular/,
-    path.resolve(__dirname, './app')
-  ),
-  new webpack.HotModuleReplacementPlugin(),
-  new webpack.ProvidePlugin({
-    'fetch': 'imports?this=>global!exports?global.fetch!whatwg-fetch'
-  })
+  new webpack.HotModuleReplacementPlugin()
 ];
