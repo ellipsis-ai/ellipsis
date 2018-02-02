@@ -44,8 +44,8 @@
     "test": "jest --runInBand",
     "postinstall": "find ./npm_modules/* -maxdepth 2 -name package.json -exec sh -c 'cd $(dirname \"{}\"); npm install' \\;",
     "flow": "flow",
-    "build": "NODE_CONFIG_DIR='./conf/webpack' webpack -p --config ./app/assets/frontend/webpack/webpack.base.config.js",
-    "start": "NODE_CONFIG_DIR='./conf/webpack' node ./app/assets/frontend/webpack/webpack.server"
+    "build": "NODE_CONFIG_DIR='./conf/webpack' webpack --env.WEBPACK_BUILD_PATH=${WEBPACK_BUILD_PATH} -p --config ./app/assets/frontend/webpack/webpack.base.config.js",
+    "start": "NODE_CONFIG_DIR='./conf/webpack' WEBPACK_BUILD_PATH=${WEBPACK_BUILD_PATH} node ./app/assets/frontend/webpack/webpack.server"
   },
   "jest": {
     "globals": {

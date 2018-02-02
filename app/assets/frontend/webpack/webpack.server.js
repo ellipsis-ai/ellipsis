@@ -20,7 +20,7 @@ console.log('[Webpack] Server running at location: ' + __dirname);
 
 // First we fire up Webpack an pass in the configuration file
 let bundleStart = null;
-const compiler = webpack(webpackConfig);
+const compiler = webpack(webpackConfig(process.env));
 
 // We give notice in the terminal when it starts bundling and
 // set the time it started

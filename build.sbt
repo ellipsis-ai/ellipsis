@@ -86,11 +86,13 @@ val appPath = "./app/assets/frontend"
 val webpackBuild = taskKey[Pipeline.Stage]("Webpack build task.")
 
 webpackBuild := { mappings =>
-  Process("npm run build", file(appPath)).!
-  val files = IO.listFiles(file("./target/web/webpack/bundles"))
+  val targetDir = "target/web/webpack/bundles"
+  val assetDir = "bundles"
+  Process("npm run build", file(appPath), ("WEBPACK_BUILD_PATH", targetDir)).!
+  val files = IO.listFiles(file(s"./$targetDir"))
   val newMappings = files.map(file => {
     println(file.getPath)
-    (file, file.getPath.replace("target/web/webpack/bundles", "bundles"))
+    (file, file.getPath.replace(targetDir, assetDir))
   })
   mappings ++ newMappings
 }
@@ -103,6 +105,6 @@ stage := (stage dependsOn webpackBuild).value
 
 // Starts: Webpack server process when running locally and build actions for production bundle
 lazy val frontendDirectory = baseDirectory {_ / appPath}
-playRunHooks += frontendDirectory.map(WebpackServer(_)).value
+playRunHooks += frontendDirectory.map(base => WebpackServer(base, "target/web/webpack/bundles")).value
 // Ends.
 // JavaScript configuration ends

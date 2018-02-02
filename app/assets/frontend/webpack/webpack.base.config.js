@@ -1,12 +1,11 @@
-// @flow
+/* eslint no-console: "off" */
 const webpack = require('webpack');
 const path = require('path');
-const buildPath = path.resolve(__dirname, '../../../../target/web/webpack/bundles');
 
 /**
  * Base configuration object for Webpack
  */
-const config = {
+const webpackConfig = {
   entry: {
     vendor: [
       'core-js',
@@ -21,7 +20,7 @@ const config = {
     styleguideColors: './app/assets/frontend/styleguide/colors/loader'
   },
   output: {
-    path: buildPath,
+    path: "",
     filename: '[name].js',
     sourceMapFilename: '[name].map',
     publicPath: '/assets/bundles/'
@@ -56,5 +55,13 @@ const config = {
   ]
 };
 
-module.exports = config;
-
+module.exports = (env) => {
+  const targetDir = env.WEBPACK_BUILD_PATH;
+  if (!targetDir) {
+    throw new Error("Must set WEBPACK_BUILD_PATH in the Webpack environment");
+  } else {
+    console.log(`Build path set to ${targetDir}`);
+  }
+  webpackConfig.output.path = path.resolve(__dirname, `../../../../${targetDir}`);
+  return webpackConfig;
+};

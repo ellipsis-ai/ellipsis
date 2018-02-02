@@ -5,7 +5,7 @@ import play.sbt.PlayRunHook
 import sbt._
 
 object WebpackServer {
-  def apply(base: File): PlayRunHook = {
+  def apply(base: File, buildPath: String): PlayRunHook = {
 
     object WebpackServerScript extends PlayRunHook {
 
@@ -13,9 +13,9 @@ object WebpackServer {
 
       override def afterStarted(addr: InetSocketAddress): Unit = {
         process = if (System.getProperty("os.name").toUpperCase().indexOf("WIN") >= 0)
-          Option(Process("cmd /c npm start", base).run)
+          Option(Process("cmd /c npm start", base, ("WEBPACK_BUILD_PATH", buildPath)).run)
         else
-          Option(Process("npm start", base).run)
+          Option(Process("npm start", base, ("WEBPACK_BUILD_PATH", buildPath)).run)
       }
 
       override def afterStopped(): Unit = {
