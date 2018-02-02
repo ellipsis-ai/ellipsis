@@ -26,13 +26,13 @@ type RGB = {
     }
 
     hasAlpha(): boolean {
-      return typeof (this.a) === "number";
+      return typeof (this.a) === "number" && this.a < 1;
     }
 
     toHex(): string {
       const hex = `#${this.r.toString(16)}${this.g.toString(16)}${this.b.toString(16)}`;
       if (this.hasAlpha()) {
-        return hex + Math.round(this.a * 256).toString(16);
+        return hex + Math.round(this.a * 255).toString(16);
       } else {
         return hex;
       }

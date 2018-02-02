@@ -1,11 +1,14 @@
 import com.typesafe.sbt.web.pipeline.Pipeline
 import play.sbt.PlayImport.PlayKeys.playRunHooks
+import sbt._
+import com.typesafe.sbt.web.SbtWeb
+import sbt.Keys._
 
 name := """ellipsis"""
 version := "1.0-SNAPSHOT"
 scalaVersion := "2.11.8"
 
-pipelineStages := Seq(rjs, digest, gzip)
+pipelineStages := Seq(webpackBuild, rjs, digest, gzip)
 
 lazy val slackClientVersion = "cd123f514e2be7fa0a7df087197f7cccbba3ca75"
 lazy val slackClientProject = ProjectRef(uri(s"https://github.com/ellipsis-ai/slack-scala-client.git#$slackClientVersion"), "slack-scala-client")
@@ -80,14 +83,20 @@ BabelKeys.options := WebJs.JS.Object(
 
 // Starts: Webpack build task
 val appPath = "./app/assets/frontend"
-val webpackBuild = taskKey[Unit]("Webpack build task.")
+val webpackBuild = taskKey[Pipeline.Stage]("Webpack build task.")
 
-webpackBuild := {
+webpackBuild := { mappings =>
   Process("npm run build", file(appPath)).!
+  val files = IO.listFiles(file("./app/assets/bundles"))
+  val newMappings = files.map(file => {
+    println(file.getPath)
+    (file, file.getPath)
+  })
+  mappings ++ newMappings
 }
 
-//(packageBin in Universal) := ((packageBin in Universal) dependsOn webpackBuild).value
-
+packageBin in Universal := (packageBin in Universal).dependsOn(webpackBuild).value
+webpackBuild in Assets := (webpackBuild in Assets).dependsOn(WebKeys.webModules in Assets).value
 dist := (dist dependsOn webpackBuild).value
 stage := (stage dependsOn webpackBuild).value
 // Ends.
