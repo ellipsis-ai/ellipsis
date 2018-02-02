@@ -1,19 +1,19 @@
+// @flow
+/* eslint no-console: "off" */
 /**
  * Webpack server for development.
  */
 
-var webpack = require('webpack');
-var webpackDevServer = require('webpack-dev-server');
-var webpackConfig = require('./webpack.config.js');
-
-var webpackPath = __dirname;
+const webpack = require('webpack');
+const WebpackDevServer = require('webpack-dev-server');
+const webpackConfig = require('./webpack.config.js');
 
 // Notify about the path where the server is running
-console.log('[Webpack] Server running at location: ' + webpackPath);
+console.log('[Webpack] Server running at location: ' + __dirname);
 
 // First we fire up Webpack an pass in the configuration file
-var bundleStart = null;
-var compiler = webpack(webpackConfig);
+let bundleStart = null;
+const compiler = webpack(webpackConfig);
 
 // We give notice in the terminal when it starts bundling and
 // set the time it started
@@ -25,10 +25,10 @@ compiler.plugin('compile', function() {
 // We also give notice when it is done compiling, including the
 // time it took. Nice to have
 compiler.plugin('done', function() {
-  console.log('[Webpack] Bundled in ' + (Date.now() - bundleStart) + 'ms!');
+  console.log('[Webpack] Bundled in ' + (bundleStart ? Date.now() - bundleStart : "?") + 'ms!');
 });
 
-var server = new webpackDevServer(compiler, {
+const server = new WebpackDevServer(compiler, {
 
   // We need to tell Webpack to serve our bundled application
   // from the build path.
