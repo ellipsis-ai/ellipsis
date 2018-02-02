@@ -6,6 +6,8 @@ import models.behaviors.behaviorversion.BehaviorVersion
 import models.behaviors.input.Input
 import models.behaviors.testing.TestEvent
 import models.behaviors.triggers.TemplateMessageTrigger
+import models.loggedevent.LoggedEvent
+import org.mockito.Matchers._
 import org.mockito.Mockito._
 import org.scalatest.mock.MockitoSugar
 import org.scalatestplus.play.PlaySpec
@@ -33,6 +35,8 @@ class BehaviorResponseSpec extends PlaySpec with MockitoSugar {
         )
         val mediumTrigger = generalTrigger.copy(id = IDs.next, template = "trigger me {foo}")
         val specificTrigger = generalTrigger.copy(id = IDs.next, template = "trigger me {foo} {bar}")
+        when(dataService.users.ensureUserFor(event.loginInfo, event.teamId)).thenReturn(Future.successful(user))
+        when(dataService.loggedEvents.log(any[LoggedEvent])).thenReturn(Future.successful({}))
         when(dataService.behaviorGroupDeployments.allActiveTriggersFor(event.context, event.maybeChannel.get, team)).
           thenReturn(Future.successful(Seq(generalTrigger, mediumTrigger, specificTrigger)))
         val groupVersion = mock[BehaviorGroupVersion]

@@ -74,7 +74,7 @@ trait MessageEvent extends Event {
             Some(trigger),
             None
           )
-          user <- ensureUser(dataService)
+          user <- dataService.users.ensureUserFor(loginInfo, teamId)
           _ <- dataService.loggedEvents.log(LoggedEvent.forTriggerMatched(trigger, this, user))
         } yield response
       })
