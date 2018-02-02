@@ -19,6 +19,7 @@
     "babel-preset-jest": "^21.2.0",
     "babel-preset-react": "^6.24.1",
     "codemirror": "5.15.2",
+    "config": "^1.29.2",
     "core-js": "2.4.1",
     "diff": "3.4.0",
     "eslint": "^4.9.0",
@@ -43,8 +44,8 @@
     "test": "jest --runInBand",
     "postinstall": "find ./npm_modules/* -maxdepth 2 -name package.json -exec sh -c 'cd $(dirname \"{}\"); npm install' \\;",
     "flow": "flow",
-    "build": "webpack -p --config ./app/assets/frontend/webpack/webpack.base.config.js",
-    "start": "node ./app/assets/frontend/webpack/webpack.server"
+    "build": "NODE_CONFIG_DIR='./conf/webpack' webpack -p --config ./app/assets/frontend/webpack/webpack.base.config.js",
+    "start": "NODE_CONFIG_DIR='./conf/webpack' node ./app/assets/frontend/webpack/webpack.server"
   },
   "jest": {
     "globals": {

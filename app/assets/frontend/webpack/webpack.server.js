@@ -7,6 +7,13 @@
 const webpack = require('webpack');
 const WebpackDevServer = require('webpack-dev-server');
 const webpackConfig = require('./webpack.config.js');
+const config = require('config');
+const devServerHost = config.get('webpack.devServer.host');
+const devServerPort = config.get('webpack.devServer.port');
+
+if (!devServerHost || !devServerPort) {
+  throw new Error("You must set webpack.devServer.host and webpack.devServer.port in the shared config.");
+}
 
 // Notify about the path where the server is running
 console.log('[Webpack] Server running at location: ' + __dirname);
@@ -47,6 +54,6 @@ const server = new WebpackDevServer(compiler, {
 
 // We fire up the development server and give notice in the terminal
 // that we are starting the initial bundle
-server.listen(8080, 'localhost', function () {
+server.listen(devServerPort, devServerHost, function () {
   console.log('[Webpack] Bundling project, please wait...');
 });
