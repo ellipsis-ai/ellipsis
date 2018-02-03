@@ -6,7 +6,7 @@
 
 const webpack = require('webpack');
 const WebpackDevServer = require('webpack-dev-server');
-const webpackConfig = require('./webpack.config.js');
+const webpackConfigLoader = require('./webpack.config.js');
 const config = require('config');
 const devServerHost = config.get('webpack.devServer.host');
 const devServerPort = config.get('webpack.devServer.port');
@@ -18,9 +18,10 @@ if (!devServerHost || !devServerPort) {
 // Notify about the path where the server is running
 console.log('[Webpack] Server running at location: ' + __dirname);
 
-// First we fire up Webpack an pass in the configuration file
+// First we fire up Webpack and pass in the configuration file
 let bundleStart = null;
-const compiler = webpack(webpackConfig(process.env));
+const webpackConfig = webpackConfigLoader(({ WEBPACK_BUILD_PATH: process.env.WEBPACK_BUILD_PATH }));
+const compiler = webpack(webpackConfig);
 
 // We give notice in the terminal when it starts bundling and
 // set the time it started
@@ -39,7 +40,8 @@ const server = new WebpackDevServer(compiler, {
 
   // We need to tell Webpack to serve our bundled application
   // from the build path.
-  publicPath: '/bundles/',
+  publicPath: `/bundles/`,
+  contentBase: false,
 
   // Configure hot replacement
   hot: true,

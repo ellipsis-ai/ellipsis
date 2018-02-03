@@ -23,7 +23,7 @@ const webpackConfig = {
     path: "",
     filename: '[name].js',
     sourceMapFilename: '[name].map',
-    publicPath: '/assets/bundles/'
+    publicPath: '/bundles/'
   },
   externals: {
   },
@@ -60,7 +60,7 @@ module.exports = (env) => {
   if (!targetDir) {
     throw new Error("Must set WEBPACK_BUILD_PATH in the Webpack environment");
   } else {
-    console.log(`Build path set to ${targetDir}`);
+    console.log(`[Webpack] Build path set to ${targetDir}`);
   }
   webpackConfig.output.path = path.resolve(__dirname, `../../../../${targetDir}`);
   return webpackConfig;

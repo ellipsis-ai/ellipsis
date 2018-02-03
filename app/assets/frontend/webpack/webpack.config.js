@@ -10,11 +10,11 @@ if (!devServerHost || !devServerPort) {
 module.exports = exports = (env) => {
   const webpackConfig = Object.create(require('./webpack.base.config.js')(env));
   webpackConfig.devtool = 'nosources-source-map';
-  webpackConfig.entry = Object.assign({}, exports.entry, {
+  webpackConfig.entry = Object.assign({}, webpackConfig.entry, {
     devServer: 'webpack/hot/dev-server',
     devServerClient: `webpack-dev-server/client?http://${devServerHost}:${devServerPort}`,
   });
-  webpackConfig.output = Object.assign({}, exports.output, {
+  webpackConfig.output = Object.assign({}, webpackConfig.output, {
     devtoolModuleFilenameTemplate: "file://[absolute-resource-path]"
   });
   webpackConfig.plugins = [

@@ -83,11 +83,11 @@ BabelKeys.options := WebJs.JS.Object(
 
 // Starts: Webpack build task
 val appPath = "./app/assets/frontend"
+val targetDir = "target/web/webpack/bundles"
+val assetDir = "bundles"
 val webpackBuild = taskKey[Pipeline.Stage]("Webpack build task.")
 
 webpackBuild := { mappings =>
-  val targetDir = "target/web/webpack/bundles"
-  val assetDir = "bundles"
   Process("npm run build", file(appPath), ("WEBPACK_BUILD_PATH", targetDir)).!
   val files = IO.listFiles(file(s"./$targetDir"))
   val newMappings = files.map(file => {
@@ -105,6 +105,6 @@ stage := (stage dependsOn webpackBuild).value
 
 // Starts: Webpack server process when running locally and build actions for production bundle
 lazy val frontendDirectory = baseDirectory {_ / appPath}
-playRunHooks += frontendDirectory.map(base => WebpackServer(base, "target/web/webpack/bundles")).value
+playRunHooks += frontendDirectory.map(base => WebpackServer(base, targetDir)).value
 // Ends.
 // JavaScript configuration ends
