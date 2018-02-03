@@ -1,0 +1,8 @@
+{
+  "webpack": {
+    "devServer": {
+      "host": "localhost",
+      "port": "8080"
+    }
+  }
+}

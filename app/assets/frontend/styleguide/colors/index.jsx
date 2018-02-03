@@ -1,31 +1,38 @@
-define(function(require) {
-  const React = require("react"),
-    RgbaColor = require('./rgba_color');
+// @flow
+import React from "react";
+import RgbaColor from './rgba_color';
 
-  return React.createClass({
-    getColorClasses: function() {
+type Color = {
+  className: string,
+  name: string,
+  value: string,
+  rgba: RgbaColor
+}
+
+class Colors extends React.Component<{}> {
+    getColorClasses(): Array<Color> {
       const colorList = [].slice.call(document.styleSheets).reduce((all, styleSheet) => {
-        if (styleSheet.cssRules) {
-          return all.concat(
-            [].slice.call(styleSheet.cssRules)
-              .filter((ea) => {
-                return ea.type === CSSRule.STYLE_RULE &&
-                  ea.selectorText.includes(".color-");
-              })
-              .reduce((prev, cssRule) => {
-                const colorName = cssRule.selectorText.replace(/\.color-/, "");
-                const value = cssRule.style.getPropertyValue("color");
-                return prev.concat({
-                  className: cssRule.selectorText.replace(/^\./, ""),
-                  name: colorName,
-                  value: value,
-                  rgba: RgbaColor.fromCSS(value)
-                });
-              }, [])
-          );
-        } else {
-          return all;
+        let rules;
+        try {
+          rules = [].slice.call(styleSheet.cssRules);
+        } catch(e) {
+          rules = [];
         }
+        return all.concat(rules.filter((ea) => {
+            return ea.type === CSSRule.STYLE_RULE &&
+              ea.selectorText.includes(".color-");
+          })
+          .reduce((prev, cssRule) => {
+            const colorName = cssRule.selectorText.replace(/\.color-/, "");
+            const value = cssRule.style.getPropertyValue("color");
+            return prev.concat({
+              className: cssRule.selectorText.replace(/^\./, ""),
+              name: colorName,
+              value: value,
+              rgba: RgbaColor.fromCSS(value)
+            });
+          }, [])
+        );
       }, []);
       // Find the unique set by name
       const byName = {};
@@ -35,9 +42,9 @@ define(function(require) {
         }
       });
       return Object.keys(byName).map((name) => byName[name]);
-    },
+    }
 
-    renderColor: function(color) {
+    renderColor(color: Color) {
       return (
         <div className="display-inline-block align-t mrxl mbneg1 border bg-lightest" key={color.name}>
           <div className="display-inline-block align-t width width-5 height-5 mrneg1 position-relative position-z-above">
@@ -57,9 +64,9 @@ define(function(require) {
           </div>
         </div>
       );
-    },
+    }
 
-    render: function() {
+    render() {
       return (
         <div>
           <div className="container">
@@ -74,5 +81,6 @@ define(function(require) {
         </div>
       );
     }
-  });
-});
+  }
+
+export default Colors;
