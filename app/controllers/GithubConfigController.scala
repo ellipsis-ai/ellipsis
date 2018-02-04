@@ -42,7 +42,9 @@ class GithubConfigController @Inject() (
               team.id,
               linkedAccount = maybeGithubLinkedAccount.map(LinkedAccountData.from)
             )
-            Ok(views.js.shared.pageConfig(viewConfig(Some(teamAccess)), "config/github/index", Json.toJson(config)))
+            Ok(views.js.shared.webpackLoader(
+              viewConfig(None), "GithubConfigConfig", "githubConfig", Json.toJson(config)
+            ))
           }.getOrElse {
             NotFound("Team not found")
           }

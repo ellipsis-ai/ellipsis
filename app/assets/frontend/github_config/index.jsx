@@ -1,53 +1,56 @@
-define(function(require) {
-  var React = require('react'),
-    CSRFTokenHiddenInput = require('../shared_ui/csrf_token_hidden_input'),
-    Page = require('../shared_ui/page'),
-    SettingsPage = require('../shared_ui/settings_page');
+// @flow
+import * as React from 'react';
+import CSRFTokenHiddenInput from '../../javascripts/shared_ui/csrf_token_hidden_input';
+import PageComponent from '../../javascripts/shared_ui/page';
+const Page: any = PageComponent;
+import SettingsPage from '../../javascripts/shared_ui/settings_page';
+import type {PageRequiredProps} from "../../javascripts/shared_ui/page";
+import autobind from '../../javascripts/lib/autobind';
 
-  const resetForm = jsRoutes.controllers.GithubConfigController.reset();
+const resetForm = jsRoutes.controllers.GithubConfigController.reset();
 
-  const GithubConfig = React.createClass({
-    propTypes: Object.assign({}, Page.requiredPropTypes, {
-      isAdmin: React.PropTypes.bool.isRequired,
-      csrfToken: React.PropTypes.string.isRequired,
-      teamId: React.PropTypes.string.isRequired,
-      linkedAccount: React.PropTypes.shape({
-        providerId: React.PropTypes.string.isRequired,
-        providerKey: React.PropTypes.string.isRequired,
-        createdAt: React.PropTypes.string.isRequired
-      })
-    }),
+export type GithubConfigProps = {
+  isAdmin: boolean,
+  csrfToken: string,
+  teamId: string,
+  linkedAccount: ?{
+    providerId: string,
+    providerKey: string,
+    createdAt: string
+  }
+}
 
-    getDefaultProps: function() {
-      return Page.requiredPropDefaults();
-    },
+type Props = GithubConfigProps & PageRequiredProps
 
-    getInitialState: function() {
-      return {
-        linkedAccount: this.props.linkedAccount
-      };
-    },
+class GithubConfig extends React.Component<Props> {
+  props: Props;
+  static defaultProps: PageRequiredProps;
 
-    getLinkedAccount: function() {
-      return this.state.linkedAccount;
-    },
+    constructor(props: Props) {
+      super(props);
+      autobind(this);
+    }
 
-    render: function() {
+    getLinkedAccount() {
+      return this.props.linkedAccount;
+    }
+
+    render() {
       return (
         <SettingsPage teamId={this.props.teamId} isAdmin={this.props.isAdmin} header={"GitHub Configuration"} activePage={"githubConfig"}>
           {this.getLinkedAccount() ? this.renderLinkedAccount() : this.renderNoLinkedAccount()}
           {this.props.onRenderFooter()}
         </SettingsPage>
       );
-    },
+    }
 
-    renderLogo: function() {
+    renderLogo() {
       return (
         <img height="32" src="/assets/images/logos/GitHub-Mark-64px.png"/>
       );
-    },
+    }
 
-    renderLinkedAccount: function() {
+    renderLinkedAccount() {
       return (
         <div>
           <div className="columns">
@@ -66,14 +69,14 @@ define(function(require) {
           </div>
         </div>
       );
-    },
+    }
 
-    getGithubAuthUrl: function() {
+    getGithubAuthUrl() {
       const redirect = jsRoutes.controllers.GithubConfigController.index().url;
       return jsRoutes.controllers.SocialAuthController.authenticateGithub(redirect).url;
-    },
+    }
 
-    renderNoLinkedAccount: function() {
+    renderNoLinkedAccount() {
       return (
         <div className="columns">
           <div className="column">
@@ -86,8 +89,8 @@ define(function(require) {
         </div>
       );
     }
+}
 
-  });
+GithubConfig.defaultProps = Page.requiredPropDefaults();
 
-  return GithubConfig;
-});
+export default GithubConfig;
