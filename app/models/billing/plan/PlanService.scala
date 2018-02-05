@@ -10,4 +10,5 @@ trait PlanService extends ChargebeeService {
 
   def allPlans(count: Int = 100): Future[Seq[Plan]]
 
+  def get(planId: String): Future[Option[Plan]]
 }

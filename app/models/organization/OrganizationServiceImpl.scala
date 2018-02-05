@@ -63,10 +63,6 @@ class OrganizationServiceImpl @Inject()(
     save(organization.copy(maybeChargebeeCustomerId = chargebeeCustomerId))
   }
 
-  def setChargebeeCustomerIdFor(organization: Organization, chargebeeCustomerId: String): Future[Organization] = {
-    save(organization.copy(maybeChargebeeCustomerId = Some(chargebeeCustomerId)))
-  }
-
 
   private def saveAction(organization: Organization): DBIO[Organization] = {
     findQueryFor(organization.id).result.flatMap { result =>

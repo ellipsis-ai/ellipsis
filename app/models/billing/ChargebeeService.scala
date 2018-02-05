@@ -11,9 +11,9 @@ trait ChargebeeService {
   val configuration: Configuration
   implicit val ec: ExecutionContext
 
-  val site: String = configuration.get[String]("chargebee.site")
-  val apiKey: String = configuration.get[String]("chargebee.api_key")
+  val site: String = configuration.get[String]("billing.chargebee.site")
+  val apiKey: String = configuration.get[String]("billing.chargebee.api_key")
   val chargebeeEnv = new Environment(site, apiKey)
-  val freePlanId: String = configuration.get[String]("chargebee.free_plan_id")
+  val freePlanId: String = configuration.get[String]("billing.chargebee.free_plan_id")
 
 }

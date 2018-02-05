@@ -77,3 +77,5 @@ for plan in plans:
     result = chargebee.Plan.create(plan)
     plan = result.plan
     print(plan)
+
+# create addons

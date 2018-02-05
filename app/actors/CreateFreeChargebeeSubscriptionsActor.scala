@@ -5,6 +5,7 @@ import javax.inject.Inject
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
 import play.api.Logger
+import play.api.Configuration
 import akka.actor.Actor
 import models.organization.Organization
 import models.team.Team
@@ -12,17 +13,20 @@ import services.DataService
 import com.chargebee.models.Subscription
 import models.IDs
 
+
 object CreateFreeChargebeeSubscriptionsActor {
   final val name = "setup-chargebee-for-orgs"
 }
 
 class CreateFreeChargebeeSubscriptionsActor @Inject() (
                                              dataService: DataService,
+                                             configuration: Configuration,
                                              implicit val ec: ExecutionContext
                                    ) extends Actor {
 
   // initial delay of 1 minute so that, in the case of errors & actor restarts, it doesn't hammer external APIs
   val tick = context.system.scheduler.schedule(1 minute, 10 minutes, self, "tick")
+  val createSubFlag = configuration.get[Boolean]("billing.auto_create_free_subscription")
 
   override def postStop() = {
     tick.cancel()
@@ -30,15 +34,19 @@ class CreateFreeChargebeeSubscriptionsActor @Inject() (
 
   def receive = {
     case "tick" => {
-      for {
-        orgs <- dataService.organizations.allOrgsWithEmptyChargebeeId.map { orgs =>
-          if (orgs.length > 0) {
-            Logger.info(s"Found ${orgs.length} organizations without a Chargebee customer id.")
+      if (createSubFlag) {
+        for {
+          orgs <- dataService.organizations.allOrgsWithEmptyChargebeeId.map { orgs =>
+            if (orgs.length > 0) {
+              Logger.info(s"Found ${orgs.length} organizations without a Chargebee customer id.")
+            }
+            orgs
           }
-          orgs
-        }
-        subs <- createSubsFor(orgs)
-      } yield {}
+          subs <- createSubsFor(orgs)
+        } yield {}
+      } else {
+        Logger.info("Billing message: creating free Chargebee subscriptions for new teams is off.")
+      }
     }
   }
 

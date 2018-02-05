@@ -30,4 +30,8 @@ object TeamStatQueries {
 
   val all = TableQuery[TeamStatsTable]
 
+  def allDailyActiveUsers(start: OffsetDateTime, end: OffsetDateTime, teamId: String) = {
+    all
+  }
+
 }

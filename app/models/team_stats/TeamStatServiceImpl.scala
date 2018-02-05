@@ -1,9 +1,11 @@
 package models.team_stats
 
+import java.time.OffsetDateTime
 import javax.inject.Inject
 
 import com.google.inject.Provider
 import drivers.SlickPostgresDriver.api._
+import models.team.Team
 import play.api.Configuration
 import services.DataService
 
@@ -23,4 +25,7 @@ class TeamStatServiceImpl @Inject() (
     dataService.run(all.result)
   }
 
+  def activeUsersCountFor(team: Team, start: OffsetDateTime, end: OffsetDateTime): Future[Int] = {
+    Future { 10 }
+  }
 }

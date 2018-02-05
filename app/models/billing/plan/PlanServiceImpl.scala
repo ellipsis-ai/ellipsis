@@ -2,9 +2,12 @@ package models.billing.plan
 
 
 import javax.inject.Inject
-import com.chargebee.models.Plan
+
+import com.chargebee.models.{Plan, Subscription}
+import com.google.inject.Provider
 import play.api.Configuration
 import services.DataService
+
 import scala.collection.JavaConversions._
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.{ExecutionContext, Future, blocking}
@@ -12,9 +15,11 @@ import scala.concurrent.{ExecutionContext, Future, blocking}
 
 class PlanServiceImpl @Inject()(
                                  val configuration: Configuration,
-                                 val dataService: DataService,
+                                 val dataServiceProvider: Provider[DataService],
                                  implicit val ec: ExecutionContext
                                ) extends PlanService {
+
+  def dataService = dataServiceProvider.get
 
   def allPlans(count: Int = 100): Future[Seq[Plan]] = {
       Future {
@@ -28,6 +33,14 @@ class PlanServiceImpl @Inject()(
         }
         buffer
       }
+  }
+
+  def get(planId: String): Future[Option[Plan]] = {
+    Future {
+      blocking{
+        Some(Plan.retrieve(planId).request(chargebeeEnv).plan())
+      }
+    }
   }
 
 }
