@@ -18,6 +18,7 @@ const webpackConfig = {
       'whatwg-fetch'
     ],
     githubConfig: './app/assets/frontend/github_config/loader',
+    regionalSettings: './app/assets/frontend/settings/regional_settings/loader',
     scheduling: './app/assets/frontend/scheduling/loader',
     styleguideColors: './app/assets/frontend/styleguide/colors/loader'
   },

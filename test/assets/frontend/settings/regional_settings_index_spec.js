@@ -1,9 +1,9 @@
-import React from 'react';
-import TestUtils from 'react-addons-test-utils';
+import * as React from 'react';
+import * as TestUtils from 'react-addons-test-utils';
 global.fetch = require('./../../../mocks/mock_fetch');
 
-const Page = require('../../../../app/assets/javascripts/shared_ui/page');
-const RegionalSettings = require('../../../../app/assets/javascripts/settings/regional_settings/index');
+import Page from '../../../../app/assets/javascripts/shared_ui/page';
+import RegionalSettings from '../../../../app/assets/frontend/settings/regional_settings/index';
 
 jsRoutes.controllers.APITokenController.listTokens = jest.fn(() => ({ url: '/mock_list_tokens' }));
 jsRoutes.controllers.ApplicationController.possibleCitiesFor = jest.fn(() => ({ url: '/mock_possible_cities' }));

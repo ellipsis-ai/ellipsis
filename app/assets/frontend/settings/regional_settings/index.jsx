@@ -1,28 +1,40 @@
 // @flow
-import type {PageRequiredProps} from '../../shared_ui/page';
+import type {PageRequiredProps} from '../../../javascripts/shared_ui/page';
+import * as React from 'react';
+import moment from 'moment';
+import Collapsible from '../../../javascripts/shared_ui/collapsible';
 
-define(function(require) {
-  const React = require('react'),
-    moment = require('moment'),
-    Collapsible = require('../../shared_ui/collapsible'),
-    Button = require('../../form/button'),
-    SettingsPage = require('../../shared_ui/settings_page'),
-    TeamTimeZoneSetter = require('../../time_zone/team_time_zone_setter'),
-    Page = require('../../shared_ui/page'),
-    autobind = require('../../lib/autobind');
+// TODO: Remove the "any" types here once the required modules are converted to ES6
+import ButtonComponent from '../../../javascripts/form/button';
+const Button: any = ButtonComponent;
+import SettingsPage from '../../../javascripts/shared_ui/settings_page';
+import TeamTimeZoneSetterComponent from '../../../javascripts/time_zone/team_time_zone_setter';
+const TeamTimeZoneSetter: any = TeamTimeZoneSetterComponent;
+import PageComponent from '../../../javascripts/shared_ui/page';
+const Page: any = PageComponent;
+import autobind from '../../../javascripts/lib/autobind';
 
-  type Props = {
-    csrfToken: string,
-    isAdmin: boolean,
-    teamId: string,
-    onSaveTimeZone: (tzName: string, formattedName: string, newOffset: number) => void,
-    teamTimeZone?: string,
-    teamTimeZoneName?: string,
-    teamTimeZoneOffset?: number
-  }
+type RegionalSettingsProps = {
+  csrfToken: string,
+  isAdmin: boolean,
+  teamId: string,
+  onSaveTimeZone: (tzName: string, formattedName: string, newOffset: number) => void,
+  teamTimeZone: ?string,
+  teamTimeZoneName: ?string,
+  teamTimeZoneOffset: ?number
+}
 
-  class RegionalSettings extends React.Component<Props & PageRequiredProps> {
-    constructor(props) {
+type Props = RegionalSettingsProps & PageRequiredProps
+
+type State = {
+  currentTime: string;
+}
+
+class RegionalSettings extends React.Component<Props, State> {
+  teamTimeZoneSetter: ?TeamTimeZoneSetter;
+  static defaultProps: PageRequiredProps;
+
+    constructor(props: Props) {
       super(props);
       autobind(this);
       this.state = {
@@ -125,7 +137,6 @@ define(function(require) {
     }
   }
 
-  RegionalSettings.defaultProps = Page.requiredPropDefaults();
+RegionalSettings.defaultProps = Page.requiredPropDefaults();
 
-  return RegionalSettings;
-});
+export default RegionalSettings;
