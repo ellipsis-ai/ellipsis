@@ -113,10 +113,6 @@ requirejs.config({
       name: 'settings/regional_settings/loader',
       include: ['settings/regional_settings/index'],
       exclude: ['common']
-    }, {
-      name: 'scheduling/loader',
-      include: ['scheduling/index'],
-      exclude: ['common']
     }
   ]
 });
