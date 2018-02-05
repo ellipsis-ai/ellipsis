@@ -3,7 +3,6 @@ import BehaviorGroup from '../../javascripts/models/behavior_group';
 import ScheduledAction from '../models/scheduled_action';
 
 const ScheduledItemTitle = React.createClass({
-    displayName: 'ScheduledItemTitle',
     propTypes: {
       scheduledAction: React.PropTypes.instanceOf(ScheduledAction).isRequired,
       behaviorGroups: React.PropTypes.arrayOf(React.PropTypes.instanceOf(BehaviorGroup)).isRequired
