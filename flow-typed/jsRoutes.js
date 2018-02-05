@@ -1,6 +1,7 @@
 // @flow
 type JsRoute = {
-  url: string
+  url: string,
+  method: string
 }
 
 declare var jsRoutes: {
@@ -18,6 +19,10 @@ declare var jsRoutes: {
     },
     BehaviorImportExportController: {
       "export": (string) => JsRoute
+    },
+    GithubConfigController: {
+      index: () => JsRoute,
+      reset: () => JsRoute
     },
     SocialAuthController: {
       authenticateGithub: (string) => JsRoute
