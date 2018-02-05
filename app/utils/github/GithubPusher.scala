@@ -87,7 +87,7 @@ case class GithubPusher(
   val escapedCommitterName: String = ShellEscaping.escapeWithSingleQuotes(committerInfo.name)
   val escapedCommitterEmail: String = ShellEscaping.escapeWithSingleQuotes(committerInfo.email)
 
-  private def runCommand(cmd: String, maybeCreateException: Option[String => Exception]): Future[Unit] = {
+  private def runCommand(cmd: String, maybeCreateException: Option[String => Exception]): Future[String] = {
     println(cmd)
     Future {
       blocking {
@@ -96,31 +96,33 @@ case class GithubPusher(
           logText => buffer.append(s"$logText\n")
         )
         val exitValue = Process(Seq("bash", "-c", cmd)).!(processLogger)
+        val output = buffer.mkString
         if (exitValue != 0) {
           maybeCreateException.foreach { createException =>
-            throw createException(buffer.mkString)
+            throw createException(output)
           }
         }
+        output
       }
     }
   }
 
-  private def cloneRepo: Future[Unit] = {
+  private def cloneRepo: Future[String] = {
     runCommand(
       s"mkdir -p $parentPath && cd $parentPath && rm -rf $exportName && git clone $remoteUrl $exportName",
       Some(message => GitCloneException(owner, repoName, message))
     )
   }
 
-  private def ensureBranch: Future[Unit] = {
+  private def ensureBranch: Future[String] = {
     runCommand(s"cd $dirName && git checkout -b $escapedBranch && git push origin $escapedBranch", None)
   }
 
-  private def ensureBranchCheckedOut: Future[Unit] = {
+  private def ensureBranchCheckedOut: Future[String] = {
     runCommand(s"cd $dirName && git checkout $escapedBranch", None)
   }
 
-  private def pullLatest: Future[Unit] = {
+  private def pullLatest: Future[String] = {
     runCommand(s"cd $dirName && git pull origin $escapedBranch", Some(GitPullException.apply))
   }
 
@@ -136,14 +138,24 @@ case class GithubPusher(
     }
   }
 
-  private def push: Future[Unit] = {
+  private def push: Future[String] = {
     runCommand(
       raw"""cd $dirName && git add . && git -c user.name=$escapedCommitterName -c user.email=$escapedCommitterEmail commit -a -m $escapedCommitMessage && git push origin $escapedBranch""",
       Some((message) => GitPushException.fromMessage(escapedBranch, message))
     )
   }
 
-  private def cleanUp: Future[Unit] = {
+  private def setGitSHA: Future[Unit] = {
+    for {
+      sha <- runCommand(
+        raw"""cd $dirName && git rev-parse HEAD""",
+        None
+      )
+      _ <- dataService.behaviorGroupVersionSHAs.maybeCreateFor(behaviorGroup, sha.trim)
+    } yield {}
+  }
+
+  private def cleanUp: Future[String] = {
     runCommand(s"rm -rf $dirName", None)
   }
 
@@ -155,6 +167,7 @@ case class GithubPusher(
       _ <- pullLatest
       _ <- export
       _ <- push
+      _ <- setGitSHA
       _ <- cleanUp
     } yield {}
   }
