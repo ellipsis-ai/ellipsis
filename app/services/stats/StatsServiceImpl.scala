@@ -16,11 +16,17 @@ class StatsServiceImpl @Inject()(
                                   implicit val ec: ExecutionContext
                                 ) extends StatsService {
 
-  def activeUsersFor(organization: Organization, start: OffsetDateTime, end: OffsetDateTime): Future[Int] = {
+  def activeUsersCountFor(organization: Organization, start: OffsetDateTime, end: OffsetDateTime): Future[Int] = {
     for {
       teams <- dataService.teams.allTeamsFor(organization)
+      allCountPerTeam <- Future.sequence {
+        teams.map { team =>
+          dataService.activeUserRecords.countFor(team.id, start, end)
+        }
+      }
+      countPerOrg <- Future.successful(allCountPerTeam.reduce(_+_))
     } yield {
-      10
+      countPerOrg
     }
   }
 

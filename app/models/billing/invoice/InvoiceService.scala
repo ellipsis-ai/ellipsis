@@ -14,7 +14,7 @@ trait InvoiceService extends ChargebeeService {
 
   def allPending(count: Int = 100): Future[Seq[Invoice]]
 
-  def addCharges(invoice: Invoice, charges: Seq[Charge]): Future[Invoice]
+  def addChargesForActiveUser(fatInvoice: FatInvoice, activeCount: Int): Future[FatInvoice]
 
   def close(invoice: Invoice): Future[Invoice]
 
@@ -23,6 +23,5 @@ trait InvoiceService extends ChargebeeService {
   def previousInvoiceFor(fatInvoice: FatInvoice): Future[FatInvoice]
 
   def billingPeriodFor(fatInvoice: FatInvoice): Future[BillingPeriod]
-
 
 }

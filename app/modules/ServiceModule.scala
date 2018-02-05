@@ -51,11 +51,11 @@ import models.organization.{OrganizationService, OrganizationServiceImpl}
 import models.billing.plan.{PlanService, PlanServiceImpl}
 import models.billing.subscription.{SubscriptionService, SubscriptionServiceImpl}
 import models.billing.invoice.{InvoiceService, InvoiceServiceImpl}
+import models.billing.active_user_record.{ActiveUserRecordService, ActiveUserRecordServiceImpl}
 import services.billing.{BillingService, BillingServiceImpl}
-
 import services._
 import net.codingwell.scalaguice.ScalaModule
-
+import services.stats.{StatsService, StatsServiceImpl}
 import utils.SlackFileMap
 
 class ServiceModule extends AbstractModule with ScalaModule {
@@ -122,6 +122,8 @@ class ServiceModule extends AbstractModule with ScalaModule {
     bind[SubscriptionService].to[SubscriptionServiceImpl]
     bind[InvoiceService].to[InvoiceServiceImpl]
     bind[BillingService].to[BillingServiceImpl]
+    bind[ActiveUserRecordService].to[ActiveUserRecordServiceImpl]
+    bind[StatsService].to[StatsServiceImpl]
 
     bind[Models].asEagerSingleton()
     bind[PlanService].to[PlanServiceImpl]

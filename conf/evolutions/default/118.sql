@@ -1,16 +1,17 @@
 # --- !Ups
 
-CREATE TABLE team_stats (
+CREATE TABLE active_user_records (
   id TEXT PRIMARY KEY,
-  team_id TEXT NOT NULL REFERENCES teams(id),
-  name TEXT NOT NULL,
-  start_time TIMESTAMPTZ NOT NULL,
-  end_time TIMESTAMPTZ,
-  value numeric(15,6),
-  about JSONB,
+  team_id TEXT NOT NULL,
+  user_id TEXT NULL,
+  external_user_id TEXT NULL,
+  derived_user_id TEXT NOT NULL,
   created_at TIMESTAMPTZ NOT NULL
 );
 
+ALTER TABLE active_user_records ADD CONSTRAINT chk_active_user_records CHECK (user_id is not null or external_user_id is not null);
+
 # --- !Downs
 
-DROP TABLE IF EXISTS team_stats;
+DROP TABLE IF EXISTS active_user_records;
+

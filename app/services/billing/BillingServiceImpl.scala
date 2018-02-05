@@ -3,17 +3,13 @@ package services.billing
 import java.time.{Instant, OffsetDateTime, ZoneId}
 import javax.inject.Inject
 
-import com.amazonaws.services.inspector.model.Subscription
-import com.chargebee.models.{Invoice, Plan}
-import com.chargebee.models.Invoice.Status
+import com.chargebee.models.Invoice
 import models.billing.invoice.FatInvoice
-import models.organization.Organization
-import play.api.{Configuration, Logger}
+import play.api.Configuration
 import services.DataService
+import services.stats.StatsService
 
-import scala.collection.JavaConversions._
-import scala.collection.mutable.ListBuffer
-import scala.concurrent.{ExecutionContext, Future, blocking}
+import scala.concurrent.{ExecutionContext, Future}
 
 
 case class Charge(amountInCents: Int, description: String)
@@ -21,6 +17,7 @@ case class Charge(amountInCents: Int, description: String)
 class BillingServiceImpl @Inject()(
                                     val configuration: Configuration,
                                     val dataService: DataService,
+                                    val statsService: StatsService,
                                     implicit val ec: ExecutionContext
                                   ) extends BillingService {
 
@@ -60,13 +57,27 @@ class BillingServiceImpl @Inject()(
   }
 
   private def chargeMetered(pendingAndMetered: Seq[FatInvoice]): Future[Seq[FatInvoice]] = {
-    Future { pendingAndMetered }
-//    pendingAndMetered.map { fi =>
-//      val bp = dataService.invoices.billingPeriodFor(fi)
-//      val orgId = fi.subscription.organizationId
-//      val activeUsers = dataService.teamStats.activeUsersCount(bp.start, bp.end)
-//    }
+    Future.sequence {
+      pendingAndMetered.map { fi =>
+        for {
+          activeCount <- getActiveUserCountFor(fi)
+          chargedInvoice <- dataService.invoices.addChargesForActiveUser(fi, activeCount)
+        } yield {
+          chargedInvoice
+        }
+      }
+    }
+  }
 
+  private def getActiveUserCountFor(meteredFatInvoice: FatInvoice): Future[Int] = {
+    for {
+      billingPeriod <- dataService.invoices.billingPeriodFor(meteredFatInvoice)
+      orgId <- Future.successful(meteredFatInvoice.subscription.optString("cf_organization_id"))
+      org <- dataService.organizations.find(orgId)
+      count <- statsService.activeUsersCountFor(org.get, billingPeriod.start, billingPeriod.end)
+    } yield {
+       count
+    }
   }
 
   private def closeAll(pending: Seq[FatInvoice]): Future[Seq[FatInvoice]] = {

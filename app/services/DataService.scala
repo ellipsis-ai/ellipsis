@@ -40,6 +40,7 @@ import models.behaviors.scheduling.recurrence.RecurrenceService
 import models.behaviors.scheduling.scheduledbehavior.ScheduledBehaviorService
 import models.behaviors.scheduling.scheduledmessage.ScheduledMessageService
 import models.behaviors.triggers.messagetrigger.MessageTriggerService
+import models.billing.active_user_record.ActiveUserRecordService
 import models.devmodechannel.DevModeChannelService
 import models.environmentvariable.TeamEnvironmentVariableService
 import models.organization.OrganizationService
@@ -98,6 +99,7 @@ trait DataService {
   val subscriptions: SubscriptionService
   val invoices: InvoiceService
   val plans: PlanService
+  val activeUserRecords: ActiveUserRecordService
   val behaviorGroupDeployments: BehaviorGroupDeploymentService
   def behaviorResponses: BehaviorResponseService
 

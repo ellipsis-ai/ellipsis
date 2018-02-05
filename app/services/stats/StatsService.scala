@@ -9,6 +9,6 @@ import scala.concurrent.Future
 
 trait StatsService {
 
-  def activeUsersFor(organization: Organization, start: OffsetDateTime, end: OffsetDateTime): Future[Int]
+  def activeUsersCountFor(organization: Organization, start: OffsetDateTime, end: OffsetDateTime): Future[Int]
 
 }

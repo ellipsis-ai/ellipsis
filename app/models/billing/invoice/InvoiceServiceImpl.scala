@@ -40,20 +40,16 @@ class InvoiceServiceImpl @Inject()(
     }
   }
 
-  def addCharges(invoice: Invoice, charges: Seq[Charge]): Future[Invoice] = {
-    Future.sequence {
-      charges.map { charge =>
-        Future {
-          blocking {
-            Invoice
-              .addCharge(invoice.id).amount(charge.amountInCents)
-              .description(charge.description)
-              .request()
-          }
-        }
+  def addChargesForActiveUser(fatInvoice: FatInvoice, activeCount: Int): Future[FatInvoice] = {
+    Future {
+      blocking {
+        Invoice.addAddonCharge(fatInvoice.invoice.id)
+          .addonId(addOnIdFor(fatInvoice.plan))
+          .addonQuantity(activeCount)
+          .request()
       }
-    }.map { results =>
-      results.last.invoice()
+    }.map { ni =>
+      (FatInvoice(ni.invoice(), fatInvoice.subscription, fatInvoice.plan))
     }
   }
 
