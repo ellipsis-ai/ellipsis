@@ -1,13 +1,32 @@
-/* global RegionalSettingsConfiguration:false */
+// @flow
 import 'core-js';
 import 'whatwg-fetch';
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';
 import RegionalSettings from './index';
-import Page from '../../../javascripts/shared_ui/page';
+import PageComponent from '../../../javascripts/shared_ui/page';
+const Page: any = PageComponent;
 import autobind from '../../../javascripts/lib/autobind';
 
-class RegionalSettingsLoader extends React.Component {
+type Props = {
+  containerId: string,
+  csrfToken: string,
+  isAdmin: boolean,
+  teamId: string,
+  teamTimeZone: ?string,
+  teamTimeZoneName: ?string,
+  teamTimeZoneOffset: ?number
+};
+
+declare var RegionalSettingsConfiguration: Props;
+
+type State = {
+  teamTimeZone: ?string,
+  teamTimeZoneName: ?string,
+  teamTimeZoneOffset: ?number
+}
+
+class RegionalSettingsLoader extends React.PureComponent<Props, State> {
         constructor(props) {
           super(props);
           autobind(this);
@@ -43,17 +62,10 @@ class RegionalSettingsLoader extends React.Component {
         }
 }
 
-RegionalSettingsLoader.propTypes = {
-  containerId: React.PropTypes.string.isRequired,
-  csrfToken: React.PropTypes.string.isRequired,
-  isAdmin: React.PropTypes.bool.isRequired,
-  teamId: React.PropTypes.string.isRequired,
-  teamTimeZone: React.PropTypes.string,
-  teamTimeZoneName: React.PropTypes.string,
-  teamTimeZoneOffset: React.PropTypes.number
-};
+const container = document.getElementById(RegionalSettingsConfiguration.containerId);
 
-ReactDOM.render(
-  React.createElement(RegionalSettingsLoader, RegionalSettingsConfiguration),
-  document.getElementById(RegionalSettingsConfiguration.containerId)
-);
+if (container) {
+  ReactDOM.render((
+    <RegionalSettingsLoader {...RegionalSettingsConfiguration} />
+  ), container);
+}
