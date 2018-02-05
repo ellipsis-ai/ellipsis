@@ -1,11 +1,13 @@
-requirejs(['common'], function() {
-  requirejs(
-    ['core-js', 'whatwg-fetch', 'react', 'react-dom', './settings/regional_settings/index',
-      'config/regionalsettings/index', './shared_ui/page', './lib/autobind'],
-    function(Core, Fetch, React, ReactDOM, RegionalSettings,
-             RegionalSettingsConfiguration, Page, autobind) {
+/* global RegionalSettingsConfiguration:false */
+import 'core-js';
+import 'whatwg-fetch';
+import * as React from 'react';
+import * as ReactDOM from 'react-dom';
+import RegionalSettings from './index';
+import Page from '../../../javascripts/shared_ui/page';
+import autobind from '../../../javascripts/lib/autobind';
 
-      class RegionalSettingsLoader extends React.Component {
+class RegionalSettingsLoader extends React.Component {
         constructor(props) {
           super(props);
           autobind(this);
@@ -39,22 +41,19 @@ requirejs(['common'], function() {
             </Page>
           );
         }
-      }
+}
 
-      RegionalSettingsLoader.propTypes = {
-        containerId: React.PropTypes.string.isRequired,
-        csrfToken: React.PropTypes.string.isRequired,
-        isAdmin: React.PropTypes.bool.isRequired,
-        teamId: React.PropTypes.string.isRequired,
-        teamTimeZone: React.PropTypes.string,
-        teamTimeZoneName: React.PropTypes.string,
-        teamTimeZoneOffset: React.PropTypes.number
-      };
+RegionalSettingsLoader.propTypes = {
+  containerId: React.PropTypes.string.isRequired,
+  csrfToken: React.PropTypes.string.isRequired,
+  isAdmin: React.PropTypes.bool.isRequired,
+  teamId: React.PropTypes.string.isRequired,
+  teamTimeZone: React.PropTypes.string,
+  teamTimeZoneName: React.PropTypes.string,
+  teamTimeZoneOffset: React.PropTypes.number
+};
 
-      ReactDOM.render(
-        React.createElement(RegionalSettingsLoader, RegionalSettingsConfiguration),
-        document.getElementById(RegionalSettingsConfiguration.containerId)
-      );
-    }
-  );
-});
+ReactDOM.render(
+  React.createElement(RegionalSettingsLoader, RegionalSettingsConfiguration),
+  document.getElementById(RegionalSettingsConfiguration.containerId)
+);
