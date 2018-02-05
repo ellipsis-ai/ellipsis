@@ -5,8 +5,8 @@ declare var ColorsConfig: {
 
 import 'core-js';
 import 'whatwg-fetch';
-import React from 'react';
-import ReactDOM from 'react-dom';
+import * as React from 'react';
+import * as ReactDOM from 'react-dom';
 import Colors from './index';
 
 const container = document.getElementById(ColorsConfig.containerId);

@@ -17,8 +17,9 @@ const webpackConfig = {
       'diff',
       'whatwg-fetch'
     ],
-    styleguideColors: './app/assets/frontend/styleguide/colors/loader',
-    githubConfig: './app/assets/frontend/github_config/loader'
+    githubConfig: './app/assets/frontend/github_config/loader',
+    scheduling: './app/assets/frontend/scheduling/loader',
+    styleguideColors: './app/assets/frontend/styleguide/colors/loader'
   },
   output: {
     path: "",
