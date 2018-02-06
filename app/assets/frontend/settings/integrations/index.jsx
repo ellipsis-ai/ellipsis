@@ -1,13 +1,12 @@
-define(function(require) {
-  var React = require('react'),
-    Collapsible = require('../../shared_ui/collapsible'),
-    HelpButton = require('../../help/help_button'),
-    HelpPanel = require('../../help/panel'),
-    Page = require('../../shared_ui/page'),
-    SettingsPage = require('../../shared_ui/settings_page'),
-    Sort = require('../../lib/sort');
+import * as React from 'react';
+import Collapsible from '../../../javascripts/shared_ui/collapsible';
+import HelpButton from '../../../javascripts/help/help_button';
+import HelpPanel from '../../../javascripts/help/panel';
+import Page from '../../../javascripts/shared_ui/page';
+import SettingsPage from '../../../javascripts/shared_ui/settings_page';
+import Sort from '../../../javascripts/lib/sort';
 
-  const IntegrationList = React.createClass({
+const IntegrationList = React.createClass({
     propTypes: Object.assign({}, Page.requiredPropTypes, {
       csrfToken: React.PropTypes.string.isRequired,
       isAdmin: React.PropTypes.bool.isRequired,
@@ -275,7 +274,6 @@ define(function(require) {
         </HelpPanel>
       );
     }
-  });
-
-  return IntegrationList;
 });
+
+export default IntegrationList;

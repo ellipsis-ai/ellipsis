@@ -1,14 +1,12 @@
-define(function(require) {
-  var React = require('react'),
-    Collapsible = require('../../shared_ui/collapsible'),
-    CsrfTokenHiddenInput = require('../../shared_ui/csrf_token_hidden_input'),
-    SettingsPage = require('../../shared_ui/settings_page'),
-    ifPresent = require('../../lib/if_present'),
-    FormInput = require('../../form/input'),
-    Page = require('../../shared_ui/page');
+import * as React from 'react';
+import Collapsible from '../../../javascripts/shared_ui/collapsible';
+import CsrfTokenHiddenInput from '../../../javascripts/shared_ui/csrf_token_hidden_input';
+import SettingsPage from '../../../javascripts/shared_ui/settings_page';
+import ifPresent from '../../../javascripts/lib/if_present';
+import FormInput from '../../../javascripts/form/input';
+import Page from '../../../javascripts/shared_ui/page';
 
-  return React.createClass({
-    displayName: 'ConfigEditor',
+const AwsConfigEditor = React.createClass({
     propTypes: Object.assign({}, Page.requiredPropTypes, {
       configId: React.PropTypes.string,
       name: React.PropTypes.string,
@@ -314,5 +312,6 @@ define(function(require) {
         </div>
       );
     }
-  });
 });
+
+export default AwsConfigEditor;
