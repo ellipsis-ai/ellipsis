@@ -1,22 +1,21 @@
-define(function(require) {
-  var React = require('react'),
-    EditableName = require('./editable_name'),
-    BehaviorGroup = require('../models/behavior_group'),
-    BehaviorGroupCard = require('./behavior_group_card'),
-    BehaviorGroupInfoPanel = require('./behavior_group_info_panel'),
-    Collapsible = require('../shared_ui/collapsible'),
-    ConfirmActionPanel = require('../panels/confirm_action'),
-    SearchInput = require('../form/search'),
-    InstalledBehaviorGroupsPanel = require('./installed_behavior_groups_panel'),
-    ListHeading = require('./list_heading'),
-    Page = require('../shared_ui/page'),
-    ResponsiveColumn = require('../shared_ui/responsive_column'),
-    SubstringHighlighter = require('../shared_ui/substring_highlighter'),
-    debounce = require('javascript-debounce');
+import * as React from 'react';
+import EditableName from './editable_name';
+import BehaviorGroup from '../../javascripts/models/behavior_group';
+import BehaviorGroupCard from './behavior_group_card';
+import BehaviorGroupInfoPanel from './behavior_group_info_panel';
+import Collapsible from '../../javascripts/shared_ui/collapsible';
+import ConfirmActionPanel from '../../javascripts/panels/confirm_action';
+import SearchInput from '../../javascripts/form/search';
+import InstalledBehaviorGroupsPanel from './installed_behavior_groups_panel';
+import ListHeading from './list_heading';
+import Page from '../../javascripts/shared_ui/page';
+import ResponsiveColumn from '../../javascripts/shared_ui/responsive_column';
+import SubstringHighlighter from '../../javascripts/shared_ui/substring_highlighter';
+import debounce from 'javascript-debounce';
 
-  const ANIMATION_DURATION = 0.25;
+const ANIMATION_DURATION = 0.25;
 
-  const BehaviorList = React.createClass({
+const BehaviorList = React.createClass({
     propTypes: Object.assign({}, Page.requiredPropTypes, {
       onLoadPublishedBehaviorGroups: React.PropTypes.func.isRequired,
       onBehaviorGroupImport: React.PropTypes.func.isRequired,
@@ -631,7 +630,6 @@ define(function(require) {
         </div>
       );
     }
-  });
-
-  return BehaviorList;
 });
+
+export default BehaviorList;

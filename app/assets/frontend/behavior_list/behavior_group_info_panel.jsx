@@ -1,15 +1,17 @@
 // @flow
-define(function(require) {
-  const React = require('react'),
-    BehaviorGroup = require('../models/behavior_group'),
-    BehaviorVersion = require('../models/behavior_version'),
-    EditableName = require('./editable_name'),
-    Formatter = require('../lib/formatter'),
-    SVGInstall = require('../svg/install'),
-    SVGInstalled = require('../svg/installed'),
-    ifPresent = require('../lib/if_present'),
-    Sort = require('../lib/sort'),
-    autobind = require('../lib/autobind');
+import * as React from 'react';
+import BehaviorGroupModel from '../../javascripts/models/behavior_group';
+const BehaviorGroup: any = BehaviorGroupModel; // TODO
+import BehaviorVersionModel from '../../javascripts/models/behavior_version';
+const BehaviorVersion: any = BehaviorVersionModel;
+import EditableName from './editable_name';
+import FormatterModule from '../../javascripts/lib/formatter';
+const Formatter: any = FormatterModule;
+import SVGInstall from '../../javascripts/svg/install';
+import SVGInstalled from '../../javascripts/svg/installed';
+import ifPresent from '../../javascripts/lib/if_present';
+import Sort from '../../javascripts/lib/sort';
+import autobind from '../../javascripts/lib/autobind';
 
   type Props = {
     groupData: ?BehaviorGroup,
@@ -23,9 +25,7 @@ define(function(require) {
   }
 
   class BehaviorGroupInfoPanel extends React.Component<Props> {
-    props: Props;
-
-    constructor(props) {
+    constructor(props: Props) {
       super(props);
       autobind(this);
     }
@@ -185,5 +185,4 @@ define(function(require) {
     }
   }
 
-  return BehaviorGroupInfoPanel;
-});
+export default BehaviorGroupInfoPanel;

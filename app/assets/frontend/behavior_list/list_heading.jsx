@@ -1,8 +1,6 @@
-define(function(require) {
-  var React = require('react');
+import * as React from 'react';
 
-  return React.createClass({
-    displayName: 'ListHeading',
+const ListHeading = React.createClass({
     propTypes: {
       includeTeachButton: React.PropTypes.bool,
       children: React.PropTypes.node.isRequired,
@@ -26,5 +24,6 @@ define(function(require) {
         </div>
       );
     }
-  });
 });
+
+export default ListHeading;

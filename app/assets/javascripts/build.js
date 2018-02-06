@@ -81,10 +81,6 @@ requirejs.config({
       name: 'behavior_editor/loader',
       include: ['behavior_editor/index'],
       exclude: ['common']
-    }, {
-      name: 'behavior_list/loader',
-      include: ['behavior_list/app'],
-      exclude: ['common']
     }
   ]
 });

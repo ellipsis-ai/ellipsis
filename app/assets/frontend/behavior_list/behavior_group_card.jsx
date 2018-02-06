@@ -1,14 +1,11 @@
-define(function(require) {
-  var
-    React = require('react'),
-    BehaviorGroup = require('../models/behavior_group'),
-    Checkbox = require('../form/checkbox'),
-    SVGInstall = require('../svg/install'),
-    SVGInstalled = require('../svg/installed'),
-    SVGInstalling = require('../svg/installing');
+import * as React from 'react';
+import BehaviorGroup from '../../javascripts/models/behavior_group';
+import Checkbox from '../../javascripts/form/checkbox';
+import SVGInstall from '../../javascripts/svg/install';
+import SVGInstalled from '../../javascripts/svg/installed';
+import SVGInstalling from '../../javascripts/svg/installing';
 
-  return React.createClass({
-    displayName: 'BehaviorGroupCard',
+const BehaviorGroupCard = React.createClass({
     propTypes: {
       groupData: React.PropTypes.instanceOf(BehaviorGroup).isRequired,
       localId: React.PropTypes.string,
@@ -161,5 +158,6 @@ define(function(require) {
         </div>
       );
     }
-  });
 });
+
+export default BehaviorGroupCard;

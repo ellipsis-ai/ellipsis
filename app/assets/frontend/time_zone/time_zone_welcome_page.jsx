@@ -1,7 +1,6 @@
-define(function(require) {
-  const React = require('react');
+import * as React from 'react';
 
-  class TeamTimeZoneWelcomePage extends React.Component {
+class TeamTimeZoneWelcomePage extends React.Component {
     render() {
       return (
         <div className="bg-white border-bottom border-bottom-thick pvxl">
@@ -23,11 +22,10 @@ define(function(require) {
         </div>
       );
     }
-  }
+}
 
-  TeamTimeZoneWelcomePage.propTypes = {
-    children: React.PropTypes.node.isRequired
-  };
+TeamTimeZoneWelcomePage.propTypes = {
+  children: React.PropTypes.node.isRequired
+};
 
-  return TeamTimeZoneWelcomePage;
-});
+export default TeamTimeZoneWelcomePage;

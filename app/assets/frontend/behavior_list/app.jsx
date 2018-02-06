@@ -1,15 +1,14 @@
-define(function(require) {
-  var React = require('react'),
-    BehaviorGroup = require('../models/behavior_group'),
-    BehaviorList = require('./index'),
-    PageNotification = require('../shared_ui/page_notification'),
-    DataRequest = require('../lib/data_request'),
-    ImmutableObjectUtils = require('../lib/immutable_object_utils'),
-    TimeZoneWelcomePage = require('../time_zone/time_zone_welcome_page'),
-    TeamTimeZoneSetter = require('../time_zone/team_time_zone_setter'),
-    Page = require('../shared_ui/page');
+import * as React from 'react';
+import BehaviorGroup from '../../javascripts/models/behavior_group';
+import BehaviorList from './index';
+import PageNotification from '../../javascripts/shared_ui/page_notification';
+import DataRequest from '../../javascripts/lib/data_request';
+import ImmutableObjectUtils from '../../javascripts/lib/immutable_object_utils';
+import TimeZoneWelcomePage from '../time_zone/time_zone_welcome_page';
+import TeamTimeZoneSetter from '../time_zone/team_time_zone_setter';
+import Page from '../../javascripts/shared_ui/page';
 
-  return React.createClass({
+const BehaviorListApp = React.createClass({
     propTypes: Object.assign({}, Page.requiredPropTypes, {
       csrfToken: React.PropTypes.string.isRequired,
       behaviorGroups: React.PropTypes.arrayOf(React.PropTypes.object).isRequired,
@@ -242,5 +241,6 @@ define(function(require) {
         );
       }
     }
-  });
 });
+
+export default BehaviorListApp;
