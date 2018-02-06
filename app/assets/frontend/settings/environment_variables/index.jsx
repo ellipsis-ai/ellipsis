@@ -1,9 +1,9 @@
 import React from 'react';
-import SettingsPage from '../../../javascripts/shared_ui/settings_page';
+import SettingsPage from '../../shared_ui/settings_page';
 import Setter from './setter';
-import ifPresent from '../../../javascripts/lib/if_present';
-import Sort from '../../../javascripts/lib/sort';
-import Page from '../../../javascripts/shared_ui/page';
+import ifPresent from '../../lib/if_present';
+import Sort from '../../lib/sort';
+import Page from '../../shared_ui/page';
 
 const EnvironmentVariableList = React.createClass({
     propTypes: Object.assign({}, Page.requiredPropTypes, {

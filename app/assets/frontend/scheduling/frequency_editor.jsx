@@ -1,5 +1,5 @@
 import * as React from 'react';
-import FormInput from '../../javascripts/form/input';
+import FormInput from '../form/input';
 import OptionalInt from '../models/optional_int';
 import Recurrence from '../models/recurrence';
 

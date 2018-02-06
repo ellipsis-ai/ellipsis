@@ -1,6 +1,6 @@
 import * as React from 'react';
-import Formatter from '../../javascripts/lib/formatter';
-import BehaviorGroup from '../../javascripts/models/behavior_group';
+import Formatter from '../lib/formatter';
+import BehaviorGroup from '../models/behavior_group';
 import ScheduledAction from '../models/scheduled_action';
 import ScheduledItemTitle from './scheduled_item_title';
 

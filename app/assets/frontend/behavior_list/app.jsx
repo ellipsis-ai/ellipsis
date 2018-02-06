@@ -1,12 +1,12 @@
 import * as React from 'react';
-import BehaviorGroup from '../../javascripts/models/behavior_group';
+import BehaviorGroup from '../models/behavior_group';
 import BehaviorList from './index';
-import PageNotification from '../../javascripts/shared_ui/page_notification';
-import DataRequest from '../../javascripts/lib/data_request';
-import ImmutableObjectUtils from '../../javascripts/lib/immutable_object_utils';
+import PageNotification from '../shared_ui/page_notification';
+import DataRequest from '../lib/data_request';
+import ImmutableObjectUtils from '../lib/immutable_object_utils';
 import TimeZoneWelcomePage from '../time_zone/time_zone_welcome_page';
 import TeamTimeZoneSetter from '../time_zone/team_time_zone_setter';
-import Page from '../../javascripts/shared_ui/page';
+import Page from '../shared_ui/page';
 
 const BehaviorListApp = React.createClass({
     propTypes: Object.assign({}, Page.requiredPropTypes, {

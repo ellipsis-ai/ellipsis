@@ -1,6 +1,6 @@
 window.crypto = require('./../../../mocks/mock_window_crypto');
-const BehaviorGroup = require('../../../../app/assets/javascripts/models/behavior_group');
-const diffs = require('../../../../app/assets/javascripts/models/diffs');
+const BehaviorGroup = require('../../../../app/assets/frontend/models/behavior_group');
+const diffs = require('../../../../app/assets/frontend/models/diffs');
 const TextPart = diffs.TextPart;
 
 const teamId = 'team123456';

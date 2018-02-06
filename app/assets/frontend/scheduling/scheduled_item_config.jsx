@@ -1,11 +1,11 @@
 import * as React from 'react';
-import DeleteButton from '../../javascripts/shared_ui/delete_button';
-import Select from '../../javascripts/form/select';
-import FormInput from '../../javascripts/form/input';
-import ImmutableObjectUtils from '../../javascripts/lib/immutable_object_utils';
-import BehaviorGroup from '../../javascripts/models/behavior_group';
+import DeleteButton from '../shared_ui/delete_button';
+import Select from '../form/select';
+import FormInput from '../form/input';
+import ImmutableObjectUtils from '../lib/immutable_object_utils';
+import BehaviorGroup from '../models/behavior_group';
 import ScheduledAction from '../models/scheduled_action';
-import Sort from '../../javascripts/lib/sort';
+import Sort from '../lib/sort';
 
 const ScheduledItemTitle = React.createClass({
     propTypes: {

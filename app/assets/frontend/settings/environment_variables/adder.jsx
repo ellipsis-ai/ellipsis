@@ -1,11 +1,11 @@
-define(function(require) {
-  var React = require('react'),
-    Input = require('../../../javascripts/form/input'),
-    Textarea = require('../../../javascripts/form/textarea'),
-    formatEnvVarName = require('../../../javascripts/lib/formatter').formatEnvironmentVariableName,
-    ifPresent = require('../../../javascripts/lib/if_present');
+import * as React from 'react';
+import Input from '../../form/input';
+import Textarea from '../../form/textarea';
+import Formatter from '../../lib/formatter';
+const formatEnvVarName = Formatter.formatEnvironmentVariableName;
+import ifPresent from '../../lib/if_present';
 
-  return React.createClass({
+const Adder = React.createClass({
     propTypes: {
       prompt: React.PropTypes.string,
       onCancelClick: React.PropTypes.func.isRequired,
@@ -178,5 +178,6 @@ define(function(require) {
         </div>
       );
     }
-  });
 });
+
+export default Adder;

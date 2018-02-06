@@ -77,10 +77,6 @@ requirejs.config({
         "diff",
         'whatwg-fetch'
       ]
-    }, {
-      name: 'behavior_editor/loader',
-      include: ['behavior_editor/index'],
-      exclude: ['common']
     }
   ]
 });

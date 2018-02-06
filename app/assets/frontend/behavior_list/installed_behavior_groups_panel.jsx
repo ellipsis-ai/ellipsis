@@ -1,7 +1,7 @@
 import * as React from 'react';
-import Formatter from '../../javascripts/lib/formatter';
-import SVGCheckmark from '../../javascripts/svg/checkmark';
-import URLCreator from '../../javascripts/lib/url_creator';
+import Formatter from '../lib/formatter';
+import SVGCheckmark from '../svg/checkmark';
+import URLCreator from '../lib/url_creator';
 
 const InstalledBehaviorGroupsPanel = React.createClass({
     displayName: 'InstalledBehaviorGroupsPanel',

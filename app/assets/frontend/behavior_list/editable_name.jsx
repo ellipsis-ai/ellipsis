@@ -1,11 +1,9 @@
-define(function(require) {
-  var React = require('react'),
-    Editable = require('../../javascripts/models/editable'),
-    SubstringHighlighter = require('../../javascripts/shared_ui/substring_highlighter'),
-    ImmutableObjectUtils = require('../../javascripts/lib/immutable_object_utils');
+import * as React from 'react';
+import Editable from '../models/editable';
+import SubstringHighlighter from '../shared_ui/substring_highlighter';
+import ImmutableObjectUtils from '../lib/immutable_object_utils';
 
-  return React.createClass({
-    displayName: 'EditableName',
+const EditableName = React.createClass({
     propTypes: {
       version: React.PropTypes.instanceOf(Editable).isRequired,
       disableLink: React.PropTypes.bool,
@@ -120,7 +118,7 @@ define(function(require) {
         <div className={this.getDisplayClassesFor(version)}>
           <span className={this.props.disableLink ? "" : "link"}>{version.name || "New data type"}</span>
           {this.props.labelDataType ? (
-            <span> (data type)</span>
+            <span>{" (data type)"}</span>
           ) : null}
         </div>
       );
@@ -211,5 +209,6 @@ define(function(require) {
         );
       }
     }
-  });
 });
+
+export default EditableName;

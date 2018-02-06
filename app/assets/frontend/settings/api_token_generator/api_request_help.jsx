@@ -1,7 +1,7 @@
 import * as React from 'react';
-import Collapsible from '../../../javascripts/shared_ui/collapsible';
-import ExpandButton from '../../../javascripts/shared_ui/expand_button';
-import HelpPanel from '../../../javascripts/help/panel';
+import Collapsible from '../../shared_ui/collapsible';
+import ExpandButton from '../../shared_ui/expand_button';
+import HelpPanel from '../../help/panel';
 
 const APIRequestHelp = React.createClass({
     propTypes: {

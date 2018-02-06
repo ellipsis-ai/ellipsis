@@ -1,11 +1,11 @@
 // @flow
 import * as React from 'react';
-import CSRFTokenHiddenInput from '../../javascripts/shared_ui/csrf_token_hidden_input';
-import PageComponent from '../../javascripts/shared_ui/page';
+import CSRFTokenHiddenInput from '../shared_ui/csrf_token_hidden_input';
+import PageComponent from '../shared_ui/page';
 const Page: any = PageComponent;
-import SettingsPage from '../../javascripts/shared_ui/settings_page';
-import type {PageRequiredProps} from "../../javascripts/shared_ui/page";
-import autobind from '../../javascripts/lib/autobind';
+import SettingsPage from '../shared_ui/settings_page';
+import type {PageRequiredProps} from "../shared_ui/page";
+import autobind from '../lib/autobind';
 
 const resetForm = jsRoutes.controllers.GithubConfigController.reset();
 

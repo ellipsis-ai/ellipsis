@@ -1,10 +1,10 @@
 import * as React from 'react';
-import Collapsible from '../../../javascripts/shared_ui/collapsible';
-import CsrfTokenHiddenInput from '../../../javascripts/shared_ui/csrf_token_hidden_input';
-import SettingsPage from '../../../javascripts/shared_ui/settings_page';
-import ifPresent from '../../../javascripts/lib/if_present';
-import FormInput from '../../../javascripts/form/input';
-import Page from '../../../javascripts/shared_ui/page';
+import Collapsible from '../../shared_ui/collapsible';
+import CsrfTokenHiddenInput from '../../shared_ui/csrf_token_hidden_input';
+import SettingsPage from '../../shared_ui/settings_page';
+import ifPresent from '../../lib/if_present';
+import FormInput from '../../form/input';
+import Page from '../../shared_ui/page';
 
 const AwsConfigEditor = React.createClass({
     propTypes: Object.assign({}, Page.requiredPropTypes, {

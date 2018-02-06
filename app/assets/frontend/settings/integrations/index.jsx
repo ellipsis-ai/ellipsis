@@ -1,10 +1,10 @@
 import * as React from 'react';
-import Collapsible from '../../../javascripts/shared_ui/collapsible';
-import HelpButton from '../../../javascripts/help/help_button';
-import HelpPanel from '../../../javascripts/help/panel';
-import Page from '../../../javascripts/shared_ui/page';
-import SettingsPage from '../../../javascripts/shared_ui/settings_page';
-import Sort from '../../../javascripts/lib/sort';
+import Collapsible from '../../shared_ui/collapsible';
+import HelpButton from '../../help/help_button';
+import HelpPanel from '../../help/panel';
+import Page from '../../shared_ui/page';
+import SettingsPage from '../../shared_ui/settings_page';
+import Sort from '../../lib/sort';
 
 const IntegrationList = React.createClass({
     propTypes: Object.assign({}, Page.requiredPropTypes, {

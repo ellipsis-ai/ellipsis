@@ -86,7 +86,12 @@ class BehaviorEditorController @Inject() (
           data = editorData,
           maybeShowVersions
         )
-        Future.successful(Ok(views.js.shared.pageConfig(viewConfig(Some(editorData.teamAccess)), "config/behavioreditor/edit", Json.toJson(config))))
+        Future.successful(Ok(views.js.shared.webpackLoader(
+          viewConfig(Some(editorData.teamAccess)),
+          "BehaviorEditorConfiguration",
+          "behaviorEditor",
+          Json.toJson(config)
+        )))
       }.getOrElse {
         Future.successful(NotFound("Skill not found"))
       }

@@ -1,5 +1,5 @@
 import * as React from 'react';
-import BehaviorGroup from '../../javascripts/models/behavior_group';
+import BehaviorGroup from '../models/behavior_group';
 import ScheduledAction from '../models/scheduled_action';
 
 const ScheduledItemTitle = React.createClass({

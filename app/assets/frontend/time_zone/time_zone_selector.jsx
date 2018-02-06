@@ -1,7 +1,7 @@
 import * as React from 'react';
-import DataRequest from '../../javascripts/lib/data_request';
-import SearchWithResults from '../../javascripts/form/search_with_results';
-import autobind from '../../javascripts/lib/autobind';
+import DataRequest from '../lib/data_request';
+import SearchWithResults from '../form/search_with_results';
+import autobind from '../lib/autobind';
 
 class TimeZoneSelector extends React.PureComponent {
     constructor(props) {

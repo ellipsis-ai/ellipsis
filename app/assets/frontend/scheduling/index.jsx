@@ -1,18 +1,18 @@
 import * as React from 'react';
-import BrowserUtils from '../../javascripts/lib/browser_utils';
-import Button from '../../javascripts/form/button';
+import BrowserUtils from '../lib/browser_utils';
+import Button from '../form/button';
 import ChannelName from './channel_name';
-import Collapsible from '../../javascripts/shared_ui/collapsible';
-import ConfirmActionPanel from '../../javascripts/panels/confirm_action';
-import DynamicLabelButton from '../../javascripts/form/dynamic_label_button';
-import Page from '../../javascripts/shared_ui/page';
-import BehaviorGroup from '../../javascripts/models/behavior_group';
+import Collapsible from '../shared_ui/collapsible';
+import ConfirmActionPanel from '../panels/confirm_action';
+import DynamicLabelButton from '../form/dynamic_label_button';
+import Page from '../shared_ui/page';
+import BehaviorGroup from '../models/behavior_group';
 import ScheduledAction from '../models/scheduled_action';
 import ScheduleChannel from '../models/schedule_channel';
 import ScheduledItem from './scheduled_item';
 import ScheduledItemEditor from './scheduled_item_editor';
 import ScheduledItemTitle from './scheduled_item_title';
-import Sort from '../../javascripts/lib/sort';
+import Sort from '../lib/sort';
 
   const Scheduling = React.createClass({
     propTypes: Object.assign({}, Page.requiredPropTypes, {

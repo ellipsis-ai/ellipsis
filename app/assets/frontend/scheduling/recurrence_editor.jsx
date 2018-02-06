@@ -1,5 +1,5 @@
 import * as React from 'react';
-import ToggleGroup from '../../javascripts/form/toggle_group';
+import ToggleGroup from '../form/toggle_group';
 import Recurrence from '../models/recurrence';
 import MinutelyRecurrenceEditor from './minutely_recurrence_editor';
 import HourlyRecurrenceEditor from './hourly_recurrence_editor';

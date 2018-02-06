@@ -1,0 +1,116 @@
+// @flow
+
+import type {Diffable, DiffableProp} from "./diffs";
+
+import ApiConfigRef from './api_config_ref';
+import RequiredApiConfig from './required_api_config';
+import ID from '../lib/id';
+
+class RequiredSimpleTokenApi extends RequiredApiConfig implements Diffable {
+
+    diffProps(): Array<DiffableProp> {
+      return [{
+        name: "Name used in code",
+        value: this.nameInCode || ""
+      }];
+    }
+
+    onAddConfigFor(editor) {
+      return editor.onAddSimpleTokenApi;
+    }
+
+    onAddNewConfigFor() {
+      return undefined; // N/A
+    }
+
+    onRemoveConfigFor(editor) {
+      return editor.onRemoveSimpleTokenApi;
+    }
+
+    onUpdateConfigFor(editor) {
+      return editor.onUpdateSimpleTokenApi;
+    }
+
+    getApiLogoUrl(editor) {
+      return editor.getSimpleTokenLogoUrlForConfig(this);
+    }
+
+    getApiName(editor) {
+      return editor.getSimpleTokenNameForConfig(this);
+    }
+
+    getAllConfigsFrom(editor) {
+      return editor.getAllSimpleTokenApis().filter(ea => ea.id === this.apiId);
+    }
+
+    codePathPrefix() {
+      return "ellipsis.accessTokens.";
+    }
+
+    codePath() {
+      return `${this.codePathPrefix()}${this.nameInCode}`;
+    }
+
+    configName() {
+      return "";
+    }
+
+    isConfigured() {
+      return true;
+    }
+
+    clone(props): RequiredSimpleTokenApi {
+      return RequiredSimpleTokenApi.fromProps(Object.assign({}, this, props));
+    }
+
+    static fromProps(props): RequiredSimpleTokenApi {
+      return new RequiredSimpleTokenApi(props.id, props.exportId, props.apiId, props.nameInCode, props.config);
+    }
+
+  }
+
+  class SimpleTokenApiRef extends ApiConfigRef {
+    logoImageUrl: string;
+
+    constructor(id: string, displayName: string, logoImageUrl: string) {
+      super(id, displayName);
+      Object.defineProperties(this, {
+        logoImageUrl: { value: logoImageUrl, enumerable: true }
+      });
+    }
+
+    getApiLogoUrl() {
+      return this.logoImageUrl;
+    }
+
+    getApiName() {
+      return this.displayName;
+    }
+
+    configName() {
+      return this.displayName;
+    }
+
+    newRequired() {
+      return new RequiredSimpleTokenApi(
+        ID.next(),
+        ID.next(),
+        this.id,
+        this.defaultNameInCode(),
+        this
+      );
+    }
+
+    static fromJson(props) {
+      return new SimpleTokenApiRef(props.id, props.displayName, props.logoImageUrl);
+    }
+
+}
+
+RequiredSimpleTokenApi.fromJson = function (props) {
+  return RequiredSimpleTokenApi.fromProps(Object.assign({}, props, {
+    config: props.config ? SimpleTokenApiRef.fromJson(props.config) : undefined
+  }));
+};
+
+export {SimpleTokenApiRef, RequiredSimpleTokenApi};
