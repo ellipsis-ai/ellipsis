@@ -1,12 +1,11 @@
-define(function(require) {
-  var React = require('react'),
-    SettingsPage = require('../../shared_ui/settings_page'),
-    Setter = require('./setter'),
-    ifPresent = require('../../lib/if_present'),
-    Sort = require('../../lib/sort'),
-    Page = require("../../shared_ui/page");
+import React from 'react';
+import SettingsPage from '../../../javascripts/shared_ui/settings_page';
+import Setter from './setter';
+import ifPresent from '../../../javascripts/lib/if_present';
+import Sort from '../../../javascripts/lib/sort';
+import Page from '../../../javascripts/shared_ui/page';
 
-  const EnvironmentVariableList = React.createClass({
+const EnvironmentVariableList = React.createClass({
     propTypes: Object.assign({}, Page.requiredPropTypes, {
       csrfToken: React.PropTypes.string.isRequired,
       isAdmin: React.PropTypes.bool.isRequired,
@@ -115,5 +114,5 @@ define(function(require) {
 
   });
 
-  return EnvironmentVariableList;
-});
+export default EnvironmentVariableList;
+

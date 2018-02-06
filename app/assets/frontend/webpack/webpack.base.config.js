@@ -19,6 +19,7 @@ const webpackConfig = {
     ],
     apiTokenGenerator: './app/assets/frontend/settings/api_token_generator/loader',
     awsConfigEditor: './app/assets/frontend/settings/aws_config_editor/loader',
+    environmentVariables: './app/assets/frontend/settings/environment_variables/loader',
     githubConfig: './app/assets/frontend/github_config/loader',
     integrationEditor: './app/assets/frontend/settings/oauth2_editor/loader',
     integrationList: './app/assets/frontend/settings/integrations/loader',

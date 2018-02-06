@@ -1,7 +1,6 @@
-import React from 'react';
-import TestUtils from 'react-addons-test-utils';
-
-const EnvironmentVariables = require('../../../../app/assets/javascripts/settings/environment_variables/index');
+import * as React from 'react';
+import * as TestUtils from 'react-addons-test-utils';
+import EnvironmentVariables from '../../../../app/assets/frontend/settings/environment_variables/index';
 
 jsRoutes.controllers.APITokenController.listTokens = jest.fn(() => ({ url: '/mock_list_tokens' }));
 jsRoutes.controllers.GithubConfigController.index = jest.fn(() => ({ url: '/mock_github_config' }));

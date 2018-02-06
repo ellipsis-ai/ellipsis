@@ -85,10 +85,6 @@ requirejs.config({
       name: 'behavior_list/loader',
       include: ['behavior_list/app'],
       exclude: ['common']
-    }, {
-      name: 'settings/environment_variables/loader',
-      include: ['settings/environment_variables/index'],
-      exclude: ['common']
     }
   ]
 });

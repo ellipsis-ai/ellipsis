@@ -70,7 +70,12 @@ class EnvironmentVariablesController @Inject() (
               data = EnvironmentVariablesData(team.id, varsData ++ newVarsData),
               focus = maybeNewVars.flatMap(_.headOption)
             )
-            Ok(views.js.shared.pageConfig(viewConfig(Some(teamAccess)), "settings/environmentvariables/list", Json.toJson(config)))
+            Ok(views.js.shared.webpackLoader(
+              viewConfig(Some(teamAccess)),
+              "EnvironmentVariableListConfig",
+              "environmentVariables",
+              Json.toJson(config)
+            ))
           }.getOrElse{
             NotFound("Team not found")
           }
