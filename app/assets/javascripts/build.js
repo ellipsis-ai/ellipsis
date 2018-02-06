@@ -86,10 +86,6 @@ requirejs.config({
       include: ['behavior_list/app'],
       exclude: ['common']
     }, {
-      name: 'settings/aws_config_editor/loader',
-      include: ['settings/aws_config_editor/index'],
-      exclude: ['common']
-    }, {
       name: 'settings/environment_variables/loader',
       include: ['settings/environment_variables/index'],
       exclude: ['common']
