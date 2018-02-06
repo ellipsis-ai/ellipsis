@@ -89,10 +89,6 @@ requirejs.config({
       name: 'settings/environment_variables/loader',
       include: ['settings/environment_variables/index'],
       exclude: ['common']
-    }, {
-      name: 'settings/integrations/loader',
-      include: ['settings/integrations/index'],
-      exclude: ['common']
     }
   ]
 });

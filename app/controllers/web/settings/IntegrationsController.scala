@@ -49,7 +49,12 @@ class IntegrationsController @Inject() (
               applications = applications.map(app => OAuth2ApplicationData.from(app)),
               awsConfigs = awsConfigs.map(AWSConfigData.from)
             )
-            Ok(views.js.shared.pageConfig(viewConfig(Some(teamAccess)), "settings/integrations/list", Json.toJson(config)))
+            Ok(views.js.shared.webpackLoader(
+              viewConfig(Some(teamAccess)),
+              "IntegrationListConfig",
+              "integrationList",
+              Json.toJson(config)
+            ))
           }.getOrElse{
             NotFound("Team not found")
           }
