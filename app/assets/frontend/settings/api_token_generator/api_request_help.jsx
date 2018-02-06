@@ -1,11 +1,9 @@
-define(function(require) {
-  var React = require('react'),
-    Collapsible = require('../../shared_ui/collapsible'),
-    ExpandButton = require('../../shared_ui/expand_button'),
-    HelpPanel = require('../../help/panel');
+import * as React from 'react';
+import Collapsible from '../../../javascripts/shared_ui/collapsible';
+import ExpandButton from '../../../javascripts/shared_ui/expand_button';
+import HelpPanel from '../../../javascripts/help/panel';
 
-  return React.createClass({
-    displayName: 'APIRequestHelp',
+const APIRequestHelp = React.createClass({
     propTypes: {
       onCollapse: React.PropTypes.func.isRequired
     },
@@ -106,5 +104,6 @@ define(function(require) {
         </div>
       );
     }
-  });
 });
+
+export default APIRequestHelp;

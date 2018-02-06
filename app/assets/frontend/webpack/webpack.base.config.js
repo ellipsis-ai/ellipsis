@@ -17,6 +17,7 @@ const webpackConfig = {
       'diff',
       'whatwg-fetch'
     ],
+    apiTokenGenerator: './app/assets/frontend/settings/api_token_generator/loader',
     githubConfig: './app/assets/frontend/github_config/loader',
     regionalSettings: './app/assets/frontend/settings/regional_settings/loader',
     scheduling: './app/assets/frontend/scheduling/loader',

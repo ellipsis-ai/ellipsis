@@ -1,18 +1,17 @@
-define(function(require) {
-  var React = require('react'),
-      APIRequestHelp = require('./api_request_help'),
-      Collapsible = require('../../shared_ui/collapsible'),
-      CSRFTokenHiddenInput = require('../../shared_ui/csrf_token_hidden_input'),
-      Formatter = require('../../lib/formatter'),
-      HelpButton = require('../../help/help_button'),
-      FormInput = require('../../form/input'),
-      Page = require('../../shared_ui/page'),
-      SettingsPage = require('../../shared_ui/settings_page');
+import * as React from 'react';
+import APIRequestHelp from './api_request_help';
+import Collapsible from '../../../javascripts/shared_ui/collapsible';
+import CSRFTokenHiddenInput from '../../../javascripts/shared_ui/csrf_token_hidden_input';
+import Formatter from '../../../javascripts/lib/formatter';
+import HelpButton from '../../../javascripts/help/help_button';
+import FormInput from '../../../javascripts/form/input';
+import Page from '../../../javascripts/shared_ui/page';
+import SettingsPage from '../../../javascripts/shared_ui/settings_page';
 
-  var revokeForm = jsRoutes.controllers.APITokenController.revokeToken();
-  var createForm = jsRoutes.controllers.APITokenController.createToken();
+var revokeForm = jsRoutes.controllers.APITokenController.revokeToken();
+var createForm = jsRoutes.controllers.APITokenController.createToken();
 
-  const ApiTokenGenerator = React.createClass({
+const ApiTokenGenerator = React.createClass({
     propTypes: Object.assign({}, Page.requiredPropTypes, {
       csrfToken: React.PropTypes.string.isRequired,
       isAdmin: React.PropTypes.bool.isRequired,
@@ -181,7 +180,6 @@ define(function(require) {
         );
       }
     }
-  });
-
-  return ApiTokenGenerator;
 });
+
+export default ApiTokenGenerator;
