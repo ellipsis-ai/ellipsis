@@ -215,7 +215,7 @@ define(function(require) {
       return (
         <div className="mvxl">
           <a className="button"
-             href={jsRoutes.controllers.web.settings.IntegrationsController.add(this.props.teamId, null, null, null).url}
+             href={jsRoutes.controllers.web.settings.OAuth2ApplicationController.add(this.props.teamId, null, null, null).url}
           >
             Add a new integration
           </a>
