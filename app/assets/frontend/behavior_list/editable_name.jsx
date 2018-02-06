@@ -1,8 +1,8 @@
 define(function(require) {
   var React = require('react'),
-    Editable = require('../models/editable'),
-    SubstringHighlighter = require('../shared_ui/substring_highlighter'),
-    ImmutableObjectUtils = require('../lib/immutable_object_utils');
+    Editable = require('../../javascripts/models/editable'),
+    SubstringHighlighter = require('../../javascripts/shared_ui/substring_highlighter'),
+    ImmutableObjectUtils = require('../../javascripts/lib/immutable_object_utils');
 
   return React.createClass({
     displayName: 'EditableName',

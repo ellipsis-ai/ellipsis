@@ -1,8 +1,8 @@
 import React from 'react';
 import TestUtils from 'react-addons-test-utils';
 window.crypto = require('./../../../mocks/mock_window_crypto');
-const BehaviorListApp = require('../../../../app/assets/javascripts/behavior_list/app');
-const BehaviorList = require('../../../../app/assets/javascripts/behavior_list/index');
+const BehaviorListApp = require('../../../../app/assets/frontend/behavior_list/app');
+const BehaviorList = require('../../../../app/assets/frontend/behavior_list/index');
 const TimeZoneSetter = require('../../../../app/assets/javascripts/time_zone/team_time_zone_setter');
 const BehaviorGroup = require('../../../../app/assets/javascripts/models/behavior_group');
 const Page = require('../../../../app/assets/javascripts/shared_ui/page');

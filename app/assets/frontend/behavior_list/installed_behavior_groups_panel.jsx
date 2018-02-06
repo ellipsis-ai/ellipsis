@@ -1,10 +1,9 @@
-define(function(require) {
-  var React = require('react'),
-    Formatter = require('../lib/formatter'),
-    SVGCheckmark = require('../svg/checkmark'),
-    URLCreator = require('../lib/url_creator');
+import * as React from 'react';
+import Formatter from '../../javascripts/lib/formatter';
+import SVGCheckmark from '../../javascripts/svg/checkmark';
+import URLCreator from '../../javascripts/lib/url_creator';
 
-  return React.createClass({
+const InstalledBehaviorGroupsPanel = React.createClass({
     displayName: 'InstalledBehaviorGroupsPanel',
     propTypes: {
       installedBehaviorGroups: React.PropTypes.arrayOf(React.PropTypes.object).isRequired,
@@ -145,5 +144,6 @@ define(function(require) {
         </div>
       );
     }
-  });
 });
+
+export default InstalledBehaviorGroupsPanel;
