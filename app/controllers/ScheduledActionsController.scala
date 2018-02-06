@@ -49,7 +49,12 @@ class ScheduledActionsController @Inject()(
           )
         } yield {
           maybeConfig.map { config =>
-            Ok(views.js.shared.pageConfig(viewConfig(Some(teamAccess)), "config/scheduling/index", Json.toJson(config)))
+            Ok(views.js.shared.webpackLoader(
+              viewConfig(Some(teamAccess)),
+              "SchedulingConfig",
+              "scheduling",
+              Json.toJson(config)
+            ))
           }.getOrElse {
             NotFound("Team not found")
           }
