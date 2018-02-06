@@ -4,8 +4,8 @@ import BehaviorList from './index';
 import PageNotification from '../../javascripts/shared_ui/page_notification';
 import DataRequest from '../../javascripts/lib/data_request';
 import ImmutableObjectUtils from '../../javascripts/lib/immutable_object_utils';
-import TimeZoneWelcomePage from '../../javascripts/time_zone/time_zone_welcome_page';
-import TeamTimeZoneSetter from '../../javascripts/time_zone/team_time_zone_setter';
+import TimeZoneWelcomePage from '../time_zone/time_zone_welcome_page';
+import TeamTimeZoneSetter from '../time_zone/team_time_zone_setter';
 import Page from '../../javascripts/shared_ui/page';
 
 const BehaviorListApp = React.createClass({

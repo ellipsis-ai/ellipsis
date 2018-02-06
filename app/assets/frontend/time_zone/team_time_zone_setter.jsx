@@ -1,12 +1,10 @@
-// @flow
-define(function(require) {
-  var React = require('react'),
-    DataRequest = require('../lib/data_request'),
-    Button = require('../form/button'),
-    DynamicLabelButton = require('../form/dynamic_label_button'),
-    TimeZoneSelector = require('./time_zone_selector');
+import * as React from 'react';
+import DataRequest from '../../javascripts/lib/data_request';
+import Button from '../../javascripts/form/button';
+import DynamicLabelButton from '../../javascripts/form/dynamic_label_button';
+import TimeZoneSelector from './time_zone_selector';
 
-  const TeamTimeZoneSetter = React.createClass({
+const TeamTimeZoneSetter = React.createClass({
     propTypes: {
       csrfToken: React.PropTypes.string.isRequired,
       teamId: React.PropTypes.string.isRequired,
@@ -123,5 +121,4 @@ define(function(require) {
     }
   });
 
-  return TeamTimeZoneSetter;
-});
+export default TeamTimeZoneSetter;

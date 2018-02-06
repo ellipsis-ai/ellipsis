@@ -1,10 +1,9 @@
-define(function(require) {
-  var React = require('react'),
-    DataRequest = require('../lib/data_request'),
-    SearchWithResults = require('../form/search_with_results'),
-    autobind = require('../lib/autobind');
+import * as React from 'react';
+import DataRequest from '../../javascripts/lib/data_request';
+import SearchWithResults from '../../javascripts/form/search_with_results';
+import autobind from '../../javascripts/lib/autobind';
 
-  class TimeZoneSelector extends React.PureComponent {
+class TimeZoneSelector extends React.PureComponent {
     constructor(props) {
       super(props);
       autobind(this);
@@ -177,14 +176,12 @@ define(function(require) {
         </div>
       );
     }
-  }
+}
 
-  TimeZoneSelector.propTypes = {
-    onChange: React.PropTypes.func.isRequired,
-    defaultTimeZone: React.PropTypes.string,
-    resetWithNewDefault: React.PropTypes.bool
-  };
+TimeZoneSelector.propTypes = {
+  onChange: React.PropTypes.func.isRequired,
+  defaultTimeZone: React.PropTypes.string,
+  resetWithNewDefault: React.PropTypes.bool
+};
 
-  return TimeZoneSelector;
-
-});
+export default TimeZoneSelector;

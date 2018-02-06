@@ -8,7 +8,7 @@ import Collapsible from '../../../javascripts/shared_ui/collapsible';
 import ButtonComponent from '../../../javascripts/form/button';
 const Button: any = ButtonComponent;
 import SettingsPage from '../../../javascripts/shared_ui/settings_page';
-import TeamTimeZoneSetterComponent from '../../../javascripts/time_zone/team_time_zone_setter';
+import TeamTimeZoneSetterComponent from '../../time_zone/team_time_zone_setter';
 const TeamTimeZoneSetter: any = TeamTimeZoneSetterComponent;
 import PageComponent from '../../../javascripts/shared_ui/page';
 const Page: any = PageComponent;

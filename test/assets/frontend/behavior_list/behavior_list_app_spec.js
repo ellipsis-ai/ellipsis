@@ -1,11 +1,11 @@
-import React from 'react';
-import TestUtils from 'react-addons-test-utils';
+import * as React from 'react';
+import * as TestUtils from 'react-addons-test-utils';
 window.crypto = require('./../../../mocks/mock_window_crypto');
-const BehaviorListApp = require('../../../../app/assets/frontend/behavior_list/app');
-const BehaviorList = require('../../../../app/assets/frontend/behavior_list/index');
-const TimeZoneSetter = require('../../../../app/assets/javascripts/time_zone/team_time_zone_setter');
-const BehaviorGroup = require('../../../../app/assets/javascripts/models/behavior_group');
-const Page = require('../../../../app/assets/javascripts/shared_ui/page');
+import BehaviorListApp from '../../../../app/assets/frontend/behavior_list/app';
+import BehaviorList from '../../../../app/assets/frontend/behavior_list/index';
+import TimeZoneSetter from '../../../../app/assets/frontend/time_zone/team_time_zone_setter';
+import BehaviorGroup from '../../../../app/assets/javascripts/models/behavior_group';
+import Page from '../../../../app/assets/javascripts/shared_ui/page';
 
 jest.mock('../../../../app/assets/javascripts/lib/data_request', () => ({
   jsonGet: jest.fn(() => {
