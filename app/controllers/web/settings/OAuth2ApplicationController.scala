@@ -127,7 +127,12 @@ class OAuth2ApplicationController @Inject() (
               applicationShared = application.isShared,
               applicationCanBeShared = isAdmin
             )
-            Ok(views.js.shared.pageConfig(viewConfig(Some(teamAccess)), "settings/integrations/editor", Json.toJson(config)))
+            Ok(views.js.shared.webpackLoader(
+              viewConfig(Some(teamAccess)),
+              "IntegrationEditorConfig",
+              "integrationEditor",
+              Json.toJson(config)
+            ))
           }).getOrElse {
             NotFound("Unknown configuration")
           }

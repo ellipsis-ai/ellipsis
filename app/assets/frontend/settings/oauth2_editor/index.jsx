@@ -1,15 +1,14 @@
-define(function(require) {
-  var React = require('react'),
-    Checkbox = require('../../form/checkbox'),
-    Collapsible = require('../../shared_ui/collapsible'),
-    CsrfTokenHiddenInput = require('../../shared_ui/csrf_token_hidden_input'),
-    FormInput = require('../../form/input'),
-    SettingsPage = require('../../shared_ui/settings_page'),
-    BrowserUtils = require('../../lib/browser_utils'),
-    ifPresent = require('../../lib/if_present'),
-    Page = require('../../shared_ui/page');
+import * as React from 'react';
+import Checkbox from '../../../javascripts/form/checkbox';
+import Collapsible from '../../../javascripts/shared_ui/collapsible';
+import CsrfTokenHiddenInput from '../../../javascripts/shared_ui/csrf_token_hidden_input';
+import FormInput from '../../../javascripts/form/input';
+import SettingsPage from '../../../javascripts/shared_ui/settings_page';
+import BrowserUtils from '../../../javascripts/lib/browser_utils';
+import ifPresent from '../../../javascripts/lib/if_present';
+import Page from '../../../javascripts/shared_ui/page';
 
-  const IntegrationEditor = React.createClass({
+const IntegrationEditor = React.createClass({
     propTypes: Object.assign({}, Page.requiredPropTypes, {
       isAdmin: React.PropTypes.bool.isRequired,
       apis: React.PropTypes.arrayOf(React.PropTypes.shape({
@@ -525,5 +524,4 @@ define(function(require) {
     }
   });
 
-  return IntegrationEditor;
-});
+export default IntegrationEditor;

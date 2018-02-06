@@ -19,6 +19,7 @@ const webpackConfig = {
     ],
     apiTokenGenerator: './app/assets/frontend/settings/api_token_generator/loader',
     githubConfig: './app/assets/frontend/github_config/loader',
+    integrationEditor: './app/assets/frontend/settings/oauth2_editor/loader',
     regionalSettings: './app/assets/frontend/settings/regional_settings/loader',
     scheduling: './app/assets/frontend/scheduling/loader',
     styleguideColors: './app/assets/frontend/styleguide/colors/loader'
