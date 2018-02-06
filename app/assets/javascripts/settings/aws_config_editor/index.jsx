@@ -184,7 +184,7 @@ define(function(require) {
           return (
             <span>
               <span className="mhs">
-                <button className="button-raw" onClick={this.reset}>Add a configuration</button>
+                <button className="button-raw" onClick={this.reset}>Add configuration</button>
               </span>
               <span className="mhs">→</span>
               <span className="mhs">{this.getName()}</span>
@@ -193,7 +193,7 @@ define(function(require) {
         } else {
           return (
             <span>
-              <span className="mhs">Add a configuration</span>
+              <span className="mhs">Add configuration</span>
               <span className="mhs">→</span>
               <span className="mhs">AWS</span>
             </span>
@@ -202,7 +202,7 @@ define(function(require) {
       } else {
         return (
           <span>
-            <span className="mhs">Edit a configuration</span>
+            <span className="mhs">Edit configuration</span>
             <span className="mhs">→</span>
             <span className="mhs">{this.getName() || (<span className="type-disabled">Untitled</span>)}</span>
           </span>

@@ -9,8 +9,9 @@ define(function(require) {
     ifPresent = require('../../lib/if_present'),
     Page = require('../../shared_ui/page');
 
-  const ApplicationEditor = React.createClass({
+  const IntegrationEditor = React.createClass({
     propTypes: Object.assign({}, Page.requiredPropTypes, {
+      isAdmin: React.PropTypes.bool.isRequired,
       apis: React.PropTypes.arrayOf(React.PropTypes.shape({
         apiId: React.PropTypes.string.isRequired,
         name: React.PropTypes.string.isRequired,
@@ -32,7 +33,6 @@ define(function(require) {
       applicationSaved: React.PropTypes.bool,
       applicationShared: React.PropTypes.bool.isRequired,
       applicationCanBeShared: React.PropTypes.bool.isRequired,
-      isAdmin: React.PropTypes.bool.isRequired,
       csrfToken: React.PropTypes.string.isRequired,
       teamId: React.PropTypes.string.isRequired,
       callbackUrl: React.PropTypes.string.isRequired,
@@ -229,7 +229,7 @@ define(function(require) {
 
     render: function() {
       return (
-        <SettingsPage teamId={this.props.teamId} isAdmin={this.props.isAdmin} activePage={"oauthApplications"} header={this.renderHeader()}>
+        <SettingsPage teamId={this.props.teamId} isAdmin={this.props.isAdmin} header={this.renderHeader()} activePage={"oauthApplications"}>
           <form action={jsRoutes.controllers.web.settings.OAuth2ApplicationController.save().url} method="POST" className="flex-row-cascade">
             <CsrfTokenHiddenInput value={this.props.csrfToken} />
             <input type="hidden" name="apiId" value={this.getApplicationApiId()} />
@@ -246,17 +246,16 @@ define(function(require) {
               {this.renderConfigureApplication()}
             </Collapsible>
 
-            {this.props.onRenderFooter((
-              <Collapsible revealWhen={this.shouldRevealApplicationUrl() && !this.props.activePanelIsModal}>
-                <div className="container border-top ptm">
-                  <div className="columns mobile-columns-float">
-                    <div className="column column-one-quarter" />
-                    <div className="column column-three-quarters plxxxxl prm">
-                      <button type="submit"
-                        className={"button-primary mrs mbm " + (this.state.isSaving ? "button-activated" : "")}
-                        disabled={!this.canBeSaved()}
-                        onClick={this.onSaveClick}
-                      >
+            {this.props.onRenderFooter(
+              <div className="container border-top">
+                <div className="columns mobile-columns-float">
+                  <div className="column column-one-quarter" />
+                  <div className="column column-three-quarters plxxxl ptm prm">
+                    <button type="submit"
+                            className={"button-primary mrs mbm " + (this.state.isSaving ? "button-activated" : "")}
+                            disabled={!this.canBeSaved()}
+                            onClick={this.onSaveClick}
+                    >
                       <span className="button-labels">
                         <span className="button-normal-label">
                           <span className="mobile-display-none">Save changes</span>
@@ -264,12 +263,11 @@ define(function(require) {
                         </span>
                         <span className="button-activated-label">Saving…</span>
                       </span>
-                      </button>
-                    </div>
+                    </button>
                   </div>
                 </div>
-              </Collapsible>
-            ))}
+              </div>
+            )}
           </form>
         </SettingsPage>
       );
@@ -279,7 +277,7 @@ define(function(require) {
       return (
         <h3 className="mvn ptxxl type-weak display-ellipsis">
           <span className="mrs">
-             <a href={jsRoutes.controllers.web.settings.IntegrationsController.list().url}>Integrations</a>
+            <a href={jsRoutes.controllers.web.settings.IntegrationsController.list().url}>Integrations</a>
           </span>
           <span className="mhs">→</span>
           {this.renderApplicationHeader()}
@@ -290,13 +288,13 @@ define(function(require) {
     renderApplicationHeader: function() {
       if (!this.apiIsSet()) {
         return (
-          <span className="mhs">Add a configuration</span>
+          <span className="mhs">Add configuration</span>
         );
       } else if (!this.props.applicationSaved) {
         return (
           <span>
             <span className="mhs">
-              <button className="button-raw" onClick={this.reset}>Add a configuration</button>
+              <button className="button-raw" onClick={this.reset}>Add configuration</button>
             </span>
             <span className="mhs">→</span>
             <span className="mhs">{this.getApplicationApiName()}</span>
@@ -305,12 +303,16 @@ define(function(require) {
       } else {
         return (
           <span>
-            <span className="mhs">Edit a configuration</span>
+            <span className="mhs">Edit configuration</span>
             <span className="mhs">→</span>
             <span className="mhs">{this.getApplicationName() || (<span className="type-disabled">Untitled</span>)}</span>
           </span>
         );
       }
+    },
+
+    redirectToAWSEditor: function() {
+      window.location = jsRoutes.controllers.web.settings.AWSConfigController.add().url;
     },
 
     renderChooseApi: function() {
@@ -323,10 +325,13 @@ define(function(require) {
           </p>
 
           <div className="mvxl">
+            <button type="button" key={"apiTypeButton12"} className="button-l mrl mbl" onClick={this.redirectToAWSEditor}>
+              <span className="type-black">AWS</span>
+          </button>
             {this.props.apis.map((api, index) => (
               <button type="button" key={"apiTypeButton" + index}
-                className="button-l mrl mbl"
-                onClick={this.setApplicationApi.bind(this, api)}
+                      className="button-l mrl mbl"
+                      onClick={this.setApplicationApi.bind(this, api)}
               >
                 {ifPresent(api.logoImageUrl, url => (
                   <img src={url} height="32" className="align-m" />
@@ -362,7 +367,7 @@ define(function(require) {
     renderConfigureApplication: function() {
       return (
         <div>
-          <p className="mtm mbxl">Configure a new {this.getApplicationApiName()} configuration so your skills can access data from a {this.getApplicationApiName()} account.</p>
+          <p className="mtm mbxl">Set up a new {this.getApplicationApiName()} configuration so your skills can access data from a {this.getApplicationApiName()} account.</p>
 
           <div>
             <h4 className="mbn position-relative">
@@ -395,9 +400,9 @@ define(function(require) {
             <Collapsible revealWhen={!this.shouldRevealApplicationUrl()}>
               <div className="mvxl">
                 <button type="button"
-                  className="button-primary"
-                  disabled={this.applicationNameIsEmpty()}
-                  onClick={this.revealApplicationURL}>
+                        className="button-primary"
+                        disabled={this.applicationNameIsEmpty()}
+                        onClick={this.revealApplicationURL}>
                   Continue
                 </button>
               </div>
@@ -439,21 +444,21 @@ define(function(require) {
                   <div className="column column-one-half">
                     <h5 className="mtn">Client ID</h5>
                     <FormInput className="form-input-borderless type-monospace"
-                      placeholder="Enter identifier"
-                      name="clientId"
-                      value={this.getApplicationClientId()}
-                      onChange={this.setApplicationClientId}
-                      disableAuto={true}
+                           placeholder="Enter identifier"
+                           name="clientId"
+                           value={this.getApplicationClientId()}
+                           onChange={this.setApplicationClientId}
+                           disableAuto={true}
                     />
                   </div>
                   <div className="column column-one-half">
                     <h5 className="mtn">Client secret</h5>
                     <FormInput className="form-input-borderless type-monospace"
-                      placeholder="Enter secret"
-                      name="clientSecret"
-                      value={this.getApplicationClientSecret()}
-                      onChange={this.setApplicationClientSecret}
-                      disableAuto={true}
+                           placeholder="Enter secret"
+                           name="clientSecret"
+                           value={this.getApplicationClientSecret()}
+                           onChange={this.setApplicationClientSecret}
+                           disableAuto={true}
                     />
                   </div>
                 </div>
@@ -479,11 +484,11 @@ define(function(require) {
                 <div className="columns">
                   <div className="column column-one-third">
                     <FormInput className="form-input-borderless type-monospace"
-                      name="scope"
-                      value={this.getApplicationScope()}
-                      onChange={this.setApplicationScope}
-                      placeholder="Enter scope value"
-                      disableAuto={true}
+                           name="scope"
+                           value={this.getApplicationScope()}
+                           onChange={this.setApplicationScope}
+                           placeholder="Enter scope value"
+                           disableAuto={true}
                     />
                   </div>
                 </div>
@@ -520,5 +525,5 @@ define(function(require) {
     }
   });
 
-  return ApplicationEditor;
+  return IntegrationEditor;
 });
