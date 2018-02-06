@@ -98,8 +98,8 @@ requirejs.config({
       include: ['settings/integrations/index'],
       exclude: ['common']
     }, {
-      name: 'settings/integrations_editor/loader',
-      include: ['settings/integrations_editor/index'],
+      name: 'settings/oauth2_editor/loader',
+      include: ['settings/oauth2_editor/index'],
       exclude: ['common']
     }
   ]

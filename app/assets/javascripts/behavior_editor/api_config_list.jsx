@@ -62,7 +62,7 @@ define(function(require) {
               <div className="column column-shrink ptm type-link">
                 <AddButton
                   onClick={this.props.onAddApiConfigClick}
-                  label={"Add new integration"}
+                  label={"Add new configuration"}
                 />
               </div>
             </div>

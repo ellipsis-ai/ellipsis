@@ -247,10 +247,10 @@ define(function(require) {
             </Collapsible>
 
             {this.props.onRenderFooter(
-              <div className="container">
+              <div className="container border-top">
                 <div className="columns mobile-columns-float">
                   <div className="column column-one-quarter" />
-                  <div className="column column-three-quarters plxxxxl prm">
+                  <div className="column column-three-quarters plxxxl ptm prm">
                     <button type="submit"
                             className={"button-primary mrs mbm " + (this.state.isSaving ? "button-activated" : "")}
                             disabled={!this.canBeSaved()}
@@ -288,13 +288,13 @@ define(function(require) {
     renderApplicationHeader: function() {
       if (!this.apiIsSet()) {
         return (
-          <span className="mhs">Add a configuration</span>
+          <span className="mhs">Add configuration</span>
         );
       } else if (!this.props.applicationSaved) {
         return (
           <span>
             <span className="mhs">
-              <button className="button-raw" onClick={this.reset}>Add a configuration</button>
+              <button className="button-raw" onClick={this.reset}>Add configuration</button>
             </span>
             <span className="mhs">→</span>
             <span className="mhs">{this.getApplicationApiName()}</span>
@@ -303,7 +303,7 @@ define(function(require) {
       } else {
         return (
           <span>
-            <span className="mhs">Edit</span>
+            <span className="mhs">Edit configuration</span>
             <span className="mhs">→</span>
             <span className="mhs">{this.getApplicationName() || (<span className="type-disabled">Untitled</span>)}</span>
           </span>
@@ -367,7 +367,7 @@ define(function(require) {
     renderConfigureApplication: function() {
       return (
         <div>
-          <p className="mtm mbxl">Configure a new {this.getApplicationApiName()} configuration so your skills can access data from a {this.getApplicationApiName()} account.</p>
+          <p className="mtm mbxl">Set up a new {this.getApplicationApiName()} configuration so your skills can access data from a {this.getApplicationApiName()} account.</p>
 
           <div>
             <h4 className="mbn position-relative">
