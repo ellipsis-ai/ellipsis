@@ -24,7 +24,7 @@ class ActiveUserRecordServiceImpl @Inject()(
   def allRecords: Future[Seq[ActiveUserRecord]] = dataService.run(all.result)
 
   def countFor(teamId: String, start: OffsetDateTime, end: OffsetDateTime): Future[Int] = {
-    Future { 10 }
+    dataService.run(uncompiledCountWithTeamIdAndDateQuery(teamId, start, end).result)
   }
 
 }

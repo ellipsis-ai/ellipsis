@@ -28,5 +28,12 @@ object ActiveUserRecordQueries {
 
   val all = TableQuery[ActiveUserRecordTable]
 
-
+  def uncompiledCountWithTeamIdAndDateQuery(teamId: Rep[String], start: Rep[OffsetDateTime], end: Rep[OffsetDateTime]) = {
+    all
+      .filter(r => r.teamId === teamId && r.createdAt >= start && r.createdAt <= end)
+      .distinctOn(_.derivedUserId)
+      .length
+  }
+  val compiledCountWithTeamIdAndDateQuery = Compiled(uncompiledCountWithTeamIdAndDateQuery _)
 }
+

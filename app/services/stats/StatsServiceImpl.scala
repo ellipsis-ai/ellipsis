@@ -19,11 +19,7 @@ class StatsServiceImpl @Inject()(
   def activeUsersCountFor(organization: Organization, start: OffsetDateTime, end: OffsetDateTime): Future[Int] = {
     for {
       teams <- dataService.teams.allTeamsFor(organization)
-      allCountPerTeam <- Future.sequence {
-        teams.map { team =>
-          dataService.activeUserRecords.countFor(team.id, start, end)
-        }
-      }
+      allCountPerTeam <- Future.sequence(teams.map(team => dataService.activeUserRecords.countFor(team.id, start, end)))
       countPerOrg <- Future.successful(allCountPerTeam.reduce(_+_))
     } yield {
       countPerOrg

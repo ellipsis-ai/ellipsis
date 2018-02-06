@@ -8,6 +8,7 @@
     "test": "test"
   },
   "dependencies": {
+    "eslint": "4.17.0",
     "eslint-plugin-react": "7.6.1",
     "flow-typed": "2.3.0"
   },
