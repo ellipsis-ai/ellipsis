@@ -1,5 +1,5 @@
 import Recurrence from './recurrence';
-import DeepEqual from '../../javascripts/lib/deep_equal';
+import DeepEqual from '../lib/deep_equal';
 
   class ScheduledAction {
 

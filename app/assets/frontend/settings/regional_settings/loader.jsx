@@ -4,9 +4,9 @@ import 'whatwg-fetch';
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';
 import RegionalSettings from './index';
-import PageComponent from '../../../javascripts/shared_ui/page';
+import PageComponent from '../../shared_ui/page';
 const Page: any = PageComponent;
-import autobind from '../../../javascripts/lib/autobind';
+import autobind from '../../lib/autobind';
 
 type Props = {
   containerId: string,

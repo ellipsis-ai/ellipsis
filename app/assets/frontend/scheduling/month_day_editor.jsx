@@ -1,6 +1,6 @@
 import * as React from 'react';
 import DayOfMonthInput from '../form/day_of_month_input';
-import Select from '../../javascripts/form/select';
+import Select from '../form/select';
 import Month from '../models/month';
 import Recurrence from '../models/recurrence';
 

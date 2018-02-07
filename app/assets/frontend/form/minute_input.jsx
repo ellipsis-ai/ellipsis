@@ -1,5 +1,5 @@
 import * as React from 'react';
-import FormInput from '../../javascripts/form/input';
+import FormInput from '../form/input';
 import Minute from '../models/minute';
 
 const MinuteInput = React.createClass({

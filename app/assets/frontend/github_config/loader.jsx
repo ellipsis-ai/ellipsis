@@ -6,9 +6,7 @@ import * as React from 'react';
 import * as ReactDOM from 'react-dom';
 import GithubConfig from './index';
 import type {GithubConfigProps} from './index';
-// TODO: remove "any" hack once Page is converted to ES6 module
-import PageComponent from '../../javascripts/shared_ui/page';
-const Page: any = PageComponent;
+import Page from '../shared_ui/page';
 
 type Config = {
   containerId: string

@@ -2,7 +2,7 @@ import * as React from 'react';
 import * as TestUtils from 'react-addons-test-utils';
 global.fetch = require('./../../../mocks/mock_fetch');
 
-import Page from '../../../../app/assets/javascripts/shared_ui/page';
+import Page from '../../../../app/assets/frontend/shared_ui/page';
 import RegionalSettings from '../../../../app/assets/frontend/settings/regional_settings/index';
 
 jsRoutes.controllers.APITokenController.listTokens = jest.fn(() => ({ url: '/mock_list_tokens' }));

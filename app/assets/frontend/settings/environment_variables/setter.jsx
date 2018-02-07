@@ -1,13 +1,13 @@
-define(function(require) {
-  var React = require('react'),
-    Collapsible = require('../../../javascripts/shared_ui/collapsible'),
-    ImmutableObjectUtils = require('../../../javascripts/lib/immutable_object_utils'),
-    Input = require('../../../javascripts/form/input'),
-    Textarea = require('../../../javascripts/form/textarea'),
-    formatEnvVarName = require('../../../javascripts/lib/formatter').formatEnvironmentVariableName,
-    ifPresent = require('../../../javascripts/lib/if_present');
+import React from 'react';
+import Collapsible from '../../shared_ui/collapsible';
+import ImmutableObjectUtils from '../../lib/immutable_object_utils';
+import Input from '../../form/input';
+import Textarea from '../../form/textarea';
+import Formatter from '../../lib/formatter';
+const formatEnvVarName = Formatter.formatEnvironmentVariableName;
+import ifPresent from '../../lib/if_present';
 
-  return React.createClass({
+const Setter = React.createClass({
     propTypes: {
       onCancelClick: React.PropTypes.func,
       onSave: React.PropTypes.func.isRequired,
@@ -325,5 +325,6 @@ define(function(require) {
         </div>
       );
     }
-  });
 });
+
+export default Setter;

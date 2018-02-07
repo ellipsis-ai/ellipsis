@@ -1,8 +1,7 @@
 import * as React from 'react';
 import * as TestUtils from 'react-addons-test-utils';
-window.crypto = require('./../../../mocks/mock_window_crypto');
 import BehaviorList from '../../../../app/assets/frontend/behavior_list/index';
-import BehaviorGroup from '../../../../app/assets/javascripts/models/behavior_group';
+import BehaviorGroup from '../../../../app/assets/frontend/models/behavior_group';
 import BehaviorGroupCard from '../../../../app/assets/frontend/behavior_list/behavior_group_card';
 
 describe('BehaviorList', () => {

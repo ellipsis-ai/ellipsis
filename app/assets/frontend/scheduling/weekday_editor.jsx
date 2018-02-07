@@ -1,5 +1,5 @@
 import * as React from 'react';
-import Checkbox from '../../javascripts/form/checkbox';
+import Checkbox from '../form/checkbox';
 import DayOfWeek from '../models/day_of_week';
 import Recurrence from '../models/recurrence';
 

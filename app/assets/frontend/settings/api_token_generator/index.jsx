@@ -1,12 +1,12 @@
 import * as React from 'react';
 import APIRequestHelp from './api_request_help';
-import Collapsible from '../../../javascripts/shared_ui/collapsible';
-import CSRFTokenHiddenInput from '../../../javascripts/shared_ui/csrf_token_hidden_input';
-import Formatter from '../../../javascripts/lib/formatter';
-import HelpButton from '../../../javascripts/help/help_button';
-import FormInput from '../../../javascripts/form/input';
-import Page from '../../../javascripts/shared_ui/page';
-import SettingsPage from '../../../javascripts/shared_ui/settings_page';
+import Collapsible from '../../shared_ui/collapsible';
+import CSRFTokenHiddenInput from '../../shared_ui/csrf_token_hidden_input';
+import Formatter from '../../lib/formatter';
+import HelpButton from '../../help/help_button';
+import FormInput from '../../form/input';
+import Page from '../../shared_ui/page';
+import SettingsPage from '../../shared_ui/settings_page';
 
 var revokeForm = jsRoutes.controllers.APITokenController.revokeToken();
 var createForm = jsRoutes.controllers.APITokenController.createToken();

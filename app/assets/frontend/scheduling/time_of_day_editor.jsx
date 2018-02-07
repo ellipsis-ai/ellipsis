@@ -1,10 +1,10 @@
 import * as React from 'react';
-import Collapsible from '../../javascripts/shared_ui/collapsible';
-import FormInput from '../../javascripts/form/input';
+import Collapsible from '../shared_ui/collapsible';
+import FormInput from '../form/input';
 import MinuteInput from '../form/minute_input';
 import TimeZoneSelector from '../time_zone/time_zone_selector';
 import Hour from '../models/hour';
-import ToggleGroup from '../../javascripts/form/toggle_group';
+import ToggleGroup from '../form/toggle_group';
 import Recurrence from '../models/recurrence';
 
 const TimeOfDayEditor = React.createClass({

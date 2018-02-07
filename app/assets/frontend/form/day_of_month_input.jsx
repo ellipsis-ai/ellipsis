@@ -1,5 +1,5 @@
 import * as React from 'react';
-import FormInput from '../../javascripts/form/input';
+import FormInput from '../form/input';
 import DayOfMonth from '../models/day_of_month';
 
 const DayOfMonthInput = React.createClass({

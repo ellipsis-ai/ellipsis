@@ -1,17 +1,14 @@
 // @flow
 import * as React from 'react';
-import BehaviorGroupModel from '../../javascripts/models/behavior_group';
-const BehaviorGroup: any = BehaviorGroupModel; // TODO
-import BehaviorVersionModel from '../../javascripts/models/behavior_version';
-const BehaviorVersion: any = BehaviorVersionModel;
+import BehaviorGroup from '../models/behavior_group';
+import BehaviorVersion from '../models/behavior_version';
 import EditableName from './editable_name';
-import FormatterModule from '../../javascripts/lib/formatter';
-const Formatter: any = FormatterModule;
-import SVGInstall from '../../javascripts/svg/install';
-import SVGInstalled from '../../javascripts/svg/installed';
-import ifPresent from '../../javascripts/lib/if_present';
-import Sort from '../../javascripts/lib/sort';
-import autobind from '../../javascripts/lib/autobind';
+import Formatter from '../lib/formatter';
+import SVGInstall from '../svg/install';
+import SVGInstalled from '../svg/installed';
+import ifPresent from '../lib/if_present';
+import Sort from '../lib/sort';
+import autobind from '../lib/autobind';
 
   type Props = {
     groupData: ?BehaviorGroup,
@@ -95,7 +92,7 @@ import autobind from '../../javascripts/lib/autobind';
     renderBehaviors(): React.Node {
       const behaviors = this.getBehaviors();
       const behaviorCount = behaviors.length;
-      const exportId = this.props.groupData ? this.props.groupData.exportId : "";
+      const exportId = this.props.groupData && this.props.groupData.exportId ? this.props.groupData.exportId : "";
       const hasGroupId = Boolean(this.props.groupData && this.props.groupData.id);
       return (
         <div className="type-s">

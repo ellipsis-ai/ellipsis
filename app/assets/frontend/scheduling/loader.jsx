@@ -4,12 +4,12 @@ import 'whatwg-fetch';
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';
 import Scheduling from './index';
-import Page from '../../javascripts/shared_ui/page';
+import Page from '../shared_ui/page';
 import ScheduledAction from '../models/scheduled_action';
 import ScheduleChannel from '../models/schedule_channel';
-import BehaviorGroup from '../../javascripts/models/behavior_group';
-import DataRequest from '../../javascripts/lib/data_request';
-import ImmutableObjectUtils from '../../javascripts/lib/immutable_object_utils';
+import BehaviorGroup from '../models/behavior_group';
+import DataRequest from '../lib/data_request';
+import ImmutableObjectUtils from '../lib/immutable_object_utils';
 
 const SchedulingLoader = React.createClass({
         propTypes: {

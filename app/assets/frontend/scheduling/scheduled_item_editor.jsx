@@ -1,9 +1,9 @@
 import * as React from 'react';
 import RecurrenceEditor from './recurrence_editor';
-import SectionHeading from '../../javascripts/shared_ui/section_heading';
+import SectionHeading from '../shared_ui/section_heading';
 import ScheduleChannelEditor from './schedule_channel_editor';
 import ScheduledItemConfig from './scheduled_item_config';
-import BehaviorGroup from '../../javascripts/models/behavior_group';
+import BehaviorGroup from '../models/behavior_group';
 import ScheduledAction from '../models/scheduled_action';
 import ScheduleChannel from '../models/schedule_channel';
 

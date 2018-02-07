@@ -1,7 +1,7 @@
 import * as React from 'react';
-import DataRequest from '../../javascripts/lib/data_request';
-import Button from '../../javascripts/form/button';
-import DynamicLabelButton from '../../javascripts/form/dynamic_label_button';
+import DataRequest from '../lib/data_request';
+import Button from '../form/button';
+import DynamicLabelButton from '../form/dynamic_label_button';
 import TimeZoneSelector from './time_zone_selector';
 
 const TeamTimeZoneSetter = React.createClass({
