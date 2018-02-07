@@ -1,4 +1,3 @@
-window.crypto = require('./../../../mocks/mock_window_crypto');
 import ID from '../../../../app/assets/frontend/lib/id';
 
 describe("ID", () => {

@@ -1,4 +1,3 @@
-window.crypto = require('./../../../mocks/mock_window_crypto');
 import LibraryVersion from '../../../../app/assets/frontend/models/library_version';
 
 const libraryVersion = Object.freeze({

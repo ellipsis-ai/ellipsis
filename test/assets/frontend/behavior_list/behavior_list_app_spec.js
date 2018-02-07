@@ -1,6 +1,5 @@
 import * as React from 'react';
 import * as TestUtils from 'react-addons-test-utils';
-window.crypto = require('./../../../mocks/mock_window_crypto');
 import BehaviorListApp from '../../../../app/assets/frontend/behavior_list/app';
 import BehaviorList from '../../../../app/assets/frontend/behavior_list/index';
 import TimeZoneSetter from '../../../../app/assets/frontend/time_zone/team_time_zone_setter';

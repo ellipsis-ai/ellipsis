@@ -1,4 +1,3 @@
-window.crypto = require('./../../../mocks/mock_window_crypto');
 import BehaviorGroup from '../../../../app/assets/frontend/models/behavior_group';
 import {TextPart, MultiLineTextPropertyDiff, maybeDiffFor} from '../../../../app/assets/frontend/models/diffs';
 

@@ -10,7 +10,7 @@ const webpackConfig = {
     vendor: [
       'core-js',
       'javascript-debounce',
-      'node-uuid',
+      'uuid',
       'react',
       'react-dom',
       'urijs',

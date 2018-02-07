@@ -1,4 +1,3 @@
-window.crypto = require('./../../../mocks/mock_window_crypto');
 import React from 'react';
 import TestUtils from 'react-addons-test-utils';
 import TriggerConfiguration from '../../../../app/assets/frontend/behavior_editor/trigger_configuration';

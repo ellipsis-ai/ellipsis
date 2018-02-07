@@ -1,6 +1,5 @@
 jest.mock('../../../../app/assets/frontend/behavior_editor/code_editor')
   .mock('../../../../app/assets/frontend/shared_ui/react-codemirror');
-window.crypto = require('./../../../mocks/mock_window_crypto');
 global.fetch = require('./../../../mocks/mock_fetch');
 
 import React from 'react';
