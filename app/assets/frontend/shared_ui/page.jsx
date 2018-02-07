@@ -46,6 +46,7 @@ class Page extends React.Component<Props, State> {
       autobind(this);
       this.state = this.getDefaultState();
       this.footer = null;
+      this.panels = {};
     }
 
     getDefaultState(): State {

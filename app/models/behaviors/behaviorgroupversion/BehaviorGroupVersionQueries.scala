@@ -24,7 +24,6 @@ object BehaviorGroupVersionQueries {
       raw.maybeIcon,
       raw.maybeDescription,
       maybeAuthor,
-      raw.maybeGitSHA,
       raw.createdAt
     )
   }
