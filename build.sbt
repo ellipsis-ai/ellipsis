@@ -66,7 +66,7 @@ JsEngineKeys.engineType := JsEngineKeys.EngineType.Node
 
 // Starts: Webpack build task
 val appPath = "./app/assets/frontend"
-val targetDir = "target/web/webpack/bundles"
+val targetDir = "target/web/public/main/bundles"
 val assetDir = "bundles"
 val webpackBuild = taskKey[Pipeline.Stage]("Webpack build task.")
 
