@@ -1,5 +1,7 @@
 import * as React from 'react';
 import Codemirror from '../shared_ui/react-codemirror';
+import {JSHINT} from 'jshint';
+window.JSHINT = JSHINT;
 import 'codemirror';
 import 'codemirror/mode/javascript/javascript';
 import 'codemirror/addon/lint/lint';
@@ -74,7 +76,7 @@ const CodeEditor = React.createClass({
       node: true,
       nonstandard: true,
       phantom: false,
-      prototype: false,
+      prototypejs: false,
       qunit: false,
       rhino: false,
       shelljs: false,
@@ -142,7 +144,9 @@ const CodeEditor = React.createClass({
           indentWithTabs: false,
           lineWrapping: this.props.lineWrapping,
           lineNumbers: true,
-          lint: this.getJsHintOptions(),
+          lint: {
+            options: this.getJsHintOptions()
+          },
           smartIndent: true,
           tabSize: 2,
           viewportMargin: Infinity,
