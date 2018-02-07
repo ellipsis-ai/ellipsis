@@ -177,6 +177,9 @@ object BehaviorEditorData {
           }
         }.getOrElse(Future.successful(None))
       }
+      maybeGitSHA <- maybeGroupVersion.map { groupVersion =>
+        dataService.behaviorGroupVersionSHAs.findForId(groupVersion.id)
+      }.getOrElse(Future.successful(None))
     } yield {
       val maybeVerifiedSelectedId = maybeVerifiedBehaviorId.orElse(maybeVerifiedLibraryId)
       val data = maybeGroupData.getOrElse {
@@ -194,7 +197,7 @@ object BehaviorEditorData {
           Seq(),
           Seq(),
           githubUrl = None,
-          maybeGroupVersion.flatMap(_.maybeGitSHA),
+          maybeGitSHA.map(_.gitSHA),
           exportId = None,
           Some(OffsetDateTime.now),
           Some(userData),

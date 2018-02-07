@@ -14,7 +14,6 @@ case class ImmutableBehaviorGroupVersionData(
                                               dataTypeInputs: Seq[InputData],
                                               behaviorVersions: Seq[BehaviorVersionData],
                                               libraryVersions: Seq[LibraryVersionData],
-                                              gitSHA: Option[String],
                                               exportId: Option[String],
                                               createdAt: Option[OffsetDateTime]
                                             )

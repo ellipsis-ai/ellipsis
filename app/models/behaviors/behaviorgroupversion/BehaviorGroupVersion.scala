@@ -14,7 +14,6 @@ case class BehaviorGroupVersion(
                                 maybeIcon: Option[String],
                                 maybeDescription: Option[String],
                                 maybeAuthor: Option[User],
-                                maybeGitSHA: Option[String],
                                 createdAt: OffsetDateTime
                               ) {
 
@@ -34,7 +33,6 @@ case class BehaviorGroupVersion(
       maybeIcon,
       maybeDescription,
       maybeAuthor.map(_.id),
-      maybeGitSHA,
       createdAt
     )
   }

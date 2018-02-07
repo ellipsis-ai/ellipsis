@@ -211,7 +211,6 @@ object BehaviorGroupData {
             dataTypeInputsData,
             versionsData,
             libraryVersionsData,
-            version.maybeGitSHA,
             version.group.maybeExportId,
             Some(version.createdAt)
           )

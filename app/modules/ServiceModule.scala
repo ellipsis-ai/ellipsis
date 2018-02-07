@@ -21,6 +21,7 @@ import models.behaviors.behavior.{BehaviorService, BehaviorServiceImpl}
 import models.behaviors.behaviorgroup.{BehaviorGroupService, BehaviorGroupServiceImpl}
 import models.behaviors.behaviorgroupdeployment.{BehaviorGroupDeploymentService, BehaviorGroupDeploymentServiceImpl}
 import models.behaviors.behaviorgroupversion.{BehaviorGroupVersionService, BehaviorGroupVersionServiceImpl}
+import models.behaviors.behaviorgroupversionsha.{BehaviorGroupVersionSHAService, BehaviorGroupVersionSHAServiceImpl}
 import models.behaviors.behaviorparameter.{BehaviorParameterService, BehaviorParameterServiceImpl}
 import models.behaviors.behaviorversion.{BehaviorVersionService, BehaviorVersionServiceImpl}
 import models.behaviors.config.awsconfig.{AWSConfigService, AWSConfigServiceImpl}
@@ -109,6 +110,7 @@ class ServiceModule extends AbstractModule with ScalaModule {
     bind[NodeModuleVersionService].to[NodeModuleVersionServiceImpl]
     bind[DevModeChannelService].to[DevModeChannelServiceImpl]
     bind[BehaviorGroupDeploymentService].to[BehaviorGroupDeploymentServiceImpl]
+    bind[BehaviorGroupVersionSHAService].to[BehaviorGroupVersionSHAServiceImpl]
 
 
     bind[AWSLambdaService].to[AWSLambdaServiceImpl]
