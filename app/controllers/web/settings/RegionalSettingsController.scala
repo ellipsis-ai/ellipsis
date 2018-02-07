@@ -44,7 +44,12 @@ class RegionalSettingsController @Inject()(
               maybeTz.map(_.getDisplayName(TextStyle.FULL, Locale.ENGLISH)),
               maybeTz.map(tz => OffsetDateTime.now(tz).getOffset.getTotalSeconds)
             )
-            Ok(views.js.shared.pageConfig(viewConfig(Some(teamAccess)), "config/regionalsettings/index", Json.toJson(config)))
+            Ok(views.js.shared.webpackLoader(
+              viewConfig(Some(teamAccess)),
+              "RegionalSettingsConfiguration",
+              "regionalSettings",
+              Json.toJson(config)
+            ))
           }.getOrElse {
             NotFound("Team not found")
           }

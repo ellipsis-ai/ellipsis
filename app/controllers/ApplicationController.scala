@@ -73,7 +73,12 @@ class ApplicationController @Inject() (
               teamTimeZone = team.maybeTimeZone.map(_.toString),
               branchName = maybeBranch
             )
-            Ok(views.js.shared.pageConfig(viewConfig(Some(teamAccess)), "config/index", Json.toJson(config)))
+            Ok(views.js.shared.webpackLoader(
+              viewConfig(Some(teamAccess)),
+              "BehaviorListConfig",
+              "behaviorList",
+              Json.toJson(config)
+            ))
           }.getOrElse {
             NotFound("Team not found")
           }

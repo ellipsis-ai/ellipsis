@@ -25,8 +25,8 @@ var React = require('react'),
   DefaultStorageBrowser = require('./default_storage_browser'),
   DevModeChannelsHelp = require('./dev_mode_channels_help'),
   DynamicLabelButton = require('../form/dynamic_label_button'),
-  EnvVariableAdder = require('../settings/environment_variables/adder'),
-  EnvVariableSetter = require('../settings/environment_variables/setter'),
+  EnvVariableAdder = require('../../frontend/settings/environment_variables/adder'),
+  EnvVariableSetter = require('../../frontend/settings/environment_variables/setter'),
   HiddenJsonInput = require('./hidden_json_input'),
   Input = require('../models/input'),
   Formatter = require('../lib/formatter'),
@@ -98,6 +98,7 @@ const BehaviorEditor = React.createClass({
     ).isRequired,
     onSave: React.PropTypes.func.isRequired,
     onLinkGithubRepo: React.PropTypes.func.isRequired,
+    onUpdateFromGithub: React.PropTypes.func.isRequired,
     onForgetSavedAnswerForInput: React.PropTypes.func.isRequired,
     onLoad: React.PropTypes.func,
     userId: React.PropTypes.string.isRequired,
@@ -2589,6 +2590,7 @@ const BehaviorEditor = React.createClass({
         isLinkedToGithub={this.props.isLinkedToGithub}
         linkedGithubRepo={this.props.linkedGithubRepo}
         onLinkGithubRepo={this.props.onLinkGithubRepo}
+        onUpdateFromGithub={this.props.onUpdateFromGithub}
         onSaveChanges={this.onSaveClick}
       />
     );

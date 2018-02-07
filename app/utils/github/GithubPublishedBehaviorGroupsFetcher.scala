@@ -82,7 +82,11 @@ case class GithubPublishedBehaviorGroupsFetcher(
           GithubBehaviorGroupDataBuilder(groupPath, ea, team, maybeBranch, dataService).build
         }
       }
-      case _ => throw GithubResultFromDataException("Could not build skills from response")
+      case _ => throw GithubResultFromDataException(
+        GitFetcherExceptionType.NoValidSkillFound,
+        "Could not build skills from response",
+        data.asOpt[JsObject].getOrElse(Json.obj("data" -> data))
+      )
     }
     behaviorGroups.map { ea =>
       val maybeExistingGroup = alreadyInstalled.find(_.exportId == ea.exportId)

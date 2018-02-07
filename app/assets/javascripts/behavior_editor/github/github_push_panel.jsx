@@ -10,6 +10,7 @@ define(function(require) {
     LinkedGithubRepo = require('../../models/linked_github_repo'),
     GithubErrorNotification = require('./github_error_notification'),
     GithubOwnerRepoReadonly = require('./github_owner_repo_readonly'),
+    SVGWarning = require('../../svg/warning'),
     autobind = require('../../lib/autobind');
 
   type Props = {
@@ -17,66 +18,41 @@ define(function(require) {
     linked?: LinkedGithubRepo,
     onPushBranch: () => void,
     onDoneClick: () => void,
-    csrfToken: string,
-    branch: ?string
+    csrfToken: string
   };
 
   type State = {
-    branch: string,
     commitMessage: string,
     isSaving: boolean,
     lastSaved: ?Date,
-    lastSavedBranch: ?string,
     error: ?string
   };
 
   class GithubPushPanel extends React.Component<Props, State> {
     props: Props;
     state: State;
-    branchInput: ?FormInput;
     commitMessageInput: ?FormInput;
 
     constructor(props) {
       super(props);
       autobind(this);
       this.state = {
-        branch: this.getDefaultBranch(),
         commitMessage: "",
         isSaving: false,
         lastSaved: null,
-        lastSavedBranch: null,
-        error: null
+        error: null,
+        warning: null
       };
     }
 
-    componentWillReceiveProps(newProps) {
-      if (newProps.branch !== this.props.branch) {
-        this.setState({
-          branch: newProps.branch
-        });
-      }
-    }
-
-    getDefaultBranch(): string {
-      return this.props.branch || "master";
-    }
-
     focus(): void {
-      if (this.branchInput && !this.getBranch()) {
-        this.branchInput.focus();
-      } else if (this.commitMessageInput) {
+      if (this.commitMessageInput) {
         this.commitMessageInput.focus();
       }
     }
 
     getBranch(): string {
-      return this.state.branch;
-    }
-
-    onBranchChange(branch: string): void {
-      this.setState({
-        branch: Formatter.formatGitBranchIdentifier(branch)
-      });
+      return (this.props.linked && this.props.linked.currentBranch) || "master";
     }
 
     getCommitMessage(): string {
@@ -96,7 +72,8 @@ define(function(require) {
         const repo = linked.getRepo();
         this.setState({
           isSaving: true,
-          error: null
+          error: null,
+          warning: null
         }, () => this.pushToGithub(owner, repo));
       }
     }
@@ -112,19 +89,34 @@ define(function(require) {
           commitMessage: this.getCommitMessage()
         },
         this.props.csrfToken
-      ).then(() => {
-        this.setState({
-          commitMessage: "",
-          isSaving: false,
-          lastSaved: new Date(),
-          lastSavedBranch: branch
-        });
-        this.props.onPushBranch();
-      }).catch((err: DataRequest.ResponseError) => {
-        this.setState({
-          isSaving: false,
-          error: err.body
-        });
+      ).then((json) => {
+        if (json.data) {
+          this.setState({
+            commitMessage: "",
+            isSaving: false,
+            lastSaved: new Date()
+          });
+          this.props.onPushBranch();
+        } else if (json.errors) {
+          const error = json.errors;
+          if (error.type && error.type === "NoChanges") {
+            this.setState({
+              isSaving: false,
+              lastSaved: new Date(),
+              warning: "Warning: nothing was committed because this branch has no changes from master."
+            });
+            this.props.onPushBranch();
+          } else {
+            this.onPushError(json.errors.message);
+          }
+        }
+      }).catch((err: DataRequest.ResponseError) => this.onPushError(err.body));
+    }
+
+    onPushError(errorMessage: string) {
+      this.setState({
+        isSaving: false,
+        error: errorMessage
       });
     }
 
@@ -156,14 +148,8 @@ define(function(require) {
                 <div className="column column-shrink align-button">
                   <span className="type-label mrs">Branch:</span>
                 </div>
-                <div className="column column-expand">
-                  <FormInput
-                    ref={(el) => this.branchInput = el}
-                    className="form-input-borderless type-monospace type-s width-15 mrm"
-                    placeholder="e.g. master"
-                    onChange={this.onBranchChange}
-                    value={this.getBranch()}
-                  />
+                <div className="column column-expand align-button">
+                  <span className="type-monospace type-s width-15 mrm">{this.getBranch()}</span>
                 </div>
               </div>
               <div className="column-row">
@@ -187,9 +173,9 @@ define(function(require) {
             <DynamicLabelButton
               className="button-primary mrs"
               onClick={this.onPushToGithub}
-              disabledWhen={this.state.isSaving || !this.getBranch() || !this.getCommitMessage()}
+              disabledWhen={this.state.isSaving || !this.getCommitMessage()}
               labels={[{
-                text: "Force push…",
+                text: "Push…",
                 displayWhen: !this.state.isSaving
               }, {
                 text: "Pushing…",
@@ -200,7 +186,7 @@ define(function(require) {
               className="mrs"
               onClick={this.onDone}
             >
-              Done
+              {this.state.lastSaved ? "Done" : "Cancel"}
             </Button>
           </div>
           <div className="mtxl">
@@ -216,10 +202,15 @@ define(function(require) {
           <GithubErrorNotification error={this.state.error} />
         );
       } else if (this.state.lastSaved && !this.state.isSaving) {
-        const branch = this.state.lastSavedBranch ? `to branch ${this.state.lastSavedBranch}` : "";
         return (
-          <div className="fade-in">
-            Pushed {branch} {Formatter.formatTimestampRelative(this.state.lastSaved)}
+          <div className="fade-in type-s">
+            {this.state.warning ? (
+              <span>
+                <span className="display-inline-block height-xl mrs type-yellow align-m"><SVGWarning /></span>
+                <b>{this.state.warning} </b>
+              </span>
+            ) : null}
+            <span>Branch {this.getBranch()} successfully pushed {Formatter.formatTimestampRelative(this.state.lastSaved)}.</span>
           </div>
         );
       } else {

@@ -81,50 +81,6 @@ requirejs.config({
       name: 'behavior_editor/loader',
       include: ['behavior_editor/index'],
       exclude: ['common']
-    }, {
-      name: 'behavior_list/loader',
-      include: ['behavior_list/app'],
-      exclude: ['common']
-    }, {
-      name: 'settings/api_token_generator/loader',
-      include: ['settings/api_token_generator/index'],
-      exclude: ['common']
-    }, {
-      name: 'settings/application_editor/loader',
-      include: ['settings/application_editor/index'],
-      exclude: ['common']
-    }, {
-      name: 'settings/aws_config_editor/loader',
-      include: ['settings/aws_config_editor/index'],
-      exclude: ['common']
-    }, {
-      name: 'settings/environment_variables/loader',
-      include: ['settings/environment_variables/index'],
-      exclude: ['common']
-    }, {
-      name: 'settings/integrations/loader',
-      include: ['settings/integrations/index'],
-      exclude: ['common']
-    }, {
-      name: 'settings/integrations_editor/loader',
-      include: ['settings/integrations_editor/index'],
-      exclude: ['common']
-    }, {
-      name: 'settings/regional_settings/loader',
-      include: ['settings/regional_settings/index'],
-      exclude: ['common']
-    }, {
-      name: 'styleguide/colors/loader',
-      include: ['styleguide/colors/index'],
-      exclude: ['common']
-    }, {
-      name: 'scheduling/loader',
-      include: ['scheduling/index'],
-      exclude: ['common']
-    }, {
-      name: 'github_config/loader',
-      include: ['github_config/index'],
-      exclude: ['common']
     }
   ]
 });

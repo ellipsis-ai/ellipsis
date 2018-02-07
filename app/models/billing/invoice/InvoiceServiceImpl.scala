@@ -6,12 +6,11 @@ import javax.inject.Inject
 
 import com.chargebee.ListResult
 import com.chargebee.filters.enums.SortOrder
-import com.chargebee.models.{Invoice, Plan, Subscription}
-import com.chargebee.models.Invoice.{AddChargeRequest, Status}
+import com.chargebee.models.Invoice
+import com.chargebee.models.Invoice.Status
 import com.google.inject.Provider
 import play.api.Configuration
 import services.DataService
-import services.billing.Charge
 
 import scala.collection.JavaConversions._
 import scala.collection.mutable.ListBuffer
@@ -40,6 +39,12 @@ class InvoiceServiceImpl @Inject()(
     }
   }
 
+  def allPendingFatInvoices(): Future[Seq[FatInvoice]] = {
+    allPending().flatMap { invoices =>
+      Future.sequence(invoices.map(toFatInvoice(_)))
+    }
+  }
+
   def addChargesForActiveUser(fatInvoice: FatInvoice, activeCount: Int): Future[FatInvoice] = {
     Future {
       blocking {
@@ -61,7 +66,17 @@ class InvoiceServiceImpl @Inject()(
     }.map(_.invoice())
   }
 
-  def toFatInvoice(invoice: Invoice): Future[FatInvoice] = {
+  def billingPeriodFor(fatInvoice: FatInvoice): Future[BillingPeriod] = {
+    for {
+      previousInvoice <- previousInvoiceFor(fatInvoice)
+      startDate <- Future.successful(getInvoiceDateAsOffsetDateTimeFor(previousInvoice.invoice))
+      endDate <- Future.successful(getInvoiceDateAsOffsetDateTimeFor(fatInvoice.invoice))
+    } yield {
+      BillingPeriod(startDate, endDate)
+    }
+  }
+
+  private def toFatInvoice(invoice: Invoice): Future[FatInvoice] = {
     for {
       maybeSub <- dataService.subscriptions.get(invoice.subscriptionId())
       sub <- Future.successful {
@@ -76,7 +91,7 @@ class InvoiceServiceImpl @Inject()(
     }
   }
 
-  def previousInvoiceFor(fatInvoice: FatInvoice): Future[FatInvoice] = {
+  private def previousInvoiceFor(fatInvoice: FatInvoice): Future[FatInvoice] = {
     Future {
       blocking {
         val result: ListResult = Invoice.list().subscriptionId().is(fatInvoice.subscription.id())
@@ -88,17 +103,6 @@ class InvoiceServiceImpl @Inject()(
       }
     }.map(FatInvoice(_, fatInvoice.subscription, fatInvoice.plan))
   }
-
-  def billingPeriodFor(fatInvoice: FatInvoice): Future[BillingPeriod] = {
-    for {
-      previousInvoice <- previousInvoiceFor(fatInvoice)
-      startDate <- Future.successful(getInvoiceDateAsOffsetDateTimeFor(previousInvoice.invoice))
-      endDate <- Future.successful(getInvoiceDateAsOffsetDateTimeFor(fatInvoice.invoice))
-    } yield {
-     BillingPeriod(startDate, endDate)
-    }
-  }
-
 
   private def getInvoiceDateAsOffsetDateTimeFor(invoice: Invoice): OffsetDateTime = {
     OffsetDateTime.ofInstant(Instant.ofEpochMilli(invoice.date().getTime), ZoneId.systemDefault())

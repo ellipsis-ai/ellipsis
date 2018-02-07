@@ -5,17 +5,17 @@ import java.time.{OffsetDateTime, ZoneId}
 import javax.inject.Inject
 
 import controllers.Assets.Asset
-import play.api.Configuration
+import play.api.{Configuration, Environment, Mode}
 import play.api.mvc._
 
 import scala.concurrent.ExecutionContext
 
 class RemoteAssets @Inject() (
-                             val configuration: Configuration,
-                             val assets: Assets,
-                             implicit val ec: ExecutionContext
-                             )
-  extends InjectedController {
+                               val configuration: Configuration,
+                               val assets: Assets,
+                               val environment: Environment,
+                               implicit val ec: ExecutionContext
+                             ) extends InjectedController {
 
   private val timeZoneCode = "GMT"
 
@@ -37,9 +37,19 @@ class RemoteAssets @Inject() (
           val withoutAssetsPrefix = controllers.routes.RemoteAssets.getAsset(asset).url.substring(7)
           contentUrl + withoutAssetsPrefix
         }
-        case None => controllers.routes.RemoteAssets.getAsset(asset).url
+        case None => {
+          controllers.routes.RemoteAssets.getAsset(asset).url
+        }
       }
     }
   }
 
+  def getWebpackBundle(file: String): String = {
+    // In development, bundles are served by the WebpackController
+    if (environment.mode == Mode.Dev) {
+      routes.WebpackController.bundle(file).url
+    } else {
+      getUrl("bundles/" + file)
+    }
+  }
 }

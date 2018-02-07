@@ -2,7 +2,7 @@
 define(function(require) {
   const React = require('react'),
     AddButton = require('../form/add_button'),
-    EditableName = require('../behavior_list/editable_name'),
+    EditableName = require('../../frontend/behavior_list/editable_name'),
     Editable = require('../models/editable'),
     Sort = require('../lib/sort');
 

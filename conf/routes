@@ -68,7 +68,7 @@ POST        /settings/delete_environment_variable     @controllers.web.settings.
 
 GET         /settings/regional_settings               @controllers.web.settings.RegionalSettingsController.index(teamId: Option[String] ?= None)
 GET         /settings/integrations                    @controllers.web.settings.IntegrationsController.list(teamId: Option[String] ?= None)
-GET         /settings/integrations/add                @controllers.web.settings.IntegrationsController.add(teamId: Option[String] ?= None, behaviorGroupId: Option[String] ?= None, behaviorId: Option[String] ?= None, requiredNameInCode: Option[String] ?= None)
+GET         /settings/integrations/add                @controllers.web.settings.OAuth2ApplicationController.add(teamId: Option[String] ?= None, behaviorGroupId: Option[String] ?= None, behaviorId: Option[String] ?= None, requiredNameInCode: Option[String] ?= None)
 
 GET         /settings/oauth2_applications/add         @controllers.web.settings.OAuth2ApplicationController.add(teamId: Option[String] ?= None, behaviorGroupId: Option[String] ?= None, behaviorId: Option[String] ?= None, requiredNameInCode: Option[String] ?= None)
 GET         /settings/oauth2_applications/:id/edit    @controllers.web.settings.OAuth2ApplicationController.edit(id: String, teamId: Option[String] ?= None)
@@ -161,3 +161,6 @@ GET         /assets/*file                             @controllers.RemoteAssets.
 
 # Styleguide routes
 GET         /styleguide/colors                        @controllers.StyleguideController.colors
+
+# Webpack routes
+GET         /bundles/*file                            @controllers.WebpackController.bundle(file)

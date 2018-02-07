@@ -5,6 +5,7 @@ import models.accounts.user.User
 import models.behaviors.behaviorgroup.BehaviorGroup
 import models.team.Team
 import play.api.Configuration
+import play.api.libs.json.{JsObject, Json}
 import services._
 import utils.ShellEscaping
 
@@ -12,7 +13,12 @@ import scala.concurrent.{ExecutionContext, Future, blocking}
 import scala.sys.process.{Process, ProcessLogger}
 import scala.util.matching.Regex
 
-trait GitCommandException extends Exception
+sealed trait GitCommandException extends Exception
+
+object GitPushExceptionType extends Enumeration {
+  type GitPushExceptionType = Value
+  val NoChanges, Unknown = Value
+}
 
 case class EnsureGitRepoDirException(message: String) extends GitCommandException {
   override def getMessage: String = s"Error initializing git repo: $message"
@@ -34,15 +40,21 @@ case class GitPullException(message: String) extends GitCommandException {
 case class ExportForPushException(message: String) extends GitCommandException {
   override def getMessage: String = s"Error exporting skill: $message"
 }
-case class GitPushException(branch: String, message: String) extends GitCommandException {
+
+case class GitPushException(exceptionType: GitPushExceptionType.Value, message: String, branch: String) extends GitCommandException {
+  val details: JsObject = Json.obj("branch" -> branch)
+  override def getMessage: String = message
+}
+
+object GitPushException {
   private val nothingToCommitRegex: Regex = """nothing to commit, working directory clean\s*\Z""".r
-  override def getMessage: String = {
-    val errorDetails = if (nothingToCommitRegex.findFirstIn(message).isDefined) {
-      s"branch $branch has no changes to commit"
+
+  def fromMessage(branch: String, originalMessage: String): GitPushException = {
+    if (nothingToCommitRegex.findFirstIn(originalMessage).isDefined) {
+      GitPushException(GitPushExceptionType.NoChanges, s"Warning: branch $branch has no changes from master to commit.", branch)
     } else {
-      message.trim
+      GitPushException(GitPushExceptionType.Unknown, s"Error pushing to GitHub: ${originalMessage.trim}", branch)
     }
-    s"Error pushing to GitHub: $errorDetails"
   }
 }
 
@@ -127,7 +139,7 @@ case class GithubPusher(
   private def push: Future[Unit] = {
     runCommand(
       raw"""cd $dirName && git add . && git -c user.name=$escapedCommitterName -c user.email=$escapedCommitterEmail commit -a -m $escapedCommitMessage && git push origin $escapedBranch""",
-      Some((message) => GitPushException(escapedBranch, message))
+      Some((message) => GitPushException.fromMessage(escapedBranch, message))
     )
   }
 

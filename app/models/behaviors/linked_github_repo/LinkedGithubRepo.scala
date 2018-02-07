@@ -6,5 +6,6 @@ case class LinkedGithubRepo(
                            owner: String,
                            repo: String,
                            behaviorGroupId: String,
+                           maybeCurrentBranch: Option[String],
                            createdAt: OffsetDateTime
                            )

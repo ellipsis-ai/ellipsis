@@ -1,4 +1,4 @@
-# --- !Ups
+  # --- !Ups
 
 CREATE TABLE organizations (
   id TEXT PRIMARY KEY,

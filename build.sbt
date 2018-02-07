@@ -1,21 +1,30 @@
-import WebJs._
-import RjsKeys._
+import com.typesafe.sbt.web.pipeline.Pipeline
+import play.sbt.PlayImport.PlayKeys.playRunHooks
+import sbt._
+import com.typesafe.sbt.web.SbtWeb
+import sbt.Keys._
 
 name := """ellipsis"""
-
 version := "1.0-SNAPSHOT"
+scalaVersion := "2.11.8"
+
+pipelineStages := Seq(webpackBuild, rjs, digest, gzip)
+
+lazy val slackClientVersion = "cd123f514e2be7fa0a7df087197f7cccbba3ca75"
+lazy val slackClientProject = ProjectRef(uri(s"https://github.com/ellipsis-ai/slack-scala-client.git#$slackClientVersion"), "slack-scala-client")
 
 lazy val root =
   (project in file(".")).
     dependsOn(slackClientProject).
     enablePlugins(PlayScala, SbtWeb)
 
-pipelineStages := Seq(rjs, digest, gzip)
+javaOptions in Test += "-Dconfig.file=conf/test.conf"
+scalacOptions in Compile ++= Seq("-Xmax-classfile-name", "128")
+updateOptions := updateOptions.value.withCachedResolution(true)
+fork in run := true
 
-scalaVersion := "2.11.8"
-
-lazy val slackClientVersion = "cd123f514e2be7fa0a7df087197f7cccbba3ca75"
-lazy val slackClientProject = ProjectRef(uri(s"https://github.com/ellipsis-ai/slack-scala-client.git#$slackClientVersion"), "slack-scala-client")
+resolvers += "scalaz-bintray" at "http://dl.bintray.com/scalaz/releases"
+resolvers += "Atlassian Releases" at "https://maven.atlassian.com/public/"
 
 libraryDependencies ++= Seq(
   evolutions,
@@ -49,6 +58,7 @@ libraryDependencies ++= Seq(
   "org.webjars.bower" % "urijs" % "1.18.1",
   "org.webjars.npm" % "diff" % "3.4.0",
   "org.webjars.bower" % "node-uuid" % "1.4.7",
+  "org.webjars.npm" % "little-loader" % "0.2.0",
   "com.atlassian.commonmark" % "commonmark" % "0.6.0",
   "com.atlassian.commonmark" % "commonmark-ext-gfm-strikethrough" % "0.6.0",
   "com.atlassian.commonmark" % "commonmark-ext-autolink" % "0.6.0",
@@ -62,24 +72,39 @@ libraryDependencies ++= Seq(
   "com.chargebee" % "chargebee-java" % "2.3.8"
 )
 
-
-javaOptions in Test += "-Dconfig.file=conf/test.conf"
-
-resolvers += "scalaz-bintray" at "http://dl.bintray.com/scalaz/releases"
-
-routesGenerator := InjectedRoutesGenerator
-
-resolvers += "Atlassian Releases" at "https://maven.atlassian.com/public/"
-
+// JavaScript configuration begins
 JsEngineKeys.engineType := JsEngineKeys.EngineType.Node
 
 RjsKeys.mainConfig := "build"
 RjsKeys.mainModule := "build"
-updateOptions := updateOptions.value.withCachedResolution(true)
 BabelKeys.options := WebJs.JS.Object(
   "presets" -> List("es2015", "react")
 )
 
-scalacOptions in Compile ++= Seq("-Xmax-classfile-name", "128")
+// Starts: Webpack build task
+val appPath = "./app/assets/frontend"
+val targetDir = "target/web/webpack/bundles"
+val assetDir = "bundles"
+val webpackBuild = taskKey[Pipeline.Stage]("Webpack build task.")
 
-fork in run := true
+webpackBuild := { mappings =>
+  Process("npm run build", file(appPath), ("WEBPACK_BUILD_PATH", targetDir)).!
+  val files = IO.listFiles(file(s"./$targetDir"))
+  val newMappings = files.map(file => {
+    println(file.getPath)
+    (file, file.getPath.replace(targetDir, assetDir))
+  })
+  mappings ++ newMappings
+}
+
+packageBin in Universal := (packageBin in Universal).dependsOn(webpackBuild).value
+webpackBuild in Assets := (webpackBuild in Assets).dependsOn(WebKeys.webModules in Assets).value
+dist := (dist dependsOn webpackBuild).value
+stage := (stage dependsOn webpackBuild).value
+// Ends.
+
+// Starts: Webpack server process when running locally and build actions for production bundle
+lazy val frontendDirectory = baseDirectory {_ / appPath}
+playRunHooks += frontendDirectory.map(base => WebpackServer(base, targetDir)).value
+// Ends.
+// JavaScript configuration ends

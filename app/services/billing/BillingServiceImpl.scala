@@ -11,9 +11,6 @@ import services.stats.StatsService
 
 import scala.concurrent.{ExecutionContext, Future}
 
-
-case class Charge(amountInCents: Int, description: String)
-
 class BillingServiceImpl @Inject()(
                                     val configuration: Configuration,
                                     val dataService: DataService,
@@ -29,7 +26,7 @@ class BillingServiceImpl @Inject()(
 
       // Fetch all the pending invoices and make them Fat (get the subscription and the plan) so that
       // we can run some biz logic on the invoices
-      pending <- pendingFatInvoices()
+      pending <- dataService.invoices.allPendingFatInvoices()
 
       // Find out the list of invoices due to a metered subscription
       pendingAndMetered <- pendingAndMetered(pending)
@@ -41,12 +38,6 @@ class BillingServiceImpl @Inject()(
       closed <- closeAll(pending)
     } yield {
       closed.map(_.invoice)
-    }
-  }
-
-  private def pendingFatInvoices(): Future[Seq[FatInvoice]] = {
-    dataService.invoices.allPending().flatMap { invoices =>
-      Future.sequence(invoices.map(dataService.invoices.toFatInvoice(_)))
     }
   }
 

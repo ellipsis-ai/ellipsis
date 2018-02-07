@@ -8,8 +8,9 @@
 @page.main("Scheduling", config, selectedNav = "scheduling") {
   <div id="content" class="flex-row-cascade">
     <div id="scheduling" class="flex-row-cascade"></div>
-    <script src='@config.assets.getUrl("lib/requirejs/require.min.js")'></script>
+
+    <script src='@config.assets.getUrl("lib/little-loader/dist/little-loader.min.js")'></script>
+    <script src='@config.assets.getWebpackBundle("vendor.js")'></script>
     <script src="@routes.ScheduledActionsController.index(maybeScheduledId, maybeNewSchedule, maybeTeamId)"></script>
-    <script src='@config.assets.getUrl("javascripts/scheduling/loader.js")'></script>
   </div>
 }

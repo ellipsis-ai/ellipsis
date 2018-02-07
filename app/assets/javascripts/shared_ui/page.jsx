@@ -46,6 +46,7 @@ define(function(require) {
       autobind(this);
       this.state = this.getDefaultState();
       this.footer = null;
+      this.panels = {};
     }
 
     getDefaultState(): State {
