@@ -6,7 +6,6 @@ import type BehaviorGroup from "./behavior_group";
 
 import BehaviorConfig from './behavior_config';
 import DataTypeConfig from './data_type_config';
-import DeepEqual from '../lib/deep_equal';
 import Editable from './editable';
 import Input from './input';
 import ParamType from './param_type';
@@ -286,10 +285,6 @@ class BehaviorVersion extends Editable implements Diffable {
       return super.toJSON().clone({
         createdAt: null
       });
-    }
-
-    isIdenticalToVersion(behaviorVersion: BehaviorVersion): boolean {
-      return DeepEqual.isEqual(this.forEqualityComparison(), behaviorVersion.forEqualityComparison());
     }
 
     sortKeyForExisting(): ?string {

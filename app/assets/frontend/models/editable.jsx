@@ -120,6 +120,7 @@ class Editable {
       throw "Needs to be implemented in subclasses";
     }
 
+    /* eslint no-unused-vars: "off" */
     clone(props: {}): Editable {
       throw "Needs to be implemented in subclasses";
     }
@@ -135,12 +136,8 @@ class Editable {
       return this.toJSON();
     }
 
-    isIdenticalToVersion(version: *): boolean {
+    isIdenticalToVersion<T: Editable>(version: T): boolean {
       return DeepEqual.isEqual(this.forEqualityComparison(), version.forEqualityComparison());
-    }
-
-    static forEqualityComparison(version) {
-      return version.forEqualityComparison();
     }
 }
 

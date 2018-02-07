@@ -177,8 +177,8 @@ class BehaviorGroup implements Diffable, HasInputs {
     // Used by JSON.stringify for submitting data to the server
     toJSON() {
       return this.clone({
-        behaviorVersions: this.sortedForComparison(this.behaviorVersions).map(BehaviorVersion.forEqualityComparison),
-        libraryVersions: this.sortedForComparison(this.libraryVersions).map(LibraryVersion.forEqualityComparison),
+        behaviorVersions: this.sortedForComparison(this.behaviorVersions).map((ea) => ea.forEqualityComparison()),
+        libraryVersions: this.sortedForComparison(this.libraryVersions).map((ea) => ea.forEqualityComparison()),
         createdAt: null,
         author: null,
         deployment: null
