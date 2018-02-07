@@ -30,7 +30,7 @@ class ParamType {
       return this.isBuiltIn && this.id === "Yes/No";
     }
 
-    formatValue(value): string {
+    formatValue(value: string): string {
       if (this.isNumberType()) {
         return Formatter.formatPossibleNumber(value);
       } else {
@@ -68,11 +68,11 @@ class ParamType {
       }
     }
 
-    clone(newProps): ParamType {
+    clone(newProps: {}): ParamType {
       return ParamType.fromProps(Object.assign({}, this, newProps));
     }
 
-    static fromProps(props): ParamType {
+    static fromProps(props: { id: string, exportId: string, name: string, needsConfig?: boolean }): ParamType {
       return new ParamType(
         props.id,
         props.exportId,

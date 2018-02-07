@@ -85,11 +85,11 @@ class Trigger implements Diffable {
       return !this.isRegex && /\{.+?\}/.test(this.getText());
     }
 
-    usesInputName(name): boolean {
+    usesInputName(name: string): boolean {
       return !this.isRegex && this.getText().includes(`{${name}}`);
     }
 
-    capturesInputIndex(index): boolean {
+    capturesInputIndex(index: number): boolean {
       if (!this.isRegex) {
         return false;
       }
@@ -101,7 +101,7 @@ class Trigger implements Diffable {
       return this.isRegex && /\(.+?\)/.test(this.getText());
     }
 
-    getTextWithNewInputName(oldName, newName): string {
+    getTextWithNewInputName(oldName: string, newName: string): string {
       if (!this.isRegex) {
         return this.getText().split(`{${oldName}}`).join(`{${newName}}`);
       } else {
@@ -109,7 +109,7 @@ class Trigger implements Diffable {
       }
     }
 
-    clone(props): Trigger {
+    clone(props: {}): Trigger {
       return Trigger.fromProps(Object.assign({}, this, props));
     }
 

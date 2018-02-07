@@ -2,6 +2,7 @@
 import DataTypeField from './data_type_field';
 import SequentialName from "../lib/sequential_name";
 import ID from "../lib/id";
+import ParamType from "./param_type";
 
 const ID_FIELD_INDEX = 0;
 
@@ -33,7 +34,7 @@ class DataTypeConfig {
       return this.fields.some((ea) => ea.name !== "id" && ea.fieldType.id === "Text");
     }
 
-    isIdField(field, index): boolean {
+    isIdField(field: DataTypeField, index: number): boolean {
       return field.name === "id" && index === ID_FIELD_INDEX;
     }
 
@@ -41,7 +42,7 @@ class DataTypeConfig {
       return this.fields.some(this.isIdField);
     }
 
-    withRequiredFieldsEnsured(requiredFieldType): DataTypeConfig {
+    withRequiredFieldsEnsured(requiredFieldType: ParamType): DataTypeConfig {
       if (!this.requiresFields()) {
         return this;
       }
@@ -79,7 +80,7 @@ class DataTypeConfig {
       }
     }
 
-    clone(props): DataTypeConfig {
+    clone(props: {}): DataTypeConfig {
       return DataTypeConfig.fromProps(Object.assign({}, this, props));
     }
 

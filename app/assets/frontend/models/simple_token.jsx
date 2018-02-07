@@ -5,8 +5,22 @@ import type {Diffable, DiffableProp} from "./diffs";
 import ApiConfigRef from './api_config_ref';
 import RequiredApiConfig from './required_api_config';
 import ID from '../lib/id';
+/* eslint-disable no-use-before-define */
+
+type callback = () => void
+
+type SimpleTokenEditor = {
+  onAddSimpleTokenApi: (RequiredSimpleTokenApi) => void,
+  onRemoveSimpleTokenApi: (RequiredSimpleTokenApi) => void,
+  onUpdateSimpleTokenApi: (RequiredSimpleTokenApi, ?callback) => void,
+  getSimpleTokenLogoUrlForConfig: (RequiredSimpleTokenApi) => string,
+  getSimpleTokenNameForConfig: (RequiredSimpleTokenApi) => string,
+  getAllSimpleTokenApis: () => Array<RequiredSimpleTokenApi>
+}
 
 class RequiredSimpleTokenApi extends RequiredApiConfig implements Diffable {
+
+    static fromJson: ({ config: SimpleTokenApiRef }) => RequiredSimpleTokenApi;
 
     diffProps(): Array<DiffableProp> {
       return [{
@@ -15,7 +29,7 @@ class RequiredSimpleTokenApi extends RequiredApiConfig implements Diffable {
       }];
     }
 
-    onAddConfigFor(editor) {
+    onAddConfigFor(editor: SimpleTokenEditor) {
       return editor.onAddSimpleTokenApi;
     }
 
@@ -23,23 +37,23 @@ class RequiredSimpleTokenApi extends RequiredApiConfig implements Diffable {
       return undefined; // N/A
     }
 
-    onRemoveConfigFor(editor) {
+    onRemoveConfigFor(editor: SimpleTokenEditor) {
       return editor.onRemoveSimpleTokenApi;
     }
 
-    onUpdateConfigFor(editor) {
+    onUpdateConfigFor(editor: SimpleTokenEditor) {
       return editor.onUpdateSimpleTokenApi;
     }
 
-    getApiLogoUrl(editor) {
+    getApiLogoUrl(editor: SimpleTokenEditor) {
       return editor.getSimpleTokenLogoUrlForConfig(this);
     }
 
-    getApiName(editor) {
+    getApiName(editor: SimpleTokenEditor) {
       return editor.getSimpleTokenNameForConfig(this);
     }
 
-    getAllConfigsFrom(editor) {
+    getAllConfigsFrom(editor: SimpleTokenEditor) {
       return editor.getAllSimpleTokenApis().filter(ea => ea.id === this.apiId);
     }
 
@@ -59,12 +73,12 @@ class RequiredSimpleTokenApi extends RequiredApiConfig implements Diffable {
       return true;
     }
 
-    clone(props): RequiredSimpleTokenApi {
+    clone(props: {}): RequiredSimpleTokenApi {
       return RequiredSimpleTokenApi.fromProps(Object.assign({}, this, props));
     }
 
     static fromProps(props): RequiredSimpleTokenApi {
-      return new RequiredSimpleTokenApi(props.id, props.exportId, props.apiId, props.nameInCode, props.config);
+      return new RequiredSimpleTokenApi(props.id, props.exportId, props.apiId, props.nameInCode);
     }
 
   }
@@ -96,18 +110,17 @@ class RequiredSimpleTokenApi extends RequiredApiConfig implements Diffable {
         ID.next(),
         ID.next(),
         this.id,
-        this.defaultNameInCode(),
-        this
+        this.defaultNameInCode()
       );
     }
 
-    static fromJson(props) {
+    static fromJson(props: {} & SimpleTokenApiRef) {
       return new SimpleTokenApiRef(props.id, props.displayName, props.logoImageUrl);
     }
 
 }
 
-RequiredSimpleTokenApi.fromJson = function (props) {
+RequiredSimpleTokenApi.fromJson = function(props) {
   return RequiredSimpleTokenApi.fromProps(Object.assign({}, props, {
     config: props.config ? SimpleTokenApiRef.fromJson(props.config) : undefined
   }));

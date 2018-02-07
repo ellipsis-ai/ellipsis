@@ -1,6 +1,7 @@
 // @flow
 
-import type {Diffable, HasInputs, DiffableProp} from './diffs';
+import type {Diffable, DiffableProp} from './diffs';
+import type {HasInputs} from "./input";
 
 import BehaviorGroupDeployment from './behavior_group_deployment';
 import BehaviorVersion from './behavior_version';
@@ -12,6 +13,7 @@ import {RequiredAWSConfig} from './aws';
 import {RequiredOAuth2Application} from './oauth2';
 import {RequiredSimpleTokenApi} from './simple_token';
 import User from './user';
+import ParamType from "./param_type";
 
 const ONE_MINUTE = 60000;
 
@@ -141,7 +143,7 @@ class BehaviorGroup implements Diffable, HasInputs {
       });
     }
 
-    clone(props): BehaviorGroup {
+    clone(props: {}): BehaviorGroup {
       return BehaviorGroup.fromProps(Object.assign({}, this, props));
     }
 
@@ -149,7 +151,7 @@ class BehaviorGroup implements Diffable, HasInputs {
       return this.clone({ createdAt: Date.now() });
     }
 
-    copyWithInputsForBehaviorVersion(inputsForBehavior, behaviorVersion): BehaviorGroup {
+    copyWithInputsForBehaviorVersion(inputsForBehavior: Array<Input>, behaviorVersion: BehaviorVersion): BehaviorGroup {
       const inputIdsForBehavior = inputsForBehavior.map(ea => ea.inputId);
       const newBehaviorVersion = behaviorVersion.clone({ inputIds: inputIdsForBehavior }).copyWithNewTimestamp();
       const inputs = behaviorVersion.isDataType() ? this.dataTypeInputs : this.actionInputs;
@@ -187,7 +189,7 @@ class BehaviorGroup implements Diffable, HasInputs {
       return this.toJSON();
     }
 
-    isIdenticalTo(group): boolean {
+    isIdenticalTo(group: BehaviorGroup): boolean {
       return DeepEqual.isEqual(this.forEqualityComparison(), group.forEqualityComparison());
     }
 
@@ -197,29 +199,29 @@ class BehaviorGroup implements Diffable, HasInputs {
       });
     }
 
-    withNewBehaviorVersion(behaviorVersion): BehaviorGroup {
+    withNewBehaviorVersion(behaviorVersion: BehaviorVersion): BehaviorGroup {
       return this.clone({
         behaviorVersions: this.behaviorVersions.concat([behaviorVersion])
       });
     }
 
-    withNewLibraryVersion(libraryVersion): BehaviorGroup {
+    withNewLibraryVersion(libraryVersion: LibraryVersion): BehaviorGroup {
       return this.clone({
         libraryVersions: this.libraryVersions.concat([libraryVersion])
       });
     }
 
-    hasBehaviorVersionWithId(behaviorId): boolean {
+    hasBehaviorVersionWithId(behaviorId: string): boolean {
       return !!this.behaviorVersions.find(ea => ea.behaviorId === behaviorId);
     }
 
-    getCustomParamTypes(): Array<BehaviorVersion> {
+    getCustomParamTypes(): Array<ParamType> {
       return this.behaviorVersions.
         filter(ea => ea.isDataType()).
         map(ea => ea.toParamType());
     }
 
-    sortedForComparison(versions): Array<BehaviorVersion> {
+    sortedForComparison<T: BehaviorVersion | LibraryVersion>(versions: Array<T>): Array<T> {
       return versions.sort((a, b) => {
         if (a.getPersistentId() < b.getPersistentId()) {
           return -1;

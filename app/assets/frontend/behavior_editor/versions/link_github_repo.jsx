@@ -25,12 +25,10 @@ type GithubRepoMatch = {
 }
 
 class LinkGithubRepo extends React.Component<Props, State> {
-    props: Props;
-    state: State;
     repoUrlInput: ?FormInput;
     timerId: ?number;
 
-    constructor(props) {
+    constructor(props: Props) {
       super(props);
       autobind(this);
       this.state = this.getDefaultState();
@@ -74,7 +72,7 @@ class LinkGithubRepo extends React.Component<Props, State> {
       const owner = match && match.owner;
       const repo = match && match.repo;
       this.setState({
-        invalidUrl: url && !(owner && repo)
+        invalidUrl: Boolean(url && !(owner && repo))
       });
     }
 

@@ -8,7 +8,7 @@ export type PageRequiredProps = {
   onClearActivePanel: (optionalCallback?: () => void) => void,
   onRenderFooter: (content: React.Node, footerClassName?: string) => React.Node,
   footerHeight: number,
-  onRenderPanel: (panelName: string, panel: React.ElementType) => void
+  onRenderPanel: (panelName: string, panel: React.Node) => void
 };
 
 import Event from '../lib/event';
@@ -37,7 +37,7 @@ type State = {
 class Page extends React.Component<Props, State> {
     panels: { [string]: ?React.Component<*> };
     footer: ?(HTMLElement | FixedFooter);
-    component: ?(React.ElementType);
+    component: ?(React.Node);
     static requiredPropTypes: {};
     static feedbackContainerId: string;
 
@@ -81,7 +81,7 @@ class Page extends React.Component<Props, State> {
       this.setState(this.getDefaultState(), optionalCallback);
     }
 
-    onRenderPanel(panelName: string, panel: React.ElementType): void {
+    onRenderPanel(panelName: string, panel: React.Node): void {
       const newPanel = {};
       newPanel[panelName] = panel;
       this.panels = Object.assign({}, this.panels, newPanel);

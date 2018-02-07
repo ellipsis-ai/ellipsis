@@ -4,10 +4,31 @@ import type {Diffable, DiffableProp} from "./diffs";
 import ApiConfigRef from './api_config_ref';
 import RequiredApiConfigWithConfig from './required_api_config_with_config';
 import ID from '../lib/id';
+/* eslint-disable no-use-before-define */
+type callback = () => void
+
+type AWSEditor = {
+  onAddAWSConfig: (RequiredAWSConfig, ?callback) => void,
+  addNewAWSConfig: (?RequiredAWSConfig) => void,
+  onRemoveAWSConfig: (RequiredAWSConfig, ?callback) => void,
+  onUpdateAWSConfig: (RequiredAWSConfig, ?callback) => void,
+  getAllAWSConfigs: () => Array<AWSConfigRef>,
+  getOAuth2ApiNameForConfig: (AWSConfigRef) => string
+}
+
+type RequiredAWSConfigProps = {
+  id: string,
+  exportId: string,
+  apiId: string,
+  nameInCode: string,
+  config: ?AWSConfigRef
+}
 
 const logoUrl = "/assets/images/logos/aws_logo_web_300px.png";
 
 class RequiredAWSConfig extends RequiredApiConfigWithConfig implements Diffable {
+
+    static fromJson: (props: RequiredAWSConfigProps) => RequiredAWSConfig;
 
     diffProps(): Array<DiffableProp> {
       return [{
@@ -19,19 +40,19 @@ class RequiredAWSConfig extends RequiredApiConfigWithConfig implements Diffable 
       }];
     }
 
-    onAddConfigFor(editor) {
+    onAddConfigFor(editor: AWSEditor) {
       return editor.onAddAWSConfig;
     }
 
-    onAddNewConfigFor(editor) {
+    onAddNewConfigFor(editor: AWSEditor) {
       return editor.addNewAWSConfig;
     }
 
-    onRemoveConfigFor(editor) {
+    onRemoveConfigFor(editor: AWSEditor) {
       return editor.onRemoveAWSConfig;
     }
 
-    onUpdateConfigFor(editor) {
+    onUpdateConfigFor(editor: AWSEditor) {
       return editor.onUpdateAWSConfig;
     }
 
@@ -43,7 +64,7 @@ class RequiredAWSConfig extends RequiredApiConfigWithConfig implements Diffable 
       return "AWS";
     }
 
-    getAllConfigsFrom(editor) {
+    getAllConfigsFrom(editor: AWSEditor) {
       return editor.getAllAWSConfigs();
     }
 
@@ -63,7 +84,7 @@ class RequiredAWSConfig extends RequiredApiConfigWithConfig implements Diffable 
       return Boolean(this.config);
     }
 
-    clone(props): RequiredAWSConfig {
+    clone(props: RequiredAWSConfigProps): RequiredAWSConfig {
       return RequiredAWSConfig.fromProps((Object.assign({}, this, props)));
     }
 
@@ -89,7 +110,7 @@ class RequiredAWSConfig extends RequiredApiConfigWithConfig implements Diffable 
       return logoUrl;
     }
 
-    getApiName(editor): string {
+    getApiName(editor: AWSEditor): string {
       return editor.getOAuth2ApiNameForConfig(this);
     }
 
@@ -103,7 +124,7 @@ class RequiredAWSConfig extends RequiredApiConfigWithConfig implements Diffable 
 }
 
 RequiredAWSConfig.fromJson = function(props): RequiredAWSConfig {
-  const config = props.config ? AWSConfigRef.fromJson(props.config) : undefined;
+  const config = props.config ? AWSConfigRef.fromJson(props.config) : null;
   return new RequiredAWSConfig(props.id, props.exportId, props.apiId, props.nameInCode, config);
 };
 

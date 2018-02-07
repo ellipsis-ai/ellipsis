@@ -23,7 +23,7 @@ class ResponseTemplate {
       });
     }
 
-    clone(props): ResponseTemplate {
+    clone(props: { text: string }): ResponseTemplate {
       return new ResponseTemplate(props.text);
     }
 
@@ -46,7 +46,7 @@ class ResponseTemplate {
       return matches ? matches.map((ea) => ea.replace(/^\{for\s+|\s+in\s+.+\}$/g, '')) : [];
     }
 
-    getUnknownParamsExcluding(validParams): Array<string> {
+    getUnknownParamsExcluding(validParams: Array<string>): Array<string> {
       var varsDefinedInForLoops = this.getVarsDefinedInTemplateLoops();
       return this.getParamsUsed().filter((param) => {
         return !validParams.some((validParam) => stringStartsWithVarName(param, validParam)) &&
@@ -55,7 +55,7 @@ class ResponseTemplate {
       });
     }
 
-    replaceParamName(oldName, newName): ResponseTemplate {
+    replaceParamName(oldName: string, newName: string): ResponseTemplate {
       var newText = this.text.split(`{${oldName}}`).join(`{${newName}}`);
       if (newText !== this.text) {
         return this.clone({

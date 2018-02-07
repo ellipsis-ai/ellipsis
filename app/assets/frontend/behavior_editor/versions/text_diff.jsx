@@ -43,7 +43,7 @@ class TextDiff extends React.PureComponent<Props> {
       );
     }
 
-    renderLines(diff): React.Node {
+    renderLines(diff: MultiLineTextPropertyDiff): React.Node {
       const totalLines = Math.max(diff.oldLines.length, diff.newLines.length);
       const longerSide = diff.oldLines.length > diff.newLines.length ? diff.oldLines : diff.newLines;
       const maxNumDigits = String(totalLines).length;

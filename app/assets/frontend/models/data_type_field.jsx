@@ -12,7 +12,7 @@ class DataTypeField {
       fieldId: string,
       fieldVersionId: ?string,
       name: ?string,
-      fieldType: string,
+      fieldType: ParamType,
       isLabel: ?boolean
     ) {
       Object.defineProperties(this, {
@@ -39,17 +39,18 @@ class DataTypeField {
       });
     }
 
-    clone(props): DataTypeField {
-      return DataTypeField.fromProps(Object.assign({}, this, props));
+    clone(props: {}): DataTypeField {
+      const newProps = Object.assign({}, this, props);
+      return DataTypeField.fromProps(newProps);
     }
 
-    static fromProps(props): DataTypeField {
+    static fromProps(props: { fieldId: string, fieldVersionId?: ?string, name: string, fieldType: ParamType, isLabel?: boolean }): DataTypeField {
       return new DataTypeField(
         props.fieldId,
-        props.fieldVersionId,
+        props.fieldVersionId ? props.fieldVersionId : null,
         props.name,
         props.fieldType,
-        props.isLabel
+        props.isLabel ? props.isLabel : false
       );
     }
 

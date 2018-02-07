@@ -17,7 +17,7 @@ class Input implements Diffable {
     constructor(
       name: ?string,
       question: ?string,
-      paramType: string,
+      paramType: ParamType,
       isSavedForTeam: ?boolean,
       isSavedForUser: ?boolean,
       inputId: string,
@@ -108,7 +108,7 @@ class Input implements Diffable {
         this.paramType.id === other.paramType.id;
     }
 
-    clone(props) {
+    clone(props: {}) {
       return Input.fromProps(Object.assign({}, this, props));
     }
 
@@ -131,4 +131,8 @@ class Input implements Diffable {
 }
 
 export default Input;
+
+export interface HasInputs {
+  getInputs(): Array<Input>
+}
 

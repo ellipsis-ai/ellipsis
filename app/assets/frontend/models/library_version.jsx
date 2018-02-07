@@ -1,5 +1,6 @@
 // @flow
 import type {Diffable, DiffableProp} from "./diffs";
+import type BehaviorGroup from "./behavior_group";
 
 import Editable from './editable';
 
@@ -58,7 +59,7 @@ class LibraryVersion extends Editable implements Diffable {
     }
 
     getIdForDiff(): string {
-      return this.exportId;
+      return this.exportId || "";
     }
 
     diffProps(): Array<DiffableProp> {
@@ -103,7 +104,7 @@ class LibraryVersion extends Editable implements Diffable {
       return "Cancel new library";
     }
 
-    buildUpdatedGroupFor(group, props): LibraryVersion {
+    buildUpdatedGroupFor(group: BehaviorGroup, props: {}): BehaviorGroup {
       const updated = this.clone(props);
       const updatedVersions = group.libraryVersions.
         filter(ea => ea.libraryId !== updated.libraryId ).
@@ -119,7 +120,7 @@ class LibraryVersion extends Editable implements Diffable {
       return true;
     }
 
-    clone(props): LibraryVersion {
+    clone(props: {}): LibraryVersion {
       return LibraryVersion.fromProps(Object.assign({}, this, props));
     }
 

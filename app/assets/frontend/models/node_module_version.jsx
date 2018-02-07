@@ -10,7 +10,7 @@ class NodeModuleVersion {
       });
     }
 
-    clone(props): NodeModuleVersion {
+    clone(props: {}): NodeModuleVersion {
       return NodeModuleVersion.fromProps(Object.assign({}, this, props));
     }
 

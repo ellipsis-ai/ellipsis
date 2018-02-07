@@ -24,12 +24,12 @@ class BehaviorSwitcherGroup extends React.Component<Props> {
       return Sort.arrayAlphabeticalBy(this.props.editables, ea => ea.sortKey());
     }
 
-    isSelected(editable): boolean {
+    isSelected(editable: Editable): boolean {
       const selected = this.getSelected();
       return Boolean(selected && editable.getPersistentId() === selected.getPersistentId());
     }
 
-    renderNameFor(editable): React.Node {
+    renderNameFor(editable: Editable): React.Node {
       return (
         <EditableName
           className="plxl mobile-pll"

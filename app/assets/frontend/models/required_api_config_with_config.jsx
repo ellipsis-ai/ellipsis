@@ -3,9 +3,9 @@ import ApiConfigRef from './api_config_ref';
 import RequiredApiConfig from './required_api_config';
 
 class RequiredApiConfigWithConfig extends RequiredApiConfig {
-    config: ApiConfigRef;
+    config: ?ApiConfigRef;
 
-    constructor(id: string, exportId: string, apiId: string, nameInCode: string, config: ApiConfigRef) {
+    constructor(id: string, exportId: string, apiId: string, nameInCode: string, config: ?ApiConfigRef) {
       super(id, exportId, apiId, nameInCode);
       Object.defineProperties(this, {
         config: {value: config, enumerable: true}

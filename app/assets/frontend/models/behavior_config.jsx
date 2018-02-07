@@ -32,7 +32,7 @@ class BehaviorConfig {
       return this.getDataTypeConfig() ? this.getDataTypeConfig().getFields() : [];
     }
 
-    clone(props): BehaviorConfig {
+    clone(props: {}): BehaviorConfig {
       return BehaviorConfig.fromProps(Object.assign({}, this, props));
     }
 

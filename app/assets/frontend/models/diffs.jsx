@@ -6,18 +6,17 @@ export interface Diff {
   summaryText(): string;
 }
 
-// TODO: This is a hack since we can't import BehaviorGroup here or inside BehaviorVersion (because it would be a circular dependency)
-export interface HasInputs {
-  getInputs<T>(): Array<T>
-}
+import type {HasInputs} from "../models/input";
 
-export type DiffableProp = {
-  name: string,
-  value: Array<Diffable> | string | boolean,
-  parent?: HasInputs,
-  isCategorical?: boolean,
-  isCode?: boolean,
-  isOrderable?: boolean
+type Diffables = $ReadOnlyArray<Diffable>
+
+export interface DiffableProp {
+  +name: string;
+  +value: Diffables | string | boolean;
+  +parent?: HasInputs;
+  +isCategorical?: boolean;
+  +isCode?: boolean;
+  +isOrderable?: boolean;
 }
 
 export interface Diffable {
@@ -40,10 +39,10 @@ import * as JsDiff from "diff";
 import DeepEqual from '../lib/deep_equal';
 
 class OrderingDiff<T: Diffable> implements Diff {
-    beforeItems: Array<T>;
-    afterItems: Array<T>;
+    beforeItems: $ReadOnlyArray<T>;
+    afterItems: $ReadOnlyArray<T>;
 
-    constructor(beforeItems: Array<T>, afterItems: Array<T>) {
+    constructor(beforeItems: $ReadOnlyArray<T>, afterItems: $ReadOnlyArray<T>) {
       Object.defineProperties(this, {
         beforeItems: { value: beforeItems, enumerable: true },
         afterItems: { value: afterItems, enumerable: true }
@@ -62,7 +61,7 @@ class OrderingDiff<T: Diffable> implements Diff {
       return this.label();
     }
 
-    textForItems(items: Array<T>): string {
+    textForItems(items: $ReadOnlyArray<T>): string {
       return items.map((ea, index) => {
         const number = index + 1;
         const name = ea.itemLabel() || ea.diffLabel();
@@ -463,7 +462,7 @@ class OrderingDiff<T: Diffable> implements Diff {
     }
   }
 
-  function diffsFor<T: Diffable>(originalItems: Array<T>, newItems: Array<T>, parents: ?DiffableParent): Array<Diff> {
+  function diffsFor<T: Diffable>(originalItems: $ReadOnlyArray<T>, newItems: $ReadOnlyArray<T>, parents: ?DiffableParent): Array<Diff> {
     const originalIds = originalItems.map(ea => ea.getIdForDiff());
     const newIds = newItems.map(ea => ea.getIdForDiff());
 
@@ -514,11 +513,11 @@ class OrderingDiff<T: Diffable> implements Diff {
     }, []);
   }
 
-  function idsFor(items: Array<Diffable>): Array<string> {
+  function idsFor(items: $ReadOnlyArray<Diffable>): $ReadOnlyArray<string> {
     return items.map(ea => ea.getIdForDiff());
   }
 
-  function orderingDiffsFor(prop: DiffableProp, originalItems: Array<Diffable>, newItems: Array<Diffable>): Array<OrderingDiff<*>> {
+  function orderingDiffsFor(prop: DiffableProp, originalItems: $ReadOnlyArray<Diffable>, newItems: $ReadOnlyArray<Diffable>): Array<OrderingDiff<*>> {
     if (prop.isOrderable) {
       const originalIds = idsFor(originalItems);
       const newIds = idsFor(newItems);

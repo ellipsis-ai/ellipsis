@@ -1,6 +1,7 @@
 // @flow
 import * as React from 'react';
 import {OrderingDiff} from '../../models/diffs';
+import type {Diffable} from "../../models/diffs";
 
 type Props = {
   className: ?string,
@@ -10,7 +11,7 @@ type Props = {
 class OrderingDiffDetail extends React.PureComponent<Props> {
     props: Props;
 
-    orderedList(items: Array<*>) {
+    orderedList(items: $ReadOnlyArray<Diffable>) {
       return items.map((ea, index) => {
         const number = index + 1;
         const label = ea.itemLabel() || ea.diffLabel();

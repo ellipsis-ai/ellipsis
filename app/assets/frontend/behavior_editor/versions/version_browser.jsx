@@ -605,7 +605,7 @@ class VersionBrowser extends React.Component<Props, State> {
       }, this.onUpdateFromGithub);
     }
 
-    renderGithubBranch(): ElementType {
+    renderGithubBranch(): React.Node {
       return (
         <div className="display-inline-block mbs">
           <div className="align-button align-button-s mrs">
@@ -628,7 +628,7 @@ class VersionBrowser extends React.Component<Props, State> {
       );
     }
 
-    renderGithubBranchInput(): ElementType {
+    renderGithubBranchInput(): React.Node {
       return (
         <Collapsible revealWhen={this.state.isChangingBranchName}>
           <span className="align-button align-button-s type-label mrs mbs">Enter branch name:</span>
@@ -735,7 +735,7 @@ class VersionBrowser extends React.Component<Props, State> {
       return this.getSelectedVersionIndex() === 0 ? (
         <span>last saved version</span>
       ) : (
-        <span>version dated {Formatter.formatTimestampShort(timestamp)}</span>
+        <span>version {timestamp ? `dated ${Formatter.formatTimestampShort(timestamp)}` : "with unknown date"}</span>
       );
     }
 
@@ -781,7 +781,7 @@ class VersionBrowser extends React.Component<Props, State> {
       };
     }
 
-    render(): ElementType {
+    render(): React.Node {
       const selectedVersion = this.getSelectedVersion();
       const diff = this.getDiffForSelectedVersion(selectedVersion);
       const hasChanges = Boolean(diff);

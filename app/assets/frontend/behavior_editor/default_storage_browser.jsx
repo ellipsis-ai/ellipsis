@@ -6,7 +6,6 @@ import Checkbox from '../form/checkbox';
 import DataRequest from '../lib/data_request';
 import DataTypeField from '../models/data_type_field';
 import DefaultStorageItem from '../models/default_storage_item';
-import DefaultStorageItemField from '../models/default_storage_item_field';
 import autobind from '../lib/autobind';
 
 type Props = {
@@ -126,7 +125,7 @@ class DefaultStorageBrowser extends React.Component<Props, State> {
       }
     }
 
-    renderItem(item: DefaultStorageItem, fields: Array<DefaultStorageItemField>, index: number, isLastItem: boolean): React.Node {
+    renderItem(item: DefaultStorageItem, fields: Array<DataTypeField>, index: number, isLastItem: boolean): React.Node {
       return (
         <tr key={`row${index}`}>
           {this.renderCheckboxCell(item)}
@@ -135,7 +134,7 @@ class DefaultStorageBrowser extends React.Component<Props, State> {
       );
     }
 
-    renderItems(fields: Array<DefaultStorageItemField>): React.Node {
+    renderItems(fields: Array<DataTypeField>): React.Node {
       const items = this.getItems();
       const maxItemCount = DefaultStorageBrowser.getTableRowCount();
       const maxRowCount = maxItemCount + 1;
@@ -161,9 +160,9 @@ class DefaultStorageBrowser extends React.Component<Props, State> {
       return tableRows;
     }
 
-    renderFieldHeader(field: DefaultStorageItemField): React.Node {
+    renderFieldHeader(field: DataTypeField, index: number): React.Node {
       return (
-        <th key={field.fieldId}
+        <th key={`field${index}`}
           className="bg-light border-bottom border-light type-monospace type-weak phxs"
         >{field.name}</th>
       );
@@ -199,10 +198,16 @@ class DefaultStorageBrowser extends React.Component<Props, State> {
         .then(() => {
           this.loadItems();
         })
-        .catch(this.onErrorSaving);
+        .catch(this.onErrorDeleting);
     }
 
-    isChecked(item: DefaultStorageItem): boolean {
+    onErrorDeleting(): void {
+      this.setState({
+        error: "An error occurred while deleting. Please try again."
+      });
+    }
+
+  isChecked(item: DefaultStorageItem): boolean {
       return this.getCheckedIds().indexOf(item.data.id) >= 0;
     }
 
@@ -236,7 +241,7 @@ class DefaultStorageBrowser extends React.Component<Props, State> {
       );
     }
 
-    renderFieldCell(item: DefaultStorageItem, field: DefaultStorageItemField, index: number, isLast: boolean) {
+    renderFieldCell(item: DefaultStorageItem, field: DataTypeField, index: number, isLast: boolean) {
       const value = item.data[field.name];
       const className = `phxs type-monospace border-light border-right ${
         isLast ? "border-bottom " : ""

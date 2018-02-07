@@ -1,6 +1,8 @@
 // @flow
 
-import type {Diffable, HasInputs, DiffableProp} from "./diffs";
+import type {Diffable, DiffableProp} from "./diffs";
+import type {HasInputs} from "./input";
+import type BehaviorGroup from "./behavior_group";
 
 import BehaviorConfig from './behavior_config';
 import DataTypeConfig from './data_type_config';
@@ -36,7 +38,7 @@ class BehaviorVersion extends Editable implements Diffable {
       teamId: string,
       name: ?string,
       description: ?string,
-      responseTemplate: ?string,
+      responseTemplate: ?ResponseTemplate,
       functionBody: string,
       inputIds: Array<string>,
       triggers: Array<Trigger>,
@@ -81,9 +83,14 @@ class BehaviorVersion extends Editable implements Diffable {
     inputsFor(group?: HasInputs): Array<Input> {
       if (group) {
         const allInputs = group.getInputs();
-        return this.inputIds.
-          map(eaId => allInputs.find(ea => ea.inputId === eaId)).
-          filter(ea => !!ea);
+        const matchingInputs = [];
+        this.inputIds.forEach((eaId) => {
+          const input = allInputs.find(ea => ea.inputId === eaId);
+          if (input) {
+            matchingInputs.push(input);
+          }
+        });
+        return matchingInputs;
       } else {
         return [];
       }
@@ -141,7 +148,7 @@ class BehaviorVersion extends Editable implements Diffable {
       return this.isDataType() ? "Cancel new data type" : "Cancel new action";
     }
 
-    buildUpdatedGroupFor(group, props) {
+    buildUpdatedGroupFor(group: BehaviorGroup, props: {}): BehaviorGroup {
       const timestampedBehavior = this.clone(props).copyWithNewTimestamp();
       const updatedVersions = group.behaviorVersions.
         filter(ea => ea.behaviorId !== timestampedBehavior.behaviorId ).
@@ -266,7 +273,7 @@ class BehaviorVersion extends Editable implements Diffable {
       return this.functionBody || "";
     }
 
-    includesText(queryString): boolean {
+    includesText(queryString: string): boolean {
       var lowercase = queryString.toLowerCase().trim();
       return super.includesText(queryString) ||
           this.getTriggers().some((trigger) => (
@@ -281,7 +288,7 @@ class BehaviorVersion extends Editable implements Diffable {
       });
     }
 
-    isIdenticalToVersion(behaviorVersion): boolean {
+    isIdenticalToVersion(behaviorVersion: BehaviorVersion): boolean {
       return DeepEqual.isEqual(this.forEqualityComparison(), behaviorVersion.forEqualityComparison());
     }
 
@@ -291,8 +298,8 @@ class BehaviorVersion extends Editable implements Diffable {
 
     toParamType(): ParamType {
       return ParamType.fromProps({
-        id: this.id,
-        exportId: this.exportId,
+        id: this.id || "unknown",
+        exportId: this.exportId || "unknown",
         name: this.name || "Unnamed data type"
       });
     }
@@ -313,7 +320,7 @@ class BehaviorVersion extends Editable implements Diffable {
       );
     }
 
-    clone(props): BehaviorVersion {
+    clone(props: {}): BehaviorVersion {
       return BehaviorVersion.fromProps(Object.assign({}, this, props));
     }
 

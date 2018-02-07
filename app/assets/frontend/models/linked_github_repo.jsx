@@ -32,7 +32,7 @@ class LinkedGithubRepo {
       return `https://${this.getPath()}`;
     }
 
-    clone(props): LinkedGithubRepo {
+    clone(props: {}): LinkedGithubRepo {
       return LinkedGithubRepo.fromProps(Object.assign({}, this, props));
     }
 

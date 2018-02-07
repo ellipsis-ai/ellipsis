@@ -10,9 +10,7 @@ type Props = ButtonProps & {
 };
 
 class SidebarButton extends React.Component<Props> {
-    props: Props;
-
-    constructor(props): void {
+    constructor(props: Props): void {
       super(props);
       autobind(this);
     }

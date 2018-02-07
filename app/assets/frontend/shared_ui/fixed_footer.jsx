@@ -4,7 +4,7 @@ import autobind from '../lib/autobind';
 
 type Props = {
   children: React.Node,
-  className: ?string,
+  className?: string,
   onHeightChange: (number) => void
 }
 

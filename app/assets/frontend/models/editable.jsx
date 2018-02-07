@@ -5,7 +5,7 @@ class Editable {
     id: ?string;
     groupId: string;
     teamId: string;
-    isNew: boolean;
+    isNew: ?boolean;
     name: ?string;
     description: ?string;
     functionBody: string;
@@ -17,7 +17,7 @@ class Editable {
       id: ?string,
       groupId: string,
       teamId: string,
-      isNew: boolean,
+      isNew: ?boolean,
       name: ?string,
       description: ?string,
       functionBody: string,
@@ -110,13 +110,17 @@ class Editable {
       return "Cancel new item";
     }
 
-    includesText(queryString): boolean {
+    includesText(queryString: string): boolean {
       var lowercase = queryString.toLowerCase().trim();
       return this.getName().toLowerCase().includes(lowercase) ||
         this.getDescription().toLowerCase().includes(lowercase);
     }
 
-    clone(props): Editable {
+    getPersistentId(): string {
+      throw "Needs to be implemented in subclasses";
+    }
+
+    clone(props: {}): Editable {
       throw "Needs to be implemented in subclasses";
     }
 
@@ -131,7 +135,7 @@ class Editable {
       return this.toJSON();
     }
 
-    isIdenticalToVersion(version): boolean {
+    isIdenticalToVersion(version: *): boolean {
       return DeepEqual.isEqual(this.forEqualityComparison(), version.forEqualityComparison());
     }
 

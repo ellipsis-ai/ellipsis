@@ -4,6 +4,8 @@ import BehaviorGroup from '../models/behavior_group';
 import BehaviorGroupDeployment from '../models/behavior_group_deployment';
 import Formatter from '../lib/formatter';
 import autobind from '../lib/autobind';
+import User from '../models/user';
+import type {Timestamp} from "../lib/formatter";
 
 type Props = {
   group: BehaviorGroup,
@@ -14,15 +16,13 @@ type Props = {
 };
 
 class BehaviorGroupSaveInfo extends React.PureComponent<Props> {
-    props: Props;
-
-    constructor(props) {
+    constructor(props: Props) {
       super(props);
       autobind(this);
     }
 
-    buildStringFor(createdAt, user, isCurrentUser, prefix): string {
-      const ts = Formatter.formatTimestampRelativeIfRecent(createdAt);
+    buildStringFor(createdAt: ?Timestamp, user: ?User, isCurrentUser: boolean, prefix: string): string {
+      const ts = createdAt ? Formatter.formatTimestampRelativeIfRecent(createdAt): "on unknown date";
       const userName = user && user.userName ? user.formattedFullNameOrUserName() : null;
       const userString = !isCurrentUser && userName ? `by ${userName}` : "";
       return `${prefix} ${ts} ${userString}`;
@@ -54,11 +54,11 @@ class BehaviorGroupSaveInfo extends React.PureComponent<Props> {
     }
 
     savedByCurrentUser(): boolean {
-      return this.props.group.author && this.props.group.author.id === this.props.currentUserId;
+      return Boolean(this.props.group.author && this.props.group.author.id === this.props.currentUserId);
     }
 
     deployedByCurrentUser(): boolean {
-      return this.props.group.deployment && this.props.group.deployment.deployer && (this.props.group.deployment.deployer.id === this.props.currentUserId);
+      return Boolean(this.props.group.deployment && this.props.group.deployment.deployer && (this.props.group.deployment.deployer.id === this.props.currentUserId));
     }
 
     statusString(): string {

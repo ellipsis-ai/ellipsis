@@ -1,5 +1,5 @@
 // @flow
-import React from 'react';
+import * as React from 'react';
 import BehaviorVersion from '../models/behavior_version';
 import Collapsible from '../shared_ui/collapsible';
 import DefaultStorageAdderField from './default_storage_adder_field';
@@ -10,6 +10,7 @@ import DataTypeField from '../models/data_type_field';
 import DefaultStorageItem from '../models/default_storage_item';
 import ImmutableObjectUtils from '../lib/immutable_object_utils';
 import autobind from '../lib/autobind';
+import DefaultStorageItemField from "../models/default_storage_item_field";
 
 type Props = {
   csrfToken: string,
@@ -19,20 +20,20 @@ type Props = {
 
 type State = {
   fieldValues: Array<any>,
-  lastSavedItem: DefaultStorageItem,
+  lastSavedItem: ?DefaultStorageItem,
   isSaving: boolean,
   error: ?string
 }
 
 class DefaultStorageAdder extends React.Component<Props, State> {
-    props: Props;
-    state: State;
+    inputs: Array<DefaultStorageAdderField>;
+    saveButton: ?DynamicLabelButton;
 
     constructor(props: Props) {
       super(props);
       this.state = {
         fieldValues: this.getDefaultValuesFor(props.behaviorVersion),
-        lastSavedItem: new DefaultStorageItem(),
+        lastSavedItem: null,
         isSaving: false,
         error: null
       };
@@ -46,22 +47,22 @@ class DefaultStorageAdder extends React.Component<Props, State> {
           newProps.behaviorVersion.getDataTypeFields() !== this.props.behaviorVersion.getDataTypeFields()) {
         this.setState({
           fieldValues: this.getDefaultValuesFor(newProps.behaviorVersion),
-          lastSavedItem: new DefaultStorageItem(),
+          lastSavedItem: null,
           error: null
         });
       }
     }
 
-    getDefaultValuesFor(behaviorVersion): Array<any> {
+    getDefaultValuesFor(behaviorVersion: BehaviorVersion): Array<any> {
       return this.getWritableFieldsFor(behaviorVersion).map((field) => field.fieldType.getDefaultValue());
     }
 
-    getWritableFieldsFor(behaviorVersion): Array<DataTypeField> {
+    getWritableFieldsFor(behaviorVersion: BehaviorVersion): Array<DataTypeField> {
       return behaviorVersion.getWritableDataTypeFields();
     }
 
-    getLastSavedItemFields(): Array<DataTypeField> {
-      return this.state.lastSavedItem.fields;
+    getLastSavedItemFields(): Array<DefaultStorageItemField> {
+      return this.state.lastSavedItem ? this.state.lastSavedItem.fields : [];
     }
 
     updateFieldValue(index: number, newValue: any): void {
@@ -75,7 +76,7 @@ class DefaultStorageAdder extends React.Component<Props, State> {
     }
 
     hasSavedItem(): boolean {
-      return this.state.lastSavedItem.fields.length > 0;
+      return this.state.lastSavedItem ? this.state.lastSavedItem.fields.length > 0 : false;
     }
 
     save(): void {
