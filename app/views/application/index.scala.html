@@ -7,8 +7,8 @@
 @page.main("View your skills", config, selectedNav = "skills", bodyClass = "bg-blue-lighter") {
   <div id="content" class="content pbn bg-blue-lighter">
     <div id="behaviorListContainer"></div>
-    <script src='@config.assets.getUrl("lib/requirejs/require.min.js")'></script>
+    <script src='@config.assets.getUrl("lib/little-loader/dist/little-loader.min.js")'></script>
+    <script src='@config.assets.getWebpackBundle("vendor.js")'></script>
     <script src='@{routes.ApplicationController.index(maybeTeamId, maybeBranch)}'></script>
-    <script src='@config.assets.getUrl("javascripts/behavior_list/loader.js")'></script>
   </div>
 }

@@ -68,7 +68,7 @@ class BehaviorImportExportController @Inject() (
           for {
             maybeTeam <- dataService.teams.find(info.teamId, request.identity)
             maybeImporter <- Future.successful(maybeTeam.map { team =>
-              BehaviorGroupZipImporter(team, request.identity, zipFile.ref.file, dataService, cacheService)
+              BehaviorGroupZipImporter(team, request.identity, zipFile.ref.toFile, dataService, cacheService)
             })
             maybeBehaviorGroup <- maybeImporter.map { importer =>
               importer.run

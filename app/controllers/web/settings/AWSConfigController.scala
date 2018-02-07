@@ -62,7 +62,12 @@ class AWSConfigController @Inject() (
               behaviorGroupId = maybeBehaviorGroupId,
               behaviorId = maybeBehaviorId
             )
-            Ok(views.js.shared.pageConfig(viewConfig(Some(teamAccess)), "config/awsconfig/edit", Json.toJson(config)))
+            Ok(views.js.shared.webpackLoader(
+              viewConfig(Some(teamAccess)),
+              "AwsConfigEditorConfig",
+              "awsConfigEditor",
+              Json.toJson(config)
+            ))
           }.getOrElse {
             NotFound("Team not found")
           }
@@ -116,7 +121,12 @@ class AWSConfigController @Inject() (
               behaviorGroupId = None,
               behaviorId = None
             )
-            Ok(views.js.shared.pageConfig(viewConfig(Some(teamAccess)), "config/awsconfig/edit", Json.toJson(editConfig)))
+            Ok(views.js.shared.webpackLoader(
+              viewConfig(Some(teamAccess)),
+              "AwsConfigEditorConfig",
+              "awsConfigEditor",
+              Json.toJson(editConfig)
+            ))
           }).getOrElse {
             NotFound("Unknown AWS configuration")
           }

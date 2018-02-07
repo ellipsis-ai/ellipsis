@@ -20,6 +20,7 @@ import models.behaviors.behavior.BehaviorService
 import models.behaviors.behaviorgroup.BehaviorGroupService
 import models.behaviors.behaviorgroupdeployment.BehaviorGroupDeploymentService
 import models.behaviors.behaviorgroupversion.BehaviorGroupVersionService
+import models.behaviors.behaviorgroupversionsha.BehaviorGroupVersionSHAService
 import models.behaviors.behaviorparameter.BehaviorParameterService
 import models.behaviors.behaviorversion.BehaviorVersionService
 import models.behaviors.config.awsconfig.AWSConfigService
@@ -101,6 +102,7 @@ class MockDataService extends DataService with MockitoSugar {
   val devModeChannels = mock[DevModeChannelService]
   val behaviorGroupDeployments = mock[BehaviorGroupDeploymentService]
   val loggedEvents = mock[LoggedEventService]
+  val behaviorGroupVersionSHAs = mock[BehaviorGroupVersionSHAService]
   val behaviorResponses = mock[BehaviorResponseService]
   val subscriptions = mock[SubscriptionService]
 
