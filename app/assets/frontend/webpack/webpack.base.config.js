@@ -69,7 +69,9 @@ const webpackConfig = {
   },
   plugins: [
     new webpack.optimize.CommonsChunkPlugin({
-      names: ['vendor', 'jshint'],
+      // Order is important: last file listed here will contain Webpack bootstrap,
+      // and thus must be loaded first on each page.
+      names: ['jshint', 'vendor'],
       minChunks: Infinity
     })
   ]

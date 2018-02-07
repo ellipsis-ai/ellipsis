@@ -48,7 +48,7 @@ const server = new WebpackDevServer(compiler, {
 
   // The rest is terminal configurations
   quiet: false,
-  noInfo: true,
+  noInfo: false,
   stats: {
     colors: true
   }
