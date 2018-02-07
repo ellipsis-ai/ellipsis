@@ -17,6 +17,7 @@ const webpackConfig = {
       'diff',
       'whatwg-fetch'
     ],
+    add_to_slack: './app/assets/frontend/slack/add_to_slack',
     apiTokenGenerator: './app/assets/frontend/settings/api_token_generator/loader',
     awsConfigEditor: './app/assets/frontend/settings/aws_config_editor/loader',
     behaviorEditor: './app/assets/frontend/behavior_editor/loader',
@@ -25,6 +26,7 @@ const webpackConfig = {
     githubConfig: './app/assets/frontend/github_config/loader',
     integrationEditor: './app/assets/frontend/settings/oauth2_editor/loader',
     integrationList: './app/assets/frontend/settings/integrations/loader',
+    page_header: './app/assets/frontend/page_header/page_header',
     regionalSettings: './app/assets/frontend/settings/regional_settings/loader',
     scheduling: './app/assets/frontend/scheduling/loader',
     styleguideColors: './app/assets/frontend/styleguide/colors/loader'

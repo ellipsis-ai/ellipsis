@@ -79,9 +79,6 @@
       "<rootDir>/project/target/.+",
       "<rootDir>/target/.+"
     ],
-    "transform": {
-      ".*": "<rootDir>/app/assets/javascripts/amdefinerator"
-    },
     "testRegex": "((/__tests__/|/test/).*|(\\.|/)(test|spec))\\.jsx?$",
     "testPathIgnorePatterns": [
       "/node_modules/.+",
