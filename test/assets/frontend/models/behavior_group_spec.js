@@ -1,5 +1,5 @@
 window.crypto = require('./../../../mocks/mock_window_crypto');
-const BehaviorGroup = require('../../../../app/assets/frontend/models/behavior_group');
+import BehaviorGroup from '../../../../app/assets/frontend/models/behavior_group';
 
 const behaviorGroupData = Object.freeze({
   "id": "abcdef",

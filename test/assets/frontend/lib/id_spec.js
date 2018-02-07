@@ -1,5 +1,5 @@
 window.crypto = require('./../../../mocks/mock_window_crypto');
-const ID = require('../../../../app/assets/frontend/lib/id');
+import ID from '../../../../app/assets/frontend/lib/id';
 
 describe("ID", () => {
   const uuid = "2025698a-5ee3-4264-a9ed-c8befe6f61bd";

@@ -1,7 +1,6 @@
 window.crypto = require('./../../../mocks/mock_window_crypto');
-const BehaviorGroup = require('../../../../app/assets/frontend/models/behavior_group');
-const diffs = require('../../../../app/assets/frontend/models/diffs');
-const TextPart = diffs.TextPart;
+import BehaviorGroup from '../../../../app/assets/frontend/models/behavior_group';
+import {TextPart, MultiLineTextPropertyDiff, maybeDiffFor} from '../../../../app/assets/frontend/models/diffs';
 
 const teamId = 'team123456';
 const groupId = 'group123456';
@@ -244,7 +243,7 @@ const behaviorGroupVersion2 = Object.freeze({
 });
 
 function textDiff(left, right) {
-  return diffs.MultiLineTextPropertyDiff.maybeFor("", left, right);
+  return MultiLineTextPropertyDiff.maybeFor("", left, right);
 }
 
 describe('diffs', () => {
@@ -254,7 +253,7 @@ describe('diffs', () => {
     it('builds the correct diff for a behavior group', () => {
       const version1 = BehaviorGroup.fromJson(behaviorGroupVersion1);
       const version2 = BehaviorGroup.fromJson(behaviorGroupVersion2);
-      const maybeDiff = diffs.maybeDiffFor(version1, version2);
+      const maybeDiff = maybeDiffFor(version1, version2);
       expect(maybeDiff).toBeTruthy();
       const diffText = maybeDiff.displayText();
 

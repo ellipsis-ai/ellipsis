@@ -1,4 +1,4 @@
-const Sort = require('../../../../app/assets/frontend/lib/sort');
+import Sort from '../../../../app/assets/frontend/lib/sort';
 
 describe('Sort', () => {
   describe('arrayAlphaBy', () => {

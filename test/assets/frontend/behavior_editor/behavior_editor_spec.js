@@ -5,14 +5,13 @@ global.fetch = require('./../../../mocks/mock_fetch');
 
 import React from 'react';
 import TestUtils from 'react-addons-test-utils';
-const BehaviorEditor = require('../../../../app/assets/frontend/behavior_editor/index'),
-  BehaviorVersion = require('../../../../app/assets/frontend/models/behavior_version'),
-  BehaviorGroup = require('../../../../app/assets/frontend/models/behavior_group'),
-  ResponseTemplate = require('../../../../app/assets/frontend/models/response_template'),
-  ParamType = require('../../../../app/assets/frontend/models/param_type'),
-  aws = require('../../../../app/assets/frontend/models/aws'),
-  oauth2 = require('../../../../app/assets/frontend/models/oauth2'),
-  simpleToken = require('../../../../app/assets/frontend/models/simple_token');
+import BehaviorEditor from '../../../../app/assets/frontend/behavior_editor/index';
+import BehaviorVersion from '../../../../app/assets/frontend/models/behavior_version';
+import BehaviorGroup from '../../../../app/assets/frontend/models/behavior_group';
+import ParamType from '../../../../app/assets/frontend/models/param_type';
+import {AWSConfigRef} from '../../../../app/assets/frontend/models/aws';
+import {OAuth2ApplicationRef} from '../../../../app/assets/frontend/models/oauth2';
+import {SimpleTokenApiRef} from '../../../../app/assets/frontend/models/simple_token';
 
 jsRoutes.controllers.BehaviorEditorController.edit = jest.fn(() => ({ url: '/mock_edit' }));
 jsRoutes.controllers.BehaviorEditorController.save = jest.fn(() => ({ url: '/mock_save' }));
@@ -103,7 +102,8 @@ describe('BehaviorEditor', () => {
     savedAnswers: [],
     onForgetSavedAnswerForInput: jest.fn(),
     userId: "1",
-    onLinkGithubRepo: jest.fn()
+    onLinkGithubRepo: jest.fn(),
+    onUpdateFromGithub: jest.fn()
   });
 
   const newSkillConfig = Object.freeze({
@@ -176,7 +176,8 @@ describe('BehaviorEditor', () => {
     selectedId: "2",
     onSave: jest.fn(),
     onForgetSavedAnswerForInput: jest.fn(),
-    onLinkGithubRepo: jest.fn()
+    onLinkGithubRepo: jest.fn(),
+    onUpdateFromGithub: jest.fn()
   });
 
   let editorConfig;
@@ -190,9 +191,9 @@ describe('BehaviorEditor', () => {
   function createEditor(config) {
     const props = Object.assign({}, config, {
       group: BehaviorGroup.fromJson(config.group),
-      awsConfigs: config.awsConfigs.map(aws.AWSConfigRef.fromJson),
-      oauth2Applications: config.oauth2Applications.map(oauth2.OAuth2ApplicationRef.fromJson),
-      simpleTokenApis: config.simpleTokenApis.map(simpleToken.SimpleTokenApiRef.fromJson),
+      awsConfigs: config.awsConfigs.map(AWSConfigRef.fromJson),
+      oauth2Applications: config.oauth2Applications.map(OAuth2ApplicationRef.fromJson),
+      simpleTokenApis: config.simpleTokenApis.map(SimpleTokenApiRef.fromJson),
       builtinParamTypes: config.builtinParamTypes.map(ParamType.fromJson),
       onDeploy: jest.fn()
     });

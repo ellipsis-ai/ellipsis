@@ -1,4 +1,4 @@
-const Formatter = require('../../../../app/assets/frontend/lib/formatter');
+import Formatter from '../../../../app/assets/frontend/lib/formatter';
 
 describe("Formatter", () => {
   describe("formatCamelCaseIdentifier", () => {

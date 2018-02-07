@@ -4,9 +4,9 @@ import TestUtils from 'react-addons-test-utils';
 import type {PageRequiredProps} from '../../../../app/assets/frontend/shared_ui/page';
 
 // TODO: remove `any` when we're using ES6 modules
-const Page: any = require('../../../../app/assets/frontend/shared_ui/page');
-const PageFooterRenderingError = require('../../../../app/assets/frontend/shared_ui/page_footer_rendering_error');
-const FixedFooter = require('../../../../app/assets/frontend/shared_ui/fixed_footer');
+import Page from '../../../../app/assets/frontend/shared_ui/page';
+import PageFooterRenderingError from '../../../../app/assets/frontend/shared_ui/page_footer_rendering_error';
+import FixedFooter from '../../../../app/assets/frontend/shared_ui/fixed_footer';
 
 class FooterRenderingComponent extends React.Component<PageRequiredProps> {
   render() {
@@ -119,13 +119,6 @@ describe('Page', () => {
       page.clearActivePanel(callback);
       expect(page.setState.mock.calls[0][1]).toBe(callback);
       expect(callback).toBeCalled();
-    });
-
-    it('passes no callback to setState if no valid function is passed', () => {
-      const page = createMockedPage();
-      const notACallback = {};
-      page.clearActivePanel(notACallback);
-      expect(page.setState.mock.calls[0][1]).toBeFalsy();
     });
   });
 

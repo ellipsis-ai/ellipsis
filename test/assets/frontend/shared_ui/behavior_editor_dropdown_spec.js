@@ -1,6 +1,6 @@
 import React from 'react';
 import TestUtils from 'react-addons-test-utils';
-const DropdownMenu = require('../../../../app/assets/frontend/shared_ui/dropdown_menu');
+import DropdownMenu from '../../../../app/assets/frontend/shared_ui/dropdown_menu';
 
 describe('DropdownMenu', () => {
   let toggled = false;

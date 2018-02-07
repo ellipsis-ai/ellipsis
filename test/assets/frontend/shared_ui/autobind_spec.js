@@ -1,4 +1,4 @@
-const autobind = require('../../../../app/assets/frontend/lib/autobind');
+import autobind from '../../../../app/assets/frontend/lib/autobind';
 
 describe("autobind", () => {
   class Foo {

@@ -1,5 +1,5 @@
-const NotificationData = require("../../../../app/assets/frontend/models/notification_data");
-const NotificationDataGroup = require("../../../../app/assets/frontend/models/notification_data_group");
+import NotificationData from "../../../../app/assets/frontend/models/notification_data";
+import NotificationDataGroup from "../../../../app/assets/frontend/models/notification_data_group";
 
 describe("NotificationDataGroup", () => {
 

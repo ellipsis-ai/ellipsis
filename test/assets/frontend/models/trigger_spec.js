@@ -1,4 +1,4 @@
-const Trigger = require("../../../../app/assets/frontend/models/trigger");
+import Trigger from "../../../../app/assets/frontend/models/trigger";
 
 describe("Trigger", () => {
   describe("capturesInputIndex", () => {
