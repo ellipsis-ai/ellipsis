@@ -8,7 +8,7 @@ name := """ellipsis"""
 version := "1.0-SNAPSHOT"
 scalaVersion := "2.11.8"
 
-pipelineStages := Seq(webpackBuild, rjs, digest, gzip)
+pipelineStages := Seq(webpackBuild, digest, gzip)
 
 lazy val slackClientVersion = "cd123f514e2be7fa0a7df087197f7cccbba3ca75"
 lazy val slackClientProject = ProjectRef(uri(s"https://github.com/ellipsis-ai/slack-scala-client.git#$slackClientVersion"), "slack-scala-client")
@@ -67,7 +67,7 @@ JsEngineKeys.engineType := JsEngineKeys.EngineType.Node
 // Starts: Webpack build task
 val appPath = "./app/assets/frontend"
 val targetDir = "target/web/webpack"
-val assetDir = "bundles"
+val assetDir = "javascripts"
 val webpackBuild = taskKey[Pipeline.Stage]("Webpack build task.")
 
 webpackBuild := { mappings =>

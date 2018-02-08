@@ -7,6 +7,9 @@ const path = require('path');
  */
 const webpackConfig = {
   entry: {
+    // Used on every page, should include bootstrapping code
+    global: ['./app/assets/frontend/page_header/page_header'],
+
     // Vendor JS used by React pages
     vendor: [
       'core-js',
@@ -24,7 +27,6 @@ const webpackConfig = {
 
     // Simple scripts used on non-React pages:
     add_to_slack: './app/assets/frontend/slack/add_to_slack',
-    global: './app/assets/frontend/page_header/page_header',
 
     // React loaders:
     apiTokenGenerator: './app/assets/frontend/settings/api_token_generator/loader',
@@ -43,7 +45,7 @@ const webpackConfig = {
     path: "",
     filename: '[name].js',
     sourceMapFilename: '[name].map',
-    publicPath: '/bundles/'
+    publicPath: '/javascripts/'
   },
   externals: {
   },
@@ -69,9 +71,10 @@ const webpackConfig = {
   },
   plugins: [
     new webpack.optimize.CommonsChunkPlugin({
-      // Order is important: last file listed here will contain Webpack bootstrap,
-      // and thus must be loaded first on each page.
-      names: ['jshint', 'vendor', 'global'],
+      name: 'global'
+    }),
+    new webpack.optimize.CommonsChunkPlugin({
+      names: ['jshint', 'vendor'],
       minChunks: Infinity
     })
   ]

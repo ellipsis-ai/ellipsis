@@ -49,7 +49,7 @@ class RemoteAssets @Inject() (
     if (environment.mode == Mode.Dev) {
       routes.WebpackController.bundle(file).url
     } else {
-      getUrl("bundles/" + file)
+      getUrl("javascripts/" + file)
     }
   }
 }
