@@ -42,7 +42,7 @@
     }'>
       @shared.mainNav(config, selectedNav, hideNav, navClass)
     </header>
+    <script src="@config.assets.getWebpackBundle("global.js")"></script>
     @content
   </body>
-  <script src="@config.assets.getWebpackBundle("page_header.js")"></script>
 </html>

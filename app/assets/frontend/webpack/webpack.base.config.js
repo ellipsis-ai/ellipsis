@@ -24,7 +24,7 @@ const webpackConfig = {
 
     // Simple scripts used on non-React pages:
     add_to_slack: './app/assets/frontend/slack/add_to_slack',
-    page_header: './app/assets/frontend/page_header/page_header',
+    global: './app/assets/frontend/page_header/page_header',
 
     // React loaders:
     apiTokenGenerator: './app/assets/frontend/settings/api_token_generator/loader',
@@ -71,7 +71,7 @@ const webpackConfig = {
     new webpack.optimize.CommonsChunkPlugin({
       // Order is important: last file listed here will contain Webpack bootstrap,
       // and thus must be loaded first on each page.
-      names: ['jshint', 'vendor'],
+      names: ['jshint', 'vendor', 'global'],
       minChunks: Infinity
     })
   ]
