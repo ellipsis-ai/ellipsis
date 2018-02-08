@@ -66,7 +66,7 @@ JsEngineKeys.engineType := JsEngineKeys.EngineType.Node
 
 // Starts: Webpack build task
 val appPath = "./app/assets/frontend"
-val targetDir = "target/web/webpack"
+val targetDir = "target/web/webpack/main"
 val assetDir = "javascripts"
 val webpackBuild = taskKey[Pipeline.Stage]("Webpack build task.")
 
@@ -80,8 +80,9 @@ webpackBuild := { mappings =>
   mappings ++ newMappings
 }
 
-packageBin in Universal := (packageBin in Universal).dependsOn(webpackBuild).value
 webpackBuild in Assets := (webpackBuild in Assets).dependsOn(WebKeys.webModules in Assets).value
+
+packageBin in Universal := (packageBin in Universal).dependsOn(webpackBuild).value
 dist := (dist dependsOn webpackBuild).value
 stage := (stage dependsOn webpackBuild).value
 // Ends.
