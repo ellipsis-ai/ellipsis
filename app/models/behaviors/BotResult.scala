@@ -34,6 +34,7 @@ sealed trait BotResult {
   val shouldInterrupt: Boolean = true
   def text: String
   def fullText: String = text
+  def maybeText: Option[String] = Option(fullText.trim).filter(_.nonEmpty)
   def hasText: Boolean = fullText.trim.nonEmpty
   val isForUndeployed: Boolean = false
 

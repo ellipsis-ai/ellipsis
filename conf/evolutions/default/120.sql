@@ -10,7 +10,7 @@ CREATE TABLE logged_events (
   medium TEXT,
   channel TEXT,
   channel_details JSONB,
-  when TIMESTAMPTZ NOT NULL
+  created_at TIMESTAMPTZ NOT NULL
 );
 
 # --- !Downs

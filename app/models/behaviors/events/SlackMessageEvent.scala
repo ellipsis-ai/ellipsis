@@ -159,10 +159,10 @@ case class SlackMessageEvent(
 //  val loggedEvent: LoggedEvent = LoggedEvent(IDs.next, TriggerMatchedInChat, causeDetails)
 
 
-  def causeType: CauseType = TriggerMatchedInChat
-  def causeDetails: CauseDetails = CauseDetails(Some(messageText), trigger.maybePattern, None, Some(channelDetails))
-  def resultType: ResultType
-  def resultDetails: ResultDetails
+//  def causeType: CauseType = TriggerMatchedInChat
+//  def causeDetails: CauseDetails = CauseDetails(Some(messageText), trigger.maybePattern, None, Some(channelDetails))
+//  def resultType: ResultType
+//  def resultDetails: ResultDetails
 
 }
 

@@ -78,10 +78,6 @@ case class SlackMessageSender(
       threadTs = maybeThreadTs,
       replyBroadcast = maybeReplyBroadcast
     ).
-      flatMap { res =>
-        val context = LoggedEventContext(None, Some(MessageContext(Conversation.SLACK_CONTEXT, channelToUse)))
-        dataService.loggedEvents.log(LoggedEvent.forBotMessageSent(text, context)).map(_ => res)
-      }.
       recover {
         case t: Throwable => throw SlackMessageSenderException(t, channel, teamId, user, text)
       }

@@ -8,6 +8,7 @@ import drivers.SlickPostgresDriver.api._
 import play.api.libs.json.{JsValue, Json}
 import services.DataService
 import slick.ast.ColumnOption.PrimaryKey
+import slick.dbio.DBIO
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -20,9 +21,9 @@ class LoggedEventsTable(tag: Tag) extends Table[LoggedEvent](tag, "logged_events
     { str => CauseType.definitelyFind(str) }
   )
 
-  implicit val causeDetailsColumnType =  MappedColumnType.base[CauseDetails, String](
-    { v => Json.toJson(v).toString },
-    { str => CauseDetails.fromJsonString(str) }
+  implicit val causeDetailsColumnType =  MappedColumnType.base[CauseDetails, JsValue](
+    { v => Json.toJson(v) },
+    { json => CauseDetails.fromJson(json) }
   )
 
   implicit val resultTypeColumnType = MappedColumnType.base[ResultType, String](
@@ -30,9 +31,9 @@ class LoggedEventsTable(tag: Tag) extends Table[LoggedEvent](tag, "logged_events
     { str => ResultType.definitelyFind(str) }
   )
 
-  implicit val resultDetailsColumnType =  MappedColumnType.base[ResultDetails, String](
-    { v => Json.toJson(v).toString },
-    { str => ResultDetails.fromJsonString(str) }
+  implicit val resultDetailsColumnType =  MappedColumnType.base[ResultDetails, JsValue](
+    { v => Json.toJson(v) },
+    { json => ResultDetails.fromJson(json) }
   )
 
   def id = column[String]("id", PrimaryKey)
@@ -55,9 +56,12 @@ class LoggedEventServiceImpl @Inject() (
 
   import LoggedEventQueries._
 
+  def logAction(event: LoggedEvent): DBIO[Unit] = {
+    (all += event).map(_ => {})
+  }
+
   def log(event: LoggedEvent): Future[Unit] = {
-    val action = (all += event).map(_ => {})
-    dataService.run(action)
+    dataService.run(logAction(event))
   }
 
 }

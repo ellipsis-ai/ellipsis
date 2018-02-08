@@ -438,7 +438,7 @@ case class BehaviorBackedDataType(dataTypeConfig: DataTypeConfig) extends Behavi
       Seq(ParameterWithValue(context.parameter, AWSLambdaConstants.invocationParamFor(0), Some(value)))
     }.getOrElse(Seq())
     for {
-      maybeResult <- context.dataService.behaviorVersions.resultForAction(behaviorVersion, paramsWithValues, context.event, context.maybeConversation).map(Some(_))
+      maybeResult <- context.dataService.behaviorVersions.resultForAction(behaviorVersion, paramsWithValues, context.event, context.maybeConversation, None).map(Some(_))
     } yield maybeResult
   }
 

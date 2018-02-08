@@ -64,7 +64,7 @@ case class BehaviorResponse(
     val startTime = OffsetDateTime.now
     for {
       user <- event.ensureUserAction(dataService)
-      result <- dataService.behaviorVersions.resultForAction(behaviorVersion, parametersWithValues, event, maybeConversation)
+      result <- dataService.behaviorVersions.resultForAction(behaviorVersion, parametersWithValues, event, maybeConversation, maybeActivatedTrigger)
       _ <- {
         val runtimeInMilliseconds = OffsetDateTime.now.toInstant.toEpochMilli - startTime.toInstant.toEpochMilli
         dataService.invocationLogEntries.createForAction(

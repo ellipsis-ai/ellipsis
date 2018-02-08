@@ -39,7 +39,7 @@ class ScheduledActor @Inject()(
     val action: DBIO[Boolean] = Scheduled.maybeNextToBeSentAction(when, dataService).flatMap { maybeNext =>
       maybeNext.map { scheduled =>
         for {
-          _ <- DBIO.from(dataService.loggedEvents.log(LoggedEvent.forScheduledRun(scheduled)))
+//          _ <- DBIO.from(dataService.loggedEvents.log(LoggedEvent.forScheduledRun(scheduled)))
           displayText <- DBIO.from(scheduled.displayText(dataService))
           maybeProfile <- scheduled.botProfileAction(dataService)
           maybeSlackUserId <- scheduled.maybeUser.map { user =>

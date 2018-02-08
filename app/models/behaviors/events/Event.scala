@@ -176,28 +176,28 @@ trait Event {
                                services: DefaultServices
                              )(implicit ec: ExecutionContext): Future[Seq[BehaviorResponse]]
 
-  def causeType: CauseType
-  def causeDetails: CauseDetails
-  def resultType: ResultType
-  def resultDetails: ResultDetails
+//  def causeType: CauseType
+//  def causeDetails: CauseDetails
+//  def resultType: ResultType
+//  def resultDetails: ResultDetails
 
-  def logForResultAction(result: BotResult, dataService: DataService): DBIO[Unit] = {
-    val channelDetails = ChannelDetails(Some(context), maybeChannel, Seq())
-    val causeDetails = CauseDetails(Some(messageText), trigger.maybePattern, None, Some(channelDetails))
-    val loggedEvent: LoggedEvent = LoggedEvent(IDs.next, TriggerMatchedInChat, causeDetails)
-    for {
-      user <- ensureUserAction(dataService)
-      _ <- dataService.loggedEvents.logAction(LoggedEvent(
-        IDs.next,
-        causeType,
-        causeDetails,
-        resultType,
-        resultDetails,
-        Some(user.id),
-        OffsetDateTime.now
-      ))
-    } yield {}
-
-  }
+//  def logForResultAction(result: BotResult, dataService: DataService): DBIO[Unit] = {
+//    val channelDetails = ChannelDetails(Some(context), maybeChannel, Seq())
+//    val causeDetails = CauseDetails(Some(messageText), trigger.maybePattern, None, Some(channelDetails))
+//    val loggedEvent: LoggedEvent = LoggedEvent(IDs.next, TriggerMatchedInChat, causeDetails)
+//    for {
+//      user <- ensureUserAction(dataService)
+//      _ <- dataService.loggedEvents.logAction(LoggedEvent(
+//        IDs.next,
+//        causeType,
+//        causeDetails,
+//        resultType,
+//        resultDetails,
+//        Some(user.id),
+//        OffsetDateTime.now
+//      ))
+//    } yield {}
+//
+//  }
 
 }

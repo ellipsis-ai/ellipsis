@@ -14,7 +14,8 @@ import models.behaviors.behaviorgroup.BehaviorGroup
 import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
 import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.events.Event
-import models.loggedevent.{CauseDetails, ChannelDetails, LoggedEvent, TriggerMatchedInChat}
+import models.behaviors.triggers.messagetrigger.MessageTrigger
+import models.loggedevent._
 import models.team.Team
 import play.api.{Configuration, Logger}
 import services._
@@ -352,20 +353,34 @@ class BehaviorVersionServiceImpl @Inject() (
                        behaviorVersion: BehaviorVersion,
                        parametersWithValues: Seq[ParameterWithValue],
                        event: Event,
-                       maybeConversation: Option[Conversation]
+                       maybeConversation: Option[Conversation],
+                       maybeActivatedTrigger: Option[MessageTrigger]
                      ): DBIO[BotResult] = {
     for {
       teamEnvVars <- dataService.teamEnvironmentVariables.allForAction(behaviorVersion.team)
       result <- maybeNotReadyResultForAction(behaviorVersion, event).flatMap { maybeResult =>
         maybeResult.map(DBIO.successful).getOrElse {
-          lambdaService
-            .invokeAction(behaviorVersion, parametersWithValues, teamEnvVars, event, maybeConversation, defaultServices)
-            .map { r => {
-              val channelDetails = ChannelDetails(Some(event.context), event.maybeChannel, Seq())
-              val causeDetails = CauseDetails(Some(messageText), trigger.maybePattern, None, Some(channelDetails))
-              dataService.loggedEvents.log(LoggedEvent(IDs.next, TriggerMatchedInChat, causeDetails))
-            }}
+          lambdaService.invokeAction(behaviorVersion, parametersWithValues, teamEnvVars, event, maybeConversation, defaultServices)
         }
+      }
+      user <- event.ensureUserAction(dataService)
+      maybeChannelForSend <- result.maybeChannelForSendAction(maybeConversation, dataService)
+      _ <- {
+        val channelDetails = ChannelDetails(Some(event.context), event.maybeChannel, Seq())
+        val causeDetails = CauseDetails(Some(event.messageText), maybeActivatedTrigger.flatMap(_.maybePattern), None, Some(channelDetails))
+        val resultChannelDetails = ChannelDetails(Some(event.context), maybeChannelForSend, Seq())
+        val resultDetails = ResultDetails(result.maybeText, Some(behaviorVersion.id), Some(resultChannelDetails))
+        dataService.loggedEvents.logAction(
+          LoggedEvent(
+            IDs.next,
+            TriggerMatchedInChat,
+            causeDetails,
+            BehaviorRun,
+            resultDetails,
+            Some(user.id),
+            OffsetDateTime.now
+          )
+        )
       }
     } yield result
   }
@@ -374,9 +389,10 @@ class BehaviorVersionServiceImpl @Inject() (
                  behaviorVersion: BehaviorVersion,
                  parametersWithValues: Seq[ParameterWithValue],
                  event: Event,
-                 maybeConversation: Option[Conversation]
+                 maybeConversation: Option[Conversation],
+                 maybeActivatedTrigger: Option[MessageTrigger]
                ): Future[BotResult] = {
-    dataService.run(resultForAction(behaviorVersion, parametersWithValues, event, maybeConversation))
+    dataService.run(resultForAction(behaviorVersion, parametersWithValues, event, maybeConversation, maybeActivatedTrigger))
   }
 
 }

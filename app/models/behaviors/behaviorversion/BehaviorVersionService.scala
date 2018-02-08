@@ -7,6 +7,7 @@ import models.behaviors.behaviorgroup.BehaviorGroup
 import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
 import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.events.Event
+import models.behaviors.triggers.messagetrigger.MessageTrigger
 import models.behaviors.{BotResult, ParameterWithValue}
 import models.team.Team
 import services.ApiConfigInfo
@@ -68,14 +69,16 @@ trait BehaviorVersionService {
                        behaviorVersion: BehaviorVersion,
                        parametersWithValues: Seq[ParameterWithValue],
                        event: Event,
-                       maybeConversation: Option[Conversation]
+                       maybeConversation: Option[Conversation],
+                       maybeActivatedTrigger: Option[MessageTrigger]
                      ): DBIO[BotResult]
 
   def resultFor(
                  behaviorVersion: BehaviorVersion,
                  parametersWithValues: Seq[ParameterWithValue],
                  event: Event,
-                 maybeConversation: Option[Conversation]
+                 maybeConversation: Option[Conversation],
+                 maybeActivatedTrigger: Option[MessageTrigger]
                ): Future[BotResult]
 
   def unlearn(behaviorVersion: BehaviorVersion): Future[Unit]
