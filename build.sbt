@@ -46,7 +46,6 @@ libraryDependencies ++= Seq(
   "net.codingwell" %% "scala-guice" % "4.0.0",
   "net.ceedubs" %% "ficus" % "1.1.2",
   "com.amazonaws" % "aws-java-sdk" % "1.11.123",
-  "org.webjars.npm" % "little-loader" % "0.2.0",
   "com.atlassian.commonmark" % "commonmark" % "0.6.0",
   "com.atlassian.commonmark" % "commonmark-ext-gfm-strikethrough" % "0.6.0",
   "com.atlassian.commonmark" % "commonmark-ext-autolink" % "0.6.0",

@@ -6,9 +6,9 @@
 @page.main("Edit skill", config, selectedNav = "skills") {
   <div id="content" class="flex-row-cascade">
     <div id="editorContainer" class="flex-row-cascade"></div>
-    <script src='@config.assets.getUrl("lib/little-loader/dist/little-loader.min.js")'></script>
     <script src='@config.assets.getWebpackBundle("vendor.js")'></script>
     <script src='@config.assets.getWebpackBundle("jshint.js")'></script>
     <script src='@dataRoute'></script>
+    <script src='@config.assets.getWebpackBundle("behaviorEditor.js")'></script>
   </div>
 }
