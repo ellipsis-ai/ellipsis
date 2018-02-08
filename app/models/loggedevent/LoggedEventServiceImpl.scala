@@ -5,7 +5,7 @@ import javax.inject.Inject
 
 import com.google.inject.Provider
 import drivers.SlickPostgresDriver.api._
-import play.api.libs.json.JsValue
+import play.api.libs.json.{JsValue, Json}
 import services.DataService
 import slick.ast.ColumnOption.PrimaryKey
 
@@ -13,20 +13,37 @@ import scala.concurrent.{ExecutionContext, Future}
 
 class LoggedEventsTable(tag: Tag) extends Table[LoggedEvent](tag, "logged_events") {
 
-  implicit val eventTypeColumnType = MappedColumnType.base[LoggedEventType, String](
+  import Formatting._
+
+  implicit val causeTypeColumnType = MappedColumnType.base[CauseType, String](
+    { v => v.toString },
+    { str => CauseType.definitelyFind(str) }
+  )
+
+  implicit val causeDetailsColumnType =  MappedColumnType.base[CauseDetails, String](
+    { v => Json.toJson(v).toString },
+    { str => CauseDetails.fromJsonString(str) }
+  )
+
+  implicit val resultTypeColumnType = MappedColumnType.base[ResultType, String](
     { gt => gt.toString },
-    { str => LoggedEventType.definitelyFind(str) }
+    { str => ResultType.definitelyFind(str) }
+  )
+
+  implicit val resultDetailsColumnType =  MappedColumnType.base[ResultDetails, String](
+    { v => Json.toJson(v).toString },
+    { str => ResultDetails.fromJsonString(str) }
   )
 
   def id = column[String]("id", PrimaryKey)
-  def eventType = column[LoggedEventType]("type")
+  def causeType = column[CauseType]("cause_type")
+  def causeDetails = column[CauseDetails]("cause_details")
+  def resultType = column[ResultType]("result_type")
+  def resultDetails = column[ResultDetails]("result_details")
   def maybeUserId = column[Option[String]]("user_id")
-  def maybeMedium = column[Option[String]]("medium")
-  def maybeChannel = column[Option[String]]("channel")
-  def details = column[JsValue]("details")
   def createdAt = column[OffsetDateTime]("created_at")
 
-  def * = (id, eventType, maybeUserId, maybeMedium, maybeChannel, details, createdAt) <> ((LoggedEvent.apply _).tupled, LoggedEvent.unapply _)
+  def * = (id, causeType, causeDetails, resultType, resultDetails, maybeUserId, createdAt) <> ((LoggedEvent.apply _).tupled, LoggedEvent.unapply _)
 }
 
 class LoggedEventServiceImpl @Inject() (

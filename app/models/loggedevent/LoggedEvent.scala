@@ -22,11 +22,11 @@ case class LoggedEventContext(maybeUser: Option[User], maybeMessageContext: Opti
 
 case class LoggedEvent(
                         id: String,
-                        eventType: LoggedEventType,
+                        causeType: CauseType,
+                        causeDetails: CauseDetails,
+                        resultType: ResultType,
+                        resultDetails: ResultDetails,
                         maybeUserId: Option[String],
-                        maybeMedium: Option[String],
-                        maybeChannel: Option[String],
-                        details: JsValue,
                         createdAt: OffsetDateTime
                       )
 
@@ -47,9 +47,11 @@ object DetailsFormatting {
 
 object LoggedEvent {
 
+  /*
+
   import DetailsFormatting._
 
-  def newFor(eventType: LoggedEventType, context: LoggedEventContext, details: JsValue) = {
+  def newFor(eventType: CauseType, context: LoggedEventContext, details: JsValue) = {
     LoggedEvent(
       IDs.next,
       eventType,
@@ -89,6 +91,8 @@ object LoggedEvent {
       Json.toJson(ScheduledRunDetails(ScheduledActionData.fromScheduled(scheduled)))
     )
   }
+
+  */
 
 //  def runFromHelp(behaviorVersion: BehaviorVersion, context: LoggedEventContext): Future[Unit]
 //

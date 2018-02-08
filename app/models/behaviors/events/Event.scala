@@ -1,7 +1,10 @@
 package models.behaviors.events
 
+import java.time.OffsetDateTime
+
 import akka.actor.ActorSystem
 import com.mohiva.play.silhouette.api.LoginInfo
+import models.IDs
 import models.accounts.user.User
 import models.behaviors._
 import models.behaviors.behavior.Behavior
@@ -9,6 +12,7 @@ import models.behaviors.behaviorversion.BehaviorVersion
 import models.behaviors.builtins.DisplayHelpBehavior
 import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.scheduling.Scheduled
+import models.loggedevent._
 import models.team.Team
 import play.api.Configuration
 import play.api.libs.json.JsObject
@@ -171,5 +175,29 @@ trait Event {
                                maybeLimitToBehavior: Option[Behavior],
                                services: DefaultServices
                              )(implicit ec: ExecutionContext): Future[Seq[BehaviorResponse]]
+
+  def causeType: CauseType
+  def causeDetails: CauseDetails
+  def resultType: ResultType
+  def resultDetails: ResultDetails
+
+  def logForResultAction(result: BotResult, dataService: DataService): DBIO[Unit] = {
+    val channelDetails = ChannelDetails(Some(context), maybeChannel, Seq())
+    val causeDetails = CauseDetails(Some(messageText), trigger.maybePattern, None, Some(channelDetails))
+    val loggedEvent: LoggedEvent = LoggedEvent(IDs.next, TriggerMatchedInChat, causeDetails)
+    for {
+      user <- ensureUserAction(dataService)
+      _ <- dataService.loggedEvents.logAction(LoggedEvent(
+        IDs.next,
+        causeType,
+        causeDetails,
+        resultType,
+        resultDetails,
+        Some(user.id),
+        OffsetDateTime.now
+      ))
+    } yield {}
+
+  }
 
 }

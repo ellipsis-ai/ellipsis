@@ -1,9 +1,10 @@
 package models.behaviors.events
 
+import models.IDs
 import models.behaviors.BehaviorResponse
 import models.behaviors.behavior.Behavior
 import models.behaviors.conversations.conversation.Conversation
-import models.loggedevent.LoggedEvent
+import models.loggedevent.{CauseDetails, ChannelDetails, LoggedEvent, TriggerMatchedInChat}
 import models.team.Team
 import services.{DataService, DefaultServices}
 
@@ -74,8 +75,6 @@ trait MessageEvent extends Event {
             Some(trigger),
             None
           )
-          user <- dataService.users.ensureUserFor(loginInfo, teamId)
-          _ <- dataService.loggedEvents.log(LoggedEvent.forTriggerMatched(trigger, this, user))
         } yield response
       })
     } yield responses

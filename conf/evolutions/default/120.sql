@@ -2,12 +2,15 @@
 
 CREATE TABLE logged_events (
   id TEXT PRIMARY KEY,
-  type TEXT NOT NULL,
+  cause_type TEXT NOT NULL,
+  cause_details JSONB NOT NULL,
+  result_type TEXT NOT NULL,
+  result_details JSONB NOT NULL,
   user_id TEXT REFERENCES users(id),
   medium TEXT,
   channel TEXT,
-  details JSONB NOT NULL,
-  created_at TIMESTAMPTZ NOT NULL
+  channel_details JSONB,
+  when TIMESTAMPTZ NOT NULL
 );
 
 # --- !Downs

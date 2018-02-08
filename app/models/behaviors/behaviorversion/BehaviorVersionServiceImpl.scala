@@ -14,6 +14,7 @@ import models.behaviors.behaviorgroup.BehaviorGroup
 import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
 import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.events.Event
+import models.loggedevent.{CauseDetails, ChannelDetails, LoggedEvent, TriggerMatchedInChat}
 import models.team.Team
 import play.api.{Configuration, Logger}
 import services._
@@ -359,6 +360,11 @@ class BehaviorVersionServiceImpl @Inject() (
         maybeResult.map(DBIO.successful).getOrElse {
           lambdaService
             .invokeAction(behaviorVersion, parametersWithValues, teamEnvVars, event, maybeConversation, defaultServices)
+            .map { r => {
+              val channelDetails = ChannelDetails(Some(event.context), event.maybeChannel, Seq())
+              val causeDetails = CauseDetails(Some(messageText), trigger.maybePattern, None, Some(channelDetails))
+              dataService.loggedEvents.log(LoggedEvent(IDs.next, TriggerMatchedInChat, causeDetails))
+            }}
         }
       }
     } yield result

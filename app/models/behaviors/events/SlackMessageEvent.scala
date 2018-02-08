@@ -4,6 +4,7 @@ import akka.actor.ActorSystem
 import models.accounts.slack.botprofile.SlackBotProfile
 import models.accounts.user.User
 import models.behaviors.conversations.conversation.Conversation
+import models.loggedevent._
 import play.api.Configuration
 import services.{AWSLambdaService, CacheService, DataService, DefaultServices}
 import slack.api.SlackApiClient
@@ -152,6 +153,16 @@ case class SlackMessageEvent(
       ensureSlackProfileFor(loginInfo, dataService).map(_ => user)
     }
   }
+
+//  val channelDetails = ChannelDetails(Some(context), maybeChannel, Seq())
+//  val causeDetails = CauseDetails(Some(messageText), trigger.maybePattern, None, Some(channelDetails))
+//  val loggedEvent: LoggedEvent = LoggedEvent(IDs.next, TriggerMatchedInChat, causeDetails)
+
+
+  def causeType: CauseType = TriggerMatchedInChat
+  def causeDetails: CauseDetails = CauseDetails(Some(messageText), trigger.maybePattern, None, Some(channelDetails))
+  def resultType: ResultType
+  def resultDetails: ResultDetails
 
 }
 
