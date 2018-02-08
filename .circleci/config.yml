@@ -82,10 +82,6 @@ jobs:
             - v10-playapp-{{ arch }}-{{ .Branch }}-{{ checksum "build.sbt" }}
             - v10-playapp-{{ arch }}-{{ checksum "build.sbt" }}
       - run:
-          name: Erase node_modules before compiling to avoid Problems with NPM resolution
-          command: |
-            rm -rf node_modules
-      - run:
           name: Run Activator tests
           command: |
             cat /dev/null | activator test
