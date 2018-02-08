@@ -87,6 +87,6 @@ module.exports = (env) => {
   } else {
     console.log(`[Webpack] Build path set to ${targetDir}`);
   }
-  webpackConfig.output.path = path.resolve(__dirname, `../../../../${targetDir}`);
+  webpackConfig.output.path = path.resolve(targetDir);
   return webpackConfig;
 };

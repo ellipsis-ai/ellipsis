@@ -39,18 +39,15 @@ object WebpackPlugin extends AutoPlugin {
 //    includeFilter in webpack := (jsFilter in Assets).value,
     WebpackKeys.targetDir := "webpack",
     webpack := { mappings: Seq[PathMapping] =>
-      val targetDir = "target/web/webpack"
-      val finalDir = targetDir + "/javascripts"
-      val sourceDir = "./app/assets/frontend"
-      Process("npm run build", file(sourceDir), ("WEBPACK_BUILD_PATH", finalDir)).!
-      val files = IO.listFiles(file(s"./$finalDir"))
+      val targetDir = (sourceManaged in Assets).value / "webpack"
+      val finalDir = targetDir / "javascripts"
+      val sourceDir = (sourceDirectory in Assets).value / "frontend"
+      Process("npm run build", sourceDir, ("WEBPACK_BUILD_PATH", finalDir.toPath.toString)).!
+      val files = IO.listFiles(finalDir)
       println("Files:")
       println(files.map(_.toPath).mkString("\n"))
       // Create a mapping (see PathMapping) for the concatenated file
-      val webpackMapping = files.map(file => {
-        println(file.getPath)
-        (file, file.getPath.replace(finalDir, "javascripts"))
-      })
+      val webpackMapping = files.toSeq pair relativeTo(targetDir)
       // Pass the concatenated file and the untouched files to next pipeline stage; source files will not be passed on
       println("Mappings:")
       println(webpackMapping.mkString("\n"))
