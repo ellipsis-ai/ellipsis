@@ -34,23 +34,15 @@ object WebpackPlugin extends AutoPlugin {
   import com.typesafe.sbt.web.Import._, WebKeys._
 
   override def projectSettings: Seq[Def.Setting[_]] = Seq(
-    // By default, concat JavaScript assets
-    // We are reusing sbt's includeFilter but scope it to our task
-//    includeFilter in webpack := (jsFilter in Assets).value,
     WebpackKeys.targetDir := "webpack",
     webpack := { mappings: Seq[PathMapping] =>
+      // sourceManaged is crucial here: that ensures the assets are on the web server in production
       val targetDir = (sourceManaged in Assets).value / "webpack"
       val finalDir = targetDir / "javascripts"
       val sourceDir = (sourceDirectory in Assets).value / "frontend"
       Process("npm run build", sourceDir, ("WEBPACK_BUILD_PATH", finalDir.toPath.toString)).!
       val files = IO.listFiles(finalDir)
-      println("Files:")
-      println(files.map(_.toPath).mkString("\n"))
-      // Create a mapping (see PathMapping) for the concatenated file
       val webpackMapping = files.toSeq pair relativeTo(targetDir)
-      // Pass the concatenated file and the untouched files to next pipeline stage; source files will not be passed on
-      println("Mappings:")
-      println(webpackMapping.mkString("\n"))
       webpackMapping ++ mappings
     }
   )
