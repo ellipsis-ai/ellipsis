@@ -4,10 +4,10 @@ import akka.actor.ActorSystem
 import models.behaviors.behavior.Behavior
 import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.scheduling.Scheduled
+import models.behaviors.triggers.messagetrigger.MessageTrigger
+import models.loggedevent.CauseType
 import models.team.Team
-import play.api.Configuration
 import play.api.libs.json.JsObject
-import play.api.libs.ws.WSClient
 import services.{CacheService, DataService, DefaultServices}
 import utils.UploadFileSpec
 
@@ -60,5 +60,7 @@ case class ScheduledEvent(underlying: Event, scheduled: Scheduled) extends Event
                              )(implicit ec: ExecutionContext) = underlying.allBehaviorResponsesFor(maybeTeam, maybeLimitToBehavior, services)
 
   def allOngoingConversations(dataService: DataService) = underlying.allOngoingConversations(dataService)
+
+  def causeTypeFor(maybeActivatedTrigger: Option[MessageTrigger]): CauseType = scheduled.causeType
 
 }

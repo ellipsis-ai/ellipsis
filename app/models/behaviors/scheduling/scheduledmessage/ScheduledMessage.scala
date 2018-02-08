@@ -7,6 +7,7 @@ import models.accounts.user.User
 import models.behaviors.events._
 import models.behaviors.scheduling.Scheduled
 import models.behaviors.scheduling.recurrence.Recurrence
+import models.loggedevent.{CauseType, ScheduledMessageRun}
 import models.team.Team
 import services.DataService
 import slack.api.SlackApiClient
@@ -55,6 +56,8 @@ case class ScheduledMessage(
   def updateNextTriggeredForAction(dataService: DataService): DBIO[ScheduledMessage] = {
     dataService.scheduledMessages.updateNextTriggeredForAction(this)
   }
+
+  val causeType: CauseType = ScheduledMessageRun
 
   def toRaw: RawScheduledMessage = {
     RawScheduledMessage(

@@ -6,9 +6,10 @@ import models.accounts.user.User
 import models.behaviors.BehaviorResponse
 import models.behaviors.behavior.Behavior
 import models.behaviors.conversations.conversation.Conversation
+import models.behaviors.triggers.messagetrigger.MessageTrigger
+import models.loggedevent.{ApiBehaviorRun, CauseType}
 import models.team.Team
-import play.api.Configuration
-import services.{AWSLambdaConstants, CacheService, DataService, DefaultServices}
+import services.{AWSLambdaConstants, DataService, DefaultServices}
 import slack.api.SlackApiClient
 import utils.{SlackMessageSender, UploadFileSpec}
 
@@ -107,5 +108,8 @@ case class RunEvent(
       ensureSlackProfileFor(loginInfo, dataService).map(_ => user)
     }
   }
+
+  def causeTypeFor(maybeActivatedTrigger: Option[MessageTrigger]): CauseType = ApiBehaviorRun
+  override val maybeRequestedBehavior: Option[Behavior] = Some(behavior)
 
 }

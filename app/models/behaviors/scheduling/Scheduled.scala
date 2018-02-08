@@ -12,6 +12,7 @@ import models.accounts.user.User
 import models.behaviors.BotResult
 import models.behaviors.events.{EventHandler, ScheduledEvent}
 import models.behaviors.scheduling.recurrence.Recurrence
+import models.loggedevent.CauseType
 import models.team.Team
 import play.api.{Configuration, Logger}
 import services.{DataService, DefaultServices}
@@ -284,6 +285,8 @@ trait Scheduled {
   }
 
   def updateNextTriggeredForAction(dataService: DataService): DBIO[Scheduled]
+
+  val causeType: CauseType
 
 }
 

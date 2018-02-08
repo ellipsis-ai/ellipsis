@@ -1,10 +1,10 @@
 package models.behaviors.events
 
-import models.IDs
 import models.behaviors.BehaviorResponse
 import models.behaviors.behavior.Behavior
 import models.behaviors.conversations.conversation.Conversation
-import models.loggedevent.{CauseDetails, ChannelDetails, LoggedEvent, TriggerMatchedInChat}
+import models.behaviors.triggers.messagetrigger.MessageTrigger
+import models.loggedevent._
 import models.team.Team
 import services.{DataService, DefaultServices}
 
@@ -78,6 +78,14 @@ trait MessageEvent extends Event {
         } yield response
       })
     } yield responses
+  }
+
+  def causeTypeFor(maybeActivatedTrigger: Option[MessageTrigger]): CauseType = {
+    if (maybeActivatedTrigger.isDefined) {
+      TriggerMatchedInChat
+    } else {
+      ConversationResponse
+    }
   }
 
 }

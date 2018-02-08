@@ -12,9 +12,9 @@ import models.behaviors.behaviorversion.BehaviorVersion
 import models.behaviors.builtins.DisplayHelpBehavior
 import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.scheduling.Scheduled
+import models.behaviors.triggers.messagetrigger.MessageTrigger
 import models.loggedevent._
 import models.team.Team
-import play.api.Configuration
 import play.api.libs.json.JsObject
 import services.{AWSLambdaService, CacheService, DataService, DefaultServices}
 import slick.dbio.DBIO
@@ -176,28 +176,37 @@ trait Event {
                                services: DefaultServices
                              )(implicit ec: ExecutionContext): Future[Seq[BehaviorResponse]]
 
-//  def causeType: CauseType
-//  def causeDetails: CauseDetails
-//  def resultType: ResultType
-//  def resultDetails: ResultDetails
+  def causeTypeFor(maybeActivatedTrigger: Option[MessageTrigger]): CauseType
+  val maybeRequestedBehavior: Option[Behavior] = None
 
-//  def logForResultAction(result: BotResult, dataService: DataService): DBIO[Unit] = {
-//    val channelDetails = ChannelDetails(Some(context), maybeChannel, Seq())
-//    val causeDetails = CauseDetails(Some(messageText), trigger.maybePattern, None, Some(channelDetails))
-//    val loggedEvent: LoggedEvent = LoggedEvent(IDs.next, TriggerMatchedInChat, causeDetails)
-//    for {
-//      user <- ensureUserAction(dataService)
-//      _ <- dataService.loggedEvents.logAction(LoggedEvent(
-//        IDs.next,
-//        causeType,
-//        causeDetails,
-//        resultType,
-//        resultDetails,
-//        Some(user.id),
-//        OffsetDateTime.now
-//      ))
-//    } yield {}
-//
-//  }
+  def logForResultAction(
+                          result: BotResult,
+                          maybeActivatedTrigger: Option[MessageTrigger],
+                          maybeInvokedBehaviorVersion: Option[BehaviorVersion],
+                          maybeConversation: Option[Conversation],
+                          dataService: DataService
+                        )(implicit actorSystem: ActorSystem, ec: ExecutionContext): DBIO[Unit] = {
+    for {
+      user <- ensureUserAction(dataService)
+      maybeChannelForSend <- result.maybeChannelForSendAction(maybeConversation, dataService)
+      _ <- {
+        val channelDetails = ChannelDetails(Some(context), maybeChannel, Seq())
+        val causeDetails = CauseDetails(maybeMessageText, maybeActivatedTrigger.flatMap(_.maybePattern), None, Some(channelDetails))
+        val resultChannelDetails = ChannelDetails(Some(context), maybeChannelForSend, Seq())
+        val resultDetails = ResultDetails(result.maybeText, maybeInvokedBehaviorVersion.map(_.id), Some(resultChannelDetails))
+        dataService.loggedEvents.logAction(
+          LoggedEvent(
+            IDs.next,
+            causeTypeFor(maybeActivatedTrigger),
+            causeDetails,
+            BehaviorRun,
+            resultDetails,
+            Some(user.id),
+            OffsetDateTime.now
+          )
+        )
+      }
+    } yield {}
+  }
 
 }

@@ -9,12 +9,25 @@ sealed trait CauseType {
 
 
 object CauseType extends Enum[CauseType] {
-  val values = List(TriggerMatchedInChat, ScheduledBehaviorRun, ScheduleMessageRun)
+  val values = List(
+    TriggerMatchedInChat,
+    ConversationResponse,
+    BotMentioned,
+    PrivateMessageToBot,
+    ScheduledBehaviorRun,
+    ScheduledMessageRun,
+    ApiBehaviorRun,
+    ApiMessageRun
+  )
   def definitelyFind(name: String): CauseType = find(name).get
 }
 
 object TriggerMatchedInChat extends CauseType {
   val name: String = "trigger_matched_in_chat"
+}
+
+object ConversationResponse extends CauseType {
+  val name: String = "conversation_response"
 }
 
 object BotMentioned extends CauseType {
@@ -29,7 +42,7 @@ object ScheduledBehaviorRun extends CauseType {
   val name: String = "scheduled_behavior_run"
 }
 
-object ScheduleMessageRun extends CauseType {
+object ScheduledMessageRun extends CauseType {
   val name: String = "scheduled_message_run"
 }
 

@@ -7,9 +7,6 @@ CREATE TABLE logged_events (
   result_type TEXT NOT NULL,
   result_details JSONB NOT NULL,
   user_id TEXT REFERENCES users(id),
-  medium TEXT,
-  channel TEXT,
-  channel_details JSONB,
   created_at TIMESTAMPTZ NOT NULL
 );
 

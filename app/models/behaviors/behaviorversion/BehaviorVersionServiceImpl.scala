@@ -365,23 +365,7 @@ class BehaviorVersionServiceImpl @Inject() (
       }
       user <- event.ensureUserAction(dataService)
       maybeChannelForSend <- result.maybeChannelForSendAction(maybeConversation, dataService)
-      _ <- {
-        val channelDetails = ChannelDetails(Some(event.context), event.maybeChannel, Seq())
-        val causeDetails = CauseDetails(Some(event.messageText), maybeActivatedTrigger.flatMap(_.maybePattern), None, Some(channelDetails))
-        val resultChannelDetails = ChannelDetails(Some(event.context), maybeChannelForSend, Seq())
-        val resultDetails = ResultDetails(result.maybeText, Some(behaviorVersion.id), Some(resultChannelDetails))
-        dataService.loggedEvents.logAction(
-          LoggedEvent(
-            IDs.next,
-            TriggerMatchedInChat,
-            causeDetails,
-            BehaviorRun,
-            resultDetails,
-            Some(user.id),
-            OffsetDateTime.now
-          )
-        )
-      }
+      _ <- event.logForResultAction(result, maybeActivatedTrigger, Some(behaviorVersion), maybeConversation, dataService)
     } yield result
   }
 

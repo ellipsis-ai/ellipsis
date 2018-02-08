@@ -8,6 +8,7 @@ import models.behaviors.behavior.Behavior
 import models.behaviors.events.{EventType, RunEvent, ScheduledEvent}
 import models.behaviors.scheduling.Scheduled
 import models.behaviors.scheduling.recurrence.Recurrence
+import models.loggedevent.{CauseType, ScheduledBehaviorRun}
 import models.team.Team
 import play.api.libs.json.Json
 import services.DataService
@@ -75,6 +76,8 @@ case class ScheduledBehavior(
   def updateNextTriggeredForAction(dataService: DataService): DBIO[ScheduledBehavior] = {
     dataService.scheduledBehaviors.updateNextTriggeredForAction(this)
   }
+
+  val causeType: CauseType = ScheduledBehaviorRun
 
   def toRaw: RawScheduledBehavior = {
     RawScheduledBehavior(
