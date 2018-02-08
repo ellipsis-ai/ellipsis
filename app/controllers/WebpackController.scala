@@ -31,7 +31,7 @@ class WebpackController @Inject()(
         Ok(response.body).withHeaders(headers: _*).as(contentType)
       }
     } else {
-      val asset = Asset(s"/bundles/$file")
+      val asset = Asset(s"javascripts/$file")
       Future.successful(Redirect(routes.RemoteAssets.getAsset(asset)))
     }
   }
