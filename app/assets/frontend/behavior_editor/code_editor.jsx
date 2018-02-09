@@ -7,6 +7,11 @@ import 'codemirror/mode/javascript/javascript';
 import 'codemirror/addon/lint/lint';
 import 'codemirror/addon/lint/javascript-lint';
 import 'codemirror/addon/hint/show-hint';
+import 'codemirror/addon/edit/closebrackets';
+import 'codemirror/addon/fold/foldcode';
+import 'codemirror/addon/fold/foldgutter';
+import 'codemirror/addon/fold/brace-fold';
+import 'codemirror/addon/comment/comment';
 
 const CodeEditor = React.createClass({
   propTypes: {
@@ -138,7 +143,7 @@ const CodeEditor = React.createClass({
         options={{
           mode: "javascript",
           firstLineNumber: this.props.firstLineNumber,
-          gutters: ["CodeMirror-lint-markers","CodeMirror-linenumbers"],
+          gutters: ["CodeMirror-lint-markers","CodeMirror-linenumbers", "CodeMirror-foldgutter"],
           hintOptions: { hint: this.autocompleteParams },
           indentUnit: 2,
           indentWithTabs: false,
@@ -150,9 +155,12 @@ const CodeEditor = React.createClass({
           smartIndent: true,
           tabSize: 2,
           viewportMargin: Infinity,
+          autoCloseBrackets: true,
+          foldGutter: true,
           extraKeys: {
-            Esc: "autocomplete",
-            Tab: this.replaceTabsWithSpaces
+            "Esc": "autocomplete",
+            "Tab": this.replaceTabsWithSpaces,
+            "Cmd-/": "toggleComment"
           }
         }}
       />
