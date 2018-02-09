@@ -8,6 +8,7 @@ import 'codemirror/addon/lint/lint';
 import 'codemirror/addon/lint/javascript-lint';
 import 'codemirror/addon/hint/show-hint';
 import 'codemirror/addon/edit/closebrackets';
+import 'codemirror/addon/edit/matchbrackets';
 import 'codemirror/addon/fold/foldcode';
 import 'codemirror/addon/fold/foldgutter';
 import 'codemirror/addon/fold/brace-fold';
@@ -156,6 +157,7 @@ const CodeEditor = React.createClass({
           tabSize: 2,
           viewportMargin: Infinity,
           autoCloseBrackets: true,
+          matchBrackets: true,
           foldGutter: true,
           extraKeys: {
             "Esc": "autocomplete",

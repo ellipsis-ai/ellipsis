@@ -10,6 +10,7 @@
 
 .CodeMirror {
   .type-monospace();
+  color: @gray-darkest;
   font-size: @type-s;
   line-height: @xl;
   height: auto;
@@ -17,6 +18,35 @@
   border-width: 0 @border-width 0 0;
   border-style: solid;
   border-right-color: @border-color;
+}
+
+/* Color scheme */
+
+.cm-s-default .cm-keyword {
+  color: @blue-medium-text;
+}
+
+.cm-s-default .cm-def,
+.cm-s-default .cm-variable {
+  color: @blue-darkest;
+}
+
+.cm-s-default .cm-string,
+.cm-s-default .cm-string-2 {
+  color: @orange-medium;
+}
+
+.cm-s-default .cm-property {
+  color: @blue-dark;
+}
+
+.cm-s-default .cm-operator {
+  color: @green-dark;
+}
+
+div.CodeMirror span.CodeMirror-matchingbracket {
+  background-color: @yellow-lighter;
+  color: @black-faded;
 }
 
 /* Use pseudo-elements to draw top/bottom borders so they're positioned correctly */
