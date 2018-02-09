@@ -161,7 +161,7 @@ const CodeConfiguration = React.createClass({
                 <div className="column column-shrink plxxxl prn align-r position-relative">
                   <code className="type-disabled type-s position-absolute position-top-right prxs">1</code>
                 </div>
-                <div className="column column-expand plxs">
+                <div className="column column-expand pll">
                   <code className="type-s">
                     <span className="type-s type-weak">{
                       this.props.functionExecutesImmediately ?
@@ -178,7 +178,7 @@ const CodeConfiguration = React.createClass({
               </div>
             </div>
 
-            <div style={{ marginLeft: "49px" }}>
+            <div style={{ marginLeft: "60px" }}>
               <Notifications
                 ref="notifications"
                 notifications={this.state.notifications}
@@ -221,7 +221,7 @@ const CodeConfiguration = React.createClass({
               <div className="column column-shrink plxxxl prn align-r position-relative">
                 <code className="type-disabled type-s position-absolute position-top-right prxs">{this.getLastLineNumberForCode()}</code>
               </div>
-              <div className="column column-expand plxs">
+              <div className="column column-expand pll">
                 <div className="columns columns-elastic">
                   <div className="column column-expand">
                     <code className="type-weak type-s">{
