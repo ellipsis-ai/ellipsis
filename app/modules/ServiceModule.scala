@@ -53,6 +53,8 @@ import models.billing.plan.{PlanService, PlanServiceImpl}
 import models.billing.subscription.{SubscriptionService, SubscriptionServiceImpl}
 import models.billing.invoice.{InvoiceService, InvoiceServiceImpl}
 import models.billing.active_user_record.{ActiveUserRecordService, ActiveUserRecordServiceImpl}
+import models.billing.addon.{AddonService, AddonServiceImpl}
+import models.billing.customer.{CustomerService, CustomerServiceImpl}
 import services.billing.{BillingService, BillingServiceImpl}
 import services._
 import net.codingwell.scalaguice.ScalaModule
@@ -126,6 +128,8 @@ class ServiceModule extends AbstractModule with ScalaModule {
     bind[BillingService].to[BillingServiceImpl]
     bind[ActiveUserRecordService].to[ActiveUserRecordServiceImpl]
     bind[StatsService].to[StatsServiceImpl]
+    bind[AddonService].to[AddonServiceImpl]
+    bind[CustomerService].to[CustomerServiceImpl]
 
     bind[Models].asEagerSingleton()
     bind[PlanService].to[PlanServiceImpl]

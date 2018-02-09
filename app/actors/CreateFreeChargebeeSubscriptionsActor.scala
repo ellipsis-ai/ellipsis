@@ -25,7 +25,7 @@ class CreateFreeChargebeeSubscriptionsActor @Inject() (
                                    ) extends Actor {
 
   // initial delay of 1 minute so that, in the case of errors & actor restarts, it doesn't hammer external APIs
-  val tick = context.system.scheduler.schedule(1 minute, 10 minutes, self, "tick")
+  val tick = context.system.scheduler.schedule(1 minute, 1 minutes, self, "tick")
   val createSubFlag = configuration.get[Boolean]("billing.auto_create_free_subscription")
 
   override def postStop() = {
@@ -45,7 +45,7 @@ class CreateFreeChargebeeSubscriptionsActor @Inject() (
           subs <- createSubsFor(orgs)
         } yield {}
       } else {
-        Logger.info("Billing message: creating free Chargebee subscriptions for new teams is off.")
+        Logger.info("Billing message: Creating free Chargebee subscriptions for new teams is OFF.")
       }
     }
   }
@@ -55,22 +55,17 @@ class CreateFreeChargebeeSubscriptionsActor @Inject() (
       organizations.map { org =>
         for {
           org <- dataService.organizations.setChargebeeCustomerIdFor(org, Some(IDs.next))
-          teams <- dataService.teams.allTeamsFor(org)
-          subs <- teamsToSubs(teams, org)
+          sub <- createSub(org)
         } yield {
-          subs
+          sub
         }
       }
-    }.map(_.flatten)
+    }
   }
 
-  private def teamsToSubs(teams: Seq[Team], org: Organization): Future[Seq[Option[Subscription]]] = {
-    Future.sequence(teams.map(createSub(_, org)))
-  }
-
-  private def createSub(team: Team, org: Organization): Future[Option[Subscription]] = {
-    dataService.subscriptions.createFreeSubscription(team, org).map { maybeSubscription =>
-      Logger.info(s"Created Chargebee free subscription for team ${team.name}, " +
+  private def createSub(org: Organization): Future[Option[Subscription]] = {
+    dataService.subscriptions.createFreeSubscription(org).map { maybeSubscription =>
+      Logger.info(s"Created Chargebee free subscription for Org ${org.name}, " +
         s"organization id: ${org.id}, Chargebee customer id: ${org.maybeChargebeeCustomerId}")
       maybeSubscription
     }

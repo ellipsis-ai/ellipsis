@@ -1,6 +1,7 @@
 package models.billing.invoice
 
 
+import java.sql.Timestamp
 import java.time.{Instant, OffsetDateTime, ZoneId}
 import javax.inject.Inject
 
@@ -49,7 +50,7 @@ class InvoiceServiceImpl @Inject()(
     Future {
       blocking {
         Invoice.addAddonCharge(fatInvoice.invoice.id)
-          .addonId(addOnIdFor(fatInvoice.plan))
+          .addonId(addonIdFor(fatInvoice.plan))
           .addonQuantity(activeCount)
           .request()
       }
@@ -68,21 +69,30 @@ class InvoiceServiceImpl @Inject()(
 
   def billingPeriodFor(fatInvoice: FatInvoice): Future[BillingPeriod] = {
     for {
-      previousInvoice <- previousInvoiceFor(fatInvoice)
-      startDate <- Future.successful(getInvoiceDateAsOffsetDateTimeFor(previousInvoice.invoice))
-      endDate <- Future.successful(getInvoiceDateAsOffsetDateTimeFor(fatInvoice.invoice))
+      maybePreviousInvoice <- previousInvoiceFor(fatInvoice)
+      startDate <- Future.successful {
+        maybePreviousInvoice match {
+          case None => getDateAsOffsetDateTimeFor(fatInvoice.subscription.startDate())
+          case Some(fi) => getDateAsOffsetDateTimeFor(fi.invoice.date())
+        }
+      }
+      endDate <- Future.successful(getDateAsOffsetDateTimeFor(fatInvoice.invoice.date()))
     } yield {
       BillingPeriod(startDate, endDate)
     }
   }
 
+  private def getDateAsOffsetDateTimeFor(timestamp: Timestamp): OffsetDateTime = {
+    OffsetDateTime.ofInstant(Instant.ofEpochMilli(timestamp.getTime), ZoneId.systemDefault())
+  }
+
   private def toFatInvoice(invoice: Invoice): Future[FatInvoice] = {
     for {
-      maybeSub <- dataService.subscriptions.get(invoice.subscriptionId())
+      maybeSub <- dataService.subscriptions.find(invoice.subscriptionId())
       sub <- Future.successful {
         maybeSub.getOrElse(throw new InvalidInvoice("Subscription Id is invalid"))
       }
-      maybePlan <- dataService.plans.get(sub.planId())
+      maybePlan <- dataService.plans.find(sub.planId())
       plan <- Future.successful {
         maybePlan.getOrElse(throw new InvalidInvoice("Plan Id is invalid"))
       }
@@ -91,21 +101,24 @@ class InvoiceServiceImpl @Inject()(
     }
   }
 
-  private def previousInvoiceFor(fatInvoice: FatInvoice): Future[FatInvoice] = {
+  private def previousInvoiceFor(fatInvoice: FatInvoice): Future[Option[FatInvoice]] = {
     Future {
       blocking {
-        val result: ListResult = Invoice.list().subscriptionId().is(fatInvoice.subscription.id())
-          .status().isNot(Status.PAID)
+        val result: ListResult = Invoice.list()
+          .subscriptionId().is(fatInvoice.subscription.id())
+          .date().before(fatInvoice.invoice.date())
           .limit(1)
           .sortByDate(SortOrder.DESC)
           .request(chargebeeEnv)
-        result.get(0).invoice()
+        result
       }
-    }.map(FatInvoice(_, fatInvoice.subscription, fatInvoice.plan))
-  }
-
-  private def getInvoiceDateAsOffsetDateTimeFor(invoice: Invoice): OffsetDateTime = {
-    OffsetDateTime.ofInstant(Instant.ofEpochMilli(invoice.date().getTime), ZoneId.systemDefault())
+    }.map { r =>
+      if (r.length == 0) {
+        None
+      } else {
+        Some(FatInvoice(r.get(0).invoice(), fatInvoice.subscription, fatInvoice.plan))
+      }
+    }
   }
 
 }

@@ -3,9 +3,9 @@ package models.billing.plan
 
 import javax.inject.Inject
 
-import com.chargebee.models.{Plan, Subscription}
+import com.chargebee.models.Plan
 import com.google.inject.Provider
-import play.api.Configuration
+import play.api.{Configuration, Logger}
 import services.DataService
 
 import scala.collection.JavaConversions._
@@ -35,12 +35,53 @@ class PlanServiceImpl @Inject()(
       }
   }
 
-  def get(planId: String): Future[Option[Plan]] = {
+  def find(id: String): Future[Option[Plan]] = {
     Future {
       blocking{
-        Some(Plan.retrieve(planId).request(chargebeeEnv).plan())
+        Some(Plan.retrieve(id).request(chargebeeEnv).plan())
+      }
+    }.recover{
+      case e: Throwable => {
+        Logger.error(s"Error while finding Plan ${id}", e)
+      }
+      None
+    }
+  }
+
+  def create(data: PlanData): Future[Option[Plan]] = {
+    Future {
+      blocking {
+        Some(Plan.create()
+          .id(data.id)
+          .name(data.name)
+          .invoiceName(data.invoiceName)
+          .price(data.price)
+          .request(chargebeeEnv)
+          .plan())
+      }
+    }.recover {
+      case e: Throwable => {
+        Logger.error(s"Error while creating Plan with ${data}", e)
+      }
+      None
+    }
+  }
+
+  def createStandardPlans: Future[Seq[Option[Plan]]] = Future.sequence(StandardPlans.list.map(create(_)))
+
+  def delete(plan: Plan): Future[Option[Plan]] = {
+    Future {
+      blocking {
+        Some(Plan.delete(plan.id).request(chargebeeEnv).plan())
+      }
+    }.recover {
+      case e: Throwable => {
+        Logger.error(s"Error while deleting Plan with id ${plan.id}", e)
+        None
       }
     }
   }
+
+  def delete(plans: Seq[Plan]): Future[Seq[Option[Plan]]] = Future.sequence(plans.map(delete(_)))
 
 }

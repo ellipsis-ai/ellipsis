@@ -97,6 +97,13 @@ class TeamServiceImpl @Inject() (
     save(team.copy(maybeTimeZone = Some(tz)))
   }
 
+  def organizationFor(team: Team): Future[Organization] = {
+    team.maybeOrganizationId match {
+      case Some(organizationId) => dataService.organizations.find(organizationId).map(_.get)
+      case None => throw new Exception("A team must have an organization!")
+    }
+  }
+
   def setOrganizationIdFor(team: Team, organizationId: Option[String]): Future[Team] = {
     save(team.copy(maybeOrganizationId = organizationId))
   }

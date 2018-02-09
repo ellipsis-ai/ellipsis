@@ -8,6 +8,6 @@ import scala.concurrent.Future
 
 trait BillingService {
 
-  def processInvoices(): Future[Seq[Invoice]]
+  def processInvoices: Future[Seq[Invoice]]
 
 }

@@ -37,6 +37,15 @@ class OrganizationServiceImpl @Inject()(
     dataService.run(findQueryFor(id).result.map(_.headOption))
   }
 
+  def create(name: String, chargebeeCustomerId: String): Future[Organization] = save(
+    Organization(
+      IDs.next,
+      name,
+      Some(chargebeeCustomerId),
+      OffsetDateTime.now()
+    )
+  )
+
   def create(name: String): Future[Organization] = save(
     Organization(
       IDs.next,

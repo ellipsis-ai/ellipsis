@@ -45,6 +45,8 @@ import models.behaviors.scheduling.scheduledbehavior.ScheduledBehaviorService
 import models.behaviors.scheduling.scheduledmessage.ScheduledMessageService
 import models.behaviors.triggers.messagetrigger.MessageTriggerService
 import models.billing.active_user_record.ActiveUserRecordService
+import models.billing.addon.AddonService
+import models.billing.customer.CustomerService
 import models.billing.invoice.InvoiceService
 import models.billing.plan.PlanService
 import models.devmodechannel.DevModeChannelService
@@ -105,9 +107,11 @@ class PostgresDataService @Inject() (
                                       val behaviorGroupVersionSHAsProvider: Provider[BehaviorGroupVersionSHAService],
                                       val behaviorResponsesProvider: Provider[BehaviorResponseService],
                                       val subscriptionsProvider: Provider[SubscriptionService],
-                                      val plansProvider: Provider[PlanService],
+                                      val planProvider: Provider[PlanService],
                                       val invoiceProvider: Provider[InvoiceService],
-                                      val activeUserRecordProvider: Provider[ActiveUserRecordService]
+                                      val activeUserRecordProvider: Provider[ActiveUserRecordService],
+                                      val addonProvider: Provider[AddonService],
+                                      val customerProvider: Provider[CustomerService]
 
                                     ) extends DataService {
 
@@ -156,9 +160,11 @@ class PostgresDataService @Inject() (
   val behaviorGroupDeployments = behaviorGroupDeploymentsProvider.get
   val behaviorGroupVersionSHAs = behaviorGroupVersionSHAsProvider.get
   val subscriptions = subscriptionsProvider.get
-  val plans = plansProvider.get
+  val plans = planProvider.get
+  val addons = addonProvider.get
   val invoices = invoiceProvider.get
   val activeUserRecords = activeUserRecordProvider.get
+  val customers = customerProvider.get
 
   def behaviorResponses = behaviorResponsesProvider.get
 

@@ -4,6 +4,13 @@ import psycopg2
 import datetime
 import string, random
 
+# reset chargebeetest site data
+# reset ellipsis db
+# add 5 teams with active users
+# upgrade subscriptions
+# trigger pending invoice
+# test with no invoice
+
 
 def insert_team(cur, id, name):
   sql = """INSERT INTO public.teams(id, name, time_zone, created_at, organization_id) VALUES (%s, %s, %s, %s, %s);"""

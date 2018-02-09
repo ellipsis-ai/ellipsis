@@ -18,6 +18,8 @@ trait OrganizationService {
 
     def create(name: String): Future[Organization]
 
+    def create(name: String, chargebeeCustomerId: String): Future[Organization]
+
     def createAction(name: String): DBIO[Organization]
 
     def save(organization: Organization): Future[Organization]

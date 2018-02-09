@@ -20,7 +20,7 @@ trait ChargebeeService {
   val starterPlanId: String = configuration.get[String]("billing.chargebee.starter_plan_id")
   val businessPlanId: String = configuration.get[String]("billing.chargebee.business_plan_id")
 
-  def addOnIdFor(plan: Plan): String = {
+  def addonIdFor(plan: Plan): String = {
     s"active-user-${plan.id}"
   }
 }

@@ -44,6 +44,7 @@ import models.behaviors.scheduling.scheduledbehavior.ScheduledBehaviorService
 import models.behaviors.scheduling.scheduledmessage.ScheduledMessageService
 import models.behaviors.triggers.messagetrigger.MessageTriggerService
 import models.billing.active_user_record.ActiveUserRecordService
+import models.billing.addon.AddonService
 import models.billing.invoice.InvoiceService
 import models.billing.plan.PlanService
 import models.billing.subscription.SubscriptionService
@@ -108,6 +109,7 @@ class MockDataService extends DataService with MockitoSugar {
   val subscriptions = mock[SubscriptionService]
   val plans = mock[PlanService]
   val invoices = mock[InvoiceService]
+  val addons = mock[AddonService]
   val activeUserRecords = mock[ActiveUserRecordService]
 
   private def dontCallMe = throw new Exception("Don't call me")

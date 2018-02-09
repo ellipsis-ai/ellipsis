@@ -57,7 +57,18 @@ trait DBSpec extends PlaySpec with OneAppPerSuite with MockitoSugar {
   val botResultService = app.injector.instanceOf(classOf[BotResultService])
   implicit val ec: ExecutionContext = app.injector.instanceOf(classOf[ExecutionContext])
 
-  def newSavedTeam: Team = runNow(dataService.teams.create(IDs.next))
+
+  def newSavedTeam: Team = {
+    runNow {
+      for {
+        label <- Future.successful(scala.util.Random.nextInt(10000))
+        org <- dataService.organizations.create(s"o-${label}")
+        team <- dataService.teams.create(s"t-${label}", org)
+      } yield {
+        team
+      }
+    }
+  }
 
   def newSavedUserOn(team: Team): User = runNow(dataService.users.createFor(team.id))
 

@@ -9,18 +9,18 @@ import akka.actor.Actor
 import services.billing.BillingService
 import play.api.Configuration
 
-object ClosePendingInvoices {
+object ClosePendingInvoicesActor {
   final val name = "close-pending-invoices"
 }
 
-class ClosePendingInvoices @Inject() (
+class ClosePendingInvoicesActor @Inject() (
                                        val billingService: BillingService,
                                        val configuration: Configuration,
                                        implicit val ec: ExecutionContext
                                      ) extends Actor {
 
   // initial delay of 1 minute so that, in the case of errors & actor restarts, it doesn't hammer external APIs
-  val tick = context.system.scheduler.schedule(1 minute, 30 minutes, self, "tick")
+  val tick = context.system.scheduler.schedule(1 minute, 1 minutes, self, "tick")
   val closePendingFlag = configuration.get[Boolean]("billing.process_pending_invoices")
 
   override def postStop() = {
@@ -30,9 +30,10 @@ class ClosePendingInvoices @Inject() (
   def receive = {
     case "tick" => {
       if (closePendingFlag) {
-        billingService.processInvoices()
+        Logger.info("Billing message: Closing pending invoices is ON.")
+        billingService.processInvoices
       } else {
-        Logger.info("Billing message: Auto close pending info is off.")
+        Logger.info("Billing message: Closing pending invoices is OFF.")
       }
     }
   }

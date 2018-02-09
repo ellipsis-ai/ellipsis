@@ -20,6 +20,8 @@ trait TeamService {
 
   def allTeamsFor(organization: Organization): Future[Seq[Team]]
 
+  def organizationFor(team: Team): Future[Organization]
+
   def setNameFor(team: Team, name: String): Future[Team]
 
   def setTimeZoneFor(team: Team, tz: ZoneId): Future[Team]
