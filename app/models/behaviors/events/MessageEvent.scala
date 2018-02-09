@@ -84,7 +84,7 @@ trait MessageEvent extends Event {
     if (maybeActivatedTrigger.isDefined) {
       TriggerMatchedInChat
     } else {
-      ConversationResponse
+      ConversationCompleted
     }
   }
 

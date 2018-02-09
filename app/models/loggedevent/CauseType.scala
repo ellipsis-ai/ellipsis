@@ -11,7 +11,7 @@ sealed trait CauseType {
 object CauseType extends Enum[CauseType] {
   val values = List(
     TriggerMatchedInChat,
-    ConversationResponse,
+    ConversationCompleted,
     BotMentioned,
     PrivateMessageToBot,
     ScheduledBehaviorRun,
@@ -26,8 +26,8 @@ object TriggerMatchedInChat extends CauseType {
   val name: String = "trigger_matched_in_chat"
 }
 
-object ConversationResponse extends CauseType {
-  val name: String = "conversation_response"
+object ConversationCompleted extends CauseType {
+  val name: String = "conversation_completed"
 }
 
 object BotMentioned extends CauseType {
