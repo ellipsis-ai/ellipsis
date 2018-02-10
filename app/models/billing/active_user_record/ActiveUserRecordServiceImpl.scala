@@ -6,6 +6,8 @@ import javax.inject.Inject
 
 import com.google.inject.Provider
 import drivers.SlickPostgresDriver.api._
+import models.IDs
+import models.accounts.user.User
 import play.api.Configuration
 import services.DataService
 
@@ -21,10 +23,28 @@ class ActiveUserRecordServiceImpl @Inject()(
 
   import models.billing.active_user_record.ActiveUserRecordQueries._
 
+  def create(user: User, createdAt: OffsetDateTime = OffsetDateTime.now): Future[ActiveUserRecord] = {
+    save(ActiveUserRecord(IDs.next, user.id, createdAt))
+  }
+
+  def save(aur: ActiveUserRecord): Future[ActiveUserRecord] = {
+    dataService.run(saveAction(aur))
+  }
+
   def allRecords: Future[Seq[ActiveUserRecord]] = dataService.run(all.result)
 
   def countFor(teamId: String, start: OffsetDateTime, end: OffsetDateTime): Future[Int] = {
-    dataService.run(uncompiledCountWithTeamIdAndDateQuery(teamId, start, end).result)
+    dataService.run(compiledCountWithTeamIdAndDateQuery(teamId, start, end).result)
   }
 
+
+  private def saveAction(aur: ActiveUserRecord): DBIO[ActiveUserRecord] = {
+    findQueryFor(aur.id).result.flatMap { result =>
+      result.headOption.map { existing =>
+        all.filter(_.id === aur.id).update(aur)
+      }.getOrElse {
+        all += aur
+      }.map { _ => aur }
+    }
+  }
 }

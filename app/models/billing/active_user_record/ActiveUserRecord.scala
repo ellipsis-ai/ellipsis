@@ -6,23 +6,8 @@ import models.IDs
 import play.api.libs.json.{JsValue, Json}
 
 
-case class ActiveUserRecord(
-                             id: String,
-                             teamId: String,
-                             userId: Option[String],
-                             externalUserId: Option[String],
-                             derivedUserId: String,
-                             createdAt: OffsetDateTime
-                           )
+case class ActiveUserRecord(id: String, userId: String, createdAt: OffsetDateTime)
 
 object ActiveUserRecord {
-  def apply(teamId: String, userId: Option[String], externalUserId: Option[String]): ActiveUserRecord = {
-    ActiveUserRecord(
-      IDs.next,
-      teamId,
-      userId,
-      externalUserId,
-      userId.getOrElse(externalUserId.get),
-      OffsetDateTime.now)
-  }
+  def apply(userId: String): ActiveUserRecord = ActiveUserRecord(IDs.next, userId, OffsetDateTime.now)
 }

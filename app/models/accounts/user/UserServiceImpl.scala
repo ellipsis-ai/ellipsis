@@ -56,6 +56,7 @@ class UserServiceImpl @Inject() (
   }
 
   def createOnTeamWithId(teamId: String): User = User(IDs.next, teamId, None)
+
   def createOnTeam(team: Team): User = createOnTeamWithId(team.id)
 
   def createFor(teamId: String): Future[User] = save(createOnTeamWithId(teamId))

@@ -1,6 +1,8 @@
 package support
 
 import java.sql.Timestamp
+import java.time.Instant
+
 import java.util.Calendar
 import scala.concurrent.duration._
 
@@ -13,13 +15,14 @@ import scala.concurrent.{Await, Future, blocking}
 trait BillingSpec extends DBSpec with ChargebeeService  {
 
   def runNowAndBePatient[T](future: Future[T]): T = {
-    Await.result(future, 60.seconds)
+    Await.result(future, 120.seconds)
   }
 
   def startAfresh: Future[TimeMachine] = {
     Future {
       blocking {
         TimeMachine.startAfresh("delorean")
+          .genesisTime(Timestamp.from(Instant.now.minusSeconds(3600*24*90)))
           .request(chargebeeEnv)
           .timeMachine()
           .waitForTimeTravelCompletion(chargebeeEnv)

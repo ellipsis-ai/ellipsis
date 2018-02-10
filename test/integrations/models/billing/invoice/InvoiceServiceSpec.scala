@@ -4,8 +4,6 @@ import com.chargebee.models.{Subscription, TimeMachine}
 import models.IDs
 import support.BillingSpec
 
-import scala.concurrent.Future
-
 
 class InvoiceServiceSpec extends BillingSpec {
 
@@ -19,31 +17,47 @@ class InvoiceServiceSpec extends BillingSpec {
         val user = newSavedUserOn(team)
 
         // >>>>  MOVE BACK 6 MONTHS <<<<
-
+        info("Moving 6 months back")
         val timeMachine: TimeMachine = runNowAndBePatient(restChargebeeSite)
         val sub = runNow(dataService.subscriptions.createFreeSubscription(org))
 
 
-        // >>>>  NOW MOVE 35 DAYS FORWARD <<<<
+//        // >>>>  NOW MOVE 35 DAYS FORWARD <<<<
+//        info("Moving 35 days forward")
+//        val tm_35 = runNowAndBePatient(moveForward(timeMachine, 35))
+//
+//        // There should be only one invoice in a pending state ...
+//        val pendingInvoices = runNow(dataService.invoices.allPendingFatInvoices())
+//        pendingInvoices.length mustBe 1
+//        val fatInvoice = pendingInvoices.head
+//
+//        // with a billing period from the start of the subscription to the billing date ...
+//        val billingPeriod = runNow(dataService.invoices.billingPeriodFor(fatInvoice))
+//
+//        billingPeriod.start mustBe fatInvoice.subscription.startedAt()
+//        billingPeriod.end mustBe fatInvoice.invoice.date()
+//
+//        // and the sub should still be active.
+//        fatInvoice.subscription.status() mustBe Subscription.Status.ACTIVE
 
-        val tm_35 = runNowAndBePatient(moveForward(timeMachine, 35))
 
-        // There should be only one invoice in a pending state ...
-        val pendingInvoices = runNow(dataService.invoices.allPendingFatInvoices())
-        pendingInvoices.length mustBe 1
-        val fatInvoice = pendingInvoices.head
-
-        // with a billing period from the start of the subscription to the billing date ...
-        val billingPeriod = runNow(dataService.invoices.billingPeriodFor(fatInvoice))
-
-        billingPeriod.start mustBe fatInvoice.subscription.startedAt()
-        billingPeriod.end mustBe fatInvoice.invoice.date()
-
-        // and the sub should still be active.
-        fatInvoice.subscription.status() mustBe Subscription.Status.ACTIVE
 
         // >>>>  NOW MOVE FORWARD 30 DAYS MORE <<<<
-        val tm_65 = runNowAndBePatient(moveForward(tm_35, 30))
+//        info("Moving 30 days forward")
+//        val tm_65 = runNowAndBePatient(moveForward(timeMachine, 65))
+//
+//        val pendingInvoices2 = runNow(dataService.invoices.allPendingFatInvoices())
+//        pendingInvoices2.length mustBe 2
+//        val fatInvoice2 = pendingInvoices2.head
+//
+//        // with a billing period from the start of the subscription to the billing date ...
+//        val billingPeriod2 = runNow(dataService.invoices.billingPeriodFor(fatInvoice2))
+//        billingPeriod2.start mustBe pendingInvoices2.head.invoice.date()
+//        billingPeriod2.end mustBe fatInvoice2.invoice.date()
+//
+//        // and the sub should still be active.
+//        fatInvoice2.subscription.status() mustBe Subscription.Status.ACTIVE
+
 
       })
     }

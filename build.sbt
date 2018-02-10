@@ -1,4 +1,3 @@
-import com.typesafe.sbt.web.pipeline.Pipeline
 import play.sbt.PlayImport.PlayKeys.playRunHooks
 import sbt._
 import com.typesafe.sbt.web.SbtWeb
@@ -8,7 +7,7 @@ name := """ellipsis"""
 version := "1.0-SNAPSHOT"
 scalaVersion := "2.11.8"
 
-pipelineStages := Seq(webpackBuild, rjs, digest, gzip)
+pipelineStages := Seq(webpack, digest, gzip)
 
 lazy val slackClientVersion = "cd123f514e2be7fa0a7df087197f7cccbba3ca75"
 lazy val slackClientProject = ProjectRef(uri(s"https://github.com/ellipsis-ai/slack-scala-client.git#$slackClientVersion"), "slack-scala-client")
@@ -47,18 +46,6 @@ libraryDependencies ++= Seq(
   "net.codingwell" %% "scala-guice" % "4.0.0",
   "net.ceedubs" %% "ficus" % "1.1.2",
   "com.amazonaws" % "aws-java-sdk" % "1.11.123",
-  "org.webjars" % "requirejs" % "2.2.0",
-  "org.webjars.bower" % "core.js" % "2.4.1",
-  "org.webjars.bower" % "react" % "15.3.1",
-  "org.webjars.bower" % "fetch" % "1.0.0",
-  "org.webjars.bower" % "codemirror" % "5.22.2",
-  "org.webjars.bower" % "jshint" % "2.9.5",
-  "org.webjars.bower" % "javascript-debounce" % "1.0.0",
-  "org.webjars.bower" % "moment" % "2.14.1",
-  "org.webjars.bower" % "urijs" % "1.18.1",
-  "org.webjars.npm" % "diff" % "3.4.0",
-  "org.webjars.bower" % "node-uuid" % "1.4.7",
-  "org.webjars.npm" % "little-loader" % "0.2.0",
   "com.atlassian.commonmark" % "commonmark" % "0.6.0",
   "com.atlassian.commonmark" % "commonmark-ext-gfm-strikethrough" % "0.6.0",
   "com.atlassian.commonmark" % "commonmark-ext-autolink" % "0.6.0",
@@ -75,33 +62,8 @@ libraryDependencies ++= Seq(
 // JavaScript configuration begins
 JsEngineKeys.engineType := JsEngineKeys.EngineType.Node
 
-RjsKeys.mainConfig := "build"
-RjsKeys.mainModule := "build"
-BabelKeys.options := WebJs.JS.Object(
-  "presets" -> List("es2015", "react")
-)
-
-// Starts: Webpack build task
 val appPath = "./app/assets/frontend"
-val targetDir = "target/web/webpack/bundles"
-val assetDir = "bundles"
-val webpackBuild = taskKey[Pipeline.Stage]("Webpack build task.")
-
-webpackBuild := { mappings =>
-  Process("npm run build", file(appPath), ("WEBPACK_BUILD_PATH", targetDir)).!
-  val files = IO.listFiles(file(s"./$targetDir"))
-  val newMappings = files.map(file => {
-    println(file.getPath)
-    (file, file.getPath.replace(targetDir, assetDir))
-  })
-  mappings ++ newMappings
-}
-
-packageBin in Universal := (packageBin in Universal).dependsOn(webpackBuild).value
-webpackBuild in Assets := (webpackBuild in Assets).dependsOn(WebKeys.webModules in Assets).value
-dist := (dist dependsOn webpackBuild).value
-stage := (stage dependsOn webpackBuild).value
-// Ends.
+val targetDir = "target/web/webpack"
 
 // Starts: Webpack server process when running locally and build actions for production bundle
 lazy val frontendDirectory = baseDirectory {_ / appPath}

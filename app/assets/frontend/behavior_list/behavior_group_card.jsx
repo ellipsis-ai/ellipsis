@@ -1,9 +1,9 @@
 import * as React from 'react';
-import BehaviorGroup from '../../javascripts/models/behavior_group';
-import Checkbox from '../../javascripts/form/checkbox';
-import SVGInstall from '../../javascripts/svg/install';
-import SVGInstalled from '../../javascripts/svg/installed';
-import SVGInstalling from '../../javascripts/svg/installing';
+import BehaviorGroup from '../models/behavior_group';
+import Checkbox from '../form/checkbox';
+import SVGInstall from '../svg/install';
+import SVGInstalled from '../svg/installed';
+import SVGInstalling from '../svg/installing';
 
 const BehaviorGroupCard = React.createClass({
     propTypes: {

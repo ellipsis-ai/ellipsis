@@ -1,12 +1,12 @@
 import * as React from 'react';
-import Checkbox from '../../../javascripts/form/checkbox';
-import Collapsible from '../../../javascripts/shared_ui/collapsible';
-import CsrfTokenHiddenInput from '../../../javascripts/shared_ui/csrf_token_hidden_input';
-import FormInput from '../../../javascripts/form/input';
-import SettingsPage from '../../../javascripts/shared_ui/settings_page';
-import BrowserUtils from '../../../javascripts/lib/browser_utils';
-import ifPresent from '../../../javascripts/lib/if_present';
-import Page from '../../../javascripts/shared_ui/page';
+import Checkbox from '../../form/checkbox';
+import Collapsible from '../../shared_ui/collapsible';
+import CsrfTokenHiddenInput from '../../shared_ui/csrf_token_hidden_input';
+import FormInput from '../../form/input';
+import SettingsPage from '../../shared_ui/settings_page';
+import BrowserUtils from '../../lib/browser_utils';
+import ifPresent from '../../lib/if_present';
+import Page from '../../shared_ui/page';
 
 const IntegrationEditor = React.createClass({
     propTypes: Object.assign({}, Page.requiredPropTypes, {

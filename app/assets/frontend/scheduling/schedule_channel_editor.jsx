@@ -1,8 +1,8 @@
 import * as React from 'react';
-import Checkbox from '../../javascripts/form/checkbox';
-import Collapsible from '../../javascripts/shared_ui/collapsible';
-import SearchWithResults from '../../javascripts/form/search_with_results';
-import SVGCheckmark from '../../javascripts/svg/checkmark';
+import Checkbox from '../form/checkbox';
+import Collapsible from '../shared_ui/collapsible';
+import SearchWithResults from '../form/search_with_results';
+import SVGCheckmark from '../svg/checkmark';
 import ChannelName from './channel_name';
 import ScheduledAction from '../models/scheduled_action';
 import ScheduleChannel from '../models/schedule_channel';

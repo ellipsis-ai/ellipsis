@@ -1,18 +1,14 @@
 // @flow
-import type {PageRequiredProps} from '../../../javascripts/shared_ui/page';
+import type {PageRequiredProps} from '../../shared_ui/page';
 import * as React from 'react';
 import moment from 'moment';
-import Collapsible from '../../../javascripts/shared_ui/collapsible';
+import Collapsible from '../../shared_ui/collapsible';
 
-// TODO: Remove the "any" types here once the required modules are converted to ES6
-import ButtonComponent from '../../../javascripts/form/button';
-const Button: any = ButtonComponent;
-import SettingsPage from '../../../javascripts/shared_ui/settings_page';
-import TeamTimeZoneSetterComponent from '../../time_zone/team_time_zone_setter';
-const TeamTimeZoneSetter: any = TeamTimeZoneSetterComponent;
-import PageComponent from '../../../javascripts/shared_ui/page';
-const Page: any = PageComponent;
-import autobind from '../../../javascripts/lib/autobind';
+import Button from '../../form/button';
+import SettingsPage from '../../shared_ui/settings_page';
+import TeamTimeZoneSetter from '../../time_zone/team_time_zone_setter';
+import Page from '../../shared_ui/page';
+import autobind from '../../lib/autobind';
 
 type RegionalSettingsProps = {
   csrfToken: string,

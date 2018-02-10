@@ -8,8 +8,8 @@
     @* Re-include the CSS from the app server URL so it can be read by JS *@
     <link rel='stylesheet' href='@routes.RemoteAssets.getAsset("stylesheets/main.css").url'>
 
-    <script src='@config.assets.getUrl("lib/little-loader/dist/little-loader.min.js")'></script>
     <script src='@config.assets.getWebpackBundle("vendor.js")'></script>
     <script src='@routes.StyleguideController.colors()'></script>
+    <script src='@config.assets.getWebpackBundle("styleguideColors.js")'></script>
   </div>
 }

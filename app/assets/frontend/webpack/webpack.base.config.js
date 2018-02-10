@@ -7,18 +7,31 @@ const path = require('path');
  */
 const webpackConfig = {
   entry: {
+    // Used on every page, should include bootstrapping code
+    global: ['./app/assets/frontend/page_header/page_header'],
+
+    // Vendor JS used by React pages
     vendor: [
       'core-js',
       'javascript-debounce',
-      'node-uuid',
+      'uuid',
       'react',
       'react-dom',
       'urijs',
       'diff',
       'whatwg-fetch'
     ],
+
+    // JSHint loaded separately just on the skill editor
+    jshint: ['jshint'],
+
+    // Simple scripts used on non-React pages:
+    add_to_slack: './app/assets/frontend/slack/add_to_slack',
+
+    // React loaders:
     apiTokenGenerator: './app/assets/frontend/settings/api_token_generator/loader',
     awsConfigEditor: './app/assets/frontend/settings/aws_config_editor/loader',
+    behaviorEditor: './app/assets/frontend/behavior_editor/loader',
     behaviorList: './app/assets/frontend/behavior_list/loader',
     environmentVariables: './app/assets/frontend/settings/environment_variables/loader',
     githubConfig: './app/assets/frontend/github_config/loader',
@@ -32,7 +45,7 @@ const webpackConfig = {
     path: "",
     filename: '[name].js',
     sourceMapFilename: '[name].map',
-    publicPath: '/bundles/'
+    publicPath: '/javascripts/'
   },
   externals: {
   },
@@ -47,7 +60,7 @@ const webpackConfig = {
         use: {
           loader: 'babel-loader',
           options: {
-            presets: ['es2015', 'react']
+            presets: ['env', 'react']
           }
         },
       }
@@ -58,7 +71,10 @@ const webpackConfig = {
   },
   plugins: [
     new webpack.optimize.CommonsChunkPlugin({
-      name: 'vendor',
+      name: 'global'
+    }),
+    new webpack.optimize.CommonsChunkPlugin({
+      names: ['jshint', 'vendor'],
       minChunks: Infinity
     })
   ]
@@ -71,6 +87,6 @@ module.exports = (env) => {
   } else {
     console.log(`[Webpack] Build path set to ${targetDir}`);
   }
-  webpackConfig.output.path = path.resolve(__dirname, `../../../../${targetDir}`);
+  webpackConfig.output.path = path.resolve(targetDir);
   return webpackConfig;
 };

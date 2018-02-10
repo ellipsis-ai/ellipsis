@@ -193,7 +193,7 @@ trait DBSpec extends PlaySpec with OneAppPerSuite with MockitoSugar {
   }
 
   def runNow[T](future: Future[T]): T = {
-    Await.result(future, 60.seconds)
+    Await.result(future, 30.seconds)
   }
 
   def runNow[T](dbio: DBIO[T]): T = {

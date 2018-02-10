@@ -2,12 +2,12 @@ import * as React from 'react';
 import TestUtils from 'react-addons-test-utils';
 import mockFetch from './../../../mocks/mock_fetch';
 global.fetch = mockFetch;
-jest.mock('../../../../app/assets/javascripts/lib/browser_utils');
+jest.mock('../../../../app/assets/frontend/lib/browser_utils');
 import Scheduling from '../../../../app/assets/frontend/scheduling/index';
 import Recurrence from '../../../../app/assets/frontend/models/recurrence';
 import ScheduledAction from '../../../../app/assets/frontend/models/scheduled_action';
 import ScheduleChannel from '../../../../app/assets/frontend/models/schedule_channel';
-import ID from '../../../../app/assets/javascripts/lib/id';
+import ID from '../../../../app/assets/frontend/lib/id';
 
 jsRoutes.controllers.ScheduledActionsController.index = () => ({ url: "/test" });
 

@@ -8,7 +8,6 @@ import play.api.Logger
 import play.api.Configuration
 import akka.actor.Actor
 import models.organization.Organization
-import models.team.Team
 import services.DataService
 import com.chargebee.models.Subscription
 import models.IDs

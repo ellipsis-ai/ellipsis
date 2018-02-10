@@ -1,16 +1,16 @@
 import * as React from 'react';
 import EditableName from './editable_name';
-import BehaviorGroup from '../../javascripts/models/behavior_group';
+import BehaviorGroup from '../models/behavior_group';
 import BehaviorGroupCard from './behavior_group_card';
 import BehaviorGroupInfoPanel from './behavior_group_info_panel';
-import Collapsible from '../../javascripts/shared_ui/collapsible';
-import ConfirmActionPanel from '../../javascripts/panels/confirm_action';
-import SearchInput from '../../javascripts/form/search';
+import Collapsible from '../shared_ui/collapsible';
+import ConfirmActionPanel from '../panels/confirm_action';
+import SearchInput from '../form/search';
 import InstalledBehaviorGroupsPanel from './installed_behavior_groups_panel';
 import ListHeading from './list_heading';
-import Page from '../../javascripts/shared_ui/page';
-import ResponsiveColumn from '../../javascripts/shared_ui/responsive_column';
-import SubstringHighlighter from '../../javascripts/shared_ui/substring_highlighter';
+import Page from '../shared_ui/page';
+import ResponsiveColumn from '../shared_ui/responsive_column';
+import SubstringHighlighter from '../shared_ui/substring_highlighter';
 import debounce from 'javascript-debounce';
 
 const ANIMATION_DURATION = 0.25;
