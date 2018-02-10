@@ -7,11 +7,12 @@ import scala.concurrent.{ExecutionContext, Future, blocking}
 import play.api.{Configuration, Logger}
 import services.DataService
 import com.chargebee.models.Subscription
+import com.chargebee.models.enums.AutoCollection
 import com.google.inject.Provider
 import models.billing.ChargebeeService
 import models.organization.Organization
-import scala.collection.JavaConversions._
 
+import scala.collection.JavaConversions._
 import scala.collection.mutable.ListBuffer
 
 
@@ -40,6 +41,7 @@ class SubscriptionServiceImpl @Inject()(
           case Some(chargebeeCustomerId) => {
             Some(Subscription.create()
               .planId(freePlanId)
+              .autoCollection(AutoCollection.OFF)
               .param("cf_organization_id", organization.id)
               .param("cf_organization_name", organization.name)
               .customerId(chargebeeCustomerId)

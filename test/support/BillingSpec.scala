@@ -1,35 +1,57 @@
 package support
 
+import java.sql.Timestamp
+import java.util.Calendar
+import scala.concurrent.duration._
+
 import com.chargebee.models.TimeMachine
 import models.billing.ChargebeeService
 
-import scala.concurrent.{Future, blocking}
+import scala.concurrent.{Await, Future, blocking}
 
 
 trait BillingSpec extends DBSpec with ChargebeeService  {
 
+  def runNowAndBePatient[T](future: Future[T]): T = {
+    Await.result(future, 60.seconds)
+  }
+
   def startAfresh: Future[TimeMachine] = {
     Future {
       blocking {
-        TimeMachine.startAfresh("delorean").request(chargebeeEnv)
-          .timeMachine().waitForTimeTravelCompletion(chargebeeEnv)
+        TimeMachine.startAfresh("delorean")
+          .request(chargebeeEnv)
+          .timeMachine()
+          .waitForTimeTravelCompletion(chargebeeEnv)
       }
     }
   }
 
-  def backToPresent: Future[TimeMachine] = {
-    Future {
+//  Timestamp old;
+//  ZonedDateTime zonedDateTime = old.toInstant().atZone(ZoneId.of("UTC"));
+//  Timestamp new = Timestamp.from(zonedDateTime.plus(14, ChronoUnit.DAYS).toInstant());
+
+  private def addDays(days: Int, timestamp: Timestamp): Timestamp = {
+    val cal = Calendar.getInstance()
+    cal.setTimeInMillis(timestamp.getTime())
+    cal.add(Calendar.DAY_OF_MONTH, days)
+    new Timestamp(cal.getTime().getTime())
+  }
+
+  def moveForward(timeMachine: TimeMachine, forDays: Int) = {
+    Future{
       blocking {
-        TimeMachine.travelForward("delorean").request(chargebeeEnv)
-          .timeMachine().waitForTimeTravelCompletion(chargebeeEnv)
+        TimeMachine.travelForward("delorean")
+          .destinationTime(addDays(forDays, timeMachine.destinationTime()))
+          .request(chargebeeEnv)
+          .timeMachine()
+          .waitForTimeTravelCompletion(chargebeeEnv)
       }
     }
   }
 
   def clearCustomerData = {
     for {
-//      _ <- startAfresh
-//      _ <- backToPresent
       subs <- dataService.subscriptions.allSubscriptions()
       _ <- dataService.subscriptions.delete(subs)
       custs <- dataService.customers.allCustomers()
@@ -46,9 +68,9 @@ trait BillingSpec extends DBSpec with ChargebeeService  {
     } yield {}
   }
 
-  def restChargebeeSite = {
+  def restChargebeeSite: Future[TimeMachine] = {
     for {
-      _ <- clearCustomerData
+      timeMachine <- startAfresh
 
       // Chargebee needs a moment to delete the Subscriptions
       _ <- Future { Thread.sleep(2000) }
@@ -56,7 +78,9 @@ trait BillingSpec extends DBSpec with ChargebeeService  {
       _ <- clearPlansAndAddons
       _ <- dataService.plans.createStandardPlans
       _ <- dataService.addons.createStandardAddons
-    } yield {}
+    } yield {
+      timeMachine
+    }
   }
 
 }

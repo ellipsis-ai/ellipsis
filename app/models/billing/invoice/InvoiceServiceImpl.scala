@@ -72,18 +72,14 @@ class InvoiceServiceImpl @Inject()(
       maybePreviousInvoice <- previousInvoiceFor(fatInvoice)
       startDate <- Future.successful {
         maybePreviousInvoice match {
-          case None => getDateAsOffsetDateTimeFor(fatInvoice.subscription.startDate())
-          case Some(fi) => getDateAsOffsetDateTimeFor(fi.invoice.date())
+          case None => fatInvoice.subscription.createdAt()
+          case Some(fi) => fi.invoice.date()
         }
       }
-      endDate <- Future.successful(getDateAsOffsetDateTimeFor(fatInvoice.invoice.date()))
+      endDate <- Future.successful(fatInvoice.invoice.date())
     } yield {
       BillingPeriod(startDate, endDate)
     }
-  }
-
-  private def getDateAsOffsetDateTimeFor(timestamp: Timestamp): OffsetDateTime = {
-    OffsetDateTime.ofInstant(Instant.ofEpochMilli(timestamp.getTime), ZoneId.systemDefault())
   }
 
   private def toFatInvoice(invoice: Invoice): Future[FatInvoice] = {

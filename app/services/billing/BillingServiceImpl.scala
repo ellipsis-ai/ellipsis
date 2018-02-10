@@ -65,7 +65,7 @@ class BillingServiceImpl @Inject()(
       billingPeriod <- dataService.invoices.billingPeriodFor(meteredFatInvoice)
       orgId <- Future.successful(meteredFatInvoice.subscription.optString("cf_organization_id"))
       org <- dataService.organizations.find(orgId)
-      count <- statsService.activeUsersCountFor(org.get, billingPeriod.start, billingPeriod.end)
+      count <- statsService.activeUsersCountFor(org.get, billingPeriod.startToOffsetDateTime, billingPeriod.endToOffsetDateTime)
     } yield {
        count
     }
