@@ -34,8 +34,7 @@ class ActiveUserRecordServiceSpec extends DBSpec {
 
         runNow(dataService.activeUserRecords.allRecords).length mustBe 5
 
-        val a = runNow(dataService.activeUserRecords.countFor(team.id, OffsetDateTime.now.minusMonths(1), OffsetDateTime.now))
-        info(a)
+        runNow(dataService.activeUserRecords.countFor(team.id, OffsetDateTime.now.minusMonths(1), OffsetDateTime.now)) mustBe 5
 
         simulateActivityFor(Seq(users.head, users.head, users.head))
         simulateActivityFor(users.take(5))

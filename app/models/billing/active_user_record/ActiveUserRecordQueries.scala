@@ -40,8 +40,8 @@ object ActiveUserRecordQueries {
 
   def uncompiledCountForTeamBetweenDates(teamId: Rep[String], start: Rep[OffsetDateTime], end: Rep[OffsetDateTime]) = {
     uncompiledAllForTeamBetweenDates(teamId, start, end)
-//      .distinctOn(_._1.userId)
       .groupBy(_._1.userId)
+      .map { case(userId, recordsQuery) => (userId, recordsQuery.length) }
   }
   val compiledCountWithTeamIdAndDateQuery = uncompiledCountForTeamBetweenDates _
 }
