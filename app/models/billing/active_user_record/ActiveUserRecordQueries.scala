@@ -42,8 +42,7 @@ object ActiveUserRecordQueries {
     uncompiledAllForTeamBetweenDates(teamId, start, end)
 //      .distinctOn(_._1.userId)
       .groupBy(_._1.userId)
-      .length
   }
-  val compiledCountWithTeamIdAndDateQuery = Compiled(uncompiledCountForTeamBetweenDates _)
+  val compiledCountWithTeamIdAndDateQuery = uncompiledCountForTeamBetweenDates _
 }
 
