@@ -21,6 +21,8 @@ class BillingServiceImpl @Inject()(
   case class InvalidBillingRecord(message: String) extends Exception(message)
 
 
+  def isActive: Boolean = (dataService.plans.site != "changeme" && dataService.plans.apiKey != "changeme")
+
   def processInvoices(): Future[Seq[Invoice]] = {
     for {
 

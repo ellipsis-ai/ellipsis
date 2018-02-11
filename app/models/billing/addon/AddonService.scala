@@ -8,9 +8,9 @@ import scala.concurrent.Future
 
 trait AddonService extends ChargebeeService {
 
-  def create(data: AddonData): Future[Addon]
+  def create(data: AddonData, doNotLogError: Boolean=false): Future[Option[Addon]]
 
-  def createStandardAddons: Future[Seq[Option[Addon]]]
+  def createStandardAddons(doNotLogError: Boolean=false): Future[Seq[Option[Addon]]]
 
   def allAddons(count: Int = 100): Future[Seq[Addon]]
 

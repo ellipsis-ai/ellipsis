@@ -48,7 +48,7 @@ class PlanServiceImpl @Inject()(
     }
   }
 
-  def create(data: PlanData): Future[Option[Plan]] = {
+  def create(data: PlanData, doNotLogError: Boolean = false): Future[Option[Plan]] = {
     Future {
       blocking {
         Some(Plan.create()
@@ -61,13 +61,17 @@ class PlanServiceImpl @Inject()(
       }
     }.recover {
       case e: Throwable => {
-        Logger.error(s"Error while creating Plan with ${data}", e)
+        if (!doNotLogError) Logger.error(s"Error while creating Plan with ${data}", e)
       }
       None
     }
   }
 
-  def createStandardPlans: Future[Seq[Option[Plan]]] = Future.sequence(StandardPlans.list.map(create(_)))
+  def createStandardPlans(doNotLogError: Boolean = false): Future[Seq[Option[Plan]]] = {
+      Future.sequence {
+        StandardPlans.list.map(create(_, doNotLogError))
+      }
+  }
 
   def delete(plan: Plan): Future[Option[Plan]] = {
     Future {

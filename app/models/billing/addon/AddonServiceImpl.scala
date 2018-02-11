@@ -20,10 +20,10 @@ class AddonServiceImpl @Inject()(
 
   def dataService = dataServiceProvider.get
 
-  def create(data: AddonData): Future[Addon] = {
+  def create(data: AddonData, doNotLogError: Boolean=false): Future[Option[Addon]] = {
     Future {
       blocking {
-        Addon.create()
+        Some(Addon.create()
           .id(data.id)
           .name(data.name)
           .invoiceName(data.invoiceName)
@@ -33,23 +33,20 @@ class AddonServiceImpl @Inject()(
           .chargeType(Addon.ChargeType.NON_RECURRING)
           .`type`(Addon.Type.QUANTITY)
           .request(chargebeeEnv)
-          .addon()
+          .addon())
       }
+    }.recover {
+      case e: Throwable => {
+        if (!doNotLogError) Logger.error(s"Error while creating Addon ${data}", e)
+      }
+        None
     }
   }
 
 
-  def createStandardAddons: Future[Seq[Option[Addon]]] = {
+  def createStandardAddons(doNotLogError: Boolean=false): Future[Seq[Option[Addon]]] = {
     Future.sequence {
-      StandardAddons.list.map { data =>
-        create(data).map(Some(_))
-          .recover {
-            case e: Throwable => {
-              Logger.error(s"Error while creating Addon ${data}", e)
-            }
-              None
-          }
-      }
+      StandardAddons.list.map(data => create(data, doNotLogError))
     }
   }
 

@@ -12,9 +12,9 @@ trait PlanService extends ChargebeeService {
 
   def find(id: String): Future[Option[Plan]]
 
-  def createStandardPlans: Future[Seq[Option[Plan]]]
+  def create(data: PlanData, doNotLogError: Boolean = false): Future[Option[Plan]]
 
-  def create(data: PlanData): Future[Option[Plan]]
+  def createStandardPlans(doNotLogError: Boolean = false): Future[Seq[Option[Plan]]]
 
   def delete(plan: Plan): Future[Option[Plan]]
 

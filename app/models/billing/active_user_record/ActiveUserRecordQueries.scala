@@ -43,6 +43,6 @@ object ActiveUserRecordQueries {
       .groupBy(_._1.userId)
       .map { case(userId, recordsQuery) => (userId, recordsQuery.length) }
   }
-  val compiledCountWithTeamIdAndDateQuery = uncompiledCountForTeamBetweenDates _
+  val compiledCountForTeamBetweenDates = uncompiledCountForTeamBetweenDates _
 }
 

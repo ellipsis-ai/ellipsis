@@ -10,4 +10,5 @@ trait BillingService {
 
   def processInvoices: Future[Seq[Invoice]]
 
+  def isActive: Boolean
 }

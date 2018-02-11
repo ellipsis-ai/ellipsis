@@ -213,7 +213,8 @@ in your development server.
 
 If you need to touch the payments code you need to:
 1. Create a new free Chargebee account
-2. Get the test site URL and generate a new API key
+2. Get the test site URL and generate a new API key. Complete the setup by clicking on the link 
+in the email Chargebee sent you
 3. Add 2 env. variables to your IntellJ run configuration: CHARGEBEE_SITE and CHARGEBEE_API_KEY. 
 Note that the CHARGEBEE_SITE is not the full URL but just the subdomain.
 4. Configure the Chargebee webhooks:  go to Settings › API & Webhooks › Webhook Settings, in 
@@ -223,6 +224,8 @@ _https://ellipsis-matteo.ngrok.io/webhooks/chargebee/events_.
 5. Enable metered billing: go to Settings > SITE SETTINGS > Site Info & Billing Rules, 
 enable Notify and wait to close Invoices and to save the changes made click Update Site
 Info & Billing Rules. [More info](https://www.chargebee.com/docs/metered_billing.html)
-6. Create the Plans in Chargebee: run the script ./scripts/billing/create_plans.py.
-The script needs to access the Chargebee credentials and it assumes they are stored in a json
-file in .local_dev/credentials.json (.local_dev is in the .gitignore file). 
+6. Create the following cutom fields:
+On Plan, a field of type checkbox, named "metered"
+On Customer, two single line fields, organization_id and organization_name
+On Subscription, two single line fields, organization_id and organization_name
+7. Plans and Addons are automatically created by the Playapp at start up.
