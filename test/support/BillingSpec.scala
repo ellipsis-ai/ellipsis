@@ -79,8 +79,8 @@ trait BillingSpec extends DBSpec with ChargebeeService  {
       _ <- Future { Thread.sleep(2000) }
 
       _ <- clearPlansAndAddons
-      _ <- dataService.plans.createStandardPlans
-      _ <- dataService.addons.createStandardAddons
+      _ <- dataService.plans.createStandardPlans()
+      _ <- dataService.addons.createStandardAddons()
     } yield {
       timeMachine
     }
