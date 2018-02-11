@@ -16,11 +16,6 @@ object DefaultStorageItemQueries {
   }
   val findByIdQuery = Compiled(uncompiledFindByIdQuery _)
 
-  def uncompiledAllForBehaviorGroupQuery(behaviorGroupId: Rep[String]) = {
-    allWithBehavior.filter { case(_, ((behavior, _), _)) => behavior.groupId === behaviorGroupId }
-  }
-  val allForBehaviorGroupQuery = Compiled(uncompiledAllForBehaviorGroupQuery _)
-
   def uncompiledByBehaviorIdQuery(behaviorId: Rep[String]) = {
     allWithBehavior.
       filter { case(item, ((behavior, _), _)) => behavior.id === behaviorId }
