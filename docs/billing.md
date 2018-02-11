@@ -1,10 +1,7 @@
-# DESIGN NOTES ABOUT BILLING
+# BILLING
 
 
-## Work in progress
-- need to deploy this
-
-## Our Plans
+## Plans
 Developer Plan - Free plan, up to 3 active user per month
 Starter Plan - $5/active user/month, minimum $25/month
 Business Plan - $8/active user/month, minimum $80/month
@@ -31,6 +28,3 @@ One Ellipsis Organization entity can have multiple Subscriptions but only one of
 
 ## Metered Billing
 Every 10 minutes we run an actor that fetches the list of pending invoices and process them.
-
-
-
