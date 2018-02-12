@@ -84,13 +84,13 @@ jobs:
       - run:
           name: Run Scala specs
           command: |
-            cat /dev/null | sbt "test-only -- -l tags.IntegrationTest"
+            cat /dev/null | activator "test-only -- -l tags.IntegrationTest"
       - run:
           name: Maybe run integration specs
           command: |
            if [ "${CIRCLE_BRANCH}" == "prod" ]
            then
-             cat /dev/null | sbt "test-only -- -n tags.IntegrationTest"
+             cat /dev/null | activator "test-only -- -n tags.IntegrationTest"
            fi
       - run:
           name: Ensure static assets build
