@@ -413,12 +413,8 @@ class SlackController @Inject() (
       val user = info.event.user
       val slackUserId = user.id
       val slackTeamId = info.teamId
-      val displayName = Option(user.profile.displayName).filter(_.nonEmpty).
-        orElse(user.profile.realName).
-        getOrElse(user.name)
       val profile = user.profile
       val profileData = SlackUserProfileData(
-        displayName,
         profile,
         user.isPrimaryOwner.getOrElse(false),
         user.isOwner.getOrElse(false),
@@ -429,7 +425,7 @@ class SlackController @Inject() (
       val userData = SlackUserData(
         slackUserId,
         slackTeamId,
-        displayName,
+        user.name,
         profile.realName,
         user.tz,
         deleted = user.deleted.getOrElse(false),

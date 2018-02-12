@@ -67,11 +67,7 @@ class SlackEventServiceImpl @Inject()(
           val profileNameData = info.profile.map { profile =>
             SlackUserProfileNameData(profile.display_name, profile.first_name, profile.last_name, profile.real_name)
           }.getOrElse(SlackUserProfileNameData(info.name, None, None, None))
-          val userDisplayName = Option(profileNameData.displayName).filter(_.nonEmpty).
-            orElse(profileNameData.realName).
-            getOrElse(info.name)
           val profileData = SlackUserProfileData(
-            userDisplayName,
             profileNameData,
             isPrimaryOwner = info.is_primary_owner.getOrElse(false),
             isOwner = info.is_owner.getOrElse(false),
@@ -82,7 +78,7 @@ class SlackEventServiceImpl @Inject()(
           val userData = SlackUserData(
             slackUserId,
             slackTeamId,
-            userDisplayName,
+            info.name,
             info.profile.flatMap(_.real_name),
             info.tz,
             info.deleted.getOrElse(false),

@@ -40,7 +40,7 @@ case class SlackMessageEvent(
         maybeSlackUserData <- services.slackEventService.maybeSlackUserDataFor(profile)
       } yield {
         maybeSlackUserData.map { userData =>
-          s"@${userData.displayName} "
+          s"@${userData.getDisplayName} "
         }.getOrElse("...")
       }
     }
