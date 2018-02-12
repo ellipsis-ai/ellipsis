@@ -37,7 +37,7 @@ class ActiveUserRecordServiceImpl @Inject()(
 
   def countFor(teamId: String, start: OffsetDateTime, end: OffsetDateTime): Future[Int] = {
     if (start.compareTo(end) >= 0 ) throw WrongTimeInterval(s"start date time ${start} cannot be greater or equal to end ${end}")
-    val action = compiledCountForTeamBetweenDates(teamId, start, end).result.map(_.length)
+    val action = countForTeamBetweenDates(teamId, start, end).result.map(_.length)
     dataService.run(action)
   }
 

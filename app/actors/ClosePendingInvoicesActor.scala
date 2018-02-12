@@ -19,8 +19,7 @@ class ClosePendingInvoicesActor @Inject() (
                                        implicit val ec: ExecutionContext
                                      ) extends Actor {
 
-  // initial delay of 1 minute so that, in the case of errors & actor restarts, it doesn't hammer external APIs
-  val tick = context.system.scheduler.schedule(1 minute, 1 minutes, self, "tick")
+  val tick = context.system.scheduler.schedule(1 minute, 1 hour, self, "tick")
   val closePendingFlag = configuration.get[Boolean]("billing.process_pending_invoices")
 
   override def postStop() = {
@@ -30,7 +29,6 @@ class ClosePendingInvoicesActor @Inject() (
   def receive = {
     case "tick" => {
       if (closePendingFlag) {
-        Logger.info("Billing message: Closing pending invoices is ON.")
         billingService.processInvoices
       } else {
         Logger.info("Billing message: Closing pending invoices is OFF.")

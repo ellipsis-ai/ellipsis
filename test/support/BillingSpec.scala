@@ -30,17 +30,6 @@ trait BillingSpec extends DBSpec with ChargebeeService  {
     }
   }
 
-//  Timestamp old;
-//  ZonedDateTime zonedDateTime = old.toInstant().atZone(ZoneId.of("UTC"));
-//  Timestamp new = Timestamp.from(zonedDateTime.plus(14, ChronoUnit.DAYS).toInstant());
-
-  private def addDays(days: Int, timestamp: Timestamp): Timestamp = {
-    val cal = Calendar.getInstance()
-    cal.setTimeInMillis(timestamp.getTime())
-    cal.add(Calendar.DAY_OF_MONTH, days)
-    new Timestamp(cal.getTime().getTime())
-  }
-
   def moveForward(timeMachine: TimeMachine, forDays: Int) = {
     Future{
       blocking {
@@ -84,6 +73,14 @@ trait BillingSpec extends DBSpec with ChargebeeService  {
     } yield {
       timeMachine
     }
+  }
+
+
+  private def addDays(days: Int, timestamp: Timestamp): Timestamp = {
+    val cal = Calendar.getInstance()
+    cal.setTimeInMillis(timestamp.getTime())
+    cal.add(Calendar.DAY_OF_MONTH, days)
+    new Timestamp(cal.getTime().getTime())
   }
 
 }

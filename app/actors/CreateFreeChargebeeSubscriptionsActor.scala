@@ -23,8 +23,7 @@ class CreateFreeChargebeeSubscriptionsActor @Inject() (
                                              implicit val ec: ExecutionContext
                                    ) extends Actor {
 
-  // initial delay of 1 minute so that, in the case of errors & actor restarts, it doesn't hammer external APIs
-  val tick = context.system.scheduler.schedule(1 minute, 1 minutes, self, "tick")
+  val tick = context.system.scheduler.schedule(1 minute, 10 minutes, self, "tick")
   val createSubFlag = configuration.get[Boolean]("billing.auto_create_free_subscription")
 
   override def postStop() = {
