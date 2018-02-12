@@ -82,9 +82,16 @@ jobs:
             - v10-playapp-{{ arch }}-{{ .Branch }}-{{ checksum "build.sbt" }}
             - v10-playapp-{{ arch }}-{{ checksum "build.sbt" }}
       - run:
-          name: Run Activator tests
+          name: Run Scala specs
           command: |
-            cat /dev/null | activator test
+            cat /dev/null | sbt "test-only -- -l tags.IntegrationTest"
+      - run:
+          name: Maybe run integration specs
+          command: |
+           if [ "${CIRCLE_BRANCH}" == "prod" ]
+           then
+             cat /dev/null | sbt "test-only -- -n tags.IntegrationTest"
+           fi
       - run:
           name: Ensure static assets build
           command: |
