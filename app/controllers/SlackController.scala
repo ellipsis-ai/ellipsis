@@ -4,7 +4,7 @@ import javax.inject.Inject
 
 import com.google.inject.Provider
 import com.mohiva.play.silhouette.api.Silhouette
-import json.{SlackUserData, SlackUserProfileData, SlackUserProfileNameData}
+import json.{SlackUserData, SlackUserProfileData}
 import models.behaviors.builtins.DisplayHelpBehavior
 import models.behaviors.events.SlackMessageActionConstants._
 import models.behaviors.events._
@@ -364,7 +364,7 @@ class SlackController @Inject() (
   case class UserChangeInfo(
                              id: String,
                              name: String,
-                             profile: SlackUserProfileNameData,
+                             profile: SlackUserProfileData,
                              isPrimaryOwner: Option[Boolean],
                              isOwner: Option[Boolean],
                              isRestricted: Option[Boolean],
@@ -394,7 +394,7 @@ class SlackController @Inject() (
             "first_name" -> optional(nonEmptyText),
             "last_name" -> optional(nonEmptyText),
             "real_name" -> optional(nonEmptyText)
-          )(SlackUserProfileNameData.apply)(SlackUserProfileNameData.unapply),
+          )(SlackUserProfileData.apply)(SlackUserProfileData.unapply),
           "is_primary_owner" -> optional(boolean),
           "is_owner" -> optional(boolean),
           "is_restricted" -> optional(boolean),
@@ -414,22 +414,17 @@ class SlackController @Inject() (
       val slackUserId = user.id
       val slackTeamId = info.teamId
       val profile = user.profile
-      val profileData = SlackUserProfileData(
-        profile,
-        user.isPrimaryOwner.getOrElse(false),
-        user.isOwner.getOrElse(false),
-        user.isRestricted.getOrElse(false),
-        user.isUltraRestricted.getOrElse(false),
-        user.tz
-      )
       val userData = SlackUserData(
         slackUserId,
         slackTeamId,
         user.name,
-        profile.realName,
+        user.isPrimaryOwner.getOrElse(false),
+        user.isOwner.getOrElse(false),
+        user.isRestricted.getOrElse(false),
+        user.isUltraRestricted.getOrElse(false),
         user.tz,
         deleted = user.deleted.getOrElse(false),
-        profileData
+        Some(profile)
       )
        services.cacheService.cacheSlackUserData(userData)
       Logger.info(s"Cached new Slack user data for team id $slackTeamId, user id $slackUserId")

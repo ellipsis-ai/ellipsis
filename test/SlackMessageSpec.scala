@@ -1,4 +1,4 @@
-import json.{SlackUserData, SlackUserProfileData, SlackUserProfileNameData}
+import json.{SlackUserData, SlackUserProfileData}
 import models.behaviors.events.SlackMessage
 import org.scalatestplus.play.PlaySpec
 
@@ -15,17 +15,18 @@ class SlackMessageSpec extends PlaySpec {
     userId,
     "T1234",
     username,
-    Some("Luke Andrews"),
+    isPrimaryOwner = false,
+    isOwner = false,
+    isRestricted = false,
+    isUltraRestricted = false,
     tz,
     deleted = false,
-    SlackUserProfileData(
-      SlackUserProfileNameData(displayName, Some(firstName), Some(lastName), Some(fullName)),
-      isPrimaryOwner = false,
-      isOwner = false,
-      isRestricted = false,
-      isUltraRestricted = false,
-      tz
-    )
+    Some(SlackUserProfileData(
+      displayName,
+      Some(firstName),
+      Some(lastName),
+      Some(fullName)
+    ))
   )
   val userList = Set(user)
 

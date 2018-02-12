@@ -39,19 +39,16 @@ trait SlackEvent {
     }
   }
 
-  private def legacyProfileDataFor(slackUserData: SlackUserData): JsObject = {
+  private def profileDataFor(slackUserData: SlackUserData): JsObject = {
+    val profile: JsValue = slackUserData.profile.map(Json.toJson(_)).getOrElse(JsObject.empty)
     Json.obj(
       "name" -> slackUserData.getDisplayName,
-      "profile" -> Json.obj(
-        "firstName" -> slackUserData.profile.profile.firstName,
-        "lastName" -> slackUserData.profile.profile.lastName,
-        "realName" -> slackUserData.profile.profile.realName
-      ),
-      "isPrimaryOwner" -> slackUserData.profile.isPrimaryOwner,
-      "isOwner" -> slackUserData.profile.isOwner,
-      "isRestricted" -> slackUserData.profile.isRestricted,
-      "isUltraRestricted" -> slackUserData.profile.isUltraRestricted,
-      "tz" -> slackUserData.profile.tz
+      "profile" -> profile,
+      "isPrimaryOwner" -> slackUserData.isPrimaryOwner,
+      "isOwner" -> slackUserData.isOwner,
+      "isRestricted" -> slackUserData.isRestricted,
+      "isUltraRestricted" -> slackUserData.isUltraRestricted,
+      "tz" -> slackUserData.tz
     )
   }
 
@@ -66,7 +63,7 @@ trait SlackEvent {
         "channelName" -> Json.toJson(maybeChannelInfo.map(_.name))
       ))
       maybeUser.map { user =>
-        Json.toJson(user.profile).as[JsObject] ++ legacyProfileDataFor(user) ++ channelDetails
+        profileDataFor(user) ++ channelDetails
       }.getOrElse {
         channelDetails
       }

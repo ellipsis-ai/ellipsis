@@ -1,6 +1,6 @@
 import java.time.OffsetDateTime
 
-import json.{SlackUserData, SlackUserProfileData, SlackUserProfileNameData}
+import json.{SlackUserData, SlackUserProfileData}
 import models.IDs
 import models.accounts.slack.botprofile.SlackBotProfile
 import models.behaviors.events.SlackEvent
@@ -35,16 +35,19 @@ class SlackEventSpec extends PlaySpec with MockitoSugar {
   val lastName = "Lumbergh"
   val fullName = "Bill Lumbergh"
   val tz = "America/New_York"
-  val profileNameData = SlackUserProfileNameData(displayName, Some(firstName), Some(lastName), Some(fullName))
-  val profile = SlackUserProfileData(
-    profileNameData,
+  val profileData = SlackUserProfileData(displayName, Some(firstName), Some(lastName), Some(fullName))
+  val slackUserData = SlackUserData(
+    slackUserId,
+    slackTeamId,
+    username,
     isPrimaryOwner = false,
     isOwner = false,
     isRestricted = false,
     isUltraRestricted = false,
-    Some(tz)
+    Some(tz),
+    deleted = false,
+    Some(profileData)
   )
-  val slackUserData = SlackUserData(slackUserId, slackTeamId, username, Some(fullName), Some(tz), deleted = false, profile)
 
   val date = OffsetDateTime.now.minusDays(365).toInstant.toEpochMilli
 
@@ -94,11 +97,11 @@ class SlackEventSpec extends PlaySpec with MockitoSugar {
         val event = TestSlackEvent(slackUserData.accountId, slackChannelInfo.id, mockSlackClient, slackBotProfile)
         val d: JsObject = await(event.detailsFor(services)(actorSystem, ec))
         (d \ "name").as[String] mustBe displayName
-        (d \ "isPrimaryOwner").as[Boolean] mustBe profile.isPrimaryOwner
-        (d \ "isOwner").as[Boolean] mustBe profile.isOwner
-        (d \ "isRestricted").as[Boolean] mustBe profile.isRestricted
-        (d \ "isUltraRestricted").as[Boolean] mustBe profile.isUltraRestricted
-        (d \ "tz").as[String] mustBe profile.tz.get
+        (d \ "isPrimaryOwner").as[Boolean] mustBe slackUserData.isPrimaryOwner
+        (d \ "isOwner").as[Boolean] mustBe slackUserData.isOwner
+        (d \ "isRestricted").as[Boolean] mustBe slackUserData.isRestricted
+        (d \ "isUltraRestricted").as[Boolean] mustBe slackUserData.isUltraRestricted
+        (d \ "tz").as[String] mustBe slackUserData.tz.get
         (d \ "channelMembers").as[Seq[String]] mustBe Seq(slackUserId, otherSlackUserId)
         (d \ "channelName").as[String] mustBe slackChannelInfo.name
         (d \ "profile" \ "firstName").as[String] mustBe firstName

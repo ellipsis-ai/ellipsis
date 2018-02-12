@@ -4,12 +4,19 @@ case class SlackUserData(
                           accountId: String,
                           accountTeamId: String,
                           accountName: String,
-                          fullName: Option[String],
+                          isPrimaryOwner: Boolean,
+                          isOwner: Boolean,
+                          isRestricted: Boolean,
+                          isUltraRestricted: Boolean,
                           tz: Option[String],
                           deleted: Boolean,
-                          profile: SlackUserProfileData
+                          profile: Option[SlackUserProfileData]
                         ) {
   def getDisplayName: String = {
-    profile.profile.maybeDisplayName.getOrElse(accountName)
+    profile.flatMap(_.maybeDisplayName).getOrElse(accountName)
+  }
+
+  def maybeRealName: Option[String] = {
+    profile.flatMap(_.realName)
   }
 }
