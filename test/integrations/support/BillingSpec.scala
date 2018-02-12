@@ -1,14 +1,14 @@
-package support
+package integrations.support
 
 import java.sql.Timestamp
 import java.time.Instant
-
 import java.util.Calendar
-import scala.concurrent.duration._
 
 import com.chargebee.models.TimeMachine
 import models.billing.ChargebeeService
+import support.DBSpec
 
+import scala.concurrent.duration._
 import scala.concurrent.{Await, Future, blocking}
 
 

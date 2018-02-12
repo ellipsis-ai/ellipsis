@@ -8,7 +8,7 @@ import scala.concurrent.Future
 
 trait InvoiceService extends ChargebeeService {
 
-  def allPending(count: Int = 100): Future[Seq[Invoice]]
+  def allPendingInDescOrder(count: Int = 100): Future[Seq[Invoice]]
 
   def addChargesForActiveUser(fatInvoice: FatInvoice, activeCount: Int): Future[FatInvoice]
 

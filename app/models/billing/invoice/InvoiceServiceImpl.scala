@@ -1,8 +1,6 @@
 package models.billing.invoice
 
 
-import java.sql.Timestamp
-import java.time.{Instant, OffsetDateTime, ZoneId}
 import javax.inject.Inject
 
 import com.chargebee.ListResult
@@ -10,7 +8,7 @@ import com.chargebee.filters.enums.SortOrder
 import com.chargebee.models.Invoice
 import com.chargebee.models.Invoice.Status
 import com.google.inject.Provider
-import play.api.Configuration
+import play.api.{Configuration, Logger}
 import services.DataService
 
 import scala.collection.JavaConversions._
@@ -26,10 +24,14 @@ class InvoiceServiceImpl @Inject()(
 
   def dataService = dataServiceProvider.get
 
-  def allPending(count: Int = 100): Future[Seq[Invoice]] = {
+  def allPendingInDescOrder(count: Int = 100): Future[Seq[Invoice]] = {
     Future {
       blocking {
-        Invoice.list().status().is(Status.PENDING).limit(count).request(chargebeeEnv)
+        Invoice.list()
+          .status().is(Status.PENDING)
+          .sortByDate(SortOrder.DESC)
+          .limit(count)
+          .request(chargebeeEnv)
       }
     }.map { result =>
       val buffer = ListBuffer[com.chargebee.models.Invoice]()
@@ -41,7 +43,7 @@ class InvoiceServiceImpl @Inject()(
   }
 
   def allPendingFatInvoices(): Future[Seq[FatInvoice]] = {
-    allPending().flatMap { invoices =>
+    allPendingInDescOrder().flatMap { invoices =>
       Future.sequence(invoices.map(toFatInvoice(_)))
     }
   }
@@ -73,7 +75,9 @@ class InvoiceServiceImpl @Inject()(
       startDate <- Future.successful {
         maybePreviousInvoice match {
           case None => fatInvoice.subscription.createdAt()
-          case Some(fi) => fi.invoice.date()
+          case Some(fi) => {
+            fi.invoice.date()
+          }
         }
       }
       endDate <- Future.successful(fatInvoice.invoice.date())
