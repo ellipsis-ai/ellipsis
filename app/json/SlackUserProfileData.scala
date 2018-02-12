@@ -1,7 +1,7 @@
 package json
 
 case class SlackUserProfileData(
-                                 name: String,
+                                 displayName: String,
                                  profile: SlackUserProfileNameData,
                                  isPrimaryOwner: Boolean,
                                  isOwner: Boolean,
@@ -11,6 +11,7 @@ case class SlackUserProfileData(
                                )
 
 case class SlackUserProfileNameData(
+                                     displayName: String,
                                      firstName: Option[String],
                                      lastName: Option[String],
                                      realName: Option[String]

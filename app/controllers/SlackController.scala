@@ -390,6 +390,7 @@ class SlackController @Inject() (
           "id" -> nonEmptyText,
           "name" -> nonEmptyText,
           "profile" -> mapping(
+            "display_name" -> nonEmptyText,
             "first_name" -> optional(nonEmptyText),
             "last_name" -> optional(nonEmptyText),
             "real_name" -> optional(nonEmptyText)
@@ -412,10 +413,12 @@ class SlackController @Inject() (
       val user = info.event.user
       val slackUserId = user.id
       val slackTeamId = info.teamId
-      val userName = user.name
+      val displayName = Option(user.profile.displayName).filter(_.nonEmpty).
+        orElse(user.profile.realName).
+        getOrElse(user.name)
       val profile = user.profile
       val profileData = SlackUserProfileData(
-        userName,
+        displayName,
         profile,
         user.isPrimaryOwner.getOrElse(false),
         user.isOwner.getOrElse(false),
@@ -426,13 +429,13 @@ class SlackController @Inject() (
       val userData = SlackUserData(
         slackUserId,
         slackTeamId,
-        userName,
+        displayName,
         profile.realName,
         user.tz,
         deleted = user.deleted.getOrElse(false),
         profileData
       )
-      services.cacheService.cacheSlackUserData(userData)
+       services.cacheService.cacheSlackUserData(userData)
       Logger.info(s"Cached new Slack user data for team id $slackTeamId, user id $slackUserId")
       Ok(":+1:")
     })

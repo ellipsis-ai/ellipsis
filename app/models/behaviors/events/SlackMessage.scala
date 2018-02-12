@@ -27,7 +27,7 @@ object SlackMessage {
 
   def augmentUserIdsWithNames(initialText: String, userList: Set[SlackUserData]): String = {
     userList.foldLeft(initialText) { (resultText, user) =>
-      resultText.replace(s"""<@${user.accountId}>""", s"""<@${user.accountId}|${user.accountName}>""")
+      resultText.replace(s"""<@${user.accountId}>""", s"""<@${user.accountId}|${user.displayName}>""")
     }
   }
 

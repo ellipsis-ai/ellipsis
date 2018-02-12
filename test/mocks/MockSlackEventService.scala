@@ -43,6 +43,7 @@ class MockSlackEventService extends SlackEventService with MockitoSugar {
     when(client.listIms).thenReturn(Future.successful(Seq()))
     val slackUser = slack.models.User(
       id = IDs.next,
+      team_id = None,
       name = IDs.next,
       deleted = None,
       color = None,
@@ -53,6 +54,7 @@ class MockSlackEventService extends SlackEventService with MockitoSugar {
       is_primary_owner = None,
       is_restricted = None,
       is_ultra_restricted = None,
+      is_stranger = None,
       has_2fa = None,
       has_files = None,
       tz = None,

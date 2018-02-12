@@ -9,7 +9,7 @@ scalaVersion := "2.11.8"
 
 pipelineStages := Seq(webpack, digest, gzip)
 
-lazy val slackClientVersion = "cd123f514e2be7fa0a7df087197f7cccbba3ca75"
+lazy val slackClientVersion = "298dee6abc7266e16160da745a744e7d35ca299d"
 lazy val slackClientProject = ProjectRef(uri(s"https://github.com/ellipsis-ai/slack-scala-client.git#$slackClientVersion"), "slack-scala-client")
 
 lazy val root =

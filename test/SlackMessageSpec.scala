@@ -5,7 +5,10 @@ import org.scalatestplus.play.PlaySpec
 class SlackMessageSpec extends PlaySpec {
 
   val userId = "U1234567"
-  val name = "attaboy"
+  val name = "Atta Boy"
+  val firstName = "Luke"
+  val lastName = "Andrews"
+  val fullName = s"$firstName $lastName"
   val tz = Some("America/Toronto")
   val user = SlackUserData(
     userId,
@@ -16,7 +19,7 @@ class SlackMessageSpec extends PlaySpec {
     deleted = false,
     SlackUserProfileData(
       name,
-      SlackUserProfileNameData(Some("Luke"), Some("Andrews"), Some("Luke Andrews")),
+      SlackUserProfileNameData(name, Some(firstName), Some(lastName), Some(fullName)),
       isPrimaryOwner = false,
       isOwner = false,
       isRestricted = false,
@@ -29,7 +32,7 @@ class SlackMessageSpec extends PlaySpec {
   "unformatLinks" should {
     "unformat channels and users" in {
       SlackMessage.unformatLinks("<@U12345678>") mustBe "@U12345678"
-      SlackMessage.unformatLinks("<@U12345678|attaboy>") mustBe "@attaboy"
+      SlackMessage.unformatLinks(s"<@U12345678|$name>") mustBe s"@$name"
       SlackMessage.unformatLinks("<@W12345678>") mustBe "@W12345678"
       SlackMessage.unformatLinks("<@W12345678|enterprise>") mustBe "@enterprise"
       SlackMessage.unformatLinks("<#C12345789>") mustBe "#C12345789"
@@ -75,7 +78,7 @@ class SlackMessageSpec extends PlaySpec {
 
   "augmentUserIdsWithNames" should {
     "add user names to user links" in {
-      SlackMessage.augmentUserIdsWithNames(s"Hey <@${user.accountId}>, what's shaking?", userList) mustBe s"Hey <@${user.accountId}|${user.accountName}>, what's shaking?"
+      SlackMessage.augmentUserIdsWithNames(s"Hey <@${user.accountId}>, what's shaking?", userList) mustBe s"Hey <@${user.accountId}|${user.displayName}>, what's shaking?"
     }
   }
 
@@ -93,7 +96,7 @@ class SlackMessageSpec extends PlaySpec {
       val expected =
         s"""Hey @channel, has anyone seen luke@ellipsis.ai?
            |
-           |He & I have a meeting. @${user.accountName}, have you seen him?""".stripMargin
+           |He & I have a meeting. @${user.displayName}, have you seen him?""".stripMargin
       SlackMessage.unformatTextWithUsers(received, userList) mustBe expected
     }
 
