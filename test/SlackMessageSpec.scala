@@ -22,7 +22,7 @@ class SlackMessageSpec extends PlaySpec {
     tz,
     deleted = false,
     Some(SlackUserProfileData(
-      displayName,
+      Some(displayName),
       Some(firstName),
       Some(lastName),
       Some(fullName)
@@ -33,7 +33,7 @@ class SlackMessageSpec extends PlaySpec {
   "unformatLinks" should {
     "unformat channels and users" in {
       SlackMessage.unformatLinks("<@U12345678>") mustBe "@U12345678"
-      SlackMessage.unformatLinks(s"<@U12345678|$displayName>") mustBe s"@$displayName"
+      SlackMessage.unformatLinks(s"<@U12345678|Full Name>") mustBe s"@Full Name"
       SlackMessage.unformatLinks("<@W12345678>") mustBe "@W12345678"
       SlackMessage.unformatLinks("<@W12345678|enterprise>") mustBe "@enterprise"
       SlackMessage.unformatLinks("<#C12345789>") mustBe "#C12345789"

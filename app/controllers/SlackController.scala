@@ -390,7 +390,7 @@ class SlackController @Inject() (
           "id" -> nonEmptyText,
           "name" -> nonEmptyText,
           "profile" -> mapping(
-            "display_name" -> text,
+            "display_name" -> optional(text),
             "first_name" -> optional(nonEmptyText),
             "last_name" -> optional(nonEmptyText),
             "real_name" -> optional(nonEmptyText)

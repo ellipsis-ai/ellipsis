@@ -1,13 +1,13 @@
 package json
 
 case class SlackUserProfileData(
-                                 private val displayName: String,
+                                 private val displayName: Option[String],
                                  firstName: Option[String],
                                  lastName: Option[String],
                                  realName: Option[String]
                                ) {
   def maybeDisplayName: Option[String] = {
-    Option(displayName).filter(_.nonEmpty).orElse {
+    displayName.filter(_.nonEmpty).orElse {
       realName.filter(_.nonEmpty)
     }
   }
