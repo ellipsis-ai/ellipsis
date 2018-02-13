@@ -8,7 +8,7 @@ import com.chargebee.filters.enums.SortOrder
 import com.chargebee.models.Invoice
 import com.chargebee.models.Invoice.Status
 import com.google.inject.Provider
-import play.api.{Configuration, Logger}
+import play.api.Configuration
 import services.DataService
 
 import scala.collection.JavaConversions._
