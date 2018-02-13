@@ -12,10 +12,20 @@ pipelineStages := Seq(webpack, digest, gzip)
 lazy val slackClientVersion = "6e59b7c1c9864be745571eba3b0d424a3409b783"
 lazy val slackClientProject = ProjectRef(uri(s"https://github.com/ellipsis-ai/slack-scala-client.git#$slackClientVersion"), "slack-scala-client")
 
-lazy val root =
-  (project in file(".")).
-    dependsOn(slackClientProject).
-    enablePlugins(PlayScala, SbtWeb)
+lazy val unitTest = config("ut") extend(Test)
+lazy val integrationTest = config("it") extend(Test)
+
+
+lazy val root = (project in file(".")).
+    dependsOn(slackClientProject)
+    .enablePlugins(PlayScala, SbtWeb)
+    .configs(unitTest)
+    .settings(inConfig(unitTest)(Defaults.testTasks): _*)
+    .settings(testOptions in unitTest := Seq(Tests.Argument("-l", "tags.IntegrationTest")))
+    .configs(integrationTest)
+    .settings(inConfig(integrationTest)(Defaults.testTasks): _*)
+    .settings(testOptions in integrationTest := Seq(Tests.Argument("-n", "tags.IntegrationTest")))
+
 
 javaOptions in Test += "-Dconfig.file=conf/test.conf"
 scalacOptions in Compile ++= Seq("-Xmax-classfile-name", "128")
