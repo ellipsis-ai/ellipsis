@@ -72,6 +72,7 @@ class GraphQLServiceImpl @Inject() (
     val createFieldRegex = """create(\S+)""".r
     val updateFieldRegex = """update(\S+)""".r
     val deleteFieldRegex = """delete(\S+)""".r
+    val deleteWhereFieldRegex = """deleteWhere(\S+)""".r
 
     private def toJson(v: Any): JsValue = {
       v match {
@@ -119,6 +120,11 @@ class GraphQLServiceImpl @Inject() (
       definition.name match {
         case createFieldRegex(typeName) => ctx.ctx.createItem(typeName, user, valueFor(ctx, definition), group).map(_.data)
         case updateFieldRegex(typeName) => ctx.ctx.updateItem(typeName, user, valueFor(ctx, definition), group).map(_.data)
+        case deleteWhereFieldRegex(typeName) => {
+          ctx.ctx.deleteFilteredItemsFor(typeName, valueFor(ctx, definition), group).map { items =>
+            items.map(_.data)
+          }
+        }
         case deleteFieldRegex(_) => {
           val idToDelete: String = ctx.arg(definition.arguments.head.name)
           ctx.ctx.deleteItem(idToDelete, group).map { maybeItem =>

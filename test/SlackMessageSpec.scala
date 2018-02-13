@@ -1,35 +1,39 @@
-import json.{SlackUserData, SlackUserProfileData, SlackUserProfileNameData}
+import json.{SlackUserData, SlackUserProfileData}
 import models.behaviors.events.SlackMessage
 import org.scalatestplus.play.PlaySpec
 
 class SlackMessageSpec extends PlaySpec {
 
   val userId = "U1234567"
-  val name = "attaboy"
+  val username = "attaboy"
+  val displayName = "Atta Boy"
+  val firstName = "Luke"
+  val lastName = "Andrews"
+  val fullName = s"$firstName $lastName"
   val tz = Some("America/Toronto")
   val user = SlackUserData(
     userId,
     "T1234",
-    name,
-    Some("Luke Andrews"),
+    username,
+    isPrimaryOwner = false,
+    isOwner = false,
+    isRestricted = false,
+    isUltraRestricted = false,
     tz,
     deleted = false,
-    SlackUserProfileData(
-      name,
-      SlackUserProfileNameData(Some("Luke"), Some("Andrews"), Some("Luke Andrews")),
-      isPrimaryOwner = false,
-      isOwner = false,
-      isRestricted = false,
-      isUltraRestricted = false,
-      tz
-    )
+    Some(SlackUserProfileData(
+      Some(displayName),
+      Some(firstName),
+      Some(lastName),
+      Some(fullName)
+    ))
   )
   val userList = Set(user)
 
   "unformatLinks" should {
     "unformat channels and users" in {
       SlackMessage.unformatLinks("<@U12345678>") mustBe "@U12345678"
-      SlackMessage.unformatLinks("<@U12345678|attaboy>") mustBe "@attaboy"
+      SlackMessage.unformatLinks(s"<@U12345678|Full Name>") mustBe s"@Full Name"
       SlackMessage.unformatLinks("<@W12345678>") mustBe "@W12345678"
       SlackMessage.unformatLinks("<@W12345678|enterprise>") mustBe "@enterprise"
       SlackMessage.unformatLinks("<#C12345789>") mustBe "#C12345789"
@@ -75,7 +79,7 @@ class SlackMessageSpec extends PlaySpec {
 
   "augmentUserIdsWithNames" should {
     "add user names to user links" in {
-      SlackMessage.augmentUserIdsWithNames(s"Hey <@${user.accountId}>, what's shaking?", userList) mustBe s"Hey <@${user.accountId}|${user.accountName}>, what's shaking?"
+      SlackMessage.augmentUserIdsWithNames(s"Hey <@${user.accountId}>, what's shaking?", userList) mustBe s"Hey <@${user.accountId}|${user.getDisplayName}>, what's shaking?"
     }
   }
 
@@ -93,7 +97,7 @@ class SlackMessageSpec extends PlaySpec {
       val expected =
         s"""Hey @channel, has anyone seen luke@ellipsis.ai?
            |
-           |He & I have a meeting. @${user.accountName}, have you seen him?""".stripMargin
+           |He & I have a meeting. @${user.getDisplayName}, have you seen him?""".stripMargin
       SlackMessage.unformatTextWithUsers(received, userList) mustBe expected
     }
 

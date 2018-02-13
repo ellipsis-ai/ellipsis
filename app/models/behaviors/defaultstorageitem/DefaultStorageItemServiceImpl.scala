@@ -90,13 +90,16 @@ class DefaultStorageItemServiceImpl @Inject() (
     dataService.run(findByIdAction(id, behaviorGroup))
   }
 
-  private def filterForBehavior(behavior: Behavior, filter: JsValue): Future[Seq[DefaultStorageItem]] = {
-    val action = for {
+  private def filterForBehaviorAction(behavior: Behavior, filter: JsValue): DBIO[Seq[DefaultStorageItem]] = {
+    for {
       filterWithIds <- dataWithFieldIdsFor(filter, behavior.id)
       result <- filterQuery(behavior.id, filterWithIds).result
       items <- DBIO.sequence(result.map(tuple2Item))
     } yield items
-    dataService.run(action)
+  }
+
+  private def filterForBehavior(behavior: Behavior, filter: JsValue): Future[Seq[DefaultStorageItem]] = {
+    dataService.run(filterForBehaviorAction(behavior, filter))
   }
 
   def filter(typeName: String, filter: JsValue, behaviorGroup: BehaviorGroup): Future[Seq[DefaultStorageItem]] = {
@@ -302,6 +305,24 @@ class DefaultStorageItemServiceImpl @Inject() (
   def deleteItems(ids: Seq[String], behaviorGroup: BehaviorGroup): Future[Int] = {
     Future.sequence(ids.map(ea => deleteItem(ea, behaviorGroup))).map { deletedItemOptions =>
       deletedItemOptions.flatten.length
+    }
+  }
+
+  def deleteFilteredItemsForBehavior(behavior: Behavior, filter: JsValue): Future[Seq[DefaultStorageItem]] = {
+    val action = for {
+      found <- filterForBehaviorAction(behavior, filter)
+      _ <- DBIO.sequence(found.map { ea =>
+        deleteItemAction(ea.id, behavior.group)
+      })
+    } yield found
+    dataService.run(action)
+  }
+
+  def deleteFilteredItemsFor(typeName: String, filter: JsValue, behaviorGroup: BehaviorGroup): Future[Seq[DefaultStorageItem]] = {
+    dataService.behaviors.findByIdOrName(typeName, behaviorGroup).flatMap { maybeBehavior =>
+      maybeBehavior.map { behavior =>
+        deleteFilteredItemsForBehavior(behavior, filter)
+      }.getOrElse(Future.successful(Seq()))
     }
   }
 

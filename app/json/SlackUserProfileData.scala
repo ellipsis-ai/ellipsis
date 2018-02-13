@@ -1,17 +1,14 @@
 package json
 
 case class SlackUserProfileData(
-                                 name: String,
-                                 profile: SlackUserProfileNameData,
-                                 isPrimaryOwner: Boolean,
-                                 isOwner: Boolean,
-                                 isRestricted: Boolean,
-                                 isUltraRestricted: Boolean,
-                                 tz: Option[String]
-                               )
-
-case class SlackUserProfileNameData(
-                                     firstName: Option[String],
-                                     lastName: Option[String],
-                                     realName: Option[String]
-                                   )
+                                 private val displayName: Option[String],
+                                 firstName: Option[String],
+                                 lastName: Option[String],
+                                 realName: Option[String]
+                               ) {
+  def maybeDisplayName: Option[String] = {
+    displayName.filter(_.nonEmpty).orElse {
+      realName.filter(_.nonEmpty)
+    }
+  }
+}

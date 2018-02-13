@@ -558,7 +558,7 @@ case class BehaviorBackedDataType(dataTypeConfig: DataTypeConfig) extends Behavi
                                         )(implicit ec: ExecutionContext): DBIO[BotResult] = {
     for {
       superPrompt <- maybeSearchQuery.map { searchQuery =>
-        DBIO.successful(s"Here are some options for `$searchQuery`. Type a number to choose an option.")
+        DBIO.successful(s"Here are some options for `$searchQuery`.")
       }.getOrElse(super.promptResultForAction(maybePreviousCollectedValue, context, paramState, isReminding).map(_.text))
       validValues <- fetchValidValuesAction(maybeSearchQuery, context)
       output <- if (validValues.isEmpty) {

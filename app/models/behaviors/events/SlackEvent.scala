@@ -3,6 +3,7 @@ package models.behaviors.events
 import akka.actor.ActorSystem
 import com.mohiva.play.silhouette.api.LoginInfo
 import json.Formatting._
+import json.SlackUserData
 import models.accounts.slack.botprofile.SlackBotProfile
 import models.accounts.slack.profile.SlackProfile
 import play.api.libs.json._
@@ -38,6 +39,19 @@ trait SlackEvent {
     }
   }
 
+  private def profileDataFor(slackUserData: SlackUserData): JsObject = {
+    val profile: JsValue = slackUserData.profile.map(Json.toJson(_)).getOrElse(JsObject.empty)
+    Json.obj(
+      "name" -> slackUserData.getDisplayName,
+      "profile" -> profile,
+      "isPrimaryOwner" -> slackUserData.isPrimaryOwner,
+      "isOwner" -> slackUserData.isOwner,
+      "isRestricted" -> slackUserData.isRestricted,
+      "isUltraRestricted" -> slackUserData.isUltraRestricted,
+      "tz" -> slackUserData.tz
+    )
+  }
+
   def detailsFor(services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[JsObject] = {
     val slackChannels = SlackChannels(client, services.cacheService, profile.slackTeamId)
     for {
@@ -49,7 +63,7 @@ trait SlackEvent {
         "channelName" -> Json.toJson(maybeChannelInfo.map(_.name))
       ))
       maybeUser.map { user =>
-        Json.toJson(user.profile).as[JsObject] ++ channelDetails
+        profileDataFor(user) ++ channelDetails
       }.getOrElse {
         channelDetails
       }

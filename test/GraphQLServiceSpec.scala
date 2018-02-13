@@ -1,6 +1,5 @@
-package models
-
 import json._
+import models.IDs
 import models.accounts.user.User
 import models.behaviors.behaviorgroup.BehaviorGroup
 import models.behaviors.behaviorparameter.{NumberType, TextType, YesNoType}
@@ -88,7 +87,7 @@ class GraphQLServiceSpec extends DBSpec {
         filterArg.argumentType.namedType.name mustBe someType.behaviorVersion.inputName
 
         val mutation = schema.mutation.get
-        mutation.fields must have length(6)
+        mutation.fields must have length(8)
 
         val someTypeCreateField = mutation.fields.find(_.name == someType.behaviorVersion.createFieldName).get
         someTypeCreateField.arguments must have length(1)
@@ -107,6 +106,12 @@ class GraphQLServiceSpec extends DBSpec {
         val idArg = someTypeDeleteField.arguments.head
         idArg.name mustBe "id"
         idArg.argumentType mustBe sangria.schema.IDType
+
+        val someTypeDeleteWhereField = mutation.fields.find(_.name == someType.behaviorVersion.deleteWhereFieldName).get
+        someTypeDeleteWhereField.arguments must have length(1)
+        val deleteFilterArg = someTypeDeleteWhereField.arguments.head
+        deleteFilterArg.name mustBe "filter"
+        deleteFilterArg.argumentType.namedType.name mustBe someType.behaviorVersion.inputName
 
         println(schema.renderPretty.trim)
       })
@@ -135,7 +140,7 @@ class GraphQLServiceSpec extends DBSpec {
         filterArg.argumentType.namedType.name mustBe someTypeBehaviorVersion.inputName
 
         val mutation = schema.mutation.get
-        mutation.fields must have length(6)
+        mutation.fields must have length(8)
 
         val someTypeCreateField = mutation.fields.find(_.name == someTypeBehaviorVersion.createFieldName).get
         someTypeCreateField.arguments must have length(1)
@@ -300,6 +305,50 @@ class GraphQLServiceSpec extends DBSpec {
 
         val deleteResult = runNow(graphQLService.runQuery(firstVersion.group, user, deleteMutation, None, Some(deleteVariables)))
         (deleteResult \ "data").get mustBe JsObject(Map("deleteSomeType" -> JsObject(Map("foo" -> JsString("bar")))))
+
+        val remainingItems = runNow(dataService.defaultStorageItems.filter(someType.behaviorVersion.typeName, jsonData, group))
+        remainingItems must have length(0)
+      })
+    }
+
+    "save some records and delete them" in {
+      withEmptyDB(dataService, { () =>
+        val team = newSavedTeam
+        val user = newSavedUserOn(team)
+        val group = newSavedBehaviorGroupFor(team)
+        val groupData = buildGroupDataFor(group, user)
+        val firstVersion = newSavedGroupVersionFor(group, user, Some(groupData))
+        val dataTypeConfigs = runNow(dataService.dataTypeConfigs.allFor(firstVersion))
+        val someType = dataTypeConfigs.find(_.behaviorVersion.typeName == "SomeType").get
+
+        val createMutation =
+          """mutation CreateSomeType($someType: SomeTypeInput!) {
+            |  createSomeType(someType: $someType) {
+            |    foo
+            |  }
+            |}
+          """.stripMargin
+        val jsonData = JsObject(Map("foo" -> JsString("bar")))
+        val mutationVariables = JsObject(Map("someType" -> jsonData)).toString
+        val mutationResult = runNow(graphQLService.runQuery(firstVersion.group, user, createMutation, None, Some(mutationVariables)))
+        val savedItems = runNow(dataService.defaultStorageItems.filter(someType.behaviorVersion.typeName, jsonData, group))
+        savedItems must have length(1)
+        val savedItem = savedItems.head
+        (savedItem.data \ "foo").as[String] mustBe "bar"
+        (savedItem.data \ "id").as[String] mustBe savedItem.id
+        (mutationResult \ "data").get mustBe JsObject(Map("createSomeType" -> JsObject(Map("foo" -> JsString("bar")))))
+
+        val deleteMutation =
+          """mutation DeleteSomeType($filter: SomeTypeInput!) {
+            |  deleteWhereSomeType(filter: $filter) {
+            |    foo
+            |  }
+            |}
+          """.stripMargin
+        val deleteVariables = JsObject(Map("filter" -> JsObject.empty)).toString
+
+        val deleteResult = runNow(graphQLService.runQuery(firstVersion.group, user, deleteMutation, None, Some(deleteVariables)))
+        (deleteResult \ "data").get mustBe JsObject(Map("deleteWhereSomeType" -> JsArray(Array(JsObject(Map("foo" -> JsString("bar")))))))
 
         val remainingItems = runNow(dataService.defaultStorageItems.filter(someType.behaviorVersion.typeName, jsonData, group))
         remainingItems must have length(0)

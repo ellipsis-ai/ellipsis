@@ -72,9 +72,6 @@ object Formatting {
   lazy implicit val requiredAWSConfigDataReads = Json.reads[RequiredAWSConfigData]
   lazy implicit val requiredAWSConfigDataWrites = Json.writes[RequiredAWSConfigData]
 
-  lazy implicit val slackUserProfileNameDataReads = Json.reads[SlackUserProfileNameData]
-  lazy implicit val slackUserProfileNameDataWrites = Json.writes[SlackUserProfileNameData]
-
   lazy implicit val slackUserProfileDataReads = Json.reads[SlackUserProfileData]
   lazy implicit val slackUserProfileDataWrites = Json.writes[SlackUserProfileData]
 
