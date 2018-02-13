@@ -223,7 +223,7 @@ trait Scheduled {
             Some(SlackDMInfo(userData.accountId, dmChannel))
           }.recover {
             case e: ApiError => {
-              val msg = s"""Couldn't open DM for scheduled message to ${userData.fullName} (${userData.accountId}) on Slack team ${userData.accountTeamId} due to Slack API error: ${e.code}"""
+              val msg = s"""Couldn't open DM for scheduled message to @${userData.getDisplayName} (${userData.accountId}) on Slack team ${userData.accountTeamId} due to Slack API error: ${e.code}"""
               Logger.error(msg, e)
               None
             }
