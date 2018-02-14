@@ -31,7 +31,9 @@ class BehaviorGroupServiceSpec extends DBSpec {
         newSavedDeploymentFor(groupVersion, user)
         newSavedSHAFor(groupVersion)
 
-        dataService.behaviorGroups.delete(group)
+        runNow(dataService.behaviorGroups.delete(group))
+
+        runNow(dataService.behaviorGroups.find(group.id, user)) must not be defined
       })
     }
   }
