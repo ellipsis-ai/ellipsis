@@ -611,7 +611,17 @@ case class BehaviorBackedDataType(dataTypeConfig: DataTypeConfig) extends Behavi
     maybeCachedSearchQueryFor(context).map { searchQuery =>
       promptResultForListAllCaseAction(Some(searchQuery), maybePreviousCollectedValue, context, paramState, isReminding)
     }.getOrElse {
-      super.promptResultForAction(maybePreviousCollectedValue, context, paramState, isReminding)
+      maybePreviousCollectedValue.map { v =>
+        context.maybeConversation.map { conversation =>
+          val key = searchQueryCacheKeyFor(conversation, context.parameter)
+          context.cacheService.set(key, v, 5.minutes)
+          context.dataService.collectedParameterValues.deleteForAction(context.parameter, conversation)
+        }.getOrElse(DBIO.successful({})).flatMap { _ =>
+          promptResultForSearchCaseAction(None, context, paramState, isReminding)
+        }
+      }.getOrElse {
+        super.promptResultForAction(maybePreviousCollectedValue, context, paramState, isReminding)
+      }
     }
   }
 
