@@ -16,7 +16,7 @@ class SettingsPage extends React.Component {
             </div>
           </div>
           <div className="flex-columns flex-row-expand">
-            <div className="flex-column flex-column-left flex-rows container container-wide prn">
+            <div className="flex-column flex-column-left flex-rows container container-wide width-full prn">
               <div className="columns flex-columns flex-row-expand">
                 <div className="column column-one-quarter flex-column">
                   <SettingsMenu activePage={this.props.activePage} teamId={this.props.teamId} isAdmin={this.props.isAdmin}/>

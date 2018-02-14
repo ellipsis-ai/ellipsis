@@ -246,10 +246,10 @@ const IntegrationEditor = React.createClass({
             </Collapsible>
 
             {this.props.onRenderFooter(
-              <div className="container border-top">
+              <div className="container container-wide prn border-top">
                 <div className="columns mobile-columns-float">
                   <div className="column column-one-quarter" />
-                  <div className="column column-three-quarters plxxxl ptm prm">
+                  <div className="column column-three-quarters phxxxxl ptm">
                     <button type="submit"
                             className={"button-primary mrs mbm " + (this.state.isSaving ? "button-activated" : "")}
                             disabled={!this.canBeSaved()}
