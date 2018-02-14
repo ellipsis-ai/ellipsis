@@ -67,13 +67,18 @@ class CollectedParameterValueServiceImpl @Inject() (
     }
   }
 
+  def uncompiledRawFindQuery(parameterId: Rep[String], conversationId: Rep[String]) = {
+    all.filter(_.parameterId === parameterId).filter(_.conversationId === conversationId)
+  }
+  val rawFindQuery = Compiled(uncompiledRawFindQuery _)
+
   def ensureFor(
                  parameter: BehaviorParameter,
                  conversation: Conversation,
                  valueString: String
                ): Future[CollectedParameterValue] = {
     val raw = RawCollectedParameterValue(parameter.id, conversation.id, valueString)
-    val query = all.filter(_.parameterId === raw.parameterId).filter(_.conversationId === raw.conversationId)
+    val query = rawFindQuery(raw.parameterId, raw.conversationId)
     val action = query.result.flatMap { r =>
       r.headOption.map { existing =>
         query.update(raw)
@@ -84,6 +89,10 @@ class CollectedParameterValueServiceImpl @Inject() (
     dataService.run(action).flatMap { _ =>
       find(parameter, conversation).map(_.get)
     }
+  }
+
+  def deleteForAction(parameter: BehaviorParameter, conversation: Conversation): DBIO[Unit] = {
+    rawFindQuery(parameter.id, conversation.id).delete.map(_ => {})
   }
 
   def deleteAll(): Future[Unit] = {
