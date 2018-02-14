@@ -1,6 +1,10 @@
+// @flow
 (function() {
 
   class HeaderHandler {
+    header: ?HTMLElement;
+    timerId: ?number;
+
     constructor() {
       this.header = document.getElementById('main-header');
       this.timerId = null;
@@ -12,24 +16,45 @@
       if (this.timerId) {
         window.clearTimeout(this.timerId);
       }
-      this.timerId = window.setTimeout(function() {
-        document.body.style.paddingTop = this.header.offsetHeight + 'px';
-      }.bind(this), 50);
+      if (document.body && this.header) {
+        const body = document.body;
+        const header = this.header;
+        this.timerId = window.setTimeout(function() {
+          body.style.paddingTop = header.offsetHeight + 'px';
+        }, 50);
+      }
     }
   }
 
   class MenuHandler {
+    userMenuButton: ?HTMLElement;
+    userMenu: ?HTMLElement;
+    navMenuButton: ?HTMLElement;
+    navMenu: ?HTMLElement;
+    navBar: ?HTMLElement;
+    activeMenu: ?HTMLElement;
+    activeButton: ?HTMLElement;
+
     constructor() {
       this.userMenuButton = document.getElementById('main-user-menu-button');
       this.userMenu = document.getElementById('main-user-menu');
+      this.navMenuButton = document.getElementById('main-nav-button');
+      this.navMenu = document.getElementById('main-nav-menu');
       this.navBar = document.getElementById('main-header');
       if (this.userMenuButton && this.userMenu) {
-        this.userMenuButton.addEventListener('click', this.onUserMenuClick.bind(this));
-        document.addEventListener('click', this.onDocumentClick.bind(this));
+        this.addEventListeners(this.userMenu, this.userMenuButton);
+      }
+      if (this.navMenuButton && this.navMenu) {
+        this.addEventListeners(this.navMenu, this.navMenuButton);
       }
     }
 
-    addClass(el, className) {
+    addEventListeners(menu: HTMLElement, button: HTMLElement) {
+      button.addEventListener('click', this.onMenuClick.bind(this, menu, button));
+      document.addEventListener('click', this.onDocumentClick.bind(this, menu, button));
+    }
+
+    addClass(el: HTMLElement, className: string) {
       var classes = el.className.replace(/\s+/g, ' ').split(' ');
       if (!classes.find(function(cl) {
           return cl.trim() === className;
@@ -39,7 +64,7 @@
       }
     }
 
-    removeClass(el, className) {
+    removeClass(el: HTMLElement, className: string) {
       var classes = el.className.replace(/\s+/g, ' ').split(' ');
       var newClasses = classes.filter(function(cl) {
         return cl !== className;
@@ -47,43 +72,58 @@
       el.className = newClasses.join(' ');
     }
 
-    onUserMenuClick(event) {
-      if (this.userMenuVisible()) {
-        this.hideUserMenu();
+    onMenuClick(menu: HTMLElement, button: HTMLElement, event: Event) {
+      if (this.menuVisible(menu)) {
+        this.hideMenu(menu, button);
+        this.activeButton = null;
+        this.activeMenu = null;
       } else {
-        this.showUserMenu();
+        if (this.activeButton && this.activeMenu) {
+          this.hideMenu(this.activeMenu, this.activeButton);
+        }
+        this.showMenu(menu, button);
+        this.activeButton = button;
+        this.activeMenu = menu;
       }
       event.stopPropagation();
       event.preventDefault();
     }
 
-    hideUserMenu() {
-      this.addClass(this.userMenu, 'display-none');
-      this.removeClass(this.userMenuButton, 'button-dropdown-trigger-menu-open');
-      this.removeClass(this.navBar, 'position-z-front');
-      this.addClass(this.navBar, 'position-z-behind-scrim');
+    hideMenu(menu: HTMLElement, button: HTMLElement) {
+      this.addClass(menu, 'display-none');
+      this.removeClass(button, 'button-dropdown-trigger-menu-open');
+      if (this.navBar) {
+        const bar = this.navBar;
+        this.removeClass(bar, 'position-z-front');
+        this.addClass(bar, 'position-z-behind-scrim');
+      }
     }
 
-    showUserMenu() {
-      this.removeClass(this.userMenu, 'display-none');
-      this.addClass(this.userMenuButton, 'button-dropdown-trigger-menu-open');
-      this.removeClass(this.navBar, 'position-z-behind-scrim');
-      this.addClass(this.navBar, 'position-z-front');
+    showMenu(menu, button) {
+      this.removeClass(menu, 'display-none');
+      this.addClass(button, 'button-dropdown-trigger-menu-open');
+      if (this.navBar) {
+        const bar = this.navBar;
+        this.removeClass(bar, 'position-z-behind-scrim');
+        this.addClass(bar, 'position-z-front');
+      }
     }
 
-    userMenuVisible() {
-      return this.userMenu.clientHeight > 0;
+    menuVisible(menu: HTMLElement) {
+      return menu.clientHeight > 0;
     }
 
-    onDocumentClick() {
-      if (this.userMenuVisible()) {
-        this.hideUserMenu();
+    onDocumentClick(menu: HTMLElement, button: HTMLElement) {
+      if (this.menuVisible(menu)) {
+        this.hideMenu(menu, button);
       }
     }
   }
 
   /* Enables touchscreen active pseudo-class support */
-  document.body.addEventListener('touchstart', function() { return null; });
+  if (document.body) {
+    document.body.addEventListener('touchstart', function() { return null; });
+  }
 
   new HeaderHandler();
   new MenuHandler();

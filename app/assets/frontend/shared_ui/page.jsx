@@ -180,7 +180,7 @@ class Page extends React.Component<Props, State> {
 
     renderFeedbackLink() {
       return (
-        <Button className="button-nav mhs pbm mobile-pbs" onClick={this.toggleFeedback}>Feedback</Button>
+        <Button className="button-dropdown-item plm" onClick={this.toggleFeedback}>Feedback</Button>
       );
     }
 

@@ -4,43 +4,44 @@
   hideNav: Boolean,
   navClass: String = ""
 )(implicit r: RequestHeader)
-@tabClassFor(tabId: String) = @{
-  if (tabId == selectedNav) {
-    "link-light display-inline-block align-button border-emphasis-bottom border-pink mhs pbs mobile-pbxs"
-  } else {
-    "link-light display-inline-block align-button mhs pbm mobile-pbs"
-  }
-}
-<div class="container container-wide prm mobile-prs @navClass">
+<div class="container container-wide phs @navClass">
   <div class="columns columns-elastic">
-  <div class="column column-expand pts mobile-ptxs">
-    <a class="link-pink display-inline-block align-b mrs mobile-mtxs"
-      href='@routes.ApplicationController.index(config.maybeTeamAccess.flatMap(_.maybeAdminAccessToTeamId))'>
-      @mainLogo(config)
-    </a>
+    <div class="column column-expand">
+      <button id="main-nav-button" type="button"
+        class="border-radius-bottom-left-none button-subtle button-l button-dropdown-trigger button-dropdown-trigger-l button-dropdown-trigger-no-icon align-t mrs"
+        @if(hideNav) { disabled="disabled" }>
+        @mainLogo(config)
+        @if(!hideNav) {
+          <span class="type-pink display-inline-block align-m mlxs mtxs">▾</span>
+        }
+      </button>
+      <div class="position-relative type-black">
+        <ul class="type-s popup popup-dropdown-menu fade-in display-none" id="main-nav-menu">
+          <li>
+            <a class="button button-dropdown-item plm"
+          href='@routes.ApplicationController.index(config.maybeTeamAccess.flatMap(_.maybeAdminAccessToTeamId))'
+            >Skills</a>
+          </li>
 
-    @if(!hideNav) {
-      <a class="@tabClassFor("skills")"
-        href='@routes.ApplicationController.index(config.maybeTeamAccess.flatMap(_.maybeAdminAccessToTeamId))'>
-        Skills
-      </a>
+          <li>
+            <a class="button button-dropdown-item plm"
+          href='@routes.ScheduledActionsController.index(None, None, config.maybeTeamAccess.flatMap(_.maybeAdminAccessToTeamId))'
+            >Scheduling</a>
+          </li>
 
-      <a class="@tabClassFor("scheduling")"
-        href='@routes.ScheduledActionsController.index(None, None, config.maybeTeamAccess.flatMap(_.maybeAdminAccessToTeamId))'>
-        Scheduling
-      </a>
+          <li>
+            <a class="button button-dropdown-item plm"
+          href='@controllers.web.settings.routes.RegionalSettingsController.index(config.maybeTeamAccess.flatMap(_.maybeAdminAccessToTeamId))'
+            >Settings</a>
+          </li>
 
-      <a class="@tabClassFor("settings")"
-        href='@controllers.web.settings.routes.RegionalSettingsController.index(config.maybeTeamAccess.flatMap(_.maybeAdminAccessToTeamId))'>
-        Settings
-      </a>
-
-      <span id="header-feedback">
-        @* Placeholder button replaced by React Page *@
-        <button class="button button-nav mhs pbm mobile-pbs" type="button">Feedback</button>
-      </span>
-    }
+          <li id="header-feedback">
+            @* Placeholder button replaced by React Page *@
+            <button class="button button-dropdown-item plm" type="button">Feedback</button>
+          </li>
+        </ul>
+      </div>
+    </div>
+    @config.maybeTeamAccess.map { teamAccess => @teamMenu(teamAccess) }
   </div>
-  @config.maybeTeamAccess.map { teamAccess => @teamMenu(teamAccess) }
-</div>
 </div>
