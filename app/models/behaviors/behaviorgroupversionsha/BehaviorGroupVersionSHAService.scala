@@ -14,4 +14,6 @@ trait BehaviorGroupVersionSHAService {
 
   def maybeCreateFor(group: BehaviorGroup, gitSHA: String): Future[Option[BehaviorGroupVersionSHA]]
 
+  def deleteAll(): Future[Unit]
+
 }

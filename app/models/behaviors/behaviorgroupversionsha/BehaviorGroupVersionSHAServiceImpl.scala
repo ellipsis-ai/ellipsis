@@ -64,4 +64,8 @@ class BehaviorGroupVersionSHAServiceImpl @Inject() (
     } yield maybeSHA
   }
 
+  def deleteAll(): Future[Unit] = {
+    dataService.run(all.delete).map(_ => Unit)
+  }
+
 }
