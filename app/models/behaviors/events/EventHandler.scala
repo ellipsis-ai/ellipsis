@@ -52,12 +52,13 @@ class EventHandler @Inject() (
     val mentionedBot = event.includesBotMention
     val shortcutPlusKeyword = "^(\\.\\.\\.|…)(stop|cancel|skip)".r.findFirstIn(text).isDefined
     val mentionedPlusKeyword = mentionedBot && "^<@.+?>:?\\s+(stop|cancel|skip)$".r.findFirstIn(text).isDefined
+    val isExactMenuItemText = Conversation.CANCEL_MENU_ITEM_TEXT == text
     /*
     One could imagine allowing the stop words to work with no prefix in a DM with Ellipsis, but since such words
     could also be valid answers, disabling this for now.
 
     val isDMPlusKeyword = mentionedBot && "^(stop|cancel|skip)$".r.findFirstIn(text).isDefined */
-    shortcutPlusKeyword || mentionedPlusKeyword /* || isDMPlusKeyword */
+    shortcutPlusKeyword || mentionedPlusKeyword || isExactMenuItemText /* || isDMPlusKeyword */
   }
 
   def handleInConversation(originalConvo: Conversation, event: Event): Future[BotResult] = {

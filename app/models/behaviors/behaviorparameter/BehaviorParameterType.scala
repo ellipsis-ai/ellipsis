@@ -573,9 +573,12 @@ case class BehaviorBackedDataType(dataTypeConfig: DataTypeConfig) extends Behavi
         context.maybeConversation.foreach { conversation =>
           context.cacheService.cacheValidValues(valuesListCacheKeyFor(conversation, context.parameter), validValues)
         }
+        val builtinMenuItems = Seq(
+          SlackMessageActionMenuItem(Conversation.CANCEL_MENU_ITEM_TEXT, Conversation.CANCEL_MENU_ITEM_TEXT)
+        )
         val menuItems = validValues.zipWithIndex.map { case (ea, i) =>
           SlackMessageActionMenuItem(s"${i+1}. ${ea.label}", ea.label)
-        }
+        } ++ builtinMenuItems
         val actionsList = Seq(SlackMessageActionMenu("ignored", "Choose an option", menuItems))
         val groups: Seq[MessageAttachmentGroup] = Seq(
           SlackMessageActionsGroup(context.inputChoiceCallbackId, actionsList, None, Some(Color.BLUE_LIGHT))

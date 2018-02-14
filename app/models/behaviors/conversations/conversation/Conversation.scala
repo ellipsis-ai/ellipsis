@@ -160,4 +160,6 @@ object Conversation {
   val INVOKE_BEHAVIOR = "invoke_behavior"
 
   val SECONDS_UNTIL_BACKGROUNDED = 3600
+
+  val CANCEL_MENU_ITEM_TEXT = "Cancel the current action"
 }
