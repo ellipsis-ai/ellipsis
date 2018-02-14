@@ -138,10 +138,10 @@ const AwsConfigEditor = React.createClass({
             {this.renderConfigure()}
 
             {this.props.onRenderFooter((
-              <div className="container">
+              <div className="container container-wide border-top prn">
                 <div className="columns mobile-columns-float">
                   <div className="column column-one-quarter" />
-                  <div className="column column-three-quarters plxxxxl prm">
+                  <div className="column column-three-quarters phxxxxl ptm prm">
                     <button type="submit"
                             className={"button-primary mrs mbm " + (this.state.isSaving ? "button-activated" : "")}
                             disabled={!this.canBeSaved()}
