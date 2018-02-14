@@ -574,8 +574,9 @@ case class BehaviorBackedDataType(dataTypeConfig: DataTypeConfig) extends Behavi
           context.cacheService.cacheValidValues(valuesListCacheKeyFor(conversation, context.parameter), validValues)
         }
         val builtinMenuItems = Seq(
-          SlackMessageActionMenuItem(Conversation.CANCEL_MENU_ITEM_TEXT, Conversation.CANCEL_MENU_ITEM_TEXT)
-        )
+          maybeSearchQuery.map(_ => SlackMessageActionMenuItem(Conversation.SEARCH_AGAIN_MENU_ITEM_TEXT, Conversation.SEARCH_AGAIN_MENU_ITEM_TEXT)),
+          Some(SlackMessageActionMenuItem(Conversation.CANCEL_MENU_ITEM_TEXT, Conversation.CANCEL_MENU_ITEM_TEXT))
+        ).flatten
         val menuItems = validValues.zipWithIndex.map { case (ea, i) =>
           SlackMessageActionMenuItem(s"${i+1}. ${ea.label}", ea.label)
         } ++ builtinMenuItems
@@ -651,6 +652,10 @@ case class BehaviorBackedDataType(dataTypeConfig: DataTypeConfig) extends Behavi
     }
   }
 
+  def isRequestingSearchAgain(context: BehaviorParameterContext): Boolean = {
+    context.event.relevantMessageText == Conversation.SEARCH_AGAIN_MENU_ITEM_TEXT
+  }
+
   override def handleCollected(event: Event, context: BehaviorParameterContext)(implicit ec: ExecutionContext): Future[Unit] = {
     usesSearch(context).flatMap { usesSearch =>
       if (usesSearch && maybeCachedSearchQueryFor(context).isEmpty && context.maybeConversation.isDefined) {
@@ -662,6 +667,10 @@ case class BehaviorBackedDataType(dataTypeConfig: DataTypeConfig) extends Behavi
         maybeCollectingOtherCacheKeyFor(context).foreach { key =>
           context.cacheService.set(key, "true", 5.minutes)
         }
+        Future.successful({})
+      } else if (usesSearch && maybeCachedSearchQueryFor(context).nonEmpty && isRequestingSearchAgain(context)) {
+        val key = searchQueryCacheKeyFor(context.maybeConversation.get, context.parameter)
+        context.cacheService.remove(key)
         Future.successful({})
       } else {
         super.handleCollected(event, context)
