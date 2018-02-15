@@ -1,10 +1,11 @@
 @(navItem: NavItem, index: Int)
-@dividerMargin = @{if(index > 0) "mhs" else "mrs"}
-<div class="display-inline-block height-button-l align-t color-gray-lightest-translucent @dividerMargin">@shared.svg.divider()</div>
-<div class="display-inline-block align-t" id="mainNav@index.toString">
+<div class="column prn display-inline-block height-button-l align-t color-gray-lightest-translucent">
+  @shared.svg.divider()
+</div>
+<div class="column prn display-inline-block align-t" id="mainNav@index.toString">
 @navItem.maybeRoute.map { route =>
-  <a class="align-button-l phs" href="@route">@navItem.title</a>
+  <a class="align-button-l plxl prl" href="@route">@navItem.title</a>
 }.getOrElse {
-  <span class="align-button-l phs">@navItem.title</span>
+  <span class="align-button-l plxl prl">@navItem.title</span>
 }
 </div>
