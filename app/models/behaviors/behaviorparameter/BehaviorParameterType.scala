@@ -342,7 +342,7 @@ case class BehaviorBackedDataType(dataTypeConfig: DataTypeConfig) extends Behavi
     usesSearch(context).flatMap { usesSearch =>
       if (usesSearch) {
         fetchResultBody(Some(value.label), context).map { resultBody =>
-          resultBody.values.find(_.id == value.id)
+          resultBody.maybeValueForId(value.id)
         }
       } else {
         fetchMatchFor(value.id, context)
@@ -388,11 +388,9 @@ case class BehaviorBackedDataType(dataTypeConfig: DataTypeConfig) extends Behavi
     for {
       resultBody <- cachedResultBodyFor(context)
       value <- try {
-        val index = text.toInt - 1
-        Some(resultBody.values(index))
+        resultBody.maybeValueAtIndex(text.toInt - 1)
       } catch {
         case e: NumberFormatException => None
-        case e: IndexOutOfBoundsException => None
       }
     } yield value
   }
@@ -400,7 +398,7 @@ case class BehaviorBackedDataType(dataTypeConfig: DataTypeConfig) extends Behavi
   private def cachedValidValueForLabel(text: String, context: BehaviorParameterContext): Option[ValidValue] = {
     for {
       resultBody <- cachedResultBodyFor(context)
-      value <- resultBody.values.find((ea) => textMatchesLabel(text, ea.label, context))
+      value <- resultBody.maybeValueForText(text, context)
     } yield value
   }
 
@@ -458,7 +456,7 @@ case class BehaviorBackedDataType(dataTypeConfig: DataTypeConfig) extends Behavi
     if (dataTypeConfig.usesCode) {
       fetchValidValuesResultAction(maybeSearchQuery, context).map { maybeResult =>
         maybeResult.map {
-          case r: SuccessResult => extractResultBody(r)
+          case r: SuccessResult => DataTypeResultBody.fromSuccessResult(r)
           case _: BotResult => DataTypeResultBody.empty
         }.getOrElse(DataTypeResultBody.empty)
       }
@@ -495,16 +493,7 @@ case class BehaviorBackedDataType(dataTypeConfig: DataTypeConfig) extends Behavi
           context.services.dataService.defaultStorageItems.allForAction(behaviorVersion.behavior)
         }
       } yield {
-        val values = items.map(_.data).flatMap {
-          case ea: JsObject =>
-            val maybeLabel = maybeLabelField.flatMap { labelField => (ea \ labelField.name).asOpt[String] }
-            Json.toJson(Map(
-              "id" -> JsString(id),
-              "label" -> maybeLabel.map(JsString.apply).getOrElse(JsNull)
-            ) ++ ea.value).asOpt[ValidValue]
-          case _ => None
-        }
-        DataTypeResultBody(values)
+        DataTypeResultBody.fromDefaultStorageItems(items, maybeLabelField, behaviorVersion)
       }
     }
   }
@@ -513,15 +502,9 @@ case class BehaviorBackedDataType(dataTypeConfig: DataTypeConfig) extends Behavi
     context.dataService.run(resultBodyAction(maybeSearchQuery, context))
   }
 
-  private def textMatchesLabel(text: String, label: String, context: BehaviorParameterContext): Boolean = {
-    text.toLowerCase == label.toLowerCase
-  }
-
   private def fetchMatchFor(text: String, context: BehaviorParameterContext)(implicit ec: ExecutionContext): Future[Option[ValidValue]] = {
     fetchResultBody(None, context).map { resultBody =>
-      resultBody.values.find {
-        v => v.id == text || textMatchesLabel(text, v.label, context)
-      }
+      resultBody.maybeValueForText(text, context)
     }
   }
 
@@ -547,7 +530,7 @@ case class BehaviorBackedDataType(dataTypeConfig: DataTypeConfig) extends Behavi
         DBIO.successful(s"Here are some options for `$searchQuery`.")
       }.getOrElse(super.promptResultForAction(maybePreviousCollectedValue, context, paramState, isReminding).map(_.text))
       resultBody <- resultBodyAction(maybeSearchQuery, context)
-      output <- if (resultBody.values.isEmpty) {
+      output <- if (resultBody.isEmpty) {
         maybeSearchQuery.map { searchQuery =>
           val key = searchQueryCacheKeyFor(context.maybeConversation.get, context.parameter)
           context.cacheService.remove(key)
