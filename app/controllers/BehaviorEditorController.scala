@@ -46,7 +46,7 @@ class BehaviorEditorController @Inject() (
           teamAccess <- dataService.users.teamAccessFor(user, maybeTeamId)
         } yield teamAccess.maybeTargetTeam.map { team =>
           val dataRoute = routes.BehaviorEditorController.newGroup(maybeTeamId)
-          Ok(views.html.behavioreditor.edit(viewConfig(Some(teamAccess)), dataRoute))
+          Ok(views.html.behavioreditor.edit(viewConfig(Some(teamAccess)), dataRoute, "New skill"))
         }.getOrElse {
           notFoundWithLoginFor(request, Some(teamAccess))
         }
@@ -68,8 +68,9 @@ class BehaviorEditorController @Inject() (
           }.getOrElse(Future.successful(None))
           result <- maybeTeam.map { team =>
             dataService.users.teamAccessFor(user, Some(team.id)).map { teamAccess =>
+              val skillTitle = maybeGroupData.flatMap(_.name).getOrElse("Untitled skill")
               val dataRoute = routes.BehaviorEditorController.edit(groupId, maybeBehaviorId, maybeShowVersions)
-              Ok(views.html.behavioreditor.edit(viewConfig(Some(teamAccess)), dataRoute))
+              Ok(views.html.behavioreditor.edit(viewConfig(Some(teamAccess)), dataRoute, skillTitle))
             }
           }.getOrElse { skillNotFound }
         } yield result
