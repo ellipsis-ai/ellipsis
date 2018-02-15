@@ -1,8 +1,7 @@
 @(
   title: String,
   config: ViewConfig,
-  pageId: String = "",
-  selectedNav: String = "",
+  maybeNavItem1: Option[NavItem],
   bodyClass: String = "bg-lightest",
   navClass: String = "",
   hideNav: Boolean = false
@@ -40,7 +39,7 @@
         navBorderColorForPage +
         navBgColorForPage
     }'>
-      @shared.mainNav(config, selectedNav, hideNav, navClass)
+      @shared.mainNav(config, maybeNavItem1, hideNav, navClass)
     </header>
     <script src="@config.assets.getWebpackBundle("global.js")"></script>
     @content

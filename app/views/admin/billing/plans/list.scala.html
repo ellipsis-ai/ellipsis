@@ -5,7 +5,7 @@
   )(implicit messages: Messages, r: RequestHeader
 )
 
-@page.main("Plans", config) {
+@page.main("Plans", config, Some(NavItem.admin)) {
   <h4>ChargeBee Plans</h4>
   <ol>
     @plans.map { ea =>

@@ -4,7 +4,7 @@
   dataRoute: Call
 )(implicit messages: Messages, r: RequestHeader)
 
-@page.main(title, config, selectedNav = "settings") {
+@page.main(title, config, Some(NavItem.teamSettings(config.maybeTargetTeamId))) {
   <div id="content" class="content flex-row-cascade">
     <div id="applicationEditor" class="flex-row-cascade"></div>
     <script src='@config.assets.getWebpackBundle("vendor.js")'></script>
