@@ -1,5 +1,6 @@
 package models.behaviors.behaviorparameter
 
+import json.Formatting._
 import models.behaviors.SuccessResult
 import models.behaviors.behaviorversion.BehaviorVersion
 import models.behaviors.datatypefield.DataTypeField
