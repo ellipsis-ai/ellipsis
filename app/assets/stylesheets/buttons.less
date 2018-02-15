@@ -412,7 +412,7 @@ button.button-dropdown-trigger-menu-open {
 button.button-dropdown-trigger.button-l:focus,
 button.button-dropdown-trigger-menu-open.button-l {
   padding-top: (@m - @border-width-thick) !important;
-  padding-bottom: (@m - @border-width-thick) !important;
+  padding-bottom: @m !important;
   padding-left: (@l - @border-width) !important;
   padding-right: (@l - @border-width) !important;
 }
@@ -462,8 +462,9 @@ a.button-s:focus {
   padding: (@xs - @border-width-thick + 1) (@m - @border-width-thick) (@xs - @border-width-thick - 1);
 }
 
-button.button-subtle:focus {
-  border-color: @border-color-dropdown !important;
+button.button-subtle:focus,
+button.button-subtle:active {
+  border-color: @border-color !important;
 }
 
 button.button-dropdown-trigger-menu-open:focus {
@@ -516,10 +517,6 @@ button.button-nav:hover {
 button:active {
   background-color: @black-translucent;
   border-color: @blue-dark;
-}
-
-button.button-subtle:active {
-  border-color: @gray-dark !important;
 }
 
 button.button-raw:active,
