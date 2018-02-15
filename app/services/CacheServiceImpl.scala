@@ -5,7 +5,7 @@ import javax.inject.{Inject, Provider, Singleton}
 import json.Formatting._
 import json.{ImmutableBehaviorGroupVersionData, SlackUserData}
 import models.accounts.slack.botprofile.SlackBotProfile
-import models.behaviors.behaviorparameter.ValidValue
+import models.behaviors.behaviorparameter.DataTypeResultBody
 import models.behaviors.events._
 import play.api.cache.SyncCacheApi
 import play.api.libs.json.{JsError, JsSuccess, JsValue, Json}
@@ -80,16 +80,13 @@ class CacheServiceImpl @Inject() (
     }
   }
 
-  def cacheValidValues(key: String, values: Seq[ValidValue], expiration: Duration = Duration.Inf): Unit = {
-    set(key, Json.toJson(values), expiration)
+  def cacheDataTypeResultBody(key: String, resultBody: DataTypeResultBody, expiration: Duration = Duration.Inf): Unit = {
+    set(key, Json.toJson(resultBody), expiration)
   }
 
-  def getValidValues(key: String): Option[Seq[ValidValue]] = {
+  def getDataTypeResultBody(key: String): Option[DataTypeResultBody] = {
     get[JsValue](key).flatMap { json =>
-      json.validate[Seq[ValidValue]] match {
-        case JsSuccess(values, jsPath) => Some(values)
-        case JsError(err) => None
-      }
+      json.asOpt[DataTypeResultBody]
     }
   }
 

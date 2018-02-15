@@ -3,7 +3,7 @@ package json
 import json.web.settings.IntegrationListConfig
 import models.accounts.slack.botprofile.SlackBotProfile
 import models.behaviors.{ExecutionErrorData, ExecutionLogData}
-import models.behaviors.behaviorparameter.ValidValue
+import models.behaviors.behaviorparameter.{DataTypeResultBody, ValidValue}
 import models.behaviors.events.{SlackFile, SlackMessage}
 import models.behaviors.testing.{InvocationTestReportOutput, ResultOutput}
 import play.api.libs.json._
@@ -187,5 +187,7 @@ object Formatting {
   implicit val githubConfigConfigFormat = Json.format[GithubConfigConfig]
 
   implicit val integrationListConfigFormat = Json.format[IntegrationListConfig]
+
+  lazy implicit val resultBodyFormat = Json.format[DataTypeResultBody]
 
 }
