@@ -3,7 +3,7 @@
   maybeTeamId: Option[String],
   maybeBranch: Option[String]
 )(implicit messages: Messages, r: RequestHeader)
-@page.main("View your skills", config, Some(NavItem.skills(None, None)), bodyClass = "bg-blue-lighter") {
+@page.main("View your skills", config, Some(NavItem.skills(link = false, None, None)), bodyClass = "bg-blue-lighter") {
   <div id="content" class="content pbn bg-blue-lighter">
     <div id="behaviorListContainer"></div>
     <script src='@config.assets.getWebpackBundle("vendor.js")'></script>

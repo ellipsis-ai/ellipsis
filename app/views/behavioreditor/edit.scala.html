@@ -3,7 +3,7 @@
   dataRoute: Call
 )(implicit messages: Messages, r: RequestHeader)
 
-@page.main("Edit skill", config, Some(NavItem.skills(None, None))) {
+@page.main("Edit skill", config, Some(NavItem.skills(link = true, config.maybeTargetTeamId, None))) {
   <div id="content" class="flex-row-cascade">
     <div id="editorContainer" class="flex-row-cascade"></div>
     <script src='@config.assets.getWebpackBundle("vendor.js")'></script>

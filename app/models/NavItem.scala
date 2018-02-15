@@ -2,16 +2,25 @@ package models
 
 import play.api.mvc.Call
 
-case class NavItem(title: String, route: Option[Call])
+case class NavItem(title: String, maybeRoute: Option[Call])
 
 object NavItem {
 
-  def skills(maybeTeamId: Option[String], maybeBranch: Option[String]): NavItem = {
-    NavItem("Skills", Some(controllers.routes.ApplicationController.index(maybeTeamId, maybeBranch)))
+  def skills(link: Boolean, maybeTeamId: Option[String], maybeBranch: Option[String]): NavItem = {
+    NavItem("Skills", if (link) {
+      Some(controllers.routes.ApplicationController.index(maybeTeamId, maybeBranch))
+    } else {
+      None
+    })
   }
 
-  def scheduling(maybeTeamId: Option[String]): NavItem = {
-    NavItem("Scheduling", Some(controllers.routes.ScheduledActionsController.index(None, None, maybeTeamId)))
+  def scheduling(link: Boolean, maybeTeamId: Option[String]): NavItem = {
+    NavItem("Scheduling", if (link) {
+      Some(controllers.routes.ScheduledActionsController.index(None, None, maybeTeamId))
+    } else {
+      None
+    })
+
   }
 
   def teamSettings(maybeTeamId: Option[String]): NavItem = {
