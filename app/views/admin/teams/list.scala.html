@@ -13,7 +13,7 @@
 )
 
 
-@page.main("Teams", config, Some(NavItem.admin)) {
+@page.main("Teams", config, Seq(NavItem.admin)) {
   <h4>@teamCount Teams</h4>
   <ol>
   @teams.map { team =>

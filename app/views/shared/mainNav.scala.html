@@ -1,6 +1,6 @@
 @(
   config: ViewConfig,
-  maybeNavItem1: Option[NavItem],
+  navItems: Seq[(NavItem, Int)],
   hideNav: Boolean,
   navClass: String = ""
 )(implicit r: RequestHeader)
@@ -44,15 +44,8 @@
           </ul>
         </div>
       </div>
-      @maybeNavItem1.map { navItem =>
-        <div class="display-inline-block align-t color-gray-lightest-translucent mrs">@shared.svg.divider()</div>
-        <div class="display-inline-block align-t" id="mainNav1">
-          @navItem.maybeRoute.map { route =>
-            <a class="align-button-l phs" href="@route">@navItem.title</a>
-          }.getOrElse {
-            <span class="align-button-l phs">@navItem.title</span>
-          }
-        </div>
+      @navItems.map { case(navItem, i) =>
+        @shared.navItem(navItem, i)
       }
     </div>
     </div>

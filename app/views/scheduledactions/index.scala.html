@@ -5,7 +5,7 @@
   maybeTeamId: Option[String]
 )(implicit messages: Messages, r: RequestHeader)
 
-@page.main("Scheduling", config, Some(NavItem.scheduling(link = false, None))) {
+@page.main("Scheduling", config, Seq(NavItem.scheduling(link = false, None))) {
   <div id="content" class="flex-row-cascade">
     <div id="scheduling" class="flex-row-cascade"></div>
 

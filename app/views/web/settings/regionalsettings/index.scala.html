@@ -3,7 +3,7 @@
   dataRoute: Call
 )(implicit messages: Messages, r: RequestHeader)
 
-@page.main("Regional settings", config, Some(NavItem.teamSettings(config.maybeTargetTeamId))) {
+@page.main("Regional settings", config, Seq(NavItem.teamSettings(config.maybeTargetTeamId))) {
   <div id="content" class="flex-row-cascade">
     <div id="regionalSettings" class="flex-row-cascade"></div>
 
