@@ -17,5 +17,7 @@ case class ViewConfig(
 
   val maybeTargetTeamId: Option[String] = maybeTeamAccess.flatMap(_.maybeTargetTeam.map(_.id))
 
+  val maybeAdminAccessTeamId: Option[String] = maybeTeamAccess.flatMap(_.maybeAdminAccessToTeamId)
+
   val isAdmin: Boolean = maybeTeamAccess.exists(_.isAdminAccess)
 }

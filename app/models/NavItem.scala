@@ -23,8 +23,8 @@ object NavItem {
 
   }
 
-  def teamSettings(maybeTeamId: Option[String]): NavItem = {
-    NavItem("Settings", Some(controllers.web.settings.routes.RegionalSettingsController.index(maybeTeamId)))
+  def teamSettings: NavItem = {
+    NavItem("Settings", None)
   }
 
   def help: NavItem = {
@@ -33,6 +33,14 @@ object NavItem {
 
   def admin: NavItem = {
     NavItem("Admin", None)
+  }
+
+  def integrations(link: Boolean, maybeTeamId: Option[String]) = {
+    NavItem("Integrations", if (link) {
+      Some(controllers.web.settings.routes.IntegrationsController.list(maybeTeamId))
+    } else {
+      None
+    })
   }
 
 }

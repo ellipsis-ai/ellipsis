@@ -3,7 +3,7 @@
   dataRoute: Call
 )(implicit messages: Messages, r: RequestHeader)
 
-@page.main("Integrations", config, Seq(NavItem.teamSettings(config.maybeTargetTeamId))) {
+@page.main("Integrations", config, Seq(NavItem.teamSettings, NavItem.integrations(link = false, None))) {
   <div id="content" class="content flex-row-cascade">
     <div id="applicationList" class="flex-row-cascade"></div>
     <script src='@config.assets.getWebpackBundle("vendor.js")'></script>
