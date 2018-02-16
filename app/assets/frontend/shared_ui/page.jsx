@@ -7,7 +7,7 @@ export type PageRequiredProps = {
   onToggleActivePanel: (name: string, beModal?: boolean, optionalCallback?: () => void) => void,
   onClearActivePanel: (optionalCallback?: () => void) => void,
   onRenderFooter: (content: React.Node, footerClassName?: string) => React.Node,
-  onRenderNavItem?: (content: React.Node, index: number) => void,
+  onRenderNavItems: (content: React.Node) => void,
   footerHeight: number,
   onRenderPanel: (panelName: string, panel: React.Node) => void
 };
@@ -34,6 +34,12 @@ type State = {
   previousPanelName: string,
   previousPanelIsModal: boolean,
   footerHeight: number
+}
+
+export type NavItemContent = {
+  title: string,
+  url?: ?string,
+  callback?: ?() => void
 }
 
 class Page extends React.Component<Props, State> {
@@ -182,25 +188,16 @@ class Page extends React.Component<Props, State> {
       );
     }
 
-    createNavItemContainer(index: number): ?HTMLElement {
-      if (this.navItems) {
-        const items = this.navItems;
-        const newContainer = document.createElement("div");
-        newContainer.id = `mainNav${index}`;
-        newContainer.className = "column prn display-inline-block";
-        items.appendChild(newContainer);
-        return newContainer;
-      } else {
-        return null;
-      }
-    }
-
-    onRenderNavItem(content: React.Node, index: number) {
+    onRenderNavItems(navItems: Array<NavItemContent>) {
       // This should use ReactDOM.createPortal when we upgrade to React 16
-      const el = document.getElementById(`mainNav${index}`) || this.createNavItemContainer(index);
+      const el = this.navItems;
       if (el) {
         ReactDOM.render((
-          <NavItem>{content}</NavItem>
+          <div>
+            {navItems.map((ea, index) => (
+              <NavItem key={`navItem${index}`} title={ea.title} url={ea.url} callback={ea.callback} />
+            ))}
+          </div>
         ), el);
       }
     }
@@ -221,7 +218,7 @@ class Page extends React.Component<Props, State> {
             onClearActivePanel: this.clearActivePanel,
             onRenderFooter: this.onRenderFooter,
             onRenderPanel: this.onRenderPanel,
-            onRenderNavItem: this.onRenderNavItem,
+            onRenderNavItems: this.onRenderNavItems,
             footerHeight: this.getFooterHeight(),
             ref: (component) => this.component = component
           }))}
@@ -237,6 +234,7 @@ class Page extends React.Component<Props, State> {
         onClearActivePanel: Page.placeholderCallback,
         onRenderFooter: Page.placeholderCallback,
         onRenderPanel: Page.placeholderCallback,
+        onRenderNavItems: Page.placeholderCallback,
         footerHeight: 0
       };
     }
@@ -253,7 +251,7 @@ Page.requiredPropTypes = {
   onClearActivePanel: React.PropTypes.func.isRequired,
   onRenderFooter: React.PropTypes.func.isRequired,
   onRenderPanel: React.PropTypes.func.isRequired,
-  onRenderNavItem: React.PropTypes.func,
+  onRenderNavItems: React.PropTypes.func.isRequired,
   footerHeight: React.PropTypes.number.isRequired
 };
 

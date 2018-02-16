@@ -1638,11 +1638,11 @@ const BehaviorEditor = React.createClass({
     if (this.props.showVersions) {
       this.showVersions();
     }
-    this.props.onRenderNavItem(this.getBehaviorGroup().getName(), 1);
+    this.renderNav();
   },
 
   componentDidUpdate: function() {
-    this.props.onRenderNavItem(this.getBehaviorGroup().getName(), 1);
+    this.renderNav();
   },
 
   checkForUpdates: function() {
@@ -2071,7 +2071,7 @@ const BehaviorEditor = React.createClass({
                     <Button
                       className="mrl mbm"
                       onClick={this.showVersions}>
-                      {this.isModified() ? "Review changes…" : "Compare versions…"}
+                      Review changes…
                     </Button>
                   ) : null}
                   <div className="display-inline-block align-button mbm">
@@ -2591,7 +2591,25 @@ const BehaviorEditor = React.createClass({
       />
     );
   },
- render: function() {
+
+  renderNav: function() {
+    const versionBrowserOpen = this.props.activePanelName === 'versionBrowser';
+    const items = [{
+      title: "Skills",
+      url: jsRoutes.controllers.ApplicationController.index(this.props.isAdmin ? this.props.teamId : undefined).url
+    }, {
+      title: this.getBehaviorGroup().getName(),
+      callback: versionBrowserOpen ? this.props.onClearActivePanel : null
+    }];
+    if (versionBrowserOpen) {
+      items.push({
+        title: "Review changes"
+      });
+    }
+    this.props.onRenderNavItems(items);
+  },
+
+  render: function() {
     const versionBrowserShouldOpen = this.props.activePanelName === 'versionBrowser';
     return (
       <div className="position-relative flex-row-cascade">

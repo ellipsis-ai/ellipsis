@@ -1,7 +1,6 @@
-@(navItem: NavItem, index: Int)
-<div class="column prn display-inline-block" id="mainNav@index.toString">
-  <div class="column prn display-inline-block height-button-l align-t color-black-translucent
-  @{if (index == 0) { "mlneg-divider" } else { "" }}">
+@(navItem: NavItem)
+<div class="column prn display-inline-block">
+  <div class="column prn display-inline-block height-button-l align-t color-black-translucent">
     @shared.svg.divider()
   </div>
   <div class="column prn display-inline-block align-t type-semibold">

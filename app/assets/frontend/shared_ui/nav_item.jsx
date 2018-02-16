@@ -1,20 +1,34 @@
 // @flow
 import * as React from 'react';
 import SVGDivider from '../svg/divider';
+import type {NavItemContent} from '../shared_ui/page';
+import Button from "../form/button";
 
-type Props = {
-  children: React.Node
-};
+class NavItem extends React.PureComponent<NavItemContent> {
+  renderTitle() {
+    if (this.props.callback) {
+      return (
+        <Button className="button-l button-raw plxl prl" onClick={this.props.callback}>{this.props.title}</Button>
+      );
+    } else if (this.props.url) {
+      return (
+        <a className="align-button-l plxl prl" href={this.props.url}>{this.props.title}</a>
+      );
+    } else {
+      return (
+        <div className="align-button-l plxl prl">{this.props.title}</div>
+      );
+    }
+  }
 
-class NavItem extends React.PureComponent<Props> {
   render(): React.Node {
     return (
-      <div>
+      <div className="column prn display-inline-block fade-in">
         <div className="column prn display-inline-block height-button-l align-t color-black-translucent">
           <SVGDivider />
         </div>
         <div className="column prn display-inline-block align-t type-semibold">
-          <div className="align-button-l plxl prl">{this.props.children}</div>
+          {this.renderTitle()}
         </div>
       </div>
     );

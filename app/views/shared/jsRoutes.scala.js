@@ -11,6 +11,7 @@
   routes.javascript.ApplicationController.deleteBehaviorGroups,
   routes.javascript.ApplicationController.fetchPublishedBehaviorInfo,
   routes.javascript.ApplicationController.findBehaviorGroupsMatching,
+  routes.javascript.ApplicationController.index,
   routes.javascript.ApplicationController.mergeBehaviorGroups,
   routes.javascript.ApplicationController.possibleCitiesFor,
   routes.javascript.ApplicationController.setTeamTimeZone,

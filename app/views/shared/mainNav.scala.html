@@ -1,6 +1,6 @@
 @(
   config: ViewConfig,
-  navItems: Seq[(NavItem, Int)],
+  navItems: Seq[NavItem],
   hideNav: Boolean,
   navClass: String = ""
 )(implicit r: RequestHeader)
@@ -8,7 +8,7 @@
   <div class="columns columns-elastic">
     <div class="column column-expand">
       <div class="height-button-l">
-      <div class="column prn display-inline-block align-t">
+      <div class="column prn display-inline-block align-t mrneg-divider">
         @if(!hideNav) {
           <button id="main-nav-button" type="button"
             class="border-radius-bottom-left-none button-subtle button-l button-dropdown-trigger
@@ -50,8 +50,8 @@
         </div>
       </div>
       <div class="column prn display-inline-block align-t height-button-l" id="mainNavItems">
-        @navItems.map { case(navItem, i) =>
-          @shared.navItem(navItem, i)
+        @navItems.map { navItem =>
+          @shared.navItem(navItem)
         }
       </div>
     </div>
