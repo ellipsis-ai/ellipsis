@@ -16,8 +16,6 @@ const BehaviorSwitcher = React.createClass({
       nodeModuleVersions: React.PropTypes.arrayOf(React.PropTypes.instanceOf(NodeModuleVersion)).isRequired,
       selectedId: React.PropTypes.string,
       groupId: React.PropTypes.string,
-      groupName: React.PropTypes.string.isRequired,
-      groupDescription: React.PropTypes.string.isRequired,
       onSelect: React.PropTypes.func.isRequired,
       addNewAction: React.PropTypes.func.isRequired,
       addNewDataType: React.PropTypes.func.isRequired,
@@ -30,18 +28,6 @@ const BehaviorSwitcher = React.createClass({
       onApiConfigClick: React.PropTypes.func.isRequired,
       onAddApiConfigClick: React.PropTypes.func.isRequired,
       getApiConfigName: React.PropTypes.func.isRequired
-    },
-
-    getSkillTitle: function() {
-      return (
-        <div className="mbxs">
-          <h4 className="mvn">{this.props.groupName}</h4>
-          <div className="type-s type-weak display-ellipsis display-limit-width"
-            title={this.props.groupDescription}>
-            {this.props.groupDescription}
-          </div>
-        </div>
-      );
     },
 
     onEditSkillDetails: function() {
@@ -96,10 +82,6 @@ const BehaviorSwitcher = React.createClass({
         <div className="pbxxxl">
 
           <div className="border-bottom ptxl pbl">
-
-            <div className="container container-wide">
-              {this.getSkillTitle()}
-            </div>
 
             <div>
               <button type="button"

@@ -7,6 +7,7 @@ export type PageRequiredProps = {
   onToggleActivePanel: (name: string, beModal?: boolean, optionalCallback?: () => void) => void,
   onClearActivePanel: (optionalCallback?: () => void) => void,
   onRenderFooter: (content: React.Node, footerClassName?: string) => React.Node,
+  onRenderNavItem?: (content: React.Node, index: number) => void,
   footerHeight: number,
   onRenderPanel: (panelName: string, panel: React.Node) => void
 };
@@ -17,6 +18,7 @@ import Collapsible from './collapsible';
 import FixedFooter from './fixed_footer';
 import ModalScrim from './modal_scrim';
 import Button from '../form/button';
+import NavItem from './nav_item';
 import autobind from '../lib/autobind';
 import PageFooterRenderingError from './page_footer_rendering_error';
 
@@ -38,6 +40,7 @@ class Page extends React.Component<Props, State> {
     panels: { [string]: ?React.Component<*> };
     footer: ?(HTMLElement | FixedFooter);
     component: ?(React.Node);
+    navItems: ?HTMLElement;
     static requiredPropTypes: {};
     static feedbackContainerId: string;
 
@@ -142,6 +145,7 @@ class Page extends React.Component<Props, State> {
     componentDidMount(): void {
       window.document.addEventListener('keydown', this.onDocumentKeyDown, false);
       window.document.addEventListener('focus', this.handleModalFocus, true);
+      this.navItems = document.getElementById("mainNavItems");
       const container = this.props.feedbackContainer || document.getElementById(Page.feedbackContainerId);
       if (this.footer && container) {
         ReactDOM.render(this.renderFeedbackLink(), container);
@@ -178,6 +182,29 @@ class Page extends React.Component<Props, State> {
       );
     }
 
+    createNavItemContainer(index: number): ?HTMLElement {
+      if (this.navItems) {
+        const items = this.navItems;
+        const newContainer = document.createElement("div");
+        newContainer.id = `mainNav${index}`;
+        newContainer.className = "column prn display-inline-block";
+        items.appendChild(newContainer);
+        return newContainer;
+      } else {
+        return null;
+      }
+    }
+
+    onRenderNavItem(content: React.Node, index: number) {
+      // This should use ReactDOM.createPortal when we upgrade to React 16
+      const el = document.getElementById(`mainNav${index}`) || this.createNavItemContainer(index);
+      if (el) {
+        ReactDOM.render((
+          <NavItem>{content}</NavItem>
+        ), el);
+      }
+    }
+
     renderFeedbackLink() {
       return (
         <Button className="button-dropdown-item plm" onClick={this.toggleFeedback}>Feedback</Button>
@@ -194,6 +221,7 @@ class Page extends React.Component<Props, State> {
             onClearActivePanel: this.clearActivePanel,
             onRenderFooter: this.onRenderFooter,
             onRenderPanel: this.onRenderPanel,
+            onRenderNavItem: this.onRenderNavItem,
             footerHeight: this.getFooterHeight(),
             ref: (component) => this.component = component
           }))}
@@ -225,6 +253,7 @@ Page.requiredPropTypes = {
   onClearActivePanel: React.PropTypes.func.isRequired,
   onRenderFooter: React.PropTypes.func.isRequired,
   onRenderPanel: React.PropTypes.func.isRequired,
+  onRenderNavItem: React.PropTypes.func,
   footerHeight: React.PropTypes.number.isRequired
 };
 

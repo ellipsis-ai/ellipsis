@@ -1,12 +1,14 @@
 @(navItem: NavItem, index: Int)
-<div class="column prn display-inline-block height-button-l align-t color-black-translucent
-@{if (index == 0) { "mlneg-divider" } else { "" }}">
-  @shared.svg.divider()
-</div>
-<div class="column prn display-inline-block align-t type-semibold" id="mainNav@index.toString">
-@navItem.maybeRoute.map { route =>
-  <a class="align-button-l plxl prl" href="@route">@navItem.title</a>
-}.getOrElse {
-  <span class="align-button-l plxl prl">@navItem.title</span>
-}
+<div class="column prn display-inline-block" id="mainNav@index.toString">
+  <div class="column prn display-inline-block height-button-l align-t color-black-translucent
+  @{if (index == 0) { "mlneg-divider" } else { "" }}">
+    @shared.svg.divider()
+  </div>
+  <div class="column prn display-inline-block align-t type-semibold">
+  @navItem.maybeRoute.map { route =>
+    <a class="align-button-l plxl prl" href="@route">@navItem.title</a>
+  }.getOrElse {
+    <span class="align-button-l plxl prl">@navItem.title</span>
+  }
+  </div>
 </div>

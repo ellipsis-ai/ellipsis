@@ -1638,10 +1638,12 @@ const BehaviorEditor = React.createClass({
     if (this.props.showVersions) {
       this.showVersions();
     }
+    this.props.onRenderNavItem(this.getBehaviorGroup().getName(), 1);
   },
 
-  // componentDidUpdate: function() {
-  // },
+  componentDidUpdate: function() {
+    this.props.onRenderNavItem(this.getBehaviorGroup().getName(), 1);
+  },
 
   checkForUpdates: function() {
     if (document.hasFocus() && this.isExistingGroup() && !this.isSaving()) {
@@ -2288,10 +2290,6 @@ const BehaviorEditor = React.createClass({
               nodeModuleVersions={this.getNodeModuleVersions()}
               selectedId={this.getSelectedId()}
               groupId={this.getBehaviorGroup().id}
-              groupName={this.getBehaviorGroup().getName()}
-              groupDescription={this.getBehaviorGroup().description || ""}
-              onBehaviorGroupNameChange={this.onBehaviorGroupNameChange}
-              onBehaviorGroupDescriptionChange={this.onBehaviorGroupDescriptionChange}
               onSelect={this.onSelect}
               addNewAction={this.addNewAction}
               addNewDataType={this.addNewDataType}
@@ -2593,8 +2591,7 @@ const BehaviorEditor = React.createClass({
       />
     );
   },
-
-  render: function() {
+ render: function() {
     const versionBrowserShouldOpen = this.props.activePanelName === 'versionBrowser';
     return (
       <div className="position-relative flex-row-cascade">

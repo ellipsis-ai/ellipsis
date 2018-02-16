@@ -49,13 +49,14 @@
           </ul>
         </div>
       </div>
-      <div class="column prn display-inline-block align-t" id="mainNavItems">
+      <div class="column prn display-inline-block align-t height-button-l" id="mainNavItems">
         @navItems.map { case(navItem, i) =>
           @shared.navItem(navItem, i)
         }
       </div>
     </div>
     </div>
+    <div class="column column-shrink align-r pts" id="mainNavActions"></div>
     @config.maybeTeamAccess.map { teamAccess => @shared.teamMenu(teamAccess) }
   </div>
 </div>
