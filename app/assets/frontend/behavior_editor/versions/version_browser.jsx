@@ -6,7 +6,6 @@ import BehaviorGroupDiff from './behavior_group_diff';
 import Button from '../../form/button';
 import Collapsible from '../../shared_ui/collapsible';
 import DynamicLabelButton from '../../form/dynamic_label_button';
-import FixedHeader from '../../shared_ui/fixed_header';
 import FixedFooter from '../../shared_ui/fixed_footer';
 import Formatter from '../../lib/formatter';
 import FormInput from '../../form/input';
@@ -787,42 +786,31 @@ class VersionBrowser extends React.Component<Props, State> {
       const hasChanges = Boolean(diff);
       return (
         <div className="flex-row-cascade" style={this.getContainerStyle()}>
-          <FixedHeader onHeightChange={this.setHeaderHeight}>
-
-            <div className="bg-light border-bottom border-light container container-wide pvm">
-              <div className="columns">
-                <div className="column column-one-half">
-                  <Button className="button-raw" onClick={this.props.onClearActivePanel}>{this.props.currentGroup.getName()}</Button>
-                  <span className="mhs type-weak">→</span>
-                  <span>Skill versions</span>
-                </div>
-                <div className="column column-one-half align-r">
-                  {this.renderGithubRepo()}
-                </div>
-              </div>
-            </div>
-
-            <Collapsible revealWhen={this.state.isModifyingGithubRepo}>
-              <div className="bg-white border-bottom border-light container container-wide pvm">
-                <LinkGithubRepo
-                  ref={(el) => this.linkGitHubRepoComponent = el}
-                  group={this.props.currentGroup}
-                  linked={this.props.linkedGithubRepo}
-                  onDoneClick={this.onLinkedGithubRepo}
-                  onLinkGithubRepo={this.props.onLinkGithubRepo}
-                  csrfToken={this.props.csrfToken}
-                />
-              </div>
-            </Collapsible>
-
-            <div className="bg-lightest border-emphasis-bottom border-pink container container-wide">
-              {this.renderVersionSelector(hasChanges)}
-            </div>
-
-          </FixedHeader>
 
           <div className="flex-columns flex-row-expand">
             <div className="flex-column flex-column-left flex-rows bg-white">
+
+              <div className="bg-light border-bottom border-light container container-wide pvm">
+                {this.renderGithubRepo()}
+              </div>
+
+              <Collapsible revealWhen={this.state.isModifyingGithubRepo}>
+                <div className="bg-white border-bottom border-light container container-wide pvm">
+                  <LinkGithubRepo
+                    ref={(el) => this.linkGitHubRepoComponent = el}
+                    group={this.props.currentGroup}
+                    linked={this.props.linkedGithubRepo}
+                    onDoneClick={this.onLinkedGithubRepo}
+                    onLinkGithubRepo={this.props.onLinkGithubRepo}
+                    csrfToken={this.props.csrfToken}
+                  />
+                </div>
+              </Collapsible>
+
+              <div className="bg-lightest border-emphasis-bottom border-pink container container-wide">
+                {this.renderVersionSelector(hasChanges)}
+              </div>
+
               <div className="container container container-wide pvxl">
                 {this.renderSelectedVersion(selectedVersion, diff)}
               </div>
