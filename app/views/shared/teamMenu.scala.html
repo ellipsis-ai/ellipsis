@@ -7,16 +7,12 @@
     @CSRF.formField
     <button class="button-subtle button-dropdown-trigger button-dropdown-trigger-no-icon mobile-phs" type="button" id="main-user-menu-button">
       <span class="display-inline-block align-t">
-      @teamSymbol()
+      @shared.teamSymbol()
       </span>
       @teamAccess.maybeAdminAccessToTeam.map { team =>
       <span class="type-label display-inline-block align-t ptxs mlxs">
         @team.name
       </span>
-      }.getOrElse {
-        @teamAccess.maybeTargetTeam.flatMap(_.maybeNonEmptyName.map(name => {
-            <span class="type-label display-inline-block align-t ptxs mlxs mobile-display-none">{name}</span>
-        })).getOrElse("")
       }
     </button>
   <div class="position-relative type-black">
