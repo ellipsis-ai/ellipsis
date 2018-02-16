@@ -441,17 +441,6 @@ case class BehaviorBackedDataType(dataTypeConfig: DataTypeConfig) extends Behavi
     } yield maybeResult
   }
 
-  private def extractResultBody(result: SuccessResult): DataTypeResultBody = {
-    val json = result.result
-    json.asOpt[DataTypeResultBody].getOrElse {
-      json.asOpt[Seq[ValidValue]].map(DataTypeResultBody.apply).getOrElse {
-        json.asOpt[Seq[String]].map(strings => DataTypeResultBody(strings.map { ea => ValidValue(ea, ea, Map()) })).getOrElse {
-          DataTypeResultBody.empty
-        }
-      }
-    }
-  }
-
   private def resultBodyAction(maybeSearchQuery: Option[String], context: BehaviorParameterContext)(implicit ec: ExecutionContext): DBIO[DataTypeResultBody] = {
     if (dataTypeConfig.usesCode) {
       fetchValidValuesResultAction(maybeSearchQuery, context).map { maybeResult =>
