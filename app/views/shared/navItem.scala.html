@@ -1,8 +1,9 @@
 @(navItem: NavItem, index: Int)
-<div class="column prn display-inline-block height-button-l align-t color-gray-lightest-translucent">
+<div class="column prn display-inline-block height-button-l align-t color-gray-lightest-translucent
+@{if (index == 0) { "mlneg-divider" } else { "" }}">
   @shared.svg.divider()
 </div>
-<div class="column prn display-inline-block align-t" id="mainNav@index.toString">
+<div class="column prn display-inline-block align-t type-semibold" id="mainNav@index.toString">
 @navItem.maybeRoute.map { route =>
   <a class="align-button-l plxl prl" href="@route">@navItem.title</a>
 }.getOrElse {

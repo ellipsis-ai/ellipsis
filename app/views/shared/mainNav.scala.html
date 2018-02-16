@@ -9,14 +9,19 @@
     <div class="column column-expand">
       <div class="height-button-l">
       <div class="column prn display-inline-block align-t">
-        <button id="main-nav-button" type="button"
-          class="border-radius-bottom-left-none button-subtle button-l button-dropdown-trigger button-dropdown-trigger-l button-dropdown-trigger-no-icon"
-          @if(hideNav) { disabled="disabled" }>
-          @shared.mainLogo(config)
-          @if(!hideNav) {
-            <span class="type-pink display-inline-block align-t mlxs">▾</span>
-          }
-        </button>
+        @if(!hideNav) {
+          <button id="main-nav-button" type="button"
+            class="border-radius-bottom-left-none button-subtle button-l button-dropdown-trigger
+              button-dropdown-trigger-l button-dropdown-trigger-no-icon"
+          >
+            @shared.mainLogo(config, inverted = config.isAdmin)
+            <span class="type-pink display-inline-block align-t mhs">▾</span>
+          </button>
+        } else {
+          <div class="height-logo mtm">
+            @shared.mainLogo(config, inverted = true)
+          </div>
+        }
         <div class="position-relative type-black">
           <ul class="type-s popup popup-dropdown-menu fade-in display-none" id="main-nav-menu">
             <li>

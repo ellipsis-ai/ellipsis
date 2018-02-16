@@ -11,9 +11,11 @@ case class ViewConfig(
 
   val configuration: Configuration = assets.configuration
 
-  val isDevelopment = configuration.get[String]("application.version").contains("Development")
+  val isDevelopment: Boolean = configuration.get[String]("application.version").contains("Development")
 
-  val isProduction = !isDevelopment
+  val isProduction: Boolean = !isDevelopment
 
-  val maybeTargetTeamId = maybeTeamAccess.flatMap(_.maybeTargetTeam.map(_.id))
+  val maybeTargetTeamId: Option[String] = maybeTeamAccess.flatMap(_.maybeTargetTeam.map(_.id))
+
+  val isAdmin: Boolean = maybeTeamAccess.exists(_.isAdminAccess)
 }
