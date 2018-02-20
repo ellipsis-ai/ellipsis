@@ -2,7 +2,6 @@ import * as React from 'react';
 import APIConfigPanel from './api_config_panel';
 import {AWSConfigRef} from '../models/aws';
 import BehaviorGroup from '../models/behavior_group';
-import BehaviorGroupSaveInfo from './behavior_group_save_info';
 import BehaviorGroupVersionMetaData from '../models/behavior_group_version_meta_data';
 import BehaviorGroupDetailsPanel from './behavior_group_details_panel';
 import BehaviorGroupEditor from './behavior_group_editor';
@@ -12,7 +11,6 @@ import BehaviorTester from './behavior_tester';
 import DataTypeTester from './data_type_tester';
 import BehaviorCodeHelp from './behavior_code_help';
 import Button from '../form/button';
-import ChangeSummary from './change_summary';
 import CodeConfiguration from './code_configuration';
 import ConfirmActionPanel from '../panels/confirm_action';
 import CollapseButton from '../shared_ui/collapse_button';
@@ -68,6 +66,7 @@ import ImmutableObjectUtils from '../lib/immutable_object_utils';
 import debounce from 'javascript-debounce';
 import Sort from '../lib/sort';
 import 'codemirror/mode/markdown/markdown';
+import DeploymentStatus from "./deployment_status";
 
 var MOBILE_MAX_WIDTH = 768;
 
@@ -616,21 +615,6 @@ const BehaviorEditor = React.createClass({
     return notifications;
   },
 
-  buildDeploymentNotifications: function() {
-    if (this.isExistingGroup() && !this.isModified() && !this.isDeployed()) {
-      return [new NotificationData({
-        kind: "deployment_warning",
-        type: "saved_version_not_deployed",
-        lastSaveTimestamp: this.props.group.createdAt,
-        lastDeployTimestamp: this.props.lastDeployTimestamp,
-        onDevModeChannelsClick: this.toggleDevModeChannelsHelp,
-        onClick: this.deploy
-      })];
-    } else {
-      return [];
-    }
-  },
-
   buildSkillDetailsNotifications: function() {
     if (this.isExistingGroup() && !this.getBehaviorGroup().name) {
       return [new NotificationData({
@@ -651,7 +635,6 @@ const BehaviorEditor = React.createClass({
       this.buildDataTypeNotifications(),
       this.buildTemplateNotifications(),
       this.buildServerNotifications(),
-      this.buildDeploymentNotifications(),
       this.buildSkillDetailsNotifications()
     );
   },
@@ -904,7 +887,7 @@ const BehaviorEditor = React.createClass({
     )
       .then((json) => {
         if (json.id) {
-          this.props.onDeploy(json);
+          this.props.onDeploy(json, callback);
         } else {
           this.onDeployError(null, callback);
         }
@@ -1638,11 +1621,13 @@ const BehaviorEditor = React.createClass({
     if (this.props.showVersions) {
       this.showVersions();
     }
-    this.renderNav();
+    this.renderNavItems();
+    this.renderNavActions();
   },
 
   componentDidUpdate: function() {
-    this.renderNav();
+    this.renderNavItems();
+    this.renderNavActions();
   },
 
   checkForUpdates: function() {
@@ -2105,26 +2090,6 @@ const BehaviorEditor = React.createClass({
         <span className="fade-in type-pink type-bold type-italic">
           <span style={{ height: 24 }} className="display-inline-block mrs align-b"><SVGWarning /></span>
           <span>{this.state.error}</span>
-        </span>
-      );
-    } else if (this.isLatestSavedVersion() && this.props.group.createdAt) {
-      return (
-        <BehaviorGroupSaveInfo
-          className="fade-in type-green type-bold type-italic"
-          group={this.props.group}
-          currentUserId={this.props.userId}
-          isCurrentVersion={true}
-        />
-      );
-    } else if (this.isExistingGroup() && this.isModified()) {
-      return (
-        <span className="fade-in type-pink type-italic">
-          <span className="type-bold">Unsaved changes </span>
-            <ChangeSummary
-              currentGroupVersion={this.getBehaviorGroup()}
-              originalGroupVersion={this.props.group}
-              isModified={this.editableIsModified}
-            />
         </span>
       );
     } else {
@@ -2592,7 +2557,7 @@ const BehaviorEditor = React.createClass({
     );
   },
 
-  renderNav: function() {
+  renderNavItems: function() {
     const versionBrowserOpen = this.props.activePanelName === 'versionBrowser';
     const items = [{
       title: "Skills",
@@ -2607,6 +2572,28 @@ const BehaviorEditor = React.createClass({
       });
     }
     this.props.onRenderNavItems(items);
+  },
+
+  renderDeployStatus: function() {
+    return (
+      <DeploymentStatus
+        group={this.getBehaviorGroup()}
+        isModified={this.isModified()}
+        lastSaveTimestamp={this.props.group.createdAt}
+        lastDeployTimestamp={this.props.lastDeployTimestamp}
+        currentUserId={this.props.userId}
+        onDevModeChannelsClick={this.toggleDevModeChannelsHelp}
+        onDeployClick={this.deploy}
+      />
+    );
+  },
+
+  renderNavActions: function() {
+    if (this.state.versionBrowserOpen) {
+      this.props.onRenderNavActions(null);
+    } else {
+      this.props.onRenderNavActions(this.renderDeployStatus());
+    }
   },
 
   render: function() {

@@ -52,7 +52,7 @@ const Formatter = {
       if (diff < ONE_WEEK_IN_MS) {
         return this.formatTimestampRelative(timestamp);
       } else {
-        return this.formatTimestampShort(timestamp);
+        return this.formatTimestampDate(timestamp);
       }
     },
 
