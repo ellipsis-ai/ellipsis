@@ -10,7 +10,9 @@ import models.accounts.user.User
 import models.behaviors.BotResultService
 import models.behaviors.behavior.Behavior
 import models.behaviors.behaviorgroup.BehaviorGroup
+import models.behaviors.behaviorgroupdeployment.BehaviorGroupDeployment
 import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
+import models.behaviors.behaviorgroupversionsha.BehaviorGroupVersionSHA
 import models.behaviors.behaviorversion.BehaviorVersion
 import models.behaviors.config.requiredawsconfig.RequiredAWSConfig
 import models.behaviors.config.requiredoauth2apiconfig.RequiredOAuth2ApiConfig
@@ -151,6 +153,14 @@ trait DBSpec extends PlaySpec with OneAppPerSuite with MockitoSugar {
     runNow(dataService.behaviorGroupVersions.createFor(group, user, data.copyForNewVersionOf(group)))
   }
 
+  def newSavedDeploymentFor(groupVersion: BehaviorGroupVersion, user: User): BehaviorGroupDeployment = {
+    runNow(dataService.behaviorGroupDeployments.deploy(groupVersion, user.id, None))
+  }
+
+  def newSavedSHAFor(groupVersion: BehaviorGroupVersion): BehaviorGroupVersionSHA = {
+    runNow(dataService.behaviorGroupVersionSHAs.createForAction(groupVersion, "made-up-ABCDEFGHIJ"))
+  }
+
   def behaviorVersionFor(behavior: Behavior, groupVersion: BehaviorGroupVersion): BehaviorVersion = {
     runNow(dataService.behaviorVersions.findFor(behavior, groupVersion)).get
   }
@@ -188,6 +198,7 @@ trait DBSpec extends PlaySpec with OneAppPerSuite with MockitoSugar {
         runNow(dataService.slackProfiles.deleteAll())
         runNow(dataService.collectedParameterValues.deleteAll())
         runNow(dataService.conversations.deleteAll())
+        runNow(dataService.behaviorGroupVersionSHAs.deleteAll())
       }
     }
   }
