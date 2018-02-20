@@ -25,6 +25,8 @@ const FooterRenderingComponentDefaultProps = Object.freeze({
   onClearActivePanel: jest.fn(),
   onRenderFooter: jest.fn(),
   onRenderPanel: jest.fn(),
+  onRenderNavItems: jest.fn(),
+  onRenderNavActions: jest.fn(),
   footerHeight: 0
 });
 
