@@ -64,7 +64,7 @@ const ApiTokenGenerator = React.createClass({
 
     render: function() {
       return (
-        <SettingsPage teamId={this.props.teamId} activePage={"apiTokens"} header={"Ellipsis API tokens"} isAdmin={this.props.isAdmin}>
+        <SettingsPage teamId={this.props.teamId} activePage={"apiTokens"} isAdmin={this.props.isAdmin}>
           <p>
             <span>Generate API tokens to make requests to Ellipsis that trigger a response. </span>
             <span>For better security, use each token only for a single purpose.</span>

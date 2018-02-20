@@ -64,7 +64,7 @@ const IntegrationList = React.createClass({
 
     render: function() {
       return (
-        <SettingsPage teamId={this.props.teamId} isAdmin={this.props.isAdmin} header={this.renderHeader()} activePage={"oauthApplications"}>
+        <SettingsPage teamId={this.props.teamId} isAdmin={this.props.isAdmin} activePage={"oauthApplications"}>
 
           <p>
             <span>Create a new configuration to give Ellipsis access to third-party APIs, </span>
@@ -107,14 +107,6 @@ const IntegrationList = React.createClass({
             </Collapsible>
           ))}
         </SettingsPage>
-      );
-    },
-
-    renderHeader: function() {
-      return (
-        <h3 className="mvn ptxxl type-weak display-ellipsis">
-          <span className="mrs">Integrations</span>
-        </h3>
       );
     },
 
