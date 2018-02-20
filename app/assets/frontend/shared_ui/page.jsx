@@ -1,15 +1,23 @@
 // @flow
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';
+
+export type NavItemContent = {
+  title: string,
+  url?: ?string,
+  callback?: ?() => void
+}
+
 export type PageRequiredProps = {
   activePanelName: string,
   activePanelIsModal: boolean,
   onToggleActivePanel: (name: string, beModal?: boolean, optionalCallback?: () => void) => void,
   onClearActivePanel: (optionalCallback?: () => void) => void,
   onRenderFooter: (content: React.Node, footerClassName?: string) => React.Node,
-  onRenderNavItems: (content: React.Node) => void,
-  footerHeight: number,
-  onRenderPanel: (panelName: string, panel: React.Node) => void
+  onRenderNavItems: (items: Array<NavItemContent>) => void,
+  onRenderNavActions: (content: React.Node) => void,
+  onRenderPanel: (panelName: string, panel: React.Node) => void,
+  footerHeight: number
 };
 
 import Event from '../lib/event';
@@ -36,17 +44,12 @@ type State = {
   footerHeight: number
 }
 
-export type NavItemContent = {
-  title: string,
-  url?: ?string,
-  callback?: ?() => void
-}
-
 class Page extends React.Component<Props, State> {
     panels: { [string]: ?React.Component<*> };
     footer: ?(HTMLElement | FixedFooter);
     component: ?(React.Node);
     navItems: ?HTMLElement;
+    navActions: ?HTMLElement;
     static requiredPropTypes: {};
     static feedbackContainerId: string;
 
@@ -56,6 +59,8 @@ class Page extends React.Component<Props, State> {
       this.state = this.getDefaultState();
       this.footer = null;
       this.panels = {};
+      this.navItems = document.getElementById("mainNavItems");
+      this.navActions = document.getElementById("mainNavActions");
     }
 
     getDefaultState(): State {
@@ -151,7 +156,6 @@ class Page extends React.Component<Props, State> {
     componentDidMount(): void {
       window.document.addEventListener('keydown', this.onDocumentKeyDown, false);
       window.document.addEventListener('focus', this.handleModalFocus, true);
-      this.navItems = document.getElementById("mainNavItems");
       const container = this.props.feedbackContainer || document.getElementById(Page.feedbackContainerId);
       if (this.footer && container) {
         ReactDOM.render(this.renderFeedbackLink(), container);
@@ -202,6 +206,16 @@ class Page extends React.Component<Props, State> {
       }
     }
 
+    onRenderNavActions(content: React.Node) {
+      // This should use ReactDOM.createPortal when we upgrade to React 16
+      const el = this.navActions;
+      if (el) {
+        ReactDOM.render((
+          <div>{content}</div>
+        ), el);
+      }
+    }
+
     renderFeedbackLink() {
       return (
         <Button className="button-dropdown-item plm" onClick={this.toggleFeedback}>Feedback</Button>
@@ -219,6 +233,7 @@ class Page extends React.Component<Props, State> {
             onRenderFooter: this.onRenderFooter,
             onRenderPanel: this.onRenderPanel,
             onRenderNavItems: this.onRenderNavItems,
+            onRenderNavActions: this.onRenderNavActions,
             footerHeight: this.getFooterHeight(),
             ref: (component) => this.component = component
           }))}
@@ -235,6 +250,7 @@ class Page extends React.Component<Props, State> {
         onRenderFooter: Page.placeholderCallback,
         onRenderPanel: Page.placeholderCallback,
         onRenderNavItems: Page.placeholderCallback,
+        onRenderNavActions: Page.placeholderCallback,
         footerHeight: 0
       };
     }
@@ -252,6 +268,7 @@ Page.requiredPropTypes = {
   onRenderFooter: React.PropTypes.func.isRequired,
   onRenderPanel: React.PropTypes.func.isRequired,
   onRenderNavItems: React.PropTypes.func.isRequired,
+  onRenderNavActions: React.PropTypes.func.isRequired,
   footerHeight: React.PropTypes.number.isRequired
 };
 
