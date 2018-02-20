@@ -30,6 +30,7 @@ class BehaviorEditorLoader extends React.Component {
             group: group,
             builtinParamTypes: this.props.builtinParamTypes.map(ParamType.fromJson),
             selectedId: selectedId,
+            savedAnswers: this.props.savedAnswers,
             onLoad: null
           };
           if (group.id && selectedId) {
@@ -101,8 +102,12 @@ class BehaviorEditorLoader extends React.Component {
           }
         }
 
+        getSavedAnswers() {
+          return (this.state && this.state.savedAnswers) ? this.state.savedAnswers : [];
+        }
+
         resetSavedAnswerForInput(inputId, numAnswersDeleted) {
-          const newSavedAnswers = this.state.savedAnswers.map((ea) => {
+          const newSavedAnswers = this.getSavedAnswers().map((ea) => {
             if (ea.inputId === inputId) {
               return Object.assign({}, ea, {
                 myValueString: null,
@@ -131,7 +136,7 @@ class BehaviorEditorLoader extends React.Component {
                 oauth2Apis={this.props.oauth2Apis}
                 simpleTokenApis={this.state.simpleTokenApis}
                 linkedOAuth2ApplicationIds={this.props.linkedOAuth2ApplicationIds}
-                savedAnswers={this.props.savedAnswers}
+                savedAnswers={this.getSavedAnswers()}
                 onSave={this.onSave}
                 onForgetSavedAnswerForInput={this.resetSavedAnswerForInput}
                 onLoad={this.state.onLoad}
