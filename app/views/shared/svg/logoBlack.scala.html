@@ -1,5 +1,13 @@
-@(cropValue: Option[String] /* X Y width height */)
-@crop = @{ cropValue.getOrElse("0 0 102 32") }
+@(hideSymbol: Boolean = false, hideText: Boolean = true)
+@crop = @{
+  if (hideSymbol) {
+    "42 0 60 32"
+  } else if (hideText) {
+    "0 0 32 32"
+  } else {
+    "0 0 102 32"
+  }
+}
 <svg role="img" aria-label="Ellipsis" x="0px" y="0px" viewBox="@crop" height="32px">
   <title>Ellipsis</title>
   <g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd" transform="translate(-25.000000, -9.000000)">

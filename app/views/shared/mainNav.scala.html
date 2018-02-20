@@ -4,7 +4,8 @@
   hideNav: Boolean,
   navClass: String = ""
 )(implicit r: RequestHeader)
-<div class="container container-wide phs @navClass">
+@navPadding = @{ if (hideNav) { "" } else { "phs" } }
+<div class="container container-wide @navPadding @navClass">
   <div class="columns columns-elastic">
     <div class="column column-expand">
       <div class="height-button-l">

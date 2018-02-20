@@ -2,15 +2,21 @@
   config: ViewConfig,
   inverted: Boolean = false
 )(implicit r: RequestHeader)
-@l(crop: Option[String] = None) = @{ if (inverted) { shared.svg.logo(crop) } else { shared.svg.logoBlack(crop) } }
-@if(!config.isDevelopment) {
-  <div class="align-button type-label paxs mbs type-white bg-blue border-radius">Dev</div>
-  <div class="display-inline-block align-m mobile-display-none height-logo">@l(Some("128 0 272 112"))</div>
+@l(hideSymbol: Boolean = false, hideText: Boolean = false) = @{
+  if (inverted) {
+    shared.svg.logo(hideSymbol, hideText)
+  } else {
+    shared.svg.logoBlack(hideSymbol, hideText)
+  }
+}
+@if(config.isDevelopment) {
+  <div class="column paxs mrs align-button type-label type-white bg-blue border-radius">Dev</div>
+  <div class="column prn display-inline-block align-m mobile-display-none height-logo">@l(hideSymbol = true)</div>
 } else {
   @if(config.maybeTeamAccess.exists(_.isAdminAccess)) {
     <div class="column prn display-inline-block type-l mobile-ptxs pbxs">👻</div>
   } else {
     <div class="column prn display-inline-block align-t mobile-display-none height-logo mtneg1">@l()</div>
-    <div class="column prn display-inline-block align-t mobile-display-only height-logo-s">@l(Some("0 0 112 112"))</div>
+    <div class="column prn display-inline-block align-t mobile-display-only height-logo-s">@l(hideText = true)</div>
   }
 }
