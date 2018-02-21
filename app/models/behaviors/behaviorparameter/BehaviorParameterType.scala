@@ -17,6 +17,8 @@ import utils.Color
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
 
+case class FetchValidValuesBadResultException(result: BotResult) extends Exception(s"Couldn't fetch data type values: ${result.resultType}")
+
 sealed trait BehaviorParameterType extends FieldTypeForSchema {
 
   val id: String
@@ -442,10 +444,6 @@ case class BehaviorBackedDataType(dataTypeConfig: DataTypeConfig) extends Behavi
     } yield maybeResult
   }
 
-  private def fetchValidValuesResult(maybeSearchQuery: Option[String], context: BehaviorParameterContext)(implicit ec: ExecutionContext): Future[Option[BotResult]] = {
-    context.dataService.run(fetchValidValuesResultAction(maybeSearchQuery, context))
-  }
-
   private def extractValidValueFrom(json: JsValue): Option[ValidValue] = {
     json.validate[ValidValue] match {
       case JsSuccess(data, _) => Some(data)
@@ -474,7 +472,7 @@ case class BehaviorBackedDataType(dataTypeConfig: DataTypeConfig) extends Behavi
       fetchValidValuesResultAction(maybeSearchQuery, context).map { maybeResult =>
         maybeResult.map {
           case r: SuccessResult => extractValidValues(r)
-          case _: BotResult => Seq()
+          case r: BotResult => throw FetchValidValuesBadResultException(r)
         }.getOrElse(Seq())
       }
     } else {
