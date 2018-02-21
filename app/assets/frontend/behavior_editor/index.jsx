@@ -67,6 +67,7 @@ import debounce from 'javascript-debounce';
 import Sort from '../lib/sort';
 import 'codemirror/mode/markdown/markdown';
 import DeploymentStatus from "./deployment_status";
+import GithubRepoActions from "./versions/github_repo_actions";
 
 var MOBILE_MAX_WIDTH = 768;
 
@@ -1110,6 +1111,12 @@ const BehaviorEditor = React.createClass({
     this.props.onToggleActivePanel(name, beModal, optionalCallback);
   },
 
+  toggleChangeGithubRepo: function() {
+    this.setState({
+      isModifyingGithubRepo: !this.state.isModifyingGithubRepo
+    });
+  },
+
   toggleSharedAnswerInputSelector: function() {
     this.toggleActivePanel('sharedAnswerInputSelector', true);
   },
@@ -1698,7 +1705,8 @@ const BehaviorEditor = React.createClass({
       errorReachingServer: null,
       versionBrowserOpen: false,
       revertToVersion: null,
-      revertToVersionTitle: null
+      revertToVersionTitle: null,
+      isModifyingGithubRepo: false
     };
   },
 
@@ -2551,8 +2559,10 @@ const BehaviorEditor = React.createClass({
         isLinkedToGithub={this.props.isLinkedToGithub}
         linkedGithubRepo={this.props.linkedGithubRepo}
         onLinkGithubRepo={this.props.onLinkGithubRepo}
+        onChangedGithubRepo={this.toggleChangeGithubRepo}
         onUpdateFromGithub={this.props.onUpdateFromGithub}
         onSaveChanges={this.onSaveClick}
+        isModifyingGithubRepo={this.state.isModifyingGithubRepo}
       />
     );
   },
@@ -2588,9 +2598,22 @@ const BehaviorEditor = React.createClass({
     );
   },
 
+  renderGithubRepoActions: function() {
+    return (
+      <GithubRepoActions
+        linkedGithubRepo={this.props.linkedGithubRepo}
+        isLinkedToGithub={this.props.isLinkedToGithub}
+        currentGroupIsModified={this.isModified()}
+        currentGroup={this.getBehaviorGroup()}
+        currentSelectedId={this.getSelectedId()}
+        onChangeGithubRepo={this.toggleChangeGithubRepo}
+      />
+    );
+  },
+
   renderNavActions: function() {
     if (this.state.versionBrowserOpen) {
-      this.props.onRenderNavActions(null);
+      this.props.onRenderNavActions(this.renderGithubRepoActions());
     } else {
       this.props.onRenderNavActions(this.renderDeployStatus());
     }

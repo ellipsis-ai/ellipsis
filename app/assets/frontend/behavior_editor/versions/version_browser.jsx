@@ -10,7 +10,6 @@ import FixedFooter from '../../shared_ui/fixed_footer';
 import Formatter from '../../lib/formatter';
 import FormInput from '../../form/input';
 import GithubErrorNotification from '../github/github_error_notification';
-import GithubOwnerRepoReadonly from '../github/github_owner_repo_readonly';
 import GithubPushPanel from '../github/github_push_panel';
 import LinkGithubRepo from './link_github_repo';
 import LinkedGithubRepo from '../../models/linked_github_repo';
@@ -43,7 +42,9 @@ type Props = {
     linkedGithubRepo?: LinkedGithubRepo,
     onLinkGithubRepo: (owner: string, repo: string, branch: ?string, callback: () => void) => void,
     onUpdateFromGithub: (owner: string, repo: string, branch: string, callback: ({ data: {} }) => void, onError: (branch: string, error?: GithubFetchError) => void) => void,
-    onSaveChanges: () => void
+    onSaveChanges: () => void,
+    isModifyingGithubRepo: boolean,
+    onChangedGithubRepo: () => void
 };
 
 type State = {
@@ -51,7 +52,6 @@ type State = {
     diffFromSelectedToCurrent: boolean,
     headerHeight: number,
     footerHeight: number,
-    isModifyingGithubRepo: boolean,
     branch: string,
     isChangingBranchName: boolean,
     isFetching: boolean,
@@ -87,7 +87,6 @@ class VersionBrowser extends React.Component<Props, State> {
         diffFromSelectedToCurrent: true,
         headerHeight: 0,
         footerHeight: 0,
-        isModifyingGithubRepo: false,
         branch: props.linkedGithubRepo && props.linkedGithubRepo.currentBranch ? props.linkedGithubRepo.currentBranch : "master",
         isFetching: false,
         isChangingBranchName: false,
@@ -200,21 +199,10 @@ class VersionBrowser extends React.Component<Props, State> {
       }
     }
 
-    getGithubAuthUrl(): string {
-      const redirect = jsRoutes.controllers.BehaviorEditorController.edit(this.props.currentGroup.id, this.props.currentSelectedId, true).url;
-      return jsRoutes.controllers.SocialAuthController.authenticateGithub(redirect).url;
-    }
-
-    renderGithubAuth(): React.Node {
-      return (
-        <span className="type-s">
-          <a href={this.getGithubAuthUrl()}>
-            <img height="24" src="/assets/images/logos/GitHub-Mark-64px.png" className="mrs align-m" />
-            <span>Authenticate with GitHub</span>
-          </a>
-          <span> to sync this skill with a GitHub repo</span>
-        </span>
-      );
+    componentDidUpdate(prevProps: Props): void {
+      if (this.props.isModifyingGithubRepo && !prevProps.isModifyingGithubRepo) {
+        this.focusOnGithubRepo();
+      }
     }
 
     onClickMenuItem(key: string): void {
@@ -367,12 +355,6 @@ class VersionBrowser extends React.Component<Props, State> {
 
     getFooterHeight(): number {
       return this.state.footerHeight;
-    }
-
-    setHeaderHeight(height: number): void {
-      this.setState({
-        headerHeight: height
-      });
     }
 
     setFooterHeight(height: number): void {
@@ -560,15 +542,7 @@ class VersionBrowser extends React.Component<Props, State> {
     }
 
     onLinkedGithubRepo(): void {
-      this.setState({
-        isModifyingGithubRepo: false
-      });
-    }
-
-    onChangeGithubLinkClick(): void {
-      this.setState({
-        isModifyingGithubRepo: true
-      }, this.focusOnGithubRepo);
+      this.props.onChangedGithubRepo();
     }
 
     focusOnGithubRepo(): void {
@@ -738,32 +712,6 @@ class VersionBrowser extends React.Component<Props, State> {
       );
     }
 
-    renderGithubRepo(): React.Node {
-      if (this.props.linkedGithubRepo && this.props.isLinkedToGithub) {
-        return (
-          <div>
-            <span className="mrm">
-              <span className="type-label mrs">GitHub repository:</span>
-              <GithubOwnerRepoReadonly linked={this.props.linkedGithubRepo}/>
-            </span>
-            {this.renderChangeRepoButton()}
-          </div>
-        );
-      } else if (!this.props.isLinkedToGithub && !this.props.currentGroupIsModified) {
-        return this.renderGithubAuth();
-      } else if (!this.props.linkedGithubRepo) {
-        return this.renderChangeRepoButton();
-      }
-    }
-
-    renderChangeRepoButton(): React.Node {
-      return (
-        <Button className="button-s button-shrink" onClick={this.onChangeGithubLinkClick} disabled={this.state.isModifyingGithubRepo}>
-          {this.props.linkedGithubRepo ? "Change repo…" : "Link GitHub repo…"}
-        </Button>
-      );
-    }
-
     getMainHeaderHeight(): number {
       const mainHeader = document.getElementById("main-header");
       return mainHeader ? mainHeader.offsetHeight : 0;
@@ -790,12 +738,8 @@ class VersionBrowser extends React.Component<Props, State> {
           <div className="flex-columns flex-row-expand">
             <div className="flex-column flex-column-left flex-rows bg-white">
 
-              <div className="bg-light border-bottom border-light container container-wide pvm">
-                {this.renderGithubRepo()}
-              </div>
-
-              <Collapsible revealWhen={this.state.isModifyingGithubRepo}>
-                <div className="bg-white border-bottom border-light container container-wide pvm">
+              <Collapsible revealWhen={this.props.isModifyingGithubRepo}>
+                <div className="bg-white border-emphasis-bottom border-light container container-wide pvl">
                   <LinkGithubRepo
                     ref={(el) => this.linkGitHubRepoComponent = el}
                     group={this.props.currentGroup}
