@@ -8,7 +8,7 @@ class NavItem extends React.PureComponent<NavItemContent> {
   renderTitle() {
     if (this.props.callback) {
       return (
-        <Button className="button-l button-raw plxl prl" onClick={this.props.callback}>{this.props.title}</Button>
+        <Button className="button-l button-raw pvl plxl prl" onClick={this.props.callback}>{this.props.title}</Button>
       );
     } else if (this.props.url) {
       return (

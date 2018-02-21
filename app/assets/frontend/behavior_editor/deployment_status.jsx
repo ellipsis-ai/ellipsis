@@ -61,13 +61,15 @@ class DeploymentStatus extends React.PureComponent<Props, State> {
     const deployed = this.durationSinceDeployment();
     return (
       <span>
-        <span>{saved ? `Saved ${saved}` : "Never saved"}</span>
-        <span className="type-weak mhxs">·</span>
-        {deployed ? (
-          <span>Last deployed {deployed} before</span>
-        ) : (
-          <b>Not yet deployed</b>
-        )}
+        <span className="display-inline-block">{saved ? `Saved ${saved}` : "Never saved"}</span>
+        <span className="display-inline-block type-weak mhxs">·</span>
+        <span className="display-inline-block">
+          {deployed ? (
+            <span>Last deployed {deployed} before</span>
+          ) : (
+            <b>Not yet deployed</b>
+          )}
+        </span>
       </span>
     );
   }
@@ -123,14 +125,14 @@ class DeploymentStatus extends React.PureComponent<Props, State> {
       return (
         <div className="fade-in">
           <span className="display-inline-block height-xl mrs align-m type-green"><SVGCheckmark label={this.getFullStatus(isExisting, isModified, currentDeployment)}/></span>
-          <span className="display-inline-block align-button-s">Deployed</span>
+          <span className="type-s">Deployed</span>
         </div>
       );
     } else {
       return (
         <div className="fade-in">
-          <div className="display-inline-block align-m height-xl type-yellow mrs"><SVGInfo label={this.getFullStatus(isExisting, isModified, currentDeployment)} /></div>
-          <div className="display-inline-block align-button-s">{this.undeployedStatus()}</div>
+          <span className="display-inline-block align-m height-xl type-yellow mrs"><SVGInfo label={this.getFullStatus(isExisting, isModified, currentDeployment)} /></span>
+          <span className="type-s">{this.undeployedStatus()}</span>
         </div>
       );
     }
@@ -142,16 +144,18 @@ class DeploymentStatus extends React.PureComponent<Props, State> {
     const currentDeployment = this.props.group.deployment;
     return (
       <div>
-        <div className="display-inline-block mrm" title={this.getFullStatus(isExisting, isModified, currentDeployment)}>
+        <div className="type-s display-inline-block mrm mvl" title={this.getFullStatus(isExisting, isModified, currentDeployment)}>
           {this.renderStatus(isExisting, isModified, currentDeployment)}
         </div>
-        <DynamicLabelButton
-          className="button-s button-shrink mrs"
-          onClick={this.deploy}
-          labels={this.getConfirmButtonLabels()}
-          disabledWhen={this.isDeploying() || Boolean(currentDeployment) || isModified || !isExisting}
-        />
-        <HelpButton onClick={this.onHelpClick}/>
+        <div className="type-m display-inline-block mbl">
+          <DynamicLabelButton
+            className="button-s button-shrink mrs"
+            onClick={this.deploy}
+            labels={this.getConfirmButtonLabels()}
+            disabledWhen={this.isDeploying() || Boolean(currentDeployment) || isModified || !isExisting}
+          />
+          <HelpButton onClick={this.onHelpClick} />
+        </div>
       </div>
     );
   }

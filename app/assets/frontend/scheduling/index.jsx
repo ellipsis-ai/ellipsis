@@ -108,7 +108,7 @@ import Sort from '../lib/sort';
 
     renderNavActions: function() {
       const actions = this.state.isEditing ? null : (
-        <div className="fade-in">
+        <div className="fade-in height-xl mvl">
           <Button className="button-shrink button-s" onClick={this.addNewItem}>Schedule something new</Button>
         </div>
       );
