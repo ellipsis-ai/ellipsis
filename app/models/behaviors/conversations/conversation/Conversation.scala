@@ -3,7 +3,7 @@ package models.behaviors.conversations.conversation
 import java.time.OffsetDateTime
 
 import models.behaviors._
-import models.behaviors.behaviorparameter.BehaviorParameter
+import models.behaviors.behaviorparameter.{BehaviorParameter, FetchValidValuesBadResultException}
 import models.behaviors.behaviorversion.BehaviorVersion
 import models.behaviors.events.SlackMessageActionConstants._
 import models.behaviors.events._
@@ -101,10 +101,12 @@ trait Conversation {
                  event: Event,
                  services: DefaultServices
                )(implicit ec: ExecutionContext): Future[BotResult] = {
-    for {
+    (for {
       updatedConversation <- updateWith(event, services)
       result <- updatedConversation.respond(event, isReminding=false, services)
-    } yield result
+    } yield result).recover {
+      case e: FetchValidValuesBadResultException => e.result
+    }
   }
 
   def maybeNextParamToCollect(
