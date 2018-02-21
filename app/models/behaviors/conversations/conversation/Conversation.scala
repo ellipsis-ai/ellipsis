@@ -101,12 +101,10 @@ trait Conversation {
                  event: Event,
                  services: DefaultServices
                )(implicit ec: ExecutionContext): Future[BotResult] = {
-    (for {
+    for {
       updatedConversation <- updateWith(event, services)
       result <- updatedConversation.respond(event, isReminding=false, services)
-    } yield result).recover {
-      case e: FetchValidValuesBadResultException => e.result
-    }
+    } yield result
   }
 
   def maybeNextParamToCollect(
