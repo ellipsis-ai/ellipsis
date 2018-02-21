@@ -2,15 +2,16 @@ package models.behaviors.events
 
 import javax.inject._
 
+import models.behaviors.behaviorparameter.FetchValidValuesBadResultException
 import models.behaviors.builtins.BuiltinBehavior
 import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.events.SlackMessageActionConstants._
-import models.behaviors.{BehaviorResponse, BotResult, SimpleTextResult, TextWithAttachmentsResult}
+import models.behaviors.{BotResult, SimpleTextResult, TextWithAttachmentsResult}
 import services.DefaultServices
 import utils.Color
 
-import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration._
+import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
 class EventHandler @Inject() (
@@ -123,7 +124,7 @@ class EventHandler @Inject() (
   }
 
   def handle(event: Event, maybeConversation: Option[Conversation]): Future[Seq[BotResult]] = {
-    maybeConversation.map { conversation =>
+    (maybeConversation.map { conversation =>
       handleInConversation(conversation, conversation.maybeOriginalEventType.map { eventType =>
         event.withOriginalEventType(eventType)
       }.getOrElse(event)).map(Seq(_))
@@ -137,6 +138,8 @@ class EventHandler @Inject() (
           }
         }
       }
+    }).recover {
+      case e: FetchValidValuesBadResultException => Seq(e.result)
     }
   }
 }
