@@ -17,7 +17,7 @@ import utils.Color
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
 
-case class FetchValidValuesBadResultException(result: BotResult) extends Exception(s"Couldn't fetch data type values: ${result}")
+case class FetchValidValuesBadResultException(result: BotResult) extends Exception(s"Couldn't fetch data type values: ${result.resultType}")
 
 sealed trait BehaviorParameterType extends FieldTypeForSchema {
 
