@@ -4,60 +4,72 @@
   hideNav: Boolean,
   navClass: String = ""
 )(implicit r: RequestHeader)
-@navPadding = @{ if (hideNav) { "" } else { "phs" } }
-<div class="container container-wide @navPadding @navClass">
-  <div class="columns columns-elastic">
-    <div class="column column-expand">
-      <div class="height-button-l">
-      <div class="column prn display-inline-block align-t mrneg-divider">
-        @if(!hideNav) {
-          <button id="main-nav-button" type="button"
+@navPadding = @{ if (hideNav) { "container container-wide" } else { "" } }
+@navBorderColorForPage = @{if (hideNav) "" else " border-emphasis-bottom border-light "}
+<div class="@navPadding @navClass">
+  <div class="flex-columns flex-columns-wrap">
+    <div class="flex-column flex-column-left @navBorderColorForPage">
+      <div class="flex-columns flex-columns-wrap">
+        <div class="flex-column flex-column-left flex-column-shrink">
+          @if(!hideNav) {
+            <button id="main-nav-button" type="button"
             class="border-radius-bottom-left-none button-subtle button-l button-dropdown-trigger
-              button-dropdown-trigger-l button-dropdown-trigger-no-icon"
-          >
-            @shared.mainLogo(config)
-            <span class="type-pink display-inline-block align-t mhs">▾</span>
-          </button>
-        } else {
-          <div class="height-logo mtm">
-            @shared.mainLogo(config, inverted = true)
+                button-dropdown-trigger-l button-dropdown-trigger-no-icon mls mrneg-divider"
+            >
+              <span class="display-block">
+              @shared.mainLogo(config, includeArrow = true)
+              </span>
+            </button><div class="display-inline-block height-button-l align-t color-black-translucent">
+            @shared.svg.divider()
+            </div>
+            <div class="position-relative type-black">
+              <ul class="type-s popup popup-dropdown-menu fade-in display-none" id="main-nav-menu">
+                <li>
+                  <a class="button button-dropdown-item plm"
+                  href='@routes.ApplicationController.index(config.maybeTeamAccess.flatMap(_.maybeAdminAccessToTeamId))'
+                  >Skills</a>
+                </li>
+
+                <li>
+                  <a class="button button-dropdown-item plm"
+                  href='@routes.ScheduledActionsController.index(None, None, config.maybeTeamAccess.flatMap(_.maybeAdminAccessToTeamId))'
+                  >Scheduling</a>
+                </li>
+
+                <li>
+                  <a class="button button-dropdown-item plm"
+                  href='@controllers.web.settings.routes.RegionalSettingsController.index(config.maybeTeamAccess.flatMap(_.maybeAdminAccessToTeamId))'
+                  >Settings</a>
+                </li>
+
+                <li id="header-feedback">
+                  @* Placeholder button replaced by React Page *@
+                  <button class="button button-dropdown-item plm" type="button">Feedback</button>
+                </li>
+              </ul>
+            </div>
+          } else {
+            <div class="height-logo mtm">@shared.mainLogo(config, inverted = true)</div>
+          }
+        </div>
+        <div class="flex-column flex-column-left" id="mainNavItems">
+          <div class="columns">
+            @navItems.map { navItem =>
+              @shared.navItem(navItem)
+            }
           </div>
-        }
-        <div class="position-relative type-black">
-          <ul class="type-s popup popup-dropdown-menu fade-in display-none" id="main-nav-menu">
-            <li>
-              <a class="button button-dropdown-item plm"
-            href='@routes.ApplicationController.index(config.maybeTeamAccess.flatMap(_.maybeAdminAccessToTeamId))'
-              >Skills</a>
-            </li>
-
-            <li>
-              <a class="button button-dropdown-item plm"
-            href='@routes.ScheduledActionsController.index(None, None, config.maybeTeamAccess.flatMap(_.maybeAdminAccessToTeamId))'
-              >Scheduling</a>
-            </li>
-
-            <li>
-              <a class="button button-dropdown-item plm"
-            href='@controllers.web.settings.routes.RegionalSettingsController.index(config.maybeTeamAccess.flatMap(_.maybeAdminAccessToTeamId))'
-              >Settings</a>
-            </li>
-
-            <li id="header-feedback">
-              @* Placeholder button replaced by React Page *@
-              <button class="button button-dropdown-item plm" type="button">Feedback</button>
-            </li>
-          </ul>
         </div>
       </div>
-      <div class="column prn display-inline-block align-t height-button-l" id="mainNavItems">
-        @navItems.map { navItem =>
-          @shared.navItem(navItem)
+    </div>
+    <div class="flex-column flex-column-right align-r @navBorderColorForPage">
+      <div class="flex-columns">
+        <div class="flex-column flex-column-left pvl prs" id="mainNavActions"></div>
+        @config.maybeTeamAccess.map { teamAccess =>
+          <div class="flex-column flex-column-shrink flex-column-right pts prs">
+            @shared.teamMenu(teamAccess)
+          </div>
         }
       </div>
     </div>
-    </div>
-    <div class="column column-shrink align-r align-m prs" id="mainNavActions"></div>
-    @config.maybeTeamAccess.map { teamAccess => @shared.teamMenu(teamAccess) }
   </div>
 </div>

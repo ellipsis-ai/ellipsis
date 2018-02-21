@@ -1,13 +1,12 @@
 @(navItem: NavItem)
-<div class="column prn display-inline-block">
-  <div class="column prn display-inline-block height-button-l align-t color-black-translucent">
-    @shared.svg.divider()
-  </div>
-  <div class="column prn display-inline-block align-t type-semibold">
+<div class="column prn display-nowrap fade-in">
+  <div class="display-inline-block align-t type-semibold">
   @navItem.maybeRoute.map { route =>
     <a class="align-button-l plxl prl" href="@route">@navItem.title</a>
   }.getOrElse {
     <span class="align-button-l plxl prl">@navItem.title</span>
   }
+  </div><div class="display-inline-block height-button-l align-t color-black-translucent">
+    @shared.svg.divider()
   </div>
 </div>

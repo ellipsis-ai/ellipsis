@@ -197,7 +197,7 @@ class Page extends React.Component<Props, State> {
       const el = this.navItems;
       if (el) {
         ReactDOM.render((
-          <div>
+          <div className="columns">
             {navItems.map((ea, index) => (
               <NavItem key={`navItem${index}`} title={ea.title} url={ea.url} callback={ea.callback} />
             ))}

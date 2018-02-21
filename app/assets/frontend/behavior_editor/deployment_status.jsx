@@ -141,7 +141,7 @@ class DeploymentStatus extends React.PureComponent<Props, State> {
     const isModified = this.props.isModified;
     const currentDeployment = this.props.group.deployment;
     return (
-      <div className="display-nowrap">
+      <div>
         <div className="display-inline-block mrm" title={this.getFullStatus(isExisting, isModified, currentDeployment)}>
           {this.renderStatus(isExisting, isModified, currentDeployment)}
         </div>

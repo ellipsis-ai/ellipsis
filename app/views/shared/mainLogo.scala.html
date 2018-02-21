@@ -1,6 +1,7 @@
 @(
   config: ViewConfig,
-  inverted: Boolean = false
+  inverted: Boolean = false,
+  includeArrow: Boolean = false
 )(implicit r: RequestHeader)
 @l(hideSymbol: Boolean = false, hideText: Boolean = false) = @{
   if (inverted) {
@@ -10,13 +11,17 @@
   }
 }
 @if(config.isDevelopment) {
-  <div class="column paxs mrs align-button type-label type-white bg-blue border-radius">Dev</div>
-  <div class="column prn display-inline-block align-m mobile-display-none height-logo">@l(hideSymbol = true)</div>
+  <span class="display-inline-block mrs type-label type-white bg-blue border-radius phxs pvs height height-logo align-t">
+    Dev
+  </span><span class="display-inline-block mobile-display-none height-logo align-t">
+    @l(hideSymbol = true)
+  </span>@if(includeArrow) {<span class="display-inline-block type-pink align-t mhs">▾</span>}
 } else {
   @if(config.maybeTeamAccess.exists(_.isAdminAccess)) {
-    <div class="column prn display-inline-block type-l mobile-ptxs pbxs">👻</div>
-  } else {
-    <div class="column prn display-inline-block align-t mobile-display-none height-logo mtneg1">@l()</div>
-    <div class="column prn display-inline-block align-t mobile-display-only height-logo-s">@l(hideText = true)</div>
-  }
+    <span class="display-inline-block type-l mobile-ptxs pbxs">👻</span>} else {
+    <span class="display-inline-block align-t mobile-display-none height-logo mtneg1">
+      @l()
+    </span><span class="display-inline-block align-t mobile-display-only height-logo-s">
+      @l(hideText = true)
+    </span>}@if(includeArrow) {<span class="display-inline-block type-pink align-t mhs">▾</span>}
 }

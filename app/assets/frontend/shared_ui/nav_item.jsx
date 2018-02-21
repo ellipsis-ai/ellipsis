@@ -23,12 +23,12 @@ class NavItem extends React.PureComponent<NavItemContent> {
 
   render(): React.Node {
     return (
-      <div className="column prn display-inline-block fade-in">
-        <div className="column prn display-inline-block height-button-l align-t color-black-translucent">
-          <SVGDivider />
-        </div>
-        <div className="column prn display-inline-block align-t type-semibold">
+      <div className="column prn display-nowrap fade-in">
+        <div className="display-inline-block align-t type-semibold">
           {this.renderTitle()}
+        </div>
+        <div className="display-inline-block height-button-l align-t color-black-translucent">
+          <SVGDivider />
         </div>
       </div>
     );
