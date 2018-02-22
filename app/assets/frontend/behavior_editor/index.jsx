@@ -1409,7 +1409,7 @@ const BehaviorEditor = React.createClass({
   },
 
   isExistingGroup: function() {
-    return !!this.getBehaviorGroup().id;
+    return this.getBehaviorGroup().isExisting();
   },
 
   isLatestSavedVersion: function() {

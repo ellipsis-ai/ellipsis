@@ -48,28 +48,38 @@ class DeploymentStatus extends React.PureComponent<Props, State> {
     return this.state.isDeploying;
   }
 
-  durationSinceDeployment(): ?string {
-    const lastSaved = this.props.lastSaveTimestamp;
-    const lastDeployed = this.props.lastDeployTimestamp;
-    return lastSaved && lastDeployed ?
-      moment(lastDeployed).from(new Date(lastSaved), true) :
-      null;
+  saveStatus(): string {
+    const timestamp = this.props.lastSaveTimestamp;
+    if (!timestamp || !this.props.group.isExisting()) {
+      return "Unsaved";
+    }
+    const savedMoment = moment(timestamp);
+    const nowMoment = moment();
+    if (savedMoment.isSame(nowMoment, 'day')) {
+      return `Saved ${Formatter.formatTimestampRelative(timestamp)}`;
+    } else {
+      return `Last modified ${Formatter.formatTimestampDate(timestamp)}`;
+    }
+  }
+
+  lastDeployedStatus(): React.Node {
+    if (this.props.lastDeployTimestamp) {
+      return (
+        <span>Older version deployed</span>
+      );
+    } else {
+      return (
+        <b>Not yet deployed</b>
+      );
+    }
   }
 
   undeployedStatus() {
-    const saved = this.props.lastSaveTimestamp ? Formatter.formatTimestampRelativeIfRecent(this.props.lastSaveTimestamp) : null;
-    const deployed = this.durationSinceDeployment();
     return (
       <span>
-        <span className="display-inline-block">{saved ? `Saved ${saved}` : "Never saved"}</span>
+        <span className="display-inline-block">{this.saveStatus()}</span>
         <span className="display-inline-block type-weak mhxs">·</span>
-        <span className="display-inline-block">
-          {deployed ? (
-            <span>Last deployed {deployed} before</span>
-          ) : (
-            <b>Not yet deployed</b>
-          )}
-        </span>
+        <span className="display-inline-block">{this.lastDeployedStatus()}</span>
       </span>
     );
   }
@@ -148,12 +158,14 @@ class DeploymentStatus extends React.PureComponent<Props, State> {
           {this.renderStatus(isExisting, isModified, currentDeployment)}
         </div>
         <div className="type-m display-inline-block mbl">
-          <DynamicLabelButton
-            className="button-s button-shrink mrs"
-            onClick={this.deploy}
-            labels={this.getConfirmButtonLabels()}
-            disabledWhen={this.isDeploying() || Boolean(currentDeployment) || isModified || !isExisting}
-          />
+          {currentDeployment && !isModified ? null : (
+            <DynamicLabelButton
+              className="button-s button-shrink mrs"
+              onClick={this.deploy}
+              labels={this.getConfirmButtonLabels()}
+              disabledWhen={this.isDeploying() || isModified || !isExisting}
+            />
+          )}
           <HelpButton onClick={this.onHelpClick} />
         </div>
       </div>
