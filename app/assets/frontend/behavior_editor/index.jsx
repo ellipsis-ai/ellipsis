@@ -972,10 +972,6 @@ const BehaviorEditor = React.createClass({
     return this.getBehaviorGroup().isRecentlySaved() && !this.isModified();
   },
 
-  isDeployed: function() {
-    return Boolean(this.getBehaviorGroup().deployment);
-  },
-
   onSaveClick: function() {
     this.onSaveBehaviorGroup();
   },
@@ -1410,10 +1406,6 @@ const BehaviorEditor = React.createClass({
 
   isExistingGroup: function() {
     return this.getBehaviorGroup().isExisting();
-  },
-
-  isLatestSavedVersion: function() {
-    return this.isExistingGroup() && !this.isSaving() && !this.isModified() && !this.state.newerVersionOnServer;
   },
 
   isFinishedBehavior: function() {
