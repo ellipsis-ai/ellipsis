@@ -104,7 +104,15 @@ class UserServiceImpl @Inject() (
       }.getOrElse {
         dataService.teams.findAction(user.teamId)
       }
-    } yield UserTeamAccess(user, loggedInTeam, maybeTeam, maybeTeam.exists(t => t.id != user.teamId))
+      maybeSlackBotProfile <- maybeTeam.map { team =>
+        dataService.slackBotProfiles.allForAction(team).map(_.headOption)
+      }.getOrElse(DBIO.successful(None))
+      maybeBotName <- maybeSlackBotProfile.map { slackBotProfile =>
+        DBIO.from(slackEventService.maybeSlackUserDataFor(slackBotProfile).map { maybeSlackUserData =>
+          maybeSlackUserData.map(_.getDisplayName)
+        })
+      }.getOrElse(DBIO.successful(None))
+    } yield UserTeamAccess(user, loggedInTeam, maybeTeam, maybeBotName, maybeTeam.exists(t => t.id != user.teamId))
   }
 
   def teamAccessFor(user: User, maybeTargetTeamId: Option[String]): Future[UserTeamAccess] = {

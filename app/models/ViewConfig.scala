@@ -5,9 +5,9 @@ import models.accounts.user.UserTeamAccess
 import play.api.Configuration
 
 case class ViewConfig(
-                          assets: RemoteAssets,
-                          maybeTeamAccess: Option[UserTeamAccess]
-                         ) {
+                       assets: RemoteAssets,
+                       maybeTeamAccess: Option[UserTeamAccess]
+                     ) {
 
   val configuration: Configuration = assets.configuration
 
@@ -16,4 +16,6 @@ case class ViewConfig(
   val isProduction = !isDevelopment
 
   val maybeTargetTeamId = maybeTeamAccess.flatMap(_.maybeTargetTeam.map(_.id))
+
+  val botName = maybeTeamAccess.flatMap(_.maybeBotName).getOrElse("ellipsis")
 }
