@@ -2,6 +2,7 @@ package models
 
 import controllers.RemoteAssets
 import models.accounts.user.UserTeamAccess
+import models.team.Team
 import play.api.Configuration
 
 case class ViewConfig(
@@ -17,5 +18,5 @@ case class ViewConfig(
 
   val maybeTargetTeamId = maybeTeamAccess.flatMap(_.maybeTargetTeam.map(_.id))
 
-  val botName = maybeTeamAccess.flatMap(_.maybeBotName).getOrElse("ellipsis")
+  val botName: String = maybeTeamAccess.flatMap(_.maybeBotName).getOrElse(Team.defaultBotName)
 }

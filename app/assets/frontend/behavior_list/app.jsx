@@ -15,7 +15,8 @@ const BehaviorListApp = React.createClass({
       teamId: React.PropTypes.string.isRequired,
       slackTeamId: React.PropTypes.string.isRequired,
       teamTimeZone: React.PropTypes.string,
-      branchName: React.PropTypes.string
+      branchName: React.PropTypes.string,
+      botName: React.PropTypes.string.isRequired
     }),
 
     getDefaultProps: function() {
@@ -225,6 +226,7 @@ const BehaviorListApp = React.createClass({
               onClearActivePanel={this.props.onClearActivePanel}
               onRenderFooter={this.props.onRenderFooter}
               footerHeight={this.props.footerHeight}
+              botName={this.props.botName}
             />
           </div>
         );

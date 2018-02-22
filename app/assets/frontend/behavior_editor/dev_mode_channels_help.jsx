@@ -5,7 +5,8 @@ import URLCreator from '../lib/url_creator';
 
 type Props = {
   onCollapseClick: () => void,
-  slackTeamId?: string
+  slackTeamId?: string,
+  botName: string
 }
 
 class DevModeChannelsHelp extends React.PureComponent<Props> {
@@ -57,7 +58,7 @@ class DevModeChannelsHelp extends React.PureComponent<Props> {
                 <li>
                   <p>
                     <span>Type </span>
-                    <span className="box-chat box-chat-help mrs">@ellipsis enable dev mode</span>
+                    <span className="box-chat box-chat-help mrs">@{this.props.botName} enable dev mode</span>
                     <span> in any channel to turn it on</span>
                   </p>
                 </li>
@@ -65,7 +66,7 @@ class DevModeChannelsHelp extends React.PureComponent<Props> {
                 <li>
                   <p>
                     <span>Type </span>
-                    <span className="box-chat box-chat-help mrs">@ellipsis disable dev mode</span>
+                    <span className="box-chat box-chat-help mrs">@{this.props.botName} disable dev mode</span>
                     <span> in any channel to turn it off</span>
                   </p>
                 </li>

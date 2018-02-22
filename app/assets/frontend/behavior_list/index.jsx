@@ -32,7 +32,8 @@ const BehaviorList = React.createClass({
       isLoadingMatchingResults: React.PropTypes.bool.isRequired,
       publishedBehaviorGroupLoadStatus: React.PropTypes.string.isRequired,
       teamId: React.PropTypes.string.isRequired,
-      slackTeamId: React.PropTypes.string.isRequired
+      slackTeamId: React.PropTypes.string.isRequired,
+      botName: React.PropTypes.string.isRequired
     }),
 
     getDefaultProps: function() {
@@ -588,6 +589,7 @@ const BehaviorList = React.createClass({
                 installedBehaviorGroups={this.getLocalBehaviorGroupsJustInstalled()}
                 onToggle={this.props.onClearActivePanel}
                 slackTeamId={this.props.slackTeamId}
+                botName={this.props.botName}
               />
             </Collapsible>
             <Collapsible

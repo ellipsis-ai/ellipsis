@@ -17,6 +17,8 @@ case class UserTeamAccess(user: User, loggedInTeam: Team, maybeTargetTeam: Optio
 
   val canAccessTargetTeam: Boolean = maybeTargetTeam.isDefined
 
+  val botName: String = maybeBotName.getOrElse(Team.defaultBotName)
+
 }
 
 case class User(

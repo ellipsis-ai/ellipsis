@@ -8,7 +8,8 @@ const InstalledBehaviorGroupsPanel = React.createClass({
     propTypes: {
       installedBehaviorGroups: React.PropTypes.arrayOf(React.PropTypes.object).isRequired,
       onToggle: React.PropTypes.func.isRequired,
-      slackTeamId: React.PropTypes.string
+      slackTeamId: React.PropTypes.string,
+      botName: React.PropTypes.string.isRequired
     },
 
     getInstalledBehaviorGroups: function() {
@@ -124,7 +125,7 @@ const InstalledBehaviorGroupsPanel = React.createClass({
 
             <ul className="list-space-xl">
               <li>
-                <span>Type <span className="box-chat-example">/invite @ellipsis</span> to add your </span>
+                <span>Type <span className="box-chat-example">/invite @{this.props.botName}</span> to add your </span>
                 <span>bot to any channel.</span>
               </li>
               {this.getBehaviorHelpInstructions()}
