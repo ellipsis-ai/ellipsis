@@ -433,10 +433,19 @@ button.button-dropdown-trigger-menu-open:focus {
   border-bottom-width: 0 !important;
 }
 
+button.button-l.button-dropdown-trigger-menu-open,
+button.button-l.button-dropdown-trigger-menu-open:focus {
+  border-radius: @border-radius-large @border-radius-large 0 0;
+}
+
 button.button-dropdown-trigger-menu-above.button-dropdown-trigger-menu-open {
   border-radius: 0 0 @border-radius @border-radius;
   border-top-width: 0 !important;
   border-bottom-width: @border-width-thick !important;
+}
+
+button.button-l.button-dropdown-trigger-menu-above.button-dropdown-trigger-menu-open {
+  border-radius: 0 0 @border-radius-large @border-radius-large;
 }
 
 button.button-dropdown-trigger-symbol:focus,

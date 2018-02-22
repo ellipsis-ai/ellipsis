@@ -5,7 +5,7 @@
   navClass: String = ""
 )(implicit r: RequestHeader)
 @navPadding = @{ if (hideNav) { "container container-wide" } else { "" } }
-@navBorderColorForPage = @{if (hideNav) "" else " border-emphasis-bottom border-light "}
+@navBorderColorForPage = @{if (hideNav) "" else " border-bottom-thick border-light "}
 <div class="@navPadding @navClass">
   <div class="flex-columns flex-columns-wrap">
     <div class="flex-column flex-column-left @navBorderColorForPage">

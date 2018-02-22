@@ -2238,7 +2238,7 @@ const BehaviorEditor = React.createClass({
     return (
       <div className={
           "column column-page-sidebar flex-column flex-column-left bg-white " +
-          "border-right prn position-relative mobile-position-fixed-top-full mobile-position-z-front "
+          "border-right-thick border-light prn position-relative mobile-position-fixed-top-full mobile-position-z-front "
         }
       >
         <Collapsible revealWhen={this.behaviorSwitcherIsVisible()} animationDisabled={!this.hasMobileLayout()}>
