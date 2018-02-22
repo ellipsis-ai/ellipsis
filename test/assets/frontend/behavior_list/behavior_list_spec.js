@@ -138,7 +138,8 @@ describe('BehaviorList', () => {
     isLoadingMatchingResults: false,
     publishedBehaviorGroupLoadStatus: 'loaded',
     teamId: "1",
-    slackTeamId: "1"
+    slackTeamId: "1",
+    botName: "TestBot"
   });
 
   class Footer extends React.Component {

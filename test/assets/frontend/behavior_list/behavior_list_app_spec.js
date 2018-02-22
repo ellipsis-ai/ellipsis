@@ -111,7 +111,8 @@ describe('BehaviorListApp', () => {
     teamId: "1",
     slackTeamId: "1",
     teamTimeZone: "America/Toronto",
-    branchName: null
+    branchName: null,
+    botName: "TestBot"
   });
 
   function createBehaviorListApp(config) {

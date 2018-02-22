@@ -194,7 +194,8 @@ describe('BehaviorEditor', () => {
       oauth2Applications: config.oauth2Applications.map(OAuth2ApplicationRef.fromJson),
       simpleTokenApis: config.simpleTokenApis.map(SimpleTokenApiRef.fromJson),
       builtinParamTypes: config.builtinParamTypes.map(ParamType.fromJson),
-      onDeploy: jest.fn()
+      onDeploy: jest.fn(),
+      botName: "TestBot"
     });
     return TestUtils.renderIntoDocument(
       <BehaviorEditor {...props} />
