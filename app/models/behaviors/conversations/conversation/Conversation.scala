@@ -3,7 +3,7 @@ package models.behaviors.conversations.conversation
 import java.time.OffsetDateTime
 
 import models.behaviors._
-import models.behaviors.behaviorparameter.BehaviorParameter
+import models.behaviors.behaviorparameter.{BehaviorParameter, FetchValidValuesBadResultException}
 import models.behaviors.behaviorversion.BehaviorVersion
 import models.behaviors.events.SlackMessageActionConstants._
 import models.behaviors.events._
