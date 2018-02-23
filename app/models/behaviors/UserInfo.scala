@@ -8,7 +8,7 @@ import models.behaviors.events.Event
 import models.team.Team
 import play.api.libs.ws.WSClient
 import play.api.libs.json._
-import services.{ApiConfigInfo, CacheService, DataService, DefaultServices}
+import services.{ApiConfigInfo, DataService, DefaultServices}
 import slick.dbio.DBIO
 
 import scala.concurrent.{ExecutionContext, Future}

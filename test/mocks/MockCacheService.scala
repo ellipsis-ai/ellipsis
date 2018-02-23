@@ -4,7 +4,7 @@ import json.{ImmutableBehaviorGroupVersionData, SlackUserData}
 import models.behaviors.behaviorparameter.ValidValue
 import models.behaviors.events.{Event, SlackMessageEvent}
 import org.scalatest.mock.MockitoSugar
-import services.{CacheService, SlackUserDataCacheKey}
+import services.caching.{CacheService, SlackChannelDataCacheKey, SlackGroupDataCacheKey, SlackUserDataCacheKey}
 import slack.models.{Channel, Group, Im}
 
 import scala.concurrent.Future
@@ -29,25 +29,15 @@ class MockCacheService extends CacheService with MockitoSugar {
 
   def getValidValues(key: String): Option[Seq[ValidValue]] = None
 
-  def cacheSlackChannelInfo(channel: String, teamId: String, data: Channel): Unit = {}
+  def getSlackChannelInfo(key: SlackChannelDataCacheKey, dataFn: SlackChannelDataCacheKey => Future[Option[Channel]]): Future[Option[Channel]] = Future.successful(None)
 
-  def getSlackChannelInfo(channel: String, teamId: String): Option[Channel] = None
-
-  def cacheSlackGroupInfo(group: String, teamId: String, data: Group): Unit = {}
-
-  def getSlackGroupInfo(group: String, teamId: String): Option[Group] = None
+  def getSlackGroupInfo(key: SlackGroupDataCacheKey, dataFn: SlackGroupDataCacheKey => Future[Option[Group]]): Future[Option[Group]] = Future.successful(None)
 
   def getSlackChannels(teamId: String, dataFn: String => Future[Seq[Channel]]): Future[Seq[Channel]] = Future.successful(Seq())
 
-  def cacheSlackGroups(data: Seq[Group], teamId: String): Unit = {}
+  def getSlackGroups(teamId: String, dataFn: String => Future[Seq[Group]]): Future[Seq[Group]] = Future.successful(Seq())
 
-  def getSlackGroups(teamId: String): Option[Seq[Group]] = None
-
-  def cacheSlackIMs(data: Seq[Im], teamId: String): Unit = {}
-
-  def getSlackIMs(teamId: String): Option[Seq[Im]] = None
-
-  def cacheSlackUserData(userData: SlackUserData): Unit = {}
+  def getSlackIMs(teamId: String, dataFn: String => Future[Seq[Im]]): Future[Seq[Im]] = Future.successful(Seq())
 
   def getSlackUserData(key: SlackUserDataCacheKey, dataFn: SlackUserDataCacheKey => Future[Option[SlackUserData]]): Future[Option[SlackUserData]] = Future.successful(None)
 

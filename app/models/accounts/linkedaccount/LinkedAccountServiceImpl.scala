@@ -9,7 +9,8 @@ import drivers.SlickPostgresDriver.api._
 import models.accounts.github.GithubProvider
 import models.accounts.slack.SlackProvider
 import models.accounts.user.User
-import services.{CacheService, DataService}
+import services.DataService
+import services.caching.CacheService
 
 import scala.concurrent.{ExecutionContext, Future}
 

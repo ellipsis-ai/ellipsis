@@ -1,4 +1,4 @@
-package services
+package services.caching
 
 import javax.inject.{Inject, Provider, Singleton}
 
@@ -12,6 +12,7 @@ import models.behaviors.behaviorparameter.ValidValue
 import models.behaviors.events._
 import play.api.cache.SyncCacheApi
 import play.api.libs.json.{JsError, JsSuccess, JsValue, Json}
+import services._
 import slack.models.{Channel, Group, Im}
 
 import scala.concurrent.Future
@@ -107,38 +108,16 @@ class CacheServiceImpl @Inject() (
     }
   }
 
-  private def slackChannelInfoKey(channel: String, teamId: String): String = {
-    s"slack-team-$teamId-channel-$channel-info"
+  val slackChannelInfoCache = LfuCache[SlackChannelDataCacheKey, Option[Channel]](cacheSettingsWithTimeToLive(10.seconds))
+
+  def getSlackChannelInfo(key: SlackChannelDataCacheKey, dataFn: SlackChannelDataCacheKey => Future[Option[Channel]]): Future[Option[Channel]] = {
+    slackChannelInfoCache.getOrLoad(key, dataFn)
   }
 
-  def cacheSlackChannelInfo(channel: String, teamId: String, data: Channel): Unit = {
-    set(slackChannelInfoKey(channel, teamId), Json.toJson(data), 1.hour)
-  }
+  val slackGroupInfoCache = LfuCache[SlackGroupDataCacheKey, Option[Group]](cacheSettingsWithTimeToLive(10.seconds))
 
-  def getSlackChannelInfo(channel: String, teamId: String): Option[Channel] = {
-    get[JsValue](slackChannelInfoKey(channel, teamId)).flatMap { json =>
-      json.validate[Channel] match {
-        case JsSuccess(data, _) => Some(data)
-        case JsError(_) => None
-      }
-    }
-  }
-
-  private def slackGroupInfoKey(group: String, teamId: String): String = {
-    s"slack-team-$teamId-group-$group-info"
-  }
-
-  def cacheSlackGroupInfo(group: String, teamId: String, data: Group): Unit = {
-    set(slackGroupInfoKey(group, teamId), Json.toJson(data), 1.hour)
-  }
-
-  def getSlackGroupInfo(group: String, teamId: String): Option[Group] = {
-    get[JsValue](slackGroupInfoKey(group, teamId)).flatMap { json =>
-      json.validate[Group] match {
-        case JsSuccess(data, _) => Some(data)
-        case JsError(_) => None
-      }
-    }
+  def getSlackGroupInfo(key: SlackGroupDataCacheKey, dataFn: SlackGroupDataCacheKey => Future[Option[Group]]): Future[Option[Group]] = {
+    slackGroupInfoCache.getOrLoad(key, dataFn)
   }
 
   private def slackChannelsKey(teamId: String): String = {
@@ -155,38 +134,20 @@ class CacheServiceImpl @Inject() (
     s"slack-groups-team-$teamId"
   }
 
-  def cacheSlackGroups(data: Seq[Group], teamId: String): Unit = {
-    set(slackGroupsKey(teamId), Json.toJson(data), 10.seconds)
-  }
+  val slackGroupsCache: Cache[String, Seq[Group]] = LfuCache(cacheSettingsWithTimeToLive(10.seconds))
 
-  def getSlackGroups(teamId: String): Option[Seq[Group]] = {
-    get[JsValue](slackChannelsKey(teamId)).flatMap { json =>
-      json.validate[Seq[Group]] match {
-        case JsSuccess(data, jsPath) => Some(data)
-        case JsError(err) => None
-      }
-    }
+  def getSlackGroups(teamId: String, dataFn: String => Future[Seq[Group]]): Future[Seq[Group]] = {
+    slackGroupsCache.getOrLoad(slackGroupsKey(teamId), dataFn)
   }
 
   private def slackImsKey(teamId: String): String = {
     s"slack-ims-team-$teamId"
   }
 
-  def cacheSlackIMs(data: Seq[Im], teamId: String): Unit = {
-    set(slackImsKey(teamId), Json.toJson(data), 10.seconds)
-  }
+  val slackImsCache: Cache[String, Seq[Im]] = LfuCache(cacheSettingsWithTimeToLive(10.seconds))
 
-  def getSlackIMs(teamId: String): Option[Seq[Im]] = {
-    get[JsValue](slackImsKey(teamId)).flatMap { json =>
-      json.validate[Seq[Im]] match {
-        case JsSuccess(data, jsPath) => Some(data)
-        case JsError(err) => None
-      }
-    }
-  }
-
-  private def slackUserDataKey(slackUserId: String, slackTeamId: String): String = {
-    s"slack-user-profile-data-v12-team-$slackTeamId-user-$slackUserId"
+  def getSlackIMs(teamId: String, dataFn: String => Future[Seq[Im]]): Future[Seq[Im]] = {
+    slackImsCache.getOrLoad(slackImsKey(teamId), dataFn)
   }
 
   val slackUserDataCache: Cache[SlackUserDataCacheKey, Option[SlackUserData]] = LfuCache(cacheSettingsWithTimeToLive(1.minute))

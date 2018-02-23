@@ -17,6 +17,7 @@ import models.behaviors.events.Event
 import models.team.Team
 import play.api.{Configuration, Logger}
 import services._
+import services.caching.CacheService
 
 import scala.concurrent.{ExecutionContext, Future}
 

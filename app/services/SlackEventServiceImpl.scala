@@ -10,6 +10,7 @@ import models.behaviors.events.{EventHandler, SlackMessageEvent}
 import play.api.Logger
 import play.api.i18n.MessagesApi
 import play.api.libs.json._
+import services.caching.{CacheService, SlackUserDataCacheKey}
 import slack.api.{ApiError, SlackApiClient}
 import utils.SlackMessageReactionHandler
 

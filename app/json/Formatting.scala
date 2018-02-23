@@ -7,7 +7,7 @@ import models.behaviors.behaviorparameter.ValidValue
 import models.behaviors.events.{SlackFile, SlackMessage}
 import models.behaviors.testing.{InvocationTestReportOutput, ResultOutput}
 import play.api.libs.json._
-import services.SlackMessageEventData
+import services.caching.SlackMessageEventData
 import utils.{CityInfo, UploadFileSpec}
 
 object Formatting {

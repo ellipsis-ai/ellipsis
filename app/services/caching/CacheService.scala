@@ -1,4 +1,4 @@
-package services
+package services.caching
 
 import json.{ImmutableBehaviorGroupVersionData, SlackUserData}
 import models.behaviors.behaviorparameter.ValidValue
@@ -27,23 +27,15 @@ trait CacheService {
 
   def getValidValues(key: String): Option[Seq[ValidValue]]
 
-  def cacheSlackChannelInfo(channel: String, teamId: String, data: Channel): Unit
+  def getSlackChannelInfo(key: SlackChannelDataCacheKey, dataFn: SlackChannelDataCacheKey => Future[Option[Channel]]): Future[Option[Channel]]
 
-  def getSlackChannelInfo(channel: String, teamId: String): Option[Channel]
-
-  def cacheSlackGroupInfo(group: String, teamId: String, data: Group): Unit
-
-  def getSlackGroupInfo(group: String, teamId: String): Option[Group]
+  def getSlackGroupInfo(key: SlackGroupDataCacheKey, dataFn: SlackGroupDataCacheKey => Future[Option[Group]]): Future[Option[Group]]
 
   def getSlackChannels(teamId: String, dataFn: String => Future[Seq[Channel]]): Future[Seq[Channel]]
 
-  def cacheSlackGroups(data: Seq[Group], teamId: String): Unit
+  def getSlackGroups(teamId: String, dataFn: String => Future[Seq[Group]]): Future[Seq[Group]]
 
-  def getSlackGroups(teamId: String): Option[Seq[Group]]
-
-  def cacheSlackIMs(data: Seq[Im], teamId: String): Unit
-
-  def getSlackIMs(teamId: String): Option[Seq[Im]]
+  def getSlackIMs(teamId: String, dataFn: String => Future[Seq[Im]]): Future[Seq[Im]]
 
   def getSlackUserData(key: SlackUserDataCacheKey, dataFn: SlackUserDataCacheKey => Future[Option[SlackUserData]]): Future[Option[SlackUserData]]
 

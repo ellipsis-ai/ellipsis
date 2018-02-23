@@ -5,7 +5,8 @@ import models.accounts.slack.botprofile.SlackBotProfile
 import models.accounts.user.User
 import models.behaviors.conversations.conversation.Conversation
 import play.api.Configuration
-import services.{AWSLambdaService, CacheService, DataService, DefaultServices}
+import services.caching.CacheService
+import services.{AWSLambdaService, DataService, DefaultServices}
 import slack.api.SlackApiClient
 import utils.{SlackMessageSender, UploadFileSpec}
 

@@ -10,6 +10,7 @@ import models.behaviors.BotResultService
 import play.api.Configuration
 import play.api.libs.ws.WSClient
 import services._
+import services.caching.CacheService
 import slick.dbio.DBIO
 
 import scala.concurrent.{ExecutionContext, Future}

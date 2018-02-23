@@ -13,7 +13,8 @@ import models.accounts.linkedaccount.LinkedAccount
 import models.behaviors.events.{Event, SlackMessageEvent}
 import models.team.Team
 import play.api.Configuration
-import services.{CacheService, DataService, SlackEventService}
+import services.caching.CacheService
+import services.{DataService, SlackEventService}
 import slack.api.SlackApiClient
 
 import scala.concurrent.{ExecutionContext, Future}
