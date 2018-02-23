@@ -12,7 +12,8 @@ import models.behaviors.scheduling.Scheduled
 import models.team.Team
 import play.api.Configuration
 import play.api.libs.json.JsObject
-import services.{AWSLambdaService, CacheService, DataService, DefaultServices}
+import services.caching.CacheService
+import services.{AWSLambdaService, DataService, DefaultServices}
 import slick.dbio.DBIO
 import utils.UploadFileSpec
 

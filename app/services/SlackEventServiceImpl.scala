@@ -8,6 +8,7 @@ import models.behaviors.BotResultService
 import models.behaviors.events.{EventHandler, SlackMessageEvent}
 import play.api.Logger
 import play.api.i18n.MessagesApi
+import services.caching.{CacheService, SlackUserDataCacheKey}
 import slack.api.{ApiError, SlackApiClient}
 import utils.SlackMessageReactionHandler
 
@@ -52,19 +53,17 @@ class SlackEventServiceImpl @Inject()(
     }).map(_.flatten)
   }
 
-  def maybeSlackUserDataFor(slackUserId: String, slackTeamId: String, client: SlackApiClient): Future[Option[SlackUserData]] = {
-    cacheService.getSlackUserData(slackUserId, slackTeamId).map { userData =>
-      Future.successful(Some(userData))
-    }.getOrElse {
+  def fetchSlackUserDataFn(slackUserId: String, slackTeamId: String, client: SlackApiClient): SlackUserDataCacheKey => Future[Option[SlackUserData]] = {
+    key: SlackUserDataCacheKey => {
       for {
-        maybeInfo <- client.getUserInfo(slackUserId).map(Some(_)).recover {
+        maybeInfo <- client.getUserInfo(key.slackUserId).map(Some(_)).recover {
           case e: ApiError => {
             Logger.warn("Error from Slack API while retrieving Slack user data", e)
             None
           }
         }
       } yield {
-        maybeInfo.flatMap { info =>
+        maybeInfo.map { info =>
           val maybeProfile = info.profile.map { profile =>
             SlackUserProfileData(
               profile.display_name,
@@ -73,9 +72,9 @@ class SlackEventServiceImpl @Inject()(
               profile.real_name
             )
           }
-          val userData = SlackUserData(
-            slackUserId,
-            slackTeamId,
+          SlackUserData(
+            key.slackUserId,
+            key.slackTeamId,
             info.name,
             isPrimaryOwner = info.is_primary_owner.getOrElse(false),
             isOwner = info.is_owner.getOrElse(false),
@@ -85,11 +84,13 @@ class SlackEventServiceImpl @Inject()(
             info.deleted.getOrElse(false),
             maybeProfile
           )
-          cacheService.cacheSlackUserData(userData)
-          Some(userData)
         }
       }
     }
+  }
+
+  def maybeSlackUserDataFor(slackUserId: String, slackTeamId: String, client: SlackApiClient): Future[Option[SlackUserData]] = {
+    cacheService.getSlackUserData(SlackUserDataCacheKey(slackUserId, slackTeamId), fetchSlackUserDataFn(slackUserId, slackTeamId, client))
   }
 
   def maybeSlackUserDataFor(botProfile: SlackBotProfile): Future[Option[SlackUserData]] = {

@@ -10,7 +10,8 @@ import models.accounts.user.User
 import models.behaviors.behaviorgroup.BehaviorGroup
 import models.team.Team
 import play.api.libs.json.{JsError, JsSuccess, Json}
-import services.{CacheService, DataService}
+import services.DataService
+import services.caching.CacheService
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.matching.Regex

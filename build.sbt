@@ -66,7 +66,8 @@ libraryDependencies ++= Seq(
   "com.github.mumoshu" %% "play2-memcached-play26" % "0.9.0",
   "net.logstash.logback" % "logstash-logback-encoder" % "4.11",
   "io.sentry" % "sentry-logback" % "1.5.6",
-  "com.chargebee" % "chargebee-java" % "2.3.8"
+  "com.chargebee" % "chargebee-java" % "2.3.8",
+  "com.typesafe.akka" %% "akka-http-caching" % "10.1.0-RC2"
 )
 
 // JavaScript configuration begins

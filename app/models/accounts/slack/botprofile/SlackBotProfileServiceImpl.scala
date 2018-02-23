@@ -10,7 +10,8 @@ import models.behaviors.events.{EventType, SlackMessage, SlackMessageEvent}
 import models.behaviors.{BotResult, BotResultService}
 import models.team.Team
 import play.api.Logger
-import services.{CacheService, DataService, SlackEventService}
+import services.caching.CacheService
+import services.{DataService, SlackEventService}
 import slack.api.SlackApiClient
 import slick.dbio.DBIO
 import utils.{SlackChannels, SlackMessageReactionHandler, SlackTimestamp}

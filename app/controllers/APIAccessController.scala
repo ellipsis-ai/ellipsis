@@ -16,7 +16,8 @@ import models.silhouette.EllipsisEnv
 import play.api.Configuration
 import play.api.libs.ws.WSClient
 import play.api.mvc.{AnyContent, Result}
-import services.{CacheService, DataService}
+import services.DataService
+import services.caching.CacheService
 
 import scala.concurrent.{ExecutionContext, Future}
 

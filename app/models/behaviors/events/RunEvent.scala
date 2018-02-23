@@ -8,7 +8,8 @@ import models.behaviors.behavior.Behavior
 import models.behaviors.conversations.conversation.Conversation
 import models.team.Team
 import play.api.Configuration
-import services.{AWSLambdaConstants, CacheService, DataService, DefaultServices}
+import services.caching.CacheService
+import services.{AWSLambdaConstants, DataService, DefaultServices}
 import slack.api.SlackApiClient
 import utils.{SlackMessageSender, UploadFileSpec}
 

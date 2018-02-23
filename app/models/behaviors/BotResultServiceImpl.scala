@@ -4,7 +4,8 @@ import javax.inject.Inject
 
 import akka.actor.ActorSystem
 import play.api.Configuration
-import services.{CacheService, DataService}
+import services.DataService
+import services.caching.CacheService
 import slick.dbio.DBIO
 
 import scala.concurrent.{ExecutionContext, Future}

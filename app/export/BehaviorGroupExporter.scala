@@ -7,7 +7,8 @@ import json.{BehaviorGroupConfig, BehaviorGroupData, BehaviorVersionData, Librar
 import models.IDs
 import models.accounts.user.User
 import play.api.libs.json.Json
-import services.{CacheService, DataService}
+import services.DataService
+import services.caching.CacheService
 import utils.SafeFileName
 
 import scala.concurrent.{ExecutionContext, Future}

@@ -13,7 +13,8 @@ import models.behaviors.templates.TemplateApplier
 import play.api.Configuration
 import play.api.libs.json._
 import services.AWSLambdaConstants._
-import services.{AWSLambdaLogResult, CacheService, DataService}
+import services.caching.CacheService
+import services.{AWSLambdaLogResult, DataService}
 import slick.dbio.DBIO
 import utils.UploadFileSpec
 

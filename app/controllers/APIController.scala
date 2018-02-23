@@ -23,7 +23,8 @@ import play.api.libs.json._
 import play.api.libs.ws.{WSClient, WSResponse}
 import play.api.mvc.{AnyContent, Request, Result}
 import play.api.{Configuration, Logger}
-import services.{AWSLambdaService, CacheService, DataService, SlackEventService}
+import services.caching.CacheService
+import services.{AWSLambdaService, DataService, SlackEventService}
 import utils.{SlackFileMap, SlackTimestamp}
 
 import scala.concurrent.{ExecutionContext, Future}
