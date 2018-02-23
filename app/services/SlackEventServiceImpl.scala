@@ -1,15 +1,14 @@
 package services
 
-import javax.inject._
 import akka.actor.ActorSystem
+import javax.inject._
 import json.{SlackUserData, SlackUserProfileData}
 import models.accounts.slack.botprofile.SlackBotProfile
 import models.behaviors.BotResultService
 import models.behaviors.events.{EventHandler, SlackMessageEvent}
 import play.api.Logger
 import play.api.i18n.MessagesApi
-import play.api.libs.json._
-import slack.api.{ApiError, InvalidResponseError, SlackApiClient}
+import slack.api.{ApiError, SlackApiClient}
 import utils.SlackMessageReactionHandler
 
 import scala.concurrent.{ExecutionContext, Future}

@@ -5,7 +5,7 @@ import java.time.OffsetDateTime
 import models.behaviors.BotResult
 import models.behaviors.events.{EventType, SlackMessageEvent}
 import models.team.Team
-import services.{CacheService, SlackEventService}
+import services.CacheService
 import slick.dbio.DBIO
 import utils.SlackChannels
 

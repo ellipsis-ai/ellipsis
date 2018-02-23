@@ -2,19 +2,19 @@ package models.accounts.user
 
 import java.time.OffsetDateTime
 
-import javax.inject.Inject
 import akka.actor.ActorSystem
 import com.google.inject.Provider
 import com.mohiva.play.silhouette.api.LoginInfo
 import drivers.SlickPostgresDriver.api._
+import javax.inject.Inject
 import json.{SlackUserData, UserData}
 import models.IDs
 import models.accounts.linkedaccount.LinkedAccount
 import models.behaviors.events.{Event, SlackMessageEvent}
 import models.team.Team
-import play.api.{Configuration, Logger}
+import play.api.Configuration
 import services.{CacheService, DataService, SlackEventService}
-import slack.api.{InvalidResponseError, SlackApiClient}
+import slack.api.SlackApiClient
 
 import scala.concurrent.{ExecutionContext, Future}
 

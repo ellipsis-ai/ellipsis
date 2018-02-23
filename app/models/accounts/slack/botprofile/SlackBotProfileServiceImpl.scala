@@ -2,12 +2,12 @@ package models.accounts.slack.botprofile
 
 import java.time.OffsetDateTime
 
-import javax.inject.{Inject, Provider}
 import akka.actor.ActorSystem
 import drivers.SlickPostgresDriver.api._
+import javax.inject.{Inject, Provider}
 import models.accounts.registration.RegistrationService
-import models.behaviors.{BotResult, BotResultService}
 import models.behaviors.events.{EventType, SlackMessage, SlackMessageEvent}
+import models.behaviors.{BotResult, BotResultService}
 import models.team.Team
 import play.api.Logger
 import services.{CacheService, DataService, SlackEventService}
