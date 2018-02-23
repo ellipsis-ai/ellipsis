@@ -4,9 +4,10 @@ import json.{ImmutableBehaviorGroupVersionData, SlackUserData}
 import models.behaviors.behaviorparameter.ValidValue
 import models.behaviors.events.{Event, SlackMessageEvent}
 import org.scalatest.mock.MockitoSugar
-import services.CacheService
+import services.{CacheService, SlackUserDataCacheKey}
 import slack.models.{Channel, Group, Im}
 
+import scala.concurrent.Future
 import scala.concurrent.duration.Duration
 import scala.reflect.ClassTag
 
@@ -36,9 +37,7 @@ class MockCacheService extends CacheService with MockitoSugar {
 
   def getSlackGroupInfo(group: String, teamId: String): Option[Group] = None
 
-  def cacheSlackChannels(data: Seq[Channel], teamId: String): Unit = {}
-
-  def getSlackChannels(teamId: String): Option[Seq[Channel]] = None
+  def getSlackChannels(teamId: String, dataFn: String => Future[Seq[Channel]]): Future[Seq[Channel]] = Future.successful(Seq())
 
   def cacheSlackGroups(data: Seq[Group], teamId: String): Unit = {}
 
@@ -50,7 +49,7 @@ class MockCacheService extends CacheService with MockitoSugar {
 
   def cacheSlackUserData(userData: SlackUserData): Unit = {}
 
-  def getSlackUserData(userId: String, slackTeamId: String): Option[SlackUserData] = None
+  def getSlackUserData(key: SlackUserDataCacheKey, dataFn: SlackUserDataCacheKey => Future[Option[SlackUserData]]): Future[Option[SlackUserData]] = Future.successful(None)
 
   def cacheBehaviorGroupVersionData(data: ImmutableBehaviorGroupVersionData): Unit = {}
 
