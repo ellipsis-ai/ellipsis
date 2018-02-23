@@ -56,6 +56,14 @@ const BehaviorList = React.createClass({
       }
     },
 
+    componentDidMount: function() {
+      this.props.onRenderNavActions(this.renderSearch());
+    },
+
+    componentDidUpdate: function() {
+      this.props.onRenderNavActions(this.renderSearch());
+    },
+
     updateSearch: function(newValue) {
       this.setState({
         searchText: newValue
@@ -354,7 +362,7 @@ const BehaviorList = React.createClass({
       var groups = this.getMatchingBehaviorGroupsFrom(allLocal);
       return (
         <Collapsible revealWhen={allLocal.length > 0} animationDuration={0.5}>
-          <div className="container container-c mvxl">
+          <div className="container container-c ptxl">
 
             <ListHeading teamId={this.props.teamId} includeTeachButton={true}>
               {this.isSearching() ?
@@ -515,12 +523,12 @@ const BehaviorList = React.createClass({
     renderIntro: function() {
       if (this.props.localBehaviorGroups.length === 0) {
         return (
-          <div className="bg-blue-medium pvxxl border-emphasis-bottom border-blue bg-large-logo">
+          <div className="bg-blue-medium pvxxl border-bottom-thick border-blue type-white">
             <div className="container container-c">
-              <p className="type-l type-white phl">
-                Ellipsis is a customizable chat bot that helps your team be more productive.
+              <div className="type-l type-light phl">
+                Ellipsis is a customizable bot that helps your team be more productive.
                 Teach your bot to perform tasks and provide answers to your team.
-              </p>
+              </div>
             </div>
           </div>
         );
@@ -529,17 +537,13 @@ const BehaviorList = React.createClass({
 
     renderSearch: function() {
       return (
-        <div className="ptxl mbxl">
-          <div className="container container-c">
-            <div className="mhl">
-              <SearchInput
-                placeholder="Search skills…"
-                value={this.state.searchText}
-                onChange={this.updateSearch}
-                isSearching={this.props.isLoadingMatchingResults}
-              />
-            </div>
-          </div>
+        <div className="pts display-inline-block width-15">
+          <SearchInput
+            placeholder="Search skills…"
+            value={this.state.searchText}
+            onChange={this.updateSearch}
+            isSearching={this.props.isLoadingMatchingResults}
+          />
         </div>
       );
     },
@@ -550,9 +554,7 @@ const BehaviorList = React.createClass({
           <div style={{ paddingBottom: `${this.props.footerHeight}px` }}>
             {this.renderIntro()}
 
-            <div className={(this.hasLocalBehaviorGroups() ? "bg-lightest" : "")}>
-              {this.renderSearch()}
-
+            <div className="bg-lightest">
               {this.renderInstalledBehaviorGroups()}
             </div>
 

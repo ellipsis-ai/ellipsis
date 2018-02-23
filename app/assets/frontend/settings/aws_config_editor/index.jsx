@@ -23,6 +23,14 @@ const AwsConfigEditor = React.createClass({
       isAdmin: React.PropTypes.bool.isRequired
     }),
 
+    componentDidMount: function() {
+      this.renderNav();
+    },
+
+    componentDidUpdate: function() {
+      this.renderNav();
+    },
+
     configNameInput: null,
 
     getDefaultProps: function() {
@@ -126,7 +134,7 @@ const AwsConfigEditor = React.createClass({
 
     render: function() {
       return (
-        <SettingsPage teamId={this.props.teamId} activePage={"oauthApplications"} header={this.renderHeader()} isAdmin={this.props.isAdmin}>
+        <SettingsPage teamId={this.props.teamId} activePage={"oauthApplications"} isAdmin={this.props.isAdmin}>
           <form action={jsRoutes.controllers.web.settings.AWSConfigController.save().url} method="POST" className="flex-row-cascade">
             <CsrfTokenHiddenInput value={this.props.csrfToken} />
             <input type="hidden" name="id" value={this.props.configId} />
@@ -164,47 +172,27 @@ const AwsConfigEditor = React.createClass({
       );
     },
 
-    renderHeader: function() {
-      return (
-        <h3 className="mvn ptxxl type-weak display-ellipsis">
-          <span className="mrs">
-             <a href={jsRoutes.controllers.web.settings.IntegrationsController.list().url}>Integrations</a>
-          </span>
-          <span className="mhs">→</span>
-          {this.renderConfigHeader()}
-        </h3>
-      );
+    renderNav: function() {
+      const navItems = [{
+        title: "Settings"
+      }, {
+        url: jsRoutes.controllers.web.settings.IntegrationsController.list().url,
+        title: "Integrations"
+      }];
+      this.props.onRenderNavItems(navItems.concat(this.renderConfigNavItems()));
     },
 
-    renderConfigHeader: function() {
+    renderConfigNavItems: function() {
       if (!this.props.configSaved) {
-        if (this.getName() && this.getName().trim.length > 0) {
-          return (
-            <span>
-              <span className="mhs">
-                <button className="button-raw" onClick={this.reset}>Add configuration</button>
-              </span>
-              <span className="mhs">→</span>
-              <span className="mhs">{this.getName()}</span>
-            </span>
-          );
-        } else {
-          return (
-            <span>
-              <span className="mhs">Add configuration</span>
-              <span className="mhs">→</span>
-              <span className="mhs">AWS</span>
-            </span>
-          );
-        }
+        return [{
+          title: "Add AWS configuration"
+        }];
       } else {
-        return (
-          <span>
-            <span className="mhs">Edit configuration</span>
-            <span className="mhs">→</span>
-            <span className="mhs">{this.getName() || (<span className="type-disabled">Untitled</span>)}</span>
-          </span>
-        );
+        const configName = this.getName() || "Untitled configuration";
+        const title = configName === "AWS" ? "AWS" : `${configName} (AWS)`;
+        return [{
+          title: title
+        }];
       }
     },
 

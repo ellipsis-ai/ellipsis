@@ -31,12 +31,14 @@
   li {
     list-style-type: none;
 
-    > button {
+    > button,
+    > a.button {
       width: 100%;
       border-radius: 0;
     }
 
-    &:last-child > button {
+    &:last-child > button,
+    &:last-child > a.button {
       border-bottom-left-radius: @border-radius - @border-width-thick;
       border-bottom-right-radius: @border-radius - @border-width-thick;
     }

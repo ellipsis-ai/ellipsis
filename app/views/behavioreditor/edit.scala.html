@@ -1,9 +1,13 @@
 @(
   config: ViewConfig,
-  dataRoute: Call
+  dataRoute: Call,
+  skillName: String
 )(implicit messages: Messages, r: RequestHeader)
 
-@page.main("Edit skill", config, selectedNav = "skills") {
+@page.main(s"Edit skill · $skillName", config, Seq(
+  NavItem.skills(link = true, config.maybeAdminAccessTeamId, None),
+  NavItem(skillName, None)
+)) {
   <div id="content" class="flex-row-cascade">
     <div id="editorContainer" class="flex-row-cascade"></div>
     <script src='@config.assets.getWebpackBundle("vendor.js")'></script>

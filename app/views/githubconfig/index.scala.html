@@ -3,7 +3,7 @@
   dataRoute: Call
 )(implicit messages: Messages, r: RequestHeader)
 
-@page.main("GitHub configuration", config, selectedNav = "settings") {
+@page.main("GitHub authentication", config, Seq(NavItem.teamSettings, NavItem("GitHub authentication", None))) {
   <div id="content" class="content flex-row-cascade">
     <div id="githubConfig" class="flex-row-cascade"></div>
 

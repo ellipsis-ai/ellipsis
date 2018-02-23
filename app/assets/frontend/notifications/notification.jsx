@@ -17,7 +17,6 @@ import NotificationForInvalidParamInTrigger from './invalid_param_in_trigger';
 import NotificationForUnknownParamInTemplate from './unknown_param_in_template';
 import NotificationForServerDataWarning from './server_data_warning';
 import NotificationForSkillDetailsWarning from './skill_details_warning';
-import NotificationForDeploymentWarning from './deployment_warning';
 import NotificationDataGroup from '../models/notification_data_group';
 
 const Notification = React.createClass({
@@ -137,14 +136,6 @@ const Notification = React.createClass({
           icon: this.getErrorIcon(),
           message: (
             <NotificationForServerDataWarning details={this.props.group.members} />
-          )
-        };
-      } else if (kind === "deployment_warning") {
-        return {
-          containerClass: "box-tip",
-          icon: this.getTipIcon(),
-          message: (
-            <NotificationForDeploymentWarning details={this.props.group.members}/>
           )
         };
       } else if (kind === "skill_details_warning") {

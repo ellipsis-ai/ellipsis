@@ -103,6 +103,10 @@ class BehaviorGroup implements Diffable, HasInputs {
       return !!this.createdAt && new Date(this.createdAt) > (new Date() - ONE_MINUTE);
     }
 
+    isExisting(): boolean {
+      return Boolean(this.id);
+    }
+
     getName(): string {
       return this.name || this.getUntitledName();
     }

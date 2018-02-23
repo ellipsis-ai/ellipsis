@@ -5,7 +5,6 @@ import Input from '../../form/input';
 import Textarea from '../../form/textarea';
 import Formatter from '../../lib/formatter';
 const formatEnvVarName = Formatter.formatEnvironmentVariableName;
-import ifPresent from '../../lib/if_present';
 
 const Setter = React.createClass({
     propTypes: {
@@ -129,6 +128,7 @@ const Setter = React.createClass({
         vars: this.getVars().concat(namedNewVars),
         newVars: [this.createNewVar()],
         saveError: false,
+        justSaved: false,
         isSaving: true
       }, () => {
         this.props.onSave(this.state.vars);
@@ -186,6 +186,12 @@ const Setter = React.createClass({
       });
     },
 
+    onSaveComplete: function() {
+      this.setState(Object.assign({}, this.getInitialState(), {
+        justSaved: true
+      }));
+    },
+
     getDuplicateErrorMessage: function() {
       var names = this.getDuplicateNames();
       if (names.length === 0) {
@@ -199,9 +205,25 @@ const Setter = React.createClass({
       );
     },
 
+    renderSaveStatus: function() {
+      if (this.state.saveError) {
+        return (
+          <span className="mbs type-pink type-bold align-button fade-in">
+            An error occurred while saving. Please try again.
+          </span>
+        );
+      } else if (this.state.justSaved) {
+        return (
+          <span className="mbs type-green align-button fade-in"> — saved successfully</span>
+        );
+      } else {
+        return this.getDuplicateErrorMessage();
+      }
+    },
+
     renderSetterActions: function() {
       return (
-        <div>
+        <div className="display-inline-block">
           <button type="button"
             className={"button-primary mrs mbs " + (this.state.isSaving ? "button-activated" : "")}
             disabled={!this.isValid()}
@@ -219,11 +241,7 @@ const Setter = React.createClass({
           >
             Cancel
           </button>
-          {ifPresent(this.state.saveError, () => (
-            <span className="mbs type-pink type-bold align-button fade-in">
-                  An error occurred while saving. Please try again.
-                </span>
-          ), () => (this.getDuplicateErrorMessage()))}
+          {this.renderSaveStatus()}
         </div>
       );
     },

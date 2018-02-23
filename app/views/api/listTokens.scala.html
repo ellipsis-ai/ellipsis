@@ -3,7 +3,7 @@
   dataRoute: Call
 )(implicit messages: Messages, r: RequestHeader)
 
-@page.main("API token generator", config, selectedNav = "settings") {
+@page.main("Ellipsis API tokens", config, Seq(NavItem.teamSettings, NavItem("Ellipsis API tokens", None))) {
   <div id="content" class="content flex-row-cascade">
     <div id="apiTokenGenerator" class="flex-row-cascade"></div>
     <script src='@config.assets.getWebpackBundle("vendor.js")'></script>

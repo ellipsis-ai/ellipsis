@@ -7,6 +7,7 @@ type JsRoute = {
 declare var jsRoutes: {
   controllers: {
     ApplicationController: {
+      index: (teamId?: string) => JsRoute,
       setTeamTimeZone: () => JsRoute
     },
     BehaviorEditorController: {

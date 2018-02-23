@@ -1,14 +1,23 @@
 // @flow
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';
+
+export type NavItemContent = {
+  title: string,
+  url?: ?string,
+  callback?: ?() => void
+}
+
 export type PageRequiredProps = {
   activePanelName: string,
   activePanelIsModal: boolean,
   onToggleActivePanel: (name: string, beModal?: boolean, optionalCallback?: () => void) => void,
   onClearActivePanel: (optionalCallback?: () => void) => void,
   onRenderFooter: (content: React.Node, footerClassName?: string) => React.Node,
-  footerHeight: number,
-  onRenderPanel: (panelName: string, panel: React.Node) => void
+  onRenderNavItems: (items: Array<NavItemContent>) => void,
+  onRenderNavActions: (content: React.Node) => void,
+  onRenderPanel: (panelName: string, panel: React.Node) => void,
+  footerHeight: number
 };
 
 import Event from '../lib/event';
@@ -17,6 +26,7 @@ import Collapsible from './collapsible';
 import FixedFooter from './fixed_footer';
 import ModalScrim from './modal_scrim';
 import Button from '../form/button';
+import NavItem from './nav_item';
 import autobind from '../lib/autobind';
 import PageFooterRenderingError from './page_footer_rendering_error';
 
@@ -38,6 +48,8 @@ class Page extends React.Component<Props, State> {
     panels: { [string]: ?React.Component<*> };
     footer: ?(HTMLElement | FixedFooter);
     component: ?(React.Node);
+    navItems: ?HTMLElement;
+    navActions: ?HTMLElement;
     static requiredPropTypes: {};
     static feedbackContainerId: string;
 
@@ -47,6 +59,8 @@ class Page extends React.Component<Props, State> {
       this.state = this.getDefaultState();
       this.footer = null;
       this.panels = {};
+      this.navItems = document.getElementById("mainNavItems");
+      this.navActions = document.getElementById("mainNavActions");
     }
 
     getDefaultState(): State {
@@ -178,9 +192,33 @@ class Page extends React.Component<Props, State> {
       );
     }
 
+    onRenderNavItems(navItems: Array<NavItemContent>) {
+      // This should use ReactDOM.createPortal when we upgrade to React 16
+      const el = this.navItems;
+      if (el) {
+        ReactDOM.render((
+          <div className="columns">
+            {navItems.map((ea, index) => (
+              <NavItem key={`navItem${index}`} title={ea.title} url={ea.url} callback={ea.callback} />
+            ))}
+          </div>
+        ), el);
+      }
+    }
+
+    onRenderNavActions(content: React.Node) {
+      // This should use ReactDOM.createPortal when we upgrade to React 16
+      const el = this.navActions;
+      if (el) {
+        ReactDOM.render((
+          <div>{content}</div>
+        ), el);
+      }
+    }
+
     renderFeedbackLink() {
       return (
-        <Button className="button-nav mhs pbm mobile-pbs" onClick={this.toggleFeedback}>Feedback</Button>
+        <Button className="button-dropdown-item plm" onClick={this.toggleFeedback}>Feedback</Button>
       );
     }
 
@@ -194,6 +232,8 @@ class Page extends React.Component<Props, State> {
             onClearActivePanel: this.clearActivePanel,
             onRenderFooter: this.onRenderFooter,
             onRenderPanel: this.onRenderPanel,
+            onRenderNavItems: this.onRenderNavItems,
+            onRenderNavActions: this.onRenderNavActions,
             footerHeight: this.getFooterHeight(),
             ref: (component) => this.component = component
           }))}
@@ -209,6 +249,8 @@ class Page extends React.Component<Props, State> {
         onClearActivePanel: Page.placeholderCallback,
         onRenderFooter: Page.placeholderCallback,
         onRenderPanel: Page.placeholderCallback,
+        onRenderNavItems: Page.placeholderCallback,
+        onRenderNavActions: Page.placeholderCallback,
         footerHeight: 0
       };
     }
@@ -225,6 +267,8 @@ Page.requiredPropTypes = {
   onClearActivePanel: React.PropTypes.func.isRequired,
   onRenderFooter: React.PropTypes.func.isRequired,
   onRenderPanel: React.PropTypes.func.isRequired,
+  onRenderNavItems: React.PropTypes.func.isRequired,
+  onRenderNavActions: React.PropTypes.func.isRequired,
   footerHeight: React.PropTypes.number.isRequired
 };
 

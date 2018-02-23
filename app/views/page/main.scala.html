@@ -1,15 +1,21 @@
 @(
   title: String,
   config: ViewConfig,
-  pageId: String = "",
-  selectedNav: String = "",
+  navItems: Seq[NavItem] = Seq(),
   bodyClass: String = "bg-lightest",
   navClass: String = "",
   hideNav: Boolean = false
 )(content: Html)(implicit messages: Messages, r: RequestHeader)
 
-@navBgColorForPage = @{if (config.maybeTeamAccess.exists(_.isAdminAccess)) " bg-pink " else " bg-black "}
-@navBorderColorForPage = @{if (hideNav) "" else " border-emphasis-bottom border-pink "}
+@navBgColorForPage = @{
+  if (hideNav) {
+    "bg-black type-white"
+  } else if (config.isAdmin) {
+    "bg-pink-medium type-black"
+  } else {
+    "bg-white-translucent type-black"
+  }
+}
 <!DOCTYPE html>
 <html lang="en">
   <head>
@@ -36,11 +42,10 @@
   </head>
   <body class="flex-rows flex-rows-viewport @bodyClass">
     <header id="main-header" class='@{
-      "position-fixed-top position-z-behind-scrim type-white " +
-        navBorderColorForPage +
+      "position-fixed-top position-z-behind-scrim " +
         navBgColorForPage
     }'>
-      @shared.mainNav(config, selectedNav, hideNav, navClass)
+      @shared.mainNav(config, navItems, hideNav, navClass)
     </header>
     <script src="@config.assets.getWebpackBundle("global.js")"></script>
     @content
