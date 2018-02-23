@@ -8,7 +8,8 @@ import models.behaviors.events._
 import models.team.Team
 import play.api.Configuration
 import play.api.libs.json.JsObject
-import services.{CacheService, DataService, DefaultServices}
+import services.caching.CacheService
+import services.{DataService, DefaultServices}
 import slick.dbio.DBIO
 import utils.UploadFileSpec
 

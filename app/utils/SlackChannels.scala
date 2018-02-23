@@ -1,7 +1,7 @@
 package utils
 
 import akka.actor.ActorSystem
-import services.CacheService
+import services.caching.{CacheService, SlackChannelDataCacheKey, SlackGroupDataCacheKey}
 import slack.api.{ApiError, SlackApiClient}
 import slack.models.{Channel, Group, Im}
 
@@ -166,20 +166,15 @@ case class SlackChannels(client: SlackApiClient, cacheService: CacheService, sla
     if (!channel.startsWith("C")) {
       Future.successful(None)
     } else {
-      cacheService.getSlackChannelInfo(channel, slackTeamId).map { channelInfo =>
-        Future.successful(Some(channelInfo))
-      }.getOrElse {
-        client.getChannelInfo(channel).map { channelInfo =>
-          cacheService.cacheSlackChannelInfo(channel, slackTeamId, channelInfo)
-          Some(channelInfo)
-        }.recover {
+      cacheService.getSlackChannelInfo(SlackChannelDataCacheKey(channel, slackTeamId), (key: SlackChannelDataCacheKey) => {
+        client.getChannelInfo(key.channel).map(Some(_)).recover {
           case e: ApiError => if (e.code == "channel_not_found") {
             None
           } else {
             throw ChannelInfoException(channel, slackTeamId, e)
           }
         }
-      }
+      })
     }
   }
 
@@ -187,60 +182,40 @@ case class SlackChannels(client: SlackApiClient, cacheService: CacheService, sla
     if (!channel.startsWith("G")) {
       Future.successful(None)
     } else {
-      cacheService.getSlackGroupInfo(channel, slackTeamId).map { groupInfo =>
-        Future.successful(Some(groupInfo))
-      }.getOrElse {
-        client.getGroupInfo(channel).map { groupInfo =>
-          cacheService.cacheSlackGroupInfo(channel, slackTeamId, groupInfo)
-          Some(groupInfo)
-        }.recover {
+      cacheService.getSlackGroupInfo(SlackGroupDataCacheKey(channel, slackTeamId), (key: SlackGroupDataCacheKey) => {
+        client.getGroupInfo(key.group).map(Some(_)).recover {
           case e: ApiError => if (e.code == "channel_not_found") {
             None
           } else {
             throw GroupInfoException(channel, slackTeamId, e)
           }
         }
-      }
+      })
     }
   }
 
   def listChannels(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Seq[Channel]] = {
-    cacheService.getSlackChannels(slackTeamId).map { channels =>
-      Future.successful(channels)
-    }.getOrElse {
-      client.listChannels(excludeArchived = 1).map { channels =>
-        cacheService.cacheSlackChannels(channels, slackTeamId)
-        channels
-      }.recover {
+    cacheService.getSlackChannels(slackTeamId, (slackTeamId: String) => {
+      client.listChannels(excludeArchived = 1).recover {
         case t: Throwable => throw ListChannelsException(slackTeamId, t)
       }
-    }
+    })
   }
 
   def listGroups(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Seq[Group]] = {
-    cacheService.getSlackGroups(slackTeamId).map { groups =>
-      Future.successful(groups)
-    }.getOrElse {
-      client.listGroups(excludeArchived = 1).map { groups =>
-        cacheService.cacheSlackGroups(groups, slackTeamId)
-        groups
-      }.recover {
+    cacheService.getSlackGroups(slackTeamId, (slackTeamId: String) =>
+      client.listGroups(excludeArchived = 1).recover {
         case t: Throwable => throw ListGroupsException(slackTeamId, t)
       }
-    }
+    )
   }
 
   def listIms(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Seq[Im]] = {
-    cacheService.getSlackIMs(slackTeamId).map { ims =>
-      Future.successful(ims)
-    }.getOrElse {
-      client.listIms().map { ims =>
-        cacheService.cacheSlackIMs(ims, slackTeamId)
-        ims
-      }.recover {
+    cacheService.getSlackIMs(slackTeamId, (slackTeamId: String) =>
+      client.listIms().recover {
         case t: Throwable => throw DMInfoException(slackTeamId, t)
       }
-    }
+    )
   }
 }
 

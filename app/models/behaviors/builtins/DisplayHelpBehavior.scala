@@ -6,7 +6,8 @@ import models.behaviors.events.SlackMessageActionConstants._
 import models.behaviors.events._
 import models.behaviors.{BotResult, TextWithAttachmentsResult}
 import models.help._
-import services.{AWSLambdaService, CacheService, DataService, DefaultServices}
+import services.caching.CacheService
+import services.{AWSLambdaService, DataService, DefaultServices}
 import utils._
 
 import scala.concurrent.{ExecutionContext, Future}

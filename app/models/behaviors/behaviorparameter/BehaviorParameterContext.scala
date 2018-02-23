@@ -6,7 +6,8 @@ import models.behaviors.conversations.ParamCollectionState
 import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.events.Event
 import models.behaviors.events.SlackMessageActionConstants._
-import services.{CacheService, DataService, DefaultServices}
+import services.caching.CacheService
+import services.{DataService, DefaultServices}
 import slick.dbio.DBIO
 
 import scala.concurrent.{ExecutionContext, Future}

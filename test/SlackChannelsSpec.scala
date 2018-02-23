@@ -1,6 +1,6 @@
 import org.scalatest.mock.MockitoSugar
 import org.scalatestplus.play.PlaySpec
-import services.CacheService
+import services.caching.CacheService
 import slack.api.SlackApiClient
 import utils.SlackChannels
 

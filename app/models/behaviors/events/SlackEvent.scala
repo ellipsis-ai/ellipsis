@@ -7,7 +7,8 @@ import json.SlackUserData
 import models.accounts.slack.botprofile.SlackBotProfile
 import models.accounts.slack.profile.SlackProfile
 import play.api.libs.json._
-import services.{CacheService, DataService, DefaultServices}
+import services.caching.CacheService
+import services.{DataService, DefaultServices}
 import slack.api.SlackApiClient
 import utils.SlackChannels
 

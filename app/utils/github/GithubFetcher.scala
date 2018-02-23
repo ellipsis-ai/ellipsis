@@ -4,6 +4,7 @@ import play.api.Configuration
 import play.api.libs.json._
 import play.api.libs.ws.WSClient
 import services._
+import services.caching.CacheService
 
 import scala.concurrent.duration._
 import scala.concurrent.{Await, ExecutionContext, Future}

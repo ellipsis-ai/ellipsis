@@ -9,7 +9,7 @@ import models.behaviors.BotResultService
 import models.behaviors.events.EventHandler
 import models.behaviors.scheduling.Scheduled
 import play.api.{Configuration, Logger}
-import services.{CacheService, DataService, DefaultServices}
+import services.{DataService, DefaultServices}
 import slack.api.SlackApiClient
 
 import scala.concurrent.{ExecutionContext, Future}

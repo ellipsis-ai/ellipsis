@@ -10,7 +10,8 @@ import models.IDs
 import models.accounts.user.User
 import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
 import models.team.Team
-import services.{CacheService, DataService}
+import services.DataService
+import services.caching.CacheService
 
 import scala.concurrent.{ExecutionContext, Future}
 

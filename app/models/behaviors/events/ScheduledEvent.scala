@@ -7,8 +7,8 @@ import models.behaviors.scheduling.Scheduled
 import models.team.Team
 import play.api.Configuration
 import play.api.libs.json.JsObject
-import play.api.libs.ws.WSClient
-import services.{CacheService, DataService, DefaultServices}
+import services.caching.CacheService
+import services.{DataService, DefaultServices}
 import utils.UploadFileSpec
 
 import scala.concurrent.{ExecutionContext, Future}

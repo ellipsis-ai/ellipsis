@@ -13,7 +13,8 @@ import org.mockito.Mockito._
 import org.scalatest.mock.MockitoSugar
 import org.scalatestplus.play.PlaySpec
 import play.api.test.Helpers._
-import services.{CacheService, DataService}
+import services.DataService
+import services.caching.CacheService
 import slack.models.{Group, GroupValue}
 import support.TestContext
 import utils.{ChannelLike, SlackChannels, SlackGroup}

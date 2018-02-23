@@ -7,6 +7,7 @@ import com.google.inject.Provider
 import models.behaviors.BotResultService
 import play.api.Configuration
 import play.api.libs.ws.WSClient
+import services.caching.CacheService
 import utils.SlackFileMap
 
 @Singleton
