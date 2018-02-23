@@ -29,7 +29,7 @@ trait SlackBotProfileService {
 
   def eventualMaybeEvent(slackTeamId: String, channelId: String, maybeUserId: Option[String], maybeOriginalEventType: Option[EventType]): Future[Option[SlackMessageEvent]]
 
-  def maybeNameForAction(botProfile: SlackBotProfile): DBIO[Option[String]]
+  def maybeNameFor(botProfile: SlackBotProfile): Future[Option[String]]
 
   def sendResultWithNewEvent(
     description: String,

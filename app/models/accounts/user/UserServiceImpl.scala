@@ -109,7 +109,7 @@ class UserServiceImpl @Inject() (
         dataService.slackBotProfiles.allForAction(team).map(_.headOption)
       }.getOrElse(DBIO.successful(None))
       maybeBotName <- maybeSlackBotProfile.map { slackBotProfile =>
-        dataService.slackBotProfiles.maybeNameForAction(slackBotProfile)
+        DBIO.from(dataService.slackBotProfiles.maybeNameFor(slackBotProfile))
       }.getOrElse(DBIO.successful(None))
     } yield UserTeamAccess(user, loggedInTeam, maybeTeam, maybeBotName, maybeTeam.exists(t => t.id != user.teamId))
   }

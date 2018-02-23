@@ -37,12 +37,8 @@ case class SlackMessageEvent(
     if (isDirectMessage) {
       Future.successful("")
     } else {
-      for {
-        maybeSlackUserData <- services.slackEventService.maybeSlackUserDataFor(profile)
-      } yield {
-        maybeSlackUserData.map { userData =>
-          s"@${userData.getDisplayName} "
-        }.getOrElse("...")
+      services.dataService.slackBotProfiles.maybeNameFor(profile).map { maybeName =>
+        maybeName.getOrElse("...")
       }
     }
   }
