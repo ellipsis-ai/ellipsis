@@ -29,17 +29,32 @@ class MockCacheService extends CacheService with MockitoSugar {
 
   def getValidValues(key: String): Option[Seq[ValidValue]] = None
 
-  def getSlackChannelInfo(key: SlackChannelDataCacheKey, dataFn: SlackChannelDataCacheKey => Future[Option[Channel]]): Future[Option[Channel]] = Future.successful(None)
+  def getSlackChannelInfo(
+                           key: SlackChannelDataCacheKey,
+                           dataFn: SlackChannelDataCacheKey => Future[Option[Channel]]
+                         ): Future[Option[Channel]] = dataFn(key)
 
-  def getSlackGroupInfo(key: SlackGroupDataCacheKey, dataFn: SlackGroupDataCacheKey => Future[Option[Group]]): Future[Option[Group]] = Future.successful(None)
+  def getSlackGroupInfo(
+                         key: SlackGroupDataCacheKey,
+                         dataFn: SlackGroupDataCacheKey => Future[Option[Group]]
+                       ): Future[Option[Group]] = dataFn(key)
 
-  def getSlackChannels(teamId: String, dataFn: String => Future[Seq[Channel]]): Future[Seq[Channel]] = Future.successful(Seq())
+  def getSlackChannels(
+                        teamId: String,
+                        dataFn: String => Future[Seq[Channel]]
+                      ): Future[Seq[Channel]] = dataFn(teamId)
 
-  def getSlackGroups(teamId: String, dataFn: String => Future[Seq[Group]]): Future[Seq[Group]] = Future.successful(Seq())
+  def getSlackGroups(
+                      teamId: String,
+                      dataFn: String => Future[Seq[Group]]
+                    ): Future[Seq[Group]] = dataFn(teamId)
 
-  def getSlackIMs(teamId: String, dataFn: String => Future[Seq[Im]]): Future[Seq[Im]] = Future.successful(Seq())
+  def getSlackIMs(teamId: String, dataFn: String => Future[Seq[Im]]): Future[Seq[Im]] = dataFn(teamId)
 
-  def getSlackUserData(key: SlackUserDataCacheKey, dataFn: SlackUserDataCacheKey => Future[Option[SlackUserData]]): Future[Option[SlackUserData]] = Future.successful(None)
+  def getSlackUserData(
+                        key: SlackUserDataCacheKey,
+                        dataFn: SlackUserDataCacheKey => Future[Option[SlackUserData]]
+                      ): Future[Option[SlackUserData]] = dataFn(key)
 
   def cacheBehaviorGroupVersionData(data: ImmutableBehaviorGroupVersionData): Unit = {}
 

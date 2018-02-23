@@ -122,34 +122,22 @@ class CacheServiceImpl @Inject() (
     slackGroupInfoCache.getOrLoad(key, dataFn)
   }
 
-  private def slackChannelsKey(teamId: String): String = {
-    s"slack-channels-team-$teamId"
-  }
-
   private val slackChannelsCache = LfuCache[String, Seq[Channel]](cacheSettingsWithTimeToLive(slackApiCallExpiry))
 
   def getSlackChannels(teamId: String, dataFn: String => Future[Seq[Channel]]): Future[Seq[Channel]] = {
-    slackChannelsCache.getOrLoad(slackChannelsKey(teamId), dataFn)
-  }
-
-  private def slackGroupsKey(teamId: String): String = {
-    s"slack-groups-team-$teamId"
+    slackChannelsCache.getOrLoad(teamId, dataFn)
   }
 
   private val slackGroupsCache: Cache[String, Seq[Group]] = LfuCache(cacheSettingsWithTimeToLive(slackApiCallExpiry))
 
   def getSlackGroups(teamId: String, dataFn: String => Future[Seq[Group]]): Future[Seq[Group]] = {
-    slackGroupsCache.getOrLoad(slackGroupsKey(teamId), dataFn)
-  }
-
-  private def slackImsKey(teamId: String): String = {
-    s"slack-ims-team-$teamId"
+    slackGroupsCache.getOrLoad(teamId, dataFn)
   }
 
   private val slackImsCache: Cache[String, Seq[Im]] = LfuCache(cacheSettingsWithTimeToLive(slackApiCallExpiry))
 
   def getSlackIMs(teamId: String, dataFn: String => Future[Seq[Im]]): Future[Seq[Im]] = {
-    slackImsCache.getOrLoad(slackImsKey(teamId), dataFn)
+    slackImsCache.getOrLoad(teamId, dataFn)
   }
 
   private val slackUserDataCache: Cache[SlackUserDataCacheKey, Option[SlackUserData]] = LfuCache(cacheSettingsWithTimeToLive(slackApiCallExpiry))

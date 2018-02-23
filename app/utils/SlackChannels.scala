@@ -167,7 +167,7 @@ case class SlackChannels(client: SlackApiClient, cacheService: CacheService, sla
       Future.successful(None)
     } else {
       cacheService.getSlackChannelInfo(SlackChannelDataCacheKey(channel, slackTeamId), (key: SlackChannelDataCacheKey) => {
-        client.getChannelInfo(channel).map(Some(_)).recover {
+        client.getChannelInfo(key.channel).map(Some(_)).recover {
           case e: ApiError => if (e.code == "channel_not_found") {
             None
           } else {
@@ -183,7 +183,7 @@ case class SlackChannels(client: SlackApiClient, cacheService: CacheService, sla
       Future.successful(None)
     } else {
       cacheService.getSlackGroupInfo(SlackGroupDataCacheKey(channel, slackTeamId), (key: SlackGroupDataCacheKey) => {
-        client.getGroupInfo(channel).map(Some(_)).recover {
+        client.getGroupInfo(key.group).map(Some(_)).recover {
           case e: ApiError => if (e.code == "channel_not_found") {
             None
           } else {
