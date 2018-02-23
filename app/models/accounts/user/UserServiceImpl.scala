@@ -1,8 +1,8 @@
 package models.accounts.user
 
 import java.time.OffsetDateTime
-import javax.inject.Inject
 
+import javax.inject.Inject
 import akka.actor.ActorSystem
 import com.google.inject.Provider
 import com.mohiva.play.silhouette.api.LoginInfo
@@ -12,9 +12,9 @@ import models.IDs
 import models.accounts.linkedaccount.LinkedAccount
 import models.behaviors.events.{Event, SlackMessageEvent}
 import models.team.Team
-import play.api.Configuration
+import play.api.{Configuration, Logger}
 import services.{CacheService, DataService, SlackEventService}
-import slack.api.SlackApiClient
+import slack.api.{InvalidResponseError, SlackApiClient}
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -108,9 +108,7 @@ class UserServiceImpl @Inject() (
         dataService.slackBotProfiles.allForAction(team).map(_.headOption)
       }.getOrElse(DBIO.successful(None))
       maybeBotName <- maybeSlackBotProfile.map { slackBotProfile =>
-        DBIO.from(slackEventService.maybeSlackUserDataFor(slackBotProfile).map { maybeSlackUserData =>
-          maybeSlackUserData.map(_.getDisplayName)
-        })
+        dataService.slackBotProfiles.maybeNameForAction(slackBotProfile)
       }.getOrElse(DBIO.successful(None))
     } yield UserTeamAccess(user, loggedInTeam, maybeTeam, maybeBotName, maybeTeam.exists(t => t.id != user.teamId))
   }

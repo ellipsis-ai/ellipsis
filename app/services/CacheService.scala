@@ -53,4 +53,8 @@ trait CacheService {
   def cacheBehaviorGroupVersionData(data: ImmutableBehaviorGroupVersionData): Unit
 
   def getBehaviorGroupVersionData(groupVersionId: String): Option[ImmutableBehaviorGroupVersionData]
+
+  def cacheBotName(name: String, teamId: String): Unit
+
+  def getBotName(teamId: String): Option[String]
 }

@@ -1,8 +1,8 @@
 package models.accounts.slack.botprofile
 
 import java.time.OffsetDateTime
-import javax.inject.{Inject, Provider}
 
+import javax.inject.{Inject, Provider}
 import akka.actor.ActorSystem
 import drivers.SlickPostgresDriver.api._
 import models.accounts.registration.RegistrationService
@@ -12,6 +12,7 @@ import models.team.Team
 import play.api.Logger
 import services.{CacheService, DataService, SlackEventService}
 import slack.api.SlackApiClient
+import slick.dbio.DBIO
 import utils.{SlackChannels, SlackMessageReactionHandler, SlackTimestamp}
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -32,6 +33,7 @@ class SlackBotProfileServiceImpl @Inject() (
                                              slackEventServiceProvider: Provider[SlackEventService],
                                              botResultServiceProvider: Provider[BotResultService],
                                              registrationServiceProvider: Provider[RegistrationService],
+                                             cacheServiceProvider: Provider[CacheService],
                                              implicit val actorSystem: ActorSystem,
                                              implicit val ec: ExecutionContext
                                         ) extends SlackBotProfileService {
@@ -40,7 +42,7 @@ class SlackBotProfileServiceImpl @Inject() (
   def slackEventService = slackEventServiceProvider.get
   def botResultService = botResultServiceProvider.get
   def registrationService = registrationServiceProvider.get
-
+  def cacheService = cacheServiceProvider.get
 
   val all = TableQuery[SlackBotProfileTable]
 
@@ -125,6 +127,25 @@ class SlackBotProfileServiceImpl @Inject() (
 
   def channelsFor(botProfile: SlackBotProfile, cacheService: CacheService): SlackChannels = {
     SlackChannels(SlackApiClient(botProfile.token), cacheService, botProfile.slackTeamId)
+  }
+
+  def maybeNameForAction(botProfile: SlackBotProfile): DBIO[Option[String]] = {
+    val teamId = botProfile.teamId
+    DBIO.from(slackEventService.maybeSlackUserDataFor(botProfile).map { maybeSlackUserData =>
+      maybeSlackUserData.map { slackUserData =>
+        val name = slackUserData.getDisplayName
+        cacheService.cacheBotName(name, teamId)
+        name
+      }.orElse {
+        Logger.error("No bot user data returned from Slack API; using fallback cache")
+        cacheService.getBotName(teamId)
+      }
+    }.recover {
+      case e: slack.api.InvalidResponseError => {
+        Logger.warn("Couldn’t retrieve bot user data from Slack API because of an invalid response; using fallback cache", e)
+        cacheService.getBotName(teamId)
+      }
+    })
   }
 
   private def sendResult(eventualMaybeResult: Future[Option[BotResult]]): Future[Option[String]] = {

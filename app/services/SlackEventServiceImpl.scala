@@ -1,7 +1,6 @@
 package services
 
 import javax.inject._
-
 import akka.actor.ActorSystem
 import json.{SlackUserData, SlackUserProfileData}
 import models.accounts.slack.botprofile.SlackBotProfile
@@ -10,7 +9,7 @@ import models.behaviors.events.{EventHandler, SlackMessageEvent}
 import play.api.Logger
 import play.api.i18n.MessagesApi
 import play.api.libs.json._
-import slack.api.{ApiError, SlackApiClient}
+import slack.api.{ApiError, InvalidResponseError, SlackApiClient}
 import utils.SlackMessageReactionHandler
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -60,7 +59,10 @@ class SlackEventServiceImpl @Inject()(
     }.getOrElse {
       for {
         maybeInfo <- client.getUserInfo(slackUserId).map(Some(_)).recover {
-          case e: ApiError => None
+          case e: ApiError => {
+            Logger.warn("Error from Slack API while retrieving Slack user data", e)
+            None
+          }
         }
       } yield {
         maybeInfo.flatMap { info =>

@@ -56,4 +56,7 @@ class MockCacheService extends CacheService with MockitoSugar {
 
   def getBehaviorGroupVersionData(groupVersionId: String): Option[ImmutableBehaviorGroupVersionData] = None
 
+  def cacheBotName(name: String, teamId: String): Unit = {}
+
+  def getBotName(teamId: String): Option[String] = Some("MockBot")
 }
