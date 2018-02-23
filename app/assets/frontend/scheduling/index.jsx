@@ -77,6 +77,11 @@ import Sort from '../lib/sort';
       }
     },
 
+    componentDidMount() {
+      this.renderNavItems();
+      this.renderNavActions();
+    },
+
     componentDidUpdate(prevProps, prevState) {
       if (prevState.isEditing !== this.state.isEditing) {
         window.scrollTo(0, 0);
@@ -84,6 +89,30 @@ import Sort from '../lib/sort';
         const explicitTeamId = BrowserUtils.hasQueryParam("teamId") ? this.props.teamId : null;
         BrowserUtils.replaceURL(this.getCorrectedURL(explicitTeamId));
       }
+      this.renderNavItems();
+      this.renderNavActions();
+    },
+
+    renderNavItems: function() {
+      const items = [{
+        title: "Scheduling"
+      }];
+      if (this.state.isEditing) {
+        const item = this.getSelectedItem();
+        items.push({
+          title: item && !item.isNew() ? "Edit schedule" : "New schedule"
+        });
+      }
+      this.props.onRenderNavItems(items);
+    },
+
+    renderNavActions: function() {
+      const actions = this.state.isEditing ? null : (
+        <div className="fade-in height-xl mvl">
+          <Button className="button-shrink button-s" onClick={this.addNewItem}>Schedule something new</Button>
+        </div>
+      );
+      this.props.onRenderNavActions(actions);
     },
 
     hasChannelList: function() {
@@ -240,19 +269,13 @@ import Sort from '../lib/sort';
     },
 
     renderSubheading: function() {
-      if (this.isEditing()) {
-        const selectedItem = this.getSelectedItem();
+      if (!this.hasChannelList()) {
         return (
-          <span className="fade-in">
-            <span className="mhs">→</span>
-            <span className="mhs">{selectedItem && !selectedItem.isNew() ? "Edit schedule" : "New schedule"}</span>
-          </span>
-        );
-      } else if (!this.hasChannelList()) {
-        return (
-          <span className="type-pink type-italic type-m align-m">
-            — Warning: An error occurred loading channel information
-          </span>
+          <div className="ptxl container container-wide">
+            <div className="type-pink type-italic type-m align-m">
+              Warning: An error occurred loading channel information
+            </div>
+          </div>
         );
       }
     },
@@ -348,7 +371,7 @@ import Sort from '../lib/sort';
 
     renderNoSchedules: function() {
       return (
-        <div className={"pvxxl phxxl mobile-phxl"}>
+        <div className={"container container-wide pvxl"}>
           {this.hasChannelList() ? this.renderNoSchedulesMessage() : this.renderErrorMessage()}
         </div>
       );
@@ -387,23 +410,6 @@ import Sort from '../lib/sort';
       const selectedItemIsNew = Boolean(selectedItem && selectedItem.isNew());
       return (
         <div className="flex-row-cascade">
-          <div className="bg-light">
-            <div className="container container-wide pvxl">
-              <div className="columns columns-elastic mobile-columns-float">
-                <div className="column column-expand align-b">
-                  <h3 className="mvn type-weak display-ellipsis mts">
-                    <span className="mrs">Scheduling</span>
-                    {this.renderSubheading()}
-                  </h3>
-                </div>
-                <div className="column column-shrink mobile-ptm">
-                  <Collapsible revealWhen={!this.isEditing() && this.hasChannelList()}>
-                    <button type="button" className="button-shrink" onClick={this.addNewItem}>Schedule something new</button>
-                  </Collapsible>
-                </div>
-              </div>
-            </div>
-          </div>
           <Collapsible revealWhen={!this.isEditing()} className={"flex-row-cascade mobile-flex-no-expand"}>
             <div className="flex-columns flex-row-expand">
               <div className="flex-column flex-column-left flex-rows container container-wide phn">
@@ -412,7 +418,8 @@ import Sort from '../lib/sort';
                     {this.renderSidebar(groups)}
                   </div>
                   <div className="column mobile-column-full pbxxxxl column-three-quarters flex-column">
-                   {this.renderScheduleList(groups)}
+                    {this.renderSubheading()}
+                    {this.renderScheduleList(groups)}
                   </div>
                 </div>
               </div>

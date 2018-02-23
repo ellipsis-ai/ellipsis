@@ -225,6 +225,8 @@ const BehaviorListApp = React.createClass({
               onToggleActivePanel={this.props.onToggleActivePanel}
               onClearActivePanel={this.props.onClearActivePanel}
               onRenderFooter={this.props.onRenderFooter}
+              onRenderNavItems={this.props.onRenderNavItems}
+              onRenderNavActions={this.props.onRenderNavActions}
               footerHeight={this.props.footerHeight}
               botName={this.props.botName}
             />

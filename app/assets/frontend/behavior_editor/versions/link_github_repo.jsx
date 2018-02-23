@@ -137,15 +137,19 @@ class LinkGithubRepo extends React.Component<Props, State> {
           <div>
             {this.renderOwnerAndRepo()}
           </div>
-          <div>
-            <div className="align-button type-label mrs">Repository URL:</div>
-            <FormInput
-              className="form-input-borderless type-monospace width-30"
-              ref={(el) => this.repoUrlInput = el}
-              onChange={this.onRepoUrlChange}
-              placeholder={"e.g. https://github.com/your_company/your_repo"}
-              value={this.getRepoUrl()}
-            />
+          <div className="columns columns-elastic">
+            <div className="column column-shrink display-nowrap">
+              <div className="align-button type-label mrs">Repository URL:</div>
+            </div>
+            <div className="column column-expand">
+              <FormInput
+                className="form-input-borderless type-monospace"
+                ref={(el) => this.repoUrlInput = el}
+                onChange={this.onRepoUrlChange}
+                placeholder={"e.g. https://github.com/your_company/your_repo"}
+                value={this.getRepoUrl()}
+              />
+            </div>
           </div>
           <div className="mtl">
             <Button

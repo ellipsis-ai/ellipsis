@@ -15,7 +15,7 @@ class DevModeChannelsHelp extends React.PureComponent<Props> {
     renderHeading() {
       return (
         <div>
-          <h4 className="mtn type-weak">Dev mode channels</h4>
+          <h4 className="mtn type-weak">Deployment and dev mode</h4>
 
           <p>
             <a className="button button-shrink button-s" href={URLCreator.forSlack(this.props.slackTeamId)}>Open Slack</a>
@@ -31,13 +31,13 @@ class DevModeChannelsHelp extends React.PureComponent<Props> {
           onCollapseClick={this.props.onCollapseClick}
         >
           <p>
-            <span>To avoid impacting other users of a skill, Ellipsis allows you to make changes </span>
+            <span>To avoid impacting other users of a skill, you can make changes </span>
             <span>and test them before they are available to everyone. </span>
-            <span>When the updated skill is ready, you can deploy it to the whole team. </span>
+            <span>When the updated skill is ready, deploy it to the whole team. </span>
           </p>
 
           <p>
-            You can test an undeployed skill in two ways:
+            Test undeployed skills in two ways:
           </p>
 
           <ul className="list-space-l">

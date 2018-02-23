@@ -37,7 +37,7 @@ class GithubConfig extends React.Component<Props> {
 
     render() {
       return (
-        <SettingsPage teamId={this.props.teamId} isAdmin={this.props.isAdmin} header={"GitHub Configuration"} activePage={"githubConfig"}>
+        <SettingsPage teamId={this.props.teamId} isAdmin={this.props.isAdmin} activePage={"githubConfig"}>
           {this.getLinkedAccount() ? this.renderLinkedAccount() : this.renderNoLinkedAccount()}
           {this.props.onRenderFooter()}
         </SettingsPage>

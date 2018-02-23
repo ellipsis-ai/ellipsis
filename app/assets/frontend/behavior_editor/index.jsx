@@ -2,7 +2,6 @@ import * as React from 'react';
 import APIConfigPanel from './api_config_panel';
 import {AWSConfigRef} from '../models/aws';
 import BehaviorGroup from '../models/behavior_group';
-import BehaviorGroupSaveInfo from './behavior_group_save_info';
 import BehaviorGroupVersionMetaData from '../models/behavior_group_version_meta_data';
 import BehaviorGroupDetailsPanel from './behavior_group_details_panel';
 import BehaviorGroupEditor from './behavior_group_editor';
@@ -12,7 +11,6 @@ import BehaviorTester from './behavior_tester';
 import DataTypeTester from './data_type_tester';
 import BehaviorCodeHelp from './behavior_code_help';
 import Button from '../form/button';
-import ChangeSummary from './change_summary';
 import CodeConfiguration from './code_configuration';
 import ConfirmActionPanel from '../panels/confirm_action';
 import CollapseButton from '../shared_ui/collapse_button';
@@ -68,6 +66,8 @@ import ImmutableObjectUtils from '../lib/immutable_object_utils';
 import debounce from 'javascript-debounce';
 import Sort from '../lib/sort';
 import 'codemirror/mode/markdown/markdown';
+import DeploymentStatus from "./deployment_status";
+import GithubRepoActions from "./versions/github_repo_actions";
 
 var MOBILE_MAX_WIDTH = 768;
 
@@ -617,21 +617,6 @@ const BehaviorEditor = React.createClass({
     return notifications;
   },
 
-  buildDeploymentNotifications: function() {
-    if (this.isExistingGroup() && !this.isModified() && !this.isDeployed()) {
-      return [new NotificationData({
-        kind: "deployment_warning",
-        type: "saved_version_not_deployed",
-        lastSaveTimestamp: this.props.group.createdAt,
-        lastDeployTimestamp: this.props.lastDeployTimestamp,
-        onDevModeChannelsClick: this.toggleDevModeChannelsHelp,
-        onClick: this.deploy
-      })];
-    } else {
-      return [];
-    }
-  },
-
   buildSkillDetailsNotifications: function() {
     if (this.isExistingGroup() && !this.getBehaviorGroup().name) {
       return [new NotificationData({
@@ -652,7 +637,6 @@ const BehaviorEditor = React.createClass({
       this.buildDataTypeNotifications(),
       this.buildTemplateNotifications(),
       this.buildServerNotifications(),
-      this.buildDeploymentNotifications(),
       this.buildSkillDetailsNotifications()
     );
   },
@@ -905,7 +889,7 @@ const BehaviorEditor = React.createClass({
     )
       .then((json) => {
         if (json.id) {
-          this.props.onDeploy(json);
+          this.props.onDeploy(json, callback);
         } else {
           this.onDeployError(null, callback);
         }
@@ -987,10 +971,6 @@ const BehaviorEditor = React.createClass({
 
   isJustSaved: function() {
     return this.getBehaviorGroup().isRecentlySaved() && !this.isModified();
-  },
-
-  isDeployed: function() {
-    return Boolean(this.getBehaviorGroup().deployment);
   },
 
   onSaveClick: function() {
@@ -1126,6 +1106,12 @@ const BehaviorEditor = React.createClass({
 
   toggleActivePanel: function(name, beModal, optionalCallback) {
     this.props.onToggleActivePanel(name, beModal, optionalCallback);
+  },
+
+  toggleChangeGithubRepo: function() {
+    this.setState({
+      isModifyingGithubRepo: !this.state.isModifyingGithubRepo
+    });
   },
 
   toggleSharedAnswerInputSelector: function() {
@@ -1420,11 +1406,7 @@ const BehaviorEditor = React.createClass({
   },
 
   isExistingGroup: function() {
-    return !!this.getBehaviorGroup().id;
-  },
-
-  isLatestSavedVersion: function() {
-    return this.isExistingGroup() && !this.isSaving() && !this.isModified() && !this.state.newerVersionOnServer;
+    return this.getBehaviorGroup().isExisting();
   },
 
   isFinishedBehavior: function() {
@@ -1639,10 +1621,14 @@ const BehaviorEditor = React.createClass({
     if (this.props.showVersions) {
       this.showVersions();
     }
+    this.renderNavItems();
+    this.renderNavActions();
   },
 
-  // componentDidUpdate: function() {
-  // },
+  componentDidUpdate: function() {
+    this.renderNavItems();
+    this.renderNavActions();
+  },
 
   checkForUpdates: function() {
     if (document.hasFocus() && this.isExistingGroup() && !this.isSaving()) {
@@ -1712,7 +1698,8 @@ const BehaviorEditor = React.createClass({
       errorReachingServer: null,
       versionBrowserOpen: false,
       revertToVersion: null,
-      revertToVersionTitle: null
+      revertToVersionTitle: null,
+      isModifyingGithubRepo: false
     };
   },
 
@@ -2071,7 +2058,7 @@ const BehaviorEditor = React.createClass({
                     <Button
                       className="mrl mbm"
                       onClick={this.showVersions}>
-                      {this.isModified() ? "Review changes…" : "Compare versions…"}
+                      Review changes…
                     </Button>
                   ) : null}
                   <div className="display-inline-block align-button mbm">
@@ -2107,26 +2094,6 @@ const BehaviorEditor = React.createClass({
           <span>{this.state.error}</span>
         </span>
       );
-    } else if (this.isLatestSavedVersion() && this.props.group.createdAt) {
-      return (
-        <BehaviorGroupSaveInfo
-          className="fade-in type-green type-bold type-italic"
-          group={this.props.group}
-          currentUserId={this.props.userId}
-          isCurrentVersion={true}
-        />
-      );
-    } else if (this.isExistingGroup() && this.isModified()) {
-      return (
-        <span className="fade-in type-pink type-italic">
-          <span className="type-bold">Unsaved changes </span>
-            <ChangeSummary
-              currentGroupVersion={this.getBehaviorGroup()}
-              originalGroupVersion={this.props.group}
-              isModified={this.editableIsModified}
-            />
-        </span>
-      );
     } else {
       return "";
     }
@@ -2159,7 +2126,7 @@ const BehaviorEditor = React.createClass({
             <span className="display-inline-block align-t mrm" style={{ height: "24px" }}>
               <SVGHamburger />
             </span>
-            <h4 className="type-black display-inline-block align-m man">{this.getBehaviorGroup().getName()}</h4>
+            <h4 className="type-black display-inline-block align-m man">Skill components</h4>
           </Button>
         </div>
       );
@@ -2273,7 +2240,7 @@ const BehaviorEditor = React.createClass({
     return (
       <div className={
           "column column-page-sidebar flex-column flex-column-left bg-white " +
-          "border-right prn position-relative mobile-position-fixed-top-full mobile-position-z-front "
+          "border-right-thick border-light prn position-relative mobile-position-fixed-top-full mobile-position-z-front "
         }
       >
         <Collapsible revealWhen={this.behaviorSwitcherIsVisible()} animationDisabled={!this.hasMobileLayout()}>
@@ -2290,10 +2257,6 @@ const BehaviorEditor = React.createClass({
               nodeModuleVersions={this.getNodeModuleVersions()}
               selectedId={this.getSelectedId()}
               groupId={this.getBehaviorGroup().id}
-              groupName={this.getBehaviorGroup().getName()}
-              groupDescription={this.getBehaviorGroup().description || ""}
-              onBehaviorGroupNameChange={this.onBehaviorGroupNameChange}
-              onBehaviorGroupDescriptionChange={this.onBehaviorGroupDescriptionChange}
               onSelect={this.onSelect}
               addNewAction={this.addNewAction}
               addNewDataType={this.addNewDataType}
@@ -2590,10 +2553,64 @@ const BehaviorEditor = React.createClass({
         isLinkedToGithub={this.props.isLinkedToGithub}
         linkedGithubRepo={this.props.linkedGithubRepo}
         onLinkGithubRepo={this.props.onLinkGithubRepo}
+        onChangedGithubRepo={this.toggleChangeGithubRepo}
         onUpdateFromGithub={this.props.onUpdateFromGithub}
         onSaveChanges={this.onSaveClick}
+        isModifyingGithubRepo={this.state.isModifyingGithubRepo}
       />
     );
+  },
+
+  renderNavItems: function() {
+    const versionBrowserOpen = this.props.activePanelName === 'versionBrowser';
+    const items = [{
+      title: "Skills",
+      url: jsRoutes.controllers.ApplicationController.index(this.props.isAdmin ? this.props.teamId : undefined).url
+    }, {
+      title: this.getBehaviorGroup().getName(),
+      callback: versionBrowserOpen ? this.props.onClearActivePanel : null
+    }];
+    if (versionBrowserOpen) {
+      items.push({
+        title: "Review changes"
+      });
+    }
+    this.props.onRenderNavItems(items);
+  },
+
+  renderDeployStatus: function() {
+    return (
+      <DeploymentStatus
+        group={this.getBehaviorGroup()}
+        isModified={this.isModified()}
+        lastSaveTimestamp={this.props.group.createdAt}
+        lastDeployTimestamp={this.props.lastDeployTimestamp}
+        currentUserId={this.props.userId}
+        onDevModeChannelsClick={this.toggleDevModeChannelsHelp}
+        onDeployClick={this.deploy}
+      />
+    );
+  },
+
+  renderGithubRepoActions: function() {
+    return (
+      <GithubRepoActions
+        linkedGithubRepo={this.props.linkedGithubRepo}
+        isLinkedToGithub={this.props.isLinkedToGithub}
+        currentGroupIsModified={this.isModified()}
+        currentGroup={this.getBehaviorGroup()}
+        currentSelectedId={this.getSelectedId()}
+        onChangeGithubRepo={this.toggleChangeGithubRepo}
+      />
+    );
+  },
+
+  renderNavActions: function() {
+    if (this.state.versionBrowserOpen) {
+      this.props.onRenderNavActions(this.renderGithubRepoActions());
+    } else {
+      this.props.onRenderNavActions(this.renderDeployStatus());
+    }
   },
 
   render: function() {
