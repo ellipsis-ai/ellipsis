@@ -48,6 +48,8 @@ class CacheServiceImpl @Inject() (
     defaultCachingSettings.withLfuCacheSettings(shortLivedLfuCacheSettings)
   }
 
+  val slackApiCallExpiry: Duration = 10.seconds
+
   def set[T: ClassTag](key: String, value: T, expiration: Duration = Duration.Inf): Unit = {
     cache.set(key, value, expiration)
   }
@@ -108,13 +110,13 @@ class CacheServiceImpl @Inject() (
     }
   }
 
-  val slackChannelInfoCache = LfuCache[SlackChannelDataCacheKey, Option[Channel]](cacheSettingsWithTimeToLive(10.seconds))
+  private val slackChannelInfoCache = LfuCache[SlackChannelDataCacheKey, Option[Channel]](cacheSettingsWithTimeToLive(slackApiCallExpiry))
 
   def getSlackChannelInfo(key: SlackChannelDataCacheKey, dataFn: SlackChannelDataCacheKey => Future[Option[Channel]]): Future[Option[Channel]] = {
     slackChannelInfoCache.getOrLoad(key, dataFn)
   }
 
-  val slackGroupInfoCache = LfuCache[SlackGroupDataCacheKey, Option[Group]](cacheSettingsWithTimeToLive(10.seconds))
+  private val slackGroupInfoCache = LfuCache[SlackGroupDataCacheKey, Option[Group]](cacheSettingsWithTimeToLive(slackApiCallExpiry))
 
   def getSlackGroupInfo(key: SlackGroupDataCacheKey, dataFn: SlackGroupDataCacheKey => Future[Option[Group]]): Future[Option[Group]] = {
     slackGroupInfoCache.getOrLoad(key, dataFn)
@@ -124,7 +126,7 @@ class CacheServiceImpl @Inject() (
     s"slack-channels-team-$teamId"
   }
 
-  val slackChannelsCache = LfuCache[String, Seq[Channel]](cacheSettingsWithTimeToLive(10.seconds))
+  private val slackChannelsCache = LfuCache[String, Seq[Channel]](cacheSettingsWithTimeToLive(slackApiCallExpiry))
 
   def getSlackChannels(teamId: String, dataFn: String => Future[Seq[Channel]]): Future[Seq[Channel]] = {
     slackChannelsCache.getOrLoad(slackChannelsKey(teamId), dataFn)
@@ -134,7 +136,7 @@ class CacheServiceImpl @Inject() (
     s"slack-groups-team-$teamId"
   }
 
-  val slackGroupsCache: Cache[String, Seq[Group]] = LfuCache(cacheSettingsWithTimeToLive(10.seconds))
+  private val slackGroupsCache: Cache[String, Seq[Group]] = LfuCache(cacheSettingsWithTimeToLive(slackApiCallExpiry))
 
   def getSlackGroups(teamId: String, dataFn: String => Future[Seq[Group]]): Future[Seq[Group]] = {
     slackGroupsCache.getOrLoad(slackGroupsKey(teamId), dataFn)
@@ -144,13 +146,13 @@ class CacheServiceImpl @Inject() (
     s"slack-ims-team-$teamId"
   }
 
-  val slackImsCache: Cache[String, Seq[Im]] = LfuCache(cacheSettingsWithTimeToLive(10.seconds))
+  private val slackImsCache: Cache[String, Seq[Im]] = LfuCache(cacheSettingsWithTimeToLive(slackApiCallExpiry))
 
   def getSlackIMs(teamId: String, dataFn: String => Future[Seq[Im]]): Future[Seq[Im]] = {
     slackImsCache.getOrLoad(slackImsKey(teamId), dataFn)
   }
 
-  val slackUserDataCache: Cache[SlackUserDataCacheKey, Option[SlackUserData]] = LfuCache(cacheSettingsWithTimeToLive(1.minute))
+  private val slackUserDataCache: Cache[SlackUserDataCacheKey, Option[SlackUserData]] = LfuCache(cacheSettingsWithTimeToLive(slackApiCallExpiry))
 
   def getSlackUserData(key: SlackUserDataCacheKey, dataFn: SlackUserDataCacheKey => Future[Option[SlackUserData]]): Future[Option[SlackUserData]] = {
     slackUserDataCache.getOrLoad(key, dataFn)
