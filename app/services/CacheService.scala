@@ -5,6 +5,7 @@ import models.behaviors.behaviorparameter.ValidValue
 import models.behaviors.events.{Event, SlackMessageEvent}
 import slack.models.{Channel, Group, Im}
 
+import scala.concurrent.Future
 import scala.concurrent.duration._
 import scala.reflect.ClassTag
 
@@ -34,9 +35,7 @@ trait CacheService {
 
   def getSlackGroupInfo(group: String, teamId: String): Option[Group]
 
-  def cacheSlackChannels(data: Seq[Channel], teamId: String): Unit
-
-  def getSlackChannels(teamId: String): Option[Seq[Channel]]
+  def getSlackChannels(teamId: String, dataFn: String => Future[Seq[Channel]]): Future[Seq[Channel]]
 
   def cacheSlackGroups(data: Seq[Group], teamId: String): Unit
 
@@ -46,9 +45,7 @@ trait CacheService {
 
   def getSlackIMs(teamId: String): Option[Seq[Im]]
 
-  def cacheSlackUserData(userData: SlackUserData): Unit
-
-  def getSlackUserData(slackUserId: String, slackTeamId: String): Option[SlackUserData]
+  def getSlackUserData(key: SlackUserDataCacheKey, dataFn: SlackUserDataCacheKey => Future[Option[SlackUserData]]): Future[Option[SlackUserData]]
 
   def cacheBehaviorGroupVersionData(data: ImmutableBehaviorGroupVersionData): Unit
 

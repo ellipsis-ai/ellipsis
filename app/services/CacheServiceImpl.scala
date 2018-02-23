@@ -2,6 +2,9 @@ package services
 
 import javax.inject.{Inject, Provider, Singleton}
 
+import akka.actor.ActorSystem
+import akka.http.caching.LfuCache
+import akka.http.caching.scaladsl.{Cache, CachingSettings}
 import json.Formatting._
 import json.{ImmutableBehaviorGroupVersionData, SlackUserData}
 import models.accounts.slack.botprofile.SlackBotProfile
@@ -11,6 +14,7 @@ import play.api.cache.SyncCacheApi
 import play.api.libs.json.{JsError, JsSuccess, JsValue, Json}
 import slack.models.{Channel, Group, Im}
 
+import scala.concurrent.Future
 import scala.concurrent.duration._
 import scala.reflect.ClassTag
 
@@ -28,10 +32,20 @@ case class SlackMessageEventData(
 @Singleton
 class CacheServiceImpl @Inject() (
                                    cache: SyncCacheApi, // TODO: change to async
-                                   slackEventServiceProvider: Provider[SlackEventService]
+                                   slackEventServiceProvider: Provider[SlackEventService],
+                                   implicit val actorSystem: ActorSystem
                                  ) extends CacheService {
 
   def slackEventService = slackEventServiceProvider.get
+
+  def cacheSettingsWithTimeToLive(duration: Duration): CachingSettings = {
+    val defaultCachingSettings = CachingSettings(actorSystem)
+    val shortLivedLfuCacheSettings =
+      defaultCachingSettings.lfuCacheSettings
+        .withTimeToLive(duration)
+        .withTimeToIdle(duration.div(2))
+    defaultCachingSettings.withLfuCacheSettings(shortLivedLfuCacheSettings)
+  }
 
   def set[T: ClassTag](key: String, value: T, expiration: Duration = Duration.Inf): Unit = {
     cache.set(key, value, expiration)
@@ -131,17 +145,10 @@ class CacheServiceImpl @Inject() (
     s"slack-channels-team-$teamId"
   }
 
-  def cacheSlackChannels(data: Seq[Channel], teamId: String): Unit = {
-    set(slackChannelsKey(teamId), Json.toJson(data), 10.seconds)
-  }
+  val slackChannelsCache = LfuCache[String, Seq[Channel]](cacheSettingsWithTimeToLive(10.seconds))
 
-  def getSlackChannels(teamId: String): Option[Seq[Channel]] = {
-    get[JsValue](slackChannelsKey(teamId)).flatMap { json =>
-      json.validate[Seq[Channel]] match {
-        case JsSuccess(data, jsPath) => Some(data)
-        case JsError(err) => None
-      }
-    }
+  def getSlackChannels(teamId: String, dataFn: String => Future[Seq[Channel]]): Future[Seq[Channel]] = {
+    slackChannelsCache.getOrLoad(slackChannelsKey(teamId), dataFn)
   }
 
   private def slackGroupsKey(teamId: String): String = {
@@ -182,17 +189,10 @@ class CacheServiceImpl @Inject() (
     s"slack-user-profile-data-v12-team-$slackTeamId-user-$slackUserId"
   }
 
-  def cacheSlackUserData(userData: SlackUserData): Unit = {
-    set(slackUserDataKey(userData.accountId, userData.accountTeamId), Json.toJson(userData), 1.hour)
-  }
+  val slackUserDataCache: Cache[SlackUserDataCacheKey, Option[SlackUserData]] = LfuCache(cacheSettingsWithTimeToLive(1.minute))
 
-  def getSlackUserData(slackUserId: String, slackTeamId: String): Option[SlackUserData] = {
-    get[JsValue](slackUserDataKey(slackUserId, slackTeamId)).flatMap { json =>
-      json.validate[SlackUserData] match {
-        case JsSuccess(data, jsPath) => Some(data)
-        case JsError(err) => None
-      }
-    }
+  def getSlackUserData(key: SlackUserDataCacheKey, dataFn: SlackUserDataCacheKey => Future[Option[SlackUserData]]): Future[Option[SlackUserData]] = {
+    slackUserDataCache.getOrLoad(key, dataFn)
   }
 
   def cacheBehaviorGroupVersionData(data: ImmutableBehaviorGroupVersionData): Unit = {

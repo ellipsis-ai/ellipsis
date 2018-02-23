@@ -205,16 +205,11 @@ case class SlackChannels(client: SlackApiClient, cacheService: CacheService, sla
   }
 
   def listChannels(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Seq[Channel]] = {
-    cacheService.getSlackChannels(slackTeamId).map { channels =>
-      Future.successful(channels)
-    }.getOrElse {
-      client.listChannels(excludeArchived = 1).map { channels =>
-        cacheService.cacheSlackChannels(channels, slackTeamId)
-        channels
-      }.recover {
+    cacheService.getSlackChannels(slackTeamId, (slackTeamId: String) => {
+      client.listChannels(excludeArchived = 1).recover {
         case t: Throwable => throw ListChannelsException(slackTeamId, t)
       }
-    }
+    })
   }
 
   def listGroups(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Seq[Group]] = {

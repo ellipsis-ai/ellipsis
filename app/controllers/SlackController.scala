@@ -408,36 +408,10 @@ class SlackController @Inject() (
     })
   )
 
-  private def maybeUserProfileChangedResult(implicit request: Request[AnyContent]): Option[Result] = {
-    maybeResultFor(userProfileChangedRequestForm, (info: UserProfileChangedRequestInfo) => {
-      val user = info.event.user
-      val slackUserId = user.id
-      val slackTeamId = info.teamId
-      val profile = user.profile
-      val userData = SlackUserData(
-        slackUserId,
-        slackTeamId,
-        user.name,
-        user.isPrimaryOwner.getOrElse(false),
-        user.isOwner.getOrElse(false),
-        user.isRestricted.getOrElse(false),
-        user.isUltraRestricted.getOrElse(false),
-        user.tz,
-        deleted = user.deleted.getOrElse(false),
-        Some(profile)
-      )
-       services.cacheService.cacheSlackUserData(userData)
-      Logger.info(s"Cached new Slack user data for team id $slackTeamId, user id $slackUserId")
-      Ok(":+1:")
-    })
-  }
-
-
   private def maybeEventResult(implicit request: Request[AnyContent]): Option[Result] = {
     if (isValidEventRequest) {
       maybeMessageResult orElse
-        maybeChannelMembersChangedResult orElse
-        maybeUserProfileChangedResult
+        maybeChannelMembersChangedResult
     } else {
       None
     }
