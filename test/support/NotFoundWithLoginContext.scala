@@ -28,6 +28,7 @@ trait NotFoundWithLoginContext extends ControllerTestContextWithLoggedInUser {
       when(teamAccess.loggedInTeam).thenReturn(loggedInTeam)
       when(teamAccess.maybeAdminAccessToTeam).thenReturn(None)
       when(teamAccess.maybeAdminAccessToTeamId).thenReturn(None)
+      when(teamAccess.maybeBotName).thenReturn(None)
 
       val request =
         FakeRequest(buildCall).

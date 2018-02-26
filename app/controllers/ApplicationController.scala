@@ -64,6 +64,7 @@ class ApplicationController @Inject() (
           }.getOrElse(Future.successful(Seq()))
         } yield {
           teamAccess.maybeTargetTeam.map { team =>
+            val viewConfigData = viewConfig(Some(teamAccess))
             val config = ApplicationIndexConfig(
               containerId = "behaviorListContainer",
               behaviorGroups = groupData,
@@ -71,10 +72,11 @@ class ApplicationController @Inject() (
               teamId = team.id,
               slackTeamId = maybeSlackTeamId,
               teamTimeZone = team.maybeTimeZone.map(_.toString),
-              branchName = maybeBranch
+              branchName = maybeBranch,
+              botName = viewConfigData.botName
             )
             Ok(views.js.shared.webpackLoader(
-              viewConfig(Some(teamAccess)),
+              viewConfigData,
               "BehaviorListConfig",
               "behaviorList",
               Json.toJson(config)

@@ -150,6 +150,7 @@ class BehaviorEditorLoader extends React.Component {
                 onDeploy={this.onDeploy}
                 lastDeployTimestamp={this.props.lastDeployTimestamp}
                 slackTeamId={this.props.slackTeamId}
+                botName={this.props.botName}
               />
             </Page>
           );
@@ -175,7 +176,8 @@ BehaviorEditorLoader.propTypes = {
   linkedGithubRepo: React.PropTypes.object,
   showVersions: React.PropTypes.bool,
   lastDeployTimestamp: React.PropTypes.string,
-  slackTeamId: React.PropTypes.string
+  slackTeamId: React.PropTypes.string,
+  botName: React.PropTypes.string.isRequired
 };
 
 ReactDOM.render(

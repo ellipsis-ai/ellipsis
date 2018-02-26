@@ -186,7 +186,7 @@ case class DisplayHelpBehavior(
           }
         }).map(_.flatten.sorted)
       }).getOrElse(Future.successful(Seq()))
-      botPrefix <- event.botPrefix(services)
+      botPrefix <- event.contextualBotPrefix(services)
     } yield {
       val (named, unnamed) = groupData.partition(_.maybeNonEmptyName.isDefined)
       val namedGroupData = named.map(behaviorGroupData => SkillHelpGroupData(behaviorGroupData))

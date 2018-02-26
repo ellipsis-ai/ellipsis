@@ -313,7 +313,7 @@ class BehaviorVersionServiceImpl @Inject() (
       missingOAuth2Applications <- DBIO.successful(requiredOAuth2ApiConfigs.flatMap(_.maybeApplication).filter { app =>
         !userInfo.links.exists(_.externalSystem == app.name)
       })
-      botPrefix <- DBIO.from(event.botPrefix(defaultServices))
+      botPrefix <- DBIO.from(event.contextualBotPrefix(defaultServices))
       maybeResult <- if (missingTeamEnvVars.nonEmpty) {
         DBIO.successful(Some(MissingTeamEnvVarsResult(
           event,

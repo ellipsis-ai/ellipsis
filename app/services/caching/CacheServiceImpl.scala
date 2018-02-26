@@ -159,4 +159,16 @@ class CacheServiceImpl @Inject() (
     }
   }
 
+  private def botNameKey(teamId: String): String = {
+    s"team-$teamId-bot-name-v1"
+  }
+
+  def cacheBotName(name: String, teamId: String): Unit = {
+    set(botNameKey(teamId), name, Duration.Inf)
+  }
+
+  def getBotName(teamId: String): Option[String] = {
+    get(botNameKey(teamId))
+  }
+
 }

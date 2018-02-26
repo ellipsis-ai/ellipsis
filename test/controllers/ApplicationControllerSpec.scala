@@ -38,11 +38,10 @@ class ApplicationControllerSpec extends PlaySpec with MockitoSugar {
         val behavior = Behavior(behaviorId, team, Some(behaviorGroup), None, false, OffsetDateTime.now)
         val behaviorGroupVersion = BehaviorGroupVersion(groupVersionId, behaviorGroup, groupName, None, None, None, OffsetDateTime.now)
         val behaviorVersion = BehaviorVersion(IDs.next, behavior, behaviorGroupVersion, None, None, None, None, false, None, OffsetDateTime.now)
-        val teamAccess = mock[UserTeamAccess]
+        val teamAccess = UserTeamAccess(user, team, Some(team), Some("TestBot"), isAdminAccess = false)
 
         when(dataService.users.teamAccessFor(user, Some(team.id))).thenReturn(Future.successful(teamAccess))
         when(dataService.teams.find(team.id)).thenReturn(Future.successful(Some(team)))
-        when(teamAccess.maybeTargetTeam).thenReturn(Some(team))
         when(dataService.behaviorGroups.allFor(team)).thenReturn(Future.successful(Seq(behaviorGroup)))
         when(dataService.behaviorGroups.find(groupId, user)).thenReturn(Future.successful(Some(behaviorGroup)))
         when(dataService.behaviorGroupVersions.findWithoutAccessCheck(groupVersionId)).thenReturn(Future.successful(Some(behaviorGroupVersion)))
@@ -98,10 +97,9 @@ class ApplicationControllerSpec extends PlaySpec with MockitoSugar {
   "setTeamTimeZone" should {
     "set the team time zone when passed a valid time zone name" in new ControllerTestContextWithLoggedInUser {
       running(app) {
-        val teamAccess = mock[UserTeamAccess]
+        val teamAccess = UserTeamAccess(user, team, Some(team), Some("TestBot"), isAdminAccess = false)
         val tz = ZoneId.of("America/Toronto")
         when(dataService.users.teamAccessFor(user, Some(team.id))).thenReturn(Future.successful(teamAccess))
-        when(teamAccess.maybeTargetTeam).thenReturn(Some(team))
         when(dataService.teams.setTimeZoneFor(anyObject(), any[ZoneId])).thenReturn(Future(team.copy(maybeTimeZone = Some(tz))))
 
         val csrfToken = csrfProvider.generateToken

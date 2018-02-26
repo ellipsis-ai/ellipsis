@@ -55,25 +55,29 @@ case class RunEvent(
                    attachmentGroups: Seq[MessageAttachmentGroup],
                    files: Seq[UploadFileSpec],
                    isForUndeployed: Boolean,
-                   cacheService: CacheService,
+                   services: DefaultServices,
                    configuration: Configuration
                  )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[String]] = {
-    SlackMessageSender(
-      client,
-      user,
-      profile.slackTeamId,
-      unformattedText,
-      forcePrivate,
-      isForUndeployed,
-      channel,
-      channel,
-      maybeThreadId,
-      maybeShouldUnfurl,
-      maybeConversation,
-      attachmentGroups,
-      files,
-      configuration
-    ).send
+    for {
+      botName <- botPrefix(services)
+      maybeTs <- SlackMessageSender(
+        client,
+        user,
+        profile.slackTeamId,
+        unformattedText,
+        forcePrivate,
+        isForUndeployed,
+        channel,
+        channel,
+        maybeThreadId,
+        maybeShouldUnfurl,
+        maybeConversation,
+        attachmentGroups,
+        files,
+        configuration,
+        botName
+      ).send
+    } yield maybeTs
   }
 
   def allBehaviorResponsesFor(

@@ -21,7 +21,8 @@ case class BehaviorEditorEditConfig(
   linkedGithubRepo: Option[LinkedGithubRepoData],
   showVersions: Option[Boolean],
   lastDeployTimestamp: Option[OffsetDateTime],
-  slackTeamId: Option[String]
+  slackTeamId: Option[String],
+  botName: String
 )
 
 object BehaviorEditorEditConfig {
@@ -45,7 +46,8 @@ object BehaviorEditorEditConfig {
       data.linkedGithubRepo,
       maybeShowVersions,
       data.lastDeployTimestamp,
-      data.maybeSlackTeamId
+      data.maybeSlackTeamId,
+      data.botName
     )
   }
 }

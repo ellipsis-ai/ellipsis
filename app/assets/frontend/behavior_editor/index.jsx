@@ -105,7 +105,8 @@ const BehaviorEditor = React.createClass({
     showVersions: React.PropTypes.bool,
     onDeploy: React.PropTypes.func.isRequired,
     lastDeployTimestamp: React.PropTypes.string,
-    slackTeamId: React.PropTypes.string
+    slackTeamId: React.PropTypes.string,
+    botName: React.PropTypes.string.isRequired
   }),
 
   getDefaultProps: function() {
@@ -1900,6 +1901,7 @@ const BehaviorEditor = React.createClass({
             <DevModeChannelsHelp
               onCollapseClick={this.props.onClearActivePanel}
               slackTeamId={this.props.slackTeamId}
+              botName={this.props.botName}
             />
           </Collapsible>
 

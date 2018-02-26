@@ -1,15 +1,13 @@
 package services
 
-import javax.inject._
-
 import akka.actor.ActorSystem
+import javax.inject._
 import json.{SlackUserData, SlackUserProfileData}
 import models.accounts.slack.botprofile.SlackBotProfile
 import models.behaviors.BotResultService
 import models.behaviors.events.{EventHandler, SlackMessageEvent}
 import play.api.Logger
 import play.api.i18n.MessagesApi
-import play.api.libs.json._
 import services.caching.{CacheService, SlackUserDataCacheKey}
 import slack.api.{ApiError, SlackApiClient}
 import utils.SlackMessageReactionHandler
@@ -59,7 +57,10 @@ class SlackEventServiceImpl @Inject()(
     key: SlackUserDataCacheKey => {
       for {
         maybeInfo <- client.getUserInfo(key.slackUserId).map(Some(_)).recover {
-          case e: ApiError => None
+          case e: ApiError => {
+            Logger.warn("Error from Slack API while retrieving Slack user data", e)
+            None
+          }
         }
       } yield {
         maybeInfo.map { info =>

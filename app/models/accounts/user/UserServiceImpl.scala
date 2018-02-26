@@ -1,12 +1,12 @@
 package models.accounts.user
 
 import java.time.OffsetDateTime
-import javax.inject.Inject
 
 import akka.actor.ActorSystem
 import com.google.inject.Provider
 import com.mohiva.play.silhouette.api.LoginInfo
 import drivers.SlickPostgresDriver.api._
+import javax.inject.Inject
 import json.{SlackUserData, UserData}
 import models.IDs
 import models.accounts.linkedaccount.LinkedAccount
@@ -105,7 +105,13 @@ class UserServiceImpl @Inject() (
       }.getOrElse {
         dataService.teams.findAction(user.teamId)
       }
-    } yield UserTeamAccess(user, loggedInTeam, maybeTeam, maybeTeam.exists(t => t.id != user.teamId))
+      maybeSlackBotProfile <- maybeTeam.map { team =>
+        dataService.slackBotProfiles.allForAction(team).map(_.headOption)
+      }.getOrElse(DBIO.successful(None))
+      maybeBotName <- maybeSlackBotProfile.map { slackBotProfile =>
+        DBIO.from(dataService.slackBotProfiles.maybeNameFor(slackBotProfile))
+      }.getOrElse(DBIO.successful(None))
+    } yield UserTeamAccess(user, loggedInTeam, maybeTeam, maybeBotName, maybeTeam.exists(t => t.id != user.teamId))
   }
 
   def teamAccessFor(user: User, maybeTargetTeamId: Option[String]): Future[UserTeamAccess] = {

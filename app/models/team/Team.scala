@@ -27,4 +27,6 @@ object Team {
     OffsetDateTime.now
   )
 
+  def defaultBotName: String = "YourCompanyBot"
+
 }
