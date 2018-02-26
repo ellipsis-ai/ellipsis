@@ -1,5 +1,6 @@
 @import (reference) "measurements";
 @import (reference) "colors";
+@import (reference) "fonts";
 
 p {
   margin: 0 0 @m 0;
@@ -8,6 +9,10 @@ p {
 .light-antialiasing() {
   -moz-osx-font-smoothing: grayscale;
   -webkit-font-smoothing: antialiased;
+}
+
+.type-brand {
+  font-family: @grotaFonts;
 }
 
 b, .type-bold {
