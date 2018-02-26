@@ -127,6 +127,10 @@ case class GithubPusher(
     runCommand(s"cd $dirName && git pull origin $escapedBranch", Some(GitPullException.apply))
   }
 
+  private def deleteFiles: Future[String] = {
+    runCommand(s"cd $dirName && rm -rf ./*", None)
+  }
+
   private def export: Future[Unit] = {
     for {
       maybeExporter <- BehaviorGroupExporter.maybeFor(behaviorGroup.id, user, dataService, cacheService, Some(parentPath), Some(exportName))
@@ -166,6 +170,7 @@ case class GithubPusher(
       _ <- ensureBranch
       _ <- ensureBranchCheckedOut
       _ <- pullLatest
+      _ <- deleteFiles
       _ <- export
       _ <- push
       _ <- setGitSHA
