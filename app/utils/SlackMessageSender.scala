@@ -11,9 +11,9 @@ import slack.models.Attachment
 import scala.concurrent.{ExecutionContext, Future}
 import scala.reflect.io.File
 
-case class SlackMessageSenderException(underlying: Throwable, channel: String, teamId: String, userId: String, text: String)
+case class SlackMessageSenderException(underlying: Throwable, channel: String, slackTeamId: String, userId: String, text: String)
   extends Exception(
-    s"""Bad response from Slack while sending a message to user $userId in channel $channel on team $teamId
+    s"""Bad response from Slack while sending a message to user $userId in channel $channel on team $slackTeamId
        |Message:
        |$text
        |
@@ -25,7 +25,7 @@ case class SlackMessageSenderException(underlying: Throwable, channel: String, t
 case class SlackMessageSender(
                                client: SlackApiClient,
                                user: String,
-                               teamId: String,
+                               slackTeamId: String,
                                unformattedText: String,
                                forcePrivate: Boolean,
                                isForUndeployed: Boolean,
@@ -36,12 +36,13 @@ case class SlackMessageSender(
                                maybeConversation: Option[Conversation],
                                attachmentGroups: Seq[MessageAttachmentGroup] = Seq(),
                                files: Seq[UploadFileSpec] = Seq(),
-                               configuration: Configuration
+                               configuration: Configuration,
+                               botName: String
                              ) {
 
   val attachmentGroupsToUse = if (isForUndeployed) {
     val baseUrl = configuration.get[String]("application.apiBaseUrl")
-    val path = controllers.routes.HelpController.devMode().url
+    val path = controllers.routes.HelpController.devMode(Some(slackTeamId), Some(botName)).url
     val link = s"[development]($baseUrl$path)"
     attachmentGroups ++ Seq(SlackMessageTextAttachmentGroup(s"\uD83D\uDEA7 Skill in $link \uD83D\uDEA7", None))
   } else {
@@ -73,7 +74,7 @@ case class SlackMessageSender(
       threadTs = maybeThreadTs,
       replyBroadcast = maybeReplyBroadcast
     ).recover {
-      case t: Throwable => throw SlackMessageSenderException(t, channel, teamId, user, text)
+      case t: Throwable => throw SlackMessageSenderException(t, channel, slackTeamId, user, text)
     }
   }
 

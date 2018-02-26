@@ -1,6 +1,7 @@
 @(
   heading: String,
-  config: ViewConfig
+  config: ViewConfig,
+  botName: String
 )(implicit messages: Messages, r: RequestHeader)
 
 @page.main(heading, config, Seq(NavItem.help)) {
@@ -24,13 +25,13 @@
               You can enable dev mode for a channel by typing:
             </p>
             <p class="mbxxl"><code>
-            @@@{config.botName} enable dev mode
+            @@@botName enable dev mode
             </code></p>
             <p class="type-semibold">
               To turn off dev mode for that channel, you can type:
             </p>
             <p class="mbxxl"><code>
-            @@@{config.botName} disable dev mode
+            @@@botName disable dev mode
             </code></p>
           </div>
         </div>

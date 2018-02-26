@@ -34,12 +34,16 @@ case class SlackMessageEvent(
   lazy val isBotMessage: Boolean = profile.userId == user
 
   override def botPrefix(services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[String] = {
+    services.dataService.slackBotProfiles.maybeNameFor(profile).map { maybeName =>
+      maybeName.getOrElse("...")
+    }
+  }
+
+  override def contextualBotPrefix(services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[String] = {
     if (isDirectMessage) {
       Future.successful("")
     } else {
-      services.dataService.slackBotProfiles.maybeNameFor(profile).map { maybeName =>
-        maybeName.getOrElse("...")
-      }
+      botPrefix(services)
     }
   }
 
@@ -122,11 +126,13 @@ case class SlackMessageEvent(
                    attachmentGroups: Seq[MessageAttachmentGroup],
                    files: Seq[UploadFileSpec],
                    isForUndeployed: Boolean,
-                   cacheService: CacheService,
+                   services: DefaultServices,
                    configuration: Configuration
                  )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[String]] = {
-    channelForSend(forcePrivate, maybeConversation, cacheService).flatMap { channelToUse =>
-      SlackMessageSender(
+    for {
+      channelToUse <- channelForSend(forcePrivate, maybeConversation, services.cacheService)
+      botName <- botPrefix(services)
+      maybeTs <- SlackMessageSender(
         client,
         user,
         profile.slackTeamId,
@@ -140,9 +146,10 @@ case class SlackMessageEvent(
         maybeConversation,
         attachmentGroups,
         files,
-        configuration
+        configuration,
+        botName
       ).send
-    }
+    } yield maybeTs
   }
 
   override def ensureUser(dataService: DataService)(implicit ec: ExecutionContext): Future[User] = {

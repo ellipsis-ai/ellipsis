@@ -130,6 +130,15 @@ class SlackBotProfileServiceImpl @Inject() (
     SlackChannels(SlackApiClient(botProfile.token), cacheService, botProfile.slackTeamId)
   }
 
+  def maybeNameFor(slackTeamId: String): Future[Option[String]] = {
+    for {
+      maybeSlackBotProfile <- allForSlackTeamId(slackTeamId).map(_.headOption)
+      maybeName <- maybeSlackBotProfile.map { slackBotProfile =>
+        maybeNameFor(slackBotProfile)
+      }.getOrElse(Future.successful(None))
+    } yield maybeName
+  }
+
   def maybeNameFor(botProfile: SlackBotProfile): Future[Option[String]] = {
     val teamId = botProfile.teamId
     slackEventService.maybeSlackUserDataFor(botProfile).map { maybeSlackUserData =>
