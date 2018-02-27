@@ -3,13 +3,12 @@ package models.behaviors.conversations.conversation
 import java.time.OffsetDateTime
 
 import models.behaviors._
-import models.behaviors.behaviorparameter.{BehaviorParameter, FetchValidValuesBadResultException}
+import models.behaviors.behaviorparameter.BehaviorParameter
 import models.behaviors.behaviorversion.BehaviorVersion
 import models.behaviors.events.SlackMessageActionConstants._
 import models.behaviors.events._
 import models.behaviors.triggers.messagetrigger.MessageTrigger
-import services.DefaultServices
-import services.DataService
+import services.{DataService, DefaultServices}
 import slick.dbio.DBIO
 import utils.SlackTimestamp
 
