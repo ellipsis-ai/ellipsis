@@ -12,7 +12,7 @@ import models.IDs
 import models.accounts.linkedaccount.LinkedAccount
 import models.behaviors.events.{Event, SlackMessageEvent}
 import models.team.Team
-import play.api.Configuration
+import play.api.{Configuration, Logger}
 import services.caching.CacheService
 import services.{DataService, SlackEventService}
 import slack.api.SlackApiClient
@@ -130,11 +130,28 @@ class UserServiceImpl @Inject() (
   }
 
   def userDataFor(user: User, team: Team): Future[UserData] = {
-    for {
-      maybeSlackUserData <- maybeSlackUserDataFor(user, team)
-    } yield {
-      val maybeTzString = maybeSlackUserData.flatMap(_.tz).orElse(team.maybeTimeZone.map(_.toString))
-      UserData(user.id, maybeSlackUserData.map(_.getDisplayName), maybeSlackUserData.flatMap(_.maybeRealName), maybeTzString)
+    if (user.teamId != team.id) {
+      for {
+        isAdmin <- isAdmin(user)
+      } yield {
+        if (isAdmin) {
+          UserData.asAdmin(user.id)
+        } else {
+          Logger.error(s"Non-admin user data requested with mismatched team ID: user ID ${user.id} with team ID ${user.teamId} compared to requested team ID ${team.id}")
+          UserData(user.id, None, None, None)
+        }
+      }
+    } else {
+      for {
+        maybeSlackUserData <- maybeSlackUserDataFor(user, team)
+      } yield {
+        val maybeTzString = maybeSlackUserData.flatMap(_.tz).orElse(team.maybeTimeZone.map(_.toString))
+        UserData(
+          user.id,
+          maybeSlackUserData.map(_.getDisplayName),
+          maybeSlackUserData.flatMap(_.maybeRealName),
+          maybeTzString)
+      }
     }
   }
 
