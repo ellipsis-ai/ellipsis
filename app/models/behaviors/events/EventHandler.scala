@@ -93,6 +93,8 @@ class EventHandler @Inject() (
           updatedConvo.resultFor(event, services)
         }
       }
+    }.recoverWith {
+      case e: FetchValidValuesBadResultException => dataService.conversations.cancel(originalConvo).map(_ => e.result)
     }
   }
 
