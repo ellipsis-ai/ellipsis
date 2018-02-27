@@ -130,11 +130,19 @@ class UserServiceImpl @Inject() (
   }
 
   def userDataFor(user: User, team: Team): Future[UserData] = {
-    for {
-      maybeSlackUserData <- maybeSlackUserDataFor(user, team)
-    } yield {
-      val maybeTzString = maybeSlackUserData.flatMap(_.tz).orElse(team.maybeTimeZone.map(_.toString))
-      UserData(user.id, maybeSlackUserData.map(_.getDisplayName), maybeSlackUserData.flatMap(_.maybeRealName), maybeTzString)
+    if (user.teamId != team.id) {
+      Future(UserData.asAdmin(user.id))
+    } else {
+      for {
+        maybeSlackUserData <- maybeSlackUserDataFor(user, team)
+      } yield {
+        val maybeTzString = maybeSlackUserData.flatMap(_.tz).orElse(team.maybeTimeZone.map(_.toString))
+        UserData(
+          user.id,
+          maybeSlackUserData.map(_.getDisplayName),
+          maybeSlackUserData.flatMap(_.maybeRealName),
+          maybeTzString)
+      }
     }
   }
 
