@@ -158,8 +158,8 @@ object BehaviorEditorData {
         }
       }.getOrElse(Future.successful(None))
       builtinParamTypeData <- Future.sequence(BehaviorParameterType.allBuiltin.map(ea => BehaviorParameterTypeData.from(ea, dataService)))
-      isAdmin <- dataService.users.isAdmin(user)
       userData <- dataService.users.userDataFor(user, team)
+      isAdmin <- dataService.users.isAdmin(user)
       isLinkedToGithub <- dataService.linkedAccounts.maybeForGithubFor(user).map(_.nonEmpty)
       maybeLinkedGithubRepo <- maybeGroup.map { group =>
         dataService.linkedGithubRepos.maybeFor(group)
