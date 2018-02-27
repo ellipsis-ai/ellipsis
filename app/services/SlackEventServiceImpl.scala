@@ -58,7 +58,11 @@ class SlackEventServiceImpl @Inject()(
       for {
         maybeInfo <- client.getUserInfo(key.slackUserId).map(Some(_)).recover {
           case e: ApiError => {
-            Logger.warn("Error from Slack API while retrieving Slack user data", e)
+            if (e.code == "user_not_found") {
+              Logger.warn(s"Slack API said user not found for user $slackUserId on team $slackTeamId", e)
+            } else {
+              Logger.error(s"Unknown error from Slack API while retrieving Slack user data for user $slackUserId on team $slackTeamId", e)
+            }
             None
           }
         }
