@@ -60,7 +60,7 @@ class BehaviorListLoader extends React.Component<Props, State> {
     this.loadPublishedBehaviorGroups();
   }
 
-  loadPublishedBehaviorGroups() {
+  loadPublishedBehaviorGroups(): void {
     const url = jsRoutes.controllers.ApplicationController.fetchPublishedBehaviorInfo(
       this.props.teamId, this.props.branchName
     ).url;
@@ -79,7 +79,7 @@ class BehaviorListLoader extends React.Component<Props, State> {
       });
   }
 
-  importBehaviorGroup(groupToInstall: BehaviorGroup) {
+  importBehaviorGroup(groupToInstall: BehaviorGroup): void {
     const url = jsRoutes.controllers.BehaviorImportExportController.doImport().url;
 
     const body = {
@@ -99,7 +99,7 @@ class BehaviorListLoader extends React.Component<Props, State> {
     });
   }
 
-  updateBehaviorGroup(existingGroup: BehaviorGroup, updatedData: BehaviorGroup) {
+  updateBehaviorGroup(existingGroup: BehaviorGroup, updatedData: BehaviorGroup): void {
     const url = jsRoutes.controllers.BehaviorEditorController.save().url;
 
     const body = {
@@ -119,14 +119,14 @@ class BehaviorListLoader extends React.Component<Props, State> {
     });
   }
 
-  didImportPublishedGroup(publishedGroup: BehaviorGroup, importedGroup: BehaviorGroup) {
+  didImportPublishedGroup(publishedGroup: BehaviorGroup, importedGroup: BehaviorGroup): void {
     this.setState({
       currentlyInstalling: this.state.currentlyInstalling.filter((ea) => ea !== publishedGroup),
       recentlyInstalled: this.state.recentlyInstalled.concat(importedGroup)
     });
   }
 
-  didUpdateExistingGroup(existingGroup: BehaviorGroup, updatedGroup: BehaviorGroup) {
+  didUpdateExistingGroup(existingGroup: BehaviorGroup, updatedGroup: BehaviorGroup): void {
     const index = this.state.recentlyInstalled.findIndex(ea => ea.id === updatedGroup.id);
     const newGroups = index >= 0 ?
       ImmutableObjectUtils.arrayWithNewElementAtIndex(this.state.recentlyInstalled, updatedGroup, index) :
@@ -137,7 +137,7 @@ class BehaviorListLoader extends React.Component<Props, State> {
     });
   }
 
-  mergeBehaviorGroups(behaviorGroupIds: Array<string>) {
+  mergeBehaviorGroups(behaviorGroupIds: Array<string>): void {
     const url = jsRoutes.controllers.ApplicationController.mergeBehaviorGroups().url;
     const body = { behaviorGroupIds: behaviorGroupIds };
     DataRequest
@@ -150,7 +150,7 @@ class BehaviorListLoader extends React.Component<Props, State> {
       });
   }
 
-  deleteBehaviorGroups(behaviorGroupIds: Array<string>) {
+  deleteBehaviorGroups(behaviorGroupIds: Array<string>): void {
     const url = jsRoutes.controllers.ApplicationController.deleteBehaviorGroups().url;
     const body = { behaviorGroupIds: behaviorGroupIds };
     DataRequest
@@ -163,7 +163,7 @@ class BehaviorListLoader extends React.Component<Props, State> {
       });
   }
 
-  getSearchResults(queryString: string) {
+  getSearchResults(queryString: string): void {
     const trimmed = queryString.trim();
     if (trimmed) {
       this.setState({
@@ -190,23 +190,23 @@ class BehaviorListLoader extends React.Component<Props, State> {
     }
   }
 
-  dismissNotification(notificationName: string) {
+  dismissNotification(notificationName: string): void {
     this.setState({
       dismissedNotifications: this.state.dismissedNotifications.concat(notificationName)
     });
   }
 
-  hasDismissedNotification(notificationName: string) {
+  hasDismissedNotification(notificationName: string): boolean {
     return this.state.dismissedNotifications.includes(notificationName);
   }
 
-  onSaveTimeZone(newTzId: string, newTzName: string) {
+  onSaveTimeZone(newTzId: string, newTzName: string): void {
     this.setState({
       currentTeamTimeZone: newTzName
     });
   }
 
-  renderTimeZoneSetNotification() {
+  renderTimeZoneSetNotification(): React.Node {
     return !this.props.teamTimeZone && this.state.currentTeamTimeZone ? (
       <PageNotification
         name="TIME_ZONE_SET"
@@ -217,7 +217,7 @@ class BehaviorListLoader extends React.Component<Props, State> {
     ) : null;
   }
 
-  renderPage() {
+  renderPage(): React.Node {
     if (this.state.currentTeamTimeZone) {
       return (
         <BehaviorList
@@ -254,7 +254,7 @@ class BehaviorListLoader extends React.Component<Props, State> {
     }
   }
 
-  render() {
+  render(): React.Node {
     return (
       <Page csrfToken={this.props.csrfToken} feedbackContainer={this.props.feedbackContainer}>
         {this.renderPage()}

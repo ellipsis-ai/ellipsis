@@ -101,7 +101,7 @@ class BehaviorList extends React.Component<Props, State> {
     return ANIMATION_DURATION;
   }
 
-  getLocalBehaviorGroups() {
+  getLocalBehaviorGroups(): Array<BehaviorGroup> {
     const newGroups = this.props.recentlyInstalled.slice();
     const localGroups = this.props.localBehaviorGroups.map((group) => {
       const updatedIndex = newGroups.findIndex((newGroup) => newGroup.id === group.id);
@@ -114,11 +114,11 @@ class BehaviorList extends React.Component<Props, State> {
     return localGroups.concat(newGroups);
   }
 
-  isSearching() {
-    return this.props.currentSearchText && this.props.currentSearchText.length;
+  isSearching(): boolean {
+    return Boolean(this.props.currentSearchText && this.props.currentSearchText.length);
   }
 
-  getMatchingBehaviorGroupsFrom(groups: Array<BehaviorGroup>) {
+  getMatchingBehaviorGroupsFrom(groups: Array<BehaviorGroup>): Array<BehaviorGroup> {
     if (this.isSearching()) {
       return groups.filter((ea) =>
         ea.exportId && BehaviorGroup.groupsIncludeExportId(this.props.matchingResults, ea.exportId)
@@ -128,38 +128,38 @@ class BehaviorList extends React.Component<Props, State> {
     }
   }
 
-  getUninstalledBehaviorGroups() {
+  getUninstalledBehaviorGroups(): Array<BehaviorGroup> {
     return this.props.publishedBehaviorGroups.filter((published) =>
       published.exportId && !BehaviorGroup.groupsIncludeExportId(this.props.localBehaviorGroups, published.exportId)
     );
   }
 
-  getLocalBehaviorGroupsJustInstalled() {
+  getLocalBehaviorGroupsJustInstalled(): Array<BehaviorGroup> {
     return this.props.recentlyInstalled;
   }
 
-  getCheckedGroupIds() {
+  getCheckedGroupIds(): Array<string> {
     return this.state.checkedGroupIds || [];
   }
 
-  getLocalIdFor(exportId: ?string) {
+  getLocalIdFor(exportId: ?string): ?string {
     var localGroup = exportId ? this.getLocalBehaviorGroups().find((ea) => ea.exportId === exportId) : null;
     return localGroup ? localGroup.id : null;
   }
 
-  isGroupChecked(group: BehaviorGroup) {
-    return group.id && this.getCheckedGroupIds().indexOf(group.id) >= 0;
+  isGroupChecked(group: BehaviorGroup): boolean {
+    return Boolean(group.id && this.getCheckedGroupIds().indexOf(group.id) >= 0);
   }
 
-  confirmDeleteBehaviorGroups() {
+  confirmDeleteBehaviorGroups(): void {
     this.toggleActivePanel('confirmDeleteBehaviorGroups', true);
   }
 
-  confirmMergeBehaviorGroups() {
+  confirmMergeBehaviorGroups(): void {
     this.toggleActivePanel('confirmMergeBehaviorGroups', true);
   }
 
-  onGroupCheckboxChange(groupId: string, isChecked: boolean, optionalCallback?: () => void) {
+  onGroupCheckboxChange(groupId: string, isChecked: boolean, optionalCallback?: () => void): void {
     var newGroupIds = this.getCheckedGroupIds().slice();
     var index = newGroupIds.indexOf(groupId);
     if (isChecked) {
@@ -176,13 +176,13 @@ class BehaviorList extends React.Component<Props, State> {
     }, optionalCallback);
   }
 
-  clearCheckedGroups() {
+  clearCheckedGroups(): void {
     this.setState({
       checkedGroupIds: []
     });
   }
 
-  mergeBehaviorGroups() {
+  mergeBehaviorGroups(): void {
     this.setState({
       isSubmitting: true
     }, () => {
@@ -190,7 +190,7 @@ class BehaviorList extends React.Component<Props, State> {
     });
   }
 
-  deleteBehaviorGroups() {
+  deleteBehaviorGroups(): void {
     this.setState({
       isSubmitting: true
     }, () => {
@@ -198,7 +198,7 @@ class BehaviorList extends React.Component<Props, State> {
     });
   }
 
-  getActionsLabel(checkedCount: number) {
+  getActionsLabel(checkedCount: number): string {
     if (checkedCount === 0) {
       return "No skills selected";
     } else if (checkedCount === 1) {
@@ -208,7 +208,7 @@ class BehaviorList extends React.Component<Props, State> {
     }
   }
 
-  getLabelForDeleteAction(checkedCount: number) {
+  getLabelForDeleteAction(checkedCount: number): string {
     if (checkedCount < 2) {
       return "Delete skill";
     } else {
@@ -216,7 +216,7 @@ class BehaviorList extends React.Component<Props, State> {
     }
   }
 
-  getTextForDeleteBehaviorGroups(checkedCount: number) {
+  getTextForDeleteBehaviorGroups(checkedCount: number): string {
     if (checkedCount === 1) {
       return "Are you sure you want to delete this skill?";
     } else {
@@ -224,20 +224,20 @@ class BehaviorList extends React.Component<Props, State> {
     }
   }
 
-  getTextForMergeBehaviorGroups(checkedCount: number) {
+  getTextForMergeBehaviorGroups(checkedCount: number): string {
     return `Are you sure you want to merge these ${checkedCount} skills?`;
   }
 
-  getSelectedBehaviorGroup() {
+  getSelectedBehaviorGroup(): ?BehaviorGroup {
     return this.state.selectedBehaviorGroup;
   }
 
-  selectedBehaviorGroupIsUninstalled() {
+  selectedBehaviorGroupIsUninstalled(): boolean {
     var selectedGroup = this.getSelectedBehaviorGroup();
-    return !!(selectedGroup && selectedGroup.exportId && !this.getLocalIdFor(selectedGroup.exportId));
+    return Boolean(selectedGroup && selectedGroup.exportId && !this.getLocalIdFor(selectedGroup.exportId));
   }
 
-  selectedBehaviorWasImported() {
+  selectedBehaviorWasImported(): boolean {
     var selectedGroup = this.getSelectedBehaviorGroup();
     return Boolean(
       selectedGroup &&
@@ -247,35 +247,35 @@ class BehaviorList extends React.Component<Props, State> {
     );
   }
 
-  getSelectedBehaviorGroupId() {
+  getSelectedBehaviorGroupId(): ?string {
     var group = this.getSelectedBehaviorGroup();
     return group ? group.id : null;
   }
 
-  hasRecentlyInstalledBehaviorGroups() {
+  hasRecentlyInstalledBehaviorGroups(): boolean {
     return this.getLocalBehaviorGroupsJustInstalled().length > 0;
   }
 
-  getActivePanelName() {
+  getActivePanelName(): ?string {
     return this.props.activePanelName;
   }
 
-  clearActivePanel() {
+  clearActivePanel(): void {
     this.props.onClearActivePanel();
   }
 
-  toggleActivePanel(panelName: string, beModal?: boolean) {
+  toggleActivePanel(panelName: string, beModal?: boolean): void {
     this.props.onToggleActivePanel(panelName, beModal);
   }
 
-  onBehaviorGroupImport(groupToInstall: BehaviorGroup) {
+  onBehaviorGroupImport(groupToInstall: BehaviorGroup): void {
     if (this.getActivePanelName() === 'moreInfo') {
       this.clearActivePanel();
     }
     this.props.onBehaviorGroupImport(groupToInstall);
   }
 
-  onBehaviorGroupUpdate(existingGroup: BehaviorGroup, updatedData: BehaviorGroup) {
+  onBehaviorGroupUpdate(existingGroup: BehaviorGroup, updatedData: BehaviorGroup): void {
     if (this.getActivePanelName() === 'moreInfo') {
       this.clearActivePanel();
     }
@@ -289,7 +289,7 @@ class BehaviorList extends React.Component<Props, State> {
     }
   }
 
-  getUpdatedBehaviorGroupData() {
+  getUpdatedBehaviorGroupData(): ?BehaviorGroup {
     const selected = this.getSelectedBehaviorGroup();
     if (selected && selected.exportId && selected.id) {
       return this.props.publishedBehaviorGroups.find((ea) => ea.exportId === selected.exportId);
@@ -308,7 +308,7 @@ class BehaviorList extends React.Component<Props, State> {
       BehaviorGroup.groupsIncludeExportId(this.props.recentlyInstalled, exportId));
   }
 
-  toggleInfoPanel(group: BehaviorGroup) {
+  toggleInfoPanel(group: BehaviorGroup): void {
     var previousSelectedGroup = this.state.selectedBehaviorGroup;
     var panelOpen = this.getActivePanelName() === 'moreInfo';
 
@@ -334,7 +334,7 @@ class BehaviorList extends React.Component<Props, State> {
     }
   }
 
-  highlight(text: ?string) {
+  highlight(text: ?string): React.Node {
     if (text) {
       return (
         <SubstringHighlighter text={text} substring={this.props.currentSearchText}/>
@@ -344,7 +344,7 @@ class BehaviorList extends React.Component<Props, State> {
     }
   }
 
-  getDescriptionOrMatchingTriggers(group: BehaviorGroup) {
+  getDescriptionOrMatchingTriggers(group: BehaviorGroup): React.Node {
     var lowercaseDescription = group.getDescription().toLowerCase();
     var lowercaseSearch = this.props.currentSearchText.toLowerCase();
     var matchingBehaviorVersions = [];
@@ -370,7 +370,7 @@ class BehaviorList extends React.Component<Props, State> {
     }
   }
 
-  renderInstalledBehaviorGroups() {
+  renderInstalledBehaviorGroups(): React.Node {
     var allLocal = this.getLocalBehaviorGroups();
     var groups = this.getMatchingBehaviorGroupsFrom(allLocal);
     return (
@@ -415,7 +415,7 @@ class BehaviorList extends React.Component<Props, State> {
     );
   }
 
-  renderActions() {
+  renderActions(): React.Node {
     var selectedCount = this.getCheckedGroupIds().length;
     return (
       <div>
@@ -446,7 +446,7 @@ class BehaviorList extends React.Component<Props, State> {
     );
   }
 
-  renderPublishedIntro() {
+  renderPublishedIntro(): React.Node {
     if (this.getLocalBehaviorGroups().length > 0) {
       return (
         <ListHeading teamId={this.props.teamId}>
@@ -470,7 +470,7 @@ class BehaviorList extends React.Component<Props, State> {
     }
   }
 
-  renderPublishedGroups() {
+  renderPublishedGroups(): React.Node {
     var uninstalled = this.getUninstalledBehaviorGroups();
     var groups = this.getMatchingBehaviorGroupsFrom(uninstalled);
     if (this.props.publishedBehaviorGroupLoadStatus === 'loaded' && uninstalled.length === 0) {
@@ -533,7 +533,7 @@ class BehaviorList extends React.Component<Props, State> {
     }
   }
 
-  renderIntro() {
+  renderIntro(): React.Node {
     if (this.props.localBehaviorGroups.length === 0) {
       return (
         <div className="bg-blue-medium pvxxl border-bottom-thick border-blue type-white">
@@ -548,7 +548,7 @@ class BehaviorList extends React.Component<Props, State> {
     }
   }
 
-  renderSearch() {
+  renderSearch(): React.Node {
     return (
       <div className="pts display-inline-block width-15">
         <SearchInput
@@ -561,7 +561,7 @@ class BehaviorList extends React.Component<Props, State> {
     );
   }
 
-  render() {
+  render(): React.Node {
     return (
       <div>
         {this.props.notification}
