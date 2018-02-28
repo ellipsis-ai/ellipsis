@@ -52,7 +52,7 @@ case class SlackMessageSender(
     val link = s"[dev mode]($baseUrl$path)"
     attachmentGroups ++ Seq(
       SlackMessageTextAttachmentGroup(
-        s"\uD83D\uDEA7 You are running the deployed version of this skill even though you've made changes. You can use the most recent undeployed version in $link.", None
+        s"\uD83D\uDEA7 You are running the deployed version of this skill even though you've made changes. You can always use the most recent version in $link.", None
       )
     )
   } else {

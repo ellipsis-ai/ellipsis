@@ -36,8 +36,8 @@ sealed trait BotResult {
   def text: String
   def fullText: String = text
   def hasText: Boolean = fullText.trim.nonEmpty
-  val isForUndeployed: Boolean = false
-  val hasUndeployedVersionForAuthor: Boolean = false
+  val isForUndeployed: Boolean
+  val hasUndeployedVersionForAuthor: Boolean
 
   def filesAsLogText: String = {
     if (files.nonEmpty) {
@@ -160,8 +160,8 @@ case class SuccessResult(
                           maybeResponseTemplate: Option[String],
                           maybeLogResult: Option[AWSLambdaLogResult],
                           forcePrivateResponse: Boolean,
-                          override val isForUndeployed: Boolean,
-                          override val hasUndeployedVersionForAuthor: Boolean
+                          isForUndeployed: Boolean,
+                          hasUndeployedVersionForAuthor: Boolean
                           ) extends BotResultWithLogResult {
 
   val resultType = ResultType.Success
@@ -184,6 +184,9 @@ case class SuccessResult(
 
 case class SimpleTextResult(event: Event, maybeConversation: Option[Conversation], simpleText: String, forcePrivateResponse: Boolean) extends BotResult {
 
+  val isForUndeployed: Boolean = false
+  val hasUndeployedVersionForAuthor: Boolean = false
+
   val resultType = ResultType.SimpleText
 
   def text: String = simpleText
@@ -199,6 +202,9 @@ case class TextWithAttachmentsResult(
                                     ) extends BotResult {
   val resultType = ResultType.TextWithActions
 
+  val isForUndeployed: Boolean = false
+  val hasUndeployedVersionForAuthor: Boolean = false
+
   def text: String = simpleText
 }
 
@@ -208,6 +214,9 @@ case class NoResponseResult(
                              payloadJson: JsValue,
                              maybeLogResult: Option[AWSLambdaLogResult]
                            ) extends BotResultWithLogResult {
+
+  val isForUndeployed: Boolean = false
+  val hasUndeployedVersionForAuthor: Boolean = false
 
   val resultType = ResultType.NoResponse
   val forcePrivateResponse = false // N/A
@@ -239,7 +248,9 @@ case class ExecutionErrorResult(
                                  dataService: DataService,
                                  configuration: Configuration,
                                  payloadJson: JsValue,
-                                 maybeLogResult: Option[AWSLambdaLogResult]
+                                 maybeLogResult: Option[AWSLambdaLogResult],
+                                 isForUndeployed: Boolean,
+                                 hasUndeployedVersionForAuthor: Boolean
                                ) extends BotResultWithLogResult with WithBehaviorLink {
 
   val resultType = ResultType.ExecutionError
@@ -314,7 +325,9 @@ case class SyntaxErrorResult(
                               dataService: DataService,
                               configuration: Configuration,
                               payloadJson: JsValue,
-                              maybeLogResult: Option[AWSLambdaLogResult]
+                              maybeLogResult: Option[AWSLambdaLogResult],
+                              isForUndeployed: Boolean,
+                              hasUndeployedVersionForAuthor: Boolean
                             ) extends BotResultWithLogResult with WithBehaviorLink {
 
   val resultType = ResultType.SyntaxError
@@ -337,7 +350,9 @@ case class NoCallbackTriggeredResult(
                                       maybeConversation: Option[Conversation],
                                       behaviorVersion: BehaviorVersion,
                                       dataService: DataService,
-                                      configuration: Configuration
+                                      configuration: Configuration,
+                                      isForUndeployed: Boolean,
+                                      hasUndeployedVersionForAuthor: Boolean
                                     ) extends BotResult with WithBehaviorLink {
 
   val resultType = ResultType.NoCallbackTriggered
@@ -354,7 +369,9 @@ case class MissingTeamEnvVarsResult(
                                  dataService: DataService,
                                  configuration: Configuration,
                                  missingEnvVars: Set[String],
-                                 botPrefix: String
+                                 botPrefix: String,
+                                 isForUndeployed: Boolean,
+                                 hasUndeployedVersionForAuthor: Boolean
                                ) extends BotResult with WithBehaviorLink {
 
 
@@ -383,6 +400,9 @@ case class AWSDownResult(event: Event, maybeConversation: Option[Conversation]) 
   val resultType = ResultType.AWSDown
   val forcePrivateResponse = false
 
+  val isForUndeployed: Boolean = false
+  val hasUndeployedVersionForAuthor: Boolean = false
+
   def text: String = {
     """
       |The Amazon Web Service that Ellipsis relies upon is currently down.
@@ -399,7 +419,9 @@ case class OAuth2TokenMissing(
                                maybeConversation: Option[Conversation],
                                loginToken: LoginToken,
                                cacheService: CacheService,
-                               configuration: Configuration
+                               configuration: Configuration,
+                               isForUndeployed: Boolean,
+                               hasUndeployedVersionForAuthor: Boolean
                                ) extends BotResult {
 
   val key = IDs.next
@@ -431,7 +453,9 @@ case class RequiredApiNotReady(
                                 event: Event,
                                 maybeConversation: Option[Conversation],
                                 dataService: DataService,
-                                configuration: Configuration
+                                configuration: Configuration,
+                                isForUndeployed: Boolean,
+                                hasUndeployedVersionForAuthor: Boolean
                              ) extends BotResult {
 
   val resultType = ResultType.RequiredApiNotReady

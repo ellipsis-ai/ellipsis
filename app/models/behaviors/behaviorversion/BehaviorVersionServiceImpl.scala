@@ -314,6 +314,8 @@ class BehaviorVersionServiceImpl @Inject() (
         !userInfo.links.exists(_.externalSystem == app.name)
       })
       botPrefix <- DBIO.from(event.contextualBotPrefix(defaultServices))
+      isForUndeployed <- dataService.behaviorGroupDeployments.findForBehaviorGroupVersionAction(behaviorVersion.groupVersion).map(_.isEmpty)
+      hasUndeployedVersionForAuthor <- dataService.behaviorGroupDeployments.hasUndeployedVersionForAuthorAction(behaviorVersion.groupVersion)
       maybeResult <- if (missingTeamEnvVars.nonEmpty) {
         DBIO.successful(Some(MissingTeamEnvVarsResult(
           event,
@@ -322,20 +324,22 @@ class BehaviorVersionServiceImpl @Inject() (
           dataService,
           configuration,
           missingTeamEnvVars,
-          botPrefix
+          botPrefix,
+          isForUndeployed,
+          hasUndeployedVersionForAuthor
         )
         )
         )
       } else {
         notReadyOAuth2Applications.headOption.map { firstNotReadyOAuth2App =>
-          DBIO.successful(Some(RequiredApiNotReady(firstNotReadyOAuth2App, event, None,  dataService, configuration)
+          DBIO.successful(Some(RequiredApiNotReady(firstNotReadyOAuth2App, event, None,  dataService, configuration, isForUndeployed, hasUndeployedVersionForAuthor)
           ))
         }.getOrElse {
           val missingOAuth2ApplicationsRequiringAuth = missingOAuth2Applications.filter(_.api.grantType.requiresAuth)
           missingOAuth2ApplicationsRequiringAuth.headOption.map { firstMissingOAuth2App =>
             event.ensureUserAction(dataService).flatMap { user =>
               dataService.loginTokens.createForAction(user).map { loginToken =>
-                OAuth2TokenMissing(firstMissingOAuth2App, event, None, loginToken, cacheService, configuration)
+                OAuth2TokenMissing(firstMissingOAuth2App, event, None, loginToken, cacheService, configuration, isForUndeployed, hasUndeployedVersionForAuthor)
               }
             }.map(Some(_))
           }.getOrElse(DBIO.successful(None))

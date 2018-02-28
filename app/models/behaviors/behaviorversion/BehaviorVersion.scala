@@ -111,11 +111,11 @@ case class BehaviorVersion(
         NoResponseResult(event, maybeConversation, json, logResultOption)
       } else {
         if (json.toString == "null") {
-          NoCallbackTriggeredResult(event, maybeConversation, this, dataService, configuration)
+          NoCallbackTriggeredResult(event, maybeConversation, this, dataService, configuration, isForUndeployed, hasUndeployedVersionForAuthor)
         } else if (isSyntaxError(json)) {
-          SyntaxErrorResult(event, maybeConversation, this, dataService, configuration, json, logResultOption)
+          SyntaxErrorResult(event, maybeConversation, this, dataService, configuration, json, logResultOption, isForUndeployed, hasUndeployedVersionForAuthor)
         } else {
-          ExecutionErrorResult(event, maybeConversation, this, dataService, configuration, json, logResultOption)
+          ExecutionErrorResult(event, maybeConversation, this, dataService, configuration, json, logResultOption, isForUndeployed, hasUndeployedVersionForAuthor)
         }
       }
     }
