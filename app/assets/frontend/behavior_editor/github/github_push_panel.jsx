@@ -28,6 +28,7 @@ type LastSavedInfo = {
 type State = {
   commitMessage: string,
   isSaving: boolean,
+  hasSavedSinceOpen: boolean,
   lastSavedInfo: ?LastSavedInfo,
   error: ?string,
   warning: React.Node
@@ -42,6 +43,7 @@ class GithubPushPanel extends React.Component<Props, State> {
       this.state = {
         commitMessage: "",
         isSaving: false,
+        hasSavedSinceOpen: false,
         lastSavedInfo: null,
         error: null,
         warning: null
@@ -108,6 +110,7 @@ class GithubPushPanel extends React.Component<Props, State> {
           this.setState({
             commitMessage: "",
             isSaving: false,
+            hasSavedSinceOpen: true,
             lastSavedInfo: {
               date: new Date(),
               branch: branch
@@ -119,6 +122,7 @@ class GithubPushPanel extends React.Component<Props, State> {
           if (error.type && error.type === "NoChanges") {
             this.setState({
               isSaving: false,
+              hasSavedSinceOpen: true,
               lastSavedInfo: {
                 date: new Date(),
                 branch: branch
@@ -135,7 +139,7 @@ class GithubPushPanel extends React.Component<Props, State> {
 
     noCommitWarningForBranch(branch: string): React.Node {
       return (
-        <span>Warning: no changes were committed because branch <b>{branch}</b> is identical to master.</span>
+        <span><b>Warning:</b> no changes were committed because branch <b>{branch}</b> is identical to <b>master</b>.</span>
       );
     }
 
@@ -150,6 +154,7 @@ class GithubPushPanel extends React.Component<Props, State> {
       this.setState({
         commitMessage: "",
         isSaving: false,
+        hasSavedSinceOpen: false,
         error: null,
         warning: null
       }, this.props.onDoneClick);
@@ -213,7 +218,7 @@ class GithubPushPanel extends React.Component<Props, State> {
               className="mrs"
               onClick={this.onDone}
             >
-              {this.state.lastSavedInfo ? "Done" : "Cancel"}
+              {this.state.hasSavedSinceOpen ? "Done" : "Cancel"}
             </Button>
           </div>
           <div className="mtxl">
@@ -235,7 +240,7 @@ class GithubPushPanel extends React.Component<Props, State> {
             {this.state.warning ? (
               <span>
                 <span className="display-inline-block height-xl mrs type-yellow align-m"><SVGWarning /></span>
-                <b>{this.state.warning} </b>
+                <span>{this.state.warning} </span>
               </span>
             ) : null}
             <span>Branch <b>{lastSavedInfo.branch}</b> pushed {Formatter.formatTimestampRelative(lastSavedInfo.date)}.</span>
