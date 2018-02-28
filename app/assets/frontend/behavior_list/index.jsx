@@ -33,7 +33,8 @@ const BehaviorList = React.createClass({
       publishedBehaviorGroupLoadStatus: React.PropTypes.string.isRequired,
       teamId: React.PropTypes.string.isRequired,
       slackTeamId: React.PropTypes.string.isRequired,
-      botName: React.PropTypes.string.isRequired
+      botName: React.PropTypes.string.isRequired,
+      notification: React.PropTypes.node
     }),
 
     getDefaultProps: function() {
@@ -552,6 +553,7 @@ const BehaviorList = React.createClass({
     render: function() {
       return (
         <div>
+          {this.props.notification}
           <div style={{ paddingBottom: `${this.props.footerHeight}px` }}>
             {this.renderIntro()}
 

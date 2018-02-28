@@ -1,10 +1,9 @@
 import * as React from 'react';
 import * as TestUtils from 'react-addons-test-utils';
-import BehaviorListApp from '../../../../app/assets/frontend/behavior_list/app';
+import BehaviorListLoader from '../../../../app/assets/frontend/behavior_list/loader';
 import BehaviorList from '../../../../app/assets/frontend/behavior_list/index';
 import TimeZoneSetter from '../../../../app/assets/frontend/time_zone/team_time_zone_setter';
 import BehaviorGroup from '../../../../app/assets/frontend/models/behavior_group';
-import Page from '../../../../app/assets/frontend/shared_ui/page';
 
 jest.mock('../../../../app/assets/frontend/lib/data_request', () => ({
   jsonGet: jest.fn(() => {
@@ -115,12 +114,11 @@ describe('BehaviorListApp', () => {
     botName: "TestBot"
   });
 
-  function createBehaviorListApp(config) {
+  function createBehaviorListLoader(config) {
+    const div = document.createElement("div");
     return TestUtils.renderIntoDocument(
-      <Page csrfToken={config.csrfToken} feedbackContainer={document.createElement('span')}>
-        <BehaviorListApp {...config} />
-      </Page>
-    ).component;
+      <BehaviorListLoader {...config} feedbackContainer={div} />
+    );
   }
 
   let config = {};
@@ -131,14 +129,14 @@ describe('BehaviorListApp', () => {
 
   describe('render', () => {
     it('renders a BehaviorList when the time zone is set', () => {
-      const list = createBehaviorListApp(config);
+      const list = createBehaviorListLoader(config);
       expect(TestUtils.scryRenderedComponentsWithType(list, BehaviorList).length).toBe(1);
       expect(TestUtils.scryRenderedComponentsWithType(list, TimeZoneSetter).length).toBe(0);
     });
 
     it('renders a TimeZoneSetter when no time zone is set', () => {
       config.teamTimeZone = null;
-      const list = createBehaviorListApp(config);
+      const list = createBehaviorListLoader(config);
       expect(TestUtils.scryRenderedComponentsWithType(list, BehaviorList).length).toBe(0);
       expect(TestUtils.scryRenderedComponentsWithType(list, TimeZoneSetter).length).toBe(1);
     });
@@ -152,7 +150,7 @@ describe('BehaviorListApp', () => {
 
     it('removes the existing group from currently installing and adds it to recently installed', () => {
       config.localBehaviorGroups = [installedGroup];
-      const list = createBehaviorListApp(config);
+      const list = createBehaviorListLoader(config);
       list.setState = jest.fn();
       list.state = {
         recentlyInstalled: [installedGroup2],
@@ -167,7 +165,7 @@ describe('BehaviorListApp', () => {
 
     it('splices the updated group in if it was previously recently installed', () => {
       config.localBehaviorGroups = [installedGroup];
-      const list = createBehaviorListApp(config);
+      const list = createBehaviorListLoader(config);
       list.setState = jest.fn();
       list.state = {
         recentlyInstalled: [installedGroup, installedGroup2],
