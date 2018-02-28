@@ -29,6 +29,7 @@ case class SlackMessageSender(
                                unformattedText: String,
                                forcePrivate: Boolean,
                                isForUndeployed: Boolean,
+                               hasUndeployedVersionForAuthor: Boolean,
                                originatingChannel: String,
                                channelToUse: String,
                                maybeThreadId: Option[String],
@@ -45,6 +46,15 @@ case class SlackMessageSender(
     val path = controllers.routes.HelpController.devMode(Some(slackTeamId), Some(botName)).url
     val link = s"[development]($baseUrl$path)"
     attachmentGroups ++ Seq(SlackMessageTextAttachmentGroup(s"\uD83D\uDEA7 Skill in $link \uD83D\uDEA7", None))
+  } else if (hasUndeployedVersionForAuthor) {
+    val baseUrl = configuration.get[String]("application.apiBaseUrl")
+    val path = controllers.routes.HelpController.devMode(Some(slackTeamId), Some(botName)).url
+    val link = s"[dev mode]($baseUrl$path)"
+    attachmentGroups ++ Seq(
+      SlackMessageTextAttachmentGroup(
+        s"\uD83D\uDEA7 You are running the deployed version of this skill even though you've made changes. You can use the most recent undeployed version in $link.", None
+      )
+    )
   } else {
     attachmentGroups
   }

@@ -126,6 +126,7 @@ case class SlackMessageEvent(
                    attachmentGroups: Seq[MessageAttachmentGroup],
                    files: Seq[UploadFileSpec],
                    isForUndeployed: Boolean,
+                   hasUndeployedVersionForAuthor: Boolean,
                    services: DefaultServices,
                    configuration: Configuration
                  )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[String]] = {
@@ -139,6 +140,7 @@ case class SlackMessageEvent(
         unformattedText,
         forcePrivate,
         isForUndeployed,
+        hasUndeployedVersionForAuthor,
         channel,
         channelToUse,
         maybeThreadId,

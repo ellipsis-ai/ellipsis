@@ -37,6 +37,7 @@ sealed trait BotResult {
   def fullText: String = text
   def hasText: Boolean = fullText.trim.nonEmpty
   val isForUndeployed: Boolean = false
+  val hasUndeployedVersionForAuthor: Boolean = false
 
   def filesAsLogText: String = {
     if (files.nonEmpty) {
@@ -159,7 +160,8 @@ case class SuccessResult(
                           maybeResponseTemplate: Option[String],
                           maybeLogResult: Option[AWSLambdaLogResult],
                           forcePrivateResponse: Boolean,
-                          override val isForUndeployed: Boolean
+                          override val isForUndeployed: Boolean,
+                          override val hasUndeployedVersionForAuthor: Boolean
                           ) extends BotResultWithLogResult {
 
   val resultType = ResultType.Success
