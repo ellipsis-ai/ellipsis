@@ -33,9 +33,9 @@ case class SlackMessageEvent(
 
   lazy val isBotMessage: Boolean = profile.userId == user
 
-  override def botPrefix(services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[String] = {
+  override def botName(services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[String] = {
     services.dataService.slackBotProfiles.maybeNameFor(profile).map { maybeName =>
-      maybeName.getOrElse("...")
+      maybeName.getOrElse(SlackMessageEvent.fallbackBotPrefix)
     }
   }
 
@@ -43,7 +43,15 @@ case class SlackMessageEvent(
     if (isDirectMessage) {
       Future.successful("")
     } else {
-      botPrefix(services)
+      for {
+        name <- botName(services)
+      } yield {
+        if (name == SlackMessageEvent.fallbackBotPrefix) {
+          name
+        } else {
+          s"@$name "
+        }
+      }
     }
   }
 
@@ -131,7 +139,7 @@ case class SlackMessageEvent(
                  )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[String]] = {
     for {
       channelToUse <- channelForSend(forcePrivate, maybeConversation, services.cacheService)
-      botName <- botPrefix(services)
+      botName <- botName(services)
       maybeTs <- SlackMessageSender(
         client,
         user,
@@ -162,6 +170,7 @@ case class SlackMessageEvent(
 
 object SlackMessageEvent {
 
+  val fallbackBotPrefix = "..."
   def mentionRegexFor(botId: String): Regex = s"""<@$botId>""".r
   def toBotRegexFor(botId: String): Regex = s"""^<@$botId>:?\\s*""".r
 
