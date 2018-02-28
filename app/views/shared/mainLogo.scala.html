@@ -11,17 +11,23 @@
   }
 }
 @if(config.isDevelopment) {
-  <span class="display-inline-block mrs type-label type-white bg-blue border-radius phxs pvs height height-logo align-t">
-    Dev
-  </span><span class="display-inline-block mobile-display-none height-logo align-t">
-    @l(hideSymbol = true)
-  </span>@if(includeArrow) {<span class="display-inline-block type-pink align-t mhs">▾</span>}
+    <span
+      class="display-inline-block type-label type-white bg-blue border-radius phxs pvs height height-logo align-t">
+      Dev</span>
 } else {
-  @if(config.maybeTeamAccess.exists(_.isAdminAccess)) {
-    <span class="display-inline-block type-l mobile-ptxs pbxs">👻</span>} else {
-    <span class="display-inline-block align-t mobile-display-none height-logo mtneg1">
-      @l()
-    </span><span class="display-inline-block align-t mobile-display-only height-logo-s">
+  @if(config.isAdmin) {<span
+      class="display-inline-block type-l mobile-ptxs pbxs">
+    👻</span>} else {
+    <span
+    class="display-inline-block height-logo align-t">
       @l(hideText = true)
-    </span>}@if(includeArrow) {<span class="display-inline-block type-pink align-t mhs">▾</span>}
-}
+    </span>}}@config.maybeTeamName.map { teamName => <span
+      class="display-inline-block align-t mobile-display-none type-brand type-regular mlxs">
+      @teamName
+    </span>}.getOrElse {<span
+      class="display-inline-block align-t mobile-display-none height-logo mtneg1">
+      @l(hideSymbol = true)
+    </span>}@if(includeArrow) {<span
+      class="display-inline-block type-pink align-t mhs">
+      ▾
+    </span>}
