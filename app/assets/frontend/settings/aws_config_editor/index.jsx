@@ -176,7 +176,7 @@ const AwsConfigEditor = React.createClass({
       const navItems = [{
         title: "Settings"
       }, {
-        url: jsRoutes.controllers.web.settings.IntegrationsController.list().url,
+        url: jsRoutes.controllers.web.settings.IntegrationsController.list(this.props.isAdmin ? this.props.teamId : null).url,
         title: "Integrations"
       }];
       this.props.onRenderNavItems(navItems.concat(this.renderConfigNavItems()));
