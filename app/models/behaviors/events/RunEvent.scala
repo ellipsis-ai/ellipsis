@@ -59,7 +59,7 @@ case class RunEvent(
                    configuration: Configuration
                  )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[String]] = {
     for {
-      botName <- botPrefix(services)
+      botName <- botName(services)
       maybeTs <- SlackMessageSender(
         client,
         user,
