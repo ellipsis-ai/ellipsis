@@ -38,7 +38,8 @@ class MockAWSLambdaService @Inject() (
       maybeResponseTemplate = None,
       maybeLogResult = None,
       forcePrivateResponse = false,
-      isForUndeployed = false
+      isForUndeployed = false,
+      hasUndeployedVersionForAuthor = false
     )
   }
 

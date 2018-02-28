@@ -200,11 +200,23 @@ class AWSLambdaServiceImpl @Inject() (
       requiredAWSConfigs <- dataService.requiredAWSConfigs.allForAction(behaviorVersion.groupVersion)
       requiredOAuth2ApiConfigs <- dataService.requiredOAuth2ApiConfigs.allForAction(behaviorVersion.groupVersion)
       requiredSimpleTokenApis <- dataService.requiredSimpleTokenApis.allForAction(behaviorVersion.groupVersion)
-      isForUndeployed <- dataService.behaviorGroupDeployments.findForBehaviorGroupVersionAction(behaviorVersion.groupVersion).map { maybeDeployment =>
-        maybeDeployment.isEmpty
-      }
+      isForUndeployed <- dataService.behaviorGroupDeployments.findForBehaviorGroupVersionAction(behaviorVersion.groupVersion).map(_.isEmpty)
+      hasUndeployedVersionForAuthor <- dataService.behaviorGroupDeployments.hasUndeployedVersionForAuthorAction(behaviorVersion.groupVersion)
       result <- if (behaviorVersion.functionBody.isEmpty) {
-        DBIO.successful(SuccessResult(event, maybeConversation, JsNull, JsNull, parametersWithValues, behaviorVersion.maybeResponseTemplate, None, behaviorVersion.forcePrivateResponse, isForUndeployed))
+        DBIO.successful(
+          SuccessResult(
+            event,
+            maybeConversation,
+            JsNull,
+            JsNull,
+            parametersWithValues,
+            behaviorVersion.maybeResponseTemplate,
+            None,
+            behaviorVersion.forcePrivateResponse,
+            isForUndeployed,
+            hasUndeployedVersionForAuthor
+          )
+        )
       } else {
         for {
           user <- event.ensureUserAction(dataService)
@@ -220,7 +232,17 @@ class AWSLambdaServiceImpl @Inject() (
             result => {
               val logString = new java.lang.String(new BASE64Decoder().decodeBuffer(result.getLogResult))
               val logResult = AWSLambdaLogResult.fromText(logString)
-              behaviorVersion.resultFor(result.getPayload, logResult, parametersWithValues, dataService, configuration, event, maybeConversation, isForUndeployed)
+              behaviorVersion.resultFor(
+                result.getPayload,
+                logResult,
+                parametersWithValues,
+                dataService,
+                configuration,
+                event,
+                maybeConversation,
+                isForUndeployed,
+                hasUndeployedVersionForAuthor
+              )
             },
             maybeConversation,
             invocationRetryIntervals,

@@ -26,4 +26,6 @@ trait BehaviorGroupDeploymentService {
 
   def deploy(version: BehaviorGroupVersion, userId: String, maybeComment: Option[String]): Future[BehaviorGroupDeployment]
 
+  def hasUndeployedVersionForAuthorAction(version: BehaviorGroupVersion): DBIO[Boolean]
+
 }

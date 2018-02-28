@@ -128,4 +128,13 @@ class BehaviorGroupDeploymentServiceImpl @Inject() (
     dataService.run(action.transactionally)
   }
 
+  def hasUndeployedVersionForAuthorAction(version: BehaviorGroupVersion): DBIO[Boolean] = {
+    for {
+      isDeployed <- findForBehaviorGroupVersionAction(version).map(_.isDefined)
+      hasNewerForAuthor <- dataService.behaviorGroupVersions.hasNewerVersionForAuthorAction(version)
+    } yield {
+      isDeployed && hasNewerForAuthor
+    }
+  }
+
 }

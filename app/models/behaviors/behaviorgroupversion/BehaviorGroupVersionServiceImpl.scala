@@ -8,12 +8,13 @@ import drivers.SlickPostgresDriver.api._
 import json.BehaviorGroupData
 import models.IDs
 import models.accounts.user.User
-import models.behaviors.behaviorgroup.{BehaviorGroup, BehaviorGroupQueries}
+import models.behaviors.behaviorgroup.BehaviorGroup
 import play.api.Logger
 import services.{AWSLambdaService, ApiConfigInfo, DataService}
+import slick.dbio.DBIO
 
-import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.concurrent.duration._
+import scala.concurrent.{Await, ExecutionContext, Future}
 
 case class RawBehaviorGroupVersion(
                                    id: String,
@@ -269,6 +270,12 @@ class BehaviorGroupVersionServiceImpl @Inject() (
     } yield {
       (current ++ deployed ++ activeConvo).distinct
     }
+  }
+
+  def hasNewerVersionForAuthorAction(version: BehaviorGroupVersion): DBIO[Boolean] = {
+    version.maybeAuthor.map { author =>
+      newerVersionsForAuthorQuery(version.createdAt, author.id).result.map(_.length > 0)
+    }.getOrElse(DBIO.successful(false))
   }
 
 }
