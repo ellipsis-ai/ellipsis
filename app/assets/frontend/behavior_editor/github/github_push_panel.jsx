@@ -20,12 +20,18 @@ type Props = {
   csrfToken: string
 };
 
+type LastSavedInfo = {
+  date: Date,
+  branch: string
+}
+
 type State = {
   commitMessage: string,
   isSaving: boolean,
-  lastSaved: ?Date,
+  hasSavedSinceOpen: boolean,
+  lastSavedInfo: ?LastSavedInfo,
   error: ?string,
-  warning: ?string
+  warning: React.Node
 };
 
 class GithubPushPanel extends React.Component<Props, State> {
@@ -37,10 +43,22 @@ class GithubPushPanel extends React.Component<Props, State> {
       this.state = {
         commitMessage: "",
         isSaving: false,
-        lastSaved: null,
+        hasSavedSinceOpen: false,
+        lastSavedInfo: null,
         error: null,
         warning: null
       };
+    }
+
+    componentWillReceiveProps(newProps: Props): void {
+      const newBranch = newProps.linked && newProps.linked.currentBranch;
+      const oldBranch = this.props.linked && this.props.linked.currentBranch;
+      if (oldBranch !== newBranch) {
+        this.setState({
+          warning: null,
+          error: null
+        });
+      }
     }
 
     focus(): void {
@@ -92,7 +110,11 @@ class GithubPushPanel extends React.Component<Props, State> {
           this.setState({
             commitMessage: "",
             isSaving: false,
-            lastSaved: new Date()
+            hasSavedSinceOpen: true,
+            lastSavedInfo: {
+              date: new Date(),
+              branch: branch
+            }
           });
           this.props.onPushBranch();
         } else if (json.errors) {
@@ -100,8 +122,12 @@ class GithubPushPanel extends React.Component<Props, State> {
           if (error.type && error.type === "NoChanges") {
             this.setState({
               isSaving: false,
-              lastSaved: new Date(),
-              warning: "Warning: nothing was committed because this branch has no changes from master."
+              hasSavedSinceOpen: true,
+              lastSavedInfo: {
+                date: new Date(),
+                branch: branch
+              },
+              warning: this.noCommitWarningForBranch(branch)
             });
             this.props.onPushBranch();
           } else {
@@ -109,6 +135,12 @@ class GithubPushPanel extends React.Component<Props, State> {
           }
         }
       }).catch((err: DataRequest.ResponseError) => this.onPushError(err.body || "An unknown error occurred."));
+    }
+
+    noCommitWarningForBranch(branch: string): React.Node {
+      return (
+        <span><b>Warning:</b> no changes were committed because branch <b>{branch}</b> is identical to <b>master</b>.</span>
+      );
     }
 
     onPushError(errorMessage: string) {
@@ -122,7 +154,9 @@ class GithubPushPanel extends React.Component<Props, State> {
       this.setState({
         commitMessage: "",
         isSaving: false,
-        error: null
+        hasSavedSinceOpen: false,
+        error: null,
+        warning: null
       }, this.props.onDoneClick);
     }
 
@@ -184,7 +218,7 @@ class GithubPushPanel extends React.Component<Props, State> {
               className="mrs"
               onClick={this.onDone}
             >
-              {this.state.lastSaved ? "Done" : "Cancel"}
+              {this.state.hasSavedSinceOpen ? "Done" : "Cancel"}
             </Button>
           </div>
           <div className="mtxl">
@@ -199,17 +233,17 @@ class GithubPushPanel extends React.Component<Props, State> {
         return (
           <GithubErrorNotification error={this.state.error} />
         );
-      } else if (this.state.lastSaved && !this.state.isSaving) {
-        const lastSaved = this.state.lastSaved;
+      } else if (this.state.lastSavedInfo && !this.state.isSaving) {
+        const lastSavedInfo = this.state.lastSavedInfo;
         return (
           <div className="fade-in type-s">
             {this.state.warning ? (
               <span>
                 <span className="display-inline-block height-xl mrs type-yellow align-m"><SVGWarning /></span>
-                <b>{this.state.warning} </b>
+                <span>{this.state.warning} </span>
               </span>
             ) : null}
-            <span>Branch {this.getBranch()} successfully pushed {Formatter.formatTimestampRelative(lastSaved)}.</span>
+            <span>Branch <b>{lastSavedInfo.branch}</b> pushed {Formatter.formatTimestampRelative(lastSavedInfo.date)}.</span>
           </div>
         );
       } else {
