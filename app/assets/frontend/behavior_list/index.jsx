@@ -580,7 +580,6 @@ class BehaviorList extends React.Component<Props, State> {
         {this.props.onRenderFooter((
           <div>
             <Collapsible
-              ref="moreInfo"
               revealWhen={this.getActivePanelName() === 'moreInfo'}
               animationDuration={this.getAnimationDuration()}
             >
@@ -596,7 +595,6 @@ class BehaviorList extends React.Component<Props, State> {
               />
             </Collapsible>
             <Collapsible
-              ref="afterInstall"
               revealWhen={this.hasRecentlyInstalledBehaviorGroups() && this.getActivePanelName() === 'afterInstall'}
               animationDuration={this.getAnimationDuration()}
             >
@@ -616,9 +614,7 @@ class BehaviorList extends React.Component<Props, State> {
                 </div>
               </div>
             </Collapsible>
-            <Collapsible ref="confirmDeleteBehaviorGroups"
-              revealWhen={this.getActivePanelName() === 'confirmDeleteBehaviorGroups'}
-            >
+            <Collapsible revealWhen={this.getActivePanelName() === 'confirmDeleteBehaviorGroups'}>
               <ConfirmActionPanel
                 confirmText="Delete"
                 confirmingText="Deleting"
@@ -629,9 +625,7 @@ class BehaviorList extends React.Component<Props, State> {
                 <p>{this.getTextForDeleteBehaviorGroups(this.getCheckedGroupIds().length)}</p>
               </ConfirmActionPanel>
             </Collapsible>
-            <Collapsible ref="confirmMergeBehaviorGroups"
-              revealWhen={this.getActivePanelName() === 'confirmMergeBehaviorGroups'}
-            >
+            <Collapsible revealWhen={this.getActivePanelName() === 'confirmMergeBehaviorGroups'}>
               <ConfirmActionPanel
                 confirmText="Merge"
                 confirmingText="Merging"
