@@ -13,11 +13,12 @@ import ImmutableObjectUtils from '../lib/immutable_object_utils';
 import TimeZoneWelcomePage from '../time_zone/time_zone_welcome_page';
 import TeamTimeZoneSetter from '../time_zone/team_time_zone_setter';
 import autobind from "../lib/autobind";
+import type {BehaviorGroupJson} from "../models/behavior_group";
 
 type Props = {
   containerId: string,
   csrfToken: string,
-  behaviorGroups: Array<BehaviorGroup>,
+  behaviorGroups: Array<BehaviorGroupJson>,
   teamId: string,
   slackTeamId: string,
   teamTimeZone?: ?string,
