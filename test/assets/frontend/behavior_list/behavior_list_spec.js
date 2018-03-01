@@ -6,9 +6,9 @@ import BehaviorGroup from '../../../../app/assets/frontend/models/behavior_group
 import BehaviorGroupCard from '../../../../app/assets/frontend/behavior_list/behavior_group_card';
 
 describe('BehaviorList', () => {
-  jsRoutes.controllers.BehaviorEditorController.edit = () => '/edit';
-  jsRoutes.controllers.BehaviorEditorController.newGroup = () => '/newGroup';
-  jsRoutes.controllers.ApplicationController.possibleCitiesFor = () => '/possibleCitiesFor';
+  jsRoutes.controllers.BehaviorEditorController.edit = () => ({ url: '/edit', method: 'get' });
+  jsRoutes.controllers.BehaviorEditorController.newGroup = () => ({ url: '/newGroup', method: 'get' });
+  jsRoutes.controllers.ApplicationController.possibleCitiesFor = () => ({ url: '/possibleCitiesFor', method: 'get' });
 
   const behaviorVersionTask1 = Object.freeze({
     "teamId": "abcdef",
@@ -147,7 +147,7 @@ describe('BehaviorList', () => {
     notification: null
   });
 
-  class Footer extends React.Component {
+  class Footer extends React.Component<{}> {
     renderFooter(content) {
       return (
         <div>{content}</div>
