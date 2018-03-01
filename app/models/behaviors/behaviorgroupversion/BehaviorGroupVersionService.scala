@@ -49,6 +49,6 @@ trait BehaviorGroupVersionService {
 
   def activeFunctionNames: Future[Seq[String]]
 
-  def hasNewerVersionForAuthorAction(version: BehaviorGroupVersion): DBIO[Boolean]
+  def hasNewerVersionForAuthorAction(version: BehaviorGroupVersion, user: User): DBIO[Boolean]
 
 }

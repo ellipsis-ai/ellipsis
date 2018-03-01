@@ -1,5 +1,6 @@
 package models.behaviors.behaviorgroupdeployment
 
+import models.accounts.user.User
 import models.behaviors.behaviorgroup.BehaviorGroup
 import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
 import models.behaviors.triggers.messagetrigger.MessageTrigger
@@ -26,6 +27,6 @@ trait BehaviorGroupDeploymentService {
 
   def deploy(version: BehaviorGroupVersion, userId: String, maybeComment: Option[String]): Future[BehaviorGroupDeployment]
 
-  def hasUndeployedVersionForAuthorAction(version: BehaviorGroupVersion): DBIO[Boolean]
+  def hasUndeployedVersionForAuthorAction(version: BehaviorGroupVersion, user: User): DBIO[Boolean]
 
 }
