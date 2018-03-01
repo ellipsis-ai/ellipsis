@@ -1,13 +1,12 @@
 // @flow
 import * as React from 'react';
-import Formatter from '../lib/formatter';
 import SVGCheckmark from '../svg/checkmark';
 import URLCreator from '../lib/url_creator';
 import BehaviorGroup from '../models/behavior_group';
 import autobind from '../lib/autobind';
 
 type Props = {
-  installedBehaviorGroups: Array<BehaviorGroup>,
+  installedBehaviorGroup: ?BehaviorGroup,
   onToggle: () => void,
   slackTeamId: string,
   botName: string
@@ -19,35 +18,21 @@ class InstalledBehaviorGroupsPanel extends React.Component<Props> {
     autobind(this);
   }
 
-  getInstalledBehaviorGroups(): Array<BehaviorGroup> {
-    return this.props.installedBehaviorGroups;
+  getInstalledBehaviorGroup(): ?BehaviorGroup {
+    return this.props.installedBehaviorGroup;
   }
 
-  getHeading() {
-    var groups = this.getInstalledBehaviorGroups();
-    var groupNames = Formatter.formatList(groups, (ea) => ea.getName());
-    if (groups.length === 1) {
-      return (
-        <span>Ellipsis has a learned new skill: <b>{groupNames}</b></span>
-      );
-    } else {
-      return (
-        <span>Ellipsis has learned {groups.length} new skills: <b>{groupNames}</b></span>
-      );
-    }
+  getHeading(group: BehaviorGroup) {
+    var groupName = group.getName();
+    return (
+      <span>Ellipsis has a learned new skill: <b>{groupName}</b></span>
+    );
   }
 
   getIntro() {
-    var groups = this.getInstalledBehaviorGroups();
-    if (groups.length === 1) {
-      return (
-        <span>Use your bot’s new skill:</span>
-      );
-    } else if (groups.length > 1) {
-      return (
-        <span>Use your bot’s new skills:</span>
-      );
-    }
+    return (
+      <span>Use your bot’s new skill:</span>
+    );
   }
 
   getFirstTriggerFor(group: BehaviorGroup) {
@@ -77,14 +62,13 @@ class InstalledBehaviorGroupsPanel extends React.Component<Props> {
     return triggerText;
   }
 
-  getBehaviorHelpInstructions() {
-    var groups = this.getInstalledBehaviorGroups();
-    var firstTrigger = groups[0] && this.getFirstTriggerFor(groups[0]);
-    if (groups.length === 1 && firstTrigger) {
+  getBehaviorHelpInstructions(group: BehaviorGroup) {
+    var firstTrigger = this.getFirstTriggerFor(group);
+    if (firstTrigger) {
       return (
         <li>
           <span>In your channel, type <span className="box-chat-example">{firstTrigger}</span> </span>
-          <span>to try out the {groups[0].name} skill, or </span>
+          <span>to try out the {group.getName()} skill, or </span>
           <span className="box-chat-example">...help</span>
           <span> to see everything Ellipsis can do so far.</span>
         </li>
@@ -111,9 +95,8 @@ class InstalledBehaviorGroupsPanel extends React.Component<Props> {
   }
 
   render() {
-    const groups = this.getInstalledBehaviorGroups();
-    const numGroups = groups.length;
-    if (numGroups === 0) {
+    const group = this.getInstalledBehaviorGroup();
+    if (!group) {
       return null;
     }
     return (
@@ -123,7 +106,7 @@ class InstalledBehaviorGroupsPanel extends React.Component<Props> {
               <span className="type-green display-inline-block mrs align-b" style={{ height: "24px" }}>
                 <SVGCheckmark/>
               </span>
-            {this.getHeading()}
+            {this.getHeading(group)}
           </div>
         </div>
 
@@ -135,7 +118,7 @@ class InstalledBehaviorGroupsPanel extends React.Component<Props> {
               <span>Type <span className="box-chat-example">/invite @{this.props.botName}</span> to add your </span>
               <span>bot to any channel.</span>
             </li>
-            {this.getBehaviorHelpInstructions()}
+            {this.getBehaviorHelpInstructions(group)}
           </ul>
 
           <div className="mtxl">
@@ -143,9 +126,7 @@ class InstalledBehaviorGroupsPanel extends React.Component<Props> {
 
             <a className="button mbs mrs button-primary" href={this.getSlackUrl()}>Open your Slack team</a>
 
-            {groups.map((group, index) => (
-              <a className="button mbs mrs" href={this.getEditUrlFor(group)} key={`group${index}`}>Edit {group.name}</a>
-            ))}
+            <a className="button mbs mrs" href={this.getEditUrlFor(group)}>Edit {group.getName()}</a>
           </div>
 
         </div>
