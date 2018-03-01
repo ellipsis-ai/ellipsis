@@ -1,3 +1,4 @@
+// @flow
 import * as React from 'react';
 import * as TestUtils from 'react-addons-test-utils';
 import BehaviorList from '../../../../app/assets/frontend/behavior_list/index';
@@ -128,18 +129,22 @@ describe('BehaviorList', () => {
     onBehaviorGroupUpdate: jest.fn(),
     onMergeBehaviorGroups: jest.fn(),
     onDeleteBehaviorGroups: jest.fn(),
+    onBehaviorGroupDeploy: jest.fn(),
     onSearch: jest.fn(),
     localBehaviorGroups: [group1, group2, group3],
     publishedBehaviorGroups: [],
     recentlyInstalled: [],
     currentlyInstalling: [],
     matchingResults: [],
+    isDeploying: false,
+    deployError: null,
     currentSearchText: "",
     isLoadingMatchingResults: false,
     publishedBehaviorGroupLoadStatus: 'loaded',
     teamId: "1",
     slackTeamId: "1",
-    botName: "TestBot"
+    botName: "TestBot",
+    notification: null
   });
 
   class Footer extends React.Component {

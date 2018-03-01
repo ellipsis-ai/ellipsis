@@ -16,7 +16,9 @@ declare var jsRoutes: {
     },
     BehaviorEditorController: {
       deleteDefaultStorageItems: () => JsRoute,
+      deploy: () => JsRoute,
       edit: (groupId: string, selectedId?: string, showVersions?: boolean) => JsRoute,
+      newGroup: (teamId: string) => JsRoute,
       pushToGithub: () => JsRoute,
       queryDefaultStorage: () => JsRoute,
       save: () => JsRoute,

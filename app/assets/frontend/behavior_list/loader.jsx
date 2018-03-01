@@ -5,6 +5,7 @@ import * as React from 'react';
 import * as ReactDOM from 'react-dom';
 import Page from '../shared_ui/page';
 import BehaviorGroup from '../models/behavior_group';
+import BehaviorGroupDeployment from '../models/behavior_group_deployment';
 import BehaviorList from './index';
 import PageNotification from '../shared_ui/page_notification';
 import DataRequest from '../lib/data_request';
@@ -34,7 +35,9 @@ type State = {
   currentSearchText: string,
   isLoadingMatchingResults: boolean,
   currentTeamTimeZone: ?string,
-  dismissedNotifications: Array<string>
+  dismissedNotifications: Array<string>,
+  isDeploying: boolean,
+  deployError: ?string
 }
 
 declare var BehaviorListConfig: Props;
@@ -52,7 +55,9 @@ class BehaviorListLoader extends React.Component<Props, State> {
       currentSearchText: "",
       isLoadingMatchingResults: false,
       currentTeamTimeZone: this.props.teamTimeZone,
-      dismissedNotifications: []
+      dismissedNotifications: [],
+      isDeploying: false,
+      deployError: null
     };
   }
 
@@ -66,9 +71,9 @@ class BehaviorListLoader extends React.Component<Props, State> {
     ).url;
     DataRequest
       .jsonGet(url)
-      .then((json) => {
+      .then((groupsJson) => {
         this.setState({
-          publishedBehaviorGroups: json,
+          publishedBehaviorGroups: groupsJson.map(BehaviorGroup.fromJson),
           publishedBehaviorGroupLoadStatus: 'loaded'
         });
       })
@@ -92,7 +97,9 @@ class BehaviorListLoader extends React.Component<Props, State> {
     }, () => {
       DataRequest
         .jsonPost(url, body, this.props.csrfToken)
-        .then((importedGroup) => this.didImportPublishedGroup(groupToInstall, importedGroup))
+        .then((importedGroupJson) => {
+          this.didImportPublishedGroup(groupToInstall, BehaviorGroup.fromJson(importedGroupJson));
+        })
         .catch(() => {
           // TODO: Handle errors importing
         });
@@ -112,7 +119,9 @@ class BehaviorListLoader extends React.Component<Props, State> {
     }, () => {
       DataRequest
         .jsonPost(url, body, this.props.csrfToken)
-        .then((newGroup) => this.didUpdateExistingGroup(existingGroup, newGroup))
+        .then((newGroupJson) => {
+          this.didUpdateExistingGroup(existingGroup, BehaviorGroup.fromJson(newGroupJson));
+        })
         .catch(() => {
           // TODO: Handle errors importing
         });
@@ -163,6 +172,49 @@ class BehaviorListLoader extends React.Component<Props, State> {
       });
   }
 
+  deployBehaviorGroup(behaviorGroupId: string): void {
+    this.setState({
+      isDeploying: true,
+      deployError: null
+    }, () => {
+      DataRequest.jsonPost(
+        jsRoutes.controllers.BehaviorEditorController.deploy().url,
+        { behaviorGroupId: behaviorGroupId },
+        this.props.csrfToken
+      ).then((deploymentJson) => {
+        if (deploymentJson.id) {
+          this.didDeployBehaviorGroup(behaviorGroupId, BehaviorGroupDeployment.fromProps(deploymentJson));
+        } else {
+          this.onDeployError();
+        }
+      }).catch((error) => {
+        this.onDeployError(error);
+      });
+    });
+  }
+
+  didDeployBehaviorGroup(groupId: string, deployment: BehaviorGroupDeployment): void {
+    const updated = this.state.recentlyInstalled.map((ea) => {
+      if (ea.id === groupId) {
+        return ea.clone({ deployment: deployment });
+      } else {
+        return ea;
+      }
+    });
+    this.setState({
+      isDeploying: false,
+      recentlyInstalled: updated
+    });
+  }
+
+  onDeployError(error?: DataRequest.ResponseError): void {
+    const errorMessage = error && error.body || "Skill could not be deployed. An unknown error occurred.";
+    this.setState({
+      isDeploying: false,
+      deployError: errorMessage
+    });
+  }
+
   getSearchResults(queryString: string): void {
     const trimmed = queryString.trim();
     if (trimmed) {
@@ -172,10 +224,10 @@ class BehaviorListLoader extends React.Component<Props, State> {
       const url = jsRoutes.controllers.ApplicationController.findBehaviorGroupsMatching(queryString, this.props.branchName, this.props.teamId).url;
       DataRequest
         .jsonGet(url)
-        .then((results) => {
+        .then((matchingGroupsJson) => {
           this.setState({
             isLoadingMatchingResults: false,
-            matchingResults: results,
+            matchingResults: matchingGroupsJson.map(BehaviorGroup.fromJson),
             currentSearchText: trimmed
           });
         })
@@ -226,12 +278,15 @@ class BehaviorListLoader extends React.Component<Props, State> {
           onBehaviorGroupUpdate={this.updateBehaviorGroup}
           onMergeBehaviorGroups={this.mergeBehaviorGroups}
           onDeleteBehaviorGroups={this.deleteBehaviorGroups}
+          onBehaviorGroupDeploy={this.deployBehaviorGroup}
           onSearch={this.getSearchResults}
           localBehaviorGroups={this.props.behaviorGroups.map(BehaviorGroup.fromJson)}
-          publishedBehaviorGroups={this.state.publishedBehaviorGroups.map(BehaviorGroup.fromJson)}
-          recentlyInstalled={this.state.recentlyInstalled.map(BehaviorGroup.fromJson)}
+          publishedBehaviorGroups={this.state.publishedBehaviorGroups}
+          recentlyInstalled={this.state.recentlyInstalled}
           currentlyInstalling={this.state.currentlyInstalling}
-          matchingResults={this.state.matchingResults.map(BehaviorGroup.fromJson)}
+          matchingResults={this.state.matchingResults}
+          isDeploying={this.state.isDeploying}
+          deployError={this.state.deployError}
           currentSearchText={this.state.currentSearchText}
           isLoadingMatchingResults={this.state.isLoadingMatchingResults}
           publishedBehaviorGroupLoadStatus={this.state.publishedBehaviorGroupLoadStatus}

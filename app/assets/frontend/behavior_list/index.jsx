@@ -24,12 +24,15 @@ type Props = {
   onBehaviorGroupUpdate: (BehaviorGroup, BehaviorGroup) => void,
   onMergeBehaviorGroups: (ids: Array<string>) => void,
   onDeleteBehaviorGroups: (ids: Array<string>) => void,
+  onBehaviorGroupDeploy: (id: string) => void,
   onSearch: (text: string) => void,
   localBehaviorGroups: Array<BehaviorGroup>,
   publishedBehaviorGroups: Array<BehaviorGroup>,
   recentlyInstalled: Array<BehaviorGroup>,
   currentlyInstalling: Array<BehaviorGroup>,
   matchingResults: Array<BehaviorGroup>,
+  isDeploying: boolean,
+  deployError: ?string,
   currentSearchText: string,
   isLoadingMatchingResults: boolean,
   publishedBehaviorGroupLoadStatus: string,
@@ -607,6 +610,9 @@ class BehaviorList extends React.Component<Props, State> {
               <InstalledBehaviorGroupsPanel
                 installedBehaviorGroup={this.getMostRecentGroupJustInstalled()}
                 onToggle={this.props.onClearActivePanel}
+                onDeploy={this.props.onBehaviorGroupDeploy}
+                isDeploying={this.props.isDeploying}
+                deployError={this.props.deployError}
                 slackTeamId={this.props.slackTeamId}
                 botName={this.props.botName}
               />
