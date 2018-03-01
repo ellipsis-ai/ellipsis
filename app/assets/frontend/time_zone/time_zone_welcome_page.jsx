@@ -1,5 +1,6 @@
 // @flow
 import * as React from 'react';
+import Page from "../shared_ui/page";
 import type {PageRequiredProps} from "../shared_ui/page";
 
 type Props = {
@@ -7,6 +8,8 @@ type Props = {
 } & PageRequiredProps
 
 class TeamTimeZoneWelcomePage extends React.Component<Props> {
+  static defaultProps: PageRequiredProps;
+
     render() {
       return (
         <div className="bg-white border-bottom border-bottom-thick pvxl">
@@ -31,5 +34,7 @@ class TeamTimeZoneWelcomePage extends React.Component<Props> {
       );
     }
 }
+
+TeamTimeZoneWelcomePage.defaultProps = Page.requiredPropDefaults();
 
 export default TeamTimeZoneWelcomePage;

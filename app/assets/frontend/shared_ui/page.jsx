@@ -33,7 +33,7 @@ import PageFooterRenderingError from './page_footer_rendering_error';
 type Props = {
   children: React.Node,
   csrfToken: string,
-  feedbackContainer?: HTMLElement
+  feedbackContainer?: ?HTMLElement
 }
 
 type State = {

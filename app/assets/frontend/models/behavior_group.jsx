@@ -321,8 +321,8 @@ class BehaviorGroup implements Diffable, HasInputs {
       }));
     }
 
-    static groupsIncludeExportId(groups, exportId): Array<BehaviorGroup> {
-      return groups.some((ea) => ea.exportId === exportId);
+    static groupsIncludeExportId(groups: Array<BehaviorGroup>, exportId: ?string): boolean {
+      return Boolean(exportId && groups.some((ea) => ea.exportId === exportId));
     }
 }
 
