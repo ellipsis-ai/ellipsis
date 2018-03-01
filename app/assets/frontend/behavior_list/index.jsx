@@ -24,12 +24,15 @@ type Props = {
   onBehaviorGroupUpdate: (BehaviorGroup, BehaviorGroup) => void,
   onMergeBehaviorGroups: (ids: Array<string>) => void,
   onDeleteBehaviorGroups: (ids: Array<string>) => void,
+  onBehaviorGroupDeploy: (id: string) => void,
   onSearch: (text: string) => void,
   localBehaviorGroups: Array<BehaviorGroup>,
   publishedBehaviorGroups: Array<BehaviorGroup>,
   recentlyInstalled: Array<BehaviorGroup>,
   currentlyInstalling: Array<BehaviorGroup>,
   matchingResults: Array<BehaviorGroup>,
+  isDeploying: boolean,
+  deployError: ?string,
   currentSearchText: string,
   isLoadingMatchingResults: boolean,
   publishedBehaviorGroupLoadStatus: string,
@@ -69,7 +72,7 @@ class BehaviorList extends React.Component<Props, State> {
     const newestImported = nextProps.recentlyInstalled.filter((next) => !BehaviorGroup.groupsIncludeExportId(this.props.recentlyInstalled, next.exportId));
     const newlyInstalled = newestImported.filter((newGroup) => !BehaviorGroup.groupsIncludeExportId(this.props.localBehaviorGroups, newGroup.exportId));
     if (newlyInstalled.length > 0 && this.props.activePanelName !== 'afterInstall') {
-      this.props.onToggleActivePanel('afterInstall');
+      this.props.onToggleActivePanel('afterInstall', true);
     }
   }
 
@@ -136,6 +139,12 @@ class BehaviorList extends React.Component<Props, State> {
 
   getLocalBehaviorGroupsJustInstalled(): Array<BehaviorGroup> {
     return this.props.recentlyInstalled;
+  }
+
+  getMostRecentGroupJustInstalled(): ?BehaviorGroup {
+    const allInstalled = this.getLocalBehaviorGroupsJustInstalled();
+    const numInstalled = allInstalled.length;
+    return numInstalled > 0 ? allInstalled[numInstalled - 1] : null;
   }
 
   getCheckedGroupIds(): Array<string> {
@@ -599,8 +608,11 @@ class BehaviorList extends React.Component<Props, State> {
               animationDuration={this.getAnimationDuration()}
             >
               <InstalledBehaviorGroupsPanel
-                installedBehaviorGroups={this.getLocalBehaviorGroupsJustInstalled()}
+                installedBehaviorGroup={this.getMostRecentGroupJustInstalled()}
                 onToggle={this.props.onClearActivePanel}
+                onDeploy={this.props.onBehaviorGroupDeploy}
+                isDeploying={this.props.isDeploying}
+                deployError={this.props.deployError}
                 slackTeamId={this.props.slackTeamId}
                 botName={this.props.botName}
               />

@@ -10,13 +10,16 @@ declare var jsRoutes: {
       deleteBehaviorGroups: () => JsRoute,
       findBehaviorGroupsMatching: (queryString: string, branch: ?string, teamId: string) => JsRoute,
       index: (teamId?: string) => JsRoute,
+      possibleCitiesFor: (search: string) => JsRoute,
       setTeamTimeZone: () => JsRoute,
       fetchPublishedBehaviorInfo: (teamId: string, branchName?: ?string) => JsRoute,
       mergeBehaviorGroups: () => JsRoute
     },
     BehaviorEditorController: {
       deleteDefaultStorageItems: () => JsRoute,
+      deploy: () => JsRoute,
       edit: (groupId: string, selectedId?: string, showVersions?: boolean) => JsRoute,
+      newGroup: (teamId: string) => JsRoute,
       pushToGithub: () => JsRoute,
       queryDefaultStorage: () => JsRoute,
       save: () => JsRoute,
