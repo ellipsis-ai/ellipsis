@@ -272,10 +272,8 @@ class BehaviorGroupVersionServiceImpl @Inject() (
     }
   }
 
-  def hasNewerVersionForAuthorAction(version: BehaviorGroupVersion): DBIO[Boolean] = {
-    version.maybeAuthor.map { author =>
-      newerVersionsForAuthorQuery(version.createdAt, author.id).result.map(_.length > 0)
-    }.getOrElse(DBIO.successful(false))
+  def hasNewerVersionForAuthorAction(version: BehaviorGroupVersion, user: User): DBIO[Boolean] = {
+    newerVersionsForAuthorQuery(version.createdAt, user.id).result.map(_.nonEmpty)
   }
 
 }

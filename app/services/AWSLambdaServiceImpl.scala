@@ -201,7 +201,8 @@ class AWSLambdaServiceImpl @Inject() (
       requiredOAuth2ApiConfigs <- dataService.requiredOAuth2ApiConfigs.allForAction(behaviorVersion.groupVersion)
       requiredSimpleTokenApis <- dataService.requiredSimpleTokenApis.allForAction(behaviorVersion.groupVersion)
       isForUndeployed <- dataService.behaviorGroupDeployments.findForBehaviorGroupVersionAction(behaviorVersion.groupVersion).map(_.isEmpty)
-      hasUndeployedVersionForAuthor <- dataService.behaviorGroupDeployments.hasUndeployedVersionForAuthorAction(behaviorVersion.groupVersion)
+      user <- event.ensureUserAction(dataService)
+      hasUndeployedVersionForAuthor <- dataService.behaviorGroupDeployments.hasUndeployedVersionForAuthorAction(behaviorVersion.groupVersion, user)
       result <- if (behaviorVersion.functionBody.isEmpty) {
         DBIO.successful(
           SuccessResult(

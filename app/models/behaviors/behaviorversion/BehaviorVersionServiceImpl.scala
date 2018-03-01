@@ -315,7 +315,8 @@ class BehaviorVersionServiceImpl @Inject() (
       })
       botPrefix <- DBIO.from(event.contextualBotPrefix(defaultServices))
       isForUndeployed <- dataService.behaviorGroupDeployments.findForBehaviorGroupVersionAction(behaviorVersion.groupVersion).map(_.isEmpty)
-      hasUndeployedVersionForAuthor <- dataService.behaviorGroupDeployments.hasUndeployedVersionForAuthorAction(behaviorVersion.groupVersion)
+      user <- event.ensureUserAction(dataService)
+      hasUndeployedVersionForAuthor <- dataService.behaviorGroupDeployments.hasUndeployedVersionForAuthorAction(behaviorVersion.groupVersion, user)
       maybeResult <- if (missingTeamEnvVars.nonEmpty) {
         DBIO.successful(Some(MissingTeamEnvVarsResult(
           event,
