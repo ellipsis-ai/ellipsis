@@ -313,7 +313,7 @@ class AWSLambdaServiceImpl @Inject() (
     val paramNames = params.map(_.input.name)
     val paramDecoration = if (isForExport) { "" } else { decorateParams(params) }
     s"""function(${(paramNames ++ Array(CONTEXT_PARAM)).mkString(", ")}) {
-        |  $paramDecoration${functionBody.trim}
+        |  $paramDecoration${functionBody}
         |}\n""".stripMargin
   }
 
