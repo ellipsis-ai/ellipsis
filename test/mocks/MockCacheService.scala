@@ -1,10 +1,11 @@
 package mocks
 
 import json.{ImmutableBehaviorGroupVersionData, SlackUserData}
+import models.behaviors.BotResult
 import models.behaviors.behaviorparameter.ValidValue
 import models.behaviors.events.{Event, SlackMessageEvent}
 import org.scalatest.mock.MockitoSugar
-import services.caching.{CacheService, SlackChannelDataCacheKey, SlackGroupDataCacheKey, SlackUserDataCacheKey}
+import services.caching._
 import slack.models.{Channel, Group, Im}
 
 import scala.concurrent.Future
@@ -28,6 +29,8 @@ class MockCacheService extends CacheService with MockitoSugar {
   def cacheValidValues(key: String, values: Seq[ValidValue], expiration: Duration = Duration.Inf): Unit = {}
 
   def getValidValues(key: String): Option[Seq[ValidValue]] = None
+
+  def getDataTypeBotResult(key: DataTypeBotResultsCacheKey, dataFn: DataTypeBotResultsCacheKey => Future[BotResult]): Future[BotResult] = dataFn(key)
 
   def getSlackChannelInfo(
                            key: SlackChannelDataCacheKey,
