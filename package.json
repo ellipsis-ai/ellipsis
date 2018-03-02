@@ -7,9 +7,7 @@
   "directories": {
     "test": "test"
   },
-  "dependencies": {
-    "npm": "^5.7.1"
-  },
+  "dependencies": {},
   "devDependencies": {
     "@types/jest": "^19.2.0",
     "@types/react": "^15.6.14",
@@ -36,7 +34,7 @@
     "react": "15.3.1",
     "react-addons-test-utils": "15.3.1",
     "react-dom": "15.3.1",
-    "ts-jest": "^19.0.2",
+    "ts-jest": "^19.0.14",
     "ts-loader": "^3.5.0",
     "typescript": "^2.7.2",
     "urijs": "1.18.1",
@@ -74,9 +72,6 @@
             }
           }
         }
-      },
-      "ts-jest": {
-        "tsConfigFile": "test/tsconfig.test.json"
       }
     },
     "moduleFileExtensions": [
@@ -100,7 +95,7 @@
     ],
     "transform": {
       "^.+\\.jsx?$": "<rootDir>/node_modules/babel-jest",
-      "^.+\\.tsx?$": "ts-jest"
+      "^.+\\.tsx?$": "<rootDir>/node_modules/ts-jest/dist/preprocessor"
     }
   },
   "repository": {
