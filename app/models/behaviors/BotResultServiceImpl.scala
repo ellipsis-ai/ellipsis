@@ -64,6 +64,7 @@ class BotResultServiceImpl @Inject() (
           botResult.attachmentGroups,
           files,
           botResult.isForUndeployed,
+          botResult.hasUndeployedVersionForAuthor,
           services,
           configuration
         )

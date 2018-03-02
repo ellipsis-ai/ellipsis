@@ -17,6 +17,27 @@ import ParamType from "./param_type";
 
 const ONE_MINUTE = 60000;
 
+export type BehaviorGroupJson = {
+  id: string;
+  teamId: string;
+  name: ?string;
+  icon: ?string;
+  description: ?string;
+  githubUrl: ?string;
+  actionInputs: Array<*>;
+  dataTypeInputs: Array<*>;
+  behaviorVersions: Array<*>;
+  libraryVersions: Array<*>;
+  requiredAWSConfigs: Array<*>;
+  requiredOAuth2ApiConfigs: Array<*>;
+  requiredSimpleTokenApis: Array<*>;
+  createdAt: ?number;
+  exportId: ?string;
+  author: ?User;
+  gitSHA: ?string;
+  deployment: ?*;
+}
+
 class BehaviorGroup implements Diffable, HasInputs {
     id: string;
     teamId: string;
@@ -321,8 +342,8 @@ class BehaviorGroup implements Diffable, HasInputs {
       }));
     }
 
-    static groupsIncludeExportId(groups, exportId): Array<BehaviorGroup> {
-      return groups.some((ea) => ea.exportId === exportId);
+    static groupsIncludeExportId(groups: Array<BehaviorGroup>, exportId: ?string): boolean {
+      return Boolean(exportId && groups.some((ea) => ea.exportId === exportId));
     }
 }
 

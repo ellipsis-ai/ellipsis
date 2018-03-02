@@ -1,53 +1,56 @@
+// @flow
 import * as React from 'react';
-import Formatter from '../lib/formatter';
+import Button from '../form/button';
 import SVGCheckmark from '../svg/checkmark';
 import URLCreator from '../lib/url_creator';
+import BehaviorGroup from '../models/behavior_group';
+import autobind from '../lib/autobind';
+import DynamicLabelButton from "../form/dynamic_label_button";
+import Collapsible from "../shared_ui/collapsible";
 
-const InstalledBehaviorGroupsPanel = React.createClass({
-    displayName: 'InstalledBehaviorGroupsPanel',
-    propTypes: {
-      installedBehaviorGroups: React.PropTypes.arrayOf(React.PropTypes.object).isRequired,
-      onToggle: React.PropTypes.func.isRequired,
-      slackTeamId: React.PropTypes.string,
-      botName: React.PropTypes.string.isRequired
-    },
+type Props = {
+  installedBehaviorGroup: ?BehaviorGroup,
+  onToggle: () => void,
+  onDeploy: (behaviorGroupId: string) => void,
+  isDeploying: boolean,
+  deployError: ?string,
+  slackTeamId: string,
+  botName: string
+}
 
-    getInstalledBehaviorGroups: function() {
-      return this.props.installedBehaviorGroups;
-    },
+class InstalledBehaviorGroupsPanel extends React.Component<Props> {
+  constructor(props: Props) {
+    super(props);
+    autobind(this);
+  }
 
-    getHeading: function() {
-      var groups = this.getInstalledBehaviorGroups();
-      var groupNames = Formatter.formatList(groups, (ea) => ea.name);
-      if (groups.length === 1) {
-        return (
-          <span>Ellipsis has a learned new skill: <b>{groupNames}</b></span>
-        );
-      } else {
-        return (
-          <span>Ellipsis has learned {groups.length} new skills: <b>{groupNames}</b></span>
-        );
-      }
-    },
+  getInstalledBehaviorGroup(): ?BehaviorGroup {
+    return this.props.installedBehaviorGroup;
+  }
 
-    getIntro: function() {
-      var groups = this.getInstalledBehaviorGroups();
-      if (groups.length === 1) {
-        return (
-          <span>Use your bot’s new skill:</span>
-        );
-      } else if (groups.length > 1) {
-        return (
-          <span>Use your bot’s new skills:</span>
-        );
-      }
-    },
+  getHeading(group: BehaviorGroup) {
+    var groupName = group.getName();
+    return (
+      <span>You have installed a new skill: <b>{groupName}</b></span>
+    );
+  }
 
-    getFirstTriggerFor: function(group) {
-      var triggerText = "";
+  getFirstTriggerFor(group: BehaviorGroup) {
+    var triggerText = "";
+    group.behaviorVersions.find((version) => {
+      return version.triggers.some((trigger) => {
+        if (!trigger.isRegex && /\bhelp\b/i.test(trigger.text)) {
+          triggerText = trigger.displayText();
+          return true;
+        } else {
+          return false;
+        }
+      });
+    });
+    if (!triggerText) {
       group.behaviorVersions.find((version) => {
-        return version.triggers.some((trigger) => {
-          if (!trigger.isRegex && /\bhelp\b/i.test(trigger.text)) {
+        return version.triggers.find((trigger) => {
+          if (trigger.text) {
             triggerText = trigger.displayText();
             return true;
           } else {
@@ -55,96 +58,123 @@ const InstalledBehaviorGroupsPanel = React.createClass({
           }
         });
       });
-      if (!triggerText) {
-        group.behaviorVersions.find((version) => {
-          return version.triggers.find((trigger) => {
-            if (trigger.text) {
-              triggerText = trigger.displayText();
-              return true;
-            } else {
-              return false;
-            }
-          });
-        });
-      }
-      return triggerText;
-    },
+    }
+    return triggerText;
+  }
 
-    getBehaviorHelpInstructions: function() {
-      var groups = this.getInstalledBehaviorGroups();
-      var firstTrigger = groups[0] && this.getFirstTriggerFor(groups[0]);
-      if (groups.length === 1 && firstTrigger) {
-        return (
-          <li>
-            <span>In your channel, type <span className="box-chat-example">{firstTrigger}</span> </span>
-            <span>to try out the {groups[0].name} skill, or </span>
-            <span className="box-chat-example">...help</span>
-            <span> to see everything Ellipsis can do so far.</span>
-          </li>
-        );
-      } else {
-        return (
-          <li>
-            <span>In your channel, type <span className="box-chat-example">...help</span> to see everything Ellipsis can do so far.</span>
-          </li>
-        );
-      }
-    },
-
-    getSlackUrl: function() {
-      return URLCreator.forSlack(this.props.slackTeamId);
-    },
-
-    getEditUrlFor: function(group) {
-      return jsRoutes.controllers.BehaviorEditorController.edit(group.id).url;
-    },
-
-    onClickDone: function() {
-      this.props.onToggle();
-    },
-
-    render: function() {
-      const groups = this.getInstalledBehaviorGroups();
-      const numGroups = groups.length;
-      if (numGroups === 0) {
-        return null;
-      }
+  getBehaviorHelpInstructions(group: BehaviorGroup) {
+    var firstTrigger = this.getFirstTriggerFor(group);
+    if (firstTrigger) {
       return (
-        <div className="bg-green-lightest border-emphasis-top border-green">
-          <div className="bg-green-light">
-            <div className="container container-c pvm">
-              <span className="type-green display-inline-block mrs align-b" style={{ height: "24px" }}>
-                <SVGCheckmark />
-              </span>
-              {this.getHeading()}
-            </div>
-          </div>
+        <li>
+          <span>In your channel, type <span className="box-chat-example">{firstTrigger}</span> </span>
+          <span>to try out the {group.getName()} skill, or </span>
+          <span className="box-chat-example">...help</span>
+          <span> to see everything Ellipsis can do so far.</span>
+        </li>
+      );
+    } else {
+      return (
+        <li>
+          <span>In your channel, type <span className="box-chat-example">...help</span> to see everything Ellipsis can do so far.</span>
+        </li>
+      );
+    }
+  }
 
-          <div className="container container-c pvxl">
-            <div className="mbxl">{this.getIntro()}</div>
+  getSlackUrl() {
+    return URLCreator.forSlack(this.props.slackTeamId);
+  }
+
+  getEditUrlFor(group: BehaviorGroup) {
+    return jsRoutes.controllers.BehaviorEditorController.edit(group.id).url;
+  }
+
+  onClickDone() {
+    this.props.onToggle();
+  }
+
+  deploy() {
+    if (this.props.installedBehaviorGroup) {
+      this.props.onDeploy(this.props.installedBehaviorGroup.id);
+    }
+  }
+
+  render() {
+    const group = this.getInstalledBehaviorGroup();
+    if (!group) {
+      return null;
+    }
+    const groupIsDeployed = Boolean(group.deployment);
+    return (
+      <div className="bg-green-lightest border-emphasis-top border-green">
+        <div className="bg-green-light">
+          <div className="container container-c pvm">
+              <span className="type-green display-inline-block mrs align-b" style={{ height: "24px" }}>
+                <SVGCheckmark/>
+              </span>
+            {this.getHeading(group)}
+          </div>
+        </div>
+
+        <div className="container container-c pvxl">
+
+          <Collapsible revealWhen={!groupIsDeployed}>
+            <p>
+              To start using your skill right away, deploy it to your team now. Or you can edit it first and deploy later.
+            </p>
+          </Collapsible>
+
+          <Collapsible revealWhen={groupIsDeployed}>
+
+            <p>To use this skill now:</p>
 
             <ul className="list-space-xl">
               <li>
                 <span>Type <span className="box-chat-example">/invite @{this.props.botName}</span> to add your </span>
                 <span>bot to any channel.</span>
               </li>
-              {this.getBehaviorHelpInstructions()}
+              {this.getBehaviorHelpInstructions(group)}
             </ul>
 
-            <div className="mtxl">
-              <button type="button" className="mbs mrs" onClick={this.onClickDone}>Done</button>
-
+            <div className="mvxl">
               <a className="button mbs mrs button-primary" href={this.getSlackUrl()}>Open your Slack team</a>
-
-              {groups.map((group, index) => (
-                <a className="button mbs mrs" href={this.getEditUrlFor(group)} key={`group${index}`}>Edit {group.name}</a>
-              ))}
             </div>
 
+          </Collapsible>
+
+          <div className="mtxl">
+            <DynamicLabelButton
+              className="button-primary mbs mrs"
+              onClick={this.deploy}
+              disabledWhen={this.props.isDeploying || groupIsDeployed}
+              labels={[{
+                text: "Deploy…",
+                displayWhen: !this.props.isDeploying && !groupIsDeployed
+              }, {
+                text: "Deploying",
+                displayWhen: this.props.isDeploying
+              }, {
+                text: "Deployed",
+                displayWhen: !this.props.isDeploying && groupIsDeployed
+              }]}
+            />
+
+            <a className="button mbs mrs" href={this.getEditUrlFor(group)}>Edit skill</a>
+
+            <Button className="mbs mrl" onClick={this.onClickDone}>Done</Button>
+
+            {this.props.deployError ? (
+              <div className="align-button mbs type-pink type-bold type-italic fade-in">
+                {this.props.deployError}
+              </div>
+            ) : null}
           </div>
+
         </div>
-      );
-    }
-});
+      </div>
+    );
+  }
+}
 
 export default InstalledBehaviorGroupsPanel;

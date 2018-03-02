@@ -197,6 +197,7 @@ class ConversationServiceImpl @Inject() (
           attachmentGroups = Seq(),
           files = Seq(),
           isForUndeployed = false,
+          hasUndeployedVersionForAuthor = false,
           services,
           configuration
         ))

@@ -55,6 +55,7 @@ case class RunEvent(
                    attachmentGroups: Seq[MessageAttachmentGroup],
                    files: Seq[UploadFileSpec],
                    isForUndeployed: Boolean,
+                   hasUndeployedVersionForAuthor: Boolean,
                    services: DefaultServices,
                    configuration: Configuration
                  )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[String]] = {
@@ -67,6 +68,7 @@ case class RunEvent(
         unformattedText,
         forcePrivate,
         isForUndeployed,
+        hasUndeployedVersionForAuthor,
         channel,
         channel,
         maybeThreadId,

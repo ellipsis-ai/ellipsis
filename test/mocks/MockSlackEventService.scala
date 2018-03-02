@@ -3,7 +3,7 @@ package mocks
 import java.time.OffsetDateTime
 
 import akka.actor.ActorSystem
-import json.SlackUserData
+import json.{SlackUserData, SlackUserProfileData}
 import models.IDs
 import models.accounts.slack.botprofile.SlackBotProfile
 import models.behaviors.events.SlackMessageEvent
@@ -98,7 +98,18 @@ class MockSlackEventService extends SlackEventService with MockitoSugar {
   }
 
   def maybeSlackUserDataFor(botProfile: SlackBotProfile): Future[Option[SlackUserData]] = {
-    Future.successful(None)
+    Future.successful(Some(SlackUserData(
+      botProfile.userId,
+      botProfile.slackTeamId,
+      "MockBot",
+      isPrimaryOwner = false,
+      isOwner = false,
+      isRestricted = false,
+      isUltraRestricted = false,
+      None,
+      deleted = false,
+      Some(SlackUserProfileData(Some("MockBot"), None, None, None))
+    )))
   }
 
 }

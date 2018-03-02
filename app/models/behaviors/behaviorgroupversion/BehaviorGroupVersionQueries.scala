@@ -1,5 +1,7 @@
 package models.behaviors.behaviorgroupversion
 
+import java.time.OffsetDateTime
+
 import drivers.SlickPostgresDriver.api._
 import models.accounts.user.{User, UserQueries, UsersTable}
 import models.behaviors.behaviorgroup.BehaviorGroupQueries
@@ -62,5 +64,13 @@ object BehaviorGroupVersionQueries {
     uncompiledAllCurrentQuery.map { case((version, _), _) => version.id }
   }
   val allCurrentIdsQuery = Compiled(uncompiledAllCurrentIdsQuery)
+
+  private def uncompiledNewerVersionsForAuthorQuery(groupId: Rep[String], createdAt: Rep[OffsetDateTime], userId: Rep[String]) = {
+    all.
+      filter(_.groupId === groupId).
+      filter(_.createdAt > createdAt).
+      filter(_.maybeAuthorId === userId)
+  }
+  val newerVersionsForAuthorQuery = Compiled(uncompiledNewerVersionsForAuthorQuery _)
 
 }

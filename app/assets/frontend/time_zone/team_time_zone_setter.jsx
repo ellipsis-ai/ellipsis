@@ -49,11 +49,6 @@ const TeamTimeZoneSetter = React.createClass({
                 isSaving: false,
                 justSaved: true
               });
-              setTimeout(() => {
-                this.setState({
-                  justSaved: false
-                });
-              }, 5000);
               this.props.onSave(json.tzName, json.formattedName || displayName, json.currentOffset);
             } else {
               throw new Error(json.message || "");
