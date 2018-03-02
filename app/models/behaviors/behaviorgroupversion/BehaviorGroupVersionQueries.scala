@@ -65,8 +65,11 @@ object BehaviorGroupVersionQueries {
   }
   val allCurrentIdsQuery = Compiled(uncompiledAllCurrentIdsQuery)
 
-  private def uncompiledNewerVersionsForAuthorQuery(createdAt: Rep[OffsetDateTime], userId: Rep[String]) = {
-    all.filter(_.createdAt > createdAt).filter(_.maybeAuthorId === userId)
+  private def uncompiledNewerVersionsForAuthorQuery(groupId: Rep[String], createdAt: Rep[OffsetDateTime], userId: Rep[String]) = {
+    all.
+      filter(_.groupId === groupId).
+      filter(_.createdAt > createdAt).
+      filter(_.maybeAuthorId === userId)
   }
   val newerVersionsForAuthorQuery = Compiled(uncompiledNewerVersionsForAuthorQuery _)
 
