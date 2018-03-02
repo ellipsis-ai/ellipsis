@@ -10,6 +10,7 @@ import models.behaviors.events._
 import models.behaviors._
 import play.api.libs.json._
 import services.AWSLambdaConstants._
+import services.caching.DataTypeBotResultsCacheKey
 import services.{AWSLambdaConstants, DataService}
 import slick.dbio.DBIO
 import utils.Color
@@ -439,8 +440,11 @@ case class BehaviorBackedDataType(dataTypeConfig: DataTypeConfig) extends Behavi
       val value = ParameterValue(searchQuery, JsString(searchQuery), isValid=true)
       Seq(ParameterWithValue(context.parameter, AWSLambdaConstants.invocationParamFor(0), Some(value)))
     }.getOrElse(Seq())
+    val key = DataTypeBotResultsCacheKey(context.parameter.id, maybeSearchQuery, context.maybeConversation.map(_.id))
     for {
-      maybeResult <- context.dataService.behaviorVersions.resultForAction(behaviorVersion, paramsWithValues, context.event, context.maybeConversation).map(Some(_))
+      maybeResult <- DBIO.from(context.cacheService.getDataTypeBotResult(key, (key: DataTypeBotResultsCacheKey) => {
+        context.dataService.behaviorVersions.resultFor(behaviorVersion, paramsWithValues, context.event, context.maybeConversation)
+      }).map(Some(_)))
     } yield maybeResult
   }
 
