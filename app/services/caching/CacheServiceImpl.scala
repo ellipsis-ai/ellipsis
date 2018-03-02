@@ -8,6 +8,7 @@ import akka.http.caching.scaladsl.{Cache, CachingSettings}
 import json.Formatting._
 import json.{ImmutableBehaviorGroupVersionData, SlackUserData}
 import models.accounts.slack.botprofile.SlackBotProfile
+import models.behaviors.BotResult
 import models.behaviors.behaviorparameter.ValidValue
 import models.behaviors.events._
 import play.api.cache.SyncCacheApi
@@ -49,6 +50,7 @@ class CacheServiceImpl @Inject() (
   }
 
   val slackApiCallExpiry: Duration = 10.seconds
+  val dataTypeBotResultsExpiry: Duration = 6.seconds
 
   def set[T: ClassTag](key: String, value: T, expiration: Duration = Duration.Inf): Unit = {
     cache.set(key, value, expiration)
@@ -108,6 +110,12 @@ class CacheServiceImpl @Inject() (
         case JsError(err) => None
       }
     }
+  }
+
+  private val dataTypeBotResultsCache = LfuCache[DataTypeBotResultsCacheKey, BotResult](cacheSettingsWithTimeToLive(dataTypeBotResultsExpiry))
+
+  def getDataTypeBotResult(key: DataTypeBotResultsCacheKey, dataFn: DataTypeBotResultsCacheKey => Future[BotResult]): Future[BotResult] = {
+    dataTypeBotResultsCache.getOrLoad(key, dataFn)
   }
 
   private val slackChannelInfoCache = LfuCache[SlackChannelDataCacheKey, Option[Channel]](cacheSettingsWithTimeToLive(slackApiCallExpiry))
