@@ -74,6 +74,10 @@ jobs:
           command: |
             npm run flow
       - run:
+          name: Run Typescript checking
+          command: |
+            npm run typescript
+      - run:
           name: Run JavaScript tests
           command: |
             npm test

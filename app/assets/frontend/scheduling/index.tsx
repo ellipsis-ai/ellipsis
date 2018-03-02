@@ -13,42 +13,62 @@ import ScheduledItem from './scheduled_item';
 import ScheduledItemEditor from './scheduled_item_editor';
 import ScheduledItemTitle from './scheduled_item_title';
 import Sort from '../lib/sort';
+import {PageRequiredProps} from '../shared_ui/page';
+import autobind from '../lib/autobind';
 
-  const Scheduling = React.createClass({
-    propTypes: Object.assign({}, Page.requiredPropTypes, {
-      scheduledActions: React.PropTypes.arrayOf(React.PropTypes.instanceOf(ScheduledAction)).isRequired,
-      channelList: React.PropTypes.arrayOf(React.PropTypes.instanceOf(ScheduleChannel)),
-      behaviorGroups: React.PropTypes.arrayOf(React.PropTypes.instanceOf(BehaviorGroup)).isRequired,
-      teamId: React.PropTypes.string.isRequired,
-      teamTimeZone: React.PropTypes.string,
-      teamTimeZoneName: React.PropTypes.string,
-      slackUserId: React.PropTypes.string,
-      slackBotUserId: React.PropTypes.string,
-      onSave: React.PropTypes.func.isRequired,
-      isSaving: React.PropTypes.bool.isRequired,
-      onDelete: React.PropTypes.func.isRequired,
-      isDeleting: React.PropTypes.bool.isRequired,
-      error: React.PropTypes.string,
-      onClearErrors: React.PropTypes.func.isRequired,
-      justSavedAction: React.PropTypes.instanceOf(ScheduledAction),
-      selectedScheduleId: React.PropTypes.string,
-      newAction: React.PropTypes.bool
-    }),
+type Props = {
+  scheduledActions: Array<ScheduledAction>
+  channelList: Array<ScheduleChannel>,
+  behaviorGroups: Array<BehaviorGroup>,
+  teamId: string,
+  teamTimeZone: string | null,
+  teamTimeZoneName: string | null,
+  slackUserId: string,
+  slackBotUserId: string,
+  onSave: () => void,
+  isSaving: boolean,
+  onDelete: () => void,
+  isDeleting: boolean,
+  error: string | null,
+  onClearErrors: () => void,
+  justSavedAction: ScheduledAction | null,
+  selectedScheduleId: string | null,
+  newAction: boolean | null
+} & PageRequiredProps
 
-    getDefaultProps: function() {
-      return Page.requiredPropDefaults();
-    },
+type State = {
+  filterChannelId: string | null,
+  selectedItem: ScheduledAction | null,
+  justSaved: boolean,
+  justDeleted: boolean,
+  isEditing: boolean
+}
 
-    getInitialState: function() {
+type ScheduleGroup = {
+  channel: ScheduleChannel | null,
+  channelName: string,
+  channelId: string,
+  excludesBot: boolean,
+  excludesUser: boolean,
+  actions: Array<ScheduledAction>
+}
+
+class Scheduling extends React.Component<Props, State> {
+
+    static defaultProps: PageRequiredProps;
+
+    constructor(props) {
+      super(props);
+      autobind(this);
       const selectedItem = this.getDefaultSelectedItem();
-      return {
+      this.state = {
         filterChannelId: selectedItem && this.hasChannelList() ? selectedItem.channel : null,
         selectedItem: selectedItem,
         justSaved: false,
         justDeleted: false,
         isEditing: Boolean(selectedItem)
       };
-    },
+    }
 
     componentWillReceiveProps(nextProps) {
       const justSaved = this.props.isSaving && !nextProps.isSaving;
@@ -75,12 +95,12 @@ import Sort from '../lib/sort';
           isEditing: Boolean(nextProps.error)
         });
       }
-    },
+    }
 
     componentDidMount() {
       this.renderNavItems();
       this.renderNavActions();
-    },
+    }
 
     componentDidUpdate(prevProps, prevState) {
       if (prevState.isEditing !== this.state.isEditing) {
@@ -91,9 +111,9 @@ import Sort from '../lib/sort';
       }
       this.renderNavItems();
       this.renderNavActions();
-    },
+    }
 
-    renderNavItems: function() {
+    renderNavItems() {
       const items = [{
         title: "Scheduling"
       }];
@@ -104,22 +124,22 @@ import Sort from '../lib/sort';
         });
       }
       this.props.onRenderNavItems(items);
-    },
+    }
 
-    renderNavActions: function() {
+    renderNavActions() {
       const actions = this.state.isEditing ? null : (
         <div className="fade-in height-xl mvl">
           <Button className="button-shrink button-s" onClick={this.addNewItem}>Schedule something new</Button>
         </div>
       );
       this.props.onRenderNavActions(actions);
-    },
+    }
 
-    hasChannelList: function() {
+    hasChannelList(): boolean {
       return Boolean(this.props.channelList) && this.props.channelList.length > 0;
-    },
+    }
 
-    getDefaultSelectedItem: function() {
+    getDefaultSelectedItem(): ScheduledAction | null {
       if (this.props.selectedScheduleId) {
         return this.props.scheduledActions.find((ea) => ea.id === this.props.selectedScheduleId);
       } else if (this.props.newAction) {
@@ -127,9 +147,9 @@ import Sort from '../lib/sort';
       } else {
         return null;
       }
-    },
+    }
 
-    getCorrectedURL: function(explicitTeamId) {
+    getCorrectedURL(explicitTeamId): string {
       if (this.state.isEditing && this.state.selectedItem && !this.state.selectedItem.isNew()) {
         return jsRoutes.controllers.ScheduledActionsController.index(this.state.selectedItem.id, null, explicitTeamId).url;
       } else if (this.state.isEditing && this.state.selectedItem) {
@@ -137,27 +157,27 @@ import Sort from '../lib/sort';
       } else {
         return jsRoutes.controllers.ScheduledActionsController.index(null, null, explicitTeamId).url;
       }
-    },
+    }
 
-    isEditing: function() {
+    isEditing(): boolean {
       return this.state.isEditing;
-    },
+    }
 
-    getSelectedItem: function() {
+    getSelectedItem(): ScheduledAction | null {
       return this.state.selectedItem;
-    },
+    }
 
-    updateSelectedItem: function(newItem, optionalCallback) {
+    updateSelectedItem(newItem, optionalCallback) {
       this.setState({
         selectedItem: newItem
       }, optionalCallback);
-    },
+    }
 
-    findChannelFor: function(channelId) {
+    findChannelFor(channelId): ScheduleChannel | null {
       return this.hasChannelList() ? this.props.channelList.find((ea) => ea.id === channelId) : null;
-    },
+    }
 
-    getScheduleByChannel: function() {
+    getScheduleByChannel(): Array<ScheduleGroup> {
       const groupsByName = {};
       this.props.scheduledActions.forEach((action) => {
         const channel = this.findChannelFor(action.channel);
@@ -180,33 +200,29 @@ import Sort from '../lib/sort';
       const channelNames = Object.keys(groupsByName);
       const sortedNames = Sort.arrayAlphabeticalBy(channelNames, (ea) => ea);
       return sortedNames.map((channelName) => groupsByName[channelName]);
-    },
+    }
 
-    shouldShowChannel: function(channelId) {
+    shouldShowChannel(channelId): boolean {
       return !this.state.filterChannelId || this.state.filterChannelId === channelId;
-    },
+    }
 
-    toggleFilter: function(channelId) {
-      const newState = {};
-      if (this.filterActiveFor(channelId)) {
-        newState.filterChannelId = null;
-      } else {
-        newState.filterChannelId = channelId;
-      }
-      this.setState(newState);
-    },
+    toggleFilter(channelId) {
+      this.setState({
+        filterChannelId: this.filterActiveFor(channelId) ? null : channelId
+      });
+    }
 
-    clearFilters: function() {
+    clearFilters() {
       this.setState({
         filterChannelId: null
       });
-    },
+    }
 
-    filterActiveFor: function(channelId) {
+    filterActiveFor(channelId): boolean {
       return this.state.filterChannelId === channelId;
-    },
+    }
 
-    toggleEditor: function(action) {
+    toggleEditor(action) {
       this.props.onClearErrors();
       this.setState({
         selectedItem: action,
@@ -214,13 +230,13 @@ import Sort from '../lib/sort';
         justDeleted: false,
         isEditing: true
       });
-    },
+    }
 
-    createNewSchedule: function() {
+    createNewSchedule(): ScheduledAction {
       return ScheduledAction.newWithDefaults(this.props.teamTimeZone, this.props.teamTimeZoneName);
-    },
+    }
 
-    addNewItem: function() {
+    addNewItem() {
       this.props.onClearErrors();
       this.setState({
         selectedItem: this.createNewSchedule(),
@@ -228,32 +244,32 @@ import Sort from '../lib/sort';
         justDeleted: false,
         isEditing: true
       });
-    },
+    }
 
-    cancelEditor: function() {
+    cancelEditor() {
       this.setState({
         selectedItem: null,
         isEditing: false
       });
-    },
+    }
 
-    saveSelectedItem: function() {
+    saveSelectedItem() {
       this.props.onSave(this.getSelectedItem());
-    },
+    }
 
-    confirmDeleteItem: function() {
+    confirmDeleteItem() {
       this.props.onToggleActivePanel("confirmDelete", true);
-    },
+    }
 
-    deleteSelectedItem: function() {
+    deleteSelectedItem() {
       this.props.onDelete(this.getSelectedItem());
-    },
+    }
 
-    undoConfirmDelete: function() {
+    undoConfirmDelete() {
       this.props.onClearActivePanel();
-    },
+    }
 
-    selectedItemHasChanges: function() {
+    selectedItemHasChanges(): boolean {
       const selected = this.getSelectedItem();
       if (!selected) {
         return false;
@@ -266,9 +282,9 @@ import Sort from '../lib/sort';
         return true;
       }
       return !original.isIdenticalTo(selected);
-    },
+    }
 
-    renderSubheading: function() {
+    renderSubheading() {
       if (!this.hasChannelList()) {
         return (
           <div className="ptxl container container-wide">
@@ -277,18 +293,20 @@ import Sort from '../lib/sort';
             </div>
           </div>
         );
+      } else {
+        return null;
       }
-    },
+    }
 
-    shouldShowActions: function() {
+    shouldShowActions(): boolean {
       return this.isEditing() && !this.props.activePanelName;
-    },
+    }
 
-    hasActiveRequest: function() {
+    hasActiveRequest(): boolean {
       return this.props.isSaving || this.props.isDeleting;
-    },
+    }
 
-    renderSidebar: function(groups) {
+    renderSidebar(groups) {
       return (
         <div>
           <div className="phxl mobile-phl mbs">
@@ -308,9 +326,9 @@ import Sort from '../lib/sort';
           </div>
         </div>
       );
-    },
+    }
 
-    renderFilterList: function(groups) {
+    renderFilterList(groups) {
       if (groups.length > 1) {
         return groups.map((group) => (
           <Button
@@ -324,9 +342,9 @@ import Sort from '../lib/sort';
           </Button>
         ));
       }
-    },
+    }
 
-    renderGroupWarning: function(group) {
+    renderGroupWarning(group) {
       if (group.excludesBot) {
         return (
           <span className="type-s type-pink type-bold type-italic">
@@ -339,10 +357,12 @@ import Sort from '../lib/sort';
             — You are not a member of this channel.
           </span>
         );
+      } else {
+        return null;
       }
-    },
+    }
 
-    renderGroups: function(groups) {
+    renderGroups(groups) {
       return groups.map((group) => (
         <Collapsible key={`group-${group.channelId || "unknown"}`} revealWhen={this.shouldShowChannel(group.channelId)}>
           <div className="ptxl pbxl">
@@ -367,17 +387,17 @@ import Sort from '../lib/sort';
           </div>
         </Collapsible>
       ));
-    },
+    }
 
-    renderNoSchedules: function() {
+    renderNoSchedules() {
       return (
         <div className={"container container-wide pvxl"}>
           {this.hasChannelList() ? this.renderNoSchedulesMessage() : this.renderErrorMessage()}
         </div>
       );
-    },
+    }
 
-    renderNoSchedulesMessage: function() {
+    renderNoSchedulesMessage() {
       return (
         <div>
           <p className="type-bold">Nothing is currently scheduled in channels you can access on this team.</p>
@@ -386,9 +406,9 @@ import Sort from '../lib/sort';
 
         </div>
       );
-    },
+    }
 
-    renderErrorMessage: function() {
+    renderErrorMessage() {
       return (
         <div>
           <p className="type-bold">No scheduling information was found.</p>
@@ -396,13 +416,13 @@ import Sort from '../lib/sort';
           <p>There may be an error, or you may not have access to this information.</p>
         </div>
       );
-    },
+    }
 
-    renderScheduleList: function(groups) {
+    renderScheduleList(groups) {
       return groups.length > 0 ? this.renderGroups(groups) : this.renderNoSchedules();
-    },
+    }
 
-    render: function() {
+    render() {
       const groups = this.getScheduleByChannel();
       const selectedItem = this.getSelectedItem();
       const selectedItemChannel = selectedItem ? this.findChannelFor(selectedItem.channel) : null;
@@ -544,6 +564,8 @@ import Sort from '../lib/sort';
         </div>
       );
     }
-  });
+}
+
+Scheduling.defaultProps = Page.requiredPropDefaults();
 
 export default Scheduling;
