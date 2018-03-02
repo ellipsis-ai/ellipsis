@@ -202,7 +202,7 @@ class BehaviorVersionServiceImpl @Inject() (
         groupVersion,
         raw.maybeDescription,
         raw.maybeName,
-        raw.maybeFunctionBody,
+        raw.maybeFunctionBody.map(_.trim),
         raw.maybeResponseTemplate,
         raw.forcePrivateResponse,
         maybeUser,
