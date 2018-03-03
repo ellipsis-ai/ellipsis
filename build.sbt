@@ -5,7 +5,7 @@ import sbt.Keys._
 
 name := """ellipsis"""
 version := "1.0-SNAPSHOT"
-scalaVersion := "2.11.8"
+scalaVersion := "2.11.12"
 
 pipelineStages := Seq(webpack, digest, gzip)
 
@@ -52,7 +52,7 @@ libraryDependencies ++= Seq(
   "com.typesafe.play" %% "play-slick" % "3.0.1",
   "com.typesafe.play" %% "play-slick-evolutions" % "3.0.1",
   "com.typesafe.play" %% "play-json" % "2.6.3",
-  "org.postgresql" % "postgresql" % "9.4-1201-jdbc4",
+  "org.postgresql" % "postgresql" % "42.1.1",
   "net.codingwell" %% "scala-guice" % "4.0.0",
   "net.ceedubs" %% "ficus" % "1.1.2",
   "com.amazonaws" % "aws-java-sdk" % "1.11.123",
