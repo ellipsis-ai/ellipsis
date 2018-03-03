@@ -1,7 +1,6 @@
 package services
 
 import javax.inject.Inject
-
 import json.BehaviorGroupData
 import models.accounts.user.User
 import models.behaviors.behaviorgroup.BehaviorGroup
@@ -9,6 +8,7 @@ import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
 import models.behaviors.behaviorparameter.YesNoType
 import models.behaviors.datatypeconfig.BehaviorVersionForDataTypeSchema
 import models.behaviors.defaultstorageitem.DefaultStorageItemService
+import play.api.Logger
 import play.api.libs.json._
 import sangria.ast
 import sangria.ast.Document
@@ -82,7 +82,16 @@ class GraphQLServiceImpl @Inject() (
         case b: Boolean => JsBoolean(b)
         case arr: Array[Any] => JsArray(arr.map(toJson))
         case m: Map[_, _] => JsObject(m.map {
-          case(key, value) => (key.toString, toJson(value))
+          case(key, value) => {
+            try {
+              (key.asInstanceOf[String], toJson(value))
+            } catch {
+              case e: ClassCastException => {
+                Logger.warn(s"GraphQL toJson called with a Map with non-string keys. Forcing keys to strings:\n$m", e)
+                (key.toString, toJson(value))
+              }
+            }
+          }
         })
         case _ => JsNull
       }
