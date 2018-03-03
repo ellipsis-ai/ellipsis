@@ -4,7 +4,6 @@ env:
   es6: true
 extends: [
   'eslint:recommended',
-  'plugin:flowtype/recommended',
   'plugin:react/recommended',
 ]
 parserOptions:
@@ -13,14 +12,10 @@ parserOptions:
     experimentalObjectRestSpread: true
     jsx: true
 plugins:
-  - flowtype
   - react
 settings:
   react:
     version: 15.3
-    flowVersion: 0.57
-  flowtype:
-    onlyFilesWithFlowAnnotation: true
 globals:
   requirejs: false
   define: false

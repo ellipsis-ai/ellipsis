@@ -14,7 +14,7 @@ import {SimpleTokenApiRef} from '../models/simple_token';
 import LinkedGithubRepo from '../models/linked_github_repo';
 import autobind from '../lib/autobind';
 import Page from '../shared_ui/page';
-import DataRequest from '../lib/data_request';
+import {DataRequest} from '../lib/data_request';
 
 class BehaviorEditorLoader extends React.Component {
         constructor(props) {
@@ -124,7 +124,8 @@ class BehaviorEditorLoader extends React.Component {
 
         render() {
           return (
-            <Page csrfToken={this.props.csrfToken}>
+            <Page csrfToken={this.props.csrfToken}
+              onRender={(pageProps) => (
               <BehaviorEditor
                 group={this.state.group}
                 selectedId={this.state.selectedId}
@@ -151,8 +152,10 @@ class BehaviorEditorLoader extends React.Component {
                 lastDeployTimestamp={this.props.lastDeployTimestamp}
                 slackTeamId={this.props.slackTeamId}
                 botName={this.props.botName}
+                {...pageProps}
               />
-            </Page>
+              )}
+            />
           );
         }
 }

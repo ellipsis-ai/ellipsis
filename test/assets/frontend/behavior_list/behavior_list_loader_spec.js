@@ -1,4 +1,3 @@
-// @flow
 import * as React from 'react';
 import * as TestUtils from 'react-addons-test-utils';
 import BehaviorListLoader from '../../../../app/assets/frontend/behavior_list/loader';
@@ -6,7 +5,7 @@ import BehaviorList from '../../../../app/assets/frontend/behavior_list/index';
 import TimeZoneSetter from '../../../../app/assets/frontend/time_zone/team_time_zone_setter';
 import BehaviorGroup from '../../../../app/assets/frontend/models/behavior_group';
 
-jest.mock('../../../../app/assets/frontend/lib/data_request', () => ({
+jest.setMock('../../../../app/assets/frontend/lib/data_request', { DataRequest: () => ({
   jsonGet: jest.fn(() => {
     return new Promise((resolve, reject) => {
       process.nextTick(() => resolve([]) || reject({ error: "oops" }));
@@ -17,7 +16,7 @@ jest.mock('../../../../app/assets/frontend/lib/data_request', () => ({
       process.nextTick(() => resolve([]) || reject({ error: "oops" }));
     });
   })
-}));
+})});
 
 describe('BehaviorListApp', () => {
   jsRoutes.controllers.ApplicationController.fetchPublishedBehaviorInfo = () => ({ url: '/fetch', method: 'get' });

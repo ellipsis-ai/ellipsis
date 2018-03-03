@@ -25,9 +25,9 @@ type Props = {
   teamTimeZoneName: string | null,
   slackUserId: string,
   slackBotUserId: string,
-  onSave: () => void,
+  onSave: (scheduled: ScheduledAction) => void,
   isSaving: boolean,
-  onDelete: () => void,
+  onDelete: (scheduled: ScheduledAction) => void,
   isDeleting: boolean,
   error: string | null,
   onClearErrors: () => void,
@@ -254,7 +254,10 @@ class Scheduling extends React.Component<Props, State> {
     }
 
     saveSelectedItem() {
-      this.props.onSave(this.getSelectedItem());
+      const item = this.getSelectedItem();
+      if (item) {
+        this.props.onSave(item);
+      }
     }
 
     confirmDeleteItem() {
@@ -262,7 +265,10 @@ class Scheduling extends React.Component<Props, State> {
     }
 
     deleteSelectedItem() {
-      this.props.onDelete(this.getSelectedItem());
+      const item = this.getSelectedItem();
+      if (item) {
+        this.props.onDelete(item);
+      }
     }
 
     undoConfirmDelete() {
