@@ -8,15 +8,17 @@ import autobind from '../lib/autobind';
 
 const resetForm = jsRoutes.controllers.GithubConfigController.reset();
 
-export type GithubConfigProps = {
+interface LinkedAccount {
+  providerId: string,
+  providerKey: string,
+  createdAt: string
+}
+
+export interface GithubConfigProps {
   isAdmin: boolean,
   csrfToken: string,
   teamId: string,
-  linkedAccount: {
-    providerId: string,
-    providerKey: string,
-    createdAt: string
-  } | null
+  linkedAccount: LinkedAccount | null
 }
 
 type Props = GithubConfigProps & PageRequiredProps

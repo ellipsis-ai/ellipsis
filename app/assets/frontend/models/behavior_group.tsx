@@ -15,7 +15,7 @@ import ParamType from "./param_type";
 
 const ONE_MINUTE = 60000;
 
-export type BehaviorGroupJson = {
+export interface BehaviorGroupJson {
   id: string;
   teamId: string;
   name: string | null;

@@ -1,11 +1,11 @@
 import * as React from 'react';
-export type ButtonProps = {
+export interface ButtonProps {
   children: any,
   className?: string,
   disabled?: boolean,
   onClick: () => void,
   title?: string
-};
+}
 
 import autobind from '../lib/autobind';
 

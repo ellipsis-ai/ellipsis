@@ -36,7 +36,7 @@ type Props = {
     versions: Array<BehaviorGroup>,
     onClearActivePanel: () => void,
     onUndoChanges: () => void,
-    onRestoreVersionClick: (version: BehaviorGroup, title) => void,
+    onRestoreVersionClick: (version: BehaviorGroup, title: any) => void,
     isLinkedToGithub: boolean,
     linkedGithubRepo?: LinkedGithubRepo,
     onLinkGithubRepo: (owner: string, repo: string, branch: string | null, callback: () => void) => void,
@@ -426,7 +426,7 @@ class VersionBrowser extends React.Component<Props, State> {
       }
     }
 
-    renderSelectableVersion(caption) {
+    renderSelectableVersion(caption: any) {
       const githubMode = this.compareGithubVersions();
       return (
         <div>
@@ -471,7 +471,7 @@ class VersionBrowser extends React.Component<Props, State> {
       }
     }
 
-    renderCurrentVersionPlaceholder(caption) {
+    renderCurrentVersionPlaceholder(caption: any) {
       return (
         <div>
           {caption}

@@ -1,7 +1,7 @@
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';
 
-export type NavItemContent = {
+export interface NavItemContent {
   title: string,
   url?: string | null,
   callback?: (() => void) | null

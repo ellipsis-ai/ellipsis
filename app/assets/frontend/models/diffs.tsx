@@ -25,10 +25,10 @@ export interface Diffable {
   diffProps(parent?: HasInputs): Array<DiffableProp>;
 }
 
-export type DiffableParent = {
+export interface DiffableParent {
   mine: HasInputs,
   other: HasInputs
-};
+}
 
 export type TextPartKind = "added" | "removed" | "unchanged";
 /* eslint-enable no-use-before-define */

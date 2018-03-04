@@ -271,7 +271,7 @@ class BehaviorListLoader extends React.Component<Props, State> {
     ) : null;
   }
 
-  renderPage<P extends PageRequiredProps, S extends any>(pageProps: PageRequiredProps): React.ReactElement<P> {
+  renderPage<P extends PageRequiredProps>(pageProps: PageRequiredProps): React.ReactElement<P> {
     if (this.state.currentTeamTimeZone) {
       return (
         <BehaviorList
