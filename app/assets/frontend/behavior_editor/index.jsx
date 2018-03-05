@@ -14,7 +14,7 @@ import Button from '../form/button';
 import CodeConfiguration from './code_configuration';
 import ConfirmActionPanel from '../panels/confirm_action';
 import CollapseButton from '../shared_ui/collapse_button';
-import DataRequest from '../lib/data_request';
+import {DataRequest} from '../lib/data_request';
 import DataTypeEditor from './data_type_editor';
 import DataTypePromptHelp from './data_type_prompt_help';
 import DataTypeSourceHelp from './data_type_source_help';

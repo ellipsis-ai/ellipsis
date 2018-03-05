@@ -52,8 +52,10 @@ const webpackConfig = {
   module: {
     rules: [
       {
-        test: /\.ts$/,
-        use: 'ts-loader'
+        test: /\.tsx?$/,
+        use: {
+          loader: 'ts-loader'
+        }
       },
       {
         test: /\.jsx$/,
@@ -67,7 +69,7 @@ const webpackConfig = {
     ]
   },
   resolve: {
-    extensions: ['.jsx', '.ts', '.js']
+    extensions: ['.tsx', '.jsx', '.ts', '.js']
   },
   plugins: [
     new webpack.optimize.CommonsChunkPlugin({

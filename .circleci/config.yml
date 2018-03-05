@@ -70,9 +70,9 @@ jobs:
           command: |
             npm run lint
       - run:
-          name: Run Flow type-checking
+          name: Run Typescript checking
           command: |
-            npm run flow
+            npm run typescript
       - run:
           name: Run JavaScript tests
           command: |

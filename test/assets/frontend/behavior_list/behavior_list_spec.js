@@ -1,9 +1,9 @@
-// @flow
 import * as React from 'react';
 import * as TestUtils from 'react-addons-test-utils';
 import BehaviorList from '../../../../app/assets/frontend/behavior_list/index';
 import BehaviorGroup from '../../../../app/assets/frontend/models/behavior_group';
 import BehaviorGroupCard from '../../../../app/assets/frontend/behavior_list/behavior_group_card';
+import Page from '../../../../app/assets/frontend/shared_ui/page';
 
 describe('BehaviorList', () => {
   jsRoutes.controllers.BehaviorEditorController.edit = () => ({ url: '/edit', method: 'get' });
@@ -147,7 +147,7 @@ describe('BehaviorList', () => {
     notification: null
   });
 
-  class Footer extends React.Component<{}> {
+  class Footer extends React.Component {
     renderFooter(content) {
       return (
         <div>{content}</div>
@@ -164,7 +164,7 @@ describe('BehaviorList', () => {
   function createBehaviorList(config) {
     const footer = TestUtils.renderIntoDocument(<Footer/>);
     return TestUtils.renderIntoDocument(
-      <BehaviorList onRenderFooter={footer.renderFooter} {...config} />
+      <BehaviorList {...config} {...Page.requiredPropDefaults()} onRenderFooter={footer.renderFooter} />
     );
   }
 

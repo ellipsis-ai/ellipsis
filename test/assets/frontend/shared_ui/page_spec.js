@@ -1,14 +1,12 @@
-// @flow
 import * as React from 'react';
 import TestUtils from 'react-addons-test-utils';
-import type {PageRequiredProps} from '../../../../app/assets/frontend/shared_ui/page';
 
 // TODO: remove `any` when we're using ES6 modules
 import Page from '../../../../app/assets/frontend/shared_ui/page';
 import PageFooterRenderingError from '../../../../app/assets/frontend/shared_ui/page_footer_rendering_error';
 import FixedFooter from '../../../../app/assets/frontend/shared_ui/fixed_footer';
 
-class FooterRenderingComponent extends React.Component<PageRequiredProps> {
+class FooterRenderingComponent extends React.Component {
   render() {
     return (
       <div>
@@ -30,7 +28,7 @@ const FooterRenderingComponentDefaultProps = Object.freeze({
   footerHeight: 0
 });
 
-class NoFooterComponent extends React.Component<{}> {
+class NoFooterComponent extends React.Component {
   render() {
     return (
       <div />
@@ -39,14 +37,14 @@ class NoFooterComponent extends React.Component<{}> {
 }
 
 describe('Page', () => {
-  function createPage(overrideComponent) {
+  function createPage(override) {
     const feedbackContainer = document.createElement('span');
     return TestUtils.renderIntoDocument((
-      <Page feedbackContainer={feedbackContainer} csrfToken={"1"}>
-        {overrideComponent || (
-          <FooterRenderingComponent {...FooterRenderingComponentDefaultProps} />
-        )}
-      </Page>
+      <Page feedbackContainer={feedbackContainer} csrfToken={"1"}
+        onRender={override || ((pageProps) => (
+          <FooterRenderingComponent {...FooterRenderingComponentDefaultProps} {...pageProps} />
+        ))}
+      />
     ));
   }
 
@@ -79,9 +77,7 @@ describe('Page', () => {
     it('when not called by the child component, it throws a PageFooterRenderingError', () => {
       expect.assertions(1);
       try {
-        createPage((
-          <NoFooterComponent/>
-        ));
+        createPage((pageProps => (<NoFooterComponent {...pageProps} />)));
       } catch(e) {
         expect(e).toBeInstanceOf(PageFooterRenderingError);
       }
