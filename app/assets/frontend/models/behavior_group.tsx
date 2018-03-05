@@ -1,5 +1,4 @@
 import {Diffable, DiffableProp} from './diffs';
-import {HasInputs} from "./input";
 
 import BehaviorGroupDeployment from './behavior_group_deployment';
 import BehaviorVersion from './behavior_version';
@@ -36,7 +35,7 @@ export interface BehaviorGroupJson {
   deployment: any;
 }
 
-class BehaviorGroup implements Diffable, HasInputs {
+class BehaviorGroup implements Diffable {
     id: string;
     teamId: string;
     name: string | null;

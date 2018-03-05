@@ -119,7 +119,6 @@ class Editable {
       throw "Needs to be implemented in subclasses";
     }
 
-    /* eslint no-unused-vars: "off" */
     clone(props: {}): Editable {
       throw "Needs to be implemented in subclasses";
     }

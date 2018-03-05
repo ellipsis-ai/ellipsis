@@ -1,5 +1,4 @@
 import {Diffable, DiffableProp} from "./diffs";
-import {HasInputs} from "./input";
 import BehaviorGroup from "./behavior_group";
 
 import BehaviorConfig from './behavior_config';
@@ -77,7 +76,7 @@ class BehaviorVersion extends Editable implements Diffable {
       return this.config.dataTypeConfig && this.config.dataTypeConfig.usesCode;
     }
 
-    inputsFor(group?: HasInputs): Array<Input> {
+    inputsFor(group?: BehaviorGroup): Array<Input> {
       if (group) {
         const allInputs = group.getInputs();
         const matchingInputs: Array<Input> = [];
@@ -93,7 +92,7 @@ class BehaviorVersion extends Editable implements Diffable {
       }
     }
 
-    diffProps(parent?: HasInputs): Array<DiffableProp> {
+    diffProps(parent?: BehaviorGroup): Array<DiffableProp> {
       return [{
         name: "Name",
         value: this.getName()

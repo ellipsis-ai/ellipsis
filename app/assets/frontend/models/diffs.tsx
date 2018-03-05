@@ -1,17 +1,17 @@
-/* eslint-disable no-use-before-define */
+import * as JsDiff from "diff";
+import DeepEqual from '../lib/deep_equal';
+
 export interface Diff {
   displayText(): string;
   summaryText(): string;
 }
 
-import {HasInputs} from "../models/input";
-
-type Diffables = Array<Diffable>
+type DiffablePropValue = Array<Diffable> | string | boolean;
 
 export interface DiffableProp {
   name: string;
-  value: Diffables | string | boolean;
-  parent?: HasInputs;
+  value: DiffablePropValue;
+  parent?: Diffable;
   isCategorical?: boolean;
   isCode?: boolean;
   isOrderable?: boolean;
@@ -22,19 +22,17 @@ export interface Diffable {
   itemLabel(): string | null;
   kindLabel(): string;
   getIdForDiff(): string;
-  diffProps(parent?: HasInputs): Array<DiffableProp>;
+  diffProps(parent?: Diffable): Array<DiffableProp>;
 }
 
-export interface DiffableParent {
-  mine: HasInputs,
-  other: HasInputs
+export interface DiffableParents {
+  mine: Diffable,
+  other: Diffable
 }
 
 export type TextPartKind = "added" | "removed" | "unchanged";
-/* eslint-enable no-use-before-define */
 
-import * as JsDiff from "diff";
-import DeepEqual from '../lib/deep_equal';
+type NestedDiffs = Array<Diff | Diff[] | null>
 
 class OrderingDiff<T extends Diffable> implements Diff {
     beforeItems: Array<T>;
@@ -79,9 +77,9 @@ class OrderingDiff<T extends Diffable> implements Diff {
 
   class AddedOrRemovedDiff<T extends Diffable> implements Diff {
     item: T;
-    children: Array<Diff>;
+    children: Diff[];
 
-    constructor(item: T, children?: Array<Diff> | null) {
+    constructor(item: T, children?: Diff[] | null) {
       Object.defineProperties(this, {
         item: { value: item, enumerable: true },
         children: { value: children || [], enumerable: true}
@@ -125,9 +123,9 @@ class OrderingDiff<T extends Diffable> implements Diff {
   class ModifiedDiff<T extends Diffable> implements Diff {
     original: T;
     modified: T;
-    children: Array<Diff>;
+    children: Diff[];
 
-    constructor(children: Array<Diff>, original: T, modified: T) {
+    constructor(children: Diff[], original: T, modified: T) {
       Object.defineProperties(this, {
         original: { value: original, enumerable: true },
         modified: { value: modified, enumerable: true },
@@ -430,7 +428,7 @@ class OrderingDiff<T extends Diffable> implements Diff {
   }
 
   function addedOrRemovedDiffFor<T extends Diffable>(item: T, isAdded: boolean): AddedOrRemovedDiff<T> {
-    const possibleChildren = item.diffProps().map((prop) => {
+    const unflattenedChildren: NestedDiffs = item.diffProps().map((prop) => {
       const value = prop.value;
       // TODO: allow diffs with null: see https://github.com/ellipsis-ai/ellipsis/issues/2196
       if (typeof value === "string") {
@@ -451,13 +449,7 @@ class OrderingDiff<T extends Diffable> implements Diff {
         return null;
       }
     });
-    const children: Array<Diff> = possibleChildren.reduce((arr: Array<Diff>, ea) => {
-      if (ea) {
-        return arr.concat(ea);
-      } else {
-        return arr;
-      }
-    }, []);
+    const children: Diff[] = flattenDiffs(unflattenedChildren);
     if (isAdded) {
       return new AddedDiff(item, children);
     } else {
@@ -465,7 +457,7 @@ class OrderingDiff<T extends Diffable> implements Diff {
     }
   }
 
-  function diffsFor<T extends Diffable>(originalItems: Array<T>, newItems: Array<T>, parents?: DiffableParent | null): Array<Diff> {
+  function diffsFor<T extends Diffable>(originalItems: Array<T>, newItems: Array<T>, parents?: DiffableParents | null): Diff[] {
     const originalIds = originalItems.map(ea => ea.getIdForDiff());
     const newIds = newItems.map(ea => ea.getIdForDiff());
 
@@ -473,7 +465,7 @@ class OrderingDiff<T extends Diffable> implements Diff {
     const addedIds = newIds.filter(ea => originalIds.indexOf(ea) === -1);
     const removedIds = originalIds.filter(ea => newIds.indexOf(ea) === -1);
 
-    const added: Array<Diff> = [];
+    const added: Diff[] = [];
     addedIds.forEach(eaId => {
       const item = newItems.find(ea => ea.getIdForDiff() === eaId);
       if (item) {
@@ -481,7 +473,7 @@ class OrderingDiff<T extends Diffable> implements Diff {
       }
     });
 
-    const removed: Array<Diff> = [];
+    const removed: Diff[] = [];
     removedIds.forEach(eaId => {
       const item = originalItems.find(ea => ea.getIdForDiff() === eaId);
       if (item) {
@@ -489,7 +481,7 @@ class OrderingDiff<T extends Diffable> implements Diff {
       }
     });
 
-    const modified: Array<Diff> = [];
+    const modified: Diff[] = [];
     modifiedIds.forEach(eaId => {
       const originalItem = originalItems.find(ea => ea.getIdForDiff() === eaId);
       const newItem = newItems.find(ea => ea.getIdForDiff() === eaId);
@@ -504,7 +496,7 @@ class OrderingDiff<T extends Diffable> implements Diff {
     return added.concat(removed.concat(modified));
   }
 
-  function maybeParentsFor(originalProp: DiffableProp, modifiedProp?: DiffableProp | null): DiffableParent | null {
+  function maybeParentsFor(originalProp: DiffableProp, modifiedProp?: DiffableProp | null): DiffableParents | null {
     if (originalProp.parent && modifiedProp && modifiedProp.parent) {
       return { mine: originalProp.parent, other: modifiedProp.parent };
     } else {
@@ -512,8 +504,8 @@ class OrderingDiff<T extends Diffable> implements Diff {
     }
   }
 
-  function flattenDiffs(someDiffs: Array<Diff | null | Array<Diff>>): Array<Diff> {
-    return someDiffs.reduce((a: Array<Diff>, b) => {
+  function flattenDiffs(someDiffs: NestedDiffs): Diff[] {
+    return someDiffs.reduce((a: Diff[], b) => {
       return b ? a.concat(b) : a;
     }, []);
   }
@@ -540,10 +532,10 @@ class OrderingDiff<T extends Diffable> implements Diff {
     }
   }
 
-  function maybeDiffFor<T extends Diffable>(original: T, modified: T, parents?: DiffableParent | null): ModifiedDiff<T> | null {
+  function maybeDiffFor<T extends Diffable>(original: T, modified: T, parents?: DiffableParents | null): ModifiedDiff<T> | null {
     const originalProps = parents ? original.diffProps(parents.mine) : original.diffProps();
     const modifiedProps = parents ? modified.diffProps(parents.other) : modified.diffProps();
-    const unflattenedDiffs: Array<Diff | Array<Diff> | null> = originalProps.map((originalProp) => {
+    const unflattenedDiffs: NestedDiffs = originalProps.map((originalProp) => {
       const propName = originalProp.name;
       const originalValue = originalProp.value;
       const modifiedProp = modifiedProps.find((otherProp) => otherProp.name === originalProp.name);

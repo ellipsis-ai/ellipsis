@@ -129,8 +129,3 @@ class Input implements Diffable {
 }
 
 export default Input;
-
-export interface HasInputs {
-  getInputs(): Array<Input>
-}
-

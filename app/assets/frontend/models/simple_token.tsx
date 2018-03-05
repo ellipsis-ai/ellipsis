@@ -3,7 +3,6 @@ import {Diffable, DiffableProp} from "./diffs";
 import ApiConfigRef from './api_config_ref';
 import RequiredApiConfig from './required_api_config';
 import ID from '../lib/id';
-/* eslint-disable no-use-before-define */
 
 type callback = () => void
 
