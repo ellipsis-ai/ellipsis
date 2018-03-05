@@ -421,6 +421,10 @@ class OrderingDiff<T extends Diffable> implements Diff {
 
   }
 
+  function isDiffableArray(value: DiffablePropValue): value is Array<Diffable> {
+    return Array.isArray(value);
+  }
+
   function addedOrRemovedDiffFor<T extends Diffable>(item: T, isAdded: boolean): AddedOrRemovedDiff<T> {
     const unflattenedChildren: NestedDiffs = item.diffProps().map((prop) => {
       const value = prop.value;
@@ -437,13 +441,13 @@ class OrderingDiff<T extends Diffable> implements Diff {
             return null;
           }
         }
-      } else if (Array.isArray(value)) {
+      } else if (isDiffableArray(value)) {
         return value.map((child) => addedOrRemovedDiffFor(child, isAdded));
       } else {
         return null;
       }
     });
-    const children: Diff[] = flattenDiffs(unflattenedChildren);
+    const children = flattenDiffs(unflattenedChildren);
     if (isAdded) {
       return new AddedDiff(item, children);
     } else {
@@ -508,7 +512,7 @@ class OrderingDiff<T extends Diffable> implements Diff {
     return items.map(ea => ea.getIdForDiff());
   }
 
-  function orderingDiffsFor(prop: DiffableProp, originalItems: Array<Diffable>, newItems: Array<Diffable>): Array<OrderingDiff<any>> {
+  function orderingDiffsFor(prop: DiffableProp, originalItems: Array<Diffable>, newItems: Array<Diffable>): Array<OrderingDiff<Diffable>> {
     if (prop.isOrderable) {
       const originalIds = idsFor(originalItems);
       const newIds = idsFor(newItems);
@@ -541,8 +545,8 @@ class OrderingDiff<T extends Diffable> implements Diff {
           MultiLineTextPropertyDiff.maybeFor(propName, originalValue, modifiedString, { isCode: Boolean(originalProp.isCode) });
       } else if (typeof originalValue === "boolean") {
         return BooleanPropertyDiff.maybeFor(propName, originalValue, Boolean(modifiedValue));
-      } else if (Array.isArray(originalValue)) {
-        const modifiedArray = Array.isArray(modifiedValue) ? modifiedValue : [];
+      } else if (isDiffableArray(originalValue)) {
+        const modifiedArray = modifiedValue && isDiffableArray(modifiedValue) ? modifiedValue : [] as Array<Diffable>;
         const orderingDiffs = orderingDiffsFor(originalProp, originalValue, modifiedArray);
         return diffsFor(originalValue, modifiedArray, maybeParentsFor(originalProp, modifiedProp)).concat(orderingDiffs);
       } else {
