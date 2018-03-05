@@ -9,7 +9,7 @@ if (!devServerHost || !devServerPort) {
 
 module.exports = exports = (env) => {
   const webpackConfig = Object.create(require('./webpack.base.config.js')(env));
-  webpackConfig.devtool = 'source-map';
+  webpackConfig.devtool = 'nosources-source-map';
   webpackConfig.entry = Object.assign({}, webpackConfig.entry, {
     devServer: 'webpack/hot/dev-server',
     devServerClient: `webpack-dev-server/client?http://${devServerHost}:${devServerPort}`,
