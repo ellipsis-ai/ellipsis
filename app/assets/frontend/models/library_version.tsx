@@ -119,7 +119,7 @@ class LibraryVersion extends Editable implements Diffable {
       return true;
     }
 
-    clone(props: {}): LibraryVersion {
+    clone(props: Partial<LibraryVersion>): LibraryVersion {
       return LibraryVersion.fromProps(Object.assign({}, this, props));
     }
 

@@ -312,7 +312,7 @@ class BehaviorVersion extends Editable implements Diffable {
       );
     }
 
-    clone(props: {}): BehaviorVersion {
+    clone(props: Partial<BehaviorVersion>): BehaviorVersion {
       return BehaviorVersion.fromProps(Object.assign({}, this, props));
     }
 

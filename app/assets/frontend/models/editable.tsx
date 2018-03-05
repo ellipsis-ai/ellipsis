@@ -1,6 +1,6 @@
 import DeepEqual from '../lib/deep_equal';
 
-class Editable {
+abstract class Editable {
     id?: string | null;
     groupId: string;
     teamId: string;
@@ -115,22 +115,18 @@ class Editable {
         this.getDescription().toLowerCase().includes(lowercase);
     }
 
-    getPersistentId(): string {
-      throw "Needs to be implemented in subclasses";
-    }
+    abstract getPersistentId(): string
 
-    clone(props: {}): Editable {
-      throw "Needs to be implemented in subclasses";
-    }
+    abstract clone(props: Partial<Editable>): Editable
 
     // Used by JSON.stringify for submitting data to the server
-    toJSON() {
+    toJSON(): Editable {
       return this.clone({
         editorScrollPosition: null
       });
     }
 
-    forEqualityComparison() {
+    forEqualityComparison(): Editable {
       return this.toJSON();
     }
 

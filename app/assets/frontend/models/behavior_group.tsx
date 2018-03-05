@@ -244,7 +244,7 @@ class BehaviorGroup implements Diffable {
         map(ea => ea.toParamType());
     }
 
-    sortedForComparison<T extends BehaviorVersion | LibraryVersion>(versions: Array<T>): Array<T> {
+    sortedForComparison(versions: Array<Editable>): Array<Editable> {
       return versions.sort((a, b) => {
         if (a.getPersistentId() < b.getPersistentId()) {
           return -1;

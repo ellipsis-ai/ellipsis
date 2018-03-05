@@ -75,7 +75,7 @@ class OrderingDiff<T extends Diffable> implements Diff {
     }
   }
 
-  class AddedOrRemovedDiff<T extends Diffable> implements Diff {
+  abstract class AddedOrRemovedDiff<T extends Diffable> implements Diff {
     item: T;
     children: Diff[];
 
@@ -94,9 +94,7 @@ class OrderingDiff<T extends Diffable> implements Diff {
       return this.label();
     }
 
-    diffType(): string {
-      throw "Should be implemented by subclasses";
-    }
+    abstract diffType(): string
 
     label(): string {
       return `${this.diffType()} ${this.item.diffLabel()}`;
@@ -151,7 +149,7 @@ class OrderingDiff<T extends Diffable> implements Diff {
 
   }
 
-  class PropertyDiff<T> implements Diff {
+  abstract class PropertyDiff<T> implements Diff {
     label: string;
     original: T;
     modified: T;
@@ -164,13 +162,9 @@ class OrderingDiff<T extends Diffable> implements Diff {
       });
     }
 
-    displayText(): string {
-      throw "Should be implemented by subclasses";
-    }
+    abstract displayText(): string
 
-    summaryText(): string {
-      throw "Should be implemented by subclasses";
-    }
+    abstract summaryText(): string
 
   }
 
