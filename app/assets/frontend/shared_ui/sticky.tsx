@@ -1,28 +1,41 @@
 import * as React from 'react';
 import DeepEqual from '../lib/deep_equal';
 
-  function setStyles(element, styles) {
-    if (element && element.style) {
-      Object.keys(styles).forEach((styleName) => {
-        element.style[styleName] = styles[styleName];
-      });
-    }
+function setStyles(element: HTMLElement | null, styles: Partial<CSSStyleDeclaration>) {
+  if (element && element.style) {
+    Object.keys(styles).forEach((styleName) => {
+      element.style[styleName] = styles[styleName];
+    });
+  }
+}
+
+export interface Coords {
+  top: number,
+  left: number,
+  bottom: number
+}
+
+type Props = {
+  onGetCoordinates: () => Coords,
+  children: any,
+  disabledWhen?: boolean,
+  innerClassName?: string,
+  outerClassName?: string
+}
+
+class Sticky extends React.Component<Props> {
+  scrollTopPosition: number;
+  lastCoords: Coords | null;
+  innerContainer: HTMLElement | null;
+  outerContainer: HTMLElement | null;
+  placeholder: HTMLElement | null;
+
+  constructor(props: Props) {
+    super(props);
+    this.scrollTopPosition = 0;
   }
 
-const Sticky = React.createClass({
-    propTypes: {
-      onGetCoordinates: React.PropTypes.func.isRequired,
-      children: React.PropTypes.node.isRequired,
-      disabledWhen: React.PropTypes.bool,
-      innerClassName: React.PropTypes.string,
-      outerClassName: React.PropTypes.string
-    },
-
-    scrollTopPosition: 0,
-
-    lastCoords: {},
-
-    resetCoordinates: function() {
+  resetCoordinates() {
       if (!this.innerContainer) {
         return;
       }
@@ -60,29 +73,29 @@ const Sticky = React.createClass({
       }
 
       this.innerContainer.scrollTop = this.scrollTopPosition;
-    },
+    }
 
-    componentDidMount: function() {
+    componentDidMount() {
       setStyles(this.innerContainer, {
         overflowY: 'auto'
       });
 
       window.addEventListener('resize', this.resetCoordinates, false);
       this.resetCoordinates();
-    },
+    }
 
-    componentWillUpdate: function() {
+    componentWillUpdate() {
       this.scrollTopPosition = this.innerContainer ? this.innerContainer.scrollTop : 0;
-    },
+    }
 
-    componentDidUpdate: function(prevProps) {
+    componentDidUpdate(prevProps) {
       if (this.props.disabledWhen && prevProps.disabledWhen) {
         return;
       }
       this.resetCoordinates();
-    },
+    }
 
-    render: function() {
+    render() {
       return (
         <div className={this.props.outerClassName || ""} style={{ position: "relative" }} ref={(div) => { this.outerContainer = div; }}>
           <div ref={(div) => { this.placeholder = div; }} />
@@ -92,6 +105,6 @@ const Sticky = React.createClass({
         </div>
       );
     }
-});
+}
 
 export default Sticky;

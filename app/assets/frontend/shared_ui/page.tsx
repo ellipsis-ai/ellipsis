@@ -18,7 +18,7 @@ export interface PageRequiredProps {
   onRenderPanel: (panelName: string, panel) => void,
   footerHeight: number,
   ref?: any
-};
+}
 
 import Event from '../lib/event';
 import FeedbackPanel from '../panels/feedback';
