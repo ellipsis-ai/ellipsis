@@ -68,7 +68,7 @@ import Sort from '../lib/sort';
 import 'codemirror/mode/markdown/markdown';
 import DeploymentStatus from "./deployment_status";
 import GithubRepoActions from "./versions/github_repo_actions";
-import {MOBILE_MAX_WIDTH} from "assets/frontend/lib/constants";
+import {MOBILE_MAX_WIDTH} from "../lib/constants";
 
 const BehaviorEditor = React.createClass({
   propTypes: Object.assign({}, Page.requiredPropTypes, {
