@@ -1,6 +1,7 @@
 import * as React from 'react';
 import FormInput from './input';
 import SVGSearch from '../svg/search';
+import SVGX from '../svg/x';
 
 const FormSearch = React.createClass({
     propTypes: {
@@ -19,7 +20,14 @@ const FormSearch = React.createClass({
     },
 
     clearValue: function() {
-      this.props.onChange("");
+      const hasCurrentValue = Boolean(this.props.value);
+      this.props.onChange("", () => {
+        if (hasCurrentValue) {
+          this.focus();
+        } else {
+          this.blur();
+        }
+      });
     },
 
     focus: function() {
@@ -28,9 +36,27 @@ const FormSearch = React.createClass({
       }
     },
 
+    blur: function() {
+      if (this.input) {
+        this.input.blur();
+      }
+    },
+
+    getClassNames: function() {
+      return this.props.className ? this.props.className.split(" ") : [];
+    },
+
+    isSmall: function() {
+      return this.getClassNames().includes("form-input-s");
+    },
+
+    isBorderless: function() {
+      return this.getClassNames().includes("form-input-borderless");
+    },
+
     render: function() {
       return (
-        <div className={"columns columns-elastic " + (this.props.withResults ? " mbneg1 position-relative position-z-above " : "")}>
+        <div className={"columns columns-elastic position-relative " + (this.props.withResults ? " mbneg1 position-z-above " : "")}>
           <div className="column column-expand prn">
             <div className={"position-relative " + (this.props.isSearching ? "pulse-faded" : "")}>
               <div>
@@ -38,33 +64,48 @@ const FormSearch = React.createClass({
                   ref={(input) => this.input = input}
                   {...this.getRemainingProps()}
                   className={
-                    "form-input-icon form-input-with-button " +
-                    (this.props.withResults ? " border-radius-bottom-none " : "") +
-                    (this.props.className || "")
+                    `form-input-icon-left form-input-with-button ${
+                      this.props.withResults ? " border-radius-bottom-none " : ""
+                    } ${
+                      this.getClassNames().join(" ")
+                    }`
                   }
                   onEscKey={this.clearValue}
                 />
               </div>
               <div
                 className={
-                  "position-absolute position-top-left position-z-above align-button mls type-weak"
+                  `position-absolute position-top-left position-z-above type-weak ${
+                    this.isSmall() ? "align-button-s" : "align-button"
+                  } ${
+                    this.isBorderless() ? "" : "mls"
+                  }`
                 }
-                style={{ height: "24px" }}
+                style={{ height: this.isSmall() ? "18px" : "24px" }}
               >
                 <SVGSearch />
               </div>
             </div>
           </div>
-          <div className="column column-shrink">
+          <div className={`type-weak ${
+            this.isBorderless() ? "position-absolute position-top-right position-z-above" : "column column-shrink"
+          } ${
+            this.isBorderless() && !this.props.value ? "display-none" : "fade-in"
+          }`}>
             <button type="button"
               className={
-                "button-shrink button-with-form-input " +
-                (this.props.withResults ? " border-radius-bottom-none " : "")
+                `button-shrink button-with-form-input ${
+                  this.props.withResults ? "border-radius-bottom-none" : ""
+                } ${
+                  this.isSmall() ? "button-s" : ""
+                } ${
+                  this.isBorderless() ? "button-subtle" : ""
+                }`
               }
               onClick={this.clearValue}
               disabled={!this.props.value}
             >
-              Clear
+              <SVGX label="Clear search" />
             </button>
           </div>
         </div>

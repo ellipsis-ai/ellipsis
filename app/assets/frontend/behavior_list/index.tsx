@@ -87,13 +87,17 @@ class BehaviorList extends React.Component<Props, State> {
   }
 
   componentDidMount() {
-    this.props.onRenderNavActions(this.renderSearch());
+    this.props.onRenderNavActions(this.renderNavActions());
     window.addEventListener('scroll', this.delayOnScroll);
 //    window.addEventListener('resize', this.delayCheckSize);
   }
 
   componentDidUpdate() {
-    this.props.onRenderNavActions(this.renderSearch());
+    this.props.onRenderNavActions(this.renderNavActions());
+  }
+
+  renderNavActions() {
+    return this.renderTeachButton();
   }
 
   onScroll() {
@@ -134,14 +138,24 @@ class BehaviorList extends React.Component<Props, State> {
   }
 
   scrollToLocal(): void {
-    if (this.localGroupContainer) {
-      this.scrollToElement(this.localGroupContainer);
+    const localContainer = this.localGroupContainer;
+    if (localContainer) {
+      this.setState({
+        visibleSection: "local"
+      }, () => {
+        this.scrollToElement(localContainer);
+      });
     }
   }
 
   scrollToPublished(): void {
-    if (this.publishedGroupContainer) {
-      this.scrollToElement(this.publishedGroupContainer);
+    const publishedContainer = this.publishedGroupContainer;
+    if (publishedContainer) {
+      this.setState({
+        visibleSection: "published"
+      }, () => {
+        this.scrollToElement(publishedContainer);
+      });
     }
   }
 
@@ -167,7 +181,7 @@ class BehaviorList extends React.Component<Props, State> {
     };
   }
 
-  updateSearch(newValue: string) {
+  updateSearch(newValue: string, optionalCallback?: () => void) {
     this.setState({
       searchText: newValue
     }, () => {
@@ -175,6 +189,9 @@ class BehaviorList extends React.Component<Props, State> {
         this.delaySubmitSearch();
       } else {
         this.submitSearch();
+      }
+      if (optionalCallback) {
+        optionalCallback();
       }
     });
   }
@@ -472,7 +489,6 @@ class BehaviorList extends React.Component<Props, State> {
               `Your team’s skills matching “${this.props.currentSearchText}”` :
               "Your team’s skills"
             }
-            sideContent={this.renderTeachButton()}
           />
 
           <div className={"columns mvxl " + (this.props.isLoadingMatchingResults ? "pulse-faded" : "")}>
@@ -539,10 +555,12 @@ class BehaviorList extends React.Component<Props, State> {
 
   renderTeachButton() {
     return (
-      <a href={jsRoutes.controllers.BehaviorEditorController.newGroup(this.props.teamId).url}
-        className="button button-shrink">
-        Teach Ellipsis something new…
-      </a>
+      <div className="mtl">
+        <a href={jsRoutes.controllers.BehaviorEditorController.newGroup(this.props.teamId).url}
+          className="button button-s button-shrink">
+          Create new skill…
+        </a>
+      </div>
     );
   }
 
@@ -552,7 +570,6 @@ class BehaviorList extends React.Component<Props, State> {
         <div>
           <ListHeading
             heading={"To get started, install one of the skills available"}
-            sideContent={this.renderTeachButton()}
           />
 
           <p className="type-blue-faded mhl mbxl">
@@ -652,14 +669,48 @@ class BehaviorList extends React.Component<Props, State> {
 
   renderSearch() {
     return (
-      <div className="pts display-inline-block width-15">
+      <div className="phxl mobile-phl mtxs mbxxl mobile-mvn">
         <SearchInput
           placeholder="Search skills…"
           value={this.state.searchText}
           onChange={this.updateSearch}
           isSearching={this.props.isLoadingMatchingResults}
+          className="form-input-borderless form-input-s"
         />
       </div>
+    );
+  }
+
+  renderSidebar(hasLocalGroups: boolean, hasUninstalledGroups: boolean) {
+    return (
+      <Sticky
+        onGetCoordinates={this.getSidebarCoordinates}
+        disabledWhen={() => window.innerWidth <= MOBILE_MAX_WIDTH}
+      >
+        <div className="pvxxl mobile-pvl">
+
+          {this.renderSearch()}
+
+          <div className="mobile-display-none">
+            <SidebarButton
+              onClick={this.scrollToLocal}
+              selected={this.isScrolledToLocal()}
+              disabled={!hasLocalGroups}
+              className="mbl mobile-mbm"
+            >
+              Your team’s skills
+            </SidebarButton>
+
+            <SidebarButton
+              onClick={this.scrollToPublished}
+              selected={this.isScrolledToPublished()}
+              disabled={!hasUninstalledGroups}
+            >
+              Skills available to install
+            </SidebarButton>
+          </div>
+        </div>
+      </Sticky>
     );
   }
 
@@ -677,30 +728,8 @@ class BehaviorList extends React.Component<Props, State> {
           <div className="flex-columns flex-row-expand">
             <div className="flex-column flex-column-left flex-rows container container-wide phn">
               <div className="columns flex-columns flex-row-expand mobile-flex-no-columns">
-                <div className="column column-page-sidebar flex-column flex-column-left bg-white border-right-thick border-light prn mobile-display-none">
-                  <Sticky
-                    onGetCoordinates={this.getSidebarCoordinates}
-                    disabledWhen={() => window.innerWidth <= MOBILE_MAX_WIDTH}
-                  >
-                    <div className="pvxxl mobile-pvl">
-                      <SidebarButton
-                        onClick={this.scrollToLocal}
-                        selected={this.isScrolledToLocal()}
-                        disabled={!hasLocalGroups}
-                        className="mbl mobile-mbm"
-                      >
-                        Your team’s skills
-                      </SidebarButton>
-
-                      <SidebarButton
-                        onClick={this.scrollToPublished}
-                        selected={this.isScrolledToPublished()}
-                        disabled={!hasUninstalledGroups}
-                      >
-                        Skills available to install
-                      </SidebarButton>
-                    </div>
-                  </Sticky>
+                <div className="column column-page-sidebar flex-column flex-column-left bg-white border-right-thick border-light mobile-border-right-none mobile-border-bottom prn">
+                  {this.renderSidebar(hasLocalGroups, hasUninstalledGroups)}
                 </div>
                 <div className="column column-page-main column-page-main-wide flex-column flex-column-main">
                   {this.renderIntro()}
