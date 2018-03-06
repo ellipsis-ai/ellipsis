@@ -73,10 +73,7 @@ const webpackConfig = {
   },
   plugins: [
     new webpack.optimize.CommonsChunkPlugin({
-      name: 'global'
-    }),
-    new webpack.optimize.CommonsChunkPlugin({
-      names: ['jshint', 'vendor'],
+      names: ['jshint', 'vendor', 'global'],
       minChunks: Infinity
     })
   ]
