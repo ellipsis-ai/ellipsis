@@ -43,7 +43,7 @@ const server = new WebpackDevServer(compiler, {
   contentBase: false,
 
   // Configure hot replacement
-  hot: true,
+  hot: false,
 
   // The rest is terminal configurations
   quiet: false,
