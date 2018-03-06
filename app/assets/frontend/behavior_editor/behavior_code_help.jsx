@@ -1,6 +1,6 @@
 import * as React from 'react';
 import Collapsible from '../shared_ui/collapsible';
-import Constants from '../lib/constants';
+import * as Constants from '../lib/constants';
 import HelpPanel from '../help/panel';
 
 const BehaviorCodeHelp = React.createClass({
