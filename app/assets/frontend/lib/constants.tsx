@@ -5,7 +5,8 @@ const Constants = Object.freeze({
   DOCS_URLS: {
     INPUTS: "https://docs.ellipsis.ai/developers/reference/02_actions/02_inputs/",
     TRIGGERS: "https://docs.ellipsis.ai/developers/reference/02_actions/01_triggers/"
-  }
+  },
+  MOBILE_MAX_WIDTH: 768
 });
 
 export default Constants;

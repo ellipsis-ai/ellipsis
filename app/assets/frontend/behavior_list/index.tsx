@@ -16,7 +16,8 @@ import autobind from "../lib/autobind";
 import {PageRequiredProps} from "../shared_ui/page";
 import {PublishedBehaviorGroupLoadStatus} from "./loader";
 import SidebarButton from "../form/sidebar_button";
-import Sticky, {Coords} from "../shared_ui/sticky";
+import Sticky, {Coords, Dimensions} from "../shared_ui/sticky";
+import {MOBILE_MAX_WIDTH} from "../lib/constants";
 
 const ANIMATION_DURATION = 0.25;
 
@@ -49,13 +50,15 @@ type State = {
   checkedGroupIds: Array<string>,
   isSubmitting: boolean,
   searchText: string,
-  visibleSection: "local" | "published"
+  visibleSection: "local" | "published",
+  windowDimensions: Dimensions
 }
 
 class BehaviorList extends React.Component<Props, State> {
   static defaultProps: PageRequiredProps;
   delaySubmitSearch: () => void;
   delayOnScroll: () => void;
+  delayCheckSize: () => void;
   localGroupContainer: HTMLElement | null;
   publishedGroupContainer: HTMLElement | null;
   mainHeader: HTMLElement | null;
@@ -68,11 +71,16 @@ class BehaviorList extends React.Component<Props, State> {
       checkedGroupIds: [],
       isSubmitting: false,
       searchText: "",
-      visibleSection: this.props.localBehaviorGroups.length > 0 ? "local" : "published"
+      visibleSection: this.props.localBehaviorGroups.length > 0 ? "local" : "published",
+      windowDimensions: {
+        width: window.innerWidth,
+        height: window.innerHeight
+      }
     };
 
     this.delaySubmitSearch = debounce(() => this.submitSearch(), 500);
-    this.delayOnScroll = debounce(() => this.onScroll(), 50);
+    this.delayOnScroll = debounce(() => this.onScroll(), 25);
+    this.delayCheckSize = debounce(() => this.checkSize(), 25);
     this.mainHeader = document.getElementById('main-header');
   }
 
@@ -86,11 +94,23 @@ class BehaviorList extends React.Component<Props, State> {
 
   componentDidMount() {
     this.props.onRenderNavActions(this.renderSearch());
-    window.addEventListener('scroll', this.delayOnScroll)
+    window.addEventListener('scroll', this.delayOnScroll);
+    window.addEventListener('resize', this.delayCheckSize);
   }
 
   componentDidUpdate() {
     this.props.onRenderNavActions(this.renderSearch());
+  }
+
+  checkSize() {
+    if (this.state.windowDimensions.width !== window.innerWidth || this.state.windowDimensions.height !== window.innerHeight) {
+      this.setState({
+        windowDimensions: {
+          width: window.innerWidth,
+          height: window.innerHeight
+        }
+      });
+    }
   }
 
   onScroll() {
@@ -661,6 +681,7 @@ class BehaviorList extends React.Component<Props, State> {
     const localGroups = this.getMatchingBehaviorGroupsFrom(allLocal);
     const allUninstalled = this.getUninstalledBehaviorGroups();
     const uninstalledGroups = this.getMatchingBehaviorGroupsFrom(allUninstalled);
+    const hasUninstalledGroups = allUninstalled.length > 0;
     return (
       <div className="flex-row-cascade">
         {this.props.notification}
@@ -671,28 +692,26 @@ class BehaviorList extends React.Component<Props, State> {
                 <div className="column column-page-sidebar flex-column flex-column-left bg-white border-right-thick border-light prn">
                   <Sticky
                     onGetCoordinates={this.getSidebarCoordinates}
+                    windowDimensions={this.state.windowDimensions}
+                    disabledWhen={this.state.windowDimensions.width <= MOBILE_MAX_WIDTH}
                   >
-                    <div className="pvl">
-                      <div className="mbl">
-                        <SidebarButton
-                          onClick={this.scrollToLocal}
-                          selected={this.isScrolledToLocal()}
-                          disabled={!hasLocalGroups}
-                          className="mbxl"
-                        >
-                          Your team’s skills
-                        </SidebarButton>
-                      </div>
+                    <div className="pvxxl mobile-pvl">
+                      <SidebarButton
+                        onClick={this.scrollToLocal}
+                        selected={this.isScrolledToLocal()}
+                        disabled={!hasLocalGroups}
+                        className="mbl mobile-mbm"
+                      >
+                        Your team’s skills
+                      </SidebarButton>
 
-                      <div className="mbl">
-                        <SidebarButton
-                          onClick={this.scrollToPublished}
-                          selected={this.isScrolledToPublished()}
-                          className="mbxl"
-                        >
-                          Skills available to install
-                        </SidebarButton>
-                      </div>
+                      <SidebarButton
+                        onClick={this.scrollToPublished}
+                        selected={this.isScrolledToPublished()}
+                        disabled={!hasUninstalledGroups}
+                      >
+                        Skills available to install
+                      </SidebarButton>
                     </div>
                   </Sticky>
                 </div>
@@ -704,7 +723,7 @@ class BehaviorList extends React.Component<Props, State> {
                   </div>
 
                   <div ref={(el) => this.publishedGroupContainer = el} className="container container-c ptxxl pbxl">
-                    {this.renderPublishedGroups(uninstalledGroups, allUninstalled.length > 0)}
+                    {this.renderPublishedGroups(uninstalledGroups, hasUninstalledGroups)}
                   </div>
                 </div>
               </div>

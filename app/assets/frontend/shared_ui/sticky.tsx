@@ -15,12 +15,18 @@ export interface Coords {
   bottom: number
 }
 
+export interface Dimensions {
+  width: number,
+  height: number
+}
+
 type Props = {
   onGetCoordinates: () => Coords,
   children: any,
   disabledWhen?: boolean,
   innerClassName?: string,
-  outerClassName?: string
+  outerClassName?: string,
+  windowDimensions: Dimensions
 }
 
 class Sticky extends React.Component<Props> {
