@@ -788,23 +788,11 @@ const BehaviorEditor = React.createClass({
   },
 
   checkMobileLayout: function() {
-    let newState = null;
     if (this.hasMobileLayout() !== this.windowIsMobile()) {
-      newState = Object.assign({}, newState, {
+      this.setState({
         behaviorSwitcherVisible: !this.windowIsMobile(),
         hasMobileLayout: this.windowIsMobile()
       });
-    }
-    if (this.state.windowDimensions.width !== window.innerWidth || this.state.windowDimensions.height !== window.innerHeight) {
-      newState = Object.assign({}, newState, {
-        windowDimensions: {
-          width: window.innerWidth,
-          height: window.innerHeight
-        }
-      });
-    }
-    if (newState) {
-      this.setState(newState);
     }
   },
 
@@ -2264,7 +2252,6 @@ const BehaviorEditor = React.createClass({
             onGetCoordinates={this.getLeftPanelCoordinates}
             innerClassName="position-z-above"
             disabledWhen={this.hasMobileLayout()}
-            windowDimensions={this.state.windowDimensions}
           >
             {this.windowIsMobile() ? (
               <div className="position-absolute position-top-right mtm mobile-mts mobile-mrs">

@@ -15,18 +15,12 @@ export interface Coords {
   bottom: number
 }
 
-export interface Dimensions {
-  width: number,
-  height: number
-}
-
 type Props = {
   onGetCoordinates: () => Coords,
   children: any,
-  disabledWhen?: boolean,
+  disabledWhen?: boolean | (() => boolean),
   innerClassName?: string,
-  outerClassName?: string,
-  windowDimensions: Dimensions
+  outerClassName?: string
 }
 
 class Sticky extends React.Component<Props> {
@@ -35,10 +29,22 @@ class Sticky extends React.Component<Props> {
   innerContainer: HTMLElement | null;
   outerContainer: HTMLElement | null;
   placeholder: HTMLElement | null;
+  windowWidth: number;
 
   constructor(props: Props) {
     super(props);
     this.scrollTopPosition = 0;
+    this.windowWidth = window.innerWidth;
+  }
+
+  isDisabledFor(props: Props): boolean {
+    if (typeof props.disabledWhen === "boolean") {
+      return props.disabledWhen;
+    } else if (typeof props.disabledWhen === "function") {
+      return props.disabledWhen();
+    } else {
+      return false;
+    }
   }
 
   resetCoordinates() {
@@ -47,10 +53,11 @@ class Sticky extends React.Component<Props> {
       }
 
       var coords = this.props.onGetCoordinates();
-      if (DeepEqual.isEqual(coords, this.lastCoords)) {
+      if (DeepEqual.isEqual(coords, this.lastCoords) && this.windowWidth === window.innerWidth) {
         return;
       }
 
+      this.windowWidth = window.innerWidth;
       this.lastCoords = coords;
 
       setStyles(this.placeholder, { width: "" });
@@ -63,7 +70,7 @@ class Sticky extends React.Component<Props> {
 
       var newWidth = this.innerContainer.clientWidth;
 
-      if (!this.props.disabledWhen) {
+      if (!this.isDisabledFor(this.props)) {
         setStyles(this.outerContainer, {
           height: `${coords.bottom}px`
         });
@@ -86,7 +93,7 @@ class Sticky extends React.Component<Props> {
         overflowY: 'auto'
       });
 
-      window.addEventListener('resize', this.resetCoordinates, false);
+      window.addEventListener('resize', () => this.resetCoordinates(), false);
       this.resetCoordinates();
     }
 
@@ -95,7 +102,7 @@ class Sticky extends React.Component<Props> {
     }
 
     componentDidUpdate(prevProps) {
-      if (this.props.disabledWhen && prevProps.disabledWhen) {
+      if (this.isDisabledFor(this.props) && this.isDisabledFor(prevProps)) {
         return;
       }
       this.resetCoordinates();

@@ -16,7 +16,7 @@ import autobind from "../lib/autobind";
 import {PageRequiredProps} from "../shared_ui/page";
 import {PublishedBehaviorGroupLoadStatus} from "./loader";
 import SidebarButton from "../form/sidebar_button";
-import Sticky, {Coords, Dimensions} from "../shared_ui/sticky";
+import Sticky, {Coords} from "../shared_ui/sticky";
 import {MOBILE_MAX_WIDTH} from "../lib/constants";
 
 const ANIMATION_DURATION = 0.25;
@@ -50,15 +50,13 @@ type State = {
   checkedGroupIds: Array<string>,
   isSubmitting: boolean,
   searchText: string,
-  visibleSection: "local" | "published",
-  windowDimensions: Dimensions
+  visibleSection: "local" | "published"
 }
 
 class BehaviorList extends React.Component<Props, State> {
   static defaultProps: PageRequiredProps;
   delaySubmitSearch: () => void;
   delayOnScroll: () => void;
-  delayCheckSize: () => void;
   localGroupContainer: HTMLElement | null;
   publishedGroupContainer: HTMLElement | null;
   mainHeader: HTMLElement | null;
@@ -71,16 +69,11 @@ class BehaviorList extends React.Component<Props, State> {
       checkedGroupIds: [],
       isSubmitting: false,
       searchText: "",
-      visibleSection: this.props.localBehaviorGroups.length > 0 ? "local" : "published",
-      windowDimensions: {
-        width: window.innerWidth,
-        height: window.innerHeight
-      }
+      visibleSection: this.props.localBehaviorGroups.length > 0 ? "local" : "published"
     };
 
     this.delaySubmitSearch = debounce(() => this.submitSearch(), 500);
-    this.delayOnScroll = debounce(() => this.onScroll(), 25);
-    this.delayCheckSize = debounce(() => this.checkSize(), 25);
+    this.delayOnScroll = debounce(() => this.onScroll(), 50);
     this.mainHeader = document.getElementById('main-header');
   }
 
@@ -95,22 +88,11 @@ class BehaviorList extends React.Component<Props, State> {
   componentDidMount() {
     this.props.onRenderNavActions(this.renderSearch());
     window.addEventListener('scroll', this.delayOnScroll);
-    window.addEventListener('resize', this.delayCheckSize);
+//    window.addEventListener('resize', this.delayCheckSize);
   }
 
   componentDidUpdate() {
     this.props.onRenderNavActions(this.renderSearch());
-  }
-
-  checkSize() {
-    if (this.state.windowDimensions.width !== window.innerWidth || this.state.windowDimensions.height !== window.innerHeight) {
-      this.setState({
-        windowDimensions: {
-          width: window.innerWidth,
-          height: window.innerHeight
-        }
-      });
-    }
   }
 
   onScroll() {
@@ -689,11 +671,10 @@ class BehaviorList extends React.Component<Props, State> {
           <div className="flex-columns flex-row-expand">
             <div className="flex-column flex-column-left flex-rows container container-wide phn">
               <div className="columns flex-columns flex-row-expand mobile-flex-no-columns">
-                <div className="column column-page-sidebar flex-column flex-column-left bg-white border-right-thick border-light prn">
+                <div className="column column-page-sidebar flex-column flex-column-left bg-white border-right-thick border-light prn mobile-display-none">
                   <Sticky
                     onGetCoordinates={this.getSidebarCoordinates}
-                    windowDimensions={this.state.windowDimensions}
-                    disabledWhen={this.state.windowDimensions.width <= MOBILE_MAX_WIDTH}
+                    disabledWhen={() => window.innerWidth <= MOBILE_MAX_WIDTH}
                   >
                     <div className="pvxxl mobile-pvl">
                       <SidebarButton
