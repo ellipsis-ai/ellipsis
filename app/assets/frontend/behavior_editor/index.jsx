@@ -68,7 +68,7 @@ import Sort from '../lib/sort';
 import 'codemirror/mode/markdown/markdown';
 import DeploymentStatus from "./deployment_status";
 import GithubRepoActions from "./versions/github_repo_actions";
-import * as Constants from "../lib/constants";
+import {MOBILE_MAX_WIDTH} from "assets/frontend/lib/constants";
 
 const BehaviorEditor = React.createClass({
   propTypes: Object.assign({}, Page.requiredPropTypes, {
@@ -784,7 +784,7 @@ const BehaviorEditor = React.createClass({
   },
 
   windowIsMobile: function() {
-    return window.innerWidth <= Constants.MOBILE_MAX_WIDTH;
+    return window.innerWidth <= MOBILE_MAX_WIDTH;
   },
 
   checkMobileLayout: function() {
