@@ -1,5 +1,5 @@
 import * as React from 'react';
-import Constants from '../lib/constants';
+import * as Constants from '../lib/constants';
 import HelpPanel from '../help/panel';
 
 class DataTypeSourceHelp extends React.Component {

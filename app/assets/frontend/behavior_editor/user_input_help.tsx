@@ -1,6 +1,6 @@
 import * as React from 'react';
 import HelpPanel from '../help/panel';
-import Constants from '../lib/constants';
+import * as Constants from '../lib/constants';
 
 type Props = {
   onCollapseClick: () => void
