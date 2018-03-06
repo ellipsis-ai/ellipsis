@@ -16,9 +16,9 @@ import * as debounce from 'javascript-debounce';
 import autobind from "../lib/autobind";
 import {PageRequiredProps} from "../shared_ui/page";
 import {PublishedBehaviorGroupLoadStatus} from "./loader";
-import SidebarButton from "../form/sidebar_button";
 import Sticky, {Coords} from "../shared_ui/sticky";
 import {MOBILE_MAX_WIDTH} from "../lib/constants";
+import Button from "../form/button";
 
 const ANIMATION_DURATION = 0.25;
 
@@ -97,7 +97,12 @@ class BehaviorList extends React.Component<Props, State> {
   }
 
   renderNavActions() {
-    return this.renderTeachButton();
+    return (
+      <div className="mtl">
+        {this.renderSearch()}
+        {this.renderTeachButton()}
+      </div>
+    );
   }
 
   onScroll() {
@@ -506,7 +511,7 @@ class BehaviorList extends React.Component<Props, State> {
                   onCheckedChange={this.onGroupCheckboxChange}
                   isChecked={this.isGroupChecked(group)}
                   wasReimported={this.wasReimported(group)}
-                  cardClassName="bg-white"
+                  cardClassName="bg-white border-light"
                 />
               </ResponsiveColumn>
             )) : (
@@ -517,7 +522,7 @@ class BehaviorList extends React.Component<Props, State> {
           </div>
 
         </div>
-        <hr className="mvn bg-dark-translucent"/>
+        <hr className="mvn rule-faint"/>
       </Collapsible>
     );
   }
@@ -526,26 +531,26 @@ class BehaviorList extends React.Component<Props, State> {
     var selectedCount = this.getCheckedGroupIds().length;
     return (
       <div>
-        <button type="button"
+        <Button
           className="button-primary mrs mbs"
           onClick={this.clearCheckedGroups}
         >
           Cancel
-        </button>
-        <button type="button"
+        </Button>
+        <Button
           className="mrs mbs"
           onClick={this.confirmDeleteBehaviorGroups}
           disabled={selectedCount < 1}
         >
           {this.getLabelForDeleteAction(selectedCount)}
-        </button>
-        <button type="button"
+        </Button>
+        <Button
           className="mrl mbs"
           onClick={this.confirmMergeBehaviorGroups}
           disabled={selectedCount < 2}
         >
           Merge skills
-        </button>
+        </Button>
         <div className="align-button mrs mbs type-italic type-weak">
           {this.getActionsLabel(selectedCount)}
         </div>
@@ -555,12 +560,10 @@ class BehaviorList extends React.Component<Props, State> {
 
   renderTeachButton() {
     return (
-      <div className="mtl">
-        <a href={jsRoutes.controllers.BehaviorEditorController.newGroup(this.props.teamId).url}
-          className="button button-s button-shrink">
-          Create new skill…
-        </a>
-      </div>
+      <a href={jsRoutes.controllers.BehaviorEditorController.newGroup(this.props.teamId).url}
+        className="button button-s button-shrink">
+        Create new skill…
+      </a>
     );
   }
 
@@ -618,7 +621,7 @@ class BehaviorList extends React.Component<Props, State> {
                   onMoreInfoClick={this.toggleInfoPanel}
                   isImporting={this.isImporting(group)}
                   isImportable={true}
-                  cardClassName="bg-blue-lightest"
+                  cardClassName="bg-blue-lightest border-blue-light"
                 />
               </ResponsiveColumn>
             )) : (
@@ -644,7 +647,7 @@ class BehaviorList extends React.Component<Props, State> {
             An error occurred loading the list of published skills.
           </p>
 
-          <button type="button" onClick={this.props.onLoadPublishedBehaviorGroups}>Try again…</button>
+          <Button onClick={this.props.onLoadPublishedBehaviorGroups}>Try again…</Button>
         </div>
       );
     }
@@ -669,13 +672,13 @@ class BehaviorList extends React.Component<Props, State> {
 
   renderSearch() {
     return (
-      <div className="phxl mobile-phl mtxs mbxxl mobile-mvn">
+      <div className="display-inline-block width-15 align-b mrxl">
         <SearchInput
           placeholder="Search skills…"
           value={this.state.searchText}
           onChange={this.updateSearch}
           isSearching={this.props.isLoadingMatchingResults}
-          className="form-input-borderless form-input-s"
+          className="form-input-s"
         />
       </div>
     );
@@ -689,25 +692,28 @@ class BehaviorList extends React.Component<Props, State> {
       >
         <div className="pvxxl mobile-pvl">
 
-          {this.renderSearch()}
-
           <div className="mobile-display-none">
-            <SidebarButton
-              onClick={this.scrollToLocal}
-              selected={this.isScrolledToLocal()}
-              disabled={!hasLocalGroups}
-              className="mbl mobile-mbm"
-            >
-              Your team’s skills
-            </SidebarButton>
+            <ul className="list-nav phxl mobile-phl">
+              <li className={this.isScrolledToLocal() ? "list-nav-active-item" : ""}>
+                <Button
+                  className="button-block type-link"
+                  onClick={this.scrollToLocal}
+                  disabled={!hasLocalGroups}
+                >
+                  Your team’s skills
+                </Button>
+              </li>
 
-            <SidebarButton
-              onClick={this.scrollToPublished}
-              selected={this.isScrolledToPublished()}
-              disabled={!hasUninstalledGroups}
-            >
-              Skills available to install
-            </SidebarButton>
+              <li className={this.isScrolledToPublished() ? "list-nav-active-item" : ""}>
+                <Button
+                  className="button-block type-link"
+                  onClick={this.scrollToPublished}
+                  disabled={!hasUninstalledGroups}
+                >
+                  Skills available to install
+                </Button>
+              </li>
+            </ul>
           </div>
         </div>
       </Sticky>
@@ -728,13 +734,13 @@ class BehaviorList extends React.Component<Props, State> {
           <div className="flex-columns flex-row-expand">
             <div className="flex-column flex-column-left flex-rows container container-wide phn">
               <div className="columns flex-columns flex-row-expand mobile-flex-no-columns">
-                <div className="column column-page-sidebar flex-column flex-column-left bg-white border-right-thick border-light mobile-border-right-none mobile-border-bottom prn">
+                <div className="column column-page-sidebar flex-column flex-column-left bg-lightest mobile-border-bottom prn">
                   {this.renderSidebar(hasLocalGroups, hasUninstalledGroups)}
                 </div>
                 <div className="column column-page-main column-page-main-wide flex-column flex-column-main">
                   {this.renderIntro()}
 
-                  <div ref={(el) => this.localGroupContainer = el} className="bg-lightest">
+                  <div ref={(el) => this.localGroupContainer = el} className="bg-white">
                     {this.renderInstalledBehaviorGroups(localGroups, hasLocalGroups)}
                   </div>
 

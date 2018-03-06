@@ -5,7 +5,7 @@ import Button from './button';
 import autobind from '../lib/autobind';
 
 type Props = ButtonProps & {
-  selected: boolean
+  selected?: boolean
 };
 
 class SidebarButton extends React.Component<Props> {
