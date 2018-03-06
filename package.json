@@ -12,6 +12,7 @@
     "@types/diff": "^3.2.2",
     "@types/jest": "^19.2.0",
     "@types/react": "^15.6.14",
+    "animated-scroll-to": "1.1.8",
     "babel-cli": "6.26.0",
     "babel-core": "6.26.0",
     "babel-eslint": "8.2.1",

@@ -1,4 +1,5 @@
 import * as React from 'react';
+import animateScrollTo from 'animated-scroll-to';
 import EditableName from './editable_name';
 import BehaviorGroup from '../models/behavior_group';
 import BehaviorVersion from '../models/behavior_version';
@@ -124,7 +125,12 @@ class BehaviorList extends React.Component<Props, State> {
   scrollToElement(element: HTMLElement): void {
     const elementRect = element.getBoundingClientRect();
     const newY = Math.max(window.scrollY + elementRect.top - this.getHeaderHeight(), 0);
-    window.scrollTo(window.scrollX, newY);
+    animateScrollTo(newY, {
+      speed: 350,
+      minDuration: 100,
+      maxDuration: 500,
+      cancelOnUserAction: true
+    });
   }
 
   scrollToLocal(): void {
