@@ -19,7 +19,8 @@ const webpackConfig = {
       'react-dom',
       'urijs',
       'diff',
-      'whatwg-fetch'
+      'whatwg-fetch',
+      'moment'
     ],
 
     // JSHint loaded separately just on the skill editor
@@ -75,7 +76,9 @@ const webpackConfig = {
     new webpack.optimize.CommonsChunkPlugin({
       names: ['jshint', 'vendor', 'global'],
       minChunks: Infinity
-    })
+    }),
+    /* Force moment to only load English locale instead of all */
+    new webpack.ContextReplacementPlugin(/moment[\/\\]locale$/, /en/)
   ]
 };
 
