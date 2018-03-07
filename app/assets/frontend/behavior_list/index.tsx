@@ -689,20 +689,18 @@ class BehaviorList extends React.Component<Props, State> {
   }
 
   renderIntro() {
-    if (this.getLocalBehaviorGroups().length === 0) {
-      return (
-        <div className="bg-blue-medium pvxxl border-bottom-thick border-blue type-white">
-          <div className="container">
+    return (
+      <Collapsible revealWhen={this.getLocalBehaviorGroups().length === 0}>
+        <div className="bg-lightest ptxl container container-c pbm">
+          <div className="phl">
             <div className="type-l type-light">
-              Ellipsis is a customizable bot that helps your team be more productive.
+              This is a customizable bot that helps your team be more productive.
               Teach your bot to perform tasks and provide answers to your team.
             </div>
           </div>
         </div>
-      );
-    } else {
-      return null;
-    }
+      </Collapsible>
+    );
   }
 
   renderSearch() {
