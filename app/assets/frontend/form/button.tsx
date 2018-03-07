@@ -1,13 +1,15 @@
 import * as React from 'react';
+import autobind from '../lib/autobind';
+import {CSSProperties} from "react";
+
 export interface ButtonProps {
   children: any,
   className?: string,
   disabled?: boolean,
   onClick: () => void,
-  title?: string
+  title?: string,
+  style?: Partial<CSSProperties>
 }
-
-import autobind from '../lib/autobind';
 
 type Props = ButtonProps;
 
