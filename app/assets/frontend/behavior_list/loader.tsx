@@ -28,14 +28,22 @@ type Props = {
 
 export type PublishedBehaviorGroupLoadStatus = "loaded" | "loading" | "error";
 
+export interface SearchResult {
+  isLoading: boolean,
+  error: string | null,
+  matches: Array<BehaviorGroup>
+}
+
+export interface SearchResults {
+  [searchText: string]: SearchResult | undefined
+}
+
 type State = {
   publishedBehaviorGroupLoadStatus: PublishedBehaviorGroupLoadStatus,
   publishedBehaviorGroups: Array<BehaviorGroup>,
   recentlyInstalled: Array<BehaviorGroup>,
   currentlyInstalling: Array<BehaviorGroup>,
-  matchingResults: Array<BehaviorGroup>,
-  currentSearchText: string,
-  isLoadingMatchingResults: boolean,
+  matchingResults: SearchResults,
   currentTeamTimeZone?: string | null,
   dismissedNotifications: Array<string>,
   isDeploying: boolean,
@@ -53,9 +61,7 @@ class BehaviorListLoader extends React.Component<Props, State> {
       publishedBehaviorGroups: [],
       recentlyInstalled: [],
       currentlyInstalling: [],
-      matchingResults: [],
-      currentSearchText: "",
-      isLoadingMatchingResults: false,
+      matchingResults: {},
       currentTeamTimeZone: this.props.teamTimeZone,
       dismissedNotifications: [],
       isDeploying: false,
@@ -217,29 +223,48 @@ class BehaviorListLoader extends React.Component<Props, State> {
     });
   }
 
+  updateMatchResultsFor(queryString: string, newResult: SearchResult, callback?: () => void): void {
+    const newResults: SearchResults = {};
+    newResults[queryString] = newResult;
+    this.setState((prevState) => {
+      return {
+        matchingResults: Object.assign({}, prevState.matchingResults, newResults)
+      };
+    }, callback);
+  }
+
   getSearchResults(queryString: string): void {
     const trimmed = queryString.trim();
     if (trimmed) {
-      this.setState({
-        isLoadingMatchingResults: true
-      });
-      const url = jsRoutes.controllers.ApplicationController.findBehaviorGroupsMatching(queryString, this.props.branchName, this.props.teamId).url;
-      DataRequest
-        .jsonGet(url)
-        .then((matchingGroupsJson) => {
-          this.setState({
-            isLoadingMatchingResults: false,
-            matchingResults: matchingGroupsJson.map(BehaviorGroup.fromJson),
-            currentSearchText: trimmed
+      const existingResult = this.state.matchingResults[trimmed];
+      if (existingResult && (existingResult.isLoading || !existingResult.error)) {
+        return;
+      }
+      const loadingResult: SearchResult = {
+        isLoading: true,
+        error: null,
+        matches: []
+      };
+      this.updateMatchResultsFor(queryString, loadingResult, () => {
+        const url = jsRoutes.controllers.ApplicationController.findBehaviorGroupsMatching(queryString, this.props.branchName, this.props.teamId).url;
+        DataRequest
+          .jsonGet(url)
+          .then((matchingGroupsJson) => {
+            const loadedResult: SearchResult = {
+              isLoading: false,
+              error: null,
+              matches: matchingGroupsJson.map(BehaviorGroup.fromJson)
+            };
+            this.updateMatchResultsFor(queryString, loadedResult);
+          })
+          .catch(() => {
+            const errorResult: SearchResult = {
+              isLoading: false,
+              error: `An error occurred while searching for “${queryString}”`,
+              matches: []
+            };
+            this.updateMatchResultsFor(queryString, errorResult);
           });
-        })
-        .catch(() => {
-          // TODO: no really, error handling
-        });
-    } else {
-      this.setState({
-        matchingResults: [],
-        currentSearchText: ""
       });
     }
   }
@@ -286,12 +311,10 @@ class BehaviorListLoader extends React.Component<Props, State> {
           publishedBehaviorGroups={this.state.publishedBehaviorGroups}
           recentlyInstalled={this.state.recentlyInstalled}
           currentlyInstalling={this.state.currentlyInstalling}
-          matchingResults={this.state.matchingResults}
           isDeploying={this.state.isDeploying}
           deployError={this.state.deployError}
-          currentSearchText={this.state.currentSearchText}
-          isLoadingMatchingResults={this.state.isLoadingMatchingResults}
           publishedBehaviorGroupLoadStatus={this.state.publishedBehaviorGroupLoadStatus}
+          matchingResults={this.state.matchingResults}
           teamId={this.props.teamId}
           slackTeamId={this.props.slackTeamId}
           botName={this.props.botName}

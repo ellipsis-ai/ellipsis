@@ -1,4 +1,5 @@
 import * as React from 'react';
+import animateScrollTo from 'animated-scroll-to';
 import EditableName from './editable_name';
 import BehaviorGroup from '../models/behavior_group';
 import BehaviorVersion from '../models/behavior_version';
@@ -9,13 +10,16 @@ import ConfirmActionPanel from '../panels/confirm_action';
 import SearchInput from '../form/search';
 import InstalledBehaviorGroupsPanel from './installed_behavior_groups_panel';
 import ListHeading from './list_heading';
-import Page from '../shared_ui/page';
 import ResponsiveColumn from '../shared_ui/responsive_column';
 import SubstringHighlighter from '../shared_ui/substring_highlighter';
 import * as debounce from 'javascript-debounce';
 import autobind from "../lib/autobind";
 import {PageRequiredProps} from "../shared_ui/page";
 import {PublishedBehaviorGroupLoadStatus} from "./loader";
+import Sticky, {Coords} from "../shared_ui/sticky";
+import {MOBILE_MAX_WIDTH} from "../lib/constants";
+import Button from "../form/button";
+import {SearchResult} from "./loader";
 
 const ANIMATION_DURATION = 0.25;
 
@@ -31,11 +35,11 @@ type Props = {
   publishedBehaviorGroups: Array<BehaviorGroup>,
   recentlyInstalled: Array<BehaviorGroup>,
   currentlyInstalling: Array<BehaviorGroup>,
-  matchingResults: Array<BehaviorGroup>,
+  matchingResults: {
+    [searchText: string]: SearchResult | undefined
+  },
   isDeploying: boolean,
   deployError: string | null,
-  currentSearchText: string,
-  isLoadingMatchingResults: boolean,
   publishedBehaviorGroupLoadStatus: PublishedBehaviorGroupLoadStatus,
   teamId: string,
   slackTeamId: string,
@@ -47,12 +51,19 @@ type State = {
   selectedBehaviorGroup: BehaviorGroup | null,
   checkedGroupIds: Array<string>,
   isSubmitting: boolean,
-  searchText: string
+  userSearchText: string,
+  activeSearchText: string,
+  visibleSection: "local" | "published"
 }
 
 class BehaviorList extends React.Component<Props, State> {
   static defaultProps: PageRequiredProps;
   delaySubmitSearch: () => void;
+  delayUpdateActiveSearch: (newText: string) => void;
+  delayOnScroll: () => void;
+  localGroupContainer: HTMLElement | null;
+  publishedGroupContainer: HTMLElement | null;
+  mainHeader: HTMLElement | null;
 
   constructor(props: Props) {
     super(props);
@@ -61,12 +72,15 @@ class BehaviorList extends React.Component<Props, State> {
       selectedBehaviorGroup: null,
       checkedGroupIds: [],
       isSubmitting: false,
-      searchText: ""
+      userSearchText: "",
+      activeSearchText: "",
+      visibleSection: this.props.localBehaviorGroups.length > 0 ? "local" : "published"
     };
 
-    this.delaySubmitSearch = debounce(function() {
-      this.submitSearch();
-    }, 500);
+    this.delaySubmitSearch = debounce(() => this.submitSearch(), 50);
+    this.delayUpdateActiveSearch = debounce((newText) => this.updateActiveSearch(newText), 200);
+    this.delayOnScroll = debounce(() => this.onScroll(), 50);
+    this.mainHeader = document.getElementById('main-header');
   }
 
   componentWillReceiveProps(nextProps: Props) {
@@ -78,27 +92,129 @@ class BehaviorList extends React.Component<Props, State> {
   }
 
   componentDidMount() {
-    this.props.onRenderNavActions(this.renderSearch());
+    this.props.onRenderNavActions(this.renderNavActions());
+    window.addEventListener('scroll', this.delayOnScroll);
   }
 
   componentDidUpdate() {
-    this.props.onRenderNavActions(this.renderSearch());
+    this.props.onRenderNavActions(this.renderNavActions());
   }
 
-  updateSearch(newValue: string) {
+  getSearchText(): string {
+    return this.state.activeSearchText;
+  }
+
+  renderNavActions() {
+    return (
+      <div className="mtl">
+        {this.renderTeachButton()}
+      </div>
+    );
+  }
+
+  onScroll() {
+    const scrollY = window.scrollY;
+    const localCoords = this.localGroupContainer ? this.localGroupContainer.getBoundingClientRect() : null;
+    const localTop = scrollY + (localCoords ? localCoords.top : 0);
+    const localHeight = localCoords ? localCoords.height : 0;
+    const publishedCoords = this.publishedGroupContainer ? this.publishedGroupContainer.getBoundingClientRect() : null;
+    const publishedTop = scrollY + (publishedCoords ? publishedCoords.top : 0);
+    const headerHeight = this.getHeaderHeight();
+    const visibleTop = scrollY + headerHeight;
+    const visibleBottom = scrollY + window.innerHeight;
+    const visibleOneThird = visibleTop + Math.round((visibleBottom - visibleTop) / 3);
+    if (publishedTop > visibleOneThird || localHeight > 0 && localTop >= visibleTop) {
+      this.setState({
+        visibleSection: "local"
+      });
+    } else {
+      this.setState({
+        visibleSection: "published"
+      })
+    }
+  }
+
+  getHeaderHeight(): number {
+    return this.mainHeader ? this.mainHeader.offsetHeight : 0;
+  }
+
+  scrollToElement(element: HTMLElement): void {
+    const elementRect = element.getBoundingClientRect();
+    const newY = Math.max(window.scrollY + elementRect.top - this.getHeaderHeight(), 0);
+    animateScrollTo(newY, {
+      speed: 350,
+      minDuration: 100,
+      maxDuration: 500,
+      cancelOnUserAction: true
+    });
+  }
+
+  scrollToLocal(): void {
+    const localContainer = this.localGroupContainer;
+    if (localContainer) {
+      this.setState({
+        visibleSection: "local"
+      }, () => {
+        this.scrollToElement(localContainer);
+      });
+    }
+  }
+
+  scrollToPublished(): void {
+    const publishedContainer = this.publishedGroupContainer;
+    if (publishedContainer) {
+      this.setState({
+        visibleSection: "published"
+      }, () => {
+        this.scrollToElement(publishedContainer);
+      });
+    }
+  }
+
+  isScrolledToLocal(): boolean {
+    return this.state.visibleSection === "local";
+  }
+
+  isScrolledToPublished(): boolean {
+    return this.state.visibleSection === "published";
+  }
+
+  getSidebarCoordinates(): Coords {
+    const headerHeight = this.getHeaderHeight();
+    const footerHeight = this.props.activePanelIsModal ? 0 : this.props.footerHeight;
+    const windowHeight = window.innerHeight;
+
+    const availableHeight = windowHeight - headerHeight - footerHeight;
+    const newHeight = availableHeight > 0 ? availableHeight : window.innerHeight;
+    return {
+      top: headerHeight,
+      left: window.scrollX > 0 ? -window.scrollX : 0,
+      bottom: newHeight
+    };
+  }
+
+  updateUserSearch(newValue: string, optionalCallback?: () => void) {
     this.setState({
-      searchText: newValue
+      userSearchText: newValue
     }, () => {
       if (newValue) {
         this.delaySubmitSearch();
-      } else {
-        this.submitSearch();
+      }
+      this.delayUpdateActiveSearch(newValue);
+      if (optionalCallback) {
+        optionalCallback();
       }
     });
   }
 
   submitSearch() {
-    this.props.onSearch(this.state.searchText);
+    this.props.onSearch(this.state.userSearchText);
+  }
+
+  updateActiveSearch(newValue: string) {
+    this.setState({
+      activeSearchText: newValue.trim()
+    })
   }
 
   getAnimationDuration() {
@@ -119,13 +235,36 @@ class BehaviorList extends React.Component<Props, State> {
   }
 
   isSearching(): boolean {
-    return Boolean(this.props.currentSearchText && this.props.currentSearchText.length);
+    const searchText = this.getSearchText();
+    return Boolean(searchText && searchText.length);
+  }
+
+  getCurrentSearchResult(): SearchResult | undefined {
+    return this.props.matchingResults[this.getSearchText()];
+  }
+
+  getResultsForSearch(): Array<BehaviorGroup> {
+    const result = this.getCurrentSearchResult();
+    if (result) {
+      return result.matches
+    } else {
+      return [];
+    }
+  }
+
+  isLoadingMatchingResults(): boolean {
+    const result = this.getCurrentSearchResult();
+    if (result) {
+      return result.isLoading;
+    } else {
+      return false;
+    }
   }
 
   getMatchingBehaviorGroupsFrom(groups: Array<BehaviorGroup>): Array<BehaviorGroup> {
-    if (this.isSearching()) {
+    if (this.isSearching() && !this.isLoadingMatchingResults()) {
       return groups.filter((ea) =>
-        ea.exportId && BehaviorGroup.groupsIncludeExportId(this.props.matchingResults, ea.exportId)
+        ea.exportId && BehaviorGroup.groupsIncludeExportId(this.getResultsForSearch(), ea.exportId)
       );
     } else {
       return groups;
@@ -347,7 +486,7 @@ class BehaviorList extends React.Component<Props, State> {
   highlight(text: string | null) {
     if (text) {
       return (
-        <SubstringHighlighter text={text} substring={this.props.currentSearchText}/>
+        <SubstringHighlighter text={text} substring={this.getSearchText()}/>
       );
     } else {
       return null;
@@ -356,7 +495,7 @@ class BehaviorList extends React.Component<Props, State> {
 
   getDescriptionOrMatchingTriggers(group: BehaviorGroup) {
     var lowercaseDescription = group.getDescription().toLowerCase();
-    var lowercaseSearch = this.props.currentSearchText.toLowerCase();
+    var lowercaseSearch = this.getSearchText().toLowerCase();
     var matchingBehaviorVersions: Array<BehaviorVersion> = [];
     if (lowercaseSearch) {
       matchingBehaviorVersions = group.behaviorVersions.filter((version) => version.includesText(lowercaseSearch));
@@ -372,7 +511,7 @@ class BehaviorList extends React.Component<Props, State> {
               version={version}
               disableLink={true}
               key={`matchingBehaviorVersion${version.behaviorId || version.exportId || index}`}
-              highlightText={this.props.currentSearchText}
+              highlightText={this.getSearchText()}
             />
           ))}
         </div>
@@ -380,21 +519,19 @@ class BehaviorList extends React.Component<Props, State> {
     }
   }
 
-  renderInstalledBehaviorGroups() {
-    var allLocal = this.getLocalBehaviorGroups();
-    var groups = this.getMatchingBehaviorGroupsFrom(allLocal);
+  renderInstalledBehaviorGroups(groups: Array<BehaviorGroup>, hasLocalGroups: boolean) {
     return (
-      <Collapsible revealWhen={allLocal.length > 0} animationDuration={0.5}>
+      <Collapsible revealWhen={hasLocalGroups} animationDuration={0.5}>
         <div className="container container-c ptxl">
 
-          <ListHeading teamId={this.props.teamId} includeTeachButton={true}>
-            {this.isSearching() ?
-              `Your skills matching “${this.props.currentSearchText}”` :
-              "Your skills"
+          <ListHeading
+            heading={this.isSearching() ?
+              `Your team’s skills matching “${this.getSearchText()}”` :
+              "Your team’s skills"
             }
-          </ListHeading>
+          />
 
-          <div className={"columns mvxl " + (this.props.isLoadingMatchingResults ? "pulse-faded" : "")}>
+          <div className={"columns mvxl " + (this.isLoadingMatchingResults() ? "pulse-faded" : "")}>
             {groups.length > 0 ? groups.map((group) => (
               <ResponsiveColumn key={group.id}>
                 <BehaviorGroupCard
@@ -409,7 +546,7 @@ class BehaviorList extends React.Component<Props, State> {
                   onCheckedChange={this.onGroupCheckboxChange}
                   isChecked={this.isGroupChecked(group)}
                   wasReimported={this.wasReimported(group)}
-                  cardClassName="bg-white"
+                  cardClassName="bg-white border-light"
                 />
               </ResponsiveColumn>
             )) : (
@@ -420,7 +557,7 @@ class BehaviorList extends React.Component<Props, State> {
           </div>
 
         </div>
-        <hr className="mtn bg-dark-translucent mbxxxl"/>
+        <hr className="mvn rule-faint"/>
       </Collapsible>
     );
   }
@@ -429,26 +566,26 @@ class BehaviorList extends React.Component<Props, State> {
     var selectedCount = this.getCheckedGroupIds().length;
     return (
       <div>
-        <button type="button"
+        <Button
           className="button-primary mrs mbs"
           onClick={this.clearCheckedGroups}
         >
           Cancel
-        </button>
-        <button type="button"
+        </Button>
+        <Button
           className="mrs mbs"
           onClick={this.confirmDeleteBehaviorGroups}
           disabled={selectedCount < 1}
         >
           {this.getLabelForDeleteAction(selectedCount)}
-        </button>
-        <button type="button"
+        </Button>
+        <Button
           className="mrl mbs"
           onClick={this.confirmMergeBehaviorGroups}
           disabled={selectedCount < 2}
         >
           Merge skills
-        </button>
+        </Button>
         <div className="align-button mrs mbs type-italic type-weak">
           {this.getActionsLabel(selectedCount)}
         </div>
@@ -456,38 +593,46 @@ class BehaviorList extends React.Component<Props, State> {
     );
   }
 
+  renderTeachButton() {
+    return (
+      <a href={jsRoutes.controllers.BehaviorEditorController.newGroup(this.props.teamId).url}
+        className="button button-s button-shrink">
+        Create new skill…
+      </a>
+    );
+  }
+
   renderPublishedIntro() {
-    if (this.getLocalBehaviorGroups().length > 0) {
-      return (
-        <ListHeading teamId={this.props.teamId}>
-          {this.isSearching() ?
-            `Skills published by Ellipsis.ai matching “${this.props.currentSearchText}”` :
-            "Install skills published by Ellipsis.ai"}
-        </ListHeading>
-      );
-    } else {
+    if (this.getLocalBehaviorGroups().length === 0) {
       return (
         <div>
-          <ListHeading teamId={this.props.teamId} includeTeachButton={true}>
-            To get started, install one of the skills published by Ellipsis.ai
-          </ListHeading>
+          <ListHeading
+            heading={"To get started, install one of the skills available"}
+          />
 
           <p className="type-blue-faded mhl mbxl">
             Each skill instructs your bot how to perform a set of related tasks, and when to respond to people in chat.
           </p>
         </div>
       );
+    } else {
+      return (
+        <div>
+          <ListHeading heading={this.isSearching() ?
+            `Skills available to install matching “${this.getSearchText()}”` :
+            "Skills available to install"
+          } />
+        </div>
+      );
     }
   }
 
-  renderPublishedGroups() {
-    var uninstalled = this.getUninstalledBehaviorGroups();
-    var groups = this.getMatchingBehaviorGroupsFrom(uninstalled);
-    if (this.props.publishedBehaviorGroupLoadStatus === 'loaded' && uninstalled.length === 0) {
+  renderPublishedGroups(groups: Array<BehaviorGroup>, hasUninstalledGroups: boolean) {
+    if (this.props.publishedBehaviorGroupLoadStatus === 'loaded' && !hasUninstalledGroups) {
       return (
         <div>
           <p className="phl">
-            <span className="mrs">🏆💯⭐️🌈{/* <- thar be emoji invisible in intellij */}</span>
+            <span className="mrs">🏆💯⭐️🌈</span>
             <span>Congratulations! You’ve installed all of the skills published by Ellipsis.ai.</span>
           </p>
         </div>
@@ -498,7 +643,7 @@ class BehaviorList extends React.Component<Props, State> {
 
           {this.renderPublishedIntro()}
 
-          <div className={"columns mvxl " + (this.props.isLoadingMatchingResults ? "pulse-faded" : "")}>
+          <div className={"columns mvxl " + (this.isLoadingMatchingResults() ? "pulse-faded" : "")}>
             {groups.length > 0 ? groups.map((group) => (
               <ResponsiveColumn key={group.exportId}>
                 <BehaviorGroupCard
@@ -511,7 +656,7 @@ class BehaviorList extends React.Component<Props, State> {
                   onMoreInfoClick={this.toggleInfoPanel}
                   isImporting={this.isImporting(group)}
                   isImportable={true}
-                  cardClassName="bg-blue-lightest"
+                  cardClassName="bg-blue-lightest border-blue-light"
                 />
               </ResponsiveColumn>
             )) : (
@@ -537,55 +682,111 @@ class BehaviorList extends React.Component<Props, State> {
             An error occurred loading the list of published skills.
           </p>
 
-          <button type="button" onClick={this.props.onLoadPublishedBehaviorGroups}>Try again…</button>
+          <Button onClick={this.props.onLoadPublishedBehaviorGroups}>Try again…</Button>
         </div>
       );
     }
   }
 
   renderIntro() {
-    if (this.props.localBehaviorGroups.length === 0) {
-      return (
-        <div className="bg-blue-medium pvxxl border-bottom-thick border-blue type-white">
-          <div className="container container-c">
-            <div className="type-l type-light phl">
-              Ellipsis is a customizable bot that helps your team be more productive.
+    return (
+      <Collapsible revealWhen={this.getLocalBehaviorGroups().length === 0}>
+        <div className="bg-lightest ptxl container container-c pbm">
+          <div className="phl">
+            <div className="type-l type-light">
+              This is a customizable bot that helps your team be more productive.
               Teach your bot to perform tasks and provide answers to your team.
             </div>
           </div>
         </div>
-      );
-    } else {
-      return null;
-    }
+      </Collapsible>
+    );
   }
 
   renderSearch() {
     return (
-      <div className="pts display-inline-block width-15">
+      <div className="mhl">
         <SearchInput
           placeholder="Search skills…"
-          value={this.state.searchText}
-          onChange={this.updateSearch}
-          isSearching={this.props.isLoadingMatchingResults}
+          value={this.state.userSearchText}
+          onChange={this.updateUserSearch}
+          isSearching={this.isLoadingMatchingResults()}
+          className="form-input-s"
         />
       </div>
     );
   }
 
-  render() {
+  renderSidebar(hasLocalGroups: boolean, hasUninstalledGroups: boolean) {
     return (
-      <div>
-        {this.props.notification}
-        <div style={{ paddingBottom: `${this.props.footerHeight}px` }}>
-          {this.renderIntro()}
+      <Sticky
+        onGetCoordinates={this.getSidebarCoordinates}
+        disabledWhen={() => window.innerWidth <= MOBILE_MAX_WIDTH}
+      >
+        <div className="pvxxl mobile-pvl">
 
-          <div className="bg-lightest">
-            {this.renderInstalledBehaviorGroups()}
+          <div className="mobile-display-none">
+            <ul className="list-nav phxl mobile-phl">
+              <li className={this.isScrolledToLocal() ? "list-nav-active-item" : ""}>
+                <Button
+                  className="button-block type-link"
+                  onClick={this.scrollToLocal}
+                  disabled={!hasLocalGroups}
+                >
+                  Your team’s skills
+                </Button>
+              </li>
+
+              <li className={this.isScrolledToPublished() ? "list-nav-active-item" : ""}>
+                <Button
+                  className="button-block type-link"
+                  onClick={this.scrollToPublished}
+                  disabled={!hasUninstalledGroups}
+                >
+                  Skills available to install
+                </Button>
+              </li>
+            </ul>
           </div>
+        </div>
+      </Sticky>
+    );
+  }
 
-          <div className="container container-c mvxl">
-            {this.renderPublishedGroups()}
+  render() {
+    const allLocal = this.getLocalBehaviorGroups();
+    const hasLocalGroups = allLocal.length > 0;
+    const localGroups = this.getMatchingBehaviorGroupsFrom(allLocal);
+    const allUninstalled = this.getUninstalledBehaviorGroups();
+    const uninstalledGroups = this.getMatchingBehaviorGroupsFrom(allUninstalled);
+    const hasUninstalledGroups = allUninstalled.length > 0;
+    return (
+      <div className="flex-row-cascade">
+        {this.props.notification}
+        <div className="flex-row-cascade" style={{ paddingBottom: `${this.props.footerHeight}px` }}>
+          <div className="flex-columns flex-row-expand">
+            <div className="flex-column flex-column-left flex-rows container container-wide phn">
+              <div className="columns flex-columns flex-row-expand mobile-flex-no-columns">
+                <div className="column column-page-sidebar flex-column flex-column-left bg-lightest mobile-border-bottom prn">
+                  {this.renderSidebar(hasLocalGroups, hasUninstalledGroups)}
+                </div>
+                <div className="column column-page-main column-page-main-wide flex-column flex-column-main">
+                  {this.renderIntro()}
+
+                  <div className="bg-lightest pvl container container-c">
+                    {this.renderSearch()}
+                  </div>
+
+                  <div ref={(el) => this.localGroupContainer = el} className="bg-white">
+                    {this.renderInstalledBehaviorGroups(localGroups, hasLocalGroups)}
+                  </div>
+
+                  <div ref={(el) => this.publishedGroupContainer = el} className="container container-c ptxxl pbxl">
+                    {this.renderPublishedGroups(uninstalledGroups, hasUninstalledGroups)}
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -624,7 +825,7 @@ class BehaviorList extends React.Component<Props, State> {
               revealWhen={!this.props.activePanelIsModal && this.getCheckedGroupIds().length > 0}
             >
               <div className="border-top">
-                <div className="container container-c ptm">
+                <div className="container ptm">
                   {this.renderActions()}
                 </div>
               </div>
@@ -657,7 +858,5 @@ class BehaviorList extends React.Component<Props, State> {
     );
   }
 }
-
-BehaviorList.defaultProps = Page.requiredPropDefaults();
 
 export default BehaviorList;

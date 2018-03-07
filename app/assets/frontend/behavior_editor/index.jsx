@@ -1698,7 +1698,11 @@ const BehaviorEditor = React.createClass({
       versionBrowserOpen: false,
       revertToVersion: null,
       revertToVersionTitle: null,
-      isModifyingGithubRepo: false
+      isModifyingGithubRepo: false,
+      windowDimensions: {
+        width: window.innerWidth,
+        height: window.innerHeight
+      }
     };
   },
 
@@ -2243,7 +2247,12 @@ const BehaviorEditor = React.createClass({
         }
       >
         <Collapsible revealWhen={this.behaviorSwitcherIsVisible()} animationDisabled={!this.hasMobileLayout()}>
-          <Sticky ref={(el) => this.leftPanel = el} onGetCoordinates={this.getLeftPanelCoordinates} innerClassName="position-z-above" disabledWhen={this.hasMobileLayout()}>
+          <Sticky
+            ref={(el) => this.leftPanel = el}
+            onGetCoordinates={this.getLeftPanelCoordinates}
+            innerClassName="position-z-above"
+            disabledWhen={this.hasMobileLayout()}
+          >
             {this.windowIsMobile() ? (
               <div className="position-absolute position-top-right mtm mobile-mts mobile-mrs">
                 <CollapseButton onClick={this.toggleBehaviorSwitcher} direction={"up"} />

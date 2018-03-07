@@ -5,7 +5,7 @@ import Button from './button';
 import autobind from '../lib/autobind';
 
 type Props = ButtonProps & {
-  selected: boolean
+  selected?: boolean
 };
 
 class SidebarButton extends React.Component<Props> {
@@ -17,7 +17,7 @@ class SidebarButton extends React.Component<Props> {
     render() {
       return (
         <Button
-          className={`button-block width-full phxl mobile-phl pvxs mvxs ${
+          className={`button-block width-full phxl mobile-phl pvxs ${
             this.props.selected ? "bg-blue type-white" : "type-link"
           } ${this.props.className || ""}`}
           disabled={this.props.disabled}
