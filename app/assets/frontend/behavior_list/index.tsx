@@ -89,7 +89,6 @@ class BehaviorList extends React.Component<Props, State> {
   componentDidMount() {
     this.props.onRenderNavActions(this.renderNavActions());
     window.addEventListener('scroll', this.delayOnScroll);
-//    window.addEventListener('resize', this.delayCheckSize);
   }
 
   componentDidUpdate() {
@@ -99,7 +98,6 @@ class BehaviorList extends React.Component<Props, State> {
   renderNavActions() {
     return (
       <div className="mtl">
-        {this.renderSearch()}
         {this.renderTeachButton()}
       </div>
     );
@@ -584,7 +582,7 @@ class BehaviorList extends React.Component<Props, State> {
       return (
         <div>
           <ListHeading heading={this.isSearching() ?
-            `Available skills matching “${this.props.currentSearchText}”` :
+            `Skills available to install matching “${this.props.currentSearchText}”` :
             "Skills available to install"
           } />
         </div>
@@ -672,7 +670,7 @@ class BehaviorList extends React.Component<Props, State> {
 
   renderSearch() {
     return (
-      <div className="display-inline-block width-15 align-b mrxl">
+      <div className="mhl">
         <SearchInput
           placeholder="Search skills…"
           value={this.state.searchText}
@@ -739,6 +737,10 @@ class BehaviorList extends React.Component<Props, State> {
                 </div>
                 <div className="column column-page-main column-page-main-wide flex-column flex-column-main">
                   {this.renderIntro()}
+
+                  <div className="bg-lightest pvl container container-c">
+                    {this.renderSearch()}
+                  </div>
 
                   <div ref={(el) => this.localGroupContainer = el} className="bg-white">
                     {this.renderInstalledBehaviorGroups(localGroups, hasLocalGroups)}
