@@ -19,6 +19,7 @@ import {PublishedBehaviorGroupLoadStatus} from "./loader";
 import Sticky, {Coords} from "../shared_ui/sticky";
 import {MOBILE_MAX_WIDTH} from "../lib/constants";
 import Button from "../form/button";
+import {SearchResult} from "./loader";
 
 const ANIMATION_DURATION = 0.25;
 
@@ -34,11 +35,11 @@ type Props = {
   publishedBehaviorGroups: Array<BehaviorGroup>,
   recentlyInstalled: Array<BehaviorGroup>,
   currentlyInstalling: Array<BehaviorGroup>,
-  matchingResults: Array<BehaviorGroup>,
+  matchingResults: {
+    [searchText: string]: SearchResult | undefined
+  },
   isDeploying: boolean,
   deployError: string | null,
-  currentSearchText: string,
-  isLoadingMatchingResults: boolean,
   publishedBehaviorGroupLoadStatus: PublishedBehaviorGroupLoadStatus,
   teamId: string,
   slackTeamId: string,
@@ -50,13 +51,15 @@ type State = {
   selectedBehaviorGroup: BehaviorGroup | null,
   checkedGroupIds: Array<string>,
   isSubmitting: boolean,
-  searchText: string,
+  userSearchText: string,
+  activeSearchText: string,
   visibleSection: "local" | "published"
 }
 
 class BehaviorList extends React.Component<Props, State> {
   static defaultProps: PageRequiredProps;
   delaySubmitSearch: () => void;
+  delayUpdateActiveSearch: (newText: string) => void;
   delayOnScroll: () => void;
   localGroupContainer: HTMLElement | null;
   publishedGroupContainer: HTMLElement | null;
@@ -69,11 +72,13 @@ class BehaviorList extends React.Component<Props, State> {
       selectedBehaviorGroup: null,
       checkedGroupIds: [],
       isSubmitting: false,
-      searchText: "",
+      userSearchText: "",
+      activeSearchText: "",
       visibleSection: this.props.localBehaviorGroups.length > 0 ? "local" : "published"
     };
 
-    this.delaySubmitSearch = debounce(() => this.submitSearch(), 500);
+    this.delaySubmitSearch = debounce(() => this.submitSearch(), 50);
+    this.delayUpdateActiveSearch = debounce((newText) => this.updateActiveSearch(newText), 200);
     this.delayOnScroll = debounce(() => this.onScroll(), 50);
     this.mainHeader = document.getElementById('main-header');
   }
@@ -93,6 +98,10 @@ class BehaviorList extends React.Component<Props, State> {
 
   componentDidUpdate() {
     this.props.onRenderNavActions(this.renderNavActions());
+  }
+
+  getSearchText(): string {
+    return this.state.activeSearchText;
   }
 
   renderNavActions() {
@@ -184,15 +193,14 @@ class BehaviorList extends React.Component<Props, State> {
     };
   }
 
-  updateSearch(newValue: string, optionalCallback?: () => void) {
+  updateUserSearch(newValue: string, optionalCallback?: () => void) {
     this.setState({
-      searchText: newValue
+      userSearchText: newValue
     }, () => {
       if (newValue) {
         this.delaySubmitSearch();
-      } else {
-        this.submitSearch();
       }
+      this.delayUpdateActiveSearch(newValue);
       if (optionalCallback) {
         optionalCallback();
       }
@@ -200,7 +208,13 @@ class BehaviorList extends React.Component<Props, State> {
   }
 
   submitSearch() {
-    this.props.onSearch(this.state.searchText);
+    this.props.onSearch(this.state.userSearchText);
+  }
+
+  updateActiveSearch(newValue: string) {
+    this.setState({
+      activeSearchText: newValue.trim()
+    })
   }
 
   getAnimationDuration() {
@@ -221,13 +235,36 @@ class BehaviorList extends React.Component<Props, State> {
   }
 
   isSearching(): boolean {
-    return Boolean(this.props.currentSearchText && this.props.currentSearchText.length);
+    const searchText = this.getSearchText();
+    return Boolean(searchText && searchText.length);
+  }
+
+  getCurrentSearchResult(): SearchResult | undefined {
+    return this.props.matchingResults[this.getSearchText()];
+  }
+
+  getResultsForSearch(): Array<BehaviorGroup> {
+    const result = this.getCurrentSearchResult();
+    if (result) {
+      return result.matches
+    } else {
+      return [];
+    }
+  }
+
+  isLoadingMatchingResults(): boolean {
+    const result = this.getCurrentSearchResult();
+    if (result) {
+      return result.isLoading;
+    } else {
+      return false;
+    }
   }
 
   getMatchingBehaviorGroupsFrom(groups: Array<BehaviorGroup>): Array<BehaviorGroup> {
-    if (this.isSearching()) {
+    if (this.isSearching() && !this.isLoadingMatchingResults()) {
       return groups.filter((ea) =>
-        ea.exportId && BehaviorGroup.groupsIncludeExportId(this.props.matchingResults, ea.exportId)
+        ea.exportId && BehaviorGroup.groupsIncludeExportId(this.getResultsForSearch(), ea.exportId)
       );
     } else {
       return groups;
@@ -449,7 +486,7 @@ class BehaviorList extends React.Component<Props, State> {
   highlight(text: string | null) {
     if (text) {
       return (
-        <SubstringHighlighter text={text} substring={this.props.currentSearchText}/>
+        <SubstringHighlighter text={text} substring={this.getSearchText()}/>
       );
     } else {
       return null;
@@ -458,7 +495,7 @@ class BehaviorList extends React.Component<Props, State> {
 
   getDescriptionOrMatchingTriggers(group: BehaviorGroup) {
     var lowercaseDescription = group.getDescription().toLowerCase();
-    var lowercaseSearch = this.props.currentSearchText.toLowerCase();
+    var lowercaseSearch = this.getSearchText().toLowerCase();
     var matchingBehaviorVersions: Array<BehaviorVersion> = [];
     if (lowercaseSearch) {
       matchingBehaviorVersions = group.behaviorVersions.filter((version) => version.includesText(lowercaseSearch));
@@ -474,7 +511,7 @@ class BehaviorList extends React.Component<Props, State> {
               version={version}
               disableLink={true}
               key={`matchingBehaviorVersion${version.behaviorId || version.exportId || index}`}
-              highlightText={this.props.currentSearchText}
+              highlightText={this.getSearchText()}
             />
           ))}
         </div>
@@ -489,12 +526,12 @@ class BehaviorList extends React.Component<Props, State> {
 
           <ListHeading
             heading={this.isSearching() ?
-              `Your team’s skills matching “${this.props.currentSearchText}”` :
+              `Your team’s skills matching “${this.getSearchText()}”` :
               "Your team’s skills"
             }
           />
 
-          <div className={"columns mvxl " + (this.props.isLoadingMatchingResults ? "pulse-faded" : "")}>
+          <div className={"columns mvxl " + (this.isLoadingMatchingResults() ? "pulse-faded" : "")}>
             {groups.length > 0 ? groups.map((group) => (
               <ResponsiveColumn key={group.id}>
                 <BehaviorGroupCard
@@ -582,7 +619,7 @@ class BehaviorList extends React.Component<Props, State> {
       return (
         <div>
           <ListHeading heading={this.isSearching() ?
-            `Skills available to install matching “${this.props.currentSearchText}”` :
+            `Skills available to install matching “${this.getSearchText()}”` :
             "Skills available to install"
           } />
         </div>
@@ -606,7 +643,7 @@ class BehaviorList extends React.Component<Props, State> {
 
           {this.renderPublishedIntro()}
 
-          <div className={"columns mvxl " + (this.props.isLoadingMatchingResults ? "pulse-faded" : "")}>
+          <div className={"columns mvxl " + (this.isLoadingMatchingResults() ? "pulse-faded" : "")}>
             {groups.length > 0 ? groups.map((group) => (
               <ResponsiveColumn key={group.exportId}>
                 <BehaviorGroupCard
@@ -673,9 +710,9 @@ class BehaviorList extends React.Component<Props, State> {
       <div className="mhl">
         <SearchInput
           placeholder="Search skills…"
-          value={this.state.searchText}
-          onChange={this.updateSearch}
-          isSearching={this.props.isLoadingMatchingResults}
+          value={this.state.userSearchText}
+          onChange={this.updateUserSearch}
+          isSearching={this.isLoadingMatchingResults()}
           className="form-input-s"
         />
       </div>
