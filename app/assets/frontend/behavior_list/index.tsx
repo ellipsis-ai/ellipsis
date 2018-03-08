@@ -1,17 +1,15 @@
 import * as React from 'react';
 import animateScrollTo from 'animated-scroll-to';
-import EditableName from './editable_name';
 import BehaviorGroup from '../models/behavior_group';
-import BehaviorVersion from '../models/behavior_version';
 import BehaviorGroupCard from './behavior_group_card';
 import BehaviorGroupInfoPanel from './behavior_group_info_panel';
+import Checkbox from '../form/checkbox';
 import Collapsible from '../shared_ui/collapsible';
 import ConfirmActionPanel from '../panels/confirm_action';
 import SearchInput from '../form/search';
 import InstalledBehaviorGroupsPanel from './installed_behavior_groups_panel';
 import ListHeading from './list_heading';
 import ResponsiveColumn from '../shared_ui/responsive_column';
-import SubstringHighlighter from '../shared_ui/substring_highlighter';
 import * as debounce from 'javascript-debounce';
 import autobind from "../lib/autobind";
 import {PageRequiredProps} from "../shared_ui/page";
@@ -20,6 +18,9 @@ import Sticky, {Coords} from "../shared_ui/sticky";
 import {MOBILE_MAX_WIDTH} from "../lib/constants";
 import Button from "../form/button";
 import {SearchResult} from "./loader";
+import SVGInstall from '../svg/install';
+import SVGInstalled from '../svg/installed';
+import SVGInstalling from '../svg/installing';
 
 const ANIMATION_DURATION = 0.25;
 
@@ -431,7 +432,7 @@ class BehaviorList extends React.Component<Props, State> {
     const callback = () => {
       this.props.onBehaviorGroupUpdate(existingGroup, updatedData);
     };
-    if (this.isGroupChecked(existingGroup)) {
+    if (existingGroup.id && this.isGroupChecked(existingGroup)) {
       this.onGroupCheckboxChange(existingGroup.id, false, callback);
     } else {
       callback();
@@ -483,40 +484,20 @@ class BehaviorList extends React.Component<Props, State> {
     }
   }
 
-  highlight(text: string | null) {
-    if (text) {
-      return (
-        <SubstringHighlighter text={text} substring={this.getSearchText()}/>
-      );
-    } else {
-      return null;
-    }
-  }
-
-  getDescriptionOrMatchingTriggers(group: BehaviorGroup) {
-    var lowercaseDescription = group.getDescription().toLowerCase();
-    var lowercaseSearch = this.getSearchText().toLowerCase();
-    var matchingBehaviorVersions: Array<BehaviorVersion> = [];
-    if (lowercaseSearch) {
-      matchingBehaviorVersions = group.behaviorVersions.filter((version) => version.includesText(lowercaseSearch));
-    }
-    if (!lowercaseSearch || lowercaseDescription.includes(lowercaseSearch) || matchingBehaviorVersions.length === 0) {
-      return this.highlight(group.description);
-    } else {
-      return (
-        <div>
-          {matchingBehaviorVersions.map((version, index) => (
-            <EditableName
-              className="mbs"
-              version={version}
-              disableLink={true}
-              key={`matchingBehaviorVersion${version.behaviorId || version.exportId || index}`}
-              highlightText={this.getSearchText()}
-            />
-          ))}
-        </div>
-      );
-    }
+  renderInstalledGroupActions(group: BehaviorGroup) {
+    const onCheckedChangeForGroup = (isChecked) => {
+      if (group.id) {
+        this.onGroupCheckboxChange(group.id, isChecked);
+      }
+    };
+    return (
+      <Checkbox
+        className="display-block type-s"
+        onChange={onCheckedChangeForGroup}
+        checked={this.isGroupChecked(group)}
+        label="Select"
+      />
+    )
   }
 
   renderInstalledBehaviorGroups(groups: Array<BehaviorGroup>, hasLocalGroups: boolean) {
@@ -532,21 +513,16 @@ class BehaviorList extends React.Component<Props, State> {
           />
 
           <div className={"columns mvxl " + (this.isLoadingMatchingResults() ? "pulse-faded" : "")}>
-            {groups.length > 0 ? groups.map((group) => (
-              <ResponsiveColumn key={group.id}>
+            {groups.length > 0 ? groups.map((group, index) => (
+              <ResponsiveColumn key={group.id || `group${index}`}>
                 <BehaviorGroupCard
-                  name={this.highlight(group.name)}
-                  description={this.getDescriptionOrMatchingTriggers(group)}
-                  icon={group.icon}
-                  groupData={group}
-                  localId={group.id}
+                  group={group}
                   onMoreInfoClick={this.toggleInfoPanel}
-                  isImportable={false}
                   isImporting={this.isImporting(group)}
-                  onCheckedChange={this.onGroupCheckboxChange}
-                  isChecked={this.isGroupChecked(group)}
                   wasReimported={this.wasReimported(group)}
                   cardClassName="bg-white border-light"
+                  secondaryActions={this.renderInstalledGroupActions(group)}
+                  searchText={this.getSearchText()}
                 />
               </ResponsiveColumn>
             )) : (
@@ -627,6 +603,34 @@ class BehaviorList extends React.Component<Props, State> {
     }
   }
 
+  renderInstallActionsFor(group: BehaviorGroup) {
+    const onImportforGroup = () => {
+      this.onBehaviorGroupImport(group);
+    };
+    if (this.isImporting(group)) {
+      return (
+        <Button title="Installing, please wait…" className="button-raw button-no-wrap height-xl" disabled={true} onClick={null}>
+          <span className="display-inline-block align-m mrs" style={{width: 40, height: 24}}><SVGInstalling /></span>
+          <span className="display-inline-block align-m">Installing…</span>
+        </Button>
+      );
+    } else if (group.id) {
+      return (
+        <Button title="Already installed" className="button-raw button-no-wrap height-xl" disabled={true} onClick={null}>
+          <span className="display-inline-block align-m mrs" style={{width: 40, height: 24}}><SVGInstalled /></span>
+          <span className="display-inline-block align-m type-green">Installed</span>
+        </Button>
+      );
+    } else {
+      return (
+        <Button title="Install this skill" className="button-raw button-no-wrap height-xl" onClick={onImportforGroup}>
+          <span className="display-inline-block align-m mrs" style={{width: 40, height: 24}}><SVGInstall /></span>
+          <span className="display-inline-block align-m">Install</span>
+        </Button>
+      );
+    }
+  }
+
   renderPublishedGroups(groups: Array<BehaviorGroup>, hasUninstalledGroups: boolean) {
     if (this.props.publishedBehaviorGroupLoadStatus === 'loaded' && !hasUninstalledGroups) {
       return (
@@ -647,16 +651,12 @@ class BehaviorList extends React.Component<Props, State> {
             {groups.length > 0 ? groups.map((group) => (
               <ResponsiveColumn key={group.exportId}>
                 <BehaviorGroupCard
-                  name={this.highlight(group.name)}
-                  description={this.getDescriptionOrMatchingTriggers(group)}
-                  icon={group.icon}
-                  groupData={group}
-                  localId={this.getLocalIdFor(group.exportId)}
-                  onBehaviorGroupImport={this.onBehaviorGroupImport}
+                  group={group}
                   onMoreInfoClick={this.toggleInfoPanel}
                   isImporting={this.isImporting(group)}
-                  isImportable={true}
                   cardClassName="bg-blue-lightest border-blue-light"
+                  secondaryActions={this.renderInstallActionsFor(group)}
+                  searchText={this.getSearchText()}
                 />
               </ResponsiveColumn>
             )) : (

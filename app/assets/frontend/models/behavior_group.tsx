@@ -36,7 +36,7 @@ export interface BehaviorGroupJson {
 }
 
 class BehaviorGroup implements Diffable {
-    id: string;
+    id: string | null;
     teamId: string;
     name: string | null;
     icon: string | null;
@@ -271,7 +271,7 @@ class BehaviorGroup implements Diffable {
     }
 
     getIdForDiff(): string {
-      return this.id;
+      return this.id || "unknown";
     }
 
     diffProps(): Array<DiffableProp> {
