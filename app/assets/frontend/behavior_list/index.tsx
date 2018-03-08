@@ -431,7 +431,7 @@ class BehaviorList extends React.Component<Props, State> {
     const callback = () => {
       this.props.onBehaviorGroupUpdate(existingGroup, updatedData);
     };
-    if (this.isGroupChecked(existingGroup)) {
+    if (existingGroup.id && this.isGroupChecked(existingGroup)) {
       this.onGroupCheckboxChange(existingGroup.id, false, callback);
     } else {
       callback();
@@ -532,8 +532,8 @@ class BehaviorList extends React.Component<Props, State> {
           />
 
           <div className={"columns mvxl " + (this.isLoadingMatchingResults() ? "pulse-faded" : "")}>
-            {groups.length > 0 ? groups.map((group) => (
-              <ResponsiveColumn key={group.id}>
+            {groups.length > 0 ? groups.map((group, index) => (
+              <ResponsiveColumn key={group.id || `group${index}`}>
                 <BehaviorGroupCard
                   name={this.highlight(group.name)}
                   description={this.getDescriptionOrMatchingTriggers(group)}

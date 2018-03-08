@@ -22,8 +22,8 @@ class GithubRepoActions extends React.Component<Props> {
     autobind(this);
   }
 
-  getGithubAuthUrl(): string {
-    const redirect = jsRoutes.controllers.BehaviorEditorController.edit(this.props.currentGroup.id, this.props.currentSelectedId, true).url;
+  getGithubAuthUrl(groupId: string, currentSelectedId: string): string {
+    const redirect = jsRoutes.controllers.BehaviorEditorController.edit(groupId, currentSelectedId, true).url;
     return jsRoutes.controllers.SocialAuthController.authenticateGithub(redirect).url;
   }
 
@@ -40,15 +40,21 @@ class GithubRepoActions extends React.Component<Props> {
   }
 
   renderGithubAuth() {
-    return (
-      <span className="type-s">
-        <a href={this.getGithubAuthUrl()}>
-          <img height="24" src="/assets/images/logos/GitHub-Mark-64px.png" className="mrs align-m" />
-          <span>Authenticate with GitHub</span>
-        </a>
-        <span> to sync this skill with a GitHub repo</span>
-      </span>
-    );
+    const groupId = this.props.currentGroup.id;
+    const selectedId = this.props.currentSelectedId;
+    if (groupId && selectedId) {
+      return (
+        <span className="type-s">
+          <a href={this.getGithubAuthUrl(groupId, selectedId)}>
+            <img height="24" src="/assets/images/logos/GitHub-Mark-64px.png" className="mrs align-m"/>
+            <span>Authenticate with GitHub</span>
+          </a>
+          <span> to sync this skill with a GitHub repo</span>
+        </span>
+      );
+    } else {
+      return null;
+    }
   }
 
   renderGithubActions() {

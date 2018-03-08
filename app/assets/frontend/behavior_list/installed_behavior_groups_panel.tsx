@@ -85,8 +85,15 @@ class InstalledBehaviorGroupsPanel extends React.Component<Props> {
     return URLCreator.forSlack(this.props.slackTeamId);
   }
 
-  getEditUrlFor(group: BehaviorGroup) {
-    return jsRoutes.controllers.BehaviorEditorController.edit(group.id).url;
+  renderEditLinkFor(group: BehaviorGroup) {
+    if (group.id) {
+      const url = jsRoutes.controllers.BehaviorEditorController.edit(group.id).url;
+      return (
+        <a className="button mbs mrs" href={url}>Edit skill</a>
+      );
+    } else {
+      return null;
+    }
   }
 
   onClickDone() {
@@ -94,7 +101,7 @@ class InstalledBehaviorGroupsPanel extends React.Component<Props> {
   }
 
   deploy() {
-    if (this.props.installedBehaviorGroup) {
+    if (this.props.installedBehaviorGroup && this.props.installedBehaviorGroup.id) {
       this.props.onDeploy(this.props.installedBehaviorGroup.id);
     }
   }
@@ -159,7 +166,7 @@ class InstalledBehaviorGroupsPanel extends React.Component<Props> {
               }]}
             />
 
-            <a className="button mbs mrs" href={this.getEditUrlFor(group)}>Edit skill</a>
+            {this.renderEditLinkFor(group)}
 
             <Button className="mbs mrl" onClick={this.onClickDone}>Done</Button>
 
