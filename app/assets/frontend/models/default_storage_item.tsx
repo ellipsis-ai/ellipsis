@@ -1,6 +1,9 @@
 import DefaultStorageItemField from './default_storage_item_field';
 
-type DefaultStorageItemData = { [prop: string]: any };
+type DefaultStorageItemData = {
+  id: string,
+  [prop: string]: any
+};
 
 class DefaultStorageItem {
     id: string;

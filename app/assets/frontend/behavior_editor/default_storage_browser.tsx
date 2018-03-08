@@ -210,7 +210,10 @@ class DefaultStorageBrowser extends React.Component<Props, State> {
       return this.getCheckedIds().indexOf(item.data.id) >= 0;
     }
 
-    toggleChecked(checked: boolean, itemId: string): void {
+    toggleChecked(checked: boolean, itemId?: string): void {
+      if (!itemId) {
+        return;
+      }
       let checkedIdsAfter = this.getCheckedIds();
       if (checked) {
         checkedIdsAfter = checkedIdsAfter.concat([itemId]);
@@ -224,7 +227,7 @@ class DefaultStorageBrowser extends React.Component<Props, State> {
     }
 
     renderCheckboxCell(item: DefaultStorageItem) {
-      const itemId = item.data.id;
+      const itemId: string = item.data.id;
       return (
         <td
           key={`${itemId}-checkbox`}
