@@ -1,6 +1,7 @@
 import * as React from 'react';
 import BehaviorGroup from '../models/behavior_group';
 import BehaviorVersion from '../models/behavior_version';
+import DynamicLabelButton from '../form/dynamic_label_button';
 import EditableName from './editable_name';
 import Formatter from '../lib/formatter';
 import SVGInstall from '../svg/install';
@@ -16,7 +17,8 @@ import autobind from '../lib/autobind';
     updatedData: BehaviorGroup | null,
     onToggle: () => void,
     isImportable: boolean,
-    wasImported: boolean | null,
+    wasImported: boolean,
+    isImporting: boolean,
     localId: string | null
   }
 
@@ -135,7 +137,18 @@ import autobind from '../lib/autobind';
       if (this.props.updatedData) {
         return (
           <div className="mvl fade-in">
-            <button type="button" className="button-s" onClick={this.onUpdate}>Re-install</button>
+            <DynamicLabelButton
+              className="button-s"
+              disabledWhen={this.props.isImporting}
+              onClick={this.onUpdate}
+              labels={[{
+                text: "Re-install",
+                displayWhen: !this.props.isImporting
+              }, {
+                text: "Re-installing",
+                displayWhen: this.props.isImporting
+              }]}
+            />
           </div>
         );
       } else {
@@ -154,7 +167,7 @@ import autobind from '../lib/autobind';
         );
       } else if (this.props.wasImported) {
         return (
-          <div className="type-s mvm fade-in">
+          <div className={`type-s mvm fade-in ${this.props.isImporting ? "pulse" : ""}`}>
             <span className="display-inline-block align-m mrs" style={{ width: 30, height: 18 }}><SVGInstalled /></span>
             <span className="display-inline-block align-m type-green">Installed from Ellipsis.ai</span>
           </div>

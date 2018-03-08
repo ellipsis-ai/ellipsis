@@ -21,6 +21,7 @@ import {SearchResult} from "./loader";
 import SVGInstall from '../svg/install';
 import SVGInstalled from '../svg/installed';
 import SVGInstalling from '../svg/installing';
+import SVGCheckmark from '../svg/checkmark';
 
 const ANIMATION_DURATION = 0.25;
 
@@ -85,10 +86,25 @@ class BehaviorList extends React.Component<Props, State> {
   }
 
   componentWillReceiveProps(nextProps: Props) {
-    const newestImported = nextProps.recentlyInstalled.filter((next) => !BehaviorGroup.groupsIncludeExportId(this.props.recentlyInstalled, next.exportId));
-    const newlyInstalled = newestImported.filter((newGroup) => !BehaviorGroup.groupsIncludeExportId(this.props.localBehaviorGroups, newGroup.exportId));
+    const newestImported = nextProps.recentlyInstalled.filter((next) => {
+      return !BehaviorGroup.groupsIncludeExportId(this.props.recentlyInstalled, next.exportId);
+    });
+    const newlyInstalled = newestImported.filter((newGroup) => {
+      return !BehaviorGroup.groupsIncludeExportId(this.props.localBehaviorGroups, newGroup.exportId);
+    });
+    const newestUpdated = newestImported.filter((newGroup) => {
+      return BehaviorGroup.groupsIncludeExportId(this.props.localBehaviorGroups, newGroup.exportId);
+    });
     if (newlyInstalled.length > 0 && this.props.activePanelName !== 'afterInstall') {
       this.props.onToggleActivePanel('afterInstall', true);
+    } else if (newestUpdated.length > 0) {
+      const selected = this.getSelectedBehaviorGroup();
+      const selectedUpdated = selected && newestUpdated.find((ea) => ea.id === selected.id);
+      if (selected && selectedUpdated) {
+        this.setState({
+          selectedBehaviorGroup: selectedUpdated
+        });
+      }
     }
   }
 
@@ -426,9 +442,6 @@ class BehaviorList extends React.Component<Props, State> {
   }
 
   onBehaviorGroupUpdate(existingGroup: BehaviorGroup, updatedData: BehaviorGroup): void {
-    if (this.getActivePanelName() === 'moreInfo') {
-      this.clearActivePanel();
-    }
     const callback = () => {
       this.props.onBehaviorGroupUpdate(existingGroup, updatedData);
     };
@@ -448,8 +461,8 @@ class BehaviorList extends React.Component<Props, State> {
     }
   }
 
-  isImporting(group: BehaviorGroup): boolean {
-    return Boolean(group.exportId && BehaviorGroup.groupsIncludeExportId(this.props.currentlyInstalling, group.exportId));
+  isImporting(group: BehaviorGroup | null): boolean {
+    return Boolean(group && group.exportId && BehaviorGroup.groupsIncludeExportId(this.props.currentlyInstalling, group.exportId));
   }
 
   wasReimported(group: BehaviorGroup): boolean {
@@ -485,19 +498,32 @@ class BehaviorList extends React.Component<Props, State> {
   }
 
   renderInstalledGroupActions(group: BehaviorGroup) {
+    const groupId = group.id;
+    if (!groupId) {
+      return null;
+    }
     const onCheckedChangeForGroup = (isChecked) => {
-      if (group.id) {
-        this.onGroupCheckboxChange(group.id, isChecked);
-      }
+      this.onGroupCheckboxChange(groupId, isChecked);
     };
     return (
-      <Checkbox
-        className="display-block type-s"
-        onChange={onCheckedChangeForGroup}
-        checked={this.isGroupChecked(group)}
-        label="Select"
-      />
-    )
+      <div className="columns columns-elastic type-s">
+        <div className="column column-shrink">
+          <div className="display-nowrap">
+            <Checkbox
+              className="display-block"
+              onChange={onCheckedChangeForGroup}
+              checked={this.isGroupChecked(group)}
+              label={(
+                <span className="narrow-display-none">Select</span>
+              )}
+            />
+          </div>
+        </div>
+        <div className="column column-expand align-r">
+          <a href={jsRoutes.controllers.BehaviorEditorController.edit(groupId).url}>Edit</a>
+        </div>
+      </div>
+    );
   }
 
   renderInstalledBehaviorGroups(groups: Array<BehaviorGroup>, hasLocalGroups: boolean) {
@@ -801,6 +827,7 @@ class BehaviorList extends React.Component<Props, State> {
                 onToggle={this.clearActivePanel}
                 isImportable={this.selectedBehaviorGroupIsUninstalled()}
                 wasImported={this.selectedBehaviorWasImported()}
+                isImporting={this.isImporting(this.getSelectedBehaviorGroup())}
                 localId={this.getSelectedBehaviorGroupId()}
                 onBehaviorGroupImport={this.onBehaviorGroupImport}
                 onBehaviorGroupUpdate={this.onBehaviorGroupUpdate}
