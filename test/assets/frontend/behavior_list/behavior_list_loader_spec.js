@@ -20,8 +20,9 @@ jest.setMock('../../../../app/assets/frontend/lib/data_request', { DataRequest: 
 
 describe('BehaviorListApp', () => {
   jsRoutes.controllers.ApplicationController.fetchPublishedBehaviorInfo = () => ({ url: '/fetch', method: 'get' });
-  jsRoutes.controllers.BehaviorEditorController.newGroup = () => ({ url: '/newGroup', method: 'get' });
   jsRoutes.controllers.ApplicationController.possibleCitiesFor = () => ({ url: '/possibleCitiesFor', method: 'get' });
+  jsRoutes.controllers.BehaviorEditorController.edit = () => ({ url: '/edit', method: 'get' });
+  jsRoutes.controllers.BehaviorEditorController.newGroup = () => ({ url: '/newGroup', method: 'get' });
 
   const behaviorVersionTask1 = Object.freeze({
     "teamId": "abcdef",

@@ -85,10 +85,25 @@ class BehaviorList extends React.Component<Props, State> {
   }
 
   componentWillReceiveProps(nextProps: Props) {
-    const newestImported = nextProps.recentlyInstalled.filter((next) => !BehaviorGroup.groupsIncludeExportId(this.props.recentlyInstalled, next.exportId));
-    const newlyInstalled = newestImported.filter((newGroup) => !BehaviorGroup.groupsIncludeExportId(this.props.localBehaviorGroups, newGroup.exportId));
+    const newestImported = nextProps.recentlyInstalled.filter((next) => {
+      return !BehaviorGroup.groupsIncludeExportId(this.props.recentlyInstalled, next.exportId);
+    });
+    const newlyInstalled = newestImported.filter((newGroup) => {
+      return !BehaviorGroup.groupsIncludeExportId(this.props.localBehaviorGroups, newGroup.exportId);
+    });
+    const newestUpdated = newestImported.filter((newGroup) => {
+      return BehaviorGroup.groupsIncludeExportId(this.props.localBehaviorGroups, newGroup.exportId);
+    });
     if (newlyInstalled.length > 0 && this.props.activePanelName !== 'afterInstall') {
       this.props.onToggleActivePanel('afterInstall', true);
+    } else if (newestUpdated.length > 0) {
+      const selected = this.getSelectedBehaviorGroup();
+      const selectedUpdated = selected && newestUpdated.find((ea) => ea.id === selected.id);
+      if (selected && selectedUpdated) {
+        this.setState({
+          selectedBehaviorGroup: selectedUpdated
+        });
+      }
     }
   }
 
@@ -387,13 +402,18 @@ class BehaviorList extends React.Component<Props, State> {
     return Boolean(selectedGroup && selectedGroup.exportId && !this.getLocalIdFor(selectedGroup.exportId));
   }
 
-  selectedBehaviorWasImported(): boolean {
-    var selectedGroup = this.getSelectedBehaviorGroup();
+  groupIsPublished(group: BehaviorGroup | null): boolean {
     return Boolean(
-      selectedGroup &&
-      selectedGroup.id &&
-      selectedGroup.exportId &&
-      BehaviorGroup.groupsIncludeExportId(this.props.publishedBehaviorGroups, selectedGroup.exportId)
+      group &&
+      group.exportId &&
+      BehaviorGroup.groupsIncludeExportId(this.props.publishedBehaviorGroups, group.exportId)
+    );
+  }
+
+  publishedGroupWasImported(group: BehaviorGroup): boolean {
+    return Boolean(
+      group.exportId &&
+      BehaviorGroup.groupsIncludeExportId(this.getLocalBehaviorGroups(), group.exportId)
     );
   }
 
@@ -426,9 +446,6 @@ class BehaviorList extends React.Component<Props, State> {
   }
 
   onBehaviorGroupUpdate(existingGroup: BehaviorGroup, updatedData: BehaviorGroup): void {
-    if (this.getActivePanelName() === 'moreInfo') {
-      this.clearActivePanel();
-    }
     const callback = () => {
       this.props.onBehaviorGroupUpdate(existingGroup, updatedData);
     };
@@ -448,8 +465,8 @@ class BehaviorList extends React.Component<Props, State> {
     }
   }
 
-  isImporting(group: BehaviorGroup): boolean {
-    return Boolean(group.exportId && BehaviorGroup.groupsIncludeExportId(this.props.currentlyInstalling, group.exportId));
+  isImporting(group: BehaviorGroup | null): boolean {
+    return Boolean(group && group.exportId && BehaviorGroup.groupsIncludeExportId(this.props.currentlyInstalling, group.exportId));
   }
 
   wasReimported(group: BehaviorGroup): boolean {
@@ -485,19 +502,32 @@ class BehaviorList extends React.Component<Props, State> {
   }
 
   renderInstalledGroupActions(group: BehaviorGroup) {
+    const groupId = group.id;
+    if (!groupId) {
+      return null;
+    }
     const onCheckedChangeForGroup = (isChecked) => {
-      if (group.id) {
-        this.onGroupCheckboxChange(group.id, isChecked);
-      }
+      this.onGroupCheckboxChange(groupId, isChecked);
     };
     return (
-      <Checkbox
-        className="display-block type-s"
-        onChange={onCheckedChangeForGroup}
-        checked={this.isGroupChecked(group)}
-        label="Select"
-      />
-    )
+      <div className="columns columns-elastic type-s">
+        <div className="column column-shrink">
+          <div className="display-nowrap">
+            <Checkbox
+              className="display-block"
+              onChange={onCheckedChangeForGroup}
+              checked={this.isGroupChecked(group)}
+              label={(
+                <span className="narrow-display-none">Select</span>
+              )}
+            />
+          </div>
+        </div>
+        <div className="column column-expand align-r">
+          <a href={jsRoutes.controllers.BehaviorEditorController.edit(groupId).url}>Edit</a>
+        </div>
+      </div>
+    );
   }
 
   renderInstalledBehaviorGroups(groups: Array<BehaviorGroup>, hasLocalGroups: boolean) {
@@ -603,18 +633,18 @@ class BehaviorList extends React.Component<Props, State> {
     }
   }
 
-  renderInstallActionsFor(group: BehaviorGroup) {
+  renderInstallActionsFor(publishedGroup: BehaviorGroup) {
     const onImportforGroup = () => {
-      this.onBehaviorGroupImport(group);
+      this.onBehaviorGroupImport(publishedGroup);
     };
-    if (this.isImporting(group)) {
+    if (this.isImporting(publishedGroup)) {
       return (
         <Button title="Installing, please wait…" className="button-raw button-no-wrap height-xl" disabled={true} onClick={null}>
           <span className="display-inline-block align-m mrs" style={{width: 40, height: 24}}><SVGInstalling /></span>
           <span className="display-inline-block align-m">Installing…</span>
         </Button>
       );
-    } else if (group.id) {
+    } else if (this.publishedGroupWasImported(publishedGroup)) {
       return (
         <Button title="Already installed" className="button-raw button-no-wrap height-xl" disabled={true} onClick={null}>
           <span className="display-inline-block align-m mrs" style={{width: 40, height: 24}}><SVGInstalled /></span>
@@ -800,7 +830,8 @@ class BehaviorList extends React.Component<Props, State> {
                 groupData={this.getSelectedBehaviorGroup()}
                 onToggle={this.clearActivePanel}
                 isImportable={this.selectedBehaviorGroupIsUninstalled()}
-                wasImported={this.selectedBehaviorWasImported()}
+                isPublished={this.groupIsPublished(this.getSelectedBehaviorGroup())}
+                isImporting={this.isImporting(this.getSelectedBehaviorGroup())}
                 localId={this.getSelectedBehaviorGroupId()}
                 onBehaviorGroupImport={this.onBehaviorGroupImport}
                 onBehaviorGroupUpdate={this.onBehaviorGroupUpdate}

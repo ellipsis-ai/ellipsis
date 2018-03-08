@@ -1,6 +1,5 @@
 import * as React from 'react';
 import BehaviorGroup from '../models/behavior_group';
-import SVGInstalled from '../svg/installed';
 import Button from "../form/button";
 import autobind from "../lib/autobind";
 import BehaviorVersion from "../models/behavior_version";
@@ -71,19 +70,6 @@ class BehaviorGroupCard extends React.PureComponent<Props> {
     return this.props.secondaryActions;
   }
 
-  renderWasReimported() {
-    if (this.props.wasReimported) {
-      return (
-        <div className="type-s align-r fade-in">
-          <span className="display-inline-block align-m mrs" style={{width: 30, height: 18}}><SVGInstalled/></span>
-          <span className="display-inline-block align-m type-green">Re-installed</span>
-        </div>
-      );
-    } else {
-      return null;
-    }
-  }
-
   getDescription() {
     return (
       <div className="display-overflow-fade-bottom" style={{maxHeight: "4rem"}}>
@@ -139,10 +125,7 @@ class BehaviorGroupCard extends React.PureComponent<Props> {
             </Button>
           </div>
           <div className="phl pvm width" style={{height: "2.6667rem"}}>
-            <div className="columns">
-              <div className="column column-one-half">{this.renderSecondaryAction()}</div>
-              <div className="column column-one-half">{this.renderWasReimported()}</div>
-            </div>
+            {this.renderSecondaryAction()}
           </div>
         </div>
       </div>
