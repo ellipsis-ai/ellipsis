@@ -1,6 +1,5 @@
 import * as React from 'react';
 import BehaviorGroup from '../models/behavior_group';
-import SVGInstalled from '../svg/installed';
 import Button from "../form/button";
 import autobind from "../lib/autobind";
 import BehaviorVersion from "../models/behavior_version";

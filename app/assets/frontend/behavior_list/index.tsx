@@ -21,7 +21,6 @@ import {SearchResult} from "./loader";
 import SVGInstall from '../svg/install';
 import SVGInstalled from '../svg/installed';
 import SVGInstalling from '../svg/installing';
-import SVGCheckmark from '../svg/checkmark';
 
 const ANIMATION_DURATION = 0.25;
 
@@ -403,13 +402,18 @@ class BehaviorList extends React.Component<Props, State> {
     return Boolean(selectedGroup && selectedGroup.exportId && !this.getLocalIdFor(selectedGroup.exportId));
   }
 
-  selectedBehaviorWasImported(): boolean {
-    var selectedGroup = this.getSelectedBehaviorGroup();
+  groupIsPublished(group: BehaviorGroup | null): boolean {
     return Boolean(
-      selectedGroup &&
-      selectedGroup.id &&
-      selectedGroup.exportId &&
-      BehaviorGroup.groupsIncludeExportId(this.props.publishedBehaviorGroups, selectedGroup.exportId)
+      group &&
+      group.exportId &&
+      BehaviorGroup.groupsIncludeExportId(this.props.publishedBehaviorGroups, group.exportId)
+    );
+  }
+
+  publishedGroupWasImported(group: BehaviorGroup): boolean {
+    return Boolean(
+      group.exportId &&
+      BehaviorGroup.groupsIncludeExportId(this.getLocalBehaviorGroups(), group.exportId)
     );
   }
 
@@ -629,18 +633,18 @@ class BehaviorList extends React.Component<Props, State> {
     }
   }
 
-  renderInstallActionsFor(group: BehaviorGroup) {
+  renderInstallActionsFor(publishedGroup: BehaviorGroup) {
     const onImportforGroup = () => {
-      this.onBehaviorGroupImport(group);
+      this.onBehaviorGroupImport(publishedGroup);
     };
-    if (this.isImporting(group)) {
+    if (this.isImporting(publishedGroup)) {
       return (
         <Button title="Installing, please wait…" className="button-raw button-no-wrap height-xl" disabled={true} onClick={null}>
           <span className="display-inline-block align-m mrs" style={{width: 40, height: 24}}><SVGInstalling /></span>
           <span className="display-inline-block align-m">Installing…</span>
         </Button>
       );
-    } else if (group.id) {
+    } else if (this.publishedGroupWasImported(publishedGroup)) {
       return (
         <Button title="Already installed" className="button-raw button-no-wrap height-xl" disabled={true} onClick={null}>
           <span className="display-inline-block align-m mrs" style={{width: 40, height: 24}}><SVGInstalled /></span>
@@ -826,7 +830,7 @@ class BehaviorList extends React.Component<Props, State> {
                 groupData={this.getSelectedBehaviorGroup()}
                 onToggle={this.clearActivePanel}
                 isImportable={this.selectedBehaviorGroupIsUninstalled()}
-                wasImported={this.selectedBehaviorWasImported()}
+                isPublished={this.groupIsPublished(this.getSelectedBehaviorGroup())}
                 isImporting={this.isImporting(this.getSelectedBehaviorGroup())}
                 localId={this.getSelectedBehaviorGroupId()}
                 onBehaviorGroupImport={this.onBehaviorGroupImport}

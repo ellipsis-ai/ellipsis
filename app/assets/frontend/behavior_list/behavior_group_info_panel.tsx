@@ -17,7 +17,7 @@ import autobind from '../lib/autobind';
     updatedData: BehaviorGroup | null,
     onToggle: () => void,
     isImportable: boolean,
-    wasImported: boolean,
+    isPublished: boolean,
     isImporting: boolean,
     localId: string | null
   }
@@ -134,7 +134,7 @@ import autobind from '../lib/autobind';
     }
 
     renderUpdate() {
-      if (this.props.updatedData) {
+      if (this.props.updatedData && this.props.localId) {
         return (
           <div className="mvl fade-in">
             <DynamicLabelButton
@@ -165,7 +165,7 @@ import autobind from '../lib/autobind';
             </a>
           </div>
         );
-      } else if (this.props.wasImported) {
+      } else if (this.props.isPublished) {
         return (
           <div className={`type-s mvm fade-in ${this.props.isImporting ? "pulse" : ""}`}>
             <span className="display-inline-block align-m mrs" style={{ width: 30, height: 18 }}><SVGInstalled /></span>

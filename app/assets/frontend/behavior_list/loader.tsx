@@ -139,14 +139,7 @@ class BehaviorListLoader extends React.Component<Props, State> {
   didImportPublishedGroup(publishedGroup: BehaviorGroup, importedGroup: BehaviorGroup): void {
     this.setState({
       currentlyInstalling: this.state.currentlyInstalling.filter((ea) => ea !== publishedGroup),
-      recentlyInstalled: this.state.recentlyInstalled.concat(importedGroup),
-      publishedBehaviorGroups: this.state.publishedBehaviorGroups.map((ea) => {
-        if (ea === publishedGroup) {
-          return ea.clone({ id: importedGroup.id });
-        } else {
-          return ea;
-        }
-      })
+      recentlyInstalled: this.state.recentlyInstalled.concat(importedGroup)
     });
   }
 
