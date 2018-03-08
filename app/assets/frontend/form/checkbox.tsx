@@ -1,37 +1,49 @@
 import * as React from 'react';
+import autobind from '../lib/autobind';
 
-const Checkbox = React.createClass({
-  propTypes: {
-    checked: React.PropTypes.bool.isRequired,
-    onChange: React.PropTypes.func.isRequired,
-    onEnterKey: React.PropTypes.func,
-    className: React.PropTypes.string,
-    label: React.PropTypes.string,
-    title: React.PropTypes.string,
-    name: React.PropTypes.string,
-    useButtonStyle: React.PropTypes.bool,
-    value: React.PropTypes.string,
-    disabledWhen: React.PropTypes.bool
-  },
-  onChange: function() {
-    this.props.onChange(Boolean(this.refs.input.checked), this.props.value);
-  },
+type Props = {
+  checked: boolean,
+  onChange: (isChecked: boolean, value?: string) => void,
+  onEnterKey?: () => void,
+  className?: string | null,
+  label?: any,
+  title?: string,
+  name?: string,
+  useButtonStyle?: boolean,
+  value?: string,
+  disabledWhen?: boolean
+}
 
-  handleEnterKey: function(event) {
+class Checkbox extends React.PureComponent<Props> {
+  input: HTMLInputElement | null;
+
+  constructor(props: Props) {
+    super(props);
+    autobind(this);
+  }
+
+  onChange() {
+    const isChecked = Boolean(this.input && this.input.checked);
+    this.props.onChange(isChecked, this.props.value);
+  }
+
+  handleEnterKey(event) {
     if (event.which === 13) {
       event.preventDefault();
       if (typeof this.props.onEnterKey === 'function') {
         this.props.onEnterKey();
       }
     }
-  },
+  }
 
-  focus: function() {
-    this.refs.input.focus();
-  },
+  focus() {
+    if (this.input) {
+      this.input.focus();
+    }
+  }
 
-  getClassName: function() {
-    const classNames = [];
+  getClassName() {
+    const classNames: Array<String> = [];
     if (this.props.useButtonStyle) {
       if (this.props.checked) {
         classNames.push("checkbox-button checkbox-button-s checkbox-button-checked");
@@ -43,14 +55,15 @@ const Checkbox = React.createClass({
       classNames.push(this.props.className);
     }
     return classNames.join(" ");
-  },
+  }
 
-  render: function() {
+  render() {
     return (
       <label className={this.getClassName()} title={this.props.title}>
-        <input type="checkbox"
+        <input
+          ref={(el) => this.input = el}
+          type="checkbox"
           className={this.props.label ? "man mrs" : "man"}
-          ref="input"
           checked={this.props.checked}
           onChange={this.onChange}
           onKeyPress={this.handleEnterKey}
@@ -62,6 +75,6 @@ const Checkbox = React.createClass({
       </label>
     );
   }
-});
+}
 
 export default Checkbox;
