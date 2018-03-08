@@ -6,7 +6,7 @@ export interface ButtonProps {
   children: any,
   className?: string,
   disabled?: boolean,
-  onClick: () => void,
+  onClick: (() => void) | null,
   title?: string,
   style?: Partial<CSSProperties>
 }

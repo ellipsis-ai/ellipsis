@@ -609,27 +609,22 @@ class BehaviorList extends React.Component<Props, State> {
     };
     if (this.isImporting(group)) {
       return (
-        <Button title="Installing, please wait…" className="button-raw button-no-wrap height-xl" disabled={true}
-          onClick={() => {
-          }}>
-          <span className="display-inline-block align-m mrs" style={{width: 40, height: 24}}><SVGInstalling/></span>
+        <Button title="Installing, please wait…" className="button-raw button-no-wrap height-xl" disabled={true} onClick={null}>
+          <span className="display-inline-block align-m mrs" style={{width: 40, height: 24}}><SVGInstalling /></span>
           <span className="display-inline-block align-m">Installing…</span>
         </Button>
       );
     } else if (group.id) {
       return (
-        <Button title="Already installed" className="button-raw button-no-wrap height-xl" disabled={true}
-          onClick={() => {
-          }}>
-          <span className="display-inline-block align-m mrs" style={{width: 40, height: 24}}><SVGInstalled/></span>
+        <Button title="Already installed" className="button-raw button-no-wrap height-xl" disabled={true} onClick={null}>
+          <span className="display-inline-block align-m mrs" style={{width: 40, height: 24}}><SVGInstalled /></span>
           <span className="display-inline-block align-m type-green">Installed</span>
         </Button>
       );
     } else {
       return (
-        <Button title="Install this skill" className="button-raw button-no-wrap height-xl"
-          onClick={onImportforGroup}>
-          <span className="display-inline-block align-m mrs" style={{width: 40, height: 24}}><SVGInstall/></span>
+        <Button title="Install this skill" className="button-raw button-no-wrap height-xl" onClick={onImportforGroup}>
+          <span className="display-inline-block align-m mrs" style={{width: 40, height: 24}}><SVGInstall /></span>
           <span className="display-inline-block align-m">Install</span>
         </Button>
       );
