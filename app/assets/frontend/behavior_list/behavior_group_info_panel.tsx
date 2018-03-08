@@ -3,12 +3,13 @@ import BehaviorGroup from '../models/behavior_group';
 import BehaviorVersion from '../models/behavior_version';
 import DynamicLabelButton from '../form/dynamic_label_button';
 import EditableName from './editable_name';
-import Formatter from '../lib/formatter';
+import Formatter, {Timestamp} from '../lib/formatter';
 import SVGInstall from '../svg/install';
 import SVGInstalled from '../svg/installed';
 import ifPresent from '../lib/if_present';
 import Sort from '../lib/sort';
 import autobind from '../lib/autobind';
+import {maybeDiffFor} from "../models/diffs";
 
   type Props = {
     groupData: BehaviorGroup | null,
@@ -17,7 +18,7 @@ import autobind from '../lib/autobind';
     updatedData: BehaviorGroup | null,
     onToggle: () => void,
     isImportable: boolean,
-    isPublished: boolean,
+    publishedGroupData: BehaviorGroup | null,
     isImporting: boolean,
     localId: string | null
   }
@@ -33,8 +34,8 @@ import autobind from '../lib/autobind';
       return Sort.arrayAlphabeticalBy(behaviorVersions.filter((version) => !version.isDataType()), (version) => version.sortKey());
     }
 
-    getName() {
-      return this.props.groupData && this.props.groupData.name || (
+    getName(group: BehaviorGroup) {
+      return group.name || (
         <span className="type-italic type-disabled">Untitled skill</span>
       );
     }
@@ -56,22 +57,24 @@ import autobind from '../lib/autobind';
     }
 
     render() {
-      if (!this.props.groupData) {
+      const group = this.props.groupData;
+      if (!group) {
         return null;
       }
+      const icon = group.icon;
       return (
         <div className="box-action phn">
           <div className="container container-c">
             <div className="columns">
               <div className="column column-page-sidebar">
                 <h3 className="mtn">
-                  {ifPresent(this.props.groupData.icon, (icon) => (
+                  {icon ? (
                     <span className="mrm type-icon">{icon}</span>
-                  ))}
-                  <span>{this.getName()}</span>
+                  ) : null}
+                  <span>{this.getName(group)}</span>
                 </h3>
 
-                {this.renderMetaInfo()}
+                {this.renderMetaInfo(group)}
               </div>
               <div className="column column-page-main">
                 {this.props.groupData && this.props.groupData.description ? (
@@ -142,7 +145,7 @@ import autobind from '../lib/autobind';
               disabledWhen={this.props.isImporting}
               onClick={this.onUpdate}
               labels={[{
-                text: "Re-install",
+                text: "Revert to published version",
                 displayWhen: !this.props.isImporting
               }, {
                 text: "Re-installing",
@@ -156,20 +159,21 @@ import autobind from '../lib/autobind';
       }
     }
 
-    renderInstallInfo() {
-      if (this.props.groupData && this.props.groupData.githubUrl) {
+    renderInstallInfo(group: BehaviorGroup) {
+      const groupGithubUrl = group.githubUrl;
+      if (groupGithubUrl) {
         return (
           <div className="type-s mvm">
-            <a target="_blank" href={this.props.groupData.githubUrl}>
+            <a target="_blank" href={groupGithubUrl}>
               View source on Github
             </a>
           </div>
         );
-      } else if (this.props.isPublished) {
+      } else if (this.props.groupData && this.props.publishedGroupData) {
         return (
           <div className={`type-s mvm fade-in ${this.props.isImporting ? "pulse" : ""}`}>
             <span className="display-inline-block align-m mrs" style={{ width: 30, height: 18 }}><SVGInstalled /></span>
-            <span className="display-inline-block align-m type-green">Installed from Ellipsis.ai</span>
+            <span className="display-inline-block align-m type-green">Skill published by Ellipsis</span>
           </div>
         );
       } else {
@@ -177,21 +181,42 @@ import autobind from '../lib/autobind';
       }
     }
 
-    renderMetaInfo() {
+    renderMetaInfo(group: BehaviorGroup) {
       return (
         <div>
-          {this.renderLastModified()}
-          {this.renderInstallInfo()}
+          {this.renderInstallInfo(group)}
+          {this.renderLastModified(group)}
           {this.renderUpdate()}
         </div>
       );
     }
 
-    renderLastModified() {
-      if (this.props.localId && this.props.groupData && this.props.groupData.createdAt) {
+    renderLastModifiedText(group: BehaviorGroup, createdAt: Timestamp) {
+      const lastModifiedDate = Formatter.formatTimestampRelativeIfRecent(createdAt);
+      const authorName = group.author ? group.author.formattedFullNameOrUserName() : "an unknown user";
+      const alsoPublished = this.props.publishedGroupData;
+      const maybeDiff = alsoPublished && maybeDiffFor(group, alsoPublished);
+      const sameAsPublished = alsoPublished && !maybeDiff;
+      if (sameAsPublished) {
+        return (
+          <span>Installed {lastModifiedDate} by {authorName}</span>
+        );
+      } else if (alsoPublished) {
+        return (
+          <span>Modified since it was installed. Last modified {lastModifiedDate} by {authorName}</span>
+        );
+      } else {
+        return (
+          <span>Last modified {lastModifiedDate} by {authorName}</span>
+        );
+      }
+    }
+
+    renderLastModified(group: BehaviorGroup) {
+      if (this.props.localId && group.createdAt) {
         return (
           <div className="type-weak type-s mvm">
-            Last modified {Formatter.formatTimestampRelativeIfRecent(this.props.groupData.createdAt)}
+            {this.renderLastModifiedText(group, group.createdAt)}
           </div>
         );
       } else {
