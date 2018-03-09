@@ -3,10 +3,9 @@ import BehaviorGroup from '../models/behavior_group';
 import BehaviorVersion from '../models/behavior_version';
 import DynamicLabelButton from '../form/dynamic_label_button';
 import EditableName from './editable_name';
-import Formatter, {Timestamp} from '../lib/formatter';
+import Formatter from '../lib/formatter';
 import SVGInstall from '../svg/install';
 import SVGInstalled from '../svg/installed';
-import ifPresent from '../lib/if_present';
 import Sort from '../lib/sort';
 import autobind from '../lib/autobind';
 import {maybeDiffFor} from "../models/diffs";
@@ -15,7 +14,6 @@ import {maybeDiffFor} from "../models/diffs";
     groupData: BehaviorGroup | null,
     onBehaviorGroupImport: (BehaviorGroup) => void,
     onBehaviorGroupUpdate: (originalGroup: BehaviorGroup, updatedGroup: BehaviorGroup) => void,
-    updatedData: BehaviorGroup | null,
     onToggle: () => void,
     isImportable: boolean,
     publishedGroupData: BehaviorGroup | null,
@@ -46,9 +44,9 @@ import {maybeDiffFor} from "../models/diffs";
       }
     }
 
-    onUpdate(): void {
-      if (this.props.groupData && this.props.updatedData) {
-        this.props.onBehaviorGroupUpdate(this.props.groupData, this.props.updatedData);
+    onRevertToPublished(): void {
+      if (this.props.groupData && this.props.publishedGroupData) {
+        this.props.onBehaviorGroupUpdate(this.props.groupData, this.props.publishedGroupData);
       }
     }
 
@@ -62,6 +60,9 @@ import {maybeDiffFor} from "../models/diffs";
         return null;
       }
       const icon = group.icon;
+      const alsoPublished = this.props.publishedGroupData;
+      const maybeDiff = alsoPublished && maybeDiffFor(group, alsoPublished);
+      const sameAsPublished = Boolean(alsoPublished && !maybeDiff);
       return (
         <div className="box-action phn">
           <div className="container container-c">
@@ -74,7 +75,7 @@ import {maybeDiffFor} from "../models/diffs";
                   <span>{this.getName(group)}</span>
                 </h3>
 
-                {this.renderMetaInfo(group)}
+                {this.renderMetaInfo(group, alsoPublished, sameAsPublished)}
               </div>
               <div className="column column-page-main">
                 {this.props.groupData && this.props.groupData.description ? (
@@ -136,17 +137,20 @@ import {maybeDiffFor} from "../models/diffs";
       }
     }
 
-    renderUpdate() {
-      if (this.props.updatedData && this.props.localId) {
+    renderUpdate(publishedData: BehaviorGroup | null, sameAsPublished: boolean) {
+      if (publishedData && this.props.localId) {
         return (
           <div className="mvl fade-in">
             <DynamicLabelButton
               className="button-s"
-              disabledWhen={this.props.isImporting}
-              onClick={this.onUpdate}
+              disabledWhen={this.props.isImporting || sameAsPublished}
+              onClick={this.onRevertToPublished}
               labels={[{
                 text: "Revert to published version",
-                displayWhen: !this.props.isImporting
+                displayWhen: !this.props.isImporting && !sameAsPublished
+              }, {
+                text: "Synced with published version",
+                displayWhen: !this.props.isImporting && sameAsPublished
               }, {
                 text: "Re-installing",
                 displayWhen: this.props.isImporting
@@ -169,54 +173,69 @@ import {maybeDiffFor} from "../models/diffs";
             </a>
           </div>
         );
-      } else if (this.props.groupData && this.props.publishedGroupData) {
+      } else if (this.props.publishedGroupData) {
+        const publishedGithubUrl = this.props.publishedGroupData.githubUrl;
         return (
-          <div className={`type-s mvm fade-in ${this.props.isImporting ? "pulse" : ""}`}>
-            <span className="display-inline-block align-m mrs" style={{ width: 30, height: 18 }}><SVGInstalled /></span>
-            <span className="display-inline-block align-m type-green">Skill published by Ellipsis</span>
+          <div className={`type-s mvm ${this.props.isImporting ? "pulse" : ""}`}>
+            <span className="display-inline-block align-m mrs" style={{width: 30, height: 18}}><SVGInstalled /></span>
+            <span className="display-inline-block align-m type-green">Published by Ellipsis</span>
+            {publishedGithubUrl ? (
+              <span>
+                <span className="type-disabled mhxs">·</span>
+                <a target="_blank" href={publishedGithubUrl}>View source</a>
+              </span>
+            ) : null}
           </div>
         );
       } else {
-        return null;
+        return (
+          <div className="type-s mvm">
+            <span>Created by your team</span>
+          </div>
+        );
       }
     }
 
-    renderMetaInfo(group: BehaviorGroup) {
+    renderMetaInfo(group: BehaviorGroup, publishedData: BehaviorGroup | null, sameAsPublished: boolean) {
       return (
         <div>
           {this.renderInstallInfo(group)}
-          {this.renderLastModified(group)}
-          {this.renderUpdate()}
+          {this.renderLastModified(group, Boolean(publishedData), sameAsPublished)}
+          {this.renderUpdate(publishedData, sameAsPublished)}
         </div>
       );
     }
 
-    renderLastModifiedText(group: BehaviorGroup, createdAt: Timestamp) {
-      const lastModifiedDate = Formatter.formatTimestampRelativeIfRecent(createdAt);
-      const authorName = group.author ? group.author.formattedFullNameOrUserName() : "an unknown user";
-      const alsoPublished = this.props.publishedGroupData;
-      const maybeDiff = alsoPublished && maybeDiffFor(group, alsoPublished);
-      const sameAsPublished = alsoPublished && !maybeDiff;
+    renderLastModifiedText(lastModifiedDate: string, authorName: string, isPublished: boolean, sameAsPublished: boolean) {
       if (sameAsPublished) {
         return (
-          <span>Installed {lastModifiedDate} by {authorName}</span>
+          <ul>
+            <li>Installed {lastModifiedDate} by {authorName}</li>
+          </ul>
         );
-      } else if (alsoPublished) {
+      } else if (isPublished) {
         return (
-          <span>Modified since it was installed. Last modified {lastModifiedDate} by {authorName}</span>
+          <ul>
+            <li>This skill differs from published version</li>
+            <li>Last modified {lastModifiedDate} by {authorName}</li>
+          </ul>
         );
       } else {
         return (
-          <span>Last modified {lastModifiedDate} by {authorName}</span>
+          <ul>
+            <li>Last modified {lastModifiedDate} by {authorName}</li>
+          </ul>
         );
       }
     }
 
-    renderLastModified(group: BehaviorGroup) {
+    renderLastModified(group: BehaviorGroup, isPublished: boolean, sameAsPublished: boolean) {
       if (this.props.localId && group.createdAt) {
+        const lastModifiedDate = Formatter.formatTimestampRelativeIfRecent(group.createdAt);
+        const authorName = group.author ? group.author.formattedFullNameOrUserName() : "an unknown user";
         return (
           <div className="type-weak type-s mvm">
-            {this.renderLastModifiedText(group, group.createdAt)}
+            {this.renderLastModifiedText(lastModifiedDate, authorName, isPublished, sameAsPublished)}
           </div>
         );
       } else {

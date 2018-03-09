@@ -404,6 +404,7 @@ class BehaviorList extends React.Component<Props, State> {
 
   publishedGroupDataFor(group: BehaviorGroup | null): BehaviorGroup | null {
     return group &&
+      group.id &&
       group.exportId &&
       this.props.publishedBehaviorGroups.find((ea) => ea.exportId === group.exportId) ||
       null;
@@ -452,15 +453,6 @@ class BehaviorList extends React.Component<Props, State> {
       this.onGroupCheckboxChange(existingGroup.id, false, callback);
     } else {
       callback();
-    }
-  }
-
-  getUpdatedBehaviorGroupData(): BehaviorGroup | null {
-    const selected = this.getSelectedBehaviorGroup();
-    if (selected && selected.exportId && selected.id) {
-      return this.props.publishedBehaviorGroups.find((ea) => ea.exportId === selected.exportId) || null;
-    } else {
-      return null;
     }
   }
 
@@ -834,7 +826,6 @@ class BehaviorList extends React.Component<Props, State> {
                 localId={this.getSelectedBehaviorGroupId()}
                 onBehaviorGroupImport={this.onBehaviorGroupImport}
                 onBehaviorGroupUpdate={this.onBehaviorGroupUpdate}
-                updatedData={this.getUpdatedBehaviorGroupData()}
               />
             </Collapsible>
             <Collapsible
