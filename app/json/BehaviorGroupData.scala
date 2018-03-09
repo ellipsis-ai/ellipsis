@@ -31,7 +31,9 @@ case class BehaviorGroupData(
                               exportId: Option[String],
                               createdAt: Option[OffsetDateTime],
                               author: Option[UserData],
-                              deployment: Option[BehaviorGroupDeploymentData]
+                              deployment: Option[BehaviorGroupDeploymentData],
+                              initialAuthor: Option[UserData],
+                              initialCreatedAt: Option[OffsetDateTime]
                             ) extends Ordered[BehaviorGroupData] with FuzzyMatchable {
 
   val fuzzyMatchPatterns: Seq[FuzzyMatchPattern] = {
@@ -142,12 +144,21 @@ object BehaviorGroupData {
       maybeAuthor <- immutableData.authorId.map { authorId =>
         dataService.users.find(authorId)
       }.getOrElse(Future.successful(None))
+      maybeInitialAuthor <- immutableData.initialAuthorId.map { authorId =>
+        dataService.users.find(authorId)
+      }.getOrElse(Future.successful(None))
       maybeTeam <- dataService.teams.find(immutableData.teamId)
       maybeUserData <- (for {
         author <- maybeAuthor
         team <- maybeTeam
       } yield {
         dataService.users.userDataFor(author, team).map(Some(_))
+      }).getOrElse(Future.successful(None))
+      maybeInitialUserData <- (for {
+        initialAuthor <- maybeInitialAuthor
+        team <- maybeTeam
+      } yield {
+        dataService.users.userDataFor(initialAuthor, team).map(Some(_))
       }).getOrElse(Future.successful(None))
       maybeDeployment <- dataService.behaviorGroupDeployments.findForBehaviorGroupVersionId(versionId)
       maybeDeploymentData <- maybeDeployment.map { deployment =>
@@ -172,7 +183,9 @@ object BehaviorGroupData {
         immutableData.exportId,
         immutableData.createdAt,
         maybeUserData,
-        maybeDeploymentData
+        maybeDeploymentData,
+        maybeInitialUserData,
+        immutableData.initialCreatedAt
       )
     }
   }
@@ -180,6 +193,8 @@ object BehaviorGroupData {
   def buildFor(
                 version: BehaviorGroupVersion,
                 user: User,
+                maybeFirstAuthor: Option[User],
+                maybeFirstCreatedAt: Option[OffsetDateTime],
                 dataService: DataService,
                 cacheService: CacheService
               )(implicit ec: ExecutionContext): Future[BehaviorGroupData] = {
@@ -213,7 +228,9 @@ object BehaviorGroupData {
             versionsData,
             libraryVersionsData,
             version.group.maybeExportId,
-            Some(version.createdAt)
+            Some(version.createdAt),
+            maybeFirstAuthor.map(_.id),
+            maybeFirstCreatedAt
           )
           cacheService.cacheBehaviorGroupVersionData(immutable)
           immutable
@@ -226,11 +243,21 @@ object BehaviorGroupData {
   def maybeFor(id: String, user: User, maybeGithubUrl: Option[String], dataService: DataService, cacheService: CacheService)(implicit ec: ExecutionContext): Future[Option[BehaviorGroupData]] = {
     for {
       maybeGroup <- dataService.behaviorGroups.find(id, user)
+      maybeFirstGroupVersion <- maybeGroup.map { group =>
+        dataService.behaviorGroupVersions.maybeFirstFor(group)
+      }.getOrElse(Future.successful(None))
       maybeLatestGroupVersion <- maybeGroup.map { group =>
           dataService.behaviorGroupVersions.maybeCurrentFor(group)
       }.getOrElse(Future.successful(None))
       data <- maybeLatestGroupVersion.map { version =>
-        buildFor(version, user, dataService, cacheService).map(Some(_))
+        buildFor(
+          version,
+          user,
+          maybeFirstGroupVersion.flatMap(_.maybeAuthor),
+          maybeFirstGroupVersion.map(_.createdAt),
+          dataService,
+          cacheService
+        ).map(Some(_))
       }.getOrElse(Future.successful(None))
     } yield data
   }

@@ -203,7 +203,9 @@ object BehaviorEditorData {
           exportId = None,
           Some(OffsetDateTime.now),
           Some(userData),
-          maybeDeploymentData
+          maybeDeploymentData,
+          None,
+          None
         )
       }
       BehaviorEditorData(

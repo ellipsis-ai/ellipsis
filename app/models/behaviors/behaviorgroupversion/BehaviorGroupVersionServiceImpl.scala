@@ -79,6 +79,18 @@ class BehaviorGroupVersionServiceImpl @Inject() (
     dataService.run(maybeCurrentForAction(group))
   }
 
+  def maybeFirstForAction(group: BehaviorGroup): DBIO[Option[BehaviorGroupVersion]] = {
+    firstIdForQuery(group.id).result.flatMap { r =>
+      r.headOption.map { firstId =>
+        findWithoutAccessCheckAction(firstId)
+      }.getOrElse(DBIO.successful(None))
+    }
+  }
+
+  def maybeFirstFor(group: BehaviorGroup): Future[Option[BehaviorGroupVersion]] = {
+    dataService.run(maybeFirstForAction(group))
+  }
+
   def createForAction(
                  group: BehaviorGroup,
                  user: User,
