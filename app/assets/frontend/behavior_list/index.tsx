@@ -402,12 +402,12 @@ class BehaviorList extends React.Component<Props, State> {
     return Boolean(selectedGroup && selectedGroup.exportId && !this.getLocalIdFor(selectedGroup.exportId));
   }
 
-  groupIsPublished(group: BehaviorGroup | null): boolean {
-    return Boolean(
-      group &&
+  publishedGroupDataFor(group: BehaviorGroup | null): BehaviorGroup | null {
+    return group &&
+      group.id &&
       group.exportId &&
-      BehaviorGroup.groupsIncludeExportId(this.props.publishedBehaviorGroups, group.exportId)
-    );
+      this.props.publishedBehaviorGroups.find((ea) => ea.exportId === group.exportId) ||
+      null;
   }
 
   publishedGroupWasImported(group: BehaviorGroup): boolean {
@@ -453,15 +453,6 @@ class BehaviorList extends React.Component<Props, State> {
       this.onGroupCheckboxChange(existingGroup.id, false, callback);
     } else {
       callback();
-    }
-  }
-
-  getUpdatedBehaviorGroupData(): BehaviorGroup | null {
-    const selected = this.getSelectedBehaviorGroup();
-    if (selected && selected.exportId && selected.id) {
-      return this.props.publishedBehaviorGroups.find((ea) => ea.exportId === selected.exportId) || null;
-    } else {
-      return null;
     }
   }
 
@@ -830,12 +821,11 @@ class BehaviorList extends React.Component<Props, State> {
                 groupData={this.getSelectedBehaviorGroup()}
                 onToggle={this.clearActivePanel}
                 isImportable={this.selectedBehaviorGroupIsUninstalled()}
-                isPublished={this.groupIsPublished(this.getSelectedBehaviorGroup())}
+                publishedGroupData={this.publishedGroupDataFor(this.getSelectedBehaviorGroup())}
                 isImporting={this.isImporting(this.getSelectedBehaviorGroup())}
                 localId={this.getSelectedBehaviorGroupId()}
                 onBehaviorGroupImport={this.onBehaviorGroupImport}
                 onBehaviorGroupUpdate={this.onBehaviorGroupUpdate}
-                updatedData={this.getUpdatedBehaviorGroupData()}
               />
             </Collapsible>
             <Collapsible
