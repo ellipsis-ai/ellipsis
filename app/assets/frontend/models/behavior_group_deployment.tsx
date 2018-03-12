@@ -1,4 +1,12 @@
-import User from './user';
+import User, {UserJson} from './user';
+
+export interface BehaviorGroupDeploymentJson {
+  id: string;
+  groupId: string;
+  groupVersionId: string;
+  deployer: UserJson | null;
+  createdAt: number;
+}
 
 class BehaviorGroupDeployment {
     id: string;
@@ -23,13 +31,13 @@ class BehaviorGroupDeployment {
       });
     }
 
-    static fromProps(props): BehaviorGroupDeployment {
+    static fromJson(json: BehaviorGroupDeploymentJson): BehaviorGroupDeployment {
       return new BehaviorGroupDeployment(
-        props.id,
-        props.groupId,
-        props.groupVersionId,
-        User.fromProps(props.deployer),
-        props.createdAt
+        json.id,
+        json.groupId,
+        json.groupVersionId,
+        User.fromJson(json.deployer),
+        json.createdAt
       );
     }
 

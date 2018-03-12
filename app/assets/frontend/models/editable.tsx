@@ -1,16 +1,29 @@
 import DeepEqual from '../lib/deep_equal';
 
-abstract class Editable {
-    id?: string | null;
+export interface EditableInterface {
+  id: string | null;
+  groupId: string;
+  teamId: string;
+  isNew: boolean | null;
+  name: string | null;
+  description: string | null;
+  functionBody: string;
+  exportId: string | null;
+  editorScrollPosition: number | null;
+  createdAt: number | null;
+}
+
+abstract class Editable implements EditableInterface {
+    id: string | null;
     groupId: string;
     teamId: string;
-    isNew?: boolean | null;
+    isNew: boolean | null;
     name: string | null;
-    description?: string | null;
+    description: string | null;
     functionBody: string;
-    exportId?: string | null;
-    editorScrollPosition?: number | null;
-    createdAt?: number | null;
+    exportId: string | null;
+    editorScrollPosition: number | null;
+    createdAt: number | null;
 
     constructor(
       id: string | null,
@@ -117,7 +130,7 @@ abstract class Editable {
 
     abstract getPersistentId(): string
 
-    abstract clone(props: Partial<Editable>): Editable
+    abstract clone(props: Partial<EditableInterface>): Editable
 
     // Used by JSON.stringify for submitting data to the server
     toJSON(): Editable {
@@ -126,9 +139,7 @@ abstract class Editable {
       });
     }
 
-    forEqualityComparison(): Editable {
-      return this.toJSON();
-    }
+    abstract forEqualityComparison(): Editable
 
     isIdenticalToVersion<T extends Editable>(version: T): boolean {
       return DeepEqual.isEqual(this.forEqualityComparison(), version.forEqualityComparison());

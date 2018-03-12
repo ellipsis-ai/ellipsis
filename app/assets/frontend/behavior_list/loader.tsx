@@ -191,7 +191,7 @@ class BehaviorListLoader extends React.Component<Props, State> {
         this.props.csrfToken
       ).then((deploymentJson) => {
         if (deploymentJson.id) {
-          this.didDeployBehaviorGroup(behaviorGroupId, BehaviorGroupDeployment.fromProps(deploymentJson));
+          this.didDeployBehaviorGroup(behaviorGroupId, BehaviorGroupDeployment.fromJson(deploymentJson));
         } else {
           this.onDeployError();
         }

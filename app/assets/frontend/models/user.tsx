@@ -1,3 +1,9 @@
+export interface UserJson {
+  id: string,
+  userName: string | null;
+  fullName: string | null;
+}
+
 class User {
     id: string;
     userName: string | null;

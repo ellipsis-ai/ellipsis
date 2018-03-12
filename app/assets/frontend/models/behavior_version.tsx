@@ -3,11 +3,12 @@ import BehaviorGroup from "./behavior_group";
 
 import BehaviorConfig from './behavior_config';
 import DataTypeConfig from './data_type_config';
-import Editable from './editable';
+import Editable, {EditableInterface} from './editable';
 import Input from './input';
 import ParamType from './param_type';
 import ResponseTemplate from './response_template';
 import Trigger from './trigger';
+import LibraryVersion from "./library_version";
 
 type DefaultActionProps = {
   name?: string,
@@ -16,16 +17,28 @@ type DefaultActionProps = {
   responseTemplate: ResponseTemplate
 }
 
-class BehaviorVersion extends Editable implements Diffable {
-    id?: string | null;
+export interface BehaviorVersionInterface extends EditableInterface {
+  id: string | null;
+  behaviorId: string;
+  responseTemplate: ResponseTemplate | null;
+  functionBody: string;
+  inputIds: Array<string>;
+  triggers: Array<Trigger>;
+  config: BehaviorConfig;
+  knownEnvVarsUsed: Array<string>;
+  isNew: boolean | null;
+}
+
+class BehaviorVersion extends Editable implements Diffable, EditableInterface {
+    id: string | null;
     behaviorId: string;
-    responseTemplate?: ResponseTemplate | null;
+    responseTemplate: ResponseTemplate | null;
     functionBody: string;
     inputIds: Array<string>;
     triggers: Array<Trigger>;
     config: BehaviorConfig;
     knownEnvVarsUsed: Array<string>;
-    isNew?: boolean | null;
+    isNew: boolean | null;
 
     constructor(
       id: string | null,
@@ -43,7 +56,7 @@ class BehaviorVersion extends Editable implements Diffable {
       knownEnvVarsUsed: Array<string>,
       createdAt: number | null,
       isNew: boolean | null,
-      editorScrollPosition: number
+      editorScrollPosition: number | null
     ) {
       super(
         id,
@@ -278,10 +291,14 @@ class BehaviorVersion extends Editable implements Diffable {
     }
 
     // Used by JSON.stringify for submitting data to the server
-    toJSON() {
-      return super.toJSON().clone({
+    toJSON(): BehaviorVersion {
+      return (super.toJSON() as BehaviorVersion).clone({
         createdAt: null
       });
+    }
+
+    forEqualityComparison(): BehaviorVersion {
+      return this.toJSON();
     }
 
     sortKeyForExisting(): string | null {
@@ -312,11 +329,11 @@ class BehaviorVersion extends Editable implements Diffable {
       );
     }
 
-    clone(props: Partial<BehaviorVersion>): BehaviorVersion {
+    clone(props: Partial<BehaviorVersionInterface>): BehaviorVersion {
       return BehaviorVersion.fromProps(Object.assign({}, this, props));
     }
 
-    static fromProps(props): BehaviorVersion {
+    static fromProps(props: BehaviorVersionInterface): BehaviorVersion {
       return new BehaviorVersion(
         props.id,
         props.behaviorId,

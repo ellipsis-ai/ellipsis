@@ -1,9 +1,14 @@
 import {Diffable, DiffableProp} from "./diffs";
 import BehaviorGroup from "./behavior_group";
 
-import Editable from './editable';
+import Editable, {EditableInterface} from './editable';
 
-class LibraryVersion extends Editable implements Diffable {
+interface LibraryVersionInterface extends EditableInterface {
+  functionBody: string;
+  libraryId: string;
+}
+
+class LibraryVersion extends Editable implements Diffable, LibraryVersionInterface {
     functionBody: string;
     libraryId: string;
 
@@ -16,7 +21,7 @@ class LibraryVersion extends Editable implements Diffable {
       teamId: string,
       libraryId: string,
       exportId: string | null,
-      isNew: boolean,
+      isNew: boolean | null,
       editorScrollPosition: number | null,
       createdAt: number | null
     ) {
@@ -119,11 +124,15 @@ class LibraryVersion extends Editable implements Diffable {
       return true;
     }
 
-    clone(props: Partial<LibraryVersion>): LibraryVersion {
+    clone(props: Partial<LibraryVersionInterface>): LibraryVersion {
       return LibraryVersion.fromProps(Object.assign({}, this, props));
     }
 
-    static fromProps(props): LibraryVersion {
+    forEqualityComparison(): LibraryVersion {
+      return this.toJSON() as LibraryVersion;
+    }
+
+    static fromProps(props: LibraryVersionInterface): LibraryVersion {
       return new LibraryVersion(
         props.id,
         props.name,
