@@ -127,7 +127,7 @@ class BehaviorGroupServiceImpl @Inject() (
 
     for {
       groupsData <- Future.sequence(groupVersions.map { ea =>
-        BehaviorGroupData.buildFor(ea, user, None, None, dataService, cacheService)
+        BehaviorGroupData.buildFor(ea, user, None, dataService, cacheService)
       })
       userData <- dataService.users.userDataFor(user, team)
       mergedData <- Future.successful({
@@ -154,11 +154,10 @@ class BehaviorGroupServiceImpl @Inject() (
           githubUrl = None,
           gitSHA = None,
           exportId = None,
-          None,
+          createdAt = None,
           Some(userData),
-          None,
-          initialAuthor = None,
-          initialCreatedAt = None
+          deployment = None,
+          metaData = None
         )
       })
       _ <- Future.sequence(groupVersions.map { ea =>

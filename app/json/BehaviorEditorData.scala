@@ -204,7 +204,6 @@ object BehaviorEditorData {
           Some(OffsetDateTime.now),
           Some(userData),
           maybeDeploymentData,
-          None,
           None
         )
       }
