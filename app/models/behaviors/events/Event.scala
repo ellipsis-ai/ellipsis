@@ -79,8 +79,6 @@ trait Event {
 
   def detailsFor(services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[JsObject]
 
-  def recentMessages(dataService: DataService)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Seq[String]] = Future.successful(Seq())
-
   def navLinkList(lambdaService: AWSLambdaService): Seq[(String, String)] = {
     lambdaService.configuration.getOptional[String]("application.apiBaseUrl").map { baseUrl =>
       val skillsListPath = baseUrl + controllers.routes.ApplicationController.index(Some(teamId))
