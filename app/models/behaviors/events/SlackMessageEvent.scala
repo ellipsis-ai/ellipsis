@@ -88,24 +88,6 @@ case class SlackMessageEvent(
     dataService.conversations.findOngoingFor(user, context, maybeChannel, Some(ts))
   }
 
-  override def recentMessages(dataService: DataService)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Seq[String]] = {
-    for {
-      maybeTeam <- dataService.teams.find(profile.teamId)
-      maybeOAuthToken <- dataService.oauth2Tokens.maybeFullForSlackTeamId(profile.slackTeamId)
-      maybeUserClient <- Future.successful(maybeOAuthToken.map { token =>
-        SlackApiClient(token.accessToken)
-      })
-      maybeHistory <- maybeUserClient.map { userClient =>
-        userClient.getChannelHistory(channel, latest = Some(ts)).map(Some(_))
-      }.getOrElse(Future.successful(None))
-      messages <- Future.successful(maybeHistory.map { history =>
-        history.messages.slice(0, 10).reverse.flatMap { json =>
-          (json \ "text").asOpt[String]
-        }
-      }.getOrElse(Seq()))
-    } yield messages
-  }
-
   override def navLinks(lambdaService: AWSLambdaService): String = {
     navLinkList(lambdaService).map { case(title, path) =>
       s"[$title]($path)"
