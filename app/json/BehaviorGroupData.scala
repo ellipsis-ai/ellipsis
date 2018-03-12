@@ -133,6 +133,8 @@ object BehaviorGroupData {
 
   def buildForImmutableData(
                              immutableData: ImmutableBehaviorGroupVersionData,
+                             maybeFirstAuthor: Option[User],
+                             maybeFirstCreatedAt: Option[OffsetDateTime],
                              user: User,
                              dataService: DataService
                            )(implicit ec: ExecutionContext): Future[BehaviorGroupData] = {
@@ -144,8 +146,8 @@ object BehaviorGroupData {
       maybeAuthor <- immutableData.authorId.map { authorId =>
         dataService.users.find(authorId)
       }.getOrElse(Future.successful(None))
-      maybeInitialAuthor <- immutableData.initialAuthorId.map { authorId =>
-        dataService.users.find(authorId)
+      maybeInitialAuthor <- maybeFirstAuthor.map { firstAuthor =>
+        dataService.users.find(firstAuthor.id)
       }.getOrElse(Future.successful(None))
       maybeTeam <- dataService.teams.find(immutableData.teamId)
       maybeUserData <- (for {
@@ -185,7 +187,7 @@ object BehaviorGroupData {
         maybeUserData,
         maybeDeploymentData,
         maybeInitialUserData,
-        immutableData.initialCreatedAt
+        maybeFirstCreatedAt
       )
     }
   }
@@ -228,15 +230,13 @@ object BehaviorGroupData {
             versionsData,
             libraryVersionsData,
             version.group.maybeExportId,
-            Some(version.createdAt),
-            maybeFirstAuthor.map(_.id),
-            maybeFirstCreatedAt
+            Some(version.createdAt)
           )
           cacheService.cacheBehaviorGroupVersionData(immutable)
           immutable
         }
       }
-      data <- buildForImmutableData(immutableData, user, dataService)
+      data <- buildForImmutableData(immutableData, maybeFirstAuthor, maybeFirstCreatedAt, user, dataService)
     } yield data
   }
 

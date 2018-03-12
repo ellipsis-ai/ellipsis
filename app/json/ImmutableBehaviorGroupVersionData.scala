@@ -15,7 +15,5 @@ case class ImmutableBehaviorGroupVersionData(
                                               behaviorVersions: Seq[BehaviorVersionData],
                                               libraryVersions: Seq[LibraryVersionData],
                                               exportId: Option[String],
-                                              createdAt: Option[OffsetDateTime],
-                                              initialAuthorId: Option[String],
-                                              initialCreatedAt: Option[OffsetDateTime]
+                                              createdAt: Option[OffsetDateTime]
                                             )
