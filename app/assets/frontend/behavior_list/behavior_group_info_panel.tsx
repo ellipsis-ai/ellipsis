@@ -3,12 +3,13 @@ import BehaviorGroup from '../models/behavior_group';
 import BehaviorVersion from '../models/behavior_version';
 import DynamicLabelButton from '../form/dynamic_label_button';
 import EditableName from './editable_name';
-import Formatter from '../lib/formatter';
+import Formatter, {Timestamp} from '../lib/formatter';
 import SVGInstall from '../svg/install';
 import SVGInstalled from '../svg/installed';
 import Sort from '../lib/sort';
 import autobind from '../lib/autobind';
 import {maybeDiffFor} from "../models/diffs";
+import User from "../models/user";
 
   type Props = {
     groupData: BehaviorGroup | null,
@@ -163,7 +164,7 @@ import {maybeDiffFor} from "../models/diffs";
       }
     }
 
-    renderInstallInfo(group: BehaviorGroup) {
+    renderSourceInfo(group: BehaviorGroup) {
       const groupGithubUrl = group.githubUrl;
       if (groupGithubUrl) {
         return (
@@ -199,43 +200,81 @@ import {maybeDiffFor} from "../models/diffs";
     renderMetaInfo(group: BehaviorGroup, publishedData: BehaviorGroup | null, sameAsPublished: boolean) {
       return (
         <div>
-          {this.renderInstallInfo(group)}
-          {this.renderLastModified(group, Boolean(publishedData), sameAsPublished)}
+          {this.renderSourceInfo(group)}
+          {this.renderHistory(group, Boolean(publishedData), sameAsPublished)}
           {this.renderUpdate(publishedData, sameAsPublished)}
         </div>
       );
     }
 
-    renderLastModifiedText(lastModifiedDate: string, authorName: string, isPublished: boolean, sameAsPublished: boolean) {
+    renderInitialCreatedText(dateText: string | null, initialAuthor: string, isPublished: boolean) {
+      if (dateText) {
+        if (isPublished) {
+          return (
+            <li>Installed {dateText} by {initialAuthor}</li>
+          );
+        } else {
+          return (
+            <li>Created {dateText} by {initialAuthor}</li>
+          );
+        }
+      } else {
+        return null;
+      }
+    }
+
+    renderLastModifiedText(lastModified: Timestamp, group: BehaviorGroup, isPublished: boolean, sameAsPublished: boolean) {
+      const DEFAULT_NAME = "an unknown user";
+
+      const initialCreated = group.getInitialCreatedAt();
+      let initialCreatedDate = initialCreated ? Formatter.formatTimestampRelativeIfRecent(initialCreated) : null;
+      let lastModifiedDate = Formatter.formatTimestampRelativeIfRecent(lastModified);
+      const hasChangedSinceCreation = lastModified !== initialCreated;
+
+      // Make the date text more precise if the short versions appear the same when the underlying timestamps are different
+      if (hasChangedSinceCreation && initialCreated && initialCreatedDate === lastModifiedDate) {
+        initialCreatedDate = Formatter.formatTimestampShort(initialCreated);
+        lastModifiedDate = Formatter.formatTimestampShort(lastModified);
+      }
+
+      const initialAuthor = group.getInitialAuthor();
+      const initialAuthorName = initialAuthor ? initialAuthor.formattedFullNameOrUserName(DEFAULT_NAME) : DEFAULT_NAME;
+      const currentAuthorName = group.author ? group.author.formattedFullNameOrUserName(DEFAULT_NAME) : DEFAULT_NAME;
+
       if (sameAsPublished) {
         return (
           <ul>
-            <li>Installed {lastModifiedDate} by {authorName}</li>
+            {this.renderInitialCreatedText(initialCreatedDate, initialAuthorName, isPublished)}
+            {hasChangedSinceCreation ? (
+              <li>Re-installed {lastModifiedDate} by {currentAuthorName}</li>
+            ) : null}
           </ul>
         );
       } else if (isPublished) {
         return (
           <ul>
+            {this.renderInitialCreatedText(initialCreatedDate, initialAuthorName, isPublished)}
             <li>This skill differs from published version</li>
-            <li>Last modified {lastModifiedDate} by {authorName}</li>
+            <li>Last modified {lastModifiedDate} by {currentAuthorName}</li>
           </ul>
         );
       } else {
         return (
           <ul>
-            <li>Last modified {lastModifiedDate} by {authorName}</li>
+            {this.renderInitialCreatedText(initialCreatedDate, initialAuthorName, isPublished)}
+            {hasChangedSinceCreation ? (
+              <li>Last modified {lastModifiedDate} by {currentAuthorName}</li>
+            ) : null}
           </ul>
         );
       }
     }
 
-    renderLastModified(group: BehaviorGroup, isPublished: boolean, sameAsPublished: boolean) {
+    renderHistory(group: BehaviorGroup, isPublished: boolean, sameAsPublished: boolean) {
       if (this.props.localId && group.createdAt) {
-        const lastModifiedDate = Formatter.formatTimestampRelativeIfRecent(group.createdAt);
-        const authorName = group.author ? group.author.formattedFullNameOrUserName() : "an unknown user";
         return (
           <div className="type-weak type-s mvm">
-            {this.renderLastModifiedText(lastModifiedDate, authorName, isPublished, sameAsPublished)}
+            {this.renderLastModifiedText(group.createdAt, group, isPublished, sameAsPublished)}
           </div>
         );
       } else {

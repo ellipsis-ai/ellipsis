@@ -19,12 +19,12 @@ class User {
       });
     }
 
-    formattedUserName(): string {
-      return this.userName ? `@${this.userName}` : "Unknown";
+    formattedUserName(defaultName?: string): string {
+      return this.userName ? `@${this.userName}` : (defaultName || "Unknown");
     }
 
-    formattedName(): string {
-      return this.formattedNameIfKnown() || "Unknown";
+    formattedName(defaultName?: string): string {
+      return this.formattedNameIfKnown() || (defaultName || "Unknown");
     }
 
     formattedNameIfKnown(): string {
@@ -39,8 +39,8 @@ class User {
       }
     }
 
-    formattedFullNameOrUserName(): string {
-      return this.fullName || this.formattedUserName();
+    formattedFullNameOrUserName(defaultName?: string): string {
+      return this.fullName || this.formattedUserName(defaultName);
     }
 
     isSameUser(otherUser?: User | null): boolean {
