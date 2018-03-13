@@ -39,34 +39,24 @@ export interface BehaviorVersionInterface extends EditableInterface {
 }
 
 class BehaviorVersion extends Editable implements Diffable, BehaviorVersionInterface, EditableInterface {
-    id: string | null;
-    behaviorId: string;
-    responseTemplate: ResponseTemplate | null;
-    functionBody: string;
-    inputIds: Array<string>;
-    triggers: Array<Trigger>;
-    config: BehaviorConfig;
-    knownEnvVarsUsed: Array<string>;
-    isNew: boolean | null;
-
-    constructor(
-      id: string | null,
-      behaviorId: string,
-      groupId: string,
-      teamId: string,
-      name: string | null,
-      description: string | null,
-      responseTemplate: ResponseTemplate | null,
-      functionBody: string,
-      inputIds: Array<string>,
-      triggers: Array<Trigger>,
-      config: BehaviorConfig,
-      exportId: string | null,
-      knownEnvVarsUsed: Array<string>,
-      createdAt: number | null,
-      isNew: boolean | null,
-      editorScrollPosition: number | null
-    ) {
+  constructor(
+    readonly id: string | null,
+    readonly behaviorId: string,
+    readonly groupId: string,
+    readonly teamId: string,
+    readonly name: string | null,
+    readonly description: string | null,
+    readonly responseTemplate: ResponseTemplate | null,
+    readonly functionBody: string,
+    readonly inputIds: Array<string>,
+    readonly triggers: Array<Trigger>,
+    readonly config: BehaviorConfig,
+    readonly exportId: string | null,
+    readonly knownEnvVarsUsed: Array<string>,
+    readonly createdAt: number | null,
+    readonly isNew: boolean | null,
+    readonly editorScrollPosition: number | null
+  ) {
       super(
         id,
         groupId,
@@ -88,7 +78,7 @@ class BehaviorVersion extends Editable implements Diffable, BehaviorVersionInter
         config: { value: config, enumerable: true },
         knownEnvVarsUsed: { value: knownEnvVarsUsed || [], enumerable: true }
       });
-    }
+  }
 
     responseTemplateText(): string {
       return this.responseTemplate ? this.responseTemplate.text : "";

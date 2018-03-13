@@ -51,47 +51,27 @@ interface BehaviorGroupInterface extends BehaviorGroupJson {
 }
 
 class BehaviorGroup implements Diffable, BehaviorGroupInterface {
-    id: string | null;
-    teamId: string;
-    name: string | null;
-    icon: string | null;
-    description: string | null;
-    githubUrl: string | null;
-    actionInputs: Array<Input>;
-    dataTypeInputs: Array<Input>;
-    behaviorVersions: Array<BehaviorVersion>;
-    libraryVersions: Array<LibraryVersion>;
-    requiredAWSConfigs: Array<RequiredAWSConfig>;
-    requiredOAuth2ApiConfigs: Array<RequiredOAuth2Application>;
-    requiredSimpleTokenApis: Array<RequiredSimpleTokenApi>;
-    createdAt: number | null;
-    exportId: string | null;
-    author: User | null;
-    gitSHA: string | null;
-    deployment: BehaviorGroupDeployment | null;
-    metaData: BehaviorGroupMetaData | null;
-
-    constructor(
-      id: string | null,
-      teamId: string,
-      name: string | null,
-      icon: string | null,
-      description: string | null,
-      githubUrl: string | null,
-      actionInputs: Array<Input>,
-      dataTypeInputs: Array<Input>,
-      behaviorVersions: Array<BehaviorVersion>,
-      libraryVersions: Array<LibraryVersion>,
-      requiredAWSConfigs: Array<RequiredAWSConfig>,
-      requiredOAuth2ApiConfigs: Array<RequiredOAuth2Application>,
-      requiredSimpleTokenApis: Array<RequiredSimpleTokenApi>,
-      createdAt: number | null,
-      exportId: string | null,
-      author: User | null,
-      gitSHA: string | null,
-      deployment: BehaviorGroupDeployment | null,
-      metaData: BehaviorGroupMetaData | null
-    ) {
+  constructor(
+    readonly id: string | null,
+    readonly teamId: string,
+    readonly name: string | null,
+    readonly icon: string | null,
+    readonly description: string | null,
+    readonly githubUrl: string | null,
+    readonly actionInputs: Array<Input>,
+    readonly dataTypeInputs: Array<Input>,
+    readonly behaviorVersions: Array<BehaviorVersion>,
+    readonly libraryVersions: Array<LibraryVersion>,
+    readonly requiredAWSConfigs: Array<RequiredAWSConfig>,
+    readonly requiredOAuth2ApiConfigs: Array<RequiredOAuth2Application>,
+    readonly requiredSimpleTokenApis: Array<RequiredSimpleTokenApi>,
+    readonly createdAt: number | null,
+    readonly exportId: string | null,
+    readonly author: User | null,
+    readonly gitSHA: string | null,
+    readonly deployment: BehaviorGroupDeployment | null,
+    readonly metaData: BehaviorGroupMetaData | null
+  ) {
       Object.defineProperties(this, {
         id: { value: id, enumerable: true },
         teamId: { value: teamId, enumerable: true },
@@ -113,7 +93,7 @@ class BehaviorGroup implements Diffable, BehaviorGroupInterface {
         deployment: { value: deployment, enumerable: true },
         metaData: { value: metaData, enumerable: true }
       });
-    }
+  }
 
     getEditables(): ReadonlyArray<Editable> {
       const arr: Array<Editable> = [];

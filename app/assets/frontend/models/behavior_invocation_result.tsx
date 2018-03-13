@@ -1,17 +1,13 @@
 class BehaviorInvocationTestResult {
-    responseText: string;
-    kind: string | null;
-    missingInputNames: Array<string>;
-    missingSimpleTokens: Array<string>;
-    files: Array<string>;
+  readonly responseText: string;
 
-    constructor(
-      responseText: string | null,
-      kind: string | null,
-      missingInputNames: Array<string>,
-      missingSimpleTokens: Array<string>,
-      files: Array<string>
-    ) {
+  constructor(
+    responseText: string | null,
+    readonly kind: string | null,
+    readonly missingInputNames: Array<string>,
+    readonly missingSimpleTokens: Array<string>,
+    readonly files: Array<string>
+  ) {
       Object.defineProperties(this, {
         responseText: { value: responseText || "", enumerable: true },
         kind: { value: kind, enumerable: true },
@@ -19,7 +15,7 @@ class BehaviorInvocationTestResult {
         missingSimpleTokens: { value: missingSimpleTokens || [], enumerable: true },
         files: { value: files || [], enumerable: true }
       });
-    }
+  }
 
     wasSuccessful(): boolean {
       return this.kind === "Success";

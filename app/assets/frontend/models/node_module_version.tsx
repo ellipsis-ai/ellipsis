@@ -1,25 +1,32 @@
-class NodeModuleVersion {
-    from: string;
-    version: string;
+export interface NodeModuleVersionJson {
+  from: string,
+  version: string
+}
 
-    constructor(from: string, version: string) {
-      Object.defineProperties(this, {
-        from: { value: from, enumerable: true },
-        version: { value: version, enumerable: true }
-      });
-    }
+interface NodeModuleVersionInterface extends NodeModuleVersionJson {}
 
-    clone(props: {}): NodeModuleVersion {
-      return NodeModuleVersion.fromProps(Object.assign({}, this, props));
-    }
+class NodeModuleVersion implements NodeModuleVersionInterface {
+  constructor(
+    readonly from: string,
+    readonly version: string
+  ) {
+    Object.defineProperties(this, {
+      from: {value: from, enumerable: true},
+      version: {value: version, enumerable: true}
+    });
+  }
 
-    static fromProps(props): NodeModuleVersion {
-      return new NodeModuleVersion(props.from, props.version);
-    }
+  clone(props: Partial<NodeModuleVersionInterface>): NodeModuleVersion {
+    return NodeModuleVersion.fromProps(Object.assign({}, this, props));
+  }
 
-    static allFromJson(jsonArray) {
-      return jsonArray.map((props) => NodeModuleVersion.fromProps(props));
-    }
+  static fromProps(props: NodeModuleVersionInterface): NodeModuleVersion {
+    return new NodeModuleVersion(props.from, props.version);
+  }
+
+  static allFromJson(jsonArray: Array<NodeModuleVersionJson>) {
+    return jsonArray.map((props) => NodeModuleVersion.fromProps(props));
+  }
 
 }
 

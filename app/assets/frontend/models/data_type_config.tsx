@@ -15,13 +15,12 @@ interface DataTypeConfigInterface extends DataTypeConfigJson {
 }
 
 class DataTypeConfig implements DataTypeConfigInterface {
-    fields: Array<DataTypeField>;
-    usesCode: boolean;
+  readonly usesCode: boolean;
 
-    constructor(
-      fields: Array<DataTypeField>,
-      usesCode: boolean | null
-    ) {
+  constructor(
+    readonly fields: Array<DataTypeField>,
+    usesCode: boolean | null
+  ) {
       Object.defineProperties(this, {
         fields: {
           value: fields,
@@ -32,7 +31,7 @@ class DataTypeConfig implements DataTypeConfigInterface {
           enumerable: true
         }
       });
-    }
+  }
 
     requiresFields(): boolean {
       return !this.usesCode;

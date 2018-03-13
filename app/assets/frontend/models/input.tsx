@@ -18,33 +18,24 @@ interface InputInterface extends InputJson {
 }
 
 class Input implements Diffable, InputInterface {
-    name: string;
-    question: string;
-    paramType: ParamType;
-    isSavedForTeam: boolean;
-    isSavedForUser: boolean;
-    inputId: string;
-    inputVersionId: string;
-    exportId: string;
-
-    constructor(
-      name: string | null,
-      question: string | null,
-      paramType: ParamType,
-      isSavedForTeam: boolean | null,
-      isSavedForUser: boolean | null,
-      inputId: string,
-      inputVersionId: string,
-      exportId: string
-    ) {
+  constructor(
+    readonly name: string,
+    readonly question: string,
+    readonly paramType: ParamType,
+    readonly isSavedForTeam: boolean,
+    readonly isSavedForUser: boolean,
+    readonly inputId: string,
+    readonly inputVersionId: string,
+    readonly exportId: string
+  ) {
 
       Object.defineProperties(this, {
         name: {
-          value: name || '',
+          value: name,
           enumerable: true
         },
         question: {
-          value: question || '',
+          value: question,
           enumerable: true
         },
         paramType: {
@@ -52,11 +43,11 @@ class Input implements Diffable, InputInterface {
           enumerable: true
         },
         isSavedForTeam: {
-          value: !!isSavedForTeam,
+          value: isSavedForTeam,
           enumerable: true
         },
         isSavedForUser: {
-          value: !!isSavedForUser,
+          value: isSavedForUser,
           enumerable: true
         },
         inputId: {
@@ -72,7 +63,7 @@ class Input implements Diffable, InputInterface {
           enumerable: true
         }
       });
-    }
+  }
 
     diffLabel(): string {
       const name = this.itemLabel();

@@ -12,13 +12,16 @@ export interface ParamTypeJson {
 interface ParamTypeInterface extends ParamTypeJson {}
 
 class ParamType implements ParamTypeInterface {
-    id: string;
-    exportId: string;
-    isBuiltIn: boolean;
-    name: string;
-    needsConfig: boolean;
+  readonly isBuiltIn: boolean;
+  readonly name: string;
+  readonly needsConfig: boolean;
 
-    constructor(id: string, exportId: string, maybeName: string | null, maybeNeedsConfig?: boolean | null) {
+  constructor(
+    readonly id: string,
+    readonly exportId: string,
+    maybeName: string | null,
+    maybeNeedsConfig?: boolean | null
+  ) {
       const isBuiltIn = builtinTypes.includes(id) && id === maybeName;
 
       Object.defineProperties(this, {

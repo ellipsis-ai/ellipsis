@@ -8,11 +8,11 @@ export interface BehaviorGroupMetaDataJson {
 }
 
 class BehaviorGroupMetaData {
-  groupId: string;
-  initialCreatedAt: Timestamp;
-  initialAuthor: User | null;
-
-  constructor(groupId: string, initialCreatedAt: Timestamp, initialAuthor: User | null) {
+  constructor(
+    readonly groupId: string,
+    readonly initialCreatedAt: Timestamp,
+    readonly initialAuthor: User | null
+  ) {
     Object.defineProperties(this, {
       groupId: { value: groupId, enumerable: true },
       initialCreatedAt: { value: initialCreatedAt, enumerable: true },

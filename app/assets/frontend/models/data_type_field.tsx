@@ -13,19 +13,14 @@ interface DataTypeFieldInterface extends DataTypeFieldJson {
 }
 
 class DataTypeField implements DataTypeFieldInterface {
-    fieldId: string;
-    fieldVersionId: string | null;
-    name: string;
-    fieldType: ParamType;
-    isLabel: boolean;
-
-    constructor(
-      fieldId: string,
-      fieldVersionId: string | null,
-      name: string | null,
-      fieldType: ParamType,
-      isLabel: boolean | null
-    ) {
+  readonly name: string;
+  constructor(
+    readonly fieldId: string,
+    readonly fieldVersionId: string | null,
+    name: string | null,
+    readonly fieldType: ParamType,
+    isLabel: boolean | null
+  ) {
       Object.defineProperties(this, {
         fieldVersionId: {
           value: fieldVersionId,
@@ -48,7 +43,7 @@ class DataTypeField implements DataTypeFieldInterface {
           enumerable: true
         }
       });
-    }
+  }
 
     clone(props: Partial<DataTypeFieldInterface>): DataTypeField {
       const newProps = Object.assign({}, this, props);

@@ -1,9 +1,10 @@
 class DefaultStorageItemField {
-    name: string;
-    value: any;
-    stringValue: string;
+  readonly stringValue: string;
 
-    constructor(name: string, value: any) {
+  constructor(
+    readonly name: string,
+    readonly value: any
+  ) {
       Object.defineProperties(this, {
         name: {
           value: name,
@@ -18,7 +19,7 @@ class DefaultStorageItemField {
           enumerable: true
         }
       });
-    }
+  }
 }
 
 export default DefaultStorageItemField;

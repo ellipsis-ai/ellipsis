@@ -5,9 +5,45 @@ import Hour from './hour';
 import Minute from './minute';
 import Month from './month';
 
-  class Recurrence {
+interface Time {
+  hour: number,
+  minute: number
+}
 
-    constructor(props) {
+export interface RecurrenceJson {
+  id: string | null,
+  displayString: string | null,
+  frequency: number,
+  typeName: string,
+  timeOfDay: Time | null,
+  timeZone: string | null,
+  timeZoneName: string | null,
+  minuteOfHour: number | null,
+  dayOfWeek: number | null,
+  dayOfMonth: number | null,
+  nthDayOfWeek: number | null,
+  month: number | null,
+  daysOfWeek: Array<number>
+}
+
+interface RecurrenceInterface extends RecurrenceJson {}
+
+class Recurrence implements RecurrenceInterface {
+  id: string | null;
+  displayString: string | null;
+  frequency: number;
+  typeName: string;
+  timeOfDay: Time | null;
+  timeZone: string | null;
+  timeZoneName: string | null;
+  minuteOfHour: number | null;
+  dayOfWeek: number | null;
+  dayOfMonth: number | null;
+  nthDayOfWeek: number | null;
+  month: number | null;
+  daysOfWeek: Array<number>;
+
+    constructor(props: Partial<RecurrenceInterface>) {
       const initialProps = Object.assign({
         id: null,
         displayString: "",
@@ -41,7 +77,7 @@ import Month from './month';
       });
     }
 
-    fallbackTimeOfDay() {
+    fallbackTimeOfDay(): Time {
       return this.timeOfDay || Recurrence.defaultTimeOfDay();
     }
 
@@ -52,65 +88,66 @@ import Month from './month';
       });
     }
 
-    isValid() {
+    isValid(): boolean {
       return this.isValidMinutely() || this.isValidHourly() || this.isValidDaily() || this.isValidWeekly() ||
         this.isValidMonthlyByDayOfMonth() || this.isValidMonthlyByNthDayOfWeek() || this.isValidYearly();
     }
 
-    hasValidFrequency() {
+    hasValidFrequency(): boolean {
       return new OptionalInt(this.frequency).is(ea => ea > 0);
     }
 
-    hasValidTimeOfDay() {
-      return Boolean(this.timeOfDay) && this.hasValidTimeZone() && Minute.isValid(this.timeOfDay.minute) &&
-        Hour.isValid(this.timeOfDay.hour);
+    hasValidTimeOfDay(): boolean {
+      const timeOfDay = this.timeOfDay;
+      return Boolean(timeOfDay && this.hasValidTimeZone() && Minute.isValid(timeOfDay.minute) &&
+        Hour.isValid(timeOfDay.hour));
     }
 
-    hasValidNthDayOfWeek() {
+    hasValidNthDayOfWeek(): boolean {
       return new OptionalInt(this.nthDayOfWeek).is((ea) => ea >= 1 && ea <= 5);
     }
 
-    hasValidTimeZone() {
-      return Boolean(this.timeZone) && this.timeZone.length > 0;
+    hasValidTimeZone(): boolean {
+      return Boolean(this.timeZone && this.timeZone.length > 0);
     }
 
-    isValidMinutely() {
+    isValidMinutely(): boolean {
       return this.typeName === "minutely" && this.hasValidFrequency();
     }
 
-    isValidHourly() {
+    isValidHourly(): boolean {
       return this.typeName === "hourly" && this.hasValidFrequency() && Minute.isValid(this.minuteOfHour);
     }
 
-    isValidDaily() {
+    isValidDaily(): boolean {
       return this.typeName === "daily" && this.hasValidFrequency() && this.hasValidTimeOfDay();
     }
 
-    isValidWeekly() {
+    isValidWeekly(): boolean {
       return this.typeName === "weekly" && this.hasValidFrequency() && this.hasValidTimeOfDay() &&
         this.daysOfWeek.length > 0 && this.daysOfWeek.every(DayOfWeek.isValid);
     }
 
-    isValidMonthlyByDayOfMonth() {
+    isValidMonthlyByDayOfMonth(): boolean {
       return this.typeName === "monthly_by_day_of_month" && this.hasValidFrequency() && this.hasValidTimeOfDay() &&
         DayOfMonth.isValid(this.dayOfMonth);
     }
 
-    isValidMonthlyByNthDayOfWeek() {
+    isValidMonthlyByNthDayOfWeek(): boolean {
       return this.typeName === "monthly_by_nth_day_of_week" && this.hasValidFrequency() && this.hasValidTimeOfDay() &&
         this.hasValidNthDayOfWeek() && DayOfWeek.isValid(this.dayOfWeek);
     }
 
-    isValidYearly() {
+    isValidYearly(): boolean {
       return this.typeName === "yearly" && this.hasValidFrequency() && this.hasValidTimeOfDay() &&
         DayOfMonth.isValid(this.dayOfMonth) && Month.isValid(this.month);
     }
 
-    clone(props) {
+    clone(props: Partial<RecurrenceInterface>): Recurrence {
       return new Recurrence(Object.assign({}, this, props));
     }
 
-    becomeMinutely() {
+    becomeMinutely(): Recurrence {
       return this.clone({
         typeName: "minutely",
         timeOfDay: null,
@@ -125,8 +162,8 @@ import Month from './month';
       });
     }
 
-    becomeHourly() {
-      const minuteOfHour = Number.isInteger(this.minuteOfHour) ? this.minuteOfHour : 0;
+    becomeHourly(): Recurrence {
+      const minuteOfHour = typeof this.minuteOfHour === "number" && Number.isInteger(this.minuteOfHour) ? this.minuteOfHour : 0;
       return this.clone({
         typeName: "hourly",
         minuteOfHour: minuteOfHour,
@@ -141,7 +178,7 @@ import Month from './month';
       });
     }
 
-    becomeDaily(defaultProps) {
+    becomeDaily(defaultProps?: Partial<RecurrenceInterface>): Recurrence {
       return this.clone({
         typeName: "daily",
         timeOfDay: this.fallbackTimeOfDay(),
@@ -156,7 +193,7 @@ import Month from './month';
       });
     }
 
-    becomeWeekly(defaultProps) {
+    becomeWeekly(defaultProps): Recurrence {
       return this.clone({
         typeName: "weekly",
         timeOfDay: this.fallbackTimeOfDay(),
@@ -170,7 +207,7 @@ import Month from './month';
       });
     }
 
-    becomeMonthlyByDayOfMonth(defaultProps) {
+    becomeMonthlyByDayOfMonth(defaultProps): Recurrence {
       return this.clone({
         typeName: "monthly_by_day_of_month",
         timeOfDay: this.fallbackTimeOfDay(),
@@ -185,7 +222,7 @@ import Month from './month';
       });
     }
 
-    becomeYearly(defaultProps) {
+    becomeYearly(defaultProps): Recurrence {
       return this.clone({
         typeName: "yearly",
         timeOfDay: this.fallbackTimeOfDay(),
@@ -200,7 +237,7 @@ import Month from './month';
       });
     }
 
-    static defaultTimeOfDay() {
+    static defaultTimeOfDay(): Time {
       return { hour: 9, minute: 0 };
     }
   }

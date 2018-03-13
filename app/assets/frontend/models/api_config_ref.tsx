@@ -6,15 +6,15 @@ export interface ApiConfigRefJson {
 }
 
 class ApiConfigRef implements ApiConfigRefJson {
-    id: string;
-    displayName: string;
-
-    constructor(id: string, displayName: string) {
+  constructor(
+    readonly id: string,
+    readonly displayName: string
+  ) {
       Object.defineProperties(this, {
         id: { value: id, enumerable: true },
         displayName: { value: displayName, enumerable: true }
       });
-    }
+  }
 
     defaultNameInCode(): string {
       return Formatter.formatCamelCaseIdentifier(this.displayName);

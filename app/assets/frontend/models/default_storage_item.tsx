@@ -6,20 +6,14 @@ type DefaultStorageItemData = {
 };
 
 class DefaultStorageItem {
-    id: string;
-    behaviorId: string;
-    updatedAt: number | null;
-    updatedByUserId: string | null;
-    data: DefaultStorageItemData;
-    fields: Array<DefaultStorageItemField>;
-
-    constructor(
-      id: string,
-      behaviorId: string,
-      updatedAt: number | null,
-      updatedByUserId: string | null,
-      data: DefaultStorageItemData
-    ) {
+  readonly fields: Array<DefaultStorageItemField>;
+  constructor(
+    readonly id: string,
+    readonly behaviorId: string,
+    readonly updatedAt: number | null,
+    readonly updatedByUserId: string | null,
+    readonly data: DefaultStorageItemData
+  ) {
       Object.defineProperties(this, {
         id: {
           value: id,

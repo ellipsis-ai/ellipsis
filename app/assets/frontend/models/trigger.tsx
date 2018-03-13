@@ -10,16 +10,15 @@ export interface TriggerJson {
 interface TriggerInterface extends TriggerJson {}
 
 class Trigger implements Diffable, TriggerInterface {
-    text: string;
-    isRegex: boolean;
-    requiresMention: boolean;
-    caseSensitive: boolean;
+  readonly isRegex: boolean;
+  readonly requiresMention: boolean;
+  readonly caseSensitive: boolean;
 
-    constructor(
-      text: string | null,
-      maybeIsRegex: boolean | null,
-      maybeRequiresMention: boolean | null
-    ) {
+  constructor(
+    readonly text: string,
+    maybeIsRegex: boolean | null,
+    maybeRequiresMention: boolean | null
+  ) {
       const isRegex: boolean = typeof maybeIsRegex === "boolean" ? Boolean(maybeIsRegex) : false;
       const requiresMention: boolean = typeof maybeRequiresMention === "boolean" ? Boolean(maybeRequiresMention) : true;
       Object.defineProperties(this, {
@@ -37,7 +36,7 @@ class Trigger implements Diffable, TriggerInterface {
           enumerable: true
         },
         text: {
-          value: text || "",
+          value: text,
           enumerable: true
         }
       });

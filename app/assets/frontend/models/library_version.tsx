@@ -11,22 +11,19 @@ export interface LibraryVersionJson extends EditableJson {
 interface LibraryVersionInterface extends LibraryVersionJson, EditableInterface {}
 
 class LibraryVersion extends Editable implements Diffable, LibraryVersionInterface {
-    functionBody: string;
-    libraryId: string;
-
-    constructor(
-      id: string | null,
-      name: string | null,
-      description: string | null,
-      functionBody: string,
-      groupId: string,
-      teamId: string,
-      libraryId: string,
-      exportId: string | null,
-      isNew: boolean | null,
-      editorScrollPosition: number | null,
-      createdAt: number | null
-    ) {
+  constructor(
+    readonly id: string | null,
+    readonly name: string | null,
+    readonly description: string | null,
+    readonly functionBody: string,
+    readonly groupId: string,
+    readonly teamId: string,
+    readonly libraryId: string,
+    readonly exportId: string | null,
+    readonly isNew: boolean | null,
+    readonly editorScrollPosition: number | null,
+    readonly createdAt: number | null
+  ) {
       super(
         id,
         groupId,
@@ -44,7 +41,7 @@ class LibraryVersion extends Editable implements Diffable, LibraryVersionInterfa
         functionBody: { value: functionBody, enumerable: true },
         libraryId: { value: libraryId, enumerable: true }
       });
-    }
+  }
 
     sortKeyForExisting(): string | null {
       return this.name;

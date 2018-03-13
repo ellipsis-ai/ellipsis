@@ -7,14 +7,10 @@ export interface UserJson {
 interface UserInterface extends UserJson {}
 
 class User {
-    id: string;
-    userName: string | null;
-    fullName: string | null;
-
     constructor(
-      id: string,
-      userName: string | null,
-      fullName: string | null
+      readonly id: string,
+      readonly userName: string | null,
+      readonly fullName: string | null
     ) {
       Object.defineProperties(this, {
         id: { value: id, enumerable: true },

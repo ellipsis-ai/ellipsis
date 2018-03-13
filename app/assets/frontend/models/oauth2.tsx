@@ -35,8 +35,8 @@ interface RequiredOAuth2ApplicationProps extends RequiredOAuth2ApplicationJson {
 }
 
 class RequiredOAuth2Application extends RequiredApiConfigWithConfig implements Diffable, RequiredOAuth2ApplicationProps {
-    config: OAuth2ApplicationRef | null;
-    recommendedScope: string;
+  readonly config: OAuth2ApplicationRef | null;
+  readonly recommendedScope: string;
 
     constructor(id: string, exportId: string, apiId: string, nameInCode: string, config: OAuth2ApplicationRef | null, recommendedScope: string) {
       super(id, exportId, apiId, nameInCode, config);

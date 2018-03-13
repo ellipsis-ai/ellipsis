@@ -19,7 +19,7 @@ interface ResponseTemplateInterface {
 }
 
 class ResponseTemplate implements ResponseTemplateInterface {
-    text: string;
+  readonly text: string;
 
     constructor(maybeText: string | null) {
       Object.defineProperties(this, {

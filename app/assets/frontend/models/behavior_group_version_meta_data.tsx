@@ -1,21 +1,17 @@
 import User from './user';
 
 class BehaviorGroupVersionMetaData {
-    behaviorGroupId: string;
-    createdAt: number;
-    author: User | null;
-
-    constructor(
-      behaviorGroupId: string,
-      createdAt: number,
-      author: User | null,
-    ) {
+  constructor(
+    readonly behaviorGroupId: string,
+    readonly createdAt: number,
+    readonly author: User | null,
+  ) {
       Object.defineProperties(this, {
         behaviorGroupId: { value: behaviorGroupId, enumerable: true },
         createdAt: { value: createdAt, enumerable: true },
         author: { value: author, enumerable: true }
       });
-    }
+  }
 
     static fromProps(props) {
       return new BehaviorGroupVersionMetaData(

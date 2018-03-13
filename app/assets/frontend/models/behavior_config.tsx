@@ -13,19 +13,13 @@ interface BehaviorConfigInterface extends BehaviorConfigJson {
 }
 
 class BehaviorConfig implements BehaviorConfigInterface {
-    exportId: string | null;
-    name: string | null;
-    forcePrivateResponse: boolean | null;
-    isDataType: boolean;
-    dataTypeConfig: DataTypeConfig | null;
-
-    constructor(
-      exportId: string | null,
-      name: string | null,
-      forcePrivateResponse: boolean | null,
-      isDataType: boolean,
-      dataTypeConfig: DataTypeConfig | null
-    ) {
+  constructor(
+    readonly exportId: string | null,
+    readonly name: string | null,
+    readonly forcePrivateResponse: boolean | null,
+    readonly isDataType: boolean,
+    readonly dataTypeConfig: DataTypeConfig | null
+  ) {
       Object.defineProperties(this, {
         exportId: { value: exportId, enumerable: true },
         name: { value: name, enumerable: true },

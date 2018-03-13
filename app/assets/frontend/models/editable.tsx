@@ -16,30 +16,18 @@ export interface EditableJson {
 export interface EditableInterface extends EditableJson {}
 
 abstract class Editable implements EditableInterface {
-    id: string | null;
-    groupId: string;
-    teamId: string;
-    isNew: boolean | null;
-    name: string | null;
-    description: string | null;
-    functionBody: string;
-    exportId: string | null;
-    editorScrollPosition: number | null;
-    createdAt: number | null;
-
-    constructor(
-      id: string | null,
-      groupId: string,
-      teamId: string,
-      isNew: boolean | null,
-      name: string | null,
-      description: string | null,
-      functionBody: string,
-      exportId: string | null,
-      editorScrollPosition: number | null,
-      createdAt: number | null
-    ) {
-
+  constructor(
+    readonly id: string | null,
+    readonly groupId: string,
+    readonly teamId: string,
+    readonly isNew: boolean | null,
+    readonly name: string | null,
+    readonly description: string | null,
+    readonly functionBody: string,
+    readonly exportId: string | null,
+    readonly editorScrollPosition: number | null,
+    readonly createdAt: number | null
+  ) {
       Object.defineProperties(this, {
         id: { value: id, enumerable: true },
         groupId: { value: groupId, enumerable: true },
@@ -52,7 +40,7 @@ abstract class Editable implements EditableInterface {
         editorScrollPosition: { value: editorScrollPosition, enumerable: true },
         createdAt: {value: createdAt, enumerable: true }
       });
-    }
+  }
 
     isBehaviorVersion(): boolean {
       return false;
