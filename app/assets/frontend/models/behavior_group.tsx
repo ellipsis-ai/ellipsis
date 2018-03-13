@@ -2,33 +2,33 @@ import {Diffable, DiffableProp} from './diffs';
 
 import BehaviorGroupDeployment, {BehaviorGroupDeploymentJson} from './behavior_group_deployment';
 import BehaviorGroupMetaData, {BehaviorGroupMetaDataJson} from "./behavior_group_meta_data";
-import BehaviorVersion from './behavior_version';
+import BehaviorVersion, {BehaviorVersionJson} from './behavior_version';
 import Editable from './editable';
-import LibraryVersion from './library_version';
-import Input from './input';
+import LibraryVersion, {LibraryVersionJson} from './library_version';
+import Input, {InputJson} from './input';
 import DeepEqual from '../lib/deep_equal';
-import {RequiredAWSConfig} from './aws';
-import {RequiredOAuth2Application} from './oauth2';
-import {RequiredSimpleTokenApi} from './simple_token';
+import {RequiredAWSConfig, RequiredAWSConfigJson} from './aws';
+import {RequiredOAuth2Application, RequiredOAuth2ApplicationJson} from './oauth2';
+import {RequiredSimpleTokenApi, RequiredSimpleTokenApiJson} from './simple_token';
 import User, {UserJson} from './user';
 import ParamType from "./param_type";
 
 const ONE_MINUTE = 60000;
 
 export interface BehaviorGroupJson {
-  id: string;
+  id: string | null;
   teamId: string;
   name: string | null;
   icon: string | null;
   description: string | null;
   githubUrl: string | null;
-  actionInputs: Array<any>;
-  dataTypeInputs: Array<any>;
-  behaviorVersions: Array<any>;
-  libraryVersions: Array<any>;
-  requiredAWSConfigs: Array<any>;
-  requiredOAuth2ApiConfigs: Array<any>;
-  requiredSimpleTokenApis: Array<any>;
+  actionInputs: Array<InputJson>;
+  dataTypeInputs: Array<InputJson>;
+  behaviorVersions: Array<BehaviorVersionJson>;
+  libraryVersions: Array<LibraryVersionJson>;
+  requiredAWSConfigs: Array<RequiredAWSConfigJson>;
+  requiredOAuth2ApiConfigs: Array<RequiredOAuth2ApplicationJson>;
+  requiredSimpleTokenApis: Array<RequiredSimpleTokenApiJson>;
   createdAt: number | null;
   exportId: string | null;
   author: UserJson | null;
@@ -37,13 +37,7 @@ export interface BehaviorGroupJson {
   metaData: BehaviorGroupMetaDataJson | null;
 }
 
-interface BehaviorGroupInterface {
-  id: string | null;
-  teamId: string;
-  name: string | null;
-  icon: string | null;
-  description: string | null;
-  githubUrl: string | null;
+interface BehaviorGroupInterface extends BehaviorGroupJson {
   actionInputs: Array<Input>;
   dataTypeInputs: Array<Input>;
   behaviorVersions: Array<BehaviorVersion>;
@@ -51,10 +45,7 @@ interface BehaviorGroupInterface {
   requiredAWSConfigs: Array<RequiredAWSConfig>;
   requiredOAuth2ApiConfigs: Array<RequiredOAuth2Application>;
   requiredSimpleTokenApis: Array<RequiredSimpleTokenApi>;
-  createdAt: number | null;
-  exportId: string | null;
   author: User | null;
-  gitSHA: string | null;
   deployment: BehaviorGroupDeployment | null;
   metaData: BehaviorGroupMetaData | null;
 }

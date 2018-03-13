@@ -1,12 +1,14 @@
 import {Diffable, DiffableProp} from "./diffs";
 import BehaviorGroup from "./behavior_group";
 
-import Editable, {EditableInterface} from './editable';
+import Editable, {EditableInterface, EditableJson} from './editable';
 
-interface LibraryVersionInterface extends EditableInterface {
+export interface LibraryVersionJson extends EditableJson {
   functionBody: string;
   libraryId: string;
 }
+
+interface LibraryVersionInterface extends LibraryVersionJson, EditableInterface {}
 
 class LibraryVersion extends Editable implements Diffable, LibraryVersionInterface {
     functionBody: string;

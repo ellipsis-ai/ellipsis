@@ -2,7 +2,16 @@ import Formatter from '../lib/formatter';
 
 const builtinTypes: Array<string> = ['Text', 'Number', 'Yes/No'];
 
-class ParamType {
+export interface ParamTypeJson {
+  id: string;
+  exportId: string;
+  name: string;
+  needsConfig?: boolean | null
+}
+
+interface ParamTypeInterface extends ParamTypeJson {}
+
+class ParamType implements ParamTypeInterface {
     id: string;
     exportId: string;
     isBuiltIn: boolean;
@@ -67,11 +76,11 @@ class ParamType {
       }
     }
 
-    clone(newProps: {}): ParamType {
+    clone(newProps: Partial<ParamTypeInterface>): ParamType {
       return ParamType.fromProps(Object.assign({}, this, newProps));
     }
 
-    static fromProps(props: { id: string, exportId: string, name: string, needsConfig?: boolean }): ParamType {
+    static fromProps(props: ParamTypeInterface): ParamType {
       return new ParamType(
         props.id,
         props.exportId,
@@ -80,7 +89,7 @@ class ParamType {
       );
     }
 
-    static fromJson(props): ParamType {
+    static fromJson(props: ParamTypeJson): ParamType {
       return ParamType.fromProps(props);
     }
   }

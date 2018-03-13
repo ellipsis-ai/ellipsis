@@ -1,8 +1,23 @@
 import {Diffable, DiffableProp} from './diffs';
 
-import ParamType from './param_type';
+import ParamType, {ParamTypeJson} from './param_type';
 
-class Input implements Diffable {
+export interface InputJson {
+  name: string;
+  question: string;
+  paramType: ParamTypeJson;
+  isSavedForTeam: boolean;
+  isSavedForUser: boolean;
+  inputId: string;
+  inputVersionId: string;
+  exportId: string;
+}
+
+interface InputInterface extends InputJson {
+  paramType: ParamType;
+}
+
+class Input implements Diffable, InputInterface {
     name: string;
     question: string;
     paramType: ParamType;
@@ -110,7 +125,7 @@ class Input implements Diffable {
       return Input.fromProps(Object.assign({}, this, props));
     }
 
-    static fromProps(props) {
+    static fromProps(props: InputInterface) {
       return new Input(
         props.name,
         props.question,
@@ -123,8 +138,14 @@ class Input implements Diffable {
       );
     }
 
-    static allFromJson(jsonArray) {
-      return jsonArray.map((triggerObj) => Input.fromProps(triggerObj));
+    static fromJson(json: InputJson) {
+      return Input.fromProps(Object.assign({}, json, {
+        paramType: ParamType.fromJson(json.paramType)
+      }));
+    }
+
+    static allFromJson(jsonArray: Array<InputJson>) {
+      return jsonArray.map((triggerObj) => Input.fromJson(triggerObj));
     }
 }
 

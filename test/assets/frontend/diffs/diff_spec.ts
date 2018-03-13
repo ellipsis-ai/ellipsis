@@ -1,5 +1,7 @@
-import BehaviorGroup from '../../../../app/assets/frontend/models/behavior_group';
+import BehaviorGroup, {BehaviorGroupJson} from '../../../../app/assets/frontend/models/behavior_group';
 import {TextPart, MultiLineTextPropertyDiff, maybeDiffFor} from '../../../../app/assets/frontend/models/diffs';
+import {BehaviorVersionJson} from "../../../../app/assets/frontend/models/behavior_version";
+import {LibraryVersionJson} from "../../../../app/assets/frontend/models/library_version";
 
 const teamId = 'team123456';
 const groupId = 'group123456';
@@ -11,9 +13,12 @@ const requiredAWSConfigId = 'requiredAWS123456';
 const requiredGithubConfigId = 'requiredGithub123456';
 const requiredPivotalTrackerConfigId = 'requiredPivotalTracker123456';
 
-const behaviorVersion1 = Object.freeze({
+const behaviorVersion1: BehaviorVersionJson = Object.freeze({
   "id": "abcdef",
+  teamId: "1",
   "name": "First name",
+  description: null,
+  exportId: "abcdef",
   "groupId": groupId,
   "behaviorId": behaviorId,
   "functionBody": "use strict;",
@@ -32,14 +37,23 @@ const behaviorVersion1 = Object.freeze({
   }],
   "inputIds": [inputId, inputId2],
   "config": {
-    "forcePrivateResponse": false
+    "forcePrivateResponse": false,
+    isDataType: false,
+    exportId: null,
+    name: null,
+    dataTypeConfig: null
   },
-  "createdAt": 1468338136532
+  "createdAt": 1468338136532,
+  knownEnvVarsUsed: [],
+  isNew: false,
+  editorScrollPosition: null
 });
-const behaviorVersion2 = Object.freeze({
+const behaviorVersion2: BehaviorVersionJson = Object.freeze({
   "id": "abcdef",
+  teamId: "1",
   "name": "Second name",
   "description": "A description",
+  exportId: "abcdef",
   "groupId": groupId,
   "behaviorId": behaviorId,
   "functionBody": "use strict; // so strict",
@@ -58,31 +72,44 @@ const behaviorVersion2 = Object.freeze({
   }],
   "inputIds": [inputId2, inputId],
   "config": {
-    "forcePrivateResponse": true
+    "forcePrivateResponse": true,
+    isDataType: false,
+    exportId: null,
+    name: null,
+    dataTypeConfig: null
   },
-  "createdAt": 1468359271138
+  "createdAt": 1468359271138,
+  knownEnvVarsUsed: [],
+  isNew: false,
+  editorScrollPosition: null
 });
 
-const libraryVersion1 = Object.freeze({
+const libraryVersion1: LibraryVersionJson = Object.freeze({
   id: 'abcdef',
   name: 'some-lib',
   description: 'A library',
   functionBody: 'return "foo"',
   groupId: groupId,
   teamId: teamId,
-  libaryId: libraryId,
-  editorScrollPosition: 0
+  libraryId: libraryId,
+  editorScrollPosition: 0,
+  isNew: false,
+  exportId: 'abcdef',
+  createdAt: Date.now()
 });
 
-const libraryVersion2 = Object.freeze({
+const libraryVersion2: LibraryVersionJson = Object.freeze({
   id: 'abcdef',
   name: 'some-lib-revised',
   description: 'A library (revised)',
   functionBody: 'return "foo";',
   groupId: groupId,
   teamId: teamId,
-  libaryId: libraryId,
-  editorScrollPosition: 10
+  libraryId: libraryId,
+  editorScrollPosition: 10,
+  isNew: false,
+  exportId: 'abcdef',
+  createdAt: Date.now()
 });
 
 const defaultStorageDataType = Object.freeze({
@@ -121,11 +148,13 @@ const actionInput1 = Object.freeze({
   paramType: {
     id: 'Text',
     name: 'Text',
+    exportId: 'Text',
     needsConfig: false
   },
   isSavedForTeam: false,
   isSavedForUser: true,
   inputId: inputId,
+  inputVersionId: inputId,
   exportId: inputId
 });
 
@@ -135,11 +164,13 @@ const actionInputChanged = Object.freeze({
   paramType: {
     id: 'sdflkjafks',
     name: 'Person',
+    exportId: 'sdflkjafks',
     needsConfig: false
   },
   isSavedForTeam: true,
   isSavedForUser: false,
   inputId: inputId,
+  inputVersionId: inputId,
   exportId: inputId
 });
 
@@ -149,11 +180,13 @@ const actionInput2 = Object.freeze({
   paramType: {
     id: 'Text',
     name: 'Text',
+    exportId: 'Text',
     needsConfig: false
   },
   isSavedForTeam: false,
   isSavedForUser: false,
   inputId: inputId2,
+  inputVersionId: inputId2,
   exportId: inputId2
 });
 
@@ -162,7 +195,7 @@ const requiredAWSConfig1 = Object.freeze({
   exportId: requiredAWSConfigId,
   apiId: 'aws',
   nameInCode: 'prod',
-  config: undefined
+  config: null
 });
 
 const requiredAWSConfig2 = Object.freeze({
@@ -181,7 +214,7 @@ const requiredOAuth2Config1 = Object.freeze({
   exportId: requiredGithubConfigId,
   apiId: 'github',
   nameInCode: 'github',
-  config: undefined,
+  config: null,
   recommendedScope: 'repo'
 });
 
@@ -190,6 +223,7 @@ const requiredOAuth2Config2 = Object.freeze({
   exportId: requiredGithubConfigId,
   apiId: 'github',
   nameInCode: 'githubReadonly',
+  config: null,
   recommendedScope: 'repo:readonly'
 });
 
@@ -198,6 +232,7 @@ const requiredOAuth2Config3 = Object.freeze({
   exportId: 'requiredGithubabcdef',
   apiId: 'github',
   nameInCode: 'githubReadwrite',
+  config: null,
   recommendedScope: 'repo'
 });
 
@@ -215,9 +250,13 @@ const requiredSimpleTokenApi2 = Object.freeze({
   nameInCode: 'pivotalTracker2',
 });
 
-const behaviorGroupVersion1 = Object.freeze({
+const behaviorGroupVersion1: BehaviorGroupJson = Object.freeze({
+  id: "1",
+  teamId: "1",
+  createdAt: Date.now(),
   name: "Some skill",
   icon: "🚀",
+  description: null,
   groupId: 'group123456',
   behaviorVersions: [behaviorVersion1],
   requiredAWSConfigs: [requiredAWSConfig1],
@@ -225,11 +264,21 @@ const behaviorGroupVersion1 = Object.freeze({
   requiredSimpleTokenApis: [requiredSimpleTokenApi1],
   actionInputs: [actionInput1, actionInput2],
   dataTypeInputs: [],
-  libraryVersions: [libraryVersion1]
+  libraryVersions: [libraryVersion1],
+  githubUrl: null,
+  exportId: null,
+  author: null,
+  gitSHA: null,
+  deployment: null,
+  metaData: null
 });
 
-const behaviorGroupVersion2 = Object.freeze({
+const behaviorGroupVersion2: BehaviorGroupJson = Object.freeze({
+  id: "1",
+  teamId: "1",
+  createdAt: Date.now(),
   name: "Some updated skill",
+  icon: null,
   description: "With a description",
   groupId: 'group123456',
   behaviorVersions: [behaviorVersion2],
@@ -238,7 +287,13 @@ const behaviorGroupVersion2 = Object.freeze({
   requiredSimpleTokenApis: [requiredSimpleTokenApi2],
   actionInputs: [actionInputChanged, actionInput2],
   dataTypeInputs: [],
-  libraryVersions: [libraryVersion2]
+  libraryVersions: [libraryVersion2],
+  githubUrl: null,
+  exportId: null,
+  author: null,
+  gitSHA: null,
+  deployment: null,
+  metaData: null
 });
 
 function textDiff(left, right) {
@@ -254,7 +309,7 @@ describe('diffs', () => {
       const version2 = BehaviorGroup.fromJson(behaviorGroupVersion2);
       const maybeDiff = maybeDiffFor(version1, version2);
       expect(maybeDiff).toBeTruthy();
-      const diffText = maybeDiff.displayText();
+      const diffText = maybeDiff && maybeDiff.displayText();
 
       // the empty objects for original and modified objects are ignored in the match
       const expectedDiffTree = {
@@ -462,6 +517,7 @@ describe('diffs', () => {
                     paramType: {
                       id: 'Text',
                       name: 'Text',
+                      exportId: 'Text',
                       needsConfig: false
                     },
                     isSavedForTeam: false,
@@ -475,6 +531,7 @@ describe('diffs', () => {
                     paramType: {
                       id: 'sdflkjafks',
                       name: 'Person',
+                      exportId: 'sdflkjafks',
                       needsConfig: false
                     },
                     isSavedForTeam: true,
@@ -490,6 +547,7 @@ describe('diffs', () => {
                     paramType: {
                       id: 'Text',
                       name: 'Text',
+                      exportId: 'Text',
                       needsConfig: false
                     },
                     isSavedForTeam: false,
@@ -503,6 +561,7 @@ describe('diffs', () => {
                     paramType: {
                       id: 'Text',
                       name: 'Text',
+                      exportId: 'Text',
                       needsConfig: false
                     },
                     isSavedForTeam: false,
@@ -587,6 +646,11 @@ describe('diffs', () => {
                 "label": "Name used in code",
                 "modified": "githubReadonly",
                 "original": "github"
+              },
+              {
+                "label": "Recommended scope",
+                "modified": "repo:readonly",
+                "original": "repo"
               }
             ]
           },
@@ -626,7 +690,7 @@ describe('diffs', () => {
     it('handles a single line', () => {
       const left = `cat`;
       const right = `dog`;
-      const result = textDiff(left, right);
+      const result = textDiff(left, right) as MultiLineTextPropertyDiff;
       expect(result.oldLines).toEqual([[new TextPart("cat", false, true)]]);
       expect(result.newLines).toEqual([[new TextPart("dog", true)]]);
       expect(result.unifiedLines).toEqual([[new TextPart("cat", false, true), new TextPart("dog", true)]]);
@@ -640,7 +704,7 @@ bear
       const right = `cat
 bear
 `;
-      const result = textDiff(left, right);
+      const result = textDiff(left, right) as MultiLineTextPropertyDiff;
       expect(result.oldLines).toEqual([
         [new TextPart("cat\n")],
         [new TextPart("dog\n", false, true)],
@@ -669,7 +733,7 @@ dog`;
       const right = `cat
 dog`;
 
-      const result = textDiff(left, right);
+      const result = textDiff(left, right) as MultiLineTextPropertyDiff;
       expect(result.oldLines).toEqual([
         [new TextPart("cat"), new TextPart("\n")],
         [new TextPart("\n", false, true)],
@@ -699,7 +763,7 @@ dog`;
 dog
 
 `;
-      const result = textDiff(left, right);
+      const result = textDiff(left, right) as MultiLineTextPropertyDiff;
       expect(result.oldLines).toEqual([
         [new TextPart("cat"), new TextPart("\n")],
         [],
@@ -732,7 +796,7 @@ in two straight lines`;
 lived twelve little boys
 
 with two straight sticks`;
-      const result = textDiff(left, right);
+      const result = textDiff(left, right) as MultiLineTextPropertyDiff;
       expect(result.oldLines).toEqual([
         [new TextPart("in "), new TextPart("an", false, true),
           new TextPart(" "), new TextPart("old", false, true),

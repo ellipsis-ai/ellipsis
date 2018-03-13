@@ -1,6 +1,15 @@
 import {Diffable, DiffableProp} from "./diffs";
 
-class Trigger implements Diffable {
+export interface TriggerJson {
+  text: string;
+  isRegex: boolean;
+  requiresMention: boolean;
+  caseSensitive: boolean;
+}
+
+interface TriggerInterface extends TriggerJson {}
+
+class Trigger implements Diffable, TriggerInterface {
     text: string;
     isRegex: boolean;
     requiresMention: boolean;
@@ -107,11 +116,11 @@ class Trigger implements Diffable {
       }
     }
 
-    clone(props: {}): Trigger {
+    clone(props: Partial<TriggerInterface>): Trigger {
       return Trigger.fromProps(Object.assign({}, this, props));
     }
 
-    static fromProps(props): Trigger {
+    static fromProps(props: TriggerInterface): Trigger {
       return new Trigger(
         props.text,
         props.isRegex,
@@ -119,7 +128,7 @@ class Trigger implements Diffable {
       );
     }
 
-    static triggersFromJson(jsonArrayOrNull) {
+    static triggersFromJson(jsonArrayOrNull: Array<TriggerJson> | null) {
       if (jsonArrayOrNull) {
         return jsonArrayOrNull.map((triggerObj) => Trigger.fromProps(triggerObj));
       } else {

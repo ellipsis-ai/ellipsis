@@ -1,6 +1,11 @@
 import Formatter from '../lib/formatter';
 
-class ApiConfigRef {
+export interface ApiConfigRefJson {
+  id: string;
+  displayName: string;
+}
+
+class ApiConfigRef implements ApiConfigRefJson {
     id: string;
     displayName: string;
 

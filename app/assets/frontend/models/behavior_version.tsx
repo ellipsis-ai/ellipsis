@@ -1,14 +1,12 @@
 import {Diffable, DiffableProp} from "./diffs";
 import BehaviorGroup from "./behavior_group";
-
-import BehaviorConfig from './behavior_config';
+import BehaviorConfig, {BehaviorConfigJson} from './behavior_config';
 import DataTypeConfig from './data_type_config';
-import Editable, {EditableInterface} from './editable';
+import Editable, {EditableInterface, EditableJson} from './editable';
 import Input from './input';
 import ParamType from './param_type';
-import ResponseTemplate from './response_template';
-import Trigger from './trigger';
-import LibraryVersion from "./library_version";
+import ResponseTemplate, {ResponseTemplateJson} from './response_template';
+import Trigger, {TriggerJson} from './trigger';
 
 type DefaultActionProps = {
   name?: string,
@@ -17,8 +15,18 @@ type DefaultActionProps = {
   responseTemplate: ResponseTemplate
 }
 
+export interface BehaviorVersionJson extends EditableJson {
+  behaviorId: string;
+  responseTemplate: ResponseTemplateJson | null;
+  functionBody: string;
+  inputIds: Array<string>;
+  triggers: Array<TriggerJson>;
+  config: BehaviorConfigJson;
+  knownEnvVarsUsed: Array<string>;
+  isNew: boolean | null;
+}
+
 export interface BehaviorVersionInterface extends EditableInterface {
-  id: string | null;
   behaviorId: string;
   responseTemplate: ResponseTemplate | null;
   functionBody: string;
@@ -29,7 +37,7 @@ export interface BehaviorVersionInterface extends EditableInterface {
   isNew: boolean | null;
 }
 
-class BehaviorVersion extends Editable implements Diffable, EditableInterface {
+class BehaviorVersion extends Editable implements Diffable, BehaviorVersionInterface, EditableInterface {
     id: string | null;
     behaviorId: string;
     responseTemplate: ResponseTemplate | null;
@@ -354,16 +362,14 @@ class BehaviorVersion extends Editable implements Diffable, EditableInterface {
       );
     }
 
-    static fromJson(props): BehaviorVersion {
+    static fromJson(props: BehaviorVersionJson): BehaviorVersion {
       const materializedProps = Object.assign({}, props, {
-        responseTemplate: ResponseTemplate.fromString(props.responseTemplate || '')
+        responseTemplate: typeof props.responseTemplate === 'string' ?
+          ResponseTemplate.fromString(props.responseTemplate || '') :
+          new ResponseTemplate(props.responseTemplate && props.responseTemplate.text),
+        config: BehaviorConfig.fromJson(props.config),
+        triggers: Trigger.triggersFromJson(props.triggers)
       });
-      if (props.config) {
-        materializedProps.config = BehaviorConfig.fromJson(props.config);
-      }
-      if (props.triggers) {
-        materializedProps.triggers = Trigger.triggersFromJson(props.triggers);
-      }
       return BehaviorVersion.fromProps(materializedProps);
     }
 

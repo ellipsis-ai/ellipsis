@@ -65,11 +65,13 @@ describe('BehaviorEditor', () => {
     builtinParamTypes: [{
       id: 'Text',
       name: 'Text',
-      needsConfig: false
+      needsConfig: false,
+      exportId: 'Text'
     }, {
       id: 'Number',
       name: 'Number',
-      needsConfig: false
+      needsConfig: false,
+      exportId: 'Number'
     }],
     "awsConfigs": [{
       "id": "aws",
@@ -231,7 +233,7 @@ describe('BehaviorEditor', () => {
       }];
       firstBehavior.inputIds = editorConfig.group.actionInputs.map(ea => ea.inputId);
       let editor = createEditor(editorConfig);
-      expect(editor.getInputs()).toEqual(editorConfig.group.actionInputs);
+      expect(editor.getInputs()).toMatchObject(editorConfig.group.actionInputs);
     });
 
     it('returns an array even when no params are defined', () => {

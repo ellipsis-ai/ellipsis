@@ -8,7 +8,11 @@ export interface BehaviorGroupDeploymentJson {
   createdAt: number;
 }
 
-class BehaviorGroupDeployment {
+interface BehaviorGroupDeploymentInterface extends BehaviorGroupDeploymentJson {
+  deployer: User | null
+}
+
+class BehaviorGroupDeployment implements BehaviorGroupDeploymentInterface {
     id: string;
     groupId: string;
     groupVersionId: string;
@@ -36,7 +40,7 @@ class BehaviorGroupDeployment {
         json.id,
         json.groupId,
         json.groupVersionId,
-        User.fromJson(json.deployer),
+        json.deployer ? User.fromJson(json.deployer) : null,
         json.createdAt
       );
     }

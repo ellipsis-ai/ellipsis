@@ -4,6 +4,8 @@ export interface UserJson {
   fullName: string | null;
 }
 
+interface UserInterface extends UserJson {}
+
 class User {
     id: string;
     userName: string | null;
@@ -11,8 +13,8 @@ class User {
 
     constructor(
       id: string,
-      userName?: string,
-      fullName?: string
+      userName: string | null,
+      fullName: string | null
     ) {
       Object.defineProperties(this, {
         id: { value: id, enumerable: true },
@@ -49,15 +51,15 @@ class User {
       return Boolean(otherUser && this.id === otherUser.id);
     }
 
-    static fromProps(props): User {
+    static fromProps(props: UserInterface): User {
       return new User(
         props.id,
-        props.name,
+        props.userName,
         props.fullName
       );
     }
 
-    static fromJson(props): User {
+    static fromJson(props: UserJson): User {
       return User.fromProps(props);
     }
 }

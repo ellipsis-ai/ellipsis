@@ -1,6 +1,6 @@
 import DeepEqual from '../lib/deep_equal';
 
-export interface EditableInterface {
+export interface EditableJson {
   id: string | null;
   groupId: string;
   teamId: string;
@@ -12,6 +12,8 @@ export interface EditableInterface {
   editorScrollPosition: number | null;
   createdAt: number | null;
 }
+
+export interface EditableInterface extends EditableJson {}
 
 abstract class Editable implements EditableInterface {
     id: string | null;
