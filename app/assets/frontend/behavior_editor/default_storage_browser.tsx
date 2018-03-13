@@ -107,7 +107,7 @@ class DefaultStorageBrowser extends React.Component<Props, State> {
     }
 
     getFields(): Array<DataTypeField> {
-      return this.props.behaviorVersion.getDataTypeConfig().getFields();
+      return this.props.behaviorVersion.getDataTypeFields();
     }
 
     getTableStatusText(itemCount: number, maxItemCount: number): string {

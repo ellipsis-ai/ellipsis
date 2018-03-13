@@ -7,6 +7,7 @@ import Input from './input';
 import ParamType from './param_type';
 import ResponseTemplate, {ResponseTemplateJson} from './response_template';
 import Trigger, {TriggerJson} from './trigger';
+import DataTypeField from "./data_type_field";
 
 type DefaultActionProps = {
   name?: string,
@@ -94,7 +95,7 @@ class BehaviorVersion extends Editable implements Diffable, BehaviorVersionInter
     }
 
     dataTypeUsesCode(): boolean {
-      return this.config.dataTypeConfig && this.config.dataTypeConfig.usesCode;
+      return Boolean(this.config.dataTypeConfig && this.config.dataTypeConfig.usesCode);
     }
 
     inputsFor(group?: BehaviorGroup): Array<Input> {
@@ -130,7 +131,7 @@ class BehaviorVersion extends Editable implements Diffable, BehaviorVersionInter
         isCode: true
       }, {
         name: "Always responds privately",
-        value: this.config.forcePrivateResponse
+        value: Boolean(this.config.forcePrivateResponse)
       }, {
         name: "Code-backed data type",
         value: this.dataTypeUsesCode()
@@ -178,7 +179,7 @@ class BehaviorVersion extends Editable implements Diffable, BehaviorVersionInter
     }
 
     getIdForDiff(): string {
-      return this.config.exportId;
+      return this.config.exportId || "unknown";
     }
 
     isBehaviorVersion(): boolean {
@@ -194,7 +195,8 @@ class BehaviorVersion extends Editable implements Diffable, BehaviorVersionInter
     }
 
     usesCode(): boolean {
-      return !this.isDataType() || this.getDataTypeConfig().usesCode;
+      const config = this.getDataTypeConfig();
+      return !this.isDataType() || Boolean(config && config.usesCode);
     }
 
     getBehaviorVersionTypeName(): string {
@@ -223,16 +225,18 @@ class BehaviorVersion extends Editable implements Diffable, BehaviorVersionInter
       return `Edit ${this.getBehaviorVersionTypeName()}`;
     }
 
-    getDataTypeConfig(): DataTypeConfig {
+    getDataTypeConfig(): DataTypeConfig | null {
       return this.config.getDataTypeConfig();
     }
 
-    getDataTypeFields() {
-      return this.getDataTypeConfig() ? this.getDataTypeConfig().getFields() : [];
+    getDataTypeFields(): Array<DataTypeField> {
+      const config = this.getDataTypeConfig();
+      return config ? config.getFields() : [];
     }
 
-    getWritableDataTypeFields() {
-      return this.getDataTypeConfig() ? this.getDataTypeConfig().getWritableFields() : [];
+    getWritableDataTypeFields(): Array<DataTypeField> {
+      const config = this.getDataTypeConfig();
+      return config ? config.getWritableFields() : [];
     }
 
     getGraphQLListQueryName(): string {
@@ -260,7 +264,8 @@ class BehaviorVersion extends Editable implements Diffable, BehaviorVersionInter
     }
 
     requiresFields(): boolean {
-      return this.getDataTypeConfig() ? this.getDataTypeConfig().requiresFields() : false;
+      const config = this.getDataTypeConfig();
+      return config ? config.requiresFields() : false;
     }
 
     getTriggers(): Array<Trigger> {

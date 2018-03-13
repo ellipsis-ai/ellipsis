@@ -236,7 +236,8 @@ class BehaviorGroup implements Diffable, BehaviorGroupInterface {
 
     isValidForDataStorage(): boolean {
       return this.getDataTypes().every(ea => {
-        return Boolean(ea.name && ea.name.length > 0 && ea.getDataTypeConfig().isValidForDataStorage());
+        const config = ea.getDataTypeConfig();
+        return Boolean(ea.name && ea.name.length > 0 && config && config.isValidForDataStorage());
       });
     }
 
