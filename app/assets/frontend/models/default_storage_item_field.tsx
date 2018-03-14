@@ -1,4 +1,9 @@
-class DefaultStorageItemField {
+export interface DefaultStorageItemFieldJson {
+  name: string,
+  value: any
+}
+
+class DefaultStorageItemField implements DefaultStorageItemFieldJson {
   readonly stringValue: string;
 
   constructor(

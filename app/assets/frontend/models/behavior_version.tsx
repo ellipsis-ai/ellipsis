@@ -27,15 +27,10 @@ export interface BehaviorVersionJson extends EditableJson {
   isNew: boolean | null;
 }
 
-export interface BehaviorVersionInterface extends EditableInterface {
-  behaviorId: string;
+export interface BehaviorVersionInterface extends EditableInterface, BehaviorVersionJson {
   responseTemplate: ResponseTemplate | null;
-  functionBody: string;
-  inputIds: Array<string>;
   triggers: Array<Trigger>;
   config: BehaviorConfig;
-  knownEnvVarsUsed: Array<string>;
-  isNew: boolean | null;
 }
 
 class BehaviorVersion extends Editable implements Diffable, BehaviorVersionInterface, EditableInterface {

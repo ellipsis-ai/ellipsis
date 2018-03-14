@@ -29,19 +29,19 @@ export interface RecurrenceJson {
 interface RecurrenceInterface extends RecurrenceJson {}
 
 class Recurrence implements RecurrenceInterface {
-  id: string | null;
-  displayString: string | null;
-  frequency: number;
-  typeName: string;
-  timeOfDay: Time | null;
-  timeZone: string | null;
-  timeZoneName: string | null;
-  minuteOfHour: number | null;
-  dayOfWeek: number | null;
-  dayOfMonth: number | null;
-  nthDayOfWeek: number | null;
-  month: number | null;
-  daysOfWeek: Array<number>;
+  readonly id: string | null;
+  readonly displayString: string | null;
+  readonly frequency: number;
+  readonly typeName: string;
+  readonly timeOfDay: Time | null;
+  readonly timeZone: string | null;
+  readonly timeZoneName: string | null;
+  readonly minuteOfHour: number | null;
+  readonly dayOfWeek: number | null;
+  readonly dayOfMonth: number | null;
+  readonly nthDayOfWeek: number | null;
+  readonly month: number | null;
+  readonly daysOfWeek: Array<number>;
 
     constructor(props: Partial<RecurrenceInterface>) {
       const initialProps = Object.assign({

@@ -129,8 +129,8 @@ class RequiredOAuth2Application extends RequiredApiConfigWithConfig implements D
   }
 
   class OAuth2ApplicationRef extends ApiConfigRef implements OAuth2ApplicationRefJson {
-    apiId: string;
-    scope: string;
+    readonly apiId: string;
+    readonly scope: string;
 
     constructor(id: string, displayName: string, apiId: string, scope: string) {
       super(id, displayName);
