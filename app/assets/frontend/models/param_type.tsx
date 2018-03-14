@@ -6,7 +6,7 @@ export interface ParamTypeJson {
   id: string;
   exportId: string;
   name: string;
-  needsConfig?: boolean | null
+  needsConfig?: Option<boolean>
 }
 
 interface ParamTypeInterface extends ParamTypeJson {}
@@ -19,8 +19,8 @@ class ParamType implements ParamTypeInterface {
   constructor(
     readonly id: string,
     readonly exportId: string,
-    maybeName: string | null,
-    maybeNeedsConfig?: boolean | null
+    maybeName?: Option<string>,
+    maybeNeedsConfig?: Option<boolean>
   ) {
       const isBuiltIn = builtinTypes.includes(id) && id === maybeName;
 
@@ -57,7 +57,7 @@ class ParamType implements ParamTypeInterface {
       }
     }
 
-    getInputPlaceholder(): string | null {
+    getInputPlaceholder(): Option<string> {
       if (this.isNumberType()) {
         return "Enter a number";
       } else {
@@ -65,7 +65,7 @@ class ParamType implements ParamTypeInterface {
       }
     }
 
-    getOptions(): Array<{ label: string, value: string }> | null {
+    getOptions(): Option<Array<{ label: string, value: string }>> {
       if (this.isBuiltIn && this.id === "Yes/No") {
         return [{
           label: "Yes",

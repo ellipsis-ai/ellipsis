@@ -16,7 +16,7 @@ type RGB = {
     b: number;
     a: number;
 
-    constructor(r: number, g: number, b: number, a: number | null) {
+    constructor(r: number, g: number, b: number, a: Option<number>) {
       this.r = r;
       this.g = g;
       this.b = b;
@@ -55,7 +55,7 @@ type RGB = {
       }
     }
 
-    static fromCSS(colorValue: string): RgbaColor | null {
+    static fromCSS(colorValue: string): Option<RgbaColor> {
       let r, g, b, a;
       const rgbMatch = colorValue.match(/rgba?\s*\(\s*(\d+)[\s,]*(\d+)[\s,]*(\d+)[\s,]*(\d+.?\d*)?/i);
       const hexMatch = colorValue.match(/#([0-9a-f]){3,6}/i);

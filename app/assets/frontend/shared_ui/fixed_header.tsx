@@ -12,8 +12,8 @@ type State = {
 }
 
 class FixedHeader extends React.Component<Props, State> {
-    intervalId: number | null;
-    header: HTMLElement | null;
+    intervalId: Option<number>;
+    header: Option<HTMLElement>;
     currentScrollHeight: number;
 
     constructor(props: Props) {

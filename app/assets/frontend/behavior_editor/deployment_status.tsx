@@ -100,7 +100,7 @@ class DeploymentStatus extends React.PureComponent<Props, State> {
     this.props.onDevModeChannelsClick();
   }
 
-  userNameFor(user: User | null): string {
+  userNameFor(user: Option<User>): string {
     if (!user) {
       return "unknown";
     } else if (user.id === this.props.currentUserId) {
@@ -110,7 +110,7 @@ class DeploymentStatus extends React.PureComponent<Props, State> {
     }
   }
 
-  getFullStatus(isExisting: boolean, isModified: boolean, currentDeployment: BehaviorGroupDeployment | null): string {
+  getFullStatus(isExisting: boolean, isModified: boolean, currentDeployment: Option<BehaviorGroupDeployment>): string {
     const lastSaved = isExisting && this.props.lastSaveTimestamp ? Formatter.formatTimestampShort(this.props.lastSaveTimestamp) : null;
     const lastSavedText = lastSaved ? `Last saved: ${lastSaved} by ${this.userNameFor(this.props.group.author)}` : "Skill never saved";
 
@@ -123,7 +123,7 @@ class DeploymentStatus extends React.PureComponent<Props, State> {
     return [lastSavedText, lastDeployedText, unsavedChangeText].join("\n");
   }
 
-  renderStatus(isExisting: boolean, isModified: boolean, currentDeployment: BehaviorGroupDeployment | null) {
+  renderStatus(isExisting: boolean, isModified: boolean, currentDeployment: Option<BehaviorGroupDeployment>) {
     if (isExisting && isModified) {
       return (
         <div className="fade-in">

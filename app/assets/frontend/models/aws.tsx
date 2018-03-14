@@ -2,40 +2,37 @@ import {Diffable, DiffableProp} from "./diffs";
 import ApiConfigRef, {ApiConfigRefJson} from './api_config_ref';
 import RequiredApiConfigWithConfig from './required_api_config_with_config';
 import ID from '../lib/id';
+import {RequiredApiConfigJson} from "./required_api_config";
 type callback = () => void
 
 type AWSEditor = {
-  onAddAWSConfig: (r: RequiredAWSConfig, c?: callback | null) => void,
+  onAddAWSConfig: (r: RequiredAWSConfig, c?: Option<callback>) => void,
   addNewAWSConfig: (r?: RequiredAWSConfig) => void,
-  onRemoveAWSConfig: (r: RequiredAWSConfig, c?: callback | null) => void,
-  onUpdateAWSConfig: (r: RequiredAWSConfig, c?: callback | null) => void,
+  onRemoveAWSConfig: (r: RequiredAWSConfig, c?: Option<callback>) => void,
+  onUpdateAWSConfig: (r: RequiredAWSConfig, c?: Option<callback>) => void,
   getAllAWSConfigs: () => Array<AWSConfigRef>,
   getOAuth2ApiNameForConfig: (a: AWSConfigRef) => string
 }
 
-export interface RequiredAWSConfigJson {
-  id: string,
-  exportId: string | null,
-  apiId: string,
-  nameInCode: string,
-  config: AWSConfigRefJson | null
+export interface RequiredAWSConfigJson extends RequiredApiConfigJson {
+  config?: Option<AWSConfigRefJson>
 }
 
 interface RequiredAWSConfigInterface extends RequiredAWSConfigJson {
-  config: AWSConfigRef | null
+  config?: Option<AWSConfigRef>
 }
 
 const logoUrl = "/assets/images/logos/aws_logo_web_300px.png";
 
 class RequiredAWSConfig extends RequiredApiConfigWithConfig implements RequiredAWSConfigInterface, Diffable {
-  readonly config: AWSConfigRef | null;
+  readonly config: Option<AWSConfigRef>;
 
   constructor(
-    id: string,
-    exportId: string | null,
+    id: Option<string>,
+    exportId: Option<string>,
     apiId: string,
     nameInCode: string,
-    config: AWSConfigRef | null
+    config: Option<AWSConfigRef>
   ) {
     super(id, exportId, apiId, nameInCode, config);
   }

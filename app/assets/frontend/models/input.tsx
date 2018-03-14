@@ -5,26 +5,26 @@ import ParamType, {ParamTypeJson} from './param_type';
 export interface InputJson {
   name: string;
   question: string;
-  paramType: ParamTypeJson | null;
+  paramType?: Option<ParamTypeJson>;
   isSavedForTeam: boolean;
   isSavedForUser: boolean;
-  inputId: string | null;
-  exportId: string | null;
+  inputId?: Option<string>;
+  exportId?: Option<string>;
 }
 
 interface InputInterface extends InputJson {
-  paramType: ParamType | null
+  paramType?: Option<ParamType>
 }
 
 class Input implements Diffable, InputInterface {
   constructor(
     readonly name: string,
     readonly question: string,
-    readonly paramType: ParamType | null,
+    readonly paramType: Option<ParamType>,
     readonly isSavedForTeam: boolean,
     readonly isSavedForUser: boolean,
-    readonly inputId: string | null,
-    readonly exportId: string | null
+    readonly inputId: Option<string>,
+    readonly exportId: Option<string>
   ) {
 
       Object.defineProperties(this, {
@@ -65,7 +65,7 @@ class Input implements Diffable, InputInterface {
       return name ? `${kindLabel} “${name}”` : `unnamed ${kindLabel}`;
     }
 
-    itemLabel(): string | null {
+    itemLabel(): Option<string> {
       return this.name;
     }
 

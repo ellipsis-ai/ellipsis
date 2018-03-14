@@ -16,9 +16,9 @@ class Trigger implements Diffable, TriggerInterface {
   readonly text: string;
 
   constructor(
-    maybeText?: string | null,
-    maybeIsRegex?: boolean | null,
-    maybeRequiresMention?: boolean | null
+    maybeText?: Option<string>,
+    maybeIsRegex?: Option<boolean>,
+    maybeRequiresMention?: Option<boolean>
   ) {
       const isRegex: boolean = typeof maybeIsRegex === "boolean" ? Boolean(maybeIsRegex) : false;
       const requiresMention: boolean = typeof maybeRequiresMention === "boolean" ? Boolean(maybeRequiresMention) : true;
@@ -49,7 +49,7 @@ class Trigger implements Diffable, TriggerInterface {
       return itemLabel ? `${kindLabel} “${itemLabel}”` : `empty ${kindLabel}`;
     }
 
-    itemLabel(): string | null {
+    itemLabel(): Option<string> {
       return this.text;
     }
 
@@ -128,7 +128,7 @@ class Trigger implements Diffable, TriggerInterface {
       );
     }
 
-    static triggersFromJson(jsonArrayOrNull: Array<TriggerJson> | null) {
+    static triggersFromJson(jsonArrayOrNull: Option<Array<TriggerJson>>) {
       if (jsonArrayOrNull) {
         return jsonArrayOrNull.map((triggerObj) => Trigger.fromProps(triggerObj));
       } else {

@@ -6,7 +6,7 @@ export interface ButtonProps {
   children: any,
   className?: string,
   disabled?: boolean,
-  onClick: (() => void) | null,
+  onClick: Option<() => void>,
   title?: string,
   style?: Partial<CSSProperties>
 }
@@ -15,7 +15,7 @@ type Props = ButtonProps;
 
 class Button extends React.PureComponent<Props> {
     props: Props;
-    button: HTMLButtonElement | null;
+    button: Option<HTMLButtonElement>;
 
     constructor(props: Props) {
       super(props);

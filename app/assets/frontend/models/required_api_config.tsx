@@ -1,7 +1,14 @@
-class RequiredApiConfig {
+export interface RequiredApiConfigJson {
+  id?: Option<string>,
+  exportId?: Option<string>,
+  apiId: string,
+  nameInCode: string
+}
+
+class RequiredApiConfig implements RequiredApiConfigJson {
   constructor(
-    readonly id: string,
-    readonly exportId: string | null,
+    readonly id: Option<string>,
+    readonly exportId: Option<string>,
     readonly apiId: string,
     readonly nameInCode: string
   ) {
@@ -19,7 +26,7 @@ class RequiredApiConfig {
       return itemLabel ? `${kindLabel} "${itemLabel}"`: `unnamed ${kindLabel}`;
     }
 
-    itemLabel(): string | null {
+    itemLabel(): Option<string> {
       return this.nameInCode;
     }
 

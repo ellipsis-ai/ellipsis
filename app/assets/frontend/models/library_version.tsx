@@ -4,7 +4,6 @@ import BehaviorGroup from "./behavior_group";
 import Editable, {EditableInterface, EditableJson} from './editable';
 
 export interface LibraryVersionJson extends EditableJson {
-  functionBody: string;
   libraryId: string;
 }
 
@@ -12,17 +11,17 @@ interface LibraryVersionInterface extends LibraryVersionJson, EditableInterface 
 
 class LibraryVersion extends Editable implements Diffable, LibraryVersionInterface {
   constructor(
-    readonly id: string | null,
-    readonly name: string | null,
-    readonly description: string | null,
+    readonly id: Option<string>,
+    readonly name: Option<string>,
+    readonly description: Option<string>,
     readonly functionBody: string,
     readonly groupId: string,
     readonly teamId: string,
     readonly libraryId: string,
-    readonly exportId: string | null,
-    readonly isNew: boolean | null,
-    readonly editorScrollPosition: number | null,
-    readonly createdAt: number | null
+    readonly exportId: Option<string>,
+    readonly isNew: Option<boolean>,
+    readonly editorScrollPosition: Option<number>,
+    readonly createdAt: Option<number>
   ) {
       super(
         id,
@@ -43,7 +42,7 @@ class LibraryVersion extends Editable implements Diffable, LibraryVersionInterfa
       });
   }
 
-    sortKeyForExisting(): string | null {
+    sortKeyForExisting(): Option<string> {
       return this.name;
     }
 
@@ -53,7 +52,7 @@ class LibraryVersion extends Editable implements Diffable, LibraryVersionInterfa
       return itemLabel ? `${kindLabel} “${itemLabel}”` : `unnamed ${kindLabel}`;
     }
 
-    itemLabel(): string | null {
+    itemLabel(): Option<string> {
       return this.name;
     }
 

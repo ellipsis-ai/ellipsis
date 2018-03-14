@@ -1,7 +1,7 @@
 import {Diffable, DiffableProp} from "./diffs";
 
 import ApiConfigRef from './api_config_ref';
-import RequiredApiConfig from './required_api_config';
+import RequiredApiConfig, {RequiredApiConfigJson} from './required_api_config';
 import ID from '../lib/id';
 
 type callback = () => void
@@ -9,18 +9,13 @@ type callback = () => void
 type SimpleTokenEditor = {
   onAddSimpleTokenApi: (r: RequiredSimpleTokenApi) => void,
   onRemoveSimpleTokenApi: (r: RequiredSimpleTokenApi) => void,
-  onUpdateSimpleTokenApi: (r: RequiredSimpleTokenApi, c?: callback | null) => void,
+  onUpdateSimpleTokenApi: (r: RequiredSimpleTokenApi, c?: Option<callback>) => void,
   getSimpleTokenLogoUrlForConfig: (r: RequiredSimpleTokenApi) => string,
   getSimpleTokenNameForConfig: (r: RequiredSimpleTokenApi) => string,
   getAllSimpleTokenApis: () => Array<RequiredSimpleTokenApi>
 }
 
-export interface RequiredSimpleTokenApiJson {
-  id: string | null,
-  exportId: string | null,
-  apiId: string,
-  nameInCode: string
-}
+export interface RequiredSimpleTokenApiJson extends RequiredApiConfigJson {}
 
 class RequiredSimpleTokenApi extends RequiredApiConfig implements Diffable, RequiredSimpleTokenApiJson {
 

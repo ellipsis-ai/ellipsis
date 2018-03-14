@@ -12,17 +12,17 @@ type Props = {
   csrfToken: string,
   isAdmin: boolean,
   teamId: string,
-  teamTimeZone: string | null,
-  teamTimeZoneName: string | null,
-  teamTimeZoneOffset: number | null
+  teamTimeZone: Option<string>,
+  teamTimeZoneName: Option<string>,
+  teamTimeZoneOffset: Option<number>
 };
 
 declare var RegionalSettingsConfiguration: Props;
 
 type State = {
-  teamTimeZone: string | null,
-  teamTimeZoneName: string | null,
-  teamTimeZoneOffset: number | null
+  teamTimeZone: Option<string>,
+  teamTimeZoneName: Option<string>,
+  teamTimeZoneOffset: Option<number>
 }
 
 class RegionalSettingsLoader extends React.PureComponent<Props, State> {

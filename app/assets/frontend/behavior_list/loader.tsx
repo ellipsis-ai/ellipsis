@@ -20,17 +20,17 @@ type Props = {
   behaviorGroups: Array<BehaviorGroupJson>,
   teamId: string,
   slackTeamId: string,
-  teamTimeZone?: string | null,
-  branchName: string | null,
+  teamTimeZone?: Option<string>,
+  branchName: Option<string>,
   botName: string,
-  feedbackContainer?: HTMLElement | null
+  feedbackContainer?: Option<HTMLElement>
 };
 
 export type PublishedBehaviorGroupLoadStatus = "loaded" | "loading" | "error";
 
 export interface SearchResult {
   isLoading: boolean,
-  error: string | null,
+  error: Option<string>,
   matches: Array<BehaviorGroup>
 }
 
@@ -44,10 +44,10 @@ type State = {
   recentlyInstalled: Array<BehaviorGroup>,
   currentlyInstalling: Array<BehaviorGroup>,
   matchingResults: SearchResults,
-  currentTeamTimeZone?: string | null,
+  currentTeamTimeZone?: Option<string>,
   dismissedNotifications: Array<string>,
   isDeploying: boolean,
-  deployError: string | null
+  deployError: Option<string>
 }
 
 declare var BehaviorListConfig: Props;

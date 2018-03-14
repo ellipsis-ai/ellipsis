@@ -12,14 +12,14 @@ import {maybeDiffFor} from "../models/diffs";
 import User from "../models/user";
 
   type Props = {
-    groupData: BehaviorGroup | null,
+    groupData: Option<BehaviorGroup>,
     onBehaviorGroupImport: (BehaviorGroup) => void,
     onBehaviorGroupUpdate: (originalGroup: BehaviorGroup, updatedGroup: BehaviorGroup) => void,
     onToggle: () => void,
     isImportable: boolean,
-    publishedGroupData: BehaviorGroup | null,
+    publishedGroupData: Option<BehaviorGroup>,
     isImporting: boolean,
-    localId: string | null
+    localId: Option<string>
   }
 
   class BehaviorGroupInfoPanel extends React.Component<Props> {
@@ -138,7 +138,7 @@ import User from "../models/user";
       }
     }
 
-    renderUpdate(publishedData: BehaviorGroup | null, sameAsPublished: boolean) {
+    renderUpdate(publishedData: Option<BehaviorGroup>, sameAsPublished: boolean) {
       if (publishedData && this.props.localId) {
         return (
           <div className="mvl fade-in">
@@ -197,7 +197,7 @@ import User from "../models/user";
       }
     }
 
-    renderMetaInfo(group: BehaviorGroup, publishedData: BehaviorGroup | null, sameAsPublished: boolean) {
+    renderMetaInfo(group: BehaviorGroup, publishedData: Option<BehaviorGroup>, sameAsPublished: boolean) {
       return (
         <div>
           {this.renderSourceInfo(group)}
@@ -207,7 +207,7 @@ import User from "../models/user";
       );
     }
 
-    renderInitialCreatedText(dateText: string | null, initialAuthor: string, isPublished: boolean) {
+    renderInitialCreatedText(dateText: Option<string>, initialAuthor: string, isPublished: boolean) {
       if (dateText) {
         if (isPublished) {
           return (

@@ -8,11 +8,11 @@ import DynamicLabelButton from "../form/dynamic_label_button";
 import Collapsible from "../shared_ui/collapsible";
 
 type Props = {
-  installedBehaviorGroup: BehaviorGroup | null,
+  installedBehaviorGroup: Option<BehaviorGroup>,
   onToggle: () => void,
   onDeploy: (behaviorGroupId: string) => void,
   isDeploying: boolean,
-  deployError: string | null,
+  deployError: Option<string>,
   slackTeamId: string,
   botName: string
 }
@@ -23,7 +23,7 @@ class InstalledBehaviorGroupsPanel extends React.Component<Props> {
     autobind(this);
   }
 
-  getInstalledBehaviorGroup(): BehaviorGroup | null {
+  getInstalledBehaviorGroup(): Option<BehaviorGroup> {
     return this.props.installedBehaviorGroup;
   }
 

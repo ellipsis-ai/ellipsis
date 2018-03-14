@@ -2,7 +2,7 @@ import ParamType, {ParamTypeJson} from './param_type';
 
 export interface DataTypeFieldJson {
   fieldId: string;
-  fieldVersionId?: string | null;
+  fieldVersionId?: Option<string>;
   name: string;
   fieldType: ParamTypeJson;
   isLabel?: boolean;
@@ -16,10 +16,10 @@ class DataTypeField implements DataTypeFieldInterface {
   readonly name: string;
   constructor(
     readonly fieldId: string,
-    readonly fieldVersionId: string | null,
-    name: string | null,
+    readonly fieldVersionId: Option<string>,
+    name: Option<string>,
     readonly fieldType: ParamType,
-    isLabel: boolean | null
+    isLabel: Option<boolean>
   ) {
       Object.defineProperties(this, {
         fieldVersionId: {

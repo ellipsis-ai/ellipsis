@@ -9,35 +9,35 @@ interface ScheduledActionArgument {
 }
 
 export interface ScheduledActionJson {
-  id: string | null,
+  id?: Option<string>,
   scheduleType: string,
-  behaviorId: string | null,
-  behaviorGroupId: string | null,
-  trigger: string | null,
+  behaviorId?: Option<string>,
+  behaviorGroupId?: Option<string>,
+  trigger?: Option<string>,
   arguments: Array<ScheduledActionArgument>,
   recurrence: RecurrenceJson,
-  firstRecurrence: Timestamp | null,
-  secondRecurrence: Timestamp | null,
+  firstRecurrence?: Option<Timestamp>,
+  secondRecurrence?: Option<Timestamp>,
   useDM: boolean,
   channel: string
 }
 
 interface ScheduledActionInterface extends ScheduledActionJson {
   recurrence: Recurrence,
-  firstRecurrence: Date | null;
-  secondRecurrence: Date | null;
+  firstRecurrence?: Option<Date>;
+  secondRecurrence?: Option<Date>;
 }
 
 class ScheduledAction implements ScheduledActionInterface {
-  readonly id: string | null;
+  readonly id: Option<string>;
   readonly scheduleType: string;
-  readonly behaviorId: string | null;
-  readonly behaviorGroupId: string | null;
-  readonly trigger: string | null;
+  readonly behaviorId: Option<string>;
+  readonly behaviorGroupId: Option<string>;
+  readonly trigger: Option<string>;
   readonly arguments: Array<ScheduledActionArgument>;
   readonly recurrence: Recurrence;
-  readonly firstRecurrence: Date | null;
-  readonly secondRecurrence: Date | null;
+  readonly firstRecurrence: Option<Date>;
+  readonly secondRecurrence: Option<Date>;
   readonly useDM: boolean;
   readonly channel: string;
 
@@ -136,7 +136,7 @@ class ScheduledAction implements ScheduledActionInterface {
       return new ScheduledAction(Object.assign({}, this, props));
     }
 
-    static dateFromTimestamp(t: Timestamp | null): Date | null {
+    static dateFromTimestamp(t: Option<Timestamp>): Option<Date> {
       if (typeof t === 'string') {
         return new Date(t);
       } else if (typeof t === 'number') {
@@ -157,7 +157,7 @@ class ScheduledAction implements ScheduledActionInterface {
       return new ScheduledAction(materializedProps);
     }
 
-    static newWithDefaults(timeZone: string | null, timeZoneName: string | null): ScheduledAction {
+    static newWithDefaults(timeZone: Option<string>, timeZoneName: Option<string>): ScheduledAction {
       return new ScheduledAction({
         scheduleType: "message",
         trigger: "",

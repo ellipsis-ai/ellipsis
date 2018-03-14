@@ -1,32 +1,32 @@
 import DeepEqual from '../lib/deep_equal';
 
 export interface EditableJson {
-  id: string | null;
+  id?: Option<string>;
   groupId: string;
   teamId: string;
-  isNew: boolean | null;
-  name: string | null;
-  description: string | null;
+  isNew?: Option<boolean>;
+  name?: Option<string>;
+  description?: Option<string>;
   functionBody: string;
-  exportId: string | null;
-  editorScrollPosition: number | null;
-  createdAt: number | null;
+  exportId?: Option<string>;
+  editorScrollPosition?: Option<number>;
+  createdAt?: Option<number>;
 }
 
 export interface EditableInterface extends EditableJson {}
 
 abstract class Editable implements EditableInterface {
   constructor(
-    readonly id: string | null,
+    readonly id: Option<string>,
     readonly groupId: string,
     readonly teamId: string,
-    readonly isNew: boolean | null,
-    readonly name: string | null,
-    readonly description: string | null,
+    readonly isNew: Option<boolean>,
+    readonly name: Option<string>,
+    readonly description: Option<string>,
     readonly functionBody: string,
-    readonly exportId: string | null,
-    readonly editorScrollPosition: number | null,
-    readonly createdAt: number | null
+    readonly exportId: Option<string>,
+    readonly editorScrollPosition: Option<number>,
+    readonly createdAt: Option<number>
   ) {
       Object.defineProperties(this, {
         id: { value: id, enumerable: true },
@@ -60,7 +60,7 @@ abstract class Editable implements EditableInterface {
       return pad.substring(0, pad.length - timestampString.length) + timestampString;
     }
 
-    sortKeyForExisting(): string | null {
+    sortKeyForExisting(): Option<string> {
       return null; // override in subclasses
     }
 

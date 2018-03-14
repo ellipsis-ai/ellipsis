@@ -26,11 +26,11 @@ import OptionalInt from './optional_int';
       return typeof this.value === "number" && this.isValid() ? Month.SHORT_NAMES[this.value - 1] : "";
     }
 
-    maxDays(): number | null {
+    maxDays(): Option<number> {
       return typeof this.value === "number" && this.isValid() ? Month.MAX_DAYS[this.value - 1] : null;
     }
 
-    limitDaytoMax(day: number): number | null {
+    limitDaytoMax(day: number): Option<number> {
       const days = this.maxDays();
       return days ? Math.min(days, day) : day;
     }

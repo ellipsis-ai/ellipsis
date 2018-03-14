@@ -7,7 +7,7 @@ import autobind from '../../lib/autobind';
 type Props = {
   label: any,
   children?: any,
-  className?: string | null
+  className?: Option<string>
 };
 
 type State = {

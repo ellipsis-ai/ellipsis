@@ -16,7 +16,7 @@ import OptionalInt from './optional_int';
       return new Minute(super.fromString(parsed ? parsed[1] : "").value);
     }
 
-    static isValid(intOrNull: number | null): boolean {
+    static isValid(intOrNull: Option<number>): boolean {
       const m = new Minute(intOrNull);
       return m.is((ea) => ea >= 0 && ea <= 59);
     }

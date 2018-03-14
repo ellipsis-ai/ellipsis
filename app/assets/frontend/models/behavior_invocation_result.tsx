@@ -1,7 +1,7 @@
 interface BehaviorInvocationResultFile {
-  content: string | null,
-  filetype: string | null,
-  filename: string | null
+  content?: Option<string>,
+  filetype?: Option<string>,
+  filename?: Option<string>
 }
 
 interface BehaviorInvocationResultOutput {
@@ -13,12 +13,12 @@ interface BehaviorInvocationResultOutput {
 interface BehaviorInvocationTestReportOutput {
   missingInputNames: Array<string>,
   missingSimpleTokens: Array<string>,
-  result: BehaviorInvocationResultOutput | null
+  result?: Option<BehaviorInvocationResultOutput>
 }
 
 export interface BehaviorInvocationTestResultJson {
   responseText: string,
-  kind: string | null,
+  kind?: Option<string>,
   missingInputNames: Array<string>,
   missingSimpleTokens: Array<string>,
   files: Array<BehaviorInvocationResultFile>
@@ -28,8 +28,8 @@ class BehaviorInvocationTestResult implements BehaviorInvocationTestResultJson {
   readonly responseText: string;
 
   constructor(
-    responseText: string | null,
-    readonly kind: string | null,
+    responseText: Option<string>,
+    readonly kind: Option<string>,
     readonly missingInputNames: Array<string>,
     readonly missingSimpleTokens: Array<string>,
     readonly files: Array<BehaviorInvocationResultFile>

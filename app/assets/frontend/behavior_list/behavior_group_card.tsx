@@ -9,9 +9,9 @@ import EditableName from './editable_name';
 type Props = {
   group: BehaviorGroup,
   onMoreInfoClick: (BehaviorGroup) => void,
-  isImporting?: boolean | null,
-  wasReimported?: boolean | null,
-  cardClassName?: string | null,
+  isImporting?: Option<boolean>,
+  wasReimported?: Option<boolean>,
+  cardClassName?: Option<string>,
   secondaryActions: any,
   searchText: string
 }
@@ -30,7 +30,7 @@ class BehaviorGroupCard extends React.PureComponent<Props> {
     this.props.onMoreInfoClick(this.props.group);
   }
 
-  highlight(text: string | null) {
+  highlight(text: Option<string>) {
     if (text) {
       return (
         <SubstringHighlighter text={text} substring={this.props.searchText}/>

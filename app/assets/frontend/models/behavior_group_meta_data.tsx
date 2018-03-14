@@ -4,18 +4,18 @@ import {Timestamp} from "../lib/formatter";
 export interface BehaviorGroupMetaDataJson {
   groupId: string;
   initialCreatedAt: Timestamp;
-  initialAuthor: UserJson | null;
+  initialAuthor?: Option<UserJson>;
 }
 
 interface BehaviorGroupMetaDataInterface extends BehaviorGroupMetaDataJson {
-  initialAuthor: User | null
+  initialAuthor?: Option<User>
 }
 
 class BehaviorGroupMetaData implements BehaviorGroupMetaDataInterface {
   constructor(
     readonly groupId: string,
     readonly initialCreatedAt: Timestamp,
-    readonly initialAuthor: User | null
+    readonly initialAuthor: Option<User>
   ) {
     Object.defineProperties(this, {
       groupId: { value: groupId, enumerable: true },

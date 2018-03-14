@@ -2,16 +2,16 @@ import ApiConfigRef from './api_config_ref';
 import RequiredApiConfig from './required_api_config';
 
 class RequiredApiConfigWithConfig extends RequiredApiConfig {
-  readonly config: ApiConfigRef | null;
+  readonly config?: Option<ApiConfigRef>;
 
-    constructor(id: string, exportId: string | null, apiId: string, nameInCode: string, config: ApiConfigRef | null) {
+    constructor(id: Option<string>, exportId: Option<string>, apiId: string, nameInCode: string, config: Option<ApiConfigRef>) {
       super(id, exportId, apiId, nameInCode);
       Object.defineProperties(this, {
         config: {value: config, enumerable: true}
       });
     }
 
-    configName(): string | null {
+    configName(): Option<string> {
       if (this.config) {
         return this.config.displayName;
       } else {

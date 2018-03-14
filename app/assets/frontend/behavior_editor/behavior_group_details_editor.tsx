@@ -13,8 +13,8 @@ type Props = {
 
 class BehaviorGroupDetailsEditor extends React.PureComponent<Props> {
     props: Props;
-    skillName: FormInput | null;
-    skillDescription: Textarea | null;
+    skillName: Option<FormInput>;
+    skillDescription: Option<Textarea>;
 
     constructor(props: Props) {
       super(props);

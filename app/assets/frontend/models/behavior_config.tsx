@@ -1,24 +1,24 @@
 import DataTypeConfig, {DataTypeConfigJson} from './data_type_config';
 
 export interface BehaviorConfigJson {
-  exportId: string | null;
-  name: string | null;
-  forcePrivateResponse: boolean | null;
+  exportId?: Option<string>;
+  name?: Option<string>;
+  forcePrivateResponse?: Option<boolean>;
   isDataType: boolean;
-  dataTypeConfig: DataTypeConfigJson | null;
+  dataTypeConfig?: Option<DataTypeConfigJson>;
 }
 
 interface BehaviorConfigInterface extends BehaviorConfigJson {
-  dataTypeConfig: DataTypeConfig | null;
+  dataTypeConfig?: Option<DataTypeConfig>;
 }
 
 class BehaviorConfig implements BehaviorConfigInterface {
   constructor(
-    readonly exportId: string | null,
-    readonly name: string | null,
-    readonly forcePrivateResponse: boolean | null,
+    readonly exportId: Option<string>,
+    readonly name: Option<string>,
+    readonly forcePrivateResponse: Option<boolean>,
     readonly isDataType: boolean,
-    readonly dataTypeConfig: DataTypeConfig | null
+    readonly dataTypeConfig: Option<DataTypeConfig>
   ) {
       Object.defineProperties(this, {
         exportId: { value: exportId, enumerable: true },
@@ -29,7 +29,7 @@ class BehaviorConfig implements BehaviorConfigInterface {
       });
     }
 
-    getDataTypeConfig(): DataTypeConfig | null {
+    getDataTypeConfig(): Option<DataTypeConfig> {
       return this.dataTypeConfig;
     }
 

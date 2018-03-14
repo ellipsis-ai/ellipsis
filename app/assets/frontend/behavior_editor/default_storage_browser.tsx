@@ -18,7 +18,7 @@ type Props = {
 type State = {
   items: Array<DefaultStorageItem>,
   isLoading: boolean,
-  error: string | null,
+  error: Option<string>,
   checkedIds: Array<string>
 }
 

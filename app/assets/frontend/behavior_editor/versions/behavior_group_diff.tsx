@@ -16,7 +16,7 @@ class BehaviorGroupDiff extends React.Component<Props> {
       autobind(this);
     }
 
-    renderTextDiff(diff: MultiLineTextPropertyDiff, index: number, className?: string | null) {
+    renderTextDiff(diff: MultiLineTextPropertyDiff, index: number, className?: Option<string>) {
       return (
         <DiffItem className={className} key={`diff${index}`} label={diff.summaryText()}>
           <TextDiff diff={diff} className="bg-white mbneg1" />
@@ -24,7 +24,7 @@ class BehaviorGroupDiff extends React.Component<Props> {
       );
     }
 
-    renderOrderingDiff(diff: OrderingDiff<Diffable>, index: number, className?: string | null) {
+    renderOrderingDiff(diff: OrderingDiff<Diffable>, index: number, className?: Option<string>) {
       return (
         <DiffItem className={className} key={`diff${index}`} label={diff.summaryText()}>
           <OrderingDiffDetail diff={diff} className={className} />
@@ -32,7 +32,7 @@ class BehaviorGroupDiff extends React.Component<Props> {
       );
     }
 
-    renderAddedRemovedModifiedDiff(diff: AddedOrRemovedDiff<Diffable> | ModifiedDiff<Diffable>, index: number, className?: string | null) {
+    renderAddedRemovedModifiedDiff(diff: AddedOrRemovedDiff<Diffable> | ModifiedDiff<Diffable>, index: number, className?: Option<string>) {
       return (
         <DiffItem className={className} key={`diff${index}`} label={diff.summaryText()}>
           {this.renderDiffChildren(diff)}
@@ -40,7 +40,7 @@ class BehaviorGroupDiff extends React.Component<Props> {
       );
     }
 
-    renderSingleDiff(diff: Diff, index: number, childClassName?: string | null) {
+    renderSingleDiff(diff: Diff, index: number, childClassName?: Option<string>) {
       if (diff instanceof MultiLineTextPropertyDiff) {
         return this.renderTextDiff(diff, index, childClassName);
       } else if (diff instanceof OrderingDiff) {
@@ -50,7 +50,7 @@ class BehaviorGroupDiff extends React.Component<Props> {
       }
     }
 
-    renderDiffChildren(diff: Diff, childClassName?: string | null) {
+    renderDiffChildren(diff: Diff, childClassName?: Option<string>) {
       if (diff instanceof ModifiedDiff || diff instanceof AddedOrRemovedDiff) {
         return diff.children.map((ea, index) => this.renderSingleDiff(ea, index, childClassName));
       }

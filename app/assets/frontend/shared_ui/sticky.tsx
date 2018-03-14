@@ -1,7 +1,7 @@
 import * as React from 'react';
 import DeepEqual from '../lib/deep_equal';
 
-function setStyles(element: HTMLElement | null, styles: Partial<CSSStyleDeclaration>) {
+function setStyles(element: Option<HTMLElement>, styles: Partial<CSSStyleDeclaration>) {
   if (element && element.style) {
     Object.keys(styles).forEach((styleName) => {
       element.style[styleName] = styles[styleName];
@@ -25,10 +25,10 @@ type Props = {
 
 class Sticky extends React.Component<Props> {
   scrollTopPosition: number;
-  lastCoords: Coords | null;
-  innerContainer: HTMLElement | null;
-  outerContainer: HTMLElement | null;
-  placeholder: HTMLElement | null;
+  lastCoords: Option<Coords>;
+  innerContainer: Option<HTMLElement>;
+  outerContainer: Option<HTMLElement>;
+  placeholder: Option<HTMLElement>;
   windowWidth: number;
 
   constructor(props: Props) {

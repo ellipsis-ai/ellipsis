@@ -21,7 +21,7 @@ interface ResponseTemplateInterface {
 class ResponseTemplate implements ResponseTemplateInterface {
   readonly text: string;
 
-    constructor(maybeText?: string | null) {
+    constructor(maybeText?: Option<string>) {
       Object.defineProperties(this, {
         text: {
           value: maybeText || "",

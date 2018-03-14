@@ -3,9 +3,9 @@ import 'whatwg-fetch';
 class ResponseError extends Error {
     status: number;
     statusText: string;
-    body: string | null;
+    body: Option<string>;
 
-    constructor(status: number, statusText: string, body: string | null) {
+    constructor(status: number, statusText: string, body: Option<string>) {
       super(`${status} ${statusText}`);
       this.status = status;
       this.statusText = statusText;

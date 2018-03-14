@@ -25,11 +25,11 @@ import OptionalInt from './optional_int';
       return typeof this.value === "number" && Hour.isPM(this.value);
     }
 
-    convertToAMValue(): number | null {
+    convertToAMValue(): Option<number> {
       return typeof this.value === "number" ? Hour.convertToAM(this.value) : null;
     }
 
-    convertToPMValue(): number | null {
+    convertToPMValue(): Option<number> {
       return typeof this.value === "number" ? Hour.convertToPM(this.value) : null;
     }
 
