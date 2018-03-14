@@ -2,6 +2,10 @@ import BehaviorGroup, {BehaviorGroupJson} from '../../../../app/assets/frontend/
 import {TextPart, MultiLineTextPropertyDiff, maybeDiffFor} from '../../../../app/assets/frontend/models/diffs';
 import {BehaviorVersionJson} from "../../../../app/assets/frontend/models/behavior_version";
 import {LibraryVersionJson} from "../../../../app/assets/frontend/models/library_version";
+import {InputJson} from "../../../../app/assets/frontend/models/input";
+import {RequiredAWSConfigJson} from "../../../../app/assets/frontend/models/aws";
+import {RequiredOAuth2ApplicationJson} from "../../../../app/assets/frontend/models/oauth2";
+import {RequiredSimpleTokenApiJson} from "../../../../app/assets/frontend/models/simple_token";
 
 const teamId = 'team123456';
 const groupId = 'group123456';
@@ -112,37 +116,7 @@ const libraryVersion2: LibraryVersionJson = Object.freeze({
   createdAt: Date.now()
 });
 
-const defaultStorageDataType = Object.freeze({
-  id: "abcdef",
-  behaviorId: "jfgh",
-  name: "myDataType",
-  config: {
-    dataTypeConfig: {
-      fields: [{
-        fieldId: "1",
-        fieldVersionId: "2",
-        name: "field1",
-        fieldType: {
-          name: "Text",
-          id: "Text"
-        },
-        isLabel: true
-      }, {
-        fieldId: "3",
-        fieldVersionId: "4",
-        name: "field2",
-        fieldType: {
-          name: "Text",
-          id: "Text"
-        },
-        isLabel: false
-      }],
-      usesCode: false
-    }
-  }
-});
-
-const actionInput1 = Object.freeze({
+const actionInput1: InputJson = Object.freeze({
   name: 'clown',
   question: 'what drives the car?',
   paramType: {
@@ -154,11 +128,10 @@ const actionInput1 = Object.freeze({
   isSavedForTeam: false,
   isSavedForUser: true,
   inputId: inputId,
-  inputVersionId: inputId,
   exportId: inputId
 });
 
-const actionInputChanged = Object.freeze({
+const actionInputChanged: InputJson = Object.freeze({
   name: 'clown',
   question: 'who drives the car?',
   paramType: {
@@ -170,11 +143,10 @@ const actionInputChanged = Object.freeze({
   isSavedForTeam: true,
   isSavedForUser: false,
   inputId: inputId,
-  inputVersionId: inputId,
   exportId: inputId
 });
 
-const actionInput2 = Object.freeze({
+const actionInput2: InputJson = Object.freeze({
   name: 'somethingElse',
   question: 'and now for something?',
   paramType: {
@@ -186,11 +158,10 @@ const actionInput2 = Object.freeze({
   isSavedForTeam: false,
   isSavedForUser: false,
   inputId: inputId2,
-  inputVersionId: inputId2,
   exportId: inputId2
 });
 
-const requiredAWSConfig1 = Object.freeze({
+const requiredAWSConfig1: RequiredAWSConfigJson = Object.freeze({
   id: 'aws123',
   exportId: requiredAWSConfigId,
   apiId: 'aws',
@@ -198,7 +169,7 @@ const requiredAWSConfig1 = Object.freeze({
   config: null
 });
 
-const requiredAWSConfig2 = Object.freeze({
+const requiredAWSConfig2: RequiredAWSConfigJson = Object.freeze({
   id: 'aws123',
   exportId: requiredAWSConfigId,
   apiId: 'aws',
@@ -209,7 +180,7 @@ const requiredAWSConfig2 = Object.freeze({
   }
 });
 
-const requiredOAuth2Config1 = Object.freeze({
+const requiredOAuth2Config1: RequiredOAuth2ApplicationJson = Object.freeze({
   id: 'github123',
   exportId: requiredGithubConfigId,
   apiId: 'github',
@@ -218,7 +189,7 @@ const requiredOAuth2Config1 = Object.freeze({
   recommendedScope: 'repo'
 });
 
-const requiredOAuth2Config2 = Object.freeze({
+const requiredOAuth2Config2: RequiredOAuth2ApplicationJson = Object.freeze({
   id: 'github123',
   exportId: requiredGithubConfigId,
   apiId: 'github',
@@ -227,7 +198,7 @@ const requiredOAuth2Config2 = Object.freeze({
   recommendedScope: 'repo:readonly'
 });
 
-const requiredOAuth2Config3 = Object.freeze({
+const requiredOAuth2Config3: RequiredOAuth2ApplicationJson = Object.freeze({
   id: 'github12345',
   exportId: 'requiredGithubabcdef',
   apiId: 'github',
@@ -236,14 +207,14 @@ const requiredOAuth2Config3 = Object.freeze({
   recommendedScope: 'repo'
 });
 
-const requiredSimpleTokenApi1 = Object.freeze({
+const requiredSimpleTokenApi1: RequiredSimpleTokenApiJson = Object.freeze({
   id: 'pivotalTracker123',
   exportId: requiredPivotalTrackerConfigId,
   apiId: 'pivotalTracker',
   nameInCode: 'pivotalTracker',
 });
 
-const requiredSimpleTokenApi2 = Object.freeze({
+const requiredSimpleTokenApi2: RequiredSimpleTokenApiJson = Object.freeze({
   id: 'pivotalTracker123',
   exportId: requiredPivotalTrackerConfigId,
   apiId: 'pivotalTracker',
