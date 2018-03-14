@@ -9,7 +9,7 @@ type Props = {
   group: BehaviorGroup,
   linked?: LinkedGithubRepo,
   onDoneClick: () => void,
-  onLinkGithubRepo: (owner: string, repo: string, branch: string | null, callback: () => void) => void,
+  onLinkGithubRepo: (owner: string, repo: string, branch: Option<string>, callback: () => void) => void,
   csrfToken: string
 };
 
@@ -19,13 +19,13 @@ type State = {
 };
 
 type GithubRepoMatch = {
-  owner: string | null,
-  repo: string | null
+  owner: Option<string>,
+  repo: Option<string>
 }
 
 class LinkGithubRepo extends React.Component<Props, State> {
-    repoUrlInput: FormInput | null;
-    timerId: number | null;
+    repoUrlInput: Option<FormInput>;
+    timerId: Option<number>;
 
     constructor(props: Props) {
       super(props);

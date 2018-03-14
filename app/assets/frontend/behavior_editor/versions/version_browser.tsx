@@ -39,7 +39,7 @@ type Props = {
     onRestoreVersionClick: (version: BehaviorGroup, title: any) => void,
     isLinkedToGithub: boolean,
     linkedGithubRepo?: LinkedGithubRepo,
-    onLinkGithubRepo: (owner: string, repo: string, branch: string | null, callback: () => void) => void,
+    onLinkGithubRepo: (owner: string, repo: string, branch: Option<string>, callback: () => void) => void,
     onUpdateFromGithub: (owner: string, repo: string, branch: string, callback: (json: { data: BehaviorGroupJson }) => void, onError: (branch: string, error?: GithubFetchError) => void) => void,
     onSaveChanges: () => void,
     isModifyingGithubRepo: boolean,
@@ -54,11 +54,11 @@ type State = {
     branch: string,
     isChangingBranchName: boolean,
     isFetching: boolean,
-    lastFetched: Date | null,
+    lastFetched: Option<Date>,
     isNewBranch: boolean,
-    githubVersion: BehaviorGroup | null,
+    githubVersion: Option<BehaviorGroup>,
     isCommitting: boolean,
-    error: string | null
+    error: Option<string>
 }
 
 type GroupedVersion = {
@@ -74,9 +74,9 @@ type VersionGroup = {
 class VersionBrowser extends React.Component<Props, State> {
     props: Props;
     state: State;
-    pushPanel: GithubPushPanel | null;
-    linkGitHubRepoComponent: LinkGithubRepo | null;
-    newBranchInput: FormInput | null;
+    pushPanel: Option<GithubPushPanel>;
+    linkGitHubRepoComponent: Option<LinkGithubRepo>;
+    newBranchInput: Option<FormInput>;
 
     constructor(props: Props) {
       super(props);
@@ -305,7 +305,7 @@ class VersionBrowser extends React.Component<Props, State> {
       return this.state.selectedMenuItem === versionSources.github;
     }
 
-    getSelectedVersionIndex(): number | null {
+    getSelectedVersionIndex(): Option<number> {
       if (this.state.selectedMenuItem) {
         const match = this.state.selectedMenuItem.match(/version(\d+)/);
         return match ? parseInt(match[1], 10) : null;
@@ -314,7 +314,7 @@ class VersionBrowser extends React.Component<Props, State> {
       }
     }
 
-    getSelectedVersion(): BehaviorGroup | null {
+    getSelectedVersion(): Option<BehaviorGroup> {
       const index = this.getSelectedVersionIndex();
       if (typeof index === "number") {
         return this.getVersionIndex(index);
@@ -325,7 +325,7 @@ class VersionBrowser extends React.Component<Props, State> {
       }
     }
 
-    getVersionIndex(index: number): BehaviorGroup | null {
+    getVersionIndex(index: number): Option<BehaviorGroup> {
       return this.props.versions[index];
     }
 
@@ -335,7 +335,7 @@ class VersionBrowser extends React.Component<Props, State> {
       });
     }
 
-    getDiffForSelectedVersion(selectedVersion: BehaviorGroup | null): ModifiedDiff<BehaviorGroup> | null {
+    getDiffForSelectedVersion(selectedVersion: Option<BehaviorGroup>): Option<ModifiedDiff<BehaviorGroup>> {
       // original.maybeDiffFor(modified) shows changes from original to modified
       if (selectedVersion) {
         return this.state.diffFromSelectedToCurrent ?
@@ -370,7 +370,7 @@ class VersionBrowser extends React.Component<Props, State> {
       }
     }
 
-    renderSelectedVersion(selectedVersion: BehaviorGroup | null, diff: ModifiedDiff<BehaviorGroup> | null) {
+    renderSelectedVersion(selectedVersion: Option<BehaviorGroup>, diff: Option<ModifiedDiff<BehaviorGroup>>) {
       if (selectedVersion) {
         return (
           <div>
@@ -416,7 +416,7 @@ class VersionBrowser extends React.Component<Props, State> {
       }
     }
 
-    renderDiff(diff: ModifiedDiff<BehaviorGroup> | null) {
+    renderDiff(diff: Option<ModifiedDiff<BehaviorGroup>>) {
       if (diff) {
         return (
           <BehaviorGroupDiff diff={diff} />
@@ -495,7 +495,7 @@ class VersionBrowser extends React.Component<Props, State> {
       }
     }
 
-    renderRevertButton(selectedVersion: BehaviorGroup | null, hasChanges: boolean) {
+    renderRevertButton(selectedVersion: Option<BehaviorGroup>, hasChanges: boolean) {
       return (
         <Button className="mrs mbm" onClick={this.revertToSelected} disabled={!hasChanges}>
           {this.renderRevertButtonTitle(selectedVersion, hasChanges)}
@@ -503,7 +503,7 @@ class VersionBrowser extends React.Component<Props, State> {
       );
     }
 
-    renderRevertButtonTitle(selectedVersion: BehaviorGroup | null, hasChanges: boolean) {
+    renderRevertButtonTitle(selectedVersion: Option<BehaviorGroup>, hasChanges: boolean) {
       if (this.compareGithubVersions()) {
         const branch = this.getSavedBranch();
         return branch ? (
@@ -524,7 +524,7 @@ class VersionBrowser extends React.Component<Props, State> {
       }
     }
 
-    renderCommitButton(selectedVersion: BehaviorGroup | null, hasChanges: boolean) {
+    renderCommitButton(selectedVersion: Option<BehaviorGroup>, hasChanges: boolean) {
       if (this.props.linkedGithubRepo && this.compareGithubVersions()) {
         const unsavedChanges = this.props.currentGroupIsModified;
         const githubVersionIsIdentical = Boolean(selectedVersion && !hasChanges);
@@ -711,7 +711,7 @@ class VersionBrowser extends React.Component<Props, State> {
       );
     }
 
-    renderLocalVersionTitle(timestamp: Timestamp | null) {
+    renderLocalVersionTitle(timestamp: Option<Timestamp>) {
       return this.getSelectedVersionIndex() === 0 ? (
         <span>last saved version</span>
       ) : (

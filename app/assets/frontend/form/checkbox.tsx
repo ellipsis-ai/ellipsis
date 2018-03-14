@@ -5,7 +5,7 @@ type Props = {
   checked: boolean,
   onChange: (isChecked: boolean, value?: string) => void,
   onEnterKey?: () => void,
-  className?: string | null,
+  className?: Option<string>,
   label?: any,
   title?: string,
   name?: string,
@@ -15,7 +15,7 @@ type Props = {
 }
 
 class Checkbox extends React.PureComponent<Props> {
-  input: HTMLInputElement | null;
+  input: Option<HTMLInputElement>;
 
   constructor(props: Props) {
     super(props);

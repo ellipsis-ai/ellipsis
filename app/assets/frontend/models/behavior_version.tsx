@@ -10,7 +10,7 @@ import Trigger, {TriggerJson} from './trigger';
 import DataTypeField from "./data_type_field";
 
 type DefaultActionProps = {
-  name?: string,
+  name?: Option<string>,
   triggers: Array<Trigger>,
   functionBody: string,
   responseTemplate: ResponseTemplate
@@ -18,39 +18,37 @@ type DefaultActionProps = {
 
 export interface BehaviorVersionJson extends EditableJson {
   behaviorId: string;
-  responseTemplate: ResponseTemplateJson | null;
-  functionBody: string;
+  responseTemplate?: Option<ResponseTemplateJson>;
   inputIds: Array<string>;
   triggers: Array<TriggerJson>;
   config: BehaviorConfigJson;
   knownEnvVarsUsed: Array<string>;
-  isNew: boolean | null;
 }
 
 export interface BehaviorVersionInterface extends EditableInterface, BehaviorVersionJson {
-  responseTemplate: ResponseTemplate | null;
+  responseTemplate?: Option<ResponseTemplate>;
   triggers: Array<Trigger>;
   config: BehaviorConfig;
 }
 
 class BehaviorVersion extends Editable implements Diffable, BehaviorVersionInterface, EditableInterface {
   constructor(
-    readonly id: string | null,
+    readonly id: Option<string>,
     readonly behaviorId: string,
     readonly groupId: string,
     readonly teamId: string,
-    readonly name: string | null,
-    readonly description: string | null,
-    readonly responseTemplate: ResponseTemplate | null,
+    readonly name: Option<string>,
+    readonly description: Option<string>,
+    readonly responseTemplate: Option<ResponseTemplate>,
     readonly functionBody: string,
     readonly inputIds: Array<string>,
     readonly triggers: Array<Trigger>,
     readonly config: BehaviorConfig,
-    readonly exportId: string | null,
+    readonly exportId: Option<string>,
     readonly knownEnvVarsUsed: Array<string>,
-    readonly createdAt: number | null,
-    readonly isNew: boolean | null,
-    readonly editorScrollPosition: number | null
+    readonly createdAt: Option<number>,
+    readonly isNew: Option<boolean>,
+    readonly editorScrollPosition: Option<number>
   ) {
       super(
         id,
@@ -194,7 +192,7 @@ class BehaviorVersion extends Editable implements Diffable, BehaviorVersionInter
       return itemLabel ? `${kindLabel} “${itemLabel}”` : `unnamed ${kindLabel}`;
     }
 
-    itemLabel(): string | null {
+    itemLabel(): Option<string> {
       return this.getName();
     }
 
@@ -210,7 +208,7 @@ class BehaviorVersion extends Editable implements Diffable, BehaviorVersionInter
       return `Edit ${this.getBehaviorVersionTypeName()}`;
     }
 
-    getDataTypeConfig(): DataTypeConfig | null {
+    getDataTypeConfig(): Option<DataTypeConfig> {
       return this.config.getDataTypeConfig();
     }
 
@@ -299,7 +297,7 @@ class BehaviorVersion extends Editable implements Diffable, BehaviorVersionInter
       return this.toJSON();
     }
 
-    sortKeyForExisting(): string | null {
+    sortKeyForExisting(): Option<string> {
       return this.name || this.getFirstTriggerText();
     }
 

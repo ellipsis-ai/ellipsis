@@ -7,11 +7,11 @@ declare var jsRoutes: {
   controllers: {
     ApplicationController: {
       deleteBehaviorGroups: () => JsRoute,
-      findBehaviorGroupsMatching: (queryString: string, branch: string | null, teamId: string) => JsRoute,
+      findBehaviorGroupsMatching: (queryString: string, branch: Option<string>, teamId: string) => JsRoute,
       index: (teamId?: string) => JsRoute,
       possibleCitiesFor: (search: string) => JsRoute,
       setTeamTimeZone: () => JsRoute,
-      fetchPublishedBehaviorInfo: (teamId: string, branchName?: string | null) => JsRoute,
+      fetchPublishedBehaviorInfo: (teamId: string, branchName?: Option<string>) => JsRoute,
       mergeBehaviorGroups: () => JsRoute
     },
     BehaviorEditorController: {
@@ -19,7 +19,7 @@ declare var jsRoutes: {
       deploy: () => JsRoute,
       edit: (groupId: string, selectedId?: string, showVersions?: boolean) => JsRoute,
       newGroup: (teamId: string) => JsRoute,
-      newUnsavedBehavior: (isDataType: boolean, teamId: string, behaviorIdToClone: string, newName: string | null) => JsRoute,
+      newUnsavedBehavior: (isDataType: boolean, teamId: string, behaviorIdToClone: string, newName: Option<string>) => JsRoute,
       newUnsavedLibrary: (teamId: string, libraryIdToClone: string) => JsRoute,
       nodeModuleVersionsFor: (groupId: string) => JsRoute,
       pushToGithub: () => JsRoute,
@@ -43,7 +43,7 @@ declare var jsRoutes: {
       resetForUser: () => JsRoute
     },
     ScheduledActionsController: {
-      index: (selectedId?: string | null, isNewSchedule?: boolean | null, teamId?: string | null) => JsRoute
+      index: (selectedId?: Option<string>, isNewSchedule?: Option<boolean>, teamId?: Option<string>) => JsRoute
     },
     SocialAuthController: {
       authenticateGithub: (string) => JsRoute

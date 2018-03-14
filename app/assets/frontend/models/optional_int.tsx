@@ -1,7 +1,7 @@
 class OptionalInt {
-  readonly value: number | null;
+  readonly value: Option<number>;
 
-    constructor(intOrNull: number | null) {
+    constructor(intOrNull: Option<number>) {
       Object.defineProperties(this, {
         value: {
           value: typeof intOrNull === 'number' && Number.isInteger(intOrNull) ? intOrNull : null,
@@ -42,7 +42,7 @@ class OptionalInt {
       return typeof this.value === "number" && Number.isInteger(this.value);
     }
 
-    valueWithinRange(min: number, max: number): number | null {
+    valueWithinRange(min: number, max: number): Option<number> {
       if (typeof this.value === "number" && this.isInteger()) {
         return Math.min(Math.max(this.value, min), max);
       } else {
@@ -54,7 +54,7 @@ class OptionalInt {
       return OptionalInt.fromStringWithDefault(string, null);
     }
 
-    static fromStringWithDefault(string: string, defaultValue: number | null) {
+    static fromStringWithDefault(string: string, defaultValue: Option<number>) {
       const result = parseInt(string, 10);
       return new OptionalInt(Number.isInteger(result) ? result : defaultValue);
     }

@@ -21,31 +21,31 @@ type Props = {
   channelList: Array<ScheduleChannel>,
   behaviorGroups: Array<BehaviorGroup>,
   teamId: string,
-  teamTimeZone: string | null,
-  teamTimeZoneName: string | null,
+  teamTimeZone: Option<string>,
+  teamTimeZoneName: Option<string>,
   slackUserId: string,
   slackBotUserId: string,
   onSave: (scheduled: ScheduledAction) => void,
   isSaving: boolean,
   onDelete: (scheduled: ScheduledAction) => void,
   isDeleting: boolean,
-  error: string | null,
+  error: Option<string>,
   onClearErrors: () => void,
-  justSavedAction: ScheduledAction | null,
-  selectedScheduleId: string | null,
-  newAction: boolean | null
+  justSavedAction: Option<ScheduledAction>,
+  selectedScheduleId: Option<string>,
+  newAction: Option<boolean>
 } & PageRequiredProps
 
 type State = {
-  filterChannelId: string | null,
-  selectedItem: ScheduledAction | null,
+  filterChannelId: Option<string>,
+  selectedItem: Option<ScheduledAction>,
   justSaved: boolean,
   justDeleted: boolean,
   isEditing: boolean
 }
 
 type ScheduleGroup = {
-  channel: ScheduleChannel | null,
+  channel: Option<ScheduleChannel>,
   channelName: string,
   channelId: string,
   excludesBot: boolean,
@@ -139,7 +139,7 @@ class Scheduling extends React.Component<Props, State> {
       return Boolean(this.props.channelList) && this.props.channelList.length > 0;
     }
 
-    getDefaultSelectedItem(): ScheduledAction | null {
+    getDefaultSelectedItem(): Option<ScheduledAction> {
       if (this.props.selectedScheduleId) {
         return this.props.scheduledActions.find((ea) => ea.id === this.props.selectedScheduleId) || null;
       } else if (this.props.newAction) {
@@ -163,7 +163,7 @@ class Scheduling extends React.Component<Props, State> {
       return this.state.isEditing;
     }
 
-    getSelectedItem(): ScheduledAction | null {
+    getSelectedItem(): Option<ScheduledAction> {
       return this.state.selectedItem;
     }
 
@@ -173,7 +173,7 @@ class Scheduling extends React.Component<Props, State> {
       }, optionalCallback);
     }
 
-    findChannelFor(channelId): ScheduleChannel | null {
+    findChannelFor(channelId): Option<ScheduleChannel> {
       return this.hasChannelList() && this.props.channelList.find((ea) => ea.id === channelId) || null;
     }
 

@@ -3,18 +3,18 @@ import User, {UserJson} from './user';
 export interface BehaviorGroupVersionMetaDataJson {
   behaviorGroupId: string,
   createdAt: number,
-  author: UserJson | null
+  author?: Option<UserJson>
 }
 
 interface BehaviorGroupVersionMetaDataInterface extends BehaviorGroupVersionMetaDataJson {
-  author: User | null
+  author?: Option<User>
 }
 
 class BehaviorGroupVersionMetaData implements BehaviorGroupVersionMetaDataInterface {
   constructor(
     readonly behaviorGroupId: string,
     readonly createdAt: number,
-    readonly author: User | null
+    readonly author: Option<User>
   ) {
       Object.defineProperties(this, {
         behaviorGroupId: { value: behaviorGroupId, enumerable: true },

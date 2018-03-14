@@ -19,7 +19,7 @@ export interface DiffableProp {
 
 export interface Diffable {
   diffLabel(): string;
-  itemLabel(): string | null;
+  itemLabel(): Option<string>;
   kindLabel(): string;
   getIdForDiff(): string;
   diffProps(parent?: Diffable): Array<DiffableProp>;
@@ -32,7 +32,7 @@ export interface DiffableParents {
 
 export type TextPartKind = "added" | "removed" | "unchanged";
 
-type NestedDiffs = Array<Diff | Diff[] | null>
+type NestedDiffs = Array<Diff | Option<Diff[]>>
 
 class OrderingDiff<T extends Diffable> implements Diff {
   constructor(
@@ -79,7 +79,7 @@ class OrderingDiff<T extends Diffable> implements Diff {
     readonly children: Diff[];
     constructor(
       readonly item: T,
-      children?: Diff[] | null
+      children?: Option<Diff[]>
     ) {
       Object.defineProperties(this, {
         item: { value: item, enumerable: true },
@@ -370,7 +370,7 @@ class OrderingDiff<T extends Diffable> implements Diff {
       return `${this.label} ${this.getTextChangeType()}`;
     }
 
-    static maybeFor(label: string, maybeOriginal: string | null, maybeModified: string | null, options?: TextPropertyOptions): MultiLineTextPropertyDiff | null {
+    static maybeFor(label: string, maybeOriginal: Option<string>, maybeModified: Option<string>, options?: TextPropertyOptions): Option<MultiLineTextPropertyDiff> {
       const original = maybeOriginal || "";
       const modified = maybeModified || "";
       if (original === modified) {
@@ -392,7 +392,7 @@ class OrderingDiff<T extends Diffable> implements Diff {
       return this.displayText();
     }
 
-    static maybeFor(label: string, original: boolean, modified: boolean): BooleanPropertyDiff | null {
+    static maybeFor(label: string, original: boolean, modified: boolean): Option<BooleanPropertyDiff> {
       if (original === modified) {
         return null;
       } else {
@@ -419,7 +419,7 @@ class OrderingDiff<T extends Diffable> implements Diff {
       return this.displayText();
     }
 
-    static maybeFor(label: string, original: string, modified: string): CategoricalPropertyDiff | null {
+    static maybeFor(label: string, original: string, modified: string): Option<CategoricalPropertyDiff> {
       if (original === modified) {
         return null;
       } else {
@@ -463,7 +463,7 @@ class OrderingDiff<T extends Diffable> implements Diff {
     }
   }
 
-  function diffsFor<T extends Diffable>(originalItems: Array<T>, newItems: Array<T>, parents?: DiffableParents | null): Diff[] {
+  function diffsFor<T extends Diffable>(originalItems: Array<T>, newItems: Array<T>, parents?: Option<DiffableParents>): Diff[] {
     const originalIds = originalItems.map(ea => ea.getIdForDiff());
     const newIds = newItems.map(ea => ea.getIdForDiff());
 
@@ -502,7 +502,7 @@ class OrderingDiff<T extends Diffable> implements Diff {
     return added.concat(removed.concat(modified));
   }
 
-  function maybeParentsFor(originalProp: DiffableProp, modifiedProp?: DiffableProp | null): DiffableParents | null {
+  function maybeParentsFor(originalProp: DiffableProp, modifiedProp?: Option<DiffableProp>): Option<DiffableParents> {
     if (originalProp.parent && modifiedProp && modifiedProp.parent) {
       return { mine: originalProp.parent, other: modifiedProp.parent };
     } else {
@@ -538,7 +538,7 @@ class OrderingDiff<T extends Diffable> implements Diff {
     }
   }
 
-  function maybeDiffFor<T extends Diffable>(original: T, modified: T, parents?: DiffableParents | null): ModifiedDiff<T> | null {
+  function maybeDiffFor<T extends Diffable>(original: T, modified: T, parents?: Option<DiffableParents>): Option<ModifiedDiff<T>> {
     const originalProps = parents ? original.diffProps(parents.mine) : original.diffProps();
     const modifiedProps = parents ? modified.diffProps(parents.other) : modified.diffProps();
     const unflattenedDiffs: NestedDiffs = originalProps.map((originalProp) => {

@@ -11,36 +11,36 @@ interface Time {
 }
 
 export interface RecurrenceJson {
-  id: string | null,
-  displayString: string | null,
+  id?: Option<string>,
+  displayString?: Option<string>,
   frequency: number,
   typeName: string,
-  timeOfDay: Time | null,
-  timeZone: string | null,
-  timeZoneName: string | null,
-  minuteOfHour: number | null,
-  dayOfWeek: number | null,
-  dayOfMonth: number | null,
-  nthDayOfWeek: number | null,
-  month: number | null,
+  timeOfDay?: Option<Time>,
+  timeZone?: Option<string>,
+  timeZoneName?: Option<string>,
+  minuteOfHour?: Option<number>,
+  dayOfWeek?: Option<number>,
+  dayOfMonth?: Option<number>,
+  nthDayOfWeek?: Option<number>,
+  month?: Option<number>,
   daysOfWeek: Array<number>
 }
 
 interface RecurrenceInterface extends RecurrenceJson {}
 
 class Recurrence implements RecurrenceInterface {
-  readonly id: string | null;
-  readonly displayString: string | null;
+  readonly id: Option<string>;
+  readonly displayString: Option<string>;
   readonly frequency: number;
   readonly typeName: string;
-  readonly timeOfDay: Time | null;
-  readonly timeZone: string | null;
-  readonly timeZoneName: string | null;
-  readonly minuteOfHour: number | null;
-  readonly dayOfWeek: number | null;
-  readonly dayOfMonth: number | null;
-  readonly nthDayOfWeek: number | null;
-  readonly month: number | null;
+  readonly timeOfDay: Option<Time>;
+  readonly timeZone: Option<string>;
+  readonly timeZoneName: Option<string>;
+  readonly minuteOfHour: Option<number>;
+  readonly dayOfWeek: Option<number>;
+  readonly dayOfMonth: Option<number>;
+  readonly nthDayOfWeek: Option<number>;
+  readonly month: Option<number>;
   readonly daysOfWeek: Array<number>;
 
     constructor(props: Partial<RecurrenceInterface>) {

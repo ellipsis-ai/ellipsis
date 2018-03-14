@@ -19,14 +19,14 @@ type Props = {
 
 type State = {
   fieldValues: Array<any>,
-  lastSavedItem: DefaultStorageItem | null,
+  lastSavedItem: Option<DefaultStorageItem>,
   isSaving: boolean,
-  error: string | null
+  error: Option<string>
 }
 
 class DefaultStorageAdder extends React.Component<Props, State> {
     inputs: Array<DefaultStorageAdderField>;
-    saveButton: DynamicLabelButton | null;
+    saveButton: Option<DynamicLabelButton>;
 
     constructor(props: Props) {
       super(props);

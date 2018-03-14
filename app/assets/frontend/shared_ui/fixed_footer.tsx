@@ -12,8 +12,8 @@ type State = {
 }
 
 class FixedFooter extends React.Component<Props, State> {
-    intervalId: number | null;
-    footer: HTMLElement | null;
+    intervalId: Option<number>;
+    footer: Option<HTMLElement>;
     currentScrollHeight: number;
 
     constructor(props: Props) {

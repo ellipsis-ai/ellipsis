@@ -14,9 +14,9 @@ type RegionalSettingsProps = {
   isAdmin: boolean,
   teamId: string,
   onSaveTimeZone: (tzName: string, formattedName: string, newOffset: number) => void,
-  teamTimeZone: string | null,
-  teamTimeZoneName: string | null,
-  teamTimeZoneOffset: number | null
+  teamTimeZone: Option<string>,
+  teamTimeZoneName: Option<string>,
+  teamTimeZoneOffset: Option<number>
 }
 
 type Props = RegionalSettingsProps & PageRequiredProps
@@ -26,7 +26,7 @@ type State = {
 }
 
 class RegionalSettings extends React.Component<Props, State> {
-  teamTimeZoneSetter: TeamTimeZoneSetter | null;
+  teamTimeZoneSetter: Option<TeamTimeZoneSetter>;
   static defaultProps: PageRequiredProps;
 
     constructor(props: Props) {

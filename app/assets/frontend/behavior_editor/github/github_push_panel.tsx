@@ -28,13 +28,13 @@ type State = {
   commitMessage: string,
   isSaving: boolean,
   hasSavedSinceOpen: boolean,
-  lastSavedInfo: LastSavedInfo | null,
-  error: string | null,
+  lastSavedInfo: Option<LastSavedInfo>,
+  error: Option<string>,
   warning: any
 };
 
 class GithubPushPanel extends React.Component<Props, State> {
-    commitMessageInput: FormInput | null;
+    commitMessageInput: Option<FormInput>;
 
     constructor(props: Props) {
       super(props);

@@ -8,8 +8,8 @@ interface DefaultStorageItemData {
 export interface DefaultStorageItemJson {
   id: string,
   behaviorId: string,
-  updatedAt: number | null,
-  updatedByUserId: string | null,
+  updatedAt?: Option<number>,
+  updatedByUserId?: Option<string>,
   data: DefaultStorageItemData
 }
 
@@ -18,8 +18,8 @@ class DefaultStorageItem implements DefaultStorageItemJson {
   constructor(
     readonly id: string,
     readonly behaviorId: string,
-    readonly updatedAt: number | null,
-    readonly updatedByUserId: string | null,
+    readonly updatedAt: Option<number>,
+    readonly updatedByUserId: Option<string>,
     readonly data: DefaultStorageItemData
   ) {
       Object.defineProperties(this, {

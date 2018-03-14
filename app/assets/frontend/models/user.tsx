@@ -1,7 +1,7 @@
 export interface UserJson {
   id: string,
-  userName: string | null;
-  fullName: string | null;
+  userName?: Option<string>;
+  fullName?: Option<string>;
 }
 
 interface UserInterface extends UserJson {}
@@ -9,8 +9,8 @@ interface UserInterface extends UserJson {}
 class User {
     constructor(
       readonly id: string,
-      readonly userName: string | null,
-      readonly fullName: string | null
+      readonly userName: Option<string>,
+      readonly fullName: Option<string>
     ) {
       Object.defineProperties(this, {
         id: { value: id, enumerable: true },
@@ -43,7 +43,7 @@ class User {
       return this.fullName || this.formattedUserName(defaultName);
     }
 
-    isSameUser(otherUser?: User | null): boolean {
+    isSameUser(otherUser?: Option<User>): boolean {
       return Boolean(otherUser && this.id === otherUser.id);
     }
 

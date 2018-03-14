@@ -1,8 +1,8 @@
 (function() {
 
   class HeaderHandler {
-    header: HTMLElement | null;
-    timerId: number | null;
+    header: Option<HTMLElement>;
+    timerId: Option<number>;
 
     constructor() {
       this.header = document.getElementById('main-header');
@@ -26,13 +26,13 @@
   }
 
   class MenuHandler {
-    userMenuButton: HTMLElement | null;
-    userMenu: HTMLElement | null;
-    navMenuButton: HTMLElement | null;
-    navMenu: HTMLElement | null;
-    navBar: HTMLElement | null;
-    activeMenu: HTMLElement | null;
-    activeButton: HTMLElement | null;
+    userMenuButton: Option<HTMLElement>;
+    userMenu: Option<HTMLElement>;
+    navMenuButton: Option<HTMLElement>;
+    navMenu: Option<HTMLElement>;
+    navBar: Option<HTMLElement>;
+    activeMenu: Option<HTMLElement>;
+    activeButton: Option<HTMLElement>;
 
     constructor() {
       this.userMenuButton = document.getElementById('main-user-menu-button');

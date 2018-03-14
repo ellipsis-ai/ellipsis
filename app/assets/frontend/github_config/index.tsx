@@ -18,7 +18,7 @@ export interface GithubConfigProps {
   isAdmin: boolean,
   csrfToken: string,
   teamId: string,
-  linkedAccount: LinkedAccount | null
+  linkedAccount: Option<LinkedAccount>
 }
 
 type Props = GithubConfigProps & PageRequiredProps

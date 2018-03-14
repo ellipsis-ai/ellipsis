@@ -19,7 +19,7 @@ class DataTypeConfig implements DataTypeConfigInterface {
 
   constructor(
     readonly fields: Array<DataTypeField>,
-    usesCode: boolean | null
+    usesCode: Option<boolean>
   ) {
       Object.defineProperties(this, {
         fields: {

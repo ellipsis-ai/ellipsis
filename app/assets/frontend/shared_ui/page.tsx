@@ -3,8 +3,8 @@ import * as ReactDOM from 'react-dom';
 
 export interface NavItemContent {
   title: string,
-  url?: string | null,
-  callback?: (() => void) | null
+  url?: Option<string>,
+  callback?: Option<() => void>
 }
 
 export interface PageRequiredProps {
@@ -33,7 +33,7 @@ import PageFooterRenderingError from './page_footer_rendering_error';
 type Props = {
   onRender: <P extends PageRequiredProps>(pageProps: PageRequiredProps) => React.ReactElement<P>,
   csrfToken: string,
-  feedbackContainer?: HTMLElement | null
+  feedbackContainer?: Option<HTMLElement>
 }
 
 type State = {
@@ -48,8 +48,8 @@ class Page extends React.Component<Props, State> {
     panels: { [prop: string]: any };
     footer: any;
     component: any;
-    navItems: HTMLElement | null;
-    navActions: HTMLElement | null;
+    navItems: Option<HTMLElement>;
+    navActions: Option<HTMLElement>;
     static requiredPropTypes: {};
     static feedbackContainerId: string;
 

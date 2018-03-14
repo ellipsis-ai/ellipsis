@@ -15,7 +15,7 @@ type Props = {
 
 class BehaviorGroupEditor extends React.PureComponent<Props> {
     props: Props;
-    detailsEditor: BehaviorGroupDetailsEditor | null;
+    detailsEditor: Option<BehaviorGroupDetailsEditor>;
 
     constructor(props: Props) {
       super(props);

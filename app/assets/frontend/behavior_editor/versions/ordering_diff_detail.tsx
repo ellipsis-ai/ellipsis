@@ -3,7 +3,7 @@ import {OrderingDiff} from '../../models/diffs';
 import {Diffable} from "../../models/diffs";
 
 type Props = {
-  className?: string | null,
+  className?: Option<string>,
   diff: OrderingDiff<Diffable>
 };
 

@@ -17,12 +17,12 @@ import {Timestamp} from "../lib/formatter";
 const ONE_MINUTE = 60000;
 
 export interface BehaviorGroupJson {
-  id: string | null;
+  id?: Option<string>;
   teamId: string;
-  name: string | null;
-  icon: string | null;
-  description: string | null;
-  githubUrl: string | null;
+  name?: Option<string>;
+  icon?: Option<string>;
+  description?: Option<string>;
+  githubUrl?: Option<string>;
   actionInputs: Array<InputJson>;
   dataTypeInputs: Array<InputJson>;
   behaviorVersions: Array<BehaviorVersionJson>;
@@ -30,12 +30,12 @@ export interface BehaviorGroupJson {
   requiredAWSConfigs: Array<RequiredAWSConfigJson>;
   requiredOAuth2ApiConfigs: Array<RequiredOAuth2ApplicationJson>;
   requiredSimpleTokenApis: Array<RequiredSimpleTokenApiJson>;
-  createdAt: Timestamp | null;
-  exportId: string | null;
-  author: UserJson | null;
-  gitSHA: string | null;
-  deployment: BehaviorGroupDeploymentJson | null;
-  metaData: BehaviorGroupMetaDataJson | null;
+  createdAt?: Option<Timestamp>;
+  exportId?: Option<string>;
+  author?: Option<UserJson>;
+  gitSHA?: Option<string>;
+  deployment?: Option<BehaviorGroupDeploymentJson>;
+  metaData?: Option<BehaviorGroupMetaDataJson>;
 }
 
 interface BehaviorGroupInterface extends BehaviorGroupJson {
@@ -46,19 +46,19 @@ interface BehaviorGroupInterface extends BehaviorGroupJson {
   requiredAWSConfigs: Array<RequiredAWSConfig>;
   requiredOAuth2ApiConfigs: Array<RequiredOAuth2Application>;
   requiredSimpleTokenApis: Array<RequiredSimpleTokenApi>;
-  author: User | null;
-  deployment: BehaviorGroupDeployment | null;
-  metaData: BehaviorGroupMetaData | null;
+  author?: Option<User>;
+  deployment?: Option<BehaviorGroupDeployment>;
+  metaData?: Option<BehaviorGroupMetaData>;
 }
 
 class BehaviorGroup implements Diffable, BehaviorGroupInterface {
   constructor(
-    readonly id: string | null,
+    readonly id: Option<string>,
     readonly teamId: string,
-    readonly name: string | null,
-    readonly icon: string | null,
-    readonly description: string | null,
-    readonly githubUrl: string | null,
+    readonly name: Option<string>,
+    readonly icon: Option<string>,
+    readonly description: Option<string>,
+    readonly githubUrl: Option<string>,
     readonly actionInputs: Array<Input>,
     readonly dataTypeInputs: Array<Input>,
     readonly behaviorVersions: Array<BehaviorVersion>,
@@ -66,12 +66,12 @@ class BehaviorGroup implements Diffable, BehaviorGroupInterface {
     readonly requiredAWSConfigs: Array<RequiredAWSConfig>,
     readonly requiredOAuth2ApiConfigs: Array<RequiredOAuth2Application>,
     readonly requiredSimpleTokenApis: Array<RequiredSimpleTokenApi>,
-    readonly createdAt: Timestamp | null,
-    readonly exportId: string | null,
-    readonly author: User | null,
-    readonly gitSHA: string | null,
-    readonly deployment: BehaviorGroupDeployment | null,
-    readonly metaData: BehaviorGroupMetaData | null
+    readonly createdAt: Option<Timestamp>,
+    readonly exportId: Option<string>,
+    readonly author: Option<User>,
+    readonly gitSHA: Option<string>,
+    readonly deployment: Option<BehaviorGroupDeployment>,
+    readonly metaData: Option<BehaviorGroupMetaData>
   ) {
       Object.defineProperties(this, {
         id: { value: id, enumerable: true },
@@ -117,7 +117,7 @@ class BehaviorGroup implements Diffable, BehaviorGroupInterface {
       return this.getRequiredOAuth2ApiConfigs().filter(ea => !ea.config).length > 0;
     }
 
-    static timestampToNumber(t: Timestamp | null): number | null {
+    static timestampToNumber(t: Option<Timestamp>): Option<number> {
       if (typeof t === "number") {
         return t;
       } else if (typeof t === "string") {
@@ -275,7 +275,7 @@ class BehaviorGroup implements Diffable, BehaviorGroupInterface {
       return itemLabel ? `${kindLabel} “${itemLabel}”` : `untitled ${kindLabel}`;
     }
 
-    itemLabel(): string | null {
+    itemLabel(): Option<string> {
       return this.getName();
     }
 
@@ -287,11 +287,11 @@ class BehaviorGroup implements Diffable, BehaviorGroupInterface {
       return this.id || "unknown";
     }
 
-    getInitialAuthor(): User | null {
+    getInitialAuthor(): Option<User> {
       return this.metaData ? this.metaData.initialAuthor : null;
     }
 
-    getInitialCreatedAt(): Timestamp | null {
+    getInitialCreatedAt(): Option<Timestamp> {
       return this.metaData ? this.metaData.initialCreatedAt : null;
     }
 
@@ -363,7 +363,7 @@ class BehaviorGroup implements Diffable, BehaviorGroupInterface {
       }));
     }
 
-    static groupsIncludeExportId(groups: Array<BehaviorGroup>, exportId: string | null): boolean {
+    static groupsIncludeExportId(groups: Array<BehaviorGroup>, exportId: Option<string>): boolean {
       return Boolean(exportId && groups.some((ea) => ea.exportId === exportId));
     }
 }

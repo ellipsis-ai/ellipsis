@@ -40,7 +40,7 @@ type Props = {
     [searchText: string]: SearchResult | undefined
   },
   isDeploying: boolean,
-  deployError: string | null,
+  deployError: Option<string>,
   publishedBehaviorGroupLoadStatus: PublishedBehaviorGroupLoadStatus,
   teamId: string,
   slackTeamId: string,
@@ -49,7 +49,7 @@ type Props = {
 } & PageRequiredProps;
 
 type State = {
-  selectedBehaviorGroup: BehaviorGroup | null,
+  selectedBehaviorGroup: Option<BehaviorGroup>,
   checkedGroupIds: Array<string>,
   isSubmitting: boolean,
   userSearchText: string,
@@ -62,9 +62,9 @@ class BehaviorList extends React.Component<Props, State> {
   delaySubmitSearch: () => void;
   delayUpdateActiveSearch: (newText: string) => void;
   delayOnScroll: () => void;
-  localGroupContainer: HTMLElement | null;
-  publishedGroupContainer: HTMLElement | null;
-  mainHeader: HTMLElement | null;
+  localGroupContainer: Option<HTMLElement>;
+  publishedGroupContainer: Option<HTMLElement>;
+  mainHeader: Option<HTMLElement>;
 
   constructor(props: Props) {
     super(props);
@@ -297,7 +297,7 @@ class BehaviorList extends React.Component<Props, State> {
     return this.props.recentlyInstalled;
   }
 
-  getMostRecentGroupJustInstalled(): BehaviorGroup | null {
+  getMostRecentGroupJustInstalled(): Option<BehaviorGroup> {
     const allInstalled = this.getLocalBehaviorGroupsJustInstalled();
     const numInstalled = allInstalled.length;
     return numInstalled > 0 ? allInstalled[numInstalled - 1] : null;
@@ -307,7 +307,7 @@ class BehaviorList extends React.Component<Props, State> {
     return this.state.checkedGroupIds || [];
   }
 
-  getLocalIdFor(exportId: string | null): string | null {
+  getLocalIdFor(exportId: Option<string>): Option<string> {
     var localGroup = exportId ? this.getLocalBehaviorGroups().find((ea) => ea.exportId === exportId) : null;
     return localGroup ? localGroup.id : null;
   }
@@ -393,7 +393,7 @@ class BehaviorList extends React.Component<Props, State> {
     return `Are you sure you want to merge these ${checkedCount} skills?`;
   }
 
-  getSelectedBehaviorGroup(): BehaviorGroup | null {
+  getSelectedBehaviorGroup(): Option<BehaviorGroup> {
     return this.state.selectedBehaviorGroup;
   }
 
@@ -402,7 +402,7 @@ class BehaviorList extends React.Component<Props, State> {
     return Boolean(selectedGroup && selectedGroup.exportId && !this.getLocalIdFor(selectedGroup.exportId));
   }
 
-  publishedGroupDataFor(group: BehaviorGroup | null): BehaviorGroup | null {
+  publishedGroupDataFor(group: Option<BehaviorGroup>): Option<BehaviorGroup> {
     return group &&
       group.id &&
       group.exportId &&
@@ -417,7 +417,7 @@ class BehaviorList extends React.Component<Props, State> {
     );
   }
 
-  getSelectedBehaviorGroupId(): string | null {
+  getSelectedBehaviorGroupId(): Option<string> {
     var group = this.getSelectedBehaviorGroup();
     return group ? group.id : null;
   }
@@ -426,7 +426,7 @@ class BehaviorList extends React.Component<Props, State> {
     return this.getLocalBehaviorGroupsJustInstalled().length > 0;
   }
 
-  getActivePanelName(): string | null {
+  getActivePanelName(): Option<string> {
     return this.props.activePanelName;
   }
 
@@ -456,7 +456,7 @@ class BehaviorList extends React.Component<Props, State> {
     }
   }
 
-  isImporting(group: BehaviorGroup | null): boolean {
+  isImporting(group: Option<BehaviorGroup>): boolean {
     return Boolean(group && group.exportId && BehaviorGroup.groupsIncludeExportId(this.props.currentlyInstalling, group.exportId));
   }
 

@@ -4,12 +4,12 @@ export interface BehaviorGroupDeploymentJson {
   id: string;
   groupId: string;
   groupVersionId: string;
-  deployer: UserJson | null;
+  deployer?: Option<UserJson>;
   createdAt: number;
 }
 
 interface BehaviorGroupDeploymentInterface extends BehaviorGroupDeploymentJson {
-  deployer: User | null
+  deployer?: Option<User>
 }
 
 class BehaviorGroupDeployment implements BehaviorGroupDeploymentInterface {
@@ -17,7 +17,7 @@ class BehaviorGroupDeployment implements BehaviorGroupDeploymentInterface {
     readonly id: string,
     readonly groupId: string,
     readonly groupVersionId: string,
-    readonly deployer: User | null,
+    readonly deployer: Option<User>,
     readonly createdAt: number
   ) {
       Object.defineProperties(this, {

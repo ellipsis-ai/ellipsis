@@ -3,14 +3,15 @@ import {Diffable, DiffableProp} from "./diffs";
 import ApiConfigRef, {ApiConfigRefJson} from './api_config_ref';
 import RequiredApiConfigWithConfig from './required_api_config_with_config';
 import ID from '../lib/id';
+import {RequiredApiConfigJson} from "./required_api_config";
 
 type callback = () => void
 
 type RequiredOAuth2Editor = {
-  onAddOAuth2Application: (r: RequiredOAuth2Application, c?: callback | null) => void,
-  addNewOAuth2Application: (r?: RequiredOAuth2Application | null) => void,
-  onRemoveOAuth2Application: (r: RequiredOAuth2Application, c?: callback | null) => void,
-  onUpdateOAuth2Application: (r: RequiredOAuth2Application, c?: callback | null) => void,
+  onAddOAuth2Application: (r: RequiredOAuth2Application, c?: Option<callback>) => void,
+  addNewOAuth2Application: (r?: Option<RequiredOAuth2Application>) => void,
+  onRemoveOAuth2Application: (r: RequiredOAuth2Application, c?: Option<callback>) => void,
+  onUpdateOAuth2Application: (r: RequiredOAuth2Application, c?: Option<callback>) => void,
   getOAuth2LogoUrlForConfig: (r: RequiredOAuth2Application) => string,
   getOAuth2ApiNameForConfig: (r: RequiredOAuth2Application) => string,
   getAllOAuth2Applications: () => Array<RequiredOAuth2Application>
@@ -21,24 +22,20 @@ type OAuth2ApplicationRefEditor = {
   getOAuth2ApiNameForConfig: (OAuth2ApplicationRef) => string,
 }
 
-export interface RequiredOAuth2ApplicationJson {
-  id: string,
-  exportId: string | null,
-  apiId: string,
-  nameInCode: string,
-  config: OAuth2ApplicationRefJson | null,
+export interface RequiredOAuth2ApplicationJson extends RequiredApiConfigJson {
+  config?: Option<OAuth2ApplicationRefJson>,
   recommendedScope: string
 }
 
 interface RequiredOAuth2ApplicationInterface extends RequiredOAuth2ApplicationJson {
-  config: OAuth2ApplicationRef | null
+  config?: Option<OAuth2ApplicationRef>
 }
 
 class RequiredOAuth2Application extends RequiredApiConfigWithConfig implements Diffable, RequiredOAuth2ApplicationInterface {
-  readonly config: OAuth2ApplicationRef | null;
+  readonly config: Option<OAuth2ApplicationRef>;
   readonly recommendedScope: string;
 
-    constructor(id: string, exportId: string | null, apiId: string, nameInCode: string, config: OAuth2ApplicationRef | null, recommendedScope: string) {
+    constructor(id: Option<string>, exportId: Option<string>, apiId: string, nameInCode: string, config: Option<OAuth2ApplicationRef>, recommendedScope: string) {
       super(id, exportId, apiId, nameInCode, config);
       Object.defineProperties(this, {
         recommendedScope: { value: recommendedScope, enumerable: true }

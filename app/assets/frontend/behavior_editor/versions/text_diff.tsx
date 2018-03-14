@@ -4,7 +4,7 @@ import TextDiffPart from './text_diff_part';
 import {MultiLineTextPropertyDiff, TextPart} from '../../models/diffs';
 
 type Props = {
-  className: string | null,
+  className: Option<string>,
   diff: MultiLineTextPropertyDiff
 };
 
@@ -19,7 +19,7 @@ class TextDiff extends React.PureComponent<Props> {
       );
     }
 
-    getBgColorForLine(line?: Array<TextPart> | null): string {
+    getBgColorForLine(line?: Option<Array<TextPart>>): string {
       if (line && line.some((part) => part.isRemoved())) {
         return "bg-pink-lightest";
       } else if (line && line.some((part) => part.isAdded())) {
@@ -29,7 +29,7 @@ class TextDiff extends React.PureComponent<Props> {
       }
     }
 
-    renderLine(line: Array<TextPart> | null | undefined, onlyLine: boolean) {
+    renderLine(line: Option<Array<TextPart>> | undefined, onlyLine: boolean) {
       const isEmpty = !line || line.length === 0 || line.length === 1 && line[0].valueIsEmpty();
       return (
         <div className={`type-wrap-words ${this.props.diff.isCode ? "type-monospace" : ""} ${this.getBgColorForLine(line)}`}>
