@@ -1,7 +1,7 @@
 class RequiredApiConfig {
   constructor(
     readonly id: string,
-    readonly exportId: string,
+    readonly exportId: string | null,
     readonly apiId: string,
     readonly nameInCode: string
   ) {
@@ -28,7 +28,7 @@ class RequiredApiConfig {
     }
 
     getIdForDiff(): string {
-      return this.exportId;
+      return this.exportId || "unknown";
     }
 
     canHaveConfig(): boolean {

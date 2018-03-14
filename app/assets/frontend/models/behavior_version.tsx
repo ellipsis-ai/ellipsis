@@ -27,15 +27,10 @@ export interface BehaviorVersionJson extends EditableJson {
   isNew: boolean | null;
 }
 
-export interface BehaviorVersionInterface extends EditableInterface {
-  behaviorId: string;
+export interface BehaviorVersionInterface extends EditableInterface, BehaviorVersionJson {
   responseTemplate: ResponseTemplate | null;
-  functionBody: string;
-  inputIds: Array<string>;
   triggers: Array<Trigger>;
   config: BehaviorConfig;
-  knownEnvVarsUsed: Array<string>;
-  isNew: boolean | null;
 }
 
 class BehaviorVersion extends Editable implements Diffable, BehaviorVersionInterface, EditableInterface {
@@ -368,7 +363,7 @@ class BehaviorVersion extends Editable implements Diffable, BehaviorVersionInter
       return BehaviorVersion.fromProps(materializedProps);
     }
 
-    static defaultActionProps(optionalName): DefaultActionProps {
+    static defaultActionProps(optionalName?: string): DefaultActionProps {
       const functionBody = (
 `// Write a Node.js (6.10.2) function that calls ellipsis.success() with a result.
 // You can require any NPM package.

@@ -1,10 +1,10 @@
 import {Diffable, DiffableProp} from "./diffs";
 
 export interface TriggerJson {
-  text: string;
-  isRegex: boolean;
-  requiresMention: boolean;
-  caseSensitive: boolean;
+  text: string,
+  isRegex: boolean,
+  requiresMention: boolean,
+  caseSensitive: boolean
 }
 
 interface TriggerInterface extends TriggerJson {}
@@ -13,11 +13,12 @@ class Trigger implements Diffable, TriggerInterface {
   readonly isRegex: boolean;
   readonly requiresMention: boolean;
   readonly caseSensitive: boolean;
+  readonly text: string;
 
   constructor(
-    readonly text: string,
-    maybeIsRegex: boolean | null,
-    maybeRequiresMention: boolean | null
+    maybeText?: string | null,
+    maybeIsRegex?: boolean | null,
+    maybeRequiresMention?: boolean | null
   ) {
       const isRegex: boolean = typeof maybeIsRegex === "boolean" ? Boolean(maybeIsRegex) : false;
       const requiresMention: boolean = typeof maybeRequiresMention === "boolean" ? Boolean(maybeRequiresMention) : true;
@@ -36,7 +37,7 @@ class Trigger implements Diffable, TriggerInterface {
           enumerable: true
         },
         text: {
-          value: text,
+          value: maybeText || "",
           enumerable: true
         }
       });

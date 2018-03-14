@@ -228,7 +228,6 @@ describe('BehaviorEditor', () => {
         isSavedForTeam: false,
         isSavedForUser: true,
         inputId: "abcd1234",
-        inputVersionId: "xzy321",
         exportId: null
       }];
       firstBehavior.inputIds = editorConfig.group.actionInputs.map(ea => ea.inputId);

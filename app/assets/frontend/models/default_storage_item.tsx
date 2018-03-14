@@ -1,11 +1,19 @@
 import DefaultStorageItemField from './default_storage_item_field';
 
-type DefaultStorageItemData = {
+interface DefaultStorageItemData {
   id: string,
   [prop: string]: any
-};
+}
 
-class DefaultStorageItem {
+export interface DefaultStorageItemJson {
+  id: string,
+  behaviorId: string,
+  updatedAt: number | null,
+  updatedByUserId: string | null,
+  data: DefaultStorageItemData
+}
+
+class DefaultStorageItem implements DefaultStorageItemJson {
   readonly fields: Array<DefaultStorageItemField>;
   constructor(
     readonly id: string,

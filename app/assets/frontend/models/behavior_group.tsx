@@ -173,8 +173,8 @@ class BehaviorGroup implements Diffable, BehaviorGroupInterface {
     copyWithObsoleteInputsRemoved(): BehaviorGroup {
       const inputIdsUsed = this.getAllInputIdsFromBehaviorVersions();
       return this.clone({
-        actionInputs: this.actionInputs.filter(ea => inputIdsUsed.has(ea.inputId)),
-        dataTypeInputs: this.dataTypeInputs.filter(ea => inputIdsUsed.has(ea.inputId))
+        actionInputs: this.actionInputs.filter(ea => ea.inputId && inputIdsUsed.has(ea.inputId)),
+        dataTypeInputs: this.dataTypeInputs.filter(ea => ea.inputId && inputIdsUsed.has(ea.inputId))
       });
     }
 
@@ -187,12 +187,12 @@ class BehaviorGroup implements Diffable, BehaviorGroupInterface {
     }
 
     copyWithInputsForBehaviorVersion(inputsForBehavior: Array<Input>, behaviorVersion: BehaviorVersion): BehaviorGroup {
-      const inputIdsForBehavior = inputsForBehavior.map(ea => ea.inputId);
+      const inputIdsForBehavior = inputsForBehavior.map(ea => ea.inputId).filter((ea): ea is string => typeof ea === 'string');
       const newBehaviorVersion = behaviorVersion.clone({ inputIds: inputIdsForBehavior }).copyWithNewTimestamp();
       const inputs = behaviorVersion.isDataType() ? this.dataTypeInputs : this.actionInputs;
       const newInputs =
         inputs.
-          filter(ea => inputIdsForBehavior.indexOf(ea.inputId) === -1).
+          filter(ea => ea.inputId && inputIdsForBehavior.indexOf(ea.inputId) === -1).
           concat(inputsForBehavior);
       const newBehaviorVersions =
         this.behaviorVersions.

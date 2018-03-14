@@ -7,7 +7,11 @@ export interface BehaviorGroupMetaDataJson {
   initialAuthor: UserJson | null;
 }
 
-class BehaviorGroupMetaData {
+interface BehaviorGroupMetaDataInterface extends BehaviorGroupMetaDataJson {
+  initialAuthor: User | null
+}
+
+class BehaviorGroupMetaData implements BehaviorGroupMetaDataInterface {
   constructor(
     readonly groupId: string,
     readonly initialCreatedAt: Timestamp,
@@ -20,7 +24,7 @@ class BehaviorGroupMetaData {
     });
   }
 
-  static fromJson(json: BehaviorGroupMetaDataJson) {
+  static fromJson(json: BehaviorGroupMetaDataJson): BehaviorGroupMetaData {
     return new BehaviorGroupMetaData(
       json.groupId,
       json.initialCreatedAt,

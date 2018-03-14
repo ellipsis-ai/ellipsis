@@ -5,28 +5,26 @@ import ParamType, {ParamTypeJson} from './param_type';
 export interface InputJson {
   name: string;
   question: string;
-  paramType: ParamTypeJson;
+  paramType: ParamTypeJson | null;
   isSavedForTeam: boolean;
   isSavedForUser: boolean;
-  inputId: string;
-  inputVersionId: string;
-  exportId: string;
+  inputId: string | null;
+  exportId: string | null;
 }
 
 interface InputInterface extends InputJson {
-  paramType: ParamType;
+  paramType: ParamType | null
 }
 
 class Input implements Diffable, InputInterface {
   constructor(
     readonly name: string,
     readonly question: string,
-    readonly paramType: ParamType,
+    readonly paramType: ParamType | null,
     readonly isSavedForTeam: boolean,
     readonly isSavedForUser: boolean,
-    readonly inputId: string,
-    readonly inputVersionId: string,
-    readonly exportId: string
+    readonly inputId: string | null,
+    readonly exportId: string | null
   ) {
 
       Object.defineProperties(this, {
@@ -54,10 +52,6 @@ class Input implements Diffable, InputInterface {
           value: inputId,
           enumerable: true
         },
-        inputVersionId: {
-          value: inputVersionId,
-          enumerable: true
-        },
         exportId: {
           value: exportId,
           enumerable: true
@@ -80,7 +74,7 @@ class Input implements Diffable, InputInterface {
     }
 
     getIdForDiff(): string {
-      return this.exportId;
+      return this.exportId || "unknown";
     }
 
     diffProps(): Array<DiffableProp> {
@@ -92,7 +86,7 @@ class Input implements Diffable, InputInterface {
         value: this.question
       }, {
         name: "Data type",
-        value: this.paramType.name,
+        value: this.paramType ? this.paramType.name : "",
         isCategorical: true
       }, {
         name: "Save and re-use answer for the team",
@@ -108,15 +102,16 @@ class Input implements Diffable, InputInterface {
     }
 
     isSameNameAndTypeAs(other: Input): boolean {
-      return this.name === other.name &&
-        this.paramType.id === other.paramType.id;
+      return Boolean(this.name === other.name &&
+        this.paramType && other.paramType &&
+        this.paramType.id === other.paramType.id);
     }
 
-    clone(props: {}) {
+    clone(props: Partial<InputInterface>): Input {
       return Input.fromProps(Object.assign({}, this, props));
     }
 
-    static fromProps(props: InputInterface) {
+    static fromProps(props: InputInterface): Input {
       return new Input(
         props.name,
         props.question,
@@ -124,14 +119,13 @@ class Input implements Diffable, InputInterface {
         props.isSavedForTeam,
         props.isSavedForUser,
         props.inputId,
-        props.inputVersionId,
         props.exportId
       );
     }
 
-    static fromJson(json: InputJson) {
+    static fromJson(json: InputJson): Input {
       return Input.fromProps(Object.assign({}, json, {
-        paramType: ParamType.fromJson(json.paramType)
+        paramType: json.paramType ? ParamType.fromJson(json.paramType) : null
       }));
     }
 

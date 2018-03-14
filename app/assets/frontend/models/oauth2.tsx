@@ -23,22 +23,22 @@ type OAuth2ApplicationRefEditor = {
 
 export interface RequiredOAuth2ApplicationJson {
   id: string,
-  exportId: string,
+  exportId: string | null,
   apiId: string,
   nameInCode: string,
   config: OAuth2ApplicationRefJson | null,
   recommendedScope: string
 }
 
-interface RequiredOAuth2ApplicationProps extends RequiredOAuth2ApplicationJson {
+interface RequiredOAuth2ApplicationInterface extends RequiredOAuth2ApplicationJson {
   config: OAuth2ApplicationRef | null
 }
 
-class RequiredOAuth2Application extends RequiredApiConfigWithConfig implements Diffable, RequiredOAuth2ApplicationProps {
+class RequiredOAuth2Application extends RequiredApiConfigWithConfig implements Diffable, RequiredOAuth2ApplicationInterface {
   readonly config: OAuth2ApplicationRef | null;
   readonly recommendedScope: string;
 
-    constructor(id: string, exportId: string, apiId: string, nameInCode: string, config: OAuth2ApplicationRef | null, recommendedScope: string) {
+    constructor(id: string, exportId: string | null, apiId: string, nameInCode: string, config: OAuth2ApplicationRef | null, recommendedScope: string) {
       super(id, exportId, apiId, nameInCode, config);
       Object.defineProperties(this, {
         recommendedScope: { value: recommendedScope, enumerable: true }
@@ -102,11 +102,11 @@ class RequiredOAuth2Application extends RequiredApiConfigWithConfig implements D
       return Boolean(this.config);
     }
 
-    clone(props: {}) {
+    clone(props: Partial<RequiredOAuth2ApplicationInterface>): RequiredOAuth2Application {
       return RequiredOAuth2Application.fromProps(Object.assign({}, this, props));
     }
 
-    static fromProps(props) {
+    static fromProps(props: RequiredOAuth2ApplicationInterface) {
       return new RequiredOAuth2Application(
         props.id,
         props.exportId,
@@ -129,8 +129,8 @@ class RequiredOAuth2Application extends RequiredApiConfigWithConfig implements D
   }
 
   class OAuth2ApplicationRef extends ApiConfigRef implements OAuth2ApplicationRefJson {
-    apiId: string;
-    scope: string;
+    readonly apiId: string;
+    readonly scope: string;
 
     constructor(id: string, displayName: string, apiId: string, scope: string) {
       super(id, displayName);

@@ -4,7 +4,7 @@ import RequiredApiConfig from './required_api_config';
 class RequiredApiConfigWithConfig extends RequiredApiConfig {
   readonly config: ApiConfigRef | null;
 
-    constructor(id: string, exportId: string, apiId: string, nameInCode: string, config: ApiConfigRef | null) {
+    constructor(id: string, exportId: string | null, apiId: string, nameInCode: string, config: ApiConfigRef | null) {
       super(id, exportId, apiId, nameInCode);
       Object.defineProperties(this, {
         config: {value: config, enumerable: true}

@@ -581,7 +581,7 @@ class SlackController @Inject() (
           info.user.id,
           slackMessage,
           None,
-          info.action_ts,
+          info.message_ts,
           slackEventService.clientFor(profile),
           None
         ))
