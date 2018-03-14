@@ -1,30 +1,33 @@
 import DeepEqual from '../lib/deep_equal';
 
-abstract class Editable {
-    id?: string | null;
-    groupId: string;
-    teamId: string;
-    isNew?: boolean | null;
-    name: string | null;
-    description?: string | null;
-    functionBody: string;
-    exportId?: string | null;
-    editorScrollPosition?: number | null;
-    createdAt?: number | null;
+export interface EditableJson {
+  id: string | null;
+  groupId: string;
+  teamId: string;
+  isNew: boolean | null;
+  name: string | null;
+  description: string | null;
+  functionBody: string;
+  exportId: string | null;
+  editorScrollPosition: number | null;
+  createdAt: number | null;
+}
 
-    constructor(
-      id: string | null,
-      groupId: string,
-      teamId: string,
-      isNew: boolean | null,
-      name: string | null,
-      description: string | null,
-      functionBody: string,
-      exportId: string | null,
-      editorScrollPosition: number | null,
-      createdAt: number | null
-    ) {
+export interface EditableInterface extends EditableJson {}
 
+abstract class Editable implements EditableInterface {
+  constructor(
+    readonly id: string | null,
+    readonly groupId: string,
+    readonly teamId: string,
+    readonly isNew: boolean | null,
+    readonly name: string | null,
+    readonly description: string | null,
+    readonly functionBody: string,
+    readonly exportId: string | null,
+    readonly editorScrollPosition: number | null,
+    readonly createdAt: number | null
+  ) {
       Object.defineProperties(this, {
         id: { value: id, enumerable: true },
         groupId: { value: groupId, enumerable: true },
@@ -37,7 +40,7 @@ abstract class Editable {
         editorScrollPosition: { value: editorScrollPosition, enumerable: true },
         createdAt: {value: createdAt, enumerable: true }
       });
-    }
+  }
 
     isBehaviorVersion(): boolean {
       return false;
@@ -117,7 +120,7 @@ abstract class Editable {
 
     abstract getPersistentId(): string
 
-    abstract clone(props: Partial<Editable>): Editable
+    abstract clone(props: Partial<EditableInterface>): Editable
 
     // Used by JSON.stringify for submitting data to the server
     toJSON(): Editable {
@@ -126,9 +129,7 @@ abstract class Editable {
       });
     }
 
-    forEqualityComparison(): Editable {
-      return this.toJSON();
-    }
+    abstract forEqualityComparison(): Editable
 
     isIdenticalToVersion<T extends Editable>(version: T): boolean {
       return DeepEqual.isEqual(this.forEqualityComparison(), version.forEqualityComparison());

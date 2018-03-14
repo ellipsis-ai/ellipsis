@@ -1,6 +1,6 @@
 import {Diffable, DiffableProp} from "./diffs";
 
-import ApiConfigRef from './api_config_ref';
+import ApiConfigRef, {ApiConfigRefJson} from './api_config_ref';
 import RequiredApiConfigWithConfig from './required_api_config_with_config';
 import ID from '../lib/id';
 
@@ -21,13 +21,24 @@ type OAuth2ApplicationRefEditor = {
   getOAuth2ApiNameForConfig: (OAuth2ApplicationRef) => string,
 }
 
-type RequiredOAuth2ApplicationProps = { id: string, exportId: string, apiId: string, nameInCode: string, config: OAuth2ApplicationRef, scope: string }
+export interface RequiredOAuth2ApplicationJson {
+  id: string,
+  exportId: string | null,
+  apiId: string,
+  nameInCode: string,
+  config: OAuth2ApplicationRefJson | null,
+  recommendedScope: string
+}
 
-class RequiredOAuth2Application extends RequiredApiConfigWithConfig implements Diffable {
-    recommendedScope: string;
-    static fromJson: (RequiredOAuth2ApplicationProps) => RequiredOAuth2Application;
+interface RequiredOAuth2ApplicationInterface extends RequiredOAuth2ApplicationJson {
+  config: OAuth2ApplicationRef | null
+}
 
-    constructor(id: string, exportId: string, apiId: string, nameInCode: string, config: ApiConfigRef | null, recommendedScope: string) {
+class RequiredOAuth2Application extends RequiredApiConfigWithConfig implements Diffable, RequiredOAuth2ApplicationInterface {
+  readonly config: OAuth2ApplicationRef | null;
+  readonly recommendedScope: string;
+
+    constructor(id: string, exportId: string | null, apiId: string, nameInCode: string, config: OAuth2ApplicationRef | null, recommendedScope: string) {
       super(id, exportId, apiId, nameInCode, config);
       Object.defineProperties(this, {
         recommendedScope: { value: recommendedScope, enumerable: true }
@@ -91,11 +102,11 @@ class RequiredOAuth2Application extends RequiredApiConfigWithConfig implements D
       return Boolean(this.config);
     }
 
-    clone(props: {}) {
+    clone(props: Partial<RequiredOAuth2ApplicationInterface>): RequiredOAuth2Application {
       return RequiredOAuth2Application.fromProps(Object.assign({}, this, props));
     }
 
-    static fromProps(props) {
+    static fromProps(props: RequiredOAuth2ApplicationInterface) {
       return new RequiredOAuth2Application(
         props.id,
         props.exportId,
@@ -106,11 +117,20 @@ class RequiredOAuth2Application extends RequiredApiConfigWithConfig implements D
       );
     }
 
-  }
+    static fromJson(props: RequiredOAuth2ApplicationJson): RequiredOAuth2Application {
+      const config = props.config ? OAuth2ApplicationRef.fromJson(props.config) : null;
+      return new RequiredOAuth2Application(props.id, props.exportId, props.apiId, props.nameInCode, config, props.recommendedScope);
+    }
+}
 
-  class OAuth2ApplicationRef extends ApiConfigRef {
+  export interface OAuth2ApplicationRefJson extends ApiConfigRefJson {
     apiId: string;
     scope: string;
+  }
+
+  class OAuth2ApplicationRef extends ApiConfigRef implements OAuth2ApplicationRefJson {
+    readonly apiId: string;
+    readonly scope: string;
 
     constructor(id: string, displayName: string, apiId: string, scope: string) {
       super(id, displayName);
@@ -147,10 +167,5 @@ class RequiredOAuth2Application extends RequiredApiConfigWithConfig implements D
       return new OAuth2ApplicationRef(props.id, props.displayName, props.apiId, props.scope);
     }
 }
-
-RequiredOAuth2Application.fromJson = function (props: RequiredOAuth2ApplicationProps) {
-  const config = props.config ? OAuth2ApplicationRef.fromJson(props.config) : null;
-  return new RequiredOAuth2Application(props.id, props.exportId, props.apiId, props.nameInCode, config, props.scope);
-};
 
 export {OAuth2ApplicationRef, RequiredOAuth2Application};

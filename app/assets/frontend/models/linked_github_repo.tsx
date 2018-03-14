@@ -1,9 +1,17 @@
-class LinkedGithubRepo {
-    owner: string;
-    repo: string;
-    currentBranch: string;
+export interface LinkedGitHubRepoJson {
+  owner: string,
+  repo: string,
+  currentBranch: string
+}
 
-    constructor(owner: string, repo: string, currentBranch: string) {
+interface LinkedGitHubRepoInterface extends LinkedGitHubRepoJson {}
+
+class LinkedGithubRepo implements LinkedGitHubRepoInterface {
+    constructor(
+      readonly owner: string,
+      readonly repo: string,
+      readonly currentBranch: string
+    ) {
       Object.defineProperties(this, {
         owner: { value: owner, enumerable: true },
         repo: { value: repo, enumerable: true },
@@ -31,11 +39,11 @@ class LinkedGithubRepo {
       return `https://${this.getPath()}`;
     }
 
-    clone(props: {}): LinkedGithubRepo {
+    clone(props: Partial<LinkedGitHubRepoInterface>): LinkedGithubRepo {
       return LinkedGithubRepo.fromProps(Object.assign({}, this, props));
     }
 
-    static fromProps(props): LinkedGithubRepo {
+    static fromProps(props: LinkedGitHubRepoInterface): LinkedGithubRepo {
       return new LinkedGithubRepo(
         props.owner || "",
         props.repo || "",
@@ -43,7 +51,7 @@ class LinkedGithubRepo {
       );
     }
 
-    static fromJson(props): LinkedGithubRepo {
+    static fromJson(props: LinkedGitHubRepoJson): LinkedGithubRepo {
       return LinkedGithubRepo.fromProps(Object.assign({}, props));
     }
 

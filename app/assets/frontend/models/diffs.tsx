@@ -35,15 +35,15 @@ export type TextPartKind = "added" | "removed" | "unchanged";
 type NestedDiffs = Array<Diff | Diff[] | null>
 
 class OrderingDiff<T extends Diffable> implements Diff {
-    beforeItems: Array<T>;
-    afterItems: Array<T>;
-
-    constructor(beforeItems: Array<T>, afterItems: Array<T>) {
-      Object.defineProperties(this, {
-        beforeItems: { value: beforeItems, enumerable: true },
-        afterItems: { value: afterItems, enumerable: true }
-      });
-    }
+  constructor(
+    readonly beforeItems: Array<T>,
+    readonly afterItems: Array<T>
+  ) {
+    Object.defineProperties(this, {
+      beforeItems: { value: beforeItems, enumerable: true },
+      afterItems: { value: afterItems, enumerable: true }
+    });
+  }
 
     displayText(): string {
       if (this.beforeItems[0]) {
@@ -76,10 +76,11 @@ class OrderingDiff<T extends Diffable> implements Diff {
   }
 
   abstract class AddedOrRemovedDiff<T extends Diffable> implements Diff {
-    item: T;
-    children: Diff[];
-
-    constructor(item: T, children?: Diff[] | null) {
+    readonly children: Diff[];
+    constructor(
+      readonly item: T,
+      children?: Diff[] | null
+    ) {
       Object.defineProperties(this, {
         item: { value: item, enumerable: true },
         children: { value: children || [], enumerable: true}
@@ -119,11 +120,11 @@ class OrderingDiff<T extends Diffable> implements Diff {
   }
 
   class ModifiedDiff<T extends Diffable> implements Diff {
-    original: T;
-    modified: T;
-    children: Diff[];
-
-    constructor(children: Diff[], original: T, modified: T) {
+    constructor(
+      readonly children: Diff[],
+      readonly original: T,
+      readonly modified: T
+    ) {
       Object.defineProperties(this, {
         original: { value: original, enumerable: true },
         modified: { value: modified, enumerable: true },
@@ -150,11 +151,11 @@ class OrderingDiff<T extends Diffable> implements Diff {
   }
 
   abstract class PropertyDiff<T> implements Diff {
-    label: string;
-    original: T;
-    modified: T;
-
-    constructor(label: string, original: T, modified: T) {
+    constructor(
+      readonly label: string,
+      readonly original: T,
+      readonly modified: T
+    ) {
       Object.defineProperties(this, {
         label: { value: label, enumerable: true },
         original: { value: original, enumerable: true },
@@ -173,10 +174,12 @@ class OrderingDiff<T extends Diffable> implements Diff {
   const TEXT_UNCHANGED = "unchanged";
 
   class TextPart {
-    value: string;
-    kind: TextPartKind;
-
-    constructor(value: string, added?: boolean, removed?: boolean) {
+    readonly kind: TextPartKind;
+    constructor(
+      readonly value: string,
+      added?: boolean,
+      removed?: boolean
+    ) {
       if (added && removed) {
         throw "Can't be both added and removed";
       } else {
@@ -223,12 +226,17 @@ class OrderingDiff<T extends Diffable> implements Diff {
   }
 
   class MultiLineTextPropertyDiff extends PropertyDiff<string> {
-    oldLines: LinesOfTextParts;
-    newLines: LinesOfTextParts;
-    unifiedLines: LinesOfTextParts;
-    isCode: boolean;
+    readonly oldLines: LinesOfTextParts;
+    readonly newLines: LinesOfTextParts;
+    readonly unifiedLines: LinesOfTextParts;
+    readonly isCode: boolean;
 
-    constructor(label: string, original: string, modified: string, options?: TextPropertyOptions) {
+    constructor(
+      label: string,
+      original: string,
+      modified: string,
+      options?: TextPropertyOptions
+    ) {
       super(label, original, modified);
       const parts = JsDiff.diffWordsWithSpace(original, modified);
       const oldLines: LinesOfTextParts = [[]];

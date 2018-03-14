@@ -2,14 +2,26 @@ import Formatter from '../lib/formatter';
 
 const builtinTypes: Array<string> = ['Text', 'Number', 'Yes/No'];
 
-class ParamType {
-    id: string;
-    exportId: string;
-    isBuiltIn: boolean;
-    name: string;
-    needsConfig: boolean;
+export interface ParamTypeJson {
+  id: string;
+  exportId: string;
+  name: string;
+  needsConfig?: boolean | null
+}
 
-    constructor(id: string, exportId: string, maybeName: string | null, maybeNeedsConfig?: boolean | null) {
+interface ParamTypeInterface extends ParamTypeJson {}
+
+class ParamType implements ParamTypeInterface {
+  readonly isBuiltIn: boolean;
+  readonly name: string;
+  readonly needsConfig: boolean;
+
+  constructor(
+    readonly id: string,
+    readonly exportId: string,
+    maybeName: string | null,
+    maybeNeedsConfig?: boolean | null
+  ) {
       const isBuiltIn = builtinTypes.includes(id) && id === maybeName;
 
       Object.defineProperties(this, {
@@ -67,11 +79,11 @@ class ParamType {
       }
     }
 
-    clone(newProps: {}): ParamType {
+    clone(newProps: Partial<ParamTypeInterface>): ParamType {
       return ParamType.fromProps(Object.assign({}, this, newProps));
     }
 
-    static fromProps(props: { id: string, exportId: string, name: string, needsConfig?: boolean }): ParamType {
+    static fromProps(props: ParamTypeInterface): ParamType {
       return new ParamType(
         props.id,
         props.exportId,
@@ -80,7 +92,7 @@ class ParamType {
       );
     }
 
-    static fromJson(props): ParamType {
+    static fromJson(props: ParamTypeJson): ParamType {
       return ParamType.fromProps(props);
     }
   }

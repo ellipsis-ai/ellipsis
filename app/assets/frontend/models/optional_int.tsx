@@ -1,5 +1,5 @@
 class OptionalInt {
-    value: number | null;
+  readonly value: number | null;
 
     constructor(intOrNull: number | null) {
       Object.defineProperties(this, {

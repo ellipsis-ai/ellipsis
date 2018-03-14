@@ -1,19 +1,26 @@
-import ParamType from './param_type';
+import ParamType, {ParamTypeJson} from './param_type';
 
-class DataTypeField {
-    fieldId: string;
-    fieldVersionId: string | null;
-    name: string;
-    fieldType: ParamType;
-    isLabel: boolean;
+export interface DataTypeFieldJson {
+  fieldId: string;
+  fieldVersionId?: string | null;
+  name: string;
+  fieldType: ParamTypeJson;
+  isLabel?: boolean;
+}
 
-    constructor(
-      fieldId: string,
-      fieldVersionId: string | null,
-      name: string | null,
-      fieldType: ParamType,
-      isLabel: boolean | null
-    ) {
+interface DataTypeFieldInterface extends DataTypeFieldJson {
+  fieldType: ParamType;
+}
+
+class DataTypeField implements DataTypeFieldInterface {
+  readonly name: string;
+  constructor(
+    readonly fieldId: string,
+    readonly fieldVersionId: string | null,
+    name: string | null,
+    readonly fieldType: ParamType,
+    isLabel: boolean | null
+  ) {
       Object.defineProperties(this, {
         fieldVersionId: {
           value: fieldVersionId,
@@ -36,14 +43,14 @@ class DataTypeField {
           enumerable: true
         }
       });
-    }
+  }
 
-    clone(props: {}): DataTypeField {
+    clone(props: Partial<DataTypeFieldInterface>): DataTypeField {
       const newProps = Object.assign({}, this, props);
       return DataTypeField.fromProps(newProps);
     }
 
-    static fromProps(props: { fieldId: string, fieldVersionId?: string | null, name: string, fieldType: ParamType, isLabel?: boolean }): DataTypeField {
+    static fromProps(props: DataTypeFieldInterface): DataTypeField {
       return new DataTypeField(
         props.fieldId,
         props.fieldVersionId ? props.fieldVersionId : null,
@@ -53,15 +60,14 @@ class DataTypeField {
       );
     }
 
-    static fromJson(props): DataTypeField {
-      const materializedProps = Object.assign({}, props);
-      if (props.fieldType) {
-        materializedProps.fieldType = ParamType.fromJson(props.fieldType);
-      }
+    static fromJson(props: DataTypeFieldJson): DataTypeField {
+      const materializedProps = Object.assign({}, props, props.fieldType ? {
+        fieldType: ParamType.fromJson(props.fieldType)
+      } : null);
       return DataTypeField.fromProps(materializedProps);
     }
 
-    static fieldsFromJson(jsonArray): Array<DataTypeField> {
+    static fieldsFromJson(jsonArray: Array<DataTypeFieldJson>): Array<DataTypeField> {
       return jsonArray.map(DataTypeField.fromJson);
     }
 

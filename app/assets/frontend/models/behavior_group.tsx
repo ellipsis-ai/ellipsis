@@ -1,80 +1,77 @@
 import {Diffable, DiffableProp} from './diffs';
 
-import BehaviorGroupDeployment from './behavior_group_deployment';
-import BehaviorVersion from './behavior_version';
+import BehaviorGroupDeployment, {BehaviorGroupDeploymentJson} from './behavior_group_deployment';
+import BehaviorGroupMetaData, {BehaviorGroupMetaDataJson} from "./behavior_group_meta_data";
+import BehaviorVersion, {BehaviorVersionJson} from './behavior_version';
 import Editable from './editable';
-import LibraryVersion from './library_version';
-import Input from './input';
+import LibraryVersion, {LibraryVersionJson} from './library_version';
+import Input, {InputJson} from './input';
 import DeepEqual from '../lib/deep_equal';
-import {RequiredAWSConfig} from './aws';
-import {RequiredOAuth2Application} from './oauth2';
-import {RequiredSimpleTokenApi} from './simple_token';
-import User from './user';
+import {RequiredAWSConfig, RequiredAWSConfigJson} from './aws';
+import {RequiredOAuth2Application, RequiredOAuth2ApplicationJson} from './oauth2';
+import {RequiredSimpleTokenApi, RequiredSimpleTokenApiJson} from './simple_token';
+import User, {UserJson} from './user';
 import ParamType from "./param_type";
 
 const ONE_MINUTE = 60000;
 
 export interface BehaviorGroupJson {
-  id: string;
+  id: string | null;
   teamId: string;
   name: string | null;
   icon: string | null;
   description: string | null;
   githubUrl: string | null;
-  actionInputs: Array<any>;
-  dataTypeInputs: Array<any>;
-  behaviorVersions: Array<any>;
-  libraryVersions: Array<any>;
-  requiredAWSConfigs: Array<any>;
-  requiredOAuth2ApiConfigs: Array<any>;
-  requiredSimpleTokenApis: Array<any>;
+  actionInputs: Array<InputJson>;
+  dataTypeInputs: Array<InputJson>;
+  behaviorVersions: Array<BehaviorVersionJson>;
+  libraryVersions: Array<LibraryVersionJson>;
+  requiredAWSConfigs: Array<RequiredAWSConfigJson>;
+  requiredOAuth2ApiConfigs: Array<RequiredOAuth2ApplicationJson>;
+  requiredSimpleTokenApis: Array<RequiredSimpleTokenApiJson>;
   createdAt: number | null;
   exportId: string | null;
-  author: User | null;
+  author: UserJson | null;
   gitSHA: string | null;
-  deployment: any;
+  deployment: BehaviorGroupDeploymentJson | null;
+  metaData: BehaviorGroupMetaDataJson | null;
 }
 
-class BehaviorGroup implements Diffable {
-    id: string | null;
-    teamId: string;
-    name: string | null;
-    icon: string | null;
-    description: string | null;
-    githubUrl: string | null;
-    actionInputs: Array<Input>;
-    dataTypeInputs: Array<Input>;
-    behaviorVersions: Array<BehaviorVersion>;
-    libraryVersions: Array<LibraryVersion>;
-    requiredAWSConfigs: Array<RequiredAWSConfig>;
-    requiredOAuth2ApiConfigs: Array<RequiredOAuth2Application>;
-    requiredSimpleTokenApis: Array<RequiredSimpleTokenApi>;
-    createdAt: number | null;
-    exportId: string | null;
-    author: User | null;
-    gitSHA: string | null;
-    deployment: BehaviorGroupDeployment | null;
+interface BehaviorGroupInterface extends BehaviorGroupJson {
+  actionInputs: Array<Input>;
+  dataTypeInputs: Array<Input>;
+  behaviorVersions: Array<BehaviorVersion>;
+  libraryVersions: Array<LibraryVersion>;
+  requiredAWSConfigs: Array<RequiredAWSConfig>;
+  requiredOAuth2ApiConfigs: Array<RequiredOAuth2Application>;
+  requiredSimpleTokenApis: Array<RequiredSimpleTokenApi>;
+  author: User | null;
+  deployment: BehaviorGroupDeployment | null;
+  metaData: BehaviorGroupMetaData | null;
+}
 
-    constructor(
-      id: string,
-      teamId: string,
-      name: string | null,
-      icon: string | null,
-      description: string | null,
-      githubUrl: string | null,
-      actionInputs: Array<Input>,
-      dataTypeInputs: Array<Input>,
-      behaviorVersions: Array<BehaviorVersion>,
-      libraryVersions: Array<LibraryVersion>,
-      requiredAWSConfigs: Array<RequiredAWSConfig>,
-      requiredOAuth2ApiConfigs: Array<RequiredOAuth2Application>,
-      requiredSimpleTokenApis: Array<RequiredSimpleTokenApi>,
-      createdAt: number | null,
-      exportId: string | null,
-      author: User | null,
-      gitSHA: string | null,
-      deployment: BehaviorGroupDeployment | null
-    ) {
+class BehaviorGroup implements Diffable, BehaviorGroupInterface {
+  constructor(
+    readonly id: string | null,
+    readonly teamId: string,
+    readonly name: string | null,
+    readonly icon: string | null,
+    readonly description: string | null,
+    readonly githubUrl: string | null,
+    readonly actionInputs: Array<Input>,
+    readonly dataTypeInputs: Array<Input>,
+    readonly behaviorVersions: Array<BehaviorVersion>,
+    readonly libraryVersions: Array<LibraryVersion>,
+    readonly requiredAWSConfigs: Array<RequiredAWSConfig>,
+    readonly requiredOAuth2ApiConfigs: Array<RequiredOAuth2Application>,
+    readonly requiredSimpleTokenApis: Array<RequiredSimpleTokenApi>,
+    readonly createdAt: number | null,
+    readonly exportId: string | null,
+    readonly author: User | null,
+    readonly gitSHA: string | null,
+    readonly deployment: BehaviorGroupDeployment | null,
+    readonly metaData: BehaviorGroupMetaData | null
+  ) {
       Object.defineProperties(this, {
         id: { value: id, enumerable: true },
         teamId: { value: teamId, enumerable: true },
@@ -93,11 +90,12 @@ class BehaviorGroup implements Diffable {
         exportId: { value: exportId, enumerable: true },
         author: { value: author, enumerable: true },
         gitSHA: { value: gitSHA, enumerable: true },
-        deployment: { value: deployment, enumerable: true }
+        deployment: { value: deployment, enumerable: true },
+        metaData: { value: metaData, enumerable: true }
       });
-    }
+  }
 
-    getEditables(): Array<Editable> {
+    getEditables(): ReadonlyArray<Editable> {
       const arr: Array<Editable> = [];
       return arr.concat(this.behaviorVersions, this.libraryVersions);
     }
@@ -161,12 +159,12 @@ class BehaviorGroup implements Diffable {
     copyWithObsoleteInputsRemoved(): BehaviorGroup {
       const inputIdsUsed = this.getAllInputIdsFromBehaviorVersions();
       return this.clone({
-        actionInputs: this.actionInputs.filter(ea => inputIdsUsed.has(ea.inputId)),
-        dataTypeInputs: this.dataTypeInputs.filter(ea => inputIdsUsed.has(ea.inputId))
+        actionInputs: this.actionInputs.filter(ea => ea.inputId && inputIdsUsed.has(ea.inputId)),
+        dataTypeInputs: this.dataTypeInputs.filter(ea => ea.inputId && inputIdsUsed.has(ea.inputId))
       });
     }
 
-    clone(props: {}): BehaviorGroup {
+    clone(props: Partial<BehaviorGroupInterface>): BehaviorGroup {
       return BehaviorGroup.fromProps(Object.assign({}, this, props));
     }
 
@@ -175,12 +173,12 @@ class BehaviorGroup implements Diffable {
     }
 
     copyWithInputsForBehaviorVersion(inputsForBehavior: Array<Input>, behaviorVersion: BehaviorVersion): BehaviorGroup {
-      const inputIdsForBehavior = inputsForBehavior.map(ea => ea.inputId);
+      const inputIdsForBehavior = inputsForBehavior.map(ea => ea.inputId).filter((ea): ea is string => typeof ea === 'string');
       const newBehaviorVersion = behaviorVersion.clone({ inputIds: inputIdsForBehavior }).copyWithNewTimestamp();
       const inputs = behaviorVersion.isDataType() ? this.dataTypeInputs : this.actionInputs;
       const newInputs =
         inputs.
-          filter(ea => inputIdsForBehavior.indexOf(ea.inputId) === -1).
+          filter(ea => ea.inputId && inputIdsForBehavior.indexOf(ea.inputId) === -1).
           concat(inputsForBehavior);
       const newBehaviorVersions =
         this.behaviorVersions.
@@ -218,7 +216,8 @@ class BehaviorGroup implements Diffable {
 
     isValidForDataStorage(): boolean {
       return this.getDataTypes().every(ea => {
-        return Boolean(ea.name && ea.name.length > 0 && ea.getDataTypeConfig().isValidForDataStorage());
+        const config = ea.getDataTypeConfig();
+        return Boolean(ea.name && ea.name.length > 0 && config && config.isValidForDataStorage());
       });
     }
 
@@ -244,7 +243,7 @@ class BehaviorGroup implements Diffable {
         map(ea => ea.toParamType());
     }
 
-    sortedForComparison(versions: Array<Editable>): Array<Editable> {
+    sortedForComparison<T extends Editable>(versions: Array<T>): Array<T> {
       return versions.sort((a, b) => {
         if (a.getPersistentId() < b.getPersistentId()) {
           return -1;
@@ -303,7 +302,7 @@ class BehaviorGroup implements Diffable {
       }];
     }
 
-    static fromProps(props): BehaviorGroup {
+    static fromProps(props: BehaviorGroupInterface): BehaviorGroup {
       return new BehaviorGroup(
         props.id,
         props.teamId,
@@ -322,11 +321,12 @@ class BehaviorGroup implements Diffable {
         props.exportId,
         props.author,
         props.gitSHA,
-        props.deployment
+        props.deployment,
+        props.metaData
       );
     }
 
-    static fromJson(props): BehaviorGroup {
+    static fromJson(props: BehaviorGroupJson): BehaviorGroup {
       return BehaviorGroup.fromProps(Object.assign({}, props, {
         requiredAWSConfigs: props.requiredAWSConfigs.map(RequiredAWSConfig.fromJson),
         requiredOAuth2ApiConfigs: props.requiredOAuth2ApiConfigs.map(RequiredOAuth2Application.fromJson),
@@ -336,7 +336,8 @@ class BehaviorGroup implements Diffable {
         dataTypeInputs: Input.allFromJson(props.dataTypeInputs || []),
         libraryVersions: props.libraryVersions.map(ea => LibraryVersion.fromProps(Object.assign({}, ea, { groupId: props.id }))),
         author: props.author ? User.fromJson(props.author) : null,
-        deployment: props.deployment ? BehaviorGroupDeployment.fromProps(props.deployment) : null
+        deployment: props.deployment ? BehaviorGroupDeployment.fromJson(props.deployment) : null,
+        metaData: props.metaData ? BehaviorGroupMetaData.fromJson(props.metaData) : null
       }));
     }
 

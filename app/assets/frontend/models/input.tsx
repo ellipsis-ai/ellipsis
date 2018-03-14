@@ -1,35 +1,39 @@
 import {Diffable, DiffableProp} from './diffs';
 
-import ParamType from './param_type';
+import ParamType, {ParamTypeJson} from './param_type';
 
-class Input implements Diffable {
-    name: string;
-    question: string;
-    paramType: ParamType;
-    isSavedForTeam: boolean;
-    isSavedForUser: boolean;
-    inputId: string;
-    inputVersionId: string;
-    exportId: string;
+export interface InputJson {
+  name: string;
+  question: string;
+  paramType: ParamTypeJson | null;
+  isSavedForTeam: boolean;
+  isSavedForUser: boolean;
+  inputId: string | null;
+  exportId: string | null;
+}
 
-    constructor(
-      name: string | null,
-      question: string | null,
-      paramType: ParamType,
-      isSavedForTeam: boolean | null,
-      isSavedForUser: boolean | null,
-      inputId: string,
-      inputVersionId: string,
-      exportId: string
-    ) {
+interface InputInterface extends InputJson {
+  paramType: ParamType | null
+}
+
+class Input implements Diffable, InputInterface {
+  constructor(
+    readonly name: string,
+    readonly question: string,
+    readonly paramType: ParamType | null,
+    readonly isSavedForTeam: boolean,
+    readonly isSavedForUser: boolean,
+    readonly inputId: string | null,
+    readonly exportId: string | null
+  ) {
 
       Object.defineProperties(this, {
         name: {
-          value: name || '',
+          value: name,
           enumerable: true
         },
         question: {
-          value: question || '',
+          value: question,
           enumerable: true
         },
         paramType: {
@@ -37,19 +41,15 @@ class Input implements Diffable {
           enumerable: true
         },
         isSavedForTeam: {
-          value: !!isSavedForTeam,
+          value: isSavedForTeam,
           enumerable: true
         },
         isSavedForUser: {
-          value: !!isSavedForUser,
+          value: isSavedForUser,
           enumerable: true
         },
         inputId: {
           value: inputId,
-          enumerable: true
-        },
-        inputVersionId: {
-          value: inputVersionId,
           enumerable: true
         },
         exportId: {
@@ -57,7 +57,7 @@ class Input implements Diffable {
           enumerable: true
         }
       });
-    }
+  }
 
     diffLabel(): string {
       const name = this.itemLabel();
@@ -74,7 +74,7 @@ class Input implements Diffable {
     }
 
     getIdForDiff(): string {
-      return this.exportId;
+      return this.exportId || "unknown";
     }
 
     diffProps(): Array<DiffableProp> {
@@ -86,7 +86,7 @@ class Input implements Diffable {
         value: this.question
       }, {
         name: "Data type",
-        value: this.paramType.name,
+        value: this.paramType ? this.paramType.name : "",
         isCategorical: true
       }, {
         name: "Save and re-use answer for the team",
@@ -102,15 +102,16 @@ class Input implements Diffable {
     }
 
     isSameNameAndTypeAs(other: Input): boolean {
-      return this.name === other.name &&
-        this.paramType.id === other.paramType.id;
+      return Boolean(this.name === other.name &&
+        this.paramType && other.paramType &&
+        this.paramType.id === other.paramType.id);
     }
 
-    clone(props: {}) {
+    clone(props: Partial<InputInterface>): Input {
       return Input.fromProps(Object.assign({}, this, props));
     }
 
-    static fromProps(props) {
+    static fromProps(props: InputInterface): Input {
       return new Input(
         props.name,
         props.question,
@@ -118,13 +119,18 @@ class Input implements Diffable {
         props.isSavedForTeam,
         props.isSavedForUser,
         props.inputId,
-        props.inputVersionId,
         props.exportId
       );
     }
 
-    static allFromJson(jsonArray) {
-      return jsonArray.map((triggerObj) => Input.fromProps(triggerObj));
+    static fromJson(json: InputJson): Input {
+      return Input.fromProps(Object.assign({}, json, {
+        paramType: json.paramType ? ParamType.fromJson(json.paramType) : null
+      }));
+    }
+
+    static allFromJson(jsonArray: Array<InputJson>) {
+      return jsonArray.map((triggerObj) => Input.fromJson(triggerObj));
     }
 }
 

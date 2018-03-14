@@ -1,16 +1,25 @@
 import {Diffable, DiffableProp} from "./diffs";
 
-class Trigger implements Diffable {
-    text: string;
-    isRegex: boolean;
-    requiresMention: boolean;
-    caseSensitive: boolean;
+export interface TriggerJson {
+  text: string,
+  isRegex: boolean,
+  requiresMention: boolean,
+  caseSensitive: boolean
+}
 
-    constructor(
-      text: string | null,
-      maybeIsRegex: boolean | null,
-      maybeRequiresMention: boolean | null
-    ) {
+interface TriggerInterface extends TriggerJson {}
+
+class Trigger implements Diffable, TriggerInterface {
+  readonly isRegex: boolean;
+  readonly requiresMention: boolean;
+  readonly caseSensitive: boolean;
+  readonly text: string;
+
+  constructor(
+    maybeText?: string | null,
+    maybeIsRegex?: boolean | null,
+    maybeRequiresMention?: boolean | null
+  ) {
       const isRegex: boolean = typeof maybeIsRegex === "boolean" ? Boolean(maybeIsRegex) : false;
       const requiresMention: boolean = typeof maybeRequiresMention === "boolean" ? Boolean(maybeRequiresMention) : true;
       Object.defineProperties(this, {
@@ -28,7 +37,7 @@ class Trigger implements Diffable {
           enumerable: true
         },
         text: {
-          value: text || "",
+          value: maybeText || "",
           enumerable: true
         }
       });
@@ -107,11 +116,11 @@ class Trigger implements Diffable {
       }
     }
 
-    clone(props: {}): Trigger {
+    clone(props: Partial<TriggerInterface>): Trigger {
       return Trigger.fromProps(Object.assign({}, this, props));
     }
 
-    static fromProps(props): Trigger {
+    static fromProps(props: TriggerInterface): Trigger {
       return new Trigger(
         props.text,
         props.isRegex,
@@ -119,7 +128,7 @@ class Trigger implements Diffable {
       );
     }
 
-    static triggersFromJson(jsonArrayOrNull) {
+    static triggersFromJson(jsonArrayOrNull: Array<TriggerJson> | null) {
       if (jsonArrayOrNull) {
         return jsonArrayOrNull.map((triggerObj) => Trigger.fromProps(triggerObj));
       } else {

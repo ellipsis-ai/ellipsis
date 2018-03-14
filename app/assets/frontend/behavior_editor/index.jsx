@@ -672,15 +672,21 @@ const BehaviorEditor = React.createClass({
 
   addNewInput: function(optionalNewName, callback) {
     const newName = optionalNewName || SequentialName.nextFor(this.getInputs(), (ea) => ea.name, "userInput");
-    this.addInput(Input.fromProps({
-      inputId: ID.next(),
+    const newInput = Input.fromProps({
       name: newName,
-      paramType: this.props.builtinParamTypes.find((ea) => ea.id === "Text")
-    }), callback);
+      question: "",
+      paramType: this.props.builtinParamTypes.find((ea) => ea.id === "Text"),
+      isSavedForTeam: false,
+      isSavedForUser: false,
+      inputId: ID.next(),
+      exportId: null
+    });
+    this.addInput(newInput, callback);
   },
 
   addTrigger: function(callback) {
-    this.setEditableProp('triggers', this.getBehaviorTriggers().concat(Trigger.fromProps({})), callback);
+    const newTrigger = new Trigger();
+    this.setEditableProp('triggers', this.getBehaviorTriggers().concat(newTrigger), callback);
   },
 
   cloneEditable: function() {
@@ -1474,9 +1480,12 @@ const BehaviorEditor = React.createClass({
   },
 
   addNewAWSConfig: function(required) {
-    const requiredToUse = required || new RequiredAWSConfig({
+    const requiredToUse = required || RequiredAWSConfig.fromProps({
       id: ID.next(),
-      apiId: 'aws'
+      exportId: null,
+      apiId: 'aws',
+      nameInCode: "",
+      config: null
     });
     this.onNewAWSConfig(requiredToUse);
   },
@@ -1508,8 +1517,13 @@ const BehaviorEditor = React.createClass({
   },
 
   addNewOAuth2Application: function(required) {
-    const requiredToUse = required || new RequiredOAuth2Application({
-      id: ID.next()
+    const requiredToUse = required || RequiredOAuth2Application.fromProps({
+      id: ID.next(),
+      exportId: null,
+      apiId: "",
+      nameInCode: "",
+      config: null,
+      recommendedScope: ""
     });
     this.onNewOAuth2Application(requiredToUse);
   },

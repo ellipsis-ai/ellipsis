@@ -1,9 +1,15 @@
-class DefaultStorageItemField {
-    name: string;
-    value: any;
-    stringValue: string;
+export interface DefaultStorageItemFieldJson {
+  name: string,
+  value: any
+}
 
-    constructor(name: string, value: any) {
+class DefaultStorageItemField implements DefaultStorageItemFieldJson {
+  readonly stringValue: string;
+
+  constructor(
+    readonly name: string,
+    readonly value: any
+  ) {
       Object.defineProperties(this, {
         name: {
           value: name,
@@ -18,7 +24,7 @@ class DefaultStorageItemField {
           enumerable: true
         }
       });
-    }
+  }
 }
 
 export default DefaultStorageItemField;

@@ -1,25 +1,27 @@
 import DefaultStorageItemField from './default_storage_item_field';
 
-type DefaultStorageItemData = {
+interface DefaultStorageItemData {
   id: string,
   [prop: string]: any
-};
+}
 
-class DefaultStorageItem {
-    id: string;
-    behaviorId: string;
-    updatedAt: number | null;
-    updatedByUserId: string | null;
-    data: DefaultStorageItemData;
-    fields: Array<DefaultStorageItemField>;
+export interface DefaultStorageItemJson {
+  id: string,
+  behaviorId: string,
+  updatedAt: number | null,
+  updatedByUserId: string | null,
+  data: DefaultStorageItemData
+}
 
-    constructor(
-      id: string,
-      behaviorId: string,
-      updatedAt: number | null,
-      updatedByUserId: string | null,
-      data: DefaultStorageItemData
-    ) {
+class DefaultStorageItem implements DefaultStorageItemJson {
+  readonly fields: Array<DefaultStorageItemField>;
+  constructor(
+    readonly id: string,
+    readonly behaviorId: string,
+    readonly updatedAt: number | null,
+    readonly updatedByUserId: string | null,
+    readonly data: DefaultStorageItemData
+  ) {
       Object.defineProperties(this, {
         id: {
           value: id,

@@ -10,10 +10,18 @@ function stringStartsWithVarName(string, varName) {
   return string.split('.')[0].trim() === varName;
 }
 
-class ResponseTemplate {
-    text: string;
+export type ResponseTemplateJson = {
+  text: string
+} | string
 
-    constructor(maybeText: string | null) {
+interface ResponseTemplateInterface {
+  text: string
+}
+
+class ResponseTemplate implements ResponseTemplateInterface {
+  readonly text: string;
+
+    constructor(maybeText?: string | null) {
       Object.defineProperties(this, {
         text: {
           value: maybeText || "",
@@ -115,7 +123,7 @@ class ResponseTemplate {
       return matchRegExp.test(this.text);
     }
 
-    static fromString(string): ResponseTemplate {
+    static fromString(string: string): ResponseTemplate {
       return new ResponseTemplate(string);
     }
 }

@@ -1,25 +1,29 @@
 import {Diffable, DiffableProp} from "./diffs";
 import BehaviorGroup from "./behavior_group";
 
-import Editable from './editable';
+import Editable, {EditableInterface, EditableJson} from './editable';
 
-class LibraryVersion extends Editable implements Diffable {
-    functionBody: string;
-    libraryId: string;
+export interface LibraryVersionJson extends EditableJson {
+  functionBody: string;
+  libraryId: string;
+}
 
-    constructor(
-      id: string | null,
-      name: string | null,
-      description: string | null,
-      functionBody: string,
-      groupId: string,
-      teamId: string,
-      libraryId: string,
-      exportId: string | null,
-      isNew: boolean,
-      editorScrollPosition: number | null,
-      createdAt: number | null
-    ) {
+interface LibraryVersionInterface extends LibraryVersionJson, EditableInterface {}
+
+class LibraryVersion extends Editable implements Diffable, LibraryVersionInterface {
+  constructor(
+    readonly id: string | null,
+    readonly name: string | null,
+    readonly description: string | null,
+    readonly functionBody: string,
+    readonly groupId: string,
+    readonly teamId: string,
+    readonly libraryId: string,
+    readonly exportId: string | null,
+    readonly isNew: boolean | null,
+    readonly editorScrollPosition: number | null,
+    readonly createdAt: number | null
+  ) {
       super(
         id,
         groupId,
@@ -37,7 +41,7 @@ class LibraryVersion extends Editable implements Diffable {
         functionBody: { value: functionBody, enumerable: true },
         libraryId: { value: libraryId, enumerable: true }
       });
-    }
+  }
 
     sortKeyForExisting(): string | null {
       return this.name;
@@ -119,11 +123,15 @@ class LibraryVersion extends Editable implements Diffable {
       return true;
     }
 
-    clone(props: Partial<LibraryVersion>): LibraryVersion {
+    clone(props: Partial<LibraryVersionInterface>): LibraryVersion {
       return LibraryVersion.fromProps(Object.assign({}, this, props));
     }
 
-    static fromProps(props): LibraryVersion {
+    forEqualityComparison(): LibraryVersion {
+      return this.toJSON() as LibraryVersion;
+    }
+
+    static fromProps(props: LibraryVersionInterface): LibraryVersion {
       return new LibraryVersion(
         props.id,
         props.name,

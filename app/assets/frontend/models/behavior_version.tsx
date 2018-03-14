@@ -1,13 +1,13 @@
 import {Diffable, DiffableProp} from "./diffs";
 import BehaviorGroup from "./behavior_group";
-
-import BehaviorConfig from './behavior_config';
+import BehaviorConfig, {BehaviorConfigJson} from './behavior_config';
 import DataTypeConfig from './data_type_config';
-import Editable from './editable';
+import Editable, {EditableInterface, EditableJson} from './editable';
 import Input from './input';
 import ParamType from './param_type';
-import ResponseTemplate from './response_template';
-import Trigger from './trigger';
+import ResponseTemplate, {ResponseTemplateJson} from './response_template';
+import Trigger, {TriggerJson} from './trigger';
+import DataTypeField from "./data_type_field";
 
 type DefaultActionProps = {
   name?: string,
@@ -16,35 +16,42 @@ type DefaultActionProps = {
   responseTemplate: ResponseTemplate
 }
 
-class BehaviorVersion extends Editable implements Diffable {
-    id?: string | null;
-    behaviorId: string;
-    responseTemplate?: ResponseTemplate | null;
-    functionBody: string;
-    inputIds: Array<string>;
-    triggers: Array<Trigger>;
-    config: BehaviorConfig;
-    knownEnvVarsUsed: Array<string>;
-    isNew?: boolean | null;
+export interface BehaviorVersionJson extends EditableJson {
+  behaviorId: string;
+  responseTemplate: ResponseTemplateJson | null;
+  functionBody: string;
+  inputIds: Array<string>;
+  triggers: Array<TriggerJson>;
+  config: BehaviorConfigJson;
+  knownEnvVarsUsed: Array<string>;
+  isNew: boolean | null;
+}
 
-    constructor(
-      id: string | null,
-      behaviorId: string,
-      groupId: string,
-      teamId: string,
-      name: string | null,
-      description: string | null,
-      responseTemplate: ResponseTemplate | null,
-      functionBody: string,
-      inputIds: Array<string>,
-      triggers: Array<Trigger>,
-      config: BehaviorConfig,
-      exportId: string | null,
-      knownEnvVarsUsed: Array<string>,
-      createdAt: number | null,
-      isNew: boolean | null,
-      editorScrollPosition: number
-    ) {
+export interface BehaviorVersionInterface extends EditableInterface, BehaviorVersionJson {
+  responseTemplate: ResponseTemplate | null;
+  triggers: Array<Trigger>;
+  config: BehaviorConfig;
+}
+
+class BehaviorVersion extends Editable implements Diffable, BehaviorVersionInterface, EditableInterface {
+  constructor(
+    readonly id: string | null,
+    readonly behaviorId: string,
+    readonly groupId: string,
+    readonly teamId: string,
+    readonly name: string | null,
+    readonly description: string | null,
+    readonly responseTemplate: ResponseTemplate | null,
+    readonly functionBody: string,
+    readonly inputIds: Array<string>,
+    readonly triggers: Array<Trigger>,
+    readonly config: BehaviorConfig,
+    readonly exportId: string | null,
+    readonly knownEnvVarsUsed: Array<string>,
+    readonly createdAt: number | null,
+    readonly isNew: boolean | null,
+    readonly editorScrollPosition: number | null
+  ) {
       super(
         id,
         groupId,
@@ -66,14 +73,14 @@ class BehaviorVersion extends Editable implements Diffable {
         config: { value: config, enumerable: true },
         knownEnvVarsUsed: { value: knownEnvVarsUsed || [], enumerable: true }
       });
-    }
+  }
 
     responseTemplateText(): string {
       return this.responseTemplate ? this.responseTemplate.text : "";
     }
 
     dataTypeUsesCode(): boolean {
-      return this.config.dataTypeConfig && this.config.dataTypeConfig.usesCode;
+      return Boolean(this.config.dataTypeConfig && this.config.dataTypeConfig.usesCode);
     }
 
     inputsFor(group?: BehaviorGroup): Array<Input> {
@@ -109,7 +116,7 @@ class BehaviorVersion extends Editable implements Diffable {
         isCode: true
       }, {
         name: "Always responds privately",
-        value: this.config.forcePrivateResponse
+        value: Boolean(this.config.forcePrivateResponse)
       }, {
         name: "Code-backed data type",
         value: this.dataTypeUsesCode()
@@ -157,7 +164,7 @@ class BehaviorVersion extends Editable implements Diffable {
     }
 
     getIdForDiff(): string {
-      return this.config.exportId;
+      return this.config.exportId || "unknown";
     }
 
     isBehaviorVersion(): boolean {
@@ -173,7 +180,8 @@ class BehaviorVersion extends Editable implements Diffable {
     }
 
     usesCode(): boolean {
-      return !this.isDataType() || this.getDataTypeConfig().usesCode;
+      const config = this.getDataTypeConfig();
+      return !this.isDataType() || Boolean(config && config.usesCode);
     }
 
     getBehaviorVersionTypeName(): string {
@@ -202,16 +210,18 @@ class BehaviorVersion extends Editable implements Diffable {
       return `Edit ${this.getBehaviorVersionTypeName()}`;
     }
 
-    getDataTypeConfig(): DataTypeConfig {
+    getDataTypeConfig(): DataTypeConfig | null {
       return this.config.getDataTypeConfig();
     }
 
-    getDataTypeFields() {
-      return this.getDataTypeConfig() ? this.getDataTypeConfig().getFields() : [];
+    getDataTypeFields(): Array<DataTypeField> {
+      const config = this.getDataTypeConfig();
+      return config ? config.getFields() : [];
     }
 
-    getWritableDataTypeFields() {
-      return this.getDataTypeConfig() ? this.getDataTypeConfig().getWritableFields() : [];
+    getWritableDataTypeFields(): Array<DataTypeField> {
+      const config = this.getDataTypeConfig();
+      return config ? config.getWritableFields() : [];
     }
 
     getGraphQLListQueryName(): string {
@@ -239,7 +249,8 @@ class BehaviorVersion extends Editable implements Diffable {
     }
 
     requiresFields(): boolean {
-      return this.getDataTypeConfig() ? this.getDataTypeConfig().requiresFields() : false;
+      const config = this.getDataTypeConfig();
+      return config ? config.requiresFields() : false;
     }
 
     getTriggers(): Array<Trigger> {
@@ -278,10 +289,14 @@ class BehaviorVersion extends Editable implements Diffable {
     }
 
     // Used by JSON.stringify for submitting data to the server
-    toJSON() {
-      return super.toJSON().clone({
+    toJSON(): BehaviorVersion {
+      return (super.toJSON() as BehaviorVersion).clone({
         createdAt: null
       });
+    }
+
+    forEqualityComparison(): BehaviorVersion {
+      return this.toJSON();
     }
 
     sortKeyForExisting(): string | null {
@@ -312,11 +327,11 @@ class BehaviorVersion extends Editable implements Diffable {
       );
     }
 
-    clone(props: Partial<BehaviorVersion>): BehaviorVersion {
+    clone(props: Partial<BehaviorVersionInterface>): BehaviorVersion {
       return BehaviorVersion.fromProps(Object.assign({}, this, props));
     }
 
-    static fromProps(props): BehaviorVersion {
+    static fromProps(props: BehaviorVersionInterface): BehaviorVersion {
       return new BehaviorVersion(
         props.id,
         props.behaviorId,
@@ -337,20 +352,18 @@ class BehaviorVersion extends Editable implements Diffable {
       );
     }
 
-    static fromJson(props): BehaviorVersion {
+    static fromJson(props: BehaviorVersionJson): BehaviorVersion {
       const materializedProps = Object.assign({}, props, {
-        responseTemplate: ResponseTemplate.fromString(props.responseTemplate || '')
+        responseTemplate: typeof props.responseTemplate === 'string' ?
+          ResponseTemplate.fromString(props.responseTemplate || '') :
+          new ResponseTemplate(props.responseTemplate && props.responseTemplate.text),
+        config: BehaviorConfig.fromJson(props.config),
+        triggers: Trigger.triggersFromJson(props.triggers)
       });
-      if (props.config) {
-        materializedProps.config = BehaviorConfig.fromJson(props.config);
-      }
-      if (props.triggers) {
-        materializedProps.triggers = Trigger.triggersFromJson(props.triggers);
-      }
       return BehaviorVersion.fromProps(materializedProps);
     }
 
-    static defaultActionProps(optionalName): DefaultActionProps {
+    static defaultActionProps(optionalName?: string): DefaultActionProps {
       const functionBody = (
 `// Write a Node.js (6.10.2) function that calls ellipsis.success() with a result.
 // You can require any NPM package.

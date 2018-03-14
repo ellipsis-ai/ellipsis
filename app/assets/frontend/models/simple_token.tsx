@@ -15,9 +15,14 @@ type SimpleTokenEditor = {
   getAllSimpleTokenApis: () => Array<RequiredSimpleTokenApi>
 }
 
-class RequiredSimpleTokenApi extends RequiredApiConfig implements Diffable {
+export interface RequiredSimpleTokenApiJson {
+  id: string | null,
+  exportId: string | null,
+  apiId: string,
+  nameInCode: string
+}
 
-    static fromJson: (s: { config: SimpleTokenApiRef }) => RequiredSimpleTokenApi;
+class RequiredSimpleTokenApi extends RequiredApiConfig implements Diffable, RequiredSimpleTokenApiJson {
 
     diffProps(): Array<DiffableProp> {
       return [{
@@ -78,6 +83,9 @@ class RequiredSimpleTokenApi extends RequiredApiConfig implements Diffable {
       return new RequiredSimpleTokenApi(props.id, props.exportId, props.apiId, props.nameInCode);
     }
 
+    static fromJson(props: RequiredSimpleTokenApiJson): RequiredSimpleTokenApi {
+      return RequiredSimpleTokenApi.fromProps(props);
+    }
   }
 
   class SimpleTokenApiRef extends ApiConfigRef {
@@ -116,11 +124,5 @@ class RequiredSimpleTokenApi extends RequiredApiConfig implements Diffable {
     }
 
 }
-
-RequiredSimpleTokenApi.fromJson = function(props) {
-  return RequiredSimpleTokenApi.fromProps(Object.assign({}, props, {
-    config: props.config ? SimpleTokenApiRef.fromJson(props.config) : undefined
-  }));
-};
 
 export {SimpleTokenApiRef, RequiredSimpleTokenApi};

@@ -1,10 +1,48 @@
-import Recurrence from './recurrence';
+import Recurrence, {RecurrenceJson} from './recurrence';
 import DeepEqual from '../lib/deep_equal';
+import {Timestamp} from "../lib/formatter";
+import BehaviorGroup from "./behavior_group";
 
-  class ScheduledAction {
+interface ScheduledActionArgument {
+  name: string,
+  value: any
+}
 
-    constructor(props) {
-      const initialProps = Object.assign({
+export interface ScheduledActionJson {
+  id: string | null,
+  scheduleType: string,
+  behaviorId: string | null,
+  behaviorGroupId: string | null,
+  trigger: string | null,
+  arguments: Array<ScheduledActionArgument>,
+  recurrence: RecurrenceJson,
+  firstRecurrence: Timestamp | null,
+  secondRecurrence: Timestamp | null,
+  useDM: boolean,
+  channel: string
+}
+
+interface ScheduledActionInterface extends ScheduledActionJson {
+  recurrence: Recurrence,
+  firstRecurrence: Date | null;
+  secondRecurrence: Date | null;
+}
+
+class ScheduledAction implements ScheduledActionInterface {
+  readonly id: string | null;
+  readonly scheduleType: string;
+  readonly behaviorId: string | null;
+  readonly behaviorGroupId: string | null;
+  readonly trigger: string | null;
+  readonly arguments: Array<ScheduledActionArgument>;
+  readonly recurrence: Recurrence;
+  readonly firstRecurrence: Date | null;
+  readonly secondRecurrence: Date | null;
+  readonly useDM: boolean;
+  readonly channel: string;
+
+    constructor(props: Partial<ScheduledActionInterface>) {
+      const initialProps: ScheduledActionInterface = Object.assign({
         id: null,
         scheduleType: null,
         behaviorId: null,
@@ -33,7 +71,7 @@ import DeepEqual from '../lib/deep_equal';
       });
     }
 
-    getSkillNameFromGroups(behaviorGroups) {
+    getSkillNameFromGroups(behaviorGroups: Array<BehaviorGroup>): string {
       let name = "";
       if (this.behaviorGroupId) {
         const group = behaviorGroups.find((ea) => ea.id === this.behaviorGroupId);
@@ -44,7 +82,7 @@ import DeepEqual from '../lib/deep_equal';
       return name;
     }
 
-    getActionNameFromGroups(behaviorGroups) {
+    getActionNameFromGroups(behaviorGroups: Array<BehaviorGroup>): string {
       let name = "";
       if (this.behaviorGroupId && this.behaviorId) {
         const group = behaviorGroups.find((ea) => ea.id === this.behaviorGroupId);
@@ -58,56 +96,68 @@ import DeepEqual from '../lib/deep_equal';
       return name;
     }
 
-    isNew() {
+    isNew(): boolean {
       return !this.id;
     }
 
     forEqualityComparison() {
       return this.clone({
-        recurrence: this.recurrence ? this.recurrence.forEqualityComparison() : null
+        recurrence: this.recurrence.forEqualityComparison()
       });
     }
 
-    isIdenticalTo(otherAction) {
+    isIdenticalTo(otherAction: ScheduledAction): boolean {
       return DeepEqual.isEqual(this.forEqualityComparison(), otherAction.forEqualityComparison());
     }
 
-    isValidForScheduleType() {
+    isValidForScheduleType(): boolean {
       if (this.scheduleType === "message") {
-        return this.trigger.length > 0;
+        return Boolean(this.trigger && this.trigger.length > 0);
       } else if (this.scheduleType === "behavior") {
-        return this.behaviorId.length > 0 && this.behaviorGroupId.length > 0;
+        return Boolean(this.behaviorId && this.behaviorGroupId && this.behaviorId.length > 0 && this.behaviorGroupId.length > 0);
       } else {
         return false;
       }
     }
 
-    hasValidRecurrence() {
-      return this.recurrence && this.recurrence.isValid();
+    hasValidRecurrence(): boolean {
+      return this.recurrence.isValid();
     }
 
-    hasValidChannel() {
+    hasValidChannel(): boolean {
       return this.channel.length > 0;
     }
 
-    isValid() {
+    isValid(): boolean {
       return this.isValidForScheduleType() && this.hasValidChannel() && this.hasValidRecurrence();
     }
 
-    clone(props) {
+    clone(props: Partial<ScheduledActionInterface>): ScheduledAction {
       return new ScheduledAction(Object.assign({}, this, props));
     }
 
-    static fromJson(props) {
+    static dateFromTimestamp(t: Timestamp | null): Date | null {
+      if (typeof t === 'string') {
+        return new Date(t);
+      } else if (typeof t === 'number') {
+        return new Date(t);
+      } else if (t instanceof Date) {
+        return t;
+      } else {
+        return null;
+      }
+    }
+
+    static fromJson(props: ScheduledActionJson): ScheduledAction {
       const materializedProps = Object.assign(props, {
         recurrence: new Recurrence(props.recurrence),
-        firstRecurrence: new Date(props.firstRecurrence),
-        secondRecurrence: new Date(props.secondRecurrence)
+        firstRecurrence: ScheduledAction.dateFromTimestamp(props.firstRecurrence),
+        secondRecurrence: ScheduledAction.dateFromTimestamp(props.secondRecurrence)
       });
       return new ScheduledAction(materializedProps);
     }
 
-    static newWithDefaults(timeZone, timeZoneName) {
+    static newWithDefaults(timeZone: string | null, timeZoneName: string | null): ScheduledAction {
       return new ScheduledAction({
         scheduleType: "message",
         trigger: "",

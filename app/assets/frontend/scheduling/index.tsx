@@ -141,7 +141,7 @@ class Scheduling extends React.Component<Props, State> {
 
     getDefaultSelectedItem(): ScheduledAction | null {
       if (this.props.selectedScheduleId) {
-        return this.props.scheduledActions.find((ea) => ea.id === this.props.selectedScheduleId);
+        return this.props.scheduledActions.find((ea) => ea.id === this.props.selectedScheduleId) || null;
       } else if (this.props.newAction) {
         return this.createNewSchedule();
       } else {
@@ -174,7 +174,7 @@ class Scheduling extends React.Component<Props, State> {
     }
 
     findChannelFor(channelId): ScheduleChannel | null {
-      return this.hasChannelList() ? this.props.channelList.find((ea) => ea.id === channelId) : null;
+      return this.hasChannelList() && this.props.channelList.find((ea) => ea.id === channelId) || null;
     }
 
     getScheduleByChannel(): Array<ScheduleGroup> {

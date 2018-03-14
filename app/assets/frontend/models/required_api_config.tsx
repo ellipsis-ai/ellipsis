@@ -1,10 +1,10 @@
 class RequiredApiConfig {
-    id: string;
-    exportId: string;
-    apiId: string;
-    nameInCode: string;
-
-    constructor(id: string, exportId: string, apiId: string, nameInCode: string) {
+  constructor(
+    readonly id: string,
+    readonly exportId: string | null,
+    readonly apiId: string,
+    readonly nameInCode: string
+  ) {
       Object.defineProperties(this, {
         id: { value: id, enumerable: true },
         exportId: { value: exportId, enumerable: true },
@@ -28,7 +28,7 @@ class RequiredApiConfig {
     }
 
     getIdForDiff(): string {
-      return this.exportId;
+      return this.exportId || "unknown";
     }
 
     canHaveConfig(): boolean {

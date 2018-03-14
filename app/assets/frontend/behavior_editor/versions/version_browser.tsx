@@ -1,6 +1,6 @@
 import * as React from 'react';
 import {Timestamp} from '../../lib/formatter';
-import BehaviorGroup from '../../models/behavior_group';
+import BehaviorGroup, {BehaviorGroupJson} from '../../models/behavior_group';
 import BehaviorGroupDiff from './behavior_group_diff';
 import Button from '../../form/button';
 import Collapsible from '../../shared_ui/collapsible';
@@ -40,7 +40,7 @@ type Props = {
     isLinkedToGithub: boolean,
     linkedGithubRepo?: LinkedGithubRepo,
     onLinkGithubRepo: (owner: string, repo: string, branch: string | null, callback: () => void) => void,
-    onUpdateFromGithub: (owner: string, repo: string, branch: string, callback: (d: { data: {} }) => void, onError: (branch: string, error?: GithubFetchError) => void) => void,
+    onUpdateFromGithub: (owner: string, repo: string, branch: string, callback: (json: { data: BehaviorGroupJson }) => void, onError: (branch: string, error?: GithubFetchError) => void) => void,
     onSaveChanges: () => void,
     isModifyingGithubRepo: boolean,
     onChangedGithubRepo: () => void
@@ -150,7 +150,7 @@ class VersionBrowser extends React.Component<Props, State> {
       }
     }
 
-    onUpdated(json: { data: {} }): void {
+    onUpdated(json: { data: BehaviorGroupJson }): void {
       this.setState({
         isFetching: false,
         lastFetched: new Date(),

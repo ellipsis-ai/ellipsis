@@ -1,18 +1,26 @@
-import DataTypeField from './data_type_field';
+import DataTypeField, {DataTypeFieldJson} from './data_type_field';
 import SequentialName from "../lib/sequential_name";
 import ID from "../lib/id";
 import ParamType from "./param_type";
 
 const ID_FIELD_INDEX = 0;
 
-class DataTypeConfig {
-    fields: Array<DataTypeField>;
-    usesCode: boolean;
+export interface DataTypeConfigJson {
+  fields: Array<DataTypeFieldJson>;
+  usesCode: boolean;
+}
 
-    constructor(
-      fields: Array<DataTypeField>,
-      usesCode: boolean | null
-    ) {
+interface DataTypeConfigInterface extends DataTypeConfigJson {
+  fields: Array<DataTypeField>
+}
+
+class DataTypeConfig implements DataTypeConfigInterface {
+  readonly usesCode: boolean;
+
+  constructor(
+    readonly fields: Array<DataTypeField>,
+    usesCode: boolean | null
+  ) {
       Object.defineProperties(this, {
         fields: {
           value: fields,
@@ -23,7 +31,7 @@ class DataTypeConfig {
           enumerable: true
         }
       });
-    }
+  }
 
     requiresFields(): boolean {
       return !this.usesCode;
@@ -79,22 +87,21 @@ class DataTypeConfig {
       }
     }
 
-    clone(props: {}): DataTypeConfig {
+    clone(props: Partial<DataTypeConfigInterface>): DataTypeConfig {
       return DataTypeConfig.fromProps(Object.assign({}, this, props));
     }
 
-    static fromProps(props): DataTypeConfig {
+    static fromProps(props: DataTypeConfigInterface): DataTypeConfig {
       return new DataTypeConfig(
         props.fields,
         props.usesCode
       );
     }
 
-    static fromJson(props): DataTypeConfig {
-      const materializedProps = Object.assign({}, props);
-      if (props.fields) {
-        materializedProps.fields = DataTypeField.fieldsFromJson(props.fields);
-      }
+    static fromJson(props: DataTypeConfigJson): DataTypeConfig {
+      const materializedProps = Object.assign({}, props, props.fields ? {
+        fields: DataTypeField.fieldsFromJson(props.fields)
+      } : null);
       return DataTypeConfig.fromProps(materializedProps);
     }
 
