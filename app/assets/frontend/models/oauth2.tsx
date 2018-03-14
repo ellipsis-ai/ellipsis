@@ -102,7 +102,7 @@ class RequiredOAuth2Application extends RequiredApiConfigWithConfig implements D
       return Boolean(this.config);
     }
 
-    clone(props: {}) {
+    clone(props: Partial<RequiredOAuth2ApplicationInterface>): RequiredOAuth2Application {
       return RequiredOAuth2Application.fromProps(Object.assign({}, this, props));
     }
 

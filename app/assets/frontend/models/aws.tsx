@@ -28,13 +28,14 @@ interface RequiredAWSConfigInterface extends RequiredAWSConfigJson {
 const logoUrl = "/assets/images/logos/aws_logo_web_300px.png";
 
 class RequiredAWSConfig extends RequiredApiConfigWithConfig implements RequiredAWSConfigInterface, Diffable {
+  readonly config: AWSConfigRef | null;
 
   constructor(
     id: string,
     exportId: string | null,
     apiId: string,
     nameInCode: string,
-    readonly config: AWSConfigRef | null
+    config: AWSConfigRef | null
   ) {
     super(id, exportId, apiId, nameInCode, config);
   }
@@ -103,7 +104,13 @@ class RequiredAWSConfig extends RequiredApiConfigWithConfig implements RequiredA
 
     static fromJson(props: RequiredAWSConfigJson): RequiredAWSConfig {
       const config = props.config ? AWSConfigRef.fromJson(props.config) : null;
-      return new RequiredAWSConfig(props.id, props.exportId, props.apiId, props.nameInCode, config);
+      return RequiredAWSConfig.fromProps({
+        id: props.id,
+        exportId: props.exportId,
+        apiId: props.apiId,
+        nameInCode: props.nameInCode,
+        config: config
+      });
     }
 
 }
