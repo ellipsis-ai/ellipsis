@@ -12,6 +12,7 @@ import {RequiredOAuth2Application, RequiredOAuth2ApplicationJson} from './oauth2
 import {RequiredSimpleTokenApi, RequiredSimpleTokenApiJson} from './simple_token';
 import User, {UserJson} from './user';
 import ParamType from "./param_type";
+import {Timestamp} from "../lib/formatter";
 
 const ONE_MINUTE = 60000;
 
@@ -29,7 +30,7 @@ export interface BehaviorGroupJson {
   requiredAWSConfigs: Array<RequiredAWSConfigJson>;
   requiredOAuth2ApiConfigs: Array<RequiredOAuth2ApplicationJson>;
   requiredSimpleTokenApis: Array<RequiredSimpleTokenApiJson>;
-  createdAt: number | null;
+  createdAt: Timestamp | null;
   exportId: string | null;
   author: UserJson | null;
   gitSHA: string | null;
@@ -65,7 +66,7 @@ class BehaviorGroup implements Diffable, BehaviorGroupInterface {
     readonly requiredAWSConfigs: Array<RequiredAWSConfig>,
     readonly requiredOAuth2ApiConfigs: Array<RequiredOAuth2Application>,
     readonly requiredSimpleTokenApis: Array<RequiredSimpleTokenApi>,
-    readonly createdAt: number | null,
+    readonly createdAt: Timestamp | null,
     readonly exportId: string | null,
     readonly author: User | null,
     readonly gitSHA: string | null,
@@ -116,8 +117,21 @@ class BehaviorGroup implements Diffable, BehaviorGroupInterface {
       return this.getRequiredOAuth2ApiConfigs().filter(ea => !ea.config).length > 0;
     }
 
+    static timestampToNumber(t: Timestamp | null): number | null {
+      if (typeof t === "number") {
+        return t;
+      } else if (typeof t === "string") {
+        return Number(new Date(t));
+      } else if (t instanceof Date) {
+        return Number(t);
+      } else {
+        return null;
+      }
+    }
+
     isRecentlySaved(): boolean {
-      return !!this.createdAt && Number(new Date(this.createdAt)) > Number(new Date()) - ONE_MINUTE;
+      const dateAsNumber = BehaviorGroup.timestampToNumber(this.createdAt);
+      return Boolean(dateAsNumber && (dateAsNumber > (Number(new Date()) - ONE_MINUTE)));
     }
 
     isExisting(): boolean {
@@ -271,6 +285,14 @@ class BehaviorGroup implements Diffable, BehaviorGroupInterface {
 
     getIdForDiff(): string {
       return this.id || "unknown";
+    }
+
+    getInitialAuthor(): User | null {
+      return this.metaData ? this.metaData.initialAuthor : null;
+    }
+
+    getInitialCreatedAt(): Timestamp | null {
+      return this.metaData ? this.metaData.initialCreatedAt : null;
     }
 
     diffProps(): Array<DiffableProp> {
