@@ -19,11 +19,16 @@ declare var jsRoutes: {
       deploy: () => JsRoute,
       edit: (groupId: string, selectedId?: string, showVersions?: boolean) => JsRoute,
       newGroup: (teamId: string) => JsRoute,
+      newUnsavedBehavior: (isDataType: boolean, teamId: string, behaviorIdToClone: string, newName: string | null) => JsRoute,
+      newUnsavedLibrary: (teamId: string, libraryIdToClone: string) => JsRoute,
+      nodeModuleVersionsFor: (groupId: string) => JsRoute,
       pushToGithub: () => JsRoute,
       queryDefaultStorage: () => JsRoute,
       save: () => JsRoute,
       saveDefaultStorageItem: () => JsRoute,
-      updateFromGithub: () => JsRoute
+      updateFromGithub: () => JsRoute,
+      updateNodeModules: () => JsRoute,
+      versionInfoFor: (groupId: string) => JsRoute
     },
     BehaviorImportExportController: {
       doImport: () => JsRoute,
@@ -32,6 +37,10 @@ declare var jsRoutes: {
     GithubConfigController: {
       index: () => JsRoute,
       reset: () => JsRoute
+    },
+    SavedAnswerController: {
+      resetForTeam: () => JsRoute,
+      resetForUser: () => JsRoute
     },
     ScheduledActionsController: {
       index: (selectedId?: string | null, isNewSchedule?: boolean | null, teamId?: string | null) => JsRoute

@@ -15,19 +15,31 @@ type AWSEditor = {
 
 export interface RequiredAWSConfigJson {
   id: string,
-  exportId: string,
+  exportId: string | null,
   apiId: string,
   nameInCode: string,
   config: AWSConfigRefJson | null
 }
 
+interface RequiredAWSConfigInterface extends RequiredAWSConfigJson {
+  config: AWSConfigRef | null
+}
+
 const logoUrl = "/assets/images/logos/aws_logo_web_300px.png";
 
-class RequiredAWSConfig extends RequiredApiConfigWithConfig implements RequiredAWSConfigJson, Diffable {
+class RequiredAWSConfig extends RequiredApiConfigWithConfig implements RequiredAWSConfigInterface, Diffable {
 
-    static fromJson: (props: RequiredAWSConfigJson) => RequiredAWSConfig;
+  constructor(
+    id: string,
+    exportId: string | null,
+    apiId: string,
+    nameInCode: string,
+    readonly config: AWSConfigRef | null
+  ) {
+    super(id, exportId, apiId, nameInCode, config);
+  }
 
-    diffProps(): Array<DiffableProp> {
+  diffProps(): Array<DiffableProp> {
       return [{
         name: "Name used in code",
         value: this.nameInCode || ""
@@ -81,19 +93,24 @@ class RequiredAWSConfig extends RequiredApiConfigWithConfig implements RequiredA
       return Boolean(this.config);
     }
 
-    clone(props: RequiredAWSConfigJson): RequiredAWSConfig {
-      return RequiredAWSConfig.fromProps((Object.assign({}, this, props)));
+    clone(props: Partial<RequiredAWSConfigInterface>): RequiredAWSConfig {
+      return RequiredAWSConfig.fromProps(Object.assign({}, this, props));
     }
 
-    static fromProps(props) {
+    static fromProps(props: RequiredAWSConfigInterface) {
       return new RequiredAWSConfig(props.id, props.exportId, props.apiId, props.nameInCode, props.config);
     }
 
-  }
+    static fromJson(props: RequiredAWSConfigJson): RequiredAWSConfig {
+      const config = props.config ? AWSConfigRef.fromJson(props.config) : null;
+      return new RequiredAWSConfig(props.id, props.exportId, props.apiId, props.nameInCode, config);
+    }
+
+}
 
   export interface AWSConfigRefJson extends ApiConfigRefJson {}
 
-  class AWSConfigRef extends ApiConfigRef {
+  class AWSConfigRef extends ApiConfigRef implements AWSConfigRefJson {
 
     newRequired(): RequiredAWSConfig {
       return new RequiredAWSConfig(
@@ -121,10 +138,5 @@ class RequiredAWSConfig extends RequiredApiConfigWithConfig implements RequiredA
       return new AWSConfigRef(props.id, props.displayName);
     }
 }
-
-RequiredAWSConfig.fromJson = function(props: RequiredAWSConfigJson): RequiredAWSConfig {
-  const config = props.config ? AWSConfigRef.fromJson(props.config) : null;
-  return new RequiredAWSConfig(props.id, props.exportId, props.apiId, props.nameInCode, config);
-};
 
 export {AWSConfigRef, RequiredAWSConfig};
