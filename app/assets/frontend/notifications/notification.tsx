@@ -18,20 +18,33 @@ import NotificationForUnknownParamInTemplate from './unknown_param_in_template';
 import NotificationForServerDataWarning from './server_data_warning';
 import NotificationForSkillDetailsWarning from './skill_details_warning';
 import NotificationDataGroup from '../models/notification_data_group';
+import NotificationData, {NotificationKind} from "../models/notification_data";
+import {ReactElement} from "react";
+import EnvVarMissingNotificationData from "../models/notifications/env_var_missing_notification_data";
 
-const Notification = React.createClass({
-    propTypes: {
-      group: React.PropTypes.instanceOf(NotificationDataGroup).isRequired,
-      inline: React.PropTypes.bool
-    },
+interface Props {
+  group: NotificationDataGroup,
+  inline?: Option<boolean>
+}
 
-    getNotificationForKind: function(kind) {
-      if (kind === "env_var_not_defined") {
+interface NotificationConfig {
+  containerClass: string,
+  icon: ReactElement<any>,
+  message: ReactElement<any>
+}
+
+function groupIsEnvVarMissing(arr: Array<NotificationData>): arr is Array<EnvVarMissingNotificationData> {
+  return arr.every(ea => ea instanceof EnvVarMissingNotificationData);
+}
+
+class Notification extends React.Component<Props> {
+    getNotificationForKind(kind: NotificationKind, members: Array<NotificationData>): NotificationConfig {
+      if (groupIsEnvVarMissing(members)) {
         return {
           containerClass: "box-warning",
           icon: this.getWarningIcon(),
           message: (
-            <NotificationForEnvVarMissing details={this.props.group.members}/>
+            <NotificationForEnvVarMissing details={members}/>
           )
         };
       } else if (kind === "required_aws_config_without_config") {
@@ -149,34 +162,34 @@ const Notification = React.createClass({
       } else {
         throw new Error(`Error: ${kind} is not a valid notification`);
       }
-    },
+    }
 
-    getWarningIcon: function() {
+    getWarningIcon() {
       return (
         <span className="display-inline-block align-b type-yellow" style={{ width: 22, height: 24 }}>
           <SVGWarning />
         </span>
       );
-    },
+    }
 
-    getErrorIcon: function() {
+    getErrorIcon() {
       return (
         <span className="display-inline-block align-b type-pink" style={{ width: 22, height: 24 }}>
           <SVGWarning inverted={true} />
         </span>
       );
-    },
+    }
 
-    getTipIcon: function() {
+    getTipIcon() {
       return (
         <span className="display-inline-block align-b type-green" style={{ width: 22, height: 24 }}>
           <SVGTip />
         </span>
       );
-    },
+    }
 
-    render: function() {
-      var notification = this.getNotificationForKind(this.props.group.kind);
+    render() {
+      var notification = this.getNotificationForKind(this.props.group.kind, this.props.group.members);
       return (
         <Collapsible revealWhen={!this.props.group.hidden} animateInitialRender={true}>
           <div className={
@@ -194,6 +207,6 @@ const Notification = React.createClass({
         </Collapsible>
       );
     }
-});
+}
 
 export default Notification;

@@ -3,31 +3,36 @@ import Notification from './notification';
 import NotificationData from '../models/notification_data';
 import NotificationDataGroup from '../models/notification_data_group';
 
-const Notifications = React.createClass({
-    propTypes: {
-      notifications: React.PropTypes.arrayOf(React.PropTypes.instanceOf(NotificationData)).isRequired,
-      className: React.PropTypes.string,
-      inline: React.PropTypes.bool
-    },
+interface Props {
+  notifications: Array<NotificationData>,
+  className?: string,
+  inline?: Option<boolean>
+}
 
-    getInitialState: function() {
-      return {
-        notificationGroups: NotificationDataGroup.groupByKind(this.props.notifications)
-      };
-    },
+interface State {
+  notificationGroups: Array<NotificationDataGroup>
+}
 
-    updateGroups: function(newNotifications) {
+class Notifications extends React.Component<Props, State> {
+  constructor(props: Props) {
+    super(props);
+    this.state = {
+      notificationGroups: NotificationDataGroup.groupByKind(this.props.notifications)
+    };
+  }
+
+    updateGroups(newNotifications: Array<NotificationData>): void {
       var newNotificationGroups = NotificationDataGroup.groupByKind(newNotifications);
       this.setState({
         notificationGroups: NotificationDataGroup.hideOldAndAppendNew(this.state.notificationGroups, newNotificationGroups)
       });
-    },
+    }
 
-    componentWillReceiveProps: function(newProps) {
+    componentWillReceiveProps(newProps: Props) {
       this.updateGroups(newProps.notifications);
-    },
+    }
 
-    render: function() {
+    render() {
       return (
         <div className={this.props.className}>
           {this.state.notificationGroups.map((group, index) => (
@@ -36,6 +41,6 @@ const Notifications = React.createClass({
         </div>
       );
     }
-});
+}
 
 export default Notifications;

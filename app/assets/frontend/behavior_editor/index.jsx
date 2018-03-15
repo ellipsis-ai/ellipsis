@@ -69,6 +69,7 @@ import 'codemirror/mode/markdown/markdown';
 import DeploymentStatus from "./deployment_status";
 import GithubRepoActions from "./versions/github_repo_actions";
 import {MOBILE_MAX_WIDTH} from "../lib/constants";
+import {EnvVarMissingNotificationData} from "assets/frontend/notifications/env_var_not_defined";
 
 const BehaviorEditor = React.createClass({
   propTypes: Object.assign({}, Page.requiredPropTypes, {
@@ -411,7 +412,7 @@ const BehaviorEditor = React.createClass({
       return this.getEnvVariables()
         .filter((ea) => selectedBehavior.knownEnvVarsUsed.includes(ea.name))
         .filter((ea) => !ea.isAlreadySavedWithValue)
-        .map((ea) => new NotificationData({
+        .map((ea) => new EnvVarMissingNotificationData({
           kind: "env_var_not_defined",
           environmentVariableName: ea.name,
           onClick: () => {

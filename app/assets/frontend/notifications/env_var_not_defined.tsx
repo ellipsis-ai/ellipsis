@@ -1,15 +1,18 @@
 import * as React from 'react';
+import autobind from '../lib/autobind';
+import EnvVarMissingNotificationData from "../models/notifications/env_var_missing_notification_data";
 
-const NotificationForEnvVarMissing = React.createClass({
-    propTypes: {
-      details: React.PropTypes.arrayOf(React.PropTypes.shape({
-        kind: React.PropTypes.string.isRequired,
-        environmentVariableName: React.PropTypes.string.isRequired,
-        onClick: React.PropTypes.func.isRequired
-      })).isRequired
-    },
+interface Props {
+  details: Array<EnvVarMissingNotificationData>
+}
 
-    getButtonForEnvVar: function(envVarDetail) {
+class NotificationForEnvVarMissing extends React.PureComponent<Props> {
+  constructor(props: Props) {
+    super(props);
+    autobind(this);
+  }
+
+    getButtonForEnvVar(envVarDetail: EnvVarMissingNotificationData) {
       return (
         <button
           type="button"
@@ -17,9 +20,9 @@ const NotificationForEnvVarMissing = React.createClass({
           onClick={envVarDetail.onClick}
         >{envVarDetail.environmentVariableName}</button>
       );
-    },
+    }
 
-    render: function() {
+    render() {
       var numVarsMissing = this.props.details.length;
       if (numVarsMissing === 1) {
         var firstDetail = this.props.details[0];
@@ -46,6 +49,6 @@ const NotificationForEnvVarMissing = React.createClass({
         );
       }
     }
-});
+}
 
 export default NotificationForEnvVarMissing;
