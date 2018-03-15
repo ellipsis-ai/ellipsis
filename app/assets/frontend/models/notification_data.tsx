@@ -22,12 +22,7 @@ class NotificationData implements NotificationDataInterface {
   readonly kind: NotificationKind;
 
   constructor(props: NotificationDataInterface) {
-    Object.keys(props).map((propName) => {
-      Object.defineProperty(this, propName, {
-        value: props[propName],
-        enumerable: true
-      });
-    });
+    Object.assign(this, props);
   }
 }
 
