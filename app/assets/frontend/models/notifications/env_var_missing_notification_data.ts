@@ -10,11 +10,8 @@ class EnvVarMissingNotificationData extends NotificationData implements EnvVarMi
   readonly kind: "env_var_not_defined";
   readonly environmentVariableName: string;
   readonly onClick: () => void;
-
   constructor(props: EnvVarMissingNotificationDataInterface) {
     super(props);
-    this.environmentVariableName = props.environmentVariableName;
-    this.onClick = props.onClick;
   }
 }
 

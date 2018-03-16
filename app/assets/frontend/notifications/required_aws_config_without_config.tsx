@@ -1,20 +1,13 @@
-import React from 'react';
+import * as React from 'react';
 import {AWSConfigRef, RequiredAWSConfig} from '../models/aws';
+import RequiredAwsConfigNotificationData from "../models/notifications/required_aws_config_notification_data";
 
-const NotificationForMissingAWSConfig = React.createClass({
-    propTypes: {
-      details: React.PropTypes.arrayOf(React.PropTypes.shape({
-        kind: React.PropTypes.string.isRequired,
-        name: React.PropTypes.string.isRequired,
-        existingAWSConfigs: React.PropTypes.arrayOf(React.PropTypes.instanceOf(AWSConfigRef)).isRequired,
-        requiredAWSConfig: React.PropTypes.instanceOf(RequiredAWSConfig).isRequired,
-        onUpdateAWSConfig: React.PropTypes.func.isRequired,
-        onNewAWSConfig: React.PropTypes.func.isRequired,
-        onConfigClick: React.PropTypes.func.isRequired
-      })).isRequired
-    },
+interface Props {
+  details: Array<RequiredAwsConfigNotificationData>
+}
 
-    addAWSConfigPrompt: function(detail) {
+class NotificationForMissingAWSConfig extends React.PureComponent<Props> {
+    addAWSConfigPrompt(detail: RequiredAwsConfigNotificationData) {
       var matchingConfigs = detail.existingAWSConfigs;
       if (matchingConfigs.length === 1) {
         const config = matchingConfigs[0];
@@ -57,19 +50,19 @@ const NotificationForMissingAWSConfig = React.createClass({
           </span>
         );
       }
-    },
+    }
 
-    onUpdateAWSConfig: function(detail, cfg) {
+    onUpdateAWSConfig(detail: RequiredAwsConfigNotificationData, cfg: AWSConfigRef): void {
       detail.onUpdateAWSConfig(detail.requiredAWSConfig.clone({
         config: cfg
       }));
-    },
+    }
 
-    onNewAWSConfig: function(detail, requiredAWSConfig) {
+    onNewAWSConfig(detail: RequiredAwsConfigNotificationData, requiredAWSConfig: RequiredAWSConfig): void {
       detail.onNewAWSConfig(requiredAWSConfig);
-    },
+    }
 
-    render: function() {
+    render() {
       var detail = this.props.details[0];
       return (
         <span>
@@ -78,6 +71,6 @@ const NotificationForMissingAWSConfig = React.createClass({
         </span>
       );
     }
-});
+}
 
 export default NotificationForMissingAWSConfig;

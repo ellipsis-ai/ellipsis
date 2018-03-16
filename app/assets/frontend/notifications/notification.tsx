@@ -18,9 +18,10 @@ import NotificationForUnknownParamInTemplate from './unknown_param_in_template';
 import NotificationForServerDataWarning from './server_data_warning';
 import NotificationForSkillDetailsWarning from './skill_details_warning';
 import NotificationDataGroup from '../models/notification_data_group';
-import NotificationData, {NotificationKind} from "../models/notification_data";
+import NotificationData, {NotificationDataInterface, NotificationKind} from "../models/notification_data";
 import {ReactElement} from "react";
 import EnvVarMissingNotificationData from "../models/notifications/env_var_missing_notification_data";
+import RequiredAwsConfigNotificationData from "../models/notifications/required_aws_config_notification_data";
 
 interface Props {
   group: NotificationDataGroup,
@@ -33,13 +34,13 @@ interface NotificationConfig {
   message: ReactElement<any>
 }
 
-function groupIsEnvVarMissing(arr: Array<NotificationData>): arr is Array<EnvVarMissingNotificationData> {
-  return arr.every(ea => ea instanceof EnvVarMissingNotificationData);
+function notificationTypeIs<I extends NotificationDataInterface, T extends NotificationData>(arr: Array<NotificationData>, type: new(props: I) => T): arr is Array<T> {
+  return arr.every(ea => ea instanceof type);
 }
 
 class Notification extends React.Component<Props> {
     getNotificationForKind(kind: NotificationKind, members: Array<NotificationData>): NotificationConfig {
-      if (groupIsEnvVarMissing(members)) {
+      if (notificationTypeIs(members, EnvVarMissingNotificationData)) {
         return {
           containerClass: "box-warning",
           icon: this.getWarningIcon(),
@@ -47,12 +48,12 @@ class Notification extends React.Component<Props> {
             <NotificationForEnvVarMissing details={members}/>
           )
         };
-      } else if (kind === "required_aws_config_without_config") {
+      } else if (notificationTypeIs(members, RequiredAwsConfigNotificationData)) {
         return {
           containerClass: "box-warning",
           icon: this.getWarningIcon(),
           message: (
-            <NotificationForRequiredAWSConfigWithoutConfig details={this.props.group.members} />
+            <NotificationForRequiredAWSConfigWithoutConfig details={members} />
           )
         };
       } else if (kind === "oauth2_config_without_application") {

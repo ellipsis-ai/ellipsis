@@ -70,6 +70,7 @@ import DeploymentStatus from "./deployment_status";
 import GithubRepoActions from "./versions/github_repo_actions";
 import {MOBILE_MAX_WIDTH} from "../lib/constants";
 import EnvVarMissingNotificationData from "../models/notifications/env_var_missing_notification_data";
+import RequiredAwsConfigNotificationData from "../models/notifications/required_aws_config_notification_data";
 
 const BehaviorEditor = React.createClass({
   propTypes: Object.assign({}, Page.requiredPropTypes, {
@@ -432,7 +433,7 @@ const BehaviorEditor = React.createClass({
     if (this.isConfiguringApi()) {
       return [];
     }
-    return this.getRequiredAWSConfigsWithNoMatchingAWSConfig().map(ea => new NotificationData({
+    return this.getRequiredAWSConfigsWithNoMatchingAWSConfig().map(ea => new RequiredAwsConfigNotificationData({
       kind: "required_aws_config_without_config",
       name: ea.nameInCode,
       requiredAWSConfig: ea,
