@@ -55,7 +55,7 @@ class BotResultServiceImpl @Inject() (
       }.getOrElse(DBIO.successful(None))
       maybeEvent <- DBIO.successful(
         for {
-          botProfile <-maybeBotProfile
+          botProfile <- maybeBotProfile
           slackProfile <- maybeSlackProfile
           behavior <- maybeBehavior
           channel <- maybeSlackChannelId
@@ -74,7 +74,9 @@ class BotResultServiceImpl @Inject() (
       _ <- if (maybeBehavior.isDefined) {
         runBehaviorFor(maybeEvent)
       } else {
-        DBIO.successful({})
+        val text = s"Can't run action named `${nextAction.actionName}` in this skill"
+        val result = SimpleTextResult(botResult.event, botResult.maybeConversation, text, botResult.forcePrivateResponse)
+        sendInAction(result, None, None, None)
       }
     } yield {}
   }
