@@ -64,6 +64,11 @@ case class BehaviorVersion(
     maybeName.getOrElse(id)
   }
 
+  def nameAndIdString: String = {
+    val namePart = maybeName.map(_ ++ " ").getOrElse("")
+    s"${namePart}[${id}]"
+  }
+
   def hasFunction: Boolean = {
     maybeFunctionBody.exists(_.trim.nonEmpty)
   }
@@ -96,6 +101,7 @@ case class BehaviorVersion(
     (json \ "result").toOption.map { successResult =>
       SuccessResult(
         event,
+        this,
         maybeConversation,
         successResult,
         json,
@@ -108,7 +114,7 @@ case class BehaviorVersion(
       )
     }.getOrElse {
       if ((json \ NO_RESPONSE_KEY).toOption.exists(_.as[Boolean])) {
-        NoResponseResult(event, maybeConversation, json, logResultOption)
+        NoResponseResult(event, this, maybeConversation, json, logResultOption)
       } else {
         if (json.toString == "null") {
           NoCallbackTriggeredResult(event, maybeConversation, this, dataService, configuration, isForUndeployed, hasUndeployedVersionForAuthor)
