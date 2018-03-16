@@ -168,7 +168,7 @@ class AWSLambdaServiceImpl @Inject() (
           JavaFutureConverter.javaToScala(client.invokeAsync(invokeRequest)).map(successFn).recoverWith {
             case e: java.util.concurrent.ExecutionException => {
               e.getMessage match {
-                case amazonServiceExceptionRegex() => Future.successful(AWSDownResult(event, maybeConversation))
+                case amazonServiceExceptionRegex() => Future.successful(AWSDownResult(event, behaviorVersion, maybeConversation))
                 case resourceNotFoundExceptionRegex() => {
                   retryIntervals.headOption.map { retryInterval =>
                     Logger.info(s"retrying behavior invocation after resource not found with interval: ${retryInterval}s")
@@ -207,6 +207,7 @@ class AWSLambdaServiceImpl @Inject() (
         DBIO.successful(
           SuccessResult(
             event,
+            behaviorVersion,
             maybeConversation,
             JsNull,
             JsNull,
