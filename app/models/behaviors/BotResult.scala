@@ -26,12 +26,24 @@ object ResultType extends Enumeration {
   val Success, SimpleText, TextWithActions, ConversationPrompt, NoResponse, ExecutionError, SyntaxError, NoCallbackTriggered, MissingTeamEnvVar, AWSDown, OAuth2TokenMissing, RequiredApiNotReady = Value
 }
 
+case class NextActionArg(name: String, value: String)
+
+case class NextAction(actionName: String, args: Option[Seq[NextActionArg]]) {
+  val argumentsMap: Map[String, String] = {
+    args.getOrElse(Seq()).map { ea =>
+      (ea.name, ea.value)
+    }.toMap
+  }
+}
+
 sealed trait BotResult {
   val resultType: ResultType.Value
   val forcePrivateResponse: Boolean
   val event: Event
   val maybeConversation: Option[Conversation]
   def files: Seq[UploadFileSpec] = Seq()
+  val maybeBehaviorVersion: Option[BehaviorVersion]
+  def maybeNextAction: Option[NextAction] = None
   val shouldInterrupt: Boolean = true
   def text: String
   def fullText: String = text
@@ -153,6 +165,7 @@ case class InvalidFilesException(message: String) extends Exception {
 
 case class SuccessResult(
                           event: Event,
+                          behaviorVersion: BehaviorVersion,
                           maybeConversation: Option[Conversation],
                           result: JsValue,
                           payloadJson: JsValue,
@@ -166,6 +179,8 @@ case class SuccessResult(
 
   val resultType = ResultType.Success
 
+  val maybeBehaviorVersion: Option[BehaviorVersion] = Some(behaviorVersion)
+
   override def files: Seq[UploadFileSpec] = {
     val authoredFiles = (payloadJson \ "files").validateOpt[Seq[UploadFileSpec]] match {
       case JsSuccess(maybeFiles, _) => maybeFiles.getOrElse(Seq())
@@ -174,6 +189,10 @@ case class SuccessResult(
       }.mkString(", "))
     }
     authoredFiles ++ super.files
+  }
+
+  override def maybeNextAction: Option[NextAction] = {
+    (payloadJson \ "next").asOpt[NextAction]
   }
 
   def text: String = {
@@ -189,6 +208,8 @@ case class SimpleTextResult(event: Event, maybeConversation: Option[Conversation
 
   val resultType = ResultType.SimpleText
 
+  val maybeBehaviorVersion: Option[BehaviorVersion] = None
+
   def text: String = simpleText
 
 }
@@ -202,6 +223,8 @@ case class TextWithAttachmentsResult(
                                     ) extends BotResult {
   val resultType = ResultType.TextWithActions
 
+  val maybeBehaviorVersion: Option[BehaviorVersion] = None
+
   val isForUndeployed: Boolean = false
   val hasUndeployedVersionForAuthor: Boolean = false
 
@@ -210,6 +233,7 @@ case class TextWithAttachmentsResult(
 
 case class NoResponseResult(
                              event: Event,
+                             behaviorVersion: BehaviorVersion,
                              maybeConversation: Option[Conversation],
                              payloadJson: JsValue,
                              maybeLogResult: Option[AWSLambdaLogResult]
@@ -222,6 +246,8 @@ case class NoResponseResult(
   val forcePrivateResponse = false // N/A
   override val shouldInterrupt = false
 
+  val maybeBehaviorVersion: Option[BehaviorVersion] = Some(behaviorVersion)
+
   def text: String = ""
 
   override val shouldSend: Boolean = false
@@ -230,6 +256,7 @@ case class NoResponseResult(
 trait WithBehaviorLink {
 
   val behaviorVersion: BehaviorVersion
+  val maybeBehaviorVersion: Option[BehaviorVersion] = Some(behaviorVersion)
   val dataService: DataService
   val configuration: Configuration
   val forcePrivateResponse = behaviorVersion.forcePrivateResponse
@@ -395,13 +422,15 @@ case class MissingTeamEnvVarsResult(
 
 }
 
-case class AWSDownResult(event: Event, maybeConversation: Option[Conversation]) extends BotResult {
+case class AWSDownResult(event: Event, behaviorVersion: BehaviorVersion, maybeConversation: Option[Conversation]) extends BotResult {
 
   val resultType = ResultType.AWSDown
   val forcePrivateResponse = false
 
   val isForUndeployed: Boolean = false
   val hasUndeployedVersionForAuthor: Boolean = false
+
+  val maybeBehaviorVersion: Option[BehaviorVersion] = Some(behaviorVersion)
 
   def text: String = {
     """
@@ -416,6 +445,7 @@ case class AWSDownResult(event: Event, maybeConversation: Option[Conversation]) 
 case class OAuth2TokenMissing(
                                oAuth2Application: OAuth2Application,
                                event: Event,
+                               behaviorVersion: BehaviorVersion,
                                maybeConversation: Option[Conversation],
                                loginToken: LoginToken,
                                cacheService: CacheService,
@@ -427,6 +457,8 @@ case class OAuth2TokenMissing(
   val key = IDs.next
 
   val resultType = ResultType.OAuth2TokenMissing
+
+  val maybeBehaviorVersion: Option[BehaviorVersion] = Some(behaviorVersion)
 
   val forcePrivateResponse = true
 
@@ -451,6 +483,7 @@ case class OAuth2TokenMissing(
 case class RequiredApiNotReady(
                                 required: RequiredOAuth2ApiConfig,
                                 event: Event,
+                                behaviorVersion: BehaviorVersion,
                                 maybeConversation: Option[Conversation],
                                 dataService: DataService,
                                 configuration: Configuration,
@@ -460,6 +493,8 @@ case class RequiredApiNotReady(
 
   val resultType = ResultType.RequiredApiNotReady
   val forcePrivateResponse = true
+
+  val maybeBehaviorVersion: Option[BehaviorVersion] = Some(behaviorVersion)
 
   def configLink: String = dataService.behaviors.editLinkFor(required.groupVersion.group.id, None, configuration)
   def configText: String = {

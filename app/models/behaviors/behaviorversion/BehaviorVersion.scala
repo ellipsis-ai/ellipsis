@@ -96,6 +96,7 @@ case class BehaviorVersion(
     (json \ "result").toOption.map { successResult =>
       SuccessResult(
         event,
+        this,
         maybeConversation,
         successResult,
         json,
@@ -108,7 +109,7 @@ case class BehaviorVersion(
       )
     }.getOrElse {
       if ((json \ NO_RESPONSE_KEY).toOption.exists(_.as[Boolean])) {
-        NoResponseResult(event, maybeConversation, json, logResultOption)
+        NoResponseResult(event, this, maybeConversation, json, logResultOption)
       } else {
         if (json.toString == "null") {
           NoCallbackTriggeredResult(event, maybeConversation, this, dataService, configuration, isForUndeployed, hasUndeployedVersionForAuthor)

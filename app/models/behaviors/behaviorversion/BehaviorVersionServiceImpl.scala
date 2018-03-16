@@ -333,14 +333,14 @@ class BehaviorVersionServiceImpl @Inject() (
         )
       } else {
         notReadyOAuth2Applications.headOption.map { firstNotReadyOAuth2App =>
-          DBIO.successful(Some(RequiredApiNotReady(firstNotReadyOAuth2App, event, None,  dataService, configuration, isForUndeployed, hasUndeployedVersionForAuthor)
+          DBIO.successful(Some(RequiredApiNotReady(firstNotReadyOAuth2App, event, behaviorVersion, None,  dataService, configuration, isForUndeployed, hasUndeployedVersionForAuthor)
           ))
         }.getOrElse {
           val missingOAuth2ApplicationsRequiringAuth = missingOAuth2Applications.filter(_.api.grantType.requiresAuth)
           missingOAuth2ApplicationsRequiringAuth.headOption.map { firstMissingOAuth2App =>
             event.ensureUserAction(dataService).flatMap { user =>
               dataService.loginTokens.createForAction(user).map { loginToken =>
-                OAuth2TokenMissing(firstMissingOAuth2App, event, None, loginToken, cacheService, configuration, isForUndeployed, hasUndeployedVersionForAuthor)
+                OAuth2TokenMissing(firstMissingOAuth2App, event, behaviorVersion, None, loginToken, cacheService, configuration, isForUndeployed, hasUndeployedVersionForAuthor)
               }
             }.map(Some(_))
           }.getOrElse(DBIO.successful(None))
