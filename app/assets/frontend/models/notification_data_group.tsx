@@ -6,9 +6,9 @@ export interface NotificationDataGroupInterface {
   hidden?: boolean
 }
 
-class NotificationDataGroup implements NotificationDataGroupInterface {
+class NotificationDataGroup<T extends NotificationData> implements NotificationDataGroupInterface {
   readonly kind: NotificationKind;
-  readonly members: Array<NotificationData>;
+  readonly members: Array<T>;
   readonly hidden: boolean;
 
   constructor(props: NotificationDataGroupInterface) {
@@ -31,23 +31,23 @@ class NotificationDataGroup implements NotificationDataGroupInterface {
       });
   }
 
-    concat(newMember: NotificationData): NotificationDataGroup {
+    concat(newMember: T): NotificationDataGroup<T> {
       return this.clone({
         members: this.members.concat(newMember)
       });
     }
 
-    hide(): NotificationDataGroup {
+    hide(): NotificationDataGroup<any> {
       return this.clone({
         hidden: true
       });
     }
 
-    clone(newProps: Partial<NotificationDataGroupInterface>): NotificationDataGroup {
+    clone(newProps: Partial<NotificationDataGroupInterface>): NotificationDataGroup<T> {
       return new NotificationDataGroup(Object.assign({}, this, newProps));
     }
 
-    static groupByKind(notifications: Array<NotificationData>): Array<NotificationDataGroup> {
+    static groupByKind(notifications: Array<NotificationData>): Array<NotificationDataGroup<any>> {
       var kinds = {};
       notifications.forEach((ea) => {
         const group = kinds[ea.kind] || new NotificationDataGroup({ kind: ea.kind });
@@ -56,7 +56,7 @@ class NotificationDataGroup implements NotificationDataGroupInterface {
       return Object.keys(kinds).map((ea) => kinds[ea]);
     }
 
-    static hideOldAndAppendNew(oldGroups: Array<NotificationDataGroup>, newGroups: Array<NotificationDataGroup>) {
+    static hideOldAndAppendNew(oldGroups: Array<NotificationDataGroup<any>>, newGroups: Array<NotificationDataGroup<any>>) {
       let brandNew = newGroups;
       const merged = oldGroups.map((oldGroup) => {
         if (oldGroup.hidden) {

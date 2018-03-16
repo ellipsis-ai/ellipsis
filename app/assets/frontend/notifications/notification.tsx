@@ -23,8 +23,8 @@ import {ReactElement} from "react";
 import EnvVarMissingNotificationData from "../models/notifications/env_var_missing_notification_data";
 import RequiredAwsConfigNotificationData from "../models/notifications/required_aws_config_notification_data";
 
-interface Props {
-  group: NotificationDataGroup,
+interface Props<T extends NotificationData> {
+  group: NotificationDataGroup<T>,
   inline?: Option<boolean>
 }
 
@@ -38,7 +38,7 @@ function notificationTypeIs<I extends NotificationDataInterface, T extends Notif
   return arr.every(ea => ea instanceof type);
 }
 
-class Notification extends React.Component<Props> {
+class Notification<T extends NotificationData> extends React.Component<Props<T>> {
     getNotificationForKind(kind: NotificationKind, members: Array<NotificationData>): NotificationConfig {
       if (notificationTypeIs(members, EnvVarMissingNotificationData)) {
         return {

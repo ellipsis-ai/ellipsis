@@ -10,7 +10,7 @@ interface Props {
 }
 
 interface State {
-  notificationGroups: Array<NotificationDataGroup>
+  notificationGroups: Array<NotificationDataGroup<any>>
 }
 
 class Notifications extends React.Component<Props, State> {
