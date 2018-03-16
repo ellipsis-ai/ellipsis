@@ -2,6 +2,7 @@ import akka.actor.ActorSystem
 import models.IDs
 import models.accounts.slack.botprofile.SlackBotProfile
 import models.accounts.user.User
+import models.behaviors.behaviorversion.BehaviorVersion
 import models.behaviors.conversations.InvokeBehaviorConversation
 import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.events.{SlackMessage, SlackMessageEvent}
@@ -79,6 +80,7 @@ class BotResultSpec extends PlaySpec with MockitoSugar with DBSpec {
         val result =
           SuccessResult(
             event,
+            mock[BehaviorVersion],
             None,
             JsString("result"),
             JsNull,
@@ -110,6 +112,7 @@ class BotResultSpec extends PlaySpec with MockitoSugar with DBSpec {
         val result =
           SuccessResult(
             event,
+            mock[BehaviorVersion],
             None,
             resultJs,
             JsNull,
@@ -152,7 +155,7 @@ class BotResultSpec extends PlaySpec with MockitoSugar with DBSpec {
         val event: SlackMessageEvent = newEventFor(profile)
 
         val responseText = "response"
-        val result = NoResponseResult(event, None, JsNull, None)
+        val result = NoResponseResult(event, mock[BehaviorVersion], None, JsNull, None)
         val resultTs: String = SlackTimestamp.now
 
         val conversation = newConversationFor(team, user, profile, event)
@@ -184,6 +187,7 @@ class BotResultSpec extends PlaySpec with MockitoSugar with DBSpec {
         val result =
           SuccessResult(
             event,
+            mock[BehaviorVersion],
             Some(selfConversation),
             resultJs,
             JsNull,
@@ -230,6 +234,7 @@ class BotResultSpec extends PlaySpec with MockitoSugar with DBSpec {
         val result =
           SuccessResult(
             event,
+            mock[BehaviorVersion],
             Some(threadedConversation),
             JsString("result"),
             JsNull,

@@ -31,6 +31,7 @@ class MockAWSLambdaService @Inject() (
   def resultFor(event: Event, maybeConversation: Option[Conversation]): BotResult = {
     SuccessResult(
       event,
+      mock[BehaviorVersion],
       maybeConversation,
       result = JsString("result"),
       payloadJson = JsNull,
