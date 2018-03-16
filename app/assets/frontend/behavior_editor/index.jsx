@@ -69,7 +69,7 @@ import 'codemirror/mode/markdown/markdown';
 import DeploymentStatus from "./deployment_status";
 import GithubRepoActions from "./versions/github_repo_actions";
 import {MOBILE_MAX_WIDTH} from "../lib/constants";
-import {EnvVarMissingNotificationData} from "assets/frontend/notifications/env_var_not_defined";
+import EnvVarMissingNotificationData from "../models/notifications/env_var_missing_notification_data";
 
 const BehaviorEditor = React.createClass({
   propTypes: Object.assign({}, Page.requiredPropTypes, {
