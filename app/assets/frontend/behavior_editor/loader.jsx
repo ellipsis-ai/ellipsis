@@ -88,7 +88,7 @@ class BehaviorEditorLoader extends React.Component {
 
         onDeploy(deploymentProps, callback) {
           this.setState({
-            group: this.state.group.clone({ deployment: BehaviorGroupDeployment.fromProps(deploymentProps) }),
+            group: this.state.group.clone({ deployment: BehaviorGroupDeployment.fromJson(deploymentProps) }),
             onLoad: null
           }, callback);
         }
