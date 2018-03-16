@@ -3,6 +3,7 @@ package models.behaviors
 import javax.inject.Inject
 
 import akka.actor.ActorSystem
+import models.behaviors.behaviorversion.BehaviorVersion
 import models.behaviors.events.{Event, EventHandler, RunEvent}
 import play.api.{Configuration, Logger}
 import services.caching.CacheService
@@ -23,13 +24,15 @@ class BotResultServiceImpl @Inject() (
   val cacheService: CacheService = services.cacheService
   def slackService: SlackEventService = services.slackEventService
 
-  private def runBehaviorFor(maybeEvent: Option[Event])(implicit actorSystem: ActorSystem): DBIO[Seq[BotResult]] = {
+  private def runBehaviorFor(maybeEvent: Option[Event], maybeOriginatingBehaviorVersion: Option[BehaviorVersion])(implicit actorSystem: ActorSystem): DBIO[Seq[BotResult]] = {
     for {
       result <- maybeEvent.map { event =>
         DBIO.from(eventHandler.handle(event, None)).flatMap { results =>
           DBIO.sequence(results.map { result =>
             sendInAction(result, None, None, None).map { _ =>
-              Logger.info(event.logTextFor(result, Some("as next action")))
+              val nextActionPart = result.maybeBehaviorVersion.map(_.nameAndIdString).getOrElse("<not found>")
+              val originatingActionPart = maybeOriginatingBehaviorVersion.map(_.nameAndIdString).getOrElse("<not found>")
+              Logger.info(event.logTextFor(result, Some(s"as next action `${nextActionPart}` from action `${originatingActionPart}`")))
             }.map(_ => result)
           })
         }
@@ -39,7 +42,7 @@ class BotResultServiceImpl @Inject() (
     } yield result
   }
 
-  private def run(nextAction: NextAction, botResult: BotResult)(implicit actorSystem: ActorSystem): DBIO[Unit] = {
+  private def runNextAction(nextAction: NextAction, botResult: BotResult)(implicit actorSystem: ActorSystem): DBIO[Unit] = {
     for {
       maybeSlackChannelId <- botResult.event.maybeChannelForSendAction(botResult.forcePrivateResponse, botResult.maybeConversation, dataService)
       maybeBehavior <- botResult.maybeBehaviorVersion.map { originatingBehaviorVersion =>
@@ -72,7 +75,7 @@ class BotResultServiceImpl @Inject() (
         )
       )
       _ <- if (maybeBehavior.isDefined) {
-        runBehaviorFor(maybeEvent)
+        runBehaviorFor(maybeEvent, botResult.maybeBehaviorVersion)
       } else {
         val text = s"Can't run action named `${nextAction.actionName}` in this skill"
         val result = SimpleTextResult(botResult.event, botResult.maybeConversation, text, botResult.forcePrivateResponse)
@@ -133,7 +136,7 @@ class BotResultServiceImpl @Inject() (
         )
       )
       _ <- botResult.maybeNextAction.map { nextAction =>
-        run(nextAction, botResult)
+        runNextAction(nextAction, botResult)
       }.getOrElse(DBIO.successful({}))
     } yield sendResult
   }

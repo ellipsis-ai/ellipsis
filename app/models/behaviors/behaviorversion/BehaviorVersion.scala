@@ -64,6 +64,11 @@ case class BehaviorVersion(
     maybeName.getOrElse(id)
   }
 
+  def nameAndIdString: String = {
+    val namePart = maybeName.map(_ ++ " ").getOrElse("")
+    s"${namePart}[${id}]"
+  }
+
   def hasFunction: Boolean = {
     maybeFunctionBody.exists(_.trim.nonEmpty)
   }
