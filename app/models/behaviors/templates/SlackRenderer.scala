@@ -102,6 +102,7 @@ class SlackRenderer(stringBuilder: StringBuilder) extends AbstractVisitor {
   }
 
   override def visit(thematicBreak: ThematicBreak) {
+    stringBuilder.append("\r─────\r")
     visitChildren(thematicBreak)
   }
 
