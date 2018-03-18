@@ -1,29 +1,34 @@
 import * as React from 'react';
 import {OAuth2ApplicationRef, RequiredOAuth2Application} from '../models/oauth2';
+import OAuth2ConfigWithoutApplicationNotificationData from "../models/notifications/oauth2_config_without_application_notification_data";
+import autobind from '../lib/autobind';
 
-const NotificationForMissingOAuth2Application = React.createClass({
-    propTypes: {
-      details: React.PropTypes.arrayOf(React.PropTypes.shape({
-        kind: React.PropTypes.string.isRequired,
-        name: React.PropTypes.string.isRequired,
-        existingOAuth2Applications: React.PropTypes.arrayOf(React.PropTypes.instanceOf(OAuth2ApplicationRef)).isRequired,
-        requiredApiConfig: React.PropTypes.instanceOf(RequiredOAuth2Application).isRequired,
-        onUpdateOAuth2Application: React.PropTypes.func.isRequired,
-        onNewOAuth2Application: React.PropTypes.func.isRequired,
-        onConfigClick: React.PropTypes.func.isRequired
-      })).isRequired
-    },
+interface Props {
+  details: Array<OAuth2ConfigWithoutApplicationNotificationData>
+}
 
-    recommendedScopeAnnotation: function(detail) {
+class NotificationForMissingOAuth2Application extends React.PureComponent<Props> {
+  constructor(props: Props) {
+    super(props);
+    autobind(this);
+  }
+
+    recommendedScopeAnnotation(detail: OAuth2ConfigWithoutApplicationNotificationData) {
       var recommendedScope = detail.requiredApiConfig.recommendedScope;
       if (recommendedScope) {
         return (
-          <span>(recommended scope: <b>{recommendedScope}</b>)</span>
+          <span>
+            <span>(recommended scope: </span>
+            <b>{recommendedScope}</b>
+            <span>)</span>
+          </span>
         );
+      } else {
+        return null;
       }
-    },
+    }
 
-    addOAuth2ApplicationPrompt: function(detail) {
+    addOAuth2ApplicationPrompt(detail: OAuth2ConfigWithoutApplicationNotificationData) {
       var matchingApplications = detail.existingOAuth2Applications.filter(ea => ea.apiId === detail.requiredApiConfig.apiId);
       if (matchingApplications.length === 1) {
         const app = matchingApplications[0];
@@ -66,19 +71,19 @@ const NotificationForMissingOAuth2Application = React.createClass({
           </span>
         );
       }
-    },
+    }
 
-    onUpdateOAuth2Application: function(detail, app) {
+    onUpdateOAuth2Application(detail: OAuth2ConfigWithoutApplicationNotificationData, app: OAuth2ApplicationRef) {
       detail.onUpdateOAuth2Application(detail.requiredApiConfig.clone({
         config: app
       }));
-    },
+    }
 
-    onNewOAuth2Application: function(detail, requiredOAuth2ApiConfig) {
+    onNewOAuth2Application(detail: OAuth2ConfigWithoutApplicationNotificationData, requiredOAuth2ApiConfig: RequiredOAuth2Application) {
       detail.onNewOAuth2Application(requiredOAuth2ApiConfig);
-    },
+    }
 
-    render: function() {
+    render() {
       var numRequiredApiConfigs = this.props.details.length;
       if (numRequiredApiConfigs === 1) {
         var detail = this.props.details[0];
@@ -105,6 +110,6 @@ const NotificationForMissingOAuth2Application = React.createClass({
         );
       }
     }
-});
+}
 
 export default NotificationForMissingOAuth2Application;

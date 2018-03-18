@@ -71,6 +71,7 @@ import GithubRepoActions from "./versions/github_repo_actions";
 import {MOBILE_MAX_WIDTH} from "../lib/constants";
 import EnvVarMissingNotificationData from "../models/notifications/env_var_missing_notification_data";
 import RequiredAwsConfigNotificationData from "../models/notifications/required_aws_config_notification_data";
+import OAuth2ConfigWithoutApplicationNotificationData from "../models/notifications/oauth2_config_without_application_notification_data";
 
 const BehaviorEditor = React.createClass({
   propTypes: Object.assign({}, Page.requiredPropTypes, {
@@ -470,7 +471,7 @@ const BehaviorEditor = React.createClass({
     if (this.isConfiguringApi()) {
       return [];
     }
-    return this.getRequiredOAuth2ApiConfigsWithNoApplication().map(ea => new NotificationData({
+    return this.getRequiredOAuth2ApiConfigsWithNoApplication().map(ea => new OAuth2ConfigWithoutApplicationNotificationData({
       kind: "oauth2_config_without_application",
       name: this.getOAuth2ApiWithId(ea.apiId).name,
       requiredApiConfig: ea,

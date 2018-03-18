@@ -1,6 +1,6 @@
-import NotificationData from "../notification_data";
+import NotificationData, {NotificationDataInterface} from "../notification_data";
 
-interface EnvVarMissingNotificationDataInterface extends NotificationData {
+interface EnvVarMissingNotificationDataInterface extends NotificationDataInterface {
   kind: "env_var_not_defined";
   environmentVariableName: string;
   onClick: () => void;

@@ -22,6 +22,7 @@ import NotificationData, {NotificationDataInterface, NotificationKind} from "../
 import {ReactElement} from "react";
 import EnvVarMissingNotificationData from "../models/notifications/env_var_missing_notification_data";
 import RequiredAwsConfigNotificationData from "../models/notifications/required_aws_config_notification_data";
+import OAuth2ConfigWithoutApplicationNotificationData from "../models/notifications/oauth2_config_without_application_notification_data";
 
 interface Props<T extends NotificationData> {
   group: NotificationDataGroup<T>,
@@ -56,12 +57,12 @@ class Notification<T extends NotificationData> extends React.Component<Props<T>>
             <NotificationForRequiredAWSConfigWithoutConfig details={members} />
           )
         };
-      } else if (kind === "oauth2_config_without_application") {
+      } else if (notificationTypeIs(members, OAuth2ConfigWithoutApplicationNotificationData)) {
         return {
           containerClass: "box-warning",
           icon: this.getWarningIcon(),
           message: (
-            <NotificationForMissingOAuth2Application details={this.props.group.members} />
+            <NotificationForMissingOAuth2Application details={members} />
           )
         };
       } else if (kind === 'data_type_needs_config') {
