@@ -1,10 +1,14 @@
 package utils
 
 import akka.actor.ActorSystem
+import json.Formatting._
 import models.SlackMessageFormatter
+import models.behaviors.ActionChoice
 import models.behaviors.conversations.conversation.Conversation
-import models.behaviors.events.{MessageAttachmentGroup, SlackMessageAttachmentGroup, SlackMessageTextAttachmentGroup}
+import models.behaviors.events._
+import models.behaviors.events.SlackMessageActionConstants._
 import play.api.Configuration
+import play.api.libs.json.Json
 import slack.api.SlackApiClient
 import slack.models.Attachment
 
@@ -37,26 +41,48 @@ case class SlackMessageSender(
                                maybeConversation: Option[Conversation],
                                attachmentGroups: Seq[MessageAttachmentGroup] = Seq(),
                                files: Seq[UploadFileSpec] = Seq(),
+                               choices: Seq[ActionChoice],
                                configuration: Configuration,
                                botName: String
                              ) {
 
-  val attachmentGroupsToUse = if (isForUndeployed) {
-    val baseUrl = configuration.get[String]("application.apiBaseUrl")
-    val path = controllers.routes.HelpController.devMode(Some(slackTeamId), Some(botName)).url
-    val link = s"[development]($baseUrl$path)"
-    attachmentGroups ++ Seq(SlackMessageTextAttachmentGroup(s"\uD83D\uDEA7 Skill in $link \uD83D\uDEA7", None))
-  } else if (hasUndeployedVersionForAuthor) {
-    val baseUrl = configuration.get[String]("application.apiBaseUrl")
-    val path = controllers.routes.HelpController.devMode(Some(slackTeamId), Some(botName)).url
-    val link = s"[dev mode]($baseUrl$path)"
-    attachmentGroups ++ Seq(
-      SlackMessageTextAttachmentGroup(
-        s"\uD83D\uDEA7 You are running the deployed version of this skill even though you've made changes. You can always use the most recent version in $link.", None
+  val choicesAttachmentGroups: Seq[SlackMessageActionsGroup] = {
+    if (choices.isEmpty) {
+      Seq()
+    } else {
+      val actionList = choices.zipWithIndex.map { case(ea, i) =>
+        val value = Json.toJson(ea).toString()
+        SlackMessageActionButton(ACTION_CHOICE, ea.label, value, maybeStyle = Some("primary"))
+      }
+      Seq(SlackMessageActionsGroup(
+        ACTION_CHOICES,
+        actionList,
+        None,
+        Some(Color.PINK),
+        None
+      ))
+    }
+  }
+
+  val attachmentGroupsToUse = {
+    val groups = attachmentGroups ++ choicesAttachmentGroups
+    if (isForUndeployed) {
+      val baseUrl = configuration.get[String]("application.apiBaseUrl")
+      val path = controllers.routes.HelpController.devMode(Some(slackTeamId), Some(botName)).url
+      val link = s"[development]($baseUrl$path)"
+      groups ++ Seq(SlackMessageTextAttachmentGroup(s"\uD83D\uDEA7 Skill in $link \uD83D\uDEA7", None))
+    } else if (hasUndeployedVersionForAuthor) {
+      val baseUrl = configuration.get[String]("application.apiBaseUrl")
+      val path = controllers.routes.HelpController.devMode(Some(slackTeamId), Some(botName)).url
+      val link = s"[dev mode]($baseUrl$path)"
+      groups ++ Seq(
+        SlackMessageTextAttachmentGroup(
+          s"\uD83D\uDEA7 You are running the deployed version of this skill even though you've made changes. You can always use the most recent version in $link.", None
+        )
       )
-    )
-  } else {
-    attachmentGroups
+    } else {
+      groups
+    }
   }
 
   private def postChatMessage(

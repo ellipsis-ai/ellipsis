@@ -9,6 +9,8 @@ object SlackMessageActionConstants {
   val STOP_CONVERSATION = "stop_conversation"
   val RUN_BEHAVIOR_VERSION = "run_behavior_version"
   val INPUT_CHOICE = "input_choice"
+  val ACTION_CHOICES = "action_choices"
+  val ACTION_CHOICE = "action_choice"
 
   def inputChoiceCallbackIdFor(slackUserId: String, maybeConversationId: Option[String]): String = {
     val conversationId = maybeConversationId.getOrElse("")

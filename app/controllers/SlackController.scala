@@ -4,7 +4,8 @@ import javax.inject.Inject
 
 import com.google.inject.Provider
 import com.mohiva.play.silhouette.api.Silhouette
-import json.{SlackUserData, SlackUserProfileData}
+import json.Formatting._
+import models.behaviors.ActionChoice
 import models.behaviors.builtins.DisplayHelpBehavior
 import models.behaviors.events.SlackMessageActionConstants._
 import models.behaviors.events._
@@ -35,6 +36,7 @@ class SlackController @Inject() (
   val lambdaService = services.lambdaService
   val cacheService = services.cacheService
   val ws = services.ws
+  val botResultService = services.botResultService
   implicit val actorSystem = services.actorSystem
 
   private def maybeResultFor[T](form: Form[T], resultFn: T => Result)
@@ -455,6 +457,14 @@ class SlackController @Inject() (
       }
     }
 
+    def maybeSelectedActionChoice: Option[ActionChoice] = {
+      val maybeAction = actions.find(_.name == ACTION_CHOICE)
+      maybeAction.flatMap(_.value).flatMap { value =>
+        val json = Json.parse(value)
+        json.asOpt[ActionChoice]
+      }
+    }
+
     private def originalMessageActions: Seq[ActionInfo] = {
       this.original_message.attachments.flatMap(_.actions).flatten
     }
@@ -770,6 +780,46 @@ class SlackController @Inject() (
                 } getOrElse {
                   s"$user ran an action"
                 })
+              }
+
+              info.maybeSelectedActionChoice.foreach { actionChoice =>
+                dataService.slackBotProfiles.sendResultWithNewEvent(
+                  s"run action named ${actionChoice.actionName}",
+                  event => for {
+                    maybeGroupVersion <- actionChoice.groupVersionId.map { groupVersionId =>
+                      dataService.behaviorGroupVersions.findWithoutAccessCheck(groupVersionId)
+                    }.getOrElse(Future.successful(None))
+                    maybeBehaviorVersion <- maybeGroupVersion.map { groupVersion =>
+                      dataService.behaviorVersions.findByName(actionChoice.actionName, groupVersion)
+                    }.getOrElse(Future.successful(None))
+                    params <- maybeBehaviorVersion.map { behaviorVersion =>
+                      dataService.behaviorParameters.allFor(behaviorVersion)
+                    }.getOrElse(Future.successful(Seq()))
+                    invocationParams <- Future.successful(actionChoice.argumentsMap.flatMap { case(name, value) =>
+                      params.find(_.name == name).map { param =>
+                        (AWSLambdaConstants.invocationParamFor(param.rank - 1), value)
+                      }
+                    })
+                    maybeResponse <- maybeBehaviorVersion.map { behaviorVersion =>
+                      dataService.behaviorResponses.buildFor(
+                        event,
+                        behaviorVersion,
+                        invocationParams,
+                        None,
+                        None
+                      ).map(Some(_))
+                    }.getOrElse(Future.successful(None))
+                    maybeResult <- maybeResponse.map { response =>
+                      response.result.map(Some(_))
+                    }.getOrElse(Future.successful(None))
+                  } yield maybeResult,
+                  info.team.id,
+                  info.channel.id,
+                  info.user.id,
+                  info.message_ts
+                )
+
+                maybeResultText = Some(s"$user clicked ${actionChoice.label}")
               }
 
               // respond immediately by appending a new attachment
