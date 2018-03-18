@@ -52,13 +52,13 @@ case class SlackMessageSender(
     } else {
       val actionList = choices.zipWithIndex.map { case(ea, i) =>
         val value = Json.toJson(ea).toString()
-        SlackMessageActionButton(ACTION_CHOICE, ea.label, value, maybeStyle = Some("primary"))
+        SlackMessageActionButton(ACTION_CHOICE, ea.label, value)
       }
       Seq(SlackMessageActionsGroup(
         ACTION_CHOICES,
         actionList,
         None,
-        Some(Color.PINK),
+        Some(Color.BLUE_LIGHTER),
         None
       ))
     }
