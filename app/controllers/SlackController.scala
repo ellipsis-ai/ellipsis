@@ -21,6 +21,7 @@ import play.utils.UriEncoding
 import services._
 
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.{Failure, Success, Try}
 
 class SlackController @Inject() (
                                   val silhouette: Silhouette[EllipsisEnv],
@@ -460,8 +461,10 @@ class SlackController @Inject() (
     def maybeSelectedActionChoice: Option[ActionChoice] = {
       val maybeAction = actions.find(_.name == ACTION_CHOICE)
       maybeAction.flatMap(_.value).flatMap { value =>
-        val json = Json.parse(value)
-        json.asOpt[ActionChoice]
+        Try(Json.parse(value)) match {
+          case Success(json) => json.asOpt[ActionChoice]
+          case Failure(_) => None
+        }
       }
     }
 
