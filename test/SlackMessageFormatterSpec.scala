@@ -39,6 +39,16 @@ class SlackMessageFormatterSpec extends PlaySpec {
       format("The $latest is the <latest>") mustBe "The $latest is the &lt;latest&gt;"
     }
 
+    "handle horizontal rule" in {
+      val input = """There should be a line below this
+                    |
+                    |---
+                    |
+                    |There should be a line above this""".stripMargin
+      val output = "There should be a line below this\r\r─────\r\rThere should be a line above this"
+      format(input) mustBe output
+    }
+
   }
 
 }
