@@ -274,6 +274,12 @@ class BehaviorGroupVersionServiceImpl @Inject() (
     }
   }
 
+  def isActive(groupVersion: BehaviorGroupVersion, context: String, channel: String): Future[Boolean] = {
+    dataService.behaviorGroupDeployments.maybeActiveBehaviorGroupVersionFor(groupVersion.group, context, channel).map{ maybeActive =>
+      maybeActive.contains(groupVersion)
+    }
+  }
+
   def activeFunctionNames: Future[Seq[String]] = {
     for {
       current <- currentFunctionNames

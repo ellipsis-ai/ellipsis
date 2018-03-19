@@ -7,6 +7,7 @@ import com.mohiva.play.silhouette.api.Silhouette
 import json.Formatting._
 import models.behaviors.ActionChoice
 import models.behaviors.builtins.DisplayHelpBehavior
+import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.events.SlackMessageActionConstants._
 import models.behaviors.events._
 import models.help.HelpGroupSearchValue
@@ -793,7 +794,13 @@ class SlackController @Inject() (
                       dataService.behaviorGroupVersions.findWithoutAccessCheck(groupVersionId)
                     }.getOrElse(Future.successful(None))
                     maybeBehaviorVersion <- maybeGroupVersion.map { groupVersion =>
-                      dataService.behaviorVersions.findByName(actionChoice.actionName, groupVersion)
+                      dataService.behaviorGroupVersions.isActive(groupVersion, Conversation.SLACK_CONTEXT, info.channel.id).flatMap { isActive =>
+                        if (isActive) {
+                          dataService.behaviorVersions.findByName(actionChoice.actionName, groupVersion)
+                        } else {
+                          Future.successful(None)
+                        }
+                      }
                     }.getOrElse(Future.successful(None))
                     params <- maybeBehaviorVersion.map { behaviorVersion =>
                       dataService.behaviorParameters.allFor(behaviorVersion)
@@ -822,7 +829,21 @@ class SlackController @Inject() (
                   info.message_ts
                 )
 
-                maybeResultText = Some(s"$user clicked ${actionChoice.label}")
+                dataService.runNow(for {
+                  maybeGroupVersion <- actionChoice.groupVersionId.map { groupVersionId =>
+                    dataService.behaviorGroupVersions.findWithoutAccessCheck(groupVersionId)
+                  }.getOrElse(Future.successful(None))
+                  isActive <- maybeGroupVersion.map { groupVersion =>
+                    dataService.behaviorGroupVersions.isActive(groupVersion, Conversation.SLACK_CONTEXT, info.channel.id)
+                  }.getOrElse(Future.successful(false))
+                } yield {
+                  if (isActive) {
+                    maybeResultText = Some(s"$user clicked ${actionChoice.label}")
+                  } else {
+                    shouldRemoveActions = true
+                    maybeResultText = Some("This skill has been updated, making these associated actions no longer valid")
+                  }
+                })
               }
 
               // respond immediately by appending a new attachment
