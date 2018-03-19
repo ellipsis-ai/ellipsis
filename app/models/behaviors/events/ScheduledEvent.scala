@@ -1,6 +1,7 @@
 package models.behaviors.events
 
 import akka.actor.ActorSystem
+import models.behaviors.ActionChoice
 import models.behaviors.behavior.Behavior
 import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.scheduling.Scheduled
@@ -30,12 +31,13 @@ case class ScheduledEvent(underlying: Event, scheduled: Scheduled) extends Event
                    maybeConversation: Option[Conversation],
                    attachmentGroups: Seq[MessageAttachmentGroup],
                    files: Seq[UploadFileSpec],
+                   choices: Seq[ActionChoice],
                    isForUndeployed: Boolean,
                    hasUndeployedVersionForAuthor: Boolean,
                    services: DefaultServices,
                    configuration: Configuration
                  )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[String]] = {
-    underlying.sendMessage(text, forcePrivate, maybeShouldUnfurl, maybeConversation, attachmentGroups, files, isForUndeployed, hasUndeployedVersionForAuthor, services, configuration)
+    underlying.sendMessage(text, forcePrivate, maybeShouldUnfurl, maybeConversation, attachmentGroups, files, choices, isForUndeployed, hasUndeployedVersionForAuthor, services, configuration)
   }
 
   override def detailsFor(services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[JsObject] = {

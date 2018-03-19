@@ -154,6 +154,13 @@ class BehaviorVersionServiceImpl @Inject() (
     dataService.run(findForAction(behavior, groupVersion))
   }
 
+  def findByName(name: String, groupVersion: BehaviorGroupVersion): Future[Option[BehaviorVersion]] = {
+    val action = findWithNameQuery(name, groupVersion.id).result.map { r =>
+      r.headOption.map(tuple2BehaviorVersion)
+    }
+    dataService.run(action)
+  }
+
   def findCurrentByName(name: String, group: BehaviorGroup): Future[Option[BehaviorVersion]] = {
     dataService.run(findCurrentByNameAction(name, group))
   }

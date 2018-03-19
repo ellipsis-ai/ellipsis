@@ -51,6 +51,8 @@ trait BehaviorGroupVersionService {
 
   def redeployAllCurrentVersions: Future[Unit]
 
+  def isActive(groupVersion: BehaviorGroupVersion, context: String, channel: String): Future[Boolean]
+
   def activeFunctionNames: Future[Seq[String]]
 
   def hasNewerVersionForAuthorAction(version: BehaviorGroupVersion, user: User): DBIO[Boolean]

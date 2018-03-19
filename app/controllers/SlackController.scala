@@ -4,8 +4,10 @@ import javax.inject.Inject
 
 import com.google.inject.Provider
 import com.mohiva.play.silhouette.api.Silhouette
-import json.{SlackUserData, SlackUserProfileData}
+import json.Formatting._
+import models.behaviors.ActionChoice
 import models.behaviors.builtins.DisplayHelpBehavior
+import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.events.SlackMessageActionConstants._
 import models.behaviors.events._
 import models.help.HelpGroupSearchValue
@@ -20,6 +22,7 @@ import play.utils.UriEncoding
 import services._
 
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.{Failure, Success, Try}
 
 class SlackController @Inject() (
                                   val silhouette: Silhouette[EllipsisEnv],
@@ -35,6 +38,7 @@ class SlackController @Inject() (
   val lambdaService = services.lambdaService
   val cacheService = services.cacheService
   val ws = services.ws
+  val botResultService = services.botResultService
   implicit val actorSystem = services.actorSystem
 
   private def maybeResultFor[T](form: Form[T], resultFn: T => Result)
@@ -455,6 +459,16 @@ class SlackController @Inject() (
       }
     }
 
+    def maybeSelectedActionChoice: Option[ActionChoice] = {
+      val maybeAction = actions.find(_.name == ACTION_CHOICE)
+      maybeAction.flatMap(_.value).flatMap { value =>
+        Try(Json.parse(value)) match {
+          case Success(json) => json.asOpt[ActionChoice]
+          case Failure(_) => None
+        }
+      }
+    }
+
     private def originalMessageActions: Seq[ActionInfo] = {
       this.original_message.attachments.flatMap(_.actions).flatten
     }
@@ -769,6 +783,66 @@ class SlackController @Inject() (
                   s"$user ran ${text.mkString("“", "", "”")}"
                 } getOrElse {
                   s"$user ran an action"
+                })
+              }
+
+              info.maybeSelectedActionChoice.foreach { actionChoice =>
+                dataService.slackBotProfiles.sendResultWithNewEvent(
+                  s"run action named ${actionChoice.actionName}",
+                  event => for {
+                    maybeGroupVersion <- actionChoice.groupVersionId.map { groupVersionId =>
+                      dataService.behaviorGroupVersions.findWithoutAccessCheck(groupVersionId)
+                    }.getOrElse(Future.successful(None))
+                    maybeBehaviorVersion <- maybeGroupVersion.map { groupVersion =>
+                      dataService.behaviorGroupVersions.isActive(groupVersion, Conversation.SLACK_CONTEXT, info.channel.id).flatMap { isActive =>
+                        if (isActive) {
+                          dataService.behaviorVersions.findByName(actionChoice.actionName, groupVersion)
+                        } else {
+                          Future.successful(None)
+                        }
+                      }
+                    }.getOrElse(Future.successful(None))
+                    params <- maybeBehaviorVersion.map { behaviorVersion =>
+                      dataService.behaviorParameters.allFor(behaviorVersion)
+                    }.getOrElse(Future.successful(Seq()))
+                    invocationParams <- Future.successful(actionChoice.argumentsMap.flatMap { case(name, value) =>
+                      params.find(_.name == name).map { param =>
+                        (AWSLambdaConstants.invocationParamFor(param.rank - 1), value)
+                      }
+                    })
+                    maybeResponse <- maybeBehaviorVersion.map { behaviorVersion =>
+                      dataService.behaviorResponses.buildFor(
+                        event,
+                        behaviorVersion,
+                        invocationParams,
+                        None,
+                        None
+                      ).map(Some(_))
+                    }.getOrElse(Future.successful(None))
+                    maybeResult <- maybeResponse.map { response =>
+                      response.result.map(Some(_))
+                    }.getOrElse(Future.successful(None))
+                  } yield maybeResult,
+                  info.team.id,
+                  info.channel.id,
+                  info.user.id,
+                  info.message_ts
+                )
+
+                dataService.runNow(for {
+                  maybeGroupVersion <- actionChoice.groupVersionId.map { groupVersionId =>
+                    dataService.behaviorGroupVersions.findWithoutAccessCheck(groupVersionId)
+                  }.getOrElse(Future.successful(None))
+                  isActive <- maybeGroupVersion.map { groupVersion =>
+                    dataService.behaviorGroupVersions.isActive(groupVersion, Conversation.SLACK_CONTEXT, info.channel.id)
+                  }.getOrElse(Future.successful(false))
+                } yield {
+                  if (isActive) {
+                    maybeResultText = Some(s"$user clicked ${actionChoice.label}")
+                  } else {
+                    shouldRemoveActions = true
+                    maybeResultText = Some("This skill has been updated, making these associated actions no longer valid")
+                  }
                 })
               }
 

@@ -26,15 +26,25 @@ object ResultType extends Enumeration {
   val Success, SimpleText, TextWithActions, ConversationPrompt, NoResponse, ExecutionError, SyntaxError, NoCallbackTriggered, MissingTeamEnvVar, AWSDown, OAuth2TokenMissing, RequiredApiNotReady = Value
 }
 
-case class NextActionArg(name: String, value: String)
-
-case class NextAction(actionName: String, args: Option[Seq[NextActionArg]]) {
+trait WithActionArgs {
+  val args: Option[Seq[ActionArg]]
   val argumentsMap: Map[String, String] = {
     args.getOrElse(Seq()).map { ea =>
       (ea.name, ea.value)
     }.toMap
   }
 }
+
+case class ActionArg(name: String, value: String)
+
+case class NextAction(actionName: String, args: Option[Seq[ActionArg]]) extends WithActionArgs
+
+case class ActionChoice(
+                         label: String,
+                         actionName: String,
+                         args: Option[Seq[ActionArg]],
+                         groupVersionId: Option[String]
+                       ) extends WithActionArgs
 
 sealed trait BotResult {
   val resultType: ResultType.Value
@@ -44,6 +54,7 @@ sealed trait BotResult {
   def files: Seq[UploadFileSpec] = Seq()
   val maybeBehaviorVersion: Option[BehaviorVersion]
   def maybeNextAction: Option[NextAction] = None
+  def maybeChoices: Option[Seq[ActionChoice]] = None
   val shouldInterrupt: Boolean = true
   def text: String
   def fullText: String = text
@@ -193,6 +204,14 @@ case class SuccessResult(
 
   override def maybeNextAction: Option[NextAction] = {
     (payloadJson \ "next").asOpt[NextAction]
+  }
+
+  override def maybeChoices: Option[Seq[ActionChoice]] = {
+    (payloadJson \ "choices").asOpt[Seq[ActionChoice]].map { choices =>
+      choices.map { ea =>
+        ea.copy(groupVersionId = Some(behaviorVersion.groupVersion.id))
+      }
+    }
   }
 
   def text: String = {

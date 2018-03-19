@@ -2,7 +2,7 @@ package json
 
 import json.web.settings.IntegrationListConfig
 import models.accounts.slack.botprofile.SlackBotProfile
-import models.behaviors.{ExecutionErrorData, ExecutionLogData, NextAction, NextActionArg}
+import models.behaviors._
 import models.behaviors.behaviorparameter.ValidValue
 import models.behaviors.events.{SlackFile, SlackMessage}
 import models.behaviors.testing.{InvocationTestReportOutput, ResultOutput}
@@ -190,7 +190,8 @@ object Formatting {
 
   implicit val integrationListConfigFormat = Json.format[IntegrationListConfig]
 
-  lazy implicit val nextActionArgFormat = Json.format[NextActionArg]
+  lazy implicit val actionArgFormat = Json.format[ActionArg]
   lazy implicit val nextActionFormat = Json.format[NextAction]
+  lazy implicit val actionChoiceFormat = Json.format[ActionChoice]
 
 }
