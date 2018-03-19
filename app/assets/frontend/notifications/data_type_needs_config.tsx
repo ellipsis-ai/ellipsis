@@ -1,15 +1,18 @@
 import * as React from 'react';
+import DataTypeNeedsConfigNotificationData from "../models/notifications/data_type_needs_config_notification_data";
+import autobind from '../lib/autobind';
 
-const NotificationForDataTypeNeedsConfig = React.createClass({
-    propTypes: {
-      details: React.PropTypes.arrayOf(React.PropTypes.shape({
-        kind: React.PropTypes.string.isRequired,
-        name: React.PropTypes.string.isRequired,
-        onClick: React.PropTypes.func.isRequired
-      })).isRequired
-    },
+interface Props {
+  details: Array<DataTypeNeedsConfigNotificationData>
+}
 
-    renderDetail: function(detail) {
+class NotificationForDataTypeNeedsConfig extends React.PureComponent<Props> {
+  constructor(props: Props) {
+    super(props);
+    autobind(this);
+  }
+
+    renderDetail(detail: DataTypeNeedsConfigNotificationData) {
       return (
         <span>
           <span>The <b>{detail.name}</b> data type needs to be configured.</span>
@@ -22,13 +25,12 @@ const NotificationForDataTypeNeedsConfig = React.createClass({
           </span>
         </span>
       );
-    },
-
-    render: function() {
-      return this.renderDetail(this.props.details[0]);
     }
 
-});
+    render() {
+      return this.renderDetail(this.props.details[0]);
+    }
+}
 
 export default NotificationForDataTypeNeedsConfig;
 

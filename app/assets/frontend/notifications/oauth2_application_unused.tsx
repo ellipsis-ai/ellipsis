@@ -1,15 +1,18 @@
 import * as React from 'react';
+import OAuth2ApplicationUnusedNotificationData from "../models/notifications/oauth2_application_unused";
+import autobind from '../lib/autobind';
 
-const NotificationForUnusedOAuth2Application = React.createClass({
-    propTypes: {
-      details: React.PropTypes.arrayOf(React.PropTypes.shape({
-        kind: React.PropTypes.string.isRequired,
-        name: React.PropTypes.string.isRequired,
-        code: React.PropTypes.string.isRequired
-      })).isRequired
-    },
+interface Props {
+  details: Array<OAuth2ApplicationUnusedNotificationData>
+}
 
-    render: function() {
+class NotificationForUnusedOAuth2Application extends React.PureComponent<Props> {
+  constructor(props: Props) {
+    super(props);
+    autobind(this);
+  }
+
+    render() {
       var numApps = this.props.details.length;
       if (numApps === 1) {
         var firstApp = this.props.details[0];
@@ -35,6 +38,6 @@ const NotificationForUnusedOAuth2Application = React.createClass({
         );
       }
     }
-});
+}
 
 export default NotificationForUnusedOAuth2Application;

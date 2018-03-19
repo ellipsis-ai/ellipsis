@@ -1,4 +1,5 @@
 import * as React from 'react';
+import {ReactElement} from "react";
 import Collapsible from '../shared_ui/collapsible';
 import SVGTip from '../svg/tip';
 import SVGWarning from '../svg/warning';
@@ -19,10 +20,21 @@ import NotificationForServerDataWarning from './server_data_warning';
 import NotificationForSkillDetailsWarning from './skill_details_warning';
 import NotificationDataGroup from '../models/notification_data_group';
 import NotificationData, {NotificationDataInterface, NotificationKind} from "../models/notification_data";
-import {ReactElement} from "react";
 import EnvVarMissingNotificationData from "../models/notifications/env_var_missing_notification_data";
 import RequiredAwsConfigNotificationData from "../models/notifications/required_aws_config_notification_data";
 import OAuth2ConfigWithoutApplicationNotificationData from "../models/notifications/oauth2_config_without_application_notification_data";
+import DataTypeNeedsConfigNotificationData from "../models/notifications/data_type_needs_config_notification_data";
+import DataTypeUnnamedNotificationData from "../models/notifications/data_type_unnamed_notification_data";
+import DataTypeMissingFieldsNotificationData from "../models/notifications/data_type_missing_fields_notification_data";
+import DataTypeUnnamedFieldsNotificationData from "../models/notifications/data_type_unnamed_fields_notification_data";
+import DataTypeDuplicateFieldsNotificationData from "../models/notifications/data_type_duplicate_fields_notification_data";
+import OAuth2ApplicationUnusedNotificationData from "../models/notifications/oauth2_application_unused";
+import AWSUnusedNotificationData from "../models/notifications/aws_unused_notification_data";
+import ParamNotInFunctionNotificationData from "../models/notifications/param_not_in_function_notification_data";
+import InvalidParamInTriggerNotificationData from "../models/notifications/invalid_param_in_trigger_notification_data";
+import UnknownParamInTemplateNotificationData from "../models/notifications/unknown_param_in_template_notification_data";
+import ServerDataWarningNotificationData from "../models/notifications/server_data_warning_notification_data";
+import SkillDetailsWarningNotificationData from "../models/notifications/skill_details_warning_notification_data";
 
 interface Props<T extends NotificationData> {
   group: NotificationDataGroup<T>,
@@ -65,100 +77,100 @@ class Notification<T extends NotificationData> extends React.Component<Props<T>>
             <NotificationForMissingOAuth2Application details={members} />
           )
         };
-      } else if (kind === 'data_type_needs_config') {
+      } else if (notificationTypeIs(members, DataTypeNeedsConfigNotificationData)) {
         return {
           containerClass: "box-warning",
           icon: this.getWarningIcon(),
           message: (
-            <NotificationForDataTypeNeedsConfig details={this.props.group.members} />
+            <NotificationForDataTypeNeedsConfig details={members} />
           )
         };
-      } else if (kind === "data_type_unnamed") {
+      } else if (notificationTypeIs(members, DataTypeUnnamedNotificationData)) {
         return {
           containerClass: "box-warning",
           icon: this.getWarningIcon(),
           message: (
-            <NotificationForDataTypeUnnamed details={this.props.group.members} />
+            <NotificationForDataTypeUnnamed details={members} />
           )
         };
-      } else if (kind === "data_type_missing_fields") {
+      } else if (notificationTypeIs(members, DataTypeMissingFieldsNotificationData)) {
         return {
           containerClass: "box-warning",
           icon: this.getWarningIcon(),
           message: (
-            <NotificationForDataTypeMissingFields details={this.props.group.members} />
+            <NotificationForDataTypeMissingFields details={members} />
           )
         };
-      } else if (kind === "data_type_unnamed_fields") {
+      } else if (notificationTypeIs(members, DataTypeUnnamedFieldsNotificationData)) {
         return {
           containerClass: "box-warning",
           icon: this.getWarningIcon(),
           message: (
-            <NotificationForDataTypeUnnamedFields details={this.props.group.members} />
+            <NotificationForDataTypeUnnamedFields details={members} />
           )
         };
-      } else if (kind === "data_type_duplicate_fields") {
+      } else if (notificationTypeIs(members, DataTypeDuplicateFieldsNotificationData)) {
         return {
           containerClass: "box-warning",
           icon: this.getWarningIcon(),
           message: (
-            <NotificationForDataTypeDuplicateFields details={this.props.group.members} />
+            <NotificationForDataTypeDuplicateFields details={members} />
           )
         };
-      } else if (kind === "oauth2_application_unused") {
+      } else if (notificationTypeIs(members, OAuth2ApplicationUnusedNotificationData)) {
         return {
           containerClass: "box-tip pvs",
           icon: this.getTipIcon(),
           message: (
-            <NotificationForUnusedOAuth2Application details={this.props.group.members} />
+            <NotificationForUnusedOAuth2Application details={members} />
           )
         };
-      } else if (kind === "aws_unused") {
+      } else if (notificationTypeIs(members, AWSUnusedNotificationData)) {
         return {
           containerClass: "box-tip pvs",
           icon: this.getTipIcon(),
           message: (
-            <NotificationForUnusedAWS details={this.props.group.members} />
+            <NotificationForUnusedAWS details={members} />
           )
         };
-      } else if (kind === "param_not_in_function") {
+      } else if (notificationTypeIs(members, ParamNotInFunctionNotificationData)) {
         return {
           containerClass: "box-tip",
           icon: this.getTipIcon(),
           message: (
-            <NotificationForParamNotInFunction details={this.props.group.members} />
+            <NotificationForParamNotInFunction details={members} />
           )
         };
-      } else if (kind === "unknown_param_in_template") {
+      } else if (notificationTypeIs(members, UnknownParamInTemplateNotificationData)) {
         return {
           containerClass: "box-warning",
           icon: this.getWarningIcon(),
           message: (
-            <NotificationForUnknownParamInTemplate details={this.props.group.members} />
+            <NotificationForUnknownParamInTemplate details={members} />
           )
         };
-      } else if (kind === "invalid_param_in_trigger") {
+      } else if (notificationTypeIs(members, InvalidParamInTriggerNotificationData)) {
         return {
           containerClass: "box-warning",
           icon: this.getWarningIcon(),
           message: (
-            <NotificationForInvalidParamInTrigger details={this.props.group.members}/>
+            <NotificationForInvalidParamInTrigger details={members}/>
           )
         };
-      } else if (kind === "server_data_warning") {
+      } else if (notificationTypeIs(members, ServerDataWarningNotificationData)) {
         return {
           containerClass: "box-error",
           icon: this.getErrorIcon(),
           message: (
-            <NotificationForServerDataWarning details={this.props.group.members} />
+            <NotificationForServerDataWarning details={members} />
           )
         };
-      } else if (kind === "skill_details_warning") {
+      } else if (notificationTypeIs(members, SkillDetailsWarningNotificationData)) {
         return {
           containerClass: "box-warning",
           icon: this.getWarningIcon(),
           message: (
-            <NotificationForSkillDetailsWarning details={this.props.group.members} />
+            <NotificationForSkillDetailsWarning details={members} />
           )
         };
       } else {

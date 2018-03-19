@@ -5,12 +5,13 @@ import DropdownMenu from '../shared_ui/dropdown_menu';
 import HelpButton from '../help/help_button';
 import Input from '../models/input';
 import Notifications from '../notifications/notifications';
-import NotificationData from '../models/notification_data';
 import {RequiredAWSConfig} from '../models/aws';
 import {RequiredOAuth2Application} from '../models/oauth2';
 import SectionHeading from '../shared_ui/section_heading';
 import SVGSettingsIcon from '../svg/settings';
 import debounce from 'javascript-debounce';
+import OAuth2ApplicationUnusedNotificationData from "../models/notifications/oauth2_application_unused";
+import AWSUnusedNotificationData from "../models/notifications/aws_unused_notification_data";
 
 const CodeConfiguration = React.createClass({
     propTypes: {
@@ -106,7 +107,7 @@ const CodeConfiguration = React.createClass({
       this.props.apiApplications
         .filter((ea) => ea && !this.hasUsedOAuth2Application(this.props.functionBody, ea.nameInCode))
         .forEach((ea) => {
-          oAuth2Notifications.push(new NotificationData({
+          oAuth2Notifications.push(new OAuth2ApplicationUnusedNotificationData({
             kind: "oauth2_application_unused",
             name: ea.config.displayName,
             code: `ellipsis.accessTokens.${ea.nameInCode}`
@@ -115,7 +116,7 @@ const CodeConfiguration = React.createClass({
       this.props.requiredAWSConfigs
         .filter(ea => !this.hasUsedAWSConfig(this.props.functionBody, ea.nameInCode))
         .forEach(ea => {
-          awsNotifications.push(new NotificationData({
+          awsNotifications.push(new AWSUnusedNotificationData({
             kind: "aws_unused",
             code: `ellipsis.aws.${ea.nameInCode}`
           }));

@@ -1,13 +1,18 @@
 import * as React from 'react';
+import AWSUnusedNotificationData from "../models/notifications/aws_unused_notification_data";
+import autobind from '../lib/autobind';
 
-const NotificationForUnusedAWS = React.createClass({
-    propTypes: {
-      details: React.PropTypes.arrayOf(React.PropTypes.shape({
-        code: React.PropTypes.string.isRequired
-      })).isRequired
-    },
+interface Props {
+  details: Array<AWSUnusedNotificationData>
+}
 
-    render: function() {
+class NotificationForUnusedAWS extends React.PureComponent<Props> {
+  constructor(props: Props) {
+    super(props);
+    autobind(this);
+  }
+
+    render() {
       return (
         <span>
           <span>Use <code className="box-code-example mhxs">{this.props.details[0].code}</code> in your </span>
@@ -16,6 +21,6 @@ const NotificationForUnusedAWS = React.createClass({
         </span>
       );
     }
-});
+}
 
 export default NotificationForUnusedAWS;

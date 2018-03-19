@@ -18,7 +18,7 @@ export interface NotificationDataInterface {
   kind: NotificationKind
 }
 
-class NotificationData implements NotificationDataInterface {
+abstract class NotificationData implements NotificationDataInterface {
   readonly kind: NotificationKind;
 
   constructor(props: NotificationDataInterface) {

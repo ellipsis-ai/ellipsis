@@ -1,10 +1,19 @@
 import * as React from 'react';
 import Formatter from '../lib/formatter';
-import BehaviorGroupVersionMetaData from '../models/behavior_group_version_meta_data';
+import ServerDataWarningNotificationData from "../models/notifications/server_data_warning_notification_data";
+import autobind from '../lib/autobind';
 
-class NotificationForServerDataWarning extends React.Component {
+interface Props {
+  details: Array<ServerDataWarningNotificationData>
+}
 
-    getNetworkErrorMessage(networkError) {
+class NotificationForServerDataWarning extends React.PureComponent<Props> {
+  constructor(props: Props) {
+    super(props);
+    autobind(this);
+  }
+
+    getNetworkErrorMessage(networkError: ServerDataWarningNotificationData): string {
       const errorMessage = networkError.error && networkError.error.message ? networkError.error.message : "";
       if (/^401/.test(errorMessage)) {
         return "You have been signed out. Please reload the page.";
@@ -17,11 +26,11 @@ class NotificationForServerDataWarning extends React.Component {
       }
     }
 
-    getNewerVersionMessage(notificationDetail) {
+    getNewerVersionMessage(notificationDetail: ServerDataWarningNotificationData): string {
       const versionData = notificationDetail.newerVersion;
-      const name = versionData.author && versionData.author.formattedFullNameOrUserName();
-      const timestamp = Formatter.formatTimestampRelativeIfRecent(versionData.createdAt);
-      if (versionData.author && versionData.author.id === notificationDetail.currentUserId) {
+      const name = versionData && versionData.author && versionData.author.formattedFullNameOrUserName();
+      const timestamp = versionData ? Formatter.formatTimestampRelativeIfRecent(versionData.createdAt) : "recently";
+      if (versionData && versionData.author && versionData.author.id === notificationDetail.currentUserId) {
         return `You saved a newer version of this skill in another window ${timestamp}.`;
       } else if (name) {
         return `${name} saved a newer version of this skill ${timestamp}.`;
@@ -52,16 +61,5 @@ class NotificationForServerDataWarning extends React.Component {
       );
     }
 }
-
-NotificationForServerDataWarning.propTypes = {
-  details: React.PropTypes.arrayOf(React.PropTypes.shape({
-    kind: React.PropTypes.string.isRequired,
-    type: React.PropTypes.string.isRequired,
-    onClick: React.PropTypes.func,
-    error: React.PropTypes.instanceOf(Error),
-    currentUserId: React.PropTypes.string,
-    newerVersion: React.PropTypes.instanceOf(BehaviorGroupVersionMetaData)
-  })).isRequired
-};
 
 export default NotificationForServerDataWarning;

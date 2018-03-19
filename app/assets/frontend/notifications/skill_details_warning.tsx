@@ -1,6 +1,17 @@
 import * as React from 'react';
+import SkillDetailsWarningNotificationData from "../models/notifications/skill_details_warning_notification_data";
+import autobind from '../lib/autobind';
 
-class NotificationForSkillDetailsWarning extends React.PureComponent {
+interface Props {
+  details: Array<SkillDetailsWarningNotificationData>
+}
+
+class NotificationForSkillDetailsWarning extends React.PureComponent<Props> {
+  constructor(props: Props) {
+    super(props);
+    autobind(this);
+  }
+
     render() {
       const detail = this.props.details.find((ea) => ea.type === "no_skill_name");
       return (
@@ -14,13 +25,5 @@ class NotificationForSkillDetailsWarning extends React.PureComponent {
       );
     }
 }
-
-NotificationForSkillDetailsWarning.propTypes = {
-  details: React.PropTypes.arrayOf(React.PropTypes.shape({
-    kind: React.PropTypes.string.isRequired,
-    type: React.PropTypes.string.isRequired,
-    onClick: React.PropTypes.func
-  })).isRequired
-};
 
 export default NotificationForSkillDetailsWarning;
