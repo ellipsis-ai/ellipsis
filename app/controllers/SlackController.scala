@@ -3,7 +3,7 @@ package controllers
 import javax.inject.Inject
 
 import com.google.inject.Provider
-import com.mohiva.play.silhouette.api.Silhouette
+import com.mohiva.play.silhouette.api.{LoginInfo, Silhouette}
 import json.Formatting._
 import models.behaviors.ActionChoice
 import models.behaviors.builtins.DisplayHelpBehavior
@@ -623,7 +623,7 @@ class SlackController @Inject() (
             if (info.isValid) {
               var maybeResultText: Option[String] = None
               var shouldRemoveActions = false
-              val user = s"<@${info.user.id}>"
+              val slackUser = s"<@${info.user.id}>"
 
               info.maybeInputChoice.foreach { response =>
                 info.isForInputChoiceForDoneConversation.flatMap { shouldStop =>
@@ -633,7 +633,7 @@ class SlackController @Inject() (
                     inputChoiceResultFor(response, info)
                   }
                 }
-                maybeResultText = Some(s"$user chose $response")
+                maybeResultText = Some(s"$slackUser chose $response")
                 shouldRemoveActions = true
               }
 
@@ -660,7 +660,7 @@ class SlackController @Inject() (
                   info.user.id,
                   info.message_ts
                 )
-                maybeResultText = Some(s"$user clicked More help.")
+                maybeResultText = Some(s"$slackUser clicked More help.")
               }
 
               info.maybeHelpForSkillIdWithMaybeSearch.foreach { searchValue =>
@@ -682,9 +682,9 @@ class SlackController @Inject() (
                   info.message_ts
                 )
                 maybeResultText = Some(info.findButtonLabelForNameAndValue(SHOW_BEHAVIOR_GROUP_HELP, searchValue.helpGroupId).map { text =>
-                  s"$user clicked $text."
+                  s"$slackUser clicked $text."
                 } getOrElse {
-                  s"$user clicked a button."
+                  s"$slackUser clicked a button."
                 })
               }
 
@@ -706,7 +706,7 @@ class SlackController @Inject() (
                   info.user.id,
                   info.message_ts
                 )
-                maybeResultText = Some(s"$user clicked List all actions")
+                maybeResultText = Some(s"$slackUser clicked List all actions")
               }
 
               info.maybeConfirmContinueConversationId.foreach { conversationId =>
@@ -720,7 +720,7 @@ class SlackController @Inject() (
                   }.getOrElse(Future.successful({}))
                 }
                 shouldRemoveActions = true
-                maybeResultText = Some(s"$user clicked 'Yes'")
+                maybeResultText = Some(s"$slackUser clicked 'Yes'")
               }
 
               info.maybeDontContinueConversationId.foreach { conversationId =>
@@ -740,7 +740,7 @@ class SlackController @Inject() (
                   }.getOrElse(Future.successful({}))
                 }
                 shouldRemoveActions = true
-                maybeResultText = Some(s"$user clicked 'No'")
+                maybeResultText = Some(s"$slackUser clicked 'No'")
               }
 
               info.maybeStopConversationId.foreach { conversationId =>
@@ -750,7 +750,7 @@ class SlackController @Inject() (
                   }.getOrElse(Future.successful({}))
                 }
                 shouldRemoveActions = true
-                maybeResultText = Some(s"$user stopped the conversation")
+                maybeResultText = Some(s"$slackUser stopped the conversation")
               }
 
               info.maybeRunBehaviorVersionId.foreach { behaviorVersionId =>
@@ -778,11 +778,11 @@ class SlackController @Inject() (
                 )
 
                 maybeResultText = Some(info.findButtonLabelForNameAndValue(RUN_BEHAVIOR_VERSION, behaviorVersionId).map { text =>
-                  s"$user clicked $text"
+                  s"$slackUser clicked $text"
                 } orElse info.findOptionLabelForValue(behaviorVersionId).map { text =>
-                  s"$user ran ${text.mkString("“", "", "”")}"
+                  s"$slackUser ran ${text.mkString("“", "", "”")}"
                 } getOrElse {
-                  s"$user ran an action"
+                  s"$slackUser ran an action"
                 })
               }
 
@@ -793,9 +793,10 @@ class SlackController @Inject() (
                     maybeGroupVersion <- actionChoice.groupVersionId.map { groupVersionId =>
                       dataService.behaviorGroupVersions.findWithoutAccessCheck(groupVersionId)
                     }.getOrElse(Future.successful(None))
+                    user <- event.ensureUser(dataService)
                     maybeBehaviorVersion <- maybeGroupVersion.map { groupVersion =>
                       dataService.behaviorGroupVersions.isActive(groupVersion, Conversation.SLACK_CONTEXT, info.channel.id).flatMap { isActive =>
-                        if (isActive) {
+                        if (isActive && actionChoice.canBeTriggeredBy(user)) {
                           dataService.behaviorVersions.findByName(actionChoice.actionName, groupVersion)
                         } else {
                           Future.successful(None)
@@ -836,12 +837,17 @@ class SlackController @Inject() (
                   isActive <- maybeGroupVersion.map { groupVersion =>
                     dataService.behaviorGroupVersions.isActive(groupVersion, Conversation.SLACK_CONTEXT, info.channel.id)
                   }.getOrElse(Future.successful(false))
+                  maybeUser <- maybeGroupVersion.map { groupVersion =>
+                    dataService.users.ensureUserFor(LoginInfo(Conversation.SLACK_CONTEXT, info.user.id), groupVersion.team.id).map(Some(_))
+                  }.getOrElse(Future.successful(None))
                 } yield {
-                  if (isActive) {
-                    maybeResultText = Some(s"$user clicked ${actionChoice.label}")
-                  } else {
+                  if (!isActive) {
                     shouldRemoveActions = true
                     maybeResultText = Some("This skill has been updated, making these associated actions no longer valid")
+                  } else if (!maybeUser.exists(u => actionChoice.canBeTriggeredBy(u))) {
+                    maybeResultText = Some(s"This action can't be triggered by ${slackUser}")
+                  } else {
+                    maybeResultText = Some(s"$slackUser clicked ${actionChoice.label}")
                   }
                 })
               }

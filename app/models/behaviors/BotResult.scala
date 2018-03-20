@@ -5,6 +5,7 @@ import json.Formatting._
 import models.IDs
 import models.accounts.logintoken.LoginToken
 import models.accounts.oauth2application.OAuth2Application
+import models.accounts.user.User
 import models.behaviors.behaviorversion.BehaviorVersion
 import models.behaviors.config.requiredoauth2apiconfig.RequiredOAuth2ApiConfig
 import models.behaviors.conversations.conversation.Conversation
@@ -43,8 +44,13 @@ case class ActionChoice(
                          label: String,
                          actionName: String,
                          args: Option[Seq[ActionArg]],
+                         userId: Option[String],
                          groupVersionId: Option[String]
-                       ) extends WithActionArgs
+                       ) extends WithActionArgs {
+
+  def canBeTriggeredBy(user: User): Boolean = userId.isEmpty || userId.contains(user.id)
+
+}
 
 sealed trait BotResult {
   val resultType: ResultType.Value
@@ -54,7 +60,7 @@ sealed trait BotResult {
   def files: Seq[UploadFileSpec] = Seq()
   val maybeBehaviorVersion: Option[BehaviorVersion]
   def maybeNextAction: Option[NextAction] = None
-  def maybeChoices: Option[Seq[ActionChoice]] = None
+  def maybeChoicesAction(dataService: DataService)(implicit ec: ExecutionContext): DBIO[Option[Seq[ActionChoice]]] = DBIO.successful(None)
   val shouldInterrupt: Boolean = true
   def text: String
   def fullText: String = text
@@ -206,10 +212,15 @@ case class SuccessResult(
     (payloadJson \ "next").asOpt[NextAction]
   }
 
-  override def maybeChoices: Option[Seq[ActionChoice]] = {
-    (payloadJson \ "choices").asOpt[Seq[ActionChoice]].map { choices =>
-      choices.map { ea =>
-        ea.copy(groupVersionId = Some(behaviorVersion.groupVersion.id))
+  override def maybeChoicesAction(dataService: DataService)(implicit ec: ExecutionContext): DBIO[Option[Seq[ActionChoice]]] = {
+    event.ensureUserAction(dataService).map { user =>
+      (payloadJson \ "choices").asOpt[Seq[ActionChoice]].map { choices =>
+        choices.map { ea =>
+          ea.copy(
+            userId = Some(user.id),
+            groupVersionId = Some(behaviorVersion.groupVersion.id)
+          )
+        }
       }
     }
   }
