@@ -840,12 +840,21 @@ class SlackController @Inject() (
                   maybeUser <- maybeGroupVersion.map { groupVersion =>
                     dataService.users.ensureUserFor(LoginInfo(Conversation.SLACK_CONTEXT, info.user.id), groupVersion.team.id).map(Some(_))
                   }.getOrElse(Future.successful(None))
+                  maybeChoiceSlackUserId <- actionChoice.userId.map { userId =>
+                    dataService.users.find(userId).flatMap { maybeUser =>
+                      maybeUser.map { user =>
+                        dataService.linkedAccounts.maybeSlackUserIdFor(user)
+                      }.getOrElse(Future.successful(None))
+                    }
+                  }.getOrElse(Future.successful(None))
                 } yield {
                   if (!isActive) {
                     shouldRemoveActions = true
                     maybeResultText = Some("This skill has been updated, making these associated actions no longer valid")
                   } else if (!maybeUser.exists(u => actionChoice.canBeTriggeredBy(u))) {
-                    maybeResultText = Some(s"This action can't be triggered by ${slackUser}")
+                    maybeResultText = Some(maybeChoiceSlackUserId.map { choiceSlackUserId =>
+                      s"Only <@${choiceSlackUserId}> can make this choice"
+                    }.getOrElse("You are not allowed to make this choice"))
                   } else {
                     shouldRemoveActions = true
                     maybeResultText = Some(s"$slackUser clicked ${actionChoice.label}")
