@@ -23,10 +23,15 @@
    );
 
    */
-const ifPresent = function(maybeValue, ifPresentCallback, optionalIfEmptyCallback) {
-    var isFalsyValue = [null, undefined, false, ""].some(falsy => falsy === maybeValue);
-    var isEmptyArray = Array.isArray(maybeValue) && maybeValue.length === 0;
-    if (!isFalsyValue && !isEmptyArray) {
+
+function isTruthy<T>(maybeValue: Option<T>): maybeValue is T {
+  var isFalsyValue = [null, undefined, false, ""].some(falsy => falsy === maybeValue as any);
+  var isEmptyArray = Array.isArray(maybeValue) && maybeValue.length === 0;
+  return !isFalsyValue && !isEmptyArray;
+}
+
+const ifPresent = function<T>(maybeValue: Option<T>, ifPresentCallback: (item: T) => any, optionalIfEmptyCallback?: () => any): any {
+    if (isTruthy(maybeValue)) {
       return ifPresentCallback(maybeValue);
     } else if (typeof optionalIfEmptyCallback === 'function') {
       return optionalIfEmptyCallback();
