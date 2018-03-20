@@ -10,11 +10,12 @@ import ScheduleChannel, {ScheduleChannelInterface} from '../../../../app/assets/
 import ID from '../../../../app/assets/frontend/lib/id';
 import Page from '../../../../app/assets/frontend/shared_ui/page';
 import {SchedulingProps} from "../../../../app/assets/frontend/scheduling";
+import {Component} from "react";
 
 jsRoutes.controllers.ScheduledActionsController.index = () => ({ url: "/test", method: "get" });
 
 class Loader extends React.Component<SchedulingProps, SchedulingProps> {
-  page: Option<Scheduling>;
+  page: Scheduling;
   constructor(props: SchedulingProps) {
     super(props);
     this.state = props;
@@ -30,10 +31,10 @@ class Loader extends React.Component<SchedulingProps, SchedulingProps> {
   }
 }
 
-function createIndexWrapper(config: SchedulingProps) {
+function createIndexWrapper(config: SchedulingProps): Loader {
   return TestUtils.renderIntoDocument(
     <Loader {...config} />
-  );
+  ) as Loader;
 }
 
 function emptyFn() { void(0); }
