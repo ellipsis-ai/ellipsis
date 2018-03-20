@@ -29,7 +29,6 @@ import Input from '../models/input';
 import Formatter from '../lib/formatter';
 import ID from '../lib/id';
 import NodeModuleVersion from '../models/node_module_version';
-import NotificationData from '../models/notification_data';
 import FormInput from '../form/input';
 import LibraryCodeHelp from './library_code_help';
 import LibraryVersion from '../models/library_version';
@@ -69,6 +68,17 @@ import 'codemirror/mode/markdown/markdown';
 import DeploymentStatus from "./deployment_status";
 import GithubRepoActions from "./versions/github_repo_actions";
 import {MOBILE_MAX_WIDTH} from "../lib/constants";
+import DataTypeDuplicateFieldsNotificationData from "../models/notifications/data_type_duplicate_fields_notification_data";
+import DataTypeMissingFieldsNotificationData from "../models/notifications/data_type_missing_fields_notification_data";
+import DataTypeNeedsConfigNotificationData from "../models/notifications/data_type_needs_config_notification_data";
+import DataTypeUnnamedFieldsNotificationData from "../models/notifications/data_type_unnamed_fields_notification_data";
+import DataTypeUnnamedNotificationData from "../models/notifications/data_type_unnamed_notification_data";
+import EnvVarMissingNotificationData from "../models/notifications/env_var_missing_notification_data";
+import RequiredAwsConfigNotificationData from "../models/notifications/required_aws_config_notification_data";
+import OAuth2ConfigWithoutApplicationNotificationData from "../models/notifications/oauth2_config_without_application_notification_data";
+import ServerDataWarningNotificationData from "../models/notifications/server_data_warning_notification_data";
+import SkillDetailsWarningNotificationData from "../models/notifications/skill_details_warning_notification_data";
+import UnknownParamInTemplateNotificationData from "../models/notifications/unknown_param_in_template_notification_data";
 
 const BehaviorEditor = React.createClass({
   propTypes: Object.assign({}, Page.requiredPropTypes, {
@@ -411,8 +421,7 @@ const BehaviorEditor = React.createClass({
       return this.getEnvVariables()
         .filter((ea) => selectedBehavior.knownEnvVarsUsed.includes(ea.name))
         .filter((ea) => !ea.isAlreadySavedWithValue)
-        .map((ea) => new NotificationData({
-          kind: "env_var_not_defined",
+        .map((ea) => new EnvVarMissingNotificationData({
           environmentVariableName: ea.name,
           onClick: () => {
             this.showEnvVariableSetter(ea.name);
@@ -431,8 +440,7 @@ const BehaviorEditor = React.createClass({
     if (this.isConfiguringApi()) {
       return [];
     }
-    return this.getRequiredAWSConfigsWithNoMatchingAWSConfig().map(ea => new NotificationData({
-      kind: "required_aws_config_without_config",
+    return this.getRequiredAWSConfigsWithNoMatchingAWSConfig().map(ea => new RequiredAwsConfigNotificationData({
       name: ea.nameInCode,
       requiredAWSConfig: ea,
       existingAWSConfigs: this.getAllAWSConfigs(),
@@ -468,8 +476,7 @@ const BehaviorEditor = React.createClass({
     if (this.isConfiguringApi()) {
       return [];
     }
-    return this.getRequiredOAuth2ApiConfigsWithNoApplication().map(ea => new NotificationData({
-      kind: "oauth2_config_without_application",
+    return this.getRequiredOAuth2ApiConfigsWithNoApplication().map(ea => new OAuth2ConfigWithoutApplicationNotificationData({
       name: this.getOAuth2ApiWithId(ea.apiId).name,
       requiredApiConfig: ea,
       existingOAuth2Applications: this.getAllOAuth2Applications(),
@@ -488,8 +495,7 @@ const BehaviorEditor = React.createClass({
     const needsConfig = this.getParamTypesNeedingConfiguration().map(ea => {
       const behaviorVersion = this.getBehaviorGroup().behaviorVersions.find(bv => bv.id === ea.id);
       const behaviorId = behaviorVersion ? behaviorVersion.behaviorId : null;
-      return new NotificationData({
-        kind: "data_type_needs_config",
+      return new DataTypeNeedsConfigNotificationData({
         name: ea.name,
         onClick: () => this.onSelect(this.getBehaviorGroup().id, behaviorId)
       });
@@ -500,8 +506,7 @@ const BehaviorEditor = React.createClass({
     const unnamedDataTypes = dataTypes
       .filter((ea) => !ea.getName().trim())
       .map((ea) => {
-        return new NotificationData({
-          kind: "data_type_unnamed",
+        return new DataTypeUnnamedNotificationData({
           onClick: () => {
             this.onSelect(this.getBehaviorGroup().id, ea.behaviorId, () => {
               if (this.editableNameInput) {
@@ -515,8 +520,7 @@ const BehaviorEditor = React.createClass({
     const missingFields = dataTypes
       .filter((ea) => ea.getDataTypeConfig().isMissingFields())
       .map((ea) => {
-        return new NotificationData({
-          kind: "data_type_missing_fields",
+        return new DataTypeMissingFieldsNotificationData({
           name: ea.getName(),
           onClick: () => {
             this.onSelect(this.getBehaviorGroup().id, ea.behaviorId, () => {
@@ -531,8 +535,7 @@ const BehaviorEditor = React.createClass({
     const unnamedFields = dataTypes
       .filter((dataType) => dataType.requiresFields() && dataType.getDataTypeFields().some((field) => !field.name))
       .map((ea) => {
-        return new NotificationData({
-          kind: "data_type_unnamed_fields",
+        return new DataTypeUnnamedFieldsNotificationData({
           name: ea.getName(),
           onClick: () => {
             this.onSelect(this.getBehaviorGroup().id, ea.behaviorId, () => {
@@ -555,8 +558,7 @@ const BehaviorEditor = React.createClass({
         }
       })
       .map((ea) => {
-        return new NotificationData({
-          kind: "data_type_duplicate_fields",
+        return new DataTypeDuplicateFieldsNotificationData({
           name: ea.getName(),
           onClick: () => {
             this.onSelect(this.getBehaviorGroup().id, ea.behaviorId, () => {
@@ -583,8 +585,7 @@ const BehaviorEditor = React.createClass({
       var template = this.getBehaviorTemplate();
       var validParams = this.getValidParamNamesForTemplate();
       var unknownTemplateParams = template.getUnknownParamsExcluding(validParams);
-      return unknownTemplateParams.map((paramName) => new NotificationData({
-        kind: "unknown_param_in_template",
+      return unknownTemplateParams.map((paramName) => new UnknownParamInTemplateNotificationData({
         name: paramName
       }));
     } else {
@@ -596,8 +597,7 @@ const BehaviorEditor = React.createClass({
     if (!this.state) return [];
     const notifications = [];
     if (this.state.newerVersionOnServer) {
-      notifications.push(new NotificationData({
-        kind: "server_data_warning",
+      notifications.push(new ServerDataWarningNotificationData({
         type: "newer_version",
         newerVersion: this.state.newerVersionOnServer,
         currentUserId: this.props.userId,
@@ -607,8 +607,7 @@ const BehaviorEditor = React.createClass({
       }));
     }
     if (this.state.errorReachingServer) {
-      notifications.push(new NotificationData({
-        kind: "server_data_warning",
+      notifications.push(new ServerDataWarningNotificationData({
         type: "network_error",
         error: this.state.errorReachingServer
       }));
@@ -618,8 +617,7 @@ const BehaviorEditor = React.createClass({
 
   buildSkillDetailsNotifications: function() {
     if (this.isExistingGroup() && !this.getBehaviorGroup().name) {
-      return [new NotificationData({
-        kind: "skill_details_warning",
+      return [new SkillDetailsWarningNotificationData({
         type: "no_skill_name",
         onClick: this.toggleRequestSkillDetails
       })];

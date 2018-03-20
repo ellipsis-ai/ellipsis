@@ -1,21 +1,24 @@
 import * as React from 'react';
+import ParamNotInFunctionNotificationData from "../models/notifications/param_not_in_function_notification_data";
+import autobind from '../lib/autobind';
 
-const NotificationForParamNotInFunction = React.createClass({
-    propTypes: {
-      details: React.PropTypes.arrayOf(React.PropTypes.shape({
-        kind: React.PropTypes.string.isRequired,
-        name: React.PropTypes.string.isRequired,
-        onClick: React.PropTypes.func.isRequired
-      })).isRequired
-    },
+interface Props {
+  details: Array<ParamNotInFunctionNotificationData>
+}
 
-    onClick: function() {
+class NotificationForParamNotInFunction extends React.PureComponent<Props> {
+  constructor(props: Props) {
+    super(props);
+    autobind(this);
+  }
+
+    onClick(): void {
       this.props.details.forEach((detail) => {
         detail.onClick();
       });
-    },
+    }
 
-    render: function() {
+    render() {
       var numParams = this.props.details.length;
       if (numParams === 1) {
         let detail = this.props.details[0];
@@ -42,6 +45,6 @@ const NotificationForParamNotInFunction = React.createClass({
         );
       }
     }
-});
+}
 
 export default NotificationForParamNotInFunction;

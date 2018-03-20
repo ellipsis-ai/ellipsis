@@ -2,7 +2,8 @@ import React from 'react';
 import TestUtils from 'react-addons-test-utils';
 import TriggerConfiguration from '../../../../app/assets/frontend/behavior_editor/trigger_configuration';
 import Trigger from '../../../../app/assets/frontend/models/trigger';
-import NotificationData from '../../../../app/assets/frontend/models/notification_data';
+import ParamNotInFunctionNotificationData from "../../../../app/assets/frontend/models/notifications/param_not_in_function_notification_data";
+import InvalidParamInTriggerNotificationData from "../../../../app/assets/frontend/models/notifications/invalid_param_in_trigger_notification_data";
 
 describe('TriggerConfiguration', () => {
   const defaultConfig = {
@@ -142,7 +143,7 @@ describe('TriggerConfiguration', () => {
       const component = create(triggerConfig);
       const notifications = component.getNotificationsFor(triggerConfig.triggers[0]);
       expect(notifications.length).toBe(1);
-      expect(notifications[0]).toBeInstanceOf(NotificationData);
+      expect(notifications[0]).toBeInstanceOf(ParamNotInFunctionNotificationData);
       expect(notifications[0]).toEqual(expect.objectContaining({
         kind: "param_not_in_function",
         name: "adjective",
@@ -160,7 +161,7 @@ describe('TriggerConfiguration', () => {
       const component = create(triggerConfig);
       const notifications = component.getNotificationsFor(triggerConfig.triggers[0]);
       expect(notifications.length).toBe(1);
-      expect(notifications[0]).toBeInstanceOf(NotificationData);
+      expect(notifications[0]).toBeInstanceOf(InvalidParamInTriggerNotificationData);
       expect(notifications[0]).toEqual(expect.objectContaining({
         kind: "invalid_param_in_trigger",
         name: "%afraid*"

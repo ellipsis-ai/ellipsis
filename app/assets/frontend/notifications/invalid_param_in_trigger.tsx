@@ -1,14 +1,18 @@
 import * as React from 'react';
+import InvalidParamInTriggerNotificationData from "../models/notifications/invalid_param_in_trigger_notification_data";
+import autobind from '../lib/autobind';
 
-const NotificationForInvalidParamInTrigger = React.createClass({
-    propTypes: {
-      details: React.PropTypes.arrayOf(React.PropTypes.shape({
-        kind: React.PropTypes.string.isRequired,
-        name: React.PropTypes.string.isRequired
-      })).isRequired
-    },
+interface Props {
+  details: Array<InvalidParamInTriggerNotificationData>
+}
 
-    render: function() {
+class NotificationForInvalidParamInTrigger extends React.PureComponent<Props> {
+  constructor(props: Props) {
+    super(props);
+    autobind(this);
+  }
+
+    render() {
       var numParams = this.props.details.length;
       if (numParams === 1) {
         let detail = this.props.details[0];
@@ -33,6 +37,6 @@ const NotificationForInvalidParamInTrigger = React.createClass({
         );
       }
     }
-});
+}
 
 export default NotificationForInvalidParamInTrigger;

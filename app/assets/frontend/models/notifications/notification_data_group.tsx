@@ -1,5 +1,17 @@
-class NotificationDataGroup {
-    constructor(props) {
+import {default as NotificationData, NotificationKind} from "./notification_data";
+
+export interface NotificationDataGroupInterface {
+  kind: NotificationKind,
+  members?: Array<NotificationData>,
+  hidden?: boolean
+}
+
+class NotificationDataGroup<T extends NotificationData> implements NotificationDataGroupInterface {
+  readonly kind: NotificationKind;
+  readonly members: Array<T>;
+  readonly hidden: boolean;
+
+  constructor(props: NotificationDataGroupInterface) {
       if (!props.kind) {
         throw new Error("NotificationDataGroup must have a kind property");
       }
@@ -17,22 +29,25 @@ class NotificationDataGroup {
           enumerable: true
         }
       });
-    }
-    concat(newMember) {
+  }
+
+    concat(newMember: T): NotificationDataGroup<T> {
       return this.clone({
         members: this.members.concat(newMember)
       });
     }
-    hide() {
+
+    hide(): NotificationDataGroup<any> {
       return this.clone({
         hidden: true
       });
     }
-    clone(newProps) {
+
+    clone(newProps: Partial<NotificationDataGroupInterface>): NotificationDataGroup<T> {
       return new NotificationDataGroup(Object.assign({}, this, newProps));
     }
 
-    static groupByKind(notifications) {
+    static groupByKind(notifications: Array<NotificationData>): Array<NotificationDataGroup<any>> {
       var kinds = {};
       notifications.forEach((ea) => {
         const group = kinds[ea.kind] || new NotificationDataGroup({ kind: ea.kind });
@@ -41,7 +56,7 @@ class NotificationDataGroup {
       return Object.keys(kinds).map((ea) => kinds[ea]);
     }
 
-    static hideOldAndAppendNew(oldGroups, newGroups) {
+    static hideOldAndAppendNew(oldGroups: Array<NotificationDataGroup<any>>, newGroups: Array<NotificationDataGroup<any>>) {
       let brandNew = newGroups;
       const merged = oldGroups.map((oldGroup) => {
         if (oldGroup.hidden) {

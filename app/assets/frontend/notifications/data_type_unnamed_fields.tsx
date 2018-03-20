@@ -1,38 +1,40 @@
 import * as React from 'react';
+import DataTypeUnnamedFieldsNotificationData from "../models/notifications/data_type_unnamed_fields_notification_data";
+import autobind from '../lib/autobind';
 
-const NotificationForDataTypeDuplicateFields = React.createClass({
-    displayName: 'NotificationForDataTypeDuplicateFields',
-    propTypes: {
-      details: React.PropTypes.arrayOf(React.PropTypes.shape({
-        kind: React.PropTypes.string.isRequired,
-        name: React.PropTypes.string,
-        onClick: React.PropTypes.func.isRequired
-      })).isRequired
-    },
+interface Props {
+  details: Array<DataTypeUnnamedFieldsNotificationData>
+}
 
-    render: function() {
+class NotificationForDataTypeUnnamedFields extends React.PureComponent<Props> {
+  constructor(props: Props) {
+    super(props);
+    autobind(this);
+  }
+
+    render() {
       const count = this.props.details.length;
       if (count === 1) {
         return (
           <span>
-            <span>Data type field names must be unique.</span>
+            <span>Each data type field must have a name.</span>
             <button type="button"
               className="button-raw link button-s mhxs"
               onClick={this.props.details[0].onClick}
-            >Edit duplicate field on {this.props.details[0].name || "data type"}</button>
+            >Edit fields on {this.props.details[0].name || "data type"}</button>
           </span>
         );
       } else {
         return (
           <span>
-            <span>Data type field names must be unique.</span>
+            <span>Each data type field must have a name.</span>
             {this.props.details.map((ea, index) => (
               <span key={`detail${index}`}>
                 <button
                   type="button"
                   className="button-raw link button-s mhxs"
                   onClick={ea.onClick}
-                >Edit duplicate field on {ea.name || `data type ${index + 1}`}</button>
+                >Edit fields on {ea.name || `data type ${index + 1}`}</button>
                 {index + 1 < this.props.details.length ? (
                   <span className="mhxs type-weak">·</span>
                 ) : null}
@@ -43,7 +45,7 @@ const NotificationForDataTypeDuplicateFields = React.createClass({
       }
     }
 
-});
+}
 
-export default NotificationForDataTypeDuplicateFields;
+export default NotificationForDataTypeUnnamedFields;
 

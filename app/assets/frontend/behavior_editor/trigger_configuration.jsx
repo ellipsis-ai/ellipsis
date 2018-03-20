@@ -2,10 +2,11 @@ import * as React from 'react';
 import HelpButton from '../help/help_button';
 import Formatter from '../lib/formatter';
 import Notifications from '../notifications/notifications';
-import NotificationData from '../models/notification_data';
 import SectionHeading from '../shared_ui/section_heading';
 import TriggerInput from './trigger_input';
 import Trigger from '../models/trigger';
+import ParamNotInFunctionNotificationData from "../models/notifications/param_not_in_function_notification_data";
+import InvalidParamInTriggerNotificationData from "../models/notifications/invalid_param_in_trigger_notification_data";
 
 const TriggerConfiguration = React.createClass({
     propTypes: {
@@ -66,16 +67,14 @@ const TriggerConfiguration = React.createClass({
       const unknownParamNames = trigger.paramNames().filter((ea) => !this.props.inputNames.includes(ea));
       return unknownParamNames.map((name) => {
         if (Formatter.isValidNameForCode(name)) {
-          return new NotificationData({
-            kind: "param_not_in_function",
+          return new ParamNotInFunctionNotificationData({
             name: name,
             onClick: () => {
               this.props.onAddNewInput(name);
             }
           });
         } else {
-          return new NotificationData({
-            kind: "invalid_param_in_trigger",
+          return new InvalidParamInTriggerNotificationData({
             name: name
           });
         }

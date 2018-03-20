@@ -1,11 +1,12 @@
-jest.mock('../../../../app/assets/frontend/behavior_editor/code_editor')
-  .mock('../../../../app/assets/frontend/shared_ui/react-codemirror');
-global.fetch = require('./../../../mocks/mock_fetch');
+jest.mock('../../../../app/assets/frontend/behavior_editor/code_editor');
+jest.mock('../../../../app/assets/frontend/shared_ui/react-codemirror');
+import * as MockDataRequest from '../../../mocks/mock_data_request';
+jest.mock('../../../../app/assets/frontend/lib/data_request', () => MockDataRequest);
 
-import React from 'react';
-import TestUtils from 'react-addons-test-utils';
+import * as React from 'react';
+import * as TestUtils from 'react-addons-test-utils';
 import BehaviorEditor from '../../../../app/assets/frontend/behavior_editor/index';
-import BehaviorVersion from '../../../../app/assets/frontend/models/behavior_version';
+import BehaviorVersion, {BehaviorVersionJson} from '../../../../app/assets/frontend/models/behavior_version';
 import BehaviorGroup from '../../../../app/assets/frontend/models/behavior_group';
 import ParamType from '../../../../app/assets/frontend/models/param_type';
 import {AWSConfigRef} from '../../../../app/assets/frontend/models/aws';
@@ -308,7 +309,7 @@ describe('BehaviorEditor', () => {
     const TWO_MINUTES = 120000;
     it("false if recent save but isModified() is true", () => {
       let config = Object.assign({}, editorConfig, {
-        group: Object.assign({}, editorConfig.group, { createdAt: new Date() - HALF_MINUTE })
+        group: Object.assign({}, editorConfig.group, { createdAt: Number(new Date()) - HALF_MINUTE })
       });
       let editor = createEditor(config);
       editor.isModified = jest.fn(() => true);
@@ -318,7 +319,7 @@ describe('BehaviorEditor', () => {
 
     it("false if not a recent save", () => {
       let config = Object.assign({}, editorConfig, {
-        group: Object.assign({}, editorConfig.group, { createdAt: new Date() - TWO_MINUTES })
+        group: Object.assign({}, editorConfig.group, { createdAt: Number(new Date()) - TWO_MINUTES })
       });
       let editor = createEditor(config);
       editor.isModified = jest.fn(() => false);
@@ -328,7 +329,7 @@ describe('BehaviorEditor', () => {
 
     it("true if a recent save and isModified() is false", () => {
       let config = Object.assign({}, editorConfig, {
-        group: Object.assign({}, editorConfig.group, { createdAt: new Date() - HALF_MINUTE })
+        group: Object.assign({}, editorConfig.group, { createdAt: Number(new Date()) - HALF_MINUTE })
       });
       let editor = createEditor(config);
       editor.isModified = jest.fn(() => false);
@@ -350,24 +351,30 @@ describe('BehaviorEditor', () => {
         inputId: inputId,
         groupId: groupId
       };
-      const otherBehaviorsInGroup = [
+      const otherBehaviorsInGroup: Array<BehaviorVersionJson> = [
           {
+            teamId: "1",
             behaviorId: "2",
             functionBody: "",
             responseTemplate: "",
             inputIds: [savedAnswerInput.inputId],
             triggers: [],
-            config: {},
+            config: {
+              isDataType: false
+            },
             knownEnvVarsUsed: [],
             groupId: groupId
           },
           {
+            teamId: "1",
             behaviorId: "3",
             functionBody: "",
             responseTemplate: "",
             inputIds: [savedAnswerInput.inputId],
             triggers: [],
-            config: {},
+            config: {
+              isDataType: false
+            },
             knownEnvVarsUsed: [],
             groupId: groupId
           }
