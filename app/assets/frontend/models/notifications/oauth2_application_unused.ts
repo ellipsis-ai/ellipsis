@@ -1,4 +1,4 @@
-import NotificationData, {NotificationDataInterface} from "../notification_data";
+import NotificationData, {NotificationDataInterface} from "./notification_data";
 
 interface OAuth2ApplicationUnusedNotificationDataInterface extends NotificationDataInterface {
   name: string;

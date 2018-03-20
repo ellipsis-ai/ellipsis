@@ -1,4 +1,4 @@
-import NotificationData, {NotificationDataInterface} from "../notification_data";
+import NotificationData, {NotificationDataInterface} from "./notification_data";
 import BehaviorGroupVersionMetaData from "../behavior_group_version_meta_data";
 
 interface ServerDataWarningNotificationDataInterface extends NotificationDataInterface {

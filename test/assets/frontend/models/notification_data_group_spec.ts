@@ -1,4 +1,4 @@
-import NotificationDataGroup from "../../../../app/assets/frontend/models/notification_data_group";
+import NotificationDataGroup from "../../../../app/assets/frontend/models/notifications/notification_data_group";
 import UnknownParamInTemplateNotificationData from "../../../../app/assets/frontend/models/notifications/unknown_param_in_template_notification_data";
 import AWSUnusedNotificationData from "../../../../app/assets/frontend/models/notifications/aws_unused_notification_data";
 

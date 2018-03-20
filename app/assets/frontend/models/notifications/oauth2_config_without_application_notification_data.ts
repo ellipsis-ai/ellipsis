@@ -1,4 +1,4 @@
-import NotificationData, {NotificationDataInterface} from "../notification_data";
+import NotificationData, {NotificationDataInterface} from "./notification_data";
 import {OAuth2ApplicationRef, RequiredOAuth2Application} from "../oauth2";
 
 interface OAuth2ConfigWithoutApplicationNotificationDataInterface extends NotificationDataInterface {

@@ -1,7 +1,7 @@
 import * as React from 'react';
 import Notification from './notification';
-import NotificationData from '../models/notification_data';
-import NotificationDataGroup from '../models/notification_data_group';
+import NotificationData from '../models/notifications/notification_data';
+import NotificationDataGroup from '../models/notifications/notification_data_group';
 
 interface Props {
   notifications: Array<NotificationData>,
