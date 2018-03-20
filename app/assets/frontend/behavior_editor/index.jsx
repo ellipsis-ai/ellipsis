@@ -949,7 +949,7 @@ const BehaviorEditor = React.createClass({
         if (json.id) {
           const group = this.getBehaviorGroup();
           const teamId = group.teamId;
-          const groupId = group.id;
+          const groupId = json.id;
           if (this.state.shouldRedirectToAddNewOAuth2App) {
             const config = this.state.requiredOAuth2ApiConfig;
             window.location.href = jsRoutes.controllers.web.settings.OAuth2ApplicationController.add(teamId, groupId, this.getSelectedId(), config.nameInCode).url;

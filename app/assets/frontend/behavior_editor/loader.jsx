@@ -41,7 +41,7 @@ class BehaviorEditorLoader extends React.Component {
         onLinkGithubRepo(owner, repo, branch, callback) {
           const url = jsRoutes.controllers.BehaviorEditorController.linkToGithubRepo().url;
           const params = {};
-          params.behaviorGroupId = this.props.group.id;
+          params.behaviorGroupId = this.state.group.id;
           params.owner = owner;
           params.repo = repo;
           if (branch) {
@@ -57,7 +57,7 @@ class BehaviorEditorLoader extends React.Component {
         onUpdateFromGithub(owner, repo, branch, callback, onError) {
           DataRequest.jsonPost(
             jsRoutes.controllers.BehaviorEditorController.updateFromGithub().url, {
-              behaviorGroupId: this.props.group.id,
+              behaviorGroupId: this.state.group.id,
               owner: owner,
               repo: repo,
               branch: branch
