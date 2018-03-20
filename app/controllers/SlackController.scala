@@ -847,6 +847,7 @@ class SlackController @Inject() (
                   } else if (!maybeUser.exists(u => actionChoice.canBeTriggeredBy(u))) {
                     maybeResultText = Some(s"This action can't be triggered by ${slackUser}")
                   } else {
+                    shouldRemoveActions = true
                     maybeResultText = Some(s"$slackUser clicked ${actionChoice.label}")
                   }
                 })
