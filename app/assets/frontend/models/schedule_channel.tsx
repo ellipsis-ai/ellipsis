@@ -7,7 +7,7 @@ export interface ScheduleChannelJson {
   isArchived: boolean
 }
 
-interface ScheduleChannelInterface extends ScheduleChannelJson {}
+export interface ScheduleChannelInterface extends ScheduleChannelJson {}
 
 class ScheduleChannel implements ScheduleChannelInterface {
   readonly id: string;

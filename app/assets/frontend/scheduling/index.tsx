@@ -16,7 +16,7 @@ import Sort from '../lib/sort';
 import {PageRequiredProps} from '../shared_ui/page';
 import autobind from '../lib/autobind';
 
-type Props = {
+export interface SchedulingProps {
   scheduledActions: Array<ScheduledAction>
   channelList: Array<ScheduleChannel>,
   behaviorGroups: Array<BehaviorGroup>,
@@ -34,7 +34,9 @@ type Props = {
   justSavedAction: Option<ScheduledAction>,
   selectedScheduleId: Option<string>,
   newAction: Option<boolean>
-} & PageRequiredProps
+}
+
+type Props = SchedulingProps & PageRequiredProps
 
 type State = {
   filterChannelId: Option<string>,

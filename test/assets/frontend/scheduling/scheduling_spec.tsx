@@ -1,19 +1,21 @@
 import * as React from 'react';
-import TestUtils from 'react-addons-test-utils';
-import mockFetch from './../../../mocks/mock_fetch';
-global.fetch = mockFetch;
+import * as TestUtils from 'react-addons-test-utils';
+import * as MockDataRequest from '../../../mocks/mock_data_request';
+jest.mock('../../../../app/assets/frontend/lib/data_request', () => MockDataRequest);
 jest.mock('../../../../app/assets/frontend/lib/browser_utils');
 import Scheduling from '../../../../app/assets/frontend/scheduling/index';
 import Recurrence from '../../../../app/assets/frontend/models/recurrence';
-import ScheduledAction from '../../../../app/assets/frontend/models/scheduled_action';
-import ScheduleChannel from '../../../../app/assets/frontend/models/schedule_channel';
+import ScheduledAction, {ScheduledActionInterface} from '../../../../app/assets/frontend/models/scheduled_action';
+import ScheduleChannel, {ScheduleChannelInterface} from '../../../../app/assets/frontend/models/schedule_channel';
 import ID from '../../../../app/assets/frontend/lib/id';
 import Page from '../../../../app/assets/frontend/shared_ui/page';
+import {SchedulingProps} from "../../../../app/assets/frontend/scheduling";
 
-jsRoutes.controllers.ScheduledActionsController.index = () => ({ url: "/test" });
+jsRoutes.controllers.ScheduledActionsController.index = () => ({ url: "/test", method: "get" });
 
-class Loader extends React.Component {
-  constructor(props) {
+class Loader extends React.Component<SchedulingProps, SchedulingProps> {
+  page: Option<Scheduling>;
+  constructor(props: SchedulingProps) {
     super(props);
     this.state = props;
   }
@@ -28,7 +30,7 @@ class Loader extends React.Component {
   }
 }
 
-function createIndexWrapper(config) {
+function createIndexWrapper(config: SchedulingProps) {
   return TestUtils.renderIntoDocument(
     <Loader {...config} />
   );
@@ -41,7 +43,7 @@ const defaultUserId = "U1234";
 const defaultTimeZone = "America/New_York";
 const defaultTimeZoneName = "Eastern Time";
 
-const emptyConfig = Object.freeze({
+const emptyConfig: SchedulingProps = Object.freeze({
   scheduledActions: [],
   channelList: [],
   behaviorGroups: [],
@@ -61,7 +63,7 @@ const emptyConfig = Object.freeze({
   newAction: false
 });
 
-function newSchedule(props) {
+function newSchedule(props?: Partial<ScheduledActionInterface>) {
   return new ScheduledAction(Object.assign({
     id: ID.next(),
     scheduleType: "message",
@@ -80,7 +82,7 @@ function newSchedule(props) {
   }, props));
 }
 
-function newChannel(props) {
+function newChannel(props?: Partial<ScheduleChannelInterface>) {
   return new ScheduleChannel(Object.assign({
     id: defaultChannelId,
     name: "test",
