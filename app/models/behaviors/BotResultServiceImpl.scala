@@ -121,6 +121,7 @@ class BotResultServiceImpl @Inject() (
           sendInAction(SimpleTextResult(event, maybeConversation, e.responseText, forcePrivateResponse), None).map(_ => Seq())
         }
       }
+      maybeChoices <- botResult.maybeChoicesAction(dataService)
       sendResult <- DBIO.from(
         event.sendMessage(
           botResult.fullText,
@@ -129,7 +130,7 @@ class BotResultServiceImpl @Inject() (
           maybeConversation,
           botResult.attachmentGroups,
           files,
-          botResult.maybeChoices.getOrElse(Seq()),
+          maybeChoices.getOrElse(Seq()),
           botResult.isForUndeployed,
           botResult.hasUndeployedVersionForAuthor,
           services,
