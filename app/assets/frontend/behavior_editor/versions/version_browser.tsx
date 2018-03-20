@@ -180,6 +180,8 @@ class VersionBrowser extends React.Component<Props, State> {
         return "loading";
       } else if (props.currentGroupIsModified) {
         return "version0";
+      } else if (props.linkedGithubRepo && props.isLinkedToGithub) {
+        return versionSources.github;
       } else {
         return "select";
       }
@@ -190,9 +192,7 @@ class VersionBrowser extends React.Component<Props, State> {
       const currentGroupChanged = nextProps.currentGroup !== this.props.currentGroup &&
         !nextProps.currentGroup.isIdenticalTo(this.props.currentGroup);
       if (versionsChanged || currentGroupChanged) {
-        this.setState({
-          selectedMenuItem: this.getDefaultSelectedItem(nextProps)
-        });
+        this.onClickMenuItem(this.getDefaultSelectedItem(nextProps));
       }
     }
 
@@ -548,6 +548,9 @@ class VersionBrowser extends React.Component<Props, State> {
 
     onLinkedGithubRepo(): void {
       this.props.onChangedGithubRepo();
+      if (this.props.isLinkedToGithub && this.props.linkedGithubRepo) {
+        this.onClickMenuItem(versionSources.github);
+      }
     }
 
     focusOnGithubRepo(): void {
