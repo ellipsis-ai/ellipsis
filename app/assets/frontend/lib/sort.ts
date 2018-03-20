@@ -1,5 +1,5 @@
-class Sort {
-    static arrayAlphabeticalBy(array, mapItemToProperty) {
+const Sort = {
+    arrayAlphabeticalBy: function(array: Array<any>, mapItemToProperty: (item: any) => Option<string>) {
       var copy = array.slice();
       return copy.sort((a, b) => {
         const aLower = (mapItemToProperty(a) || "").toLowerCase();
@@ -13,7 +13,6 @@ class Sort {
         }
       });
     }
-}
+};
 
 export default Sort;
-
