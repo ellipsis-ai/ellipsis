@@ -1,17 +1,15 @@
-import NotificationData from "../notification_data";
+import NotificationData, {NotificationDataInterface} from "../notification_data";
 
-interface DataTypeMissingFieldsNotificationDataInterface extends NotificationData {
-  kind: "data_type_missing_fields";
+interface DataTypeMissingFieldsNotificationDataInterface extends NotificationDataInterface {
   name: string;
   onClick: () => void;
 }
 
 class DataTypeMissingFieldsNotificationData extends NotificationData implements DataTypeMissingFieldsNotificationDataInterface {
-  readonly kind: "data_type_missing_fields";
   readonly name: string;
   readonly onClick: () => void;
   constructor(props: DataTypeMissingFieldsNotificationDataInterface) {
-    super(props);
+    super(props, "data_type_missing_fields");
   }
 }
 

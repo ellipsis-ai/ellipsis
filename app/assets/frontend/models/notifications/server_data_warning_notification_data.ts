@@ -1,8 +1,7 @@
-import NotificationData from "../notification_data";
+import NotificationData, {NotificationDataInterface} from "../notification_data";
 import BehaviorGroupVersionMetaData from "../behavior_group_version_meta_data";
 
-interface ServerDataWarningNotificationDataInterface extends NotificationData {
-  kind: "server_data_warning";
+interface ServerDataWarningNotificationDataInterface extends NotificationDataInterface {
   type: string;
   onClick?: Option<() => void>;
   error?: Option<Error>;
@@ -11,14 +10,13 @@ interface ServerDataWarningNotificationDataInterface extends NotificationData {
 }
 
 class ServerDataWarningNotificationData extends NotificationData implements ServerDataWarningNotificationDataInterface {
-  readonly kind: "server_data_warning";
   readonly type: string;
   readonly onClick?: Option<() => void>;
   readonly error?: Option<Error>;
   readonly currentUserId?: Option<string>;
   readonly newerVersion?: Option<BehaviorGroupVersionMetaData>;
   constructor(props: ServerDataWarningNotificationDataInterface) {
-    super(props);
+    super(props, "server_data_warning");
   }
 }
 

@@ -1,15 +1,13 @@
-import NotificationData from "../notification_data";
+import NotificationData, {NotificationDataInterface} from "../notification_data";
 
-interface InvalidParamInTriggerNotificationDataInterface extends NotificationData {
-  kind: "invalid_param_in_trigger";
+interface InvalidParamInTriggerNotificationDataInterface extends NotificationDataInterface {
   name: string;
 }
 
 class InvalidParamInTriggerNotificationData extends NotificationData implements InvalidParamInTriggerNotificationDataInterface {
-  readonly kind: "invalid_param_in_trigger";
   readonly name: string;
   constructor(props: InvalidParamInTriggerNotificationDataInterface) {
-    super(props);
+    super(props, "invalid_param_in_trigger");
   }
 }
 

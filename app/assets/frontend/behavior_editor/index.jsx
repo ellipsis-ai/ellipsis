@@ -422,7 +422,6 @@ const BehaviorEditor = React.createClass({
         .filter((ea) => selectedBehavior.knownEnvVarsUsed.includes(ea.name))
         .filter((ea) => !ea.isAlreadySavedWithValue)
         .map((ea) => new EnvVarMissingNotificationData({
-          kind: "env_var_not_defined",
           environmentVariableName: ea.name,
           onClick: () => {
             this.showEnvVariableSetter(ea.name);
@@ -442,7 +441,6 @@ const BehaviorEditor = React.createClass({
       return [];
     }
     return this.getRequiredAWSConfigsWithNoMatchingAWSConfig().map(ea => new RequiredAwsConfigNotificationData({
-      kind: "required_aws_config_without_config",
       name: ea.nameInCode,
       requiredAWSConfig: ea,
       existingAWSConfigs: this.getAllAWSConfigs(),
@@ -479,7 +477,6 @@ const BehaviorEditor = React.createClass({
       return [];
     }
     return this.getRequiredOAuth2ApiConfigsWithNoApplication().map(ea => new OAuth2ConfigWithoutApplicationNotificationData({
-      kind: "oauth2_config_without_application",
       name: this.getOAuth2ApiWithId(ea.apiId).name,
       requiredApiConfig: ea,
       existingOAuth2Applications: this.getAllOAuth2Applications(),
@@ -499,7 +496,6 @@ const BehaviorEditor = React.createClass({
       const behaviorVersion = this.getBehaviorGroup().behaviorVersions.find(bv => bv.id === ea.id);
       const behaviorId = behaviorVersion ? behaviorVersion.behaviorId : null;
       return new DataTypeNeedsConfigNotificationData({
-        kind: "data_type_needs_config",
         name: ea.name,
         onClick: () => this.onSelect(this.getBehaviorGroup().id, behaviorId)
       });
@@ -511,7 +507,6 @@ const BehaviorEditor = React.createClass({
       .filter((ea) => !ea.getName().trim())
       .map((ea) => {
         return new DataTypeUnnamedNotificationData({
-          kind: "data_type_unnamed",
           onClick: () => {
             this.onSelect(this.getBehaviorGroup().id, ea.behaviorId, () => {
               if (this.editableNameInput) {
@@ -526,7 +521,6 @@ const BehaviorEditor = React.createClass({
       .filter((ea) => ea.getDataTypeConfig().isMissingFields())
       .map((ea) => {
         return new DataTypeMissingFieldsNotificationData({
-          kind: "data_type_missing_fields",
           name: ea.getName(),
           onClick: () => {
             this.onSelect(this.getBehaviorGroup().id, ea.behaviorId, () => {
@@ -542,7 +536,6 @@ const BehaviorEditor = React.createClass({
       .filter((dataType) => dataType.requiresFields() && dataType.getDataTypeFields().some((field) => !field.name))
       .map((ea) => {
         return new DataTypeUnnamedFieldsNotificationData({
-          kind: "data_type_unnamed_fields",
           name: ea.getName(),
           onClick: () => {
             this.onSelect(this.getBehaviorGroup().id, ea.behaviorId, () => {
@@ -566,7 +559,6 @@ const BehaviorEditor = React.createClass({
       })
       .map((ea) => {
         return new DataTypeDuplicateFieldsNotificationData({
-          kind: "data_type_duplicate_fields",
           name: ea.getName(),
           onClick: () => {
             this.onSelect(this.getBehaviorGroup().id, ea.behaviorId, () => {
@@ -594,7 +586,6 @@ const BehaviorEditor = React.createClass({
       var validParams = this.getValidParamNamesForTemplate();
       var unknownTemplateParams = template.getUnknownParamsExcluding(validParams);
       return unknownTemplateParams.map((paramName) => new UnknownParamInTemplateNotificationData({
-        kind: "unknown_param_in_template",
         name: paramName
       }));
     } else {
@@ -607,7 +598,6 @@ const BehaviorEditor = React.createClass({
     const notifications = [];
     if (this.state.newerVersionOnServer) {
       notifications.push(new ServerDataWarningNotificationData({
-        kind: "server_data_warning",
         type: "newer_version",
         newerVersion: this.state.newerVersionOnServer,
         currentUserId: this.props.userId,
@@ -618,7 +608,6 @@ const BehaviorEditor = React.createClass({
     }
     if (this.state.errorReachingServer) {
       notifications.push(new ServerDataWarningNotificationData({
-        kind: "server_data_warning",
         type: "network_error",
         error: this.state.errorReachingServer
       }));
@@ -629,7 +618,6 @@ const BehaviorEditor = React.createClass({
   buildSkillDetailsNotifications: function() {
     if (this.isExistingGroup() && !this.getBehaviorGroup().name) {
       return [new SkillDetailsWarningNotificationData({
-        kind: "skill_details_warning",
         type: "no_skill_name",
         onClick: this.toggleRequestSkillDetails
       })];

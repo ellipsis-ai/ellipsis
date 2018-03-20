@@ -4,10 +4,10 @@ import AWSUnusedNotificationData from "../../../../app/assets/frontend/models/no
 
 describe("NotificationDataGroup", () => {
 
-  const foo1 = new UnknownParamInTemplateNotificationData({ kind: "unknown_param_in_template", name: "alpha" });
-  const bar1 = new AWSUnusedNotificationData({ kind: "aws_unused", code: "bravo" });
-  const foo2 = new UnknownParamInTemplateNotificationData({ kind: "unknown_param_in_template", name: "charlie" });
-  const bar2 = new AWSUnusedNotificationData({ kind: "aws_unused", code: "delta" });
+  const foo1 = new UnknownParamInTemplateNotificationData({ name: "alpha" });
+  const bar1 = new AWSUnusedNotificationData({ code: "bravo" });
+  const foo2 = new UnknownParamInTemplateNotificationData({ name: "charlie" });
+  const bar2 = new AWSUnusedNotificationData({ code: "delta" });
 
   describe("groupByKind", () => {
     it("assembles a list of NotificationData into an array of groups by kind", () => {

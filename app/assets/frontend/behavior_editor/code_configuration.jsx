@@ -108,7 +108,6 @@ const CodeConfiguration = React.createClass({
         .filter((ea) => ea && !this.hasUsedOAuth2Application(this.props.functionBody, ea.nameInCode))
         .forEach((ea) => {
           oAuth2Notifications.push(new OAuth2ApplicationUnusedNotificationData({
-            kind: "oauth2_application_unused",
             name: ea.config.displayName,
             code: `ellipsis.accessTokens.${ea.nameInCode}`
           }));
@@ -117,7 +116,6 @@ const CodeConfiguration = React.createClass({
         .filter(ea => !this.hasUsedAWSConfig(this.props.functionBody, ea.nameInCode))
         .forEach(ea => {
           awsNotifications.push(new AWSUnusedNotificationData({
-            kind: "aws_unused",
             code: `ellipsis.aws.${ea.nameInCode}`
           }));
         });

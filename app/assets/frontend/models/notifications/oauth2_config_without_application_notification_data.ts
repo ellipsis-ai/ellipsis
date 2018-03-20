@@ -1,8 +1,7 @@
-import NotificationData from "../notification_data";
+import NotificationData, {NotificationDataInterface} from "../notification_data";
 import {OAuth2ApplicationRef, RequiredOAuth2Application} from "../oauth2";
 
-interface OAuth2ConfigWithoutApplicationNotificationDataInterface extends NotificationData {
-  kind: "oauth2_config_without_application";
+interface OAuth2ConfigWithoutApplicationNotificationDataInterface extends NotificationDataInterface {
   name: string;
   existingOAuth2Applications: Array<OAuth2ApplicationRef>;
   requiredApiConfig: RequiredOAuth2Application;
@@ -12,7 +11,6 @@ interface OAuth2ConfigWithoutApplicationNotificationDataInterface extends Notifi
 }
 
 class OAuth2ConfigWithoutApplicationNotificationData extends NotificationData implements OAuth2ConfigWithoutApplicationNotificationDataInterface {
-  readonly kind: "oauth2_config_without_application";
   readonly name: string;
   readonly existingOAuth2Applications: Array<OAuth2ApplicationRef>;
   readonly requiredApiConfig: RequiredOAuth2Application;
@@ -20,7 +18,7 @@ class OAuth2ConfigWithoutApplicationNotificationData extends NotificationData im
   readonly onNewOAuth2Application: (newApp: RequiredOAuth2Application) => void;
   readonly onConfigClick: (configApp: RequiredOAuth2Application) => void;
   constructor(props: OAuth2ConfigWithoutApplicationNotificationDataInterface) {
-    super(props);
+    super(props, "oauth2_config_without_application");
   }
 }
 

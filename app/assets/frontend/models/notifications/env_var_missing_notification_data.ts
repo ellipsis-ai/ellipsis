@@ -1,17 +1,15 @@
 import NotificationData, {NotificationDataInterface} from "../notification_data";
 
 interface EnvVarMissingNotificationDataInterface extends NotificationDataInterface {
-  kind: "env_var_not_defined";
   environmentVariableName: string;
   onClick: () => void;
 }
 
 class EnvVarMissingNotificationData extends NotificationData implements EnvVarMissingNotificationDataInterface {
-  readonly kind: "env_var_not_defined";
   readonly environmentVariableName: string;
   readonly onClick: () => void;
   constructor(props: EnvVarMissingNotificationDataInterface) {
-    super(props);
+    super(props, "env_var_not_defined");
   }
 }
 

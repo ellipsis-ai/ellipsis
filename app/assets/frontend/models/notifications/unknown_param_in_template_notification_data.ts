@@ -1,15 +1,13 @@
-import NotificationData from "../notification_data";
+import NotificationData, {NotificationDataInterface} from "../notification_data";
 
-interface UnknownParamInTemplateNotificationDataInterface extends NotificationData {
-  kind: "unknown_param_in_template";
+interface UnknownParamInTemplateNotificationDataInterface extends NotificationDataInterface {
   name: string;
 }
 
 class UnknownParamInTemplateNotificationData extends NotificationData implements UnknownParamInTemplateNotificationDataInterface {
-  readonly kind: "unknown_param_in_template";
   readonly name: string;
   constructor(props: UnknownParamInTemplateNotificationDataInterface) {
-    super(props);
+    super(props, "unknown_param_in_template");
   }
 }
 

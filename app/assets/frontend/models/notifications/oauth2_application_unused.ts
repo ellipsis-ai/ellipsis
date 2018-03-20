@@ -1,17 +1,15 @@
-import NotificationData from "../notification_data";
+import NotificationData, {NotificationDataInterface} from "../notification_data";
 
-interface OAuth2ApplicationUnusedNotificationDataInterface extends NotificationData {
-  kind: "oauth2_application_unused";
+interface OAuth2ApplicationUnusedNotificationDataInterface extends NotificationDataInterface {
   name: string;
   code: string;
 }
 
 class OAuth2ApplicationUnusedNotificationData extends NotificationData implements OAuth2ApplicationUnusedNotificationDataInterface {
-  readonly kind: "oauth2_application_unused";
   readonly name: string;
   readonly code: string;
   constructor(props: OAuth2ApplicationUnusedNotificationDataInterface) {
-    super(props);
+    super(props, "oauth2_application_unused");
   }
 }
 

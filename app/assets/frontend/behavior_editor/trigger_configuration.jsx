@@ -68,7 +68,6 @@ const TriggerConfiguration = React.createClass({
       return unknownParamNames.map((name) => {
         if (Formatter.isValidNameForCode(name)) {
           return new ParamNotInFunctionNotificationData({
-            kind: "param_not_in_function",
             name: name,
             onClick: () => {
               this.props.onAddNewInput(name);
@@ -76,7 +75,6 @@ const TriggerConfiguration = React.createClass({
           });
         } else {
           return new InvalidParamInTriggerNotificationData({
-            kind: "invalid_param_in_trigger",
             name: name
           });
         }

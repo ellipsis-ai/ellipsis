@@ -14,15 +14,14 @@ export type NotificationKind = "env_var_not_defined" |
   "server_data_warning" |
   "skill_details_warning"
 
-export interface NotificationDataInterface {
-  kind: NotificationKind
-}
+export interface NotificationDataInterface {}
 
 abstract class NotificationData implements NotificationDataInterface {
   readonly kind: NotificationKind;
 
-  constructor(props: NotificationDataInterface) {
+  constructor(props: NotificationDataInterface, kind: NotificationKind) {
     Object.assign(this, props);
+    this.kind = kind;
   }
 }
 
