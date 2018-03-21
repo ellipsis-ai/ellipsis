@@ -65,6 +65,8 @@ class BehaviorList extends React.Component<Props, State> {
   localGroupContainer: Option<HTMLElement>;
   publishedGroupContainer: Option<HTMLElement>;
   mainHeader: Option<HTMLElement>;
+  localHeading: Option<HTMLElement>;
+  publishedHeading: Option<HTMLElement>;
 
   constructor(props: Props) {
     super(props);
@@ -133,13 +135,25 @@ class BehaviorList extends React.Component<Props, State> {
     const localCoords = this.localGroupContainer ? this.localGroupContainer.getBoundingClientRect() : null;
     const localTop = scrollY + (localCoords ? localCoords.top : 0);
     const localHeight = localCoords ? localCoords.height : 0;
-    const publishedCoords = this.publishedGroupContainer ? this.publishedGroupContainer.getBoundingClientRect() : null;
-    const publishedTop = scrollY + (publishedCoords ? publishedCoords.top : 0);
+    const localBottom = localTop + localHeight;
+    const localHeadingCoords = this.localHeading ? this.localHeading.getBoundingClientRect() : null;
+    const localHeadingTop = scrollY + (localHeadingCoords ? localHeadingCoords.top : 0);
+    const publishedHeadingCoords = this.publishedHeading ? this.publishedHeading.getBoundingClientRect() : null;
+    const publishedHeadingTop = scrollY + (publishedHeadingCoords ? publishedHeadingCoords.top : 0);
+    const publishedHeadingHeight = publishedHeadingCoords ? publishedHeadingCoords.height : 0;
+    const publishedHeadingBottom = publishedHeadingTop + publishedHeadingHeight;
     const headerHeight = this.getHeaderHeight();
     const visibleTop = scrollY + headerHeight;
     const visibleBottom = scrollY + window.innerHeight;
-    const visibleOneThird = visibleTop + Math.round((visibleBottom - visibleTop) / 3);
-    if (publishedTop > visibleOneThird || localHeight > 0 && localTop >= visibleTop) {
+    const visibleHeight = visibleBottom - visibleTop;
+    const visibleHalf = visibleTop + Math.round((visibleBottom - visibleTop) / 2);
+
+    const publishedNotVisible = publishedHeadingBottom > visibleBottom;
+    const localContainerIsSmall = localHeight < visibleHeight;
+    const localHeadingBelowTop = localHeadingTop >= visibleTop;
+    const localBottomVisibleBelowHalf = localBottom >= visibleHalf;
+    if (publishedNotVisible || (localContainerIsSmall &&
+        (localHeadingBelowTop || localBottomVisibleBelowHalf))) {
       this.setState({
         visibleSection: "local"
       });
@@ -526,12 +540,14 @@ class BehaviorList extends React.Component<Props, State> {
       <Collapsible revealWhen={hasLocalGroups} animationDuration={0.5}>
         <div className="container container-c ptxl">
 
-          <ListHeading
-            heading={this.isSearching() ?
-              `Your team’s skills matching “${this.getSearchText()}”` :
-              "Your team’s skills"
-            }
-          />
+          <div ref={(el) => this.localHeading = el}>
+            <ListHeading
+              heading={this.isSearching() ?
+                `Your team’s skills matching “${this.getSearchText()}”` :
+                "Your team’s skills"
+              }
+            />
+          </div>
 
           <div className={"columns mvxl " + (this.isLoadingMatchingResults() ? "pulse-faded" : "")}>
             {groups.length > 0 ? groups.map((group, index) => (
@@ -614,7 +630,7 @@ class BehaviorList extends React.Component<Props, State> {
       );
     } else {
       return (
-        <div>
+        <div ref={(el) => this.publishedHeading = el}>
           <ListHeading heading={this.isSearching() ?
             `Skills available to install matching “${this.getSearchText()}”` :
             "Skills available to install"
