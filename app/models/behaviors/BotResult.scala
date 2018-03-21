@@ -73,14 +73,12 @@ sealed trait BotResult {
       files.map { fileSpec =>
         val filename = fileSpec.filename.getOrElse("File")
         val filetype = fileSpec.filetype.getOrElse("unknown type")
-        val content = fileSpec.content.map { content =>
-          val lines = content.split("\n")
-          if (lines.length > 10) {
-            lines.slice(0, 10).mkString("", "\n", "\n...(truncated)")
-          } else {
-            lines.mkString("\n")
-          }
-        }.getOrElse("(empty)")
+        val lines = fileSpec.content.split("\n")
+        val content = if (lines.length > 10) {
+          lines.slice(0, 10).mkString("", "\n", "\n...(truncated)")
+        } else {
+          lines.mkString("\n")
+        }
         s"""$filename ($filetype):
            |$content
            """.stripMargin
@@ -151,7 +149,7 @@ trait BotResultWithLogResult extends BotResult {
 
   val maybeAuthorLogFile: Option[UploadFileSpec] = {
     maybeAuthorLog.map { log =>
-      UploadFileSpec(Some(log), Some("text"), Some("Developer log"))
+      UploadFileSpec(log, Some("text"), Some("Developer log"))
     }
   }
 
@@ -368,7 +366,7 @@ case class ExecutionErrorResult(
   override def files: Seq[UploadFileSpec] = {
     val log = maybeAuthorLog.map(_ + "\n").getOrElse("") + maybeErrorLog.getOrElse("")
     if (log.nonEmpty) {
-      Seq(UploadFileSpec(Some(log), Some("text"), Some("Developer log")))
+      Seq(UploadFileSpec(log, Some("text"), Some("Developer log")))
     } else {
       Seq()
     }
