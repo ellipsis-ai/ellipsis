@@ -23,7 +23,7 @@ class DeepEqual {
       }
     }
 
-    static objectsEqual(obj1: {}, obj2: {}): boolean {
+    static objectsEqual(obj1: object, obj2: object): boolean {
       // typeof null returns "object", so we need to guard against one side being null
       if (obj1 !== obj2 && (obj1 === null || obj2 === null)) {
         return false;
