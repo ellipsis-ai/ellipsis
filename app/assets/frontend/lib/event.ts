@@ -1,41 +1,41 @@
 class Event {
-    static keyPressWasDown(event) {
+    static keyPressWasDown(event: KeyboardEvent): boolean {
       return event.which === 40;
     }
 
-    static keyPressWasEnter(event) {
+    static keyPressWasEnter(event: KeyboardEvent): boolean {
       return event.which === 13;
     }
 
-    static keyPressWasEsc(event) {
+    static keyPressWasEsc(event: KeyboardEvent): boolean {
       return event.which === 27;
     }
 
-    static keyPressWasLeft(event) {
+    static keyPressWasLeft(event: KeyboardEvent): boolean {
       return event.which === 37;
     }
 
-    static keyPressWasRight(event) {
+    static keyPressWasRight(event: KeyboardEvent): boolean {
       return event.which === 39;
     }
 
-    static keyPressWasSpace(event) {
+    static keyPressWasSpace(event: KeyboardEvent): boolean {
       return event.which === 32;
     }
 
-    static keyPressWasTab(event) {
+    static keyPressWasTab(event: KeyboardEvent): boolean {
       return event.which === 9;
     }
 
-    static keyPressWasUp(event) {
+    static keyPressWasUp(event: KeyboardEvent): boolean {
       return event.which === 38;
     }
 
-    static keyPressIncludedShift(event) {
+    static keyPressIncludedShift(event: KeyboardEvent): boolean {
       return event.shiftKey;
     }
 
-    static keyPressWasSaveShortcut(event) {
+    static keyPressWasSaveShortcut(event: KeyboardEvent): boolean {
       var sKeyWhich = 83;
       if (/^Mac/.test(navigator.platform)) {
         return event.metaKey && !event.altKey && !event.shiftKey && !event.ctrlKey && event.which === sKeyWhich;

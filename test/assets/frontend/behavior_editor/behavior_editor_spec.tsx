@@ -191,7 +191,7 @@ describe('BehaviorEditor', () => {
     firstBehavior = editorConfig.group.behaviorVersions[0];
   });
 
-  function createEditor(config) {
+  function createEditor(config): BehaviorEditor {
     const props = Object.assign({}, config, {
       group: BehaviorGroup.fromJson(config.group),
       awsConfigs: config.awsConfigs.map(AWSConfigRef.fromJson),
@@ -203,7 +203,7 @@ describe('BehaviorEditor', () => {
     });
     return TestUtils.renderIntoDocument(
       <BehaviorEditor {...props} />
-    );
+    ) as BehaviorEditor;
   }
 
   describe('getFunctionBody', () => {

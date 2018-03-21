@@ -22,7 +22,7 @@ export interface ScheduledActionJson {
   channel: string
 }
 
-interface ScheduledActionInterface extends ScheduledActionJson {
+export interface ScheduledActionInterface extends ScheduledActionJson {
   recurrence: Recurrence,
   firstRecurrence?: Option<Date>;
   secondRecurrence?: Option<Date>;
