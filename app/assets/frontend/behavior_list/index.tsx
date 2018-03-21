@@ -21,6 +21,8 @@ import {SearchResult} from "./loader";
 import SVGInstall from '../svg/install';
 import SVGInstalled from '../svg/installed';
 import SVGInstalling from '../svg/installing';
+import FixedHeader from "../shared_ui/fixed_header";
+import {CSSProperties} from "react";
 
 const ANIMATION_DURATION = 0.25;
 
@@ -54,7 +56,8 @@ type State = {
   isSubmitting: boolean,
   userSearchText: string,
   activeSearchText: string,
-  visibleSection: "local" | "published"
+  visibleSection: "local" | "published",
+  searchHeaderHeight: number
 }
 
 class BehaviorList extends React.Component<Props, State> {
@@ -77,7 +80,8 @@ class BehaviorList extends React.Component<Props, State> {
       isSubmitting: false,
       userSearchText: "",
       activeSearchText: "",
-      visibleSection: this.props.localBehaviorGroups.length > 0 ? "local" : "published"
+      visibleSection: this.props.localBehaviorGroups.length > 0 ? "local" : "published",
+      searchHeaderHeight: 0
     };
 
     this.delaySubmitSearch = debounce(() => this.submitSearch(), 50);
@@ -164,8 +168,25 @@ class BehaviorList extends React.Component<Props, State> {
     }
   }
 
-  getHeaderHeight(): number {
+  updateSearchHeaderHeight(newHeight: number): void {
+    this.setState({
+      searchHeaderHeight: newHeight
+    });
+  }
+
+  getMainHeaderHeight(): number {
     return this.mainHeader ? this.mainHeader.offsetHeight : 0;
+  }
+
+  getHeaderHeight(): number {
+    return this.getMainHeaderHeight() + this.state.searchHeaderHeight;
+  }
+
+  getScrollableContainerStyle(): CSSProperties {
+    return {
+      paddingTop: `${this.state.searchHeaderHeight}px`,
+      paddingBottom: `${this.props.footerHeight}px`
+    }
   }
 
   scrollToElement(element: HTMLElement): void {
@@ -728,7 +749,7 @@ class BehaviorList extends React.Component<Props, State> {
   renderIntro() {
     return (
       <Collapsible revealWhen={this.getLocalBehaviorGroups().length === 0}>
-        <div className="bg-lightest ptxl container container-c pbm">
+        <div className="bg-lightest pts pbxl container container-c">
           <div className="phl">
             <div className="type-l type-light">
               This is a customizable bot that helps your team be more productive.
@@ -742,14 +763,21 @@ class BehaviorList extends React.Component<Props, State> {
 
   renderSearch() {
     return (
-      <div className="mhl">
-        <SearchInput
-          placeholder="Search skills…"
-          value={this.state.userSearchText}
-          onChange={this.updateUserSearch}
-          isSearching={this.isLoadingMatchingResults()}
-          className="form-input-s"
-        />
+      <div className="columns flex-columns flex-row-expand mobile-flex-no-columns">
+        <div className="column column-page-sidebar flex-column flex-column-left bg-lightest" />
+        <div className="column column-page-main column-page-main-wide flex-column flex-column-main">
+          <div className="bg-lightest-translucent pvl container container-c">
+            <div className="mhl">
+              <SearchInput
+                placeholder="Search skills…"
+                value={this.state.userSearchText}
+                onChange={this.updateUserSearch}
+                isSearching={this.isLoadingMatchingResults()}
+                className="form-input-borderless form-input-s"
+              />
+            </div>
+          </div>
+        </div>
       </div>
     );
   }
@@ -760,9 +788,8 @@ class BehaviorList extends React.Component<Props, State> {
         onGetCoordinates={this.getSidebarCoordinates}
         disabledWhen={() => window.innerWidth <= MOBILE_MAX_WIDTH}
       >
-        <div className="pvxxl mobile-pvl">
-
-          <div className="mobile-display-none">
+        <div className="pbxxl mobile-display-none">
+          <div>
             <ul className="list-nav phxl mobile-phl">
               <li className={this.isScrolledToLocal() ? "list-nav-active-item" : ""}>
                 <Button
@@ -800,7 +827,10 @@ class BehaviorList extends React.Component<Props, State> {
     return (
       <div className="flex-row-cascade">
         {this.props.notification}
-        <div className="flex-row-cascade" style={{ paddingBottom: `${this.props.footerHeight}px` }}>
+        <FixedHeader onHeightChange={this.updateSearchHeaderHeight} marginTop={this.getMainHeaderHeight()}>
+          {this.renderSearch()}
+        </FixedHeader>
+        <div className="flex-row-cascade" style={this.getScrollableContainerStyle()}>
           <div className="flex-columns flex-row-expand">
             <div className="flex-column flex-column-left flex-rows container container-wide phn">
               <div className="columns flex-columns flex-row-expand mobile-flex-no-columns">
@@ -809,10 +839,6 @@ class BehaviorList extends React.Component<Props, State> {
                 </div>
                 <div className="column column-page-main column-page-main-wide flex-column flex-column-main">
                   {this.renderIntro()}
-
-                  <div className="bg-lightest pvl container container-c">
-                    {this.renderSearch()}
-                  </div>
 
                   <div ref={(el) => this.localGroupContainer = el} className="bg-white">
                     {this.renderInstalledBehaviorGroups(localGroups, hasLocalGroups)}
