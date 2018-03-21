@@ -827,7 +827,7 @@ class BehaviorList extends React.Component<Props, State> {
     return (
       <div className="flex-row-cascade">
         {this.props.notification}
-        <FixedHeader onHeightChange={this.updateSearchHeaderHeight} marginTop={this.getMainHeaderHeight()}>
+        <FixedHeader onHeightChange={this.updateSearchHeaderHeight} marginTop={this.getMainHeaderHeight()} zIndexClassName="position-z-behind-scrim">
           {this.renderSearch()}
         </FixedHeader>
         <div className="flex-row-cascade" style={this.getScrollableContainerStyle()}>

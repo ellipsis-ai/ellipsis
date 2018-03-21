@@ -7,6 +7,7 @@ class FixedHeader extends React.Component<FixedElementProps> {
       <FixedElement
         elementType={"header"}
         className={this.props.className}
+        zIndexClassName={this.props.zIndexClassName}
         onHeightChange={this.props.onHeightChange}
         marginTop={this.props.marginTop}
       >

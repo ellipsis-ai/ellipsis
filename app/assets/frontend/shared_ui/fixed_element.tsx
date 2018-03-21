@@ -3,10 +3,11 @@ import autobind from '../lib/autobind';
 import {CSSProperties} from "react";
 
 export interface FixedElementProps {
-  children: any,
-  className?: string,
-  onHeightChange: (number) => void,
-  marginTop?: Option<number>
+  children: any;
+  className?: string;
+  zIndexClassName?: string;
+  onHeightChange: (number) => void;
+  marginTop?: Option<number>;
 }
 
 type Props = FixedElementProps & {
@@ -71,7 +72,7 @@ class FixedElement extends React.Component<Props, State> {
     render() {
       return React.createElement(this.props.elementType, {
         ref: (el) => this.element = el,
-        className: `position-fixed-${this.props.elementType === "header" ? "top": "bottom"} position-z-front ${this.props.className || ""}`,
+        className: `position-fixed-${this.props.elementType === "header" ? "top": "bottom"} ${this.props.zIndexClassName || "position-z-front"} ${this.props.className || ""}`,
         style: this.getStyle()
       }, this.props.children);
     }
