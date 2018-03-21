@@ -6,49 +6,62 @@ import models.behaviors.conversations.ParamCollectionState
 import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.datatypeconfig.DataTypeConfig
 import models.behaviors.datatypefield.FieldTypeForSchema
-import models.behaviors.events.Event
-import models.behaviors.{BotResult, ParameterValue, ParameterWithValue, SuccessResult}
+import models.behaviors.events._
+import models.behaviors._
 import play.api.libs.json._
+import services.AWSLambdaConstants._
+import services.caching.DataTypeBotResultsCacheKey
 import services.{AWSLambdaConstants, DataService}
 import slick.dbio.DBIO
+import utils.Color
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
 import scala.concurrent.duration._
+import scala.concurrent.{ExecutionContext, Future}
+
+case class FetchValidValuesBadResultException(result: BotResult) extends Exception(s"Couldn't fetch data type values: ${result.resultType}")
 
 sealed trait BehaviorParameterType extends FieldTypeForSchema {
 
   val id: String
   val exportId: String
   val name: String
-  def needsConfig(dataService: DataService): Future[Boolean]
+  def needsConfig(dataService: DataService)(implicit ec: ExecutionContext): Future[Boolean]
   val isBuiltIn: Boolean
 
-  def isValid(text: String, context: BehaviorParameterContext): Future[Boolean]
+  def isValid(text: String, context: BehaviorParameterContext)(implicit ec: ExecutionContext): Future[Boolean]
 
-  def prepareForInvocation(text: String, context: BehaviorParameterContext): Future[JsValue]
+  def prepareForInvocation(text: String, context: BehaviorParameterContext)(implicit ec: ExecutionContext): Future[JsValue]
 
   def invalidPromptModifier: String
 
+  def stopText: String = "`...stop`"
+
+  def stopInstructions: String = s"Or say $stopText to end the conversation."
+
   def invalidValueModifierFor(maybePreviousCollectedValue: Option[String]): String = {
     if (maybePreviousCollectedValue.isDefined) {
-      s" (${invalidPromptModifier})"
+      invalidPromptModifier
     } else {
       ""
     }
   }
 
-  def promptForAction(
+  def questionTextFor(context: BehaviorParameterContext): String = {
+    context.parameter.question.trim
+  }
+
+  def promptResultForAction(
                  maybePreviousCollectedValue: Option[String],
                  context: BehaviorParameterContext,
                  paramState: ParamCollectionState,
                  isReminding: Boolean
-               ): DBIO[String] = {
+               )(implicit ec: ExecutionContext): DBIO[BotResult] = {
     for {
       isFirst <- context.isFirstParamAction
       paramCount <- DBIO.from(context.unfilledParamCount(paramState))
     } yield {
-      val preamble = if (isReminding || !isFirst || paramCount <= 1) {
+      val invalidModifier = invalidValueModifierFor(maybePreviousCollectedValue)
+      val preamble = if (isReminding || !isFirst || paramCount <= 1 || invalidModifier.nonEmpty) {
         ""
       } else {
         context.event.messageRecipientPrefix ++ (if (paramCount == 2) {
@@ -59,14 +72,20 @@ sealed trait BehaviorParameterType extends FieldTypeForSchema {
           s"I need to ask you some questions."
         })
       }
-      s"$preamble\n\n**${context.parameter.question}** ${invalidValueModifierFor(maybePreviousCollectedValue)}"
+      context.simpleTextResultFor(s"""$preamble
+         |
+         |$invalidModifier
+         |
+         |__${questionTextFor(context)}__""".stripMargin)
     }
   }
 
-  def resolvedValueFor(text: String, context: BehaviorParameterContext): Future[Option[String]]
+  def resolvedValueFor(text: String, context: BehaviorParameterContext)(implicit ec: ExecutionContext): Future[Option[String]]
 
-  def handleCollected(event: Event, context: BehaviorParameterContext): Future[Unit] = {
-    val potentialValue = event.relevantMessageText
+  def potentialValueFor(event: Event, context: BehaviorParameterContext): String = event.relevantMessageText
+
+  def handleCollected(event: Event, context: BehaviorParameterContext)(implicit ec: ExecutionContext): Future[Unit] = {
+    val potentialValue = potentialValueFor(event, context)
     val input = context.parameter.input
     if (input.isSaved) {
       resolvedValueFor(potentialValue, context).flatMap { maybeValueToSave =>
@@ -83,19 +102,21 @@ sealed trait BehaviorParameterType extends FieldTypeForSchema {
     }
   }
 
+  def decorationCodeFor(param: BehaviorParameter): String = ""
+
 }
 
 trait BuiltInType extends BehaviorParameterType {
   lazy val id = name
   lazy val exportId = name
   val isBuiltIn: Boolean = true
-  def needsConfig(dataService: DataService) = Future.successful(false)
-  def resolvedValueFor(text: String, context: BehaviorParameterContext): Future[Option[String]] = {
+  def needsConfig(dataService: DataService)(implicit ec: ExecutionContext) = Future.successful(false)
+  def resolvedValueFor(text: String, context: BehaviorParameterContext)(implicit ec: ExecutionContext): Future[Option[String]] = {
     Future.successful(Some(text))
   }
   def prepareValue(text: String): JsValue
   def prepareJsValue(value: JsValue): JsValue
-  def prepareForInvocation(text: String, context: BehaviorParameterContext) = Future.successful(prepareValue(text))
+  def prepareForInvocation(text: String, context: BehaviorParameterContext)(implicit ec: ExecutionContext) = Future.successful(prepareValue(text))
 }
 
 object TextType extends BuiltInType {
@@ -103,7 +124,7 @@ object TextType extends BuiltInType {
 
   val outputName: String = "String"
 
-  def isValid(text: String, context: BehaviorParameterContext) = Future.successful(true)
+  def isValid(text: String, context: BehaviorParameterContext)(implicit ec: ExecutionContext) = Future.successful(true)
 
   def prepareValue(text: String) = JsString(text)
   def prepareJsValue(value: JsValue): JsValue = {
@@ -114,7 +135,7 @@ object TextType extends BuiltInType {
     }
   }
 
-  val invalidPromptModifier: String = "I need a valid answer"
+  val invalidPromptModifier: String = s"I need a valid answer. $stopInstructions"
 
 }
 
@@ -123,7 +144,7 @@ object NumberType extends BuiltInType {
 
   val outputName: String = "Float"
 
-  def isValid(text: String, context: BehaviorParameterContext) = Future.successful {
+  def isValid(text: String, context: BehaviorParameterContext)(implicit ec: ExecutionContext) = Future.successful {
     try {
       text.toDouble
       true
@@ -146,7 +167,7 @@ object NumberType extends BuiltInType {
     }
   }
 
-  val invalidPromptModifier: String = "I need a number"
+  val invalidPromptModifier: String = s"I need a number to answer this. $stopInstructions"
 }
 
 object YesNoType extends BuiltInType {
@@ -169,7 +190,7 @@ object YesNoType extends BuiltInType {
     }
   }
 
-  def isValid(text: String, context: BehaviorParameterContext): Future[Boolean] = {
+  def isValid(text: String, context: BehaviorParameterContext)(implicit ec: ExecutionContext): Future[Boolean] = {
     Future.successful(maybeValidValueFor(text).isDefined)
   }
 
@@ -187,7 +208,67 @@ object YesNoType extends BuiltInType {
     }
   }
 
-  val invalidPromptModifier: String = "I need something like 'yes' or 'no'"
+  val invalidPromptModifier: String = s"I need an answer like “yes” or “no”. $stopInstructions"
+}
+
+object FileType extends BuiltInType {
+  val name = "File"
+
+  val outputName: String = "File"
+
+  def isIntentionallyEmpty(text: String): Boolean = text.trim.toLowerCase == "none"
+
+  override def questionTextFor(context: BehaviorParameterContext): String = {
+    super.questionTextFor(context) ++ """ (or type "none" if you don't have one)"""
+  }
+
+  private def eventHasFile(context: BehaviorParameterContext): Boolean = {
+    context.event match {
+      case e: SlackMessageEvent => e.maybeFile.nonEmpty
+      case _ => false
+    }
+  }
+
+  private def alreadyHasFile(text: String, context: BehaviorParameterContext): Boolean = {
+    context.services.slackFileMap.maybeUrlFor(text).nonEmpty
+  }
+
+  def isValid(text: String, context: BehaviorParameterContext)(implicit ec: ExecutionContext): Future[Boolean] = {
+    Future.successful {
+      alreadyHasFile(text, context) || eventHasFile(context) || isIntentionallyEmpty(text)
+    }
+  }
+
+  def prepareValue(text: String) = {
+    if (isIntentionallyEmpty(text)) {
+      JsNull
+    } else {
+      Json.toJson(Map("id" -> text))
+    }
+  }
+
+  def prepareJsValue(value: JsValue): JsValue = {
+    value match {
+      case s: JsString => prepareValue(s.value)
+      case v => v
+    }
+  }
+
+  override def potentialValueFor(event: Event, context: BehaviorParameterContext): String = {
+    event match {
+      case e: SlackMessageEvent => e.maybeFile.map { file =>
+        context.services.slackFileMap.save(file)
+      }.getOrElse(super.potentialValueFor(event, context))
+      case _ => super.potentialValueFor(event, context)
+    }
+  }
+
+  override def decorationCodeFor(param: BehaviorParameter): String = {
+    val paramName = param.input.name;
+    raw"""if ($paramName) { $paramName.fetch = require("$FETCH_FUNCTION_FOR_FILE_PARAM_NAME")($paramName, $CONTEXT_PARAM); }"""
+  }
+
+  val invalidPromptModifier: String = raw"""I need you to upload a file or type `none` if you don't have one. $stopInstructions"""
 }
 
 case class ValidValue(id: String, label: String, data: Map[String, String])
@@ -200,8 +281,8 @@ case class BehaviorBackedDataType(dataTypeConfig: DataTypeConfig) extends Behavi
   override val exportId: String = behaviorVersion.behavior.maybeExportId.getOrElse(id)
   val name = behaviorVersion.maybeName.getOrElse("Unnamed data type")
 
-  val outputName: String = dataTypeConfig.outputName
-  override lazy val inputName: String = dataTypeConfig.inputName
+  val outputName: String = behaviorVersion.outputName
+  override lazy val inputName: String = behaviorVersion.inputName
 
   val isBuiltIn: Boolean = false
 
@@ -235,7 +316,7 @@ case class BehaviorBackedDataType(dataTypeConfig: DataTypeConfig) extends Behavi
     )
   }
 
-  def resolvedValueFor(text: String, context: BehaviorParameterContext): Future[Option[String]] = {
+  def resolvedValueFor(text: String, context: BehaviorParameterContext)(implicit ec: ExecutionContext): Future[Option[String]] = {
     cachedValidValueFor(text, context).map { vv =>
       Future.successful(Some(vv))
     }.getOrElse {
@@ -251,7 +332,7 @@ case class BehaviorBackedDataType(dataTypeConfig: DataTypeConfig) extends Behavi
     s"[${context.parameter.paramType.name}]($link)"
   }
 
-  def needsConfig(dataService: DataService) = {
+  def needsConfig(dataService: DataService)(implicit ec: ExecutionContext) = {
     for {
       requiredOAuth2ApiConfigs <- dataService.requiredOAuth2ApiConfigs.allFor(behaviorVersion.groupVersion)
     } yield !requiredOAuth2ApiConfigs.forall(_.isReady)
@@ -259,7 +340,7 @@ case class BehaviorBackedDataType(dataTypeConfig: DataTypeConfig) extends Behavi
 
   val team = behaviorVersion.team
 
-  def maybeValidValueForSavedAnswer(value: ValidValue, context: BehaviorParameterContext): Future[Option[ValidValue]] = {
+  def maybeValidValueForSavedAnswer(value: ValidValue, context: BehaviorParameterContext)(implicit ec: ExecutionContext): Future[Option[ValidValue]] = {
     usesSearch(context).flatMap { usesSearch =>
       if (usesSearch) {
         fetchValidValues(Some(value.label), context).map { values =>
@@ -271,11 +352,11 @@ case class BehaviorBackedDataType(dataTypeConfig: DataTypeConfig) extends Behavi
     }
   }
 
-  def isValid(text: String, context: BehaviorParameterContext) = {
+  def isValid(text: String, context: BehaviorParameterContext)(implicit ec: ExecutionContext) = {
     maybeValidValueFor(text, context).map(_.isDefined)
   }
 
-  def maybeValidValueFor(text: String, context: BehaviorParameterContext): Future[Option[ValidValue]] = {
+  def maybeValidValueFor(text: String, context: BehaviorParameterContext)(implicit ec: ExecutionContext): Future[Option[ValidValue]] = {
     val maybeJson = try {
       Some(Json.parse(text))
     } catch {
@@ -286,10 +367,14 @@ case class BehaviorBackedDataType(dataTypeConfig: DataTypeConfig) extends Behavi
         maybeValidValueForSavedAnswer(validValue, context)
       }
     }.getOrElse {
-      cachedValidValueFor(text, context).map { v =>
-        Future.successful(Some(v))
-      }.getOrElse {
-        fetchMatchFor(text, context)
+      if (isCollectingOther(context)) {
+        Future.successful(Some(ValidValue(BehaviorParameterType.otherId, text, Map())))
+      } else {
+        cachedValidValueFor(text, context).map { v =>
+          Future.successful(Some(v))
+        }.getOrElse {
+          fetchMatchFor(text, context)
+        }
       }
     }
   }
@@ -326,7 +411,7 @@ case class BehaviorBackedDataType(dataTypeConfig: DataTypeConfig) extends Behavi
       orElse(cachedValidValueForLabel(text, context))
   }
 
-  def prepareForInvocation(text: String, context: BehaviorParameterContext) = {
+  def prepareForInvocation(text: String, context: BehaviorParameterContext)(implicit ec: ExecutionContext) = {
     maybeValidValueFor(text, context).map { maybeValidValue =>
       maybeValidValue.map { vv =>
         JsObject(Map(BehaviorParameterType.ID_PROPERTY -> JsString(vv.id), BehaviorParameterType.LABEL_PROPERTY -> JsString(vv.label)) ++ vv.data.map { case(k, v) => k -> JsString(v) })
@@ -334,7 +419,7 @@ case class BehaviorBackedDataType(dataTypeConfig: DataTypeConfig) extends Behavi
     }
   }
 
-  val invalidPromptModifier: String = s"I need a $name. Type one of the numbers or labels below or `...stop` to end this conversation."
+  val invalidPromptModifier: String = s"I need a $name. Choose one of the options below. $stopInstructions"
 
   private def valuesListCacheKeyFor(conversation: Conversation, parameter: BehaviorParameter): String = {
     s"values-list-${conversation.id}-${parameter.id}"
@@ -344,39 +429,54 @@ case class BehaviorBackedDataType(dataTypeConfig: DataTypeConfig) extends Behavi
     s"search-query-${conversation.id}-${parameter.id}"
   }
 
-  private def fetchValidValuesResultAction(maybeSearchQuery: Option[String], context: BehaviorParameterContext): DBIO[Option[BotResult]] = {
+  private def maybeCollectingOtherCacheKeyFor(context: BehaviorParameterContext): Option[String] = {
+    context.maybeConversation.map { convo =>
+      s"collecting-other-${convo.id}-${context.parameter.id}"
+    }
+  }
+
+  private def fetchValidValuesResultAction(maybeSearchQuery: Option[String], context: BehaviorParameterContext)(implicit ec: ExecutionContext): DBIO[Option[BotResult]] = {
     val paramsWithValues = maybeSearchQuery.map { searchQuery =>
       val value = ParameterValue(searchQuery, JsString(searchQuery), isValid=true)
       Seq(ParameterWithValue(context.parameter, AWSLambdaConstants.invocationParamFor(0), Some(value)))
     }.getOrElse(Seq())
+    val key = DataTypeBotResultsCacheKey(context.parameter.id, maybeSearchQuery, context.maybeConversation.map(_.id))
     for {
-      maybeResult <- context.dataService.behaviorVersions.resultForAction(behaviorVersion, paramsWithValues, context.event, context.maybeConversation).map(Some(_))
+      maybeResult <- DBIO.from(context.cacheService.getDataTypeBotResult(key, (key: DataTypeBotResultsCacheKey) => {
+        context.dataService.behaviorVersions.resultFor(behaviorVersion, paramsWithValues, context.event, context.maybeConversation)
+      }).map(Some(_)))
     } yield maybeResult
-  }
-
-  private def fetchValidValuesResult(maybeSearchQuery: Option[String], context: BehaviorParameterContext): Future[Option[BotResult]] = {
-    context.dataService.run(fetchValidValuesResultAction(maybeSearchQuery, context))
   }
 
   private def extractValidValueFrom(json: JsValue): Option[ValidValue] = {
     json.validate[ValidValue] match {
       case JsSuccess(data, _) => Some(data)
-      case e: JsError => None
+      case _: JsError => None
     }
   }
 
   private def extractValidValues(result: SuccessResult): Seq[ValidValue] = {
-    result.result.as[Seq[JsObject]].flatMap { ea =>
-      extractValidValueFrom(ea)
+    result.result.validate[Seq[JsObject]] match {
+      case JsSuccess(data, _) => {
+        data.flatMap { ea =>
+          extractValidValueFrom(ea)
+        }
+      }
+      case _: JsError => {
+        result.result.validate[Seq[String]] match {
+          case JsSuccess(strings, _) => strings.map { ea => ValidValue(ea, ea, Map()) }
+          case _: JsError => Seq()
+        }
+      }
     }
   }
 
-  private def fetchValidValuesAction(maybeSearchQuery: Option[String], context: BehaviorParameterContext): DBIO[Seq[ValidValue]] = {
+  private def fetchValidValuesAction(maybeSearchQuery: Option[String], context: BehaviorParameterContext)(implicit ec: ExecutionContext): DBIO[Seq[ValidValue]] = {
     if (dataTypeConfig.usesCode) {
       fetchValidValuesResultAction(maybeSearchQuery, context).map { maybeResult =>
         maybeResult.map {
           case r: SuccessResult => extractValidValues(r)
-          case _: BotResult => Seq()
+          case r: BotResult => throw FetchValidValuesBadResultException(r)
         }.getOrElse(Seq())
       }
     } else {
@@ -395,9 +495,9 @@ case class BehaviorBackedDataType(dataTypeConfig: DataTypeConfig) extends Behavi
             throw new RuntimeException("Need a valid label field")
           }
         }.getOrElse("{}"))
-        query <- dataTypeConfig.outputFieldNamesAction(context.dataService).map { fieldStr =>
+        query <- behaviorVersion.outputFieldNamesAction(context.dataService).map { fieldStr =>
           s"""{
-             |  ${dataTypeConfig.listName}(filter: $filter) {
+             |  ${behaviorVersion.listName}(filter: $filter) {
              |  $fieldStr
              |  }
              |}
@@ -425,48 +525,49 @@ case class BehaviorBackedDataType(dataTypeConfig: DataTypeConfig) extends Behavi
     }
   }
 
-  private def fetchValidValues(maybeSearchQuery: Option[String], context: BehaviorParameterContext): Future[Seq[ValidValue]] = {
+  private def fetchValidValues(maybeSearchQuery: Option[String], context: BehaviorParameterContext)(implicit ec: ExecutionContext): Future[Seq[ValidValue]] = {
     context.dataService.run(fetchValidValuesAction(maybeSearchQuery, context))
   }
 
   private def textMatchesLabel(text: String, label: String, context: BehaviorParameterContext): Boolean = {
-    val lowercaseText = text.toLowerCase
-    val unformattedText = context.event.unformatTextFragment(text).toLowerCase
-    val lowercaseLabel = label.toLowerCase
-    lowercaseLabel == lowercaseText || lowercaseLabel == unformattedText
+    text.toLowerCase == label.toLowerCase
   }
 
-  private def fetchMatchFor(text: String, context: BehaviorParameterContext): Future[Option[ValidValue]] = {
-    fetchValidValues(None, context).map { validValues =>
+  private def fetchMatchFor(text: String, context: BehaviorParameterContext)(implicit ec: ExecutionContext): Future[Option[ValidValue]] = {
+    fetchValidValues(Some(text), context).map { validValues =>
       validValues.find {
         v => v.id == text || textMatchesLabel(text, v.label, context)
       }
     }
   }
 
-  private def cancelAndRespondForAction(response: String, context: BehaviorParameterContext): DBIO[String] = {
+  private def cancelAndRespondForAction(response: String, context: BehaviorParameterContext)(implicit ec: ExecutionContext): DBIO[BotResult] = {
     context.dataService.conversations.cancelAction(context.maybeConversation).map { _ =>
-      s"$response\n\n(Your current action has been cancelled. Try again after fixing the problem.)"
+      context.simpleTextResultFor(s"$response\n\n(Your current action has been cancelled. Try again after fixing the problem.)")
     }
   }
 
-  private def promptForListAllCaseAction(
+  private def promptResultForOtherCaseAction(context: BehaviorParameterContext): DBIO[BotResult] = {
+    DBIO.successful(context.simpleTextResultFor(s"OK, you chose “other”. What do you want to say instead?"))
+  }
+
+  private def promptResultForListAllCaseAction(
                                           maybeSearchQuery: Option[String],
                                           maybePreviousCollectedValue: Option[String],
                                           context: BehaviorParameterContext,
                                           paramState: ParamCollectionState,
                                           isReminding: Boolean
-                                        ): DBIO[String] = {
+                                        )(implicit ec: ExecutionContext): DBIO[BotResult] = {
     for {
       superPrompt <- maybeSearchQuery.map { searchQuery =>
-        DBIO.successful(s"Here are some options for `$searchQuery`. Type a number to choose an option.")
-      }.getOrElse(super.promptForAction(maybePreviousCollectedValue, context, paramState, isReminding))
+        DBIO.successful(s"Here are some options for `$searchQuery`.")
+      }.getOrElse(super.promptResultForAction(maybePreviousCollectedValue, context, paramState, isReminding).map(_.text))
       validValues <- fetchValidValuesAction(maybeSearchQuery, context)
       output <- if (validValues.isEmpty) {
         maybeSearchQuery.map { searchQuery =>
           val key = searchQueryCacheKeyFor(context.maybeConversation.get, context.parameter)
           context.cacheService.remove(key)
-          DBIO.successful(s"I couldn't find anything matching `$searchQuery`. Try searching again or type `…stop`.")
+          DBIO.successful(context.simpleTextResultFor(s"I couldn't find anything matching `$searchQuery`. Try searching again or type $stopText."))
         }.getOrElse {
           cancelAndRespondForAction(s"This data type isn't returning any values: ${editLinkFor(context)}", context)
         }
@@ -474,10 +575,18 @@ case class BehaviorBackedDataType(dataTypeConfig: DataTypeConfig) extends Behavi
         context.maybeConversation.foreach { conversation =>
           context.cacheService.cacheValidValues(valuesListCacheKeyFor(conversation, context.parameter), validValues)
         }
-        val valuesPrompt = validValues.zipWithIndex.map { case (ea, i) =>
-          s"\n\n$i. ${ea.label}"
-        }.mkString
-        DBIO.successful(superPrompt ++ valuesPrompt)
+        val builtinMenuItems = Seq(
+          maybeSearchQuery.map(_ => SlackMessageActionMenuItem(Conversation.SEARCH_AGAIN_MENU_ITEM_TEXT, Conversation.SEARCH_AGAIN_MENU_ITEM_TEXT)),
+          Some(SlackMessageActionMenuItem(Conversation.CANCEL_MENU_ITEM_TEXT, Conversation.CANCEL_MENU_ITEM_TEXT))
+        ).flatten
+        val menuItems = validValues.zipWithIndex.map { case (ea, i) =>
+          SlackMessageActionMenuItem(s"${i+1}. ${ea.label}", ea.label)
+        } ++ builtinMenuItems
+        val actionsList = Seq(SlackMessageActionMenu("ignored", "Choose an option", menuItems))
+        val groups: Seq[MessageAttachmentGroup] = Seq(
+          SlackMessageActionsGroup(context.inputChoiceCallbackId, actionsList, None, Some(Color.BLUE_LIGHT))
+        )
+        DBIO.successful(TextWithAttachmentsResult(context.event, context.maybeConversation, superPrompt, context.behaviorVersion.forcePrivateResponse, groups))
       }
     } yield output
   }
@@ -488,23 +597,37 @@ case class BehaviorBackedDataType(dataTypeConfig: DataTypeConfig) extends Behavi
     }.getOrElse(None)
   }
 
-  private def promptForSearchCaseAction(
+  private def isCollectingOther(context: BehaviorParameterContext): Boolean = {
+    maybeCollectingOtherCacheKeyFor(context).exists { key =>
+      context.cacheService.hasKey(key)
+    }
+  }
+
+  private def promptResultForSearchCaseAction(
                                          maybePreviousCollectedValue: Option[String],
                                          context: BehaviorParameterContext,
                                          paramState: ParamCollectionState,
                                          isReminding: Boolean
-                                       ): DBIO[String] = {
+                                       )(implicit ec: ExecutionContext): DBIO[BotResult] = {
 
     maybeCachedSearchQueryFor(context).map { searchQuery =>
-      promptForListAllCaseAction(Some(searchQuery), maybePreviousCollectedValue, context, paramState, isReminding)
+      promptResultForListAllCaseAction(Some(searchQuery), maybePreviousCollectedValue, context, paramState, isReminding)
     }.getOrElse {
-      super.promptForAction(maybePreviousCollectedValue, context, paramState, isReminding).map { superPrompt =>
-        superPrompt ++ " Enter a search query:"
+      maybePreviousCollectedValue.map { v =>
+        context.maybeConversation.map { conversation =>
+          val key = searchQueryCacheKeyFor(conversation, context.parameter)
+          context.cacheService.set(key, v, 5.minutes)
+          context.dataService.collectedParameterValues.deleteForAction(context.parameter, conversation)
+        }.getOrElse(DBIO.successful({})).flatMap { _ =>
+          promptResultForSearchCaseAction(None, context, paramState, isReminding)
+        }
+      }.getOrElse {
+        super.promptResultForAction(maybePreviousCollectedValue, context, paramState, isReminding)
       }
     }
   }
 
-  private def usesSearchAction(context: BehaviorParameterContext): DBIO[Boolean] = {
+  private def usesSearchAction(context: BehaviorParameterContext)(implicit ec: ExecutionContext): DBIO[Boolean] = {
     if (dataTypeConfig.usesCode) {
       context.dataService.behaviorVersions.hasSearchParamAction(behaviorVersion)
     } else {
@@ -514,31 +637,52 @@ case class BehaviorBackedDataType(dataTypeConfig: DataTypeConfig) extends Behavi
     }
   }
 
-  private def usesSearch(context: BehaviorParameterContext): Future[Boolean] = {
+  private def usesSearch(context: BehaviorParameterContext)(implicit ec: ExecutionContext): Future[Boolean] = {
     context.dataService.run(usesSearchAction(context))
   }
 
-  override def promptForAction(
+  override def promptResultForAction(
                                maybePreviousCollectedValue: Option[String],
                                context: BehaviorParameterContext,
                                paramState: ParamCollectionState,
                                isReminding: Boolean
-                             ): DBIO[String] = {
+                             )(implicit ec: ExecutionContext): DBIO[BotResult] = {
     usesSearchAction(context).flatMap { usesSearch =>
       if (usesSearch) {
-        promptForSearchCaseAction(maybePreviousCollectedValue, context, paramState, isReminding)
+        promptResultForSearchCaseAction(maybePreviousCollectedValue, context, paramState, isReminding)
+      } else if (isCollectingOther(context)) {
+        promptResultForOtherCaseAction(context)
       } else {
-        promptForListAllCaseAction(None, maybePreviousCollectedValue, context, paramState, isReminding)
+        promptResultForListAllCaseAction(None, maybePreviousCollectedValue, context, paramState, isReminding)
       }
     }
   }
 
-  override def handleCollected(event: Event, context: BehaviorParameterContext): Future[Unit] = {
+  def isOther(context: BehaviorParameterContext): Boolean = {
+    cachedValidValueFor(context.event.relevantMessageText, context).exists { v =>
+      v.id == BehaviorParameterType.otherId
+    }
+  }
+
+  def isRequestingSearchAgain(context: BehaviorParameterContext): Boolean = {
+    context.event.relevantMessageText == Conversation.SEARCH_AGAIN_MENU_ITEM_TEXT
+  }
+
+  override def handleCollected(event: Event, context: BehaviorParameterContext)(implicit ec: ExecutionContext): Future[Unit] = {
     usesSearch(context).flatMap { usesSearch =>
       if (usesSearch && maybeCachedSearchQueryFor(context).isEmpty && context.maybeConversation.isDefined) {
         val key = searchQueryCacheKeyFor(context.maybeConversation.get, context.parameter)
         val searchQuery = event.relevantMessageText
         context.cacheService.set(key, searchQuery, 5.minutes)
+        Future.successful({})
+      } else if (!isCollectingOther(context) && isOther(context) && context.maybeConversation.isDefined) {
+        maybeCollectingOtherCacheKeyFor(context).foreach { key =>
+          context.cacheService.set(key, "true", 5.minutes)
+        }
+        Future.successful({})
+      } else if (usesSearch && maybeCachedSearchQueryFor(context).nonEmpty && isRequestingSearchAgain(context)) {
+        val key = searchQueryCacheKeyFor(context.maybeConversation.get, context.parameter)
+        context.cacheService.remove(key)
         Future.successful({})
       } else {
         super.handleCollected(event, context)
@@ -553,17 +697,19 @@ object BehaviorParameterType {
   val ID_PROPERTY = "id"
   val LABEL_PROPERTY = "label"
   val DATA_PROPERTY = "data"
-  val SEARCH_COUNT_THRESHOLD = 10
+  val SEARCH_COUNT_THRESHOLD = 30
+  val otherId: String = "other"
 
   val allBuiltin = Seq(
     TextType,
     NumberType,
-    YesNoType
+    YesNoType,
+    FileType
   )
 
   def findBuiltIn(id: String): Option[BehaviorParameterType] = allBuiltin.find(_.id == id)
 
-  def allForAction(maybeBehaviorGroupVersion: Option[BehaviorGroupVersion], dataService: DataService): DBIO[Seq[BehaviorParameterType]] = {
+  def allForAction(maybeBehaviorGroupVersion: Option[BehaviorGroupVersion], dataService: DataService)(implicit ec: ExecutionContext): DBIO[Seq[BehaviorParameterType]] = {
     maybeBehaviorGroupVersion.map { groupVersion =>
       dataService.dataTypeConfigs.allForAction(groupVersion)
     }.getOrElse(DBIO.successful(Seq())).map { dataTypeConfigs =>
@@ -571,7 +717,7 @@ object BehaviorParameterType {
     }
   }
 
-  def findAction(id: String, behaviorGroupVersion: BehaviorGroupVersion, dataService: DataService): DBIO[Option[BehaviorParameterType]] = {
+  def findAction(id: String, behaviorGroupVersion: BehaviorGroupVersion, dataService: DataService)(implicit ec: ExecutionContext): DBIO[Option[BehaviorParameterType]] = {
     allForAction(Some(behaviorGroupVersion), dataService).map { all =>
       all.find {
         case paramType: BehaviorBackedDataType => paramType.id == id || paramType.behaviorVersion.maybeExportId.contains(id)

@@ -6,21 +6,20 @@ import models.behaviors._
 import models.behaviors.behaviorparameter.BehaviorParameter
 import models.behaviors.behaviorversion.BehaviorVersion
 import models.behaviors.events.SlackMessageActionConstants._
-import models.behaviors.events.{Event, SlackMessageActionButton, SlackMessageActions, SlackMessageEvent}
+import models.behaviors.events._
 import models.behaviors.triggers.messagetrigger.MessageTrigger
-import services.DefaultServices
-import services.DataService
+import services.{DataService, DefaultServices}
 import slick.dbio.DBIO
 import utils.SlackTimestamp
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 trait Conversation {
   val id: String
   val behaviorVersion: BehaviorVersion
   val maybeTrigger: Option[MessageTrigger]
   val maybeTriggerMessage: Option[String]
+  val maybeOriginalEventType: Option[EventType]
   val conversationType: String
   val context: String
   val maybeChannel: Option[String]
@@ -33,6 +32,7 @@ trait Conversation {
   val isScheduled: Boolean = maybeScheduledMessageId.isDefined
 
   def isPending: Boolean = state == Conversation.PENDING_STATE
+  def isDone: Boolean = state == Conversation.DONE_STATE
 
   def staleCutoff: OffsetDateTime = OffsetDateTime.now.minusHours(1)
 
@@ -46,19 +46,28 @@ trait Conversation {
     startedAt.plusSeconds(Conversation.SECONDS_UNTIL_BACKGROUNDED).isBefore(OffsetDateTime.now)
   }
 
-  private def maybeSlackPlaceholderEventAction(services: DefaultServices): DBIO[Option[Event]] = {
+  private def maybeSlackPlaceholderEventAction(services: DefaultServices)(implicit ec: ExecutionContext): DBIO[Option[Event]] = {
     services.dataService.slackBotProfiles.allForAction(behaviorVersion.team).map { botProfiles =>
       for {
         botProfile <- botProfiles.headOption
         channel <- maybeChannel
-      // TODO: Create a new class of synthetic events that doesn't need a SlackUserInfo list
+      // TODO: Create a new class for placeholder events
       // https://github.com/ellipsis-ai/ellipsis/issues/1719
-      // For now, there's no text in the event, so the empty user list doesn't matter
-      } yield SlackMessageEvent(botProfile, channel, None, userIdForContext, "", SlackTimestamp.now, services.slackEventService.clientFor(botProfile), Seq())
+      } yield SlackMessageEvent(
+        botProfile,
+        channel,
+        None,
+        userIdForContext,
+        SlackMessage.blank,
+        None,
+        SlackTimestamp.now,
+        services.slackEventService.clientFor(botProfile),
+        None // TODO: Pass the original event type down to here if we actually care about it, but it doesn't seem useful at present
+      )
     }
   }
 
-  def maybePlaceholderEventAction(services: DefaultServices): DBIO[Option[Event]] = {
+  def maybePlaceholderEventAction(services: DefaultServices)(implicit ec: ExecutionContext): DBIO[Option[Event]] = {
     context match {
       case Conversation.SLACK_CONTEXT => maybeSlackPlaceholderEventAction(services)
       case _ => DBIO.successful(None)
@@ -73,24 +82,24 @@ trait Conversation {
 
   def updateStateTo(newState: String, dataService: DataService): Future[Conversation]
   def cancel(dataService: DataService): Future[Conversation] = updateStateTo(Conversation.DONE_STATE, dataService)
-  def updateWith(event: Event, services: DefaultServices): Future[Conversation]
+  def updateWith(event: Event, services: DefaultServices)(implicit ec: ExecutionContext): Future[Conversation]
 
   def respondAction(
                      event: Event,
                      isReminding: Boolean,
                      services: DefaultServices
-                   ): DBIO[BotResult]
+                   )(implicit ec: ExecutionContext): DBIO[BotResult]
 
   def respond(
                event: Event,
                isReminding: Boolean,
                services: DefaultServices
-             ): Future[BotResult]
+             )(implicit ec: ExecutionContext): Future[BotResult]
 
   def resultFor(
                  event: Event,
                  services: DefaultServices
-               ): Future[BotResult] = {
+               )(implicit ec: ExecutionContext): Future[BotResult] = {
     for {
       updatedConversation <- updateWith(event, services)
       result <- updatedConversation.respond(event, isReminding=false, services)
@@ -100,19 +109,19 @@ trait Conversation {
   def maybeNextParamToCollect(
                                event: Event,
                                services: DefaultServices
-                             ): Future[Option[BehaviorParameter]]
+                             )(implicit ec: ExecutionContext): Future[Option[BehaviorParameter]]
 
   def maybeRemindResultAction(
                                services: DefaultServices
-                            ): DBIO[Option[BotResult]] = {
+                            )(implicit ec: ExecutionContext): DBIO[Option[BotResult]] = {
     maybePlaceholderEventAction(services).flatMap { maybeEvent =>
       maybeEvent.map { event =>
         respondAction(event, isReminding=true, services).map { result =>
           val intro = s"Hey <@$userIdForContext>, don’t forget, I’m still waiting for your answer to this:"
-          val actions = Seq(SlackMessageActionButton(STOP_CONVERSATION, "Stop asking", id))
+          val actionList = Seq(SlackMessageActionButton(STOP_CONVERSATION, "Stop asking", id))
           val question = result.text
-          val attachment = SlackMessageActions(STOP_CONVERSATION, actions, Some(question), None)
-          Some(TextWithActionsResult(result.event, Some(this), intro, result.forcePrivateResponse, attachment))
+          val actionsGroup = SlackMessageActionsGroup(STOP_CONVERSATION, actionList, Some(question), None)
+          Some(TextWithAttachmentsResult(result.event, Some(this), intro, result.forcePrivateResponse, Seq(actionsGroup)))
         }
       }.getOrElse(DBIO.successful(None))
     }
@@ -132,7 +141,8 @@ trait Conversation {
       startedAt,
       maybeLastInteractionAt,
       state,
-      maybeScheduledMessageId
+      maybeScheduledMessageId,
+      maybeOriginalEventType.map(_.toString)
     )
   }
 }
@@ -149,4 +159,7 @@ object Conversation {
   val INVOKE_BEHAVIOR = "invoke_behavior"
 
   val SECONDS_UNTIL_BACKGROUNDED = 3600
+
+  val CANCEL_MENU_ITEM_TEXT = "Cancel the current action"
+  val SEARCH_AGAIN_MENU_ITEM_TEXT = "Try searching again"
 }

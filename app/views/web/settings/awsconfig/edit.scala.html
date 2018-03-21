@@ -1,0 +1,14 @@
+@(
+  config: ViewConfig,
+  title: String,
+  dataRoute: Call
+)(implicit messages: Messages, r: RequestHeader)
+
+@page.main(title, config, Seq(NavItem.teamSettings, NavItem.integrations(link = true, config.maybeAdminAccessTeamId))) {
+  <div id="content" class="content flex-row-cascade">
+    <div id="configEditor" class="flex-row-cascade"></div>
+    <script src='@config.assets.getWebpackBundle("vendor.js")'></script>
+    <script src="@dataRoute"></script>
+    <script src='@config.assets.getWebpackBundle("awsConfigEditor.js")'></script>
+  </div>
+}

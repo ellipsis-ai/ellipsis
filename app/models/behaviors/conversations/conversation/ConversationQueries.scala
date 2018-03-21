@@ -7,6 +7,7 @@ import models.behaviors.conversations.InvokeBehaviorConversation
 import models.behaviors.triggers.messagetrigger.MessageTriggerQueries
 import drivers.SlickPostgresDriver.api._
 import models.behaviors.behaviorversion.BehaviorVersionQueries
+import models.behaviors.events.EventType
 
 object ConversationQueries {
 
@@ -33,7 +34,8 @@ object ConversationQueries {
       raw.startedAt,
       raw.maybeLastInteractionAt,
       raw.state,
-      raw.maybeScheduledMessageId
+      raw.maybeScheduledMessageId,
+      EventType.maybeFrom(raw.maybeOriginalEventType)
     )
   }
 
@@ -50,6 +52,14 @@ object ConversationQueries {
   }
   val allOngoingQueryFor = Compiled(uncompiledAllOngoingQueryFor _)
 
+  def uncompiledWithThreadIdQuery(threadId: Rep[String], userIdForContext: Rep[String], context: Rep[String]) = {
+    allWithTrigger.
+      filter { case((convo, _), _) => convo.userIdForContext === userIdForContext }.
+      filter { case((convo, _), _) => convo.context === context }.
+      filter { case((convo, _), _) => convo.maybeThreadId === threadId }
+  }
+  val withThreadIdQuery = Compiled(uncompiledWithThreadIdQuery _)
+
   def uncompiledAllPendingQuery = {
     val doneValue: Rep[String] = Conversation.DONE_STATE
     allWithTrigger.filterNot { case((convo, _), _) => convo.state === doneValue }
@@ -60,6 +70,23 @@ object ConversationQueries {
     uncompiledAllPendingQuery.filterNot { case((convo, _), _) => convo.maybeThreadId.isDefined }
   }
   def allForegroundQuery = Compiled(uncompiledAllForegroundQuery)
+
+  def uncompiledAllOngoingVersionIdsQuery(doneState: Rep[String]) = {
+    allWithBehaviorVersion.
+      filterNot { case(convo, _) => convo.state === doneState }.
+      map { case(_, (((bv, _), _), _)) => bv.groupVersionId }.
+      distinct
+  }
+  val allOngoingVersionIdsQuery = Compiled(uncompiledAllOngoingVersionIdsQuery _)
+
+  def uncompiledRawOldConversationsQuery(cutoff: Rep[OffsetDateTime], doneState: Rep[String]) = {
+    all.
+      filterNot(_.state === doneState).
+      filter(_.startedAt < cutoff).
+      filter(c => c.maybeLastInteractionAt.isEmpty || c.maybeLastInteractionAt < cutoff).
+      map(_.state)
+  }
+  val cancelOldConversationsQuery = Compiled(uncompiledRawOldConversationsQuery _)
 
   val tableName: String = "conversations"
   val startedAtName: String = "started_at"
@@ -78,5 +105,7 @@ object ConversationQueries {
          LIMIT 1
        """.as[String]
   }
+
+  def oldConversationCutoff: OffsetDateTime = OffsetDateTime.now.minusDays(1)
 
 }

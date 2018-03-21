@@ -11,27 +11,31 @@ import models.accounts.user.User
 import models.behaviors.behaviorgroupversion.{BehaviorGroupVersion, BehaviorGroupVersionQueries}
 import services.DataService
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 case class RawRequiredSimpleTokenApi(
                                       id: String,
+                                      exportId: String,
                                       groupVersionId: String,
+                                      nameInCode: String,
                                       apiId: String
                                          )
 
 class RequiredSimpleTokenApisTable(tag: Tag) extends Table[RawRequiredSimpleTokenApi](tag, "required_simple_token_apis") {
 
   def id = column[String]("id", O.PrimaryKey)
+  def exportId = column[String]("export_id")
   def groupVersionId = column[String]("group_version_id")
+  def nameInCode = column[String]("name_in_code")
   def apiId = column[String]("api_id")
 
-  def * = (id, groupVersionId, apiId) <>
+  def * = (id, exportId, groupVersionId, nameInCode, apiId) <>
     ((RawRequiredSimpleTokenApi.apply _).tupled, RawRequiredSimpleTokenApi.unapply _)
 }
 
 class RequiredSimpleTokenApiServiceImpl @Inject()(
-                                                         dataServiceProvider: Provider[DataService]
+                                                         dataServiceProvider: Provider[DataService],
+                                                         implicit val ec: ExecutionContext
                                                        ) extends RequiredSimpleTokenApiService {
 
   def dataService = dataServiceProvider.get
@@ -47,18 +51,30 @@ class RequiredSimpleTokenApiServiceImpl @Inject()(
     val groupVersion = BehaviorGroupVersionQueries.tuple2BehaviorGroupVersion(tuple._1._2)
     RequiredSimpleTokenApi(
       raw.id,
+      raw.exportId,
       groupVersion,
+      raw.nameInCode,
       tuple._2
     )
   }
 
   def uncompiledAllForQuery(behaviorVersionId: Rep[String]) = {
-    allWithApi.filter { case((required, _), _) => required.groupVersionId === behaviorVersionId }
+    allWithApi.
+      filter { case((required, _), _) => required.groupVersionId === behaviorVersionId }.
+      sortBy { case((required, _), _) => required.nameInCode }
   }
   val allForQuery = Compiled(uncompiledAllForQuery _)
 
+  def allForIdAction(groupVersionId: String): DBIO[Seq[RequiredSimpleTokenApi]] = {
+    allForQuery(groupVersionId).result.map(r => r.map(tuple2Required))
+  }
+
   def allForAction(groupVersion: BehaviorGroupVersion): DBIO[Seq[RequiredSimpleTokenApi]] = {
-    allForQuery(groupVersion.id).result.map(r => r.map(tuple2Required))
+    allForIdAction(groupVersion.id)
+  }
+
+  def allForId(groupVersionId: String): Future[Seq[RequiredSimpleTokenApi]] = {
+    dataService.run(allForIdAction(groupVersionId))
   }
 
   def allFor(groupVersion: BehaviorGroupVersion): Future[Seq[RequiredSimpleTokenApi]] = {
@@ -120,7 +136,7 @@ class RequiredSimpleTokenApiServiceImpl @Inject()(
     for {
       maybeApi <- DBIO.from(dataService.simpleTokenApis.find(data.apiId))
       maybeConfig <- maybeApi.map { api =>
-        val newInstance = RequiredSimpleTokenApi(IDs.next, groupVersion, api)
+        val newInstance = RequiredSimpleTokenApi(IDs.next, data.exportId.getOrElse(IDs.next), groupVersion, data.nameInCode, api)
         (all += newInstance.toRaw).map(_ => newInstance).map(Some(_))
       }.getOrElse(DBIO.successful(None))
     } yield maybeConfig

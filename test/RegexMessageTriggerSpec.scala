@@ -11,9 +11,9 @@ import models.team.Team
 class RegexMessageTriggerSpec extends MessageTriggerSpec {
 
   def triggerFor(pattern: String, requiresBotMention: Boolean = false, isCaseSensitive: Boolean = true): RegexMessageTrigger = {
-    val team = Team(IDs.next, "Team!", None)
+    val team = Team("Team!")
     val versionId = IDs.next
-    val group = BehaviorGroup(IDs.next, None, team, None, OffsetDateTime.now)
+    val group = BehaviorGroup(IDs.next, None, team, OffsetDateTime.now)
     val groupVersion = BehaviorGroupVersion(IDs.next, group, "", None, None, None, OffsetDateTime.now)
     val behavior = Behavior(IDs.next, team, Some(group), Some(versionId), isDataType = false, OffsetDateTime.now)
     val behaviorVersion = BehaviorVersion(versionId, behavior, groupVersion, None, None, None, None, forcePrivateResponse = false, None, OffsetDateTime.now)

@@ -26,6 +26,13 @@ object DefaultStorageItemQueries {
   }
   val filterQuery = Compiled(uncompiledFilterQuery _)
 
+  def uncompiledRawFilterQuery(behaviorId: Rep[String], filter: Rep[JsValue]) = {
+    all.
+      filter(_.behaviorId === behaviorId).
+      filter(_.data.@>(filter))
+  }
+  val rawFilterQuery = Compiled(uncompiledRawFilterQuery _)
+
   def uncompiledCountQuery(behaviorId: Rep[String]) = {
     all.filter(_.behaviorId === behaviorId).length
   }
@@ -43,8 +50,9 @@ object DefaultStorageItemQueries {
   }
   val allForQuery = Compiled(uncompiledAllForQuery _)
 
-  def uncompiledDeleteByIdQuery(id: Rep[String]) = {
+  def uncompiledRawFindQueryFor(id: Rep[String]) = {
     all.filter { case(item) => item.id === id }
   }
-  val deleteByIdQuery = Compiled(uncompiledDeleteByIdQuery _)
+  val rawFindQueryFor = Compiled(uncompiledRawFindQueryFor _)
+
 }

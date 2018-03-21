@@ -1,9 +1,12 @@
 package models.behaviors.behaviorparameter
 
+import models.behaviors.BotResult
 import models.behaviors.behaviorversion.BehaviorVersion
 import models.behaviors.conversations.ParamCollectionState
 import models.behaviors.input.Input
 import slick.dbio.DBIO
+
+import scala.concurrent.ExecutionContext
 
 case class BehaviorParameter(
                               id: String,
@@ -18,8 +21,13 @@ case class BehaviorParameter(
 
   def question: String = maybeQuestion.getOrElse(s"What is the value for `$name`?")
 
-  def promptAction(maybeValue: Option[String], context: BehaviorParameterContext, paramState: ParamCollectionState, isReminding: Boolean): DBIO[String] = {
-    paramType.promptForAction(maybeValue, context, paramState, isReminding)
+  def promptResultAction(
+                    maybeValue: Option[String],
+                    context: BehaviorParameterContext,
+                    paramState: ParamCollectionState,
+                    isReminding: Boolean
+                  )(implicit ec: ExecutionContext): DBIO[BotResult] = {
+    paramType.promptResultForAction(maybeValue, context, paramState, isReminding)
   }
 
   def toRaw: RawBehaviorParameter = {

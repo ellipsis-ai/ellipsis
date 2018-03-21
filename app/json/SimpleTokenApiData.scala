@@ -1,11 +1,11 @@
 package json
 
-import controllers.RemoteAssets.getUrl
+import controllers.RemoteAssets
 import models.accounts.simpletokenapi.SimpleTokenApi
 
 case class SimpleTokenApiData(
-                               apiId: String,
-                               name: String,
+                               id: String,
+                               displayName: String,
                                tokenUrl: Option[String],
                                iconImageUrl: Option[String],
                                logoImageUrl: Option[String]
@@ -13,21 +13,21 @@ case class SimpleTokenApiData(
 
 object SimpleTokenApiData {
 
-  private def maybeLogoImageUrlFor(apiName: String): Option[String] = {
+  private def maybeLogoImageUrlFor(apiName: String, assets: RemoteAssets): Option[String] = {
     if (apiName.toLowerCase.contains("pivotal tracker")) {
-      Some(getUrl("images/logos/pivotal_tracker.png"))
+      Some(assets.getUrl("images/logos/pivotal_tracker.png"))
     } else {
       None
     }
   }
 
-  def from(api: SimpleTokenApi): SimpleTokenApiData = {
+  def from(api: SimpleTokenApi, assets: RemoteAssets): SimpleTokenApiData = {
     SimpleTokenApiData(
       api.id,
       api.name,
       api.maybeTokenUrl,
       None,
-      this.maybeLogoImageUrlFor(api.name)
+      this.maybeLogoImageUrlFor(api.name, assets)
     )
   }
 

@@ -5,10 +5,43 @@ import support.DBSpec
 
 class BehaviorGroupServiceSpec extends DBSpec {
 
+  "BehaviorGroupService.delete" should {
+
+    "delete a group and all its associated data" in {
+      withEmptyDB(dataService, { () =>
+        val team = newSavedTeam
+        val user = newSavedUserOn(team)
+
+        val group = newSavedBehaviorGroupFor(team)
+
+        val groupVersion = {
+          val inputsData = 1.to(3).map(_ => newInputDataFor())
+          val behaviorVersionsData = inputsData.map { inputData =>
+            BehaviorVersionData.newUnsavedFor(group.team.id, isDataType = false, maybeName = None, dataService).copy(
+              inputIds = Seq(inputData.inputId.get)
+            )
+          }
+          val groupData = newGroupVersionDataFor(group, user).copy(
+            behaviorVersions = behaviorVersionsData,
+            actionInputs = inputsData
+          )
+          newSavedGroupVersionFor(group, user, Some(groupData))
+        }
+
+        newSavedDeploymentFor(groupVersion, user)
+        newSavedSHAFor(groupVersion)
+
+        runNow(dataService.behaviorGroups.delete(group))
+
+        runNow(dataService.behaviorGroups.find(group.id, user)) must not be defined
+      })
+    }
+  }
+
   "BehaviorGroupService.merge" should {
 
     "merge a list of groups into a new group" in {
-      withEmptyDB(dataService, { db =>
+      withEmptyDB(dataService, { () =>
         val team = newSavedTeam
         val user = newSavedUserOn(team)
 

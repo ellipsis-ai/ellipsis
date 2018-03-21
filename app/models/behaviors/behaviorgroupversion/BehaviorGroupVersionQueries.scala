@@ -1,5 +1,7 @@
 package models.behaviors.behaviorgroupversion
 
+import java.time.OffsetDateTime
+
 import drivers.SlickPostgresDriver.api._
 import models.accounts.user.{User, UserQueries, UsersTable}
 import models.behaviors.behaviorgroup.BehaviorGroupQueries
@@ -33,9 +35,47 @@ object BehaviorGroupVersionQueries {
   }
   val findQuery = Compiled(uncompiledFindQuery _)
 
-  def uncompiledAllForQuery(groupId: Rep[String]) = {
-    allWithUser.filter { case((version, _), _) => version.groupId === groupId }
+  def uncompiledBatchForQuery(groupId: Rep[String], batchSize: ConstColumn[Long], offset: ConstColumn[Long]) = {
+    allWithUser.
+      filter { case((version, _), _) => version.groupId === groupId }.
+      sortBy { case((version, _), _) => version.createdAt.desc }.
+      drop(offset).
+      take(batchSize)
+
   }
-  val allForQuery = Compiled(uncompiledAllForQuery _)
+  val batchForQuery = Compiled(uncompiledBatchForQuery _)
+
+  private def uncompiledCurrentIdForQuery(groupId: Rep[String]) = {
+    all.filter(_.groupId === groupId).sortBy(_.createdAt.desc).take(1).map(_.id)
+  }
+  val currentIdForQuery = Compiled(uncompiledCurrentIdForQuery _)
+
+  private def uncompiledFirstIdForQuery(groupId: Rep[String]) = {
+    all.filter(_.groupId === groupId).sortBy(_.createdAt.asc).take(1).map(_.id)
+  }
+  val firstIdForQuery = Compiled(uncompiledFirstIdForQuery _)
+
+  def uncompiledAllCurrentQuery = {
+    // distinctOn() is broken in Slick as of v3.2.1, so we use a subquery
+    allWithUser.filter { case((outerVersion, _), _) =>
+      !all.filter { innerVersion =>
+        innerVersion.groupId === outerVersion.groupId && innerVersion.createdAt > outerVersion.createdAt
+      }.exists
+    }
+  }
+  val allCurrentQuery = Compiled(uncompiledAllCurrentQuery)
+
+  private def uncompiledAllCurrentIdsQuery = {
+    uncompiledAllCurrentQuery.map { case((version, _), _) => version.id }
+  }
+  val allCurrentIdsQuery = Compiled(uncompiledAllCurrentIdsQuery)
+
+  private def uncompiledNewerVersionsForAuthorQuery(groupId: Rep[String], createdAt: Rep[OffsetDateTime], userId: Rep[String]) = {
+    all.
+      filter(_.groupId === groupId).
+      filter(_.createdAt > createdAt).
+      filter(_.maybeAuthorId === userId)
+  }
+  val newerVersionsForAuthorQuery = Compiled(uncompiledNewerVersionsForAuthorQuery _)
 
 }

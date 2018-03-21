@@ -12,6 +12,8 @@ class DataPopulationModule extends AbstractModule with ScalaModule {
     bind(classOf[SimpleTokenApiPopulator]).asEagerSingleton()
     bind(classOf[EnsureExportIds]).asEagerSingleton()
     bind(classOf[CitiesToTimeZones]).asEagerSingleton()
+    bind(classOf[OrganizationsPopulator]).asEagerSingleton()
+    bind(classOf[BillingPlansAndAddonsPopulator]).asEagerSingleton()
   }
 
 }

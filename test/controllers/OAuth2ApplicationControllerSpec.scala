@@ -1,5 +1,7 @@
 package controllers
 
+import java.time.OffsetDateTime
+
 import com.mohiva.play.silhouette.test._
 import models.IDs
 import models.accounts.oauth2api.{AuthorizationCode, OAuth2Api}
@@ -21,15 +23,15 @@ class OAuth2ApplicationControllerSpec extends PlaySpec with MockitoSugar {
 
     "404 for application from another team (even if it's shared)" in new MyContext {
       running(app) {
-        val someOtherTeam = Team(IDs.next, "", None)
+        val someOtherTeam = Team("Team1")
         val oauth2AppForOtherTeam = OAuth2Application(IDs.next, "", oauth2Api, IDs.next, IDs.next, None, someOtherTeam.id, isShared = true)
-        val teamAccess = UserTeamAccess(user, team, Some(team), isAdminAccess = false)
+        val teamAccess = UserTeamAccess(user, team, Some(team), Some("TestBot"), isAdminAccess = false)
         when(dataService.users.teamAccessFor(user, None)).thenReturn(Future.successful(teamAccess))
         when(dataService.users.isAdmin(user)).thenReturn(Future.successful(false))
         when(dataService.oauth2Apis.allFor(teamAccess.maybeTargetTeam)).thenReturn(Future.successful(Seq(oauth2Api)))
         when(dataService.oauth2Applications.find(oauth2AppForOtherTeam.id)).thenReturn(Future.successful(Some(oauth2AppForOtherTeam)))
         val request =
-          FakeRequest(controllers.routes.OAuth2ApplicationController.edit(oauth2AppForOtherTeam.id)).
+          FakeRequest(controllers.web.settings.routes.OAuth2ApplicationController.edit(oauth2AppForOtherTeam.id)).
             withAuthenticator(user.loginInfo)
         val result = route(app, request).get
         status(result) mustBe NOT_FOUND

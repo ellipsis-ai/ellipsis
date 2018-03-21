@@ -2,31 +2,36 @@ package controllers
 
 import javax.inject.Inject
 
+import com.google.inject.Provider
 import com.mohiva.play.silhouette.api.Silhouette
 import com.mohiva.play.silhouette.api.actions.SecuredRequest
 import json.Formatting._
 import json._
+import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
 import models.behaviors.testing.{InvocationTester, TestEvent, TriggerTester}
 import models.behaviors.triggers.messagetrigger.MessageTrigger
 import models.silhouette.EllipsisEnv
 import play.api.data.Form
 import play.api.data.Forms._
-import play.api.i18n.MessagesApi
 import play.api.libs.json._
 import play.api.mvc.{AnyContent, Result}
 import play.filters.csrf.CSRF
-import services.DefaultServices
+import services.{DefaultServices, GithubService}
+import utils.FutureSequencer
+import utils.github._
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 class BehaviorEditorController @Inject() (
-                                           val messagesApi: MessagesApi,
                                            val silhouette: Silhouette[EllipsisEnv],
-                                           val services: DefaultServices
+                                           val githubService: GithubService,
+                                           val services: DefaultServices,
+                                           val assetsProvider: Provider[RemoteAssets],
+                                           implicit val ec: ExecutionContext
                                          ) extends ReAuthable {
 
   val dataService = services.dataService
+  val cacheService = services.cacheService
   val configuration = services.configuration
   val ws = services.ws
 
@@ -34,38 +39,38 @@ class BehaviorEditorController @Inject() (
     val user = request.identity
     render.async {
       case Accepts.JavaScript() => {
-        editorDataResult(BehaviorEditorData.buildForNew(user, maybeTeamId, dataService, ws))
+        editorDataResult(BehaviorEditorData.buildForNew(user, maybeTeamId, dataService, ws, assets), None)
       }
       case Accepts.Html() => {
         for {
           teamAccess <- dataService.users.teamAccessFor(user, maybeTeamId)
-          result <- teamAccess.maybeTargetTeam.map { team =>
-            val dataRoute = routes.BehaviorEditorController.newGroup(maybeTeamId)
-            Future.successful(Ok(views.html.behavioreditor.edit(viewConfig(Some(teamAccess)), dataRoute)))
-          }.getOrElse {
-            reAuthFor(request, maybeTeamId)
-          }
-        } yield result
+        } yield teamAccess.maybeTargetTeam.map { team =>
+          val dataRoute = routes.BehaviorEditorController.newGroup(maybeTeamId)
+          Ok(views.html.behavioreditor.edit(viewConfig(Some(teamAccess)), dataRoute, "New skill"))
+        }.getOrElse {
+          notFoundWithLoginFor(request, Some(teamAccess))
+        }
       }
     }
   }
 
-  def edit(groupId: String, maybeBehaviorId: Option[String]) = silhouette.SecuredAction.async { implicit request =>
+  def edit(groupId: String, maybeBehaviorId: Option[String], maybeShowVersions: Option[Boolean]) = silhouette.SecuredAction.async { implicit request =>
     val user = request.identity
     render.async {
       case Accepts.JavaScript() => {
-        editorDataResult(BehaviorEditorData.buildForEdit(user, groupId, maybeBehaviorId, dataService, ws))
+        editorDataResult(BehaviorEditorData.buildForEdit(user, groupId, maybeBehaviorId, dataService, cacheService, ws, assets), maybeShowVersions)
       }
       case Accepts.Html() => {
         for {
-          maybeGroupData <- BehaviorGroupData.maybeFor(groupId, user, maybeGithubUrl = None, dataService)
+          maybeGroupData <- BehaviorGroupData.maybeFor(groupId, user, maybeGithubUrl = None, dataService, cacheService)
           maybeTeam <- maybeGroupData.map { data =>
             dataService.teams.find(data.teamId, user)
           }.getOrElse(Future.successful(None))
           result <- maybeTeam.map { team =>
             dataService.users.teamAccessFor(user, Some(team.id)).map { teamAccess =>
-              val dataRoute = routes.BehaviorEditorController.edit(groupId, maybeBehaviorId)
-              Ok(views.html.behavioreditor.edit(viewConfig(Some(teamAccess)), dataRoute))
+              val skillTitle = maybeGroupData.flatMap(_.name).getOrElse("Untitled skill")
+              val dataRoute = routes.BehaviorEditorController.edit(groupId, maybeBehaviorId, maybeShowVersions)
+              Ok(views.html.behavioreditor.edit(viewConfig(Some(teamAccess)), dataRoute, skillTitle))
             }
           }.getOrElse { skillNotFound }
         } yield result
@@ -73,33 +78,56 @@ class BehaviorEditorController @Inject() (
     }
   }
 
-  private def editorDataResult(eventualMaybeEditorData: Future[Option[BehaviorEditorData]])(implicit request: SecuredRequest[EllipsisEnv, AnyContent]): Future[Result] = {
+  private def editorDataResult(eventualMaybeEditorData: Future[Option[BehaviorEditorData]], maybeShowVersions: Option[Boolean])(implicit request: SecuredRequest[EllipsisEnv, AnyContent]): Future[Result] = {
     eventualMaybeEditorData.flatMap { maybeEditorData =>
       maybeEditorData.map { editorData =>
         val config = BehaviorEditorEditConfig.fromEditorData(
           containerId = "editorContainer",
           csrfToken = CSRF.getToken(request).map(_.value),
-          data = editorData
+          data = editorData,
+          maybeShowVersions
         )
-        Future.successful(Ok(views.js.shared.pageConfig(viewConfig(Some(editorData.teamAccess)), "config/behavioreditor/edit", Json.toJson(config))))
+        Future.successful(Ok(views.js.shared.webpackLoader(
+          viewConfig(Some(editorData.teamAccess)),
+          "BehaviorEditorConfiguration",
+          "behaviorEditor",
+          Json.toJson(config)
+        )))
       }.getOrElse {
         Future.successful(NotFound("Skill not found"))
       }
     }
   }
 
-  private def skillNotFound()(implicit request: SecuredRequest[EllipsisEnv, AnyContent]): Future[Result] = {
-    dataService.users.teamAccessFor(request.identity, None).flatMap { teamAccess =>
-      val response = NotFound(
-        views.html.error.notFound(
-          viewConfig(Some(teamAccess)),
-          Some("Skill not found"),
-          Some("The skill you are trying to access could not be found."),
-          Some(reAuthLinkFor(request, None))
-        )
-      )
+  def metaData(behaviorGroupId: String) = silhouette.SecuredAction.async { implicit request =>
+    val user = request.identity
+    for {
+      maybeBehaviorGroup <- dataService.behaviorGroups.find(behaviorGroupId, user)
+      maybeLastVersion <- maybeBehaviorGroup.map { group =>
+        dataService.behaviorGroupVersions.maybeCurrentFor(group)
+      }.getOrElse(Future.successful(None))
+      maybeUserData <- maybeLastVersion.flatMap { version =>
+        version.maybeAuthor.map { author =>
+          dataService.users.userDataFor(author, version.team).map(Some(_))
+        }
+      }.getOrElse(Future.successful(None))
+    } yield {
+      maybeLastVersion.map { groupVersion =>
+        Ok(Json.toJson(BehaviorGroupVersionMetaData(behaviorGroupId, groupVersion.createdAt, maybeUserData)))
+      }.getOrElse {
+        NotFound("Skill not found")
+      }
+    }
+  }
 
-      withAuthDiscarded(request, response)
+  private def skillNotFound()(implicit request: SecuredRequest[EllipsisEnv, AnyContent]): Future[Result] = {
+    dataService.users.teamAccessFor(request.identity, None).map { teamAccess =>
+      notFoundWithLoginFor(
+        request,
+        Some(teamAccess),
+        Some("Skill not found"),
+        Some("The skill you are trying to access could not be found.")
+      )
     }
   }
 
@@ -148,7 +176,7 @@ class BehaviorEditorController @Inject() (
                 dataService.behaviorGroupVersions.createFor(group, user, dataToUse).map(Some(_))
               }.getOrElse(Future.successful(None))
               maybeGroupData <- maybeGroup.map { group =>
-                BehaviorGroupData.maybeFor(group.id, user, maybeGithubUrl = None, dataService)
+                BehaviorGroupData.maybeFor(group.id, user, maybeGithubUrl = None, dataService, cacheService)
               }.getOrElse(Future.successful(None))
             } yield {
               maybeGroupData.map { groupData =>
@@ -160,6 +188,44 @@ class BehaviorEditorController @Inject() (
           }
           case e: JsError => {
             Future.successful(BadRequest(s"Malformatted data: ${e.errors.mkString("\n")}"))
+          }
+        }
+      }
+    )
+  }
+
+  case class UpdateNodeModulesInfo(behaviorGroupId: String)
+
+  private val updateNodeModulesForm = Form(
+    mapping(
+      "behaviorGroupId" -> nonEmptyText
+    )(UpdateNodeModulesInfo.apply)(UpdateNodeModulesInfo.unapply)
+  )
+
+  def updateNodeModules = silhouette.SecuredAction.async { implicit request =>
+    val user = request.identity
+    updateNodeModulesForm.bindFromRequest.fold(
+      formWithErrors => {
+        Future.successful(BadRequest(formWithErrors.errorsAsJson))
+      },
+      info => {
+        for {
+          maybeGroup <- dataService.behaviorGroups.find(info.behaviorGroupId, user)
+          maybeGroupData <- BehaviorGroupData.maybeFor(info.behaviorGroupId, user, maybeGithubUrl = None, dataService, cacheService)
+          maybeSavedGroupVersion <- (for {
+            group <- maybeGroup
+            groupData <- maybeGroupData
+          } yield {
+            dataService.behaviorGroupVersions.createFor(group, user, groupData.copyForNewVersionOf(group)).map(Some(_))
+          }).getOrElse(Future.successful(None))
+          maybeUpdatedGroupData <- maybeSavedGroupVersion.map { groupVersion =>
+            BehaviorGroupData.buildFor(groupVersion, user, None, dataService, cacheService).map(Some(_))
+          }.getOrElse(Future.successful(None))
+        } yield {
+          maybeUpdatedGroupData.map { groupData =>
+            Ok(Json.toJson(groupData))
+          }.getOrElse {
+            NotFound("")
           }
         }
       }
@@ -209,13 +275,27 @@ class BehaviorEditorController @Inject() (
     for {
       maybeBehaviorGroup <- dataService.behaviorGroups.findWithoutAccessCheck(behaviorGroupId)
       versions <- maybeBehaviorGroup.map { group =>
-       dataService.behaviorGroupVersions.allFor(group).map(_.sortBy(_.createdAt).reverse.take(20))
+       dataService.behaviorGroupVersions.batchFor(group)
       }.getOrElse(Future.successful(Seq()))
-      versionsData <- Future.sequence(versions.map { ea =>
-       BehaviorGroupData.buildFor(ea, user, dataService)
-      })
+      // Todo: this can go back to being a regular Future.sequence (in parallel) if we
+      versionsData <- FutureSequencer.sequence(versions, (ea: BehaviorGroupVersion) => BehaviorGroupData.buildFor(ea, user, None, dataService, cacheService))
     } yield {
       Ok(Json.toJson(versionsData))
+    }
+  }
+
+  def nodeModuleVersionsFor(behaviorGroupId: String) = silhouette.SecuredAction.async { implicit request =>
+    val user = request.identity
+    for {
+      maybeBehaviorGroup <- dataService.behaviorGroups.find(behaviorGroupId, user)
+      maybeCurrentGroupVersion <- maybeBehaviorGroup.map { group =>
+        dataService.behaviorGroups.maybeCurrentVersionFor(group)
+      }.getOrElse(Future.successful(None))
+      nodeModuleVersions <- maybeCurrentGroupVersion.map { groupVersion =>
+        dataService.run(services.lambdaService.ensureNodeModuleVersionsFor(groupVersion))
+      }.getOrElse(Future.successful(Seq()))
+    } yield {
+      Ok(Json.toJson(nodeModuleVersions.map(NodeModuleVersionData.from)))
     }
   }
 
@@ -394,6 +474,233 @@ class BehaviorEditorController @Inject() (
           maybeResult.map { result =>
             Ok(result.toString)
           }.getOrElse(NotFound("Skill not found"))
+        }
+      }
+    )
+  }
+
+
+  case class GithubActionErrorData(message: String, `type`: Option[String], details: Option[JsObject])
+
+  case class GithubActionErrorResponse(errors: GithubActionErrorData)
+  object GithubActionErrorResponse {
+    def jsonFrom(message: String, `type`: Option[String], details: Option[JsObject]): JsValue = {
+      Json.toJson(GithubActionErrorResponse(GithubActionErrorData(message, `type`, details)))
+    }
+  }
+  implicit val githubActionErrorDataWrites = Json.writes[GithubActionErrorData]
+  implicit val githubActionErrorResponseWrites = Json.writes[GithubActionErrorResponse]
+
+  case class UpdateFromGithubInfo(
+                                   behaviorGroupId: String,
+                                   owner: String,
+                                   repo: String,
+                                   branch: Option[String]
+                                 )
+
+  private val updateFromGithubForm = Form(
+    mapping(
+      "behaviorGroupId" -> nonEmptyText,
+      "owner" -> nonEmptyText,
+      "repo" -> nonEmptyText,
+      "branch" -> optional(nonEmptyText)
+    )(UpdateFromGithubInfo.apply)(UpdateFromGithubInfo.unapply)
+  )
+
+  case class UpdateFromGithubSuccessResponse(data: BehaviorGroupData)
+
+  implicit val updateFromGithubSuccessResponseWrites = Json.writes[UpdateFromGithubSuccessResponse]
+
+  def updateFromGithub = silhouette.SecuredAction.async { implicit request =>
+    val user = request.identity
+    updateFromGithubForm.bindFromRequest.fold(
+      formWithErrors => {
+        Future.successful(BadRequest(formWithErrors.errorsAsJson))
+      },
+      info => {
+        for {
+          maybeGithubLinkedAccount <- dataService.linkedAccounts.maybeForGithubFor(user)
+          maybeGithubProfile <- maybeGithubLinkedAccount.map { linked =>
+            dataService.githubProfiles.find(linked.loginInfo)
+          }.getOrElse(Future.successful(None))
+          maybeBehaviorGroup <- dataService.behaviorGroups.find(info.behaviorGroupId, user)
+          _ <- dataService.linkedGithubRepos.maybeSetCurrentBranch(maybeBehaviorGroup, info.branch)
+          maybeExistingGroupData <- maybeBehaviorGroup.map { group =>
+            dataService.behaviorGroups.maybeCurrentVersionFor(group).flatMap { maybeCurrentVersion =>
+              maybeCurrentVersion.map { currentVersion =>
+                BehaviorGroupData.buildFor(currentVersion, user, None, dataService, cacheService).map(Some(_))
+              }.getOrElse(Future.successful(None))
+            }
+          }.getOrElse(Future.successful(None))
+          teamAccess <- dataService.users.teamAccessFor(user, maybeBehaviorGroup.map(_.team.id))
+          oauth2Appications <- teamAccess.maybeTargetTeam.map { team =>
+            dataService.oauth2Applications.allUsableFor(team)
+          }.getOrElse(Future.successful(Seq()))
+        } yield {
+          maybeBehaviorGroup.map { group =>
+            maybeGithubProfile.map { profile =>
+              val fetcher = GithubSingleBehaviorGroupFetcher(group.team, info.owner, info.repo, profile.token, info.branch, maybeExistingGroupData, githubService, services, ec)
+              try {
+                val groupData = fetcher.result.copyWithApiApplicationsIfAvailable(oauth2Appications)
+                Ok(Json.toJson(UpdateFromGithubSuccessResponse(groupData)))
+              } catch {
+                case e: GithubResultFromDataException => Ok(GithubActionErrorResponse.jsonFrom(e.getMessage, Some(e.exceptionType.toString), Some(e.details)))
+                case e: GithubFetchDataException => Ok(GithubActionErrorResponse.jsonFrom(e.getMessage, None, None))
+              }
+            }.getOrElse(Unauthorized(s"User is not correctly authed with GitHub"))
+          }.getOrElse(NotFound(s"Skill with ID ${info.behaviorGroupId} not found"))
+        }
+      }
+    )
+  }
+
+  case class PushToGithubInfo(
+                               behaviorGroupId: String,
+                               owner: String,
+                               repo: String,
+                               branch: Option[String],
+                               commitMessage: String
+                             )
+
+  private val pushToGithubForm = Form(
+    mapping(
+      "behaviorGroupId" -> nonEmptyText,
+      "owner" -> nonEmptyText,
+      "repo" -> nonEmptyText,
+      "branch" -> optional(nonEmptyText),
+      "commitMessage" -> nonEmptyText
+    )(PushToGithubInfo.apply)(PushToGithubInfo.unapply)
+  )
+
+  case class PushToGithubSuccessData(branch: String)
+  case class PushToGithubSuccessResponse(data: PushToGithubSuccessData)
+
+  implicit val pushToGithubSuccessDataWrites = Json.writes[PushToGithubSuccessData]
+  implicit val pushToGithubSuccessResponseWrites = Json.writes[PushToGithubSuccessResponse]
+
+  def pushToGithub = silhouette.SecuredAction.async { implicit request =>
+    val user = request.identity
+    pushToGithubForm.bindFromRequest.fold(
+      formWithErrors => {
+        Future.successful(BadRequest(formWithErrors.errorsAsJson))
+      },
+      info => {
+        for {
+          maybeGithubLinkedAccount <- dataService.linkedAccounts.maybeForGithubFor(user)
+          maybeGithubProfile <- maybeGithubLinkedAccount.map { linked =>
+            dataService.githubProfiles.find(linked.loginInfo)
+          }.getOrElse(Future.successful(None))
+          maybeBehaviorGroup <- dataService.behaviorGroups.find(info.behaviorGroupId, user)
+          _ <- dataService.linkedGithubRepos.maybeSetCurrentBranch(maybeBehaviorGroup, info.branch)
+          result <- maybeBehaviorGroup.map { group =>
+            maybeGithubProfile.map { profile =>
+              val committerInfo = GithubCommitterInfoFetcher(user, profile.token, githubService, services, ec).result
+              val branch = info.branch.getOrElse("master")
+              val pusher =
+                GithubPusher(
+                  info.owner,
+                  info.repo,
+                  branch,
+                  info.commitMessage,
+                  profile.token,
+                  committerInfo,
+                  group,
+                  user,
+                  services,
+                  ec
+                )
+              pusher.run.map { r =>
+                Ok(Json.toJson(PushToGithubSuccessResponse(PushToGithubSuccessData(branch))))
+              }.recover {
+                case e: GitPushException => {
+                  Ok(GithubActionErrorResponse.jsonFrom(e.getMessage, Some(e.exceptionType.toString), Some(e.details)))
+                }
+                case e: GitCommandException => {
+                  BadRequest(e.getMessage)
+                }
+              }
+            }.getOrElse(Future.successful(Unauthorized(s"User is not correctly authed with GitHub")))
+          }.getOrElse(Future.successful(NotFound(s"Skill with ID ${info.behaviorGroupId} not found")))
+        } yield result
+      }
+    )
+  }
+
+  case class LinkToGithubRepoInfo(
+                               behaviorGroupId: String,
+                               owner: String,
+                               repo: String,
+                               currentBranch: Option[String]
+                             )
+
+  private val linkToGithubRepoForm = Form(
+    mapping(
+      "behaviorGroupId" -> nonEmptyText,
+      "owner" -> nonEmptyText,
+      "repo" -> nonEmptyText,
+      "currentBranch" -> optional(nonEmptyText)
+    )(LinkToGithubRepoInfo.apply)(LinkToGithubRepoInfo.unapply)
+  )
+
+  def linkToGithubRepo = silhouette.SecuredAction.async { implicit request =>
+    val user = request.identity
+    linkToGithubRepoForm.bindFromRequest.fold(
+      formWithErrors => {
+        Future.successful(BadRequest(formWithErrors.errorsAsJson))
+      },
+      info => {
+        for {
+          maybeGithubLinkedAccount <- dataService.linkedAccounts.maybeForGithubFor(user)
+          maybeGithubProfile <- maybeGithubLinkedAccount.map { linked =>
+            dataService.githubProfiles.find(linked.loginInfo)
+          }.getOrElse(Future.successful(None))
+          maybeBehaviorGroup <- dataService.behaviorGroups.find(info.behaviorGroupId, user)
+          result <- maybeBehaviorGroup.map { group =>
+            maybeGithubProfile.map { profile =>
+              dataService.linkedGithubRepos.ensureLink(group, info.owner, info.repo, info.currentBranch).map { linked =>
+                Ok(Json.toJson(LinkedGithubRepoData(linked.owner, linked.repo, linked.maybeCurrentBranch)))
+              }
+            }.getOrElse(Future.successful(Unauthorized(s"User is not correctly authed with GitHub")))
+          }.getOrElse(Future.successful(NotFound(s"Skill with ID ${info.behaviorGroupId} not found")))
+        } yield result
+      }
+    )
+  }
+
+  case class DeployInfo(
+                         behaviorGroupId: String,
+                         comment: Option[String]
+                       )
+
+  private val deployForm = Form(
+    mapping(
+      "behaviorGroupId" -> nonEmptyText,
+      "comment" -> optional(nonEmptyText)
+    )(DeployInfo.apply)(DeployInfo.unapply)
+  )
+
+  def deploy = silhouette.SecuredAction.async { implicit request =>
+    val user = request.identity
+    deployForm.bindFromRequest.fold(
+      formWithErrors => {
+        Future.successful(BadRequest(formWithErrors.errorsAsJson))
+      },
+      info => {
+        for {
+          maybeGroup <- dataService.behaviorGroups.find(info.behaviorGroupId, user)
+          maybeCurrentGroupVersion <- maybeGroup.map { group =>
+            dataService.behaviorGroups.maybeCurrentVersionFor(group)
+          }.getOrElse(Future.successful(None))
+          maybeDeployment <- maybeCurrentGroupVersion.map { groupVersion =>
+            dataService.behaviorGroupDeployments.deploy(groupVersion, user.id, None).map(Some(_))
+          }.getOrElse(Future.successful(None))
+          maybeDeploymentData <- maybeDeployment.map { deployment =>
+            BehaviorGroupDeploymentData.fromDeployment(deployment, dataService).map(Some(_))
+          }.getOrElse(Future.successful(None))
+        } yield maybeDeploymentData.map { deployment =>
+          Ok(Json.toJson(deployment))
+        }.getOrElse {
+          NotFound(s"Couldn't find skill with ID: ${info.behaviorGroupId}")
         }
       }
     )

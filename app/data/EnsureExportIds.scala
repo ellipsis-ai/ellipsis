@@ -10,10 +10,12 @@ import models.behaviors.input.{InputQueries, RawInput}
 import services.DataService
 import utils.FutureSequencer
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
-class EnsureExportIds @Inject() (dataService: DataService) {
+class EnsureExportIds @Inject() (
+                                  dataService: DataService,
+                                  implicit val ec: ExecutionContext
+                                ) {
 
   def ensureForGroup(group: RawBehaviorGroup): Future[Unit] = {
     if (group.maybeExportId.isDefined) {

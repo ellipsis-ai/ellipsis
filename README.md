@@ -205,5 +205,27 @@ $ su postgres
 $ dropdb ellipsis-test
 ```
 
-### Ops
- Play App logs on the EB instance /var/log/eb-docker/containers/eb-current-app/
+
+#### Charbee Setup
+In Ellipsis payments are handles by Chargebee. If you do not touch any of the
+payments code there is nothing to do. The billing pages will simply not be visible
+in your development server.
+
+If you need to touch the payments code you need to:
+1. Create a new free Chargebee account
+2. Get the test site URL and generate a new API key. Complete the setup by clicking on the link 
+in the email Chargebee sent you
+3. Add 2 env. variables to your IntellJ run configuration: CHARGEBEE_SITE and CHARGEBEE_API_KEY. 
+Note that the CHARGEBEE_SITE is not the full URL but just the subdomain.
+4. Configure the Chargebee webhooks:  go to Settings › API & Webhooks › Webhook Settings, in 
+Webhook URL put: https://<your-dev-server-url/webhooks/chargebee/events, for instance 
+_https://ellipsis-matteo.ngrok.io/webhooks/chargebee/events_. 
+[More info.](https://www.chargebee.com/docs/webhook_settings.html)
+5. Enable metered billing: go to Settings > SITE SETTINGS > Site Info & Billing Rules, 
+enable Notify and wait to close Invoices and to save the changes made click Update Site
+Info & Billing Rules. [More info](https://www.chargebee.com/docs/metered_billing.html)
+6. Create the following cutom fields:
+On Plan, a field of type checkbox, named "metered"
+On Customer, two single line fields, organization_id and organization_name
+On Subscription, two single line fields, organization_id and organization_name
+7. Plans and Addons are automatically created by the Playapp at start up.

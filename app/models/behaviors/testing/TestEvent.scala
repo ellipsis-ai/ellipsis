@@ -2,19 +2,19 @@ package models.behaviors.testing
 
 import akka.actor.ActorSystem
 import models.accounts.user.User
-import models.behaviors.UserInfo
+import models.behaviors.{ActionChoice, UserInfo}
 import models.behaviors.conversations.conversation.Conversation
-import models.behaviors.events.{MessageActions, MessageEvent}
+import models.behaviors.events._
 import models.team.Team
+import play.api.Configuration
 import play.api.libs.json.JsObject
-import play.api.libs.ws.WSClient
-import services.DataService
+import services.caching.CacheService
+import services.{DataService, DefaultServices}
 import slick.dbio.DBIO
 import utils.UploadFileSpec
 
 import scala.collection.mutable.ArrayBuffer
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 case class TestEvent(
                       user: User,
@@ -23,15 +23,19 @@ case class TestEvent(
                       includesBotMention: Boolean
                     ) extends MessageEvent {
 
+  val eventType: EventType = EventType.test
+  val maybeOriginalEventType: Option[EventType] = None
+  def withOriginalEventType(originalEventType: EventType): Event = this
+
   val teamId = team.id
 
   val messageBuffer: ArrayBuffer[String] = new ArrayBuffer()
 
   lazy val userIdForContext = user.id
   lazy val name = "test"
-  lazy val maybeChannel = None
+  lazy val maybeChannel = Some("C123456")
   lazy val maybeThreadId = None
-  def eventualMaybeDMChannel(implicit actorSystem: ActorSystem) = Future.successful(None)
+  def eventualMaybeDMChannel(cacheService: CacheService)(implicit actorSystem: ActorSystem, ec: ExecutionContext) = Future.successful(None)
   val isResponseExpected = true
   val messageRecipientPrefix: String = ""
   lazy val isPublicChannel = false
@@ -43,21 +47,28 @@ case class TestEvent(
                    forcePrivate: Boolean,
                    maybeShouldUnfurl: Option[Boolean],
                    maybeConversation: Option[Conversation],
-                   maybeActions: Option[MessageActions],
-                   files: Seq[UploadFileSpec]
-                 )(implicit actorSystem: ActorSystem): Future[Option[String]] = {
+                   attachmentGroups: Seq[MessageAttachmentGroup],
+                   files: Seq[UploadFileSpec],
+                   choices: Seq[ActionChoice],
+                   isForUndeployed: Boolean,
+                   hasUndeployedVersionForAuthor: Boolean,
+                   services: DefaultServices,
+                   configuration: Configuration
+                 )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[String]] = {
     Future.successful(messageBuffer += text).map(_ => None)
   }
 
-  override def userInfoAction(ws: WSClient, dataService: DataService)(implicit actorSystem: ActorSystem): DBIO[UserInfo] = {
-    UserInfo.buildForAction(user, this, ws, dataService)
+  override def userInfoAction(
+                               services: DefaultServices
+                             )(implicit actorSystem: ActorSystem, ec: ExecutionContext): DBIO[UserInfo] = {
+    UserInfo.buildForAction(user, this, services)
   }
 
   override def ensureUserAction(dataService: DataService): DBIO[User] = {
     DBIO.successful(user)
   }
 
-  def detailsFor(ws: WSClient)(implicit actorSystem: ActorSystem): Future[JsObject] = {
+  def detailsFor(services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[JsObject] = {
     Future.successful(JsObject(Seq()))
   }
 

@@ -1,37 +1,44 @@
 package controllers
 
+import java.time.OffsetDateTime
 import java.time.format.TextStyle
 import java.util.Locale
 import javax.inject.Inject
 
+import com.google.inject.Provider
 import com.mohiva.play.silhouette.api.Silhouette
 import json._
 import models.silhouette.EllipsisEnv
-import play.api.Configuration
 import play.api.data.Form
 import play.api.data.Forms._
-import play.api.i18n.MessagesApi
 import play.api.libs.json.Json
-import play.api.libs.ws.WSClient
 import play.filters.csrf.CSRF
-import services.{AWSLambdaService, DataService, GithubService}
+import services.{DefaultServices, GithubService}
+import utils.github.GithubPublishedBehaviorGroupsFetcher
 import utils.{CitiesToTimeZones, FuzzyMatcher, TimeZoneParser}
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 class ApplicationController @Inject() (
-                                        val messagesApi: MessagesApi,
                                         val silhouette: Silhouette[EllipsisEnv],
-                                        val configuration: Configuration,
-                                        val dataService: DataService,
-                                        val lambdaService: AWSLambdaService,
-                                        val ws: WSClient,
                                         val githubService: GithubService,
-                                        val citiesToTimeZones: CitiesToTimeZones
+                                        val services: DefaultServices,
+                                        val citiesToTimeZones: CitiesToTimeZones,
+                                        val assetsProvider: Provider[RemoteAssets],
+                                        implicit val ec: ExecutionContext
                                       ) extends ReAuthable {
 
   import json.Formatting._
+
+  val configuration = services.configuration
+  val dataService = services.dataService
+  val lambdaService = services.lambdaService
+  val cacheService = services.cacheService
+  val ws = services.ws
+
+  def teamHome(id: String, maybeBranch: Option[String] = None) = {
+     index(Option(id), maybeBranch)
+  }
 
   def index(maybeTeamId: Option[String], maybeBranch: Option[String] = None) = silhouette.SecuredAction.async { implicit request =>
     val user = request.identity
@@ -52,11 +59,12 @@ class ApplicationController @Inject() (
           }.getOrElse(Future.successful(None))
           groupData <- maybeBehaviorGroups.map { groups =>
             Future.sequence(groups.map { group =>
-              BehaviorGroupData.maybeFor(group.id, user, None, dataService)
+              BehaviorGroupData.maybeFor(group.id, user, None, dataService, cacheService)
             }).map(_.flatten.sorted)
           }.getOrElse(Future.successful(Seq()))
         } yield {
           teamAccess.maybeTargetTeam.map { team =>
+            val viewConfigData = viewConfig(Some(teamAccess))
             val config = ApplicationIndexConfig(
               containerId = "behaviorListContainer",
               behaviorGroups = groupData,
@@ -64,9 +72,15 @@ class ApplicationController @Inject() (
               teamId = team.id,
               slackTeamId = maybeSlackTeamId,
               teamTimeZone = team.maybeTimeZone.map(_.toString),
-              branchName = maybeBranch
+              branchName = maybeBranch,
+              botName = viewConfigData.botName
             )
-            Ok(views.js.shared.pageConfig(viewConfig(Some(teamAccess)), "config/index", Json.toJson(config)))
+            Ok(views.js.shared.webpackLoader(
+              viewConfigData,
+              "BehaviorListConfig",
+              "behaviorList",
+              Json.toJson(config)
+            ))
           }.getOrElse {
             NotFound("Team not found")
           }
@@ -75,18 +89,22 @@ class ApplicationController @Inject() (
       case Accepts.Html() => {
         for {
           teamAccess <- eventualTeamAccess
-          result <- teamAccess.maybeTargetTeam.map { team =>
-            Future.successful(Ok(views.html.application.index(viewConfig(Some(teamAccess)), maybeTeamId, maybeBranch)))
-          }.getOrElse {
-            reAuthFor(request, maybeTeamId)
-          }
-        } yield result
+        } yield teamAccess.maybeTargetTeam.map { team =>
+          Ok(views.html.application.index(viewConfig(Some(teamAccess)), maybeTeamId, maybeBranch))
+        }.getOrElse {
+          notFoundWithLoginFor(
+            request,
+            Some(teamAccess)
+          )
+        }
       }
     }
   }
 
-  def fetchPublishedBehaviorInfo(maybeTeamId: Option[String],
-                                    maybeBranch: Option[String] = None) = silhouette.SecuredAction.async { implicit request =>
+  def fetchPublishedBehaviorInfo(
+                                  maybeTeamId: Option[String],
+                                  maybeBranch: Option[String] = None
+                                ) = silhouette.SecuredAction.async { implicit request =>
     val user = request.identity
     for {
       teamAccess <- dataService.users.teamAccessFor(user, maybeTeamId)
@@ -94,14 +112,19 @@ class ApplicationController @Inject() (
         dataService.behaviorGroups.allFor(team)
       }.getOrElse(Future.successful(Seq()))
       alreadyInstalledData <- Future.sequence(alreadyInstalled.map { group =>
-        BehaviorGroupData.maybeFor(group.id, user, None, dataService)
+        BehaviorGroupData.maybeFor(group.id, user, None, dataService, cacheService)
       }).map(_.flatten)
-      result <- teamAccess.maybeTargetTeam.map { team =>
-        Future.successful(Ok(Json.toJson(githubService.publishedBehaviorGroupsFor(team, maybeBranch, alreadyInstalledData))))
+    } yield teamAccess.maybeTargetTeam.map { team =>
+      val fetcher = GithubPublishedBehaviorGroupsFetcher(team, maybeBranch, alreadyInstalledData, githubService, services, ec)
+      Ok(Json.toJson(fetcher.result))
+    }.getOrElse {
+      val message = maybeTeamId.map { teamId =>
+        s"You can't access this for team ${teamId}"
       }.getOrElse {
-        reAuthFor(request, maybeTeamId)
+        "You can't access this"
       }
-    } yield result
+      Forbidden(message)
+    }
   }
 
   case class SelectedBehaviorGroupsInfo(behaviorGroupIds: Seq[String])
@@ -124,7 +147,7 @@ class ApplicationController @Inject() (
             dataService.behaviorGroups.findWithoutAccessCheck(id)
           }).map(_.flatten)
           merged <- dataService.behaviorGroups.merge(groups, user)
-          maybeData <- BehaviorGroupData.maybeFor(merged.id, user, None, dataService)
+          maybeData <- BehaviorGroupData.maybeFor(merged.id, user, None, dataService, cacheService)
         } yield maybeData.map { data =>
           Ok(Json.toJson(data))
         }.getOrElse {
@@ -166,7 +189,7 @@ class ApplicationController @Inject() (
       }
       maybeInstalledGroupData <- maybeInstalledBehaviorGroups.map { groups =>
         val eventualMaybeGroupData = groups.map { group =>
-          BehaviorGroupData.maybeFor(group.id, user, None, dataService)
+          BehaviorGroupData.maybeFor(group.id, user, None, dataService, cacheService)
         }
         Future.sequence(eventualMaybeGroupData).map { maybeGroups =>
           Some(maybeGroups.flatten.sorted)
@@ -177,7 +200,8 @@ class ApplicationController @Inject() (
     } yield {
       maybeInstalledGroupData.map { installedGroupData =>
         val publishedGroupData = teamAccess.maybeTargetTeam.map { team =>
-          githubService.publishedBehaviorGroupsFor(team, maybeBranch, installedGroupData)
+          val fetcher = GithubPublishedBehaviorGroupsFetcher(team, maybeBranch, installedGroupData, githubService, services, ec)
+          fetcher.result
         }.getOrElse(Seq())
         val matchResults = FuzzyMatcher[BehaviorGroupData](queryString, installedGroupData ++ publishedGroupData).run
         Ok(Json.toJson(matchResults.map(_.item)).toString)
@@ -192,12 +216,15 @@ class ApplicationController @Inject() (
     Ok(Json.obj("matches" -> matches))
   }
 
+  case class TimeZoneFormInfo(tzName: String, maybeTeamId: Option[String])
+
+  implicit val timeZoneFormInfoReads = Json.reads[TimeZoneFormInfo]
+
   private val timeZoneForm = Form(
     mapping(
       "tzName" -> nonEmptyText,
-      "teamId" -> optional(nonEmptyText),
-      "formattedName" -> optional(nonEmptyText)
-    )(TeamTimeZoneData.apply)(TeamTimeZoneData.unapply)
+      "teamId" -> optional(nonEmptyText)
+    )(TimeZoneFormInfo.apply)(TimeZoneFormInfo.unapply)
   )
 
   def setTeamTimeZone = silhouette.SecuredAction.async { implicit request =>
@@ -217,7 +244,11 @@ class ApplicationController @Inject() (
         } yield {
           maybeTeam.map { team =>
             team.maybeTimeZone.map { tz =>
-              Ok(Json.toJson(TeamTimeZoneData(tz.toString, None, Some(tz.getDisplayName(TextStyle.FULL, Locale.ENGLISH)))).toString)
+              Ok(Json.toJson(TeamTimeZoneData(
+                tz.toString,
+                Some(tz.getDisplayName(TextStyle.FULL, Locale.ENGLISH)),
+                OffsetDateTime.now(tz).getOffset.getTotalSeconds
+              )).toString)
             }.getOrElse {
               BadRequest(Json.obj("message" -> "Invalid time zone").toString)
             }

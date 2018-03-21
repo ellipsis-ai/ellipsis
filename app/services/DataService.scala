@@ -1,5 +1,6 @@
 package services
 
+import models.accounts.github.profile.GithubProfileService
 import models.accounts.linkedaccount.LinkedAccountService
 import models.accounts.linkedoauth2token.LinkedOAuth2TokenService
 import models.accounts.linkedsimpletoken.LinkedSimpleTokenService
@@ -15,10 +16,13 @@ import models.apitoken.APITokenService
 import models.behaviors.BehaviorResponseService
 import models.behaviors.behavior.BehaviorService
 import models.behaviors.behaviorgroup.BehaviorGroupService
+import models.behaviors.behaviorgroupdeployment.BehaviorGroupDeploymentService
 import models.behaviors.behaviorgroupversion.BehaviorGroupVersionService
+import models.behaviors.behaviorgroupversionsha.BehaviorGroupVersionSHAService
 import models.behaviors.behaviorparameter.BehaviorParameterService
 import models.behaviors.behaviorversion.BehaviorVersionService
 import models.behaviors.config.awsconfig.AWSConfigService
+import models.behaviors.config.requiredawsconfig.RequiredAWSConfigService
 import models.behaviors.config.requiredoauth2apiconfig.RequiredOAuth2ApiConfigService
 import models.behaviors.config.requiredsimpletokenapi.RequiredSimpleTokenApiService
 import models.behaviors.conversations.collectedparametervalue.CollectedParameterValueService
@@ -28,14 +32,23 @@ import models.behaviors.datatypefield.DataTypeFieldService
 import models.behaviors.defaultstorageitem.DefaultStorageItemService
 import models.behaviors.input.InputService
 import models.behaviors.invocationlogentry.InvocationLogEntryService
-import models.behaviors.scheduling.scheduledmessage.ScheduledMessageService
-import models.behaviors.triggers.messagetrigger.MessageTriggerService
-import models.environmentvariable.{TeamEnvironmentVariableService, UserEnvironmentVariableService}
 import models.behaviors.invocationtoken.InvocationTokenService
 import models.behaviors.library.LibraryVersionService
+import models.behaviors.linked_github_repo.LinkedGithubRepoService
+import models.behaviors.nodemoduleversion.NodeModuleVersionService
 import models.behaviors.savedanswer.SavedAnswerService
 import models.behaviors.scheduling.recurrence.RecurrenceService
 import models.behaviors.scheduling.scheduledbehavior.ScheduledBehaviorService
+import models.behaviors.scheduling.scheduledmessage.ScheduledMessageService
+import models.behaviors.triggers.messagetrigger.MessageTriggerService
+import models.billing.active_user_record.ActiveUserRecordService
+import models.billing.addon.AddonService
+import models.devmodechannel.DevModeChannelService
+import models.environmentvariable.TeamEnvironmentVariableService
+import models.organization.OrganizationService
+import models.billing.invoice.InvoiceService
+import models.billing.plan.PlanService
+import models.billing.subscription.SubscriptionService
 import models.team.TeamService
 import slick.dbio.DBIO
 
@@ -46,16 +59,17 @@ trait DataService {
   val users: UserService
   val loginTokens: LoginTokenService
   val linkedAccounts: LinkedAccountService
+  val organizations: OrganizationService
   val teams: TeamService
   val apiTokens: APITokenService
   val teamEnvironmentVariables: TeamEnvironmentVariableService
-  val userEnvironmentVariables: UserEnvironmentVariableService
   val invocationTokens: InvocationTokenService
   val linkedOAuth2Tokens: LinkedOAuth2TokenService
   val linkedSimpleTokens: LinkedSimpleTokenService
   val oauth2Apis: OAuth2ApiService
   val oauth2Applications: OAuth2ApplicationService
   val simpleTokenApis: SimpleTokenApiService
+  val githubProfiles: GithubProfileService
   val slackProfiles: SlackProfileService
   val slackBotProfiles: SlackBotProfileService
   val oauth2Tokens: OAuth2TokenService
@@ -69,17 +83,28 @@ trait DataService {
   val behaviorParameters: BehaviorParameterService
   val inputs: InputService
   val libraries: LibraryVersionService
+  val nodeModuleVersions: NodeModuleVersionService
   val savedAnswers: SavedAnswerService
   val messageTriggers: MessageTriggerService
   val awsConfigs: AWSConfigService
+  val requiredAWSConfigs: RequiredAWSConfigService
   val requiredOAuth2ApiConfigs: RequiredOAuth2ApiConfigService
   val requiredSimpleTokenApis: RequiredSimpleTokenApiService
+  val linkedGithubRepos: LinkedGithubRepoService
   val conversations: ConversationService
   val collectedParameterValues: CollectedParameterValueService
   val scheduledMessages: ScheduledMessageService
   val scheduledBehaviors: ScheduledBehaviorService
   val recurrences: RecurrenceService
   val invocationLogEntries: InvocationLogEntryService
+  val devModeChannels: DevModeChannelService
+  val subscriptions: SubscriptionService
+  val invoices: InvoiceService
+  val plans: PlanService
+  val addons: AddonService
+  val activeUserRecords: ActiveUserRecordService
+  val behaviorGroupDeployments: BehaviorGroupDeploymentService
+  val behaviorGroupVersionSHAs: BehaviorGroupVersionSHAService
   def behaviorResponses: BehaviorResponseService
 
   def run[T](action: DBIO[T]): Future[T]

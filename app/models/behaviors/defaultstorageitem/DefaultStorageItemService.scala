@@ -31,10 +31,12 @@ trait DefaultStorageItemService {
 
   def createItem(typeName: String, user: User, data: JsValue, behaviorGroup: BehaviorGroup): Future[DefaultStorageItem]
 
-  def createItemAction(typeName: String, user: User, data: JsValue, behaviorGroup: BehaviorGroup): DBIO[DefaultStorageItem]
+  def updateItem(typeName: String, user: User, data: JsValue, behaviorGroup: BehaviorGroup): Future[DefaultStorageItem]
 
   def deleteItem(id: String, behaviorGroup: BehaviorGroup): Future[Option[DefaultStorageItem]]
 
   def deleteItems(ids: Seq[String], behaviorGroup: BehaviorGroup): Future[Int]
+
+  def deleteFilteredItemsFor(typeName: String, filter: JsValue, behaviorGroup: BehaviorGroup): Future[Seq[DefaultStorageItem]]
 
 }

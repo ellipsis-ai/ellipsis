@@ -3,8 +3,6 @@ package models.behaviors.behaviorgroupversion
 import json.BehaviorGroupData
 import models.accounts.user.User
 import models.behaviors.behaviorgroup.BehaviorGroup
-import models.behaviors.defaultstorageitem.DefaultStorageItemService
-import sangria.schema.Schema
 import slick.dbio.DBIO
 
 import scala.concurrent.Future
@@ -15,14 +13,23 @@ trait BehaviorGroupVersionService {
 
   def findWithoutAccessCheck(id: String): Future[Option[BehaviorGroupVersion]]
 
-  def allFor(group: BehaviorGroup): Future[Seq[BehaviorGroupVersion]]
+  def batchFor(group: BehaviorGroup, batchSize: Int = 20, offset: Int = 0): Future[Seq[BehaviorGroupVersion]]
+
+  def maybeCurrentForAction(group: BehaviorGroup): DBIO[Option[BehaviorGroupVersion]]
+
+  def maybeCurrentFor(group: BehaviorGroup): Future[Option[BehaviorGroupVersion]]
+
+  def maybeFirstForAction(group: BehaviorGroup): DBIO[Option[BehaviorGroupVersion]]
+
+  def maybeFirstFor(group: BehaviorGroup): Future[Option[BehaviorGroupVersion]]
 
   def createForAction(
                        group: BehaviorGroup,
                        user: User,
                        maybeName: Option[String] = None,
                        maybeIcon: Option[String] = None,
-                       maybeDescription: Option[String] = None
+                       maybeDescription: Option[String] = None,
+                       maybeGitSHA: Option[String] = None
                      ): DBIO[BehaviorGroupVersion]
 
   def createFor(
@@ -30,7 +37,8 @@ trait BehaviorGroupVersionService {
                  user: User,
                  maybeName: Option[String] = None,
                  maybeIcon: Option[String] = None,
-                 maybeDescription: Option[String] = None
+                 maybeDescription: Option[String] = None,
+                 maybeGitSHA: Option[String] = None
                ): Future[BehaviorGroupVersion]
 
   def createFor(
@@ -38,5 +46,15 @@ trait BehaviorGroupVersionService {
                  user: User,
                  data: BehaviorGroupData
                ): Future[BehaviorGroupVersion]
+
+  def redeploy(groupVersion: BehaviorGroupVersion): Future[Unit]
+
+  def redeployAllCurrentVersions: Future[Unit]
+
+  def isActive(groupVersion: BehaviorGroupVersion, context: String, channel: String): Future[Boolean]
+
+  def activeFunctionNames: Future[Seq[String]]
+
+  def hasNewerVersionForAuthorAction(version: BehaviorGroupVersion, user: User): DBIO[Boolean]
 
 }

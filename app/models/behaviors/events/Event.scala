@@ -10,13 +10,13 @@ import models.behaviors.builtins.DisplayHelpBehavior
 import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.scheduling.Scheduled
 import models.team.Team
+import play.api.Configuration
 import play.api.libs.json.JsObject
-import play.api.libs.ws.WSClient
+import services.caching.CacheService
 import services.{AWSLambdaService, DataService, DefaultServices}
 import slick.dbio.DBIO
 import utils.UploadFileSpec
 
-import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{ExecutionContext, Future}
 
 trait Event {
@@ -30,20 +30,33 @@ trait Event {
   val relevantMessageTextWithFormatting: String = messageText
   val maybeMessageText: Option[String] = Option(messageText).filter(_.trim.nonEmpty)
   val maybeScheduled: Option[Scheduled] = None
+  val eventType: EventType
+  val maybeOriginalEventType: Option[EventType]
   val context = name
   val isResponseExpected: Boolean
   val includesBotMention: Boolean
   val messageRecipientPrefix: String
   val isPublicChannel: Boolean
 
-  def logTextFor(result: BotResult): String = {
+  def originalEventType: EventType = {
+    maybeOriginalEventType.getOrElse(eventType)
+  }
+
+  def withOriginalEventType(originalEventType: EventType): Event
+
+  def logTextForResultSource: String = "in response to slack message"
+
+  def logTextFor(result: BotResult, maybeSource: Option[String]): String = {
     val channelText = maybeChannel.map { channel =>
       s" in channel [${channel}]"
     }.getOrElse("")
+    val userText = s" for context user ID [${result.event.userIdForContext}]"
     val convoText = result.maybeConversation.map { convo =>
       s" in conversation [${convo.id}]"
     }.getOrElse("")
-    s"Sending result [${result.fullText}] in response to slack message [${messageText}]$channelText$convoText"
+    val sourceText = maybeSource.getOrElse(logTextForResultSource)
+    val logIntro = s"Sending result $sourceText [${messageText}]$channelText$userText$convoText: [${result.fullText}]"
+    s"$logIntro\n${result.filesAsLogText}"
   }
 
   def loginInfo: LoginInfo = LoginInfo(name, userIdForContext)
@@ -52,36 +65,41 @@ trait Event {
     dataService.users.ensureUserForAction(loginInfo, teamId)
   }
 
-  def ensureUser(dataService: DataService): Future[User] = {
+  def ensureUser(dataService: DataService)(implicit ec: ExecutionContext): Future[User] = {
     dataService.run(ensureUserAction(dataService))
   }
 
-  def userInfoAction(ws: WSClient, dataService: DataService)(implicit actorSystem: ActorSystem): DBIO[UserInfo] = {
-    UserInfo.buildForAction(this, teamId, ws, dataService)
+  def userInfoAction(services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): DBIO[UserInfo] = {
+    UserInfo.buildForAction(this, teamId, services)
   }
 
-  def messageInfo(ws: WSClient, dataService: DataService)(implicit actorSystem: ActorSystem): Future[MessageInfo] = {
-    MessageInfo.buildFor(this, ws, dataService)
+  def messageInfo(services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[MessageInfo] = {
+    MessageInfo.buildFor(this, services)
   }
 
-  def detailsFor(ws: WSClient)(implicit actorSystem: ActorSystem): Future[JsObject]
+  def detailsFor(services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[JsObject]
 
-  def recentMessages(dataService: DataService)(implicit actorSystem: ActorSystem): Future[Seq[String]] = Future.successful(Seq())
+  def navLinkList(lambdaService: AWSLambdaService): Seq[(String, String)] = {
+    lambdaService.configuration.getOptional[String]("application.apiBaseUrl").map { baseUrl =>
+      val skillsListPath = baseUrl + controllers.routes.ApplicationController.index(Some(teamId))
+      val schedulingPath = baseUrl + controllers.routes.ScheduledActionsController.index(None, None, Some(teamId))
+      val settingsPath = baseUrl + controllers.web.settings.routes.EnvironmentVariablesController.list(Some(teamId))
+      Seq(
+        "View and install skills" -> skillsListPath,
+        "Scheduling" -> schedulingPath,
+        "Team settings" -> settingsPath
+      )
+    }.getOrElse(Seq())
+  }
 
-  def navLinks(noSkills: Boolean, lambdaService: AWSLambdaService): String = {
-    lambdaService.configuration.getString("application.apiBaseUrl").map { baseUrl =>
-      val skillsListPath = controllers.routes.ApplicationController.index(Some(teamId))
-      val schedulingPath = controllers.routes.ScheduledActionsController.index(None, None, Some(teamId))
-      if (noSkills) {
-        s"""[Get started by teaching me something]($baseUrl$skillsListPath)"""
-      } else {
-        s"""[View all skills]($baseUrl$skillsListPath) · [Scheduling]($baseUrl$schedulingPath)"""
-      }
-    }.getOrElse("")
+  def navLinks(lambdaService: AWSLambdaService): String = {
+    navLinkList(lambdaService).map { case(title, path) =>
+      s"$title: $path"
+    }.mkString("\n")
   }
 
   def teachMeLinkFor(lambdaService: AWSLambdaService): String = {
-    val newBehaviorLink = lambdaService.configuration.getString("application.apiBaseUrl").map { baseUrl =>
+    val newBehaviorLink = lambdaService.configuration.getOptional[String]("application.apiBaseUrl").map { baseUrl =>
       val path = controllers.routes.BehaviorEditorController.newGroup(Some(teamId))
       s"$baseUrl$path"
     }.get
@@ -89,24 +107,15 @@ trait Event {
   }
 
   def installLinkFor(lambdaService: AWSLambdaService): String = {
-    val installLink = lambdaService.configuration.getString("application.apiBaseUrl").map { baseUrl =>
+    val installLink = lambdaService.configuration.getOptional[String]("application.apiBaseUrl").map { baseUrl =>
       val path = controllers.routes.ApplicationController.index(Some(teamId))
       s"$baseUrl$path"
     }.get
     s"[install new skills]($installLink)"
   }
 
-  def iDontKnowHowToRespondMessageFor(lambdaService: AWSLambdaService)(implicit ec: ExecutionContext): String = {
-    s"""
-       |I don’t know how to respond to:
-       |
-       |> $messageText
-       |
-       |Type `${botPrefix}help` to see what I can do or ${teachMeLinkFor(lambdaService)}
-    """.stripMargin
-  }
-
-  def noExactMatchResult(dataService: DataService, lambdaService: AWSLambdaService)(implicit actorSystem: ActorSystem): Future[BotResult] = {
+  def noExactMatchResult(services: DefaultServices)
+                        (implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[BotResult] = {
     DisplayHelpBehavior(
       Some(messageText),
       None,
@@ -115,15 +124,14 @@ trait Event {
       includeNonMatchingResults = false,
       isFirstTrigger = true,
       this,
-      lambdaService,
-      dataService
+      services
     ).result
   }
 
-  def eventualMaybeDMChannel(implicit actorSystem: ActorSystem): Future[Option[String]]
+  def eventualMaybeDMChannel(cacheService: CacheService)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[String]]
 
-  def maybeChannelToUseFor(behaviorVersion: BehaviorVersion)(implicit actorSystem: ActorSystem): Future[Option[String]] = {
-    eventualMaybeDMChannel.map { maybeDMChannel =>
+  def maybeChannelToUseFor(behaviorVersion: BehaviorVersion, cacheService: CacheService)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[String]] = {
+    eventualMaybeDMChannel(cacheService).map { maybeDMChannel =>
       if (behaviorVersion.forcePrivateResponse) {
         maybeDMChannel
       } else {
@@ -147,23 +155,25 @@ trait Event {
                    forcePrivate: Boolean,
                    maybeShouldUnfurl: Option[Boolean],
                    maybeConversation: Option[Conversation],
-                   maybeActions: Option[MessageActions] = None,
-                   files: Seq[UploadFileSpec] = Seq()
-                 )(implicit actorSystem: ActorSystem): Future[Option[String]]
+                   attachmentGroups: Seq[MessageAttachmentGroup],
+                   files: Seq[UploadFileSpec],
+                   choices: Seq[ActionChoice],
+                   isForUndeployed: Boolean,
+                   hasUndeployedVersionForAuthor: Boolean,
+                   services: DefaultServices,
+                   configuration: Configuration
+                 )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[String]]
 
-  def botPrefix: String = ""
+  def botName(services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[String] = Future.successful("")
+
+  def contextualBotPrefix(services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[String] = Future.successful("")
 
   val invocationLogText: String
-
-  def unformatTextFragment(text: String): String = {
-    // Override for client-specific code to strip formatting from text
-    text
-  }
 
   def allBehaviorResponsesFor(
                                maybeTeam: Option[Team],
                                maybeLimitToBehavior: Option[Behavior],
                                services: DefaultServices
-                             ): Future[Seq[BehaviorResponse]]
+                             )(implicit ec: ExecutionContext): Future[Seq[BehaviorResponse]]
 
 }

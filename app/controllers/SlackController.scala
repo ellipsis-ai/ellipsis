@@ -2,44 +2,57 @@ package controllers
 
 import javax.inject.Inject
 
-import com.mohiva.play.silhouette.api.Silhouette
-import models.SlackMessageFormatter
-import models.behaviors.{BehaviorResponse, BotResultService}
+import com.google.inject.Provider
+import com.mohiva.play.silhouette.api.{LoginInfo, Silhouette}
+import json.Formatting._
+import models.behaviors.ActionChoice
 import models.behaviors.builtins.DisplayHelpBehavior
+import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.events.SlackMessageActionConstants._
-import models.behaviors.events.{EventHandler, SlackMessageEvent}
+import models.behaviors.events._
 import models.help.HelpGroupSearchValue
 import models.silhouette.EllipsisEnv
 import play.api.Logger
 import play.api.data.Form
 import play.api.data.Forms._
-import play.api.i18n.MessagesApi
+import play.api.http.{HeaderNames, MimeTypes}
 import play.api.libs.json._
-import play.api.mvc.{Action, AnyContent, Request, Result}
+import play.api.mvc.{AnyContent, Request, Result}
 import play.utils.UriEncoding
 import services._
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
+import scala.util.{Failure, Success, Try}
 
 class SlackController @Inject() (
-                                  val messagesApi: MessagesApi,
                                   val silhouette: Silhouette[EllipsisEnv],
                                   val eventHandler: EventHandler,
                                   val slackEventService: SlackEventService,
-                                  val services: DefaultServices
+                                  val services: DefaultServices,
+                                  val assetsProvider: Provider[RemoteAssets],
+                                  implicit val ec: ExecutionContext
                                 ) extends EllipsisController {
 
   val dataService = services.dataService
   val configuration = services.configuration
   val lambdaService = services.lambdaService
   val cacheService = services.cacheService
+  val ws = services.ws
+  val botResultService = services.botResultService
   implicit val actorSystem = services.actorSystem
+
+  private def maybeResultFor[T](form: Form[T], resultFn: T => Result)
+                               (implicit request: Request[AnyContent]): Option[Result] = {
+    form.bindFromRequest.fold(
+      _ => None,
+      info => Some(resultFn(info))
+    )
+  }
 
   def add = silhouette.UserAwareAction { implicit request =>
     val maybeResult = for {
-      scopes <- configuration.getString("silhouette.slack.scope")
-      clientId <- configuration.getString("silhouette.slack.clientID")
+      scopes <- configuration.getOptional[String]("silhouette.slack.scope")
+      clientId <- configuration.getOptional[String]("silhouette.slack.clientID")
     } yield {
         val redirectUrl = routes.SocialAuthController.installForSlack().absoluteURL(secure=true)
         Ok(views.html.slack.addToSlack(viewConfig(None), scopes, clientId, redirectUrl))
@@ -53,8 +66,8 @@ class SlackController @Inject() (
     }.getOrElse(Future.successful(None))
     eventualMaybeTeamAccess.map { maybeTeamAccess =>
       val maybeResult = for {
-        scopes <- configuration.getString("silhouette.slack.signInScope")
-        clientId <- configuration.getString("silhouette.slack.clientID")
+        scopes <- configuration.getOptional[String]("silhouette.slack.signInScope")
+        clientId <- configuration.getOptional[String]("silhouette.slack.clientID")
       } yield {
           val redirectUrl = routes.SocialAuthController.authenticateSlack(maybeRedirectUrl).absoluteURL(secure=true)
           Ok(views.html.slack.signInWithSlack(viewConfig(maybeTeamAccess), scopes, clientId, UriEncoding.encodePathSegment(redirectUrl, "utf-8")))
@@ -65,7 +78,7 @@ class SlackController @Inject() (
 
   trait RequestInfo {
     val token: String
-    def isValid: Boolean = configuration.getString("slack.token").contains(token)
+    def isValid: Boolean = configuration.getOptional[String]("slack.token").contains(token)
   }
 
   case class ChallengeRequestInfo(token: String, challenge: String, requestType: String) extends RequestInfo
@@ -80,22 +93,69 @@ class SlackController @Inject() (
     })
   )
 
-  private def challengeResult(info: ChallengeRequestInfo): Result = {
-    if (info.isValid) {
-      Ok(info.challenge)
-    } else {
-      Forbidden("Bad token")
-    }
+  private def maybeChallengeResult(implicit request: Request[AnyContent]): Option[Result] = {
+    maybeResultFor(challengeRequestForm, (info: ChallengeRequestInfo) => {
+      if (info.isValid) {
+        Ok(info.challenge)
+      } else {
+        Forbidden("Bad token")
+      }
+    })
   }
 
-  trait MessageRequestInfo extends RequestInfo {
+  trait EventInfo {
+    val eventType: String
+  }
+
+  case class AnyEventInfo(eventType: String) extends EventInfo
+
+  trait EventRequestInfo {
     val teamId: String
+    val event: EventInfo
+  }
+
+  case class ValidEventRequestInfo(
+                                  token: String,
+                                  teamId: String,
+                                  event: AnyEventInfo,
+                                  requestType: String,
+                                  eventId: String
+                                ) extends EventRequestInfo with RequestInfo
+
+  private val validEventRequestForm = Form(
+    mapping(
+      "token" -> nonEmptyText,
+      "team_id" -> nonEmptyText,
+      "event" -> mapping(
+        "type" -> nonEmptyText
+      )(AnyEventInfo.apply)(AnyEventInfo.unapply),
+      "type" -> nonEmptyText,
+      "event_id" -> nonEmptyText
+    )(ValidEventRequestInfo.apply)(ValidEventRequestInfo.unapply) verifying("Not a valid event request", fields => fields match {
+      case info => info.requestType == "event_callback" && info.isValid
+    })
+  )
+
+  def isValidEventRequest(implicit request: Request[AnyContent]): Boolean = {
+    validEventRequestForm.bindFromRequest.fold(
+      _ => false,
+      _ => true
+    )
+  }
+
+  trait MessageRequestInfo extends EventRequestInfo {
     val channel: String
     val userId: String
     val message: String
-    val ts: String
     val maybeThreadTs: Option[String]
+    val ts: String
   }
+
+  case class FileInfo(
+                     createdAt: Long,
+                     downloadUrl: String,
+                     maybeThumbnailUrl: Option[String]
+                     )
 
   case class MessageSentEventInfo(
                                     eventType: String,
@@ -103,41 +163,38 @@ class SlackController @Inject() (
                                     maybeThreadTs: Option[String],
                                     userId: String,
                                     channel: String,
-                                    text: String
-                                  )
+                                    text: String,
+                                    maybeFileInfo: Option[FileInfo]
+                                  ) extends EventInfo
 
-  case class MessageSentEventRequestInfo(
-                                          token: String,
+  case class MessageSentRequestInfo(
                                           teamId: String,
-                                          apiAppId: String,
-                                          event: MessageSentEventInfo,
-                                          requestType: String,
-                                          authedUsers: Seq[String]
+                                          event: MessageSentEventInfo
                                         ) extends MessageRequestInfo {
     val message: String = event.text.trim
     val userId: String = event.userId
     val channel: String = event.channel
     val ts: String = event.ts
-    val maybeThreadTs = event.maybeThreadTs
+    val maybeThreadTs: Option[String] = event.maybeThreadTs
   }
-
-  private val messageSentEventRequestForm = Form(
+  private val messageSentRequestForm = Form(
     mapping(
-      "token" -> nonEmptyText,
       "team_id" -> nonEmptyText,
-      "api_app_id" -> nonEmptyText,
       "event" -> mapping(
         "type" -> nonEmptyText,
         "ts" -> nonEmptyText,
         "thread_ts" -> optional(nonEmptyText),
         "user" -> nonEmptyText,
         "channel" -> nonEmptyText,
-        "text" -> nonEmptyText
-      )(MessageSentEventInfo.apply)(MessageSentEventInfo.unapply),
-      "type" -> nonEmptyText,
-      "authed_users" -> seq(nonEmptyText)
-    )(MessageSentEventRequestInfo.apply)(MessageSentEventRequestInfo.unapply) verifying("Not an event request", fields => fields match {
-      case info => info.requestType == "event_callback"
+        "text" -> nonEmptyText,
+        "file" -> optional(mapping(
+          "created" -> longNumber,
+          "url_private_download" -> nonEmptyText,
+          "thumb_1024" -> optional(nonEmptyText)
+        )(FileInfo.apply)(FileInfo.unapply))
+      )(MessageSentEventInfo.apply)(MessageSentEventInfo.unapply)
+    )(MessageSentRequestInfo.apply)(MessageSentRequestInfo.unapply) verifying("Not a valid message event", fields => fields match {
+      case info => info.event.eventType == "message"
     })
   )
 
@@ -159,28 +216,22 @@ class SlackController @Inject() (
                                       eventTs: String,
                                       maybeThreadTs: Option[String],
                                       ts: String
-                                   )
+                                   ) extends EventInfo
 
-  case class MessageChangedEventRequestInfo(
-                                             token: String,
+  case class MessageChangedRequestInfo(
                                              teamId: String,
-                                             apiAppId: String,
-                                             event: MessageChangedEventInfo,
-                                             requestType: String,
-                                             authedUsers: Seq[String]
+                                             event: MessageChangedEventInfo
                                           ) extends MessageRequestInfo {
     val message: String = event.message.text.trim
     val userId: String = event.message.userId
     val channel: String = event.channel
     val ts: String = event.ts
-    val maybeThreadTs = event.maybeThreadTs
+    val maybeThreadTs: Option[String] = event.maybeThreadTs
   }
 
-  private val messageChangedEventRequestForm = Form(
+  private val messageChangedRequestForm = Form(
     mapping(
-      "token" -> nonEmptyText,
       "team_id" -> nonEmptyText,
-      "api_app_id" -> nonEmptyText,
       "event" -> mapping(
         "type" -> nonEmptyText,
         "message" -> mapping(
@@ -198,73 +249,70 @@ class SlackController @Inject() (
         "event_ts" -> nonEmptyText,
         "thread_ts" -> optional(nonEmptyText),
         "ts" -> nonEmptyText
-      )(MessageChangedEventInfo.apply)(MessageChangedEventInfo.unapply),
-      "type" -> nonEmptyText,
-      "authed_users" -> seq(nonEmptyText)
-    )(MessageChangedEventRequestInfo.apply)(MessageChangedEventRequestInfo.unapply) verifying("Not an edited message event request", fields => fields match {
-      case info => info.requestType == "event_callback" && info.event.eventSubType == "message_changed"
+      )(MessageChangedEventInfo.apply)(MessageChangedEventInfo.unapply)
+    )(MessageChangedRequestInfo.apply)(MessageChangedRequestInfo.unapply) verifying("Not an edited message event request", fields => fields match {
+      case info => info.event.eventType == "message" && info.event.eventSubType == "message_changed"
     })
   )
 
   private def messageEventResult(info: MessageRequestInfo)(implicit request: Request[AnyContent]): Result = {
-    if (info.isValid) {
-      val isRetry = request.headers.get("X-Slack-Retry-Num").isDefined
-      if (isRetry) {
-        Ok("We are ignoring retries for now")
-      } else {
-        for {
-          maybeProfile <- dataService.slackBotProfiles.allForSlackTeamId(info.teamId).map(_.headOption)
-          maybeSlackUsers <- maybeProfile.map { profile =>
-            if (SlackMessageFormatter.textContainsRawUserIds(info.message)) {
-              slackEventService.maybeSlackUserListFor(profile)
-            } else {
-              // TODO: an empty list here isn't a good solution; we probably want a special class for
-              // the message text that knows whether it needs a user list to convert user IDs
-              Future.successful(Some(Seq()))
-            }
-          }.getOrElse(Future.successful(None))
-          _ <- (for {
-            profile <- maybeProfile
-            slackUsers <- maybeSlackUsers
-          } yield {
-            slackEventService.onEvent(SlackMessageEvent(
-              profile,
-              info.channel,
-              info.maybeThreadTs,
-              info.userId,
-              info.message,
-              info.ts,
-              slackEventService.clientFor(profile),
-              slackUsers
-            ))
-          }).getOrElse {
-            Future.successful({})
-          }
-        } yield {}
-
-        // respond immediately
-        Ok(":+1:")
-      }
+    val isRetry = request.headers.get("X-Slack-Retry-Num").isDefined
+    if (isRetry) {
+      Ok("We are ignoring retries for now")
     } else {
-      Forbidden("Bad token")
+      for {
+        maybeProfile <- dataService.slackBotProfiles.allForSlackTeamId(info.teamId).map(_.headOption)
+        maybeSlackMessage <- maybeProfile.map { profile =>
+          SlackMessage.fromFormattedText(info.message, profile, slackEventService).map(Some(_))
+        }.getOrElse(Future.successful(None))
+        maybeFile <- Future.successful(
+          info.event match {
+            case e: MessageSentEventInfo => e.maybeFileInfo.map(i => SlackFile(i.downloadUrl, i.maybeThumbnailUrl))
+            case _ => None
+          }
+        )
+        _ <- (for {
+          profile <- maybeProfile
+          slackMessage <- maybeSlackMessage
+        } yield {
+          slackEventService.onEvent(SlackMessageEvent(
+            profile,
+            info.channel,
+            info.maybeThreadTs,
+            info.userId,
+            slackMessage,
+            maybeFile,
+            info.ts,
+            slackEventService.clientFor(profile),
+            None
+          ))
+        }).getOrElse {
+          Future.successful({})
+        }
+      } yield {}
+
+      // respond immediately
+      Ok(":+1:")
+    }
+  }
+
+  private def maybeMessageResult(implicit request: Request[AnyContent]): Option[Result] = {
+    maybeResultFor(messageSentRequestForm, messageEventResult) orElse
+      maybeResultFor(messageChangedRequestForm, messageEventResult)
+  }
+
+  private def maybeEventResult(implicit request: Request[AnyContent]): Option[Result] = {
+    if (isValidEventRequest) {
+      maybeMessageResult
+    } else {
+      None
     }
   }
 
   def event = Action { implicit request =>
-    challengeRequestForm.bindFromRequest.fold(
-      _ => {
-        messageSentEventRequestForm.bindFromRequest.fold(
-          _ => {
-            messageChangedEventRequestForm.bindFromRequest.fold(
-              _ => Ok("I don't know what to do with this request but I'm not concerned"),
-              info => messageEventResult(info)
-            )
-          },
-          info => messageEventResult(info)
-        )
-      },
-      info => challengeResult(info)
-    )
+    (maybeChallengeResult orElse maybeEventResult).getOrElse {
+      Ok("I don't know what to do with this request but I'm not concerned")
+    }
   }
 
   case class ActionSelectOptionInfo(text: Option[String], value: String)
@@ -281,7 +329,13 @@ class SlackController @Inject() (
   case class TeamInfo(id: String, domain: String)
   case class ChannelInfo(id: String, name: String)
   case class UserInfo(id: String, name: String)
-  case class OriginalMessageInfo(text: String, attachments: Seq[AttachmentInfo], response_type: Option[String], replace_original: Option[Boolean])
+  case class OriginalMessageInfo(
+                                  text: String,
+                                  attachments: Seq[AttachmentInfo],
+                                  response_type: Option[String],
+                                  replace_original: Option[Boolean],
+                                  thread_ts: Option[String]
+                                )
   case class AttachmentInfo(
                              fallback: Option[String] = None,
                              title: Option[String] = None,
@@ -329,6 +383,46 @@ class SlackController @Inject() (
       }
     }
 
+    def maybeInputChoice: Option[String] = {
+      val maybeSlackUserId = maybeUserIdForCallbackId(callback_id)
+      maybeSlackUserId.flatMap { slackUserId =>
+        if (user.id == slackUserId) {
+          val maybeAction = actions.headOption
+          val maybeValue = maybeAction.flatMap(_.value)
+          maybeValue.orElse {
+            for {
+              selectedOptions <- maybeAction.map(_.selected_options)
+              firstOption <- selectedOptions.map(_.headOption)
+              response <- firstOption.map(_.value)
+            } yield {
+              response
+            }
+          }
+        } else {
+          None
+        }
+      }
+    }
+
+    def maybeIncorrectUserIdTryingInputChoice: Option[String] = {
+      val maybeSlackUserId = maybeUserIdForCallbackId(callback_id)
+      maybeSlackUserId.flatMap { slackUserId =>
+        if (user.id != slackUserId) {
+          Some(slackUserId)
+        } else {
+          None
+        }
+      }
+    }
+
+    def isForInputChoiceForDoneConversation: Future[Boolean] = {
+      maybeConversationIdForCallbackId(callback_id).map { convoId =>
+        dataService.conversations.find(convoId).map { maybeConvo =>
+          maybeConvo.exists(_.isDone)
+        }
+      }.getOrElse(Future.successful(false))
+    }
+
     def maybeHelpIndexAt: Option[Int] = {
       actions.find { info => info.name == SHOW_HELP_INDEX }.map { _.value.map { value =>
         try {
@@ -361,6 +455,16 @@ class SlackController @Inject() (
           behaviorId <- firstOption.map(_.value)
         } yield {
           behaviorId
+        }
+      }
+    }
+
+    def maybeSelectedActionChoice: Option[ActionChoice] = {
+      val maybeAction = actions.find(_.name == ACTION_CHOICE)
+      maybeAction.flatMap(_.value).flatMap { value =>
+        Try(Json.parse(value)) match {
+          case Success(json) => json.asOpt[ActionChoice]
+          case Failure(_) => None
         }
       }
     }
@@ -417,10 +521,93 @@ class SlackController @Inject() (
 
   implicit val actionsTriggeredReads = Json.reads[ActionsTriggeredInfo]
 
+  private def sendEphemeralMessage(message: String, info: ActionsTriggeredInfo): Future[Unit] = {
+    for {
+      maybeProfile <- dataService.slackBotProfiles.allForSlackTeamId(info.team.id).map(_.headOption)
+      _ <- (for {
+        profile <- maybeProfile
+      } yield {
+        ws.
+          url("https://slack.com/api/chat.postEphemeral").
+          withHttpHeaders(HeaderNames.ACCEPT -> MimeTypes.JSON).
+          post(Map(
+            "token" -> Seq(profile.token),
+            "channel" -> Seq(info.channel.id),
+            "text" -> Seq(message),
+            "user" -> Seq(info.user.id)
+          ))
+      }).getOrElse {
+        Future.successful({})
+      }
+    } yield {}
+  }
+
+  private def updateActionsMessageFor(
+                                       info: ActionsTriggeredInfo,
+                                       maybeResultText: Option[String],
+                                       shouldRemoveActions: Boolean
+                                     ): Future[Unit] = {
+    val maybeOriginalColor = info.original_message.attachments.headOption.flatMap(_.color)
+    val newAttachment = AttachmentInfo(maybeResultText, None, None, Some(Seq("text")), Some(info.callback_id), color = maybeOriginalColor, footer = maybeResultText)
+    val originalAttachmentsToUse = if (shouldRemoveActions) {
+      info.original_message.attachments.map(ea => ea.copy(actions = None))
+    } else {
+      info.original_message.attachments
+    }
+    val updated = info.original_message.copy(attachments = originalAttachmentsToUse :+ newAttachment)
+    for {
+      maybeProfile <- dataService.slackBotProfiles.allForSlackTeamId(info.team.id).map(_.headOption)
+      _ <- (for {
+        profile <- maybeProfile
+      } yield {
+        ws.
+          url("https://slack.com/api/chat.update").
+          withHttpHeaders(HeaderNames.ACCEPT -> MimeTypes.JSON).
+          post(Map(
+            "token" -> Seq(profile.token),
+            "channel" -> Seq(info.channel.id),
+            "text" -> Seq(updated.text),
+            "attachments" -> Seq(Json.prettyPrint(Json.toJson(updated.attachments))),
+            "as_user" -> Seq("true"),
+            "ts" -> Seq(info.message_ts),
+            "user" -> Seq(info.user.id)
+          ))
+      }).getOrElse {
+        Future.successful({})
+      }
+    } yield {}
+  }
+
+  private def inputChoiceResultFor(value: String, info: ActionsTriggeredInfo)(implicit request: Request[AnyContent]): Future[Unit] = {
+    for {
+      maybeProfile <- dataService.slackBotProfiles.allForSlackTeamId(info.team.id).map(_.headOption)
+      maybeSlackMessage <- maybeProfile.map { profile =>
+        SlackMessage.fromFormattedText(value, profile, slackEventService).map(Some(_))
+      }.getOrElse(Future.successful(None))
+      _ <- (for {
+        profile <- maybeProfile
+        slackMessage <- maybeSlackMessage
+      } yield {
+        slackEventService.onEvent(SlackMessageEvent(
+          profile,
+          info.channel.id,
+          info.original_message.thread_ts,
+          info.user.id,
+          slackMessage,
+          None,
+          info.message_ts,
+          slackEventService.clientFor(profile),
+          None
+        ))
+      }).getOrElse {
+        Future.successful({})
+      }
+    } yield {}
+  }
+
   def action = Action { implicit request =>
     actionForm.bindFromRequest.fold(
       formWithErrors => {
-        println(formWithErrors.errorsAsJson)
         BadRequest(formWithErrors.errorsAsJson)
       },
       payload => {
@@ -429,14 +616,31 @@ class SlackController @Inject() (
         // we return the original message back.
         //
         // TODO: Investigate whether this is safe and/or desirable
-        val unescapedPayload = SlackMessageFormatter.unescapeSlackHTMLEntities(payload)
+        val unescapedPayload = SlackMessage.unescapeSlackHTMLEntities(payload)
 
         Json.parse(unescapedPayload).validate[ActionsTriggeredInfo] match {
           case JsSuccess(info, jsPath) => {
             if (info.isValid) {
-              var resultText: String = "OK, let’s continue."
+              var maybeResultText: Option[String] = None
               var shouldRemoveActions = false
-              val user = s"<@${info.user.id}>"
+              val slackUser = s"<@${info.user.id}>"
+
+              info.maybeInputChoice.foreach { response =>
+                info.isForInputChoiceForDoneConversation.flatMap { shouldStop =>
+                  if (shouldStop) {
+                    updateActionsMessageFor(info, Some(s"This conversation is no longer active"), shouldRemoveActions = true)
+                  } else {
+                    inputChoiceResultFor(response, info)
+                  }
+                }
+                maybeResultText = Some(s"$slackUser chose $response")
+                shouldRemoveActions = true
+              }
+
+              info.maybeIncorrectUserIdTryingInputChoice.foreach { correctUserId =>
+                val correctUser = s"<@${correctUserId}>"
+                sendEphemeralMessage(s"Only $correctUser can answer this", info)
+              }
 
               info.maybeHelpIndexAt.foreach { index =>
                 dataService.slackBotProfiles.sendResultWithNewEvent(
@@ -449,15 +653,14 @@ class SlackController @Inject() (
                     includeNonMatchingResults = false,
                     isFirstTrigger = false,
                     event,
-                    lambdaService,
-                    dataService
+                    services
                   ).result.map(Some(_)),
                   info.team.id,
                   info.channel.id,
                   info.user.id,
                   info.message_ts
                 )
-                resultText = s"$user clicked More help."
+                maybeResultText = Some(s"$slackUser clicked More help.")
               }
 
               info.maybeHelpForSkillIdWithMaybeSearch.foreach { searchValue =>
@@ -471,19 +674,18 @@ class SlackController @Inject() (
                     includeNonMatchingResults = false,
                     isFirstTrigger = false,
                     event,
-                    lambdaService,
-                    dataService
+                    services
                   ).result.map(Some(_)),
                   info.team.id,
                   info.channel.id,
                   info.user.id,
                   info.message_ts
                 )
-                resultText = info.findButtonLabelForNameAndValue(SHOW_BEHAVIOR_GROUP_HELP, searchValue.helpGroupId).map { text =>
-                  s"$user clicked $text."
+                maybeResultText = Some(info.findButtonLabelForNameAndValue(SHOW_BEHAVIOR_GROUP_HELP, searchValue.helpGroupId).map { text =>
+                  s"$slackUser clicked $text."
                 } getOrElse {
-                  s"$user clicked a button."
-                }
+                  s"$slackUser clicked a button."
+                })
               }
 
               info.maybeActionListForSkillId.foreach { searchValue =>
@@ -497,15 +699,14 @@ class SlackController @Inject() (
                     includeNonMatchingResults = true,
                     isFirstTrigger = false,
                     event,
-                    lambdaService,
-                    dataService
+                    services
                   ).result.map(Some(_)),
                   info.team.id,
                   info.channel.id,
                   info.user.id,
                   info.message_ts
                 )
-                resultText = s"$user clicked List all actions"
+                maybeResultText = Some(s"$slackUser clicked List all actions")
               }
 
               info.maybeConfirmContinueConversationId.foreach { conversationId =>
@@ -519,7 +720,7 @@ class SlackController @Inject() (
                   }.getOrElse(Future.successful({}))
                 }
                 shouldRemoveActions = true
-                resultText = s"$user clicked 'Yes'"
+                maybeResultText = Some(s"$slackUser clicked 'Yes'")
               }
 
               info.maybeDontContinueConversationId.foreach { conversationId =>
@@ -530,7 +731,7 @@ class SlackController @Inject() (
                         eventHandler.handle(event, None).flatMap { results =>
                           Future.sequence(
                             results.map(result => services.botResultService.sendIn(result, None).map { _ =>
-                              Logger.info(event.logTextFor(result))
+                              Logger.info(event.logTextFor(result, None))
                             })
                           )
                         }
@@ -539,7 +740,7 @@ class SlackController @Inject() (
                   }.getOrElse(Future.successful({}))
                 }
                 shouldRemoveActions = true
-                resultText = s"$user clicked 'No'"
+                maybeResultText = Some(s"$slackUser clicked 'No'")
               }
 
               info.maybeStopConversationId.foreach { conversationId =>
@@ -549,7 +750,7 @@ class SlackController @Inject() (
                   }.getOrElse(Future.successful({}))
                 }
                 shouldRemoveActions = true
-                resultText = s"$user stopped the conversation"
+                maybeResultText = Some(s"$slackUser stopped the conversation")
               }
 
               info.maybeRunBehaviorVersionId.foreach { behaviorVersionId =>
@@ -576,18 +777,94 @@ class SlackController @Inject() (
                   info.message_ts
                 )
 
-                resultText = info.findButtonLabelForNameAndValue(RUN_BEHAVIOR_VERSION, behaviorVersionId).map { text =>
-                  s"$user clicked $text"
+                maybeResultText = Some(info.findButtonLabelForNameAndValue(RUN_BEHAVIOR_VERSION, behaviorVersionId).map { text =>
+                  s"$slackUser clicked $text"
                 } orElse info.findOptionLabelForValue(behaviorVersionId).map { text =>
-                  s"$user ran ${text.mkString("“", "", "”")}"
+                  s"$slackUser ran ${text.mkString("“", "", "”")}"
                 } getOrElse {
-                  s"$user ran an action"
-                }
+                  s"$slackUser ran an action"
+                })
+              }
+
+              info.maybeSelectedActionChoice.foreach { actionChoice =>
+                dataService.slackBotProfiles.sendResultWithNewEvent(
+                  s"run action named ${actionChoice.actionName}",
+                  event => for {
+                    maybeGroupVersion <- actionChoice.groupVersionId.map { groupVersionId =>
+                      dataService.behaviorGroupVersions.findWithoutAccessCheck(groupVersionId)
+                    }.getOrElse(Future.successful(None))
+                    user <- event.ensureUser(dataService)
+                    maybeBehaviorVersion <- maybeGroupVersion.map { groupVersion =>
+                      dataService.behaviorGroupVersions.isActive(groupVersion, Conversation.SLACK_CONTEXT, info.channel.id).flatMap { isActive =>
+                        if (isActive && actionChoice.canBeTriggeredBy(user)) {
+                          dataService.behaviorVersions.findByName(actionChoice.actionName, groupVersion)
+                        } else {
+                          Future.successful(None)
+                        }
+                      }
+                    }.getOrElse(Future.successful(None))
+                    params <- maybeBehaviorVersion.map { behaviorVersion =>
+                      dataService.behaviorParameters.allFor(behaviorVersion)
+                    }.getOrElse(Future.successful(Seq()))
+                    invocationParams <- Future.successful(actionChoice.argumentsMap.flatMap { case(name, value) =>
+                      params.find(_.name == name).map { param =>
+                        (AWSLambdaConstants.invocationParamFor(param.rank - 1), value)
+                      }
+                    })
+                    maybeResponse <- maybeBehaviorVersion.map { behaviorVersion =>
+                      dataService.behaviorResponses.buildFor(
+                        event,
+                        behaviorVersion,
+                        invocationParams,
+                        None,
+                        None
+                      ).map(Some(_))
+                    }.getOrElse(Future.successful(None))
+                    maybeResult <- maybeResponse.map { response =>
+                      response.result.map(Some(_))
+                    }.getOrElse(Future.successful(None))
+                  } yield maybeResult,
+                  info.team.id,
+                  info.channel.id,
+                  info.user.id,
+                  info.message_ts
+                )
+
+                dataService.runNow(for {
+                  maybeGroupVersion <- actionChoice.groupVersionId.map { groupVersionId =>
+                    dataService.behaviorGroupVersions.findWithoutAccessCheck(groupVersionId)
+                  }.getOrElse(Future.successful(None))
+                  isActive <- maybeGroupVersion.map { groupVersion =>
+                    dataService.behaviorGroupVersions.isActive(groupVersion, Conversation.SLACK_CONTEXT, info.channel.id)
+                  }.getOrElse(Future.successful(false))
+                  maybeUser <- maybeGroupVersion.map { groupVersion =>
+                    dataService.users.ensureUserFor(LoginInfo(Conversation.SLACK_CONTEXT, info.user.id), groupVersion.team.id).map(Some(_))
+                  }.getOrElse(Future.successful(None))
+                  maybeChoiceSlackUserId <- actionChoice.userId.map { userId =>
+                    dataService.users.find(userId).flatMap { maybeUser =>
+                      maybeUser.map { user =>
+                        dataService.linkedAccounts.maybeSlackUserIdFor(user)
+                      }.getOrElse(Future.successful(None))
+                    }
+                  }.getOrElse(Future.successful(None))
+                } yield {
+                  if (!isActive) {
+                    shouldRemoveActions = true
+                    maybeResultText = Some("This skill has been updated, making these associated actions no longer valid")
+                  } else if (!maybeUser.exists(u => actionChoice.canBeTriggeredBy(u))) {
+                    maybeResultText = Some(maybeChoiceSlackUserId.map { choiceSlackUserId =>
+                      s"Only <@${choiceSlackUserId}> can make this choice"
+                    }.getOrElse("You are not allowed to make this choice"))
+                  } else {
+                    shouldRemoveActions = true
+                    maybeResultText = Some(s"$slackUser clicked ${actionChoice.label}")
+                  }
+                })
               }
 
               // respond immediately by appending a new attachment
               val maybeOriginalColor = info.original_message.attachments.headOption.flatMap(_.color)
-              val newAttachment = AttachmentInfo(Some(resultText), None, None, Some(Seq("text")), Some(info.callback_id), color = maybeOriginalColor, footer = Some(resultText))
+              val newAttachment = AttachmentInfo(maybeResultText, None, None, Some(Seq("text")), Some(info.callback_id), color = maybeOriginalColor, footer = maybeResultText)
               val originalAttachmentsToUse = if (shouldRemoveActions) {
                 info.original_message.attachments.map(ea => ea.copy(actions = None))
               } else {

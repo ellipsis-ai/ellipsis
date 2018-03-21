@@ -1,8 +1,7 @@
 @(
-  exception: play.api.UsefulException
+  exception: play.api.UsefulException,
+  assets: RemoteAssets
 )(implicit messages: Messages, r: RequestHeader)
-
-@shared.requireJsConfig()
 
 console.log("@{exception.title}: @{exception.description}");
 console.log("Stack trace:", @{JavaScript(exception.cause.getStackTrace.mkString("[\"", "\",\"", "\"]"))});

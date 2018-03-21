@@ -11,16 +11,15 @@ import models.accounts.user.User
 import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
 import models.team.Team
 import services.DataService
+import services.caching.CacheService
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 
 case class RawBehaviorGroup(
                              id: String,
                              maybeExportId: Option[String],
                              teamId: String,
-                             maybeCurrentVersionId: Option[String],
                              createdAt: OffsetDateTime
                            )
 
@@ -29,22 +28,24 @@ class BehaviorGroupsTable(tag: Tag) extends Table[RawBehaviorGroup](tag, "behavi
   def id = column[String]("id", O.PrimaryKey)
   def maybeExportId = column[Option[String]]("export_id")
   def teamId = column[String]("team_id")
-  def maybeCurrentVersionId = column[Option[String]]("current_version_id")
   def createdAt = column[OffsetDateTime]("created_at")
 
-  def * = (id, maybeExportId, teamId, maybeCurrentVersionId, createdAt) <> ((RawBehaviorGroup.apply _).tupled, RawBehaviorGroup.unapply _)
+  def * = (id, maybeExportId, teamId, createdAt) <> ((RawBehaviorGroup.apply _).tupled, RawBehaviorGroup.unapply _)
 }
 
 class BehaviorGroupServiceImpl @Inject() (
-                                          dataServiceProvider: Provider[DataService]
+                                          dataServiceProvider: Provider[DataService],
+                                          cacheServiceProvider: Provider[CacheService],
+                                          implicit val ec: ExecutionContext
                                         ) extends BehaviorGroupService {
 
   def dataService = dataServiceProvider.get
+  def cacheService = cacheServiceProvider.get
 
   import BehaviorGroupQueries._
 
   def createFor(maybeExportId: Option[String], team: Team): Future[BehaviorGroup] = {
-    val raw = RawBehaviorGroup(IDs.next, maybeExportId.orElse(Some(IDs.next)), team.id, None, OffsetDateTime.now)
+    val raw = RawBehaviorGroup(IDs.next, maybeExportId.orElse(Some(IDs.next)), team.id, OffsetDateTime.now)
     val action = (all += raw).map(_ => tuple2Group((raw, team)))
     dataService.run(action)
   }
@@ -126,13 +127,15 @@ class BehaviorGroupServiceImpl @Inject() (
 
     for {
       groupsData <- Future.sequence(groupVersions.map { ea =>
-        BehaviorGroupData.buildFor(ea, user, dataService)
+        BehaviorGroupData.buildFor(ea, user, None, dataService, cacheService)
       })
+      userData <- dataService.users.userDataFor(user, team)
       mergedData <- Future.successful({
         val actionInputs = groupsData.flatMap(_.actionInputs)
         val dataTypeInputs = groupsData.flatMap(_.dataTypeInputs)
         val behaviorVersions = groupsData.flatMap(_.behaviorVersions)
         val libraryVersions = groupsData.flatMap(_.libraryVersions)
+        val requiredAWSConfigs = groupsData.flatMap(_.requiredAWSConfigs)
         val requiredOAuth2ApiConfigs = groupsData.flatMap(_.requiredOAuth2ApiConfigs)
         val requiredSimpleTokenApis = groupsData.flatMap(_.requiredSimpleTokenApis)
         BehaviorGroupData(
@@ -145,11 +148,16 @@ class BehaviorGroupServiceImpl @Inject() (
           dataTypeInputs,
           behaviorVersions,
           libraryVersions,
+          requiredAWSConfigs,
           requiredOAuth2ApiConfigs,
           requiredSimpleTokenApis,
           githubUrl = None,
-          exportId = None, // Don't think it makes sense to have an exportId for something merged
-          None
+          gitSHA = None,
+          exportId = None,
+          createdAt = None,
+          Some(userData),
+          deployment = None,
+          metaData = None
         )
       })
       _ <- Future.sequence(groupVersions.map { ea =>
@@ -174,9 +182,7 @@ class BehaviorGroupServiceImpl @Inject() (
   }
 
   def maybeCurrentVersionFor(group: BehaviorGroup): Future[Option[BehaviorGroupVersion]] = {
-    group.maybeCurrentVersionId.map { versionId =>
-      dataService.behaviorGroupVersions.findWithoutAccessCheck(versionId)
-    }.getOrElse(Future.successful(None))
+    dataService.behaviorGroupVersions.maybeCurrentFor(group)
   }
 
 }

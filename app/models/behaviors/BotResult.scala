@@ -5,6 +5,7 @@ import json.Formatting._
 import models.IDs
 import models.accounts.logintoken.LoginToken
 import models.accounts.oauth2application.OAuth2Application
+import models.accounts.user.User
 import models.behaviors.behaviorversion.BehaviorVersion
 import models.behaviors.config.requiredoauth2apiconfig.RequiredOAuth2ApiConfig
 import models.behaviors.conversations.conversation.Conversation
@@ -13,17 +14,42 @@ import models.behaviors.templates.TemplateApplier
 import play.api.Configuration
 import play.api.libs.json._
 import services.AWSLambdaConstants._
-import services.{AWSLambdaLogResult, CacheService, DataService}
+import services.caching.CacheService
+import services.{AWSLambdaLogResult, DataService}
 import slick.dbio.DBIO
 import utils.UploadFileSpec
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration._
 
 object ResultType extends Enumeration {
   type ResultType = Value
-  val Success, SimpleText, TextWithActions, ConversationPrompt, NoResponse, UnhandledError, HandledError, SyntaxError, NoCallbackTriggered, MissingTeamEnvVar, AWSDown, OAuth2TokenMissing, RequiredApiNotReady = Value
+  val Success, SimpleText, TextWithActions, ConversationPrompt, NoResponse, ExecutionError, SyntaxError, NoCallbackTriggered, MissingTeamEnvVar, AWSDown, OAuth2TokenMissing, RequiredApiNotReady = Value
+}
+
+trait WithActionArgs {
+  val args: Option[Seq[ActionArg]]
+  val argumentsMap: Map[String, String] = {
+    args.getOrElse(Seq()).map { ea =>
+      (ea.name, ea.value)
+    }.toMap
+  }
+}
+
+case class ActionArg(name: String, value: String)
+
+case class NextAction(actionName: String, args: Option[Seq[ActionArg]]) extends WithActionArgs
+
+case class ActionChoice(
+                         label: String,
+                         actionName: String,
+                         args: Option[Seq[ActionArg]],
+                         userId: Option[String],
+                         groupVersionId: Option[String]
+                       ) extends WithActionArgs {
+
+  def canBeTriggeredBy(user: User): Boolean = userId.isEmpty || userId.contains(user.id)
+
 }
 
 sealed trait BotResult {
@@ -32,10 +58,37 @@ sealed trait BotResult {
   val event: Event
   val maybeConversation: Option[Conversation]
   def files: Seq[UploadFileSpec] = Seq()
+  val maybeBehaviorVersion: Option[BehaviorVersion]
+  def maybeNextAction: Option[NextAction] = None
+  def maybeChoicesAction(dataService: DataService)(implicit ec: ExecutionContext): DBIO[Option[Seq[ActionChoice]]] = DBIO.successful(None)
   val shouldInterrupt: Boolean = true
   def text: String
   def fullText: String = text
   def hasText: Boolean = fullText.trim.nonEmpty
+  val isForUndeployed: Boolean
+  val hasUndeployedVersionForAuthor: Boolean
+
+  def filesAsLogText: String = {
+    if (files.nonEmpty) {
+      files.map { fileSpec =>
+        val filename = fileSpec.filename.getOrElse("File")
+        val filetype = fileSpec.filetype.getOrElse("unknown type")
+        val content = fileSpec.content.map { content =>
+          val lines = content.split("\n")
+          if (lines.length > 10) {
+            lines.slice(0, 10).mkString("", "\n", "\n...(truncated)")
+          } else {
+            lines.mkString("\n")
+          }
+        }.getOrElse("(empty)")
+        s"""$filename ($filetype):
+           |$content
+           """.stripMargin
+      }.mkString("======\nFiles:\n======\n", "\n======\n", "\n======\n")
+    } else {
+      ""
+    }
+  }
 
   def maybeChannelForSendAction(maybeConversation: Option[Conversation], dataService: DataService)(implicit actorSystem: ActorSystem): DBIO[Option[String]] = {
     event.maybeChannelForSendAction(forcePrivateResponse, maybeConversation, dataService)
@@ -45,7 +98,7 @@ sealed trait BotResult {
     dataService.run(maybeChannelForSendAction(maybeConversation, dataService))
   }
 
-  def maybeOngoingConversation(dataService: DataService)(implicit actorSystem: ActorSystem): Future[Option[Conversation]] = {
+  def maybeOngoingConversation(dataService: DataService)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[Conversation]] = {
     maybeChannelForSend(None, dataService).flatMap { maybeChannel =>
       dataService.conversations.findOngoingFor(event.userIdForContext, event.context, maybeChannel, event.maybeThreadId)
     }
@@ -56,7 +109,7 @@ sealed trait BotResult {
     s"You haven't answered my question yet, but I have something new to $action you."
   }
 
-  def interruptOngoingConversationsForAction(dataService: DataService)(implicit actorSystem: ActorSystem): DBIO[Boolean] = {
+  def interruptOngoingConversationsForAction(dataService: DataService)(implicit actorSystem: ActorSystem, ec: ExecutionContext): DBIO[Boolean] = {
     if (maybeConversation.exists(_.maybeThreadId.isDefined)) {
       DBIO.successful(false)
     } else {
@@ -75,15 +128,36 @@ sealed trait BotResult {
 
   val shouldSend: Boolean = true
 
-  def maybeActions: Option[MessageActions] = None
+  def attachmentGroups: Seq[MessageAttachmentGroup] = Seq()
 }
 
 trait BotResultWithLogResult extends BotResult {
+  val payloadJson: JsValue
   val maybeLogResult: Option[AWSLambdaLogResult]
-  val logStatements = maybeLogResult.map(_.userDefinedLogStatements).getOrElse("")
 
-  override def fullText: String = logStatements ++ text
+  private val maybeAuthorLogTextFromJson: Option[String] = {
+    val logged = (payloadJson \ "logs").validate[Seq[ExecutionLogData]] match {
+      case JsSuccess(logs, _) => logs.map(_.toString).mkString("\n")
+      case JsError(_) => ""
+    }
+    Option(logged).filter(_.nonEmpty)
+  }
 
+  val maybeAuthorLog: Option[String] = {
+    maybeAuthorLogTextFromJson orElse {
+      maybeLogResult.map(_.authorDefinedLogStatements).filter(_.nonEmpty)
+    }
+  }
+
+  val maybeAuthorLogFile: Option[UploadFileSpec] = {
+    maybeAuthorLog.map { log =>
+      UploadFileSpec(Some(log), Some("text"), Some("Developer log"))
+    }
+  }
+
+  override def files: Seq[UploadFileSpec] = {
+    super.files ++ Seq(maybeAuthorLogFile).flatten
+  }
 }
 
 case class InvalidFilesException(message: String) extends Exception {
@@ -108,23 +182,46 @@ case class InvalidFilesException(message: String) extends Exception {
 
 case class SuccessResult(
                           event: Event,
+                          behaviorVersion: BehaviorVersion,
                           maybeConversation: Option[Conversation],
                           result: JsValue,
-                          resultWithOptions: JsValue,
+                          payloadJson: JsValue,
                           parametersWithValues: Seq[ParameterWithValue],
                           maybeResponseTemplate: Option[String],
                           maybeLogResult: Option[AWSLambdaLogResult],
-                          forcePrivateResponse: Boolean
+                          forcePrivateResponse: Boolean,
+                          isForUndeployed: Boolean,
+                          hasUndeployedVersionForAuthor: Boolean
                           ) extends BotResultWithLogResult {
 
   val resultType = ResultType.Success
 
+  val maybeBehaviorVersion: Option[BehaviorVersion] = Some(behaviorVersion)
+
   override def files: Seq[UploadFileSpec] = {
-    (resultWithOptions \ "files").validateOpt[Seq[UploadFileSpec]] match {
+    val authoredFiles = (payloadJson \ "files").validateOpt[Seq[UploadFileSpec]] match {
       case JsSuccess(maybeFiles, _) => maybeFiles.getOrElse(Seq())
       case JsError(errs) => throw InvalidFilesException(errs.map { case (_, validationErrors) =>
         validationErrors.map(_.message).mkString(", ")
       }.mkString(", "))
+    }
+    authoredFiles ++ super.files
+  }
+
+  override def maybeNextAction: Option[NextAction] = {
+    (payloadJson \ "next").asOpt[NextAction]
+  }
+
+  override def maybeChoicesAction(dataService: DataService)(implicit ec: ExecutionContext): DBIO[Option[Seq[ActionChoice]]] = {
+    event.ensureUserAction(dataService).map { user =>
+      (payloadJson \ "choices").asOpt[Seq[ActionChoice]].map { choices =>
+        choices.map { ea =>
+          ea.copy(
+            userId = Some(user.id),
+            groupVersionId = Some(behaviorVersion.groupVersion.id)
+          )
+        }
+      }
     }
   }
 
@@ -136,27 +233,50 @@ case class SuccessResult(
 
 case class SimpleTextResult(event: Event, maybeConversation: Option[Conversation], simpleText: String, forcePrivateResponse: Boolean) extends BotResult {
 
+  val isForUndeployed: Boolean = false
+  val hasUndeployedVersionForAuthor: Boolean = false
+
   val resultType = ResultType.SimpleText
 
+  val maybeBehaviorVersion: Option[BehaviorVersion] = None
+
   def text: String = simpleText
 
 }
 
-case class TextWithActionsResult(event: Event, maybeConversation: Option[Conversation], simpleText: String, forcePrivateResponse: Boolean, actions: MessageActions) extends BotResult {
+case class TextWithAttachmentsResult(
+                                      event: Event,
+                                      maybeConversation: Option[Conversation],
+                                      simpleText: String,
+                                      forcePrivateResponse: Boolean,
+                                      override val attachmentGroups: Seq[MessageAttachmentGroup]
+                                    ) extends BotResult {
   val resultType = ResultType.TextWithActions
 
-  def text: String = simpleText
+  val maybeBehaviorVersion: Option[BehaviorVersion] = None
 
-  override def maybeActions: Option[MessageActions] = {
-    Some(actions)
-  }
+  val isForUndeployed: Boolean = false
+  val hasUndeployedVersionForAuthor: Boolean = false
+
+  def text: String = simpleText
 }
 
-case class NoResponseResult(event: Event, maybeConversation: Option[Conversation], maybeLogResult: Option[AWSLambdaLogResult]) extends BotResultWithLogResult {
+case class NoResponseResult(
+                             event: Event,
+                             behaviorVersion: BehaviorVersion,
+                             maybeConversation: Option[Conversation],
+                             payloadJson: JsValue,
+                             maybeLogResult: Option[AWSLambdaLogResult]
+                           ) extends BotResultWithLogResult {
+
+  val isForUndeployed: Boolean = false
+  val hasUndeployedVersionForAuthor: Boolean = false
 
   val resultType = ResultType.NoResponse
   val forcePrivateResponse = false // N/A
   override val shouldInterrupt = false
+
+  val maybeBehaviorVersion: Option[BehaviorVersion] = Some(behaviorVersion)
 
   def text: String = ""
 
@@ -166,6 +286,7 @@ case class NoResponseResult(event: Event, maybeConversation: Option[Conversation
 trait WithBehaviorLink {
 
   val behaviorVersion: BehaviorVersion
+  val maybeBehaviorVersion: Option[BehaviorVersion] = Some(behaviorVersion)
   val dataService: DataService
   val configuration: Configuration
   val forcePrivateResponse = behaviorVersion.forcePrivateResponse
@@ -177,36 +298,42 @@ trait WithBehaviorLink {
   }
 }
 
-case class UnhandledErrorResult(
+case class ExecutionErrorResult(
                                  event: Event,
                                  maybeConversation: Option[Conversation],
                                  behaviorVersion: BehaviorVersion,
                                  dataService: DataService,
                                  configuration: Configuration,
-                                 maybeLogResult: Option[AWSLambdaLogResult]
+                                 payloadJson: JsValue,
+                                 maybeLogResult: Option[AWSLambdaLogResult],
+                                 isForUndeployed: Boolean,
+                                 hasUndeployedVersionForAuthor: Boolean
                                ) extends BotResultWithLogResult with WithBehaviorLink {
 
-  val resultType = ResultType.UnhandledError
-  val functionLines = behaviorVersion.functionBody.split("\n").length
+  val resultType = ResultType.ExecutionError
+  val howToIncludeStackTraceMessage = "\n\nTo include a stack trace, throw an `Error` object in your code. For example:\n  throw new Error(\"Something went wrong.\")"
 
-  def text: String = {
-    val prompt = s"\nI encountered an error in ${linkToBehaviorFor("one of your skills")} before calling `$SUCCESS_CALLBACK `or `$ERROR_CALLBACK`"
-    Array(Some(prompt), maybeLogResult.flatMap(_.maybeTranslated(functionLines))).flatten.mkString(":\n\n")
+  private val maybeError: Option[ExecutionErrorData] = {
+    (payloadJson \ "error").validate[ExecutionErrorData] match {
+      case JsSuccess(errorValue, _) => Some(errorValue)
+      case JsError(_) => None
+    }
   }
 
-}
+  private val maybeUserErrorMessage: Option[String] = {
+    maybeError.flatMap(_.userMessage)
+  }
 
-case class HandledErrorResult(
-                               event: Event,
-                               maybeConversation: Option[Conversation],
-                               behaviorVersion: BehaviorVersion,
-                               dataService: DataService,
-                               configuration: Configuration,
-                               json: JsValue,
-                               maybeLogResult: Option[AWSLambdaLogResult]
-                             ) extends BotResultWithLogResult with WithBehaviorLink {
+  def text: String = {
+    s"I encountered an error in ${linkToBehaviorFor("one of your skills")}${
+      maybeUserErrorMessage.map(userError => s":\n\n$userError").getOrElse(".")
+    }"
+  }
 
-  val resultType = ResultType.HandledError
+  private def logContainsStackTrace(log: String): Boolean = {
+    val lines = log.lines.toList
+    lines.length > 1 && lines.tail.exists(_.matches("""^\s*at .+?\(.+?:\d+:\d+\)"""))
+  }
 
   private def dropEnclosingDoubleQuotes(text: String): String = """^"|"$""".r.replaceAllIn(text, "")
 
@@ -214,11 +341,37 @@ case class HandledErrorResult(
     dropEnclosingDoubleQuotes(result.as[String])
   }
 
-  def text: String = {
-    val detail = (json \ "errorMessage").toOption.map(processedResultFor).map { msg =>
-      s":\n\n```\n$msg\n```"
-    }.getOrElse("")
-    s"I encountered an error in ${linkToBehaviorFor("one of your skills")}$detail"
+  private val maybeCallbackErrorMessage: Option[String] = {
+    (payloadJson \ "errorMessage").toOption.map(processedResultFor).filterNot {
+      _.matches("""RequestId: \S+ Process exited before completing request""")
+    }
+  }
+
+  private val maybeThrownLogMessage: Option[String] = {
+    maybeLogResult.flatMap(_.maybeTranslated)
+  }
+
+  private def maybeErrorLog: Option[String] = {
+    maybeError.map { error =>
+      val translatedStack = error.translateStack
+      if (translatedStack.nonEmpty) {
+        translatedStack
+      } else {
+        error.message + howToIncludeStackTraceMessage
+      }
+    } orElse {
+      val result = Seq(maybeCallbackErrorMessage, maybeThrownLogMessage).flatten.mkString("\n")
+      Option(result).filter(_.nonEmpty)
+    }
+  }
+
+  override def files: Seq[UploadFileSpec] = {
+    val log = maybeAuthorLog.map(_ + "\n").getOrElse("") + maybeErrorLog.getOrElse("")
+    if (log.nonEmpty) {
+      Seq(UploadFileSpec(Some(log), Some("text"), Some("Developer log")))
+    } else {
+      Seq()
+    }
   }
 }
 
@@ -228,8 +381,10 @@ case class SyntaxErrorResult(
                               behaviorVersion: BehaviorVersion,
                               dataService: DataService,
                               configuration: Configuration,
-                              json: JsValue,
-                              maybeLogResult: Option[AWSLambdaLogResult]
+                              payloadJson: JsValue,
+                              maybeLogResult: Option[AWSLambdaLogResult],
+                              isForUndeployed: Boolean,
+                              hasUndeployedVersionForAuthor: Boolean
                             ) extends BotResultWithLogResult with WithBehaviorLink {
 
   val resultType = ResultType.SyntaxError
@@ -238,7 +393,9 @@ case class SyntaxErrorResult(
     s"""
        |There's a syntax error in your skill:
        |
-       |${(json \ "errorMessage").asOpt[String].getOrElse("")}
+       |````
+       |${(payloadJson \ "errorMessage").asOpt[String].getOrElse("")}
+       |````
        |
        |${linkToBehaviorFor("Take a look in the skill editor")} for more details.
      """.stripMargin
@@ -250,7 +407,9 @@ case class NoCallbackTriggeredResult(
                                       maybeConversation: Option[Conversation],
                                       behaviorVersion: BehaviorVersion,
                                       dataService: DataService,
-                                      configuration: Configuration
+                                      configuration: Configuration,
+                                      isForUndeployed: Boolean,
+                                      hasUndeployedVersionForAuthor: Boolean
                                     ) extends BotResult with WithBehaviorLink {
 
   val resultType = ResultType.NoCallbackTriggered
@@ -266,8 +425,19 @@ case class MissingTeamEnvVarsResult(
                                  behaviorVersion: BehaviorVersion,
                                  dataService: DataService,
                                  configuration: Configuration,
-                                 missingEnvVars: Seq[String]
+                                 missingEnvVars: Set[String],
+                                 botPrefix: String,
+                                 isForUndeployed: Boolean,
+                                 hasUndeployedVersionForAuthor: Boolean
                                ) extends BotResult with WithBehaviorLink {
+
+
+  val linkToEnvVarConfig: String = {
+    val baseUrl = configuration.get[String]("application.apiBaseUrl")
+    val path = controllers.web.settings.routes.EnvironmentVariablesController.list(Some(event.teamId), Some(missingEnvVars.mkString(",")))
+    val url = s"$baseUrl$path"
+    s"[Configure environment variables](${url})"
+  }
 
   val resultType = ResultType.MissingTeamEnvVar
 
@@ -276,18 +446,21 @@ case class MissingTeamEnvVarsResult(
        |To use ${linkToBehaviorFor("this skill")}, you need the following environment variables defined:
        |${missingEnvVars.map( ea => s"\n- $ea").mkString("")}
        |
-       |You can define an environment variable by typing something like:
-       |
-       |`${event.botPrefix}set env ENV_VAR_NAME value`
+       |$linkToEnvVarConfig
     """.stripMargin
   }
 
 }
 
-case class AWSDownResult(event: Event, maybeConversation: Option[Conversation]) extends BotResult {
+case class AWSDownResult(event: Event, behaviorVersion: BehaviorVersion, maybeConversation: Option[Conversation]) extends BotResult {
 
   val resultType = ResultType.AWSDown
   val forcePrivateResponse = false
+
+  val isForUndeployed: Boolean = false
+  val hasUndeployedVersionForAuthor: Boolean = false
+
+  val maybeBehaviorVersion: Option[BehaviorVersion] = Some(behaviorVersion)
 
   def text: String = {
     """
@@ -302,20 +475,25 @@ case class AWSDownResult(event: Event, maybeConversation: Option[Conversation]) 
 case class OAuth2TokenMissing(
                                oAuth2Application: OAuth2Application,
                                event: Event,
+                               behaviorVersion: BehaviorVersion,
                                maybeConversation: Option[Conversation],
                                loginToken: LoginToken,
                                cacheService: CacheService,
-                               configuration: Configuration
+                               configuration: Configuration,
+                               isForUndeployed: Boolean,
+                               hasUndeployedVersionForAuthor: Boolean
                                ) extends BotResult {
 
   val key = IDs.next
 
   val resultType = ResultType.OAuth2TokenMissing
 
+  val maybeBehaviorVersion: Option[BehaviorVersion] = Some(behaviorVersion)
+
   val forcePrivateResponse = true
 
   def authLink: String = {
-    val baseUrl = configuration.getString("application.apiBaseUrl").get
+    val baseUrl = configuration.get[String]("application.apiBaseUrl")
     val redirectPath = controllers.routes.APIAccessController.linkCustomOAuth2Service(oAuth2Application.id, None, None, Some(key), None)
     val redirect = s"$baseUrl$redirectPath"
     val authPath = controllers.routes.SocialAuthController.loginWithToken(loginToken.value, Some(redirect))
@@ -335,13 +513,18 @@ case class OAuth2TokenMissing(
 case class RequiredApiNotReady(
                                 required: RequiredOAuth2ApiConfig,
                                 event: Event,
+                                behaviorVersion: BehaviorVersion,
                                 maybeConversation: Option[Conversation],
                                 dataService: DataService,
-                                configuration: Configuration
+                                configuration: Configuration,
+                                isForUndeployed: Boolean,
+                                hasUndeployedVersionForAuthor: Boolean
                              ) extends BotResult {
 
   val resultType = ResultType.RequiredApiNotReady
   val forcePrivateResponse = true
+
+  val maybeBehaviorVersion: Option[BehaviorVersion] = Some(behaviorVersion)
 
   def configLink: String = dataService.behaviors.editLinkFor(required.groupVersion.group.id, None, configuration)
   def configText: String = {

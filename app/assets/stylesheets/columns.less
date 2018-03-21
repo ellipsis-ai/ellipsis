@@ -237,6 +237,10 @@
   box-sizing: border-box;
 }
 
+.flex-columns-wrap {
+  flex-wrap: wrap;
+}
+
 .flex-columns-left {
   justify-content: flex-start;
 }
@@ -247,6 +251,10 @@
 
 .flex-column-left {
   order: 1;
+}
+
+.flex-column-shrink {
+  flex-grow: 0;
 }
 
 .flex-column-main {
@@ -263,6 +271,10 @@
 @media (max-width: @mobile-max-width) {
   .mobile-flex-no-columns {
     flex-flow: column;
+  }
+
+  .mobile-flex-no-expand {
+    display: block !important;
   }
 
   .flex-column-main {

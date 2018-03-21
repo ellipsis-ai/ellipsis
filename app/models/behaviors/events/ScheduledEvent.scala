@@ -1,21 +1,27 @@
 package models.behaviors.events
 
 import akka.actor.ActorSystem
+import models.behaviors.ActionChoice
 import models.behaviors.behavior.Behavior
 import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.scheduling.Scheduled
 import models.team.Team
+import play.api.Configuration
 import play.api.libs.json.JsObject
-import play.api.libs.ws.WSClient
+import services.caching.CacheService
 import services.{DataService, DefaultServices}
 import utils.UploadFileSpec
 
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 case class ScheduledEvent(underlying: Event, scheduled: Scheduled) extends Event {
 
-  def eventualMaybeDMChannel(implicit actorSystem: ActorSystem): Future[Option[String]] = {
-    underlying.eventualMaybeDMChannel
+  val eventType: EventType = EventType.scheduled
+  val maybeOriginalEventType: Option[EventType] = None
+  def withOriginalEventType(originalEventType: EventType): Event = this
+
+  def eventualMaybeDMChannel(cacheService: CacheService)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[String]] = {
+    underlying.eventualMaybeDMChannel(cacheService)
   }
 
   def sendMessage(
@@ -23,14 +29,19 @@ case class ScheduledEvent(underlying: Event, scheduled: Scheduled) extends Event
                    forcePrivate: Boolean,
                    maybeShouldUnfurl: Option[Boolean],
                    maybeConversation: Option[Conversation],
-                   maybeActions: Option[MessageActions],
-                   files: Seq[UploadFileSpec]
-                 )(implicit actorSystem: ActorSystem) = {
-    underlying.sendMessage(text, forcePrivate, maybeShouldUnfurl, maybeConversation, maybeActions, files)
+                   attachmentGroups: Seq[MessageAttachmentGroup],
+                   files: Seq[UploadFileSpec],
+                   choices: Seq[ActionChoice],
+                   isForUndeployed: Boolean,
+                   hasUndeployedVersionForAuthor: Boolean,
+                   services: DefaultServices,
+                   configuration: Configuration
+                 )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[String]] = {
+    underlying.sendMessage(text, forcePrivate, maybeShouldUnfurl, maybeConversation, attachmentGroups, files, choices, isForUndeployed, hasUndeployedVersionForAuthor, services, configuration)
   }
 
-  override def detailsFor(ws: WSClient)(implicit actorSystem: ActorSystem): Future[JsObject] = {
-    underlying.detailsFor(ws)
+  override def detailsFor(services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[JsObject] = {
+    underlying.detailsFor(services)
   }
 
   lazy val maybeChannel: Option[String] = underlying.maybeChannel
@@ -50,7 +61,7 @@ case class ScheduledEvent(underlying: Event, scheduled: Scheduled) extends Event
                                maybeTeam: Option[Team],
                                maybeLimitToBehavior: Option[Behavior],
                                services: DefaultServices
-                             ) = underlying.allBehaviorResponsesFor(maybeTeam, maybeLimitToBehavior, services)
+                             )(implicit ec: ExecutionContext) = underlying.allBehaviorResponsesFor(maybeTeam, maybeLimitToBehavior, services)
 
   def allOngoingConversations(dataService: DataService) = underlying.allOngoingConversations(dataService)
 

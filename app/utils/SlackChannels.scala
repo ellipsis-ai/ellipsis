@@ -1,12 +1,54 @@
 package utils
 
 import akka.actor.ActorSystem
+import services.caching.{CacheService, SlackChannelDataCacheKey, SlackGroupDataCacheKey}
 import slack.api.{ApiError, SlackApiClient}
 import slack.models.{Channel, Group, Im}
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 import scala.util.matching.Regex
+
+sealed trait SlackChannelException {
+  val underlying: Throwable
+  val slackTeamId: String
+}
+
+case class ChannelInfoException(
+                                 channel: String,
+                                 slackTeamId: String,
+                                 underlying: Throwable
+                               ) extends Exception(
+  s"Error fetching info for Slack channel $channel on team $slackTeamId because $underlying",
+  underlying) with SlackChannelException
+
+case class GroupInfoException(
+                               group: String,
+                               slackTeamId: String,
+                               underlying: Throwable
+                             ) extends Exception(
+  s"Error fetching info for Slack group $group on team $slackTeamId because $underlying",
+  underlying) with SlackChannelException
+
+case class ListChannelsException(
+                                  slackTeamId: String,
+                                  underlying: Throwable
+                                ) extends Exception(
+  s"Error fetching list of Slack channels on team $slackTeamId because $underlying",
+  underlying) with SlackChannelException
+
+case class ListGroupsException(
+                                slackTeamId: String,
+                                underlying: Throwable
+                              ) extends Exception(
+  s"Error fetching list of Slack groups on team $slackTeamId because $underlying",
+  underlying) with SlackChannelException
+
+case class DMInfoException(
+                            slackTeamId: String,
+                            underlying: Throwable
+                          ) extends Exception(
+  s"Error fetching list of Slack DM channels on team $slackTeamId because $underlying",
+  underlying) with SlackChannelException
 
 trait ChannelLike {
   val members: Seq[String]
@@ -51,39 +93,41 @@ case class SlackDM(im: Im) extends ChannelLike {
   val isArchived: Boolean = im.is_user_deleted.getOrElse(false)
 }
 
-case class SlackChannels(client: SlackApiClient) {
+case class SlackChannels(client: SlackApiClient, cacheService: CacheService, slackTeamId: String) {
 
-  private def swallowingChannelNotFound[T](fn: () => Future[T]): Future[Option[T]] = {
-    fn().map(Some(_)).recover {
-      case e: ApiError => if (e.code == "channel_not_found") {
-        None
+  def getInfoFor(channelLikeId: String)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[ChannelLike]] = {
+    for {
+      maybeChannel <- maybeChannelInfoFor(channelLikeId)
+      maybeGroup <- if (maybeChannel.isEmpty) {
+        maybeGroupInfoFor(channelLikeId)
       } else {
-        throw e
+        Future.successful(None)
+      }
+      maybeIm <- if (maybeChannel.isEmpty && maybeGroup.isEmpty) {
+        listIms.map(_.find(_.id == channelLikeId))
+      } else {
+        Future.successful(None)
+      }
+    } yield {
+      maybeChannel.map(SlackChannel.apply) orElse {
+        maybeGroup.map(SlackGroup.apply) orElse {
+          maybeIm.map(SlackDM.apply)
+        }
       }
     }
   }
 
-  private def getInfoFor(channelLikeId: String)(implicit actorSystem: ActorSystem): Future[Option[ChannelLike]] = {
+  def getList(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Seq[ChannelLike]] = {
     for {
-      maybeChannel <- swallowingChannelNotFound(() => client.getChannelInfo(channelLikeId))
-      maybeGroup <- swallowingChannelNotFound(() => client.getGroupInfo(channelLikeId))
-      maybeIm <- client.listIms().map(_.find(_.id == channelLikeId))
-    } yield {
-      maybeChannel.map(SlackChannel.apply).orElse(maybeGroup.map(SlackGroup.apply)).orElse(maybeIm.map(SlackDM.apply))
-    }
-  }
-
-  def getList(implicit actorSystem: ActorSystem): Future[Seq[ChannelLike]] = {
-    for {
-      channels <- client.listChannels()
-      groups <- client.listGroups()
-      dms <- client.listIms()
+      channels <- listChannels
+      groups <- listGroups
+      dms <- listIms
     } yield {
       channels.map(SlackChannel.apply) ++ groups.map(SlackGroup.apply) ++ dms.map(SlackDM.apply)
     }
   }
 
-  def getListForUser(maybeSlackUserId: Option[String])(implicit actorSystem: ActorSystem): Future[Seq[ChannelLike]] = {
+  def getListForUser(maybeSlackUserId: Option[String])(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Seq[ChannelLike]] = {
     maybeSlackUserId.map { slackUserId =>
       getList.map { channels =>
         channels.filter(ea => ea.visibleToUser(slackUserId))
@@ -91,7 +135,7 @@ case class SlackChannels(client: SlackApiClient) {
     }.getOrElse(Future.successful(Seq()))
   }
 
-  def getMembersFor(channelOrGroupId: String)(implicit actorSystem: ActorSystem): Future[Seq[String]] = {
+  def getMembersFor(channelOrGroupId: String)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Seq[String]] = {
     getInfoFor(channelOrGroupId).map { maybeChannelLike =>
       maybeChannelLike.map(_.members).getOrElse(Seq())
     }
@@ -107,7 +151,7 @@ case class SlackChannels(client: SlackApiClient) {
     }
   }
 
-  def maybeIdFor(channelLikeIdOrName: String)(implicit actorSystem: ActorSystem): Future[Option[String]] = {
+  def maybeIdFor(channelLikeIdOrName: String)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[String]] = {
     val unformattedChannelLikeIdOrName = unformatChannelText(channelLikeIdOrName)
     getInfoFor(unformattedChannelLikeIdOrName).flatMap { maybeChannelLike =>
       maybeChannelLike.map(c => Future.successful(Some(c.id))).getOrElse {
@@ -116,6 +160,62 @@ case class SlackChannels(client: SlackApiClient) {
         }
       }
     }
+  }
+
+  def maybeChannelInfoFor(channel: String)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[Channel]] = {
+    if (!channel.startsWith("C")) {
+      Future.successful(None)
+    } else {
+      cacheService.getSlackChannelInfo(SlackChannelDataCacheKey(channel, slackTeamId), (key: SlackChannelDataCacheKey) => {
+        client.getChannelInfo(key.channel).map(Some(_)).recover {
+          case e: ApiError => if (e.code == "channel_not_found") {
+            None
+          } else {
+            throw ChannelInfoException(channel, slackTeamId, e)
+          }
+        }
+      })
+    }
+  }
+
+  def maybeGroupInfoFor(channel: String)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[Group]] = {
+    if (!channel.startsWith("G")) {
+      Future.successful(None)
+    } else {
+      cacheService.getSlackGroupInfo(SlackGroupDataCacheKey(channel, slackTeamId), (key: SlackGroupDataCacheKey) => {
+        client.getGroupInfo(key.group).map(Some(_)).recover {
+          case e: ApiError => if (e.code == "channel_not_found") {
+            None
+          } else {
+            throw GroupInfoException(channel, slackTeamId, e)
+          }
+        }
+      })
+    }
+  }
+
+  def listChannels(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Seq[Channel]] = {
+    cacheService.getSlackChannels(slackTeamId, (slackTeamId: String) => {
+      client.listChannels(excludeArchived = 1).recover {
+        case t: Throwable => throw ListChannelsException(slackTeamId, t)
+      }
+    })
+  }
+
+  def listGroups(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Seq[Group]] = {
+    cacheService.getSlackGroups(slackTeamId, (slackTeamId: String) =>
+      client.listGroups(excludeArchived = 1).recover {
+        case t: Throwable => throw ListGroupsException(slackTeamId, t)
+      }
+    )
+  }
+
+  def listIms(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Seq[Im]] = {
+    cacheService.getSlackIMs(slackTeamId, (slackTeamId: String) =>
+      client.listIms().recover {
+        case t: Throwable => throw DMInfoException(slackTeamId, t)
+      }
+    )
   }
 }
 

@@ -1,12 +1,10 @@
 package models.behaviors.testing
 
 import models.accounts.user.User
-import models.behaviors.BehaviorResponse
 import models.behaviors.behaviorversion.BehaviorVersion
 import services._
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 case class InvocationTester(
                             user: User,
@@ -15,7 +13,7 @@ case class InvocationTester(
                             services: DefaultServices
                           ) {
 
-  def run: Future[InvocationTestReport] = {
+  def run(implicit ec: ExecutionContext): Future[InvocationTestReport] = {
     val dataService = services.dataService
     for {
       params <- dataService.behaviorParameters.allFor(behaviorVersion)
@@ -35,18 +33,17 @@ case class InvocationTester(
       }
 
       missingSimpleTokens <- dataService.requiredSimpleTokenApis.missingFor(user, behaviorVersion.groupVersion)
-      missingUserEnvVars <- dataService.userEnvironmentVariables.missingFor(user, behaviorVersion, dataService)
 
-      report <- if (missingParams.isEmpty && missingSimpleTokens.isEmpty && missingUserEnvVars.isEmpty) {
+      report <- if (missingParams.isEmpty && missingSimpleTokens.isEmpty) {
         val invocationParamValues = paramValueMaybes.zipWithIndex.map { case ((param, v), i) =>
           (AWSLambdaConstants.invocationParamFor(i), v.get)
         }.toMap
         for {
           parametersWithValues <- dataService.behaviorResponses.parametersWithValuesFor(event, behaviorVersion, invocationParamValues, None)
           result <- dataService.behaviorVersions.resultFor(behaviorVersion, parametersWithValues, event, None)
-        } yield InvocationTestReport(behaviorVersion, Some(result), Seq(), Seq(), Seq())
+        } yield InvocationTestReport(behaviorVersion, Some(result), Seq(), Seq())
       } else {
-        Future.successful(InvocationTestReport(behaviorVersion, None, missingParams, missingSimpleTokens, missingUserEnvVars))
+        Future.successful(InvocationTestReport(behaviorVersion, None, missingParams, missingSimpleTokens))
       }
     } yield report
   }

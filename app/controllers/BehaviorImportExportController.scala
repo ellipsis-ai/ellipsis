@@ -2,6 +2,7 @@ package controllers
 
 import javax.inject.Inject
 
+import com.google.inject.Provider
 import com.mohiva.play.silhouette.api.Silhouette
 import export._
 import json._
@@ -10,23 +11,24 @@ import models.silhouette.EllipsisEnv
 import play.api.Configuration
 import play.api.data.Form
 import play.api.data.Forms._
-import play.api.i18n.MessagesApi
 import play.api.libs.json._
+import services.caching.CacheService
 import services.{AWSLambdaService, DataService}
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 class BehaviorImportExportController @Inject() (
-                                                 val messagesApi: MessagesApi,
                                                  val silhouette: Silhouette[EllipsisEnv],
                                                  val dataService: DataService,
+                                                 val cacheService: CacheService,
                                                  val lambdaService: AWSLambdaService,
-                                                 val configuration: Configuration
+                                                 val configuration: Configuration,
+                                                 val assetsProvider: Provider[RemoteAssets],
+                                                 implicit val ec: ExecutionContext
                                                ) extends ReAuthable {
 
   def export(id: String) = silhouette.SecuredAction.async { implicit request =>
-    BehaviorGroupExporter.maybeFor(id, request.identity, dataService).map { maybeExporter =>
+    BehaviorGroupExporter.maybeFor(id, request.identity, dataService, cacheService).map { maybeExporter =>
       maybeExporter.map { exporter =>
         Ok.sendFile(exporter.getZipFile)
       }.getOrElse {
@@ -67,7 +69,7 @@ class BehaviorImportExportController @Inject() (
           for {
             maybeTeam <- dataService.teams.find(info.teamId, request.identity)
             maybeImporter <- Future.successful(maybeTeam.map { team =>
-              BehaviorGroupZipImporter(team, request.identity, zipFile.ref.file, dataService)
+              BehaviorGroupZipImporter(team, request.identity, zipFile.ref.toFile, dataService, cacheService)
             })
             maybeBehaviorGroup <- maybeImporter.map { importer =>
               importer.run
@@ -119,7 +121,7 @@ class BehaviorImportExportController @Inject() (
                 dataService.behaviors.allForGroup(group).map(_.headOption)
               }.getOrElse(Future.successful(None))
               maybeBehaviorGroupData <- maybeBehaviorGroup.map { group =>
-                BehaviorGroupData.maybeFor(group.id, user, None, dataService)
+                BehaviorGroupData.maybeFor(group.id, user, None, dataService, cacheService)
               }.getOrElse(Future.successful(None))
             } yield {
               maybeBehaviorGroupData.map { groupData =>

@@ -1,10 +1,9 @@
 package controllers
 
-import java.time.format.TextStyle
-import java.util.Locale
 import javax.inject.Inject
 
 import akka.actor.ActorSystem
+import com.google.inject.Provider
 import com.mohiva.play.silhouette.api.Silhouette
 import json.Formatting._
 import json._
@@ -16,23 +15,23 @@ import models.team.Team
 import play.api.Configuration
 import play.api.data.Form
 import play.api.data.Forms._
-import play.api.i18n.MessagesApi
 import play.api.libs.json.{JsError, JsSuccess, Json}
 import play.filters.csrf.CSRF
-import services.DataService
+import services.DefaultServices
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 
 class ScheduledActionsController @Inject()(
-                                            val messagesApi: MessagesApi,
                                             val configuration: Configuration,
                                             val silhouette: Silhouette[EllipsisEnv],
-                                            val dataService: DataService,
-                                            implicit val actorSystem: ActorSystem
+                                            val services: DefaultServices,
+                                            val assetsProvider: Provider[RemoteAssets],
+                                            implicit val actorSystem: ActorSystem,
+                                            implicit val ec: ExecutionContext
                                           ) extends ReAuthable {
 
+  val dataService = services.dataService
   def index(maybeScheduledId: Option[String], maybeNewSchedule: Option[Boolean], maybeTeamId: Option[String]) = silhouette.SecuredAction.async { implicit request =>
     val user = request.identity
 
@@ -40,41 +39,26 @@ class ScheduledActionsController @Inject()(
       case Accepts.JavaScript() => {
         for {
           teamAccess <- dataService.users.teamAccessFor(user, maybeTeamId)
-          result <- teamAccess.maybeTargetTeam.map { team =>
-            for {
-              maybeBotProfile <- dataService.slackBotProfiles.allFor(team).map(_.headOption)
-              maybeSlackUserId <- dataService.linkedAccounts.maybeSlackUserIdFor(user)
-              channelList <- maybeBotProfile.map { botProfile =>
-                dataService.slackBotProfiles.channelsFor(botProfile).getListForUser(maybeSlackUserId)
-              }.getOrElse(Future.successful(Seq()))
-              scheduledActions <- ScheduledActionData.buildFor(maybeSlackUserId, team, channelList, dataService)
-              behaviorGroups <- dataService.behaviorGroups.allFor(team)
-              groupData <- Future.sequence(behaviorGroups.map { group =>
-                BehaviorGroupData.maybeFor(group.id, user, None, dataService)
-              }).map(_.flatten.sorted)
-            } yield {
-              val pageData = ScheduledActionsConfig(
-                containerId = "scheduling",
-                csrfToken = CSRF.getToken(request).map(_.value),
-                teamId = team.id,
-                scheduledActions = scheduledActions,
-                channelList = ScheduleChannelData.fromChannelLikeList(channelList),
-                behaviorGroups = groupData,
-                teamTimeZone = team.maybeTimeZone.map(_.toString),
-                teamTimeZoneName = team.maybeTimeZone.map(_.getDisplayName(TextStyle.FULL, Locale.ENGLISH)),
-                slackUserId = maybeSlackUserId,
-                slackBotUserId = maybeBotProfile.map(_.userId),
-                selectedScheduleId = maybeScheduledId,
-                newAction = maybeNewSchedule
-              )
-              Ok(views.js.shared
-                .pageConfig(viewConfig(Some(teamAccess)), "config/scheduling/index", Json.toJson(pageData))
-              )
-            }
+          maybeConfig <- ScheduledActionsConfig.buildConfigFor(
+            user,
+            teamAccess,
+            services,
+            maybeScheduledId,
+            maybeNewSchedule,
+            CSRF.getToken(request).map(_.value)
+          )
+        } yield {
+          maybeConfig.map { config =>
+            Ok(views.js.shared.webpackLoader(
+              viewConfig(Some(teamAccess)),
+              "SchedulingConfig",
+              "scheduling",
+              Json.toJson(config)
+            ))
           }.getOrElse {
-            Future.successful(NotFound("Team not found"))
+            NotFound("Team not found")
           }
-        } yield result
+        }
       }
       case Accepts.Html() => {
         for {
@@ -83,7 +67,7 @@ class ScheduledActionsController @Inject()(
           teamAccess.maybeTargetTeam.map { _ =>
             Ok(views.html.scheduledactions.index(viewConfig(Some(teamAccess)), maybeScheduledId, maybeNewSchedule, maybeTeamId))
           }.getOrElse {
-            NotFound("Team not found")
+            NotFound(views.html.error.notFound(viewConfig(None), Some("Team not found"), None))
           }
         }
       }
@@ -261,7 +245,7 @@ class ScheduledActionsController @Inject()(
     for {
       maybeExistingScheduledMessage <- dataService.scheduledMessages.findForTeam(id, team)
       didDeleteMessage <- maybeExistingScheduledMessage.map { scheduledMessage =>
-        dataService.scheduledMessages.delete(scheduledMessage)
+        dataService.scheduledMessages.delete(scheduledMessage).map(_.isDefined)
       }.getOrElse(Future.successful(false))
     } yield didDeleteMessage
   }
@@ -270,7 +254,7 @@ class ScheduledActionsController @Inject()(
     for {
       maybeExistingScheduledBehavior <- dataService.scheduledBehaviors.findForTeam(id, team)
       didDeleteBehavior <- maybeExistingScheduledBehavior.map { scheduledBehavior =>
-        dataService.scheduledBehaviors.delete(scheduledBehavior)
+        dataService.scheduledBehaviors.delete(scheduledBehavior).map(_.isDefined)
       }.getOrElse(Future.successful(false))
     } yield didDeleteBehavior
   }

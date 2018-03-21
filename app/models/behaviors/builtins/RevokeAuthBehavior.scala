@@ -3,19 +3,18 @@ package models.behaviors.builtins
 import akka.actor.ActorSystem
 import models.behaviors.events.Event
 import models.behaviors.{BotResult, SimpleTextResult}
-import services.{AWSLambdaService, DataService}
+import services.DefaultServices
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 case class RevokeAuthBehavior(
                                appName: String,
                                event: Event,
-                               lambdaService: AWSLambdaService,
-                               dataService: DataService
+                               services: DefaultServices
                              ) extends BuiltinBehavior {
 
-  def result(implicit actorSystem: ActorSystem): Future[BotResult] = {
+  def result(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[BotResult] = {
+    val dataService = services.dataService
     for {
       maybeTeam <- dataService.teams.find(event.teamId)
       user <- event.ensureUser(dataService)

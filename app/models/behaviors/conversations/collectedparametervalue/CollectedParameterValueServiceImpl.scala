@@ -8,8 +8,7 @@ import models.behaviors.behaviorparameter.{BehaviorParameter, BehaviorParameterQ
 import models.behaviors.conversations.conversation.{Conversation, ConversationQueries}
 import services.DataService
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 case class RawCollectedParameterValue(parameterId: String, conversationId: String, valueString: String)
 
@@ -23,7 +22,8 @@ class CollectedParameterValuesTable(tag: Tag) extends Table[RawCollectedParamete
 }
 
 class CollectedParameterValueServiceImpl @Inject() (
-                                                     dataServiceProvider: Provider[DataService]
+                                                     dataServiceProvider: Provider[DataService],
+                                                     implicit val ec: ExecutionContext
                                                    ) extends CollectedParameterValueService {
 
   def dataService = dataServiceProvider.get
@@ -67,13 +67,18 @@ class CollectedParameterValueServiceImpl @Inject() (
     }
   }
 
+  def uncompiledRawFindQuery(parameterId: Rep[String], conversationId: Rep[String]) = {
+    all.filter(_.parameterId === parameterId).filter(_.conversationId === conversationId)
+  }
+  val rawFindQuery = Compiled(uncompiledRawFindQuery _)
+
   def ensureFor(
                  parameter: BehaviorParameter,
                  conversation: Conversation,
                  valueString: String
                ): Future[CollectedParameterValue] = {
     val raw = RawCollectedParameterValue(parameter.id, conversation.id, valueString)
-    val query = all.filter(_.parameterId === raw.parameterId).filter(_.conversationId === raw.conversationId)
+    val query = rawFindQuery(raw.parameterId, raw.conversationId)
     val action = query.result.flatMap { r =>
       r.headOption.map { existing =>
         query.update(raw)
@@ -84,6 +89,10 @@ class CollectedParameterValueServiceImpl @Inject() (
     dataService.run(action).flatMap { _ =>
       find(parameter, conversation).map(_.get)
     }
+  }
+
+  def deleteForAction(parameter: BehaviorParameter, conversation: Conversation): DBIO[Unit] = {
+    rawFindQuery(parameter.id, conversation.id).delete.map(_ => {})
   }
 
   def deleteAll(): Future[Unit] = {

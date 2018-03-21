@@ -13,8 +13,7 @@ import models.behaviors.scheduling.recurrence.{RawRecurrence, Recurrence, Recurr
 import models.team.{Team, TeamQueries}
 import services.DataService
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 case class RawScheduledMessage(
                                 id: String,
@@ -55,7 +54,8 @@ class ScheduledMessagesTable(tag: Tag) extends Table[RawScheduledMessage](tag, S
 }
 
 class ScheduledMessageServiceImpl @Inject() (
-                                               dataServiceProvider: Provider[DataService]
+                                               dataServiceProvider: Provider[DataService],
+                                               implicit val ec: ExecutionContext
                                              ) extends ScheduledMessageService {
 
   def dataService = dataServiceProvider.get
@@ -113,6 +113,22 @@ class ScheduledMessageServiceImpl @Inject() (
 
   def allForChannel(team: Team, channel: String): Future[Seq[ScheduledMessage]] = {
     val action = allForChannelQuery(team.id, channel).result.map { r =>
+      r.map(tuple2ScheduledMessage)
+    }
+    dataService.run(action)
+  }
+
+  def uncompiledAllForTextQuery(text: Rep[String], teamId: Rep[String], maybeUserId: Rep[Option[String]], maybeChannelId: Rep[Option[String]]) = {
+    allWithUser.
+      filter { case(((msg, _), _), _) => msg.teamId === teamId }.
+      filter { case(((msg, _), _), _) => msg.text === text }.
+      filter { case(((msg, _), _), _) => maybeUserId.isEmpty || msg.maybeUserId === maybeUserId }.
+      filter { case(((msg, _), _), _) => maybeChannelId.isEmpty || msg.maybeChannel === maybeChannelId }
+  }
+  def allForTextQuery = Compiled(uncompiledAllForTextQuery _)
+
+  def allForText(text: String, team: Team, maybeUser: Option[User], maybeChannel: Option[String]): Future[Seq[ScheduledMessage]] = {
+    val action = allForTextQuery(text, team.id, maybeUser.map(_.id), maybeChannel).result.map { r =>
       r.map(tuple2ScheduledMessage)
     }
     dataService.run(action)
@@ -220,8 +236,16 @@ class ScheduledMessageServiceImpl @Inject() (
     dataService.run(action)
   }
 
-  def delete(scheduledMessage: ScheduledMessage): Future[Boolean] = {
+  def delete(scheduledMessage: ScheduledMessage): Future[Option[ScheduledMessage]] = {
     // recurrence deletes cascade to scheduled behaviors
-    dataService.recurrences.delete(scheduledMessage.recurrence.id)
+    for {
+      didDelete <- dataService.recurrences.delete(scheduledMessage.recurrence.id)
+    } yield {
+      if (didDelete) {
+        Some(scheduledMessage)
+      } else {
+        None
+      }
+    }
   }
 }

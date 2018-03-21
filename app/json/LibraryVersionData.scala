@@ -1,12 +1,13 @@
 package json
 
+import java.time.OffsetDateTime
+
 import export.BehaviorGroupExporter
 import models.IDs
 import models.behaviors.library.LibraryVersion
 import services.DataService
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 case class LibraryVersionData(
                                id: Option[String],
@@ -15,7 +16,8 @@ case class LibraryVersionData(
                                isNew: Option[Boolean],
                                name: String,
                                description: Option[String],
-                               functionBody: String
+                               functionBody: String,
+                               createdAt: OffsetDateTime
                             ) {
 
   val code: String = LibraryVersion.codeFor(functionBody)
@@ -64,7 +66,16 @@ case class LibraryVersionData(
 object LibraryVersionData {
 
   def fromVersion(version: LibraryVersion): LibraryVersionData = {
-    LibraryVersionData(Some(version.id), Some(version.libraryId), version.maybeExportId, isNew = Some(false), version.name, version.maybeDescription, version.functionBody)
+    LibraryVersionData(
+      Some(version.id),
+      Some(version.libraryId),
+      version.maybeExportId,
+      isNew = Some(false),
+      version.name,
+      version.maybeDescription,
+      version.functionBody,
+      version.createdAt
+    )
   }
 
   def newUnsaved: LibraryVersionData = LibraryVersionData(
@@ -74,10 +85,11 @@ object LibraryVersionData {
     isNew = Some(true),
     name = "",
     description = None,
-    functionBody = ""
+    functionBody = "",
+    OffsetDateTime.now
   )
 
-  def maybeClonedFor(libraryIdToClone: String, dataService: DataService): Future[Option[LibraryVersionData]] = {
+  def maybeClonedFor(libraryIdToClone: String, dataService: DataService)(implicit ec: ExecutionContext): Future[Option[LibraryVersionData]] = {
     for {
       maybeExisting <- dataService.libraries.findCurrentByLibraryId(libraryIdToClone)
     } yield {
@@ -89,16 +101,17 @@ object LibraryVersionData {
           isNew = Some(true),
           name = s"${existing.name}-copy",
           description = existing.maybeDescription,
-          functionBody = existing.functionBody
+          functionBody = existing.functionBody,
+          createdAt = OffsetDateTime.now
         )
       }
     }
   }
 
-  val libFileRegex = """^lib\/(.+).js""".r
+  val libNameRegex = """^(.+)\.js""".r
   val libContentRegex = """(?s)\/\*\s*([^$]*)\s+@exportId\s+(\S+)\s*\*\/\s*(.*)""".r
 
-  def fromFile(content: String, filename: String): LibraryVersionData = {
+  def from(content: String, filename: String): LibraryVersionData = {
     var maybeExportId: Option[String] = None
     var maybeDescription: Option[String] = None
     var code: String = ""
@@ -107,7 +120,7 @@ object LibraryVersionData {
       maybeExportId = Some(firstMatch.subgroups(1))
       code = firstMatch.subgroups(2)
     }
-    val name = libFileRegex.findFirstMatchIn(filename).map { firstMatch =>
+    val name = libNameRegex.findFirstMatchIn(filename).map { firstMatch =>
       firstMatch.subgroups(0)
     }.getOrElse(filename)
     LibraryVersionData(
@@ -117,7 +130,8 @@ object LibraryVersionData {
       isNew = Some(false),
       name,
       maybeDescription,
-      LibraryVersion.functionBodyFrom(code)
+      LibraryVersion.functionBodyFrom(code),
+      OffsetDateTime.now
     )
   }
 }

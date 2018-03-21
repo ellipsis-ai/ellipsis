@@ -12,7 +12,8 @@ case class HelpSearchResult(
                              underlying: FuzzyMatchResult[HelpGroupData],
                              event: Event,
                              dataService: DataService,
-                             lambdaService: AWSLambdaService
+                             lambdaService: AWSLambdaService,
+                             botPrefix: String
                            ) extends HelpResult {
   val group = underlying.item
   val descriptionMatches: Boolean = underlying.patterns.contains(group.fuzzyMatchDescription)

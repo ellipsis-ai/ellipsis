@@ -10,10 +10,10 @@ import models.behaviors.BotResultService
 import play.api.Configuration
 import play.api.libs.ws.WSClient
 import services._
+import services.caching.CacheService
 import slick.dbio.DBIO
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 case class RawConversation(
                             id: String,
@@ -28,7 +28,8 @@ case class RawConversation(
                             startedAt: OffsetDateTime,
                             maybeLastInteractionAt: Option[OffsetDateTime],
                             state: String,
-                            maybeScheduledMessageId: Option[String]
+                            maybeScheduledMessageId: Option[String],
+                            maybeOriginalEventType: Option[String]
                           )
 
 class ConversationsTable(tag: Tag) extends Table[RawConversation](tag, ConversationQueries.tableName) {
@@ -46,14 +47,16 @@ class ConversationsTable(tag: Tag) extends Table[RawConversation](tag, Conversat
   def maybeLastInteractionAt = column[Option[OffsetDateTime]](ConversationQueries.lastInteractionAtName)
   def state = column[String]("state")
   def maybeScheduledMessageId = column[Option[String]]("scheduled_message_id")
+  def maybeOriginalEventType = column[Option[String]]("original_event_type")
 
   def * =
-    (id, behaviorVersionId, maybeTriggerId, maybeTriggerMessage, conversationType, context, maybeChannel, maybeThreadId, userIdForContext, startedAt, maybeLastInteractionAt, state, maybeScheduledMessageId) <>
+    (id, behaviorVersionId, maybeTriggerId, maybeTriggerMessage, conversationType, context, maybeChannel, maybeThreadId, userIdForContext, startedAt, maybeLastInteractionAt, state, maybeScheduledMessageId, maybeOriginalEventType) <>
       ((RawConversation.apply _).tupled, RawConversation.unapply _)
 }
 
 class ConversationServiceImpl @Inject() (
-                                          servicesProvider: Provider[DefaultServices]
+                                          servicesProvider: Provider[DefaultServices],
+                                          implicit val ec: ExecutionContext
                                          ) extends ConversationService {
 
   def services: DefaultServices = servicesProvider.get
@@ -83,6 +86,13 @@ class ConversationServiceImpl @Inject() (
     dataService.run(saveAction(conversation))
   }
 
+  def maybeWithThreadId(threadId: String, userIdForContext: String, context: String): Future[Option[Conversation]] = {
+    val action = withThreadIdQuery(threadId, userIdForContext, context).result.map { r =>
+      r.map(tuple2Conversation).headOption
+    }
+    dataService.run(action)
+  }
+
   def allOngoingForAction(userIdForContext: String, context: String, maybeChannel: Option[String], maybeThreadId: Option[String]): DBIO[Seq[Conversation]] = {
     allOngoingQueryFor(userIdForContext, context).result.map { r =>
       r.map(tuple2Conversation)
@@ -98,6 +108,11 @@ class ConversationServiceImpl @Inject() (
 
   def allOngoingFor(userIdForContext: String, context: String, maybeChannel: Option[String], maybeThreadId: Option[String]): Future[Seq[Conversation]] = {
     dataService.run(allOngoingForAction(userIdForContext, context, maybeChannel, maybeThreadId))
+  }
+
+  def allOngoingBehaviorGroupVersionIds: Future[Seq[String]] = {
+    val action = allOngoingVersionIdsQuery(Conversation.DONE_STATE).result
+    dataService.run(action)
   }
 
   def allForeground: Future[Seq[Conversation]] = {
@@ -129,6 +144,11 @@ class ConversationServiceImpl @Inject() (
 
   def cancel(conversation: Conversation): Future[Unit] = {
     dataService.run(cancelAction(conversation))
+  }
+
+  def cancelOldConverations: Future[Unit] = {
+    val action = cancelOldConversationsQuery(oldConversationCutoff, Conversation.DONE_STATE).update(Conversation.DONE_STATE).map(_ => {})
+    dataService.run(action)
   }
 
   def deleteAll(): Future[Unit] = {
@@ -174,7 +194,13 @@ class ConversationServiceImpl @Inject() (
           conversation.behaviorVersion.forcePrivateResponse,
           maybeShouldUnfurl = None,
           Some(conversation),
-          maybeActions = None
+          attachmentGroups = Seq(),
+          files = Seq(),
+          choices = Seq(),
+          isForUndeployed = false,
+          hasUndeployedVersionForAuthor = false,
+          services,
+          configuration
         ))
       }.getOrElse(DBIO.successful(None))
       _ <- maybeEvent.map { event =>

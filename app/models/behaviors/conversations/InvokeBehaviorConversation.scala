@@ -7,15 +7,13 @@ import models.behaviors.BotResult
 import models.behaviors.behaviorparameter.BehaviorParameter
 import models.behaviors.behaviorversion.BehaviorVersion
 import models.behaviors.conversations.conversation.Conversation
-import models.behaviors.events.{Event, SlackMessageEvent}
+import models.behaviors.events.{Event, EventType, SlackMessageEvent}
 import models.behaviors.triggers.messagetrigger.MessageTrigger
-import models.behaviors.{BehaviorResponse, BotResult}
 import services.{DataService, DefaultServices}
 import slick.dbio.DBIO
 import utils.SlackMessageReactionHandler
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 case class InvokeBehaviorConversation(
                                        id: String,
@@ -29,7 +27,8 @@ case class InvokeBehaviorConversation(
                                        startedAt: OffsetDateTime,
                                        maybeLastInteractionAt: Option[OffsetDateTime],
                                        state: String = Conversation.NEW_STATE,
-                                       maybeScheduledMessageId: Option[String]
+                                       maybeScheduledMessageId: Option[String],
+                                       maybeOriginalEventType: Option[EventType]
                                       ) extends Conversation {
 
   val conversationType = Conversation.INVOKE_BEHAVIOR
@@ -57,20 +56,19 @@ case class InvokeBehaviorConversation(
     }.head // There should always be a match
   }
 
-  def collectionStatesFor(event: Event, services: DefaultServices): Future[Seq[CollectionState]] = {
+  def collectionStatesFor(event: Event, services: DefaultServices)(implicit ec: ExecutionContext): Future[Seq[CollectionState]] = {
     services.dataService.run(collectionStatesForAction(event, services))
   }
 
-  def collectionStatesForAction(event: Event, services: DefaultServices): DBIO[Seq[CollectionState]] = {
+  def collectionStatesForAction(event: Event, services: DefaultServices)(implicit ec: ExecutionContext): DBIO[Seq[CollectionState]] = {
     for {
       user <- event.ensureUserAction(services.dataService)
       simpleTokenState <- SimpleTokenCollectionState.fromAction(user, this, event, services)
-      userEnvVarState <- UserEnvVarCollectionState.fromAction(user, this, event, services)
       paramState <- ParamCollectionState.fromAction(this, event, services)
-    } yield Seq(simpleTokenState, userEnvVarState, paramState)
+    } yield Seq(simpleTokenState, paramState)
   }
 
-  def updateToNextState(event: Event, services: DefaultServices): Future[Conversation] = {
+  def updateToNextState(event: Event, services: DefaultServices)(implicit ec: ExecutionContext): Future[Conversation] = {
     for {
       collectionStates <- collectionStatesFor(event, services)
       collectionStatesWithIsComplete <- Future.sequence(collectionStates.map { collectionState =>
@@ -87,7 +85,7 @@ case class InvokeBehaviorConversation(
     } yield updated
   }
 
-  def updateWith(event: Event, services: DefaultServices): Future[Conversation] = {
+  def updateWith(event: Event, services: DefaultServices)(implicit ec: ExecutionContext): Future[Conversation] = {
 
     for {
       collectionStates <- collectionStatesFor(event, services)
@@ -104,7 +102,7 @@ case class InvokeBehaviorConversation(
                      event: Event,
                      isReminding: Boolean,
                      services: DefaultServices
-                   ): DBIO[BotResult] = {
+                   )(implicit ec: ExecutionContext): DBIO[BotResult] = {
     for {
       collectionStates <- collectionStatesForAction(event, services)
       result <- collectionStates.find(_.name == state).map(_.promptResultForAction(this, isReminding)).getOrElse {
@@ -120,7 +118,7 @@ case class InvokeBehaviorConversation(
                event: Event,
                isReminding: Boolean,
                services: DefaultServices
-             ): Future[BotResult] = {
+             )(implicit ec: ExecutionContext): Future[BotResult] = {
     val eventualResponse = services.dataService.run(respondAction(event, isReminding, services))
     event match {
       case event: SlackMessageEvent => {
@@ -135,7 +133,7 @@ case class InvokeBehaviorConversation(
   def maybeNextParamToCollect(
                                event: Event,
                                services: DefaultServices
-                     ): Future[Option[BehaviorParameter]] = {
+                     )(implicit ec: ExecutionContext): Future[Option[BehaviorParameter]] = {
     for {
       collectionStates <- collectionStatesFor(event, services)
       maybeCollectionState <- Future.successful(collectionStates.find(_.name == state))
@@ -151,12 +149,10 @@ case class InvokeBehaviorConversation(
 object InvokeBehaviorConversation {
 
   val COLLECT_SIMPLE_TOKENS_STATE = "collect_simple_tokens"
-  val COLLECT_USER_ENV_VARS_STATE = "collect_user_env_vars"
   val COLLECT_PARAM_VALUES_STATE = "collect_param_values"
 
   val statesRequiringPrivateMessage = Seq(
-    COLLECT_SIMPLE_TOKENS_STATE,
-    COLLECT_USER_ENV_VARS_STATE
+    COLLECT_SIMPLE_TOKENS_STATE
   )
 
   def createFor(
@@ -165,7 +161,7 @@ object InvokeBehaviorConversation {
                  maybeChannel: Option[String],
                  maybeActivatedTrigger: Option[MessageTrigger],
                  dataService: DataService
-                 ): Future[InvokeBehaviorConversation] = {
+                 )(implicit ec: ExecutionContext): Future[InvokeBehaviorConversation] = {
     val newInstance =
       InvokeBehaviorConversation(
         IDs.next,
@@ -179,7 +175,8 @@ object InvokeBehaviorConversation {
         OffsetDateTime.now,
         None,
         Conversation.NEW_STATE,
-        event.maybeScheduled.map(_.id)
+        event.maybeScheduled.map(_.id),
+        Some(event.originalEventType)
       )
     dataService.conversations.save(newInstance).map(_ => newInstance)
   }

@@ -11,8 +11,7 @@ import drivers.SlickPostgresDriver.api._
 import models.behaviors.behavior.Behavior
 import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 case class RawInput(
                      id: String,
@@ -44,7 +43,8 @@ class InputsTable(tag: Tag) extends Table[RawInput](tag, "inputs") {
 }
 
 class InputServiceImpl @Inject() (
-                                   dataServiceProvider: Provider[DataService]
+                                   dataServiceProvider: Provider[DataService],
+                                   implicit val ec: ExecutionContext
                                  ) extends InputService {
 
   def dataService = dataServiceProvider.get

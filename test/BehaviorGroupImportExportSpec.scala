@@ -1,16 +1,15 @@
 import drivers.SlickPostgresDriver.api._
 import export.{BehaviorGroupExporter, BehaviorGroupZipImporter}
-import json.{BehaviorParameterTypeData, BehaviorVersionData, LibraryVersionData}
+import json.{BehaviorParameterTypeData, BehaviorVersionData, DataTypeFieldData, LibraryVersionData}
 import models.IDs
 import models.accounts.user.User
 import models.behaviors.behaviorgroup.{BehaviorGroup, BehaviorGroupQueries}
 import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
-import models.behaviors.behaviorparameter.{BehaviorBackedDataType, BehaviorParameterType}
+import models.behaviors.behaviorparameter.{BehaviorBackedDataType, BehaviorParameterType, TextType}
 import models.behaviors.behaviorversion.BehaviorVersion
 import support.DBSpec
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 class BehaviorGroupImportExportSpec extends DBSpec {
 
@@ -22,27 +21,27 @@ class BehaviorGroupImportExportSpec extends DBSpec {
     dataType.maybeName must contain(paramType.name)
   }
 
-  def exportAndImport(group: BehaviorGroup, exportUser: User, importUser: User): Unit = {
+  def exportAndImport(group: BehaviorGroup, exportUser: User, importUser: User)(implicit ec: ExecutionContext): Unit = {
     val maybeImportTeam = runNow(dataService.teams.find(importUser.teamId))
-    val maybeExporter = runNow(BehaviorGroupExporter.maybeFor(group.id, exportUser, dataService))
+    val maybeExporter = runNow(BehaviorGroupExporter.maybeFor(group.id, exportUser, dataService, cacheService))
     maybeExporter.isDefined mustBe(true)
     val file = maybeExporter.get.getZipFile
 
     // change the existing export ID so it's not a re-install
     runNow(dataService.run(BehaviorGroupQueries.all.filter(_.id === group.id).map(_.maybeExportId).update(Some(IDs.next))))
 
-    val importer = BehaviorGroupZipImporter(maybeImportTeam.get, importUser, file, dataService)
+    val importer = BehaviorGroupZipImporter(maybeImportTeam.get, importUser, file, dataService, cacheService)
     runNow(importer.run)
   }
 
-  def checkImportedBehaviorsCorrectly(exported: BehaviorGroup, imported: BehaviorGroup): Unit = {
+  def checkImportedBehaviorsCorrectly(exported: BehaviorGroup, imported: BehaviorGroup)(implicit ec: ExecutionContext): Unit = {
     val exportedBehaviors = runNow(dataService.behaviors.regularForGroup(exported))
     val importedBehaviors = runNow(dataService.behaviors.regularForGroup(imported))
     exportedBehaviors.length mustBe importedBehaviors.length
     exportedBehaviors.map(_.id).intersect(importedBehaviors.map(_.id)) mustBe empty
   }
 
-  def checkImportedDataTypesCorrectly(exported: BehaviorGroup, imported: BehaviorGroup): Unit = {
+  def checkImportedDataTypesCorrectly(exported: BehaviorGroup, imported: BehaviorGroup)(implicit ec: ExecutionContext): Unit = {
     val exportedDataTypes = runNow(dataService.behaviors.dataTypesForGroup(exported))
     val importedDataTypes = runNow(dataService.behaviors.dataTypesForGroup(imported))
     exportedDataTypes.length mustBe importedDataTypes.length
@@ -56,7 +55,7 @@ class BehaviorGroupImportExportSpec extends DBSpec {
     exportedInputs.map(_.id).intersect(importedInputs.map(_.id)) mustBe empty
   }
 
-  def mustBeValidImport(exported: BehaviorGroup, imported: BehaviorGroup): Unit = {
+  def mustBeValidImport(exported: BehaviorGroup, imported: BehaviorGroup)(implicit ec: ExecutionContext): Unit = {
     val reloadedExported = runNow(dataService.behaviorGroups.findWithoutAccessCheck(exported.id).map(_.get))
     reloadedExported.id must not be(imported.id)
 
@@ -73,8 +72,23 @@ class BehaviorGroupImportExportSpec extends DBSpec {
 
   "BehaviorGroupExporter" should {
 
+    "should allow an optional parent directory in the path" in {
+      BehaviorGroupZipImporter.versionFileRegex.findFirstMatchIn("actions/foo/bar").isDefined mustBe true
+      BehaviorGroupZipImporter.versionFileRegex.findFirstMatchIn("skill/actions/foo/bar").isDefined mustBe true
+      BehaviorGroupZipImporter.readmeRegex.findFirstMatchIn("README").isDefined mustBe true
+      BehaviorGroupZipImporter.readmeRegex.findFirstMatchIn("skill/README").isDefined mustBe true
+      BehaviorGroupZipImporter.configRegex.findFirstMatchIn("config.json").isDefined mustBe true
+      BehaviorGroupZipImporter.configRegex.findFirstMatchIn("skill/config.json").isDefined mustBe true
+      BehaviorGroupZipImporter.actionInputsRegex.findFirstMatchIn("action_inputs.json").isDefined mustBe true
+      BehaviorGroupZipImporter.actionInputsRegex.findFirstMatchIn("skill/action_inputs.json").isDefined mustBe true
+      BehaviorGroupZipImporter.dataTypeInputsRegex.findFirstMatchIn("data_type_inputs.json").isDefined mustBe true
+      BehaviorGroupZipImporter.dataTypeInputsRegex.findFirstMatchIn("skill/data_type_inputs.json").isDefined mustBe true
+      BehaviorGroupZipImporter.libFileRegex.findFirstMatchIn("lib/my_library.js").isDefined mustBe true
+      BehaviorGroupZipImporter.libFileRegex.findFirstMatchIn("skill/lib/my_library.js").isDefined mustBe true
+    }
+
     "export and import back in" in {
-      withEmptyDB(dataService, { db =>
+      withEmptyDB(dataService, { () =>
         val team = newSavedTeam
         val user = newSavedUserOn(team)
         val group = newSavedBehaviorGroupFor(team)
@@ -112,7 +126,7 @@ class BehaviorGroupImportExportSpec extends DBSpec {
     }
 
     "export and import back in with shared param" in {
-      withEmptyDB(dataService, { db =>
+      withEmptyDB(dataService, { () =>
         val team = newSavedTeam
         val user = newSavedUserOn(team)
         val group = newSavedBehaviorGroupFor(team)
@@ -160,7 +174,7 @@ class BehaviorGroupImportExportSpec extends DBSpec {
     }
 
     "export and import back in with a data type" in {
-      withEmptyDB(dataService, { db =>
+      withEmptyDB(dataService, { () =>
         val team = newSavedTeam
         val user = newSavedUserOn(team)
         val group = newSavedBehaviorGroupFor(team)
@@ -215,12 +229,64 @@ class BehaviorGroupImportExportSpec extends DBSpec {
           dataService.behaviors.maybeCurrentVersionFor(behavior)
         }).map(_.flatten))
         importedDataTypeVersions must have length 1
-        checkParamTypeMatches(importedParams.head.input.paramType, importedDataTypeVersions.head)
+        val importedDataTypeVersion = importedDataTypeVersions.head
+        val dataTypeConfig = runNow(dataService.dataTypeConfigs.maybeFor(importedDataTypeVersion)).get
+        runNow(dataService.dataTypeFields.allFor(dataTypeConfig)) mustBe empty
+        checkParamTypeMatches(importedParams.head.input.paramType, importedDataTypeVersion)
+      })
+    }
+
+    "export and import back in with a default-storage-backed data type" in {
+      withEmptyDB(dataService, { () =>
+        val team = newSavedTeam
+        val user = newSavedUserOn(team)
+        val group = newSavedBehaviorGroupFor(team)
+
+        val dataTypeVersionData = BehaviorVersionData.newUnsavedFor(team.id, isDataType = true, maybeName = Some("A data type"), dataService)
+        val defaultStorageDataTypeVersionData = dataTypeVersionData.copy(
+          config = dataTypeVersionData.config.copy(
+            dataTypeConfig = dataTypeVersionData.config.dataTypeConfig.map { cfg =>
+              cfg.copy(
+                usesCode = Some(false),
+                fields = Seq(
+                  DataTypeFieldData.newUnsavedNamed("name", runNow(BehaviorParameterTypeData.from(TextType, dataService)))
+                )
+              )
+            }
+          )
+        )
+
+        val groupData = newGroupVersionDataFor(group, user).copy(
+          behaviorVersions = Seq(defaultStorageDataTypeVersionData)
+        )
+        newSavedGroupVersionFor(group, user, Some(groupData))
+
+        val groupsBefore = runNow(dataService.behaviorGroups.allFor(team))
+        groupsBefore must have length 1
+
+        exportAndImport(group, user, user)
+
+        val groupsAfter = runNow(dataService.behaviorGroups.allFor(team))
+        groupsAfter must have length 2
+
+        val exportedGroup = groupsBefore.head
+        val importedGroup = groupsAfter.filterNot(_.id == exportedGroup.id).head
+
+        mustBeValidImport(exportedGroup, importedGroup)
+
+        val importedDataTypes = runNow(dataService.behaviors.dataTypesForGroup(importedGroup))
+        val importedDataTypeVersions = runNow(Future.sequence(importedDataTypes.map { behavior =>
+          dataService.behaviors.maybeCurrentVersionFor(behavior)
+        }).map(_.flatten))
+        importedDataTypeVersions must have length 1
+        val importedDataTypeVersion = importedDataTypeVersions.head
+        val dataTypeConfig = runNow(dataService.dataTypeConfigs.maybeFor(importedDataTypeVersion)).get
+        runNow(dataService.dataTypeFields.allFor(dataTypeConfig)) must have length 2 // includes generated id field
       })
     }
 
     "export and import back in with a search data type" in {
-      withEmptyDB(dataService, { db =>
+      withEmptyDB(dataService, { () =>
         val team = newSavedTeam
         val user = newSavedUserOn(team)
         val group = newSavedBehaviorGroupFor(team)
@@ -267,7 +333,7 @@ class BehaviorGroupImportExportSpec extends DBSpec {
     }
 
     "export and import back in with a code library" in {
-      withEmptyDB(dataService, { db =>
+      withEmptyDB(dataService, { () =>
         val team = newSavedTeam
         val user = newSavedUserOn(team)
         val group = newSavedBehaviorGroupFor(team)
@@ -308,7 +374,7 @@ class BehaviorGroupImportExportSpec extends DBSpec {
     }
 
     "export and import back in with a required oauth2 config without the oauth2 app already existing for the team" in {
-      withEmptyDB(dataService, { db =>
+      withEmptyDB(dataService, { () =>
         val team = newSavedTeam
         val user = newSavedUserOn(team)
         val group = newSavedBehaviorGroupFor(team)
@@ -344,7 +410,7 @@ class BehaviorGroupImportExportSpec extends DBSpec {
     }
 
     "export and import back in with a required oauth2 config with an oauth2 app already existing for the team" in {
-      withEmptyDB(dataService, { db =>
+      withEmptyDB(dataService, { () =>
         val team = newSavedTeam
         val user = newSavedUserOn(team)
         val group = newSavedBehaviorGroupFor(team)
@@ -381,6 +447,42 @@ class BehaviorGroupImportExportSpec extends DBSpec {
       })
     }
 
+    "export and import back in with a required aws config" in {
+      withEmptyDB(dataService, { () =>
+        val team = newSavedTeam
+        val user = newSavedUserOn(team)
+        val group = newSavedBehaviorGroupFor(team)
+
+        val behaviorVersionData = BehaviorVersionData.newUnsavedFor(team.id, isDataType = false, maybeName = None, dataService)
+        val groupData = newGroupVersionDataFor(group, user).copy(
+          behaviorVersions = Seq(behaviorVersionData)
+        )
+
+        val groupVersion = newSavedGroupVersionFor(group, user, Some(groupData))
+        val requiredName = "prod"
+        newSavedRequiredAWSConfigFor(requiredName, groupVersion)
+
+        val groupsBefore = runNow(dataService.behaviorGroups.allFor(team))
+        groupsBefore must have length 1
+
+        exportAndImport(group, user, user)
+
+        val groupsAfter = runNow(dataService.behaviorGroups.allFor(team))
+        groupsAfter must have length 2
+
+        val exportedGroup = groupsBefore.head
+        val importedGroup = groupsAfter.filterNot(_.id == exportedGroup.id).head
+        val importedGroupVersion = runNow(dataService.behaviorGroups.maybeCurrentVersionFor(importedGroup)).get
+
+        mustBeValidImport(exportedGroup, importedGroup)
+
+        val importedRequiredAWSConfigs = runNow(dataService.requiredAWSConfigs.allFor(importedGroupVersion))
+        importedRequiredAWSConfigs must have length 1
+        val importedRequiredAWSConfig = importedRequiredAWSConfigs.head
+        importedRequiredAWSConfig.nameInCode mustBe requiredName
+      })
+    }
+
   }
 
   "LibraryVersionData" should {
@@ -395,8 +497,8 @@ class BehaviorGroupImportExportSpec extends DBSpec {
            |
            |foo('bar');
            |""".stripMargin
-      val filename = "lib/foo-lib.js"
-      val data = LibraryVersionData.fromFile(content, filename)
+      val filename = "foo-lib.js"
+      val data = LibraryVersionData.from(content, filename)
       data.name mustBe "foo-lib"
       data.description must contain("Some description blah")
       data.functionBody mustBe

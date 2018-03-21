@@ -12,30 +12,34 @@ import models.behaviors.behaviorgroup.BehaviorGroup
 import models.behaviors.behaviorgroupversion.{BehaviorGroupVersion, BehaviorGroupVersionQueries}
 import services.DataService
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 case class RawRequiredOAuth2ApiConfig(
                                        id: String,
+                                       exportId: String,
                                        groupVersionId: String,
                                        apiId: String,
                                        maybeRecommendedScope: Option[String],
+                                       nameInCode: String,
                                        maybeApplicationId: Option[String]
                                      )
 
 class RequiredOAuth2ApiConfigsTable(tag: Tag) extends Table[RawRequiredOAuth2ApiConfig](tag, "required_oauth2_api_configs") {
 
   def id = column[String]("id", O.PrimaryKey)
+  def exportId = column[String]("export_id")
   def groupVersionId = column[String]("group_version_id")
   def apiId = column[String]("api_id")
   def maybeRecommendedScope = column[Option[String]]("recommended_scope")
+  def nameInCode = column[String]("name_in_code")
   def maybeApplicationId = column[Option[String]]("application_id")
 
-  def * = (id, groupVersionId, apiId, maybeRecommendedScope, maybeApplicationId) <> ((RawRequiredOAuth2ApiConfig.apply _).tupled, RawRequiredOAuth2ApiConfig.unapply _)
+  def * = (id, exportId, groupVersionId, apiId, maybeRecommendedScope, nameInCode, maybeApplicationId) <> ((RawRequiredOAuth2ApiConfig.apply _).tupled, RawRequiredOAuth2ApiConfig.unapply _)
 }
 
 class RequiredOAuth2ApiConfigServiceImpl @Inject() (
-                                                     dataServiceProvider: Provider[DataService]
+                                                     dataServiceProvider: Provider[DataService],
+                                                     implicit val ec: ExecutionContext
                                                    ) extends RequiredOAuth2ApiConfigService {
 
   def dataService = dataServiceProvider.get
@@ -52,20 +56,32 @@ class RequiredOAuth2ApiConfigServiceImpl @Inject() (
     val groupVersion = BehaviorGroupVersionQueries.tuple2BehaviorGroupVersion(tuple._1._1._2)
     RequiredOAuth2ApiConfig(
       raw.id,
+      raw.exportId,
       groupVersion,
       tuple._1._2,
       raw.maybeRecommendedScope,
+      raw.nameInCode,
       tuple._2.map(OAuth2ApplicationQueries.tuple2Application)
     )
   }
 
   def uncompiledAllForQuery(groupVersionId: Rep[String]) = {
-    allWithApplication.filter { case(((required, _), _), _) => required.groupVersionId === groupVersionId }
+    allWithApplication.
+      filter { case(((required, _), _), _) => required.groupVersionId === groupVersionId }.
+      sortBy { case(((required, _), _), _) => required.nameInCode }
   }
   val allForQuery = Compiled(uncompiledAllForQuery _)
 
+  def allForIdAction(groupVersionId: String): DBIO[Seq[RequiredOAuth2ApiConfig]] = {
+    allForQuery(groupVersionId).result.map(r => r.map(tuple2Required))
+  }
+
   def allForAction(groupVersion: BehaviorGroupVersion): DBIO[Seq[RequiredOAuth2ApiConfig]] = {
-    allForQuery(groupVersion.id).result.map(r => r.map(tuple2Required))
+    allForIdAction(groupVersion.id)
+  }
+
+  def allForId(groupVersionId: String): Future[Seq[RequiredOAuth2ApiConfig]] = {
+    dataService.run(allForIdAction(groupVersionId))
   }
 
   def allFor(groupVersion: BehaviorGroupVersion): Future[Seq[RequiredOAuth2ApiConfig]] = {
@@ -103,6 +119,20 @@ class RequiredOAuth2ApiConfigServiceImpl @Inject() (
     dataService.run(action)
   }
 
+  def uncompiledFindWithNameInCodeQuery(nameInCode: Rep[String], groupVersionId: Rep[String]) = {
+    allWithApplication.
+      filter(_._1._1._1.nameInCode === nameInCode).
+      filter(_._1._1._1.groupVersionId === groupVersionId)
+  }
+  val findWithNameInCodeQuery = Compiled(uncompiledFindWithNameInCodeQuery _)
+
+  def findWithNameInCode(nameInCode: String, groupVersion: BehaviorGroupVersion): Future[Option[RequiredOAuth2ApiConfig]] = {
+    val action = findWithNameInCodeQuery(nameInCode, groupVersion.id).result.map { r =>
+      r.headOption.map(tuple2Required)
+    }
+    dataService.run(action)
+  }
+
   def uncompiledFindRawQuery(id: Rep[String]) = all.filter(_.id === id)
   val findRawQuery = Compiled(uncompiledFindRawQuery _)
 
@@ -122,11 +152,11 @@ class RequiredOAuth2ApiConfigServiceImpl @Inject() (
   def maybeCreateForAction(data: RequiredOAuth2ApiConfigData, groupVersion: BehaviorGroupVersion): DBIO[Option[RequiredOAuth2ApiConfig]] = {
     for {
       maybeApi <- DBIO.from(dataService.oauth2Apis.find(data.apiId))
-      maybeApplication <- data.application.map { appData =>
-        DBIO.from(dataService.oauth2Applications.find(appData.applicationId))
+      maybeApplication <- data.config.map { appData =>
+        DBIO.from(dataService.oauth2Applications.find(appData.id))
       }.getOrElse(DBIO.successful(None))
       maybeConfig <- maybeApi.map { api =>
-        val newInstance = RequiredOAuth2ApiConfig(IDs.next, groupVersion, api, data.recommendedScope, maybeApplication)
+        val newInstance = RequiredOAuth2ApiConfig(IDs.next, data.exportId.getOrElse(IDs.next), groupVersion, api, data.recommendedScope, data.nameInCode, maybeApplication)
         (all += newInstance.toRaw).map(_ => newInstance).map(Some(_))
       }.getOrElse(DBIO.successful(None))
     } yield maybeConfig

@@ -44,17 +44,17 @@ case class DataTypeFieldData(
     copy(fieldType = fieldType.map(_.copy(id = maybeMatchingBehaviorVersion.flatMap(_.id))))
   }
 
-  def copyWithNewIdIn(oldToNewIdMapping: collection.mutable.Map[String, String]): DataTypeFieldData = {
-    val newId = IDs.next
-    val maybeOldID = id
-    maybeOldID.foreach { oldId => oldToNewIdMapping.put(oldId, newId) }
-    copy(id = Some(newId))
-  }
-
   def copyForClone: DataTypeFieldData = {
     copy(
+      id = Some(IDs.next),
       fieldId = Some(IDs.next),
       exportId = Some(IDs.next)
+    )
+  }
+
+  def copyForNewVersion: DataTypeFieldData = {
+    copy(
+      id = Some(IDs.next)
     )
   }
 

@@ -1,0 +1,40 @@
+@(
+  missingFunctions: Seq[String],
+  currentFunctions: Seq[String],
+  obsoleteFunctions: Seq[String]
+  )(implicit r: RequestHeader, flash: Flash)
+
+@import helper._
+
+<p>@flash.get("success")</p>
+
+<p>@missingFunctions.length missing functions:</p>
+<ul>
+  @missingFunctions.map { fn =>
+    <li>@fn</li>
+  }
+</ul>
+
+<form action="@controllers.admin.routes.LambdasController.redeployAll" method="POST">
+  @CSRF.formField
+  <input type="submit" value="Redeploy all"/>
+</form>
+<p>@currentFunctions.length current functions:</p>
+<ul>
+  @currentFunctions.map { fn =>
+    <li>
+      @fn
+      <form action="@controllers.admin.routes.LambdasController.redeploy(fn)" method="POST">
+        @CSRF.formField
+        <input type="submit" value="Redeploy"/>
+      </form>
+    </li>
+  }
+</ul>
+
+<p>@obsoleteFunctions.length obsolete functions:</p>
+<ul>
+  @obsoleteFunctions.map { fn =>
+    <li>@fn</li>
+  }
+</ul>

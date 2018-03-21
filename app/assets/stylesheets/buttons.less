@@ -54,8 +54,14 @@ a.button,
   width: 100%;
 }
 
-a.button, .form-toggle-group {
+a.button, .form-toggle-group, .checkbox-button {
   display: inline-block;
+}
+
+.checkbox-button {
+  min-width: 0;
+  height: auto;
+  min-height: @button-height;
 }
 
 a.button:hover {
@@ -71,7 +77,7 @@ button.button-dropdown-trigger,
   padding-right: @dropdown-trigger-right-padding - @border-width;
   border-color: @border-color-dropdown;
   color: @black;
-  min-width: 0;
+  min-width: 0 !important;
   text-align: left;
   white-space: nowrap;
 }
@@ -139,7 +145,7 @@ button.button-s,
   border-radius: @border-radius-small;
 }
 
-button.button-l, a.button-l {
+button.button-l, a.button-l, .checkbox-button-l {
   font-size: @type-button-l;
   font-weight: 600;
   line-height: @xxl;
@@ -149,6 +155,15 @@ button.button-l, a.button-l {
   padding-bottom: @m - @border-width-thick;
   min-width: @m * 20;
   border-radius: @border-radius-large;
+}
+
+.checkbox-button-l {
+  font-size: @type-m;
+  line-height: @xl;
+  padding-top: @xs + @m - @border-width-thick;
+  padding-bottom: @xs + @m - @border-width-thick;
+  min-height: @button-large-height;
+  height: auto;
 }
 
 button.button-dropdown-trigger.button-s,
@@ -206,9 +221,21 @@ button[disabled] {
 a.button-shrink,
 button.button-shrink {
   min-width: 0;
+  padding-left: (@m - @border-width);
+  padding-right: (@m - @border-width);
+  white-space: nowrap;
+}
+
+a.button-shrink.button-s,
+button.button-shrink.button-s {
   padding-left: (@s - @border-width);
   padding-right: (@s - @border-width);
-  white-space: nowrap;
+}
+
+a.button-shrink.button-l,
+button.button-shrink.button-l {
+  padding-left: (@m - @border-width-thick);
+  padding-right: (@m - @border-width-thick);
 }
 
 button.button-symbol {
@@ -231,6 +258,19 @@ button.button-block {
   font-style: inherit;
   line-height: inherit;
   height: auto;
+}
+
+button.button-nav {
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+  border: none !important;
+  color: inherit;
+  line-height: @xl;
+  height: auto;
+  .light-antialiasing();
+  min-width: 0;
+  font-size: inherit;
+  font-weight: inherit;
 }
 
 button.button-no-wrap {
@@ -260,12 +300,18 @@ button.button-subtle {
   color: inherit;
 }
 
+button.button-subtle[disabled] {
+  border-color: transparent !important;
+}
+
 button.button-inherit {
   border-color: inherit !important;
   color: inherit;
 }
 
-button.button-dropdown-item {
+button.button-dropdown-item,
+a.button-dropdown-item {
+  display: block;
   font-size: @type-s;
   line-height: @l;
   padding-left: (@s - @border-width);
@@ -312,7 +358,9 @@ a.button-l:focus {
 
 button.button-dropdown-item:focus,
 button.button-dropdown-item:hover,
-button.button-dropdown-item-hover {
+button.button-dropdown-item-hover,
+a.button-dropdown-item:focus,
+a.button-dropdown-item:hover {
   padding-left: (@s - @border-width);
   padding-right: (@s - @border-width);
   background-color: @blue-medium;
@@ -365,6 +413,14 @@ button.button-dropdown-trigger-menu-open {
   }
 }
 
+button.button-dropdown-trigger.button-l:focus,
+button.button-dropdown-trigger-menu-open.button-l {
+  padding-top: (@m - @border-width-thick) !important;
+  padding-bottom: @m !important;
+  padding-left: (@l - @border-width) !important;
+  padding-right: (@l - @border-width) !important;
+}
+
 button.button-dropdown-trigger.button-s:focus,
 button.button-dropdown-trigger-menu-open.button-s,
 .form-select-s .form-select-element:focus {
@@ -376,16 +432,24 @@ button.button-dropdown-trigger-menu-open.button-s,
 
 button.button-dropdown-trigger-menu-open,
 button.button-dropdown-trigger-menu-open:focus {
-  color: @gray-medium;
   border-color: @border-color;
   border-radius: @border-radius @border-radius 0 0;
   border-bottom-width: 0 !important;
+}
+
+button.button-l.button-dropdown-trigger-menu-open,
+button.button-l.button-dropdown-trigger-menu-open:focus {
+  border-radius: @border-radius-large @border-radius-large 0 0;
 }
 
 button.button-dropdown-trigger-menu-above.button-dropdown-trigger-menu-open {
   border-radius: 0 0 @border-radius @border-radius;
   border-top-width: 0 !important;
   border-bottom-width: @border-width-thick !important;
+}
+
+button.button-l.button-dropdown-trigger-menu-above.button-dropdown-trigger-menu-open {
+  border-radius: 0 0 @border-radius-large @border-radius-large;
 }
 
 button.button-dropdown-trigger-symbol:focus,
@@ -411,8 +475,9 @@ a.button-s:focus {
   padding: (@xs - @border-width-thick + 1) (@m - @border-width-thick) (@xs - @border-width-thick - 1);
 }
 
-button.button-subtle:focus {
-  border-color: currentColor !important;
+button.button-subtle:focus,
+button.button-subtle:active {
+  border-color: @border-color !important;
 }
 
 button.button-dropdown-trigger-menu-open:focus {
@@ -422,8 +487,20 @@ button.button-dropdown-trigger-menu-open:focus {
 a.button-shrink:focus,
 button.button-shrink:focus,
 button.button-symbol:focus {
+  padding-left: (@m - @border-width-thick) !important;
+  padding-right: (@m - @border-width-thick) !important;
+}
+
+button.button-shrink.button-s:focus,
+a.button-shrink.button-s:focus {
   padding-left: (@s - @border-width-thick) !important;
   padding-right: (@s - @border-width-thick) !important;
+}
+
+button.button-shrink.button-l:focus,
+a.button-shrink.button-l:focus {
+  padding-left: (@m - @border-width-thick*2) !important;
+  padding-right: (@m - @border-width-thick*2) !important;
 }
 
 button.button-s.button-symbol:focus {
@@ -446,13 +523,13 @@ button.button-block:focus .link {
   color: @blue-medium-alt;
 }
 
+button.button-nav:hover {
+  color: @pink-medium;
+}
+
 button:active {
   background-color: @black-translucent;
   border-color: @blue-dark;
-}
-
-button.button-subtle:active {
-  border-color: @blue-dark !important;
 }
 
 button.button-raw:active,
@@ -485,7 +562,8 @@ a.button-primary,
 button.button-error,
 a.button-error,
 button.button-inverted,
-a.button-inverted {
+a.button-inverted,
+.checkbox-button.button-inverted {
   font-weight: 600;
   color: @white;
   .light-antialiasing();
@@ -537,6 +615,17 @@ a.button-inverted {
   color: @white;
 }
 
+.checkbox-button.button-inverted {
+  border-color: @blue-medium !important;
+  color: @white;
+}
+
+.checkbox-button-checked.button-inverted {
+  background-color: @blue-darkest;
+  border-color: @blue-darkest !important;
+  color: @white;
+}
+
 button.button-inverted:hover,
 a.button-inverted:hover {
   background-color: @white-subtle;
@@ -544,8 +633,8 @@ a.button-inverted:hover {
 
 button.button-primary[disabled],
 button.button-error[disabled] {
-  background-color: @gray-light !important;
-  border-color: @gray-light !important;
+  background-color: @gray-medium-translucent !important;
+  border-color: transparent !important;
   color: @white !important;
 }
 
@@ -644,6 +733,8 @@ button.button-activated {
 .checkbox-button-s {
   vertical-align: middle;
   padding: 3px @xs;
+  height: auto;
+  min-height: @button-small-height;
 }
 
 .form-toggle-group-s {

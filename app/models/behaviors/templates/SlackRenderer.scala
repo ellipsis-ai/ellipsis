@@ -1,11 +1,35 @@
 package models.behaviors.templates
 
+import java.util.regex.Matcher
+
 import org.commonmark.ext.gfm.strikethrough.Strikethrough
 import org.commonmark.node._
+import play.api.Logger
 
 class SlackRenderer(stringBuilder: StringBuilder) extends AbstractVisitor {
   def escapeControlEntities(text: String): String = {
-    text.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;")
+    val ampersandsEscaped = text.replaceAll("&", "&amp;")
+    try {
+      """\S+""".r.replaceAllIn(
+        Matcher.quoteReplacement(ampersandsEscaped), m => {
+          val str = m.matched
+          if (str == null || str.isEmpty) {
+            ""
+          } else if (str.matches(".*<[@#].+>.*")) {
+            str
+          } else {
+            str.replaceAll("<", "&lt;").replaceAll(">", "&gt;")
+          }
+        })
+    } catch {
+      case e: Throwable => {
+        Logger.error(
+          s"""Error trying to escape entities. Giving up and returning original text: [
+             |$text
+             |]""".stripMargin, e)
+        text
+      }
+    }
   }
 
   override def visit(blockQuote: BlockQuote) {
@@ -19,13 +43,15 @@ class SlackRenderer(stringBuilder: StringBuilder) extends AbstractVisitor {
           child = child.getNext
           while (child != null) {
             child match {
-              case text: Text =>
-              case _ => stringBuilder.append(" ")
+              case s: SoftLineBreak => stringBuilder.append("\r> ")
+              case h: HardLineBreak => stringBuilder.append("\r> ")
+              case _ => child.accept(this)
             }
-            child.accept(this)
             child = child.getNext
           }
-          stringBuilder.append("\r> ")
+          if (node.getNext != null) {
+            stringBuilder.append("\r> ")
+          }
         }
         case _ => {
           stringBuilder.append("\r> ")
@@ -70,16 +96,18 @@ class SlackRenderer(stringBuilder: StringBuilder) extends AbstractVisitor {
   }
 
   override def visit(heading: Heading) {
+    stringBuilder.append("*")
     visitChildren(heading)
-    stringBuilder.append("\r\r")
+    stringBuilder.append("*\r\r")
   }
 
   override def visit(thematicBreak: ThematicBreak) {
+    stringBuilder.append("\r─────\r")
     visitChildren(thematicBreak)
   }
 
   override def visit(html: HtmlInline) {
-    stringBuilder.append(html.getLiteral)
+    stringBuilder.append(escapeControlEntities(html.getLiteral))
     visitChildren(html)
   }
 
@@ -99,20 +127,24 @@ class SlackRenderer(stringBuilder: StringBuilder) extends AbstractVisitor {
 
   }
 
+  def linkWithTitle(link: Link): Unit = {
+    stringBuilder.append("<")
+    stringBuilder.append(s"${link.getDestination}")
+    stringBuilder.append("|")
+    visitChildren(link)
+    stringBuilder.append(">")
+  }
+
   override def visit(link: Link) {
     link.getFirstChild match {
       case e: Text => {
         if (e.getLiteral == link.getDestination) {
           stringBuilder.append(s"<${link.getDestination}>")
         } else {
-          stringBuilder.append("<")
-          stringBuilder.append(s"${link.getDestination}")
-          stringBuilder.append("|")
-          visitChildren(link)
-          stringBuilder.append(">")
+          linkWithTitle(link)
         }
       }
-      case _ => visitChildren(link)
+      case _ => linkWithTitle(link)
     }
   }
 
@@ -149,6 +181,7 @@ class SlackRenderer(stringBuilder: StringBuilder) extends AbstractVisitor {
   }
 
   override def visit(softLineBreak: SoftLineBreak) {
+    stringBuilder.append("\r")
     visitChildren(softLineBreak)
   }
 
@@ -159,7 +192,12 @@ class SlackRenderer(stringBuilder: StringBuilder) extends AbstractVisitor {
   }
 
   override def visit(text: Text) {
-    stringBuilder.append(text.getLiteral)
+    /* HACK: any leftover formatting characters not parsed as Markdown get
+       surrounded by soft hyphens to disable accidental formatting in Slack */
+    val safeText = text.getLiteral.
+      replaceAll("""(\S)([*_`~])(\s|$)""", "$1\u00AD$2\u00AD$3").
+      replaceAll("""(\s|^)([*_`~])(\S)""", "$1\u00AD$2\u00AD$3")
+    stringBuilder.append(escapeControlEntities(safeText))
     visitChildren(text)
   }
 

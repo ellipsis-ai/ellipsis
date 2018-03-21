@@ -5,34 +5,36 @@ import java.time.OffsetDateTime
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 
-import services.DataService
+import com.google.inject.Provider
 import com.mohiva.play.silhouette.api.util.Clock
 import play.api.Configuration
+import services.DataService
 import com.mohiva.play.silhouette.api._
 import com.mohiva.play.silhouette.api.repositories.AuthInfoRepository
 import com.mohiva.play.silhouette.api.services.AuthenticatorResult
 import com.mohiva.play.silhouette.impl.authenticators.CookieAuthenticator
 import models._
-import models.accounts.user.User
 import models.accounts.linkedaccount.LinkedAccount
+import models.accounts.github.GithubProvider
 import models.accounts.slack.SlackProvider
+import models.accounts.user.User
 import models.silhouette.EllipsisEnv
-import play.api.i18n.MessagesApi
-import play.api.libs.concurrent.Execution.Implicits._
 import play.api.mvc.{RequestHeader, Result}
 
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration.FiniteDuration
 
 class SocialAuthController @Inject() (
-                                       val messagesApi: MessagesApi,
                                        val silhouette: Silhouette[EllipsisEnv],
                                        val configuration: Configuration,
                                        val clock: Clock,
                                        val models: Models,
+                                       val assetsProvider: Provider[RemoteAssets],
                                        slackProvider: SlackProvider,
+                                       githubProvider: GithubProvider,
                                        dataService: DataService,
-                                       authInfoRepository: AuthInfoRepository
+                                       authInfoRepository: AuthInfoRepository,
+                                       implicit val ec: ExecutionContext
                                      ) extends EllipsisController with Logger {
 
   val env = silhouette.env
@@ -82,7 +84,7 @@ class SocialAuthController @Inject() (
       val authorizationParams = maybeTeamId.map { teamId =>
         settings.authorizationParams + ("team" -> teamId)
       }.getOrElse(settings.authorizationParams)
-      settings.copy(redirectURL = url, authorizationParams = authorizationParams)
+      settings.copy(redirectURL = Some(url), authorizationParams = authorizationParams)
     }
     val authenticateResult = provider.authenticate() recover {
       case e: com.mohiva.play.silhouette.impl.exceptions.AccessDeniedException => {
@@ -138,10 +140,10 @@ class SocialAuthController @Inject() (
       maybeTeamId.foreach { teamId =>
         authorizationParams = authorizationParams + ("team" -> teamId)
       }
-      configuration.getString("silhouette.slack.signInScope").foreach { signInScope =>
+      configuration.getOptional[String]("silhouette.slack.signInScope").foreach { signInScope =>
         authorizationParams = authorizationParams + ("scope" -> signInScope)
       }
-      settings.copy(redirectURL = url, authorizationParams = authorizationParams)
+      settings.copy(redirectURL = Some(url), authorizationParams = authorizationParams)
     }
     val authenticateResult = provider.authenticate() recover {
       case e: com.mohiva.play.silhouette.impl.exceptions.AccessDeniedException => {
@@ -193,6 +195,48 @@ class SocialAuthController @Inject() (
           }
         } yield result
       }
+    }
+  }
+
+  def authenticateGithub(
+                         maybeRedirect: Option[String],
+                         maybeTeamId: Option[String],
+                         maybeChannelId: Option[String]
+                       ) = silhouette.SecuredAction.async { implicit request =>
+    val user = request.identity
+    val provider = githubProvider.withSettings { settings =>
+      val url = routes.SocialAuthController.authenticateGithub(maybeRedirect, maybeTeamId, maybeChannelId).absoluteURL(secure = true)
+      var authorizationParams = settings.authorizationParams
+      configuration.getOptional[String]("silhouette.github.scope").foreach { signInScope =>
+        authorizationParams = authorizationParams + ("scope" -> signInScope)
+      }
+      settings.copy(redirectURL = Some(url), authorizationParams = authorizationParams)
+    }
+    val authenticateResult = provider.authenticate() recover {
+      case e: com.mohiva.play.silhouette.api.exceptions.ProviderException => {
+        val redirect = maybeRedirect.getOrElse(routes.ApplicationController.index().url)
+        Left(Redirect(validatedRedirectUri(redirect)))
+      }
+    }
+    authenticateResult.flatMap {
+      case Left(result) => Future.successful(result)
+      case Right(authInfo) => for {
+        profile <- githubProvider.retrieveProfile(authInfo)
+        result <- for {
+          _ <- dataService.githubProfiles.save(profile)
+          _ <- authInfoRepository.save(profile.loginInfo, authInfo)
+          maybeExistingLinkedAccount <- dataService.linkedAccounts.find(profile.loginInfo, user.teamId)
+          _ <- maybeExistingLinkedAccount.map(Future.successful).getOrElse {
+            dataService.linkedAccounts.save(LinkedAccount(user, profile.loginInfo, OffsetDateTime.now))
+          }
+          result <- Future.successful {
+            maybeRedirect.map { redirect =>
+              Redirect(validatedRedirectUri(redirect))
+            }.getOrElse(Redirect(routes.ApplicationController.index()))
+          }
+          authenticatedResult <- authenticatorResultForUserAndResult(user, result)
+        } yield authenticatedResult
+      } yield result
     }
   }
 

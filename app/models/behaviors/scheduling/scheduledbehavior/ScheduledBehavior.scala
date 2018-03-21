@@ -5,7 +5,7 @@ import java.time.OffsetDateTime
 import models.accounts.slack.botprofile.SlackBotProfile
 import models.accounts.user.User
 import models.behaviors.behavior.Behavior
-import models.behaviors.events.{RunEvent, ScheduledEvent}
+import models.behaviors.events.{EventType, RunEvent, ScheduledEvent}
 import models.behaviors.scheduling.Scheduled
 import models.behaviors.scheduling.recurrence.Recurrence
 import models.team.Team
@@ -15,8 +15,7 @@ import slack.api.SlackApiClient
 import slick.dbio.DBIO
 import utils.SlackTimestamp
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 case class ScheduledBehavior(
                               id: String,
@@ -31,39 +30,42 @@ case class ScheduledBehavior(
                               createdAt: OffsetDateTime
                            ) extends Scheduled {
 
-  def maybeBehaviorName(dataService: DataService): Future[Option[String]] = {
+  def displayText(dataService: DataService)(implicit ec: ExecutionContext): Future[String] = {
     for {
       maybeBehaviorVersion <- dataService.behaviors.maybeCurrentVersionFor(behavior)
+      maybeBehaviorGroupVersion <- dataService.behaviorGroups.maybeCurrentVersionFor(behavior.group)
     } yield {
-      maybeBehaviorVersion.flatMap(_.maybeName)
-    }
-  }
-
-  def maybeBehaviorGroupName(dataService: DataService): Future[Option[String]] = {
-    for {
-      maybeGroupVersion <- dataService.behaviorGroups.maybeCurrentVersionFor(behavior.group)
-    } yield {
-      maybeGroupVersion.flatMap(version => Option(version.name).filter(_.trim.nonEmpty))
-    }
-  }
-
-  def displayText(dataService: DataService): Future[String] = {
-    for {
-      maybeBehaviorName <- maybeBehaviorName(dataService)
-      maybeBehaviorGroupName <- maybeBehaviorGroupName(dataService)
-    } yield {
-      val actionText = maybeBehaviorName.map { name =>
-        s"""an action named `${name}`"""
-      }.getOrElse("an unnamed action")
-      val groupText = maybeBehaviorGroupName.map { name =>
-        s" in skill `$name`"
-      }.getOrElse("")
+      val actionText = maybeBehaviorVersion.map { behaviorVersion =>
+        behaviorVersion.maybeName.map { name =>
+          s"""an action named `$name`"""
+        }.getOrElse("an unnamed action")
+      }.getOrElse("a deleted action")
+      val groupText = maybeBehaviorGroupVersion.map { groupVersion =>
+        if (groupVersion.name.trim.nonEmpty) {
+          s" in skill `${groupVersion.name}`"
+        } else {
+          s" in an unnamed skill"
+        }
+      }.getOrElse(" in a deleted skill")
       actionText ++ groupText
     }
   }
 
   def eventFor(channel: String, slackUserId: String, profile: SlackBotProfile, client: SlackApiClient): ScheduledEvent = {
-    ScheduledEvent(RunEvent(profile, behavior, arguments, channel, None, slackUserId, SlackTimestamp.now, client), this)
+    ScheduledEvent(
+      RunEvent(
+        profile,
+        behavior,
+        arguments,
+        channel,
+        None,
+        slackUserId,
+        SlackTimestamp.now,
+        client,
+        Some(EventType.scheduled)
+      ),
+      this
+    )
   }
 
   def withUpdatedNextTriggeredFor(when: OffsetDateTime): ScheduledBehavior = {

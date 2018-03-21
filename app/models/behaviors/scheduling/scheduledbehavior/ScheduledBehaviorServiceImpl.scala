@@ -15,8 +15,7 @@ import models.team.{Team, TeamQueries}
 import play.api.libs.json.{JsError, JsSuccess, JsValue}
 import services.DataService
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 case class RawScheduledBehavior(
                                  id: String,
@@ -60,7 +59,8 @@ class ScheduledBehaviorsTable(tag: Tag) extends Table[RawScheduledBehavior](tag,
 }
 
 class ScheduledBehaviorServiceImpl @Inject() (
-                                              dataServiceProvider: Provider[DataService]
+                                              dataServiceProvider: Provider[DataService],
+                                              implicit val ec: ExecutionContext
                                             ) extends ScheduledBehaviorService {
 
   def dataService = dataServiceProvider.get
@@ -114,9 +114,7 @@ class ScheduledBehaviorServiceImpl @Inject() (
       all <- allForTeam(team)
       groups <- dataService.behaviorGroups.allFor(team)
       currentGroupVersions <- Future.sequence(groups.map { g =>
-        g.maybeCurrentVersionId.map { versionId =>
-          dataService.behaviorGroupVersions.findWithoutAccessCheck(versionId)
-        }.getOrElse(Future.successful(None))
+        dataService.behaviorGroupVersions.maybeCurrentFor(g)
       }).map(_.flatten)
       currentBehaviorVersions <- Future.sequence(currentGroupVersions.map { gv =>
         dataService.behaviorVersions.allForGroupVersion(gv)
@@ -263,8 +261,16 @@ class ScheduledBehaviorServiceImpl @Inject() (
   }
   val rawFindQueryFor = Compiled(uncompiledRawFindQuery _)
 
-  def delete(scheduledBehavior: ScheduledBehavior): Future[Boolean] = {
+  def delete(scheduledBehavior: ScheduledBehavior): Future[Option[ScheduledBehavior]] = {
     // recurrence deletes cascade to scheduled behaviors
-    dataService.recurrences.delete(scheduledBehavior.recurrence.id)
+    for {
+      didDelete <- dataService.recurrences.delete(scheduledBehavior.recurrence.id)
+    } yield {
+      if (didDelete) {
+        Some(scheduledBehavior)
+      } else {
+        None
+      }
+    }
   }
 }

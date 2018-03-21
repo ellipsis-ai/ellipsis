@@ -1,7 +1,11 @@
+parser: "babel-eslint"
 env:
   browser: true
   es6: true
-extends: ['eslint:recommended','plugin:react/recommended']
+extends: [
+  'eslint:recommended',
+  'plugin:react/recommended',
+]
 parserOptions:
   ecmaVersion: 6
   ecmaFeatures:
@@ -9,6 +13,9 @@ parserOptions:
     jsx: true
 plugins:
   - react
+settings:
+  react:
+    version: 15.3
 globals:
   requirejs: false
   define: false
@@ -110,7 +117,15 @@ rules:
   no-use-before-define:
     - error
     - functions: false
+  no-useless-escape:
+    - off
   react/prop-types:
     - warn
   react/display-name:
     - off
+  react/no-string-refs:
+    - warn
+  react/no-find-dom-node:
+    - off
+  react/no-unescaped-entities:
+    - warn

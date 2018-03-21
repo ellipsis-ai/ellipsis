@@ -7,8 +7,7 @@ import com.google.inject.Provider
 import drivers.SlickPostgresDriver.api._
 import services.DataService
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 case class RawRecurrence(
                           id: String,
@@ -93,15 +92,26 @@ class RecurrencesTable(tag: Tag) extends Table[RawRecurrence](tag, "recurrences"
 }
 
 class RecurrenceServiceImpl @Inject() (
-                                        dataServiceProvider: Provider[DataService]
+                                        dataServiceProvider: Provider[DataService],
+                                        implicit val ec: ExecutionContext
                                       ) extends RecurrenceService {
 
   def dataService = dataServiceProvider.get
 
   import RecurrenceQueries._
 
+  /* TODO: Investigate why saving time-of-day midnight causes a PostgreSQL error
+
+     Midnight causes a mapping error with an invalid `-infinity` value,
+     so we ensure time of day is at least one nanosecond later.
+
+     (PostgreSQL throws away nanoseconds anyway.) */
+  private def ensureAfterMinTimeOfDay(raw: RawRecurrence): RawRecurrence = {
+    raw.copy(maybeTimeOfDay = raw.maybeTimeOfDay.map(_.plusNanos(1)))
+  }
+
   def save(recurrence: Recurrence): Future[Recurrence] = {
-    val raw = recurrence.toRaw
+    val raw = ensureAfterMinTimeOfDay(recurrence.toRaw)
     val query = all.filter(_.id === raw.id)
     val action = query.result.flatMap { r =>
       r.headOption.map { existing =>

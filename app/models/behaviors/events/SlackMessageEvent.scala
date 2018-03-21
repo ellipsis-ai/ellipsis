@@ -1,62 +1,85 @@
 package models.behaviors.events
 
 import akka.actor.ActorSystem
-import models.SlackMessageFormatter
-import models.accounts.slack.SlackUserInfo
 import models.accounts.slack.botprofile.SlackBotProfile
-import models.accounts.slack.profile.SlackProfile
 import models.accounts.user.User
+import models.behaviors.ActionChoice
 import models.behaviors.conversations.conversation.Conversation
-import services.DataService
+import play.api.Configuration
+import services.caching.CacheService
+import services.{AWSLambdaService, DataService, DefaultServices}
 import slack.api.SlackApiClient
 import utils.{SlackMessageSender, UploadFileSpec}
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 import scala.util.matching.Regex
 
 case class SlackMessageEvent(
-                                 profile: SlackBotProfile,
-                                 channel: String,
-                                 maybeThreadId: Option[String],
-                                 user: String,
-                                 text: String,
-                                 ts: String,
-                                 client: SlackApiClient,
-                                 slackUserList: Seq[SlackUserInfo]
-                               ) extends MessageEvent with SlackEvent {
+                              profile: SlackBotProfile,
+                              channel: String,
+                              maybeThreadId: Option[String],
+                              user: String,
+                              message: SlackMessage,
+                              maybeFile: Option[SlackFile],
+                              ts: String,
+                              client: SlackApiClient,
+                              maybeOriginalEventType: Option[EventType]
+                            ) extends MessageEvent with SlackEvent {
+
+  val eventType: EventType = EventType.chat
+
+  def withOriginalEventType(originalEventType: EventType): Event = {
+    this.copy(maybeOriginalEventType = Some(originalEventType))
+  }
 
   lazy val isBotMessage: Boolean = profile.userId == user
-  lazy val isPublicChannel: Boolean = !isDirectMessage(channel) && !isPrivateChannel(channel)
 
-  override def botPrefix: String = if (isDirectMessage(channel)) { "" } else { s"<@${profile.userId}> " }
+  override def botName(services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[String] = {
+    services.dataService.slackBotProfiles.maybeNameFor(profile).map { maybeName =>
+      maybeName.getOrElse(SlackMessageEvent.fallbackBotPrefix)
+    }
+  }
 
-  val messageText: String = text
+  override def contextualBotPrefix(services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[String] = {
+    if (isDirectMessage) {
+      Future.successful("")
+    } else {
+      for {
+        name <- botName(services)
+      } yield {
+        if (name == SlackMessageEvent.fallbackBotPrefix) {
+          name
+        } else {
+          s"@$name "
+        }
+      }
+    }
+  }
+
+  val messageText: String = message.originalText
 
   override val relevantMessageTextWithFormatting: String = {
-    val withoutDotDotDot = MessageEvent.ellipsisRegex.replaceFirstIn(messageText, "")
-    SlackMessageEvent.toBotRegexFor(profile.userId).replaceFirstIn(withoutDotDotDot, "")
+    message.withoutBotPrefix
   }
 
   override val relevantMessageText: String = {
-    unformatTextFragment(relevantMessageTextWithFormatting)
+    message.unformattedText
   }
 
   lazy val includesBotMention: Boolean = {
-    isDirectMessage(channel) ||
-      SlackMessageEvent.mentionRegexFor(profile.userId).findFirstMatchIn(text).nonEmpty ||
-      MessageEvent.ellipsisRegex.findFirstMatchIn(text).nonEmpty
+    isDirectMessage ||
+      SlackMessageEvent.mentionRegexFor(profile.userId).findFirstMatchIn(message.originalText).nonEmpty ||
+      MessageEvent.ellipsisRegex.findFirstMatchIn(message.originalText).nonEmpty
   }
 
   override val isResponseExpected: Boolean = includesBotMention
   val teamId: String = profile.teamId
   val userIdForContext: String = user
-  val messageRecipientPrefix: String = messageRecipientPrefixFor(channel)
 
   lazy val maybeChannel = Some(channel)
   lazy val name: String = Conversation.SLACK_CONTEXT
 
-  def maybeOngoingConversation(dataService: DataService): Future[Option[Conversation]] = {
+  def maybeOngoingConversation(dataService: DataService)(implicit ec: ExecutionContext): Future[Option[Conversation]] = {
     dataService.conversations.findOngoingFor(user, context, maybeChannel, maybeThreadId).flatMap { maybeConvo =>
       maybeConvo.map(c => Future.successful(Some(c))).getOrElse(maybeConversationRootedHere(dataService))
     }
@@ -66,35 +89,23 @@ case class SlackMessageEvent(
     dataService.conversations.findOngoingFor(user, context, maybeChannel, Some(ts))
   }
 
-  override def recentMessages(dataService: DataService)(implicit actorSystem: ActorSystem): Future[Seq[String]] = {
-    for {
-      maybeTeam <- dataService.teams.find(profile.teamId)
-      maybeOAuthToken <- dataService.oauth2Tokens.maybeFullForSlackTeamId(profile.slackTeamId)
-      maybeUserClient <- Future.successful(maybeOAuthToken.map { token =>
-        SlackApiClient(token.accessToken)
-      })
-      maybeHistory <- maybeUserClient.map { userClient =>
-        userClient.getChannelHistory(channel, latest = Some(ts)).map(Some(_))
-      }.getOrElse(Future.successful(None))
-      messages <- Future.successful(maybeHistory.map { history =>
-        history.messages.slice(0, 10).reverse.flatMap { json =>
-          (json \ "text").asOpt[String]
-        }
-      }.getOrElse(Seq()))
-    } yield messages
+  override def navLinks(lambdaService: AWSLambdaService): String = {
+    navLinkList(lambdaService).map { case(title, path) =>
+      s"[$title]($path)"
+    }.mkString("  ·  ")
   }
 
-  def channelForSend(forcePrivate: Boolean, maybeConversation: Option[Conversation])(implicit actorSystem: ActorSystem): Future[String] = {
-    eventualMaybeDMChannel(actorSystem).map { maybeDMChannel =>
-      (if (forcePrivate) {
-        maybeDMChannel
-      } else {
-        None
-      }).orElse {
-        maybeConversation.flatMap { convo =>
-          convo.maybeChannel
-        }
-      }.getOrElse(channel)
+  def channelForSend(
+                      forcePrivate: Boolean,
+                      maybeConversation: Option[Conversation],
+                      cacheService: CacheService
+                    )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[String] = {
+    (if (forcePrivate) {
+      eventualMaybeDMChannel(cacheService)
+    } else {
+      Future.successful(maybeConversation.flatMap(_.maybeChannel))
+    }).map { maybeChannel =>
+      maybeChannel.getOrElse(channel)
     }
   }
 
@@ -103,40 +114,50 @@ case class SlackMessageEvent(
                    forcePrivate: Boolean,
                    maybeShouldUnfurl: Option[Boolean],
                    maybeConversation: Option[Conversation],
-                   maybeActions: Option[MessageActions] = None,
-                   files: Seq[UploadFileSpec] = Seq()
-                 )(implicit actorSystem: ActorSystem): Future[Option[String]] = {
-    channelForSend(forcePrivate, maybeConversation).flatMap { channelToUse =>
-      SlackMessageSender(
+                   attachmentGroups: Seq[MessageAttachmentGroup],
+                   files: Seq[UploadFileSpec],
+                   choices: Seq[ActionChoice],
+                   isForUndeployed: Boolean,
+                   hasUndeployedVersionForAuthor: Boolean,
+                   services: DefaultServices,
+                   configuration: Configuration
+                 )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[String]] = {
+    for {
+      channelToUse <- channelForSend(forcePrivate, maybeConversation, services.cacheService)
+      botName <- botName(services)
+      maybeTs <- SlackMessageSender(
         client,
         user,
+        profile.slackTeamId,
         unformattedText,
         forcePrivate,
+        isForUndeployed,
+        hasUndeployedVersionForAuthor,
         channel,
         channelToUse,
         maybeThreadId,
         maybeShouldUnfurl,
         maybeConversation,
-        maybeActions,
-        files
+        attachmentGroups,
+        files,
+        choices,
+        configuration,
+        botName
       ).send
-    }
+    } yield maybeTs
   }
 
-  override def ensureUser(dataService: DataService): Future[User] = {
+  override def ensureUser(dataService: DataService)(implicit ec: ExecutionContext): Future[User] = {
     super.ensureUser(dataService).flatMap { user =>
-      dataService.slackProfiles.save(SlackProfile(profile.slackTeamId, loginInfo)).map(_ => user)
+      ensureSlackProfileFor(loginInfo, dataService).map(_ => user)
     }
-  }
-
-  override def unformatTextFragment(text: String): String = {
-    SlackMessageFormatter.unformatText(text, slackUserList)
   }
 
 }
 
 object SlackMessageEvent {
 
+  val fallbackBotPrefix = "..."
   def mentionRegexFor(botId: String): Regex = s"""<@$botId>""".r
   def toBotRegexFor(botId: String): Regex = s"""^<@$botId>:?\\s*""".r
 

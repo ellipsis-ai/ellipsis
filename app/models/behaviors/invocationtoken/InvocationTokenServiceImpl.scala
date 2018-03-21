@@ -5,14 +5,13 @@ import javax.inject.Inject
 
 import com.google.inject.Provider
 import models.IDs
-import services.DataService
+import services.{AWSLambdaService, DataService}
 import drivers.SlickPostgresDriver.api._
 import models.accounts.user.User
 import models.behaviors.behavior.Behavior
 import models.behaviors.scheduling.Scheduled
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 class InvocationTokensTable(tag: Tag) extends Table[InvocationToken](tag, "invocation_tokens") {
 
@@ -26,10 +25,13 @@ class InvocationTokensTable(tag: Tag) extends Table[InvocationToken](tag, "invoc
 }
 
 class InvocationTokenServiceImpl @Inject() (
-                                  dataServiceProvider: Provider[DataService]
+                                  dataServiceProvider: Provider[DataService],
+                                  lambdaServiceProvider: Provider[AWSLambdaService],
+                                  implicit val ec: ExecutionContext
                                 ) extends InvocationTokenService {
 
   def dataService = dataServiceProvider.get
+  def lambdaService = lambdaServiceProvider.get
 
   val all = TableQuery[InvocationTokensTable]
 
@@ -42,9 +44,14 @@ class InvocationTokenServiceImpl @Inject() (
     dataService.run(findQueryFor(id).result.map(_.headOption))
   }
 
+  def isExpired(token: InvocationToken): Boolean = {
+    // there can be a delay in starting, so we allow an extra 5 seconds
+    token.createdAt.isBefore(OffsetDateTime.now.minusSeconds(lambdaService.invocationTimeoutSeconds + 5))
+  }
+
   def findNotExpired(id: String): Future[Option[InvocationToken]] = {
     find(id).map { maybeToken =>
-      maybeToken.filterNot(_.isExpired)
+      maybeToken.filterNot(isExpired)
     }
   }
 

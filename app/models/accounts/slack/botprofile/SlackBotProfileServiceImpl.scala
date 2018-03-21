@@ -1,19 +1,22 @@
 package models.accounts.slack.botprofile
 
 import java.time.OffsetDateTime
-import javax.inject.{Inject, Provider}
 
 import akka.actor.ActorSystem
 import drivers.SlickPostgresDriver.api._
+import javax.inject.{Inject, Provider}
+import models.accounts.registration.RegistrationService
+import models.behaviors.events.{EventType, SlackMessage, SlackMessageEvent}
 import models.behaviors.{BotResult, BotResultService}
-import models.behaviors.events.SlackMessageEvent
 import models.team.Team
 import play.api.Logger
+import services.caching.CacheService
 import services.{DataService, SlackEventService}
-import utils.{SlackMessageReactionHandler, SlackTimestamp}
+import slack.api.SlackApiClient
+import slick.dbio.DBIO
+import utils.{SlackChannels, SlackMessageReactionHandler, SlackTimestamp}
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 class SlackBotProfileTable(tag: Tag) extends Table[SlackBotProfile](tag, "slack_bot_profiles") {
   def userId = column[String]("user_id", O.PrimaryKey)
@@ -27,15 +30,20 @@ class SlackBotProfileTable(tag: Tag) extends Table[SlackBotProfile](tag, "slack_
 }
 
 class SlackBotProfileServiceImpl @Inject() (
-                                          dataServiceProvider: Provider[DataService],
-                                          slackEventServiceProvider: Provider[SlackEventService],
-                                          botResultServiceProvider: Provider[BotResultService],
-                                          implicit val actorSystem: ActorSystem
+                                             dataServiceProvider: Provider[DataService],
+                                             slackEventServiceProvider: Provider[SlackEventService],
+                                             botResultServiceProvider: Provider[BotResultService],
+                                             registrationServiceProvider: Provider[RegistrationService],
+                                             cacheServiceProvider: Provider[CacheService],
+                                             implicit val actorSystem: ActorSystem,
+                                             implicit val ec: ExecutionContext
                                         ) extends SlackBotProfileService {
 
   def dataService = dataServiceProvider.get
   def slackEventService = slackEventServiceProvider.get
   def botResultService = botResultServiceProvider.get
+  def registrationService = registrationServiceProvider.get
+  def cacheService = cacheServiceProvider.get
 
   val all = TableQuery[SlackBotProfileTable]
 
@@ -86,11 +94,11 @@ class SlackBotProfileServiceImpl @Inject() (
           maybeTeam <- DBIO.from(dataService.teams.find(existing.teamId))
           _ <- query.update(profile)
           _ <- maybeTeam.map { team =>
-            DBIO.from(dataService.teams.setInitialNameFor(team, slackTeamName))
+            DBIO.from(dataService.teams.setNameFor(team, slackTeamName))
           }.getOrElse(DBIO.successful(Unit))
         } yield profile
       }
-      case None => DBIO.from(dataService.teams.create(slackTeamName)).flatMap { team =>
+      case None => DBIO.from(registrationService.registerNewTeam(slackTeamName)).flatMap { team =>
         val newProfile = SlackBotProfile(userId, team.id, slackTeamId, token, OffsetDateTime.now)
         (all += newProfile).map { _ => newProfile }
       }
@@ -98,13 +106,54 @@ class SlackBotProfileServiceImpl @Inject() (
     dataService.run(action)
   }
 
-  def eventualMaybeEvent(slackTeamId: String, channelId: String, userId: String): Future[Option[SlackMessageEvent]] = {
+  def eventualMaybeEvent(slackTeamId: String, channelId: String, maybeUserId: Option[String], maybeOriginalEventType: Option[EventType]): Future[Option[SlackMessageEvent]] = {
     allForSlackTeamId(slackTeamId).map { botProfiles =>
       botProfiles.headOption.map { botProfile =>
-        // TODO: Create a new class of synthetic events that doesn't need a SlackUserInfo list
+        // TODO: Create a new class for placeholder events
         // https://github.com/ellipsis-ai/ellipsis/issues/1719
-        // For now, there's no text in the event, so the empty user list doesn't matter
-        SlackMessageEvent(botProfile, channelId, None, userId, "", SlackTimestamp.now, slackEventService.clientFor(botProfile), Seq())
+        SlackMessageEvent(
+          botProfile,
+          channelId,
+          None,
+          maybeUserId.getOrElse(botProfile.userId),
+          SlackMessage.blank,
+          None,
+          SlackTimestamp.now,
+          slackEventService.clientFor(botProfile),
+          maybeOriginalEventType
+        )
+      }
+    }
+  }
+
+  def channelsFor(botProfile: SlackBotProfile, cacheService: CacheService): SlackChannels = {
+    SlackChannels(SlackApiClient(botProfile.token), cacheService, botProfile.slackTeamId)
+  }
+
+  def maybeNameFor(slackTeamId: String): Future[Option[String]] = {
+    for {
+      maybeSlackBotProfile <- allForSlackTeamId(slackTeamId).map(_.headOption)
+      maybeName <- maybeSlackBotProfile.map { slackBotProfile =>
+        maybeNameFor(slackBotProfile)
+      }.getOrElse(Future.successful(None))
+    } yield maybeName
+  }
+
+  def maybeNameFor(botProfile: SlackBotProfile): Future[Option[String]] = {
+    val teamId = botProfile.teamId
+    slackEventService.maybeSlackUserDataFor(botProfile).map { maybeSlackUserData =>
+      maybeSlackUserData.map { slackUserData =>
+        val name = slackUserData.getDisplayName
+        cacheService.cacheBotName(name, teamId)
+        name
+      }.orElse {
+        Logger.error("No bot user data returned from Slack API; using fallback cache")
+        cacheService.getBotName(teamId)
+      }
+    }.recover {
+      case e: slack.api.InvalidResponseError => {
+        Logger.warn("Couldn’t retrieve bot user data from Slack API because of an invalid response; using fallback cache", e)
+        cacheService.getBotName(teamId)
       }
     }
   }
@@ -128,7 +177,7 @@ class SlackBotProfileServiceImpl @Inject() (
   ): Future[Unit] = {
     val delayMilliseconds = 1000
     (for {
-      maybeEvent <- eventualMaybeEvent(slackTeamId, channelId, userId)
+      maybeEvent <- eventualMaybeEvent(slackTeamId, channelId, Some(userId), None)
       _ <- maybeEvent.map { event =>
         val eventualResult = getEventualMaybeResult(event)
         sendResult(eventualResult)

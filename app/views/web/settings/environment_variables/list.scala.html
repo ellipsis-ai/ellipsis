@@ -1,0 +1,13 @@
+@(
+  config: ViewConfig,
+  dataRoute: Call
+)(implicit messages: Messages, r: RequestHeader)
+
+@page.main("Environment variables", config, Seq(NavItem.teamSettings, NavItem("Environment variables", None))) {
+  <div id="content" class="content flex-row-cascade">
+    <div id="environmentVariableList" class="flex-row-cascade"></div>
+    <script src='@config.assets.getWebpackBundle("vendor.js")'></script>
+    <script src="@dataRoute"></script>
+    <script src='@config.assets.getWebpackBundle("environmentVariables.js")'></script>
+  </div>
+}

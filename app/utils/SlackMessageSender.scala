@@ -1,29 +1,89 @@
 package utils
 
 import akka.actor.ActorSystem
+import json.Formatting._
 import models.SlackMessageFormatter
+import models.behaviors.ActionChoice
 import models.behaviors.conversations.conversation.Conversation
-import models.behaviors.events.{MessageActions, SlackMessageActions}
+import models.behaviors.events._
+import models.behaviors.events.SlackMessageActionConstants._
+import play.api.Configuration
+import play.api.libs.json.Json
 import slack.api.SlackApiClient
 import slack.models.Attachment
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 import scala.reflect.io.File
+
+case class SlackMessageSenderException(underlying: Throwable, channel: String, slackTeamId: String, userId: String, text: String)
+  extends Exception(
+    s"""Bad response from Slack while sending a message to user $userId in channel $channel on team $slackTeamId
+       |Message:
+       |$text
+       |
+       |Underlying cause:
+       |${underlying.toString}
+     """.stripMargin, underlying) {
+}
 
 case class SlackMessageSender(
                                client: SlackApiClient,
                                user: String,
+                               slackTeamId: String,
                                unformattedText: String,
                                forcePrivate: Boolean,
+                               isForUndeployed: Boolean,
+                               hasUndeployedVersionForAuthor: Boolean,
                                originatingChannel: String,
                                channelToUse: String,
                                maybeThreadId: Option[String],
                                maybeShouldUnfurl: Option[Boolean],
                                maybeConversation: Option[Conversation],
-                               maybeActions: Option[MessageActions] = None,
-                               files: Seq[UploadFileSpec] = Seq()
+                               attachmentGroups: Seq[MessageAttachmentGroup] = Seq(),
+                               files: Seq[UploadFileSpec] = Seq(),
+                               choices: Seq[ActionChoice],
+                               configuration: Configuration,
+                               botName: String
                              ) {
+
+  val choicesAttachmentGroups: Seq[SlackMessageActionsGroup] = {
+    if (choices.isEmpty) {
+      Seq()
+    } else {
+      val actionList = choices.zipWithIndex.map { case(ea, i) =>
+        val value = Json.toJson(ea).toString()
+        SlackMessageActionButton(ACTION_CHOICE, ea.label, value)
+      }
+      Seq(SlackMessageActionsGroup(
+        ACTION_CHOICES,
+        actionList,
+        None,
+        Some(Color.BLUE_LIGHTER),
+        None
+      ))
+    }
+  }
+
+  val attachmentGroupsToUse = {
+    val groups = attachmentGroups ++ choicesAttachmentGroups
+    if (isForUndeployed) {
+      val baseUrl = configuration.get[String]("application.apiBaseUrl")
+      val path = controllers.routes.HelpController.devMode(Some(slackTeamId), Some(botName)).url
+      val link = s"[development]($baseUrl$path)"
+      groups ++ Seq(SlackMessageTextAttachmentGroup(s"\uD83D\uDEA7 Skill in $link \uD83D\uDEA7", None))
+    } else if (hasUndeployedVersionForAuthor) {
+      val baseUrl = configuration.get[String]("application.apiBaseUrl")
+      val path = controllers.routes.HelpController.devMode(Some(slackTeamId), Some(botName)).url
+      val link = s"[dev mode]($baseUrl$path)"
+      groups ++ Seq(
+        SlackMessageTextAttachmentGroup(
+          s"\uD83D\uDEA7 You are running the deployed version of this skill even though you've made changes. You can always use the most recent version in $link.", None
+        )
+      )
+    } else {
+      groups
+    }
+  }
 
   private def postChatMessage(
                                text: String,
@@ -31,9 +91,10 @@ case class SlackMessageSender(
                                maybeReplyBroadcast: Option[Boolean] = None,
                                maybeAttachments: Option[Seq[Attachment]] = None,
                                maybeChannelToForce: Option[String] = None
-                             )(implicit actorSystem: ActorSystem): Future[String] = {
+                             )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[String] = {
+    val channel = maybeChannelToForce.getOrElse(maybeThreadTs.map(_ => originatingChannel).getOrElse(channelToUse))
     client.postChatMessage(
-      maybeChannelToForce.getOrElse(maybeThreadTs.map(_ => originatingChannel).getOrElse(channelToUse)),
+      channel,
       text,
       username = None,
       asUser = Some(true),
@@ -48,7 +109,9 @@ case class SlackMessageSender(
       deleteOriginal = None,
       threadTs = maybeThreadTs,
       replyBroadcast = maybeReplyBroadcast
-    )
+    ).recover {
+      case t: Throwable => throw SlackMessageSenderException(t, channel, slackTeamId, user, text)
+    }
   }
 
   private def isDirectMessage(channelId: String): Boolean = {
@@ -70,7 +133,7 @@ case class SlackMessageSender(
     }
   }
 
-  def sendPreamble(formattedText: String, channelToUse: String)(implicit actorSystem: ActorSystem): Future[Unit] = {
+  def sendPreamble(formattedText: String, channelToUse: String)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Unit] = {
     if (formattedText.nonEmpty) {
       for {
         _ <- if (maybeThreadId.isDefined && maybeConversation.flatMap(_.maybeThreadId).isEmpty) {
@@ -111,10 +174,10 @@ case class SlackMessageSender(
                                   segments: List[String],
                                   channelToUse: String,
                                   maybeShouldUnfurl: Option[Boolean],
-                                  maybeAttachments: Option[Seq[Attachment]],
+                                  attachments: Seq[Attachment],
                                   maybeConversation: Option[Conversation],
                                   maybePreviousTs: Option[String]
-                                )(implicit actorSystem: ActorSystem): Future[Option[String]] = {
+                                )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[String]] = {
     if (segments.isEmpty) {
       Future.successful(maybePreviousTs)
     } else {
@@ -124,24 +187,23 @@ case class SlackMessageSender(
         Future.successful(None)
       } else {
         val maybeAttachmentsForSegment = if (segments.tail.isEmpty) {
-          maybeAttachments
+          Some(attachments).filter(_.nonEmpty)
         } else {
           None
         }
         val maybeThreadTsToUse = maybeConversation.flatMap(_.maybeThreadId)
-        val replyBroadcast = maybeThreadTsToUse.isDefined && maybeConversation.exists(_.state == Conversation.DONE_STATE)
 
         postChatMessage(
           segment,
           maybeThreadTsToUse,
-          Some(replyBroadcast),
+          maybeReplyBroadcast = Some(false),
           maybeAttachmentsForSegment
         )
-      }.flatMap { ts => sendMessageSegmentsInOrder(segments.tail, channelToUse, maybeShouldUnfurl, maybeAttachments, maybeConversation, Some(ts))}
+      }.flatMap { ts => sendMessageSegmentsInOrder(segments.tail, channelToUse, maybeShouldUnfurl, attachments, maybeConversation, Some(ts))}
     }
   }
 
-  def sendFile(spec: UploadFileSpec)(implicit actorSystem: ActorSystem): Future[Unit] = {
+  def sendFile(spec: UploadFileSpec)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Unit] = {
     val file = File.makeTemp()
     file.appendAll(spec.content)
     client.uploadFile(
@@ -152,21 +214,19 @@ case class SlackMessageSender(
     ).map(_ => {})
   }
 
-  def sendFiles(implicit actorSystem: ActorSystem): Future[Unit] = {
+  def sendFiles(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Unit] = {
     Future.sequence(files.map(sendFile)).map(_ => {})
   }
 
-  def send(implicit actorSystem: ActorSystem): Future[Option[String]] = {
+  def send(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[String]] = {
     val formattedText = SlackMessageFormatter.bodyTextFor(unformattedText)
-    val maybeAttachments = maybeActions.flatMap { actions =>
-      actions match {
-        case a: SlackMessageActions => Some(a.attachments)
-        case _ => None
-      }
+    val attachments = attachmentGroupsToUse.flatMap {
+      case a: SlackMessageAttachmentGroup => a.attachments.map(_.underlying)
+      case _ => Seq()
     }
     for {
       _ <- sendPreamble(formattedText, channelToUse)
-      maybeLastTs <- sendMessageSegmentsInOrder(messageSegmentsFor(formattedText), channelToUse, maybeShouldUnfurl, maybeAttachments, maybeConversation, None)
+      maybeLastTs <- sendMessageSegmentsInOrder(messageSegmentsFor(formattedText), channelToUse, maybeShouldUnfurl, attachments, maybeConversation, None)
       _ <- sendFiles
     } yield maybeLastTs
   }

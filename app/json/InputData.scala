@@ -5,8 +5,7 @@ import models.IDs
 import models.behaviors.input.Input
 import services.DataService
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 case class InputData(
                       id: Option[String],
@@ -63,7 +62,7 @@ case class InputData(
 
 object InputData {
 
-  def fromInput(input: Input, dataService: DataService): Future[InputData] = {
+  def fromInput(input: Input, dataService: DataService)(implicit ec: ExecutionContext): Future[InputData] = {
     BehaviorParameterTypeData.from(input.paramType, dataService).map { paramTypeData =>
       InputData(
         Some(input.id),

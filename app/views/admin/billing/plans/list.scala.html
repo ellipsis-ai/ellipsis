@@ -1,0 +1,17 @@
+@import com.chargebee.models.Plan
+@(
+  plans: Seq[Plan],
+  config: ViewConfig
+  )(implicit messages: Messages, r: RequestHeader
+)
+
+@page.main("Plans", config, Seq(NavItem.admin)) {
+  <h4>ChargeBee Plans</h4>
+  <ol>
+    @plans.map { ea =>
+      <li>
+       @ea.name()
+      </li>
+    }
+  </ol>
+}

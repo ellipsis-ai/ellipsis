@@ -24,6 +24,9 @@ label {
 
 @form-padding-vertical: @s;
 @form-padding-horizontal: @s;
+@form-padding-vertical-s: @xs;
+@form-padding-horizontal-s: @xs;
+@form-input-height-s: @xl;
 @form-input-height: @s * 2 + @xl;
 @form-input-height-large: @m * 2 + @xxl;
 @form-input-height-h2: @s * 2 + @xxxl;
@@ -49,6 +52,15 @@ input.box-code-example {
   .form-field();
   width: 100%;
   vertical-align: bottom; /* Prevents default bottom "margin" when textarea is only child of a box */
+}
+
+.form-input-s {
+  height: @form-input-height-s;
+  padding: (@form-padding-vertical-s - @border-width) (@form-padding-horizontal-s - @border-width);
+}
+
+.form-input.form-input-inline {
+  width: auto;
 }
 
 .form-input-inverted {
@@ -112,14 +124,14 @@ input.box-code-example {
   color: @form-color-disabled;
 }
 
-.form-input-icon {
-  padding-left: @xxl - @border-width;
-}
-
 .form-input-with-button {
   border-top-right-radius: 0;
   border-bottom-right-radius: 0;
   border-right-color: transparent;
+}
+
+.form-input-borderless.form-input-with-button.form-input-s {
+  padding-right: @xxl - @xs !important;
 }
 
 .button-with-form-input {
@@ -146,8 +158,8 @@ input.box-code-example {
   z-index: 1;
 }
 
-.form-input-icon:focus {
-  padding-left: @xxl - @border-width-thick;
+.form-input-s:focus {
+  padding: (@form-padding-vertical-s - @border-width-thick) (@form-padding-horizontal-s - @border-width-thick);
 }
 
 .form-input-borderless {
@@ -158,15 +170,61 @@ input.box-code-example {
   border-radius: 0;
   padding-left: 0;
   padding-right: 0;
-  padding-bottom: (@form-padding-vertical - @border-width - @xs);
+  padding-bottom: (@form-padding-vertical - @xs);
   height: @form-input-height - @xs;
   margin-bottom: @xs;
+}
+
+.form-input-borderless.form-input-s,
+.form-input-borderless.form-input-s:focus {
+  height: @form-input-height-s;
+  padding: 0 0 @xxs 0;
+  margin-bottom: 0;
+}
+
+@icon-width: @xxl - @border-width;
+@icon-width-focus: @xxl - @border-width-thick;
+@icon-width-s: @xxl - @xs - @border-width;
+@icon-width-s-focus: @xxl - @xs - @border-width-thick;
+@icon-width-borderless: @xl - @border-width;
+@icon-width-borderless-s: @xl - @xs - @border-width;
+
+.form-input-icon-left {
+  padding-left: @icon-width;
+}
+
+.form-input-icon-left:focus {
+  padding-left: @icon-width-focus;
+}
+
+.form-input-s.form-input-icon-left {
+  padding-left: @icon-width-s;
+}
+
+.form-input-s.form-input-icon-left:focus {
+  padding-left: @icon-width-s-focus;
 }
 
 .form-input-borderless:focus {
   padding-left: 0;
   padding-right: 0;
-  padding-bottom: (@form-padding-vertical - @border-width-thick - @xs);
+  padding-top: (@form-padding-vertical - @border-width);
+  padding-bottom: (@form-padding-vertical - @xs);
+}
+
+.form-input-borderless.form-input-s:focus {
+  padding-top: 0;
+  padding-bottom: @xxs;
+}
+
+.form-input-borderless.form-input-icon-left,
+.form-input-borderless.form-input-icon-left:focus {
+  padding-left: @xl - @border-width;
+}
+
+.form-input-borderless.form-input-s.form-input-icon-left,
+.form-input-borderless.form-input-s.form-input-icon-left:focus {
+  padding-left: @xl - @xs - @border-width;
 }
 
 .form-input-borderless[readonly] {

@@ -3,9 +3,9 @@ package models.accounts.slack.botprofile
 import java.time.OffsetDateTime
 
 import models.behaviors.BotResult
-import models.behaviors.events.SlackMessageEvent
+import models.behaviors.events.{EventType, SlackMessageEvent}
 import models.team.Team
-import slack.api.SlackApiClient
+import services.caching.CacheService
 import slick.dbio.DBIO
 import utils.SlackChannels
 
@@ -25,11 +25,13 @@ trait SlackBotProfileService {
 
   def ensure(userId: String, slackTeamId: String, slackTeamName: String, token: String): Future[SlackBotProfile]
 
-  def channelsFor(botProfile: SlackBotProfile): SlackChannels = {
-    SlackChannels(SlackApiClient(botProfile.token))
-  }
+  def channelsFor(botProfile: SlackBotProfile, cacheService: CacheService): SlackChannels
 
-  def eventualMaybeEvent(slackTeamId: String, channelId: String, userId: String): Future[Option[SlackMessageEvent]]
+  def eventualMaybeEvent(slackTeamId: String, channelId: String, maybeUserId: Option[String], maybeOriginalEventType: Option[EventType]): Future[Option[SlackMessageEvent]]
+
+  def maybeNameFor(slackTeamId: String): Future[Option[String]]
+
+  def maybeNameFor(botProfile: SlackBotProfile): Future[Option[String]]
 
   def sendResultWithNewEvent(
     description: String,

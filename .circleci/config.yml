@@ -5,7 +5,7 @@ jobs:
     #   only:
     #     - master
     docker:
-      - image: ellipsis/circleci_primary:1.0
+      - image: ellipsis/docker-circleci-playapp:latest
         environment:
           AWS_REGION: us-east-1
           DB_HOST: localhost
@@ -23,7 +23,7 @@ jobs:
       - run:
           name: Waiting for Postgres to be ready
           command: |
-            for i in `seq 1 10`;
+            for i in `seq 1 30`;
             do
               nc -z localhost 5432 && echo Success && exit 0
               echo -n .
@@ -35,14 +35,14 @@ jobs:
           command: |
             tar --help
             gzip --help
-            cat npm_modules/*/package.json > npm_modules/npm_checksum
+            cat npm_modules/*/package-lock.json > npm_modules/npm_checksum
       - restore_cache:
           keys:
-            - v4-node-{{ .Branch }}-{{ checksum "package.json" }}
-            - v4-node-{{ checksum "package.json" }}
+            - v8-node-{{ arch }}-{{ .Branch }}-{{ checksum "package-lock.json" }}
+            - v8-node-{{ arch }}-{{ checksum "package-lock.json" }}
       - restore_cache:
           keys:
-            - v1-npm_modules-{{ checksum "npm_modules/npm_checksum" }}
+            - v4-npm_modules-{{ arch }}-{{ checksum "npm_modules/npm_checksum" }}
       - run:
           name: Install npm dependencies
           command: |
@@ -50,50 +50,66 @@ jobs:
       - save_cache:
           paths:
             - node_modules
-          key: v4-node-{{ .Branch }}-{{ checksum "package.json" }}
+          key: v8-node-{{ arch }}-{{ .Branch }}-{{ checksum "package-lock.json" }}
       - save_cache:
           paths:
             - node_modules
-          key: v4-node-{{ checksum "package.json" }}
+          key: v8-node-{{ arch }}-{{ checksum "package-lock.json" }}
       - save_cache:
           paths:
             - npm_modules/ellipsis-action-logs/node_modules
             - npm_modules/ellipsis-aws-billing/node_modules
             - npm_modules/ellipsis-cal-date-format/node_modules
+            - npm_modules/ellipsis-date-range-parser/node_modules
             - npm_modules/ellipsis-default-storage/node_modules
             - npm_modules/ellipsis-post-message/node_modules
             - npm_modules/ellipsis-random-response/node_modules
-          key: v1-npm_modules-{{ checksum "npm_modules/npm_checksum" }}
+          key: v4-npm_modules-{{ arch }}-{{ checksum "npm_modules/npm_checksum" }}
       - run:
           name: Run JavaScript linter
           command: |
             npm run lint
+      - run:
+          name: Run Typescript checking
+          command: |
+            npm run typescript
       - run:
           name: Run JavaScript tests
           command: |
             npm test
       - restore_cache:
           keys:
-            - v6-playapp-{{ .Branch }}-{{ checksum "build.sbt" }}
-            - v6-playapp-{{ checksum "build.sbt" }}
+            - v10-playapp-{{ arch }}-{{ .Branch }}-{{ checksum "build.sbt" }}
+            - v10-playapp-{{ arch }}-{{ checksum "build.sbt" }}
       - run:
-          name: Run Activator tests
+          name: Run all the unit tests
           command: |
-            activator test
+            cat /dev/null | activator "test-only -- -l tags.IntegrationTest"
+      - run:
+          name: Maybe run all the integration tests
+          command: |
+           if [ "${CIRCLE_BRANCH}" == "prod" ] && [ -z "${SKIP_INTEGRATION_TESTS}" ]
+           then
+             cat /dev/null | activator "test-only -- -n tags.IntegrationTest"
+           fi
+      - run:
+          name: Ensure static assets build
+          command: |
+            cat /dev/null | activator web-stage
       - save_cache:
           paths:
             - .ivy2
             - .sbt
             - ~/.ivy2
             - ~/.sbt
-          key: v6-playapp-{{ .Branch }}-{{ checksum "build.sbt" }}
+          key: v10-playapp-{{ arch }}-{{ .Branch }}-{{ checksum "build.sbt" }}
       - save_cache:
           paths:
             - .ivy2
             - .sbt
             - ~/.ivy2
             - ~/.sbt
-          key: v6-playapp-{{ checksum "build.sbt" }}
+          key: v10-playapp-{{ arch }}-{{ checksum "build.sbt" }}
       - run:
           name: Maybe deploy on stag01
           command: |

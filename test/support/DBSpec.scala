@@ -1,10 +1,8 @@
 package support
 
 import akka.actor.ActorSystem
-import com.typesafe.config.ConfigFactory
-import drivers.SlickPostgresDriver.api.{Database => PostgresDatabase}
 import json._
-import mocks.MockAWSLambdaService
+import mocks.{MockAWSLambdaService, MockCacheService, MockSlackEventService}
 import models.IDs
 import models.accounts.oauth2api.{AuthorizationCode, OAuth2Api}
 import models.accounts.oauth2application.OAuth2Application
@@ -12,8 +10,11 @@ import models.accounts.user.User
 import models.behaviors.BotResultService
 import models.behaviors.behavior.Behavior
 import models.behaviors.behaviorgroup.BehaviorGroup
+import models.behaviors.behaviorgroupdeployment.BehaviorGroupDeployment
 import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
+import models.behaviors.behaviorgroupversionsha.BehaviorGroupVersionSHA
 import models.behaviors.behaviorversion.BehaviorVersion
+import models.behaviors.config.requiredawsconfig.RequiredAWSConfig
 import models.behaviors.config.requiredoauth2apiconfig.RequiredOAuth2ApiConfig
 import models.behaviors.input.Input
 import models.behaviors.savedanswer.SavedAnswer
@@ -21,21 +22,23 @@ import models.team.Team
 import modules.ActorModule
 import org.scalatest.mock.MockitoSugar
 import org.scalatestplus.play.{OneAppPerSuite, PlaySpec}
-import play.api.db.Databases
+import play.api.db.DBApi
 import play.api.db.evolutions.Evolutions
 import play.api.inject.bind
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.ws.WSClient
 import play.api.{Application, Configuration}
 import services._
+import services.caching.CacheService
 import slick.dbio.DBIO
 
 import scala.concurrent.duration._
-import scala.concurrent.{Await, Future}
+import scala.concurrent.{Await, ExecutionContext, Future}
 
 trait DBSpec extends PlaySpec with OneAppPerSuite with MockitoSugar {
 
-  lazy val config = ConfigFactory.load()
+  lazy val config = app.injector.instanceOf(classOf[Configuration])
+  lazy val dbApi = app.injector.instanceOf(classOf[DBApi])
   lazy val cacheService = app.injector.instanceOf(classOf[CacheService])
   lazy val configuration = app.injector.instanceOf(classOf[Configuration])
   lazy val services = app.injector.instanceOf(classOf[DefaultServices])
@@ -44,7 +47,8 @@ trait DBSpec extends PlaySpec with OneAppPerSuite with MockitoSugar {
     GuiceApplicationBuilder().
       overrides(bind[AWSLambdaService].to[MockAWSLambdaService]).
       overrides(bind[GithubService].toInstance(mock[GithubService])).
-      overrides(bind[SlackEventService].toInstance(mock[SlackEventService])).
+      overrides(bind[SlackEventService].to[MockSlackEventService]).
+      overrides(bind[CacheService].to[MockCacheService]).
       disable[ActorModule].
       build()
 
@@ -54,8 +58,20 @@ trait DBSpec extends PlaySpec with OneAppPerSuite with MockitoSugar {
   val slackEventService = app.injector.instanceOf(classOf[SlackEventService])
   val ws = app.injector.instanceOf(classOf[WSClient])
   val botResultService = app.injector.instanceOf(classOf[BotResultService])
+  implicit val ec: ExecutionContext = app.injector.instanceOf(classOf[ExecutionContext])
 
-  def newSavedTeam: Team = runNow(dataService.teams.create(IDs.next))
+
+  def newSavedTeam: Team = {
+    runNow {
+      for {
+        label <- Future.successful(scala.util.Random.nextInt(10000))
+        org <- dataService.organizations.create(s"o-${label}")
+        team <- dataService.teams.create(s"t-${label}", org)
+      } yield {
+        team
+      }
+    }
+  }
 
   def newSavedUserOn(team: Team): User = runNow(dataService.users.createFor(team.id))
 
@@ -95,11 +111,16 @@ trait DBSpec extends PlaySpec with OneAppPerSuite with MockitoSugar {
       dataTypeInputs = Seq(),
       behaviorVersions = Seq(),
       libraryVersions = Seq(),
+      requiredAWSConfigs = Seq(),
       requiredOAuth2ApiConfigs = Seq(),
       requiredSimpleTokenApis = Seq(),
       githubUrl = None,
+      gitSHA = None,
       exportId = None,
-      createdAt = None
+      createdAt = None,
+      author = None,
+      deployment = None,
+      metaData = None
     )
   }
 
@@ -124,14 +145,22 @@ trait DBSpec extends PlaySpec with OneAppPerSuite with MockitoSugar {
       inputIds = Seq(input2Data.inputId.get)
     )
     newGroupVersionDataFor(group, user).copy(
-      behaviorVersions = Seq(behaviorVersion1Data, behaviorVersion2Data),
-      actionInputs = Seq(input1Data, input2Data)
+      actionInputs = Seq(input1Data, input2Data),
+      behaviorVersions = Seq(behaviorVersion1Data, behaviorVersion2Data)
     )
   }
 
   def newSavedGroupVersionFor(group: BehaviorGroup, user: User, maybeData: Option[BehaviorGroupData] = None): BehaviorGroupVersion = {
     val data = maybeData.getOrElse(defaultGroupVersionDataFor(group, user))
     runNow(dataService.behaviorGroupVersions.createFor(group, user, data.copyForNewVersionOf(group)))
+  }
+
+  def newSavedDeploymentFor(groupVersion: BehaviorGroupVersion, user: User): BehaviorGroupDeployment = {
+    runNow(dataService.behaviorGroupDeployments.deploy(groupVersion, user.id, None))
+  }
+
+  def newSavedSHAFor(groupVersion: BehaviorGroupVersion): BehaviorGroupVersionSHA = {
+    runNow(dataService.behaviorGroupVersionSHAs.createForAction(groupVersion, "made-up-ABCDEFGHIJ"))
   }
 
   def behaviorVersionFor(behavior: Behavior, groupVersion: BehaviorGroupVersion): BehaviorVersion = {
@@ -151,28 +180,27 @@ trait DBSpec extends PlaySpec with OneAppPerSuite with MockitoSugar {
   }
 
   def newSavedRequiredOAuth2ConfigFor(api: OAuth2Api, groupVersion: BehaviorGroupVersion): RequiredOAuth2ApiConfig = {
-    val data = RequiredOAuth2ApiConfigData(None, api.id, None, None)
+    val data = RequiredOAuth2ApiConfigData(None, None, api.id, None, "default", None)
     runNow(dataService.requiredOAuth2ApiConfigs.maybeCreateFor(data, groupVersion)).get
   }
 
-  def withEmptyDB[T](dataService: PostgresDataService, fn: PostgresDatabase => T) = {
-    Databases.withDatabase(
-      driver = config.getString("db.default.driver"),
-      url = config.getString("db.default.url"),
-      config = Map(
-        "username" -> config.getString("db.default.username"),
-        "password" -> config.getString("db.default.password")
-      )
-    ) { database =>
-      Evolutions.withEvolutions(database) {
-        try {
-          fn(dataService.models.db)
-        } finally {
-          // Misguided legacy down evolutions will blow up if any of these exist, so delete them
-          runNow(dataService.slackProfiles.deleteAll())
-          runNow(dataService.collectedParameterValues.deleteAll())
-          runNow(dataService.conversations.deleteAll())
-        }
+  def newSavedRequiredAWSConfigFor(name: String, groupVersion: BehaviorGroupVersion): RequiredAWSConfig = {
+    val data = RequiredAWSConfigData(None, None, name, None)
+    runNow(dataService.requiredAWSConfigs.createForAction(data, groupVersion))
+  }
+
+  def withEmptyDB[T](dataService: PostgresDataService, fn: () => T) = {
+    val database = dbApi.database("default")
+
+    Evolutions.withEvolutions(database) {
+      try {
+        fn()
+      } finally {
+        // Misguided legacy down evolutions will blow up if any of these exist, so delete them
+        runNow(dataService.slackProfiles.deleteAll())
+        runNow(dataService.collectedParameterValues.deleteAll())
+        runNow(dataService.conversations.deleteAll())
+        runNow(dataService.behaviorGroupVersionSHAs.deleteAll())
       }
     }
   }

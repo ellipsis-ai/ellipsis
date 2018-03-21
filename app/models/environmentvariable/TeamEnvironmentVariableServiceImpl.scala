@@ -8,8 +8,7 @@ import models.team._
 import services.DataService
 import drivers.SlickPostgresDriver.api._
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 case class RawTeamEnvironmentVariable(
                                    name: String,
@@ -29,7 +28,8 @@ class TeamEnvironmentVariablesTable(tag: Tag) extends Table[RawTeamEnvironmentVa
 }
 
 class TeamEnvironmentVariableServiceImpl @Inject() (
-                                      dataServiceProvider: Provider[DataService]
+                                      dataServiceProvider: Provider[DataService],
+                                      implicit val ec: ExecutionContext
                                     ) extends TeamEnvironmentVariableService {
 
   def dataService = dataServiceProvider.get

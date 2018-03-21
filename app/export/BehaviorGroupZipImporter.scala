@@ -6,21 +6,22 @@ import java.util.zip.{ZipEntry, ZipInputStream}
 
 import json.Formatting._
 import json._
-import models.IDs
 import models.accounts.user.User
 import models.behaviors.behaviorgroup.BehaviorGroup
 import models.team.Team
 import play.api.libs.json.{JsError, JsSuccess, Json}
 import services.DataService
+import services.caching.CacheService
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
+import scala.util.matching.Regex
 
 case class BehaviorGroupZipImporter(
                                      team: Team,
                                      user: User,
                                      zipFile: File,
-                                     dataService: DataService
+                                     dataService: DataService,
+                                     cacheService: CacheService
                                    ) {
 
   protected def readDataFrom(zipInputStream: ZipInputStream): String = {
@@ -36,23 +37,18 @@ case class BehaviorGroupZipImporter(
     out.toString
   }
 
-  def run: Future[Option[BehaviorGroup]] = {
+  def run(implicit ec: ExecutionContext): Future[Option[BehaviorGroup]] = {
 
     val zipInputStream: ZipInputStream = new ZipInputStream(new FileInputStream(zipFile))
     var nextEntry: ZipEntry = zipInputStream.getNextEntry
 
     val versionStringMaps = scala.collection.mutable.Map[String, scala.collection.mutable.Map[String, String]]()
 
-    val versionFileRegex = """^(actions|data_types)/([^/]+)/(.+)""".r
-    val readmeRegex = """^README$$""".r
-    val configRegex = """^config\.json$$""".r
-    val actionInputsRegex = """^action_inputs\.json$$""".r
-    val dataTypeInputsRegex = """^data_type_inputs\.json$$""".r
-
     var maybeGroupName: Option[String] = None
     var maybeGroupDescription: Option[String] = None
     var maybeExportId: Option[String] = None
     var maybeIcon: Option[String] = None
+    var requiredAWSConfigData: Seq[RequiredAWSConfigData] = Seq()
     var requiredOAuth2ApiConfigData: Seq[RequiredOAuth2ApiConfigData] = Seq()
     var requiredSimpleTokenApiData: Seq[RequiredSimpleTokenApiData] = Seq()
     var actionInputs: Seq[InputData] = Seq()
@@ -61,7 +57,7 @@ case class BehaviorGroupZipImporter(
 
     while (nextEntry != null) {
       val entryName = nextEntry.getName
-      versionFileRegex.findFirstMatchIn(entryName).foreach { firstMatch =>
+      BehaviorGroupZipImporter.versionFileRegex.findFirstMatchIn(entryName).foreach { firstMatch =>
         val versionId = firstMatch.subgroups(1)
         val filename = firstMatch.subgroups(2)
         val map = versionStringMaps.getOrElse(versionId, {
@@ -71,27 +67,29 @@ case class BehaviorGroupZipImporter(
         })
         map.put(filename, readDataFrom(zipInputStream))
       }
-      LibraryVersionData.libFileRegex.findFirstMatchIn(entryName).foreach { _ =>
-        val newLib = LibraryVersionData.fromFile(readDataFrom(zipInputStream), entryName)
+      BehaviorGroupZipImporter.libFileRegex.findFirstMatchIn(entryName).foreach { firstMatch =>
+        val filename = firstMatch.subgroups(0)
+        val newLib = LibraryVersionData.from(readDataFrom(zipInputStream), filename)
         libraries ++= Seq(newLib)
       }
-      readmeRegex.findFirstMatchIn(entryName).foreach { _ =>
+      BehaviorGroupZipImporter.readmeRegex.findFirstMatchIn(entryName).foreach { _ =>
         maybeGroupDescription = Some(readDataFrom(zipInputStream))
       }
-      configRegex.findFirstMatchIn(entryName).foreach { _ =>
+      BehaviorGroupZipImporter.configRegex.findFirstMatchIn(entryName).foreach { _ =>
         val readData = readDataFrom(zipInputStream)
         Json.parse(readData).validate[BehaviorGroupConfig] match {
           case JsSuccess(data, _) => {
             maybeGroupName = Some(data.name)
             maybeExportId = data.exportId
             maybeIcon = data.icon
+            requiredAWSConfigData = data.requiredAWSConfigs
             requiredOAuth2ApiConfigData = data.requiredOAuth2ApiConfigs
             requiredSimpleTokenApiData = data.requiredSimpleTokenApis
           }
           case e: JsError =>
         }
       }
-      actionInputsRegex.findFirstMatchIn(entryName).foreach { firstMatch =>
+      BehaviorGroupZipImporter.actionInputsRegex.findFirstMatchIn(entryName).foreach { firstMatch =>
         val readData = readDataFrom(zipInputStream)
         Json.parse(readData).validate[Seq[InputData]] match {
           case JsSuccess(data, jsPath) => {
@@ -100,7 +98,7 @@ case class BehaviorGroupZipImporter(
           case e: JsError =>
         }
       }
-      dataTypeInputsRegex.findFirstMatchIn(entryName).foreach { firstMatch =>
+      BehaviorGroupZipImporter.dataTypeInputsRegex.findFirstMatchIn(entryName).foreach { firstMatch =>
         val readData = readDataFrom(zipInputStream)
         Json.parse(readData).validate[Seq[InputData]] match {
           case JsSuccess(data, jsPath) => {
@@ -129,9 +127,10 @@ case class BehaviorGroupZipImporter(
     for {
       alreadyInstalled <- dataService.behaviorGroups.allFor(team)
       alreadyInstalledData <- Future.sequence(alreadyInstalled.map { group =>
-        BehaviorGroupData.maybeFor(group.id, user, None, dataService)
+        BehaviorGroupData.maybeFor(group.id, user, None, dataService, cacheService)
       }).map(_.flatten)
       maybeExistingGroupData <- Future.successful(alreadyInstalledData.find(_.exportId == maybeExportId))
+      userData <- dataService.users.userDataFor(user, team)
       data <- Future.successful(
         BehaviorGroupData(
           None,
@@ -143,15 +142,30 @@ case class BehaviorGroupZipImporter(
           dataTypeInputs,
           versionsData,
           libraries,
+          requiredAWSConfigData,
           requiredOAuth2ApiConfigData,
           requiredSimpleTokenApiData,
           githubUrl = None,
+          gitSHA = None,
           exportId = maybeExportId,
-          Some(OffsetDateTime.now)
+          Some(OffsetDateTime.now),
+          Some(userData),
+          deployment = None,
+          metaData = None
         ).copyForImportableForTeam(team, maybeExistingGroupData)
       )
       maybeImported <- BehaviorGroupImporter(team, user, data, dataService).run
     } yield maybeImported
   }
 
+}
+
+object BehaviorGroupZipImporter {
+  private val optionalParentDir = """^(?:[^/]+\/)?"""
+  val versionFileRegex: Regex = raw"""${optionalParentDir}(actions|data_types)/([^/]+)/(.+)""".r
+  val readmeRegex: Regex = raw"""${optionalParentDir}README$$""".r
+  val configRegex: Regex = raw"""${optionalParentDir}config\.json$$""".r
+  val actionInputsRegex: Regex = raw"""${optionalParentDir}action_inputs\.json$$""".r
+  val dataTypeInputsRegex: Regex = raw"""${optionalParentDir}data_type_inputs\.json$$""".r
+  val libFileRegex: Regex = raw"""${optionalParentDir}lib\/(.+.js)""".r
 }

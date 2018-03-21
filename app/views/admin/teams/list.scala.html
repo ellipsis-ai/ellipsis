@@ -1,0 +1,40 @@
+@import models.team.Team
+@import java.time.format.DateTimeFormatter
+@import java.time.LocalDateTime
+@import java.time.ZoneId
+
+@(
+  config: ViewConfig,
+  teams: Seq[Team],
+  teamCount: Int,
+  currentPage: Int,
+  pageSize: Int,
+  pageCount: Int)(implicit messages: Messages, r: RequestHeader
+)
+
+
+@page.main("Teams", config, Seq(NavItem.admin)) {
+  <h4>@teamCount Teams</h4>
+  <ol>
+  @teams.map { team =>
+    <li>
+      @team.createdAt.format(DateTimeFormatter.ofPattern("EEE, dd MMM yyyy HH:mm:ss 'GMT'").withLocale(java.util.Locale.ENGLISH).withZone(ZoneId.of("GMT"))),
+      <a href="@controllers.routes.ApplicationController.teamHome(team.id).url"> @team.name </a>
+      , @team.timeZone
+    </li>
+  }
+  </ol>
+
+  @if(teamCount != pageSize ) {
+    <a href="?page=1">1</a>
+    <a href="?page=@pageCount&perPage=@pageSize">@pageCount</a>
+    @*@if(currentPage != 1) {*@
+      @*<a href="?page=@{currentPage-1}&perPage=@pageSize">Previous</a>*@
+    @*}*@
+    @*@if(currentPage != pageCount) {*@
+      @*<a href="?page=@{currentPage-1}">Next</a>*@
+    @*}*@
+  }
+
+}
+

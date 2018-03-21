@@ -6,7 +6,7 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "author": "Ellipsis Co. <a@ellipsis.ai> (http://ellipsis.ai)",
+  "author": "Ellipsis Co. <a@ellipsis.ai> (https://www.ellipsis.ai)",
   "license": "ISC",
   "dependencies": {
     "q": "latest"

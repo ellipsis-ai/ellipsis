@@ -11,9 +11,9 @@ import models.team.Team
 class TemplateMessageTriggerSpec extends MessageTriggerSpec {
 
   def triggerFor(template: String, requiresBotMention: Boolean = false, isCaseSensitive: Boolean = false): TemplateMessageTrigger = {
-    val team = Team(IDs.next, "Team!", None)
+    val team = Team("Team!")
     val versionId = IDs.next
-    val group = BehaviorGroup(IDs.next, None, team, None, OffsetDateTime.now)
+    val group = BehaviorGroup(IDs.next, None, team, OffsetDateTime.now)
     val groupVersion = BehaviorGroupVersion(IDs.next, group, "", None, None, None, OffsetDateTime.now)
     val behavior = Behavior(IDs.next, team, Some(group), Some(versionId), isDataType = false, OffsetDateTime.now)
     val behaviorVersion = BehaviorVersion(versionId, behavior, groupVersion, None, None, None, None, forcePrivateResponse = false, None, OffsetDateTime.now)
@@ -123,6 +123,11 @@ class TemplateMessageTriggerSpec extends MessageTriggerSpec {
     "be permissive with curly double quotes in triggers" in {
       val trigger = triggerFor("Double quotes are “cool”")
       matches(trigger, "Double quotes are \"cool\"") mustBe true
+    }
+
+    "match even when there are trailing spaces in the trigger" in {
+      val trigger = triggerFor("   some space at the beginning and end ")
+      matches(trigger, "some space at the beginning and end") mustBe true
     }
   }
 

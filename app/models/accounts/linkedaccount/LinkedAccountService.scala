@@ -4,8 +4,7 @@ import com.mohiva.play.silhouette.api.LoginInfo
 import models.accounts.user.User
 import slick.dbio.DBIO
 
-import scala.concurrent.Future
-import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.{ExecutionContext, Future}
 
 trait LinkedAccountService {
 
@@ -23,11 +22,15 @@ trait LinkedAccountService {
 
   def maybeForSlackFor(user: User): Future[Option[LinkedAccount]]
 
-  def maybeSlackUserIdFor(user: User): Future[Option[String]] = {
+  def maybeSlackUserIdFor(user: User)(implicit ec: ExecutionContext): Future[Option[String]] = {
     maybeForSlackFor(user).map { maybeLinkedAccount =>
       maybeLinkedAccount.map(_.loginInfo.providerKey)
     }
   }
+
+  def maybeForGithubFor(user: User): Future[Option[LinkedAccount]]
+
+  def deleteGithubFor(user: User): Future[Boolean]
 
   def isAdminAction(linkedAccount: LinkedAccount): DBIO[Boolean]
 

@@ -31,6 +31,7 @@ server.pid
 activator
 node_modules
 /conf/version.conf
-tags
+/tags
 actw
 **/npm-debug.log
+.local_dev

@@ -9,30 +9,47 @@
   },
   "dependencies": {},
   "devDependencies": {
-    "amdefine": "^1.0.0",
-    "babel-core": "^6.13.2",
-    "babel-jest": "^19.0.0",
-    "babel-polyfill": "^6.9.1",
-    "babel-preset-es2015": "^6.13.2",
-    "babel-preset-react": "^6.11.1",
-    "codemirror": "5.15.2",
+    "@types/diff": "^3.2.2",
+    "@types/jest": "^19.2.4",
+    "@types/react": "^15.6.14",
+    "@types/react-addons-test-utils": "0.14.21",
+    "animated-scroll-to": "1.1.8",
+    "babel-cli": "6.26.0",
+    "babel-core": "6.26.0",
+    "babel-eslint": "8.2.1",
+    "babel-jest": "19.0.0",
+    "babel-loader": "7.1.2",
+    "babel-preset-env": "1.6.1",
+    "babel-preset-react": "6.24.1",
+    "codemirror": "5.34.0",
+    "config": "1.29.4",
     "core-js": "2.4.1",
-    "eslint": "^2.13.1",
-    "eslint-plugin-react": "^5.2.2",
+    "diff": "3.4.0",
+    "eslint": "4.17.0",
+    "eslint-plugin-react": "7.4.0",
     "javascript-debounce": "1.0.0",
-    "jest": "^19.0.2",
-    "moment": "2.14.1",
-    "node-uuid": "^1.4.7",
+    "jest": "19.0.2",
+    "jshint": "2.9.5",
+    "moment": "2.21.0",
     "react": "15.3.1",
     "react-addons-test-utils": "15.3.1",
     "react-dom": "15.3.1",
+    "ts-jest": "^19.0.14",
+    "ts-loader": "^3.5.0",
+    "typescript": "^2.7.2",
     "urijs": "1.18.1",
+    "uuid": "3.2.1",
+    "webpack": "3.10.0",
+    "webpack-dev-server": "2.11.1",
     "whatwg-fetch": "1.0.0"
   },
   "scripts": {
     "lint": "scripts/run_eslint",
-    "test": "jest --runInBand",
-    "postinstall": "find ./npm_modules/* -maxdepth 2 -name package.json -exec sh -c 'cd $(dirname \"{}\"); npm install' \\;"
+    "test": "node --trace-warnings node_modules/.bin/jest --runInBand",
+    "postinstall": "find ./npm_modules/* -maxdepth 2 -name package.json -exec sh -c 'cd $(dirname \"{}\"); npm install' \\;",
+    "build": "NODE_CONFIG_DIR='./conf/webpack' webpack --env.WEBPACK_BUILD_PATH=${WEBPACK_BUILD_PATH} -p --config ./app/assets/frontend/webpack/webpack.base.config.js",
+    "start": "NODE_CONFIG_DIR='./conf/webpack' node ./app/assets/frontend/webpack/webpack.server",
+    "typescript": "tsc --pretty --noEmit"
   },
   "jest": {
     "globals": {
@@ -41,30 +58,45 @@
           "APITokenController": {},
           "ApplicationController": {},
           "BehaviorEditorController": {},
-          "EnvironmentVariablesController": {},
-          "OAuth2ApplicationController": {}
+          "ScheduledActionsController": {},
+          "GithubConfigController": {},
+          "SocialAuthController": {},
+          "web": {
+            "settings": {
+              "IntegrationsController": {},
+              "EnvironmentVariablesController": {},
+              "RegionalSettingsController": {},
+              "OAuth2ApplicationController": {},
+              "AWSConfigController": {}
+            }
+          }
         }
       }
     },
     "moduleFileExtensions": [
       "js",
       "jsx",
+      "ts",
+      "tsx",
       "json",
       "node"
     ],
     "modulePathIgnorePatterns": [
-      "Ben Newman"
+      "<rootDir>/project/target/.+",
+      "<rootDir>/target/.+"
     ],
-    "transform": {
-      ".*": "<rootDir>/app/assets/javascripts/amdefinerator"
-    },
-    "testRegex": "((/__tests__/|/test/).*|(\\.|/)(test|spec))\\.jsx?$",
+    "testRegex": "((/__tests__/|/test/).*|(\\.|/)(test|spec))\\.(jsx?|tsx?)$",
     "testPathIgnorePatterns": [
       "/node_modules/.+",
       "/project/.+",
       "/target/.+",
-      "/test/mocks/.+"
-    ]
+      "/test/mocks/.+",
+      ".+/*\\.d\\.ts"
+    ],
+    "transform": {
+      "^.+\\.jsx?$": "<rootDir>/node_modules/babel-jest",
+      "^.+\\.tsx?$": "<rootDir>/node_modules/ts-jest/dist/preprocessor"
+    }
   },
   "repository": {
     "type": "git",

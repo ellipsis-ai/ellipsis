@@ -4,13 +4,13 @@ import akka.actor.ActorSystem
 import json.BehaviorGroupData
 import models.behaviors.events.SlackMessageActionConstants._
 import models.behaviors.events._
-import models.behaviors.{BotResult, TextWithActionsResult}
+import models.behaviors.{BotResult, TextWithAttachmentsResult}
 import models.help._
-import services.{AWSLambdaService, DataService}
+import services.caching.CacheService
+import services.{AWSLambdaService, DataService, DefaultServices}
 import utils._
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 case class DisplayHelpBehavior(
                          maybeHelpString: Option[String],
@@ -20,9 +20,12 @@ case class DisplayHelpBehavior(
                          includeNonMatchingResults: Boolean,
                          isFirstTrigger: Boolean,
                          event: Event,
-                         lambdaService: AWSLambdaService,
-                         dataService: DataService
+                         services: DefaultServices
                        ) extends BuiltinBehavior {
+
+  val lambdaService: AWSLambdaService = services.lambdaService
+  val dataService: DataService = services.dataService
+  val cacheService: CacheService = services.cacheService
 
   private def maybeHelpSearch: Option[String] = {
     maybeHelpString.filter(_.trim.nonEmpty)
@@ -34,22 +37,25 @@ case class DisplayHelpBehavior(
     }.getOrElse("")
   }
 
-  private def introResultFor(results: Seq[HelpResult], startAt: Int): BotResult = {
+  private def introResultFor(results: Seq[HelpResult], startAt: Int, botPrefix: String): BotResult = {
     val endAt = startAt + SlackMessageSender.MAX_ACTIONS_PER_ATTACHMENT - 1
     val resultsToShow = results.slice(startAt, endAt)
     val resultsRemaining = results.slice(endAt, results.length)
 
-    val intro = if (startAt == 0 && maybeHelpString.isEmpty) {
-      s"OK, let’s start from the top. Here are some things I know about. ${event.navLinks(noSkills = false, lambdaService)}"
+    val intro = if (startAt == 0 && results.isEmpty) {
+      "I don’t have any skills installed right now. Try installing a skill to make me more useful."
+    } else if (startAt == 0 && maybeHelpString.isEmpty) {
+      s"OK, let’s start from the top. Here are some things I know about."
     } else if (startAt == 0 && maybeHelpString.isDefined) {
-      s"OK, here’s what I know$matchString. ${event.navLinks(noSkills = false, lambdaService)}"
+      s"OK, here’s what I know$matchString."
     } else {
       s"OK, here are some more things I know$matchString."
     }
     val maybeInstructions = if (startAt > 0 || !isFirstTrigger) {
       None
     } else if (matchString.isEmpty) {
-      Some(s"Click a skill to learn more. You can also search by keyword. For example, type:  \n`${event.botPrefix}help bananas`")
+      Some(
+        s"Click a skill to learn more. You can also search by keyword. Example: `${botPrefix}help bananas`")
     } else {
       Some("Click a skill to learn more, or try searching a different keyword.")
     }
@@ -58,15 +64,38 @@ case class DisplayHelpBehavior(
       val buttonValue = HelpGroupSearchValue(result.group.helpActionId, maybeHelpSearch).toString
       SlackMessageActionButton(SHOW_BEHAVIOR_GROUP_HELP, label, buttonValue)
     })
+
     val remainingGroupCount = resultsRemaining.length
-    val actions = if (remainingGroupCount > 0) {
+    val actionList = if (remainingGroupCount > 0) {
       val label = if (remainingGroupCount == 1) { "1 more skill…" } else { s"$remainingGroupCount more skills…" }
       skillActions :+ SlackMessageActionButton(SHOW_HELP_INDEX, label, endAt.toString, maybeStyle = Some("primary"))
     } else {
       skillActions
     }
-    val attachment = SlackMessageActions(SHOW_HELP_INDEX, actions, maybeInstructions, Some(Color.PINK))
-    TextWithActionsResult(event, None, intro, forcePrivateResponse = false, attachment)
+    val actionsGroup = SlackMessageActionsGroup(
+      SHOW_HELP_INDEX,
+      actionList,
+      maybeInstructions,
+      Some(Color.PINK),
+      if (startAt == 0) { Some("Skills") } else { None }
+    )
+    val attachments = if (startAt == 0) {
+      Seq(actionsGroup, generalHelpGroup(botPrefix))
+    } else {
+      Seq(actionsGroup)
+    }
+    TextWithAttachmentsResult(event, None, intro, forcePrivateResponse = false, attachments)
+  }
+
+  def generalHelpText(botPrefix: String): String = {
+    s"""${event.navLinks(lambdaService)}
+       |
+       |🗣 Have feedback? Try `${botPrefix}feedback: Is this thing on?`
+     """.stripMargin
+  }
+
+  def generalHelpGroup(botPrefix: String): SlackMessageAttachmentGroup = {
+    SlackMessageTextAttachmentGroup(generalHelpText(botPrefix: String), Some("General"))
   }
 
   def skillNameAndDescriptionFor(result: HelpResult): String = {
@@ -87,7 +116,7 @@ case class DisplayHelpBehavior(
     val behaviorVersions = result.behaviorVersionsToDisplay(includeNonMatchingResults)
 
     val intro = if (isFirstTrigger) {
-      s"Here’s what I know$matchString. ${event.navLinks(noSkills = false, lambdaService)}"
+      s"Here’s what I know$matchString."
     } else {
       "OK, here’s the help you asked for:"
     }
@@ -114,18 +143,25 @@ case class DisplayHelpBehavior(
       Some("Select or type an action to run it now:")
     }
 
-    val messageActions = SlackMessageActions(SHOW_BEHAVIOR_GROUP_HELP, actionList, actionText, Some(Color.BLUE_LIGHT), None)
+    val actionsGroup = SlackMessageActionsGroup(SHOW_BEHAVIOR_GROUP_HELP, actionList, actionText, Some(Color.BLUE_LIGHT), None)
 
-    TextWithActionsResult(event, None, resultText, forcePrivateResponse = false, messageActions)
+    TextWithAttachmentsResult(event, None, resultText, forcePrivateResponse = false, Seq(actionsGroup))
   }
 
   def emptyResult: BotResult = {
-    val actions = Seq(SlackMessageActionButton(SHOW_HELP_INDEX, "More help…", "0"))
-    val resultText = s"I don’t know anything$matchString. ${event.navLinks(noSkills = true, lambdaService)}"
-    TextWithActionsResult(event, None, resultText, forcePrivateResponse = false, SlackMessageActions("help_no_result", actions, None, Some(Color.PINK)))
+    val actionList = Seq(SlackMessageActionButton(SHOW_HELP_INDEX, "More help…", "0"))
+    val resultText = s"I don’t know anything$matchString."
+    val actionsGroup = SlackMessageActionsGroup("help_no_result", actionList, None, Some(Color.PINK))
+    TextWithAttachmentsResult(event, None, resultText, forcePrivateResponse = false, Seq(actionsGroup))
   }
 
-  def result(implicit actorSystem: ActorSystem): Future[BotResult] = {
+  def searchedHelp: Boolean = maybeHelpSearch.isDefined
+  def clickedSkill: Boolean = maybeSkillId.isDefined
+  def shouldShowSingleSkill(matchingGroupData: Seq[HelpResult]): Boolean = {
+    (searchedHelp || clickedSkill) && matchingGroupData.length == 1
+  }
+
+  def result(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[BotResult] = {
     for {
       maybeTeam <- dataService.teams.find(event.teamId)
       user <- event.ensureUser(dataService)
@@ -138,11 +174,19 @@ case class DisplayHelpBehavior(
       }.getOrElse {
         Future.successful(None)
       }
-      groupData <- maybeBehaviorGroups.map { groups =>
+      groupData <- (for {
+        channel <- event.maybeChannel
+        groups <- maybeBehaviorGroups
+      } yield {
         Future.sequence(groups.map { group =>
-          BehaviorGroupData.maybeFor(group.id, user, None, dataService)
+          dataService.behaviorGroupDeployments.maybeActiveBehaviorGroupVersionFor(group, event.context, channel).flatMap { maybeGroupVersion =>
+            maybeGroupVersion.map { groupVersion =>
+              BehaviorGroupData.buildFor(groupVersion, user, None, dataService, cacheService).map(Some(_))
+            }.getOrElse(Future.successful(None))
+          }
         }).map(_.flatten.sorted)
-      }.getOrElse(Future.successful(Seq()))
+      }).getOrElse(Future.successful(Seq()))
+      botPrefix <- event.contextualBotPrefix(services)
     } yield {
       val (named, unnamed) = groupData.partition(_.maybeNonEmptyName.isDefined)
       val namedGroupData = named.map(behaviorGroupData => SkillHelpGroupData(behaviorGroupData))
@@ -152,14 +196,15 @@ case class DisplayHelpBehavior(
         namedGroupData
       }
       val matchingGroupData = maybeHelpSearch.map { helpSearch =>
-        FuzzyMatcher[HelpGroupData](helpSearch, flattenedGroupData).run.map(matchResult => HelpSearchResult(helpSearch, matchResult, event, dataService, lambdaService))
-      }.getOrElse(flattenedGroupData.map(group => SimpleHelpResult(group, event, dataService, lambdaService)))
-      if (matchingGroupData.isEmpty) {
+        FuzzyMatcher[HelpGroupData](helpSearch, flattenedGroupData).run.map(matchResult => HelpSearchResult(helpSearch, matchResult, event, dataService, lambdaService, botPrefix))
+      }.getOrElse(flattenedGroupData.map(group => SimpleHelpResult(group, event, dataService, lambdaService, botPrefix)))
+
+      if (searchedHelp && matchingGroupData.isEmpty) {
         emptyResult
-      } else if (matchingGroupData.length == 1) {
+      } else if (shouldShowSingleSkill(matchingGroupData)) {
         skillResultFor(matchingGroupData.head)
       } else {
-        introResultFor(matchingGroupData, maybeStartAtIndex.getOrElse(0))
+        introResultFor(matchingGroupData, maybeStartAtIndex.getOrElse(0), botPrefix)
       }
     }
   }

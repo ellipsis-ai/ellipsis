@@ -14,9 +14,13 @@ trait ConversationService {
 
   def save(conversation: Conversation): Future[Conversation]
 
+  def maybeWithThreadId(threadId: String, userIdForContext: String, context: String): Future[Option[Conversation]]
+
   def allOngoingForAction(userIdForContext: String, context: String, maybeChannel: Option[String], maybeThreadId: Option[String]): DBIO[Seq[Conversation]]
 
   def allOngoingFor(userIdForContext: String, context: String, maybeChannel: Option[String], maybeThreadId: Option[String]): Future[Seq[Conversation]]
+
+  def allOngoingBehaviorGroupVersionIds: Future[Seq[String]]
 
   def allForeground: Future[Seq[Conversation]]
 
@@ -35,6 +39,8 @@ trait ConversationService {
   def cancel(maybeConversation: Option[Conversation]): Future[Unit] = {
     maybeConversation.map(cancel).getOrElse(Future.successful({}))
   }
+
+  def cancelOldConverations: Future[Unit]
 
   def deleteAll(): Future[Unit]
 

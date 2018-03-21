@@ -9,18 +9,17 @@ import drivers.SlickPostgresDriver.api._
 import models.accounts.slack.botprofile.SlackBotProfile
 import models.accounts.slack.profile.SlackProfile
 import models.accounts.user.User
+import models.behaviors.BotResult
 import models.behaviors.events.{EventHandler, ScheduledEvent}
 import models.behaviors.scheduling.recurrence.Recurrence
-import models.behaviors.{BotResult, BotResultService}
 import models.team.Team
 import play.api.{Configuration, Logger}
-import services.DataService
+import services.{DataService, DefaultServices}
 import slack.api.{ApiError, SlackApiClient}
 import slick.dbio.DBIO
 import utils.{FutureSequencer, SlackChannels}
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 trait Scheduled {
 
@@ -33,11 +32,11 @@ trait Scheduled {
   val nextSentAt: OffsetDateTime
   val createdAt: OffsetDateTime
 
-  def displayText(dataService: DataService): Future[String]
+  def displayText(dataService: DataService)(implicit ec: ExecutionContext): Future[String]
 
   def followingSentAt: OffsetDateTime = recurrence.nextAfter(nextSentAt)
 
-  def successResponse(dataService: DataService): Future[String] = {
+  def successResponse(dataService: DataService)(implicit ec: ExecutionContext): Future[String] = {
     displayText(dataService).map { displayText =>
       s"""OK, I will run $displayText $recurrenceAndChannel."""
     }
@@ -70,7 +69,7 @@ trait Scheduled {
   }
 
   def scheduleLinkFor(configuration: Configuration, scheduleId: String, teamId: String): String = {
-    configuration.getString("application.apiBaseUrl").map { baseUrl =>
+    configuration.getOptional[String]("application.apiBaseUrl").map { baseUrl =>
       val path = controllers.routes.ScheduledActionsController.index(Some(scheduleId), None, Some(teamId))
       s"_[✎ Edit]($baseUrl$path)_"
     }.getOrElse("")
@@ -113,7 +112,7 @@ trait Scheduled {
                     dataService: DataService,
                     configuration: Configuration,
                     includeChannel: Boolean
-                  ): Future[String] = {
+                  )(implicit ec: ExecutionContext): Future[String] = {
     val details = if (includeChannel) {
       recurrenceAndChannel
     } else {
@@ -159,11 +158,11 @@ trait Scheduled {
      """.stripMargin
   }
 
-  def botProfileAction(dataService: DataService): DBIO[Option[SlackBotProfile]] = {
+  def botProfileAction(dataService: DataService)(implicit ec: ExecutionContext): DBIO[Option[SlackBotProfile]] = {
     dataService.slackBotProfiles.allForAction(team).map(_.headOption)
   }
 
-  def maybeSlackProfile(dataService: DataService): Future[Option[SlackProfile]] = {
+  def maybeSlackProfile(dataService: DataService)(implicit ec: ExecutionContext): Future[Option[SlackProfile]] = {
     maybeUser.map { user =>
       for {
         maybeSlackLinkedAccount <- dataService.linkedAccounts.maybeForSlackFor(user)
@@ -181,24 +180,11 @@ trait Scheduled {
                                 eventHandler: EventHandler,
                                 client: SlackApiClient,
                                 profile: SlackBotProfile,
-                                dataService: DataService,
-                                configuration: Configuration,
-                                botResultService: BotResultService
-                              )(implicit actorSystem: ActorSystem): Future[Unit] = {
+                                services: DefaultServices
+                              )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Unit] = {
     for {
-      members <- SlackChannels(client).getMembersFor(channel)
-      otherMembers <- Future.successful(members.filterNot(ea => ea == profile.userId))
-      dmInfos <- Future.sequence(otherMembers.map { ea =>
-        client.openIm(ea).map { dmChannel =>
-          Some(SlackDMInfo(ea, dmChannel))
-        }.recover {
-          case e: ApiError => {
-            Logger.error(s"Couldn't send DM to $ea due to Slack API error: ${e.code}", e)
-            None
-          }
-        }
-      }).map(_.flatten)
-      _ <- FutureSequencer.sequence(dmInfos, sendForFn(eventHandler, client, profile, dataService, configuration, botResultService))
+      memberIds <- SlackChannels(client, services.cacheService, profile.slackTeamId).getMembersFor(channel)
+      _ <- FutureSequencer.sequence(memberIds, sendForFn(eventHandler, client, profile, services))
     } yield {}
   }
 
@@ -211,15 +197,13 @@ trait Scheduled {
                eventHandler: EventHandler,
                client: SlackApiClient,
                profile: SlackBotProfile,
-               dataService: DataService,
-               configuration: Configuration,
-               botResultService: BotResultService
-             )(implicit actorSystem: ActorSystem): Future[Unit] = {
+               services: DefaultServices
+             )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Unit] = {
     val event = eventFor(channel, slackUserId, profile, client)
     for {
       results <- eventHandler.handle(event, None)
     } yield {
-      FutureSequencer.sequence(results, sendResultFn(event, configuration, dataService, botResultService))
+      FutureSequencer.sequence(results, sendResultFn(event, services))
     }
   }
 
@@ -227,20 +211,39 @@ trait Scheduled {
                   eventHandler: EventHandler,
                   client: SlackApiClient,
                   profile: SlackBotProfile,
-                  dataService: DataService,
-                  configuration: Configuration,
-                  botResultService: BotResultService
-               )(implicit actorSystem: ActorSystem): SlackDMInfo => Future[Unit] = {
-    info: SlackDMInfo => sendFor(info.channelId, info.userId, eventHandler, client, profile, dataService, configuration, botResultService)
+                  services: DefaultServices
+               )(implicit actorSystem: ActorSystem, ec: ExecutionContext): String => Future[Unit] = {
+    slackUserId: String => {
+      for {
+        maybeSlackUserData <- services.slackEventService.maybeSlackUserDataFor(slackUserId, profile.slackTeamId, client)
+        maybeDmInfo <- maybeSlackUserData.filter { userData =>
+          userData.accountId != profile.userId && !userData.deleted
+        }.map { userData =>
+          client.openIm(userData.accountId).map { dmChannel =>
+            Some(SlackDMInfo(userData.accountId, dmChannel))
+          }.recover {
+            case e: ApiError => {
+              val msg = s"""Couldn't open DM for scheduled message to @${userData.getDisplayName} (${userData.accountId}) on Slack team ${userData.accountTeamId} due to Slack API error: ${e.code}"""
+              Logger.error(msg, e)
+              None
+            }
+          }
+        }.getOrElse(Future.successful(None))
+        _ <- maybeDmInfo.map { info =>
+          sendFor(info.channelId, info.userId, eventHandler, client, profile, services)
+        }.getOrElse(Future.successful({}))
+      } yield {}
+    }
   }
 
   def sendResult(
                   result: BotResult,
                   event: ScheduledEvent,
-                  configuration: Configuration,
-                  dataService: DataService,
-                  botResultService: BotResultService
-                )(implicit actorSystem: ActorSystem): Future[Unit] = {
+                  services: DefaultServices
+                )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Unit] = {
+    val dataService = services.dataService
+    val configuration = services.configuration
+    val botResultService = services.botResultService
     for {
       displayText <- displayText(dataService)
       maybeIntroText <- Future.successful(maybeScheduleInfoTextFor(event, result, configuration, displayText, isForInterruption = false))
@@ -251,34 +254,30 @@ trait Scheduled {
         event.maybeChannel.
           map { channel => s" in channel $channel" }.
           getOrElse("")
-      Logger.info(s"Sending result [${result.fullText}] for scheduled message [$displayText]$channelInfo")
+      Logger.info(event.logTextFor(result, Some(s"for scheduled message [$displayText]")))
     }
   }
 
   def sendResultFn(
                     event: ScheduledEvent,
-                    configuration: Configuration,
-                    dataService: DataService,
-                    botResultService: BotResultService
-                  )(implicit actorSystem: ActorSystem): BotResult => Future[Unit] = {
-    result: BotResult => sendResult(result, event, configuration, dataService, botResultService)
+                    services: DefaultServices
+                  )(implicit actorSystem: ActorSystem, ec: ExecutionContext): BotResult => Future[Unit] = {
+    result: BotResult => sendResult(result, event, services)
   }
 
   def send(
             eventHandler: EventHandler,
             client: SlackApiClient,
             profile: SlackBotProfile,
-            dataService: DataService,
-            configuration: Configuration,
-            botResultService: BotResultService
-          )(implicit actorSystem: ActorSystem): Future[Unit] = {
+            services: DefaultServices
+          )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Unit] = {
     maybeChannel.map { channel =>
       if (isForIndividualMembers) {
-        sendForIndividualMembers(channel, eventHandler, client, profile, dataService, configuration, botResultService)
+        sendForIndividualMembers(channel, eventHandler, client, profile, services)
       } else {
-        maybeSlackProfile(dataService).flatMap { maybeSlackProfile =>
+        maybeSlackProfile(services.dataService).flatMap { maybeSlackProfile =>
           val slackUserId = maybeSlackProfile.map(_.loginInfo.providerKey).getOrElse(profile.userId)
-          sendFor(channel, slackUserId, eventHandler, client, profile, dataService, configuration, botResultService)
+          sendFor(channel, slackUserId, eventHandler, client, profile, services)
         }
       }
     }.getOrElse(Future.successful(Unit))
@@ -290,21 +289,21 @@ trait Scheduled {
 
 object Scheduled {
 
-  def allActiveForTeam(team: Team, dataService: DataService): Future[Seq[Scheduled]] = {
+  def allActiveForTeam(team: Team, dataService: DataService)(implicit ec: ExecutionContext): Future[Seq[Scheduled]] = {
     for {
       scheduledMessages <- dataService.scheduledMessages.allForTeam(team)
       scheduledBehaviors <- dataService.scheduledBehaviors.allActiveForTeam(team)
     } yield scheduledMessages ++ scheduledBehaviors
   }
 
-  def allActiveForChannel(team: Team, channel: String, dataService: DataService): Future[Seq[Scheduled]] = {
+  def allActiveForChannel(team: Team, channel: String, dataService: DataService)(implicit ec: ExecutionContext): Future[Seq[Scheduled]] = {
     for {
       scheduledMessages <- dataService.scheduledMessages.allForChannel(team, channel)
       scheduledBehaviors <- dataService.scheduledBehaviors.allActiveForChannel(team, channel)
     } yield scheduledMessages ++ scheduledBehaviors
   }
 
-  def maybeNextToBeSentAction(when: OffsetDateTime, dataService: DataService): DBIO[Option[Scheduled]] = {
+  def maybeNextToBeSentAction(when: OffsetDateTime, dataService: DataService)(implicit ec: ExecutionContext): DBIO[Option[Scheduled]] = {
     dataService.scheduledMessages.maybeNextToBeSentAction(when).flatMap { maybeNext =>
       maybeNext.map { next =>
         DBIO.successful(Some(next))

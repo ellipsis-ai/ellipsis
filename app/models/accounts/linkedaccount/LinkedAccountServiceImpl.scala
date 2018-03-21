@@ -3,13 +3,16 @@ package models.accounts.linkedaccount
 import java.time.OffsetDateTime
 import javax.inject._
 
+import akka.actor.ActorSystem
 import com.mohiva.play.silhouette.api.LoginInfo
+import drivers.SlickPostgresDriver.api._
+import models.accounts.github.GithubProvider
+import models.accounts.slack.SlackProvider
 import models.accounts.user.User
 import services.DataService
-import drivers.SlickPostgresDriver.api._
+import services.caching.CacheService
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 case class RawLinkedAccount(userId: String, loginInfo: LoginInfo, createdAt: OffsetDateTime)
 
@@ -23,9 +26,15 @@ class LinkedAccountsTable(tag: Tag) extends Table[RawLinkedAccount](tag, "linked
   def * = (userId, loginInfo, createdAt) <> (RawLinkedAccount.tupled, RawLinkedAccount.unapply _)
 }
 
-class LinkedAccountServiceImpl @Inject() (dataServiceProvider: Provider[DataService]) extends LinkedAccountService {
+class LinkedAccountServiceImpl @Inject() (
+                                           dataServiceProvider: Provider[DataService],
+                                           cacheServiceProvider: Provider[CacheService],
+                                           implicit val ec: ExecutionContext,
+                                           implicit val actorSystem: ActorSystem
+                                         ) extends LinkedAccountService {
 
   def dataService = dataServiceProvider.get
+  def cacheService = cacheServiceProvider.get
 
   import LinkedAccountQueries._
 
@@ -66,13 +75,25 @@ class LinkedAccountServiceImpl @Inject() (dataServiceProvider: Provider[DataServ
   }
 
   def maybeForSlackForAction(user: User): DBIO[Option[LinkedAccount]] = {
-    forSlackForQuery(user.id).result.map { r =>
+    forProviderForQuery(user.id, SlackProvider.ID).result.map { r =>
       r.headOption.map(tuple2LinkedAccount)
     }
   }
 
   def maybeForSlackFor(user: User): Future[Option[LinkedAccount]] = {
     dataService.run(maybeForSlackForAction(user))
+  }
+
+  def maybeForGithubFor(user: User): Future[Option[LinkedAccount]] = {
+    val action = forProviderForQuery(user.id, GithubProvider.ID).result.map { r =>
+      r.headOption.map(tuple2LinkedAccount)
+    }
+    dataService.run(action)
+  }
+
+  def deleteGithubFor(user: User): Future[Boolean] = {
+    val action = rawForProviderForQuery(user.id, GithubProvider.ID).delete.map(_ > 0)
+    dataService.run(action)
   }
 
   def isAdminAction(linkedAccount: LinkedAccount): DBIO[Boolean] = {

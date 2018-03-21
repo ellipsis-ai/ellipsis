@@ -2,11 +2,15 @@ package models.behaviors.config.awsconfig
 
 case class AWSConfig(
                       id: String,
-                      behaviorVersionId: String,
-                      maybeAccessKeyName: Option[String],
-                      maybeSecretKeyName: Option[String],
-                      maybeRegionName: Option[String]
+                      name: String,
+                      teamId: String,
+                      maybeAccessKey: Option[String],
+                      maybeSecretKey: Option[String],
+                      maybeRegion: Option[String]
                     ) {
 
-  def environmentVariableNames: Seq[String] = Seq(maybeAccessKeyName, maybeSecretKeyName, maybeRegionName).flatten
+  lazy val accessKey: String = maybeAccessKey.getOrElse("NOT_SET")
+  lazy val secretKey: String = maybeSecretKey.getOrElse("NOT_SET")
+  lazy val region: String = maybeRegion.getOrElse("NOT_SET")
+
 }

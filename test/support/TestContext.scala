@@ -1,7 +1,9 @@
 package support
 
+import java.time.OffsetDateTime
+
 import akka.actor.ActorSystem
-import mocks.{MockAWSLambdaService, MockAWSLogsService, MockDataService}
+import mocks.{MockAWSLambdaService, MockAWSLogsService, MockCacheService, MockDataService}
 import models.IDs
 import models.accounts.user.User
 import models.behaviors.BotResultService
@@ -14,6 +16,10 @@ import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.ws.WSClient
 import play.api.{Application, Configuration}
 import services._
+import services.caching.CacheService
+import utils.SlackFileMap
+
+import scala.concurrent.ExecutionContext
 
 trait TestContext extends MockitoSugar{
 
@@ -27,12 +33,14 @@ trait TestContext extends MockitoSugar{
       overrides(bind[EventHandler].toInstance(mock[EventHandler])).
       overrides(bind[GithubService].toInstance(mock[GithubService])).
       overrides(bind[GraphQLService].toInstance(mock[GraphQLService])).
-      overrides(bind[SlackEventService].toInstance(mock[SlackEventService])).
+      overrides(bind[SlackEventService].toInstance(mock[SlackEventServiceImpl])).
       overrides(bind[BotResultService].toInstance(mock[BotResultService])).
+      overrides(bind[CacheService].to[MockCacheService]).
+      overrides(bind[SlackFileMap].toInstance(mock[SlackFileMap])).
       disable[ActorModule]
   }
   lazy val teamId: String = IDs.next
-  lazy val team: Team = Team(teamId, "", None)
+  lazy val team: Team = Team(teamId, "", None, None, OffsetDateTime.now())
   lazy val user: User = newUserFor(teamId)
   lazy implicit val app: Application = appBuilder.build()
   val dataService = app.injector.instanceOf(classOf[DataService])
@@ -46,6 +54,8 @@ trait TestContext extends MockitoSugar{
   val cacheService = app.injector.instanceOf(classOf[CacheService])
   val ws = app.injector.instanceOf(classOf[WSClient])
   val configuration = app.injector.instanceOf(classOf[Configuration])
+  val slackFileMap = app.injector.instanceOf(classOf[SlackFileMap])
   lazy val services = app.injector.instanceOf(classOf[DefaultServices])
+  lazy implicit val ec = app.injector.instanceOf(classOf[ExecutionContext])
 
 }

@@ -1,6 +1,6 @@
 package models.team
 
-import java.time.ZoneId
+import java.time.{OffsetDateTime, ZoneId}
 import javax.inject.Inject
 
 import com.google.inject.Provider
@@ -10,13 +10,14 @@ import models.accounts.user.User
 import play.api.Configuration
 import services.DataService
 import drivers.SlickPostgresDriver.api._
+import models.organization.Organization
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 class TeamServiceImpl @Inject() (
-                                  dataServiceProvider: Provider[DataService],
-                                  configuration: Configuration
+                                  val dataServiceProvider: Provider[DataService],
+                                  configuration: Configuration,
+                                  implicit val ec: ExecutionContext
                                 ) extends TeamService {
 
   def dataService = dataServiceProvider.get
@@ -25,6 +26,22 @@ class TeamServiceImpl @Inject() (
 
   def allTeams: Future[Seq[Team]] = {
     dataService.run(all.result)
+  }
+
+  def allCount: Future[Int] = {
+    dataService.run(all.length.result)
+  }
+
+  def allTeamsPaged(page: Int, perPage: Int): Future[Seq[Team]] = {
+    dataService.run(allPagedQuery((page - 1) * perPage, perPage).result)
+  }
+
+  def allTeamsWithoutOrg: Future[Seq[Team]] = {
+    dataService.run(withoutOrg.result)
+  }
+
+  def allTeamsFor(organization: Organization): Future[Seq[Team]] = {
+    dataService.run(withOrganizationId(organization.id).result)
   }
 
   def findAction(id: String): DBIO[Option[Team]] = {
@@ -62,35 +79,52 @@ class TeamServiceImpl @Inject() (
     } yield maybeTeam
   }
 
-  def create(name: String): Future[Team] = save(Team(IDs.next, name, None))
+  def create(name: String): Future[Team] = save(Team(name))
 
-  def setInitialNameFor(team: Team, name: String): Future[Team] = {
-    if (team.maybeNonEmptyName.isEmpty) {
-      save(team.copy(name = name))
-    } else {
-      Future.successful(team)
-    }
+  def create(name: String, organization: Organization): Future[Team] = {
+    save(Team(IDs.next, name, None, Some(organization.id), OffsetDateTime.now))
+  }
+
+  def createAction(name: String, organization: Organization): DBIO[Team] = {
+    saveAction(Team(IDs.next, name, None, Some(organization.id), OffsetDateTime.now))
+  }
+
+  def setNameFor(team: Team, name: String): Future[Team] = {
+    save(team.copy(name = name))
   }
 
   def setTimeZoneFor(team: Team, tz: ZoneId): Future[Team] = {
     save(team.copy(maybeTimeZone = Some(tz)))
   }
 
-  def save(team: Team): Future[Team] = {
-    val query = findQueryFor(team.id)
-    val action = query.result.flatMap { result =>
-      result.headOption.map { existing =>
-        all.filter(_.id === team.id).update(team)
-      }.getOrElse {
-        all += team
-      }.map { _ => team }
+  def organizationFor(team: Team): Future[Organization] = {
+    team.maybeOrganizationId match {
+      case Some(organizationId) => dataService.organizations.find(organizationId).map(_.get)
+      case None => throw new Exception("A team must have an organization!")
     }
-    dataService.run(action)
+  }
+
+  def setOrganizationIdFor(team: Team, organizationId: Option[String]): Future[Team] = {
+    save(team.copy(maybeOrganizationId = organizationId))
+  }
+
+  def save(team: Team): Future[Team] = {
+    dataService.run(saveAction(team))
   }
 
   def isAdmin(team: Team): Future[Boolean] = {
     dataService.slackBotProfiles.allFor(team).map { botProfiles =>
       botProfiles.exists(_.slackTeamId == LinkedAccount.ELLIPSIS_SLACK_TEAM_ID)
+    }
+  }
+
+  private def saveAction(team: Team): DBIO[Team] = {
+    findQueryFor(team.id).result.flatMap { result =>
+      result.headOption.map { existing =>
+        all.filter(_.id === team.id).update(team)
+      }.getOrElse {
+        all += team
+      }.map { _ => team }
     }
   }
 }

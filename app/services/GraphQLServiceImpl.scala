@@ -1,13 +1,14 @@
 package services
 
 import javax.inject.Inject
-
 import json.BehaviorGroupData
 import models.accounts.user.User
 import models.behaviors.behaviorgroup.BehaviorGroup
 import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
-import models.behaviors.datatypeconfig.DataTypeConfigForSchema
+import models.behaviors.behaviorparameter.YesNoType
+import models.behaviors.datatypeconfig.BehaviorVersionForDataTypeSchema
 import models.behaviors.defaultstorageitem.DefaultStorageItemService
+import play.api.Logger
 import play.api.libs.json._
 import sangria.ast
 import sangria.ast.Document
@@ -17,8 +18,7 @@ import sangria.parser.{QueryParser, SyntaxError}
 import sangria.schema.{Action, Context, DefaultAstSchemaBuilder, Schema}
 
 import scala.collection.immutable.ListMap
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}
 
 case class ItemNotFoundError(id: String) extends Exception with UserFacingError {
@@ -26,13 +26,14 @@ case class ItemNotFoundError(id: String) extends Exception with UserFacingError 
 }
 
 class GraphQLServiceImpl @Inject() (
-                                    dataService: DataService
+                                    dataService: DataService,
+                                    implicit val ec: ExecutionContext
                                   ) extends GraphQLService {
 
-  private def schemaStringFromConfigs(configs: Seq[DataTypeConfigForSchema]): Future[String] = {
-    val queryFieldsStr = configs.map(_.queryFieldsString).mkString("")
-    val mutationFieldsStr = configs.map(_.mutationFieldsString).mkString("")
-    Future.sequence(configs.map(_.graphQL(dataService))).map(_.mkString("\n\n")).map { typesStr =>
+  private def buildSchemaStringFor(versions: Seq[BehaviorVersionForDataTypeSchema]): Future[String] = {
+    val queryFieldsStr = versions.map(_.queryFieldsString).mkString("")
+    val mutationFieldsStr = versions.map(_.mutationFieldsString).mkString("")
+    Future.sequence(versions.map(_.graphQL(dataService))).map(_.mkString("\n\n")).map { typesStr =>
       s"""schema {
          |  query: Query
          |  mutation: Mutation
@@ -55,13 +56,12 @@ class GraphQLServiceImpl @Inject() (
 
   private def schemaStringFor(groupVersion: BehaviorGroupVersion): Future[String] = {
     dataService.dataTypeConfigs.allUsingDefaultStorageFor(groupVersion).map(_.sortBy(_.id)).flatMap { configs =>
-      schemaStringFromConfigs(configs)
+      buildSchemaStringFor(configs.map(_.behaviorVersion))
     }
   }
 
   private def previewSchemaStringFor(data: BehaviorGroupData): Future[String] = {
-    val configs = data.dataTypeBehaviorVersions.flatMap(_.config.dataTypeConfig)
-    schemaStringFromConfigs(configs)
+    buildSchemaStringFor(data.dataTypeBehaviorVersions)
   }
 
   class MySchemaBuilder(groupVersion: BehaviorGroupVersion, user: User) extends DefaultAstSchemaBuilder[DefaultStorageItemService] {
@@ -70,17 +70,30 @@ class GraphQLServiceImpl @Inject() (
 
     val listFieldRegex = """(\S+)List""".r
     val createFieldRegex = """create(\S+)""".r
+    val updateFieldRegex = """update(\S+)""".r
     val deleteFieldRegex = """delete(\S+)""".r
+    val deleteWhereFieldRegex = """deleteWhere(\S+)""".r
 
     private def toJson(v: Any): JsValue = {
       v match {
         case opt: Option[Any] => opt.map(toJson).getOrElse(JsNull)
         case s: String => Json.toJson(s)
         case n: Double => JsNumber(BigDecimal(n))
+        case b: Boolean => JsBoolean(b)
         case arr: Array[Any] => JsArray(arr.map(toJson))
-        case m: Map[String, Any] => {
-          JsObject(m.map { ea => (ea._1, toJson(ea._2)) })
-        }
+        case m: Map[_, _] => JsObject(m.map {
+          case(key, value) => {
+            try {
+              (key.asInstanceOf[String], toJson(value))
+            } catch {
+              case e: ClassCastException => {
+                Logger.warn(s"GraphQL toJson called with a Map with non-string keys. Forcing keys to strings:\n$m", e)
+                (key.toString, toJson(value))
+              }
+            }
+          }
+        })
+        case _ => JsNull
       }
     }
 
@@ -115,6 +128,12 @@ class GraphQLServiceImpl @Inject() (
                                  ): Action[DefaultStorageItemService, _] = {
       definition.name match {
         case createFieldRegex(typeName) => ctx.ctx.createItem(typeName, user, valueFor(ctx, definition), group).map(_.data)
+        case updateFieldRegex(typeName) => ctx.ctx.updateItem(typeName, user, valueFor(ctx, definition), group).map(_.data)
+        case deleteWhereFieldRegex(typeName) => {
+          ctx.ctx.deleteFilteredItemsFor(typeName, valueFor(ctx, definition), group).map { items =>
+            items.map(_.data)
+          }
+        }
         case deleteFieldRegex(_) => {
           val idToDelete: String = ctx.arg(definition.arguments.head.name)
           ctx.ctx.deleteItem(idToDelete, group).map { maybeItem =>
@@ -139,12 +158,33 @@ class GraphQLServiceImpl @Inject() (
               case arr: JsArray => fromJson(arr)
               case JsNull => null
               case _ => {
-                (ctx.value.asInstanceOf[JsObject] \ (definition.name)).asOpt[JsValue].map(fromJson)
+                val maybeValue = (ctx.value.asInstanceOf[JsObject] \ (definition.name)).asOpt[JsValue].map(fromJson)
+                if (definition.fieldType.namedType.name == "Boolean") {
+                  parseBoolean(maybeValue)
+                } else {
+                  maybeValue
+                }
               }
             }
           }
         }
       }
+    }
+
+    private def parseBoolean(maybeValue: Option[Any]) = {
+      maybeValue.map {
+        case b: Boolean => b
+        case s: String => YesNoType.maybeValidValueFor(s).getOrElse(null)
+        case d: Double =>
+          if (d == 1) {
+            true
+          } else if (d == 0) {
+            false
+          } else {
+            null
+          }
+        case _ => null
+      }.orNull
     }
 
     def fromJson(v: JsValue) = v match {
@@ -184,7 +224,7 @@ class GraphQLServiceImpl @Inject() (
                     vars: JsValue
                   ): Future[JsValue] = {
     Executor.execute(schema, query, operationName = op, variables = vars, userContext = dataService.defaultStorageItems).recover {
-      case e: sangria.execution.ValidationError => errorResultFor(e.getMessage)
+      case e: sangria.execution.UserFacingError => errorResultFor(e.getMessage)
     }
   }
 

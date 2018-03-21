@@ -10,8 +10,7 @@ import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
 import models.behaviors.behaviorversion.BehaviorVersion
 import services.DataService
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 case class RawDataTypeConfig(
                               id: String,
@@ -30,7 +29,8 @@ class DataTypeConfigsTable(tag: Tag) extends Table[RawDataTypeConfig](tag, "data
 }
 
 class DataTypeConfigServiceImpl @Inject() (
-                                             dataServiceProvider: Provider[DataService]
+                                             dataServiceProvider: Provider[DataService],
+                                             implicit val ec: ExecutionContext
                                            ) extends DataTypeConfigService {
 
   def dataService = dataServiceProvider.get
