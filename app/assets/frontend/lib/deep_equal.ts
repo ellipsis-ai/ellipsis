@@ -1,5 +1,5 @@
 class DeepEqual {
-    static isEqual(thing1, thing2) {
+    static isEqual(thing1: any, thing2: any): boolean {
       if (thing1 === thing2) {
         return true;
       } else if (Number.isNaN(thing1) && Number.isNaN(thing2)) {
@@ -13,7 +13,7 @@ class DeepEqual {
       }
     }
 
-    static arraysEqual(array1, array2) {
+    static arraysEqual(array1: Array<any>, array2: Array<any>): boolean {
       if (array1.length !== array2.length) {
         return false;
       } else {
@@ -23,7 +23,7 @@ class DeepEqual {
       }
     }
 
-    static objectsEqual(obj1, obj2) {
+    static objectsEqual(obj1: {}, obj2: {}): boolean {
       // typeof null returns "object", so we need to guard against one side being null
       if (obj1 !== obj2 && (obj1 === null || obj2 === null)) {
         return false;
