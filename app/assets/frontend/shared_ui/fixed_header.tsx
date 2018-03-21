@@ -1,10 +1,12 @@
 import * as React from 'react';
 import autobind from '../lib/autobind';
+import {CSSProperties} from "react";
 
 type Props = {
   children: any,
   className?: string,
-  onHeightChange: (number) => void
+  onHeightChange: (number) => void,
+  marginTop?: Option<number>
 }
 
 type State = {
@@ -52,12 +54,22 @@ class FixedHeader extends React.Component<Props, State> {
       }
     }
 
+    getStyle(): CSSProperties {
+      const style: CSSProperties = {
+        marginTop: `${this.props.marginTop || 0}px`
+      };
+      if (this.state.exceedsWindowHeight) {
+        style.overflowY = 'auto';
+      }
+      return style;
+    }
+
     render() {
       return (
         <header
           ref={(el) => this.header = el}
           className={`position-fixed-top position-z-front ${this.props.className || ""}`}
-          style={(this.state.exceedsWindowHeight ? { overflowY: 'auto' } : {})}
+          style={this.getStyle()}
         >
           {this.props.children}
         </header>
