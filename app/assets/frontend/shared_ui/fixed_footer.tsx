@@ -7,6 +7,7 @@ class FixedFooter extends React.Component<FixedElementProps> {
       <FixedElement
         elementType={"footer"}
         className={this.props.className}
+        zIndexClassName={this.props.zIndexClassName}
         onHeightChange={this.props.onHeightChange}
         marginTop={this.props.marginTop}
       >
