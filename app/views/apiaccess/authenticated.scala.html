@@ -4,18 +4,23 @@
   message: String
   )(implicit messages: Messages, r: RequestHeader)
 
-@page.main("Authenticated", config) {
-
+@page.main(
+  "Authentication successful",
+  config,
+  bodyClass = "bg-white",
+  navClass = "container-narrow container-c",
+  hideNav = true
+) {
   <div id="content" class="content">
-    <div class="bg-blue-medium pvxxl border-emphasis-bottom border-blue bg-large-logo">
-      <div class="container">
-        <p class="type-l type-white">
-          You are logged in@maybeTeam.map(team => s" to ${team.name}")
-        </p>
+    <div class="bg-black type-white pvxxl border-emphasis-bottom border-pink">
+      <div class="container container-narrow container-c pvxxxxl mobile-pvxl">
+        <h1 class="mobile-mtn">
+          Authentication successful
+        </h1>
       </div>
     </div>
-    <div class="bg-white border-bottom pvxxxl">
-      <div class="container">
+    <div class="bg-white">
+      <div class="container container-narrow container-c pvxxxl mobile-pvl">
         <div class="columns">
           <div class="column column-three-quarters">
             <p>
