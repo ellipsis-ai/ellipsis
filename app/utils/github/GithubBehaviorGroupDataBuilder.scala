@@ -9,7 +9,6 @@ import play.api.libs.json._
 import services.DataService
 
 case class GithubBehaviorGroupDataBuilder(
-                                           groupPath: String,
                                            data: JsValue,
                                            team: Team,
                                            owner: String,
@@ -115,7 +114,7 @@ case class GithubBehaviorGroupDataBuilder(
       cfg <- Json.parse(text).asOpt[BehaviorGroupConfig]
     } yield cfg
     val maybeExportId = maybeConfig.flatMap(_.exportId)
-    val name = maybeConfig.map(_.name).getOrElse(groupPath)
+    val name = maybeConfig.map(_.name).getOrElse(repoName)
     val icon = maybeConfig.flatMap(_.icon)
     val requiredAWSConfigData = maybeConfig.map(_.requiredAWSConfigs).getOrElse(Seq())
     val requiredOAuth2ApiConfigData = maybeConfig.map(_.requiredOAuth2ApiConfigs).getOrElse(Seq())

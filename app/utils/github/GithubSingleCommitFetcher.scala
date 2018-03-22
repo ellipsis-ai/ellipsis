@@ -87,7 +87,7 @@ case class GithubSingleCommitFetcher(
       case _ => {
         repoData \ "object" \ "tree" \ "entries" match {
           case JsDefined(_) => {
-            GithubBehaviorGroupDataBuilder(repoName, (repoData \ "object" \ "tree").get, team, owner, repoName, maybeBranch, None, dataService).
+            GithubBehaviorGroupDataBuilder((repoData \ "object" \ "tree").get, team, owner, repoName, maybeBranch, None, dataService).
               build.
               copyForImportableForTeam(team, maybeExistingGroup)
           }
