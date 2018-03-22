@@ -46,7 +46,7 @@ class GithubRepoActions extends React.Component<Props> {
       return (
         <span className="type-s">
           <a href={this.getGithubAuthUrl(groupId, selectedId)}>
-            <img height="24" src="/assets/images/logos/GitHub-Mark-64px.png" className="mrs align-m"/>
+            <img height="24" src="/assets/images/logos/GitHub-Mark-64px.png" className="mrs align-m" />
             <span>Authenticate with GitHub</span>
           </a>
           <span> to sync this skill with a GitHub repo</span>
@@ -63,7 +63,7 @@ class GithubRepoActions extends React.Component<Props> {
         <div>
             <span className="mrm">
               <span className="type-label mrs">GitHub repository:</span>
-              <GithubOwnerRepoReadonly linked={this.props.linkedGithubRepo}/>
+              <GithubOwnerRepoReadonly linked={this.props.linkedGithubRepo} />
             </span>
           {this.renderChangeRepoButton()}
         </div>

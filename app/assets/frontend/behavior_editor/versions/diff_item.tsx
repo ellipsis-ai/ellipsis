@@ -15,57 +15,57 @@ type State = {
 }
 
 class DiffItem extends React.Component<Props, State> {
-    constructor(props: Props) {
-      super(props);
-      autobind(this);
-      this.state = {
-        expanded: false
-      };
-    }
+  constructor(props: Props) {
+    super(props);
+    autobind(this);
+    this.state = {
+      expanded: false
+    };
+  }
 
-    hasChildren(): boolean {
-      return React.Children.count(this.props.children) > 0;
-    }
+  hasChildren(): boolean {
+    return React.Children.count(this.props.children) > 0;
+  }
 
-    toggleExpanded(): void {
-      this.setState({
-        expanded: !this.state.expanded
-      });
-    }
+  toggleExpanded(): void {
+    this.setState({
+      expanded: !this.state.expanded
+    });
+  }
 
-    renderChildren() {
-      if (this.hasChildren()) {
-        return (
-          <Collapsible revealWhen={this.state.expanded}>
-            {React.Children.map(this.props.children, (child) => (
-              <div className="mtxs border bg-lightest type-s">{child}</div>
-            ))}
-          </Collapsible>
-        );
-      } else {
-        return null;
-      }
-    }
-
-    render() {
+  renderChildren() {
+    if (this.hasChildren()) {
       return (
-        <div className={this.props.className || "pas border-bottom mbneg1"}>
-          <div>
-            {this.hasChildren() ? (
-              <Button className="button-block width-full" onClick={this.toggleExpanded}>
+        <Collapsible revealWhen={this.state.expanded}>
+          {React.Children.map(this.props.children, (child) => (
+            <div className="mtxs border bg-lightest type-s">{child}</div>
+          ))}
+        </Collapsible>
+      );
+    } else {
+      return null;
+    }
+  }
+
+  render() {
+    return (
+      <div className={this.props.className || "pas border-bottom mbneg1"}>
+        <div>
+          {this.hasChildren() ? (
+            <Button className="button-block width-full" onClick={this.toggleExpanded}>
                 <span className="display-inline-block align-m height-xl mrs">
                   <SVGExpand expanded={this.state.expanded} />
                 </span>
-                <span className="display-inline-block align-m">
+              <span className="display-inline-block align-m">
                   {this.props.label}
                 </span>
-              </Button>
-            ) : this.props.label}
-          </div>
-          {this.renderChildren()}
+            </Button>
+          ) : this.props.label}
         </div>
-      );
-    }
+        {this.renderChildren()}
+      </div>
+    );
+  }
 }
 
 export default DiffItem;
