@@ -80,7 +80,7 @@ case class DisplayHelpBehavior(
       if (startAt == 0) { Some("Skills") } else { None }
     )
     val attachments = if (startAt == 0) {
-      Seq(actionsGroup, generalHelpGroup(botPrefix))
+      Seq(generalHelpGroup(botPrefix), actionsGroup)
     } else {
       Seq(actionsGroup)
     }
@@ -148,11 +148,11 @@ case class DisplayHelpBehavior(
     TextWithAttachmentsResult(event, None, resultText, forcePrivateResponse = false, Seq(actionsGroup))
   }
 
-  def emptyResult: BotResult = {
+  def emptyResult(botPrefix: String): BotResult = {
     val actionList = Seq(SlackMessageActionButton(SHOW_HELP_INDEX, "More help…", "0"))
     val resultText = s"I don’t know anything$matchString."
     val actionsGroup = SlackMessageActionsGroup("help_no_result", actionList, None, Some(Color.PINK))
-    TextWithAttachmentsResult(event, None, resultText, forcePrivateResponse = false, Seq(actionsGroup))
+    TextWithAttachmentsResult(event, None, resultText, forcePrivateResponse = false, Seq(generalHelpGroup(botPrefix), actionsGroup))
   }
 
   def searchedHelp: Boolean = maybeHelpSearch.isDefined
@@ -200,7 +200,7 @@ case class DisplayHelpBehavior(
       }.getOrElse(flattenedGroupData.map(group => SimpleHelpResult(group, event, dataService, lambdaService, botPrefix)))
 
       if (searchedHelp && matchingGroupData.isEmpty) {
-        emptyResult
+        emptyResult(botPrefix)
       } else if (shouldShowSingleSkill(matchingGroupData)) {
         skillResultFor(matchingGroupData.head)
       } else {
