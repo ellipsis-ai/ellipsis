@@ -3,8 +3,8 @@ package controllers
 import java.time.OffsetDateTime
 import java.time.format.TextStyle
 import java.util.Locale
-import javax.inject.Inject
 
+import javax.inject.Inject
 import com.google.inject.Provider
 import com.mohiva.play.silhouette.api.Silhouette
 import json._
@@ -14,7 +14,7 @@ import play.api.data.Forms._
 import play.api.libs.json.Json
 import play.filters.csrf.CSRF
 import services.{DefaultServices, GithubService}
-import utils.github.GithubPublishedBehaviorGroupsFetcher
+import utils.github.{GithubPublishedBehaviorGroupsFetcher, GithubSingleCommitFetcher, GithubSkillCommitsFetcher}
 import utils.{CitiesToTimeZones, FuzzyMatcher, TimeZoneParser}
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -115,8 +115,12 @@ class ApplicationController @Inject() (
         BehaviorGroupData.maybeFor(group.id, user, None, dataService, cacheService)
       }).map(_.flatten)
     } yield teamAccess.maybeTargetTeam.map { team =>
-      val fetcher = GithubPublishedBehaviorGroupsFetcher(team, maybeBranch, alreadyInstalledData, githubService, services, ec)
-      Ok(Json.toJson(fetcher.result))
+      //val fetcher = GithubPublishedBehaviorGroupsFetcher(team, maybeBranch, alreadyInstalledData, githubService, services, ec)
+      val commits = GithubSkillCommitsFetcher(team, maybeBranch, alreadyInstalledData, githubService, services, ec).result
+      val data = commits.map { ea =>
+        GithubSingleCommitFetcher(team, ea.owner, ea.repoName, ea.commitId, maybeBranch, None, githubService, services, ec).result
+      }
+      Ok(Json.toJson(data))
     }.getOrElse {
       val message = maybeTeamId.map { teamId =>
         s"You can't access this for team ${teamId}"

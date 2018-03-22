@@ -75,11 +75,12 @@ case class GithubPublishedBehaviorGroupsFetcher(
   }
 
   def resultFromNonErrorResponse(data: JsValue): Seq[BehaviorGroupData] = {
-    val behaviorGroups = (data \ "data" \ "repository" \ "object" \ "entries") match {
+    val behaviorGroups = (data \ "data" \ "repository" \ "object" \ "entries" \ "object") match {
       case JsDefined(JsArray(arr)) => {
         arr.map { ea =>
           val groupPath = (ea \ "name").as[String]
-          GithubBehaviorGroupDataBuilder(groupPath, ea, team, maybeBranch, dataService).build
+          val maybeGitSHA = (data \ "ref" \ "target" \ "oid").asOpt[String]
+          GithubBehaviorGroupDataBuilder(groupPath, ea, team, maybeBranch, None, maybeGitSHA, dataService).build
         }
       }
       case _ => throw GithubResultFromDataException(

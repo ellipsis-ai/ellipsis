@@ -13,6 +13,8 @@ case class GithubBehaviorGroupDataBuilder(
                                           data: JsValue,
                                           team: Team,
                                           maybeBranch: Option[String],
+                                          maybeGithubUrl: Option[String],
+                                          maybeSHA: Option[String],
                                           dataService: DataService
                                         ) {
 
@@ -39,7 +41,7 @@ case class GithubBehaviorGroupDataBuilder(
   }
 
   private def githubUrlForGroupPath: String = {
-    s"${WEB_URL}/${USER_NAME}/${REPO_NAME}/tree/$branch/published/$groupPath"
+    maybeGithubUrl.getOrElse(s"${WEB_URL}/${USER_NAME}/${REPO_NAME}/tree/$branch/published/$groupPath")
   }
 
   private def githubUrlForBehaviorPath(behaviorType: String, behaviorPath: String): String = {
@@ -107,7 +109,7 @@ case class GithubBehaviorGroupDataBuilder(
   }
 
   def build: BehaviorGroupData = {
-    val entries = (data \ "object" \ "entries")
+    val entries = data \ "entries"
     val maybeConfig = for {
       entry <- findEntryNamed("config.json", entries)
       text <- (entry \ "object" \ "text").asOpt[String]
@@ -127,7 +129,6 @@ case class GithubBehaviorGroupDataBuilder(
     val dataTypes = behaviorVersionsDataFromEntryNamed("data_types", entries)
     val behaviors = actions ++ dataTypes
     val libraries = findEntryNamed("lib", entries).map(json => libraryVersionsDataFrom(json)).getOrElse(Seq())
-    val maybeSHA = (data \ "ref" \ "target" \ "oid").asOpt[String]
     BehaviorGroupData(
       None,
       team.id,

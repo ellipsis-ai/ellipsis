@@ -90,7 +90,8 @@ case class GithubSingleBehaviorGroupFetcher(
       case _ => {
         repoData \ "object" \ "entries" match {
           case JsDefined(_) => {
-            GithubBehaviorGroupDataBuilder(repoName, repoData.get, team, maybeBranch, dataService).
+            val maybeGitSHA = (repoData \ "ref" \ "target" \ "oid").asOpt[String]
+            GithubBehaviorGroupDataBuilder(repoName, (repoData \ "object").get, team, maybeBranch, Some(s"https://github.com/$owner/$repoName"), maybeGitSHA, dataService).
               build.
               copyForImportableForTeam(team, maybeExistingGroup)
           }
