@@ -40,8 +40,8 @@ class LinkedGithubRepoServiceImpl @Inject() (
     dataService.run(maybeForAction(group))
   }
 
-  def ensureLink(group: BehaviorGroup, owner: String, repo: String, maybeCurrentBranch: Option[String]): Future[LinkedGithubRepo] = {
-    val action = for {
+  def ensureLinkAction(group: BehaviorGroup, owner: String, repo: String, maybeCurrentBranch: Option[String]): DBIO[LinkedGithubRepo] = {
+    for {
       maybeExisting <- maybeForAction(group)
       maybeAlreadyLinked <- maybeExisting.map { existing =>
         if (existing.behaviorGroupId == group.id && existing.owner == owner && existing.repo == repo) {
@@ -58,8 +58,10 @@ class LinkedGithubRepoServiceImpl @Inject() (
         (all += newInstance).map(_ => newInstance)
       }
     } yield linked
+  }
 
-    dataService.run(action)
+  def ensureLink(group: BehaviorGroup, owner: String, repo: String, maybeCurrentBranch: Option[String]): Future[LinkedGithubRepo] = {
+    dataService.run(ensureLinkAction(group, owner, repo, maybeCurrentBranch))
   }
 
   def maybeSetCurrentBranch(group: BehaviorGroup, branch: String): Future[Option[LinkedGithubRepo]] = {

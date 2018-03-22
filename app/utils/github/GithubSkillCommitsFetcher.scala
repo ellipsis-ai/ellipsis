@@ -11,13 +11,8 @@ import scala.util.matching.Regex
 case class SkillCommit(owner: String, repoName: String, commitId: String)
 
 case class SubmoduleInfo(name: String, path: String, url: String) {
-  val urlRegex: Regex = """https://github.com/([^/]+)/(.+)""".r
-  def maybeOwnerAndName: Option[(String, String)] = url match {
-    case urlRegex(owner, name) => Some((owner, name))
-    case _ => None
-  }
-  val maybeOwner: Option[String] = maybeOwnerAndName.map(_._1)
-  val maybeName: Option[String] = maybeOwnerAndName.map(_._2)
+  val maybeOwner: Option[String] = GithubUtils.maybeOwnerFor(url)
+  val maybeName: Option[String] = GithubUtils.maybeNameFor(url)
 }
 
 case class CommitInfo(name: String, commitId: String)
