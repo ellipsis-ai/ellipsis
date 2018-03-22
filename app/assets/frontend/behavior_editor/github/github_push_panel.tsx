@@ -1,5 +1,4 @@
 import * as React from 'react';
-import Formatter from '../../lib/formatter';
 import Button from '../../form/button';
 import DynamicLabelButton from '../../form/dynamic_label_button';
 import BehaviorGroup from '../../models/behavior_group';
@@ -8,29 +7,27 @@ import FormInput from '../../form/input';
 import LinkedGithubRepo from '../../models/linked_github_repo';
 import GithubErrorNotification from './github_error_notification';
 import GithubOwnerRepoReadonly from './github_owner_repo_readonly';
-import SVGWarning from '../../svg/warning';
 import autobind from '../../lib/autobind';
+
+export interface LastSavedInfo {
+  date: Date,
+  branch: string,
+  noCommit?: boolean
+}
 
 type Props = {
   group: BehaviorGroup,
   linked?: LinkedGithubRepo,
-  onPushBranch: () => void,
+  onPushBranch: (info: LastSavedInfo) => void,
   onDoneClick: () => void,
   csrfToken: string
 };
 
-type LastSavedInfo = {
-  date: Date,
-  branch: string
-}
-
 type State = {
   commitMessage: string,
   isSaving: boolean,
-  hasSavedSinceOpen: boolean,
-  lastSavedInfo: Option<LastSavedInfo>,
-  error: Option<string>,
-  warning: any
+  hasSavedSinceOpen: boolean
+  error: Option<string>
 };
 
 class GithubPushPanel extends React.Component<Props, State> {
@@ -43,9 +40,7 @@ class GithubPushPanel extends React.Component<Props, State> {
         commitMessage: "",
         isSaving: false,
         hasSavedSinceOpen: false,
-        lastSavedInfo: null,
-        error: null,
-        warning: null
+        error: null
       };
     }
 
@@ -54,7 +49,6 @@ class GithubPushPanel extends React.Component<Props, State> {
       const oldBranch = this.props.linked && this.props.linked.currentBranch;
       if (oldBranch !== newBranch) {
         this.setState({
-          warning: null,
           error: null
         });
       }
@@ -87,8 +81,7 @@ class GithubPushPanel extends React.Component<Props, State> {
         const repo = linked.getRepo();
         this.setState({
           isSaving: true,
-          error: null,
-          warning: null
+          error: null
         }, () => this.pushToGithub(owner, repo));
       }
     }
@@ -105,41 +98,31 @@ class GithubPushPanel extends React.Component<Props, State> {
         },
         this.props.csrfToken
       ).then((json) => {
+        const lastSavedInfo: LastSavedInfo = {
+          date: new Date(),
+          branch: branch
+        };
         if (json.data) {
           this.setState({
             commitMessage: "",
             isSaving: false,
-            hasSavedSinceOpen: true,
-            lastSavedInfo: {
-              date: new Date(),
-              branch: branch
-            }
+            hasSavedSinceOpen: true
           });
-          this.props.onPushBranch();
+          this.props.onPushBranch(lastSavedInfo);
         } else if (json.errors) {
           const error = json.errors;
           if (error.type && error.type === "NoChanges") {
+            lastSavedInfo.noCommit = true;
             this.setState({
               isSaving: false,
-              hasSavedSinceOpen: true,
-              lastSavedInfo: {
-                date: new Date(),
-                branch: branch
-              },
-              warning: this.noCommitWarningForBranch(branch)
+              hasSavedSinceOpen: true
             });
-            this.props.onPushBranch();
+            this.props.onPushBranch(lastSavedInfo);
           } else {
             this.onPushError(json.errors.message);
           }
         }
       }).catch((err: ResponseError) => this.onPushError(err.body || "An unknown error occurred."));
-    }
-
-    noCommitWarningForBranch(branch: string) {
-      return (
-        <span><b>Warning:</b> no changes were committed because branch <b>{branch}</b> is identical to <b>master</b>.</span>
-      );
     }
 
     onPushError(errorMessage: string) {
@@ -154,8 +137,7 @@ class GithubPushPanel extends React.Component<Props, State> {
         commitMessage: "",
         isSaving: false,
         hasSavedSinceOpen: false,
-        error: null,
-        warning: null
+        error: null
       }, this.props.onDoneClick);
     }
 
@@ -231,19 +213,6 @@ class GithubPushPanel extends React.Component<Props, State> {
       if (this.state.error) {
         return (
           <GithubErrorNotification error={this.state.error} />
-        );
-      } else if (this.state.lastSavedInfo && !this.state.isSaving) {
-        const lastSavedInfo = this.state.lastSavedInfo;
-        return (
-          <div className="fade-in type-s">
-            {this.state.warning ? (
-              <span>
-                <span className="display-inline-block height-xl mrs type-yellow align-m"><SVGWarning /></span>
-                <span>{this.state.warning} </span>
-              </span>
-            ) : null}
-            <span>Branch <b>{lastSavedInfo.branch}</b> pushed {Formatter.formatTimestampRelative(lastSavedInfo.date)}.</span>
-          </div>
         );
       } else {
         return (
