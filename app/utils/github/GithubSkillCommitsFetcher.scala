@@ -64,7 +64,6 @@ case class GithubSkillCommitsFetcher(
   val submoduleConfigRegex: Regex = """(?s)\[\s*submodule\s+\"([^\"]+)\"\]\s*path\s*=\s*(\S+)\s*url\s*=\s*(\S+)\s*""".r
 
   def resultFromNonErrorResponse(data: JsValue): Seq[SkillCommit] = {
-    val foo = data \ "data" \ "repository" \ "object" \ "entries"
     (data \ "data" \ "repository" \ "object" \ "entries") match {
       case JsDefined(JsArray(arr)) => {
         val maybeSubmodules = arr.find { ea =>

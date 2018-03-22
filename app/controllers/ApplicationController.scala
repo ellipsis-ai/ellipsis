@@ -115,12 +115,8 @@ class ApplicationController @Inject() (
         BehaviorGroupData.maybeFor(group.id, user, None, dataService, cacheService)
       }).map(_.flatten)
     } yield teamAccess.maybeTargetTeam.map { team =>
-      //val fetcher = GithubPublishedBehaviorGroupsFetcher(team, maybeBranch, alreadyInstalledData, githubService, services, ec)
-      val commits = GithubSkillCommitsFetcher(team, maybeBranch, alreadyInstalledData, githubService, services, ec).result
-      val data = commits.map { ea =>
-        GithubSingleCommitFetcher(team, ea.owner, ea.repoName, ea.commitId, maybeBranch, None, githubService, services, ec).result
-      }
-      Ok(Json.toJson(data))
+      val fetcher = GithubPublishedBehaviorGroupsFetcher(team, maybeBranch, alreadyInstalledData, githubService, services, ec)
+      Ok(Json.toJson(fetcher.result))
     }.getOrElse {
       val message = maybeTeamId.map { teamId =>
         s"You can't access this for team ${teamId}"
