@@ -92,9 +92,9 @@ case class GithubSingleCommitFetcher(
               copyForImportableForTeam(team, maybeExistingGroup)
           }
           case _ => throw GithubResultFromDataException(
-            GitFetcherExceptionType.NoBranchFound,
-            s"Branch '$branch' doesn't exist for $owner/$repoName",
-            Json.obj("repo" -> repoName, "owner" -> owner, "branch" -> branch)
+            GitFetcherExceptionType.NoCommitFound,
+            s"Commit with SHA '$oid' wasn't found for $owner/$repoName",
+            Json.obj("repo" -> repoName, "owner" -> owner, "branch" -> branch, "sha" -> oid)
           )
         }
       }
