@@ -21,13 +21,9 @@
     <span
     class="display-inline-block height-logo align-t">
       @l(hideText = true)
-    </span>}}@config.maybeTeamName.map { teamName => <span
-      class="display-inline-block align-t mobile-display-none type-brand type-regular mlxs">
-      @teamName
-    </span>}.getOrElse {<span
-      class="display-inline-block align-t mobile-display-none height-logo mtneg1">
-      @l(hideSymbol = true)
-    </span>}@if(includeArrow) {<span
+    </span>}}<span
+      class="display-inline-block align-t mobile-display-none type-brand type-regular mlxs">@{config.maybeTeamName.getOrElse("Ellipsis")}
+    </span>@if(includeArrow) {<span
       class="display-inline-block type-pink align-t mhs">
       ▾
     </span>}
