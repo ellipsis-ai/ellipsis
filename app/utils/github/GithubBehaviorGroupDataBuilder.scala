@@ -9,19 +9,22 @@ import play.api.libs.json._
 import services.DataService
 
 case class GithubBehaviorGroupDataBuilder(
-                                          groupPath: String,
-                                          data: JsValue,
-                                          team: Team,
-                                          maybeBranch: Option[String],
-                                          maybeGithubUrl: Option[String],
-                                          maybeSHA: Option[String],
-                                          dataService: DataService
+                                           groupPath: String,
+                                           data: JsValue,
+                                           team: Team,
+                                           owner: String,
+                                           repoName: String,
+                                           maybeBranch: Option[String],
+                                           maybeSHA: Option[String],
+                                           dataService: DataService
                                         ) {
 
   val API_URL = "https://api.github.com/graphql"
   val WEB_URL = "https://github.com"
   val USER_NAME = "ellipsis-ai"
   val REPO_NAME = "behaviors"
+
+  val githubUrl: String = s"https://github.com/$owner/$repoName"
 
   val branch: String = maybeBranch.getOrElse("master")
 
@@ -40,12 +43,8 @@ case class GithubBehaviorGroupDataBuilder(
     }
   }
 
-  private def githubUrlForGroupPath: String = {
-    maybeGithubUrl.getOrElse(s"${WEB_URL}/${USER_NAME}/${REPO_NAME}/tree/$branch/published/$groupPath")
-  }
-
   private def githubUrlForBehaviorPath(behaviorType: String, behaviorPath: String): String = {
-    s"${githubUrlForGroupPath}/$behaviorType/$behaviorPath"
+    s"${githubUrl}/$behaviorType/$behaviorPath"
   }
 
   private def inputsFor(text: String): Seq[InputData] = {
@@ -122,7 +121,6 @@ case class GithubBehaviorGroupDataBuilder(
     val requiredOAuth2ApiConfigData = maybeConfig.map(_.requiredOAuth2ApiConfigs).getOrElse(Seq())
     val requiredSimpleTokenApiData = maybeConfig.map(_.requiredSimpleTokenApis).getOrElse(Seq())
     val readme = findEntryNamed("README", entries).flatMap(readme => (readme \ "object" \ "text").asOpt[String])
-    val githubUrl = githubUrlForGroupPath
     val actionInputs = inputsFromEntryNamed("action_inputs.json", entries)
     val dataTypeInputs = inputsFromEntryNamed("data_type_inputs.json", entries)
     val actions = behaviorVersionsDataFromEntryNamed("actions", entries)
