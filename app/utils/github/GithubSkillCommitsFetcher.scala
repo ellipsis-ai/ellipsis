@@ -56,34 +56,42 @@ case class GithubSkillCommitsFetcher(
      """.stripMargin
   }
 
-  val submoduleConfigRegex: Regex = """(?s)\[\s*submodule\s+\"([^\"]+)\"\]\s*path\s*=\s*(\S+)\s*url\s*=\s*(\S+)\s*""".r
+  private val submoduleConfigRegex: Regex = """(?s)\[\s*submodule\s+\"([^\"]+)\"\]\s*path\s*=\s*(\S+)\s*url\s*=\s*(\S+)\s*""".r
+
+  private def submoduleInfosFor(entries: Seq[JsValue]): Seq[SubmoduleInfo] = {
+    val maybeSubmodules = entries.find { ea =>
+      (ea \ "name").asOpt[String].contains(".gitmodules")
+    }
+    val maybeSubmodulesText = maybeSubmodules.flatMap { submodules =>
+      (submodules \ "object" \ "text") match {
+        case JsDefined(JsString(str)) => Some(str)
+        case _ => None
+      }
+    }
+    maybeSubmodulesText.map { text =>
+      submoduleConfigRegex.findAllMatchIn(text).map { ea =>
+        val g = ea.subgroups
+        SubmoduleInfo(g.head, g(1), g(2))
+      }.toSeq
+    }.getOrElse(Seq())
+  }
+
+  private def commitInfosFor(entries: Seq[JsValue]): Seq[CommitInfo] = {
+    val commits = entries.filter { ea => (ea \ "type").asOpt[String].contains("commit") }
+    commits.flatMap { ea =>
+      for {
+        name <- (ea \ "name").asOpt[String]
+        commitId <- (ea \ "oid").asOpt[String]
+      } yield CommitInfo(name, commitId)
+    }
+  }
 
   def resultFromNonErrorResponse(data: JsValue): Seq[SkillCommit] = {
     (data \ "data" \ "repository" \ "object" \ "entries") match {
       case JsDefined(JsArray(arr)) => {
-        val maybeSubmodules = arr.find { ea =>
-          (ea \ "name").asOpt[String].contains(".gitmodules")
-        }
-        val maybeSubmodulesText = maybeSubmodules.flatMap { submodules =>
-          (submodules \ "object" \ "text") match {
-            case JsDefined(JsString(str)) => Some(str)
-            case _ => None
-          }
-        }
-        val submoduleInfos = maybeSubmodulesText.map { text =>
-          submoduleConfigRegex.findAllMatchIn(text).map { ea =>
-            val g = ea.subgroups
-            SubmoduleInfo(g.head, g(1), g(2))
-          }
-        }.getOrElse(Seq())
-        val commits = arr.filter { ea => (ea \ "type").asOpt[String].contains("commit") }
-        val commitInfos = commits.flatMap { ea =>
-          for {
-            name <- (ea \ "name").asOpt[String]
-            commitId <- (ea \ "oid").asOpt[String]
-          } yield CommitInfo(name, commitId)
-        }
-        submoduleInfos.toSeq.flatMap { ea =>
+        val submoduleInfos = submoduleInfosFor(arr)
+        val commitInfos = commitInfosFor(arr)
+        submoduleInfos.flatMap { ea =>
           for {
             owner <- ea.maybeOwner
             name <- ea.maybeName
