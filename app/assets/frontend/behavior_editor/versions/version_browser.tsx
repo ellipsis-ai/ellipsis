@@ -9,12 +9,13 @@ import FixedFooter from '../../shared_ui/fixed_footer';
 import Formatter from '../../lib/formatter';
 import FormInput from '../../form/input';
 import GithubErrorNotification from '../github/github_error_notification';
-import GithubPushPanel from '../github/github_push_panel';
+import GithubPushPanel, {LastSavedInfo} from '../github/github_push_panel';
 import LinkGithubRepo from './link_github_repo';
 import LinkedGithubRepo from '../../models/linked_github_repo';
 import Select from '../../form/select';
 import {maybeDiffFor, ModifiedDiff} from '../../models/diffs';
 import autobind from '../../lib/autobind';
+import SVGWarning from '../../svg/warning';
 
 const versionSources = {
   local: "local",
@@ -58,7 +59,8 @@ type State = {
   isNewBranch: boolean,
   githubVersion: Option<BehaviorGroup>,
   isCommitting: boolean,
-  error: Option<string>
+  error: Option<string>,
+  lastSavedInfo: Option<LastSavedInfo>
 }
 
 type GroupedVersion = {
@@ -93,15 +95,25 @@ class VersionBrowser extends React.Component<Props, State> {
       isNewBranch: false,
       githubVersion: null,
       isCommitting: false,
-      error: null
+      error: null,
+      lastSavedInfo: null
     };
   }
 
-  onPushBranch(): void {
+  onPushBranch(lastSavedInfo: LastSavedInfo): void {
     this.setState({
       githubVersion: this.props.currentGroup,
       lastFetched: new Date(),
-      isNewBranch: false
+      isNewBranch: false,
+      isCommitting: false,
+      lastSavedInfo: lastSavedInfo
+    });
+  }
+
+  onDone(): void {
+    this.props.onClearActivePanel();
+    this.setState({
+      lastSavedInfo: null
     });
   }
 
@@ -741,6 +753,39 @@ class VersionBrowser extends React.Component<Props, State> {
     };
   }
 
+  clearLastSavedInfo() {
+    this.setState({
+      lastSavedInfo: null
+    });
+  }
+
+  renderLastSavedInfo() {
+    const lastSavedInfo = this.state.lastSavedInfo;
+    if (lastSavedInfo) {
+      return (
+        <div className={`type-s mbneg1 container container-wide ${
+            lastSavedInfo.noCommit ? "box-warning" : "box-tip"
+          }`}>
+          <span className="mrm">
+            {lastSavedInfo.noCommit ? (
+              <span>
+                <span className="display-inline-block height-xl mrs type-yellow align-m"><SVGWarning /></span>
+                <span>Branch <b>{lastSavedInfo.branch}</b> created, but no changes committed because it is identical to <b>master</b>.</span>
+              </span>
+            ) : (
+              <span> Branch <b>{lastSavedInfo.branch}</b> pushed {Formatter.formatTimestampRelative(lastSavedInfo.date)}.</span>
+            )}
+          </span>
+          <Button onClick={this.clearLastSavedInfo} className="button-s button-shrink">OK</Button>
+        </div>
+      );
+    } else {
+      return (
+        <div/>
+      );
+    }
+  }
+
   render() {
     const selectedVersion = this.getSelectedVersion();
     const diff = this.getDiffForSelectedVersion(selectedVersion);
@@ -775,10 +820,12 @@ class VersionBrowser extends React.Component<Props, State> {
         </div>
 
         <FixedFooter onHeightChange={this.setFooterHeight}>
-
+          <Collapsible revealWhen={Boolean(this.state.lastSavedInfo)}>
+            {this.renderLastSavedInfo()}
+          </Collapsible>
           <Collapsible revealWhen={!this.state.isCommitting}>
-            <div className="ptm bg-lightest border-emphasis-top border-pink container container-wide">
-              <Button className="mrs mbm button-primary" onClick={this.props.onClearActivePanel}>Done</Button>
+            <div className="ptm bg-lightest border-top container container-wide">
+              <Button className="mrs mbm button-primary" onClick={this.onDone}>Done</Button>
               {this.renderSaveButton()}
               {this.renderRevertButton(selectedVersion, hasChanges)}
               {this.renderCommitButton(selectedVersion, hasChanges)}
