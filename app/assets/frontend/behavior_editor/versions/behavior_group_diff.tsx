@@ -1,4 +1,7 @@
-import {Diff, AddedOrRemovedDiff, ModifiedDiff, MultiLineTextPropertyDiff, OrderingDiff, Diffable} from '../../models/diffs';
+import {
+  Diff, AddedOrRemovedDiff, ModifiedDiff, MultiLineTextPropertyDiff, OrderingDiff, Diffable,
+  BooleanPropertyDiff, CategoricalPropertyDiff
+} from '../../models/diffs';
 import * as React from 'react';
 import DiffItem from './diff_item';
 import TextDiff from './text_diff';
@@ -32,6 +35,12 @@ class BehaviorGroupDiff extends React.Component<Props> {
       );
     }
 
+    renderSimpleDiff(diff: BooleanPropertyDiff | CategoricalPropertyDiff, index: number, className?: Option<string>) {
+      return (
+        <DiffItem className={className} key={`diff${index}`} label={diff.summaryText()} />
+      )
+    }
+
     renderAddedRemovedModifiedDiff(diff: AddedOrRemovedDiff<Diffable> | ModifiedDiff<Diffable>, index: number, className?: Option<string>) {
       return (
         <DiffItem className={className} key={`diff${index}`} label={diff.summaryText()}>
@@ -45,6 +54,8 @@ class BehaviorGroupDiff extends React.Component<Props> {
         return this.renderTextDiff(diff, index, childClassName);
       } else if (diff instanceof OrderingDiff) {
         return this.renderOrderingDiff(diff, index, childClassName);
+      } else if (diff instanceof BooleanPropertyDiff || diff instanceof CategoricalPropertyDiff) {
+        return this.renderSimpleDiff(diff, index, childClassName);
       } else if (diff instanceof AddedOrRemovedDiff || diff instanceof ModifiedDiff) {
         return this.renderAddedRemovedModifiedDiff(diff, index, childClassName);
       }
