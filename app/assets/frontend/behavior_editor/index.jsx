@@ -2583,9 +2583,10 @@ const BehaviorEditor = React.createClass({
 
   renderNavItems: function() {
     const versionBrowserOpen = this.props.activePanelName === 'versionBrowser';
+    const indexUrl = jsRoutes.controllers.ApplicationController.index(this.props.group.teamId).url;
     const items = [{
       title: "Skills",
-      url: jsRoutes.controllers.ApplicationController.index(this.props.isAdmin ? this.props.teamId : undefined).url
+      url: indexUrl
     }, {
       title: this.getBehaviorGroup().getName(),
       callback: versionBrowserOpen ? this.props.onClearActivePanel : null
