@@ -29,11 +29,7 @@ class GithubConfigController @Inject() (
       case Accepts.JavaScript() => {
         for {
           teamAccess <- dataService.users.teamAccessFor(user, maybeTeamId)
-          maybeGithubLinkedAccount <- if (teamAccess.isAdminAccess) {
-            Future.successful(None)
-          } else {
-            dataService.linkedAccounts.maybeForGithubFor(user)
-          }
+          maybeGithubLinkedAccount <- dataService.linkedAccounts.maybeForGithubFor(user)
         } yield {
           teamAccess.maybeTargetTeam.map { team =>
             val config = GithubConfigConfig(
