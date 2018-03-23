@@ -44,11 +44,14 @@ case class ActionChoice(
                          label: String,
                          actionName: String,
                          args: Option[Seq[ActionArg]],
+                         allowOthers: Option[Boolean],
                          userId: Option[String],
                          groupVersionId: Option[String]
                        ) extends WithActionArgs {
 
-  def canBeTriggeredBy(user: User): Boolean = userId.isEmpty || userId.contains(user.id)
+  def canBeTriggeredBy(user: User): Boolean = {
+    allowOthers.contains(true) || userId.isEmpty || userId.contains(user.id)
+  }
 
 }
 
