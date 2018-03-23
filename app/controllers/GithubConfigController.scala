@@ -1,13 +1,14 @@
 package controllers
 
 import javax.inject.Inject
-
 import com.google.inject.Provider
 import com.mohiva.play.silhouette.api.Silhouette
 import json.Formatting._
 import json._
 import models.silhouette.EllipsisEnv
 import play.api.Configuration
+import play.api.data.Form
+import play.api.data.Forms._
 import play.api.libs.json.Json
 import play.filters.csrf.CSRF
 import services.DataService
@@ -65,14 +66,28 @@ class GithubConfigController @Inject() (
     }
   }
 
+  case class ResetGithubConfigInfo(maybeTeamId: Option[String])
+
+  private val resetGithubConfigForm = Form(
+    mapping(
+      "teamId" -> optional(nonEmptyText)
+    )(ResetGithubConfigInfo.apply)(ResetGithubConfigInfo.unapply)
+  )
+
   def reset = silhouette.SecuredAction.async { implicit request =>
     val user = request.identity
-    for {
-      isDeleted <- dataService.linkedAccounts.deleteGithubFor(user)
-    } yield {
-      println(s"deleted: $isDeleted")
-      Redirect(routes.GithubConfigController.index())
-    }
+    resetGithubConfigForm.bindFromRequest.fold(
+      formWithErrors => {
+        Future.successful(BadRequest(formWithErrors.errorsAsJson))
+      },
+      info => {
+        for {
+          isDeleted <- dataService.linkedAccounts.deleteGithubFor(user)
+        } yield {
+          println(s"deleted: $isDeleted")
+          Redirect(routes.GithubConfigController.index(info.maybeTeamId))
+        }
+      }
+    )
   }
-
 }

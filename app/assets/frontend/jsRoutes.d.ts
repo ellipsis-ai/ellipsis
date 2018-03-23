@@ -35,7 +35,7 @@ declare var jsRoutes: {
       "export": (string) => JsRoute
     },
     GithubConfigController: {
-      index: () => JsRoute,
+      index: (teamId?: Option<string>) => JsRoute,
       reset: () => JsRoute
     },
     SavedAnswerController: {
@@ -46,7 +46,7 @@ declare var jsRoutes: {
       index: (selectedId?: Option<string>, isNewSchedule?: Option<boolean>, teamId?: Option<string>) => JsRoute
     },
     SocialAuthController: {
-      authenticateGithub: (string) => JsRoute
+      authenticateGithub: (redirectUrl?: Option<string>, teamId?: Option<string>, channelId?: Option<string>) => JsRoute
     }
   }
 };
