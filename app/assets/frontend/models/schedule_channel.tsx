@@ -53,7 +53,7 @@ class ScheduleChannel implements ScheduleChannelInterface {
     }
 
     userCanAccess(slackUserId: string): boolean {
-      return this.isDM() || this.members.includes(slackUserId);
+      return this.isDM() || this.isPublic || this.members.includes(slackUserId);
     }
 
     getFormattedName(): string {

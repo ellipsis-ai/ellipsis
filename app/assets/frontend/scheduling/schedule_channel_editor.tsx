@@ -66,7 +66,7 @@ class ScheduleChannelEditor extends React.Component<Props, State> {
     }
 
     canSelectChannel(channel: ScheduleChannel): boolean {
-      return !channel.isArchived && channel.members.includes(this.props.slackUserId);
+      return !channel.isArchived && channel.userCanAccess(this.props.slackUserId);
     }
 
     getFilteredChannelList(): Array<ScheduleChannelOption> {
