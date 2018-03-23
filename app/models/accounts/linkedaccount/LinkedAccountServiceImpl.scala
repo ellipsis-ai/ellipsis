@@ -74,6 +74,12 @@ class LinkedAccountServiceImpl @Inject() (
     dataService.run(action)
   }
 
+  def allForLoginInfoAction(loginInfo: LoginInfo): DBIO[Seq[LinkedAccount]] = {
+    allForLoginInfoQuery(loginInfo.providerID, loginInfo.providerKey).result.map { r =>
+      r.map(tuple2LinkedAccount)
+    }
+  }
+
   def maybeForSlackForAction(user: User): DBIO[Option[LinkedAccount]] = {
     forProviderForQuery(user.id, SlackProvider.ID).result.map { r =>
       r.headOption.map(tuple2LinkedAccount)

@@ -26,6 +26,13 @@ object LinkedAccountQueries {
   }
   val allForQuery = Compiled(uncompiledAllForQuery _)
 
+  def uncompiledAllForLoginInfoQuery(providerId: Rep[String], providerKey: Rep[String]) = {
+    joined.
+      filter { case(la, _) => la.providerId === providerId }.
+      filter { case(la, _) => la.providerKey === providerKey }
+  }
+  val allForLoginInfoQuery = Compiled(uncompiledAllForLoginInfoQuery _)
+
   def uncompiledForProviderForQuery(userId: Rep[String], providerId: Rep[String]) = {
     joined.
       filter { case(la, u) => la.providerId === providerId }.
