@@ -2583,7 +2583,7 @@ const BehaviorEditor = React.createClass({
 
   renderNavItems: function() {
     const versionBrowserOpen = this.props.activePanelName === 'versionBrowser';
-    const indexUrl = jsRoutes.controllers.ApplicationController.index(this.props.group.teamId).url;
+    const indexUrl = jsRoutes.controllers.ApplicationController.index(this.props.isAdmin ? this.props.group.teamId : null).url;
     const items = [{
       title: "Skills",
       url: indexUrl
