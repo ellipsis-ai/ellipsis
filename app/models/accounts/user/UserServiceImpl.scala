@@ -77,23 +77,29 @@ class UserServiceImpl @Inject() (
     dataService.run(saveAction(user))
   }
 
-  def createNewUserAction(loginInfo: LoginInfo, teamId: String): DBIO[User] = {
+  private def createNewUserAction(loginInfo: LoginInfo, teamId: String): DBIO[User] = {
     for {
       user <- saveAction(createOnTeamWithId(teamId))
       _ <- dataService.linkedAccounts.saveAction(LinkedAccount(user, loginInfo, OffsetDateTime.now))
     } yield user
   }
 
+  private def maybeExistingUserForAction(loginInfo: LoginInfo, teamId: String): DBIO[Option[User]] = {
+    dataService.linkedAccounts.findAction(loginInfo, teamId).map { maybeLinkedAccount =>
+      maybeLinkedAccount.map(_.user)
+    }
+  }
+
   def ensureUserForAction(loginInfo: LoginInfo, teamId: String): DBIO[User] = {
-    for {
-      maybeExistingUser <- dataService.linkedAccounts.findAction(loginInfo, teamId).map { maybeLinkedAccount =>
-        maybeLinkedAccount.map(_.user)
+    maybeExistingUserForAction(loginInfo, teamId).flatMap { maybeExisting =>
+      maybeExisting.map(DBIO.successful).getOrElse {
+        maybeAdminUserForAction(loginInfo).flatMap { maybeAdmin =>
+          maybeAdmin.map(DBIO.successful).getOrElse {
+            createNewUserAction(loginInfo, teamId)
+          }
+        }
       }
-      maybeAdminUser <- maybeAdminUserForAction(loginInfo)
-      user <- maybeExistingUser.orElse(maybeAdminUser).map(DBIO.successful).getOrElse {
-        createNewUserAction(loginInfo, teamId)
-      }
-    } yield user
+    }
   }
 
   def ensureUserFor(loginInfo: LoginInfo, teamId: String): Future[User] = {
@@ -127,7 +133,7 @@ class UserServiceImpl @Inject() (
     dataService.run(teamAccessForAction(user, maybeTargetTeamId))
   }
 
-  def maybeAdminUserForAction(info: LoginInfo): DBIO[Option[User]] = {
+  private def maybeAdminUserForAction(info: LoginInfo): DBIO[Option[User]] = {
     for {
       linkedAccounts <- dataService.linkedAccounts.allForLoginInfoAction(info)
       withIsAdmins <- DBIO.sequence(linkedAccounts.map { la =>
