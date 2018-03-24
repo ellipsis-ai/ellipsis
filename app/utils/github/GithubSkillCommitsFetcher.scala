@@ -12,7 +12,7 @@ case class SkillCommit(owner: String, repoName: String, commitId: String)
 
 case class SubmoduleInfo(name: String, path: String, url: String) {
   val maybeOwner: Option[String] = GithubUtils.maybeOwnerFor(url)
-  val maybeName: Option[String] = GithubUtils.maybeNameFor(url)
+  val maybeRepoName: Option[String] = GithubUtils.maybeNameFor(url)
 }
 
 case class CommitInfo(name: String, commitId: String)
@@ -94,9 +94,9 @@ case class GithubSkillCommitsFetcher(
         submoduleInfos.flatMap { ea =>
           for {
             owner <- ea.maybeOwner
-            name <- ea.maybeName
-            commitId <- commitInfos.find(_.name == name).map(_.commitId)
-          } yield SkillCommit(owner, name, commitId)
+            repoName <- ea.maybeRepoName
+            commitId <- commitInfos.find(_.name == ea.name).map(_.commitId)
+          } yield SkillCommit(owner, repoName, commitId)
         }
       }
       case _ => throw GithubResultFromDataException(
