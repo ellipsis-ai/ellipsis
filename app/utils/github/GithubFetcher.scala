@@ -13,7 +13,7 @@ sealed trait GitFetcherException extends Exception
 
 object GitFetcherExceptionType extends Enumeration {
   type GitFetcherExceptionType = Value
-  val NoCommiterInfoFound, NoRepoFound, NoBranchFound, NoValidSkillFound = Value
+  val NoCommiterInfoFound, NoRepoFound, NoBranchFound, NoCommitFound, NoValidSkillFound = Value
 }
 
 case class GithubResultFromDataException(exceptionType: GitFetcherExceptionType.Value, message: String, details: JsObject) extends GitFetcherException {

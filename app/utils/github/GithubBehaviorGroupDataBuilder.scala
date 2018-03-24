@@ -9,17 +9,21 @@ import play.api.libs.json._
 import services.DataService
 
 case class GithubBehaviorGroupDataBuilder(
-                                          groupPath: String,
-                                          data: JsValue,
-                                          team: Team,
-                                          maybeBranch: Option[String],
-                                          dataService: DataService
+                                           data: JsValue,
+                                           team: Team,
+                                           owner: String,
+                                           repoName: String,
+                                           maybeBranch: Option[String],
+                                           maybeSHA: Option[String],
+                                           dataService: DataService
                                         ) {
 
   val API_URL = "https://api.github.com/graphql"
   val WEB_URL = "https://github.com"
   val USER_NAME = "ellipsis-ai"
   val REPO_NAME = "behaviors"
+
+  val githubUrl: String = s"https://github.com/$owner/$repoName"
 
   val branch: String = maybeBranch.getOrElse("master")
 
@@ -38,12 +42,8 @@ case class GithubBehaviorGroupDataBuilder(
     }
   }
 
-  private def githubUrlForGroupPath: String = {
-    s"${WEB_URL}/${USER_NAME}/${REPO_NAME}/tree/$branch/published/$groupPath"
-  }
-
   private def githubUrlForBehaviorPath(behaviorType: String, behaviorPath: String): String = {
-    s"${githubUrlForGroupPath}/$behaviorType/$behaviorPath"
+    s"${githubUrl}/$behaviorType/$behaviorPath"
   }
 
   private def inputsFor(text: String): Seq[InputData] = {
@@ -107,27 +107,25 @@ case class GithubBehaviorGroupDataBuilder(
   }
 
   def build: BehaviorGroupData = {
-    val entries = (data \ "object" \ "entries")
+    val entries = data \ "entries"
     val maybeConfig = for {
       entry <- findEntryNamed("config.json", entries)
       text <- (entry \ "object" \ "text").asOpt[String]
       cfg <- Json.parse(text).asOpt[BehaviorGroupConfig]
     } yield cfg
     val maybeExportId = maybeConfig.flatMap(_.exportId)
-    val name = maybeConfig.map(_.name).getOrElse(groupPath)
+    val name = maybeConfig.map(_.name).getOrElse(repoName)
     val icon = maybeConfig.flatMap(_.icon)
     val requiredAWSConfigData = maybeConfig.map(_.requiredAWSConfigs).getOrElse(Seq())
     val requiredOAuth2ApiConfigData = maybeConfig.map(_.requiredOAuth2ApiConfigs).getOrElse(Seq())
     val requiredSimpleTokenApiData = maybeConfig.map(_.requiredSimpleTokenApis).getOrElse(Seq())
     val readme = findEntryNamed("README", entries).flatMap(readme => (readme \ "object" \ "text").asOpt[String])
-    val githubUrl = githubUrlForGroupPath
     val actionInputs = inputsFromEntryNamed("action_inputs.json", entries)
     val dataTypeInputs = inputsFromEntryNamed("data_type_inputs.json", entries)
     val actions = behaviorVersionsDataFromEntryNamed("actions", entries)
     val dataTypes = behaviorVersionsDataFromEntryNamed("data_types", entries)
     val behaviors = actions ++ dataTypes
     val libraries = findEntryNamed("lib", entries).map(json => libraryVersionsDataFrom(json)).getOrElse(Seq())
-    val maybeSHA = (data \ "ref" \ "target" \ "oid").asOpt[String]
     BehaviorGroupData(
       None,
       team.id,
