@@ -6,51 +6,70 @@ import SVGCheckmark from '../svg/checkmark';
 import ChannelName from './channel_name';
 import ScheduledAction from '../models/scheduled_action';
 import ScheduleChannel from '../models/schedule_channel';
+import autobind from "../lib/autobind";
 
-const ScheduleChannelEditor = React.createClass({
-    propTypes: {
-      scheduledAction: React.PropTypes.instanceOf(ScheduledAction).isRequired,
-      channelList: React.PropTypes.arrayOf(React.PropTypes.instanceOf(ScheduleChannel)),
-      slackUserId: React.PropTypes.string.isRequired,
-      slackBotUserId: React.PropTypes.string.isRequired,
-      onChange: React.PropTypes.func.isRequired
-    },
+interface Props {
+  scheduledAction: ScheduledAction,
+  channelList: Array<ScheduleChannel>,
+  slackUserId: string,
+  slackBotUserId: string,
+  onChange: (channelId: string, useDM: boolean) => void
+}
 
-    getInitialState: function() {
-      return {
-        searchText: "",
-        showChannels: false
-      };
-    },
+interface State {
+  searchText: string,
+  showChannels: boolean
+}
 
-    hasChannelList: function() {
+interface ScheduleChannelOption {
+  name: string,
+  value: string
+}
+
+class ScheduleChannelEditor extends React.Component<Props, State> {
+  searcher: Option<SearchWithResults>;
+
+  constructor(props: Props) {
+    super(props);
+    autobind(this);
+    this.state = this.defaultState();
+  }
+
+  defaultState(): State {
+    return {
+      searchText: "",
+      showChannels: false
+    };
+  }
+
+    hasChannelList(): boolean {
       return Boolean(this.props.channelList) && this.props.channelList.length > 0;
-    },
+    }
 
-    findChannelFor: function(channelId) {
+    findChannelFor(channelId: string): Option<ScheduleChannel> {
       return this.hasChannelList() ? this.props.channelList.find((ea) => ea.id === channelId) : null;
-    },
+    }
 
-    componentWillUpdate: function(newProps) {
+    componentWillUpdate(newProps: Props) {
       if (newProps.scheduledAction.id !== this.props.scheduledAction.id) {
-        this.setState(this.getInitialState());
+        this.setState(this.defaultState());
       }
-    },
+    }
 
-    searchIncludes: function(channel, text) {
+    searchIncludes(channel: ScheduleChannel, text: string): boolean {
       if (!text) {
         return true;
       } else {
         const forComparison = text.replace(/^#/, "").toLowerCase();
         return channel.getName().toLowerCase().includes(forComparison);
       }
-    },
+    }
 
-    canSelectChannel: function(channel) {
-      return !channel.isArchived && channel.members.includes(this.props.slackUserId);
-    },
+    canSelectChannel(channel: ScheduleChannel): boolean {
+      return !channel.isArchived && channel.userCanAccess(this.props.slackUserId);
+    }
 
-    getFilteredChannelList: function() {
+    getFilteredChannelList(): Array<ScheduleChannelOption> {
       const channels = this.hasChannelList() ? this.props.channelList.filter(
         (ea) => this.canSelectChannel(ea) && this.searchIncludes(ea, this.state.searchText)
       ) : [];
@@ -73,9 +92,9 @@ const ScheduleChannelEditor = React.createClass({
           value: ""
         }].concat(channelList);
       }
-    },
+    }
 
-    updateSearch: function(newValue) {
+    updateSearch(newValue: string): void {
       const selectedChannel = this.findChannelFor(this.props.scheduledAction.channel);
       if (!selectedChannel || !this.searchIncludes(selectedChannel, newValue)) {
         const newChannel = this.hasChannelList() ?
@@ -85,22 +104,22 @@ const ScheduleChannelEditor = React.createClass({
       this.setState({
         searchText: newValue
       });
-    },
+    }
 
-    selectChannel: function(newValue) {
-      const useDM = this.channelIsDM(newValue) ? false : this.props.scheduledAction.useDM;
-      this.props.onChange(newValue, useDM);
-    },
+    selectChannel(channelId: string): void {
+      const useDM = this.channelIsDM(channelId) ? false : this.props.scheduledAction.useDM;
+      this.props.onChange(channelId, useDM);
+    }
 
-    channelIsDM: function(channelId) {
+    channelIsDM(channelId: string): boolean {
       if (!channelId) {
         return false;
       }
       const selectedChannel = this.findChannelFor(channelId);
       return Boolean(selectedChannel && selectedChannel.isDM());
-    },
+    }
 
-    botMissingFromChannel: function() {
+    botMissingFromChannel(): boolean {
       const channelId = this.props.scheduledAction.channel;
       if (channelId && this.props.slackBotUserId) {
         const channelInfo = this.findChannelFor(channelId);
@@ -109,20 +128,20 @@ const ScheduleChannelEditor = React.createClass({
         }
       }
       return false;
-    },
+    }
 
-    updateDM: function(newValue) {
-      this.props.onChange(this.props.scheduledAction.channel, newValue);
-    },
+    updateDM(useDM: boolean): void {
+      this.props.onChange(this.props.scheduledAction.channel, useDM);
+    }
 
-    nameForChannel: function(channelId) {
+    nameForChannel(channelId: string) {
       const foundChannel = channelId ? this.findChannelFor(channelId) : null;
       return (
         <ChannelName channel={foundChannel} channelId={channelId} />
       );
-    },
+    }
 
-    showChannels: function() {
+    showChannels(): void {
       this.setState({
         showChannels: true
       }, () => {
@@ -131,13 +150,13 @@ const ScheduleChannelEditor = React.createClass({
           this.searcher.focus();
         }
       });
-    },
+    }
 
-    shouldShowChannels: function() {
+    shouldShowChannels(): boolean {
       return this.props.scheduledAction.isNew() || this.state.showChannels;
-    },
+    }
 
-    renderChannelWarning: function() {
+    renderChannelWarning() {
       if (this.botMissingFromChannel()) {
         return (
           <span className="type-pink type-bold type-italic">
@@ -164,9 +183,9 @@ const ScheduleChannelEditor = React.createClass({
           </span>
         );
       }
-    },
+    }
 
-    render: function() {
+    render() {
       const channelList = this.getFilteredChannelList();
       const hasNoMatches = Boolean(this.state.searchText) && channelList.length === 0;
       const isDM = this.channelIsDM(this.props.scheduledAction.channel);
@@ -210,6 +229,6 @@ const ScheduleChannelEditor = React.createClass({
         </div>
       );
     }
-});
+}
 
 export default ScheduleChannelEditor;

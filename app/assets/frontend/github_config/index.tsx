@@ -6,8 +6,6 @@ import SettingsPage from '../shared_ui/settings_page';
 import {PageRequiredProps} from "../shared_ui/page";
 import autobind from '../lib/autobind';
 
-const resetForm = jsRoutes.controllers.GithubConfigController.reset();
-
 interface LinkedAccount {
   providerId: string,
   providerKey: string,
@@ -52,6 +50,7 @@ class GithubConfig extends React.Component<Props> {
     }
 
     renderLinkedAccount() {
+      const resetAction = jsRoutes.controllers.GithubConfigController.reset();
       return (
         <div>
           <div className="columns">
@@ -62,8 +61,11 @@ class GithubConfig extends React.Component<Props> {
               <span>You have linked to your GitHub account</span>
             </div>
             <div className="column">
-              <form action={resetForm.url} method={resetForm.method}>
+              <form action={resetAction.url} method={resetAction.method}>
                 <CSRFTokenHiddenInput value={this.props.csrfToken} />
+                {this.props.isAdmin ? (
+                  <input type="hidden" name="teamId" value={this.props.teamId} />
+                ) : null}
                 <button type="submit" className="button-s button-shrink">Reset</button>
               </form>
             </div>
@@ -73,8 +75,9 @@ class GithubConfig extends React.Component<Props> {
     }
 
     getGithubAuthUrl() {
-      const redirect = jsRoutes.controllers.GithubConfigController.index().url;
-      return jsRoutes.controllers.SocialAuthController.authenticateGithub(redirect).url;
+      const teamId = this.props.isAdmin ? this.props.teamId : null;
+      const redirect = jsRoutes.controllers.GithubConfigController.index(teamId).url;
+      return jsRoutes.controllers.SocialAuthController.authenticateGithub(redirect, teamId, null).url;
     }
 
     renderNoLinkedAccount() {

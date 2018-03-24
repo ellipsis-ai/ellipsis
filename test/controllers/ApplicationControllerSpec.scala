@@ -68,7 +68,10 @@ class ApplicationControllerSpec extends PlaySpec with MockitoSugar {
                 |  "data": {
                 |    "repository": {
                 |      "object": {
-                |        "entries": []
+                |        "entries": [],
+                |        "tree": {
+                |          "entries": []
+                |        }
                 |      }
                 |    }
                 |  }

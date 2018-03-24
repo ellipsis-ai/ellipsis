@@ -3,7 +3,7 @@ import DeepEqual from '../lib/deep_equal';
 import {Timestamp} from "../lib/formatter";
 import BehaviorGroup from "./behavior_group";
 
-interface ScheduledActionArgument {
+export interface ScheduledActionArgument {
   name: string,
   value: any
 }

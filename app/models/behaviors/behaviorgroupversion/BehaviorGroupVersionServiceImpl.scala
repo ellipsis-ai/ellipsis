@@ -1,8 +1,8 @@
 package models.behaviors.behaviorgroupversion
 
 import java.time.OffsetDateTime
-import javax.inject.Inject
 
+import javax.inject.Inject
 import com.google.inject.Provider
 import drivers.SlickPostgresDriver.api._
 import json.BehaviorGroupData
@@ -12,6 +12,7 @@ import models.behaviors.behaviorgroup.BehaviorGroup
 import play.api.Logger
 import services.{AWSLambdaService, ApiConfigInfo, DataService}
 import slick.dbio.DBIO
+import utils.github.GithubUtils
 
 import scala.concurrent.duration._
 import scala.concurrent.{Await, ExecutionContext, Future}
@@ -189,6 +190,13 @@ class BehaviorGroupVersionServiceImpl @Inject() (
           (bv, params)
         }
       })
+      _ <- (for {
+        githubUrl <- data.githubUrl
+        owner <- GithubUtils.maybeOwnerFor(githubUrl)
+        name <- GithubUtils.maybeNameFor(githubUrl)
+      } yield {
+        dataService.linkedGithubRepos.ensureLinkAction(group, owner, name, None)
+      }).getOrElse(DBIO.successful({}))
     } yield {
       // deploy in the background
       lambdaService.deployFunctionFor(

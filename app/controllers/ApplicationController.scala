@@ -3,8 +3,8 @@ package controllers
 import java.time.OffsetDateTime
 import java.time.format.TextStyle
 import java.util.Locale
-import javax.inject.Inject
 
+import javax.inject.Inject
 import com.google.inject.Provider
 import com.mohiva.play.silhouette.api.Silhouette
 import json._
@@ -14,7 +14,7 @@ import play.api.data.Forms._
 import play.api.libs.json.Json
 import play.filters.csrf.CSRF
 import services.{DefaultServices, GithubService}
-import utils.github.GithubPublishedBehaviorGroupsFetcher
+import utils.github.{GithubPublishedBehaviorGroupsFetcher, GithubSingleCommitFetcher, GithubSkillCommitsFetcher}
 import utils.{CitiesToTimeZones, FuzzyMatcher, TimeZoneParser}
 
 import scala.concurrent.{ExecutionContext, Future}
