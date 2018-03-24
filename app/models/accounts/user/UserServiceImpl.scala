@@ -77,18 +77,23 @@ class UserServiceImpl @Inject() (
     dataService.run(saveAction(user))
   }
 
+  def createNewUserAction(loginInfo: LoginInfo, teamId: String): DBIO[User] = {
+    for {
+      user <- saveAction(createOnTeamWithId(teamId))
+      _ <- dataService.linkedAccounts.saveAction(LinkedAccount(user, loginInfo, OffsetDateTime.now))
+    } yield user
+  }
+
   def ensureUserForAction(loginInfo: LoginInfo, teamId: String): DBIO[User] = {
-    maybeAdminUserForAction(loginInfo).flatMap { maybeAdminUser =>
-      maybeAdminUser.map(DBIO.successful).getOrElse {
-        dataService.linkedAccounts.findAction(loginInfo, teamId).flatMap { maybeLinkedAccount =>
-          maybeLinkedAccount.map(DBIO.successful).getOrElse {
-            saveAction(createOnTeamWithId(teamId)).flatMap { user =>
-              dataService.linkedAccounts.saveAction(LinkedAccount(user, loginInfo, OffsetDateTime.now))
-            }
-          }.map(_.user)
-        }
+    for {
+      maybeExistingUser <- dataService.linkedAccounts.findAction(loginInfo, teamId).map { maybeLinkedAccount =>
+        maybeLinkedAccount.map(_.user)
       }
-    }
+      maybeAdminUser <- maybeAdminUserForAction(loginInfo)
+      user <- maybeExistingUser.orElse(maybeAdminUser).map(DBIO.successful).getOrElse {
+        createNewUserAction(loginInfo, teamId)
+      }
+    } yield user
   }
 
   def ensureUserFor(loginInfo: LoginInfo, teamId: String): Future[User] = {
