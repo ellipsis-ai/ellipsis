@@ -21,6 +21,9 @@ case class GithubSingleCommitFetcher(
 
   val token: String = config.get[String]("github.repoAccessToken")
 
+  override val cacheKey: String = s"github_published_commit_${owner}_${repoName}_${branch}_${oid}"
+  override val shouldTryCache: Boolean = maybeBranch.isEmpty
+
   def query = {
     s"""
       |query {
