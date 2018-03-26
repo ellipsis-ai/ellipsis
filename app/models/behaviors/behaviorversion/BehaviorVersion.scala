@@ -32,7 +32,6 @@ case class BehaviorVersion(
                             maybeFunctionBody: Option[String],
                             maybeResponseTemplate: Option[String],
                             forcePrivateResponse: Boolean,
-                            maybeAuthor: Option[User],
                             createdAt: OffsetDateTime
                           ) extends BehaviorVersionForDataTypeSchema {
 
@@ -137,7 +136,6 @@ case class BehaviorVersion(
       maybeFunctionBody,
       maybeResponseTemplate,
       forcePrivateResponse,
-      maybeAuthor.map(_.id),
       createdAt
     )
   }

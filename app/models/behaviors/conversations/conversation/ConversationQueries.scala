@@ -12,7 +12,7 @@ import models.behaviors.events.EventType
 object ConversationQueries {
 
   def all = TableQuery[ConversationsTable]
-  def allWithBehaviorVersion = all.join(BehaviorVersionQueries.allWithGroupVersion).on(_.behaviorVersionId === _._1._1._1.id)
+  def allWithBehaviorVersion = all.join(BehaviorVersionQueries.allWithGroupVersion).on(_.behaviorVersionId === _._1._1.id)
   def allWithTrigger = allWithBehaviorVersion.joinLeft(MessageTriggerQueries.allWithBehaviorVersion).on(_._1.maybeTriggerId === _._1.id)
 
   type TupleType = ((RawConversation, BehaviorVersionQueries.TupleType), Option[MessageTriggerQueries.TupleType])
@@ -74,7 +74,7 @@ object ConversationQueries {
   def uncompiledAllOngoingVersionIdsQuery(doneState: Rep[String]) = {
     allWithBehaviorVersion.
       filterNot { case(convo, _) => convo.state === doneState }.
-      map { case(_, (((bv, _), _), _)) => bv.groupVersionId }.
+      map { case(_, ((bv, _), _)) => bv.groupVersionId }.
       distinct
   }
   val allOngoingVersionIdsQuery = Compiled(uncompiledAllOngoingVersionIdsQuery _)

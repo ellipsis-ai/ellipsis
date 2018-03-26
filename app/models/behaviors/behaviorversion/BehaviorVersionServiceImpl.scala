@@ -1,10 +1,10 @@
 package models.behaviors.behaviorversion
 
 import java.time.OffsetDateTime
-import javax.inject.Inject
 
 import akka.actor.ActorSystem
 import drivers.SlickPostgresDriver.api._
+import javax.inject.Inject
 import json.BehaviorVersionData
 import models.IDs
 import models.accounts.user.User
@@ -15,7 +15,7 @@ import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
 import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.events.Event
 import models.team.Team
-import play.api.{Configuration, Logger}
+import play.api.Configuration
 import services._
 import services.caching.CacheService
 
@@ -30,7 +30,6 @@ case class RawBehaviorVersion(
                                maybeFunctionBody: Option[String],
                                maybeResponseTemplate: Option[String],
                                forcePrivateResponse: Boolean,
-                               maybeAuthorId: Option[String],
                                createdAt: OffsetDateTime
                              )
 
@@ -52,12 +51,11 @@ class BehaviorVersionsTable(tag: Tag) extends Table[RawBehaviorVersion](tag, "be
 
   def forcePrivateResponse = column[Boolean]("private_response")
 
-  def maybeAuthorId = column[Option[String]]("author_id")
 
   def createdAt = column[OffsetDateTime]("created_at")
 
   def * =
-    (id, behaviorId, groupVersionId, maybeDescription, maybeName, maybeFunctionBody, maybeResponseTemplate, forcePrivateResponse, maybeAuthorId, createdAt) <>
+    (id, behaviorId, groupVersionId, maybeDescription, maybeName, maybeFunctionBody, maybeResponseTemplate, forcePrivateResponse, createdAt) <>
       ((RawBehaviorVersion.apply _).tupled, RawBehaviorVersion.unapply _)
 }
 
@@ -83,8 +81,8 @@ class BehaviorVersionServiceImpl @Inject() (
 
   def uncompiledAllForQuery(behaviorId: Rep[String]) = {
     allWithGroupVersion.
-      filter { case (((version, _), _), _) => version.behaviorId === behaviorId }.
-      sortBy { case (((version, _), _), _) => version.createdAt.desc }
+      filter { case ((version, _), _) => version.behaviorId === behaviorId }.
+      sortBy { case ((version, _), _) => version.createdAt.desc }
   }
 
   val allForQuery = Compiled(uncompiledAllForQuery _)
@@ -126,7 +124,7 @@ class BehaviorVersionServiceImpl @Inject() (
   }
 
   def uncompiledFindQuery(id: Rep[String]) = {
-    allWithGroupVersion.filter { case (((version, _), _), _) => version.id === id }
+    allWithGroupVersion.filter { case ((version, _), _) => version.id === id }
   }
 
   val findQuery = Compiled(uncompiledFindQuery _)
@@ -137,7 +135,7 @@ class BehaviorVersionServiceImpl @Inject() (
   }
 
   def uncompiledFindForBehaviorAndGroupVersionQuery(behaviorId: Rep[String], groupVersionId: Rep[String]) = {
-    allWithGroupVersion.filter { case (((behaviorVersion, _), _), ((groupVersion, _), _)) => behaviorVersion
+    allWithGroupVersion.filter { case ((behaviorVersion, _), ((groupVersion, _), _)) => behaviorVersion
       .behaviorId === behaviorId && groupVersion.id === groupVersionId
     }
   }
@@ -198,7 +196,6 @@ class BehaviorVersionServiceImpl @Inject() (
       None,
       None,
       forcePrivateResponse = false,
-      maybeUser.map(_.id),
       OffsetDateTime.now
     )
 
@@ -212,7 +209,6 @@ class BehaviorVersionServiceImpl @Inject() (
         raw.maybeFunctionBody.map(_.trim),
         raw.maybeResponseTemplate,
         raw.forcePrivateResponse,
-        maybeUser,
         raw.createdAt
       )
     }

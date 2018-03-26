@@ -9,7 +9,7 @@ object InputQueries {
 
   val all = TableQuery[InputsTable]
   val allWithGroupVersion = all.join(BehaviorGroupVersionQueries.allWithUser).on(_.behaviorGroupVersionId === _._1._1.id)
-  val joined = allWithGroupVersion.joinLeft(DataTypeConfigQueries.allWithBehaviorVersion).on(_._1.paramType === _._2._1._1._1.id)
+  val joined = allWithGroupVersion.joinLeft(DataTypeConfigQueries.allWithBehaviorVersion).on(_._1.paramType === _._2._1._1.id)
 
   type TupleType = ((RawInput, BehaviorGroupVersionQueries.TupleType), Option[DataTypeConfigQueries.TupleType])
 
