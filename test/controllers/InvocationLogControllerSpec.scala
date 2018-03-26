@@ -46,7 +46,6 @@ class InvocationLogControllerSpec extends PlaySpec with MockitoSugar {
       Some("return"),
       Some("{successResult}"),
       forcePrivateResponse = false,
-      None,
       now
     )
     val entry = InvocationLogEntry(
