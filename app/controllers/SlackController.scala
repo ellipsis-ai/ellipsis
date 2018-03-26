@@ -469,6 +469,12 @@ class SlackController @Inject() (
       }
     }
 
+    def maybeYesNoAnswer: Option[String] = {
+      actions.find(_.name == YES_NO_CHOICE).flatMap { action =>
+        action.value.filter(v => v == YES || v == NO)
+      }
+    }
+
     private def originalMessageActions: Seq[ActionInfo] = {
       this.original_message.attachments.flatMap(_.actions).flatten
     }
@@ -751,6 +757,12 @@ class SlackController @Inject() (
                 }
                 shouldRemoveActions = true
                 maybeResultText = Some(s"$slackUser stopped the conversation")
+              }
+
+              info.maybeYesNoAnswer.foreach { answer =>
+                inputChoiceResultFor(answer, info)
+                shouldRemoveActions = true
+                maybeResultText = Some(s"$slackUser selected `${answer.capitalize}`")
               }
 
               info.maybeRunBehaviorVersionId.foreach { behaviorVersionId =>
