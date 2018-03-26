@@ -1,11 +1,16 @@
 package support
 
+import java.time.OffsetDateTime
+
 import akka.actor.ActorSystem
+import com.mohiva.play.silhouette.api.LoginInfo
 import json._
 import mocks.{MockAWSLambdaService, MockCacheService, MockSlackEventService}
 import models.IDs
+import models.accounts.linkedaccount.LinkedAccount
 import models.accounts.oauth2api.{AuthorizationCode, OAuth2Api}
 import models.accounts.oauth2application.OAuth2Application
+import models.accounts.slack.SlackProvider
 import models.accounts.user.User
 import models.behaviors.BotResultService
 import models.behaviors.behavior.Behavior
@@ -74,6 +79,15 @@ trait DBSpec extends PlaySpec with OneAppPerSuite with MockitoSugar {
   }
 
   def newSavedUserOn(team: Team): User = runNow(dataService.users.createFor(team.id))
+
+  def newSavedLinkedAccountFor(user: User): Future[LinkedAccount] = {
+    val account = LinkedAccount(user, LoginInfo(SlackProvider.ID, IDs.next), OffsetDateTime.now)
+    dataService.linkedAccounts.save(account)
+  }
+
+  def newSavedLinkedAccount: LinkedAccount = {
+    runNow(newSavedLinkedAccountFor(newSavedUserOn(newSavedTeam)))
+  }
 
   def newSavedAnswerFor(input: Input, user: User): SavedAnswer = {
     runNow(dataService.savedAnswers.ensureFor(input, "answer", user))

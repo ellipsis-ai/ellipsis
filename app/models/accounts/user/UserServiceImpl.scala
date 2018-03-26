@@ -77,13 +77,28 @@ class UserServiceImpl @Inject() (
     dataService.run(saveAction(user))
   }
 
+  private def createNewUserAction(loginInfo: LoginInfo, teamId: String): DBIO[User] = {
+    for {
+      user <- saveAction(createOnTeamWithId(teamId))
+      _ <- dataService.linkedAccounts.saveAction(LinkedAccount(user, loginInfo, OffsetDateTime.now))
+    } yield user
+  }
+
+  private def maybeExistingUserForAction(loginInfo: LoginInfo, teamId: String): DBIO[Option[User]] = {
+    dataService.linkedAccounts.findAction(loginInfo, teamId).map { maybeLinkedAccount =>
+      maybeLinkedAccount.map(_.user)
+    }
+  }
+
   def ensureUserForAction(loginInfo: LoginInfo, teamId: String): DBIO[User] = {
-    dataService.linkedAccounts.findAction(loginInfo, teamId).flatMap { maybeLinkedAccount =>
-      maybeLinkedAccount.map(DBIO.successful).getOrElse {
-        saveAction(createOnTeamWithId(teamId)).flatMap { user =>
-          dataService.linkedAccounts.saveAction(LinkedAccount(user, loginInfo, OffsetDateTime.now))
+    maybeExistingUserForAction(loginInfo, teamId).flatMap { maybeExisting =>
+      maybeExisting.map(DBIO.successful).getOrElse {
+        maybeAdminUserForAction(loginInfo).flatMap { maybeAdmin =>
+          maybeAdmin.map(DBIO.successful).getOrElse {
+            createNewUserAction(loginInfo, teamId)
+          }
         }
-      }.map(_.user)
+      }
     }
   }
 
@@ -116,6 +131,21 @@ class UserServiceImpl @Inject() (
 
   def teamAccessFor(user: User, maybeTargetTeamId: Option[String]): Future[UserTeamAccess] = {
     dataService.run(teamAccessForAction(user, maybeTargetTeamId))
+  }
+
+  private def maybeAdminUserForAction(info: LoginInfo): DBIO[Option[User]] = {
+    for {
+      linkedAccounts <- dataService.linkedAccounts.allForLoginInfoAction(info)
+      withIsAdmins <- DBIO.sequence(linkedAccounts.map { la =>
+        dataService.linkedAccounts.isAdminAction(la).map { isAdmin =>
+          (la, isAdmin)
+        }
+      })
+    } yield {
+      withIsAdmins.
+        find { case(_, isAdmin) => isAdmin }.
+        map { case(la, _) => la.user}
+    }
   }
 
   def isAdmin(user: User): Future[Boolean] = {
