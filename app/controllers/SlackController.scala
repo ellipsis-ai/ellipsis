@@ -307,7 +307,6 @@ class SlackController @Inject() (
   }
 
   private def messageEventResult(info: MessageRequestInfo)(implicit request: Request[AnyContent]): Result = {
-    println(Json.prettyPrint(request.body.asJson.getOrElse(Json.obj())))
     val isRetry = request.headers.get("X-Slack-Retry-Num").isDefined
     if (isRetry) {
       Ok("We are ignoring retries for now")
@@ -366,7 +365,8 @@ class SlackController @Inject() (
                                   attachments: Seq[AttachmentInfo],
                                   response_type: Option[String],
                                   replace_original: Option[Boolean],
-                                  thread_ts: Option[String]
+                                  thread_ts: Option[String],
+                                  source_team: Option[String]
                                 )
   case class AttachmentInfo(
                              fallback: Option[String] = None,
@@ -402,6 +402,8 @@ class SlackController @Inject() (
                                    original_message: OriginalMessageInfo,
                                    response_url: String
                                  ) extends RequestInfo {
+
+    def slackTeamIdToUse: String = original_message.source_team.getOrElse(team.id)
 
     def maybeHelpForSkillIdWithMaybeSearch: Option[HelpGroupSearchValue] = {
       actions.find(_.name == SHOW_BEHAVIOR_GROUP_HELP).flatMap {
@@ -663,7 +665,7 @@ class SlackController @Inject() (
         //
         // TODO: Investigate whether this is safe and/or desirable
         val unescapedPayload = SlackMessage.unescapeSlackHTMLEntities(payload)
-
+        println(Json.prettyPrint(Json.parse(unescapedPayload)))
         Json.parse(unescapedPayload).validate[ActionsTriggeredInfo] match {
           case JsSuccess(info, jsPath) => {
             if (info.isValid) {
@@ -701,7 +703,7 @@ class SlackController @Inject() (
                     event,
                     services
                   ).result.map(Some(_)),
-                  info.team.id,
+                  info.slackTeamIdToUse,
                   info.channel.id,
                   info.user.id,
                   info.message_ts
@@ -722,7 +724,7 @@ class SlackController @Inject() (
                     event,
                     services
                   ).result.map(Some(_)),
-                  info.team.id,
+                  info.slackTeamIdToUse,
                   info.channel.id,
                   info.user.id,
                   info.message_ts
@@ -747,7 +749,7 @@ class SlackController @Inject() (
                     event,
                     services
                   ).result.map(Some(_)),
-                  info.team.id,
+                  info.slackTeamIdToUse,
                   info.channel.id,
                   info.user.id,
                   info.message_ts
@@ -823,7 +825,7 @@ class SlackController @Inject() (
                       response.result.map(Some(_))
                     }.getOrElse(Future.successful(None))
                   } yield maybeResult,
-                  info.team.id,
+                  info.slackTeamIdToUse,
                   info.channel.id,
                   info.user.id,
                   info.message_ts
@@ -876,7 +878,7 @@ class SlackController @Inject() (
                       response.result.map(Some(_))
                     }.getOrElse(Future.successful(None))
                   } yield maybeResult,
-                  info.team.id,
+                  info.slackTeamIdToUse,
                   info.channel.id,
                   info.user.id,
                   info.message_ts

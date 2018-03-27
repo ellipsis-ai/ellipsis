@@ -1,8 +1,8 @@
 package models.behaviors.conversations.conversation
 
 import java.time.OffsetDateTime
-import javax.inject.Inject
 
+import javax.inject.Inject
 import akka.actor.ActorSystem
 import com.google.inject.Provider
 import drivers.SlickPostgresDriver.api._
@@ -93,8 +93,8 @@ class ConversationServiceImpl @Inject() (
     dataService.run(action)
   }
 
-  def allOngoingForAction(userIdForContext: String, context: String, maybeChannel: Option[String], maybeThreadId: Option[String]): DBIO[Seq[Conversation]] = {
-    allOngoingQueryFor(userIdForContext, context).result.map { r =>
+  def allOngoingForAction(userIdForContext: String, context: String, maybeChannel: Option[String], maybeThreadId: Option[String], teamId: String): DBIO[Seq[Conversation]] = {
+    allOngoingQueryFor(userIdForContext, context, teamId).result.map { r =>
       r.map(tuple2Conversation)
     }.map { activeConvos =>
       maybeThreadId.map { threadId =>
@@ -106,8 +106,8 @@ class ConversationServiceImpl @Inject() (
     }
   }
 
-  def allOngoingFor(userIdForContext: String, context: String, maybeChannel: Option[String], maybeThreadId: Option[String]): Future[Seq[Conversation]] = {
-    dataService.run(allOngoingForAction(userIdForContext, context, maybeChannel, maybeThreadId))
+  def allOngoingFor(userIdForContext: String, context: String, maybeChannel: Option[String], maybeThreadId: Option[String], teamId: String): Future[Seq[Conversation]] = {
+    dataService.run(allOngoingForAction(userIdForContext, context, maybeChannel, maybeThreadId, teamId))
   }
 
   def allOngoingBehaviorGroupVersionIds: Future[Seq[String]] = {
@@ -131,8 +131,8 @@ class ConversationServiceImpl @Inject() (
     } yield maybeConvo
   }
 
-  def findOngoingFor(userIdForContext: String, context: String, maybeChannel: Option[String], maybeThreadId: Option[String]): Future[Option[Conversation]] = {
-    allOngoingFor(userIdForContext, context, maybeChannel: Option[String], maybeThreadId).map(_.headOption)
+  def findOngoingFor(userIdForContext: String, context: String, maybeChannel: Option[String], maybeThreadId: Option[String], teamId: String): Future[Option[Conversation]] = {
+    allOngoingFor(userIdForContext, context, maybeChannel: Option[String], maybeThreadId, teamId).map(_.headOption)
   }
 
   def uncompiledCancelQuery(conversationId: Rep[String]) = all.filter(_.id === conversationId).map(_.state)

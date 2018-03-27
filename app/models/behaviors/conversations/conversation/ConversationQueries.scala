@@ -44,11 +44,12 @@ object ConversationQueries {
   }
   val findQueryFor = Compiled(uncompiledFindQueryFor _)
 
-  def uncompiledAllOngoingQueryFor(userIdForContext: Rep[String], context: Rep[String]) = {
+  def uncompiledAllOngoingQueryFor(userIdForContext: Rep[String], context: Rep[String], teamId: Rep[String]) = {
     allWithTrigger.
       filter { case((convo, _), _) => convo.userIdForContext === userIdForContext }.
       filter { case((convo, _), _) => convo.context === context }.
-      filterNot { case((convo, _), _) => convo.state === Conversation.DONE_STATE }
+      filterNot { case((convo, _), _) => convo.state === Conversation.DONE_STATE }.
+      filter { case((_, (_, (b, _))), _) => b._2._1.teamId === teamId }
   }
   val allOngoingQueryFor = Compiled(uncompiledAllOngoingQueryFor _)
 

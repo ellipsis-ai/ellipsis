@@ -103,7 +103,7 @@ sealed trait BotResult {
 
   def maybeOngoingConversation(dataService: DataService)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[Conversation]] = {
     maybeChannelForSend(None, dataService).flatMap { maybeChannel =>
-      dataService.conversations.findOngoingFor(event.userIdForContext, event.context, maybeChannel, event.maybeThreadId)
+      dataService.conversations.findOngoingFor(event.userIdForContext, event.context, maybeChannel, event.maybeThreadId, event.teamId)
     }
   }
 
@@ -117,7 +117,7 @@ sealed trait BotResult {
       DBIO.successful(false)
     } else {
       maybeChannelForSendAction(maybeConversation, dataService).flatMap { maybeChannelForSend =>
-        dataService.conversations.allOngoingForAction(event.userIdForContext, event.context, maybeChannelForSend, event.maybeThreadId).flatMap { ongoing =>
+        dataService.conversations.allOngoingForAction(event.userIdForContext, event.context, maybeChannelForSend, event.maybeThreadId, event.teamId).flatMap { ongoing =>
           val toInterrupt = ongoing.filterNot(ea => maybeConversation.map(_.id).contains(ea.id))
           DBIO.sequence(toInterrupt.map { ea =>
             dataService.conversations.backgroundAction(ea, interruptionPrompt, includeUsername = true)

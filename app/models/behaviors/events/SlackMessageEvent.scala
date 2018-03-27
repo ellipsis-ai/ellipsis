@@ -76,13 +76,13 @@ case class SlackMessageEvent(
   lazy val name: String = Conversation.SLACK_CONTEXT
 
   def maybeOngoingConversation(dataService: DataService)(implicit ec: ExecutionContext): Future[Option[Conversation]] = {
-    dataService.conversations.findOngoingFor(user, context, maybeChannel, maybeThreadId).flatMap { maybeConvo =>
+    dataService.conversations.findOngoingFor(user, context, maybeChannel, maybeThreadId, teamId).flatMap { maybeConvo =>
       maybeConvo.map(c => Future.successful(Some(c))).getOrElse(maybeConversationRootedHere(dataService))
     }
   }
 
   def maybeConversationRootedHere(dataService: DataService): Future[Option[Conversation]] = {
-    dataService.conversations.findOngoingFor(user, context, maybeChannel, Some(ts))
+    dataService.conversations.findOngoingFor(user, context, maybeChannel, Some(ts), teamId)
   }
 
   override def navLinks(lambdaService: AWSLambdaService): String = {
