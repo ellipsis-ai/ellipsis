@@ -665,7 +665,6 @@ class SlackController @Inject() (
         //
         // TODO: Investigate whether this is safe and/or desirable
         val unescapedPayload = SlackMessage.unescapeSlackHTMLEntities(payload)
-        println(Json.prettyPrint(Json.parse(unescapedPayload)))
         Json.parse(unescapedPayload).validate[ActionsTriggeredInfo] match {
           case JsSuccess(info, jsPath) => {
             if (info.isValid) {
