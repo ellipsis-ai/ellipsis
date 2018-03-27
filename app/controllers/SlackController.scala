@@ -278,7 +278,12 @@ class SlackController @Inject() (
     SlackMessage.fromFormattedText(info.message, botProfile, slackEventService).flatMap { slackMessage =>
       if (maybeSourceTeamId.exists(tid => botProfile.slackTeamId != tid && tid != LinkedAccount.ELLIPSIS_SLACK_TEAM_ID)) {
         if (info.channel.startsWith("D") || botProfile.includesBotMention(slackMessage)) {
-          sendEphemeralMessage("I only respond to my owners", info)
+          dataService.teams.find(botProfile.teamId).flatMap { maybeTeam =>
+            val teamText = maybeTeam.map { team =>
+              s"the ${team.name} team"
+            }.getOrElse("another team")
+            sendEphemeralMessage(s"Sorry, I'm only able to respond to people from ${teamText}.", info)
+          }
         } else {
           Future.successful({})
         }
