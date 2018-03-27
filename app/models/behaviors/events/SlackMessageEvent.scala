@@ -66,11 +66,7 @@ case class SlackMessageEvent(
     message.unformattedText
   }
 
-  lazy val includesBotMention: Boolean = {
-    isDirectMessage ||
-      SlackMessageEvent.mentionRegexFor(profile.userId).findFirstMatchIn(message.originalText).nonEmpty ||
-      MessageEvent.ellipsisRegex.findFirstMatchIn(message.originalText).nonEmpty
-  }
+  lazy val includesBotMention: Boolean = isDirectMessage || profile.includesBotMention(message)
 
   override val isResponseExpected: Boolean = includesBotMention
   val teamId: String = profile.teamId

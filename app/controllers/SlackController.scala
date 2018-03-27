@@ -1,10 +1,11 @@
 package controllers
 
 import javax.inject.Inject
-
 import com.google.inject.Provider
 import com.mohiva.play.silhouette.api.{LoginInfo, Silhouette}
 import json.Formatting._
+import models.accounts.linkedaccount.LinkedAccount
+import models.accounts.slack.botprofile.SlackBotProfile
 import models.behaviors.ActionChoice
 import models.behaviors.builtins.DisplayHelpBehavior
 import models.behaviors.conversations.conversation.Conversation
@@ -111,12 +112,16 @@ class SlackController @Inject() (
 
   trait EventRequestInfo {
     val teamId: String
+    val maybeAuthedTeamIds: Option[Seq[String]]
     val event: EventInfo
+
+    val teamIds: Seq[String] = maybeAuthedTeamIds.getOrElse(Seq(teamId))
   }
 
   case class ValidEventRequestInfo(
                                   token: String,
                                   teamId: String,
+                                  maybeAuthedTeamIds: Option[Seq[String]],
                                   event: AnyEventInfo,
                                   requestType: String,
                                   eventId: String
@@ -126,6 +131,7 @@ class SlackController @Inject() (
     mapping(
       "token" -> nonEmptyText,
       "team_id" -> nonEmptyText,
+      "authed_teams" -> optional(seq(nonEmptyText)),
       "event" -> mapping(
         "type" -> nonEmptyText
       )(AnyEventInfo.apply)(AnyEventInfo.unapply),
@@ -158,17 +164,19 @@ class SlackController @Inject() (
                      )
 
   case class MessageSentEventInfo(
-                                    eventType: String,
-                                    ts: String,
-                                    maybeThreadTs: Option[String],
-                                    userId: String,
-                                    channel: String,
-                                    text: String,
-                                    maybeFileInfo: Option[FileInfo]
+                                   eventType: String,
+                                   ts: String,
+                                   maybeThreadTs: Option[String],
+                                   userId: String,
+                                   maybeSourceTeamId: Option[String],
+                                   channel: String,
+                                   text: String,
+                                   maybeFileInfo: Option[FileInfo]
                                   ) extends EventInfo
 
   case class MessageSentRequestInfo(
                                           teamId: String,
+                                          maybeAuthedTeamIds: Option[Seq[String]],
                                           event: MessageSentEventInfo
                                         ) extends MessageRequestInfo {
     val message: String = event.text.trim
@@ -180,11 +188,13 @@ class SlackController @Inject() (
   private val messageSentRequestForm = Form(
     mapping(
       "team_id" -> nonEmptyText,
+      "authed_teams" -> optional(seq(nonEmptyText)),
       "event" -> mapping(
         "type" -> nonEmptyText,
         "ts" -> nonEmptyText,
         "thread_ts" -> optional(nonEmptyText),
         "user" -> nonEmptyText,
+        "source_team" -> optional(nonEmptyText),
         "channel" -> nonEmptyText,
         "text" -> nonEmptyText,
         "file" -> optional(mapping(
@@ -204,6 +214,7 @@ class SlackController @Inject() (
                                  eventType: String,
                                  ts: String,
                                  userId: String,
+                                 maybeSourceTeamId: Option[String],
                                  text: String,
                                  edited: EditedInfo
                                )
@@ -220,6 +231,7 @@ class SlackController @Inject() (
 
   case class MessageChangedRequestInfo(
                                              teamId: String,
+                                             maybeAuthedTeamIds: Option[Seq[String]],
                                              event: MessageChangedEventInfo
                                           ) extends MessageRequestInfo {
     val message: String = event.message.text.trim
@@ -232,12 +244,14 @@ class SlackController @Inject() (
   private val messageChangedRequestForm = Form(
     mapping(
       "team_id" -> nonEmptyText,
+      "authed_teams" -> optional(seq(nonEmptyText)),
       "event" -> mapping(
         "type" -> nonEmptyText,
         "message" -> mapping(
           "type" -> nonEmptyText,
           "ts" -> nonEmptyText,
           "user" -> nonEmptyText,
+          "source_team" -> optional(nonEmptyText),
           "text" -> nonEmptyText,
           "edited" -> mapping(
             "user" -> nonEmptyText,
@@ -255,40 +269,58 @@ class SlackController @Inject() (
     })
   )
 
+  private def processEventsFor(info: MessageRequestInfo, botProfile: SlackBotProfile)(implicit request: Request[AnyContent]): Future[Unit] = {
+    val maybeSourceTeamId = info.event match {
+      case e: MessageChangedEventInfo => e.message.maybeSourceTeamId
+      case e: MessageSentEventInfo => e.maybeSourceTeamId
+      case _ => None
+    }
+    SlackMessage.fromFormattedText(info.message, botProfile, slackEventService).flatMap { slackMessage =>
+      if (maybeSourceTeamId.exists(tid => botProfile.slackTeamId != tid && tid != LinkedAccount.ELLIPSIS_SLACK_TEAM_ID)) {
+        if (info.channel.startsWith("D") || botProfile.includesBotMention(slackMessage)) {
+          sendEphemeralMessage("I only respond to my owners", info)
+        } else {
+          Future.successful({})
+        }
+      } else {
+        val maybeFile = info.event match {
+          case e: MessageSentEventInfo => e.maybeFileInfo.map(i => SlackFile(i.downloadUrl, i.maybeThumbnailUrl))
+          case _ => None
+        }
+        for {
+          _ <- slackEventService.onEvent(
+            SlackMessageEvent(
+              botProfile,
+              info.channel,
+              info.maybeThreadTs,
+              info.userId,
+              slackMessage,
+              maybeFile,
+              info.ts,
+              slackEventService.clientFor(botProfile),
+              None
+            )
+          )
+        } yield {}
+      }
+    }
+  }
+
   private def messageEventResult(info: MessageRequestInfo)(implicit request: Request[AnyContent]): Result = {
+    println(Json.prettyPrint(request.body.asJson.getOrElse(Json.obj())))
     val isRetry = request.headers.get("X-Slack-Retry-Num").isDefined
     if (isRetry) {
       Ok("We are ignoring retries for now")
     } else {
       for {
-        maybeProfile <- dataService.slackBotProfiles.allForSlackTeamId(info.teamId).map(_.headOption)
-        maybeSlackMessage <- maybeProfile.map { profile =>
-          SlackMessage.fromFormattedText(info.message, profile, slackEventService).map(Some(_))
-        }.getOrElse(Future.successful(None))
-        maybeFile <- Future.successful(
-          info.event match {
-            case e: MessageSentEventInfo => e.maybeFileInfo.map(i => SlackFile(i.downloadUrl, i.maybeThumbnailUrl))
-            case _ => None
+        profiles <- Future.sequence(info.teamIds.map { teamId =>
+          dataService.slackBotProfiles.allForSlackTeamId(teamId)
+        }).map(_.flatten)
+        _ <- Future.sequence(
+          profiles.map { profile =>
+            processEventsFor(info, profile)
           }
         )
-        _ <- (for {
-          profile <- maybeProfile
-          slackMessage <- maybeSlackMessage
-        } yield {
-          slackEventService.onEvent(SlackMessageEvent(
-            profile,
-            info.channel,
-            info.maybeThreadTs,
-            info.userId,
-            slackMessage,
-            maybeFile,
-            info.ts,
-            slackEventService.clientFor(profile),
-            None
-          ))
-        }).getOrElse {
-          Future.successful({})
-        }
       } yield {}
 
       // respond immediately
@@ -527,9 +559,9 @@ class SlackController @Inject() (
 
   implicit val actionsTriggeredReads = Json.reads[ActionsTriggeredInfo]
 
-  private def sendEphemeralMessage(message: String, info: ActionsTriggeredInfo): Future[Unit] = {
+  private def sendEphemeralMessage(message: String, slackTeamId: String, slackChannelId: String, slackUserId: String): Future[Unit] = {
     for {
-      maybeProfile <- dataService.slackBotProfiles.allForSlackTeamId(info.team.id).map(_.headOption)
+      maybeProfile <- dataService.slackBotProfiles.allForSlackTeamId(slackTeamId).map(_.headOption)
       _ <- (for {
         profile <- maybeProfile
       } yield {
@@ -538,14 +570,22 @@ class SlackController @Inject() (
           withHttpHeaders(HeaderNames.ACCEPT -> MimeTypes.JSON).
           post(Map(
             "token" -> Seq(profile.token),
-            "channel" -> Seq(info.channel.id),
+            "channel" -> Seq(slackChannelId),
             "text" -> Seq(message),
-            "user" -> Seq(info.user.id)
+            "user" -> Seq(slackUserId)
           ))
       }).getOrElse {
         Future.successful({})
       }
     } yield {}
+  }
+
+  private def sendEphemeralMessage(message: String, info: ActionsTriggeredInfo): Future[Unit] = {
+    sendEphemeralMessage(message, info.team.id, info.channel.id, info.user.id)
+  }
+
+  private def sendEphemeralMessage(message: String, info: MessageRequestInfo): Future[Unit] = {
+    sendEphemeralMessage(message, info.teamId, info.channel, info.userId)
   }
 
   private def updateActionsMessageFor(
