@@ -418,7 +418,7 @@ class SlackController @Inject() (
     }
 
     def maybeInputChoice: Option[String] = {
-      val maybeSlackUserId = maybeUserIdForCallbackId(callback_id)
+      val maybeSlackUserId = maybeUserIdForCallbackId(INPUT_CHOICE, callback_id)
       maybeSlackUserId.flatMap { slackUserId =>
         if (user.id == slackUserId) {
           val maybeAction = actions.headOption
@@ -439,7 +439,7 @@ class SlackController @Inject() (
     }
 
     def maybeIncorrectUserIdTryingInputChoice: Option[String] = {
-      val maybeSlackUserId = maybeUserIdForCallbackId(callback_id)
+      val maybeSlackUserId = maybeUserIdForCallbackId(INPUT_CHOICE, callback_id)
       maybeSlackUserId.flatMap { slackUserId =>
         if (user.id != slackUserId) {
           Some(slackUserId)
@@ -450,7 +450,7 @@ class SlackController @Inject() (
     }
 
     def isForInputChoiceForDoneConversation: Future[Boolean] = {
-      maybeConversationIdForCallbackId(callback_id).map { convoId =>
+      maybeConversationIdForCallbackId(INPUT_CHOICE, callback_id).map { convoId =>
         dataService.conversations.find(convoId).map { maybeConvo =>
           maybeConvo.exists(_.isDone)
         }
@@ -504,9 +504,35 @@ class SlackController @Inject() (
     }
 
     def maybeYesNoAnswer: Option[String] = {
-      actions.find(_.name == YES_NO_CHOICE).flatMap { action =>
-        action.value.filter(v => v == YES || v == NO)
+      val maybeSlackUserId = maybeUserIdForCallbackId(YES_NO_CHOICE, callback_id)
+      maybeSlackUserId.flatMap { slackUserId =>
+        if (user.id == slackUserId) {
+          actions.find(_.name == callback_id).flatMap { action =>
+            action.value.filter(v => v == YES || v == NO)
+          }
+        } else {
+          None
+        }
       }
+    }
+
+    def maybeIncorrectUserIdTryingYesNo: Option[String] = {
+      val maybeSlackUserId = maybeUserIdForCallbackId(YES_NO_CHOICE, callback_id)
+      maybeSlackUserId.flatMap { slackUserId =>
+        if (user.id != slackUserId) {
+          Some(slackUserId)
+        } else {
+          None
+        }
+      }
+    }
+
+    def isForYesNoForDoneConversation: Future[Boolean] = {
+      maybeConversationIdForCallbackId(YES_NO_CHOICE, callback_id).map { convoId =>
+        dataService.conversations.find(convoId).map { maybeConvo =>
+          maybeConvo.exists(_.isDone)
+        }
+      }.getOrElse(Future.successful(false))
     }
 
     private def originalMessageActions: Seq[ActionInfo] = {
@@ -689,6 +715,11 @@ class SlackController @Inject() (
                 sendEphemeralMessage(s"Only $correctUser can answer this", info)
               }
 
+              info.maybeIncorrectUserIdTryingYesNo.foreach { correctUserId =>
+                val correctUser = s"<@${correctUserId}>"
+                sendEphemeralMessage(s"Only $correctUser can answer this", info)
+              }
+
               info.maybeHelpIndexAt.foreach { index =>
                 dataService.slackBotProfiles.sendResultWithNewEvent(
                   "help index",
@@ -801,7 +832,14 @@ class SlackController @Inject() (
               }
 
               info.maybeYesNoAnswer.foreach { answer =>
-                inputChoiceResultFor(answer, info)
+                info.isForYesNoForDoneConversation.flatMap { shouldStop =>
+                  if (shouldStop) {
+                    updateActionsMessageFor(info, Some(s"This conversation is no longer active"), shouldRemoveActions = true)
+                  } else {
+                    inputChoiceResultFor(answer, info)
+                  }
+                }
+
                 shouldRemoveActions = true
                 maybeResultText = Some(s"$slackUser selected `${answer.capitalize}`")
               }

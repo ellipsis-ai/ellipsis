@@ -1,5 +1,7 @@
 package models.behaviors.events
 
+import scala.util.matching.Regex
+
 object SlackMessageActionConstants {
   val SHOW_BEHAVIOR_GROUP_HELP = "help_for_skill"
   val LIST_BEHAVIOR_GROUP_ACTIONS = "help_actions_for_skill"
@@ -15,15 +17,26 @@ object SlackMessageActionConstants {
   val YES = "yes"
   val NO = "no"
 
-  def inputChoiceCallbackIdFor(slackUserId: String, maybeConversationId: Option[String]): String = {
+  def callbackIdFor(kind: String, slackUserId: String, maybeConversationId: Option[String]): String = {
     val conversationId = maybeConversationId.getOrElse("")
-    s"$INPUT_CHOICE/$slackUserId/$conversationId"
+    s"$kind/$slackUserId/$conversationId"
   }
-  val inputChoiceCallbackIdRegex = raw"""^$INPUT_CHOICE\/([^\/]+)\/([^\/]+)$$""".r
-  def maybeUserIdForCallbackId(callbackId: String): Option[String] = {
-    inputChoiceCallbackIdRegex.findFirstMatchIn(callbackId).flatMap(_.subgroups.headOption)
+  def callbackIdRegexFor(kind: String): Regex = {
+    raw"""^$kind\/([^\/]+)\/([^\/]+)$$""".r
   }
-  def maybeConversationIdForCallbackId(callbackId: String): Option[String] = {
-    inputChoiceCallbackIdRegex.findFirstMatchIn(callbackId).flatMap(_.subgroups.tail.headOption)
+
+  def maybeUserIdForCallbackId(kind: String, callbackId: String): Option[String] = {
+    callbackIdRegexFor(kind).findFirstMatchIn(callbackId).flatMap(_.subgroups.headOption)
+  }
+  def maybeConversationIdForCallbackId(kind: String, callbackId: String): Option[String] = {
+    callbackIdRegexFor(kind).findFirstMatchIn(callbackId).flatMap(_.subgroups.tail.headOption)
+  }
+
+  def inputChoiceCallbackIdFor(slackUserId: String, maybeConversationId: Option[String]): String = {
+    callbackIdFor(INPUT_CHOICE, slackUserId, maybeConversationId)
+  }
+
+  def yesNoCallbackIdFor(slackUserId: String, maybeConversationId: Option[String]): String = {
+    callbackIdFor(YES_NO_CHOICE, slackUserId, maybeConversationId)
   }
 }
