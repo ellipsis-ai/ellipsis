@@ -51,12 +51,13 @@ class LinkedAccountServiceImpl @Inject() (
   }
 
   def saveAction(link: LinkedAccount): DBIO[LinkedAccount] = {
-    val query = all.filter(_.providerId === link.loginInfo.providerID).filter(_.providerKey === link.loginInfo.providerKey)
+    val query =
+      all.
+        filter(_.providerId === link.loginInfo.providerID).
+        filter(_.providerKey === link.loginInfo.providerKey).
+        filter(_.userId === link.user.id)
     query.result.headOption.flatMap {
-      case Some(_) => {
-        query.
-          update(link.toRaw)
-      }
+      case Some(_) => DBIO.successful({})
       case None => all += link.toRaw
     }.map { _ => link }
   }
