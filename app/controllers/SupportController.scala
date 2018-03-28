@@ -4,17 +4,15 @@ import akka.actor.ActorSystem
 import com.google.inject.Provider
 import com.mohiva.play.silhouette.api.Silhouette
 import javax.inject.Inject
+import json.Formatting._
 import json.SupportRequestConfig
+import models.behaviors.builtins.FeedbackBehavior
 import models.silhouette.EllipsisEnv
 import play.api.Configuration
 import play.api.libs.json.{JsError, JsValue, Json}
 import play.api.mvc.{Action, AnyContent}
 import play.filters.csrf.CSRF
 import services.{DataService, DefaultServices}
-import json.Formatting._
-import models.behaviors.builtins.FeedbackBehavior
-import play.api.data.Form
-import play.api.data.Forms._
 
 import scala.concurrent.{ExecutionContext, Future}
 
