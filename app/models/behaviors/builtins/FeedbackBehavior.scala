@@ -47,14 +47,24 @@ object FeedbackBehavior {
     } yield wasSent
   }
 
-  def supportRequest(services: DefaultServices)
+  def supportRequest(maybeUser: Option[User], maybeTeam: Option[Team], services: DefaultServices, name: String, emailAddress: String, message: String)
                     (implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Boolean] = {
     for {
-      wasSent <- sendFeedbackToAdminTeam(
-        "I need help",
-        services,
-        EventType.web
-      )
+      maybeUserData <- (for {
+        user <- maybeUser
+        team <- maybeTeam
+      } yield {
+        services.dataService.users.userDataFor(user, team).map(Some(_))
+      }).getOrElse(Future.successful(None))
+      wasSent <- {
+        val maybeTeamInfo = maybeTeam.map(team => teamInfo(team, services))
+        val maybeUserInfo = maybeUser.map(user => userInfo(user.id, maybeUserData))
+        sendFeedbackToAdminTeam(
+          supportMessage(maybeTeamInfo, maybeUserInfo, name, emailAddress, message),
+          services,
+          EventType.web
+        )
+      }
     } yield wasSent
   }
 
@@ -87,7 +97,7 @@ object FeedbackBehavior {
 
   private def userInfo(userId: String, maybeUserData: Option[UserData]): String = {
     maybeUserData.map { userData =>
-      s"**${userData.fullName.getOrElse("Unknown")}** ${userData.userName.map(userName => s"@$userName").getOrElse("(unknown username)")} (#$userId)"
+      s"**${userData.fullName.getOrElse("Unknown")}** · ${userData.userName.map(userName => s"@$userName").getOrElse("(unknown username)")} · ID: $userId"
     }.getOrElse(s"User #$userId")
   }
 
@@ -103,12 +113,20 @@ object FeedbackBehavior {
   }
 
   private def feedbackMessage(teamInfo: String, userInfo: String, feedbackType: String, message: String): String = {
-    s"""${feedbackType.capitalize}:
+    s"""${feedbackType}:
        |
-       |👤 $userInfo
-       |💼 $teamInfo
+       |_Profile:_
+       |User: $userInfo
+       |Team: $teamInfo
        |
-       |${message.lines.mkString("> ", "\n", "")}
+       |${message.lines.mkString("> ", "\n> ", "\n")}
      """.stripMargin
+  }
+
+  private def supportMessage(maybeTeamInfo: Option[String], maybeUserInfo: Option[String], name: String, emailAddress: String, message: String): String = {
+    val teamInfo = maybeTeamInfo.getOrElse("None")
+    val userInfo = maybeUserInfo.getOrElse("None")
+    val feedbackType = s":rotating_light: Support request from **$name** · <$emailAddress>"
+    feedbackMessage(teamInfo, userInfo, feedbackType, message)
   }
 }

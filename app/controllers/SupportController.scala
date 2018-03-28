@@ -7,22 +7,27 @@ import javax.inject.Inject
 import json.SupportRequestConfig
 import models.silhouette.EllipsisEnv
 import play.api.Configuration
-import play.api.libs.json.Json
+import play.api.libs.json.{JsError, JsValue, Json}
 import play.api.mvc.{Action, AnyContent}
 import play.filters.csrf.CSRF
-import services.DataService
+import services.{DataService, DefaultServices}
 import json.Formatting._
+import models.behaviors.builtins.FeedbackBehavior
+import play.api.data.Form
+import play.api.data.Forms._
 
 import scala.concurrent.{ExecutionContext, Future}
 
 class SupportController @Inject() (
                                     val configuration: Configuration,
-                                    val dataService: DataService,
+                                    val services: DefaultServices,
                                     val silhouette: Silhouette[EllipsisEnv],
                                     val assetsProvider: Provider[RemoteAssets],
                                     implicit val actorSystem: ActorSystem,
                                     implicit val ec: ExecutionContext
                                   ) extends EllipsisController {
+
+  val dataService: DataService = services.dataService
 
   def request: Action[AnyContent] = silhouette.UserAwareAction.async { implicit request =>
     for {
@@ -51,4 +56,31 @@ class SupportController @Inject() (
     }
   }
 
+  case class SendRequestInfo(name: String, emailAddress: String, message: String)
+
+  implicit val sendRequestInfoFormat = Json.format[SendRequestInfo]
+
+  def sendRequest: Action[JsValue] = silhouette.UserAwareAction(parse.json).async { implicit request =>
+    request.body.validate[SendRequestInfo].fold(
+      errors => {
+        Future.successful(BadRequest(Json.obj("errors" -> JsError.toJson(errors))))
+      },
+      info => {
+        val maybeUser = request.identity
+        for {
+          maybeTeam <- maybeUser.map { user =>
+            dataService.teams.find(user.teamId)
+          }.getOrElse(Future.successful(None))
+          didSend <- FeedbackBehavior
+            .supportRequest(maybeUser, maybeTeam, services, info.name, info.emailAddress, info.message)
+        } yield {
+          if (didSend) {
+            Ok(Json.toJson(info))
+          } else {
+            InternalServerError(Json.obj("errors" -> Seq("The support request did not send. Please try again.")))
+          }
+        }
+      }
+    )
+  }
 }

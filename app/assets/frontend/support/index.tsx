@@ -5,6 +5,7 @@ import User from "../models/user";
 import FormInput from '../form/input';
 import Textarea from '../form/textarea';
 import DynamicLabelButton from "../form/dynamic_label_button";
+import {DataRequest} from "../lib/data_request";
 
 export interface SupportRequestProps {
   csrfToken: string,
@@ -18,7 +19,9 @@ interface State {
   userName: string,
   email: string,
   message: string,
-  isSubmitting: boolean
+  isSubmitting: boolean,
+  didSubmit: boolean,
+  error: Option<string>
 }
 
 class SupportRequest extends React.Component<Props, State> {
@@ -29,7 +32,9 @@ class SupportRequest extends React.Component<Props, State> {
       userName: this.props.user && this.props.user.fullName || "",
       email: "",
       message: "",
-      isSubmitting: false
+      isSubmitting: false,
+      didSubmit: false,
+      error: null
     }
   }
 
@@ -62,16 +67,40 @@ class SupportRequest extends React.Component<Props, State> {
 
   onSubmit(): void {
     this.setState({
-      isSubmitting: true
+      isSubmitting: true,
+      didSubmit: false,
+      error: null
     }, this.doSubmit);
   }
 
   doSubmit(): void {
-    setTimeout(() => {
+    const url = jsRoutes.controllers.SupportController.sendRequest().url;
+    DataRequest.jsonPost(url, {
+      name: this.state.userName,
+      emailAddress: this.state.email,
+      message: this.state.message
+    }, this.props.csrfToken)
+      .then(this.didSubmit)
+      .catch(this.submitError);
+  }
+
+  didSubmit(json: { name: string, emailAddress: string, message: string }) {
+    if (json.message) {
       this.setState({
-        isSubmitting: false
+        isSubmitting: false,
+        didSubmit: true,
+        message: ""
       });
-    }, 500);
+    } else {
+      this.submitError();
+    }
+  }
+
+  submitError(err?: string) {
+    this.setState({
+      isSubmitting: false,
+      error: err || "An error occurred. Please try again or reload the page."
+    });
   }
 
   isSubmitting(): boolean {
@@ -118,8 +147,8 @@ class SupportRequest extends React.Component<Props, State> {
             <div>
               <DynamicLabelButton
                 onClick={this.onSubmit}
-                className="button-primary"
-                disabledWhen={this.formFieldsInvalid()}
+                className="button-primary mrs"
+                disabledWhen={this.formFieldsInvalid() || this.isSubmitting()}
                 labels={[{
                   text: "Send request",
                   displayWhen: !this.isSubmitting()
@@ -128,6 +157,16 @@ class SupportRequest extends React.Component<Props, State> {
                   displayWhen: this.isSubmitting()
                 }]}
               />
+              {this.state.didSubmit ? (
+                <span className="align-button type-green fade-in">
+                  — Your request has been sent.
+                </span>
+              ) : null}
+              {this.state.error ? (
+                <span className="align-button type-pink type-bold type-italic">
+                  — {this.state.error}
+                </span>
+              ) : null}
             </div>
           </div>
         </div>

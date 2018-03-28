@@ -47,6 +47,9 @@ declare var jsRoutes: {
     },
     SocialAuthController: {
       authenticateGithub: (redirectUrl?: Option<string>, teamId?: Option<string>, channelId?: Option<string>) => JsRoute
+    },
+    SupportController: {
+      sendRequest: () => JsRoute
     }
   }
 };
