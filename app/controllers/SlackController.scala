@@ -7,6 +7,7 @@ import json.Formatting._
 import models.accounts.linkedaccount.LinkedAccount
 import models.accounts.slack.botprofile.SlackBotProfile
 import models.behaviors.ActionChoice
+import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
 import models.behaviors.builtins.DisplayHelpBehavior
 import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.events.SlackMessageActionConstants._
@@ -364,7 +365,7 @@ class SlackController @Inject() (
                        )
   case class TeamInfo(id: String, domain: String)
   case class ChannelInfo(id: String, name: String)
-  case class UserInfo(id: String, name: String)
+  case class UserInfo(id: String, name: String, team_id: Option[String])
   case class OriginalMessageInfo(
                                   text: String,
                                   attachments: Seq[AttachmentInfo],
@@ -408,7 +409,7 @@ class SlackController @Inject() (
                                    response_url: String
                                  ) extends RequestInfo {
 
-    def slackTeamIdToUse: String = original_message.source_team.getOrElse(team.id)
+    def slackTeamIdToUse: String = user.team_id.getOrElse(team.id)
 
     def maybeHelpForSkillIdWithMaybeSearch: Option[HelpGroupSearchValue] = {
       actions.find(_.name == SHOW_BEHAVIOR_GROUP_HELP).flatMap {
@@ -684,6 +685,81 @@ class SlackController @Inject() (
     } yield {}
   }
 
+  private def sendCannotBeTriggeredFor(
+                                        actionChoice: ActionChoice,
+                                        maybeGroupVersion: Option[BehaviorGroupVersion],
+                                        info: ActionsTriggeredInfo
+                                      ): Future[Unit] = {
+    for {
+      maybeChoiceSlackUserId <- actionChoice.userId.map { userId =>
+        dataService.users.find(userId).flatMap { maybeUser =>
+          maybeUser.map { user =>
+            dataService.linkedAccounts.maybeSlackUserIdFor(user)
+          }.getOrElse(Future.successful(None))
+        }
+      }.getOrElse(Future.successful(None))
+      _ <- {
+        val msg: String = if (actionChoice.areOthersAllowed) {
+          val teamText = maybeGroupVersion.map { bgv => s" ${bgv.team.name}"}.getOrElse("")
+          s"Only members of the${teamText} team can make this choice"
+        } else {
+          maybeChoiceSlackUserId.map { choiceSlackUserId =>
+            s"Only <@${choiceSlackUserId}> can make this choice"
+          }.getOrElse("You are not allowed to make this choice")
+        }
+        sendEphemeralMessage(msg, info)
+      }
+    } yield {}
+  }
+
+  private def processActionChoice(
+                                   actionChoice: ActionChoice,
+                                   maybeGroupVersion: Option[BehaviorGroupVersion],
+                                   info: ActionsTriggeredInfo
+                                 ): Future[Unit] = {
+    dataService.slackBotProfiles.sendResultWithNewEvent(
+      s"run action named ${actionChoice.actionName}",
+      event => for {
+        user <- event.ensureUser(dataService)
+        maybeBehaviorVersion <- maybeGroupVersion.map { groupVersion =>
+          dataService.behaviorGroupVersions.isActive(groupVersion, Conversation.SLACK_CONTEXT, info.channel.id).flatMap { isActive =>
+            actionChoice.canBeTriggeredBy(user, dataService).flatMap { canBeTriggered =>
+              if (isActive && canBeTriggered) {
+                dataService.behaviorVersions.findByName(actionChoice.actionName, groupVersion)
+              } else {
+                Future.successful(None)
+              }
+            }
+          }
+        }.getOrElse(Future.successful(None))
+        params <- maybeBehaviorVersion.map { behaviorVersion =>
+          dataService.behaviorParameters.allFor(behaviorVersion)
+        }.getOrElse(Future.successful(Seq()))
+        invocationParams <- Future.successful(actionChoice.argumentsMap.flatMap { case(name, value) =>
+          params.find(_.name == name).map { param =>
+            (AWSLambdaConstants.invocationParamFor(param.rank - 1), value)
+          }
+        })
+        maybeResponse <- maybeBehaviorVersion.map { behaviorVersion =>
+          dataService.behaviorResponses.buildFor(
+            event,
+            behaviorVersion,
+            invocationParams,
+            None,
+            None
+          ).map(Some(_))
+        }.getOrElse(Future.successful(None))
+        maybeResult <- maybeResponse.map { response =>
+          response.result.map(Some(_))
+        }.getOrElse(Future.successful(None))
+      } yield maybeResult,
+      info.slackTeamIdToUse,
+      info.channel.id,
+      info.user.id,
+      info.message_ts
+    )
+  }
+
   def action = Action { implicit request =>
     actionForm.bindFromRequest.fold(
       formWithErrors => {
@@ -883,79 +959,37 @@ class SlackController @Inject() (
               }
 
               info.maybeSelectedActionChoice.foreach { actionChoice =>
-                dataService.slackBotProfiles.sendResultWithNewEvent(
-                  s"run action named ${actionChoice.actionName}",
-                  event => for {
-                    maybeGroupVersion <- actionChoice.groupVersionId.map { groupVersionId =>
-                      dataService.behaviorGroupVersions.findWithoutAccessCheck(groupVersionId)
-                    }.getOrElse(Future.successful(None))
-                    user <- event.ensureUser(dataService)
-                    maybeBehaviorVersion <- maybeGroupVersion.map { groupVersion =>
-                      dataService.behaviorGroupVersions.isActive(groupVersion, Conversation.SLACK_CONTEXT, info.channel.id).flatMap { isActive =>
-                        if (isActive && actionChoice.canBeTriggeredBy(user)) {
-                          dataService.behaviorVersions.findByName(actionChoice.actionName, groupVersion)
-                        } else {
-                          Future.successful(None)
-                        }
-                      }
-                    }.getOrElse(Future.successful(None))
-                    params <- maybeBehaviorVersion.map { behaviorVersion =>
-                      dataService.behaviorParameters.allFor(behaviorVersion)
-                    }.getOrElse(Future.successful(Seq()))
-                    invocationParams <- Future.successful(actionChoice.argumentsMap.flatMap { case(name, value) =>
-                      params.find(_.name == name).map { param =>
-                        (AWSLambdaConstants.invocationParamFor(param.rank - 1), value)
-                      }
-                    })
-                    maybeResponse <- maybeBehaviorVersion.map { behaviorVersion =>
-                      dataService.behaviorResponses.buildFor(
-                        event,
-                        behaviorVersion,
-                        invocationParams,
-                        None,
-                        None
-                      ).map(Some(_))
-                    }.getOrElse(Future.successful(None))
-                    maybeResult <- maybeResponse.map { response =>
-                      response.result.map(Some(_))
-                    }.getOrElse(Future.successful(None))
-                  } yield maybeResult,
-                  info.slackTeamIdToUse,
-                  info.channel.id,
-                  info.user.id,
-                  info.message_ts
-                )
 
-                dataService.runNow(for {
-                  maybeGroupVersion <- actionChoice.groupVersionId.map { groupVersionId =>
-                    dataService.behaviorGroupVersions.findWithoutAccessCheck(groupVersionId)
+                val maybeGroupVersion = dataService.runNow(actionChoice.groupVersionId.map { groupVersionId =>
+                  dataService.behaviorGroupVersions.findWithoutAccessCheck(groupVersionId)
+                }.getOrElse(Future.successful(None)))
+
+                val isActive = dataService.runNow(maybeGroupVersion.map { groupVersion =>
+                  dataService.behaviorGroupVersions.isActive(groupVersion, Conversation.SLACK_CONTEXT, info.channel.id)
+                }.getOrElse(Future.successful(false)))
+
+                val canBeTriggered = dataService.runNow(for {
+                  maybeBotProfile <- dataService.slackBotProfiles.allForSlackTeamId(info.slackTeamIdToUse).map(_.headOption)
+                  maybeUser <- maybeBotProfile.map { botProfile =>
+                    dataService.users.ensureUserFor(LoginInfo(Conversation.SLACK_CONTEXT, info.user.id), botProfile.teamId).map(Some(_))
                   }.getOrElse(Future.successful(None))
-                  isActive <- maybeGroupVersion.map { groupVersion =>
-                    dataService.behaviorGroupVersions.isActive(groupVersion, Conversation.SLACK_CONTEXT, info.channel.id)
+                  canBeTriggered <- maybeUser.map { user =>
+                    actionChoice.canBeTriggeredBy(user, dataService)
                   }.getOrElse(Future.successful(false))
-                  maybeUser <- maybeGroupVersion.map { groupVersion =>
-                    dataService.users.ensureUserFor(LoginInfo(Conversation.SLACK_CONTEXT, info.user.id), groupVersion.team.id).map(Some(_))
-                  }.getOrElse(Future.successful(None))
-                  maybeChoiceSlackUserId <- actionChoice.userId.map { userId =>
-                    dataService.users.find(userId).flatMap { maybeUser =>
-                      maybeUser.map { user =>
-                        dataService.linkedAccounts.maybeSlackUserIdFor(user)
-                      }.getOrElse(Future.successful(None))
-                    }
-                  }.getOrElse(Future.successful(None))
-                } yield {
-                  if (!isActive) {
-                    shouldRemoveActions = true
-                    maybeResultText = Some("This skill has been updated, making these associated actions no longer valid")
-                  } else if (!maybeUser.exists(u => actionChoice.canBeTriggeredBy(u))) {
-                    maybeResultText = Some(maybeChoiceSlackUserId.map { choiceSlackUserId =>
-                      s"Only <@${choiceSlackUserId}> can make this choice"
-                    }.getOrElse("You are not allowed to make this choice"))
-                  } else {
-                    shouldRemoveActions = true
+                } yield canBeTriggered)
+
+                if (canBeTriggered) {
+                  shouldRemoveActions = true
+                  if (isActive) {
                     maybeResultText = Some(s"$slackUser clicked ${actionChoice.label}")
+                    processActionChoice(actionChoice, maybeGroupVersion, info) // happens in the background
+                  } else {
+                    maybeResultText = Some("This skill has been updated, making these associated actions no longer valid")
                   }
-                })
+                } else {
+                  sendCannotBeTriggeredFor(actionChoice, maybeGroupVersion, info) // happens in the background
+                }
+
               }
 
               // respond immediately by appending a new attachment

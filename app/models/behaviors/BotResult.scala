@@ -49,8 +49,31 @@ case class ActionChoice(
                          groupVersionId: Option[String]
                        ) extends WithActionArgs {
 
-  def canBeTriggeredBy(user: User): Boolean = {
-    allowOthers.contains(true) || userId.isEmpty || userId.contains(user.id)
+  val areOthersAllowed: Boolean = allowOthers.contains(true)
+
+  private def isAllowedBecauseAdmin(user: User, dataService: DataService)(implicit ec: ExecutionContext): Future[Boolean] = {
+    dataService.users.isAdmin(user).map { isAdmin =>
+      areOthersAllowed && isAdmin
+    }
+  }
+
+  private def isAllowedBecauseSameTeam(user: User, dataService: DataService)(implicit ec: ExecutionContext): Future[Boolean] = {
+    userId.map { uid =>
+      dataService.users.find(uid).map { maybeUser =>
+        areOthersAllowed && maybeUser.exists(u => u.teamId == user.teamId)
+      }
+    }.getOrElse(Future.successful(false))
+  }
+
+  def canBeTriggeredBy(user: User, dataService: DataService)(implicit ec: ExecutionContext): Future[Boolean] = {
+    val noUser = userId.isEmpty
+    val sameUser = userId.contains(user.id)
+    for {
+      admin <- isAllowedBecauseAdmin(user, dataService)
+      sameTeam <- isAllowedBecauseSameTeam(user, dataService)
+    } yield {
+      noUser || sameUser || sameTeam || admin
+    }
   }
 
 }
