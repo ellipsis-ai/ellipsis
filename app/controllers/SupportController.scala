@@ -1,5 +1,6 @@
 package controllers
 
+import akka.actor.ActorSystem
 import com.google.inject.Provider
 import com.mohiva.play.silhouette.api.Silhouette
 import javax.inject.Inject
@@ -19,6 +20,7 @@ class SupportController @Inject() (
                                     val dataService: DataService,
                                     val silhouette: Silhouette[EllipsisEnv],
                                     val assetsProvider: Provider[RemoteAssets],
+                                    implicit val actorSystem: ActorSystem,
                                     implicit val ec: ExecutionContext
                                   ) extends EllipsisController {
 

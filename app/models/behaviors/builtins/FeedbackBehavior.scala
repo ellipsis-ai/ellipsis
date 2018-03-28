@@ -47,6 +47,17 @@ object FeedbackBehavior {
     } yield wasSent
   }
 
+  def supportRequest(services: DefaultServices)
+                    (implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Boolean] = {
+    for {
+      wasSent <- sendFeedbackToAdminTeam(
+        "I need help",
+        services,
+        EventType.web
+      )
+    } yield wasSent
+  }
+
   private def sendFeedbackToAdminTeam(msg: String, services: DefaultServices, originalEventType: EventType)
                                      (implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Boolean] = {
     for {

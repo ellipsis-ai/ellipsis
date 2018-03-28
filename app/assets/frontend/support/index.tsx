@@ -4,6 +4,7 @@ import {PageRequiredProps} from "../shared_ui/page";
 import User from "../models/user";
 import FormInput from '../form/input';
 import Textarea from '../form/textarea';
+import DynamicLabelButton from "../form/dynamic_label_button";
 
 export interface SupportRequestProps {
   csrfToken: string,
@@ -16,7 +17,8 @@ type Props = SupportRequestProps & PageRequiredProps
 interface State {
   userName: string,
   email: string,
-  message: string
+  message: string,
+  isSubmitting: boolean
 }
 
 class SupportRequest extends React.Component<Props, State> {
@@ -26,7 +28,8 @@ class SupportRequest extends React.Component<Props, State> {
     this.state = {
       userName: this.props.user && this.props.user.fullName || "",
       email: "",
-      message: ""
+      message: "",
+      isSubmitting: false
     }
   }
 
@@ -48,6 +51,33 @@ class SupportRequest extends React.Component<Props, State> {
     this.onChange("message", newValue);
   }
 
+  isValidEmail(): boolean {
+    const email = this.state.email.trim();
+    return /^\S+@\S+$/.test(email);
+  }
+
+  formFieldsInvalid(): boolean {
+    return !this.state.userName || !this.state.message || !this.isValidEmail();
+  }
+
+  onSubmit(): void {
+    this.setState({
+      isSubmitting: true
+    }, this.doSubmit);
+  }
+
+  doSubmit(): void {
+    setTimeout(() => {
+      this.setState({
+        isSubmitting: false
+      });
+    }, 500);
+  }
+
+  isSubmitting(): boolean {
+    return this.state.isSubmitting;
+  }
+
   render() {
     return (
       <div id="content">
@@ -59,17 +89,45 @@ class SupportRequest extends React.Component<Props, State> {
 
         <div className="bg-white">
           <div className="container container-narrow container-c pvxxxl mobile-pvl">
-            <div className="pbxl">
-              <h5>Your name:</h5>
-              <FormInput value={this.state.userName} onChange={this.onChangeName} className="form-input-borderless max-width-20" />
+            <div className="columns">
+              <div className="column column-one-third narrow-column-half mobile-column-full pbl">
+                <h5>Your name <span className="type-weak type-regular">(required):</span></h5>
+                <FormInput
+                  value={this.state.userName}
+                  onChange={this.onChangeName}
+                  className="form-input-borderless max-width-20"
+                  placeholder="First and last name"
+                />
+              </div>
+              <div className="column column-one-third narrow-column-half mobile-column-full pbl">
+                <h5>Your email <span className="type-weak type-regular">(required):</span></h5>
+                <FormInput
+                  value={this.state.email}
+                  onChange={this.onChangeEmail}
+                  className="form-input-borderless max-width-20"
+                  placeholder="person@yourcompany.com"
+                />
+              </div>
             </div>
-            <div className="pbxl">
-              <h5>Your email:</h5>
-              <FormInput value={this.state.email} onChange={this.onChangeEmail} className="form-input-borderless max-width-20" />
+            <div className="columns">
+              <div className="column column-two-thirds narrow-column-full pbl">
+                <h5>Your question or concern <span className="type-weak type-regular">(required):</span></h5>
+                <Textarea value={this.state.message} onChange={this.onChangeMessage} rows="10" className="form-input-height-auto" />
+              </div>
             </div>
-            <div className="">
-              <h5>Your question or concern:</h5>
-              <Textarea value={this.state.message} onChange={this.onChangeMessage} rows="10" className="form-input-height-auto" />
+            <div>
+              <DynamicLabelButton
+                onClick={this.onSubmit}
+                className="button-primary"
+                disabledWhen={this.formFieldsInvalid()}
+                labels={[{
+                  text: "Send request",
+                  displayWhen: !this.isSubmitting()
+                }, {
+                  text: "Sending…",
+                  displayWhen: this.isSubmitting()
+                }]}
+              />
             </div>
           </div>
         </div>
