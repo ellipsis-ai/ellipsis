@@ -685,28 +685,40 @@ class SlackController @Inject() (
     } yield {}
   }
 
+  private def maybeSlackUserIdForActionChoice(actionChoice: ActionChoice): Future[Option[String]] = {
+    actionChoice.userId.map { userId =>
+      dataService.users.find(userId).flatMap { maybeUser =>
+        maybeUser.map { user =>
+          dataService.linkedAccounts.maybeSlackUserIdFor(user)
+        }.getOrElse(Future.successful(None))
+      }
+    }.getOrElse(Future.successful(None))
+  }
+
+  private def cannotBeTriggeredMessageFor(
+                                           actionChoice: ActionChoice,
+                                           maybeGroupVersion: Option[BehaviorGroupVersion],
+                                           maybeChoiceSlackUserId: Option[String]
+                                         ): String = {
+    if (actionChoice.areOthersAllowed) {
+      val teamText = maybeGroupVersion.map { bgv => s" ${bgv.team.name}"}.getOrElse("")
+      s"Only members of the${teamText} team can make this choice"
+    } else {
+      maybeChoiceSlackUserId.map { choiceSlackUserId =>
+        s"Only <@${choiceSlackUserId}> can make this choice"
+      }.getOrElse("You are not allowed to make this choice")
+    }
+  }
+
   private def sendCannotBeTriggeredFor(
                                         actionChoice: ActionChoice,
                                         maybeGroupVersion: Option[BehaviorGroupVersion],
                                         info: ActionsTriggeredInfo
                                       ): Future[Unit] = {
     for {
-      maybeChoiceSlackUserId <- actionChoice.userId.map { userId =>
-        dataService.users.find(userId).flatMap { maybeUser =>
-          maybeUser.map { user =>
-            dataService.linkedAccounts.maybeSlackUserIdFor(user)
-          }.getOrElse(Future.successful(None))
-        }
-      }.getOrElse(Future.successful(None))
+      maybeChoiceSlackUserId <- maybeSlackUserIdForActionChoice(actionChoice)
       _ <- {
-        val msg: String = if (actionChoice.areOthersAllowed) {
-          val teamText = maybeGroupVersion.map { bgv => s" ${bgv.team.name}"}.getOrElse("")
-          s"Only members of the${teamText} team can make this choice"
-        } else {
-          maybeChoiceSlackUserId.map { choiceSlackUserId =>
-            s"Only <@${choiceSlackUserId}> can make this choice"
-          }.getOrElse("You are not allowed to make this choice")
-        }
+        val msg = cannotBeTriggeredMessageFor(actionChoice, maybeGroupVersion, maybeChoiceSlackUserId)
         sendEphemeralMessage(msg, info)
       }
     } yield {}
