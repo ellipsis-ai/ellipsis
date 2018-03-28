@@ -60,8 +60,8 @@ class SupportController @Inject() (
 
   def sendRequest: Action[JsValue] = silhouette.UserAwareAction(parse.json).async { implicit request =>
     request.body.validate[SendRequestInfo].fold(
-      errors => {
-        Future.successful(BadRequest(Json.obj("errors" -> JsError.toJson(errors))))
+      _ => {
+        Future.successful(BadRequest("Some information was missing or badly formatted: please provide your name, email address and the message to send."))
       },
       info => {
         val maybeUser = request.identity
@@ -75,7 +75,7 @@ class SupportController @Inject() (
           if (didSend) {
             Ok(Json.toJson(info))
           } else {
-            InternalServerError(Json.obj("errors" -> Seq("The support request did not send. Please try again.")))
+            InternalServerError("There was an error sending the request. Please try again.")
           }
         }
       }

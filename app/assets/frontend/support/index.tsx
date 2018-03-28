@@ -5,7 +5,7 @@ import User from "../models/user";
 import FormInput from '../form/input';
 import Textarea from '../form/textarea';
 import DynamicLabelButton from "../form/dynamic_label_button";
-import {DataRequest} from "../lib/data_request";
+import {DataRequest, ResponseError} from "../lib/data_request";
 
 export interface SupportRequestProps {
   csrfToken: string,
@@ -96,10 +96,11 @@ class SupportRequest extends React.Component<Props, State> {
     }
   }
 
-  submitError(err?: string) {
+  submitError(err?: ResponseError) {
+    const errorMessage = err && err.body || "An error occurred. Please try again or reload the page.";
     this.setState({
       isSubmitting: false,
-      error: err || "An error occurred. Please try again or reload the page."
+      error: errorMessage
     });
   }
 
