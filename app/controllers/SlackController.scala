@@ -444,14 +444,11 @@ class SlackController @Inject() (
       }
     }
 
-    def maybeIncorrectUserIdTryingInputChoice: Option[String] = {
-      val maybeSlackUserId = maybeUserIdForCallbackId(INPUT_CHOICE, callback_id)
-      maybeSlackUserId.flatMap { slackUserId =>
-        if (user.id != slackUserId) {
-          Some(slackUserId)
-        } else {
-          None
-        }
+    val maybeUserIdForInputChoice: Option[String] = maybeUserIdForCallbackId(INPUT_CHOICE, callback_id)
+
+    def isIncorrectUserTryingInputChoice: Boolean = {
+      maybeUserIdForInputChoice.exists { correctUserId =>
+        user.id != correctUserId
       }
     }
 
@@ -522,14 +519,11 @@ class SlackController @Inject() (
       }
     }
 
-    def maybeIncorrectUserIdTryingYesNo: Option[String] = {
-      val maybeSlackUserId = maybeUserIdForCallbackId(YES_NO_CHOICE, callback_id)
-      maybeSlackUserId.flatMap { slackUserId =>
-        if (user.id != slackUserId) {
-          Some(slackUserId)
-        } else {
-          None
-        }
+    val maybeUserIdForYesNoChoice: Option[String] = maybeUserIdForCallbackId(YES_NO_CHOICE, callback_id)
+
+    def isIncorrectUserTryingYesNo: Boolean = {
+      maybeUserIdForYesNoChoice.exists { correctId =>
+        user.id != correctId
       }
     }
 
@@ -803,14 +797,18 @@ class SlackController @Inject() (
                 shouldRemoveActions = true
               }
 
-              info.maybeIncorrectUserIdTryingInputChoice.foreach { correctUserId =>
-                val correctUser = s"<@${correctUserId}>"
-                sendEphemeralMessage(s"Only $correctUser can answer this", info)
+              if (info.isIncorrectUserTryingInputChoice) {
+                info.maybeUserIdForInputChoice.foreach { correctUserId =>
+                  val correctUser = s"<@${correctUserId}>"
+                  sendEphemeralMessage(s"Only $correctUser can answer this", info)
+                }
               }
 
-              info.maybeIncorrectUserIdTryingYesNo.foreach { correctUserId =>
-                val correctUser = s"<@${correctUserId}>"
-                sendEphemeralMessage(s"Only $correctUser can answer this", info)
+              if (info.isIncorrectUserTryingYesNo) {
+                info.maybeUserIdForYesNoChoice.foreach { correctUserId =>
+                  val correctUser = s"<@${correctUserId}>"
+                  sendEphemeralMessage(s"Only $correctUser can answer this", info)
+                }
               }
 
               info.maybeHelpIndexAt.foreach { index =>
