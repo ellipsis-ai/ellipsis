@@ -11,7 +11,7 @@ object InvocationLogEntryQueries {
 
   val all = TableQuery[InvocationLogEntriesTable]
   val allWithUser = all.join(UserQueries.all).on(_.userId === _.id)
-  val allWithVersion = allWithUser.join(BehaviorVersionQueries.allWithGroupVersion).on(_._1.behaviorVersionId === _._1._1._1.id)
+  val allWithVersion = allWithUser.join(BehaviorVersionQueries.allWithGroupVersion).on(_._1.behaviorVersionId === _._1._1.id)
 
   type TupleType = ((RawInvocationLogEntry, User), BehaviorVersionQueries.TupleType)
 
@@ -84,7 +84,7 @@ object InvocationLogEntryQueries {
                                      maybeOriginalEventType: Rep[Option[String]]
                                    ) = {
     allWithVersion.
-      filter { case(_, (((version, _), _), _)) => version.behaviorId === behaviorId }.
+      filter { case(_, ((version, _), _)) => version.behaviorId === behaviorId }.
       filter { case((entry, _), _) => entry.createdAt >= from && entry.createdAt <= to }.
       filter { case((entry, _), _) => maybeUserId.isEmpty || entry.userId === maybeUserId }.
       filter { case((entry, _), _) => maybeOriginalEventType.isEmpty || entry.maybeOriginalEventType === maybeOriginalEventType }

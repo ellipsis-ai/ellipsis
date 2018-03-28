@@ -1,13 +1,14 @@
 package models.behaviors.behaviorparameter
 
 import com.fasterxml.jackson.core.JsonParseException
+import models.behaviors._
 import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
 import models.behaviors.conversations.ParamCollectionState
 import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.datatypeconfig.DataTypeConfig
 import models.behaviors.datatypefield.FieldTypeForSchema
+import models.behaviors.events.SlackMessageActionConstants._
 import models.behaviors.events._
-import models.behaviors._
 import play.api.libs.json._
 import services.AWSLambdaConstants._
 import services.caching.DataTypeBotResultsCacheKey
@@ -209,6 +210,25 @@ object YesNoType extends BuiltInType {
   }
 
   val invalidPromptModifier: String = s"I need an answer like “yes” or “no”. $stopInstructions"
+
+  override def promptResultForAction(
+                                     maybePreviousCollectedValue: Option[String],
+                                     context: BehaviorParameterContext,
+                                     paramState: ParamCollectionState,
+                                     isReminding: Boolean
+                                   )(implicit ec: ExecutionContext): DBIO[BotResult] = {
+    super.promptResultForAction(maybePreviousCollectedValue, context, paramState, isReminding).map { superPromptResult =>
+      val actionList = Seq(SlackMessageActionButton(YES_NO_CHOICE, "Yes", YES), SlackMessageActionButton(YES_NO_CHOICE, "No", NO))
+      val actionsGroup = SlackMessageActionsGroup(YES_NO_CHOICE, actionList, None, None)
+      TextWithAttachmentsResult(
+        superPromptResult.event,
+        superPromptResult.maybeConversation,
+        superPromptResult.fullText,
+        superPromptResult.forcePrivateResponse,
+        Seq(actionsGroup)
+      )
+    }
+  }
 }
 
 object FileType extends BuiltInType {
