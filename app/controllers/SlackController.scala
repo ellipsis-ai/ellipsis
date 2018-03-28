@@ -718,25 +718,16 @@ class SlackController @Inject() (
     } yield {}
   }
 
-  private def processActionChoice(
-                                   actionChoice: ActionChoice,
-                                   maybeGroupVersion: Option[BehaviorGroupVersion],
-                                   info: ActionsTriggeredInfo
-                                 ): Future[Unit] = {
+  private def processTriggerableAndActiveActionChoice(
+                                                       actionChoice: ActionChoice,
+                                                       maybeGroupVersion: Option[BehaviorGroupVersion],
+                                                       info: ActionsTriggeredInfo
+                                                     ): Future[Unit] = {
     dataService.slackBotProfiles.sendResultWithNewEvent(
       s"run action named ${actionChoice.actionName}",
       event => for {
-        user <- event.ensureUser(dataService)
         maybeBehaviorVersion <- maybeGroupVersion.map { groupVersion =>
-          dataService.behaviorGroupVersions.isActive(groupVersion, Conversation.SLACK_CONTEXT, info.channel.id).flatMap { isActive =>
-            actionChoice.canBeTriggeredBy(user, dataService).flatMap { canBeTriggered =>
-              if (isActive && canBeTriggered) {
-                dataService.behaviorVersions.findByName(actionChoice.actionName, groupVersion)
-              } else {
-                Future.successful(None)
-              }
-            }
-          }
+          dataService.behaviorVersions.findByName(actionChoice.actionName, groupVersion)
         }.getOrElse(Future.successful(None))
         params <- maybeBehaviorVersion.map { behaviorVersion =>
           dataService.behaviorParameters.allFor(behaviorVersion)
@@ -992,7 +983,7 @@ class SlackController @Inject() (
                   shouldRemoveActions = true
                   if (isActive) {
                     maybeResultText = Some(s"$slackUser clicked ${actionChoice.label}")
-                    processActionChoice(actionChoice, maybeGroupVersion, info) // happens in the background
+                    processTriggerableAndActiveActionChoice(actionChoice, maybeGroupVersion, info) // happens in the background
                   } else {
                     maybeResultText = Some("This skill has been updated, making these associated actions no longer valid")
                   }
