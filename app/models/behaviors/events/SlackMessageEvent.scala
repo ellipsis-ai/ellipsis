@@ -16,6 +16,7 @@ import scala.util.matching.Regex
 
 case class SlackMessageEvent(
                               profile: SlackBotProfile,
+                              userSlackTeamId: String,
                               channel: String,
                               maybeThreadId: Option[String],
                               user: String,

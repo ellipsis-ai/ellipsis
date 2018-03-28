@@ -37,6 +37,7 @@ trait SlackBotProfileService {
     description: String,
     getEventualMaybeResult: SlackMessageEvent => Future[Option[BotResult]],
     slackTeamId: String,
+    botProfile: SlackBotProfile,
     channelId: String,
     userId: String,
     originalMessageTs: String

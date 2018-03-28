@@ -16,6 +16,7 @@ import scala.concurrent.{ExecutionContext, Future}
 
 trait SlackEvent {
   val user: String
+  val userSlackTeamId: String
   val channel: String
   val profile: SlackBotProfile
   val client: SlackApiClient
@@ -72,7 +73,11 @@ trait SlackEvent {
   }
 
   def ensureSlackProfileFor(loginInfo: LoginInfo, dataService: DataService)(implicit ec: ExecutionContext): Future[SlackProfile] = {
-    dataService.slackProfiles.save(SlackProfile(profile.slackTeamId, loginInfo))
+    dataService.slackProfiles.find(loginInfo).flatMap { maybeExisting =>
+      maybeExisting.map(Future.successful).getOrElse {
+        dataService.slackProfiles.save(SlackProfile(userSlackTeamId, loginInfo))
+      }
+    }
   }
 
 }

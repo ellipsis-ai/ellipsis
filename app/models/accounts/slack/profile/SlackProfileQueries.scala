@@ -6,8 +6,13 @@ object SlackProfileQueries {
 
   val all = TableQuery[SlackProfileTable]
 
-  private def uncompiledFindSlackProfile(providerId: Rep[String], providerKey: Rep[String]) = {
+  private def uncompiledFindSlackProfileForLoginInfo(providerId: Rep[String], providerKey: Rep[String]) = {
     all.filter(_.providerId === providerId).filter(_.providerKey === providerKey)
+  }
+  val findSlackProfileForLoginInfo = Compiled(uncompiledFindSlackProfileForLoginInfo _)
+
+  private def uncompiledFindSlackProfile(providerId: Rep[String], providerKey: Rep[String], teamId: Rep[String]) = {
+    uncompiledFindSlackProfileForLoginInfo(providerId, providerKey).filter(_.teamId === teamId)
   }
   val findSlackProfileQuery = Compiled(uncompiledFindSlackProfile _)
 

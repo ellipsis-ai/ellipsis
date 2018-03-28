@@ -32,26 +32,22 @@ class SlackProfileServiceImpl @Inject() (
   import SlackProfileQueries._
 
   def save(slackProfile: SlackProfile): Future[SlackProfile] = {
-    val query = findSlackProfileQuery(slackProfile.loginInfo.providerID, slackProfile.loginInfo.providerKey)
+    val query = findSlackProfileQuery(slackProfile.loginInfo.providerID, slackProfile.loginInfo.providerKey, slackProfile.teamId)
     val action = query.result.headOption.flatMap {
-      case Some(_) => query.update(slackProfile)
-      case None => {
-        all += slackProfile
-      }
-    }.map { number =>
+      case Some(_) => DBIO.successful({})
+      case None => all += slackProfile
+    }.map { _ =>
       slackProfile
     }
     dataService.run(action)
   }
-
-  def countFor(teamId: String): Future[Int] = dataService.run(countForTeam(teamId).result)
 
   def allFor(teamId: String): Future[Seq[SlackProfile]] = {
     dataService.run(allForQuery(teamId).result)
   }
 
   def findAction(loginInfo: LoginInfo): DBIO[Option[SlackProfile]] = {
-    findSlackProfileQuery(loginInfo.providerID, loginInfo.providerKey).result.headOption
+    findSlackProfileForLoginInfo(loginInfo.providerID, loginInfo.providerKey).result.headOption
   }
 
   def find(loginInfo: LoginInfo): Future[Option[SlackProfile]] = {

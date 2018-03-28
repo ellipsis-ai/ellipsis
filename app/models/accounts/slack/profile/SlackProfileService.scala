@@ -9,8 +9,6 @@ trait SlackProfileService {
 
   def save(slackProfile: SlackProfile): Future[SlackProfile]
 
-  def countFor(teamId: String): Future[Int]
-
   def allFor(teamId: String): Future[Seq[SlackProfile]]
 
   def findAction(loginInfo: LoginInfo): DBIO[Option[SlackProfile]]

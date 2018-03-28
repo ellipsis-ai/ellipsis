@@ -87,6 +87,7 @@ class CommandsController @Inject() (
         } yield {
           val slackEvent = SlackMessageEvent(
             botProfile,
+            slackProfile.teamId,
             maybeSlackChannelId.getOrElse(channel),
             None,
             slackProfile.loginInfo.providerKey,

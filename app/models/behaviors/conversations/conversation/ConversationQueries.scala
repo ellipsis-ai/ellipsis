@@ -31,6 +31,7 @@ object ConversationQueries {
       raw.maybeChannel,
       raw.maybeThreadId,
       raw.userIdForContext,
+      raw.maybeTeamIdForContext,
       raw.startedAt,
       raw.maybeLastInteractionAt,
       raw.state,

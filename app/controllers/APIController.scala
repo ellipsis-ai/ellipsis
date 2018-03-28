@@ -128,6 +128,7 @@ class APIController @Inject() (
         } yield {
           val slackEvent = SlackMessageEvent(
             botProfile,
+            slackProfile.teamId,
             maybeSlackChannelId.getOrElse(channel),
             None,
             slackProfile.loginInfo.providerKey,
@@ -319,6 +320,7 @@ class APIController @Inject() (
           behavior <- maybeBehavior
         } yield RunEvent(
           botProfile,
+          slackProfile.teamId,
           behavior,
           info.argumentsMap,
           maybeSlackChannelId.getOrElse(info.channel),

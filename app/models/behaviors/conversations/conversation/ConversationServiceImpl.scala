@@ -25,6 +25,7 @@ case class RawConversation(
                             maybeChannel: Option[String],
                             maybeThreadId: Option[String],
                             userIdForContext: String,
+                            maybeTeamIdForContext: Option[String],
                             startedAt: OffsetDateTime,
                             maybeLastInteractionAt: Option[OffsetDateTime],
                             state: String,
@@ -43,6 +44,7 @@ class ConversationsTable(tag: Tag) extends Table[RawConversation](tag, Conversat
   def maybeChannel = column[Option[String]]("channel")
   def maybeThreadId = column[Option[String]]("thread_id")
   def userIdForContext = column[String]("user_id_for_context")
+  def maybeTeamIdForContext = column[Option[String]]("team_id_for_context")
   def startedAt = column[OffsetDateTime](ConversationQueries.startedAtName)
   def maybeLastInteractionAt = column[Option[OffsetDateTime]](ConversationQueries.lastInteractionAtName)
   def state = column[String]("state")
@@ -50,7 +52,7 @@ class ConversationsTable(tag: Tag) extends Table[RawConversation](tag, Conversat
   def maybeOriginalEventType = column[Option[String]]("original_event_type")
 
   def * =
-    (id, behaviorVersionId, maybeTriggerId, maybeTriggerMessage, conversationType, context, maybeChannel, maybeThreadId, userIdForContext, startedAt, maybeLastInteractionAt, state, maybeScheduledMessageId, maybeOriginalEventType) <>
+    (id, behaviorVersionId, maybeTriggerId, maybeTriggerMessage, conversationType, context, maybeChannel, maybeThreadId, userIdForContext, maybeTeamIdForContext, startedAt, maybeLastInteractionAt, state, maybeScheduledMessageId, maybeOriginalEventType) <>
       ((RawConversation.apply _).tupled, RawConversation.unapply _)
 }
 

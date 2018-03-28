@@ -113,6 +113,7 @@ class SlackBotProfileServiceImpl @Inject() (
         // https://github.com/ellipsis-ai/ellipsis/issues/1719
         SlackMessageEvent(
           botProfile,
+          slackTeamId,
           channelId,
           None,
           maybeUserId.getOrElse(botProfile.userId),
@@ -168,21 +169,33 @@ class SlackBotProfileServiceImpl @Inject() (
   }
 
   def sendResultWithNewEvent(
-    description: String,
-    getEventualMaybeResult: SlackMessageEvent => Future[Option[BotResult]],
-    slackTeamId: String,
-    channelId: String,
-    userId: String,
-    originalMessageTs: String
+                              description: String,
+                              getEventualMaybeResult: SlackMessageEvent => Future[Option[BotResult]],
+                              userSlackTeamId: String,
+                              botProfile: SlackBotProfile,
+                              channelId: String,
+                              userId: String,
+                              originalMessageTs: String
   ): Future[Unit] = {
     val delayMilliseconds = 1000
+    val event = SlackMessageEvent(
+      botProfile,
+      userSlackTeamId,
+      channelId,
+      None,
+      userId,
+      SlackMessage.blank,
+      None,
+      SlackTimestamp.now,
+      slackEventService.clientFor(botProfile),
+      None
+    )
     (for {
-      maybeEvent <- eventualMaybeEvent(slackTeamId, channelId, Some(userId), None)
-      _ <- maybeEvent.map { event =>
+      _ <- {
         val eventualResult = getEventualMaybeResult(event)
         sendResult(eventualResult)
         SlackMessageReactionHandler.handle(event.client, eventualResult, channelId, originalMessageTs, delayMilliseconds)
-      }.getOrElse(Future.successful(None))
+      }
     } yield {}).recover {
       case t: Throwable => {
         Logger.error(s"Exception responding to a Slack action: $description", t)

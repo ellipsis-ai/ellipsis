@@ -25,6 +25,7 @@ trait Conversation {
   val maybeChannel: Option[String]
   val maybeThreadId: Option[String]
   val userIdForContext: String
+  val maybeTeamIdForContext: Option[String]
   val startedAt: OffsetDateTime
   val maybeLastInteractionAt: Option[OffsetDateTime]
   val state: String
@@ -55,6 +56,7 @@ trait Conversation {
       // https://github.com/ellipsis-ai/ellipsis/issues/1719
       } yield SlackMessageEvent(
         botProfile,
+        maybeTeamIdForContext.getOrElse(botProfile.slackTeamId),
         channel,
         None,
         userIdForContext,
@@ -138,6 +140,7 @@ trait Conversation {
       maybeChannel,
       maybeThreadId,
       userIdForContext,
+      maybeTeamIdForContext,
       startedAt,
       maybeLastInteractionAt,
       state,

@@ -64,6 +64,7 @@ class BotResultServiceImpl @Inject() (
           channel <- maybeSlackChannelId
         } yield RunEvent(
           botProfile,
+          slackProfile.teamId,
           behavior,
           nextAction.argumentsMap,
           channel,
