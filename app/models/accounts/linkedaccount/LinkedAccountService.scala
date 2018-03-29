@@ -34,8 +34,4 @@ trait LinkedAccountService {
 
   def deleteGithubFor(user: User): Future[Boolean]
 
-  def isAdminAction(linkedAccount: LinkedAccount): DBIO[Boolean]
-
-  def isAdmin(linkedAccount: LinkedAccount): Future[Boolean]
-
 }

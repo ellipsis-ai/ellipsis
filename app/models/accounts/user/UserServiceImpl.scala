@@ -10,6 +10,7 @@ import javax.inject.Inject
 import json.{SlackUserData, UserData}
 import models.IDs
 import models.accounts.linkedaccount.LinkedAccount
+import models.accounts.slack.profile.SlackProfile
 import models.behaviors.events.{Event, SlackMessageEvent}
 import models.team.Team
 import play.api.{Configuration, Logger}
@@ -109,8 +110,7 @@ class UserServiceImpl @Inject() (
   def teamAccessForAction(user: User, maybeTargetTeamId: Option[String]): DBIO[UserTeamAccess] = {
     for {
       loggedInTeam <- dataService.teams.findAction(user.teamId).map(_.get)
-      maybeSlackLinkedAccount <- dataService.linkedAccounts.maybeForSlackForAction(user)
-      isAdmin <- maybeSlackLinkedAccount.map(dataService.linkedAccounts.isAdminAction).getOrElse(DBIO.successful(false))
+      isAdmin <- DBIO.from(isAdmin(user))
       maybeTeam <- maybeTargetTeamId.map { targetTeamId =>
         if (targetTeamId != user.teamId && !isAdmin) {
           DBIO.successful(None)
@@ -137,7 +137,7 @@ class UserServiceImpl @Inject() (
     for {
       linkedAccounts <- dataService.linkedAccounts.allForLoginInfoAction(info)
       withIsAdmins <- DBIO.sequence(linkedAccounts.map { la =>
-        dataService.linkedAccounts.isAdminAction(la).map { isAdmin =>
+        DBIO.from(isAdmin(la.user)).map { isAdmin =>
           (la, isAdmin)
         }
       })
@@ -149,13 +149,8 @@ class UserServiceImpl @Inject() (
   }
 
   def isAdmin(user: User): Future[Boolean] = {
-    for {
-      linkedAccounts <- dataService.linkedAccounts.allFor(user)
-      isAdmins <- Future.sequence(linkedAccounts.map { acc =>
-        dataService.linkedAccounts.isAdmin(acc)
-      })
-    } yield {
-      isAdmins.contains(true)
+    maybeSlackTeamIdFor(user).map { maybeSlackTeamId =>
+      maybeSlackTeamId.contains(LinkedAccount.ELLIPSIS_SLACK_TEAM_ID)
     }
   }
 
@@ -196,6 +191,27 @@ class UserServiceImpl @Inject() (
         slackEventService.maybeSlackUserDataFor(slackAccount.loginInfo.providerKey, slackBotProfile.slackTeamId, SlackApiClient(slackBotProfile.token))
       }).getOrElse(Future.successful(None))
     } yield maybeUserData
+  }
+
+  def maybeSlackTeamIdFor(user: User): Future[Option[String]] = {
+    for {
+      maybeTeam <- dataService.teams.find(user.teamId)
+      maybeSlackUserData <- maybeTeam.map { team =>
+        maybeSlackUserDataFor(user, team)
+      }.getOrElse(Future.successful(None))
+    } yield maybeSlackUserData.map(_.accountTeamId)
+  }
+
+  def maybeSlackProfileFor(user: User): Future[Option[SlackProfile]] = {
+    for {
+      maybeLinkedAccount <- dataService.linkedAccounts.maybeForSlackFor(user)
+      maybeSlackTeamId <- maybeSlackTeamIdFor(user)
+    } yield {
+      for {
+        linkedAccount <- maybeLinkedAccount
+        slackTeamId <- maybeSlackTeamId
+      } yield SlackProfile(slackTeamId, linkedAccount.loginInfo)
+    }
   }
 
   def findForInvocationToken(tokenId: String): Future[Option[User]] = {

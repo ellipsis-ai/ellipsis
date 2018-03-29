@@ -1,9 +1,27 @@
 # --- !Ups
 
+BEGIN;
+
 ALTER TABLE linked_accounts
-DROP CONSTRAINT linked_accounts_provider_id_provider_key_key;
+DROP CONSTRAINT IF EXISTS linked_accounts_provider_id_provider_key_key;
+
+DROP TABLE IF EXISTS slack_profiles;
+
+ALTER TABLE conversations ADD COLUMN team_id_for_context TEXT;
+
+COMMIT;
 
 # --- !Downs
 
-ALTER TABLE linked_accounts
-ADD CONSTRAINT linked_accounts_provider_id_provider_key_key UNIQUE (provider_id, provider_key);
+BEGIN;
+
+CREATE TABLE slack_profiles (
+  provider_id TEXT NOT NULL,
+  provider_key TEXT NOT NULL,
+  team_id TEXT NOT NULL,
+  PRIMARY KEY(provider_id, provider_key)
+);
+
+ALTER TABLE conversations DROP COLUMN team_id_for_context;
+
+COMMIT;

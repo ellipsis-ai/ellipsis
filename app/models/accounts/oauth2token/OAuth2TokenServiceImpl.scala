@@ -5,7 +5,6 @@ import javax.inject.{Inject, Provider}
 
 import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.impl.providers.OAuth2Info
-import models.accounts.slack.profile.SlackProfileQueries
 import services.DataService
 import drivers.SlickPostgresDriver.api._
 
@@ -68,23 +67,6 @@ class OAuth2TokenServiceImpl @Inject() (
   def findByLoginInfo(loginInfo: LoginInfo): Future[Option[OAuth2Token]] = {
     val action = findByLoginInfoQuery(loginInfo.providerID, loginInfo.providerKey).result.headOption
     dataService.run(action)
-  }
-
-  def uncompiledAllFullForSlackTeamIdQuery(teamId: Rep[String]) = {
-    SlackProfileQueries.uncompiledAllForQuery(teamId).
-      join(tokens).on(_.providerKey === _.providerKey).
-      map { case(profile, token) => token }.
-      filter(_.maybeSlackScopes.isDefined).
-      filterNot(_.maybeSlackScopes === "identity.basic")
-  }
-  val allFullForSlackTeamIdQuery = Compiled(uncompiledAllFullForSlackTeamIdQuery _)
-
-  def allFullForSlackTeamId(teamId: String): Future[Seq[OAuth2Token]] = {
-    dataService.run(allFullForSlackTeamIdQuery(teamId).result)
-  }
-
-  def maybeFullForSlackTeamId(teamId: String): Future[Option[OAuth2Token]] = {
-    allFullForSlackTeamId(teamId).map(_.headOption)
   }
 
 }

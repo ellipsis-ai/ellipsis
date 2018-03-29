@@ -72,12 +72,4 @@ trait SlackEvent {
     }
   }
 
-  def ensureSlackProfileFor(loginInfo: LoginInfo, dataService: DataService)(implicit ec: ExecutionContext): Future[SlackProfile] = {
-    dataService.slackProfiles.find(loginInfo).flatMap { maybeExisting =>
-      maybeExisting.map(Future.successful).getOrElse {
-        dataService.slackProfiles.save(SlackProfile(userSlackTeamId, loginInfo))
-      }
-    }
-  }
-
 }

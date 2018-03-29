@@ -186,11 +186,8 @@ class APIController @Inject() (
         maybeBotProfile <- maybeTeam.map { team =>
           dataService.slackBotProfiles.allFor(team).map(_.headOption)
         }.getOrElse(Future.successful(None))
-        maybeSlackLinkedAccount <- maybeUser.map { user =>
-          dataService.linkedAccounts.maybeForSlackFor(user)
-        }.getOrElse(Future.successful(None))
-        maybeSlackProfile <- maybeSlackLinkedAccount.map { slackLinkedAccount =>
-          dataService.slackProfiles.find(slackLinkedAccount.loginInfo)
+        maybeSlackProfile <- maybeUser.map { user =>
+          dataService.users.maybeSlackProfileFor(user)
         }.getOrElse(Future.successful(None))
       } yield {
         ApiMethodContext(

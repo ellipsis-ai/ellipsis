@@ -12,7 +12,6 @@ import models.accounts.oauth2application.OAuth2ApplicationService
 import models.accounts.oauth2token.OAuth2TokenService
 import models.accounts.simpletokenapi.SimpleTokenApiService
 import models.accounts.slack.botprofile.SlackBotProfileService
-import models.accounts.slack.profile.SlackProfileService
 import models.accounts.user.UserService
 import models.apitoken.APITokenService
 import models.behaviors.BehaviorResponseService
@@ -75,7 +74,6 @@ class MockDataService extends DataService with MockitoSugar {
   val oauth2Applications = mock[OAuth2ApplicationService]
   val simpleTokenApis = mock[SimpleTokenApiService]
   val githubProfiles = mock[GithubProfileService]
-  val slackProfiles = mock[SlackProfileService]
   val slackBotProfiles = mock[SlackBotProfileService]
   val oauth2Tokens = mock[OAuth2TokenService]
   val behaviorGroups = mock[BehaviorGroupService]

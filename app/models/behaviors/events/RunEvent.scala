@@ -112,10 +112,4 @@ case class RunEvent(
     } yield responses
   }
 
-  override def ensureUser(dataService: DataService)(implicit ec: ExecutionContext): Future[User] = {
-    super.ensureUser(dataService).flatMap { user =>
-      ensureSlackProfileFor(loginInfo, dataService).map(_ => user)
-    }
-  }
-
 }

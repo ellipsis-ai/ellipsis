@@ -53,23 +53,22 @@ class BotResultServiceImpl @Inject() (
       }.getOrElse(DBIO.successful(None))
       user <- botResult.event.ensureUserAction(dataService)
       maybeSlackLinkedAccount <- dataService.linkedAccounts.maybeForSlackForAction(user)
-      maybeSlackProfile <- maybeSlackLinkedAccount.map { slackLinkedAccount =>
-        dataService.slackProfiles.findAction(slackLinkedAccount.loginInfo)
-      }.getOrElse(DBIO.successful(None))
+      maybeSlackTeamIdForUser <- DBIO.from(dataService.users.maybeSlackTeamIdFor(user))
       maybeEvent <- DBIO.successful(
         for {
           botProfile <- maybeBotProfile
-          slackProfile <- maybeSlackProfile
+          slackTeamIdForUser <- maybeSlackTeamIdForUser
+          linkedAccount <- maybeSlackLinkedAccount
           behavior <- maybeBehavior
           channel <- maybeSlackChannelId
         } yield RunEvent(
           botProfile,
-          slackProfile.teamId,
+          slackTeamIdForUser,
           behavior,
           nextAction.argumentsMap,
           channel,
           None,
-          slackProfile.loginInfo.providerKey,
+          linkedAccount.loginInfo.providerKey,
           SlackTimestamp.now,
           slackService.clientFor(botProfile),
           Some(botResult.event.eventType)

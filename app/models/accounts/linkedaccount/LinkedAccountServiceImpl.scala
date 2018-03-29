@@ -103,14 +103,4 @@ class LinkedAccountServiceImpl @Inject() (
     dataService.run(action)
   }
 
-  def isAdminAction(linkedAccount: LinkedAccount): DBIO[Boolean] = {
-    dataService.slackProfiles.findAction(linkedAccount.loginInfo).map { maybeProfile =>
-      maybeProfile.map(_.teamId).contains(LinkedAccount.ELLIPSIS_SLACK_TEAM_ID)
-    }
-  }
-
-  def isAdmin(linkedAccount: LinkedAccount): Future[Boolean] = {
-    dataService.run(isAdminAction(linkedAccount))
-  }
-
 }

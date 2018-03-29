@@ -164,12 +164,7 @@ trait Scheduled {
 
   def maybeSlackProfile(dataService: DataService)(implicit ec: ExecutionContext): Future[Option[SlackProfile]] = {
     maybeUser.map { user =>
-      for {
-        maybeSlackLinkedAccount <- dataService.linkedAccounts.maybeForSlackFor(user)
-        maybeSlackProfile <- maybeSlackLinkedAccount.map { linkedAccount =>
-          dataService.slackProfiles.find(linkedAccount.loginInfo)
-        }.getOrElse(Future.successful(None))
-      } yield maybeSlackProfile
+      dataService.users.maybeSlackProfileFor(user)
     }.getOrElse(Future.successful(None))
   }
 
