@@ -31,59 +31,33 @@ class UserServiceSpec extends DBSpec with MockitoSugar {
       disable[ActorModule].
       build()
 
-//  "UserService.ensureUserFor" should {
-//
-//    "return an admin user if it exists, not creating a new user for another team" in {
-//      withEmptyDB(dataService, { () =>
-//        val slackTeamId = LinkedAccount.ELLIPSIS_SLACK_TEAM_ID
-//        val team = newSavedTeam
-//        val user = newSavedUserOn(team)
-//        val linkedAccount = newSavedLinkedAccountFor(user, slackTeamId)
-//        val loginInfo = linkedAccount.loginInfo
-//
-//        val otherTeam = newSavedTeam
-//
-//        val botProfile = runNow(dataService.slackBotProfiles.ensure(IDs.next, slackTeamId, IDs.next, IDs.next))
-//        val client = SlackApiClient(botProfile.token)
-//        when(slackEventService.clientFor(botProfile)).thenReturn(client)
-//        val slackUserData = SlackUserData(linkedAccount.loginInfo.providerKey, slackTeamId, "", false, false, false, false, None, false, None)
-//        when(slackEventService.maybeSlackUserDataFor(linkedAccount.loginInfo.providerKey, slackTeamId, client)).thenReturn(Future.successful(Some(slackUserData)))
-//
-//        //runNow(dataService.slackProfiles.save(SlackProfile(LinkedAccount.ELLIPSIS_SLACK_TEAM_ID, loginInfo)))
-//        runNow(dataService.users.ensureUserFor(loginInfo, otherTeam.id)) mustBe linkedAccount.user
-//      })
-//    }
-//
-//  }
 
-//  "UserService.isAdmin" should {
-//
-//    "be false when there's no user data " in {
-//      withEmptyDB(dataService, { () =>
-//        val linkedAccount = newSavedLinkedAccount
-//        runNow(dataService.linkedAccounts.isAdmin(linkedAccount)) mustBe false
-//      })
-//    }
-//
-//    "be false when the SlackProfile is for the wrong Slack team" in {
-//      withEmptyDB(dataService, { () =>
-//        val linkedAccount = newSavedLinkedAccount
-//        val randomSlackTeamId = IDs.next
-//        runNow(dataService.slackProfiles.save(SlackProfile(randomSlackTeamId, linkedAccount.loginInfo)))
-//
-//        runNow(dataService.linkedAccounts.isAdmin(linkedAccount)) mustBe false
-//      })
-//    }
-//
-//    "be true when there's a matching SlackProfile for the admin Slack team" in {
-//      withEmptyDB(dataService, { () =>
-//        val linkedAccount = newSavedLinkedAccount
-//        runNow(dataService.slackProfiles.save(SlackProfile(LinkedAccount.ELLIPSIS_SLACK_TEAM_ID, linkedAccount.loginInfo)))
-//
-//        runNow(dataService.linkedAccounts.isAdmin(linkedAccount)) mustBe true
-//      })
-//    }
-//
-//  }
+  "UserService.isAdmin" should {
+
+    "be false when the slack account isn't from the admin team" in {
+      withEmptyDB(dataService, { () =>
+        val linkedAccount = newSavedLinkedAccount
+        runNow(dataService.users.isAdmin(linkedAccount.user)) mustBe false
+      })
+    }
+
+    "be true when there's a linked slack account on the admin team" in {
+      withEmptyDB(dataService, { () =>
+        val team = newSavedTeam
+        val user = newSavedUserOn(team)
+        val adminSlackTeamId = LinkedAccount.ELLIPSIS_SLACK_TEAM_ID
+        val linkedAccount = newSavedLinkedAccountFor(user)
+
+        val botProfile = runNow(dataService.slackBotProfiles.ensure(IDs.next, adminSlackTeamId, IDs.next, IDs.next))
+        val client = SlackApiClient(botProfile.token)
+        when(slackEventService.clientFor(botProfile)).thenReturn(client)
+        val slackUserData = SlackUserData(linkedAccount.loginInfo.providerKey, adminSlackTeamId, "", false, false, false, false, None, false, None)
+        when(slackEventService.maybeSlackUserDataFor(linkedAccount.loginInfo.providerKey, adminSlackTeamId, client)).thenReturn(Future.successful(Some(slackUserData)))
+
+        runNow(dataService.users.isAdmin(linkedAccount.user)) mustBe true
+      })
+    }
+
+  }
 
 }

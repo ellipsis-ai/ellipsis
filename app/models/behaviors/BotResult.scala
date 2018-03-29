@@ -59,8 +59,19 @@ case class ActionChoice(
 
   private def isAllowedBecauseSameTeam(user: User, dataService: DataService)(implicit ec: ExecutionContext): Future[Boolean] = {
     userId.map { uid =>
-      dataService.users.find(uid).map { maybeUser =>
-        areOthersAllowed && maybeUser.exists(u => u.teamId == user.teamId)
+      for {
+        maybeActionChoiceUser <- dataService.users.find(uid)
+        maybeActionChoiceSlackTeamId <- maybeActionChoiceUser.map { u =>
+          dataService.users.maybeSlackTeamIdFor(u)
+        }.getOrElse(Future.successful(None))
+        maybeAttemptingUserSlackTeamId <- dataService.users.maybeSlackTeamIdFor(user)
+      } yield {
+        (for {
+          actionChoiceSlackTeamId <- maybeActionChoiceSlackTeamId
+          attemptingUserSlackTeamId <- maybeAttemptingUserSlackTeamId
+        } yield {
+          areOthersAllowed && actionChoiceSlackTeamId == attemptingUserSlackTeamId
+        }).getOrElse(false)
       }
     }.getOrElse(Future.successful(false))
   }

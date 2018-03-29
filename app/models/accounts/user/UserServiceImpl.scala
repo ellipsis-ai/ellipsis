@@ -94,11 +94,7 @@ class UserServiceImpl @Inject() (
   def ensureUserForAction(loginInfo: LoginInfo, teamId: String): DBIO[User] = {
     maybeExistingUserForAction(loginInfo, teamId).flatMap { maybeExisting =>
       maybeExisting.map(DBIO.successful).getOrElse {
-        maybeAdminUserForAction(loginInfo).flatMap { maybeAdmin =>
-          maybeAdmin.map(DBIO.successful).getOrElse {
-            createNewUserAction(loginInfo, teamId)
-          }
-        }
+        createNewUserAction(loginInfo, teamId)
       }
     }
   }
@@ -133,25 +129,20 @@ class UserServiceImpl @Inject() (
     dataService.run(teamAccessForAction(user, maybeTargetTeamId))
   }
 
-  private def maybeAdminUserForAction(info: LoginInfo): DBIO[Option[User]] = {
-    for {
-      linkedAccounts <- dataService.linkedAccounts.allForLoginInfoAction(info)
-      withIsAdmins <- DBIO.sequence(linkedAccounts.map { la =>
-        DBIO.from(isAdmin(la.user)).map { isAdmin =>
-          (la, isAdmin)
-        }
-      })
-    } yield {
-      withIsAdmins.
-        find { case(_, isAdmin) => isAdmin }.
-        map { case(la, _) => la.user}
-    }
-  }
-
   def isAdmin(user: User): Future[Boolean] = {
-    maybeSlackTeamIdFor(user).map { maybeSlackTeamId =>
-      maybeSlackTeamId.contains(LinkedAccount.ELLIPSIS_SLACK_TEAM_ID)
-    }
+    for {
+      maybeAdminBotProfile <- dataService.slackBotProfiles.allForSlackTeamId(LinkedAccount.ELLIPSIS_SLACK_TEAM_ID).map(_.headOption)
+      maybeClient <- Future.successful(maybeAdminBotProfile.map(slackEventService.clientFor))
+      maybeLinkedAccount <- dataService.linkedAccounts.maybeForSlackFor(user)
+      isAdmin <- (for {
+        client <- maybeClient
+        linkedAccount <- maybeLinkedAccount
+      } yield {
+        slackEventService.maybeSlackUserDataFor(linkedAccount.loginInfo.providerKey, LinkedAccount.ELLIPSIS_SLACK_TEAM_ID, client).map { maybeSlackUserData =>
+          maybeSlackUserData.exists(_.accountTeamId == LinkedAccount.ELLIPSIS_SLACK_TEAM_ID)
+        }
+      }).getOrElse(Future.successful(false))
+    } yield isAdmin
   }
 
   def userDataFor(user: User, team: Team): Future[UserData] = {

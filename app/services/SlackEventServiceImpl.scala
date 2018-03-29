@@ -78,7 +78,7 @@ class SlackEventServiceImpl @Inject()(
           }
           SlackUserData(
             key.slackUserId,
-            key.slackTeamId,
+            info.team_id.getOrElse(slackTeamId),
             info.name,
             isPrimaryOwner = info.is_primary_owner.getOrElse(false),
             isOwner = info.is_owner.getOrElse(false),
