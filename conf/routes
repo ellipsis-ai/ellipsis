@@ -116,6 +116,9 @@ GET         /health_check                             @controllers.HealthControl
 GET         /legal/privacy_policy                     @controllers.LegalController.privacyPolicy
 GET         /legal/user_agreement                     @controllers.LegalController.userAgreement
 
+GET         /support                                  @controllers.SupportController.request
+POST        /support/send_request                     @controllers.SupportController.sendRequest
+
 #POST        /authenticate/credentials        controllers.CredentialsAuthController.authenticate
 #POST        /signUp                          controllers.SignUpController.signUp
 

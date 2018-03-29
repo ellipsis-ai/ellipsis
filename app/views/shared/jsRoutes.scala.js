@@ -43,6 +43,7 @@
   routes.javascript.ScheduledActionsController.delete,
   routes.javascript.ScheduledActionsController.save,
   routes.javascript.SocialAuthController.authenticateGithub,
+  routes.javascript.SupportController.sendRequest,
 
   // Settings
   routes.javascript.GithubConfigController.index,

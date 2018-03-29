@@ -1,0 +1,14 @@
+@(
+  config: ViewConfig
+)(implicit r: RequestHeader, m: Messages)
+
+@page.main("Support request", config, navClass = "container-narrow container-c", hideNav = true) {
+  <div id="content" class="content flex-row-cascade">
+    <div id="supportRequest" class="flex-row-cascade"></div>
+
+    <script src='@config.assets.getWebpackBundle("vendor.js")'></script>
+    <script src='@{routes.SupportController.request()}'></script>
+    <script src='@{config.assets.getWebpackBundle("supportRequest.js")}'></script>
+  </div>
+
+}

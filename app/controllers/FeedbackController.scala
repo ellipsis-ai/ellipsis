@@ -47,7 +47,7 @@ class FeedbackController @Inject()(
         for {
           teamAccess <- dataService.users.teamAccessFor(user, None)
           maybeWasSent <- teamAccess.maybeTargetTeam.map { team =>
-            FeedbackBehavior.feedbackFor(user, team, services, "feedback", info.message, EventType.web).map(Some(_))
+            FeedbackBehavior.feedbackFor(user, team, services, "Feedback", info.message, EventType.web).map(Some(_))
           }.getOrElse(Future.successful(None))
         } yield {
           maybeWasSent.map { wasSent =>

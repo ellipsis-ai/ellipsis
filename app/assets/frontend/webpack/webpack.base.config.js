@@ -40,7 +40,8 @@ const webpackConfig = {
     integrationList: './app/assets/frontend/settings/integrations/loader',
     regionalSettings: './app/assets/frontend/settings/regional_settings/loader',
     scheduling: './app/assets/frontend/scheduling/loader',
-    styleguideColors: './app/assets/frontend/styleguide/colors/loader'
+    styleguideColors: './app/assets/frontend/styleguide/colors/loader',
+    supportRequest: './app/assets/frontend/support/loader'
   },
   output: {
     path: "",
