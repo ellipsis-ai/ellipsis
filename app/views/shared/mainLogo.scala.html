@@ -10,20 +10,15 @@
     shared.svg.logoBlack(hideSymbol, hideText)
   }
 }
-@if(config.isDevelopment) {
-    <span
-      class="display-inline-block type-label type-white bg-blue border-radius phxs pvs height height-logo align-t">
-      Dev</span>
-} else {
-  @if(config.isAdmin) {<span
-      class="display-inline-block type-l mobile-ptxs pbxs">
-    👻</span>} else {
-    <span
-    class="display-inline-block height-logo align-t">
-      @l(hideText = true)
-    </span>}}<span
-      class="display-inline-block align-t mobile-display-none type-brand type-regular mlxs">@{config.maybeTeamName.getOrElse("Ellipsis")}
-    </span>@if(includeArrow) {<span
-      class="display-inline-block type-pink align-t mhs">
-      ▾
-    </span>}
+@logoColor = @{
+  if(config.isDevelopment) "color-blue-medium" else ""
+}
+@if(config.isAdmin) {<span class="display-inline-block type-l mobile-ptxs pbxs">
+  👻
+</span>} else {<span class="display-inline-block height-logo align-t @logoColor">
+  @l(hideText = true)
+</span>}<span class="display-inline-block align-t mobile-display-none type-brand type-regular mls">
+  @{config.maybeTeamName.getOrElse("Ellipsis")}
+</span>@if(includeArrow) {<span class="display-inline-block type-pink align-t mhs">
+  ▾
+</span>}
