@@ -11,6 +11,7 @@ object SlackMessageActionConstants {
   val STOP_CONVERSATION = "stop_conversation"
   val RUN_BEHAVIOR_VERSION = "run_behavior_version"
   val INPUT_CHOICE = "input_choice"
+  val DATA_TYPE_CHOICE = "data_type_choice"
   val ACTION_CHOICES = "action_choices"
   val ACTION_CHOICE = "action_choice"
   val YES_NO_CHOICE = "yes_no_choice"
@@ -32,8 +33,8 @@ object SlackMessageActionConstants {
     callbackIdRegexFor(kind).findFirstMatchIn(callbackId).flatMap(_.subgroups.tail.headOption)
   }
 
-  def inputChoiceCallbackIdFor(slackUserId: String, maybeConversationId: Option[String]): String = {
-    callbackIdFor(INPUT_CHOICE, slackUserId, maybeConversationId)
+  def dataTypeChoiceCallbackIdFor(slackUserId: String, maybeConversationId: Option[String]): String = {
+    callbackIdFor(DATA_TYPE_CHOICE, slackUserId, maybeConversationId)
   }
 
   def yesNoCallbackIdFor(slackUserId: String, maybeConversationId: Option[String]): String = {

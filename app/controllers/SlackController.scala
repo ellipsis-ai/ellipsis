@@ -428,8 +428,8 @@ class SlackController @Inject() (
       }
     }
 
-    def maybeInputChoice: Option[String] = {
-      val maybeSlackUserId = maybeUserIdForCallbackId(INPUT_CHOICE, callback_id)
+    def maybeDataTypeChoice: Option[String] = {
+      val maybeSlackUserId = maybeUserIdForCallbackId(DATA_TYPE_CHOICE, callback_id)
       maybeSlackUserId.flatMap { slackUserId =>
         if (user.id == slackUserId) {
           val maybeAction = actions.headOption
@@ -449,16 +449,16 @@ class SlackController @Inject() (
       }
     }
 
-    val maybeUserIdForInputChoice: Option[String] = maybeUserIdForCallbackId(INPUT_CHOICE, callback_id)
+    val maybeUserIdForDataTypeChoice: Option[String] = maybeUserIdForCallbackId(DATA_TYPE_CHOICE, callback_id)
 
-    def isIncorrectUserTryingInputChoice: Boolean = {
-      maybeUserIdForInputChoice.exists { correctUserId =>
+    def isIncorrectUserTryingDataTypeChoice: Boolean = {
+      maybeUserIdForDataTypeChoice.exists { correctUserId =>
         user.id != correctUserId
       }
     }
 
-    def isForInputChoiceForDoneConversation: Future[Boolean] = {
-      maybeConversationIdForCallbackId(INPUT_CHOICE, callback_id).map { convoId =>
+    def isForDataTypeChoiceForDoneConversation: Future[Boolean] = {
+      maybeConversationIdForCallbackId(DATA_TYPE_CHOICE, callback_id).map { convoId =>
         dataService.conversations.find(convoId).map { maybeConvo =>
           maybeConvo.exists(_.isDone)
         }
@@ -869,14 +869,10 @@ class SlackController @Inject() (
     }
   }
 
-  case class InputChoicePermission(
-                                    choice: String,
-                                    info: ActionsTriggeredInfo,
-                                    isConversationDone: Boolean,
-                                    implicit val request: Request[AnyContent]
-                                  ) extends ActionPermission {
-    val isIncorrectUser: Boolean = info.isIncorrectUserTryingInputChoice
-
+  trait InputChoicePermission extends ActionPermission {
+    val choice: String
+    val isConversationDone: Boolean
+    val isIncorrectUser: Boolean
     val maybeResultText = Some(s"$slackUser chose $choice")
     val shouldRemoveActions = true
 
@@ -884,7 +880,7 @@ class SlackController @Inject() (
       if (isConversationDone) {
         updateActionsMessageFor(info, Some(s"This conversation is no longer active"), shouldRemoveActions = true)
       } else if (isIncorrectUser) {
-        info.maybeUserIdForInputChoice.foreach { correctUserId =>
+        info.maybeUserIdForDataTypeChoice.foreach { correctUserId =>
           val correctUser = s"<@${correctUserId}>"
           sendEphemeralMessage(s"Only $correctUser can answer this", info)
         }
@@ -894,18 +890,27 @@ class SlackController @Inject() (
     }
   }
 
-  object InputChoicePermission extends ActionPermissionType[InputChoicePermission] {
+  case class DataTypeChoicePermission(
+                                    choice: String,
+                                    info: ActionsTriggeredInfo,
+                                    isConversationDone: Boolean,
+                                    implicit val request: Request[AnyContent]
+                                  ) extends InputChoicePermission {
+    val isIncorrectUser: Boolean = info.isIncorrectUserTryingDataTypeChoice
+  }
 
-    def maybeFor(info: ActionsTriggeredInfo, botProfile: SlackBotProfile)(implicit request: Request[AnyContent]): Option[Future[InputChoicePermission]] = {
-      info.maybeInputChoice.map { choice =>
+  object DataTypeChoicePermission extends ActionPermissionType[DataTypeChoicePermission] {
+
+    def maybeFor(info: ActionsTriggeredInfo, botProfile: SlackBotProfile)(implicit request: Request[AnyContent]): Option[Future[DataTypeChoicePermission]] = {
+      info.maybeDataTypeChoice.map { choice =>
         buildFor(choice, info)
       }
     }
 
-    def buildFor(choice: String, info: ActionsTriggeredInfo)(implicit request: Request[AnyContent]): Future[InputChoicePermission] = {
+    def buildFor(choice: String, info: ActionsTriggeredInfo)(implicit request: Request[AnyContent]): Future[DataTypeChoicePermission] = {
       for {
-        isConversationDone <- info.isForInputChoiceForDoneConversation
-      } yield InputChoicePermission(
+        isConversationDone <- info.isForDataTypeChoiceForDoneConversation
+      } yield DataTypeChoicePermission(
         choice,
         info,
         isConversationDone,
@@ -916,28 +921,12 @@ class SlackController @Inject() (
   }
 
   case class YesNoChoicePermission(
-                                  value: String,
-                                  info: ActionsTriggeredInfo,
-                                  isConversationDone: Boolean,
-                                  implicit val request: Request[AnyContent]
-                                  ) extends ActionPermission {
+                                    choice: String,
+                                    info: ActionsTriggeredInfo,
+                                    isConversationDone: Boolean,
+                                    implicit val request: Request[AnyContent]
+                                  ) extends InputChoicePermission {
     val isIncorrectUser: Boolean = info.isIncorrectUserTryingYesNo
-
-    val maybeResultText = Some(s"$slackUser chose $value")
-    val shouldRemoveActions = true
-
-    def runInBackground = {
-      if (isConversationDone) {
-        updateActionsMessageFor(info, Some(s"This conversation is no longer active"), shouldRemoveActions = true)
-      } else if (isIncorrectUser) {
-        info.maybeUserIdForInputChoice.foreach { correctUserId =>
-          val correctUser = s"<@${correctUserId}>"
-          sendEphemeralMessage(s"Only $correctUser can answer this", info)
-        }
-      } else {
-        inputChoiceResultFor(value, info)
-      }
-    }
   }
 
   object YesNoChoicePermission extends ActionPermissionType[YesNoChoicePermission] {
@@ -983,7 +972,7 @@ class SlackController @Inject() (
 
               maybeBotProfile.map { botProfile =>
 
-                InputChoicePermission.maybeResultFor(info, botProfile).getOrElse {
+                DataTypeChoicePermission.maybeResultFor(info, botProfile).getOrElse {
                   YesNoChoicePermission.maybeResultFor(info, botProfile).getOrElse {
                     ActionChoicePermission.maybeResultFor(info, botProfile).getOrElse {
 
