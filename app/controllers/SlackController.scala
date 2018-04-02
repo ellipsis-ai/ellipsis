@@ -950,16 +950,12 @@ class SlackController @Inject() (
 
   }
 
-  case class HelpIndexPermission(
-                                  index: Int,
-                                  info: ActionsTriggeredInfo,
-                                  isIncorrectTeam: Boolean,
-                                  botProfile: SlackBotProfile,
-                                  implicit val request: Request[AnyContent]
-                                ) extends ActionPermission {
-
-    val maybeResultText = Some(s"$slackUser clicked More help.")
+  trait HelpPermission extends ActionPermission {
     val shouldRemoveActions: Boolean = false
+    val isIncorrectTeam: Boolean
+    val botProfile: SlackBotProfile
+
+    def runForCorrectTeam: Unit
 
     def runInBackground: Unit = {
       if (isIncorrectTeam) {
@@ -969,38 +965,29 @@ class SlackController @Inject() (
           sendEphemeralMessage(msg, info)
         }
       } else {
-        dataService.slackBotProfiles.sendResultWithNewEvent(
-          "help index",
-          (event) => DisplayHelpBehavior(
-            None,
-            None,
-            Some(index),
-            includeNameAndDescription = false,
-            includeNonMatchingResults = false,
-            isFirstTrigger = false,
-            event,
-            services
-          ).result.map(Some(_)),
-          info.slackTeamIdToUse,
-          botProfile,
-          info.channel.id,
-          info.user.id,
-          info.message_ts
-        )
+        runForCorrectTeam
       }
     }
 
   }
 
-  object HelpIndexPermission extends ActionPermissionType[HelpIndexPermission] {
+  trait HelpPermissionType[T <: HelpPermission, V] extends ActionPermissionType[T] {
 
-    def maybeFor(info: ActionsTriggeredInfo, botProfile: SlackBotProfile)(implicit request: Request[AnyContent]): Option[Future[HelpIndexPermission]] = {
-      info.maybeHelpIndexAt.map { index =>
-        buildFor(index, info, botProfile)
+    def maybeValueFor(info: ActionsTriggeredInfo): Option[V]
+    def buildFor(
+                  value: V,
+                  info: ActionsTriggeredInfo,
+                  isIncorrectTeam: Boolean,
+                  botProfile: SlackBotProfile
+                )(implicit request:  Request[AnyContent]): T
+
+    def maybeFor(info: ActionsTriggeredInfo, botProfile: SlackBotProfile)(implicit request: Request[AnyContent]): Option[Future[T]] = {
+      maybeValueFor(info).map { v =>
+        buildFor(v, info, botProfile)
       }
     }
 
-    def buildFor(index: Int, info: ActionsTriggeredInfo, botProfile: SlackBotProfile)(implicit request: Request[AnyContent]): Future[HelpIndexPermission] = {
+    def buildFor(value: V, info: ActionsTriggeredInfo, botProfile: SlackBotProfile)(implicit request: Request[AnyContent]): Future[T] = {
       for {
         maybeUser <- dataService.users.ensureUserFor(LoginInfo(Conversation.SLACK_CONTEXT, info.user.id), botProfile.teamId).map(Some(_))
         isAdmin <- maybeUser.map { user =>
@@ -1012,8 +999,105 @@ class SlackController @Inject() (
       } yield {
         val isSameTeam = maybeAttemptingSlackTeamId.contains(botProfile.slackTeamId)
         val isIncorrectTeam = !isSameTeam && !isAdmin
-        HelpIndexPermission(index, info, isIncorrectTeam, botProfile, request)
+        buildFor(value, info, isIncorrectTeam, botProfile)
       }
+    }
+  }
+
+  case class HelpIndexPermission(
+                                  index: Int,
+                                  info: ActionsTriggeredInfo,
+                                  isIncorrectTeam: Boolean,
+                                  botProfile: SlackBotProfile,
+                                  implicit val request: Request[AnyContent]
+                                ) extends HelpPermission {
+
+    val maybeResultText = Some(s"$slackUser clicked More help.")
+
+    def runForCorrectTeam: Unit = {
+      dataService.slackBotProfiles.sendResultWithNewEvent(
+        "help index",
+        (event) => DisplayHelpBehavior(
+          None,
+          None,
+          Some(index),
+          includeNameAndDescription = false,
+          includeNonMatchingResults = false,
+          isFirstTrigger = false,
+          event,
+          services
+        ).result.map(Some(_)),
+        info.slackTeamIdToUse,
+        botProfile,
+        info.channel.id,
+        info.user.id,
+        info.message_ts
+      )
+    }
+
+  }
+
+  object HelpIndexPermission extends HelpPermissionType[HelpIndexPermission, Int] {
+
+    def maybeValueFor(info: ActionsTriggeredInfo): Option[Int] = info.maybeHelpIndexAt
+    def buildFor(
+                  value: Int,
+                  info: ActionsTriggeredInfo,
+                  isIncorrectTeam: Boolean,
+                  botProfile: SlackBotProfile
+                )(implicit request:  Request[AnyContent]): HelpIndexPermission = {
+      HelpIndexPermission(value, info, isIncorrectTeam, botProfile, request)
+    }
+
+  }
+
+  case class HelpForSkillPermission(
+                                     searchValue: HelpGroupSearchValue,
+                                     info: ActionsTriggeredInfo,
+                                     isIncorrectTeam: Boolean,
+                                     botProfile: SlackBotProfile,
+                                     implicit val request: Request[AnyContent]
+                                   ) extends HelpPermission {
+
+    val maybeResultText = Some(info.findButtonLabelForNameAndValue(SHOW_BEHAVIOR_GROUP_HELP, searchValue.helpGroupId).map { text =>
+      s"$slackUser clicked $text."
+    } getOrElse {
+      s"$slackUser clicked a button."
+    })
+
+    def runForCorrectTeam: Unit = {
+      dataService.slackBotProfiles.sendResultWithNewEvent(
+        "skill help with maybe search",
+        (event) => DisplayHelpBehavior(
+          searchValue.maybeSearchText,
+          Some(searchValue.helpGroupId),
+          None,
+          includeNameAndDescription = true,
+          includeNonMatchingResults = false,
+          isFirstTrigger = false,
+          event,
+          services
+        ).result.map(Some(_)),
+        info.slackTeamIdToUse,
+        botProfile,
+        info.channel.id,
+        info.user.id,
+        info.message_ts
+      )
+    }
+
+  }
+
+  object HelpForSkillPermission extends HelpPermissionType[HelpForSkillPermission, HelpGroupSearchValue] {
+
+    def maybeValueFor(info: ActionsTriggeredInfo): Option[HelpGroupSearchValue] = info.maybeHelpForSkillIdWithMaybeSearch
+    def buildFor(
+                  value: HelpGroupSearchValue,
+                  info: ActionsTriggeredInfo,
+                  isIncorrectTeam: Boolean,
+                  botProfile: SlackBotProfile
+                )(implicit request:  Request[AnyContent]): HelpForSkillPermission = {
+      HelpForSkillPermission(value, info, isIncorrectTeam, botProfile, request)
     }
 
   }
@@ -1031,7 +1115,7 @@ class SlackController @Inject() (
         // TODO: Investigate whether this is safe and/or desirable
         val unescapedPayload = SlackMessage.unescapeSlackHTMLEntities(payload)
         Json.parse(unescapedPayload).validate[ActionsTriggeredInfo] match {
-          case JsSuccess(info, jsPath) => {
+          case JsSuccess(info, _) => {
             if (info.isValid) {
               var maybeResultText: Option[String] = None
               var shouldRemoveActions = false
@@ -1044,143 +1128,120 @@ class SlackController @Inject() (
                   YesNoChoicePermission.maybeResultFor(info, botProfile).getOrElse {
                     ActionChoicePermission.maybeResultFor(info, botProfile).getOrElse {
                       HelpIndexPermission.maybeResultFor(info, botProfile).getOrElse {
+                        HelpForSkillPermission.maybeResultFor(info, botProfile).getOrElse {
 
-                        info.maybeHelpForSkillIdWithMaybeSearch.foreach { searchValue =>
-                          dataService.slackBotProfiles.sendResultWithNewEvent(
-                            "skill help with maybe search",
-                            (event) => DisplayHelpBehavior(
-                              searchValue.maybeSearchText,
-                              Some(searchValue.helpGroupId),
-                              None,
-                              includeNameAndDescription = true,
-                              includeNonMatchingResults = false,
-                              isFirstTrigger = false,
-                              event,
-                              services
-                            ).result.map(Some(_)),
-                            info.slackTeamIdToUse,
-                            botProfile,
-                            info.channel.id,
-                            info.user.id,
-                            info.message_ts
-                          )
-                          maybeResultText = Some(info.findButtonLabelForNameAndValue(SHOW_BEHAVIOR_GROUP_HELP, searchValue.helpGroupId).map { text =>
-                            s"$slackUser clicked $text."
-                          } getOrElse {
-                            s"$slackUser clicked a button."
-                          })
-                        }
-
-                        info.maybeActionListForSkillId.foreach { searchValue =>
-                          dataService.slackBotProfiles.sendResultWithNewEvent(
-                            "for skill action list",
-                            event => DisplayHelpBehavior(
-                              searchValue.maybeSearchText,
-                              Some(searchValue.helpGroupId),
-                              None,
-                              includeNameAndDescription = false,
-                              includeNonMatchingResults = true,
-                              isFirstTrigger = false,
-                              event,
-                              services
-                            ).result.map(Some(_)),
-                            info.slackTeamIdToUse,
-                            botProfile,
-                            info.channel.id,
-                            info.user.id,
-                            info.message_ts
-                          )
-                          maybeResultText = Some(s"$slackUser clicked List all actions")
-                        }
-
-                        info.maybeConfirmContinueConversationId.foreach { conversationId =>
-                          dataService.conversations.find(conversationId).flatMap { maybeConversation =>
-                            maybeConversation.map { convo =>
-                              dataService.conversations.touch(convo).flatMap { _ =>
-                                cacheService.getEvent(convo.pendingEventKey).map { event =>
-                                  slackEventService.onEvent(event)
-                                }.getOrElse(Future.successful({}))
-                              }
-                            }.getOrElse(Future.successful({}))
+                          info.maybeActionListForSkillId.foreach { searchValue =>
+                            dataService.slackBotProfiles.sendResultWithNewEvent(
+                              "for skill action list",
+                              event => DisplayHelpBehavior(
+                                searchValue.maybeSearchText,
+                                Some(searchValue.helpGroupId),
+                                None,
+                                includeNameAndDescription = false,
+                                includeNonMatchingResults = true,
+                                isFirstTrigger = false,
+                                event,
+                                services
+                              ).result.map(Some(_)),
+                              info.slackTeamIdToUse,
+                              botProfile,
+                              info.channel.id,
+                              info.user.id,
+                              info.message_ts
+                            )
+                            maybeResultText = Some(s"$slackUser clicked List all actions")
                           }
-                          shouldRemoveActions = true
-                          maybeResultText = Some(s"$slackUser clicked 'Yes'")
-                        }
 
-                        info.maybeDontContinueConversationId.foreach { conversationId =>
-                          dataService.conversations.find(conversationId).flatMap { maybeConversation =>
-                            maybeConversation.map { convo =>
-                              dataService.conversations.background(convo, "OK, on to the next thing.", includeUsername = false).flatMap { _ =>
-                                cacheService.getEvent(convo.pendingEventKey).map { event =>
-                                  eventHandler.handle(event, None).flatMap { results =>
-                                    Future.sequence(
-                                      results.map(result => services.botResultService.sendIn(result, None).map { _ =>
-                                        Logger.info(event.logTextFor(result, None))
-                                      })
-                                    )
-                                  }
-                                }.getOrElse(Future.successful({}))
-                              }
-                            }.getOrElse(Future.successful({}))
+                          info.maybeConfirmContinueConversationId.foreach { conversationId =>
+                            dataService.conversations.find(conversationId).flatMap { maybeConversation =>
+                              maybeConversation.map { convo =>
+                                dataService.conversations.touch(convo).flatMap { _ =>
+                                  cacheService.getEvent(convo.pendingEventKey).map { event =>
+                                    slackEventService.onEvent(event)
+                                  }.getOrElse(Future.successful({}))
+                                }
+                              }.getOrElse(Future.successful({}))
+                            }
+                            shouldRemoveActions = true
+                            maybeResultText = Some(s"$slackUser clicked 'Yes'")
                           }
-                          shouldRemoveActions = true
-                          maybeResultText = Some(s"$slackUser clicked 'No'")
-                        }
 
-                        info.maybeStopConversationId.foreach { conversationId =>
-                          dataService.conversations.find(conversationId).flatMap { maybeConversation =>
-                            maybeConversation.map { convo =>
-                              dataService.conversations.cancel(convo)
-                            }.getOrElse(Future.successful({}))
+                          info.maybeDontContinueConversationId.foreach { conversationId =>
+                            dataService.conversations.find(conversationId).flatMap { maybeConversation =>
+                              maybeConversation.map { convo =>
+                                dataService.conversations.background(convo, "OK, on to the next thing.", includeUsername = false).flatMap { _ =>
+                                  cacheService.getEvent(convo.pendingEventKey).map { event =>
+                                    eventHandler.handle(event, None).flatMap { results =>
+                                      Future.sequence(
+                                        results.map(result => services.botResultService.sendIn(result, None).map { _ =>
+                                          Logger.info(event.logTextFor(result, None))
+                                        })
+                                      )
+                                    }
+                                  }.getOrElse(Future.successful({}))
+                                }
+                              }.getOrElse(Future.successful({}))
+                            }
+                            shouldRemoveActions = true
+                            maybeResultText = Some(s"$slackUser clicked 'No'")
                           }
-                          shouldRemoveActions = true
-                          maybeResultText = Some(s"$slackUser stopped the conversation")
+
+                          info.maybeStopConversationId.foreach { conversationId =>
+                            dataService.conversations.find(conversationId).flatMap { maybeConversation =>
+                              maybeConversation.map { convo =>
+                                dataService.conversations.cancel(convo)
+                              }.getOrElse(Future.successful({}))
+                            }
+                            shouldRemoveActions = true
+                            maybeResultText = Some(s"$slackUser stopped the conversation")
+                          }
+
+                          info.maybeRunBehaviorVersionId.foreach { behaviorVersionId =>
+                            dataService.slackBotProfiles.sendResultWithNewEvent(
+                              s"run behavior version $behaviorVersionId",
+                              event => for {
+                                maybeBehaviorVersion <- dataService.behaviorVersions.findWithoutAccessCheck(behaviorVersionId)
+                                maybeResponse <- maybeBehaviorVersion.map { behaviorVersion =>
+                                  dataService.behaviorResponses.buildFor(
+                                    event,
+                                    behaviorVersion,
+                                    Map(),
+                                    None,
+                                    None
+                                  ).map(Some(_))
+                                }.getOrElse(Future.successful(None))
+                                maybeResult <- maybeResponse.map { response =>
+                                  response.result.map(Some(_))
+                                }.getOrElse(Future.successful(None))
+                              } yield maybeResult,
+                              info.slackTeamIdToUse,
+                              botProfile,
+                              info.channel.id,
+                              info.user.id,
+                              info.message_ts
+                            )
+
+                            maybeResultText = Some(info.findButtonLabelForNameAndValue(RUN_BEHAVIOR_VERSION, behaviorVersionId).map { text =>
+                              s"$slackUser clicked $text"
+                            } orElse info.findOptionLabelForValue(behaviorVersionId).map { text =>
+                              s"$slackUser ran ${text.mkString("“", "", "”")}"
+                            } getOrElse {
+                              s"$slackUser ran an action"
+                            })
+                          }
+
+                          // respond immediately by appending a new attachment
+                          val maybeOriginalColor = info.original_message.attachments.headOption.flatMap(_.color)
+                          val newAttachment = AttachmentInfo(maybeResultText, None, None, Some(Seq("text")), Some(info.callback_id), color = maybeOriginalColor, footer = maybeResultText)
+                          val originalAttachmentsToUse = if (shouldRemoveActions) {
+                            info.original_message.attachments.map(ea => ea.copy(actions = None))
+                          } else {
+                            info.original_message.attachments
+                          }
+                          val updated = info.original_message.copy(attachments = originalAttachmentsToUse :+ newAttachment)
+                          Future.successful(Ok(Json.toJson(updated)))
                         }
 
-                        info.maybeRunBehaviorVersionId.foreach { behaviorVersionId =>
-                          dataService.slackBotProfiles.sendResultWithNewEvent(
-                            s"run behavior version $behaviorVersionId",
-                            event => for {
-                              maybeBehaviorVersion <- dataService.behaviorVersions.findWithoutAccessCheck(behaviorVersionId)
-                              maybeResponse <- maybeBehaviorVersion.map { behaviorVersion =>
-                                dataService.behaviorResponses.buildFor(
-                                  event,
-                                  behaviorVersion,
-                                  Map(),
-                                  None,
-                                  None
-                                ).map(Some(_))
-                              }.getOrElse(Future.successful(None))
-                              maybeResult <- maybeResponse.map { response =>
-                                response.result.map(Some(_))
-                              }.getOrElse(Future.successful(None))
-                            } yield maybeResult,
-                            info.slackTeamIdToUse,
-                            botProfile,
-                            info.channel.id,
-                            info.user.id,
-                            info.message_ts
-                          )
-
-                          maybeResultText = Some(info.findButtonLabelForNameAndValue(RUN_BEHAVIOR_VERSION, behaviorVersionId).map { text =>
-                            s"$slackUser clicked $text"
-                          } orElse info.findOptionLabelForValue(behaviorVersionId).map { text =>
-                            s"$slackUser ran ${text.mkString("“", "", "”")}"
-                          } getOrElse {
-                            s"$slackUser ran an action"
-                          })
-                        }
-
-                        // respond immediately by appending a new attachment
-                        val maybeOriginalColor = info.original_message.attachments.headOption.flatMap(_.color)
-                        val newAttachment = AttachmentInfo(maybeResultText, None, None, Some(Seq("text")), Some(info.callback_id), color = maybeOriginalColor, footer = maybeResultText)
-                        val originalAttachmentsToUse = if (shouldRemoveActions) {
-                          info.original_message.attachments.map(ea => ea.copy(actions = None))
-                        } else {
-                          info.original_message.attachments
-                        }
-                        val updated = info.original_message.copy(attachments = originalAttachmentsToUse :+ newAttachment)
-                        Future.successful(Ok(Json.toJson(updated)))
                       }
 
                     }
