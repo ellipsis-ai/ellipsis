@@ -117,7 +117,7 @@ trait Event {
   def noExactMatchResult(services: DefaultServices)
                         (implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[BotResult] = {
     DisplayHelpBehavior(
-      Some(messageText),
+      Some(relevantMessageText),
       None,
       Some(0),
       includeNameAndDescription = true,
