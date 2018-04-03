@@ -120,9 +120,10 @@ trait Conversation {
       maybeEvent.map { event =>
         respondAction(event, isReminding=true, services).map { result =>
           val intro = s"Hey <@$userIdForContext>, don’t forget, I’m still waiting for your answer to this:"
-          val actionList = Seq(SlackMessageActionButton(STOP_CONVERSATION, "Stop asking", id))
+          val callbackId = stopConversationCallbackIdFor(event.userIdForContext, Some(id))
+          val actionList = Seq(SlackMessageActionButton(callbackId, "Stop asking", id))
           val question = result.text
-          val actionsGroup = SlackMessageActionsGroup(STOP_CONVERSATION, actionList, Some(question), None)
+          val actionsGroup = SlackMessageActionsGroup(callbackId, actionList, Some(question), None)
           Some(TextWithAttachmentsResult(result.event, Some(this), intro, result.forcePrivateResponse, Seq(actionsGroup)))
         }
       }.getOrElse(DBIO.successful(None))

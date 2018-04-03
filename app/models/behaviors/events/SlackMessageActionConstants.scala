@@ -45,4 +45,8 @@ object SlackMessageActionConstants {
     callbackIdFor(CONFIRM_CONTINUE_CONVERSATION, slackUserId, maybeConversationId)
   }
 
+  def stopConversationCallbackIdFor(slackUserId: String, maybeConversationId: Option[String]): String = {
+    callbackIdFor(STOP_CONVERSATION, slackUserId, maybeConversationId)
+  }
+
 }
