@@ -40,4 +40,9 @@ object SlackMessageActionConstants {
   def yesNoCallbackIdFor(slackUserId: String, maybeConversationId: Option[String]): String = {
     callbackIdFor(YES_NO_CHOICE, slackUserId, maybeConversationId)
   }
+
+  def continueConversationCallbackIdFor(slackUserId: String, maybeConversationId: Option[String]): String = {
+    callbackIdFor(CONFIRM_CONTINUE_CONVERSATION, slackUserId, maybeConversationId)
+  }
+
 }

@@ -74,9 +74,10 @@ class EventHandler @Inject() (
             }
             val key = updatedConvo.pendingEventKey
             services.cacheService.cacheEvent(key, event, 5.minutes)
+            val callbackId = continueConversationCallbackIdFor(event.userIdForContext, Some(updatedConvo.id))
             val actionList = Seq(
-              SlackMessageActionButton(CONFIRM_CONTINUE_CONVERSATION, "Yes, this is my answer", updatedConvo.id),
-              SlackMessageActionButton(DONT_CONTINUE_CONVERSATION, "No, it’s not an answer", updatedConvo.id)
+              SlackMessageActionButton(callbackId, "Yes, this is my answer", YES),
+              SlackMessageActionButton(callbackId, "No, it’s not an answer", NO)
             )
             val prompt = maybeLastPrompt.map { lastPrompt =>
               s"""It’s been a while since I asked you this question:
@@ -86,7 +87,7 @@ class EventHandler @Inject() (
             }.getOrElse {
               s"It’s been a while since I asked you the question above."
             } + s"\n\nJust so I’m sure, is this an answer?"
-            val actions = SlackMessageActionsGroup("should_continue_conversation", actionList, Some(event.relevantMessageTextWithFormatting), Some(Color.PINK))
+            val actions = SlackMessageActionsGroup(callbackId, actionList, Some(event.relevantMessageTextWithFormatting), Some(Color.PINK))
             TextWithAttachmentsResult(event, Some(updatedConvo), prompt, forcePrivateResponse = false, Seq(actions))
           }
         } else {
