@@ -194,4 +194,6 @@ object Formatting {
   lazy implicit val nextActionFormat = Json.format[NextAction]
   lazy implicit val actionChoiceFormat = Json.format[ActionChoice]
 
+  implicit val supportRequestConfigFormat = Json.format[SupportRequestConfig]
+
 }

@@ -54,7 +54,14 @@ object BuiltinBehavior {
         case resetBehaviorsRegex() => Some(ResetBehaviorsBehavior(event, services))
         case setTimeZoneRegex(tzString) => Some(SetDefaultTimeZoneBehavior(tzString, event, services))
         case revokeAuthRegex(appName) => Some(RevokeAuthBehavior(appName, event, services))
-        case feedbackRegex(feedbackType, message) => Some(FeedbackBehavior(feedbackType, message, event, services))
+        case feedbackRegex(feedbackTrigger, message) => {
+          val feedbackType = if (feedbackTrigger == "support") {
+            "Chat support"
+          } else {
+            "Chat feedback"
+          }
+          Some(FeedbackBehavior(feedbackType, message, event, services))
+        }
         case helloRegex() => Some(HelloBehavior(event, services))
         case enableDevModeChannelRegex() => Some(EnableDevModeChannelBehavior(event, services))
         case disableDevModeChannelRegex() => Some(DisableDevModeChannelBehavior(event, services))

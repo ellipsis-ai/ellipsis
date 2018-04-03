@@ -111,6 +111,13 @@ class BehaviorList extends React.Component<Props, State> {
         });
       }
     }
+    if (nextProps.publishedBehaviorGroups.every((published) => {
+      return nextProps.recentlyInstalled.some((recent) => recent.exportId === published.exportId)
+    })) {
+      this.setState({
+        visibleSection: "local"
+      });
+    }
   }
 
   componentDidMount() {
@@ -152,10 +159,10 @@ class BehaviorList extends React.Component<Props, State> {
     const visibleHeight = visibleBottom - visibleTop;
     const visibleHalf = visibleTop + Math.round((visibleBottom - visibleTop) / 2);
 
-    const publishedNotVisible = publishedHeadingBottom > visibleBottom;
-    const localContainerIsSmall = localHeight < visibleHeight;
-    const localHeadingBelowTop = localHeadingTop >= visibleTop;
-    const localBottomVisibleBelowHalf = localBottom >= visibleHalf;
+    const publishedNotVisible = !this.publishedHeading || publishedHeadingBottom > visibleBottom;
+    const localContainerIsSmall = this.localHeading && localHeight < visibleHeight;
+    const localHeadingBelowTop = this.localHeading && localHeadingTop >= visibleTop;
+    const localBottomVisibleBelowHalf = this.localHeading && localBottom >= visibleHalf;
     if (publishedNotVisible || (localContainerIsSmall &&
         (localHeadingBelowTop || localBottomVisibleBelowHalf))) {
       this.setState({

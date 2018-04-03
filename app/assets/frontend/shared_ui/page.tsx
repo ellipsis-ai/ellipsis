@@ -159,7 +159,7 @@ class Page extends React.Component<Props, State> {
       const container = this.props.feedbackContainer || document.getElementById(Page.feedbackContainerId);
       if (this.footer && container) {
         ReactDOM.render(this.renderFeedbackLink(), container);
-      } else {
+      } else if (container && !this.footer) {
         throw new PageFooterRenderingError(this);
       }
     }
