@@ -20,15 +20,11 @@ trait SlackEvent {
   val profile: SlackBotProfile
   val client: SlackApiClient
   def eventualMaybeDMChannel(cacheService: CacheService)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[String]] = {
-    SlackChannels(client, cacheService, profile.slackTeamId).listIms.flatMap { ims =>
-      ims.find(_.user == user).map(im => Future.successful(Some(im.id))).getOrElse {
-        client.openIm(user).map(Some(_)).recover {
-          case e: ApiError => {
-            val msg = s"""Couldn't open DM for scheduled message to user with ID ${user} on Slack team ${userSlackTeamId} due to Slack API error: ${e.code}"""
-            Logger.error(msg, e)
-            None
-          }
-        }
+    client.openIm(user).map(Some(_)).recover {
+      case e: ApiError => {
+        val msg = s"""Couldn't open DM for scheduled message to user with ID ${user} on Slack team ${userSlackTeamId} due to Slack API error: ${e.code}"""
+        Logger.error(msg, e)
+        None
       }
     }
   }
