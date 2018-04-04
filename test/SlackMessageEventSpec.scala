@@ -25,6 +25,7 @@ class SlackMessageEventSpec extends PlaySpec with MockitoSugar {
     when(services.dataService.slackBotProfiles.maybeNameFor(profile)).thenReturn(Future.successful(maybeBotName))
     SlackMessageEvent(
       profile,
+      slackTeamId,
       channel,
       None,
       IDs.next,

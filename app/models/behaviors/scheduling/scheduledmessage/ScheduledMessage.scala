@@ -31,10 +31,11 @@ case class ScheduledMessage(
     Future.successful(s"`$text`")
   }
 
-  def eventFor(channel: String, slackUserId: String, profile: SlackBotProfile, client: SlackApiClient): ScheduledEvent = {
+  def eventFor(channel: String, slackUserId: String, slackTeamId: String, profile: SlackBotProfile, client: SlackApiClient): ScheduledEvent = {
     ScheduledEvent(
       SlackMessageEvent(
         profile,
+        slackTeamId,
         channel,
         None,
         slackUserId,

@@ -49,8 +49,42 @@ case class ActionChoice(
                          groupVersionId: Option[String]
                        ) extends WithActionArgs {
 
-  def canBeTriggeredBy(user: User): Boolean = {
-    allowOthers.contains(true) || userId.isEmpty || userId.contains(user.id)
+  val areOthersAllowed: Boolean = allowOthers.contains(true)
+
+  private def isAllowedBecauseAdmin(user: User, dataService: DataService)(implicit ec: ExecutionContext): Future[Boolean] = {
+    dataService.users.isAdmin(user).map { isAdmin =>
+      areOthersAllowed && isAdmin
+    }
+  }
+
+  private def isAllowedBecauseSameTeam(user: User, dataService: DataService)(implicit ec: ExecutionContext): Future[Boolean] = {
+    userId.map { uid =>
+      for {
+        maybeActionChoiceUser <- dataService.users.find(uid)
+        maybeActionChoiceSlackTeamId <- maybeActionChoiceUser.map { u =>
+          dataService.users.maybeSlackTeamIdFor(u)
+        }.getOrElse(Future.successful(None))
+        maybeAttemptingUserSlackTeamId <- dataService.users.maybeSlackTeamIdFor(user)
+      } yield {
+        (for {
+          actionChoiceSlackTeamId <- maybeActionChoiceSlackTeamId
+          attemptingUserSlackTeamId <- maybeAttemptingUserSlackTeamId
+        } yield {
+          areOthersAllowed && actionChoiceSlackTeamId == attemptingUserSlackTeamId
+        }).getOrElse(false)
+      }
+    }.getOrElse(Future.successful(false))
+  }
+
+  def canBeTriggeredBy(user: User, dataService: DataService)(implicit ec: ExecutionContext): Future[Boolean] = {
+    val noUser = userId.isEmpty
+    val sameUser = userId.contains(user.id)
+    for {
+      admin <- isAllowedBecauseAdmin(user, dataService)
+      sameTeam <- isAllowedBecauseSameTeam(user, dataService)
+    } yield {
+      noUser || sameUser || sameTeam || admin
+    }
   }
 
 }
@@ -103,7 +137,7 @@ sealed trait BotResult {
 
   def maybeOngoingConversation(dataService: DataService)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[Conversation]] = {
     maybeChannelForSend(None, dataService).flatMap { maybeChannel =>
-      dataService.conversations.findOngoingFor(event.userIdForContext, event.context, maybeChannel, event.maybeThreadId)
+      dataService.conversations.findOngoingFor(event.userIdForContext, event.context, maybeChannel, event.maybeThreadId, event.teamId)
     }
   }
 
@@ -117,7 +151,7 @@ sealed trait BotResult {
       DBIO.successful(false)
     } else {
       maybeChannelForSendAction(maybeConversation, dataService).flatMap { maybeChannelForSend =>
-        dataService.conversations.allOngoingForAction(event.userIdForContext, event.context, maybeChannelForSend, event.maybeThreadId).flatMap { ongoing =>
+        dataService.conversations.allOngoingForAction(event.userIdForContext, event.context, maybeChannelForSend, event.maybeThreadId, event.teamId).flatMap { ongoing =>
           val toInterrupt = ongoing.filterNot(ea => maybeConversation.map(_.id).contains(ea.id))
           DBIO.sequence(toInterrupt.map { ea =>
             dataService.conversations.backgroundAction(ea, interruptionPrompt, includeUsername = true)

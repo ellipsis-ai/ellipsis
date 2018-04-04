@@ -16,9 +16,9 @@ trait ConversationService {
 
   def maybeWithThreadId(threadId: String, userIdForContext: String, context: String): Future[Option[Conversation]]
 
-  def allOngoingForAction(userIdForContext: String, context: String, maybeChannel: Option[String], maybeThreadId: Option[String]): DBIO[Seq[Conversation]]
+  def allOngoingForAction(userIdForContext: String, context: String, maybeChannel: Option[String], maybeThreadId: Option[String], teamId: String): DBIO[Seq[Conversation]]
 
-  def allOngoingFor(userIdForContext: String, context: String, maybeChannel: Option[String], maybeThreadId: Option[String]): Future[Seq[Conversation]]
+  def allOngoingFor(userIdForContext: String, context: String, maybeChannel: Option[String], maybeThreadId: Option[String], teamId: String): Future[Seq[Conversation]]
 
   def allOngoingBehaviorGroupVersionIds: Future[Seq[String]]
 
@@ -26,7 +26,7 @@ trait ConversationService {
 
   def maybeNextNeedingReminderAction(when: OffsetDateTime): DBIO[Option[Conversation]]
 
-  def findOngoingFor(userIdForContext: String, context: String, maybeChannel: Option[String], maybeThreadId: Option[String]): Future[Option[Conversation]]
+  def findOngoingFor(userIdForContext: String, context: String, maybeChannel: Option[String], maybeThreadId: Option[String], teamId: String): Future[Option[Conversation]]
 
   def cancelAction(conversation: Conversation): DBIO[Unit]
 

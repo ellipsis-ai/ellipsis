@@ -51,10 +51,11 @@ case class ScheduledBehavior(
     }
   }
 
-  def eventFor(channel: String, slackUserId: String, profile: SlackBotProfile, client: SlackApiClient): ScheduledEvent = {
+  def eventFor(channel: String, slackUserId: String, slackTeamId: String, profile: SlackBotProfile, client: SlackApiClient): ScheduledEvent = {
     ScheduledEvent(
       RunEvent(
         profile,
+        slackTeamId,
         behavior,
         arguments,
         channel,

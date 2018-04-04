@@ -102,9 +102,7 @@ class SocialAuthController @Inject() (
           botProfile <- slackProvider.maybeBotProfileFor(authInfo, dataService).map { maybeBotProfile =>
             maybeBotProfile.get // Blow up if we can't get a bot profile
           }
-          maybeSlackTeamId <- Future.successful(Some(maybeTeamId.getOrElse(profile.teamId)))
-          savedProfile <- dataService.slackProfiles.save(profile)
-          savedAuthInfo <- authInfoRepository.save(profile.loginInfo, authInfo)
+          _ <- authInfoRepository.save(profile.loginInfo, authInfo)
           linkedAccount <- dataService.linkedAccounts.find(profile.loginInfo, botProfile.teamId).flatMap { maybeExisting =>
             maybeExisting.map(Future.successful).getOrElse {
               val eventualUser = request.identity.map(Future.successful).getOrElse {
@@ -171,9 +169,8 @@ class SocialAuthController @Inject() (
               }
             } else {
               for {
-                savedProfile <- dataService.slackProfiles.save(profile)
                 loginInfo <- Future.successful(profile.loginInfo)
-                savedAuthInfo <- authInfoRepository.save(loginInfo, authInfo)
+                _ <- authInfoRepository.save(loginInfo, authInfo)
                 maybeExistingLinkedAccount <- dataService.linkedAccounts.find(profile.loginInfo, teamId)
                 linkedAccount <- maybeExistingLinkedAccount.map(Future.successful).getOrElse {
                   val eventualUser = request.identity.map(Future.successful).getOrElse {

@@ -86,19 +86,16 @@ class APIControllerSpec extends PlaySpec with MockitoSugar {
       any[Option[String]], any[Option[Boolean]])(any[ActorSystem])).thenReturn(Future.successful(SlackTimestamp.now))
     when(mockSlackClient.listUsers).thenReturn(Future.successful(Seq()))
 
-    val event = SlackMessageEvent(botProfile, defaultChannel, None, defaultSlackUserId, SlackMessage.fromUnformattedText("foo", botProfile.userId), None, SlackTimestamp.now, mockSlackClient, Some(EventType.api))
+    val event = SlackMessageEvent(botProfile, defaultSlackTeamId, defaultChannel, None, defaultSlackUserId, SlackMessage.fromUnformattedText("foo", botProfile.userId), None, SlackTimestamp.now, mockSlackClient, Some(EventType.api))
     when(dataService.slackBotProfiles.allFor(team)).thenReturn(Future.successful(Seq(botProfile)))
     val loginInfo = LoginInfo(defaultContext, defaultSlackUserId)
     val slackProfile = SlackProfile(defaultSlackTeamId, loginInfo)
-    when(dataService.slackProfiles.allFor(team.id)).thenReturn(Future.successful(Seq(slackProfile)))
-    val linkedAccount = LinkedAccount(user, loginInfo, OffsetDateTime.now)
-    when(dataService.linkedAccounts.maybeForSlackFor(user)).thenReturn(Future.successful(Some(linkedAccount)))
-    when(dataService.slackProfiles.find(loginInfo)).thenReturn(Future.successful(Some(slackProfile)))
+    when(dataService.users.maybeSlackProfileFor(user)).thenReturn(Future.successful(Some(slackProfile)))
     val mockSlackChannels = mock[SlackChannels]
     when(dataService.slackBotProfiles.channelsFor(any[SlackBotProfile], any[CacheService])).thenReturn(mockSlackChannels)
     when(mockSlackChannels.maybeIdFor(defaultChannel)).thenReturn(Future.successful(Some(defaultChannel)))
 
-    when(dataService.conversations.allOngoingFor(defaultSlackUserId, event.context, event.maybeChannel, event.maybeThreadId)).thenReturn(Future.successful(Seq()))
+    when(dataService.conversations.allOngoingFor(defaultSlackUserId, event.context, event.maybeChannel, event.maybeThreadId, team.id)).thenReturn(Future.successful(Seq()))
     when(eventHandler.handle(any[Event], org.mockito.Matchers.eq(None))).thenReturn(Future.successful(Seq(SimpleTextResult(event, None, "result", forcePrivateResponse = false))))
 
     when(botResultService.sendIn(

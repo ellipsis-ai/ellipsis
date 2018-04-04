@@ -16,6 +16,7 @@ import scala.concurrent.{ExecutionContext, Future}
 
 case class RunEvent(
                      profile: SlackBotProfile,
+                     userSlackTeamId: String,
                      behavior: Behavior,
                      arguments: Map[String, String],
                      channel: String,
@@ -43,7 +44,7 @@ case class RunEvent(
   lazy val name: String = Conversation.SLACK_CONTEXT
 
   def allOngoingConversations(dataService: DataService): Future[Seq[Conversation]] = {
-    dataService.conversations.allOngoingFor(userIdForContext, context, maybeChannel, maybeThreadId)
+    dataService.conversations.allOngoingFor(userIdForContext, context, maybeChannel, maybeThreadId, teamId)
   }
 
   def sendMessage(
@@ -109,12 +110,6 @@ case class RunEvent(
         } yield Seq(response)
       }.getOrElse(Future.successful(Seq()))
     } yield responses
-  }
-
-  override def ensureUser(dataService: DataService)(implicit ec: ExecutionContext): Future[User] = {
-    super.ensureUser(dataService).flatMap { user =>
-      ensureSlackProfileFor(loginInfo, dataService).map(_ => user)
-    }
   }
 
 }

@@ -19,16 +19,21 @@ import scala.concurrent.Future
 
 class SlackEventSpec extends PlaySpec with MockitoSugar {
 
+  val slackTeamId = "T12345678"
+
   case class TestSlackEvent(
                              user: String,
                              channel: String,
                              client: SlackApiClient,
                              profile: SlackBotProfile
-                           ) extends SlackEvent
+                           ) extends SlackEvent {
+
+    val userSlackTeamId: String = slackTeamId
+
+  }
 
   val slackUserId = "U12345678"
   val otherSlackUserId = "U87654321"
-  val slackTeamId = "T12345678"
   val username = "lumbergh"
   val displayName = "Mr. Lumbergh"
   val firstName = "Bill"

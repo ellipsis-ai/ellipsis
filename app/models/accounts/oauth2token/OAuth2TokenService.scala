@@ -17,8 +17,4 @@ trait OAuth2TokenService {
 
   def findByLoginInfo(loginInfo: LoginInfo): Future[Option[OAuth2Token]]
 
-  def allFullForSlackTeamId(teamId: String): Future[Seq[OAuth2Token]]
-
-  def maybeFullForSlackTeamId(teamId: String): Future[Option[OAuth2Token]]
-
 }

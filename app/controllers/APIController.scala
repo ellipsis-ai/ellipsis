@@ -128,6 +128,7 @@ class APIController @Inject() (
         } yield {
           val slackEvent = SlackMessageEvent(
             botProfile,
+            slackProfile.teamId,
             maybeSlackChannelId.getOrElse(channel),
             None,
             slackProfile.loginInfo.providerKey,
@@ -185,11 +186,8 @@ class APIController @Inject() (
         maybeBotProfile <- maybeTeam.map { team =>
           dataService.slackBotProfiles.allFor(team).map(_.headOption)
         }.getOrElse(Future.successful(None))
-        maybeSlackLinkedAccount <- maybeUser.map { user =>
-          dataService.linkedAccounts.maybeForSlackFor(user)
-        }.getOrElse(Future.successful(None))
-        maybeSlackProfile <- maybeSlackLinkedAccount.map { slackLinkedAccount =>
-          dataService.slackProfiles.find(slackLinkedAccount.loginInfo)
+        maybeSlackProfile <- maybeUser.map { user =>
+          dataService.users.maybeSlackProfileFor(user)
         }.getOrElse(Future.successful(None))
       } yield {
         ApiMethodContext(
@@ -319,6 +317,7 @@ class APIController @Inject() (
           behavior <- maybeBehavior
         } yield RunEvent(
           botProfile,
+          slackProfile.teamId,
           behavior,
           info.argumentsMap,
           maybeSlackChannelId.getOrElse(info.channel),

@@ -16,6 +16,7 @@ import scala.concurrent.{ExecutionContext, Future}
 
 trait SlackEvent {
   val user: String
+  val userSlackTeamId: String
   val channel: String
   val profile: SlackBotProfile
   val client: SlackApiClient
@@ -69,10 +70,6 @@ trait SlackEvent {
         channelDetails
       }
     }
-  }
-
-  def ensureSlackProfileFor(loginInfo: LoginInfo, dataService: DataService)(implicit ec: ExecutionContext): Future[SlackProfile] = {
-    dataService.slackProfiles.save(SlackProfile(profile.slackTeamId, loginInfo))
   }
 
 }

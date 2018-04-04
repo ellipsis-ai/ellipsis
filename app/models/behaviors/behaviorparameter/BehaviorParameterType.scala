@@ -218,8 +218,9 @@ object YesNoType extends BuiltInType {
                                      isReminding: Boolean
                                    )(implicit ec: ExecutionContext): DBIO[BotResult] = {
     super.promptResultForAction(maybePreviousCollectedValue, context, paramState, isReminding).map { superPromptResult =>
-      val actionList = Seq(SlackMessageActionButton(YES_NO_CHOICE, "Yes", YES), SlackMessageActionButton(YES_NO_CHOICE, "No", NO))
-      val actionsGroup = SlackMessageActionsGroup(YES_NO_CHOICE, actionList, None, None)
+      val callbackId = context.yesNoCallbackId
+      val actionList = Seq(SlackMessageActionButton(callbackId, "Yes", YES), SlackMessageActionButton(callbackId, "No", NO))
+      val actionsGroup = SlackMessageActionsGroup(callbackId, actionList, None, None)
       TextWithAttachmentsResult(
         superPromptResult.event,
         superPromptResult.maybeConversation,
@@ -604,7 +605,7 @@ case class BehaviorBackedDataType(dataTypeConfig: DataTypeConfig) extends Behavi
         } ++ builtinMenuItems
         val actionsList = Seq(SlackMessageActionMenu("ignored", "Choose an option", menuItems))
         val groups: Seq[MessageAttachmentGroup] = Seq(
-          SlackMessageActionsGroup(context.inputChoiceCallbackId, actionsList, None, Some(Color.BLUE_LIGHT))
+          SlackMessageActionsGroup(context.dataTypeChoiceCallbackId, actionsList, None, Some(Color.BLUE_LIGHT))
         )
         DBIO.successful(TextWithAttachmentsResult(context.event, context.maybeConversation, superPrompt, context.behaviorVersion.forcePrivateResponse, groups))
       }

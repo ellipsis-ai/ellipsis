@@ -13,7 +13,6 @@ import models.accounts.oauth2application.OAuth2ApplicationService
 import models.accounts.oauth2token.OAuth2TokenService
 import models.accounts.simpletokenapi.SimpleTokenApiService
 import models.accounts.slack.botprofile.SlackBotProfileService
-import models.accounts.slack.profile.SlackProfileService
 import models.accounts.user.UserService
 import models.apitoken.APITokenService
 import models.behaviors.BehaviorResponseService
@@ -75,7 +74,6 @@ class PostgresDataService @Inject() (
                                       val oauth2ApplicationsProvider: Provider[OAuth2ApplicationService],
                                       val simpleTokenApisProvider: Provider[SimpleTokenApiService],
                                       val githubProfilesProvider: Provider[GithubProfileService],
-                                      val slackProfilesProvider: Provider[SlackProfileService],
                                       val slackBotProfilesProvider: Provider[SlackBotProfileService],
                                       val oauth2TokensProvider: Provider[OAuth2TokenService],
                                       val behaviorGroupsProvider: Provider[BehaviorGroupService],
@@ -129,7 +127,6 @@ class PostgresDataService @Inject() (
   val oauth2Applications = oauth2ApplicationsProvider.get
   val simpleTokenApis = simpleTokenApisProvider.get
   val githubProfiles = githubProfilesProvider.get
-  val slackProfiles = slackProfilesProvider.get
   val slackBotProfiles = slackBotProfilesProvider.get
   val oauth2Tokens = oauth2TokensProvider.get
   val behaviorGroups = behaviorGroupsProvider.get

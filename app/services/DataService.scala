@@ -10,7 +10,6 @@ import models.accounts.oauth2application.OAuth2ApplicationService
 import models.accounts.oauth2token.OAuth2TokenService
 import models.accounts.simpletokenapi.SimpleTokenApiService
 import models.accounts.slack.botprofile.SlackBotProfileService
-import models.accounts.slack.profile.SlackProfileService
 import models.accounts.user.UserService
 import models.apitoken.APITokenService
 import models.behaviors.BehaviorResponseService
@@ -70,7 +69,6 @@ trait DataService {
   val oauth2Applications: OAuth2ApplicationService
   val simpleTokenApis: SimpleTokenApiService
   val githubProfiles: GithubProfileService
-  val slackProfiles: SlackProfileService
   val slackBotProfiles: SlackBotProfileService
   val oauth2Tokens: OAuth2TokenService
   val behaviorGroups: BehaviorGroupService

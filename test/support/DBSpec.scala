@@ -80,13 +80,17 @@ trait DBSpec extends PlaySpec with OneAppPerSuite with MockitoSugar {
 
   def newSavedUserOn(team: Team): User = runNow(dataService.users.createFor(team.id))
 
-  def newSavedLinkedAccountFor(user: User): Future[LinkedAccount] = {
-    val account = LinkedAccount(user, LoginInfo(SlackProvider.ID, IDs.next), OffsetDateTime.now)
-    dataService.linkedAccounts.save(account)
+  def newSavedLinkedAccountFor(user: User, slackUserId: String): LinkedAccount = {
+    val account = LinkedAccount(user, LoginInfo(SlackProvider.ID, slackUserId), OffsetDateTime.now)
+    runNow(dataService.linkedAccounts.save(account))
+  }
+
+  def newSavedLinkedAccountFor(user: User): LinkedAccount = {
+    newSavedLinkedAccountFor(user, IDs.next)
   }
 
   def newSavedLinkedAccount: LinkedAccount = {
-    runNow(newSavedLinkedAccountFor(newSavedUserOn(newSavedTeam)))
+    newSavedLinkedAccountFor(newSavedUserOn(newSavedTeam))
   }
 
   def newSavedAnswerFor(input: Input, user: User): SavedAnswer = {
@@ -210,8 +214,6 @@ trait DBSpec extends PlaySpec with OneAppPerSuite with MockitoSugar {
       try {
         fn()
       } finally {
-        // Misguided legacy down evolutions will blow up if any of these exist, so delete them
-        runNow(dataService.slackProfiles.deleteAll())
         runNow(dataService.collectedParameterValues.deleteAll())
         runNow(dataService.conversations.deleteAll())
         runNow(dataService.behaviorGroupVersionSHAs.deleteAll())

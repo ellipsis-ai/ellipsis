@@ -34,7 +34,7 @@ class BotResultSpec extends PlaySpec with MockitoSugar with DBSpec {
   }
 
   def newEventFor(profile: SlackBotProfile, maybeThreadId: Option[String] = defaultThreadId): SlackMessageEvent = {
-    SlackMessageEvent(profile, defaultChannel, maybeThreadId, defaultSlackUserId, SlackMessage.blank, None, SlackTimestamp.now, slackEventService.clientFor(profile), None)
+    SlackMessageEvent(profile, defaultSlackTeamId, defaultChannel, maybeThreadId, defaultSlackUserId, SlackMessage.blank, None, SlackTimestamp.now, slackEventService.clientFor(profile), None)
   }
 
   def newConversationFor(team: Team, user: User, profile: SlackBotProfile, event: SlackMessageEvent): Conversation = {
@@ -133,7 +133,7 @@ class BotResultSpec extends PlaySpec with MockitoSugar with DBSpec {
         mockPostChatMessage(interruptionPrompt, event, resultTs, None)
 
         conversationToBeInterrupted.maybeThreadId.isEmpty mustBe true
-        val ongoing = runNow(dataService.conversations.allOngoingFor(event.userIdForContext, event.context, Some(event.channel), event.maybeThreadId))
+        val ongoing = runNow(dataService.conversations.allOngoingFor(event.userIdForContext, event.context, Some(event.channel), event.maybeThreadId, team.id))
         ongoing must have length(1)
         ongoing.head mustBe conversationToBeInterrupted
 

@@ -16,6 +16,7 @@ import scala.util.matching.Regex
 
 case class SlackMessageEvent(
                               profile: SlackBotProfile,
+                              userSlackTeamId: String,
                               channel: String,
                               maybeThreadId: Option[String],
                               user: String,
@@ -66,11 +67,7 @@ case class SlackMessageEvent(
     message.unformattedText
   }
 
-  lazy val includesBotMention: Boolean = {
-    isDirectMessage ||
-      SlackMessageEvent.mentionRegexFor(profile.userId).findFirstMatchIn(message.originalText).nonEmpty ||
-      MessageEvent.ellipsisRegex.findFirstMatchIn(message.originalText).nonEmpty
-  }
+  lazy val includesBotMention: Boolean = isDirectMessage || profile.includesBotMention(message)
 
   override val isResponseExpected: Boolean = includesBotMention
   val teamId: String = profile.teamId
@@ -80,13 +77,13 @@ case class SlackMessageEvent(
   lazy val name: String = Conversation.SLACK_CONTEXT
 
   def maybeOngoingConversation(dataService: DataService)(implicit ec: ExecutionContext): Future[Option[Conversation]] = {
-    dataService.conversations.findOngoingFor(user, context, maybeChannel, maybeThreadId).flatMap { maybeConvo =>
+    dataService.conversations.findOngoingFor(user, context, maybeChannel, maybeThreadId, teamId).flatMap { maybeConvo =>
       maybeConvo.map(c => Future.successful(Some(c))).getOrElse(maybeConversationRootedHere(dataService))
     }
   }
 
   def maybeConversationRootedHere(dataService: DataService): Future[Option[Conversation]] = {
-    dataService.conversations.findOngoingFor(user, context, maybeChannel, Some(ts))
+    dataService.conversations.findOngoingFor(user, context, maybeChannel, Some(ts), teamId)
   }
 
   override def navLinks(lambdaService: AWSLambdaService): String = {
@@ -145,12 +142,6 @@ case class SlackMessageEvent(
         botName
       ).send
     } yield maybeTs
-  }
-
-  override def ensureUser(dataService: DataService)(implicit ec: ExecutionContext): Future[User] = {
-    super.ensureUser(dataService).flatMap { user =>
-      ensureSlackProfileFor(loginInfo, dataService).map(_ => user)
-    }
   }
 
 }

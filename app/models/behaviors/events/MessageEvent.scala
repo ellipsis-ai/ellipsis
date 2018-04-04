@@ -14,7 +14,7 @@ trait MessageEvent extends Event {
   lazy val invocationLogText: String = relevantMessageText
 
   def allOngoingConversations(dataService: DataService): Future[Seq[Conversation]] = {
-    dataService.conversations.allOngoingFor(userIdForContext, context, maybeChannel, maybeThreadId)
+    dataService.conversations.allOngoingFor(userIdForContext, context, maybeChannel, maybeThreadId, teamId)
   }
 
   def allBehaviorResponsesFor(

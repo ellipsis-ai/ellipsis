@@ -51,12 +51,13 @@ class LinkedAccountServiceImpl @Inject() (
   }
 
   def saveAction(link: LinkedAccount): DBIO[LinkedAccount] = {
-    val query = all.filter(_.providerId === link.loginInfo.providerID).filter(_.providerKey === link.loginInfo.providerKey)
+    val query =
+      all.
+        filter(_.providerId === link.loginInfo.providerID).
+        filter(_.providerKey === link.loginInfo.providerKey).
+        filter(_.userId === link.user.id)
     query.result.headOption.flatMap {
-      case Some(_) => {
-        query.
-          update(link.toRaw)
-      }
+      case Some(_) => DBIO.successful({})
       case None => all += link.toRaw
     }.map { _ => link }
   }
@@ -100,16 +101,6 @@ class LinkedAccountServiceImpl @Inject() (
   def deleteGithubFor(user: User): Future[Boolean] = {
     val action = rawForProviderForQuery(user.id, GithubProvider.ID).delete.map(_ > 0)
     dataService.run(action)
-  }
-
-  def isAdminAction(linkedAccount: LinkedAccount): DBIO[Boolean] = {
-    dataService.slackProfiles.findAction(linkedAccount.loginInfo).map { maybeProfile =>
-      maybeProfile.map(_.teamId).contains(LinkedAccount.ELLIPSIS_SLACK_TEAM_ID)
-    }
-  }
-
-  def isAdmin(linkedAccount: LinkedAccount): Future[Boolean] = {
-    dataService.run(isAdminAction(linkedAccount))
   }
 
 }
