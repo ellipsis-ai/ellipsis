@@ -1,7 +1,7 @@
 package models.behaviors.events
 
 import javax.inject._
-
+import json.SlackUserData
 import models.behaviors.behaviorparameter.FetchValidValuesBadResultException
 import models.behaviors.builtins.BuiltinBehavior
 import models.behaviors.conversations.conversation.Conversation
@@ -87,7 +87,11 @@ class EventHandler @Inject() (
             }.getOrElse {
               s"It’s been a while since I asked you the question above."
             } + s"\n\nJust so I’m sure, is this an answer?"
-            val actions = SlackMessageActionsGroup(callbackId, actionList, Some(event.relevantMessageTextWithFormatting), Some(Color.PINK))
+            val maybeSlackUserList = event match {
+              case slackMessageEvent: SlackMessageEvent => Some(slackMessageEvent.message.userList)
+              case _ => None
+            }
+            val actions = SlackMessageActionsGroup(callbackId, actionList, Some(event.relevantMessageTextWithFormatting), maybeSlackUserList, Some(Color.PINK))
             TextWithAttachmentsResult(event, Some(updatedConvo), prompt, forcePrivateResponse = false, Seq(actions))
           }
         } else {

@@ -1,5 +1,6 @@
 import java.time.OffsetDateTime
 
+import json.SlackUserData
 import models.IDs
 import models.accounts.slack.botprofile.SlackBotProfile
 import models.behaviors.events.{SlackMessage, SlackMessageEvent}
@@ -29,7 +30,7 @@ class SlackMessageEventSpec extends PlaySpec with MockitoSugar {
       channel,
       None,
       IDs.next,
-      SlackMessage("oh hai", "oh hai", "oh hai"),
+      SlackMessage("oh hai", "oh hai", "oh hai", Set.empty[SlackUserData]),
       None,
       OffsetDateTime.now.toString,
       SlackApiClient(botToken),
