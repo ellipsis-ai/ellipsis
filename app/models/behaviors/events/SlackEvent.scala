@@ -1,15 +1,14 @@
 package models.behaviors.events
 
 import akka.actor.ActorSystem
-import com.mohiva.play.silhouette.api.LoginInfo
 import json.Formatting._
 import json.SlackUserData
 import models.accounts.slack.botprofile.SlackBotProfile
-import models.accounts.slack.profile.SlackProfile
+import play.api.Logger
 import play.api.libs.json._
+import services.DefaultServices
 import services.caching.CacheService
-import services.{DataService, DefaultServices}
-import slack.api.SlackApiClient
+import slack.api.{ApiError, SlackApiClient}
 import utils.SlackChannels
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -21,7 +20,17 @@ trait SlackEvent {
   val profile: SlackBotProfile
   val client: SlackApiClient
   def eventualMaybeDMChannel(cacheService: CacheService)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[String]] = {
-    SlackChannels(client, cacheService, profile.slackTeamId).listIms.map(_.find(_.user == user).map(_.id))
+    SlackChannels(client, cacheService, profile.slackTeamId).listIms.flatMap { ims =>
+      ims.find(_.user == user).map(im => Future.successful(Some(im.id))).getOrElse {
+        client.openIm(user).map(Some(_)).recover {
+          case e: ApiError => {
+            val msg = s"""Couldn't open DM for scheduled message to user with ID ${user} on Slack team ${userSlackTeamId} due to Slack API error: ${e.code}"""
+            Logger.error(msg, e)
+            None
+          }
+        }
+      }
+    }
   }
 
   val isDirectMessage: Boolean = {
