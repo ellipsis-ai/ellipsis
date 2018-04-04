@@ -1,6 +1,7 @@
 package models.behaviors.events
 
 import akka.actor.ActorSystem
+import json.SlackUserData
 import models.accounts.slack.botprofile.SlackBotProfile
 import models.accounts.user.User
 import models.behaviors.{ActionChoice, BehaviorResponse}
@@ -79,7 +80,8 @@ case class RunEvent(
         files,
         choices,
         configuration,
-        botName
+        botName,
+        Set.empty[SlackUserData]
       ).send
     } yield maybeTs
   }

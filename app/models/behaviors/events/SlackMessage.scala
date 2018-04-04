@@ -6,7 +6,7 @@ import services.SlackEventService
 
 import scala.concurrent.{ExecutionContext, Future}
 
-case class SlackMessage(originalText: String, withoutBotPrefix: String, unformattedText: String)
+case class SlackMessage(originalText: String, withoutBotPrefix: String, unformattedText: String, userList: Set[SlackUserData])
 
 object SlackMessage {
   def unformatLinks(text: String): String = {
@@ -46,7 +46,7 @@ object SlackMessage {
 
   def fromUnformattedText(text: String, botUserId: String): SlackMessage = {
     val withoutBotPrefix = removeBotPrefix(text, botUserId)
-    SlackMessage(text, withoutBotPrefix, withoutBotPrefix)
+    SlackMessage(text, withoutBotPrefix, withoutBotPrefix, Set.empty[SlackUserData])
   }
 
   def userIdsInText(text: String): Set[String] = {
@@ -59,9 +59,9 @@ object SlackMessage {
     for {
       slackUsers <- slackEventService.slackUserDataList(userList, botProfile)
     } yield {
-      SlackMessage(text, withoutBotPrefix, unformatTextWithUsers(withoutBotPrefix, slackUsers))
+      SlackMessage(text, withoutBotPrefix, unformatTextWithUsers(withoutBotPrefix, slackUsers), slackUsers)
     }
   }
 
-  def blank: SlackMessage = SlackMessage("", "", "")
+  def blank: SlackMessage = SlackMessage("", "", "", Set.empty[SlackUserData])
 }

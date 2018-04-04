@@ -1,10 +1,20 @@
+import json.{SlackUserData, SlackUserProfileData}
 import models.SlackMessageFormatter
 import org.scalatestplus.play.PlaySpec
 
 class SlackMessageFormatterSpec extends PlaySpec {
 
+  def slackUserData(userId: String, username: String, displayName: String): SlackUserData = {
+    SlackUserData(userId, "T1", username, isPrimaryOwner = false, isOwner = false, isRestricted = false, isUltraRestricted = false, None, deleted = false, Some(SlackUserProfileData(Some(displayName), None, None, None)))
+  }
+  val slackUserList: Set[SlackUserData] = Set(
+    slackUserData("U1", "alligator", "Alligatór"),
+    slackUserData("U2", "baboon", "A Baboon!"),
+    slackUserData("U3", "crocodile", "Mr. Croc O. Dile")
+  )
+
   def format(original: String): String = {
-    SlackMessageFormatter.bodyTextFor(original).trim
+    SlackMessageFormatter.bodyTextFor(original, slackUserList).trim
   }
 
   "bodyTextFor" should {
@@ -46,6 +56,12 @@ class SlackMessageFormatterSpec extends PlaySpec {
                     |
                     |There should be a line above this""".stripMargin
       val output = "There should be a line below this\r\r─────\r\rThere should be a line above this"
+      format(input) mustBe output
+    }
+
+    "converts usernames into links" in {
+      val input = """@A Baboon! has a message for @Alligatór: time to meet @Mr. Croc O. Dile."""
+      val output = "<@U2> has a message for <@U1>: time to meet <@U3>."
       format(input) mustBe output
     }
 

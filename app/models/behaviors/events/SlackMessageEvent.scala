@@ -139,7 +139,8 @@ case class SlackMessageEvent(
         files,
         choices,
         configuration,
-        botName
+        botName,
+        message.userList
       ).send
     } yield maybeTs
   }

@@ -123,7 +123,7 @@ trait Conversation {
           val callbackId = stopConversationCallbackIdFor(event.userIdForContext, Some(id))
           val actionList = Seq(SlackMessageActionButton(callbackId, "Stop asking", id))
           val question = result.text
-          val actionsGroup = SlackMessageActionsGroup(callbackId, actionList, Some(question), None)
+          val actionsGroup = SlackMessageActionsGroup(callbackId, actionList, Some(question), None, None)
           Some(TextWithAttachmentsResult(result.event, Some(this), intro, result.forcePrivateResponse, Seq(actionsGroup)))
         }
       }.getOrElse(DBIO.successful(None))

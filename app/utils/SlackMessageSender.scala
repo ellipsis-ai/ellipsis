@@ -2,6 +2,7 @@ package utils
 
 import akka.actor.ActorSystem
 import json.Formatting._
+import json.SlackUserData
 import models.SlackMessageFormatter
 import models.behaviors.ActionChoice
 import models.behaviors.conversations.conversation.Conversation
@@ -43,7 +44,8 @@ case class SlackMessageSender(
                                files: Seq[UploadFileSpec] = Seq(),
                                choices: Seq[ActionChoice],
                                configuration: Configuration,
-                               botName: String
+                               botName: String,
+                               slackUserList: Set[SlackUserData]
                              ) {
 
   val choicesAttachmentGroups: Seq[SlackMessageActionsGroup] = {
@@ -58,6 +60,7 @@ case class SlackMessageSender(
         ACTION_CHOICES,
         actionList,
         None,
+        None,
         Some(Color.BLUE_LIGHTER),
         None
       ))
@@ -70,14 +73,14 @@ case class SlackMessageSender(
       val baseUrl = configuration.get[String]("application.apiBaseUrl")
       val path = controllers.routes.HelpController.devMode(Some(slackTeamId), Some(botName)).url
       val link = s"[development]($baseUrl$path)"
-      groups ++ Seq(SlackMessageTextAttachmentGroup(s"\uD83D\uDEA7 Skill in $link \uD83D\uDEA7", None))
+      groups ++ Seq(SlackMessageTextAttachmentGroup(s"\uD83D\uDEA7 Skill in $link \uD83D\uDEA7", None, None))
     } else if (hasUndeployedVersionForAuthor) {
       val baseUrl = configuration.get[String]("application.apiBaseUrl")
       val path = controllers.routes.HelpController.devMode(Some(slackTeamId), Some(botName)).url
       val link = s"[dev mode]($baseUrl$path)"
       groups ++ Seq(
         SlackMessageTextAttachmentGroup(
-          s"\uD83D\uDEA7 You are running the deployed version of this skill even though you've made changes. You can always use the most recent version in $link.", None
+          s"\uD83D\uDEA7 You are running the deployed version of this skill even though you've made changes. You can always use the most recent version in $link.", None, None
         )
       )
     } else {
@@ -219,7 +222,7 @@ case class SlackMessageSender(
   }
 
   def send(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[String]] = {
-    val formattedText = SlackMessageFormatter.bodyTextFor(unformattedText)
+    val formattedText = SlackMessageFormatter.bodyTextFor(unformattedText, slackUserList)
     val attachments = attachmentGroupsToUse.flatMap {
       case a: SlackMessageAttachmentGroup => a.attachments.map(_.underlying)
       case _ => Seq()

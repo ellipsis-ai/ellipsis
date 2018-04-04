@@ -1,11 +1,13 @@
 package models.behaviors.events
 
+import json.SlackUserData
 import utils.SlackMessageSender
 
 case class SlackMessageActionsGroup(
                                 id: String,
                                 actions: Seq[SlackMessageAction],
                                 maybeText: Option[String],
+                                maybeSlackUserList: Option[Set[SlackUserData]],
                                 maybeColor: Option[String],
                                 maybeTitle: Option[String] = None,
                                 maybeTitleLink: Option[String] = None
@@ -21,6 +23,7 @@ case class SlackMessageActionsGroup(
       if (index == 0) {
         SlackMessageAttachment(
           maybeText,
+          maybeSlackUserList,
           maybeTitle,
           maybeTitleLink,
           maybeColor,
@@ -29,6 +32,7 @@ case class SlackMessageActionsGroup(
         )
       } else {
         SlackMessageAttachment(
+          None,
           None,
           None,
           None,

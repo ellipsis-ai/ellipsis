@@ -1,10 +1,12 @@
 package models.behaviors.events
 
+import json.SlackUserData
 import models.SlackMessageFormatter
 import slack.models.{ActionField, Attachment}
 
 case class SlackMessageAttachment(
                                    maybeText: Option[String],
+                                   maybeSlackUserList: Option[Set[SlackUserData]],
                                    maybeTitle: Option[String] = None,
                                    maybeTitleLink: Option[String] = None,
                                    maybeColor: Option[String] = None,
@@ -21,7 +23,7 @@ case class SlackMessageAttachment(
     author_icon = None,
     title = maybeTitle,
     title_link = maybeTitleLink,
-    text = maybeText.map(SlackMessageFormatter.bodyTextFor),
+    text = maybeText.map(text => SlackMessageFormatter.bodyTextFor(text, maybeSlackUserList.getOrElse(Set.empty[SlackUserData]))),
     fields = Seq(),
     image_url = None,
     thumb_url = None,
