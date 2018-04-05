@@ -1,11 +1,8 @@
 package models
 
-import java.time.OffsetDateTime
-
 import json.SlackUserData
 import mocks.{MockAWSLambdaService, MockCacheService}
 import models.accounts.linkedaccount.LinkedAccount
-import models.accounts.slack.botprofile.SlackBotProfile
 import modules.ActorModule
 import org.mockito.Matchers._
 import org.mockito.Mockito._
@@ -15,7 +12,7 @@ import play.api.inject.bind
 import play.api.inject.guice.GuiceApplicationBuilder
 import services.{AWSLambdaService, GithubService, SlackEventService}
 import services.caching.CacheService
-import slack.api.{ApiError, SlackApiClient}
+import slack.api.SlackApiClient
 import support.DBSpec
 
 import scala.concurrent.Future
