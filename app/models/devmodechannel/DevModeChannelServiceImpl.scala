@@ -43,6 +43,10 @@ class DevModeChannelServiceImpl @Inject() (
     dataService.run(action)
   }
 
+  def isEnabledFor(context: String, channel: String, team: Team): Future[Boolean] = {
+    find(context, channel, team).map(_.isDefined)
+  }
+
   def ensureFor(context: String, channel: String, team: Team): Future[DevModeChannel] = {
     val action = findQuery(context, channel, team.id).result.flatMap { r =>
       r.headOption.map(DBIO.successful).getOrElse {

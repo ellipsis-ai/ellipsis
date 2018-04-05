@@ -133,6 +133,7 @@ class BotResultServiceImpl @Inject() (
           maybeChoices.getOrElse(Seq()),
           botResult.isForUndeployed,
           botResult.hasUndeployedVersionForAuthor,
+          botResult.isInDevMode,
           services,
           configuration
         )

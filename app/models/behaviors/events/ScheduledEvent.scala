@@ -34,10 +34,11 @@ case class ScheduledEvent(underlying: Event, scheduled: Scheduled) extends Event
                    choices: Seq[ActionChoice],
                    isForUndeployed: Boolean,
                    hasUndeployedVersionForAuthor: Boolean,
+                   isInDevMode: Boolean,
                    services: DefaultServices,
                    configuration: Configuration
                  )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[String]] = {
-    underlying.sendMessage(text, forcePrivate, maybeShouldUnfurl, maybeConversation, attachmentGroups, files, choices, isForUndeployed, hasUndeployedVersionForAuthor, services, configuration)
+    underlying.sendMessage(text, forcePrivate, maybeShouldUnfurl, maybeConversation, attachmentGroups, files, choices, isForUndeployed, hasUndeployedVersionForAuthor, isInDevMode, services, configuration)
   }
 
   override def detailsFor(services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[JsObject] = {

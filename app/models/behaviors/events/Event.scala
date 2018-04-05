@@ -160,6 +160,7 @@ trait Event {
                    choices: Seq[ActionChoice],
                    isForUndeployed: Boolean,
                    hasUndeployedVersionForAuthor: Boolean,
+                   isInDevMode: Boolean,
                    services: DefaultServices,
                    configuration: Configuration
                  )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[String]]

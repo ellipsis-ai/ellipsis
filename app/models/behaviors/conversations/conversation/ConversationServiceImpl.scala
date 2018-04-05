@@ -201,6 +201,7 @@ class ConversationServiceImpl @Inject() (
           choices = Seq(),
           isForUndeployed = false,
           hasUndeployedVersionForAuthor = false,
+          isInDevMode = false,
           services,
           configuration
         ))

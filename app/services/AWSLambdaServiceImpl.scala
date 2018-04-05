@@ -203,6 +203,9 @@ class AWSLambdaServiceImpl @Inject() (
       isForUndeployed <- dataService.behaviorGroupDeployments.findForBehaviorGroupVersionAction(behaviorVersion.groupVersion).map(_.isEmpty)
       user <- event.ensureUserAction(dataService)
       hasUndeployedVersionForAuthor <- dataService.behaviorGroupDeployments.hasUndeployedVersionForAuthorAction(behaviorVersion.groupVersion, user)
+      isInDevMode <- event.maybeChannel.map { channel =>
+        DBIO.from(dataService.devModeChannels.isEnabledFor(event.context, channel, behaviorVersion.team))
+      }.getOrElse(DBIO.successful(false))
       result <- if (behaviorVersion.functionBody.isEmpty) {
         DBIO.successful(
           SuccessResult(
@@ -216,7 +219,8 @@ class AWSLambdaServiceImpl @Inject() (
             None,
             behaviorVersion.forcePrivateResponse,
             isForUndeployed,
-            hasUndeployedVersionForAuthor
+            hasUndeployedVersionForAuthor,
+            isInDevMode
           )
         )
       } else {
@@ -243,7 +247,8 @@ class AWSLambdaServiceImpl @Inject() (
                 event,
                 maybeConversation,
                 isForUndeployed,
-                hasUndeployedVersionForAuthor
+                hasUndeployedVersionForAuthor,
+                isInDevMode
               )
             },
             maybeConversation,

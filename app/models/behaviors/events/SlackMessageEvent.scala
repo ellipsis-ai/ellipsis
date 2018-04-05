@@ -116,6 +116,7 @@ case class SlackMessageEvent(
                    choices: Seq[ActionChoice],
                    isForUndeployed: Boolean,
                    hasUndeployedVersionForAuthor: Boolean,
+                   isInDevMode: Boolean,
                    services: DefaultServices,
                    configuration: Configuration
                  )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[String]] = {
@@ -127,9 +128,10 @@ case class SlackMessageEvent(
         user,
         profile.slackTeamId,
         unformattedText,
-        forcePrivate,
-        isForUndeployed,
-        hasUndeployedVersionForAuthor,
+        forcePrivate = forcePrivate,
+        isForUndeployed = isForUndeployed,
+        hasUndeployedVersionForAuthor = hasUndeployedVersionForAuthor,
+        isInDevMode = isInDevMode,
         channel,
         channelToUse,
         maybeThreadId,

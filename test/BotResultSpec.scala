@@ -89,7 +89,8 @@ class BotResultSpec extends PlaySpec with MockitoSugar with DBSpec {
             None,
             forcePrivateResponse = false,
             isForUndeployed = false,
-            hasUndeployedVersionForAuthor = false
+            hasUndeployedVersionForAuthor = false,
+            isInDevMode = false
           )
         val resultTs: String = SlackTimestamp.now
 
@@ -121,7 +122,8 @@ class BotResultSpec extends PlaySpec with MockitoSugar with DBSpec {
             None,
             forcePrivateResponse = false,
             isForUndeployed = false,
-            hasUndeployedVersionForAuthor = false
+            hasUndeployedVersionForAuthor = false,
+            isInDevMode = false
           )
         val resultTs: String = SlackTimestamp.now
 
@@ -196,7 +198,8 @@ class BotResultSpec extends PlaySpec with MockitoSugar with DBSpec {
             None,
             forcePrivateResponse = false,
             isForUndeployed = false,
-            hasUndeployedVersionForAuthor = false
+            hasUndeployedVersionForAuthor = false,
+            isInDevMode = false
           )
 
         mockPostChatMessage(responseText, event, resultTs, None)
@@ -243,7 +246,8 @@ class BotResultSpec extends PlaySpec with MockitoSugar with DBSpec {
             None,
             forcePrivateResponse = false,
             isForUndeployed = false,
-            hasUndeployedVersionForAuthor = false
+            hasUndeployedVersionForAuthor = false,
+            isInDevMode = false
           )
 
         val otherConversation = newConversationFor(team, user, profile, event)

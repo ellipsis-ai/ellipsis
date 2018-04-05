@@ -35,6 +35,7 @@ case class SlackMessageSender(
                                forcePrivate: Boolean,
                                isForUndeployed: Boolean,
                                hasUndeployedVersionForAuthor: Boolean,
+                               isInDevMode: Boolean,
                                originatingChannel: String,
                                channelToUse: String,
                                maybeThreadId: Option[String],

@@ -320,6 +320,9 @@ class BehaviorVersionServiceImpl @Inject() (
       isForUndeployed <- dataService.behaviorGroupDeployments.findForBehaviorGroupVersionAction(behaviorVersion.groupVersion).map(_.isEmpty)
       user <- event.ensureUserAction(dataService)
       hasUndeployedVersionForAuthor <- dataService.behaviorGroupDeployments.hasUndeployedVersionForAuthorAction(behaviorVersion.groupVersion, user)
+      isInDevMode <- event.maybeChannel.map { channel =>
+        DBIO.from(dataService.devModeChannels.isEnabledFor(event.context, channel, behaviorVersion.team))
+      }.getOrElse(DBIO.successful(false))
       maybeResult <- if (missingTeamEnvVars.nonEmpty) {
         DBIO.successful(Some(MissingTeamEnvVarsResult(
           event,
@@ -330,20 +333,21 @@ class BehaviorVersionServiceImpl @Inject() (
           missingTeamEnvVars,
           botPrefix,
           isForUndeployed,
-          hasUndeployedVersionForAuthor
+          hasUndeployedVersionForAuthor,
+          isInDevMode
         )
         )
         )
       } else {
         notReadyOAuth2Applications.headOption.map { firstNotReadyOAuth2App =>
-          DBIO.successful(Some(RequiredApiNotReady(firstNotReadyOAuth2App, event, behaviorVersion, None,  dataService, configuration, isForUndeployed, hasUndeployedVersionForAuthor)
+          DBIO.successful(Some(RequiredApiNotReady(firstNotReadyOAuth2App, event, behaviorVersion, None,  dataService, configuration, isForUndeployed, hasUndeployedVersionForAuthor, isInDevMode)
           ))
         }.getOrElse {
           val missingOAuth2ApplicationsRequiringAuth = missingOAuth2Applications.filter(_.api.grantType.requiresAuth)
           missingOAuth2ApplicationsRequiringAuth.headOption.map { firstMissingOAuth2App =>
             event.ensureUserAction(dataService).flatMap { user =>
               dataService.loginTokens.createForAction(user).map { loginToken =>
-                OAuth2TokenMissing(firstMissingOAuth2App, event, behaviorVersion, None, loginToken, cacheService, configuration, isForUndeployed, hasUndeployedVersionForAuthor)
+                OAuth2TokenMissing(firstMissingOAuth2App, event, behaviorVersion, None, loginToken, cacheService, configuration, isForUndeployed, hasUndeployedVersionForAuthor, isInDevMode)
               }
             }.map(Some(_))
           }.getOrElse(DBIO.successful(None))
