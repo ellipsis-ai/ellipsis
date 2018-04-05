@@ -158,9 +158,7 @@ trait Event {
                    attachmentGroups: Seq[MessageAttachmentGroup],
                    files: Seq[UploadFileSpec],
                    choices: Seq[ActionChoice],
-                   isForUndeployed: Boolean,
-                   hasUndeployedVersionForAuthor: Boolean,
-                   isInDevMode: Boolean,
+                   developerContext: DeveloperContext,
                    services: DefaultServices,
                    configuration: Configuration
                  )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[String]]

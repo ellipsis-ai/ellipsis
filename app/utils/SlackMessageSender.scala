@@ -4,7 +4,7 @@ import akka.actor.ActorSystem
 import json.Formatting._
 import json.SlackUserData
 import models.SlackMessageFormatter
-import models.behaviors.ActionChoice
+import models.behaviors.{ActionChoice, DeveloperContext}
 import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.events._
 import models.behaviors.events.SlackMessageActionConstants._
@@ -33,9 +33,7 @@ case class SlackMessageSender(
                                slackTeamId: String,
                                unformattedText: String,
                                forcePrivate: Boolean,
-                               isForUndeployed: Boolean,
-                               hasUndeployedVersionForAuthor: Boolean,
-                               isInDevMode: Boolean,
+                               developerContext: DeveloperContext,
                                originatingChannel: String,
                                channelToUse: String,
                                maybeThreadId: Option[String],
@@ -70,12 +68,12 @@ case class SlackMessageSender(
 
   val attachmentGroupsToUse = {
     val groups = attachmentGroups ++ choicesAttachmentGroups
-    if (isForUndeployed) {
+    if (developerContext.isForUndeployedBehaviorVersion) {
       val baseUrl = configuration.get[String]("application.apiBaseUrl")
       val path = controllers.routes.HelpController.devMode(Some(slackTeamId), Some(botName)).url
       val link = s"[development]($baseUrl$path)"
       groups ++ Seq(SlackMessageTextAttachmentGroup(s"\uD83D\uDEA7 Skill in $link \uD83D\uDEA7", None, None))
-    } else if (hasUndeployedVersionForAuthor) {
+    } else if (developerContext.hasUndeployedBehaviorVersionForAuthor) {
       val baseUrl = configuration.get[String]("application.apiBaseUrl")
       val path = controllers.routes.HelpController.devMode(Some(slackTeamId), Some(botName)).url
       val link = s"[dev mode]($baseUrl$path)"

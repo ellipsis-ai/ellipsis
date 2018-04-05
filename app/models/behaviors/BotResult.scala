@@ -102,9 +102,7 @@ sealed trait BotResult {
   def text: String
   def fullText: String = text
   def hasText: Boolean = fullText.trim.nonEmpty
-  val isForUndeployed: Boolean
-  val hasUndeployedVersionForAuthor: Boolean
-  val isInDevMode: Boolean
+  val developerContext: DeveloperContext
 
   def filesAsLogText: String = {
     if (files.nonEmpty) {
@@ -194,7 +192,7 @@ trait BotResultWithLogResult extends BotResult {
   }
 
   override def files: Seq[UploadFileSpec] = {
-    if (isInDevMode) {
+    if (developerContext.isInDevMode) {
       super.files ++ Seq(maybeAuthorLogFile).flatten
     } else {
       super.files
@@ -232,9 +230,7 @@ case class SuccessResult(
                           maybeResponseTemplate: Option[String],
                           maybeLogResult: Option[AWSLambdaLogResult],
                           forcePrivateResponse: Boolean,
-                          isForUndeployed: Boolean,
-                          hasUndeployedVersionForAuthor: Boolean,
-                          isInDevMode: Boolean
+                          developerContext: DeveloperContext
                         ) extends BotResultWithLogResult {
 
   val resultType = ResultType.Success
@@ -276,9 +272,7 @@ case class SuccessResult(
 
 case class SimpleTextResult(event: Event, maybeConversation: Option[Conversation], simpleText: String, forcePrivateResponse: Boolean) extends BotResult {
 
-  val isForUndeployed: Boolean = false
-  val hasUndeployedVersionForAuthor: Boolean = false
-  val isInDevMode: Boolean = false
+  val developerContext: DeveloperContext = DeveloperContext.default
 
   val resultType = ResultType.SimpleText
 
@@ -299,9 +293,7 @@ case class TextWithAttachmentsResult(
 
   val maybeBehaviorVersion: Option[BehaviorVersion] = None
 
-  val isForUndeployed: Boolean = false
-  val hasUndeployedVersionForAuthor: Boolean = false
-  val isInDevMode: Boolean = false
+  val developerContext: DeveloperContext = DeveloperContext.default
 
   def text: String = simpleText
 }
@@ -314,9 +306,7 @@ case class NoResponseResult(
                              maybeLogResult: Option[AWSLambdaLogResult]
                            ) extends BotResultWithLogResult {
 
-  val isForUndeployed: Boolean = false
-  val hasUndeployedVersionForAuthor: Boolean = false
-  val isInDevMode: Boolean = false
+  val developerContext: DeveloperContext = DeveloperContext.default
 
   val resultType = ResultType.NoResponse
   val forcePrivateResponse = false // N/A
@@ -352,9 +342,7 @@ case class ExecutionErrorResult(
                                  configuration: Configuration,
                                  payloadJson: JsValue,
                                  maybeLogResult: Option[AWSLambdaLogResult],
-                                 isForUndeployed: Boolean,
-                                 hasUndeployedVersionForAuthor: Boolean,
-                                 isInDevMode: Boolean
+                                 developerContext: DeveloperContext
                                ) extends BotResultWithLogResult with WithBehaviorLink {
 
   val resultType = ResultType.ExecutionError
@@ -414,7 +402,7 @@ case class ExecutionErrorResult(
 
   override def files: Seq[UploadFileSpec] = {
     val log = maybeAuthorLog.map(_ + "\n").getOrElse("") + maybeErrorLog.getOrElse("")
-    if (log.nonEmpty && isInDevMode) {
+    if (log.nonEmpty && developerContext.isInDevMode) {
       Seq(UploadFileSpec(Some(log), Some("text"), Some("Developer log")))
     } else {
       Seq()
@@ -430,9 +418,7 @@ case class SyntaxErrorResult(
                               configuration: Configuration,
                               payloadJson: JsValue,
                               maybeLogResult: Option[AWSLambdaLogResult],
-                              isForUndeployed: Boolean,
-                              hasUndeployedVersionForAuthor: Boolean,
-                              isInDevMode: Boolean
+                              developerContext: DeveloperContext
                             ) extends BotResultWithLogResult with WithBehaviorLink {
 
   val resultType = ResultType.SyntaxError
@@ -456,9 +442,7 @@ case class NoCallbackTriggeredResult(
                                       behaviorVersion: BehaviorVersion,
                                       dataService: DataService,
                                       configuration: Configuration,
-                                      isForUndeployed: Boolean,
-                                      hasUndeployedVersionForAuthor: Boolean,
-                                      isInDevMode: Boolean
+                                      developerContext: DeveloperContext
                                     ) extends BotResult with WithBehaviorLink {
 
   val resultType = ResultType.NoCallbackTriggered
@@ -476,9 +460,7 @@ case class MissingTeamEnvVarsResult(
                                  configuration: Configuration,
                                  missingEnvVars: Set[String],
                                  botPrefix: String,
-                                 isForUndeployed: Boolean,
-                                 hasUndeployedVersionForAuthor: Boolean,
-                                 isInDevMode: Boolean
+                                 developerContext: DeveloperContext
                                ) extends BotResult with WithBehaviorLink {
 
 
@@ -507,9 +489,7 @@ case class AWSDownResult(event: Event, behaviorVersion: BehaviorVersion, maybeCo
   val resultType = ResultType.AWSDown
   val forcePrivateResponse = false
 
-  val isForUndeployed: Boolean = false
-  val hasUndeployedVersionForAuthor: Boolean = false
-  val isInDevMode: Boolean = false
+  val developerContext: DeveloperContext = DeveloperContext.default
 
   val maybeBehaviorVersion: Option[BehaviorVersion] = Some(behaviorVersion)
 
@@ -531,9 +511,7 @@ case class OAuth2TokenMissing(
                                loginToken: LoginToken,
                                cacheService: CacheService,
                                configuration: Configuration,
-                               isForUndeployed: Boolean,
-                               hasUndeployedVersionForAuthor: Boolean,
-                               isInDevMode: Boolean
+                               developerContext: DeveloperContext
                              ) extends BotResult {
 
   val key = IDs.next
@@ -569,9 +547,7 @@ case class RequiredApiNotReady(
                                 maybeConversation: Option[Conversation],
                                 dataService: DataService,
                                 configuration: Configuration,
-                                isForUndeployed: Boolean,
-                                hasUndeployedVersionForAuthor: Boolean,
-                                isInDevMode: Boolean
+                                developerContext: DeveloperContext
                              ) extends BotResult {
 
   val resultType = ResultType.RequiredApiNotReady

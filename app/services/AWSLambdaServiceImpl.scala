@@ -200,10 +200,7 @@ class AWSLambdaServiceImpl @Inject() (
       requiredAWSConfigs <- dataService.requiredAWSConfigs.allForAction(behaviorVersion.groupVersion)
       requiredOAuth2ApiConfigs <- dataService.requiredOAuth2ApiConfigs.allForAction(behaviorVersion.groupVersion)
       requiredSimpleTokenApis <- dataService.requiredSimpleTokenApis.allForAction(behaviorVersion.groupVersion)
-      isForUndeployed <- dataService.behaviorGroupDeployments.findForBehaviorGroupVersionAction(behaviorVersion.groupVersion).map(_.isEmpty)
-      user <- event.ensureUserAction(dataService)
-      hasUndeployedVersionForAuthor <- dataService.behaviorGroupDeployments.hasUndeployedVersionForAuthorAction(behaviorVersion.groupVersion, user)
-      isInDevMode <- dataService.devModeChannels.isEnabledForAction(event, behaviorVersion)
+      developerContext <- DeveloperContext.buildFor(event, behaviorVersion, dataService)
       result <- if (behaviorVersion.functionBody.isEmpty) {
         DBIO.successful(
           SuccessResult(
@@ -216,9 +213,7 @@ class AWSLambdaServiceImpl @Inject() (
             behaviorVersion.maybeResponseTemplate,
             None,
             behaviorVersion.forcePrivateResponse,
-            isForUndeployed,
-            hasUndeployedVersionForAuthor,
-            isInDevMode
+            developerContext
           )
         )
       } else {
@@ -244,9 +239,7 @@ class AWSLambdaServiceImpl @Inject() (
                 configuration,
                 event,
                 maybeConversation,
-                isForUndeployed,
-                hasUndeployedVersionForAuthor,
-                isInDevMode
+                developerContext
               )
             },
             maybeConversation,

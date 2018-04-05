@@ -1,7 +1,6 @@
 package mocks
 
 import javax.inject.Inject
-
 import com.amazonaws.services.lambda.AWSLambdaAsyncClient
 import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
 import models.behaviors.behaviorparameter.BehaviorParameter
@@ -10,7 +9,7 @@ import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.events.Event
 import models.behaviors.library.LibraryVersion
 import models.behaviors.nodemoduleversion.NodeModuleVersion
-import models.behaviors.{BotResult, ParameterWithValue, SuccessResult}
+import models.behaviors.{BotResult, DeveloperContext, ParameterWithValue, SuccessResult}
 import models.environmentvariable.EnvironmentVariable
 import org.scalatest.mock.MockitoSugar
 import play.api.Configuration
@@ -39,9 +38,7 @@ class MockAWSLambdaService @Inject() (
       maybeResponseTemplate = None,
       maybeLogResult = None,
       forcePrivateResponse = false,
-      isForUndeployed = false,
-      hasUndeployedVersionForAuthor = false,
-      isInDevMode = false
+      DeveloperContext.default
     )
   }
 

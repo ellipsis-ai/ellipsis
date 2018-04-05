@@ -6,7 +6,7 @@ import models.behaviors.behaviorversion.BehaviorVersion
 import models.behaviors.conversations.InvokeBehaviorConversation
 import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.events.{SlackMessage, SlackMessageEvent}
-import models.behaviors.{NoResponseResult, SuccessResult}
+import models.behaviors.{DeveloperContext, NoResponseResult, SuccessResult}
 import models.team.Team
 import org.mockito.Mockito._
 import org.scalatest.mock.MockitoSugar
@@ -88,9 +88,7 @@ class BotResultSpec extends PlaySpec with MockitoSugar with DBSpec {
             Some(responseText),
             None,
             forcePrivateResponse = false,
-            isForUndeployed = false,
-            hasUndeployedVersionForAuthor = false,
-            isInDevMode = false
+            DeveloperContext.default
           )
         val resultTs: String = SlackTimestamp.now
 
@@ -121,9 +119,7 @@ class BotResultSpec extends PlaySpec with MockitoSugar with DBSpec {
             Some(responseText),
             None,
             forcePrivateResponse = false,
-            isForUndeployed = false,
-            hasUndeployedVersionForAuthor = false,
-            isInDevMode = false
+            DeveloperContext.default
           )
         val resultTs: String = SlackTimestamp.now
 
@@ -197,9 +193,7 @@ class BotResultSpec extends PlaySpec with MockitoSugar with DBSpec {
             Some(responseText),
             None,
             forcePrivateResponse = false,
-            isForUndeployed = false,
-            hasUndeployedVersionForAuthor = false,
-            isInDevMode = false
+            DeveloperContext.default
           )
 
         mockPostChatMessage(responseText, event, resultTs, None)
@@ -245,9 +239,7 @@ class BotResultSpec extends PlaySpec with MockitoSugar with DBSpec {
             Some(responseText),
             None,
             forcePrivateResponse = false,
-            isForUndeployed = false,
-            hasUndeployedVersionForAuthor = false,
-            isInDevMode = false
+            DeveloperContext.default
           )
 
         val otherConversation = newConversationFor(team, user, profile, event)

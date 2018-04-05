@@ -3,7 +3,7 @@ package models.behaviors.events
 import akka.actor.ActorSystem
 import models.accounts.slack.botprofile.SlackBotProfile
 import models.accounts.user.User
-import models.behaviors.ActionChoice
+import models.behaviors.{ActionChoice, DeveloperContext}
 import models.behaviors.conversations.conversation.Conversation
 import play.api.Configuration
 import services.caching.CacheService
@@ -114,9 +114,7 @@ case class SlackMessageEvent(
                    attachmentGroups: Seq[MessageAttachmentGroup],
                    files: Seq[UploadFileSpec],
                    choices: Seq[ActionChoice],
-                   isForUndeployed: Boolean,
-                   hasUndeployedVersionForAuthor: Boolean,
-                   isInDevMode: Boolean,
+                   developerContext: DeveloperContext,
                    services: DefaultServices,
                    configuration: Configuration
                  )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[String]] = {
@@ -129,9 +127,7 @@ case class SlackMessageEvent(
         profile.slackTeamId,
         unformattedText,
         forcePrivate = forcePrivate,
-        isForUndeployed = isForUndeployed,
-        hasUndeployedVersionForAuthor = hasUndeployedVersionForAuthor,
-        isInDevMode = isInDevMode,
+        developerContext,
         channel,
         channelToUse,
         maybeThreadId,

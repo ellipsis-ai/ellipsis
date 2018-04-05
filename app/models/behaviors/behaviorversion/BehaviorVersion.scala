@@ -90,9 +90,7 @@ case class BehaviorVersion(
                  configuration: Configuration,
                  event: Event,
                  maybeConversation: Option[Conversation],
-                 isForUndeployed: Boolean,
-                 hasUndeployedVersionForAuthor: Boolean,
-                 isInDevMode: Boolean
+                 developerContext: DeveloperContext
                ): BotResult = {
     val bytes = payload.array
     val jsonString = new java.lang.String( bytes, Charset.forName("UTF-8") )
@@ -109,20 +107,18 @@ case class BehaviorVersion(
         maybeResponseTemplate,
         logResultOption,
         forcePrivateResponse,
-        isForUndeployed,
-        hasUndeployedVersionForAuthor,
-        isInDevMode
+        developerContext
       )
     }.getOrElse {
       if ((json \ NO_RESPONSE_KEY).toOption.exists(_.as[Boolean])) {
         NoResponseResult(event, this, maybeConversation, json, logResultOption)
       } else {
         if (json.toString == "null") {
-          NoCallbackTriggeredResult(event, maybeConversation, this, dataService, configuration, isForUndeployed, hasUndeployedVersionForAuthor, isInDevMode)
+          NoCallbackTriggeredResult(event, maybeConversation, this, dataService, configuration, developerContext)
         } else if (isSyntaxError(json)) {
-          SyntaxErrorResult(event, maybeConversation, this, dataService, configuration, json, logResultOption, isForUndeployed, hasUndeployedVersionForAuthor, isInDevMode)
+          SyntaxErrorResult(event, maybeConversation, this, dataService, configuration, json, logResultOption, developerContext)
         } else {
-          ExecutionErrorResult(event, maybeConversation, this, dataService, configuration, json, logResultOption, isForUndeployed, hasUndeployedVersionForAuthor, isInDevMode)
+          ExecutionErrorResult(event, maybeConversation, this, dataService, configuration, json, logResultOption, developerContext)
         }
       }
     }
