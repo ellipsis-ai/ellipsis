@@ -36,15 +36,18 @@ class DevModeChannelServiceImpl @Inject() (
 
   import DevModeChannelQueries._
 
-  def find(context: String, channel: String, team: Team): Future[Option[DevModeChannel]] = {
-    val action = findQuery(context, channel, team.id).result.map { r =>
+  def findAction(context: String, channel: String, team: Team): DBIO[Option[DevModeChannel]] = {
+    findQuery(context, channel, team.id).result.map { r =>
       r.headOption
     }
-    dataService.run(action)
   }
 
-  def isEnabledFor(context: String, channel: String, team: Team): Future[Boolean] = {
-    find(context, channel, team).map(_.isDefined)
+  def find(context: String, channel: String, team: Team): Future[Option[DevModeChannel]] = {
+    dataService.run(findAction(context, channel, team))
+  }
+
+  def isEnabledForAction(context: String, channel: String, team: Team): DBIO[Boolean] = {
+    findAction(context, channel, team).map(_.isDefined)
   }
 
   def ensureFor(context: String, channel: String, team: Team): Future[DevModeChannel] = {

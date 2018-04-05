@@ -321,7 +321,7 @@ class BehaviorVersionServiceImpl @Inject() (
       user <- event.ensureUserAction(dataService)
       hasUndeployedVersionForAuthor <- dataService.behaviorGroupDeployments.hasUndeployedVersionForAuthorAction(behaviorVersion.groupVersion, user)
       isInDevMode <- event.maybeChannel.map { channel =>
-        DBIO.from(dataService.devModeChannels.isEnabledFor(event.context, channel, behaviorVersion.team))
+        dataService.devModeChannels.isEnabledForAction(event.context, channel, behaviorVersion.team)
       }.getOrElse(DBIO.successful(false))
       maybeResult <- if (missingTeamEnvVars.nonEmpty) {
         DBIO.successful(Some(MissingTeamEnvVarsResult(
