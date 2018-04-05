@@ -3,6 +3,7 @@ package services
 import akka.actor.ActorSystem
 import javax.inject._
 import json.{SlackUserData, SlackUserProfileData}
+import models.accounts.linkedaccount.LinkedAccount
 import models.accounts.slack.botprofile.SlackBotProfile
 import models.behaviors.BotResultService
 import models.behaviors.events.{EventHandler, SlackMessageEvent}
@@ -49,19 +50,27 @@ class SlackEventServiceImpl @Inject()(
     val client = SlackApiClient(botProfile.token)
     val slackTeamId = botProfile.slackTeamId
     Future.sequence(slackUserIds.map { userId =>
-      maybeSlackUserDataFor(userId, slackTeamId, client)
+      maybeSlackUserDataFor(userId, slackTeamId, client, (e) => {
+        Logger.info(
+          s"""Slack API reported user not found while trying to convert user IDs to username:
+            |Slack user ID: ${userId}
+            |Ellipsis bot Slack team ID: ${botProfile.slackTeamId}
+            |Ellipsis team ID: ${botProfile.teamId}
+          """.stripMargin, e)
+        None
+      })
     }).map(_.flatten)
   }
 
-  def fetchSlackUserDataFn(slackUserId: String, slackTeamId: String, client: SlackApiClient): SlackUserDataCacheKey => Future[Option[SlackUserData]] = {
+  def fetchSlackUserDataFn(slackUserId: String, slackTeamId: String, client: SlackApiClient, onUserNotFound: ((ApiError) => Option[slack.models.User])): SlackUserDataCacheKey => Future[Option[SlackUserData]] = {
     key: SlackUserDataCacheKey => {
       for {
-        maybeInfo <- client.getUserInfo(key.slackUserId).map(Some(_)).recover {
+        maybeInfo <- client.getUserInfo(key.slackUserId).map(Some(_)).recover  {
           case e: ApiError => {
             if (e.code == "user_not_found") {
-              Logger.warn(s"Slack API said user not found for user $slackUserId on team $slackTeamId", e)
+              onUserNotFound(e)
             } else {
-              Logger.error(s"Unknown error from Slack API while retrieving Slack user data for user $slackUserId on team $slackTeamId", e)
+              Logger.error(s"Unexpected error from Slack API while retrieving Slack user data for user $slackUserId on team $slackTeamId", e)
             }
             None
           }
@@ -93,11 +102,14 @@ class SlackEventServiceImpl @Inject()(
     }
   }
 
-  def maybeSlackUserDataFor(slackUserId: String, slackTeamId: String, client: SlackApiClient): Future[Option[SlackUserData]] = {
-    cacheService.getSlackUserData(SlackUserDataCacheKey(slackUserId, slackTeamId), fetchSlackUserDataFn(slackUserId, slackTeamId, client))
+  def maybeSlackUserDataFor(slackUserId: String, slackTeamId: String, client: SlackApiClient, onUserNotFound: (ApiError) => Option[slack.models.User]): Future[Option[SlackUserData]] = {
+    cacheService.getSlackUserData(SlackUserDataCacheKey(slackUserId, slackTeamId), fetchSlackUserDataFn(slackUserId, slackTeamId, client, onUserNotFound))
   }
 
   def maybeSlackUserDataFor(botProfile: SlackBotProfile): Future[Option[SlackUserData]] = {
-    maybeSlackUserDataFor(botProfile.userId, botProfile.slackTeamId, clientFor(botProfile))
+    maybeSlackUserDataFor(botProfile.userId, botProfile.slackTeamId, clientFor(botProfile), (e) => {
+      Logger.error(s"Slack said the Ellipsis bot Slack user could not be found for Ellipsis team ${botProfile.teamId} on Slack team ${botProfile.slackTeamId} with slack user ID ${botProfile.userId}", e)
+      None
+    })
   }
 }

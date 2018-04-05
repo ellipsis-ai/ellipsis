@@ -15,7 +15,7 @@ import play.api.inject.bind
 import play.api.inject.guice.GuiceApplicationBuilder
 import services.{AWSLambdaService, GithubService, SlackEventService}
 import services.caching.CacheService
-import slack.api.SlackApiClient
+import slack.api.{ApiError, SlackApiClient}
 import support.DBSpec
 
 import scala.concurrent.Future
@@ -52,7 +52,7 @@ class UserServiceSpec extends DBSpec with MockitoSugar {
         val client = SlackApiClient(botProfile.token)
         when(slackEventService.clientFor(botProfile)).thenReturn(client)
         val slackUserData = SlackUserData(linkedAccount.loginInfo.providerKey, adminSlackTeamId, "", false, false, false, false, None, false, None)
-        when(slackEventService.maybeSlackUserDataFor(linkedAccount.loginInfo.providerKey, adminSlackTeamId, client)).thenReturn(Future.successful(Some(slackUserData)))
+        when(slackEventService.maybeSlackUserDataFor(linkedAccount.loginInfo.providerKey, adminSlackTeamId, client, any())).thenReturn(Future.successful(Some(slackUserData)))
 
         runNow(dataService.users.isAdmin(linkedAccount.user)) mustBe true
       })

@@ -10,7 +10,7 @@ import org.scalatest.mock.MockitoSugar
 import org.scalatestplus.play.PlaySpec
 import play.api.libs.json.JsObject
 import play.api.test.Helpers._
-import slack.api.SlackApiClient
+import slack.api.{ApiError, SlackApiClient}
 import slack.models.Channel
 import support.TestContext
 import utils.SlackChannel
@@ -87,7 +87,7 @@ class SlackEventSpec extends PlaySpec with MockitoSugar {
 
         val mockSlackClient = mock[SlackApiClient]
 
-        when(services.slackEventService.maybeSlackUserDataFor(org.mockito.Matchers.eq[String](slackUserData.accountId), org.mockito.Matchers.eq[String](slackTeamId), any[SlackApiClient])).thenReturn(
+        when(services.slackEventService.maybeSlackUserDataFor(org.mockito.Matchers.eq[String](slackUserData.accountId), org.mockito.Matchers.eq[String](slackTeamId), any[SlackApiClient], any())).thenReturn(
           Future.successful(Some(slackUserData))
         )
 

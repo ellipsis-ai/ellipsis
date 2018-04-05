@@ -138,7 +138,7 @@ class UserServiceImpl @Inject() (
         client <- maybeClient
         linkedAccount <- maybeLinkedAccount
       } yield {
-        slackEventService.maybeSlackUserDataFor(linkedAccount.loginInfo.providerKey, LinkedAccount.ELLIPSIS_SLACK_TEAM_ID, client).map { maybeSlackUserData =>
+        slackEventService.maybeSlackUserDataFor(linkedAccount.loginInfo.providerKey, LinkedAccount.ELLIPSIS_SLACK_TEAM_ID, client, (_) => None).map { maybeSlackUserData =>
           maybeSlackUserData.exists(_.accountTeamId == LinkedAccount.ELLIPSIS_SLACK_TEAM_ID)
         }
       }).getOrElse(Future.successful(false))
@@ -179,7 +179,19 @@ class UserServiceImpl @Inject() (
         slackBotProfile <- maybeSlackBotProfile
         slackAccount <- maybeSlackAccount
       } yield {
-        slackEventService.maybeSlackUserDataFor(slackAccount.loginInfo.providerKey, slackBotProfile.slackTeamId, SlackApiClient(slackBotProfile.token))
+        val slackUserId = slackAccount.loginInfo.providerKey
+        val slackTeamId = slackBotProfile.slackTeamId
+        slackEventService.maybeSlackUserDataFor(slackUserId, slackTeamId, SlackApiClient(slackBotProfile.token), (e) => {
+          Logger.error(
+            s"""Slack API reported user not found while trying to build user data for an Ellipsis user.
+               |Ellipsis user ID: ${user.id}
+               |Ellipsis user’s team ID: ${user.teamId}
+               |Ellipsis team ID for this requeust: ${team.id}
+               |Slack user ID: $slackUserId
+               |Slack team ID for this team’s bot: $slackTeamId
+             """.stripMargin, e)
+          None
+        })
       }).getOrElse(Future.successful(None))
     } yield maybeUserData
   }
