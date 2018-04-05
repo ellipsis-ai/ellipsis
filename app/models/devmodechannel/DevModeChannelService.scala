@@ -1,5 +1,7 @@
 package models.devmodechannel
 
+import models.behaviors.behaviorversion.BehaviorVersion
+import models.behaviors.events.Event
 import models.team.Team
 import slick.dbio.DBIO
 
@@ -11,7 +13,7 @@ trait DevModeChannelService {
 
   def find(context: String, channel: String, team: Team): Future[Option[DevModeChannel]]
 
-  def isEnabledForAction(context: String, channel: String, team: Team): DBIO[Boolean]
+  def isEnabledForAction(event: Event, behaviorVersion: BehaviorVersion): DBIO[Boolean]
 
   def ensureFor(context: String, channel: String, team: Team): Future[DevModeChannel]
 

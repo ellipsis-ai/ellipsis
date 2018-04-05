@@ -203,9 +203,7 @@ class AWSLambdaServiceImpl @Inject() (
       isForUndeployed <- dataService.behaviorGroupDeployments.findForBehaviorGroupVersionAction(behaviorVersion.groupVersion).map(_.isEmpty)
       user <- event.ensureUserAction(dataService)
       hasUndeployedVersionForAuthor <- dataService.behaviorGroupDeployments.hasUndeployedVersionForAuthorAction(behaviorVersion.groupVersion, user)
-      isInDevMode <- event.maybeChannel.map { channel =>
-        dataService.devModeChannels.isEnabledForAction(event.context, channel, behaviorVersion.team)
-      }.getOrElse(DBIO.successful(false))
+      isInDevMode <- dataService.devModeChannels.isEnabledForAction(event, behaviorVersion)
       result <- if (behaviorVersion.functionBody.isEmpty) {
         DBIO.successful(
           SuccessResult(
