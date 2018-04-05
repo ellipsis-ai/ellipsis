@@ -4,7 +4,7 @@ import akka.actor.ActorSystem
 import json.SlackUserData
 import models.accounts.slack.botprofile.SlackBotProfile
 import models.accounts.user.User
-import models.behaviors.{ActionChoice, BehaviorResponse}
+import models.behaviors.{ActionChoice, BehaviorResponse, DeveloperContext}
 import models.behaviors.behavior.Behavior
 import models.behaviors.conversations.conversation.Conversation
 import models.team.Team
@@ -56,8 +56,7 @@ case class RunEvent(
                    attachmentGroups: Seq[MessageAttachmentGroup],
                    files: Seq[UploadFileSpec],
                    choices: Seq[ActionChoice],
-                   isForUndeployed: Boolean,
-                   hasUndeployedVersionForAuthor: Boolean,
+                   developerContext: DeveloperContext,
                    services: DefaultServices,
                    configuration: Configuration
                  )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[String]] = {
@@ -68,9 +67,8 @@ case class RunEvent(
         user,
         profile.slackTeamId,
         unformattedText,
-        forcePrivate,
-        isForUndeployed,
-        hasUndeployedVersionForAuthor,
+        forcePrivate = forcePrivate,
+        developerContext,
         channel,
         channel,
         maybeThreadId,

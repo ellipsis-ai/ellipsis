@@ -6,7 +6,7 @@ import javax.inject.Inject
 import akka.actor.ActorSystem
 import com.google.inject.Provider
 import drivers.SlickPostgresDriver.api._
-import models.behaviors.BotResultService
+import models.behaviors.{BotResultService, DeveloperContext}
 import play.api.Configuration
 import play.api.libs.ws.WSClient
 import services._
@@ -199,8 +199,7 @@ class ConversationServiceImpl @Inject() (
           attachmentGroups = Seq(),
           files = Seq(),
           choices = Seq(),
-          isForUndeployed = false,
-          hasUndeployedVersionForAuthor = false,
+          DeveloperContext.default,
           services,
           configuration
         ))

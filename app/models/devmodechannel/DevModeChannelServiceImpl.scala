@@ -1,12 +1,14 @@
 package models.devmodechannel
 
 import java.time.OffsetDateTime
-import javax.inject.Inject
 
+import javax.inject.Inject
 import com.google.inject.Provider
 import models.team._
 import services.DataService
 import drivers.SlickPostgresDriver.api._
+import models.behaviors.behaviorversion.BehaviorVersion
+import models.behaviors.events.Event
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -36,11 +38,20 @@ class DevModeChannelServiceImpl @Inject() (
 
   import DevModeChannelQueries._
 
-  def find(context: String, channel: String, team: Team): Future[Option[DevModeChannel]] = {
-    val action = findQuery(context, channel, team.id).result.map { r =>
+  def findAction(context: String, channel: String, team: Team): DBIO[Option[DevModeChannel]] = {
+    findQuery(context, channel, team.id).result.map { r =>
       r.headOption
     }
-    dataService.run(action)
+  }
+
+  def find(context: String, channel: String, team: Team): Future[Option[DevModeChannel]] = {
+    dataService.run(findAction(context, channel, team))
+  }
+
+  def isEnabledForAction(event: Event, behaviorVersion: BehaviorVersion): DBIO[Boolean] = {
+    event.maybeChannel.map { channel =>
+      findAction(event.context, channel, behaviorVersion.team).map(_.isDefined)
+    }.getOrElse(DBIO.successful(false))
   }
 
   def ensureFor(context: String, channel: String, team: Team): Future[DevModeChannel] = {

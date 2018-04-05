@@ -131,8 +131,7 @@ class BotResultServiceImpl @Inject() (
           botResult.attachmentGroups,
           files,
           maybeChoices.getOrElse(Seq()),
-          botResult.isForUndeployed,
-          botResult.hasUndeployedVersionForAuthor,
+          botResult.developerContext,
           services,
           configuration
         )

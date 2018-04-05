@@ -2,7 +2,7 @@ package models.behaviors.testing
 
 import akka.actor.ActorSystem
 import models.accounts.user.User
-import models.behaviors.{ActionChoice, UserInfo}
+import models.behaviors.{ActionChoice, DeveloperContext, UserInfo}
 import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.events._
 import models.team.Team
@@ -50,8 +50,7 @@ case class TestEvent(
                    attachmentGroups: Seq[MessageAttachmentGroup],
                    files: Seq[UploadFileSpec],
                    choices: Seq[ActionChoice],
-                   isForUndeployed: Boolean,
-                   hasUndeployedVersionForAuthor: Boolean,
+                   developerContext: DeveloperContext,
                    services: DefaultServices,
                    configuration: Configuration
                  )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[String]] = {
