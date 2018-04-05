@@ -62,7 +62,15 @@ trait SlackEvent {
   def detailsFor(services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[JsObject] = {
     val slackChannels = SlackChannels(client, services.cacheService, profile.slackTeamId)
     for {
-      maybeUser <- services.slackEventService.maybeSlackUserDataFor(user, profile.slackTeamId, SlackApiClient(profile.token))
+      maybeUser <- services.slackEventService.maybeSlackUserDataFor(user, profile.slackTeamId, SlackApiClient(profile.token), (e) => {
+        Logger.error(
+          s"""Slack API reported user not found while generating details about the user to send to an action:
+             |Slack user ID: ${user}
+             |Ellipsis bot Slack team ID: ${profile.slackTeamId}
+             |Ellipsis team ID: ${profile.teamId}
+           """.stripMargin, e)
+        None
+      })
       maybeChannelInfo <- slackChannels.getInfoFor(channel)
     } yield {
       val channelDetails = JsObject(Seq(

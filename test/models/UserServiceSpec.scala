@@ -1,12 +1,10 @@
 package models
 
-import java.time.OffsetDateTime
-
 import json.SlackUserData
 import mocks.{MockAWSLambdaService, MockCacheService}
 import models.accounts.linkedaccount.LinkedAccount
-import models.accounts.slack.botprofile.SlackBotProfile
 import modules.ActorModule
+import org.mockito.Matchers
 import org.mockito.Matchers._
 import org.mockito.Mockito._
 import org.scalatest.mock.MockitoSugar
@@ -52,7 +50,7 @@ class UserServiceSpec extends DBSpec with MockitoSugar {
         val client = SlackApiClient(botProfile.token)
         when(slackEventService.clientFor(botProfile)).thenReturn(client)
         val slackUserData = SlackUserData(linkedAccount.loginInfo.providerKey, adminSlackTeamId, "", false, false, false, false, None, false, None)
-        when(slackEventService.maybeSlackUserDataFor(linkedAccount.loginInfo.providerKey, adminSlackTeamId, client)).thenReturn(Future.successful(Some(slackUserData)))
+        when(slackEventService.maybeSlackUserDataFor(Matchers.eq(linkedAccount.loginInfo.providerKey), Matchers.eq(adminSlackTeamId), Matchers.eq(client), any())).thenReturn(Future.successful(Some(slackUserData)))
 
         runNow(dataService.users.isAdmin(linkedAccount.user)) mustBe true
       })

@@ -87,7 +87,7 @@ class SlackEventSpec extends PlaySpec with MockitoSugar {
 
         val mockSlackClient = mock[SlackApiClient]
 
-        when(services.slackEventService.maybeSlackUserDataFor(org.mockito.Matchers.eq[String](slackUserData.accountId), org.mockito.Matchers.eq[String](slackTeamId), any[SlackApiClient])).thenReturn(
+        when(services.slackEventService.maybeSlackUserDataFor(org.mockito.Matchers.eq[String](slackUserData.accountId), org.mockito.Matchers.eq[String](slackTeamId), any[SlackApiClient], any())).thenReturn(
           Future.successful(Some(slackUserData))
         )
 

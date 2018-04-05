@@ -211,7 +211,16 @@ trait Scheduled {
                )(implicit actorSystem: ActorSystem, ec: ExecutionContext): String => Future[Unit] = {
     slackUserId: String => {
       for {
-        maybeSlackUserData <- services.slackEventService.maybeSlackUserDataFor(slackUserId, profile.slackTeamId, client)
+        maybeSlackUserData <- services.slackEventService.maybeSlackUserDataFor(slackUserId, profile.slackTeamId, client, (e) => {
+          Logger.error(
+            s"""Slack API reported user not found while trying to send a scheduled message:
+               |Slack user ID: $slackUserId
+               |Ellipsis bot Slack team ID: ${profile.slackTeamId}
+               |Ellipsis user ID: ${maybeUser.map(_.id).getOrElse("unknown")}
+               |Ellipsis team ID: ${team.id}
+             """.stripMargin, e)
+          None
+        })
         maybeDmInfo <- maybeSlackUserData.filter { userData =>
           userData.accountId != profile.userId && !userData.deleted
         }.map { userData =>

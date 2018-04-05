@@ -10,7 +10,7 @@ import models.behaviors.events.SlackMessageEvent
 import org.mockito.Matchers._
 import org.mockito.Mockito._
 import services.SlackEventService
-import slack.api.SlackApiClient
+import slack.api.{ApiError, SlackApiClient}
 import org.scalatest.mock.MockitoSugar
 import slack.models.Attachment
 import utils.SlackTimestamp
@@ -93,7 +93,7 @@ class MockSlackEventService extends SlackEventService with MockitoSugar {
     Future.successful(Set())
   }
 
-  def maybeSlackUserDataFor(slackUserId: String, slackTeamId: String, client: SlackApiClient): Future[Option[SlackUserData]] = {
+  def maybeSlackUserDataFor(slackUserId: String, slackTeamId: String, client: SlackApiClient, onUserNotFound: ApiError => Option[slack.models.User]): Future[Option[SlackUserData]] = {
     Future.successful(None)
   }
 
