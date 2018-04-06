@@ -149,11 +149,20 @@ class UserServiceImpl @Inject() (
     if (user.teamId != team.id) {
       for {
         isAdmin <- isAdmin(user)
+        hasNoSlackLinkedAccount <- if (!isAdmin) {
+          dataService.linkedAccounts.maybeForSlackFor(user).map(_.isEmpty)
+        } else {
+          Future.successful(false)
+        }
       } yield {
         if (isAdmin) {
           UserData.asAdmin(user.id)
         } else {
-          Logger.error(s"Non-admin user data requested with mismatched team ID: user ID ${user.id} with team ID ${user.teamId} compared to requested team ID ${team.id}")
+          if (hasNoSlackLinkedAccount) {
+            Logger.warn(s"User data requested but no Slack linked account exists for user ID ${user.id} with team ID ${user.teamId}")
+          } else {
+            Logger.error(s"Non-admin user data requested with mismatched team ID: user ID ${user.id} with team ID ${user.teamId} compared to requested team ID ${team.id}")
+          }
           UserData(user.id, None, None, None)
         }
       }
