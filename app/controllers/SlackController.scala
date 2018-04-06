@@ -6,7 +6,7 @@ import com.mohiva.play.silhouette.api.{LoginInfo, Silhouette}
 import json.Formatting._
 import models.accounts.linkedaccount.LinkedAccount
 import models.accounts.slack.botprofile.SlackBotProfile
-import models.behaviors.{ActionChoice, SimpleTextResult, TextWithAttachmentsResult}
+import models.behaviors.{ActionChoice, SimpleTextResult}
 import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
 import models.behaviors.builtins.DisplayHelpBehavior
 import models.behaviors.conversations.conversation.Conversation
@@ -831,21 +831,21 @@ class SlackController @Inject() (
 
     def result: Result = {
 
-      // respond immediately by adding a new attachment and sending a message
-      val maybeOriginalColor = info.original_message.attachments.headOption.flatMap(_.color)
-      val newAttachment = AttachmentInfo(
-        maybeResultText,
-        title = None,
-        text = None,
-        Some(Seq("text")),
-        Some(info.callback_id),
-        color = maybeOriginalColor,
-        footer = Some("✔︎︎ OK")
-      )
+      // respond immediately by sending a new message
       maybeResultText.foreach(instantBackgroundResponse)
       runInBackground
 
       val updated = if (shouldRemoveActions) {
+        val maybeOriginalColor = info.original_message.attachments.headOption.flatMap(_.color)
+        val newAttachment = AttachmentInfo(
+          maybeResultText,
+          title = None,
+          text = None,
+          Some(Seq("text")),
+          Some(info.callback_id),
+          color = maybeOriginalColor,
+          footer = Some("✔︎︎ OK")
+        )
         val attachments = info.original_message.attachments.map(ea => ea.copy(actions = None))
         info.original_message.copy(attachments = attachments :+ newAttachment)
       } else {
