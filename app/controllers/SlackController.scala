@@ -833,7 +833,15 @@ class SlackController @Inject() (
 
       // respond immediately by adding a new attachment and sending a message
       val maybeOriginalColor = info.original_message.attachments.headOption.flatMap(_.color)
-      val newAttachment = AttachmentInfo(maybeResultText, None, None, Some(Seq("text")), Some(info.callback_id), color = maybeOriginalColor, footer = maybeResultText)
+      val newAttachment = AttachmentInfo(
+        maybeResultText,
+        title = None,
+        text = None,
+        Some(Seq("text")),
+        Some(info.callback_id),
+        color = maybeOriginalColor,
+        footer = Some("✔︎︎ OK")
+      )
       maybeResultText.foreach(instantBackgroundResponse)
       runInBackground
 
