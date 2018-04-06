@@ -6,7 +6,7 @@ import com.mohiva.play.silhouette.api.{LoginInfo, Silhouette}
 import json.Formatting._
 import models.accounts.linkedaccount.LinkedAccount
 import models.accounts.slack.botprofile.SlackBotProfile
-import models.behaviors.ActionChoice
+import models.behaviors.{ActionChoice, SimpleTextResult, TextWithAttachmentsResult}
 import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
 import models.behaviors.builtins.DisplayHelpBehavior
 import models.behaviors.conversations.conversation.Conversation
@@ -365,7 +365,9 @@ class SlackController @Inject() (
                          selected_options: Option[Seq[ActionSelectOptionInfo]]
                        )
   case class TeamInfo(id: String, domain: String)
-  case class ChannelInfo(id: String, name: String)
+  case class ChannelInfo(id: String, name: String) {
+    val isDirectMessage: Boolean = id.startsWith("D")
+  }
   case class UserInfo(id: String, name: String, team_id: Option[String])
   case class OriginalMessageInfo(
                                   text: String,
@@ -791,24 +793,56 @@ class SlackController @Inject() (
     val info: ActionsTriggeredInfo
     val shouldRemoveActions: Boolean
     val maybeResultText: Option[String]
-    val slackUser: String = s"<@${info.user.id}>"
+    val slackUser: String = if (info.channel.isDirectMessage) {
+      "You"
+    } else {
+      s"<@${info.user.id}>"
+    }
     implicit val request: Request[AnyContent]
+
+    def instantBackgroundResponse(responseText: String): Future[Unit] = {
+      for {
+        maybeSlackBotProfile <- dataService.slackBotProfiles.allForSlackTeamId(info.slackTeamIdToUse).map(_.headOption)
+      } yield {
+        (for {
+          botProfile <- maybeSlackBotProfile
+        } yield {
+          dataService.slackBotProfiles.sendResultWithNewEvent(
+            "Message acknowledging response to Slack action",
+            slackMessageEvent => Future.successful(Some(
+              SimpleTextResult(
+                slackMessageEvent,
+                maybeConversation = None,
+                s"_${responseText}_",
+                forcePrivateResponse = false
+              )
+            )),
+            botProfile.slackTeamId,
+            botProfile,
+            info.channel.id,
+            info.user.id,
+            info.message_ts
+          )
+        }).getOrElse(Future.successful({}))
+      }
+    }
 
     def runInBackground: Unit
 
     def result: Result = {
 
-      runInBackground
-
-      // respond immediately by appending a new attachment
+      // respond immediately by adding a new attachment and sending a message
       val maybeOriginalColor = info.original_message.attachments.headOption.flatMap(_.color)
       val newAttachment = AttachmentInfo(maybeResultText, None, None, Some(Seq("text")), Some(info.callback_id), color = maybeOriginalColor, footer = maybeResultText)
-      val originalAttachmentsToUse = if (shouldRemoveActions) {
-        info.original_message.attachments.map(ea => ea.copy(actions = None))
+      maybeResultText.foreach(instantBackgroundResponse)
+      runInBackground
+
+      val updated = if (shouldRemoveActions) {
+        val attachments = info.original_message.attachments.map(ea => ea.copy(actions = None))
+        info.original_message.copy(attachments = attachments :+ newAttachment)
       } else {
-        info.original_message.attachments
+        info.original_message
       }
-      val updated = info.original_message.copy(attachments = originalAttachmentsToUse :+ newAttachment)
       Ok(Json.toJson(updated))
     }
 
