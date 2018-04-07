@@ -802,10 +802,10 @@ class SlackController @Inject() (
 
     def instantBackgroundResponse(responseText: String): Future[Unit] = {
       for {
-        maybeSlackBotProfile <- dataService.slackBotProfiles.allForSlackTeamId(info.slackTeamIdToUse).map(_.headOption)
+        maybeBotProfile <- info.maybeBotProfile
       } yield {
         (for {
-          botProfile <- maybeSlackBotProfile
+          botProfile <- maybeBotProfile
         } yield {
           dataService.slackBotProfiles.sendResultWithNewEvent(
             "Message acknowledging response to Slack action",
