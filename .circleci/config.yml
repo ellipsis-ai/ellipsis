@@ -59,7 +59,6 @@ jobs:
           paths:
             - npm_modules/ellipsis-action-logs/node_modules
             - npm_modules/ellipsis-aws-billing/node_modules
-            - npm_modules/ellipsis-cal-date-format/node_modules
             - npm_modules/ellipsis-date-range-parser/node_modules
             - npm_modules/ellipsis-default-storage/node_modules
             - npm_modules/ellipsis-post-message/node_modules
