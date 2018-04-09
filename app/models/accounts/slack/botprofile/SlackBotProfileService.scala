@@ -40,6 +40,7 @@ trait SlackBotProfileService {
     botProfile: SlackBotProfile,
     channelId: String,
     userId: String,
-    originalMessageTs: String
+    originalMessageTs: String,
+    maybeThreadTs: Option[String]
   ): Future[Unit]
 }

@@ -6,7 +6,7 @@ import com.mohiva.play.silhouette.api.{LoginInfo, Silhouette}
 import json.Formatting._
 import models.accounts.linkedaccount.LinkedAccount
 import models.accounts.slack.botprofile.SlackBotProfile
-import models.behaviors.{ActionChoice, SimpleTextResult}
+import models.behaviors.{ActionAcknowledgmentResult, ActionChoice}
 import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
 import models.behaviors.builtins.DisplayHelpBehavior
 import models.behaviors.conversations.conversation.Conversation
@@ -784,7 +784,8 @@ class SlackController @Inject() (
       botProfile,
       info.channel.id,
       info.user.id,
-      info.message_ts
+      info.message_ts,
+      info.original_message.thread_ts
     )
   }
 
@@ -809,19 +810,21 @@ class SlackController @Inject() (
         } yield {
           dataService.slackBotProfiles.sendResultWithNewEvent(
             "Message acknowledging response to Slack action",
-            slackMessageEvent => Future.successful(Some(
-              SimpleTextResult(
+            slackMessageEvent => for {
+              maybeConversation <- slackMessageEvent.maybeOngoingConversation(dataService)
+            } yield {
+              Some(ActionAcknowledgmentResult(
                 slackMessageEvent,
-                maybeConversation = None,
-                s"_${responseText}_",
-                forcePrivateResponse = false
-              )
-            )),
+                maybeConversation,
+                s"_${responseText}_"
+              ))
+            },
             botProfile.slackTeamId,
             botProfile,
             info.channel.id,
             info.user.id,
-            info.message_ts
+            info.message_ts,
+            info.original_message.thread_ts
           )
         }).getOrElse(Future.successful({}))
       }
@@ -1091,7 +1094,8 @@ class SlackController @Inject() (
         botProfile,
         info.channel.id,
         info.user.id,
-        info.message_ts
+        info.message_ts,
+        info.original_message.thread_ts
       )
     }
 
@@ -1142,7 +1146,8 @@ class SlackController @Inject() (
         botProfile,
         info.channel.id,
         info.user.id,
-        info.message_ts
+        info.message_ts,
+        info.original_message.thread_ts
       )
     }
 
@@ -1189,7 +1194,8 @@ class SlackController @Inject() (
         botProfile,
         info.channel.id,
         info.user.id,
-        info.message_ts
+        info.message_ts,
+        info.original_message.thread_ts
       )
     }
 
@@ -1378,7 +1384,8 @@ class SlackController @Inject() (
         botProfile,
         info.channel.id,
         info.user.id,
-        info.message_ts
+        info.message_ts,
+        info.original_message.thread_ts
       )
     }
 
