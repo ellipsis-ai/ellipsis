@@ -784,7 +784,8 @@ class SlackController @Inject() (
       botProfile,
       info.channel.id,
       info.user.id,
-      info.message_ts
+      info.message_ts,
+      info.original_message.thread_ts
     )
   }
 
@@ -809,18 +810,21 @@ class SlackController @Inject() (
         } yield {
           dataService.slackBotProfiles.sendResultWithNewEvent(
             "Message acknowledging response to Slack action",
-            slackMessageEvent => Future.successful(Some(
-              ActionAcknowledgmentResult(
+            slackMessageEvent => for {
+              maybeConversation <- slackMessageEvent.maybeOngoingConversation(dataService)
+            } yield {
+              Some(ActionAcknowledgmentResult(
                 slackMessageEvent,
-                maybeConversation = None,
+                maybeConversation,
                 s"_${responseText}_"
-              )
-            )),
+              ))
+            },
             botProfile.slackTeamId,
             botProfile,
             info.channel.id,
             info.user.id,
-            info.message_ts
+            info.message_ts,
+            info.original_message.thread_ts
           )
         }).getOrElse(Future.successful({}))
       }
@@ -1090,7 +1094,8 @@ class SlackController @Inject() (
         botProfile,
         info.channel.id,
         info.user.id,
-        info.message_ts
+        info.message_ts,
+        info.original_message.thread_ts
       )
     }
 
@@ -1141,7 +1146,8 @@ class SlackController @Inject() (
         botProfile,
         info.channel.id,
         info.user.id,
-        info.message_ts
+        info.message_ts,
+        info.original_message.thread_ts
       )
     }
 
@@ -1188,7 +1194,8 @@ class SlackController @Inject() (
         botProfile,
         info.channel.id,
         info.user.id,
-        info.message_ts
+        info.message_ts,
+        info.original_message.thread_ts
       )
     }
 
@@ -1377,7 +1384,8 @@ class SlackController @Inject() (
         botProfile,
         info.channel.id,
         info.user.id,
-        info.message_ts
+        info.message_ts,
+        info.original_message.thread_ts
       )
     }
 

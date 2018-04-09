@@ -175,14 +175,15 @@ class SlackBotProfileServiceImpl @Inject() (
                               botProfile: SlackBotProfile,
                               channelId: String,
                               userId: String,
-                              originalMessageTs: String
+                              originalMessageTs: String,
+                              maybeThreadTs: Option[String]
   ): Future[Unit] = {
     val delayMilliseconds = 1000
     val event = SlackMessageEvent(
       botProfile,
       userSlackTeamId,
       channelId,
-      None,
+      maybeThreadTs,
       userId,
       SlackMessage.blank,
       None,
