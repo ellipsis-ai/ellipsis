@@ -6,7 +6,7 @@ import com.mohiva.play.silhouette.api.{LoginInfo, Silhouette}
 import json.Formatting._
 import models.accounts.linkedaccount.LinkedAccount
 import models.accounts.slack.botprofile.SlackBotProfile
-import models.behaviors.{ActionChoice, SimpleTextResult}
+import models.behaviors.{ActionAcknowledgmentResult, ActionChoice}
 import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
 import models.behaviors.builtins.DisplayHelpBehavior
 import models.behaviors.conversations.conversation.Conversation
@@ -810,11 +810,10 @@ class SlackController @Inject() (
           dataService.slackBotProfiles.sendResultWithNewEvent(
             "Message acknowledging response to Slack action",
             slackMessageEvent => Future.successful(Some(
-              SimpleTextResult(
+              ActionAcknowledgmentResult(
                 slackMessageEvent,
                 maybeConversation = None,
-                s"_${responseText}_",
-                forcePrivateResponse = false
+                s"_${responseText}_"
               )
             )),
             botProfile.slackTeamId,
