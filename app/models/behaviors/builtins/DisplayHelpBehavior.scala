@@ -128,7 +128,7 @@ case class DisplayHelpBehavior(
     }
     for {
       maybeSkillResult <- maybeHelpBehaviorVersion.map { behaviorVersionData =>
-        maybeRunHelpActionFor(behaviorVersionData)
+        maybeRunHelpBehaviorFor(behaviorVersionData)
       }.getOrElse(Future.successful(None))
     } yield {
       maybeSkillResult.getOrElse {
@@ -137,7 +137,7 @@ case class DisplayHelpBehavior(
     }
   }
 
-  def maybeRunHelpActionFor(behaviorVersionData: BehaviorVersionData)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[BotResult]] = {
+  private def maybeRunHelpBehaviorFor(behaviorVersionData: BehaviorVersionData)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[BotResult]] = {
     for {
       maybeBehaviorVersion <- behaviorVersionData.id.map { versionId =>
         dataService.behaviorVersions.findWithoutAccessCheck(versionId)
