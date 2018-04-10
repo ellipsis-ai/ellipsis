@@ -162,6 +162,27 @@ case class DisplayHelpBehavior(
     (searchedHelp || clickedSkill) && matchingGroupData.length == 1
   }
 
+  private def helpResultFor(groupData: Seq[BehaviorGroupData], botPrefix: String): Future[BotResult] = {
+    val (named, unnamed) = groupData.partition(_.maybeNonEmptyName.isDefined)
+    val namedGroupData = named.map(behaviorGroupData => SkillHelpGroupData(behaviorGroupData))
+    val flattenedGroupData = if (unnamed.nonEmpty) {
+      namedGroupData :+ MiscHelpGroupData(unnamed)
+    } else {
+      namedGroupData
+    }
+    val matchingGroupData = maybeHelpSearch.map { helpSearch =>
+      FuzzyMatcher[HelpGroupData](helpSearch, flattenedGroupData).run.map(matchResult => HelpSearchResult(helpSearch, matchResult, event, dataService, lambdaService, botPrefix))
+    }.getOrElse(flattenedGroupData.map(group => SimpleHelpResult(group, event, dataService, lambdaService, botPrefix)))
+
+    if (searchedHelp && matchingGroupData.isEmpty) {
+      Future.successful(emptyResult(botPrefix))
+    } else if (shouldShowSingleSkill(matchingGroupData)) {
+      Future.successful(skillResultFor(matchingGroupData.head))
+    } else {
+      Future.successful(introResultFor(matchingGroupData, maybeStartAtIndex.getOrElse(0), botPrefix))
+    }
+  }
+
   def result(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[BotResult] = {
     for {
       maybeTeam <- dataService.teams.find(event.teamId)
@@ -188,25 +209,7 @@ case class DisplayHelpBehavior(
         }).map(_.flatten.sorted)
       }).getOrElse(Future.successful(Seq()))
       botPrefix <- event.contextualBotPrefix(services)
-    } yield {
-      val (named, unnamed) = groupData.partition(_.maybeNonEmptyName.isDefined)
-      val namedGroupData = named.map(behaviorGroupData => SkillHelpGroupData(behaviorGroupData))
-      val flattenedGroupData = if (unnamed.nonEmpty) {
-        namedGroupData :+ MiscHelpGroupData(unnamed)
-      } else {
-        namedGroupData
-      }
-      val matchingGroupData = maybeHelpSearch.map { helpSearch =>
-        FuzzyMatcher[HelpGroupData](helpSearch, flattenedGroupData).run.map(matchResult => HelpSearchResult(helpSearch, matchResult, event, dataService, lambdaService, botPrefix))
-      }.getOrElse(flattenedGroupData.map(group => SimpleHelpResult(group, event, dataService, lambdaService, botPrefix)))
-
-      if (searchedHelp && matchingGroupData.isEmpty) {
-        emptyResult(botPrefix)
-      } else if (shouldShowSingleSkill(matchingGroupData)) {
-        skillResultFor(matchingGroupData.head)
-      } else {
-        introResultFor(matchingGroupData, maybeStartAtIndex.getOrElse(0), botPrefix)
-      }
-    }
+      helpResult <- helpResultFor(groupData, botPrefix)
+    } yield helpResult
   }
 }
