@@ -59,7 +59,7 @@ const BehaviorSwitcher = React.createClass({
               {this.props.nodeModuleVersions.map((version, index) => (
                 <div
                   key={`nodeModuleVersion${index}`}
-                  className={`pvxs`}
+                  className={`pbxs`}
                 >
                   <div className="phxl mobile-phl type-monospace display-ellipsis" title={
                     `${version.from} v${version.version}`
