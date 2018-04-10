@@ -8,47 +8,55 @@ import {RequiredAWSConfig} from '../models/aws';
 import {RequiredOAuth2Application} from '../models/oauth2';
 import {RequiredSimpleTokenApi} from '../models/simple_token';
 import DynamicLabelButton from "../form/dynamic_label_button";
+import Editable from "../models/editable";
+import RequiredApiConfig from "../models/required_api_config";
+import autobind from "../lib/autobind";
 
-const BehaviorSwitcher = React.createClass({
-    propTypes: {
-      actionBehaviors: React.PropTypes.arrayOf(React.PropTypes.instanceOf(BehaviorVersion)).isRequired,
-      dataTypeBehaviors: React.PropTypes.arrayOf(React.PropTypes.instanceOf(BehaviorVersion)).isRequired,
-      libraries: React.PropTypes.arrayOf(React.PropTypes.instanceOf(LibraryVersion)).isRequired,
-      nodeModuleVersions: React.PropTypes.arrayOf(React.PropTypes.instanceOf(NodeModuleVersion)).isRequired,
-      selectedId: React.PropTypes.string,
-      groupId: React.PropTypes.string,
-      onSelect: React.PropTypes.func.isRequired,
-      addNewAction: React.PropTypes.func.isRequired,
-      addNewDataType: React.PropTypes.func.isRequired,
-      addNewLibrary: React.PropTypes.func.isRequired,
-      isModified: React.PropTypes.func.isRequired,
-      onUpdateNodeModules: React.PropTypes.func.isRequired,
-      requiredAWSConfigs: React.PropTypes.arrayOf(React.PropTypes.instanceOf(RequiredAWSConfig)).isRequired,
-      requiredOAuth2Applications: React.PropTypes.arrayOf(React.PropTypes.instanceOf(RequiredOAuth2Application)).isRequired,
-      requiredSimpleTokenApis: React.PropTypes.arrayOf(React.PropTypes.instanceOf(RequiredSimpleTokenApi)).isRequired,
-      onApiConfigClick: React.PropTypes.func.isRequired,
-      onAddApiConfigClick: React.PropTypes.func.isRequired,
-      getApiConfigName: React.PropTypes.func.isRequired,
-      updatingNodeModules: React.PropTypes.bool
-    },
+interface Props {
+  actionBehaviors: Array<BehaviorVersion>,
+  dataTypeBehaviors: Array<BehaviorVersion>,
+  libraries: Array<LibraryVersion>,
+  nodeModuleVersions: Array<NodeModuleVersion>,
+  selectedId?: Option<string>,
+  groupId: string,
+  onSelect: (groupId: string, editableId?: Option<string>) => void,
+  addNewAction: () => void,
+  addNewDataType: () => void,
+  addNewLibrary: () => void,
+  isModified: (editable: Editable) => boolean,
+  onUpdateNodeModules: () => void,
+  requiredAWSConfigs: Array<RequiredAWSConfig>,
+  requiredOAuth2Applications: Array<RequiredOAuth2Application>,
+  requiredSimpleTokenApis: Array<RequiredSimpleTokenApi>,
+  onApiConfigClick: (config: RequiredApiConfig) => void,
+  onAddApiConfigClick: () => void,
+  getApiConfigName: (config: RequiredApiConfig) => string,
+  updatingNodeModules: boolean
+}
 
-    onEditSkillDetails: function() {
+class BehaviorSwitcher extends React.Component<Props> {
+    constructor(props: Props) {
+      super(props);
+      autobind(this);
+    }
+
+    onEditSkillDetails() {
       this.props.onSelect(this.props.groupId, null);
-    },
+    }
 
-    getAllBehaviors: function() {
+    getAllBehaviors(): Array<Editable> {
       return this.props.actionBehaviors.concat(this.props.dataTypeBehaviors);
-    },
+    }
 
-    getEditables: function() {
+    getEditables(): Array<Editable> {
       return this.getAllBehaviors().concat(this.props.libraries);
-    },
+    }
 
-    getSelected: function() {
+    getSelected(): Option<Editable> {
       return this.getEditables().find(ea => ea.getPersistentId() === this.props.selectedId);
-    },
+    }
 
-    renderNodeModules: function() {
+    renderNodeModules() {
       if (this.props.nodeModuleVersions.length) {
         return (
           <div className="border-bottom mtl pbl">
@@ -96,9 +104,9 @@ const BehaviorSwitcher = React.createClass({
       } else {
         return null;
       }
-    },
+    }
 
-    render: function() {
+    render() {
       return (
         <div className="pbxxxl">
 
@@ -165,6 +173,6 @@ const BehaviorSwitcher = React.createClass({
         </div>
       );
     }
-});
+}
 
 export default BehaviorSwitcher;

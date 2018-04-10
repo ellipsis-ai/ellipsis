@@ -7,9 +7,9 @@ import Sort from '../lib/sort';
 type Props = {
     heading: string,
     editables: Array<Editable>,
-    selectedId?: string,
+    selectedId?: Option<string>,
     onAddNew: () => void,
-    addNewLabel?: string,
+    addNewLabel?: Option<string>,
     onSelect: (groupId: string, selectableId: string) => void,
     isModified: (Editable) => boolean
 }

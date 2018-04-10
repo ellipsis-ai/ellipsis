@@ -1,7 +1,7 @@
 import ApiConfigRef from './api_config_ref';
 import RequiredApiConfig from './required_api_config';
 
-class RequiredApiConfigWithConfig extends RequiredApiConfig {
+abstract class RequiredApiConfigWithConfig extends RequiredApiConfig {
   readonly config?: Option<ApiConfigRef>;
 
     constructor(id: Option<string>, exportId: Option<string>, apiId: string, nameInCode: string, config: Option<ApiConfigRef>) {
