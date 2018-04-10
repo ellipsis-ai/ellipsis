@@ -124,6 +124,7 @@ class AWSLambdaServiceImpl @Inject() (
                                    userInfo: UserInfo,
                                    teamInfo: TeamInfo,
                                    eventInfo: EventInfo,
+                                   conversationInfo: ConversationInfo,
                                    token: InvocationToken
                                    ): Seq[(String, JsObject)] = {
     val teamEnvVars = environmentVariables.filter(ev => ev.isInstanceOf[TeamEnvironmentVariable])
@@ -135,7 +136,8 @@ class AWSLambdaServiceImpl @Inject() (
       }),
       USER_INFO_KEY -> userInfo.toJson,
       TEAM_INFO_KEY -> teamInfo.toJson,
-      EVENT_INFO_KEY -> eventInfo.toJson
+      EVENT_INFO_KEY -> eventInfo.toJson,
+      CONVERSATION_INFO_KEY -> conversationInfo.toJson
     )))
   }
 
@@ -154,10 +156,11 @@ class AWSLambdaServiceImpl @Inject() (
                           ): DBIO[BotResult] = {
     for {
       userInfo <- event.userInfoAction(defaultServices)
+      conversationInfo <- event.conversationInfoAction(maybeConversation, defaultServices)
       result <- {
         DBIO.from(TeamInfo.forConfig(apiConfigInfo, userInfo, team, ws).flatMap { teamInfo =>
           val payloadJson = JsObject(
-            payloadData ++ contextParamDataFor(environmentVariables, userInfo, teamInfo, EventInfo(event), token) ++ Seq(("behaviorVersionId", JsString(behaviorVersion.id)))
+            payloadData ++ contextParamDataFor(environmentVariables, userInfo, teamInfo, EventInfo(event), conversationInfo, token) ++ Seq(("behaviorVersionId", JsString(behaviorVersion.id)))
           )
           val invokeRequest =
             new InvokeRequest().

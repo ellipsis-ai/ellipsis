@@ -73,6 +73,10 @@ trait Event {
     UserInfo.buildForAction(this, teamId, services)
   }
 
+  def conversationInfoAction(maybeConversation: Option[Conversation], services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): DBIO[ConversationInfo] = {
+    ConversationInfo.buildForAction(this, maybeConversation, services)
+  }
+
   def messageInfo(services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[MessageInfo] = {
     MessageInfo.buildFor(this, services)
   }

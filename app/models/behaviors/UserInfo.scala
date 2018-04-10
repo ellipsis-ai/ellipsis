@@ -2,13 +2,15 @@ package models.behaviors
 
 import akka.actor.ActorSystem
 import models.accounts.user.User
+import models.behaviors.behaviorparameter.BehaviorParameterContext
 import models.behaviors.config.awsconfig.AWSConfig
 import models.behaviors.config.requiredawsconfig.RequiredAWSConfig
+import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.events.Event
 import models.team.Team
-import play.api.libs.ws.WSClient
 import play.api.libs.json._
-import services.{ApiConfigInfo, DataService, DefaultServices}
+import play.api.libs.ws.WSClient
+import services.{ApiConfigInfo, DefaultServices}
 import slick.dbio.DBIO
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -40,7 +42,50 @@ object MessageInfo {
 
 }
 
-case class UserInfo(user: User, links: Seq[LinkedInfo], maybeMessageInfo: Option[MessageInfo], maybeTimeZone: Option[String], maybeUserName: Option[String], maybeFullName: Option[String]) {
+case class InputValue(inputName: String, inputValue: JsValue)
+
+case class ConversationInfo(inputValuesCollected: Seq[InputValue]) {
+
+  def toJson: JsObject = {
+    JsObject(inputValuesCollected.map { ea =>
+      ea.inputName -> ea.inputValue
+    })
+  }
+
+}
+
+object ConversationInfo {
+
+  def buildForAction(
+                      event: Event,
+                      maybeConversation: Option[Conversation],
+                      services: DefaultServices
+                    )(implicit actorSystem: ActorSystem, ec: ExecutionContext): DBIO[ConversationInfo] = {
+    for {
+      inputValues <- maybeConversation.map { convo =>
+        services.dataService.collectedParameterValues.allForAction(convo).flatMap { collected =>
+          DBIO.sequence(collected.map { ea =>
+            val context = BehaviorParameterContext(event, maybeConversation, ea.parameter, services)
+            DBIO.from(ea.parameter.paramType.prepareForInvocation(ea.valueString, context)).map { v =>
+              InputValue(ea.parameter.name, v)
+            }
+          })
+        }
+      }.getOrElse(DBIO.successful(Seq()))
+    } yield {
+      ConversationInfo(inputValues)
+    }
+  }
+}
+
+case class UserInfo(
+                     user: User,
+                     links: Seq[LinkedInfo],
+                     maybeMessageInfo: Option[MessageInfo],
+                     maybeTimeZone: Option[String],
+                     maybeUserName: Option[String],
+                     maybeFullName: Option[String]
+                   ) {
 
   implicit val messageInfoWrites = Json.writes[MessageInfo]
 

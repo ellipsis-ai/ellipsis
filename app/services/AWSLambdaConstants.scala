@@ -9,6 +9,7 @@ object AWSLambdaConstants {
   val USER_INFO_KEY = "userInfo"
   val TEAM_INFO_KEY = "teamInfo"
   val EVENT_INFO_KEY = "event"
+  val CONVERSATION_INFO_KEY = "conversationInfo"
   val ENV_KEY = "env"
   val API_BASE_URL_KEY = "apiBaseUrl"
   val RESULT_KEY = "successResult"
