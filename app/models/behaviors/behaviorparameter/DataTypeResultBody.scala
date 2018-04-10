@@ -35,7 +35,7 @@ object DataTypeResultBody {
     val json = result.result
     json.asOpt[DataTypeResultBody].getOrElse {
       json.asOpt[Seq[ValidValue]].map(DataTypeResultBody.apply).getOrElse {
-        json.asOpt[Seq[String]].map(strings => DataTypeResultBody(strings.map { ea => ValidValue(ea, ea, Map()) })).getOrElse {
+        json.asOpt[Seq[String]].map(strings => DataTypeResultBody(strings.map { ea => ValidValue(ea, ea, None) })).getOrElse {
           empty
         }
       }
