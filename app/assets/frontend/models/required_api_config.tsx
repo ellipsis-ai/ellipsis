@@ -5,7 +5,7 @@ export interface RequiredApiConfigJson {
   nameInCode: string
 }
 
-class RequiredApiConfig implements RequiredApiConfigJson {
+abstract class RequiredApiConfig implements RequiredApiConfigJson {
   constructor(
     readonly id: Option<string>,
     readonly exportId: Option<string>,
@@ -41,6 +41,10 @@ class RequiredApiConfig implements RequiredApiConfigJson {
     canHaveConfig(): boolean {
       return false;
     }
+
+    abstract codePath(): string
+
+    abstract isConfigured(): boolean
   }
 
 export default RequiredApiConfig;

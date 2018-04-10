@@ -4,7 +4,7 @@ import SVGPlus from '../svg/plus';
 
 type Props = {
     onClick: () => void,
-    label?: string
+    label?: Option<string>
 }
 
 class AddButton extends React.PureComponent<Props> {

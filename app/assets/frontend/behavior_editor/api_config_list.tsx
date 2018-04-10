@@ -4,22 +4,29 @@ import Button from '../form/button';
 import {RequiredAWSConfig} from '../models/aws';
 import {RequiredOAuth2Application} from '../models/oauth2';
 import {RequiredSimpleTokenApi} from '../models/simple_token';
+import autobind from "../lib/autobind";
+import RequiredApiConfig from "../models/required_api_config";
 
-const ApiConfigList = React.createClass({
-    propTypes: {
-      requiredAWSConfigs: React.PropTypes.arrayOf(React.PropTypes.instanceOf(RequiredAWSConfig)).isRequired,
-      requiredOAuth2Applications: React.PropTypes.arrayOf(React.PropTypes.instanceOf(RequiredOAuth2Application)).isRequired,
-      requiredSimpleTokenApis: React.PropTypes.arrayOf(React.PropTypes.instanceOf(RequiredSimpleTokenApi)).isRequired,
-      onApiConfigClick: React.PropTypes.func.isRequired,
-      onAddApiConfigClick:  React.PropTypes.func.isRequired,
-      getApiConfigName: React.PropTypes.func.isRequired
-    },
+interface Props {
+  requiredAWSConfigs: Array<RequiredAWSConfig>,
+  requiredOAuth2Applications: Array<RequiredOAuth2Application>,
+  requiredSimpleTokenApis: Array<RequiredSimpleTokenApi>,
+  onApiConfigClick: (config: RequiredApiConfig) => void,
+  onAddApiConfigClick: () => void,
+  getApiConfigName: (config: RequiredApiConfig) => string
+}
 
-    onApiConfigClick: function(required) {
+class ApiConfigList extends React.Component<Props> {
+    constructor(props: Props) {
+      super(props);
+      autobind(this);
+    }
+
+    onApiConfigClick(required): void {
       this.props.onApiConfigClick(required);
-    },
+    }
 
-    renderConfig: function(required) {
+    renderConfig(required: RequiredApiConfig) {
       const name = this.props.getApiConfigName(required);
       const path = required.codePath();
       const onClick = this.onApiConfigClick.bind(this, required);
@@ -36,17 +43,17 @@ const ApiConfigList = React.createClass({
           </div>
         </div>
       );
-    },
+    }
 
-    renderConfigs: function(configs) {
+    renderConfigs(configs: Array<RequiredApiConfig>) {
       return configs.map((required, index) => (
         <div key={`apiConfig${index}`} className={`pvxs`}>
           {this.renderConfig(required)}
         </div>
       ));
-    },
+    }
 
-    render: function() {
+    render() {
       const awsConfigs = this.renderConfigs(this.props.requiredAWSConfigs);
       const oAuth2Configs = this.renderConfigs(this.props.requiredOAuth2Applications);
       const simpleTokenConfigs = this.renderConfigs(this.props.requiredSimpleTokenApis);
@@ -74,6 +81,6 @@ const ApiConfigList = React.createClass({
         </div>
       );
     }
-});
+}
 
 export default ApiConfigList;
