@@ -872,7 +872,8 @@ const BehaviorEditor = React.createClass({
   onSaveError: function(error) {
     this.props.onClearActivePanel();
     this.setState({
-      error: error || "not_saved"
+      error: error || "not_saved",
+      updatingNodeModules: false
     });
   },
 
@@ -903,7 +904,10 @@ const BehaviorEditor = React.createClass({
   },
 
   updateNodeModules: function(optionalCallback) {
-    this.setState({ error: null });
+    this.setState({
+      error: null,
+      updatingNodeModules: true
+    });
     this.toggleActivePanel('saving', true);
     DataRequest.jsonPost(
       jsRoutes.controllers.BehaviorEditorController.updateNodeModules().url,
@@ -1389,7 +1393,7 @@ const BehaviorEditor = React.createClass({
   },
 
   getNodeModuleVersions: function() {
-    return this.state.nodeModuleVersions || [];
+    return Sort.arrayAlphabeticalBy(this.state.nodeModuleVersions || [], (ea) => ea.from);
   },
 
   hasInputNamed: function(name) {
@@ -1591,12 +1595,22 @@ const BehaviorEditor = React.createClass({
 
   loadNodeModuleVersions: function() {
     if (this.isExistingGroup()) {
-      DataRequest.jsonGet(jsRoutes.controllers.BehaviorEditorController.nodeModuleVersionsFor(this.getBehaviorGroup().id).url)
-        .then(json => {
-          this.setState({
-            nodeModuleVersions: NodeModuleVersion.allFromJson(json)
+      this.setState({
+        updatingNodeModules: true
+      }, () => {
+        DataRequest.jsonGet(jsRoutes.controllers.BehaviorEditorController.nodeModuleVersionsFor(this.getBehaviorGroup().id).url)
+          .then(json => {
+            this.setState({
+              nodeModuleVersions: NodeModuleVersion.allFromJson(json),
+              updatingNodeModules: false
+            });
+          })
+          .catch(() => {
+            this.setState({
+              updatingNodeModules: false
+            });
           });
-        });
+      });
     }
   },
 
@@ -1714,7 +1728,8 @@ const BehaviorEditor = React.createClass({
       windowDimensions: {
         width: window.innerWidth,
         height: window.innerHeight
-      }
+      },
+      updatingNodeModules: false
     };
   },
 
@@ -2289,6 +2304,7 @@ const BehaviorEditor = React.createClass({
               onApiConfigClick={this.onApiConfigClick}
               onAddApiConfigClick={this.onAddApiConfigClick}
               getApiConfigName={this.getApiConfigName}
+              updatingNodeModules={this.state.updatingNodeModules}
             />
           </Sticky>
         </Collapsible>

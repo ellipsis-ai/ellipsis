@@ -7,6 +7,7 @@ import NodeModuleVersion from '../models/node_module_version';
 import {RequiredAWSConfig} from '../models/aws';
 import {RequiredOAuth2Application} from '../models/oauth2';
 import {RequiredSimpleTokenApi} from '../models/simple_token';
+import DynamicLabelButton from "../form/dynamic_label_button";
 
 const BehaviorSwitcher = React.createClass({
     propTypes: {
@@ -27,7 +28,8 @@ const BehaviorSwitcher = React.createClass({
       requiredSimpleTokenApis: React.PropTypes.arrayOf(React.PropTypes.instanceOf(RequiredSimpleTokenApi)).isRequired,
       onApiConfigClick: React.PropTypes.func.isRequired,
       onAddApiConfigClick: React.PropTypes.func.isRequired,
-      getApiConfigName: React.PropTypes.func.isRequired
+      getApiConfigName: React.PropTypes.func.isRequired,
+      updatingNodeModules: React.PropTypes.bool
     },
 
     onEditSkillDetails: function() {
@@ -57,18 +59,37 @@ const BehaviorSwitcher = React.createClass({
               {this.props.nodeModuleVersions.map((version, index) => (
                 <div
                   key={`nodeModuleVersion${index}`}
-                  className={`pvxs`}
+                  className={`pbxs`}
                 >
-                  <div className="phxl mobile-phl type-monospace">
+                  <div className="phxl mobile-phl type-monospace display-ellipsis" title={
+                    `${version.from} v${version.version}`
+                  }>
                     <span>{version.from}</span>
-                    <span className="type-weak"> —&nbsp;v{version.version}</span></div>
+                    {this.props.updatingNodeModules ? (
+                      <span className="pulse type-disabled">@...</span>
+                    ) : (
+                      <span>
+                        <span className="type-disabled">@</span>
+                        <span className="type-weak">{version.version}</span>
+                      </span>
+                    )}
+                  </div>
                 </div>
               ))}
             </div>
             <div className="container container-wide mvm">
-              <button type="button"
-                      onClick={this.props.onUpdateNodeModules}
-                      className="button button-s button-shrink">Update NPM module versions</button>
+              <DynamicLabelButton
+                onClick={this.props.onUpdateNodeModules}
+                className="button button-s button-shrink"
+                disabledWhen={this.props.updatingNodeModules}
+                labels={[{
+                  text: "Update NPM module versions",
+                  displayWhen: !this.props.updatingNodeModules
+                }, {
+                  text: "Updating…",
+                  displayWhen: this.props.updatingNodeModules
+                }]}
+              />
             </div>
           </div>
         );
