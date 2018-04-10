@@ -32,7 +32,6 @@ case class BehaviorVersion(
                             maybeFunctionBody: Option[String],
                             maybeResponseTemplate: Option[String],
                             forcePrivateResponse: Boolean,
-                            maybeAuthor: Option[User],
                             createdAt: OffsetDateTime
                           ) extends BehaviorVersionForDataTypeSchema {
 
@@ -64,6 +63,11 @@ case class BehaviorVersion(
     maybeName.getOrElse(id)
   }
 
+  def nameAndIdString: String = {
+    val namePart = maybeName.map(_ ++ " ").getOrElse("")
+    s"${namePart}[${id}]"
+  }
+
   def hasFunction: Boolean = {
     maybeFunctionBody.exists(_.trim.nonEmpty)
   }
@@ -86,24 +90,35 @@ case class BehaviorVersion(
                  configuration: Configuration,
                  event: Event,
                  maybeConversation: Option[Conversation],
-                 isForUndeployed: Boolean
+                 developerContext: DeveloperContext
                ): BotResult = {
     val bytes = payload.array
     val jsonString = new java.lang.String( bytes, Charset.forName("UTF-8") )
     val json = Json.parse(jsonString)
     val logResultOption = Some(logResult)
     (json \ "result").toOption.map { successResult =>
-      SuccessResult(event, maybeConversation, successResult, json, parametersWithValues, maybeResponseTemplate, logResultOption, forcePrivateResponse, isForUndeployed)
+      SuccessResult(
+        event,
+        this,
+        maybeConversation,
+        successResult,
+        json,
+        parametersWithValues,
+        maybeResponseTemplate,
+        logResultOption,
+        forcePrivateResponse,
+        developerContext
+      )
     }.getOrElse {
       if ((json \ NO_RESPONSE_KEY).toOption.exists(_.as[Boolean])) {
-        NoResponseResult(event, maybeConversation, json, logResultOption)
+        NoResponseResult(event, this, maybeConversation, json, logResultOption)
       } else {
         if (json.toString == "null") {
-          NoCallbackTriggeredResult(event, maybeConversation, this, dataService, configuration)
+          NoCallbackTriggeredResult(event, maybeConversation, this, dataService, configuration, developerContext)
         } else if (isSyntaxError(json)) {
-          SyntaxErrorResult(event, maybeConversation, this, dataService, configuration, json, logResultOption)
+          SyntaxErrorResult(event, maybeConversation, this, dataService, configuration, json, logResultOption, developerContext)
         } else {
-          ExecutionErrorResult(event, maybeConversation, this, dataService, configuration, json, logResultOption)
+          ExecutionErrorResult(event, maybeConversation, this, dataService, configuration, json, logResultOption, developerContext)
         }
       }
     }
@@ -119,7 +134,6 @@ case class BehaviorVersion(
       maybeFunctionBody,
       maybeResponseTemplate,
       forcePrivateResponse,
-      maybeAuthor.map(_.id),
       createdAt
     )
   }

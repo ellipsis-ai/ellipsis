@@ -4,6 +4,7 @@ import play.api.Configuration
 import play.api.libs.json._
 import play.api.libs.ws.WSClient
 import services._
+import services.caching.CacheService
 
 import scala.concurrent.duration._
 import scala.concurrent.{Await, ExecutionContext, Future}
@@ -12,7 +13,7 @@ sealed trait GitFetcherException extends Exception
 
 object GitFetcherExceptionType extends Enumeration {
   type GitFetcherExceptionType = Value
-  val NoCommiterInfoFound, NoRepoFound, NoBranchFound, NoValidSkillFound = Value
+  val NoCommiterInfoFound, NoRepoFound, NoBranchFound, NoCommitFound, NoValidSkillFound = Value
 }
 
 case class GithubResultFromDataException(exceptionType: GitFetcherExceptionType.Value, message: String, details: JsObject) extends GitFetcherException {

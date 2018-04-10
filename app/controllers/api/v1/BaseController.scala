@@ -11,7 +11,8 @@ import play.api.{Configuration, Logger}
 import play.api.libs.json.{JsObject, JsValue, Json}
 import play.api.libs.ws.WSClient
 import play.api.mvc.{AnyContent, Request, Result}
-import services.{AWSLambdaService, CacheService, DataService, SlackEventService}
+import services.caching.CacheService
+import services.{AWSLambdaService, DataService, SlackEventService}
 
 import scala.concurrent.ExecutionContext
 

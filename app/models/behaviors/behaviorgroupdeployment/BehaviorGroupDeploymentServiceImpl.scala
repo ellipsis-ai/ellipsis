@@ -6,6 +6,7 @@ import javax.inject.Inject
 import com.google.inject.Provider
 import drivers.SlickPostgresDriver.api._
 import models.IDs
+import models.accounts.user.User
 import models.behaviors.behaviorgroup.BehaviorGroup
 import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
 import models.behaviors.triggers.messagetrigger.MessageTrigger
@@ -126,6 +127,15 @@ class BehaviorGroupDeploymentServiceImpl @Inject() (
       }
     } yield instance
     dataService.run(action.transactionally)
+  }
+
+  def hasUndeployedVersionForAuthorAction(version: BehaviorGroupVersion, user: User): DBIO[Boolean] = {
+    for {
+      isDeployed <- findForBehaviorGroupVersionAction(version).map(_.isDefined)
+      hasNewerForAuthor <- dataService.behaviorGroupVersions.hasNewerVersionForAuthorAction(version, user)
+    } yield {
+      isDeployed && hasNewerForAuthor
+    }
   }
 
 }

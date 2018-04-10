@@ -12,23 +12,30 @@ const SettingsMenu = React.createClass({
     },
 
     render: function () {
+      const teamId = this.props.isAdmin ? this.props.teamId : null;
       return (
         <nav className="mvxxl">
           <ul className="list-nav">
+            <li className="mbxl">
+              <h5>Team settings</h5>
+            </li>
             <li className={this.activeClassWhenPageName("regionalSettings")}>
-              <a href={jsRoutes.controllers.web.settings.RegionalSettingsController.index(this.props.teamId).url}>Regional settings</a>
+              <a href={jsRoutes.controllers.web.settings.RegionalSettingsController.index(teamId).url}>Regional settings</a>
             </li>
             <li className={this.activeClassWhenPageName("environmentVariables")}>
-              <a href={jsRoutes.controllers.web.settings.EnvironmentVariablesController.list(this.props.teamId).url}>Environment variables</a>
-            </li>
-            <li className={this.activeClassWhenPageName("apiTokens")}>
-              <a href={jsRoutes.controllers.APITokenController.listTokens(null, this.props.teamId).url}>Ellipsis API tokens</a>
+              <a href={jsRoutes.controllers.web.settings.EnvironmentVariablesController.list(teamId).url}>Environment variables</a>
             </li>
             <li className={this.activeClassWhenPageName("oauthApplications")}>
-              <a href={jsRoutes.controllers.web.settings.IntegrationsController.list(this.props.teamId).url}>Integrations</a>
+              <a href={jsRoutes.controllers.web.settings.IntegrationsController.list(teamId).url}>Integrations</a>
+            </li>
+            <li className="mtxxxl mbxl">
+              <h5>User settings</h5>
+            </li>
+            <li className={this.activeClassWhenPageName("apiTokens")}>
+              <a href={jsRoutes.controllers.APITokenController.listTokens(null, teamId).url}>Ellipsis API tokens</a>
             </li>
             <li className={this.activeClassWhenPageName("githubConfig")}>
-              <a href={jsRoutes.controllers.GithubConfigController.index(this.props.teamId).url}>GitHub configuration</a>
+              <a href={jsRoutes.controllers.GithubConfigController.index(teamId).url}>GitHub authentication</a>
             </li>
           </ul>
         </nav>

@@ -1,12 +1,14 @@
 package mocks
 
 import json.{ImmutableBehaviorGroupVersionData, SlackUserData}
-import models.behaviors.behaviorparameter.{DataTypeResultBody, ValidValue}
+import models.behaviors.BotResult
+import models.behaviors.behaviorparameter.DataTypeResultBody
 import models.behaviors.events.{Event, SlackMessageEvent}
 import org.scalatest.mock.MockitoSugar
-import services.CacheService
+import services.caching._
 import slack.models.{Channel, Group, Im}
 
+import scala.concurrent.Future
 import scala.concurrent.duration.Duration
 import scala.reflect.ClassTag
 
@@ -28,32 +30,40 @@ class MockCacheService extends CacheService with MockitoSugar {
 
   def getDataTypeResultBody(key: String): Option[DataTypeResultBody] = None
 
-  def cacheSlackChannelInfo(channel: String, teamId: String, data: Channel): Unit = {}
+  def getDataTypeBotResult(key: DataTypeBotResultsCacheKey, dataFn: DataTypeBotResultsCacheKey => Future[BotResult]): Future[BotResult] = dataFn(key)
 
-  def getSlackChannelInfo(channel: String, teamId: String): Option[Channel] = None
+  def getSlackChannelInfo(
+                           key: SlackChannelDataCacheKey,
+                           dataFn: SlackChannelDataCacheKey => Future[Option[Channel]]
+                         ): Future[Option[Channel]] = dataFn(key)
 
-  def cacheSlackGroupInfo(group: String, teamId: String, data: Group): Unit = {}
+  def getSlackGroupInfo(
+                         key: SlackGroupDataCacheKey,
+                         dataFn: SlackGroupDataCacheKey => Future[Option[Group]]
+                       ): Future[Option[Group]] = dataFn(key)
 
-  def getSlackGroupInfo(group: String, teamId: String): Option[Group] = None
+  def getSlackChannels(
+                        teamId: String,
+                        dataFn: String => Future[Seq[Channel]]
+                      ): Future[Seq[Channel]] = dataFn(teamId)
 
-  def cacheSlackChannels(data: Seq[Channel], teamId: String): Unit = {}
+  def getSlackGroups(
+                      teamId: String,
+                      dataFn: String => Future[Seq[Group]]
+                    ): Future[Seq[Group]] = dataFn(teamId)
 
-  def getSlackChannels(teamId: String): Option[Seq[Channel]] = None
+  def getSlackIMs(teamId: String, dataFn: String => Future[Seq[Im]]): Future[Seq[Im]] = dataFn(teamId)
 
-  def cacheSlackGroups(data: Seq[Group], teamId: String): Unit = {}
-
-  def getSlackGroups(teamId: String): Option[Seq[Group]] = None
-
-  def cacheSlackIMs(data: Seq[Im], teamId: String): Unit = {}
-
-  def getSlackIMs(teamId: String): Option[Seq[Im]] = None
-
-  def cacheSlackUserData(userData: SlackUserData): Unit = {}
-
-  def getSlackUserData(userId: String, slackTeamId: String): Option[SlackUserData] = None
+  def getSlackUserData(
+                        key: SlackUserDataCacheKey,
+                        dataFn: SlackUserDataCacheKey => Future[Option[SlackUserData]]
+                      ): Future[Option[SlackUserData]] = dataFn(key)
 
   def cacheBehaviorGroupVersionData(data: ImmutableBehaviorGroupVersionData): Unit = {}
 
   def getBehaviorGroupVersionData(groupVersionId: String): Option[ImmutableBehaviorGroupVersionData] = None
 
+  def cacheBotName(name: String, teamId: String): Unit = {}
+
+  def getBotName(teamId: String): Option[String] = Some("MockBot")
 }

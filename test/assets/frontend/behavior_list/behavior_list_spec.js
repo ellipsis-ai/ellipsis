@@ -3,11 +3,12 @@ import * as TestUtils from 'react-addons-test-utils';
 import BehaviorList from '../../../../app/assets/frontend/behavior_list/index';
 import BehaviorGroup from '../../../../app/assets/frontend/models/behavior_group';
 import BehaviorGroupCard from '../../../../app/assets/frontend/behavior_list/behavior_group_card';
+import Page from '../../../../app/assets/frontend/shared_ui/page';
 
 describe('BehaviorList', () => {
-  jsRoutes.controllers.BehaviorEditorController.edit = () => '/edit';
-  jsRoutes.controllers.BehaviorEditorController.newGroup = () => '/newGroup';
-  jsRoutes.controllers.ApplicationController.possibleCitiesFor = () => '/possibleCitiesFor';
+  jsRoutes.controllers.BehaviorEditorController.edit = () => ({ url: '/edit', method: 'get' });
+  jsRoutes.controllers.BehaviorEditorController.newGroup = () => ({ url: '/newGroup', method: 'get' });
+  jsRoutes.controllers.ApplicationController.possibleCitiesFor = () => ({ url: '/possibleCitiesFor', method: 'get' });
 
   const behaviorVersionTask1 = Object.freeze({
     "teamId": "abcdef",
@@ -128,17 +129,20 @@ describe('BehaviorList', () => {
     onBehaviorGroupUpdate: jest.fn(),
     onMergeBehaviorGroups: jest.fn(),
     onDeleteBehaviorGroups: jest.fn(),
+    onBehaviorGroupDeploy: jest.fn(),
     onSearch: jest.fn(),
     localBehaviorGroups: [group1, group2, group3],
     publishedBehaviorGroups: [],
     recentlyInstalled: [],
     currentlyInstalling: [],
-    matchingResults: [],
-    currentSearchText: "",
-    isLoadingMatchingResults: false,
+    matchingResults: {},
+    isDeploying: false,
+    deployError: null,
     publishedBehaviorGroupLoadStatus: 'loaded',
     teamId: "1",
-    slackTeamId: "1"
+    slackTeamId: "1",
+    botName: "TestBot",
+    notification: null
   });
 
   class Footer extends React.Component {
@@ -158,7 +162,7 @@ describe('BehaviorList', () => {
   function createBehaviorList(config) {
     const footer = TestUtils.renderIntoDocument(<Footer/>);
     return TestUtils.renderIntoDocument(
-      <BehaviorList onRenderFooter={footer.renderFooter} {...config} />
+      <BehaviorList {...config} {...Page.requiredPropDefaults()} onRenderFooter={footer.renderFooter} />
     );
   }
 

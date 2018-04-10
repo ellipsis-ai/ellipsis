@@ -1,14 +1,15 @@
 package models.behaviors.events
 
 import akka.actor.ActorSystem
+import json.SlackUserData
 import models.accounts.slack.botprofile.SlackBotProfile
 import models.accounts.user.User
-import models.behaviors.BehaviorResponse
+import models.behaviors.{ActionChoice, BehaviorResponse, DeveloperContext}
 import models.behaviors.behavior.Behavior
 import models.behaviors.conversations.conversation.Conversation
 import models.team.Team
 import play.api.Configuration
-import services.{AWSLambdaConstants, CacheService, DataService, DefaultServices}
+import services.{AWSLambdaConstants, DataService, DefaultServices}
 import slack.api.SlackApiClient
 import utils.{SlackMessageSender, UploadFileSpec}
 
@@ -16,6 +17,7 @@ import scala.concurrent.{ExecutionContext, Future}
 
 case class RunEvent(
                      profile: SlackBotProfile,
+                     userSlackTeamId: String,
                      behavior: Behavior,
                      arguments: Map[String, String],
                      channel: String,
@@ -43,7 +45,7 @@ case class RunEvent(
   lazy val name: String = Conversation.SLACK_CONTEXT
 
   def allOngoingConversations(dataService: DataService): Future[Seq[Conversation]] = {
-    dataService.conversations.allOngoingFor(userIdForContext, context, maybeChannel, maybeThreadId)
+    dataService.conversations.allOngoingFor(userIdForContext, context, maybeChannel, maybeThreadId, teamId)
   }
 
   def sendMessage(
@@ -53,26 +55,33 @@ case class RunEvent(
                    maybeConversation: Option[Conversation],
                    attachmentGroups: Seq[MessageAttachmentGroup],
                    files: Seq[UploadFileSpec],
-                   isForUndeployed: Boolean,
-                   cacheService: CacheService,
+                   choices: Seq[ActionChoice],
+                   developerContext: DeveloperContext,
+                   services: DefaultServices,
                    configuration: Configuration
                  )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[String]] = {
-    SlackMessageSender(
-      client,
-      user,
-      profile.slackTeamId,
-      unformattedText,
-      forcePrivate,
-      isForUndeployed,
-      channel,
-      channel,
-      maybeThreadId,
-      maybeShouldUnfurl,
-      maybeConversation,
-      attachmentGroups,
-      files,
-      configuration
-    ).send
+    for {
+      botName <- botName(services)
+      maybeTs <- SlackMessageSender(
+        client,
+        user,
+        profile.slackTeamId,
+        unformattedText,
+        forcePrivate = forcePrivate,
+        developerContext,
+        channel,
+        channel,
+        maybeThreadId,
+        maybeShouldUnfurl,
+        maybeConversation,
+        attachmentGroups,
+        files,
+        choices,
+        configuration,
+        botName,
+        Set.empty[SlackUserData]
+      ).send
+    } yield maybeTs
   }
 
   def allBehaviorResponsesFor(
@@ -101,12 +110,6 @@ case class RunEvent(
         } yield Seq(response)
       }.getOrElse(Future.successful(Seq()))
     } yield responses
-  }
-
-  override def ensureUser(dataService: DataService)(implicit ec: ExecutionContext): Future[User] = {
-    super.ensureUser(dataService).flatMap { user =>
-      ensureSlackProfileFor(loginInfo, dataService).map(_ => user)
-    }
   }
 
 }

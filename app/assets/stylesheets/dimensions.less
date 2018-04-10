@@ -23,11 +23,17 @@
 }
 
 .height-logo {
-  height: 40px;
+  height: 32px;
 }
 
 .height-logo-s {
-  height: 36px;
+  height: 24px;
+}
+
+.height-button-l {
+  @button-large-height: @xl + (@l * 2);
+  height: @button-large-height;
+  line-height: @button-large-height;
 }
 
 .min-width-border-radius {
@@ -64,6 +70,10 @@
 
 .min-width-20 {
   min-width: 20em !important;
+}
+
+.max-width-20 {
+  max-width: 20em !important;
 }
 
 .width-30 {

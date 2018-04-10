@@ -1,5 +1,5 @@
 import * as React from 'react';
-import DataRequest from '../lib/data_request';
+import {DataRequest} from '../lib/data_request';
 import SearchWithResults from '../form/search_with_results';
 import autobind from '../lib/autobind';
 

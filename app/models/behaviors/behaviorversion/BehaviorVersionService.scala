@@ -42,6 +42,8 @@ trait BehaviorVersionService {
 
   def findFor(behavior: Behavior, groupVersion: BehaviorGroupVersion): Future[Option[BehaviorVersion]]
 
+  def findByName(name: String, groupVersion: BehaviorGroupVersion): Future[Option[BehaviorVersion]]
+
   def findCurrentByName(name: String, group: BehaviorGroup): Future[Option[BehaviorVersion]]
 
   def findCurrentByNameAction(name: String, group: BehaviorGroup): DBIO[Option[BehaviorVersion]]

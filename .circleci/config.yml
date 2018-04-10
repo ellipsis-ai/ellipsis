@@ -23,7 +23,7 @@ jobs:
       - run:
           name: Waiting for Postgres to be ready
           command: |
-            for i in `seq 1 10`;
+            for i in `seq 1 30`;
             do
               nc -z localhost 5432 && echo Success && exit 0
               echo -n .
@@ -59,7 +59,6 @@ jobs:
           paths:
             - npm_modules/ellipsis-action-logs/node_modules
             - npm_modules/ellipsis-aws-billing/node_modules
-            - npm_modules/ellipsis-cal-date-format/node_modules
             - npm_modules/ellipsis-date-range-parser/node_modules
             - npm_modules/ellipsis-default-storage/node_modules
             - npm_modules/ellipsis-post-message/node_modules
@@ -70,9 +69,9 @@ jobs:
           command: |
             npm run lint
       - run:
-          name: Run Flow type-checking
+          name: Run Typescript checking
           command: |
-            npm run flow
+            npm run typescript
       - run:
           name: Run JavaScript tests
           command: |

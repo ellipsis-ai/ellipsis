@@ -2,21 +2,25 @@ package models.behaviors.behaviorparameter
 
 import com.fasterxml.jackson.core.JsonParseException
 import json.Formatting._
+import models.behaviors._
 import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
 import models.behaviors.conversations.ParamCollectionState
 import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.datatypeconfig.DataTypeConfig
 import models.behaviors.datatypefield.FieldTypeForSchema
+import models.behaviors.events.SlackMessageActionConstants._
 import models.behaviors.events._
-import models.behaviors._
 import play.api.libs.json._
 import services.AWSLambdaConstants._
+import services.caching.DataTypeBotResultsCacheKey
 import services.{AWSLambdaConstants, DataService}
 import slick.dbio.DBIO
 import utils.Color
 
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
+
+case class FetchValidValuesBadResultException(result: BotResult) extends Exception(s"Couldn't fetch data type values: ${result.resultType}")
 
 sealed trait BehaviorParameterType extends FieldTypeForSchema {
 
@@ -207,6 +211,26 @@ object YesNoType extends BuiltInType {
   }
 
   val invalidPromptModifier: String = s"I need an answer like “yes” or “no”. $stopInstructions"
+
+  override def promptResultForAction(
+                                     maybePreviousCollectedValue: Option[String],
+                                     context: BehaviorParameterContext,
+                                     paramState: ParamCollectionState,
+                                     isReminding: Boolean
+                                   )(implicit ec: ExecutionContext): DBIO[BotResult] = {
+    super.promptResultForAction(maybePreviousCollectedValue, context, paramState, isReminding).map { superPromptResult =>
+      val callbackId = context.yesNoCallbackId
+      val actionList = Seq(SlackMessageActionButton(callbackId, "Yes", YES), SlackMessageActionButton(callbackId, "No", NO))
+      val actionsGroup = SlackMessageActionsGroup(callbackId, actionList, None, None, None)
+      TextWithAttachmentsResult(
+        superPromptResult.event,
+        superPromptResult.maybeConversation,
+        superPromptResult.fullText,
+        superPromptResult.forcePrivateResponse,
+        Seq(actionsGroup)
+      )
+    }
+  }
 }
 
 object FileType extends BuiltInType {
@@ -436,8 +460,11 @@ case class BehaviorBackedDataType(dataTypeConfig: DataTypeConfig) extends Behavi
       val value = ParameterValue(searchQuery, JsString(searchQuery), isValid=true)
       Seq(ParameterWithValue(context.parameter, AWSLambdaConstants.invocationParamFor(0), Some(value)))
     }.getOrElse(Seq())
+    val key = DataTypeBotResultsCacheKey(context.parameter.id, maybeSearchQuery, context.maybeConversation.map(_.id))
     for {
-      maybeResult <- context.dataService.behaviorVersions.resultForAction(behaviorVersion, paramsWithValues, context.event, context.maybeConversation).map(Some(_))
+      maybeResult <- DBIO.from(context.cacheService.getDataTypeBotResult(key, (key: DataTypeBotResultsCacheKey) => {
+        context.dataService.behaviorVersions.resultFor(behaviorVersion, paramsWithValues, context.event, context.maybeConversation)
+      }).map(Some(_)))
     } yield maybeResult
   }
 
@@ -446,7 +473,7 @@ case class BehaviorBackedDataType(dataTypeConfig: DataTypeConfig) extends Behavi
       fetchValidValuesResultAction(maybeSearchQuery, context).map { maybeResult =>
         maybeResult.map {
           case r: SuccessResult => DataTypeResultBody.fromSuccessResult(r)
-          case _: BotResult => DataTypeResultBody.empty
+          case r: BotResult => throw FetchValidValuesBadResultException(r)
         }.getOrElse(DataTypeResultBody.empty)
       }
     } else {
@@ -540,7 +567,7 @@ case class BehaviorBackedDataType(dataTypeConfig: DataTypeConfig) extends Behavi
         } ++ builtinMenuItems
         val actionsList = Seq(SlackMessageActionMenu("ignored", "Choose an option", menuItems))
         val groups: Seq[MessageAttachmentGroup] = Seq(
-          SlackMessageActionsGroup(context.inputChoiceCallbackId, actionsList, None, Some(Color.BLUE_LIGHT))
+          SlackMessageActionsGroup(context.dataTypeChoiceCallbackId, actionsList, None, None, Some(Color.BLUE_LIGHT))
         )
         DBIO.successful(TextWithAttachmentsResult(context.event, context.maybeConversation, superPrompt, context.behaviorVersion.forcePrivateResponse, groups))
       }

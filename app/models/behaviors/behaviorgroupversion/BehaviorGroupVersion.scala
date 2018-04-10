@@ -5,7 +5,10 @@ import java.time.OffsetDateTime
 import models.accounts.user.User
 import models.behaviors.behaviorgroup.BehaviorGroup
 import models.team.Team
+import services.DataService
 import utils.SafeFileName
+
+import scala.concurrent.{ExecutionContext, Future}
 
 case class BehaviorGroupVersion(
                                 id: String,
@@ -23,6 +26,31 @@ case class BehaviorGroupVersion(
 
   def exportName: String = {
     Option(SafeFileName.forName(name)).filter(_.nonEmpty).getOrElse(id)
+  }
+
+  private def isAllowedBecauseAdmin(user: User, dataService: DataService)(implicit ec: ExecutionContext): Future[Boolean] = {
+    dataService.users.isAdmin(user)
+  }
+
+  private def isAllowedBecauseSameTeam(user: User, dataService: DataService)(implicit ec: ExecutionContext): Future[Boolean] = {
+    for {
+      maybeAttemptingUserSlackTeamId <- dataService.users.maybeSlackTeamIdFor(user)
+      maybeBotProfile <- dataService.slackBotProfiles.allFor(team).map(_.headOption)
+    } yield {
+      (for {
+        attemptingUserSlackTeamId <- maybeAttemptingUserSlackTeamId
+        requiredSlackTeamId <- maybeBotProfile.map(_.slackTeamId)
+      } yield attemptingUserSlackTeamId == requiredSlackTeamId).getOrElse(false)
+    }
+  }
+
+  def canBeTriggeredBy(user: User, dataService: DataService)(implicit ec: ExecutionContext): Future[Boolean] = {
+    for {
+      admin <- isAllowedBecauseAdmin(user, dataService)
+      sameTeam <- isAllowedBecauseSameTeam(user, dataService)
+    } yield {
+      sameTeam || admin
+    }
   }
 
   def toRaw: RawBehaviorGroupVersion = {

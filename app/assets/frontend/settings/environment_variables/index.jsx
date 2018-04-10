@@ -1,7 +1,6 @@
 import React from 'react';
 import SettingsPage from '../../shared_ui/settings_page';
 import Setter from './setter';
-import ifPresent from '../../lib/if_present';
 import Sort from '../../lib/sort';
 import Page from '../../shared_ui/page';
 
@@ -28,8 +27,7 @@ const EnvironmentVariableList = React.createClass({
     getInitialState: function() {
       return {
         activePanel: null,
-        environmentVariables: this.groupAndSortVarsByNameAndPresenceOfValue(this.props.data.variables),
-        justSaved: false
+        environmentVariables: this.groupAndSortVarsByNameAndPresenceOfValue(this.props.data.variables)
       };
     },
 
@@ -41,12 +39,6 @@ const EnvironmentVariableList = React.createClass({
     },
 
     onSave: function(envVars) {
-      this.setState({
-        justSaved: false
-      }, () => { this.save(envVars); });
-    },
-
-    save: function(envVars) {
       var url = jsRoutes.controllers.web.settings.EnvironmentVariablesController.submit().url;
       var data = {
         teamId: this.props.data.teamId,
@@ -65,15 +57,16 @@ const EnvironmentVariableList = React.createClass({
         .then((response) => response.json())
         .then((json) => {
           this.setState({
-            environmentVariables: json.variables,
-            justSaved: true
+            environmentVariables: json.variables
           }, () => {
             if (this.setterComponent) {
-              this.setterComponent.reset();
+              this.setterComponent.onSaveComplete();
             }
           });
         }).catch(() => {
-          this.refs.envVariableSetterPanel.onSaveError();
+          if (this.setterComponent) {
+            this.setterComponent.onSaveError();
+          }
         });
     },
 
@@ -83,19 +76,9 @@ const EnvironmentVariableList = React.createClass({
 
     render: function() {
       return (
-        <SettingsPage teamId={this.props.data.teamId} isAdmin={this.props.isAdmin} header={this.renderHeader()} activePage={"environmentVariables"}>
+        <SettingsPage teamId={this.props.data.teamId} isAdmin={this.props.isAdmin} activePage={"environmentVariables"}>
           {this.renderEnvVarList()}
-          {this.props.onRenderFooter()}
         </SettingsPage>
-      );
-    },
-
-    renderHeader: function() {
-      return (
-        <h3 className="mvn ptxxl type-weak display-ellipsis">
-          <span className="mrs">Environment variables</span>
-          {ifPresent(this.state.justSaved, () => (<span className="type-green fade-in"> — saved successfully</span>))}
-        </h3>
       );
     },
 

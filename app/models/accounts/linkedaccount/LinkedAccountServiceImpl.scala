@@ -9,7 +9,8 @@ import drivers.SlickPostgresDriver.api._
 import models.accounts.github.GithubProvider
 import models.accounts.slack.SlackProvider
 import models.accounts.user.User
-import services.{CacheService, DataService}
+import services.DataService
+import services.caching.CacheService
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -50,12 +51,13 @@ class LinkedAccountServiceImpl @Inject() (
   }
 
   def saveAction(link: LinkedAccount): DBIO[LinkedAccount] = {
-    val query = all.filter(_.providerId === link.loginInfo.providerID).filter(_.providerKey === link.loginInfo.providerKey)
+    val query =
+      all.
+        filter(_.providerId === link.loginInfo.providerID).
+        filter(_.providerKey === link.loginInfo.providerKey).
+        filter(_.userId === link.user.id)
     query.result.headOption.flatMap {
-      case Some(_) => {
-        query.
-          update(link.toRaw)
-      }
+      case Some(_) => DBIO.successful({})
       case None => all += link.toRaw
     }.map { _ => link }
   }
@@ -71,6 +73,12 @@ class LinkedAccountServiceImpl @Inject() (
         result.map(tuple2LinkedAccount)
       }
     dataService.run(action)
+  }
+
+  def allForLoginInfoAction(loginInfo: LoginInfo): DBIO[Seq[LinkedAccount]] = {
+    allForLoginInfoQuery(loginInfo.providerID, loginInfo.providerKey).result.map { r =>
+      r.map(tuple2LinkedAccount)
+    }
   }
 
   def maybeForSlackForAction(user: User): DBIO[Option[LinkedAccount]] = {
@@ -93,16 +101,6 @@ class LinkedAccountServiceImpl @Inject() (
   def deleteGithubFor(user: User): Future[Boolean] = {
     val action = rawForProviderForQuery(user.id, GithubProvider.ID).delete.map(_ > 0)
     dataService.run(action)
-  }
-
-  def isAdminAction(linkedAccount: LinkedAccount): DBIO[Boolean] = {
-    dataService.slackProfiles.findAction(linkedAccount.loginInfo).map { maybeProfile =>
-      maybeProfile.map(_.teamId).contains(LinkedAccount.ELLIPSIS_SLACK_TEAM_ID)
-    }
-  }
-
-  def isAdmin(linkedAccount: LinkedAccount): Future[Boolean] = {
-    dataService.run(isAdminAction(linkedAccount))
   }
 
 }

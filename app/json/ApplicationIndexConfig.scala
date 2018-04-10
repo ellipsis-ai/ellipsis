@@ -7,5 +7,6 @@ case class ApplicationIndexConfig(
   teamId: String,
   slackTeamId: Option[String],
   teamTimeZone: Option[String],
-  branchName: Option[String]
+  branchName: Option[String],
+  botName: String
 )

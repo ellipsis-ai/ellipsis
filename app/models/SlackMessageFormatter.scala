@@ -1,7 +1,9 @@
 package models
 
 import java.util
+import java.util.regex.Matcher
 
+import json.SlackUserData
 import models.behaviors.templates.SlackRenderer
 import org.commonmark.ext.autolink.AutolinkExtension
 import org.commonmark.ext.gfm.strikethrough.StrikethroughExtension
@@ -28,11 +30,19 @@ object SlackMessageFormatter {
     node
   }
 
-  def bodyTextFor(text: String): String = {
+  def convertUsernamesToLinks(formattedText: String, userList: Set[SlackUserData]): String = {
+    userList.toSeq.foldLeft(formattedText) { (text, user) =>
+      raw"""(^|\s|\W)@\Q${user.getDisplayName}\E($$|\s|\W)""".r.replaceAllIn(text, s"$$1${Matcher.quoteReplacement(s"<@${user.accountId}>")}$$2")
+    }
+  }
+
+  def bodyTextFor(text: String, userList: Set[SlackUserData]): String = {
     val builder = StringBuilder.newBuilder
     val slack = new SlackRenderer(builder)
     commonmarkNodeFor(text).accept(slack)
-    builder.mkString
+    val result = builder.mkString
+    val withUserIds = convertUsernamesToLinks(result, userList)
+    withUserIds
   }
 
 }

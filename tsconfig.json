@@ -1,0 +1,23 @@
+{
+  "compilerOptions": {
+    "sourceMap": true,
+    "noImplicitAny": false,
+    "noImplicitReturns": true,
+    "strictFunctionTypes": true,
+    "strictNullChecks": true,
+    "module": "es6",
+    "target": "es5",
+    "lib": ["es2016", "dom"],
+    "jsx": "react",
+    "allowJs": false,
+    "outDir": "target/web/typescript",
+    "moduleResolution": "node"
+  },
+  "include": [
+    "app/assets/frontend/**/*",
+    "test/**/*"
+  ],
+  "exclude": [
+    "node_modules"
+  ]
+}

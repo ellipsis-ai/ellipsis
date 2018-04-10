@@ -19,6 +19,10 @@ trait BehaviorGroupVersionService {
 
   def maybeCurrentFor(group: BehaviorGroup): Future[Option[BehaviorGroupVersion]]
 
+  def maybeFirstForAction(group: BehaviorGroup): DBIO[Option[BehaviorGroupVersion]]
+
+  def maybeFirstFor(group: BehaviorGroup): Future[Option[BehaviorGroupVersion]]
+
   def createForAction(
                        group: BehaviorGroup,
                        user: User,
@@ -47,6 +51,10 @@ trait BehaviorGroupVersionService {
 
   def redeployAllCurrentVersions: Future[Unit]
 
+  def isActive(groupVersion: BehaviorGroupVersion, context: String, channel: String): Future[Boolean]
+
   def activeFunctionNames: Future[Seq[String]]
+
+  def hasNewerVersionForAuthorAction(version: BehaviorGroupVersion, user: User): DBIO[Boolean]
 
 }

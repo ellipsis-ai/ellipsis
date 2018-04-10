@@ -1,12 +1,13 @@
 @(
   heading: String,
-  config: ViewConfig
+  config: ViewConfig,
+  botName: String
 )(implicit messages: Messages, r: RequestHeader)
 
-@page.main(heading, config) {
+@page.main(heading, config, Seq(NavItem.help)) {
 
   <div id="content" class="content">
-    <div class="bg-pink border-emphasis-bottom border-pink bg-large-logo">
+    <div class="bg-pink border-emphasis-bottom border-pink">
       <div class="container ptxxxxl pbl">
         <h1 class="type-white">
           <span>Help: @heading</span>
@@ -21,19 +22,19 @@
               You can schedule actions by doing something like:
             </p>
             <p class="mbxxl"><code>
-              @@ellipsis: schedule "go bananas" every day at 3pm
+              @@@botName: schedule "go bananas" every day at 3pm
             </code></p>
             <p class="type-semibold">
               To see what is currently scheduled, type:
             </p>
             <p class="mbxxl"><code>
-              @@ellipsis: scheduled
+              @@@botName: scheduled
             </code></p>
             <p class="type-semibold">
               To unschedule, type:
             </p>
             <p class="mbxxl"><code>
-              @@ellipsis: unschedule "go bananas"
+              @@@botName: unschedule "go bananas"
             </code></p>
           </div>
         </div>

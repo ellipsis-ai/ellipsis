@@ -12,7 +12,8 @@ import models.behaviors.scheduling.Scheduled
 import models.team.Team
 import play.api.Configuration
 import play.api.libs.json.JsObject
-import services.{AWSLambdaService, CacheService, DataService, DefaultServices}
+import services.caching.CacheService
+import services.{AWSLambdaService, DataService, DefaultServices}
 import slick.dbio.DBIO
 import utils.UploadFileSpec
 
@@ -78,8 +79,6 @@ trait Event {
 
   def detailsFor(services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[JsObject]
 
-  def recentMessages(dataService: DataService)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Seq[String]] = Future.successful(Seq())
-
   def navLinkList(lambdaService: AWSLambdaService): Seq[(String, String)] = {
     lambdaService.configuration.getOptional[String]("application.apiBaseUrl").map { baseUrl =>
       val skillsListPath = baseUrl + controllers.routes.ApplicationController.index(Some(teamId))
@@ -118,7 +117,7 @@ trait Event {
   def noExactMatchResult(services: DefaultServices)
                         (implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[BotResult] = {
     DisplayHelpBehavior(
-      Some(messageText),
+      Some(relevantMessageText),
       None,
       Some(0),
       includeNameAndDescription = true,
@@ -158,12 +157,15 @@ trait Event {
                    maybeConversation: Option[Conversation],
                    attachmentGroups: Seq[MessageAttachmentGroup],
                    files: Seq[UploadFileSpec],
-                   isForUndeployed: Boolean,
-                   cacheService: CacheService,
+                   choices: Seq[ActionChoice],
+                   developerContext: DeveloperContext,
+                   services: DefaultServices,
                    configuration: Configuration
                  )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[String]]
 
-  def botPrefix(services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[String] = Future.successful("")
+  def botName(services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[String] = Future.successful("")
+
+  def contextualBotPrefix(services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[String] = Future.successful("")
 
   val invocationLogText: String
 

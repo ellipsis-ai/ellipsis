@@ -12,7 +12,8 @@ import play.api.Configuration
 import play.api.data.Form
 import play.api.data.Forms._
 import play.api.libs.json._
-import services.{AWSLambdaService, CacheService, DataService}
+import services.caching.CacheService
+import services.{AWSLambdaService, DataService}
 
 import scala.concurrent.{ExecutionContext, Future}
 

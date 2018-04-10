@@ -1,19 +1,21 @@
 package models.behaviors.behaviorgroupversion
 
 import java.time.OffsetDateTime
-import javax.inject.Inject
 
+import javax.inject.Inject
 import com.google.inject.Provider
 import drivers.SlickPostgresDriver.api._
 import json.BehaviorGroupData
 import models.IDs
 import models.accounts.user.User
-import models.behaviors.behaviorgroup.{BehaviorGroup, BehaviorGroupQueries}
+import models.behaviors.behaviorgroup.BehaviorGroup
 import play.api.Logger
 import services.{AWSLambdaService, ApiConfigInfo, DataService}
+import slick.dbio.DBIO
+import utils.github.GithubUtils
 
-import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.concurrent.duration._
+import scala.concurrent.{Await, ExecutionContext, Future}
 
 case class RawBehaviorGroupVersion(
                                    id: String,
@@ -76,6 +78,18 @@ class BehaviorGroupVersionServiceImpl @Inject() (
 
   def maybeCurrentFor(group: BehaviorGroup): Future[Option[BehaviorGroupVersion]] = {
     dataService.run(maybeCurrentForAction(group))
+  }
+
+  def maybeFirstForAction(group: BehaviorGroup): DBIO[Option[BehaviorGroupVersion]] = {
+    firstIdForQuery(group.id).result.flatMap { r =>
+      r.headOption.map { firstId =>
+        findWithoutAccessCheckAction(firstId)
+      }.getOrElse(DBIO.successful(None))
+    }
+  }
+
+  def maybeFirstFor(group: BehaviorGroup): Future[Option[BehaviorGroupVersion]] = {
+    dataService.run(maybeFirstForAction(group))
   }
 
   def createForAction(
@@ -176,6 +190,13 @@ class BehaviorGroupVersionServiceImpl @Inject() (
           (bv, params)
         }
       })
+      _ <- (for {
+        githubUrl <- data.githubUrl
+        owner <- GithubUtils.maybeOwnerFor(githubUrl)
+        name <- GithubUtils.maybeNameFor(githubUrl)
+      } yield {
+        dataService.linkedGithubRepos.ensureLinkAction(group, owner, name, None)
+      }).getOrElse(DBIO.successful({}))
     } yield {
       // deploy in the background
       lambdaService.deployFunctionFor(
@@ -261,6 +282,12 @@ class BehaviorGroupVersionServiceImpl @Inject() (
     }
   }
 
+  def isActive(groupVersion: BehaviorGroupVersion, context: String, channel: String): Future[Boolean] = {
+    dataService.behaviorGroupDeployments.maybeActiveBehaviorGroupVersionFor(groupVersion.group, context, channel).map{ maybeActive =>
+      maybeActive.contains(groupVersion)
+    }
+  }
+
   def activeFunctionNames: Future[Seq[String]] = {
     for {
       current <- currentFunctionNames
@@ -269,6 +296,10 @@ class BehaviorGroupVersionServiceImpl @Inject() (
     } yield {
       (current ++ deployed ++ activeConvo).distinct
     }
+  }
+
+  def hasNewerVersionForAuthorAction(version: BehaviorGroupVersion, user: User): DBIO[Boolean] = {
+    newerVersionsForAuthorQuery(version.group.id, version.createdAt, user.id).result.map(_.nonEmpty)
   }
 
 }

@@ -1,5 +1,5 @@
 import * as React from 'react';
-import DataRequest from '../lib/data_request';
+import {DataRequest} from '../lib/data_request';
 import Button from '../form/button';
 import DynamicLabelButton from '../form/dynamic_label_button';
 import TimeZoneSelector from './time_zone_selector';
@@ -49,11 +49,6 @@ const TeamTimeZoneSetter = React.createClass({
                 isSaving: false,
                 justSaved: true
               });
-              setTimeout(() => {
-                this.setState({
-                  justSaved: false
-                });
-              }, 5000);
               this.props.onSave(json.tzName, json.formattedName || displayName, json.currentOffset);
             } else {
               throw new Error(json.message || "");

@@ -8,7 +8,7 @@ import Page from '../shared_ui/page';
 import ScheduledAction from '../models/scheduled_action';
 import ScheduleChannel from '../models/schedule_channel';
 import BehaviorGroup from '../models/behavior_group';
-import DataRequest from '../lib/data_request';
+import {DataRequest} from '../lib/data_request';
 import ImmutableObjectUtils from '../lib/immutable_object_utils';
 
 const SchedulingLoader = React.createClass({
@@ -117,7 +117,8 @@ const SchedulingLoader = React.createClass({
 
         render: function() {
           return (
-            <Page csrfToken={this.props.csrfToken}>
+            <Page csrfToken={this.props.csrfToken}
+              onRender={(pageProps) => (
               <Scheduling
                 scheduledActions={this.state.scheduledActions}
                 channelList={this.props.channelList ? this.props.channelList.map(ScheduleChannel.fromJson) : null}
@@ -136,8 +137,9 @@ const SchedulingLoader = React.createClass({
                 slackBotUserId={this.props.slackBotUserId}
                 selectedScheduleId={this.props.selectedScheduleId}
                 newAction={this.props.newAction}
+                {...pageProps}
               />
-            </Page>
+            )} />
           );
         }
 });

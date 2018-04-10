@@ -164,16 +164,11 @@ trait Scheduled {
 
   def maybeSlackProfile(dataService: DataService)(implicit ec: ExecutionContext): Future[Option[SlackProfile]] = {
     maybeUser.map { user =>
-      for {
-        maybeSlackLinkedAccount <- dataService.linkedAccounts.maybeForSlackFor(user)
-        maybeSlackProfile <- maybeSlackLinkedAccount.map { linkedAccount =>
-          dataService.slackProfiles.find(linkedAccount.loginInfo)
-        }.getOrElse(Future.successful(None))
-      } yield maybeSlackProfile
+      dataService.users.maybeSlackProfileFor(user)
     }.getOrElse(Future.successful(None))
   }
 
-  case class SlackDMInfo(userId: String, channelId: String)
+  case class SlackDMInfo(userId: String, teamId: String, channelId: String)
 
   def sendForIndividualMembers(
                                 channel: String,
@@ -188,18 +183,19 @@ trait Scheduled {
     } yield {}
   }
 
-  def eventFor(channel: String, slackUserId: String, profile: SlackBotProfile, client: SlackApiClient): ScheduledEvent
+  def eventFor(channel: String, slackUserId: String, slackTeamId: String, profile: SlackBotProfile, client: SlackApiClient): ScheduledEvent
 
   // TODO: don't be slack-specific
   def sendFor(
                channel: String,
                slackUserId: String,
+               slackTeamId: String,
                eventHandler: EventHandler,
                client: SlackApiClient,
                profile: SlackBotProfile,
                services: DefaultServices
              )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Unit] = {
-    val event = eventFor(channel, slackUserId, profile, client)
+    val event = eventFor(channel, slackUserId, slackTeamId, profile, client)
     for {
       results <- eventHandler.handle(event, None)
     } yield {
@@ -215,12 +211,21 @@ trait Scheduled {
                )(implicit actorSystem: ActorSystem, ec: ExecutionContext): String => Future[Unit] = {
     slackUserId: String => {
       for {
-        maybeSlackUserData <- services.slackEventService.maybeSlackUserDataFor(slackUserId, profile.slackTeamId, client)
+        maybeSlackUserData <- services.slackEventService.maybeSlackUserDataFor(slackUserId, profile.slackTeamId, client, (e) => {
+          Logger.error(
+            s"""Slack API reported user not found while trying to send a scheduled message:
+               |Slack user ID: $slackUserId
+               |Ellipsis bot Slack team ID: ${profile.slackTeamId}
+               |Ellipsis user ID: ${maybeUser.map(_.id).getOrElse("unknown")}
+               |Ellipsis team ID: ${team.id}
+             """.stripMargin, e)
+          None
+        })
         maybeDmInfo <- maybeSlackUserData.filter { userData =>
           userData.accountId != profile.userId && !userData.deleted
         }.map { userData =>
           client.openIm(userData.accountId).map { dmChannel =>
-            Some(SlackDMInfo(userData.accountId, dmChannel))
+            Some(SlackDMInfo(userData.accountId, userData.accountTeamId, dmChannel))
           }.recover {
             case e: ApiError => {
               val msg = s"""Couldn't open DM for scheduled message to @${userData.getDisplayName} (${userData.accountId}) on Slack team ${userData.accountTeamId} due to Slack API error: ${e.code}"""
@@ -230,7 +235,7 @@ trait Scheduled {
           }
         }.getOrElse(Future.successful(None))
         _ <- maybeDmInfo.map { info =>
-          sendFor(info.channelId, info.userId, eventHandler, client, profile, services)
+          sendFor(info.channelId, info.userId, info.teamId, eventHandler, client, profile, services)
         }.getOrElse(Future.successful({}))
       } yield {}
     }
@@ -277,7 +282,8 @@ trait Scheduled {
       } else {
         maybeSlackProfile(services.dataService).flatMap { maybeSlackProfile =>
           val slackUserId = maybeSlackProfile.map(_.loginInfo.providerKey).getOrElse(profile.userId)
-          sendFor(channel, slackUserId, eventHandler, client, profile, services)
+          val slackTeamId = maybeSlackProfile.map(_.teamId).getOrElse(profile.slackTeamId)
+          sendFor(channel, slackUserId, slackTeamId, eventHandler, client, profile, services)
         }
       }
     }.getOrElse(Future.successful(Unit))

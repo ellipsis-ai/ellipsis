@@ -1,15 +1,16 @@
 package models.behaviors.conversations.conversation
 
 import java.time.OffsetDateTime
-import javax.inject.Inject
 
+import javax.inject.Inject
 import akka.actor.ActorSystem
 import com.google.inject.Provider
 import drivers.SlickPostgresDriver.api._
-import models.behaviors.BotResultService
+import models.behaviors.{BotResultService, DeveloperContext}
 import play.api.Configuration
 import play.api.libs.ws.WSClient
 import services._
+import services.caching.CacheService
 import slick.dbio.DBIO
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -24,6 +25,7 @@ case class RawConversation(
                             maybeChannel: Option[String],
                             maybeThreadId: Option[String],
                             userIdForContext: String,
+                            maybeTeamIdForContext: Option[String],
                             startedAt: OffsetDateTime,
                             maybeLastInteractionAt: Option[OffsetDateTime],
                             state: String,
@@ -42,6 +44,7 @@ class ConversationsTable(tag: Tag) extends Table[RawConversation](tag, Conversat
   def maybeChannel = column[Option[String]]("channel")
   def maybeThreadId = column[Option[String]]("thread_id")
   def userIdForContext = column[String]("user_id_for_context")
+  def maybeTeamIdForContext = column[Option[String]]("team_id_for_context")
   def startedAt = column[OffsetDateTime](ConversationQueries.startedAtName)
   def maybeLastInteractionAt = column[Option[OffsetDateTime]](ConversationQueries.lastInteractionAtName)
   def state = column[String]("state")
@@ -49,7 +52,7 @@ class ConversationsTable(tag: Tag) extends Table[RawConversation](tag, Conversat
   def maybeOriginalEventType = column[Option[String]]("original_event_type")
 
   def * =
-    (id, behaviorVersionId, maybeTriggerId, maybeTriggerMessage, conversationType, context, maybeChannel, maybeThreadId, userIdForContext, startedAt, maybeLastInteractionAt, state, maybeScheduledMessageId, maybeOriginalEventType) <>
+    (id, behaviorVersionId, maybeTriggerId, maybeTriggerMessage, conversationType, context, maybeChannel, maybeThreadId, userIdForContext, maybeTeamIdForContext, startedAt, maybeLastInteractionAt, state, maybeScheduledMessageId, maybeOriginalEventType) <>
       ((RawConversation.apply _).tupled, RawConversation.unapply _)
 }
 
@@ -92,8 +95,8 @@ class ConversationServiceImpl @Inject() (
     dataService.run(action)
   }
 
-  def allOngoingForAction(userIdForContext: String, context: String, maybeChannel: Option[String], maybeThreadId: Option[String]): DBIO[Seq[Conversation]] = {
-    allOngoingQueryFor(userIdForContext, context).result.map { r =>
+  def allOngoingForAction(userIdForContext: String, context: String, maybeChannel: Option[String], maybeThreadId: Option[String], teamId: String): DBIO[Seq[Conversation]] = {
+    allOngoingQueryFor(userIdForContext, context, teamId).result.map { r =>
       r.map(tuple2Conversation)
     }.map { activeConvos =>
       maybeThreadId.map { threadId =>
@@ -105,8 +108,8 @@ class ConversationServiceImpl @Inject() (
     }
   }
 
-  def allOngoingFor(userIdForContext: String, context: String, maybeChannel: Option[String], maybeThreadId: Option[String]): Future[Seq[Conversation]] = {
-    dataService.run(allOngoingForAction(userIdForContext, context, maybeChannel, maybeThreadId))
+  def allOngoingFor(userIdForContext: String, context: String, maybeChannel: Option[String], maybeThreadId: Option[String], teamId: String): Future[Seq[Conversation]] = {
+    dataService.run(allOngoingForAction(userIdForContext, context, maybeChannel, maybeThreadId, teamId))
   }
 
   def allOngoingBehaviorGroupVersionIds: Future[Seq[String]] = {
@@ -130,8 +133,8 @@ class ConversationServiceImpl @Inject() (
     } yield maybeConvo
   }
 
-  def findOngoingFor(userIdForContext: String, context: String, maybeChannel: Option[String], maybeThreadId: Option[String]): Future[Option[Conversation]] = {
-    allOngoingFor(userIdForContext, context, maybeChannel: Option[String], maybeThreadId).map(_.headOption)
+  def findOngoingFor(userIdForContext: String, context: String, maybeChannel: Option[String], maybeThreadId: Option[String], teamId: String): Future[Option[Conversation]] = {
+    allOngoingFor(userIdForContext, context, maybeChannel: Option[String], maybeThreadId, teamId).map(_.headOption)
   }
 
   def uncompiledCancelQuery(conversationId: Rep[String]) = all.filter(_.id === conversationId).map(_.state)
@@ -195,8 +198,9 @@ class ConversationServiceImpl @Inject() (
           Some(conversation),
           attachmentGroups = Seq(),
           files = Seq(),
-          isForUndeployed = false,
-          cacheService,
+          choices = Seq(),
+          DeveloperContext.default,
+          services,
           configuration
         ))
       }.getOrElse(DBIO.successful(None))

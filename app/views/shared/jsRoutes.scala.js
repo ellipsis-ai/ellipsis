@@ -11,6 +11,7 @@
   routes.javascript.ApplicationController.deleteBehaviorGroups,
   routes.javascript.ApplicationController.fetchPublishedBehaviorInfo,
   routes.javascript.ApplicationController.findBehaviorGroupsMatching,
+  routes.javascript.ApplicationController.index,
   routes.javascript.ApplicationController.mergeBehaviorGroups,
   routes.javascript.ApplicationController.possibleCitiesFor,
   routes.javascript.ApplicationController.setTeamTimeZone,
@@ -42,6 +43,7 @@
   routes.javascript.ScheduledActionsController.delete,
   routes.javascript.ScheduledActionsController.save,
   routes.javascript.SocialAuthController.authenticateGithub,
+  routes.javascript.SupportController.sendRequest,
 
   // Settings
   routes.javascript.GithubConfigController.index,

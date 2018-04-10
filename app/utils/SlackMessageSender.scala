@@ -1,19 +1,24 @@
 package utils
 
 import akka.actor.ActorSystem
+import json.Formatting._
+import json.SlackUserData
 import models.SlackMessageFormatter
+import models.behaviors.{ActionChoice, DeveloperContext}
 import models.behaviors.conversations.conversation.Conversation
-import models.behaviors.events.{MessageAttachmentGroup, SlackMessageAttachmentGroup, SlackMessageTextAttachmentGroup}
+import models.behaviors.events._
+import models.behaviors.events.SlackMessageActionConstants._
 import play.api.Configuration
+import play.api.libs.json.Json
 import slack.api.SlackApiClient
 import slack.models.Attachment
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.reflect.io.File
 
-case class SlackMessageSenderException(underlying: Throwable, channel: String, teamId: String, userId: String, text: String)
+case class SlackMessageSenderException(underlying: Throwable, channel: String, slackTeamId: String, userId: String, text: String)
   extends Exception(
-    s"""Bad response from Slack while sending a message to user $userId in channel $channel on team $teamId
+    s"""Bad response from Slack while sending a message to user $userId in channel $channel on team $slackTeamId
        |Message:
        |$text
        |
@@ -25,10 +30,10 @@ case class SlackMessageSenderException(underlying: Throwable, channel: String, t
 case class SlackMessageSender(
                                client: SlackApiClient,
                                user: String,
-                               teamId: String,
+                               slackTeamId: String,
                                unformattedText: String,
                                forcePrivate: Boolean,
-                               isForUndeployed: Boolean,
+                               developerContext: DeveloperContext,
                                originatingChannel: String,
                                channelToUse: String,
                                maybeThreadId: Option[String],
@@ -36,16 +41,50 @@ case class SlackMessageSender(
                                maybeConversation: Option[Conversation],
                                attachmentGroups: Seq[MessageAttachmentGroup] = Seq(),
                                files: Seq[UploadFileSpec] = Seq(),
-                               configuration: Configuration
+                               choices: Seq[ActionChoice],
+                               configuration: Configuration,
+                               botName: String,
+                               slackUserList: Set[SlackUserData]
                              ) {
 
-  val attachmentGroupsToUse = if (isForUndeployed) {
-    val baseUrl = configuration.get[String]("application.apiBaseUrl")
-    val path = controllers.routes.HelpController.devMode().url
-    val link = s"[development]($baseUrl$path)"
-    attachmentGroups ++ Seq(SlackMessageTextAttachmentGroup(s"\uD83D\uDEA7 Skill in $link \uD83D\uDEA7", None))
-  } else {
-    attachmentGroups
+  val choicesAttachmentGroups: Seq[SlackMessageActionsGroup] = {
+    if (choices.isEmpty) {
+      Seq()
+    } else {
+      val actionList = choices.zipWithIndex.map { case(ea, i) =>
+        val value = Json.toJson(ea).toString()
+        SlackMessageActionButton(ACTION_CHOICE, ea.label, value)
+      }
+      Seq(SlackMessageActionsGroup(
+        ACTION_CHOICES,
+        actionList,
+        None,
+        None,
+        Some(Color.BLUE_LIGHTER),
+        None
+      ))
+    }
+  }
+
+  val attachmentGroupsToUse = {
+    val groups = attachmentGroups ++ choicesAttachmentGroups
+    if (developerContext.isForUndeployedBehaviorVersion) {
+      val baseUrl = configuration.get[String]("application.apiBaseUrl")
+      val path = controllers.routes.HelpController.devMode(Some(slackTeamId), Some(botName)).url
+      val link = s"[development]($baseUrl$path)"
+      groups ++ Seq(SlackMessageTextAttachmentGroup(s"\uD83D\uDEA7 Skill in $link \uD83D\uDEA7", None, None))
+    } else if (developerContext.hasUndeployedBehaviorVersionForAuthor) {
+      val baseUrl = configuration.get[String]("application.apiBaseUrl")
+      val path = controllers.routes.HelpController.devMode(Some(slackTeamId), Some(botName)).url
+      val link = s"[dev mode]($baseUrl$path)"
+      groups ++ Seq(
+        SlackMessageTextAttachmentGroup(
+          s"\uD83D\uDEA7 You are running the deployed version of this skill even though you've made changes. You can always use the most recent version in $link.", None, None
+        )
+      )
+    } else {
+      groups
+    }
   }
 
   private def postChatMessage(
@@ -73,7 +112,7 @@ case class SlackMessageSender(
       threadTs = maybeThreadTs,
       replyBroadcast = maybeReplyBroadcast
     ).recover {
-      case t: Throwable => throw SlackMessageSenderException(t, channel, teamId, user, text)
+      case t: Throwable => throw SlackMessageSenderException(t, channel, slackTeamId, user, text)
     }
   }
 
@@ -182,7 +221,7 @@ case class SlackMessageSender(
   }
 
   def send(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[String]] = {
-    val formattedText = SlackMessageFormatter.bodyTextFor(unformattedText)
+    val formattedText = SlackMessageFormatter.bodyTextFor(unformattedText, slackUserList)
     val attachments = attachmentGroupsToUse.flatMap {
       case a: SlackMessageAttachmentGroup => a.attachments.map(_.underlying)
       case _ => Seq()

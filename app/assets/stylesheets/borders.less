@@ -91,6 +91,10 @@
   border-color: @border-color-light;
 }
 
+.border-blue-light {
+  border-color: @blue-light;
+}
+
 .border-blue {
   border-color: @blue-light-alt;
 }
@@ -163,6 +167,10 @@
   border-bottom-right-radius: 0 !important;
 }
 
+.border-radius-bottom-left-none {
+  border-bottom-left-radius: 0 !important;
+}
+
 .border-radius-left {
   .border-radius-top-left();
   .border-radius-bottom-left();
@@ -189,7 +197,28 @@
   .mobile-border-top {
     border-top: @border-width solid @border-color;
   }
+
+  .mobile-border-bottom {
+    border-bottom: @border-width solid @border-color;
+  }
+
   .mobile-border-none {
     border: none;
+  }
+
+  .mobile-border-top-none {
+    border-top: none;
+  }
+
+  .mobile-border-left-none {
+    border-left: none;
+  }
+
+  .mobile-border-right-none {
+    border-right: none;
+  }
+
+  .mobile-border-bottom-none {
+    border-bottom: none;
   }
 }

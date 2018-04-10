@@ -1,10 +1,10 @@
 package models.behaviors.behaviorversion
 
 import java.time.OffsetDateTime
-import javax.inject.Inject
 
 import akka.actor.ActorSystem
 import drivers.SlickPostgresDriver.api._
+import javax.inject.Inject
 import json.BehaviorVersionData
 import models.IDs
 import models.accounts.user.User
@@ -15,8 +15,9 @@ import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
 import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.events.Event
 import models.team.Team
-import play.api.{Configuration, Logger}
+import play.api.Configuration
 import services._
+import services.caching.CacheService
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -29,7 +30,6 @@ case class RawBehaviorVersion(
                                maybeFunctionBody: Option[String],
                                maybeResponseTemplate: Option[String],
                                forcePrivateResponse: Boolean,
-                               maybeAuthorId: Option[String],
                                createdAt: OffsetDateTime
                              )
 
@@ -51,12 +51,11 @@ class BehaviorVersionsTable(tag: Tag) extends Table[RawBehaviorVersion](tag, "be
 
   def forcePrivateResponse = column[Boolean]("private_response")
 
-  def maybeAuthorId = column[Option[String]]("author_id")
 
   def createdAt = column[OffsetDateTime]("created_at")
 
   def * =
-    (id, behaviorId, groupVersionId, maybeDescription, maybeName, maybeFunctionBody, maybeResponseTemplate, forcePrivateResponse, maybeAuthorId, createdAt) <>
+    (id, behaviorId, groupVersionId, maybeDescription, maybeName, maybeFunctionBody, maybeResponseTemplate, forcePrivateResponse, createdAt) <>
       ((RawBehaviorVersion.apply _).tupled, RawBehaviorVersion.unapply _)
 }
 
@@ -82,8 +81,8 @@ class BehaviorVersionServiceImpl @Inject() (
 
   def uncompiledAllForQuery(behaviorId: Rep[String]) = {
     allWithGroupVersion.
-      filter { case (((version, _), _), _) => version.behaviorId === behaviorId }.
-      sortBy { case (((version, _), _), _) => version.createdAt.desc }
+      filter { case ((version, _), _) => version.behaviorId === behaviorId }.
+      sortBy { case ((version, _), _) => version.createdAt.desc }
   }
 
   val allForQuery = Compiled(uncompiledAllForQuery _)
@@ -125,7 +124,7 @@ class BehaviorVersionServiceImpl @Inject() (
   }
 
   def uncompiledFindQuery(id: Rep[String]) = {
-    allWithGroupVersion.filter { case (((version, _), _), _) => version.id === id }
+    allWithGroupVersion.filter { case ((version, _), _) => version.id === id }
   }
 
   val findQuery = Compiled(uncompiledFindQuery _)
@@ -136,7 +135,7 @@ class BehaviorVersionServiceImpl @Inject() (
   }
 
   def uncompiledFindForBehaviorAndGroupVersionQuery(behaviorId: Rep[String], groupVersionId: Rep[String]) = {
-    allWithGroupVersion.filter { case (((behaviorVersion, _), _), ((groupVersion, _), _)) => behaviorVersion
+    allWithGroupVersion.filter { case ((behaviorVersion, _), ((groupVersion, _), _)) => behaviorVersion
       .behaviorId === behaviorId && groupVersion.id === groupVersionId
     }
   }
@@ -151,6 +150,13 @@ class BehaviorVersionServiceImpl @Inject() (
 
   def findFor(behavior: Behavior, groupVersion: BehaviorGroupVersion): Future[Option[BehaviorVersion]] = {
     dataService.run(findForAction(behavior, groupVersion))
+  }
+
+  def findByName(name: String, groupVersion: BehaviorGroupVersion): Future[Option[BehaviorVersion]] = {
+    val action = findWithNameQuery(name, groupVersion.id).result.map { r =>
+      r.headOption.map(tuple2BehaviorVersion)
+    }
+    dataService.run(action)
   }
 
   def findCurrentByName(name: String, group: BehaviorGroup): Future[Option[BehaviorVersion]] = {
@@ -190,7 +196,6 @@ class BehaviorVersionServiceImpl @Inject() (
       None,
       None,
       forcePrivateResponse = false,
-      maybeUser.map(_.id),
       OffsetDateTime.now
     )
 
@@ -201,10 +206,9 @@ class BehaviorVersionServiceImpl @Inject() (
         groupVersion,
         raw.maybeDescription,
         raw.maybeName,
-        raw.maybeFunctionBody,
+        raw.maybeFunctionBody.map(_.trim),
         raw.maybeResponseTemplate,
         raw.forcePrivateResponse,
-        maybeUser,
         raw.createdAt
       )
     }
@@ -312,7 +316,8 @@ class BehaviorVersionServiceImpl @Inject() (
       missingOAuth2Applications <- DBIO.successful(requiredOAuth2ApiConfigs.flatMap(_.maybeApplication).filter { app =>
         !userInfo.links.exists(_.externalSystem == app.name)
       })
-      botPrefix <- DBIO.from(event.botPrefix(defaultServices))
+      botPrefix <- DBIO.from(event.contextualBotPrefix(defaultServices))
+      developerContext <- DeveloperContext.buildFor(event, behaviorVersion, dataService)
       maybeResult <- if (missingTeamEnvVars.nonEmpty) {
         DBIO.successful(Some(MissingTeamEnvVarsResult(
           event,
@@ -321,20 +326,21 @@ class BehaviorVersionServiceImpl @Inject() (
           dataService,
           configuration,
           missingTeamEnvVars,
-          botPrefix
+          botPrefix,
+          developerContext
         )
         )
         )
       } else {
         notReadyOAuth2Applications.headOption.map { firstNotReadyOAuth2App =>
-          DBIO.successful(Some(RequiredApiNotReady(firstNotReadyOAuth2App, event, None,  dataService, configuration)
+          DBIO.successful(Some(RequiredApiNotReady(firstNotReadyOAuth2App, event, behaviorVersion, None,  dataService, configuration, developerContext)
           ))
         }.getOrElse {
           val missingOAuth2ApplicationsRequiringAuth = missingOAuth2Applications.filter(_.api.grantType.requiresAuth)
           missingOAuth2ApplicationsRequiringAuth.headOption.map { firstMissingOAuth2App =>
             event.ensureUserAction(dataService).flatMap { user =>
               dataService.loginTokens.createForAction(user).map { loginToken =>
-                OAuth2TokenMissing(firstMissingOAuth2App, event, None, loginToken, cacheService, configuration)
+                OAuth2TokenMissing(firstMissingOAuth2App, event, behaviorVersion, None, loginToken, cacheService, configuration, developerContext)
               }
             }.map(Some(_))
           }.getOrElse(DBIO.successful(None))

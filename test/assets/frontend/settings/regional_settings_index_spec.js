@@ -29,9 +29,11 @@ describe('RegionalSettings', () => {
 
   function createIndex(config) {
     return TestUtils.renderIntoDocument(
-      <Page csrfToken={config.csrfToken} feedbackContainer={document.createElement('span')}>
-        <RegionalSettings {...config} />
-      </Page>
+      <Page csrfToken={config.csrfToken} feedbackContainer={document.createElement('span')}
+        onRender={(pageProps) => (
+          <RegionalSettings {...config} {...pageProps} />
+        )}
+      />
     ).component;
   }
 

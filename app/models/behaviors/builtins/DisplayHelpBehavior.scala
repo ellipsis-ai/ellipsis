@@ -6,7 +6,8 @@ import models.behaviors.events.SlackMessageActionConstants._
 import models.behaviors.events._
 import models.behaviors.{BotResult, TextWithAttachmentsResult}
 import models.help._
-import services.{AWSLambdaService, CacheService, DataService, DefaultServices}
+import services.caching.CacheService
+import services.{AWSLambdaService, DataService, DefaultServices}
 import utils._
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -75,11 +76,12 @@ case class DisplayHelpBehavior(
       SHOW_HELP_INDEX,
       actionList,
       maybeInstructions,
+      None,
       Some(Color.PINK),
       if (startAt == 0) { Some("Skills") } else { None }
     )
     val attachments = if (startAt == 0) {
-      Seq(actionsGroup, generalHelpGroup(botPrefix))
+      Seq(generalHelpGroup(botPrefix), actionsGroup)
     } else {
       Seq(actionsGroup)
     }
@@ -94,7 +96,7 @@ case class DisplayHelpBehavior(
   }
 
   def generalHelpGroup(botPrefix: String): SlackMessageAttachmentGroup = {
-    SlackMessageTextAttachmentGroup(generalHelpText(botPrefix: String), Some("General"))
+    SlackMessageTextAttachmentGroup(generalHelpText(botPrefix: String), None, Some("General"))
   }
 
   def skillNameAndDescriptionFor(result: HelpResult): String = {
@@ -142,16 +144,16 @@ case class DisplayHelpBehavior(
       Some("Select or type an action to run it now:")
     }
 
-    val actionsGroup = SlackMessageActionsGroup(SHOW_BEHAVIOR_GROUP_HELP, actionList, actionText, Some(Color.BLUE_LIGHT), None)
+    val actionsGroup = SlackMessageActionsGroup(SHOW_BEHAVIOR_GROUP_HELP, actionList, actionText, None, Some(Color.BLUE_LIGHT), None)
 
     TextWithAttachmentsResult(event, None, resultText, forcePrivateResponse = false, Seq(actionsGroup))
   }
 
-  def emptyResult: BotResult = {
+  def emptyResult(botPrefix: String): BotResult = {
     val actionList = Seq(SlackMessageActionButton(SHOW_HELP_INDEX, "More help…", "0"))
     val resultText = s"I don’t know anything$matchString."
-    val actionsGroup = SlackMessageActionsGroup("help_no_result", actionList, None, Some(Color.PINK))
-    TextWithAttachmentsResult(event, None, resultText, forcePrivateResponse = false, Seq(actionsGroup))
+    val actionsGroup = SlackMessageActionsGroup("help_no_result", actionList, None, None, Some(Color.PINK))
+    TextWithAttachmentsResult(event, None, resultText, forcePrivateResponse = false, Seq(generalHelpGroup(botPrefix), actionsGroup))
   }
 
   def searchedHelp: Boolean = maybeHelpSearch.isDefined
@@ -180,12 +182,12 @@ case class DisplayHelpBehavior(
         Future.sequence(groups.map { group =>
           dataService.behaviorGroupDeployments.maybeActiveBehaviorGroupVersionFor(group, event.context, channel).flatMap { maybeGroupVersion =>
             maybeGroupVersion.map { groupVersion =>
-              BehaviorGroupData.buildFor(groupVersion, user, dataService, cacheService).map(Some(_))
+              BehaviorGroupData.buildFor(groupVersion, user, None, dataService, cacheService).map(Some(_))
             }.getOrElse(Future.successful(None))
           }
         }).map(_.flatten.sorted)
       }).getOrElse(Future.successful(Seq()))
-      botPrefix <- event.botPrefix(services)
+      botPrefix <- event.contextualBotPrefix(services)
     } yield {
       val (named, unnamed) = groupData.partition(_.maybeNonEmptyName.isDefined)
       val namedGroupData = named.map(behaviorGroupData => SkillHelpGroupData(behaviorGroupData))
@@ -199,7 +201,7 @@ case class DisplayHelpBehavior(
       }.getOrElse(flattenedGroupData.map(group => SimpleHelpResult(group, event, dataService, lambdaService, botPrefix)))
 
       if (searchedHelp && matchingGroupData.isEmpty) {
-        emptyResult
+        emptyResult(botPrefix)
       } else if (shouldShowSingleSkill(matchingGroupData)) {
         skillResultFor(matchingGroupData.head)
       } else {

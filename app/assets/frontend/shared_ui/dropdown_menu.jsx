@@ -1,5 +1,4 @@
 import * as React from 'react';
-import CSS from '../lib/css';
 import Event from '../lib/event';
 
 const BehaviorEditorDropdownMenu = React.createClass({
@@ -158,6 +157,10 @@ BehaviorEditorDropdownMenu.Item = React.createClass({
       this.state.hover !== nextState.hover;
   },
 
+  visibleWhen: function(condition) {
+    return " visibility " + (condition ? "visibility-visible" : "visibility-hidden") + " ";
+  },
+
   render: function() {
     return (
       <button
@@ -171,7 +174,7 @@ BehaviorEditorDropdownMenu.Item = React.createClass({
       >
         <div className="columns columns-elastic">
           {typeof(this.props.checkedWhen) !== 'undefined' ? (
-            <div className={"column column-shrink prs align-m " + CSS.visibleWhen(this.props.checkedWhen)}>
+            <div className={"column column-shrink prs align-m " + this.visibleWhen(this.props.checkedWhen)}>
               ✓
             </div>
           ) : null}

@@ -29,6 +29,7 @@ import models.team.Team
 import play.api.libs.json._
 import play.api.libs.ws.WSClient
 import play.api.{Configuration, Logger}
+import services.caching.CacheService
 import slick.dbio.DBIO
 import sun.misc.BASE64Decoder
 import utils.{JavaFutureConverter, RequiredModulesInCode}
@@ -167,7 +168,7 @@ class AWSLambdaServiceImpl @Inject() (
           JavaFutureConverter.javaToScala(client.invokeAsync(invokeRequest)).map(successFn).recoverWith {
             case e: java.util.concurrent.ExecutionException => {
               e.getMessage match {
-                case amazonServiceExceptionRegex() => Future.successful(AWSDownResult(event, maybeConversation))
+                case amazonServiceExceptionRegex() => Future.successful(AWSDownResult(event, behaviorVersion, maybeConversation))
                 case resourceNotFoundExceptionRegex() => {
                   retryIntervals.headOption.map { retryInterval =>
                     Logger.info(s"retrying behavior invocation after resource not found with interval: ${retryInterval}s")
@@ -199,11 +200,22 @@ class AWSLambdaServiceImpl @Inject() (
       requiredAWSConfigs <- dataService.requiredAWSConfigs.allForAction(behaviorVersion.groupVersion)
       requiredOAuth2ApiConfigs <- dataService.requiredOAuth2ApiConfigs.allForAction(behaviorVersion.groupVersion)
       requiredSimpleTokenApis <- dataService.requiredSimpleTokenApis.allForAction(behaviorVersion.groupVersion)
-      isForUndeployed <- dataService.behaviorGroupDeployments.findForBehaviorGroupVersionAction(behaviorVersion.groupVersion).map { maybeDeployment =>
-        maybeDeployment.isEmpty
-      }
+      developerContext <- DeveloperContext.buildFor(event, behaviorVersion, dataService)
       result <- if (behaviorVersion.functionBody.isEmpty) {
-        DBIO.successful(SuccessResult(event, maybeConversation, JsNull, JsNull, parametersWithValues, behaviorVersion.maybeResponseTemplate, None, behaviorVersion.forcePrivateResponse, isForUndeployed))
+        DBIO.successful(
+          SuccessResult(
+            event,
+            behaviorVersion,
+            maybeConversation,
+            JsNull,
+            JsNull,
+            parametersWithValues,
+            behaviorVersion.maybeResponseTemplate,
+            None,
+            behaviorVersion.forcePrivateResponse,
+            developerContext
+          )
+        )
       } else {
         for {
           user <- event.ensureUserAction(dataService)
@@ -219,7 +231,16 @@ class AWSLambdaServiceImpl @Inject() (
             result => {
               val logString = new java.lang.String(new BASE64Decoder().decodeBuffer(result.getLogResult))
               val logResult = AWSLambdaLogResult.fromText(logString)
-              behaviorVersion.resultFor(result.getPayload, logResult, parametersWithValues, dataService, configuration, event, maybeConversation, isForUndeployed)
+              behaviorVersion.resultFor(
+                result.getPayload,
+                logResult,
+                parametersWithValues,
+                dataService,
+                configuration,
+                event,
+                maybeConversation,
+                developerContext
+              )
             },
             maybeConversation,
             invocationRetryIntervals,

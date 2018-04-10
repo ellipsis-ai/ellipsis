@@ -64,7 +64,7 @@ const IntegrationList = React.createClass({
 
     render: function() {
       return (
-        <SettingsPage teamId={this.props.teamId} isAdmin={this.props.isAdmin} header={this.renderHeader()} activePage={"oauthApplications"}>
+        <SettingsPage teamId={this.props.teamId} isAdmin={this.props.isAdmin} activePage={"oauthApplications"}>
 
           <p>
             <span>Create a new configuration to give Ellipsis access to third-party APIs, </span>
@@ -110,14 +110,6 @@ const IntegrationList = React.createClass({
       );
     },
 
-    renderHeader: function() {
-      return (
-        <h3 className="mvn ptxxl type-weak display-ellipsis">
-          <span className="mrs">Integrations</span>
-        </h3>
-      );
-    },
-
     renderNoApplications: function() {
       return (
         <div>
@@ -136,6 +128,10 @@ const IntegrationList = React.createClass({
       );
     },
 
+    optionalTeamId: function() {
+      return this.props.isAdmin ? this.props.teamId : null;
+    },
+
     renderApplicationList: function() {
       var grouped = this.getGroupedApplications();
       var route = jsRoutes.controllers.web.settings.OAuth2ApplicationController.edit;
@@ -149,7 +145,7 @@ const IntegrationList = React.createClass({
             if (group.length === 1 && groupName.toLowerCase() === group[0].displayName.toLowerCase()) {
               return (
                 <div key={`oAuthApplicationGroup${groupIndex}`} className="mvm">
-                  <h4><a href={route(group[0].id).url}>{groupName}</a></h4>
+                  <h4><a href={route(group[0].id, this.optionalTeamId()).url}>{groupName}</a></h4>
                 </div>
               );
             } else {
@@ -160,7 +156,7 @@ const IntegrationList = React.createClass({
                     {group.map((app, appIndex) => {
                       return (
                         <li key={`oAuthApplicationGroup${groupIndex}-${appIndex}`}>
-                          <a href={route(app.id, this.props.teamId).url}>{app.displayName}</a>
+                          <a href={route(app.id, this.optionalTeamId()).url}>{app.displayName}</a>
                         </li>
                       );
                     })}
@@ -201,7 +197,7 @@ const IntegrationList = React.createClass({
             {awsConfigs.map((config, index) => {
               return (
                 <li key={`awsConfig${index}`} className="mvm">
-                  <a href={route(config.id).url}>{config.displayName}</a>
+                  <a href={route(config.id, this.optionalTeamId()).url}>{config.displayName}</a>
                 </li>
               );
             })}
@@ -214,28 +210,12 @@ const IntegrationList = React.createClass({
       return (
         <div className="mvxl">
           <a className="button"
-             href={jsRoutes.controllers.web.settings.OAuth2ApplicationController.add(this.props.teamId, null, null, null).url}
+             href={jsRoutes.controllers.web.settings.OAuth2ApplicationController.add(this.optionalTeamId(), null, null, null).url}
           >
             Add a new integration
           </a>
         </div>
       );
-    },
-
-    renderApplicationCountDescription: function(appCount, apiGroupCount) {
-      if (appCount === 1) {
-        return (
-          <p>There is one configuration.</p>
-        );
-      } else if (apiGroupCount === 1) {
-        return (
-          <p>There are {appCount} configurations.</p>
-        );
-      } else {
-        return (
-          <p>There are {appCount} configurations for {apiGroupCount} services.</p>
-        );
-      }
     },
 
     renderOAuth2ApplicationHelp: function() {

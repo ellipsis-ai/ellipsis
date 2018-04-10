@@ -107,14 +107,17 @@ GET         /admin/billing/plans                      @controllers.admin.billing
 GET         /metrics/invocations_for_date/:token/:year/:month/:day          @controllers.VisibilityAPIController.invocationCountsForDate(token: String, year: String, month: String, day: String)
 GET         /metrics/for_team_for_date/:token/:teamName/:year/:month/:day   @controllers.VisibilityAPIController.forTeamForDate(token: String, teamName: String, year: String, month: String, day: String)
 
-GET         /help/devmode                             @controllers.HelpController.devMode
-GET         /help/scheduling                          @controllers.HelpController.scheduledMessages
+GET         /help/devmode                             @controllers.HelpController.devMode(slackTeamId: Option[String] ?= None, botName: Option[String] ?= None)
+GET         /help/scheduling                          @controllers.HelpController.scheduledMessages(slackTeamId: Option[String] ?= None, botName: Option[String] ?= None)
 POST        /feedback/send                            @controllers.FeedbackController.send
 
 GET         /health_check                             @controllers.HealthController.check
 
 GET         /legal/privacy_policy                     @controllers.LegalController.privacyPolicy
 GET         /legal/user_agreement                     @controllers.LegalController.userAgreement
+
+GET         /support                                  @controllers.SupportController.request
+POST        /support/send_request                     @controllers.SupportController.sendRequest
 
 #POST        /authenticate/credentials        controllers.CredentialsAuthController.authenticate
 #POST        /signUp                          controllers.SignUpController.signUp

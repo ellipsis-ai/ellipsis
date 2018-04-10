@@ -1,25 +1,32 @@
 package models.behaviors.events
 
 import akka.actor.ActorSystem
-import com.mohiva.play.silhouette.api.LoginInfo
 import json.Formatting._
 import json.SlackUserData
 import models.accounts.slack.botprofile.SlackBotProfile
-import models.accounts.slack.profile.SlackProfile
+import play.api.Logger
 import play.api.libs.json._
-import services.{CacheService, DataService, DefaultServices}
-import slack.api.SlackApiClient
+import services.DefaultServices
+import services.caching.CacheService
+import slack.api.{ApiError, SlackApiClient}
 import utils.SlackChannels
 
 import scala.concurrent.{ExecutionContext, Future}
 
 trait SlackEvent {
   val user: String
+  val userSlackTeamId: String
   val channel: String
   val profile: SlackBotProfile
   val client: SlackApiClient
   def eventualMaybeDMChannel(cacheService: CacheService)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[String]] = {
-    SlackChannels(client, cacheService, profile.slackTeamId).listIms.map(_.find(_.user == user).map(_.id))
+    client.openIm(user).map(Some(_)).recover {
+      case e: ApiError => {
+        val msg = s"""Couldn't open DM for scheduled message to user with ID ${user} on Slack team ${userSlackTeamId} due to Slack API error: ${e.code}"""
+        Logger.error(msg, e)
+        None
+      }
+    }
   }
 
   val isDirectMessage: Boolean = {
@@ -55,7 +62,15 @@ trait SlackEvent {
   def detailsFor(services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[JsObject] = {
     val slackChannels = SlackChannels(client, services.cacheService, profile.slackTeamId)
     for {
-      maybeUser <- services.slackEventService.maybeSlackUserDataFor(user, profile.slackTeamId, SlackApiClient(profile.token))
+      maybeUser <- services.slackEventService.maybeSlackUserDataFor(user, profile.slackTeamId, SlackApiClient(profile.token), (e) => {
+        Logger.error(
+          s"""Slack API reported user not found while generating details about the user to send to an action:
+             |Slack user ID: ${user}
+             |Ellipsis bot Slack team ID: ${profile.slackTeamId}
+             |Ellipsis team ID: ${profile.teamId}
+           """.stripMargin, e)
+        None
+      })
       maybeChannelInfo <- slackChannels.getInfoFor(channel)
     } yield {
       val channelDetails = JsObject(Seq(
@@ -68,10 +83,6 @@ trait SlackEvent {
         channelDetails
       }
     }
-  }
-
-  def ensureSlackProfileFor(loginInfo: LoginInfo, dataService: DataService)(implicit ec: ExecutionContext): Future[SlackProfile] = {
-    dataService.slackProfiles.save(SlackProfile(profile.slackTeamId, loginInfo))
   }
 
 }

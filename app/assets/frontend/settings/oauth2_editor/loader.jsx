@@ -7,7 +7,9 @@ import IntegrationEditor from './index';
 import Page from '../../shared_ui/page';
 
 ReactDOM.render((
-  <Page csrfToken={IntegrationEditorConfig.csrfToken}>
-    <IntegrationEditor {...IntegrationEditorConfig} />
-  </Page>
+  <Page csrfToken={IntegrationEditorConfig.csrfToken}
+    onRender={(pageProps) => (
+      <IntegrationEditor {...IntegrationEditorConfig} {...pageProps} />
+    )}
+  />
 ), document.getElementById(IntegrationEditorConfig.containerId));

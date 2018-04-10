@@ -3,6 +3,7 @@ package models.accounts.user
 import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.api.services.IdentityService
 import json.UserData
+import models.accounts.slack.profile.SlackProfile
 import models.behaviors.behavior.Behavior
 import models.behaviors.behaviorgroup.BehaviorGroup
 import models.behaviors.events.Event
@@ -33,6 +34,10 @@ trait UserService extends IdentityService[User] {
   def isAdmin(user: User): Future[Boolean]
 
   def userDataFor(user: User, team: Team): Future[UserData]
+
+  def maybeSlackTeamIdFor(user: User): Future[Option[String]]
+
+  def maybeSlackProfileFor(user: User): Future[Option[SlackProfile]]
 
   def findForInvocationToken(tokenId: String): Future[Option[User]]
 }

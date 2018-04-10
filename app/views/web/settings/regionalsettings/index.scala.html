@@ -2,8 +2,7 @@
   config: ViewConfig,
   dataRoute: Call
 )(implicit messages: Messages, r: RequestHeader)
-
-@page.main("Regional settings", config, selectedNav = "settings") {
+@page.main("Regional settings", config, Seq(NavItem.teamSettings, NavItem("Regional settings", None))) {
   <div id="content" class="flex-row-cascade">
     <div id="regionalSettings" class="flex-row-cascade"></div>
 

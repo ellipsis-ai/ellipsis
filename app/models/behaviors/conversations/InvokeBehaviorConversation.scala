@@ -7,7 +7,7 @@ import models.behaviors.BotResult
 import models.behaviors.behaviorparameter.BehaviorParameter
 import models.behaviors.behaviorversion.BehaviorVersion
 import models.behaviors.conversations.conversation.Conversation
-import models.behaviors.events.{Event, EventType, SlackMessageEvent}
+import models.behaviors.events.{Event, EventType, SlackEvent, SlackMessageEvent}
 import models.behaviors.triggers.messagetrigger.MessageTrigger
 import services.{DataService, DefaultServices}
 import slick.dbio.DBIO
@@ -24,6 +24,7 @@ case class InvokeBehaviorConversation(
                                        maybeChannel: Option[String],
                                        maybeThreadId: Option[String],
                                        userIdForContext: String, // id for Slack, etc user
+                                       maybeTeamIdForContext: Option[String],
                                        startedAt: OffsetDateTime,
                                        maybeLastInteractionAt: Option[OffsetDateTime],
                                        state: String = Conversation.NEW_STATE,
@@ -162,6 +163,10 @@ object InvokeBehaviorConversation {
                  maybeActivatedTrigger: Option[MessageTrigger],
                  dataService: DataService
                  )(implicit ec: ExecutionContext): Future[InvokeBehaviorConversation] = {
+    val maybeTeamIdForContext = event match {
+      case e: SlackEvent => Some(e.userSlackTeamId)
+      case _ => None
+    }
     val newInstance =
       InvokeBehaviorConversation(
         IDs.next,
@@ -172,6 +177,7 @@ object InvokeBehaviorConversation {
         maybeChannel,
         None,
         event.userIdForContext,
+        maybeTeamIdForContext,
         OffsetDateTime.now,
         None,
         Conversation.NEW_STATE,

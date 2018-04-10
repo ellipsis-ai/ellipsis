@@ -7,6 +7,7 @@ import models.team.Team
 import play.api.Configuration
 import play.api.libs.json.{JsObject, Json}
 import services._
+import services.caching.CacheService
 import utils.ShellEscaping
 
 import scala.concurrent.{ExecutionContext, Future, blocking}
@@ -87,7 +88,7 @@ case class GithubPusher(
   val escapedCommitterName: String = ShellEscaping.escapeWithSingleQuotes(committerInfo.name)
   val escapedCommitterEmail: String = ShellEscaping.escapeWithSingleQuotes(committerInfo.email)
 
-  private def runCommand(cmd: String, maybeCreateException: Option[String => Exception]): Future[String] = {
+  private def runCommand(cmd: String, maybeCreateException: Option[String => Option[Exception]]): Future[String] = {
     println(cmd)
     Future {
       blocking {
@@ -99,7 +100,7 @@ case class GithubPusher(
         val output = buffer.mkString
         if (exitValue != 0) {
           maybeCreateException.foreach { createException =>
-            throw createException(output)
+            createException(output).foreach(throw _)
           }
         }
         output
@@ -110,7 +111,7 @@ case class GithubPusher(
   private def cloneRepo: Future[String] = {
     runCommand(
       s"mkdir -p $parentPath && cd $parentPath && rm -rf $exportName && git clone $remoteUrl $exportName",
-      Some(message => GitCloneException(owner, repoName, message))
+      Some(message => Some(GitCloneException(owner, repoName, message)))
     )
   }
 
@@ -122,8 +123,20 @@ case class GithubPusher(
     runCommand(s"cd $dirName && git checkout $escapedBranch", None)
   }
 
+  private val newEmptyRepoRegex = """Couldn't find remote ref master""".r
+
   private def pullLatest: Future[String] = {
-    runCommand(s"cd $dirName && git pull origin $escapedBranch", Some(GitPullException.apply))
+    runCommand(s"cd $dirName && git pull origin $escapedBranch", Some((str: String) => {
+      if (newEmptyRepoRegex.findFirstIn(str).isDefined) {
+        None
+      } else {
+        Some(GitPullException(str))
+      }
+    }))
+  }
+
+  private def deleteFiles: Future[String] = {
+    runCommand(s"cd $dirName && rm -rf ./*", None)
   }
 
   private def export: Future[Unit] = {
@@ -141,7 +154,7 @@ case class GithubPusher(
   private def push: Future[String] = {
     runCommand(
       raw"""cd $dirName && git add . && git -c user.name=$escapedCommitterName -c user.email=$escapedCommitterEmail commit -a -m $escapedCommitMessage && git push origin $escapedBranch""",
-      Some((message) => GitPushException.fromMessage(escapedBranch, message))
+      Some((message) => Some(GitPushException.fromMessage(escapedBranch, message)))
     )
   }
 
@@ -165,6 +178,7 @@ case class GithubPusher(
       _ <- ensureBranch
       _ <- ensureBranchCheckedOut
       _ <- pullLatest
+      _ <- deleteFiles
       _ <- export
       _ <- push
       _ <- setGitSHA

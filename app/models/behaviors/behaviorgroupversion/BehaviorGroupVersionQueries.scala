@@ -1,5 +1,7 @@
 package models.behaviors.behaviorgroupversion
 
+import java.time.OffsetDateTime
+
 import drivers.SlickPostgresDriver.api._
 import models.accounts.user.{User, UserQueries, UsersTable}
 import models.behaviors.behaviorgroup.BehaviorGroupQueries
@@ -48,6 +50,11 @@ object BehaviorGroupVersionQueries {
   }
   val currentIdForQuery = Compiled(uncompiledCurrentIdForQuery _)
 
+  private def uncompiledFirstIdForQuery(groupId: Rep[String]) = {
+    all.filter(_.groupId === groupId).sortBy(_.createdAt.asc).take(1).map(_.id)
+  }
+  val firstIdForQuery = Compiled(uncompiledFirstIdForQuery _)
+
   def uncompiledAllCurrentQuery = {
     // distinctOn() is broken in Slick as of v3.2.1, so we use a subquery
     allWithUser.filter { case((outerVersion, _), _) =>
@@ -62,5 +69,13 @@ object BehaviorGroupVersionQueries {
     uncompiledAllCurrentQuery.map { case((version, _), _) => version.id }
   }
   val allCurrentIdsQuery = Compiled(uncompiledAllCurrentIdsQuery)
+
+  private def uncompiledNewerVersionsForAuthorQuery(groupId: Rep[String], createdAt: Rep[OffsetDateTime], userId: Rep[String]) = {
+    all.
+      filter(_.groupId === groupId).
+      filter(_.createdAt > createdAt).
+      filter(_.maybeAuthorId === userId)
+  }
+  val newerVersionsForAuthorQuery = Compiled(uncompiledNewerVersionsForAuthorQuery _)
 
 }

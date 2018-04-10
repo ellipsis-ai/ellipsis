@@ -1,6 +1,6 @@
 import * as React from 'react';
 import autobind from '../lib/autobind';
-import DataRequest from '../lib/data_request';
+import {DataRequest} from '../lib/data_request';
 import Button from '../form/button';
 import Textarea from '../form/textarea';
 

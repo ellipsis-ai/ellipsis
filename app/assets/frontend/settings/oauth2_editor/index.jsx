@@ -41,6 +41,14 @@ const IntegrationEditor = React.createClass({
       behaviorId: React.PropTypes.string
     }),
 
+    componentDidMount: function() {
+      this.renderNav();
+    },
+
+    componentDidUpdate: function() {
+      this.renderNav();
+    },
+
     applicationNameInput: null,
 
     getDefaultProps: function() {
@@ -228,7 +236,7 @@ const IntegrationEditor = React.createClass({
 
     render: function() {
       return (
-        <SettingsPage teamId={this.props.teamId} isAdmin={this.props.isAdmin} header={this.renderHeader()} activePage={"oauthApplications"}>
+        <SettingsPage teamId={this.props.teamId} isAdmin={this.props.isAdmin} activePage={"oauthApplications"}>
           <form action={jsRoutes.controllers.web.settings.OAuth2ApplicationController.save().url} method="POST" className="flex-row-cascade">
             <CsrfTokenHiddenInput value={this.props.csrfToken} />
             <input type="hidden" name="apiId" value={this.getApplicationApiId()} />
@@ -272,41 +280,33 @@ const IntegrationEditor = React.createClass({
       );
     },
 
-    renderHeader: function() {
-      return (
-        <h3 className="mvn ptxxl type-weak display-ellipsis">
-          <span className="mrs">
-            <a href={jsRoutes.controllers.web.settings.IntegrationsController.list().url}>Integrations</a>
-          </span>
-          <span className="mhs">→</span>
-          {this.renderApplicationHeader()}
-        </h3>
-      );
+    renderNav: function() {
+      const navItems = [{
+        title: "Settings"
+      }, {
+        url: jsRoutes.controllers.web.settings.IntegrationsController.list(this.props.isAdmin ? this.props.teamId : null).url,
+        title: "Integrations"
+      }];
+      this.props.onRenderNavItems(navItems.concat(this.renderApplicationNavItems()));
     },
 
-    renderApplicationHeader: function() {
+    renderApplicationNavItems: function() {
+      const apiName = this.getApplicationApiName();
       if (!this.apiIsSet()) {
-        return (
-          <span className="mhs">Add configuration</span>
-        );
+        return [{
+          title: "Add configuration"
+        }];
       } else if (!this.props.applicationSaved) {
-        return (
-          <span>
-            <span className="mhs">
-              <button className="button-raw" onClick={this.reset}>Add configuration</button>
-            </span>
-            <span className="mhs">→</span>
-            <span className="mhs">{this.getApplicationApiName()}</span>
-          </span>
-        );
+        return [{
+          callback: this.reset,
+          title: `Add ${apiName} configuration`
+        }];
       } else {
-        return (
-          <span>
-            <span className="mhs">Edit configuration</span>
-            <span className="mhs">→</span>
-            <span className="mhs">{this.getApplicationName() || (<span className="type-disabled">Untitled</span>)}</span>
-          </span>
-        );
+        const configName = this.getApplicationName() || "Untitled configuration";
+        const title = configName === apiName ? apiName : `${configName} (${apiName})`;
+        return [{
+          title: title
+        }];
       }
     },
 

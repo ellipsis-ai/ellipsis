@@ -10,7 +10,6 @@ import models.accounts.user.{UserService, UserServiceImpl}
 import models.accounts.logintoken.{LoginTokenService, LoginTokenServiceImpl}
 import models.accounts.oauth2api.{OAuth2ApiService, OAuth2ApiServiceImpl}
 import models.accounts.oauth2application.{OAuth2ApplicationService, OAuth2ApplicationServiceImpl}
-import models.accounts.slack.profile.{SlackProfileService, SlackProfileServiceImpl}
 import models.accounts.oauth2token.{OAuth2TokenService, OAuth2TokenServiceImpl}
 import models.accounts.registration.{RegistrationService, RegistrationServiceImpl}
 import models.accounts.simpletokenapi.{SimpleTokenApiService, SimpleTokenApiServiceImpl}
@@ -58,6 +57,7 @@ import models.billing.customer.{CustomerService, CustomerServiceImpl}
 import services.billing.{BillingService, BillingServiceImpl}
 import services._
 import net.codingwell.scalaguice.ScalaModule
+import services.caching.{CacheService, CacheServiceImpl}
 import services.stats.{StatsService, StatsServiceImpl}
 import utils.SlackFileMap
 
@@ -80,7 +80,6 @@ class ServiceModule extends AbstractModule with ScalaModule {
     bind[OAuth2ApplicationService].to[OAuth2ApplicationServiceImpl]
     bind[SimpleTokenApiService].to[SimpleTokenApiServiceImpl]
     bind[GithubProfileService].to[GithubProfileServiceImpl]
-    bind[SlackProfileService].to[SlackProfileServiceImpl]
     bind[SlackBotProfileService].to[SlackBotProfileServiceImpl]
     bind[OAuth2TokenService].to[OAuth2TokenServiceImpl]
     bind[BehaviorGroupService].to[BehaviorGroupServiceImpl]

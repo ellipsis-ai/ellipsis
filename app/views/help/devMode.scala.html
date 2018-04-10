@@ -1,12 +1,13 @@
 @(
   heading: String,
-  config: ViewConfig
+  config: ViewConfig,
+  botName: String
 )(implicit messages: Messages, r: RequestHeader)
 
-@page.main(heading, config) {
+@page.main(heading, config, Seq(NavItem.help)) {
 
   <div id="content" class="content">
-    <div class="bg-pink border-emphasis-bottom border-pink bg-large-logo">
+    <div class="bg-pink border-emphasis-bottom border-pink">
       <div class="container ptxxxxl pbl">
         <h1 class="type-white">
           <span>Help: @heading</span>
@@ -24,13 +25,13 @@
               You can enable dev mode for a channel by typing:
             </p>
             <p class="mbxxl"><code>
-            @@ellipsis enable dev mode
+            @@@botName enable dev mode
             </code></p>
             <p class="type-semibold">
               To turn off dev mode for that channel, you can type:
             </p>
             <p class="mbxxl"><code>
-            @@ellipsis disable dev mode
+            @@@botName disable dev mode
             </code></p>
           </div>
         </div>

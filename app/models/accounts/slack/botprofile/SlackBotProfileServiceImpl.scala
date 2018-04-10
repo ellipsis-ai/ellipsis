@@ -1,17 +1,19 @@
 package models.accounts.slack.botprofile
 
 import java.time.OffsetDateTime
-import javax.inject.{Inject, Provider}
 
 import akka.actor.ActorSystem
 import drivers.SlickPostgresDriver.api._
+import javax.inject.{Inject, Provider}
 import models.accounts.registration.RegistrationService
-import models.behaviors.{BotResult, BotResultService}
 import models.behaviors.events.{EventType, SlackMessage, SlackMessageEvent}
+import models.behaviors.{BotResult, BotResultService}
 import models.team.Team
 import play.api.Logger
-import services.{CacheService, DataService, SlackEventService}
+import services.caching.CacheService
+import services.{DataService, SlackEventService}
 import slack.api.SlackApiClient
+import slick.dbio.DBIO
 import utils.{SlackChannels, SlackMessageReactionHandler, SlackTimestamp}
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -32,6 +34,7 @@ class SlackBotProfileServiceImpl @Inject() (
                                              slackEventServiceProvider: Provider[SlackEventService],
                                              botResultServiceProvider: Provider[BotResultService],
                                              registrationServiceProvider: Provider[RegistrationService],
+                                             cacheServiceProvider: Provider[CacheService],
                                              implicit val actorSystem: ActorSystem,
                                              implicit val ec: ExecutionContext
                                         ) extends SlackBotProfileService {
@@ -40,7 +43,7 @@ class SlackBotProfileServiceImpl @Inject() (
   def slackEventService = slackEventServiceProvider.get
   def botResultService = botResultServiceProvider.get
   def registrationService = registrationServiceProvider.get
-
+  def cacheService = cacheServiceProvider.get
 
   val all = TableQuery[SlackBotProfileTable]
 
@@ -110,6 +113,7 @@ class SlackBotProfileServiceImpl @Inject() (
         // https://github.com/ellipsis-ai/ellipsis/issues/1719
         SlackMessageEvent(
           botProfile,
+          slackTeamId,
           channelId,
           None,
           maybeUserId.getOrElse(botProfile.userId),
@@ -127,6 +131,34 @@ class SlackBotProfileServiceImpl @Inject() (
     SlackChannels(SlackApiClient(botProfile.token), cacheService, botProfile.slackTeamId)
   }
 
+  def maybeNameFor(slackTeamId: String): Future[Option[String]] = {
+    for {
+      maybeSlackBotProfile <- allForSlackTeamId(slackTeamId).map(_.headOption)
+      maybeName <- maybeSlackBotProfile.map { slackBotProfile =>
+        maybeNameFor(slackBotProfile)
+      }.getOrElse(Future.successful(None))
+    } yield maybeName
+  }
+
+  def maybeNameFor(botProfile: SlackBotProfile): Future[Option[String]] = {
+    val teamId = botProfile.teamId
+    slackEventService.maybeSlackUserDataFor(botProfile).map { maybeSlackUserData =>
+      maybeSlackUserData.map { slackUserData =>
+        val name = slackUserData.getDisplayName
+        cacheService.cacheBotName(name, teamId)
+        name
+      }.orElse {
+        Logger.error("No bot user data returned from Slack API; using fallback cache")
+        cacheService.getBotName(teamId)
+      }
+    }.recover {
+      case e: slack.api.InvalidResponseError => {
+        Logger.warn("Couldn’t retrieve bot user data from Slack API because of an invalid response; using fallback cache", e)
+        cacheService.getBotName(teamId)
+      }
+    }
+  }
+
   private def sendResult(eventualMaybeResult: Future[Option[BotResult]]): Future[Option[String]] = {
     for {
       maybeResult <- eventualMaybeResult
@@ -137,21 +169,34 @@ class SlackBotProfileServiceImpl @Inject() (
   }
 
   def sendResultWithNewEvent(
-    description: String,
-    getEventualMaybeResult: SlackMessageEvent => Future[Option[BotResult]],
-    slackTeamId: String,
-    channelId: String,
-    userId: String,
-    originalMessageTs: String
+                              description: String,
+                              getEventualMaybeResult: SlackMessageEvent => Future[Option[BotResult]],
+                              userSlackTeamId: String,
+                              botProfile: SlackBotProfile,
+                              channelId: String,
+                              userId: String,
+                              originalMessageTs: String,
+                              maybeThreadTs: Option[String]
   ): Future[Unit] = {
     val delayMilliseconds = 1000
+    val event = SlackMessageEvent(
+      botProfile,
+      userSlackTeamId,
+      channelId,
+      maybeThreadTs,
+      userId,
+      SlackMessage.blank,
+      None,
+      SlackTimestamp.now,
+      slackEventService.clientFor(botProfile),
+      None
+    )
     (for {
-      maybeEvent <- eventualMaybeEvent(slackTeamId, channelId, Some(userId), None)
-      _ <- maybeEvent.map { event =>
+      _ <- {
         val eventualResult = getEventualMaybeResult(event)
         sendResult(eventualResult)
         SlackMessageReactionHandler.handle(event.client, eventualResult, channelId, originalMessageTs, delayMilliseconds)
-      }.getOrElse(Future.successful(None))
+      }
     } yield {}).recover {
       case t: Throwable => {
         Logger.error(s"Exception responding to a Slack action: $description", t)

@@ -2,7 +2,6 @@ import * as React from 'react';
 import APIConfigPanel from './api_config_panel';
 import {AWSConfigRef} from '../models/aws';
 import BehaviorGroup from '../models/behavior_group';
-import BehaviorGroupSaveInfo from './behavior_group_save_info';
 import BehaviorGroupVersionMetaData from '../models/behavior_group_version_meta_data';
 import BehaviorGroupDetailsPanel from './behavior_group_details_panel';
 import BehaviorGroupEditor from './behavior_group_editor';
@@ -12,11 +11,10 @@ import BehaviorTester from './behavior_tester';
 import DataTypeTester from './data_type_tester';
 import BehaviorCodeHelp from './behavior_code_help';
 import Button from '../form/button';
-import ChangeSummary from './change_summary';
 import CodeConfiguration from './code_configuration';
 import ConfirmActionPanel from '../panels/confirm_action';
 import CollapseButton from '../shared_ui/collapse_button';
-import DataRequest from '../lib/data_request';
+import {DataRequest} from '../lib/data_request';
 import DataTypeEditor from './data_type_editor';
 import DataTypePromptHelp from './data_type_prompt_help';
 import DataTypeSourceHelp from './data_type_source_help';
@@ -31,7 +29,6 @@ import Input from '../models/input';
 import Formatter from '../lib/formatter';
 import ID from '../lib/id';
 import NodeModuleVersion from '../models/node_module_version';
-import NotificationData from '../models/notification_data';
 import FormInput from '../form/input';
 import LibraryCodeHelp from './library_code_help';
 import LibraryVersion from '../models/library_version';
@@ -68,8 +65,20 @@ import ImmutableObjectUtils from '../lib/immutable_object_utils';
 import debounce from 'javascript-debounce';
 import Sort from '../lib/sort';
 import 'codemirror/mode/markdown/markdown';
-
-var MOBILE_MAX_WIDTH = 768;
+import DeploymentStatus from "./deployment_status";
+import GithubRepoActions from "./versions/github_repo_actions";
+import {MOBILE_MAX_WIDTH} from "../lib/constants";
+import DataTypeDuplicateFieldsNotificationData from "../models/notifications/data_type_duplicate_fields_notification_data";
+import DataTypeMissingFieldsNotificationData from "../models/notifications/data_type_missing_fields_notification_data";
+import DataTypeNeedsConfigNotificationData from "../models/notifications/data_type_needs_config_notification_data";
+import DataTypeUnnamedFieldsNotificationData from "../models/notifications/data_type_unnamed_fields_notification_data";
+import DataTypeUnnamedNotificationData from "../models/notifications/data_type_unnamed_notification_data";
+import EnvVarMissingNotificationData from "../models/notifications/env_var_missing_notification_data";
+import RequiredAwsConfigNotificationData from "../models/notifications/required_aws_config_notification_data";
+import OAuth2ConfigWithoutApplicationNotificationData from "../models/notifications/oauth2_config_without_application_notification_data";
+import ServerDataWarningNotificationData from "../models/notifications/server_data_warning_notification_data";
+import SkillDetailsWarningNotificationData from "../models/notifications/skill_details_warning_notification_data";
+import UnknownParamInTemplateNotificationData from "../models/notifications/unknown_param_in_template_notification_data";
 
 const BehaviorEditor = React.createClass({
   propTypes: Object.assign({}, Page.requiredPropTypes, {
@@ -105,7 +114,8 @@ const BehaviorEditor = React.createClass({
     showVersions: React.PropTypes.bool,
     onDeploy: React.PropTypes.func.isRequired,
     lastDeployTimestamp: React.PropTypes.string,
-    slackTeamId: React.PropTypes.string
+    slackTeamId: React.PropTypes.string,
+    botName: React.PropTypes.string.isRequired
   }),
 
   getDefaultProps: function() {
@@ -411,8 +421,7 @@ const BehaviorEditor = React.createClass({
       return this.getEnvVariables()
         .filter((ea) => selectedBehavior.knownEnvVarsUsed.includes(ea.name))
         .filter((ea) => !ea.isAlreadySavedWithValue)
-        .map((ea) => new NotificationData({
-          kind: "env_var_not_defined",
+        .map((ea) => new EnvVarMissingNotificationData({
           environmentVariableName: ea.name,
           onClick: () => {
             this.showEnvVariableSetter(ea.name);
@@ -431,8 +440,7 @@ const BehaviorEditor = React.createClass({
     if (this.isConfiguringApi()) {
       return [];
     }
-    return this.getRequiredAWSConfigsWithNoMatchingAWSConfig().map(ea => new NotificationData({
-      kind: "required_aws_config_without_config",
+    return this.getRequiredAWSConfigsWithNoMatchingAWSConfig().map(ea => new RequiredAwsConfigNotificationData({
       name: ea.nameInCode,
       requiredAWSConfig: ea,
       existingAWSConfigs: this.getAllAWSConfigs(),
@@ -468,8 +476,7 @@ const BehaviorEditor = React.createClass({
     if (this.isConfiguringApi()) {
       return [];
     }
-    return this.getRequiredOAuth2ApiConfigsWithNoApplication().map(ea => new NotificationData({
-      kind: "oauth2_config_without_application",
+    return this.getRequiredOAuth2ApiConfigsWithNoApplication().map(ea => new OAuth2ConfigWithoutApplicationNotificationData({
       name: this.getOAuth2ApiWithId(ea.apiId).name,
       requiredApiConfig: ea,
       existingOAuth2Applications: this.getAllOAuth2Applications(),
@@ -488,8 +495,7 @@ const BehaviorEditor = React.createClass({
     const needsConfig = this.getParamTypesNeedingConfiguration().map(ea => {
       const behaviorVersion = this.getBehaviorGroup().behaviorVersions.find(bv => bv.id === ea.id);
       const behaviorId = behaviorVersion ? behaviorVersion.behaviorId : null;
-      return new NotificationData({
-        kind: "data_type_needs_config",
+      return new DataTypeNeedsConfigNotificationData({
         name: ea.name,
         onClick: () => this.onSelect(this.getBehaviorGroup().id, behaviorId)
       });
@@ -500,8 +506,7 @@ const BehaviorEditor = React.createClass({
     const unnamedDataTypes = dataTypes
       .filter((ea) => !ea.getName().trim())
       .map((ea) => {
-        return new NotificationData({
-          kind: "data_type_unnamed",
+        return new DataTypeUnnamedNotificationData({
           onClick: () => {
             this.onSelect(this.getBehaviorGroup().id, ea.behaviorId, () => {
               if (this.editableNameInput) {
@@ -515,8 +520,7 @@ const BehaviorEditor = React.createClass({
     const missingFields = dataTypes
       .filter((ea) => ea.getDataTypeConfig().isMissingFields())
       .map((ea) => {
-        return new NotificationData({
-          kind: "data_type_missing_fields",
+        return new DataTypeMissingFieldsNotificationData({
           name: ea.getName(),
           onClick: () => {
             this.onSelect(this.getBehaviorGroup().id, ea.behaviorId, () => {
@@ -531,8 +535,7 @@ const BehaviorEditor = React.createClass({
     const unnamedFields = dataTypes
       .filter((dataType) => dataType.requiresFields() && dataType.getDataTypeFields().some((field) => !field.name))
       .map((ea) => {
-        return new NotificationData({
-          kind: "data_type_unnamed_fields",
+        return new DataTypeUnnamedFieldsNotificationData({
           name: ea.getName(),
           onClick: () => {
             this.onSelect(this.getBehaviorGroup().id, ea.behaviorId, () => {
@@ -555,8 +558,7 @@ const BehaviorEditor = React.createClass({
         }
       })
       .map((ea) => {
-        return new NotificationData({
-          kind: "data_type_duplicate_fields",
+        return new DataTypeDuplicateFieldsNotificationData({
           name: ea.getName(),
           onClick: () => {
             this.onSelect(this.getBehaviorGroup().id, ea.behaviorId, () => {
@@ -583,8 +585,7 @@ const BehaviorEditor = React.createClass({
       var template = this.getBehaviorTemplate();
       var validParams = this.getValidParamNamesForTemplate();
       var unknownTemplateParams = template.getUnknownParamsExcluding(validParams);
-      return unknownTemplateParams.map((paramName) => new NotificationData({
-        kind: "unknown_param_in_template",
+      return unknownTemplateParams.map((paramName) => new UnknownParamInTemplateNotificationData({
         name: paramName
       }));
     } else {
@@ -596,8 +597,7 @@ const BehaviorEditor = React.createClass({
     if (!this.state) return [];
     const notifications = [];
     if (this.state.newerVersionOnServer) {
-      notifications.push(new NotificationData({
-        kind: "server_data_warning",
+      notifications.push(new ServerDataWarningNotificationData({
         type: "newer_version",
         newerVersion: this.state.newerVersionOnServer,
         currentUserId: this.props.userId,
@@ -607,8 +607,7 @@ const BehaviorEditor = React.createClass({
       }));
     }
     if (this.state.errorReachingServer) {
-      notifications.push(new NotificationData({
-        kind: "server_data_warning",
+      notifications.push(new ServerDataWarningNotificationData({
         type: "network_error",
         error: this.state.errorReachingServer
       }));
@@ -616,25 +615,9 @@ const BehaviorEditor = React.createClass({
     return notifications;
   },
 
-  buildDeploymentNotifications: function() {
-    if (this.isExistingGroup() && !this.isModified() && !this.isDeployed()) {
-      return [new NotificationData({
-        kind: "deployment_warning",
-        type: "saved_version_not_deployed",
-        lastSaveTimestamp: this.props.group.createdAt,
-        lastDeployTimestamp: this.props.lastDeployTimestamp,
-        onDevModeChannelsClick: this.toggleDevModeChannelsHelp,
-        onClick: this.deploy
-      })];
-    } else {
-      return [];
-    }
-  },
-
   buildSkillDetailsNotifications: function() {
     if (this.isExistingGroup() && !this.getBehaviorGroup().name) {
-      return [new NotificationData({
-        kind: "skill_details_warning",
+      return [new SkillDetailsWarningNotificationData({
         type: "no_skill_name",
         onClick: this.toggleRequestSkillDetails
       })];
@@ -651,7 +634,6 @@ const BehaviorEditor = React.createClass({
       this.buildDataTypeNotifications(),
       this.buildTemplateNotifications(),
       this.buildServerNotifications(),
-      this.buildDeploymentNotifications(),
       this.buildSkillDetailsNotifications()
     );
   },
@@ -688,15 +670,21 @@ const BehaviorEditor = React.createClass({
 
   addNewInput: function(optionalNewName, callback) {
     const newName = optionalNewName || SequentialName.nextFor(this.getInputs(), (ea) => ea.name, "userInput");
-    this.addInput(Input.fromProps({
-      inputId: ID.next(),
+    const newInput = Input.fromProps({
       name: newName,
-      paramType: this.props.builtinParamTypes.find((ea) => ea.id === "Text")
-    }), callback);
+      question: "",
+      paramType: this.props.builtinParamTypes.find((ea) => ea.id === "Text"),
+      isSavedForTeam: false,
+      isSavedForUser: false,
+      inputId: ID.next(),
+      exportId: null
+    });
+    this.addInput(newInput, callback);
   },
 
   addTrigger: function(callback) {
-    this.setEditableProp('triggers', this.getBehaviorTriggers().concat(Trigger.fromProps({})), callback);
+    const newTrigger = new Trigger();
+    this.setEditableProp('triggers', this.getBehaviorTriggers().concat(newTrigger), callback);
   },
 
   cloneEditable: function() {
@@ -884,7 +872,8 @@ const BehaviorEditor = React.createClass({
   onSaveError: function(error) {
     this.props.onClearActivePanel();
     this.setState({
-      error: error || "not_saved"
+      error: error || "not_saved",
+      updatingNodeModules: false
     });
   },
 
@@ -904,7 +893,7 @@ const BehaviorEditor = React.createClass({
     )
       .then((json) => {
         if (json.id) {
-          this.props.onDeploy(json);
+          this.props.onDeploy(json, callback);
         } else {
           this.onDeployError(null, callback);
         }
@@ -915,7 +904,10 @@ const BehaviorEditor = React.createClass({
   },
 
   updateNodeModules: function(optionalCallback) {
-    this.setState({ error: null });
+    this.setState({
+      error: null,
+      updatingNodeModules: true
+    });
     this.toggleActivePanel('saving', true);
     DataRequest.jsonPost(
       jsRoutes.controllers.BehaviorEditorController.updateNodeModules().url,
@@ -961,7 +953,7 @@ const BehaviorEditor = React.createClass({
         if (json.id) {
           const group = this.getBehaviorGroup();
           const teamId = group.teamId;
-          const groupId = group.id;
+          const groupId = json.id;
           if (this.state.shouldRedirectToAddNewOAuth2App) {
             const config = this.state.requiredOAuth2ApiConfig;
             window.location.href = jsRoutes.controllers.web.settings.OAuth2ApplicationController.add(teamId, groupId, this.getSelectedId(), config.nameInCode).url;
@@ -986,10 +978,6 @@ const BehaviorEditor = React.createClass({
 
   isJustSaved: function() {
     return this.getBehaviorGroup().isRecentlySaved() && !this.isModified();
-  },
-
-  isDeployed: function() {
-    return Boolean(this.getBehaviorGroup().deployment);
   },
 
   onSaveClick: function() {
@@ -1125,6 +1113,12 @@ const BehaviorEditor = React.createClass({
 
   toggleActivePanel: function(name, beModal, optionalCallback) {
     this.props.onToggleActivePanel(name, beModal, optionalCallback);
+  },
+
+  toggleChangeGithubRepo: function() {
+    this.setState({
+      isModifyingGithubRepo: !this.state.isModifyingGithubRepo
+    });
   },
 
   toggleSharedAnswerInputSelector: function() {
@@ -1399,7 +1393,7 @@ const BehaviorEditor = React.createClass({
   },
 
   getNodeModuleVersions: function() {
-    return this.state.nodeModuleVersions || [];
+    return Sort.arrayAlphabeticalBy(this.state.nodeModuleVersions || [], (ea) => ea.from);
   },
 
   hasInputNamed: function(name) {
@@ -1419,11 +1413,7 @@ const BehaviorEditor = React.createClass({
   },
 
   isExistingGroup: function() {
-    return !!this.getBehaviorGroup().id;
-  },
-
-  isLatestSavedVersion: function() {
-    return this.isExistingGroup() && !this.isSaving() && !this.isModified() && !this.state.newerVersionOnServer;
+    return this.getBehaviorGroup().isExisting();
   },
 
   isFinishedBehavior: function() {
@@ -1492,9 +1482,12 @@ const BehaviorEditor = React.createClass({
   },
 
   addNewAWSConfig: function(required) {
-    const requiredToUse = required || new RequiredAWSConfig({
+    const requiredToUse = required || RequiredAWSConfig.fromProps({
       id: ID.next(),
-      apiId: 'aws'
+      exportId: null,
+      apiId: 'aws',
+      nameInCode: "",
+      config: null
     });
     this.onNewAWSConfig(requiredToUse);
   },
@@ -1526,8 +1519,13 @@ const BehaviorEditor = React.createClass({
   },
 
   addNewOAuth2Application: function(required) {
-    const requiredToUse = required || new RequiredOAuth2Application({
-      id: ID.next()
+    const requiredToUse = required || RequiredOAuth2Application.fromProps({
+      id: ID.next(),
+      exportId: null,
+      apiId: "",
+      nameInCode: "",
+      config: null,
+      recommendedScope: ""
     });
     this.onNewOAuth2Application(requiredToUse);
   },
@@ -1597,12 +1595,22 @@ const BehaviorEditor = React.createClass({
 
   loadNodeModuleVersions: function() {
     if (this.isExistingGroup()) {
-      DataRequest.jsonGet(jsRoutes.controllers.BehaviorEditorController.nodeModuleVersionsFor(this.getBehaviorGroup().id).url)
-        .then(json => {
-          this.setState({
-            nodeModuleVersions: NodeModuleVersion.allFromJson(json)
+      this.setState({
+        updatingNodeModules: true
+      }, () => {
+        DataRequest.jsonGet(jsRoutes.controllers.BehaviorEditorController.nodeModuleVersionsFor(this.getBehaviorGroup().id).url)
+          .then(json => {
+            this.setState({
+              nodeModuleVersions: NodeModuleVersion.allFromJson(json),
+              updatingNodeModules: false
+            });
+          })
+          .catch(() => {
+            this.setState({
+              updatingNodeModules: false
+            });
           });
-        });
+      });
     }
   },
 
@@ -1638,10 +1646,14 @@ const BehaviorEditor = React.createClass({
     if (this.props.showVersions) {
       this.showVersions();
     }
+    this.renderNavItems();
+    this.renderNavActions();
   },
 
-  // componentDidUpdate: function() {
-  // },
+  componentDidUpdate: function() {
+    this.renderNavItems();
+    this.renderNavActions();
+  },
 
   checkForUpdates: function() {
     if (document.hasFocus() && this.isExistingGroup() && !this.isSaving()) {
@@ -1711,7 +1723,13 @@ const BehaviorEditor = React.createClass({
       errorReachingServer: null,
       versionBrowserOpen: false,
       revertToVersion: null,
-      revertToVersionTitle: null
+      revertToVersionTitle: null,
+      isModifyingGithubRepo: false,
+      windowDimensions: {
+        width: window.innerWidth,
+        height: window.innerHeight
+      },
+      updatingNodeModules: false
     };
   },
 
@@ -1913,6 +1931,7 @@ const BehaviorEditor = React.createClass({
             <DevModeChannelsHelp
               onCollapseClick={this.props.onClearActivePanel}
               slackTeamId={this.props.slackTeamId}
+              botName={this.props.botName}
             />
           </Collapsible>
 
@@ -2069,7 +2088,7 @@ const BehaviorEditor = React.createClass({
                     <Button
                       className="mrl mbm"
                       onClick={this.showVersions}>
-                      {this.isModified() ? "Review changes…" : "Compare versions…"}
+                      Review changes…
                     </Button>
                   ) : null}
                   <div className="display-inline-block align-button mbm">
@@ -2105,26 +2124,6 @@ const BehaviorEditor = React.createClass({
           <span>{this.state.error}</span>
         </span>
       );
-    } else if (this.isLatestSavedVersion() && this.props.group.createdAt) {
-      return (
-        <BehaviorGroupSaveInfo
-          className="fade-in type-green type-bold type-italic"
-          group={this.props.group}
-          currentUserId={this.props.userId}
-          isCurrentVersion={true}
-        />
-      );
-    } else if (this.isExistingGroup() && this.isModified()) {
-      return (
-        <span className="fade-in type-pink type-italic">
-          <span className="type-bold">Unsaved changes </span>
-            <ChangeSummary
-              currentGroupVersion={this.getBehaviorGroup()}
-              originalGroupVersion={this.props.group}
-              isModified={this.editableIsModified}
-            />
-        </span>
-      );
     } else {
       return "";
     }
@@ -2157,7 +2156,7 @@ const BehaviorEditor = React.createClass({
             <span className="display-inline-block align-t mrm" style={{ height: "24px" }}>
               <SVGHamburger />
             </span>
-            <h4 className="type-black display-inline-block align-m man">{this.getBehaviorGroup().getName()}</h4>
+            <h4 className="type-black display-inline-block align-m man">Skill components</h4>
           </Button>
         </div>
       );
@@ -2271,11 +2270,16 @@ const BehaviorEditor = React.createClass({
     return (
       <div className={
           "column column-page-sidebar flex-column flex-column-left bg-white " +
-          "border-right prn position-relative mobile-position-fixed-top-full mobile-position-z-front "
+          "border-right-thick border-light prn position-relative mobile-position-fixed-top-full mobile-position-z-front "
         }
       >
         <Collapsible revealWhen={this.behaviorSwitcherIsVisible()} animationDisabled={!this.hasMobileLayout()}>
-          <Sticky ref={(el) => this.leftPanel = el} onGetCoordinates={this.getLeftPanelCoordinates} innerClassName="position-z-above" disabledWhen={this.hasMobileLayout()}>
+          <Sticky
+            ref={(el) => this.leftPanel = el}
+            onGetCoordinates={this.getLeftPanelCoordinates}
+            innerClassName="position-z-above"
+            disabledWhen={this.hasMobileLayout()}
+          >
             {this.windowIsMobile() ? (
               <div className="position-absolute position-top-right mtm mobile-mts mobile-mrs">
                 <CollapseButton onClick={this.toggleBehaviorSwitcher} direction={"up"} />
@@ -2288,10 +2292,6 @@ const BehaviorEditor = React.createClass({
               nodeModuleVersions={this.getNodeModuleVersions()}
               selectedId={this.getSelectedId()}
               groupId={this.getBehaviorGroup().id}
-              groupName={this.getBehaviorGroup().getName()}
-              groupDescription={this.getBehaviorGroup().description || ""}
-              onBehaviorGroupNameChange={this.onBehaviorGroupNameChange}
-              onBehaviorGroupDescriptionChange={this.onBehaviorGroupDescriptionChange}
               onSelect={this.onSelect}
               addNewAction={this.addNewAction}
               addNewDataType={this.addNewDataType}
@@ -2304,6 +2304,7 @@ const BehaviorEditor = React.createClass({
               onApiConfigClick={this.onApiConfigClick}
               onAddApiConfigClick={this.onAddApiConfigClick}
               getApiConfigName={this.getApiConfigName}
+              updatingNodeModules={this.state.updatingNodeModules}
             />
           </Sticky>
         </Collapsible>
@@ -2588,10 +2589,65 @@ const BehaviorEditor = React.createClass({
         isLinkedToGithub={this.props.isLinkedToGithub}
         linkedGithubRepo={this.props.linkedGithubRepo}
         onLinkGithubRepo={this.props.onLinkGithubRepo}
+        onChangedGithubRepo={this.toggleChangeGithubRepo}
         onUpdateFromGithub={this.props.onUpdateFromGithub}
         onSaveChanges={this.onSaveClick}
+        isModifyingGithubRepo={this.state.isModifyingGithubRepo}
       />
     );
+  },
+
+  renderNavItems: function() {
+    const versionBrowserOpen = this.props.activePanelName === 'versionBrowser';
+    const indexUrl = jsRoutes.controllers.ApplicationController.index(this.props.isAdmin ? this.props.group.teamId : null).url;
+    const items = [{
+      title: "Skills",
+      url: indexUrl
+    }, {
+      title: this.getBehaviorGroup().getName(),
+      callback: versionBrowserOpen ? this.props.onClearActivePanel : null
+    }];
+    if (versionBrowserOpen) {
+      items.push({
+        title: "Review changes"
+      });
+    }
+    this.props.onRenderNavItems(items);
+  },
+
+  renderDeployStatus: function() {
+    return (
+      <DeploymentStatus
+        group={this.getBehaviorGroup()}
+        isModified={this.isModified()}
+        lastSaveTimestamp={this.props.group.createdAt}
+        lastDeployTimestamp={this.props.lastDeployTimestamp}
+        currentUserId={this.props.userId}
+        onDevModeChannelsClick={this.toggleDevModeChannelsHelp}
+        onDeployClick={this.deploy}
+      />
+    );
+  },
+
+  renderGithubRepoActions: function() {
+    return (
+      <GithubRepoActions
+        linkedGithubRepo={this.props.linkedGithubRepo}
+        isLinkedToGithub={this.props.isLinkedToGithub}
+        currentGroupIsModified={this.isModified()}
+        currentGroup={this.getBehaviorGroup()}
+        currentSelectedId={this.getSelectedId()}
+        onChangeGithubRepo={this.toggleChangeGithubRepo}
+      />
+    );
+  },
+
+  renderNavActions: function() {
+    if (this.state.versionBrowserOpen) {
+      this.props.onRenderNavActions(this.renderGithubRepoActions());
+    } else {
+      this.props.onRenderNavActions(this.renderDeployStatus());
+    }
   },
 
   render: function() {

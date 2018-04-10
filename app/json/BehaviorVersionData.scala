@@ -151,7 +151,7 @@ object BehaviorVersionData {
       Some(isNew),
       config.name,
       description,
-      functionBody,
+      functionBody.trim,
       responseTemplate,
       inputIds,
       triggers.sorted,

@@ -46,7 +46,7 @@ class BehaviorEditorController @Inject() (
           teamAccess <- dataService.users.teamAccessFor(user, maybeTeamId)
         } yield teamAccess.maybeTargetTeam.map { team =>
           val dataRoute = routes.BehaviorEditorController.newGroup(maybeTeamId)
-          Ok(views.html.behavioreditor.edit(viewConfig(Some(teamAccess)), dataRoute))
+          Ok(views.html.behavioreditor.edit(viewConfig(Some(teamAccess)), dataRoute, "New skill"))
         }.getOrElse {
           notFoundWithLoginFor(request, Some(teamAccess))
         }
@@ -68,8 +68,9 @@ class BehaviorEditorController @Inject() (
           }.getOrElse(Future.successful(None))
           result <- maybeTeam.map { team =>
             dataService.users.teamAccessFor(user, Some(team.id)).map { teamAccess =>
+              val skillTitle = maybeGroupData.flatMap(_.name).getOrElse("Untitled skill")
               val dataRoute = routes.BehaviorEditorController.edit(groupId, maybeBehaviorId, maybeShowVersions)
-              Ok(views.html.behavioreditor.edit(viewConfig(Some(teamAccess)), dataRoute))
+              Ok(views.html.behavioreditor.edit(viewConfig(Some(teamAccess)), dataRoute, skillTitle))
             }
           }.getOrElse { skillNotFound }
         } yield result
@@ -218,7 +219,7 @@ class BehaviorEditorController @Inject() (
             dataService.behaviorGroupVersions.createFor(group, user, groupData.copyForNewVersionOf(group)).map(Some(_))
           }).getOrElse(Future.successful(None))
           maybeUpdatedGroupData <- maybeSavedGroupVersion.map { groupVersion =>
-            BehaviorGroupData.buildFor(groupVersion, user, dataService, cacheService).map(Some(_))
+            BehaviorGroupData.buildFor(groupVersion, user, None, dataService, cacheService).map(Some(_))
           }.getOrElse(Future.successful(None))
         } yield {
           maybeUpdatedGroupData.map { groupData =>
@@ -277,7 +278,7 @@ class BehaviorEditorController @Inject() (
        dataService.behaviorGroupVersions.batchFor(group)
       }.getOrElse(Future.successful(Seq()))
       // Todo: this can go back to being a regular Future.sequence (in parallel) if we
-      versionsData <- FutureSequencer.sequence(versions, (ea: BehaviorGroupVersion) => BehaviorGroupData.buildFor(ea, user, dataService, cacheService))
+      versionsData <- FutureSequencer.sequence(versions, (ea: BehaviorGroupVersion) => BehaviorGroupData.buildFor(ea, user, None, dataService, cacheService))
     } yield {
       Ok(Json.toJson(versionsData))
     }
@@ -527,7 +528,7 @@ class BehaviorEditorController @Inject() (
           maybeExistingGroupData <- maybeBehaviorGroup.map { group =>
             dataService.behaviorGroups.maybeCurrentVersionFor(group).flatMap { maybeCurrentVersion =>
               maybeCurrentVersion.map { currentVersion =>
-                BehaviorGroupData.buildFor(currentVersion, user, dataService, cacheService).map(Some(_))
+                BehaviorGroupData.buildFor(currentVersion, user, None, dataService, cacheService).map(Some(_))
               }.getOrElse(Future.successful(None))
             }
           }.getOrElse(Future.successful(None))

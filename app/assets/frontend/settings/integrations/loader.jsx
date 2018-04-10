@@ -7,7 +7,10 @@ import IntegrationList from './index';
 import Page from '../../shared_ui/page';
 
 ReactDOM.render((
-  <Page csrfToken={IntegrationListConfig.csrfToken}>
-    <IntegrationList {...IntegrationListConfig} />
-  </Page>
+  <Page
+    csrfToken={IntegrationListConfig.csrfToken}
+    onRender={(pageProps) => (
+      <IntegrationList {...IntegrationListConfig} {...pageProps} />
+    )}
+  />
 ), document.getElementById(IntegrationListConfig.containerId));

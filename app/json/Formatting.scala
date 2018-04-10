@@ -2,12 +2,12 @@ package json
 
 import json.web.settings.IntegrationListConfig
 import models.accounts.slack.botprofile.SlackBotProfile
-import models.behaviors.{ExecutionErrorData, ExecutionLogData}
 import models.behaviors.behaviorparameter.{DataTypeResultBody, ValidValue}
 import models.behaviors.events.{SlackFile, SlackMessage}
 import models.behaviors.testing.{InvocationTestReportOutput, ResultOutput}
+import models.behaviors.{ExecutionErrorData, ExecutionLogData, _}
 import play.api.libs.json._
-import services.SlackMessageEventData
+import services.caching.SlackMessageEventData
 import utils.{CityInfo, UploadFileSpec}
 
 object Formatting {
@@ -82,6 +82,8 @@ object Formatting {
   lazy implicit val userDataWrites = Json.writes[UserData]
 
   lazy implicit val behaviorGroupDeploymentDataFormat = Json.format[BehaviorGroupDeploymentData]
+
+  lazy implicit val behaviorGroupMetaDataFormat = Json.format[BehaviorGroupMetaData]
 
   lazy implicit val behaviorGroupReads = Json.reads[BehaviorGroupData]
   lazy implicit val behaviorGroupWrites = Json.writes[BehaviorGroupData]
@@ -187,6 +189,12 @@ object Formatting {
   implicit val githubConfigConfigFormat = Json.format[GithubConfigConfig]
 
   implicit val integrationListConfigFormat = Json.format[IntegrationListConfig]
+
+  lazy implicit val actionArgFormat = Json.format[ActionArg]
+  lazy implicit val nextActionFormat = Json.format[NextAction]
+  lazy implicit val actionChoiceFormat = Json.format[ActionChoice]
+
+  implicit val supportRequestConfigFormat = Json.format[SupportRequestConfig]
 
   lazy implicit val resultBodyFormat = Json.format[DataTypeResultBody]
 

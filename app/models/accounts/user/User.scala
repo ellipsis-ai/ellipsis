@@ -3,7 +3,7 @@ package models.accounts.user
 import com.mohiva.play.silhouette.api.{Identity, LoginInfo}
 import models.team.Team
 
-case class UserTeamAccess(user: User, loggedInTeam: Team, maybeTargetTeam: Option[Team], isAdminAccess: Boolean) {
+case class UserTeamAccess(user: User, loggedInTeam: Team, maybeTargetTeam: Option[Team], maybeBotName: Option[String], isAdminAccess: Boolean) {
 
   val maybeAdminAccessToTeam: Option[Team] = {
     if (isAdminAccess) {
@@ -16,6 +16,8 @@ case class UserTeamAccess(user: User, loggedInTeam: Team, maybeTargetTeam: Optio
   val maybeAdminAccessToTeamId = maybeAdminAccessToTeam.map(_.id)
 
   val canAccessTargetTeam: Boolean = maybeTargetTeam.isDefined
+
+  val botName: String = maybeBotName.getOrElse(Team.defaultBotName)
 
 }
 

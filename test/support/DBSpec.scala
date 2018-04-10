@@ -1,11 +1,16 @@
 package support
 
+import java.time.OffsetDateTime
+
 import akka.actor.ActorSystem
+import com.mohiva.play.silhouette.api.LoginInfo
 import json._
 import mocks.{MockAWSLambdaService, MockCacheService, MockSlackEventService}
 import models.IDs
+import models.accounts.linkedaccount.LinkedAccount
 import models.accounts.oauth2api.{AuthorizationCode, OAuth2Api}
 import models.accounts.oauth2application.OAuth2Application
+import models.accounts.slack.SlackProvider
 import models.accounts.user.User
 import models.behaviors.BotResultService
 import models.behaviors.behavior.Behavior
@@ -29,6 +34,7 @@ import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.ws.WSClient
 import play.api.{Application, Configuration}
 import services._
+import services.caching.CacheService
 import slick.dbio.DBIO
 
 import scala.concurrent.duration._
@@ -74,6 +80,19 @@ trait DBSpec extends PlaySpec with OneAppPerSuite with MockitoSugar {
 
   def newSavedUserOn(team: Team): User = runNow(dataService.users.createFor(team.id))
 
+  def newSavedLinkedAccountFor(user: User, slackUserId: String): LinkedAccount = {
+    val account = LinkedAccount(user, LoginInfo(SlackProvider.ID, slackUserId), OffsetDateTime.now)
+    runNow(dataService.linkedAccounts.save(account))
+  }
+
+  def newSavedLinkedAccountFor(user: User): LinkedAccount = {
+    newSavedLinkedAccountFor(user, IDs.next)
+  }
+
+  def newSavedLinkedAccount: LinkedAccount = {
+    newSavedLinkedAccountFor(newSavedUserOn(newSavedTeam))
+  }
+
   def newSavedAnswerFor(input: Input, user: User): SavedAnswer = {
     runNow(dataService.savedAnswers.ensureFor(input, "answer", user))
   }
@@ -118,7 +137,8 @@ trait DBSpec extends PlaySpec with OneAppPerSuite with MockitoSugar {
       exportId = None,
       createdAt = None,
       author = None,
-      deployment = None
+      deployment = None,
+      metaData = None
     )
   }
 
@@ -194,8 +214,6 @@ trait DBSpec extends PlaySpec with OneAppPerSuite with MockitoSugar {
       try {
         fn()
       } finally {
-        // Misguided legacy down evolutions will blow up if any of these exist, so delete them
-        runNow(dataService.slackProfiles.deleteAll())
         runNow(dataService.collectedParameterValues.deleteAll())
         runNow(dataService.conversations.deleteAll())
         runNow(dataService.behaviorGroupVersionSHAs.deleteAll())

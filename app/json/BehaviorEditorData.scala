@@ -7,7 +7,8 @@ import models.accounts.user.{User, UserTeamAccess}
 import models.behaviors.behaviorparameter.BehaviorParameterType
 import models.team.Team
 import play.api.libs.ws.WSClient
-import services.{CacheService, DataService}
+import services.DataService
+import services.caching.CacheService
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -28,7 +29,8 @@ case class BehaviorEditorData(
                                isLinkedToGithub: Boolean,
                                linkedGithubRepo: Option[LinkedGithubRepoData],
                                lastDeployTimestamp: Option[OffsetDateTime],
-                               maybeSlackTeamId: Option[String]
+                               maybeSlackTeamId: Option[String],
+                               botName: String
                               )
 
 object BehaviorEditorData {
@@ -201,7 +203,8 @@ object BehaviorEditorData {
           exportId = None,
           Some(OffsetDateTime.now),
           Some(userData),
-          maybeDeploymentData
+          maybeDeploymentData,
+          None
         )
       }
       BehaviorEditorData(
@@ -221,7 +224,8 @@ object BehaviorEditorData {
         isLinkedToGithub,
         maybeLinkedGithubRepo.map(r => LinkedGithubRepoData(r.owner, r.repo, r.maybeCurrentBranch)),
         maybeLastDeployTimestamp,
-        maybeSlackBotProfile.map(_.slackTeamId)
+        maybeSlackBotProfile.map(_.slackTeamId),
+        teamAccess.botName
       )
     }
   }

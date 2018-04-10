@@ -14,7 +14,7 @@ import {SimpleTokenApiRef} from '../models/simple_token';
 import LinkedGithubRepo from '../models/linked_github_repo';
 import autobind from '../lib/autobind';
 import Page from '../shared_ui/page';
-import DataRequest from '../lib/data_request';
+import {DataRequest} from '../lib/data_request';
 
 class BehaviorEditorLoader extends React.Component {
         constructor(props) {
@@ -30,6 +30,7 @@ class BehaviorEditorLoader extends React.Component {
             group: group,
             builtinParamTypes: this.props.builtinParamTypes.map(ParamType.fromJson),
             selectedId: selectedId,
+            savedAnswers: this.props.savedAnswers,
             onLoad: null
           };
           if (group.id && selectedId) {
@@ -40,7 +41,7 @@ class BehaviorEditorLoader extends React.Component {
         onLinkGithubRepo(owner, repo, branch, callback) {
           const url = jsRoutes.controllers.BehaviorEditorController.linkToGithubRepo().url;
           const params = {};
-          params.behaviorGroupId = this.props.group.id;
+          params.behaviorGroupId = this.state.group.id;
           params.owner = owner;
           params.repo = repo;
           if (branch) {
@@ -56,7 +57,7 @@ class BehaviorEditorLoader extends React.Component {
         onUpdateFromGithub(owner, repo, branch, callback, onError) {
           DataRequest.jsonPost(
             jsRoutes.controllers.BehaviorEditorController.updateFromGithub().url, {
-              behaviorGroupId: this.props.group.id,
+              behaviorGroupId: this.state.group.id,
               owner: owner,
               repo: repo,
               branch: branch
@@ -87,7 +88,7 @@ class BehaviorEditorLoader extends React.Component {
 
         onDeploy(deploymentProps, callback) {
           this.setState({
-            group: this.state.group.clone({ deployment: BehaviorGroupDeployment.fromProps(deploymentProps) }),
+            group: this.state.group.clone({ deployment: BehaviorGroupDeployment.fromJson(deploymentProps) }),
             onLoad: null
           }, callback);
         }
@@ -101,8 +102,12 @@ class BehaviorEditorLoader extends React.Component {
           }
         }
 
+        getSavedAnswers() {
+          return (this.state && this.state.savedAnswers) ? this.state.savedAnswers : [];
+        }
+
         resetSavedAnswerForInput(inputId, numAnswersDeleted) {
-          const newSavedAnswers = this.state.savedAnswers.map((ea) => {
+          const newSavedAnswers = this.getSavedAnswers().map((ea) => {
             if (ea.inputId === inputId) {
               return Object.assign({}, ea, {
                 myValueString: null,
@@ -119,7 +124,8 @@ class BehaviorEditorLoader extends React.Component {
 
         render() {
           return (
-            <Page csrfToken={this.props.csrfToken}>
+            <Page csrfToken={this.props.csrfToken}
+              onRender={(pageProps) => (
               <BehaviorEditor
                 group={this.state.group}
                 selectedId={this.state.selectedId}
@@ -131,7 +137,7 @@ class BehaviorEditorLoader extends React.Component {
                 oauth2Apis={this.props.oauth2Apis}
                 simpleTokenApis={this.state.simpleTokenApis}
                 linkedOAuth2ApplicationIds={this.props.linkedOAuth2ApplicationIds}
-                savedAnswers={this.props.savedAnswers}
+                savedAnswers={this.getSavedAnswers()}
                 onSave={this.onSave}
                 onForgetSavedAnswerForInput={this.resetSavedAnswerForInput}
                 onLoad={this.state.onLoad}
@@ -145,8 +151,11 @@ class BehaviorEditorLoader extends React.Component {
                 onDeploy={this.onDeploy}
                 lastDeployTimestamp={this.props.lastDeployTimestamp}
                 slackTeamId={this.props.slackTeamId}
+                botName={this.props.botName}
+                {...pageProps}
               />
-            </Page>
+              )}
+            />
           );
         }
 }
@@ -170,7 +179,8 @@ BehaviorEditorLoader.propTypes = {
   linkedGithubRepo: React.PropTypes.object,
   showVersions: React.PropTypes.bool,
   lastDeployTimestamp: React.PropTypes.string,
-  slackTeamId: React.PropTypes.string
+  slackTeamId: React.PropTypes.string,
+  botName: React.PropTypes.string.isRequired
 };
 
 ReactDOM.render(

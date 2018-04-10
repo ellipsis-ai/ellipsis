@@ -5,7 +5,7 @@ import javax.inject.Inject
 import com.google.inject.Singleton
 import models.IDs
 import models.behaviors.events.SlackFile
-import services.CacheService
+import services.caching.CacheService
 
 @Singleton
 class SlackFileMap @Inject() (

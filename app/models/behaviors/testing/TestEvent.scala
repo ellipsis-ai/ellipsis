@@ -2,13 +2,14 @@ package models.behaviors.testing
 
 import akka.actor.ActorSystem
 import models.accounts.user.User
-import models.behaviors.UserInfo
+import models.behaviors.{ActionChoice, DeveloperContext, UserInfo}
 import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.events._
 import models.team.Team
 import play.api.Configuration
 import play.api.libs.json.JsObject
-import services.{CacheService, DataService, DefaultServices}
+import services.caching.CacheService
+import services.{DataService, DefaultServices}
 import slick.dbio.DBIO
 import utils.UploadFileSpec
 
@@ -48,8 +49,9 @@ case class TestEvent(
                    maybeConversation: Option[Conversation],
                    attachmentGroups: Seq[MessageAttachmentGroup],
                    files: Seq[UploadFileSpec],
-                   isForUndeployed: Boolean,
-                   cacheService: CacheService,
+                   choices: Seq[ActionChoice],
+                   developerContext: DeveloperContext,
+                   services: DefaultServices,
                    configuration: Configuration
                  )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[String]] = {
     Future.successful(messageBuffer += text).map(_ => None)

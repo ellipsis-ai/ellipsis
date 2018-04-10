@@ -1,16 +1,17 @@
 package models.behaviors.events
 
 import javax.inject._
-
+import json.SlackUserData
+import models.behaviors.behaviorparameter.FetchValidValuesBadResultException
 import models.behaviors.builtins.BuiltinBehavior
 import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.events.SlackMessageActionConstants._
-import models.behaviors.{BehaviorResponse, BotResult, SimpleTextResult, TextWithAttachmentsResult}
+import models.behaviors.{BotResult, SimpleTextResult, TextWithAttachmentsResult}
 import services.DefaultServices
 import utils.Color
 
-import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration._
+import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
 class EventHandler @Inject() (
@@ -73,9 +74,10 @@ class EventHandler @Inject() (
             }
             val key = updatedConvo.pendingEventKey
             services.cacheService.cacheEvent(key, event, 5.minutes)
+            val callbackId = continueConversationCallbackIdFor(event.userIdForContext, Some(updatedConvo.id))
             val actionList = Seq(
-              SlackMessageActionButton(CONFIRM_CONTINUE_CONVERSATION, "Yes, this is my answer", updatedConvo.id),
-              SlackMessageActionButton(DONT_CONTINUE_CONVERSATION, "No, it’s not an answer", updatedConvo.id)
+              SlackMessageActionButton(callbackId, "Yes, this is my answer", YES),
+              SlackMessageActionButton(callbackId, "No, it’s not an answer", NO)
             )
             val prompt = maybeLastPrompt.map { lastPrompt =>
               s"""It’s been a while since I asked you this question:
@@ -85,13 +87,19 @@ class EventHandler @Inject() (
             }.getOrElse {
               s"It’s been a while since I asked you the question above."
             } + s"\n\nJust so I’m sure, is this an answer?"
-            val actions = SlackMessageActionsGroup("should_continue_conversation", actionList, Some(event.relevantMessageTextWithFormatting), Some(Color.PINK))
+            val maybeSlackUserList = event match {
+              case slackMessageEvent: SlackMessageEvent => Some(slackMessageEvent.message.userList)
+              case _ => None
+            }
+            val actions = SlackMessageActionsGroup(callbackId, actionList, Some(event.relevantMessageTextWithFormatting), maybeSlackUserList, Some(Color.PINK))
             TextWithAttachmentsResult(event, Some(updatedConvo), prompt, forcePrivateResponse = false, Seq(actions))
           }
         } else {
           updatedConvo.resultFor(event, services)
         }
       }
+    }.recoverWith {
+      case e: FetchValidValuesBadResultException => dataService.conversations.cancel(originalConvo).map(_ => e.result)
     }
   }
 
@@ -123,7 +131,7 @@ class EventHandler @Inject() (
   }
 
   def handle(event: Event, maybeConversation: Option[Conversation]): Future[Seq[BotResult]] = {
-    maybeConversation.map { conversation =>
+    (maybeConversation.map { conversation =>
       handleInConversation(conversation, conversation.maybeOriginalEventType.map { eventType =>
         event.withOriginalEventType(eventType)
       }.getOrElse(event)).map(Seq(_))
@@ -137,6 +145,8 @@ class EventHandler @Inject() (
           }
         }
       }
+    }).recover {
+      case e: FetchValidValuesBadResultException => Seq(e.result)
     }
   }
 }

@@ -3,14 +3,14 @@ package mocks
 import java.time.OffsetDateTime
 
 import akka.actor.ActorSystem
-import json.SlackUserData
+import json.{SlackUserData, SlackUserProfileData}
 import models.IDs
 import models.accounts.slack.botprofile.SlackBotProfile
 import models.behaviors.events.SlackMessageEvent
 import org.mockito.Matchers._
 import org.mockito.Mockito._
 import services.SlackEventService
-import slack.api.SlackApiClient
+import slack.api.{ApiError, SlackApiClient}
 import org.scalatest.mock.MockitoSugar
 import slack.models.Attachment
 import utils.SlackTimestamp
@@ -93,12 +93,23 @@ class MockSlackEventService extends SlackEventService with MockitoSugar {
     Future.successful(Set())
   }
 
-  def maybeSlackUserDataFor(slackUserId: String, slackTeamId: String, client: SlackApiClient): Future[Option[SlackUserData]] = {
+  def maybeSlackUserDataFor(slackUserId: String, slackTeamId: String, client: SlackApiClient, onUserNotFound: ApiError => Option[slack.models.User]): Future[Option[SlackUserData]] = {
     Future.successful(None)
   }
 
   def maybeSlackUserDataFor(botProfile: SlackBotProfile): Future[Option[SlackUserData]] = {
-    Future.successful(None)
+    Future.successful(Some(SlackUserData(
+      botProfile.userId,
+      botProfile.slackTeamId,
+      "MockBot",
+      isPrimaryOwner = false,
+      isOwner = false,
+      isRestricted = false,
+      isUltraRestricted = false,
+      None,
+      deleted = false,
+      Some(SlackUserProfileData(Some("MockBot"), None, None, None))
+    )))
   }
 
 }

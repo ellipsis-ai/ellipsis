@@ -4,9 +4,25 @@
   display: none !important;
 }
 
+@media (min-width: (@narrow-max-width + 1)) {
+  .narrow-display-only {
+    display: none !important;
+  }
+}
+
 @media (min-width: (@mobile-max-width + 1)) {
   .mobile-display-only {
     display: none !important;
+  }
+}
+
+@media (max-width: @narrow-max-width) {
+  .narrow-display-none {
+    display: none !important;
+  }
+
+  .narrow-display-inline-block {
+    display: inline-block !important;
   }
 }
 
@@ -30,6 +46,10 @@
 
 .display-block {
   display: block;
+}
+
+.display-nowrap {
+  white-space: nowrap;
 }
 
 .display-ellipsis {
