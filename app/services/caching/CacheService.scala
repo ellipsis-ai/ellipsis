@@ -28,10 +28,6 @@ trait CacheService {
 
   def getDataTypeResultBody(key: String): Option[DataTypeResultBody]
 
-  def cacheValidValues(key: String, values: Seq[ValidValue], expiration: Duration = Duration.Inf): Unit
-
-  def getValidValues(key: String): Option[Seq[ValidValue]]
-
   def getDataTypeBotResult(key: DataTypeBotResultsCacheKey, dataFn: DataTypeBotResultsCacheKey => Future[BotResult]): Future[BotResult]
 
   def getSlackChannelInfo(key: SlackChannelDataCacheKey, dataFn: SlackChannelDataCacheKey => Future[Option[Channel]]): Future[Option[Channel]]

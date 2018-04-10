@@ -110,19 +110,6 @@ class CacheServiceImpl @Inject() (
     }
   }
 
-  def cacheValidValues(key: String, values: Seq[ValidValue], expiration: Duration = Duration.Inf): Unit = {
-    set(key, Json.toJson(values), expiration)
-  }
-
-  def getValidValues(key: String): Option[Seq[ValidValue]] = {
-    get[JsValue](key).flatMap { json =>
-      json.validate[Seq[ValidValue]] match {
-        case JsSuccess(values, jsPath) => Some(values)
-        case JsError(err) => None
-      }
-    }
-  }
-
   private val dataTypeBotResultsCache = LfuCache[DataTypeBotResultsCacheKey, BotResult](cacheSettingsWithTimeToLive(dataTypeBotResultsExpiry))
 
   def getDataTypeBotResult(key: DataTypeBotResultsCacheKey, dataFn: DataTypeBotResultsCacheKey => Future[BotResult]): Future[BotResult] = {
