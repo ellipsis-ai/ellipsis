@@ -1,7 +1,6 @@
 package services.caching
 
 import javax.inject.{Inject, Provider, Singleton}
-
 import akka.actor.ActorSystem
 import akka.http.caching.LfuCache
 import akka.http.caching.scaladsl.{Cache, CachingSettings}
@@ -9,7 +8,7 @@ import json.Formatting._
 import json.{ImmutableBehaviorGroupVersionData, SlackUserData}
 import models.accounts.slack.botprofile.SlackBotProfile
 import models.behaviors.BotResult
-import models.behaviors.behaviorparameter.ValidValue
+import models.behaviors.behaviorparameter.{DataTypeResultBody, ValidValue}
 import models.behaviors.events._
 import play.api.cache.SyncCacheApi
 import play.api.libs.json.{JsError, JsSuccess, JsValue, Json}
@@ -98,6 +97,16 @@ class CacheServiceImpl @Inject() (
         }
         case JsError(err) => None
       }
+    }
+  }
+
+  def cacheDataTypeResultBody(key: String, resultBody: DataTypeResultBody, expiration: Duration = Duration.Inf): Unit = {
+    set(key, Json.toJson(resultBody), expiration)
+  }
+
+  def getDataTypeResultBody(key: String): Option[DataTypeResultBody] = {
+    get[JsValue](key).flatMap { json =>
+      json.asOpt[DataTypeResultBody]
     }
   }
 
