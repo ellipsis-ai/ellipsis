@@ -4,7 +4,7 @@ import akka.actor.ActorSystem
 import json.{BehaviorGroupData, BehaviorVersionData}
 import models.behaviors.events.SlackMessageActionConstants._
 import models.behaviors.events._
-import models.behaviors.{BotResult, TextWithAttachmentsResult}
+import models.behaviors.{BotResult, SuccessResult, TextWithAttachmentsResult}
 import models.help._
 import services.caching.CacheService
 import services.{AWSLambdaService, DataService, DefaultServices}
@@ -99,37 +99,41 @@ case class DisplayHelpBehavior(
     SlackMessageTextAttachmentGroup(generalHelpText(botPrefix: String), None, Some("General"))
   }
 
+  def skillNameFor(result: HelpResult): String = {
+    val icon = result.group.maybeIcon.map(icon => s"$icon ").getOrElse("")
+    result.group.maybeEditLink(dataService, lambdaService).map { url =>
+      s"**[${icon}${result.group.name} ✎]($url)**"
+    }.getOrElse {
+      s"**${icon}${result.group.name}**"
+    }
+  }
+
+  def prependSkillNameToText(helpResult: HelpResult, text: String): String = {
+    s"${skillNameFor(helpResult)}\n$text"
+  }
+
   def skillNameAndDescriptionFor(result: HelpResult): String = {
     if (includeNameAndDescription) {
-      val name = result.group.maybeEditLink(dataService, lambdaService).map { url =>
-        s"**[${result.group.name} ✎]($url)**"
-      }.getOrElse {
-        s"**${result.group.name}**"
-      }
-      val description = result.description
-      s"$name  \n$description\n\n"
+      prependSkillNameToText(result, s"${result.description}\n\n")
     } else {
       ""
     }
   }
 
-  def triggerTextIncludesHelp(text: String): Boolean = {
-    """(?i)\bhelp\b""".r.findFirstIn(text).isDefined
+  private def shouldRunHelpActionFor(result: HelpResult, behaviorVersions: Seq[BehaviorVersionData]): Boolean = {
+    behaviorVersions.forall(_.name.contains("help")) || maybeHelpSearch.isEmpty || maybeHelpSearch.exists(_.equalsIgnoreCase(result.group.name.trim))
   }
 
   def skillResultFor(result: HelpResult)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[BotResult] = {
     val behaviorVersions = result.behaviorVersionsToDisplay(includeNonMatchingResults)
-    val maybeHelpBehaviorVersion = if (matchString.isEmpty) {
-      behaviorVersions.find(_.triggers.exists(trigger => {
-        !trigger.isRegex && triggerTextIncludesHelp(trigger.text)
-      }))
-    } else {
-      None
-    }
     for {
-      maybeSkillResult <- maybeHelpBehaviorVersion.map { behaviorVersionData =>
-        maybeRunHelpBehaviorFor(behaviorVersionData)
-      }.getOrElse(Future.successful(None))
+      maybeSkillResult <- if (shouldRunHelpActionFor(result, behaviorVersions)) {
+        result.group.maybeGroupId.map { behaviorGroupId =>
+          maybeRunHelpBehaviorFor(result, behaviorGroupId)
+        }.getOrElse(Future.successful(None))
+      } else {
+        Future.successful(None)
+      }
     } yield {
       maybeSkillResult.getOrElse {
         skillActionsListResultFor(result, behaviorVersions)
@@ -137,21 +141,31 @@ case class DisplayHelpBehavior(
     }
   }
 
-  private def maybeRunHelpBehaviorFor(behaviorVersionData: BehaviorVersionData)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[BotResult]] = {
+  private def maybeRunHelpBehaviorFor(helpResult: HelpResult, behaviorGroupId: String)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[BotResult]] = {
     for {
-      maybeBehaviorVersion <- behaviorVersionData.id.map { versionId =>
-        dataService.behaviorVersions.findWithoutAccessCheck(versionId)
+      maybeBehaviorGroup <- dataService.behaviorGroups.findWithoutAccessCheck(behaviorGroupId)
+      maybeBehaviorGroupVersion <- maybeBehaviorGroup.map { group =>
+        dataService.behaviorGroupVersions.maybeCurrentFor(group)
       }.getOrElse(Future.successful(None))
-      triggers <- maybeBehaviorVersion.map { behaviorVersion =>
-        dataService.messageTriggers.allFor(behaviorVersion)
+      behaviorVersions <- maybeBehaviorGroupVersion.map { groupVersion =>
+        dataService.behaviorVersions.allForGroupVersion(groupVersion)
       }.getOrElse(Future.successful(Seq()))
+      maybeBehaviorVersion <- Future.successful {
+        behaviorVersions.filterNot(_.isDataType).find(_.maybeName.contains("help"))
+      }
       maybeResponse <- maybeBehaviorVersion.map { behaviorVersion =>
-        val maybeTrigger = triggers.find(trigger =>
-          !trigger.shouldTreatAsRegex && triggerTextIncludesHelp(trigger.pattern)
-        )
-        dataService.behaviorResponses.buildFor(event, behaviorVersion, Map(), maybeTrigger, None).map(Some(_))
+        dataService.behaviorResponses.buildFor(event, behaviorVersion, Map(), None, None).map(Some(_))
       }.getOrElse(Future.successful(None))
-      maybeResult <- maybeResponse.map(_.result.map(Some(_))).getOrElse(Future.successful(None))
+      maybeResult <- maybeResponse.map { response =>
+        response.result.map {
+          case s: SuccessResult => {
+            s.copy(maybeResponseTemplate = s.maybeResponseTemplate.map(text => prependSkillNameToText(helpResult, text)))
+          }
+          case otherResult => {
+            otherResult
+          }
+        }.map(Some(_))
+      }.getOrElse(Future.successful(None))
     } yield maybeResult
   }
 

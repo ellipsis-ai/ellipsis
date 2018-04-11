@@ -9,9 +9,11 @@ case class MiscHelpGroupData(groups: Seq[BehaviorGroupData]) extends HelpGroupDa
   val helpActionId: String = HelpGroupData.MISCELLANEOUS_ACTION_ID
   val behaviorVersions: Seq[BehaviorVersionData] = groups.flatMap(_.behaviorVersions)
   val name: String = "Miscellaneous skills"
+  val maybeIcon: Option[String] = None
   override def shortName: String = "Miscellaneous"
   val description: String = ""
   def maybeEditLink(dataService: DataService, lambdaService: AWSLambdaService): Option[String] = None
+  val maybeGroupId: Option[String] = None
 
   val fuzzyMatchPatterns: Seq[FuzzyMatchPattern] = {
     behaviorVersions.flatMap(_.triggers)
