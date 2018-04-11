@@ -120,10 +120,14 @@ case class DisplayHelpBehavior(
     }
   }
 
+  def matchesHelpActionName(maybeBehaviorVersionName: Option[String]): Boolean = {
+    maybeBehaviorVersionName.exists(_.equalsIgnoreCase("help"))
+  }
+
   private def shouldRunHelpActionFor(result: HelpResult, behaviorVersions: Seq[BehaviorVersionData]): Boolean = {
     result.group match {
       case skillGroupData: SkillHelpGroupData => {
-        behaviorVersions.forall(_.name.contains("help")) ||
+        behaviorVersions.forall(ea => matchesHelpActionName(ea.name)) ||
           maybeHelpSearch.isEmpty ||
           maybeHelpSearch.exists(_.equalsIgnoreCase(skillGroupData.name.trim))
       }
@@ -158,7 +162,7 @@ case class DisplayHelpBehavior(
         dataService.behaviorVersions.allForGroupVersion(groupVersion)
       }.getOrElse(Future.successful(Seq()))
       maybeBehaviorVersion <- Future.successful {
-        behaviorVersions.filterNot(_.isDataType).find(_.maybeName.contains("help"))
+        behaviorVersions.filterNot(_.isDataType).find(ea => matchesHelpActionName(ea.maybeName))
       }
       maybeResponse <- maybeBehaviorVersion.map { behaviorVersion =>
         dataService.behaviorResponses.buildFor(event, behaviorVersion, Map(), None, None).map(Some(_))

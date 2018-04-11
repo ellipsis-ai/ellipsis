@@ -34,55 +34,23 @@ class InstalledBehaviorGroupsPanel extends React.Component<Props> {
     );
   }
 
-  getFirstTriggerFor(group: BehaviorGroup) {
-    var triggerText = "";
-    group.behaviorVersions.find((version) => {
-      return version.triggers.some((trigger) => {
-        if (!trigger.isRegex && /\bhelp\b/i.test(trigger.text)) {
-          triggerText = trigger.displayText();
-          return true;
-        } else {
-          return false;
-        }
-      });
-    });
-    if (!triggerText) {
-      group.behaviorVersions.find((version) => {
-        return Boolean(version.triggers.find((trigger) => {
-          if (trigger.text) {
-            triggerText = trigger.displayText();
-            return true;
-          } else {
-            return false;
-          }
-        }));
-      });
-    }
-    return triggerText;
-  }
-
   getBehaviorHelpInstructions(group: BehaviorGroup) {
-    var firstTrigger = this.getFirstTriggerFor(group);
-    if (firstTrigger) {
-      return (
-        <li>
-          <span>In your channel, type <span className="box-chat-example">{firstTrigger}</span> </span>
-          <span>to try out the {group.getName()} skill, or </span>
-          <span className="box-chat-example">...help</span>
-          <span> to see everything Ellipsis can do so far.</span>
-        </li>
-      );
-    } else {
-      return (
-        <li>
-          <span>In your channel, type <span className="box-chat-example">...help</span> to see everything Ellipsis can do so far.</span>
-        </li>
-      );
-    }
+    return (
+      <li>
+        <span>In your channel, type <span className="box-chat-example">{this.getBotNameForSlack()} help {group.getName()}</span> </span>
+        <span>to try out the {group.getName()} skill, or </span>
+        <span className="box-chat-example">{this.getBotNameForSlack()} help</span>
+        <span> to see everything your bot can do so far.</span>
+      </li>
+    );
   }
 
   getSlackUrl() {
     return URLCreator.forSlack(this.props.slackTeamId);
+  }
+
+  getBotNameForSlack(): string {
+    return `@${this.props.botName}`;
   }
 
   renderEditLinkFor(group: BehaviorGroup) {
@@ -137,7 +105,7 @@ class InstalledBehaviorGroupsPanel extends React.Component<Props> {
 
             <ul className="list-space-xl">
               <li>
-                <span>Type <span className="box-chat-example">/invite @{this.props.botName}</span> to add your </span>
+                <span>Type <span className="box-chat-example">/invite {this.getBotNameForSlack()}</span> to add your </span>
                 <span>bot to any channel.</span>
               </li>
               {this.getBehaviorHelpInstructions(group)}
