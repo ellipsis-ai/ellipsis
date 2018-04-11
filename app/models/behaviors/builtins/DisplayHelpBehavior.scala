@@ -185,23 +185,24 @@ case class DisplayHelpBehavior(
     val versionsText = result.helpTextFor(behaviorVersions)
     val nameAndDescription = skillNameAndDescriptionFor(result)
     val listHeading = result.behaviorVersionsHeading(includeNonMatchingResults) ++ "  "
-    val resultText = s"""$intro
-                        |
-                        |$nameAndDescription$listHeading
-                        |$versionsText
-                        |""".stripMargin
+    val resultText =
+      s"""$intro
+         |
+         |$nameAndDescription$listHeading
+         |$versionsText
+         |""".stripMargin
 
-    val runnableActions = result.slackRunActionsFor (behaviorVersions)
+    val runnableActions = result.slackRunActionsFor(behaviorVersions)
     val indexAction = result.slackHelpIndexAction
-    val actionList = result.maybeShowAllBehaviorVersionsAction (maybeHelpSearch, includeNonMatchingResults).map {showAllAction =>
-      runnableActions ++ Seq (showAllAction, indexAction)
+    val actionList = result.maybeShowAllBehaviorVersionsAction(maybeHelpSearch, includeNonMatchingResults).map { showAllAction =>
+      runnableActions ++ Seq(showAllAction, indexAction)
     } getOrElse {
       runnableActions :+ indexAction
     }
-      val actionText = if (behaviorVersions.length == 1) {
+    val actionText = if (behaviorVersions.length == 1) {
       None
     } else {
-      Some ("Select or type an action to run it now:")
+      Some("Select or type an action to run it now:")
     }
 
     val actionsGroup = SlackMessageActionsGroup(SHOW_BEHAVIOR_GROUP_HELP, actionList, actionText, None, Some(Color.BLUE_LIGHT), None)
