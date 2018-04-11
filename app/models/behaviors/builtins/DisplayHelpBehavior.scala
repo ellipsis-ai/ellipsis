@@ -121,7 +121,14 @@ case class DisplayHelpBehavior(
   }
 
   private def shouldRunHelpActionFor(result: HelpResult, behaviorVersions: Seq[BehaviorVersionData]): Boolean = {
-    behaviorVersions.forall(_.name.contains("help")) || maybeHelpSearch.isEmpty || maybeHelpSearch.exists(_.equalsIgnoreCase(result.group.name.trim))
+    result.group match {
+      case skillGroupData: SkillHelpGroupData => {
+        behaviorVersions.forall(_.name.contains("help")) ||
+          maybeHelpSearch.isEmpty ||
+          maybeHelpSearch.exists(_.equalsIgnoreCase(skillGroupData.name.trim))
+      }
+      case _ => false
+    }
   }
 
   def skillResultFor(result: HelpResult)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[BotResult] = {
