@@ -1,10 +1,10 @@
 package models.behaviors.builtins
 
 import akka.actor.ActorSystem
-import json.BehaviorGroupData
+import json.{BehaviorGroupData, BehaviorVersionData}
 import models.behaviors.events.SlackMessageActionConstants._
 import models.behaviors.events._
-import models.behaviors.{BotResult, TextWithAttachmentsResult}
+import models.behaviors.{BotResult, SuccessResult, TextWithAttachmentsResult}
 import models.help._
 import services.caching.CacheService
 import services.{AWSLambdaService, DataService, DefaultServices}
@@ -99,23 +99,84 @@ case class DisplayHelpBehavior(
     SlackMessageTextAttachmentGroup(generalHelpText(botPrefix: String), None, Some("General"))
   }
 
+  def skillNameFor(result: HelpResult): String = {
+    val icon = result.group.maybeIcon.map(icon => s"$icon ").getOrElse("")
+    result.group.maybeEditLink(dataService, lambdaService).map { url =>
+      s"**[${icon}${result.group.name} ✎]($url)**"
+    }.getOrElse {
+      s"**${icon}${result.group.name}**"
+    }
+  }
+
+  def prependSkillNameToText(helpResult: HelpResult, text: String): String = {
+    s"${skillNameFor(helpResult)}\n$text"
+  }
+
   def skillNameAndDescriptionFor(result: HelpResult): String = {
     if (includeNameAndDescription) {
-      val name = result.group.maybeEditLink(dataService, lambdaService).map { url =>
-        s"**[${result.group.name} ✎]($url)**"
-      }.getOrElse {
-        s"**${result.group.name}**"
-      }
-      val description = result.description
-      s"$name  \n$description\n\n"
+      prependSkillNameToText(result, s"${result.description}\n\n")
     } else {
       ""
     }
   }
 
-  def skillResultFor(result: HelpResult): BotResult = {
-    val behaviorVersions = result.behaviorVersionsToDisplay(includeNonMatchingResults)
+  private def shouldRunHelpActionFor(result: HelpResult, behaviorVersions: Seq[BehaviorVersionData]): Boolean = {
+    result.group match {
+      case skillGroupData: SkillHelpGroupData => {
+        behaviorVersions.forall(_.name.contains("help")) ||
+          maybeHelpSearch.isEmpty ||
+          maybeHelpSearch.exists(_.equalsIgnoreCase(skillGroupData.name.trim))
+      }
+      case _ => false
+    }
+  }
 
+  def skillResultFor(result: HelpResult)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[BotResult] = {
+    val behaviorVersions = result.behaviorVersionsToDisplay(includeNonMatchingResults)
+    for {
+      maybeSkillResult <- if (shouldRunHelpActionFor(result, behaviorVersions)) {
+        result.group.maybeGroupId.map { behaviorGroupId =>
+          maybeRunHelpBehaviorFor(result, behaviorGroupId)
+        }.getOrElse(Future.successful(None))
+      } else {
+        Future.successful(None)
+      }
+    } yield {
+      maybeSkillResult.getOrElse {
+        skillActionsListResultFor(result, behaviorVersions)
+      }
+    }
+  }
+
+  private def maybeRunHelpBehaviorFor(helpResult: HelpResult, behaviorGroupId: String)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[BotResult]] = {
+    for {
+      maybeBehaviorGroup <- dataService.behaviorGroups.findWithoutAccessCheck(behaviorGroupId)
+      maybeBehaviorGroupVersion <- maybeBehaviorGroup.map { group =>
+        dataService.behaviorGroupVersions.maybeCurrentFor(group)
+      }.getOrElse(Future.successful(None))
+      behaviorVersions <- maybeBehaviorGroupVersion.map { groupVersion =>
+        dataService.behaviorVersions.allForGroupVersion(groupVersion)
+      }.getOrElse(Future.successful(Seq()))
+      maybeBehaviorVersion <- Future.successful {
+        behaviorVersions.filterNot(_.isDataType).find(_.maybeName.contains("help"))
+      }
+      maybeResponse <- maybeBehaviorVersion.map { behaviorVersion =>
+        dataService.behaviorResponses.buildFor(event, behaviorVersion, Map(), None, None).map(Some(_))
+      }.getOrElse(Future.successful(None))
+      maybeResult <- maybeResponse.map { response =>
+        response.result.map {
+          case s: SuccessResult => {
+            s.copy(maybeResponseTemplate = s.maybeResponseTemplate.map(text => prependSkillNameToText(helpResult, text)))
+          }
+          case otherResult => {
+            otherResult
+          }
+        }.map(Some(_))
+      }.getOrElse(Future.successful(None))
+    } yield maybeResult
+  }
+
+  def skillActionsListResultFor(result: HelpResult, behaviorVersions: Seq[BehaviorVersionData]): BotResult = {
     val intro = if (isFirstTrigger) {
       s"Here’s what I know$matchString."
     } else {
@@ -188,25 +249,28 @@ case class DisplayHelpBehavior(
         }).map(_.flatten.sorted)
       }).getOrElse(Future.successful(Seq()))
       botPrefix <- event.contextualBotPrefix(services)
-    } yield {
-      val (named, unnamed) = groupData.partition(_.maybeNonEmptyName.isDefined)
-      val namedGroupData = named.map(behaviorGroupData => SkillHelpGroupData(behaviorGroupData))
-      val flattenedGroupData = if (unnamed.nonEmpty) {
-        namedGroupData :+ MiscHelpGroupData(unnamed)
-      } else {
-        namedGroupData
-      }
-      val matchingGroupData = maybeHelpSearch.map { helpSearch =>
-        FuzzyMatcher[HelpGroupData](helpSearch, flattenedGroupData).run.map(matchResult => HelpSearchResult(helpSearch, matchResult, event, dataService, lambdaService, botPrefix))
-      }.getOrElse(flattenedGroupData.map(group => SimpleHelpResult(group, event, dataService, lambdaService, botPrefix)))
+      helpResult <- helpResultFor(groupData, botPrefix)
+    } yield helpResult
+  }
 
-      if (searchedHelp && matchingGroupData.isEmpty) {
-        emptyResult(botPrefix)
-      } else if (shouldShowSingleSkill(matchingGroupData)) {
-        skillResultFor(matchingGroupData.head)
-      } else {
-        introResultFor(matchingGroupData, maybeStartAtIndex.getOrElse(0), botPrefix)
-      }
+  private def helpResultFor(groupData: Seq[BehaviorGroupData], botPrefix: String)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[BotResult] = {
+    val (named, unnamed) = groupData.partition(_.maybeNonEmptyName.isDefined)
+    val namedGroupData = named.map(behaviorGroupData => SkillHelpGroupData(behaviorGroupData))
+    val flattenedGroupData = if (unnamed.nonEmpty) {
+      namedGroupData :+ MiscHelpGroupData(unnamed)
+    } else {
+      namedGroupData
+    }
+    val matchingGroupData = maybeHelpSearch.map { helpSearch =>
+      FuzzyMatcher[HelpGroupData](helpSearch, flattenedGroupData).run.map(matchResult => HelpSearchResult(helpSearch, matchResult, event, dataService, lambdaService, botPrefix))
+    }.getOrElse(flattenedGroupData.map(group => SimpleHelpResult(group, event, dataService, lambdaService, botPrefix)))
+
+    if (searchedHelp && matchingGroupData.isEmpty) {
+      Future.successful(emptyResult(botPrefix))
+    } else if (shouldShowSingleSkill(matchingGroupData)) {
+      skillResultFor(matchingGroupData.head)
+    } else {
+      Future.successful(introResultFor(matchingGroupData, maybeStartAtIndex.getOrElse(0), botPrefix))
     }
   }
 }
