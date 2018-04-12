@@ -29,7 +29,7 @@ case class RunEvent(
                   ) extends Event with SlackEvent {
 
   val eventType: EventType = EventType.api
-  def withOriginalEventType(originalEventType: EventType): Event = {
+  def withOriginalEventType(originalEventType: EventType, isUninterrupted: Boolean): Event = {
     this.copy(maybeOriginalEventType = Some(originalEventType))
   }
 

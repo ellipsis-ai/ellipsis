@@ -11,6 +11,7 @@ import models.behaviors.events.Event
 import models.behaviors.triggers.messagetrigger.MessageTrigger
 import play.api.libs.json.{JsString, JsValue}
 import services._
+import services.caching.CacheService
 import slick.dbio.DBIO
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -40,6 +41,7 @@ case class BehaviorResponse(
                              ) {
 
   val dataService: DataService = services.dataService
+  val cacheService: CacheService = services.cacheService
 
   def hasAllParamValues: Boolean = {
     parametersWithValues.forall(_.hasValidValue)
@@ -98,7 +100,8 @@ case class BehaviorResponse(
                 event,
                 maybeChannel,
                 maybeActivatedTrigger,
-                dataService
+                dataService,
+                cacheService
               )
               _ <- Future.sequence(parametersWithValues.map { p =>
                 p.maybeValue.map { v =>

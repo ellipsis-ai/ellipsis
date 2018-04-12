@@ -13,7 +13,7 @@ import utils.SlackChannels
 
 import scala.concurrent.{ExecutionContext, Future}
 
-trait SlackEvent {
+trait SlackEvent extends Event {
   val user: String
   val userSlackTeamId: String
   val channel: String
@@ -39,7 +39,7 @@ trait SlackEvent {
     !isDirectMessage && !isPrivateChannel
   }
   val messageRecipientPrefix: String = {
-    if (isDirectMessage) {
+    if (isDirectMessage || isUninterruptedConversation) {
       ""
     } else {
       s"<@$user>: "

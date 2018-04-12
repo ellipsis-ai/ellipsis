@@ -9,6 +9,7 @@ import models.behaviors.behaviorversion.BehaviorVersion
 import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.events.{Event, EventType, SlackEvent, SlackMessageEvent}
 import models.behaviors.triggers.messagetrigger.MessageTrigger
+import services.caching.CacheService
 import services.{DataService, DefaultServices}
 import slick.dbio.DBIO
 import utils.SlackMessageReactionHandler
@@ -161,7 +162,8 @@ object InvokeBehaviorConversation {
                  event: Event,
                  maybeChannel: Option[String],
                  maybeActivatedTrigger: Option[MessageTrigger],
-                 dataService: DataService
+                 dataService: DataService,
+                 cacheService: CacheService
                  )(implicit ec: ExecutionContext): Future[InvokeBehaviorConversation] = {
     val maybeTeamIdForContext = event match {
       case e: SlackEvent => Some(e.userSlackTeamId)
@@ -184,6 +186,11 @@ object InvokeBehaviorConversation {
         event.maybeScheduled.map(_.id),
         Some(event.originalEventType)
       )
-    dataService.conversations.save(newInstance).map(_ => newInstance)
+    dataService.conversations.save(newInstance).map(_ => {
+      maybeChannel.foreach { channel =>
+        cacheService.cacheLastConversationId(event.teamId, channel, newInstance.id)
+      }
+      newInstance
+    })
   }
 }

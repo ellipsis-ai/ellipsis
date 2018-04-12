@@ -132,10 +132,15 @@ class EventHandler @Inject() (
 
   def handle(event: Event, maybeConversation: Option[Conversation]): Future[Seq[BotResult]] = {
     (maybeConversation.map { conversation =>
+      val isUninterrupted = cacheService.isLastConversationIdFor(event, conversation.id)
+      cacheService.updateLastConversationIdFor(event, conversation.id)
       handleInConversation(conversation, conversation.maybeOriginalEventType.map { eventType =>
-        event.withOriginalEventType(eventType)
+        event.withOriginalEventType(eventType, isUninterrupted)
       }.getOrElse(event)).map(Seq(_))
     }.getOrElse {
+      event.maybeChannel.foreach { channel =>
+        cacheService.clearLastConversationId(event.teamId, channel)
+      }
       BuiltinBehavior.maybeFrom(event, services).map { builtin =>
         builtin.result.map(Seq(_))
       }.getOrElse {

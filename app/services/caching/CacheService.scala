@@ -49,4 +49,22 @@ trait CacheService {
   def cacheBotName(name: String, teamId: String): Unit
 
   def getBotName(teamId: String): Option[String]
+
+  def cacheLastConversationId(teamId: String, channelId: String, conversationId: String): Unit
+
+  def clearLastConversationId(teamId: String, channelId: String): Unit
+
+  def getLastConversationId(teamId: String, channelId: String): Option[String]
+
+  def isLastConversationIdFor(event: Event, conversationId: String): Boolean = {
+    event.maybeChannel.exists { channel =>
+      getLastConversationId(event.teamId, channel).contains(conversationId)
+    }
+  }
+
+  def updateLastConversationIdFor(event: Event, conversationId: String): Unit = {
+    event.maybeChannel.foreach { channel =>
+      cacheLastConversationId(event.teamId, channel, conversationId)
+    }
+  }
 }
