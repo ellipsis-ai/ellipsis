@@ -1,28 +1,21 @@
 import java.time.OffsetDateTime
 
-import akka.actor.ActorSystem
 import json.{SlackUserData, SlackUserProfileData}
 import models.IDs
 import models.accounts.slack.botprofile.SlackBotProfile
-import models.behaviors.behavior.Behavior
-import models.behaviors.{ActionChoice, BehaviorResponse, DeveloperContext}
-import models.behaviors.conversations.conversation.Conversation
-import models.behaviors.events.{Event, EventType, MessageAttachmentGroup, SlackEvent}
-import models.team.Team
+import models.behaviors.events.SlackEvent
 import org.mockito.Matchers._
 import org.mockito.Mockito._
 import org.scalatest.mock.MockitoSugar
 import org.scalatestplus.play.PlaySpec
-import play.api.Configuration
 import play.api.libs.json.JsObject
 import play.api.test.Helpers._
-import services.{DataService, DefaultServices}
 import slack.api.SlackApiClient
 import slack.models.Channel
 import support.TestContext
-import utils.{SlackChannel, UploadFileSpec}
+import utils.SlackChannel
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.Future
 
 class SlackEventSpec extends PlaySpec with MockitoSugar {
 
