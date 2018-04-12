@@ -34,7 +34,19 @@ class BotResultSpec extends PlaySpec with MockitoSugar with DBSpec {
   }
 
   def newEventFor(profile: SlackBotProfile, maybeThreadId: Option[String] = defaultThreadId): SlackMessageEvent = {
-    SlackMessageEvent(profile, defaultSlackTeamId, defaultChannel, maybeThreadId, defaultSlackUserId, SlackMessage.blank, None, SlackTimestamp.now, slackEventService.clientFor(profile), None)
+    SlackMessageEvent(
+      profile,
+      defaultSlackTeamId,
+      defaultChannel,
+      maybeThreadId,
+      defaultSlackUserId,
+      SlackMessage.blank,
+      None,
+      SlackTimestamp.now,
+      slackEventService.clientFor(profile),
+      None,
+      isUninterruptedConversation = false
+    )
   }
 
   def newConversationFor(team: Team, user: User, profile: SlackBotProfile, event: SlackMessageEvent): Conversation = {
@@ -43,7 +55,7 @@ class BotResultSpec extends PlaySpec with MockitoSugar with DBSpec {
     val groupVersion = newSavedGroupVersionFor(group, user)
     val behaviorVersion = runNow(dataService.behaviorVersions.allForGroupVersion(groupVersion)).head
 
-    runNow(InvokeBehaviorConversation.createFor(behaviorVersion, newEventFor(profile), Some(event.channel), None, dataService))
+    runNow(InvokeBehaviorConversation.createFor(behaviorVersion, newEventFor(profile), Some(event.channel), None, dataService, cacheService))
   }
 
   def mockPostChatMessage(text: String, event: SlackMessageEvent, resultTs: String, maybeThreadId: Option[String]): Unit = {

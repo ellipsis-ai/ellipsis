@@ -29,7 +29,8 @@ case class SlackMessageEventData(
                                   message: SlackMessage,
                                   maybeFile: Option[SlackFile],
                                   ts: String,
-                                  maybeOriginalEventType: Option[String]
+                                  maybeOriginalEventType: Option[String],
+                                  isUninterruptedConversation: Boolean
                                 )
 
 @Singleton
@@ -72,7 +73,7 @@ class CacheServiceImpl @Inject() (
   def cacheEvent(key: String, event: Event, expiration: Duration = Duration.Inf): Unit = {
     event match {
       case ev: SlackMessageEvent => {
-        val eventData = SlackMessageEventData(ev.profile, ev.userSlackTeamId, ev.channel, ev.maybeThreadId, ev.user, ev.message, ev.maybeFile, ev.ts, ev.maybeOriginalEventType.map(_.toString))
+        val eventData = SlackMessageEventData(ev.profile, ev.userSlackTeamId, ev.channel, ev.maybeThreadId, ev.user, ev.message, ev.maybeFile, ev.ts, ev.maybeOriginalEventType.map(_.toString), ev.isUninterruptedConversation)
         set(key, Json.toJson(eventData), expiration)
       }
       case _ =>
@@ -93,7 +94,8 @@ class CacheServiceImpl @Inject() (
             event.maybeFile,
             event.ts,
             slackEventService.clientFor(event.profile),
-            EventType.maybeFrom(event.maybeOriginalEventType)
+            EventType.maybeFrom(event.maybeOriginalEventType),
+            event.isUninterruptedConversation
           ))
         }
         case JsError(err) => None
@@ -179,6 +181,22 @@ class CacheServiceImpl @Inject() (
 
   def getBotName(teamId: String): Option[String] = {
     get(botNameKey(teamId))
+  }
+
+  private def lastConversationIdKey(teamId: String, channelId: String): String = {
+    s"team-$teamId-channel-$channelId-lastConversationId-v1"
+  }
+
+  def cacheLastConversationId(teamId: String, channelId: String, conversationId: String): Unit = {
+    set(lastConversationIdKey(teamId, channelId), conversationId)
+  }
+
+  def clearLastConversationId(teamId: String, channelId: String): Unit = {
+    remove(lastConversationIdKey(teamId, channelId))
+  }
+
+  def getLastConversationId(teamId: String, channelId: String): Option[String] = {
+    get(lastConversationIdKey(teamId, channelId))
   }
 
 }

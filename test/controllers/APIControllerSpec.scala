@@ -86,7 +86,19 @@ class APIControllerSpec extends PlaySpec with MockitoSugar {
       any[Option[String]], any[Option[Boolean]])(any[ActorSystem])).thenReturn(Future.successful(SlackTimestamp.now))
     when(mockSlackClient.listUsers).thenReturn(Future.successful(Seq()))
 
-    val event = SlackMessageEvent(botProfile, defaultSlackTeamId, defaultChannel, None, defaultSlackUserId, SlackMessage.fromUnformattedText("foo", botProfile.userId), None, SlackTimestamp.now, mockSlackClient, Some(EventType.api))
+    val event = SlackMessageEvent(
+      botProfile,
+      defaultSlackTeamId,
+      defaultChannel,
+      None,
+      defaultSlackUserId,
+      SlackMessage.fromUnformattedText("foo", botProfile.userId),
+      None,
+      SlackTimestamp.now,
+      mockSlackClient,
+      Some(EventType.api),
+      isUninterruptedConversation = false
+    )
     when(dataService.slackBotProfiles.allFor(team)).thenReturn(Future.successful(Seq(botProfile)))
     val loginInfo = LoginInfo(defaultContext, defaultSlackUserId)
     val slackProfile = SlackProfile(defaultSlackTeamId, loginInfo)

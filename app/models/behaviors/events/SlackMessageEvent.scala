@@ -24,13 +24,14 @@ case class SlackMessageEvent(
                               maybeFile: Option[SlackFile],
                               ts: String,
                               client: SlackApiClient,
-                              maybeOriginalEventType: Option[EventType]
+                              maybeOriginalEventType: Option[EventType],
+                              override val isUninterruptedConversation: Boolean
                             ) extends MessageEvent with SlackEvent {
 
   val eventType: EventType = EventType.chat
 
-  def withOriginalEventType(originalEventType: EventType): Event = {
-    this.copy(maybeOriginalEventType = Some(originalEventType))
+  def withOriginalEventType(originalEventType: EventType, isUninterrupted: Boolean): Event = {
+    this.copy(maybeOriginalEventType = Some(originalEventType), isUninterruptedConversation = isUninterrupted)
   }
 
   lazy val isBotMessage: Boolean = profile.userId == user

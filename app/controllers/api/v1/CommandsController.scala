@@ -95,7 +95,8 @@ class CommandsController @Inject() (
             None,
             SlackTimestamp.now,
             slackService.clientFor(botProfile),
-            maybeOriginalEventType
+            maybeOriginalEventType,
+            isUninterruptedConversation = false
           )
           val event: Event = maybeScheduledMessage.map { scheduledMessage =>
             ScheduledEvent(slackEvent, scheduledMessage)
