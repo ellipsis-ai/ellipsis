@@ -1,21 +1,28 @@
 import java.time.OffsetDateTime
 
+import akka.actor.ActorSystem
 import json.{SlackUserData, SlackUserProfileData}
 import models.IDs
 import models.accounts.slack.botprofile.SlackBotProfile
-import models.behaviors.events.SlackEvent
+import models.behaviors.behavior.Behavior
+import models.behaviors.{ActionChoice, BehaviorResponse, DeveloperContext}
+import models.behaviors.conversations.conversation.Conversation
+import models.behaviors.events.{Event, EventType, MessageAttachmentGroup, SlackEvent}
+import models.team.Team
 import org.mockito.Matchers._
 import org.mockito.Mockito._
 import org.scalatest.mock.MockitoSugar
 import org.scalatestplus.play.PlaySpec
+import play.api.Configuration
 import play.api.libs.json.JsObject
 import play.api.test.Helpers._
+import services.{DataService, DefaultServices}
 import slack.api.SlackApiClient
 import slack.models.Channel
 import support.TestContext
-import utils.SlackChannel
+import utils.{SlackChannel, UploadFileSpec}
 
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 class SlackEventSpec extends PlaySpec with MockitoSugar {
 
@@ -29,7 +36,40 @@ class SlackEventSpec extends PlaySpec with MockitoSugar {
                            ) extends SlackEvent {
 
     val userSlackTeamId: String = slackTeamId
+    def allOngoingConversations(dataService: DataService): Future[Seq[Conversation]] = Future.successful(Seq())
 
+    def sendMessage(
+                     text: String,
+                     forcePrivate: Boolean,
+                     maybeShouldUnfurl: Option[Boolean],
+                     maybeConversation: Option[Conversation],
+                     attachmentGroups: Seq[MessageAttachmentGroup],
+                     files: Seq[UploadFileSpec],
+                     choices: Seq[ActionChoice],
+                     developerContext: DeveloperContext,
+                     services: DefaultServices,
+                     configuration: Configuration
+                   )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[String]] = Future.successful(None)
+
+    def withOriginalEventType(originalEventType: EventType, isUninterruptedConversation: Boolean): Event = this
+
+    def allBehaviorResponsesFor(
+                                 maybeTeam: Option[Team],
+                                 maybeLimitToBehavior: Option[Behavior],
+                                 services: DefaultServices
+                               )(implicit ec: ExecutionContext): Future[Seq[BehaviorResponse]] = Future.successful(Seq())
+
+    val userIdForContext: String = user
+    val invocationLogText: String = ""
+    val messageText: String = ""
+    val eventType: EventType = EventType.test
+    val maybeThreadId: Option[String] = None
+    val maybeChannel: Option[String] = Some(channel)
+    val name: String = "test"
+    val isResponseExpected: Boolean = false
+    val maybeOriginalEventType: Option[EventType] = None
+    val includesBotMention: Boolean = false
+    val teamId: String = "T1"
   }
 
   val slackUserId = "U12345678"
