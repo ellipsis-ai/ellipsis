@@ -56,7 +56,7 @@ trait CacheService {
 
   def getLastConversationId(teamId: String, channelId: String): Option[String]
 
-  def isLastConversationIdFor(event: Event, conversationId: String): Boolean = {
+  def eventHasLastConversationId(event: Event, conversationId: String): Boolean = {
     event.maybeChannel.exists { channel =>
       getLastConversationId(event.teamId, channel).contains(conversationId)
     }

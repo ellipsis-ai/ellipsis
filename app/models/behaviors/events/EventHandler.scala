@@ -132,7 +132,7 @@ class EventHandler @Inject() (
 
   def handle(event: Event, maybeConversation: Option[Conversation]): Future[Seq[BotResult]] = {
     (maybeConversation.map { conversation =>
-      val isUninterrupted = cacheService.isLastConversationIdFor(event, conversation.id)
+      val isUninterrupted = cacheService.eventHasLastConversationId(event, conversation.id)
       cacheService.updateLastConversationIdFor(event, conversation.id)
       handleInConversation(conversation, conversation.maybeOriginalEventType.map { eventType =>
         event.withOriginalEventType(eventType, isUninterrupted)

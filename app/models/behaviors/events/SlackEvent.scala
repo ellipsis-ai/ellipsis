@@ -13,12 +13,13 @@ import utils.SlackChannels
 
 import scala.concurrent.{ExecutionContext, Future}
 
-trait SlackEvent extends Event {
+trait SlackEvent {
   val user: String
   val userSlackTeamId: String
   val channel: String
   val profile: SlackBotProfile
   val client: SlackApiClient
+  val isUninterruptedConversation: Boolean
   def eventualMaybeDMChannel(cacheService: CacheService)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[String]] = {
     client.openIm(user).map(Some(_)).recover {
       case e: ApiError => {
