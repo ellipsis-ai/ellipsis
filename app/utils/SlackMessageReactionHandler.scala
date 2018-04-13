@@ -36,18 +36,18 @@ object SlackMessageReactionHandler {
     }
   }
 
-  private def emojiFor(elapsedSeconds: Int): String = {
-    PROGRESS_REACTIONS(elapsedSeconds % PROGRESS_REACTIONS.length)
+  private def emojiFor(updateCount: Int): String = {
+    PROGRESS_REACTIONS(updateCount % PROGRESS_REACTIONS.length)
   }
 
-  private def updateReactionClock[T](p: Promise[T], client: SlackApiClient, channel: String, messageTs: String, elapsedSeconds: Int = 0)
+  private def updateReactionClock[T](p: Promise[T], client: SlackApiClient, channel: String, messageTs: String, updateCount: Int = 0)
                             (implicit system: ActorSystem): Unit = {
     implicit val ec: ExecutionContext = system.dispatcher
     if (!p.isCompleted) {
-      if (elapsedSeconds > 0) {
-        client.removeReactionFromMessage(emojiFor(elapsedSeconds), channel, messageTs)
+      if (updateCount > 0) {
+        client.removeReactionFromMessage(emojiFor(updateCount), channel, messageTs)
       }
-      val next = elapsedSeconds + 1
+      val next = updateCount + 1
       client.addReactionToMessage(emojiFor(next), channel, messageTs)
       Thread.sleep(PROGRESS_EMOJI_DURATION_MS)
       updateReactionClock(p, client, channel, messageTs, next)
