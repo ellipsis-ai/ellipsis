@@ -55,12 +55,14 @@ sealed trait BehaviorParameterType extends FieldTypeForSchema {
   def promptTextForAction(
                              maybePreviousCollectedValue: Option[String],
                              context: BehaviorParameterContext,
-                             paramState: ParamCollectionState,
+                             maybeParamState: Option[ParamCollectionState],
                              isReminding: Boolean
                            )(implicit actorSystem: ActorSystem, ec: ExecutionContext): DBIO[String] = {
     for {
       isFirst <- context.isFirstParamAction
-      paramCount <- DBIO.from(context.unfilledParamCount(paramState))
+      paramCount <- maybeParamState.map { paramState =>
+        DBIO.from(context.unfilledParamCount(paramState))
+      }.getOrElse(DBIO.successful(0))
     } yield {
       val invalidModifier = invalidValueModifierFor(maybePreviousCollectedValue)
       val preamble = if (isReminding || !isFirst || paramCount <= 1 || invalidModifier.nonEmpty) {
@@ -88,7 +90,7 @@ sealed trait BehaviorParameterType extends FieldTypeForSchema {
                  paramState: ParamCollectionState,
                  isReminding: Boolean
                )(implicit actorSystem: ActorSystem, ec: ExecutionContext): DBIO[BotResult] = {
-    promptTextForAction(maybePreviousCollectedValue, context, paramState, isReminding).map(context.simpleTextResultFor)
+    promptTextForAction(maybePreviousCollectedValue, context, Some(paramState), isReminding).map(context.simpleTextResultFor)
   }
 
   def promptResultWithValidValuesResult(result: BotResult, context: BehaviorParameterContext)(implicit actorSystem: ActorSystem, ec: ExecutionContext): DBIO[BotResult] = {
@@ -657,7 +659,9 @@ case class BehaviorBackedDataType(dataTypeConfig: DataTypeConfig) extends Behavi
         val groups: Seq[MessageAttachmentGroup] = Seq(
           SlackMessageActionsGroup(context.dataTypeChoiceCallbackId, actionsList, None, None, Some(Color.BLUE_LIGHT))
         )
-        DBIO.successful(TextWithAttachmentsResult(context.event, context.maybeConversation, "Here are some options", context.behaviorVersion.forcePrivateResponse, groups))
+        promptTextForAction(None, context, None, false).map { text =>
+          TextWithAttachmentsResult(context.event, context.maybeConversation, text, context.behaviorVersion.forcePrivateResponse, groups)
+        }
       }
     } yield output
   }
@@ -707,7 +711,6 @@ case class BehaviorBackedDataType(dataTypeConfig: DataTypeConfig) extends Behavi
                                isReminding: Boolean
                              )(implicit actorSystem: ActorSystem, ec: ExecutionContext): DBIO[BotResult] = {
     for {
-      superPrompt <- super.promptTextForAction(maybePreviousCollectedValue, context, paramState, isReminding)
       behaviorResponse <- context.dataService.behaviorResponses.buildForAction(
         context.event,
         behaviorVersion,
