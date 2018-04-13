@@ -7,6 +7,11 @@ import slack.api.SlackApiClient
 import scala.concurrent.{ExecutionContext, Future, Promise}
 
 object SlackMessageReactionHandler {
+
+  val PROGRESS_EMOJI_DURATION_MS = 3000 // ms
+  val INITIAL_REACTION = "thinking_face"
+  val PROGRESS_REACTIONS = Seq("hourglass", "hourglass_flowing_sand")
+
   def handle[T](client: SlackApiClient, future: Future[T], channel: String, messageTs: String, delayMilliseconds: Int = 1500)
                (implicit system: ActorSystem): Future[Unit] = {
     implicit val ec: ExecutionContext = system.dispatcher
@@ -20,10 +25,32 @@ object SlackMessageReactionHandler {
     Future {
       Thread.sleep(delayMilliseconds)
       if (!p.isCompleted) {
-        client.addReactionToMessage("thinking_face", channel, messageTs).map { _ =>
-          p.future.onComplete(_ => client.removeReactionFromMessage("thinking_face", channel, messageTs))
-        }
+        client.addReactionToMessage(INITIAL_REACTION, channel, messageTs).map(_ => {
+          updateReactionProgress(p, client, channel, messageTs)
+        })
+        p.future.onComplete(_ => {
+          client.removeReactionFromMessage(INITIAL_REACTION, channel, messageTs)
+          PROGRESS_REACTIONS.foreach(ea => client.removeReactionFromMessage(ea, channel, messageTs))
+        })
       }
+    }
+  }
+
+  private def emojiFor(updateCount: Int): String = {
+    PROGRESS_REACTIONS(updateCount % PROGRESS_REACTIONS.length)
+  }
+
+  private def updateReactionProgress[T](p: Promise[T], client: SlackApiClient, channel: String, messageTs: String, updateCount: Int = 0)
+                            (implicit system: ActorSystem): Unit = {
+    implicit val ec: ExecutionContext = system.dispatcher
+    if (!p.isCompleted) {
+      if (updateCount > 0) {
+        client.removeReactionFromMessage(emojiFor(updateCount), channel, messageTs)
+      }
+      val next = updateCount + 1
+      client.addReactionToMessage(emojiFor(next), channel, messageTs)
+      Thread.sleep(PROGRESS_EMOJI_DURATION_MS)
+      updateReactionProgress(p, client, channel, messageTs, next)
     }
   }
 }
