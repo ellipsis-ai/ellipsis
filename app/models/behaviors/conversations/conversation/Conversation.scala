@@ -2,6 +2,7 @@ package models.behaviors.conversations.conversation
 
 import java.time.OffsetDateTime
 
+import akka.actor.ActorSystem
 import models.behaviors._
 import models.behaviors.behaviorparameter.BehaviorParameter
 import models.behaviors.behaviorversion.BehaviorVersion
@@ -20,6 +21,7 @@ trait Conversation {
   val maybeTrigger: Option[MessageTrigger]
   val maybeTriggerMessage: Option[String]
   val maybeOriginalEventType: Option[EventType]
+  val maybeParentId: Option[String]
   val conversationType: String
   val context: String
   val maybeChannel: Option[String]
@@ -84,24 +86,24 @@ trait Conversation {
 
   def updateStateTo(newState: String, dataService: DataService): Future[Conversation]
   def cancel(dataService: DataService): Future[Conversation] = updateStateTo(Conversation.DONE_STATE, dataService)
-  def updateWith(event: Event, services: DefaultServices)(implicit ec: ExecutionContext): Future[Conversation]
+  def updateWith(event: Event, services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Conversation]
 
   def respondAction(
                      event: Event,
                      isReminding: Boolean,
                      services: DefaultServices
-                   )(implicit ec: ExecutionContext): DBIO[BotResult]
+                   )(implicit actorSystem: ActorSystem, ec: ExecutionContext): DBIO[BotResult]
 
   def respond(
                event: Event,
                isReminding: Boolean,
                services: DefaultServices
-             )(implicit ec: ExecutionContext): Future[BotResult]
+             )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[BotResult]
 
   def resultFor(
                  event: Event,
                  services: DefaultServices
-               )(implicit ec: ExecutionContext): Future[BotResult] = {
+               )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[BotResult] = {
     for {
       updatedConversation <- updateWith(event, services)
       result <- updatedConversation.respond(event, isReminding=false, services)
@@ -115,7 +117,7 @@ trait Conversation {
 
   def maybeRemindResultAction(
                                services: DefaultServices
-                            )(implicit ec: ExecutionContext): DBIO[Option[BotResult]] = {
+                            )(implicit actorSystem: ActorSystem, ec: ExecutionContext): DBIO[Option[BotResult]] = {
     maybePlaceholderEventAction(services).flatMap { maybeEvent =>
       maybeEvent.map { event =>
         respondAction(event, isReminding=true, services).map { result =>
@@ -146,7 +148,8 @@ trait Conversation {
       maybeLastInteractionAt,
       state,
       maybeScheduledMessageId,
-      maybeOriginalEventType.map(_.toString)
+      maybeOriginalEventType.map(_.toString),
+      maybeParentId
     )
   }
 }

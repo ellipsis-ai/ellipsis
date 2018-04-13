@@ -1,5 +1,6 @@
 package models.behaviors.behaviorparameter
 
+import akka.actor.ActorSystem
 import models.behaviors.BotResult
 import models.behaviors.behaviorversion.BehaviorVersion
 import models.behaviors.conversations.ParamCollectionState
@@ -26,7 +27,7 @@ case class BehaviorParameter(
                     context: BehaviorParameterContext,
                     paramState: ParamCollectionState,
                     isReminding: Boolean
-                  )(implicit ec: ExecutionContext): DBIO[BotResult] = {
+                  )(implicit actorSystem: ActorSystem, ec: ExecutionContext): DBIO[BotResult] = {
     paramType.promptResultForAction(maybeValue, context, paramState, isReminding)
   }
 

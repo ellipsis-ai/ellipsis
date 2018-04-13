@@ -149,14 +149,21 @@ sealed trait BotResult {
     if (maybeConversation.exists(_.maybeThreadId.isDefined)) {
       DBIO.successful(false)
     } else {
-      maybeChannelForSendAction(maybeConversation, dataService).flatMap { maybeChannelForSend =>
-        dataService.conversations.allOngoingForAction(event.userIdForContext, event.context, maybeChannelForSend, event.maybeThreadId, event.teamId).flatMap { ongoing =>
-          val toInterrupt = ongoing.filterNot(ea => maybeConversation.map(_.id).contains(ea.id))
+      for {
+        maybeChannelForSend <- maybeChannelForSendAction(maybeConversation, dataService)
+        familyIds <- maybeConversation.map { convo =>
+          dataService.parentConversations.ancestorsForAction(convo).map { ancestors =>
+            convo.id :: ancestors.map(_.id)
+          }
+        }.getOrElse(DBIO.successful(List()))
+        ongoing <- dataService.conversations.allOngoingForAction(event.userIdForContext, event.context, maybeChannelForSend, event.maybeThreadId, event.teamId)
+        interruptionResults <- {
+          val toInterrupt = ongoing.filterNot(ea => familyIds.contains(ea.id))
           DBIO.sequence(toInterrupt.map { ea =>
             dataService.conversations.backgroundAction(ea, interruptionPrompt, includeUsername = true)
           })
         }
-      }.map(interruptionResults => interruptionResults.nonEmpty)
+      } yield interruptionResults.nonEmpty
     }
   }
 

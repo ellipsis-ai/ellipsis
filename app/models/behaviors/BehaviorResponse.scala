@@ -3,10 +3,11 @@ package models.behaviors
 import java.time.OffsetDateTime
 
 import akka.actor.ActorSystem
-import models.behaviors.behaviorparameter.BehaviorParameter
+import models.behaviors.behaviorparameter.{BehaviorParameter, BehaviorParameterContext}
 import models.behaviors.behaviorversion.BehaviorVersion
 import models.behaviors.conversations.InvokeBehaviorConversation
 import models.behaviors.conversations.conversation.Conversation
+import models.behaviors.conversations.parentconversation.NewParentConversation
 import models.behaviors.events.Event
 import models.behaviors.triggers.messagetrigger.MessageTrigger
 import play.api.libs.json.{JsString, JsValue}
@@ -36,6 +37,7 @@ case class BehaviorResponse(
                              maybeConversation: Option[Conversation],
                              parametersWithValues: Seq[ParameterWithValue],
                              maybeActivatedTrigger: Option[MessageTrigger],
+                             maybeNewParent: Option[NewParentConversation],
                              services: DefaultServices
                              ) {
 
@@ -60,11 +62,19 @@ case class BehaviorResponse(
     }
   }
 
-  def resultForFilledOutAction(implicit ec: ExecutionContext): DBIO[BotResult] = {
+  def resultForFilledOutAction(implicit actorSystem: ActorSystem, ec: ExecutionContext): DBIO[BotResult] = {
     val startTime = OffsetDateTime.now
     for {
       user <- event.ensureUserAction(dataService)
-      result <- dataService.behaviorVersions.resultForAction(behaviorVersion, parametersWithValues, event, maybeConversation)
+      initialResult <- dataService.behaviorVersions.resultForAction(behaviorVersion, parametersWithValues, event, maybeConversation)
+      result <- {
+        services.dataService.parentConversations.maybeForAction(maybeConversation).flatMap { maybeParent =>
+          maybeParent.map { p =>
+            val context = BehaviorParameterContext(event, Some(p.parent), p.param, services)
+            p.param.paramType.promptResultWithValidValuesResult(initialResult, context)
+          }.getOrElse(DBIO.successful(initialResult))
+        }
+      }
       _ <- {
         val runtimeInMilliseconds = OffsetDateTime.now.toInstant.toEpochMilli - startTime.toInstant.toEpochMilli
         dataService.invocationLogEntries.createForAction(
@@ -80,7 +90,7 @@ case class BehaviorResponse(
     } yield result
   }
 
-  def resultForFilledOut(implicit ec: ExecutionContext): Future[BotResult] = {
+  def resultForFilledOut(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[BotResult] = {
     dataService.run(resultForFilledOutAction)
   }
 
@@ -98,6 +108,7 @@ case class BehaviorResponse(
                 event,
                 maybeChannel,
                 maybeActivatedTrigger,
+                maybeNewParent,
                 dataService
               )
               _ <- Future.sequence(parametersWithValues.map { p =>

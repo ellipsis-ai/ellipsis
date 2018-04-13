@@ -1,11 +1,11 @@
 package models.behaviors
 
 import javax.inject.Inject
-
 import models.behaviors.behavior.Behavior
 import models.behaviors.behaviorparameter.BehaviorParameterContext
 import models.behaviors.behaviorversion.BehaviorVersion
 import models.behaviors.conversations.conversation.Conversation
+import models.behaviors.conversations.parentconversation.{NewParentConversation, ParentConversation}
 import models.behaviors.events.Event
 import models.behaviors.triggers.messagetrigger.MessageTrigger
 import models.team.Team
@@ -63,10 +63,11 @@ class BehaviorResponseServiceImpl @Inject() (
                       behaviorVersion: BehaviorVersion,
                       paramValues: Map[String, String],
                       maybeActivatedTrigger: Option[MessageTrigger],
-                      maybeConversation: Option[Conversation]
+                      maybeConversation: Option[Conversation],
+                      maybeNewParent: Option[NewParentConversation]
                     ): DBIO[BehaviorResponse] = {
     parametersWithValuesForAction(event, behaviorVersion, paramValues, maybeConversation).map { paramsWithValues =>
-      BehaviorResponse(event, behaviorVersion, maybeConversation, paramsWithValues, maybeActivatedTrigger, services)
+      BehaviorResponse(event, behaviorVersion, maybeConversation, paramsWithValues, maybeActivatedTrigger, maybeNewParent, services)
     }
   }
 
@@ -75,9 +76,10 @@ class BehaviorResponseServiceImpl @Inject() (
                 behaviorVersion: BehaviorVersion,
                 paramValues: Map[String, String],
                 maybeActivatedTrigger: Option[MessageTrigger],
-                maybeConversation: Option[Conversation]
+                maybeConversation: Option[Conversation],
+                maybeNewParent: Option[NewParentConversation]
               ): Future[BehaviorResponse] = {
-    dataService.run(buildForAction(event, behaviorVersion, paramValues, maybeActivatedTrigger, maybeConversation))
+    dataService.run(buildForAction(event, behaviorVersion, paramValues, maybeActivatedTrigger, maybeConversation, maybeNewParent))
   }
 
   def allFor(

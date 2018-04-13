@@ -1,5 +1,6 @@
 package models.behaviors.conversations
 
+import akka.actor.ActorSystem
 import models.accounts.linkedsimpletoken.LinkedSimpleToken
 import models.accounts.simpletokenapi.SimpleTokenApi
 import models.accounts.user.User
@@ -31,7 +32,7 @@ case class SimpleTokenCollectionState(
 
   def isCompleteIn(conversation: Conversation)(implicit ec: ExecutionContext): Future[Boolean] = maybeNextToCollect.map(_.isEmpty)
 
-  def collectValueFrom(conversation: InvokeBehaviorConversation)(implicit ec: ExecutionContext): Future[Conversation] = {
+  def collectValueFrom(conversation: InvokeBehaviorConversation)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Conversation] = {
     for {
       maybeNextToCollect <- maybeNextToCollect
       user <- event.ensureUser(dataService)
@@ -43,7 +44,7 @@ case class SimpleTokenCollectionState(
     } yield updatedConversation
   }
 
-  def promptResultForAction(conversation: Conversation, isReminding: Boolean)(implicit ec: ExecutionContext): DBIO[BotResult] = {
+  def promptResultForAction(conversation: Conversation, isReminding: Boolean)(implicit actorSystem: ActorSystem, ec: ExecutionContext): DBIO[BotResult] = {
     maybeNextToCollectAction.map { maybeNextToCollect =>
       val prompt = maybeNextToCollect.map { api =>
         s"""

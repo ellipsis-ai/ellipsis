@@ -1,5 +1,6 @@
 package models.behaviors.conversations
 
+import akka.actor.ActorSystem
 import models.behaviors.BotResult
 import models.behaviors.conversations.conversation.Conversation
 import services.DefaultServices
@@ -16,7 +17,7 @@ trait CollectionState {
   val event: Event
 
   def isCompleteIn(conversation: Conversation)(implicit ec: ExecutionContext): Future[Boolean]
-  def collectValueFrom(conversation: InvokeBehaviorConversation)(implicit ec: ExecutionContext): Future[Conversation]
-  def promptResultForAction(conversation: Conversation, isReminding: Boolean)(implicit ec: ExecutionContext): DBIO[BotResult]
+  def collectValueFrom(conversation: InvokeBehaviorConversation)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Conversation]
+  def promptResultForAction(conversation: Conversation, isReminding: Boolean)(implicit actorSystem: ActorSystem, ec: ExecutionContext): DBIO[BotResult]
 
 }

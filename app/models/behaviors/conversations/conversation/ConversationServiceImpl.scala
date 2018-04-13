@@ -30,7 +30,8 @@ case class RawConversation(
                             maybeLastInteractionAt: Option[OffsetDateTime],
                             state: String,
                             maybeScheduledMessageId: Option[String],
-                            maybeOriginalEventType: Option[String]
+                            maybeOriginalEventType: Option[String],
+                            maybeParentId: Option[String]
                           )
 
 class ConversationsTable(tag: Tag) extends Table[RawConversation](tag, ConversationQueries.tableName) {
@@ -50,9 +51,10 @@ class ConversationsTable(tag: Tag) extends Table[RawConversation](tag, Conversat
   def state = column[String]("state")
   def maybeScheduledMessageId = column[Option[String]]("scheduled_message_id")
   def maybeOriginalEventType = column[Option[String]]("original_event_type")
+  def maybeParentId = column[Option[String]]("parent_id")
 
   def * =
-    (id, behaviorVersionId, maybeTriggerId, maybeTriggerMessage, conversationType, context, maybeChannel, maybeThreadId, userIdForContext, maybeTeamIdForContext, startedAt, maybeLastInteractionAt, state, maybeScheduledMessageId, maybeOriginalEventType) <>
+    (id, behaviorVersionId, maybeTriggerId, maybeTriggerMessage, conversationType, context, maybeChannel, maybeThreadId, userIdForContext, maybeTeamIdForContext, startedAt, maybeLastInteractionAt, state, maybeScheduledMessageId, maybeOriginalEventType, maybeParentId) <>
       ((RawConversation.apply _).tupled, RawConversation.unapply _)
 }
 
@@ -133,8 +135,12 @@ class ConversationServiceImpl @Inject() (
     } yield maybeConvo
   }
 
+  def findOngoingForAction(userIdForContext: String, context: String, maybeChannel: Option[String], maybeThreadId: Option[String], teamId: String): DBIO[Option[Conversation]] = {
+    allOngoingForAction(userIdForContext, context, maybeChannel: Option[String], maybeThreadId, teamId).map(_.headOption)
+  }
+
   def findOngoingFor(userIdForContext: String, context: String, maybeChannel: Option[String], maybeThreadId: Option[String], teamId: String): Future[Option[Conversation]] = {
-    allOngoingFor(userIdForContext, context, maybeChannel: Option[String], maybeThreadId, teamId).map(_.headOption)
+    dataService.run(findOngoingForAction(userIdForContext, context, maybeChannel, maybeThreadId, teamId))
   }
 
   def uncompiledCancelQuery(conversationId: Rep[String]) = all.filter(_.id === conversationId).map(_.state)

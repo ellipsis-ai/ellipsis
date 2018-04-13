@@ -773,6 +773,7 @@ class SlackController @Inject() (
             behaviorVersion,
             invocationParams,
             None,
+            None,
             None
           ).map(Some(_))
         }.getOrElse(Future.successful(None))
@@ -1372,6 +1373,7 @@ class SlackController @Inject() (
               event,
               behaviorVersion,
               Map(),
+              None,
               None,
               None
             ).map(Some(_))

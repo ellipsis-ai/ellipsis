@@ -1,10 +1,12 @@
 package models.behaviors.behaviorparameter
 
+import akka.actor.ActorSystem
 import com.fasterxml.jackson.core.JsonParseException
 import models.behaviors._
 import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
 import models.behaviors.conversations.ParamCollectionState
 import models.behaviors.conversations.conversation.Conversation
+import models.behaviors.conversations.parentconversation.NewParentConversation
 import models.behaviors.datatypeconfig.DataTypeConfig
 import models.behaviors.datatypefield.FieldTypeForSchema
 import models.behaviors.events.SlackMessageActionConstants._
@@ -16,7 +18,6 @@ import services.{AWSLambdaConstants, DataService}
 import slick.dbio.DBIO
 import utils.Color
 
-import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
 
 case class FetchValidValuesBadResultException(result: BotResult) extends Exception(s"Couldn't fetch data type values: ${result.resultType}")
@@ -51,12 +52,12 @@ sealed trait BehaviorParameterType extends FieldTypeForSchema {
     context.parameter.question.trim
   }
 
-  def promptResultForAction(
-                 maybePreviousCollectedValue: Option[String],
-                 context: BehaviorParameterContext,
-                 paramState: ParamCollectionState,
-                 isReminding: Boolean
-               )(implicit ec: ExecutionContext): DBIO[BotResult] = {
+  def promptTextForAction(
+                             maybePreviousCollectedValue: Option[String],
+                             context: BehaviorParameterContext,
+                             paramState: ParamCollectionState,
+                             isReminding: Boolean
+                           )(implicit actorSystem: ActorSystem, ec: ExecutionContext): DBIO[String] = {
     for {
       isFirst <- context.isFirstParamAction
       paramCount <- DBIO.from(context.unfilledParamCount(paramState))
@@ -73,19 +74,32 @@ sealed trait BehaviorParameterType extends FieldTypeForSchema {
           s"I need to ask you some questions."
         })
       }
-      context.simpleTextResultFor(s"""$preamble
+      s"""$preamble
          |
          |$invalidModifier
          |
-         |__${questionTextFor(context)}__""".stripMargin)
+         |__${questionTextFor(context)}__""".stripMargin
     }
+  }
+
+  def promptResultForAction(
+                 maybePreviousCollectedValue: Option[String],
+                 context: BehaviorParameterContext,
+                 paramState: ParamCollectionState,
+                 isReminding: Boolean
+               )(implicit actorSystem: ActorSystem, ec: ExecutionContext): DBIO[BotResult] = {
+    promptTextForAction(maybePreviousCollectedValue, context, paramState, isReminding).map(context.simpleTextResultFor)
+  }
+
+  def promptResultWithValidValuesResult(result: BotResult, context: BehaviorParameterContext)(implicit actorSystem: ActorSystem, ec: ExecutionContext): DBIO[BotResult] = {
+    DBIO.successful(result)
   }
 
   def resolvedValueFor(text: String, context: BehaviorParameterContext)(implicit ec: ExecutionContext): Future[Option[String]]
 
   def potentialValueFor(event: Event, context: BehaviorParameterContext): String = event.relevantMessageText
 
-  def handleCollected(event: Event, context: BehaviorParameterContext)(implicit ec: ExecutionContext): Future[Unit] = {
+  def handleCollected(event: Event, context: BehaviorParameterContext)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Unit] = {
     val potentialValue = potentialValueFor(event, context)
     val input = context.parameter.input
     if (input.isSaved) {
@@ -216,7 +230,7 @@ object YesNoType extends BuiltInType {
                                      context: BehaviorParameterContext,
                                      paramState: ParamCollectionState,
                                      isReminding: Boolean
-                                   )(implicit ec: ExecutionContext): DBIO[BotResult] = {
+                                   )(implicit actorSystem: ActorSystem, ec: ExecutionContext): DBIO[BotResult] = {
     super.promptResultForAction(maybePreviousCollectedValue, context, paramState, isReminding).map { superPromptResult =>
       val callbackId = context.yesNoCallbackId
       val actionList = Seq(SlackMessageActionButton(callbackId, "Yes", YES), SlackMessageActionButton(callbackId, "No", NO))
@@ -578,7 +592,7 @@ case class BehaviorBackedDataType(dataTypeConfig: DataTypeConfig) extends Behavi
                                           context: BehaviorParameterContext,
                                           paramState: ParamCollectionState,
                                           isReminding: Boolean
-                                        )(implicit ec: ExecutionContext): DBIO[BotResult] = {
+                                        )(implicit actorSystem: ActorSystem, ec: ExecutionContext): DBIO[BotResult] = {
     for {
       superPrompt <- maybeSearchQuery.map { searchQuery =>
         DBIO.successful(s"Here are some options for `$searchQuery`.")
@@ -612,6 +626,42 @@ case class BehaviorBackedDataType(dataTypeConfig: DataTypeConfig) extends Behavi
     } yield output
   }
 
+  override def promptResultWithValidValuesResult(result: BotResult, context: BehaviorParameterContext)(implicit actorSystem: ActorSystem, ec: ExecutionContext): DBIO[BotResult] = {
+    val validValues = result match {
+      case r: SuccessResult => extractValidValues(r)
+      case _ => Seq()
+    }
+    for {
+      output <- if (validValues.isEmpty) {
+        context.services.dataService.behaviorParameters.allForAction(behaviorVersion).flatMap { params =>
+          if (params.isEmpty) {
+            cancelAndRespondForAction(s"This data type isn't returning any values: ${editLinkFor(context)}", context)
+          } else {
+            context.maybeConversation.map { convo =>
+              DBIO.from(convo.resultFor(context.event, context.services))
+            }.getOrElse(cancelAndRespondForAction(s"This data type isn't returning any values: ${editLinkFor(context)}", context))
+          }
+        }
+      } else {
+        context.maybeConversation.foreach { conversation =>
+          context.cacheService.cacheValidValues(valuesListCacheKeyFor(conversation, context.parameter), validValues)
+        }
+        val builtinMenuItems = Seq(
+          SlackMessageActionMenuItem(Conversation.SEARCH_AGAIN_MENU_ITEM_TEXT, Conversation.SEARCH_AGAIN_MENU_ITEM_TEXT),
+          SlackMessageActionMenuItem(Conversation.CANCEL_MENU_ITEM_TEXT, Conversation.CANCEL_MENU_ITEM_TEXT)
+        )
+        val menuItems = validValues.zipWithIndex.map { case (ea, i) =>
+          SlackMessageActionMenuItem(s"${i+1}. ${ea.label}", ea.label)
+        } ++ builtinMenuItems
+        val actionsList = Seq(SlackMessageActionMenu("ignored", "Choose an option", menuItems))
+        val groups: Seq[MessageAttachmentGroup] = Seq(
+          SlackMessageActionsGroup(context.dataTypeChoiceCallbackId, actionsList, None, None, Some(Color.BLUE_LIGHT))
+        )
+        DBIO.successful(TextWithAttachmentsResult(context.event, context.maybeConversation, "Here are some options", context.behaviorVersion.forcePrivateResponse, groups))
+      }
+    } yield output
+  }
+
   private def maybeCachedSearchQueryFor(context: BehaviorParameterContext): Option[String] = {
     context.maybeConversation.map { conversation =>
       context.cacheService.get[String](searchQueryCacheKeyFor(conversation, context.parameter))
@@ -621,30 +671,6 @@ case class BehaviorBackedDataType(dataTypeConfig: DataTypeConfig) extends Behavi
   private def isCollectingOther(context: BehaviorParameterContext): Boolean = {
     maybeCollectingOtherCacheKeyFor(context).exists { key =>
       context.cacheService.hasKey(key)
-    }
-  }
-
-  private def promptResultForSearchCaseAction(
-                                         maybePreviousCollectedValue: Option[String],
-                                         context: BehaviorParameterContext,
-                                         paramState: ParamCollectionState,
-                                         isReminding: Boolean
-                                       )(implicit ec: ExecutionContext): DBIO[BotResult] = {
-
-    maybeCachedSearchQueryFor(context).map { searchQuery =>
-      promptResultForListAllCaseAction(Some(searchQuery), maybePreviousCollectedValue, context, paramState, isReminding)
-    }.getOrElse {
-      maybePreviousCollectedValue.map { v =>
-        context.maybeConversation.map { conversation =>
-          val key = searchQueryCacheKeyFor(conversation, context.parameter)
-          context.cacheService.set(key, v, 5.minutes)
-          context.dataService.collectedParameterValues.deleteForAction(context.parameter, conversation)
-        }.getOrElse(DBIO.successful({})).flatMap { _ =>
-          promptResultForSearchCaseAction(None, context, paramState, isReminding)
-        }
-      }.getOrElse {
-        super.promptResultForAction(maybePreviousCollectedValue, context, paramState, isReminding)
-      }
     }
   }
 
@@ -662,21 +688,41 @@ case class BehaviorBackedDataType(dataTypeConfig: DataTypeConfig) extends Behavi
     context.dataService.run(usesSearchAction(context))
   }
 
+  private def maybeOngoingConversationForAction(context: BehaviorParameterContext)(implicit ec: ExecutionContext): DBIO[Option[Conversation]] = {
+    context.dataService.conversations.allOngoingForAction(
+      context.event.userIdForContext,
+      context.event.context,
+      context.event.maybeChannel,
+      context.maybeConversation.flatMap(_.maybeThreadId),
+      context.event.teamId
+    ).map { convos =>
+      convos.filterNot(context.maybeConversation.contains).headOption
+    }
+  }
+
   override def promptResultForAction(
                                maybePreviousCollectedValue: Option[String],
                                context: BehaviorParameterContext,
                                paramState: ParamCollectionState,
                                isReminding: Boolean
-                             )(implicit ec: ExecutionContext): DBIO[BotResult] = {
-    usesSearchAction(context).flatMap { usesSearch =>
-      if (usesSearch) {
-        promptResultForSearchCaseAction(maybePreviousCollectedValue, context, paramState, isReminding)
-      } else if (isCollectingOther(context)) {
-        promptResultForOtherCaseAction(context)
+                             )(implicit actorSystem: ActorSystem, ec: ExecutionContext): DBIO[BotResult] = {
+    for {
+      superPrompt <- super.promptTextForAction(maybePreviousCollectedValue, context, paramState, isReminding)
+      behaviorResponse <- context.dataService.behaviorResponses.buildForAction(
+        context.event,
+        behaviorVersion,
+        Map(),
+        None,
+        None,
+        context.maybeConversation.map(c => NewParentConversation(c, context.parameter))
+      )
+      initialResult <- DBIO.from(behaviorResponse.result)
+      result <- if (initialResult.maybeConversation.isDefined) {
+        DBIO.successful(initialResult)
       } else {
-        promptResultForListAllCaseAction(None, maybePreviousCollectedValue, context, paramState, isReminding)
+        promptResultWithValidValuesResult(initialResult, context)
       }
-    }
+    } yield result
   }
 
   def isOther(context: BehaviorParameterContext): Boolean = {
@@ -689,28 +735,15 @@ case class BehaviorBackedDataType(dataTypeConfig: DataTypeConfig) extends Behavi
     context.event.relevantMessageText == Conversation.SEARCH_AGAIN_MENU_ITEM_TEXT
   }
 
-  override def handleCollected(event: Event, context: BehaviorParameterContext)(implicit ec: ExecutionContext): Future[Unit] = {
-    usesSearch(context).flatMap { usesSearch =>
-      if (usesSearch && maybeCachedSearchQueryFor(context).isEmpty && context.maybeConversation.isDefined) {
-        val key = searchQueryCacheKeyFor(context.maybeConversation.get, context.parameter)
-        val searchQuery = event.relevantMessageText
-        context.cacheService.set(key, searchQuery, 5.minutes)
-        Future.successful({})
-      } else if (!isCollectingOther(context) && isOther(context) && context.maybeConversation.isDefined) {
-        maybeCollectingOtherCacheKeyFor(context).foreach { key =>
-          context.cacheService.set(key, "true", 5.minutes)
-        }
-        Future.successful({})
-      } else if (usesSearch && maybeCachedSearchQueryFor(context).nonEmpty && isRequestingSearchAgain(context)) {
-        val key = searchQueryCacheKeyFor(context.maybeConversation.get, context.parameter)
-        context.cacheService.remove(key)
-        Future.successful({})
-      } else {
+  override def handleCollected(event: Event, context: BehaviorParameterContext)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Unit] = {
+    context.dataService.run(maybeOngoingConversationForAction(context)).flatMap { maybeConvo =>
+      if (maybeConvo.isEmpty) {
         super.handleCollected(event, context)
+      } else {
+        Future.successful({})
       }
     }
   }
-
 }
 
 object BehaviorParameterType {

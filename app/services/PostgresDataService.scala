@@ -1,7 +1,6 @@
 package services
 
 import javax.inject._
-
 import models._
 import models.accounts.github.profile.GithubProfileService
 import models.accounts.linkedaccount.LinkedAccountService
@@ -29,6 +28,7 @@ import models.behaviors.config.requiredoauth2apiconfig.RequiredOAuth2ApiConfigSe
 import models.behaviors.config.requiredsimpletokenapi.RequiredSimpleTokenApiService
 import models.behaviors.conversations.collectedparametervalue.CollectedParameterValueService
 import models.behaviors.conversations.conversation.ConversationService
+import models.behaviors.conversations.parentconversation.ParentConversationService
 import models.behaviors.datatypeconfig.DataTypeConfigService
 import models.behaviors.datatypefield.DataTypeFieldService
 import models.behaviors.defaultstorageitem.DefaultStorageItemService
@@ -95,6 +95,7 @@ class PostgresDataService @Inject() (
                                       val requiredSimpleTokenApiConfigsProvider: Provider[RequiredSimpleTokenApiService],
                                       val linkedGithubReposProvider: Provider[LinkedGithubRepoService],
                                       val conversationsProvider: Provider[ConversationService],
+                                      val parentConversationsProvider: Provider[ParentConversationService],
                                       val collectedParameterValuesProvider: Provider[CollectedParameterValueService],
                                       val scheduledMessagesProvider: Provider[ScheduledMessageService],
                                       val scheduledBehaviorsProvider: Provider[ScheduledBehaviorService],
@@ -148,6 +149,7 @@ class PostgresDataService @Inject() (
   val requiredSimpleTokenApis = requiredSimpleTokenApiConfigsProvider.get
   val linkedGithubRepos = linkedGithubReposProvider.get
   val conversations = conversationsProvider.get
+  val parentConversations = parentConversationsProvider.get
   val collectedParameterValues = collectedParameterValuesProvider.get
   val scheduledMessages = scheduledMessagesProvider.get
   val scheduledBehaviors = scheduledBehaviorsProvider.get

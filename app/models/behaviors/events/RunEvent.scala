@@ -105,6 +105,7 @@ case class RunEvent(
             behaviorVersion,
             invocationParams,
             None,
+            None,
             None
           )
         } yield Seq(response)

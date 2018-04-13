@@ -26,6 +26,8 @@ trait ConversationService {
 
   def maybeNextNeedingReminderAction(when: OffsetDateTime): DBIO[Option[Conversation]]
 
+  def findOngoingForAction(userIdForContext: String, context: String, maybeChannel: Option[String], maybeThreadId: Option[String], teamId: String): DBIO[Option[Conversation]]
+
   def findOngoingFor(userIdForContext: String, context: String, maybeChannel: Option[String], maybeThreadId: Option[String], teamId: String): Future[Option[Conversation]]
 
   def cancelAction(conversation: Conversation): DBIO[Unit]

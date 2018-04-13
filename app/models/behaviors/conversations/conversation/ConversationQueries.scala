@@ -36,7 +36,8 @@ object ConversationQueries {
       raw.maybeLastInteractionAt,
       raw.state,
       raw.maybeScheduledMessageId,
-      EventType.maybeFrom(raw.maybeOriginalEventType)
+      EventType.maybeFrom(raw.maybeOriginalEventType),
+      raw.maybeParentId
     )
   }
 
@@ -50,7 +51,8 @@ object ConversationQueries {
       filter { case((convo, _), _) => convo.userIdForContext === userIdForContext }.
       filter { case((convo, _), _) => convo.context === context }.
       filterNot { case((convo, _), _) => convo.state === Conversation.DONE_STATE }.
-      filter { case((_, (_, (b, _))), _) => b._2._1.teamId === teamId }
+      filter { case((_, (_, (b, _))), _) => b._2._1.teamId === teamId }.
+      sortBy { case((convo, _), _) => convo.startedAt.desc }
   }
   val allOngoingQueryFor = Compiled(uncompiledAllOngoingQueryFor _)
 
