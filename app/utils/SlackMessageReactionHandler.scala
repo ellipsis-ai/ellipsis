@@ -26,7 +26,7 @@ object SlackMessageReactionHandler {
       Thread.sleep(delayMilliseconds)
       if (!p.isCompleted) {
         client.addReactionToMessage(INITIAL_REACTION, channel, messageTs).map(_ => {
-          updateReactionClock(p, client, channel, messageTs)
+          updateReactionProgress(p, client, channel, messageTs)
         })
         p.future.onComplete(_ => {
           client.removeReactionFromMessage(INITIAL_REACTION, channel, messageTs)
@@ -40,7 +40,7 @@ object SlackMessageReactionHandler {
     PROGRESS_REACTIONS(updateCount % PROGRESS_REACTIONS.length)
   }
 
-  private def updateReactionClock[T](p: Promise[T], client: SlackApiClient, channel: String, messageTs: String, updateCount: Int = 0)
+  private def updateReactionProgress[T](p: Promise[T], client: SlackApiClient, channel: String, messageTs: String, updateCount: Int = 0)
                             (implicit system: ActorSystem): Unit = {
     implicit val ec: ExecutionContext = system.dispatcher
     if (!p.isCompleted) {
@@ -50,7 +50,7 @@ object SlackMessageReactionHandler {
       val next = updateCount + 1
       client.addReactionToMessage(emojiFor(next), channel, messageTs)
       Thread.sleep(PROGRESS_EMOJI_DURATION_MS)
-      updateReactionClock(p, client, channel, messageTs, next)
+      updateReactionProgress(p, client, channel, messageTs, next)
     }
   }
 }
