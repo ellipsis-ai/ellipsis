@@ -8,7 +8,9 @@ import scala.concurrent.{ExecutionContext, Future, Promise}
 
 object SlackMessageReactionHandler {
 
-  val HOURGLASS_EMOJI_DURATION_MS = 3000 // ms
+  val PROGRESS_EMOJI_DURATION_MS = 3000 // ms
+  val INITIAL_REACTION = "thinking_face"
+  val PROGRESS_REACTIONS = Seq("hourglass", "hourglass_flowing_sand")
 
   def handle[T](client: SlackApiClient, future: Future[T], channel: String, messageTs: String, delayMilliseconds: Int = 1500)
                (implicit system: ActorSystem): Future[Unit] = {
@@ -23,20 +25,19 @@ object SlackMessageReactionHandler {
     Future {
       Thread.sleep(delayMilliseconds)
       if (!p.isCompleted) {
-        client.addReactionToMessage("thinking_face", channel, messageTs).map(_ => {
+        client.addReactionToMessage(INITIAL_REACTION, channel, messageTs).map(_ => {
           updateReactionClock(p, client, channel, messageTs)
         })
         p.future.onComplete(_ => {
-          client.removeReactionFromMessage("thinking_face", channel, messageTs)
-          client.removeReactionFromMessage("hourglass", channel, messageTs)
-          client.removeReactionFromMessage("hourglass_flowing_sand", channel, messageTs)
+          client.removeReactionFromMessage(INITIAL_REACTION, channel, messageTs)
+          PROGRESS_REACTIONS.foreach(ea => client.removeReactionFromMessage(ea, channel, messageTs))
         })
       }
     }
   }
 
   private def emojiFor(elapsedSeconds: Int): String = {
-    if (elapsedSeconds % 2 == 1) { "hourglass" } else { "hourglass_flowing_sand" }
+    PROGRESS_REACTIONS(elapsedSeconds % PROGRESS_REACTIONS.length)
   }
 
   private def updateReactionClock[T](p: Promise[T], client: SlackApiClient, channel: String, messageTs: String, elapsedSeconds: Int = 0)
@@ -48,7 +49,7 @@ object SlackMessageReactionHandler {
       }
       val next = elapsedSeconds + 1
       client.addReactionToMessage(emojiFor(next), channel, messageTs)
-      Thread.sleep(HOURGLASS_EMOJI_DURATION_MS)
+      Thread.sleep(PROGRESS_EMOJI_DURATION_MS)
       updateReactionClock(p, client, channel, messageTs, next)
     }
   }
