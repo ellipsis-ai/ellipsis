@@ -378,15 +378,7 @@ case class BehaviorBackedDataType(dataTypeConfig: DataTypeConfig) extends Behavi
   val team = behaviorVersion.team
 
   def maybeValidValueForSavedAnswer(value: ValidValue, context: BehaviorParameterContext)(implicit ec: ExecutionContext): Future[Option[ValidValue]] = {
-    usesSearch(context).flatMap { usesSearch =>
-      if (usesSearch) {
-        fetchValidValues(Some(value.label), context).map { values =>
-          values.find(_.id == value.id)
-        }
-      } else {
-        fetchMatchFor(value.id, context)
-      }
-    }
+    fetchMatchFor(value.id, context)
   }
 
   def isValid(text: String, context: BehaviorParameterContext)(implicit ec: ExecutionContext) = {
@@ -678,31 +670,6 @@ case class BehaviorBackedDataType(dataTypeConfig: DataTypeConfig) extends Behavi
     }
   }
 
-  private def usesSearchAction(context: BehaviorParameterContext)(implicit ec: ExecutionContext): DBIO[Boolean] = {
-    if (dataTypeConfig.usesCode) {
-      context.dataService.behaviorVersions.hasSearchParamAction(behaviorVersion)
-    } else {
-      context.dataService.defaultStorageItems.countForAction(behaviorVersion.behavior).map { count =>
-        count >= BehaviorParameterType.SEARCH_COUNT_THRESHOLD
-      }
-    }
-  }
-
-  private def usesSearch(context: BehaviorParameterContext)(implicit ec: ExecutionContext): Future[Boolean] = {
-    context.dataService.run(usesSearchAction(context))
-  }
-
-  private def maybeOngoingConversationForAction(context: BehaviorParameterContext)(implicit ec: ExecutionContext): DBIO[Option[Conversation]] = {
-    context.dataService.conversations.allOngoingForAction(
-      context.event.userIdForContext,
-      context.event.context,
-      context.event.maybeChannel,
-      context.maybeConversation.flatMap(_.maybeThreadId),
-      context.event.teamId
-    ).map { convos =>
-      convos.filterNot(context.maybeConversation.contains).headOption
-    }
-  }
 
   override def promptResultForAction(
                                maybePreviousCollectedValue: Option[String],
@@ -738,15 +705,6 @@ case class BehaviorBackedDataType(dataTypeConfig: DataTypeConfig) extends Behavi
     context.event.relevantMessageText == Conversation.SEARCH_AGAIN_MENU_ITEM_TEXT
   }
 
-  override def handleCollected(event: Event, context: BehaviorParameterContext)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Unit] = {
-    context.dataService.run(maybeOngoingConversationForAction(context)).flatMap { maybeConvo =>
-      if (maybeConvo.isEmpty) {
-        super.handleCollected(event, context)
-      } else {
-        Future.successful({})
-      }
-    }
-  }
 }
 
 object BehaviorParameterType {
