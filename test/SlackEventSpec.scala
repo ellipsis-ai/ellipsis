@@ -29,7 +29,7 @@ class SlackEventSpec extends PlaySpec with MockitoSugar {
                            ) extends SlackEvent {
 
     val userSlackTeamId: String = slackTeamId
-
+    val isUninterruptedConversation: Boolean = false
   }
 
   val slackUserId = "U12345678"

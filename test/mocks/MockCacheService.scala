@@ -66,4 +66,10 @@ class MockCacheService extends CacheService with MockitoSugar {
   def cacheBotName(name: String, teamId: String): Unit = {}
 
   def getBotName(teamId: String): Option[String] = Some("MockBot")
+
+  def cacheLastConversationId(teamId: String, channelId: String, conversationId: String): Unit = {}
+
+  def clearLastConversationId(teamId: String, channelId: String): Unit = {}
+
+  def getLastConversationId(teamId: String, channelId: String): Option[String] = None
 }

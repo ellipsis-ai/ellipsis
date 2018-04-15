@@ -42,7 +42,7 @@ sealed trait BehaviorParameterType extends FieldTypeForSchema {
 
   def invalidValueModifierFor(maybePreviousCollectedValue: Option[String]): String = {
     if (maybePreviousCollectedValue.isDefined) {
-      invalidPromptModifier
+      invalidPromptModifier + "\n\n"
     } else {
       ""
     }
@@ -64,23 +64,20 @@ sealed trait BehaviorParameterType extends FieldTypeForSchema {
         DBIO.from(context.unfilledParamCount(paramState))
       }.getOrElse(DBIO.successful(0))
     } yield {
+      val prefix = context.event.messageRecipientPrefix
       val invalidModifier = invalidValueModifierFor(maybePreviousCollectedValue)
       val preamble = if (isReminding || !isFirst || paramCount <= 1 || invalidModifier.nonEmpty) {
         ""
       } else {
-        context.event.messageRecipientPrefix ++ (if (paramCount == 2) {
+        (if (paramCount == 2) {
           s"I need to ask you a couple of questions."
         } else if (paramCount < 5) {
           s"I need to ask you a few questions."
         } else {
           s"I need to ask you some questions."
-        })
+        }) + "\n\n"
       }
-      s"""$preamble
-         |
-         |$invalidModifier
-         |
-         |__${questionTextFor(context)}__""".stripMargin
+      s"""$prefix$preamble$invalidModifier __${questionTextFor(context)}__"""
     }
   }
 
@@ -587,18 +584,19 @@ case class BehaviorBackedDataType(dataTypeConfig: DataTypeConfig) extends Behavi
                                           paramState: ParamCollectionState,
                                           isReminding: Boolean
                                         )(implicit actorSystem: ActorSystem, ec: ExecutionContext): DBIO[BotResult] = {
+    val prefix = context.event.messageRecipientPrefix
     for {
       superPrompt <- maybeSearchQuery.map { searchQuery =>
-        DBIO.successful(s"Here are some options for `$searchQuery`.")
+        DBIO.successful(s"${prefix}Here are some options for `$searchQuery`.")
       }.getOrElse(super.promptResultForAction(maybePreviousCollectedValue, context, paramState, isReminding).map(_.text))
       validValues <- fetchValidValuesAction(maybeSearchQuery, context)
       output <- if (validValues.isEmpty) {
         maybeSearchQuery.map { searchQuery =>
           val key = searchQueryCacheKeyFor(context.maybeConversation.get, context.parameter)
           context.cacheService.remove(key)
-          DBIO.successful(context.simpleTextResultFor(s"I couldn't find anything matching `$searchQuery`. Try searching again or type $stopText."))
+          DBIO.successful(context.simpleTextResultFor(s"${prefix}I couldn't find anything matching `$searchQuery`. Try searching again or type $stopText."))
         }.getOrElse {
-          cancelAndRespondForAction(s"This data type isn't returning any values: ${editLinkFor(context)}", context)
+          cancelAndRespondForAction(s"${prefix}This data type isn't returning any values: ${editLinkFor(context)}", context)
         }
       } else {
         context.maybeConversation.foreach { conversation =>

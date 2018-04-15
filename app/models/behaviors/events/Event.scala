@@ -37,12 +37,13 @@ trait Event {
   val includesBotMention: Boolean
   val messageRecipientPrefix: String
   val isPublicChannel: Boolean
+  val isUninterruptedConversation: Boolean = false
 
   def originalEventType: EventType = {
     maybeOriginalEventType.getOrElse(eventType)
   }
 
-  def withOriginalEventType(originalEventType: EventType): Event
+  def withOriginalEventType(originalEventType: EventType, isUninterruptedConversation: Boolean): Event
 
   def logTextForResultSource: String = "in response to slack message"
 

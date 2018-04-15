@@ -305,7 +305,8 @@ class SlackController @Inject() (
               maybeFile,
               info.ts,
               slackEventService.clientFor(botProfile),
-              None
+              None,
+              isUninterruptedConversation = false
             )
           )
         } yield {}
@@ -700,7 +701,8 @@ class SlackController @Inject() (
           None,
           info.message_ts,
           slackEventService.clientFor(profile),
-          None
+          None,
+          isUninterruptedConversation = false
         ))
       }).getOrElse {
         Future.successful({})

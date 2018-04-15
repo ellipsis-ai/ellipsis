@@ -19,6 +19,7 @@ trait SlackEvent {
   val channel: String
   val profile: SlackBotProfile
   val client: SlackApiClient
+  val isUninterruptedConversation: Boolean
   def eventualMaybeDMChannel(cacheService: CacheService)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[String]] = {
     client.openIm(user).map(Some(_)).recover {
       case e: ApiError => {
@@ -39,7 +40,7 @@ trait SlackEvent {
     !isDirectMessage && !isPrivateChannel
   }
   val messageRecipientPrefix: String = {
-    if (isDirectMessage) {
+    if (isDirectMessage || isUninterruptedConversation) {
       ""
     } else {
       s"<@$user>: "

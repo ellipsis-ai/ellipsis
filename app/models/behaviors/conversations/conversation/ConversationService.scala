@@ -55,7 +55,7 @@ trait ConversationService {
   def touch(conversation: Conversation): Future[Conversation]
 
   def interruptionPromptFor(event: Event, prompt: String, includeUsername: Boolean): String = {
-    val usernameString = if (includeUsername) { s"<@${event.userIdForContext}>: " } else { "" }
+    val usernameString = if (includeUsername) { event.messageRecipientPrefix } else { "" }
     s"""$usernameString$prompt You can continue the previous conversation in this thread:""".stripMargin
   }
 

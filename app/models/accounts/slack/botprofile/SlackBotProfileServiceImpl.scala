@@ -121,7 +121,8 @@ class SlackBotProfileServiceImpl @Inject() (
           None,
           SlackTimestamp.now,
           slackEventService.clientFor(botProfile),
-          maybeOriginalEventType
+          maybeOriginalEventType,
+          isUninterruptedConversation = false
         )
       }
     }
@@ -189,7 +190,8 @@ class SlackBotProfileServiceImpl @Inject() (
       None,
       SlackTimestamp.now,
       slackEventService.clientFor(botProfile),
-      None
+      None,
+      isUninterruptedConversation = false
     )
     (for {
       _ <- {

@@ -25,7 +25,7 @@ case class TestEvent(
 
   val eventType: EventType = EventType.test
   val maybeOriginalEventType: Option[EventType] = None
-  def withOriginalEventType(originalEventType: EventType): Event = this
+  def withOriginalEventType(originalEventType: EventType, isUninterrupted: Boolean): Event = this
 
   val teamId = team.id
 

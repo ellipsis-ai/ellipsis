@@ -28,7 +28,7 @@ class ParamCollectionStateSpec extends DBSpec {
 
         val behaviorVersion = runNow(dataService.behaviorVersions.allForGroupVersion(groupVersion)).head
         val trigger = runNow(dataService.messageTriggers.allFor(behaviorVersion)).head
-        val conversation = runNow(InvokeBehaviorConversation.createFor(behaviorVersion, event, event.maybeChannel, Some(trigger), None, dataService))
+        val conversation = runNow(InvokeBehaviorConversation.createFor(behaviorVersion, event, event.maybeChannel, Some(trigger), None, dataService, cacheService))
         val param = runNow(dataService.behaviorParameters.allFor(behaviorVersion)).head
 
         val savedAnswer = newSavedAnswerFor(param.input, user)
@@ -59,7 +59,7 @@ class ParamCollectionStateSpec extends DBSpec {
 
         val behaviorVersion = runNow(dataService.behaviorVersions.allForGroupVersion(groupVersion)).head
         val trigger = runNow(dataService.messageTriggers.allFor(behaviorVersion)).head
-        val conversation = runNow(InvokeBehaviorConversation.createFor(behaviorVersion, event, event.maybeChannel, Some(trigger), None, dataService))
+        val conversation = runNow(InvokeBehaviorConversation.createFor(behaviorVersion, event, event.maybeChannel, Some(trigger), None, dataService, cacheService))
         val param = runNow(dataService.behaviorParameters.allFor(behaviorVersion)).head
 
         val savedAnswer = newSavedAnswerFor(param.input, user)
@@ -90,7 +90,7 @@ class ParamCollectionStateSpec extends DBSpec {
 
         val behaviorVersion = runNow(dataService.behaviorVersions.allForGroupVersion(groupVersion)).head
         val trigger = runNow(dataService.messageTriggers.allFor(behaviorVersion)).head
-        val conversation = runNow(InvokeBehaviorConversation.createFor(behaviorVersion, event, event.maybeChannel, Some(trigger), None, dataService))
+        val conversation = runNow(InvokeBehaviorConversation.createFor(behaviorVersion, event, event.maybeChannel, Some(trigger), None, dataService, cacheService))
         val param = runNow(dataService.behaviorParameters.allFor(behaviorVersion)).head
 
         val savedAnswer = newSavedAnswerFor(param.input, user)

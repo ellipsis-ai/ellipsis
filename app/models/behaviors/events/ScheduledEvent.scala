@@ -18,7 +18,7 @@ case class ScheduledEvent(underlying: Event, scheduled: Scheduled) extends Event
 
   val eventType: EventType = EventType.scheduled
   val maybeOriginalEventType: Option[EventType] = None
-  def withOriginalEventType(originalEventType: EventType): Event = this
+  def withOriginalEventType(originalEventType: EventType, isUninterruptedConversation: Boolean): Event = this
 
   def eventualMaybeDMChannel(cacheService: CacheService)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[String]] = {
     underlying.eventualMaybeDMChannel(cacheService)
