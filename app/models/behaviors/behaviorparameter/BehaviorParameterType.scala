@@ -452,10 +452,6 @@ case class BehaviorBackedDataType(dataTypeConfig: DataTypeConfig) extends Behavi
     s"values-list-${conversation.id}-${parameter.id}"
   }
 
-  private def searchQueryCacheKeyFor(conversation: Conversation, parameter: BehaviorParameter): String = {
-    s"search-query-${conversation.id}-${parameter.id}"
-  }
-
   private def maybeCollectingOtherCacheKeyFor(context: BehaviorParameterContext): Option[String] = {
     context.maybeConversation.map { convo =>
       s"collecting-other-${convo.id}-${context.parameter.id}"
@@ -629,12 +625,6 @@ case class BehaviorBackedDataType(dataTypeConfig: DataTypeConfig) extends Behavi
         }
       }
     } yield output
-  }
-
-  private def maybeCachedSearchQueryFor(context: BehaviorParameterContext): Option[String] = {
-    context.maybeConversation.map { conversation =>
-      context.cacheService.get[String](searchQueryCacheKeyFor(conversation, context.parameter))
-    }.getOrElse(None)
   }
 
   private def isCollectingOther(context: BehaviorParameterContext): Boolean = {
