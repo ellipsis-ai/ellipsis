@@ -40,7 +40,8 @@ class RequiredAWSConfig extends RequiredApiConfigWithConfig implements RequiredA
   diffProps(): Array<DiffableProp> {
       return [{
         name: "Name used in code",
-        value: this.nameInCode || ""
+        value: this.nameInCode || "",
+        ignoreForPublished: true
       }, {
         name: "Configuration to use",
         value: this.configName(),
