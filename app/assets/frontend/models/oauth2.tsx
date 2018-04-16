@@ -48,7 +48,8 @@ class RequiredOAuth2Application extends RequiredApiConfigWithConfig implements D
         value: this.nameInCode || ""
       }, {
         name: "Configuration to use",
-        value: this.configName()
+        value: this.configName(),
+        ignoreForPublished: true
       }, {
         name: "Recommended scope",
         value: this.recommendedScope

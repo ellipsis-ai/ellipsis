@@ -43,7 +43,8 @@ class RequiredAWSConfig extends RequiredApiConfigWithConfig implements RequiredA
         value: this.nameInCode || ""
       }, {
         name: "Configuration to use",
-        value: this.configName()
+        value: this.configName(),
+        ignoreForPublished: true
       }];
     }
 

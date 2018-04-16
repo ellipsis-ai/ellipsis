@@ -278,7 +278,7 @@ describe('diffs', () => {
     it('builds the correct diff for a behavior group', () => {
       const version1 = BehaviorGroup.fromJson(behaviorGroupVersion1);
       const version2 = BehaviorGroup.fromJson(behaviorGroupVersion2);
-      const maybeDiff = maybeDiffFor(version1, version2);
+      const maybeDiff = maybeDiffFor(version1, version2, null, false);
       expect(maybeDiff).toBeTruthy();
       const diffText = maybeDiff && maybeDiff.displayText();
 
