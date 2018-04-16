@@ -16,7 +16,7 @@ trait CollectionState {
   val services: DefaultServices
   val event: Event
 
-  def isCompleteIn(conversation: Conversation)(implicit ec: ExecutionContext): Future[Boolean]
+  def isCompleteIn(conversation: Conversation)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Boolean]
   def collectValueFrom(conversation: InvokeBehaviorConversation)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Conversation]
   def promptResultForAction(conversation: Conversation, isReminding: Boolean)(implicit actorSystem: ActorSystem, ec: ExecutionContext): DBIO[BotResult]
 

@@ -30,7 +30,7 @@ case class SimpleTokenCollectionState(
     dataService.run(maybeNextToCollectAction)
   }
 
-  def isCompleteIn(conversation: Conversation)(implicit ec: ExecutionContext): Future[Boolean] = maybeNextToCollect.map(_.isEmpty)
+  def isCompleteIn(conversation: Conversation)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Boolean] = maybeNextToCollect.map(_.isEmpty)
 
   def collectValueFrom(conversation: InvokeBehaviorConversation)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Conversation] = {
     for {

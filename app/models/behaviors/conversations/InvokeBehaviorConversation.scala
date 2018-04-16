@@ -74,7 +74,7 @@ case class InvokeBehaviorConversation(
     } yield Seq(simpleTokenState, paramState)
   }
 
-  def updateToNextState(event: Event, services: DefaultServices)(implicit ec: ExecutionContext): Future[Conversation] = {
+  def updateToNextState(event: Event, services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Conversation] = {
     for {
       collectionStates <- collectionStatesFor(event, services)
       collectionStatesWithIsComplete <- Future.sequence(collectionStates.map { collectionState =>
@@ -139,7 +139,7 @@ case class InvokeBehaviorConversation(
   def maybeNextParamToCollect(
                                event: Event,
                                services: DefaultServices
-                     )(implicit ec: ExecutionContext): Future[Option[BehaviorParameter]] = {
+                     )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[BehaviorParameter]] = {
     for {
       collectionStates <- collectionStatesFor(event, services)
       maybeCollectionState <- Future.successful(collectionStates.find(_.name == state))

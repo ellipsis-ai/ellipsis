@@ -24,7 +24,7 @@ case class ParamCollectionState(
 
   val rankedParams = params.sortBy(_.rank)
 
-  def allLeftToCollect(conversation: Conversation)(implicit ec: ExecutionContext): Future[Seq[(BehaviorParameter, Option[String])]] = {
+  def allLeftToCollect(conversation: Conversation)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Seq[(BehaviorParameter, Option[String])]] = {
     val tuples = rankedParams.map { ea =>
       (ea, collected.find(_.parameter == ea), savedAnswers.find(_.inputId == ea.input.inputId))
     }
@@ -48,11 +48,11 @@ case class ParamCollectionState(
     }
   }
 
-  def maybeNextToCollect(conversation: Conversation)(implicit ec: ExecutionContext): Future[Option[(BehaviorParameter, Option[String])]] = {
+  def maybeNextToCollect(conversation: Conversation)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[(BehaviorParameter, Option[String])]] = {
     allLeftToCollect(conversation).map(_.headOption)
   }
 
-  def isCompleteIn(conversation: Conversation)(implicit ec: ExecutionContext): Future[Boolean] = maybeNextToCollect(conversation).map(_.isEmpty)
+  def isCompleteIn(conversation: Conversation)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Boolean] = maybeNextToCollect(conversation).map(_.isEmpty)
 
   def invocationMap: Map[String, String] = {
     rankedParams.zipWithIndex.map { case(ea, i) =>

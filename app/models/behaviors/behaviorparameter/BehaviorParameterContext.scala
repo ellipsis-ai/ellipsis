@@ -1,5 +1,6 @@
 package models.behaviors.behaviorparameter
 
+import akka.actor.ActorSystem
 import models.behaviors.SimpleTextResult
 import models.behaviors.behaviorversion.BehaviorVersion
 import models.behaviors.conversations.ParamCollectionState
@@ -27,7 +28,7 @@ case class BehaviorParameterContext(
     services.dataService.behaviorParameters.isFirstForBehaviorVersionAction(parameter)
   }
 
-  def unfilledParamCount(paramState: ParamCollectionState)(implicit ec: ExecutionContext): Future[Int] = {
+  def unfilledParamCount(paramState: ParamCollectionState)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Int] = {
     maybeConversation.map { conversation =>
       paramState.allLeftToCollect(conversation).map(_.size)
     }.getOrElse(Future.successful(0))

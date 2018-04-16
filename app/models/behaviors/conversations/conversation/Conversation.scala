@@ -114,7 +114,7 @@ trait Conversation {
   def maybeNextParamToCollect(
                                event: Event,
                                services: DefaultServices
-                             )(implicit ec: ExecutionContext): Future[Option[BehaviorParameter]]
+                             )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[BehaviorParameter]]
 
   def maybeRemindResultAction(
                                services: DefaultServices

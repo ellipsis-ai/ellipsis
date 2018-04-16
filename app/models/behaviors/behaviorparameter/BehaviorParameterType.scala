@@ -13,13 +13,13 @@ import models.behaviors.events.SlackMessageActionConstants._
 import models.behaviors.events._
 import play.api.libs.json._
 import services.AWSLambdaConstants._
+import services.DataService
 import services.caching.DataTypeBotResultsCacheKey
-import services.{AWSLambdaConstants, DataService}
 import slick.dbio.DBIO
 import utils.Color
 
-import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration._
+import scala.concurrent.{ExecutionContext, Future}
 
 case class FetchValidValuesBadResultException(result: BotResult) extends Exception(s"Couldn't fetch data type values: ${result.resultType}")
 
@@ -31,9 +31,9 @@ sealed trait BehaviorParameterType extends FieldTypeForSchema {
   def needsConfig(dataService: DataService)(implicit ec: ExecutionContext): Future[Boolean]
   val isBuiltIn: Boolean
 
-  def isValid(text: String, context: BehaviorParameterContext)(implicit ec: ExecutionContext): Future[Boolean]
+  def isValid(text: String, context: BehaviorParameterContext)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Boolean]
 
-  def prepareForInvocation(text: String, context: BehaviorParameterContext)(implicit ec: ExecutionContext): Future[JsValue]
+  def prepareForInvocation(text: String, context: BehaviorParameterContext)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[JsValue]
 
   def invalidPromptModifier: String
 
@@ -95,7 +95,7 @@ sealed trait BehaviorParameterType extends FieldTypeForSchema {
     DBIO.successful(result)
   }
 
-  def resolvedValueFor(text: String, context: BehaviorParameterContext)(implicit ec: ExecutionContext): Future[Option[String]]
+  def resolvedValueFor(text: String, context: BehaviorParameterContext)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[String]]
 
   def potentialValueFor(event: Event, context: BehaviorParameterContext): String = event.relevantMessageText
 
@@ -126,12 +126,12 @@ trait BuiltInType extends BehaviorParameterType {
   lazy val exportId = name
   val isBuiltIn: Boolean = true
   def needsConfig(dataService: DataService)(implicit ec: ExecutionContext) = Future.successful(false)
-  def resolvedValueFor(text: String, context: BehaviorParameterContext)(implicit ec: ExecutionContext): Future[Option[String]] = {
+  def resolvedValueFor(text: String, context: BehaviorParameterContext)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[String]] = {
     Future.successful(Some(text))
   }
   def prepareValue(text: String): JsValue
   def prepareJsValue(value: JsValue): JsValue
-  def prepareForInvocation(text: String, context: BehaviorParameterContext)(implicit ec: ExecutionContext) = Future.successful(prepareValue(text))
+  def prepareForInvocation(text: String, context: BehaviorParameterContext)(implicit actorSystem: ActorSystem, ec: ExecutionContext) = Future.successful(prepareValue(text))
 }
 
 object TextType extends BuiltInType {
@@ -139,7 +139,7 @@ object TextType extends BuiltInType {
 
   val outputName: String = "String"
 
-  def isValid(text: String, context: BehaviorParameterContext)(implicit ec: ExecutionContext) = Future.successful(true)
+  def isValid(text: String, context: BehaviorParameterContext)(implicit actorSystem: ActorSystem, ec: ExecutionContext) = Future.successful(true)
 
   def prepareValue(text: String) = JsString(text)
   def prepareJsValue(value: JsValue): JsValue = {
@@ -159,7 +159,7 @@ object NumberType extends BuiltInType {
 
   val outputName: String = "Float"
 
-  def isValid(text: String, context: BehaviorParameterContext)(implicit ec: ExecutionContext) = Future.successful {
+  def isValid(text: String, context: BehaviorParameterContext)(implicit actorSystem: ActorSystem, ec: ExecutionContext) = Future.successful {
     try {
       text.toDouble
       true
@@ -205,7 +205,7 @@ object YesNoType extends BuiltInType {
     }
   }
 
-  def isValid(text: String, context: BehaviorParameterContext)(implicit ec: ExecutionContext): Future[Boolean] = {
+  def isValid(text: String, context: BehaviorParameterContext)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Boolean] = {
     Future.successful(maybeValidValueFor(text).isDefined)
   }
 
@@ -268,7 +268,7 @@ object FileType extends BuiltInType {
     context.services.slackFileMap.maybeUrlFor(text).nonEmpty
   }
 
-  def isValid(text: String, context: BehaviorParameterContext)(implicit ec: ExecutionContext): Future[Boolean] = {
+  def isValid(text: String, context: BehaviorParameterContext)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Boolean] = {
     Future.successful {
       alreadyHasFile(text, context) || eventHasFile(context) || isIntentionallyEmpty(text)
     }
@@ -351,11 +351,11 @@ case class BehaviorBackedDataType(dataTypeConfig: DataTypeConfig) extends Behavi
     )
   }
 
-  def resolvedValueFor(text: String, context: BehaviorParameterContext)(implicit ec: ExecutionContext): Future[Option[String]] = {
+  def resolvedValueFor(text: String, context: BehaviorParameterContext)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[String]] = {
     cachedValidValueFor(text, context).map { vv =>
       Future.successful(Some(vv))
     }.getOrElse {
-      fetchMatchFor(text, context)
+      getMatchFor(text, context)
     }.map { maybeValidValue =>
       maybeValidValue.map(v => Json.toJson(v).toString)
     }
@@ -375,15 +375,15 @@ case class BehaviorBackedDataType(dataTypeConfig: DataTypeConfig) extends Behavi
 
   val team = behaviorVersion.team
 
-  def maybeValidValueForSavedAnswer(value: ValidValue, context: BehaviorParameterContext)(implicit ec: ExecutionContext): Future[Option[ValidValue]] = {
-    fetchMatchFor(value.id, context)
+  def maybeValidValueForSavedAnswer(value: ValidValue, context: BehaviorParameterContext)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[ValidValue]] = {
+    getMatchFor(value.id, context)
   }
 
-  def isValid(text: String, context: BehaviorParameterContext)(implicit ec: ExecutionContext) = {
+  def isValid(text: String, context: BehaviorParameterContext)(implicit actorSystem: ActorSystem, ec: ExecutionContext) = {
     maybeValidValueFor(text, context).map(_.isDefined)
   }
 
-  def maybeValidValueFor(text: String, context: BehaviorParameterContext)(implicit ec: ExecutionContext): Future[Option[ValidValue]] = {
+  def maybeValidValueFor(text: String, context: BehaviorParameterContext)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[ValidValue]] = {
     val maybeJson = try {
       Some(Json.parse(text))
     } catch {
@@ -400,7 +400,7 @@ case class BehaviorBackedDataType(dataTypeConfig: DataTypeConfig) extends Behavi
         cachedValidValueFor(text, context).map { v =>
           Future.successful(Some(v))
         }.getOrElse {
-          fetchMatchFor(text, context)
+          getMatchFor(text, context)
         }
       }
     }
@@ -438,7 +438,7 @@ case class BehaviorBackedDataType(dataTypeConfig: DataTypeConfig) extends Behavi
       orElse(cachedValidValueForLabel(text, context))
   }
 
-  def prepareForInvocation(text: String, context: BehaviorParameterContext)(implicit ec: ExecutionContext) = {
+  def prepareForInvocation(text: String, context: BehaviorParameterContext)(implicit actorSystem: ActorSystem, ec: ExecutionContext) = {
     maybeValidValueFor(text, context).map { maybeValidValue =>
       maybeValidValue.map { vv =>
         JsObject(Map(BehaviorParameterType.ID_PROPERTY -> JsString(vv.id), BehaviorParameterType.LABEL_PROPERTY -> JsString(vv.label)) ++ vv.data.map { case(k, v) => k -> JsString(v) })
@@ -462,17 +462,34 @@ case class BehaviorBackedDataType(dataTypeConfig: DataTypeConfig) extends Behavi
     }
   }
 
-  private def fetchValidValuesResultAction(maybeMatchText: Option[String], context: BehaviorParameterContext)(implicit ec: ExecutionContext): DBIO[Option[BotResult]] = {
-    val paramsWithValues = maybeMatchText.map { matchText =>
-      val value = ParameterValue(matchText, JsString(matchText), isValid=true)
-      Seq(ParameterWithValue(context.parameter, AWSLambdaConstants.invocationParamFor(0), Some(value)))
-    }.getOrElse(Seq())
-    val key = DataTypeBotResultsCacheKey(context.parameter.id, maybeMatchText, context.maybeConversation.map(_.id))
+  private def fetchValidValuesResultAction(
+                                            context: BehaviorParameterContext
+                                          )(implicit actorSystem: ActorSystem, ec: ExecutionContext): DBIO[BotResult] = {
     for {
-      maybeResult <- DBIO.from(context.cacheService.getDataTypeBotResult(key, (key: DataTypeBotResultsCacheKey) => {
-        context.dataService.behaviorVersions.resultFor(behaviorVersion, paramsWithValues, context.event, context.maybeConversation)
-      }).map(Some(_)))
-    } yield maybeResult
+      behaviorResponse <- context.dataService.behaviorResponses.buildForAction(
+        context.event,
+        behaviorVersion,
+        Map(),
+        None,
+        None,
+        context.maybeConversation.map(c => NewParentConversation(c, context.parameter))
+      )
+      result <- DBIO.from(behaviorResponse.result)
+    } yield result
+  }
+
+  private def getValidValuesResultAction(
+                                          context: BehaviorParameterContext
+                                        )(implicit actorSystem: ActorSystem, ec: ExecutionContext): DBIO[BotResult] = {
+    for {
+      maybeRootConvo <- context.maybeConversation.map { convo =>
+        context.dataService.parentConversations.ancestorsForAction(convo).map(_.reverse.headOption.orElse(context.maybeConversation))
+      }.getOrElse(DBIO.successful(None))
+      key <- DBIO.successful(DataTypeBotResultsCacheKey(context.parameter.id, None, maybeRootConvo.map(_.id)))
+      result <- DBIO.from(context.cacheService.getDataTypeBotResult(key, (key: DataTypeBotResultsCacheKey) => {
+        context.dataService.run(fetchValidValuesResultAction(context))
+      }))
+    } yield result
   }
 
   private def extractValidValueFrom(json: JsValue): Option[ValidValue] = {
@@ -498,13 +515,11 @@ case class BehaviorBackedDataType(dataTypeConfig: DataTypeConfig) extends Behavi
     }
   }
 
-  private def fetchValidValuesAction(maybeMatchText: Option[String], context: BehaviorParameterContext)(implicit ec: ExecutionContext): DBIO[Seq[ValidValue]] = {
+  private def getValidValuesAction(maybeMatchText: Option[String], context: BehaviorParameterContext)(implicit actorSystem: ActorSystem, ec: ExecutionContext): DBIO[Seq[ValidValue]] = {
     if (dataTypeConfig.usesCode) {
-      fetchValidValuesResultAction(maybeMatchText, context).map { maybeResult =>
-        maybeResult.map {
-          case r: SuccessResult => extractValidValues(r)
-          case r: BotResult => throw FetchValidValuesBadResultException(r)
-        }.getOrElse(Seq())
+      getValidValuesResultAction(context).map {
+        case r: SuccessResult => extractValidValues(r)
+        case r: BotResult => throw FetchValidValuesBadResultException(r)
       }
     } else {
       for {
@@ -552,16 +567,16 @@ case class BehaviorBackedDataType(dataTypeConfig: DataTypeConfig) extends Behavi
     }
   }
 
-  private def fetchValidValues(maybeMatchText: Option[String], context: BehaviorParameterContext)(implicit ec: ExecutionContext): Future[Seq[ValidValue]] = {
-    context.dataService.run(fetchValidValuesAction(maybeMatchText, context))
+  private def getValidValues(maybeMatchText: Option[String], context: BehaviorParameterContext)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Seq[ValidValue]] = {
+    context.dataService.run(getValidValuesAction(maybeMatchText, context))
   }
 
   private def textMatchesLabel(text: String, label: String, context: BehaviorParameterContext): Boolean = {
     text.toLowerCase == label.toLowerCase
   }
 
-  private def fetchMatchFor(text: String, context: BehaviorParameterContext)(implicit ec: ExecutionContext): Future[Option[ValidValue]] = {
-    fetchValidValues(Some(text), context).map { validValues =>
+  private def getMatchFor(text: String, context: BehaviorParameterContext)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[ValidValue]] = {
+    getValidValues(Some(text), context).map { validValues =>
       validValues.find {
         v => v.id == text || textMatchesLabel(text, v.label, context)
       }
@@ -636,15 +651,7 @@ case class BehaviorBackedDataType(dataTypeConfig: DataTypeConfig) extends Behavi
                                isReminding: Boolean
                              )(implicit actorSystem: ActorSystem, ec: ExecutionContext): DBIO[BotResult] = {
     for {
-      behaviorResponse <- context.dataService.behaviorResponses.buildForAction(
-        context.event,
-        behaviorVersion,
-        Map(),
-        None,
-        None,
-        context.maybeConversation.map(c => NewParentConversation(c, context.parameter))
-      )
-      initialResult <- DBIO.from(behaviorResponse.result)
+      initialResult <- getValidValuesResultAction(context)
       result <- if (isCollectingOther(context)) {
         promptResultForOtherCaseAction(context)
       } else if (initialResult.maybeConversation.isDefined) {

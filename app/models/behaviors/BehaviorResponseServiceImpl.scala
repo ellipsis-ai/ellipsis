@@ -1,5 +1,6 @@
 package models.behaviors
 
+import akka.actor.ActorSystem
 import javax.inject.Inject
 import models.behaviors.behavior.Behavior
 import models.behaviors.behaviorparameter.BehaviorParameterContext
@@ -17,7 +18,8 @@ import scala.concurrent.{ExecutionContext, Future}
 class BehaviorResponseServiceImpl @Inject() (
                                               services: DefaultServices,
                                               slackEventService: SlackEventService,
-                                              implicit val ec: ExecutionContext
+                                              implicit val ec: ExecutionContext,
+                                              implicit val actorSystem: ActorSystem
                                         ) extends BehaviorResponseService {
 
   val dataService = services.dataService
