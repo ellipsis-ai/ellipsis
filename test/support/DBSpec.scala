@@ -59,7 +59,7 @@ trait DBSpec extends PlaySpec with OneAppPerSuite with MockitoSugar {
 
   val dataService = app.injector.instanceOf(classOf[PostgresDataService])
   val lambdaService = app.injector.instanceOf(classOf[AWSLambdaService])
-  val actorSystem = app.injector.instanceOf(classOf[ActorSystem])
+  implicit val actorSystem = app.injector.instanceOf(classOf[ActorSystem])
   val slackEventService = app.injector.instanceOf(classOf[SlackEventService])
   val ws = app.injector.instanceOf(classOf[WSClient])
   val botResultService = app.injector.instanceOf(classOf[BotResultService])
