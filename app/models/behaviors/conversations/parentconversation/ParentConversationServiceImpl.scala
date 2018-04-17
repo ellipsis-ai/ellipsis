@@ -68,4 +68,12 @@ class ParentConversationServiceImpl @Inject() (
     }.getOrElse(DBIO.successful(None))
   }
 
+  def rootForAction(conversation: Conversation): DBIO[Conversation] = {
+    maybeForAction(conversation).flatMap { maybeParent =>
+      maybeParent.map { p =>
+        rootForAction(p.parent)
+      }.getOrElse(DBIO.successful(conversation))
+    }
+  }
+
 }

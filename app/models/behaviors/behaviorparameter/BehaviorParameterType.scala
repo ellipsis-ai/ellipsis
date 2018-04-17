@@ -485,15 +485,15 @@ case class BehaviorBackedDataType(dataTypeConfig: DataTypeConfig) extends Behavi
     } yield result
   }
 
+  private def dataTypeResultCacheKeyFor(context: BehaviorParameterContext)(implicit ec: ExecutionContext): DataTypeBotResultsCacheKey = {
+    DataTypeBotResultsCacheKey(context.parameter.id, None, context.maybeConversation.map(_.id))
+  }
+
   private def getValidValuesResultAction(
                                           context: BehaviorParameterContext
                                         )(implicit actorSystem: ActorSystem, ec: ExecutionContext): DBIO[BotResult] = {
     for {
-      maybeRootConvo <- context.maybeConversation.map { convo =>
-        context.dataService.parentConversations.ancestorsForAction(convo).map(_.reverse.headOption.orElse(context.maybeConversation))
-      }.getOrElse(DBIO.successful(None))
-      key <- DBIO.successful(DataTypeBotResultsCacheKey(context.parameter.id, None, maybeRootConvo.map(_.id)))
-      result <- DBIO.from(context.cacheService.getDataTypeBotResult(key, (key: DataTypeBotResultsCacheKey) => {
+      result <- DBIO.from(context.cacheService.getDataTypeBotResult(dataTypeResultCacheKeyFor(context), (key: DataTypeBotResultsCacheKey) => {
         context.dataService.run(fetchValidValuesResultAction(context))
       }))
     } yield result
@@ -673,14 +673,7 @@ case class BehaviorBackedDataType(dataTypeConfig: DataTypeConfig) extends Behavi
       }
       Future.successful({})
     } else if (isRequestingStartAgain(context)) {
-      for {
-        maybeRootConvo <- context.maybeConversation.map { convo =>
-          context.dataService.parentConversations.ancestorsFor(convo).map(_.reverse.headOption.orElse(context.maybeConversation))
-        }.getOrElse(Future.successful(None))
-      } yield {
-        val key = DataTypeBotResultsCacheKey(context.parameter.id, None, maybeRootConvo.map(_.id))
-        context.cacheService.clearDataTypeBotResult(key)
-      }
+      Future.successful(context.cacheService.clearDataTypeBotResult(dataTypeResultCacheKeyFor(context)))
     } else {
       super.handleCollected(event, context)
     }

@@ -151,14 +151,20 @@ sealed trait BotResult {
     } else {
       for {
         maybeChannelForSend <- maybeChannelForSendAction(maybeConversation, dataService)
-        familyIds <- maybeConversation.map { convo =>
-          dataService.parentConversations.ancestorsForAction(convo).map { ancestors =>
-            convo.id :: ancestors.map(_.id)
-          }
-        }.getOrElse(DBIO.successful(List()))
         ongoing <- dataService.conversations.allOngoingForAction(event.userIdForContext, event.context, maybeChannelForSend, event.maybeThreadId, event.teamId)
+        ongoingWithRoots <- DBIO.sequence(ongoing.map { ea =>
+          dataService.parentConversations.rootForAction(ea).map { root =>
+            (ea, root)
+          }
+        })
+        maybeRoot <- maybeConversation.map { convo =>
+          dataService.parentConversations.rootForAction(convo).map(Some(_))
+        }.getOrElse(DBIO.successful(None))
         interruptionResults <- {
-          val toInterrupt = ongoing.filterNot(ea => familyIds.contains(ea.id))
+          val toInterrupt =
+            ongoingWithRoots.
+              filterNot { case(_, root) => maybeRoot.isEmpty || maybeRoot.contains(root) }.
+              map { case(convo, _) => convo }
           DBIO.sequence(toInterrupt.map { ea =>
             dataService.conversations.backgroundAction(ea, interruptionPrompt, includeUsername = true)
           })

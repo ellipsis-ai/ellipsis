@@ -19,4 +19,6 @@ trait ParentConversationService {
     maybeConversation.map(maybeForAction).getOrElse(DBIO.successful(None))
   }
 
+  def rootForAction(conversation: Conversation): DBIO[Conversation]
+
 }
