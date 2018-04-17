@@ -122,6 +122,10 @@ class CacheServiceImpl @Inject() (
     dataTypeBotResultsCache.getOrLoad(key, dataFn)
   }
 
+  def clearDataTypeBotResult(key: DataTypeBotResultsCacheKey): Unit = {
+    dataTypeBotResultsCache.remove(key)
+  }
+
   private val slackChannelInfoCache = LfuCache[SlackChannelDataCacheKey, Option[Channel]](cacheSettingsWithTimeToLive(slackApiCallExpiry))
 
   def getSlackChannelInfo(key: SlackChannelDataCacheKey, dataFn: SlackChannelDataCacheKey => Future[Option[Channel]]): Future[Option[Channel]] = {

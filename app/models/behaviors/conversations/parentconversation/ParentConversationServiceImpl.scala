@@ -8,7 +8,7 @@ import models.behaviors.conversations.conversation.Conversation
 import services._
 import slick.dbio.DBIO
 
-import scala.concurrent.ExecutionContext
+import scala.concurrent.{ExecutionContext, Future}
 
 case class RawParentConversation(
                             id: String,
@@ -56,6 +56,10 @@ class ParentConversationServiceImpl @Inject() (
         }.getOrElse(DBIO.successful(List()))
       }
     }.getOrElse(DBIO.successful(List()))
+  }
+
+  def ancestorsFor(conversation: Conversation)(implicit ec: ExecutionContext): Future[List[Conversation]] = {
+    dataService.run(ancestorsForAction(conversation))
   }
 
   def maybeForAction(conversation: Conversation): DBIO[Option[ParentConversation]] = {

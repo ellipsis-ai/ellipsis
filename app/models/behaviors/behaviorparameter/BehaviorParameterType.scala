@@ -621,7 +621,7 @@ case class BehaviorBackedDataType(dataTypeConfig: DataTypeConfig) extends Behavi
           context.cacheService.cacheValidValues(valuesListCacheKeyFor(conversation, context.parameter), validValues)
         }
         val builtinMenuItems = Seq(
-          SlackMessageActionMenuItem(Conversation.SEARCH_AGAIN_MENU_ITEM_TEXT, Conversation.SEARCH_AGAIN_MENU_ITEM_TEXT),
+          SlackMessageActionMenuItem(Conversation.START_AGAIN_MENU_ITEM_TEXT, Conversation.START_AGAIN_MENU_ITEM_TEXT),
           SlackMessageActionMenuItem(Conversation.CANCEL_MENU_ITEM_TEXT, Conversation.CANCEL_MENU_ITEM_TEXT)
         )
         val menuItems = validValues.zipWithIndex.map { case (ea, i) =>
@@ -669,6 +669,15 @@ case class BehaviorBackedDataType(dataTypeConfig: DataTypeConfig) extends Behavi
         context.cacheService.set(key, "true", 5.minutes)
       }
       Future.successful({})
+    } else if (isRequestingStartAgain(context)) {
+      for {
+        maybeRootConvo <- context.maybeConversation.map { convo =>
+          context.dataService.parentConversations.ancestorsFor(convo).map(_.reverse.headOption.orElse(context.maybeConversation))
+        }.getOrElse(Future.successful(None))
+      } yield {
+        val key = DataTypeBotResultsCacheKey(context.parameter.id, None, maybeRootConvo.map(_.id))
+        context.cacheService.clearDataTypeBotResult(key)
+      }
     } else {
       super.handleCollected(event, context)
     }
@@ -680,8 +689,8 @@ case class BehaviorBackedDataType(dataTypeConfig: DataTypeConfig) extends Behavi
     }
   }
 
-  def isRequestingSearchAgain(context: BehaviorParameterContext): Boolean = {
-    context.event.relevantMessageText == Conversation.SEARCH_AGAIN_MENU_ITEM_TEXT
+  def isRequestingStartAgain(context: BehaviorParameterContext): Boolean = {
+    context.event.relevantMessageText == Conversation.START_AGAIN_MENU_ITEM_TEXT
   }
 
 }

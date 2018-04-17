@@ -169,5 +169,5 @@ object Conversation {
   val SECONDS_UNTIL_BACKGROUNDED = 3600
 
   val CANCEL_MENU_ITEM_TEXT = "Cancel the current action"
-  val SEARCH_AGAIN_MENU_ITEM_TEXT = "Try searching again"
+  val START_AGAIN_MENU_ITEM_TEXT = "Try again with different answers…"
 }
