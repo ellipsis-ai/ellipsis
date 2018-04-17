@@ -522,6 +522,39 @@ case class BehaviorBackedDataType(dataTypeConfig: DataTypeConfig) extends Behavi
     }
   }
 
+  private def validValuesFromDefaultStorageFor(
+                                                maybeMatchText: Option[String],
+                                                context: BehaviorParameterContext
+                                              )(implicit actorSystem: ActorSystem, ec: ExecutionContext): DBIO[Seq[ValidValue]] = {
+    for {
+      maybeLabelField <- context.dataService.dataTypeFields.allForAction(dataTypeConfig).map{ fields =>
+        fields.find(_.isLabel).orElse {
+          fields.find { ea =>
+            !ea.isId && ea.fieldType == TextType
+          }
+        }
+      }
+      items <- (for {
+        matchText <- maybeMatchText
+        labelField <- maybeLabelField
+      } yield {
+        context.services.dataService.defaultStorageItems.searchByFieldAction(s"%$matchText%", labelField)
+      }).getOrElse {
+        context.services.dataService.defaultStorageItems.allForAction(behaviorVersion.behavior)
+      }
+    } yield {
+      items.map(_.data).flatMap {
+        case ea: JsObject =>
+          val maybeLabel = maybeLabelField.flatMap { labelField => (ea \ labelField.name).asOpt[String] }
+          extractValidValueFrom(Json.toJson(Map(
+            "id" -> JsString(id),
+            "label" -> maybeLabel.map(JsString.apply).getOrElse(JsNull)
+          ) ++ ea.value))
+        case _ => None
+      }
+    }
+  }
+
   private def getValidValuesAction(maybeMatchText: Option[String], context: BehaviorParameterContext)(implicit actorSystem: ActorSystem, ec: ExecutionContext): DBIO[Seq[ValidValue]] = {
     if (dataTypeConfig.usesCode) {
       getValidValuesResultAction(context).map {
@@ -529,48 +562,7 @@ case class BehaviorBackedDataType(dataTypeConfig: DataTypeConfig) extends Behavi
         case r: BotResult => throw FetchValidValuesBadResultException(r)
       }
     } else {
-      for {
-        maybeLabelField <- context.dataService.dataTypeFields.allForAction(dataTypeConfig).map{ fields =>
-          fields.find(_.isLabel).orElse {
-            fields.find { ea =>
-              !ea.isId && ea.fieldType == TextType
-            }
-          }
-        }
-        filter <- DBIO.successful(maybeMatchText.map { matchText =>
-          maybeLabelField.map { field =>
-            s"""{ ${field.name}: \"$matchText\" }"""
-          }.getOrElse {
-            throw new RuntimeException("Need a valid label field")
-          }
-        }.getOrElse("{}"))
-        query <- behaviorVersion.outputFieldNamesAction(context.dataService).map { fieldStr =>
-          s"""{
-             |  ${behaviorVersion.listName}(filter: $filter) {
-             |  $fieldStr
-             |  }
-             |}
-         """.stripMargin
-        }
-        items <- (for {
-          matchText <- maybeMatchText
-          labelField <- maybeLabelField
-        } yield {
-          context.services.dataService.defaultStorageItems.searchByFieldAction(s"%$matchText%", labelField)
-        }).getOrElse {
-          context.services.dataService.defaultStorageItems.allForAction(behaviorVersion.behavior)
-        }
-      } yield {
-        items.map(_.data).flatMap {
-          case ea: JsObject =>
-            val maybeLabel = maybeLabelField.flatMap { labelField => (ea \ labelField.name).asOpt[String] }
-            extractValidValueFrom(Json.toJson(Map(
-              "id" -> JsString(id),
-              "label" -> maybeLabel.map(JsString.apply).getOrElse(JsNull)
-            ) ++ ea.value))
-          case _ => None
-        }
-      }
+      validValuesFromDefaultStorageFor(maybeMatchText, context)
     }
   }
 
@@ -600,11 +592,7 @@ case class BehaviorBackedDataType(dataTypeConfig: DataTypeConfig) extends Behavi
     DBIO.successful(context.simpleTextResultFor(s"OK, you chose “other”. What do you want to say instead?"))
   }
 
-  override def promptResultWithValidValuesResult(result: BotResult, context: BehaviorParameterContext)(implicit actorSystem: ActorSystem, ec: ExecutionContext): DBIO[BotResult] = {
-    val validValues = result match {
-      case r: SuccessResult => extractValidValues(r)
-      case _ => Seq()
-    }
+  private def promptResultWithValidValues(validValues: Seq[ValidValue], context: BehaviorParameterContext)(implicit actorSystem: ActorSystem, ec: ExecutionContext): DBIO[BotResult] = {
     for {
       output <- if (validValues.isEmpty) {
         context.services.dataService.behaviorParameters.allForAction(behaviorVersion).flatMap { params =>
@@ -638,6 +626,14 @@ case class BehaviorBackedDataType(dataTypeConfig: DataTypeConfig) extends Behavi
     } yield output
   }
 
+  override def promptResultWithValidValuesResult(result: BotResult, context: BehaviorParameterContext)(implicit actorSystem: ActorSystem, ec: ExecutionContext): DBIO[BotResult] = {
+    val validValues = result match {
+      case r: SuccessResult => extractValidValues(r)
+      case _ => Seq()
+    }
+    promptResultWithValidValues(validValues, context)
+  }
+
   private def isCollectingOther(context: BehaviorParameterContext): Boolean = {
     maybeCollectingOtherCacheKeyFor(context).exists { key =>
       context.cacheService.hasKey(key)
@@ -651,16 +647,23 @@ case class BehaviorBackedDataType(dataTypeConfig: DataTypeConfig) extends Behavi
                                paramState: ParamCollectionState,
                                isReminding: Boolean
                              )(implicit actorSystem: ActorSystem, ec: ExecutionContext): DBIO[BotResult] = {
-    for {
-      initialResult <- getValidValuesResultAction(context)
-      result <- if (isCollectingOther(context)) {
-        promptResultForOtherCaseAction(context)
-      } else if (initialResult.maybeConversation.isDefined) {
-        DBIO.successful(initialResult)
-      } else {
-        promptResultWithValidValuesResult(initialResult, context)
-      }
-    } yield result
+    if (dataTypeConfig.usesCode) {
+      for {
+        initialResult <- getValidValuesResultAction(context)
+        result <- if (isCollectingOther(context)) {
+          promptResultForOtherCaseAction(context)
+        } else if (initialResult.maybeConversation.isDefined) {
+          DBIO.successful(initialResult)
+        } else {
+          promptResultWithValidValuesResult(initialResult, context)
+        }
+      } yield result
+    } else {
+      for {
+        validValues <- validValuesFromDefaultStorageFor(None, context)
+        result <- promptResultWithValidValues(validValues, context)
+      } yield result
+    }
   }
 
   override def handleCollected(event: Event, context: BehaviorParameterContext)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Unit] = {
