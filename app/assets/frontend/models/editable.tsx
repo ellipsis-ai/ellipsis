@@ -1,16 +1,17 @@
 import DeepEqual from '../lib/deep_equal';
+import {Timestamp} from "../lib/formatter";
 
 export interface EditableJson {
   id?: Option<string>;
-  groupId: string;
-  teamId: string;
+  groupId?: Option<string>;
+  teamId?: Option<string>;
   isNew?: Option<boolean>;
   name?: Option<string>;
   description?: Option<string>;
   functionBody: string;
   exportId?: Option<string>;
   editorScrollPosition?: Option<number>;
-  createdAt?: Option<number>;
+  createdAt?: Option<Timestamp>;
 }
 
 export interface EditableInterface extends EditableJson {}
@@ -18,15 +19,15 @@ export interface EditableInterface extends EditableJson {}
 abstract class Editable implements EditableInterface {
   constructor(
     readonly id: Option<string>,
-    readonly groupId: string,
-    readonly teamId: string,
+    readonly groupId: Option<string>,
+    readonly teamId: Option<string>,
     readonly isNew: Option<boolean>,
     readonly name: Option<string>,
     readonly description: Option<string>,
     readonly functionBody: string,
     readonly exportId: Option<string>,
     readonly editorScrollPosition: Option<number>,
-    readonly createdAt: Option<number>
+    readonly createdAt: Option<Timestamp>
   ) {
       Object.defineProperties(this, {
         id: { value: id, enumerable: true },
@@ -54,8 +55,21 @@ abstract class Editable implements EditableInterface {
       return false;
     }
 
+    timestampToNumberString(): string {
+      const t = this.createdAt;
+      if (typeof t === "string") {
+        return Number(new Date(t)).toString();
+      } else if (typeof t === "number") {
+        return Number(new Date(t)).toString();
+      } else if (t instanceof Date) {
+        return Number(t).toString();
+      } else {
+        return "";
+      }
+    }
+
     timestampForAlphabeticalSort(): string {
-      const timestampString = this.createdAt ? Number(new Date(this.createdAt)).toString() : "";
+      const timestampString = this.timestampToNumberString();
       const pad = new Array(16).join("0");
       return pad.substring(0, pad.length - timestampString.length) + timestampString;
     }

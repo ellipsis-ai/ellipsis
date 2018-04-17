@@ -3,6 +3,7 @@ import {Diffable, DiffableProp} from './diffs';
 import ParamType, {ParamTypeJson} from './param_type';
 
 export interface InputJson {
+  id?: Option<String>;
   name: string;
   question: string;
   paramType?: Option<ParamTypeJson>;

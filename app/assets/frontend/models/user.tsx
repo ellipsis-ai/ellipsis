@@ -2,6 +2,7 @@ export interface UserJson {
   id: string,
   userName?: Option<string>;
   fullName?: Option<string>;
+  tz?: Option<string>;
 }
 
 interface UserInterface extends UserJson {}
@@ -10,12 +11,14 @@ class User {
     constructor(
       readonly id: string,
       readonly userName: Option<string>,
-      readonly fullName: Option<string>
+      readonly fullName: Option<string>,
+      readonly tz: Option<string>
     ) {
       Object.defineProperties(this, {
         id: { value: id, enumerable: true },
         userName: { value: userName, enumerable: true },
-        fullName: { value: fullName, enumerable: true }
+        fullName: { value: fullName, enumerable: true },
+        tz: { value: tz, enumerable: true }
       });
     }
 
@@ -51,7 +54,8 @@ class User {
       return new User(
         props.id,
         props.userName,
-        props.fullName
+        props.fullName,
+        props.tz
       );
     }
 
