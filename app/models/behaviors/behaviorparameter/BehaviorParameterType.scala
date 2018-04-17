@@ -592,26 +592,33 @@ case class BehaviorBackedDataType(dataTypeConfig: DataTypeConfig) extends Behavi
     DBIO.successful(context.simpleTextResultFor(s"OK, you chose “other”. What do you want to say instead?"))
   }
 
+  private def maybeStartAgainMenuItemFor(params: Seq[BehaviorParameter]): Option[SlackMessageActionMenuItem] = {
+    if (params.isEmpty) {
+      None
+    } else {
+      Some(SlackMessageActionMenuItem(Conversation.START_AGAIN_MENU_ITEM_TEXT, Conversation.START_AGAIN_MENU_ITEM_TEXT))
+    }
+  }
+
   private def promptResultWithValidValues(validValues: Seq[ValidValue], context: BehaviorParameterContext)(implicit actorSystem: ActorSystem, ec: ExecutionContext): DBIO[BotResult] = {
     for {
+      params <- context.services.dataService.behaviorParameters.allForAction(behaviorVersion)
       output <- if (validValues.isEmpty) {
-        context.services.dataService.behaviorParameters.allForAction(behaviorVersion).flatMap { params =>
-          if (params.isEmpty) {
-            cancelAndRespondForAction(s"This data type isn't returning any values: ${editLinkFor(context)}", context)
-          } else {
-            context.maybeConversation.map { convo =>
-              DBIO.from(convo.resultFor(context.event, context.services))
-            }.getOrElse(cancelAndRespondForAction(s"This data type isn't returning any values: ${editLinkFor(context)}", context))
-          }
+        if (params.isEmpty) {
+          cancelAndRespondForAction(s"This data type isn't returning any values: ${editLinkFor(context)}", context)
+        } else {
+          context.maybeConversation.map { convo =>
+            DBIO.from(convo.resultFor(context.event, context.services))
+          }.getOrElse(cancelAndRespondForAction(s"This data type isn't returning any values: ${editLinkFor(context)}", context))
         }
       } else {
         context.maybeConversation.foreach { conversation =>
           context.cacheService.cacheValidValues(valuesListCacheKeyFor(conversation, context.parameter), validValues)
         }
         val builtinMenuItems = Seq(
-          SlackMessageActionMenuItem(Conversation.START_AGAIN_MENU_ITEM_TEXT, Conversation.START_AGAIN_MENU_ITEM_TEXT),
-          SlackMessageActionMenuItem(Conversation.CANCEL_MENU_ITEM_TEXT, Conversation.CANCEL_MENU_ITEM_TEXT)
-        )
+          maybeStartAgainMenuItemFor(params),
+          Some(SlackMessageActionMenuItem(Conversation.CANCEL_MENU_ITEM_TEXT, Conversation.CANCEL_MENU_ITEM_TEXT))
+        ).flatten
         val menuItems = validValues.zipWithIndex.map { case (ea, i) =>
           SlackMessageActionMenuItem(s"${i+1}. ${ea.label}", ea.label)
         } ++ builtinMenuItems
