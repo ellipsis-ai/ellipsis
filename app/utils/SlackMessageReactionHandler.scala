@@ -8,7 +8,7 @@ import scala.concurrent.{ExecutionContext, Future, Promise}
 
 object SlackMessageReactionHandler {
 
-  val PROGRESS_EMOJI_DURATION_MS = 3000 // ms
+  val PROGRESS_EMOJI_DURATION_MS = 2500
   val INITIAL_REACTION = "thinking_face"
   val PROGRESS_REACTIONS = Seq("hourglass", "hourglass_flowing_sand")
 
@@ -26,14 +26,20 @@ object SlackMessageReactionHandler {
       Thread.sleep(delayMilliseconds)
       if (!p.isCompleted) {
         client.addReactionToMessage(INITIAL_REACTION, channel, messageTs).map(_ => {
-          updateReactionProgress(p, client, channel, messageTs)
+          if (!p.isCompleted) {
+            updateReactionProgress(p, client, channel, messageTs)
+          }
         })
-        p.future.onComplete(_ => {
-          client.removeReactionFromMessage(INITIAL_REACTION, channel, messageTs)
-          PROGRESS_REACTIONS.foreach(ea => client.removeReactionFromMessage(ea, channel, messageTs))
-        })
+        p.future.onComplete(_ => removeAll(client, channel, messageTs))
       }
     }
+  }
+
+  private def removeAll(client: SlackApiClient, channel: String, messageTs: String)
+                       (implicit system: ActorSystem): Unit = {
+    implicit val ec: ExecutionContext = system.dispatcher
+    client.removeReactionFromMessage(INITIAL_REACTION, channel, messageTs)
+    PROGRESS_REACTIONS.foreach(ea => client.removeReactionFromMessage(ea, channel, messageTs))
   }
 
   private def emojiFor(updateCount: Int): String = {
@@ -48,9 +54,10 @@ object SlackMessageReactionHandler {
         client.removeReactionFromMessage(emojiFor(updateCount), channel, messageTs)
       }
       val next = updateCount + 1
-      client.addReactionToMessage(emojiFor(next), channel, messageTs)
-      Thread.sleep(PROGRESS_EMOJI_DURATION_MS)
-      updateReactionProgress(p, client, channel, messageTs, next)
+      client.addReactionToMessage(emojiFor(next), channel, messageTs).map(_ => {
+        Thread.sleep(PROGRESS_EMOJI_DURATION_MS)
+        updateReactionProgress(p, client, channel, messageTs, next)
+      })
     }
   }
 }
