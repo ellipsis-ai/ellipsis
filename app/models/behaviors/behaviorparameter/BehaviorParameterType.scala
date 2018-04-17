@@ -6,7 +6,7 @@ import models.behaviors._
 import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
 import models.behaviors.conversations.ParamCollectionState
 import models.behaviors.conversations.conversation.Conversation
-import models.behaviors.conversations.parentconversation.NewParentConversation
+import models.behaviors.conversations.parentconversation.{NewParentConversation, ParentConversation}
 import models.behaviors.datatypeconfig.DataTypeConfig
 import models.behaviors.datatypefield.FieldTypeForSchema
 import models.behaviors.events.SlackMessageActionConstants._
@@ -53,6 +53,20 @@ sealed trait BehaviorParameterType extends FieldTypeForSchema {
     context.parameter.question.trim
   }
 
+  def preambleFor(paramCount: Int, maybeParent: Option[ParentConversation]): String = {
+    val iPart = maybeParent.map { p =>
+      s"To get to the question **${p.param.question}**, I first"
+    }.getOrElse("I")
+    val otherPart = maybeParent.map(_ => "other ").getOrElse("")
+    (if (paramCount == 2) {
+      s"$iPart need to ask you a couple of ${otherPart}questions."
+    } else if (paramCount < 5) {
+      s"$iPart need to ask you a few ${otherPart}questions."
+    } else {
+      s"$iPart need to ask you some ${otherPart}questions."
+    }) + "\n\n"
+  }
+
   def promptTextForAction(
                              maybePreviousCollectedValue: Option[String],
                              context: BehaviorParameterContext,
@@ -64,19 +78,16 @@ sealed trait BehaviorParameterType extends FieldTypeForSchema {
       paramCount <- maybeParamState.map { paramState =>
         DBIO.from(context.unfilledParamCount(paramState))
       }.getOrElse(DBIO.successful(0))
+      maybeParent <- context.maybeConversation.map { convo =>
+        context.dataService.parentConversations.maybeForAction(convo)
+      }.getOrElse(DBIO.successful(None))
     } yield {
       val prefix = context.event.messageRecipientPrefix
       val invalidModifier = invalidValueModifierFor(maybePreviousCollectedValue)
       val preamble = if (isReminding || !isFirst || paramCount <= 1 || invalidModifier.nonEmpty) {
         ""
       } else {
-        (if (paramCount == 2) {
-          s"I need to ask you a couple of questions."
-        } else if (paramCount < 5) {
-          s"I need to ask you a few questions."
-        } else {
-          s"I need to ask you some questions."
-        }) + "\n\n"
+        preambleFor(paramCount, maybeParent)
       }
       s"""$prefix$preamble$invalidModifier __${questionTextFor(context)}__"""
     }
@@ -655,7 +666,6 @@ case class BehaviorBackedDataType(dataTypeConfig: DataTypeConfig) extends Behavi
   override def handleCollected(event: Event, context: BehaviorParameterContext)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Unit] = {
     if (!isCollectingOther(context) && isOther(context) && context.maybeConversation.isDefined) {
       maybeCollectingOtherCacheKeyFor(context).foreach { key =>
-        println("caching other")
         context.cacheService.set(key, "true", 5.minutes)
       }
       Future.successful({})
