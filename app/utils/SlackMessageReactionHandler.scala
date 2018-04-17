@@ -8,7 +8,7 @@ import scala.concurrent.{ExecutionContext, Future, Promise}
 
 object SlackMessageReactionHandler {
 
-  val PROGRESS_EMOJI_DURATION_MS = 3000 // ms
+  val PROGRESS_EMOJI_DURATION_MS = 2500
   val INITIAL_REACTION = "thinking_face"
   val PROGRESS_REACTIONS = Seq("hourglass", "hourglass_flowing_sand")
 
@@ -28,12 +28,16 @@ object SlackMessageReactionHandler {
         client.addReactionToMessage(INITIAL_REACTION, channel, messageTs).map(_ => {
           updateReactionProgress(p, client, channel, messageTs)
         })
-        p.future.onComplete(_ => {
-          client.removeReactionFromMessage(INITIAL_REACTION, channel, messageTs)
-          PROGRESS_REACTIONS.foreach(ea => client.removeReactionFromMessage(ea, channel, messageTs))
-        })
+        p.future.onComplete(_ => removeAll(client, channel, messageTs))
       }
     }
+  }
+
+  private def removeAll(client: SlackApiClient, channel: String, messageTs: String)
+                       (implicit system: ActorSystem): Unit = {
+    implicit val ec: ExecutionContext = system.dispatcher
+    client.removeReactionFromMessage(INITIAL_REACTION, channel, messageTs)
+    PROGRESS_REACTIONS.foreach(ea => client.removeReactionFromMessage(ea, channel, messageTs))
   }
 
   private def emojiFor(updateCount: Int): String = {
@@ -48,9 +52,15 @@ object SlackMessageReactionHandler {
         client.removeReactionFromMessage(emojiFor(updateCount), channel, messageTs)
       }
       val next = updateCount + 1
-      client.addReactionToMessage(emojiFor(next), channel, messageTs)
-      Thread.sleep(PROGRESS_EMOJI_DURATION_MS)
-      updateReactionProgress(p, client, channel, messageTs, next)
+      val nextEmoji = emojiFor(next)
+      client.addReactionToMessage(nextEmoji, channel, messageTs).map(_ => {
+        if (p.isCompleted) {
+          client.removeReactionFromMessage(nextEmoji, channel, messageTs)
+        } else {
+          Thread.sleep(PROGRESS_EMOJI_DURATION_MS)
+          updateReactionProgress(p, client, channel, messageTs, next)
+        }
+      })
     }
   }
 }
