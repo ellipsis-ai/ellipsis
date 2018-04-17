@@ -2,6 +2,7 @@ import {Diffable, DiffableProp} from "./diffs";
 import BehaviorGroup from "./behavior_group";
 
 import Editable, {EditableInterface, EditableJson} from './editable';
+import {Timestamp} from "../lib/formatter";
 
 export interface LibraryVersionJson extends EditableJson {
   libraryId: string;
@@ -15,13 +16,13 @@ class LibraryVersion extends Editable implements Diffable, LibraryVersionInterfa
     readonly name: Option<string>,
     readonly description: Option<string>,
     readonly functionBody: string,
-    readonly groupId: string,
-    readonly teamId: string,
+    readonly groupId: Option<string>,
+    readonly teamId: Option<string>,
     readonly libraryId: string,
     readonly exportId: Option<string>,
     readonly isNew: Option<boolean>,
     readonly editorScrollPosition: Option<number>,
-    readonly createdAt: Option<number>
+    readonly createdAt: Option<Timestamp>
   ) {
       super(
         id,

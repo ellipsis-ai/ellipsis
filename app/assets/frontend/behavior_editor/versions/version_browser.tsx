@@ -351,8 +351,8 @@ class VersionBrowser extends React.Component<Props, State> {
     // original.maybeDiffFor(modified) shows changes from original to modified
     if (selectedVersion) {
       return this.state.diffFromSelectedToCurrent ?
-        maybeDiffFor(selectedVersion, this.props.currentGroup) :
-        maybeDiffFor(this.props.currentGroup, selectedVersion);
+        maybeDiffFor(selectedVersion, this.props.currentGroup, null, false) :
+        maybeDiffFor(this.props.currentGroup, selectedVersion, null, false);
     } else {
       return null;
     }

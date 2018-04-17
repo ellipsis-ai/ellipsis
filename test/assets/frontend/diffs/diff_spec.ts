@@ -1,10 +1,15 @@
 import BehaviorGroup, {BehaviorGroupJson} from '../../../../app/assets/frontend/models/behavior_group';
-import {TextPart, MultiLineTextPropertyDiff, maybeDiffFor} from '../../../../app/assets/frontend/models/diffs';
+import {
+  TextPart,
+  MultiLineTextPropertyDiff,
+  maybeDiffFor,
+  ModifiedDiff
+} from '../../../../app/assets/frontend/models/diffs';
 import {BehaviorVersionJson} from "../../../../app/assets/frontend/models/behavior_version";
 import {LibraryVersionJson} from "../../../../app/assets/frontend/models/library_version";
 import {InputJson} from "../../../../app/assets/frontend/models/input";
 import {RequiredAWSConfigJson} from "../../../../app/assets/frontend/models/aws";
-import {RequiredOAuth2ApplicationJson} from "../../../../app/assets/frontend/models/oauth2";
+import {RequiredOAuth2Application, RequiredOAuth2ApplicationJson} from "../../../../app/assets/frontend/models/oauth2";
 import {RequiredSimpleTokenApiJson} from "../../../../app/assets/frontend/models/simple_token";
 
 const teamId = 'team123456';
@@ -267,6 +272,382 @@ const behaviorGroupVersion2: BehaviorGroupJson = Object.freeze({
   metaData: null
 });
 
+const publishedMyCalendar: BehaviorGroup = BehaviorGroup.fromJson({
+  "teamId": "v-i65oxZQDiBsZuXceONmA",
+  "name": "My Calendar",
+  "description": "Helps you keep track of your personal calendar by sending you a daily agenda and sending reminders before each event throughout the day. Say “setup my calendar” in a direct message to set it up. Or type “my calendar help” for more info.",
+  "icon": "⏰",
+  "actionInputs": [{
+    "id": "4a_489bfTRusDpqTG-LzRQ",
+    "inputId": "fLL6qZ9rSR-gdVXrbz8sEQ",
+    "exportId": "_lpHYaeKQfqd4Gghk3fhGg",
+    "name": "whenToAnnounce",
+    "paramType": {"exportId": "Text", "name": "Text"},
+    "question": "What time should I send you your agenda for the day? e.g. “9 AM” or “10 AM Eastern time”, or “none” if you don’t want an agenda",
+    "isSavedForTeam": false,
+    "isSavedForUser": false
+  }, {
+    "id": "EluEPwSxSKal_VX_x2X9iA",
+    "inputId": "P1GZEO9nTKKFl5dP707j1A",
+    "exportId": "w4C6zIa4SNO1X_91WiQTTQ",
+    "name": "shouldRemind",
+    "paramType": {"exportId": "Yes/No", "name": "Yes/No"},
+    "question": "Would you like me to send you a reminder before each event begins?",
+    "isSavedForTeam": false,
+    "isSavedForUser": false
+  }],
+  "dataTypeInputs": [],
+  "behaviorVersions": [{
+    "id": "7ijU4AHjTpeP9W7_arxSZQ",
+    "teamId": "v-i65oxZQDiBsZuXceONmA",
+    "behaviorId": "VuKRcP6mTd2S7I7PZ2nX-w",
+    "isNew": false,
+    "name": "Agenda",
+    "description": "",
+    "functionBody": "const moment = require('moment-timezone');\nconst gcal = require('google-calendar');\nconst cal = new gcal.GoogleCalendar(ellipsis.accessTokens.googleCalendar);\nconst Formatter = ellipsis.require('ellipsis-cal-date-format@0.0.13');\nconst eventlib = require('eventlib');\n\ncal.calendars.get(\"primary\", (err, res) => {\n  if (err) {\n    throw new ellipsis.Error(`An error occurred retrieving your primary calendar (${err.code}): ${err.message}`, {\n      userMessage: \"An error occurred while fetching your calendar from Google. You may try running `...what's on my calendar today` again to see if it was temporary.\"\n    });\n  } else {\n    const tz = res.timeZone;\n    list(tz || ellipsis.userInfo.timeZone || ellipsis.teamInfo.timeZone);\n  }\n});\n\nfunction list(tz) {\n  moment.tz.setDefault(tz);\n  const now = moment();\n  const min = now.clone();\n  const max = now.clone().startOf('day').add(1, 'days');\n  cal.events.list(\"primary\", {\n    timeMin: min.toISOString(),\n    timeMax: max.toISOString(),\n    orderBy: 'startTime',\n    singleEvents: true\n  }, (err, res) => {\n    if (err) {\n      ellipsis.error(`An error occurred fetching your calendar. (${err.code}: ${err.message})`);\n    } else if (!res.items) {\n      ellipsis.error(\"There was a problem fetching your calendar. Google Calendar may be experiencing a hiccup.\");\n    } else {\n      const items = eventlib.filterDeclined(res.items.slice());\n      let heading = \"\";\n      if (items.length === 0) {\n        heading = \"🎉 There’s nothing on your calendar for the rest of the day.\";\n      } else if (items.length === 1) {\n        heading = \"There’s 1 event on your calendar today:\";\n      } else {\n        heading = `There are ${items.length} events on your calendar today:`;\n      }\n      const result = {\n        heading: heading,\n        items: items.map((event) => {\n          return Object.assign({}, event, {\n            formattedEvent: Formatter.formatEvent(event, tz, now.format(Formatter.formats.YMD))\n          });\n        })\n      };\n      ellipsis.success(result);\n    }\n  });\n}",
+    "responseTemplate": "**{successResult.heading}**\n{for event in successResult.items}\n{event.formattedEvent}\n{endfor}\n",
+    "inputIds": [],
+    "triggers": [{
+      "text": "what's on my calendar today",
+      "requiresMention": true,
+      "isRegex": false,
+      "caseSensitive": false
+    }],
+    "config": {
+      "exportId": "BXUYJotxSaKz3QqZ_zSd-w",
+      "name": "Agenda",
+      "forcePrivateResponse": false,
+      "isDataType": false
+    },
+    "exportId": "BXUYJotxSaKz3QqZ_zSd-w",
+    "githubUrl": "https://github.com/ellipsis-ai/my-calendar/actions/Agenda",
+    "knownEnvVarsUsed": []
+  }, {
+    "id": "BlFk7azKRjaCgH5ricykTA",
+    "teamId": "v-i65oxZQDiBsZuXceONmA",
+    "behaviorId": "54TsRxxtQEeko-KR7Kn26g",
+    "isNew": false,
+    "name": "Deactivate",
+    "description": "",
+    "functionBody": "const EllipsisApi = ellipsis.require('ellipsis-api');\nconst api = new EllipsisApi(ellipsis).actions;\napi.unschedule({\n  actionName: \"Agenda\",\n  channel: ellipsis.userInfo.messageInfo.channel,\n  userId: ellipsis.userInfo.ellipsisUserId\n}).then(() => {\n  return api.unschedule({\n    actionName: \"Reminders\",\n    channel: ellipsis.userInfo.messageInfo.channel,\n    userId: ellipsis.userInfo.ellipsisUserId\n  });\n}).then(() => {\n  ellipsis.success();\n}).catch((err) => {\n  throw new ellipsis.Error(err, { userMessage: \"I tried to turn off your agenda and calendar reminders, but something went wrong. Try again, or else try unscheduling it manually.\" });\n});",
+    "responseTemplate": "OK. I will no longer send you your agenda or reminders in this channel.\n",
+    "inputIds": [],
+    "triggers": [{
+      "text": "deactivate my calendar",
+      "requiresMention": true,
+      "isRegex": false,
+      "caseSensitive": false
+    }, {
+      "text": "stop my calendar",
+      "requiresMention": true,
+      "isRegex": false,
+      "caseSensitive": false
+    }, {"text": "turn off my calendar", "requiresMention": true, "isRegex": false, "caseSensitive": false}],
+    "config": {
+      "exportId": "V-LAjv1AS4CoFimMANnxpg",
+      "name": "Deactivate",
+      "forcePrivateResponse": false,
+      "isDataType": false
+    },
+    "exportId": "V-LAjv1AS4CoFimMANnxpg",
+    "githubUrl": "https://github.com/ellipsis-ai/my-calendar/actions/Deactivate",
+    "knownEnvVarsUsed": []
+  }, {
+    "id": "AFV_L2J3Sp2DRxx4t9Qdjw",
+    "teamId": "v-i65oxZQDiBsZuXceONmA",
+    "behaviorId": "ZzzHEhz5RlmaxPAiQKT8Qg",
+    "isNew": false,
+    "name": "Help",
+    "description": "",
+    "functionBody": "",
+    "responseTemplate": "Ellipsis can show you what's happening on your calendar today, and send reminders when events are about to begin. (This skill requires access to your Google Calendar.)\n\n**Actions:**\n- `what's on my calendar today` — show your agenda (list all events) for the rest of the day\n- `what's on my calendar now` — show any events happening now or in the next 10 minutes\n- `setup my calendar` — set up the skill to send you your agenda each weekday, and send you reminders a few minutes before events begin\n- `stop my calendar` — turn off the scheduled agenda and reminders\n",
+    "inputIds": [],
+    "triggers": [{"text": "my calendar help", "requiresMention": true, "isRegex": false, "caseSensitive": false}],
+    "config": {
+      "exportId": "J0uB9LvZTo6_L-spEBrtqg",
+      "name": "Help",
+      "forcePrivateResponse": false,
+      "isDataType": false
+    },
+    "exportId": "J0uB9LvZTo6_L-spEBrtqg",
+    "githubUrl": "https://github.com/ellipsis-ai/my-calendar/actions/Help",
+    "knownEnvVarsUsed": []
+  }, {
+    "id": "Eb6wNX-WS1KiobO6Khud6w",
+    "teamId": "v-i65oxZQDiBsZuXceONmA",
+    "behaviorId": "vyfZP4t0SGyZZlSQ9nS55Q",
+    "isNew": false,
+    "name": "Reminders",
+    "description": "",
+    "functionBody": "const moment = require('moment-timezone');\nmoment.tz.setDefault(ellipsis.userInfo.timeZone || ellipsis.teamInfo.timeZone);\nconst gcal = require('google-calendar');\nconst cal = new gcal.GoogleCalendar(ellipsis.accessTokens.googleCalendar);\nconst Formatter = ellipsis.require('ellipsis-cal-date-format@0.0.13');\nconst eventlib = require('eventlib');\n\nlist();\n\nfunction list() {\n  const now = moment();\n  const min = now.clone();\n  const max = now.clone().add(8, 'minutes');\n  cal.events.list(\"primary\", {\n    timeMin: min.toISOString(),\n    timeMax: max.toISOString(),\n    orderBy: 'startTime',\n    singleEvents: true\n  }, (err, res) => {\n    const errorMessage = \"An error occurred while checking your Google calendar for upcoming events. You may try running `...what's on my calendar now` to see if it happens again. The problem may be temporary.\";\n    if (err) {\n      throw new ellipsis.Error(`Error ${err.code}: ${err.message}`, {\n        userMessage: errorMessage\n      });\n    } else if (!res.items) {\n      throw new ellipsis.Error(\"Google Calendar returned an invalid response (no items).\", {\n        userMessage: errorMessage\n      });\n    } else {\n      const tz = res.timeZone || ellipsis.teamInfo.timeZone;\n      moment.tz.setDefault(tz);\n      const items = eventlib.filterDeclined(res.items.filter((ea) => {\n        return moment(ea.start.dateTime).isAfter(now.clone().add(2, 'minutes').add(30, 'seconds'))\n      }));\n      if (items.length === 0) {\n        if (ellipsis.event.originalEventType === \"scheduled\") {\n          ellipsis.noResponse();\n        } else {\n          ellipsis.success({\n            hasItems: false\n          });\n        }\n      } else {\n        ellipsis.success({\n          hasItems: true,\n          heading: items.length > 1 ?\n            `Reminder: there are ${items.length} events on your calendar.` :\n            `Reminder: there’s an event on your calendar.`,\n          items: items.map((event) => {\n            return Object.assign({}, event, {\n              formattedEvent: Formatter.formatEvent(event, tz, now.format(Formatter.formats.YMD), { details: true })\n            });\n          })\n        });\n      }\n    }\n  });\n}",
+    "responseTemplate": "{if successResult.hasItems}\n⏰ {successResult.heading}\n\n{for event in successResult.items}\n{event.formattedEvent}\n\n{endfor}\n{else}\nThere’s nothing on your calendar in the next few minutes.\n{endif}\n",
+    "inputIds": [],
+    "triggers": [{
+      "text": "what's on my calendar now",
+      "requiresMention": true,
+      "isRegex": false,
+      "caseSensitive": false
+    }],
+    "config": {
+      "exportId": "SBH4IfDzTGO8P7kV02yECw",
+      "name": "Reminders",
+      "forcePrivateResponse": false,
+      "isDataType": false
+    },
+    "exportId": "SBH4IfDzTGO8P7kV02yECw",
+    "githubUrl": "https://github.com/ellipsis-ai/my-calendar/actions/Reminders",
+    "knownEnvVarsUsed": []
+  }, {
+    "id": "Sb6jPeE0RaSXGbLTBh-GSg",
+    "teamId": "v-i65oxZQDiBsZuXceONmA",
+    "behaviorId": "NHWvoxtVRU6k5FXmtHnNfw",
+    "isNew": false,
+    "name": "Setup",
+    "description": "",
+    "functionBody": "const gcal = require('google-calendar');\nconst cal = new gcal.GoogleCalendar(ellipsis.accessTokens.googleCalendar);\nconst EllipsisApi = ellipsis.require('ellipsis-api');\nconst api = new EllipsisApi(ellipsis).actions;\nconst moment = require('moment-timezone');\nmoment.tz.setDefault(ellipsis.userInfo.timeZone || ellipsis.teamInfo.timeZone);\nlet successMessage = \"\";\nlet calendarName;\n\ncal.calendars.get(\"primary\", (err, res) => {\n  if (err) {\n    throw new ellipsis.Error(`Error retrieving your primary calendar (${err.code}): ${err.message}`, {\n      userMessage: \"Sorry, an error occurred retrieving your primary calendar.\"\n    });\n  } else {\n    calendarName = res.summary;\n    doScheduling();\n  }\n});\n\nfunction doScheduling() {\n  api.unschedule({\n    actionName: \"Agenda\",\n    channel: ellipsis.userInfo.messageInfo.channel,\n    userId: ellipsis.userInfo.ellipsisUserId\n  }).then(r => {\n    return api.unschedule({\n      actionName: \"Reminders\",\n      channel: ellipsis.userInfo.messageInfo.channel,\n      userId: ellipsis.userInfo.ellipsisUserId\n    });\n  }).then(r => {\n    if (whenToAnnounce !== \"none\") {\n      return api.schedule({\n        actionName: \"Agenda\",\n        channel: ellipsis.userInfo.messageInfo.channel,\n        recurrence: `every weekday at ${whenToAnnounce}`\n      });\n    }\n  }).then(r => {\n    const recurrenceText = r.scheduled ? r.scheduled.recurrence : `every weekday at ${whenToAnnounce}`;\n    const nextRecurrence = r.scheduled ? r.scheduled.firstRecurrence : null;\n    const calendarNameText = calendarName ? `the calendar **${calendarName}**` : \"your primary calendar\";\n    successMessage += whenToAnnounce === \"none\" ?\n      `OK. I won’t send you an agenda in this channel.` :\n      `OK! I’ll show you the events on ${calendarNameText} ${recurrenceText} in this channel${\n        nextRecurrence ? `, starting ${moment(nextRecurrence).format(\"dddd, MMMM D\")}` : \"\"\n      }.`;\n    if (shouldRemind) {\n      successMessage += whenToAnnounce === \"none\" ?\n        `\\n\\nHowever, I will send you reminders a few minutes before each event begins.` :\n        `\\n\\nI’ll also send you reminders a few minutes before each event begins.`;\n      return api.schedule({\n        actionName: \"Reminders\",\n        channel: ellipsis.userInfo.messageInfo.channel,\n        recurrence: \"every 5 minutes\"\n      });\n    } else {\n      return true;\n    }\n  }).then(r => {\n    ellipsis.success(successMessage + \"\\n\\nTo change these settings, say “setup my calendar” again.\" )\n  });\n}",
+    "responseTemplate": "{successResult}",
+    "inputIds": ["fLL6qZ9rSR-gdVXrbz8sEQ", "P1GZEO9nTKKFl5dP707j1A"],
+    "triggers": [{
+      "text": "set up my calendar",
+      "requiresMention": true,
+      "isRegex": false,
+      "caseSensitive": false
+    }, {"text": "setup my calendar", "requiresMention": true, "isRegex": false, "caseSensitive": false}],
+    "config": {
+      "exportId": "ioHMv3b3T4utFwwH0cwjLg",
+      "name": "Setup",
+      "forcePrivateResponse": false,
+      "isDataType": false
+    },
+    "exportId": "ioHMv3b3T4utFwwH0cwjLg",
+    "githubUrl": "https://github.com/ellipsis-ai/my-calendar/actions/Setup",
+    "knownEnvVarsUsed": []
+  }],
+  "libraryVersions": [{
+    "id": "Q-h3QwrnSjiAU7YAmMPZYg",
+    "libraryId": "mmf-B3NiT-KJ2wAjoqpd0w",
+    "exportId": "AjtTiS-fTzKYaHsNUUpZqg",
+    "isNew": false,
+    "name": "eventlib",
+    "description": "",
+    "functionBody": "return {\n  filterDeclined: function(events) {\n    return events.filter((event) => {\n      const selfAttend = (event.attendees || []).find((ea) => ea.self);\n      const response = selfAttend ? selfAttend.responseStatus : null;\n      return response !== \"declined\";\n    });\n  }\n}\n",
+    "createdAt": "2018-04-17T10:19:13.74-04:00"
+  }],
+  "requiredAWSConfigs": [],
+  "requiredOAuth2ApiConfigs": [{
+    "exportId": "aCJZZ3vgS8eU9BAqhxjz6w-RdG2Wm5DR0m2_4FZXf-yKA-googleCalendar",
+    "apiId": "RdG2Wm5DR0m2_4FZXf-yKA",
+    "recommendedScope": "https://www.googleapis.com/auth/calendar",
+    "nameInCode": "googleCalendar"
+  }],
+  "requiredSimpleTokenApis": [],
+  "githubUrl": "https://github.com/ellipsis-ai/my-calendar",
+  "gitSHA": "af7815b9b42cf277c67f4f7123c8901826ea869e",
+  "exportId": "9l9tTPMcQliQRua_UmJ8sw",
+  "createdAt": "2018-04-17T10:19:13.74-04:00"
+});
+const installedMyCalendar: BehaviorGroup = BehaviorGroup.fromJson({
+  "id": "sxokL6idQ_a6Ks3QOD-Sug",
+  "teamId": "v-i65oxZQDiBsZuXceONmA",
+  "name": "My Calendar",
+  "description": "Helps you keep track of your personal calendar by sending you a daily agenda and sending reminders before each event throughout the day. Say “setup my calendar” in a direct message to set it up. Or type “my calendar help” for more info.",
+  "icon": "⏰",
+  "actionInputs": [{
+    "id": "eyTIxbGRT8WCE9fE6X_5WQ",
+    "inputId": "515vXugFTA6-wZnXl8CzYA",
+    "exportId": "w4C6zIa4SNO1X_91WiQTTQ",
+    "name": "shouldRemind",
+    "paramType": {"id": "Yes/No", "exportId": "Yes/No", "name": "Yes/No", "needsConfig": false},
+    "question": "Would you like me to send you a reminder before each event begins?",
+    "isSavedForTeam": false,
+    "isSavedForUser": false
+  }, {
+    "id": "1vPU3dh5QtWBdqvkIVbd7w",
+    "inputId": "IiSaZaA1Rbe_4JvsIZsBfQ",
+    "exportId": "_lpHYaeKQfqd4Gghk3fhGg",
+    "name": "whenToAnnounce",
+    "paramType": {"id": "Text", "exportId": "Text", "name": "Text", "needsConfig": false},
+    "question": "What time should I send you your agenda for the day? e.g. “9 AM” or “10 AM Eastern time”, or “none” if you don’t want an agenda",
+    "isSavedForTeam": false,
+    "isSavedForUser": false
+  }],
+  "dataTypeInputs": [],
+  "behaviorVersions": [{
+    "id": "_QtJEAlgT_yaoOUl6iPnwA",
+    "teamId": "v-i65oxZQDiBsZuXceONmA",
+    "behaviorId": "nrRQD4xlRk62cWcP99W4WA",
+    "groupId": "sxokL6idQ_a6Ks3QOD-Sug",
+    "isNew": false,
+    "name": "Deactivate",
+    "description": "",
+    "functionBody": "const EllipsisApi = ellipsis.require('ellipsis-api');\nconst api = new EllipsisApi(ellipsis).actions;\napi.unschedule({\n  actionName: \"Agenda\",\n  channel: ellipsis.userInfo.messageInfo.channel,\n  userId: ellipsis.userInfo.ellipsisUserId\n}).then(() => {\n  return api.unschedule({\n    actionName: \"Reminders\",\n    channel: ellipsis.userInfo.messageInfo.channel,\n    userId: ellipsis.userInfo.ellipsisUserId\n  });\n}).then(() => {\n  ellipsis.success();\n}).catch((err) => {\n  throw new ellipsis.Error(err, { userMessage: \"I tried to turn off your agenda and calendar reminders, but something went wrong. Try again, or else try unscheduling it manually.\" });\n});",
+    "responseTemplate": "OK. I will no longer send you your agenda or reminders in this channel.\n",
+    "inputIds": [],
+    "triggers": [{
+      "text": "deactivate my calendar",
+      "requiresMention": true,
+      "isRegex": false,
+      "caseSensitive": false
+    }, {
+      "text": "stop my calendar",
+      "requiresMention": true,
+      "isRegex": false,
+      "caseSensitive": false
+    }, {"text": "turn off my calendar", "requiresMention": true, "isRegex": false, "caseSensitive": false}],
+    "config": {
+      "exportId": "V-LAjv1AS4CoFimMANnxpg",
+      "name": "Deactivate",
+      "forcePrivateResponse": false,
+      "isDataType": false
+    },
+    "exportId": "V-LAjv1AS4CoFimMANnxpg",
+    "knownEnvVarsUsed": [],
+    "createdAt": "2018-04-16T15:18:28.21-04:00"
+  }, {
+    "id": "pURDxka2SK6pMMtgp6P0kA",
+    "teamId": "v-i65oxZQDiBsZuXceONmA",
+    "behaviorId": "VlBGDA64Qr-RmWGmnfyQPQ",
+    "groupId": "sxokL6idQ_a6Ks3QOD-Sug",
+    "isNew": false,
+    "name": "Help",
+    "description": "",
+    "functionBody": "",
+    "responseTemplate": "Ellipsis can show you what's happening on your calendar today, and send reminders when events are about to begin. (This skill requires access to your Google Calendar.)\n\n**Actions:**\n- `what's on my calendar today` — show your agenda (list all events) for the rest of the day\n- `what's on my calendar now` — show any events happening now or in the next 10 minutes\n- `setup my calendar` — set up the skill to send you your agenda each weekday, and send you reminders a few minutes before events begin\n- `stop my calendar` — turn off the scheduled agenda and reminders\n",
+    "inputIds": [],
+    "triggers": [{"text": "my calendar help", "requiresMention": true, "isRegex": false, "caseSensitive": false}],
+    "config": {
+      "exportId": "J0uB9LvZTo6_L-spEBrtqg",
+      "name": "Help",
+      "forcePrivateResponse": false,
+      "isDataType": false
+    },
+    "exportId": "J0uB9LvZTo6_L-spEBrtqg",
+    "knownEnvVarsUsed": [],
+    "createdAt": "2018-04-16T15:18:28.166-04:00"
+  }, {
+    "id": "yD5828gvSgifRejls5_G-A",
+    "teamId": "v-i65oxZQDiBsZuXceONmA",
+    "behaviorId": "F09FdPl3Qz22wi3h1EfZqQ",
+    "groupId": "sxokL6idQ_a6Ks3QOD-Sug",
+    "isNew": false,
+    "name": "Setup",
+    "description": "",
+    "functionBody": "const gcal = require('google-calendar');\nconst cal = new gcal.GoogleCalendar(ellipsis.accessTokens.googleCalendar);\nconst EllipsisApi = ellipsis.require('ellipsis-api');\nconst api = new EllipsisApi(ellipsis).actions;\nconst moment = require('moment-timezone');\nmoment.tz.setDefault(ellipsis.userInfo.timeZone || ellipsis.teamInfo.timeZone);\nlet successMessage = \"\";\nlet calendarName;\n\ncal.calendars.get(\"primary\", (err, res) => {\n  if (err) {\n    throw new ellipsis.Error(`Error retrieving your primary calendar (${err.code}): ${err.message}`, {\n      userMessage: \"Sorry, an error occurred retrieving your primary calendar.\"\n    });\n  } else {\n    calendarName = res.summary;\n    doScheduling();\n  }\n});\n\nfunction doScheduling() {\n  api.unschedule({\n    actionName: \"Agenda\",\n    channel: ellipsis.userInfo.messageInfo.channel,\n    userId: ellipsis.userInfo.ellipsisUserId\n  }).then(r => {\n    return api.unschedule({\n      actionName: \"Reminders\",\n      channel: ellipsis.userInfo.messageInfo.channel,\n      userId: ellipsis.userInfo.ellipsisUserId\n    });\n  }).then(r => {\n    if (whenToAnnounce !== \"none\") {\n      return api.schedule({\n        actionName: \"Agenda\",\n        channel: ellipsis.userInfo.messageInfo.channel,\n        recurrence: `every weekday at ${whenToAnnounce}`\n      });\n    }\n  }).then(r => {\n    const recurrenceText = r.scheduled ? r.scheduled.recurrence : `every weekday at ${whenToAnnounce}`;\n    const nextRecurrence = r.scheduled ? r.scheduled.firstRecurrence : null;\n    const calendarNameText = calendarName ? `the calendar **${calendarName}**` : \"your primary calendar\";\n    successMessage += whenToAnnounce === \"none\" ?\n      `OK. I won’t send you an agenda in this channel.` :\n      `OK! I’ll show you the events on ${calendarNameText} ${recurrenceText} in this channel${\n        nextRecurrence ? `, starting ${moment(nextRecurrence).format(\"dddd, MMMM D\")}` : \"\"\n      }.`;\n    if (shouldRemind) {\n      successMessage += whenToAnnounce === \"none\" ?\n        `\\n\\nHowever, I will send you reminders a few minutes before each event begins.` :\n        `\\n\\nI’ll also send you reminders a few minutes before each event begins.`;\n      return api.schedule({\n        actionName: \"Reminders\",\n        channel: ellipsis.userInfo.messageInfo.channel,\n        recurrence: \"every 5 minutes\"\n      });\n    } else {\n      return true;\n    }\n  }).then(r => {\n    ellipsis.success(successMessage + \"\\n\\nTo change these settings, say “setup my calendar” again.\" )\n  });\n}",
+    "responseTemplate": "{successResult}",
+    "inputIds": ["IiSaZaA1Rbe_4JvsIZsBfQ", "515vXugFTA6-wZnXl8CzYA"],
+    "triggers": [{
+      "text": "set up my calendar",
+      "requiresMention": true,
+      "isRegex": false,
+      "caseSensitive": false
+    }, {"text": "setup my calendar", "requiresMention": true, "isRegex": false, "caseSensitive": false}],
+    "config": {
+      "exportId": "ioHMv3b3T4utFwwH0cwjLg",
+      "name": "Setup",
+      "forcePrivateResponse": false,
+      "isDataType": false
+    },
+    "exportId": "ioHMv3b3T4utFwwH0cwjLg",
+    "knownEnvVarsUsed": [],
+    "createdAt": "2018-04-16T15:18:28.021-04:00"
+  }, {
+    "id": "dLhVuW9XRh2BUM9SmIEYww",
+    "teamId": "v-i65oxZQDiBsZuXceONmA",
+    "behaviorId": "c0vyvrDrSTiQ8zM9pITxBQ",
+    "groupId": "sxokL6idQ_a6Ks3QOD-Sug",
+    "isNew": false,
+    "name": "Reminders",
+    "description": "",
+    "functionBody": "const moment = require('moment-timezone');\nmoment.tz.setDefault(ellipsis.userInfo.timeZone || ellipsis.teamInfo.timeZone);\nconst gcal = require('google-calendar');\nconst cal = new gcal.GoogleCalendar(ellipsis.accessTokens.googleCalendar);\nconst Formatter = ellipsis.require('ellipsis-cal-date-format@0.0.13');\nconst eventlib = require('eventlib');\n\nlist();\n\nfunction list() {\n  const now = moment();\n  const min = now.clone();\n  const max = now.clone().add(8, 'minutes');\n  cal.events.list(\"primary\", {\n    timeMin: min.toISOString(),\n    timeMax: max.toISOString(),\n    orderBy: 'startTime',\n    singleEvents: true\n  }, (err, res) => {\n    const errorMessage = \"An error occurred while checking your Google calendar for upcoming events. You may try running `...what's on my calendar now` to see if it happens again. The problem may be temporary.\";\n    if (err) {\n      throw new ellipsis.Error(`Error ${err.code}: ${err.message}`, {\n        userMessage: errorMessage\n      });\n    } else if (!res.items) {\n      throw new ellipsis.Error(\"Google Calendar returned an invalid response (no items).\", {\n        userMessage: errorMessage\n      });\n    } else {\n      const tz = res.timeZone || ellipsis.teamInfo.timeZone;\n      moment.tz.setDefault(tz);\n      const items = eventlib.filterDeclined(res.items.filter((ea) => {\n        return moment(ea.start.dateTime).isAfter(now.clone().add(2, 'minutes').add(30, 'seconds'))\n      }));\n      if (items.length === 0) {\n        if (ellipsis.event.originalEventType === \"scheduled\") {\n          ellipsis.noResponse();\n        } else {\n          ellipsis.success({\n            hasItems: false\n          });\n        }\n      } else {\n        ellipsis.success({\n          hasItems: true,\n          heading: items.length > 1 ?\n            `Reminder: there are ${items.length} events on your calendar.` :\n            `Reminder: there’s an event on your calendar.`,\n          items: items.map((event) => {\n            return Object.assign({}, event, {\n              formattedEvent: Formatter.formatEvent(event, tz, now.format(Formatter.formats.YMD), { details: true })\n            });\n          })\n        });\n      }\n    }\n  });\n}",
+    "responseTemplate": "{if successResult.hasItems}\n⏰ {successResult.heading}\n\n{for event in successResult.items}\n{event.formattedEvent}\n\n{endfor}\n{else}\nThere’s nothing on your calendar in the next few minutes.\n{endif}\n",
+    "inputIds": [],
+    "triggers": [{
+      "text": "what's on my calendar now",
+      "requiresMention": true,
+      "isRegex": false,
+      "caseSensitive": false
+    }],
+    "config": {
+      "exportId": "SBH4IfDzTGO8P7kV02yECw",
+      "name": "Reminders",
+      "forcePrivateResponse": false,
+      "isDataType": false
+    },
+    "exportId": "SBH4IfDzTGO8P7kV02yECw",
+    "knownEnvVarsUsed": [],
+    "createdAt": "2018-04-16T15:18:28.189-04:00"
+  }, {
+    "id": "vgvsAlqBSXSoeR42UYR5Kg",
+    "teamId": "v-i65oxZQDiBsZuXceONmA",
+    "behaviorId": "FR5HZbi1Sreh6BFUY8N0Ig",
+    "groupId": "sxokL6idQ_a6Ks3QOD-Sug",
+    "isNew": false,
+    "name": "Agenda",
+    "description": "",
+    "functionBody": "const moment = require('moment-timezone');\nconst gcal = require('google-calendar');\nconst cal = new gcal.GoogleCalendar(ellipsis.accessTokens.googleCalendar);\nconst Formatter = ellipsis.require('ellipsis-cal-date-format@0.0.13');\nconst eventlib = require('eventlib');\n\ncal.calendars.get(\"primary\", (err, res) => {\n  if (err) {\n    throw new ellipsis.Error(`An error occurred retrieving your primary calendar (${err.code}): ${err.message}`, {\n      userMessage: \"An error occurred while fetching your calendar from Google. You may try running `...what's on my calendar today` again to see if it was temporary.\"\n    });\n  } else {\n    const tz = res.timeZone;\n    list(tz || ellipsis.userInfo.timeZone || ellipsis.teamInfo.timeZone);\n  }\n});\n\nfunction list(tz) {\n  moment.tz.setDefault(tz);\n  const now = moment();\n  const min = now.clone();\n  const max = now.clone().startOf('day').add(1, 'days');\n  cal.events.list(\"primary\", {\n    timeMin: min.toISOString(),\n    timeMax: max.toISOString(),\n    orderBy: 'startTime',\n    singleEvents: true\n  }, (err, res) => {\n    if (err) {\n      ellipsis.error(`An error occurred fetching your calendar. (${err.code}: ${err.message})`);\n    } else if (!res.items) {\n      ellipsis.error(\"There was a problem fetching your calendar. Google Calendar may be experiencing a hiccup.\");\n    } else {\n      const items = eventlib.filterDeclined(res.items.slice());\n      let heading = \"\";\n      if (items.length === 0) {\n        heading = \"🎉 There’s nothing on your calendar for the rest of the day.\";\n      } else if (items.length === 1) {\n        heading = \"There’s 1 event on your calendar today:\";\n      } else {\n        heading = `There are ${items.length} events on your calendar today:`;\n      }\n      const result = {\n        heading: heading,\n        items: items.map((event) => {\n          return Object.assign({}, event, {\n            formattedEvent: Formatter.formatEvent(event, tz, now.format(Formatter.formats.YMD))\n          });\n        })\n      };\n      ellipsis.success(result);\n    }\n  });\n}",
+    "responseTemplate": "**{successResult.heading}**\n{for event in successResult.items}\n{event.formattedEvent}\n{endfor}\n",
+    "inputIds": [],
+    "triggers": [{
+      "text": "what's on my calendar today",
+      "requiresMention": true,
+      "isRegex": false,
+      "caseSensitive": false
+    }],
+    "config": {
+      "exportId": "BXUYJotxSaKz3QqZ_zSd-w",
+      "name": "Agenda",
+      "forcePrivateResponse": false,
+      "isDataType": false
+    },
+    "exportId": "BXUYJotxSaKz3QqZ_zSd-w",
+    "knownEnvVarsUsed": [],
+    "createdAt": "2018-04-16T15:18:28.14-04:00"
+  }],
+  "libraryVersions": [{
+    "id": "1LM70vXTRzqyiJUTh_6K7Q",
+    "libraryId": "vZtbwqYwTlazL6lu7Pzefw",
+    "exportId": "AjtTiS-fTzKYaHsNUUpZqg",
+    "isNew": false,
+    "name": "eventlib",
+    "description": "",
+    "functionBody": "return {\n  filterDeclined: function(events) {\n    return events.filter((event) => {\n      const selfAttend = (event.attendees || []).find((ea) => ea.self);\n      const response = selfAttend ? selfAttend.responseStatus : null;\n      return response !== \"declined\";\n    });\n  }\n}\n",
+    "createdAt": "2018-04-16T15:18:27.809-04:00"
+  }],
+  "requiredAWSConfigs": [],
+  "requiredOAuth2ApiConfigs": [{
+    "id": "y7d7pXsyScGEYN_lzrB2ow",
+    "exportId": "aCJZZ3vgS8eU9BAqhxjz6w-RdG2Wm5DR0m2_4FZXf-yKA-googleCalendar",
+    "apiId": "RdG2Wm5DR0m2_4FZXf-yKA",
+    "recommendedScope": "https://www.googleapis.com/auth/calendar",
+    "nameInCode": "googleCalendar",
+    "config": {
+      "apiId": "RdG2Wm5DR0m2_4FZXf-yKA",
+      "id": "5vHvtAggQLyJ7E_oXmWeag",
+      "scope": "https://www.googleapis.com/auth/calendar",
+      "displayName": "Google Calendar"
+    }
+  }],
+  "requiredSimpleTokenApis": [],
+  "exportId": "9l9tTPMcQliQRua_UmJ8sw",
+  "createdAt": "2018-04-16T15:18:27.673-04:00",
+  "author": {
+    "id": "NeBjtWPSTBKnjMMt8zgx-g",
+    "userName": "Luke Andrews",
+    "fullName": "Luke Andrews",
+    "tz": "America/New_York"
+  },
+  "metaData": {
+    "groupId": "sxokL6idQ_a6Ks3QOD-Sug",
+    "initialCreatedAt": "2018-04-11T15:32:34.921-04:00",
+    "initialAuthor": {
+      "id": "NeBjtWPSTBKnjMMt8zgx-g",
+      "userName": "Luke Andrews",
+      "fullName": "Luke Andrews",
+      "tz": "America/New_York"
+    }
+  }
+});
+
 function textDiff(left, right) {
   return MultiLineTextPropertyDiff.maybeFor("", left, right);
 }
@@ -278,7 +659,7 @@ describe('diffs', () => {
     it('builds the correct diff for a behavior group', () => {
       const version1 = BehaviorGroup.fromJson(behaviorGroupVersion1);
       const version2 = BehaviorGroup.fromJson(behaviorGroupVersion2);
-      const maybeDiff = maybeDiffFor(version1, version2);
+      const maybeDiff = maybeDiffFor(version1, version2, null, false);
       expect(maybeDiff).toBeTruthy();
       const diffText = maybeDiff && maybeDiff.displayText();
 
@@ -653,6 +1034,23 @@ describe('diffs', () => {
       expect(diffText).toContain("Description: A library[+ (revised)]");
       expect(diffText).toContain("Code: return \"foo[-\"][+\";]");
 
+    });
+
+    it('recognizes API integration configuration differences by default', () => {
+      const maybeDiff = maybeDiffFor(publishedMyCalendar, installedMyCalendar, null, false);
+      expect(maybeDiff).not.toBeNull();
+      const diff = maybeDiff as ModifiedDiff<BehaviorGroup>;
+      expect(diff.children.length).toBe(1);
+      const childDiff = diff.children[0] as ModifiedDiff<RequiredOAuth2Application>;
+      expect(childDiff).toBeInstanceOf(ModifiedDiff);
+      expect(childDiff.original).toBeInstanceOf(RequiredOAuth2Application);
+      expect(childDiff.original.config).toBeNull();
+      expect(childDiff.modified.config).not.toBeNull();
+    });
+
+    it('ignores API integration configuration differences when comparing to published skills', () => {
+      const maybeDiff = maybeDiffFor(publishedMyCalendar, installedMyCalendar, null, true);
+      expect(maybeDiff).toBeNull();
     });
 
   });

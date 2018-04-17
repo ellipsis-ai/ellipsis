@@ -8,6 +8,7 @@ import ParamType from './param_type';
 import ResponseTemplate, {ResponseTemplateJson} from './response_template';
 import Trigger, {TriggerJson} from './trigger';
 import DataTypeField from "./data_type_field";
+import {Timestamp} from "../lib/formatter";
 
 type DefaultActionProps = {
   name?: Option<string>,
@@ -23,6 +24,7 @@ export interface BehaviorVersionJson extends EditableJson {
   triggers: Array<TriggerJson>;
   config: BehaviorConfigJson;
   knownEnvVarsUsed: Array<string>;
+  githubUrl?: Option<string>;
 }
 
 export interface BehaviorVersionInterface extends EditableInterface, BehaviorVersionJson {
@@ -35,8 +37,8 @@ class BehaviorVersion extends Editable implements Diffable, BehaviorVersionInter
   constructor(
     readonly id: Option<string>,
     readonly behaviorId: string,
-    readonly groupId: string,
-    readonly teamId: string,
+    readonly groupId: Option<string>,
+    readonly teamId: Option<string>,
     readonly name: Option<string>,
     readonly description: Option<string>,
     readonly responseTemplate: Option<ResponseTemplate>,
@@ -46,9 +48,10 @@ class BehaviorVersion extends Editable implements Diffable, BehaviorVersionInter
     readonly config: BehaviorConfig,
     readonly exportId: Option<string>,
     readonly knownEnvVarsUsed: Array<string>,
-    readonly createdAt: Option<number>,
+    readonly createdAt: Option<Timestamp>,
     readonly isNew: Option<boolean>,
-    readonly editorScrollPosition: Option<number>
+    readonly editorScrollPosition: Option<number>,
+    readonly githubUrl: Option<string>
   ) {
       super(
         id,
@@ -346,7 +349,8 @@ class BehaviorVersion extends Editable implements Diffable, BehaviorVersionInter
         props.knownEnvVarsUsed,
         props.createdAt,
         props.isNew,
-        props.editorScrollPosition
+        props.editorScrollPosition,
+        props.githubUrl
       );
     }
 

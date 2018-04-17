@@ -62,7 +62,7 @@ import User from "../models/user";
       }
       const icon = group.icon;
       const alsoPublished = this.props.publishedGroupData;
-      const maybeDiff = alsoPublished && maybeDiffFor(group, alsoPublished);
+      const maybeDiff = alsoPublished && maybeDiffFor(group, alsoPublished, null, true);
       const sameAsPublished = Boolean(alsoPublished && !maybeDiff);
       return (
         <div className="box-action phn">
