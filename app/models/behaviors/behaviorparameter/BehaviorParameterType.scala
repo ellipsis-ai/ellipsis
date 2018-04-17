@@ -55,7 +55,7 @@ sealed trait BehaviorParameterType extends FieldTypeForSchema {
 
   def preambleFor(paramCount: Int, maybeParent: Option[ParentConversation]): String = {
     val iPart = maybeParent.map { p =>
-      s"To get to the question **${p.param.question}**, I first"
+      s"To be able to answer the question **${p.param.question}**, I first"
     }.getOrElse("I")
     val otherPart = maybeParent.map(_ => "other ").getOrElse("")
     (if (paramCount == 2) {
