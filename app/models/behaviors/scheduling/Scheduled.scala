@@ -9,7 +9,7 @@ import drivers.SlickPostgresDriver.api._
 import models.accounts.slack.botprofile.SlackBotProfile
 import models.accounts.slack.profile.SlackProfile
 import models.accounts.user.User
-import models.behaviors.BotResult
+import models.behaviors.{BotResult, SuccessResult}
 import models.behaviors.events.{EventHandler, ScheduledEvent}
 import models.behaviors.scheduling.recurrence.Recurrence
 import models.team.Team
@@ -42,6 +42,24 @@ trait Scheduled {
     }
   }
 
+  def introTextFor(result: BotResult, isForInterruption: Boolean): String = {
+    val maybeIconAndIntro = for {
+      icon <- result.maybeIcon
+      intro <- result.maybeIntroLabel
+    } yield {
+      s"$icon **$intro**"
+    }
+    maybeIconAndIntro.getOrElse {
+      result.maybeIntroLabel.getOrElse {
+        if (isForInterruption) {
+          "Meanwhile:"
+        } else {
+          "\uD83D\uDC4B Hi."
+        }
+      }
+    }
+  }
+
   def maybeScheduleInfoTextFor(
                            event: ScheduledEvent,
                            result: BotResult,
@@ -51,18 +69,12 @@ trait Scheduled {
                          ): Option[String] = {
     if (result.hasText) {
       val scheduleLink = scheduleLinkFor(configuration, event.scheduled.id, event.teamId)
-      val greeting = if (isForInterruption) {
-        "Meanwhile, "
-      } else {
-        """:wave: Hi.
-         |
-         |""".stripMargin
-      }
-      Some(s"""${greeting}I’m running $displayText as scheduled. $scheduleLink
-       |
-       |───
-       |
-       |""".stripMargin)
+      val greeting = introTextFor(result, isForInterruption)
+      Some(s"""$greeting · $scheduleLink
+              |
+              |---
+              |
+              |""".stripMargin)
     } else {
       None
     }
@@ -71,7 +83,7 @@ trait Scheduled {
   def scheduleLinkFor(configuration: Configuration, scheduleId: String, teamId: String): String = {
     configuration.getOptional[String]("application.apiBaseUrl").map { baseUrl =>
       val path = controllers.routes.ScheduledActionsController.index(Some(scheduleId), None, Some(teamId))
-      s"_[✎ Edit]($baseUrl$path)_"
+      s"_[Schedule]($baseUrl$path)_"
     }.getOrElse("")
   }
 

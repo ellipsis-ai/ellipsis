@@ -95,6 +95,8 @@ sealed trait BotResult {
   val event: Event
   val maybeConversation: Option[Conversation]
   def files: Seq[UploadFileSpec] = Seq()
+  val maybeIcon: Option[String] = None
+  val maybeIntroLabel: Option[String] = None
   val maybeBehaviorVersion: Option[BehaviorVersion]
   def maybeNextAction: Option[NextAction] = None
   def maybeChoicesAction(dataService: DataService)(implicit ec: ExecutionContext): DBIO[Option[Seq[ActionChoice]]] = DBIO.successful(None)
@@ -234,6 +236,10 @@ case class SuccessResult(
                         ) extends BotResultWithLogResult {
 
   val resultType = ResultType.Success
+
+  override val maybeIcon: Option[String] = behaviorVersion.groupVersion.maybeIcon
+
+  override val maybeIntroLabel: Option[String] = Option(behaviorVersion.groupVersion.name).filter(_.nonEmpty)
 
   val maybeBehaviorVersion: Option[BehaviorVersion] = Some(behaviorVersion)
 
