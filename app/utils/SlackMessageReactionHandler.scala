@@ -26,9 +26,7 @@ object SlackMessageReactionHandler {
       Thread.sleep(delayMilliseconds)
       if (!p.isCompleted) {
         client.addReactionToMessage(INITIAL_REACTION, channel, messageTs).map(_ => {
-          if (!p.isCompleted) {
-            updateReactionProgress(p, client, channel, messageTs)
-          }
+          updateReactionProgress(p, client, channel, messageTs)
         })
         p.future.onComplete(_ => removeAll(client, channel, messageTs))
       }
@@ -54,9 +52,14 @@ object SlackMessageReactionHandler {
         client.removeReactionFromMessage(emojiFor(updateCount), channel, messageTs)
       }
       val next = updateCount + 1
-      client.addReactionToMessage(emojiFor(next), channel, messageTs).map(_ => {
-        Thread.sleep(PROGRESS_EMOJI_DURATION_MS)
-        updateReactionProgress(p, client, channel, messageTs, next)
+      val nextEmoji = emojiFor(next)
+      client.addReactionToMessage(nextEmoji, channel, messageTs).map(_ => {
+        if (p.isCompleted) {
+          client.removeReactionFromMessage(nextEmoji, channel, messageTs)
+        } else {
+          Thread.sleep(PROGRESS_EMOJI_DURATION_MS)
+          updateReactionProgress(p, client, channel, messageTs, next)
+        }
       })
     }
   }
