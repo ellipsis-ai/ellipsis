@@ -49,21 +49,29 @@ sealed trait BehaviorParameterType extends FieldTypeForSchema {
     }
   }
 
-  def questionTextFor(context: BehaviorParameterContext): String = {
-    context.parameter.question.trim
+  def questionTextFor(context: BehaviorParameterContext, paramCount: Int, maybeRoot: Option[ParentConversation]): String = {
+    val maybeRootPart = maybeRoot.flatMap { root =>
+      if (paramCount == 0) {
+        Some(root.param.question)
+      } else {
+        None
+      }
+    }
+    val localPart = context.parameter.question.trim
+    maybeRootPart.map { rootPart =>
+      s"__${rootPart}__ $localPart".trim
+    }.getOrElse(s"__${localPart}__")
   }
 
-  def preambleFor(paramCount: Int, maybeParent: Option[ParentConversation]): String = {
-    val iPart = maybeParent.map { p =>
-      s"To be able to answer the question **${p.param.question}**, I first"
-    }.getOrElse("I")
-    val otherPart = maybeParent.map(_ => "other ").getOrElse("")
+  def preambleFor(paramCount: Int): String = {
     (if (paramCount == 2) {
-      s"$iPart need to ask you a couple of ${otherPart}questions."
-    } else if (paramCount < 5) {
-      s"$iPart need to ask you a few ${otherPart}questions."
+      s"I need to ask you a couple of questions."
+    } else if (paramCount >= 3 && paramCount < 5) {
+      s"I need to ask you a few questions."
+    } else if (paramCount >= 5) {
+      s"I need to ask you some questions."
     } else {
-      s"$iPart need to ask you some ${otherPart}questions."
+      ""
     }) + "\n\n"
   }
 
@@ -78,18 +86,19 @@ sealed trait BehaviorParameterType extends FieldTypeForSchema {
       paramCount <- maybeParamState.map { paramState =>
         DBIO.from(context.unfilledParamCount(paramState))
       }.getOrElse(DBIO.successful(0))
-      maybeParent <- context.maybeConversation.map { convo =>
-        context.dataService.parentConversations.maybeForAction(convo)
+      maybeParent <- context.dataService.parentConversations.maybeForAction(context.maybeConversation)
+      maybeRoot <- maybeParent.map { parent =>
+        context.dataService.parentConversations.rootForParentAction(parent).map(Some(_))
       }.getOrElse(DBIO.successful(None))
     } yield {
       val prefix = context.event.messageRecipientPrefix
       val invalidModifier = invalidValueModifierFor(maybePreviousCollectedValue)
-      val preamble = if (isReminding || !isFirst || paramCount <= 1 || invalidModifier.nonEmpty) {
+      val preamble = if (isReminding || !isFirst || paramCount == 0 || invalidModifier.nonEmpty) {
         ""
       } else {
-        preambleFor(paramCount, maybeParent)
+        preambleFor(paramCount)
       }
-      s"""$prefix$preamble$invalidModifier __${questionTextFor(context)}__"""
+      s"""$prefix$preamble$invalidModifier ${questionTextFor(context, paramCount, maybeRoot)}"""
     }
   }
 
@@ -264,8 +273,8 @@ object FileType extends BuiltInType {
 
   def isIntentionallyEmpty(text: String): Boolean = text.trim.toLowerCase == "none"
 
-  override def questionTextFor(context: BehaviorParameterContext): String = {
-    super.questionTextFor(context) ++ """ (or type "none" if you don't have one)"""
+  override def questionTextFor(context: BehaviorParameterContext, paramCount: Int, maybeRoot: Option[ParentConversation]): String = {
+    super.questionTextFor(context, paramCount, maybeRoot) ++ """ (or type "none" if you don't have one)"""
   }
 
   private def eventHasFile(context: BehaviorParameterContext): Boolean = {

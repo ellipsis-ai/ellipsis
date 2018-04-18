@@ -21,4 +21,6 @@ trait ParentConversationService {
 
   def rootForAction(conversation: Conversation): DBIO[Conversation]
 
+  def rootForParentAction(parentConversation: ParentConversation): DBIO[ParentConversation]
+
 }
