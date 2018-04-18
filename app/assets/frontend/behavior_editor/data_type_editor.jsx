@@ -18,7 +18,6 @@ import ParamType from '../models/param_type';
 import ImmutableObjectUtils from '../lib/immutable_object_utils';
 import autobind from '../lib/autobind';
 import SectionHeading from "../shared_ui/section_heading";
-import Trigger from "../models/trigger";
 
 class DataTypeEditor extends React.Component {
     constructor(props) {
@@ -228,7 +227,7 @@ class DataTypeEditor extends React.Component {
                 onConfigureType={this.props.onConfigureType}
                 userInputs={this.props.userInputs}
                 paramTypes={this.props.paramTypes.filter(ea => ea.id !== this.props.behaviorVersion.id)}
-                triggers={this.props.triggers}
+                triggers={[]}
                 hasSharedAnswers={this.props.hasSharedAnswers}
                 otherBehaviorsInGroup={this.props.otherBehaviorsInGroup}
                 onToggleSharedAnswer={this.props.onToggleSharedAnswer}
@@ -303,7 +302,6 @@ class DataTypeEditor extends React.Component {
     onInputNameFocus: React.PropTypes.func.isRequired,
     onInputNameBlur: React.PropTypes.func.isRequired,
     userInputs: React.PropTypes.arrayOf(React.PropTypes.instanceOf(Input)).isRequired,
-    triggers: React.PropTypes.arrayOf(React.PropTypes.instanceOf(Trigger)).isRequired,
     hasSharedAnswers: React.PropTypes.bool.isRequired,
     otherBehaviorsInGroup: React.PropTypes.arrayOf(React.PropTypes.instanceOf(BehaviorVersion)).isRequired,
     onToggleSharedAnswer: React.PropTypes.func.isRequired,

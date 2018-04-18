@@ -2480,7 +2480,6 @@ const BehaviorEditor = React.createClass({
           onInputNameFocus={this.onInputNameFocus}
           onInputNameBlur={this.onInputNameBlur}
           userInputs={this.getInputs()}
-          triggers={this.getBehaviorTriggers()}
           hasSharedAnswers={this.getOtherSavedInputsInGroup().length > 0}
           otherBehaviorsInGroup={this.otherBehaviorsInGroup()}
           onToggleSharedAnswer={this.toggleSharedAnswerInputSelector}
