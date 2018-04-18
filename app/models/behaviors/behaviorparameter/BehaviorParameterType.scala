@@ -50,12 +50,8 @@ sealed trait BehaviorParameterType extends FieldTypeForSchema {
   }
 
   def questionTextFor(context: BehaviorParameterContext, paramCount: Int, maybeRoot: Option[ParentConversation]): String = {
-    val maybeRootPart = maybeRoot.flatMap { root =>
-      if (paramCount == 0) {
-        Some(root.param.question)
-      } else {
-        None
-      }
+    val maybeRootPart = maybeRoot.map { root =>
+      root.param.question
     }
     val localPart = context.parameter.question.trim
     maybeRootPart.map { rootPart =>

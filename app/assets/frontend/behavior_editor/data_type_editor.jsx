@@ -53,7 +53,8 @@ class DataTypeEditor extends React.Component {
     }
 
     updateDataTypeSource(usesCode) {
-      const newConfig = this.getDataTypeConfig().clone({ usesCode: usesCode });
+      const textType = this.getDefaultFieldType();
+      const newConfig = this.getDataTypeConfig().clone({ usesCode: usesCode }).withRequiredFieldsEnsured(textType);
       this.setDataTypeConfig(newConfig);
       this.setState({
         dataTypeSourceChosen: true
