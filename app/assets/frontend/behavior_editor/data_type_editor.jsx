@@ -227,7 +227,7 @@ class DataTypeEditor extends React.Component {
                 onInputNameBlur={this.props.onInputNameBlur}
                 onConfigureType={this.props.onConfigureType}
                 userInputs={this.props.userInputs}
-                paramTypes={this.props.paramTypes}
+                paramTypes={this.props.paramTypes.filter(ea => ea.id !== this.props.behaviorVersion.id)}
                 triggers={this.props.triggers}
                 hasSharedAnswers={this.props.hasSharedAnswers}
                 otherBehaviorsInGroup={this.props.otherBehaviorsInGroup}
