@@ -136,13 +136,15 @@ class EventHandler @Inject() (
 
   def handle(event: Event, maybeConversation: Option[Conversation]): Future[Seq[BotResult]] = {
     (maybeConversation.map { conversation =>
-      val isUninterrupted = event.maybeThreadId.isDefined || cacheService.eventHasLastConversationId(event, conversation.id)
-      if (event.maybeThreadId.isEmpty) {
-        cacheService.updateLastConversationIdFor(event, conversation.id)
+      dataService.run(dataService.parentConversations.rootForAction(conversation)).flatMap { root =>
+        val isUninterrupted = event.maybeThreadId.isDefined || cacheService.eventHasLastConversationId(event, root.id)
+        if (event.maybeThreadId.isEmpty) {
+          cacheService.updateLastConversationIdFor(event, root.id)
+        }
+        handleInConversation(conversation, conversation.maybeOriginalEventType.map { eventType =>
+          event.withOriginalEventType(eventType, isUninterrupted)
+        }.getOrElse(event)).map(Seq(_))
       }
-      handleInConversation(conversation, conversation.maybeOriginalEventType.map { eventType =>
-        event.withOriginalEventType(eventType, isUninterrupted)
-      }.getOrElse(event)).map(Seq(_))
     }.getOrElse {
       event.maybeChannel.foreach { channel =>
         if (event.maybeThreadId.isEmpty) {
