@@ -1,7 +1,12 @@
 package mocks
 
+import java.time.OffsetDateTime
+
 import javax.inject.Inject
 import com.amazonaws.services.lambda.AWSLambdaAsyncClient
+import models.IDs
+import models.behaviors.behavior.Behavior
+import models.behaviors.behaviorgroup.BehaviorGroup
 import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
 import models.behaviors.behaviorparameter.BehaviorParameter
 import models.behaviors.behaviorversion.BehaviorVersion
@@ -27,10 +32,15 @@ class MockAWSLambdaService @Inject() (
                                        val logsService: AWSLogsService
                                      ) extends AWSLambdaService with MockitoSugar {
 
+  private def behaviorVersion: BehaviorVersion = {
+    val behaviorGroupVersion = BehaviorGroupVersion(IDs.next, mock[BehaviorGroup], "Skill", None, None, None, OffsetDateTime.now)
+    BehaviorVersion(IDs.next, mock[Behavior], behaviorGroupVersion, None, None, None, None, false, OffsetDateTime.now)
+  }
+
   def resultFor(event: Event, maybeConversation: Option[Conversation]): BotResult = {
     SuccessResult(
       event,
-      mock[BehaviorVersion],
+      behaviorVersion,
       maybeConversation,
       result = JsString("result"),
       payloadJson = JsNull,

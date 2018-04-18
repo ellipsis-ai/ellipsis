@@ -102,7 +102,7 @@ class BotResultSpec extends PlaySpec with MockitoSugar with DBSpec {
         val result =
           SuccessResult(
             event,
-            mock[BehaviorVersion],
+            behaviorVersion,
             None,
             JsString("result"),
             JsNull,
@@ -133,7 +133,7 @@ class BotResultSpec extends PlaySpec with MockitoSugar with DBSpec {
         val result =
           SuccessResult(
             event,
-            mock[BehaviorVersion],
+            behaviorVersion,
             None,
             resultJs,
             JsNull,
@@ -175,7 +175,7 @@ class BotResultSpec extends PlaySpec with MockitoSugar with DBSpec {
         val event: SlackMessageEvent = newEventFor(profile)
 
         val responseText = "response"
-        val result = NoResponseResult(event, mock[BehaviorVersion], None, JsNull, None)
+        val result = NoResponseResult(event, behaviorVersion, None, JsNull, None)
         val resultTs: String = SlackTimestamp.now
 
         val conversation = newConversationFor(team, user, profile, event)
