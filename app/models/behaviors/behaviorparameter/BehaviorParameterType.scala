@@ -688,7 +688,7 @@ case class BehaviorBackedDataType(dataTypeConfig: DataTypeConfig) extends Behavi
 
   def isOther(context: BehaviorParameterContext): Boolean = {
     cachedValidValueFor(context.event.relevantMessageText, context).exists { v =>
-      v.id == BehaviorParameterType.otherId
+      v.id.toLowerCase == BehaviorParameterType.otherId
     }
   }
 
