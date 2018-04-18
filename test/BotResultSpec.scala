@@ -1,7 +1,12 @@
+import java.time.OffsetDateTime
+
 import akka.actor.ActorSystem
 import models.IDs
 import models.accounts.slack.botprofile.SlackBotProfile
 import models.accounts.user.User
+import models.behaviors.behavior.Behavior
+import models.behaviors.behaviorgroup.BehaviorGroup
+import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
 import models.behaviors.behaviorversion.BehaviorVersion
 import models.behaviors.conversations.InvokeBehaviorConversation
 import models.behaviors.conversations.conversation.Conversation
@@ -78,6 +83,11 @@ class BotResultSpec extends PlaySpec with MockitoSugar with DBSpec {
     )).thenReturn({
       Future.successful(resultTs)
     })
+  }
+
+  def behaviorVersion: BehaviorVersion = {
+    val behaviorGroupVersion = BehaviorGroupVersion(IDs.next, mock[BehaviorGroup], "Skill", None, None, None, OffsetDateTime.now)
+    BehaviorVersion(IDs.next, mock[Behavior], behaviorGroupVersion, None, None, None, None, false, OffsetDateTime.now)
   }
 
   "sendIn" should {
@@ -197,7 +207,7 @@ class BotResultSpec extends PlaySpec with MockitoSugar with DBSpec {
         val result =
           SuccessResult(
             event,
-            mock[BehaviorVersion],
+            behaviorVersion,
             Some(selfConversation),
             resultJs,
             JsNull,
@@ -243,7 +253,7 @@ class BotResultSpec extends PlaySpec with MockitoSugar with DBSpec {
         val result =
           SuccessResult(
             event,
-            mock[BehaviorVersion],
+            behaviorVersion,
             Some(threadedConversation),
             JsString("result"),
             JsNull,
