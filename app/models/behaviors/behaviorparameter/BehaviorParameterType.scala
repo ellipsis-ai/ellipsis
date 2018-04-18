@@ -317,7 +317,7 @@ object FileType extends BuiltInType {
   val invalidPromptModifier: String = raw"""I need you to upload a file or type `none` if you don't have one. $stopInstructions"""
 }
 
-case class ValidValue(id: String, label: String, data: Map[String, String])
+case class ValidValue(id: String, label: String, data: JsObject)
 
 case class BehaviorBackedDataType(dataTypeConfig: DataTypeConfig) extends BehaviorParameterType {
 
@@ -341,12 +341,9 @@ case class BehaviorBackedDataType(dataTypeConfig: DataTypeConfig) extends Behavi
       } yield {
         val otherData = json match {
           case obj: JsObject => {
-            obj.value.
-              filterNot { case(k, _) => k == BehaviorParameterType.ID_PROPERTY || k == BehaviorParameterType.LABEL_PROPERTY }.
-              map { case(k, v) => (k, v.as[String]) }.
-              toMap
+            obj - BehaviorParameterType.ID_PROPERTY - BehaviorParameterType.LABEL_PROPERTY
           }
-          case _ => Map[String, String]()
+          case _ => Json.obj()
         }
         ValidValue(id, label, otherData)
       }
@@ -358,8 +355,8 @@ case class BehaviorBackedDataType(dataTypeConfig: DataTypeConfig) extends Behavi
       Map(
         BehaviorParameterType.ID_PROPERTY -> JsString(vv.id),
         BehaviorParameterType.LABEL_PROPERTY -> JsString(vv.label)
-      ) ++ vv.data.map { case(k, v) => (k, JsString(v)) }
-    )
+      )
+    ) ++ vv.data
   }
 
   def resolvedValueFor(text: String, context: BehaviorParameterContext)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[String]] = {
@@ -406,7 +403,7 @@ case class BehaviorBackedDataType(dataTypeConfig: DataTypeConfig) extends Behavi
       }
     }.getOrElse {
       if (isCollectingOther(context)) {
-        Future.successful(Some(ValidValue(BehaviorParameterType.otherId, text, Map())))
+        Future.successful(Some(ValidValue(BehaviorParameterType.otherId, text, Json.obj())))
       } else {
         cachedValidValueFor(text, context).map { v =>
           Future.successful(Some(v))
@@ -452,7 +449,7 @@ case class BehaviorBackedDataType(dataTypeConfig: DataTypeConfig) extends Behavi
   def prepareForInvocation(text: String, context: BehaviorParameterContext)(implicit actorSystem: ActorSystem, ec: ExecutionContext) = {
     maybeValidValueFor(text, context).map { maybeValidValue =>
       maybeValidValue.map { vv =>
-        JsObject(Map(BehaviorParameterType.ID_PROPERTY -> JsString(vv.id), BehaviorParameterType.LABEL_PROPERTY -> JsString(vv.label)) ++ vv.data.map { case(k, v) => k -> JsString(v) })
+        JsObject(Map(BehaviorParameterType.ID_PROPERTY -> JsString(vv.id), BehaviorParameterType.LABEL_PROPERTY -> JsString(vv.label))) ++ vv.data
       }.getOrElse(JsString(text))
     }
   }
@@ -515,7 +512,7 @@ case class BehaviorBackedDataType(dataTypeConfig: DataTypeConfig) extends Behavi
       }
       case _: JsError => {
         result.result.validate[Seq[String]] match {
-          case JsSuccess(strings, _) => strings.map { ea => ValidValue(ea, ea, Map()) }
+          case JsSuccess(strings, _) => strings.map { ea => ValidValue(ea, ea, Json.obj()) }
           case _: JsError => Seq()
         }
       }

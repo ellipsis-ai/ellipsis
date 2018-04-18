@@ -48,6 +48,10 @@ class DataTypeEditor extends React.Component {
       return this.props.group;
     }
 
+    getDefaultFieldType() {
+      return this.props.paramTypes.find(ea => ea.id === "Text");
+    }
+
     updateDataTypeSource(usesCode) {
       const newConfig = this.getDataTypeConfig().clone({ usesCode: usesCode });
       this.setDataTypeConfig(newConfig);
