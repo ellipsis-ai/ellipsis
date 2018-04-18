@@ -245,7 +245,7 @@ class DataTypeEditor extends React.Component {
                 onAdd={this.addNewDataTypeField}
                 behaviorVersionId={this.props.behaviorVersion.id}
                 fields={this.getDataTypeFields()}
-                paramTypes={this.props.paramTypes}
+                paramTypes={this.props.builtinParamTypes}
                 animationDisabled={this.props.animationIsDisabled}
                 onConfigureType={this.props.onConfigureType}
               />
@@ -267,6 +267,7 @@ class DataTypeEditor extends React.Component {
     group: React.PropTypes.instanceOf(BehaviorGroup).isRequired,
     behaviorVersion: React.PropTypes.instanceOf(BehaviorVersion).isRequired,
     paramTypes: React.PropTypes.arrayOf(React.PropTypes.instanceOf(ParamType)).isRequired,
+    builtinParamTypes: React.PropTypes.arrayOf(React.PropTypes.instanceOf(ParamType)).isRequired,
     inputs: React.PropTypes.arrayOf(React.PropTypes.instanceOf(Input)).isRequired,
     onChangeConfig: React.PropTypes.func.isRequired,
     onChangeCode: React.PropTypes.func.isRequired,
