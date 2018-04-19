@@ -52,7 +52,7 @@ class CacheServiceImpl @Inject() (
   }
 
   val slackApiCallExpiry: Duration = 10.seconds
-  val dataTypeBotResultsExpiry: Duration = Duration.Inf
+  val dataTypeBotResultsExpiry: Duration = 24.hours
 
   def set[T: ClassTag](key: String, value: T, expiration: Duration = Duration.Inf): Unit = {
     cache.set(key, value, expiration)
