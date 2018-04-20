@@ -1,10 +1,9 @@
 package services.caching
 
-import javax.inject.{Inject, Provider, Singleton}
-
 import akka.actor.ActorSystem
 import akka.http.caching.LfuCache
 import akka.http.caching.scaladsl.{Cache, CachingSettings}
+import javax.inject.{Inject, Provider, Singleton}
 import json.Formatting._
 import json.{ImmutableBehaviorGroupVersionData, SlackUserData}
 import models.accounts.slack.botprofile.SlackBotProfile

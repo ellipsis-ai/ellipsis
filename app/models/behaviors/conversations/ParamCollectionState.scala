@@ -68,7 +68,7 @@ case class ParamCollectionState(
       maybeNextToCollect <- maybeNextToCollect(conversation)
       updatedConversation <- maybeNextToCollect.map { case(param, maybeValue) =>
         val context = BehaviorParameterContext(event, Some(conversation), param, services)
-        param.paramType.handleCollected(event, context).map(_ => conversation)
+        param.paramType.handleCollected(event, this, context).map(_ => conversation)
       }.getOrElse(Future.successful(conversation))
       updatedConversation <- updatedConversation.updateToNextState(event, services)
     } yield updatedConversation

@@ -28,7 +28,7 @@ trait Event {
   val messageText: String
   val relevantMessageText: String = messageText
   val relevantMessageTextWithFormatting: String = messageText
-  val maybeMessageText: Option[String] = Option(messageText).filter(_.trim.nonEmpty)
+  lazy val maybeMessageText: Option[String] = Option(messageText).filter(_.trim.nonEmpty)
   val maybeScheduled: Option[Scheduled] = None
   val eventType: EventType
   val maybeOriginalEventType: Option[EventType]

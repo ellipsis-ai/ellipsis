@@ -2,6 +2,7 @@ package models.behaviors.behaviorparameter
 
 import akka.actor.ActorSystem
 import com.fasterxml.jackson.core.JsonParseException
+import com.fasterxml.jackson.databind.JsonMappingException
 import models.behaviors._
 import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
 import models.behaviors.conversations.ParamCollectionState
@@ -13,7 +14,7 @@ import models.behaviors.events.SlackMessageActionConstants._
 import models.behaviors.events._
 import play.api.libs.json._
 import services.AWSLambdaConstants._
-import services.DataService
+import services.{AWSLambdaConstants, DataService}
 import services.caching.DataTypeBotResultsCacheKey
 import slick.dbio.DBIO
 import utils.Color
@@ -115,7 +116,7 @@ sealed trait BehaviorParameterType extends FieldTypeForSchema {
 
   def potentialValueFor(event: Event, context: BehaviorParameterContext): String = event.relevantMessageText
 
-  def handleCollected(event: Event, context: BehaviorParameterContext)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Unit] = {
+  def handleCollected(event: Event, paramState: ParamCollectionState, context: BehaviorParameterContext)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Unit] = {
     val potentialValue = potentialValueFor(event, context)
     val input = context.parameter.input
     if (input.isSaved) {
@@ -401,6 +402,7 @@ case class BehaviorBackedDataType(dataTypeConfig: DataTypeConfig) extends Behavi
       Some(Json.parse(text))
     } catch {
       case e: JsonParseException => None
+      case e: JsonMappingException => None
     }
     maybeJson.flatMap { json =>
       extractValidValueFrom(json).map { validValue =>
@@ -471,14 +473,28 @@ case class BehaviorBackedDataType(dataTypeConfig: DataTypeConfig) extends Behavi
     }
   }
 
+  private def paramValuesFor(maybeMatchText: Option[String], context: BehaviorParameterContext)(implicit ec: ExecutionContext): DBIO[Map[String, String]] = {
+    context.dataService.behaviorParameters.allForAction(behaviorVersion).map { params =>
+      if (params.isEmpty) {
+        Map()
+      } else {
+        maybeMatchText.map { v =>
+          Map(AWSLambdaConstants.invocationParamFor(0) -> v)
+        }.getOrElse(Map())
+      }
+    }
+  }
+
   private def fetchValidValuesResultAction(
+                                            maybeMatchText: Option[String],
                                             context: BehaviorParameterContext
                                           )(implicit actorSystem: ActorSystem, ec: ExecutionContext): DBIO[BotResult] = {
     for {
+      paramValues <- paramValuesFor(maybeMatchText, context)
       behaviorResponse <- context.dataService.behaviorResponses.buildForAction(
         context.event,
         behaviorVersion,
-        Map(),
+        paramValues,
         None,
         None,
         context.maybeConversation.map(c => NewParentConversation(c, context.parameter))
@@ -487,18 +503,31 @@ case class BehaviorBackedDataType(dataTypeConfig: DataTypeConfig) extends Behavi
     } yield result
   }
 
-  private def dataTypeResultCacheKeyFor(context: BehaviorParameterContext)(implicit ec: ExecutionContext): DataTypeBotResultsCacheKey = {
-    DataTypeBotResultsCacheKey(context.parameter.id, None, context.maybeConversation.map(_.id))
+  private def dataTypeResultCacheKeyFor(maybeMatchText: Option[String], context: BehaviorParameterContext)(implicit ec: ExecutionContext): DataTypeBotResultsCacheKey = {
+    DataTypeBotResultsCacheKey(context.parameter.id, maybeMatchText, context.maybeConversation.map(_.id))
   }
 
   private def getValidValuesResultAction(
+                                          maybeMatchText: Option[String],
                                           context: BehaviorParameterContext
                                         )(implicit actorSystem: ActorSystem, ec: ExecutionContext): DBIO[BotResult] = {
     for {
-      result <- DBIO.from(context.cacheService.getDataTypeBotResult(dataTypeResultCacheKeyFor(context), (key: DataTypeBotResultsCacheKey) => {
-        context.dataService.run(fetchValidValuesResultAction(context))
+      result <- DBIO.from(context.cacheService.getDataTypeBotResult(dataTypeResultCacheKeyFor(maybeMatchText, context), (key: DataTypeBotResultsCacheKey) => {
+        context.dataService.run(fetchValidValuesResultAction(maybeMatchText, context))
       }))
     } yield result
+  }
+
+  private def getValidValuesSuccessResultAction(
+                                                maybeMatchText: Option[String],
+                                                context: BehaviorParameterContext
+                                              )(implicit actorSystem: ActorSystem, ec: ExecutionContext): DBIO[SuccessResult] = {
+    getValidValuesResultAction(maybeMatchText, context).map { res =>
+      res match {
+        case r: SuccessResult => r
+        case r: BotResult => throw FetchValidValuesBadResultException(r)
+      }
+    }
   }
 
   private def extractValidValueFrom(json: JsValue): Option[ValidValue] = {
@@ -559,10 +588,7 @@ case class BehaviorBackedDataType(dataTypeConfig: DataTypeConfig) extends Behavi
 
   private def getValidValuesAction(maybeMatchText: Option[String], context: BehaviorParameterContext)(implicit actorSystem: ActorSystem, ec: ExecutionContext): DBIO[Seq[ValidValue]] = {
     if (dataTypeConfig.usesCode) {
-      getValidValuesResultAction(context).map {
-        case r: SuccessResult => extractValidValues(r)
-        case r: BotResult => throw FetchValidValuesBadResultException(r)
-      }
+      getValidValuesSuccessResultAction(maybeMatchText, context).map(extractValidValues)
     } else {
       validValuesFromDefaultStorageFor(maybeMatchText, context)
     }
@@ -581,6 +607,8 @@ case class BehaviorBackedDataType(dataTypeConfig: DataTypeConfig) extends Behavi
       validValues.find {
         v => v.id == text || textMatchesLabel(text, v.label, context)
       }
+    }.recover {
+      case e: FetchValidValuesBadResultException => None
     }
   }
 
@@ -649,6 +677,9 @@ case class BehaviorBackedDataType(dataTypeConfig: DataTypeConfig) extends Behavi
     }
   }
 
+  private def maybeMatchTextFor(paramState: ParamCollectionState): Option[String] = {
+    paramState.collected.headOption.map(_.valueString).filter(_.trim.nonEmpty)
+  }
 
   override def promptResultForAction(
                                maybePreviousCollectedValue: Option[String],
@@ -657,16 +688,18 @@ case class BehaviorBackedDataType(dataTypeConfig: DataTypeConfig) extends Behavi
                                isReminding: Boolean
                              )(implicit actorSystem: ActorSystem, ec: ExecutionContext): DBIO[BotResult] = {
     if (dataTypeConfig.usesCode) {
-      for {
-        initialResult <- getValidValuesResultAction(context)
-        result <- if (isCollectingOther(context)) {
-          promptResultForOtherCaseAction(context)
-        } else if (initialResult.maybeConversation.isDefined) {
-          DBIO.successful(initialResult)
-        } else {
-          promptResultWithValidValuesResult(initialResult, context)
-        }
-      } yield result
+      if (isCollectingOther(context)) {
+        promptResultForOtherCaseAction(context)
+      } else {
+        for {
+          initialResult <- getValidValuesResultAction(maybeMatchTextFor(paramState), context)
+          result <- if (initialResult.maybeConversation.isDefined) {
+            DBIO.successful(initialResult)
+          } else {
+            promptResultWithValidValuesResult(initialResult, context)
+          }
+        } yield result
+      }
     } else {
       for {
         validValues <- validValuesFromDefaultStorageFor(None, context)
@@ -675,16 +708,20 @@ case class BehaviorBackedDataType(dataTypeConfig: DataTypeConfig) extends Behavi
     }
   }
 
-  override def handleCollected(event: Event, context: BehaviorParameterContext)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Unit] = {
+  override def handleCollected(event: Event, paramState: ParamCollectionState, context: BehaviorParameterContext)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Unit] = {
     if (!isCollectingOther(context) && isOther(context) && context.maybeConversation.isDefined) {
       maybeCollectingOtherCacheKeyFor(context).foreach { key =>
         context.cacheService.set(key, "true", 5.minutes)
       }
       Future.successful({})
     } else if (isRequestingStartAgain(context)) {
-      Future.successful(context.cacheService.clearDataTypeBotResult(dataTypeResultCacheKeyFor(context)))
+      Future.sequence(paramState.collected.map { ea =>
+        context.dataService.collectedParameterValues.deleteFor(ea.parameter, ea.conversation)
+      }).map { _ =>
+        context.cacheService.clearDataTypeBotResult(dataTypeResultCacheKeyFor(maybeMatchTextFor(paramState), context))
+      }
     } else {
-      super.handleCollected(event, context)
+      super.handleCollected(event, paramState, context)
     }
   }
 

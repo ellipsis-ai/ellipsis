@@ -95,6 +95,10 @@ class CollectedParameterValueServiceImpl @Inject() (
     rawFindQuery(parameter.id, conversation.id).delete.map(_ => {})
   }
 
+  def deleteFor(parameter: BehaviorParameter, conversation: Conversation): Future[Unit] = {
+    dataService.run(deleteForAction(parameter, conversation))
+  }
+
   def deleteAll(): Future[Unit] = {
     dataService.run(all.delete).map(_ => Unit)
   }
