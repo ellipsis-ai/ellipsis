@@ -45,7 +45,7 @@ trait TestContext extends MockitoSugar{
   lazy implicit val app: Application = appBuilder.build()
   val dataService = app.injector.instanceOf(classOf[DataService])
   val graphQLService = app.injector.instanceOf(classOf[GraphQLService])
-  lazy val actorSystem = app.injector.instanceOf(classOf[ActorSystem])
+  lazy implicit val actorSystem = app.injector.instanceOf(classOf[ActorSystem])
   val eventHandler = app.injector.instanceOf(classOf[EventHandler])
   val githubService = app.injector.instanceOf(classOf[GithubService])
   val lambdaService = app.injector.instanceOf(classOf[AWSLambdaService])

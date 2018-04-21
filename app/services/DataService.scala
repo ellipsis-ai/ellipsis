@@ -26,6 +26,7 @@ import models.behaviors.config.requiredoauth2apiconfig.RequiredOAuth2ApiConfigSe
 import models.behaviors.config.requiredsimpletokenapi.RequiredSimpleTokenApiService
 import models.behaviors.conversations.collectedparametervalue.CollectedParameterValueService
 import models.behaviors.conversations.conversation.ConversationService
+import models.behaviors.conversations.parentconversation.ParentConversationService
 import models.behaviors.datatypeconfig.DataTypeConfigService
 import models.behaviors.datatypefield.DataTypeFieldService
 import models.behaviors.defaultstorageitem.DefaultStorageItemService
@@ -90,6 +91,7 @@ trait DataService {
   val requiredSimpleTokenApis: RequiredSimpleTokenApiService
   val linkedGithubRepos: LinkedGithubRepoService
   val conversations: ConversationService
+  val parentConversations: ParentConversationService
   val collectedParameterValues: CollectedParameterValueService
   val scheduledMessages: ScheduledMessageService
   val scheduledBehaviors: ScheduledBehaviorService

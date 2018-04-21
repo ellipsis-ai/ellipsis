@@ -1,5 +1,6 @@
 package models.behaviors.conversations
 
+import akka.actor.ActorSystem
 import models.behaviors.behaviorparameter.{BehaviorParameter, BehaviorParameterContext}
 import models.behaviors.conversations.collectedparametervalue.CollectedParameterValue
 import models.behaviors.conversations.conversation.Conversation
@@ -23,7 +24,7 @@ case class ParamCollectionState(
 
   val rankedParams = params.sortBy(_.rank)
 
-  def allLeftToCollect(conversation: Conversation)(implicit ec: ExecutionContext): Future[Seq[(BehaviorParameter, Option[String])]] = {
+  def allLeftToCollect(conversation: Conversation)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Seq[(BehaviorParameter, Option[String])]] = {
     val tuples = rankedParams.map { ea =>
       (ea, collected.find(_.parameter == ea), savedAnswers.find(_.inputId == ea.input.inputId))
     }
@@ -47,11 +48,11 @@ case class ParamCollectionState(
     }
   }
 
-  def maybeNextToCollect(conversation: Conversation)(implicit ec: ExecutionContext): Future[Option[(BehaviorParameter, Option[String])]] = {
+  def maybeNextToCollect(conversation: Conversation)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[(BehaviorParameter, Option[String])]] = {
     allLeftToCollect(conversation).map(_.headOption)
   }
 
-  def isCompleteIn(conversation: Conversation)(implicit ec: ExecutionContext): Future[Boolean] = maybeNextToCollect(conversation).map(_.isEmpty)
+  def isCompleteIn(conversation: Conversation)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Boolean] = maybeNextToCollect(conversation).map(_.isEmpty)
 
   def invocationMap: Map[String, String] = {
     rankedParams.zipWithIndex.map { case(ea, i) =>
@@ -62,18 +63,18 @@ case class ParamCollectionState(
     }.toMap
   }
 
-  def collectValueFrom(conversation: InvokeBehaviorConversation)(implicit ec: ExecutionContext): Future[Conversation] = {
+  def collectValueFrom(conversation: InvokeBehaviorConversation)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Conversation] = {
     for {
       maybeNextToCollect <- maybeNextToCollect(conversation)
       updatedConversation <- maybeNextToCollect.map { case(param, maybeValue) =>
         val context = BehaviorParameterContext(event, Some(conversation), param, services)
-        param.paramType.handleCollected(event, context).map(_ => conversation)
+        param.paramType.handleCollected(event, this, context).map(_ => conversation)
       }.getOrElse(Future.successful(conversation))
       updatedConversation <- updatedConversation.updateToNextState(event, services)
     } yield updatedConversation
   }
 
-  def promptResultForAction(conversation: Conversation, isReminding: Boolean)(implicit ec: ExecutionContext): DBIO[BotResult] = {
+  def promptResultForAction(conversation: Conversation, isReminding: Boolean)(implicit actorSystem: ActorSystem, ec: ExecutionContext): DBIO[BotResult] = {
     for {
       maybeNextToCollect <- DBIO.from(maybeNextToCollect(conversation))
       result <- maybeNextToCollect.map { case(param, maybeValue) =>

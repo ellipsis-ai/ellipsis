@@ -2,11 +2,14 @@ package models.behaviors.conversations
 
 import java.time.OffsetDateTime
 
+import akka.actor.ActorSystem
+import drivers.SlickPostgresDriver.api._
 import models.IDs
 import models.behaviors.BotResult
 import models.behaviors.behaviorparameter.BehaviorParameter
 import models.behaviors.behaviorversion.BehaviorVersion
 import models.behaviors.conversations.conversation.Conversation
+import models.behaviors.conversations.parentconversation.NewParentConversation
 import models.behaviors.events.{Event, EventType, SlackEvent, SlackMessageEvent}
 import models.behaviors.triggers.messagetrigger.MessageTrigger
 import services.caching.CacheService
@@ -30,7 +33,8 @@ case class InvokeBehaviorConversation(
                                        maybeLastInteractionAt: Option[OffsetDateTime],
                                        state: String = Conversation.NEW_STATE,
                                        maybeScheduledMessageId: Option[String],
-                                       maybeOriginalEventType: Option[EventType]
+                                       maybeOriginalEventType: Option[EventType],
+                                       maybeParentId: Option[String]
                                       ) extends Conversation {
 
   val conversationType = Conversation.INVOKE_BEHAVIOR
@@ -70,7 +74,7 @@ case class InvokeBehaviorConversation(
     } yield Seq(simpleTokenState, paramState)
   }
 
-  def updateToNextState(event: Event, services: DefaultServices)(implicit ec: ExecutionContext): Future[Conversation] = {
+  def updateToNextState(event: Event, services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Conversation] = {
     for {
       collectionStates <- collectionStatesFor(event, services)
       collectionStatesWithIsComplete <- Future.sequence(collectionStates.map { collectionState =>
@@ -87,7 +91,7 @@ case class InvokeBehaviorConversation(
     } yield updated
   }
 
-  def updateWith(event: Event, services: DefaultServices)(implicit ec: ExecutionContext): Future[Conversation] = {
+  def updateWith(event: Event, services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Conversation] = {
 
     for {
       collectionStates <- collectionStatesFor(event, services)
@@ -104,12 +108,12 @@ case class InvokeBehaviorConversation(
                      event: Event,
                      isReminding: Boolean,
                      services: DefaultServices
-                   )(implicit ec: ExecutionContext): DBIO[BotResult] = {
+                   )(implicit actorSystem: ActorSystem, ec: ExecutionContext): DBIO[BotResult] = {
     for {
       collectionStates <- collectionStatesForAction(event, services)
       result <- collectionStates.find(_.name == state).map(_.promptResultForAction(this, isReminding)).getOrElse {
         val paramState = paramStateIn(collectionStates)
-        services.dataService.behaviorResponses.buildForAction(event, behaviorVersion, paramState.invocationMap, maybeTrigger, Some(this)).flatMap { br =>
+        services.dataService.behaviorResponses.buildForAction(event, behaviorVersion, paramState.invocationMap, maybeTrigger, Some(this), None).flatMap { br =>
           br.resultForFilledOutAction
         }
       }
@@ -120,7 +124,7 @@ case class InvokeBehaviorConversation(
                event: Event,
                isReminding: Boolean,
                services: DefaultServices
-             )(implicit ec: ExecutionContext): Future[BotResult] = {
+             )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[BotResult] = {
     val eventualResponse = services.dataService.run(respondAction(event, isReminding, services))
     event match {
       case event: SlackMessageEvent => {
@@ -135,7 +139,7 @@ case class InvokeBehaviorConversation(
   def maybeNextParamToCollect(
                                event: Event,
                                services: DefaultServices
-                     )(implicit ec: ExecutionContext): Future[Option[BehaviorParameter]] = {
+                     )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[BehaviorParameter]] = {
     for {
       collectionStates <- collectionStatesFor(event, services)
       maybeCollectionState <- Future.successful(collectionStates.find(_.name == state))
@@ -162,6 +166,7 @@ object InvokeBehaviorConversation {
                  event: Event,
                  maybeChannel: Option[String],
                  maybeActivatedTrigger: Option[MessageTrigger],
+                 maybeParent: Option[NewParentConversation],
                  dataService: DataService,
                  cacheService: CacheService
                  )(implicit ec: ExecutionContext): Future[InvokeBehaviorConversation] = {
@@ -169,8 +174,11 @@ object InvokeBehaviorConversation {
       case e: SlackEvent => Some(e.userSlackTeamId)
       case _ => None
     }
-    val newInstance =
-      InvokeBehaviorConversation(
+    val action = for {
+      maybeParent <- maybeParent.map { parent =>
+        dataService.parentConversations.createAction(parent).map(Some(_))
+      }.getOrElse(DBIO.successful(None))
+      newInstance <- DBIO.successful(InvokeBehaviorConversation(
         IDs.next,
         behaviorVersion,
         maybeActivatedTrigger,
@@ -184,13 +192,16 @@ object InvokeBehaviorConversation {
         None,
         Conversation.NEW_STATE,
         event.maybeScheduled.map(_.id),
-        Some(event.originalEventType)
-      )
-    dataService.conversations.save(newInstance).map(_ => {
+        Some(event.originalEventType),
+        maybeParent.map(_.id)
+      ))
+      _ <- dataService.conversations.saveAction(newInstance)
+    } yield {
       maybeChannel.foreach { channel =>
         cacheService.cacheLastConversationId(event.teamId, channel, newInstance.id)
       }
       newInstance
-    })
+    }
+    dataService.run(action.transactionally)
   }
 }

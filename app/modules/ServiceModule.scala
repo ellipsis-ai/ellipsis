@@ -29,6 +29,7 @@ import models.behaviors.config.requiredoauth2apiconfig.{RequiredOAuth2ApiConfigS
 import models.behaviors.config.requiredsimpletokenapi.{RequiredSimpleTokenApiService, RequiredSimpleTokenApiServiceImpl}
 import models.behaviors.conversations.collectedparametervalue.{CollectedParameterValueService, CollectedParameterValueServiceImpl}
 import models.behaviors.conversations.conversation.{ConversationService, ConversationServiceImpl}
+import models.behaviors.conversations.parentconversation.{ParentConversationService, ParentConversationServiceImpl}
 import models.behaviors.datatypeconfig.{DataTypeConfigService, DataTypeConfigServiceImpl}
 import models.behaviors.datatypefield.{DataTypeFieldService, DataTypeFieldServiceImpl}
 import models.behaviors.defaultstorageitem.{DefaultStorageItemService, DefaultStorageItemServiceImpl}
@@ -100,6 +101,7 @@ class ServiceModule extends AbstractModule with ScalaModule {
     bind[RequiredSimpleTokenApiService].to[RequiredSimpleTokenApiServiceImpl]
     bind[LinkedGithubRepoService].to[LinkedGithubRepoServiceImpl]
     bind[ConversationService].to[ConversationServiceImpl]
+    bind[ParentConversationService].to[ParentConversationServiceImpl]
     bind[CollectedParameterValueService].to[CollectedParameterValueServiceImpl]
     bind[ScheduledMessageService].to[ScheduledMessageServiceImpl]
     bind[ScheduledBehaviorService].to[ScheduledBehaviorServiceImpl]

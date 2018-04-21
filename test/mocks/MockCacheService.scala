@@ -32,6 +32,8 @@ class MockCacheService extends CacheService with MockitoSugar {
 
   def getDataTypeBotResult(key: DataTypeBotResultsCacheKey, dataFn: DataTypeBotResultsCacheKey => Future[BotResult]): Future[BotResult] = dataFn(key)
 
+  def clearDataTypeBotResult(key: DataTypeBotResultsCacheKey): Unit = {}
+
   def getSlackChannelInfo(
                            key: SlackChannelDataCacheKey,
                            dataFn: SlackChannelDataCacheKey => Future[Option[Channel]]

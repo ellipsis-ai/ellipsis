@@ -14,6 +14,8 @@ trait CollectedParameterValueService {
 
   def deleteForAction(parameter: BehaviorParameter, conversation: Conversation): DBIO[Unit]
 
+  def deleteFor(parameter: BehaviorParameter, conversation: Conversation): Future[Unit]
+
   def deleteAll(): Future[Unit]
 
 }

@@ -2,7 +2,7 @@ import * as React from 'react';
 import CodeConfiguration from './code_configuration';
 import Collapsible from '../shared_ui/collapsible';
 import DataTypeDataSummary from './data_type_data_summary';
-import DataTypeResultConfig from './data_type_result_config';
+import UserInputConfiguration from './user_input_configuration';
 import DataTypeSchemaConfig from './data_type_schema_config';
 import DataTypeSourceConfig from './data_type_source_config';
 import ID from '../lib/id';
@@ -130,29 +130,6 @@ class DataTypeEditor extends React.Component {
       }));
     }
 
-    hasInputNamed(name) {
-      return this.props.inputs.some(ea => ea.name === name);
-    }
-
-    updateDataTypeResultConfig(shouldUseSearch) {
-      const code = this.props.behaviorVersion.getFunctionBody();
-      const callback = () => {
-        if (!code || code === BehaviorVersion.defaultDataTypeCode(!shouldUseSearch)) {
-          this.props.onChangeCode(BehaviorVersion.defaultDataTypeCode(shouldUseSearch));
-        }
-      };
-      if (shouldUseSearch) {
-        this.props.onAddNewInput('searchQuery', callback);
-      } else {
-        this.props.onDeleteInputs(callback);
-      }
-    }
-
-    isFinishedBehavior() {
-      const selected = this.getSelectedBehavior();
-      return Boolean(!selected.isNew && selected.getFunctionBody());
-    }
-
     isModified() {
       return this.props.isModified(this.props.behaviorVersion);
     }
@@ -245,12 +222,24 @@ class DataTypeEditor extends React.Component {
             <hr className="man rule-subtle" />
 
             {this.usesCode() ? (
-              <DataTypeResultConfig
-                usesSearch={this.hasInputNamed('searchQuery')}
-                onChange={this.updateDataTypeResultConfig}
-                isFinishedBehavior={this.isFinishedBehavior()}
-                activePanelName={this.props.activePanelName}
-                onToggleActivePanel={this.props.onToggleActivePanel}
+              <UserInputConfiguration
+                onInputChange={this.props.onInputChange}
+                onInputMove={this.props.onInputMove}
+                onInputDelete={this.props.onInputDelete}
+                onInputAdd={this.props.onInputAdd}
+                onInputNameFocus={this.props.onInputNameFocus}
+                onInputNameBlur={this.props.onInputNameBlur}
+                onConfigureType={this.props.onConfigureType}
+                userInputs={this.props.userInputs}
+                paramTypes={this.props.paramTypes.filter(ea => ea.id !== this.props.behaviorVersion.id)}
+                triggers={[]}
+                hasSharedAnswers={this.props.hasSharedAnswers}
+                otherBehaviorsInGroup={this.props.otherBehaviorsInGroup}
+                onToggleSharedAnswer={this.props.onToggleSharedAnswer}
+                savedAnswers={this.props.savedAnswers}
+                onToggleSavedAnswer={this.props.onToggleSavedAnswer}
+                onToggleInputHelp={this.props.onToggleInputHelp}
+                helpInputVisible={this.props.helpInputVisible}
               />
             ) : (
               <DataTypeSchemaConfig
@@ -260,7 +249,7 @@ class DataTypeEditor extends React.Component {
                 onAdd={this.addNewDataTypeField}
                 behaviorVersionId={this.props.behaviorVersion.id}
                 fields={this.getDataTypeFields()}
-                paramTypes={this.props.paramTypes}
+                paramTypes={this.props.builtinParamTypes}
                 animationDisabled={this.props.animationIsDisabled}
                 onConfigureType={this.props.onConfigureType}
               />
@@ -282,6 +271,7 @@ class DataTypeEditor extends React.Component {
     group: React.PropTypes.instanceOf(BehaviorGroup).isRequired,
     behaviorVersion: React.PropTypes.instanceOf(BehaviorVersion).isRequired,
     paramTypes: React.PropTypes.arrayOf(React.PropTypes.instanceOf(ParamType)).isRequired,
+    builtinParamTypes: React.PropTypes.arrayOf(React.PropTypes.instanceOf(ParamType)).isRequired,
     inputs: React.PropTypes.arrayOf(React.PropTypes.instanceOf(Input)).isRequired,
     onChangeConfig: React.PropTypes.func.isRequired,
     onChangeCode: React.PropTypes.func.isRequired,
@@ -308,7 +298,29 @@ class DataTypeEditor extends React.Component {
     useLineWrapping: React.PropTypes.bool.isRequired,
     onToggleCodeEditorLineWrapping: React.PropTypes.func.isRequired,
 
-    envVariableNames: React.PropTypes.arrayOf(React.PropTypes.string).isRequired
+    envVariableNames: React.PropTypes.arrayOf(React.PropTypes.string).isRequired,
+
+    onInputChange: React.PropTypes.func.isRequired,
+    onInputMove: React.PropTypes.func.isRequired,
+    onInputDelete: React.PropTypes.func.isRequired,
+    onInputAdd: React.PropTypes.func.isRequired,
+    onInputNameFocus: React.PropTypes.func.isRequired,
+    onInputNameBlur: React.PropTypes.func.isRequired,
+    userInputs: React.PropTypes.arrayOf(React.PropTypes.instanceOf(Input)).isRequired,
+    hasSharedAnswers: React.PropTypes.bool.isRequired,
+    otherBehaviorsInGroup: React.PropTypes.arrayOf(React.PropTypes.instanceOf(BehaviorVersion)).isRequired,
+    onToggleSharedAnswer: React.PropTypes.func.isRequired,
+    savedAnswers: React.PropTypes.arrayOf(
+      React.PropTypes.shape({
+        inputId: React.PropTypes.string.isRequired,
+        userAnswerCount: React.PropTypes.number.isRequired,
+        myValueString: React.PropTypes.string
+      })
+    ).isRequired,
+    onToggleSavedAnswer: React.PropTypes.func.isRequired,
+    onToggleInputHelp: React.PropTypes.func.isRequired,
+    helpInputVisible: React.PropTypes.bool.isRequired
+
 };
 
 export default DataTypeEditor;

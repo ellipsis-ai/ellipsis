@@ -3,6 +3,7 @@ package models.behaviors
 import models.behaviors.behavior.Behavior
 import models.behaviors.behaviorversion.BehaviorVersion
 import models.behaviors.conversations.conversation.Conversation
+import models.behaviors.conversations.parentconversation.NewParentConversation
 import models.behaviors.events.Event
 import models.behaviors.triggers.messagetrigger.MessageTrigger
 import models.team.Team
@@ -24,7 +25,8 @@ trait BehaviorResponseService {
                       behaviorVersion: BehaviorVersion,
                       paramValues: Map[String, String],
                       maybeActivatedTrigger: Option[MessageTrigger],
-                      maybeConversation: Option[Conversation]
+                      maybeConversation: Option[Conversation],
+                      maybeNewParent: Option[NewParentConversation]
                     ): DBIO[BehaviorResponse]
 
   def buildFor(
@@ -32,7 +34,8 @@ trait BehaviorResponseService {
                 behaviorVersion: BehaviorVersion,
                 paramValues: Map[String, String],
                 maybeActivatedTrigger: Option[MessageTrigger],
-                maybeConversation: Option[Conversation]
+                maybeConversation: Option[Conversation],
+                maybeNewParent: Option[NewParentConversation]
               ): Future[BehaviorResponse]
 
   def allFor(

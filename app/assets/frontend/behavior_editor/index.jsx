@@ -2445,7 +2445,8 @@ const BehaviorEditor = React.createClass({
           ref={(el) => this.dataTypeEditor = el}
           group={this.getBehaviorGroup()}
           behaviorVersion={this.getSelectedBehavior()}
-          paramTypes={this.getParamTypesForDataTypes()}
+          paramTypes={this.getParamTypes()}
+          builtinParamTypes={this.props.builtinParamTypes}
           inputs={this.getInputs()}
           onChangeConfig={this.setConfigProps}
           onChangeCode={this.updateCode}
@@ -2471,6 +2472,21 @@ const BehaviorEditor = React.createClass({
           onToggleCodeEditorLineWrapping={this.toggleCodeEditorLineWrapping}
 
           envVariableNames={this.getEnvVariableNames()}
+
+          onInputChange={this.updateBehaviorInputAtIndexWith}
+          onInputMove={this.moveBehaviorInputAtIndex}
+          onInputDelete={this.deleteInputAtIndex}
+          onInputAdd={this.addNewInput}
+          onInputNameFocus={this.onInputNameFocus}
+          onInputNameBlur={this.onInputNameBlur}
+          userInputs={this.getInputs()}
+          hasSharedAnswers={this.getOtherSavedInputsInGroup().length > 0}
+          otherBehaviorsInGroup={this.otherBehaviorsInGroup()}
+          onToggleSharedAnswer={this.toggleSharedAnswerInputSelector}
+          savedAnswers={this.props.savedAnswers}
+          onToggleSavedAnswer={this.toggleSavedAnswerEditor}
+          onToggleInputHelp={this.toggleUserInputHelp}
+          helpInputVisible={this.props.activePanelName === 'helpForUserInput'}
         />
       </div>
     );
