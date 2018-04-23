@@ -630,6 +630,45 @@ case class BehaviorBackedDataType(dataTypeConfig: DataTypeConfig) extends Behavi
     }
   }
 
+  private def maybeStartAgainButtonFor(params: Seq[BehaviorParameter], callbackId: String): Option[SlackMessageActionButton] = {
+    if (params.isEmpty) {
+      None
+    } else {
+      Some(SlackMessageActionButton(callbackId, Conversation.START_AGAIN_MENU_ITEM_TEXT, Conversation.START_AGAIN_MENU_ITEM_TEXT))
+    }
+  }
+
+  private def promptResultWithSimpleValidValues(
+                                                 validValues: Seq[ValidValue],
+                                                 context: BehaviorParameterContext,
+                                                 params: Seq[BehaviorParameter]
+                                               )(implicit actorSystem: ActorSystem, ec: ExecutionContext): DBIO[BotResult] = {
+    promptTextForAction(None, context, None, false).map { text =>
+      val callbackId = context.dataTypeChoiceCallbackId
+      val actionList = validValues.map { ea =>
+        SlackMessageActionButton(callbackId, ea.label, ea.label)
+      } ++ Seq(
+        maybeStartAgainButtonFor(params, callbackId),
+        Some(SlackMessageActionButton(callbackId, Conversation.CANCEL_MENU_ITEM_TEXT, Conversation.CANCEL_MENU_ITEM_TEXT))
+      ).flatten
+      val actionsGroup = SlackMessageActionsGroup(callbackId, actionList, None, None, None)
+      TextWithAttachmentsResult(
+        context.event,
+        context.maybeConversation,
+        text,
+        context.behaviorVersion.forcePrivateResponse,
+        Seq(actionsGroup)
+      )
+    }
+  }
+
+  private val MAX_SIMPLE_BUTTON_LABEL_LENGTH = 20
+  private val MAX_SIMPLE_BUTTONS = 3
+
+  private def areValidValuesSimple(validValues: Seq[ValidValue]): Boolean = {
+    validValues.length <= MAX_SIMPLE_BUTTONS && validValues.forall(ea => ea.label.length <= MAX_SIMPLE_BUTTON_LABEL_LENGTH)
+  }
+
   private def promptResultWithValidValues(validValues: Seq[ValidValue], context: BehaviorParameterContext)(implicit actorSystem: ActorSystem, ec: ExecutionContext): DBIO[BotResult] = {
     for {
       params <- context.services.dataService.behaviorParameters.allForAction(behaviorVersion)
@@ -645,19 +684,23 @@ case class BehaviorBackedDataType(dataTypeConfig: DataTypeConfig) extends Behavi
         context.maybeConversation.foreach { conversation =>
           context.cacheService.cacheValidValues(valuesListCacheKeyFor(conversation, context.parameter), validValues)
         }
-        val builtinMenuItems = Seq(
-          maybeStartAgainMenuItemFor(params),
-          Some(SlackMessageActionMenuItem(Conversation.CANCEL_MENU_ITEM_TEXT, Conversation.CANCEL_MENU_ITEM_TEXT))
-        ).flatten
-        val menuItems = validValues.zipWithIndex.map { case (ea, i) =>
-          SlackMessageActionMenuItem(s"${i+1}. ${ea.label}", ea.label)
-        } ++ builtinMenuItems
-        val actionsList = Seq(SlackMessageActionMenu("ignored", "Choose an option", menuItems))
-        val groups: Seq[MessageAttachmentGroup] = Seq(
-          SlackMessageActionsGroup(context.dataTypeChoiceCallbackId, actionsList, None, None, Some(Color.BLUE_LIGHT))
-        )
-        promptTextForAction(None, context, None, false).map { text =>
-          TextWithAttachmentsResult(context.event, context.maybeConversation, text, context.behaviorVersion.forcePrivateResponse, groups)
+        if (areValidValuesSimple(validValues)) {
+          promptResultWithSimpleValidValues(validValues, context, params)
+        } else {
+          val builtinMenuItems = Seq(
+            maybeStartAgainMenuItemFor(params),
+            Some(SlackMessageActionMenuItem(Conversation.CANCEL_MENU_ITEM_TEXT, Conversation.CANCEL_MENU_ITEM_TEXT))
+          ).flatten
+          val menuItems = validValues.zipWithIndex.map { case (ea, i) =>
+            SlackMessageActionMenuItem(s"${i+1}. ${ea.label}", ea.label)
+          } ++ builtinMenuItems
+          val actionsList = Seq(SlackMessageActionMenu("ignored", "Choose an option", menuItems))
+          val groups: Seq[MessageAttachmentGroup] = Seq(
+            SlackMessageActionsGroup(context.dataTypeChoiceCallbackId, actionsList, None, None, Some(Color.BLUE_LIGHT))
+          )
+          promptTextForAction(None, context, None, false).map { text =>
+            TextWithAttachmentsResult(context.event, context.maybeConversation, text, context.behaviorVersion.forcePrivateResponse, groups)
+          }
         }
       }
     } yield output
