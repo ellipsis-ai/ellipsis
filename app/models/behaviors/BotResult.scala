@@ -58,11 +58,11 @@ case class ActionChoice(
   }
 
   private def isAllowedBecauseSameTeam(user: User, dataService: DataService)(implicit ec: ExecutionContext): Future[Boolean] = {
-    userId.map { uid =>
+    groupVersionId.map { gvid =>
       for {
-        maybeActionChoiceUser <- dataService.users.find(uid)
-        maybeActionChoiceSlackTeamId <- maybeActionChoiceUser.map { u =>
-          dataService.users.maybeSlackTeamIdFor(u)
+        maybeGroupVersion <- dataService.behaviorGroupVersions.findWithoutAccessCheck(gvid)
+        maybeActionChoiceSlackTeamId <- maybeGroupVersion.map { gv =>
+          dataService.slackBotProfiles.allFor(gv.team).map(_.headOption.map(_.slackTeamId))
         }.getOrElse(Future.successful(None))
         maybeAttemptingUserSlackTeamId <- dataService.users.maybeSlackTeamIdFor(user)
       } yield {
