@@ -183,19 +183,18 @@ trait Scheduled {
     } yield {}
   }
 
-  def eventFor(channel: String, slackUserId: String, slackTeamId: String, profile: SlackBotProfile, client: SlackApiClient): ScheduledEvent
+  def eventFor(channel: String, slackUserId: String, profile: SlackBotProfile, client: SlackApiClient): ScheduledEvent
 
   // TODO: don't be slack-specific
   def sendFor(
                channel: String,
                slackUserId: String,
-               slackTeamId: String,
                eventHandler: EventHandler,
                client: SlackApiClient,
                profile: SlackBotProfile,
                services: DefaultServices
              )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Unit] = {
-    val event = eventFor(channel, slackUserId, slackTeamId, profile, client)
+    val event = eventFor(channel, slackUserId, profile, client)
     for {
       results <- eventHandler.handle(event, None)
     } yield {
@@ -235,7 +234,7 @@ trait Scheduled {
           }
         }.getOrElse(Future.successful(None))
         _ <- maybeDmInfo.map { info =>
-          sendFor(info.channelId, info.userId, info.teamId, eventHandler, client, profile, services)
+          sendFor(info.channelId, info.userId, eventHandler, client, profile, services)
         }.getOrElse(Future.successful({}))
       } yield {}
     }
@@ -282,8 +281,7 @@ trait Scheduled {
       } else {
         maybeSlackProfile(services.dataService).flatMap { maybeSlackProfile =>
           val slackUserId = maybeSlackProfile.map(_.loginInfo.providerKey).getOrElse(profile.userId)
-          val slackTeamId = maybeSlackProfile.map(_.teamId).getOrElse(profile.slackTeamId)
-          sendFor(channel, slackUserId, slackTeamId, eventHandler, client, profile, services)
+          sendFor(channel, slackUserId, eventHandler, client, profile, services)
         }
       }
     }.getOrElse(Future.successful(Unit))
