@@ -663,10 +663,16 @@ case class BehaviorBackedDataType(dataTypeConfig: DataTypeConfig) extends Behavi
   }
 
   private val MAX_SIMPLE_BUTTON_LABEL_LENGTH = 20
-  private val MAX_SIMPLE_BUTTONS = 3
+  private val MAX_SIMPLE_BUTTONS = 4
 
-  private def areValidValuesSimple(validValues: Seq[ValidValue]): Boolean = {
-    validValues.length <= MAX_SIMPLE_BUTTONS && validValues.forall(ea => ea.label.length <= MAX_SIMPLE_BUTTON_LABEL_LENGTH)
+  private def isSimpleValidValue(validValue: ValidValue): Boolean = {
+    val withoutEmoji = validValue.label.replaceAll(":[a-z_]+:", "")
+    withoutEmoji.length <= MAX_SIMPLE_BUTTON_LABEL_LENGTH
+  }
+
+  private def areValidValuesSimple(validValues: Seq[ValidValue], params: Seq[BehaviorParameter]): Boolean = {
+    val buttonLength = if (params.isEmpty) { validValues.length } else { validValues.length - 1 }
+    buttonLength <= MAX_SIMPLE_BUTTONS && validValues.forall(isSimpleValidValue)
   }
 
   private def promptResultWithValidValues(validValues: Seq[ValidValue], context: BehaviorParameterContext)(implicit actorSystem: ActorSystem, ec: ExecutionContext): DBIO[BotResult] = {
@@ -684,7 +690,7 @@ case class BehaviorBackedDataType(dataTypeConfig: DataTypeConfig) extends Behavi
         context.maybeConversation.foreach { conversation =>
           context.cacheService.cacheValidValues(valuesListCacheKeyFor(conversation, context.parameter), validValues)
         }
-        if (areValidValuesSimple(validValues)) {
+        if (areValidValuesSimple(validValues, params)) {
           promptResultWithSimpleValidValues(validValues, context, params)
         } else {
           val builtinMenuItems = Seq(
