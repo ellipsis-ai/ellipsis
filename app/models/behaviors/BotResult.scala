@@ -163,7 +163,7 @@ sealed trait BotResult {
         interruptionResults <- {
           val toInterrupt =
             ongoingWithRoots.
-              filterNot { case(_, root) => maybeRoot.contains(root) }.
+              filterNot { case(_, root) => maybeRoot.map(_.id).contains(root.id) }.
               map { case(convo, _) => convo }
           DBIO.sequence(toInterrupt.map { ea =>
             dataService.conversations.backgroundAction(ea, interruptionPrompt, includeUsername = true)
