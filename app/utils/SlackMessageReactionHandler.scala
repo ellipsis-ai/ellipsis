@@ -11,6 +11,7 @@ object SlackMessageReactionHandler {
   val PROGRESS_EMOJI_DURATION_MS = 2500
   val INITIAL_REACTION = "thinking_face"
   val PROGRESS_REACTIONS = Seq("hourglass", "hourglass_flowing_sand")
+  val MAX_REACTION_COUNT = 8
 
   def handle[T](client: SlackApiClient, future: Future[T], channel: String, messageTs: String, delayMilliseconds: Int = 1500)
                (implicit system: ActorSystem): Future[Unit] = {
@@ -51,16 +52,20 @@ object SlackMessageReactionHandler {
       if (updateCount > 0) {
         client.removeReactionFromMessage(emojiFor(updateCount), channel, messageTs)
       }
-      val next = updateCount + 1
-      val nextEmoji = emojiFor(next)
-      client.addReactionToMessage(nextEmoji, channel, messageTs).map(_ => {
-        if (p.isCompleted) {
-          client.removeReactionFromMessage(nextEmoji, channel, messageTs)
-        } else {
-          Thread.sleep(PROGRESS_EMOJI_DURATION_MS)
-          updateReactionProgress(p, client, channel, messageTs, next)
-        }
-      })
+      if (updateCount == MAX_REACTION_COUNT) {
+        removeAll(client, channel, messageTs)
+      } else {
+        val next = updateCount + 1
+        val nextEmoji = emojiFor(next)
+        client.addReactionToMessage(nextEmoji, channel, messageTs).map(_ => {
+          if (p.isCompleted) {
+            client.removeReactionFromMessage(nextEmoji, channel, messageTs)
+          } else {
+            Thread.sleep(PROGRESS_EMOJI_DURATION_MS)
+            updateReactionProgress(p, client, channel, messageTs, next)
+          }
+        })
+      }
     }
   }
 }
