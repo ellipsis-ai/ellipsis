@@ -3,6 +3,7 @@ package models.behaviors.behaviorparameter
 import akka.actor.ActorSystem
 import com.fasterxml.jackson.core.JsonParseException
 import com.fasterxml.jackson.databind.JsonMappingException
+import com.rockymadden.stringmetric.similarity.RatcliffObershelpMetric
 import models.behaviors._
 import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
 import models.behaviors.conversations.ParamCollectionState
@@ -14,8 +15,8 @@ import models.behaviors.events.SlackMessageActionConstants._
 import models.behaviors.events._
 import play.api.libs.json._
 import services.AWSLambdaConstants._
-import services.{AWSLambdaConstants, DataService}
 import services.caching.DataTypeBotResultsCacheKey
+import services.{AWSLambdaConstants, DataService}
 import slick.dbio.DBIO
 import utils.Color
 
@@ -394,7 +395,7 @@ case class BehaviorBackedDataType(dataTypeConfig: DataTypeConfig) extends Behavi
   }
 
   def isValidAction(text: String, context: BehaviorParameterContext)(implicit actorSystem: ActorSystem, ec: ExecutionContext): DBIO[Boolean] = {
-    maybeValidValuesForAction(text, context).map(_.length == 1)
+    maybeValidValuesForAction(text, context).map(vv => isSingleMatch(text, vv))
   }
 
   def maybeValidValuesForAction(text: String, context: BehaviorParameterContext)(implicit actorSystem: ActorSystem, ec: ExecutionContext): DBIO[Seq[ValidValue]] = {
@@ -605,9 +606,14 @@ case class BehaviorBackedDataType(dataTypeConfig: DataTypeConfig) extends Behavi
     text.toLowerCase == label.toLowerCase
   }
 
+  private def isSingleMatch(text: String, validValues: Seq[ValidValue]): Boolean = {
+    validValues.length == 1 &&
+      RatcliffObershelpMetric.compare(validValues.head.label.toLowerCase, text.toLowerCase).exists(_ > 0.75)
+  }
+
   private def getMatchForAction(text: String, context: BehaviorParameterContext)(implicit actorSystem: ActorSystem, ec: ExecutionContext): DBIO[Option[ValidValue]] = {
     getValidValuesAction(Some(text), context).map { validValues =>
-      if (validValues.length == 1) {
+      if (isSingleMatch(text, validValues)) {
         validValues.headOption
       } else {
         None
