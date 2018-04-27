@@ -459,7 +459,7 @@ case class BehaviorBackedDataType(dataTypeConfig: DataTypeConfig) extends Behavi
                             context: BehaviorParameterContext
                           )(implicit actorSystem: ActorSystem, ec: ExecutionContext): DBIO[JsValue] = {
     maybeValidValuesForAction(text, context).map { validValues =>
-      validValues.headOption.map { vv =>
+      maybeMatchFor(text, validValues).map { vv =>
         JsObject(Map(BehaviorParameterType.ID_PROPERTY -> JsString(vv.id), BehaviorParameterType.LABEL_PROPERTY -> JsString(vv.label))) ++ vv.data
       }.getOrElse(JsString(text))
     }
@@ -606,18 +606,31 @@ case class BehaviorBackedDataType(dataTypeConfig: DataTypeConfig) extends Behavi
     text.toLowerCase == label.toLowerCase
   }
 
+  private def maybeMatchById(text: String, validValues: Seq[ValidValue]): Option[ValidValue] = {
+    validValues.find(_.id == text)
+  }
+
+  private def maybeMatchByLabel(text: String, validValues: Seq[ValidValue]): Option[ValidValue] = {
+    if (validValues.length == 1 && RatcliffObershelpMetric.compare(validValues.head.label.toLowerCase, text.toLowerCase).exists(_ > 0.75)) {
+      validValues.headOption
+    } else {
+      None
+    }
+  }
+
+  private def maybeMatchFor(text: String, validValues: Seq[ValidValue]): Option[ValidValue] = {
+    maybeMatchById(text, validValues).orElse {
+      maybeMatchByLabel(text, validValues)
+    }
+  }
+
   private def isSingleMatch(text: String, validValues: Seq[ValidValue]): Boolean = {
-    validValues.length == 1 &&
-      RatcliffObershelpMetric.compare(validValues.head.label.toLowerCase, text.toLowerCase).exists(_ > 0.75)
+    maybeMatchFor(text, validValues).isDefined
   }
 
   private def getMatchForAction(text: String, context: BehaviorParameterContext)(implicit actorSystem: ActorSystem, ec: ExecutionContext): DBIO[Option[ValidValue]] = {
     getValidValuesAction(Some(text), context).map { validValues =>
-      if (isSingleMatch(text, validValues)) {
-        validValues.headOption
-      } else {
-        None
-      }
+      maybeMatchFor(text, validValues)
     }
   }
 
