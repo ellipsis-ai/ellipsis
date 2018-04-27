@@ -119,7 +119,7 @@ case class BehaviorResponse(
                   dataService.collectedParameterValues.ensureFor(p.parameter, convo, v.text)
                 }.getOrElse(Future.successful(Unit))
               })
-              result <- convo.resultFor(event, services)
+              result <- dataService.run(convo.resultForAction(event, services))
             } yield result
           }
         }

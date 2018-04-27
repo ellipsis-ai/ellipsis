@@ -30,17 +30,19 @@ case class SimpleTokenCollectionState(
     dataService.run(maybeNextToCollectAction)
   }
 
-  def isCompleteIn(conversation: Conversation)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Boolean] = maybeNextToCollect.map(_.isEmpty)
+  def isCompleteInAction(conversation: Conversation)(implicit actorSystem: ActorSystem, ec: ExecutionContext): DBIO[Boolean] = {
+    maybeNextToCollectAction.map(_.isEmpty)
+  }
 
-  def collectValueFrom(conversation: InvokeBehaviorConversation)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Conversation] = {
+  def collectValueFromAction(conversation: InvokeBehaviorConversation)(implicit actorSystem: ActorSystem, ec: ExecutionContext): DBIO[Conversation] = {
     for {
-      maybeNextToCollect <- maybeNextToCollect
-      user <- event.ensureUser(dataService)
+      maybeNextToCollect <- maybeNextToCollectAction
+      user <- event.ensureUserAction(dataService)
       updatedConversation <- maybeNextToCollect.map { api =>
         val token = event.relevantMessageText.trim
-        dataService.linkedSimpleTokens.save(LinkedSimpleToken(token, user.id, api)).map(_ => conversation)
-      }.getOrElse(Future.successful(conversation))
-      updatedConversation <- updatedConversation.updateToNextState(event, services)
+        dataService.linkedSimpleTokens.saveAction(LinkedSimpleToken(token, user.id, api)).map(_ => conversation)
+      }.getOrElse(DBIO.successful(conversation))
+      updatedConversation <- updatedConversation.updateToNextStateAction(event, services)
     } yield updatedConversation
   }
 

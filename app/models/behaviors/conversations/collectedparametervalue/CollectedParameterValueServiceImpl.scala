@@ -61,8 +61,8 @@ class CollectedParameterValueServiceImpl @Inject() (
   }
   val findQuery = Compiled(uncompiledFindQuery _)
 
-  def find(parameter: BehaviorParameter, conversation: Conversation): Future[Option[CollectedParameterValue]] = {
-    dataService.run(findQuery(parameter.id, conversation.id).result).map { r =>
+  def findAction(parameter: BehaviorParameter, conversation: Conversation): DBIO[Option[CollectedParameterValue]] = {
+    findQuery(parameter.id, conversation.id).result.map { r =>
       r.headOption.map(tuple2ParameterValue)
     }
   }
@@ -72,11 +72,11 @@ class CollectedParameterValueServiceImpl @Inject() (
   }
   val rawFindQuery = Compiled(uncompiledRawFindQuery _)
 
-  def ensureFor(
+  def ensureForAction(
                  parameter: BehaviorParameter,
                  conversation: Conversation,
                  valueString: String
-               ): Future[CollectedParameterValue] = {
+               ): DBIO[CollectedParameterValue] = {
     val raw = RawCollectedParameterValue(parameter.id, conversation.id, valueString)
     val query = rawFindQuery(raw.parameterId, raw.conversationId)
     val action = query.result.flatMap { r =>
@@ -86,9 +86,17 @@ class CollectedParameterValueServiceImpl @Inject() (
         all += raw
       }
     }
-    dataService.run(action).flatMap { _ =>
-      find(parameter, conversation).map(_.get)
+    action.flatMap { _ =>
+      findAction(parameter, conversation).map(_.get)
     }
+  }
+
+  def ensureFor(
+                 parameter: BehaviorParameter,
+                 conversation: Conversation,
+                 valueString: String
+               ): Future[CollectedParameterValue] = {
+    dataService.run(ensureForAction(parameter, conversation, valueString))
   }
 
   def deleteForAction(parameter: BehaviorParameter, conversation: Conversation): DBIO[Unit] = {

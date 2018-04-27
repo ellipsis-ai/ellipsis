@@ -44,10 +44,10 @@ class SavedAnswerServiceImpl @Inject() (
     dataService.run(action)
   }
 
-  def ensureFor(input: Input, valueString: String, user: User): Future[SavedAnswer] = {
+  def ensureForAction(input: Input, valueString: String, user: User): DBIO[SavedAnswer] = {
     val maybeUserId = maybeUserIdFor(input, user)
     val query = rawFindQueryFor(input.inputId, maybeUserId)
-    val action = for {
+    for {
       maybeExisting <- query.result.map { r =>
         r.headOption
       }
@@ -59,7 +59,10 @@ class SavedAnswerServiceImpl @Inject() (
         (all += answer).map(_ => answer)
       }
     } yield saved
-    dataService.run(action)
+  }
+
+  def ensureFor(input: Input, valueString: String, user: User): Future[SavedAnswer] = {
+    dataService.run(ensureForAction(input, valueString, user))
   }
 
   def maybeForAction(user: User, param: BehaviorParameter): DBIO[Option[SavedAnswer]] = {

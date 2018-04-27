@@ -28,10 +28,10 @@ case class BehaviorParameterContext(
     services.dataService.behaviorParameters.isFirstForBehaviorVersionAction(parameter)
   }
 
-  def unfilledParamCount(paramState: ParamCollectionState)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Int] = {
+  def unfilledParamCountAction(paramState: ParamCollectionState)(implicit actorSystem: ActorSystem, ec: ExecutionContext): DBIO[Int] = {
     maybeConversation.map { conversation =>
-      paramState.allLeftToCollect(conversation).map(_.size)
-    }.getOrElse(Future.successful(0))
+      paramState.allLeftToCollectAction(conversation).map(_.size)
+    }.getOrElse(DBIO.successful(0))
   }
 
   def simpleTextResultFor(text: String): SimpleTextResult = {

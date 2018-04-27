@@ -51,8 +51,8 @@ case class InvokeBehaviorConversation(
     InvokeBehaviorConversation.statesRequiringPrivateMessage.contains(state)
   }
 
-  def updateStateTo(newState: String, dataService: DataService): Future[Conversation] = {
-    dataService.conversations.save(this.copy(state = newState))
+  def updateStateToAction(newState: String, dataService: DataService): DBIO[Conversation] = {
+    dataService.conversations.saveAction(this.copy(state = newState))
   }
 
   def paramStateIn(collectionStates: Seq[CollectionState]): ParamCollectionState = {
@@ -74,11 +74,11 @@ case class InvokeBehaviorConversation(
     } yield Seq(simpleTokenState, paramState)
   }
 
-  def updateToNextState(event: Event, services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Conversation] = {
+  def updateToNextStateAction(event: Event, services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): DBIO[Conversation] = {
     for {
-      collectionStates <- collectionStatesFor(event, services)
-      collectionStatesWithIsComplete <- Future.sequence(collectionStates.map { collectionState =>
-        collectionState.isCompleteIn(this).map { isComplete => (collectionState, isComplete) }
+      collectionStates <- collectionStatesForAction(event, services)
+      collectionStatesWithIsComplete <- DBIO.sequence(collectionStates.map { collectionState =>
+        collectionState.isCompleteInAction(this).map { isComplete => (collectionState, isComplete) }
       })
       updated <- {
         val targetState =
@@ -86,19 +86,19 @@ case class InvokeBehaviorConversation(
             find { case(_, isComplete) => !isComplete }.
             map { case(collectionState, _) => collectionState.name }.
             getOrElse(Conversation.DONE_STATE)
-        updateStateTo(targetState, services.dataService)
+        updateStateToAction(targetState, services.dataService)
       }
     } yield updated
   }
 
-  def updateWith(event: Event, services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Conversation] = {
+  def updateWithAction(event: Event, services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): DBIO[Conversation] = {
 
     for {
-      collectionStates <- collectionStatesFor(event, services)
-      updated <- collectionStates.find(_.name == state).map(_.collectValueFrom(this)).getOrElse {
+      collectionStates <- collectionStatesForAction(event, services)
+      updated <- collectionStates.find(_.name == state).map(_.collectValueFromAction(this)).getOrElse {
         state match {
-          case Conversation.NEW_STATE => updateToNextState(event, services)
-          case Conversation.DONE_STATE => Future.successful(this)
+          case Conversation.NEW_STATE => updateToNextStateAction(event, services)
+          case Conversation.DONE_STATE => DBIO.successful(this)
         }
       }
     } yield updated
@@ -136,18 +136,25 @@ case class InvokeBehaviorConversation(
     eventualResponse
   }
 
+  def maybeNextParamToCollectAction(
+                               event: Event,
+                               services: DefaultServices
+                     )(implicit actorSystem: ActorSystem, ec: ExecutionContext): DBIO[Option[BehaviorParameter]] = {
+    for {
+      collectionStates <- collectionStatesForAction(event, services)
+      maybeCollectionState <- DBIO.successful(collectionStates.find(_.name == state))
+      maybeParam <- maybeCollectionState.map {
+        case s: ParamCollectionState => s.maybeNextToCollectAction(this)
+        case _ => DBIO.successful(None)
+      }.getOrElse(DBIO.successful(None))
+    } yield maybeParam.map(_._1)
+  }
+
   def maybeNextParamToCollect(
                                event: Event,
                                services: DefaultServices
-                     )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[BehaviorParameter]] = {
-    for {
-      collectionStates <- collectionStatesFor(event, services)
-      maybeCollectionState <- Future.successful(collectionStates.find(_.name == state))
-      maybeParam <- maybeCollectionState.map {
-        case s: ParamCollectionState => s.maybeNextToCollect(this)
-        case _ => Future.successful(None)
-      }.getOrElse(Future.successful(None))
-    } yield maybeParam.map(_._1)
+                             )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[BehaviorParameter]] = {
+    services.dataService.run(maybeNextParamToCollectAction(event, services))
   }
 
 }

@@ -11,6 +11,8 @@ trait SavedAnswerService {
 
   def find(input: Input, user: User): Future[Option[SavedAnswer]]
 
+  def ensureForAction(input: Input, valueString: String, user: User): DBIO[SavedAnswer]
+
   def ensureFor(input: Input, valueString: String, user: User): Future[SavedAnswer]
 
   def allForAction(user: User, params: Seq[BehaviorParameter]): DBIO[Seq[SavedAnswer]]

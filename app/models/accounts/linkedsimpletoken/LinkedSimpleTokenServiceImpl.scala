@@ -65,14 +65,17 @@ class LinkedSimpleTokenServiceImpl @Inject() (
   }
   val findQuery = Compiled(uncompiledFindQuery _)
 
-  def save(token: LinkedSimpleToken): Future[LinkedSimpleToken] = {
+  def saveAction(token: LinkedSimpleToken): DBIO[LinkedSimpleToken] = {
     val query = findQuery(token.userId, token.api.id)
     val raw = token.toRaw
-    val action = query.result.headOption.flatMap {
+    query.result.headOption.flatMap {
       case Some(_) => query.update(raw)
       case None => all += raw
     }.map { _ => token }
-    dataService.run(action)
+  }
+
+  def save(token: LinkedSimpleToken): Future[LinkedSimpleToken] = {
+    dataService.run(saveAction(token))
   }
 
 
