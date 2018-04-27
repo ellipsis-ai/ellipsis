@@ -3,15 +3,10 @@ import models.behaviors.behaviorparameter._
 import models.behaviors.events.{SlackFile, SlackMessageEvent}
 import org.mockito.Matchers._
 import org.mockito.Mockito._
-import org.scalatest.mock.MockitoSugar
-import org.scalatestplus.play.PlaySpec
 import play.api.libs.json._
-import support.TestContext
+import support.{DBSpec, TestContext}
 
-import scala.concurrent.duration._
-import scala.concurrent.{Await, Future}
-
-class BehaviorParameterTypeSpec extends PlaySpec with MockitoSugar {
+class BehaviorParameterTypeSpec extends DBSpec {
   "TextType" should {
     "coerce all JS values except null to JsString" in {
       TextType.prepareJsValue(JsString("foo")) mustEqual JsString("foo")
@@ -58,8 +53,6 @@ class BehaviorParameterTypeSpec extends PlaySpec with MockitoSugar {
   }
 
   "FileType" should {
-
-    def runNow[T](f: Future[T]): T = Await.result(f, 10.seconds)
 
     "coerce 'none' into JsNull" in {
       FileType.prepareJsValue(JsString("none")) mustEqual JsNull
