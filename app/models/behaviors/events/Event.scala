@@ -95,8 +95,8 @@ trait Event {
 
   def navLinks(lambdaService: AWSLambdaService): String = {
     navLinkList(lambdaService).map { case(title, path) =>
-      s"$title: $path"
-    }.mkString("\n")
+      s"[$title]($path)"
+    }.mkString("  ·  ")
   }
 
   def teachMeLinkFor(lambdaService: AWSLambdaService): String = {

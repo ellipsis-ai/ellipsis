@@ -87,12 +87,6 @@ case class SlackMessageEvent(
     dataService.conversations.findOngoingFor(user, context, maybeChannel, Some(ts), teamId)
   }
 
-  override def navLinks(lambdaService: AWSLambdaService): String = {
-    navLinkList(lambdaService).map { case(title, path) =>
-      s"[$title]($path)"
-    }.mkString("  ·  ")
-  }
-
   def channelForSend(
                       forcePrivate: Boolean,
                       maybeConversation: Option[Conversation],
