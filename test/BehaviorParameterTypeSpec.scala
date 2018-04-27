@@ -3,15 +3,10 @@ import models.behaviors.behaviorparameter._
 import models.behaviors.events.{SlackFile, SlackMessageEvent}
 import org.mockito.Matchers._
 import org.mockito.Mockito._
-import org.scalatest.mock.MockitoSugar
-import org.scalatestplus.play.PlaySpec
 import play.api.libs.json._
-import support.TestContext
+import support.{DBSpec, TestContext}
 
-import scala.concurrent.duration._
-import scala.concurrent.{Await, Future}
-
-class BehaviorParameterTypeSpec extends PlaySpec with MockitoSugar {
+class BehaviorParameterTypeSpec extends DBSpec {
   "TextType" should {
     "coerce all JS values except null to JsString" in {
       TextType.prepareJsValue(JsString("foo")) mustEqual JsString("foo")
@@ -59,8 +54,6 @@ class BehaviorParameterTypeSpec extends PlaySpec with MockitoSugar {
 
   "FileType" should {
 
-    def runNow[T](f: Future[T]): T = Await.result(f, 10.seconds)
-
     "coerce 'none' into JsNull" in {
       FileType.prepareJsValue(JsString("none")) mustEqual JsNull
     }
@@ -81,8 +74,8 @@ class BehaviorParameterTypeSpec extends PlaySpec with MockitoSugar {
       when(context.event).thenReturn(event)
       when(context.services).thenReturn(services)
       when(slackFileMap.maybeUrlFor(anyString)).thenReturn(None)
-      runNow(FileType.isValid("none", context)) mustBe true
-      runNow(FileType.isValid("wtfbbq", context)) mustBe false
+      runNow(FileType.isValidAction("none", context)) mustBe true
+      runNow(FileType.isValidAction("wtfbbq", context)) mustBe false
     }
 
     "if file included, be valid regardless of the text" in new TestContext {
@@ -92,8 +85,8 @@ class BehaviorParameterTypeSpec extends PlaySpec with MockitoSugar {
       when(context.event).thenReturn(event)
       when(context.services).thenReturn(services)
       when(slackFileMap.maybeUrlFor(anyString)).thenReturn(None)
-      runNow(FileType.isValid("none", context)) mustBe true
-      runNow(FileType.isValid("wtfbbq", context)) mustBe true
+      runNow(FileType.isValidAction("none", context)) mustBe true
+      runNow(FileType.isValidAction("wtfbbq", context)) mustBe true
     }
 
     "if the text matches an existing file ID, it's valid" in new TestContext {
@@ -104,7 +97,7 @@ class BehaviorParameterTypeSpec extends PlaySpec with MockitoSugar {
       when(context.services).thenReturn(services)
       val fileId = IDs.next
       when(slackFileMap.maybeUrlFor(fileId)).thenReturn(Some("https://fake-url.fake"))
-      runNow(FileType.isValid(fileId, context)) mustBe true
+      runNow(FileType.isValidAction(fileId, context)) mustBe true
     }
   }
 }

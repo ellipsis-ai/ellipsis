@@ -45,7 +45,7 @@ class EventHandler @Inject() (
   def cancelConversationResult(event: Event, conversation: Conversation, withMessage: String): Future[BotResult] = {
     dataService.run(dataService.parentConversations.ancestorsForAction(conversation)).flatMap { ancestors =>
       Future.sequence((conversation :: ancestors).map { ea =>
-        ea.cancel(dataService)
+        dataService.run(ea.cancelAction(dataService))
       }).map { _ =>
         SimpleTextResult(event, Some(conversation), withMessage, forcePrivateResponse = false)
       }
@@ -99,7 +99,7 @@ class EventHandler @Inject() (
             TextWithAttachmentsResult(event, Some(updatedConvo), prompt, forcePrivateResponse = false, Seq(actions))
           }
         } else {
-          updatedConvo.resultFor(event, services)
+          dataService.run(updatedConvo.resultForAction(event, services))
         }
       }
     }.recoverWith {

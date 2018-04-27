@@ -85,9 +85,9 @@ trait Conversation {
 
   val stateRequiresPrivateMessage: Boolean = false
 
-  def updateStateTo(newState: String, dataService: DataService): Future[Conversation]
-  def cancel(dataService: DataService): Future[Conversation] = updateStateTo(Conversation.DONE_STATE, dataService)
-  def updateWith(event: Event, services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Conversation]
+  def updateStateToAction(newState: String, dataService: DataService): DBIO[Conversation]
+  def cancelAction(dataService: DataService): DBIO[Conversation] = updateStateToAction(Conversation.DONE_STATE, dataService)
+  def updateWithAction(event: Event, services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): DBIO[Conversation]
 
   def respondAction(
                      event: Event,
@@ -101,13 +101,13 @@ trait Conversation {
                services: DefaultServices
              )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[BotResult]
 
-  def resultFor(
+  def resultForAction(
                  event: Event,
                  services: DefaultServices
-               )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[BotResult] = {
+               )(implicit actorSystem: ActorSystem, ec: ExecutionContext): DBIO[BotResult] = {
     for {
-      updatedConversation <- updateWith(event, services)
-      result <- updatedConversation.respond(event, isReminding=false, services)
+      updatedConversation <- updateWithAction(event, services)
+      result <- updatedConversation.respondAction(event, isReminding=false, services)
     } yield result
   }
 

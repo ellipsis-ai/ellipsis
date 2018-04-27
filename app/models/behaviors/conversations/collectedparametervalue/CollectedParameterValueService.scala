@@ -10,6 +10,8 @@ trait CollectedParameterValueService {
 
   def allForAction(conversation: Conversation): DBIO[Seq[CollectedParameterValue]]
 
+  def ensureForAction(parameter: BehaviorParameter, conversation: Conversation, valueString: String): DBIO[CollectedParameterValue]
+
   def ensureFor(parameter: BehaviorParameter, conversation: Conversation, valueString: String): Future[CollectedParameterValue]
 
   def deleteForAction(parameter: BehaviorParameter, conversation: Conversation): DBIO[Unit]

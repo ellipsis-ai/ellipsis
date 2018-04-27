@@ -24,17 +24,17 @@ case class ParamCollectionState(
 
   val rankedParams = params.sortBy(_.rank)
 
-  def allLeftToCollect(conversation: Conversation)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Seq[(BehaviorParameter, Option[String])]] = {
+  def allLeftToCollectAction(conversation: Conversation)(implicit actorSystem: ActorSystem, ec: ExecutionContext): DBIO[Seq[(BehaviorParameter, Option[String])]] = {
     val tuples = rankedParams.map { ea =>
       (ea, collected.find(_.parameter == ea), savedAnswers.find(_.inputId == ea.input.inputId))
     }
 
-    val eventualWithHasValidValue = Future.sequence(tuples.map { case(param, maybeCollected, maybeSaved) =>
+    val eventualWithHasValidValue = DBIO.sequence(tuples.map { case(param, maybeCollected, maybeSaved) =>
       val paramContext = BehaviorParameterContext(event, Some(conversation), param, services)
       val maybeValue = maybeCollected.map(_.valueString).orElse(maybeSaved.map(_.valueString))
       val eventualHasValidValue = maybeValue.map { valueString =>
-        param.paramType.isValid(valueString, paramContext)
-      }.getOrElse(Future.successful(false))
+        param.paramType.isValidAction(valueString, paramContext)
+      }.getOrElse(DBIO.successful(false))
 
       eventualHasValidValue.map { hasValidValue =>
         (param, maybeValue, hasValidValue)
@@ -48,11 +48,11 @@ case class ParamCollectionState(
     }
   }
 
-  def maybeNextToCollect(conversation: Conversation)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[(BehaviorParameter, Option[String])]] = {
-    allLeftToCollect(conversation).map(_.headOption)
+  def maybeNextToCollectAction(conversation: Conversation)(implicit actorSystem: ActorSystem, ec: ExecutionContext): DBIO[Option[(BehaviorParameter, Option[String])]] = {
+    allLeftToCollectAction(conversation).map(_.headOption)
   }
 
-  def isCompleteIn(conversation: Conversation)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Boolean] = maybeNextToCollect(conversation).map(_.isEmpty)
+  def isCompleteInAction(conversation: Conversation)(implicit actorSystem: ActorSystem, ec: ExecutionContext): DBIO[Boolean] = maybeNextToCollectAction(conversation).map(_.isEmpty)
 
   def invocationMap: Map[String, String] = {
     rankedParams.zipWithIndex.map { case(ea, i) =>
@@ -63,20 +63,20 @@ case class ParamCollectionState(
     }.toMap
   }
 
-  def collectValueFrom(conversation: InvokeBehaviorConversation)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Conversation] = {
+  def collectValueFromAction(conversation: InvokeBehaviorConversation)(implicit actorSystem: ActorSystem, ec: ExecutionContext): DBIO[Conversation] = {
     for {
-      maybeNextToCollect <- maybeNextToCollect(conversation)
-      updatedConversation <- maybeNextToCollect.map { case(param, maybeValue) =>
+      maybeNextToCollect <- maybeNextToCollectAction(conversation)
+      _ <- maybeNextToCollect.map { case(param, maybeValue) =>
         val context = BehaviorParameterContext(event, Some(conversation), param, services)
-        param.paramType.handleCollected(event, this, context).map(_ => conversation)
-      }.getOrElse(Future.successful(conversation))
-      updatedConversation <- updatedConversation.updateToNextState(event, services)
+        param.paramType.handleCollectedAction(event, this, context)
+      }.getOrElse(DBIO.successful({}))
+      updatedConversation <- conversation.updateToNextStateAction(event, services)
     } yield updatedConversation
   }
 
   def promptResultForAction(conversation: Conversation, isReminding: Boolean)(implicit actorSystem: ActorSystem, ec: ExecutionContext): DBIO[BotResult] = {
     for {
-      maybeNextToCollect <- DBIO.from(maybeNextToCollect(conversation))
+      maybeNextToCollect <- maybeNextToCollectAction(conversation)
       result <- maybeNextToCollect.map { case(param, maybeValue) =>
         val paramContext = BehaviorParameterContext(event, Some(conversation), param, services)
         param.promptResultAction(maybeValue, paramContext, this, isReminding)

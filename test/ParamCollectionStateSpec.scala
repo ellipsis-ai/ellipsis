@@ -34,7 +34,7 @@ class ParamCollectionStateSpec extends DBSpec {
         val savedAnswer = newSavedAnswerFor(param.input, user)
         val state = runNow(ParamCollectionState.from(conversation, event, services))
 
-        runNow(state.maybeNextToCollect(conversation)).map(_._1.id) mustBe None
+        runNow(state.maybeNextToCollectAction(conversation)).map(_._1.id) mustBe None
       })
     }
 
@@ -65,7 +65,7 @@ class ParamCollectionStateSpec extends DBSpec {
         val savedAnswer = newSavedAnswerFor(param.input, user)
         val state = runNow(ParamCollectionState.from(conversation, event, services))
 
-        runNow(state.maybeNextToCollect(conversation)).map(_._1.id) mustBe None
+        runNow(state.maybeNextToCollectAction(conversation)).map(_._1.id) mustBe None
       })
     }
 
@@ -96,7 +96,7 @@ class ParamCollectionStateSpec extends DBSpec {
         val savedAnswer = newSavedAnswerFor(param.input, user)
         val state = runNow(ParamCollectionState.from(conversation, event, services))
 
-        runNow(state.maybeNextToCollect(conversation)).map(_._1.id) mustBe Some(param.id)
+        runNow(state.maybeNextToCollectAction(conversation)).map(_._1.id) mustBe Some(param.id)
       })
     }
 

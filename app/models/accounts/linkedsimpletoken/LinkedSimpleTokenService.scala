@@ -11,6 +11,8 @@ trait LinkedSimpleTokenService {
 
   def allForUser(user: User): Future[Seq[LinkedSimpleToken]]
 
+  def saveAction(token: LinkedSimpleToken): DBIO[LinkedSimpleToken]
+
   def save(token: LinkedSimpleToken): Future[LinkedSimpleToken]
 
 }

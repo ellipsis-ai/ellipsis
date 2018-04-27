@@ -39,8 +39,8 @@ class BehaviorResponseServiceImpl @Inject() (
         val context = BehaviorParameterContext(event, maybeConversation, param, services)
         paramValues.get(invocationName).map { v =>
           for {
-            isValid <- DBIO.from(param.paramType.isValid(v, context))
-            json <- DBIO.from(param.paramType.prepareForInvocation(v, context))
+            isValid <- param.paramType.isValidAction(v, context)
+            json <- param.paramType.prepareForInvocation(v, context)
           } yield {
             Some(ParameterValue(v, json, isValid))
           }
