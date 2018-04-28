@@ -648,7 +648,8 @@ case class BehaviorBackedDataType(dataTypeConfig: DataTypeConfig) extends Behavi
     if (params.isEmpty) {
       None
     } else {
-      Some(SlackMessageActionMenuItem(Conversation.START_AGAIN_MENU_ITEM_TEXT, Conversation.START_AGAIN_MENU_ITEM_TEXT))
+      // TODO: revisit this
+      None //Some(SlackMessageActionMenuItem(Conversation.START_AGAIN_MENU_ITEM_TEXT, Conversation.START_AGAIN_MENU_ITEM_TEXT))
     }
   }
 
@@ -656,7 +657,8 @@ case class BehaviorBackedDataType(dataTypeConfig: DataTypeConfig) extends Behavi
     if (params.isEmpty) {
       None
     } else {
-      Some(SlackMessageActionButton(callbackId, Conversation.START_AGAIN_MENU_ITEM_TEXT, Conversation.START_AGAIN_MENU_ITEM_TEXT))
+      // TODO: revisit this
+      None //Some(SlackMessageActionButton(callbackId, Conversation.START_AGAIN_MENU_ITEM_TEXT, Conversation.START_AGAIN_MENU_ITEM_TEXT))
     }
   }
 
