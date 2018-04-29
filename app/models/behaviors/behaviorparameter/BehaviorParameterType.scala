@@ -398,7 +398,7 @@ case class BehaviorBackedDataType(dataTypeConfig: DataTypeConfig) extends Behavi
     maybeValidValuesForAction(text, context).map(vv => isSingleMatch(text, vv))
   }
 
-  def maybeValidValuesForAction(text: String, context: BehaviorParameterContext)(implicit actorSystem: ActorSystem, ec: ExecutionContext): DBIO[Seq[ValidValue]] = {
+  def maybeValidValueForText(text: String): Option[ValidValue] = {
     val maybeJson = try {
       Some(Json.parse(text))
     } catch {
@@ -406,9 +406,13 @@ case class BehaviorBackedDataType(dataTypeConfig: DataTypeConfig) extends Behavi
       case e: JsonMappingException => None
     }
     maybeJson.flatMap { json =>
-      extractValidValueFrom(json).map { validValue =>
-        maybeValidValueForSavedAnswerAction(validValue, context).map(_.toSeq)
-      }
+      extractValidValueFrom(json)
+    }
+  }
+
+  def maybeValidValuesForAction(text: String, context: BehaviorParameterContext)(implicit actorSystem: ActorSystem, ec: ExecutionContext): DBIO[Seq[ValidValue]] = {
+    maybeValidValueForText(text).map { validValue =>
+      maybeValidValueForSavedAnswerAction(validValue, context).map(_.toSeq)
     }.getOrElse {
       if (isCollectingOther(context)) {
         DBIO.successful(Seq(ValidValue(BehaviorParameterType.otherId, text, Json.obj())))
@@ -619,8 +623,10 @@ case class BehaviorBackedDataType(dataTypeConfig: DataTypeConfig) extends Behavi
   }
 
   private def maybeMatchFor(text: String, validValues: Seq[ValidValue]): Option[ValidValue] = {
-    maybeMatchById(text, validValues).orElse {
-      maybeMatchByLabel(text, validValues)
+    maybeValidValueForText(text).orElse {
+      maybeMatchById(text, validValues).orElse {
+        maybeMatchByLabel(text, validValues)
+      }
     }
   }
 
