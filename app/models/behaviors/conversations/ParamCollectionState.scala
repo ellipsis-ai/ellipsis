@@ -69,6 +69,11 @@ case class ParamCollectionState(
       _ <- maybeNextToCollect.map { case(param, maybeValue) =>
         val context = BehaviorParameterContext(event, Some(conversation), param, services)
         param.paramType.handleCollectedAction(event, this, context)
+      }.orElse {
+        collected.reverse.headOption.map(_.parameter).map { lastCollectedParam =>
+          val context = BehaviorParameterContext(event, Some(conversation), lastCollectedParam, services)
+          lastCollectedParam.paramType.handleCollectedAction(event, this, context)
+        }
       }.getOrElse(DBIO.successful({}))
       updatedConversation <- conversation.updateToNextStateAction(event, services)
     } yield updatedConversation
