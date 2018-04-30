@@ -11,13 +11,18 @@
   }
 }
 @logoColor = @{
-  if(config.isDevelopment) "color-blue-medium" else ""
-}
-@if(config.isAdmin) {<span class="display-inline-block type-l mobile-ptxs pbxs">
-  👻
-</span>} else {<span class="display-inline-block height-logo align-t @logoColor">
+  if (config.isDevelopment && config.isAdmin) {
+    "color-gray-medium-translucent"
+  } else if (config.isDevelopment) {
+    "color-blue-medium"
+  } else if (config.isAdmin) {
+    "color-pink-medium"
+  } else {
+    ""
+  }
+}<span class="display-inline-block height-logo align-t @logoColor">
   @l(hideText = true)
-</span>}<span class="display-inline-block align-t mobile-display-none type-brand type-regular mls">
+</span><span class="display-inline-block align-t mobile-display-none type-brand type-regular mls">
   @{config.maybeTeamName.getOrElse("Ellipsis")}
 </span>@if(includeArrow) {<span class="display-inline-block type-pink align-t mhs">
   ▾
