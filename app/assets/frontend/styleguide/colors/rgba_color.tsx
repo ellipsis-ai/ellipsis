@@ -27,10 +27,15 @@ type RGB = {
       return typeof (this.a) === "number" && this.a < 1;
     }
 
+    numberToPaddedHex(n: number): string {
+      const str = n.toString(16);
+      return str.length === 1 ? `0${str}` : str;
+    }
+
     toHex(): string {
-      const hex = `#${this.r.toString(16)}${this.g.toString(16)}${this.b.toString(16)}`;
+      const hex = `#${this.numberToPaddedHex(this.r)}${this.numberToPaddedHex(this.g)}${this.numberToPaddedHex(this.b)}`;
       if (this.hasAlpha()) {
-        return hex + Math.round(this.a * 255).toString(16);
+        return hex + this.numberToPaddedHex(Math.round(this.a * 255));
       } else {
         return hex;
       }
