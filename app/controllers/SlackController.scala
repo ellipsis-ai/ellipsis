@@ -888,7 +888,7 @@ class SlackController @Inject() (
       Some("This skill has been updated, making these associated actions no longer valid")
     }
 
-    override val shouldRemoveActions: Boolean = canBeTriggered
+    override val shouldRemoveActions: Boolean = !actionChoice.allowMultipleSelections.exists(identity) && canBeTriggered
 
     def runInBackground = {
       if (canBeTriggered) {
