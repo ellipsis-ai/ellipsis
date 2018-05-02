@@ -816,10 +816,11 @@ class SlackController @Inject() (
             slackMessageEvent => for {
               maybeConversation <- slackMessageEvent.maybeOngoingConversation(dataService)
             } yield {
+              val trimmed = responseText.trim.replaceAll("(^\\u00A0|\\u00A0$)", "")
               Some(ActionAcknowledgmentResult(
                 slackMessageEvent,
                 maybeConversation,
-                s"_${responseText}_"
+                s"_${trimmed}_"
               ))
             },
             botProfile.slackTeamId,
