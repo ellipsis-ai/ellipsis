@@ -45,6 +45,7 @@ case class ActionChoice(
                          actionName: String,
                          args: Option[Seq[ActionArg]],
                          allowOthers: Option[Boolean],
+                         allowMultipleSelections: Option[Boolean],
                          userId: Option[String],
                          groupVersionId: Option[String]
                        ) extends WithActionArgs {
