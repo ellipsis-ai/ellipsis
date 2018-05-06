@@ -44,7 +44,9 @@ class BotResultServiceImpl @Inject() (
 
   private def runNextAction(nextAction: NextAction, botResult: BotResult)(implicit actorSystem: ActorSystem): DBIO[Unit] = {
     for {
-      maybeSlackChannelId <- botResult.event.maybeChannelForSendAction(botResult.forcePrivateResponse, botResult.maybeConversation, dataService)
+      maybeSlackChannelId <- botResult.maybeBehaviorVersion.map { behaviorVersion =>
+        DBIO.from(botResult.event.maybeChannelToUseFor(behaviorVersion, cacheService))
+      }.getOrElse(DBIO.successful(None))
       maybeBehavior <- botResult.maybeBehaviorVersion.map { originatingBehaviorVersion =>
         dataService.behaviors.findByNameAction(nextAction.actionName, originatingBehaviorVersion.group)
       }.getOrElse(DBIO.successful(None))
@@ -99,7 +101,7 @@ class BotResultServiceImpl @Inject() (
     val forcePrivateResponse = botResult.forcePrivateResponse
     for {
       didInterrupt <- if (botResult.shouldInterrupt) {
-        botResult.interruptOngoingConversationsForAction(dataService)
+        botResult.interruptOngoingConversationsForAction(services)
       } else {
         DBIO.successful(false)
       }

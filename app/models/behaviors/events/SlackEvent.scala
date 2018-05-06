@@ -4,11 +4,13 @@ import akka.actor.ActorSystem
 import json.Formatting._
 import json.SlackUserData
 import models.accounts.slack.botprofile.SlackBotProfile
+import models.behaviors.conversations.conversation.Conversation
 import play.api.Logger
 import play.api.libs.json._
 import services.DefaultServices
 import services.caching.CacheService
 import slack.api.{ApiError, SlackApiClient}
+import slick.dbio.DBIO
 import utils.SlackChannels
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -28,6 +30,28 @@ trait SlackEvent {
         None
       }
     }
+  }
+
+  def channelForSend(
+                      forcePrivate: Boolean,
+                      maybeConversation: Option[Conversation],
+                      cacheService: CacheService
+                    )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[String] = {
+    (if (forcePrivate) {
+      eventualMaybeDMChannel(cacheService)
+    } else {
+      Future.successful(maybeConversation.flatMap(_.maybeChannel))
+    }).map { maybeChannel =>
+      maybeChannel.getOrElse(channel)
+    }
+  }
+
+  def maybeChannelForSendAction(
+                                  forcePrivate: Boolean,
+                                  maybeConversation: Option[Conversation],
+                                  services: DefaultServices
+                                )(implicit ec: ExecutionContext, actorSystem: ActorSystem): DBIO[Option[String]] = {
+    DBIO.from(channelForSend(forcePrivate, maybeConversation, services.cacheService).map(Some(_)))
   }
 
   val isDirectMessage: Boolean = {
