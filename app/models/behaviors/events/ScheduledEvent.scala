@@ -10,6 +10,7 @@ import play.api.Configuration
 import play.api.libs.json.JsObject
 import services.caching.CacheService
 import services.{DataService, DefaultServices}
+import slick.dbio.DBIO
 import utils.UploadFileSpec
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -22,6 +23,14 @@ case class ScheduledEvent(underlying: Event, scheduled: Scheduled) extends Event
 
   def eventualMaybeDMChannel(cacheService: CacheService)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[String]] = {
     underlying.eventualMaybeDMChannel(cacheService)
+  }
+
+  def maybeChannelForSendAction(
+                                 forcePrivate: Boolean,
+                                 maybeConversation: Option[Conversation],
+                                 services: DefaultServices
+                               )(implicit ec: ExecutionContext, actorSystem: ActorSystem): DBIO[Option[String]] = {
+    underlying.maybeChannelForSendAction(forcePrivate, maybeConversation, services)
   }
 
   def sendMessage(

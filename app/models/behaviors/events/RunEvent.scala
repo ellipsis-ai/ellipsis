@@ -3,10 +3,9 @@ package models.behaviors.events
 import akka.actor.ActorSystem
 import json.SlackUserData
 import models.accounts.slack.botprofile.SlackBotProfile
-import models.accounts.user.User
-import models.behaviors.{ActionChoice, BehaviorResponse, DeveloperContext}
 import models.behaviors.behavior.Behavior
 import models.behaviors.conversations.conversation.Conversation
+import models.behaviors.{ActionChoice, BehaviorResponse, DeveloperContext}
 import models.team.Team
 import play.api.Configuration
 import services.{AWSLambdaConstants, DataService, DefaultServices}
@@ -62,6 +61,7 @@ case class RunEvent(
                  )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[String]] = {
     for {
       botName <- botName(services)
+      channelToUse <- channelForSend(forcePrivate, maybeConversation, services.cacheService)
       maybeTs <- SlackMessageSender(
         client,
         user,
@@ -70,7 +70,7 @@ case class RunEvent(
         forcePrivate = forcePrivate,
         developerContext,
         channel,
-        channel,
+        channelToUse,
         maybeThreadId,
         maybeShouldUnfurl,
         maybeConversation,

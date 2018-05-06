@@ -2,12 +2,10 @@ package models.behaviors.events
 
 import akka.actor.ActorSystem
 import models.accounts.slack.botprofile.SlackBotProfile
-import models.accounts.user.User
-import models.behaviors.{ActionChoice, DeveloperContext}
 import models.behaviors.conversations.conversation.Conversation
+import models.behaviors.{ActionChoice, DeveloperContext}
 import play.api.Configuration
-import services.caching.CacheService
-import services.{AWSLambdaService, DataService, DefaultServices}
+import services.{DataService, DefaultServices}
 import slack.api.SlackApiClient
 import utils.{SlackMessageSender, UploadFileSpec}
 
@@ -85,20 +83,6 @@ case class SlackMessageEvent(
 
   def maybeConversationRootedHere(dataService: DataService): Future[Option[Conversation]] = {
     dataService.conversations.findOngoingFor(user, context, maybeChannel, Some(ts), teamId)
-  }
-
-  def channelForSend(
-                      forcePrivate: Boolean,
-                      maybeConversation: Option[Conversation],
-                      cacheService: CacheService
-                    )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[String] = {
-    (if (forcePrivate) {
-      eventualMaybeDMChannel(cacheService)
-    } else {
-      Future.successful(maybeConversation.flatMap(_.maybeChannel))
-    }).map { maybeChannel =>
-      maybeChannel.getOrElse(channel)
-    }
   }
 
   def sendMessage(

@@ -144,10 +144,8 @@ trait Event {
   def maybeChannelForSendAction(
                                  forcePrivate: Boolean,
                                  maybeConversation: Option[Conversation],
-                                 dataService: DataService
-                               )(implicit actorSystem: ActorSystem): DBIO[Option[String]] = {
-    DBIO.successful(maybeChannel)
-  }
+                                 services: DefaultServices
+                               )(implicit ec: ExecutionContext, actorSystem: ActorSystem): DBIO[Option[String]]
 
   def allOngoingConversations(dataService: DataService): Future[Seq[Conversation]]
 

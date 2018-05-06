@@ -15,7 +15,7 @@ import play.api.Configuration
 import play.api.libs.json._
 import services.AWSLambdaConstants._
 import services.caching.CacheService
-import services.{AWSLambdaLogResult, DataService}
+import services.{AWSLambdaLogResult, DataService, DefaultServices}
 import slick.dbio.DBIO
 import utils.UploadFileSpec
 
@@ -127,18 +127,8 @@ sealed trait BotResult {
     }
   }
 
-  def maybeChannelForSendAction(maybeConversation: Option[Conversation], dataService: DataService)(implicit actorSystem: ActorSystem): DBIO[Option[String]] = {
-    event.maybeChannelForSendAction(forcePrivateResponse, maybeConversation, dataService)
-  }
-
-  def maybeChannelForSend(maybeConversation: Option[Conversation], dataService: DataService)(implicit actorSystem: ActorSystem): Future[Option[String]] = {
-    dataService.run(maybeChannelForSendAction(maybeConversation, dataService))
-  }
-
-  def maybeOngoingConversation(dataService: DataService)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[Conversation]] = {
-    maybeChannelForSend(None, dataService).flatMap { maybeChannel =>
-      dataService.conversations.findOngoingFor(event.userIdForContext, event.context, maybeChannel, event.maybeThreadId, event.teamId)
-    }
+  def maybeChannelForSendAction(maybeConversation: Option[Conversation], services: DefaultServices)(implicit ec: ExecutionContext, actorSystem: ActorSystem): DBIO[Option[String]] = {
+    event.maybeChannelForSendAction(forcePrivateResponse, maybeConversation, services)
   }
 
   val interruptionPrompt = {
@@ -146,12 +136,13 @@ sealed trait BotResult {
     s"You haven't answered my question yet, but I have something new to $action you."
   }
 
-  def interruptOngoingConversationsForAction(dataService: DataService)(implicit actorSystem: ActorSystem, ec: ExecutionContext): DBIO[Boolean] = {
+  def interruptOngoingConversationsForAction(services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): DBIO[Boolean] = {
     if (maybeConversation.exists(_.maybeThreadId.isDefined)) {
       DBIO.successful(false)
     } else {
+      val dataService = services.dataService
       for {
-        maybeChannelForSend <- maybeChannelForSendAction(maybeConversation, dataService)
+        maybeChannelForSend <- maybeChannelForSendAction(maybeConversation, services)
         ongoing <- dataService.conversations.allOngoingForAction(event.userIdForContext, event.context, maybeChannelForSend, event.maybeThreadId, event.teamId)
         ongoingWithRoots <- DBIO.sequence(ongoing.map { ea =>
           dataService.parentConversations.rootForAction(ea).map { root =>

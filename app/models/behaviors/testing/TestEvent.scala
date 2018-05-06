@@ -36,6 +36,11 @@ case class TestEvent(
   lazy val maybeChannel = Some("C123456")
   lazy val maybeThreadId = None
   def eventualMaybeDMChannel(cacheService: CacheService)(implicit actorSystem: ActorSystem, ec: ExecutionContext) = Future.successful(None)
+  def maybeChannelForSendAction(
+                                 forcePrivate: Boolean,
+                                 maybeConversation: Option[Conversation],
+                                 services: DefaultServices
+                               )(implicit ec: ExecutionContext, actorSystem: ActorSystem): DBIO[Option[String]] = DBIO.successful(None)
   val isResponseExpected = true
   val messageRecipientPrefix: String = ""
   lazy val isPublicChannel = false
