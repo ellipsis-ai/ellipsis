@@ -22,12 +22,15 @@ trait SlackEvent {
   val profile: SlackBotProfile
   val client: SlackApiClient
   val isUninterruptedConversation: Boolean
-  def eventualMaybeDMChannel(cacheService: CacheService)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[String]] = {
+  def eventualMaybeDMChannel()(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[String]] = {
     client.openIm(user).map(Some(_)).recover {
       case e: ApiError => {
-        val msg = s"""Couldn't open DM for scheduled message to user with ID ${user} on Slack team ${userSlackTeamId} due to Slack API error: ${e.code}"""
+        val msg =
+          s"""Couldn't open DM channel to user with ID ${user} on Slack team ${userSlackTeamId} due to Slack API error: ${e.code}
+             |Original event channel: $channel
+           """.stripMargin
         Logger.error(msg, e)
-        None
+        throw e
       }
     }
   }
@@ -38,7 +41,7 @@ trait SlackEvent {
                       cacheService: CacheService
                     )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[String] = {
     (if (forcePrivate) {
-      eventualMaybeDMChannel(cacheService)
+      eventualMaybeDMChannel
     } else {
       Future.successful(maybeConversation.flatMap(_.maybeChannel))
     }).map { maybeChannel =>

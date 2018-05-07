@@ -92,6 +92,7 @@ class SlackEventServiceImpl @Inject()(
             isOwner = info.is_owner.getOrElse(false),
             isRestricted = info.is_restricted.getOrElse(false),
             isUltraRestricted = info.is_ultra_restricted.getOrElse(false),
+            isBot = info.is_bot.getOrElse(false),
             tz = info.tz,
             info.deleted.getOrElse(false),
             maybeProfile

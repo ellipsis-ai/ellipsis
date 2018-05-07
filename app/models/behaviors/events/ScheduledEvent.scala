@@ -8,7 +8,6 @@ import models.behaviors.scheduling.Scheduled
 import models.team.Team
 import play.api.Configuration
 import play.api.libs.json.JsObject
-import services.caching.CacheService
 import services.{DataService, DefaultServices}
 import slick.dbio.DBIO
 import utils.UploadFileSpec
@@ -21,8 +20,8 @@ case class ScheduledEvent(underlying: Event, scheduled: Scheduled) extends Event
   val maybeOriginalEventType: Option[EventType] = None
   def withOriginalEventType(originalEventType: EventType, isUninterruptedConversation: Boolean): Event = this
 
-  def eventualMaybeDMChannel(cacheService: CacheService)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[String]] = {
-    underlying.eventualMaybeDMChannel(cacheService)
+  def eventualMaybeDMChannel()(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[String]] = {
+    underlying.eventualMaybeDMChannel
   }
 
   def maybeChannelForSendAction(

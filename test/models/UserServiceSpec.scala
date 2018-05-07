@@ -49,7 +49,19 @@ class UserServiceSpec extends DBSpec with MockitoSugar {
         val botProfile = runNow(dataService.slackBotProfiles.ensure(IDs.next, adminSlackTeamId, IDs.next, IDs.next))
         val client = SlackApiClient(botProfile.token)
         when(slackEventService.clientFor(botProfile)).thenReturn(client)
-        val slackUserData = SlackUserData(linkedAccount.loginInfo.providerKey, adminSlackTeamId, "", false, false, false, false, None, false, None)
+        val slackUserData = SlackUserData(
+          accountId = linkedAccount.loginInfo.providerKey,
+          accountTeamId = adminSlackTeamId,
+          accountName = "",
+          isPrimaryOwner = false,
+          isOwner = false,
+          isRestricted = false,
+          isUltraRestricted = false,
+          isBot = false,
+          tz = None,
+          deleted = false,
+          profile = None
+        )
         when(slackEventService.maybeSlackUserDataFor(Matchers.eq(linkedAccount.loginInfo.providerKey), Matchers.eq(adminSlackTeamId), Matchers.eq(client), any())).thenReturn(Future.successful(Some(slackUserData)))
 
         runNow(dataService.users.isAdmin(linkedAccount.user)) mustBe true
