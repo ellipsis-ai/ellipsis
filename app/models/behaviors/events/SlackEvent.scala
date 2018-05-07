@@ -30,7 +30,7 @@ trait SlackEvent {
              |Original event channel: $channel
            """.stripMargin
         Logger.error(msg, e)
-        throw e
+        None
       }
     }
   }
