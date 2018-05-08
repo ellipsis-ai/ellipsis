@@ -1,7 +1,13 @@
 import * as React from 'react';
 import ScheduleChannel from '../models/schedule_channel';
 
-  class ChannelName extends React.PureComponent {
+interface Props {
+  channel?: Option<ScheduleChannel>
+  channelId?: Option<string>
+  slackUserId: string
+}
+
+  class ChannelName extends React.PureComponent<Props> {
     render() {
       const channel = this.props.channel;
       return channel ? (
@@ -20,11 +26,5 @@ import ScheduleChannel from '../models/schedule_channel';
       );
     }
   }
-
-  ChannelName.propTypes = {
-    channel: React.PropTypes.instanceOf(ScheduleChannel),
-    channelId: React.PropTypes.string,
-    slackUserId: React.PropTypes.string
-  };
 
 export default ChannelName;

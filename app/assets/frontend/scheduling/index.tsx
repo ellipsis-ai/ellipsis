@@ -110,7 +110,7 @@ class Scheduling extends React.Component<Props, State> {
 
         const explicitTeamId = BrowserUtils.hasQueryParam("teamId") ? this.props.teamId : null;
         const forceAdmin = BrowserUtils.hasQueryParamWithValue("forceAdmin", true);
-        BrowserUtils.replaceURL(this.getCorrectedURL(explicitTeamId, forceAdmin);
+        BrowserUtils.replaceURL(this.getCorrectedURL(explicitTeamId, forceAdmin));
       }
       this.renderNavItems();
       this.renderNavActions();
