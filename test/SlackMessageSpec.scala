@@ -19,6 +19,7 @@ class SlackMessageSpec extends PlaySpec {
     isOwner = false,
     isRestricted = false,
     isUltraRestricted = false,
+    isBot = false,
     tz,
     deleted = false,
     Some(SlackUserProfileData(

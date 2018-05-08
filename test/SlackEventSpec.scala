@@ -49,6 +49,7 @@ class SlackEventSpec extends PlaySpec with MockitoSugar {
     isOwner = false,
     isRestricted = false,
     isUltraRestricted = false,
+    isBot = false,
     Some(tz),
     deleted = false,
     Some(profileData)

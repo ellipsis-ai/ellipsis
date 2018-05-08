@@ -5,7 +5,19 @@ import org.scalatestplus.play.PlaySpec
 class SlackMessageFormatterSpec extends PlaySpec {
 
   def slackUserData(userId: String, username: String, displayName: String): SlackUserData = {
-    SlackUserData(userId, "T1", username, isPrimaryOwner = false, isOwner = false, isRestricted = false, isUltraRestricted = false, None, deleted = false, Some(SlackUserProfileData(Some(displayName), None, None, None)))
+    SlackUserData(
+      userId,
+      "T1",
+      username,
+      isPrimaryOwner = false,
+      isOwner = false,
+      isRestricted = false,
+      isUltraRestricted = false,
+      isBot = false,
+      None,
+      deleted = false,
+      Some(SlackUserProfileData(Some(displayName), None, None, None))
+    )
   }
   val slackUserList: Set[SlackUserData] = Set(
     slackUserData("U1", "alligator", "Alligatór"),

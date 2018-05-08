@@ -129,15 +129,15 @@ trait Event {
     ).result
   }
 
-  def eventualMaybeDMChannel(cacheService: CacheService)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[String]]
+  def eventualMaybeDMChannel()(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[String]]
 
   def maybeChannelToUseFor(behaviorVersion: BehaviorVersion, cacheService: CacheService)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[String]] = {
-    eventualMaybeDMChannel(cacheService).map { maybeDMChannel =>
-      if (behaviorVersion.forcePrivateResponse) {
+    if (behaviorVersion.forcePrivateResponse) {
+      eventualMaybeDMChannel.map { maybeDMChannel =>
         maybeDMChannel
-      } else {
-        maybeChannel
       }
+    } else {
+      Future.successful(maybeChannel)
     }
   }
 

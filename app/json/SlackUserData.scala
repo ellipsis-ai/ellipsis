@@ -8,6 +8,7 @@ case class SlackUserData(
                           isOwner: Boolean,
                           isRestricted: Boolean,
                           isUltraRestricted: Boolean,
+                          isBot: Boolean,
                           tz: Option[String],
                           deleted: Boolean,
                           profile: Option[SlackUserProfileData]

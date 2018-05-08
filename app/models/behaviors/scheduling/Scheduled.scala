@@ -221,7 +221,7 @@ trait Scheduled {
           None
         })
         maybeDmInfo <- maybeSlackUserData.filter { userData =>
-          userData.accountId != profile.userId && !userData.deleted
+          userData.accountId != profile.userId && !userData.deleted && !userData.isBot
         }.map { userData =>
           client.openIm(userData.accountId).map { dmChannel =>
             Some(SlackDMInfo(userData.accountId, userData.accountTeamId, dmChannel))
