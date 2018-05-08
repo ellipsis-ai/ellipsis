@@ -7,7 +7,7 @@ import ScheduleChannel from '../models/schedule_channel';
       return channel ? (
         <span>
           <span className="type-weak">{channel.getPrefix()} </span>
-          <span>{channel.getName()} </span>
+          <span>{channel.getName(this.props.slackUserId)} </span>
           <span className="type-weak">{channel.getSuffix()}</span>
         </span>
       ) : (
@@ -23,7 +23,8 @@ import ScheduleChannel from '../models/schedule_channel';
 
   ChannelName.propTypes = {
     channel: React.PropTypes.instanceOf(ScheduleChannel),
-    channelId: React.PropTypes.string
+    channelId: React.PropTypes.string,
+    slackUserId: React.PropTypes.string
   };
 
 export default ChannelName;

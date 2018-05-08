@@ -31,7 +31,8 @@ object ScheduledActionsConfig {
                       services: DefaultServices,
                       maybeScheduledId: Option[String],
                       maybeNewSchedule: Option[Boolean],
-                      maybeCsrfToken: Option[String]
+                      maybeCsrfToken: Option[String],
+                      forceAdmin: Boolean
                     )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[ScheduledActionsConfig]] = {
     val dataService = services.dataService
     val cacheService = services.cacheService
@@ -46,13 +47,16 @@ object ScheduledActionsConfig {
           dataService.linkedAccounts.maybeSlackUserIdFor(user)
         }
         maybeChannelList <- maybeBotProfile.map { botProfile =>
-          dataService.slackBotProfiles.channelsFor(botProfile, cacheService).
-            getListForUser(maybeSlackUserId).map(Some(_)).
-            recover {
+          val channels = dataService.slackBotProfiles.channelsFor(botProfile, cacheService)
+          if (forceAdmin) {
+            channels.getList.map(Some(_))
+          } else {
+            channels.getListForUser(maybeSlackUserId).map(Some(_)).recover {
               case e: slack.api.ApiError => None
             }
+          }
         }.getOrElse(Future.successful(None))
-        scheduledActions <- ScheduledActionData.buildForUserTeamAccess(team, teamAccess, dataService, maybeChannelList, maybeSlackUserId)
+        scheduledActions <- ScheduledActionData.buildForUserTeamAccess(team, teamAccess, dataService, maybeChannelList, maybeSlackUserId, forceAdmin)
         behaviorGroups <- dataService.behaviorGroups.allFor(team)
         groupData <- Future.sequence(behaviorGroups.map { group =>
           BehaviorGroupData.maybeFor(group.id, user, None, dataService, cacheService)

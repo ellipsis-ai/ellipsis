@@ -2,7 +2,8 @@
   config: ViewConfig,
   maybeScheduledId: Option[String],
   maybeNewSchedule: Option[Boolean],
-  maybeTeamId: Option[String]
+  maybeTeamId: Option[String],
+  maybeForceAdmin: Option[Boolean]
 )(implicit messages: Messages, r: RequestHeader)
 
 @page.main("Scheduling", config, Seq(NavItem.scheduling(link = false, None))) {
@@ -10,7 +11,7 @@
     <div id="scheduling" class="flex-row-cascade"></div>
 
     <script src='@config.assets.getWebpackBundle("vendor.js")'></script>
-    <script src="@routes.ScheduledActionsController.index(maybeScheduledId, maybeNewSchedule, maybeTeamId)"></script>
+    <script src="@routes.ScheduledActionsController.index(maybeScheduledId, maybeNewSchedule, maybeTeamId, maybeForceAdmin)"></script>
     <script src='@config.assets.getWebpackBundle("scheduling.js")'></script>
   </div>
 }

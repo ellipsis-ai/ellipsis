@@ -14,6 +14,11 @@ const BrowserUtils = {
       return url.hasQuery(qpName);
     },
 
+    hasQueryParamWithValue: function(qpName: string, value: any): boolean {
+      var url = new URI();
+      return url.hasQuery(qpName, value);
+    },
+
     removeQueryParam: function(qpName: string): void {
       var url = new URI();
       url.removeQuery(qpName);

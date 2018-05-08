@@ -109,7 +109,8 @@ class Scheduling extends React.Component<Props, State> {
         window.scrollTo(0, 0);
 
         const explicitTeamId = BrowserUtils.hasQueryParam("teamId") ? this.props.teamId : null;
-        BrowserUtils.replaceURL(this.getCorrectedURL(explicitTeamId));
+        const forceAdmin = BrowserUtils.hasQueryParamWithValue("forceAdmin", true);
+        BrowserUtils.replaceURL(this.getCorrectedURL(explicitTeamId, forceAdmin);
       }
       this.renderNavItems();
       this.renderNavActions();
@@ -151,13 +152,13 @@ class Scheduling extends React.Component<Props, State> {
       }
     }
 
-    getCorrectedURL(explicitTeamId): string {
+    getCorrectedURL(explicitTeamId, forceAdmin): string {
       if (this.state.isEditing && this.state.selectedItem && !this.state.selectedItem.isNew()) {
-        return jsRoutes.controllers.ScheduledActionsController.index(this.state.selectedItem.id, null, explicitTeamId).url;
+        return jsRoutes.controllers.ScheduledActionsController.index(this.state.selectedItem.id, null, explicitTeamId, forceAdmin).url;
       } else if (this.state.isEditing && this.state.selectedItem) {
-        return jsRoutes.controllers.ScheduledActionsController.index(null, true, explicitTeamId).url;
+        return jsRoutes.controllers.ScheduledActionsController.index(null, true, explicitTeamId, forceAdmin).url;
       } else {
-        return jsRoutes.controllers.ScheduledActionsController.index(null, null, explicitTeamId).url;
+        return jsRoutes.controllers.ScheduledActionsController.index(null, null, explicitTeamId, forceAdmin).url;
       }
     }
 
@@ -183,10 +184,10 @@ class Scheduling extends React.Component<Props, State> {
       const groupsByName = {};
       this.props.scheduledActions.forEach((action) => {
         const channel = this.findChannelFor(action.channel);
-        const channelName = channel ? channel.getFormattedName() : "Unknown";
+        const channelName = channel ? channel.getFormattedName(this.props.slackUserId) : "Unknown";
         const excludesUser = channel ? !channel.userCanAccess(this.props.slackUserId) : false;
-        const excludesBot = this.props.slackBotUserId && channel ? !channel.userCanAccess(this.props.slackBotUserId) : false;
-        if (!channel || channel.isPublic || !excludesUser) {
+        const excludesBot = this.props.slackBotUserId && channel ? !channel.isDM() && !channel.userCanAccess(this.props.slackBotUserId) : false;
+        if (!channel || channel.isPublic || !excludesUser || channel.isDM()) {
           const group = groupsByName[channelName] || {
             channel: channel,
             channelName: channelName,
@@ -376,7 +377,7 @@ class Scheduling extends React.Component<Props, State> {
           <div className="ptxl pbxl">
             <div className="phxl mobile-phl">
               <h4 className="mvn">
-                <span className="mrxs"><ChannelName channel={group.channel} /></span>
+                <span className="mrxs"><ChannelName channel={group.channel} slackUserId={this.props.slackUserId} /></span>
                 {this.renderGroupWarning(group)}
               </h4>
             </div>
@@ -499,7 +500,7 @@ class Scheduling extends React.Component<Props, State> {
                           <div className="column column-expand">
                             <p>
                               {selectedItemChannel ?
-                                `In ${selectedItemChannel.getDescription()}` :
+                                `In ${selectedItemChannel.getDescription(this.props.slackUserId)}` :
                                 `In channel ID ${selectedItem.channel}`
                               }
                             </p>

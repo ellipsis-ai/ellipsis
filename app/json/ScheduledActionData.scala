@@ -83,12 +83,13 @@ object ScheduledActionData {
                               teamAccess: UserTeamAccess,
                               dataService: DataService,
                               maybeChannelList: Option[Seq[ChannelLike]],
-                              maybeSlackUserId: Option[String]
+                              maybeSlackUserId: Option[String],
+                              forceAdmin: Boolean
                             )(implicit ec: ExecutionContext): Future[Seq[ScheduledActionData]] = {
     for {
       allScheduledActions <- buildForAdmin(team, dataService)
     } yield {
-      if (teamAccess.isAdminAccess) {
+      if (teamAccess.isAdminAccess || forceAdmin) {
         allScheduledActions
       } else {
         (for {
