@@ -32,20 +32,30 @@ class ScheduledActionsController @Inject()(
                                           ) extends ReAuthable {
 
   val dataService = services.dataService
-  def index(maybeScheduledId: Option[String], maybeNewSchedule: Option[Boolean], maybeTeamId: Option[String]) = silhouette.SecuredAction.async { implicit request =>
+
+  def index(
+             maybeScheduledId: Option[String],
+             maybeNewSchedule: Option[Boolean],
+             maybeTeamId: Option[String],
+             maybeForceAdmin: Option[Boolean]
+           ) = silhouette.SecuredAction.async { implicit request =>
     val user = request.identity
 
     render.async {
       case Accepts.JavaScript() => {
         for {
           teamAccess <- dataService.users.teamAccessFor(user, maybeTeamId)
+          forceAdmin <- dataService.users.isAdmin(user).map { userIsAdmin =>
+            userIsAdmin && maybeForceAdmin.contains(true)
+          }
           maybeConfig <- ScheduledActionsConfig.buildConfigFor(
             user,
             teamAccess,
             services,
             maybeScheduledId,
             maybeNewSchedule,
-            CSRF.getToken(request).map(_.value)
+            CSRF.getToken(request).map(_.value),
+            forceAdmin
           )
         } yield {
           maybeConfig.map { config =>
@@ -65,7 +75,7 @@ class ScheduledActionsController @Inject()(
           teamAccess <- dataService.users.teamAccessFor(user, maybeTeamId)
         } yield {
           teamAccess.maybeTargetTeam.map { _ =>
-            Ok(views.html.scheduledactions.index(viewConfig(Some(teamAccess)), maybeScheduledId, maybeNewSchedule, maybeTeamId))
+            Ok(views.html.scheduledactions.index(viewConfig(Some(teamAccess)), maybeScheduledId, maybeNewSchedule, maybeTeamId, maybeForceAdmin))
           }.getOrElse {
             NotFound(views.html.error.notFound(viewConfig(None), Some("Team not found"), None))
           }

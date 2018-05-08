@@ -61,7 +61,7 @@ class ScheduleChannelEditor extends React.Component<Props, State> {
         return true;
       } else {
         const forComparison = text.replace(/^#/, "").toLowerCase();
-        return channel.getName().toLowerCase().includes(forComparison);
+        return channel.getName(this.props.slackUserId).toLowerCase().includes(forComparison);
       }
     }
 
@@ -74,7 +74,7 @@ class ScheduleChannelEditor extends React.Component<Props, State> {
         (ea) => this.canSelectChannel(ea) && this.searchIncludes(ea, this.state.searchText)
       ) : [];
       const channelList = channels.map((ea) => ({
-        name: ea.getFormattedName(),
+        name: ea.getFormattedName(this.props.slackUserId),
         value: ea.id
       }));
       if (this.props.scheduledAction.channel) {
@@ -137,7 +137,7 @@ class ScheduleChannelEditor extends React.Component<Props, State> {
     nameForChannel(channelId: string) {
       const foundChannel = channelId ? this.findChannelFor(channelId) : null;
       return (
-        <ChannelName channel={foundChannel} channelId={channelId} />
+        <ChannelName channel={foundChannel} channelId={channelId} slackUserId={this.props.slackUserId} />
       );
     }
 

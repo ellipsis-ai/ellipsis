@@ -43,7 +43,7 @@ declare var jsRoutes: {
       resetForUser: () => JsRoute
     },
     ScheduledActionsController: {
-      index: (selectedId?: Option<string>, isNewSchedule?: Option<boolean>, teamId?: Option<string>) => JsRoute
+      index: (selectedId?: Option<string>, isNewSchedule?: Option<boolean>, teamId?: Option<string>, forceAdmin?: Option<boolean>) => JsRoute
     },
     SocialAuthController: {
       authenticateGithub: (redirectUrl?: Option<string>, teamId?: Option<string>, channelId?: Option<string>) => JsRoute

@@ -36,11 +36,23 @@ class ScheduleChannel implements ScheduleChannelInterface {
       return this.isPrivateGroup() ? "(private)" : "";
     }
 
-    getName(options?: {
+    getNameForUserId(userId: string) {
+      if (this.isDM()) {
+        if (this.members.includes(userId)) {
+          return "Direct message to you";
+        } else {
+          return "Direct message to someone else"
+        }
+      } else {
+        return this.name;
+      }
+    }
+
+    getName(userId: string, options?: {
       formatting?: boolean
     }): string {
       const shouldFormat = options && options.formatting;
-      const name = this.isDM() ? "Direct message to you" : this.name;
+      const name = this.getNameForUserId(userId);
       return shouldFormat ? `${this.getPrefix()}${name} ${this.getSuffix()}`.trim() : name;
     }
 
@@ -53,20 +65,24 @@ class ScheduleChannel implements ScheduleChannelInterface {
     }
 
     userCanAccess(slackUserId: string): boolean {
-      return this.isDM() || this.isPublic || this.members.includes(slackUserId);
+      return this.isPublic || this.members.includes(slackUserId);
     }
 
-    getFormattedName(): string {
-      return this.getName({ formatting: true });
+    getFormattedName(userId: string): string {
+      return this.getName(userId, { formatting: true });
     }
 
-    getDescription(): string {
+    getDescription(userId: string): string {
       if (this.isDM()) {
-        return "a direct message to you";
+        if (this.members.includes(userId)) {
+          return "a direct message to you";
+        } else {
+          return "a direct message to someone else";
+        }
       } else if (this.isPrivateGroup()) {
-        return `the private group ${this.getFormattedName()}`;
+        return `the private group ${this.getFormattedName(userId)}`;
       } else {
-        return `the channel ${this.getFormattedName()}`;
+        return `the channel ${this.getFormattedName(userId)}`;
       }
     }
 
