@@ -109,7 +109,7 @@ class Scheduling extends React.Component<Props, State> {
         window.scrollTo(0, 0);
 
         const explicitTeamId = BrowserUtils.hasQueryParam("teamId") ? this.props.teamId : null;
-        const forceAdmin = BrowserUtils.hasQueryParamWithValue("forceAdmin", true);
+        const forceAdmin = BrowserUtils.hasQueryParamWithValue("forceAdmin", true) || null;
         BrowserUtils.replaceURL(this.getCorrectedURL(explicitTeamId, forceAdmin));
       }
       this.renderNavItems();
@@ -152,7 +152,7 @@ class Scheduling extends React.Component<Props, State> {
       }
     }
 
-    getCorrectedURL(explicitTeamId, forceAdmin): string {
+    getCorrectedURL(explicitTeamId: Option<string>, forceAdmin: Option<boolean>): string {
       if (this.state.isEditing && this.state.selectedItem && !this.state.selectedItem.isNew()) {
         return jsRoutes.controllers.ScheduledActionsController.index(this.state.selectedItem.id, null, explicitTeamId, forceAdmin).url;
       } else if (this.state.isEditing && this.state.selectedItem) {
