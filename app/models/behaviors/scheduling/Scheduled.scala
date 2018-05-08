@@ -83,6 +83,10 @@ trait Scheduled {
     maybeChannel.exists(_.startsWith("G"))
   }
 
+  def couldSendWithBotProfile: Boolean = {
+    !isScheduledForDirectMessage && !isForIndividualMembers
+  }
+
   def recurrenceAndChannel: String = {
     val channelInfo = maybeChannel.map { channel =>
       if (isScheduledForDirectMessage) {
@@ -273,15 +277,31 @@ trait Scheduled {
             eventHandler: EventHandler,
             client: SlackApiClient,
             profile: SlackBotProfile,
-            services: DefaultServices
+            services: DefaultServices,
+            scheduledDisplayText: String
           )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Unit] = {
+    val dataService = services.dataService
     maybeChannel.map { channel =>
       if (isForIndividualMembers) {
         sendForIndividualMembers(channel, eventHandler, client, profile, services)
       } else {
-        maybeSlackProfile(services.dataService).flatMap { maybeSlackProfile =>
-          val slackUserId = maybeSlackProfile.map(_.loginInfo.providerKey).getOrElse(profile.userId)
-          sendFor(channel, slackUserId, eventHandler, client, profile, services)
+        maybeSlackProfile(dataService).flatMap { maybeSlackProfile =>
+          val maybeSlackUserId = maybeSlackProfile.map(_.loginInfo.providerKey)
+          if (maybeSlackUserId.isDefined || couldSendWithBotProfile) {
+            val slackUserId = maybeSlackUserId.getOrElse(profile.userId)
+            sendFor(channel, slackUserId, eventHandler, client, profile, services)
+          } else {
+            val userId = maybeUser.map(_.id).getOrElse("(unknown)")
+            Logger.warn(
+              s"""Unable to run scheduled item for user ID ${userId} on team ${team.id} because no Slack profile was found and this was scheduled in a direct message.
+                 |
+                 |Scheduled ID: ${id}
+                 |Summary: ${scheduledDisplayText}
+                 |Channel: ${maybeChannel.getOrElse("(none)")}
+                 |Recurrence: ${recurrence.displayString}
+                 |""".stripMargin)
+            Future.successful({})
+          }
         }
       }
     }.getOrElse(Future.successful(Unit))

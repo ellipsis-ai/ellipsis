@@ -46,7 +46,7 @@ class ScheduledActor @Inject()(
           }.getOrElse(DBIO.successful(None))
           _ <- maybeProfile.map { profile =>
             scheduled.updateNextTriggeredForAction(dataService).flatMap { _ =>
-              DBIO.from(scheduled.send(eventHandler, new SlackApiClient(profile.token), profile, services).recover {
+              DBIO.from(scheduled.send(eventHandler, new SlackApiClient(profile.token), profile, services, displayText).recover {
                 case t: Throwable => {
                   val user = scheduled.maybeUser.map { user =>
                     s"Ellipsis ID ${user.id} / Slack ID ${maybeSlackUserId.getOrElse("(unknown)")}"
