@@ -92,6 +92,7 @@ class ScheduledActionsConfigSpec extends PlaySpec with MockitoSugar {
           Future.successful(channels)
         }
       }
+    when(slackChannels.getList(any[ActorSystem], any[ExecutionContext])).thenReturn(Future.successful(channels))
   }
 
   def setupSchedules(team: Team, dataService: DataService): Seq[ScheduledMessage] = {
@@ -134,6 +135,23 @@ class ScheduledActionsConfigSpec extends PlaySpec with MockitoSugar {
         val teamAccess = UserTeamAccess(user, otherTeam, Some(team), Some("TestBot"), isAdminAccess = true)
         val schedules = setupSchedules(team, dataService)
         val maybeConfig = await(ScheduledActionsConfig.buildConfigFor(user, teamAccess, services, None, None, maybeCsrfToken, forceAdmin = false)(actorSystem, ec))
+        maybeConfig.map { config =>
+          config.scheduledActions.length mustBe 2
+          config.scheduledActions.head.id.get mustEqual schedules.head.id
+          config.scheduledActions(1).id.get mustEqual schedules(1).id
+          config.channelList.get.length mustEqual channels.length
+        }.getOrElse {
+          assert(false, "No config returned")
+        }
+      }
+    }
+
+    "return the whole list of scheduled actions in force admin mode" in new TestContext {
+      running(app) {
+        setup(user, team, dataService, cacheService)(actorSystem, ec)
+        val teamAccess = UserTeamAccess(user, team, Some(team), Some("TestBot"), isAdminAccess = false)
+        val schedules = setupSchedules(team, dataService)
+        val maybeConfig = await(ScheduledActionsConfig.buildConfigFor(user, teamAccess, services, None, None, maybeCsrfToken, forceAdmin = true)(actorSystem, ec))
         maybeConfig.map { config =>
           config.scheduledActions.length mustBe 2
           config.scheduledActions.head.id.get mustEqual schedules.head.id
