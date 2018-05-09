@@ -124,14 +124,23 @@ class ScheduledBehaviorSpec extends PlaySpec with MockitoSugar {
     }
   }
 
-  def scheduledBehaviorSpy(user: User, team: Team, channel: String): ScheduledBehavior = {
+  def scheduledBehaviorSpy(user: User, team: Team, channel: String, isForIndividualMembers: Boolean = false): ScheduledBehavior = {
     val behavior = newBehavior(team)
-    val sb = newScheduledBehavior(user, behavior, team, channel)
+    val sb = newScheduledBehavior(user, behavior, team, channel, isForIndividualMembers = isForIndividualMembers)
     val sbSpy = spy(sb)
     doReturn(Future.successful(Unit)).when(sbSpy).
-      sendFor(anyString, anyString, any[EventHandler], any[SlackApiClient], any[SlackBotProfile], any[DefaultServices])(any[ActorSystem], any[ExecutionContext])
+      sendFor(anyString, anyString, any[EventHandler], any[SlackApiClient], any[SlackBotProfile], any[DefaultServices])(
+        any[ActorSystem],
+        any[ExecutionContext]
+      )
     doReturn(Future.successful(Unit)).when(sbSpy).
-      sendForIndividualMembers(anyString, any[EventHandler], any[SlackApiClient], any[SlackBotProfile], any[DefaultServices])(any[ActorSystem], any[ExecutionContext])
+      sendForIndividualMembers(
+        anyString,
+        any[EventHandler],
+        any[SlackApiClient],
+        any[SlackBotProfile],
+        any[DefaultServices]
+      )(any[ActorSystem], any[ExecutionContext])
     sbSpy
   }
 
@@ -145,11 +154,19 @@ class ScheduledBehaviorSpec extends PlaySpec with MockitoSugar {
         val botProfile = SlackBotProfile("UMOCKBOT", team.id, slackTeamId, token, OffsetDateTime.now)
         val userSlackId = "U1000"
         val userSlackProfile = SlackProfile(slackTeamId, LoginInfo("slack", userSlackId))
-        when(services.dataService.users.maybeSlackProfileFor(user)).thenReturn(Future.successful(Some(userSlackProfile)))
+        when(services.dataService.users.maybeSlackProfileFor(user))
+          .thenReturn(Future.successful(Some(userSlackProfile)))
         val sbSpy = scheduledBehaviorSpy(user, team, channel)
         val sent = sbSpy.send(eventHandler, client, botProfile, services, "Mock schedule")
         runNow(sent)
         verify(sbSpy, times(1)).sendFor(channel, userSlackId, eventHandler, client, botProfile, services)
+        verify(sbSpy, times(0)).sendForIndividualMembers(
+          anyString,
+          any[EventHandler],
+          any[SlackApiClient],
+          any[SlackBotProfile],
+          any[DefaultServices]
+        )(any[ActorSystem], any[ExecutionContext])
       }
     }
 
@@ -165,7 +182,13 @@ class ScheduledBehaviorSpec extends PlaySpec with MockitoSugar {
         val sent = sbSpy.send(eventHandler, client, botProfile, services, "Mock schedule")
         runNow(sent)
         verify(sbSpy, times(1)).sendFor(channel, botProfile.userId, eventHandler, client, botProfile, services)
-        verify(sbSpy, times(0)).sendForIndividualMembers(channel, eventHandler, client, botProfile, services)
+        verify(sbSpy, times(0)).sendForIndividualMembers(
+          anyString,
+          any[EventHandler],
+          any[SlackApiClient],
+          any[SlackBotProfile],
+          any[DefaultServices]
+        )(any[ActorSystem], any[ExecutionContext])
       }
     }
 
@@ -176,10 +199,17 @@ class ScheduledBehaviorSpec extends PlaySpec with MockitoSugar {
         val client = SlackApiClient(token)
         val slackTeamId = "T1234567"
         val botProfile = SlackBotProfile("UMOCKBOT", team.id, slackTeamId, token, OffsetDateTime.now)
-        val sbSpy = scheduledBehaviorSpy(user, team, channel)
+        val sbSpy = scheduledBehaviorSpy(user, team, channel, isForIndividualMembers = true)
         val sent = sbSpy.send(eventHandler, client, botProfile, services, "Mock schedule")
         runNow(sent)
-        verify(sbSpy, times(0)).sendFor(channel, botProfile.userId, eventHandler, client, botProfile, services)
+        verify(sbSpy, times(0)).sendFor(
+          anyString,
+          anyString,
+          any[EventHandler],
+          any[SlackApiClient],
+          any[SlackBotProfile],
+          any[DefaultServices]
+        )(any[ActorSystem], any[ExecutionContext])
         verify(sbSpy, times(1)).sendForIndividualMembers(channel, eventHandler, client, botProfile, services)
       }
     }
@@ -195,8 +225,21 @@ class ScheduledBehaviorSpec extends PlaySpec with MockitoSugar {
         val sbSpy = scheduledBehaviorSpy(user, team, channel)
         val sent = sbSpy.send(eventHandler, client, botProfile, services, "Mock schedule")
         runNow(sent)
-        verify(sbSpy, times(0)).sendFor(channel, botProfile.userId, eventHandler, client, botProfile, services)
-        verify(sbSpy, times(0)).sendForIndividualMembers(channel, eventHandler, client, botProfile, services)
+        verify(sbSpy, times(0)).sendFor(
+          anyString,
+          anyString,
+          any[EventHandler],
+          any[SlackApiClient],
+          any[SlackBotProfile],
+          any[DefaultServices]
+        )(any[ActorSystem], any[ExecutionContext])
+        verify(sbSpy, times(0)).sendForIndividualMembers(
+          anyString,
+          any[EventHandler],
+          any[SlackApiClient],
+          any[SlackBotProfile],
+          any[DefaultServices]
+        )(any[ActorSystem], any[ExecutionContext])
       }
     }
   }
