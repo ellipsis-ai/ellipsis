@@ -1,20 +1,30 @@
 import java.time.OffsetDateTime
 
+import akka.actor.ActorSystem
+import com.mohiva.play.silhouette.api.LoginInfo
+import models.IDs
+import models.accounts.slack.botprofile.SlackBotProfile
+import models.accounts.slack.profile.SlackProfile
+import models.accounts.user.User
 import models.behaviors.behavior.Behavior
+import models.behaviors.behaviorgroup.BehaviorGroup
 import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
 import models.behaviors.behaviorversion.BehaviorVersion
+import models.behaviors.events.EventHandler
 import models.behaviors.scheduling.recurrence.Recurrence
 import models.behaviors.scheduling.scheduledbehavior.ScheduledBehavior
 import models.team.Team
 import org.mockito.Mockito._
+import org.mockito.Matchers._
 import org.scalatest.mock.MockitoSugar
 import org.scalatestplus.play.PlaySpec
 import play.api.test.Helpers._
-import services.DataService
+import services.{DataService, DefaultServices}
+import slack.api.SlackApiClient
 import support.TestContext
 
 import scala.concurrent.duration._
-import scala.concurrent.{Await, Future}
+import scala.concurrent.{Await, ExecutionContext, Future}
 
 class ScheduledBehaviorSpec extends PlaySpec with MockitoSugar {
 
@@ -35,31 +45,38 @@ class ScheduledBehaviorSpec extends PlaySpec with MockitoSugar {
     when(dataService.behaviors.maybeCurrentVersionFor(behavior)).thenReturn(Future.successful(Some(behaviorVersion)))
   }
 
-  def mockBehavior: Behavior = {
-    mock[Behavior]
+  def newBehavior(team: Team): Behavior = {
+    val group = BehaviorGroup(IDs.next, None, team, OffsetDateTime.now)
+    Behavior(IDs.next, team, Some(group), None, false, OffsetDateTime.now)
   }
 
-  def mockScheduledBehavior(behavior: Behavior, team: Team): ScheduledBehavior = {
+  def newScheduledBehavior(
+                            user: User,
+                            behavior: Behavior,
+                            team: Team,
+                            channel: String = "C12345678",
+                            isForIndividualMembers: Boolean = false
+                          ): ScheduledBehavior = {
     ScheduledBehavior(
-      "0",
-      behavior,
-      Map(),
-      None,
-      team,
-      None,
-      isForIndividualMembers = false,
-      mock[Recurrence],
-      OffsetDateTime.now,
-      OffsetDateTime.now
+      id = IDs.next,
+      behavior = behavior,
+      arguments = Map(),
+      maybeUser = Some(user),
+      team = team,
+      maybeChannel = Some(channel),
+      isForIndividualMembers = isForIndividualMembers,
+      recurrence = mock[Recurrence],
+      nextSentAt = OffsetDateTime.now,
+      createdAt = OffsetDateTime.now
     )
   }
 
   "displayText" should {
     "include the behavior name and behavior group name when both exist" in new TestContext {
       running(app) {
-        val behavior = mockBehavior
+        val behavior = newBehavior(team)
         mockNames(dataService, behavior, Some("foo"), Some("bar"))
-        val sb = mockScheduledBehavior(behavior, team)
+        val sb = newScheduledBehavior(user, behavior, team)
         val text = sb.displayText(dataService)
         runNow(text) mustBe """an action named `foo` in skill `bar`"""
       }
@@ -67,9 +84,9 @@ class ScheduledBehaviorSpec extends PlaySpec with MockitoSugar {
 
     "say an unnamed skill if no group name" in new TestContext {
       running(app) {
-        val behavior = mockBehavior
+        val behavior = newBehavior(team)
         mockNames(dataService, behavior, Some("foo"), None)
-        val sb = mockScheduledBehavior(behavior, team)
+        val sb = newScheduledBehavior(user, behavior, team)
         val text = sb.displayText(dataService)
         runNow(text) mustBe """an action named `foo` in an unnamed skill"""
       }
@@ -77,9 +94,9 @@ class ScheduledBehaviorSpec extends PlaySpec with MockitoSugar {
 
     "say an unnamed action if there’s no action name" in new TestContext {
       running(app) {
-        val behavior = mockBehavior
+        val behavior = newBehavior(team)
         mockNames(dataService, behavior, None, None)
-        val sb = mockScheduledBehavior(behavior, team)
+        val sb = newScheduledBehavior(user, behavior, team)
         val text = sb.displayText(dataService)
         runNow(text) mustBe """an unnamed action in an unnamed skill"""
       }
@@ -87,9 +104,9 @@ class ScheduledBehaviorSpec extends PlaySpec with MockitoSugar {
 
     "say an unnamed action with the skill name" in new TestContext {
       running(app) {
-        val behavior = mockBehavior
+        val behavior = newBehavior(team)
         mockNames(dataService, behavior, None, Some("bar"))
-        val sb = mockScheduledBehavior(behavior, team)
+        val sb = newScheduledBehavior(user, behavior, team)
         val text = sb.displayText(dataService)
         runNow(text) mustBe """an unnamed action in skill `bar`"""
       }
@@ -97,12 +114,132 @@ class ScheduledBehaviorSpec extends PlaySpec with MockitoSugar {
 
     "say a deleted action/skill if there is none" in new TestContext {
       running(app) {
-        val behavior = mockBehavior
+        val behavior = newBehavior(team)
         when(dataService.behaviorGroups.maybeCurrentVersionFor(behavior.group)).thenReturn(Future.successful(None))
         when(dataService.behaviors.maybeCurrentVersionFor(behavior)).thenReturn(Future.successful(None))
-        val sb = mockScheduledBehavior(behavior, team)
+        val sb = newScheduledBehavior(user, behavior, team)
         val text = sb.displayText(dataService)
         runNow(text) mustBe """a deleted action in a deleted skill"""
+      }
+    }
+  }
+
+  def scheduledBehaviorSpy(user: User, team: Team, channel: String, isForIndividualMembers: Boolean = false): ScheduledBehavior = {
+    val behavior = newBehavior(team)
+    val sb = newScheduledBehavior(user, behavior, team, channel, isForIndividualMembers = isForIndividualMembers)
+    val sbSpy = spy(sb)
+    doReturn(Future.successful(Unit)).when(sbSpy).
+      sendFor(anyString, anyString, any[EventHandler], any[SlackApiClient], any[SlackBotProfile], any[DefaultServices])(
+        any[ActorSystem],
+        any[ExecutionContext]
+      )
+    doReturn(Future.successful(Unit)).when(sbSpy).
+      sendForIndividualMembers(
+        anyString,
+        any[EventHandler],
+        any[SlackApiClient],
+        any[SlackBotProfile],
+        any[DefaultServices]
+      )(any[ActorSystem], any[ExecutionContext])
+    sbSpy
+  }
+
+  "send" should {
+    "call sendFor when there is a Slack profile and it’s not for individual members" in new TestContext {
+      running(app) {
+        val channel = "C12345678"
+        val token = IDs.next
+        val client = SlackApiClient(token)
+        val slackTeamId = "T1234567"
+        val botProfile = SlackBotProfile("UMOCKBOT", team.id, slackTeamId, token, OffsetDateTime.now)
+        val userSlackId = "U1000"
+        val userSlackProfile = SlackProfile(slackTeamId, LoginInfo("slack", userSlackId))
+        when(services.dataService.users.maybeSlackProfileFor(user))
+          .thenReturn(Future.successful(Some(userSlackProfile)))
+        val sbSpy = scheduledBehaviorSpy(user, team, channel)
+        val sent = sbSpy.send(eventHandler, client, botProfile, services, "Mock schedule")
+        runNow(sent)
+        verify(sbSpy, times(1)).sendFor(channel, userSlackId, eventHandler, client, botProfile, services)
+        verify(sbSpy, times(0)).sendForIndividualMembers(
+          anyString,
+          any[EventHandler],
+          any[SlackApiClient],
+          any[SlackBotProfile],
+          any[DefaultServices]
+        )(any[ActorSystem], any[ExecutionContext])
+      }
+    }
+
+    "call sendFor with the bot profile when there is no user Slack profile on a public channel not for individual members" in new TestContext {
+      running(app) {
+        val channel = "C12345678"
+        val token = IDs.next
+        val client = SlackApiClient(token)
+        val slackTeamId = "T1234567"
+        val botProfile = SlackBotProfile("UMOCKBOT", team.id, slackTeamId, token, OffsetDateTime.now)
+        when(services.dataService.users.maybeSlackProfileFor(user)).thenReturn(Future.successful(None))
+        val sbSpy = scheduledBehaviorSpy(user, team, channel)
+        val sent = sbSpy.send(eventHandler, client, botProfile, services, "Mock schedule")
+        runNow(sent)
+        verify(sbSpy, times(1)).sendFor(channel, botProfile.userId, eventHandler, client, botProfile, services)
+        verify(sbSpy, times(0)).sendForIndividualMembers(
+          anyString,
+          any[EventHandler],
+          any[SlackApiClient],
+          any[SlackBotProfile],
+          any[DefaultServices]
+        )(any[ActorSystem], any[ExecutionContext])
+      }
+    }
+
+    "call sendForIndividualMembers when scheduled for individual members" in new TestContext {
+      running(app) {
+        val channel = "C12345678"
+        val token = IDs.next
+        val client = SlackApiClient(token)
+        val slackTeamId = "T1234567"
+        val botProfile = SlackBotProfile("UMOCKBOT", team.id, slackTeamId, token, OffsetDateTime.now)
+        val sbSpy = scheduledBehaviorSpy(user, team, channel, isForIndividualMembers = true)
+        val sent = sbSpy.send(eventHandler, client, botProfile, services, "Mock schedule")
+        runNow(sent)
+        verify(sbSpy, times(0)).sendFor(
+          anyString,
+          anyString,
+          any[EventHandler],
+          any[SlackApiClient],
+          any[SlackBotProfile],
+          any[DefaultServices]
+        )(any[ActorSystem], any[ExecutionContext])
+        verify(sbSpy, times(1)).sendForIndividualMembers(channel, eventHandler, client, botProfile, services)
+      }
+    }
+
+    "not call sendFor or sendForIndividualMembers when in a DM and no user Slack profile exists" in new TestContext {
+      running(app) {
+        val channel = "D12345678"
+        val token = IDs.next
+        val client = SlackApiClient(token)
+        val slackTeamId = "T1234567"
+        val botProfile = SlackBotProfile("UMOCKBOT", team.id, slackTeamId, token, OffsetDateTime.now)
+        when(services.dataService.users.maybeSlackProfileFor(user)).thenReturn(Future.successful(None))
+        val sbSpy = scheduledBehaviorSpy(user, team, channel)
+        val sent = sbSpy.send(eventHandler, client, botProfile, services, "Mock schedule")
+        runNow(sent)
+        verify(sbSpy, times(0)).sendFor(
+          anyString,
+          anyString,
+          any[EventHandler],
+          any[SlackApiClient],
+          any[SlackBotProfile],
+          any[DefaultServices]
+        )(any[ActorSystem], any[ExecutionContext])
+        verify(sbSpy, times(0)).sendForIndividualMembers(
+          anyString,
+          any[EventHandler],
+          any[SlackApiClient],
+          any[SlackBotProfile],
+          any[DefaultServices]
+        )(any[ActorSystem], any[ExecutionContext])
       }
     }
   }

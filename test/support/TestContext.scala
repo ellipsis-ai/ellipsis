@@ -14,7 +14,7 @@ import org.scalatest.mock.MockitoSugar
 import play.api.inject._
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.ws.WSClient
-import play.api.{Application, Configuration}
+import play.api.{Application, Configuration, Logger}
 import services._
 import services.caching.CacheService
 import utils.SlackFileMap
