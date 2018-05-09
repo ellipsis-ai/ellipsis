@@ -16,7 +16,7 @@ class SlackMessageFormatterSpec extends PlaySpec {
       isBot = false,
       None,
       deleted = false,
-      Some(SlackUserProfileData(Some(displayName), None, None, None))
+      Some(SlackUserProfileData(Some(displayName), None, None, None, None, None))
     )
   }
   val slackUserList: Set[SlackUserData] = Set(
