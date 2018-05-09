@@ -109,7 +109,7 @@ class MockSlackEventService extends SlackEventService with MockitoSugar {
       isBot = false,
       None,
       deleted = false,
-      Some(SlackUserProfileData(Some("MockBot"), None, None, None))
+      Some(SlackUserProfileData(Some("MockBot"), None, None, None, None, None))
     )))
   }
 

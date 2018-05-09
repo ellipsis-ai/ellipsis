@@ -10,6 +10,8 @@ class SlackMessageSpec extends PlaySpec {
   val firstName = "Luke"
   val lastName = "Andrews"
   val fullName = s"$firstName $lastName"
+  val email = "luke@ellipsis.ai"
+  val phone = "647-123-4567"
   val tz = Some("America/Toronto")
   val user = SlackUserData(
     userId,
@@ -26,7 +28,9 @@ class SlackMessageSpec extends PlaySpec {
       Some(displayName),
       Some(firstName),
       Some(lastName),
-      Some(fullName)
+      Some(fullName),
+      Some(email),
+      Some(phone)
     ))
   )
   val userList = Set(user)

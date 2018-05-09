@@ -39,8 +39,10 @@ class SlackEventSpec extends PlaySpec with MockitoSugar {
   val firstName = "Bill"
   val lastName = "Lumbergh"
   val fullName = "Bill Lumbergh"
+  val email = "billsporsche@company.com"
+  val phone = "647-123-4567"
   val tz = "America/New_York"
-  val profileData = SlackUserProfileData(Some(displayName), Some(firstName), Some(lastName), Some(fullName))
+  val profileData = SlackUserProfileData(Some(displayName), Some(firstName), Some(lastName), Some(fullName), Some(email), Some(phone))
   val slackUserData = SlackUserData(
     slackUserId,
     slackTeamId,
