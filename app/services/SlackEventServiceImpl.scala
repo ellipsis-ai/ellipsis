@@ -81,7 +81,9 @@ class SlackEventServiceImpl @Inject()(
               profile.display_name,
               profile.first_name,
               profile.last_name,
-              profile.real_name
+              profile.real_name,
+              profile.email,
+              profile.phone
             )
           }
           SlackUserData(
