@@ -33,7 +33,8 @@ export interface SchedulingProps {
   onClearErrors: () => void,
   justSavedAction: Option<ScheduledAction>,
   selectedScheduleId: Option<string>,
-  newAction: Option<boolean>
+  newAction: Option<boolean>,
+  isAdmin: boolean
 }
 
 type Props = SchedulingProps & PageRequiredProps

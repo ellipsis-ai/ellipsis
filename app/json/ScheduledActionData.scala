@@ -24,7 +24,8 @@ case class ScheduledActionData(
                                 firstRecurrence: Option[OffsetDateTime],
                                 secondRecurrence: Option[OffsetDateTime],
                                 useDM: Boolean,
-                                channel: String
+                                channel: String,
+                                userId: Option[String]
                               ) {
   def visibleToSlackUser(slackUserId: String, channelList: Seq[ChannelLike]): Boolean = {
     channelList.exists { someChannel =>
@@ -46,7 +47,8 @@ object ScheduledActionData {
       firstRecurrence = Some(scheduledMessage.nextSentAt),
       secondRecurrence = Some(scheduledMessage.followingSentAt),
       useDM = scheduledMessage.isForIndividualMembers,
-      channel = scheduledMessage.maybeChannel.getOrElse("")
+      channel = scheduledMessage.maybeChannel.getOrElse(""),
+      userId = scheduledMessage.maybeUser.map(_.id)
     )
   }
 
@@ -63,7 +65,8 @@ object ScheduledActionData {
       firstRecurrence = Some(scheduledBehavior.nextSentAt),
       secondRecurrence = Some(scheduledBehavior.followingSentAt),
       useDM = scheduledBehavior.isForIndividualMembers,
-      channel = scheduledBehavior.maybeChannel.getOrElse("")
+      channel = scheduledBehavior.maybeChannel.getOrElse(""),
+      userId = scheduledBehavior.maybeUser.map(_.id)
     )
   }
 

@@ -61,7 +61,8 @@ const emptyConfig: SchedulingProps = Object.freeze({
   onClearErrors: emptyFn,
   justSavedAction: null,
   selectedScheduleId: null,
-  newAction: false
+  newAction: false,
+  isAdmin: false
 });
 
 function newSchedule(props?: Partial<ScheduledActionInterface>) {

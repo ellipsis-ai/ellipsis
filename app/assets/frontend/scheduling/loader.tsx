@@ -1,44 +1,56 @@
-/* global SchedulingConfig:false */
 import 'core-js';
 import 'whatwg-fetch';
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';
 import Scheduling from './index';
 import Page from '../shared_ui/page';
-import ScheduledAction from '../models/scheduled_action';
-import ScheduleChannel from '../models/schedule_channel';
-import BehaviorGroup from '../models/behavior_group';
+import ScheduledAction, {ScheduledActionJson} from '../models/scheduled_action';
+import ScheduleChannel, {ScheduleChannelJson} from '../models/schedule_channel';
+import BehaviorGroup, {BehaviorGroupJson} from '../models/behavior_group';
 import {DataRequest} from '../lib/data_request';
 import ImmutableObjectUtils from '../lib/immutable_object_utils';
 
-const SchedulingLoader = React.createClass({
-        propTypes: {
-          containerId: React.PropTypes.string.isRequired,
-          csrfToken: React.PropTypes.string.isRequired,
-          teamId: React.PropTypes.string.isRequired,
-          scheduledActions: React.PropTypes.arrayOf(React.PropTypes.object).isRequired,
-          behaviorGroups: React.PropTypes.arrayOf(React.PropTypes.object).isRequired,
-          channelList: React.PropTypes.arrayOf(React.PropTypes.object),
-          teamTimeZone: React.PropTypes.string,
-          teamTimeZoneName: React.PropTypes.string,
-          slackUserId: React.PropTypes.string,
-          slackBotUserId: React.PropTypes.string,
-          selectedScheduleId: React.PropTypes.string,
-          newAction: React.PropTypes.bool
-        },
+interface Props {
+  containerId: string
+  csrfToken: string
+  teamId: string
+  scheduledActions: Array<ScheduledActionJson>
+  behaviorGroups: Array<BehaviorGroupJson>
+  channelList: Array<ScheduleChannelJson>
+  teamTimeZone: Option<string>
+  teamTimeZoneName: Option<string>
+  slackUserId: string
+  slackBotUserId: string
+  selectedScheduleId: Option<string>
+  newAction: Option<boolean>
+  isAdmin: boolean
+}
 
-        getInitialState: function() {
-          return {
-            scheduledActions: this.props.scheduledActions.map(ScheduledAction.fromJson),
-            behaviorGroups: this.props.behaviorGroups.map(BehaviorGroup.fromJson),
-            isSaving: false,
-            justSavedAction: null,
-            isDeleting: false,
-            error: null
-          };
-        },
+interface State {
+  scheduledActions: Array<ScheduledAction>,
+  behaviorGroups: Array<BehaviorGroup>,
+  isSaving: boolean,
+  justSavedAction: Option<ScheduledAction>,
+  isDeleting: boolean,
+  error: Option<string>
+}
 
-        onSave: function(scheduledAction) {
+declare var SchedulingConfig: Props;
+
+class SchedulingLoader extends React.Component<Props, State> {
+  constructor(props: Props) {
+    super(props);
+    this.state = {
+      scheduledActions: this.props.scheduledActions.map(ScheduledAction.fromJson),
+      behaviorGroups: this.props.behaviorGroups.map(BehaviorGroup.fromJson),
+      isSaving: false,
+      justSavedAction: null,
+      isDeleting: false,
+      error: null
+    };
+  }
+
+        onSave(scheduledAction: ScheduledAction): void {
           const body = {
             dataJson: JSON.stringify(scheduledAction),
             scheduleType: scheduledAction.scheduleType,
@@ -72,9 +84,9 @@ const SchedulingLoader = React.createClass({
                 });
               });
           });
-        },
+        }
 
-        onDelete: function(scheduledAction) {
+        onDelete(scheduledAction: ScheduledAction): void {
           const body = {
             id: scheduledAction.id,
             scheduleType: scheduledAction.scheduleType,
@@ -104,24 +116,24 @@ const SchedulingLoader = React.createClass({
                 });
               });
           });
-        },
+        }
 
-        onClearErrors: function() {
+        onClearErrors(): void {
           this.setState({
             isSaving: false,
             isDeleting: false,
             justSavedAction: null,
             error: null
           });
-        },
+        }
 
-        render: function() {
+        render() {
           return (
             <Page csrfToken={this.props.csrfToken}
               onRender={(pageProps) => (
               <Scheduling
                 scheduledActions={this.state.scheduledActions}
-                channelList={this.props.channelList ? this.props.channelList.map(ScheduleChannel.fromJson) : null}
+                channelList={this.props.channelList ? this.props.channelList.map(ScheduleChannel.fromJson) : []}
                 behaviorGroups={this.state.behaviorGroups}
                 onSave={this.onSave}
                 isSaving={this.state.isSaving}
@@ -137,14 +149,19 @@ const SchedulingLoader = React.createClass({
                 slackBotUserId={this.props.slackBotUserId}
                 selectedScheduleId={this.props.selectedScheduleId}
                 newAction={this.props.newAction}
+                isAdmin={this.props.isAdmin}
                 {...pageProps}
               />
             )} />
           );
         }
-});
+}
 
-ReactDOM.render(
-  React.createElement(SchedulingLoader, SchedulingConfig),
-  document.getElementById(SchedulingConfig.containerId)
-);
+if (typeof SchedulingConfig !== "undefined") {
+  const container = document.getElementById(SchedulingConfig.containerId);
+  if (container) {
+    ReactDOM.render((
+      <SchedulingLoader {...SchedulingConfig} />
+    ), container);
+  }
+}

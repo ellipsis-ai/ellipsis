@@ -2,6 +2,7 @@ import Recurrence, {RecurrenceJson} from './recurrence';
 import DeepEqual from '../lib/deep_equal';
 import {Timestamp} from "../lib/formatter";
 import BehaviorGroup from "./behavior_group";
+import User, {UserJson} from "./user";
 
 export interface ScheduledActionArgument {
   name: string,
@@ -19,13 +20,15 @@ export interface ScheduledActionJson {
   firstRecurrence?: Option<Timestamp>,
   secondRecurrence?: Option<Timestamp>,
   useDM: boolean,
-  channel: string
+  channel: string,
+  userId: Option<string>
 }
 
 export interface ScheduledActionInterface extends ScheduledActionJson {
   recurrence: Recurrence,
   firstRecurrence?: Option<Date>;
   secondRecurrence?: Option<Date>;
+  user: Option<User>;
 }
 
 class ScheduledAction implements ScheduledActionInterface {
@@ -40,6 +43,8 @@ class ScheduledAction implements ScheduledActionInterface {
   readonly secondRecurrence: Option<Date>;
   readonly useDM: boolean;
   readonly channel: string;
+  readonly userId: Option<string>;
+  readonly user: Option<User>;
 
     constructor(props: Partial<ScheduledActionInterface>) {
       const initialProps: ScheduledActionInterface = Object.assign({
@@ -53,7 +58,9 @@ class ScheduledAction implements ScheduledActionInterface {
         firstRecurrence: null,
         secondRecurrence: null,
         useDM: false,
-        channel: ""
+        channel: "",
+        userId: null,
+        user: null
       }, props);
 
       Object.defineProperties(this, {
@@ -67,7 +74,9 @@ class ScheduledAction implements ScheduledActionInterface {
         firstRecurrence: { value: initialProps.firstRecurrence, enumerable: true },
         secondRecurrence: { value: initialProps.secondRecurrence, enumerable: true },
         useDM: { value: initialProps.useDM, enumerable: true },
-        channel: { value: initialProps.channel, enumerable: true }
+        channel: { value: initialProps.channel, enumerable: true },
+        userId: { value: initialProps.userId, enumerable: true },
+        user: { value: initialProps.user, enumerable: true }
       });
     }
 
