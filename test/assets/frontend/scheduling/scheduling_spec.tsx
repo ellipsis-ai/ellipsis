@@ -44,7 +44,7 @@ const defaultUserId = "U1234";
 const defaultTimeZone = "America/New_York";
 const defaultTimeZoneName = "Eastern Time";
 
-const emptyConfig: SchedulingProps = Object.freeze({
+const emptyConfig: SchedulingProps = {
   scheduledActions: [],
   channelList: [],
   behaviorGroups: [],
@@ -63,7 +63,7 @@ const emptyConfig: SchedulingProps = Object.freeze({
   selectedScheduleId: null,
   newAction: false,
   isAdmin: false
-});
+};
 
 function newSchedule(props?: Partial<ScheduledActionInterface>) {
   return new ScheduledAction(Object.assign({

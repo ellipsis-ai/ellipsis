@@ -9,6 +9,8 @@ import ScheduleChannel, {ScheduleChannelJson} from '../models/schedule_channel';
 import BehaviorGroup, {BehaviorGroupJson} from '../models/behavior_group';
 import {DataRequest} from '../lib/data_request';
 import ImmutableObjectUtils from '../lib/immutable_object_utils';
+import autobind from "../lib/autobind";
+import User from "../models/user";
 
 interface Props {
   containerId: string
@@ -26,13 +28,18 @@ interface Props {
   isAdmin: boolean
 }
 
+export interface UserMap {
+  [userId: string]: Option<User>
+}
+
 interface State {
   scheduledActions: Array<ScheduledAction>,
   behaviorGroups: Array<BehaviorGroup>,
   isSaving: boolean,
   justSavedAction: Option<ScheduledAction>,
   isDeleting: boolean,
-  error: Option<string>
+  error: Option<string>,
+  userMap: UserMap
 }
 
 declare var SchedulingConfig: Props;
@@ -40,13 +47,15 @@ declare var SchedulingConfig: Props;
 class SchedulingLoader extends React.Component<Props, State> {
   constructor(props: Props) {
     super(props);
+    autobind(this);
     this.state = {
       scheduledActions: this.props.scheduledActions.map(ScheduledAction.fromJson),
       behaviorGroups: this.props.behaviorGroups.map(BehaviorGroup.fromJson),
       isSaving: false,
       justSavedAction: null,
       isDeleting: false,
-      error: null
+      error: null,
+      userMap: {}
     };
   }
 
@@ -150,6 +159,7 @@ class SchedulingLoader extends React.Component<Props, State> {
                 selectedScheduleId={this.props.selectedScheduleId}
                 newAction={this.props.newAction}
                 isAdmin={this.props.isAdmin}
+                userMap={this.state.userMap}
                 {...pageProps}
               />
             )} />
