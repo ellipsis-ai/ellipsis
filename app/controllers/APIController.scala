@@ -568,6 +568,8 @@ class APIController @Inject() (
       result <- maybeBehavior.map { behavior =>
         if (info.userId.isDefined && maybeUser.isEmpty) {
           Future.successful(notFound(APIErrorData(s"Couldn't find a user with ID `${info.userId.get}`", Some("userId")), Json.toJson(info)))
+        } else if (info.channel.isDefined && maybeSlackChannelId.isEmpty) {
+          Future.successful(notFound(APIErrorData(s"Couldn't find channel for `${info.channel}`", Some("channel")), Json.toJson(info)))
         } else {
           dataService.scheduledBehaviors.allForBehavior(behavior, maybeUser, maybeSlackChannelId).flatMap { scheduledBehaviors =>
             for {
