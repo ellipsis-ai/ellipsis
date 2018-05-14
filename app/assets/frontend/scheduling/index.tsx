@@ -37,7 +37,8 @@ export interface SchedulingProps {
   selectedScheduleId: Option<string>,
   newAction: Option<boolean>,
   isAdmin: boolean,
-  userMap: UserMap
+  userMap: UserMap,
+  onLoadUserData: (userId: string) => void
 }
 
 type Props = SchedulingProps & PageRequiredProps
@@ -283,7 +284,11 @@ class Scheduling extends React.Component<Props, State> {
     }
 
     lookupUser(userId: string): Option<User> {
-      return this.props.userMap[userId];
+      const user = this.props.userMap[userId];
+      if (!user) {
+        this.props.onLoadUserData(userId);
+      }
+      return user;
     }
 
     selectedItemHasChanges(): boolean {

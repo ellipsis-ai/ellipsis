@@ -73,8 +73,10 @@ class ScheduledItemEditor extends React.Component<Props> {
                 <h5>Admin info</h5>
                 <div>
                   <span>Scheduled by </span>
-                  <span>{this.props.scheduleUser ? this.props.scheduleUser.formattedName() : ""} </span>
-                  <span>user ID {scheduledAction.userId || "(none)"}</span>
+                  {this.props.scheduleUser ? (
+                    <span>user {this.props.scheduleUser.formattedName()} on team {this.props.scheduleUser.teamName || "(unknown)"} · </span>
+                  ) : null}
+                  <span>Ellipsis user ID {scheduledAction.userId || "(none)"} </span>
                 </div>
               </div>
             </div>

@@ -52,6 +52,12 @@ declare var jsRoutes: {
     },
     SupportController: {
       sendRequest: () => JsRoute
+    },
+
+    admin: {
+      UserInfoController: {
+        userDataFor: (userId: string) => JsRoute
+      }
     }
   }
 };

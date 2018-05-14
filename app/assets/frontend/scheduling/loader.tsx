@@ -127,6 +127,21 @@ class SchedulingLoader extends React.Component<Props, State> {
           });
         }
 
+        onLoadUserData(userId: string): void {
+          if (this.props.isAdmin) {
+            const url = jsRoutes.controllers.admin.UserInfoController.userDataFor(userId).url;
+            DataRequest.jsonGet(url).then((json) => {
+              if (json) {
+                const userData = {};
+                userData[userId] = User.fromJson(json);
+                this.setState({
+                  userMap: Object.assign({}, this.state.userMap, userData)
+                });
+              }
+            });
+          }
+        }
+
         onClearErrors(): void {
           this.setState({
             isSaving: false,
@@ -160,6 +175,7 @@ class SchedulingLoader extends React.Component<Props, State> {
                 newAction={this.props.newAction}
                 isAdmin={this.props.isAdmin}
                 userMap={this.state.userMap}
+                onLoadUserData={this.onLoadUserData}
                 {...pageProps}
               />
             )} />

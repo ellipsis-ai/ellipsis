@@ -62,7 +62,9 @@ const emptyConfig: SchedulingProps = {
   justSavedAction: null,
   selectedScheduleId: null,
   newAction: false,
-  isAdmin: false
+  isAdmin: false,
+  userMap: {},
+  onLoadUserData: emptyFn
 };
 
 function newSchedule(props?: Partial<ScheduledActionInterface>) {
