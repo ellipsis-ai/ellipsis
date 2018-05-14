@@ -10,7 +10,7 @@ import BehaviorGroup, {BehaviorGroupJson} from '../models/behavior_group';
 import {DataRequest, ResponseError} from '../lib/data_request';
 import ImmutableObjectUtils from '../lib/immutable_object_utils';
 import autobind from "../lib/autobind";
-import User from "../models/user";
+import User, {UserJson} from "../models/user";
 
 interface Props {
   containerId: string
@@ -130,18 +130,17 @@ class SchedulingLoader extends React.Component<Props, State> {
         onLoadUserData(userId: string): void {
           if (this.props.isAdmin) {
             const url = jsRoutes.controllers.admin.UserInfoController.userDataFor(userId).url;
-            DataRequest.jsonGet(url).then((json) => {
-              if (json) {
-                const userData = {};
-                userData[userId] = User.fromJson(json);
+            DataRequest.jsonGet(url).then((userResponse: { user: Option<UserJson>, userNotFound: boolean }) => {
+              const userData = {};
+              if (userResponse.user) {
+                userData[userId] = User.fromJson(userResponse.user);
                 this.updateUserMap(userData);
-              }
-            }).catch((err: ResponseError) => {
-              if (err.status === 404) {
-                const userData = {};
+              } else if (userResponse.userNotFound) {
                 userData[userId] = new User(userId, null, null, null, null);
                 this.updateUserMap(userData);
               }
+            }).catch(() => {
+              // Ignore errors since this is admin-only for now
             });
           }
         }

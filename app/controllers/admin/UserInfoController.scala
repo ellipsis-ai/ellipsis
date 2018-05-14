@@ -10,9 +10,11 @@ import play.api.Configuration
 import play.api.libs.json.Json
 import play.api.mvc.{Action, AnyContent}
 import services.DataService
-import json.Formatting._
+import json.Formatting.userDataWrites
 
 import scala.concurrent.{ExecutionContext, Future}
+
+case class UserInfoResponse(user: Option[UserData], userNotFound: Boolean)
 
 class UserInfoController @Inject() (
                                      val silhouette: Silhouette[EllipsisEnv],
@@ -21,6 +23,8 @@ class UserInfoController @Inject() (
                                      val assetsProvider: Provider[RemoteAssets],
                                      implicit val ec: ExecutionContext
                                    ) extends AdminAuth {
+  implicit val userInfoResponseWrites = Json.writes[UserInfoResponse]
+
   def userDataFor(userId: String): Action[AnyContent] = silhouette.SecuredAction.async { implicit request =>
     withIsAdminCheck(() => {
       for {
@@ -35,11 +39,12 @@ class UserInfoController @Inject() (
           dataService.users.userDataFor(user, team).map(Some(_))
         }).getOrElse(Future.successful(None))
       } yield {
-        maybeUser.map { user =>
-          Ok(Json.toJson(maybeUserData.getOrElse(UserData(user.id, None, None, None, maybeTeam.map(_.name)))))
-        }.getOrElse {
-          NotFound("User not found")
-        }
+        Ok(Json.toJson(UserInfoResponse(
+          maybeUser.map { user =>
+            maybeUserData.getOrElse(UserData(user.id, None, None, None, maybeTeam.map(_.name)))
+          },
+          maybeUser.isEmpty
+        )))
       }
     })
   }
