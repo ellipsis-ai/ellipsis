@@ -7,7 +7,7 @@ import Page from '../shared_ui/page';
 import ScheduledAction, {ScheduledActionJson} from '../models/scheduled_action';
 import ScheduleChannel, {ScheduleChannelJson} from '../models/schedule_channel';
 import BehaviorGroup, {BehaviorGroupJson} from '../models/behavior_group';
-import {DataRequest} from '../lib/data_request';
+import {DataRequest, ResponseError} from '../lib/data_request';
 import ImmutableObjectUtils from '../lib/immutable_object_utils';
 import autobind from "../lib/autobind";
 import User from "../models/user";
@@ -134,12 +134,22 @@ class SchedulingLoader extends React.Component<Props, State> {
               if (json) {
                 const userData = {};
                 userData[userId] = User.fromJson(json);
-                this.setState({
-                  userMap: Object.assign({}, this.state.userMap, userData)
-                });
+                this.updateUserMap(userData);
+              }
+            }).catch((err: ResponseError) => {
+              if (err.status === 404) {
+                const userData = {};
+                userData[userId] = new User(userId, null, null, null, null);
+                this.updateUserMap(userData);
               }
             });
           }
+        }
+
+        updateUserMap(userData: UserMap) {
+          this.setState({
+            userMap: Object.assign({}, this.state.userMap, userData)
+          });
         }
 
         onClearErrors(): void {
