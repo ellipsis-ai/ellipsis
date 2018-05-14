@@ -19,7 +19,8 @@ export interface ScheduledActionJson {
   firstRecurrence?: Option<Timestamp>,
   secondRecurrence?: Option<Timestamp>,
   useDM: boolean,
-  channel: string
+  channel: string,
+  userId: Option<string>
 }
 
 export interface ScheduledActionInterface extends ScheduledActionJson {
@@ -40,6 +41,7 @@ class ScheduledAction implements ScheduledActionInterface {
   readonly secondRecurrence: Option<Date>;
   readonly useDM: boolean;
   readonly channel: string;
+  readonly userId: Option<string>;
 
     constructor(props: Partial<ScheduledActionInterface>) {
       const initialProps: ScheduledActionInterface = Object.assign({
@@ -53,7 +55,8 @@ class ScheduledAction implements ScheduledActionInterface {
         firstRecurrence: null,
         secondRecurrence: null,
         useDM: false,
-        channel: ""
+        channel: "",
+        userId: null
       }, props);
 
       Object.defineProperties(this, {
@@ -67,7 +70,8 @@ class ScheduledAction implements ScheduledActionInterface {
         firstRecurrence: { value: initialProps.firstRecurrence, enumerable: true },
         secondRecurrence: { value: initialProps.secondRecurrence, enumerable: true },
         useDM: { value: initialProps.useDM, enumerable: true },
-        channel: { value: initialProps.channel, enumerable: true }
+        channel: { value: initialProps.channel, enumerable: true },
+        userId: { value: initialProps.userId, enumerable: true }
       });
     }
 

@@ -154,6 +154,7 @@ class UserServiceImpl @Inject() (
         } else {
           Future.successful(false)
         }
+        maybeTeam <- dataService.teams.find(user.teamId)
       } yield {
         if (isAdmin) {
           UserData.asAdmin(user.id)
@@ -163,7 +164,7 @@ class UserServiceImpl @Inject() (
           } else {
             Logger.error(s"Non-admin user data requested with mismatched team ID: user ID ${user.id} with team ID ${user.teamId} compared to requested team ID ${team.id}")
           }
-          UserData(user.id, None, None, None)
+          UserData(user.id, None, None, None, maybeTeam.map(_.name))
         }
       }
     } else {
@@ -175,7 +176,9 @@ class UserServiceImpl @Inject() (
           user.id,
           maybeSlackUserData.map(_.getDisplayName),
           maybeSlackUserData.flatMap(_.maybeRealName),
-          maybeTzString)
+          maybeTzString,
+          Some(team.name)
+        )
       }
     }
   }

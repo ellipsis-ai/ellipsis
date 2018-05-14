@@ -58,5 +58,7 @@
   web.settings.routes.javascript.AWSConfigController.save,
   web.settings.routes.javascript.OAuth2ApplicationController.edit,
   web.settings.routes.javascript.OAuth2ApplicationController.add,
-  web.settings.routes.javascript.OAuth2ApplicationController.save
+  web.settings.routes.javascript.OAuth2ApplicationController.save,
+
+  admin.routes.javascript.UserInfoController.userDataFor
 )

@@ -21,7 +21,8 @@ case class ScheduledActionsConfig(
                                    slackUserId: Option[String],
                                    slackBotUserId: Option[String],
                                    selectedScheduleId: Option[String],
-                                   newAction: Option[Boolean]
+                                   newAction: Option[Boolean],
+                                   isAdmin: Boolean
                                  )
 
 object ScheduledActionsConfig {
@@ -74,7 +75,8 @@ object ScheduledActionsConfig {
           slackUserId = maybeSlackUserId,
           slackBotUserId = maybeBotProfile.map(_.userId),
           selectedScheduleId = maybeScheduledId,
-          newAction = maybeNewSchedule
+          newAction = maybeNewSchedule,
+          isAdmin = forceAdmin || teamAccess.isAdminAccess
         ))
       }
     }.getOrElse(Future.successful(None))

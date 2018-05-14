@@ -15,6 +15,8 @@ import ScheduledItemTitle from './scheduled_item_title';
 import Sort from '../lib/sort';
 import {PageRequiredProps} from '../shared_ui/page';
 import autobind from '../lib/autobind';
+import {UserMap} from "./loader";
+import User from '../models/user';
 
 export interface SchedulingProps {
   scheduledActions: Array<ScheduledAction>
@@ -33,7 +35,10 @@ export interface SchedulingProps {
   onClearErrors: () => void,
   justSavedAction: Option<ScheduledAction>,
   selectedScheduleId: Option<string>,
-  newAction: Option<boolean>
+  newAction: Option<boolean>,
+  isAdmin: boolean,
+  userMap: UserMap,
+  onLoadUserData: (userId: string) => void
 }
 
 type Props = SchedulingProps & PageRequiredProps
@@ -278,6 +283,14 @@ class Scheduling extends React.Component<Props, State> {
       this.props.onClearActivePanel();
     }
 
+    lookupUser(userId: string): Option<User> {
+      const user = this.props.userMap[userId];
+      if (!user) {
+        this.props.onLoadUserData(userId);
+      }
+      return user;
+    }
+
     selectedItemHasChanges(): boolean {
       const selected = this.getSelectedItem();
       if (!selected) {
@@ -464,6 +477,8 @@ class Scheduling extends React.Component<Props, State> {
               teamTimeZoneName={this.props.teamTimeZoneName || "Eastern Time"}
               slackUserId={this.props.slackUserId || ""}
               slackBotUserId={this.props.slackBotUserId || ""}
+              isAdmin={this.props.isAdmin}
+              scheduleUser={selectedItem && selectedItem.userId ? this.lookupUser(selectedItem.userId) : null}
             />
           </Collapsible>
 

@@ -8,6 +8,7 @@ import ScheduledAction, {ScheduledActionArgument} from '../models/scheduled_acti
 import ScheduleChannel from '../models/schedule_channel';
 import Recurrence from "../models/recurrence";
 import autobind from "../lib/autobind";
+import User from "../models/user";
 
 interface Props {
   scheduledAction: Option<ScheduledAction>,
@@ -17,7 +18,9 @@ interface Props {
   teamTimeZone: string,
   teamTimeZoneName: string,
   slackUserId: string,
-  slackBotUserId: string
+  slackBotUserId: string,
+  isAdmin: boolean,
+  scheduleUser: Option<User>
 }
 
 class ScheduledItemEditor extends React.Component<Props> {
@@ -64,6 +67,20 @@ class ScheduledItemEditor extends React.Component<Props> {
     return (
       <div>
         <div className="pbxxxxl">
+          {this.props.isAdmin ? (
+            <div className="bg-light type-weak">
+              <div className="container container-wide pvm">
+                <h5>Admin info</h5>
+                <div>
+                  <span>Scheduled by </span>
+                  {this.props.scheduleUser ? (
+                    <span>user {this.props.scheduleUser.formattedName()} on team {this.props.scheduleUser.teamName || "(unknown)"} · </span>
+                  ) : null}
+                  <span>Ellipsis user ID {scheduledAction.userId || "(none)"} </span>
+                </div>
+              </div>
+            </div>
+          ) : null}
           <div className="container container-wide border-bottom pvxxl">
             <SectionHeading number="1">What to do</SectionHeading>
             <ScheduledItemConfig

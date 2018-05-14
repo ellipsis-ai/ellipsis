@@ -102,6 +102,7 @@ POST        /admin/lambdas/:versionId/redeploy        @controllers.admin.Lambdas
 POST        /admin/lambdas/redeploy_all               @controllers.admin.LambdasController.redeployAll
 GET         /admin/teams                              @controllers.admin.TeamsController.list(page: Int ?= 0, perPage: Int ?= 10)
 GET         /admin/billing/plans                      @controllers.admin.billing.PlansController.list()
+GET         /admin/user_info/lookup                   @controllers.admin.UserInfoController.userDataFor(userId: String)
 
 
 GET         /metrics/invocations_for_date/:token/:year/:month/:day          @controllers.VisibilityAPIController.invocationCountsForDate(token: String, year: String, month: String, day: String)
