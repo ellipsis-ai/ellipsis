@@ -185,7 +185,7 @@ case class SlackMessageSender(
     } else {
       val segment = segments.head.trim
       // Slack API gives an error for empty messages
-      if (segment.isEmpty) {
+      if (segment.isEmpty && attachments.isEmpty) {
         Future.successful(None)
       } else {
         val maybeAttachmentsForSegment = if (segments.tail.isEmpty) {
