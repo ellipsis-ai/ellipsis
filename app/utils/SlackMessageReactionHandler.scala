@@ -27,7 +27,11 @@ object SlackMessageReactionHandler {
       Thread.sleep(delayMilliseconds)
       if (!p.isCompleted) {
         client.addReactionToMessage(INITIAL_REACTION, channel, messageTs).map(_ => {
-          updateReactionProgress(p, client, channel, messageTs)
+          if (p.isCompleted) {
+            removeAll(client, channel, messageTs)
+          } else {
+            updateReactionProgress(p, client, channel, messageTs)
+          }
         })
         p.future.onComplete(_ => removeAll(client, channel, messageTs))
       }
