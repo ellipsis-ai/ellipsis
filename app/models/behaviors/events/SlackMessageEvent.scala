@@ -3,7 +3,7 @@ package models.behaviors.events
 import akka.actor.ActorSystem
 import models.accounts.slack.botprofile.SlackBotProfile
 import models.behaviors.conversations.conversation.Conversation
-import models.behaviors.{ActionChoice, BehaviorResponse, BotResult, DeveloperContext}
+import models.behaviors.{ActionChoice, BotResult, DeveloperContext}
 import play.api.Configuration
 import services.{DataService, DefaultServices}
 import slack.api.SlackApiClient

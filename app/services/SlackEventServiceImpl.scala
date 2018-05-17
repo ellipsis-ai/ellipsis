@@ -10,7 +10,6 @@ import play.api.Logger
 import play.api.i18n.MessagesApi
 import services.caching.{CacheService, SlackUserDataCacheKey}
 import slack.api.{ApiError, SlackApiClient}
-import utils.SlackMessageReactionHandler
 
 import scala.concurrent.{ExecutionContext, Future}
 

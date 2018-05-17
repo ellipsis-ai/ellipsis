@@ -8,7 +8,7 @@ import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.events.SlackMessageActionConstants._
 import models.behaviors.{BotResult, SimpleTextResult, TextWithAttachmentsResult}
 import services.DefaultServices
-import utils.{Color, SlackMessageReactionHandler}
+import utils.Color
 
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}

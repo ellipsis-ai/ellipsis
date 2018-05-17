@@ -150,7 +150,7 @@ trait Event {
   def allOngoingConversations(dataService: DataService): Future[Seq[Conversation]]
 
   def resultReactionHandler(eventualResults: Future[Seq[BotResult]])
-                           (implicit ec: ExecutionContext, actorSystem: ActorSystem): Future[Unit] = Future(Unit)
+                           (implicit ec: ExecutionContext, actorSystem: ActorSystem): Future[Unit] = Future.successful(Unit)
 
   def sendMessage(
                    text: String,
