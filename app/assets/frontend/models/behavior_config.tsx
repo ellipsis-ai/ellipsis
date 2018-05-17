@@ -4,6 +4,7 @@ export interface BehaviorConfigJson {
   exportId?: Option<string>;
   name?: Option<string>;
   forcePrivateResponse?: Option<boolean>;
+  canBeMemoized?: Option<boolean>;
   isDataType: boolean;
   dataTypeConfig?: Option<DataTypeConfigJson>;
 }
@@ -17,6 +18,7 @@ class BehaviorConfig implements BehaviorConfigInterface {
     readonly exportId: Option<string>,
     readonly name: Option<string>,
     readonly forcePrivateResponse: Option<boolean>,
+    readonly canBeMemoized: Option<boolean>,
     readonly isDataType: boolean,
     readonly dataTypeConfig: Option<DataTypeConfig>
   ) {
@@ -24,6 +26,7 @@ class BehaviorConfig implements BehaviorConfigInterface {
         exportId: { value: exportId, enumerable: true },
         name: { value: name, enumerable: true },
         forcePrivateResponse: { value: forcePrivateResponse, enumerable: true },
+        canBeMemoized: { value: canBeMemoized, enumerable: true },
         isDataType: { value: isDataType, enumerable: true },
         dataTypeConfig: { value: dataTypeConfig, enumerable: true }
       });
@@ -47,6 +50,7 @@ class BehaviorConfig implements BehaviorConfigInterface {
         props.exportId,
         props.name,
         props.forcePrivateResponse,
+        props.canBeMemoized,
         props.isDataType,
         props.dataTypeConfig
       );

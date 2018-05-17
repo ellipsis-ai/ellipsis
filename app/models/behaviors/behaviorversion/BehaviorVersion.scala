@@ -32,11 +32,9 @@ case class BehaviorVersion(
                             maybeFunctionBody: Option[String],
                             maybeResponseTemplate: Option[String],
                             forcePrivateResponse: Boolean,
+                            canBeMemoized: Boolean,
                             createdAt: OffsetDateTime
                           ) extends BehaviorVersionForDataTypeSchema {
-
-  // TODO: make this a config option
-  val canBeMemoized: Boolean = true
 
   lazy val jsName: String = s"${BehaviorVersion.dirName}/$id.js"
 
@@ -137,6 +135,7 @@ case class BehaviorVersion(
       maybeFunctionBody,
       maybeResponseTemplate,
       forcePrivateResponse,
+      canBeMemoized,
       createdAt
     )
   }
