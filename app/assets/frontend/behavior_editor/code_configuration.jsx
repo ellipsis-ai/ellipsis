@@ -187,7 +187,7 @@ const CodeConfiguration = React.createClass({
           <div>
 
             <div className="pbxs">
-              <div className="border-top border-left border-right border-light pas">
+              <div className="plxl pbm">
                 <ToggleGroup className="form-toggle-group-s align-m">
                   <ToggleGroup.Item
                     title="This code will run every time"
