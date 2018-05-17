@@ -13,6 +13,7 @@ import models.accounts.slack.botprofile.SlackBotProfile
 import models.behaviors.BotResult
 import models.behaviors.behaviorparameter.ValidValue
 import models.behaviors.events._
+import play.api.Logger
 import play.api.cache.SyncCacheApi
 import play.api.libs.json.{JsError, JsSuccess, JsValue, Json}
 import services._
@@ -130,7 +131,7 @@ class CacheServiceImpl @Inject() (
     get[JsValue](key).flatMap { json =>
       json.validate[InvokeResultData] match {
         case JsSuccess(result, _) => {
-          println(s"Found cached InvokeResult for $key")
+          Logger.info(s"Found cached InvokeResult for $key")
           Some(
             new InvokeResult().
               withStatusCode(result.statusCode).

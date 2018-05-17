@@ -166,9 +166,8 @@ class AWSLambdaServiceImpl @Inject() (
                                   payloadData ++ contextParamDataFor(environmentVariables, userInfo, teamInfo, EventInfo(event), token) ++ Seq(("behaviorVersionId", JsString(behaviorVersion.id)))
                                 )
                                 val cacheKey = cacheKeyFor(behaviorVersion, payloadData)
-                                println(cacheKey)
                                 defaultServices.cacheService.getInvokeResult(cacheKey).map(Future.successful).getOrElse {
-                                  println(s"running ${behaviorVersion.id}")
+                                  Logger.info(s"running lambda function for ${behaviorVersion.id}")
                                   val invokeRequest =
                                     new InvokeRequest().
                                       withLogType(LogType.Tail).
