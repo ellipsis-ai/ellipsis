@@ -10,7 +10,6 @@ import play.api.Logger
 import play.api.i18n.MessagesApi
 import services.caching.{CacheService, SlackUserDataCacheKey}
 import slack.api.{ApiError, SlackApiClient}
-import utils.SlackMessageReactionHandler
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -27,7 +26,7 @@ class SlackEventServiceImpl @Inject()(
 
   def onEvent(event: SlackMessageEvent): Future[Unit] = {
     if (!event.isBotMessage) {
-      val eventuallyHandleMessage = for {
+      for {
         maybeConversation <- event.maybeOngoingConversation(dataService)
         _ <- eventHandler.handle(event, maybeConversation).flatMap { results =>
           Future.sequence(
@@ -37,7 +36,6 @@ class SlackEventServiceImpl @Inject()(
           )
         }
       } yield {}
-      SlackMessageReactionHandler.handle(event.client, eventuallyHandleMessage, event.channel, event.ts)
     } else {
       Future.successful({})
     }

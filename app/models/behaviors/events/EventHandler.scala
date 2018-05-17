@@ -30,13 +30,19 @@ class EventHandler @Inject() (
     for {
       maybeTeam <- dataService.teams.find(event.teamId)
       responses <- dataService.behaviorResponses.allFor(event, maybeTeam, None)
-      results <- Future.sequence(responses.map(_.result)).flatMap { r =>
-        if (r.isEmpty && event.isResponseExpected) {
-          event.noExactMatchResult(services).map { noMatchResult =>
-            Seq(noMatchResult)
+      results <- {
+        val eventualResults = Future.sequence(responses.map(_.result))
+        if (responses.nonEmpty) {
+          event.resultReactionHandler(eventualResults)
+        }
+        eventualResults.flatMap { r =>
+          if (r.isEmpty && event.isResponseExpected) {
+            event.noExactMatchResult(services).map { noMatchResult =>
+              Seq(noMatchResult)
+            }
+          } else {
+            Future.successful(r)
           }
-        } else {
-          Future.successful(r)
         }
       }
     } yield results

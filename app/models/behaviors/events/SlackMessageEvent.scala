@@ -3,11 +3,11 @@ package models.behaviors.events
 import akka.actor.ActorSystem
 import models.accounts.slack.botprofile.SlackBotProfile
 import models.behaviors.conversations.conversation.Conversation
-import models.behaviors.{ActionChoice, DeveloperContext}
+import models.behaviors.{ActionChoice, BotResult, DeveloperContext}
 import play.api.Configuration
 import services.{DataService, DefaultServices}
 import slack.api.SlackApiClient
-import utils.{SlackMessageSender, UploadFileSpec}
+import utils.{SlackMessageReactionHandler, SlackMessageSender, UploadFileSpec}
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.matching.Regex
@@ -83,6 +83,11 @@ case class SlackMessageEvent(
 
   def maybeConversationRootedHere(dataService: DataService): Future[Option[Conversation]] = {
     dataService.conversations.findOngoingFor(user, context, maybeChannel, Some(ts), teamId)
+  }
+
+  override def resultReactionHandler(eventualResults: Future[Seq[BotResult]])
+                                    (implicit ec: ExecutionContext, actorSystem: ActorSystem): Future[Unit] = {
+    SlackMessageReactionHandler.handle(client, eventualResults, channel, ts)
   }
 
   def sendMessage(
