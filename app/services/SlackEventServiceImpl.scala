@@ -4,7 +4,7 @@ import akka.actor.ActorSystem
 import javax.inject._
 import json.{SlackUserData, SlackUserProfileData}
 import models.accounts.slack.botprofile.SlackBotProfile
-import models.behaviors.BotResultService
+import models.behaviors.{BotResult, BotResultService}
 import models.behaviors.events.{EventHandler, SlackMessageEvent}
 import play.api.Logger
 import play.api.i18n.MessagesApi
@@ -27,9 +27,11 @@ class SlackEventServiceImpl @Inject()(
 
   def onEvent(event: SlackMessageEvent): Future[Unit] = {
     if (!event.isBotMessage) {
-      val eventuallyHandleMessage = for {
+      for {
         maybeConversation <- event.maybeOngoingConversation(dataService)
-        _ <- eventHandler.handle(event, maybeConversation).flatMap { results =>
+        _ <- eventHandler.handle(event, maybeConversation, Some((future: Future[Seq[BotResult]]) => {
+          SlackMessageReactionHandler.handle(event.client, future, event.channel, event.ts)
+        })).flatMap { results =>
           Future.sequence(
             results.map(result => botResultService.sendIn(result, None).map { _ =>
               Logger.info(event.logTextFor(result, None))
@@ -37,7 +39,6 @@ class SlackEventServiceImpl @Inject()(
           )
         }
       } yield {}
-      SlackMessageReactionHandler.handle(event.client, eventuallyHandleMessage, event.channel, event.ts)
     } else {
       Future.successful({})
     }

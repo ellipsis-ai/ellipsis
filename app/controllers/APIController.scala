@@ -227,7 +227,7 @@ class APIController @Inject() (
     for {
       result <- maybeEvent.map { event =>
         for {
-          result <- eventHandler.handle(event, None).map { results =>
+          result <- eventHandler.handle(event, None, None).map { results =>
             results.foreach { result =>
               val maybeIntro = maybeIntroTextFor(event, context, isForInterruption = false)
               val maybeInterruptionIntro = maybeIntroTextFor(event, context, isForInterruption = true)

@@ -27,7 +27,7 @@ class BotResultServiceImpl @Inject() (
   private def runBehaviorFor(maybeEvent: Option[Event], maybeOriginatingBehaviorVersion: Option[BehaviorVersion])(implicit actorSystem: ActorSystem): DBIO[Seq[BotResult]] = {
     for {
       result <- maybeEvent.map { event =>
-        DBIO.from(eventHandler.handle(event, None)).flatMap { results =>
+        DBIO.from(eventHandler.handle(event, None, None)).flatMap { results =>
           DBIO.sequence(results.map { result =>
             sendInAction(result, None, None, None).map { _ =>
               val nextActionPart = result.maybeBehaviorVersion.map(_.nameAndIdString).getOrElse("<not found>")

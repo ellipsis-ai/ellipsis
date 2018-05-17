@@ -1260,7 +1260,7 @@ class SlackController @Inject() (
     def dontContinue(conversation: Conversation): Future[Unit] = {
       dataService.conversations.background(conversation, "OK, on to the next thing.", includeUsername = false).flatMap { _ =>
         cacheService.getEvent(conversation.pendingEventKey).map { event =>
-          eventHandler.handle(event, None).flatMap { results =>
+          eventHandler.handle(event, None, None).flatMap { results =>
             Future.sequence(
               results.map(result => services.botResultService.sendIn(result, None).map { _ =>
                 Logger.info(event.logTextFor(result, None))

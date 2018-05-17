@@ -8,7 +8,7 @@ import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.events.SlackMessageActionConstants._
 import models.behaviors.{BotResult, SimpleTextResult, TextWithAttachmentsResult}
 import services.DefaultServices
-import utils.Color
+import utils.{Color, SlackMessageReactionHandler}
 
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
@@ -26,17 +26,25 @@ class EventHandler @Inject() (
 
   def slackEventService = services.slackEventService
 
-  def startInvokeConversationFor(event: Event): Future[Seq[BotResult]] = {
+  def startInvokeConversationFor(event: Event, maybeReactionHandler: Option[(Future[Seq[BotResult]]) => Future[Unit]]): Future[Seq[BotResult]] = {
     for {
       maybeTeam <- dataService.teams.find(event.teamId)
       responses <- dataService.behaviorResponses.allFor(event, maybeTeam, None)
-      results <- Future.sequence(responses.map(_.result)).flatMap { r =>
-        if (r.isEmpty && event.isResponseExpected) {
-          event.noExactMatchResult(services).map { noMatchResult =>
-            Seq(noMatchResult)
+      results <- {
+        val eventualResults = Future.sequence(responses.map(_.result))
+        maybeReactionHandler.foreach { reactionHandler =>
+          if (responses.nonEmpty) {
+            reactionHandler(eventualResults)
           }
-        } else {
-          Future.successful(r)
+        }
+        eventualResults.flatMap { r =>
+          if (r.isEmpty && event.isResponseExpected) {
+            event.noExactMatchResult(services).map { noMatchResult =>
+              Seq(noMatchResult)
+            }
+          } else {
+            Future.successful(r)
+          }
         }
       }
     } yield results
@@ -134,7 +142,7 @@ class EventHandler @Inject() (
 
   }
 
-  def handle(event: Event, maybeConversation: Option[Conversation]): Future[Seq[BotResult]] = {
+  def handle(event: Event, maybeConversation: Option[Conversation], maybeReactionHandler: Option[(Future[Seq[BotResult]]) => Future[Unit]]): Future[Seq[BotResult]] = {
     (maybeConversation.map { conversation =>
       dataService.run(dataService.parentConversations.rootForAction(conversation)).flatMap { root =>
         val isUninterrupted = event.maybeThreadId.isDefined || cacheService.eventHasLastConversationId(event, root.id)
@@ -156,7 +164,7 @@ class EventHandler @Inject() (
       }.getOrElse {
         maybeHandleInExpiredThread(event).flatMap { maybeExpiredThreadResult =>
           maybeExpiredThreadResult.map(r => Future.successful(Seq(r))).getOrElse {
-            startInvokeConversationFor(event)
+            startInvokeConversationFor(event, maybeReactionHandler)
           }
         }
       }
