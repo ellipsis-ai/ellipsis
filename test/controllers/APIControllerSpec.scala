@@ -108,7 +108,7 @@ class APIControllerSpec extends PlaySpec with MockitoSugar {
     when(mockSlackChannels.maybeIdFor(defaultChannel)).thenReturn(Future.successful(Some(defaultChannel)))
 
     when(dataService.conversations.allOngoingFor(defaultSlackUserId, event.context, event.maybeChannel, event.maybeThreadId, team.id)).thenReturn(Future.successful(Seq()))
-    when(eventHandler.handle(any[Event], org.mockito.Matchers.eq(None), org.mockito.Matchers.eq(None))).thenReturn(Future.successful(Seq(SimpleTextResult(event, None, "result", forcePrivateResponse = false))))
+    when(eventHandler.handle(any[Event], org.mockito.Matchers.eq(None))).thenReturn(Future.successful(Seq(SimpleTextResult(event, None, "result", forcePrivateResponse = false))))
 
     when(botResultService.sendIn(
       any[BotResult],

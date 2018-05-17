@@ -26,16 +26,14 @@ class EventHandler @Inject() (
 
   def slackEventService = services.slackEventService
 
-  def startInvokeConversationFor(event: Event, maybeReactionHandler: Option[(Future[Seq[BotResult]]) => Future[Unit]]): Future[Seq[BotResult]] = {
+  def startInvokeConversationFor(event: Event): Future[Seq[BotResult]] = {
     for {
       maybeTeam <- dataService.teams.find(event.teamId)
       responses <- dataService.behaviorResponses.allFor(event, maybeTeam, None)
       results <- {
         val eventualResults = Future.sequence(responses.map(_.result))
-        maybeReactionHandler.foreach { reactionHandler =>
-          if (responses.nonEmpty) {
-            reactionHandler(eventualResults)
-          }
+        if (responses.nonEmpty) {
+          event.resultReactionHandler(eventualResults)
         }
         eventualResults.flatMap { r =>
           if (r.isEmpty && event.isResponseExpected) {
@@ -142,7 +140,7 @@ class EventHandler @Inject() (
 
   }
 
-  def handle(event: Event, maybeConversation: Option[Conversation], maybeReactionHandler: Option[(Future[Seq[BotResult]]) => Future[Unit]]): Future[Seq[BotResult]] = {
+  def handle(event: Event, maybeConversation: Option[Conversation]): Future[Seq[BotResult]] = {
     (maybeConversation.map { conversation =>
       dataService.run(dataService.parentConversations.rootForAction(conversation)).flatMap { root =>
         val isUninterrupted = event.maybeThreadId.isDefined || cacheService.eventHasLastConversationId(event, root.id)
@@ -164,7 +162,7 @@ class EventHandler @Inject() (
       }.getOrElse {
         maybeHandleInExpiredThread(event).flatMap { maybeExpiredThreadResult =>
           maybeExpiredThreadResult.map(r => Future.successful(Seq(r))).getOrElse {
-            startInvokeConversationFor(event, maybeReactionHandler)
+            startInvokeConversationFor(event)
           }
         }
       }

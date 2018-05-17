@@ -200,7 +200,7 @@ trait Scheduled {
              )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Unit] = {
     val event = eventFor(channel, slackUserId, profile, client)
     for {
-      results <- eventHandler.handle(event, None, None)
+      results <- eventHandler.handle(event, None)
     } yield {
       FutureSequencer.sequence(results, sendResultFn(event, services))
     }

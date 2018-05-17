@@ -29,9 +29,7 @@ class SlackEventServiceImpl @Inject()(
     if (!event.isBotMessage) {
       for {
         maybeConversation <- event.maybeOngoingConversation(dataService)
-        _ <- eventHandler.handle(event, maybeConversation, Some((future: Future[Seq[BotResult]]) => {
-          SlackMessageReactionHandler.handle(event.client, future, event.channel, event.ts)
-        })).flatMap { results =>
+        _ <- eventHandler.handle(event, maybeConversation).flatMap { results =>
           Future.sequence(
             results.map(result => botResultService.sendIn(result, None).map { _ =>
               Logger.info(event.logTextFor(result, None))
