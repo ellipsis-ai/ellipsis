@@ -1,5 +1,6 @@
 package mocks
 
+import com.amazonaws.services.lambda.model.InvokeResult
 import json.{ImmutableBehaviorGroupVersionData, SlackUserData}
 import models.behaviors.BotResult
 import models.behaviors.behaviorparameter.ValidValue
@@ -25,6 +26,10 @@ class MockCacheService extends CacheService with MockitoSugar {
   def cacheEvent(key: String, event: Event, expiration: Duration = Duration.Inf): Unit = {}
 
   def getEvent(key: String): Option[SlackMessageEvent] = None
+
+  def cacheInvokeResult(key: String, invokeResult: InvokeResult, expiration: Duration = Duration.Inf): Unit = {}
+
+  def getInvokeResult(key: String): Option[InvokeResult] = None
 
   def cacheValidValues(key: String, values: Seq[ValidValue], expiration: Duration = Duration.Inf): Unit = {}
 
