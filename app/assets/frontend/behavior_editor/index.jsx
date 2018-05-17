@@ -1786,6 +1786,7 @@ const BehaviorEditor = React.createClass({
         functionBody={this.getFunctionBody()}
         onChangeFunctionBody={this.updateCode}
         onChangeCanBeMemoized={this.onChangeCanBeMemoized}
+        isMemoizationEnabled={codeConfigProps.isMemoizationEnabled}
         onCursorChange={this.ensureCursorVisible}
         useLineWrapping={this.state.codeEditorUseLineWrapping}
         onToggleCodeEditorLineWrapping={this.toggleCodeEditorLineWrapping}
@@ -2417,7 +2418,8 @@ const BehaviorEditor = React.createClass({
                 <div>
                   {this.renderCodeEditor({
                     sectionNumber: "3",
-                    codeHelpPanelName: 'helpForBehaviorCode'
+                    codeHelpPanelName: 'helpForBehaviorCode',
+                    isMemoizationEnabled: true
                   })}
 
                   <hr className="man rule-subtle" />
@@ -2529,7 +2531,8 @@ const BehaviorEditor = React.createClass({
           systemParams: [],
           sectionNumber: "1",
           codeHelpPanelName: 'helpForLibraryCode',
-          functionExecutesImmediately: true
+          functionExecutesImmediately: true,
+          isMemoizationEnabled: false
         })}
       </div>
     );
