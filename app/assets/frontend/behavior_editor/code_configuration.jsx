@@ -42,6 +42,7 @@ const CodeConfiguration = React.createClass({
       onToggleCodeEditorLineWrapping: React.PropTypes.func.isRequired,
 
       onChangeCanBeMemoized: React.PropTypes.func.isRequired,
+      isMemoizationEnabled: React.PropTypes.bool.isRequired,
 
       envVariableNames: React.PropTypes.arrayOf(React.PropTypes.string).isRequired,
       functionExecutesImmediately: React.PropTypes.bool
@@ -149,18 +150,42 @@ const CodeConfiguration = React.createClass({
     },
 
     canBeMemoized: function() {
-      return this.props.behaviorConfig.canBeMemoized;
+      return this.props.behaviorConfig && this.props.behaviorConfig.canBeMemoized;
     },
 
     renderCacheWarning: function() {
       if (this.canBeMemoized()) {
         return (
-          <span>
-            <span className="display-inline-block align-b type-yellow plm prxs" style={{ width: 22, height: 24 }}>
-              <SVGWarning />
-            </span>
-            <span className="display-inline-block align-b type-s">Only cache results if the function will always return the same result given the same parameters.</span>
-          </span>
+          <div className="display-inline-block align-b type-preserve-spaces">
+            <span style={{ height: 24 }} className="display-inline-block type-yellow mrs align-b type-s"><SVGWarning /></span>
+            <span className="type-s">Only cache results if the function will always return the same result given the same parameters.</span>
+          </div>
+        );
+      } else {
+        return null;
+      }
+    },
+
+    renderToggleCanBeMemoized: function() {
+      if (this.props.isMemoizationEnabled) {
+        return (
+          <div className="plxl pbm">
+            <ToggleGroup className="form-toggle-group-s align-m mrl">
+              <ToggleGroup.Item
+                title="This code will run every time"
+                label="Always run this function"
+                activeWhen={!this.canBeMemoized()}
+                onClick={this.unsetCanBeMemoized}
+              />
+              <ToggleGroup.Item
+                title="The result of this code will be cached for a given set of parameters"
+                label="Cache results"
+                activeWhen={this.canBeMemoized()}
+                onClick={this.setCanBeMemoized}
+              />
+            </ToggleGroup>
+            {this.renderCacheWarning()}
+          </div>
         );
       } else {
         return null;
@@ -187,23 +212,7 @@ const CodeConfiguration = React.createClass({
           <div>
 
             <div className="pbxs">
-              <div className="plxl pbm">
-                <ToggleGroup className="form-toggle-group-s align-m">
-                  <ToggleGroup.Item
-                    title="This code will run every time"
-                    label="Always run this function"
-                    activeWhen={!this.canBeMemoized()}
-                    onClick={this.unsetCanBeMemoized}
-                  />
-                  <ToggleGroup.Item
-                    title="The result of this code will be cached for a given set of parameters"
-                    label="Cache results"
-                    activeWhen={this.canBeMemoized()}
-                    onClick={this.setCanBeMemoized}
-                  />
-                </ToggleGroup>
-                {this.renderCacheWarning()}
-              </div>
+              {this.renderToggleCanBeMemoized()}
               <div className="columns columns-elastic">
                 <div className="column column-shrink plxxxl prn align-r position-relative">
                   <code className="type-disabled type-s position-absolute position-top-right prxs">1</code>

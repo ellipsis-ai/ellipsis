@@ -181,6 +181,7 @@ class DataTypeEditor extends React.Component {
             onDeleteFunctionBody={() => null}
 
             onChangeCanBeMemoized={this.props.onChangeCanBeMemoized}
+            isMemoizationEnabled={true}
 
             envVariableNames={this.props.envVariableNames}
           />
