@@ -146,6 +146,18 @@ class AWSLambdaServiceImpl @Inject() (
     s"lambda-${behaviorVersion.id}-${payloadString}"
   }
 
+  private def maybeCachedResultFor(
+                                    behaviorVersion: BehaviorVersion,
+                                    payloadData: Seq[(String, JsValue)]
+                                  ): Option[InvokeResult] = {
+    if (behaviorVersion.canBeMemoized) {
+      val cacheKey = cacheKeyFor(behaviorVersion, payloadData)
+      cacheService.getInvokeResult(cacheKey)
+    } else {
+      None
+    }
+  }
+
   def invokeFunctionAction(
                             behaviorVersion: BehaviorVersion,
                             token: InvocationToken,
@@ -165,8 +177,7 @@ class AWSLambdaServiceImpl @Inject() (
                                 val payloadJson = JsObject(
                                   payloadData ++ contextParamDataFor(environmentVariables, userInfo, teamInfo, EventInfo(event), token) ++ Seq(("behaviorVersionId", JsString(behaviorVersion.id)))
                                 )
-                                val cacheKey = cacheKeyFor(behaviorVersion, payloadData)
-                                defaultServices.cacheService.getInvokeResult(cacheKey).map(Future.successful).getOrElse {
+                                maybeCachedResultFor(behaviorVersion, payloadData).map(Future.successful).getOrElse {
                                   Logger.info(s"running lambda function for ${behaviorVersion.id}")
                                   val invokeRequest =
                                     new InvokeRequest().
@@ -176,7 +187,7 @@ class AWSLambdaServiceImpl @Inject() (
                                       withPayload(payloadJson.toString())
                                   JavaFutureConverter.javaToScala(client.invokeAsync(invokeRequest)).map { res =>
                                     if (behaviorVersion.canBeMemoized && res.getFunctionError == null) {
-                                      defaultServices.cacheService.cacheInvokeResult(cacheKey, res)
+                                      cacheService.cacheInvokeResult(cacheKeyFor(behaviorVersion, payloadData), res)
                                     }
                                     res
                                   }
