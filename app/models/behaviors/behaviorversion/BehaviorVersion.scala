@@ -35,6 +35,9 @@ case class BehaviorVersion(
                             createdAt: OffsetDateTime
                           ) extends BehaviorVersionForDataTypeSchema {
 
+  // TODO: make this a config option
+  val canBeMemoized: Boolean = true
+
   lazy val jsName: String = s"${BehaviorVersion.dirName}/$id.js"
 
   lazy val typeName = maybeName.getOrElse(GraphQLHelpers.fallbackTypeName)

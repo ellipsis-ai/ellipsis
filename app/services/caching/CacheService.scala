@@ -1,5 +1,6 @@
 package services.caching
 
+import com.amazonaws.services.lambda.model.InvokeResult
 import json.{ImmutableBehaviorGroupVersionData, SlackUserData}
 import models.behaviors.BotResult
 import models.behaviors.behaviorparameter.ValidValue
@@ -23,6 +24,10 @@ trait CacheService {
   def cacheEvent(key: String, event: Event, expiration: Duration = Duration.Inf): Unit
 
   def getEvent(key: String): Option[SlackMessageEvent]
+
+  def cacheInvokeResult(key: String, invokeResult: InvokeResult, expiration: Duration = Duration.Inf): Unit
+
+  def getInvokeResult(key: String): Option[InvokeResult]
 
   def cacheValidValues(key: String, values: Seq[ValidValue], expiration: Duration = Duration.Inf): Unit
 

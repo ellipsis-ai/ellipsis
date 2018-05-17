@@ -1,8 +1,11 @@
 package services.caching
 
+import java.nio.ByteBuffer
+
 import akka.actor.ActorSystem
 import akka.http.caching.LfuCache
 import akka.http.caching.scaladsl.{Cache, CachingSettings}
+import com.amazonaws.services.lambda.model.InvokeResult
 import javax.inject.{Inject, Provider, Singleton}
 import json.Formatting._
 import json.{ImmutableBehaviorGroupVersionData, SlackUserData}
@@ -32,12 +35,20 @@ case class SlackMessageEventData(
                                   isUninterruptedConversation: Boolean
                                 )
 
+case class InvokeResultData(
+                            statusCode: Int,
+                            logResult: String,
+                            payload: Array[Byte]
+                           )
+
 @Singleton
 class CacheServiceImpl @Inject() (
                                    cache: SyncCacheApi, // TODO: change to async
                                    slackEventServiceProvider: Provider[SlackEventService],
                                    implicit val actorSystem: ActorSystem
                                  ) extends CacheService {
+
+  val MAX_KEY_LENGTH = 250
 
   def slackEventService = slackEventServiceProvider.get
 
@@ -54,11 +65,17 @@ class CacheServiceImpl @Inject() (
   val dataTypeBotResultsExpiry: Duration = 24.hours
 
   def set[T: ClassTag](key: String, value: T, expiration: Duration = Duration.Inf): Unit = {
-    cache.set(key, value, expiration)
+    if (key.getBytes().length <= MAX_KEY_LENGTH) {
+      cache.set(key, value, expiration)
+    }
   }
 
   def get[T : ClassTag](key: String): Option[T] = {
-    cache.get[T](key)
+    if (key.getBytes().length <= MAX_KEY_LENGTH) {
+      cache.get[T](key)
+    } else {
+      None
+    }
   }
 
   def hasKey(key: String): Boolean = {
@@ -98,6 +115,28 @@ class CacheServiceImpl @Inject() (
           ))
         }
         case JsError(err) => None
+      }
+    }
+  }
+
+  implicit val invokeResultDataFormat = Json.format[InvokeResultData]
+
+  def cacheInvokeResult(key: String, invokeResult: InvokeResult, expiration: Duration = Duration.Inf): Unit = {
+    val data = InvokeResultData(invokeResult.getStatusCode, invokeResult.getLogResult, invokeResult.getPayload.array())
+    set(key, Json.toJson(data), expiration)
+  }
+
+  def getInvokeResult(key: String): Option[InvokeResult] = {
+    get[JsValue](key).flatMap { json =>
+      json.validate[InvokeResultData] match {
+        case JsSuccess(result, _) => {
+          Some(
+            new InvokeResult().
+              withStatusCode(result.statusCode).
+              withLogResult(result.logResult).
+              withPayload(ByteBuffer.wrap(result.payload)))
+        }
+        case JsError(_) => None
       }
     }
   }
