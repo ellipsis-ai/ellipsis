@@ -85,7 +85,8 @@ case class SlackMessageEvent(
     dataService.conversations.findOngoingFor(user, context, maybeChannel, Some(ts), teamId)
   }
 
-  override def resultReactionHandler(eventualResults: Future[Seq[BotResult]])(implicit ec: ExecutionContext, actorSystem: ActorSystem): Future[Unit] = {
+  override def resultReactionHandler(eventualResults: Future[Seq[BotResult]])
+                                    (implicit ec: ExecutionContext, actorSystem: ActorSystem): Future[Unit] = {
     SlackMessageReactionHandler.handle(client, eventualResults, channel, ts)
   }
 

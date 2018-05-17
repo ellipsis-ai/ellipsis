@@ -4,7 +4,7 @@ import akka.actor.ActorSystem
 import javax.inject._
 import json.{SlackUserData, SlackUserProfileData}
 import models.accounts.slack.botprofile.SlackBotProfile
-import models.behaviors.{BotResult, BotResultService}
+import models.behaviors.BotResultService
 import models.behaviors.events.{EventHandler, SlackMessageEvent}
 import play.api.Logger
 import play.api.i18n.MessagesApi
