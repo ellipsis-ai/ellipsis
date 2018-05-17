@@ -3,6 +3,7 @@ import BehaviorGroup from "./behavior_group";
 
 import Editable, {EditableInterface, EditableJson} from './editable';
 import {Timestamp} from "../lib/formatter";
+import {NODE_JS_VERSION} from "../lib/constants";
 
 export interface LibraryVersionJson extends EditableJson {
   libraryId: string;
@@ -149,7 +150,7 @@ class LibraryVersion extends Editable implements Diffable, LibraryVersionInterfa
 
     static defaultLibraryCode(): string {
       return (
-`// Write a Node.js (6.10.2) function that returns code you want to share.
+`// Write a Node.js (${NODE_JS_VERSION}) function that returns code you want to share.
 // Other components in your skill can require the library to use the code.
 //
 // Example:

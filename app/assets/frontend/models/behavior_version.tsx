@@ -9,6 +9,7 @@ import ResponseTemplate, {ResponseTemplateJson} from './response_template';
 import Trigger, {TriggerJson} from './trigger';
 import DataTypeField from "./data_type_field";
 import {Timestamp} from "../lib/formatter";
+import {NODE_JS_VERSION} from "../lib/constants";
 
 type DefaultActionProps = {
   name?: Option<string>,
@@ -367,12 +368,12 @@ class BehaviorVersion extends Editable implements Diffable, BehaviorVersionInter
 
     static defaultActionProps(optionalName?: string): DefaultActionProps {
       const functionBody = (
-`// Write a Node.js (6.10.2) function that calls ellipsis.success() with a result.
+`// Write a Node.js (${NODE_JS_VERSION}) function that calls ellipsis.success() with a result.
 // You can require any NPM package.
 const name = ellipsis.userInfo.fullName || "friend";
-ellipsis.success(name);
+ellipsis.success(\`Hello, \${name}.\`);
 `);
-      const template = ResponseTemplate.fromString("Hello, {successResult}");
+      const template = ResponseTemplate.fromString("{successResult}");
       const triggers = [new Trigger(`run ${optionalName || "action"}`, false, true)];
       const props: DefaultActionProps = {
         triggers: triggers,
@@ -387,7 +388,7 @@ ellipsis.success(name);
 
     static defaultDataTypeCode(usesSearch): string {
       return (
-`// Write a Node.js (6.10.2) function that calls ellipsis.success() with an array of items.
+`// Write a Node.js (${NODE_JS_VERSION}) function that calls ellipsis.success() with an array of items.
 // ${usesSearch ? "Use searchQuery to filter on the user’s input." : ""}
 // Each item should have a "label" and "id" property.
 //
