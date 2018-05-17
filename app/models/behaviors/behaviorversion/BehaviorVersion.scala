@@ -32,6 +32,7 @@ case class BehaviorVersion(
                             maybeFunctionBody: Option[String],
                             maybeResponseTemplate: Option[String],
                             forcePrivateResponse: Boolean,
+                            canBeMemoized: Boolean,
                             createdAt: OffsetDateTime
                           ) extends BehaviorVersionForDataTypeSchema {
 
@@ -134,6 +135,7 @@ case class BehaviorVersion(
       maybeFunctionBody,
       maybeResponseTemplate,
       forcePrivateResponse,
+      canBeMemoized,
       createdAt
     )
   }

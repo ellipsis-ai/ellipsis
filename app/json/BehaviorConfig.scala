@@ -6,6 +6,7 @@ case class BehaviorConfig(
                            exportId: Option[String],
                            name: Option[String],
                            forcePrivateResponse: Option[Boolean],
+                           canBeMemoized: Option[Boolean],
                            isDataType: Boolean,
                            dataTypeConfig: Option[DataTypeConfigData]
                            ) {

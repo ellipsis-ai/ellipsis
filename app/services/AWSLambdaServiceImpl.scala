@@ -2,9 +2,10 @@ package services
 
 import java.io.{File, PrintWriter}
 import java.nio.ByteBuffer
+import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Paths}
 import java.time.OffsetDateTime
-import javax.inject.Inject
+import java.util.Base64
 
 import akka.actor.ActorSystem
 import com.amazonaws.services.lambda.model._
@@ -12,6 +13,7 @@ import com.amazonaws.services.lambda.{AWSLambdaAsync, AWSLambdaAsyncClientBuilde
 import com.amazonaws.services.logs.model.{CreateLogGroupRequest, PutSubscriptionFilterRequest}
 import com.amazonaws.services.logs.{AWSLogsAsync, AWSLogsAsyncClientBuilder}
 import com.fasterxml.jackson.core.JsonParseException
+import javax.inject.Inject
 import models.behaviors._
 import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
 import models.behaviors.behaviorparameter.{BehaviorParameter, FileType}
@@ -139,6 +141,11 @@ class AWSLambdaServiceImpl @Inject() (
     )))
   }
 
+  private def cacheKeyFor(behaviorVersion: BehaviorVersion, payloadData: Seq[(String, JsValue)]): String = {
+    val payloadString = Base64.getEncoder.encodeToString(Json.toJson(payloadData).toString.getBytes(StandardCharsets.UTF_8))
+    s"lambda-${behaviorVersion.id}-${payloadString}"
+  }
+
   def invokeFunctionAction(
                             behaviorVersion: BehaviorVersion,
                             token: InvocationToken,
@@ -151,41 +158,49 @@ class AWSLambdaServiceImpl @Inject() (
                             maybeConversation: Option[Conversation],
                             retryIntervals: List[Long],
                             defaultServices: DefaultServices
-                          ): DBIO[BotResult] = {
-    for {
-      userInfo <- event.userInfoAction(defaultServices)
-      result <- {
-        DBIO.from(TeamInfo.forConfig(apiConfigInfo, userInfo, team, ws).flatMap { teamInfo =>
-          val payloadJson = JsObject(
-            payloadData ++ contextParamDataFor(environmentVariables, userInfo, teamInfo, EventInfo(event), token) ++ Seq(("behaviorVersionId", JsString(behaviorVersion.id)))
-          )
-          val invokeRequest =
-            new InvokeRequest().
-              withLogType(LogType.Tail).
-              withFunctionName(behaviorVersion.groupVersion.functionName).
-              withInvocationType(InvocationType.RequestResponse).
-              withPayload(payloadJson.toString())
-          JavaFutureConverter.javaToScala(client.invokeAsync(invokeRequest)).map(successFn).recoverWith {
-            case e: java.util.concurrent.ExecutionException => {
-              e.getMessage match {
-                case amazonServiceExceptionRegex() => Future.successful(AWSDownResult(event, behaviorVersion, maybeConversation))
-                case resourceNotFoundExceptionRegex() => {
-                  retryIntervals.headOption.map { retryInterval =>
-                    Logger.info(s"retrying behavior invocation after resource not found with interval: ${retryInterval}s")
-                    Thread.sleep(retryInterval*1000)
-                    dataService.run(invokeFunctionAction(behaviorVersion, token, payloadData, team, event, apiConfigInfo, environmentVariables, successFn, maybeConversation, retryIntervals.tail, defaultServices))
-                  }.getOrElse {
-                    throw e
-                  }
-                }
-                case _ => throw e
-              }
-            }
-          }
-        })
-      }
-    } yield result
-  }
+                          ): DBIO[BotResult] = for {
+                            userInfo <- event.userInfoAction(defaultServices)
+                            result <- {
+                              DBIO.from(TeamInfo.forConfig(apiConfigInfo, userInfo, team, ws).flatMap { teamInfo =>
+                                val payloadJson = JsObject(
+                                  payloadData ++ contextParamDataFor(environmentVariables, userInfo, teamInfo, EventInfo(event), token) ++ Seq(("behaviorVersionId", JsString(behaviorVersion.id)))
+                                )
+                                val cacheKey = cacheKeyFor(behaviorVersion, payloadData)
+                                println(cacheKey)
+                                defaultServices.cacheService.getInvokeResult(cacheKey).map(Future.successful).getOrElse {
+                                  println(s"running ${behaviorVersion.id}")
+                                  val invokeRequest =
+                                    new InvokeRequest().
+                                      withLogType(LogType.Tail).
+                                      withFunctionName(behaviorVersion.groupVersion.functionName).
+                                      withInvocationType(InvocationType.RequestResponse).
+                                      withPayload(payloadJson.toString())
+                                  JavaFutureConverter.javaToScala(client.invokeAsync(invokeRequest)).map { res =>
+                                    if (behaviorVersion.canBeMemoized && res.getFunctionError == null) {
+                                      defaultServices.cacheService.cacheInvokeResult(cacheKey, res)
+                                    }
+                                    res
+                                  }
+                                }.map(successFn).recoverWith {
+                                  case e: java.util.concurrent.ExecutionException => {
+                                    e.getMessage match {
+                                      case amazonServiceExceptionRegex() => Future.successful(AWSDownResult(event, behaviorVersion, maybeConversation))
+                                      case resourceNotFoundExceptionRegex() => {
+                                        retryIntervals.headOption.map { retryInterval =>
+                                          Logger.info(s"retrying behavior invocation after resource not found with interval: ${retryInterval}s")
+                                          Thread.sleep(retryInterval*1000)
+                                          dataService.run(invokeFunctionAction(behaviorVersion, token, payloadData, team, event, apiConfigInfo, environmentVariables, successFn, maybeConversation, retryIntervals.tail, defaultServices))
+                                        }.getOrElse {
+                                          throw e
+                                        }
+                                      }
+                                      case _ => throw e
+                                    }
+                                  }
+                                }
+                              })
+                            }
+                          } yield result
 
   def invokeAction(
                     behaviorVersion: BehaviorVersion,

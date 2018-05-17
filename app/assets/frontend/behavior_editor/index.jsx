@@ -1196,6 +1196,10 @@ const BehaviorEditor = React.createClass({
     this.setEditableProp('functionBody', newCode);
   },
 
+  onChangeCanBeMemoized: function(bool) {
+    this.setConfigProperty('canBeMemoized', bool);
+  },
+
   addEnvVar: function(envVar) {
     var newEnvVars = this.getEnvVariables().concat(envVar);
     this.updateEnvVariables(newEnvVars, {
@@ -1781,6 +1785,7 @@ const BehaviorEditor = React.createClass({
 
         functionBody={this.getFunctionBody()}
         onChangeFunctionBody={this.updateCode}
+        onChangeCanBeMemoized={this.onChangeCanBeMemoized}
         onCursorChange={this.ensureCursorVisible}
         useLineWrapping={this.state.codeEditorUseLineWrapping}
         onToggleCodeEditorLineWrapping={this.toggleCodeEditorLineWrapping}
@@ -2450,6 +2455,7 @@ const BehaviorEditor = React.createClass({
           inputs={this.getInputs()}
           onChangeConfig={this.setConfigProps}
           onChangeCode={this.updateCode}
+          onChangeCanBeMemoized={this.onChangeCanBeMemoized}
           onAddNewInput={this.addNewInput}
           onDeleteInputs={this.deleteAllInputs}
           onConfigureType={this.onConfigureType}

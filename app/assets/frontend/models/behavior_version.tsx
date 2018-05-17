@@ -120,6 +120,9 @@ class BehaviorVersion extends Editable implements Diffable, BehaviorVersionInter
         name: "Always responds privately",
         value: Boolean(this.config.forcePrivateResponse)
       }, {
+        name: "Cache results",
+        value: Boolean(this.config.canBeMemoized)
+      }, {
         name: "Code-backed data type",
         value: this.dataTypeUsesCode()
       }, {

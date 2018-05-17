@@ -30,6 +30,7 @@ case class RawBehaviorVersion(
                                maybeFunctionBody: Option[String],
                                maybeResponseTemplate: Option[String],
                                forcePrivateResponse: Boolean,
+                               canBeMemoized: Boolean,
                                createdAt: OffsetDateTime
                              )
 
@@ -51,11 +52,13 @@ class BehaviorVersionsTable(tag: Tag) extends Table[RawBehaviorVersion](tag, "be
 
   def forcePrivateResponse = column[Boolean]("private_response")
 
+  def canBeMemoized = column[Boolean]("can_be_memoized")
+
 
   def createdAt = column[OffsetDateTime]("created_at")
 
   def * =
-    (id, behaviorId, groupVersionId, maybeDescription, maybeName, maybeFunctionBody, maybeResponseTemplate, forcePrivateResponse, createdAt) <>
+    (id, behaviorId, groupVersionId, maybeDescription, maybeName, maybeFunctionBody, maybeResponseTemplate, forcePrivateResponse, canBeMemoized, createdAt) <>
       ((RawBehaviorVersion.apply _).tupled, RawBehaviorVersion.unapply _)
 }
 
@@ -196,6 +199,7 @@ class BehaviorVersionServiceImpl @Inject() (
       None,
       None,
       forcePrivateResponse = false,
+      canBeMemoized = false,
       OffsetDateTime.now
     )
 
@@ -209,6 +213,7 @@ class BehaviorVersionServiceImpl @Inject() (
         raw.maybeFunctionBody.map(_.trim),
         raw.maybeResponseTemplate,
         raw.forcePrivateResponse,
+        raw.canBeMemoized,
         raw.createdAt
       )
     }
@@ -228,7 +233,8 @@ class BehaviorVersionServiceImpl @Inject() (
         maybeDescription = data.description,
         maybeFunctionBody = Some(data.functionBody),
         maybeResponseTemplate = Some(data.responseTemplate),
-        forcePrivateResponse = data.config.forcePrivateResponse.exists(identity)
+        forcePrivateResponse = data.config.forcePrivateResponse.exists(identity),
+        canBeMemoized = data.config.canBeMemoized.exists(identity)
       ))
       inputs <- DBIO.sequence(data.inputIds.map { inputId =>
         dataService.inputs.findByInputIdAction(inputId, groupVersion)

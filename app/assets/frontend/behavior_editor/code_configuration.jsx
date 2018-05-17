@@ -9,6 +9,8 @@ import {RequiredAWSConfig} from '../models/aws';
 import {RequiredOAuth2Application} from '../models/oauth2';
 import SectionHeading from '../shared_ui/section_heading';
 import SVGSettingsIcon from '../svg/settings';
+import SVGWarning from '../svg/warning';
+import ToggleGroup from '../form/toggle_group';
 import debounce from 'javascript-debounce';
 import OAuth2ApplicationUnusedNotificationData from "../models/notifications/oauth2_application_unused";
 import AWSUnusedNotificationData from "../models/notifications/aws_unused_notification_data";
@@ -38,6 +40,8 @@ const CodeConfiguration = React.createClass({
       onCursorChange: React.PropTypes.func.isRequired,
       useLineWrapping: React.PropTypes.bool.isRequired,
       onToggleCodeEditorLineWrapping: React.PropTypes.func.isRequired,
+
+      onChangeCanBeMemoized: React.PropTypes.func.isRequired,
 
       envVariableNames: React.PropTypes.arrayOf(React.PropTypes.string).isRequired,
       functionExecutesImmediately: React.PropTypes.bool
@@ -136,6 +140,33 @@ const CodeConfiguration = React.createClass({
       this.refs.codeEditor.refresh();
     },
 
+    unsetCanBeMemoized: function() {
+      this.props.onChangeCanBeMemoized(false);
+    },
+
+    setCanBeMemoized: function() {
+      this.props.onChangeCanBeMemoized(true);
+    },
+
+    canBeMemoized: function() {
+      return this.props.behaviorConfig.canBeMemoized;
+    },
+
+    renderCacheWarning: function() {
+      if (this.canBeMemoized()) {
+        return (
+          <span>
+            <span className="display-inline-block align-b type-yellow plm prxs" style={{ width: 22, height: 24 }}>
+              <SVGWarning />
+            </span>
+            <span className="display-inline-block align-b type-s">Only cache results if the function will always return the same result given the same parameters.</span>
+          </span>
+        );
+      } else {
+        return null;
+      }
+    },
+
     render: function() {
       return (
         <div>
@@ -156,6 +187,23 @@ const CodeConfiguration = React.createClass({
           <div>
 
             <div className="pbxs">
+              <div className="plxl pbm">
+                <ToggleGroup className="form-toggle-group-s align-m">
+                  <ToggleGroup.Item
+                    title="This code will run every time"
+                    label="Always run this function"
+                    activeWhen={!this.canBeMemoized()}
+                    onClick={this.unsetCanBeMemoized}
+                  />
+                  <ToggleGroup.Item
+                    title="The result of this code will be cached for a given set of parameters"
+                    label="Cache results"
+                    activeWhen={this.canBeMemoized()}
+                    onClick={this.setCanBeMemoized}
+                  />
+                </ToggleGroup>
+                {this.renderCacheWarning()}
+              </div>
               <div className="columns columns-elastic">
                 <div className="column column-shrink plxxxl prn align-r position-relative">
                   <code className="type-disabled type-s position-absolute position-top-right prxs">1</code>
