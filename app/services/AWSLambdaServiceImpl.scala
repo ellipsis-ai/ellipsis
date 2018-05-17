@@ -2,9 +2,10 @@ package services
 
 import java.io.{File, PrintWriter}
 import java.nio.ByteBuffer
+import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Paths}
-import java.security.MessageDigest
 import java.time.OffsetDateTime
+import java.util.Base64
 
 import akka.actor.ActorSystem
 import com.amazonaws.services.lambda.model._
@@ -141,10 +142,8 @@ class AWSLambdaServiceImpl @Inject() (
   }
 
   private def cacheKeyFor(behaviorVersion: BehaviorVersion, payloadData: Seq[(String, JsValue)]): String = {
-    val payloadBytes: Array[Byte] = Json.toJson(payloadData).toString.getBytes("UTF-8")
-    val md: MessageDigest = MessageDigest.getInstance("MD5")
-    val digest: Array[Byte] = md.digest(payloadBytes)
-    s"lambda-${behaviorVersion.id}-${digest}"
+    val payloadString = Base64.getEncoder.encodeToString(Json.toJson(payloadData).toString.getBytes(StandardCharsets.UTF_8))
+    s"lambda-${behaviorVersion.id}-${payloadString}"
   }
 
   def invokeFunctionAction(

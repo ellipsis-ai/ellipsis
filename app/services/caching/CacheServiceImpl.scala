@@ -130,6 +130,7 @@ class CacheServiceImpl @Inject() (
     get[JsValue](key).flatMap { json =>
       json.validate[InvokeResultData] match {
         case JsSuccess(result, _) => {
+          println(s"Found cached InvokeResult for $key")
           Some(
             new InvokeResult().
               withStatusCode(result.statusCode).
