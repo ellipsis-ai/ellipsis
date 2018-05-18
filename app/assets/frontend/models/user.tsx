@@ -70,6 +70,10 @@ class User {
     static fromJson(props: UserJson): User {
       return User.fromProps(props);
     }
+
+    static withoutProfile(userId: string): User {
+      return User.fromProps({ id: userId });
+    }
 }
 
 export default User;
