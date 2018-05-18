@@ -1,14 +1,15 @@
 package models.behaviors
 
 import akka.actor.ActorSystem
+import json.UserData
 import models.accounts.user.User
 import models.behaviors.config.awsconfig.AWSConfig
 import models.behaviors.config.requiredawsconfig.RequiredAWSConfig
 import models.behaviors.events.Event
 import models.team.Team
-import play.api.libs.ws.WSClient
 import play.api.libs.json._
-import services.{ApiConfigInfo, DataService, DefaultServices}
+import play.api.libs.ws.WSClient
+import services.{ApiConfigInfo, DefaultServices}
 import slick.dbio.DBIO
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -40,7 +41,7 @@ object MessageInfo {
 
 }
 
-case class UserInfo(user: User, links: Seq[LinkedInfo], maybeMessageInfo: Option[MessageInfo], maybeTimeZone: Option[String], maybeUserName: Option[String], maybeFullName: Option[String]) {
+case class UserInfo(user: User, links: Seq[LinkedInfo], maybeMessageInfo: Option[MessageInfo], maybeUserData: Option[UserData]) {
 
   implicit val messageInfoWrites = Json.writes[MessageInfo]
 
@@ -51,11 +52,14 @@ case class UserInfo(user: User, links: Seq[LinkedInfo], maybeMessageInfo: Option
     val messageInfoPart = maybeMessageInfo.map { info =>
       Seq("messageInfo" -> Json.toJson(info))
     }.getOrElse(Seq())
-    val userParts = Seq("ellipsisUserId" -> JsString(user.id))
-    val timeZonePart = Seq("timeZone" -> Json.toJson(maybeTimeZone))
-    val userNamePart = Seq("userName" -> Json.toJson(maybeUserName))
-    val fullNamePart = Seq("fullName" -> Json.toJson(maybeFullName))
-    JsObject(userParts ++ linkParts ++ messageInfoPart ++ timeZonePart ++ userNamePart ++ fullNamePart)
+    val userDataPart = Seq(
+      "ellipsisUserId" -> JsString(user.id),
+      "timeZone" -> Json.toJson(maybeUserData.flatMap(_.tz)),
+      "userName" -> Json.toJson(maybeUserData.flatMap(_.userName)),
+      "fullName" -> Json.toJson(maybeUserData.flatMap(_.fullName)),
+      "email" -> Json.toJson(maybeUserData.flatMap(_.email))
+    )
+    JsObject(linkParts ++ messageInfoPart ++ userDataPart)
   }
 }
 
@@ -82,7 +86,7 @@ object UserInfo {
         DBIO.from(services.dataService.users.userDataFor(user, team)).map(Some(_))
       }.getOrElse(DBIO.successful(None))
     } yield {
-      UserInfo(user, links, Some(messageInfo), maybeUserData.flatMap(_.tz), maybeUserData.flatMap(_.userName), maybeUserData.flatMap(_.fullName))
+      UserInfo(user, links, Some(messageInfo), maybeUserData)
     }
   }
 

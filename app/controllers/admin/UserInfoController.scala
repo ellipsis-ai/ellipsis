@@ -41,7 +41,7 @@ class UserInfoController @Inject() (
       } yield {
         Ok(Json.toJson(UserInfoResponse(
           maybeUser.map { user =>
-            maybeUserData.getOrElse(UserData(user.id, None, None, None, maybeTeam.map(_.name)))
+            maybeUserData.getOrElse(UserData.withoutProfile(user.id, maybeTeam))
           },
           maybeUser.isEmpty
         )))

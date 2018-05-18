@@ -164,7 +164,7 @@ class UserServiceImpl @Inject() (
           } else {
             Logger.error(s"Non-admin user data requested with mismatched team ID: user ID ${user.id} with team ID ${user.teamId} compared to requested team ID ${team.id}")
           }
-          UserData(user.id, None, None, None, maybeTeam.map(_.name))
+          UserData.withoutProfile(user.id, maybeTeam)
         }
       }
     } else {
@@ -177,7 +177,8 @@ class UserServiceImpl @Inject() (
           maybeSlackUserData.map(_.getDisplayName),
           maybeSlackUserData.flatMap(_.maybeRealName),
           maybeTzString,
-          Some(team.name)
+          Some(team.name),
+          maybeSlackUserData.flatMap(_.profile.flatMap(_.email))
         )
       }
     }

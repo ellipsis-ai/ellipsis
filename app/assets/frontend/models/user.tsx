@@ -4,6 +4,7 @@ export interface UserJson {
   fullName?: Option<string>;
   tz?: Option<string>;
   teamName?: Option<string>;
+  email?: Option<string>;
 }
 
 interface UserInterface extends UserJson {}
@@ -14,14 +15,16 @@ class User {
       readonly userName: Option<string>,
       readonly fullName: Option<string>,
       readonly tz: Option<string>,
-      readonly teamName: Option<string>
+      readonly teamName: Option<string>,
+      readonly email: Option<string>
     ) {
       Object.defineProperties(this, {
         id: { value: id, enumerable: true },
         userName: { value: userName, enumerable: true },
         fullName: { value: fullName, enumerable: true },
         tz: { value: tz, enumerable: true },
-        teamName: { value: teamName, enumerable: true }
+        teamName: { value: teamName, enumerable: true },
+        email: { value: email, enumerable: true }
       });
     }
 
@@ -59,7 +62,8 @@ class User {
         props.userName,
         props.fullName,
         props.tz,
-        props.teamName
+        props.teamName,
+        props.email
       );
     }
 
