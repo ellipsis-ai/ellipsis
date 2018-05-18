@@ -11,7 +11,7 @@ import SectionHeading from '../shared_ui/section_heading';
 import SVGSettingsIcon from '../svg/settings';
 import SVGWarning from '../svg/warning';
 import ToggleGroup from '../form/toggle_group';
-import debounce from 'javascript-debounce';
+import * as debounce from 'javascript-debounce';
 import OAuth2ApplicationUnusedNotificationData from "../models/notifications/oauth2_application_unused";
 import AWSUnusedNotificationData from "../models/notifications/aws_unused_notification_data";
 import NotificationData from "../models/notifications/notification_data";
