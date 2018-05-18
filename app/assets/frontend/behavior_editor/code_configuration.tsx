@@ -69,10 +69,7 @@ class CodeConfiguration extends React.Component<Props, State> {
       autobind(this);
       this.state = {
         notifications: this.buildNotifications()
-      }
-    }
-
-    componentDidMount(): void {
+      };
       this.updateNotifications = debounce(this.updateNotificationsNow, 250);
     }
 
