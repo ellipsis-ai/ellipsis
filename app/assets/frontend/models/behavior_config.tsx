@@ -11,22 +11,24 @@ export interface BehaviorConfigJson {
 
 interface BehaviorConfigInterface extends BehaviorConfigJson {
   dataTypeConfig?: Option<DataTypeConfig>;
+  forcePrivateResponse: boolean;
+  canBeMemoized: boolean;
 }
 
 class BehaviorConfig implements BehaviorConfigInterface {
   constructor(
     readonly exportId: Option<string>,
     readonly name: Option<string>,
-    readonly forcePrivateResponse: Option<boolean>,
-    readonly canBeMemoized: Option<boolean>,
+    readonly forcePrivateResponse: boolean,
+    readonly canBeMemoized: boolean,
     readonly isDataType: boolean,
     readonly dataTypeConfig: Option<DataTypeConfig>
   ) {
       Object.defineProperties(this, {
         exportId: { value: exportId, enumerable: true },
         name: { value: name, enumerable: true },
-        forcePrivateResponse: { value: forcePrivateResponse, enumerable: true },
-        canBeMemoized: { value: canBeMemoized, enumerable: true },
+        forcePrivateResponse: { value: Boolean(forcePrivateResponse), enumerable: true },
+        canBeMemoized: { value: Boolean(canBeMemoized), enumerable: true },
         isDataType: { value: isDataType, enumerable: true },
         dataTypeConfig: { value: dataTypeConfig, enumerable: true }
       });
@@ -58,7 +60,9 @@ class BehaviorConfig implements BehaviorConfigInterface {
 
     static fromJson(props: BehaviorConfigJson): BehaviorConfig {
       const materializedProps = Object.assign({}, props, props.dataTypeConfig ? {
-        dataTypeConfig: DataTypeConfig.fromJson(props.dataTypeConfig)
+        dataTypeConfig: DataTypeConfig.fromJson(props.dataTypeConfig),
+        forcePrivateResponse: Boolean(props.forcePrivateResponse),
+        canBeMemoized: Boolean(props.canBeMemoized)
       } : null);
       return BehaviorConfig.fromProps(materializedProps);
     }
