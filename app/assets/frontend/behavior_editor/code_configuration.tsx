@@ -11,109 +11,124 @@ import SectionHeading from '../shared_ui/section_heading';
 import SVGSettingsIcon from '../svg/settings';
 import SVGWarning from '../svg/warning';
 import ToggleGroup from '../form/toggle_group';
-import debounce from 'javascript-debounce';
+import * as debounce from 'javascript-debounce';
 import OAuth2ApplicationUnusedNotificationData from "../models/notifications/oauth2_application_unused";
 import AWSUnusedNotificationData from "../models/notifications/aws_unused_notification_data";
+import NotificationData from "../models/notifications/notification_data";
+import autobind from "../lib/autobind";
 
-const CodeConfiguration = React.createClass({
-    propTypes: {
-      sectionNumber: React.PropTypes.string.isRequired,
-      codeHelpPanelName: React.PropTypes.string.isRequired,
+interface cursorCoordsProvider {
+  cursorCoords: (boolean) => {
+    bottom: number
+  }
+}
 
-      activePanelName: React.PropTypes.string.isRequired,
-      activeDropdownName: React.PropTypes.string.isRequired,
-      onToggleActiveDropdown: React.PropTypes.func.isRequired,
-      onToggleActivePanel: React.PropTypes.func.isRequired,
-      animationIsDisabled: React.PropTypes.bool.isRequired,
+interface Props {
+  sectionNumber: string,
+  codeHelpPanelName: string,
 
-      behaviorConfig: React.PropTypes.instanceOf(BehaviorConfig),
+  activePanelName: string,
+  activeDropdownName: string,
+  onToggleActiveDropdown: (string) => void,
+  onToggleActivePanel: (string) => void,
+  animationIsDisabled: boolean,
 
-      inputs: React.PropTypes.arrayOf(React.PropTypes.instanceOf(Input)).isRequired,
-      systemParams: React.PropTypes.arrayOf(React.PropTypes.string).isRequired,
+  behaviorConfig: Option<BehaviorConfig>,
 
-      requiredAWSConfigs: React.PropTypes.arrayOf(React.PropTypes.instanceOf(RequiredAWSConfig)).isRequired,
+  inputs: Array<Input>,
+  systemParams: Array<string>,
 
-      apiApplications: React.PropTypes.arrayOf(React.PropTypes.instanceOf(RequiredOAuth2Application)).isRequired,
+  requiredAWSConfigs: Array<RequiredAWSConfig>,
 
-      functionBody: React.PropTypes.string.isRequired,
-      onChangeFunctionBody: React.PropTypes.func.isRequired,
-      onCursorChange: React.PropTypes.func.isRequired,
-      useLineWrapping: React.PropTypes.bool.isRequired,
-      onToggleCodeEditorLineWrapping: React.PropTypes.func.isRequired,
+  apiApplications: Array<RequiredOAuth2Application>,
 
-      onChangeCanBeMemoized: React.PropTypes.func.isRequired,
-      isMemoizationEnabled: React.PropTypes.bool.isRequired,
+  functionBody: string,
+  onChangeFunctionBody: (s: string) => void,
+  onCursorChange: (cm: cursorCoordsProvider) => void,
+  useLineWrapping: boolean,
+  onToggleCodeEditorLineWrapping: () => void,
 
-      envVariableNames: React.PropTypes.arrayOf(React.PropTypes.string).isRequired,
-      functionExecutesImmediately: React.PropTypes.bool
-    },
+  onChangeCanBeMemoized: (canBeMemoized: boolean) => void,
+  isMemoizationEnabled: boolean,
 
-    getInitialState: function() {
-      return {
+  envVariableNames: Array<string>,
+  functionExecutesImmediately?: Option<boolean>
+}
+
+interface State {
+  notifications: Array<NotificationData>
+}
+
+class CodeConfiguration extends React.Component<Props, State> {
+    updateNotifications: () => void;
+    codeEditor: Option<CodeEditor>;
+    notificationComponent: Option<Notifications>;
+
+    constructor(props: Props) {
+      super(props);
+      autobind(this);
+      this.state = {
         notifications: this.buildNotifications()
       };
-    },
+      this.updateNotifications = debounce(this.updateNotificationsNow, 250);
+    }
 
-    componentDidMount: function() {
-      this.updateNotifications = debounce(this.updateNotifications, 250);
-    },
-
-    componentWillReceiveProps: function() {
+    componentWillReceiveProps(): void {
       this.updateNotifications();
-    },
+    }
 
-    updateNotifications: function() {
-      if (this.refs.notifications) {
+    updateNotificationsNow(): void {
+      if (this.notificationComponent) {
         this.setState({
           notifications: this.buildNotifications()
         });
       }
-    },
+    }
 
-    toggleBehaviorCodeHelp: function() {
+    toggleBehaviorCodeHelp(): void {
       this.props.onToggleActivePanel(this.props.codeHelpPanelName);
-    },
+    }
 
-    toggleEditorSettingsMenu: function() {
+    toggleEditorSettingsMenu(): void {
       this.props.onToggleActiveDropdown('codeEditorSettings');
-    },
+    }
 
-    getCodeFunctionParams: function() {
+    getCodeFunctionParams(): Array<string> {
       const userParams = this.props.inputs.map(ea => ea.name);
       return userParams.concat(this.props.systemParams);
-    },
+    }
 
-    getCodeEditorDropdownLabel: function() {
+    getCodeEditorDropdownLabel() {
       return (<SVGSettingsIcon label="Editor settings" />);
-    },
+    }
 
-    getFirstLineNumberForCode: function() {
+    getFirstLineNumberForCode(): number {
       return 2;
-    },
+    }
 
-    getLastLineNumberForCode: function() {
+    getLastLineNumberForCode(): number {
       const numLines = this.props.functionBody.split('\n').length;
       return this.getFirstLineNumberForCode() + numLines;
-    },
+    }
 
-    hasUsedOAuth2Application: function(code, nameInCode) {
+    hasUsedOAuth2Application(code: string, nameInCode: string): boolean {
       var pattern = new RegExp(`\\bellipsis\\.accessTokens\\.${nameInCode}\\b`);
       return pattern.test(code);
-    },
+    }
 
-    hasUsedAWSConfig: function(code, nameInCode) {
+    hasUsedAWSConfig(code: string, nameInCode: string): boolean {
       var pattern = new RegExp(`\\bellipsis\\.aws\\.${nameInCode}\\b`);
       return pattern.test(code);
-    },
+    }
 
-    buildNotifications: function() {
-      var oAuth2Notifications = [];
-      var awsNotifications = [];
+    buildNotifications(): Array<NotificationData> {
+      var oAuth2Notifications: Array<NotificationData> = [];
+      var awsNotifications: Array<NotificationData> = [];
       this.props.apiApplications
         .filter((ea) => ea && !this.hasUsedOAuth2Application(this.props.functionBody, ea.nameInCode))
         .forEach((ea) => {
           oAuth2Notifications.push(new OAuth2ApplicationUnusedNotificationData({
-            name: ea.config.displayName,
+            name: ea.config ? ea.config.displayName : "Unknown",
             code: `ellipsis.accessTokens.${ea.nameInCode}`
           }));
         });
@@ -125,9 +140,9 @@ const CodeConfiguration = React.createClass({
           }));
         });
       return oAuth2Notifications.concat(awsNotifications);
-    },
+    }
 
-    getCodeAutocompletions: function() {
+    getCodeAutocompletions(): Array<string> {
       var apiTokens = this.props.apiApplications.map(ea => `ellipsis.accessTokens.${ea.nameInCode}`);
       var envVars = this.props.envVariableNames.map(function(name) {
         return `ellipsis.env.${name}`;
@@ -135,25 +150,21 @@ const CodeConfiguration = React.createClass({
       var awsTokens = this.props.requiredAWSConfigs.map(ea => `ellipsis.aws.${ea.nameInCode}`);
 
       return this.getCodeFunctionParams().concat(apiTokens, awsTokens, envVars);
-    },
+    }
 
-    refresh: function() {
-      this.refs.codeEditor.refresh();
-    },
-
-    unsetCanBeMemoized: function() {
+    unsetCanBeMemoized(): void {
       this.props.onChangeCanBeMemoized(false);
-    },
+    }
 
-    setCanBeMemoized: function() {
+    setCanBeMemoized(): void {
       this.props.onChangeCanBeMemoized(true);
-    },
+    }
 
-    canBeMemoized: function() {
-      return this.props.behaviorConfig && this.props.behaviorConfig.canBeMemoized;
-    },
+    canBeMemoized(): boolean {
+      return Boolean(this.props.behaviorConfig && this.props.behaviorConfig.canBeMemoized);
+    }
 
-    renderCacheWarning: function() {
+    renderCacheWarning() {
       if (this.canBeMemoized()) {
         return (
           <div className="display-inline-block align-b type-preserve-spaces">
@@ -164,9 +175,9 @@ const CodeConfiguration = React.createClass({
       } else {
         return null;
       }
-    },
+    }
 
-    renderToggleCanBeMemoized: function() {
+    renderToggleCanBeMemoized() {
       if (this.props.isMemoizationEnabled) {
         return (
           <div className="plxl pbm">
@@ -190,9 +201,9 @@ const CodeConfiguration = React.createClass({
       } else {
         return null;
       }
-    },
+    }
 
-    render: function() {
+    render() {
       return (
         <div>
 
@@ -236,7 +247,7 @@ const CodeConfiguration = React.createClass({
 
             <div style={{ marginLeft: "60px" }}>
               <Notifications
-                ref="notifications"
+                ref={(el) => this.notificationComponent = el}
                 notifications={this.state.notifications}
                 inline={true}
               />
@@ -246,7 +257,7 @@ const CodeConfiguration = React.createClass({
 
           <div className="position-relative">
             <CodeEditor
-              ref="codeEditor"
+              ref={(el) => this.codeEditor = el}
               value={this.props.functionBody}
               onChange={this.props.onChangeFunctionBody}
               onCursorChange={this.props.onCursorChange}
@@ -291,6 +302,6 @@ const CodeConfiguration = React.createClass({
         </div>
       );
     }
-});
+}
 
 export default CodeConfiguration;
