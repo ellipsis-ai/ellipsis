@@ -100,9 +100,6 @@ const CodeMirror = React.createClass({
       this.props.onChange(doc.getValue());
     }
   },
-  refresh: function() {
-    this.getCodeMirror().refresh();
-  },
 
   shouldComponentUpdate: function(newProps, newState) {
     return (newProps.className !== this.props.className ||

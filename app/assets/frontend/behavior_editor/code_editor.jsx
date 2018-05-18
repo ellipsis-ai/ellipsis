@@ -130,14 +130,9 @@ const CodeEditor = React.createClass({
     cm.replaceSelection(spaces);
   },
 
-  refresh: function() {
-    this.refs.codemirror.refresh();
-  },
-
   render: function() {
     return (
       <Codemirror
-        ref="codemirror"
         value={this.props.value}
         onChange={this.props.onChange}
         onCursorChange={this.props.onCursorChange}
