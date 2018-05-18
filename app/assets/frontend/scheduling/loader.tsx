@@ -136,7 +136,7 @@ class SchedulingLoader extends React.Component<Props, State> {
                 userData[userId] = User.fromJson(userResponse.user);
                 this.updateUserMap(userData);
               } else if (userResponse.userNotFound) {
-                userData[userId] = new User(userId, null, null, null, null);
+                userData[userId] = User.withoutProfile(userId);
                 this.updateUserMap(userData);
               }
             }).catch(() => {
