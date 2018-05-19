@@ -16,4 +16,6 @@ trait BehaviorParameterService {
 
   def isFirstForBehaviorVersionAction(parameter: BehaviorParameter): DBIO[Boolean]
 
+  def haveSameInterface(behaviorParameter1: BehaviorParameter, behaviorParameter2: BehaviorParameter): Future[Boolean]
+
 }

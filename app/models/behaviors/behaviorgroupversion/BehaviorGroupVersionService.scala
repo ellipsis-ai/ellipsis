@@ -51,6 +51,12 @@ trait BehaviorGroupVersionService {
 
   def redeployAllCurrentVersions: Future[Unit]
 
+  def haveActionsWithNameAndSameInterface(
+                                           actionName: String,
+                                           groupVersion1: BehaviorGroupVersion,
+                                           groupVersion2: BehaviorGroupVersion
+                                         ): Future[Boolean]
+
   def isActive(groupVersion: BehaviorGroupVersion, context: String, channel: String): Future[Boolean]
 
   def activeFunctionNames: Future[Seq[String]]

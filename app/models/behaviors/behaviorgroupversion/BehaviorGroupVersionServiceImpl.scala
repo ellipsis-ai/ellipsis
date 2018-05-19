@@ -285,6 +285,23 @@ class BehaviorGroupVersionServiceImpl @Inject() (
     }
   }
 
+  def haveActionsWithNameAndSameInterface(
+                                           actionName: String,
+                                           groupVersion1: BehaviorGroupVersion,
+                                           groupVersion2: BehaviorGroupVersion
+                                         ): Future[Boolean] = {
+    for {
+      maybeBehaviorVersion <- dataService.behaviorVersions.findByName(actionName, groupVersion1)
+      maybeActiveBehaviorVersion <- dataService.behaviorVersions.findByName(actionName, groupVersion2)
+      behaviorVersionsMatch <- (for {
+        behaviorVersion <- maybeBehaviorVersion
+        activeBehaviorVersion <- maybeActiveBehaviorVersion
+      } yield {
+        dataService.behaviorVersions.haveSameInterface(behaviorVersion, activeBehaviorVersion)
+      }).getOrElse(Future.successful(false))
+    } yield behaviorVersionsMatch
+  }
+
   def isActive(groupVersion: BehaviorGroupVersion, context: String, channel: String): Future[Boolean] = {
     dataService.behaviorGroupDeployments.maybeActiveBehaviorGroupVersionFor(groupVersion.group, context, channel).map{ maybeActive =>
       maybeActive.contains(groupVersion)
