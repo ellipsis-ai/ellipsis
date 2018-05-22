@@ -915,9 +915,19 @@ class SlackController @Inject() (
         maybeGroupVersion <- actionChoice.groupVersionId.map { groupVersionId =>
           dataService.behaviorGroupVersions.findWithoutAccessCheck(groupVersionId)
         }.getOrElse(Future.successful(None))
-        isActive <- maybeGroupVersion.map { groupVersion =>
-          dataService.behaviorGroupVersions.isActive(groupVersion, Conversation.SLACK_CONTEXT, info.channel.id)
-        }.getOrElse(Future.successful(false))
+        maybeActiveGroupVersion <- maybeGroupVersion.map { groupVersion =>
+          dataService.behaviorGroupDeployments.maybeActiveBehaviorGroupVersionFor(groupVersion.group, Conversation.SLACK_CONTEXT, info.channel.id)
+        }.getOrElse(Future.successful(None))
+        isActive <- (for {
+          groupVersion <- maybeGroupVersion
+          activeVersion <- maybeActiveGroupVersion
+        } yield {
+          if (groupVersion == activeVersion) {
+            Future.successful(true)
+          } else {
+            dataService.behaviorGroupVersions.haveActionsWithNameAndSameInterface(actionChoice.actionName, groupVersion, activeVersion)
+          }
+        }).getOrElse(Future.successful(false))
         canBeTriggered <- for {
           maybeUser <- dataService.users.ensureUserFor(LoginInfo(Conversation.SLACK_CONTEXT, info.user.id), botProfile.teamId).map(Some(_))
           canBeTriggered <- maybeUser.map { user =>
@@ -927,7 +937,7 @@ class SlackController @Inject() (
       } yield ActionChoicePermission(
         actionChoice,
         info,
-        maybeGroupVersion,
+        maybeActiveGroupVersion,
         isActive,
         canBeTriggered,
         botProfile,

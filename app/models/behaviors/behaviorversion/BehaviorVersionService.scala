@@ -50,6 +50,8 @@ trait BehaviorVersionService {
 
   def hasSearchParamAction(behaviorVersion: BehaviorVersion): DBIO[Boolean]
 
+  def haveSameInterface(behaviorVersion1: BehaviorVersion, behaviorVersion2: BehaviorVersion): Future[Boolean]
+
   def createForAction(
                        behavior: Behavior,
                        groupVersion: BehaviorGroupVersion,

@@ -184,6 +184,28 @@ class BehaviorVersionServiceImpl @Inject() (
     }
   }
 
+  private def haveSameName(behaviorVersion1: BehaviorVersion, behaviorVersion2: BehaviorVersion): Boolean = {
+    behaviorVersion1.maybeName.exists(n => behaviorVersion2.maybeName.contains(n))
+  }
+
+  def haveSameInterface(behaviorVersion1: BehaviorVersion, behaviorVersion2: BehaviorVersion): Future[Boolean] = {
+    if (!haveSameName(behaviorVersion1, behaviorVersion2)) {
+      Future.successful(false)
+    } else {
+      for {
+        params1 <- dataService.behaviorParameters.allFor(behaviorVersion1)
+        params2 <- dataService.behaviorParameters.allFor(behaviorVersion2)
+        paramsMatch <- if (params1.length != params2.length) {
+          Future.successful(false)
+        } else {
+          Future.sequence(params1.zip(params2).map { case(p1, p2) =>
+            dataService.behaviorParameters.haveSameInterface(p1, p2)
+          }).map(matchResults => matchResults.forall(identity))
+        }
+      } yield paramsMatch
+    }
+  }
+
   def createForAction(
                        behavior: Behavior,
                        groupVersion: BehaviorGroupVersion,
