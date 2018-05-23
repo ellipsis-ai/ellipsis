@@ -105,9 +105,9 @@ class EventHandler @Inject() (
             TextWithAttachmentsResult(event, Some(updatedConvo), prompt, forcePrivateResponse = false, Seq(actions))
           }
         } else {
-          val futureResult = dataService.run(updatedConvo.resultForAction(event, services))
-          event.resultReactionHandler(futureResult.map(Seq(_)))
-          futureResult
+          val eventualResult = dataService.run(updatedConvo.resultForAction(event, services))
+          event.resultReactionHandler(eventualResult.map(Seq(_)))
+          eventualResult
         }
       }
     }.recoverWith {
@@ -160,7 +160,7 @@ class EventHandler @Inject() (
         }
       }
       BuiltinBehavior.maybeFrom(event, services).map { builtin =>
-        builtin.result.map(Seq(_))
+        event.resultReactionHandler(builtin.result.map(Seq(_)))
       }.getOrElse {
         maybeHandleInExpiredThread(event).flatMap { maybeExpiredThreadResult =>
           maybeExpiredThreadResult.map(r => Future.successful(Seq(r))).getOrElse {
