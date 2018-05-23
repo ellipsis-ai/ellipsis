@@ -105,7 +105,9 @@ class EventHandler @Inject() (
             TextWithAttachmentsResult(event, Some(updatedConvo), prompt, forcePrivateResponse = false, Seq(actions))
           }
         } else {
-          dataService.run(updatedConvo.resultForAction(event, services))
+          val futureResult = dataService.run(updatedConvo.resultForAction(event, services))
+          event.resultReactionHandler(futureResult.map(Seq(_)))
+          futureResult
         }
       }
     }.recoverWith {
