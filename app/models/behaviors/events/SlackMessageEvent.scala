@@ -86,8 +86,9 @@ case class SlackMessageEvent(
   }
 
   override def resultReactionHandler(eventualResults: Future[Seq[BotResult]])
-                                    (implicit ec: ExecutionContext, actorSystem: ActorSystem): Future[Unit] = {
+                                    (implicit ec: ExecutionContext, actorSystem: ActorSystem): Future[Seq[BotResult]] = {
     SlackMessageReactionHandler.handle(client, eventualResults, channel, ts)
+    eventualResults
   }
 
   def sendMessage(
