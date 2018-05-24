@@ -348,7 +348,8 @@ class BehaviorGroup implements Diffable, BehaviorGroupInterface {
         props.author,
         props.gitSHA,
         props.deployment,
-        props.metaData
+        props.metaData,
+        props.isManaged
       );
     }
 
