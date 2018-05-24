@@ -145,7 +145,8 @@ case class GithubBehaviorGroupDataBuilder(
       Some(OffsetDateTime.now),
       None,
       None,
-      None
+      None,
+      isManaged = false
     )
   }
 

@@ -138,6 +138,7 @@ class BehaviorGroupServiceImpl @Inject() (
         val requiredAWSConfigs = groupsData.flatMap(_.requiredAWSConfigs)
         val requiredOAuth2ApiConfigs = groupsData.flatMap(_.requiredOAuth2ApiConfigs)
         val requiredSimpleTokenApis = groupsData.flatMap(_.requiredSimpleTokenApis)
+        val isManaged = groupsData.exists(_.isManaged)
         BehaviorGroupData(
           None,
           team.id,
@@ -157,7 +158,8 @@ class BehaviorGroupServiceImpl @Inject() (
           createdAt = None,
           Some(userData),
           deployment = None,
-          metaData = None
+          metaData = None,
+          isManaged
         )
       })
       _ <- Future.sequence(groupVersions.map { ea =>

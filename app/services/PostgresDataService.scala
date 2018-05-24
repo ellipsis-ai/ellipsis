@@ -37,6 +37,7 @@ import models.behaviors.invocationlogentry.InvocationLogEntryService
 import models.behaviors.invocationtoken.InvocationTokenService
 import models.behaviors.library.LibraryVersionService
 import models.behaviors.linked_github_repo.LinkedGithubRepoService
+import models.behaviors.managedbehaviorgroup.ManagedBehaviorGroupService
 import models.behaviors.nodemoduleversion.NodeModuleVersionService
 import models.behaviors.savedanswer.SavedAnswerService
 import models.behaviors.scheduling.recurrence.RecurrenceService
@@ -103,6 +104,7 @@ class PostgresDataService @Inject() (
                                       val invocationLogEntriesProvider: Provider[InvocationLogEntryService],
                                       val devModeChannelsProvider: Provider[DevModeChannelService],
                                       val behaviorGroupDeploymentsProvider: Provider[BehaviorGroupDeploymentService],
+                                      val managedBehaviorGroupsProvider: Provider[ManagedBehaviorGroupService],
                                       val behaviorGroupVersionSHAsProvider: Provider[BehaviorGroupVersionSHAService],
                                       val behaviorResponsesProvider: Provider[BehaviorResponseService],
                                       val subscriptionsProvider: Provider[SubscriptionService],
@@ -157,6 +159,7 @@ class PostgresDataService @Inject() (
   val invocationLogEntries = invocationLogEntriesProvider.get
   val devModeChannels = devModeChannelsProvider.get
   val behaviorGroupDeployments = behaviorGroupDeploymentsProvider.get
+  val managedBehaviorGroups: ManagedBehaviorGroupService = managedBehaviorGroupsProvider.get
   val behaviorGroupVersionSHAs = behaviorGroupVersionSHAsProvider.get
   val subscriptions = subscriptionsProvider.get
   val plans = planProvider.get
