@@ -138,7 +138,8 @@ trait DBSpec extends PlaySpec with OneAppPerSuite with MockitoSugar {
       createdAt = None,
       author = None,
       deployment = None,
-      metaData = None
+      metaData = None,
+      isManaged = false
     )
   }
 
