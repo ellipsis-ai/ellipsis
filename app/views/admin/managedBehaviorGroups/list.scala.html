@@ -1,0 +1,40 @@
+@import models.behaviors.managedbehaviorgroup.ManagedBehaviorGroup
+@import models.team.Team
+@import json.BehaviorGroupData
+@import helper._
+
+@(
+  config: ViewConfig,
+  team: Team,
+  managedData: Seq[(ManagedBehaviorGroup, BehaviorGroupData)],
+  otherData: Seq[BehaviorGroupData]
+)(implicit messages: Messages, r: RequestHeader)
+
+
+@page.main("Managed skills", config, Seq(NavItem.admin)) {
+  <h4>Managed skills for @team.name</h4>
+  <ol>
+    @managedData.map { case(managed, groupData) =>
+      @groupData.id.map { groupId =>
+        <li>
+          <form method="POST" action="@controllers.admin.routes.ManagedBehaviorGroupsController.delete(groupId).url">
+            @groupData.name
+            @CSRF.formField
+          <input type="submit" value="Remove"/>
+        </form>
+        </li>
+      }
+    }
+  </ol>
+
+  <form method="POST" action="@controllers.admin.routes.ManagedBehaviorGroupsController.add(team.id).url">
+    @CSRF.formField
+    <select name="groupId">
+      @otherData.map { ea =>
+        <option value="@ea.id">@ea.name</option>
+      }
+    </select>
+    <input type="submit" value="Add"/>
+  </form>
+}
+

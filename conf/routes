@@ -103,7 +103,9 @@ POST        /admin/lambdas/redeploy_all               @controllers.admin.Lambdas
 GET         /admin/teams                              @controllers.admin.TeamsController.list(page: Int ?= 0, perPage: Int ?= 10)
 GET         /admin/billing/plans                      @controllers.admin.billing.PlansController.list()
 GET         /admin/user_info/lookup                   @controllers.admin.UserInfoController.userDataFor(userId: String)
-
+GET         /admin/managed_skills/:teamId             @controllers.admin.ManagedBehaviorGroupsController.list(teamId: String)
+POST        /admin/managed_skills/:teamId             @controllers.admin.ManagedBehaviorGroupsController.add(teamId: String)
+POST        /admin/managed_skills/delete/:groupId     @controllers.admin.ManagedBehaviorGroupsController.delete(groupId: String)
 
 GET         /metrics/invocations_for_date/:token/:year/:month/:day          @controllers.VisibilityAPIController.invocationCountsForDate(token: String, year: String, month: String, day: String)
 GET         /metrics/for_team_for_date/:token/:teamName/:year/:month/:day   @controllers.VisibilityAPIController.forTeamForDate(token: String, teamName: String, year: String, month: String, day: String)
