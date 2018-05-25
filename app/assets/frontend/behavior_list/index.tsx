@@ -57,7 +57,8 @@ type State = {
   userSearchText: string,
   activeSearchText: string,
   visibleSection: "local" | "published",
-  searchHeaderHeight: number
+  searchHeaderHeight: number,
+  onlyShowManaged: boolean
 }
 
 class BehaviorList extends React.Component<Props, State> {
@@ -81,7 +82,8 @@ class BehaviorList extends React.Component<Props, State> {
       userSearchText: "",
       activeSearchText: "",
       visibleSection: this.props.localBehaviorGroups.length > 0 ? "local" : "published",
-      searchHeaderHeight: 0
+      searchHeaderHeight: 0,
+      onlyShowManaged: false
     };
 
     this.delaySubmitSearch = debounce(() => this.submitSearch(), 50);
@@ -262,6 +264,12 @@ class BehaviorList extends React.Component<Props, State> {
       if (optionalCallback) {
         optionalCallback();
       }
+    });
+  }
+
+  updateOnlyShowManaged(isChecked: boolean) {
+    this.setState({
+      onlyShowManaged: isChecked
     });
   }
 
@@ -564,16 +572,27 @@ class BehaviorList extends React.Component<Props, State> {
   }
 
   renderInstalledBehaviorGroups(groups: Array<BehaviorGroup>, hasLocalGroups: boolean) {
+    let heading;
+    if (this.isSearching()) {
+      if (this.state.onlyShowManaged) {
+        heading = `Your managed skills matching “${this.getSearchText()}”`;
+      } else {
+        heading = `Your team’s skills matching “${this.getSearchText()}”`;
+      }
+    } else {
+      if (this.state.onlyShowManaged) {
+        heading = `Skills managed by Ellipsis`;
+      } else {
+        heading = `Your team’s skills`;
+      }
+    }
     return (
       <Collapsible revealWhen={hasLocalGroups} animationDuration={0.5}>
         <div className="container container-c ptxl">
 
           <div ref={(el) => this.localHeading = el}>
             <ListHeading
-              heading={this.isSearching() ?
-                `Your team’s skills matching “${this.getSearchText()}”` :
-                "Your team’s skills"
-              }
+              heading={heading}
             />
           </div>
 
@@ -775,13 +794,27 @@ class BehaviorList extends React.Component<Props, State> {
         <div className="column column-page-main column-page-main-wide flex-column flex-column-main">
           <div className="bg-lightest-translucent pvl container container-c">
             <div className="mhl">
-              <SearchInput
-                placeholder="Search skills…"
-                value={this.state.userSearchText}
-                onChange={this.updateUserSearch}
-                isSearching={this.isLoadingMatchingResults()}
-                className="form-input-borderless form-input-s"
-              />
+              <div className="columns flex-columns flex-row-expand mobile-flex-no-columns">
+                <div className="column column-three-quarters">
+                  <SearchInput
+                    placeholder="Search skills…"
+                    value={this.state.userSearchText}
+                    onChange={this.updateUserSearch}
+                    isSearching={this.isLoadingMatchingResults()}
+                    className="form-input-borderless form-input-s"
+                  />
+                </div>
+                <div className="column column-one-quarter">
+                  <Checkbox
+                    useButtonStyle={true}
+                    checked={this.state.onlyShowManaged}
+                    onChange={this.updateOnlyShowManaged}
+                    label={(
+                      <span className="narrow-display-none">Only show managed</span>
+                    )}
+                  />
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -828,6 +861,7 @@ class BehaviorList extends React.Component<Props, State> {
     const allLocal = this.getLocalBehaviorGroups();
     const hasLocalGroups = allLocal.length > 0;
     const localGroups = this.getMatchingBehaviorGroupsFrom(allLocal);
+    const filteredLocalGroups = this.state.onlyShowManaged ? localGroups.filter(ea => ea.isManaged) : localGroups;
     const allUninstalled = this.getUninstalledBehaviorGroups();
     const uninstalledGroups = this.getMatchingBehaviorGroupsFrom(allUninstalled);
     const hasUninstalledGroups = allUninstalled.length > 0;
@@ -848,7 +882,7 @@ class BehaviorList extends React.Component<Props, State> {
                   {this.renderIntro()}
 
                   <div ref={(el) => this.localGroupContainer = el} className="bg-white">
-                    {this.renderInstalledBehaviorGroups(localGroups, hasLocalGroups)}
+                    {this.renderInstalledBehaviorGroups(filteredLocalGroups, hasLocalGroups)}
                   </div>
 
                   <div ref={(el) => this.publishedGroupContainer = el} className="container container-c ptxxl pbxl">
