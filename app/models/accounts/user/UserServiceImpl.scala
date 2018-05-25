@@ -246,4 +246,9 @@ class UserServiceImpl @Inject() (
     } yield maybeUser
   }
 
+  def allFor(team: Team): Future[Seq[User]] = {
+    val action = allForQuery(team.id).result
+    dataService.run(action)
+  }
+
 }

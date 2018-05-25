@@ -2,7 +2,6 @@ package models.behaviors.managedbehaviorgroup
 
 import drivers.SlickPostgresDriver.api._
 import models.behaviors.behaviorgroup.BehaviorGroupQueries
-import models.team.TeamQueries
 
 object ManagedBehaviorGroupQueries {
 
@@ -19,5 +18,10 @@ object ManagedBehaviorGroupQueries {
       map { case(managed, _) => managed}
   }
   val allForTeamQuery = Compiled(uncompiledAllForTeamQuery _)
+
+  def uncompiledUpdateContactQuery(groupId: Rep[String]) = {
+    uncompiledFindForQuery(groupId).map(_.maybeContactId)
+  }
+  val updateContactQuery = Compiled(uncompiledUpdateContactQuery _)
 
 }

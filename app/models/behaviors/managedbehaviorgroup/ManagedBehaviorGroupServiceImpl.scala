@@ -45,8 +45,11 @@ class ManagedBehaviorGroupServiceImpl @Inject() (
 
   def ensureFor(group: BehaviorGroup, maybeContact: Option[User]): Future[ManagedBehaviorGroup] = {
     val action = findForQuery(group.id).result.flatMap { r =>
-      r.headOption.map(DBIO.successful).getOrElse {
-        val newInstance = ManagedBehaviorGroup(IDs.next, group.id, maybeContact.map(_.id))
+      val maybeContactId = maybeContact.map(_.id)
+      r.headOption.map { existing =>
+        updateContactQuery(group.id).update(maybeContactId).map(_ => existing.copy(maybeContactId = maybeContactId))
+      }.getOrElse {
+        val newInstance = ManagedBehaviorGroup(IDs.next, group.id, maybeContactId)
         (all += newInstance).map(_ => newInstance)
       }
     }

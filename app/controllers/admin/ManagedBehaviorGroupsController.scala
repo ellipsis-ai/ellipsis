@@ -32,6 +32,10 @@ class ManagedBehaviorGroupsController @Inject() (
         maybeTeam <- dataService.teams.find(teamId)
         result <- maybeTeam.map { team =>
           for {
+            users <- dataService.users.allFor(team)
+            usersData <- Future.sequence(users.map { ea =>
+              dataService.users.userDataFor(ea, team)
+            })
             managedGroups <- dataService.managedBehaviorGroups.allFor(team)
             allGroups <- dataService.behaviorGroups.allFor(team)
             groupData <- Future.sequence(allGroups.map { ea =>
@@ -42,14 +46,14 @@ class ManagedBehaviorGroupsController @Inject() (
               groupData.find(_.id.contains(ea.groupId)).map { groupData =>
                 (ea, groupData)
               }
-            }
+            }.sortBy { case(_, groupData) => groupData.name }
             val managedGroupIds = managedGroups.map(_.groupId)
             val otherNamedGroupData =
               groupData.
                 filterNot(d => d.id.exists(managedGroupIds.contains)).
                 filter(_.name.isDefined).
                 sortBy(_.name)
-            Ok(views.html.admin.managedBehaviorGroups.list(viewConfig(None), team, withGroupData, otherNamedGroupData))
+            Ok(views.html.admin.managedBehaviorGroups.list(viewConfig(None), team, withGroupData, otherNamedGroupData, usersData.sortBy(_.userNameOrDefault.toLowerCase)))
           }
         }.getOrElse(Future.successful(NotFound(s"Team not found: $teamId")))
 
@@ -95,6 +99,37 @@ class ManagedBehaviorGroupsController @Inject() (
           }
         }.getOrElse(Future.successful(NotFound(s"Skill not found: ${groupId}")))
       } yield result
+    })
+  }
+
+  case class SetContactInfo(contactId: Option[String])
+
+  private val setContactForm = Form(
+    mapping(
+      "contactId" -> optional(nonEmptyText)
+    )(SetContactInfo.apply)(SetContactInfo.unapply)
+  )
+
+  def setContact(groupId: String) = silhouette.SecuredAction.async { implicit request =>
+    withIsAdminCheck(() => {
+      setContactForm.bindFromRequest.fold(
+        formWithErrors => {
+          Future.successful(BadRequest(formWithErrors.errorsAsJson))
+        },
+        info => {
+          for {
+            maybeGroup <- dataService.behaviorGroups.findWithoutAccessCheck(groupId)
+            maybeContact <- info.contactId.map { contactId =>
+              dataService.users.find(contactId)
+            }.getOrElse(Future.successful(None))
+            result <- maybeGroup.map { group =>
+              dataService.managedBehaviorGroups.ensureFor(group, maybeContact).map { _ =>
+                Redirect(routes.ManagedBehaviorGroupsController.list(group.team.id))
+              }
+            }.getOrElse(Future.successful(NotFound(s"Skill not found: ${groupId}")))
+          } yield result
+        }
+      )
     })
   }
 
