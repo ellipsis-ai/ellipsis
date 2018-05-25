@@ -35,6 +35,7 @@ import models.behaviors.invocationlogentry.InvocationLogEntryService
 import models.behaviors.invocationtoken.InvocationTokenService
 import models.behaviors.library.LibraryVersionService
 import models.behaviors.linked_github_repo.LinkedGithubRepoService
+import models.behaviors.managedbehaviorgroup.ManagedBehaviorGroupService
 import models.behaviors.nodemoduleversion.NodeModuleVersionService
 import models.behaviors.savedanswer.SavedAnswerService
 import models.behaviors.scheduling.recurrence.RecurrenceService
@@ -104,6 +105,7 @@ trait DataService {
   val addons: AddonService
   val activeUserRecords: ActiveUserRecordService
   val behaviorGroupDeployments: BehaviorGroupDeploymentService
+  val managedBehaviorGroups: ManagedBehaviorGroupService
   val behaviorGroupVersionSHAs: BehaviorGroupVersionSHAService
   def behaviorResponses: BehaviorResponseService
 

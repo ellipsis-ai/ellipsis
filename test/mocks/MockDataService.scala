@@ -36,6 +36,7 @@ import models.behaviors.invocationlogentry.InvocationLogEntryService
 import models.behaviors.invocationtoken.InvocationTokenService
 import models.behaviors.library.LibraryVersionService
 import models.behaviors.linked_github_repo.LinkedGithubRepoService
+import models.behaviors.managedbehaviorgroup.ManagedBehaviorGroupService
 import models.behaviors.nodemoduleversion.NodeModuleVersionService
 import models.behaviors.savedanswer.SavedAnswerService
 import models.behaviors.scheduling.recurrence.RecurrenceService
@@ -103,6 +104,7 @@ class MockDataService extends DataService with MockitoSugar {
   val invocationLogEntries = mock[InvocationLogEntryService]
   val devModeChannels = mock[DevModeChannelService]
   val behaviorGroupDeployments = mock[BehaviorGroupDeploymentService]
+  val managedBehaviorGroups: ManagedBehaviorGroupService = mock[ManagedBehaviorGroupService]
   val behaviorGroupVersionSHAs = mock[BehaviorGroupVersionSHAService]
   val behaviorResponses = mock[BehaviorResponseService]
   val subscriptions = mock[SubscriptionService]

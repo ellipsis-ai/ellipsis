@@ -42,6 +42,7 @@ import models.environmentvariable._
 import models.behaviors.invocationtoken.{InvocationTokenService, InvocationTokenServiceImpl}
 import models.behaviors.library.{LibraryVersionService, LibraryVersionServiceImpl}
 import models.behaviors.linked_github_repo.{LinkedGithubRepoService, LinkedGithubRepoServiceImpl}
+import models.behaviors.managedbehaviorgroup.{ManagedBehaviorGroupService, ManagedBehaviorGroupServiceImpl}
 import models.behaviors.nodemoduleversion.{NodeModuleVersionService, NodeModuleVersionServiceImpl}
 import models.behaviors.savedanswer.{SavedAnswerService, SavedAnswerServiceImpl}
 import models.behaviors.scheduling.recurrence.{RecurrenceService, RecurrenceServiceImpl}
@@ -113,6 +114,7 @@ class ServiceModule extends AbstractModule with ScalaModule {
     bind[NodeModuleVersionService].to[NodeModuleVersionServiceImpl]
     bind[DevModeChannelService].to[DevModeChannelServiceImpl]
     bind[BehaviorGroupDeploymentService].to[BehaviorGroupDeploymentServiceImpl]
+    bind[ManagedBehaviorGroupService].to[ManagedBehaviorGroupServiceImpl]
     bind[BehaviorGroupVersionSHAService].to[BehaviorGroupVersionSHAServiceImpl]
 
 

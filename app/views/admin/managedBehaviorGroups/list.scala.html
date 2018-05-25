@@ -1,0 +1,52 @@
+@import models.behaviors.managedbehaviorgroup.ManagedBehaviorGroup
+@import models.team.Team
+@import json.BehaviorGroupData
+@import json.UserData
+@import helper._
+
+@(
+  config: ViewConfig,
+  team: Team,
+  managedData: Seq[(ManagedBehaviorGroup, BehaviorGroupData)],
+  otherData: Seq[BehaviorGroupData],
+  usersData: Seq[UserData]
+)(implicit messages: Messages, r: RequestHeader)
+
+
+@page.main("Managed skills", config, Seq(NavItem.admin)) {
+  <h4>Managed skills for @team.name</h4>
+  <ol>
+    @managedData.map { case(managed, groupData) =>
+      @groupData.id.map { groupId =>
+        <li>
+          <span>@groupData.name</span>
+          <form style="display:inline-block; width: auto; margin: 0; padding: 0;" method="POST" action="@controllers.admin.routes.ManagedBehaviorGroupsController.setContact(groupId).url">
+            @CSRF.formField
+            <select name="contactId" class="form-input form-input-inline">
+              <option value="">– No contact selected –</option>
+              @usersData.map { ea =>
+                <option value="@ea.id" @if(managed.maybeContactId.contains(ea.id)){ selected="selected" }else{}>@ea.userNameOrDefault</option>
+              }
+            </select>
+            <input style="display:inline;" type="submit" value="Update" class="form-input form-input-inline"/>
+          </form>
+          <form style="display:inline-block; width: auto; margin: 0; padding: 0;" method="POST" action="@controllers.admin.routes.ManagedBehaviorGroupsController.delete(groupId).url">
+            @CSRF.formField
+          <input style="display:inline;" type="submit" value="Remove" class="form-input form-input-inline"/>
+        </form>
+        </li>
+      }
+    }
+  </ol>
+
+  <form method="POST" action="@controllers.admin.routes.ManagedBehaviorGroupsController.add(team.id).url">
+    @CSRF.formField
+    <select name="groupId" class="form-input form-input-inline">
+      @otherData.map { ea =>
+        <option value="@ea.id">@ea.name</option>
+      }
+    </select>
+    <input class="form-input form-input-inline" type="submit" value="Add"/>
+  </form>
+}
+

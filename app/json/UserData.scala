@@ -9,7 +9,9 @@ case class UserData(
                      tz: Option[String],
                      teamName: Option[String],
                      email: Option[String]
-                   )
+                   ) {
+  val userNameOrDefault: String = userName.getOrElse(s"User with ID <$id>")
+}
 
 object UserData {
   def asAdmin(id: String): UserData = {

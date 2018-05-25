@@ -40,4 +40,6 @@ trait UserService extends IdentityService[User] {
   def maybeSlackProfileFor(user: User): Future[Option[SlackProfile]]
 
   def findForInvocationToken(tokenId: String): Future[Option[User]]
+
+  def allFor(team: Team): Future[Seq[User]]
 }

@@ -246,7 +246,8 @@ const behaviorGroupVersion1: BehaviorGroupJson = Object.freeze({
   author: null,
   gitSHA: null,
   deployment: null,
-  metaData: null
+  metaData: null,
+  isManaged: false
 });
 
 const behaviorGroupVersion2: BehaviorGroupJson = Object.freeze({
@@ -269,7 +270,8 @@ const behaviorGroupVersion2: BehaviorGroupJson = Object.freeze({
   author: null,
   gitSHA: null,
   deployment: null,
-  metaData: null
+  metaData: null,
+  isManaged: false
 });
 
 const publishedMyCalendar: BehaviorGroup = BehaviorGroup.fromJson({
@@ -444,7 +446,8 @@ const publishedMyCalendar: BehaviorGroup = BehaviorGroup.fromJson({
   "githubUrl": "https://github.com/ellipsis-ai/my-calendar",
   "gitSHA": "af7815b9b42cf277c67f4f7123c8901826ea869e",
   "exportId": "9l9tTPMcQliQRua_UmJ8sw",
-  "createdAt": "2018-04-17T10:19:13.74-04:00"
+  "createdAt": "2018-04-17T10:19:13.74-04:00",
+  "isManaged": false
 });
 const installedMyCalendar: BehaviorGroup = BehaviorGroup.fromJson({
   "id": "sxokL6idQ_a6Ks3QOD-Sug",
@@ -645,7 +648,8 @@ const installedMyCalendar: BehaviorGroup = BehaviorGroup.fromJson({
       "fullName": "Luke Andrews",
       "tz": "America/New_York"
     }
-  }
+  },
+  "isManaged": false
 });
 
 function textDiff(left, right) {

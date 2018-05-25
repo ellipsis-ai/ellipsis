@@ -182,6 +182,9 @@ object BehaviorEditorData {
       maybeGitSHA <- maybeGroupVersion.map { groupVersion =>
         dataService.behaviorGroupVersionSHAs.findForId(groupVersion.id)
       }.getOrElse(Future.successful(None))
+      maybeManagedInfo <- maybeGroup.map { group =>
+        dataService.managedBehaviorGroups.infoFor(group, team).map(Some(_))
+      }.getOrElse(Future.successful(None))
     } yield {
       val maybeVerifiedSelectedId = maybeVerifiedBehaviorId.orElse(maybeVerifiedLibraryId)
       val data = maybeGroupData.getOrElse {
@@ -204,7 +207,9 @@ object BehaviorEditorData {
           Some(OffsetDateTime.now),
           Some(userData),
           maybeDeploymentData,
-          None
+          None,
+          maybeManagedInfo.exists(_.isManaged),
+          maybeManagedInfo.flatMap(_.maybeContactData)
         )
       }
       BehaviorEditorData(
