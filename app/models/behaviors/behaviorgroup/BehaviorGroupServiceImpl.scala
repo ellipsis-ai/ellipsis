@@ -139,6 +139,7 @@ class BehaviorGroupServiceImpl @Inject() (
         val requiredOAuth2ApiConfigs = groupsData.flatMap(_.requiredOAuth2ApiConfigs)
         val requiredSimpleTokenApis = groupsData.flatMap(_.requiredSimpleTokenApis)
         val isManaged = groupsData.exists(_.isManaged)
+        val maybeManagedContactData = groupsData.find(_.managedContact.isDefined).flatMap(_.managedContact)
         BehaviorGroupData(
           None,
           team.id,
@@ -159,7 +160,8 @@ class BehaviorGroupServiceImpl @Inject() (
           Some(userData),
           deployment = None,
           metaData = None,
-          isManaged
+          isManaged,
+          maybeManagedContactData
         )
       })
       _ <- Future.sequence(groupVersions.map { ea =>

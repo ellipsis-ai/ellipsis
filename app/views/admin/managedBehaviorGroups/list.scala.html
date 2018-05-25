@@ -23,7 +23,7 @@
           <form style="display:inline-block; width: auto; margin: 0; padding: 0;" method="POST" action="@controllers.admin.routes.ManagedBehaviorGroupsController.setContact(groupId).url">
             @CSRF.formField
             <select name="contactId" class="form-input form-input-inline">
-              <option value="">– None selected –</option>
+              <option value="">– No contact selected –</option>
               @usersData.map { ea =>
                 <option value="@ea.id" @if(managed.maybeContactId.contains(ea.id)){ selected="selected" }else{}>@ea.userNameOrDefault</option>
               }

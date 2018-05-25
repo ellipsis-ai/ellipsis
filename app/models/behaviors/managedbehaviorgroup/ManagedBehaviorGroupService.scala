@@ -13,6 +13,8 @@ trait ManagedBehaviorGroupService {
 
   def maybeFor(group: BehaviorGroup): Future[Option[ManagedBehaviorGroup]]
 
+  def infoFor(group: BehaviorGroup, team: Team): Future[ManagedBehaviorGroupInfo]
+
   def allFor(team: Team): Future[Seq[ManagedBehaviorGroup]]
 
   def ensureFor(group: BehaviorGroup, maybeContact: Option[User]): Future[ManagedBehaviorGroup]

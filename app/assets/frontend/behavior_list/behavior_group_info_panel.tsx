@@ -9,7 +9,7 @@ import SVGInstalled from '../svg/installed';
 import Sort from '../lib/sort';
 import autobind from '../lib/autobind';
 import {maybeDiffFor} from "../models/diffs";
-import User from "../models/user";
+import User, {UserJson} from "../models/user";
 
   type Props = {
     groupData: Option<BehaviorGroup>,
@@ -164,6 +164,31 @@ import User from "../models/user";
       }
     }
 
+    renderManagedContact(contact?: Option<UserJson>) {
+      if (contact) {
+        return (
+          <ul>
+            <li>Contact: {contact.fullName} (@{contact.userName})</li>
+          </ul>
+        );
+      } else {
+        return null;
+      }
+    }
+
+    renderManagedInfo(group: BehaviorGroup) {
+      if (group.isManaged) {
+        return (
+          <div className="type-s mvm">
+            <div>Managed by Ellipsis</div>
+            {this.renderManagedContact(group.managedContact)}
+          </div>
+        );
+      } else {
+        return null;
+      }
+    }
+
     renderSourceInfo(group: BehaviorGroup) {
       const groupGithubUrl = group.githubUrl;
       if (groupGithubUrl) {
@@ -200,6 +225,7 @@ import User from "../models/user";
     renderMetaInfo(group: BehaviorGroup, publishedData: Option<BehaviorGroup>, sameAsPublished: boolean) {
       return (
         <div>
+          {this.renderManagedInfo(group)}
           {this.renderSourceInfo(group)}
           {this.renderHistory(group, Boolean(publishedData), sameAsPublished)}
           {this.renderUpdate(publishedData, sameAsPublished)}

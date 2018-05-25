@@ -37,6 +37,7 @@ export interface BehaviorGroupJson {
   deployment?: Option<BehaviorGroupDeploymentJson>;
   metaData?: Option<BehaviorGroupMetaDataJson>;
   isManaged: boolean;
+  managedContact?: Option<UserJson>;
 }
 
 interface BehaviorGroupInterface extends BehaviorGroupJson {
@@ -51,6 +52,7 @@ interface BehaviorGroupInterface extends BehaviorGroupJson {
   deployment?: Option<BehaviorGroupDeployment>;
   metaData?: Option<BehaviorGroupMetaData>;
   isManaged: boolean;
+  managedContact?: Option<UserJson>;
 }
 
 class BehaviorGroup implements Diffable, BehaviorGroupInterface {
@@ -74,7 +76,8 @@ class BehaviorGroup implements Diffable, BehaviorGroupInterface {
     readonly gitSHA: Option<string>,
     readonly deployment: Option<BehaviorGroupDeployment>,
     readonly metaData: Option<BehaviorGroupMetaData>,
-    readonly isManaged: boolean
+    readonly isManaged: boolean,
+    readonly managedContact: Option<UserJson>
   ) {
       Object.defineProperties(this, {
         id: { value: id, enumerable: true },
@@ -96,7 +99,8 @@ class BehaviorGroup implements Diffable, BehaviorGroupInterface {
         gitSHA: { value: gitSHA, enumerable: true },
         deployment: { value: deployment, enumerable: true },
         metaData: { value: metaData, enumerable: true },
-        isManaged: { value: isManaged, enumerable: true }
+        isManaged: { value: isManaged, enumerable: true },
+        managedContact: { value: managedContact, enumerable: true }
       });
   }
 
@@ -349,7 +353,8 @@ class BehaviorGroup implements Diffable, BehaviorGroupInterface {
         props.gitSHA,
         props.deployment,
         props.metaData,
-        props.isManaged
+        props.isManaged,
+        props.managedContact
       );
     }
 

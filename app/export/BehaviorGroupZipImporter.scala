@@ -152,7 +152,8 @@ case class BehaviorGroupZipImporter(
           Some(userData),
           deployment = None,
           metaData = None,
-          isManaged = false
+          isManaged = false,
+          managedContact = None
         ).copyForImportableForTeam(team, maybeExistingGroupData)
       )
       maybeImported <- BehaviorGroupImporter(team, user, data, dataService).run

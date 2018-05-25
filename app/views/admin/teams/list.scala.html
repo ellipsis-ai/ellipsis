@@ -21,6 +21,7 @@
       @team.createdAt.format(DateTimeFormatter.ofPattern("EEE, dd MMM yyyy HH:mm:ss 'GMT'").withLocale(java.util.Locale.ENGLISH).withZone(ZoneId.of("GMT"))),
       <a href="@controllers.routes.ApplicationController.teamHome(team.id).url"> @team.name </a>
       , @team.timeZone
+      <a href="@controllers.admin.routes.ManagedBehaviorGroupsController.list(team.id).url">Manage skills</a>
     </li>
   }
   </ol>

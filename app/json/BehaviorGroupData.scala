@@ -33,7 +33,8 @@ case class BehaviorGroupData(
                               author: Option[UserData],
                               deployment: Option[BehaviorGroupDeploymentData],
                               metaData: Option[BehaviorGroupMetaData],
-                              isManaged: Boolean
+                              isManaged: Boolean,
+                              managedContact: Option[UserData]
                             ) extends Ordered[BehaviorGroupData] with FuzzyMatchable {
 
   val fuzzyMatchPatterns: Seq[FuzzyMatchPattern] = {
@@ -163,9 +164,12 @@ object BehaviorGroupData {
         BehaviorGroupDeploymentData.fromDeployment(deployment, dataService).map(Some(_))
       }.getOrElse(Future.successful(None))
       maybeBehaviorGroup <- dataService.behaviorGroups.findWithoutAccessCheck(immutableData.groupId)
-      isManaged <- maybeBehaviorGroup.map { group =>
-        dataService.managedBehaviorGroups.maybeFor(group).map(_.isDefined)
-      }.getOrElse(Future.successful(false))
+      maybeManagedInfo <- (for {
+        team <- maybeTeam
+        group <- maybeBehaviorGroup
+      } yield {
+        dataService.managedBehaviorGroups.infoFor(group, team).map(Some(_))
+      }).getOrElse(Future.successful(None))
     } yield {
       val maybeMetaData = maybeInitialVersion.map { initialVersion =>
         BehaviorGroupMetaData(initialVersion.group.id, initialVersion.createdAt, maybeInitialUserData)
@@ -190,7 +194,8 @@ object BehaviorGroupData {
         maybeUserData,
         maybeDeploymentData,
         maybeMetaData,
-        isManaged
+        maybeManagedInfo.exists(_.isManaged),
+        maybeManagedInfo.flatMap(_.maybeContactData)
       )
     }
   }

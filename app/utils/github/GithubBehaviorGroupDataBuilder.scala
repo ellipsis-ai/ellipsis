@@ -146,7 +146,8 @@ case class GithubBehaviorGroupDataBuilder(
       None,
       None,
       None,
-      isManaged = false
+      isManaged = false,
+      managedContact = None
     )
   }
 

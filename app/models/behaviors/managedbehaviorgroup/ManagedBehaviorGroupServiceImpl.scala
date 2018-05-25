@@ -3,6 +3,7 @@ package models.behaviors.managedbehaviorgroup
 import com.google.inject.Provider
 import drivers.SlickPostgresDriver.api._
 import javax.inject.Inject
+import json.UserData
 import models.IDs
 import models.accounts.user.User
 import models.behaviors.behaviorgroup.BehaviorGroup
@@ -37,6 +38,18 @@ class ManagedBehaviorGroupServiceImpl @Inject() (
 
   def maybeFor(group: BehaviorGroup): Future[Option[ManagedBehaviorGroup]] = {
     dataService.run(maybeForAction(group))
+  }
+
+  def infoFor(group: BehaviorGroup, team: Team): Future[ManagedBehaviorGroupInfo] = {
+    for {
+      maybeManaged <- maybeFor(group)
+      maybeManagedContact <- maybeManaged.flatMap(_.maybeContactId).map { contactId =>
+        dataService.users.find(contactId)
+      }.getOrElse(Future.successful(None))
+      maybeManagedContactData <- maybeManagedContact.map { contact =>
+        dataService.users.userDataFor(contact, team).map(Some(_))
+      }.getOrElse(Future.successful(None))
+    } yield ManagedBehaviorGroupInfo(maybeManaged.isDefined, maybeManagedContactData)
   }
 
   def allFor(team: Team): Future[Seq[ManagedBehaviorGroup]] = {
