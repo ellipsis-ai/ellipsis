@@ -810,7 +810,7 @@ class BehaviorList extends React.Component<Props, State> {
                     checked={this.state.onlyShowManaged}
                     onChange={this.updateOnlyShowManaged}
                     label={(
-                      <span className="narrow-display-none">Only show managed</span>
+                      <span>Only show managed</span>
                     )}
                   />
                 </div>
