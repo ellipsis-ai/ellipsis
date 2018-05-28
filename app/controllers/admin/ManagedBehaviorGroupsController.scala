@@ -6,12 +6,15 @@ import com.mohiva.play.silhouette.api.Silhouette
 import controllers.RemoteAssets
 import javax.inject.Inject
 import json.BehaviorGroupData
+import models.accounts.user.User
+import models.behaviors.behaviorgroup.BehaviorGroup
 import models.silhouette.EllipsisEnv
 import play.api.Configuration
 import play.api.data.Form
 import play.api.data.Forms._
 import services.DataService
 import services.caching.CacheService
+import utils.FutureSequencer
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -33,14 +36,14 @@ class ManagedBehaviorGroupsController @Inject() (
         result <- maybeTeam.map { team =>
           for {
             users <- dataService.users.allFor(team)
-            usersData <- Future.sequence(users.map { ea =>
+            usersData <- FutureSequencer.sequence(users, (ea: User) =>
               dataService.users.userDataFor(ea, team)
-            })
+            )
             managedGroups <- dataService.managedBehaviorGroups.allFor(team)
             allGroups <- dataService.behaviorGroups.allFor(team)
-            groupData <- Future.sequence(allGroups.map { ea =>
+            groupData <- FutureSequencer.sequence(allGroups, (ea: BehaviorGroup) =>
               BehaviorGroupData.maybeFor(ea.id, user, None, dataService, cacheService)
-            }).map(_.flatten)
+            ).map(_.flatten)
           } yield {
             val withGroupData = managedGroups.flatMap { ea =>
               groupData.find(_.id.contains(ea.groupId)).map { groupData =>
