@@ -9,7 +9,7 @@ import SVGInstalled from '../svg/installed';
 import Sort from '../lib/sort';
 import autobind from '../lib/autobind';
 import {maybeDiffFor} from "../models/diffs";
-import User, {UserJson} from "../models/user";
+import {UserJson} from "../models/user";
 
   type Props = {
     groupData: Option<BehaviorGroup>,
@@ -22,7 +22,7 @@ import User, {UserJson} from "../models/user";
     localId: Option<string>
   }
 
-  class BehaviorGroupInfoPanel extends React.Component<Props> {
+  class BehaviorGroupInfoPanel extends React.PureComponent<Props> {
     constructor(props: Props) {
       super(props);
       autobind(this);

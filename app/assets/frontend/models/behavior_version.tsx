@@ -172,7 +172,7 @@ class BehaviorVersion extends Editable implements Diffable, BehaviorVersionInter
       return this.config.exportId || "unknown";
     }
 
-    isBehaviorVersion(): boolean {
+    isBehaviorVersion(): this is BehaviorVersion {
       return true;
     }
 
