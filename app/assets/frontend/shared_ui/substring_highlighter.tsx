@@ -1,13 +1,13 @@
 import * as React from 'react';
 
-const SubstringHighlighter = React.createClass({
-    propTypes: {
-      text: React.PropTypes.string,
-      substring: React.PropTypes.string,
-      highlightClassName: React.PropTypes.string
-    },
+interface Props {
+  text: string,
+  substring: Option<string>,
+  highlightClassName?: Option<string>
+}
 
-    render: function() {
+class SubstringHighlighter extends React.PureComponent<Props> {
+    render() {
       const text = this.props.text;
       const sub = this.props.substring;
       if (!text) {
@@ -42,6 +42,6 @@ const SubstringHighlighter = React.createClass({
         </span>
       );
     }
-});
+}
 
 export default SubstringHighlighter;

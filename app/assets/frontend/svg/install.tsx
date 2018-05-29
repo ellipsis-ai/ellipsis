@@ -1,7 +1,7 @@
 import * as React from 'react';
 
-const SVGInstall = React.createClass({
-  render: function() {
+class SVGInstall extends React.PureComponent<{}> {
+  render() {
     return (
       <svg aria-label="Install" height="100%" viewBox="0 0 40 24">
         <title>Install</title>
@@ -13,6 +13,6 @@ const SVGInstall = React.createClass({
       </svg>
     );
   }
-});
+}
 
 export default SVGInstall;

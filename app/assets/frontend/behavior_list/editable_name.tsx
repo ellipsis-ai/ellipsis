@@ -2,25 +2,33 @@ import * as React from 'react';
 import Editable from '../models/editable';
 import SubstringHighlighter from '../shared_ui/substring_highlighter';
 import ImmutableObjectUtils from '../lib/immutable_object_utils';
+import Trigger from "../models/trigger";
+import BehaviorVersion from "../models/behavior_version";
+import autobind from "../lib/autobind";
 
-const EditableName = React.createClass({
-    propTypes: {
-      version: React.PropTypes.instanceOf(Editable).isRequired,
-      disableLink: React.PropTypes.bool,
-      omitDescription: React.PropTypes.bool,
-      labelDataType: React.PropTypes.bool,
-      onClick: React.PropTypes.func,
-      isImportable: React.PropTypes.bool,
-      className: React.PropTypes.string,
-      triggerClassName: React.PropTypes.string,
-      highlightText: React.PropTypes.string
-    },
+interface Props {
+  version: Editable,
+  disableLink?: Option<boolean>,
+  omitDescription?: Option<boolean>,
+  labelDataType?: Option<boolean>,
+  onClick?: Option<(groupId: string, behaviorId: string) => void>,
+  isImportable?: Option<boolean>,
+  className?: Option<string>,
+  triggerClassName?: Option<string>,
+  highlightText?: Option<string>
+}
 
-    getTriggerClass: function() {
+class EditableName extends React.PureComponent<Props> {
+    constructor(props: Props) {
+      super(props);
+      autobind(this);
+    }
+
+    getTriggerClass(): string {
       return "box-chat " + (this.props.triggerClassName || "");
-    },
+    }
 
-    getLabelFromTrigger: function(trigger, showLink) {
+    getLabelFromTrigger(trigger: Trigger, showLink: boolean) {
       var className = showLink ? "link" : "";
       if (trigger && trigger.text) {
         return (
@@ -36,10 +44,12 @@ const EditableName = React.createClass({
         return (
           <span className={`${className} type-italic mrs`}>Unnamed action</span>
         );
+      } else {
+        return null;
       }
-    },
+    }
 
-    getNonRegexTriggerLabelsFromTriggers: function(triggers) {
+    getNonRegexTriggerLabelsFromTriggers(triggers: Array<Trigger>) {
       return triggers.filter((trigger) => !trigger.isRegex).map((trigger, index) => {
         if (trigger.text) {
           return (
@@ -51,13 +61,13 @@ const EditableName = React.createClass({
           return null;
         }
       });
-    },
+    }
 
-    getNonRegexTriggerText: function(triggers) {
+    getNonRegexTriggerText(triggers: Array<Trigger>): string {
       return triggers.filter((trigger) => !trigger.isRegex).map((ea) => ea.displayText()).filter((ea) => !!ea.trim()).join("\n");
-    },
+    }
 
-    getRegexTriggerText: function(triggers) {
+    getRegexTriggerText(triggers: Array<Trigger>): string {
       var regexTriggerCount = triggers.filter((trigger) => !!trigger.isRegex).length;
 
       if (regexTriggerCount === 1) {
@@ -67,9 +77,9 @@ const EditableName = React.createClass({
       } else {
         return "";
       }
-    },
+    }
 
-    getRegexTriggerLabelFromTriggers: function(triggers) {
+    getRegexTriggerLabelFromTriggers(triggers: Array<Trigger>) {
       var text = this.getRegexTriggerText(triggers);
 
       if (text) {
@@ -79,9 +89,9 @@ const EditableName = React.createClass({
       } else {
         return null;
       }
-    },
+    }
 
-    getBehaviorSummary: function(firstTrigger, otherTriggers) {
+    getBehaviorSummary(firstTrigger: Option<Trigger>, otherTriggers: Array<Trigger>): string {
       var name = this.props.version.name;
       var description = this.props.version.description;
       var firstTriggerText = firstTrigger ? firstTrigger.displayText() : "(None)";
@@ -93,9 +103,9 @@ const EditableName = React.createClass({
         firstTriggerText +
         (nonRegex ? "\n" + nonRegex : "") +
         (regex ? `\n(${regex})` : "");
-    },
+    }
 
-    getTriggersFromVersion: function(version, linkFirstTrigger) {
+    getTriggersFromVersion(version: BehaviorVersion, linkFirstTrigger: boolean) {
       var firstTriggerIndex = version.findFirstTriggerIndexForDisplay();
       var firstTrigger = version.triggers[firstTriggerIndex];
       var otherTriggers = ImmutableObjectUtils.arrayRemoveElementAtIndex(version.triggers, firstTriggerIndex);
@@ -106,14 +116,14 @@ const EditableName = React.createClass({
           {this.getRegexTriggerLabelFromTriggers(otherTriggers)}
         </span>
       );
-    },
+    }
 
-    getDisplayClassesFor: function(version) {
+    getDisplayClassesFor(version: Editable): string {
       const italic = !version.name ? "type-italic" : "";
       return `${italic} display-limit-width display-ellipsis`;
-    },
+    }
 
-    getDataTypeLabelFromVersion: function(version) {
+    getDataTypeLabelFromVersion(version: BehaviorVersion) {
       return (
         <div className={this.getDisplayClassesFor(version)}>
           <span className={this.props.disableLink ? "" : "link"}>{version.name || "New data type"}</span>
@@ -122,17 +132,17 @@ const EditableName = React.createClass({
           ) : null}
         </div>
       );
-    },
+    }
 
-    geLibraryLabelFromVersion: function(version) {
+    getLibraryLabelFromVersion(version: Editable) {
       return (
         <div className={this.getDisplayClassesFor(version)}>
           <span className={this.props.disableLink ? "" : "link"}>{version.name || "New library"}</span>
         </div>
       );
-    },
+    }
 
-    getActionLabelFromVersion: function(version) {
+    getActionLabelFromVersion(version: BehaviorVersion) {
       const name = version.name;
       const includeDescription = version.description && !this.props.omitDescription;
       if (name && name.trim().length > 0) {
@@ -146,7 +156,7 @@ const EditableName = React.createClass({
             </div>
             {includeDescription ? (
                 <div className="display-limit-width display-ellipsis">
-                  {this.getDescriptionFromVersion(this.props.version)}
+                  {this.getDescriptionFromVersion(version)}
                 </div>
               ) : null}
           </div>
@@ -158,9 +168,9 @@ const EditableName = React.createClass({
           </div>
         );
       }
-    },
+    }
 
-    getLabelFromVersion: function(version) {
+    getLabelFromVersion(version: Editable) {
       if (version.isBehaviorVersion()) {
         if (version.isDataType()) {
           return this.getDataTypeLabelFromVersion(version);
@@ -168,35 +178,37 @@ const EditableName = React.createClass({
           return this.getActionLabelFromVersion(version);
         }
       } else {
-        return this.geLibraryLabelFromVersion(version);
+        return this.getLibraryLabelFromVersion(version);
       }
-    },
+    }
 
-    getDescriptionFromVersion: function(version) {
+    getDescriptionFromVersion(version: BehaviorVersion) {
       if (!this.props.omitDescription && version.description) {
         return (
           <span className="type-italic type-weak pbxs">
             <SubstringHighlighter text={version.description} substring={this.props.highlightText} />
           </span>
         );
+      } else {
+        return null;
       }
-    },
+    }
 
-    onLinkClick: function(event) {
-      if (this.props.onClick) {
+    onLinkClick(event: React.MouseEvent<HTMLAnchorElement>) {
+      if (this.props.onClick && this.props.version.groupId) {
         this.props.onClick(this.props.version.groupId, this.props.version.getPersistentId());
         event.preventDefault();
       }
-    },
+    }
 
-    render: function() {
+    render() {
       if (this.props.disableLink) {
         return (
           <div className={this.props.className || ""}>
             {this.getLabelFromVersion(this.props.version)}
           </div>
         );
-      } else {
+      } else if (this.props.version.groupId) {
         return (
           <div>
             <a
@@ -207,8 +219,10 @@ const EditableName = React.createClass({
             </a>
           </div>
         );
+      } else {
+        return null;
       }
     }
-});
+}
 
 export default EditableName;

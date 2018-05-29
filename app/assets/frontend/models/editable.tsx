@@ -1,5 +1,6 @@
 import DeepEqual from '../lib/deep_equal';
 import {Timestamp} from "../lib/formatter";
+import BehaviorVersion from "./behavior_version";
 
 export interface EditableJson {
   id?: Option<string>;
@@ -43,7 +44,7 @@ abstract class Editable implements EditableInterface {
       });
   }
 
-    isBehaviorVersion(): boolean {
+    isBehaviorVersion(): this is BehaviorVersion {
       return false;
     }
 
