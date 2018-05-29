@@ -737,7 +737,7 @@ class APIController @Inject() (
           context <- ApiMethodContext.createFor(info.token)
           maybeEvent <- context.maybeMessageEventFor(info.message, info.channel, EventType.maybeFrom(info.originalEventType))
           result <- maybeEvent.map { event =>
-            val botResult = SimpleTextResult(event, None, info.message, forcePrivateResponse = false)
+            val botResult = SimpleTextResult(event, None, info.message, forcePrivateResponse = false, shouldInterrupt = false)
             botResultService.sendIn(botResult, None).map { _ =>
               Ok(Json.toJson(Seq(botResult.fullText)))
             }
