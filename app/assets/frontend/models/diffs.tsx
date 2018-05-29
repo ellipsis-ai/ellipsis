@@ -1,4 +1,4 @@
-import DiffMatchPatch from "diff-match-patch";
+import * as DiffMatchPatch from "diff-match-patch";
 import DeepEqual from '../lib/deep_equal';
 
 export interface Diff {
@@ -240,10 +240,12 @@ class OrderingDiff<T extends Diffable> implements Diff {
     ) {
       super(label, original, modified);
       const dmp = new DiffMatchPatch();
-      const parts = dmp.diff_main(original, modified).map(ea => {
+      const dmpParts = dmp.diff_main(original, modified);
+      dmp.diff_cleanupEfficiency(dmpParts);
+      const parts = dmpParts.map(ea => {
         return {
-          added: ea[0] == 1,
-          removed: ea[0] == -1,
+          added: ea[0] === DiffMatchPatch.DIFF_INSERT,
+          removed: ea[0] === DiffMatchPatch.DIFF_DELETE,
           value: ea[1]
          }
       });
