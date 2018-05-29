@@ -25,6 +25,7 @@
     "config": "1.29.4",
     "core-js": "2.4.1",
     "diff": "3.4.0",
+    "diff-match-patch": "1.0.1",
     "eslint": "4.17.0",
     "eslint-plugin-react": "7.4.0",
     "javascript-debounce": "1.0.0",

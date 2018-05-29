@@ -1,4 +1,4 @@
-import * as JsDiff from "diff";
+import DiffMatchPatch from "diff-match-patch";
 import DeepEqual from '../lib/deep_equal';
 
 export interface Diff {
@@ -239,7 +239,14 @@ class OrderingDiff<T extends Diffable> implements Diff {
       options?: TextPropertyOptions
     ) {
       super(label, original, modified);
-      const parts = JsDiff.diffWordsWithSpace(original, modified);
+      const dmp = new DiffMatchPatch();
+      const parts = dmp.diff_main(original, modified).map(ea => {
+        return {
+          added: ea[0] == 1,
+          removed: ea[0] == -1,
+          value: ea[1]
+         }
+      });
       const oldLines: LinesOfTextParts = [[]];
       const newLines: LinesOfTextParts = [[]];
       const unifiedLines: LinesOfTextParts = [[]];
