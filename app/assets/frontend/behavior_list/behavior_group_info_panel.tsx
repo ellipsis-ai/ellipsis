@@ -11,6 +11,7 @@ import autobind from '../lib/autobind';
 import {maybeDiffFor} from "../models/diffs";
 import {UserJson} from "../models/user";
 
+  // Note that performance reasons this component checks if properties have changed by hand in shouldComponentUpdate
   type Props = {
     groupData: Option<BehaviorGroup>,
     onBehaviorGroupImport: (BehaviorGroup) => void,
@@ -26,6 +27,11 @@ import {UserJson} from "../models/user";
     constructor(props: Props) {
       super(props);
       autobind(this);
+    }
+
+    shouldComponentUpdate(newProps: Props): boolean {
+      const propsToCheck = ["groupData", "isImportable", "publishedGroupData", "isImporting", "localId"];
+      return propsToCheck.some((propName) => newProps[propName] !== this.props[propName]);
     }
 
     getBehaviors(): Array<BehaviorVersion> {
