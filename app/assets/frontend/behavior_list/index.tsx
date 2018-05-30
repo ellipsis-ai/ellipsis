@@ -23,6 +23,7 @@ import SVGInstalled from '../svg/installed';
 import SVGInstalling from '../svg/installing';
 import FixedHeader from "../shared_ui/fixed_header";
 import {CSSProperties} from "react";
+import {maybeDiffFor} from "../models/diffs";
 
 const ANIMATION_DURATION = 0.25;
 
@@ -50,6 +51,10 @@ type Props = {
   notification: any
 } & PageRequiredProps;
 
+interface PublishedBehaviorGroupDiffers {
+  [behaviorGroupId: string]: boolean
+}
+
 type State = {
   selectedBehaviorGroup: Option<BehaviorGroup>,
   checkedGroupIds: Array<string>,
@@ -58,7 +63,8 @@ type State = {
   activeSearchText: string,
   visibleSection: "local" | "published",
   searchHeaderHeight: number,
-  onlyShowManaged: boolean
+  onlyShowManaged: boolean,
+  publishedBehaviorGroupDiffers: PublishedBehaviorGroupDiffers
 }
 
 class BehaviorList extends React.Component<Props, State> {
@@ -83,7 +89,8 @@ class BehaviorList extends React.Component<Props, State> {
       activeSearchText: "",
       visibleSection: this.props.localBehaviorGroups.length > 0 ? "local" : "published",
       searchHeaderHeight: 0,
-      onlyShowManaged: false
+      onlyShowManaged: false,
+      publishedBehaviorGroupDiffers: {}
     };
 
     this.delaySubmitSearch = debounce(() => this.submitSearch(), 50);
@@ -447,8 +454,7 @@ class BehaviorList extends React.Component<Props, State> {
     return this.state.selectedBehaviorGroup;
   }
 
-  selectedBehaviorGroupIsUninstalled(): boolean {
-    var selectedGroup = this.getSelectedBehaviorGroup();
+  behaviorGroupIsUninstalled(selectedGroup: Option<BehaviorGroup>): boolean {
     return Boolean(selectedGroup && selectedGroup.exportId && !this.getLocalIdFor(selectedGroup.exportId));
   }
 
@@ -460,16 +466,24 @@ class BehaviorList extends React.Component<Props, State> {
       null;
   }
 
+  publishedGroupDataDiffersFor(group: Option<BehaviorGroup>, published: Option<BehaviorGroup>): boolean {
+    if (group && group.id && published) {
+      let publishedGroupDiffers = this.state.publishedBehaviorGroupDiffers[group.id];
+      if (typeof publishedGroupDiffers === "undefined") {
+        this.state.publishedBehaviorGroupDiffers[group.id] = Boolean(maybeDiffFor(group, published, null, true));
+        publishedGroupDiffers = this.state.publishedBehaviorGroupDiffers[group.id];
+      }
+      return publishedGroupDiffers;
+    } else {
+      return false;
+    }
+  }
+
   publishedGroupWasImported(group: BehaviorGroup): boolean {
     return Boolean(
       group.exportId &&
       BehaviorGroup.groupsIncludeExportId(this.getLocalBehaviorGroups(), group.exportId)
     );
-  }
-
-  getSelectedBehaviorGroupId(): Option<string> {
-    var group = this.getSelectedBehaviorGroup();
-    return group ? group.id : null;
   }
 
   hasRecentlyInstalledBehaviorGroups(): boolean {
@@ -857,6 +871,24 @@ class BehaviorList extends React.Component<Props, State> {
     );
   }
 
+  renderSelectedInfoPanel() {
+    const group = this.getSelectedBehaviorGroup();
+    const publishedGroup = this.publishedGroupDataFor(group);
+    return (
+      <BehaviorGroupInfoPanel
+        groupData={group}
+        onToggle={this.clearActivePanel}
+        isImportable={this.behaviorGroupIsUninstalled(group)}
+        publishedGroupData={publishedGroup}
+        publishedGroupDiffers={this.publishedGroupDataDiffersFor(group, publishedGroup)}
+        isImporting={this.isImporting(group)}
+        localId={group ? group.id : null}
+        onBehaviorGroupImport={this.onBehaviorGroupImport}
+        onBehaviorGroupUpdate={this.onBehaviorGroupUpdate}
+      />
+    );
+  }
+
   render() {
     const allLocal = this.getLocalBehaviorGroups();
     const hasLocalGroups = allLocal.length > 0;
@@ -900,16 +932,7 @@ class BehaviorList extends React.Component<Props, State> {
               revealWhen={this.getActivePanelName() === 'moreInfo'}
               animationDuration={this.getAnimationDuration()}
             >
-              <BehaviorGroupInfoPanel
-                groupData={this.getSelectedBehaviorGroup()}
-                onToggle={this.clearActivePanel}
-                isImportable={this.selectedBehaviorGroupIsUninstalled()}
-                publishedGroupData={this.publishedGroupDataFor(this.getSelectedBehaviorGroup())}
-                isImporting={this.isImporting(this.getSelectedBehaviorGroup())}
-                localId={this.getSelectedBehaviorGroupId()}
-                onBehaviorGroupImport={this.onBehaviorGroupImport}
-                onBehaviorGroupUpdate={this.onBehaviorGroupUpdate}
-              />
+              {this.renderSelectedInfoPanel()}
             </Collapsible>
             <Collapsible
               revealWhen={this.hasRecentlyInstalledBehaviorGroups() && this.getActivePanelName() === 'afterInstall'}
