@@ -126,8 +126,7 @@ case class GithubBehaviorGroupDataBuilder(
     val dataTypes = behaviorVersionsDataFromEntryNamed("data_types", entries)
     val behaviors = actions ++ dataTypes
     val libraries = findEntryNamed("lib", entries).map(json => libraryVersionsDataFrom(json)).getOrElse(Seq())
-    BehaviorGroupData(
-      None,
+    BehaviorGroupData.fromExport(
       team.id,
       Some(name),
       readme,
@@ -142,12 +141,7 @@ case class GithubBehaviorGroupDataBuilder(
       Some(githubUrl),
       maybeSHA,
       maybeExportId,
-      Some(OffsetDateTime.now),
-      None,
-      None,
-      None,
-      isManaged = false,
-      managedContact = None
+      maybeAuthor = None
     )
   }
 

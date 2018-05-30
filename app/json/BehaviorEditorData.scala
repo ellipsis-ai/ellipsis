@@ -209,7 +209,8 @@ object BehaviorEditorData {
           maybeDeploymentData,
           None,
           maybeManagedInfo.exists(_.isManaged),
-          maybeManagedInfo.flatMap(_.maybeContactData)
+          maybeManagedInfo.flatMap(_.maybeContactData),
+          maybeLinkedGithubRepo.map(LinkedGithubRepoData.from)
         )
       }
       BehaviorEditorData(

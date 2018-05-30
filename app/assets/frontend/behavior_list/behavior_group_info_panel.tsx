@@ -219,6 +219,8 @@ import {UserJson} from "../models/user";
             ) : null}
           </div>
         );
+      } else if (group.isManaged) {
+        return null;
       } else {
         return (
           <div className="type-s mvm">

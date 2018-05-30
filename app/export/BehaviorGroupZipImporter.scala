@@ -132,8 +132,7 @@ case class BehaviorGroupZipImporter(
       maybeExistingGroupData <- Future.successful(alreadyInstalledData.find(_.exportId == maybeExportId))
       userData <- dataService.users.userDataFor(user, team)
       data <- Future.successful(
-        BehaviorGroupData(
-          None,
+        BehaviorGroupData.fromExport(
           team.id,
           maybeGroupName,
           maybeGroupDescription,
@@ -145,15 +144,10 @@ case class BehaviorGroupZipImporter(
           requiredAWSConfigData,
           requiredOAuth2ApiConfigData,
           requiredSimpleTokenApiData,
-          githubUrl = None,
-          gitSHA = None,
-          exportId = maybeExportId,
-          Some(OffsetDateTime.now),
-          Some(userData),
-          deployment = None,
-          metaData = None,
-          isManaged = false,
-          managedContact = None
+          maybeGithubUrl = None,
+          maybeGitSHA = None,
+          maybeExportId,
+          Some(userData)
         ).copyForImportableForTeam(team, maybeExistingGroupData)
       )
       maybeImported <- BehaviorGroupImporter(team, user, data, dataService).run
