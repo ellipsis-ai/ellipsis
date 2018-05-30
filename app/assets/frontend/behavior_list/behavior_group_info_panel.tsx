@@ -20,7 +20,8 @@ import {UserJson} from "../models/user";
     isImportable: boolean,
     publishedGroupData: Option<BehaviorGroup>,
     isImporting: boolean,
-    localId: Option<string>
+    localId: Option<string>,
+    "data-is-revealed"?: Option<boolean>
   }
 
   class BehaviorGroupInfoPanel extends React.PureComponent<Props> {
@@ -30,7 +31,7 @@ import {UserJson} from "../models/user";
     }
 
     shouldComponentUpdate(newProps: Props): boolean {
-      const propsToCheck = ["groupData", "isImportable", "publishedGroupData", "isImporting", "localId"];
+      const propsToCheck = ["groupData", "isImportable", "publishedGroupData", "isImporting", "localId", "data-is-revealed"];
       return propsToCheck.some((propName) => newProps[propName] !== this.props[propName]);
     }
 
