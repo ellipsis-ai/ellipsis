@@ -755,12 +755,12 @@ describe('diffs', () => {
                 "original": "A template",
                 "unifiedLines": [[
                   {
-                    "kind": "removed",
+                    "kind": "unchanged",
                     "value": "A"
                   },
                   {
                     "kind": "added",
-                    "value": "Another"
+                    "value": "nother"
                   },
                   {
                     "kind": "unchanged",
@@ -835,12 +835,16 @@ describe('diffs', () => {
                     "original": "what drives the car?",
                     "unifiedLines": [[
                       {
+                        "kind": "unchanged",
+                        "value": "wh"
+                      },
+                      {
                         "kind": "removed",
-                        "value": "what"
+                        "value": "at"
                       },
                       {
                         "kind": "added",
-                        "value": "who"
+                        "value": "o"
                       },
                       {
                         "kind": "unchanged",
@@ -971,15 +975,11 @@ describe('diffs', () => {
                 "unifiedLines": [[
                   {
                     "kind": "unchanged",
-                    "value": "return \"foo"
-                  },
-                  {
-                    "kind": "removed",
-                    "value": "\""
+                    "value": "return \"foo\""
                   },
                   {
                     "kind": "added",
-                    "value": "\";"
+                    "value": ";"
                   }
                 ]]
               }
@@ -1028,7 +1028,7 @@ describe('diffs', () => {
       expect(diffText).toContain("Modified action “First name”");
       expect(diffText).toContain("Name: [-First][+Second] name");
       expect(diffText).toContain("Description: [+A description]");
-      expect(diffText).toContain("Response template: [-A][+Another] template");
+      expect(diffText).toContain("Response template: A[+nother] template");
       expect(diffText).toContain("Code: use strict;[+ // so strict]");
       expect(diffText).toContain("Removed trigger “C”");
       expect(diffText).toContain("Added trigger “.+”");
@@ -1036,7 +1036,7 @@ describe('diffs', () => {
       expect(diffText).toContain("Modified library “some-lib”");
       expect(diffText).toContain("Name: some-lib[+-revised]");
       expect(diffText).toContain("Description: A library[+ (revised)]");
-      expect(diffText).toContain("Code: return \"foo[-\"][+\";]");
+      expect(diffText).toContain("Code: return \"foo\"[+;]");
 
     });
 
@@ -1108,22 +1108,21 @@ dog`;
 
       const result = textDiff(left, right) as MultiLineTextPropertyDiff;
       expect(result.oldLines).toEqual([
-        [new TextPart("cat"), new TextPart("\n")],
+        [new TextPart("cat\n")],
         [new TextPart("\n", false, true)],
         [new TextPart("\n", false, true)],
         [new TextPart("dog")]
       ]);
       expect(result.newLines).toEqual([
-        [new TextPart("cat"), new TextPart("\n")],
+        [new TextPart("cat\n")],
         [],
         [],
         [new TextPart("dog")]
       ]);
       expect(result.unifiedLines).toEqual([
-        [new TextPart("cat"), new TextPart("\n", false, true)],
+        [new TextPart("cat\n")],
         [new TextPart("\n", false, true)],
         [new TextPart("\n", false, true)],
-        [new TextPart("\n", true)],
         [new TextPart("dog")]
       ]);
     });
@@ -1138,22 +1137,21 @@ dog
 `;
       const result = textDiff(left, right) as MultiLineTextPropertyDiff;
       expect(result.oldLines).toEqual([
-        [new TextPart("cat"), new TextPart("\n")],
+        [new TextPart("cat\n")],
         [],
         [{ kind: "unchanged", value: "dog"}]
       ]);
       expect(result.newLines).toEqual([
-        [new TextPart("cat"), new TextPart("\n")],
+        [new TextPart("cat\n")],
         [new TextPart("\n", true)],
         [{ kind: "unchanged", value: "dog"}, new TextPart("\n", true)],
         [new TextPart("\n", true)],
         []
       ]);
       expect(result.unifiedLines).toEqual([
-        [new TextPart("cat"), new TextPart("\n", false, true)],
+        [new TextPart("cat\n")],
         [new TextPart("\n", true)],
-        [new TextPart("\n", true)],
-        [new TextPart("dog"), new TextPart("\n", true)],
+        [{ kind: "unchanged", value: "dog"}, new TextPart("\n", true)],
         [new TextPart("\n", true)],
         []
       ]);
@@ -1171,23 +1169,22 @@ lived twelve little boys
 with two straight sticks`;
       const result = textDiff(left, right) as MultiLineTextPropertyDiff;
       expect(result.oldLines).toEqual([
-        [new TextPart("in "), new TextPart("an", false, true),
-          new TextPart(" "), new TextPart("old", false, true),
+        [new TextPart("in a"), new TextPart("n old", false, true),
           new TextPart(" house in "), new TextPart("paris\n", false, true)],
-        [new TextPart("all covered with "), new TextPart("vines\n", false, true)],
+        [new TextPart("all covered with "), new TextPart("vines", false, true), new TextPart("\n")],
         [new TextPart("lived twelve little "), new TextPart("girls\n", false, true)],
         [],
-        [new TextPart("in", false, true), new TextPart(" two straight "), new TextPart("lines", false, true)]
+        [new TextPart("in", false, true), new TextPart(" two straight "), new TextPart("line", false, true), new TextPart("s")]
       ]);
       expect(result.newLines).toEqual([
-        [new TextPart("in "), new TextPart("a", true),
-          { kind: "unchanged", value: " "}, { kind: "added", value: "new"},
+        [new TextPart("in a"),
+          { kind: "added", value: " new"},
           new TextPart(" house in "), { kind: "added", value: "nice, "},
           { kind: "unchanged", value: "all covered with "}, new TextPart("bricks\n", true)],
-        [new TextPart("\n", true)],
+        [new TextPart("\n")],
         [{ kind: "unchanged", value: "lived twelve little "}, { kind: "added", value: "boys\n"}],
         [new TextPart("\n", true)],
-        [new TextPart("with", true), { kind: "unchanged", value: " two straight "}, new TextPart("sticks", true)]
+        [new TextPart("with", true), { kind: "unchanged", value: " two straight "}, new TextPart("stick", true), new TextPart("s")]
       ]);
     });
   });
