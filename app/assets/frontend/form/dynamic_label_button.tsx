@@ -1,31 +1,53 @@
 import * as React from 'react';
+import autobind from "../lib/autobind";
 
-class DynamicLabelButton extends React.Component {
-    constructor(props) {
+export interface DynamicLabelButtonLabel {
+  text: string,
+  mobileText?: Option<string>,
+  displayWhen: boolean
+}
+
+interface Props {
+  type?: Option<string>,
+  className?: Option<string>,
+  disabledWhen?: Option<boolean>,
+  onClick: () => void,
+  labels: Array<DynamicLabelButtonLabel>
+}
+
+interface State {
+  minWidth: Option<number>
+}
+
+class DynamicLabelButton extends React.PureComponent<Props, State> {
+    buttonLabels: Array<Option<HTMLDivElement>>;
+    button: Option<HTMLButtonElement>;
+
+    constructor(props: Props) {
       super(props);
       this.buttonLabels = [];
       this.state = {
         minWidth: null
       };
-      this.onClick = this.onClick.bind(this);
+      autobind(this);
     }
 
-    adjustMinWidthIfNecessary() {
+    adjustMinWidthIfNecessary(): void {
       var newMax = this.getMaxLabelWidth();
-      if (newMax !== this.state.minWidth && newMax > 0) {
+      if (newMax !== this.state.minWidth && typeof newMax === "number" && newMax > 0) {
         this.setState({ minWidth: newMax });
       }
     }
 
-    componentDidMount() {
+    componentDidMount(): void {
       this.adjustMinWidthIfNecessary();
     }
 
-    componentDidUpdate() {
+    componentDidUpdate(): void {
       this.adjustMinWidthIfNecessary();
     }
 
-    getMaxLabelWidth() {
+    getMaxLabelWidth(): Option<number> {
       var maxWidth = 0;
       this.buttonLabels.forEach((label) => {
         if (label && label.scrollWidth) {
@@ -35,10 +57,10 @@ class DynamicLabelButton extends React.Component {
       return maxWidth > 0 ? maxWidth : null;
     }
 
-    getPlaceholderStyle() {
+    getPlaceholderStyle(): React.CSSProperties | undefined {
       return this.state.minWidth ? ({
         minWidth: `${this.state.minWidth}px`
-      }) : null;
+      }) : undefined;
     }
 
     getLabels() {
@@ -88,17 +110,5 @@ class DynamicLabelButton extends React.Component {
       );
     }
 }
-
-DynamicLabelButton.propTypes = {
-  type: React.PropTypes.string,
-  className: React.PropTypes.string,
-  disabledWhen: React.PropTypes.bool,
-  onClick: React.PropTypes.func.isRequired,
-  labels: React.PropTypes.arrayOf(React.PropTypes.shape({
-    text: React.PropTypes.string.isRequired,
-    mobileText: React.PropTypes.string,
-    displayWhen: React.PropTypes.bool.isRequired
-  })).isRequired
-};
 
 export default DynamicLabelButton;

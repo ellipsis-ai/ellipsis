@@ -9,8 +9,9 @@ import SVGInstalled from '../svg/installed';
 import Sort from '../lib/sort';
 import autobind from '../lib/autobind';
 import {maybeDiffFor} from "../models/diffs";
-import User, {UserJson} from "../models/user";
+import {UserJson} from "../models/user";
 
+  // Note that performance reasons this component checks if properties have changed by hand in shouldComponentUpdate
   type Props = {
     groupData: Option<BehaviorGroup>,
     onBehaviorGroupImport: (BehaviorGroup) => void,
@@ -22,10 +23,15 @@ import User, {UserJson} from "../models/user";
     localId: Option<string>
   }
 
-  class BehaviorGroupInfoPanel extends React.Component<Props> {
+  class BehaviorGroupInfoPanel extends React.PureComponent<Props> {
     constructor(props: Props) {
       super(props);
       autobind(this);
+    }
+
+    shouldComponentUpdate(newProps: Props): boolean {
+      const propsToCheck = ["groupData", "isImportable", "publishedGroupData", "isImporting", "localId"];
+      return propsToCheck.some((propName) => newProps[propName] !== this.props[propName]);
     }
 
     getBehaviors(): Array<BehaviorVersion> {
