@@ -28,7 +28,8 @@ bounds, max-height/width and overflow get cleared after reveal, and reset before
 
   getInitialState: function() {
     return {
-      isAnimating: false
+      isAnimating: false,
+      isRevealed: this.props.revealWhen
     };
   },
 
@@ -146,7 +147,11 @@ bounds, max-height/width and overflow get cleared after reveal, and reset before
     } else {
       this.setNoWidth();
     }
-    this.afterAnimation(this.finishCollapse);
+    this.setState({
+      isRevealed: false
+    }, () => {
+      this.afterAnimation(this.finishCollapse);
+    });
   },
   finishCollapse: function() {
     this.setHidden();
@@ -166,7 +171,11 @@ bounds, max-height/width and overflow get cleared after reveal, and reset before
       } else {
         this.setCurrentWidth();
       }
-      this.afterAnimation(this.afterReveal);
+      this.setState({
+        isRevealed: true
+      }, () => {
+        this.afterAnimation(this.afterReveal);
+      });
     });
   },
   afterReveal: function() {
@@ -224,7 +233,10 @@ bounds, max-height/width and overflow get cleared after reveal, and reset before
         {React.Children.map(this.props.children, (ea) => {
           // Force children to re-render when animation starts or stops by inserting an extra data attribute
           if (ea) {
-            return React.cloneElement(ea, { "data-is-animating": this.state.isAnimating });
+            return React.cloneElement(ea, {
+              "data-is-animating": this.state.isAnimating,
+              "data-is-revealed": this.state.isRevealed
+            });
           } else {
             return ea;
           }
