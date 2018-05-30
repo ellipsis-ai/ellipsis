@@ -11,9 +11,8 @@ import org.scalatestplus.play.PlaySpec
 import play.api.libs.json.JsObject
 import play.api.test.Helpers._
 import slack.api.SlackApiClient
-import slack.models.Channel
 import support.TestContext
-import utils.SlackChannel
+import utils.SlackConversation
 
 import scala.concurrent.Future
 
@@ -59,27 +58,10 @@ class SlackEventSpec extends PlaySpec with MockitoSugar {
 
   val date = OffsetDateTime.now.minusDays(365).toInstant.toEpochMilli
 
-  val channel = Channel(
+  val slackChannelInfo = SlackConversation.defaultFor(
     id = "C1000000",
-    name = "The Channel",
-    created = date,
-    creator = slackUserId,
-    is_archived = None,
-    is_member = None,
-    is_general = None,
-    is_channel = Some(true),
-    is_group = None,
-    is_mpim = None,
-    num_members = None,
-    members = Some(Seq(slackUserId, otherSlackUserId)),
-    topic = None,
-    purpose = None,
-    last_read = None,
-    latest = None,
-    unread_count = None,
-    unread_count_display = None
+    name = "The Channel"
   )
-  val slackChannelInfo = SlackChannel(channel)
 
   val ellipsisTeamId = IDs.next
   val slackBotProfile = SlackBotProfile("U55555555", ellipsisTeamId, slackTeamId, IDs.next, OffsetDateTime.now)
@@ -92,14 +74,6 @@ class SlackEventSpec extends PlaySpec with MockitoSugar {
 
         when(services.slackEventService.maybeSlackUserDataFor(org.mockito.Matchers.eq[String](slackUserData.accountId), org.mockito.Matchers.eq[String](slackTeamId), any[SlackApiClient], any())).thenReturn(
           Future.successful(Some(slackUserData))
-        )
-
-        when(mockSlackClient.listIms()(actorSystem)).thenReturn(
-          Future.successful(Seq())
-        )
-
-        when(mockSlackClient.getChannelInfo(slackChannelInfo.id)(actorSystem)).thenReturn(
-          Future.successful(channel)
         )
 
         val event = TestSlackEvent(slackUserData.accountId, slackChannelInfo.id, mockSlackClient, slackBotProfile)

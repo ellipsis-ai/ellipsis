@@ -182,7 +182,7 @@ trait Scheduled {
                                 services: DefaultServices
                               )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Unit] = {
     for {
-      memberIds <- SlackChannels(client, services.cacheService, profile.slackTeamId).getMembersFor(channel)
+      memberIds <- SlackChannels(profile, services.cacheService, services.ws).getMembersFor(channel)
       _ <- FutureSequencer.sequence(memberIds, sendForFn(eventHandler, client, profile, services))
     } yield {}
   }

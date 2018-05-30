@@ -1,6 +1,6 @@
 package json
 
-import utils.ChannelLike
+import utils.SlackConversation
 
 case class ScheduleChannelData(
                                 id: String,
@@ -12,7 +12,7 @@ case class ScheduleChannelData(
                               )
 
 object ScheduleChannelData {
-  def fromChannelLikeList(list: Seq[ChannelLike]): Seq[ScheduleChannelData] = {
-    list.map((ea) => ScheduleChannelData(ea.id, ea.name, "Slack", ea.members, ea.isPublic, ea.isArchived))
+  def fromSlackConversationList(list: Seq[SlackConversation]): Seq[ScheduleChannelData] = {
+    list.map((ea) => ScheduleChannelData(ea.id, ea.name, "Slack", ea.membersList, ea.isPublic, ea.isArchived))
   }
 }

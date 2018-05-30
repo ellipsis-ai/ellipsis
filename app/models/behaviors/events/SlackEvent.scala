@@ -88,7 +88,7 @@ trait SlackEvent {
   }
 
   def detailsFor(services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[JsObject] = {
-    val slackChannels = SlackChannels(client, services.cacheService, profile.slackTeamId)
+    val slackChannels = SlackChannels(profile, services.cacheService, services.ws)
     for {
       maybeUser <- services.slackEventService.maybeSlackUserDataFor(user, profile.slackTeamId, SlackApiClient(profile.token), (e) => {
         Logger.error(
@@ -102,7 +102,7 @@ trait SlackEvent {
       maybeChannelInfo <- slackChannels.getInfoFor(channel)
     } yield {
       val channelDetails = JsObject(Seq(
-        "channelMembers" -> Json.toJson(maybeChannelInfo.map(_.members).getOrElse(Seq())),
+        "channelMembers" -> Json.toJson(maybeChannelInfo.map(_.membersList).getOrElse(Seq())),
         "channelName" -> Json.toJson(maybeChannelInfo.map(_.name))
       ))
       maybeUser.map { user =>

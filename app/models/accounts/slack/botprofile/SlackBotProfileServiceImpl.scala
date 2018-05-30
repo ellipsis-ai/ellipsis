@@ -10,6 +10,7 @@ import models.behaviors.events.{EventType, SlackMessage, SlackMessageEvent}
 import models.behaviors.{BotResult, BotResultService}
 import models.team.Team
 import play.api.Logger
+import play.api.libs.ws.WSClient
 import services.caching.CacheService
 import services.{DataService, SlackEventService}
 import slack.api.SlackApiClient
@@ -35,6 +36,7 @@ class SlackBotProfileServiceImpl @Inject() (
                                              botResultServiceProvider: Provider[BotResultService],
                                              registrationServiceProvider: Provider[RegistrationService],
                                              cacheServiceProvider: Provider[CacheService],
+                                             wsProvider: Provider[WSClient],
                                              implicit val actorSystem: ActorSystem,
                                              implicit val ec: ExecutionContext
                                         ) extends SlackBotProfileService {
@@ -44,6 +46,7 @@ class SlackBotProfileServiceImpl @Inject() (
   def botResultService = botResultServiceProvider.get
   def registrationService = registrationServiceProvider.get
   def cacheService = cacheServiceProvider.get
+  def ws: WSClient = wsProvider.get
 
   val all = TableQuery[SlackBotProfileTable]
 
@@ -128,8 +131,8 @@ class SlackBotProfileServiceImpl @Inject() (
     }
   }
 
-  def channelsFor(botProfile: SlackBotProfile, cacheService: CacheService): SlackChannels = {
-    SlackChannels(SlackApiClient(botProfile.token), cacheService, botProfile.slackTeamId)
+  def channelsFor(botProfile: SlackBotProfile): SlackChannels = {
+    SlackChannels(botProfile, cacheService, ws)
   }
 
   def maybeNameFor(slackTeamId: String): Future[Option[String]] = {

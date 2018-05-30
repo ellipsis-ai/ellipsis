@@ -8,7 +8,7 @@ import models.behaviors.events.{SlackFile, SlackMessage}
 import models.behaviors.testing.{InvocationTestReportOutput, ResultOutput}
 import play.api.libs.json._
 import services.caching.SlackMessageEventData
-import utils.{CityInfo, UploadFileSpec}
+import utils._
 
 object Formatting {
 
@@ -195,5 +195,9 @@ object Formatting {
   lazy implicit val actionChoiceFormat = Json.format[ActionChoice]
 
   implicit val supportRequestConfigFormat = Json.format[SupportRequestConfig]
+
+  lazy implicit val slackConversationTopicFormat: Format[SlackConversationTopic] = Json.format[SlackConversationTopic]
+  lazy implicit val slackConversationPurposeFormat: Format[SlackConversationPurpose] = Json.format[SlackConversationPurpose]
+  lazy implicit val slackConversationFormat: Format[SlackConversation] = Json.format[SlackConversation]
 
 }

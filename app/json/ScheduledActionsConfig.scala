@@ -48,7 +48,7 @@ object ScheduledActionsConfig {
           dataService.linkedAccounts.maybeSlackUserIdFor(user)
         }
         maybeChannelList <- maybeBotProfile.map { botProfile =>
-          val channels = dataService.slackBotProfiles.channelsFor(botProfile, cacheService)
+          val channels = dataService.slackBotProfiles.channelsFor(botProfile)
           if (forceAdmin) {
             channels.getList.map(Some(_))
           } else {
@@ -68,7 +68,7 @@ object ScheduledActionsConfig {
           csrfToken = maybeCsrfToken,
           teamId = team.id,
           scheduledActions = scheduledActions,
-          channelList = maybeChannelList.map(ScheduleChannelData.fromChannelLikeList),
+          channelList = maybeChannelList.map(ScheduleChannelData.fromSlackConversationList),
           behaviorGroups = groupData,
           teamTimeZone = team.maybeTimeZone.map(_.toString),
           teamTimeZoneName = team.maybeTimeZone.map(_.getDisplayName(TextStyle.FULL, Locale.ENGLISH)),

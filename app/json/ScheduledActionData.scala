@@ -7,7 +7,7 @@ import models.behaviors.scheduling.scheduledbehavior.ScheduledBehavior
 import models.behaviors.scheduling.scheduledmessage.ScheduledMessage
 import models.team.Team
 import services.DataService
-import utils.ChannelLike
+import utils.SlackConversation
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -27,9 +27,9 @@ case class ScheduledActionData(
                                 channel: String,
                                 userId: Option[String]
                               ) {
-  def visibleToSlackUser(slackUserId: String, channelList: Seq[ChannelLike]): Boolean = {
-    channelList.exists { someChannel =>
-      someChannel.id == channel && someChannel.visibleToUser(slackUserId)
+  def visibleToSlackUser(slackUserId: String, conversationList: Seq[SlackConversation]): Boolean = {
+    conversationList.exists { convo =>
+      convo.id == channel && convo.visibleToUser(slackUserId)
     }
   }
 }
@@ -85,7 +85,7 @@ object ScheduledActionData {
                               team: Team,
                               teamAccess: UserTeamAccess,
                               dataService: DataService,
-                              maybeChannelList: Option[Seq[ChannelLike]],
+                              maybeConversationList: Option[Seq[SlackConversation]],
                               maybeSlackUserId: Option[String],
                               forceAdmin: Boolean
                             )(implicit ec: ExecutionContext): Future[Seq[ScheduledActionData]] = {
@@ -96,10 +96,10 @@ object ScheduledActionData {
         allScheduledActions
       } else {
         (for {
-          channelList <- maybeChannelList
+          conversationList <- maybeConversationList
           slackUserId <- maybeSlackUserId
         } yield {
-          allScheduledActions.filter(_.visibleToSlackUser(slackUserId, channelList))
+          allScheduledActions.filter(_.visibleToSlackUser(slackUserId, conversationList))
         }).getOrElse {
           Seq()
         }

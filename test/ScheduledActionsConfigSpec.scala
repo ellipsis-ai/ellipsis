@@ -15,9 +15,8 @@ import org.scalatestplus.play.PlaySpec
 import play.api.test.Helpers._
 import services.DataService
 import services.caching.CacheService
-import slack.models.{Group, GroupValue}
 import support.TestContext
-import utils.{ChannelLike, SlackChannels, SlackGroup}
+import utils._
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -36,29 +35,13 @@ class ScheduledActionsConfigSpec extends PlaySpec with MockitoSugar {
   )
   val maybeCsrfToken = Some("nothing to see here")
 
-  def makeSlackGroup(id: String, name: String, includeUser: Boolean): ChannelLike = {
+  def makeSlackGroup(id: String, name: String, includeUser: Boolean): SlackConversation = {
     val members: Seq[String] = Seq(slackBotUserId, otherSlackUserId) ++ (if (includeUser) {
       Seq(slackUserId)
     } else {
       Seq()
     })
-    SlackGroup(
-      Group(
-        id,
-        name,
-        is_group = true,
-        created = aTimestamp,
-        creator = otherSlackUserId,
-        is_archived = false,
-        members = members,
-        topic = GroupValue("some group topic", otherSlackUserId, aTimestamp),
-        purpose = GroupValue("some group purpose", otherSlackUserId, aTimestamp),
-        last_read = None,
-        latest = None,
-        unread_count = None,
-        unread_count_display = None
-      )
-    )
+    SlackConversation.defaultFor(id, name).copy(is_group = Some(true), members = Some(members.toArray))
   }
 
   def makeScheduleFor(channelId: String, team: Team): ScheduledMessage = {
@@ -83,7 +66,7 @@ class ScheduledActionsConfigSpec extends PlaySpec with MockitoSugar {
     when(dataService.linkedAccounts.maybeSlackUserIdFor(user)(ec)).thenReturn(Future.successful(Some(slackUserId)))
 
     val slackChannels = mock[SlackChannels]
-    when(dataService.slackBotProfiles.channelsFor(any[SlackBotProfile], any[CacheService])).thenReturn(slackChannels)
+    when(dataService.slackBotProfiles.channelsFor(any[SlackBotProfile])).thenReturn(slackChannels)
     when(slackChannels.getListForUser(any[Option[String]])(any[ActorSystem], any[ExecutionContext]))
       .thenReturn {
         if (blowup) {
