@@ -293,22 +293,6 @@ case class SimpleTextResult(
 
 }
 
-case class ActionAcknowledgmentResult(event: Event, maybeConversation: Option[Conversation], simpleText: String) extends BotResult {
-
-  val developerContext: DeveloperContext = DeveloperContext.default
-
-  val resultType = ResultType.ActionAcknowledgment
-
-  val forcePrivateResponse: Boolean = false
-
-  val maybeBehaviorVersion: Option[BehaviorVersion] = None
-
-  def text: String = simpleText
-
-  override val shouldInterrupt: Boolean = false
-
-}
-
 case class TextWithAttachmentsResult(
                                       event: Event,
                                       maybeConversation: Option[Conversation],

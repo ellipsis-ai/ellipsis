@@ -1,17 +1,17 @@
 package controllers
 
-import javax.inject.Inject
 import com.google.inject.Provider
 import com.mohiva.play.silhouette.api.{LoginInfo, Silhouette}
+import javax.inject.Inject
 import json.Formatting._
 import models.accounts.linkedaccount.LinkedAccount
 import models.accounts.slack.botprofile.SlackBotProfile
-import models.behaviors.{ActionAcknowledgmentResult, ActionChoice}
 import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
 import models.behaviors.builtins.DisplayHelpBehavior
 import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.events.SlackMessageActionConstants._
 import models.behaviors.events._
+import models.behaviors.{ActionChoice, SimpleTextResult}
 import models.help.HelpGroupSearchValue
 import models.silhouette.EllipsisEnv
 import play.api.Logger
@@ -817,10 +817,12 @@ class SlackController @Inject() (
               maybeConversation <- slackMessageEvent.maybeOngoingConversation(dataService)
             } yield {
               val trimmed = responseText.trim.replaceAll("(^\\u00A0|\\u00A0$)", "")
-              Some(ActionAcknowledgmentResult(
+              Some(SimpleTextResult(
                 slackMessageEvent,
                 maybeConversation,
-                s"_${trimmed}_"
+                s"_${trimmed}_",
+                forcePrivateResponse = false,
+                shouldInterrupt = false
               ))
             },
             botProfile.slackTeamId,
