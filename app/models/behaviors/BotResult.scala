@@ -275,7 +275,13 @@ case class SuccessResult(
   }
 }
 
-case class SimpleTextResult(event: Event, maybeConversation: Option[Conversation], simpleText: String, forcePrivateResponse: Boolean) extends BotResult {
+case class SimpleTextResult(
+                             event: Event,
+                             maybeConversation: Option[Conversation],
+                             simpleText: String,
+                             forcePrivateResponse: Boolean,
+                             override val shouldInterrupt: Boolean = true
+                           ) extends BotResult {
 
   val developerContext: DeveloperContext = DeveloperContext.default
 
@@ -284,22 +290,6 @@ case class SimpleTextResult(event: Event, maybeConversation: Option[Conversation
   val maybeBehaviorVersion: Option[BehaviorVersion] = None
 
   def text: String = simpleText
-
-}
-
-case class ActionAcknowledgmentResult(event: Event, maybeConversation: Option[Conversation], simpleText: String) extends BotResult {
-
-  val developerContext: DeveloperContext = DeveloperContext.default
-
-  val resultType = ResultType.ActionAcknowledgment
-
-  val forcePrivateResponse: Boolean = false
-
-  val maybeBehaviorVersion: Option[BehaviorVersion] = None
-
-  def text: String = simpleText
-
-  override val shouldInterrupt: Boolean = false
 
 }
 
