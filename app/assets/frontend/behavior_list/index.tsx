@@ -23,6 +23,7 @@ import SVGInstalled from '../svg/installed';
 import SVGInstalling from '../svg/installing';
 import FixedHeader from "../shared_ui/fixed_header";
 import {CSSProperties} from "react";
+import {maybeDiffFor} from "../models/diffs";
 
 const ANIMATION_DURATION = 0.25;
 
@@ -50,6 +51,10 @@ type Props = {
   notification: any
 } & PageRequiredProps;
 
+interface PublishedBehaviorGroupDiffers {
+  [behaviorGroupId: string]: boolean
+}
+
 type State = {
   selectedBehaviorGroup: Option<BehaviorGroup>,
   checkedGroupIds: Array<string>,
@@ -58,7 +63,8 @@ type State = {
   activeSearchText: string,
   visibleSection: "local" | "published",
   searchHeaderHeight: number,
-  onlyShowManaged: boolean
+  onlyShowManaged: boolean,
+  publishedBehaviorGroupDiffers: PublishedBehaviorGroupDiffers
 }
 
 class BehaviorList extends React.Component<Props, State> {
@@ -83,7 +89,8 @@ class BehaviorList extends React.Component<Props, State> {
       activeSearchText: "",
       visibleSection: this.props.localBehaviorGroups.length > 0 ? "local" : "published",
       searchHeaderHeight: 0,
-      onlyShowManaged: false
+      onlyShowManaged: false,
+      publishedBehaviorGroupDiffers: {}
     };
 
     this.delaySubmitSearch = debounce(() => this.submitSearch(), 50);
@@ -458,6 +465,20 @@ class BehaviorList extends React.Component<Props, State> {
       group.exportId &&
       this.props.publishedBehaviorGroups.find((ea) => ea.exportId === group.exportId) ||
       null;
+  }
+
+  publishedGroupDataDiffersFor(group: Option<BehaviorGroup>): boolean {
+    const published = this.publishedGroupDataFor(group);
+    if (group && group.id && published) {
+      let publishedGroupDiffers = this.state.publishedBehaviorGroupDiffers[group.id];
+      if (typeof publishedGroupDiffers === "undefined") {
+        this.state.publishedBehaviorGroupDiffers[group.id] = Boolean(maybeDiffFor(group, published, null, true));
+        publishedGroupDiffers = this.state.publishedBehaviorGroupDiffers[group.id];
+      }
+      return publishedGroupDiffers;
+    } else {
+      return false;
+    }
   }
 
   publishedGroupWasImported(group: BehaviorGroup): boolean {
@@ -905,6 +926,7 @@ class BehaviorList extends React.Component<Props, State> {
                 onToggle={this.clearActivePanel}
                 isImportable={this.selectedBehaviorGroupIsUninstalled()}
                 publishedGroupData={this.publishedGroupDataFor(this.getSelectedBehaviorGroup())}
+                publishedGroupDiffers={this.publishedGroupDataDiffersFor(this.getSelectedBehaviorGroup())}
                 isImporting={this.isImporting(this.getSelectedBehaviorGroup())}
                 localId={this.getSelectedBehaviorGroupId()}
                 onBehaviorGroupImport={this.onBehaviorGroupImport}

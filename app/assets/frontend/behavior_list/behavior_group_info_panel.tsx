@@ -8,7 +8,6 @@ import SVGInstall from '../svg/install';
 import SVGInstalled from '../svg/installed';
 import Sort from '../lib/sort';
 import autobind from '../lib/autobind';
-import {maybeDiffFor} from "../models/diffs";
 import {UserJson} from "../models/user";
 
   // Note that performance reasons this component checks if properties have changed by hand in shouldComponentUpdate
@@ -19,6 +18,7 @@ import {UserJson} from "../models/user";
     onToggle: () => void,
     isImportable: boolean,
     publishedGroupData: Option<BehaviorGroup>,
+    publishedGroupDiffers: boolean,
     isImporting: boolean,
     localId: Option<string>,
     "data-is-revealed"?: Option<boolean>
@@ -69,8 +69,7 @@ import {UserJson} from "../models/user";
       }
       const icon = group.icon;
       const alsoPublished = this.props.publishedGroupData;
-      const maybeDiff = alsoPublished && maybeDiffFor(group, alsoPublished, null, true);
-      const sameAsPublished = Boolean(alsoPublished && !maybeDiff);
+      const sameAsPublished = !this.props.publishedGroupDiffers;
       return (
         <div className="box-action phn">
           <div className="container container-c">
