@@ -2,7 +2,7 @@ import * as React from 'react';
 import LinkedGithubRepo from '../../models/linked_github_repo';
 
 type Props = {
-  linked?: LinkedGithubRepo
+  linked: Option<LinkedGithubRepo>
 }
 
 class GithubOwnerRepoReadonly extends React.PureComponent<Props> {

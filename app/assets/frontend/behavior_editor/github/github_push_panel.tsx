@@ -17,7 +17,7 @@ export interface LastSavedInfo {
 
 type Props = {
   group: BehaviorGroup,
-  linked?: LinkedGithubRepo,
+  linked: Option<LinkedGithubRepo>,
   onPushBranch: (info: LastSavedInfo) => void,
   onDoneClick: () => void,
   csrfToken: string

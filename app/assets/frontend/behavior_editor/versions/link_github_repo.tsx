@@ -7,7 +7,7 @@ import autobind from '../../lib/autobind';
 
 type Props = {
   group: BehaviorGroup,
-  linked?: LinkedGithubRepo,
+  linked: Option<LinkedGithubRepo>,
   onDoneClick: () => void,
   onLinkGithubRepo: (owner: string, repo: string, branch: Option<string>, callback: () => void) => void,
   csrfToken: string
