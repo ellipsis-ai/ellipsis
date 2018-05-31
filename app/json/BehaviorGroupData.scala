@@ -34,7 +34,8 @@ case class BehaviorGroupData(
                               deployment: Option[BehaviorGroupDeploymentData],
                               metaData: Option[BehaviorGroupMetaData],
                               isManaged: Boolean,
-                              managedContact: Option[UserData]
+                              managedContact: Option[UserData],
+                              linkedGithubRepo: Option[LinkedGithubRepoData]
                             ) extends Ordered[BehaviorGroupData] with FuzzyMatchable {
 
   val fuzzyMatchPatterns: Seq[FuzzyMatchPattern] = {
@@ -170,6 +171,9 @@ object BehaviorGroupData {
       } yield {
         dataService.managedBehaviorGroups.infoFor(group, team).map(Some(_))
       }).getOrElse(Future.successful(None))
+      maybeLinkedGithubRepo <- maybeBehaviorGroup.map { group =>
+        dataService.linkedGithubRepos.maybeFor(group)
+      }.getOrElse(Future.successful(None))
     } yield {
       val maybeMetaData = maybeInitialVersion.map { initialVersion =>
         BehaviorGroupMetaData(initialVersion.group.id, initialVersion.createdAt, maybeInitialUserData)
@@ -195,7 +199,8 @@ object BehaviorGroupData {
         maybeDeploymentData,
         maybeMetaData,
         maybeManagedInfo.exists(_.isManaged),
-        maybeManagedInfo.flatMap(_.maybeContactData)
+        maybeManagedInfo.flatMap(_.maybeContactData),
+        maybeLinkedGithubRepo.map(LinkedGithubRepoData.from)
       )
     }
   }
@@ -266,6 +271,49 @@ object BehaviorGroupData {
         ).map(Some(_))
       }.getOrElse(Future.successful(None))
     } yield data
+  }
+
+  def fromExport(
+                  teamId: String,
+                  maybeName: Option[String],
+                  maybeDescription: Option[String],
+                  maybeIcon: Option[String],
+                  actionInputs: Seq[InputData],
+                  dataTypeInputs: Seq[InputData],
+                  behaviorVersions: Seq[BehaviorVersionData],
+                  libraryVersions: Seq[LibraryVersionData],
+                  requiredAWSConfigs: Seq[RequiredAWSConfigData],
+                  requiredOAuth2ApiConfigs: Seq[RequiredOAuth2ApiConfigData],
+                  requiredSimpleTokenApis: Seq[RequiredSimpleTokenApiData],
+                  maybeGithubUrl: Option[String],
+                  maybeGitSHA: Option[String],
+                  maybeExportId: Option[String],
+                  maybeAuthor: Option[UserData]
+                ): BehaviorGroupData = {
+    BehaviorGroupData(
+      id = None,
+      teamId,
+      maybeName,
+      maybeDescription,
+      maybeIcon,
+      actionInputs,
+      dataTypeInputs,
+      behaviorVersions,
+      libraryVersions,
+      requiredAWSConfigs,
+      requiredOAuth2ApiConfigs,
+      requiredSimpleTokenApis,
+      maybeGithubUrl,
+      maybeGitSHA,
+      maybeExportId,
+      createdAt = Some(OffsetDateTime.now),
+      author = None,
+      deployment = None,
+      metaData = None,
+      isManaged = false,
+      managedContact = None,
+      linkedGithubRepo = None
+    )
   }
 
 }

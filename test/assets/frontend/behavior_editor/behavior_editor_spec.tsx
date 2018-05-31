@@ -9,7 +9,7 @@ import * as React from 'react';
 import * as TestUtils from 'react-addons-test-utils';
 import BehaviorEditor from '../../../../app/assets/frontend/behavior_editor/index';
 import BehaviorVersion, {BehaviorVersionJson} from '../../../../app/assets/frontend/models/behavior_version';
-import BehaviorGroup from '../../../../app/assets/frontend/models/behavior_group';
+import BehaviorGroup, {BehaviorGroupJson} from '../../../../app/assets/frontend/models/behavior_group';
 import ParamType from '../../../../app/assets/frontend/models/param_type';
 import {AWSConfigRef} from '../../../../app/assets/frontend/models/aws';
 import {OAuth2ApplicationRef} from '../../../../app/assets/frontend/models/oauth2';
@@ -26,42 +26,46 @@ jsRoutes.controllers.SocialAuthController.authenticateGithub = jest.fn(() => ({ 
 jsRoutes.controllers.BehaviorEditorController.versionInfoFor = jest.fn(() => ({ url: '/mock_version_info' }));
 
 describe('BehaviorEditor', () => {
+  const groupJson: BehaviorGroupJson = {
+    id: '1',
+    actionInputs: [],
+    behaviorVersions: [
+      {
+        id: "123abcdef",
+        behaviorId: "1",
+        functionBody: "onSuccess('Woot')",
+        responseTemplate: "{successResult}",
+        inputIds: [],
+        triggers: [{
+          text: "Do the tests run?",
+          requiresMention: false,
+          isRegex: false,
+          caseSensitive: false
+        }],
+        config: {
+          isDataType: false
+        },
+        knownEnvVarsUsed: [],
+        groupId: '1'
+      }
+    ],
+    libraryVersions: [],
+    requiredAWSConfigs: [],
+    requiredOAuth2ApiConfigs: [],
+    requiredSimpleTokenApis: [],
+    dataTypeInputs: [],
+    isManaged: false,
+    linkedGithubRepo: {
+      owner: "ellipsis-ai",
+      repo: "ellipsis",
+      currentBranch: "master"
+    }
+  };
   const defaultConfig = Object.freeze({
     teamId: "A",
     "isAdmin": false,
     "isLinkedToGithub": false,
-    group: {
-      id: '1',
-      actionInputs: [],
-      behaviorVersions: [
-        {
-          id: "123abcdef",
-          behaviorId: "1",
-          functionBody: "onSuccess('Woot')",
-          responseTemplate: "{successResult}",
-          inputIds: [],
-          triggers: [{
-            text: "Do the tests run?",
-            requiresMention: false,
-            isRegex: false,
-            caseSensitive: false
-          }],
-          config: {
-            dataTypeConfig: {
-              fields: [],
-              name: ''
-            }
-          },
-          knownEnvVarsUsed: [],
-          groupId: '1'
-        }
-      ],
-      libraryVersions: [],
-      nodeModuleVersions: [],
-      requiredAWSConfigs: [],
-      requiredOAuth2ApiConfigs: [],
-      requiredSimpleTokenApis: []
-    },
+    group: groupJson,
     selectedId: "1",
     csrfToken: "2",
     envVariables: [ { name: "HOT_DOG" } ],
@@ -111,34 +115,37 @@ describe('BehaviorEditor', () => {
     onUpdateFromGithub: jest.fn()
   });
 
+  const newGroupJson: BehaviorGroupJson = {
+    "teamId": "B",
+    "actionInputs": [],
+    "dataTypeInputs": [],
+    "behaviorVersions": [{
+      "id": "1",
+      "teamId": "B",
+      "behaviorId": "2",
+      "isNew": true,
+      "functionBody": "",
+      "responseTemplate": "",
+      "inputIds": [],
+      "triggers": [{ "text": "", "requiresMention": true, "isRegex": false, "caseSensitive": false }],
+      "config": { "isDataType": false },
+      "knownEnvVarsUsed": []
+    }],
+    "libraryVersions": [],
+    "requiredAWSConfigs": [],
+    "requiredOAuth2ApiConfigs": [],
+    "requiredSimpleTokenApis": [],
+    "createdAt": "2017-09-15T11:58:07.36-04:00",
+    "author": { "id": "3", userName: "attaboy" },
+    isManaged: false
+  };
+
   const newSkillConfig = Object.freeze({
     "containerId": "editorContainer",
     "csrfToken": "1234",
     "isAdmin": false,
     "isLinkedToGithub": false,
-    "group": {
-      "teamId": "B",
-      "actionInputs": [],
-      "dataTypeInputs": [],
-      "behaviorVersions": [{
-        "id": "1",
-        "teamId": "B",
-        "behaviorId": "2",
-        "isNew": true,
-        "functionBody": "",
-        "responseTemplate": "",
-        "inputIds": [],
-        "triggers": [{ "text": "", "requiresMention": true, "isRegex": false, "caseSensitive": false }],
-        "config": { "isDataType": false },
-        "knownEnvVarsUsed": []
-      }],
-      "libraryVersions": [],
-      "requiredAWSConfigs": [],
-      "requiredOAuth2ApiConfigs": [],
-      "requiredSimpleTokenApis": [],
-      "createdAt": "2017-09-15T11:58:07.36-04:00",
-      "author": { "id": "3", "name": "attaboy" }
-    },
+    "group": newGroupJson,
     "builtinParamTypes": [{ "id": "Text", "exportId": "Text", "name": "Text", "needsConfig": false }, {
       "id": "Number",
       "exportId": "Number",
@@ -186,7 +193,7 @@ describe('BehaviorEditor', () => {
   });
 
   let editorConfig;
-  let firstBehavior;
+  let firstBehavior: BehaviorVersionJson;
 
   beforeEach(function() {
     editorConfig = Object.assign({}, defaultConfig);
@@ -287,9 +294,9 @@ describe('BehaviorEditor', () => {
       expect(normalSpy).toBeCalled();
     });
     it("renders the data type editor when isDataType is true", () => {
-      const bv = editorConfig.group.behaviorVersions[0];
+      const bv: BehaviorVersionJson = editorConfig.group.behaviorVersions[0];
       bv.config.isDataType = true;
-      bv.dataTypeConfig = { fields: [] };
+      bv.config.dataTypeConfig = { fields: [], usesCode: true };
       const editor = createEditor(editorConfig);
       const dataSpy = jest.spyOn(editor, 'renderDataTypeBehavior');
       const normalSpy = jest.spyOn(editor, 'renderNormalBehavior');

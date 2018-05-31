@@ -27,7 +27,6 @@ case class BehaviorEditorData(
                                userId: String,
                                isAdmin: Boolean,
                                isLinkedToGithub: Boolean,
-                               linkedGithubRepo: Option[LinkedGithubRepoData],
                                lastDeployTimestamp: Option[OffsetDateTime],
                                maybeSlackTeamId: Option[String],
                                botName: String
@@ -209,7 +208,8 @@ object BehaviorEditorData {
           maybeDeploymentData,
           None,
           maybeManagedInfo.exists(_.isManaged),
-          maybeManagedInfo.flatMap(_.maybeContactData)
+          maybeManagedInfo.flatMap(_.maybeContactData),
+          maybeLinkedGithubRepo.map(LinkedGithubRepoData.from)
         )
       }
       BehaviorEditorData(
@@ -227,7 +227,6 @@ object BehaviorEditorData {
         user.id,
         isAdmin,
         isLinkedToGithub,
-        maybeLinkedGithubRepo.map(r => LinkedGithubRepoData(r.owner, r.repo, r.maybeCurrentBranch)),
         maybeLastDeployTimestamp,
         maybeSlackBotProfile.map(_.slackTeamId),
         teamAccess.botName

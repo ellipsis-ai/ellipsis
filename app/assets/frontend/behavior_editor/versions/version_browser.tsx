@@ -39,7 +39,7 @@ type Props = {
   onUndoChanges: () => void,
   onRestoreVersionClick: (version: BehaviorGroup, title: any) => void,
   isLinkedToGithub: boolean,
-  linkedGithubRepo?: LinkedGithubRepo,
+  linkedGithubRepo: Option<LinkedGithubRepo>,
   onLinkGithubRepo: (owner: string, repo: string, branch: Option<string>, callback: () => void) => void,
   onUpdateFromGithub: (owner: string, repo: string, branch: string, callback: (json: { data: BehaviorGroupJson }) => void, onError: (branch: string, error?: GithubFetchError) => void) => void,
   onSaveChanges: () => void,
@@ -132,7 +132,8 @@ class VersionBrowser extends React.Component<Props, State> {
   }
 
   getSavedBranch(): string {
-    return this.props.linkedGithubRepo && this.props.linkedGithubRepo.currentBranch ? this.props.linkedGithubRepo.currentBranch : "master";
+    const linkedGithubRepo = this.getLinkedGithubRepo();
+    return linkedGithubRepo && linkedGithubRepo.currentBranch ? linkedGithubRepo.currentBranch : "master";
   }
 
   onBranchChange(branch: string): void {
@@ -148,8 +149,8 @@ class VersionBrowser extends React.Component<Props, State> {
   }
 
   onUpdateFromGithub(): void {
-    if (this.props.linkedGithubRepo) {
-      const linked = this.props.linkedGithubRepo;
+    const linked = this.getLinkedGithubRepo();
+    if (linked) {
       const owner = linked.getOwner();
       const repo = linked.getRepo();
       const branch = this.getCurrentBranch();
@@ -241,6 +242,10 @@ class VersionBrowser extends React.Component<Props, State> {
     return "Most recent saved version";
   }
 
+  getLinkedGithubRepo(): Option<LinkedGithubRepo> {
+    return this.props.linkedGithubRepo;
+  }
+
   getGroupedVersions(versions: Array<BehaviorGroup>): Array<VersionGroup> {
     const groups: Array<VersionGroup> = [];
     groups.push({
@@ -249,11 +254,12 @@ class VersionBrowser extends React.Component<Props, State> {
         key: "select"
       }]
     });
-    if (this.props.linkedGithubRepo && this.props.isLinkedToGithub) {
+    const linkedGithubRepo = this.getLinkedGithubRepo();
+    if (linkedGithubRepo && this.props.isLinkedToGithub) {
       groups.push({
         label: "GitHub",
         versions: [{
-          label: this.props.linkedGithubRepo.getOwnerAndRepo(),
+          label: linkedGithubRepo.getOwnerAndRepo(),
           key: versionSources.github
         }]
       });
@@ -539,7 +545,7 @@ class VersionBrowser extends React.Component<Props, State> {
   }
 
   renderCommitButton(selectedVersion: Option<BehaviorGroup>, hasChanges: boolean) {
-    if (this.props.linkedGithubRepo && this.compareGithubVersions()) {
+    if (this.getLinkedGithubRepo() && this.compareGithubVersions()) {
       const unsavedChanges = this.props.currentGroupIsModified;
       const githubVersionIsIdentical = Boolean(selectedVersion && !hasChanges);
       const branchTitle = this.renderBranchTitle(this.getSavedBranch());
@@ -562,7 +568,7 @@ class VersionBrowser extends React.Component<Props, State> {
 
   onLinkedGithubRepo(): void {
     this.props.onChangedGithubRepo();
-    if (this.props.isLinkedToGithub && this.props.linkedGithubRepo) {
+    if (this.props.isLinkedToGithub && this.getLinkedGithubRepo()) {
       this.onClickMenuItem(versionSources.github);
     }
   }
@@ -574,7 +580,7 @@ class VersionBrowser extends React.Component<Props, State> {
   }
 
   isBranchUnchanged(): boolean {
-    return this.props.linkedGithubRepo ? this.getSavedBranch() === this.getCurrentBranch() : false;
+    return this.getLinkedGithubRepo() ? this.getSavedBranch() === this.getCurrentBranch() : false;
   }
 
   changeBranch(): void {
@@ -801,7 +807,7 @@ class VersionBrowser extends React.Component<Props, State> {
                 <LinkGithubRepo
                   ref={(el) => this.linkGitHubRepoComponent = el}
                   group={this.props.currentGroup}
-                  linked={this.props.linkedGithubRepo}
+                  linked={this.getLinkedGithubRepo()}
                   onDoneClick={this.onLinkedGithubRepo}
                   onLinkGithubRepo={this.props.onLinkGithubRepo}
                   csrfToken={this.props.csrfToken}
@@ -835,7 +841,7 @@ class VersionBrowser extends React.Component<Props, State> {
             <GithubPushPanel
               ref={(el) => this.pushPanel = el}
               group={this.props.currentGroup}
-              linked={this.props.linkedGithubRepo}
+              linked={this.getLinkedGithubRepo()}
               onPushBranch={this.onPushBranch}
               onDoneClick={this.toggleCommitting}
               csrfToken={this.props.csrfToken}

@@ -8,7 +8,7 @@ import SVGInstall from '../svg/install';
 import SVGInstalled from '../svg/installed';
 import Sort from '../lib/sort';
 import autobind from '../lib/autobind';
-import {UserJson} from "../models/user";
+import {default as User, UserJson} from "../models/user";
 
   // Note that performance reasons this component checks if properties have changed by hand in shouldComponentUpdate
   type Props = {
@@ -170,11 +170,11 @@ import {UserJson} from "../models/user";
       }
     }
 
-    renderManagedContact(contact?: Option<UserJson>) {
+    renderManagedContact(contact?: Option<User>) {
       if (contact) {
         return (
           <ul>
-            <li>Contact: {contact.fullName} (@{contact.userName})</li>
+            <li>Contact: {contact.formattedNameIfKnown()}</li>
           </ul>
         );
       } else {
@@ -219,6 +219,8 @@ import {UserJson} from "../models/user";
             ) : null}
           </div>
         );
+      } else if (group.isManaged) {
+        return null;
       } else {
         return (
           <div className="type-s mvm">
