@@ -58,10 +58,10 @@ class SlackEventSpec extends PlaySpec with MockitoSugar {
 
   val date = OffsetDateTime.now.minusDays(365).toInstant.toEpochMilli
 
-  val slackChannelInfo = SlackConversation.defaultFor(
+  val slackConversation = SlackConversation.defaultFor(
     id = "C1000000",
     name = "The Channel"
-  )
+  ).copy(members = Some(Array(slackUserId, otherSlackUserId)))
 
   val ellipsisTeamId = IDs.next
   val slackBotProfile = SlackBotProfile("U55555555", ellipsisTeamId, slackTeamId, IDs.next, OffsetDateTime.now)
@@ -76,7 +76,11 @@ class SlackEventSpec extends PlaySpec with MockitoSugar {
           Future.successful(Some(slackUserData))
         )
 
-        val event = TestSlackEvent(slackUserData.accountId, slackChannelInfo.id, mockSlackClient, slackBotProfile)
+        when(services.slackApiService.listConversations(slackBotProfile)).thenReturn(Future.successful(Seq(slackConversation)))
+
+        when(services.slackApiService.conversationInfo(slackBotProfile, slackConversation.id)).thenReturn(Future.successful(Some(slackConversation)))
+
+        val event = TestSlackEvent(slackUserData.accountId, slackConversation.id, mockSlackClient, slackBotProfile)
         val d: JsObject = await(event.detailsFor(services)(actorSystem, ec))
         (d \ "name").as[String] mustBe displayName
         (d \ "isPrimaryOwner").as[Boolean] mustBe slackUserData.isPrimaryOwner
@@ -85,7 +89,7 @@ class SlackEventSpec extends PlaySpec with MockitoSugar {
         (d \ "isUltraRestricted").as[Boolean] mustBe slackUserData.isUltraRestricted
         (d \ "tz").as[String] mustBe slackUserData.tz.get
         (d \ "channelMembers").as[Seq[String]] mustBe Seq(slackUserId, otherSlackUserId)
-        (d \ "channelName").as[String] mustBe slackChannelInfo.name
+        (d \ "channelName").as[String] mustBe slackConversation.name
         (d \ "profile" \ "firstName").as[String] mustBe firstName
         (d \ "profile" \ "lastName").as[String] mustBe lastName
         (d \ "profile" \ "realName").as[String] mustBe fullName

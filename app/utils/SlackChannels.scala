@@ -1,53 +1,22 @@
 package utils
 
-import akka.actor.ActorSystem
 import models.accounts.slack.botprofile.SlackBotProfile
-import play.api.http.{HeaderNames, MimeTypes}
-import play.api.libs.json.{JsError, JsSuccess}
-import play.api.libs.ws.WSClient
-import services.caching.CacheService
+import services.SlackApiService
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.matching.Regex
 
-case class SlackChannels(profile: SlackBotProfile, cacheService: CacheService, ws: WSClient) {
+case class SlackChannels(profile: SlackBotProfile, apiService: SlackApiService) {
 
-  import json.Formatting._
-
-  def getInfoFor(convoId: String)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[SlackConversation]] = {
-    ws.
-      url("https://slack.com/api/conversations.info").
-      withHttpHeaders(HeaderNames.ACCEPT -> MimeTypes.JSON).
-      post(Map(
-        "token" -> Seq(profile.token),
-        "channel" -> Seq(convoId)
-      )).
-      map { response =>
-        (response.json \ "channel").asOpt[SlackConversation]
-      }
+  def getInfoFor(convoId: String): Future[Option[SlackConversation]] = {
+    apiService.conversationInfo(profile, convoId)
   }
 
-  def getList(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Seq[SlackConversation]] = {
-    ws.
-      url("https://slack.com/api/conversations.list").
-      withHttpHeaders(HeaderNames.ACCEPT -> MimeTypes.JSON).
-      post(Map(
-        "token" -> Seq(profile.token),
-        "limit" -> Seq("1000"),
-        "type" -> Seq("public_channel, private_channel, mpim, im")
-      )).
-      map { response =>
-        (response.json \ "channels").validate[Seq[SlackConversation]] match {
-          case JsSuccess(data, _) => data
-          case JsError(err) => {
-            println(err)
-            Seq()
-          }
-        }
-      }
+  def getList: Future[Seq[SlackConversation]] = {
+    apiService.listConversations(profile)
   }
 
-  def getListForUser(maybeSlackUserId: Option[String])(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Seq[SlackConversation]] = {
+  def getListForUser(maybeSlackUserId: Option[String])(implicit ec: ExecutionContext): Future[Seq[SlackConversation]] = {
     maybeSlackUserId.map { slackUserId =>
       getList.map { channels =>
         channels.filter(ea => ea.visibleToUser(slackUserId))
@@ -55,7 +24,7 @@ case class SlackChannels(profile: SlackBotProfile, cacheService: CacheService, w
     }.getOrElse(Future.successful(Seq()))
   }
 
-  def getMembersFor(convoId: String)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Seq[String]] = {
+  def getMembersFor(convoId: String)(implicit ec: ExecutionContext): Future[Seq[String]] = {
     getInfoFor(convoId).map { maybeConvo =>
       maybeConvo.map(_.membersList).getOrElse(Seq())
     }
@@ -71,7 +40,7 @@ case class SlackChannels(profile: SlackBotProfile, cacheService: CacheService, w
     }
   }
 
-  def maybeIdFor(channelLikeIdOrName: String)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[String]] = {
+  def maybeIdFor(channelLikeIdOrName: String)(implicit ec: ExecutionContext): Future[Option[String]] = {
     val unformattedChannelLikeIdOrName = unformatChannelText(channelLikeIdOrName)
     getInfoFor(unformattedChannelLikeIdOrName).flatMap { maybeChannelLike =>
       maybeChannelLike.map(c => Future.successful(Some(c.id))).getOrElse {

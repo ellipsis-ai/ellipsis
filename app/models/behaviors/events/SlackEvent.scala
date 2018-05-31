@@ -88,7 +88,7 @@ trait SlackEvent {
   }
 
   def detailsFor(services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[JsObject] = {
-    val slackChannels = SlackChannels(profile, services.cacheService, services.ws)
+    val slackChannels = SlackChannels(profile, services.slackApiService)
     for {
       maybeUser <- services.slackEventService.maybeSlackUserDataFor(user, profile.slackTeamId, SlackApiClient(profile.token), (e) => {
         Logger.error(

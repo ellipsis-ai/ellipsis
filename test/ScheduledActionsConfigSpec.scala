@@ -41,7 +41,7 @@ class ScheduledActionsConfigSpec extends PlaySpec with MockitoSugar {
     } else {
       Seq()
     })
-    SlackConversation.defaultFor(id, name).copy(is_group = Some(true), members = Some(members.toArray))
+    SlackConversation.defaultFor(id, name).copy(is_group = Some(true), is_private = Some(true), members = Some(members.toArray))
   }
 
   def makeScheduleFor(channelId: String, team: Team): ScheduledMessage = {
@@ -67,7 +67,7 @@ class ScheduledActionsConfigSpec extends PlaySpec with MockitoSugar {
 
     val slackChannels = mock[SlackChannels]
     when(dataService.slackBotProfiles.channelsFor(any[SlackBotProfile])).thenReturn(slackChannels)
-    when(slackChannels.getListForUser(any[Option[String]])(any[ActorSystem], any[ExecutionContext]))
+    when(slackChannels.getListForUser(any[Option[String]])(any[ExecutionContext]))
       .thenReturn {
         if (blowup) {
           Future.failed(slack.api.ApiError("account_inactive"))
@@ -75,7 +75,7 @@ class ScheduledActionsConfigSpec extends PlaySpec with MockitoSugar {
           Future.successful(channels)
         }
       }
-    when(slackChannels.getList(any[ActorSystem], any[ExecutionContext])).thenReturn(Future.successful(channels))
+    when(slackChannels.getList).thenReturn(Future.successful(channels))
   }
 
   def setupSchedules(team: Team, dataService: DataService): Seq[ScheduledMessage] = {
