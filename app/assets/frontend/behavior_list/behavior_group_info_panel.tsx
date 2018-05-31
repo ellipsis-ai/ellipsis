@@ -5,10 +5,9 @@ import DynamicLabelButton from '../form/dynamic_label_button';
 import EditableName from './editable_name';
 import Formatter, {Timestamp} from '../lib/formatter';
 import SVGInstall from '../svg/install';
-import SVGInstalled from '../svg/installed';
 import Sort from '../lib/sort';
 import autobind from '../lib/autobind';
-import {default as User, UserJson} from "../models/user";
+import User from "../models/user";
 
   // Note that performance reasons this component checks if properties have changed by hand in shouldComponentUpdate
   type Props = {
@@ -173,58 +172,55 @@ import {default as User, UserJson} from "../models/user";
     renderManagedContact(contact?: Option<User>) {
       if (contact) {
         return (
-          <ul>
-            <li>Contact: {contact.formattedNameIfKnown()}</li>
-          </ul>
+          <div>
+            <span className="type-weak">Contact: </span>
+            <span>{contact.formattedNameIfKnown()}</span>
+          </div>
         );
       } else {
         return null;
       }
     }
 
-    renderManagedInfo(group: BehaviorGroup) {
-      if (group.isManaged) {
-        return (
-          <div className="type-s mvm">
-            <div>Managed by Ellipsis</div>
-            {this.renderManagedContact(group.managedContact)}
-          </div>
-        );
-      } else {
-        return null;
-      }
+    renderGithubLink(url: Option<string>) {
+      return url ? (
+        <span className="mlxs">
+          <span className="display-nowrap">
+            <span className="type-disabled mrxs">·</span>
+            <a target="_blank" href={url}>View source</a>
+          </span>
+        </span>
+      ) : null;
     }
 
     renderSourceInfo(group: BehaviorGroup) {
-      const groupGithubUrl = group.githubUrl;
-      if (groupGithubUrl) {
+      const groupGithubUrl = group.linkedGithubRepo ? group.linkedGithubRepo.getUrl() : group.githubUrl;
+      if (group.isManaged) {
         return (
           <div className="type-s mvm">
-            <a target="_blank" href={groupGithubUrl}>
-              View source on Github
-            </a>
+            <div>
+              {this.props.publishedGroupData ? (
+                <b className="type-pink">Published/managed by Ellipsis</b>
+              ) : (
+                <b className="type-pink">Managed by Ellipsis</b>
+              )}
+              {this.renderGithubLink(groupGithubUrl)}
+            </div>
+            {this.renderManagedContact(group.managedContact)}
           </div>
-        );
+        )
       } else if (this.props.publishedGroupData) {
-        const publishedGithubUrl = this.props.publishedGroupData.githubUrl;
         return (
           <div className={`type-s mvm ${this.props.isImporting ? "pulse" : ""}`}>
-            <span className="display-inline-block align-m mrs" style={{width: 30, height: 18}}><SVGInstalled /></span>
-            <span className="display-inline-block align-m type-green">Published by Ellipsis</span>
-            {publishedGithubUrl ? (
-              <span>
-                <span className="type-disabled mhxs">·</span>
-                <a target="_blank" href={publishedGithubUrl}>View source</a>
-              </span>
-            ) : null}
+            <span className="type-green">Published by Ellipsis</span>
+            {this.renderGithubLink(groupGithubUrl || this.props.publishedGroupData.githubUrl)}
           </div>
         );
-      } else if (group.isManaged) {
-        return null;
       } else {
         return (
           <div className="type-s mvm">
-            <span>Created by your team</span>
+            <span>Custom skill</span>
+            {this.renderGithubLink(groupGithubUrl)}
           </div>
         );
       }
@@ -233,7 +229,6 @@ import {default as User, UserJson} from "../models/user";
     renderMetaInfo(group: BehaviorGroup, publishedData: Option<BehaviorGroup>, sameAsPublished: boolean) {
       return (
         <div>
-          {this.renderManagedInfo(group)}
           {this.renderSourceInfo(group)}
           {this.renderHistory(group, Boolean(publishedData), sameAsPublished)}
           {this.renderUpdate(publishedData, sameAsPublished)}
@@ -288,8 +283,8 @@ import {default as User, UserJson} from "../models/user";
         return (
           <ul>
             {this.renderInitialCreatedText(initialCreatedDate, initialAuthorName, isPublished)}
-            <li>This skill differs from published version</li>
             <li>Last modified {lastModifiedDate} by {currentAuthorName}</li>
+            <li>This skill differs from published version</li>
           </ul>
         );
       } else {
