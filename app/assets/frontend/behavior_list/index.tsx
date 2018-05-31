@@ -24,6 +24,7 @@ import SVGInstalling from '../svg/installing';
 import FixedHeader from "../shared_ui/fixed_header";
 import {CSSProperties} from "react";
 import {maybeDiffFor} from "../models/diffs";
+import {ToggleGroup, ToggleGroupItem} from '../form/toggle_group';
 
 const ANIMATION_DURATION = 0.25;
 
@@ -274,9 +275,15 @@ class BehaviorList extends React.Component<Props, State> {
     });
   }
 
-  updateOnlyShowManaged(isChecked: boolean) {
+  showAllSkills() {
     this.setState({
-      onlyShowManaged: isChecked
+      onlyShowManaged: false
+    });
+  }
+
+  showManagedSkills() {
+    this.setState({
+      onlyShowManaged: true
     });
   }
 
@@ -808,8 +815,8 @@ class BehaviorList extends React.Component<Props, State> {
         <div className="column column-page-main column-page-main-wide flex-column flex-column-main">
           <div className="bg-lightest-translucent pvl container container-c">
             <div className="mhl">
-              <div className="columns flex-columns flex-row-expand mobile-flex-no-columns">
-                <div className="column column-three-quarters">
+              <div className="columns columns-elastic mobile-columns-float">
+                <div className="column column-expand mobile-mbm">
                   <SearchInput
                     placeholder="Search skills…"
                     value={this.state.userSearchText}
@@ -818,15 +825,21 @@ class BehaviorList extends React.Component<Props, State> {
                     className="form-input-borderless form-input-s"
                   />
                 </div>
-                <div className="column column-one-quarter">
-                  <Checkbox
-                    useButtonStyle={true}
-                    checked={this.state.onlyShowManaged}
-                    onChange={this.updateOnlyShowManaged}
-                    label={(
-                      <span>Only show managed</span>
-                    )}
-                  />
+                <div className="column column-shrink">
+                  <div className="display-nowrap type-s">
+                    <ToggleGroup className="form-toggle-group-s">
+                      <ToggleGroupItem
+                        activeWhen={!this.state.onlyShowManaged}
+                        label="All skills"
+                        onClick={this.showAllSkills}
+                      />
+                      <ToggleGroupItem
+                        activeWhen={this.state.onlyShowManaged}
+                        label="Managed skills"
+                        onClick={this.showManagedSkills}
+                      />
+                    </ToggleGroup>
+                  </div>
                 </div>
               </div>
             </div>
