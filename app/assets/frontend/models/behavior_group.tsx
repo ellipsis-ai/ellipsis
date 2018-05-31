@@ -13,6 +13,7 @@ import {RequiredSimpleTokenApi, RequiredSimpleTokenApiJson} from './simple_token
 import User, {UserJson} from './user';
 import ParamType from "./param_type";
 import {Timestamp} from "../lib/formatter";
+import {default as LinkedGithubRepo, LinkedGitHubRepoJson} from "./linked_github_repo";
 
 const ONE_MINUTE = 60000;
 
@@ -38,6 +39,7 @@ export interface BehaviorGroupJson {
   metaData?: Option<BehaviorGroupMetaDataJson>;
   isManaged: boolean;
   managedContact?: Option<UserJson>;
+  linkedGithubRepo?: Option<LinkedGitHubRepoJson>;
 }
 
 interface BehaviorGroupInterface extends BehaviorGroupJson {
@@ -52,7 +54,8 @@ interface BehaviorGroupInterface extends BehaviorGroupJson {
   deployment?: Option<BehaviorGroupDeployment>;
   metaData?: Option<BehaviorGroupMetaData>;
   isManaged: boolean;
-  managedContact?: Option<UserJson>;
+  managedContact?: Option<User>;
+  linkedGithubRepo?: Option<LinkedGithubRepo>;
 }
 
 class BehaviorGroup implements Diffable, BehaviorGroupInterface {
@@ -77,7 +80,8 @@ class BehaviorGroup implements Diffable, BehaviorGroupInterface {
     readonly deployment: Option<BehaviorGroupDeployment>,
     readonly metaData: Option<BehaviorGroupMetaData>,
     readonly isManaged: boolean,
-    readonly managedContact: Option<UserJson>
+    readonly managedContact: Option<User>,
+    readonly linkedGithubRepo: Option<LinkedGithubRepo>
   ) {
       Object.defineProperties(this, {
         id: { value: id, enumerable: true },
@@ -100,7 +104,8 @@ class BehaviorGroup implements Diffable, BehaviorGroupInterface {
         deployment: { value: deployment, enumerable: true },
         metaData: { value: metaData, enumerable: true },
         isManaged: { value: isManaged, enumerable: true },
-        managedContact: { value: managedContact, enumerable: true }
+        managedContact: { value: managedContact, enumerable: true },
+        linkedGithubRepo: { value: linkedGithubRepo, enumerable: true }
       });
   }
 
@@ -354,7 +359,8 @@ class BehaviorGroup implements Diffable, BehaviorGroupInterface {
         props.deployment,
         props.metaData,
         props.isManaged,
-        props.managedContact
+        props.managedContact,
+        props.linkedGithubRepo
       );
     }
 
@@ -369,7 +375,9 @@ class BehaviorGroup implements Diffable, BehaviorGroupInterface {
         libraryVersions: props.libraryVersions.map(ea => LibraryVersion.fromProps(Object.assign({}, ea, { groupId: props.id }))),
         author: props.author ? User.fromJson(props.author) : null,
         deployment: props.deployment ? BehaviorGroupDeployment.fromJson(props.deployment) : null,
-        metaData: props.metaData ? BehaviorGroupMetaData.fromJson(props.metaData) : null
+        metaData: props.metaData ? BehaviorGroupMetaData.fromJson(props.metaData) : null,
+        managedContact: props.managedContact ? User.fromJson(props.managedContact) : null,
+        linkedGithubRepo: props.linkedGithubRepo ? LinkedGithubRepo.fromJson(props.linkedGithubRepo) : null
       }));
     }
 
