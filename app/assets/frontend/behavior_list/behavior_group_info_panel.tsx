@@ -7,7 +7,7 @@ import Formatter, {Timestamp} from '../lib/formatter';
 import SVGInstall from '../svg/install';
 import Sort from '../lib/sort';
 import autobind from '../lib/autobind';
-import {default as User, UserJson} from "../models/user";
+import User from "../models/user";
 
   // Note that performance reasons this component checks if properties have changed by hand in shouldComponentUpdate
   type Props = {
