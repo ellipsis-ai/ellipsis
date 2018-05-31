@@ -48,5 +48,18 @@ class SlackApiService @Inject()(services: DefaultServices, implicit val actorSys
       }
   }
 
+  def conversationMembers(profile: SlackBotProfile, convoId: String): Future[Seq[String]] = {
+    ws.
+      url(urlFor("conversations.members")).
+      withHttpHeaders(HeaderNames.ACCEPT -> MimeTypes.JSON).
+      post(Map(
+        "token" -> Seq(profile.token),
+        "channel" -> Seq(convoId)
+      )).
+      map { response =>
+        (response.json \ "members").asOpt[Seq[String]].getOrElse(Seq())
+      }
+  }
+
 
 }

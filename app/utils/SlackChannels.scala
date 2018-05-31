@@ -8,8 +8,15 @@ import scala.util.matching.Regex
 
 case class SlackChannels(profile: SlackBotProfile, apiService: SlackApiService) {
 
-  def getInfoFor(convoId: String): Future[Option[SlackConversation]] = {
-    apiService.conversationInfo(profile, convoId)
+  def getInfoFor(convoId: String)(implicit ec: ExecutionContext): Future[Option[SlackConversation]] = {
+    for {
+      maybeConvo <-  apiService.conversationInfo(profile, convoId)
+      maybeConvoWithMembers <- maybeConvo.map { convo =>
+        getMembersFor(convo.id).map { members =>
+          Some(convo.copy(members = Some(members.toArray)))
+        }
+      }.getOrElse(Future.successful(None))
+    } yield maybeConvoWithMembers
   }
 
   def getList: Future[Seq[SlackConversation]] = {
@@ -25,9 +32,7 @@ case class SlackChannels(profile: SlackBotProfile, apiService: SlackApiService) 
   }
 
   def getMembersFor(convoId: String)(implicit ec: ExecutionContext): Future[Seq[String]] = {
-    getInfoFor(convoId).map { maybeConvo =>
-      maybeConvo.map(_.membersList).getOrElse(Seq())
-    }
+    apiService.conversationMembers(profile, convoId)
   }
 
   import SlackChannelsRegexes._
