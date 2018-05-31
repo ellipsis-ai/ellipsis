@@ -10,8 +10,8 @@ import utils.SlackConversation
 
 import scala.concurrent.{ExecutionContext, Future}
 
-case class MalformedResponseException(message: String) extends Exception
-case class SlackApiError(code: String) extends Exception
+case class MalformedResponseException(message: String) extends Exception(message)
+case class SlackApiError(code: String) extends Exception(code)
 
 @Singleton
 class SlackApiService @Inject()(services: DefaultServices, implicit val actorSystem: ActorSystem, implicit val ec: ExecutionContext) {
@@ -37,16 +37,12 @@ class SlackApiService @Inject()(services: DefaultServices, implicit val actorSys
   def listConversations(profile: SlackBotProfile): Future[Seq[SlackConversation]] = {
     ws.
       url(urlFor("conversations.list")).
-      withHttpHeaders(HeaderNames.ACCEPT -> MimeTypes.JSON).
-      post(Map(
-        "token" -> Seq(profile.token),
-        "limit" -> Seq("1000"),
-        "type" -> Seq("public_channel, private_channel, mpim, im")
-      )).
+      withQueryStringParameters(("token", profile.token), ("limit", "1000"), ("types", "public_channel, private_channel, mpim, im"), ("exclude_archived", "true")).
+      get.
       map { response =>
         (response.json \ "channels").validate[Seq[SlackConversation]] match {
           case JsSuccess(data, _) => data
-          case JsError(_) => Seq()
+          case JsError(err) => Seq()
         }
       }
   }

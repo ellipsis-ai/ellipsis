@@ -57,11 +57,11 @@ class ScheduleChannel implements ScheduleChannelInterface {
     }
 
     isDM(): boolean {
-      return !this.isPublic && this.members.length < 2;
+      return !this.isPublic && this.members.length <= 2;
     }
 
     isPrivateGroup(): boolean {
-      return !this.isPublic && this.members.length > 1;
+      return !this.isPublic && this.members.length > 2;
     }
 
     userCanAccess(slackUserId: string): boolean {

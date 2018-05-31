@@ -14,7 +14,7 @@ case class SlackConversationPurpose(
 
 case class SlackConversation(
                               id: String,
-                              name: String,
+                              name: Option[String],
                               is_channel: Option[Boolean],
                               is_group: Option[Boolean],
                               is_im: Option[Boolean],
@@ -37,7 +37,10 @@ case class SlackConversation(
                               locale: Option[String]
                             ) {
 
-  val isPublic: Boolean = !is_private.exists(identity)
+  val isGroup: Boolean = is_group.exists(identity)
+  val isIm: Boolean = is_im.exists(identity)
+  val isMpim: Boolean = is_mpim.exists(identity)
+  val isPublic: Boolean = !is_private.exists(identity) && !isGroup && !isIm
   val isArchived: Boolean = is_archived.exists(identity)
 
   val membersList: Seq[String] = members.map(_.toSeq).getOrElse(Seq())
@@ -46,13 +49,28 @@ case class SlackConversation(
     isPublic || membersList.contains(userId)
   }
 
+  val maybeMpimPurpose: Option[String] = {
+    if (isMpim) {
+      purpose.map(_.value)
+    } else {
+      None
+    }
+  }
+
+  val computedName: String = maybeMpimPurpose.orElse(name).getOrElse("<unnamed channel>")
+
+  def sortKey: String = {
+    val kindPart = if (isPublic) { 1 } else if (isGroup) { 2 } else { 3 }
+    s"$kindPart-$computedName"
+  }
+
 }
 
 object SlackConversation {
 
   def defaultFor(id: String, name: String): SlackConversation = SlackConversation(
     id,
-    name,
+    Some(name),
     is_channel = None,
     is_group = None,
     is_im = None,

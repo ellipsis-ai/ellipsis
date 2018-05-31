@@ -5,7 +5,7 @@ import java.util.Locale
 
 import akka.actor.ActorSystem
 import models.accounts.user.{User, UserTeamAccess}
-import services.DefaultServices
+import services.{DefaultServices, SlackApiError}
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -53,7 +53,7 @@ object ScheduledActionsConfig {
             channels.getList.map(Some(_))
           } else {
             channels.getListForUser(maybeSlackUserId).map(Some(_)).recover {
-              case e: slack.api.ApiError => None
+              case e: SlackApiError => None
             }
           }
         }.getOrElse(Future.successful(None))

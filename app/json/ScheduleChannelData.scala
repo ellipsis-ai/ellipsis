@@ -13,6 +13,6 @@ case class ScheduleChannelData(
 
 object ScheduleChannelData {
   def fromSlackConversationList(list: Seq[SlackConversation]): Seq[ScheduleChannelData] = {
-    list.map((ea) => ScheduleChannelData(ea.id, ea.name, "Slack", ea.membersList, ea.isPublic, ea.isArchived))
+    list.map((ea) => ScheduleChannelData(ea.id, ea.computedName, "Slack", ea.membersList, ea.isPublic, ea.isArchived))
   }
 }

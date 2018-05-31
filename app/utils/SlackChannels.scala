@@ -19,8 +19,15 @@ case class SlackChannels(profile: SlackBotProfile, apiService: SlackApiService) 
     } yield maybeConvoWithMembers
   }
 
-  def getList: Future[Seq[SlackConversation]] = {
-    apiService.listConversations(profile)
+  def getList(implicit ec: ExecutionContext): Future[Seq[SlackConversation]] = {
+    for {
+      convos <-  apiService.listConversations(profile)
+      convosWithMembers <- Future.sequence(convos.map { convo =>
+        getMembersFor(convo.id).map { members =>
+          convo.copy(members = Some(members.toArray))
+        }
+      })
+    } yield convosWithMembers.sortBy(_.sortKey)
   }
 
   def getListForUser(maybeSlackUserId: Option[String])(implicit ec: ExecutionContext): Future[Seq[SlackConversation]] = {
