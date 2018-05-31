@@ -58,10 +58,12 @@ class SlackEventSpec extends PlaySpec with MockitoSugar {
 
   val date = OffsetDateTime.now.minusDays(365).toInstant.toEpochMilli
 
+  val members = Seq(slackUserId, otherSlackUserId)
+
   val slackConversation = SlackConversation.defaultFor(
     id = "C1000000",
     name = "The Channel"
-  ).copy(members = Some(Array(slackUserId, otherSlackUserId)))
+  )
 
   val ellipsisTeamId = IDs.next
   val slackBotProfile = SlackBotProfile("U55555555", ellipsisTeamId, slackTeamId, IDs.next, OffsetDateTime.now)
@@ -77,8 +79,8 @@ class SlackEventSpec extends PlaySpec with MockitoSugar {
         )
 
         when(services.slackApiService.listConversations(slackBotProfile)).thenReturn(Future.successful(Seq(slackConversation)))
-
         when(services.slackApiService.conversationInfo(slackBotProfile, slackConversation.id)).thenReturn(Future.successful(Some(slackConversation)))
+        when(services.slackApiService.conversationMembers(slackBotProfile, slackConversation.id)).thenReturn(Future.successful(members))
 
         val event = TestSlackEvent(slackUserData.accountId, slackConversation.id, mockSlackClient, slackBotProfile)
         val d: JsObject = await(event.detailsFor(services)(actorSystem, ec))
