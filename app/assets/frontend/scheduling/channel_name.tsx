@@ -4,7 +4,6 @@ import ScheduleChannel from '../models/schedule_channel';
 interface Props {
   channel?: Option<ScheduleChannel>
   channelId?: Option<string>
-  slackUserId: string
 }
 
   class ChannelName extends React.PureComponent<Props> {
@@ -13,7 +12,7 @@ interface Props {
       return channel ? (
         <span>
           <span className="type-weak">{channel.getPrefix()} </span>
-          <span>{channel.getName(this.props.slackUserId)} </span>
+          <span>{channel.getName()} </span>
           <span className="type-weak">{channel.getSuffix()}</span>
         </span>
       ) : (

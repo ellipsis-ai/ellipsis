@@ -137,7 +137,7 @@ class ScheduleChannelEditor extends React.Component<Props, State> {
     nameForChannel(channelId: string) {
       const foundChannel = channelId ? this.findChannelFor(channelId) : null;
       return (
-        <ChannelName channel={foundChannel} channelId={channelId} slackUserId={this.props.slackUserId} />
+        <ChannelName channel={foundChannel} channelId={channelId} />
       );
     }
 

@@ -94,10 +94,10 @@ function newChannel(props?: Partial<ScheduleChannelInterface>) {
     isBotMember: true,
     isSelfDm: false,
     isOtherDm: false,
-    isShared: false,
     isPrivateChannel: false,
     isPrivateGroup: false,
-    isArchived: false
+    isArchived: false,
+    isShared: false
   }, props));
 }
 

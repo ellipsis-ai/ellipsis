@@ -388,7 +388,7 @@ class Scheduling extends React.Component<Props, State> {
           <div className="ptxl pbxl">
             <div className="phxl mobile-phl">
               <h4 className="mvn">
-                <span className="mrxs"><ChannelName channel={group.channel} slackUserId={this.props.slackUserId} /></span>
+                <span className="mrxs"><ChannelName channel={group.channel} /></span>
                 {this.renderGroupWarning(group)}
               </h4>
             </div>
