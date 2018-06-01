@@ -175,7 +175,7 @@ describe('BehaviorListApp', () => {
     const installedGroup = Object.assign({}, group1, { id: "1", exportId: "2", name: "old" });
     const installedGroup2 = Object.assign({}, group2, { id: "2", exportId: "2" });
     const materializedGroup = BehaviorGroup.fromJson(installedGroup);
-    const updatedGroup = Object.assign({}, installedGroup, { name: "new" });
+    const updatedGroup = BehaviorGroup.fromJson(Object.assign({}, installedGroup, { name: "new" }));
 
     it('removes the existing group from currently installing and adds it to recently installed', () => {
       config.localBehaviorGroups = [installedGroup];
@@ -189,7 +189,7 @@ describe('BehaviorListApp', () => {
       expect(list.setState).toHaveBeenCalledWith({
         recentlyInstalled: [installedGroup2, updatedGroup],
         currentlyInstalling: []
-      });
+      }, expect.any(Function));
     });
 
     it('splices the updated group in if it was previously recently installed', () => {
@@ -204,7 +204,7 @@ describe('BehaviorListApp', () => {
       expect(list.setState).toHaveBeenCalledWith({
         recentlyInstalled: [updatedGroup, installedGroup2],
         currentlyInstalling: []
-      });
+      }, expect.any(Function));
     });
   });
 });
