@@ -33,7 +33,6 @@ case class SlackConversation(
                               topic: Option[SlackConversationTopic],
                               purpose: Option[SlackConversationPurpose],
                               num_members: Option[Long],
-                              members: Option[Array[String]],
                               locale: Option[String]
                             ) {
 
@@ -44,8 +43,6 @@ case class SlackConversation(
   val isPublic: Boolean = !isPrivateChannel && !isGroup && !isIm && !isMpim
   val isArchived: Boolean = is_archived.exists(identity)
   val isShared: Boolean = is_ext_shared.exists(identity)
-
-  val membersList: Seq[String] = members.map(_.toSeq).getOrElse(Seq())
 
   val isBotMember: Boolean = is_member.exists(identity)
 
@@ -93,7 +90,6 @@ object SlackConversation {
     topic = None,
     purpose = None,
     num_members = None,
-    members = None,
     locale = None
   )
 

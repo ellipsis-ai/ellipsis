@@ -91,7 +91,7 @@ class SlackEventSpec extends PlaySpec with MockitoSugar {
         (d \ "isUltraRestricted").as[Boolean] mustBe slackUserData.isUltraRestricted
         (d \ "tz").as[String] mustBe slackUserData.tz.get
         (d \ "channelMembers").as[Seq[String]] mustBe Seq(slackUserId, otherSlackUserId)
-        (d \ "channelName").as[String] mustBe slackConversation.name
+        (d \ "channelName").as[String] mustBe slackConversation.computedName
         (d \ "profile" \ "firstName").as[String] mustBe firstName
         (d \ "profile" \ "lastName").as[String] mustBe lastName
         (d \ "profile" \ "realName").as[String] mustBe fullName

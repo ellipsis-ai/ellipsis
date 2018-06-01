@@ -99,10 +99,11 @@ trait SlackEvent {
         None
       })
       maybeChannelInfo <- slackChannels.getInfoFor(channel)
+      members <- slackChannels.getMembersFor(channel)
     } yield {
       val channelDetails = JsObject(Seq(
-        "channelMembers" -> Json.toJson(maybeChannelInfo.map(_.membersList).getOrElse(Seq())),
-        "channelName" -> Json.toJson(maybeChannelInfo.map(_.name))
+        "channelMembers" -> Json.toJson(members),
+        "channelName" -> Json.toJson(maybeChannelInfo.map(_.computedName))
       ))
       maybeUser.map { user =>
         profileDataFor(user) ++ channelDetails
