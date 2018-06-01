@@ -9,7 +9,6 @@ import Sort from '../lib/sort';
 import autobind from '../lib/autobind';
 import User from "../models/user";
 
-  // Note that performance reasons this component checks if properties have changed by hand in shouldComponentUpdate
   type Props = {
     groupData: Option<BehaviorGroup>,
     onBehaviorGroupImport: (BehaviorGroup) => void,
@@ -19,19 +18,13 @@ import User from "../models/user";
     publishedGroupData: Option<BehaviorGroup>,
     publishedGroupDiffers: boolean,
     isImporting: boolean,
-    localId: Option<string>,
-    "data-is-revealed"?: Option<boolean>
+    localId: Option<string>
   }
 
   class BehaviorGroupInfoPanel extends React.PureComponent<Props> {
     constructor(props: Props) {
       super(props);
       autobind(this);
-    }
-
-    shouldComponentUpdate(newProps: Props): boolean {
-      const propsToCheck = ["groupData", "isImportable", "publishedGroupData", "isImporting", "localId", "data-is-revealed"];
-      return propsToCheck.some((propName) => newProps[propName] !== this.props[propName]);
     }
 
     getBehaviors(): Array<BehaviorVersion> {
@@ -68,7 +61,6 @@ import User from "../models/user";
       }
       const icon = group.icon;
       const alsoPublished = this.props.publishedGroupData;
-      const sameAsPublished = !this.props.publishedGroupDiffers;
       return (
         <div className="box-action phn">
           <div className="container container-c">
@@ -81,7 +73,7 @@ import User from "../models/user";
                   <span>{this.getName(group)}</span>
                 </h3>
 
-                {this.renderMetaInfo(group, alsoPublished, sameAsPublished)}
+                {this.renderMetaInfo(group, alsoPublished, this.props.publishedGroupDiffers)}
               </div>
               <div className="column column-page-main">
                 {this.props.groupData && this.props.groupData.description ? (
@@ -143,20 +135,20 @@ import User from "../models/user";
       }
     }
 
-    renderUpdate(publishedData: Option<BehaviorGroup>, sameAsPublished: boolean) {
+    renderUpdate(publishedData: Option<BehaviorGroup>, differsFromPublished: boolean) {
       if (publishedData && this.props.localId) {
         return (
           <div className="mvl fade-in">
             <DynamicLabelButton
               className="button-s"
-              disabledWhen={this.props.isImporting || sameAsPublished}
+              disabledWhen={this.props.isImporting || !differsFromPublished}
               onClick={this.onRevertToPublished}
               labels={[{
                 text: "Revert to published version",
-                displayWhen: !this.props.isImporting && !sameAsPublished
+                displayWhen: !this.props.isImporting && differsFromPublished
               }, {
                 text: "Synced with published version",
-                displayWhen: !this.props.isImporting && sameAsPublished
+                displayWhen: !this.props.isImporting && !differsFromPublished
               }, {
                 text: "Re-installing",
                 displayWhen: this.props.isImporting
@@ -226,12 +218,12 @@ import User from "../models/user";
       }
     }
 
-    renderMetaInfo(group: BehaviorGroup, publishedData: Option<BehaviorGroup>, sameAsPublished: boolean) {
+    renderMetaInfo(group: BehaviorGroup, publishedData: Option<BehaviorGroup>, differsFromPublished: boolean) {
       return (
         <div>
           {this.renderSourceInfo(group)}
-          {this.renderHistory(group, Boolean(publishedData), sameAsPublished)}
-          {this.renderUpdate(publishedData, sameAsPublished)}
+          {this.renderHistory(group, Boolean(publishedData), differsFromPublished)}
+          {this.renderUpdate(publishedData, differsFromPublished)}
         </div>
       );
     }
@@ -252,7 +244,7 @@ import User from "../models/user";
       }
     }
 
-    renderLastModifiedText(lastModified: Timestamp, group: BehaviorGroup, isPublished: boolean, sameAsPublished: boolean) {
+    renderLastModifiedText(lastModified: Timestamp, group: BehaviorGroup, isPublished: boolean, differsFromPublished: boolean) {
       const DEFAULT_NAME = "an unknown user";
 
       const initialCreated = group.getInitialCreatedAt();
@@ -270,21 +262,21 @@ import User from "../models/user";
       const initialAuthorName = initialAuthor ? initialAuthor.formattedFullNameOrUserName(DEFAULT_NAME) : DEFAULT_NAME;
       const currentAuthorName = group.author ? group.author.formattedFullNameOrUserName(DEFAULT_NAME) : DEFAULT_NAME;
 
-      if (sameAsPublished) {
+      if (isPublished && differsFromPublished) {
         return (
           <ul>
             {this.renderInitialCreatedText(initialCreatedDate, initialAuthorName, isPublished)}
-            {hasChangedSinceCreation ? (
-              <li>Re-installed {lastModifiedDate} by {currentAuthorName}</li>
-            ) : null}
+            <li>Last modified {lastModifiedDate} by {currentAuthorName}</li>
+            <li>This skill differs from published version</li>
           </ul>
         );
       } else if (isPublished) {
         return (
           <ul>
             {this.renderInitialCreatedText(initialCreatedDate, initialAuthorName, isPublished)}
-            <li>Last modified {lastModifiedDate} by {currentAuthorName}</li>
-            <li>This skill differs from published version</li>
+            {hasChangedSinceCreation ? (
+              <li>Re-installed {lastModifiedDate} by {currentAuthorName}</li>
+            ) : null}
           </ul>
         );
       } else {
@@ -299,11 +291,11 @@ import User from "../models/user";
       }
     }
 
-    renderHistory(group: BehaviorGroup, isPublished: boolean, sameAsPublished: boolean) {
+    renderHistory(group: BehaviorGroup, isPublished: boolean, differsFromPublished: boolean) {
       if (this.props.localId && group.createdAt) {
         return (
           <div className="type-weak type-s mvm">
-            {this.renderLastModifiedText(group.createdAt, group, isPublished, sameAsPublished)}
+            {this.renderLastModifiedText(group.createdAt, group, isPublished, differsFromPublished)}
           </div>
         );
       } else {

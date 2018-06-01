@@ -31,7 +31,7 @@ const ANIMATION_DURATION = 0.25;
 type Props = {
   onLoadPublishedBehaviorGroups: () => void,
   onBehaviorGroupImport: (b: BehaviorGroup) => void,
-  onBehaviorGroupUpdate: (orig: BehaviorGroup, upd: BehaviorGroup) => void,
+  onBehaviorGroupUpdate: (orig: BehaviorGroup, upd: BehaviorGroup, callback?: (newGroup: BehaviorGroup) => void) => void,
   onMergeBehaviorGroups: (ids: Array<string>) => void,
   onDeleteBehaviorGroups: (ids: Array<string>) => void,
   onBehaviorGroupDeploy: (id: string) => void,
@@ -473,14 +473,19 @@ class BehaviorList extends React.Component<Props, State> {
       null;
   }
 
+  getUpdatedPublishedGroupDiffersState(groupId: string, differs: boolean): PublishedBehaviorGroupDiffers {
+    const newState: PublishedBehaviorGroupDiffers = {};
+    newState[groupId] = differs;
+    return Object.assign({}, this.state.publishedBehaviorGroupDiffers, newState);
+  }
+
+  hasDiffForPublished(local: BehaviorGroup, published: BehaviorGroup): boolean {
+    return Boolean(maybeDiffFor(local, published, null, true));
+  }
+
   publishedGroupDataDiffersFor(group: Option<BehaviorGroup>, published: Option<BehaviorGroup>): boolean {
     if (group && group.id && published) {
-      let publishedGroupDiffers = this.state.publishedBehaviorGroupDiffers[group.id];
-      if (typeof publishedGroupDiffers === "undefined") {
-        this.state.publishedBehaviorGroupDiffers[group.id] = Boolean(maybeDiffFor(group, published, null, true));
-        publishedGroupDiffers = this.state.publishedBehaviorGroupDiffers[group.id];
-      }
-      return publishedGroupDiffers;
+      return Boolean(this.state.publishedBehaviorGroupDiffers[group.id]);
     } else {
       return false;
     }
@@ -518,7 +523,14 @@ class BehaviorList extends React.Component<Props, State> {
 
   onBehaviorGroupUpdate(existingGroup: BehaviorGroup, updatedData: BehaviorGroup): void {
     const callback = () => {
-      this.props.onBehaviorGroupUpdate(existingGroup, updatedData);
+      this.props.onBehaviorGroupUpdate(existingGroup, updatedData, (newGroup: BehaviorGroup) => {
+        const publishedData = this.publishedGroupDataFor(newGroup);
+        if (newGroup.id && publishedData) {
+          this.setState({
+            publishedBehaviorGroupDiffers: this.getUpdatedPublishedGroupDiffersState(newGroup.id, this.hasDiffForPublished(newGroup, publishedData))
+          });
+        }
+      });
     };
     if (existingGroup.id && this.isGroupChecked(existingGroup)) {
       this.onGroupCheckboxChange(existingGroup.id, false, callback);
@@ -549,8 +561,18 @@ class BehaviorList extends React.Component<Props, State> {
       this.toggleActivePanel('moreInfo');
     } else if (group && group !== previousSelectedGroup) {
       var openNewGroup = () => {
+        let publishedGroupDiffersState: Option<PublishedBehaviorGroupDiffers>;
+        const publishedGroup = this.publishedGroupDataFor(group);
+        if (group.id && publishedGroup) {
+          let publishedGroupDiffers = this.state.publishedBehaviorGroupDiffers[group.id];
+          if (typeof publishedGroupDiffers === "undefined") {
+            publishedGroupDiffers = this.hasDiffForPublished(group, publishedGroup);
+            publishedGroupDiffersState = this.getUpdatedPublishedGroupDiffersState(group.id, publishedGroupDiffers);
+          }
+        }
         this.setState({
-          selectedBehaviorGroup: group
+          selectedBehaviorGroup: group,
+          publishedBehaviorGroupDiffers: publishedGroupDiffersState || this.state.publishedBehaviorGroupDiffers
         }, () => {
           this.toggleActivePanel('moreInfo');
         });
