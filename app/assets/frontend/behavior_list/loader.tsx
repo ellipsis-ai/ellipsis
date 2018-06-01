@@ -14,7 +14,7 @@ import TeamTimeZoneSetter from '../time_zone/team_time_zone_setter';
 import autobind from "../lib/autobind";
 import {BehaviorGroupJson} from "../models/behavior_group";
 
-type Props = {
+export interface BehaviorListLoaderProps {
   containerId: string,
   csrfToken: string,
   behaviorGroups: Array<BehaviorGroupJson>,
@@ -24,7 +24,7 @@ type Props = {
   branchName: Option<string>,
   botName: string,
   feedbackContainer?: Option<HTMLElement>
-};
+}
 
 export type PublishedBehaviorGroupLoadStatus = "loaded" | "loading" | "error";
 
@@ -50,10 +50,10 @@ type State = {
   deployError: Option<string>
 }
 
-declare var BehaviorListConfig: Props;
+declare var BehaviorListConfig: BehaviorListLoaderProps;
 
-class BehaviorListLoader extends React.Component<Props, State> {
-  constructor(props: Props) {
+class BehaviorListLoader extends React.Component<BehaviorListLoaderProps, State> {
+  constructor(props: BehaviorListLoaderProps) {
     super(props);
     autobind(this);
     this.state = {

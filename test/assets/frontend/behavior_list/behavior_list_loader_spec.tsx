@@ -1,19 +1,21 @@
 import * as React from 'react';
 import * as TestUtils from 'react-addons-test-utils';
-import BehaviorListLoader from '../../../../app/assets/frontend/behavior_list/loader';
+import BehaviorListLoader, {BehaviorListLoaderProps} from '../../../../app/assets/frontend/behavior_list/loader';
 import BehaviorList from '../../../../app/assets/frontend/behavior_list/index';
 import TimeZoneSetter from '../../../../app/assets/frontend/time_zone/team_time_zone_setter';
-import BehaviorGroup from '../../../../app/assets/frontend/models/behavior_group';
+import BehaviorGroup, {BehaviorGroupJson} from '../../../../app/assets/frontend/models/behavior_group';
+import {BehaviorVersionJson} from "../../../../app/assets/frontend/models/behavior_version";
+import {ComponentClass} from "react";
 
 jest.setMock('../../../../app/assets/frontend/lib/data_request', { DataRequest: () => ({
   jsonGet: jest.fn(() => {
     return new Promise((resolve, reject) => {
-      process.nextTick(() => resolve([]) || reject({ error: "oops" }));
+      global.process.nextTick(() => resolve([]) || reject({ error: "oops" }));
     });
   }),
   jsonPost: jest.fn(() => {
     return new Promise((resolve, reject) => {
-      process.nextTick(() => resolve([]) || reject({ error: "oops" }));
+      global.process.nextTick(() => resolve([]) || reject({ error: "oops" }));
     });
   })
 })});
@@ -24,13 +26,12 @@ describe('BehaviorListApp', () => {
   jsRoutes.controllers.BehaviorEditorController.edit = () => ({ url: '/edit', method: 'get' });
   jsRoutes.controllers.BehaviorEditorController.newGroup = () => ({ url: '/newGroup', method: 'get' });
 
-  const behaviorVersionTask1 = Object.freeze({
+  const behaviorVersionTask1: BehaviorVersionJson = {
     "teamId": "abcdef",
     "groupId": "sfgsdf",
     "behaviorId": "ghijkl",
     "functionBody": "use strict;",
     "responseTemplate": "A template",
-    "params": [],
     "triggers": [{
       "text": "B",
       "requiresMention": false,
@@ -42,37 +43,47 @@ describe('BehaviorListApp', () => {
       "isRegex": false,
       "caseSensitive": false
     }],
-    "config": {},
-    "createdAt": 1468338136532
-  });
-  const behaviorVersionTask2 = Object.freeze({
+    "config": {
+      isDataType: false
+    },
+    "createdAt": 1468338136532,
+    inputIds: [],
+    knownEnvVarsUsed: []
+  };
+  const behaviorVersionTask2: BehaviorVersionJson = {
     "teamId": "abcdef",
     "groupId": "gsdfgsg",
     "behaviorId": "mnopqr",
     "functionBody": "use strict;",
     "responseTemplate": "A template",
-    "params": [],
     "triggers": [{
       "text": "A",
       "requiresMention": true,
       "isRegex": true,
       "caseSensitive": false
     }],
-    "config": {},
-    "createdAt": 1468359271138
-  });
-  const behaviorVersionKnowledge1 = Object.freeze({
+    "config": {
+      isDataType: false
+    },
+    "createdAt": 1468359271138,
+    inputIds: [],
+    knownEnvVarsUsed: []
+  };
+  const behaviorVersionKnowledge1: BehaviorVersionJson ={
     "teamId": "abcdef",
     "groupId": "jfghjfg",
     "behaviorId": "stuvwx",
     "functionBody": "",
     "responseTemplate": "The magic 8-ball says:\n\n“Concentrate and ask again.”",
-    "params": [],
     "triggers": [],
-    "config": {},
-    "createdAt": 1466109904858
-  });
-  const group1 = {
+    "config": {
+      isDataType: false
+    },
+    "createdAt": 1466109904858,
+    inputIds: [],
+    knownEnvVarsUsed: []
+  };
+  const group1: BehaviorGroupJson = {
     id: "a",
     teamId: "1",
     name: "A",
@@ -90,9 +101,10 @@ describe('BehaviorListApp', () => {
     exportId: null,
     author: null,
     gitSHA: null,
-    deployment: null
+    deployment: null,
+    isManaged: false
   };
-  const group2 = {
+  const group2: BehaviorGroupJson = {
     id: "b",
     teamId: "1",
     name: "B",
@@ -110,9 +122,10 @@ describe('BehaviorListApp', () => {
     exportId: null,
     author: null,
     gitSHA: null,
-    deployment: null
+    deployment: null,
+    isManaged: false
   };
-  const group3 = {
+  const group3: BehaviorGroupJson = {
     id: "c",
     teamId: "1",
     name: "",
@@ -130,7 +143,8 @@ describe('BehaviorListApp', () => {
     exportId: null,
     author: null,
     gitSHA: null,
-    deployment: null
+    deployment: null,
+    isManaged: false
   };
   const defaultConfig = {
     containerId: "foo",
@@ -147,10 +161,10 @@ describe('BehaviorListApp', () => {
     const div = document.createElement("div");
     return TestUtils.renderIntoDocument(
       <BehaviorListLoader {...config} feedbackContainer={div} />
-    );
+    ) as BehaviorListLoader;
   }
 
-  let config = {};
+  let config: Partial<BehaviorListLoaderProps> = {};
 
   beforeEach(() => {
     config = Object.assign({}, defaultConfig);
@@ -159,50 +173,51 @@ describe('BehaviorListApp', () => {
   describe('render', () => {
     it('renders a BehaviorList when the time zone is set', () => {
       const list = createBehaviorListLoader(config);
-      expect(TestUtils.scryRenderedComponentsWithType(list, BehaviorList).length).toBe(1);
+      expect(TestUtils.scryRenderedComponentsWithType(list, BehaviorList as ComponentClass<any>).length).toBe(1);
       expect(TestUtils.scryRenderedComponentsWithType(list, TimeZoneSetter).length).toBe(0);
     });
 
     it('renders a TimeZoneSetter when no time zone is set', () => {
       config.teamTimeZone = null;
       const list = createBehaviorListLoader(config);
-      expect(TestUtils.scryRenderedComponentsWithType(list, BehaviorList).length).toBe(0);
+      expect(TestUtils.scryRenderedComponentsWithType(list, BehaviorList as ComponentClass<any>).length).toBe(0);
       expect(TestUtils.scryRenderedComponentsWithType(list, TimeZoneSetter).length).toBe(1);
     });
   });
 
   describe('didUpdateExistingGroup', () => {
     const installedGroup = Object.assign({}, group1, { id: "1", exportId: "2", name: "old" });
-    const installedGroup2 = Object.assign({}, group2, { id: "2", exportId: "2" });
     const materializedGroup = BehaviorGroup.fromJson(installedGroup);
+    const installedGroup2 = Object.assign({}, group2, { id: "2", exportId: "2" });
+    const materializedGroup2 = BehaviorGroup.fromJson(installedGroup2);
     const updatedGroup = BehaviorGroup.fromJson(Object.assign({}, installedGroup, { name: "new" }));
 
     it('removes the existing group from currently installing and adds it to recently installed', () => {
-      config.localBehaviorGroups = [installedGroup];
+      config.behaviorGroups = [installedGroup];
       const list = createBehaviorListLoader(config);
-      list.setState = jest.fn();
-      list.state = {
-        recentlyInstalled: [installedGroup2],
+      list.setState({
+        recentlyInstalled: [materializedGroup2],
         currentlyInstalling: [materializedGroup]
-      };
+      });
+      list.setState = jest.fn();
       list.didUpdateExistingGroup(materializedGroup, updatedGroup);
       expect(list.setState).toHaveBeenCalledWith({
-        recentlyInstalled: [installedGroup2, updatedGroup],
+        recentlyInstalled: [materializedGroup2, updatedGroup],
         currentlyInstalling: []
       }, expect.any(Function));
     });
 
     it('splices the updated group in if it was previously recently installed', () => {
-      config.localBehaviorGroups = [installedGroup];
+      config.behaviorGroups = [installedGroup];
       const list = createBehaviorListLoader(config);
-      list.setState = jest.fn();
-      list.state = {
-        recentlyInstalled: [installedGroup, installedGroup2],
+      list.setState({
+        recentlyInstalled: [materializedGroup, materializedGroup2],
         currentlyInstalling: [materializedGroup]
-      };
+      });
+      list.setState = jest.fn();
       list.didUpdateExistingGroup(materializedGroup, updatedGroup);
       expect(list.setState).toHaveBeenCalledWith({
-        recentlyInstalled: [updatedGroup, installedGroup2],
+        recentlyInstalled: [updatedGroup, materializedGroup2],
         currentlyInstalling: []
       }, expect.any(Function));
     });
