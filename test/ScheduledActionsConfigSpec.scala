@@ -13,7 +13,7 @@ import org.mockito.Mockito._
 import org.scalatest.mock.MockitoSugar
 import org.scalatestplus.play.PlaySpec
 import play.api.test.Helpers._
-import services.DataService
+import services.{DataService, SlackApiError}
 import services.caching.CacheService
 import support.TestContext
 import utils._
@@ -24,24 +24,21 @@ class ScheduledActionsConfigSpec extends PlaySpec with MockitoSugar {
   val slackBotUserId = "B1234"
   val slackUserId = "U1234"
   val otherSlackUserId = "U5678"
+  val slackUserIdsWithoutUser = Seq(slackBotUserId, otherSlackUserId)
+  val slackUserIdsWithUser = slackUserIdsWithoutUser ++ Seq(slackUserId)
   val slackTeamId = "T1234"
   val channel1Id = "G1234"
   val channel2Id = "G5678"
   val aTimestamp: Long = OffsetDateTime.now.minusYears(1).toEpochSecond
   val otherTeam = Team("Other team")
   val channels = Seq(
-    makeSlackGroup(channel1Id, "general", includeUser = true),
-    makeSlackGroup(channel2Id, "other", includeUser = false)
+    makeSlackGroup(channel1Id, "general"),
+    makeSlackGroup(channel2Id, "other")
   )
   val maybeCsrfToken = Some("nothing to see here")
 
-  def makeSlackGroup(id: String, name: String, includeUser: Boolean): SlackConversation = {
-    val members: Seq[String] = Seq(slackBotUserId, otherSlackUserId) ++ (if (includeUser) {
-      Seq(slackUserId)
-    } else {
-      Seq()
-    })
-    SlackConversation.defaultFor(id, name).copy(is_group = Some(true), is_private = Some(true), members = Some(members.toArray))
+  def makeSlackGroup(id: String, name: String): SlackConversation = {
+    SlackConversation.defaultFor(id, name).copy(is_group = Some(true), is_private = Some(true))
   }
 
   def makeScheduleFor(channelId: String, team: Team): ScheduledMessage = {
@@ -67,15 +64,15 @@ class ScheduledActionsConfigSpec extends PlaySpec with MockitoSugar {
 
     val slackChannels = mock[SlackChannels]
     when(dataService.slackBotProfiles.channelsFor(any[SlackBotProfile])).thenReturn(slackChannels)
-    when(slackChannels.getListForUser(any[Option[String]])(any[ExecutionContext]))
-      .thenReturn {
-        if (blowup) {
-          Future.failed(slack.api.ApiError("account_inactive"))
-        } else {
-          Future.successful(channels)
-        }
+    when(slackChannels.getMembersFor(channel1Id)).thenReturn(Future.successful(slackUserIdsWithUser))
+    when(slackChannels.getMembersFor(channel2Id)).thenReturn(Future.successful(slackUserIdsWithoutUser))
+    when(slackChannels.getList).thenReturn(
+      if (blowup) {
+        Future.failed(SlackApiError("account_inactive"))
+      } else {
+        Future.successful(channels)
       }
-    when(slackChannels.getList).thenReturn(Future.successful(channels))
+    )
   }
 
   def setupSchedules(team: Team, dataService: DataService): Seq[ScheduledMessage] = {
@@ -105,7 +102,7 @@ class ScheduledActionsConfigSpec extends PlaySpec with MockitoSugar {
         maybeConfig.map { config =>
           config.scheduledActions.length mustBe 1
           config.scheduledActions.head.id.get mustEqual schedules.head.id
-          config.channelList.get.length mustEqual channels.length
+          config.channelList.get.length mustEqual 1
         }.getOrElse {
           assert(false, "No config returned")
         }

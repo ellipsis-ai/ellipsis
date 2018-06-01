@@ -7,7 +7,6 @@ import models.behaviors.scheduling.scheduledbehavior.ScheduledBehavior
 import models.behaviors.scheduling.scheduledmessage.ScheduledMessage
 import models.team.Team
 import services.DataService
-import utils.SlackConversation
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -27,9 +26,9 @@ case class ScheduledActionData(
                                 channel: String,
                                 userId: Option[String]
                               ) {
-  def visibleToSlackUser(slackUserId: String, conversationList: Seq[SlackConversation]): Boolean = {
+  def visibleToSlackUser(slackUserId: String, conversationList: Seq[ScheduleChannelData]): Boolean = {
     conversationList.exists { convo =>
-      convo.id == channel && convo.visibleToUser(slackUserId)
+      convo.id == channel
     }
   }
 }
@@ -85,7 +84,7 @@ object ScheduledActionData {
                               team: Team,
                               teamAccess: UserTeamAccess,
                               dataService: DataService,
-                              maybeConversationList: Option[Seq[SlackConversation]],
+                              maybeConversationList: Option[Seq[ScheduleChannelData]],
                               maybeSlackUserId: Option[String],
                               forceAdmin: Boolean
                             )(implicit ec: ExecutionContext): Future[Seq[ScheduledActionData]] = {

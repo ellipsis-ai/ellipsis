@@ -9,33 +9,11 @@ import scala.util.matching.Regex
 case class SlackChannels(profile: SlackBotProfile, apiService: SlackApiService) {
 
   def getInfoFor(convoId: String)(implicit ec: ExecutionContext): Future[Option[SlackConversation]] = {
-    for {
-      maybeConvo <-  apiService.conversationInfo(profile, convoId)
-      maybeConvoWithMembers <- maybeConvo.map { convo =>
-        getMembersFor(convo.id).map { members =>
-          Some(convo.copy(members = Some(members.toArray)))
-        }
-      }.getOrElse(Future.successful(None))
-    } yield maybeConvoWithMembers
+    apiService.conversationInfo(profile, convoId)
   }
 
   def getList(implicit ec: ExecutionContext): Future[Seq[SlackConversation]] = {
-    for {
-      convos <-  apiService.listConversations(profile)
-      convosWithMembers <- Future.sequence(convos.map { convo =>
-        getMembersFor(convo.id).map { members =>
-          convo.copy(members = Some(members.toArray))
-        }
-      })
-    } yield convosWithMembers.sortBy(_.sortKey)
-  }
-
-  def getListForUser(maybeSlackUserId: Option[String])(implicit ec: ExecutionContext): Future[Seq[SlackConversation]] = {
-    maybeSlackUserId.map { slackUserId =>
-      getList.map { channels =>
-        channels.filter(ea => ea.visibleToUser(slackUserId))
-      }
-    }.getOrElse(Future.successful(Seq()))
+    apiService.listConversations(profile)
   }
 
   def getMembersFor(convoId: String)(implicit ec: ExecutionContext): Future[Seq[String]] = {

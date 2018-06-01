@@ -40,27 +40,31 @@ case class SlackConversation(
   val isGroup: Boolean = is_group.exists(identity)
   val isIm: Boolean = is_im.exists(identity)
   val isMpim: Boolean = is_mpim.exists(identity)
-  val isPublic: Boolean = !is_private.exists(identity) && !isGroup && !isIm
+  val isPrivateChannel: Boolean = !isMpim && !isIm && is_private.exists(identity)
+  val isPublic: Boolean = !isPrivateChannel && !isGroup && !isIm && !isMpim
   val isArchived: Boolean = is_archived.exists(identity)
+  val isShared: Boolean = is_ext_shared.exists(identity)
 
   val membersList: Seq[String] = members.map(_.toSeq).getOrElse(Seq())
 
-  def visibleToUser(userId: String): Boolean = {
-    isPublic || membersList.contains(userId)
+  val isBotMember: Boolean = is_member.exists(identity)
+
+  def isVisibleToUserWhere(isPrivateMember: Boolean, forceAdmin: Boolean): Boolean = {
+    isPublic || (isPrivateMember || forceAdmin)
   }
 
-  val maybeMpimPurpose: Option[String] = {
-    if (isMpim) {
+  val maybeImPurpose: Option[String] = {
+    if (isMpim || isIm) {
       purpose.map(_.value)
     } else {
       None
     }
   }
 
-  val computedName: String = maybeMpimPurpose.orElse(name).getOrElse("<unnamed channel>")
+  val computedName: String = maybeImPurpose.orElse(name).getOrElse("<unnamed channel>")
 
   def sortKey: String = {
-    val kindPart = if (isPublic) { 1 } else if (isGroup) { 2 } else { 3 }
+    val kindPart = if (isPublic) { 1 } else if (isPrivateChannel) { 2 } else if (isMpim) { 3 } else { 4 }
     s"$kindPart-$computedName"
   }
 

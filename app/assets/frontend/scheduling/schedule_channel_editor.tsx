@@ -61,12 +61,12 @@ class ScheduleChannelEditor extends React.Component<Props, State> {
         return true;
       } else {
         const forComparison = text.replace(/^#/, "").toLowerCase();
-        return channel.getName(this.props.slackUserId).toLowerCase().includes(forComparison);
+        return channel.getName().toLowerCase().includes(forComparison);
       }
     }
 
     canSelectChannel(channel: ScheduleChannel): boolean {
-      return !channel.isArchived && channel.userCanAccess(this.props.slackUserId);
+      return !channel.isArchived && (!channel.isOtherDm || this.props.scheduledAction.channel === channel.id);
     }
 
     getFilteredChannelList(): Array<ScheduleChannelOption> {
@@ -74,7 +74,7 @@ class ScheduleChannelEditor extends React.Component<Props, State> {
         (ea) => this.canSelectChannel(ea) && this.searchIncludes(ea, this.state.searchText)
       ) : [];
       const channelList = channels.map((ea) => ({
-        name: ea.getFormattedName(this.props.slackUserId),
+        name: ea.getFormattedName(),
         value: ea.id
       }));
       if (this.props.scheduledAction.channel) {
@@ -116,7 +116,7 @@ class ScheduleChannelEditor extends React.Component<Props, State> {
         return false;
       }
       const selectedChannel = this.findChannelFor(channelId);
-      return Boolean(selectedChannel && selectedChannel.isDM());
+      return Boolean(selectedChannel && selectedChannel.isDm());
     }
 
     botMissingFromChannel(): boolean {
@@ -124,7 +124,7 @@ class ScheduleChannelEditor extends React.Component<Props, State> {
       if (channelId && this.props.slackBotUserId) {
         const channelInfo = this.findChannelFor(channelId);
         if (channelInfo) {
-          return !channelInfo.userCanAccess(this.props.slackBotUserId);
+          return !channelInfo.isBotMember;
         }
       }
       return false;

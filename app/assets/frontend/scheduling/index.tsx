@@ -189,16 +189,14 @@ class Scheduling extends React.Component<Props, State> {
       const groupsByName = {};
       this.props.scheduledActions.forEach((action) => {
         const channel = this.findChannelFor(action.channel);
-        const channelName = channel ? channel.getFormattedName(this.props.slackUserId) : "Unknown";
-        const excludesUser = channel ? !channel.userCanAccess(this.props.slackUserId) : false;
-        const excludesBot = this.props.slackBotUserId && channel ? !channel.isDM() && !channel.userCanAccess(this.props.slackBotUserId) : false;
-        if (!channel || channel.isPublic || !excludesUser || channel.isDM()) {
+        const channelName = channel ? channel.getFormattedName() : "Unknown";
+        if (!channel || channel.isPublic() || channel.isDm()) {
           const group = groupsByName[channelName] || {
             channel: channel,
             channelName: channelName,
             channelId: channel ? channel.id : "unknown",
-            excludesBot: excludesBot,
-            excludesUser: excludesUser,
+            excludesBot: channel && !channel.isBotMember,
+            excludesUser: false,
             actions: []
           };
           group.actions.push(action);
@@ -515,7 +513,7 @@ class Scheduling extends React.Component<Props, State> {
                           <div className="column column-expand">
                             <p>
                               {selectedItemChannel ?
-                                `In ${selectedItemChannel.getDescription(this.props.slackUserId)}` :
+                                `In ${selectedItemChannel.getDescription()}` :
                                 `In channel ID ${selectedItem.channel}`
                               }
                             </p>
