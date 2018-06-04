@@ -25,13 +25,7 @@ case class ScheduledActionData(
                                 useDM: Boolean,
                                 channel: String,
                                 userId: Option[String]
-                              ) {
-  def visibleToSlackUser(slackUserId: String, conversationList: Seq[ScheduleChannelData]): Boolean = {
-    conversationList.exists { convo =>
-      convo.id == channel
-    }
-  }
-}
+                              )
 
 object ScheduledActionData {
   def fromScheduledMessage(scheduledMessage: ScheduledMessage): ScheduledActionData = {
@@ -88,20 +82,16 @@ object ScheduledActionData {
                               maybeSlackUserId: Option[String],
                               forceAdmin: Boolean
                             )(implicit ec: ExecutionContext): Future[Seq[ScheduledActionData]] = {
-    for {
-      allScheduledActions <- buildForAdmin(team, dataService)
-    } yield {
+    buildForAdmin(team, dataService).map { allScheduledActions =>
       if (teamAccess.isAdminAccess || forceAdmin) {
         allScheduledActions
       } else {
-        (for {
-          conversationList <- maybeConversationList
-          slackUserId <- maybeSlackUserId
-        } yield {
-          allScheduledActions.filter(_.visibleToSlackUser(slackUserId, conversationList))
-        }).getOrElse {
-          Seq()
-        }
+        maybeConversationList.map { conversationList =>
+          val convoIds = conversationList.map(_.id)
+          allScheduledActions.filter { action =>
+            convoIds.contains(action.channel)
+          }
+        }.getOrElse(Seq())
       }
     }
   }
