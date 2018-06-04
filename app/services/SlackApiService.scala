@@ -37,7 +37,7 @@ class SlackApiService @Inject()(services: DefaultServices, implicit val actorSys
   def listConversations(profile: SlackBotProfile): Future[Seq[SlackConversation]] = {
     ws.
       url(urlFor("conversations.list")).
-      withQueryStringParameters(("token", profile.token), ("limit", "1000"), ("types", "public_channel, private_channel, mpim, im"), ("exclude_archived", "true")).
+      withQueryStringParameters(("token", profile.token), ("limit", "1000"), ("types", "public_channel, private_channel, mpim, im"), ("exclude_archived", "false")).
       get.
       map { response =>
         (response.json \ "channels").validate[Seq[SlackConversation]] match {
