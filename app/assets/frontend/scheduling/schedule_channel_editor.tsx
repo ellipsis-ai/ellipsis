@@ -124,7 +124,7 @@ class ScheduleChannelEditor extends React.Component<Props, State> {
       if (channelId && this.props.slackBotUserId) {
         const channelInfo = this.findChannelFor(channelId);
         if (channelInfo) {
-          return !channelInfo.isBotMember;
+          return !channelInfo.isBotMember && !channelInfo.isSelfDm;
         }
       }
       return false;

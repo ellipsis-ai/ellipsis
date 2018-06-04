@@ -56,7 +56,6 @@ type ScheduleGroup = {
   channelName: string,
   channelId: string,
   excludesBot: boolean,
-  excludesUser: boolean,
   actions: Array<ScheduledAction>
 }
 
@@ -190,18 +189,15 @@ class Scheduling extends React.Component<Props, State> {
       this.props.scheduledActions.forEach((action) => {
         const channel = this.findChannelFor(action.channel);
         const channelName = channel ? channel.getFormattedName() : "Unknown";
-        if (!channel || channel.isPublic() || channel.isDm()) {
-          const group = groupsByName[channelName] || {
-            channel: channel,
-            channelName: channelName,
-            channelId: channel ? channel.id : "unknown",
-            excludesBot: channel && !channel.isBotMember,
-            excludesUser: false,
-            actions: []
-          };
-          group.actions.push(action);
-          groupsByName[channelName] = group;
-        }
+        const group = groupsByName[channelName] || {
+          channel: channel,
+          channelName: channelName,
+          channelId: channel ? channel.id : "unknown",
+          excludesBot: channel && !channel.isSelfDm && !channel.isBotMember,
+          actions: []
+        };
+        group.actions.push(action);
+        groupsByName[channelName] = group;
       });
       const channelNames = Object.keys(groupsByName);
       const sortedNames = Sort.arrayAlphabeticalBy(channelNames, (ea) => ea);
@@ -369,12 +365,6 @@ class Scheduling extends React.Component<Props, State> {
         return (
           <span className="type-s type-pink type-bold type-italic">
             — Warning: Ellipsis must be invited to this channel for any scheduled action to run.
-          </span>
-        );
-      } else if (group.excludesUser) {
-        return (
-          <span className="type-s type-weak type-italic">
-            — You are not a member of this channel.
           </span>
         );
       } else {
