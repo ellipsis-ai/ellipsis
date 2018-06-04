@@ -56,6 +56,7 @@ type ScheduleGroup = {
   channelName: string,
   channelId: string,
   excludesBot: boolean,
+  isArchived: boolean,
   actions: Array<ScheduledAction>
 }
 
@@ -193,7 +194,8 @@ class Scheduling extends React.Component<Props, State> {
           channel: channel,
           channelName: channelName,
           channelId: channel ? channel.id : "unknown",
-          excludesBot: channel && !channel.isSelfDm && !channel.isBotMember,
+          excludesBot: channel && !channel.isDm() && !channel.isBotMember,
+          isArchived: channel && channel.isArchived,
           actions: []
         };
         group.actions.push(action);
@@ -361,7 +363,13 @@ class Scheduling extends React.Component<Props, State> {
     }
 
     renderGroupWarning(group) {
-      if (group.excludesBot) {
+      if (group.isArchived) {
+        return (
+          <span className="type-s type-pink type-bold type-italic">
+            — Warning: This channel is archived.
+          </span>
+        );
+      } else if (group.excludesBot) {
         return (
           <span className="type-s type-pink type-bold type-italic">
             — Warning: Ellipsis must be invited to this channel for any scheduled action to run.
