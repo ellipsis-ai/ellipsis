@@ -37,6 +37,7 @@ trait TestContext extends MockitoSugar{
       overrides(bind[BotResultService].toInstance(mock[BotResultService])).
       overrides(bind[CacheService].to[MockCacheService]).
       overrides(bind[SlackFileMap].toInstance(mock[SlackFileMap])).
+      overrides(bind[SlackApiService].toInstance(mock[SlackApiService])).
       disable[ActorModule]
   }
   lazy val teamId: String = IDs.next

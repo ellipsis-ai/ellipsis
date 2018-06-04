@@ -13,11 +13,10 @@ import org.mockito.Mockito._
 import org.scalatest.mock.MockitoSugar
 import org.scalatestplus.play.PlaySpec
 import play.api.test.Helpers._
-import services.DataService
+import services.{DataService, SlackApiError}
 import services.caching.CacheService
-import slack.models.{Group, GroupValue}
 import support.TestContext
-import utils.{ChannelLike, SlackChannels, SlackGroup}
+import utils._
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -25,40 +24,21 @@ class ScheduledActionsConfigSpec extends PlaySpec with MockitoSugar {
   val slackBotUserId = "B1234"
   val slackUserId = "U1234"
   val otherSlackUserId = "U5678"
+  val slackUserIdsWithoutUser = Seq(slackBotUserId, otherSlackUserId)
+  val slackUserIdsWithUser = slackUserIdsWithoutUser ++ Seq(slackUserId)
   val slackTeamId = "T1234"
   val channel1Id = "G1234"
   val channel2Id = "G5678"
   val aTimestamp: Long = OffsetDateTime.now.minusYears(1).toEpochSecond
   val otherTeam = Team("Other team")
   val channels = Seq(
-    makeSlackGroup(channel1Id, "general", includeUser = true),
-    makeSlackGroup(channel2Id, "other", includeUser = false)
+    makeSlackGroup(channel1Id, "general"),
+    makeSlackGroup(channel2Id, "other")
   )
   val maybeCsrfToken = Some("nothing to see here")
 
-  def makeSlackGroup(id: String, name: String, includeUser: Boolean): ChannelLike = {
-    val members: Seq[String] = Seq(slackBotUserId, otherSlackUserId) ++ (if (includeUser) {
-      Seq(slackUserId)
-    } else {
-      Seq()
-    })
-    SlackGroup(
-      Group(
-        id,
-        name,
-        is_group = true,
-        created = aTimestamp,
-        creator = otherSlackUserId,
-        is_archived = false,
-        members = members,
-        topic = GroupValue("some group topic", otherSlackUserId, aTimestamp),
-        purpose = GroupValue("some group purpose", otherSlackUserId, aTimestamp),
-        last_read = None,
-        latest = None,
-        unread_count = None,
-        unread_count_display = None
-      )
-    )
+  def makeSlackGroup(id: String, name: String): SlackConversation = {
+    SlackConversation.defaultFor(id, name).copy(is_group = Some(true), is_private = Some(true))
   }
 
   def makeScheduleFor(channelId: String, team: Team): ScheduledMessage = {
@@ -83,16 +63,16 @@ class ScheduledActionsConfigSpec extends PlaySpec with MockitoSugar {
     when(dataService.linkedAccounts.maybeSlackUserIdFor(user)(ec)).thenReturn(Future.successful(Some(slackUserId)))
 
     val slackChannels = mock[SlackChannels]
-    when(dataService.slackBotProfiles.channelsFor(any[SlackBotProfile], any[CacheService])).thenReturn(slackChannels)
-    when(slackChannels.getListForUser(any[Option[String]])(any[ActorSystem], any[ExecutionContext]))
-      .thenReturn {
-        if (blowup) {
-          Future.failed(slack.api.ApiError("account_inactive"))
-        } else {
-          Future.successful(channels)
-        }
+    when(dataService.slackBotProfiles.channelsFor(any[SlackBotProfile])).thenReturn(slackChannels)
+    when(slackChannels.getMembersFor(channel1Id)).thenReturn(Future.successful(slackUserIdsWithUser))
+    when(slackChannels.getMembersFor(channel2Id)).thenReturn(Future.successful(slackUserIdsWithoutUser))
+    when(slackChannels.getList).thenReturn(
+      if (blowup) {
+        Future.failed(SlackApiError("account_inactive"))
+      } else {
+        Future.successful(channels)
       }
-    when(slackChannels.getList(any[ActorSystem], any[ExecutionContext])).thenReturn(Future.successful(channels))
+    )
   }
 
   def setupSchedules(team: Team, dataService: DataService): Seq[ScheduledMessage] = {
@@ -122,7 +102,7 @@ class ScheduledActionsConfigSpec extends PlaySpec with MockitoSugar {
         maybeConfig.map { config =>
           config.scheduledActions.length mustBe 1
           config.scheduledActions.head.id.get mustEqual schedules.head.id
-          config.channelList.get.length mustEqual channels.length
+          config.channelList.get.length mustEqual 1
         }.getOrElse {
           assert(false, "No config returned")
         }

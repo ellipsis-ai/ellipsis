@@ -14,8 +14,8 @@ import models.behaviors.events.{EventHandler, ScheduledEvent}
 import models.behaviors.scheduling.recurrence.Recurrence
 import models.team.Team
 import play.api.{Configuration, Logger}
-import services.{DataService, DefaultServices}
-import slack.api.{ApiError, SlackApiClient}
+import services.{DataService, DefaultServices, SlackApiError}
+import slack.api.SlackApiClient
 import slick.dbio.DBIO
 import utils.{FutureSequencer, SlackChannels}
 
@@ -182,7 +182,7 @@ trait Scheduled {
                                 services: DefaultServices
                               )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Unit] = {
     for {
-      memberIds <- SlackChannels(client, services.cacheService, profile.slackTeamId).getMembersFor(channel)
+      memberIds <- SlackChannels(profile, services.slackApiService).getMembersFor(channel)
       _ <- FutureSequencer.sequence(memberIds, sendForFn(eventHandler, client, profile, services))
     } yield {}
   }
@@ -227,10 +227,10 @@ trait Scheduled {
         maybeDmInfo <- maybeSlackUserData.filter { userData =>
           userData.accountId != profile.userId && !userData.deleted && !userData.isBot
         }.map { userData =>
-          client.openIm(userData.accountId).map { dmChannel =>
+          services.slackApiService.openConversationFor(profile, userData.accountId).map { dmChannel =>
             Some(SlackDMInfo(userData.accountId, userData.accountTeamId, dmChannel))
           }.recover {
-            case e: ApiError => {
+            case e: SlackApiError => {
               val msg = s"""Couldn't open DM for scheduled message to @${userData.getDisplayName} (${userData.accountId}) on Slack team ${userData.accountTeamId} due to Slack API error: ${e.code}"""
               Logger.error(msg, e)
               None

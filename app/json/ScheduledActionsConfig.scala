@@ -5,7 +5,8 @@ import java.util.Locale
 
 import akka.actor.ActorSystem
 import models.accounts.user.{User, UserTeamAccess}
-import services.DefaultServices
+import services.{DefaultServices, SlackApiError}
+import utils.{SlackChannels, SlackConversation}
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -26,6 +27,46 @@ case class ScheduledActionsConfig(
                                  )
 
 object ScheduledActionsConfig {
+
+  private def maybeIsPrivateMemberFor(convo: SlackConversation, slackUserId: String, channels: SlackChannels)(implicit ec: ExecutionContext): Future[Option[Boolean]] = {
+    if (convo.isIm || convo.isMpim || convo.isPrivateChannel) {
+      channels.getMembersFor(convo.id).map { members =>
+        Some(members.contains(slackUserId))
+      }
+    } else {
+      Future.successful(None)
+    }
+  }
+
+  private def maybeChannelDataFor(
+                                   convo: SlackConversation,
+                                   slackUserId: String,
+                                   channels: SlackChannels,
+                                   forceAdmin: Boolean
+                                 )(implicit ec: ExecutionContext): Future[Option[ScheduleChannelData]] = {
+    maybeIsPrivateMemberFor(convo, slackUserId, channels).map { maybeIsPrivateMember =>
+      val baseData = ScheduleChannelData(
+        convo.id,
+        convo.computedName,
+        "Slack",
+        convo.isBotMember,
+        isSelfDm = false,
+        isOtherDm = false,
+        convo.isPrivateChannel,
+        convo.isMpim,
+        convo.isArchived,
+        convo.isShared
+      )
+      maybeIsPrivateMember.map { isPrivateMember =>
+        if (convo.isVisibleToUserWhere(isPrivateMember, forceAdmin)) {
+          Some(baseData.copy(isSelfDm = convo.isIm && isPrivateMember, isOtherDm = convo.isIm && !isPrivateMember))
+        } else {
+          None
+        }
+      }.getOrElse(Some(baseData))
+    }
+  }
+
   def buildConfigFor(
                       user: User,
                       teamAccess: UserTeamAccess,
@@ -47,17 +88,17 @@ object ScheduledActionsConfig {
         } else {
           dataService.linkedAccounts.maybeSlackUserIdFor(user)
         }
-        maybeChannelList <- maybeBotProfile.map { botProfile =>
-          val channels = dataService.slackBotProfiles.channelsFor(botProfile, cacheService)
-          if (forceAdmin) {
-            channels.getList.map(Some(_))
-          } else {
-            channels.getListForUser(maybeSlackUserId).map(Some(_)).recover {
-              case e: slack.api.ApiError => None
-            }
+        maybeScheduledChannelData <- maybeBotProfile.map { botProfile =>
+          val channels = dataService.slackBotProfiles.channelsFor(botProfile)
+          channels.getList.flatMap { channelList =>
+            Future.sequence(channelList.sortBy(_.sortKey).map { ea =>
+              maybeChannelDataFor(ea, maybeSlackUserId.get, channels, forceAdmin)
+            }).map(_.flatten).map(Some(_))
+          }.recover {
+            case e: SlackApiError => None
           }
         }.getOrElse(Future.successful(None))
-        scheduledActions <- ScheduledActionData.buildForUserTeamAccess(team, teamAccess, dataService, maybeChannelList, maybeSlackUserId, forceAdmin)
+        scheduledActions <- ScheduledActionData.buildForUserTeamAccess(team, teamAccess, dataService, maybeScheduledChannelData, maybeSlackUserId, forceAdmin)
         behaviorGroups <- dataService.behaviorGroups.allFor(team)
         groupData <- Future.sequence(behaviorGroups.map { group =>
           BehaviorGroupData.maybeFor(group.id, user, None, dataService, cacheService)
@@ -68,7 +109,7 @@ object ScheduledActionsConfig {
           csrfToken = maybeCsrfToken,
           teamId = team.id,
           scheduledActions = scheduledActions,
-          channelList = maybeChannelList.map(ScheduleChannelData.fromChannelLikeList),
+          channelList = maybeScheduledChannelData,
           behaviorGroups = groupData,
           teamTimeZone = team.maybeTimeZone.map(_.toString),
           teamTimeZoneName = team.maybeTimeZone.map(_.getDisplayName(TextStyle.FULL, Locale.ENGLISH)),

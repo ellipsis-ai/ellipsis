@@ -45,7 +45,7 @@ class BotResultServiceImpl @Inject() (
   private def runNextAction(nextAction: NextAction, botResult: BotResult)(implicit actorSystem: ActorSystem): DBIO[Unit] = {
     for {
       maybeSlackChannelId <- botResult.maybeBehaviorVersion.map { behaviorVersion =>
-        DBIO.from(botResult.event.maybeChannelToUseFor(behaviorVersion, cacheService))
+        DBIO.from(botResult.event.maybeChannelToUseFor(behaviorVersion, services))
       }.getOrElse(DBIO.successful(None))
       maybeBehavior <- botResult.maybeBehaviorVersion.map { originatingBehaviorVersion =>
         dataService.behaviors.findByNameAction(nextAction.actionName, originatingBehaviorVersion.group)

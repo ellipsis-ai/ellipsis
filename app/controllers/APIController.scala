@@ -104,7 +104,7 @@ class APIController @Inject() (
 
     def maybeSlackChannelIdFor(channel: String): Future[Option[String]] = {
       maybeBotProfile.map { botProfile =>
-        dataService.slackBotProfiles.channelsFor(botProfile, cacheService).maybeIdFor(channel)
+        dataService.slackBotProfiles.channelsFor(botProfile).maybeIdFor(channel)
       }.getOrElse(Future.successful(None))
     }
 

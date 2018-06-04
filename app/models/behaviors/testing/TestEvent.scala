@@ -35,7 +35,7 @@ case class TestEvent(
   lazy val name = "test"
   lazy val maybeChannel = Some("C123456")
   lazy val maybeThreadId = None
-  def eventualMaybeDMChannel()(implicit actorSystem: ActorSystem, ec: ExecutionContext) = Future.successful(None)
+  def eventualMaybeDMChannel(services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext) = Future.successful(None)
   def maybeChannelForSendAction(
                                  forcePrivate: Boolean,
                                  maybeConversation: Option[Conversation],

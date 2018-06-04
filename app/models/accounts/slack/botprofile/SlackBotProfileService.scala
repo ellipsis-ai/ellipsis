@@ -25,7 +25,7 @@ trait SlackBotProfileService {
 
   def ensure(userId: String, slackTeamId: String, slackTeamName: String, token: String): Future[SlackBotProfile]
 
-  def channelsFor(botProfile: SlackBotProfile, cacheService: CacheService): SlackChannels
+  def channelsFor(botProfile: SlackBotProfile): SlackChannels
 
   def eventualMaybeEvent(slackTeamId: String, channelId: String, maybeUserId: Option[String], maybeOriginalEventType: Option[EventType]): Future[Option[SlackMessageEvent]]
 

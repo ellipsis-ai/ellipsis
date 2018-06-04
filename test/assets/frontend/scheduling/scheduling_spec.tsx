@@ -91,9 +91,13 @@ function newChannel(props?: Partial<ScheduleChannelInterface>) {
     id: defaultChannelId,
     name: "test",
     context: "Slack",
-    members: [defaultUserId],
-    isPublic: false,
-    isArchived: false
+    isBotMember: true,
+    isSelfDm: false,
+    isOtherDm: false,
+    isPrivateChannel: false,
+    isPrivateGroup: false,
+    isArchived: false,
+    isShared: false
   }, props));
 }
 

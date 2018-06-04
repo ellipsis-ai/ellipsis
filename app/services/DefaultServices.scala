@@ -21,6 +21,7 @@ class DefaultServices @Inject() (
                                   botResultServiceProvider: Provider[BotResultService],
                                   slackEventServiceProvider: Provider[SlackEventService],
                                   slackFileMapProvider: Provider[SlackFileMap],
+                                  slackApiServiceProvider: Provider[SlackApiService],
                                   val actorSystem: ActorSystem
                           ) {
 
@@ -33,4 +34,5 @@ class DefaultServices @Inject() (
   def botResultService: BotResultService = botResultServiceProvider.get
   def slackEventService: SlackEventService = slackEventServiceProvider.get
   def slackFileMap: SlackFileMap = slackFileMapProvider.get
+  def slackApiService: SlackApiService = slackApiServiceProvider.get
 }

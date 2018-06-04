@@ -56,7 +56,7 @@ type ScheduleGroup = {
   channelName: string,
   channelId: string,
   excludesBot: boolean,
-  excludesUser: boolean,
+  isArchived: boolean,
   actions: Array<ScheduledAction>
 }
 
@@ -189,21 +189,17 @@ class Scheduling extends React.Component<Props, State> {
       const groupsByName = {};
       this.props.scheduledActions.forEach((action) => {
         const channel = this.findChannelFor(action.channel);
-        const channelName = channel ? channel.getFormattedName(this.props.slackUserId) : "Unknown";
-        const excludesUser = channel ? !channel.userCanAccess(this.props.slackUserId) : false;
-        const excludesBot = this.props.slackBotUserId && channel ? !channel.isDM() && !channel.userCanAccess(this.props.slackBotUserId) : false;
-        if (!channel || channel.isPublic || !excludesUser || channel.isDM()) {
-          const group = groupsByName[channelName] || {
-            channel: channel,
-            channelName: channelName,
-            channelId: channel ? channel.id : "unknown",
-            excludesBot: excludesBot,
-            excludesUser: excludesUser,
-            actions: []
-          };
-          group.actions.push(action);
-          groupsByName[channelName] = group;
-        }
+        const channelName = channel ? channel.getFormattedName() : "Unknown";
+        const group = groupsByName[channelName] || {
+          channel: channel,
+          channelName: channelName,
+          channelId: channel ? channel.id : "unknown",
+          excludesBot: channel && !channel.isDm() && !channel.isBotMember,
+          isArchived: channel && channel.isArchived,
+          actions: []
+        };
+        group.actions.push(action);
+        groupsByName[channelName] = group;
       });
       const channelNames = Object.keys(groupsByName);
       const sortedNames = Sort.arrayAlphabeticalBy(channelNames, (ea) => ea);
@@ -367,16 +363,16 @@ class Scheduling extends React.Component<Props, State> {
     }
 
     renderGroupWarning(group) {
-      if (group.excludesBot) {
+      if (group.isArchived) {
+        return (
+          <span className="type-s type-pink type-bold type-italic">
+            — Warning: This channel is archived.
+          </span>
+        );
+      } else if (group.excludesBot) {
         return (
           <span className="type-s type-pink type-bold type-italic">
             — Warning: Ellipsis must be invited to this channel for any scheduled action to run.
-          </span>
-        );
-      } else if (group.excludesUser) {
-        return (
-          <span className="type-s type-weak type-italic">
-            — You are not a member of this channel.
           </span>
         );
       } else {
@@ -390,7 +386,7 @@ class Scheduling extends React.Component<Props, State> {
           <div className="ptxl pbxl">
             <div className="phxl mobile-phl">
               <h4 className="mvn">
-                <span className="mrxs"><ChannelName channel={group.channel} slackUserId={this.props.slackUserId} /></span>
+                <span className="mrxs"><ChannelName channel={group.channel} /></span>
                 {this.renderGroupWarning(group)}
               </h4>
             </div>
@@ -515,7 +511,7 @@ class Scheduling extends React.Component<Props, State> {
                           <div className="column column-expand">
                             <p>
                               {selectedItemChannel ?
-                                `In ${selectedItemChannel.getDescription(this.props.slackUserId)}` :
+                                `In ${selectedItemChannel.getDescription()}` :
                                 `In channel ID ${selectedItem.channel}`
                               }
                             </p>

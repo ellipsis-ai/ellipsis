@@ -20,8 +20,8 @@ case class ScheduledEvent(underlying: Event, scheduled: Scheduled) extends Event
   val maybeOriginalEventType: Option[EventType] = None
   def withOriginalEventType(originalEventType: EventType, isUninterruptedConversation: Boolean): Event = this
 
-  def eventualMaybeDMChannel()(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[String]] = {
-    underlying.eventualMaybeDMChannel
+  def eventualMaybeDMChannel(services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[String]] = {
+    underlying.eventualMaybeDMChannel(services)
   }
 
   def maybeChannelForSendAction(

@@ -7,7 +7,6 @@ import models.behaviors.scheduling.scheduledbehavior.ScheduledBehavior
 import models.behaviors.scheduling.scheduledmessage.ScheduledMessage
 import models.team.Team
 import services.DataService
-import utils.ChannelLike
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -26,13 +25,7 @@ case class ScheduledActionData(
                                 useDM: Boolean,
                                 channel: String,
                                 userId: Option[String]
-                              ) {
-  def visibleToSlackUser(slackUserId: String, channelList: Seq[ChannelLike]): Boolean = {
-    channelList.exists { someChannel =>
-      someChannel.id == channel && someChannel.visibleToUser(slackUserId)
-    }
-  }
-}
+                              )
 
 object ScheduledActionData {
   def fromScheduledMessage(scheduledMessage: ScheduledMessage): ScheduledActionData = {
@@ -85,24 +78,20 @@ object ScheduledActionData {
                               team: Team,
                               teamAccess: UserTeamAccess,
                               dataService: DataService,
-                              maybeChannelList: Option[Seq[ChannelLike]],
+                              maybeConversationList: Option[Seq[ScheduleChannelData]],
                               maybeSlackUserId: Option[String],
                               forceAdmin: Boolean
                             )(implicit ec: ExecutionContext): Future[Seq[ScheduledActionData]] = {
-    for {
-      allScheduledActions <- buildForAdmin(team, dataService)
-    } yield {
+    buildForAdmin(team, dataService).map { allScheduledActions =>
       if (teamAccess.isAdminAccess || forceAdmin) {
         allScheduledActions
       } else {
-        (for {
-          channelList <- maybeChannelList
-          slackUserId <- maybeSlackUserId
-        } yield {
-          allScheduledActions.filter(_.visibleToSlackUser(slackUserId, channelList))
-        }).getOrElse {
-          Seq()
-        }
+        maybeConversationList.map { conversationList =>
+          val convoIds = conversationList.map(_.id)
+          allScheduledActions.filter { action =>
+            convoIds.contains(action.channel)
+          }
+        }.getOrElse(Seq())
       }
     }
   }

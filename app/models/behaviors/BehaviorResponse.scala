@@ -104,7 +104,7 @@ case class BehaviorResponse(
             resultForFilledOut
           } else {
             for {
-              maybeChannel <- event.maybeChannelToUseFor(behaviorVersion, services.cacheService)
+              maybeChannel <- event.maybeChannelToUseFor(behaviorVersion, services)
               convo <- InvokeBehaviorConversation.createFor(
                 behaviorVersion,
                 event,

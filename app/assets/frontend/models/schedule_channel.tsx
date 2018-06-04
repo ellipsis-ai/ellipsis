@@ -2,9 +2,13 @@ export interface ScheduleChannelJson {
   id: string,
   name: string,
   context: string,
-  members: Array<string>,
-  isPublic: boolean,
-  isArchived: boolean
+  isBotMember: boolean,
+  isSelfDm: boolean,
+  isOtherDm: boolean,
+  isPrivateChannel: boolean,
+  isPrivateGroup: boolean,
+  isArchived: boolean,
+  isShared: boolean
 }
 
 export interface ScheduleChannelInterface extends ScheduleChannelJson {}
@@ -13,76 +17,80 @@ class ScheduleChannel implements ScheduleChannelInterface {
   readonly id: string;
   readonly name: string;
   readonly context: string;
-  readonly members: Array<string>;
-  readonly isPublic: boolean;
+  readonly isBotMember: boolean;
+  readonly isSelfDm: boolean;
+  readonly isOtherDm: boolean;
+  readonly isPrivateChannel: boolean;
+  readonly isPrivateGroup: boolean;
   readonly isArchived: boolean;
+  readonly isShared: boolean;
 
     constructor(props: ScheduleChannelInterface) {
       Object.defineProperties(this, {
         id: { value: props.id, enumerable: true },
         name: { value: props.name, enumerable: true },
         context: { value: props.context, enumerable: true },
-        members: { value: props.members, enumerable: true },
-        isPublic: { value: props.isPublic, enumerable: true },
-        isArchived: { value: props.isArchived, enumerable: true }
+        isBotMember: { value: props.isBotMember, enumerable: true },
+        isSelfDm: { value: props.isSelfDm, enumerable: true },
+        isOtherDm: { value: props.isOtherDm, enumerable: true },
+        isPrivateChannel: { value: props.isPrivateChannel, enumerable: true },
+        isPrivateGroup: { value: props.isPrivateGroup, enumerable: true },
+        isArchived: { value: props.isArchived, enumerable: true },
+        isShared: { value: props.isShared, enumerable: true }
       });
     }
 
+    isPublic(): boolean {
+      return !this.isSelfDm && !this.isOtherDm && !this.isPrivateGroup && !this.isPrivateChannel;
+    }
+
+    isDm(): boolean {
+      return this.isSelfDm || this.isOtherDm;
+    }
+
     getPrefix(): string {
-      return this.isPublic ? "#" : "🔒 ";
+      return this.isPublic() ? "#" : "🔒 ";
     }
 
     getSuffix(): string {
-      return this.isPrivateGroup() ? "(private)" : "";
+      if (this.isShared) {
+        return "(shared)";
+      } else {
+        return "";
+      }
     }
 
-    getNameForUserId(userId: string) {
-      if (this.isDM()) {
-        if (this.members.includes(userId)) {
-          return "Direct message to you";
-        } else {
-          return "Direct message to someone else"
-        }
+    getUnformattedName() {
+      if (this.isSelfDm) {
+        return "Direct message to you";
+      } else if (this.isOtherDm) {
+        return "Direct message to someone else"
       } else {
         return this.name;
       }
     }
 
-    getName(userId: string, options?: {
+    getName(options?: {
       formatting?: boolean
     }): string {
       const shouldFormat = options && options.formatting;
-      const name = this.getNameForUserId(userId);
+      const name = this.getUnformattedName();
       return shouldFormat ? `${this.getPrefix()}${name} ${this.getSuffix()}`.trim() : name;
     }
 
-    isDM(): boolean {
-      return !this.isPublic && this.members.length < 2;
+    getFormattedName(): string {
+      return this.getName({ formatting: true });
     }
 
-    isPrivateGroup(): boolean {
-      return !this.isPublic && this.members.length > 1;
-    }
-
-    userCanAccess(slackUserId: string): boolean {
-      return this.isPublic || this.members.includes(slackUserId);
-    }
-
-    getFormattedName(userId: string): string {
-      return this.getName(userId, { formatting: true });
-    }
-
-    getDescription(userId: string): string {
-      if (this.isDM()) {
-        if (this.members.includes(userId)) {
-          return "a direct message to you";
-        } else {
-          return "a direct message to someone else";
-        }
-      } else if (this.isPrivateGroup()) {
-        return `the private group ${this.getFormattedName(userId)}`;
+    getDescription(): string {
+      if (this.isSelfDm) {
+        return "a direct message to you";
+      } else if (this.isOtherDm) {
+        return "a direct message to someone else";
+      } else if (this.isPrivateGroup) {
+        return `the private group ${this.getFormattedName()}`;
       } else {
-        return `the channel ${this.getFormattedName(userId)}`;
+        return `the channel ${this.getFormattedName()}`;
       }
     }
 
