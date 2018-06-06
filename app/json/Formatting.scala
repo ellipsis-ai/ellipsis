@@ -198,6 +198,7 @@ object Formatting {
 
   lazy implicit val slackConversationTopicFormat: Format[SlackConversationTopic] = Json.format[SlackConversationTopic]
   lazy implicit val slackConversationPurposeFormat: Format[SlackConversationPurpose] = Json.format[SlackConversationPurpose]
+  lazy implicit val slackConversationLatestInfo: Format[SlackConversationLatestInfo] = Json.format[SlackConversationLatestInfo]
   lazy implicit val slackConversationFormat: Format[SlackConversation] = Json.format[SlackConversation]
 
 }

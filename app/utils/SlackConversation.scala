@@ -12,6 +12,13 @@ case class SlackConversationPurpose(
                                      last_set: Long
                                    )
 
+case class SlackConversationLatestInfo(
+                                        `type`: Option[String],
+                                        user: Option[String],
+                                        text: Option[String],
+                                        ts: Option[String]
+                                      )
+
 case class SlackConversation(
                               id: String,
                               name: Option[String],
@@ -29,7 +36,7 @@ case class SlackConversation(
                               is_member: Option[Boolean],
                               is_private: Option[Boolean],
                               is_mpim: Option[Boolean],
-                              latest: Option[String],
+                              latest: Option[SlackConversationLatestInfo],
                               topic: Option[SlackConversationTopic],
                               purpose: Option[SlackConversationPurpose],
                               num_members: Option[Long],
