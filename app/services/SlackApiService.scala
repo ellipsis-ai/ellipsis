@@ -4,6 +4,7 @@ import akka.actor.ActorSystem
 import javax.inject.{Inject, Singleton}
 import json.Formatting._
 import models.accounts.slack.botprofile.SlackBotProfile
+import play.api.Logger
 import play.api.http.{HeaderNames, MimeTypes}
 import play.api.libs.json.{JsError, JsSuccess}
 import utils.SlackConversation
@@ -30,7 +31,21 @@ class SlackApiService @Inject()(services: DefaultServices, implicit val actorSys
         "channel" -> Seq(convoId)
       )).
       map { response =>
-        (response.json \ "channel").asOpt[SlackConversation]
+        (response.json \ "channel").validateOpt[SlackConversation] match {
+          case JsSuccess(maybeSlackConversation, _) => maybeSlackConversation
+          case JsError(errors) => {
+            Logger.error(
+              s"""Error converting channel info to SlackConversation:
+                 |Channel ID: ${convoId}
+                 |Ellipsis team ID: ${profile.teamId}
+                 |Slack team ID: ${profile.slackTeamId}
+                 |JSON error:
+                 |${JsError.toJson(errors).toString()}
+               """.stripMargin
+            )
+            None
+          }
+        }
       }
   }
 
