@@ -15,6 +15,7 @@ import org.scalatestplus.play.PlaySpec
 import play.api.test.Helpers._
 import services.DataService
 import services.caching.CacheService
+import services.slack.SlackApiError
 import support.TestContext
 import utils._
 

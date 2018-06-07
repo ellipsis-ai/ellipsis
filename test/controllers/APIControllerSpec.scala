@@ -33,7 +33,8 @@ import play.api.test.FakeRequest
 import play.api.test.Helpers._
 import services.caching.CacheService
 import services.DataService
-import services.slack.SlackEventService
+import services.slack.apiModels.Attachment
+import services.slack.{SlackApiClient, SlackEventService}
 import support.ControllerTestContext
 import utils.{SlackChannels, SlackTimestamp}
 
@@ -78,12 +79,10 @@ class APIControllerSpec extends PlaySpec with MockitoSugar {
 
     val mockSlackClient = mock[SlackApiClient]
     when(slackEventService.clientFor(botProfile)).thenReturn(mockSlackClient)
-    when(mockSlackClient.listIms).thenReturn(Future.successful(Seq()))
     when(mockSlackClient.postChatMessage(anyString, anyString, any[Option[String]], any[Option[Boolean]], any[Option[String]],
       any[Option[String]], any[Option[Seq[Attachment]]], any[Option[Boolean]], any[Option[Boolean]],
       any[Option[String]], any[Option[String]], any[Option[Boolean]], any[Option[Boolean]],
-      any[Option[String]], any[Option[Boolean]])(any[ActorSystem])).thenReturn(Future.successful(SlackTimestamp.now))
-    when(mockSlackClient.listUsers).thenReturn(Future.successful(Seq()))
+      any[Option[String]], any[Option[Boolean]])).thenReturn(Future.successful(SlackTimestamp.now))
 
     val event = SlackMessageEvent(
       botProfile,
@@ -94,7 +93,6 @@ class APIControllerSpec extends PlaySpec with MockitoSugar {
       SlackMessage.fromUnformattedText("foo", botProfile.userId),
       None,
       SlackTimestamp.now,
-      mockSlackClient,
       Some(EventType.api),
       isUninterruptedConversation = false
     )

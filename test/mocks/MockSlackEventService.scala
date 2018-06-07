@@ -7,7 +7,7 @@ import models.behaviors.events.SlackMessageEvent
 import org.mockito.Matchers._
 import org.mockito.Mockito._
 import org.scalatest.mock.MockitoSugar
-import services.slack.apiModels.Attachment
+import services.slack.apiModels.{Attachment, SlackUser}
 import services.slack.{SlackApiClient, SlackApiError, SlackEventService}
 import utils.SlackTimestamp
 
@@ -34,7 +34,7 @@ class MockSlackEventService extends SlackEventService with MockitoSugar {
       any[Option[Boolean]],
       any[Option[Boolean]],
       any[Option[String]],
-      any[Option[Boolean]])(any[ActorSystem])
+      any[Option[Boolean]])
     ).thenReturn(Future.successful(SlackTimestamp.now))
     when(client.listConversations).thenReturn(Future.successful(Seq()))
     client
@@ -48,7 +48,7 @@ class MockSlackEventService extends SlackEventService with MockitoSugar {
     Future.successful(Set())
   }
 
-  def maybeSlackUserDataFor(slackUserId: String, slackTeamId: String, client: SlackApiClient, onUserNotFound: SlackApiError => Option[services.slack.SlackUser]): Future[Option[SlackUserData]] = {
+  def maybeSlackUserDataFor(slackUserId: String, slackTeamId: String, client: SlackApiClient, onUserNotFound: SlackApiError => Option[SlackUser]): Future[Option[SlackUserData]] = {
     Future.successful(None)
   }
 
