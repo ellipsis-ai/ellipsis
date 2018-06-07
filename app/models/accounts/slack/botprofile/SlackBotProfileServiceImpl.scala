@@ -12,7 +12,8 @@ import models.team.Team
 import play.api.Logger
 import play.api.libs.ws.WSClient
 import services.caching.CacheService
-import services.{DataService, SlackApiService, SlackEventService}
+import services.slack.{MalformedResponseException, SlackApiService, SlackEventService}
+import services.DataService
 import slick.dbio.DBIO
 import utils.{SlackChannels, SlackMessageReactionHandler, SlackTimestamp}
 
@@ -123,7 +124,6 @@ class SlackBotProfileServiceImpl @Inject() (
           SlackMessage.blank,
           None,
           SlackTimestamp.now,
-          slackEventService.clientFor(botProfile),
           maybeOriginalEventType,
           isUninterruptedConversation = false
         )
@@ -132,7 +132,7 @@ class SlackBotProfileServiceImpl @Inject() (
   }
 
   def channelsFor(botProfile: SlackBotProfile): SlackChannels = {
-    SlackChannels(botProfile, slackApiService)
+    SlackChannels(slackApiService.clientFor(botProfile))
   }
 
   def maybeNameFor(slackTeamId: String): Future[Option[String]] = {
@@ -156,7 +156,7 @@ class SlackBotProfileServiceImpl @Inject() (
         cacheService.getBotName(teamId)
       }
     }.recover {
-      case e: slack.api.InvalidResponseError => {
+      case e: MalformedResponseException => {
         Logger.warn("Couldn’t retrieve bot user data from Slack API because of an invalid response; using fallback cache", e)
         cacheService.getBotName(teamId)
       }
@@ -192,7 +192,6 @@ class SlackBotProfileServiceImpl @Inject() (
       SlackMessage.blank,
       None,
       SlackTimestamp.now,
-      slackEventService.clientFor(botProfile),
       None,
       isUninterruptedConversation = false
     )
@@ -200,7 +199,7 @@ class SlackBotProfileServiceImpl @Inject() (
       _ <- {
         val eventualResult = getEventualMaybeResult(event)
         sendResult(eventualResult)
-        SlackMessageReactionHandler.handle(event.client, eventualResult, channelId, originalMessageTs, delayMilliseconds)
+        SlackMessageReactionHandler.handle(slackApiService.clientFor(botProfile), eventualResult, channelId, originalMessageTs, delayMilliseconds)
       }
     } yield {}).recover {
       case t: Throwable => {

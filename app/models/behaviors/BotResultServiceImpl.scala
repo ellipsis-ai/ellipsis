@@ -1,13 +1,13 @@
 package models.behaviors
 
 import javax.inject.Inject
-
 import akka.actor.ActorSystem
 import models.behaviors.behaviorversion.BehaviorVersion
 import models.behaviors.events.{Event, EventHandler, RunEvent}
 import play.api.{Configuration, Logger}
 import services.caching.CacheService
-import services.{DataService, DefaultServices, SlackEventService}
+import services.slack.SlackEventService
+import services.{DataService, DefaultServices}
 import slick.dbio.DBIO
 import utils.SlackTimestamp
 
@@ -72,7 +72,6 @@ class BotResultServiceImpl @Inject() (
           None,
           linkedAccount.loginInfo.providerKey,
           SlackTimestamp.now,
-          slackService.clientFor(botProfile),
           Some(botResult.event.eventType)
         )
       )

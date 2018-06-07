@@ -9,7 +9,6 @@ import models.behaviors.{ActionChoice, BehaviorResponse, DeveloperContext}
 import models.team.Team
 import play.api.Configuration
 import services.{AWSLambdaConstants, DataService, DefaultServices}
-import slack.api.SlackApiClient
 import utils.{SlackMessageSender, UploadFileSpec}
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -23,7 +22,6 @@ case class RunEvent(
                      maybeThreadId: Option[String],
                      user: String,
                      ts: String,
-                     client: SlackApiClient,
                      maybeOriginalEventType: Option[EventType]
                   ) extends Event with SlackEvent {
 
@@ -63,7 +61,7 @@ case class RunEvent(
       botName <- botName(services)
       channelToUse <- channelForSend(forcePrivate, maybeConversation, services)
       maybeTs <- SlackMessageSender(
-        client,
+        services.slackApiService.clientFor(profile),
         user,
         profile.slackTeamId,
         unformattedText,

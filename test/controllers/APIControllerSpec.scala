@@ -32,9 +32,8 @@ import play.api.libs.json._
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
 import services.caching.CacheService
-import services.{DataService, SlackEventService}
-import slack.api.SlackApiClient
-import slack.models.Attachment
+import services.DataService
+import services.slack.SlackEventService
 import support.ControllerTestContext
 import utils.{SlackChannels, SlackTimestamp}
 

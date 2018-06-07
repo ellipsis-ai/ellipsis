@@ -1,7 +1,7 @@
 import models.accounts.slack.botprofile.SlackBotProfile
 import org.scalatest.mock.MockitoSugar
 import org.scalatestplus.play.PlaySpec
-import services.SlackApiService
+import services.slack.SlackApiService
 import utils.SlackChannels
 
 

@@ -1,7 +1,6 @@
 package models.behaviors.events
 
 import javax.inject._
-import json.SlackUserData
 import models.behaviors.behaviorparameter.FetchValidValuesBadResultException
 import models.behaviors.builtins.BuiltinBehavior
 import models.behaviors.conversations.conversation.Conversation
@@ -33,7 +32,7 @@ class EventHandler @Inject() (
       results <- {
         val eventualResults = Future.sequence(responses.map(_.result))
         if (responses.nonEmpty) {
-          event.resultReactionHandler(eventualResults)
+          event.resultReactionHandler(eventualResults, services)
         }
         eventualResults.flatMap { r =>
           if (r.isEmpty && event.isResponseExpected) {
@@ -106,7 +105,7 @@ class EventHandler @Inject() (
           }
         } else {
           val eventualResult = dataService.run(updatedConvo.resultForAction(event, services))
-          event.resultReactionHandler(eventualResult.map(Seq(_)))
+          event.resultReactionHandler(eventualResult.map(Seq(_)), services)
           eventualResult
         }
       }
@@ -160,7 +159,7 @@ class EventHandler @Inject() (
         }
       }
       BuiltinBehavior.maybeFrom(event, services).map { builtin =>
-        event.resultReactionHandler(builtin.result.map(Seq(_)))
+        event.resultReactionHandler(builtin.result.map(Seq(_)), services)
       }.getOrElse {
         maybeHandleInExpiredThread(event).flatMap { maybeExpiredThreadResult =>
           maybeExpiredThreadResult.map(r => Future.successful(Seq(r))).getOrElse {

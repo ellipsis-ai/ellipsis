@@ -13,25 +13,24 @@ import models.accounts.linkedaccount.LinkedAccount
 import models.accounts.slack.profile.SlackProfile
 import models.behaviors.events.{Event, SlackMessageEvent}
 import models.team.Team
-import play.api.{Configuration, Logger}
-import services.caching.CacheService
-import services.{DataService, SlackEventService}
-import slack.api.SlackApiClient
+import play.api.Logger
+import services.DefaultServices
 
 import scala.concurrent.{ExecutionContext, Future}
 
 class UserServiceImpl @Inject() (
-                                  dataServiceProvider: Provider[DataService],
-                                  cacheServiceProvider: Provider[CacheService],
-                                  slackEventServiceProvider: Provider[SlackEventService],
-                                  configuration: Configuration,
+                                  servicesProvider: Provider[DefaultServices],
                                   implicit val actorSystem: ActorSystem,
                                   implicit val ec: ExecutionContext
                                 ) extends UserService {
 
-  def dataService = dataServiceProvider.get
-  def cacheService = cacheServiceProvider.get
-  def slackEventService = slackEventServiceProvider.get
+  def services: DefaultServices = servicesProvider.get
+
+  def dataService = services.dataService
+  def cacheService = services.cacheService
+  def slackEventService = services.slackEventService
+  def configuration = services.configuration
+  def slackApiService = services.slackApiService
 
   import UserQueries._
 
@@ -194,7 +193,7 @@ class UserServiceImpl @Inject() (
       } yield {
         val slackUserId = slackAccount.loginInfo.providerKey
         val slackTeamId = slackBotProfile.slackTeamId
-        slackEventService.maybeSlackUserDataFor(slackUserId, slackTeamId, SlackApiClient(slackBotProfile.token), (e) => {
+        slackEventService.maybeSlackUserDataFor(slackUserId, slackTeamId, slackApiService.clientFor(slackBotProfile), (e) => {
           Logger.error(
             s"""Slack API reported user not found while trying to build user data for an Ellipsis user.
                |Ellipsis user ID: ${user.id}

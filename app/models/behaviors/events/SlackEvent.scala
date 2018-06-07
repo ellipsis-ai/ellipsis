@@ -7,8 +7,8 @@ import models.accounts.slack.botprofile.SlackBotProfile
 import models.behaviors.conversations.conversation.Conversation
 import play.api.Logger
 import play.api.libs.json._
-import services.{DefaultServices, SlackApiError}
-import slack.api.SlackApiClient
+import services.DefaultServices
+import services.slack.SlackApiError
 import slick.dbio.DBIO
 import utils.SlackChannels
 
@@ -19,10 +19,9 @@ trait SlackEvent {
   val userSlackTeamId: String
   val channel: String
   val profile: SlackBotProfile
-  val client: SlackApiClient
   val isUninterruptedConversation: Boolean
   def eventualMaybeDMChannel(services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[String]] = {
-    services.slackApiService.openConversationFor(profile, user).map(Some(_)).recover {
+    services.slackApiService.clientFor(profile).openConversationFor(user).map(Some(_)).recover {
       case e: SlackApiError => {
         val msg =
           s"""Couldn't open DM channel to user with ID ${user} on Slack team ${userSlackTeamId} due to Slack API error: ${e.code}
@@ -87,9 +86,10 @@ trait SlackEvent {
   }
 
   def detailsFor(services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[JsObject] = {
-    val slackChannels = SlackChannels(profile, services.slackApiService)
+    val client = services.slackApiService.clientFor(profile)
+    val slackChannels = SlackChannels(client)
     for {
-      maybeUser <- services.slackEventService.maybeSlackUserDataFor(user, profile.slackTeamId, SlackApiClient(profile.token), (e) => {
+      maybeUser <- services.slackEventService.maybeSlackUserDataFor(user, profile.slackTeamId, client, (e) => {
         Logger.error(
           s"""Slack API reported user not found while generating details about the user to send to an action:
              |Slack user ID: ${user}

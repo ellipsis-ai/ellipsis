@@ -9,7 +9,6 @@ import models.behaviors.scheduling.Scheduled
 import models.behaviors.scheduling.recurrence.Recurrence
 import models.team.Team
 import services.DataService
-import slack.api.SlackApiClient
 import slick.dbio.DBIO
 import utils.SlackTimestamp
 
@@ -31,7 +30,7 @@ case class ScheduledMessage(
     Future.successful(s"`$text`")
   }
 
-  def eventFor(channel: String, slackUserId: String, profile: SlackBotProfile, client: SlackApiClient): ScheduledEvent = {
+  def eventFor(channel: String, slackUserId: String, profile: SlackBotProfile): ScheduledEvent = {
     ScheduledEvent(
       SlackMessageEvent(
         profile,
@@ -42,7 +41,6 @@ case class ScheduledMessage(
         SlackMessage.fromUnformattedText(text, profile.userId),
         None,
         SlackTimestamp.now,
-        client,
         Some(EventType.scheduled),
         isUninterruptedConversation = false
       ),

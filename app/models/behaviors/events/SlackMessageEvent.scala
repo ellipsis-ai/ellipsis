@@ -6,7 +6,6 @@ import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.{ActionChoice, BotResult, DeveloperContext}
 import play.api.Configuration
 import services.{DataService, DefaultServices}
-import slack.api.SlackApiClient
 import utils.{SlackMessageReactionHandler, SlackMessageSender, UploadFileSpec}
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -21,7 +20,6 @@ case class SlackMessageEvent(
                               message: SlackMessage,
                               maybeFile: Option[SlackFile],
                               ts: String,
-                              client: SlackApiClient,
                               maybeOriginalEventType: Option[EventType],
                               override val isUninterruptedConversation: Boolean
                             ) extends MessageEvent with SlackEvent {
@@ -85,9 +83,9 @@ case class SlackMessageEvent(
     dataService.conversations.findOngoingFor(user, context, maybeChannel, Some(ts), teamId)
   }
 
-  override def resultReactionHandler(eventualResults: Future[Seq[BotResult]])
+  override def resultReactionHandler(eventualResults: Future[Seq[BotResult]], services: DefaultServices)
                                     (implicit ec: ExecutionContext, actorSystem: ActorSystem): Future[Seq[BotResult]] = {
-    SlackMessageReactionHandler.handle(client, eventualResults, channel, ts)
+    SlackMessageReactionHandler.handle(services.slackApiService.clientFor(profile), eventualResults, channel, ts)
     eventualResults
   }
 
@@ -107,7 +105,7 @@ case class SlackMessageEvent(
       channelToUse <- channelForSend(forcePrivate, maybeConversation, services)
       botName <- botName(services)
       maybeTs <- SlackMessageSender(
-        client,
+        services.slackApiService.clientFor(profile),
         user,
         profile.slackTeamId,
         unformattedText,

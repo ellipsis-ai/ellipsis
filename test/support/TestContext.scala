@@ -17,6 +17,7 @@ import play.api.libs.ws.WSClient
 import play.api.{Application, Configuration, Logger}
 import services._
 import services.caching.CacheService
+import services.slack.{SlackApiService, SlackEventService, SlackEventServiceImpl}
 import utils.SlackFileMap
 
 import scala.concurrent.ExecutionContext

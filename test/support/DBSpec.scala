@@ -35,6 +35,7 @@ import play.api.libs.ws.WSClient
 import play.api.{Application, Configuration}
 import services._
 import services.caching.CacheService
+import services.slack.SlackEventService
 import slick.dbio.DBIO
 
 import scala.concurrent.duration._

@@ -10,7 +10,7 @@ import org.scalatest.mock.MockitoSugar
 import org.scalatestplus.play.PlaySpec
 import play.api.libs.json.JsObject
 import play.api.test.Helpers._
-import slack.api.SlackApiClient
+import services.slack.SlackApiClient
 import support.TestContext
 import utils.SlackConversation
 
@@ -23,7 +23,6 @@ class SlackEventSpec extends PlaySpec with MockitoSugar {
   case class TestSlackEvent(
                              user: String,
                              channel: String,
-                             client: SlackApiClient,
                              profile: SlackBotProfile
                            ) extends SlackEvent {
 
@@ -78,11 +77,11 @@ class SlackEventSpec extends PlaySpec with MockitoSugar {
           Future.successful(Some(slackUserData))
         )
 
-        when(services.slackApiService.listConversations(slackBotProfile)).thenReturn(Future.successful(Seq(slackConversation)))
-        when(services.slackApiService.conversationInfo(slackBotProfile, slackConversation.id)).thenReturn(Future.successful(Some(slackConversation)))
-        when(services.slackApiService.conversationMembers(slackBotProfile, slackConversation.id)).thenReturn(Future.successful(members))
+        when(mockSlackClient.listConversations).thenReturn(Future.successful(Seq(slackConversation)))
+        when(mockSlackClient.conversationInfo(slackConversation.id)).thenReturn(Future.successful(Some(slackConversation)))
+        when(mockSlackClient.conversationMembers(slackConversation.id)).thenReturn(Future.successful(members))
 
-        val event = TestSlackEvent(slackUserData.accountId, slackConversation.id, mockSlackClient, slackBotProfile)
+        val event = TestSlackEvent(slackUserData.accountId, slackConversation.id, slackBotProfile)
         val d: JsObject = await(event.detailsFor(services)(actorSystem, ec))
         (d \ "name").as[String] mustBe displayName
         (d \ "isPrimaryOwner").as[Boolean] mustBe slackUserData.isPrimaryOwner

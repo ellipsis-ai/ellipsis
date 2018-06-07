@@ -2,7 +2,7 @@ package models.behaviors.events
 
 import json.SlackUserData
 import models.SlackMessageFormatter
-import slack.models.{ActionField, Attachment}
+import services.slack.apiModels.{ActionField, Attachment}
 
 case class SlackMessageAttachment(
                                    maybeText: Option[String],
