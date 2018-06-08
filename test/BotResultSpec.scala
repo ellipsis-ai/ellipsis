@@ -13,12 +13,12 @@ import org.scalatest.mock.MockitoSugar
 import org.scalatestplus.play.PlaySpec
 import play.api.libs.json.{JsNull, JsString}
 import services.slack.SlackApiClient
-import support.DBSpec
+import support.{DBSpec, SlackContext}
 import utils.SlackTimestamp
 
 import scala.concurrent.Future
 
-class BotResultSpec extends PlaySpec with MockitoSugar with DBSpec {
+class BotResultSpec extends PlaySpec with MockitoSugar with DBSpec with SlackContext {
 
   val defaultContext = "slack"
   val defaultChannel = "C1234567"
@@ -89,7 +89,7 @@ class BotResultSpec extends PlaySpec with MockitoSugar with DBSpec {
 
         val event: SlackMessageEvent = newEventFor(profile)
         val responseText = "response"
-        val client = mock[SlackApiClient]
+        val client = newMockSlackApiClientFor(slackApiService, profile, defaultChannel)
         val result =
           SuccessResult(
             event,
@@ -117,7 +117,7 @@ class BotResultSpec extends PlaySpec with MockitoSugar with DBSpec {
         val team = runNow(dataService.teams.find(profile.teamId)).head
         val user = newSavedUserOn(team)
 
-        val client = mock[SlackApiClient]
+        val client = newMockSlackApiClientFor(slackApiService, profile, defaultChannel)
         val event: SlackMessageEvent = newEventFor(profile)
 
         val responseText = "response"
@@ -164,7 +164,7 @@ class BotResultSpec extends PlaySpec with MockitoSugar with DBSpec {
         val profile = newSavedBotProfile
         val team = runNow(dataService.teams.find(profile.teamId)).head
         val user = newSavedUserOn(team)
-        val client = mock[SlackApiClient]
+        val client = newMockSlackApiClientFor(slackApiService, profile, defaultChannel)
         val event: SlackMessageEvent = newEventFor(profile)
 
         val responseText = "response"
@@ -188,7 +188,7 @@ class BotResultSpec extends PlaySpec with MockitoSugar with DBSpec {
         val profile = newSavedBotProfile
         val team = runNow(dataService.teams.find(profile.teamId)).head
         val user = newSavedUserOn(team)
-        val client = mock[SlackApiClient]
+        val client = newMockSlackApiClientFor(slackApiService, profile, defaultChannel)
         val event: SlackMessageEvent = newEventFor(profile)
 
         val responseText = "response"
@@ -234,7 +234,7 @@ class BotResultSpec extends PlaySpec with MockitoSugar with DBSpec {
         val user = newSavedUserOn(team)
 
         val threadId = IDs.next
-        val client = mock[SlackApiClient]
+        val client = newMockSlackApiClientFor(slackApiService, profile, defaultChannel)
         val event: SlackMessageEvent = newEventFor(profile, Some(threadId))
 
 
