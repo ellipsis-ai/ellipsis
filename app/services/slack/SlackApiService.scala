@@ -140,9 +140,11 @@ case class SlackApiClient(
       "filename" -> filename,
       "title" -> title,
       "initial_comment" -> initialComment,
-      "channels" -> channels.map( c => Seq(c.map(_.mkString(","))) )
+      "channels" -> channels.map(_.mkString(","))
     )
-    postResponseFor("files.upload", params).map(res => extract[SlackFile](res, "file"))
+    postResponseFor("files.upload", params).map { res =>
+      extract[SlackFile](res, "file")
+    }
   }
 
   def postChatMessage(channelId: String, text: String, username: Option[String] = None, asUser: Option[Boolean] = None,
