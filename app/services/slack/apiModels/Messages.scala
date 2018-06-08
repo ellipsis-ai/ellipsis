@@ -23,15 +23,20 @@ case class AttachmentField(title: String, value: String, short: Boolean)
 case class ActionSelectOption(text: String, value: String)
 
 case class ActionField(name: String,
-                       text: String, `type`: String,
+                       text: String,
+                       `type`: String,
                        style: Option[String] = None,
                        value: Option[String] = None,
                        confirm: Option[ConfirmField] = None,
                        options: Option[Seq[ActionSelectOption]] = None
                       )
 
-case class ConfirmField(text: String, title: Option[String] = None,
-                        ok_text: Option[String] = None, cancel_text: Option[String] = None)
+case class ConfirmField(
+                         text: String,
+                         title: Option[String] = None,
+                         ok_text: Option[String] = None,
+                         cancel_text: Option[String] = None
+                       )
 
 case class SlackComment (
                           id: String,
