@@ -65,7 +65,18 @@ case class SlackConversation(
     }
   }
 
-  val computedName: String = maybeImPurpose.orElse(name).getOrElse("<unnamed channel>")
+  val computedName: String = {
+    maybeImPurpose.
+      orElse(name).
+      orElse {
+        if(isIm) {
+          Some("Direct message")
+        } else {
+          None
+        }
+      }.
+      getOrElse("<unnamed channel>")
+  }
 
   def sortKey: String = {
     val kindPart = if (isPublic) { 1 } else if (isPrivateChannel) { 2 } else if (isMpim) { 3 } else { 4 }
