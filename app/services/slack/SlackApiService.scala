@@ -36,17 +36,22 @@ case class SlackApiClient(
   private def urlFor(method: String): String = s"$API_BASE_URL/$method"
 
   private def extract[T](response: WSResponse, field: String)(implicit fmt: Format[T]): T = {
-    (response.json \ field).validate[T] match {
+    val json = response.json
+    (json \ field).validate[T] match {
       case JsSuccess(v, _) => v
-      case JsError(errors) => {
-        throw MalformedResponseException(
-          s"""Error converting Slack API data in field `${field}`.
-             |Ellipsis team ID: ${profile.teamId}
-             |Slack team ID: ${profile.slackTeamId}
-             |JSON error:
-             |${JsError.toJson(errors).toString()}
+      case JsError(_) => {
+        (json \ "error").validate[String] match {
+          case JsSuccess(code, _) => throw SlackApiError(code)
+          case JsError(errors) => throw MalformedResponseException(
+            s"""Error converting Slack API data in field `${field}`.
+               |Ellipsis team ID: ${profile.teamId}
+               |Slack team ID: ${profile.slackTeamId}
+               |JSON error:
+               |${JsError.toJson(errors).toString()}
                """.stripMargin
-        )
+          )
+        }
+
       }
     }
   }
