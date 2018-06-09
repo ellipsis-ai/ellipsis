@@ -9,15 +9,11 @@ scalaVersion := "2.11.12"
 
 pipelineStages := Seq(webpack, digest, gzip)
 
-lazy val slackClientVersion = "6e59b7c1c9864be745571eba3b0d424a3409b783"
-lazy val slackClientProject = ProjectRef(uri(s"https://github.com/ellipsis-ai/slack-scala-client.git#$slackClientVersion"), "slack-scala-client")
-
 lazy val unitTest = config("ut") extend(Test)
 lazy val integrationTest = config("it") extend(Test)
 
 
-lazy val root = (project in file(".")).
-    dependsOn(slackClientProject)
+lazy val root = (project in file("."))
     .enablePlugins(PlayScala, SbtWeb)
     .configs(unitTest)
     .settings(inConfig(unitTest)(Defaults.testTasks): _*)

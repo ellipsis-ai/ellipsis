@@ -11,6 +11,7 @@ import models.behaviors.events.Event
 import models.behaviors.triggers.messagetrigger.MessageTrigger
 import models.team.Team
 import services._
+import services.slack.SlackEventService
 import slick.dbio.DBIO
 
 import scala.concurrent.{ExecutionContext, Future}

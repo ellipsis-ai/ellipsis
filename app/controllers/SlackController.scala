@@ -22,6 +22,7 @@ import play.api.libs.json._
 import play.api.mvc.{AnyContent, Request, Result}
 import play.utils.UriEncoding
 import services._
+import services.slack.SlackEventService
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
@@ -304,7 +305,6 @@ class SlackController @Inject() (
               slackMessage,
               maybeFile,
               info.ts,
-              slackEventService.clientFor(botProfile),
               None,
               isUninterruptedConversation = false
             )
@@ -700,7 +700,6 @@ class SlackController @Inject() (
           slackMessage,
           None,
           info.message_ts,
-          slackEventService.clientFor(profile),
           None,
           isUninterruptedConversation = false
         ))

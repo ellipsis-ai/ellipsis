@@ -1,19 +1,17 @@
 package actors
 
 import java.time.OffsetDateTime
-import javax.inject.Inject
 
 import akka.actor.{Actor, ActorSystem}
 import drivers.SlickPostgresDriver.api._
-import models.behaviors.BotResultService
+import javax.inject.Inject
 import models.behaviors.events.EventHandler
 import models.behaviors.scheduling.Scheduled
-import play.api.{Configuration, Logger}
+import play.api.Logger
 import services.{DataService, DefaultServices}
-import slack.api.SlackApiClient
 
-import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration._
+import scala.concurrent.{ExecutionContext, Future}
 
 object ScheduledActor {
   final val name = "scheduled"
@@ -46,7 +44,7 @@ class ScheduledActor @Inject()(
           }.getOrElse(DBIO.successful(None))
           _ <- maybeProfile.map { profile =>
             scheduled.updateNextTriggeredForAction(dataService).flatMap { _ =>
-              DBIO.from(scheduled.send(eventHandler, new SlackApiClient(profile.token), profile, services, displayText).recover {
+              DBIO.from(scheduled.send(eventHandler, profile, services, displayText).recover {
                 case t: Throwable => {
                   val user = scheduled.maybeUser.map { user =>
                     s"Ellipsis ID ${user.id} / Slack ID ${maybeSlackUserId.getOrElse("(unknown)")}"

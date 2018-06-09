@@ -1,4 +1,4 @@
-package services
+package services.slack
 
 import akka.actor.ActorSystem
 import javax.inject._
@@ -8,8 +8,9 @@ import models.behaviors.BotResultService
 import models.behaviors.events.{EventHandler, SlackMessageEvent}
 import play.api.Logger
 import play.api.i18n.MessagesApi
+import services.DataService
 import services.caching.{CacheService, SlackUserDataCacheKey}
-import slack.api.{ApiError, SlackApiClient}
+import services.slack.apiModels.SlackUser
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -19,6 +20,7 @@ class SlackEventServiceImpl @Inject()(
                                    messages: MessagesApi,
                                    val eventHandler: EventHandler,
                                    val botResultService: BotResultService,
+                                   val slackApiService: SlackApiService,
                                    implicit val actorSystem: ActorSystem
                                  ) extends SlackEventService {
 
@@ -41,10 +43,10 @@ class SlackEventServiceImpl @Inject()(
     }
   }
 
-  def clientFor(botProfile: SlackBotProfile): SlackApiClient = SlackApiClient(botProfile.token)
+  def clientFor(botProfile: SlackBotProfile): SlackApiClient = slackApiService.clientFor(botProfile)
 
   def slackUserDataList(slackUserIds: Set[String], botProfile: SlackBotProfile): Future[Set[SlackUserData]] = {
-    val client = SlackApiClient(botProfile.token)
+    val client = clientFor(botProfile)
     val slackTeamId = botProfile.slackTeamId
     Future.sequence(slackUserIds.map { userId =>
       maybeSlackUserDataFor(userId, slackTeamId, client, (e) => {
@@ -59,19 +61,10 @@ class SlackEventServiceImpl @Inject()(
     }).map(_.flatten)
   }
 
-  def fetchSlackUserDataFn(slackUserId: String, slackTeamId: String, client: SlackApiClient, onUserNotFound: ((ApiError) => Option[slack.models.User])): SlackUserDataCacheKey => Future[Option[SlackUserData]] = {
+  def fetchSlackUserDataFn(slackUserId: String, slackTeamId: String, client: SlackApiClient, onUserNotFound: (SlackApiError => Option[SlackUser])): SlackUserDataCacheKey => Future[Option[SlackUserData]] = {
     key: SlackUserDataCacheKey => {
       for {
-        maybeInfo <- client.getUserInfo(key.slackUserId).map(Some(_)).recover  {
-          case e: ApiError => {
-            if (e.code == "user_not_found") {
-              onUserNotFound(e)
-            } else {
-              Logger.error(s"Unexpected error from Slack API while retrieving Slack user data for user $slackUserId on team $slackTeamId", e)
-            }
-            None
-          }
-        }
+        maybeInfo <- client.getUserInfo(key.slackUserId)
       } yield {
         maybeInfo.map { info =>
           val maybeProfile = info.profile.map { profile =>
@@ -102,7 +95,7 @@ class SlackEventServiceImpl @Inject()(
     }
   }
 
-  def maybeSlackUserDataFor(slackUserId: String, slackTeamId: String, client: SlackApiClient, onUserNotFound: (ApiError) => Option[slack.models.User]): Future[Option[SlackUserData]] = {
+  def maybeSlackUserDataFor(slackUserId: String, slackTeamId: String, client: SlackApiClient, onUserNotFound: SlackApiError => Option[SlackUser]): Future[Option[SlackUserData]] = {
     cacheService.getSlackUserData(SlackUserDataCacheKey(slackUserId, slackTeamId), fetchSlackUserDataFn(slackUserId, slackTeamId, client, onUserNotFound))
   }
 

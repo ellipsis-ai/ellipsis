@@ -2,7 +2,7 @@ package models.behaviors.events
 
 import json.SlackUserData
 import models.accounts.slack.botprofile.SlackBotProfile
-import services.SlackEventService
+import services.slack.SlackEventService
 
 import scala.concurrent.{ExecutionContext, Future}
 

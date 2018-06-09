@@ -5,7 +5,8 @@ import java.util.Locale
 
 import akka.actor.ActorSystem
 import models.accounts.user.{User, UserTeamAccess}
-import services.{DefaultServices, SlackApiError}
+import services.DefaultServices
+import services.slack.SlackApiError
 import utils.{SlackChannels, SlackConversation}
 
 import scala.concurrent.{ExecutionContext, Future}

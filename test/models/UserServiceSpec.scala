@@ -11,9 +11,9 @@ import org.scalatest.mock.MockitoSugar
 import play.api.Application
 import play.api.inject.bind
 import play.api.inject.guice.GuiceApplicationBuilder
-import services.{AWSLambdaService, GithubService, SlackEventService}
+import services.{AWSLambdaService, GithubService}
 import services.caching.CacheService
-import slack.api.SlackApiClient
+import services.slack.{SlackApiClient, SlackEventService}
 import support.DBSpec
 
 import scala.concurrent.Future
@@ -47,7 +47,7 @@ class UserServiceSpec extends DBSpec with MockitoSugar {
         val linkedAccount = newSavedLinkedAccountFor(user)
 
         val botProfile = runNow(dataService.slackBotProfiles.ensure(IDs.next, adminSlackTeamId, IDs.next, IDs.next))
-        val client = SlackApiClient(botProfile.token)
+        val client = mock[SlackApiClient]
         when(slackEventService.clientFor(botProfile)).thenReturn(client)
         val slackUserData = SlackUserData(
           accountId = linkedAccount.loginInfo.providerKey,

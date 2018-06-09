@@ -7,7 +7,6 @@ import models.behaviors.behaviorparameter.ValidValue
 import models.behaviors.events.{Event, SlackMessageEvent}
 import org.scalatest.mock.MockitoSugar
 import services.caching._
-import slack.models.{Channel, Group, Im}
 
 import scala.concurrent.Future
 import scala.concurrent.duration.Duration
@@ -38,28 +37,6 @@ class MockCacheService extends CacheService with MockitoSugar {
   def getDataTypeBotResult(key: DataTypeBotResultsCacheKey, dataFn: DataTypeBotResultsCacheKey => Future[BotResult]): Future[BotResult] = dataFn(key)
 
   def clearDataTypeBotResult(key: DataTypeBotResultsCacheKey): Unit = {}
-
-  def getSlackChannelInfo(
-                           key: SlackChannelDataCacheKey,
-                           dataFn: SlackChannelDataCacheKey => Future[Option[Channel]]
-                         ): Future[Option[Channel]] = dataFn(key)
-
-  def getSlackGroupInfo(
-                         key: SlackGroupDataCacheKey,
-                         dataFn: SlackGroupDataCacheKey => Future[Option[Group]]
-                       ): Future[Option[Group]] = dataFn(key)
-
-  def getSlackChannels(
-                        teamId: String,
-                        dataFn: String => Future[Seq[Channel]]
-                      ): Future[Seq[Channel]] = dataFn(teamId)
-
-  def getSlackGroups(
-                      teamId: String,
-                      dataFn: String => Future[Seq[Group]]
-                    ): Future[Seq[Group]] = dataFn(teamId)
-
-  def getSlackIMs(teamId: String, dataFn: String => Future[Seq[Im]]): Future[Seq[Im]] = dataFn(teamId)
 
   def getSlackUserData(
                         key: SlackUserDataCacheKey,

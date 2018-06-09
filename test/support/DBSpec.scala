@@ -35,6 +35,7 @@ import play.api.libs.ws.WSClient
 import play.api.{Application, Configuration}
 import services._
 import services.caching.CacheService
+import services.slack.{SlackApiService, SlackEventService}
 import slick.dbio.DBIO
 
 import scala.concurrent.duration._
@@ -54,6 +55,7 @@ trait DBSpec extends PlaySpec with OneAppPerSuite with MockitoSugar {
       overrides(bind[GithubService].toInstance(mock[GithubService])).
       overrides(bind[SlackEventService].to[MockSlackEventService]).
       overrides(bind[CacheService].to[MockCacheService]).
+      overrides(bind[SlackApiService].toInstance(mock[SlackApiService])).
       disable[ActorModule].
       build()
 
@@ -61,6 +63,7 @@ trait DBSpec extends PlaySpec with OneAppPerSuite with MockitoSugar {
   val lambdaService = app.injector.instanceOf(classOf[AWSLambdaService])
   implicit val actorSystem = app.injector.instanceOf(classOf[ActorSystem])
   val slackEventService = app.injector.instanceOf(classOf[SlackEventService])
+  val slackApiService = app.injector.instanceOf(classOf[SlackApiService])
   val ws = app.injector.instanceOf(classOf[WSClient])
   val botResultService = app.injector.instanceOf(classOf[BotResultService])
   implicit val ec: ExecutionContext = app.injector.instanceOf(classOf[ExecutionContext])

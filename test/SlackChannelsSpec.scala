@@ -1,13 +1,12 @@
-import models.accounts.slack.botprofile.SlackBotProfile
 import org.scalatest.mock.MockitoSugar
 import org.scalatestplus.play.PlaySpec
-import services.SlackApiService
+import services.slack.SlackApiClient
 import utils.SlackChannels
 
 
 class SlackChannelsSpec extends PlaySpec with MockitoSugar {
 
-  val channels = SlackChannels(mock[SlackBotProfile], mock[SlackApiService])
+  val channels = SlackChannels(mock[SlackApiClient])
   val channelId = "C123456"
 
   "unformatChannelText" should {

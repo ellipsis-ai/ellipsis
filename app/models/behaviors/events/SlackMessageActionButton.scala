@@ -1,6 +1,6 @@
 package models.behaviors.events
 
-import slack.models.ActionField
+import services.slack.apiModels.ActionField
 
 case class SlackMessageActionButton(name: String, text: String, value: String, maybeStyle: Option[String] = None) extends SlackMessageAction {
 

@@ -14,8 +14,8 @@ import models.behaviors.events.{EventHandler, ScheduledEvent}
 import models.behaviors.scheduling.recurrence.Recurrence
 import models.team.Team
 import play.api.{Configuration, Logger}
-import services.{DataService, DefaultServices, SlackApiError}
-import slack.api.SlackApiClient
+import services.slack.{SlackApiClient, SlackApiError}
+import services.{DataService, DefaultServices}
 import slick.dbio.DBIO
 import utils.{FutureSequencer, SlackChannels}
 
@@ -177,28 +177,26 @@ trait Scheduled {
   def sendForIndividualMembers(
                                 channel: String,
                                 eventHandler: EventHandler,
-                                client: SlackApiClient,
                                 profile: SlackBotProfile,
                                 services: DefaultServices
                               )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Unit] = {
     for {
-      memberIds <- SlackChannels(profile, services.slackApiService).getMembersFor(channel)
-      _ <- FutureSequencer.sequence(memberIds, sendForFn(eventHandler, client, profile, services))
+      memberIds <- SlackChannels(services.slackApiService.clientFor(profile)).getMembersFor(channel)
+      _ <- FutureSequencer.sequence(memberIds, sendForFn(eventHandler, profile, services))
     } yield {}
   }
 
-  def eventFor(channel: String, slackUserId: String, profile: SlackBotProfile, client: SlackApiClient): ScheduledEvent
+  def eventFor(channel: String, slackUserId: String, profile: SlackBotProfile): ScheduledEvent
 
   // TODO: don't be slack-specific
   def sendFor(
                channel: String,
                slackUserId: String,
                eventHandler: EventHandler,
-               client: SlackApiClient,
                profile: SlackBotProfile,
                services: DefaultServices
              )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Unit] = {
-    val event = eventFor(channel, slackUserId, profile, client)
+    val event = eventFor(channel, slackUserId, profile)
     for {
       results <- eventHandler.handle(event, None)
     } yield {
@@ -208,11 +206,11 @@ trait Scheduled {
 
   def sendForFn(
                   eventHandler: EventHandler,
-                  client: SlackApiClient,
                   profile: SlackBotProfile,
                   services: DefaultServices
                )(implicit actorSystem: ActorSystem, ec: ExecutionContext): String => Future[Unit] = {
     slackUserId: String => {
+      val client = services.slackApiService.clientFor(profile)
       for {
         maybeSlackUserData <- services.slackEventService.maybeSlackUserDataFor(slackUserId, profile.slackTeamId, client, (e) => {
           Logger.error(
@@ -227,7 +225,7 @@ trait Scheduled {
         maybeDmInfo <- maybeSlackUserData.filter { userData =>
           userData.accountId != profile.userId && !userData.deleted && !userData.isBot
         }.map { userData =>
-          services.slackApiService.openConversationFor(profile, userData.accountId).map { dmChannel =>
+          services.slackApiService.clientFor(profile).openConversationFor(userData.accountId).map { dmChannel =>
             Some(SlackDMInfo(userData.accountId, userData.accountTeamId, dmChannel))
           }.recover {
             case e: SlackApiError => {
@@ -238,7 +236,7 @@ trait Scheduled {
           }
         }.getOrElse(Future.successful(None))
         _ <- maybeDmInfo.map { info =>
-          sendFor(info.channelId, info.userId, eventHandler, client, profile, services)
+          sendFor(info.channelId, info.userId, eventHandler, profile, services)
         }.getOrElse(Future.successful({}))
       } yield {}
     }
@@ -275,7 +273,6 @@ trait Scheduled {
 
   def send(
             eventHandler: EventHandler,
-            client: SlackApiClient,
             profile: SlackBotProfile,
             services: DefaultServices,
             scheduledDisplayText: String
@@ -283,13 +280,13 @@ trait Scheduled {
     val dataService = services.dataService
     maybeChannel.map { channel =>
       if (isForIndividualMembers) {
-        sendForIndividualMembers(channel, eventHandler, client, profile, services)
+        sendForIndividualMembers(channel, eventHandler, profile, services)
       } else {
         maybeSlackProfile(dataService).flatMap { maybeSlackProfile =>
           val maybeSlackUserId = maybeSlackProfile.map(_.loginInfo.providerKey)
           if (maybeSlackUserId.isDefined || couldSendWithBotProfile) {
             val slackUserId = maybeSlackUserId.getOrElse(profile.userId)
-            sendFor(channel, slackUserId, eventHandler, client, profile, services)
+            sendFor(channel, slackUserId, eventHandler, profile, services)
           } else {
             val userId = maybeUser.map(_.id).getOrElse("(unknown)")
             Logger.warn(

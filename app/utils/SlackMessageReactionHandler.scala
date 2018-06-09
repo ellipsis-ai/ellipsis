@@ -2,7 +2,7 @@ package utils
 
 import akka.actor.ActorSystem
 import play.api.Logger
-import slack.api.SlackApiClient
+import services.slack.SlackApiClient
 
 import scala.concurrent.{ExecutionContext, Future, Promise}
 

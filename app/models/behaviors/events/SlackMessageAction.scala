@@ -1,6 +1,6 @@
 package models.behaviors.events
 
-import slack.models.ActionField
+import services.slack.apiModels.ActionField
 
 trait SlackMessageAction {
   val actionField: ActionField

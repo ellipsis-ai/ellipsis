@@ -60,6 +60,7 @@ import services.billing.{BillingService, BillingServiceImpl}
 import services._
 import net.codingwell.scalaguice.ScalaModule
 import services.caching.{CacheService, CacheServiceImpl}
+import services.slack.{SlackApiService, SlackEventService, SlackEventServiceImpl}
 import services.stats.{StatsService, StatsServiceImpl}
 import utils.SlackFileMap
 

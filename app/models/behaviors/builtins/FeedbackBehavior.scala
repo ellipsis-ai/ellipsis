@@ -8,6 +8,7 @@ import models.behaviors.events.{Event, EventType}
 import models.behaviors.{BotResult, SimpleTextResult}
 import models.team.Team
 import play.api.{Configuration, Logger}
+import services.slack.SlackApiError
 import services.{DataService, DefaultServices}
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -80,7 +81,7 @@ object FeedbackBehavior {
       wasSent <- maybeAdminTeamEvent.map { adminTeamEvent =>
         val result = SimpleTextResult(adminTeamEvent, None, msg, forcePrivateResponse = false)
         services.botResultService.sendIn(result, None).map(_.isDefined).recover {
-          case e: slack.api.ApiError => {
+          case e: SlackApiError => {
             false
           }
         }

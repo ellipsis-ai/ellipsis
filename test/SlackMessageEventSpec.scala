@@ -9,7 +9,6 @@ import org.scalatest.mock.MockitoSugar
 import org.scalatestplus.play.PlaySpec
 import play.api.test.Helpers._
 import services.DefaultServices
-import slack.api.SlackApiClient
 import support.TestContext
 
 import scala.concurrent.Future
@@ -33,7 +32,6 @@ class SlackMessageEventSpec extends PlaySpec with MockitoSugar {
       SlackMessage("oh hai", "oh hai", "oh hai", Set.empty[SlackUserData]),
       None,
       OffsetDateTime.now.toString,
-      SlackApiClient(botToken),
       None,
       isUninterruptedConversation = false
     )

@@ -1,8 +1,8 @@
 package controllers
 
 import java.time.OffsetDateTime
-import javax.inject.Inject
 
+import javax.inject.Inject
 import akka.actor.ActorSystem
 import com.google.inject.Provider
 import json.{APIErrorData, APIResultWithErrorsData, APITokenData}
@@ -24,7 +24,8 @@ import play.api.libs.ws.{WSClient, WSResponse}
 import play.api.mvc.{AnyContent, Request, Result}
 import play.api.{Configuration, Logger}
 import services.caching.CacheService
-import services.{AWSLambdaService, DataService, SlackEventService}
+import services.slack.{SlackApiError, SlackEventService}
+import services.{AWSLambdaService, DataService}
 import utils.{SlackFileMap, SlackTimestamp}
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -135,7 +136,6 @@ class APIController @Inject() (
             SlackMessage.fromUnformattedText(message, botProfile.userId),
             None,
             SlackTimestamp.now,
-            slackService.clientFor(botProfile),
             maybeOriginalEventType,
             isUninterruptedConversation = false
           )
@@ -325,7 +325,6 @@ class APIController @Inject() (
           None,
           slackProfile.loginInfo.providerKey,
           SlackTimestamp.now,
-          slackService.clientFor(botProfile),
           info.originalEventType.flatMap(EventType.find)
         )
       )
@@ -749,7 +748,7 @@ class APIController @Inject() (
 
         eventualResult.recover {
           case e: InvalidTokenException => invalidTokenRequest(info)
-          case e: slack.api.ApiError => if (e.code == "channel_not_found") {
+          case e: SlackApiError => if (e.code == "channel_not_found") {
             badRequest(Some(APIErrorData(s"""Error: the channel "${info.channel}" could not be found.""", Some("channel"))), None, Json.toJson(info))
           } else {
             // TODO: 400 seems like maybe the wrong kind of error here

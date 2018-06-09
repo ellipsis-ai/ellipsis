@@ -1,23 +1,22 @@
 package utils
 
-import models.accounts.slack.botprofile.SlackBotProfile
-import services.SlackApiService
+import services.slack.SlackApiClient
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.matching.Regex
 
-case class SlackChannels(profile: SlackBotProfile, apiService: SlackApiService) {
+case class SlackChannels(client: SlackApiClient) {
 
   def getInfoFor(convoId: String)(implicit ec: ExecutionContext): Future[Option[SlackConversation]] = {
-    apiService.conversationInfo(profile, convoId)
+    client.conversationInfo(convoId)
   }
 
   def getList(implicit ec: ExecutionContext): Future[Seq[SlackConversation]] = {
-    apiService.listConversations(profile)
+    client.listConversations
   }
 
   def getMembersFor(convoId: String)(implicit ec: ExecutionContext): Future[Seq[String]] = {
-    apiService.conversationMembers(profile, convoId)
+    client.conversationMembers(convoId)
   }
 
   import SlackChannelsRegexes._

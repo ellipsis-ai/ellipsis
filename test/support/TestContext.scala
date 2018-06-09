@@ -14,9 +14,10 @@ import org.scalatest.mock.MockitoSugar
 import play.api.inject._
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.ws.WSClient
-import play.api.{Application, Configuration, Logger}
+import play.api.{Application, Configuration}
 import services._
 import services.caching.CacheService
+import services.slack.{SlackApiService, SlackEventService, SlackEventServiceImpl}
 import utils.SlackFileMap
 
 import scala.concurrent.ExecutionContext
@@ -51,6 +52,7 @@ trait TestContext extends MockitoSugar{
   val githubService = app.injector.instanceOf(classOf[GithubService])
   val lambdaService = app.injector.instanceOf(classOf[AWSLambdaService])
   val slackEventService = app.injector.instanceOf(classOf[SlackEventService])
+  val slackApiService = app.injector.instanceOf(classOf[SlackApiService])
   val botResultService = app.injector.instanceOf(classOf[BotResultService])
   val cacheService = app.injector.instanceOf(classOf[CacheService])
   val ws = app.injector.instanceOf(classOf[WSClient])

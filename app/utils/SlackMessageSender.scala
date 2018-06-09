@@ -10,8 +10,9 @@ import models.behaviors.events._
 import models.behaviors.events.SlackMessageActionConstants._
 import play.api.Configuration
 import play.api.libs.json.Json
-import slack.api.SlackApiClient
-import slack.models.Attachment
+import services.slack.apiModels.Attachment
+import services.slack.SlackApiClient
+import services.slack.apiModels.Attachment
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.reflect.io.File
