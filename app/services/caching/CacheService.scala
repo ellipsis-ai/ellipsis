@@ -32,7 +32,7 @@ trait CacheService {
 
   def getValidValues(key: String): Option[Seq[ValidValue]]
 
-  def cacheSlackActionValue(key: String, value: String, expiration: Duration = Duration.Inf): Unit
+  def cacheSlackActionValue(value: String, expiration: Duration = Duration.Inf): String
 
   def getSlackActionValue(key: String): Option[String]
 

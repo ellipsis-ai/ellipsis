@@ -9,6 +9,7 @@ import com.amazonaws.services.lambda.model.InvokeResult
 import javax.inject.{Inject, Provider, Singleton}
 import json.Formatting._
 import json.{ImmutableBehaviorGroupVersionData, SlackUserData}
+import models.IDs
 import models.accounts.slack.botprofile.SlackBotProfile
 import models.behaviors.BotResult
 import models.behaviors.behaviorparameter.ValidValue
@@ -16,7 +17,6 @@ import models.behaviors.events._
 import play.api.Logger
 import play.api.cache.SyncCacheApi
 import play.api.libs.json.{JsError, JsSuccess, JsValue, Json}
-import services._
 import services.slack.SlackEventService
 
 import scala.concurrent.Future
@@ -155,8 +155,10 @@ class CacheServiceImpl @Inject() (
     }
   }
 
-  def cacheSlackActionValue(key: String, value: String, expiration: Duration): Unit = {
+  def cacheSlackActionValue(value: String, expiration: Duration): String = {
+    val key = s"slack-action-value-${IDs.next}"
     set(key, value, expiration)
+    key
   }
 
   def getSlackActionValue(key: String): Option[String] = {
