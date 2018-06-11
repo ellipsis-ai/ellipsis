@@ -34,6 +34,10 @@ class MockCacheService extends CacheService with MockitoSugar {
 
   def getValidValues(key: String): Option[Seq[ValidValue]] = None
 
+  def cacheSlackActionValue(key: String, value: String, expiration: Duration = Duration.Inf): Unit = {}
+
+  def getSlackActionValue(key: String): Option[String] = None
+
   def getDataTypeBotResult(key: DataTypeBotResultsCacheKey, dataFn: DataTypeBotResultsCacheKey => Future[BotResult]): Future[BotResult] = dataFn(key)
 
   def clearDataTypeBotResult(key: DataTypeBotResultsCacheKey): Unit = {}
