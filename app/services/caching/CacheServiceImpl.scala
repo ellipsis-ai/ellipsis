@@ -155,6 +155,14 @@ class CacheServiceImpl @Inject() (
     }
   }
 
+  def cacheSlackActionValue(key: String, value: String, expiration: Duration): Unit = {
+    set(key, value, expiration)
+  }
+
+  def getSlackActionValue(key: String): Option[String] = {
+    get[String](key)
+  }
+
   private val dataTypeBotResultsCache = LfuCache[DataTypeBotResultsCacheKey, BotResult](cacheSettingsWithTimeToLive(dataTypeBotResultsExpiry))
 
   def getDataTypeBotResult(key: DataTypeBotResultsCacheKey, dataFn: DataTypeBotResultsCacheKey => Future[BotResult]): Future[BotResult] = {

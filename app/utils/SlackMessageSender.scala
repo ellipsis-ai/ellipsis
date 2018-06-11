@@ -3,14 +3,14 @@ package utils
 import akka.actor.ActorSystem
 import json.Formatting._
 import json.SlackUserData
-import models.SlackMessageFormatter
-import models.behaviors.{ActionChoice, DeveloperContext}
 import models.behaviors.conversations.conversation.Conversation
-import models.behaviors.events._
 import models.behaviors.events.SlackMessageActionConstants._
+import models.behaviors.events._
+import models.behaviors.{ActionChoice, DeveloperContext}
+import models.{IDs, SlackMessageFormatter}
 import play.api.Configuration
 import play.api.libs.json.Json
-import services.slack.apiModels.Attachment
+import services.DefaultServices
 import services.slack.SlackApiClient
 import services.slack.apiModels.Attachment
 
@@ -45,7 +45,8 @@ case class SlackMessageSender(
                                choices: Seq[ActionChoice],
                                configuration: Configuration,
                                botName: String,
-                               slackUserList: Set[SlackUserData]
+                               slackUserList: Set[SlackUserData],
+                               services: DefaultServices
                              ) {
 
   val choicesAttachmentGroups: Seq[SlackMessageActionsGroup] = {
@@ -54,7 +55,14 @@ case class SlackMessageSender(
     } else {
       val actionList = choices.zipWithIndex.map { case(ea, i) =>
         val value = Json.toJson(ea).toString()
-        SlackMessageActionButton(ACTION_CHOICE, ea.label, value)
+        val valueToUse = if (value.length > SlackMessageSender.MAX_ACTION_VALUE_CHARS) {
+          val valueId = IDs.next
+          services.cacheService.cacheSlackActionValue(valueId, value)
+          valueId
+        } else {
+          value
+        }
+        SlackMessageActionButton(ACTION_CHOICE, ea.label, valueToUse)
       }
       Seq(SlackMessageActionsGroup(
         ACTION_CHOICES,
@@ -242,4 +250,6 @@ object SlackMessageSender {
   val MAX_MESSAGE_LENGTH = 2000
   // "A maximum of 5 actions may be provided."
   val MAX_ACTIONS_PER_ATTACHMENT = 5
+  // "Your value may contain up to 2000 characters."
+  val MAX_ACTION_VALUE_CHARS = 2000
 }

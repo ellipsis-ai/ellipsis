@@ -77,7 +77,8 @@ case class RunEvent(
         choices,
         configuration,
         botName,
-        Set.empty[SlackUserData]
+        Set.empty[SlackUserData],
+        services
       ).send
     } yield maybeTs
   }
