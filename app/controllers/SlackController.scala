@@ -355,7 +355,17 @@ class SlackController @Inject() (
   }
 
   case class ActionSelectOptionInfo(text: Option[String], value: String)
-  case class ActionTriggeredInfo(name: String, value: Option[String], selected_options: Option[Seq[ActionSelectOptionInfo]])
+  case class ActionTriggeredInfo(name: String, value: Option[String], selected_options: Option[Seq[ActionSelectOptionInfo]]) {
+    val maybeValue: Option[String] = {
+      value.flatMap { v =>
+        try {
+          cacheService.getSlackActionValue(v)
+        } catch {
+          case e: IllegalArgumentException => None
+        }
+      }.orElse(value)
+    }
+  }
   case class ActionInfo(
                          name: String,
                          text: String,
@@ -421,13 +431,13 @@ class SlackController @Inject() (
 
     def maybeHelpForSkillIdWithMaybeSearch: Option[HelpGroupSearchValue] = {
       actions.find(_.name == SHOW_BEHAVIOR_GROUP_HELP).flatMap {
-        _.value.map(HelpGroupSearchValue.fromString)
+        _.maybeValue.map(HelpGroupSearchValue.fromString)
       }
     }
 
     def maybeActionListForSkillId: Option[HelpGroupSearchValue] = {
       actions.find(_.name == LIST_BEHAVIOR_GROUP_ACTIONS).flatMap {
-        _.value.map(HelpGroupSearchValue.fromString)
+        _.maybeValue.map(HelpGroupSearchValue.fromString)
       }
     }
 
@@ -436,7 +446,7 @@ class SlackController @Inject() (
       maybeSlackUserId.flatMap { slackUserId =>
         if (user.id == slackUserId) {
           val maybeAction = actions.headOption
-          val maybeValue = maybeAction.flatMap(_.value)
+          val maybeValue = maybeAction.flatMap(_.maybeValue)
           maybeValue.orElse {
             for {
               selectedOptions <- maybeAction.map(_.selected_options)
@@ -469,7 +479,7 @@ class SlackController @Inject() (
     }
 
     def maybeHelpIndexAt: Option[Int] = {
-      actions.find { info => info.name == SHOW_HELP_INDEX }.map { _.value.map { value =>
+      actions.find { info => info.name == SHOW_HELP_INDEX }.map { _.maybeValue.map { value =>
         try {
           value.toInt
         } catch {
@@ -484,7 +494,7 @@ class SlackController @Inject() (
 
     def maybeConfirmContinueConversationAnswer: Option[Boolean] = {
       actions.find(_.name == callback_id).flatMap { action =>
-        action.value.filter(v => v == YES || v == NO).map(_ == YES)
+        action.maybeValue.filter(v => v == YES || v == NO).map(_ == YES)
       }
     }
 
@@ -509,7 +519,7 @@ class SlackController @Inject() (
 
     def maybeRunBehaviorVersionId: Option[String] = {
       val maybeAction = actions.find(_.name == RUN_BEHAVIOR_VERSION)
-      val maybeValue = maybeAction.flatMap(_.value)
+      val maybeValue = maybeAction.flatMap(_.maybeValue)
       maybeValue.orElse {
         for {
           selectedOptions <- maybeAction.map(_.selected_options)
@@ -523,7 +533,7 @@ class SlackController @Inject() (
 
     def maybeSelectedActionChoice: Option[ActionChoice] = {
       val maybeAction = actions.find(_.name == ACTION_CHOICE)
-      maybeAction.flatMap(_.value).flatMap { value =>
+      maybeAction.flatMap(_.maybeValue).flatMap { value =>
         Try(Json.parse(value)) match {
           case Success(json) => json.asOpt[ActionChoice]
           case Failure(_) => None
@@ -536,7 +546,7 @@ class SlackController @Inject() (
       maybeSlackUserId.flatMap { slackUserId =>
         if (user.id == slackUserId) {
           actions.find(_.name == callback_id).flatMap { action =>
-            action.value.filter(v => v == YES || v == NO)
+            action.maybeValue.filter(v => v == YES || v == NO)
           }
         } else {
           None

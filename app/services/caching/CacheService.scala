@@ -32,6 +32,10 @@ trait CacheService {
 
   def getValidValues(key: String): Option[Seq[ValidValue]]
 
+  def cacheSlackActionValue(value: String, expiration: Duration = Duration.Inf): String
+
+  def getSlackActionValue(key: String): Option[String]
+
   def getDataTypeBotResult(key: DataTypeBotResultsCacheKey, dataFn: DataTypeBotResultsCacheKey => Future[BotResult]): Future[BotResult]
 
   def clearDataTypeBotResult(key: DataTypeBotResultsCacheKey): Unit
