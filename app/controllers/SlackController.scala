@@ -356,7 +356,15 @@ class SlackController @Inject() (
 
   case class ActionSelectOptionInfo(text: Option[String], value: String)
   case class ActionTriggeredInfo(name: String, value: Option[String], selected_options: Option[Seq[ActionSelectOptionInfo]]) {
-    val maybeValue: Option[String] = value.flatMap(cacheService.getSlackActionValue).orElse(value)
+    val maybeValue: Option[String] = {
+      value.flatMap { v =>
+        try {
+          cacheService.getSlackActionValue(v)
+        } catch {
+          case e: IllegalArgumentException => None
+        }
+      }.orElse(value)
+    }
   }
   case class ActionInfo(
                          name: String,
