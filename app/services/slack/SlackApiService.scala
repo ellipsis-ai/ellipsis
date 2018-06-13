@@ -126,7 +126,7 @@ case class SlackApiClient(
     postResponseFor("users.info", Map("user" -> slackUserId)).map { r =>
       Some(extract[SlackUser](r, "user"))
     }.recover {
-      case SlackApiError("user_not_found") => None
+      case SlackApiError(code) if code == "user_not_found" || code == "account_inactive" => None
     }
   }
 
