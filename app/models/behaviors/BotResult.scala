@@ -413,7 +413,7 @@ case class ExecutionErrorResult(
 
   override def files: Seq[UploadFileSpec] = {
     val log = maybeAuthorLog.map(_ + "\n").getOrElse("") + maybeErrorLog.getOrElse("")
-    if (log.nonEmpty && developerContext.isInDevMode) {
+    if (log.nonEmpty && (developerContext.isInDevMode || developerContext.isInInvocationTester)) {
       Seq(UploadFileSpec(Some(log), Some("text"), Some("Developer log")))
     } else {
       Seq()
