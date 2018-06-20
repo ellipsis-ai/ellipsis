@@ -95,7 +95,6 @@ sealed trait BotResult {
   val forcePrivateResponse: Boolean
   val event: Event
   val maybeConversation: Option[Conversation]
-  def files: Seq[UploadFileSpec] = Seq()
   val maybeBehaviorVersion: Option[BehaviorVersion]
   def maybeNextAction: Option[NextAction] = None
   def maybeChoicesAction(dataService: DataService)(implicit ec: ExecutionContext): DBIO[Option[Seq[ActionChoice]]] = DBIO.successful(None)
@@ -104,6 +103,20 @@ sealed trait BotResult {
   def fullText: String = text
   def hasText: Boolean = fullText.trim.nonEmpty
   val developerContext: DeveloperContext
+  val maybeLog: Option[String] = None
+  val maybeLogFile: Option[UploadFileSpec] = None
+
+  def shouldIncludeLogs: Boolean = {
+    maybeLog.isDefined && (developerContext.isInDevMode || developerContext.isInInvocationTester)
+  }
+
+  def files: Seq[UploadFileSpec] = {
+    if (shouldIncludeLogs) {
+      Seq(maybeLogFile).flatten
+    } else {
+      Seq()
+    }
+  }
 
   def filesAsLogText: String = {
     if (files.nonEmpty) {
@@ -196,13 +209,9 @@ trait BotResultWithLogResult extends BotResult {
     }
   }
 
-  override def files: Seq[UploadFileSpec] = {
-    if (developerContext.isInDevMode) {
-      super.files ++ Seq(maybeAuthorLogFile).flatten
-    } else {
-      super.files
-    }
-  }
+  override val maybeLog: Option[String] = maybeAuthorLog
+  override val maybeLogFile: Option[UploadFileSpec] = maybeAuthorLogFile
+
 }
 
 case class InvalidFilesException(message: String) extends Exception {
@@ -397,7 +406,7 @@ case class ExecutionErrorResult(
     maybeLogResult.flatMap(_.maybeTranslated)
   }
 
-  private def maybeErrorLog: Option[String] = {
+  private val maybeErrorLog: Option[String] = {
     maybeError.map { error =>
       val translatedStack = error.translateStack
       if (translatedStack.nonEmpty) {
@@ -411,14 +420,19 @@ case class ExecutionErrorResult(
     }
   }
 
-  override def files: Seq[UploadFileSpec] = {
-    val log = maybeAuthorLog.map(_ + "\n").getOrElse("") + maybeErrorLog.getOrElse("")
-    if (log.nonEmpty && (developerContext.isInDevMode || developerContext.isInInvocationTester)) {
-      Seq(UploadFileSpec(Some(log), Some("text"), Some("Developer log")))
+  override val maybeLog: Option[String] = {
+    if (maybeAuthorLog.isEmpty && maybeError.isEmpty) {
+      None
     } else {
-      Seq()
+      Some(maybeAuthorLog.map(_ + "\n").getOrElse("") + maybeErrorLog.getOrElse(""))
     }
   }
+  override val maybeLogFile: Option[UploadFileSpec] = {
+    maybeLog.map { log =>
+      UploadFileSpec(Some(log), Some("text"), Some("Developer log"))
+    }
+  }
+
 }
 
 case class SyntaxErrorResult(
