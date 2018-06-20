@@ -56,6 +56,8 @@ case class BehaviorVersion(
 
   def isDataType: Boolean = behavior.isDataType
 
+  def isTest: Boolean = maybeName.contains("test")
+
   def group: BehaviorGroup = behavior.group
 
   val team: Team = behavior.team

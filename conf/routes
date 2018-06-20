@@ -46,6 +46,7 @@ POST        /update_from_github                       @controllers.BehaviorEdito
 POST        /push_to_github                           @controllers.BehaviorEditorController.pushToGithub
 POST        /linked_github_repos                      @controllers.BehaviorEditorController.linkToGithubRepo
 POST        /deploy                                   @controllers.BehaviorEditorController.deploy
+GET         /behavior_test_results/:groupId           @controllers.BehaviorEditorController.testResults(groupId: String)
 
 POST        /reset_saved_answer_for_user              @controllers.SavedAnswerController.resetForUser
 POST        /reset_saved_answer_for_all               @controllers.SavedAnswerController.resetForTeam

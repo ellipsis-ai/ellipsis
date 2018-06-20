@@ -21,6 +21,7 @@ import models.behaviors.behaviorgroupdeployment.BehaviorGroupDeploymentService
 import models.behaviors.behaviorgroupversion.BehaviorGroupVersionService
 import models.behaviors.behaviorgroupversionsha.BehaviorGroupVersionSHAService
 import models.behaviors.behaviorparameter.BehaviorParameterService
+import models.behaviors.behaviortestresult.BehaviorTestResultService
 import models.behaviors.behaviorversion.BehaviorVersionService
 import models.behaviors.config.awsconfig.AWSConfigService
 import models.behaviors.config.requiredawsconfig.RequiredAWSConfigService
@@ -106,6 +107,7 @@ class PostgresDataService @Inject() (
                                       val behaviorGroupDeploymentsProvider: Provider[BehaviorGroupDeploymentService],
                                       val managedBehaviorGroupsProvider: Provider[ManagedBehaviorGroupService],
                                       val behaviorGroupVersionSHAsProvider: Provider[BehaviorGroupVersionSHAService],
+                                      val behaviorTestResultsProvider: Provider[BehaviorTestResultService],
                                       val behaviorResponsesProvider: Provider[BehaviorResponseService],
                                       val subscriptionsProvider: Provider[SubscriptionService],
                                       val planProvider: Provider[PlanService],
@@ -161,6 +163,7 @@ class PostgresDataService @Inject() (
   val behaviorGroupDeployments = behaviorGroupDeploymentsProvider.get
   val managedBehaviorGroups: ManagedBehaviorGroupService = managedBehaviorGroupsProvider.get
   val behaviorGroupVersionSHAs = behaviorGroupVersionSHAsProvider.get
+  val behaviorTestResults = behaviorTestResultsProvider.get
   val subscriptions = subscriptionsProvider.get
   val plans = planProvider.get
   val addons = addonProvider.get

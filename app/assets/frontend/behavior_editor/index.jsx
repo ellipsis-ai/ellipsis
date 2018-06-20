@@ -9,6 +9,7 @@ import BehaviorVersion from '../models/behavior_version';
 import BehaviorSwitcher from './behavior_switcher';
 import BehaviorTester from './behavior_tester';
 import DataTypeTester from './data_type_tester';
+import BehaviorTestResult from '../models/behavior_test_result';
 import BehaviorCodeHelp from './behavior_code_help';
 import Button from '../form/button';
 import CodeConfiguration from './code_configuration';
@@ -1589,6 +1590,7 @@ const BehaviorEditor = React.createClass({
   onSave: function(newProps) {
     this.props.onSave(newProps);
     this.loadNodeModuleVersions();
+    this.loadTestResults();
   },
 
   resetNotificationsImmediately: function() {
@@ -1616,6 +1618,15 @@ const BehaviorEditor = React.createClass({
           });
       });
     }
+  },
+
+  loadTestResults: function() {
+    DataRequest.jsonGet(jsRoutes.controllers.BehaviorEditorController.testResults(this.getBehaviorGroup().id).url)
+      .then(json => {
+        this.setState({
+          testResults: BehaviorTestResult.allFromJson(json),
+        });
+      });
   },
 
   resetNotificationsEventually: debounce(function() {
@@ -1647,6 +1658,7 @@ const BehaviorEditor = React.createClass({
     window.addEventListener('focus', this.checkForUpdates, false);
     this.checkForUpdatesLater();
     this.loadNodeModuleVersions();
+    this.loadTestResults();
     if (this.props.showVersions) {
       this.showVersions();
     }

@@ -19,6 +19,7 @@ import models.behaviors.behaviorgroupdeployment.BehaviorGroupDeploymentService
 import models.behaviors.behaviorgroupversion.BehaviorGroupVersionService
 import models.behaviors.behaviorgroupversionsha.BehaviorGroupVersionSHAService
 import models.behaviors.behaviorparameter.BehaviorParameterService
+import models.behaviors.behaviortestresult.BehaviorTestResultService
 import models.behaviors.behaviorversion.BehaviorVersionService
 import models.behaviors.config.awsconfig.AWSConfigService
 import models.behaviors.config.requiredawsconfig.RequiredAWSConfigService
@@ -107,6 +108,7 @@ trait DataService {
   val behaviorGroupDeployments: BehaviorGroupDeploymentService
   val managedBehaviorGroups: ManagedBehaviorGroupService
   val behaviorGroupVersionSHAs: BehaviorGroupVersionSHAService
+  val behaviorTestResults: BehaviorTestResultService
   def behaviorResponses: BehaviorResponseService
 
   def run[T](action: DBIO[T]): Future[T]
