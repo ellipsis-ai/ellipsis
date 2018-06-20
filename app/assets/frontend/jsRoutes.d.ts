@@ -22,6 +22,7 @@ declare var jsRoutes: {
       newUnsavedBehavior: (isDataType: boolean, teamId: string, behaviorIdToClone: string, newName: Option<string>) => JsRoute,
       newUnsavedLibrary: (teamId: string, libraryIdToClone: string) => JsRoute,
       nodeModuleVersionsFor: (groupId: string) => JsRoute,
+      testResults: (groupId: string) => JsRoute,
       pushToGithub: () => JsRoute,
       queryDefaultStorage: () => JsRoute,
       save: () => JsRoute,

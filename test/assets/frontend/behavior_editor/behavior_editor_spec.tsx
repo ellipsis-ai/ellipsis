@@ -22,6 +22,7 @@ jsRoutes.controllers.ApplicationController.index = jest.fn(() => ({ url: '/mock_
 jsRoutes.controllers.ApplicationController.deleteBehaviorGroups = jest.fn(() => ({ url: '/mock_delete_behavior_group' }));
 jsRoutes.controllers.BehaviorEditorController.edit = jest.fn(() => ({ url: '/mock_edit' }));
 jsRoutes.controllers.BehaviorEditorController.nodeModuleVersionsFor = jest.fn(() => ({ url: '/mock_node_module_versions_for' }));
+jsRoutes.controllers.BehaviorEditorController.testResults = jest.fn(() => ({ url: '/mock_behavior_test_results' }));
 jsRoutes.controllers.SocialAuthController.authenticateGithub = jest.fn(() => ({ url: '/mock_authenticate_github' }));
 jsRoutes.controllers.BehaviorEditorController.versionInfoFor = jest.fn(() => ({ url: '/mock_version_info' }));
 
