@@ -2559,6 +2559,8 @@ const BehaviorEditor = React.createClass({
   renderForSelected: function(selected) {
     if (selected.isDataType()) {
       return this.renderDataTypeBehavior();
+    } else if (selected.isTest()) {
+      return this.renderTest();
     } else if (selected.isBehaviorVersion()) {
       return this.renderNormalBehavior();
     } else if (selected.isLibraryVersion()) {
@@ -2588,6 +2590,32 @@ const BehaviorEditor = React.createClass({
           sectionNumber: "1",
           codeHelpPanelName: 'helpForLibraryCode',
           functionExecutesImmediately: true,
+          isMemoizationEnabled: false
+        })}
+      </div>
+    );
+  },
+
+  renderTest: function() {
+    return (
+      <div className="pbxxxl">
+
+        <div className="columns container container-wide bg-white">
+          <div className="column column-full mobile-column-full">
+            <FormInput
+              className="form-input-borderless form-input-m mbneg1"
+              placeholder="Test description (optional)"
+              onChange={this.updateDescription}
+              value={this.getEditableDescription()}
+            />
+          </div>
+        </div>
+
+        <hr className="man rule-subtle" />
+
+        {this.renderCodeEditor({
+          sectionNumber: "1",
+          codeHelpPanelName: 'helpForTestCode',
           isMemoizationEnabled: false
         })}
       </div>
