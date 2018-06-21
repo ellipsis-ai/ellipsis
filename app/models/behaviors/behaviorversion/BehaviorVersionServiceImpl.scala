@@ -31,6 +31,7 @@ case class RawBehaviorVersion(
                                maybeResponseTemplate: Option[String],
                                forcePrivateResponse: Boolean,
                                canBeMemoized: Boolean,
+                               isTest: Boolean,
                                createdAt: OffsetDateTime
                              )
 
@@ -54,11 +55,12 @@ class BehaviorVersionsTable(tag: Tag) extends Table[RawBehaviorVersion](tag, "be
 
   def canBeMemoized = column[Boolean]("can_be_memoized")
 
+  def isTest = column[Boolean]("is_test")
 
   def createdAt = column[OffsetDateTime]("created_at")
 
   def * =
-    (id, behaviorId, groupVersionId, maybeDescription, maybeName, maybeFunctionBody, maybeResponseTemplate, forcePrivateResponse, canBeMemoized, createdAt) <>
+    (id, behaviorId, groupVersionId, maybeDescription, maybeName, maybeFunctionBody, maybeResponseTemplate, forcePrivateResponse, canBeMemoized, isTest, createdAt) <>
       ((RawBehaviorVersion.apply _).tupled, RawBehaviorVersion.unapply _)
 }
 
@@ -210,7 +212,8 @@ class BehaviorVersionServiceImpl @Inject() (
                        behavior: Behavior,
                        groupVersion: BehaviorGroupVersion,
                        maybeUser: Option[User],
-                       maybeId: Option[String]
+                       maybeId: Option[String],
+                       isTest: Boolean
                      ): DBIO[BehaviorVersion] = {
     val raw = RawBehaviorVersion(
       maybeId.getOrElse(IDs.next),
@@ -222,6 +225,7 @@ class BehaviorVersionServiceImpl @Inject() (
       None,
       forcePrivateResponse = false,
       canBeMemoized = false,
+      isTest,
       OffsetDateTime.now
     )
 
@@ -236,6 +240,7 @@ class BehaviorVersionServiceImpl @Inject() (
         raw.maybeResponseTemplate,
         raw.forcePrivateResponse,
         raw.canBeMemoized,
+        raw.isTest,
         raw.createdAt
       )
     }
@@ -249,7 +254,7 @@ class BehaviorVersionServiceImpl @Inject() (
                        data: BehaviorVersionData
                      ): DBIO[BehaviorVersion] = {
     for {
-      behaviorVersion <- createForAction(behavior, groupVersion, maybeUser, data.id)
+      behaviorVersion <- createForAction(behavior, groupVersion, maybeUser, data.id, data.config.isTest)
       updated <- saveAction(behaviorVersion.copy(
         maybeName = data.name,
         maybeDescription = data.description,

@@ -6,6 +6,7 @@ export interface BehaviorConfigJson {
   forcePrivateResponse?: Option<boolean>;
   canBeMemoized?: Option<boolean>;
   isDataType: boolean;
+  isTest: boolean;
   dataTypeConfig?: Option<DataTypeConfigJson>;
 }
 
@@ -22,6 +23,7 @@ class BehaviorConfig implements BehaviorConfigInterface {
     readonly forcePrivateResponse: boolean,
     readonly canBeMemoized: boolean,
     readonly isDataType: boolean,
+    readonly isTest: boolean,
     readonly dataTypeConfig: Option<DataTypeConfig>
   ) {
       Object.defineProperties(this, {
@@ -30,6 +32,7 @@ class BehaviorConfig implements BehaviorConfigInterface {
         forcePrivateResponse: { value: Boolean(forcePrivateResponse), enumerable: true },
         canBeMemoized: { value: Boolean(canBeMemoized), enumerable: true },
         isDataType: { value: isDataType, enumerable: true },
+        isTest: { value: isTest, enumerable: true },
         dataTypeConfig: { value: dataTypeConfig, enumerable: true }
       });
     }
@@ -54,6 +57,7 @@ class BehaviorConfig implements BehaviorConfigInterface {
         props.forcePrivateResponse,
         props.canBeMemoized,
         props.isDataType,
+        props.isTest,
         props.dataTypeConfig
       );
     }

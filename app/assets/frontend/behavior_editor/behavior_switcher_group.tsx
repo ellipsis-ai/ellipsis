@@ -3,15 +3,20 @@ import AddButton from '../form/add_button';
 import EditableName from '../../frontend/behavior_list/editable_name';
 import Editable from '../models/editable';
 import Sort from '../lib/sort';
+import TestsStatus from "./tests_status";
+import BehaviorTestResult from "../models/behavior_test_result";
 
 type Props = {
-    heading: string,
-    editables: Array<Editable>,
-    selectedId?: Option<string>,
-    onAddNew: () => void,
-    addNewLabel?: Option<string>,
-    onSelect: (groupId: string, selectableId: string) => void,
-    isModified: (Editable) => boolean
+  heading: string,
+  editables: Array<Editable>,
+  selectedId?: Option<string>,
+  onAddNew: () => void,
+  addNewLabel?: Option<string>,
+  onSelect: (groupId: string, selectableId: string) => void,
+  isModified: (Editable) => boolean,
+  isTests?: Option<boolean>,
+  runningTests?: boolean,
+  testResults?: Array<BehaviorTestResult>
 }
 
 class BehaviorSwitcherGroup extends React.Component<Props> {
@@ -41,6 +46,19 @@ class BehaviorSwitcherGroup extends React.Component<Props> {
       );
     }
 
+    renderStatus() {
+      if (this.props.isTests) {
+        return (
+          <TestsStatus
+            isRunning={!!this.props.runningTests}
+            testResults={this.props.testResults}
+          />
+        );
+      } else {
+        return null;
+      }
+    }
+
     render() {
       const editables = this.getEditableList();
       const hasEditables = editables.length > 0;
@@ -49,7 +67,7 @@ class BehaviorSwitcherGroup extends React.Component<Props> {
           <div className="container container-wide prl">
             <div className="columns columns-elastic">
               <div className="column column-expand ptl">
-                <h6>{this.props.heading}</h6>
+                <h6>{this.props.heading}{this.renderStatus()}</h6>
               </div>
               <div className="column column-shrink ptm type-link">
                 <AddButton

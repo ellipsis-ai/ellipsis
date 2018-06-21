@@ -44,7 +44,8 @@ describe('BehaviorEditor', () => {
           caseSensitive: false
         }],
         config: {
-          isDataType: false
+          isDataType: false,
+          isTest: false
         },
         knownEnvVarsUsed: [],
         groupId: '1'
@@ -129,7 +130,7 @@ describe('BehaviorEditor', () => {
       "responseTemplate": "",
       "inputIds": [],
       "triggers": [{ "text": "", "requiresMention": true, "isRegex": false, "caseSensitive": false }],
-      "config": { "isDataType": false },
+      "config": { "isDataType": false, "isTest": false },
       "knownEnvVarsUsed": []
     }],
     "libraryVersions": [],
@@ -370,7 +371,8 @@ describe('BehaviorEditor', () => {
             inputIds: [savedAnswerInput.inputId],
             triggers: [],
             config: {
-              isDataType: false
+              isDataType: false,
+              isTest: false
             },
             knownEnvVarsUsed: [],
             groupId: groupId
@@ -383,7 +385,8 @@ describe('BehaviorEditor', () => {
             inputIds: [savedAnswerInput.inputId],
             triggers: [],
             config: {
-              isDataType: false
+              isDataType: false,
+              isTest: false
             },
             knownEnvVarsUsed: [],
             groupId: groupId

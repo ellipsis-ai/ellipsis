@@ -11,17 +11,21 @@ import DynamicLabelButton from "../form/dynamic_label_button";
 import Editable from "../models/editable";
 import RequiredApiConfig from "../models/required_api_config";
 import autobind from "../lib/autobind";
+import BehaviorTestResult from "../models/behavior_test_result";
+import TestsStatus from "./tests_status";
 
 interface Props {
   actionBehaviors: Array<BehaviorVersion>,
   dataTypeBehaviors: Array<BehaviorVersion>,
   libraries: Array<LibraryVersion>,
+  tests: Array<BehaviorVersion>,
   nodeModuleVersions: Array<NodeModuleVersion>,
   selectedId?: Option<string>,
   groupId: string,
   onSelect: (groupId: string, editableId?: Option<string>) => void,
   addNewAction: () => void,
   addNewDataType: () => void,
+  addNewTest: () => void,
   addNewLibrary: () => void,
   isModified: (editable: Editable) => boolean,
   onUpdateNodeModules: () => void,
@@ -31,7 +35,9 @@ interface Props {
   onApiConfigClick: (config: RequiredApiConfig) => void,
   onAddApiConfigClick: () => void,
   getApiConfigName: (config: RequiredApiConfig) => string,
-  updatingNodeModules: boolean
+  updatingNodeModules: boolean,
+  runningTests: boolean,
+  testResults: Array<BehaviorTestResult>
 }
 
 class BehaviorSwitcher extends React.Component<Props> {
@@ -155,6 +161,19 @@ class BehaviorSwitcher extends React.Component<Props> {
               addNewLabel="Add new library"
               onSelect={this.props.onSelect}
               isModified={this.props.isModified}
+            />
+
+            <BehaviorSwitcherGroup
+              heading="Tests"
+              editables={this.props.tests}
+              selectedId={this.props.selectedId}
+              onAddNew={this.props.addNewTest}
+              addNewLabel="Add new test"
+              onSelect={this.props.onSelect}
+              isModified={this.props.isModified}
+              isTests={true}
+              runningTests={this.props.runningTests}
+              testResults={this.props.testResults}
             />
 
             <ApiConfigList

@@ -30,6 +30,7 @@ object BehaviorVersionQueries {
       raw.maybeResponseTemplate,
       raw.forcePrivateResponse,
       raw.canBeMemoized,
+      raw.isTest,
       raw.createdAt
     )
   }

@@ -18,6 +18,7 @@ import NotificationForInvalidParamInTrigger from './invalid_param_in_trigger';
 import NotificationForUnknownParamInTemplate from './unknown_param_in_template';
 import NotificationForServerDataWarning from './server_data_warning';
 import NotificationForSkillDetailsWarning from './skill_details_warning';
+import NotificationForTestResultWarning from './test_result';
 import NotificationDataGroup from '../models/notifications/notification_data_group';
 import NotificationData, {NotificationDataInterface, NotificationKind} from "../models/notifications/notification_data";
 import EnvVarMissingNotificationData from "../models/notifications/env_var_missing_notification_data";
@@ -35,6 +36,7 @@ import InvalidParamInTriggerNotificationData from "../models/notifications/inval
 import UnknownParamInTemplateNotificationData from "../models/notifications/unknown_param_in_template_notification_data";
 import ServerDataWarningNotificationData from "../models/notifications/server_data_warning_notification_data";
 import SkillDetailsWarningNotificationData from "../models/notifications/skill_details_warning_notification_data";
+import TestResultNotificationData from "../models/notifications/test_result_notification_data";
 
 interface Props<T extends NotificationData> {
   group: NotificationDataGroup<T>,
@@ -171,6 +173,14 @@ class Notification<T extends NotificationData> extends React.Component<Props<T>>
           icon: this.getWarningIcon(),
           message: (
             <NotificationForSkillDetailsWarning details={members} />
+          )
+        };
+      } else if (notificationTypeIs(members, TestResultNotificationData)) {
+        return {
+          containerClass: "box-warning",
+          icon: this.getWarningIcon(),
+          message: (
+            <NotificationForTestResultWarning details={members} />
           )
         };
       } else {

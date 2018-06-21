@@ -79,6 +79,7 @@ import RequiredAwsConfigNotificationData from "../models/notifications/required_
 import OAuth2ConfigWithoutApplicationNotificationData from "../models/notifications/oauth2_config_without_application_notification_data";
 import ServerDataWarningNotificationData from "../models/notifications/server_data_warning_notification_data";
 import SkillDetailsWarningNotificationData from "../models/notifications/skill_details_warning_notification_data";
+import TestResultsNotificationData from "../models/notifications/test_result_notification_data";
 import UnknownParamInTemplateNotificationData from "../models/notifications/unknown_param_in_template_notification_data";
 
 const BehaviorEditor = React.createClass({
@@ -627,6 +628,24 @@ const BehaviorEditor = React.createClass({
     }
   },
 
+  getFailingTestResults: function() {
+    if (this.state) {
+      return this.state.testResults.filter(ea => !ea.isPass);
+    } else {
+      return [];
+    }
+  },
+
+  buildTestResultNotifications: function() {
+    if (this.getFailingTestResults().length > 0) {
+      return [new TestResultsNotificationData({
+        type: "test_failures"
+      })];
+    } else {
+      return [];
+    }
+  },
+
   buildNotifications: function() {
     return [].concat(
       this.buildEnvVarNotifications(),
@@ -635,7 +654,8 @@ const BehaviorEditor = React.createClass({
       this.buildDataTypeNotifications(),
       this.buildTemplateNotifications(),
       this.buildServerNotifications(),
-      this.buildSkillDetailsNotifications()
+      this.buildSkillDetailsNotifications(),
+      this.buildTestResultNotifications()
     );
   },
 
@@ -874,7 +894,8 @@ const BehaviorEditor = React.createClass({
     this.props.onClearActivePanel();
     this.setState({
       error: error || "not_saved",
-      updatingNodeModules: false
+      updatingNodeModules: false,
+      runningTests: false
     });
   },
 
@@ -1397,6 +1418,10 @@ const BehaviorEditor = React.createClass({
     return this.getBehaviorGroup().libraryVersions;
   },
 
+  getTests: function() {
+    return this.getBehaviorGroup().getTests();
+  },
+
   getNodeModuleVersions: function() {
     return Sort.arrayAlphabeticalBy(this.state.nodeModuleVersions || [], (ea) => ea.from);
   },
@@ -1621,11 +1646,21 @@ const BehaviorEditor = React.createClass({
   },
 
   loadTestResults: function() {
+    this.resetNotificationsEventually();
+    this.setState({
+      error: null,
+      runningTests: true,
+      testResults: []
+    });
     DataRequest.jsonGet(jsRoutes.controllers.BehaviorEditorController.testResults(this.getBehaviorGroup().id).url)
       .then(json => {
         this.setState({
           testResults: BehaviorTestResult.allFromJson(json),
-        });
+          runningTests: false
+        }, this.resetNotificationsImmediately);
+      })
+      .catch(error => {
+        this.onSaveError(error);
       });
   },
 
@@ -2213,10 +2248,10 @@ const BehaviorEditor = React.createClass({
     return this.state.animationDisabled;
   },
 
-  addNewBehavior: function(isDataType, behaviorIdToClone, optionalDefaultProps) {
+  addNewBehavior: function(isDataType, isTest, behaviorIdToClone, optionalDefaultProps) {
     const group = this.getBehaviorGroup();
     const newName = optionalDefaultProps ? optionalDefaultProps.name : null;
-    const url = jsRoutes.controllers.BehaviorEditorController.newUnsavedBehavior(isDataType, group.teamId, behaviorIdToClone, newName).url;
+    const url = jsRoutes.controllers.BehaviorEditorController.newUnsavedBehavior(isDataType, isTest, group.teamId, behaviorIdToClone, newName).url;
     fetch(url, { credentials: 'same-origin' })
       .then((response) => response.json())
       .then((json) => {
@@ -2230,12 +2265,17 @@ const BehaviorEditor = React.createClass({
 
   addNewAction: function() {
     const nextActionName = SequentialName.nextFor(this.getActionBehaviors(), (ea) => ea.name, "action");
-    this.addNewBehavior(false, null, BehaviorVersion.defaultActionProps(nextActionName));
+    this.addNewBehavior(false, false, null, BehaviorVersion.defaultActionProps(nextActionName));
   },
 
   addNewDataType: function() {
     const nextDataTypeName = SequentialName.nextFor(this.getDataTypeBehaviors(), (ea) => ea.name, "DataType");
-    this.addNewBehavior(true, null, { name: nextDataTypeName });
+    this.addNewBehavior(true, false, null, { name: nextDataTypeName });
+  },
+
+  addNewTest: function() {
+    const nextDataTypeName = SequentialName.nextFor(this.getDataTypeBehaviors(), (ea) => ea.name, "DataType");
+    this.addNewBehavior(false, true, null, { name: nextDataTypeName });
   },
 
   addNewLibraryImpl: function(libraryIdToClone, optionalProps) {
@@ -2307,12 +2347,14 @@ const BehaviorEditor = React.createClass({
               actionBehaviors={this.getActionBehaviors()}
               dataTypeBehaviors={this.getDataTypeBehaviors()}
               libraries={this.getLibraries()}
+              tests={this.getTests()}
               nodeModuleVersions={this.getNodeModuleVersions()}
               selectedId={this.getSelectedId()}
               groupId={this.getBehaviorGroup().id}
               onSelect={this.onSelect}
               addNewAction={this.addNewAction}
               addNewDataType={this.addNewDataType}
+              addNewTest={this.addNewTest}
               addNewLibrary={this.addNewLibrary}
               isModified={this.editableIsModified}
               onUpdateNodeModules={this.updateNodeModules}
@@ -2323,6 +2365,8 @@ const BehaviorEditor = React.createClass({
               onAddApiConfigClick={this.onAddApiConfigClick}
               getApiConfigName={this.getApiConfigName}
               updatingNodeModules={this.state.updatingNodeModules}
+              runningTests={this.state.runningTests}
+              testResults={this.state.testResults}
             />
           </Sticky>
         </Collapsible>

@@ -33,6 +33,7 @@ case class BehaviorVersion(
                             maybeResponseTemplate: Option[String],
                             forcePrivateResponse: Boolean,
                             canBeMemoized: Boolean,
+                            isTest: Boolean,
                             createdAt: OffsetDateTime
                           ) extends BehaviorVersionForDataTypeSchema {
 
@@ -55,8 +56,6 @@ case class BehaviorVersion(
   val maybeExportId: Option[String] = behavior.maybeExportId
 
   def isDataType: Boolean = behavior.isDataType
-
-  def isTest: Boolean = maybeName.contains("test")
 
   def group: BehaviorGroup = behavior.group
 
@@ -138,6 +137,7 @@ case class BehaviorVersion(
       maybeResponseTemplate,
       forcePrivateResponse,
       canBeMemoized,
+      isTest,
       createdAt
     )
   }

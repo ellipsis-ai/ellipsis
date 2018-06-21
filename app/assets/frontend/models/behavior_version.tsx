@@ -184,6 +184,10 @@ class BehaviorVersion extends Editable implements Diffable, BehaviorVersionInter
       return this.config.isDataType;
     }
 
+    isTest(): boolean {
+      return this.config.isTest;
+    }
+
     usesCode(): boolean {
       const config = this.getDataTypeConfig();
       return !this.isDataType() || Boolean(config && config.usesCode);

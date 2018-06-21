@@ -233,6 +233,7 @@ class BehaviorEditorController @Inject() (
 
   def newUnsavedBehavior(
                           isDataType: Boolean,
+                          isTest: Boolean,
                           teamId: String,
                           maybeBehaviorIdToClone: Option[String],
                           maybeName: Option[String]
@@ -242,7 +243,7 @@ class BehaviorEditorController @Inject() (
         maybeBehaviorVersionData.map(_.copyForClone)
       }
     }.getOrElse {
-      Future.successful(Some(BehaviorVersionData.newUnsavedFor(teamId, isDataType, maybeName, dataService)))
+      Future.successful(Some(BehaviorVersionData.newUnsavedFor(teamId, isDataType, isTest, maybeName, dataService)))
     }.map { maybeVersionData =>
       maybeVersionData.map { data =>
         Ok(Json.toJson(data))
