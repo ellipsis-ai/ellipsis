@@ -1403,7 +1403,8 @@ const BehaviorEditor = React.createClass({
   /* Booleans */
 
   isTestable: function() {
-    return Boolean(this.getSelectedBehavior() && this.getSelectedBehavior().usesCode());
+    const selected = this.getSelectedBehavior();
+    return Boolean(selected && selected.usesCode() && !selected.isTest());
   },
 
   getActionBehaviors: function() {
