@@ -2274,7 +2274,7 @@ const BehaviorEditor = React.createClass({
   },
 
   addNewTest: function() {
-    const nextDataTypeName = SequentialName.nextFor(this.getDataTypeBehaviors(), (ea) => ea.name, "DataType");
+    const nextDataTypeName = SequentialName.nextFor(this.getDataTypeBehaviors(), (ea) => ea.name, "test");
     this.addNewBehavior(false, true, null, { name: nextDataTypeName });
   },
 
