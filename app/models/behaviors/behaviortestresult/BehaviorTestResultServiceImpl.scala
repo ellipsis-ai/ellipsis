@@ -41,6 +41,7 @@ class BehaviorTestResultServiceImpl @Inject() (
     val author = behaviorVersion.groupVersion.maybeAuthor.get
     val event = TestEvent(author, behaviorVersion.team, "", includesBotMention = true)
     DBIO.from(dataService.behaviorVersions.resultFor(behaviorVersion, Seq(), event, None)).flatMap { result =>
+      val outputText = result.fullText ++ result.maybeLog.map(l => s"\n\n$l").getOrElse("")
       val newInstance = BehaviorTestResult(
         IDs.next,
         result.maybeBehaviorVersion.get.id,
@@ -48,7 +49,7 @@ class BehaviorTestResultServiceImpl @Inject() (
           case _: SuccessResult => true
           case _ => false
         },
-        result.fullText,
+        outputText,
         OffsetDateTime.now
       )
       (all += newInstance).map(_ => newInstance)

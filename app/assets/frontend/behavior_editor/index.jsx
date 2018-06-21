@@ -81,6 +81,7 @@ import ServerDataWarningNotificationData from "../models/notifications/server_da
 import SkillDetailsWarningNotificationData from "../models/notifications/skill_details_warning_notification_data";
 import TestResultsNotificationData from "../models/notifications/test_result_notification_data";
 import UnknownParamInTemplateNotificationData from "../models/notifications/unknown_param_in_template_notification_data";
+import TestOutput from "./test_output";
 
 const BehaviorEditor = React.createClass({
   propTypes: Object.assign({}, Page.requiredPropTypes, {
@@ -1845,6 +1846,19 @@ const BehaviorEditor = React.createClass({
     );
   },
 
+  getSelectedTestResult: function() {
+    return (this.state.testResults || []).find(ea => ea.behaviorVersionId === this.getSelectedBehavior().id);
+  },
+
+  renderTestOutput: function(options) {
+    return (
+      <TestOutput
+        sectionNumber={options.sectionNumber}
+        testResult={this.getSelectedTestResult()}
+      />
+    );
+  },
+
   confirmDeleteText: function() {
     const selected = this.getSelected();
     return selected ? selected.confirmDeleteText() : "";
@@ -2619,6 +2633,13 @@ const BehaviorEditor = React.createClass({
           codeHelpPanelName: 'helpForTestCode',
           isMemoizationEnabled: false
         })}
+
+        <hr className="man rule-subtle" />
+
+        {this.renderTestOutput({
+          sectionNumber: "2"
+        })}
+
       </div>
     );
   },
