@@ -176,7 +176,7 @@ object BehaviorVersionData {
       "",
       Seq(),
       Seq(BehaviorTriggerData("", requiresMention = true, isRegex = false, caseSensitive = false)),
-      BehaviorConfig(None, maybeName, None, None, isDataType = maybeDataTypeConfig.isDefined, isTest, maybeDataTypeConfig),
+      BehaviorConfig(None, maybeName, None, None, isDataType = maybeDataTypeConfig.isDefined, Some(isTest), maybeDataTypeConfig),
       None,
       None,
       None,
@@ -268,7 +268,7 @@ object BehaviorVersionData {
           Some(behaviorVersion.forcePrivateResponse),
           Some(behaviorVersion.canBeMemoized),
           isDataType = maybeEnsuredDataTypeConfigData.isDefined,
-          isTest = behaviorVersion.isTest,
+          isTest = Some(behaviorVersion.isTest),
           maybeEnsuredDataTypeConfigData
         )
 

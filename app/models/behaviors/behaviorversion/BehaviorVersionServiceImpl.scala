@@ -254,7 +254,7 @@ class BehaviorVersionServiceImpl @Inject() (
                        data: BehaviorVersionData
                      ): DBIO[BehaviorVersion] = {
     for {
-      behaviorVersion <- createForAction(behavior, groupVersion, maybeUser, data.id, data.config.isTest)
+      behaviorVersion <- createForAction(behavior, groupVersion, maybeUser, data.id, data.config.isTest.exists(identity))
       updated <- saveAction(behaviorVersion.copy(
         maybeName = data.name,
         maybeDescription = data.description,

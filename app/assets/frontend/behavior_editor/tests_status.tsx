@@ -30,7 +30,7 @@ class TestsStatus extends React.PureComponent<Props> {
   render() {
     if (this.isRunning()) {
       return (
-        <span className="pll pulse type-disabled">running tests…</span>
+        <span className="pll pulse type-disabled">running…</span>
       );
     } else if (this.isAllPass()) {
       return (
