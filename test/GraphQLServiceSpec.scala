@@ -25,7 +25,7 @@ class GraphQLServiceSpec extends DBSpec {
   }
 
   def buildBehaviorVersionDataFor(group: BehaviorGroup, maybeName: Option[String], fields: Seq[(String, BehaviorParameterTypeData)]): BehaviorVersionData = {
-    val data = BehaviorVersionData.newUnsavedFor(group.team.id, isDataType = true, maybeName, dataService)
+    val data = BehaviorVersionData.newUnsavedFor(group.team.id, isDataType = true, isTest = false, maybeName, dataService)
     data.copy(
       config = data.config.copy(
         dataTypeConfig = Some(DataTypeConfigData(

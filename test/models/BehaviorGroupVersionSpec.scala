@@ -22,7 +22,7 @@ class BehaviorGroupVersionSpec extends DBSpec {
         val group = newSavedBehaviorGroupFor(team)
 
         val inputData = newInputDataFor()
-        val behaviorVersionData = BehaviorVersionData.newUnsavedFor(group.team.id, isDataType = false, maybeName = None, dataService).copy(
+        val behaviorVersionData = BehaviorVersionData.newUnsavedFor(group.team.id, isDataType = false, isTest = false, maybeName = None, dataService).copy(
           inputIds = Seq(inputData.inputId.get)
         )
         val groupData = newGroupVersionDataFor(group, user).copy(
@@ -52,7 +52,7 @@ class BehaviorGroupVersionSpec extends DBSpec {
         val user = newSavedUserOn(team)
         val group = newSavedBehaviorGroupFor(team)
 
-        val dataTypeVersionData = BehaviorVersionData.newUnsavedFor(team.id, isDataType = true, maybeName = Some("A data type"), dataService)
+        val dataTypeVersionData = BehaviorVersionData.newUnsavedFor(team.id, isDataType = true, isTest = false, maybeName = Some("A data type"), dataService)
 
         val dataTypeParamData = BehaviorParameterTypeData(
           dataTypeVersionData.id,
@@ -62,7 +62,7 @@ class BehaviorGroupVersionSpec extends DBSpec {
         )
 
         val inputData = newInputDataFor(Some(dataTypeParamData))
-        val behaviorVersionData = BehaviorVersionData.newUnsavedFor(team.id, isDataType = false, maybeName = None, dataService).copy(
+        val behaviorVersionData = BehaviorVersionData.newUnsavedFor(team.id, isDataType = false, isTest = false, maybeName = None, dataService).copy(
           inputIds = Seq(inputData.inputId.get)
         )
         val groupData = newGroupVersionDataFor(group, user).copy(
@@ -97,7 +97,7 @@ class BehaviorGroupVersionSpec extends DBSpec {
         val user = newSavedUserOn(team)
         val group = newSavedBehaviorGroupFor(team)
 
-        val dataTypeVersionData = BehaviorVersionData.newUnsavedFor(team.id, isDataType = true, maybeName = Some("_a data type"), dataService)
+        val dataTypeVersionData = BehaviorVersionData.newUnsavedFor(team.id, isDataType = true, isTest = false, maybeName = Some("_a data type"), dataService)
 
         val groupData = newGroupVersionDataFor(group, user).copy(
           behaviorVersions = Seq(dataTypeVersionData)
@@ -114,7 +114,7 @@ class BehaviorGroupVersionSpec extends DBSpec {
         val user = newSavedUserOn(team)
         val group = newSavedBehaviorGroupFor(team)
 
-        val dataTypeVersionData = BehaviorVersionData.newUnsavedFor(team.id, isDataType = true, maybeName = Some("A data type"), dataService)
+        val dataTypeVersionData = BehaviorVersionData.newUnsavedFor(team.id, isDataType = true, isTest = false, maybeName = Some("A data type"), dataService)
         val defaultStorageDataTypeVersionData = dataTypeVersionData.copy(
           config = dataTypeVersionData.config.copy(
             dataTypeConfig = dataTypeVersionData.config.dataTypeConfig.map { cfg =>
