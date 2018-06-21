@@ -51,7 +51,7 @@ class BehaviorSwitcher extends React.Component<Props> {
     }
 
     getAllBehaviors(): Array<Editable> {
-      return this.props.actionBehaviors.concat(this.props.dataTypeBehaviors);
+      return this.props.actionBehaviors.concat(this.props.dataTypeBehaviors).concat(this.props.tests);
     }
 
     getEditables(): Array<Editable> {
