@@ -44,7 +44,8 @@ describe('BehaviorListApp', () => {
       "caseSensitive": false
     }],
     "config": {
-      isDataType: false
+      isDataType: false,
+      isTest: false
     },
     "createdAt": 1468338136532,
     inputIds: [],
@@ -63,7 +64,8 @@ describe('BehaviorListApp', () => {
       "caseSensitive": false
     }],
     "config": {
-      isDataType: false
+      isDataType: false,
+      isTest: false
     },
     "createdAt": 1468359271138,
     inputIds: [],
@@ -77,7 +79,8 @@ describe('BehaviorListApp', () => {
     "responseTemplate": "The magic 8-ball says:\n\n“Concentrate and ask again.”",
     "triggers": [],
     "config": {
-      isDataType: false
+      isDataType: false,
+      isTest: false
     },
     "createdAt": 1466109904858,
     inputIds: [],
