@@ -711,9 +711,12 @@ class BehaviorEditorController @Inject() (
       maybeGroupVersion <- maybeGroup.map { group =>
         dataService.behaviorGroupVersions.maybeCurrentFor(group)
       }.getOrElse(Future.successful(None))
-      results <- maybeGroupVersion.map { gv =>
-        dataService.behaviorTestResults.allFor(gv)
+      tests <- maybeGroupVersion.map { groupVersion =>
+        dataService.behaviorVersions.allForGroupVersion(groupVersion).map(_.filter(_.isTest))
       }.getOrElse(Future.successful(Seq()))
+      results <- Future.sequence(tests.map { ea =>
+        dataService.behaviorTestResults.ensureFor(ea)
+      })
     } yield {
       Ok(Json.toJson(results))
     }

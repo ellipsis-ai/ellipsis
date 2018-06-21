@@ -5,8 +5,11 @@ import java.time.OffsetDateTime
 import com.google.inject.Provider
 import drivers.SlickPostgresDriver.api._
 import javax.inject.Inject
-import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
-import services.DataService
+import models.IDs
+import models.behaviors.SuccessResult
+import models.behaviors.behaviorversion.BehaviorVersion
+import models.behaviors.testing.TestEvent
+import services.{AWSLambdaService, DataService}
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -25,15 +28,39 @@ class BehaviorTestResultsTable(tag: Tag) extends Table[BehaviorTestResult](tag, 
 
 class BehaviorTestResultServiceImpl @Inject() (
                                                  dataServiceProvider: Provider[DataService],
+                                                 lambdaServiceProvider: Provider[AWSLambdaService],
                                                  implicit val ec: ExecutionContext
                                                ) extends BehaviorTestResultService {
 
   def dataService = dataServiceProvider.get
+  def lambdaService = lambdaServiceProvider.get
 
   import BehaviorTestResultQueries._
 
-  override def allFor(behaviorGroupVersion: BehaviorGroupVersion): Future[Seq[BehaviorTestResult]] = {
-    val action = allForQuery(behaviorGroupVersion.id).result
+  private def createForAction(behaviorVersion: BehaviorVersion): DBIO[BehaviorTestResult] = {
+    val author = behaviorVersion.groupVersion.maybeAuthor.get
+    val event = TestEvent(author, behaviorVersion.team, "", includesBotMention = true)
+    DBIO.from(dataService.behaviorVersions.resultFor(behaviorVersion, Seq(), event, None)).flatMap { result =>
+      val newInstance = BehaviorTestResult(
+        IDs.next,
+        result.maybeBehaviorVersion.get.id,
+        result match {
+          case _: SuccessResult => true
+          case _ => false
+        },
+        result.fullText,
+        OffsetDateTime.now
+      )
+      (all += newInstance).map(_ => newInstance)
+    }
+  }
+
+  def ensureFor(behaviorVersion: BehaviorVersion): Future[BehaviorTestResult] = {
+    val action = findByBehaviorVersionQuery(behaviorVersion.id).result.flatMap { r =>
+      r.headOption.map(DBIO.successful).getOrElse {
+        createForAction(behaviorVersion)
+      }
+    }
     dataService.run(action)
   }
 

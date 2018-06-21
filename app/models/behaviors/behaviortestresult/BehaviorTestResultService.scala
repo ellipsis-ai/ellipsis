@@ -1,11 +1,11 @@
 package models.behaviors.behaviortestresult
 
-import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
+import models.behaviors.behaviorversion.BehaviorVersion
 
 import scala.concurrent.Future
 
 trait BehaviorTestResultService {
 
-  def allFor(behaviorGroupVersion: BehaviorGroupVersion): Future[Seq[BehaviorTestResult]]
+  def ensureFor(behaviorVersion: BehaviorVersion): Future[BehaviorTestResult]
 
 }
