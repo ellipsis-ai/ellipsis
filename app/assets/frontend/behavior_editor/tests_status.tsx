@@ -19,12 +19,16 @@ class TestsStatus extends React.PureComponent<Props> {
     return this.props.isRunning;
   }
 
+  areResultsPresentAnd(predicate: (results: Array<BehaviorTestResult>) => boolean): boolean {
+    return Boolean(this.props.testResults && this.props.testResults.length > 0 && predicate(this.props.testResults));
+  }
+
   isAllPass() {
-    return this.props.testResults && this.props.testResults.every(ea => ea.isPass);
+    return this.areResultsPresentAnd(r => r.every(ea => ea.isPass));
   }
 
   areFailures() {
-    return this.props.testResults && this.props.testResults.find(ea => !ea.isPass);
+    return this.areResultsPresentAnd(r => !!r.find(ea => !ea.isPass));
   }
 
   render() {
