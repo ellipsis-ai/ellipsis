@@ -12,7 +12,8 @@ export type NotificationKind = "env_var_not_defined" |
   "unknown_param_in_template" |
   "invalid_param_in_trigger" |
   "server_data_warning" |
-  "skill_details_warning"
+  "skill_details_warning" |
+  "test_result"
 
 export interface NotificationDataInterface {}
 

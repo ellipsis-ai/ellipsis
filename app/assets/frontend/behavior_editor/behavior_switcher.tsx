@@ -11,17 +11,24 @@ import DynamicLabelButton from "../form/dynamic_label_button";
 import Editable from "../models/editable";
 import RequiredApiConfig from "../models/required_api_config";
 import autobind from "../lib/autobind";
+import BehaviorTestResult from "../models/behavior_test_result";
+import TestsStatus from "./tests_status";
+import {ReactNode} from "react";
+import SVGCheckmark from '../svg/checkmark';
+import SVGInfo from '../svg/info';
 
 interface Props {
   actionBehaviors: Array<BehaviorVersion>,
   dataTypeBehaviors: Array<BehaviorVersion>,
   libraries: Array<LibraryVersion>,
+  tests: Array<BehaviorVersion>,
   nodeModuleVersions: Array<NodeModuleVersion>,
   selectedId?: Option<string>,
   groupId: string,
   onSelect: (groupId: string, editableId?: Option<string>) => void,
   addNewAction: () => void,
   addNewDataType: () => void,
+  addNewTest: () => void,
   addNewLibrary: () => void,
   isModified: (editable: Editable) => boolean,
   onUpdateNodeModules: () => void,
@@ -31,7 +38,9 @@ interface Props {
   onApiConfigClick: (config: RequiredApiConfig) => void,
   onAddApiConfigClick: () => void,
   getApiConfigName: (config: RequiredApiConfig) => string,
-  updatingNodeModules: boolean
+  updatingNodeModules: boolean,
+  runningTests: boolean,
+  testResults: Array<BehaviorTestResult>
 }
 
 class BehaviorSwitcher extends React.Component<Props> {
@@ -45,7 +54,7 @@ class BehaviorSwitcher extends React.Component<Props> {
     }
 
     getAllBehaviors(): Array<Editable> {
-      return this.props.actionBehaviors.concat(this.props.dataTypeBehaviors);
+      return this.props.actionBehaviors.concat(this.props.dataTypeBehaviors).concat(this.props.tests);
     }
 
     getEditables(): Array<Editable> {
@@ -106,6 +115,40 @@ class BehaviorSwitcher extends React.Component<Props> {
       }
     }
 
+    renderTestsStatus(): ReactNode {
+      return (
+        <TestsStatus
+          isRunning={!!this.props.runningTests}
+          testResults={this.props.testResults}
+        />
+      );
+    }
+
+    renderTestStatusFor(test: Editable): ReactNode {
+      const result = (this.props.testResults || []).find(ea => ea.behaviorVersionId === test.id);
+      if (result) {
+        if (result.isPass) {
+          return (
+            <div className="display-inline-block fade-in">
+              <span className="display-inline-block height-l mrs align-m type-green">
+                <SVGCheckmark label="Pass"/>
+              </span>
+            </div>
+          );
+        } else {
+          return (
+            <div className="display-inline-block fade-in">
+              <span className="display-inline-block align-m height-l type-yellow mrs">
+                <SVGInfo label="Fail"/>
+              </span>
+            </div>
+          );
+        }
+      } else {
+        return null;
+      }
+    }
+
     render() {
       return (
         <div className="pbxxxl">
@@ -155,6 +198,18 @@ class BehaviorSwitcher extends React.Component<Props> {
               addNewLabel="Add new library"
               onSelect={this.props.onSelect}
               isModified={this.props.isModified}
+            />
+
+            <BehaviorSwitcherGroup
+              heading="Tests"
+              editables={this.props.tests}
+              selectedId={this.props.selectedId}
+              onAddNew={this.props.addNewTest}
+              addNewLabel="Add new test"
+              onSelect={this.props.onSelect}
+              isModified={this.props.isModified}
+              renderGroupStatus={this.renderTestsStatus}
+              renderEditableStatus={this.renderTestStatusFor}
             />
 
             <ApiConfigList

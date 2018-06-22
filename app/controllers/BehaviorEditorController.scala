@@ -1,10 +1,9 @@
 package controllers
 
-import javax.inject.Inject
-
 import com.google.inject.Provider
 import com.mohiva.play.silhouette.api.Silhouette
 import com.mohiva.play.silhouette.api.actions.SecuredRequest
+import javax.inject.Inject
 import json.Formatting._
 import json._
 import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
@@ -234,6 +233,7 @@ class BehaviorEditorController @Inject() (
 
   def newUnsavedBehavior(
                           isDataType: Boolean,
+                          isTest: Boolean,
                           teamId: String,
                           maybeBehaviorIdToClone: Option[String],
                           maybeName: Option[String]
@@ -243,7 +243,7 @@ class BehaviorEditorController @Inject() (
         maybeBehaviorVersionData.map(_.copyForClone)
       }
     }.getOrElse {
-      Future.successful(Some(BehaviorVersionData.newUnsavedFor(teamId, isDataType, maybeName, dataService)))
+      Future.successful(Some(BehaviorVersionData.newUnsavedFor(teamId, isDataType, isTest, maybeName, dataService)))
     }.map { maybeVersionData =>
       maybeVersionData.map { data =>
         Ok(Json.toJson(data))
@@ -704,5 +704,22 @@ class BehaviorEditorController @Inject() (
         }
       }
     )
+  }
+
+  def testResults(groupId: String) = silhouette.SecuredAction.async { implicit request =>
+    for {
+      maybeGroup <- dataService.behaviorGroups.find(groupId, request.identity)
+      maybeGroupVersion <- maybeGroup.map { group =>
+        dataService.behaviorGroupVersions.maybeCurrentFor(group)
+      }.getOrElse(Future.successful(None))
+      tests <- maybeGroupVersion.map { groupVersion =>
+        dataService.behaviorVersions.allForGroupVersion(groupVersion).map(_.filter(_.isTest))
+      }.getOrElse(Future.successful(Seq()))
+      results <- Future.sequence(tests.map { ea =>
+        dataService.behaviorTestResults.ensureFor(ea)
+      })
+    } yield {
+      Ok(Json.toJson(results))
+    }
   }
 }

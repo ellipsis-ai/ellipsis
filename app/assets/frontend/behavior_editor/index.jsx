@@ -9,6 +9,7 @@ import BehaviorVersion from '../models/behavior_version';
 import BehaviorSwitcher from './behavior_switcher';
 import BehaviorTester from './behavior_tester';
 import DataTypeTester from './data_type_tester';
+import BehaviorTestResult from '../models/behavior_test_result';
 import BehaviorCodeHelp from './behavior_code_help';
 import Button from '../form/button';
 import CodeConfiguration from './code_configuration';
@@ -78,7 +79,9 @@ import RequiredAwsConfigNotificationData from "../models/notifications/required_
 import OAuth2ConfigWithoutApplicationNotificationData from "../models/notifications/oauth2_config_without_application_notification_data";
 import ServerDataWarningNotificationData from "../models/notifications/server_data_warning_notification_data";
 import SkillDetailsWarningNotificationData from "../models/notifications/skill_details_warning_notification_data";
+import TestResultsNotificationData from "../models/notifications/test_result_notification_data";
 import UnknownParamInTemplateNotificationData from "../models/notifications/unknown_param_in_template_notification_data";
+import TestOutput from "./test_output";
 
 const BehaviorEditor = React.createClass({
   propTypes: Object.assign({}, Page.requiredPropTypes, {
@@ -626,6 +629,35 @@ const BehaviorEditor = React.createClass({
     }
   },
 
+  getFailingTestResults: function() {
+    if (this.state) {
+      return this.state.testResults.filter(ea => !ea.isPass);
+    } else {
+      return [];
+    }
+  },
+
+  selectFirstTestFailure: function() {
+    const first = this.getFailingTestResults()[0];
+    if (first) {
+      const matchingTest = this.getTests().find(ea => ea.id === first.behaviorVersionId);
+      if (matchingTest) {
+        this.onSelect(this.getBehaviorGroup().id, matchingTest.getPersistentId());
+      }
+    }
+  },
+
+  buildTestResultNotifications: function() {
+    if (this.getFailingTestResults().length > 0) {
+      return [new TestResultsNotificationData({
+        type: "test_failures",
+        onClick: this.selectFirstTestFailure
+      })];
+    } else {
+      return [];
+    }
+  },
+
   buildNotifications: function() {
     return [].concat(
       this.buildEnvVarNotifications(),
@@ -634,7 +666,8 @@ const BehaviorEditor = React.createClass({
       this.buildDataTypeNotifications(),
       this.buildTemplateNotifications(),
       this.buildServerNotifications(),
-      this.buildSkillDetailsNotifications()
+      this.buildSkillDetailsNotifications(),
+      this.buildTestResultNotifications()
     );
   },
 
@@ -873,7 +906,8 @@ const BehaviorEditor = React.createClass({
     this.props.onClearActivePanel();
     this.setState({
       error: error || "not_saved",
-      updatingNodeModules: false
+      updatingNodeModules: false,
+      runningTests: false
     });
   },
 
@@ -1381,7 +1415,8 @@ const BehaviorEditor = React.createClass({
   /* Booleans */
 
   isTestable: function() {
-    return Boolean(this.getSelectedBehavior() && this.getSelectedBehavior().usesCode());
+    const selected = this.getSelectedBehavior();
+    return Boolean(selected && selected.usesCode() && !selected.isTest());
   },
 
   getActionBehaviors: function() {
@@ -1394,6 +1429,10 @@ const BehaviorEditor = React.createClass({
 
   getLibraries: function() {
     return this.getBehaviorGroup().libraryVersions;
+  },
+
+  getTests: function() {
+    return this.getBehaviorGroup().getTests();
   },
 
   getNodeModuleVersions: function() {
@@ -1589,6 +1628,7 @@ const BehaviorEditor = React.createClass({
   onSave: function(newProps) {
     this.props.onSave(newProps);
     this.loadNodeModuleVersions();
+    this.loadTestResults();
   },
 
   resetNotificationsImmediately: function() {
@@ -1616,6 +1656,25 @@ const BehaviorEditor = React.createClass({
           });
       });
     }
+  },
+
+  loadTestResults: function() {
+    this.resetNotificationsEventually();
+    this.setState({
+      error: null,
+      runningTests: true,
+      testResults: []
+    });
+    DataRequest.jsonGet(jsRoutes.controllers.BehaviorEditorController.testResults(this.getBehaviorGroup().id).url)
+      .then(json => {
+        this.setState({
+          testResults: BehaviorTestResult.allFromJson(json),
+          runningTests: false
+        }, this.resetNotificationsImmediately);
+      })
+      .catch(error => {
+        this.onSaveError(error);
+      });
   },
 
   resetNotificationsEventually: debounce(function() {
@@ -1647,6 +1706,7 @@ const BehaviorEditor = React.createClass({
     window.addEventListener('focus', this.checkForUpdates, false);
     this.checkForUpdatesLater();
     this.loadNodeModuleVersions();
+    this.loadTestResults();
     if (this.props.showVersions) {
       this.showVersions();
     }
@@ -1793,6 +1853,19 @@ const BehaviorEditor = React.createClass({
 
         envVariableNames={this.getEnvVariableNames()}
         functionExecutesImmediately={codeConfigProps.functionExecutesImmediately || false}
+      />
+    );
+  },
+
+  getSelectedTestResult: function() {
+    return (this.state.testResults || []).find(ea => ea.behaviorVersionId === this.getSelectedBehavior().id);
+  },
+
+  renderTestOutput: function(options) {
+    return (
+      <TestOutput
+        sectionNumber={options.sectionNumber}
+        testResult={this.getSelectedTestResult()}
       />
     );
   },
@@ -2201,10 +2274,10 @@ const BehaviorEditor = React.createClass({
     return this.state.animationDisabled;
   },
 
-  addNewBehavior: function(isDataType, behaviorIdToClone, optionalDefaultProps) {
+  addNewBehavior: function(isDataType, isTest, behaviorIdToClone, optionalDefaultProps) {
     const group = this.getBehaviorGroup();
     const newName = optionalDefaultProps ? optionalDefaultProps.name : null;
-    const url = jsRoutes.controllers.BehaviorEditorController.newUnsavedBehavior(isDataType, group.teamId, behaviorIdToClone, newName).url;
+    const url = jsRoutes.controllers.BehaviorEditorController.newUnsavedBehavior(isDataType, isTest, group.teamId, behaviorIdToClone, newName).url;
     fetch(url, { credentials: 'same-origin' })
       .then((response) => response.json())
       .then((json) => {
@@ -2218,12 +2291,17 @@ const BehaviorEditor = React.createClass({
 
   addNewAction: function() {
     const nextActionName = SequentialName.nextFor(this.getActionBehaviors(), (ea) => ea.name, "action");
-    this.addNewBehavior(false, null, BehaviorVersion.defaultActionProps(nextActionName));
+    this.addNewBehavior(false, false, null, BehaviorVersion.defaultActionProps(nextActionName));
   },
 
   addNewDataType: function() {
     const nextDataTypeName = SequentialName.nextFor(this.getDataTypeBehaviors(), (ea) => ea.name, "DataType");
-    this.addNewBehavior(true, null, { name: nextDataTypeName });
+    this.addNewBehavior(true, false, null, { name: nextDataTypeName });
+  },
+
+  addNewTest: function() {
+    const nextDataTypeName = SequentialName.nextFor(this.getDataTypeBehaviors(), (ea) => ea.name, "test");
+    this.addNewBehavior(false, true, null, { name: nextDataTypeName });
   },
 
   addNewLibraryImpl: function(libraryIdToClone, optionalProps) {
@@ -2295,12 +2373,14 @@ const BehaviorEditor = React.createClass({
               actionBehaviors={this.getActionBehaviors()}
               dataTypeBehaviors={this.getDataTypeBehaviors()}
               libraries={this.getLibraries()}
+              tests={this.getTests()}
               nodeModuleVersions={this.getNodeModuleVersions()}
               selectedId={this.getSelectedId()}
               groupId={this.getBehaviorGroup().id}
               onSelect={this.onSelect}
               addNewAction={this.addNewAction}
               addNewDataType={this.addNewDataType}
+              addNewTest={this.addNewTest}
               addNewLibrary={this.addNewLibrary}
               isModified={this.editableIsModified}
               onUpdateNodeModules={this.updateNodeModules}
@@ -2311,6 +2391,8 @@ const BehaviorEditor = React.createClass({
               onAddApiConfigClick={this.onAddApiConfigClick}
               getApiConfigName={this.getApiConfigName}
               updatingNodeModules={this.state.updatingNodeModules}
+              runningTests={this.state.runningTests}
+              testResults={this.state.testResults}
             />
           </Sticky>
         </Collapsible>
@@ -2503,6 +2585,8 @@ const BehaviorEditor = React.createClass({
   renderForSelected: function(selected) {
     if (selected.isDataType()) {
       return this.renderDataTypeBehavior();
+    } else if (selected.isTest()) {
+      return this.renderTest();
     } else if (selected.isBehaviorVersion()) {
       return this.renderNormalBehavior();
     } else if (selected.isLibraryVersion()) {
@@ -2534,6 +2618,39 @@ const BehaviorEditor = React.createClass({
           functionExecutesImmediately: true,
           isMemoizationEnabled: false
         })}
+      </div>
+    );
+  },
+
+  renderTest: function() {
+    return (
+      <div className="pbxxxl">
+
+        <div className="columns container container-wide bg-white">
+          <div className="column column-full mobile-column-full">
+            <FormInput
+              className="form-input-borderless form-input-m mbneg1"
+              placeholder="Test description (optional)"
+              onChange={this.updateDescription}
+              value={this.getEditableDescription()}
+            />
+          </div>
+        </div>
+
+        <hr className="man rule-subtle" />
+
+        {this.renderCodeEditor({
+          sectionNumber: "1",
+          codeHelpPanelName: 'helpForTestCode',
+          isMemoizationEnabled: false
+        })}
+
+        <hr className="man rule-subtle" />
+
+        {this.renderTestOutput({
+          sectionNumber: "2"
+        })}
+
       </div>
     );
   },

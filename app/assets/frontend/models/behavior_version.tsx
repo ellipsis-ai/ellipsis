@@ -136,24 +136,24 @@ class BehaviorVersion extends Editable implements Diffable, BehaviorVersionInter
     }
 
     namePlaceholderText(): string {
-      return this.isDataType() ? "Data type name" : "Action name";
+      const label = this.kindLabel();
+      return `${label[0].toUpperCase()}${label.slice(1)} name`;
     }
 
     cloneActionText(): string {
-      return this.isDataType() ? "Clone data type…" : "Clone action…";
+      return `Clone ${this.kindLabel()}…`;
     }
 
     deleteActionText(): string {
-      return this.isDataType() ? "Delete data type…" : "Delete action…";
+      return `Delete ${this.kindLabel()}…`;
     }
 
     confirmDeleteText(): string {
-      const behaviorType = this.isDataType() ? "data type" : "action";
-      return `Are you sure you want to delete this ${behaviorType}?`;
+      return `Are you sure you want to delete this ${this.kindLabel()}?`;
     }
 
     cancelNewText(): string {
-      return this.isDataType() ? "Cancel new data type" : "Cancel new action";
+      return `Cancel new ${this.kindLabel()}`;
     }
 
     buildUpdatedGroupFor(group: BehaviorGroup, props: {}): BehaviorGroup {
@@ -184,13 +184,23 @@ class BehaviorVersion extends Editable implements Diffable, BehaviorVersionInter
       return this.config.isDataType;
     }
 
+    isTest(): boolean {
+      return this.config.isTest;
+    }
+
     usesCode(): boolean {
       const config = this.getDataTypeConfig();
       return !this.isDataType() || Boolean(config && config.usesCode);
     }
 
     getBehaviorVersionTypeName(): string {
-      return this.isDataType() ? "data type" : "action";
+      if (this.isDataType()) {
+        return "data type";
+      } else if (this.isTest()) {
+        return "test";
+      } else {
+        return "action";
+      }
     }
 
     diffLabel(): string {

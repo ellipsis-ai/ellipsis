@@ -48,6 +48,7 @@ const behaviorVersion1: BehaviorVersionJson = Object.freeze({
   "config": {
     "forcePrivateResponse": false,
     isDataType: false,
+    isTest: false,
     exportId: null,
     name: null,
     dataTypeConfig: null
@@ -83,6 +84,7 @@ const behaviorVersion2: BehaviorVersionJson = Object.freeze({
   "config": {
     "forcePrivateResponse": true,
     isDataType: false,
+    isTest: false,
     exportId: null,
     name: null,
     dataTypeConfig: null
@@ -319,7 +321,8 @@ const publishedMyCalendar: BehaviorGroup = BehaviorGroup.fromJson({
       "exportId": "BXUYJotxSaKz3QqZ_zSd-w",
       "name": "Agenda",
       "forcePrivateResponse": false,
-      "isDataType": false
+      "isDataType": false,
+      "isTest": false
     },
     "exportId": "BXUYJotxSaKz3QqZ_zSd-w",
     "githubUrl": "https://github.com/ellipsis-ai/my-calendar/actions/Agenda",
@@ -349,7 +352,8 @@ const publishedMyCalendar: BehaviorGroup = BehaviorGroup.fromJson({
       "exportId": "V-LAjv1AS4CoFimMANnxpg",
       "name": "Deactivate",
       "forcePrivateResponse": false,
-      "isDataType": false
+      "isDataType": false,
+      "isTest": false
     },
     "exportId": "V-LAjv1AS4CoFimMANnxpg",
     "githubUrl": "https://github.com/ellipsis-ai/my-calendar/actions/Deactivate",
@@ -369,7 +373,8 @@ const publishedMyCalendar: BehaviorGroup = BehaviorGroup.fromJson({
       "exportId": "J0uB9LvZTo6_L-spEBrtqg",
       "name": "Help",
       "forcePrivateResponse": false,
-      "isDataType": false
+      "isDataType": false,
+      "isTest": false
     },
     "exportId": "J0uB9LvZTo6_L-spEBrtqg",
     "githubUrl": "https://github.com/ellipsis-ai/my-calendar/actions/Help",
@@ -394,7 +399,8 @@ const publishedMyCalendar: BehaviorGroup = BehaviorGroup.fromJson({
       "exportId": "SBH4IfDzTGO8P7kV02yECw",
       "name": "Reminders",
       "forcePrivateResponse": false,
-      "isDataType": false
+      "isDataType": false,
+      "isTest": false
     },
     "exportId": "SBH4IfDzTGO8P7kV02yECw",
     "githubUrl": "https://github.com/ellipsis-ai/my-calendar/actions/Reminders",
@@ -419,7 +425,8 @@ const publishedMyCalendar: BehaviorGroup = BehaviorGroup.fromJson({
       "exportId": "ioHMv3b3T4utFwwH0cwjLg",
       "name": "Setup",
       "forcePrivateResponse": false,
-      "isDataType": false
+      "isDataType": false,
+      "isTest": false
     },
     "exportId": "ioHMv3b3T4utFwwH0cwjLg",
     "githubUrl": "https://github.com/ellipsis-ai/my-calendar/actions/Setup",
@@ -501,7 +508,8 @@ const installedMyCalendar: BehaviorGroup = BehaviorGroup.fromJson({
       "exportId": "V-LAjv1AS4CoFimMANnxpg",
       "name": "Deactivate",
       "forcePrivateResponse": false,
-      "isDataType": false
+      "isDataType": false,
+      "isTest": false
     },
     "exportId": "V-LAjv1AS4CoFimMANnxpg",
     "knownEnvVarsUsed": [],
@@ -522,7 +530,8 @@ const installedMyCalendar: BehaviorGroup = BehaviorGroup.fromJson({
       "exportId": "J0uB9LvZTo6_L-spEBrtqg",
       "name": "Help",
       "forcePrivateResponse": false,
-      "isDataType": false
+      "isDataType": false,
+      "isTest": false
     },
     "exportId": "J0uB9LvZTo6_L-spEBrtqg",
     "knownEnvVarsUsed": [],
@@ -548,7 +557,8 @@ const installedMyCalendar: BehaviorGroup = BehaviorGroup.fromJson({
       "exportId": "ioHMv3b3T4utFwwH0cwjLg",
       "name": "Setup",
       "forcePrivateResponse": false,
-      "isDataType": false
+      "isDataType": false,
+      "isTest": false
     },
     "exportId": "ioHMv3b3T4utFwwH0cwjLg",
     "knownEnvVarsUsed": [],
@@ -574,7 +584,8 @@ const installedMyCalendar: BehaviorGroup = BehaviorGroup.fromJson({
       "exportId": "SBH4IfDzTGO8P7kV02yECw",
       "name": "Reminders",
       "forcePrivateResponse": false,
-      "isDataType": false
+      "isDataType": false,
+      "isTest": false
     },
     "exportId": "SBH4IfDzTGO8P7kV02yECw",
     "knownEnvVarsUsed": [],
@@ -600,7 +611,8 @@ const installedMyCalendar: BehaviorGroup = BehaviorGroup.fromJson({
       "exportId": "BXUYJotxSaKz3QqZ_zSd-w",
       "name": "Agenda",
       "forcePrivateResponse": false,
-      "isDataType": false
+      "isDataType": false,
+      "isTest": false
     },
     "exportId": "BXUYJotxSaKz3QqZ_zSd-w",
     "knownEnvVarsUsed": [],

@@ -4,6 +4,7 @@ import json.web.settings.IntegrationListConfig
 import models.accounts.slack.botprofile.SlackBotProfile
 import models.behaviors._
 import models.behaviors.behaviorparameter.ValidValue
+import models.behaviors.behaviortestresult.BehaviorTestResult
 import models.behaviors.events.{SlackFile, SlackMessage}
 import models.behaviors.testing.{InvocationTestReportOutput, ResultOutput}
 import play.api.libs.json._
@@ -200,5 +201,7 @@ object Formatting {
   lazy implicit val slackConversationPurposeFormat: Format[SlackConversationPurpose] = Json.format[SlackConversationPurpose]
   lazy implicit val slackConversationLatestInfo: Format[SlackConversationLatestInfo] = Json.format[SlackConversationLatestInfo]
   lazy implicit val slackConversationFormat: Format[SlackConversation] = Json.format[SlackConversation]
+
+  lazy implicit val behaviorTestResultFormat: Format[BehaviorTestResult] = Json.format[BehaviorTestResult]
 
 }

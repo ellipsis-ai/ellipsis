@@ -8,6 +8,7 @@ case class BehaviorConfig(
                            forcePrivateResponse: Option[Boolean],
                            canBeMemoized: Option[Boolean],
                            isDataType: Boolean,
+                           isTest: Option[Boolean],
                            dataTypeConfig: Option[DataTypeConfigData]
                            ) {
 

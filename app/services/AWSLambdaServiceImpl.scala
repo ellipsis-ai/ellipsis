@@ -615,9 +615,8 @@ class AWSLambdaServiceImpl @Inject() (
               withHandler("index.handler").
               withTimeout(invocationTimeoutSeconds)
           )
-          _ <- JavaFutureConverter.javaToScala(client.createFunctionAsync(createFunctionRequest)).flatMap { result =>
-            setUpLogSubscriptionFor(result.getFunctionName)
-          }
+          result <- JavaFutureConverter.javaToScala(client.createFunctionAsync(createFunctionRequest))
+          _ <- setUpLogSubscriptionFor(result.getFunctionName)
         } yield {}
       }
     }

@@ -6,7 +6,6 @@ import models.accounts.github.profile.{GithubProfileService, GithubProfileServic
 import models.accounts.linkedaccount.{LinkedAccountService, LinkedAccountServiceImpl}
 import models.accounts.linkedoauth2token.{LinkedOAuth2TokenService, LinkedOAuth2TokenServiceImpl}
 import models.accounts.linkedsimpletoken.{LinkedSimpleTokenService, LinkedSimpleTokenServiceImpl}
-import models.accounts.user.{UserService, UserServiceImpl}
 import models.accounts.logintoken.{LoginTokenService, LoginTokenServiceImpl}
 import models.accounts.oauth2api.{OAuth2ApiService, OAuth2ApiServiceImpl}
 import models.accounts.oauth2application.{OAuth2ApplicationService, OAuth2ApplicationServiceImpl}
@@ -14,14 +13,15 @@ import models.accounts.oauth2token.{OAuth2TokenService, OAuth2TokenServiceImpl}
 import models.accounts.registration.{RegistrationService, RegistrationServiceImpl}
 import models.accounts.simpletokenapi.{SimpleTokenApiService, SimpleTokenApiServiceImpl}
 import models.accounts.slack.botprofile.{SlackBotProfileService, SlackBotProfileServiceImpl}
+import models.accounts.user.{UserService, UserServiceImpl}
 import models.apitoken.{APITokenService, APITokenServiceImpl}
-import models.behaviors.{BehaviorResponseService, BehaviorResponseServiceImpl, BotResultService, BotResultServiceImpl}
 import models.behaviors.behavior.{BehaviorService, BehaviorServiceImpl}
 import models.behaviors.behaviorgroup.{BehaviorGroupService, BehaviorGroupServiceImpl}
 import models.behaviors.behaviorgroupdeployment.{BehaviorGroupDeploymentService, BehaviorGroupDeploymentServiceImpl}
 import models.behaviors.behaviorgroupversion.{BehaviorGroupVersionService, BehaviorGroupVersionServiceImpl}
 import models.behaviors.behaviorgroupversionsha.{BehaviorGroupVersionSHAService, BehaviorGroupVersionSHAServiceImpl}
 import models.behaviors.behaviorparameter.{BehaviorParameterService, BehaviorParameterServiceImpl}
+import models.behaviors.behaviortestresult.{BehaviorTestResultService, BehaviorTestResultServiceImpl}
 import models.behaviors.behaviorversion.{BehaviorVersionService, BehaviorVersionServiceImpl}
 import models.behaviors.config.awsconfig.{AWSConfigService, AWSConfigServiceImpl}
 import models.behaviors.config.requiredawsconfig.{RequiredAWSConfigService, RequiredAWSConfigServiceImpl}
@@ -36,9 +36,6 @@ import models.behaviors.defaultstorageitem.{DefaultStorageItemService, DefaultSt
 import models.behaviors.events.EventHandler
 import models.behaviors.input.{InputService, InputServiceImpl}
 import models.behaviors.invocationlogentry.{InvocationLogEntryService, InvocationLogEntryServiceImpl}
-import models.behaviors.scheduling.scheduledmessage.{ScheduledMessageService, ScheduledMessageServiceImpl}
-import models.behaviors.triggers.messagetrigger.{MessageTriggerService, MessageTriggerServiceImpl}
-import models.environmentvariable._
 import models.behaviors.invocationtoken.{InvocationTokenService, InvocationTokenServiceImpl}
 import models.behaviors.library.{LibraryVersionService, LibraryVersionServiceImpl}
 import models.behaviors.linked_github_repo.{LinkedGithubRepoService, LinkedGithubRepoServiceImpl}
@@ -47,18 +44,22 @@ import models.behaviors.nodemoduleversion.{NodeModuleVersionService, NodeModuleV
 import models.behaviors.savedanswer.{SavedAnswerService, SavedAnswerServiceImpl}
 import models.behaviors.scheduling.recurrence.{RecurrenceService, RecurrenceServiceImpl}
 import models.behaviors.scheduling.scheduledbehavior.{ScheduledBehaviorService, ScheduledBehaviorServiceImpl}
-import models.devmodechannel.{DevModeChannelService, DevModeChannelServiceImpl}
-import models.team.{TeamService, TeamServiceImpl}
-import models.organization.{OrganizationService, OrganizationServiceImpl}
-import models.billing.plan.{PlanService, PlanServiceImpl}
-import models.billing.subscription.{SubscriptionService, SubscriptionServiceImpl}
-import models.billing.invoice.{InvoiceService, InvoiceServiceImpl}
+import models.behaviors.scheduling.scheduledmessage.{ScheduledMessageService, ScheduledMessageServiceImpl}
+import models.behaviors.triggers.messagetrigger.{MessageTriggerService, MessageTriggerServiceImpl}
+import models.behaviors.{BehaviorResponseService, BehaviorResponseServiceImpl, BotResultService, BotResultServiceImpl}
 import models.billing.active_user_record.{ActiveUserRecordService, ActiveUserRecordServiceImpl}
 import models.billing.addon.{AddonService, AddonServiceImpl}
 import models.billing.customer.{CustomerService, CustomerServiceImpl}
-import services.billing.{BillingService, BillingServiceImpl}
-import services._
+import models.billing.invoice.{InvoiceService, InvoiceServiceImpl}
+import models.billing.plan.{PlanService, PlanServiceImpl}
+import models.billing.subscription.{SubscriptionService, SubscriptionServiceImpl}
+import models.devmodechannel.{DevModeChannelService, DevModeChannelServiceImpl}
+import models.environmentvariable._
+import models.organization.{OrganizationService, OrganizationServiceImpl}
+import models.team.{TeamService, TeamServiceImpl}
 import net.codingwell.scalaguice.ScalaModule
+import services._
+import services.billing.{BillingService, BillingServiceImpl}
 import services.caching.{CacheService, CacheServiceImpl}
 import services.slack.{SlackApiService, SlackEventService, SlackEventServiceImpl}
 import services.stats.{StatsService, StatsServiceImpl}
@@ -117,6 +118,7 @@ class ServiceModule extends AbstractModule with ScalaModule {
     bind[BehaviorGroupDeploymentService].to[BehaviorGroupDeploymentServiceImpl]
     bind[ManagedBehaviorGroupService].to[ManagedBehaviorGroupServiceImpl]
     bind[BehaviorGroupVersionSHAService].to[BehaviorGroupVersionSHAServiceImpl]
+    bind[BehaviorTestResultService].to[BehaviorTestResultServiceImpl]
 
 
     bind[AWSLambdaService].to[AWSLambdaServiceImpl]

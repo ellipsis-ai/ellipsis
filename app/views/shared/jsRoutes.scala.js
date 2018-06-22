@@ -30,6 +30,7 @@
   routes.javascript.BehaviorEditorController.testTriggers,
   routes.javascript.BehaviorEditorController.versionInfoFor,
   routes.javascript.BehaviorEditorController.nodeModuleVersionsFor,
+  routes.javascript.BehaviorEditorController.testResults,
   routes.javascript.BehaviorEditorController.updateFromGithub,
   routes.javascript.BehaviorEditorController.pushToGithub,
   routes.javascript.BehaviorEditorController.linkToGithubRepo,

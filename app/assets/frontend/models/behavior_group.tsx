@@ -164,11 +164,15 @@ class BehaviorGroup implements Diffable, BehaviorGroupInterface {
     }
 
     getActions(): Array<BehaviorVersion> {
-      return this.behaviorVersions.filter(ea => !ea.isDataType());
+      return this.behaviorVersions.filter(ea => !ea.isDataType() && !ea.isTest());
     }
 
     getDataTypes(): Array<BehaviorVersion> {
       return this.behaviorVersions.filter(ea => ea.isDataType());
+    }
+
+    getTests(): Array<BehaviorVersion> {
+      return this.behaviorVersions.filter(ea => ea.isTest());
     }
 
     getInputs(): Array<Input> {

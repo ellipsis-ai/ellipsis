@@ -3,15 +3,18 @@ import AddButton from '../form/add_button';
 import EditableName from '../../frontend/behavior_list/editable_name';
 import Editable from '../models/editable';
 import Sort from '../lib/sort';
+import {ReactNode} from "react";
 
 type Props = {
-    heading: string,
-    editables: Array<Editable>,
-    selectedId?: Option<string>,
-    onAddNew: () => void,
-    addNewLabel?: Option<string>,
-    onSelect: (groupId: string, selectableId: string) => void,
-    isModified: (Editable) => boolean
+  heading: string,
+  editables: Array<Editable>,
+  selectedId?: Option<string>,
+  onAddNew: () => void,
+  addNewLabel?: Option<string>,
+  onSelect: (groupId: string, selectableId: string) => void,
+  isModified: (Editable) => boolean,
+  renderGroupStatus?: () => ReactNode,
+  renderEditableStatus?: (Editable) => ReactNode
 }
 
 class BehaviorSwitcherGroup extends React.Component<Props> {
@@ -37,8 +40,17 @@ class BehaviorSwitcherGroup extends React.Component<Props> {
           disableLink={this.isSelected(editable)}
           omitDescription={true}
           onClick={this.props.onSelect}
+          renderStatus={this.props.renderEditableStatus}
         />
       );
+    }
+
+    renderStatus(): ReactNode {
+      if (this.props.renderGroupStatus) {
+        return this.props.renderGroupStatus();
+      } else {
+        return null;
+      }
     }
 
     render() {
@@ -49,7 +61,7 @@ class BehaviorSwitcherGroup extends React.Component<Props> {
           <div className="container container-wide prl">
             <div className="columns columns-elastic">
               <div className="column column-expand ptl">
-                <h6>{this.props.heading}</h6>
+                <h6>{this.props.heading}{this.renderStatus()}</h6>
               </div>
               <div className="column column-shrink ptm type-link">
                 <AddButton
