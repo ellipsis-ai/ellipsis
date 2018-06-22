@@ -5,6 +5,7 @@ import ImmutableObjectUtils from '../lib/immutable_object_utils';
 import Trigger from "../models/trigger";
 import BehaviorVersion from "../models/behavior_version";
 import autobind from "../lib/autobind";
+import {ReactNode} from "react";
 
 interface Props {
   version: Editable,
@@ -15,10 +16,11 @@ interface Props {
   isImportable?: Option<boolean>,
   className?: Option<string>,
   triggerClassName?: Option<string>,
-  highlightText?: Option<string>
+  highlightText?: Option<string>,
+  renderStatus?: (Editable) => ReactNode
 }
 
-class EditableName extends React.PureComponent<Props> {
+class EditableName extends React.Component<Props> {
     constructor(props: Props) {
       super(props);
       autobind(this);
@@ -149,6 +151,7 @@ class EditableName extends React.PureComponent<Props> {
         return (
           <div>
             <div className="display-limit-width display-ellipsis">
+              {this.renderStatus()}
               <span className={"mrs " + (this.props.disableLink ? "" : "link")}>
                 <SubstringHighlighter text={name} substring={this.props.highlightText} />
               </span>
@@ -164,6 +167,7 @@ class EditableName extends React.PureComponent<Props> {
       } else {
         return (
           <div className="display-limit-width display-ellipsis">
+            {this.renderStatus()}
             {this.getTriggersFromVersion(version, !this.props.disableLink)}
           </div>
         );
@@ -198,6 +202,14 @@ class EditableName extends React.PureComponent<Props> {
       if (this.props.onClick && this.props.version.groupId) {
         this.props.onClick(this.props.version.groupId, this.props.version.getPersistentId());
         event.preventDefault();
+      }
+    }
+
+    renderStatus(): ReactNode {
+      if (this.props.renderStatus) {
+        return this.props.renderStatus(this.props.version);
+      } else {
+        return null;
       }
     }
 

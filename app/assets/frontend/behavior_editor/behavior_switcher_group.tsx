@@ -3,8 +3,7 @@ import AddButton from '../form/add_button';
 import EditableName from '../../frontend/behavior_list/editable_name';
 import Editable from '../models/editable';
 import Sort from '../lib/sort';
-import TestsStatus from "./tests_status";
-import BehaviorTestResult from "../models/behavior_test_result";
+import {ReactNode} from "react";
 
 type Props = {
   heading: string,
@@ -14,9 +13,8 @@ type Props = {
   addNewLabel?: Option<string>,
   onSelect: (groupId: string, selectableId: string) => void,
   isModified: (Editable) => boolean,
-  isTests?: Option<boolean>,
-  runningTests?: boolean,
-  testResults?: Array<BehaviorTestResult>
+  renderGroupStatus?: () => ReactNode,
+  renderEditableStatus?: (Editable) => ReactNode
 }
 
 class BehaviorSwitcherGroup extends React.Component<Props> {
@@ -42,18 +40,14 @@ class BehaviorSwitcherGroup extends React.Component<Props> {
           disableLink={this.isSelected(editable)}
           omitDescription={true}
           onClick={this.props.onSelect}
+          renderStatus={this.props.renderEditableStatus}
         />
       );
     }
 
-    renderStatus() {
-      if (this.props.isTests) {
-        return (
-          <TestsStatus
-            isRunning={!!this.props.runningTests}
-            testResults={this.props.testResults}
-          />
-        );
+    renderStatus(): ReactNode {
+      if (this.props.renderGroupStatus) {
+        return this.props.renderGroupStatus();
       } else {
         return null;
       }

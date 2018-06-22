@@ -13,6 +13,9 @@ import RequiredApiConfig from "../models/required_api_config";
 import autobind from "../lib/autobind";
 import BehaviorTestResult from "../models/behavior_test_result";
 import TestsStatus from "./tests_status";
+import {ReactNode} from "react";
+import SVGCheckmark from '../svg/checkmark';
+import SVGInfo from '../svg/info';
 
 interface Props {
   actionBehaviors: Array<BehaviorVersion>,
@@ -112,6 +115,40 @@ class BehaviorSwitcher extends React.Component<Props> {
       }
     }
 
+    renderTestsStatus(): ReactNode {
+      return (
+        <TestsStatus
+          isRunning={!!this.props.runningTests}
+          testResults={this.props.testResults}
+        />
+      );
+    }
+
+    renderTestStatusFor(test: Editable): ReactNode {
+      const result = (this.props.testResults || []).find(ea => ea.behaviorVersionId === test.id);
+      if (result) {
+        if (result.isPass) {
+          return (
+            <div className="display-inline-block fade-in">
+              <span className="display-inline-block height-l mrs align-m type-green">
+                <SVGCheckmark label="Pass"/>
+              </span>
+            </div>
+          );
+        } else {
+          return (
+            <div className="display-inline-block fade-in">
+              <span className="display-inline-block align-m height-l type-yellow mrs">
+                <SVGInfo label="Fail"/>
+              </span>
+            </div>
+          );
+        }
+      } else {
+        return null;
+      }
+    }
+
     render() {
       return (
         <div className="pbxxxl">
@@ -171,9 +208,8 @@ class BehaviorSwitcher extends React.Component<Props> {
               addNewLabel="Add new test"
               onSelect={this.props.onSelect}
               isModified={this.props.isModified}
-              isTests={true}
-              runningTests={this.props.runningTests}
-              testResults={this.props.testResults}
+              renderGroupStatus={this.renderTestsStatus}
+              renderEditableStatus={this.renderTestStatusFor}
             />
 
             <ApiConfigList
