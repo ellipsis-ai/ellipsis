@@ -637,10 +637,21 @@ const BehaviorEditor = React.createClass({
     }
   },
 
+  selectFirstTestFailure: function() {
+    const first = this.getFailingTestResults()[0];
+    if (first) {
+      const matchingTest = this.getTests().find(ea => ea.id === first.behaviorVersionId);
+      if (matchingTest) {
+        this.onSelect(this.getBehaviorGroup().id, matchingTest.getPersistentId());
+      }
+    }
+  },
+
   buildTestResultNotifications: function() {
     if (this.getFailingTestResults().length > 0) {
       return [new TestResultsNotificationData({
-        type: "test_failures"
+        type: "test_failures",
+        onClick: this.selectFirstTestFailure
       })];
     } else {
       return [];
