@@ -52,6 +52,10 @@ abstract class Editable implements EditableInterface {
       return false;
     }
 
+    isTest(): boolean {
+      return false;
+    }
+
     isLibraryVersion(): boolean {
       return false;
     }
