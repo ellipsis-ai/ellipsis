@@ -36,7 +36,7 @@ class InvocationLogController @Inject() (
   }
 
   def getLogs(
-               behaviorIdOrNameOrTrigger: String,
+               actionName: String,
                token: String,
                maybeFrom: Option[String],
                maybeTo: Option[String],
@@ -46,7 +46,7 @@ class InvocationLogController @Inject() (
     for {
       maybeInvocationToken <- dataService.invocationTokens.findNotExpired(token)
       result <- maybeInvocationToken.map { invocationToken =>
-        getLogsWithToken(behaviorIdOrNameOrTrigger, invocationToken, maybeFrom, maybeTo, maybeUserId, maybeOriginalEventType)
+        getLogsWithToken(actionName, invocationToken, maybeFrom, maybeTo, maybeUserId, maybeOriginalEventType)
       }.getOrElse {
         val errorResult = APIResultWithErrorsData(Seq(APIErrorData("Invalid or expired token", Some("token"))))
         Future.successful(BadRequest(Json.toJson(errorResult)))
@@ -55,7 +55,7 @@ class InvocationLogController @Inject() (
   }
 
   private def getLogsWithToken(
-                                behaviorIdOrNameOrTrigger: String,
+                                actionName: String,
                                 invocationToken: InvocationToken,
                                 maybeFrom: Option[String],
                                 maybeTo: Option[String],
@@ -65,8 +65,7 @@ class InvocationLogController @Inject() (
     for {
       maybeOriginatingBehaviorVersion <- dataService.behaviorVersions.findWithoutAccessCheck(invocationToken.behaviorVersionId)
       maybeBehaviorVersion <- maybeOriginatingBehaviorVersion.map { behaviorVersion =>
-        // TODO: make sure only by name is OK
-        dataService.behaviorVersions.findByName(behaviorIdOrNameOrTrigger, behaviorVersion.groupVersion)
+        dataService.behaviorVersions.findByName(actionName, behaviorVersion.groupVersion)
       }.getOrElse(Future.successful(None))
       maybeLogEntries <- maybeBehaviorVersion.map { behaviorVersion =>
         val from = maybeTimestampFor(maybeFrom).getOrElse(EARLIEST)
@@ -92,8 +91,8 @@ class InvocationLogController @Inject() (
       maybeLogEntryData.map { logEntryData =>
         Ok(Json.toJson(logEntryData))
       }.getOrElse {
-        val errorMessage = InvocationLogController.noActionFoundMessage(behaviorIdOrNameOrTrigger)
-        val errorResult = APIResultWithErrorsData(Seq(APIErrorData(errorMessage, Some("behaviorId"))))
+        val errorMessage = InvocationLogController.noActionFoundMessage(actionName)
+        val errorResult = APIResultWithErrorsData(Seq(APIErrorData(errorMessage, Some("actionName"))))
         NotFound(Json.toJson(errorResult))
       }
     }
