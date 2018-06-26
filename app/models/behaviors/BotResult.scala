@@ -421,7 +421,7 @@ case class ExecutionErrorResult(
   }
 
   override val maybeLog: Option[String] = {
-    if (maybeAuthorLog.isEmpty && maybeError.isEmpty) {
+    if (maybeAuthorLog.isEmpty && maybeErrorLog.isEmpty) {
       None
     } else {
       Some(maybeAuthorLog.map(_ + "\n").getOrElse("") + maybeErrorLog.getOrElse(""))
