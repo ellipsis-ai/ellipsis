@@ -109,16 +109,16 @@ class APIController @Inject() (
       }.getOrElse(Future.successful(None))
     }
 
-    def maybeBehaviorFor(actionName: String) = {
+    def maybeBehaviorVersionFor(actionName: String) = {
       for {
-        maybeOriginatingBehavior <- maybeInvocationToken.map { invocationToken =>
-          dataService.behaviors.findWithoutAccessCheck(invocationToken.behaviorId)
+        maybeOriginatingBehaviorVersion <- maybeInvocationToken.map { invocationToken =>
+          dataService.behaviorVersions.findWithoutAccessCheck(invocationToken.behaviorVersionId)
         }.getOrElse(Future.successful(None))
-        maybeGroup <- Future.successful(maybeOriginatingBehavior.flatMap(_.maybeGroup))
-        maybeBehavior <- maybeGroup.map { group =>
-          dataService.behaviors.findByIdOrName(actionName, group)
+        maybeGroupVersion <- Future.successful(maybeOriginatingBehaviorVersion.map(_.groupVersion))
+        maybeBehaviorVersion <- maybeGroupVersion.map { groupVersion =>
+          dataService.behaviorVersions.findByName(actionName, groupVersion)
         }.getOrElse(Future.successful(None))
-      } yield maybeBehavior
+      } yield maybeBehaviorVersion
     }
 
     def maybeMessageEventFor(message: String, channel: String, maybeOriginalEventType: Option[EventType]): Future[Option[Event]] = {
@@ -310,16 +310,16 @@ class APIController @Inject() (
                        )(implicit request: Request[AnyContent]): Future[Result] = {
     for {
       maybeSlackChannelId <- context.maybeSlackChannelIdFor(info.channel)
-      maybeBehavior <- context.maybeBehaviorFor(actionName)
+      maybeBehaviorVersion <- context.maybeBehaviorVersionFor(actionName)
       maybeEvent <- Future.successful(
         for {
           botProfile <- context.maybeBotProfile
           slackProfile <- context.maybeSlackProfile
-          behavior <- maybeBehavior
+          behaviorVersion <- maybeBehaviorVersion
         } yield RunEvent(
           botProfile,
           slackProfile.teamId,
-          behavior,
+          behaviorVersion,
           info.argumentsMap,
           maybeSlackChannelId.getOrElse(info.channel),
           None,
@@ -328,7 +328,7 @@ class APIController @Inject() (
           info.originalEventType.flatMap(EventType.find)
         )
       )
-      result <- if (maybeBehavior.isDefined) {
+      result <- if (maybeBehaviorVersion.isDefined) {
         runBehaviorFor(maybeEvent, context)
       } else {
         Future.successful(notFound(APIErrorData(s"Action named `$actionName` not found", Some("actionName")), Json.toJson(info)))
@@ -429,19 +429,19 @@ class APIController @Inject() (
                            )(implicit request: Request[AnyContent]): Future[Result] = {
     for {
       maybeSlackChannelId <- context.maybeSlackChannelIdFor(info.channel)
-      maybeBehavior <- context.maybeBehaviorFor(actionName)
+      maybeBehaviorVersion <- context.maybeBehaviorVersionFor(actionName)
       result <- (for {
         slackProfile <- context.maybeSlackProfile
-        behavior <- maybeBehavior
+        behaviorVersion <- maybeBehaviorVersion
       } yield {
         for {
-          user <- dataService.users.ensureUserFor(slackProfile.loginInfo, behavior.team.id)
+          user <- dataService.users.ensureUserFor(slackProfile.loginInfo, behaviorVersion.team.id)
           maybeScheduled <- dataService.scheduledBehaviors.maybeCreateWithRecurrenceText(
-            behavior,
+            behaviorVersion.behavior,
             info.argumentsMap,
             info.recurrenceString,
             user,
-            behavior.team,
+            behaviorVersion.team,
             maybeSlackChannelId,
             info.useDM
           )
@@ -560,17 +560,17 @@ class APIController @Inject() (
       maybeSlackChannelId <- info.channel.map { channel =>
         context.maybeSlackChannelIdFor(channel)
       }.getOrElse(Future.successful(info.channel))
-      maybeBehavior <- context.maybeBehaviorFor(actionName)
+      maybeBehaviorVersion <- context.maybeBehaviorVersionFor(actionName)
       maybeUser <- info.userId.map { userId =>
         dataService.users.find(userId)
       }.getOrElse(Future.successful(None))
-      result <- maybeBehavior.map { behavior =>
+      result <- maybeBehaviorVersion.map { behaviorVersion =>
         if (info.userId.isDefined && maybeUser.isEmpty) {
           Future.successful(notFound(APIErrorData(s"Couldn't find a user with ID `${info.userId.get}`", Some("userId")), Json.toJson(info)))
         } else if (info.channel.isDefined && maybeSlackChannelId.isEmpty) {
           Future.successful(notFound(APIErrorData(s"Couldn't find channel for `${info.channel}`", Some("channel")), Json.toJson(info)))
         } else {
-          dataService.scheduledBehaviors.allForBehavior(behavior, maybeUser, maybeSlackChannelId).flatMap { scheduledBehaviors =>
+          dataService.scheduledBehaviors.allForBehavior(behaviorVersion.behavior, maybeUser, maybeSlackChannelId).flatMap { scheduledBehaviors =>
             for {
               unscheduledList <- Future.sequence(scheduledBehaviors.map { ea =>
                 dataService.scheduledBehaviors.delete(ea)

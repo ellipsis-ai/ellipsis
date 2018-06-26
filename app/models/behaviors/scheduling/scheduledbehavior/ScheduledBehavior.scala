@@ -10,7 +10,7 @@ import models.behaviors.scheduling.Scheduled
 import models.behaviors.scheduling.recurrence.Recurrence
 import models.team.Team
 import play.api.libs.json.Json
-import services.DataService
+import services.{DataService, DefaultServices}
 import slick.dbio.DBIO
 import utils.SlackTimestamp
 
@@ -50,21 +50,25 @@ case class ScheduledBehavior(
     }
   }
 
-  def eventFor(channel: String, slackUserId: String, profile: SlackBotProfile): ScheduledEvent = {
-    ScheduledEvent(
-      RunEvent(
-        profile,
-        profile.slackTeamId,
-        behavior,
-        arguments,
-        channel,
-        None,
-        slackUserId,
-        SlackTimestamp.now,
-        Some(EventType.scheduled)
-      ),
-      this
-    )
+  def eventFor(channel: String, slackUserId: String, profile: SlackBotProfile, services: DefaultServices)(implicit ec: ExecutionContext): Future[Option[ScheduledEvent]] = {
+    services.dataService.behaviors.maybeCurrentVersionFor(behavior).map { maybeBehaviorVersion =>
+      maybeBehaviorVersion.map { behaviorVersion =>
+        ScheduledEvent(
+          RunEvent(
+            profile,
+            profile.slackTeamId,
+            behaviorVersion,
+            arguments,
+            channel,
+            None,
+            slackUserId,
+            SlackTimestamp.now,
+            Some(EventType.scheduled)
+          ),
+          this
+        )
+      }
+    }
   }
 
   def withUpdatedNextTriggeredFor(when: OffsetDateTime): ScheduledBehavior = {

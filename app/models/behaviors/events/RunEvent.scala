@@ -4,6 +4,7 @@ import akka.actor.ActorSystem
 import json.SlackUserData
 import models.accounts.slack.botprofile.SlackBotProfile
 import models.behaviors.behavior.Behavior
+import models.behaviors.behaviorversion.BehaviorVersion
 import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.{ActionChoice, BehaviorResponse, DeveloperContext}
 import models.team.Team
@@ -16,7 +17,7 @@ import scala.concurrent.{ExecutionContext, Future}
 case class RunEvent(
                      profile: SlackBotProfile,
                      userSlackTeamId: String,
-                     behavior: Behavior,
+                     behaviorVersion: BehaviorVersion,
                      arguments: Map[String, String],
                      channel: String,
                      maybeThreadId: Option[String],
@@ -33,9 +34,9 @@ case class RunEvent(
   val messageText: String = ""
   val includesBotMention: Boolean = false
   val isResponseExpected: Boolean = false
-  val invocationLogText: String = s"Running behavior ${behavior.id}"
+  val invocationLogText: String = s"Running behavior ${behaviorVersion.id}"
 
-  val teamId: String = behavior.team.id
+  val teamId: String = behaviorVersion.team.id
   val userIdForContext: String = user
 
   lazy val maybeChannel = Some(channel)
@@ -90,26 +91,21 @@ case class RunEvent(
                              )(implicit ec: ExecutionContext): Future[Seq[BehaviorResponse]] = {
     val dataService = services.dataService
     for {
-      maybeBehaviorVersion <- dataService.behaviors.maybeCurrentVersionFor(behavior)
-      responses <- maybeBehaviorVersion.map { behaviorVersion =>
-        for {
-          params <- dataService.behaviorParameters.allFor(behaviorVersion)
-          invocationParams <- Future.successful(arguments.flatMap { case(name, value) =>
-            params.find(_.name == name).map { param =>
-              (AWSLambdaConstants.invocationParamFor(param.rank - 1), value)
-            }
-          })
-          response <- dataService.behaviorResponses.buildFor(
-            this,
-            behaviorVersion,
-            invocationParams,
-            None,
-            None,
-            None
-          )
-        } yield Seq(response)
-      }.getOrElse(Future.successful(Seq()))
-    } yield responses
+      params <- dataService.behaviorParameters.allFor(behaviorVersion)
+      invocationParams <- Future.successful(arguments.flatMap { case(name, value) =>
+        params.find(_.name == name).map { param =>
+          (AWSLambdaConstants.invocationParamFor(param.rank - 1), value)
+        }
+      })
+      response <- dataService.behaviorResponses.buildFor(
+        this,
+        behaviorVersion,
+        invocationParams,
+        None,
+        None,
+        None
+      )
+    } yield Seq(response)
   }
 
 }

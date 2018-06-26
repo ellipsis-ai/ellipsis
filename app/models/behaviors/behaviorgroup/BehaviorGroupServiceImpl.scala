@@ -104,7 +104,7 @@ class BehaviorGroupServiceImpl @Inject() (
         token <- maybeToken
         user <- maybeUser
       } yield {
-        dataService.behaviors.find(token.behaviorId, user)
+        dataService.behaviors.find(token.behaviorVersionId, user)
       }).getOrElse(Future.successful(None))
     } yield maybeOriginatingBehavior.map(_.group)
   }

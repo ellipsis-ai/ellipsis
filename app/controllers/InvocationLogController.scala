@@ -63,13 +63,12 @@ class InvocationLogController @Inject() (
                                 maybeOriginalEventType: Option[String]
                               ): Future[Result] = {
     for {
-      maybeOriginatingBehavior <- dataService.behaviors.findWithoutAccessCheck(invocationToken.behaviorId)
-      maybeBehavior <- maybeOriginatingBehavior.flatMap { behavior =>
-        behavior.maybeGroup.map { group =>
-          dataService.behaviors.findByIdOrNameOrTrigger(behaviorIdOrNameOrTrigger, group)
-        }
+      maybeOriginatingBehaviorVersion <- dataService.behaviorVersions.findWithoutAccessCheck(invocationToken.behaviorVersionId)
+      maybeBehaviorVersion <- maybeOriginatingBehaviorVersion.map { behaviorVersion =>
+        // TODO: make sure only by name is OK
+        dataService.behaviorVersions.findByName(behaviorIdOrNameOrTrigger, behaviorVersion.groupVersion)
       }.getOrElse(Future.successful(None))
-      maybeLogEntries <- maybeBehavior.map { behavior =>
+      maybeLogEntries <- maybeBehaviorVersion.map { behaviorVersion =>
         val from = maybeTimestampFor(maybeFrom).getOrElse(EARLIEST)
         val to = maybeTimestampFor(maybeTo).getOrElse(LATEST)
         val maybeValidOriginalEventType = EventType.maybeFrom(maybeOriginalEventType)
@@ -78,7 +77,7 @@ class InvocationLogController @Inject() (
           Future.successful(Some(Seq()))
         } else {
           dataService.invocationLogEntries
-            .allForBehavior(behavior, from, to, maybeUserId, maybeValidOriginalEventType)
+            .allForBehavior(behaviorVersion.behavior, from, to, maybeUserId, maybeValidOriginalEventType)
             .map { entries =>
               Some(entries.filterNot(_.paramValues == JsNull))
             }

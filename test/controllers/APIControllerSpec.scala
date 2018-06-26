@@ -4,15 +4,13 @@ import java.time.{LocalTime, OffsetDateTime}
 
 import akka.actor.ActorSystem
 import com.mohiva.play.silhouette.api.LoginInfo
-import json.{APIErrorData, APIResultWithErrorsData, APITokenData}
 import json.Formatting._
+import json.{APIErrorData, APIResultWithErrorsData, APITokenData}
 import models.IDs
-import models.accounts.linkedaccount.LinkedAccount
 import models.accounts.slack.botprofile.SlackBotProfile
 import models.accounts.slack.profile.SlackProfile
 import models.accounts.user.User
 import models.apitoken.APIToken
-import models.behaviors.{BotResult, BotResultService, SimpleTextResult}
 import models.behaviors.behavior.Behavior
 import models.behaviors.behaviorgroup.BehaviorGroup
 import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
@@ -22,6 +20,7 @@ import models.behaviors.invocationtoken.InvocationToken
 import models.behaviors.scheduling.recurrence.Daily
 import models.behaviors.scheduling.scheduledbehavior.ScheduledBehavior
 import models.behaviors.scheduling.scheduledmessage.ScheduledMessage
+import models.behaviors.{BotResult, BotResultService, SimpleTextResult}
 import models.team.Team
 import org.mockito.Matchers._
 import org.mockito.Mockito._
@@ -31,8 +30,8 @@ import play.api.Application
 import play.api.libs.json._
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
-import services.caching.CacheService
 import services.DataService
+import services.caching.CacheService
 import services.slack.apiModels.Attachment
 import services.slack.{SlackApiClient, SlackEventService}
 import support.ControllerTestContext

@@ -35,21 +35,7 @@ class InvocationLogControllerSpec extends PlaySpec with MockitoSugar {
   val behaviorName = "test"
   val now: OffsetDateTime = OffsetDateTime.now
 
-  def makeLogs(behavior: Behavior, user: User): Seq[InvocationLogEntry] = {
-    val groupVersion = BehaviorGroupVersion(IDs.next, behavior.group, "Skill", None, None, None, now)
-    val behaviorVersion = BehaviorVersion(
-      IDs.next,
-      behavior,
-      groupVersion,
-      None,
-      Some(behaviorName),
-      Some("return"),
-      Some("{successResult}"),
-      forcePrivateResponse = false,
-      canBeMemoized = false,
-      isTest = false,
-      now
-    )
+  def makeLogs(behaviorVersion: BehaviorVersion, user: User): Seq[InvocationLogEntry] = {
     val entry = InvocationLogEntry(
       IDs.next,
       behaviorVersion,
@@ -72,20 +58,35 @@ class InvocationLogControllerSpec extends PlaySpec with MockitoSugar {
     )
   }
 
+//  case class BehaviorVersion(
+//                              id: String,
+//                              behavior: Behavior,
+//                              groupVersion: BehaviorGroupVersion,
+//                              maybeDescription: Option[String],
+//                              maybeName: Option[String],
+//                              maybeFunctionBody: Option[String],
+//                              maybeResponseTemplate: Option[String],
+//                              forcePrivateResponse: Boolean,
+//                              canBeMemoized: Boolean,
+//                              isTest: Boolean,
+//                              createdAt: OffsetDateTime
+
   def setupLogs(user: User, team: Team, dataService: DataService): Seq[InvocationLogEntry] = {
     val group = BehaviorGroup(IDs.next, None, team, now)
-    val originatingBehavior = Behavior(IDs.next, team, Some(group), Some(IDs.next), isDataType = false, OffsetDateTime.now)
-    val targetBehavior = Behavior(IDs.next, team, Some(group), Some(IDs.next), isDataType = false, OffsetDateTime.now)
-    val invocationToken = InvocationToken(IDs.next, user.id, originatingBehavior.id, None, now)
+    val groupVersion = BehaviorGroupVersion(IDs.next, group, "skill", None, None, None, OffsetDateTime.now)
+    val behavior = Behavior(IDs.next, team, Some(group), Some(IDs.next), isDataType = false, OffsetDateTime.now)
+    val originatingBehaviorVersion = BehaviorVersion(IDs.next, behavior, groupVersion, None, None, None, None, false, false, false, OffsetDateTime.now)
+    val targetBehaviorVersion = BehaviorVersion(IDs.next, behavior, groupVersion, None, Some(behaviorName), None, None, false, false, false, OffsetDateTime.now)
+    val invocationToken = InvocationToken(IDs.next, user.id, originatingBehaviorVersion.id, None, now)
 
-    val logs = makeLogs(targetBehavior, user)
+    val logs = makeLogs(targetBehaviorVersion, user)
     when(dataService.invocationTokens.findNotExpired(token)).thenReturn(Future.successful(Some(invocationToken)))
     when(dataService.invocationTokens.findNotExpired("wrong")).thenReturn(Future.successful(None))
-    when(dataService.behaviors.findWithoutAccessCheck(invocationToken.behaviorId)).thenReturn(Future.successful(Some(originatingBehavior)))
-    when(dataService.behaviors.findByIdOrNameOrTrigger(behaviorName, group)).thenReturn(Future.successful(Some(targetBehavior)))
-    when(dataService.behaviors.findByIdOrNameOrTrigger("wrong", group)).thenReturn(Future.successful(None))
-    when(dataService.invocationLogEntries.allForBehavior(same(targetBehavior), any[OffsetDateTime], any[OffsetDateTime], same(None), same(None))).thenReturn(Future.successful(logs))
-    when(dataService.invocationLogEntries.allForBehavior(same(targetBehavior), any[OffsetDateTime], any[OffsetDateTime], same(None), Matchers.eq(Some(EventType.chat)))).thenReturn {
+    when(dataService.behaviorVersions.findWithoutAccessCheck(invocationToken.behaviorVersionId)).thenReturn(Future.successful(Some(originatingBehaviorVersion)))
+    when(dataService.behaviorVersions.findByName(behaviorName, groupVersion)).thenReturn(Future.successful(Some(targetBehaviorVersion)))
+    when(dataService.behaviorVersions.findByName("wrong", groupVersion)).thenReturn(Future.successful(None))
+    when(dataService.invocationLogEntries.allForBehavior(same(targetBehaviorVersion.behavior), any[OffsetDateTime], any[OffsetDateTime], same(None), same(None))).thenReturn(Future.successful(logs))
+    when(dataService.invocationLogEntries.allForBehavior(same(targetBehaviorVersion.behavior), any[OffsetDateTime], any[OffsetDateTime], same(None), Matchers.eq(Some(EventType.chat)))).thenReturn {
       Future.successful(logs.filter(_.maybeOriginalEventType.exists(_ == EventType.chat)))
     }
     logs

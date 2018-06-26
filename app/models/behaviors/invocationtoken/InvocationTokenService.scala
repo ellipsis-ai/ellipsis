@@ -1,7 +1,7 @@
 package models.behaviors.invocationtoken
 
 import models.accounts.user.User
-import models.behaviors.behavior.Behavior
+import models.behaviors.behaviorversion.BehaviorVersion
 import models.behaviors.scheduling.Scheduled
 import slick.dbio.DBIO
 
@@ -11,6 +11,6 @@ trait InvocationTokenService {
 
   def findNotExpired(id: String): Future[Option[InvocationToken]]
 
-  def createForAction(user: User, behavior: Behavior, maybeScheduled: Option[Scheduled]): DBIO[InvocationToken]
+  def createForAction(user: User, behaviorVersion: BehaviorVersion, maybeScheduled: Option[Scheduled]): DBIO[InvocationToken]
 
 }
