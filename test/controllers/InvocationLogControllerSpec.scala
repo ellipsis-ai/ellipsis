@@ -58,19 +58,6 @@ class InvocationLogControllerSpec extends PlaySpec with MockitoSugar {
     )
   }
 
-//  case class BehaviorVersion(
-//                              id: String,
-//                              behavior: Behavior,
-//                              groupVersion: BehaviorGroupVersion,
-//                              maybeDescription: Option[String],
-//                              maybeName: Option[String],
-//                              maybeFunctionBody: Option[String],
-//                              maybeResponseTemplate: Option[String],
-//                              forcePrivateResponse: Boolean,
-//                              canBeMemoized: Boolean,
-//                              isTest: Boolean,
-//                              createdAt: OffsetDateTime
-
   def setupLogs(user: User, team: Team, dataService: DataService): Seq[InvocationLogEntry] = {
     val group = BehaviorGroup(IDs.next, None, team, now)
     val groupVersion = BehaviorGroupVersion(IDs.next, group, "skill", None, None, None, OffsetDateTime.now)
