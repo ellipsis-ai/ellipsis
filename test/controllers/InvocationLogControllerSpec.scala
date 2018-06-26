@@ -107,7 +107,7 @@ class InvocationLogControllerSpec extends PlaySpec with MockitoSugar {
         ))
         val result = route(app, request).get
         status(result) mustBe NOT_FOUND
-        maybeErrorInResult(contentAsJson(result)) mustEqual Some(APIErrorData(InvocationLogController.noActionFoundMessage("wrong"), Some("behaviorId")))
+        maybeErrorInResult(contentAsJson(result)) mustEqual Some(APIErrorData(InvocationLogController.noActionFoundMessage("wrong"), Some("actionName")))
       }
     }
 
