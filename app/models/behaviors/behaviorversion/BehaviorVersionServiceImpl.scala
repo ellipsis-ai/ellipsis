@@ -139,6 +139,21 @@ class BehaviorVersionServiceImpl @Inject() (
     dataService.run(action)
   }
 
+  def find(id: String, user: User): Future[Option[BehaviorVersion]] = {
+    for {
+      maybeBehaviorVersion <- findWithoutAccessCheck(id)
+      canAccess <- maybeBehaviorVersion.map { behaviorVersion =>
+        dataService.users.canAccess(user, behaviorVersion.behavior)
+      }.getOrElse(Future.successful(false))
+    } yield {
+      if (canAccess) {
+        maybeBehaviorVersion
+      } else {
+        None
+      }
+    }
+  }
+
   def uncompiledFindForBehaviorAndGroupVersionQuery(behaviorId: Rep[String], groupVersionId: Rep[String]) = {
     allWithGroupVersion.filter { case ((behaviorVersion, _), ((groupVersion, _), _)) => behaviorVersion
       .behaviorId === behaviorId && groupVersion.id === groupVersionId
