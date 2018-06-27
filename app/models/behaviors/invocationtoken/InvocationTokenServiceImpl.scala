@@ -1,15 +1,15 @@
 package models.behaviors.invocationtoken
 
 import java.time.OffsetDateTime
-import javax.inject.Inject
 
 import com.google.inject.Provider
-import models.IDs
-import services.{AWSLambdaService, DataService}
 import drivers.SlickPostgresDriver.api._
+import javax.inject.Inject
+import models.IDs
 import models.accounts.user.User
-import models.behaviors.behavior.Behavior
+import models.behaviors.behaviorversion.BehaviorVersion
 import models.behaviors.scheduling.Scheduled
+import services.{AWSLambdaService, DataService}
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -17,11 +17,11 @@ class InvocationTokensTable(tag: Tag) extends Table[InvocationToken](tag, "invoc
 
   def id = column[String]("id", O.PrimaryKey)
   def userId = column[String]("user_id")
-  def behaviorId = column[String]("behavior_id")
+  def behaviorVersionId = column[String]("behavior_version_id")
   def maybeScheduledMessageId = column[Option[String]]("scheduled_message_id")
   def createdAt = column[OffsetDateTime]("created_at")
 
-  def * = (id, userId, behaviorId, maybeScheduledMessageId, createdAt) <> ((InvocationToken.apply _).tupled, InvocationToken.unapply _)
+  def * = (id, userId, behaviorVersionId, maybeScheduledMessageId, createdAt) <> ((InvocationToken.apply _).tupled, InvocationToken.unapply _)
 }
 
 class InvocationTokenServiceImpl @Inject() (
@@ -55,8 +55,8 @@ class InvocationTokenServiceImpl @Inject() (
     }
   }
 
-  def createForAction(user: User, behavior: Behavior, maybeScheduled: Option[Scheduled]): DBIO[InvocationToken] = {
-    val newInstance = InvocationToken(IDs.next, user.id, behavior.id, maybeScheduled.map(_.id), OffsetDateTime.now)
+  def createForAction(user: User, behaviorVersion: BehaviorVersion, maybeScheduled: Option[Scheduled]): DBIO[InvocationToken] = {
+    val newInstance = InvocationToken(IDs.next, user.id, behaviorVersion.id, maybeScheduled.map(_.id), OffsetDateTime.now)
     (all += newInstance).map(_ => newInstance)
   }
 

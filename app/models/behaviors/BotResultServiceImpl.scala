@@ -47,11 +47,11 @@ class BotResultServiceImpl @Inject() (
       maybeSlackChannelId <- botResult.maybeBehaviorVersion.map { behaviorVersion =>
         DBIO.from(botResult.event.maybeChannelToUseFor(behaviorVersion, services))
       }.getOrElse(DBIO.successful(None))
-      maybeBehavior <- botResult.maybeBehaviorVersion.map { originatingBehaviorVersion =>
-        dataService.behaviors.findByNameAction(nextAction.actionName, originatingBehaviorVersion.group)
+      maybeBehaviorVersion <- botResult.maybeBehaviorVersion.map { originatingBehaviorVersion =>
+        dataService.behaviorVersions.findByNameAction(nextAction.actionName, originatingBehaviorVersion.groupVersion)
       }.getOrElse(DBIO.successful(None))
-      maybeBotProfile <- maybeBehavior.map { behavior =>
-        dataService.slackBotProfiles.allForAction(behavior.team).map(_.headOption)
+      maybeBotProfile <- maybeBehaviorVersion.map { behaviorVersion =>
+        dataService.slackBotProfiles.allForAction(behaviorVersion.team).map(_.headOption)
       }.getOrElse(DBIO.successful(None))
       user <- botResult.event.ensureUserAction(dataService)
       maybeSlackLinkedAccount <- dataService.linkedAccounts.maybeForSlackForAction(user)
@@ -61,12 +61,12 @@ class BotResultServiceImpl @Inject() (
           botProfile <- maybeBotProfile
           slackTeamIdForUser <- maybeSlackTeamIdForUser
           linkedAccount <- maybeSlackLinkedAccount
-          behavior <- maybeBehavior
+          behaviorVersion <- maybeBehaviorVersion
           channel <- maybeSlackChannelId
         } yield RunEvent(
           botProfile,
           slackTeamIdForUser,
-          behavior,
+          behaviorVersion,
           nextAction.argumentsMap,
           channel,
           None,
@@ -75,7 +75,7 @@ class BotResultServiceImpl @Inject() (
           Some(botResult.event.eventType)
         )
       )
-      _ <- if (maybeBehavior.isDefined) {
+      _ <- if (maybeBehaviorVersion.isDefined) {
         runBehaviorFor(maybeEvent, botResult.maybeBehaviorVersion)
       } else {
         val text = s"Can't run action named `${nextAction.actionName}` in this skill"

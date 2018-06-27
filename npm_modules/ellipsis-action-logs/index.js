@@ -13,11 +13,11 @@ module.exports = {
       }
     } else {
       const errorHandler = typeof args.error === "function" ? args.error : ellipsis.error;
-      const actionTriggerOrId = args.action;
-      if (!actionTriggerOrId) {
+      const actionName = args.action || args.actionName;
+      if (!actionName) {
         errorHandler("You need to pass an `action` argument");
       } else {
-        const url = `${ellipsis.apiBaseUrl}/get_action_logs/${actionTriggerOrId}/${ellipsis.token}`;
+        const url = `${ellipsis.apiBaseUrl}/get_action_logs/${actionName}/${ellipsis.token}`;
         const queryParams = {
           from: args.from.toISOString(),
           to: args.to.toISOString()
