@@ -384,6 +384,8 @@ class AWSLambdaServiceImpl @Inject() (
         |  $CONTEXT_PARAM.require = function(module) { return require(module.replace(/@.+$$/, "")); }
         |  process.removeAllListeners('unhandledRejection');
         |  process.on('unhandledRejection', $CONTEXT_PARAM.error);
+        |  process.removeAllListeners('uncaughtException');
+        |  process.on('uncaughtException', $CONTEXT_PARAM.error);
         |
         |  ${awsCodeFor(apiConfigInfo)}
         |  $CONTEXT_PARAM.accessTokens = {};
