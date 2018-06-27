@@ -38,6 +38,8 @@ trait BehaviorVersionService {
 
   def findWithoutAccessCheck(id: String): Future[Option[BehaviorVersion]]
 
+  def find(id: String, user: User): Future[Option[BehaviorVersion]]
+
   def findForAction(behavior: Behavior, groupVersion: BehaviorGroupVersion): DBIO[Option[BehaviorVersion]]
 
   def findFor(behavior: Behavior, groupVersion: BehaviorGroupVersion): Future[Option[BehaviorVersion]]
