@@ -1,6 +1,7 @@
 import * as React from 'react';
 import SVGCheckmark from '../svg/checkmark';
 import SVGInfo from '../svg/info';
+import SVGWarning from '../svg/warning';
 import autobind from '../lib/autobind';
 import BehaviorTestResult from "../models/behavior_test_result";
 
