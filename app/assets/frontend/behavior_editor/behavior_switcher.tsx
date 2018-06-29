@@ -15,7 +15,7 @@ import BehaviorTestResult from "../models/behavior_test_result";
 import TestsStatus from "./tests_status";
 import {ReactNode} from "react";
 import SVGCheckmark from '../svg/checkmark';
-import SVGInfo from '../svg/info';
+import SVGWarning from '../svg/warning';
 
 interface Props {
   actionBehaviors: Array<BehaviorVersion>,
@@ -138,8 +138,8 @@ class BehaviorSwitcher extends React.Component<Props> {
         } else {
           return (
             <div className="display-inline-block fade-in">
-              <span className="display-inline-block align-m height-l type-yellow mrs">
-                <SVGInfo label="Fail"/>
+              <span className="display-inline-block align-m height-l type-pink mrs">
+                <SVGWarning label="Fail"/>
               </span>
             </div>
           );
