@@ -272,6 +272,21 @@ class TemplateApplierSpec extends PlaySpec {
       applier.apply.trim mustBe "From input: from input\n- first\n- second"
     }
 
+    "output a JsString as a string if there is no template" in {
+      val resultJson = JsString("two\nlines\n")
+      val applier = TemplateApplier(None, JsDefined(resultJson))
+      applier.apply mustBe "two\nlines\n"
+    }
+
+    "output a non-string JsValue as a JSON-pretty-printed string" in {
+      val resultJson = Json.obj("foo" -> "bar")
+      val applier = TemplateApplier(None, JsDefined(resultJson))
+      applier.apply mustBe
+        """{
+          |  "foo" : "bar"
+          |}""".stripMargin
+    }
+
   }
 
 }
