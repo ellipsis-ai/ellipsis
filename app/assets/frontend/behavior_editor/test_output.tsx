@@ -15,11 +15,11 @@ class TestOutput extends React.Component<Props> {
     autobind(this);
   }
 
-  output(testResult) {
+  output(testResult: BehaviorTestResult) {
     return testResult.output;
   }
 
-  containerClassNames(testResult) {
+  containerClassNames(testResult: BehaviorTestResult) {
     if (testResult.isPass) {
       return "border-green";
     } else {
@@ -27,12 +27,18 @@ class TestOutput extends React.Component<Props> {
     }
   }
 
-  heading() {
-    if (this.props.testResult) {
+  resultClassNames(testResult: BehaviorTestResult) {
+    return testResult.isPass ? "type-green" : "type-pink";
+  }
+
+  renderTestResults() {
+    const result = this.props.testResult;
+    if (result) {
       return (
-        <div className="display-inline-block">
+        <div className={this.resultClassNames(result)}>
           <span>The latest run of this test </span>
-          <span className="type-italic">{this.props.testResult.isPass ? "passed" : "failed"}</span>
+          <span className="type-bold">{result.isPass ? "passed" : "failed"}</span>
+          <span>.</span>
         </div>
       )
     } else {
@@ -66,14 +72,11 @@ class TestOutput extends React.Component<Props> {
       <div>
 
         <div className="container container-wide">
-          <div className="ptxl columns columns-elastic mobile-columns-float">
-            <div className="column column-expand">
-              <SectionHeading number={this.props.sectionNumber}>
-                <span className="mrm">{this.heading()}</span>
-              </SectionHeading>
+          <div className="ptxl">
+            <SectionHeading number={this.props.sectionNumber}>Results</SectionHeading>
+            <div className="mvl">{this.renderTestResults()}</div>
 
-              {this.renderOutput()}
-            </div>
+            {this.renderOutput()}
           </div>
         </div>
 
