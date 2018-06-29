@@ -1,5 +1,6 @@
 package controllers
 
+import com.amazonaws.services.lambda.model.ResourceNotFoundException
 import com.google.inject.Provider
 import com.mohiva.play.silhouette.api.Silhouette
 import com.mohiva.play.silhouette.api.actions.SecuredRequest
@@ -19,7 +20,7 @@ import services.{DefaultServices, GithubService}
 import utils.FutureSequencer
 import utils.github._
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.{ExecutionContext, ExecutionException, Future}
 
 class BehaviorEditorController @Inject() (
                                            val silhouette: Silhouette[EllipsisEnv],
@@ -707,7 +708,7 @@ class BehaviorEditorController @Inject() (
   }
 
   def testResults(groupId: String) = silhouette.SecuredAction.async { implicit request =>
-    for {
+    (for {
       maybeGroup <- dataService.behaviorGroups.find(groupId, request.identity)
       maybeGroupVersion <- maybeGroup.map { group =>
         dataService.behaviorGroupVersions.maybeCurrentFor(group)
@@ -716,10 +717,23 @@ class BehaviorEditorController @Inject() (
         dataService.behaviorVersions.allForGroupVersion(groupVersion).map(_.filter(_.isTest))
       }.getOrElse(Future.successful(Seq()))
       results <- Future.sequence(tests.map { ea =>
-        dataService.behaviorTestResults.ensureFor(ea)
+        dataService.behaviorTestResults.ensureFor(ea).map(Some(_)).recover {
+          case e: ExecutionException => {
+            e.getCause match {
+              case r: ResourceNotFoundException => None
+              case _ => throw e
+            }
+          }
+          case o => throw o
+        }
       })
     } yield {
-      Ok(Json.toJson(results))
+      Ok(Json.toJson(BehaviorTestResultsData(
+        results.flatten,
+        results.exists(_.isEmpty)
+      )))
+    }).recover {
+      case e: Exception => InternalServerError(e.getMessage)
     }
   }
 }

@@ -203,5 +203,5 @@ object Formatting {
   lazy implicit val slackConversationFormat: Format[SlackConversation] = Json.format[SlackConversation]
 
   lazy implicit val behaviorTestResultFormat: Format[BehaviorTestResult] = Json.format[BehaviorTestResult]
-
+  lazy implicit val behaviorTestResultsDataFormat: Format[BehaviorTestResultsData] = Json.format[BehaviorTestResultsData]
 }

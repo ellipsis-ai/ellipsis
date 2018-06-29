@@ -1664,15 +1664,35 @@ const BehaviorEditor = React.createClass({
       error: null,
       runningTests: true,
       testResults: []
+    }, () => {
+      this.doTestResultRequest(0);
     });
+
+  },
+
+  doTestResultRequest: function(numRetries) {
+    const MAX_RETRY_COUNT = 4;
     DataRequest.jsonGet(jsRoutes.controllers.BehaviorEditorController.testResults(this.getBehaviorGroup().id).url)
       .then(json => {
-        this.setState({
-          testResults: BehaviorTestResult.allFromJson(json),
-          runningTests: false
-        }, this.resetNotificationsImmediately);
+        if (json.shouldRetry) {
+          if (numRetries < MAX_RETRY_COUNT) {
+            const newRetryCount = numRetries + 1;
+            setTimeout(() => {
+              this.doTestResultRequest(newRetryCount);
+            }, Math.pow(2, newRetryCount) * 1000);
+          } else {
+            throw new Error("Unable to load test results. Try reloading the page in a moment.");
+          }
+        } else if (json.results) {
+          this.setState({
+            testResults: BehaviorTestResult.allFromJson(json.results),
+            runningTests: false
+          }, this.resetNotificationsImmediately);
+        } else {
+          throw new Error("Invalid test data returned from the server");
+        }
       })
-      .catch(error => {
+      .catch((error) => {
         this.onSaveError(error);
       });
   },
