@@ -1671,13 +1671,18 @@ const BehaviorEditor = React.createClass({
   },
 
   doTestResultRequest: function(numRetries) {
+    const MAX_RETRY_COUNT = 4;
     DataRequest.jsonGet(jsRoutes.controllers.BehaviorEditorController.testResults(this.getBehaviorGroup().id).url)
       .then(json => {
         if (json.shouldRetry) {
-          const newRetryCount = numRetries + 1;
-          setTimeout(() => {
-            this.doTestResultRequest(newRetryCount);
-          }, newRetryCount * 1000);
+          if (numRetries < MAX_RETRY_COUNT) {
+            const newRetryCount = numRetries + 1;
+            setTimeout(() => {
+              this.doTestResultRequest(newRetryCount);
+            }, Math.pow(2, newRetryCount) * 1000);
+          } else {
+            throw new Error("Unable to load test results. Try reloading the page in a moment.");
+          }
         } else if (json.results) {
           this.setState({
             testResults: BehaviorTestResult.allFromJson(json.results),
