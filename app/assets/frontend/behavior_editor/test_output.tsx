@@ -16,7 +16,7 @@ class TestOutput extends React.Component<Props> {
   }
 
   output(testResult) {
-    return testResult.output.replace(/^"|"$/g, "").replace(/\\n/g, "\n");
+    return testResult.output;
   }
 
   containerClassNames(testResult) {
