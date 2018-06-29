@@ -140,7 +140,7 @@ class BotResultSpec extends PlaySpec with MockitoSugar with DBSpec with SlackCon
         val conversationToBeInterrupted = newConversationFor(team, user, profile, event)
 
         mockPostChatMessage(responseText, event, client, resultTs, None)
-        mockPostChatMessage(resultJs.toString, event, client, resultTs, Some(resultTs))
+        mockPostChatMessage(resultJs.value, event, client, resultTs, Some(resultTs))
         val interruptionPrompt = dataService.conversations.interruptionPromptFor(event, result.interruptionPrompt, includeUsername = true)
         mockPostChatMessage(interruptionPrompt, event, client, resultTs, None)
 
@@ -213,7 +213,7 @@ class BotResultSpec extends PlaySpec with MockitoSugar with DBSpec with SlackCon
           )
 
         mockPostChatMessage(responseText, event, client, resultTs, None)
-        mockPostChatMessage(resultJs.toString, event, client, resultTs, Some(resultTs))
+        mockPostChatMessage(resultJs.value, event, client, resultTs, Some(resultTs))
         val interruptionPrompt = dataService.conversations.interruptionPromptFor(event, result.interruptionPrompt, includeUsername = true)
         mockPostChatMessage(interruptionPrompt, event, client, resultTs, None)
 

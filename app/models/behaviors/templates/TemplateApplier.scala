@@ -16,7 +16,13 @@ case class TemplateApplier(
         renderer.visit(block)
         stringBuilder.mkString
       }.getOrElse("")
-    }.getOrElse(Json.prettyPrint(result.getOrElse(JsString(""))))
+    }.getOrElse {
+      val jsValue = result.getOrElse(JsString(""))
+      jsValue match {
+        case s: JsString => s.value
+        case _ => Json.prettyPrint(jsValue)
+      }
+    }
   }
 
 }
