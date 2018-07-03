@@ -5,7 +5,6 @@ import java.time.OffsetDateTime
 import models.behaviors.BotResult
 import models.behaviors.events.{EventType, SlackMessageEvent}
 import models.team.Team
-import services.caching.CacheService
 import slick.dbio.DBIO
 import utils.SlackChannels
 
@@ -20,6 +19,8 @@ trait SlackBotProfileService {
   def allFor(team: Team): Future[Seq[SlackBotProfile]]
 
   def allForSlackTeamId(slackTeamId: String): Future[Seq[SlackBotProfile]]
+
+  def admin: Future[SlackBotProfile]
 
   def allSince(when: OffsetDateTime): Future[Seq[SlackBotProfile]]
 

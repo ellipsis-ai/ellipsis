@@ -5,6 +5,7 @@ import java.time.OffsetDateTime
 import akka.actor.ActorSystem
 import drivers.SlickPostgresDriver.api._
 import javax.inject.{Inject, Provider}
+import models.accounts.linkedaccount.LinkedAccount
 import models.accounts.registration.RegistrationService
 import models.behaviors.events.{EventType, SlackMessage, SlackMessageEvent}
 import models.behaviors.{BotResult, BotResultService}
@@ -79,6 +80,8 @@ class SlackBotProfileServiceImpl @Inject() (
   def allForSlackTeamId(slackTeamId: String): Future[Seq[SlackBotProfile]] = {
     dataService.run(allForSlackTeamQuery(slackTeamId).result)
   }
+
+  def admin: Future[SlackBotProfile] = allForSlackTeamId(LinkedAccount.ELLIPSIS_SLACK_TEAM_ID).map(_.head)
 
   def uncompiledAllSinceQuery(when: Rep[OffsetDateTime]) = {
     all.filter(_.createdAt >= when)

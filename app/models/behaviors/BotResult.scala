@@ -24,7 +24,7 @@ import scala.concurrent.duration._
 
 object ResultType extends Enumeration {
   type ResultType = Value
-  val Success, SimpleText, ActionAcknowledgment, TextWithActions, ConversationPrompt, NoResponse, ExecutionError, SyntaxError, NoCallbackTriggered, MissingTeamEnvVar, AWSDown, OAuth2TokenMissing, RequiredApiNotReady = Value
+  val Success, SimpleText, ActionAcknowledgment, TextWithActions, ConversationPrompt, NoResponse, ExecutionError, SyntaxError, NoCallbackTriggered, MissingTeamEnvVar, AWSDown, OAuth2TokenMissing, RequiredApiNotReady, AdminSkillErrorNotification = Value
 }
 
 trait WithActionArgs {
@@ -103,8 +103,8 @@ sealed trait BotResult {
   def fullText: String = text
   def hasText: Boolean = fullText.trim.nonEmpty
   val developerContext: DeveloperContext
-  val maybeLog: Option[String] = None
-  val maybeLogFile: Option[UploadFileSpec] = None
+  def maybeLog: Option[String] = None
+  def maybeLogFile: Option[UploadFileSpec] = None
 
   def shouldIncludeLogs: Boolean = {
     maybeLog.isDefined && (developerContext.isInDevMode || developerContext.isInInvocationTester)
@@ -183,6 +183,15 @@ sealed trait BotResult {
   val shouldSend: Boolean = true
 
   def attachmentGroups: Seq[MessageAttachmentGroup] = Seq()
+
+  def isForManagedGroup(dataService: DataService)(implicit ec: ExecutionContext): Future[Boolean] = {
+    maybeBehaviorVersion.map { behaviorVersion =>
+      dataService.managedBehaviorGroups.maybeFor(behaviorVersion.group).map(_.isDefined)
+    }.getOrElse(Future.successful(false))
+  }
+
+  def shouldNotifyAdmins(implicit ec: ExecutionContext): Future[Boolean] = Future.successful(false)
+
 }
 
 trait BotResultWithLogResult extends BotResult {
@@ -209,8 +218,8 @@ trait BotResultWithLogResult extends BotResult {
     }
   }
 
-  override val maybeLog: Option[String] = maybeAuthorLog
-  override val maybeLogFile: Option[UploadFileSpec] = maybeAuthorLogFile
+  override def maybeLog: Option[String] = maybeAuthorLog
+  override def maybeLogFile: Option[UploadFileSpec] = maybeAuthorLogFile
 
 }
 
@@ -420,18 +429,20 @@ case class ExecutionErrorResult(
     }
   }
 
-  override val maybeLog: Option[String] = {
+  override def maybeLog: Option[String] = {
     if (maybeAuthorLog.isEmpty && maybeErrorLog.isEmpty) {
       None
     } else {
       Some(maybeAuthorLog.map(_ + "\n").getOrElse("") + maybeErrorLog.getOrElse(""))
     }
   }
-  override val maybeLogFile: Option[UploadFileSpec] = {
+  override def maybeLogFile: Option[UploadFileSpec] = {
     maybeLog.map { log =>
       UploadFileSpec(Some(log), Some("text"), Some("Developer log"))
     }
   }
+
+  override def shouldNotifyAdmins(implicit ec: ExecutionContext): Future[Boolean] = isForManagedGroup(dataService)
 
 }
 
@@ -459,6 +470,9 @@ case class SyntaxErrorResult(
        |${linkToBehaviorFor("Take a look in the skill editor")} for more details.
      """.stripMargin
   }
+
+  override def shouldNotifyAdmins(implicit ec: ExecutionContext): Future[Boolean] = isForManagedGroup(dataService)
+
 }
 
 case class NoCallbackTriggeredResult(
@@ -474,6 +488,26 @@ case class NoCallbackTriggeredResult(
 
   def text = s"It looks like neither callback was triggered in ${linkToBehaviorFor("your skill")}— you need to make sure that `$SUCCESS_CALLBACK`" ++
     s"is called to end every successful invocation and `$ERROR_CALLBACK` is called to end every unsuccessful one"
+
+  override def shouldNotifyAdmins(implicit ec: ExecutionContext): Future[Boolean] = isForManagedGroup(dataService)
+
+}
+
+case class AdminSkillErrorNotificationResult(
+                                              event: Event,
+                                              originalResult: BotResult
+                                            ) extends BotResult {
+
+  val resultType = ResultType.AdminSkillErrorNotification
+
+  override def shouldIncludeLogs: Boolean = true
+
+  lazy val developerContext: DeveloperContext = originalResult.developerContext
+  lazy val text: String = originalResult.text
+  lazy val maybeConversation: Option[Conversation] = originalResult.maybeConversation
+  lazy val maybeBehaviorVersion: Option[BehaviorVersion] = originalResult.maybeBehaviorVersion
+  override def maybeLogFile: Option[UploadFileSpec] = originalResult.maybeLogFile
+  val forcePrivateResponse: Boolean = false
 
 }
 
@@ -506,10 +540,14 @@ case class MissingTeamEnvVarsResult(
        |$linkToEnvVarConfig
     """.stripMargin
   }
-
 }
 
-case class AWSDownResult(event: Event, behaviorVersion: BehaviorVersion, maybeConversation: Option[Conversation]) extends BotResult {
+case class AWSDownResult(
+                          event: Event,
+                          behaviorVersion: BehaviorVersion,
+                          maybeConversation: Option[Conversation],
+                          dataService: DataService
+                        ) extends BotResult {
 
   val resultType = ResultType.AWSDown
   val forcePrivateResponse = false
@@ -525,6 +563,8 @@ case class AWSDownResult(event: Event, behaviorVersion: BehaviorVersion, maybeCo
       |Try asking Ellipsis anything later to check on the status.
       |""".stripMargin
   }
+
+  override def shouldNotifyAdmins(implicit ec: ExecutionContext): Future[Boolean] = isForManagedGroup(dataService)
 
 }
 

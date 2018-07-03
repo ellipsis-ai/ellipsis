@@ -3,6 +3,7 @@ package models.behaviors
 import java.time.OffsetDateTime
 
 import akka.actor.ActorSystem
+import models.accounts.linkedaccount.LinkedAccount
 import models.behaviors.behaviorparameter.{BehaviorParameter, BehaviorParameterContext}
 import models.behaviors.behaviorversion.BehaviorVersion
 import models.behaviors.conversations.InvokeBehaviorConversation
@@ -10,9 +11,11 @@ import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.conversations.parentconversation.NewParentConversation
 import models.behaviors.events.Event
 import models.behaviors.triggers.messagetrigger.MessageTrigger
+import play.api.Logger
 import play.api.libs.json.{JsString, JsValue}
 import services._
 import services.caching.CacheService
+import services.slack.SlackApiError
 import slick.dbio.DBIO
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -64,6 +67,44 @@ case class BehaviorResponse(
     }
   }
 
+  def notifyAdmins(result: BotResult)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Unit] = {
+    val msg = result.fullText
+    for {
+      maybeAdminTeamEvent <- services.dataService.slackBotProfiles.eventualMaybeEvent(
+        LinkedAccount.ELLIPSIS_SLACK_TEAM_ID,
+        LinkedAccount.ELLIPSIS_MANAGED_SKILL_ERRORS_CHANNEL_ID,
+        None,
+        Some(event.originalEventType)
+      )
+      wasSent <- maybeAdminTeamEvent.map { adminTeamEvent =>
+        val resultToSend = AdminSkillErrorNotificationResult(adminTeamEvent, result)
+        services.botResultService.sendIn(resultToSend, None).map(_.isDefined).recover {
+          case e: SlackApiError => {
+            false
+          }
+        }
+      }.getOrElse(Future.successful(false))
+    } yield {
+      if (wasSent) {
+        Logger.info(s"Managed skill error: $msg")
+      } else {
+        Logger.error(s"Managed skill error failed to send: $msg")
+      }
+      {}
+    }
+  }
+
+  def notifyAdminsIfNec(result: BotResult)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Unit] = {
+    for {
+      shouldNotify <- result.shouldNotifyAdmins
+      _ <- if (shouldNotify) {
+        notifyAdmins(result)
+      } else {
+        Future.successful({})
+      }
+    } yield {}
+  }
+
   def resultForFilledOutAction(implicit actorSystem: ActorSystem, ec: ExecutionContext): DBIO[BotResult] = {
     val startTime = OffsetDateTime.now
     for {
@@ -89,6 +130,7 @@ case class BehaviorResponse(
           runtimeInMilliseconds
         )
       }
+      _ <- DBIO.from(notifyAdminsIfNec(result))
     } yield result
   }
 
