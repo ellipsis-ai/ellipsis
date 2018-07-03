@@ -503,7 +503,25 @@ case class AdminSkillErrorNotificationResult(
   override def shouldIncludeLogs: Boolean = true
 
   lazy val developerContext: DeveloperContext = originalResult.developerContext
-  lazy val text: String = originalResult.text
+  lazy val skillLink: String = originalResult match {
+    case r: WithBehaviorLink => r.linkToBehaviorFor("✎")
+    case _ => ""
+  }
+  lazy val description: String = originalResult.maybeBehaviorVersion.map { bv =>
+    val action = bv.maybeName.getOrElse(bv.id)
+    val skill = bv.groupVersion.name
+    s" running action `$action` in skill `$skill` $skillLink"
+  }.getOrElse("")
+  lazy val text: String = {
+    val user = s"<@${originalResult.event.userIdForContext}>"
+    s"""Error$description`
+       |
+       |User: $user
+       |Result type: ${originalResult.resultType}
+       |
+     """.stripMargin
+  }
+
   lazy val maybeConversation: Option[Conversation] = originalResult.maybeConversation
   lazy val maybeBehaviorVersion: Option[BehaviorVersion] = originalResult.maybeBehaviorVersion
   override def maybeLogFile: Option[UploadFileSpec] = originalResult.maybeLogFile
