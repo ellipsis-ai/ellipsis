@@ -6,6 +6,7 @@ import _root_.models.accounts.slack.botprofile.SlackBotProfile
 import akka.actor.ActorSystem
 import javax.inject.{Inject, Singleton}
 import json.Formatting._
+import models.accounts.linkedaccount.LinkedAccount
 import play.api.http.{HeaderNames, MimeTypes}
 import play.api.libs.json.{Format, JsError, JsSuccess, Json}
 import play.api.libs.ws.WSResponse
@@ -216,5 +217,7 @@ case class SlackApiClient(
 class SlackApiService @Inject()(services: DefaultServices, implicit val actorSystem: ActorSystem, implicit val ec: ExecutionContext) {
 
   def clientFor(profile: SlackBotProfile): SlackApiClient = SlackApiClient(profile, services, actorSystem, ec)
+
+  def adminClient: Future[SlackApiClient] = services.dataService.slackBotProfiles.admin.map(clientFor)
 
 }

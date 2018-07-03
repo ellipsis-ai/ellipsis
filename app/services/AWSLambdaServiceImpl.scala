@@ -194,7 +194,7 @@ class AWSLambdaServiceImpl @Inject() (
                                 }.map(successFn).recoverWith {
                                   case e: java.util.concurrent.ExecutionException => {
                                     e.getMessage match {
-                                      case amazonServiceExceptionRegex() => Future.successful(AWSDownResult(event, behaviorVersion, maybeConversation))
+                                      case amazonServiceExceptionRegex() => Future.successful(AWSDownResult(event, behaviorVersion, maybeConversation, dataService))
                                       case resourceNotFoundExceptionRegex() => {
                                         retryIntervals.headOption.map { retryInterval =>
                                           Logger.info(s"retrying behavior invocation after resource not found with interval: ${retryInterval}s")
