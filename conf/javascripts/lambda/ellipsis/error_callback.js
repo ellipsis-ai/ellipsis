@@ -1,9 +1,9 @@
-function ellipsisErrorCallback(err) {
+function ellipsisErrorCallback(err, options) {
   let callbackError;
   if (err instanceof Error) {
     callbackError = err;
   } else {
-    const throwableError = new EllipsisError(err);
+    const throwableError = new EllipsisError(err, options);
     Error.captureStackTrace(throwableError, ellipsisErrorCallback);
     callbackError = throwableError;
   }
@@ -11,7 +11,7 @@ function ellipsisErrorCallback(err) {
     error: {
       name: callbackError.name,
       message: callbackError.message,
-      userMessage: callbackError.userMessage,
+      userMessage: callbackError.userMessage || options.userMessage,
       stack: callbackError.stack
     }
   });

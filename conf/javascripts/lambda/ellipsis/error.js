@@ -2,9 +2,8 @@ class EllipsisError extends Error {
   constructor(messageOrError, options) {
     if (messageOrError instanceof Error) {
       super(messageOrError.message);
-      Object.keys(messageOrError).map((key) => {
-        this[key] = messageOrError[key];
-      });
+      this.name = messageOrError.name;
+      this.stack = messageOrError.stack;
     } else {
       super(messageOrError);
     }
