@@ -11,6 +11,7 @@ import models.behaviors.config.requiredoauth2apiconfig.RequiredOAuth2ApiConfig
 import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.events._
 import models.behaviors.templates.TemplateApplier
+import models.team.Team
 import play.api.Configuration
 import play.api.libs.json._
 import services.AWSLambdaConstants._
@@ -355,12 +356,21 @@ trait WithBehaviorLink {
   val dataService: DataService
   val configuration: Configuration
   val forcePrivateResponse = behaviorVersion.forcePrivateResponse
+  val team: Team = behaviorVersion.team
 
   def link: String = dataService.behaviors.editLinkFor(behaviorVersion.group.id, Some(behaviorVersion.behavior.id), configuration)
 
   def linkToBehaviorFor(text: String): String = {
     s"[$text](${link})"
   }
+
+  def teamLink: String = {
+    val baseUrl = configuration.get[String]("application.apiBaseUrl")
+    val path = controllers.routes.ApplicationController.index(Some(team.id))
+    val url = s"$baseUrl$path"
+    s"[${team.name}](${url})"
+  }
+
 }
 
 case class ExecutionErrorResult(
@@ -504,7 +514,11 @@ case class AdminSkillErrorNotificationResult(
 
   lazy val developerContext: DeveloperContext = originalResult.developerContext
   lazy val skillLink: String = originalResult match {
-    case r: WithBehaviorLink => r.linkToBehaviorFor("✎")
+    case r: WithBehaviorLink => r.linkToBehaviorFor("✎ Edit")
+    case _ => ""
+  }
+  lazy val teamLink: String = originalResult match {
+    case r: WithBehaviorLink => r.teamLink
     case _ => ""
   }
   lazy val description: String = originalResult.maybeBehaviorVersion.map { bv =>
@@ -514,8 +528,9 @@ case class AdminSkillErrorNotificationResult(
   }.getOrElse("")
   lazy val text: String = {
     val user = s"<@${originalResult.event.userIdForContext}>"
-    s"""Error$description`
+    s"""Error$description
        |
+       |Team: $teamLink
        |User: $user
        |Result type: ${originalResult.resultType}
        |
