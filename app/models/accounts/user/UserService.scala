@@ -35,6 +35,8 @@ trait UserService extends IdentityService[User] {
 
   def userDataFor(user: User, team: Team): Future[UserData]
 
+  def maybeUserDataForEmail(email: String, team: Team): Future[Option[UserData]]
+
   def maybeSlackTeamIdFor(user: User): Future[Option[String]]
 
   def maybeSlackProfileFor(user: User): Future[Option[SlackProfile]]

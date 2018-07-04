@@ -181,6 +181,12 @@ class CacheServiceImpl @Inject() (
     slackUserDataCache.getOrLoad(key, dataFn)
   }
 
+  private val slackUserDataByEmailCache: Cache[SlackUserDataByEmailCacheKey, Option[SlackUserData]] = LfuCache(cacheSettingsWithTimeToLive(slackApiCallExpiry))
+
+  def getSlackUserDataByEmail(key: SlackUserDataByEmailCacheKey, dataFn: SlackUserDataByEmailCacheKey => Future[Option[SlackUserData]]): Future[Option[SlackUserData]] = {
+    slackUserDataByEmailCache.getOrLoad(key, dataFn)
+  }
+
   def cacheBehaviorGroupVersionData(data: ImmutableBehaviorGroupVersionData): Unit = {
     set(data.id, Json.toJson(data))
   }

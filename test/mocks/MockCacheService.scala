@@ -48,6 +48,11 @@ class MockCacheService extends CacheService with MockitoSugar {
                         dataFn: SlackUserDataCacheKey => Future[Option[SlackUserData]]
                       ): Future[Option[SlackUserData]] = dataFn(key)
 
+  def getSlackUserDataByEmail(
+                               key: SlackUserDataByEmailCacheKey,
+                               dataFn: SlackUserDataByEmailCacheKey => Future[Option[SlackUserData]]
+                             ): Future[Option[SlackUserData]] = dataFn(key)
+
   def cacheBehaviorGroupVersionData(data: ImmutableBehaviorGroupVersionData): Unit = {}
 
   def getBehaviorGroupVersionData(groupVersionId: String): Option[ImmutableBehaviorGroupVersionData] = None

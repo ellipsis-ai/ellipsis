@@ -5,7 +5,7 @@ import java.time.OffsetDateTime
 import javax.inject.Inject
 import akka.actor.ActorSystem
 import com.google.inject.Provider
-import json.{APIErrorData, APIResultWithErrorsData, APITokenData}
+import json.{APIErrorData, APIResultWithErrorsData, APITokenData, UserData}
 import json.Formatting._
 import models.accounts.slack.botprofile.SlackBotProfile
 import models.accounts.slack.profile.SlackProfile
@@ -872,6 +872,49 @@ class APIController @Inject() (
          |Slack bot profile ID: ${context.maybeBotProfile.map(_.userId).getOrElse("not found")}
          |Slack user profile ID: ${context.maybeSlackProfile.map(_.loginInfo.providerID).getOrElse("not found")}
          |""".stripMargin
+    )
+  }
+
+  case class LookupUserInfo(
+                             email: String,
+                             token: String
+                           ) extends ApiMethodInfo
+
+  implicit val lookupUserInfoWrites = Json.writes[LookupUserInfo]
+
+  private val lookupUserForm = Form(
+    mapping(
+      "email" -> nonEmptyText,
+      "token" -> nonEmptyText
+    )(LookupUserInfo.apply)(LookupUserInfo.unapply)
+  )
+
+  case class LookupUserResult(
+                               user: Option[UserData],
+                               userNotFound: Boolean
+                             )
+
+  implicit val lookupUserResultWrites = Json.writes[LookupUserResult]
+
+  def lookupUser = Action.async { implicit request =>
+    lookupUserForm.bindFromRequest.fold(
+      formWithErrors => {
+        Future.successful(resultForFormErrors(formWithErrors))
+      },
+      info => {
+        val eventualResult = for {
+          context <- ApiMethodContext.createFor(info.token)
+          maybeUserInfo <- context.maybeTeam.map { team =>
+            dataService.users.maybeUserDataForEmail(info.email, team)
+          }.getOrElse(Future.successful(None))
+        } yield {
+          Ok(Json.toJson(LookupUserResult(maybeUserInfo, maybeUserInfo.isEmpty)))
+        }
+
+        eventualResult.recover {
+          case e: InvalidTokenException => invalidTokenRequest(info)
+        }
+      }
     )
   }
 }
