@@ -882,15 +882,20 @@ class APIController @Inject() (
   def findUsers(token: String, maybeEmail: Option[String]) = Action.async { implicit request =>
     val eventualResult = for {
       context <- ApiMethodContext.createFor(token)
-      result <- (for {
-        team <- context.maybeTeam
-        email <- maybeEmail
-      } yield {
-        dataService.users.maybeUserDataForEmail(email, team).map { maybeUserData =>
-          Ok(Json.toJson(FindUsersResult(Seq(maybeUserData).flatten)))
+      result <- context.maybeTeam.map { team =>
+        maybeEmail.map { email =>
+          dataService.users.maybeUserDataForEmail(email, team).map { maybeUserData =>
+            val users = Seq(maybeUserData).flatten
+            Logger.info(s"Sending ${users.length} user data object(s) on team ${team.id} for findUsers API request")
+            Ok(Json.toJson(FindUsersResult(users)))
+          }
+        }.getOrElse {
+          Logger.warn(s"findUsers API request with no email param")
+          Future.successful(badRequest(Some(APIErrorData("You must pass an `email` parameter to find.", None)), None))
         }
-      }).getOrElse {
-        Future.successful(badRequest(Some(APIErrorData("You must pass an `email` parameter to find.", None)), None))
+      }.getOrElse {
+        Logger.warn(s"findUsers API request with no valid team")
+        Future.successful(notFound(APIErrorData("Team not found", None)))
       }
     } yield result
 
