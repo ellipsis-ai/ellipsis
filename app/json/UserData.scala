@@ -1,6 +1,7 @@
 package json
 
 import models.team.Team
+import play.api.libs.json.JsObject
 
 case class UserData(
                      id: String,
@@ -9,7 +10,9 @@ case class UserData(
                      tz: Option[String],
                      teamName: Option[String],
                      email: Option[String],
-                     slackUserData: Option[SlackUserData]
+                     context: Option[String],
+                     userIdForContext: Option[String],
+                     details: Option[JsObject]
                    ) {
   val userNameOrDefault: String = userName.getOrElse(s"User with ID <$id>")
 }
@@ -23,7 +26,9 @@ object UserData {
       tz = None,
       teamName = Some("Ellipsis"),
       email = None,
-      slackUserData = None
+      context = None,
+      userIdForContext = None,
+      details = None
     )
   }
 
@@ -35,7 +40,9 @@ object UserData {
       tz = None,
       teamName = maybeTeam.map(_.name),
       email = None,
-      slackUserData = None
+      context = None,
+      userIdForContext = None,
+      details = None
     )
   }
 }

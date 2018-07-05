@@ -15,8 +15,10 @@ import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.events.{Event, SlackMessageEvent}
 import models.team.Team
 import play.api.Logger
+import play.api.libs.json.Json
 import services.DefaultServices
 import services.slack.SlackApiClient
+import json.Formatting._
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -186,7 +188,9 @@ class UserServiceImpl @Inject() (
       tz = maybeTzString,
       teamName = Some(team.name),
       email = maybeSlackUserData.flatMap(_.profile.flatMap(_.email)),
-      slackUserData = maybeSlackUserData
+      context = if (maybeSlackUserData.isDefined) Some(Conversation.SLACK_CONTEXT) else None,
+      userIdForContext = maybeSlackUserData.map(_.accountId),
+      details = maybeSlackUserData.map(Json.toJsObject(_))
     )
   }
 
@@ -216,6 +220,7 @@ class UserServiceImpl @Inject() (
   }
 
   def maybeUserDataForEmail(email: String, team: Team): Future[Option[UserData]] = {
+    // TODO: Slack-specific for now; in future we might want to lookup users from other sources
     for {
       maybeSlackBotProfile <- dataService.slackBotProfiles.allFor(team).map(_.headOption)
       maybeSlackUserData <- maybeSlackBotProfile.map { profile =>
