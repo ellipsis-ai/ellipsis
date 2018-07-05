@@ -42,6 +42,11 @@ trait CacheService {
 
   def getSlackUserData(key: SlackUserDataCacheKey, dataFn: SlackUserDataCacheKey => Future[Option[SlackUserData]]): Future[Option[SlackUserData]]
 
+  def getSlackUserDataByEmail(
+                               key: SlackUserDataByEmailCacheKey,
+                               dataFn: SlackUserDataByEmailCacheKey => Future[Option[SlackUserData]]
+                             ): Future[Option[SlackUserData]]
+
   def cacheBehaviorGroupVersionData(data: ImmutableBehaviorGroupVersionData): Unit
 
   def getBehaviorGroupVersionData(groupVersionId: String): Option[ImmutableBehaviorGroupVersionData]

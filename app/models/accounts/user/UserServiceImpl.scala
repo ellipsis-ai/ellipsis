@@ -11,10 +11,14 @@ import json.{SlackUserData, UserData}
 import models.IDs
 import models.accounts.linkedaccount.LinkedAccount
 import models.accounts.slack.profile.SlackProfile
+import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.events.{Event, SlackMessageEvent}
 import models.team.Team
 import play.api.Logger
+import play.api.libs.json.Json
 import services.DefaultServices
+import services.slack.SlackApiClient
+import json.Formatting._
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -170,17 +174,24 @@ class UserServiceImpl @Inject() (
       for {
         maybeSlackUserData <- maybeSlackUserDataFor(user, team)
       } yield {
-        val maybeTzString = maybeSlackUserData.flatMap(_.tz).orElse(team.maybeTimeZone.map(_.toString))
-        UserData(
-          user.id,
-          maybeSlackUserData.map(_.getDisplayName),
-          maybeSlackUserData.flatMap(_.maybeRealName),
-          maybeTzString,
-          Some(team.name),
-          maybeSlackUserData.flatMap(_.profile.flatMap(_.email))
-        )
+        userDataFor(user, team, maybeSlackUserData)
       }
     }
+  }
+
+  private def userDataFor(user: User, team: Team, maybeSlackUserData: Option[SlackUserData]): UserData = {
+    val maybeTzString = maybeSlackUserData.flatMap(_.tz).orElse(team.maybeTimeZone.map(_.toString))
+    UserData(
+      id = user.id,
+      userName = maybeSlackUserData.map(_.getDisplayName),
+      fullName = maybeSlackUserData.flatMap(_.maybeRealName),
+      tz = maybeTzString,
+      teamName = Some(team.name),
+      email = maybeSlackUserData.flatMap(_.profile.flatMap(_.email)),
+      context = if (maybeSlackUserData.isDefined) Some(Conversation.SLACK_CONTEXT) else None,
+      userIdForContext = maybeSlackUserData.map(_.accountId),
+      details = maybeSlackUserData.map(Json.toJsObject(_))
+    )
   }
 
   private def maybeSlackUserDataFor(user: User, team: Team): Future[Option[SlackUserData]] = {
@@ -205,6 +216,24 @@ class UserServiceImpl @Inject() (
           None
         })
       }).getOrElse(Future.successful(None))
+    } yield maybeUserData
+  }
+
+  def maybeUserDataForEmail(email: String, team: Team): Future[Option[UserData]] = {
+    // TODO: Slack-specific for now; in future we might want to lookup users from other sources
+    for {
+      maybeSlackBotProfile <- dataService.slackBotProfiles.allFor(team).map(_.headOption)
+      maybeSlackUserData <- maybeSlackBotProfile.map { profile =>
+        val client = SlackApiClient(profile, services, actorSystem, ec)
+        slackEventService.maybeSlackUserDataForEmail(email, client)
+      }.getOrElse(Future.successful(None))
+      maybeUserData <- maybeSlackUserData.map { slackUserData =>
+        for {
+          user <- ensureUserFor(LoginInfo(Conversation.SLACK_CONTEXT, slackUserData.accountId), team.id)
+        } yield {
+          Some(userDataFor(user, team, maybeSlackUserData))
+        }
+      }.getOrElse(Future.successful(None))
     } yield maybeUserData
   }
 

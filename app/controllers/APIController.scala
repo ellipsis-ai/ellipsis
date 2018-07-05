@@ -5,7 +5,7 @@ import java.time.OffsetDateTime
 import javax.inject.Inject
 import akka.actor.ActorSystem
 import com.google.inject.Provider
-import json.{APIErrorData, APIResultWithErrorsData, APITokenData}
+import json.{APIErrorData, APIResultWithErrorsData, APITokenData, UserData}
 import json.Formatting._
 import models.accounts.slack.botprofile.SlackBotProfile
 import models.accounts.slack.profile.SlackProfile
@@ -873,5 +873,29 @@ class APIController @Inject() (
          |Slack user profile ID: ${context.maybeSlackProfile.map(_.loginInfo.providerID).getOrElse("not found")}
          |""".stripMargin
     )
+  }
+
+  case class FindUsersResult(users: Seq[UserData])
+
+  implicit val findUsersResultWrites = Json.writes[FindUsersResult]
+
+  def findUsers(token: String, maybeEmail: Option[String]) = Action.async { implicit request =>
+    val eventualResult = for {
+      context <- ApiMethodContext.createFor(token)
+      result <- (for {
+        team <- context.maybeTeam
+        email <- maybeEmail
+      } yield {
+        dataService.users.maybeUserDataForEmail(email, team).map { maybeUserData =>
+          Ok(Json.toJson(FindUsersResult(Seq(maybeUserData).flatten)))
+        }
+      }).getOrElse {
+        Future.successful(badRequest(Some(APIErrorData("You must pass an `email` parameter to find.", None)), None))
+      }
+    } yield result
+
+    eventualResult.recover {
+      case e: InvalidTokenException => invalidTokenRequest(Map("token" -> token))
+    }
   }
 }

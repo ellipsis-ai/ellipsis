@@ -68,4 +68,8 @@ class MockSlackEventService extends SlackEventService with MockitoSugar {
     )))
   }
 
+  def maybeSlackUserDataForEmail(email: String, client: SlackApiClient): Future[Option[SlackUserData]] = {
+    Future.successful(None)
+  }
+
 }

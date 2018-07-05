@@ -22,4 +22,6 @@ trait SlackEventService {
 
   def maybeSlackUserDataFor(botProfile: SlackBotProfile): Future[Option[SlackUserData]]
 
+  def maybeSlackUserDataForEmail(email: String, client: SlackApiClient): Future[Option[SlackUserData]]
+
 }

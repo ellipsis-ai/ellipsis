@@ -131,6 +131,14 @@ case class SlackApiClient(
     }
   }
 
+  def getUserInfoByEmail(email: String): Future[Option[SlackUser]] = {
+    postResponseFor("users.lookupByEmail", Map("email" -> email)).map { r =>
+      Some(extract[SlackUser](r, "user"))
+    }.recover {
+      case SlackApiError(code) if code == "users_not_found" => None
+    }
+  }
+
   def uploadFile(
                   file: File,
                   content: Option[String] = None,

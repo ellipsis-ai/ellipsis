@@ -9,7 +9,7 @@ import models.behaviors.events.{EventHandler, SlackMessageEvent}
 import play.api.Logger
 import play.api.i18n.MessagesApi
 import services.DataService
-import services.caching.{CacheService, SlackUserDataCacheKey}
+import services.caching.{CacheService, SlackUserDataByEmailCacheKey, SlackUserDataCacheKey}
 import services.slack.apiModels.SlackUser
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -61,36 +61,38 @@ class SlackEventServiceImpl @Inject()(
     }).map(_.flatten)
   }
 
+  private def slackUserDataFromSlackUser(user: SlackUser, slackTeamId: String): SlackUserData = {
+    val maybeProfile = user.profile.map { profile =>
+      SlackUserProfileData(
+        profile.display_name,
+        profile.first_name,
+        profile.last_name,
+        profile.real_name,
+        profile.email,
+        profile.phone
+      )
+    }
+    SlackUserData(
+      user.id,
+      user.team_id.getOrElse(slackTeamId),
+      user.name,
+      isPrimaryOwner = user.is_primary_owner.getOrElse(false),
+      isOwner = user.is_owner.getOrElse(false),
+      isRestricted = user.is_restricted.getOrElse(false),
+      isUltraRestricted = user.is_ultra_restricted.getOrElse(false),
+      isBot = user.is_bot.getOrElse(false),
+      tz = user.tz,
+      user.deleted.getOrElse(false),
+      maybeProfile
+    )
+  }
+
   def fetchSlackUserDataFn(slackUserId: String, slackTeamId: String, client: SlackApiClient, onUserNotFound: (SlackApiError => Option[SlackUser])): SlackUserDataCacheKey => Future[Option[SlackUserData]] = {
     key: SlackUserDataCacheKey => {
       for {
         maybeInfo <- client.getUserInfo(key.slackUserId)
       } yield {
-        maybeInfo.map { info =>
-          val maybeProfile = info.profile.map { profile =>
-            SlackUserProfileData(
-              profile.display_name,
-              profile.first_name,
-              profile.last_name,
-              profile.real_name,
-              profile.email,
-              profile.phone
-            )
-          }
-          SlackUserData(
-            key.slackUserId,
-            info.team_id.getOrElse(slackTeamId),
-            info.name,
-            isPrimaryOwner = info.is_primary_owner.getOrElse(false),
-            isOwner = info.is_owner.getOrElse(false),
-            isRestricted = info.is_restricted.getOrElse(false),
-            isUltraRestricted = info.is_ultra_restricted.getOrElse(false),
-            isBot = info.is_bot.getOrElse(false),
-            tz = info.tz,
-            info.deleted.getOrElse(false),
-            maybeProfile
-          )
-        }
+        maybeInfo.map(info => slackUserDataFromSlackUser(info, slackTeamId))
       }
     }
   }
@@ -104,5 +106,19 @@ class SlackEventServiceImpl @Inject()(
       Logger.error(s"Slack said the Ellipsis bot Slack user could not be found for Ellipsis team ${botProfile.teamId} on Slack team ${botProfile.slackTeamId} with slack user ID ${botProfile.userId}", e)
       None
     })
+  }
+
+  def maybeSlackUserDataForEmail(email: String, client: SlackApiClient): Future[Option[SlackUserData]] = {
+    cacheService.getSlackUserDataByEmail(SlackUserDataByEmailCacheKey(email, client.profile.slackTeamId), fetchSlackUserDataByEmailFn(email, client))
+  }
+
+  def fetchSlackUserDataByEmailFn(email: String, client: SlackApiClient): SlackUserDataByEmailCacheKey => Future[Option[SlackUserData]] = {
+    key: SlackUserDataByEmailCacheKey => {
+      for {
+        maybeInfo <- client.getUserInfoByEmail(key.email)
+      } yield {
+        maybeInfo.map(info => slackUserDataFromSlackUser(info, key.slackTeamId))
+      }
+    }
   }
 }
