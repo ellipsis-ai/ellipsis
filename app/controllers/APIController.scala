@@ -875,25 +875,27 @@ class APIController @Inject() (
     )
   }
 
-  case class FindUserResult(
-                               user: Option[UserData],
-                               userNotFound: Boolean
-                             )
+  case class FindUsersResult(users: Seq[UserData])
 
-  implicit val findUserResultWrites = Json.writes[FindUserResult]
+  implicit val findUsersResultWrites = Json.writes[FindUsersResult]
 
-  def findUser(token: String, email: String) = Action.async { implicit request =>
+  def findUsers(token: String, maybeEmail: Option[String]) = Action.async { implicit request =>
     val eventualResult = for {
       context <- ApiMethodContext.createFor(token)
-      maybeUserInfo <- context.maybeTeam.map { team =>
-        dataService.users.maybeUserDataForEmail(email, team)
-      }.getOrElse(Future.successful(None))
-    } yield {
-      Ok(Json.toJson(FindUserResult(maybeUserInfo, maybeUserInfo.isEmpty)))
-    }
+      result <- (for {
+        team <- context.maybeTeam
+        email <- maybeEmail
+      } yield {
+        dataService.users.maybeUserDataForEmail(email, team).map { maybeUserData =>
+          Ok(Json.toJson(FindUsersResult(Seq(maybeUserData).flatten)))
+        }
+      }).getOrElse {
+        Future.successful(badRequest(Some(APIErrorData("You must pass an `email` parameter to find.", None)), None))
+      }
+    } yield result
 
     eventualResult.recover {
-      case e: InvalidTokenException => invalidTokenRequest(Map("token" -> token, "email" -> email))
+      case e: InvalidTokenException => invalidTokenRequest(Map("token" -> token))
     }
   }
 }
