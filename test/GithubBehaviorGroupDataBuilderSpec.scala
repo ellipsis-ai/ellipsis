@@ -1,6 +1,7 @@
 
 import java.time.OffsetDateTime
 
+import json.LinkedGithubRepoData
 import models.IDs
 import models.team.Team
 import org.mockito.Matchers._
@@ -28,6 +29,8 @@ class GithubBehaviorGroupDataBuilderSpec extends PlaySpec with MockitoSugar {
       data.actionInputs must have length(3)
       data.dataTypeInputs must have length(0)
       data.requiredOAuth2ApiConfigs must have length(1)
+      data.githubUrl mustEqual Some("https://github.com/ellipsis-ai/github")
+      data.linkedGithubRepo mustEqual Some(LinkedGithubRepoData("ellipsis-ai", "github", None))
     }
 
     "build BehaviorGroupData from JSON, including a library" in new TestContext {
