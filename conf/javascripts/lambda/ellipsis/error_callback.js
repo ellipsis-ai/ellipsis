@@ -11,7 +11,7 @@ function ellipsisErrorCallback(err, options) {
     error: {
       name: callbackError.name,
       message: callbackError.message,
-      userMessage: callbackError.userMessage || options.userMessage,
+      userMessage: callbackError.userMessage || (options ? options.userMessage : null),
       stack: callbackError.stack
     }
   });
