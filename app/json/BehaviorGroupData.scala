@@ -69,7 +69,8 @@ case class BehaviorGroupData(
       actionInputs = actionInputsWithParamTypeIds,
       dataTypeInputs = dataTypeInputsWithParamTypeIds,
       behaviorVersions = behaviorVersionsWithIds,
-      libraryVersions = libraryVersionsWithIds
+      libraryVersions = libraryVersionsWithIds,
+      linkedGithubRepo = this.linkedGithubRepo orElse maybeExistingGroupData.flatMap(_.linkedGithubRepo)
     )
   }
 
@@ -288,7 +289,8 @@ object BehaviorGroupData {
                   maybeGithubUrl: Option[String],
                   maybeGitSHA: Option[String],
                   maybeExportId: Option[String],
-                  maybeAuthor: Option[UserData]
+                  maybeAuthor: Option[UserData],
+                  maybeLinkedGithubRepoData: Option[LinkedGithubRepoData]
                 ): BehaviorGroupData = {
     BehaviorGroupData(
       id = None,
@@ -312,7 +314,7 @@ object BehaviorGroupData {
       metaData = None,
       isManaged = false,
       managedContact = None,
-      linkedGithubRepo = None
+      linkedGithubRepo = maybeLinkedGithubRepoData
     )
   }
 

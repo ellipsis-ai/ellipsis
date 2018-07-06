@@ -141,7 +141,8 @@ case class GithubBehaviorGroupDataBuilder(
       Some(githubUrl),
       maybeSHA,
       maybeExportId,
-      maybeAuthor = None
+      maybeAuthor = None,
+      Some(LinkedGithubRepoData(owner, repoName, maybeBranch))
     )
   }
 
