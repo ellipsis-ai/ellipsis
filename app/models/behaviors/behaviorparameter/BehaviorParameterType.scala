@@ -449,7 +449,7 @@ case class BehaviorBackedDataType(dataTypeConfig: DataTypeConfig) extends Behavi
   private def cachedValidValueForLabel(text: String, context: BehaviorParameterContext): Option[ValidValue] = {
     for {
       values <- cachedValuesFor(context)
-      value <- values.find((ea) => textMatchesLabel(text, ea.label, context))
+      value <- values.find((ea) => textMatchesLabel(text, ea.label))
     } yield value
   }
 
@@ -606,8 +606,8 @@ case class BehaviorBackedDataType(dataTypeConfig: DataTypeConfig) extends Behavi
     context.dataService.run(getValidValuesAction(maybeMatchText, context))
   }
 
-  private def textMatchesLabel(text: String, label: String, context: BehaviorParameterContext): Boolean = {
-    text.toLowerCase == label.toLowerCase
+  private def textMatchesLabel(text: String, label: String): Boolean = {
+    text.toLowerCase.trim == label.toLowerCase.trim
   }
 
   private def maybeMatchById(text: String, validValues: Seq[ValidValue]): Option[ValidValue] = {
@@ -618,7 +618,7 @@ case class BehaviorBackedDataType(dataTypeConfig: DataTypeConfig) extends Behavi
     if (validValues.length == 1 && RatcliffObershelpMetric.compare(validValues.head.label.toLowerCase, text.toLowerCase).exists(_ > 0.75)) {
       validValues.headOption
     } else {
-      None
+      validValues.find(value => textMatchesLabel(text, value.label))
     }
   }
 
