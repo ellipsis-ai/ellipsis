@@ -1,7 +1,6 @@
 package json
 
 import models.behaviors.linked_github_repo.LinkedGithubRepo
-import utils.github.GithubUtils
 
 case class LinkedGithubRepoData(owner: String, repo: String, currentBranch: String)
 
