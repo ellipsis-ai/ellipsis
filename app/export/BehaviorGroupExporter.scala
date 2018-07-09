@@ -175,7 +175,7 @@ object BehaviorGroupExporter {
       maybeGroupVersion <- maybeGroup.map { group =>
         dataService.behaviorGroups.maybeCurrentVersionFor(group)
       }.getOrElse(Future.successful(None))
-      maybeGroupData <- BehaviorGroupData.maybeFor(groupId, user, None, dataService, cacheService)
+      maybeGroupData <- BehaviorGroupData.maybeFor(groupId, user, dataService, cacheService)
       functionMap <- maybeGroupData.map { groupData =>
         Future.sequence(groupData.behaviorVersions.map { ea =>
           ea.maybeFunction(dataService).map { maybeFunction =>

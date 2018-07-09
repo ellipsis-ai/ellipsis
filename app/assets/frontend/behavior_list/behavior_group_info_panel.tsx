@@ -186,7 +186,7 @@ import User from "../models/user";
     }
 
     renderSourceInfo(group: BehaviorGroup) {
-      const groupGithubUrl = group.linkedGithubRepo ? group.linkedGithubRepo.getUrl() : group.githubUrl;
+      const groupGithubUrl = group.linkedGithubRepo ? group.linkedGithubRepo.getUrl() : null;
       if (group.isManaged) {
         return (
           <div className="type-s mvm">
@@ -205,7 +205,7 @@ import User from "../models/user";
         return (
           <div className={`type-s mvm ${this.props.isImporting ? "pulse" : ""}`}>
             <span className="type-green">Published by Ellipsis</span>
-            {this.renderGithubLink(groupGithubUrl || this.props.publishedGroupData.githubUrl)}
+            {this.renderGithubLink(groupGithubUrl)}
           </div>
         );
       } else {

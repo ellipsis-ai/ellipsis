@@ -23,7 +23,6 @@ export interface BehaviorGroupJson {
   name?: Option<string>;
   icon?: Option<string>;
   description?: Option<string>;
-  githubUrl?: Option<string>;
   actionInputs: Array<InputJson>;
   dataTypeInputs: Array<InputJson>;
   behaviorVersions: Array<BehaviorVersionJson>;
@@ -65,7 +64,6 @@ class BehaviorGroup implements Diffable, BehaviorGroupInterface {
     readonly name: Option<string>,
     readonly icon: Option<string>,
     readonly description: Option<string>,
-    readonly githubUrl: Option<string>,
     readonly actionInputs: Array<Input>,
     readonly dataTypeInputs: Array<Input>,
     readonly behaviorVersions: Array<BehaviorVersion>,
@@ -89,7 +87,6 @@ class BehaviorGroup implements Diffable, BehaviorGroupInterface {
         name: { value: name, enumerable: true },
         icon: { value: icon, enumerable: true },
         description: { value: description, enumerable: true },
-        githubUrl: { value: githubUrl, enumerable: true },
         actionInputs: { value: actionInputs, enumerable: true },
         dataTypeInputs: { value: dataTypeInputs, enumerable: true },
         behaviorVersions: { value: behaviorVersions, enumerable: true },
@@ -348,7 +345,6 @@ class BehaviorGroup implements Diffable, BehaviorGroupInterface {
         props.name,
         props.icon,
         props.description,
-        props.githubUrl,
         props.actionInputs,
         props.dataTypeInputs,
         props.behaviorVersions,

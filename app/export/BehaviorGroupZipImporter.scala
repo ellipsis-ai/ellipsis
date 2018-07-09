@@ -119,7 +119,6 @@ case class BehaviorGroupZipImporter(
         strings.getOrElse("params.json", ""),
         strings.getOrElse("triggers.json", ""),
         strings.getOrElse("config.json", ""),
-        maybeGithubUrl = None,
         dataService
       )
     }.toSeq
@@ -127,7 +126,7 @@ case class BehaviorGroupZipImporter(
     for {
       alreadyInstalled <- dataService.behaviorGroups.allFor(team)
       alreadyInstalledData <- Future.sequence(alreadyInstalled.map { group =>
-        BehaviorGroupData.maybeFor(group.id, user, None, dataService, cacheService)
+        BehaviorGroupData.maybeFor(group.id, user, dataService, cacheService)
       }).map(_.flatten)
       maybeExistingGroupData <- Future.successful(alreadyInstalledData.find(_.exportId == maybeExportId))
       userData <- dataService.users.userDataFor(user, team)
@@ -144,7 +143,6 @@ case class BehaviorGroupZipImporter(
           requiredAWSConfigData,
           requiredOAuth2ApiConfigData,
           requiredSimpleTokenApiData,
-          maybeGithubUrl = None,
           maybeGitSHA = None,
           maybeExportId,
           Some(userData),

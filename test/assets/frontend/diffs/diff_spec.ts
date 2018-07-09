@@ -243,7 +243,6 @@ const behaviorGroupVersion1: BehaviorGroupJson = Object.freeze({
   actionInputs: [actionInput1, actionInput2],
   dataTypeInputs: [],
   libraryVersions: [libraryVersion1],
-  githubUrl: null,
   exportId: null,
   author: null,
   gitSHA: null,
@@ -267,7 +266,6 @@ const behaviorGroupVersion2: BehaviorGroupJson = Object.freeze({
   actionInputs: [actionInputChanged, actionInput2],
   dataTypeInputs: [],
   libraryVersions: [libraryVersion2],
-  githubUrl: null,
   exportId: null,
   author: null,
   gitSHA: null,
@@ -325,7 +323,6 @@ const publishedMyCalendar: BehaviorGroup = BehaviorGroup.fromJson({
       "isTest": false
     },
     "exportId": "BXUYJotxSaKz3QqZ_zSd-w",
-    "githubUrl": "https://github.com/ellipsis-ai/my-calendar/actions/Agenda",
     "knownEnvVarsUsed": []
   }, {
     "id": "BlFk7azKRjaCgH5ricykTA",
@@ -356,7 +353,6 @@ const publishedMyCalendar: BehaviorGroup = BehaviorGroup.fromJson({
       "isTest": false
     },
     "exportId": "V-LAjv1AS4CoFimMANnxpg",
-    "githubUrl": "https://github.com/ellipsis-ai/my-calendar/actions/Deactivate",
     "knownEnvVarsUsed": []
   }, {
     "id": "AFV_L2J3Sp2DRxx4t9Qdjw",
@@ -377,7 +373,6 @@ const publishedMyCalendar: BehaviorGroup = BehaviorGroup.fromJson({
       "isTest": false
     },
     "exportId": "J0uB9LvZTo6_L-spEBrtqg",
-    "githubUrl": "https://github.com/ellipsis-ai/my-calendar/actions/Help",
     "knownEnvVarsUsed": []
   }, {
     "id": "Eb6wNX-WS1KiobO6Khud6w",
@@ -403,7 +398,6 @@ const publishedMyCalendar: BehaviorGroup = BehaviorGroup.fromJson({
       "isTest": false
     },
     "exportId": "SBH4IfDzTGO8P7kV02yECw",
-    "githubUrl": "https://github.com/ellipsis-ai/my-calendar/actions/Reminders",
     "knownEnvVarsUsed": []
   }, {
     "id": "Sb6jPeE0RaSXGbLTBh-GSg",
@@ -429,7 +423,6 @@ const publishedMyCalendar: BehaviorGroup = BehaviorGroup.fromJson({
       "isTest": false
     },
     "exportId": "ioHMv3b3T4utFwwH0cwjLg",
-    "githubUrl": "https://github.com/ellipsis-ai/my-calendar/actions/Setup",
     "knownEnvVarsUsed": []
   }],
   "libraryVersions": [{
@@ -450,7 +443,6 @@ const publishedMyCalendar: BehaviorGroup = BehaviorGroup.fromJson({
     "nameInCode": "googleCalendar"
   }],
   "requiredSimpleTokenApis": [],
-  "githubUrl": "https://github.com/ellipsis-ai/my-calendar",
   "gitSHA": "af7815b9b42cf277c67f4f7123c8901826ea869e",
   "exportId": "9l9tTPMcQliQRua_UmJ8sw",
   "createdAt": "2018-04-17T10:19:13.74-04:00",

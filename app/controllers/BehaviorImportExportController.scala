@@ -121,7 +121,7 @@ class BehaviorImportExportController @Inject() (
                 dataService.behaviors.allForGroup(group).map(_.headOption)
               }.getOrElse(Future.successful(None))
               maybeBehaviorGroupData <- maybeBehaviorGroup.map { group =>
-                BehaviorGroupData.maybeFor(group.id, user, None, dataService, cacheService)
+                BehaviorGroupData.maybeFor(group.id, user, dataService, cacheService)
               }.getOrElse(Future.successful(None))
             } yield {
               maybeBehaviorGroupData.map { groupData =>

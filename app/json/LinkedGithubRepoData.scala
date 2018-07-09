@@ -16,12 +16,8 @@ object LinkedGithubRepoData {
 
   def maybeFrom(data: BehaviorGroupData): Option[LinkedGithubRepoData] = {
     for {
-      owner <- data.linkedGithubRepo.map(_.owner).orElse {
-        data.githubUrl.flatMap(GithubUtils.maybeOwnerFor)
-      }
-      name <- data.linkedGithubRepo.map(_.repo).orElse {
-        data.githubUrl.flatMap(GithubUtils.maybeNameFor)
-      }
+      owner <- data.linkedGithubRepo.map(_.owner)
+      name <- data.linkedGithubRepo.map(_.repo)
     } yield {
       LinkedGithubRepoData(owner, name, data.linkedGithubRepo.map(_.currentBranch))
     }
