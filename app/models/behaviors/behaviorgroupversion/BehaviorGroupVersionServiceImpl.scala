@@ -5,7 +5,7 @@ import java.time.OffsetDateTime
 import javax.inject.Inject
 import com.google.inject.Provider
 import drivers.SlickPostgresDriver.api._
-import json.BehaviorGroupData
+import json.{BehaviorGroupData, LinkedGithubRepoData}
 import models.IDs
 import models.accounts.user.User
 import models.behaviors.behaviorgroup.BehaviorGroup
@@ -194,11 +194,9 @@ class BehaviorGroupVersionServiceImpl @Inject() (
         }
       })
       _ <- (for {
-        githubUrl <- data.githubUrl
-        owner <- GithubUtils.maybeOwnerFor(githubUrl)
-        name <- GithubUtils.maybeNameFor(githubUrl)
+        githubRepoData <- LinkedGithubRepoData.maybeFrom(data)
       } yield {
-        dataService.linkedGithubRepos.ensureLinkAction(group, owner, name, None)
+        dataService.linkedGithubRepos.ensureLinkAction(group, githubRepoData.owner, githubRepoData.repo, Some(githubRepoData.currentBranch))
       }).getOrElse(DBIO.successful({}))
     } yield {
       // deploy in the background

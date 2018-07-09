@@ -1,6 +1,7 @@
 package json
 
 import models.behaviors.linked_github_repo.LinkedGithubRepo
+import utils.github.GithubUtils
 
 case class LinkedGithubRepoData(owner: String, repo: String, currentBranch: String)
 
@@ -11,5 +12,18 @@ object LinkedGithubRepoData {
 
   def from(repo: LinkedGithubRepo): LinkedGithubRepoData = {
     LinkedGithubRepoData(repo.owner, repo.repo, repo.maybeCurrentBranch)
+  }
+
+  def maybeFrom(data: BehaviorGroupData): Option[LinkedGithubRepoData] = {
+    for {
+      owner <- data.linkedGithubRepo.map(_.owner).orElse {
+        data.githubUrl.flatMap(GithubUtils.maybeOwnerFor)
+      }
+      name <- data.linkedGithubRepo.map(_.repo).orElse {
+        data.githubUrl.flatMap(GithubUtils.maybeNameFor)
+      }
+    } yield {
+      LinkedGithubRepoData(owner, name, data.linkedGithubRepo.map(_.currentBranch))
+    }
   }
 }
