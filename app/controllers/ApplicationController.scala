@@ -59,7 +59,7 @@ class ApplicationController @Inject() (
           }.getOrElse(Future.successful(None))
           groupData <- maybeBehaviorGroups.map { groups =>
             Future.sequence(groups.map { group =>
-              BehaviorGroupData.maybeFor(group.id, user, None, dataService, cacheService)
+              BehaviorGroupData.maybeFor(group.id, user, dataService, cacheService)
             }).map(_.flatten.sorted)
           }.getOrElse(Future.successful(Seq()))
         } yield {
@@ -112,7 +112,7 @@ class ApplicationController @Inject() (
         dataService.behaviorGroups.allFor(team)
       }.getOrElse(Future.successful(Seq()))
       alreadyInstalledData <- Future.sequence(alreadyInstalled.map { group =>
-        BehaviorGroupData.maybeFor(group.id, user, None, dataService, cacheService)
+        BehaviorGroupData.maybeFor(group.id, user, dataService, cacheService)
       }).map(_.flatten)
     } yield teamAccess.maybeTargetTeam.map { team =>
       val fetcher = GithubPublishedBehaviorGroupsFetcher(team, maybeBranch, alreadyInstalledData, githubService, services, ec)
@@ -147,7 +147,7 @@ class ApplicationController @Inject() (
             dataService.behaviorGroups.findWithoutAccessCheck(id)
           }).map(_.flatten)
           merged <- dataService.behaviorGroups.merge(groups, user)
-          maybeData <- BehaviorGroupData.maybeFor(merged.id, user, None, dataService, cacheService)
+          maybeData <- BehaviorGroupData.maybeFor(merged.id, user, dataService, cacheService)
         } yield maybeData.map { data =>
           Ok(Json.toJson(data))
         }.getOrElse {
@@ -189,7 +189,7 @@ class ApplicationController @Inject() (
       }
       maybeInstalledGroupData <- maybeInstalledBehaviorGroups.map { groups =>
         val eventualMaybeGroupData = groups.map { group =>
-          BehaviorGroupData.maybeFor(group.id, user, None, dataService, cacheService)
+          BehaviorGroupData.maybeFor(group.id, user, dataService, cacheService)
         }
         Future.sequence(eventualMaybeGroupData).map { maybeGroups =>
           Some(maybeGroups.flatten.sorted)

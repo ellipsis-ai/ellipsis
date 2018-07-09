@@ -62,7 +62,7 @@ class BehaviorEditorController @Inject() (
       }
       case Accepts.Html() => {
         for {
-          maybeGroupData <- BehaviorGroupData.maybeFor(groupId, user, maybeGithubUrl = None, dataService, cacheService)
+          maybeGroupData <- BehaviorGroupData.maybeFor(groupId, user, dataService, cacheService)
           maybeTeam <- maybeGroupData.map { data =>
             dataService.teams.find(data.teamId, user)
           }.getOrElse(Future.successful(None))
@@ -176,7 +176,7 @@ class BehaviorEditorController @Inject() (
                 dataService.behaviorGroupVersions.createFor(group, user, dataToUse).map(Some(_))
               }.getOrElse(Future.successful(None))
               maybeGroupData <- maybeGroup.map { group =>
-                BehaviorGroupData.maybeFor(group.id, user, maybeGithubUrl = None, dataService, cacheService)
+                BehaviorGroupData.maybeFor(group.id, user, dataService, cacheService)
               }.getOrElse(Future.successful(None))
             } yield {
               maybeGroupData.map { groupData =>
@@ -211,7 +211,7 @@ class BehaviorEditorController @Inject() (
       info => {
         for {
           maybeGroup <- dataService.behaviorGroups.find(info.behaviorGroupId, user)
-          maybeGroupData <- BehaviorGroupData.maybeFor(info.behaviorGroupId, user, maybeGithubUrl = None, dataService, cacheService)
+          maybeGroupData <- BehaviorGroupData.maybeFor(info.behaviorGroupId, user, dataService, cacheService)
           maybeSavedGroupVersion <- (for {
             group <- maybeGroup
             groupData <- maybeGroupData

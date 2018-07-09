@@ -29,7 +29,6 @@ class GithubBehaviorGroupDataBuilderSpec extends PlaySpec with MockitoSugar {
       data.actionInputs must have length(3)
       data.dataTypeInputs must have length(0)
       data.requiredOAuth2ApiConfigs must have length(1)
-      data.githubUrl mustEqual Some("https://github.com/ellipsis-ai/github")
       data.linkedGithubRepo mustEqual Some(LinkedGithubRepoData("ellipsis-ai", "github", None))
     }
 

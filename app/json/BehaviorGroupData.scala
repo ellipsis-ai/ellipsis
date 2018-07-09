@@ -26,7 +26,6 @@ case class BehaviorGroupData(
                               requiredAWSConfigs: Seq[RequiredAWSConfigData],
                               requiredOAuth2ApiConfigs: Seq[RequiredOAuth2ApiConfigData],
                               requiredSimpleTokenApis: Seq[RequiredSimpleTokenApiData],
-                              githubUrl: Option[String],
                               gitSHA: Option[String],
                               exportId: Option[String],
                               createdAt: Option[OffsetDateTime],
@@ -192,7 +191,6 @@ object BehaviorGroupData {
         requiredAWSConfigs.map(RequiredAWSConfigData.from),
         requiredOAuth2ApiConfigs.map(RequiredOAuth2ApiConfigData.from),
         requiredSimpleTokenApis.map(RequiredSimpleTokenApiData.from),
-        None,
         None, // don't include SHA when building new data from existing version
         immutableData.exportId,
         immutableData.createdAt,
@@ -253,7 +251,8 @@ object BehaviorGroupData {
     } yield data
   }
 
-  def maybeFor(id: String, user: User, maybeGithubUrl: Option[String], dataService: DataService, cacheService: CacheService)(implicit ec: ExecutionContext): Future[Option[BehaviorGroupData]] = {
+  def maybeFor(id: String, user: User, dataService: DataService, cacheService: CacheService)
+              (implicit ec: ExecutionContext): Future[Option[BehaviorGroupData]] = {
     for {
       maybeGroup <- dataService.behaviorGroups.find(id, user)
       maybeFirstGroupVersion <- maybeGroup.map { group =>
@@ -286,7 +285,6 @@ object BehaviorGroupData {
                   requiredAWSConfigs: Seq[RequiredAWSConfigData],
                   requiredOAuth2ApiConfigs: Seq[RequiredOAuth2ApiConfigData],
                   requiredSimpleTokenApis: Seq[RequiredSimpleTokenApiData],
-                  maybeGithubUrl: Option[String],
                   maybeGitSHA: Option[String],
                   maybeExportId: Option[String],
                   maybeAuthor: Option[UserData],
@@ -305,7 +303,6 @@ object BehaviorGroupData {
       requiredAWSConfigs,
       requiredOAuth2ApiConfigs,
       requiredSimpleTokenApis,
-      maybeGithubUrl,
       maybeGitSHA,
       maybeExportId,
       createdAt = Some(OffsetDateTime.now),

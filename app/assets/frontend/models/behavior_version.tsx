@@ -25,7 +25,6 @@ export interface BehaviorVersionJson extends EditableJson {
   triggers: Array<TriggerJson>;
   config: BehaviorConfigJson;
   knownEnvVarsUsed: Array<string>;
-  githubUrl?: Option<string>;
 }
 
 export interface BehaviorVersionInterface extends EditableInterface, BehaviorVersionJson {
@@ -51,8 +50,7 @@ class BehaviorVersion extends Editable implements Diffable, BehaviorVersionInter
     readonly knownEnvVarsUsed: Array<string>,
     readonly createdAt: Option<Timestamp>,
     readonly isNew: Option<boolean>,
-    readonly editorScrollPosition: Option<number>,
-    readonly githubUrl: Option<string>
+    readonly editorScrollPosition: Option<number>
   ) {
       super(
         id,
@@ -363,8 +361,7 @@ class BehaviorVersion extends Editable implements Diffable, BehaviorVersionInter
         props.knownEnvVarsUsed,
         props.createdAt,
         props.isNew,
-        props.editorScrollPosition,
-        props.githubUrl
+        props.editorScrollPosition
       );
     }
 

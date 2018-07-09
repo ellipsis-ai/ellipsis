@@ -45,7 +45,7 @@ object BehaviorEditorData {
                   )(implicit ec: ExecutionContext): Future[Option[BehaviorEditorData]] = {
 
     for {
-      maybeGroupData <- BehaviorGroupData.maybeFor(groupId, user, maybeGithubUrl = None, dataService, cacheService)
+      maybeGroupData <- BehaviorGroupData.maybeFor(groupId, user, dataService, cacheService)
       maybeTeam <- maybeGroupData.map { data =>
         dataService.teams.find(data.teamId, user)
       }.getOrElse(Future.successful(None))
@@ -200,7 +200,6 @@ object BehaviorEditorData {
           Seq(),
           Seq(),
           Seq(),
-          githubUrl = None,
           maybeGitSHA.map(_.gitSHA),
           exportId = None,
           Some(OffsetDateTime.now),

@@ -23,8 +23,6 @@ case class GithubBehaviorGroupDataBuilder(
   val USER_NAME = "ellipsis-ai"
   val REPO_NAME = "behaviors"
 
-  val githubUrl: String = s"https://github.com/$owner/$repoName"
-
   val branch: String = maybeBranch.getOrElse("master")
 
   private def nameFor(json: JsValue): String = (json \ "name").as[String]
@@ -40,10 +38,6 @@ case class GithubBehaviorGroupDataBuilder(
       }
       case _ => None
     }
-  }
-
-  private def githubUrlForBehaviorPath(behaviorType: String, behaviorPath: String): String = {
-    s"${githubUrl}/$behaviorType/$behaviorPath"
   }
 
   private def inputsFor(text: String): Seq[InputData] = {
@@ -68,7 +62,6 @@ case class GithubBehaviorGroupDataBuilder(
     val params = findEntryNamed("params.json", actionsLookup).flatMap(maybeTextFromEntry).getOrElse("")
     val triggers = findEntryNamed("triggers.json", actionsLookup).flatMap(maybeTextFromEntry).getOrElse("")
     val config = findEntryNamed("config.json", actionsLookup).flatMap(maybeTextFromEntry).getOrElse("")
-    val githubUrl = githubUrlForBehaviorPath(behaviorType, nameFor(json))
     BehaviorVersionData.fromStrings(
       team.id,
       maybeDescription,
@@ -77,7 +70,6 @@ case class GithubBehaviorGroupDataBuilder(
       params,
       triggers,
       config,
-      Some(githubUrl),
       dataService
     )
   }
@@ -138,7 +130,6 @@ case class GithubBehaviorGroupDataBuilder(
       requiredAWSConfigData,
       requiredOAuth2ApiConfigData,
       requiredSimpleTokenApiData,
-      Some(githubUrl),
       maybeSHA,
       maybeExportId,
       maybeAuthor = None,

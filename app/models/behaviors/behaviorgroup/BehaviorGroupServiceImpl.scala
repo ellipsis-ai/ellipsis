@@ -154,7 +154,6 @@ class BehaviorGroupServiceImpl @Inject() (
           requiredAWSConfigs,
           requiredOAuth2ApiConfigs,
           requiredSimpleTokenApis,
-          githubUrl = None,
           gitSHA = None,
           exportId = None,
           createdAt = None,

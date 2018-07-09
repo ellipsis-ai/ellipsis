@@ -12,7 +12,6 @@ import models.behaviors.behaviorgroup.BehaviorGroup
 import play.api.Logger
 import services.{AWSLambdaService, ApiConfigInfo, DataService}
 import slick.dbio.DBIO
-import utils.github.GithubUtils
 
 import scala.concurrent.duration._
 import scala.concurrent.{Await, ExecutionContext, Future}
