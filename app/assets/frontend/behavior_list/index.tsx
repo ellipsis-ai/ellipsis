@@ -934,8 +934,8 @@ class BehaviorList extends React.Component<Props, State> {
     const hasUninstalledGroups = allUninstalled.length > 0;
     return (
       <div className="flex-row-cascade">
-        {this.props.notification}
         <FixedHeader onHeightChange={this.updateSearchHeaderHeight} marginTop={this.getMainHeaderHeight()} zIndexClassName="position-z-behind-scrim">
+          {this.props.notification}
           {this.renderSearch()}
         </FixedHeader>
         <div className="flex-row-cascade" style={this.getScrollableContainerStyle()}>
