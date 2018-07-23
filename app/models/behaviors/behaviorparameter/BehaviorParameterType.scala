@@ -545,7 +545,33 @@ case class BehaviorBackedDataType(dataTypeConfig: DataTypeConfig) extends Behavi
     }
   }
 
-  private def extractValidValues(result: SuccessResult): Seq[ValidValue] = {
+  private def sendLogMessageInBackgroundFor(
+                                             result: SuccessResult,
+                                             context: BehaviorParameterContext
+                                           )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Unit] = {
+    context.event.sendMessage(
+      "",
+      forcePrivate = false,
+      maybeShouldUnfurl = None,
+      context.maybeConversation,
+      Seq(),
+      result.files,
+      Seq(),
+      result.developerContext,
+      context.services,
+      context.services.configuration
+    ).map(_ => {})
+  }
+
+  private def extractValidValues(
+                                  result: SuccessResult,
+                                  context: BehaviorParameterContext
+                                )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Seq[ValidValue] = {
+    result.maybeLogResult.foreach { logResult =>
+      if (result.shouldIncludeLogs && logResult.authorDefinedLogStatements.nonEmpty) {
+        sendLogMessageInBackgroundFor(result, context)
+      }
+    }
     result.result.validate[Seq[JsObject]] match {
       case JsSuccess(data, _) => {
         data.flatMap { ea =>
@@ -596,7 +622,7 @@ case class BehaviorBackedDataType(dataTypeConfig: DataTypeConfig) extends Behavi
 
   private def getValidValuesAction(maybeMatchText: Option[String], context: BehaviorParameterContext)(implicit actorSystem: ActorSystem, ec: ExecutionContext): DBIO[Seq[ValidValue]] = {
     if (dataTypeConfig.usesCode) {
-      getValidValuesSuccessResultAction(maybeMatchText, context).map(extractValidValues)
+      getValidValuesSuccessResultAction(maybeMatchText, context).map(res => extractValidValues(res, context))
     } else {
       validValuesFromDefaultStorageFor(maybeMatchText, context)
     }
@@ -746,7 +772,7 @@ case class BehaviorBackedDataType(dataTypeConfig: DataTypeConfig) extends Behavi
 
   override def promptResultWithValidValuesResult(result: BotResult, context: BehaviorParameterContext)(implicit actorSystem: ActorSystem, ec: ExecutionContext): DBIO[BotResult] = {
     val validValues = result match {
-      case r: SuccessResult => extractValidValues(r)
+      case r: SuccessResult => extractValidValues(r, context)
       case _ => Seq()
     }
     promptResultWithValidValues(validValues, context)

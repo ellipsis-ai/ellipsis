@@ -6,6 +6,7 @@ import {RequiredOAuth2Application} from '../models/oauth2';
 import TesterAuthRequired from './tester_auth_required';
 import InvocationResults from './behavior_tester_invocation_results';
 import InvocationTestResult from '../models/behavior_invocation_result';
+import BehaviorTesterInvocationResultFile from './behavior_tester_invocation_result_file';
 
 var MAX_RESULTS_TO_SHOW = 10;
 
@@ -198,7 +199,7 @@ const DataTypeTester = React.createClass({
     renderResult: function(result) {
       var isValidResult = this.isValidResult(result);
       if (isValidResult) {
-        return this.renderValidResultTableWith(this.getParsedResponse(result));
+        return this.renderValidResultTableWith(result);
       } else {
         return (
           <div className="display-overflow-scroll border border-pink bg-white pas">
@@ -212,7 +213,25 @@ const DataTypeTester = React.createClass({
       }
     },
 
-    renderValidResultTableWith: function(response) {
+    renderFiles(result) {
+      const files = result.files;
+      if (files && files.length > 0) {
+        return (
+          <div>
+            {files.map((file, index) => (
+              <BehaviorTesterInvocationResultFile key={`file${index}`}
+                                                  filename={file.filename}
+                                                  filetype={file.filetype}
+                                                  content={file.content}
+              />
+            ))}
+          </div>
+        );
+      }
+    },
+
+    renderValidResultTableWith: function(result) {
+      const response = this.getParsedResponse(result);
       var hasOtherData = response.some((item) => {
         return Object.keys(item).filter((key) => {
           return key !== 'id' && key !== 'label';
@@ -254,11 +273,15 @@ const DataTypeTester = React.createClass({
                 }
               </div>
             ) : null}
+            {this.renderFiles(result)}
           </div>
         );
       } else {
         return (
-          <div className="type-italic border pas border-green bg-white">An empty list was returned.</div>
+          <div className="border pas border-green bg-white">
+            <div className="type-italic">An empty list was returned.</div>
+            {this.renderFiles(result)}
+          </div>
         );
       }
     },
