@@ -98,7 +98,13 @@ object FeedbackBehavior {
 
   private def userInfo(userId: String, maybeUserData: Option[UserData]): String = {
     maybeUserData.map { userData =>
-      s"**${userData.fullName.getOrElse("Unknown")}** · ${userData.userName.map(userName => s"@$userName").getOrElse("(unknown username)")} · ID: $userId"
+      val fullName = userData.fullName.getOrElse("Unknown user")
+      val userName = userData.userName.map(userName => s"@$userName").getOrElse("(unknown username)")
+      val email = userData.email.getOrElse("(unknown)")
+      s"""
+         |**${fullName}** · ${userName}
+         |Email: ${email}
+         |Ellipsis ID: ${userId}""".stripMargin
     }.getOrElse(s"User #$userId")
   }
 
@@ -116,10 +122,11 @@ object FeedbackBehavior {
   private def feedbackMessage(teamInfo: String, userInfo: String, feedbackType: String, message: String): String = {
     s"""${feedbackType}:
        |
-       |_Profile:_
-       |User: $userInfo
+       |**User:**
+       |$userInfo
        |Team: $teamInfo
        |
+       |**Message:**
        |${message.lines.mkString("> ", "\n> ", "\n")}
      """.stripMargin
   }
