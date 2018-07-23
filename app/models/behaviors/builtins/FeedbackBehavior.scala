@@ -99,12 +99,13 @@ object FeedbackBehavior {
   private def userInfo(userId: String, maybeUserData: Option[UserData]): String = {
     maybeUserData.map { userData =>
       val fullName = userData.fullName.getOrElse("Unknown user")
-      val userName = userData.userName.map(userName => s"@$userName").getOrElse("(unknown username)")
+      val userName = userData.userName.map(userName => s"@$userName").getOrElse("unknown username")
       val email = userData.email.getOrElse("(unknown)")
-      s"""
-         |**${fullName}** · ${userName}
-         |Email: ${email}
-         |Ellipsis ID: ${userId}""".stripMargin
+      val tz = userData.tz.getOrElse("(unknown)")
+      s"""> Name: ${fullName} (${userName})
+         |> Email: ${email}
+         |> Time zone: ${tz}
+         |> Ellipsis ID: ${userId}""".stripMargin
     }.getOrElse(s"User #$userId")
   }
 
