@@ -36,6 +36,8 @@ trait CacheService {
 
   def getSlackActionValue(key: String): Option[String]
 
+  def getDefaultStorageSchema(groupVersionId: String, dataFn: String => Future[String]): Future[String]
+
   def getDataTypeBotResult(key: DataTypeBotResultsCacheKey, dataFn: DataTypeBotResultsCacheKey => Future[BotResult]): Future[BotResult]
 
   def clearDataTypeBotResult(key: DataTypeBotResultsCacheKey): Unit

@@ -13,7 +13,7 @@ trait DataTypeConfigService {
 
   def allFor(groupVersion: BehaviorGroupVersion): Future[Seq[DataTypeConfig]]
 
-  def allUsingDefaultStorageFor(groupVersion: BehaviorGroupVersion): Future[Seq[DataTypeConfig]]
+  def allUsingDefaultStorageFor(groupVersionId: String): Future[Seq[DataTypeConfig]]
 
   def findAction(id: String): DBIO[Option[DataTypeConfig]]
 
