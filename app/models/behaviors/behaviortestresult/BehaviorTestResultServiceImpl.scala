@@ -2,6 +2,7 @@ package models.behaviors.behaviortestresult
 
 import java.time.OffsetDateTime
 
+import akka.actor.ActorSystem
 import com.google.inject.Provider
 import drivers.SlickPostgresDriver.api._
 import javax.inject.Inject
@@ -37,7 +38,8 @@ class BehaviorTestResultServiceImpl @Inject() (
 
   import BehaviorTestResultQueries._
 
-  private def createForAction(behaviorVersion: BehaviorVersion): DBIO[BehaviorTestResult] = {
+  private def createForAction(behaviorVersion: BehaviorVersion)
+                             (implicit actorSystem: ActorSystem, ec: ExecutionContext): DBIO[BehaviorTestResult] = {
     val author = behaviorVersion.groupVersion.maybeAuthor.get
     val event = TestEvent(author, behaviorVersion.team, "", includesBotMention = true)
     DBIO.from(dataService.behaviorVersions.resultFor(behaviorVersion, Seq(), event, None)).flatMap { result =>
@@ -56,7 +58,8 @@ class BehaviorTestResultServiceImpl @Inject() (
     }
   }
 
-  def ensureFor(behaviorVersion: BehaviorVersion): Future[BehaviorTestResult] = {
+  def ensureFor(behaviorVersion: BehaviorVersion)
+               (implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[BehaviorTestResult] = {
     val action = findByBehaviorVersionQuery(behaviorVersion.id).result.flatMap { r =>
       r.headOption.map(DBIO.successful).getOrElse {
         createForAction(behaviorVersion)

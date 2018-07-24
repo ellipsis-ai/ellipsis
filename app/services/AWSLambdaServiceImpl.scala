@@ -27,7 +27,6 @@ import models.behaviors.invocationtoken.InvocationToken
 import models.behaviors.library.LibraryVersion
 import models.behaviors.nodemoduleversion.NodeModuleVersion
 import models.environmentvariable.{EnvironmentVariable, TeamEnvironmentVariable}
-import models.team.Team
 import play.api.libs.json._
 import play.api.libs.ws.WSClient
 import play.api.{Configuration, Logger}
@@ -123,21 +122,22 @@ class AWSLambdaServiceImpl @Inject() (
 
   private def invocationJsonFor(
                                  behaviorVersion: BehaviorVersion,
+                                 userInfo: UserInfo,
                                  parameterValues: Seq[ParameterWithValue],
                                  environmentVariables: Seq[EnvironmentVariable],
                                  event: Event,
-                                 defaultServices: DefaultServices,
+                                 botName: String,
                                  token: InvocationToken
-                               ): DBIO[JsObject] = {
+                               )(implicit actorSystem: ActorSystem, ec: ExecutionContext): DBIO[JsObject] = {
+    val team = behaviorVersion.team
     for {
-      awsConfigs <- dataService.awsConfigs.allForAction(behaviorVersion.team)
+      awsConfigs <- dataService.awsConfigs.allForAction(team)
       requiredAWSConfigs <- dataService.requiredAWSConfigs.allForAction(behaviorVersion.groupVersion)
       requiredOAuth2ApiConfigs <- dataService.requiredOAuth2ApiConfigs.allForAction(behaviorVersion.groupVersion)
       requiredSimpleTokenApis <- dataService.requiredSimpleTokenApis.allForAction(behaviorVersion.groupVersion)
-      userInfo <- event.userInfoAction(defaultServices)
       teamInfo <- DBIO.from {
         val apiConfigInfo = ApiConfigInfo(awsConfigs, requiredAWSConfigs, requiredOAuth2ApiConfigs, requiredSimpleTokenApis)
-        TeamInfo.forConfig(apiConfigInfo, userInfo, behaviorVersion.team, ws)
+        TeamInfo.forConfig(apiConfigInfo, userInfo, team, botName, ws)
       }
     } yield {
       val parameterValueData = parameterValues.map { ea => (ea.invocationName, ea.preparedValue) }
@@ -240,17 +240,19 @@ class AWSLambdaServiceImpl @Inject() (
                     event: Event,
                     maybeConversation: Option[Conversation],
                     defaultServices: DefaultServices
-                  ): DBIO[BotResult] = {
+                  )(implicit actorSystem: ActorSystem, ec: ExecutionContext): DBIO[BotResult] = {
     for {
       developerContext <- DeveloperContext.buildFor(event, behaviorVersion, dataService)
-      user <- event.ensureUserAction(dataService)
-      token <- dataService.invocationTokens.createForAction(user, behaviorVersion, event.maybeScheduled)
+      userInfo <- event.userInfoAction(defaultServices)
+      botName <- DBIO.from(event.botName(defaultServices))
+      token <- dataService.invocationTokens.createForAction(userInfo.user, behaviorVersion, event.maybeScheduled)
       invocationJson <- invocationJsonFor(
         behaviorVersion,
+        userInfo,
         parametersWithValues,
         environmentVariables,
         event,
-        defaultServices,
+        botName,
         token
       )
       result <- {

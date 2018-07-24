@@ -103,7 +103,7 @@ object UserInfo {
 
 }
 
-case class TeamInfo(team: Team, links: Seq[LinkedInfo], requiredAWSConfigs: Seq[RequiredAWSConfig]) {
+case class TeamInfo(team: Team, links: Seq[LinkedInfo], requiredAWSConfigs: Seq[RequiredAWSConfig], botName: String) {
 
   val configuredRequiredAWSConfigs: Seq[(RequiredAWSConfig, AWSConfig)] = {
     requiredAWSConfigs.flatMap { ea =>
@@ -120,7 +120,8 @@ case class TeamInfo(team: Team, links: Seq[LinkedInfo], requiredAWSConfigs: Seq[
           "secretAccessKey" -> JsString(cfg.secretKey),
           "region" -> JsString(cfg.region)
         ))
-      })
+      }),
+      "botName" -> JsString(botName)
     )
     val timeZonePart = Seq("timeZone" -> JsString(team.timeZone.toString))
     JsObject(linkParts ++ timeZonePart)
@@ -130,7 +131,8 @@ case class TeamInfo(team: Team, links: Seq[LinkedInfo], requiredAWSConfigs: Seq[
 
 object TeamInfo {
 
-  def forConfig(apiConfigInfo: ApiConfigInfo, userInfo: UserInfo, team: Team, ws: WSClient)(implicit ec: ExecutionContext): Future[TeamInfo] = {
+  def forConfig(apiConfigInfo: ApiConfigInfo, userInfo: UserInfo, team: Team, botName: String, ws: WSClient)
+               (implicit ec: ExecutionContext): Future[TeamInfo] = {
     val oauth2ApplicationsNeedingRefresh =
       apiConfigInfo.requiredOAuth2ApiConfigs.flatMap(_.maybeApplication).
         filter { app =>
@@ -145,7 +147,7 @@ object TeamInfo {
         }
       }
     }).map { linkMaybes =>
-      TeamInfo(team, linkMaybes.flatten, apiConfigInfo.requiredAWSConfigs)
+      TeamInfo(team, linkMaybes.flatten, apiConfigInfo.requiredAWSConfigs, botName)
     }
   }
 

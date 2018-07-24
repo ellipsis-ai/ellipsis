@@ -1,5 +1,6 @@
 package controllers
 
+import akka.actor.ActorSystem
 import com.amazonaws.services.lambda.model.ResourceNotFoundException
 import com.google.inject.Provider
 import com.mohiva.play.silhouette.api.Silhouette
@@ -27,6 +28,7 @@ class BehaviorEditorController @Inject() (
                                            val githubService: GithubService,
                                            val services: DefaultServices,
                                            val assetsProvider: Provider[RemoteAssets],
+                                           implicit val actorSystem: ActorSystem,
                                            implicit val ec: ExecutionContext
                                          ) extends ReAuthable {
 

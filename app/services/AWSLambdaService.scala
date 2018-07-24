@@ -1,5 +1,6 @@
 package services
 
+import akka.actor.ActorSystem
 import com.amazonaws.services.lambda.AWSLambdaAsync
 import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
 import models.behaviors.behaviorparameter.BehaviorParameter
@@ -17,7 +18,7 @@ import models.environmentvariable.EnvironmentVariable
 import play.api.Configuration
 import slick.dbio.DBIO
 
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 case class ApiConfigInfo(
                           awsConfigs: Seq[AWSConfig],
@@ -49,7 +50,7 @@ trait AWSLambdaService extends AWSService {
                     event: Event,
                     maybeConversation: Option[Conversation],
                     defaultServices: DefaultServices
-                  ): DBIO[BotResult]
+                  )(implicit actorSystem: ActorSystem, ec: ExecutionContext): DBIO[BotResult]
 
   def deleteFunction(functionName: String): Future[Unit]
   def deployFunctionFor(
