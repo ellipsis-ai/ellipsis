@@ -121,23 +121,6 @@ class AWSLambdaServiceImpl @Inject() (
     }
   }
 
-  private def cacheKeyFor(behaviorVersion: BehaviorVersion, payloadData: Seq[(String, JsValue)]): String = {
-    val payloadString = Base64.getEncoder.encodeToString(Json.toJson(payloadData).toString.getBytes(StandardCharsets.UTF_8))
-    s"lambda-${behaviorVersion.id}-${payloadString}"
-  }
-
-  private def maybeCachedResultFor(
-                                    behaviorVersion: BehaviorVersion,
-                                    payloadData: Seq[(String, JsValue)]
-                                  ): Option[InvokeResult] = {
-    if (behaviorVersion.canBeMemoized) {
-      val cacheKey = cacheKeyFor(behaviorVersion, payloadData)
-      cacheService.getInvokeResult(cacheKey)
-    } else {
-      None
-    }
-  }
-
   private def invocationJsonFor(
                                  behaviorVersion: BehaviorVersion,
                                  parameterValues: Seq[ParameterWithValue],
@@ -175,6 +158,23 @@ class AWSLambdaServiceImpl @Inject() (
     }
   }
 
+  private def cacheKeyFor(behaviorVersion: BehaviorVersion, payloadData: Seq[(String, JsValue)]): String = {
+    val payloadString = Base64.getEncoder.encodeToString(Json.toJson(payloadData).toString.getBytes(StandardCharsets.UTF_8))
+    s"lambda-${behaviorVersion.id}-${payloadString}"
+  }
+
+  private def maybeCachedResultFor(
+                                    behaviorVersion: BehaviorVersion,
+                                    payloadData: Seq[(String, JsValue)]
+                                  ): Option[InvokeResult] = {
+    if (behaviorVersion.canBeMemoized) {
+      val cacheKey = cacheKeyFor(behaviorVersion, payloadData)
+      cacheService.getInvokeResult(cacheKey)
+    } else {
+      None
+    }
+  }
+
   def invokeFunctionAction(
                             behaviorVersion: BehaviorVersion,
                             token: InvocationToken,
@@ -186,40 +186,52 @@ class AWSLambdaServiceImpl @Inject() (
                             retryIntervals: List[Long],
                             defaultServices: DefaultServices
                           ): DBIO[BotResult] = {
-                              DBIO.from {
-                                maybeCachedResultFor(behaviorVersion, payloadData).map(Future.successful).getOrElse {
-                                  Logger.info(s"running lambda function for ${behaviorVersion.id}")
-                                  val invokeRequest =
-                                    new InvokeRequest().
-                                      withLogType(LogType.Tail).
-                                      withFunctionName(behaviorVersion.groupVersion.functionName).
-                                      withInvocationType(InvocationType.RequestResponse).
-                                      withPayload(invocationJson.toString())
-                                  JavaFutureConverter.javaToScala(client.invokeAsync(invokeRequest)).map { res =>
-                                    if (behaviorVersion.canBeMemoized && res.getFunctionError == null) {
-                                      cacheService.cacheInvokeResult(cacheKeyFor(behaviorVersion, payloadData), res)
-                                    }
-                                    res
-                                  }
-                                }.map(successFn).recoverWith {
-                                  case e: java.util.concurrent.ExecutionException => {
-                                    e.getMessage match {
-                                      case amazonServiceExceptionRegex() => Future.successful(AWSDownResult(event, behaviorVersion, maybeConversation, dataService))
-                                      case resourceNotFoundExceptionRegex() => {
-                                        retryIntervals.headOption.map { retryInterval =>
-                                          Logger.info(s"retrying behavior invocation after resource not found with interval: ${retryInterval}s")
-                                          Thread.sleep(retryInterval*1000)
-                                          dataService.run(invokeFunctionAction(behaviorVersion, token, payloadData, invocationJson, event, successFn, maybeConversation, retryIntervals.tail, defaultServices))
-                                        }.getOrElse {
-                                          throw e
-                                        }
-                                      }
-                                      case _ => throw e
-                                    }
-                                  }
-                                }
-                              }
-                          }
+    DBIO.from {
+      maybeCachedResultFor(behaviorVersion, payloadData).map(Future.successful).getOrElse {
+        Logger.info(s"running lambda function for ${behaviorVersion.id}")
+        val invokeRequest =
+          new InvokeRequest().
+            withLogType(LogType.Tail).
+            withFunctionName(behaviorVersion.groupVersion.functionName).
+            withInvocationType(InvocationType.RequestResponse).
+            withPayload(invocationJson.toString())
+        JavaFutureConverter.javaToScala(client.invokeAsync(invokeRequest)).map { res =>
+          if (behaviorVersion.canBeMemoized && res.getFunctionError == null) {
+            cacheService.cacheInvokeResult(cacheKeyFor(behaviorVersion, payloadData), res)
+          }
+          res
+        }
+      }.map(successFn).recoverWith {
+        case e: java.util.concurrent.ExecutionException => {
+          e.getMessage match {
+            case amazonServiceExceptionRegex() => {
+              Future.successful(AWSDownResult(event, behaviorVersion, maybeConversation, dataService))
+            }
+            case resourceNotFoundExceptionRegex() => {
+              retryIntervals.headOption.map { retryInterval =>
+                Logger.info(s"retrying behavior invocation after resource not found with interval: ${retryInterval}s")
+                Thread.sleep(retryInterval * 1000)
+                dataService.run(invokeFunctionAction(
+                  behaviorVersion,
+                  token,
+                  payloadData,
+                  invocationJson,
+                  event,
+                  successFn,
+                  maybeConversation,
+                  retryIntervals.tail,
+                  defaultServices
+                ))
+              }.getOrElse {
+                throw e
+              }
+            }
+            case _ => throw e
+          }
+        }
+      }
+    }
+  }
 
   def invokeAction(
                     behaviorVersion: BehaviorVersion,
@@ -282,7 +294,8 @@ class AWSLambdaServiceImpl @Inject() (
             invocationRetryIntervals,
             defaultServices
           )
-      }}
+        }
+      }
     } yield result
   }
 
