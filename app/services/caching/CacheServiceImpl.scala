@@ -63,6 +63,7 @@ class CacheServiceImpl @Inject() (
   }
 
   val slackApiCallExpiry: Duration = 10.seconds
+  val defaultStorageSchemaExpiry: Duration = 10.seconds
   val dataTypeBotResultsExpiry: Duration = 24.hours
 
   def set[T: ClassTag](key: String, value: T, expiration: Duration = Duration.Inf): Unit = {
@@ -163,6 +164,12 @@ class CacheServiceImpl @Inject() (
 
   def getSlackActionValue(key: String): Option[String] = {
     get[String](key)
+  }
+
+  private val defaultStorageSchemaCache = LfuCache[String, String](cacheSettingsWithTimeToLive(defaultStorageSchemaExpiry))
+
+  def getDefaultStorageSchema(groupVersionId: String, dataFn: String => Future[String]): Future[String] = {
+    defaultStorageSchemaCache.getOrLoad(groupVersionId, dataFn)
   }
 
   private val dataTypeBotResultsCache = LfuCache[DataTypeBotResultsCacheKey, BotResult](cacheSettingsWithTimeToLive(dataTypeBotResultsExpiry))

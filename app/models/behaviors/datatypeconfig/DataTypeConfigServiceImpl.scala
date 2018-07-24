@@ -47,8 +47,8 @@ class DataTypeConfigServiceImpl @Inject() (
     dataService.run(allForAction(groupVersion))
   }
 
-  def allUsingDefaultStorageFor(groupVersion: BehaviorGroupVersion): Future[Seq[DataTypeConfig]] = {
-    val action = allUsingDefaultStorageForQuery(groupVersion.id).result.map { r =>
+  def allUsingDefaultStorageFor(groupVersionId: String): Future[Seq[DataTypeConfig]] = {
+    val action = allUsingDefaultStorageForQuery(groupVersionId).result.map { r =>
       r.map(tuple2Config)
     }
     dataService.run(action)

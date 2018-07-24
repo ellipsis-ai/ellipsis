@@ -16,6 +16,7 @@ import sangria.execution.{Executor, UserFacingError}
 import sangria.marshalling.playJson._
 import sangria.parser.{QueryParser, SyntaxError}
 import sangria.schema.{Action, Context, DefaultAstSchemaBuilder, Schema}
+import services.caching.CacheService
 
 import scala.collection.immutable.ListMap
 import scala.concurrent.{ExecutionContext, Future}
@@ -27,6 +28,7 @@ case class ItemNotFoundError(id: String) extends Exception with UserFacingError 
 
 class GraphQLServiceImpl @Inject() (
                                     dataService: DataService,
+                                    cacheService: CacheService,
                                     implicit val ec: ExecutionContext
                                   ) extends GraphQLService {
 
@@ -54,10 +56,14 @@ class GraphQLServiceImpl @Inject() (
     }
   }
 
-  private def schemaStringFor(groupVersion: BehaviorGroupVersion): Future[String] = {
-    dataService.dataTypeConfigs.allUsingDefaultStorageFor(groupVersion).map(_.sortBy(_.id)).flatMap { configs =>
+  private def buildSchemaStringFor(groupVersionId: String): Future[String] = {
+    dataService.dataTypeConfigs.allUsingDefaultStorageFor(groupVersionId).map(_.sortBy(_.id)).flatMap { configs =>
       buildSchemaStringFor(configs.map(_.behaviorVersion))
     }
+  }
+
+  private def schemaStringFor(groupVersion: BehaviorGroupVersion): Future[String] = {
+    cacheService.getDefaultStorageSchema(groupVersion.id, buildSchemaStringFor)
   }
 
   private def previewSchemaStringFor(data: BehaviorGroupData): Future[String] = {
