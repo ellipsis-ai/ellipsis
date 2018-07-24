@@ -121,24 +121,41 @@ class AWSLambdaServiceImpl @Inject() (
     }
   }
 
-  private def contextParamDataFor(
-                                   environmentVariables: Seq[EnvironmentVariable],
-                                   userInfo: UserInfo,
-                                   teamInfo: TeamInfo,
-                                   eventInfo: EventInfo,
-                                   token: InvocationToken
-                                   ): Seq[(String, JsObject)] = {
-    val teamEnvVars = environmentVariables.filter(ev => ev.isInstanceOf[TeamEnvironmentVariable])
-    Seq(CONTEXT_PARAM -> JsObject(Seq(
-      API_BASE_URL_KEY -> JsString(apiBaseUrl),
-      TOKEN_KEY -> JsString(token.id),
-      ENV_KEY -> JsObject(teamEnvVars.map { ea =>
-        ea.name -> JsString(ea.value)
-      }),
-      USER_INFO_KEY -> userInfo.toJson,
-      TEAM_INFO_KEY -> teamInfo.toJson,
-      EVENT_INFO_KEY -> eventInfo.toJson
-    )))
+  private def invocationJsonFor(
+                                 behaviorVersion: BehaviorVersion,
+                                 parameterValues: Seq[ParameterWithValue],
+                                 environmentVariables: Seq[EnvironmentVariable],
+                                 event: Event,
+                                 defaultServices: DefaultServices,
+                                 token: InvocationToken
+                               ): DBIO[JsObject] = {
+    for {
+      awsConfigs <- dataService.awsConfigs.allForAction(behaviorVersion.team)
+      requiredAWSConfigs <- dataService.requiredAWSConfigs.allForAction(behaviorVersion.groupVersion)
+      requiredOAuth2ApiConfigs <- dataService.requiredOAuth2ApiConfigs.allForAction(behaviorVersion.groupVersion)
+      requiredSimpleTokenApis <- dataService.requiredSimpleTokenApis.allForAction(behaviorVersion.groupVersion)
+      userInfo <- event.userInfoAction(defaultServices)
+      teamInfo <- DBIO.from {
+        val apiConfigInfo = ApiConfigInfo(awsConfigs, requiredAWSConfigs, requiredOAuth2ApiConfigs, requiredSimpleTokenApis)
+        TeamInfo.forConfig(apiConfigInfo, userInfo, behaviorVersion.team, ws)
+      }
+    } yield {
+      val parameterValueData = parameterValues.map { ea => (ea.invocationName, ea.preparedValue) }
+      val teamEnvVars = environmentVariables.filter(ev => ev.isInstanceOf[TeamEnvironmentVariable])
+      val contextParamData = Seq(
+        CONTEXT_PARAM -> JsObject(Seq(
+          API_BASE_URL_KEY -> JsString(apiBaseUrl),
+          TOKEN_KEY -> JsString(token.id),
+          ENV_KEY -> JsObject(teamEnvVars.map { ea =>
+            ea.name -> JsString(ea.value)
+          }),
+          USER_INFO_KEY -> userInfo.toJson,
+          TEAM_INFO_KEY -> teamInfo.toJson,
+          EVENT_INFO_KEY -> EventInfo(event).toJson
+        ))
+      )
+      JsObject(parameterValueData ++ contextParamData ++ Seq(("behaviorVersionId", JsString(behaviorVersion.id))))
+    }
   }
 
   private def cacheKeyFor(behaviorVersion: BehaviorVersion, payloadData: Seq[(String, JsValue)]): String = {
@@ -162,55 +179,59 @@ class AWSLambdaServiceImpl @Inject() (
                             behaviorVersion: BehaviorVersion,
                             token: InvocationToken,
                             payloadData: Seq[(String, JsValue)],
-                            team: Team,
+                            invocationJson: JsObject,
                             event: Event,
-                            apiConfigInfo: ApiConfigInfo,
-                            environmentVariables: Seq[EnvironmentVariable],
                             successFn: InvokeResult => BotResult,
                             maybeConversation: Option[Conversation],
                             retryIntervals: List[Long],
                             defaultServices: DefaultServices
-                          ): DBIO[BotResult] = for {
-                            userInfo <- event.userInfoAction(defaultServices)
-                            result <- {
-                              DBIO.from(TeamInfo.forConfig(apiConfigInfo, userInfo, team, ws).flatMap { teamInfo =>
-                                val payloadJson = JsObject(
-                                  payloadData ++ contextParamDataFor(environmentVariables, userInfo, teamInfo, EventInfo(event), token) ++ Seq(("behaviorVersionId", JsString(behaviorVersion.id)))
-                                )
-                                maybeCachedResultFor(behaviorVersion, payloadData).map(Future.successful).getOrElse {
-                                  Logger.info(s"running lambda function for ${behaviorVersion.id}")
-                                  val invokeRequest =
-                                    new InvokeRequest().
-                                      withLogType(LogType.Tail).
-                                      withFunctionName(behaviorVersion.groupVersion.functionName).
-                                      withInvocationType(InvocationType.RequestResponse).
-                                      withPayload(payloadJson.toString())
-                                  JavaFutureConverter.javaToScala(client.invokeAsync(invokeRequest)).map { res =>
-                                    if (behaviorVersion.canBeMemoized && res.getFunctionError == null) {
-                                      cacheService.cacheInvokeResult(cacheKeyFor(behaviorVersion, payloadData), res)
-                                    }
-                                    res
-                                  }
-                                }.map(successFn).recoverWith {
-                                  case e: java.util.concurrent.ExecutionException => {
-                                    e.getMessage match {
-                                      case amazonServiceExceptionRegex() => Future.successful(AWSDownResult(event, behaviorVersion, maybeConversation, dataService))
-                                      case resourceNotFoundExceptionRegex() => {
-                                        retryIntervals.headOption.map { retryInterval =>
-                                          Logger.info(s"retrying behavior invocation after resource not found with interval: ${retryInterval}s")
-                                          Thread.sleep(retryInterval*1000)
-                                          dataService.run(invokeFunctionAction(behaviorVersion, token, payloadData, team, event, apiConfigInfo, environmentVariables, successFn, maybeConversation, retryIntervals.tail, defaultServices))
-                                        }.getOrElse {
-                                          throw e
-                                        }
-                                      }
-                                      case _ => throw e
-                                    }
-                                  }
-                                }
-                              })
-                            }
-                          } yield result
+                          ): DBIO[BotResult] = {
+    DBIO.from {
+      maybeCachedResultFor(behaviorVersion, payloadData).map(Future.successful).getOrElse {
+        Logger.info(s"running lambda function for ${behaviorVersion.id}")
+        val invokeRequest =
+          new InvokeRequest().
+            withLogType(LogType.Tail).
+            withFunctionName(behaviorVersion.groupVersion.functionName).
+            withInvocationType(InvocationType.RequestResponse).
+            withPayload(invocationJson.toString())
+        JavaFutureConverter.javaToScala(client.invokeAsync(invokeRequest)).map { res =>
+          if (behaviorVersion.canBeMemoized && res.getFunctionError == null) {
+            cacheService.cacheInvokeResult(cacheKeyFor(behaviorVersion, payloadData), res)
+          }
+          res
+        }
+      }.map(successFn).recoverWith {
+        case e: java.util.concurrent.ExecutionException => {
+          e.getMessage match {
+            case amazonServiceExceptionRegex() => {
+              Future.successful(AWSDownResult(event, behaviorVersion, maybeConversation, dataService))
+            }
+            case resourceNotFoundExceptionRegex() => {
+              retryIntervals.headOption.map { retryInterval =>
+                Logger.info(s"retrying behavior invocation after resource not found with interval: ${retryInterval}s")
+                Thread.sleep(retryInterval * 1000)
+                dataService.run(invokeFunctionAction(
+                  behaviorVersion,
+                  token,
+                  payloadData,
+                  invocationJson,
+                  event,
+                  successFn,
+                  maybeConversation,
+                  retryIntervals.tail,
+                  defaultServices
+                ))
+              }.getOrElse {
+                throw e
+              }
+            }
+            case _ => throw e
+          }
+        }
+      }
+    }
+  }
 
   def invokeAction(
                     behaviorVersion: BehaviorVersion,
@@ -221,38 +242,39 @@ class AWSLambdaServiceImpl @Inject() (
                     defaultServices: DefaultServices
                   ): DBIO[BotResult] = {
     for {
-      awsConfigs <- dataService.awsConfigs.allForAction(behaviorVersion.team)
-      requiredAWSConfigs <- dataService.requiredAWSConfigs.allForAction(behaviorVersion.groupVersion)
-      requiredOAuth2ApiConfigs <- dataService.requiredOAuth2ApiConfigs.allForAction(behaviorVersion.groupVersion)
-      requiredSimpleTokenApis <- dataService.requiredSimpleTokenApis.allForAction(behaviorVersion.groupVersion)
       developerContext <- DeveloperContext.buildFor(event, behaviorVersion, dataService)
-      result <- if (behaviorVersion.functionBody.isEmpty) {
-        DBIO.successful(
-          SuccessResult(
+      user <- event.ensureUserAction(dataService)
+      token <- dataService.invocationTokens.createForAction(user, behaviorVersion, event.maybeScheduled)
+      invocationJson <- invocationJsonFor(
+        behaviorVersion,
+        parametersWithValues,
+        environmentVariables,
+        event,
+        defaultServices,
+        token
+      )
+      result <- {
+        if (behaviorVersion.functionBody.isEmpty) {
+          DBIO.successful(SuccessResult(
             event,
             behaviorVersion,
             maybeConversation,
             JsNull,
             JsNull,
             parametersWithValues,
+            invocationJson,
             behaviorVersion.maybeResponseTemplate,
             None,
             behaviorVersion.forcePrivateResponse,
             developerContext
-          )
-        )
-      } else {
-        for {
-          user <- event.ensureUserAction(dataService)
-          token <- dataService.invocationTokens.createForAction(user, behaviorVersion, event.maybeScheduled)
-          invocationResult <- invokeFunctionAction(
+          ))
+        } else {
+          invokeFunctionAction(
             behaviorVersion,
             token,
             parametersWithValues.map { ea => (ea.invocationName, ea.preparedValue) },
-            behaviorVersion.team,
+            invocationJson,
             event,
-            ApiConfigInfo(awsConfigs, requiredAWSConfigs, requiredOAuth2ApiConfigs, requiredSimpleTokenApis),
-            environmentVariables,
             result => {
               val logString = new java.lang.String(new BASE64Decoder().decodeBuffer(result.getLogResult))
               val logResult = AWSLambdaLogResult.fromText(logString)
@@ -260,6 +282,7 @@ class AWSLambdaServiceImpl @Inject() (
                 result.getPayload,
                 logResult,
                 parametersWithValues,
+                invocationJson,
                 dataService,
                 configuration,
                 event,
@@ -271,7 +294,7 @@ class AWSLambdaServiceImpl @Inject() (
             invocationRetryIntervals,
             defaultServices
           )
-        } yield invocationResult
+        }
       }
     } yield result
   }

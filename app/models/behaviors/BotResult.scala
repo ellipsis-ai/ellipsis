@@ -251,6 +251,7 @@ case class SuccessResult(
                           result: JsValue,
                           payloadJson: JsValue,
                           parametersWithValues: Seq[ParameterWithValue],
+                          invocationJson: JsObject,
                           maybeResponseTemplate: Option[String],
                           maybeLogResult: Option[AWSLambdaLogResult],
                           forcePrivateResponse: Boolean,
@@ -289,7 +290,7 @@ case class SuccessResult(
   }
 
   def text: String = {
-    val inputs = parametersWithValues.map { ea => (ea.parameter.name, ea.preparedValue) }
+    val inputs = invocationJson.fields ++ parametersWithValues.map { ea => (ea.parameter.name, ea.preparedValue) }
     TemplateApplier(maybeResponseTemplate, JsDefined(result), inputs).apply
   }
 }
