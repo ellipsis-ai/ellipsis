@@ -226,7 +226,6 @@ class AWSLambdaServiceImpl @Inject() (
                     maybeConversation: Option[Conversation],
                     defaultServices: DefaultServices
                   ): DBIO[BotResult] = {
-    val parameterPayloadData = parametersWithValues.map { ea => (ea.invocationName, ea.preparedValue) }
     for {
       awsConfigs <- dataService.awsConfigs.allForAction(behaviorVersion.team)
       requiredAWSConfigs <- dataService.requiredAWSConfigs.allForAction(behaviorVersion.groupVersion)
@@ -239,7 +238,15 @@ class AWSLambdaServiceImpl @Inject() (
       teamInfo <- DBIO.from(TeamInfo.forConfig(apiConfigInfo, userInfo, behaviorVersion.team, ws))
       token <- dataService.invocationTokens.createForAction(user, behaviorVersion, event.maybeScheduled)
       result <- {
-        val invocationJson = invocationJsonFor(parameterPayloadData, environmentVariables, userInfo, teamInfo, EventInfo(event), token, behaviorVersion.id)
+        val invocationJson = invocationJsonFor(
+          parametersWithValues.map { ea => (ea.invocationName, ea.preparedValue) },
+          environmentVariables,
+          userInfo,
+          teamInfo,
+          EventInfo(event),
+          token,
+          behaviorVersion.id
+        )
         if (behaviorVersion.functionBody.isEmpty) {
           DBIO.successful(SuccessResult(
             event,
