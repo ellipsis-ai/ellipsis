@@ -636,7 +636,7 @@ class AWSLambdaServiceImpl @Inject() (
               withFunctionName(functionName).
               withCode(functionCode).
               withRole(configuration.get[String]("aws.role")).
-              withRuntime(com.amazonaws.services.lambda.model.Runtime.Nodejs610).
+              withRuntime(com.amazonaws.services.lambda.model.Runtime.Nodejs810).
               withHandler("index.handler").
               withTimeout(invocationTimeoutSeconds)
           )

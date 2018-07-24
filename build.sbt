@@ -51,7 +51,7 @@ libraryDependencies ++= Seq(
   "org.postgresql" % "postgresql" % "42.1.1",
   "net.codingwell" %% "scala-guice" % "4.0.0",
   "net.ceedubs" %% "ficus" % "1.1.2",
-  "com.amazonaws" % "aws-java-sdk" % "1.11.123",
+  "com.amazonaws" % "aws-java-sdk" % "1.11.372",
   "com.atlassian.commonmark" % "commonmark" % "0.6.0",
   "com.atlassian.commonmark" % "commonmark-ext-gfm-strikethrough" % "0.6.0",
   "com.atlassian.commonmark" % "commonmark-ext-autolink" % "0.6.0",
