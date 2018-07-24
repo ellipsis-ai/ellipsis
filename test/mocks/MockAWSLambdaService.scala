@@ -1,5 +1,6 @@
 package mocks
 
+import akka.actor.ActorSystem
 import javax.inject.Inject
 import com.amazonaws.services.lambda.AWSLambdaAsyncClient
 import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
@@ -18,7 +19,7 @@ import play.api.libs.ws.WSClient
 import services._
 import slick.dbio.DBIO
 
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 class MockAWSLambdaService @Inject() (
                                        val configuration: Configuration,
@@ -67,7 +68,7 @@ class MockAWSLambdaService @Inject() (
                        event: Event,
                        maybeConversation: Option[Conversation],
                        defaultServices: DefaultServices
-                     ): DBIO[BotResult] = DBIO.successful(resultFor(event, maybeConversation))
+                     )(implicit actorSystem: ActorSystem, ec: ExecutionContext): DBIO[BotResult] = DBIO.successful(resultFor(event, maybeConversation))
 
   override def functionWithParams(params: Seq[BehaviorParameter], functionBody: String, isForExport: Boolean): String = ""
 
