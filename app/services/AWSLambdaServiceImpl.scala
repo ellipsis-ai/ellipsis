@@ -158,25 +158,32 @@ class AWSLambdaServiceImpl @Inject() (
     }
   }
 
+  private def invocationJsonFor(
+                              payloadData: Seq[(String, JsValue)],
+                              environmentVariables: Seq[EnvironmentVariable],
+                              userInfo: UserInfo,
+                              teamInfo: TeamInfo,
+                              eventInfo: EventInfo,
+                              token: InvocationToken,
+                              behaviorVersionId: String
+                            ): JsObject = {
+    JsObject(
+      payloadData ++ contextParamDataFor(environmentVariables, userInfo, teamInfo, eventInfo, token) ++ Seq(("behaviorVersionId", JsString(behaviorVersionId)))
+    )
+  }
+
   def invokeFunctionAction(
                             behaviorVersion: BehaviorVersion,
                             token: InvocationToken,
                             payloadData: Seq[(String, JsValue)],
-                            team: Team,
+                            invocationJson: JsObject,
                             event: Event,
-                            apiConfigInfo: ApiConfigInfo,
-                            environmentVariables: Seq[EnvironmentVariable],
                             successFn: InvokeResult => BotResult,
                             maybeConversation: Option[Conversation],
                             retryIntervals: List[Long],
                             defaultServices: DefaultServices
-                          ): DBIO[BotResult] = for {
-                            userInfo <- event.userInfoAction(defaultServices)
-                            result <- {
-                              DBIO.from(TeamInfo.forConfig(apiConfigInfo, userInfo, team, ws).flatMap { teamInfo =>
-                                val payloadJson = JsObject(
-                                  payloadData ++ contextParamDataFor(environmentVariables, userInfo, teamInfo, EventInfo(event), token) ++ Seq(("behaviorVersionId", JsString(behaviorVersion.id)))
-                                )
+                          ): DBIO[BotResult] = {
+                              DBIO.from {
                                 maybeCachedResultFor(behaviorVersion, payloadData).map(Future.successful).getOrElse {
                                   Logger.info(s"running lambda function for ${behaviorVersion.id}")
                                   val invokeRequest =
@@ -184,7 +191,7 @@ class AWSLambdaServiceImpl @Inject() (
                                       withLogType(LogType.Tail).
                                       withFunctionName(behaviorVersion.groupVersion.functionName).
                                       withInvocationType(InvocationType.RequestResponse).
-                                      withPayload(payloadJson.toString())
+                                      withPayload(invocationJson.toString())
                                   JavaFutureConverter.javaToScala(client.invokeAsync(invokeRequest)).map { res =>
                                     if (behaviorVersion.canBeMemoized && res.getFunctionError == null) {
                                       cacheService.cacheInvokeResult(cacheKeyFor(behaviorVersion, payloadData), res)
@@ -199,7 +206,7 @@ class AWSLambdaServiceImpl @Inject() (
                                         retryIntervals.headOption.map { retryInterval =>
                                           Logger.info(s"retrying behavior invocation after resource not found with interval: ${retryInterval}s")
                                           Thread.sleep(retryInterval*1000)
-                                          dataService.run(invokeFunctionAction(behaviorVersion, token, payloadData, team, event, apiConfigInfo, environmentVariables, successFn, maybeConversation, retryIntervals.tail, defaultServices))
+                                          dataService.run(invokeFunctionAction(behaviorVersion, token, payloadData, invocationJson, event, successFn, maybeConversation, retryIntervals.tail, defaultServices))
                                         }.getOrElse {
                                           throw e
                                         }
@@ -208,9 +215,8 @@ class AWSLambdaServiceImpl @Inject() (
                                     }
                                   }
                                 }
-                              })
-                            }
-                          } yield result
+                              }
+                          }
 
   def invokeAction(
                     behaviorVersion: BehaviorVersion,
@@ -220,39 +226,41 @@ class AWSLambdaServiceImpl @Inject() (
                     maybeConversation: Option[Conversation],
                     defaultServices: DefaultServices
                   ): DBIO[BotResult] = {
+    val parameterPayloadData = parametersWithValues.map { ea => (ea.invocationName, ea.preparedValue) }
     for {
       awsConfigs <- dataService.awsConfigs.allForAction(behaviorVersion.team)
       requiredAWSConfigs <- dataService.requiredAWSConfigs.allForAction(behaviorVersion.groupVersion)
       requiredOAuth2ApiConfigs <- dataService.requiredOAuth2ApiConfigs.allForAction(behaviorVersion.groupVersion)
       requiredSimpleTokenApis <- dataService.requiredSimpleTokenApis.allForAction(behaviorVersion.groupVersion)
       developerContext <- DeveloperContext.buildFor(event, behaviorVersion, dataService)
-      result <- if (behaviorVersion.functionBody.isEmpty) {
-        DBIO.successful(
-          SuccessResult(
+      user <- event.ensureUserAction(dataService)
+      userInfo <- event.userInfoAction(defaultServices)
+      apiConfigInfo <- DBIO.successful(ApiConfigInfo(awsConfigs, requiredAWSConfigs, requiredOAuth2ApiConfigs, requiredSimpleTokenApis))
+      teamInfo <- DBIO.from(TeamInfo.forConfig(apiConfigInfo, userInfo, behaviorVersion.team, ws))
+      token <- dataService.invocationTokens.createForAction(user, behaviorVersion, event.maybeScheduled)
+      result <- {
+        val invocationJson = invocationJsonFor(parameterPayloadData, environmentVariables, userInfo, teamInfo, EventInfo(event), token, behaviorVersion.id)
+        if (behaviorVersion.functionBody.isEmpty) {
+          DBIO.successful(SuccessResult(
             event,
             behaviorVersion,
             maybeConversation,
             JsNull,
             JsNull,
             parametersWithValues,
+            invocationJson,
             behaviorVersion.maybeResponseTemplate,
             None,
             behaviorVersion.forcePrivateResponse,
             developerContext
-          )
-        )
-      } else {
-        for {
-          user <- event.ensureUserAction(dataService)
-          token <- dataService.invocationTokens.createForAction(user, behaviorVersion, event.maybeScheduled)
-          invocationResult <- invokeFunctionAction(
+          ))
+        } else {
+          invokeFunctionAction(
             behaviorVersion,
             token,
             parametersWithValues.map { ea => (ea.invocationName, ea.preparedValue) },
-            behaviorVersion.team,
+            invocationJson,
             event,
-            ApiConfigInfo(awsConfigs, requiredAWSConfigs, requiredOAuth2ApiConfigs, requiredSimpleTokenApis),
-            environmentVariables,
             result => {
               val logString = new java.lang.String(new BASE64Decoder().decodeBuffer(result.getLogResult))
               val logResult = AWSLambdaLogResult.fromText(logString)
@@ -260,6 +268,7 @@ class AWSLambdaServiceImpl @Inject() (
                 result.getPayload,
                 logResult,
                 parametersWithValues,
+                invocationJson,
                 dataService,
                 configuration,
                 event,
@@ -271,8 +280,7 @@ class AWSLambdaServiceImpl @Inject() (
             invocationRetryIntervals,
             defaultServices
           )
-        } yield invocationResult
-      }
+      }}
     } yield result
   }
 

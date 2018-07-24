@@ -16,7 +16,7 @@ import models.behaviors.defaultstorageitem.GraphQLHelpers
 import models.behaviors.events.Event
 import models.team.Team
 import play.api.Configuration
-import play.api.libs.json.{JsValue, Json}
+import play.api.libs.json.{JsObject, JsValue, Json}
 import services.AWSLambdaConstants._
 import services.{AWSLambdaLogResult, DataService}
 import slick.dbio.DBIO
@@ -88,6 +88,7 @@ case class BehaviorVersion(
                  payload: ByteBuffer,
                  logResult: AWSLambdaLogResult,
                  parametersWithValues: Seq[ParameterWithValue],
+                 invocationJson: JsObject,
                  dataService: DataService,
                  configuration: Configuration,
                  event: Event,
@@ -106,6 +107,7 @@ case class BehaviorVersion(
         successResult,
         json,
         parametersWithValues,
+        invocationJson,
         maybeResponseTemplate,
         logResultOption,
         forcePrivateResponse,

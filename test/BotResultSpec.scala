@@ -11,7 +11,7 @@ import models.team.Team
 import org.mockito.Mockito._
 import org.scalatest.mock.MockitoSugar
 import org.scalatestplus.play.PlaySpec
-import play.api.libs.json.{JsNull, JsString}
+import play.api.libs.json.{JsNull, JsObject, JsString}
 import services.slack.SlackApiClient
 import support.{DBSpec, SlackContext}
 import utils.SlackTimestamp
@@ -92,16 +92,17 @@ class BotResultSpec extends PlaySpec with MockitoSugar with DBSpec with SlackCon
         val client = newMockSlackApiClientFor(slackApiService, profile, defaultChannel)
         val result =
           SuccessResult(
-            event,
-            mock[BehaviorVersion],
-            None,
-            JsString("result"),
-            JsNull,
-            Seq(),
-            Some(responseText),
-            None,
+            event = event,
+            behaviorVersion = mock[BehaviorVersion],
+            maybeConversation = None,
+            result = JsString("result"),
+            payloadJson = JsNull,
+            parametersWithValues = Seq(),
+            invocationJson = JsObject.empty,
+            maybeResponseTemplate = Some(responseText),
+            maybeLogResult = None,
             forcePrivateResponse = false,
-            DeveloperContext.default
+            developerContext = DeveloperContext.default
           )
         val resultTs: String = SlackTimestamp.now
 
@@ -124,16 +125,17 @@ class BotResultSpec extends PlaySpec with MockitoSugar with DBSpec with SlackCon
         val resultJs = JsString("result")
         val result =
           SuccessResult(
-            event,
-            mock[BehaviorVersion],
-            None,
-            resultJs,
-            JsNull,
-            Seq(),
-            Some(responseText),
-            None,
+            event = event,
+            behaviorVersion = mock[BehaviorVersion],
+            maybeConversation = None,
+            result = resultJs,
+            payloadJson = JsNull,
+            parametersWithValues = Seq(),
+            invocationJson = JsObject.empty,
+            maybeResponseTemplate = Some(responseText),
+            maybeLogResult = None,
             forcePrivateResponse = false,
-            DeveloperContext.default
+            developerContext = DeveloperContext.default
           )
         val resultTs: String = SlackTimestamp.now
 
@@ -200,16 +202,17 @@ class BotResultSpec extends PlaySpec with MockitoSugar with DBSpec with SlackCon
 
         val result =
           SuccessResult(
-            event,
-            mock[BehaviorVersion],
-            Some(selfConversation),
-            resultJs,
-            JsNull,
-            Seq(),
-            Some(responseText),
-            None,
+            event = event,
+            behaviorVersion = mock[BehaviorVersion],
+            maybeConversation = Some(selfConversation),
+            result = resultJs,
+            payloadJson = JsNull,
+            parametersWithValues = Seq(),
+            invocationJson = JsObject.empty,
+            maybeResponseTemplate = Some(responseText),
+            maybeLogResult = None,
             forcePrivateResponse = false,
-            DeveloperContext.default
+            developerContext = DeveloperContext.default
           )
 
         mockPostChatMessage(responseText, event, client, resultTs, None)
@@ -247,16 +250,17 @@ class BotResultSpec extends PlaySpec with MockitoSugar with DBSpec with SlackCon
 
         val result =
           SuccessResult(
-            event,
-            mock[BehaviorVersion],
-            Some(threadedConversation),
-            JsString("result"),
-            JsNull,
-            Seq(),
-            Some(responseText),
-            None,
+            event = event,
+            behaviorVersion = mock[BehaviorVersion],
+            maybeConversation = Some(threadedConversation),
+            result = JsString("result"),
+            payloadJson = JsNull,
+            parametersWithValues = Seq(),
+            invocationJson = JsObject.empty,
+            maybeResponseTemplate = Some(responseText),
+            maybeLogResult = None,
             forcePrivateResponse = false,
-            DeveloperContext.default
+            developerContext = DeveloperContext.default
           )
 
         val otherConversation = newConversationFor(team, user, profile, event)
