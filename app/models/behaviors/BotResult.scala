@@ -528,17 +528,17 @@ case class AdminSkillErrorNotificationResult(
     s" running action `$action` in skill `$skill` $skillLink"
   }.getOrElse("")
   lazy val text: String = {
-    val user = s"<@${originalResult.event.userIdForContext}>"
+    val userId = originalResult.event.userIdForContext
     s"""Error$description
        |
        |Team: $teamLink
-       |User: $user
+       |User: <@${userId}> (ID #${userId})
        |Result type: ${originalResult.resultType}
        |
      """.stripMargin
   }
 
-  lazy val maybeConversation: Option[Conversation] = originalResult.maybeConversation
+  lazy val maybeConversation: Option[Conversation] = None
   lazy val maybeBehaviorVersion: Option[BehaviorVersion] = originalResult.maybeBehaviorVersion
   override def maybeLogFile: Option[UploadFileSpec] = originalResult.maybeLogFile
   val forcePrivateResponse: Boolean = false
