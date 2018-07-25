@@ -409,7 +409,7 @@ class BehaviorVersionServiceImpl @Inject() (
                        parametersWithValues: Seq[ParameterWithValue],
                        event: Event,
                        maybeConversation: Option[Conversation]
-                     ): DBIO[BotResult] = {
+                     )(implicit actorSystem: ActorSystem, ec: ExecutionContext): DBIO[BotResult] = {
     for {
       teamEnvVars <- dataService.teamEnvironmentVariables.allForAction(behaviorVersion.team)
       result <- maybeNotReadyResultForAction(behaviorVersion, event).flatMap { maybeResult =>
@@ -426,7 +426,7 @@ class BehaviorVersionServiceImpl @Inject() (
                  parametersWithValues: Seq[ParameterWithValue],
                  event: Event,
                  maybeConversation: Option[Conversation]
-               ): Future[BotResult] = {
+               )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[BotResult] = {
     dataService.run(resultForAction(behaviorVersion, parametersWithValues, event, maybeConversation))
   }
 

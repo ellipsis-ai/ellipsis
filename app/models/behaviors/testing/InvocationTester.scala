@@ -1,5 +1,6 @@
 package models.behaviors.testing
 
+import akka.actor.ActorSystem
 import models.accounts.user.User
 import models.behaviors.behaviorversion.BehaviorVersion
 import services._
@@ -13,7 +14,7 @@ case class InvocationTester(
                             services: DefaultServices
                           ) {
 
-  def run(implicit ec: ExecutionContext): Future[InvocationTestReport] = {
+  def run(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[InvocationTestReport] = {
     val dataService = services.dataService
     for {
       params <- dataService.behaviorParameters.allFor(behaviorVersion)

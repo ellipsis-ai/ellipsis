@@ -1,5 +1,6 @@
 package models.behaviors.behaviorversion
 
+import akka.actor.ActorSystem
 import json.BehaviorVersionData
 import models.accounts.user.User
 import models.behaviors.behavior.Behavior
@@ -77,14 +78,14 @@ trait BehaviorVersionService {
                        parametersWithValues: Seq[ParameterWithValue],
                        event: Event,
                        maybeConversation: Option[Conversation]
-                     ): DBIO[BotResult]
+                     )(implicit actorSystem: ActorSystem, ec: ExecutionContext): DBIO[BotResult]
 
   def resultFor(
                  behaviorVersion: BehaviorVersion,
                  parametersWithValues: Seq[ParameterWithValue],
                  event: Event,
                  maybeConversation: Option[Conversation]
-               ): Future[BotResult]
+               )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[BotResult]
 
   def unlearn(behaviorVersion: BehaviorVersion): Future[Unit]
 
