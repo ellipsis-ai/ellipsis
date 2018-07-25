@@ -532,7 +532,7 @@ case class AdminSkillErrorNotificationResult(
     s"""Error$description
        |
        |Team: $teamLink
-       |User: $user
+       |User: $user (ID #${originalResult.event.userIdForContext})
        |Result type: ${originalResult.resultType}
        |
      """.stripMargin

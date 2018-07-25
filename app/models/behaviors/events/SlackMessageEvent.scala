@@ -105,24 +105,24 @@ case class SlackMessageEvent(
       channelToUse <- channelForSend(forcePrivate, maybeConversation, services)
       botName <- botName(services)
       maybeTs <- SlackMessageSender(
-        services.slackApiService.clientFor(profile),
-        user,
-        profile.slackTeamId,
-        unformattedText,
+        client = services.slackApiService.clientFor(profile),
+        user = user,
+        slackTeamId = profile.slackTeamId,
+        unformattedText = unformattedText,
         forcePrivate = forcePrivate,
-        developerContext,
-        channel,
-        channelToUse,
-        maybeThreadId,
-        maybeShouldUnfurl,
-        maybeConversation,
-        attachmentGroups,
-        files,
-        choices,
-        configuration,
-        botName,
-        message.userList,
-        services
+        developerContext = developerContext,
+        originatingChannel = channel,
+        channelToUse = channelToUse,
+        maybeThreadId = maybeThreadId,
+        maybeShouldUnfurl = maybeShouldUnfurl,
+        maybeConversation = maybeConversation,
+        attachmentGroups = attachmentGroups,
+        files = files,
+        choices = choices,
+        configuration = configuration,
+        botName = botName,
+        slackUserList = message.userList,
+        services = services
       ).send
     } yield maybeTs
   }

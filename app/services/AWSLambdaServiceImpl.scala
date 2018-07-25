@@ -27,6 +27,7 @@ import models.behaviors.invocationtoken.InvocationToken
 import models.behaviors.library.LibraryVersion
 import models.behaviors.nodemoduleversion.NodeModuleVersion
 import models.environmentvariable.{EnvironmentVariable, TeamEnvironmentVariable}
+import models.team.Team
 import play.api.libs.json._
 import play.api.libs.ws.WSClient
 import play.api.{Configuration, Logger}
@@ -120,42 +121,43 @@ class AWSLambdaServiceImpl @Inject() (
     }
   }
 
-  private def invocationJsonFor(
-                                 behaviorVersion: BehaviorVersion,
-                                 userInfo: UserInfo,
-                                 parameterValues: Seq[ParameterWithValue],
-                                 environmentVariables: Seq[EnvironmentVariable],
-                                 event: Event,
-                                 botName: String,
-                                 token: InvocationToken
-                               )(implicit actorSystem: ActorSystem, ec: ExecutionContext): DBIO[JsObject] = {
-    val team = behaviorVersion.team
+  private def teamInfoFor(team: Team, userInfo: UserInfo, botName: String, groupVersion: BehaviorGroupVersion): DBIO[TeamInfo] = {
     for {
       awsConfigs <- dataService.awsConfigs.allForAction(team)
-      requiredAWSConfigs <- dataService.requiredAWSConfigs.allForAction(behaviorVersion.groupVersion)
-      requiredOAuth2ApiConfigs <- dataService.requiredOAuth2ApiConfigs.allForAction(behaviorVersion.groupVersion)
-      requiredSimpleTokenApis <- dataService.requiredSimpleTokenApis.allForAction(behaviorVersion.groupVersion)
+      requiredAWSConfigs <- dataService.requiredAWSConfigs.allForAction(groupVersion)
+      requiredOAuth2ApiConfigs <- dataService.requiredOAuth2ApiConfigs.allForAction(groupVersion)
+      requiredSimpleTokenApis <- dataService.requiredSimpleTokenApis.allForAction(groupVersion)
       teamInfo <- DBIO.from {
         val apiConfigInfo = ApiConfigInfo(awsConfigs, requiredAWSConfigs, requiredOAuth2ApiConfigs, requiredSimpleTokenApis)
         TeamInfo.forConfig(apiConfigInfo, userInfo, team, botName, ws)
       }
-    } yield {
-      val parameterValueData = parameterValues.map { ea => (ea.invocationName, ea.preparedValue) }
-      val teamEnvVars = environmentVariables.filter(ev => ev.isInstanceOf[TeamEnvironmentVariable])
-      val contextParamData = Seq(
-        CONTEXT_PARAM -> JsObject(Seq(
-          API_BASE_URL_KEY -> JsString(apiBaseUrl),
-          TOKEN_KEY -> JsString(token.id),
-          ENV_KEY -> JsObject(teamEnvVars.map { ea =>
-            ea.name -> JsString(ea.value)
-          }),
-          USER_INFO_KEY -> userInfo.toJson,
-          TEAM_INFO_KEY -> teamInfo.toJson,
-          EVENT_INFO_KEY -> EventInfo(event).toJson
-        ))
-      )
-      JsObject(parameterValueData ++ contextParamData ++ Seq(("behaviorVersionId", JsString(behaviorVersion.id))))
-    }
+    } yield teamInfo
+  }
+
+  private def invocationJsonFor(
+                                 behaviorVersion: BehaviorVersion,
+                                 userInfo: UserInfo,
+                                 teamInfo: TeamInfo,
+                                 eventInfo: EventInfo,
+                                 parameterValues: Seq[ParameterWithValue],
+                                 environmentVariables: Seq[EnvironmentVariable],
+                                 token: InvocationToken
+                               ): JsObject = {
+    val parameterValueData = parameterValues.map { ea => (ea.invocationName, ea.preparedValue) }
+    val teamEnvVars = environmentVariables.filter(ev => ev.isInstanceOf[TeamEnvironmentVariable])
+    val contextParamData = Seq(
+      CONTEXT_PARAM -> JsObject(Seq(
+        API_BASE_URL_KEY -> JsString(apiBaseUrl),
+        TOKEN_KEY -> JsString(token.id),
+        ENV_KEY -> JsObject(teamEnvVars.map { ea =>
+          ea.name -> JsString(ea.value)
+        }),
+        USER_INFO_KEY -> userInfo.toJson,
+        TEAM_INFO_KEY -> teamInfo.toJson,
+        EVENT_INFO_KEY -> eventInfo.toJson
+      ))
+    )
+    JsObject(parameterValueData ++ contextParamData ++ Seq(("behaviorVersionId", JsString(behaviorVersion.id))))
   }
 
   private def cacheKeyFor(behaviorVersion: BehaviorVersion, payloadData: Seq[(String, JsValue)]): String = {
@@ -246,16 +248,17 @@ class AWSLambdaServiceImpl @Inject() (
       userInfo <- event.userInfoAction(defaultServices)
       botName <- DBIO.from(event.botName(defaultServices))
       token <- dataService.invocationTokens.createForAction(userInfo.user, behaviorVersion, event.maybeScheduled)
-      invocationJson <- invocationJsonFor(
-        behaviorVersion,
-        userInfo,
-        parametersWithValues,
-        environmentVariables,
-        event,
-        botName,
-        token
-      )
+      teamInfo <- teamInfoFor(behaviorVersion.team, userInfo, botName, behaviorVersion.groupVersion)
       result <- {
+        val invocationJson = invocationJsonFor(
+          behaviorVersion,
+          userInfo,
+          teamInfo,
+          EventInfo(event),
+          parametersWithValues,
+          environmentVariables,
+          token
+        )
         if (behaviorVersion.functionBody.isEmpty) {
           DBIO.successful(SuccessResult(
             event,
