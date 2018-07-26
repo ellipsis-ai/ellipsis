@@ -16,7 +16,7 @@ import sangria.execution.{Executor, UserFacingError}
 import sangria.marshalling.playJson._
 import sangria.parser.{QueryParser, SyntaxError}
 import sangria.schema.{Action, Context, DefaultAstSchemaBuilder, Schema}
-import services.caching.CacheService
+import services.caching.{CacheService, DefaultStorageSchemaCacheKey}
 
 import scala.collection.immutable.ListMap
 import scala.concurrent.{ExecutionContext, Future}
@@ -56,14 +56,10 @@ class GraphQLServiceImpl @Inject() (
     }
   }
 
-  private def buildSchemaStringFor(groupVersionId: String): Future[String] = {
+  private def schemaStringFor(groupVersionId: String): Future[String] = {
     dataService.dataTypeConfigs.allUsingDefaultStorageFor(groupVersionId).map(_.sortBy(_.id)).flatMap { configs =>
       buildSchemaStringFor(configs.map(_.behaviorVersion))
     }
-  }
-
-  private def schemaStringFor(groupVersion: BehaviorGroupVersion): Future[String] = {
-    cacheService.getDefaultStorageSchema(groupVersion.id, buildSchemaStringFor)
   }
 
   private def previewSchemaStringFor(data: BehaviorGroupData): Future[String] = {
@@ -205,13 +201,20 @@ class GraphQLServiceImpl @Inject() (
     }
   }
 
-  def schemaFor(groupVersion: BehaviorGroupVersion, user: User): Future[Schema[DefaultStorageItemService, Any]] = {
-    schemaStringFor(groupVersion).map { str =>
-      QueryParser.parse(str) match {
-        case Success(res) => Schema.buildFromAst(res, new MySchemaBuilder(groupVersion, user))
-        case Failure(err) => throw err
+  def buildSchemaFor(key: DefaultStorageSchemaCacheKey): Future[Schema[DefaultStorageItemService, Any]] = {
+    for {
+      schema <- schemaStringFor(key.groupVersion.id).map { str =>
+        QueryParser.parse(str) match {
+          case Success(res) => Schema.buildFromAst(res, new MySchemaBuilder(key.groupVersion, key.user))
+          case Failure(err) => throw err
+        }
       }
-    }
+    } yield schema
+  }
+
+  def schemaFor(groupVersion: BehaviorGroupVersion, user: User): Future[Schema[DefaultStorageItemService, Any]] = {
+    val key = DefaultStorageSchemaCacheKey(groupVersion, user)
+    cacheService.getDefaultStorageSchema(key, buildSchemaFor)
   }
 
   def previewSchemaFor(data: BehaviorGroupData): Future[Schema[DefaultStorageItemService, Any]] = {

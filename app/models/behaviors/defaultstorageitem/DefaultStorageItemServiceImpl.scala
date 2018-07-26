@@ -92,7 +92,8 @@ class DefaultStorageItemServiceImpl @Inject() (
 
   private def filterForBehaviorAction(behavior: Behavior, filter: JsValue): DBIO[Seq[DefaultStorageItem]] = {
     for {
-      filterWithIds <- dataWithFieldIdsFor(filter, behavior.id)
+      fields <- fieldsForBehaviorIdAction(behavior.id)
+      filterWithIds <- dataWithFieldIdsFor(filter, fields)
       result <- filterQuery(behavior.id, filterWithIds).result
       items <- DBIO.sequence(result.map(tuple2Item))
     } yield items
@@ -149,24 +150,26 @@ class DefaultStorageItemServiceImpl @Inject() (
   private def fieldValueWithIdsFor(field: DataTypeField, fieldValue: JsValue): DBIO[JsValue] = {
     field.fieldType match {
       case t: BuiltInType => DBIO.successful(t.prepareJsValue(fieldValue))
-      case t: BehaviorBackedDataType => dataWithFieldIdsFor(fieldValue, t.behaviorVersion.behavior.id)
+      case t: BehaviorBackedDataType => {
+        fieldsForBehaviorIdAction(t.behaviorVersion.behavior.id).flatMap { fields =>
+          dataWithFieldIdsFor(fieldValue, fields)
+        }
+      }
     }
   }
 
-  private def dataWithFieldIdsFor(data: JsValue, behaviorId: String): DBIO[JsValue] = {
+  private def dataWithFieldIdsFor(data: JsValue, fields: Seq[DataTypeField]): DBIO[JsValue] = {
     data match {
       case obj: JsObject => {
-        fieldsForBehaviorIdAction(behaviorId).flatMap { fields =>
-          val initial: DBIO[JsObject] = DBIO.successful(Json.obj())
-          obj.value.foldLeft(initial) {
-            case (eventualAcc, (fieldName, fieldValue)) => {
-              eventualAcc.flatMap { acc =>
-                fields.find(_.name == fieldName).map { field =>
-                  fieldValueWithIdsFor(field, fieldValue).map { resolvedValue =>
-                    acc + (field.fieldId, resolvedValue)
-                  }
-                }.getOrElse(DBIO.successful(acc))
-              }
+        val initial: DBIO[JsObject] = DBIO.successful(Json.obj())
+        obj.value.foldLeft(initial) {
+          case (eventualAcc, (fieldName, fieldValue)) => {
+            eventualAcc.flatMap { acc =>
+              fields.find(_.name == fieldName).map { field =>
+                fieldValueWithIdsFor(field, fieldValue).map { resolvedValue =>
+                  acc + (field.fieldId, resolvedValue)
+                }
+              }.getOrElse(DBIO.successful(acc))
             }
           }
         }.map(v => v - "id")
@@ -241,7 +244,8 @@ class DefaultStorageItemServiceImpl @Inject() (
         }
         case _ => data
       })
-      newDataWithFieldIds <- dataWithFieldIdsFor(newData, behavior.id)
+      fields <- fieldsForBehaviorIdAction(behavior.id)
+      newDataWithFieldIds <- dataWithFieldIdsFor(newData, fields)
       newInstanceToSave <- DBIO.successful(DefaultStorageItem(idToUse, behavior, OffsetDateTime.now, user.id, newDataWithFieldIds))
       _ <- DBIO.successful(println(s"saving $newInstanceToSave"))
       _ <- maybeExistingId.map { existingId =>
