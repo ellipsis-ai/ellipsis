@@ -32,12 +32,6 @@ case class SlackMessageEvent(
 
   lazy val isBotMessage: Boolean = profile.userId == user
 
-  override def botName(services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[String] = {
-    services.dataService.slackBotProfiles.maybeNameFor(profile).map { maybeName =>
-      maybeName.getOrElse(SlackMessageEvent.fallbackBotPrefix)
-    }
-  }
-
   override def contextualBotPrefix(services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[String] = {
     if (isDirectMessage) {
       Future.successful("")

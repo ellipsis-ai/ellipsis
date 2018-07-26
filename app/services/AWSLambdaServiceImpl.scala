@@ -121,7 +121,9 @@ class AWSLambdaServiceImpl @Inject() (
     }
   }
 
-  private def teamInfoFor(team: Team, userInfo: UserInfo, botName: String, groupVersion: BehaviorGroupVersion): DBIO[TeamInfo] = {
+  private def teamInfoFor(behaviorVersion: BehaviorVersion, userInfo: UserInfo, botInfo: BotInfo): DBIO[TeamInfo] = {
+    val team = behaviorVersion.team
+    val groupVersion = behaviorVersion.groupVersion
     for {
       awsConfigs <- dataService.awsConfigs.allForAction(team)
       requiredAWSConfigs <- dataService.requiredAWSConfigs.allForAction(groupVersion)
@@ -129,7 +131,7 @@ class AWSLambdaServiceImpl @Inject() (
       requiredSimpleTokenApis <- dataService.requiredSimpleTokenApis.allForAction(groupVersion)
       teamInfo <- DBIO.from {
         val apiConfigInfo = ApiConfigInfo(awsConfigs, requiredAWSConfigs, requiredOAuth2ApiConfigs, requiredSimpleTokenApis)
-        TeamInfo.forConfig(apiConfigInfo, userInfo, team, botName, ws)
+        TeamInfo.forConfig(apiConfigInfo, userInfo, team, botInfo, ws)
       }
     } yield teamInfo
   }
@@ -248,7 +250,7 @@ class AWSLambdaServiceImpl @Inject() (
       userInfo <- event.userInfoAction(defaultServices)
       botName <- DBIO.from(event.botName(defaultServices))
       token <- dataService.invocationTokens.createForAction(userInfo.user, behaviorVersion, event.maybeScheduled)
-      teamInfo <- teamInfoFor(behaviorVersion.team, userInfo, botName, behaviorVersion.groupVersion)
+      teamInfo <- teamInfoFor(behaviorVersion, userInfo, BotInfo(botName, event.botUserIdForContext))
       result <- {
         val invocationJson = invocationJsonFor(
           behaviorVersion,
