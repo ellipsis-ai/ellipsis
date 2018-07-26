@@ -30,8 +30,13 @@ case class TestEvent(
   val teamId = team.id
 
   val messageBuffer: ArrayBuffer[String] = new ArrayBuffer()
-
   lazy val userIdForContext = user.id
+
+  def botName(services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[String] = {
+    Future.successful(s"${team.name} TestBot")
+  }
+  val botUserIdForContext: String = "TEST_BOT_ID"
+
   lazy val name = "test"
   lazy val maybeChannel = Some("C123456")
   lazy val maybeThreadId = None

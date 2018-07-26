@@ -22,6 +22,7 @@ import scala.concurrent.{ExecutionContext, Future}
 trait Event {
   val name: String
   val userIdForContext: String
+  val botUserIdForContext: String
   val teamId: String
   val maybeChannel: Option[String]
   val maybeThreadId: Option[String]
@@ -165,7 +166,7 @@ trait Event {
                    configuration: Configuration
                  )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[String]]
 
-  def botName(services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[String] = Future.successful("")
+  def botName(services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[String]
 
   def contextualBotPrefix(services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[String] = Future.successful("")
 

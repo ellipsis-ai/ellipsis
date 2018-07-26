@@ -20,6 +20,14 @@ trait SlackEvent {
   val channel: String
   val profile: SlackBotProfile
   val isUninterruptedConversation: Boolean
+  lazy val botUserIdForContext: String = profile.userId
+
+  def botName(services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[String] = {
+    services.dataService.slackBotProfiles.maybeNameFor(profile).map { maybeName =>
+      maybeName.getOrElse(SlackMessageEvent.fallbackBotPrefix)
+    }
+  }
+
   def eventualMaybeDMChannel(services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[String]] = {
     services.slackApiService.clientFor(profile).openConversationFor(user).map(Some(_)).recover {
       case e: SlackApiError => {
