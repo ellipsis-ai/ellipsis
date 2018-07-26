@@ -189,7 +189,7 @@ class GraphQLServiceSpec extends DBSpec {
         val jsonData = JsObject(Map("foo" -> JsString("bar")))
         val mutationVariables = JsObject(Map("someType" -> jsonData)).toString
         val mutationResult = runNow(graphQLService.runQuery(firstVersion.group, user, mutation, None, Some(mutationVariables)))
-        val savedItems = runNow(dataService.defaultStorageItems.filter(someType.behaviorVersion.typeName, jsonData, group))
+        val savedItems = runNow(dataService.defaultStorageItems.filter(someType.behaviorVersion.typeName, jsonData, firstVersion))
         savedItems must have length(1)
         val savedItem = savedItems.head
         (savedItem.data \ "foo").as[String] mustBe "bar"
@@ -240,12 +240,12 @@ class GraphQLServiceSpec extends DBSpec {
         val mutationVariables = JsObject(Map("someType2" -> jsonData)).toString
         val mutationResult = runNow(graphQLService.runQuery(firstVersion.group, user, mutation, None, Some(mutationVariables)))
 
-        val savedSomeTypes = runNow(dataService.defaultStorageItems.filter(someType.behaviorVersion.typeName, Json.obj(), group))
+        val savedSomeTypes = runNow(dataService.defaultStorageItems.filter(someType.behaviorVersion.typeName, Json.obj(), firstVersion))
         savedSomeTypes must have length(1)
         val savedSomeType = savedSomeTypes.head
         (savedSomeType.data \ "foo").as[String] mustBe "bar"
 
-        val savedSomeType2s = runNow(dataService.defaultStorageItems.filter(someType2.behaviorVersion.typeName, Json.obj(), group))
+        val savedSomeType2s = runNow(dataService.defaultStorageItems.filter(someType2.behaviorVersion.typeName, Json.obj(), firstVersion))
         savedSomeType2s must have length(1)
         val savedSomeType2 = savedSomeType2s.head
         (savedSomeType2.data \ "bar").as[Double] mustBe 2
@@ -287,7 +287,7 @@ class GraphQLServiceSpec extends DBSpec {
         val jsonData = JsObject(Map("foo" -> JsString("bar")))
         val mutationVariables = JsObject(Map("someType" -> jsonData)).toString
         val mutationResult = runNow(graphQLService.runQuery(firstVersion.group, user, createMutation, None, Some(mutationVariables)))
-        val savedItems = runNow(dataService.defaultStorageItems.filter(someType.behaviorVersion.typeName, jsonData, group))
+        val savedItems = runNow(dataService.defaultStorageItems.filter(someType.behaviorVersion.typeName, jsonData, firstVersion))
         savedItems must have length(1)
         val savedItem = savedItems.head
         (savedItem.data \ "foo").as[String] mustBe "bar"
@@ -306,7 +306,7 @@ class GraphQLServiceSpec extends DBSpec {
         val deleteResult = runNow(graphQLService.runQuery(firstVersion.group, user, deleteMutation, None, Some(deleteVariables)))
         (deleteResult \ "data").get mustBe JsObject(Map("deleteSomeType" -> JsObject(Map("foo" -> JsString("bar")))))
 
-        val remainingItems = runNow(dataService.defaultStorageItems.filter(someType.behaviorVersion.typeName, jsonData, group))
+        val remainingItems = runNow(dataService.defaultStorageItems.filter(someType.behaviorVersion.typeName, jsonData, firstVersion))
         remainingItems must have length(0)
       })
     }
@@ -331,7 +331,7 @@ class GraphQLServiceSpec extends DBSpec {
         val jsonData = JsObject(Map("foo" -> JsString("bar")))
         val mutationVariables = JsObject(Map("someType" -> jsonData)).toString
         val mutationResult = runNow(graphQLService.runQuery(firstVersion.group, user, createMutation, None, Some(mutationVariables)))
-        val savedItems = runNow(dataService.defaultStorageItems.filter(someType.behaviorVersion.typeName, jsonData, group))
+        val savedItems = runNow(dataService.defaultStorageItems.filter(someType.behaviorVersion.typeName, jsonData, firstVersion))
         savedItems must have length(1)
         val savedItem = savedItems.head
         (savedItem.data \ "foo").as[String] mustBe "bar"
@@ -350,7 +350,7 @@ class GraphQLServiceSpec extends DBSpec {
         val deleteResult = runNow(graphQLService.runQuery(firstVersion.group, user, deleteMutation, None, Some(deleteVariables)))
         (deleteResult \ "data").get mustBe JsObject(Map("deleteWhereSomeType" -> JsArray(Array(JsObject(Map("foo" -> JsString("bar")))))))
 
-        val remainingItems = runNow(dataService.defaultStorageItems.filter(someType.behaviorVersion.typeName, jsonData, group))
+        val remainingItems = runNow(dataService.defaultStorageItems.filter(someType.behaviorVersion.typeName, jsonData, firstVersion))
         remainingItems must have length(0)
       })
     }
@@ -375,7 +375,7 @@ class GraphQLServiceSpec extends DBSpec {
         val jsonData = JsObject(Map("foo" -> JsString("bar")))
         val mutationVariables = JsObject(Map("someType" -> jsonData)).toString
         val mutationResult = runNow(graphQLService.runQuery(firstVersion.group, user, createMutation, None, Some(mutationVariables)))
-        val savedItems = runNow(dataService.defaultStorageItems.filter(someType.behaviorVersion.typeName, jsonData, group))
+        val savedItems = runNow(dataService.defaultStorageItems.filter(someType.behaviorVersion.typeName, jsonData, firstVersion))
         savedItems must have length(1)
         val savedItem = savedItems.head
         (savedItem.data \ "foo").as[String] mustBe "bar"
@@ -527,7 +527,7 @@ class GraphQLServiceSpec extends DBSpec {
         val jsonData = JsObject(Map("foo" -> JsString("bar")))
         val mutationVariables = JsObject(Map("someType" -> jsonData)).toString
         val mutationResult = runNow(graphQLService.runQuery(firstVersion.group, user, createMutation, None, Some(mutationVariables)))
-        val savedItems = runNow(dataService.defaultStorageItems.filter(someType.behaviorVersion.typeName, jsonData, group))
+        val savedItems = runNow(dataService.defaultStorageItems.filter(someType.behaviorVersion.typeName, jsonData, firstVersion))
         savedItems must have length(1)
         val savedItem = savedItems.head
         (savedItem.data \ "foo").as[String] mustBe "bar"

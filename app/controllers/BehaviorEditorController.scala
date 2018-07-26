@@ -409,8 +409,11 @@ class BehaviorEditorController @Inject() (
           case JsSuccess(item, _) => {
             for {
               maybeBehavior <- dataService.behaviors.find(item.behaviorId, user)
-              result <- maybeBehavior.map { behavior =>
-                dataService.defaultStorageItems.createItemForBehavior(behavior, user, item.data).map { newItem =>
+              maybeCurrentVersion <- maybeBehavior.map { behavior =>
+                dataService.behaviors.maybeCurrentVersionFor(behavior)
+              }.getOrElse(Future.successful(None))
+              result <- maybeCurrentVersion.map { behaviorVersion =>
+                dataService.defaultStorageItems.createItemForBehaviorVersion(behaviorVersion, user, item.data).map { newItem =>
                   Ok(Json.toJson(DefaultStorageItemData.fromItem(newItem)))
                 }
               }.getOrElse(Future.successful(NotFound(s"Couldn't find data type for ID: ${item.behaviorId}")))
@@ -440,8 +443,11 @@ class BehaviorEditorController @Inject() (
       info => {
         for {
           maybeBehavior <- dataService.behaviors.find(info.behaviorId, user)
-          result <- maybeBehavior.map { behavior =>
-            dataService.defaultStorageItems.deleteItems(info.itemIds, behavior.group).map { count =>
+          maybeCurrentVersion <- maybeBehavior.map { behavior =>
+            dataService.behaviors.maybeCurrentVersionFor(behavior)
+          }.getOrElse(Future.successful(None))
+          result <- maybeCurrentVersion.map { behaviorVersion =>
+            dataService.defaultStorageItems.deleteItems(info.itemIds, behaviorVersion.groupVersion).map { count =>
               Ok(Json.toJson(Map("deletedCount" -> count)))
             }
           }.getOrElse(Future.successful(NotFound(s"Couldn't find data type for ID: ${info.behaviorId}")))

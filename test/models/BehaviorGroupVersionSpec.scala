@@ -139,7 +139,7 @@ class BehaviorGroupVersionSpec extends DBSpec {
         val firstDataTypeFields = runNow(dataService.dataTypeFields.allFor(firstDataTypeConfig))
 
         val behavior = runNow(dataService.behaviors.allForGroup(firstGroupVersion.group)).head
-        val savedItem = runNow(dataService.defaultStorageItems.createItemForBehavior(behavior, user, Json.toJson(Map("name" -> "foo"))))
+        val savedItem = runNow(dataService.defaultStorageItems.createItemForBehaviorVersion(firstBehaviorVersion, user, Json.toJson(Map("name" -> "foo"))))
 
         val groupVersionData = runNow(BehaviorGroupData.buildFor(firstGroupVersion, user, None, dataService, cacheService)).copyForNewVersionOf(group)
         val secondGroupVersion = runNow(dataService.behaviorGroupVersions.createFor(group, user, groupVersionData))

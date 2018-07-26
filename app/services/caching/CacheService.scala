@@ -4,7 +4,9 @@ import com.amazonaws.services.lambda.model.InvokeResult
 import json.{ImmutableBehaviorGroupVersionData, SlackUserData}
 import models.behaviors.BotResult
 import models.behaviors.behaviorparameter.ValidValue
+import models.behaviors.defaultstorageitem.DefaultStorageItemService
 import models.behaviors.events.{Event, SlackMessageEvent}
+import sangria.schema.Schema
 
 import scala.concurrent.Future
 import scala.concurrent.duration._
@@ -36,7 +38,7 @@ trait CacheService {
 
   def getSlackActionValue(key: String): Option[String]
 
-  def getDefaultStorageSchema(groupVersionId: String, dataFn: String => Future[String]): Future[String]
+  def getDefaultStorageSchema(key: DefaultStorageSchemaCacheKey, dataFn: DefaultStorageSchemaCacheKey => Future[Schema[DefaultStorageItemService, Any]]): Future[Schema[DefaultStorageItemService, Any]]
 
   def getDataTypeBotResult(key: DataTypeBotResultsCacheKey, dataFn: DataTypeBotResultsCacheKey => Future[BotResult]): Future[BotResult]
 

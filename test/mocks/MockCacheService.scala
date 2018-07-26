@@ -5,8 +5,10 @@ import json.{ImmutableBehaviorGroupVersionData, SlackUserData}
 import models.IDs
 import models.behaviors.BotResult
 import models.behaviors.behaviorparameter.ValidValue
+import models.behaviors.defaultstorageitem.DefaultStorageItemService
 import models.behaviors.events.{Event, SlackMessageEvent}
 import org.scalatest.mock.MockitoSugar
+import sangria.schema.Schema
 import services.caching._
 
 import scala.concurrent.Future
@@ -39,7 +41,7 @@ class MockCacheService extends CacheService with MockitoSugar {
 
   def getSlackActionValue(key: String): Option[String] = None
 
-  def getDefaultStorageSchema(groupVersionId: String, dataFn: String => Future[String]): Future[String] = dataFn(groupVersionId)
+  def getDefaultStorageSchema(key: DefaultStorageSchemaCacheKey, dataFn: DefaultStorageSchemaCacheKey => Future[Schema[DefaultStorageItemService, Any]]): Future[Schema[DefaultStorageItemService, Any]] = dataFn(key)
 
   def getDataTypeBotResult(key: DataTypeBotResultsCacheKey, dataFn: DataTypeBotResultsCacheKey => Future[BotResult]): Future[BotResult] = dataFn(key)
 

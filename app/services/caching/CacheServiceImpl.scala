@@ -13,10 +13,12 @@ import models.IDs
 import models.accounts.slack.botprofile.SlackBotProfile
 import models.behaviors.BotResult
 import models.behaviors.behaviorparameter.ValidValue
+import models.behaviors.defaultstorageitem.DefaultStorageItemService
 import models.behaviors.events._
 import play.api.Logger
 import play.api.cache.SyncCacheApi
 import play.api.libs.json.{JsError, JsSuccess, JsValue, Json}
+import sangria.schema.Schema
 import services.slack.SlackEventService
 
 import scala.concurrent.Future
@@ -166,10 +168,10 @@ class CacheServiceImpl @Inject() (
     get[String](key)
   }
 
-  private val defaultStorageSchemaCache = LfuCache[String, String](cacheSettingsWithTimeToLive(defaultStorageSchemaExpiry))
+  private val defaultStorageSchemaCache = LfuCache[DefaultStorageSchemaCacheKey, Schema[DefaultStorageItemService, Any]](cacheSettingsWithTimeToLive(defaultStorageSchemaExpiry))
 
-  def getDefaultStorageSchema(groupVersionId: String, dataFn: String => Future[String]): Future[String] = {
-    defaultStorageSchemaCache.getOrLoad(groupVersionId, dataFn)
+  def getDefaultStorageSchema(key: DefaultStorageSchemaCacheKey, dataFn: DefaultStorageSchemaCacheKey => Future[Schema[DefaultStorageItemService, Any]]): Future[Schema[DefaultStorageItemService, Any]] = {
+    defaultStorageSchemaCache.getOrLoad(key, dataFn)
   }
 
   private val dataTypeBotResultsCache = LfuCache[DataTypeBotResultsCacheKey, BotResult](cacheSettingsWithTimeToLive(dataTypeBotResultsExpiry))
