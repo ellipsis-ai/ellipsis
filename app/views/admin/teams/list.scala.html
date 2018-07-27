@@ -1,13 +1,13 @@
-@import models.team.Team
 @import java.time.format.DateTimeFormatter
 @import java.time.LocalDateTime
 @import java.time.ZoneId
 @import java.time.format.TextStyle
 @import java.util.Locale
+@import json.AdminTeamData
 
 @(
   config: ViewConfig,
-  teams: Seq[Team],
+  teams: Seq[AdminTeamData],
   teamCount: Int,
   currentPage: Int,
   pageSize: Int,
@@ -39,6 +39,16 @@
             <p>
               <a href="@controllers.admin.routes.ManagedBehaviorGroupsController.list(team.id).url">Edit managed skills</a>
             </p>
+
+            <div>
+              <div class="display-inline-block align-t">Mention shortcut enabled:</div>
+              <div class="form-select form-select-s">
+                <select class="form-select-element">
+                  <option @if(team.allowShortcutMention) { selected="selected" }>Yes</option>
+                  <option @if(!team.allowShortcutMention) { selected="selected" }>No</option>
+                </select>
+              </div>
+            </div>
           </div>
         </div>
       </div>
