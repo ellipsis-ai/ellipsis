@@ -40,7 +40,7 @@ case class ScheduledMessage(
             channel,
             None,
             slackUserId,
-            SlackMessage.fromUnformattedText(text, profile.userId),
+            SlackMessage.fromUnformattedText(text, profile),
             None,
             SlackTimestamp.now,
             Some(EventType.scheduled),

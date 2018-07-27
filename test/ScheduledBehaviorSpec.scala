@@ -148,7 +148,7 @@ class ScheduledBehaviorSpec extends PlaySpec with MockitoSugar {
         val channel = "C12345678"
         val token = IDs.next
         val slackTeamId = "T1234567"
-        val botProfile = SlackBotProfile("UMOCKBOT", team.id, slackTeamId, token, OffsetDateTime.now)
+        val botProfile = SlackBotProfile("UMOCKBOT", team.id, slackTeamId, token, OffsetDateTime.now, allowShortcutMention = true)
         val userSlackId = "U1000"
         val userSlackProfile = SlackProfile(slackTeamId, LoginInfo("slack", userSlackId))
         when(services.dataService.users.maybeSlackProfileFor(user))
@@ -171,7 +171,7 @@ class ScheduledBehaviorSpec extends PlaySpec with MockitoSugar {
         val channel = "C12345678"
         val token = IDs.next
         val slackTeamId = "T1234567"
-        val botProfile = SlackBotProfile("UMOCKBOT", team.id, slackTeamId, token, OffsetDateTime.now)
+        val botProfile = SlackBotProfile("UMOCKBOT", team.id, slackTeamId, token, OffsetDateTime.now, allowShortcutMention = true)
         when(services.dataService.users.maybeSlackProfileFor(user)).thenReturn(Future.successful(None))
         val sbSpy = scheduledBehaviorSpy(user, team, channel)
         val sent = sbSpy.send(eventHandler, botProfile, services, "Mock schedule")
@@ -191,7 +191,7 @@ class ScheduledBehaviorSpec extends PlaySpec with MockitoSugar {
         val channel = "C12345678"
         val token = IDs.next
         val slackTeamId = "T1234567"
-        val botProfile = SlackBotProfile("UMOCKBOT", team.id, slackTeamId, token, OffsetDateTime.now)
+        val botProfile = SlackBotProfile("UMOCKBOT", team.id, slackTeamId, token, OffsetDateTime.now, allowShortcutMention = true)
         val sbSpy = scheduledBehaviorSpy(user, team, channel, isForIndividualMembers = true)
         val sent = sbSpy.send(eventHandler, botProfile, services, "Mock schedule")
         runNow(sent)
@@ -211,7 +211,7 @@ class ScheduledBehaviorSpec extends PlaySpec with MockitoSugar {
         val channel = "D12345678"
         val token = IDs.next
         val slackTeamId = "T1234567"
-        val botProfile = SlackBotProfile("UMOCKBOT", team.id, slackTeamId, token, OffsetDateTime.now)
+        val botProfile = SlackBotProfile("UMOCKBOT", team.id, slackTeamId, token, OffsetDateTime.now, allowShortcutMention = true)
         when(services.dataService.users.maybeSlackProfileFor(user)).thenReturn(Future.successful(None))
         val sbSpy = scheduledBehaviorSpy(user, team, channel)
         val sent = sbSpy.send(eventHandler, botProfile, services, "Mock schedule")

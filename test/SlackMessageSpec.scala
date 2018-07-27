@@ -1,4 +1,7 @@
+import java.time.OffsetDateTime
+
 import json.{SlackUserData, SlackUserProfileData}
+import models.accounts.slack.botprofile.SlackBotProfile
 import models.behaviors.events.SlackMessage
 import org.scalatestplus.play.PlaySpec
 
@@ -113,6 +116,26 @@ class SlackMessageSpec extends PlaySpec {
       SlackMessage.userIdsInText("Hi there, <@U12345678>.") mustBe Set("U12345678")
       SlackMessage.userIdsInText("<@W12345678> is a real piece of work.") mustBe Set("W12345678")
       SlackMessage.userIdsInText("<@W12345678> is a real piece of work. Oh that <@W12345678>") mustBe Set("W12345678")
+    }
+  }
+
+  "removeBotPrefix" should {
+    val profileWithShortcuts = SlackBotProfile("UTHEBOT", "1", "T1", "token", OffsetDateTime.now, allowShortcutMention = true)
+    val profileNoShortcuts = SlackBotProfile("UTHEBOT", "1", "T1", "token", OffsetDateTime.now, allowShortcutMention = false)
+
+    "remove the bot user link from the beginning of the message" in {
+      SlackMessage.removeBotPrefix("<@UTHEBOT> hello", profileWithShortcuts) mustBe "hello"
+      SlackMessage.removeBotPrefix("<@UTHEBOT>: hello!", profileWithShortcuts) mustBe "hello!"
+    }
+
+    "remove the shortcut if the profile allows it" in {
+      SlackMessage.removeBotPrefix("...hello", profileWithShortcuts) mustBe "hello"
+      SlackMessage.removeBotPrefix("…hello", profileWithShortcuts) mustBe "hello"
+    }
+
+    "not remove the shortcut if the profile does not allow it" in {
+      SlackMessage.removeBotPrefix("...hello", profileNoShortcuts) mustBe "...hello"
+      SlackMessage.removeBotPrefix("…hello", profileNoShortcuts) mustBe "…hello"
     }
   }
 

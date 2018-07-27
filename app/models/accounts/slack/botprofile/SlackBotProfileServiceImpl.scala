@@ -26,8 +26,9 @@ class SlackBotProfileTable(tag: Tag) extends Table[SlackBotProfile](tag, "slack_
   def slackTeamId = column[String]("slack_team_id")
   def token = column[String]("token")
   def createdAt = column[OffsetDateTime]("created_at")
+  def allowShortcutMention = column[Boolean]("allow_shortcut_mention")
 
-  def * = (userId, teamId, slackTeamId, token, createdAt) <> ((SlackBotProfile.apply _).tupled, SlackBotProfile.unapply _)
+  def * = (userId, teamId, slackTeamId, token, createdAt, allowShortcutMention) <> ((SlackBotProfile.apply _).tupled, SlackBotProfile.unapply _)
 
 }
 
@@ -96,7 +97,7 @@ class SlackBotProfileServiceImpl @Inject() (
     val query = findQuery(userId)
     val action = query.result.headOption.flatMap {
       case Some(existing) => {
-        val profile = SlackBotProfile(userId, existing.teamId, slackTeamId, token, existing.createdAt)
+        val profile = SlackBotProfile(userId, existing.teamId, slackTeamId, token, existing.createdAt, existing.allowShortcutMention)
         for {
           maybeTeam <- DBIO.from(dataService.teams.find(existing.teamId))
           _ <- query.update(profile)
@@ -105,9 +106,18 @@ class SlackBotProfileServiceImpl @Inject() (
           }.getOrElse(DBIO.successful(Unit))
         } yield profile
       }
-      case None => DBIO.from(registrationService.registerNewTeam(slackTeamName)).flatMap { team =>
-        val newProfile = SlackBotProfile(userId, team.id, slackTeamId, token, OffsetDateTime.now)
-        (all += newProfile).map { _ => newProfile }
+      case None => {
+        DBIO.from(registrationService.registerNewTeam(slackTeamName)).flatMap { team =>
+          val newProfile = SlackBotProfile(
+            userId,
+            team.id,
+            slackTeamId,
+            token,
+            OffsetDateTime.now,
+            allowShortcutMention = SlackBotProfile.ALLOW_SHORTCUT_MENTION_DEFAULT
+          )
+          (all += newProfile).map { _ => newProfile }
+        }
       }
     }
     dataService.run(action)
