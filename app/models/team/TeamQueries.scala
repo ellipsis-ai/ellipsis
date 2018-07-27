@@ -23,9 +23,10 @@ class TeamsTable(tag: Tag) extends Table[Team](tag, "teams") {
 object TeamQueries {
 
   val all = TableQuery[TeamsTable]
+  val allByCreationDate = all.sortBy { case(team) => team.createdAt.asc }
 
   def uncompiledAllPagedQuery(offset: ConstColumn[Long], size: ConstColumn[Long]) = {
-    all.drop(offset).take(size)
+    allByCreationDate.drop(offset).take(size)
   }
   val allPagedQuery = Compiled(uncompiledAllPagedQuery _)
 
