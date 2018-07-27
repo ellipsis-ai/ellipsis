@@ -133,7 +133,7 @@ class APIController @Inject() (
             maybeSlackChannelId.getOrElse(channel),
             None,
             slackProfile.loginInfo.providerKey,
-            SlackMessage.fromUnformattedText(message, botProfile.userId),
+            SlackMessage.fromUnformattedText(message, botProfile),
             None,
             SlackTimestamp.now,
             maybeOriginalEventType,

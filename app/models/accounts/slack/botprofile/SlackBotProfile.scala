@@ -15,7 +15,7 @@ case class SlackBotProfile(
 
   def includesBotMention(message: SlackMessage): Boolean = {
     SlackMessageEvent.mentionRegexFor(userId).findFirstMatchIn(message.originalText).nonEmpty ||
-      (allowShortcutMention && MessageEvent.ellipsisRegex.findFirstMatchIn(message.originalText).nonEmpty)
+      (allowShortcutMention && MessageEvent.ellipsisShortcutMentionRegex.findFirstMatchIn(message.originalText).nonEmpty)
   }
 }
 

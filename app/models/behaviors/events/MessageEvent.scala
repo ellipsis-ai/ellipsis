@@ -83,5 +83,5 @@ trait MessageEvent extends Event {
 
 object MessageEvent {
 
-  def ellipsisRegex: Regex = """^(\.\.\.|…)\s*""".r
+  def ellipsisShortcutMentionRegex: Regex = """^(\.\.\.|…)\s*""".r
 }

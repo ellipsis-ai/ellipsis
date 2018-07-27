@@ -39,13 +39,17 @@ object SlackMessage {
     unformatText(augmentUserIdsWithNames(text, userList))
   }
 
-  def removeBotPrefix(text: String, botUserId: String): String = {
-    val withoutDotDotDot = MessageEvent.ellipsisRegex.replaceFirstIn(text, "")
-    SlackMessageEvent.toBotRegexFor(botUserId).replaceFirstIn(withoutDotDotDot, "")
+  def removeBotPrefix(text: String, botProfile: SlackBotProfile): String = {
+    val withoutShortcut = if (botProfile.allowShortcutMention) {
+      MessageEvent.ellipsisShortcutMentionRegex.replaceFirstIn(text, "")
+    } else {
+      text
+    }
+    SlackMessageEvent.toBotRegexFor(botProfile.userId).replaceFirstIn(withoutShortcut, "")
   }
 
-  def fromUnformattedText(text: String, botUserId: String): SlackMessage = {
-    val withoutBotPrefix = removeBotPrefix(text, botUserId)
+  def fromUnformattedText(text: String, botProfile: SlackBotProfile): SlackMessage = {
+    val withoutBotPrefix = removeBotPrefix(text, botProfile)
     SlackMessage(text, withoutBotPrefix, withoutBotPrefix, Set.empty[SlackUserData])
   }
 
@@ -54,7 +58,7 @@ object SlackMessage {
   }
 
   def fromFormattedText(text: String, botProfile: SlackBotProfile, slackEventService: SlackEventService)(implicit ec: ExecutionContext): Future[SlackMessage] = {
-    val withoutBotPrefix = removeBotPrefix(text, botProfile.userId)
+    val withoutBotPrefix = removeBotPrefix(text, botProfile)
     val userList = userIdsInText(text)
     for {
       slackUsers <- slackEventService.slackUserDataList(userList, botProfile)
