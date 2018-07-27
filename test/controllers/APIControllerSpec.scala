@@ -71,7 +71,7 @@ class APIControllerSpec extends PlaySpec with MockitoSugar {
     when(dataService.invocationTokens.findNotExpired(token)).thenReturn(Future.successful(maybeInvocationToken))
     when(dataService.users.findForInvocationToken(token)).thenReturn(Future.successful(maybeUserForToken))
     when(dataService.teams.find(user.teamId)).thenReturn(Future.successful(Some(team)))
-    val botProfile = SlackBotProfile(defaultChannel, team.id, defaultSlackTeamId, defaultSlackToken, OffsetDateTime.now)
+    val botProfile = SlackBotProfile(defaultChannel, team.id, defaultSlackTeamId, defaultSlackToken, OffsetDateTime.now, allowShortcutMention = true)
 
     val apiController = app.injector.instanceOf(classOf[APIController])
     implicit val actorSystem = apiController.actorSystem
