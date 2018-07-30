@@ -724,7 +724,7 @@ const BehaviorEditor = React.createClass({
     const editable = this.getSelected();
     if (editable) {
       if (editable.isBehaviorVersion()) {
-        this.addNewBehavior(editable.isDataType(), editable.behaviorId);
+        this.addNewBehavior(editable.isDataType(), editable.isTest(), editable.behaviorId);
       } else {
         this.cloneLibrary(editable.libraryId);
       }
