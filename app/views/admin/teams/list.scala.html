@@ -1,21 +1,23 @@
-@import models.team.Team
 @import java.time.format.DateTimeFormatter
 @import java.time.LocalDateTime
 @import java.time.ZoneId
 @import java.time.format.TextStyle
 @import java.util.Locale
+@import json.AdminTeamData
+@import helper.CSRF
 
 @(
   config: ViewConfig,
-  teams: Seq[Team],
+  teams: Seq[AdminTeamData],
   teamCount: Int,
   currentPage: Int,
   pageSize: Int,
-  pageCount: Int)(implicit messages: Messages, r: RequestHeader
-)
+  pageCount: Int,
+  maybeUpdatedTeamId: Option[String]
+)(implicit messages: Messages, r: RequestHeader)
 
 
-@page.main("Teams", config, Seq(NavItem.admin)) {
+@page.main("Teams", config, Seq(NavItem.adminTeamsList(false))) {
   <div class="container">
     <h4>@teamCount Teams</h4>
     <div class="columns">
@@ -39,22 +41,42 @@
             <p>
               <a href="@controllers.admin.routes.ManagedBehaviorGroupsController.list(team.id).url">Edit managed skills</a>
             </p>
+
+            <div>
+              <form action="@controllers.admin.routes.TeamsController.toggleBotShortcutForTeam().url" method="post">
+                <div class="display-inline-block align-t">…Bot shortcut enabled:</div>
+                <input type="hidden" name="teamId" value="@{team.id}">
+                @CSRF.formField
+                <div class="form-select form-select-s">
+                  <select class="form-select-element" name="enableShortcut">
+                    <option value="true" @if(team.allowShortcutMention) { selected="selected" }>Yes</option>
+                    <option value="false" @if(!team.allowShortcutMention) { selected="selected" }>No</option>
+                  </select>
+                </div>
+                <button class="button button-s button-shrink align-t" type="submit">Update</button>
+                @if(maybeUpdatedTeamId.contains(team.id)) {
+                  <div class="display-inline-block align-t type-green mls type-m">✓</div>
+                }
+              </form>
+            </div>
           </div>
         </div>
       </div>
     }
     </div>
 
-    @if(teamCount != pageSize ) {
+    @*
+    if(teamCount != pageSize ) {
       <a href="?page=1">1</a>
       <a href="?page=@pageCount&perPage=@pageSize">@pageCount</a>
-      @*@if(currentPage != 1) {*@
-        @*<a href="?page=@{currentPage-1}&perPage=@pageSize">Previous</a>*@
-      @*}*@
-      @*@if(currentPage != pageCount) {*@
-        @*<a href="?page=@{currentPage-1}">Next</a>*@
-      @*}*@
+      @if(currentPage != 1) {
+        <a href="?page=@{currentPage-1}&perPage=@pageSize">Previous</a>
+      }
+      @if(currentPage != pageCount) {
+        <a href="?page=@{currentPage-1}">Next</a>
+      }
     }
+    *@
   </div>
 }
 

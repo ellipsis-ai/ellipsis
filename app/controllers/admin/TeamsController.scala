@@ -5,11 +5,15 @@ import javax.inject.Inject
 import com.google.inject.Provider
 import com.mohiva.play.silhouette.api.Silhouette
 import controllers.RemoteAssets
+import json.AdminTeamData
 import models.silhouette.EllipsisEnv
+import models.team.Team
 import play.api.Configuration
+import play.api.data.Form
+import play.api.data.Forms._
 import services.{AWSLambdaService, DataService}
-import scala.concurrent.{ExecutionContext, Future}
 
+import scala.concurrent.{ExecutionContext, Future}
 
 class TeamsController @Inject() (
                                   val silhouette: Silhouette[EllipsisEnv],
@@ -20,23 +24,44 @@ class TeamsController @Inject() (
                                   implicit val ec: ExecutionContext
                                 ) extends AdminAuth {
 
-  def list(page: Int, perPage: Int) = silhouette.SecuredAction.async { implicit request =>
+  private def adminTeamDataFor(team: Team): Future[AdminTeamData] = {
+    for {
+      maybeSlackBotProfile <- dataService.slackBotProfiles.allFor(team).map(_.headOption)
+    } yield {
+      AdminTeamData(
+        team.id,
+        team.name,
+        team.timeZone.toString,
+        team.createdAt,
+        maybeSlackBotProfile.exists(_.allowShortcutMention)
+      )
+    }
+  }
+
+  def list(page: Int, perPage: Int, maybeUpdatedTeamId: Option[String]) = silhouette.SecuredAction.async { implicit request =>
     withIsAdminCheck(() => {
       if (page < 0 || perPage < 0) {
         Future {
           BadRequest("page and perPage parameters cannot be less than zero!")
         }
-      }
-      else {
+      } else {
         for {
           count <- dataService.teams.allCount
           pageData <- getPageData(count, page, perPage)
           teams <- dataService.teams.allTeamsPaged(pageData.current, pageData.size)
+          adminTeamsData <- Future.sequence(teams.map(adminTeamDataFor))
         } yield {
-          Ok(views.html.admin.teams.list(viewConfig(None), teams, count, pageData.current, pageData.size, pageData.total))
+          Ok(views.html.admin.teams.list(
+            viewConfig(None),
+            adminTeamsData,
+            count,
+            pageData.current,
+            pageData.size,
+            pageData.total,
+            maybeUpdatedTeamId
+          ))
         }
       }
-
     })
   }
 
@@ -60,6 +85,40 @@ class TeamsController @Inject() (
     Future { new PageData(realPage, realPerPage, lastPage) }
   }
 
+  case class ToggleSlackBotShortcutInfo(teamId: String, enableShortcut: Boolean)
+
+  private val toggleSlackBotShortcutForm = Form(
+    mapping(
+      "teamId" -> nonEmptyText,
+      "enableShortcut" -> boolean
+    )(ToggleSlackBotShortcutInfo.apply)(ToggleSlackBotShortcutInfo.unapply)
+  )
+  def toggleBotShortcutForTeam() = silhouette.SecuredAction.async { implicit request =>
+    withIsAdminCheck(() => {
+      toggleSlackBotShortcutForm.bindFromRequest.fold(
+        formWithErrors => {
+          Future.successful(BadRequest(formWithErrors.errorsAsJson))
+        },
+        info => {
+          for {
+            maybeTeam <- dataService.teams.find(info.teamId)
+            maybeSlackBotProfile <- maybeTeam.map { team =>
+              dataService.slackBotProfiles.allFor(team).map(_.headOption)
+            }.getOrElse(Future.successful(None))
+            maybeEnabled <- maybeSlackBotProfile.map { botProfile =>
+              dataService.slackBotProfiles.toggleMentionShortcut(botProfile, info.enableShortcut)
+            }.getOrElse(Future.successful(None))
+          } yield {
+            maybeEnabled.map { _ =>
+              Redirect(routes.TeamsController.list(0, 10, Some(info.teamId)))
+            }.getOrElse {
+              NotFound(s"Unable to modify shortcut setting for team ${info.teamId}")
+            }
+          }
+        }
+      )
+    })
+  }
 }
 
 

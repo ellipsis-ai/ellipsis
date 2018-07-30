@@ -176,6 +176,21 @@ class SlackBotProfileServiceImpl @Inject() (
     }
   }
 
+  def toggleMentionShortcut(botProfile: SlackBotProfile, enableShortcut: Boolean): Future[Option[Boolean]] = {
+    val query = findQuery(botProfile.userId)
+    val action = query.result.headOption.flatMap {
+      case Some(existing) => {
+        for {
+          _ <- query.update(existing.copy(allowShortcutMention = enableShortcut))
+        } yield {
+          Some(enableShortcut)
+        }
+      }
+      case None => DBIO.successful(None)
+    }
+    dataService.run(action)
+  }
+
   private def sendResult(eventualMaybeResult: Future[Option[BotResult]]): Future[Option[String]] = {
     for {
       maybeResult <- eventualMaybeResult

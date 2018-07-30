@@ -13,7 +13,10 @@
 )(implicit messages: Messages, r: RequestHeader)
 
 
-@page.main("Managed skills", config, Seq(NavItem.admin)) {
+@page.main("Managed skills", config, Seq(
+  NavItem.adminTeamsList(true),
+  NavItem(s"Managed skills for ${team.name}", None)
+)) {
   <div class="container">
 
     <h4>Managed skills for @team.name</h4>

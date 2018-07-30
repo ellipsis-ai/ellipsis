@@ -101,13 +101,14 @@ GET         /authenticated/:message                   @controllers.APIAccessCont
 GET         /admin/lambdas                            @controllers.admin.LambdasController.list()
 POST        /admin/lambdas/:versionId/redeploy        @controllers.admin.LambdasController.redeploy(versionId: String)
 POST        /admin/lambdas/redeploy_all               @controllers.admin.LambdasController.redeployAll
-GET         /admin/teams                              @controllers.admin.TeamsController.list(page: Int ?= 0, perPage: Int ?= 10)
+GET         /admin/teams                              @controllers.admin.TeamsController.list(page: Int ?= 0, perPage: Int ?= 10, updatedTeamId: Option[String] ?= None)
 GET         /admin/billing/plans                      @controllers.admin.billing.PlansController.list()
 GET         /admin/user_info/lookup                   @controllers.admin.UserInfoController.userDataFor(userId: String)
 GET         /admin/managed_skills/:teamId             @controllers.admin.ManagedBehaviorGroupsController.list(teamId: String)
 POST        /admin/managed_skills/:teamId             @controllers.admin.ManagedBehaviorGroupsController.add(teamId: String)
 POST        /admin/managed_skills/delete/:groupId     @controllers.admin.ManagedBehaviorGroupsController.delete(groupId: String)
 POST        /admin/managed_skills/update/:groupId     @controllers.admin.ManagedBehaviorGroupsController.setContact(groupId: String)
+POST        /admin/teams/toggle_bot_shortcut          @controllers.admin.TeamsController.toggleBotShortcutForTeam()
 
 GET         /metrics/invocations_for_date/:token/:year/:month/:day          @controllers.VisibilityAPIController.invocationCountsForDate(token: String, year: String, month: String, day: String)
 GET         /metrics/for_team_for_date/:token/:teamName/:year/:month/:day   @controllers.VisibilityAPIController.forTeamForDate(token: String, teamName: String, year: String, month: String, day: String)
