@@ -6,6 +6,7 @@
 @import json.AdminTeamData
 @import helper.CSRF
 
+@import java.time.OffsetDateTime
 @(
   config: ViewConfig,
   teams: Seq[AdminTeamData],
@@ -16,6 +17,13 @@
   maybeUpdatedTeamId: Option[String]
 )(implicit messages: Messages, r: RequestHeader)
 
+@formatDate(date: OffsetDateTime) = @{
+  date.format(
+    DateTimeFormatter.ofPattern("EEE, dd MMM yyyy HH:mm:ss z").
+    withLocale(java.util.Locale.ENGLISH).
+    withZone(ZoneId.of("UTC"))
+  )
+}
 
 @page.main("Teams", config, Seq(NavItem.adminTeamsList(false))) {
   <div class="container">
@@ -28,19 +36,21 @@
             <a href="@controllers.routes.ApplicationController.teamHome(team.id).url">@team.name</a>
           </h4>
           <div class="type-s">
-            <p>
-              Created:
-              @team.createdAt.format(
-                DateTimeFormatter.ofPattern("EEE, dd MMM yyyy HH:mm:ss z").
-                  withLocale(java.util.Locale.ENGLISH).
-                  withZone(ZoneId.of("UTC"))
-              )<br>
-              Time zone: @team.timeZone
-            </p>
+            <div class="mbl">
+              <div>
+                Created: @formatDate(team.createdAt)
+              </div>
+              <div>
+                Last invoked: @team.lastInvocationDate.map(formatDate).getOrElse("Never")
+              </div>
+              <div>
+                Time zone: @team.timeZone
+              </div>
+            </div>
 
-            <p>
+            <div class="mbl">
               <a href="@controllers.admin.routes.ManagedBehaviorGroupsController.list(team.id).url">Edit managed skills</a>
-            </p>
+            </div>
 
             <div>
               <form action="@controllers.admin.routes.TeamsController.toggleBotShortcutForTeam().url" method="post">
