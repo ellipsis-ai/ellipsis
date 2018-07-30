@@ -27,13 +27,15 @@ class TeamsController @Inject() (
   private def adminTeamDataFor(team: Team): Future[AdminTeamData] = {
     for {
       maybeSlackBotProfile <- dataService.slackBotProfiles.allFor(team).map(_.headOption)
+      maybeLastInvocationDate <- dataService.invocationLogEntries.lastInvocationDateForTeam(team)
     } yield {
       AdminTeamData(
         team.id,
         team.name,
         team.timeZone.toString,
         team.createdAt,
-        maybeSlackBotProfile.exists(_.allowShortcutMention)
+        maybeSlackBotProfile.exists(_.allowShortcutMention),
+        maybeLastInvocationDate
       )
     }
   }
@@ -49,7 +51,7 @@ class TeamsController @Inject() (
           count <- dataService.teams.allCount
           pageData <- getPageData(count, page, perPage)
           teams <- dataService.teams.allTeamsPaged(pageData.current, pageData.size)
-          adminTeamsData <- Future.sequence(teams.map(adminTeamDataFor))
+          adminTeamsData <- Future.sequence(teams.map(adminTeamDataFor)).map(_.sorted.reverse)
         } yield {
           Ok(views.html.admin.teams.list(
             viewConfig(None),
