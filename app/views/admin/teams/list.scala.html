@@ -41,13 +41,16 @@
             </p>
 
             <div>
-              <div class="display-inline-block align-t">Mention shortcut enabled:</div>
-              <div class="form-select form-select-s">
-                <select class="form-select-element">
-                  <option @if(team.allowShortcutMention) { selected="selected" }>Yes</option>
-                  <option @if(!team.allowShortcutMention) { selected="selected" }>No</option>
-                </select>
-              </div>
+              <form>
+                <div class="display-inline-block align-t">…Bot shortcut enabled:</div>
+                <div class="form-select form-select-s">
+                  <select class="form-select-element">
+                    <option @if(team.allowShortcutMention) { selected="selected" }>Yes</option>
+                    <option @if(!team.allowShortcutMention) { selected="selected" }>No</option>
+                  </select>
+                </div>
+                <button class="button button-s button-shrink align-t" type="submit">Update</button>
+              </form>
             </div>
           </div>
         </div>
@@ -55,16 +58,18 @@
     }
     </div>
 
-    @if(teamCount != pageSize ) {
+    @*
+    if(teamCount != pageSize ) {
       <a href="?page=1">1</a>
       <a href="?page=@pageCount&perPage=@pageSize">@pageCount</a>
-      @*@if(currentPage != 1) {*@
-        @*<a href="?page=@{currentPage-1}&perPage=@pageSize">Previous</a>*@
-      @*}*@
-      @*@if(currentPage != pageCount) {*@
-        @*<a href="?page=@{currentPage-1}">Next</a>*@
-      @*}*@
+      @if(currentPage != 1) {
+        <a href="?page=@{currentPage-1}&perPage=@pageSize">Previous</a>
+      }
+      @if(currentPage != pageCount) {
+        <a href="?page=@{currentPage-1}">Next</a>
+      }
     }
+    *@
   </div>
 }
 
