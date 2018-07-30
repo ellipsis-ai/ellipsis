@@ -91,7 +91,7 @@ case class SlackApiClient(
   }
 
   def listConversations: Future[Seq[SlackConversation]] = {
-    val params = Seq(("types", "public_channel, private_channel, mpim, im"), ("exclude_archived", "false"))
+    val params = Seq(("types", "public_channel, private_channel, mpim, im"), ("exclude_archived", "false"), ("limit", "1000"))
     getResponseFor("conversations.list", params).
       map { response =>
         (response.json \ "channels").validate[Seq[SlackConversation]] match {
