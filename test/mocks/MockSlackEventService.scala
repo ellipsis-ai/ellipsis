@@ -18,7 +18,7 @@ class MockSlackEventService extends SlackEventService with MockitoSugar {
   val client: SlackApiClient = {
     val client = mock[SlackApiClient]
     implicit val system = ActorSystem("slack")
-    when(client.listConversations).thenReturn(Future.successful(Seq()))
+    when(client.listConversations()).thenReturn(Future.successful(Seq()))
     when(client.postChatMessage(
       anyString,
       anyString,
@@ -36,7 +36,7 @@ class MockSlackEventService extends SlackEventService with MockitoSugar {
       any[Option[String]],
       any[Option[Boolean]])
     ).thenReturn(Future.successful(SlackTimestamp.now))
-    when(client.listConversations).thenReturn(Future.successful(Seq()))
+    when(client.listConversations()).thenReturn(Future.successful(Seq()))
     client
   }
 

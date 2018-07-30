@@ -6,7 +6,7 @@ import _root_.models.accounts.slack.botprofile.SlackBotProfile
 import akka.actor.ActorSystem
 import javax.inject.{Inject, Singleton}
 import json.Formatting._
-import models.accounts.linkedaccount.LinkedAccount
+import play.api.Logger
 import play.api.http.{HeaderNames, MimeTypes}
 import play.api.libs.json.{Format, JsError, JsSuccess, Json}
 import play.api.libs.ws.WSResponse
@@ -30,6 +30,8 @@ case class SlackApiClient(
   import Formatting._
 
   val token: String = profile.token
+
+  private val SLACK_CONVERSATIONS_BATCH_SIZE = 1000
 
   private val API_BASE_URL = "https://slack.com/api/"
   private val ws = services.ws
@@ -75,6 +77,7 @@ case class SlackApiClient(
   }
 
   private def getResponseFor(endpoint: String, params: Seq[(String, String)]): Future[WSResponse] = {
+    Logger.info(s"SlackApiClient query $endpoint with params $params")
     ws.
       url(urlFor(endpoint)).
       withQueryStringParameters((params ++ defaultParams): _*).
@@ -90,14 +93,27 @@ case class SlackApiClient(
       }
   }
 
-  def listConversations: Future[Seq[SlackConversation]] = {
-    val params = Seq(("types", "public_channel, private_channel, mpim, im"), ("exclude_archived", "false"), ("limit", "1000"))
+  def listConversations(maybeCursor: Option[String] = None): Future[Seq[SlackConversation]] = {
+    val params = Seq(
+      ("types", "public_channel, private_channel, mpim, im"),
+      ("exclude_archived", "false"),
+      ("limit", SLACK_CONVERSATIONS_BATCH_SIZE.toString)
+    ) ++ maybeCursor.map(c => Seq(("cursor", c))).getOrElse(Seq())
     getResponseFor("conversations.list", params).
-      map { response =>
-        (response.json \ "channels").validate[Seq[SlackConversation]] match {
+      flatMap { response =>
+        val json = response.json
+        val batch = (json \ "channels").validate[Seq[SlackConversation]] match {
           case JsSuccess(data, _) => data
-          case JsError(err) => Seq()
+          case JsError(err) => {
+            Logger.error(s"Failed to parse SlackConversation from conversations.list: ${JsError.toJson(err).toString}")
+            Seq()
+          }
         }
+        // Slack returns an empty string next_cursor rather than leaving it out
+        val maybeNextCursor = (json \ "response_metadata" \ "next_cursor").asOpt[String].filter(_.trim.nonEmpty)
+        maybeNextCursor.map { nextCursor =>
+          listConversations(Some(nextCursor)).map(batch ++ _)
+        }.getOrElse(Future.successful(batch))
       }
   }
 

@@ -12,7 +12,7 @@ case class SlackChannels(client: SlackApiClient) {
   }
 
   def getList(implicit ec: ExecutionContext): Future[Seq[SlackConversation]] = {
-    client.listConversations
+    client.listConversations()
   }
 
   def getMembersFor(convoId: String)(implicit ec: ExecutionContext): Future[Seq[String]] = {
