@@ -17,7 +17,7 @@
 )(implicit messages: Messages, r: RequestHeader)
 
 
-@page.main("Teams", config, Seq(NavItem.admin)) {
+@page.main("Teams", config, Seq(NavItem.adminTeamsList(false))) {
   <div class="container">
     <h4>@teamCount Teams</h4>
     <div class="columns">

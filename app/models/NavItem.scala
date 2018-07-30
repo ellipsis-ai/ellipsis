@@ -35,6 +35,14 @@ object NavItem {
     NavItem("Admin", None)
   }
 
+  def adminTeamsList(link: Boolean): NavItem = {
+    NavItem("Teams admin", if (link) {
+      Some(controllers.admin.routes.TeamsController.list(0, 10, None))
+    } else {
+      None
+    })
+  }
+
   def integrations(link: Boolean, maybeTeamId: Option[String]) = {
     NavItem("Integrations", if (link) {
       Some(controllers.web.settings.routes.IntegrationsController.list(maybeTeamId))
