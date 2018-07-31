@@ -6,7 +6,6 @@ import drivers.SlickPostgresDriver.api._
 import models.accounts.user.{User, UserQueries}
 import models.behaviors.behaviorversion.BehaviorVersionQueries
 import models.behaviors.events.EventType
-import models.team.TeamQueries
 
 object InvocationLogEntryQueries {
 
