@@ -27,7 +27,8 @@ class TeamsController @Inject() (
   private def adminTeamDataFor(team: Team): Future[AdminTeamData] = {
     for {
       maybeSlackBotProfile <- dataService.slackBotProfiles.allFor(team).map(_.headOption)
-      maybeLastInvocationDate <- dataService.invocationLogEntries.lastInvocationDateForTeam(team)
+      /* TODO: This is super slow, not sure why: */
+      maybeLastInvocationDate <- Future.successful(None) /*dataService.invocationLogEntries.lastInvocationDateForTeam(team)*/
     } yield {
       AdminTeamData(
         team.id,
