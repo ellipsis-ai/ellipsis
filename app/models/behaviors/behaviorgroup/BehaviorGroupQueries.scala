@@ -5,6 +5,7 @@ import drivers.SlickPostgresDriver.api._
 
 object BehaviorGroupQueries {
 
+  val insertQuery = TableQuery[BehaviorGroupsTable]
   val all = TableQuery[BehaviorGroupsTable].filter(_.maybeDeletedAt.isEmpty)
   val allWithTeam = all.join(TeamQueries.all).on(_.teamId === _.id)
 
