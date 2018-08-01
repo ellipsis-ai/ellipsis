@@ -151,10 +151,6 @@ class BehaviorServiceImpl @Inject() (
     }
   }
 
-  def delete(behavior: Behavior): Future[Behavior] = {
-    dataService.run(findRawQueryFor(behavior.id).delete.map(_ => behavior))
-  }
-
   def maybeCurrentVersionForAction(behavior: Behavior): DBIO[Option[BehaviorVersion]] = {
     for {
       maybeCurrentGroupVersion <- dataService.behaviorGroupVersions.maybeCurrentForAction(behavior.group)
@@ -166,14 +162,6 @@ class BehaviorServiceImpl @Inject() (
 
   def maybeCurrentVersionFor(behavior: Behavior): Future[Option[BehaviorVersion]] = {
     dataService.run(maybeCurrentVersionForAction(behavior))
-  }
-
-  def unlearn(behavior: Behavior): Future[Unit] = {
-    for {
-      versions <- dataService.behaviorVersions.allFor(behavior)
-      _ <- Future.sequence(versions.map(v => dataService.behaviorVersions.unlearn(v)))
-      _ <- delete(behavior)
-    } yield {}
   }
 
 }
