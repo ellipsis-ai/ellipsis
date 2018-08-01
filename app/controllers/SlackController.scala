@@ -173,7 +173,7 @@ class SlackController @Inject() (
                                    maybeSourceTeamId: Option[String],
                                    channel: String,
                                    text: String,
-                                   maybeFileInfo: Option[FileInfo]
+                                   maybeFilesInfo: Option[Seq[FileInfo]]
                                   ) extends EventInfo
 
   case class MessageSentRequestInfo(
@@ -198,12 +198,12 @@ class SlackController @Inject() (
         "user" -> nonEmptyText,
         "source_team" -> optional(nonEmptyText),
         "channel" -> nonEmptyText,
-        "text" -> nonEmptyText,
-        "file" -> optional(mapping(
+        "text" -> text,
+        "files" -> optional(seq(mapping(
           "created" -> longNumber,
           "url_private_download" -> nonEmptyText,
           "thumb_1024" -> optional(nonEmptyText)
-        )(FileInfo.apply)(FileInfo.unapply))
+        )(FileInfo.apply)(FileInfo.unapply)))
       )(MessageSentEventInfo.apply)(MessageSentEventInfo.unapply)
     )(MessageSentRequestInfo.apply)(MessageSentRequestInfo.unapply) verifying("Not a valid message event", fields => fields match {
       case info => info.event.eventType == "message"
@@ -291,7 +291,7 @@ class SlackController @Inject() (
         }
       } else {
         val maybeFile = info.event match {
-          case e: MessageSentEventInfo => e.maybeFileInfo.map(i => SlackFile(i.downloadUrl, i.maybeThumbnailUrl))
+          case e: MessageSentEventInfo => e.maybeFilesInfo.flatMap(_.headOption.map(i => SlackFile(i.downloadUrl, i.maybeThumbnailUrl)))
           case _ => None
         }
         for {
